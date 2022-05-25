@@ -1,6 +1,6 @@
 import unittest
 
-from capissen38 import motors
+from haven import motors
 
 
 class MonochromatorTests(unittest.TestCase):

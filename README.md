@@ -1,4 +1,4 @@
-# capissen38
+# Haven
 
 Bluesky tools for beamlines managed by the spectroscopy group.
 
@@ -7,7 +7,7 @@ of the sky."
 
 ## Installation
 
-*capissen38* uses poetry for installation and development. First
+*haven* uses poetry for installation and development. First
 install the build manager:
 
 ```

@@ -1,13 +1,5 @@
-# [build-system]
-# requires = ["poetry-core"]
-# build-backend = "poetry.core.masonry.api"
-# # [build-system]
-# # requires = ["setuptools>=42"]
-# # build-backend = "setuptools.build_meta"
-
-
 [tool.poetry]
-name = "capissen38"
+name = "haven"
 version = "0.1.0"
 description = "Runs the spectroscopy group beamlines."
 
@@ -19,13 +11,13 @@ authors = [
 
 readme = "README.md"  # Markdown files are supported
 
-repository = "https://github.com/spc-group/capissen38"
-homepage = "https://github.com/spc-group/capissen38"
+repository = "https://github.com/spc-group/haven"
+homepage = "https://github.com/spc-group/haven"
 
 keywords = ["synchrotron", "xray", "bluesky"]
 
 [tool.poetry.dependencies]
-python = "^3.6"  # Compatible python versions must be declared here
+python = "^3.7"  # Compatible python versions must be declared here
 toml = "^0.9"
 # Dependencies with extras
 # requests = { version = "^2.13", extras = [ "security" ] }
@@ -39,7 +31,7 @@ toml = "^0.9"
 
 [tool.poetry.dev-dependencies]
 pytest = "^7.1"
-pytest-cov = "^3.0"
+pytest-cov = "^3"
 
 # [tool.poetry.scripts]
 # my-script = "my_package:main"
