@@ -1,9 +1,12 @@
 # Haven
 
+[![Documentation Status](https://readthedocs.org/projects/haven-spc/badge/?version=latest)](https://haven-spc.readthedocs.io/en/latest/?badge=latest)
+
 Bluesky tools for beamlines managed by the spectroscopy group.
 
 "Don't fly in anything with a Capissen 38 engine, they fall right out
 of the sky."
+
 
 ## Installation
 
