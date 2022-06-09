@@ -58,6 +58,8 @@ jobs:
         conda env update --file environment_2022_2.yml --name base
     - name: Install haven
       run: poetry install
+      env:
+        POETRY_VIRTUALENVS_CREATE: false      
     - name: Lint with flake8
       run: |
         conda install flake8
