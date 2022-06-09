@@ -60,12 +60,17 @@ dependencies:
   - xrayutilities
 
   # # --- packaging and publishing
+  - poetry
   # - conda-build
   # - coverage
-  # - sphinx
+  - sphinx
   # - sphinxcontrib-napoleon
   # - twine
   # - versioneer
+
+  # Code linting and formatting
+  - black
+  - flake8
 
   - ipykernel
 
