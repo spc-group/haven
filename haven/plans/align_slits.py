@@ -17,16 +17,14 @@ def align_slits(slit_motors=[], ion_chamber=None):
     for motor in slit_motors:
         # Set up the live fit object to process the results
         def gaussian(x, A, sigma, x0):
-            return A*np.exp(-(x - x0)**2/(2 * sigma**2))
+            return A * np.exp(-((x - x0) ** 2) / (2 * sigma**2))
 
         model = lmfit.Model(gaussian)
-        init_guess = {'A': 2,
-                      'sigma': lmfit.Parameter('sigma', 3, min=0),
-                      'x0': -0.2}        
-        fit = LiveFit(model, ion_chamber.name, {'x': motor.name}, init_guess)
+        init_guess = {"A": 2, "sigma": lmfit.Parameter("sigma", 3, min=0), "x0": -0.2}
+        fit = LiveFit(model, ion_chamber.name, {"x": motor.name}, init_guess)
         scan = subs_decorator(fit)(align_slit_scan)
         # Execute the scan
         yield from scan(ion_chamber=ion_chamber, slit_motor=motor)
         # Move the slit motor to the center of the Gaussian peak
-        new_center = fit.result.values['x0']
+        new_center = fit.result.values["x0"]
         yield from bps.mv(motor, new_center)
