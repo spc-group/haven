@@ -1,3 +1,8 @@
+"""A bluesky plan to scan the X-ray beam slits and then move the slits
+to that position.
+
+"""
+
 import numpy as np
 import lmfit
 from bluesky import plans as bp, plan_stubs as bps
@@ -9,7 +14,7 @@ __all__ = ["align_slits"]
 
 
 def align_slit_scan(slit_motor, ion_chamber):
-    yield from bp.scan([ion_chamber], slit_motor, -1, 1, 50)
+    yield from bp.rel_scan([ion_chamber], slit_motor, -1, 1, 50)
 
 
 def align_slits(slit_motors=[], ion_chamber=None):
