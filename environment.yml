@@ -1,16 +1,15 @@
-name: bluesky_2022_2
+name: haven
 
 # use:
-#   date; conda env create --force -f ./environment_2022_2.yml; date
+#   date; conda env create -f ./environment.yml; date
 
 channels:
-  - defaults
+  # - defaults
   - conda-forge
   - aps-anl-tag
   - nsls2forge
 
 dependencies:
-
   # --- Python core packages
   - python=3.9
   - ipython
@@ -21,6 +20,19 @@ dependencies:
   - pip
   - psutil
 
+  # --- Compiled performance packages (e.g. numpy with MKL)
+  # - numpy>=1.22
+  # - pandas>=1
+  # - scipy>=1.8
+
+  # --- Random packages that aren't on pypi
+  - aps-dm-api>=5 # User requested
+  - epics-base>=7.0.5
+
+  # --- Qt
+  - pyqt>=5.12.0,<5.15
+  - qt=5
+
   # --- testing and quality assurance
   - pre-commit
   - black
@@ -28,11 +40,7 @@ dependencies:
   - pylint
   - pytest
   - pytest-cov
-
-  # --- Qt
-  - pyqt=5
-  - qt=5
-
+  
   # --- general support packages
   - bitshuffle
   - epics-base>=7.0.5
@@ -65,11 +73,11 @@ dependencies:
   # # --- packaging and publishing
   - poetry
   - sphinx
-  # - conda-build
-  # - coverage
-  # - sphinxcontrib-napoleon
-  # - twine
-  # - versioneer
+  - conda-build
+  - coverage
+  - sphinxcontrib-napoleon
+  - twine
+  - versioneer
 
   - pip:
     - apstools
@@ -83,8 +91,8 @@ dependencies:
     - hklpy
     - ophyd>=1.6.3
     - pydm
-
-    - https://github.com/BCDA-APS/adl2pydm/archive/main.zip
+    - adl2pydm
+  #   - https://github.com/BCDA-APS/adl2pydm/archive/main.zip
     # --- optional Bluesky framework packages for evaluation
     # - bluesky-webclient is NOT Python software, don't install it this way
     #    https://github.com/bluesky/bluesky-webclient

@@ -3,7 +3,7 @@ name = "haven"
 version = "0.1.0"
 description = "Runs the spectroscopy group beamlines."
 
-license = "MIT"
+license = "all-rights-reserved"
 
 authors = [
     "Mark Wolfman <wolfman@anl.gov>"
@@ -17,8 +17,10 @@ homepage = "https://github.com/spc-group/haven"
 keywords = ["synchrotron", "xray", "bluesky"]
 
 [tool.poetry.dependencies]
-python = "^3.7"  # Compatible python versions must be declared here
-toml = "^0.9"
+
+# [tool.poetry.scripts]
+# my-script = "my_package:main"
+
 # Dependencies with extras
 # requests = { version = "^2.13", extras = [ "security" ] }
 # # Python specific dependencies with prereleases allowed
@@ -28,10 +30,3 @@ toml = "^0.9"
 
 # # Optional dependencies (extras)
 # pendulum = { version = "^1.4", optional = true }
-
-[tool.poetry.dev-dependencies]
-pytest = "^7.1"
-pytest-cov = "^3"
-
-# [tool.poetry.scripts]
-# my-script = "my_package:main"
