@@ -14,7 +14,7 @@ __all__ = ["energy_scan"]
 log = logging.getLogger(__name__)
 
 
-def energy_scan(energies, exposure, detectors=[]):
+def energy_scan(energies: Sequence, exposure: float, detectors: Sequence = []):
     """Collect a spectrum by scanning X-ray energy.
 
     Usage
@@ -37,4 +37,5 @@ def energy_scan(energies, exposure, detectors=[]):
     """
     raise NotImplementedError
     # This could be the simple way of doing it in bluesky
-    yield from bp.list_scan(motors.energy, energies)
+    energy_motor = None
+    yield from bp.list_scan(energy_motor, energies)

@@ -1,5 +1,4 @@
 import unittest
-import time
 import warnings
 import logging
 

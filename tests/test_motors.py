@@ -1,7 +1,5 @@
 import unittest
 
-from haven import motors
-
 
 class MonochromatorTests(unittest.TestCase):
     @unittest.expectedFailure
