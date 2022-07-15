@@ -1,0 +1,155 @@
+from dataclasses import dataclass
+from typing import Optional
+
+import numpy as np
+import pint
+from scipy import constants
+
+
+DEFAULT_EXPOSURE = 0.5
+
+# Calculate the conversion coefficient from k -> eV
+ureg = pint.UnitRegistry()
+hbar = constants.hbar * ureg.joule * ureg.second
+c = constants.speed_of_light * ureg.meter / ureg.second
+m_e = (
+    constants.physical_constants["electron mass energy equivalent in MeV"][0]
+    * 1e6
+    * ureg.electron_volt
+)
+ALPHA = hbar**2 * c**2 / 2 / m_e
+ALPHA = ALPHA.to("electron_volt * angstrom * angstrom").magnitude
+
+
+@dataclass
+class EnergyRange:
+    """A range of energies used for scanning."""
+
+    def energies(self):
+        raise NotImplementedError
+
+    def exposures(self):
+        raise NotImplementedError
+
+
+@dataclass
+class ERange(EnergyRange):
+    """A range of energies used for scanning.
+
+    All values are assumed to be in electron-volts. If *E0* is a
+
+    Parameters
+    ==========
+
+    E_min
+      Starting energy of the range, in eV.
+    E_max
+      Ending energy of the range, in eV.
+    E_step
+      Step-size between energies, in eV.
+    exposure
+      How long to spend at each energy, in seconds.
+
+    """
+
+    E_min: float
+    E_max: float
+    E_step: float = 1.0
+    exposure: float = DEFAULT_EXPOSURE
+
+    def energies(self):
+        """Convert the range to a sequence of actual energy values, in eV."""
+        return np.arange(self.E_min, self.E_max + self.E_step, self.E_step)
+
+    def exposures(self):
+        """Convert the range to a sequence of exposure times, in seconds."""
+        return [self.exposure] * len(self.energies())
+
+
+@dataclass
+class KRange(EnergyRange):
+    """A range of energies used for scanning in the EXAFS region.
+
+    Values are a mix of electron-volts and K-space values.
+
+    Parameters
+    ==========
+
+    E_min
+      Starting energy of the range, in eV.
+    k_max
+      Ending energy of the range, in Å⁻.
+    k_step
+      Step-size between energies, in Å⁻.
+    k_weight
+      Weighting factor for longer exposures at higher energies.
+    exposure
+      How long to spend at each energy, in seconds.
+
+    """
+
+    E_min: float
+    k_max: float
+    k_step: float = 0.1
+    k_weight: float = 0.0
+    exposure: float = DEFAULT_EXPOSURE
+
+    def energies(self):
+        """Calculates photon energies in units of eV."""
+        return self.wavenumber_to_energy(self.wavenumbers())
+
+    def energy_to_wavenumber(self, energy):
+        return np.sqrt(energy / ALPHA)
+
+    def wavenumber_to_energy(self, wavenumber):
+        return wavenumber**2 * ALPHA
+
+    def wavenumbers(self):
+        """Calculates wavenumbers (k) for the photo-electron in units Å⁻."""
+        k_min = self.energy_to_wavenumber(self.E_min)
+        ks = np.arange(k_min, self.k_max + self.k_step, self.k_step)
+        return ks
+
+    def exposures(self):
+        ks = self.wavenumbers()
+        return self.exposure * (ks / np.min(ks)) ** self.k_weight
+
+
+def merge_ranges(*ranges, default_exposure=DEFAULT_EXPOSURE):
+    """Combine multiple energy ranges.
+
+    If any of *ranges* is a instance of ``EnergyRange`` or one of its
+    subclasses, then the object will be decomposed to it's constituent
+    energies and exposure times. Otherwise, the value will be used
+    as-is for the list of energies, and *default_exposure* will be
+    used for the exposure time.
+
+    Results will be sorted by energy, and redundant energies will be
+    removed with the exposure time being taken from the first instance
+    of the particular energy encountered.
+
+    Returns
+    =======
+    energies
+      A sequence of energies, in eV.
+    exposures
+      A sequence of exposure times, in seconds.
+
+    """
+    energies = []
+    exposures = []
+    for rng in ranges:
+        if not isinstance(rng, EnergyRange):
+            # Not an energy range, assume it's a float or something
+            energies.append(rng)
+            exposures.append(default_exposure)
+        else:
+            # An energy range, so break it down
+            energies.extend(rng.energies())
+            exposures.extend(rng.exposures())
+    # Convert to proper arrays, and remove duplicate energies
+    energies, unique_idx = np.unique(
+        np.asarray(energies, dtype=float), return_index=True
+    )
+    exposures = np.asarray(exposures, dtype=float)[unique_idx]
+    return energies, exposures
