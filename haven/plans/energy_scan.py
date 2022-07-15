@@ -3,6 +3,7 @@
 """
 
 import logging
+import warnings
 from typing import Sequence, Union
 
 from bluesky import plans as bp
@@ -93,6 +94,9 @@ def energy_scan(
     # Apply E0 correction
     energies += E0
     # Prepare the positioners list with associated energies and exposures
+    msg = "Offset for undulator gap not corrected in energy_scan"
+    warnings.warn(msg)
+    log.warning(msg)
     scan_args = [(motor, energies) for motor in energy_positioners]
     scan_args += [(motor, exposure) for motor in time_positioners]
     scan_args = [item for items in scan_args for item in items]
