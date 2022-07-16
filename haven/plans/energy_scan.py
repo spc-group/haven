@@ -8,7 +8,7 @@ from typing import Sequence, Union
 
 from bluesky import plans as bp
 
-from ..positioners import ion_chambers
+from ..detectors import ion_chambers
 from haven import merge_ranges
 
 
