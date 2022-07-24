@@ -6,6 +6,7 @@ How-To Guides
    :maxdepth: 2
    :caption: Contents:
 
+   energy_scans.rst   
    define_new_motor.rst
 
    

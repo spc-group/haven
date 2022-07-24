@@ -8,8 +8,9 @@ from typing import Sequence, Union
 
 from bluesky import plans as bp
 
-from ..detectors import ion_chambers
 from haven import merge_ranges
+from ..detectors import ion_chambers
+from ..constants import edge_energy
 
 
 __all__ = ["energy_scan"]
@@ -21,12 +22,15 @@ log = logging.getLogger(__name__)
 def energy_scan(
     energies: Sequence[float],
     exposure: Union[float, Sequence[float]] = 0.1,
+    E0: Union[float, str] = 0,
     detectors: Sequence = ion_chambers,
     energy_positioners: Sequence = [],
     time_positioners: Sequence = [],
-    E0: float = 0,
 ):
     """Collect a spectrum by scanning X-ray energy.
+
+    For scanning over a pre-defined X-ray absorption edge, try
+    ``~haven.plans.xafs_scan.xafs_scan`` instead.
 
     *exposure* can be either a float, or a sequence of floats. If a
     single value is provided, it will be used for all energies. If a
@@ -43,10 +47,10 @@ def energy_scan(
         energies = range(13000, 13100)
         RE(energy_scan(energies, exposure=0.5))
 
-    The preparation of energies is up to the calling
-    function. Consider using the utility functions
-    ``haven.energy_ranges.ERange`` and ``haven.energy_ranges.KRange``
-    to prepare more sophisticated energy lists:
+    The preparation of energies is up to the calling function. For
+    more sophisticated energy lists, consider using the utility
+    functions ``haven.energy_ranges.ERange`` and
+    ``haven.energy_ranges.KRange``:
 
         energies = [
           ERange(13000, 13100, E_step=10),
@@ -66,15 +70,15 @@ def energy_scan(
       The X-ray energies, in eV, over which to scan.
     exposure
       How long, in seconds, to count at each energy.
+    E0
+      An edge energy, in eV, or name of the edge of the form
+      "Ni_L3". All energies will be relative to this value.
     detectors
       The detectors to collect X-ray signal from at each energy.
     energy_positioners
       Positioners that will receive the changing energies.
     time_positioners
       Positioners that will receive the exposure time for each scan.
-    E0
-      Take values in *energy* as relative to the edge energy *E0*. The
-      default (0) just takes the energies as is.
 
     Yields
     ======
@@ -91,7 +95,10 @@ def energy_scan(
     # Convert an individual exposure time to an array of exposure times
     if not hasattr(exposure, "__iter__"):
         exposure = [exposure] * len(energies)
-    # Apply E0 correction
+    # Correct for E0
+    if isinstance(E0, str):
+        # Look up E0 in the database if e.g. "Ni_K" is given as E0
+        E0 = edge_energy(E0)
     energies += E0
     # Prepare the positioners list with associated energies and exposures
     msg = "Offset for undulator gap not corrected in energy_scan"

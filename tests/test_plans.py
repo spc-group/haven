@@ -4,12 +4,13 @@ import logging
 
 import numpy as np
 from ophyd import sim
+from bluesky.simulators import summarize_plan, check_limits
 
 from run_engine import RunEngineStub
-from haven import align_slits, energy_scan, ERange, KRange
+from haven import align_slits, energy_scan, xafs_scan, ERange, KRange
 
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.WARNING)
 
 
 def my_callback(name, doc):
@@ -25,6 +26,9 @@ class PlanUnitTests(unittest.TestCase):
 
     """
 
+    mono_motor = sim.SynAxis(name="mono_energy", labels={"motors", "energies"})
+    exposure_motor = sim.Signal(name="exposure")
+    id_gap_motor = sim.SynAxis(name="id_gap_energy", labels={"motors", "energies"})
     RE = RunEngineStub(call_returns_result=True)
 
 
@@ -78,8 +82,6 @@ class EnergyScanTests(PlanUnitTests):
 
     def test_energy_scan_basics(self):
         # Set up fake detectors and motors
-        mono_motor = sim.SynAxis(name="mono_energy", labels={"motors", "energies"})
-        id_gap_motor = sim.SynAxis(name="id_gap_energy", labels={"motors", "energies"})
         I0_exposure = sim.SynAxis(
             name="I0_exposure",
             labels={
@@ -94,7 +96,7 @@ class EnergyScanTests(PlanUnitTests):
         )
         I0 = sim.SynGauss(
             name="I0",
-            motor=mono_motor,
+            motor=self.mono_motor,
             motor_field="mono_energy",
             center=np.median(self.energies),
             Imax=1,
@@ -111,16 +113,114 @@ class EnergyScanTests(PlanUnitTests):
             self.energies,
             detectors=[I0, It],
             exposure=self.exposure_time,
-            energy_positioners=[mono_motor, id_gap_motor],
+            energy_positioners=[self.mono_motor, self.id_gap_motor],
             time_positioners=[I0_exposure, It_exposure],
         )
         result = self.RE(scan)
         # Check that the mono and ID gap ended up in the right position
-        self.assertEqual(mono_motor.get().readback, np.max(self.energies))
-        self.assertEqual(id_gap_motor.get().readback, np.max(self.energies))
+        self.assertEqual(self.mono_motor.get().readback, np.max(self.energies))
+        self.assertEqual(self.id_gap_motor.get().readback, np.max(self.energies))
         self.assertEqual(I0_exposure.get().readback, self.exposure_time)
         self.assertEqual(It_exposure.get().readback, self.exposure_time)
 
     def test_raises_on_empty_positioners(self):
         with self.assertRaises(ValueError):
             self.RE(energy_scan(self.energies))
+
+
+class XafsScanTests(PlanUnitTests):
+    E0 = 10000  # in electron-volts
+
+    def test_single_range(self):
+        expected_energies = np.arange(9990, 10001, step=1)
+        expected_exposures = np.asarray([1.0])
+        scan = xafs_scan(
+            -10,
+            1,
+            1,
+            0,
+            E0=self.E0,
+            energy_positioners=[self.mono_motor],
+            time_positioners=[self.exposure_motor],
+        )
+        # Check that the mono motor is moved to the correct positions
+        scan_list = list(scan)
+        real_energies = [
+            i.args[0]
+            for i in scan_list
+            if i[0] == "set" and i.obj.name == "mono_energy"
+        ]
+        np.testing.assert_equal(real_energies, expected_energies)
+        # Check that the exposure is set correctly
+        real_exposures = [
+            i.args[0] for i in scan_list if i[0] == "set" and i.obj.name == "exposure"
+        ]
+        np.testing.assert_equal(real_exposures, expected_exposures)
+
+    def test_multi_range(self):
+        expected_energies = np.concatenate(
+            [
+                np.arange(9990, 10001, step=2),
+                np.arange(10001, 10011, step=1),
+            ]
+        )
+        expected_exposures = np.asarray([0.5, 1.0])
+        scan = xafs_scan(
+            -10,
+            2,
+            0.5,
+            0,
+            1,
+            1.0,
+            10,
+            E0=self.E0,
+            energy_positioners=[self.mono_motor],
+            time_positioners=[self.exposure_motor],
+        )
+        # Check that the mono motor is moved to the correct positions
+        scan_list = list(scan)
+        real_energies = [
+            i.args[0]
+            for i in scan_list
+            if i[0] == "set" and i.obj.name == "mono_energy"
+        ]
+        np.testing.assert_equal(real_energies, expected_energies)
+        # Check that the exposure is set correctly
+        real_exposures = [
+            i.args[0] for i in scan_list if i[0] == "set" and i.obj.name == "exposure"
+        ]
+        np.testing.assert_equal(real_exposures, expected_exposures)
+
+    def test_named_E0(self):
+        expected_energies = np.concatenate(
+            [
+                np.arange(8323, 8334, step=2),
+                np.arange(8334, 8344, step=1),
+            ]
+        )
+        expected_exposures = np.asarray([0.5, 1.0])
+        scan = xafs_scan(
+            -10,
+            2,
+            0.5,
+            0,
+            1,
+            1.0,
+            10,
+            E0="Ni_K",
+            energy_positioners=[self.mono_motor],
+            time_positioners=[self.exposure_motor],
+        )
+        # Check that the mono motor is moved to the correct positions
+        scan_list = list(scan)
+        real_energies = [
+            i.args[0]
+            for i in scan_list
+            if i[0] == "set" and i.obj.name == "mono_energy"
+        ]
+        np.testing.assert_equal(real_energies, expected_energies)
+        # Check that the exposure is set correctly
+        real_exposures = [
+            i.args[0] for i in scan_list if i[0] == "set" and i.obj.name == "exposure"
+        ]
+        np.testing.assert_equal(real_exposures, expected_exposures)

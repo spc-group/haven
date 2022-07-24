@@ -69,6 +69,7 @@ dependencies:
   - spec2nexus
   - stdlogpj
   - xrayutilities
+  - xraydb
 
   # # --- packaging and publishing
   - poetry
