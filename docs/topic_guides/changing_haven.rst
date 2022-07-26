@@ -1,0 +1,105 @@
+#########################################
+Making Changes to Haven and Contributing
+#########################################
+
+Two Scenarios are likely when proposing changes to Haven:
+
+* New feature or bugfix written in a development environment
+* Changes from the beamline during beamtime
+
+From a Development Environment
+==============================
+
+From the Beamline
+=================
+
+.. warning::
+
+   This section is intended for qualified beamline staff. **Users are
+   not authorized** to make changes to the beamline software without
+   staff involvement.
+
+User support often requires changes to be made quickly from the
+beamline computers.
+
+*Git* is our version control software. It interacts with github, and
+allows changes to the source code to be tracked and managed.
+
+**Before modifying Haven**, create a new branch using git. This will
+allow changes to be undone or pushed to github for use at other
+beamlines. First we will create the new branch, then we will check it
+out to begin working on it.
+
+.. code-block:: console
+
+    $ cd ~/haven
+    $ git branch broken_shutter_workaround
+    $ git checkout broken_shutter_workaround
+
+Now modify the Haven scripts as needed to get the beamline
+running. Once the changes are complete, **commit them to version
+control**. If **new files have been added**, then we have to inform
+git that they should be included, for examples:
+
+.. code-block:: console
+
+   $ git add haven/shutter_workaround.py
+
+Then **commit the changes**:
+
+.. code-block:: console
+
+    $ git commit -a -m "Workaround for the shutter not also closing when requested."
+
+If you see ``black...Failed``, then you need to run the command
+again. Black is an add-on that enforces its own code format so that we
+can focus on the important stuff, and it runs every time changes are
+committed. If code needs to be reformatted, it stops the commit and
+fixes the formatting. Attempting the commit again with the reformatted
+code usually works.
+
+The ``-a`` option tells git to automatically include all files that
+have been changed. The ``-m`` option lets us include a short message
+describing the commit. Please **write descriptive commit
+messages**. For longer messages, omit the -m option (just ``git commit
+-a``) and a text editor will appear.
+
+Now the new branch can be pushed to github with
+
+.. code-block:: console
+
+    $ git push -u origin delete_me
+
+The ``-u`` option is only needed the first time: it tells git to
+connect the new branch to github (origin).
+
+Design Defense
+==============
+
+An important consideration is how to manage changes to the code-base
+in a way that satisfies several goals:
+
+1. maximize reuse of code between beamlines (9-BM, 20-BM, and 25-ID)
+2. support rapid troubleshooting at the beamline
+3. control deployment of new features among the beamlines
+4. encourage documentation and testing
+
+Rapid troubleshooting necessarily leads to the code-base being in an
+untested state, and so these changes should not automatically apply to
+the code-base in use at another beamline.
+
+The idea presented here is to have each beamline own a local copy of
+the haven repository. Changes made at the beamline should ideally be
+made to a separate branch. If the change is worth keeping it can be
+committed along with documentation and tests, and the new branch can
+be merged into the main branch.
+
+Getting those changes to the other beamlines can be done whenever no
+experiments are taking place there. We can pull the changes from
+github, and run the system tests.
+
+
+
+.. note::
+
+   

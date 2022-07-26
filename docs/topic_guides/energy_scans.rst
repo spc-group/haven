@@ -2,12 +2,12 @@
 Running Energy Scans (XAFS)
 ############################
 
-``xafs_scan()`` for Straight-Forward XAFS Scans
+:py:func:`~haven.plans.xafs_scan.xafs_scan()` for Straight-Forward XAFS Scans
 ===============================================
 
-The ``xafs_scan()`` is a bluesky plan meant for scanning energy over a
-a number of energy ranges, for example the pre-edge, edge, and EXAFS
-signal of a K-edge.
+The :py:func:`~haven.plans.xafs_scan.xafs_scan()` is a bluesky plan
+meant for scanning energy over a a number of energy ranges, for
+example the pre-edge, edge, and EXAFS signal of a K-edge.
 
 The function accepts an arbitrary number of parameters for defining
 the ranges. The parameters are expected to provide energy step sizes
@@ -22,8 +22,8 @@ An example across the Nickel K-edge at 8333 eV could be:
 
     RE(xafs_scan(8313, 2, 1, 8325, 0.5, 2, 8365, 10, 1.5, 8533))
 
-``RE`` is the bluesky run engine, which should already be imported for
-you in the ipython environment.
+``RE`` is the bluesky :py:class:`~bluesky.run_engine.RunEngine`, which
+should already be imported for you in the ipython environment.
 
 
 Absolute vs. Relative Scans
@@ -31,9 +31,9 @@ Absolute vs. Relative Scans
 
 In some cases, it is more intuitive to describe the energy ranges
 relative to some absorption edge (*E0*). The energy of the edge can be
-given directly to ``xafs_scan`` as *E0*, then all energy points will
-be interpreted as relative to this energy. The same scan from above
-would be:
+given directly to :py:func:`~haven.plans.xafs_scan.xafs_scan` as *E0*,
+then all energy points will be interpreted as relative to this
+energy. The same scan from above would be:
 
 .. code:: python
 
@@ -65,6 +65,6 @@ scale linearly with *k*.
 
     RE(xafs_scan(-20, 2, 1, -8, 0.5, 2, 32, k_step=0.02, k_max=12, k_exposure=1., k_weight=1, E0=8333))
 
-``energy_scan()`` for More Sophisticated Scans
-==============================================
+:py:func:`~haven.plans.energy_scan.energy_scan()` for More Sophisticated Scans
+==============================================================================
 

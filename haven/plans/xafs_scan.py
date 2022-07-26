@@ -12,6 +12,9 @@ from ..energy_ranges import ERange, KRange
 from .energy_scan import energy_scan
 
 
+__all__ = ["xafs_scan"]
+
+
 def chunks(lst, n):
     """Yield successive n-sized chunks from lst."""
     for i in range(0, len(lst), n):
@@ -37,7 +40,7 @@ def xafs_scan(
 
     .. code-block:: python
 
-        ``xanfs_scan(energy, step, exposure, energy, step, exposure energy, ...)``
+        xanfs_scan(energy, step, exposure, energy, step, exposure energy, ...)
 
     The optional parameter *E0* can either be an absolute energy in
     electron-volts, or a string of the form "Ni_K" to be looked up in

@@ -74,6 +74,7 @@ dependencies:
   # # --- packaging and publishing
   - poetry
   - sphinx
+  - autoapi
   - conda-build
   - coverage
   - sphinxcontrib-napoleon
