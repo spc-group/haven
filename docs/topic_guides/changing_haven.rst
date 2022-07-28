@@ -98,7 +98,11 @@ Getting those changes to the other beamlines can be done whenever no
 experiments are taking place there. We can pull the changes from
 github, and run the system tests.
 
-
+Using a common network folder for the scripts would satisfy
+requirements 1 and 2, but not 3 and 4. Having entirely separate sets
+of scripts would satisfy requirement 2, but not 1, 3, or 4. The
+approach described here aims to strike a balance between the 4
+requirements.
 
 .. note::
 
