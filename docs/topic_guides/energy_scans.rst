@@ -164,5 +164,3 @@ exposure, energy, ...)``, and convert them to
 
 Changing Detectors or Positioners
 =================================
-
-

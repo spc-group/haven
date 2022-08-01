@@ -79,7 +79,7 @@ def xafs_scan(
     ==========
     E_min
       The starting energy for the first energy range, in eV.
-    *E_params
+    E_params
       Should be any number of parameters of the form ``energy_step,
       exposure, energy, energy_step, exposure, energy, ...``. Energies
       should be in eV and *exposure* in seconds.

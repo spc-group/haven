@@ -30,7 +30,7 @@ def energy_scan(
     """Collect a spectrum by scanning X-ray energy.
 
     For scanning over a pre-defined X-ray absorption edge, try
-    ``~haven.plans.xafs_scan.xafs_scan`` instead.
+    :py:func:`~haven.plans.xafs_scan.xafs_scan` instead.
 
     *exposure* can be either a float, or a sequence of floats. If a
     single value is provided, it will be used for all energies. If a
@@ -38,8 +38,7 @@ def energy_scan(
     and the each entry will be used for the corresponding entry in
     *energies*.
 
-    Usage
-    =====
+    **Usage:**
 
     The following code will run a scan with 1 eV steps from 13000 to
     13099 eV.
@@ -49,8 +48,10 @@ def energy_scan(
 
     The preparation of energies is up to the calling function. For
     more sophisticated energy lists, consider using the utility
-    functions ``haven.energy_ranges.ERange`` and
-    ``haven.energy_ranges.KRange``:
+    functions :py:class:`haven.energy_ranges.ERange` and
+    :py:class:`haven.energy_ranges.KRange`:
+
+    .. code-block:: python
 
         energies = [
           ERange(13000, 13100, E_step=10),
@@ -60,7 +61,9 @@ def energy_scan(
         RE(energy_scan(energies, exposure=0.5))
 
     The results can also be viewed by passing
-    ``haven.callbacks.live_xafs_plot.LiveXAFSPlot`` to the RunEngine:
+    :py:class:`haven.callbacks.live_xafs_plot.LiveXAFSPlot` to the RunEngine:
+
+    .. code-block:: python
 
         RE(energy_scan(...), LiveXAFSPlot())
 
@@ -72,7 +75,7 @@ def energy_scan(
       How long, in seconds, to count at each energy.
     E0
       An edge energy, in eV, or name of the edge of the form
-      "Ni_L3". All energies will be relative to this value.
+      ``"Ni_L3"``. All energies will be relative to this value.
     detectors
       The detectors to collect X-ray signal from at each energy.
     energy_positioners

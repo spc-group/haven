@@ -1,3 +1,5 @@
+__all__ = ["energy_scan"]
+
 #  Top-level imports
 from . import positioners  # noqa: F401
 from .plans.align_slits import align_slits  # noqa: F401

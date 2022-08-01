@@ -6,6 +6,9 @@ import pint
 from scipy import constants
 
 
+__all__ = ["ERange", "KRange"]
+
+
 DEFAULT_EXPOSURE = 0.5
 
 # Calculate the conversion coefficient from k -> eV
