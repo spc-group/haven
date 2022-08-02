@@ -8,9 +8,11 @@ from typing import Sequence, Union
 
 from bluesky import plans as bp
 
-from haven import merge_ranges
+from haven import merge_ranges, exceptions
+from haven.instrument.instrument_registry import registry
 from ..detectors import ion_chambers
 from ..constants import edge_energy
+from ..typing import DetectorList
 
 
 __all__ = ["energy_scan"]
@@ -23,7 +25,7 @@ def energy_scan(
     energies: Sequence[float],
     exposure: Union[float, Sequence[float]] = 0.1,
     E0: Union[float, str] = 0,
-    detectors: Sequence = ion_chambers,
+    detectors: DetectorList = "ion_chamber",
     energy_positioners: Sequence = [],
     time_positioners: Sequence = [],
 ):
@@ -93,6 +95,17 @@ def energy_scan(
         msg = "Cannot run energy_scan with empty *energy_positioners*."
         log.error(msg)
         raise ValueError(msg)
+    # Resolve the detector list if given by name
+    try:
+        real_detectors = registry.find(label=detectors)
+    except exceptions.InvalidComponentLabel:
+        log.debug(f"*detectors* is not a valid detector label: {detectors}")
+        real_detectors = detectors
+    except exceptions.ComponentNotFound:
+        log.debug("No registered detectors found.")
+        real_detectors = detectors
+    else:
+        log.debug(f"Found registered detectors: {detectors} -> {real_detectors}")
     # Resolve the energy ranges if provided
     merge_ranges(*energies, default_exposure=exposure)
     # Convert an individual exposure time to an array of exposure times
@@ -112,6 +125,6 @@ def energy_scan(
     scan_args = [item for items in scan_args for item in items]
     # Do the actual scan
     yield from bp.list_scan(
-        detectors,
+        real_detectors,
         *scan_args,
     )

@@ -10,6 +10,7 @@ import numpy as np
 from ..detectors import ion_chambers
 from ..energy_ranges import ERange, KRange
 from .energy_scan import energy_scan
+from ..typing import DetectorList
 
 
 __all__ = ["xafs_scan"]
@@ -29,7 +30,7 @@ def xafs_scan(
     k_max: Optional[float] = None,
     k_weight: float = 0.0,
     E0: Union[float, str] = 0,
-    detectors: Sequence = ion_chambers,
+    detectors: DetectorList = "ion_chamber",
     energy_positioners: Sequence = [],
     time_positioners: Sequence = [],
 ):

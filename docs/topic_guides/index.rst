@@ -13,4 +13,5 @@ These guides do not cover the individual beamlines thoroughly.
 
    energy_scans.rst   
    define_new_motor.rst
+   instrument_registry.rst
    changing_haven.rst
