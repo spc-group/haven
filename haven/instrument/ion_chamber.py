@@ -1,14 +1,30 @@
 """Holds detector descriptions and assignments to EPICS PVs."""
 
-from ophyd import Device, EpicsMotor, EpicsSignal, EpicsSignalRO, Component as Cpt, FormattedComponent as FCpt, Kind
+from ophyd import (
+    Device,
+    EpicsMotor,
+    EpicsSignal,
+    EpicsSignalRO,
+    Component as Cpt,
+    FormattedComponent as FCpt,
+    Kind,
+)
 from ophyd.status import DeviceStatus
 from ophyd.scaler import ScalerCH
 from apstools.devices import SRS570_PreAmplifier
 
 from .instrument_registry import registry
+from .._iconfig import load_config
 
 
 __all__ = ["IonChamber", "I0", "It", "Iref", "If"]
+
+
+iconfig = load_config()
+
+beamline_prefix = iconfig["beamline"]["pv_prefix"]
+scaler_prefix = iconfig["ion_chambers"]["scaler"]["pv_prefix"]
+pv_prefix = f"{beamline_prefix}:{scaler_prefix}"
 
 
 @registry.register
@@ -19,7 +35,7 @@ class IonChamber(Device):
 
     Attributes
     ==========
-    
+
     prefix
       The PV prefix of the overall scaler.
     scaler_ch
@@ -27,13 +43,14 @@ class IonChamber(Device):
       timer, so your channel number should start at 2.
 
     """
+
     ch_num: int = 0
     raw_counts = FCpt(EpicsSignalRO, "{prefix}.S{ch_num}")
     offset = FCpt(EpicsSignalRO, "{prefix}_offset0.{ch_char}")
     net_counts = FCpt(EpicsSignalRO, "{prefix}_netA.{ch_char}")
-    count = Cpt(EpicsSignal, '.CNT', trigger_value=1, kind=Kind.omitted)
+    count = Cpt(EpicsSignal, ".CNT", trigger_value=1, kind=Kind.omitted)
     _statuses = {}
-    
+
     def __init__(self, prefix, ch_num, *args, **kwargs):
         if ch_num < 1:
             raise ValueError(f"Scaler channels must be greater than 0: {ch_num}")
@@ -56,7 +73,7 @@ class IonChamber(Device):
 
 
 I0 = IonChamber(
-    "9bmc:scaler2",
+    pv_prefix,
     ch_num=2,
     name="I0",
     labels={
@@ -66,7 +83,7 @@ I0 = IonChamber(
 
 
 It = IonChamber(
-    "9bmc:scaler2",
+    pv_prefix,
     ch_num=3,
     name="It",
     labels={
@@ -76,7 +93,7 @@ It = IonChamber(
 
 
 Iref = IonChamber(
-    "9bmc:scaler2",
+    pv_prefix,
     ch_num=4,
     name="Iref",
     labels={
@@ -86,8 +103,10 @@ Iref = IonChamber(
 
 
 If = IonChamber(
-    "9bmc:scaler2",
+    pv_prefix,
     ch_num=5,
     name="If",
-    labels={"ion_chamber"},
+    labels={
+        "ion_chamber",
+    },
 )

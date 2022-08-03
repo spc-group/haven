@@ -1,0 +1,3 @@
+[beamline]
+pv_prefix = "spam"
+
