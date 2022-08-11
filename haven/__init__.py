@@ -13,3 +13,4 @@ from .instrument import (
     registry,
 )  # noqa: F401
 from ._iconfig import load_config
+from .xdi_writer import XDIWriter

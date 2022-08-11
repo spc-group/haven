@@ -8,3 +8,9 @@ class InvalidComponentLabel(TypeError):
     """Registry looked for a component, but the label provided is not vlaid."""
 
     ...
+
+
+class FileNotWritable(IOError):
+    """Output file is available but does not have write intent."""
+
+    ...

@@ -4,11 +4,13 @@
 
 import logging
 import warnings
-from typing import Sequence, Union
+from typing import Sequence, Union, Mapping
 
 from bluesky import plans as bp
+import numpy as np
 
 from haven import merge_ranges, exceptions
+from haven._iconfig import load_config
 from haven.instrument.instrument_registry import registry
 from ..detectors import ion_chambers
 from ..constants import edge_energy
@@ -28,6 +30,7 @@ def energy_scan(
     detectors: DetectorList = "ion_chamber",
     energy_positioners: Sequence = [],
     time_positioners: Sequence = [],
+    md: Mapping = {},
 ):
     """Collect a spectrum by scanning X-ray energy.
 
@@ -84,6 +87,8 @@ def energy_scan(
       Positioners that will receive the changing energies.
     time_positioners
       Positioners that will receive the exposure time for each scan.
+    md
+      Additional metadata to pass on the to run engine.
 
     Yields
     ======
@@ -114,7 +119,11 @@ def energy_scan(
     # Correct for E0
     if isinstance(E0, str):
         # Look up E0 in the database if e.g. "Ni_K" is given as E0
+        E0_str = E0
         E0 = edge_energy(E0)
+    else:
+        E0_str = None
+    energies = np.asarray(energies)
     energies += E0
     # Prepare the positioners list with associated energies and exposures
     msg = "Offset for undulator gap not corrected in energy_scan"
@@ -124,7 +133,9 @@ def energy_scan(
     scan_args += [(motor, exposure) for motor in time_positioners]
     scan_args = [item for items in scan_args for item in items]
     # Do the actual scan
+    config = load_config()
     yield from bp.list_scan(
         real_detectors,
         *scan_args,
+        md={"edge": E0_str, "E0": E0, **md, **config},
     )
