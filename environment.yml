@@ -39,6 +39,8 @@ dependencies:
   - flake8
   - pylint
   - pytest
+  - freezegun
+  - panel
   - pytest-cov
   
   # --- general support packages

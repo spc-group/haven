@@ -14,3 +14,9 @@ class FileNotWritable(IOError):
     """Output file is available but does not have write intent."""
 
     ...
+
+
+class XDIFilenameKeyNotFound(KeyError):
+    """The format string for an XDI filename has unknown placeholders."""
+
+    ...

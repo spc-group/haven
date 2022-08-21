@@ -10,7 +10,7 @@ from run_engine import RunEngineStub
 from haven import align_slits, energy_scan, xafs_scan, ERange, KRange
 
 
-logging.basicConfig(level=logging.WARNING)
+# logging.basicConfig(level=logging.WARNING)
 
 
 def my_callback(name, doc):
@@ -190,6 +190,14 @@ class XafsScanTests(PlanUnitTests):
             i.args[0] for i in scan_list if i[0] == "set" and i.obj.name == "exposure"
         ]
         np.testing.assert_equal(real_exposures, expected_exposures)
+
+    @unittest.expectedFailure
+    def test_exafs_k_range(self):
+        """Ensure that passing in k_min, etc. produces an energy range
+        in K-space.
+
+        """
+        assert False, "Write these tests"
 
     def test_named_E0(self):
         expected_energies = np.concatenate(
