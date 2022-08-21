@@ -12,7 +12,6 @@ import numpy as np
 from haven import merge_ranges, exceptions
 from haven._iconfig import load_config
 from haven.instrument.instrument_registry import registry
-from ..detectors import ion_chambers
 from ..constants import edge_energy
 from ..typing import DetectorList
 

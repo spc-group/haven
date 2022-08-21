@@ -2,4 +2,4 @@
 
 from ophyd.epics_motor import EpicsMotor
 
-slits_V = EpicsMotor("mini:slit:motor", name="slits_V")
+# slits_V = EpicsMotor("mini:slit:motor", name="slits_V")

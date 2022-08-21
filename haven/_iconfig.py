@@ -1,7 +1,7 @@
 """
-Provide information from the configuration.yml file.
+Provide information from the iconfig.toml file.
 
-Example YAML configuration file::
+Example TOML configuration file::
 
     # simple key:value pairs
 
@@ -23,13 +23,14 @@ import tomli
 log = logging.getLogger(__name__)
 
 
-CONFIG_FILES = [pathlib.Path("~/bluesky/").expanduser() / "iconfig.yml"]
+CONFIG_FILES = [pathlib.Path("~/bluesky/").expanduser() / "iconfig.toml"]
 
 default_config = {
     # Defaults go here, then get updated by toml loader
     "beamline": {
         "name": "SPC Beamline (sector unknown)",
         "pv_prefix": "",
+        "is_connected": False,
     },
     "ion_chambers": {
         "scaler": {"pv_prefix": ""},

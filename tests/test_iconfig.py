@@ -2,7 +2,7 @@ import unittest
 import logging
 from pathlib import Path
 
-from haven import load_config
+from haven._iconfig import load_config
 
 
 class IconfigTests(unittest.TestCase):

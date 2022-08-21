@@ -7,7 +7,6 @@ from typing import Union, Sequence, Optional
 
 import numpy as np
 
-from ..detectors import ion_chambers
 from ..energy_ranges import ERange, KRange
 from .energy_scan import energy_scan
 from ..typing import DetectorList

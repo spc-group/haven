@@ -3,8 +3,6 @@
 from ophyd import (
     Device,
     EpicsMotor,
-    EpicsSignal,
-    EpicsSignalRO,
     Component as Cpt,
     FormattedComponent as FCpt,
     Kind,
@@ -15,6 +13,7 @@ from apstools.devices import SRS570_PreAmplifier
 
 from .instrument_registry import registry
 from .._iconfig import load_config
+from ..signal import Signal, SignalRO
 
 
 __all__ = ["IonChamber", "I0", "It", "Iref", "If"]
@@ -45,10 +44,10 @@ class IonChamber(Device):
     """
 
     ch_num: int = 0
-    raw_counts = FCpt(EpicsSignalRO, "{prefix}.S{ch_num}")
-    offset = FCpt(EpicsSignalRO, "{prefix}_offset0.{ch_char}")
-    net_counts = FCpt(EpicsSignalRO, "{prefix}_netA.{ch_char}")
-    count = Cpt(EpicsSignal, ".CNT", trigger_value=1, kind=Kind.omitted)
+    raw_counts = FCpt(SignalRO, "{prefix}.S{ch_num}")
+    offset = FCpt(SignalRO, "{prefix}_offset0.{ch_char}")
+    net_counts = FCpt(SignalRO, "{prefix}_netA.{ch_char}")
+    count = Cpt(Signal, ".CNT", trigger_value=1, kind=Kind.omitted)
     _statuses = {}
 
     def __init__(self, prefix, ch_num, *args, **kwargs):
