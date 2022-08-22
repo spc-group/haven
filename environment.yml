@@ -1,13 +1,27 @@
 name: haven
 
 # use:
-#   date; conda env create -f ./environment.yml; date
+# prefer micromamba (conda takes much longer, if ever, to solve)
+# micromamba installed in ~30s
+#   date; micromamba create -y -n haven -f ./environment.yml; date
+#   # then activate with:
+#   eval "$(micromamba shell hook --shell=bash)"
+#   micromamba activate haven
+# conda installed in ~250s
+#   date; conda env create --force -f ./environment.yml; date
+#   # then activate with:
+#   conda activate haven
 
 channels:
-  - defaults
   - conda-forge
+  - apsu
   - aps-anl-tag
-  - nsls2forge
+  - defaults
+  - sveseli
+# channels:
+#   - conda-forge
+#   # - aps-anl-tag
+#   - defaults
 
 dependencies:
   # --- Python core packages
@@ -20,32 +34,22 @@ dependencies:
   - pip
   - psutil
 
-  # --- Compiled performance packages (e.g. numpy with MKL)
-  # - numpy>=1.22
-  # - pandas>=1
-  # - scipy>=1.8
-
-  # --- Random packages that aren't on pypi
-  - aps-dm-api>=5 # User requested
-  - epics-base>=7.0.5
-
-  # --- Qt
-  - pyqt=5 # >=5.12.0,<5.15
-  - qt=5
-
   # --- testing and quality assurance
-  - pre-commit
   - black
   - flake8
+  - pre-commit
   - pylint
   - pytest
-  - freezegun
-  - panel
   - pytest-cov
-  
+  # - pytest-notebook
+
+  # --- Qt
+  - pyqt =5
+  - qt =5
+
   # --- general support packages
   - bitshuffle
-  - epics-base>=7.0.5
+  - epics-base >=7.0.5
   - h5py
   - hdf5plugin
   - imagecodecs-lite
@@ -53,50 +57,68 @@ dependencies:
   - lxml
   - pandas
   - pint
-  - pyEpics>=3.5.0
+  - pyEpics >=3.5.0
   - pymongo
   - scikit-image
   - xlrd
 
-  # # --- Bluesky framework packages
-  # all moved to pip install (conda takes additional 10m to solve)
+  # --- Bluesky framework packages
+  - adl2pydm
+  - apstools
+  - area-detector-handlers
+  - bluesky-queueserver
+  - bluesky-queueserver-api
+  - bluesky-widgets
+  - bluesky >=1.8.1
+  - databroker-pack
+  - databroker =1.2
+  # - happi
+  # - hklpy >=1.0.3  # --- linux-64
+  - ophyd >=1.6.3
+  - pydm
+  # - tiled-server
+  # https://github.com/pydata/xarray/issues/6818
+  - xarray !=2022.6.0  # incompatible with numpy=1.20
 
   # --- user-requested packages
-  - aps-dm-api>=5
+  - aps-dm-api >=5   # linux-64  osx-64
+  # - c2dataviewer  # --- linux-64
   - nexpy
   - punx
+  - pvapy
   - pvview
   - pymca
   - pyRestTable
   - spec2nexus
   - stdlogpj
-  - xrayutilities
   - xraydb
-
-  # # --- packaging and publishing
-  - poetry
-  - sphinx
+  - xrayutilities  
+  
+  # --- packaging and publishing
   - conda-build
   - coverage
+  - poetry
+  - sphinx
   - sphinxcontrib-napoleon
   - twine
   - versioneer
+  - mamba
+  - micromamba
+  - pygithub
+
+  # --- packaging and publishing
+  - poetry  # skip for conda-lock
+  - sphinx
+  # - conda-build
+  - coverage
+  - sphinxcontrib-napoleon
+  # - twine
+  - versioneer
 
   - pip:
+    - time-machine
     - autoapi
-    - apstools
-    - area-detector-handlers
-    - bluesky-queueserver
-    - bluesky-queueserver-api
-    - bluesky-widgets
-    - bluesky>=1.8.1
-    - databroker-pack
-    - databroker>=1.2.4,<2
-    - hklpy
-    - ophyd>=1.6.3
-    - pydm
-    - adl2pydm
-  #   - https://github.com/BCDA-APS/adl2pydm/archive/main.zip
+    # - https://github.com/BCDA-APS/adl2pydm/archive/main.zip
     # --- optional Bluesky framework packages for evaluation
     # - bluesky-webclient is NOT Python software, don't install it this way
     #    https://github.com/bluesky/bluesky-webclient
