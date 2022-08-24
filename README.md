@@ -12,16 +12,18 @@ of the sky."
 
 ## Installation
 
-*haven* uses poetry for installation and development. First
-install the build manager:
+*haven* uses *mamba* for dependency management, and *poetry* for
+installation and development. First create the conda environment with
+mamba:
 
 ```
-$ conda install poetry
+$ mamba env create -f environment.yml -n haven
 ```
 
 then install the package, with dependencies, in developer mode:
 
 ```
+$ conda activate haven
 $ poetry install
 ```
 

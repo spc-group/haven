@@ -18,6 +18,9 @@ keywords = ["synchrotron", "xray", "bluesky"]
 
 [tool.poetry.dependencies]
 
+# time-machine = {}
+# autoapi = {}
+
 # [tool.poetry.scripts]
 # my-script = "my_package:main"
 

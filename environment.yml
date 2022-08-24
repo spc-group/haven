@@ -13,10 +13,10 @@ name: haven
 #   conda activate haven
 
 channels:
+  - defaults
   - conda-forge
   - apsu
   - aps-anl-tag
-  - defaults
   - sveseli
 # channels:
 #   - conda-forge
@@ -85,7 +85,7 @@ dependencies:
   # - c2dataviewer  # --- linux-64
   - nexpy
   - punx
-  - pvapy
+  # - pvapy
   - pvview
   - pymca
   - pyRestTable
@@ -116,6 +116,7 @@ dependencies:
   - versioneer
 
   - pip:
+    - conda-lock
     - time-machine
     - autoapi
     # - https://github.com/BCDA-APS/adl2pydm/archive/main.zip
