@@ -67,7 +67,7 @@
         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
        </property>
        <property name="channel" stdset="0">
-        <string>ca://{CHANNEL_NUMBER}:NAME</string>
+        <string>ca://${IOC_VME}:userCalc${CHANNEL_NUMBER}.DESC</string>
        </property>
        <property name="displayFormat" stdset="0">
         <enum>PyDMLabel::String</enum>
@@ -85,20 +85,44 @@
        <property name="toolTip">
         <string/>
        </property>
+       <property name="showUnits" stdset="0">
+        <bool>true</bool>
+       </property>
        <property name="channel" stdset="0">
-        <string>ca://{CHANNEL_NUMBER}:VAL</string>
+        <string>ca://${IOC_VME}:userCalc${CHANNEL_NUMBER}.VAL</string>
+       </property>
+       <property name="showLimits" stdset="0">
+        <bool>true</bool>
+       </property>
+       <property name="showTicks" stdset="0">
+        <bool>true</bool>
+       </property>
+       <property name="invertedAppearance" stdset="0">
+        <bool>false</bool>
+       </property>
+       <property name="limitsFromChannel" stdset="0">
+        <bool>false</bool>
+       </property>
+       <property name="userUpperLimit" stdset="0">
+        <double>5.000000000000000</double>
        </property>
        <property name="minorAlarmFromChannel" stdset="0">
-        <bool>true</bool>
+        <bool>false</bool>
        </property>
        <property name="userUpperMinorAlarm" stdset="0">
-        <double>0.500000000000000</double>
-       </property>
-       <property name="userLowerMinorAlarm" stdset="0">
         <double>4.500000000000000</double>
        </property>
+       <property name="userLowerMinorAlarm" stdset="0">
+        <double>0.500000000000000</double>
+       </property>
        <property name="majorAlarmFromChannel" stdset="0">
-        <bool>true</bool>
+        <bool>false</bool>
+       </property>
+       <property name="userUpperMajorAlarm" stdset="0">
+        <double>5.000000000000000</double>
+       </property>
+       <property name="userLowerMajorAlarm" stdset="0">
+        <double>0.100000000000000</double>
        </property>
       </widget>
      </item>

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>413</width>
-    <height>333</height>
+    <width>426</width>
+    <height>338</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -24,6 +24,9 @@
        <property name="toolTip">
         <string/>
        </property>
+       <property name="macros" stdset="0">
+        <string>{&quot;CHANNEL_NUMBER&quot;: 1}</string>
+       </property>
        <property name="filename" stdset="0">
         <string>voltmeter.ui</string>
        </property>
@@ -33,6 +36,9 @@
       <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_4">
        <property name="toolTip">
         <string/>
+       </property>
+       <property name="macros" stdset="0">
+        <string>{&quot;CHANNEL_NUMBER&quot;: 2}</string>
        </property>
        <property name="filename" stdset="0">
         <string>voltmeter.ui</string>
@@ -44,6 +50,9 @@
        <property name="toolTip">
         <string/>
        </property>
+       <property name="macros" stdset="0">
+        <string>{&quot;CHANNEL_NUMBER&quot;: 3}</string>
+       </property>
        <property name="filename" stdset="0">
         <string>voltmeter.ui</string>
        </property>
@@ -53,6 +62,9 @@
       <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay">
        <property name="toolTip">
         <string/>
+       </property>
+       <property name="macros" stdset="0">
+        <string>{&quot;CHANNEL_NUMBER&quot;: 4}</string>
        </property>
        <property name="filename" stdset="0">
         <string>voltmeter.ui</string>
