@@ -92,7 +92,7 @@ dependencies:
   - spec2nexus
   - stdlogpj
   - xraydb
-  - xrayutilities  
+  - xrayutilities
   
   # --- packaging and publishing
   - conda-build
@@ -116,7 +116,6 @@ dependencies:
   - versioneer
 
   - pip:
-    - conda-lock
     - time-machine
     - autoapi
     # - https://github.com/BCDA-APS/adl2pydm/archive/main.zip

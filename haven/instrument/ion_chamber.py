@@ -8,12 +8,13 @@ from ophyd import (
     Kind,
 )
 from ophyd.status import DeviceStatus
-from ophyd.scaler import ScalerCH
 from apstools.devices import SRS570_PreAmplifier
 
 from .instrument_registry import registry
+from .scaler_triggered import ScalerTriggered
 from .._iconfig import load_config
 from ..signal import Signal, SignalRO
+from .. import exceptions
 
 
 __all__ = ["IonChamber", "I0", "It", "Iref", "If"]
@@ -27,7 +28,7 @@ pv_prefix = f"{beamline_prefix}:{scaler_prefix}"
 
 
 @registry.register
-class IonChamber(Device):
+class IonChamber(ScalerTriggered, Device):
     """An ion chamber at a spectroscopy beamline.
 
     Also includes the pre-amplifier as ``.pre_amp``.
@@ -47,28 +48,15 @@ class IonChamber(Device):
     raw_counts = FCpt(SignalRO, "{prefix}.S{ch_num}")
     offset = FCpt(SignalRO, "{prefix}_offset0.{ch_char}")
     net_counts = FCpt(SignalRO, "{prefix}_netA.{ch_char}")
-    count = Cpt(Signal, ".CNT", trigger_value=1, kind=Kind.omitted)
-    _statuses = {}
 
     def __init__(self, prefix, ch_num, *args, **kwargs):
+        # Set up the channel number for this scaler channel
         if ch_num < 1:
             raise ValueError(f"Scaler channels must be greater than 0: {ch_num}")
         self.ch_num = ch_num
         self.ch_char = chr(64 + ch_num)
         # Initialize all the other Device stuff
-        super().__init__(prefix, *args, **kwargs)
-
-    def trigger(self, *args, **kwargs):
-        # Figure out if there's already a trigger active
-        previous_status = self._statuses.get(self.prefix)
-        is_idle = previous_status is None or previous_status.done
-        # Trigger the detector if not already running, and update the status dict
-        if is_idle:
-            new_status = super().trigger(*args, **kwargs)
-            self._statuses[self.prefix] = new_status
-        else:
-            new_status = previous_status
-        return new_status
+        super().__init__(prefix=prefix, *args, **kwargs)
 
 
 I0 = IonChamber(

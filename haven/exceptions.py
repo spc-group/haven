@@ -20,3 +20,12 @@ class XDIFilenameKeyNotFound(KeyError):
     """The format string for an XDI filename has unknown placeholders."""
 
     ...
+
+
+class InvalidPV(ValueError):
+    """A process variable path or similar is expected, but the path
+    provided is not valid.
+
+    """
+
+    ...
