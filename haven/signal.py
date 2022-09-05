@@ -14,6 +14,8 @@ class SimulatedSignal(sim.SynSignal):
     """
 
     _kind = Kind.normal
+    _name = "SimulatedSignal"
+    _parent = None
 
     def __init__(self, read_pv, write_pv, *args, **kwargs):
         return super().__init__(*args, **kwargs)
