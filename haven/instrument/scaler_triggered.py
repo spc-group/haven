@@ -20,7 +20,7 @@ class ScalerTriggered:
             self.scaler_prefix = scaler_prefix
         else:
             self.scaler_prefix = prefix
-        super().__init__(**kwargs)
+        super().__init__(prefix, **kwargs)
 
     def trigger(self, *args, **kwargs):
         # Figure out if there's already a trigger active

@@ -35,6 +35,11 @@ default_config = {
     "ion_chambers": {
         "scaler": {"pv_prefix": ""},
     },
+    "fluorescence_detectors": {
+        "vortex": {
+            "pv_prefix": "",
+        },
+    },
     "facility": {
         "name": "Advanced Photon Source",
         "xray_source": "insertion device",

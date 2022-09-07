@@ -32,14 +32,42 @@ class SimpleIOC(PVGroup):
 
 @pytest.fixture
 def ioc_simple():
-    with simulated_ioc(SimpleIOC) as pvdb:
+    with simulated_ioc(SimpleIOC, prefix="simple:") as pvdb:
+        yield pvdb
+
+
+class VortexIOC(PVGroup):
+    """
+    An IOC with three uncoupled read/writable PVs
+
+    Scalar PVs
+    ----------
+    A (int)
+    B (float)
+
+    Vectors PVs
+    -----------
+    C (vector of int)
+    """
+
+    NumImages = pvproperty(value=1, doc="Number of images to capture total.")
+    TriggerMode = pvproperty(value=1, doc="Operation mode for triggering the detector")
+    Acquire = pvproperty(value=0, doc="Acquire the data")
+    Erase = pvproperty(
+        value=0, doc="Erases the data in preparation for collecting new data"
+    )
+
+
+@pytest.fixture
+def ioc_vortex():
+    with simulated_ioc(VortexIOC, prefix="xspress:") as pvdb:
         yield pvdb
 
 
 @contextlib.contextmanager
-def simulated_ioc(IOC):
+def simulated_ioc(IOC, prefix):
     ioc_options, run_options = ioc_arg_parser(
-        default_prefix="simple:", argv=[], desc=dedent(IOC.__doc__)
+        default_prefix=prefix, argv=[], desc=dedent(IOC.__doc__)
     )
     ioc = IOC(**ioc_options)
     # Prepare the multiprocessing
