@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string>Firefly - SPC Group</string>
   </property>
   <widget class="QWidget" name="verticalLayoutWidget">
    <property name="geometry">
@@ -40,7 +40,7 @@
      </widget>
     </item>
     <item>
-     <widget class="PyDMByteIndicator" name="PyDMByteIndicator">
+     <widget class="PyDMByteIndicator" name="PyDMByteIndicator" native="true">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
         <horstretch>0</horstretch>

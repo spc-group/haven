@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Voltmeters</string>
+   <string>Ion Chamber Voltmeters</string>
   </property>
   <property name="autoFillBackground">
    <bool>false</bool>
@@ -80,6 +80,7 @@
    <class>PyDMEmbeddedDisplay</class>
    <extends>QFrame</extends>
    <header>pydm.widgets.embedded_display</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources/>

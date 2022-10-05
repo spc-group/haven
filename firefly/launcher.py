@@ -5,8 +5,8 @@ import pstats
 import sys
 from pathlib import Path
 
-
 ui_folder = Path(__file__).parent.resolve()
+default_ui_file = ui_folder / "main.py"
 
 
 def main():
@@ -33,18 +33,18 @@ def main():
         logger.debug('QtWebEngine is not supported.')
 
     import pydm
-    from pydm import PyDMApplication
-    # from .application import FireflyApplication
+    # from pydm import PyDMApplication
+    from .application import FireflyApplication
     from pydm.utilities.macro import parse_macro_string
 
     parser = argparse.ArgumentParser(description="Python Display Manager")
-    # parser.add_argument(
-    #     'displayfile',
-    #     help='A PyDM file to display.' +
-    #          '    Can be either a Qt .ui file, or a Python file.',
-    #     nargs='?',
-    #     default=None
-    #     )
+    parser.add_argument(
+        'displayfile',
+        help='A PyDM file to display.' +
+             '    Can be either a Qt .ui file, or a Python file.',
+        nargs='?',
+        default=default_ui_file,
+        )
     parser.add_argument(
         '--perfmon',
         action='store_true',
@@ -130,9 +130,8 @@ def main():
         logger.setLevel(pydm_args.log_level)
         handler.setLevel(pydm_args.log_level)
 
-    app = PyDMApplication(
-        # ui_file=pydm_args.displayfile,
-        ui_file=ui_folder / "main.py",
+    app = FireflyApplication(
+        ui_file=pydm_args.displayfile,
         command_line_args=pydm_args.display_args,
         perfmon=pydm_args.perfmon,
         hide_nav_bar=pydm_args.hide_nav_bar,
@@ -141,11 +140,13 @@ def main():
         fullscreen=pydm_args.fullscreen,
         read_only=pydm_args.read_only,
         macros=macros,
-        stylesheet_path=pydm_args.stylesheet
-        )
-
+        stylesheet_path=pydm_args.stylesheet,
+    )
+    
     pydm.utilities.shortcuts.install_connection_inspector(
-        parent=app.main_window)
+        parent=app.windows["beamline_status"])
+    # pydm.utilities.shortcuts.install_connection_inspector(
+    #     parent=None)
 
     exit_code = app.exec_()
 
