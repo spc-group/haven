@@ -13,8 +13,27 @@ class FireflyMainWindow(PyDMMainWindow):
         self.customize_menu()
         self.export_actions()
 
+    def add_menu_action(self, action_name: str, text: str, menu: QtWidgets.QMenu):
+        """Add a new QAction to a menubar menu.
+
+        The action triggers when the menu item is activated.
+
+        Returns
+        =======
+        action
+          A QAction for the menu item.
+
+        """
+        action = QtWidgets.QAction(self)
+        action.setObjectName(action_name)
+        action.setText(text)
+        menu.addAction(action)
+        return action
+
     def customize_menu(self):
-        # self.ui.menubar.addAction(self.ui.menuScans.menuAction())
+        # Log viewer window
+        # XAFS scan window
+        self.ui.actionShow_Log_Viewer = self.add_menu_action("actionShow_Log_Viewer", "Logs", self.ui.menuView)
         # Scans menu
         self.ui.menuScans = QtWidgets.QMenu(self.ui.menubar)
         self.ui.menuScans.setObjectName("menuScans")
@@ -39,5 +58,6 @@ class FireflyMainWindow(PyDMMainWindow):
     
     def export_actions(self):
         """Expose specific signals that might be useful for responding to window changes."""
+        self.actionShow_Log_Viewer = self.ui.actionShow_Log_Viewer
         self.actionShow_Xafs_Scan = self.ui.actionShow_Xafs_Scan
         self.actionShow_Voltmeters = self.ui.actionShow_Voltmeters

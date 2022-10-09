@@ -61,6 +61,7 @@ class FireflyApplication(PyDMApplication):
         and setup code.
 
         """
+        window.actionShow_Log_Viewer.triggered.connect(self.show_log_viewer_window)
         window.actionShow_Xafs_Scan.triggered.connect(self.show_xafs_scan_window)
         window.actionShow_Voltmeters.triggered.connect(self.show_voltmeters_window)
 
@@ -102,6 +103,10 @@ class FireflyApplication(PyDMApplication):
         self.show_window(FireflyMainWindow, ui_dir / "main.py", name="beamline_status")
 
     make_main_window = show_main_window
+
+    @Slot()
+    def show_log_viewer_window(self):
+        self.show_window(FireflyMainWindow, ui_dir / "log_viewer.ui", name="log_viewer")
 
     @Slot()
     def show_xafs_scan_window(self):
