@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>426</width>
-    <height>338</height>
+    <width>594</width>
+    <height>371</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -18,7 +18,7 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
    <item>
-    <layout class="QVBoxLayout" name="verticalLayout">
+    <layout class="QVBoxLayout" name="lytVoltmeters">
      <item>
       <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_2">
        <property name="toolTip">
@@ -68,6 +68,13 @@
        </property>
        <property name="filename" stdset="0">
         <string>voltmeter.ui</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="btnNAN">
+       <property name="text">
+        <string>PushButton</string>
        </property>
       </widget>
      </item>

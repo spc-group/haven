@@ -8,6 +8,7 @@ from pydm.display import load_file
 from pydm.utilities.stylesheet import apply_stylesheet
 
 from .main_window import FireflyMainWindow
+from .voltmeters import VoltmetersWindow
 
 
 __all__ = ["ui_dir", "FireflyApplication"]
@@ -89,7 +90,7 @@ class FireflyApplication(PyDMApplication):
         apply_stylesheet(self.stylesheet_path, widget=main_window)
         main_window.update_tools_menu()
         # Load the UI file for this window
-        main_window.open(ui_file, macros=macros)
+        display = main_window.open(ui_file, macros=macros)
         self.connect_menu_signals(window=main_window)
         # Show the display
         if self.fullscreen:
@@ -112,10 +113,7 @@ class FireflyApplication(PyDMApplication):
     def show_xafs_scan_window(self):
         self.show_window(FireflyMainWindow, ui_dir / "xafs_scan.ui", name="xafs_scan")
 
-    # show_voltmeters_window = WindowShower(FireflyMainWindow, ui_dir / "voltmeters.ui",
-    #                                              name = "voltmeters",
-    #                                              macros={"IOC_VME": "25idcVME"})
     @Slot()
     def show_voltmeters_window(self):
-        self.show_window(FireflyMainWindow, ui_dir / "voltmeters.ui", name="voltmeters",
+        self.show_window(VoltmetersWindow, ui_dir / "voltmeters.ui", name="voltmeters",
                          macros={"IOC_VME": "25idcVME"})

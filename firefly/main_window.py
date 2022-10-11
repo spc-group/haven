@@ -10,7 +10,7 @@ class FireflyMainWindow(PyDMMainWindow):
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.customize_menu()
+        self.customize_ui()
         self.export_actions()
 
     def add_menu_action(self, action_name: str, text: str, menu: QtWidgets.QMenu):
@@ -30,11 +30,14 @@ class FireflyMainWindow(PyDMMainWindow):
         menu.addAction(action)
         return action
 
-    def customize_menu(self):
+    def customize_ui(self):
         # Log viewer window
         # XAFS scan window
-        self.ui.actionShow_Log_Viewer = self.add_menu_action("actionShow_Log_Viewer", "Logs", self.ui.menuView)
-        # Scans menu
+        self.ui.actionShow_Log_Viewer = self.add_menu_action(
+            action_name="actionShow_Log_Viewer",
+            text="Logs",
+            menu=self.ui.menuView)
+=       # Scans menu
         self.ui.menuScans = QtWidgets.QMenu(self.ui.menubar)
         self.ui.menuScans.setObjectName("menuScans")
         self.ui.menuScans.setTitle("Scans")
