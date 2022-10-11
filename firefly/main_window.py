@@ -2,11 +2,8 @@ from pydm.main_window import PyDMMainWindow
 # from qtpy.QtCore import Slot
 from qtpy import QtCore, QtGui, QtWidgets
 
-from .firefly_ui import Ui_MainWindow
-
 
 class FireflyMainWindow(PyDMMainWindow):
-    UiClass = Ui_MainWindow
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -18,6 +15,16 @@ class FireflyMainWindow(PyDMMainWindow):
 
         The action triggers when the menu item is activated.
 
+        Parameters
+        ==========
+        action_name
+          The name of the parameter to the save the action. Will be
+          accessible via *action_name* on the window, and window.ui.
+        text
+          Human-readable text to show on the menu item.
+        menu
+          The QMenu object in which to put this menu item.
+
         Returns
         =======
         action
@@ -28,36 +35,38 @@ class FireflyMainWindow(PyDMMainWindow):
         action.setObjectName(action_name)
         action.setText(text)
         menu.addAction(action)
+        # Save the action as object parameters
+        setattr(self.ui, action_name, action)
+        setattr(self, action_name, action)
         return action
 
     def customize_ui(self):
         # Log viewer window
         # XAFS scan window
-        self.ui.actionShow_Log_Viewer = self.add_menu_action(
+        self.add_menu_action(
             action_name="actionShow_Log_Viewer",
             text="Logs",
             menu=self.ui.menuView)
-=       # Scans menu
+        # Scans menu
         self.ui.menuScans = QtWidgets.QMenu(self.ui.menubar)
         self.ui.menuScans.setObjectName("menuScans")
         self.ui.menuScans.setTitle("Scans")
         self.ui.menubar.addAction(self.ui.menuScans.menuAction())
         # XAFS scan window
-        self.ui.actionShow_Xafs_Scan = QtWidgets.QAction(self)
-        self.ui.actionShow_Xafs_Scan.setObjectName("actionShow_Xafs_Scan")
-        self.ui.actionShow_Xafs_Scan.setText("XAFS Scan")
-        self.ui.menuScans.addAction(self.ui.actionShow_Xafs_Scan)
+        self.add_menu_action(
+            action_name="actionShow_Xafs_Scan",
+            text="XAFS Scan",
+            menu=self.ui.menuScans)
         # Detectors menu
         self.ui.menuDetectors = QtWidgets.QMenu(self.ui.menubar)
         self.ui.menuDetectors.setObjectName("menuDetectors")
         self.ui.menuDetectors.setTitle("Detectors")
         self.ui.menubar.addAction(self.ui.menuDetectors.menuAction())        
         # Voltmeters window
-        self.ui.actionShow_Voltmeters = QtWidgets.QAction(self)
-        self.ui.actionShow_Voltmeters.setObjectName("actionShow_Voltmeters")
-        self.ui.actionShow_Voltmeters.setText("Ion Chambers")
-        self.ui.menuDetectors.addAction(self.ui.actionShow_Voltmeters)
-        self.ui.menubar.addAction(self.ui.menuScans.menuAction())
+        self.add_menu_action(
+            action_name="actionShow_Voltmeters",
+            text="Ion Chambers",
+            menu=self.ui.menuDetectors)
     
     def export_actions(self):
         """Expose specific signals that might be useful for responding to window changes."""
