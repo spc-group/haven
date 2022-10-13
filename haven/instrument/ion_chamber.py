@@ -58,6 +58,12 @@ class IonChamber(ScalerTriggered, Device):
         # Initialize all the other Device stuff
         super().__init__(prefix=prefix, *args, **kwargs)
 
+    def increase_gain(self):
+        raise NotImplementedError
+    
+    def decrease_gain(self):
+        raise NotImplementedError
+
 
 I0 = IonChamber(
     pv_prefix,
