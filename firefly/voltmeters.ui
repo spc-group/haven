@@ -20,7 +20,7 @@
    <item>
     <layout class="QVBoxLayout" name="lytVoltmeters">
      <item>
-      <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_2">
+      <widget class="PyDMEmbeddedDisplay" name="voltmeter_0">
        <property name="toolTip">
         <string/>
        </property>
@@ -33,7 +33,7 @@
       </widget>
      </item>
      <item>
-      <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_4">
+      <widget class="PyDMEmbeddedDisplay" name="voltmeter_1">
        <property name="toolTip">
         <string/>
        </property>
@@ -41,12 +41,12 @@
         <string>{&quot;CHANNEL_NUMBER&quot;: 2}</string>
        </property>
        <property name="filename" stdset="0">
-        <string>voltmeter.ui</string>
+        <string>voltmeter.py</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_3">
+      <widget class="PyDMEmbeddedDisplay" name="voltmeter_2">
        <property name="toolTip">
         <string/>
        </property>
@@ -54,12 +54,12 @@
         <string>{&quot;CHANNEL_NUMBER&quot;: 3}</string>
        </property>
        <property name="filename" stdset="0">
-        <string>voltmeter.ui</string>
+        <string>voltmeter.py</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay">
+      <widget class="PyDMEmbeddedDisplay" name="voltmeter_3">
        <property name="toolTip">
         <string/>
        </property>
@@ -67,14 +67,7 @@
         <string>{&quot;CHANNEL_NUMBER&quot;: 4}</string>
        </property>
        <property name="filename" stdset="0">
-        <string>voltmeter.ui</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="btnNAN">
-       <property name="text">
-        <string>PushButton</string>
+        <string>voltmeter.py</string>
        </property>
       </widget>
      </item>

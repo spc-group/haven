@@ -41,7 +41,7 @@
       <number>5</number>
      </property>
      <item>
-      <widget class="PyDMLabel" name="lblIonChamberName">
+      <widget class="PyDMLabel" name="ion_chamber_name_label">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
          <horstretch>0</horstretch>
@@ -72,7 +72,7 @@
       </widget>
      </item>
      <item>
-      <widget class="PyDMAnalogIndicator" name="indIonChamber">
+      <widget class="PyDMAnalogIndicator" name="ion_chamber_indicator">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
          <horstretch>0</horstretch>
@@ -165,7 +165,7 @@
        <item>
         <layout class="QHBoxLayout" name="lytVoltmeterGainButtons">
          <item>
-          <widget class="QPushButton" name="btnGainDown">
+          <widget class="QPushButton" name="gain_down_button">
            <property name="enabled">
             <bool>true</bool>
            </property>
@@ -190,7 +190,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="btnGainUp">
+          <widget class="QPushButton" name="gain_up_button">
            <property name="enabled">
             <bool>true</bool>
            </property>

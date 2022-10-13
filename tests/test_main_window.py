@@ -6,7 +6,7 @@ from firefly.application import FireflyApplication
 
 @pytest.fixture
 def app():
-    return FireflyApplication()
+    yield FireflyApplication()
 
 
 def test_add_menu_action(app):
