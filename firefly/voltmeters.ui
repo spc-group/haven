@@ -28,7 +28,7 @@
         <string>{&quot;CHANNEL_NUMBER&quot;: 1}</string>
        </property>
        <property name="filename" stdset="0">
-        <string>voltmeter.ui</string>
+        <string>voltmeter.py</string>
        </property>
       </widget>
      </item>
