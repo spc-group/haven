@@ -8,7 +8,6 @@ from pydm.display import load_file
 from pydm.utilities.stylesheet import apply_stylesheet
 
 from .main_window import FireflyMainWindow
-from .voltmeters import VoltmetersWindow
 
 
 __all__ = ["ui_dir", "FireflyApplication"]
@@ -115,5 +114,5 @@ class FireflyApplication(PyDMApplication):
 
     @Slot()
     def show_voltmeters_window(self):
-        self.show_window(VoltmetersWindow, ui_dir / "voltmeters.ui", name="voltmeters",
+        self.show_window(FireflyMainWindow, ui_dir / "voltmeters.ui", name="voltmeters",
                          macros={"IOC_VME": "25idcVME"})
