@@ -48,7 +48,7 @@ class FireflyApplication(PyDMApplication):
         # (*ui_file* and *use_main_window* let us render the window here instead)
         super().__init__(ui_file = None, use_main_window=use_main_window, *args, **kwargs)
         self.windows = {}
-        self.show_main_window()
+        self.show_status_window()
         # self.connect_menu_signals(window=self.windows['beamline_status'])        
         # self.windows['beamline_status'].actionShow_Xafs_Scan.triggered.emit()        
 
@@ -64,6 +64,7 @@ class FireflyApplication(PyDMApplication):
         window.actionShow_Log_Viewer.triggered.connect(self.show_log_viewer_window)
         window.actionShow_Xafs_Scan.triggered.connect(self.show_xafs_scan_window)
         window.actionShow_Voltmeters.triggered.connect(self.show_voltmeters_window)
+        window.actionShow_Sample_Viewer.triggered.connect(self.show_sample_viewer_window)
 
     def show_window(self, WindowClass, ui_file, name=None, macros={}):
         # Come up with the default key for saving in the windows dictionary
@@ -98,11 +99,11 @@ class FireflyApplication(PyDMApplication):
             main_window.show()
         return main_window
 
-    def show_main_window(self, stylesheet_path=None):
+    def show_status_window(self, stylesheet_path=None):
         """Instantiate a new main window for this application."""
-        self.show_window(FireflyMainWindow, ui_dir / "main.py", name="beamline_status")
+        self.show_window(FireflyMainWindow, ui_dir / "status.ui", name="beamline_status")
 
-    make_main_window = show_main_window
+    make_main_window = show_status_window
 
     @Slot()
     def show_log_viewer_window(self):
@@ -116,3 +117,7 @@ class FireflyApplication(PyDMApplication):
     def show_voltmeters_window(self):
         self.show_window(FireflyMainWindow, ui_dir / "voltmeters.ui", name="voltmeters",
                          macros={"IOC_VME": "25idcVME"})
+
+    @Slot()
+    def show_sample_viewer_window(self):
+        self.show_window(FireflyMainWindow, ui_dir / "sample_viewer.ui", name="sample_viewer")

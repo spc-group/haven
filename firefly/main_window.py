@@ -47,6 +47,16 @@ class FireflyMainWindow(PyDMMainWindow):
             action_name="actionShow_Log_Viewer",
             text="Logs",
             menu=self.ui.menuView)
+        # Motors menu
+        self.ui.menuMotors = QtWidgets.QMenu(self.ui.menubar)
+        self.ui.menuMotors.setObjectName("menuMotors")
+        self.ui.menuMotors.setTitle("Motors")
+        self.ui.menubar.addAction(self.ui.menuMotors.menuAction())
+        # Sample viewer
+        self.add_menu_action(
+            action_name="actionShow_Sample_Viewer",
+            text="Sample",
+            menu=self.ui.menuMotors)
         # Scans menu
         self.ui.menuScans = QtWidgets.QMenu(self.ui.menubar)
         self.ui.menuScans.setObjectName("menuScans")
