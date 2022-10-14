@@ -54,7 +54,7 @@
        <string/>
       </property>
       <property name="channel" stdset="0">
-       <string>ca://ACIS:ShutterPermit</string>
+       <string>ACIS:ShutterPermit</string>
       </property>
       <property name="labels" stdset="0">
        <stringlist>

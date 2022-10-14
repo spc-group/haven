@@ -36,3 +36,20 @@ def test_gain_button(app):
     # Click the button and check that the gain changed
     button.click()
     assert I0.increase_gain.called
+
+
+def test_current_display(app):
+    """Test the labels that show the voltage converted to current
+    based on amplifier settings.
+
+    """
+    display = VoltmeterDisplay(macros={"IOC_VME": "40idc", "CHANNEL_NUMBER": 1})
+    assert hasattr(display, "_ch_gain_value")
+    # Emit signals for changing the amplifier gain value
+    display._ch_gain_value.value_slot(3)  # 10
+    display._ch_gain_unit.value_slot(2)  # µA/V
+    display._ch_voltage.value_slot(2.23)
+    # Check that the label is updated
+    assert display.gain == 10
+    assert display.gain_unit == "µA"
+    assert display.ui.ion_chamber_current.text() == "(0.223 µA)"
