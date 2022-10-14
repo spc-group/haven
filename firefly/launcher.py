@@ -5,6 +5,11 @@ import pstats
 import sys
 from pathlib import Path
 
+from pydm import config
+
+# Set EPICS as the default protocol
+config.DEFAULT_PROTOCOL = "ca"
+
 ui_folder = Path(__file__).parent.resolve()
 default_ui_file = ui_folder / "main.py"
 
