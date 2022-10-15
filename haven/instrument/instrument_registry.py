@@ -1,6 +1,7 @@
-from typing import Optional
+from typing import Optional, Sequence
 import logging
 
+from ophyd import Component
 
 from haven import exceptions
 from haven.typing import Detector
@@ -26,20 +27,79 @@ class InstrumentRegistry:
     def __init__(self):
         self.components = []
 
-    def find(self, label: Optional[str] = None):
-        """Find registered device components matching parameters."""
-        try:
-            results = [
-                cpt
-                for cpt in self.components
-                if label in getattr(cpt, "_ophyd_labels_", [])
-            ]
-        except TypeError:
-            raise exceptions.InvalidComponentLabel(label)
+    def find(self, label: Optional[str] = None, name: Optional[str] = None) -> Component:
+        """Find registered device components matching parameters.
+
+        Parameters
+        ==========
+        label
+          Search by the component's ``labels={"my_label"}`` parameter.
+        name
+          Search by the component's ``name="my_name"`` parameter.
+
+        Returns
+        =======
+        result
+          A list of all the components matching the search parameters.
+
+        Raises
+        ======
+        ComponentNotFound
+          No component was found that matches the given search
+          parameters.
+        MultipleComponentsFound
+          The search parameters matched with more than one registered
+          component. Either refine the search terms or use the
+          ``self.findall()`` method.
+
+        """
+        results = self.findall(label=label, name=name)
+        if len(results) > 1:
+            raise exceptions.MultipleComponentsFound(f"Found {len(results)} components matching query. Consider using ``findall()``."
+            )
+        else:
+            return results[0]
+
+    def findall(self, label: Optional[str] = None, name: Optional[str] = None) -> Sequence[Component]:
+        """Find registered device components matching parameters.
+
+        Parameters
+        ==========
+        label
+          Search by the component's ``labels={"my_label"}`` parameter.
+        name
+          Search by the component's ``name="my_name"`` parameter.
+
+        Returns
+        =======
+        results
+          A list of all the components matching the search parameters.
+
+        Raises
+        ======
+        ComponentNotFound
+          No component was found that matches the given search
+          parameters.
+
+        """
+        results = self.components.copy()
+        # Filter by label
+        if label is not None:
+            try:
+                results = [
+                    cpt
+                    for cpt in results
+                    if label in getattr(cpt, "_ophyd_labels_", [])
+                ]
+            except TypeError:
+                raise exceptions.InvalidComponentLabel(label)
+        # Filter by name
+        if name is not None:
+            results = [cpt for cpt in results if cpt.name == name]
         # Check that the label is actually defined somewhere
         if len(results) == 0:
             raise exceptions.ComponentNotFound(
-                f"Could not find components matching label: {label}"
+                f"Could not find matching components label: {label}"
             )
         return results
 
