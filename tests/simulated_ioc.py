@@ -7,6 +7,7 @@ from typing import Optional, List, Dict, Tuple, Any
 import contextlib
 
 import pytest
+from caproto import ChannelType
 from caproto.server import (
     PVGroup,
     template_arg_parser,
@@ -22,19 +23,46 @@ class MotorIOC(PVGroup):
     """
     An IOC with some motor records, similar to those found in a VME crate.
 
-    """
+    E.g. "25idcVME:m1.VAL"
 
-    "25idcVME:m1.VAL"
+    """
     m1 = pvproperty(value=5000.0, doc="SLT V Upper", record=records.MotorFields)
     m2 = pvproperty(value=5000.0, doc="SLT V Lower", record=records.MotorFields)
     m3 = pvproperty(value=5000.0, doc="SLT H Inb", record=records.MotorFields)
-
 
 @pytest.fixture
 def ioc_motor():
     with simulated_ioc(MotorIOC, prefix="vme_crate_ioc:") as pvdb:
         yield pvdb
+    
 
+class SR570IOC(PVGroup):
+    """An IOC with an SR570 pre-amplifier.
+    
+    E.g. 
+
+    - 25idc:SR01:IpreSlit:sens_num.VAL"
+    - 25idc:SR01:IpreSlit:sens_unit.VAL
+
+    """
+    sens_num = pvproperty(value="5",
+                          enum_strings=["1", "2", "5", "10", "20", "50", "100", "200", "500"],
+                          record='mbbi',
+                          dtype=ChannelType.ENUM
+    )
+    sens_unit = pvproperty(value='nA/V',
+                          enum_strings=['pA/V', 'nA/V', 'uA/V', 'mA/V'],
+                          record='mbbi',
+                          dtype=ChannelType.ENUM
+    )
+
+
+@pytest.fixture
+def ioc_ion_chamber():
+    with simulated_ioc(SR570IOC, prefix="preamp_ioc:") as pvdb:
+        yield pvdb
+
+    
 
 class SimpleIOC(PVGroup):
     """

@@ -38,6 +38,7 @@ default_config = {
     },
     "ion_chambers": {
         "scaler": {"pv_prefix": ""},
+        "preamp": {"ioc": "preamp_ioc"},
     },
     "fluorescence_detectors": {
         "vortex": {
