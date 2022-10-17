@@ -44,7 +44,7 @@ def _add__new__method(cls, read_pv=None, *args, **kwargs):
     else:
         superclass = SimulatedSignal
     if use_epics:
-        return EpicsSignal.__new__(read_pv, *args, **kwargs)
+        return EpicsSignal.__new__(EpicsSignal, read_pv, *args, **kwargs)
     else:
         kwargs.pop("_kind", None)
         return superclass.__new__(superclass, *args, **kwargs)

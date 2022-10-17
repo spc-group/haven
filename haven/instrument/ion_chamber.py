@@ -13,7 +13,8 @@ from apstools.devices import SRS570_PreAmplifier
 from .instrument_registry import registry
 from .scaler_triggered import ScalerTriggered
 from .._iconfig import load_config
-from ..signal import Signal, SignalRO
+# from ..signal import Signal, SignalRO
+from ophyd import EpicsSignal as Signal, EpicsSignalRO as SignalRO
 from .. import exceptions
 
 
@@ -22,9 +23,9 @@ __all__ = ["IonChamber", "I0", "It", "Iref", "If"]
 
 iconfig = load_config()
 
-beamline_prefix = iconfig["beamline"]["pv_prefix"]
-scaler_prefix = iconfig["ion_chambers"]["scaler"]["pv_prefix"]
-pv_prefix = f"{beamline_prefix}:{scaler_prefix}"
+ioc_prefix = iconfig["ion_chambers"]["scaler"]["ioc"]
+record_prefix = iconfig["ion_chambers"]["scaler"]["record"]
+pv_prefix = f"{ioc_prefix}:{record_prefix}"
 
 
 @registry.register
@@ -46,8 +47,6 @@ class IonChamber(ScalerTriggered, Device):
 
     ch_num: int = 0
     raw_counts = FCpt(SignalRO, "{prefix}.S{ch_num}")
-    offset = FCpt(SignalRO, "{prefix}_offset0.{ch_char}")
-    net_counts = FCpt(SignalRO, "{prefix}_netA.{ch_char}")
 
     def __init__(self, prefix, ch_num, *args, **kwargs):
         # Set up the channel number for this scaler channel
@@ -65,41 +64,18 @@ class IonChamber(ScalerTriggered, Device):
         raise NotImplementedError
 
 
-I0 = IonChamber(
-    pv_prefix,
-    ch_num=2,
-    name="I0",
-    labels={
-        "ion_chamber",
-    },
-)
+@registry.register
+class IonChamberWithOffset(IonChamber):
+    offset = FCpt(SignalRO, "{prefix}_offset0.{ch_char}")
+    net_counts = FCpt(SignalRO, "{prefix}_netA.{ch_char}")
 
 
-It = IonChamber(
-    pv_prefix,
-    ch_num=3,
-    name="It",
-    labels={
-        "ion_chamber",
-    },
-)
-
-
-Iref = IonChamber(
-    pv_prefix,
-    ch_num=4,
-    name="Iref",
-    labels={
-        "ion_chamber",
-    },
-)
-
-
-If = IonChamber(
-    pv_prefix,
-    ch_num=5,
-    name="If",
-    labels={
-        "ion_chamber",
-    },
-)
+for name, config in load_config()["ion_chambers"].items():
+    # Define ion chambers
+    if name != "scaler":
+        IonChamber(
+            prefix=pv_prefix,
+            ch_num=config["scaler_channel"],
+            name=name,
+            labels={"ion_chambers"},
+        )
