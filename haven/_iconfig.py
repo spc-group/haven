@@ -44,6 +44,9 @@ default_config = {
         "name": "Advanced Photon Source",
         "xray_source": "insertion device",
     },
+    "motors": {
+        "ioc": "vme_crate_ioc",
+    },
 }
 
 

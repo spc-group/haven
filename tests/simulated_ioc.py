@@ -7,8 +7,33 @@ from typing import Optional, List, Dict, Tuple, Any
 import contextlib
 
 import pytest
-from caproto.server import PVGroup, template_arg_parser, pvproperty, run
+from caproto.server import (
+    PVGroup,
+    template_arg_parser,
+    pvproperty,
+    run,
+    records,
+    PvpropertyDouble,
+)
 from epics import caget, caput
+
+
+class MotorIOC(PVGroup):
+    """
+    An IOC with some motor records, similar to those found in a VME crate.
+
+    """
+
+    "25idcVME:m1.VAL"
+    m1 = pvproperty(value=5000.0, doc="SLT V Upper", record=records.MotorFields)
+    m2 = pvproperty(value=5000.0, doc="SLT V Lower", record=records.MotorFields)
+    m3 = pvproperty(value=5000.0, doc="SLT H Inb", record=records.MotorFields)
+
+
+@pytest.fixture
+def ioc_motor():
+    with simulated_ioc(MotorIOC, prefix="vme_crate_ioc:") as pvdb:
+        yield pvdb
 
 
 class SimpleIOC(PVGroup):
