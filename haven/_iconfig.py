@@ -37,7 +37,8 @@ default_config = {
         "is_connected": False,
     },
     "ion_chambers": {
-        "scaler": {"pv_prefix": ""},
+        "scaler": {"ioc": "",
+                   "record": ""},
         "preamp": {"ioc": "preamp_ioc"},
     },
     "fluorescence_detectors": {

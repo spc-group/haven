@@ -25,7 +25,7 @@ def prepare_motors(ioc):
         motor_num += 1
         pv = f"{ioc}:m{motor_num}"
         # Take the name of the ophyd motor from the epics description
-        log.info(f"Looking for motor {motor_num} at {pv}")
+        log.debug(f"Looking for motor {motor_num} at {pv}")
         name = epics.caget(f"{pv}.DESC", timeout=1)
         if name is None:
             # The PV doesn't exist, so we've probably reached the highest motor number
@@ -41,7 +41,7 @@ def prepare_motors(ioc):
                 name=name,
                 labels={"motors"},
             )
-            log.info(f"Created motor {motor}")
+            log.debug(f"Created motor {motor}")
             motors.append(motor)
 
 vme_motors = prepare_motors(ioc=conf["motors"]["ioc"])

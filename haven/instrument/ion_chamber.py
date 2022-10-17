@@ -1,6 +1,8 @@
 """Holds ion chamber detector descriptions and assignments to EPICS PVs."""
 
 from typing import Sequence
+import logging
+import math
 
 from ophyd import (
     Device,
@@ -19,6 +21,9 @@ from .._iconfig import load_config
 # from ..signal import Signal, SignalRO
 from ophyd import EpicsSignal as Signal, EpicsSignalRO as SignalRO
 from .. import exceptions
+
+
+log = logging.getLogger(__name__)
 
 
 __all__ = ["IonChamber", "I0", "It", "Iref", "If"]
@@ -82,10 +87,18 @@ class IonChamber(ScalerTriggered, Device):
         new_value = target % len(self.sensitivities)
         # Determine the new units to use (if rollover is needed)
         old_unit = self._sensitivity_unit.get()
-        new_unit = old_unit + int(target / len(self.sensitivities))
+        new_unit = old_unit + math.floor(target / len(self.sensitivities))
+        # Check that the new values are not off the end of the chart
+        value_too_low = new_unit < 0
+        max_unit = len(self.sensitivity_units) - 1
+        value_too_high = (new_unit == max_unit) and new_value > 0 # 1 mA/V is as high as it goes
+        if value_too_low or value_too_high:
+            raise exceptions.GainOverflow(self)
         # Set the new values
-        status_value = self._sensitivity.set(new_value)
-        status_unit = self._sensitivity_unit.set(new_unit)
+        status_value = self._sensitivity.set(new_value, timeout=1)
+        status_unit = self._sensitivity_unit.set(new_unit, timeout=1)
+        log.info(f"Setting new gain for {self._sensitivity}: {new_value}")
+        log.info(f"Setting new gain unit for {self._sensitivity_unit}: {new_unit}")
         return [status_value, status_unit]
     
     def increase_gain(self) -> Sequence[status.Status]:
@@ -121,12 +134,17 @@ class IonChamberWithOffset(IonChamber):
     net_counts = FCpt(SignalRO, "{prefix}_netA.{ch_char}")
 
 
-for name, config in load_config()["ion_chambers"].items():
+conf = load_config()
+preamp_ioc = conf["ion_chambers"]["preamp"]["ioc"]
+for name, config in conf["ion_chambers"].items():
     # Define ion chambers
-    if name != "scaler":
-        IonChamber(
+    if name not in ["scaler", "preamp"]:
+        preamp_prefix = f"{preamp_ioc}:{config['preamp_record']}"
+        ic = IonChamber(
             prefix=pv_prefix,
             ch_num=config["scaler_channel"],
             name=name,
+            preamp_prefix=preamp_prefix,
             labels={"ion_chambers"},
         )
+        log.info(f"Create ion chamber: {ic}")
