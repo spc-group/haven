@@ -2,9 +2,11 @@ from pydm.main_window import PyDMMainWindow
 # from qtpy.QtCore import Slot
 from qtpy import QtCore, QtGui, QtWidgets
 
+from haven.instrument.instrument_registry import registry
+from haven.exceptions import ComponentNotFound
+
 
 class FireflyMainWindow(PyDMMainWindow):
-    
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.customize_ui()
@@ -47,16 +49,34 @@ class FireflyMainWindow(PyDMMainWindow):
             action_name="actionShow_Log_Viewer",
             text="Logs",
             menu=self.ui.menuView)
-        # Motors menu
-        self.ui.menuMotors = QtWidgets.QMenu(self.ui.menubar)
-        self.ui.menuMotors.setObjectName("menuMotors")
-        self.ui.menuMotors.setTitle("Motors")
-        self.ui.menubar.addAction(self.ui.menuMotors.menuAction())
+        # Positioners menu
+        self.ui.menuPositioners = QtWidgets.QMenu(self.ui.menubar)
+        self.ui.menuPositioners.setObjectName("menuPositioners")
+        self.ui.menuPositioners.setTitle("Positioners")
+        self.ui.menubar.addAction(self.ui.menuPositioners.menuAction())
         # Sample viewer
         self.add_menu_action(
             action_name="actionShow_Sample_Viewer",
             text="Sample",
-            menu=self.ui.menuMotors)
+            menu=self.ui.menuPositioners)
+        # Motors sub-menu
+        self.ui.menuMotors = QtWidgets.QMenu(self.ui.menubar)
+        self.ui.menuMotors.setObjectName("menuMotors")
+        self.ui.menuMotors.setTitle("Motors")
+        self.ui.menuPositioners.addAction(self.ui.menuMotors.menuAction())
+        # Add each individual motor to the motors sub-menu
+        try:
+            motors = registry.findall(label="motors")
+        except ComponentNotFound:
+            log.warning("No motors found, [Positioners] -> [Motors] menu will be empty.")
+            motors = []
+        self.ui.motor_actions = []
+        for motor in motors:
+            action = QtWidgets.QAction(self)
+            action.setObjectName(f"actionShow_Motor_{motor.name}")
+            action.setText(motor.name)
+            self.ui.menuMotors.addAction(action)
+            self.ui.motor_actions.append(action)
         # Scans menu
         self.ui.menuScans = QtWidgets.QMenu(self.ui.menubar)
         self.ui.menuScans.setObjectName("menuScans")
