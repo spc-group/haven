@@ -19,6 +19,45 @@ from caproto.server import (
 from epics import caget, caput
 
 
+class UndulatorIOC(PVGroup):
+    """
+    An IOC that looks like an undulator.
+
+    E.g. "25IDds:Energy"
+
+    """
+    m1 = pvproperty(value=0, doc="horiz")
+
+
+@pytest.fixture
+def ioc_undulator():
+    with simulated_ioc(UndulatorIOC, prefix="id_ioc:") as pvdb:
+        yield pvdb
+
+print(help(pvproperty))
+
+class MonoIOC(PVGroup):
+    """
+    An IOC with some motor records, similar to those found in a VME crate.
+
+    """
+    m1 = pvproperty(value=0, doc="horiz", record=records.MotorFields)
+    m2 = pvproperty(value=0, doc="vert", record=records.MotorFields)
+    m3 = pvproperty(value=0, doc="bragg", record=records.MotorFields)
+    m4 = pvproperty(value=0, doc="gap", record=records.MotorFields)
+    m5 = pvproperty(value=0, doc="roll2", record=records.MotorFields)
+    m6 = pvproperty(value=0, doc="pitch2", record=records.MotorFields)
+    m7 = pvproperty(value=0, doc="roll-int", record=records.MotorFields)
+    m8 = pvproperty(value=0, doc="pi-int", record=records.MotorFields)
+    Energy = pvproperty(value=10000., doc="Energy", record=records.MotorFields)
+
+
+@pytest.fixture
+def ioc_mono():
+    with simulated_ioc(MonoIOC, prefix="mono_ioc:") as pvdb:
+        yield pvdb
+
+
 class MotorIOC(PVGroup):
     """
     An IOC with some motor records, similar to those found in a VME crate.

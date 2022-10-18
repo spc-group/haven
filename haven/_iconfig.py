@@ -53,6 +53,13 @@ default_config = {
     "motors": {
         "ioc": "vme_crate_ioc",
     },
+    "monochromator": {
+        "ioc": "mono_ioc",
+        "energy_ioc": "mono_ioc",
+    },
+    "undulator": {
+        "ioc": "id_ioc",
+    }
 }
 
 
