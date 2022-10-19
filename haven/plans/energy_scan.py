@@ -11,7 +11,7 @@ import numpy as np
 
 from haven import merge_ranges, exceptions
 from haven._iconfig import load_config
-from haven.instrument.instrument_registry import registry
+from haven import instrument
 from ..constants import edge_energy
 from ..typing import DetectorList
 
@@ -101,7 +101,7 @@ def energy_scan(
         raise ValueError(msg)
     # Resolve the detector list if given by name
     try:
-        real_detectors = registry.findall(label=detectors)
+        real_detectors = instrument.registry.findall(label=detectors)
     except exceptions.InvalidComponentLabel:
         log.debug(f"*detectors* is not a valid detector label: {detectors}")
         real_detectors = detectors

@@ -10,6 +10,7 @@ import logging
 import pytz
 import time_machine
 from bluesky import RunEngine
+from bluesky.simulators import summarize_plan
 from ophyd.sim import motor, SynGauss, SynAxis
 import numpy as np
 from numpy import asarray as array

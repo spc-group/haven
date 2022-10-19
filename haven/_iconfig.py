@@ -36,10 +36,10 @@ default_config = {
         "vme_prefix": "",
         "is_connected": False,
     },
-    "ion_chambers": {
-        "scaler": {"ioc": "",
-                   "record": ""},
+    "ion_chamber": {
+        "scaler": {"ioc": "", "record": ""},
         "preamp": {"ioc": "preamp_ioc"},
+        "I0": {"scaler_channel": 2, "preamp_record": "SR570_1"},
     },
     "fluorescence_detectors": {
         "vortex": {
@@ -50,7 +50,7 @@ default_config = {
         "name": "Advanced Photon Source",
         "xray_source": "insertion device",
     },
-    "motors": {
+    "motor": {
         "ioc": "vme_crate_ioc",
     },
     "monochromator": {
@@ -59,7 +59,7 @@ default_config = {
     },
     "undulator": {
         "ioc": "id_ioc",
-    }
+    },
 }
 
 

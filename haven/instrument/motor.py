@@ -46,4 +46,4 @@ def prepare_motors(ioc):
             motors.append(motor)
 
 
-vme_motors = prepare_motors(ioc=conf["motors"]["ioc"])
+vme_motors = prepare_motors(ioc=conf["motor"]["ioc"])

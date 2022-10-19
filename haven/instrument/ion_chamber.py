@@ -18,6 +18,7 @@ from apstools.devices import SRS570_PreAmplifier
 from .instrument_registry import registry
 from .scaler_triggered import ScalerTriggered
 from .._iconfig import load_config
+
 # from ..signal import Signal, SignalRO
 from ophyd import EpicsSignal as Signal, EpicsSignalRO as SignalRO
 from .. import exceptions
@@ -31,8 +32,8 @@ __all__ = ["IonChamber", "I0", "It", "Iref", "If"]
 
 iconfig = load_config()
 
-ioc_prefix = iconfig["ion_chambers"]["scaler"]["ioc"]
-record_prefix = iconfig["ion_chambers"]["scaler"]["record"]
+ioc_prefix = iconfig["ion_chamber"]["scaler"]["ioc"]
+record_prefix = iconfig["ion_chamber"]["scaler"]["record"]
 pv_prefix = f"{ioc_prefix}:{record_prefix}"
 
 
@@ -91,7 +92,9 @@ class IonChamber(ScalerTriggered, Device):
         # Check that the new values are not off the end of the chart
         value_too_low = new_unit < 0
         max_unit = len(self.sensitivity_units) - 1
-        value_too_high = (new_unit == max_unit) and new_value > 0 # 1 mA/V is as high as it goes
+        value_too_high = (
+            new_unit == max_unit
+        ) and new_value > 0  # 1 mA/V is as high as it goes
         if value_too_low or value_too_high:
             raise exceptions.GainOverflow(self)
         # Set the new values
@@ -100,7 +103,7 @@ class IonChamber(ScalerTriggered, Device):
         log.info(f"Setting new gain for {self._sensitivity}: {new_value}")
         log.info(f"Setting new gain unit for {self._sensitivity_unit}: {new_unit}")
         return [status_value, status_unit]
-    
+
     def increase_gain(self) -> Sequence[status.Status]:
         """Increase the gain (descrease the sensitivity) of the ion chamber's
         pre-amp.
@@ -113,7 +116,7 @@ class IonChamber(ScalerTriggered, Device):
 
         """
         return self._change_sensitivity(step=-1)
-    
+
     def decrease_gain(self) -> Sequence[status.Status]:
         """Decrease the gain (increase the sensitivity) of the ion chamber's
         pre-amp.
@@ -135,8 +138,8 @@ class IonChamberWithOffset(IonChamber):
 
 
 conf = load_config()
-preamp_ioc = conf["ion_chambers"]["preamp"]["ioc"]
-for name, config in conf["ion_chambers"].items():
+preamp_ioc = conf["ion_chamber"]["preamp"]["ioc"]
+for name, config in conf["ion_chamber"].items():
     # Define ion chambers
     if name not in ["scaler", "preamp"]:
         preamp_prefix = f"{preamp_ioc}:{config['preamp_record']}"
@@ -145,6 +148,6 @@ for name, config in conf["ion_chambers"].items():
             ch_num=config["scaler_channel"],
             name=name,
             preamp_prefix=preamp_prefix,
-            labels={"ion_chambers"},
+            labels={"ion_chamber"},
         )
-        log.info(f"Create ion chamber: {ic}")
+        log.info(f"Created ion chamber: {ic}")
