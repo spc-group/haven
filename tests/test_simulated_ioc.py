@@ -1,3 +1,5 @@
+import time
+
 import pytest
 from caproto import ChannelType
 from caproto.server import (
@@ -10,7 +12,7 @@ from caproto.server import (
 )
 from epics import caget, caput
 
-from haven.simulated_ioc import simulated_ioc
+from haven.simulated_ioc import simulated_ioc, ResponsiveMotorFields
 
 
 class UndulatorIOC(PVGroup):
@@ -20,8 +22,7 @@ class UndulatorIOC(PVGroup):
     E.g. "25IDds:Energy"
 
     """
-
-    m1 = pvproperty(value=0, doc="horiz")
+    ScanEnergy = pvproperty(value=0, doc="ID Energy Scan Input")
 
 
 @pytest.fixture
@@ -33,18 +34,17 @@ def ioc_undulator():
 class MonoIOC(PVGroup):
     """
     An IOC with some motor records, similar to those found in a VME crate.
-
+    
     """
-
-    m1 = pvproperty(value=0, doc="horiz", record=records.MotorFields)
-    m2 = pvproperty(value=0, doc="vert", record=records.MotorFields)
-    m3 = pvproperty(value=0, doc="bragg", record=records.MotorFields)
-    m4 = pvproperty(value=0, doc="gap", record=records.MotorFields)
-    m5 = pvproperty(value=0, doc="roll2", record=records.MotorFields)
-    m6 = pvproperty(value=0, doc="pitch2", record=records.MotorFields)
-    m7 = pvproperty(value=0, doc="roll-int", record=records.MotorFields)
-    m8 = pvproperty(value=0, doc="pi-int", record=records.MotorFields)
-    Energy = pvproperty(value=10000.0, doc="Energy", record=records.MotorFields)
+    m1 = pvproperty(value=0, doc="horiz", record=ResponsiveMotorFields)
+    m2 = pvproperty(value=0, doc="vert", record=ResponsiveMotorFields)
+    m3 = pvproperty(value=0, doc="bragg", record=ResponsiveMotorFields)
+    m4 = pvproperty(value=0, doc="gap", record=ResponsiveMotorFields)
+    m5 = pvproperty(value=0, doc="roll2", record=ResponsiveMotorFields)
+    m6 = pvproperty(value=0, doc="pitch2", record=ResponsiveMotorFields)
+    m7 = pvproperty(value=0, doc="roll-int", record=ResponsiveMotorFields)
+    m8 = pvproperty(value=0, doc="pi-int", record=ResponsiveMotorFields)
+    Energy = pvproperty(value=10000.0, doc="Energy", record=ResponsiveMotorFields)
 
 
 @pytest.fixture
@@ -60,10 +60,9 @@ class MotorIOC(PVGroup):
     E.g. "25idcVME:m1.VAL"
 
     """
-
-    m1 = pvproperty(value=5000.0, doc="SLT V Upper", record=records.MotorFields)
-    m2 = pvproperty(value=5000.0, doc="SLT V Lower", record=records.MotorFields)
-    m3 = pvproperty(value=5000.0, doc="SLT H Inb", record=records.MotorFields)
+    m1 = pvproperty(value=5000.0, doc="SLT V Upper", record=ResponsiveMotorFields)
+    m2 = pvproperty(value=5000.0, doc="SLT V Lower", record=ResponsiveMotorFields)
+    m3 = pvproperty(value=5000.0, doc="SLT H Inb", record=ResponsiveMotorFields)
 
 
 @pytest.fixture
@@ -159,3 +158,30 @@ def test_simulated_ioc(ioc_simple):
     assert caget("simple:B") == 2.0
     caput("simple:A", 5)
     assert caget("simple:A") == 5
+
+
+def test_motor_ioc(ioc_motor):
+    assert caget("vme_crate_ioc:m1") == 5000.
+    # Change the value
+    caput("vme_crate_ioc:m1", 4000.)
+    time.sleep(5)
+    # Check that the record got updated
+    assert caget("vme_crate_ioc:m1.VAL") == 4000.
+    assert caget("vme_crate_ioc:m1.RBV") == 4000.
+
+
+def test_mono_ioc(ioc_mono):
+    # Test a regular motor
+    assert caget("mono_ioc:m1") == 0.
+    # Change the value
+    caput("mono_ioc:m1", 4000.)
+    # Check that the record got updated
+    assert caget("mono_ioc:m1.VAL") == 4000.
+    assert caget("mono_ioc:m1.RBV") == 4000.
+    # Test the energy motor
+    assert caget("mono_ioc:Energy") == 10000.
+    # Change the value
+    caput("mono_ioc:Energy", 6000.)
+    # Check that the record got updated
+    assert caget("mono_ioc:Energy.VAL") == 6000.
+    assert caget("mono_ioc:Energy.RBV") == 6000.

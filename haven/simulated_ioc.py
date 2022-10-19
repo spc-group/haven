@@ -7,6 +7,7 @@ from typing import Optional, List, Dict, Tuple, Any
 import contextlib
 
 import pytest
+from caproto import ChannelType
 from caproto.server import (
     PVGroup,
     template_arg_parser,
@@ -18,6 +19,32 @@ from caproto.server import (
 from epics import caget, caput
 
 
+# Subclass the motor fields here. It's important to use this 'register_record'
+# decorator to tell caproto where to find this record:
+@records.register_record
+class ResponsiveMotorFields(records.MotorFields):
+    # The custom fields are identified by this string, which is overridden from
+    # the superclass _record_type of 'motor':
+    _record_type = 'responsive_motor'
+
+    # To override or extend the motor fields, we have to duplicate them here:
+    user_readback_value = pvproperty(name='RBV', dtype=ChannelType.DOUBLE,
+                                     doc='User Readback Value', read_only=True)
+
+    # Then we are free to extend the fields as normal pvproperties:
+    @user_readback_value.scan(period=0.1)
+    async def user_readback_value(self, instance, async_lib):
+        setpoint = self.parent.value
+        pos = setpoint
+        # Set the use, dial, and then raw readbacks:
+        timestamp = time.time()
+        await instance.write(pos, timestamp=timestamp)
+        await self.dial_readback_value.write(pos, timestamp=timestamp)
+        await self.raw_readback_value.write(int(pos * 100000.),
+                                            timestamp=timestamp)
+
+
+
 @contextlib.contextmanager
 def simulated_ioc(IOC, prefix):
     ioc_options, run_options = ioc_arg_parser(
@@ -27,10 +54,14 @@ def simulated_ioc(IOC, prefix):
     # Prepare the multiprocessing
     process = Process(target=run, kwargs=dict(pvdb=ioc.pvdb, **run_options))
     process.start()
+    time.sleep(1)
     # Drop into the calling code to run the tests
     yield ioc.pvdb
     # Stop the process now that the test is done
     process.terminate()
+    while process.is_alive():
+        pass
+    process.close()
 
 
 def ioc_arg_parser(

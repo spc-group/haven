@@ -14,7 +14,7 @@ class EnergyPositioner(PseudoPositioner):
 
     # Equivalent real axes
     mono_energy = FCpt(EpicsMotor, "{mono_energy_pv}")
-    # id_energy = FCpt(Signal, "{id_prefix}:Scanenergy")
+    id_energy = FCpt(Signal, "{id_prefix}:ScanEnergy")
 
     def __init__(self, mono_energy_pv, id_prefix, *args, **kwargs):
         self.mono_energy_pv = mono_energy_pv
@@ -25,13 +25,9 @@ class EnergyPositioner(PseudoPositioner):
     def forward(self, target_energy):
         "Given a target energy, transform to the mono and ID energies."
         return self.RealPosition(
-            mono_energy=target_energy.energy
+            mono_energy=target_energy.energy,
+            id_energy=target_energy.energy+100,
         )
-        # return self.RealPosition(
-        #     real1=-pseudo_pos.pseudo1,
-        #     real2=-pseudo_pos.pseudo2,
-        #     real3=-pseudo_pos.pseudo3
-        # )
 
     @real_position_argument
     def inverse(self, device_energy):
@@ -39,11 +35,6 @@ class EnergyPositioner(PseudoPositioner):
         return self.PseudoPosition(
             energy=device_energy.mono_energy,
         )
-        # return self.PseudoPosition(
-        #     pseudo1=-real_pos.real1,
-        #     pseudo2=-real_pos.real2,
-        #     pseudo3=-real_pos.real3
-        # )
 
 
 energy_positioner = EnergyPositioner(name="energy",
