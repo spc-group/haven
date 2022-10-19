@@ -23,6 +23,7 @@ def prepare_motors(ioc):
     motors = []
     while True:
         motor_num += 1
+        log.debug(f"Looking for motor number {motor_num}")
         prefix = f"{ioc}:m{motor_num}"
         # Take the name of the ophyd motor from the epics description
         name = epics.caget(f"{prefix}.DESC", timeout=1)
@@ -33,9 +34,9 @@ def prepare_motors(ioc):
         motor = HavenMotor(
             prefix=f"{ioc}:m{motor_num}",
             name=name,
-            labels={"motor"},
+            labels={"motors"},
         )
-        log.info(f"Create motor {motor}")
+        log.info(f"Created motor {motor}")
         motors.append(motor)
 
 

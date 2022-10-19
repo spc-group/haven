@@ -1,7 +1,7 @@
 import pytest
 
 from haven.instrument.instrument_registry import registry
-from simulated_ioc import ioc_motor
+from test_simulated_ioc import ioc_motor
 
 
 def test_create_motors(ioc_motor):

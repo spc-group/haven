@@ -101,7 +101,7 @@ def energy_scan(
         raise ValueError(msg)
     # Resolve the detector list if given by name
     try:
-        real_detectors = registry.find(label=detectors)
+        real_detectors = registry.findall(label=detectors)
     except exceptions.InvalidComponentLabel:
         log.debug(f"*detectors* is not a valid detector label: {detectors}")
         real_detectors = detectors
