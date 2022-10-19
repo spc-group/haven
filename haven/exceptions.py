@@ -1,6 +1,9 @@
+class GainOverflow(RuntimeError):
+    """The gain is trying to be set to a value that is not allowed."""
+    ...
+
 class ComponentNotFound(IndexError):
     """Registry looked for a component, but it wasn't registered."""
-
     ...
 
 

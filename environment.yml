@@ -12,6 +12,9 @@ name: haven
 #   # then activate with:
 #   conda activate haven
 
+variables:
+  PYDM_DEFAULT_PROTOCOL: ca
+
 channels:
   - defaults
   - conda-forge

@@ -6,6 +6,7 @@ from multiprocessing import Process
 from typing import Optional, List, Dict, Tuple, Any
 import contextlib
 
+import pytest
 from caproto.server import (
     PVGroup,
     template_arg_parser,

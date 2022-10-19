@@ -23,17 +23,23 @@ import tomli
 log = logging.getLogger(__name__)
 
 
-CONFIG_FILES = [pathlib.Path("~/bluesky/").expanduser() / "iconfig.toml"]
+CONFIG_FILES = [
+    pathlib.Path("~/bluesky/").expanduser() / "iconfig.toml",
+    pathlib.Path("~/bluesky/instrument").expanduser() / "iconfig.toml",
+]
 
 default_config = {
     # Defaults go here, then get updated by toml loader
     "beamline": {
         "name": "SPC Beamline (sector unknown)",
-        "pv_prefix": "",
+        "ioc_prefix": "",
+        "vme_prefix": "",
         "is_connected": False,
     },
     "ion_chambers": {
-        "scaler": {"pv_prefix": ""},
+        "scaler": {"ioc": "",
+                   "record": ""},
+        "preamp": {"ioc": "preamp_ioc"},
     },
     "fluorescence_detectors": {
         "vortex": {
@@ -47,6 +53,13 @@ default_config = {
     "motors": {
         "ioc": "vme_crate_ioc",
     },
+    "monochromator": {
+        "ioc": "mono_ioc",
+        "energy_ioc": "mono_ioc",
+    },
+    "undulator": {
+        "ioc": "id_ioc",
+    }
 }
 
 

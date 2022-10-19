@@ -17,9 +17,7 @@ from ..signal import Signal, SignalRO
 
 iconfig = load_config()
 
-beamline_prefix = iconfig["beamline"]["pv_prefix"]
-vortex_prefix = iconfig["fluorescence_detectors"]["vortex"]["pv_prefix"]
-pv_prefix = f"{beamline_prefix}:{vortex_prefix}"
+pv_prefix = iconfig["fluorescence_detectors"]["vortex"]["pv_prefix"]
 
 
 class XspressDetector(ScalerTriggered, Device):
