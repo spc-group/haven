@@ -22,7 +22,11 @@ class UndulatorIOC(PVGroup):
     E.g. "25IDds:Energy"
 
     """
+
     ScanEnergy = pvproperty(value=0, doc="ID Energy Scan Input")
+    Energy = pvproperty(value=0, doc="", record=ResponsiveMotorFields)
+    Busy = pvproperty(value=0, doc="")
+    Stop = pvproperty(value=0, doc="")
 
 
 @pytest.fixture
@@ -34,8 +38,9 @@ def ioc_undulator():
 class MonoIOC(PVGroup):
     """
     An IOC with some motor records, similar to those found in a VME crate.
-    
+
     """
+
     m1 = pvproperty(value=0, doc="horiz", record=ResponsiveMotorFields)
     m2 = pvproperty(value=0, doc="vert", record=ResponsiveMotorFields)
     m3 = pvproperty(value=0, doc="bragg", record=ResponsiveMotorFields)
@@ -60,6 +65,7 @@ class MotorIOC(PVGroup):
     E.g. "25idcVME:m1.VAL"
 
     """
+
     m1 = pvproperty(value=5000.0, doc="SLT V Upper", record=ResponsiveMotorFields)
     m2 = pvproperty(value=5000.0, doc="SLT V Lower", record=ResponsiveMotorFields)
     m3 = pvproperty(value=5000.0, doc="SLT H Inb", record=ResponsiveMotorFields)
@@ -161,27 +167,27 @@ def test_simulated_ioc(ioc_simple):
 
 
 def test_motor_ioc(ioc_motor):
-    assert caget("vme_crate_ioc:m1") == 5000.
+    assert caget("vme_crate_ioc:m1") == 5000.0
     # Change the value
-    caput("vme_crate_ioc:m1", 4000.)
+    caput("vme_crate_ioc:m1", 4000.0)
     time.sleep(5)
     # Check that the record got updated
-    assert caget("vme_crate_ioc:m1.VAL") == 4000.
-    assert caget("vme_crate_ioc:m1.RBV") == 4000.
+    assert caget("vme_crate_ioc:m1.VAL") == 4000.0
+    assert caget("vme_crate_ioc:m1.RBV") == 4000.0
 
 
 def test_mono_ioc(ioc_mono):
     # Test a regular motor
-    assert caget("mono_ioc:m1") == 0.
+    assert caget("mono_ioc:m1") == 0.0
     # Change the value
-    caput("mono_ioc:m1", 4000.)
+    caput("mono_ioc:m1", 4000.0)
     # Check that the record got updated
-    assert caget("mono_ioc:m1.VAL") == 4000.
-    assert caget("mono_ioc:m1.RBV") == 4000.
+    assert caget("mono_ioc:m1.VAL") == 4000.0
+    assert caget("mono_ioc:m1.RBV") == 4000.0
     # Test the energy motor
-    assert caget("mono_ioc:Energy") == 10000.
+    assert caget("mono_ioc:Energy") == 10000.0
     # Change the value
-    caput("mono_ioc:Energy", 6000.)
+    caput("mono_ioc:Energy", 6000.0)
     # Check that the record got updated
-    assert caget("mono_ioc:Energy.VAL") == 6000.
-    assert caget("mono_ioc:Energy.RBV") == 6000.
+    assert caget("mono_ioc:Energy.VAL") == 6000.0
+    assert caget("mono_ioc:Energy.RBV") == 6000.0
