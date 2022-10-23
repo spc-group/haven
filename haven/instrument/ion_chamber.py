@@ -8,10 +8,15 @@ from ophyd import (
     Device,
     status,
     EpicsMotor,
+    EpicsSignal,
+    PVPositionerPC,
+    PseudoPositioner,
+    PseudoSingle,
     Component as Cpt,
     FormattedComponent as FCpt,
     Kind,
 )
+from ophyd.pseudopos import pseudo_position_argument, real_position_argument
 from ophyd.status import DeviceStatus
 from apstools.devices import SRS570_PreAmplifier
 
@@ -37,6 +42,39 @@ record_prefix = iconfig["ion_chamber"]["scaler"]["record"]
 pv_prefix = f"{ioc_prefix}:{record_prefix}"
 
 
+class SensitivityPositioner(PVPositionerPC):
+    setpoint = Cpt(EpicsSignal, ".VAL")
+    readback = Cpt(EpicsSignal, ".VAL")
+
+
+class SensitivityLevelPositioner(PseudoPositioner):
+    values = [1, 2, 5, 10, 20, 50, 100, 200, 500]
+    units = ["pA/V", "nA/V", "µA/V", "mA/V"]
+
+    sens_level = Cpt(PseudoSingle, limits=(0, 27))
+
+    # Sensitivity settings
+    sens_value = Cpt(SensitivityPositioner, ":sens_num")
+    sens_unit = Cpt(SensitivityPositioner, ":sens_unit")
+
+    @pseudo_position_argument
+    def forward(self, target_gain_level):
+        "Given a target energy, transform to the mono and ID energies."
+        new_level = target_gain_level.sens_level
+        new_value = new_level % len(self.values)
+        new_unit = int(new_level / len(self.values))
+        return self.RealPosition(
+            sens_value=new_value,
+            sens_unit=new_unit,
+        )
+
+    @real_position_argument
+    def inverse(self, sensitivity):
+        "Given a position in mono and ID energy, transform to the target energy."
+        new_gain = sensitivity.sens_value + sensitivity.sens_unit * len(self.values)
+        return self.PseudoPosition(sens_level=new_gain)
+
+
 @registry.register
 class IonChamber(ScalerTriggered, Device):
     """An ion chamber at a spectroscopy beamline.
@@ -58,6 +96,7 @@ class IonChamber(ScalerTriggered, Device):
     sensitivities = [1, 2, 5, 10, 20, 50, 100, 200, 500]
     sensitivity_units = ["pA/V", "nA/V", "µA/V", "mA/V"]
     raw_counts = FCpt(SignalRO, "{prefix}.S{ch_num}")
+    sensitivity = FCpt(SensitivityLevelPositioner, "{preamp_prefix}", kind="config")
     _sensitivity = FCpt(Signal, "{preamp_prefix}:sens_num")
     _sensitivity_unit = FCpt(Signal, "{preamp_prefix}:sens_unit")
 
@@ -74,35 +113,43 @@ class IonChamber(ScalerTriggered, Device):
         # Initialize all the other Device stuff
         super().__init__(prefix=prefix, name=name, *args, **kwargs)
 
-    @property
-    def sensitivity(self):
-        return self.sensitivities[self._sensitivity.get()]
+    # @property
+    # def sensitivity(self):
+    #     return self.gain_level.sensitivities[self.gain_level.sensitivity.get()]
 
-    @property
-    def sensitivity_unit(self):
-        return self.sensitivity_units[self._sensitivity_unit.get()]
+    # @property
+    # def sensitivity_unit(self):
+    #     return self.sensitivity.unit[self.sensitivity.unit.get()]
 
-    def _change_sensitivity(self, step: int) -> Sequence[status.Status]:
-        # Determine the new sensitivity value
-        target = self._sensitivity.get() + step
-        new_value = target % len(self.sensitivities)
-        # Determine the new units to use (if rollover is needed)
-        old_unit = self._sensitivity_unit.get()
-        new_unit = old_unit + math.floor(target / len(self.sensitivities))
-        # Check that the new values are not off the end of the chart
-        value_too_low = new_unit < 0
-        max_unit = len(self.sensitivity_units) - 1
-        value_too_high = (
-            new_unit == max_unit
-        ) and new_value > 0  # 1 mA/V is as high as it goes
-        if value_too_low or value_too_high:
+    # def _change_sensitivity(self, step: int) -> Sequence[status.Status]:
+    #     # Determine the new sensitivity value
+    #     target = self._sensitivity.get() + step
+    #     new_value = target % len(self.sensitivities)
+    #     # Determine the new units to use (if rollover is needed)
+    #     old_unit = self._sensitivity_unit.get()
+    #     new_unit = old_unit + math.floor(target / len(self.sensitivities))
+    #     # Check that the new values are not off the end of the chart
+    #     value_too_low = new_unit < 0
+    #     max_unit = len(self.sensitivity_units) - 1
+    #     value_too_high = (
+    #         new_unit == max_unit
+    #     ) and new_value > 0  # 1 mA/V is as high as it goes
+    #     if value_too_low or value_too_high:
+    #         raise exceptions.GainOverflow(self)
+    #     # Set the new values
+    #     status_value = self._sensitivity.set(new_value, timeout=1)
+    #     status_unit = self._sensitivity_unit.set(new_unit, timeout=1)
+    #     log.info(f"Setting new gain for {self._sensitivity}: {new_value}")
+    #     log.info(f"Setting new gain unit for {self._sensitivity_unit}: {new_unit}")
+    #     return [status_value, status_unit]
+
+    def change_sensitivity(self, step) -> status.Status:
+        new_sens_level = self.sensitivity.sens_level.readback.get() + step
+        try:
+            status = self.sensitivity.sens_level.set(new_sens_level)
+        except ValueError:
             raise exceptions.GainOverflow(self)
-        # Set the new values
-        status_value = self._sensitivity.set(new_value, timeout=1)
-        status_unit = self._sensitivity_unit.set(new_unit, timeout=1)
-        log.info(f"Setting new gain for {self._sensitivity}: {new_value}")
-        log.info(f"Setting new gain unit for {self._sensitivity_unit}: {new_unit}")
-        return [status_value, status_unit]
+        return status
 
     def increase_gain(self) -> Sequence[status.Status]:
         """Increase the gain (descrease the sensitivity) of the ion chamber's
@@ -115,7 +162,9 @@ class IonChamber(ScalerTriggered, Device):
           sensitivity in the pre-amp.
 
         """
-        return self._change_sensitivity(step=-1)
+        return self.change_sensitivity(-1)
+        # new_gain = self.gain_level.gain_level.get().readback - 1
+        # return self.gain_level.gain_level.set(new_gain)
 
     def decrease_gain(self) -> Sequence[status.Status]:
         """Decrease the gain (increase the sensitivity) of the ion chamber's
@@ -128,7 +177,9 @@ class IonChamber(ScalerTriggered, Device):
           sensitivity in the pre-amp.
 
         """
-        return self._change_sensitivity(step=1)
+        return self.change_sensitivity(1)
+        # new_gain = self.gain_level.gain_level.get().readback + 1
+        # return self.gain_level.gain_level.set(new_gain)
 
 
 @registry.register

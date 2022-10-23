@@ -58,6 +58,18 @@ def ioc_mono():
         yield pvdb
 
 
+class ScalerIOC(PVGroup):
+    """An IOC mimicing a scaler connected to a VME crate."""
+
+    S2 = pvproperty(value=21000000, doc="It")
+
+
+@pytest.fixture
+def ioc_scaler():
+    with simulated_ioc(ScalerIOC, prefix="vme_crate_ioc.") as pvdb:
+        yield pvdb
+
+
 class MotorIOC(PVGroup):
     """
     An IOC with some motor records, similar to those found in a VME crate.
