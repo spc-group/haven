@@ -27,7 +27,9 @@ class InstrumentRegistry:
     def __init__(self):
         self.components = []
 
-    def find(self, label: Optional[str] = None, name: Optional[str] = None) -> Component:
+    def find(
+        self, label: Optional[str] = None, name: Optional[str] = None
+    ) -> Component:
         """Find registered device components matching parameters.
 
         Parameters
@@ -55,16 +57,34 @@ class InstrumentRegistry:
         """
         results = self.findall(label=label, name=name)
         if len(results) > 1:
-            raise exceptions.MultipleComponentsFound(f"Found {len(results)} components matching query. Consider using ``findall()``."
+            raise exceptions.MultipleComponentsFound(
+                f"Found {len(results)} components matching query. Consider using ``findall()``."
             )
         else:
             return results[0]
 
-    def findall(self, label: Optional[str] = None, name: Optional[str] = None) -> Sequence[Component]:
+    def findall(
+        self,
+        any: Optional[str] = None,
+        *,
+        label: Optional[str] = None,
+        name: Optional[str] = None,
+    ) -> Sequence[Component]:
         """Find registered device components matching parameters.
+
+        Combining search terms works in an *or* fashion. For example,
+        ``findall(name="my_device", label="ion_chambers")`` will find
+        all devices that have either the name "my_device" or a label
+        "ion_chambers".
+
+        The *any* keyword is a proxy for all the other keywords. For
+        example ``findall(any="my_device")`` is equivalent to
+        ``findall(name="my_device", label="my_device")``.
 
         Parameters
         ==========
+        any
+          Search by all of the other parameters.
         label
           Search by the component's ``labels={"my_label"}`` parameter.
         name
@@ -82,24 +102,29 @@ class InstrumentRegistry:
           parameters.
 
         """
-        results = self.components.copy()
+        # Check that we're searching for something
+        results = []  # self.components.copy()
         # Filter by label
-        if label is not None:
+        _label = label if label is not None else any
+        if _label is not None:
             try:
-                results = [
-                    cpt
-                    for cpt in results
-                    if label in getattr(cpt, "_ophyd_labels_", [])
-                ]
+                results.extend(
+                    [
+                        cpt
+                        for cpt in self.components
+                        if _label in getattr(cpt, "_ophyd_labels_", [])
+                    ]
+                )
             except TypeError:
                 raise exceptions.InvalidComponentLabel(label)
         # Filter by name
-        if name is not None:
-            results = [cpt for cpt in results if cpt.name == name]
+        _name = name if name is not None else any
+        if _name is not None:
+            results.extend([cpt for cpt in self.components if cpt.name == _name])
         # Check that the label is actually defined somewhere
         if len(results) == 0:
             raise exceptions.ComponentNotFound(
-                f"Could not find matching components label: {label}"
+                f"Could not find matching components label: {_label}, name: {_name}"
             )
         return results
 
