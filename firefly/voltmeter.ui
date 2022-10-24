@@ -65,7 +65,7 @@
         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
        </property>
        <property name="channel" stdset="0">
-        <string>${IOC_VME}:userCalc${CHANNEL_NUMBER}.DESC</string>
+        <string>${IOC_VME}:3820:scaler1.NM${CHANNEL_NUMBER}</string>
        </property>
        <property name="displayFormat" stdset="0">
         <enum>PyDMLabel::String</enum>
@@ -92,7 +92,7 @@
         <bool>true</bool>
        </property>
        <property name="channel" stdset="0">
-        <string>${IOC_VME}:userCalc${CHANNEL_NUMBER}.VAL</string>
+        <string>${IOC_VME}:3820:scaler1_calc${CHANNEL_NUMBER}.VAL</string>
        </property>
        <property name="showValue" stdset="0">
         <bool>false</bool>
@@ -173,7 +173,7 @@
             <bool>false</bool>
            </property>
            <property name="channel" stdset="0">
-            <string>${IOC_VME}:userCalc${CHANNEL_NUMBER}.VAL</string>
+            <string>${IOC_VME}:3820:scaler1_calc${CHANNEL_NUMBER}.VAL</string>
            </property>
           </widget>
          </item>

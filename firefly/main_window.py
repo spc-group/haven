@@ -5,6 +5,7 @@ from pydm.main_window import PyDMMainWindow
 from qtpy import QtCore, QtGui, QtWidgets
 
 from haven.instrument.instrument_registry import registry
+from haven.instrument import motor
 from haven.exceptions import ComponentNotFound
 
 
