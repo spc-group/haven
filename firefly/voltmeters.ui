@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>594</width>
-    <height>371</height>
+    <height>414</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -25,7 +25,7 @@
         <string/>
        </property>
        <property name="macros" stdset="0">
-        <string>{&quot;CHANNEL_NUMBER&quot;: 2}</string>
+        <string>{&quot;CHANNEL_NUMBER&quot;: 2, &quot;PREAMP_PREFIX&quot;: &quot;SR01:IpreSlit&quot;}</string>
        </property>
        <property name="filename" stdset="0">
         <string>voltmeter.py</string>
@@ -38,7 +38,7 @@
         <string/>
        </property>
        <property name="macros" stdset="0">
-        <string>{&quot;CHANNEL_NUMBER&quot;: 3}</string>
+        <string>{&quot;CHANNEL_NUMBER&quot;: 3, &quot;PREAMP_PREFIX&quot;: &quot;SR02:IpreKB&quot;}</string>
        </property>
        <property name="filename" stdset="0">
         <string>voltmeter.py</string>
@@ -51,7 +51,7 @@
         <string/>
        </property>
        <property name="macros" stdset="0">
-        <string>{&quot;CHANNEL_NUMBER&quot;: 4}</string>
+        <string>{&quot;CHANNEL_NUMBER&quot;: 4, &quot;PREAMP_PREFIX&quot;: &quot;SR03:I0&quot;}</string>
        </property>
        <property name="filename" stdset="0">
         <string>voltmeter.py</string>
@@ -64,7 +64,7 @@
         <string/>
        </property>
        <property name="macros" stdset="0">
-        <string>{&quot;CHANNEL_NUMBER&quot;: 5}</string>
+        <string>{&quot;CHANNEL_NUMBER&quot;: 5, &quot;PREAMP_PREFIX&quot;: &quot;SR08:Iref&quot;}</string>
        </property>
        <property name="filename" stdset="0">
         <string>voltmeter.py</string>
