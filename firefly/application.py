@@ -90,7 +90,7 @@ class FireflyApplication(PyDMApplication):
         apply_stylesheet(self.stylesheet_path, widget=main_window)
         main_window.update_tools_menu()
         # Load the UI file for this window
-        display = main_window.open(ui_file, macros=macros)
+        display = main_window.open(str(ui_file.resolve()), macros=macros)
         self.connect_menu_signals(window=main_window)
         # Show the display
         if self.fullscreen:

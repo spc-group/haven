@@ -7,6 +7,7 @@ from qtpy import QtCore, QtGui, QtWidgets
 from haven.instrument.instrument_registry import registry
 from haven.instrument import motor
 from haven.exceptions import ComponentNotFound
+from haven.instrument import motor
 
 
 log = logging.getLogger(__name__)
@@ -72,7 +73,7 @@ class FireflyMainWindow(PyDMMainWindow):
         self.ui.menuPositioners.addAction(self.ui.menuMotors.menuAction())
         # Add each individual motor to the motors sub-menu
         try:
-            motors = registry.findall(label="motors")
+            motors = sorted(registry.findall(label="motors"), key=lambda x: x.name)
         except ComponentNotFound:
             log.warning("No motors found, [Positioners] -> [Motors] menu will be empty.")
             motors = []
