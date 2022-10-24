@@ -2,6 +2,7 @@ import logging
 
 from pydm.widgets.channel import PyDMChannel
 from haven.instrument.ion_chamber import IonChamber, pv_prefix
+from haven import load_config
 
 from firefly import display
 
@@ -15,6 +16,10 @@ class VoltmeterDisplay(display.FireflyDisplay):
     
     def __init__(self, device: IonChamber = None, args=None, macros={}, **kwargs):
         self._device = device
+        default_ioc_prefix = load_config()['ion_chamber']['scaler']['ioc']
+        print(default_ioc_prefix, macros)
+        macros['IOC_VME'] = macros.get("IOC_VME", default_ioc_prefix)
+        
         super().__init__(macros=macros, args=args, **kwargs)
     
     def customize_device(self):

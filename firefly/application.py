@@ -115,8 +115,7 @@ class FireflyApplication(PyDMApplication):
 
     @Slot()
     def show_voltmeters_window(self):
-        self.show_window(FireflyMainWindow, ui_dir / "voltmeters.ui", name="voltmeters",
-                         macros={"IOC_VME": "25idcVME"})
+        self.show_window(FireflyMainWindow, ui_dir / "voltmeters.ui", name="voltmeters")
 
     @Slot()
     def show_sample_viewer_window(self):
