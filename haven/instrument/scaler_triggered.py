@@ -10,9 +10,8 @@ from ..signal import Signal
 __all__ = ["ScalerTriggered"]
 
 
-class ScalerTriggered:
-    _statuses = {}
-    count = FCpt(Signal, "{scaler_prefix}.CNT", trigger_value=1, kind=Kind.omitted)
+class ScalerTriggered(Device):
+    
 
     def __init__(self, prefix="", *, scaler_prefix=None, **kwargs):
         # Determine which prefix to use for the scaler
@@ -20,6 +19,7 @@ class ScalerTriggered:
             self.scaler_prefix = scaler_prefix
         else:
             self.scaler_prefix = prefix
+        print(super())
         super().__init__(prefix, **kwargs)
 
     def trigger(self, *args, **kwargs):

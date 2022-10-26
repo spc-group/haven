@@ -28,7 +28,7 @@ class InstrumentRegistry:
         self.components = []
 
     def find(
-        self, label: Optional[str] = None, name: Optional[str] = None
+            self, any: Optional[str] = None, *, label: Optional[str] = None, name: Optional[str] = None
     ) -> Component:
         """Find registered device components matching parameters.
 
@@ -55,7 +55,7 @@ class InstrumentRegistry:
           ``self.findall()`` method.
 
         """
-        results = self.findall(label=label, name=name)
+        results = self.findall(any=any, label=label, name=name)
         if len(results) > 1:
             raise exceptions.MultipleComponentsFound(
                 f"Found {len(results)} components matching query. Consider using ``findall()``."
@@ -132,9 +132,9 @@ class InstrumentRegistry:
         found_results = len(results) > 0
         if not found_results:
             raise exceptions.ComponentNotFound(
-                f"Could not find matching components label: {_label}, name: {_name}"
+                f'Could not find components matching: label="{_label}", name="{_name}"'
             )
-        return results
+        return list(set(results))
 
     def __new__wrapper(self, cls, *args, **kwargs):
         # Create and instantiate the new object
