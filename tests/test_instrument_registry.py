@@ -159,3 +159,23 @@ def test_find_any():
     assert cptB in result
     assert cptC in result
     assert not cptD in result
+
+
+def test_find_by_device():
+    """The registry should just return the device itself if that's what is passed."""
+    # Prepare registry
+    reg = InstrumentRegistry()
+    # Register a component
+    cptD = sim.SynGauss(
+        "sample motor",
+        sim.motor,
+        "motor",
+        center=-0.5,
+        Imax=1,
+        sigma=1,
+        labels={},
+    )
+    reg.register(cptD)
+    # Pass the device itself to the find method
+    result = reg.find(cptD)
+    assert result is cptD

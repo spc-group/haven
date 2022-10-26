@@ -1,7 +1,7 @@
 from typing import Optional, Sequence
 import logging
 
-from ophyd import Component
+from ophyd import Component, ophydobj
 
 from haven import exceptions
 from haven.typing import Detector
@@ -121,8 +121,16 @@ class InstrumentRegistry:
         _name = name if name is not None else any
         if _name is not None:
             results.extend([cpt for cpt in self.components if cpt.name == _name])
+        # If a query term is itself a device, just return that
+        found_results = len(results) > 0
+        if not found_results:
+            for obj in [_label, _name, any]:
+                if isinstance(obj, ophydobj.OphydObject):
+                    results = [obj]
+                    break
         # Check that the label is actually defined somewhere
-        if len(results) == 0:
+        found_results = len(results) > 0
+        if not found_results:
             raise exceptions.ComponentNotFound(
                 f"Could not find matching components label: {_label}, name: {_name}"
             )
