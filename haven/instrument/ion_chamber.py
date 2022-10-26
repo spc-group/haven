@@ -32,7 +32,7 @@ from .. import exceptions
 log = logging.getLogger(__name__)
 
 
-__all__ = ["IonChamber", "I0", "It", "Iref", "If"]
+__all__ = ["IonChamber"]
 
 
 iconfig = load_config()
@@ -54,8 +54,8 @@ class SensitivityLevelPositioner(PseudoPositioner):
     sens_level = Cpt(PseudoSingle, limits=(0, 27))
 
     # Sensitivity settings
-    sens_value = Cpt(SensitivityPositioner, ":sens_num")
-    sens_unit = Cpt(SensitivityPositioner, ":sens_unit")
+    sens_unit = Cpt(SensitivityPositioner, ":sens_unit", kind="config", settle_time=0.1)
+    sens_value = Cpt(SensitivityPositioner, ":sens_num", kind="config", settle_time=0.1)
 
     @pseudo_position_argument
     def forward(self, target_gain_level):
@@ -76,7 +76,7 @@ class SensitivityLevelPositioner(PseudoPositioner):
 
 
 @registry.register
-class IonChamber(ScalerTriggered, Device):
+class IonChamber(Device):
     """An ion chamber at a spectroscopy beamline.
 
     Also includes the pre-amplifier as ``.pre_amp``.
@@ -93,55 +93,33 @@ class IonChamber(ScalerTriggered, Device):
     """
 
     ch_num: int = 0
-    sensitivities = [1, 2, 5, 10, 20, 50, 100, 200, 500]
-    sensitivity_units = ["pA/V", "nA/V", "µA/V", "mA/V"]
-    raw_counts = FCpt(SignalRO, "{prefix}.S{ch_num}")
+    _statuses = {}
+    count = FCpt(Signal, "{scaler_prefix}.CNT", trigger_value=1, kind=Kind.omitted)
+    raw_counts = FCpt(SignalRO, "{prefix}.S{ch_num}", kind="hinted")
+    volts = FCpt(SignalRO, "{prefix}_calc{ch_num}.VAL", kind="hinted")
     sensitivity = FCpt(SensitivityLevelPositioner, "{preamp_prefix}", kind="config")
-    _sensitivity = FCpt(Signal, "{preamp_prefix}:sens_num")
-    _sensitivity_unit = FCpt(Signal, "{preamp_prefix}:sens_unit")
+    read_attrs = ["raw_counts", "volts", "sensitivity_sens_level"]
+    # configuration_attrs = ["sensitivity_sens_level", "sensitivity_sens_value", "sensitivity_sens_unit"]
 
-    def __init__(self, prefix, ch_num, name, preamp_prefix=None, *args, **kwargs):
+    def __init__(self, prefix, ch_num, name, preamp_prefix=None, scaler_prefix=None, voltage_pv=None, *args, **kwargs):
         # Set up the channel number for this scaler channel
         if ch_num < 1:
             raise ValueError(f"Scaler channels must be greater than 0: {ch_num}")
         self.ch_num = ch_num
         self.ch_char = chr(64 + ch_num)
+        # Determine which prefix to use for the scaler
+        if scaler_prefix is not None:
+            self.scaler_prefix = scaler_prefix
+        else:
+            self.scaler_prefix = prefix
+        # Determine pv for the voltage (e.g. user calc record)
+        self.voltage_pv = voltage_pv
         # Save an epics path to the preamp
         if preamp_prefix is None:
             preamp_prefix = prefix
         self.preamp_prefix = preamp_prefix
         # Initialize all the other Device stuff
         super().__init__(prefix=prefix, name=name, *args, **kwargs)
-
-    # @property
-    # def sensitivity(self):
-    #     return self.gain_level.sensitivities[self.gain_level.sensitivity.get()]
-
-    # @property
-    # def sensitivity_unit(self):
-    #     return self.sensitivity.unit[self.sensitivity.unit.get()]
-
-    # def _change_sensitivity(self, step: int) -> Sequence[status.Status]:
-    #     # Determine the new sensitivity value
-    #     target = self._sensitivity.get() + step
-    #     new_value = target % len(self.sensitivities)
-    #     # Determine the new units to use (if rollover is needed)
-    #     old_unit = self._sensitivity_unit.get()
-    #     new_unit = old_unit + math.floor(target / len(self.sensitivities))
-    #     # Check that the new values are not off the end of the chart
-    #     value_too_low = new_unit < 0
-    #     max_unit = len(self.sensitivity_units) - 1
-    #     value_too_high = (
-    #         new_unit == max_unit
-    #     ) and new_value > 0  # 1 mA/V is as high as it goes
-    #     if value_too_low or value_too_high:
-    #         raise exceptions.GainOverflow(self)
-    #     # Set the new values
-    #     status_value = self._sensitivity.set(new_value, timeout=1)
-    #     status_unit = self._sensitivity_unit.set(new_unit, timeout=1)
-    #     log.info(f"Setting new gain for {self._sensitivity}: {new_value}")
-    #     log.info(f"Setting new gain unit for {self._sensitivity_unit}: {new_unit}")
-    #     return [status_value, status_unit]
 
     def change_sensitivity(self, step) -> status.Status:
         new_sens_level = self.sensitivity.sens_level.readback.get() + step
@@ -163,8 +141,6 @@ class IonChamber(ScalerTriggered, Device):
 
         """
         return self.change_sensitivity(-1)
-        # new_gain = self.gain_level.gain_level.get().readback - 1
-        # return self.gain_level.gain_level.set(new_gain)
 
     def decrease_gain(self) -> Sequence[status.Status]:
         """Decrease the gain (increase the sensitivity) of the ion chamber's
@@ -178,8 +154,18 @@ class IonChamber(ScalerTriggered, Device):
 
         """
         return self.change_sensitivity(1)
-        # new_gain = self.gain_level.gain_level.get().readback + 1
-        # return self.gain_level.gain_level.set(new_gain)
+
+    def trigger(self, *args, **kwargs):
+        # Figure out if there's already a trigger active
+        previous_status = self._statuses.get(self.scaler_prefix)
+        is_idle = previous_status is None or previous_status.done
+        # Trigger the detector if not already running, and update the status dict
+        if is_idle:
+            new_status = super().trigger(*args, **kwargs)
+            self._statuses[self.scaler_prefix] = new_status
+        else:
+            new_status = previous_status
+        return new_status
 
 
 @registry.register
@@ -190,15 +176,19 @@ class IonChamberWithOffset(IonChamber):
 
 conf = load_config()
 preamp_ioc = conf["ion_chamber"]["preamp"]["ioc"]
+vme_ioc = conf["ion_chamber"]["scaler"]["ioc"]
 for name, config in conf["ion_chamber"].items():
     # Define ion chambers
     if name not in ["scaler", "preamp"]:
+        ch_num = config["scaler_channel"]
         preamp_prefix = f"{preamp_ioc}:{config['preamp_record']}"
+        voltage_pv = f"{vme_ioc}:userCalc{ch_num-1}"
         ic = IonChamber(
             prefix=pv_prefix,
             ch_num=config["scaler_channel"],
             name=name,
+            voltage_pv=voltage_pv,
             preamp_prefix=preamp_prefix,
-            labels={"ion_chamber"},
+            labels={"ion_chambers"},
         )
         log.info(f"Created ion chamber: {ic}")
