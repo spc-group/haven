@@ -9,6 +9,8 @@ from .plans.xafs_scan import xafs_scan  # noqa: F401
 from ._iconfig import load_config
 
 from .instrument import ion_chamber, IonChamber
+from .motor_position import save_motor_position
+
 # from .instrument import (
 #     ion_chamber,
 #     IonChamber,

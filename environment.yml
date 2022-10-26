@@ -46,6 +46,11 @@ dependencies:
   - pytest-cov
   # - pytest-notebook
 
+  # Database management
+  - pymongo
+  - databroker-pack
+  - databroker =1.2
+
   # --- Qt
   - pyqt =5
   - qt =5
@@ -61,7 +66,6 @@ dependencies:
   - pandas
   - pint
   - pyEpics >=3.5.0
-  - pymongo
   - scikit-image
   - xlrd
 
@@ -73,8 +77,6 @@ dependencies:
   - bluesky-queueserver-api
   - bluesky-widgets
   - bluesky >=1.8.1
-  - databroker-pack
-  - databroker =1.2
   # - happi
   # - hklpy >=1.0.3  # --- linux-64
   - ophyd >=1.6.3
@@ -121,6 +123,7 @@ dependencies:
   - pip:
     - time-machine
     - autoapi
+    - pytest-mongodb
     # - https://github.com/BCDA-APS/adl2pydm/archive/main.zip
     # --- optional Bluesky framework packages for evaluation
     # - bluesky-webclient is NOT Python software, don't install it this way
