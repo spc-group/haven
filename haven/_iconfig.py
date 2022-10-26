@@ -39,7 +39,10 @@ default_config = {
     "ion_chamber": {
         "scaler": {"ioc": "", "record": ""},
         "preamp": {"ioc": "preamp_ioc"},
-        "I0": {"scaler_channel": 2, "preamp_record": "SR570_1"},
+        "I0": {"scaler_channel": 2,
+               "preamp_record": "SR570_1",
+               "voltage_pv": "40iddVME:userCalc1",
+        },
     },
     "fluorescence_detectors": {
         "vortex": {

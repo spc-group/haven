@@ -14,16 +14,18 @@ from apstools.devices import ApsUndulator
 
 from ..signal import Signal
 from .._iconfig import load_config
+from .instrument_registry import registry
 from .monochromator import monochromator
 
 
 class Undulator(PVPositioner):
     setpoint = Cpt(EpicsSignal, ":ScanEnergy.VAL")
-    readback = Cpt(EpicsSignalRO, ":Energy.RBV")
+    readback = Cpt(EpicsSignalRO, ":Energy.VAL")
     done = Cpt(EpicsSignalRO, ":Busy.VAL")
     stop_signal = Cpt(EpicsSignal, ":Stop.VAL")
 
 
+# @registry.register
 class EnergyPositioner(PseudoPositioner):
     # Pseudo axes
     energy = Cpt(PseudoSingle)
@@ -42,7 +44,7 @@ class EnergyPositioner(PseudoPositioner):
         "Given a target energy, transform to the mono and ID energies."
         return self.RealPosition(
             mono_energy=target_energy.energy,
-            id_energy=target_energy.energy + 100,
+            id_energy=target_energy.energy / 1000,
         )
 
     @real_position_argument
@@ -58,3 +60,4 @@ energy_positioner = EnergyPositioner(
     mono_energy_pv=monochromator.energy.prefix,
     id_prefix=load_config()["undulator"]["ioc"],
 )
+registry.register(energy_positioner)

@@ -2,11 +2,12 @@ from ophyd import Device, Component as Cpt, FormattedComponent as FCpt, EpicsMot
 
 from ..signal import Signal, SignalRO
 from .._iconfig import load_config
+from .instrument_registry import registry
 
 
 config = load_config()
 
-
+@registry.register
 class Monochromator(Device):
     horiz = Cpt(EpicsMotor, ":m1", kind="config")
     vert = Cpt(EpicsMotor, ":m2", kind="config")

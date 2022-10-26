@@ -13,7 +13,19 @@ conf = load_config()
 
 @registry.register
 class HavenMotor(EpicsMotor):
-    pass
+    """The default motor for haven movement.
+
+    Returns to the previous value when being unstaged.
+    """
+    def stage(self):
+        super().stage()
+        # Save starting position to restore later
+        self._old_value = self.user_readback.value
+        
+    def unstage(self):
+        super().unstage()
+        # Restore the previously saved position after the scan ends
+        self.set(self._old_value, wait=True)
 
 
 def prepare_motors(ioc):
