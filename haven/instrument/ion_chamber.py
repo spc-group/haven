@@ -4,6 +4,7 @@ from typing import Sequence
 import logging
 import math
 
+import epics
 from ophyd import (
     Device,
     status,
@@ -75,7 +76,7 @@ class SensitivityLevelPositioner(PseudoPositioner):
         return self.PseudoPosition(sens_level=new_gain)
 
 
-@registry.register
+# @registry.register
 class IonChamber(Device):
     """An ion chamber at a spectroscopy beamline.
 
@@ -97,11 +98,15 @@ class IonChamber(Device):
     count = FCpt(Signal, "{scaler_prefix}.CNT", trigger_value=1, kind=Kind.omitted)
     raw_counts = FCpt(SignalRO, "{prefix}.S{ch_num}", kind="hinted")
     volts = FCpt(SignalRO, "{prefix}_calc{ch_num}.VAL", kind="hinted")
+    exposure_time = FCpt(Signal, "{scaler_prefix}.TP", kind="normal")
     sensitivity = FCpt(SensitivityLevelPositioner, "{preamp_prefix}", kind="config")
-    read_attrs = ["raw_counts", "volts", "sensitivity_sens_level"]
-    # configuration_attrs = ["sensitivity_sens_level", "sensitivity_sens_value", "sensitivity_sens_unit"]
+    read_attrs = ["raw_counts", "volts", "exposure_time",]
+    # configuration_attrs = ["sensitivity_sens_level",
+    #                        "sensitivity_sens_value",
+    #                        "sensitivity_sens_unit"]
 
-    def __init__(self, prefix, ch_num, name, preamp_prefix=None, scaler_prefix=None, voltage_pv=None, *args, **kwargs):
+    def __init__(self, prefix, ch_num, name, preamp_prefix=None,
+                 scaler_prefix=None, voltage_pv=None, *args, **kwargs):
         # Set up the channel number for this scaler channel
         if ch_num < 1:
             raise ValueError(f"Scaler channels must be greater than 0: {ch_num}")
@@ -174,21 +179,33 @@ class IonChamberWithOffset(IonChamber):
     net_counts = FCpt(SignalRO, "{prefix}_netA.{ch_char}")
 
 
-conf = load_config()
-preamp_ioc = conf["ion_chamber"]["preamp"]["ioc"]
-vme_ioc = conf["ion_chamber"]["scaler"]["ioc"]
-for name, config in conf["ion_chamber"].items():
-    # Define ion chambers
-    if name not in ["scaler", "preamp"]:
-        ch_num = config["scaler_channel"]
-        preamp_prefix = f"{preamp_ioc}:{config['preamp_record']}"
-        voltage_pv = f"{vme_ioc}:userCalc{ch_num-1}"
-        ic = IonChamber(
-            prefix=pv_prefix,
-            ch_num=config["scaler_channel"],
-            name=name,
-            voltage_pv=voltage_pv,
-            preamp_prefix=preamp_prefix,
-            labels={"ion_chambers"},
-        )
-        log.info(f"Created ion chamber: {ic}")
+def load_ion_chambers(config=None):
+    if config is None:
+        config = load_config()
+    preamp_ioc = config["ion_chamber"]["preamp"]["ioc"]
+    vme_ioc = config["ion_chamber"]["scaler"]["ioc"]
+    scaler_record = config["ion_chamber"]["scaler"]["record"]
+    # Loop through the configuration sections and create the ion chambers
+    for lbl, ic_config in config["ion_chamber"].items():
+        # Define ion chambers
+        if lbl.startswith("ch"):
+            # Determine ion_chamber configuration
+            ch_num = int(lbl[2:])
+            preamp_prefix = f"{preamp_ioc}:{ic_config['preamp_record']}"
+            voltage_pv = f"{vme_ioc}:userCalc{ch_num-1}"
+            desc_pv = f"{vme_ioc}:{scaler_record}.NM{ch_num}"
+            # Only use this ion chamber if it has a name 
+            name = epics.caget(desc_pv)
+            if name == "":
+                continue
+            # Create the ion chamber
+            ic = IonChamber(
+                prefix=pv_prefix,
+                ch_num=ch_num,
+                name=name,
+                voltage_pv=voltage_pv,
+                preamp_prefix=preamp_prefix,
+                labels={"ion_chambers"},
+            )
+            registry.register(ic)
+            log.info(f"Created ion chamber: {ic.name} ({ic.prefix}, ch {ic.ch_num})")

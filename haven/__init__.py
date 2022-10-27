@@ -11,14 +11,9 @@ from .plans.mono_gap_calibration import calibrate_mono_gap, align_pitch2, knife_
 from .plans.auto_gain import auto_gain
 from ._iconfig import load_config
 
-from .instrument import ion_chamber, IonChamber
+from .instrument import ion_chamber, IonChamber, registry
+from .instrument.load_instrument import load_instrument
 from .motor_position import save_motor_position
 
-# from .instrument import (
-#     ion_chamber,
-#     IonChamber,
-#     InstrumentRegistry,
-#     registry,
-# )  # noqa: F401
-# from ._iconfig import load_config  # noqa: F401
 from .xdi_writer import XDIWriter  # noqa: F401
+from .progress_bar import ProgressBar

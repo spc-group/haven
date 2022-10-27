@@ -6,12 +6,12 @@ import logging
 import warnings
 from typing import Sequence, Union, Mapping
 
-from bluesky import plans as bp
+from bluesky import plans as bp, utils
 import numpy as np
 
-from haven import merge_ranges, exceptions
-from haven._iconfig import load_config
-from haven import instrument
+from .. import merge_ranges, exceptions
+from .._iconfig import load_config
+from ..instrument import registry
 from ..constants import edge_energy
 from ..typing import DetectorList
 
@@ -26,9 +26,9 @@ def energy_scan(
     energies: Sequence[float],
     exposure: Union[float, Sequence[float]] = 0.1,
     E0: Union[float, str] = 0,
-    detectors: DetectorList = "ion_chamber",
-    energy_positioners: Sequence = [],
-    time_positioners: Sequence = [],
+    detectors: DetectorList = "ion_chambers",
+    energy_positioners: Sequence = ["energy"],
+    time_positioners: Sequence = ["I0_exposure_time"],
     md: Mapping = {},
 ):
     """Collect a spectrum by scanning X-ray energy.
@@ -99,17 +99,20 @@ def energy_scan(
         msg = "Cannot run energy_scan with empty *energy_positioners*."
         log.error(msg)
         raise ValueError(msg)
-    # Resolve the detector list if given by name
-    try:
-        real_detectors = instrument.registry.findall(label=detectors)
-    except exceptions.InvalidComponentLabel:
-        log.debug(f"*detectors* is not a valid detector label: {detectors}")
-        real_detectors = detectors
-    except exceptions.ComponentNotFound:
-        log.debug("No registered detectors found.")
-        real_detectors = detectors
-    else:
-        log.debug(f"Found registered detectors: {detectors} -> {real_detectors}")
+    # Resolve the detector and positioner list if given by name
+    # try:
+    #     real_detectors = registry.findall(name=detectors)
+    # except exceptions.InvalidComponentLabel:
+    #     log.warning(f"*detectors* is not a valid detector label: {detectors}")
+    #     real_detectors = detectors
+    # except exceptions.ComponentNotFound:
+    #     log.debug("No registered detectors found.")
+    #     real_detectors = detectors
+    # else:
+    real_detectors = registry.findall(detectors)
+    log.debug(f"Found registered detectors: {real_detectors}")
+    energy_positioners = [registry.find(ep) for ep in energy_positioners]
+    time_positioners = [registry.find(tp) for tp in time_positioners]
     # Resolve the energy ranges if provided
     merge_ranges(*energies, default_exposure=exposure)
     # Convert an individual exposure time to an array of exposure times

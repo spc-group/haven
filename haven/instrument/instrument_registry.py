@@ -3,8 +3,8 @@ import logging
 
 from ophyd import Component, ophydobj
 
-from haven import exceptions
-from haven.typing import Detector
+from .. import exceptions
+from ..typing import Detector
 
 
 log = logging.getLogger(__name__)
@@ -25,7 +25,14 @@ class InstrumentRegistry:
     devices = []  # Replaced during __init__() since [] is mutable
 
     def __init__(self):
+        self.clear()
+
+    def clear(self):
         self.components = []
+
+    @property
+    def component_names(self):
+        return [c.name for c in self.components]
 
     def find(
             self, any: Optional[str] = None, *, label: Optional[str] = None, name: Optional[str] = None
@@ -160,9 +167,23 @@ class InstrumentRegistry:
         if isinstance(component, type):
             # A class was given, so instances should be auto-registered
             component.__new__ = self.__new__wrapper
-        else:
-            # An instance was given, so just save it in the register
+        else:  # An instance was given, so just save it in the register
+            # Forget about any previously registered instances with the same name
+            # (Needed for some sub-components that are just readback values of the parent)
+            duplicate_components = [c for c in self.components if c.name == component.name]
+            # if "I0" in [c.name for c in duplicate_components]:
+            # if component.name == "I0":
+            #     import pdb; pdb.set_trace()
+            self.components = [c for c in self.components if c not in duplicate_components]
+            if len(duplicate_components) > 0:
+                log.debug(f"Replacing registered components with {component.name}:",
+                          ", ".join([c.name for c in duplicate_components]))
+            # Register this component
             self.components.append(component)
+            # Recusively register sub-components
+            sub_signals = getattr(component, "_signals", {})
+            for attr_name, cpt in sub_signals.items():
+                self.register(cpt)
         return component
 
 

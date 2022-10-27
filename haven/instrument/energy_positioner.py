@@ -21,12 +21,14 @@ from .monochromator import monochromator
 class Undulator(PVPositioner):
     setpoint = Cpt(EpicsSignal, ":ScanEnergy.VAL")
     readback = Cpt(EpicsSignalRO, ":Energy.VAL")
-    done = Cpt(EpicsSignalRO, ":Busy.VAL")
-    stop_signal = Cpt(EpicsSignal, ":Stop.VAL")
+    done = Cpt(EpicsSignalRO, ":Busy.VAL", kind="omitted")
+    stop_signal = Cpt(EpicsSignal, ":Stop.VAL", kind="omitted")
 
 
 # @registry.register
 class EnergyPositioner(PseudoPositioner):
+    id_offset = 155 # In eV
+    
     # Pseudo axes
     energy = Cpt(PseudoSingle)
 
@@ -44,7 +46,7 @@ class EnergyPositioner(PseudoPositioner):
         "Given a target energy, transform to the mono and ID energies."
         return self.RealPosition(
             mono_energy=target_energy.energy,
-            id_energy=target_energy.energy / 1000,
+            id_energy=(target_energy.energy + self.id_offset) / 1000,
         )
 
     @real_position_argument
@@ -55,9 +57,12 @@ class EnergyPositioner(PseudoPositioner):
         )
 
 
-energy_positioner = EnergyPositioner(
-    name="energy",
-    mono_energy_pv=monochromator.energy.prefix,
-    id_prefix=load_config()["undulator"]["ioc"],
-)
-registry.register(energy_positioner)
+def load_energy_positioner(config=None):
+    if config is None:
+        config = load_config()
+    energy_positioner = EnergyPositioner(
+        name="energy",
+        mono_energy_pv=monochromator.energy.prefix,
+        id_prefix=config["undulator"]["ioc"],
+    )
+    registry.register(energy_positioner)
