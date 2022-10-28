@@ -9,6 +9,7 @@ from .plans.xafs_scan import xafs_scan  # noqa: F401
 from .plans.auto_gain import auto_gain, AutoGainCallback  # noqa:F401
 from .plans.mono_gap_calibration import calibrate_mono_gap, align_pitch2, knife_scan
 from .plans.auto_gain import auto_gain
+from .run_engine import RunEngine
 from ._iconfig import load_config
 
 from .instrument import ion_chamber, IonChamber, registry
