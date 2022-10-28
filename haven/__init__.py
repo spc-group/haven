@@ -11,8 +11,12 @@ from .plans.mono_gap_calibration import calibrate_mono_gap, align_pitch2, knife_
 from .plans.auto_gain import auto_gain
 from ._iconfig import load_config
 
-from .instrument import ion_chamber, IonChamber
-from .motor_position import save_motor_position
+from .instrument import ion_chamber, IonChamber, InstrumentRegistry, registry
+from .motor_position import (
+    save_motor_position,
+    get_motor_position,
+    recall_motor_position,
+)
 
 # from .instrument import (
 #     ion_chamber,

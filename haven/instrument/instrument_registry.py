@@ -25,10 +25,14 @@ class InstrumentRegistry:
     devices = []  # Replaced during __init__() since [] is mutable
 
     def __init__(self):
-        self.components = []
+        self.clear()
 
     def find(
-            self, any: Optional[str] = None, *, label: Optional[str] = None, name: Optional[str] = None
+        self,
+        any: Optional[str] = None,
+        *,
+        label: Optional[str] = None,
+        name: Optional[str] = None,
     ) -> Component:
         """Find registered device components matching parameters.
 
@@ -62,6 +66,10 @@ class InstrumentRegistry:
             )
         else:
             return results[0]
+
+    def clear(self):
+        """Remove the previously registered components."""
+        self.components = []
 
     def findall(
         self,
@@ -102,7 +110,6 @@ class InstrumentRegistry:
           parameters.
 
         """
-        # Check that we're searching for something
         results = []  # self.components.copy()
         # Filter by label
         _label = label if label is not None else any
