@@ -25,11 +25,21 @@ class MotorAxis(BaseModel):
 class MotorPosition(BaseModel):
     name: str
     motors: Sequence[MotorAxis]
+    uid: Optional[str] = None
 
     def save(self, collection):
         payload = {"name": self.name, "motors": [m.as_dict() for m in self.motors]}
         item_id = collection.insert_one(payload).inserted_id
         return item_id
+
+    @classmethod
+    def load(Cls, document):
+        # Create a MotorPosition object
+        motor_axes = [
+            MotorAxis(name=m["name"], readback=m["readback"]) for m in document["motors"]
+        ]
+        position = Cls(name=document["name"], motors=motor_axes, uid=str(document["_id"]))
+        return position
 
 
 def save_motor_position(*motors, name: str, collection=None):
@@ -62,7 +72,7 @@ def save_motor_position(*motors, name: str, collection=None):
         elif hasattr(motor_data, "user_readback"):
             return motor_data.user_readback
         else:
-            raise ValueError("Could not find readback value.")
+            return motor_data
 
     motor_axes = [MotorAxis(name=m.name, readback=rbv(m)) for m in motors]
     position = MotorPosition(name=name, motors=motor_axes)
@@ -72,6 +82,19 @@ def save_motor_position(*motors, name: str, collection=None):
     return pos_id
 
 
+def list_motor_positions(collection=None):
+    results = collection.find()
+    for doc in results:
+        position = MotorPosition.load(doc)
+        output = f'"\n{position.name}" (uid="{position.uid}")\n'
+        for idx, motor in enumerate(position.motors):
+            # Figure out some nice tree aesthetics
+            is_last_motor = idx == (len(position.motors) - 1)
+            box_char = "┗" if is_last_motor else "┣"
+            output += f'{box_char}━"{motor.name}": {motor.readback}\n'
+        print(output, end="")
+
+
 def get_motor_position(uid, collection=None):
     """Retrieve a previously saved motor position from the database."""
     result = collection.find_one({"_id": uid})
@@ -79,11 +102,7 @@ def get_motor_position(uid, collection=None):
         raise exceptions.DocumentNotFound(
             f"Could not find document matching: _id={uid}"
         )
-    # Create a MotorPosition object
-    motor_axes = [
-        MotorAxis(name=m["name"], readback=m["readback"]) for m in result["motors"]
-    ]
-    position = MotorPosition(name=result["name"], motors=motor_axes)
+    position = MotorPosition.load(result)
     return position
 
 

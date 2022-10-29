@@ -10,6 +10,7 @@ from haven import (
     save_motor_position,
     registry,
     get_motor_position,
+    list_motor_positions,
     recall_motor_position,
 )
 
@@ -93,6 +94,18 @@ def test_recall_motor_position(mongodb, sim_registry):
     assert msg1.obj.name == "SLT V Lower"
     assert msg1.args[0] == -211.93
 
+
+def test_list_motor_positions(mongodb, capsys):
+    # Do the listing
+    list_motor_positions(collection=mongodb.motor_positions)
+    # Check stdout for printed motor positions
+    captured = capsys.readouterr()
+    assert len(captured.out) > 0
+    expected = ('"\nGood position A" (uid="abcd123")\n'
+                '┣━"SLT V Upper": 510.5\n'
+                '┗━"SLT V Lower": -211.93\n')
+    assert captured.out == expected
+    
 
 def test_motor_position_e2e(mongodb, ioc_motor):
     """Check that a motor position can be saved, then recalled using

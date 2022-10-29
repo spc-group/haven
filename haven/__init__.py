@@ -14,6 +14,7 @@ from ._iconfig import load_config
 
 from .motor_position import (
     save_motor_position,
+    list_motor_positions,
     get_motor_position,
     recall_motor_position,
 )
