@@ -8,7 +8,6 @@ from .instrument_registry import registry
 
 
 log = logging.getLogger(__name__)
-conf = load_config()
 
 
 @registry.register
@@ -28,8 +27,11 @@ class HavenMotor(EpicsMotor):
         self.set(self._old_value, wait=True)
 
 
-def prepare_motors(ioc):
+def load_vme_motors(config=None):
+    if config is None:
+        config = load_config()
     # Figure out the prefix
+    ioc = config["motor"]["ioc"]
     # Create motor objects
     motor_num = 0
     motors = []
@@ -56,6 +58,3 @@ def prepare_motors(ioc):
             )
             log.debug(f"Created motor {motor}")
             motors.append(motor)
-
-
-vme_motors = prepare_motors(ioc=conf["motor"]["ioc"])

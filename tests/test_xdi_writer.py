@@ -184,6 +184,7 @@ class CallbackTests(TestCase):
             "Beamline.pv_prefix": "20id:",
             "Scan.start_time": "2022-08-19 19:10:51-0400",
             "Column.5": "time",
+            "uid": "671c3c48-f014-421d-b3e0-57991b6745f6", # Get 
         }
         for key, val in expected_metadata.items():
             self.assertIn(f"# {key.lower()}: {val.lower()}\n", xdi_output.lower())

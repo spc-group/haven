@@ -96,6 +96,7 @@ dependencies:
   - pyRestTable
   - spec2nexus
   - stdlogpj
+  - tqdm
   - xraydb
   - xrayutilities
   

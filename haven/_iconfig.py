@@ -44,7 +44,7 @@ default_config = {
                "voltage_pv": "40iddVME:userCalc1",
         },
     },
-    "fluorescence_detectors": {
+    "fluorescence_detector": {
         "vortex": {
             "pv_prefix": "",
         },
@@ -58,7 +58,7 @@ default_config = {
     },
     "monochromator": {
         "ioc": "mono_ioc",
-        "energy_ioc": "mono_ioc",
+        "energy_ioc": "mono_ioc", # 25-ID has the "Energy" motor on separate PV
     },
     "undulator": {
         "ioc": "id_ioc",

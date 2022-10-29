@@ -9,20 +9,16 @@ from .plans.xafs_scan import xafs_scan  # noqa: F401
 from .plans.auto_gain import auto_gain, AutoGainCallback  # noqa:F401
 from .plans.mono_gap_calibration import calibrate_mono_gap, align_pitch2, knife_scan
 from .plans.auto_gain import auto_gain
+from .run_engine import RunEngine
 from ._iconfig import load_config
 
-from .instrument import ion_chamber, IonChamber, InstrumentRegistry, registry
 from .motor_position import (
     save_motor_position,
     get_motor_position,
     recall_motor_position,
 )
+from .instrument import ion_chamber, IonChamber, InstrumentRegistry, registry
+from .instrument.load_instrument import load_instrument
 
-# from .instrument import (
-#     ion_chamber,
-#     IonChamber,
-#     InstrumentRegistry,
-#     registry,
-# )  # noqa: F401
-# from ._iconfig import load_config  # noqa: F401
 from .xdi_writer import XDIWriter  # noqa: F401
+from .progress_bar import ProgressBar

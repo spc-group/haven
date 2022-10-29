@@ -3,7 +3,7 @@ capture detector signals.
 
 """
 
-from typing import Union, Sequence, Optional
+from typing import Union, Sequence, Optional, Mapping
 
 import numpy as np
 
@@ -29,9 +29,10 @@ def xafs_scan(
     k_max: Optional[float] = None,
     k_weight: float = 0.0,
     E0: Union[float, str] = 0,
-    detectors: DetectorList = "ion_chamber",
-    energy_positioners: Sequence = [],
-    time_positioners: Sequence = [],
+    detectors: DetectorList = "ion_chambers",
+    energy_positioners: Sequence = ["energy"],
+    time_positioners: Sequence = ["I0_exposure_time"],
+    md: Mapping = {},
 ):
     """Collect a spectrum by scanning X-ray energies relative to an
     absorbance edge.
@@ -40,7 +41,7 @@ def xafs_scan(
 
     .. code-block:: python
 
-        xanfs_scan(energy, step, exposure, energy, step, exposure energy, ...)
+        xafs_scan(energy, step, exposure, energy, step, exposure energy, ...)
 
     The optional parameter *E0* can either be an absolute energy in
     electron-volts, or a string of the form "Ni_K" to be looked up in
@@ -129,4 +130,5 @@ def xafs_scan(
         detectors=detectors,
         energy_positioners=energy_positioners,
         time_positioners=time_positioners,
+        md=md,
     )

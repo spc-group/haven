@@ -20,7 +20,7 @@ def slugify(value, allow_unicode=False):
     Taken from https://github.com/django/django/blob/master/django/utils/text.py
     Convert to ASCII if 'allow_unicode' is False. Convert spaces or repeated
     dashes to single dashes. Remove characters that aren't alphanumerics,
-    underscores, or hyphens. Convert to lowercase. Also strip leading and
+    underscores, or hyphens. Also strip leading and
     trailing whitespace, dashes, and underscores.
     """
     value = str(value)
@@ -32,7 +32,6 @@ def slugify(value, allow_unicode=False):
             .encode("ascii", "ignore")
             .decode("ascii")
         )
-    value = re.sub(r"[^/.\w\s-]", "", value.lower())
     return re.sub(r"[-\s]+", "-", value).strip("-_")
 
 
@@ -81,7 +80,7 @@ class XDIWriter(CallbackBase):
 
     _fd = None
     fp: Optional[Union[str, Path]] = None
-    column_names: Sequence[str] = []
+    column_names: Optional[Sequence[str]] = None
     start_time: dt.datetime = None
 
     def __init__(self, fd, *args, **kwargs):
@@ -98,7 +97,7 @@ class XDIWriter(CallbackBase):
                 raise exceptions.FileNotWritable(msg)
         else:
             # Assume *fd* is a path to a file
-            self.fp = Path(fd)
+            self.fp = Path(fd).expanduser()
         return super().__init__(*args, **kwargs)
 
     @property
@@ -139,22 +138,22 @@ class XDIWriter(CallbackBase):
                 raise exceptions.XDIFilenameKeyNotFound(msg) from None
             fp = slugify(fp)
             self.fp = Path(fp)
+        # Save the rest of the start doc so we can write the headers when we get our first datum
+        self.start_doc = doc
+
+    def stop(self, doc):
+        self.fd.close()
+
+    def finish_header(self, doc):
         fd = self.fd
         # Write package version information
         versions = ["XDI/1.0"]
         versions += [f"{name}/{ver}" for name, ver in doc.get("versions", {}).items()]
         fd.write(f"# {' '.join(versions)}\n")
-        # Column names
-        detectors = doc.get("detectors", [])
-        motors = doc.get("motors", [])
-        motors = sorted(
-            motors, key=lambda s: s != "energy"
-        )  # Put energy in the first column
-        self.column_names = motors + detectors + ["time"]
+        # Column Names
         columns = [
             f"# Column.{num+1}: {name}\n" for num, name in enumerate(self.column_names)
         ]
-
         fd.write("".join(columns))
         # X-ray edge information
         edge_str = doc.get("edge", None)
@@ -182,7 +181,7 @@ class XDIWriter(CallbackBase):
                     val = val[piece]
                 fd.write(f"# {path}: {val}\n")
             except KeyError:
-                continue
+                continue        
 
     def event(self, doc):
         """Save the data in tab-separated value, in order of
@@ -190,6 +189,14 @@ class XDIWriter(CallbackBase):
 
         """
         data = doc["data"]
+        # Use metadata from the first event to finish writing the header
+        if self.column_names is None:
+            names = list(data.keys())
+            # Sort column names so that energy-related fields are first
+            names = sorted(names, key=lambda x: not x.startswith("energy"))
+            self.column_names = names + ["time"]
+            self.finish_header(self.start_doc)
+        # Read in and store the actual data
         fd = self.fd
         values = []
         for col in self.column_names:
@@ -198,4 +205,4 @@ class XDIWriter(CallbackBase):
             else:
                 values.append(str(data[col]))
         line = "\t".join(values)
-        fd.write(line)
+        fd.write(line + "\n")
