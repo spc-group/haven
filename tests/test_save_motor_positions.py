@@ -75,12 +75,26 @@ def test_save_motor_position_by_name(mongodb):
     assert result["motors"][1]["readback"] == 23.0
 
 
-def test_get_motor_position(mongodb):
+def test_get_motor_position_by_uid(mongodb):
     result = get_motor_position(uid="abcd123", collection=mongodb.motor_positions)
     assert result.name == "Good position A"
     assert result.motors[0].name == "SLT V Upper"
     assert result.motors[0].readback == 510.5
 
+
+def test_get_motor_position_by_name(mongodb):
+    result = get_motor_position(name="Good position A", collection=mongodb.motor_positions)
+    assert result.name == "Good position A"
+    assert result.uid == "abcd123"
+    assert result.motors[0].name == "SLT V Upper"
+    assert result.motors[0].readback == 510.5        
+
+
+def test_get_motor_position_exceptions(mongodb):
+    # Fails when no query params are given
+    with pytest.raises(TypeError):
+        result = get_motor_position(collection=mongodb.motor_positions)
+    
 
 def test_recall_motor_position(mongodb, sim_registry):
     # Re-set the previous value

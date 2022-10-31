@@ -95,12 +95,22 @@ def list_motor_positions(collection=None):
         print(output, end="")
 
 
-def get_motor_position(uid, collection=None):
+def get_motor_position(uid: Optional[str] = None, name: Optional[str] = None, collection=None):
     """Retrieve a previously saved motor position from the database."""
-    result = collection.find_one({"_id": uid})
+    # Check that at least one of the parameters is given
+    has_query_param = any([val is not None for val in [uid, name]])
+    if not has_query_param:
+        raise TypeError("At least one query parameter (*uid*, *name*) is required")
+    # Build query for finding motor positions
+    query_params = {"_id": uid,
+                    "name": name}
+    # Filter out query parameters that are ``None``
+    query_params = {k: v for k, v in query_params.items() if v is not None}
+    result = collection.find_one(query_params)
+    # Feedback for if no matching motor positions are in the database
     if result is None:
         raise exceptions.DocumentNotFound(
-            f"Could not find document matching: _id={uid}"
+            f'Could not find document matching: _id="{uid}", name="{name}"'
         )
     position = MotorPosition.load(result)
     return position
