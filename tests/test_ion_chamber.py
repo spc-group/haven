@@ -9,10 +9,7 @@ from test_simulated_ioc import ioc_ion_chamber, ioc_scaler
 
 
 def test_gain_level(ioc_ion_chamber):
-    print(ioc_ion_chamber)
     positioner = SensitivityLevelPositioner("preamp_ioc", name="positioner")
-    print(positioner.sens_unit.prefix)
-    print(ioc_ion_chamber)
     positioner.wait_for_connection()
     assert positioner.get().sens_value.readback == epics.caget(
         "preamp_ioc:sens_num.VAL"
@@ -35,16 +32,15 @@ def test_gain_level(ioc_ion_chamber):
 
 
 def test_gain_changes(ioc_ion_chamber, ioc_scaler):
+    # Setup the ion chamber and connect to the IOC
     ion_chamber = IonChamber(
         prefix="vme_crate_ioc", preamp_prefix="preamp_ioc", ch_num=2, name="ion_chamber"
     )
-    # print(ion_chamber.sensitivity.unit.prefix, ioc_ion_chamber)
-
-    ion_chamber.wait_for_connection(5)
-    # Check that it respects the default value in the IOC
+    time.sleep(0.01)
+    ion_chamber.wait_for_connection(timeout=20)
     assert ion_chamber.sensitivity.sens_value.get().readback == 2
     assert ion_chamber.sensitivity.sens_unit.get().readback == 1
-    # Now change the gain without changing units
+    # Change the gain without changing units
     ion_chamber.increase_gain().wait()
     assert ion_chamber.sensitivity.sens_value.get().readback == 1
     assert ion_chamber.sensitivity.sens_unit.get().readback == 1

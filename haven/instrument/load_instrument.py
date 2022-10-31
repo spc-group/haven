@@ -15,3 +15,4 @@ def load_instrument(registry=default_registry, config=None):
     load_energy_positioner(config=config)
     load_ion_chambers(config=config)
     load_vme_motors(config=config)
+    load_monochromator(config=config)

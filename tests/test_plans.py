@@ -7,7 +7,7 @@ from ophyd import sim
 from bluesky.simulators import summarize_plan, check_limits
 
 from run_engine import RunEngineStub
-from haven import align_slits, energy_scan, xafs_scan, ERange, KRange
+from haven import align_slits, energy_scan, xafs_scan, ERange, KRange, registry
 
 
 # logging.basicConfig(level=logging.WARNING)
@@ -30,6 +30,24 @@ class PlanUnitTests(unittest.TestCase):
     exposure_motor = sim.Signal(name="exposure")
     id_gap_motor = sim.SynAxis(name="id_gap_energy", labels={"motors", "energies"})
     RE = RunEngineStub(call_returns_result=True)
+
+    def setUp(self):
+        registry.clear()
+        # Register an ion chamber
+        I0 = sim.SynGauss(
+            "I0",
+            sim.motor,
+            "motor",
+            center=-0.5,
+            Imax=1,
+            sigma=1,
+            labels={"ion_chambers"},
+        )
+        # Register the energy positioner
+        exposure_time = sim.SynAxis(name="I0_exposure_time")
+        energy = sim.SynAxis(name="energy")
+        for dev in [I0, exposure_time, energy]:
+            registry.register(dev)
 
 
 class AlignSlitsTests(PlanUnitTests):
@@ -125,7 +143,7 @@ class EnergyScanTests(PlanUnitTests):
 
     def test_raises_on_empty_positioners(self):
         with self.assertRaises(ValueError):
-            self.RE(energy_scan(self.energies))
+            self.RE(energy_scan(self.energies, energy_positioners=[]))
 
 
 class XafsScanTests(PlanUnitTests):

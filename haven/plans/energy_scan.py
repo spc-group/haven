@@ -100,16 +100,11 @@ def energy_scan(
         log.error(msg)
         raise ValueError(msg)
     # Resolve the detector and positioner list if given by name
-    # try:
-    #     real_detectors = registry.findall(name=detectors)
-    # except exceptions.InvalidComponentLabel:
-    #     log.warning(f"*detectors* is not a valid detector label: {detectors}")
-    #     real_detectors = detectors
-    # except exceptions.ComponentNotFound:
-    #     log.debug("No registered detectors found.")
-    #     real_detectors = detectors
-    # else:
-    real_detectors = registry.findall(detectors)
+    if isinstance(detectors, str):
+        detectors = registry.findall(detectors)
+    real_detectors = []
+    for det in detectors:
+        real_detectors.extend(registry.findall(det))
     log.debug(f"Found registered detectors: {real_detectors}")
     energy_positioners = [registry.find(ep) for ep in energy_positioners]
     time_positioners = [registry.find(tp) for tp in time_positioners]

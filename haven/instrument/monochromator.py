@@ -5,8 +5,6 @@ from .._iconfig import load_config
 from .instrument_registry import registry
 
 
-config = load_config()
-
 @registry.register
 class Monochromator(Device):
     horiz = Cpt(EpicsMotor, ":m1", kind="config")
@@ -27,7 +25,8 @@ class Monochromator(Device):
         self.id_prefix = id_prefix
         super().__init__(prefix, name=name, *args, **kwargs)
 
-
-monochromator = Monochromator(config["monochromator"]["ioc"],
-                              energy_prefix=config["monochromator"]["energy_ioc"],
-                              name="monochromator")
+def load_monochromator(config):
+    monochromator = Monochromator(config["monochromator"]["ioc"],
+                                  energy_prefix=config["monochromator"]["energy_ioc"],
+                                  name="monochromator")
+    return

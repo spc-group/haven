@@ -55,9 +55,6 @@ def test_find_missing_components():
 def test_exceptions():
     reg = InstrumentRegistry()
     reg.register(Device("", name="It"))
-    # Test if a list is given as a label key
-    with pytest.raises(exceptions.InvalidComponentLabel):
-        reg.find(label=[Device("", name="I0")])
     # Test if a non-existent labels throws an exception
     with pytest.raises(exceptions.ComponentNotFound):
         reg.find(label="spam")
@@ -154,7 +151,7 @@ def test_find_any():
     reg.register(cptC)
     reg.register(cptD)
     # Only one match should work fine
-    result = reg.findall(any="ion_chamber")
+    result = reg.findall(any_of="ion_chamber")
     assert cptA in result
     assert cptB in result
     assert cptC in result
@@ -179,3 +176,44 @@ def test_find_by_device():
     # Pass the device itself to the find method
     result = reg.find(cptD)
     assert result is cptD
+
+def test_find_by_list_of_names():
+    """Will the findall() method handle lists of things to look up."""
+    # Prepare registry
+    reg = InstrumentRegistry()
+    # Register a component
+    cptA = sim.SynGauss(
+        "sample motor A",
+        sim.motor,
+        "motor",
+        center=-0.5,
+        Imax=1,
+        sigma=1,
+        labels={},
+    )
+    cptB = sim.SynGauss(
+        "sample motor B",
+        sim.motor,
+        "motor",
+        center=-0.5,
+        Imax=1,
+        sigma=1,
+        labels={},
+    )
+    cptC = sim.SynGauss(
+        "sample motor C",
+        sim.motor,
+        "motor",
+        center=-0.5,
+        Imax=1,
+        sigma=1,
+        labels={},
+    )
+    reg.register(cptA)
+    reg.register(cptB)
+    reg.register(cptC)
+    # Pass the device names into the findall method
+    result = reg.findall(["sample motor A", "sample motor B"])
+    assert cptA in result
+    assert cptB in result
+    assert not cptC in result

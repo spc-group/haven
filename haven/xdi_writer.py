@@ -140,11 +140,13 @@ class XDIWriter(CallbackBase):
             self.fp = Path(fp)
         # Save the rest of the start doc so we can write the headers when we get our first datum
         self.start_doc = doc
+        # Open the file, just to be sure we can
+        self.fd
 
     def stop(self, doc):
         self.fd.close()
 
-    def finish_header(self, doc):
+    def write_header(self, doc):
         fd = self.fd
         # Write package version information
         versions = ["XDI/1.0"]
@@ -181,7 +183,11 @@ class XDIWriter(CallbackBase):
                     val = val[piece]
                 fd.write(f"# {path}: {val}\n")
             except KeyError:
-                continue        
+                continue
+        # Scan ID
+        fd.write(f"# uid: {self.start_doc.get('uid', '')}\n")
+        # Header end token
+        fd.write("# -------------\n")
 
     def event(self, doc):
         """Save the data in tab-separated value, in order of
@@ -195,7 +201,7 @@ class XDIWriter(CallbackBase):
             # Sort column names so that energy-related fields are first
             names = sorted(names, key=lambda x: not x.startswith("energy"))
             self.column_names = names + ["time"]
-            self.finish_header(self.start_doc)
+            self.write_header(self.start_doc)
         # Read in and store the actual data
         fd = self.fd
         values = []

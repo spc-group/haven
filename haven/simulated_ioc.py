@@ -18,6 +18,8 @@ from caproto.server import (
 )
 from epics import caget, caput
 
+from . import exceptions
+
 
 # Subclass the motor fields here. It's important to use this 'register_record'
 # decorator to tell caproto where to find this record:
@@ -44,23 +46,39 @@ class ResponsiveMotorFields(records.MotorFields):
                                             timestamp=timestamp)
 
 
-
 @contextlib.contextmanager
 def simulated_ioc(IOC, prefix):
     ioc_options, run_options = ioc_arg_parser(
-        default_prefix=prefix, argv=[], desc=dedent(IOC.__doc__)
+        default_prefix=prefix, argv=[], desc=dedent(IOC.__doc__),
     )
     ioc = IOC(**ioc_options)
     # Prepare the multiprocessing
+    from pprint import pprint
+    print("###############################")
+    pprint(ioc.pvdb)
+    pprint(run_options)
+    run_options["log_pv_names"] = True
     process = Process(target=run, kwargs=dict(pvdb=ioc.pvdb, **run_options))
     process.start()
-    time.sleep(1)
+    # Get the first value to make sure it's all started
+    time.sleep(0.1)
+    first_pv = next(iter(ioc.pvdb.keys()))
+    timeout = 20
+    first_value = caget(first_pv, timeout=timeout)
+    if first_value is None:
+        raise exceptions.IOCTimeout(f"{first_pv} did not start within {timeout} seconds.")
+    # time.sleep(2)
     # Drop into the calling code to run the tests
     yield ioc.pvdb
     # Stop the process now that the test is done
     process.terminate()
+    kill_start = time.time()
     while process.is_alive():
-        pass
+        if time.time() - kill_start > timeout:
+            raise exceptions.IOCTimeout(f"{IOC} not stopped within {timeout} seconds.")
+        time.sleep(0.1)
+    process.kill()
+    time.sleep(0.1)
     process.close()
 
 
@@ -81,7 +99,7 @@ def ioc_arg_parser(
     description : string
         Human-friendly description of what that IOC does
     default_prefix : string
-    args : list, optional
+    argv : list, optional
         Defaults to sys.argv
     macros : dict, optional
         Maps macro names to default value (string) or None (indicating that
@@ -90,6 +108,7 @@ def ioc_arg_parser(
         "White list" of supported server implementations. The first one will
         be the default. If None specified, the parser will accept all of the
         (hard-coded) choices.
+
     Returns
     -------
     ioc_options : dict

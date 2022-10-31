@@ -15,7 +15,7 @@ from apstools.devices import ApsUndulator
 from ..signal import Signal
 from .._iconfig import load_config
 from .instrument_registry import registry
-from .monochromator import monochromator
+from .monochromator import Monochromator
 
 
 class Undulator(PVPositioner):
@@ -46,7 +46,7 @@ class EnergyPositioner(PseudoPositioner):
         "Given a target energy, transform to the mono and ID energies."
         return self.RealPosition(
             mono_energy=target_energy.energy,
-            id_energy=(target_energy.energy + self.id_offset) / 1000,
+            id_energy=(target_energy.energy + self.id_offset) / 1000.,
         )
 
     @real_position_argument
@@ -60,9 +60,12 @@ class EnergyPositioner(PseudoPositioner):
 def load_energy_positioner(config=None):
     if config is None:
         config = load_config()
+    mono_energy_pv = Monochromator.energy.suffix
+    energy_ioc = config["monochromator"]["energy_ioc"]
+    mono_energy_pv = mono_energy_pv.format(energy_prefix=energy_ioc)
     energy_positioner = EnergyPositioner(
         name="energy",
-        mono_energy_pv=monochromator.energy.prefix,
+        mono_energy_pv=mono_energy_pv,
         id_prefix=config["undulator"]["ioc"],
     )
     registry.register(energy_positioner)

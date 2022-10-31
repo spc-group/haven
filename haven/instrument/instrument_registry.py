@@ -36,15 +36,22 @@ class InstrumentRegistry:
 
     def find(
         self,
-        any: Optional[str] = None,
+        any_of: Optional[str] = None,
         *,
         label: Optional[str] = None,
         name: Optional[str] = None,
     ) -> Component:
         """Find registered device components matching parameters.
 
+        The *any_of* keyword is a proxy for all the other
+        keywords. For example ``findall(any_of="my_device")`` is
+        equivalent to ``findall(name="my_device",
+        label="my_device")``.
+
         Parameters
         ==========
+        any_of
+          Search by all of the other parameters.
         label
           Search by the component's ``labels={"my_label"}`` parameter.
         name
@@ -66,7 +73,7 @@ class InstrumentRegistry:
           ``self.findall()`` method.
 
         """
-        results = self.findall(any=any, label=label, name=name)
+        results = self.findall(any_of=any_of, label=label, name=name)
         if len(results) > 1:
             raise exceptions.MultipleComponentsFound(
                 f"Found {len(results)} components matching query. Consider using ``findall()``."
@@ -80,7 +87,7 @@ class InstrumentRegistry:
 
     def findall(
         self,
-        any: Optional[str] = None,
+        any_of: Optional[str] = None,
         *,
         label: Optional[str] = None,
         name: Optional[str] = None,
@@ -92,13 +99,13 @@ class InstrumentRegistry:
         all devices that have either the name "my_device" or a label
         "ion_chambers".
 
-        The *any* keyword is a proxy for all the other keywords. For
-        example ``findall(any="my_device")`` is equivalent to
+        The *any_of* keyword is a proxy for all the other keywords. For
+        example ``findall(any_of="my_device")`` is equivalent to
         ``findall(name="my_device", label="my_device")``.
 
         Parameters
         ==========
-        any
+        any_of
           Search by all of the other parameters.
         label
           Search by the component's ``labels={"my_label"}`` parameter.
@@ -118,27 +125,38 @@ class InstrumentRegistry:
 
         """
         results = []  # self.components.copy()
-        # Filter by label
-        _label = label if label is not None else any
-        if _label is not None:
-            try:
-                results.extend(
-                    [
-                        cpt
-                        for cpt in self.components
-                        if _label in getattr(cpt, "_ophyd_labels_", [])
-                    ]
-                )
-            except TypeError:
-                raise exceptions.InvalidComponentLabel(label)
-        # Filter by name
-        _name = name if name is not None else any
-        if _name is not None:
-            results.extend([cpt for cpt in self.components if cpt.name == _name])
+        # Define a helper to test for lists of search parameters
+        is_iterable = lambda obj: (not isinstance(obj, str)) and hasattr(obj, "__iter__")
+        if is_iterable(any_of):
+            for a in any_of:
+                results.extend(self.findall(any_of=a))
+        else:
+            # Filter by label
+            _label = label if label is not None else any_of
+            if _label is not None:
+                if is_iterable(_label):
+                    [results.extend(self.findall(label=l)) for l in _label]
+                else:
+                    try:
+                        results.extend(
+                            [
+                                cpt
+                                for cpt in self.components
+                                if _label in getattr(cpt, "_ophyd_labels_", [])
+                            ]
+                        )
+                    except TypeError:
+                        raise exceptions.InvalidComponentLabel(_label)
+            # Filter by name
+            _name = name if name is not None else any_of
+            if _name is not None:
+                if is_iterable(_name):
+                    [results.extend(self.findall(name=n)) for n in _name]
+                results.extend([cpt for cpt in self.components if cpt.name == _name])
         # If a query term is itself a device, just return that
         found_results = len(results) > 0
         if not found_results:
-            for obj in [_label, _name, any]:
+            for obj in [_label, _name, any_of]:
                 if isinstance(obj, ophydobj.OphydObject):
                     results = [obj]
                     break
@@ -175,22 +193,19 @@ class InstrumentRegistry:
             # A class was given, so instances should be auto-registered
             component.__new__ = self.__new__wrapper
         else:  # An instance was given, so just save it in the register
-            # Forget about any previously registered instances with the same name
+            # Ignore any instances with the same name as a previous component
             # (Needed for some sub-components that are just readback values of the parent)
             duplicate_components = [
                 c for c in self.components if c.name == component.name
             ]
-            # if "I0" in [c.name for c in duplicate_components]:
-            # if component.name == "I0":
-            #     import pdb; pdb.set_trace()
-            self.components = [
-                c for c in self.components if c not in duplicate_components
-            ]
-            if len(duplicate_components) > 0:
-                log.debug(
-                    f"Replacing registered components with {component.name}:",
-                    ", ".join([c.name for c in duplicate_components]),
+            # Check that we're not adding a duplicate component name
+            is_duplicate = component.name in [c.name for c in self.components]
+            if is_duplicate:
+                log.warning(
+                    f"Ignoring components with duplicate name {component.name}: "
+                    ", ".join([c.name for c in duplicate_components])
                 )
+                return component
             # Register this component
             self.components.append(component)
             # Recusively register sub-components

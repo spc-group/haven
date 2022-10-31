@@ -111,6 +111,7 @@ class CallbackTests(TestCase):
         },
         "beamline": {"name": "20-ID-C", "pv_prefix": "20id:"},
         "sample_name": "nickel oxide",
+        "uid": "671c3c48-f014-421d-b3e0-57991b6745f6",
     }
     event_doc = {
         "data": {"I0": 2, "It": 1.5, "energy": 8330, "exposure": 0.1},
@@ -167,6 +168,7 @@ class CallbackTests(TestCase):
         self.assertIn("# Element.symbol: Ni", xdi_output)
         self.assertIn("# Element.edge: K", xdi_output)
         self.assertIn("# Mono.d_spacing: 3", xdi_output)
+        self.assertIn("# -------------")
 
     @time_machine.travel(fake_time)
     def test_optional_headers(self):
@@ -174,6 +176,7 @@ class CallbackTests(TestCase):
         os.environ["TZ"] = "America/New_York"
         time.tzset()
         writer("start", self.start_doc)
+        writer("event", self.event_doc)
         # Check that required headers were added to the XDI file
         self.stringio.seek(0)
         xdi_output = self.stringio.read()
@@ -184,7 +187,7 @@ class CallbackTests(TestCase):
             "Beamline.pv_prefix": "20id:",
             "Scan.start_time": "2022-08-19 19:10:51-0400",
             "Column.5": "time",
-            "uid": "671c3c48-f014-421d-b3e0-57991b6745f6", # Get 
+            "uid": "671c3c48-f014-421d-b3e0-57991b6745f6",
         }
         for key, val in expected_metadata.items():
             self.assertIn(f"# {key.lower()}: {val.lower()}\n", xdi_output.lower())

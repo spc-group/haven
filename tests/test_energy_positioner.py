@@ -20,7 +20,7 @@ def test_pseudo_to_real_positioner(ioc_mono, ioc_undulator):
     time.sleep(0.1)  # Caproto breaks pseudopositioner status
     # Check that the mono and ID are both moved
     assert positioner.get().mono_energy.user_setpoint == 5000
-    assert positioner.get().id_energy.setpoint == 5100
+    assert positioner.get().id_energy.setpoint == 5.155
 
 
 def test_real_to_pseudo_positioner(ioc_mono, ioc_undulator):

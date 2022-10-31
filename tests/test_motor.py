@@ -1,13 +1,16 @@
 import pytest
 
 from haven.instrument.instrument_registry import registry
+from haven.instrument import motor
 from test_simulated_ioc import ioc_motor
 
 
-def test_create_motors(ioc_motor):
-    from haven.instrument import motor
-
-    # Were the motors import correctly
+def test_load_vme_motors(ioc_motor):
+    motor.load_vme_motors()
+    # Were the motors imported correctly
     motors = registry.findall(label="motors")
     assert len(motors) == 3
-    assert motors[0].name == "SLT V Upper"
+    motor_names = [m.name for m in motors]
+    assert "SLT V Upper" in motor_names
+    assert "SLT V Lower" in motor_names
+    assert "SLT H Inb" in motor_names

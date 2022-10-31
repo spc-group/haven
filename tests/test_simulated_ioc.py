@@ -23,8 +23,8 @@ class UndulatorIOC(PVGroup):
 
     """
 
-    ScanEnergy = pvproperty(value=0, doc="ID Energy Scan Input")
-    Energy = pvproperty(value=0, doc="", record=ResponsiveMotorFields)
+    ScanEnergy = pvproperty(value=0, doc="ID Energy Scan Input", dtype=PvpropertyDouble)
+    Energy = pvproperty(value=0, doc="", record=ResponsiveMotorFields, dtype=PvpropertyDouble)
     Busy = pvproperty(value=0, doc="")
     Stop = pvproperty(value=0, doc="")
 
@@ -61,12 +61,15 @@ def ioc_mono():
 class ScalerIOC(PVGroup):
     """An IOC mimicing a scaler connected to a VME crate."""
 
-    S2 = pvproperty(value=21000000, doc="It")
+    S2 = pvproperty(name=".S2", value=21000000, doc="It")
+    CNT = pvproperty(name=".CNT", value=1)
+    TP = pvproperty(name=".TP", value=1.)
+    calc2 = pvproperty(name="_calc2.VAL", value=2.35)
 
 
 @pytest.fixture
 def ioc_scaler():
-    with simulated_ioc(ScalerIOC, prefix="vme_crate_ioc.") as pvdb:
+    with simulated_ioc(ScalerIOC, prefix="vme_crate_ioc") as pvdb:
         yield pvdb
 
 
@@ -175,6 +178,7 @@ def ioc_vortex():
 def test_simulated_ioc(ioc_simple):
     assert caget("simple:B") == 2.0
     caput("simple:A", 5)
+    time.sleep(0.1)
     assert caget("simple:A") == 5
 
 
@@ -193,13 +197,43 @@ def test_mono_ioc(ioc_mono):
     assert caget("mono_ioc:m1") == 0.0
     # Change the value
     caput("mono_ioc:m1", 4000.0)
+    time.sleep(0.1)
     # Check that the record got updated
     assert caget("mono_ioc:m1.VAL") == 4000.0
     assert caget("mono_ioc:m1.RBV") == 4000.0
     # Test the energy motor
+    caput("mono_ioc:Energy", 10000.)
+    time.sleep(0.1)
     assert caget("mono_ioc:Energy") == 10000.0
     # Change the value
     caput("mono_ioc:Energy", 6000.0)
+    time.sleep(0.1)
     # Check that the record got updated
     assert caget("mono_ioc:Energy.VAL") == 6000.0
     assert caget("mono_ioc:Energy.RBV") == 6000.0
+
+
+def test_mono_undulator_ioc(ioc_undulator):
+    """Check that both mono and undulator IOC's can load."""
+    pass
+
+
+def test_mono_undulator_ioc_again(ioc_undulator):
+    """Check that both mono and undulator IOC's can load in a second set
+    of tests.
+
+    This is in response to a specific test bug where this would fail.
+
+    """
+    pass
+
+
+def test_mono_undulator_ioc_a_third_time(ioc_undulator):
+    """Check that both mono and undulator IOC's can load in a second set
+    of tests.
+
+    This is in response to a specific test bug where this would fail.
+
+    """
+    pass
+
