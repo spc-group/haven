@@ -3,6 +3,7 @@ from typing import Optional, Sequence
 import logging
 
 from pydantic import BaseModel
+import intake
 import pymongo
 from bluesky import plans as bp, plan_stubs as bps
 from ophyd import EpicsMotor
@@ -42,6 +43,13 @@ class MotorPosition(BaseModel):
         return position
 
 
+def default_collection():
+    catalog = intake.catalog.load_combo_catalog()['haven']
+    client = catalog._asset_registry_db.client
+    collection = client.get_database().get_collection("motor_positions")
+    return collection
+
+
 def save_motor_position(*motors, name: str, collection=None):
     """Save the current positions of a number of motors to a database.
 
@@ -61,6 +69,9 @@ def save_motor_position(*motors, name: str, collection=None):
     item_id
       The ID of the item in the database.
     """
+    # Get default collection if none was given
+    if collection is None:
+        collection = default_collection()
     # Resolve device names or labels
     motors = [registry.find(name=m) for m in motors]
     # Prepare the motor positions
@@ -83,16 +94,26 @@ def save_motor_position(*motors, name: str, collection=None):
 
 
 def list_motor_positions(collection=None):
+    # Get default collection if none was given
+    if collection is None:
+        collection = default_collection()
+    # Get the motor positions from disk
     results = collection.find()
+    # Go through the results and display them
+    were_found = False
     for doc in results:
+        were_found = True
         position = MotorPosition.load(doc)
-        output = f'"\n{position.name}" (uid="{position.uid}")\n'
+        output = f'\n"{position.name}" (uid="{position.uid}")\n'
         for idx, motor in enumerate(position.motors):
             # Figure out some nice tree aesthetics
             is_last_motor = idx == (len(position.motors) - 1)
             box_char = "┗" if is_last_motor else "┣"
             output += f'{box_char}━"{motor.name}": {motor.readback}\n'
         print(output, end="")
+    # Some feedback in the case of empty motor positions
+    if not were_found:
+        print(f"No motor positions found: {collection}")
 
 
 def get_motor_position(uid: Optional[str] = None, name: Optional[str] = None, collection=None):
@@ -101,6 +122,9 @@ def get_motor_position(uid: Optional[str] = None, name: Optional[str] = None, co
     has_query_param = any([val is not None for val in [uid, name]])
     if not has_query_param:
         raise TypeError("At least one query parameter (*uid*, *name*) is required")
+    # Get default collection if none was given
+    if collection is None:
+        collection = default_collection()
     # Build query for finding motor positions
     query_params = {"_id": uid,
                     "name": name}
@@ -116,9 +140,12 @@ def get_motor_position(uid: Optional[str] = None, name: Optional[str] = None, co
     return position
 
 
-def recall_motor_position(uid, collection=None):
+def recall_motor_position(uid: Optional[str] = None, name: Optional[str] = None, collection=None):
+    # Get default collection if none was given
+    if collection is None:
+        collection = default_collection()
     # Get the saved position from the database
-    position = get_motor_position(uid=uid, collection=collection)
+    position = get_motor_position(uid=uid, name=name, collection=collection)
     # Create a move plan to recall the position
     plan_args = []
     for axis in position.motors:

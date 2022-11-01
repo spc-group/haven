@@ -2,6 +2,7 @@ from .instrument_registry import registry as default_registry
 from .energy_positioner import load_energy_positioner
 from .motor import load_vme_motors
 from .ion_chamber import load_ion_chambers
+from .monochromator import load_monochromator
 from .._iconfig import load_config
 
 
