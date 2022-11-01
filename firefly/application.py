@@ -28,6 +28,14 @@ ui_dir = Path(__file__).parent
 class FireflyApplication(PyDMApplication):
     xafs_scan_window = None
 
+<<<<<<< HEAD
+=======
+    # Actions defined here
+    run_plan = Signal(generator)
+    pause_run_engine: QAction()
+    setup_run_engine = Signal(FireflyRunEngine)
+
+>>>>>>> 189e873 (First attempt at a Qt-based RunEngine. Does not work yet.)
     def __init__(self, ui_file=None, use_main_window=False, *args, **kwargs):
         # Instantiate the parent class
         # (*ui_file* and *use_main_window* let us render the window here instead)
@@ -81,6 +89,28 @@ class FireflyApplication(PyDMApplication):
             slot = partial(self.show_motor_window, motor=motor)
             action.triggered.connect(slot)
             self.motor_window_slots.append(slot)
+
+    def prepare_run_engine(self, run_engine=None):
+        thread = QThread()
+        runner = EngineRunner(thread=thread)
+        # runner.moveToThread(thread)
+        # Prepare actions for controlling the run engine
+        print("prepare_run_engine: ", asyncio.get_event_loop())
+        self.pause_run_engine = QAction(self)
+        # Connect actions to signals for controlling the run engine
+        self.pause_run_engine.triggered.connect(runner.request_pause)
+        self.run_plan.connect(runner.run_plan)
+        self.setup_run_engine.connect(runner.setup_run_engine)
+        run_engine = FireflyRunEngine()
+        self.setup_run_engine.emit(run_engine)
+        # Start the thread
+        print("prepare_run_engine (pre_start): ", asyncio.get_event_loop())        
+        thread.start()
+        
+        print("prepare_run_engine (post_start):", asyncio.get_event_loop())
+        # Save references to the thread and runner
+        self._engine_runner_thread = thread
+        self._engine_runner = runner
 
     def connect_menu_signals(self, window):
         """Connects application-level signals to the associated slots.
