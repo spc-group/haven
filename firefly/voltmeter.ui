@@ -65,7 +65,7 @@
         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
        </property>
        <property name="channel" stdset="0">
-        <string>${IOC_VME}:3820:scaler1.NM${CHANNEL_NUMBER}</string>
+        <string>${PREFIX}.NM${CHANNEL_NUMBER}</string>
        </property>
        <property name="displayFormat" stdset="0">
         <enum>PyDMLabel::String</enum>
@@ -92,7 +92,7 @@
         <bool>true</bool>
        </property>
        <property name="channel" stdset="0">
-        <string>${IOC_VME}:3820:scaler1_calc${CHANNEL_NUMBER}.VAL</string>
+        <string>${PREFIX}_calc${CHANNEL_NUMBER}.VAL</string>
        </property>
        <property name="showValue" stdset="0">
         <bool>false</bool>
@@ -173,7 +173,7 @@
             <bool>false</bool>
            </property>
            <property name="channel" stdset="0">
-            <string>${IOC_VME}:3820:scaler1_calc${CHANNEL_NUMBER}.VAL</string>
+            <string>${PREFIX}_calc${CHANNEL_NUMBER}.VAL</string>
            </property>
           </widget>
          </item>
@@ -229,7 +229,7 @@
          <property name="sizeHint" stdset="0">
           <size>
            <width>20</width>
-           <height>40</height>
+           <height>0</height>
           </size>
          </property>
         </spacer>
@@ -302,6 +302,42 @@
         </layout>
        </item>
        <item>
+        <layout class="QHBoxLayout" name="horizontalLayout">
+         <property name="spacing">
+          <number>0</number>
+         </property>
+         <property name="topMargin">
+          <number>5</number>
+         </property>
+         <item>
+          <widget class="PyDMLabel" name="sens_num_label">
+           <property name="toolTip">
+            <string/>
+           </property>
+           <property name="text">
+            <string>20</string>
+           </property>
+           <property name="channel" stdset="0">
+            <string>${PREAMP_PREFIX}:sens_num.VAL</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="PyDMLabel" name="sens_unit_label">
+           <property name="toolTip">
+            <string/>
+           </property>
+           <property name="text">
+            <string>mA/V</string>
+           </property>
+           <property name="channel" stdset="0">
+            <string>${PREAMP_PREFIX}:sens_unit.VAL</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
         <spacer name="verticalSpacer_2">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
@@ -309,7 +345,7 @@
          <property name="sizeHint" stdset="0">
           <size>
            <width>20</width>
-           <height>40</height>
+           <height>0</height>
           </size>
          </property>
         </spacer>

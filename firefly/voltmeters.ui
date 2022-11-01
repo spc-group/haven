@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>594</width>
-    <height>414</height>
+    <width>640</width>
+    <height>554</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -18,7 +18,7 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
    <item>
-    <layout class="QVBoxLayout" name="lytVoltmeters">
+    <layout class="QVBoxLayout" name="voltmeters_layout">
      <item>
       <widget class="PyDMEmbeddedDisplay" name="voltmeter_0">
        <property name="toolTip">
@@ -73,9 +73,27 @@
      </item>
     </layout>
    </item>
+   <item>
+    <widget class="PyDMCheckbox" name="PyDMCheckbox">
+     <property name="toolTip">
+      <string/>
+     </property>
+     <property name="text">
+      <string>Continuous counting</string>
+     </property>
+     <property name="channel" stdset="0">
+      <string>${PREFIX}.CNT</string>
+     </property>
+    </widget>
+   </item>
   </layout>
  </widget>
  <customwidgets>
+  <customwidget>
+   <class>PyDMCheckbox</class>
+   <extends>QCheckBox</extends>
+   <header>pydm.widgets.checkbox</header>
+  </customwidget>
   <customwidget>
    <class>PyDMEmbeddedDisplay</class>
    <extends>QFrame</extends>
