@@ -26,9 +26,9 @@ class VoltmeterDisplay(display.FireflyDisplay):
         # Create and store the hardware device
         ch_num = self.macros().get("CHANNEL_NUMBER", None)
         config = load_config()
-        preamp_ioc = config["ion_chamber"]["preamp"]["ioc"]
-        record = self.macros().get("PREAMP_PREFIX", "")
-        preamp_prefix = f"{preamp_ioc}:{record}"
+        # preamp_ioc = config["ion_chamber"]["preamp"]["ioc"]
+        preamp_prefix = self.macros().get("PREAMP_PREFIX", "")
+        # preamp_prefix = f"{preamp_ioc}:{record}"
         if self._device is None:
             if ch_num is not None:
                 # Create a new device
