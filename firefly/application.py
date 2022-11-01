@@ -1,14 +1,18 @@
 from pathlib import Path
 from dataclasses import dataclass, field
 from typing import Optional, Union, Mapping
+import asyncio
 
-from qtpy.QtCore import Slot
+from qtpy.QtWidgets import QAction
+from qtpy.QtCore import Slot, QThread, Signal, QObject
 from pydm.application import PyDMApplication
 from pydm.display import load_file
 from pydm.utilities.stylesheet import apply_stylesheet
 
 from .main_window import FireflyMainWindow
+from .engine_runner import EngineRunner, FireflyRunEngine
 
+generator = type((x for x in []))
 
 __all__ = ["ui_dir", "FireflyApplication"]
 
@@ -16,32 +20,13 @@ __all__ = ["ui_dir", "FireflyApplication"]
 ui_dir = Path(__file__).parent
 
 
-# @dataclass
-# class WindowShower():
-#     __name__ = ""
-#     WindowClass: type
-#     ui_file: Union[Path, str]
-#     name: Optional[str] = None
-#     macros: Mapping = field(default_factory=dict)
-
-#     def __set_name__(self, obj, name):
-#         self.__name__ = name
-    
-#     def __get__(self, obj, *args, **kwargs):
-#         print(self.__call__)
-#         return self.__call__
-    
-#     @Slot(bool)
-#     def __call__(self, val, *args, **kwargs):
-#         print(self.__name__, self.obj)
-#         self.obj.show_window(WindowClass=self.WindowClass,
-#                              ui_file=self.ui_file, name=self.name,
-#                              macros=self.macros)
-
-
-
 class FireflyApplication(PyDMApplication):
     xafs_scan_window = None
+
+    # Actions defined here
+    run_plan = Signal(generator)
+    pause_run_engine: QAction()
+    setup_run_engine = Signal(FireflyRunEngine)
 
     def __init__(self, ui_file=None, use_main_window=False, *args, **kwargs):
         # Instantiate the the parent class
@@ -50,7 +35,32 @@ class FireflyApplication(PyDMApplication):
         self.windows = {}
         self.show_status_window()
         # self.connect_menu_signals(window=self.windows['beamline_status'])        
-        # self.windows['beamline_status'].actionShow_Xafs_Scan.triggered.emit()        
+        # self.windows['beamline_status'].actionShow_Xafs_Scan.triggered.emit()
+
+    def prepare_run_engine(self, run_engine=None):
+        thread = QThread()
+        runner = EngineRunner(thread=thread)
+        # runner.moveToThread(thread)
+        # Prepare actions for controlling the run engine
+        print("prepare_run_engine: ", asyncio.get_event_loop())
+        self.pause_run_engine = QAction(self)
+        # Connect actions to signals for controlling the run engine
+        self.pause_run_engine.triggered.connect(runner.request_pause)
+        self.run_plan.connect(runner.run_plan)
+        self.setup_run_engine.connect(runner.setup_run_engine)
+        run_engine = FireflyRunEngine()
+        self.setup_run_engine.emit(run_engine)
+        # Start the thread
+        print("prepare_run_engine (pre_start): ", asyncio.get_event_loop())        
+        thread.start()
+        
+        print("prepare_run_engine (post_start):", asyncio.get_event_loop())
+        # Save references to the thread and runner
+        self._engine_runner_thread = thread
+        self._engine_runner = runner
+
+    # def pause_run_engine(self, defer=False):
+    #     self.run_engine_pause_requested.emit(defer)
 
     def connect_menu_signals(self, window):
         """Connects application-level signals to the associated slots.
