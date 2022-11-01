@@ -41,6 +41,10 @@ def main():
     # from pydm import PyDMApplication
     from .application import FireflyApplication
     from pydm.utilities.macro import parse_macro_string
+    import haven
+
+    # Define devices on the beamline
+    haven.load_instrument()
 
     parser = argparse.ArgumentParser(description="Python Display Manager")
     parser.add_argument(
