@@ -1,7 +1,7 @@
 import logging
 
 from pydm.widgets.channel import PyDMChannel
-from haven.instrument.ion_chamber import IonChamber, pv_prefix, preamp_ioc
+from haven.instrument.ion_chamber import IonChamber, pv_prefix
 from haven import load_config
 
 from firefly import display
@@ -25,6 +25,8 @@ class VoltmeterDisplay(display.FireflyDisplay):
     def customize_device(self):
         # Create and store the hardware device
         ch_num = self.macros().get("CHANNEL_NUMBER", None)
+        config = load_config()
+        preamp_ioc = config["ion_chamber"]["preamp"]["ioc"]
         preamp_prefix = f"{preamp_ioc}:" + self.macros().get("PREAMP_PREFIX", None)
         if self._device is None:
             if ch_num is not None:

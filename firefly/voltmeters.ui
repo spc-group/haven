@@ -64,7 +64,7 @@
         <string/>
        </property>
        <property name="macros" stdset="0">
-        <string>{&quot;CHANNEL_NUMBER&quot;: 5, &quot;PREAMP_PREFIX&quot;: &quot;SR08:Iref&quot;}</string>
+        <string>{&quot;CHANNEL_NUMBER&quot;: 5, &quot;PREAMP_PREFIX&quot;: &quot;SR04:It&quot;}</string>
        </property>
        <property name="filename" stdset="0">
         <string>voltmeter.py</string>
