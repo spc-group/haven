@@ -24,7 +24,7 @@ class VoltmetersDisplay(display.FireflyDisplay):
             self.voltmeters_layout.takeAt(idx).widget().deleteLater()
         # Add embedded displays for all the ion chambers
         ion_chambers = haven.registry.findall(label="ion_chambers")
-        for ic in ion_chambers:
+        for ic in sorted(ion_chambers, key=lambda c: c.ch_num):
             disp = PyDMEmbeddedDisplay(parent=self)
             disp.macros = json.dumps({"CHANNEL_NUMBER": ic.ch_num,
                                       "PREAMP_PREFIX": ic.preamp_prefix,
