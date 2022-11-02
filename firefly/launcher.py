@@ -43,9 +43,6 @@ def main():
     from pydm.utilities.macro import parse_macro_string
     import haven
 
-    # Define devices on the beamline
-    haven.load_instrument()
-
     parser = argparse.ArgumentParser(description="Python Display Manager")
     parser.add_argument(
         'displayfile',
@@ -138,6 +135,9 @@ def main():
     if pydm_args.log_level:
         logger.setLevel(pydm_args.log_level)
         handler.setLevel(pydm_args.log_level)
+
+    # Define devices on the beamline
+    haven.load_instrument()
 
     app = FireflyApplication(
         ui_file=pydm_args.displayfile,

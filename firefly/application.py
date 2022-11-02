@@ -1,11 +1,15 @@
+import logging
 from pathlib import Path
 from dataclasses import dataclass, field
 from typing import Optional, Union, Mapping
+from functools import partial
 
-from qtpy.QtCore import Slot
+from qtpy import QtWidgets, QtCore
 from pydm.application import PyDMApplication
 from pydm.display import load_file
 from pydm.utilities.stylesheet import apply_stylesheet
+from haven.exceptions import ComponentNotFound
+from haven import HavenMotor, registry
 
 from .main_window import FireflyMainWindow
 
@@ -13,53 +17,55 @@ from .main_window import FireflyMainWindow
 __all__ = ["ui_dir", "FireflyApplication"]
 
 
+log = logging.getLogger(__name__)
+
+
 ui_dir = Path(__file__).parent
-
-
-# @dataclass
-# class WindowShower():
-#     __name__ = ""
-#     WindowClass: type
-#     ui_file: Union[Path, str]
-#     name: Optional[str] = None
-#     macros: Mapping = field(default_factory=dict)
-
-#     def __set_name__(self, obj, name):
-#         self.__name__ = name
-    
-#     def __get__(self, obj, *args, **kwargs):
-#         print(self.__call__)
-#         return self.__call__
-    
-#     @Slot(bool)
-#     def __call__(self, val, *args, **kwargs):
-#         print(self.__name__, self.obj)
-#         self.obj.show_window(WindowClass=self.WindowClass,
-#                              ui_file=self.ui_file, name=self.name,
-#                              macros=self.macros)
-
 
 
 class FireflyApplication(PyDMApplication):
     xafs_scan_window = None
-
+    
     def __init__(self, ui_file=None, use_main_window=False, *args, **kwargs):
-        # Instantiate the the parent class
+        # Instantiate the parent class
         # (*ui_file* and *use_main_window* let us render the window here instead)
-        super().__init__(ui_file = None, use_main_window=use_main_window, *args, **kwargs)
+        super().__init__(ui_file=None, use_main_window=use_main_window, *args, **kwargs)
         self.windows = {}
+        # Make actions for launching each motor window
+        self.prepare_motor_windows()
+        # Launch the default display
         self.show_status_window()
-        # self.connect_menu_signals(window=self.windows['beamline_status'])        
-        # self.windows['beamline_status'].actionShow_Xafs_Scan.triggered.emit()        
+
+    def prepare_motor_windows(self):
+        """Prepare the support for opening motor windows."""
+        # Get active motors
+        try:
+            motors = sorted(registry.findall(label="motors"), key=lambda x: x.name)
+        except ComponentNotFound:
+            log.warning("No motors found, [Positioners] -> [Motors] menu will be empty.")
+            motors = []
+        # Create menu actions for each motor
+        self.motor_actions = []
+        self.motor_window_slots = []
+        self.motor_windows = {}
+        for motor in motors:
+            action = QtWidgets.QAction(self)
+            action.setObjectName(f"actionShow_Motor_{motor.name}")
+            action.setText(motor.name)
+            self.motor_actions.append(action)
+            # Create a slot for opening the motor window
+            slot = partial(self.show_motor_window, motor=motor)
+            action.triggered.connect(slot)
+            self.motor_window_slots.append(slot)
 
     def connect_menu_signals(self, window):
         """Connects application-level signals to the associated slots.
-
+        
         These signals should generally be applicable to multiple
         windows. If the signal and/or slot is specific to a given
         window, then it should be in that widnow's class definition
         and setup code.
-
+        
         """
         window.actionShow_Log_Viewer.triggered.connect(self.show_log_viewer_window)
         window.actionShow_Xafs_Scan.triggered.connect(self.show_xafs_scan_window)
@@ -99,24 +105,31 @@ class FireflyApplication(PyDMApplication):
             main_window.show()
         return main_window
 
+    def show_motor_window(self, *args, motor: HavenMotor):
+        """Instantiate a new main window for this application."""
+        motor_name = motor.name.replace(" ", "_")
+        self.show_window(FireflyMainWindow, ui_dir / "motor.ui",
+                         name=f"FireflyMainWindow_motor_{motor_name}",
+                         macros={"PREFIX": motor.prefix})
+
     def show_status_window(self, stylesheet_path=None):
         """Instantiate a new main window for this application."""
         self.show_window(FireflyMainWindow, ui_dir / "status.ui", name="beamline_status")
 
     make_main_window = show_status_window
 
-    @Slot()
+    @QtCore.Slot()
     def show_log_viewer_window(self):
         self.show_window(FireflyMainWindow, ui_dir / "log_viewer.ui", name="log_viewer")
 
-    @Slot()
+    @QtCore.Slot()
     def show_xafs_scan_window(self):
         self.show_window(FireflyMainWindow, ui_dir / "xafs_scan.ui", name="xafs_scan")
 
-    @Slot()
+    @QtCore.Slot()
     def show_voltmeters_window(self):
         self.show_window(FireflyMainWindow, ui_dir / "voltmeters.py", name="voltmeters")
 
-    @Slot()
+    @QtCore.Slot()
     def show_sample_viewer_window(self):
         self.show_window(FireflyMainWindow, ui_dir / "sample_viewer.ui", name="sample_viewer")
