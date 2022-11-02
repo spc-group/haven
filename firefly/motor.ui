@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>319</width>
-    <height>162</height>
+    <width>191</width>
+    <height>203</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -35,7 +35,7 @@
         <set>Qt::AlignCenter</set>
        </property>
        <property name="channel" stdset="0">
-        <string>${PV}.DESC</string>
+        <string>${PREFIX}.DESC</string>
        </property>
       </widget>
      </item>
@@ -59,7 +59,7 @@
         <bool>true</bool>
        </property>
        <property name="channel" stdset="0">
-        <string>${PV}.RBV</string>
+        <string>${PREFIX}.RBV</string>
        </property>
       </widget>
      </item>
@@ -90,7 +90,7 @@
           <string>5000.0281</string>
          </property>
          <property name="channel" stdset="0">
-          <string>${PV}.VAL</string>
+          <string>${PREFIX}.VAL</string>
          </property>
         </widget>
        </item>
@@ -110,6 +110,19 @@
       </layout>
      </item>
      <item>
+      <widget class="PyDMPushButton" name="PyDMPushButton_3">
+       <property name="toolTip">
+        <string/>
+       </property>
+       <property name="text">
+        <string>Stop</string>
+       </property>
+       <property name="channel" stdset="0">
+        <string>${PREFIX}.STOP</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <layout class="QHBoxLayout" name="horizontalLayout">
        <property name="bottomMargin">
         <number>0</number>
@@ -117,10 +130,16 @@
        <item>
         <widget class="PyDMPushButton" name="PyDMPushButton">
          <property name="sizePolicy">
-          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>30</width>
+           <height>16777215</height>
+          </size>
          </property>
          <property name="font">
           <font>
@@ -134,7 +153,7 @@
           <string>❰</string>
          </property>
          <property name="channel" stdset="0">
-          <string>${PV}.TWR</string>
+          <string>${PREFIX}.TWR</string>
          </property>
         </widget>
        </item>
@@ -153,17 +172,23 @@
           <set>Qt::AlignCenter</set>
          </property>
          <property name="channel" stdset="0">
-          <string>${PV}.TWV</string>
+          <string>${PREFIX}.TWV</string>
          </property>
         </widget>
        </item>
        <item>
         <widget class="PyDMPushButton" name="PyDMPushButton_2">
          <property name="sizePolicy">
-          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>30</width>
+           <height>16777215</height>
+          </size>
          </property>
          <property name="font">
           <font>
@@ -177,24 +202,71 @@
           <string>❱</string>
          </property>
          <property name="channel" stdset="0">
-          <string>${PV}.TWF</string>
+          <string>${PREFIX}.TWF</string>
          </property>
         </widget>
        </item>
       </layout>
      </item>
      <item>
-      <widget class="PyDMPushButton" name="PyDMPushButton_3">
-       <property name="toolTip">
-        <string/>
-       </property>
-       <property name="text">
-        <string>Stop</string>
-       </property>
-       <property name="channel" stdset="0">
-        <string>${PV}.STOP</string>
+      <widget class="Line" name="line">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
        </property>
       </widget>
+     </item>
+     <item>
+      <spacer name="verticalSpacer">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>20</width>
+         <height>40</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <layout class="QHBoxLayout" name="horizontalLayout_5">
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
+       <item>
+        <widget class="QPushButton" name="pushButton_2">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="text">
+          <string>Save/Restore</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="horizontalSpacer_3">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QPushButton" name="pushButton">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="text">
+          <string>Debug</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </item>
     </layout>
    </item>

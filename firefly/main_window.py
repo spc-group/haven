@@ -4,9 +4,7 @@ from pydm.main_window import PyDMMainWindow
 # from qtpy.QtCore import Slot
 from qtpy import QtCore, QtGui, QtWidgets
 
-from haven.instrument.instrument_registry import registry
 from haven.instrument import motor
-from haven.exceptions import ComponentNotFound
 from haven.instrument import motor
 
 
@@ -15,6 +13,7 @@ log = logging.getLogger(__name__)
 
 class FireflyMainWindow(PyDMMainWindow):
     def __init__(self, *args, **kwargs):
+        print(args, kwargs)
         super().__init__(*args, **kwargs)
         self.customize_ui()
         self.export_actions()
@@ -71,19 +70,9 @@ class FireflyMainWindow(PyDMMainWindow):
         self.ui.menuMotors.setObjectName("menuMotors")
         self.ui.menuMotors.setTitle("Motors")
         self.ui.menuPositioners.addAction(self.ui.menuMotors.menuAction())
-        # Add each individual motor to the motors sub-menu
-        try:
-            motors = sorted(registry.findall(label="motors"), key=lambda x: x.name)
-        except ComponentNotFound:
-            log.warning("No motors found, [Positioners] -> [Motors] menu will be empty.")
-            motors = []
-        self.ui.motor_actions = []
-        for motor in motors:
-            action = QtWidgets.QAction(self)
-            action.setObjectName(f"actionShow_Motor_{motor.name}")
-            action.setText(motor.name)
-            self.ui.menuMotors.addAction(action)
-            self.ui.motor_actions.append(action)
+        # Add actions to the motors sub-menu
+        # for motor in motors:
+        #     self.ui.menuMotors.addAction(action)
         # Scans menu
         self.ui.menuScans = QtWidgets.QMenu(self.ui.menubar)
         self.ui.menuScans.setObjectName("menuScans")
