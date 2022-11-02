@@ -18,8 +18,15 @@ from .motor_position import (
     get_motor_position,
     recall_motor_position,
 )
-from .instrument import ion_chamber, IonChamber, InstrumentRegistry, registry, Monochromator
+from .instrument import (
+    ion_chamber,
+    IonChamber,
+    InstrumentRegistry,
+    registry,
+    Monochromator,
+)
 from .instrument.load_instrument import load_instrument
+from .instrument.motor import HavenMotor
 
 from .xdi_writer import XDIWriter  # noqa: F401
 from .progress_bar import ProgressBar

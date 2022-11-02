@@ -16,11 +16,12 @@ class HavenMotor(EpicsMotor):
 
     Returns to the previous value when being unstaged.
     """
+
     def stage(self):
         super().stage()
         # Save starting position to restore later
         self._old_value = self.user_readback.value
-        
+
     def unstage(self):
         super().unstage()
         # Restore the previously saved position after the scan ends
@@ -37,7 +38,6 @@ def load_vme_motors(config=None):
     motors = []
     while True:
         motor_num += 1
-        log.debug(f"Looking for motor number {motor_num}")
         pv = f"{ioc}:m{motor_num}"
         # Take the name of the ophyd motor from the epics description
         log.debug(f"Looking for motor {motor_num} at {pv}")
