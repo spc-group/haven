@@ -37,12 +37,9 @@ default_config = {
         "is_connected": False,
     },
     "ion_chamber": {
-        "scaler": {"ioc": "", "record": ""},
+        "scaler": {"ioc": "scaler_ioc", "record": "scaler1"},
         "preamp": {"ioc": "preamp_ioc"},
-        "I0": {"scaler_channel": 2,
-               "preamp_record": "SR570_1",
-               "voltage_pv": "40iddVME:userCalc1",
-        },
+        "ch2": {"preamp_record": "SR570_1"}
     },
     "fluorescence_detector": {
         "vortex": {
@@ -54,7 +51,7 @@ default_config = {
         "xray_source": "insertion device",
     },
     "motor": {
-        "ioc": "vme_crate_ioc",
+        "iocs": ["vme_crate_ioc"],
     },
     "monochromator": {
         "ioc": "mono_ioc",

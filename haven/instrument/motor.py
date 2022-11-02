@@ -28,11 +28,15 @@ class HavenMotor(EpicsMotor):
         self.set(self._old_value, wait=True)
 
 
-def load_vme_motors(config=None):
+def load_all_motors(config=None):
     if config is None:
         config = load_config()
     # Figure out the prefix
-    ioc = config["motor"]["ioc"]
+    for ioc in config["motor"]["iocs"]:
+        log.info(f"Auto-detecing motors from IOC: {ioc}")
+        load_ioc_motors(ioc)
+
+def load_ioc_motors(ioc):
     # Create motor objects
     motor_num = 0
     motors = []

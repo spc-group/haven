@@ -115,7 +115,7 @@ def test_list_motor_positions(mongodb, capsys):
     # Check stdout for printed motor positions
     captured = capsys.readouterr()
     assert len(captured.out) > 0
-    expected = ('"\nGood position A" (uid="abcd123")\n'
+    expected = ('\n"Good position A" (uid="abcd123")\n'
                 '┣━"SLT V Upper": 510.5\n'
                 '┗━"SLT V Lower": -211.93\n')
     assert captured.out == expected
