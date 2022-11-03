@@ -129,9 +129,13 @@ def test_motor_position_e2e(mongodb, ioc_motor):
     # Create an epics motor for setting values manually
     pv = "vme_crate_ioc:m1"
     motor1 = EpicsMotor(pv, name="SLT V Upper")
+    motor1.wait_for_connection()
+    assert motor1.connected
     registry.register(motor1)
     registry.find(name="SLT V Upper")
     epics.caput(pv, 504.6)
+    assert epics.caget(pv, use_monitor=False) == 504.6
+    assert motor1.get(use_monitor=False).user_readback == 504.6
     time.sleep(0.1)
     # Save motor position
     uid = save_motor_position(
@@ -140,13 +144,12 @@ def test_motor_position_e2e(mongodb, ioc_motor):
     # Change to a different value
     epics.caput(pv, 520)
     time.sleep(0.1)
-    assert motor1.get().user_readback == 520
+    assert epics.caget(pv, use_monitor=False) == 520
+    assert motor1.get(use_monitor=False).user_readback == 520
     # Recall the saved position and see if it complies
     RE = RunEngine()
     plan = recall_motor_position(uid=uid, collection=mongodb.motor_positions)
     msg = next(plan)
-    from pprint import pprint
-
-    pprint(list(plan))
+    print(msg)
     assert msg.obj.name == "SLT V Upper"
     assert msg.args[0] == 504.6

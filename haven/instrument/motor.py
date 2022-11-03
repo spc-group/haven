@@ -60,5 +60,5 @@ def load_ioc_motors(ioc):
                 name=name,
                 labels={"motors"},
             )
-            log.debug(f"Created motor {motor}")
+            log.info(f"Created motor {motor}")
             motors.append(motor)

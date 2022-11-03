@@ -1,6 +1,8 @@
 # Emacs autosaves
 *~
 
+prof/
+
 .loglogin
 
 # Byte-compiled / optimized / DLL files

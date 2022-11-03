@@ -74,10 +74,17 @@ def save_motor_position(*motors, name: str, collection=None):
         collection = default_collection()
     # Resolve device names or labels
     motors = [registry.find(name=m) for m in motors]
+
     # Prepare the motor positions
     def rbv(motor):
         """Helper function to get readback value (rbv)."""
-        motor_data = motor.get()
+        try:
+            # Wrap this in a try block because not every signal has this argument
+            motor_data = motor.get(use_monitor=False)
+            print(motor_data)
+        except TypeError:
+            log.debug("Failed to do get() with ``use_monitor=False``")
+            motor_data = motor.get()
         if hasattr(motor_data, "readback"):
             return motor_data.readback
         elif hasattr(motor_data, "user_readback"):
