@@ -19,13 +19,19 @@ jobs:
       max-parallel: 5
     steps:
     - uses: actions/checkout@v3
-    - name: Install conda environment from environment.yml
+    - name: Install micromamba
       uses: mamba-org/provision-with-micromamba@main
       with:
         environment-file: environment.yml
+    # - name: Create conda environment
+    #   run: |
+    #     micromamba create -n haven -y -f environment-explicit.txt
     - name: Activate conda environment
       run: |
         micromamba activate haven
+    # - name: Install any missing dependencies (mostly via pip)
+    #   run: |
+    #     pip install time-machine autoapi pytest-mongodb        
     - name: Install haven
       run: poetry install
       env:

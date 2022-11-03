@@ -44,7 +44,7 @@ dependencies:
   - pylint
   - pytest
   - pytest-cov
-  - pytest-qt
+  - pytest-qt >=4.2.0
   - caproto >=1.0.0
   # - pytest-notebook
 
@@ -55,7 +55,7 @@ dependencies:
 
   # --- Qt
   - pyqt >=5.12
-  - qt =5
+  - qt >=5.12
 
   # --- general support packages
   - bitshuffle
