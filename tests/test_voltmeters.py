@@ -83,5 +83,4 @@ def test_embedded_display_widgets(qtbot, registry):
     assert hasattr(vms_display, "_ion_chamber_displays")
     assert len(vms_display._ion_chamber_displays) == 2
     assert vms_display.voltmeters_layout.count() == 2
-    print(vms_display.children())
     # import pdb; pdb.set_trace()

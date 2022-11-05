@@ -15,6 +15,8 @@ class VoltmeterDisplay(display.FireflyDisplay):
     gain_units = ["pA/V", "nA/V", "µA/V", "mA/V"]
     
     def __init__(self, device: IonChamber = None, args=None, macros={}, **kwargs):
+        print(device)
+        assert False
         self._device = device
         default_ioc_prefix = load_config()['ion_chamber']['scaler']['ioc']
         print(default_ioc_prefix, macros)
