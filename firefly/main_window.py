@@ -13,7 +13,6 @@ log = logging.getLogger(__name__)
 
 class FireflyMainWindow(PyDMMainWindow):
     def __init__(self, *args, **kwargs):
-        print(args, kwargs)
         super().__init__(*args, **kwargs)
         self.customize_ui()
         self.export_actions()
@@ -92,6 +91,10 @@ class FireflyMainWindow(PyDMMainWindow):
         self.add_menu_action(
             action_name="actionShow_Voltmeters",
             text="Ion Chambers",
+            menu=self.ui.menuDetectors)
+        self.add_menu_action(
+            action_name="actionShow_Cameras",
+            text="Cameras",
             menu=self.ui.menuDetectors)
     
     def export_actions(self):

@@ -71,6 +71,7 @@ class FireflyApplication(PyDMApplication):
         window.actionShow_Xafs_Scan.triggered.connect(self.show_xafs_scan_window)
         window.actionShow_Voltmeters.triggered.connect(self.show_voltmeters_window)
         window.actionShow_Sample_Viewer.triggered.connect(self.show_sample_viewer_window)
+        window.actionShow_Cameras.triggered.connect(self.show_cameras_window)
 
     def show_window(self, WindowClass, ui_file, name=None, macros={}):
         # Come up with the default key for saving in the windows dictionary
@@ -133,3 +134,7 @@ class FireflyApplication(PyDMApplication):
     @QtCore.Slot()
     def show_sample_viewer_window(self):
         self.show_window(FireflyMainWindow, ui_dir / "sample_viewer.ui", name="sample_viewer")
+
+    @QtCore.Slot()
+    def show_cameras_window(self):
+        self.show_window(FireflyMainWindow, ui_dir / "cameras.py", name="cameras")

@@ -7,7 +7,6 @@ from firefly import display
 # from .voltmeter import VoltmeterDisplay
 
 
-
 class VoltmetersDisplay(display.FireflyDisplay):
     _ion_chamber_displays = []
 
