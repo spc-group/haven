@@ -55,10 +55,19 @@ default_config = {
     },
     "monochromator": {
         "ioc": "mono_ioc",
-        "energy_ioc": "mono_ioc", # 25-ID has the "Energy" motor on separate PV
+        "energy_ioc": "mono_ioc",  # 25-ID has the "Energy" motor on separate PV
     },
     "undulator": {
         "ioc": "id_ioc",
+    },
+    "camera": {
+        "imagej_command": "imagej",
+        # Keys for camera definitions must begin with "cam" (e.g. "camA", "camB")
+        "camA": {
+            "name": "s25id-gige-A",
+            "description": "GigE Vision A",
+            "ioc": "camA_ioc",
+        },
     },
 }
 

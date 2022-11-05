@@ -27,6 +27,7 @@ from .instrument import (
 )
 from .instrument.load_instrument import load_instrument
 from .instrument.motor import HavenMotor
+from .instrument.camera import Camera
 
 from .xdi_writer import XDIWriter  # noqa: F401
 from .progress_bar import ProgressBar
