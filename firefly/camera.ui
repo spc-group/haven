@@ -50,10 +50,13 @@
         <string>Start</string>
        </property>
        <property name="channel" stdset="0">
-        <string>${PREFIX}:cam1:Acquire</string>
+        <string>${PREFIX}cam1:Acquire</string>
+       </property>
+       <property name="showConfirmDialog" stdset="0">
+        <bool>false</bool>
        </property>
        <property name="pressValue" stdset="0">
-        <string>None</string>
+        <string>1</string>
        </property>
        <property name="releaseValue" stdset="0">
         <string>1</string>
@@ -69,7 +72,10 @@
         <string>Stop</string>
        </property>
        <property name="channel" stdset="0">
-        <string>${PREFIX}:cam1:Acquire</string>
+        <string>${PREFIX}cam1:Acquire</string>
+       </property>
+       <property name="pressValue" stdset="0">
+        <string>0</string>
        </property>
        <property name="releaseValue" stdset="0">
         <string>0</string>
@@ -85,7 +91,7 @@
         </sizepolicy>
        </property>
        <property name="toolTip">
-        <string>Acquisition status (green=idle, yellow=acquiring, grey=disconnected)</string>
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Acquisition status: &lt;span style=&quot;color:green&quot;&gt;green=idle&lt;/span&gt;, &lt;span style=&quot;color:orange&quot;&gt;yellow=acquiring&lt;/span&gt;, white=disconnected)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
        <property name="alarmSensitiveContent" stdset="0">
         <bool>false</bool>
@@ -94,7 +100,7 @@
         <bool>true</bool>
        </property>
        <property name="channel" stdset="0">
-        <string>{PREFIX}:cam1:Acquire</string>
+        <string>${PREFIX}cam1:Acquire</string>
        </property>
        <property name="onColor" stdset="0">
         <color>
