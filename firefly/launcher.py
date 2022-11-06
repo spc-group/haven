@@ -63,11 +63,6 @@ def main():
         help='Enable cProfile function profiling, printing on exit.'
     )
     parser.add_argument(
-        '--hide-nav-bar',
-        action='store_true',
-        help='Start PyDM with the navigation bar hidden.'
-        )
-    parser.add_argument(
         '--hide-menu-bar',
         action='store_true',
         help='Start PyDM with the menu bar hidden.'
@@ -143,7 +138,6 @@ def main():
         ui_file=pydm_args.displayfile,
         command_line_args=pydm_args.display_args,
         perfmon=pydm_args.perfmon,
-        hide_nav_bar=pydm_args.hide_nav_bar,
         hide_menu_bar=pydm_args.hide_menu_bar,
         hide_status_bar=pydm_args.hide_status_bar,
         fullscreen=pydm_args.fullscreen,

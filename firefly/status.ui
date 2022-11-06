@@ -204,7 +204,7 @@
         <bool>true</bool>
        </property>
        <property name="channel" stdset="0">
-        <string>{energy_pv}</string>
+        <string>{ENERGY_PV}</string>
        </property>
       </widget>
      </item>

@@ -33,10 +33,24 @@ class FireflyApplication(PyDMApplication):
         # (*ui_file* and *use_main_window* let us render the window here instead)
         super().__init__(ui_file=None, use_main_window=use_main_window, *args, **kwargs)
         self.windows = {}
-        # Make actions for launching each motor window
-        self.prepare_motor_windows()
+        # Make actions for launching other windows
+        self.setup_window_actions()
         # Launch the default display
         self.show_status_window()
+
+    def setup_window_actions(self):
+        """Create QActions for clicking on menu items, shortcuts, etc.
+
+        These actions should be usable by multiple
+        windows. Window-specific actions belong with the window.
+
+        """
+        self.prepare_motor_windows()
+        # Action for showing the beamline status window
+        self.show_status_window_action = QtWidgets.QAction(self)
+        self.show_status_window_action.setObjectName(f"show_status_window_action")
+        self.show_status_window_action.setText("Beamline Status")
+        self.show_status_window_action.triggered.connect(self.show_status_window)
 
     def prepare_motor_windows(self):
         """Prepare the support for opening motor windows."""
@@ -92,8 +106,7 @@ class FireflyApplication(PyDMApplication):
 
     def create_window(self, WindowClass, ui_file, macros={}):
         # Create and save this window
-        main_window = WindowClass(hide_nav_bar=self.hide_nav_bar,
-                                  hide_menu_bar=self.hide_menu_bar,
+        main_window = WindowClass(hide_menu_bar=self.hide_menu_bar,
                                   hide_status_bar=self.hide_status_bar)
         # Make it look pretty
         apply_stylesheet(self.stylesheet_path, widget=main_window)
