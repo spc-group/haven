@@ -161,7 +161,10 @@
             <string>2.21</string>
            </property>
            <property name="alignment">
-            <set>Qt::AlignBottom|Qt::AlignRight|Qt::AlignTrailing</set>
+            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+           </property>
+           <property name="margin">
+            <number>0</number>
            </property>
            <property name="precision" stdset="0">
             <number>2</number>
@@ -190,7 +193,7 @@
             <string> V </string>
            </property>
            <property name="alignment">
-            <set>Qt::AlignBottom|Qt::AlignLeading|Qt::AlignLeft</set>
+            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
            </property>
            <property name="margin">
             <number>0</number>
@@ -317,6 +320,9 @@
            <property name="text">
             <string>20</string>
            </property>
+           <property name="alignment">
+            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+           </property>
            <property name="channel" stdset="0">
             <string>${PREAMP_PREFIX}:sens_num.VAL</string>
            </property>
@@ -336,6 +342,19 @@
           </widget>
          </item>
         </layout>
+       </item>
+       <item>
+        <spacer name="verticalSpacer_3">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
        </item>
        <item>
         <spacer name="verticalSpacer_2">

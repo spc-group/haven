@@ -4,7 +4,6 @@ from pydm.main_window import PyDMMainWindow
 # from qtpy.QtCore import Slot
 from qtpy import QtCore, QtGui, QtWidgets
 from pydm import data_plugins
-
 from haven.instrument import motor
 from haven.instrument import motor
 
@@ -13,6 +12,8 @@ log = logging.getLogger(__name__)
 
 
 class FireflyMainWindow(PyDMMainWindow):
+    hide_nav_bar: bool = True
+    
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.customize_ui()
@@ -49,9 +50,10 @@ class FireflyMainWindow(PyDMMainWindow):
         return action
 
     def customize_ui(self):
-        # Remove navbar
-        self.removeToolBar(self.ui.navbar)
-        # Log viewer window
+        # Hide the nav bar
+        if self.hide_nav_bar:
+            self.toggle_nav_bar(False)
+            self.ui.actionShow_Navigation_Bar.setChecked(False)
         # XAFS scan window
         self.add_menu_action(
             action_name="actionShow_Log_Viewer",
@@ -72,9 +74,6 @@ class FireflyMainWindow(PyDMMainWindow):
         self.ui.menuMotors.setObjectName("menuMotors")
         self.ui.menuMotors.setTitle("Motors")
         self.ui.menuPositioners.addAction(self.ui.menuMotors.menuAction())
-        # Add actions to the motors sub-menu
-        # for motor in motors:
-        #     self.ui.menuMotors.addAction(action)
         # Scans menu
         self.ui.menuScans = QtWidgets.QMenu(self.ui.menubar)
         self.ui.menuScans.setObjectName("menuScans")
@@ -99,7 +98,12 @@ class FireflyMainWindow(PyDMMainWindow):
             action_name="actionShow_Cameras",
             text="Cameras",
             menu=self.ui.menuDetectors)
-        # Set window title
+        # Add actions to the motors sub-menus
+        app = QtWidgets.QApplication.instance()
+        for action in app.motor_actions:
+            self.ui.menuMotors.addAction(action)
+        # Add other menu actions
+        self.ui.menuView.addAction(app.show_status_window_action)
 
     def update_window_title(self):
         if self.showing_file_path_in_title_bar:

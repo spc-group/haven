@@ -120,6 +120,9 @@
        <property name="channel" stdset="0">
         <string>${PREFIX}.STOP</string>
        </property>
+       <property name="pressValue" stdset="0">
+        <string>1</string>
+       </property>
       </widget>
      </item>
      <item>
@@ -154,6 +157,9 @@
          </property>
          <property name="channel" stdset="0">
           <string>${PREFIX}.TWR</string>
+         </property>
+         <property name="pressValue" stdset="0">
+          <string>1</string>
          </property>
         </widget>
        </item>
@@ -203,6 +209,9 @@
          </property>
          <property name="channel" stdset="0">
           <string>${PREFIX}.TWF</string>
+         </property>
+         <property name="pressValue" stdset="0">
+          <string>1</string>
          </property>
         </widget>
        </item>
