@@ -3,6 +3,7 @@ import logging
 from pydm.main_window import PyDMMainWindow
 # from qtpy.QtCore import Slot
 from qtpy import QtCore, QtGui, QtWidgets
+from pydm import data_plugins
 
 from haven.instrument import motor
 from haven.instrument import motor
@@ -48,6 +49,8 @@ class FireflyMainWindow(PyDMMainWindow):
         return action
 
     def customize_ui(self):
+        # Remove navbar
+        self.removeToolBar(self.ui.navbar)
         # Log viewer window
         # XAFS scan window
         self.add_menu_action(
@@ -96,6 +99,17 @@ class FireflyMainWindow(PyDMMainWindow):
             action_name="actionShow_Cameras",
             text="Cameras",
             menu=self.ui.menuDetectors)
+        # Set window title
+
+    def update_window_title(self):
+        if self.showing_file_path_in_title_bar:
+            title = self.current_file()
+        else:
+            title = self.display_widget().windowTitle()
+        title += " - Firefly"
+        if data_plugins.is_read_only():
+            title += " [Read Only Mode]"
+        self.setWindowTitle(title)
     
     def export_actions(self):
         """Expose specific signals that might be useful for responding to window changes."""

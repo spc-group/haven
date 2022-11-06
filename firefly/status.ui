@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Firefly - SPC Group</string>
+   <string>Beamline Status</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
