@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>454</width>
-    <height>67</height>
+    <width>412</width>
+    <height>74</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -142,35 +142,6 @@
         <stringlist>
          <string></string>
         </stringlist>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="PyDMLabel" name="fps_label">
-       <property name="toolTip">
-        <string/>
-       </property>
-       <property name="text">
-        <string>24.5</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-       </property>
-       <property name="precision" stdset="0">
-        <number>1</number>
-       </property>
-       <property name="precisionFromPV" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="channel" stdset="0">
-        <string>${PREFIX}cam1:FrameRate_RBV</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="fps_unit_label">
-       <property name="text">
-        <string>fps</string>
        </property>
       </widget>
      </item>
