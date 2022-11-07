@@ -138,7 +138,7 @@ class FireflyApplication(PyDMApplication):
 
     @QtCore.Slot()
     def show_xafs_scan_window(self):
-        self.show_window(FireflyMainWindow, ui_dir / "xafs_scan.ui", name="xafs_scan")
+        self.show_window(FireflyMainWindow, ui_dir / "xafs_scan.py", name="xafs_scan")
 
     @QtCore.Slot()
     def show_voltmeters_window(self):
