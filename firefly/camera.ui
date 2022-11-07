@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>707</width>
-    <height>39</height>
+    <width>454</width>
+    <height>67</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -42,45 +42,52 @@
       </widget>
      </item>
      <item>
-      <widget class="PyDMPushButton" name="start_button">
-       <property name="toolTip">
-        <string>Start acquiring images</string>
+      <layout class="QVBoxLayout" name="verticalLayout_4">
+       <property name="rightMargin">
+        <number>5</number>
        </property>
-       <property name="text">
-        <string>Start</string>
-       </property>
-       <property name="channel" stdset="0">
-        <string>${PREFIX}cam1:Acquire</string>
-       </property>
-       <property name="showConfirmDialog" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="pressValue" stdset="0">
-        <string>1</string>
-       </property>
-       <property name="releaseValue" stdset="0">
-        <string>1</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="PyDMPushButton" name="stop_button">
-       <property name="toolTip">
-        <string>Stop acquiring images</string>
-       </property>
-       <property name="text">
-        <string>Stop</string>
-       </property>
-       <property name="channel" stdset="0">
-        <string>${PREFIX}cam1:Acquire</string>
-       </property>
-       <property name="pressValue" stdset="0">
-        <string>0</string>
-       </property>
-       <property name="releaseValue" stdset="0">
-        <string>0</string>
-       </property>
-      </widget>
+       <item>
+        <widget class="PyDMPushButton" name="start_button">
+         <property name="toolTip">
+          <string>Start acquiring images</string>
+         </property>
+         <property name="text">
+          <string>Start</string>
+         </property>
+         <property name="channel" stdset="0">
+          <string>${PREFIX}cam1:Acquire</string>
+         </property>
+         <property name="showConfirmDialog" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="pressValue" stdset="0">
+          <string>1</string>
+         </property>
+         <property name="releaseValue" stdset="0">
+          <string>1</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="PyDMPushButton" name="stop_button">
+         <property name="toolTip">
+          <string>Stop acquiring images</string>
+         </property>
+         <property name="text">
+          <string>Stop</string>
+         </property>
+         <property name="channel" stdset="0">
+          <string>${PREFIX}cam1:Acquire</string>
+         </property>
+         <property name="pressValue" stdset="0">
+          <string>0</string>
+         </property>
+         <property name="releaseValue" stdset="0">
+          <string>0</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </item>
      <item>
       <widget class="PyDMByteIndicator" name="camera_acquire_bit">
@@ -146,6 +153,9 @@
        <property name="text">
         <string>24.5</string>
        </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
        <property name="precision" stdset="0">
         <number>1</number>
        </property>
@@ -165,6 +175,48 @@
       </widget>
      </item>
      <item>
+      <layout class="QVBoxLayout" name="verticalLayout_2">
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
+       <item>
+        <widget class="PyDMPushButton" name="auto_gain_button">
+         <property name="toolTip">
+          <string/>
+         </property>
+         <property name="text">
+          <string>Auto Gain</string>
+         </property>
+         <property name="channel" stdset="0">
+          <string>${PREFIX}cam1:GainAuto</string>
+         </property>
+         <property name="pressValue" stdset="0">
+          <string>1</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="PyDMPushButton" name="auto_exposure_button">
+         <property name="toolTip">
+          <string/>
+         </property>
+         <property name="text">
+          <string>Auto Exposure</string>
+         </property>
+         <property name="channel" stdset="0">
+          <string>${PREFIX}cam1:ExposureAuto</string>
+         </property>
+         <property name="pressValue" stdset="0">
+          <string>1</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item>
       <widget class="Line" name="line">
        <property name="orientation">
         <enum>Qt::Vertical</enum>
@@ -172,66 +224,34 @@
       </widget>
      </item>
      <item>
-      <widget class="PyDMPushButton" name="auto_gain_button">
-       <property name="toolTip">
-        <string/>
+      <layout class="QVBoxLayout" name="verticalLayout_3">
+       <property name="rightMargin">
+        <number>0</number>
        </property>
-       <property name="text">
-        <string>Auto Gain</string>
-       </property>
-       <property name="channel" stdset="0">
-        <string>${PREFIX}cam1:GainAuto</string>
-       </property>
-       <property name="pressValue" stdset="0">
-        <string>1</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="PyDMPushButton" name="auto_exposure_button">
-       <property name="toolTip">
-        <string/>
-       </property>
-       <property name="text">
-        <string>Auto Exposure</string>
-       </property>
-       <property name="channel" stdset="0">
-        <string>${PREFIX}cam1:ExposureAuto</string>
-       </property>
-       <property name="pressValue" stdset="0">
-        <string>1</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="Line" name="line_2">
-       <property name="orientation">
-        <enum>Qt::Vertical</enum>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="caqtdm_button">
-       <property name="enabled">
-        <bool>true</bool>
-       </property>
-       <property name="toolTip">
-        <string>Launch the ADAravis caQtDM window</string>
-       </property>
-       <property name="text">
-        <string>Settings</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="imageJ_button">
-       <property name="toolTip">
-        <string>Launch ImageJ with the EPICS AD Viewer plugin loaded for this camera</string>
-       </property>
-       <property name="text">
-        <string>ImageJ</string>
-       </property>
-      </widget>
+       <item>
+        <widget class="QPushButton" name="caqtdm_button">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+         <property name="toolTip">
+          <string>Launch the ADAravis caQtDM window</string>
+         </property>
+         <property name="text">
+          <string>Settings</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="imageJ_button">
+         <property name="toolTip">
+          <string>Launch ImageJ with the EPICS AD Viewer plugin loaded for this camera</string>
+         </property>
+         <property name="text">
+          <string>ImageJ</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </item>
     </layout>
    </item>

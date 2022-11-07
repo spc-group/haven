@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>723</width>
-    <height>55</height>
+    <width>465</width>
+    <height>149</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -34,7 +34,17 @@
         <string/>
        </property>
        <property name="filename" stdset="0">
-        <string>camera.ui</string>
+        <string>camera.py</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_2">
+       <property name="toolTip">
+        <string/>
+       </property>
+       <property name="filename" stdset="0">
+        <string>camera.py</string>
        </property>
       </widget>
      </item>
