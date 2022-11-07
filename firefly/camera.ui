@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>458</width>
+    <width>707</width>
     <height>39</height>
    </rect>
   </property>
@@ -23,7 +23,7 @@
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
-      <widget class="PyDMLabel" name="PyDMLabel">
+      <widget class="PyDMLabel" name="description_label">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
          <horstretch>0</horstretch>
@@ -139,9 +139,87 @@
       </widget>
      </item>
      <item>
+      <widget class="PyDMLabel" name="fps_label">
+       <property name="toolTip">
+        <string/>
+       </property>
+       <property name="text">
+        <string>24.5</string>
+       </property>
+       <property name="precision" stdset="0">
+        <number>1</number>
+       </property>
+       <property name="precisionFromPV" stdset="0">
+        <bool>false</bool>
+       </property>
+       <property name="channel" stdset="0">
+        <string>${PREFIX}cam1:FrameRate_RBV</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="fps_unit_label">
+       <property name="text">
+        <string>fps</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="Line" name="line">
        <property name="orientation">
         <enum>Qt::Vertical</enum>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="PyDMPushButton" name="auto_gain_button">
+       <property name="toolTip">
+        <string/>
+       </property>
+       <property name="text">
+        <string>Auto Gain</string>
+       </property>
+       <property name="channel" stdset="0">
+        <string>${PREFIX}cam1:GainAuto</string>
+       </property>
+       <property name="pressValue" stdset="0">
+        <string>1</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="PyDMPushButton" name="auto_exposure_button">
+       <property name="toolTip">
+        <string/>
+       </property>
+       <property name="text">
+        <string>Auto Exposure</string>
+       </property>
+       <property name="channel" stdset="0">
+        <string>${PREFIX}cam1:ExposureAuto</string>
+       </property>
+       <property name="pressValue" stdset="0">
+        <string>1</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="Line" name="line_2">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="caqtdm_button">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
+       <property name="toolTip">
+        <string>Launch the ADAravis caQtDM window</string>
+       </property>
+       <property name="text">
+        <string>Settings</string>
        </property>
       </widget>
      </item>
