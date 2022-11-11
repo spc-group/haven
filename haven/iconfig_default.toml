@@ -6,6 +6,28 @@ ioc_prefix = ""
 vme_prefix = ""
 is_connected = false
 
+[facility]
+
+name = "Advanced Photon Source"
+xray_source = "insertion device"
+
+[shutter]
+
+[shutter.A]
+
+open_pv = "PSS:99ID:FES_OPEN_EPICS.VAL"
+close_pv = "PSS:99ID:FES_CLOSE_EPICS.VAL"
+status_pv = "PSS:99ID:A_BEAM_PRESENT"
+
+[undulator]
+
+ioc = "id_ioc"
+
+[monochromator]
+
+ioc = "mono_ioc"
+energy_ioc = "mono_ioc"  # 25-ID has the Energy motor on separate PV
+
 [ion_chamber]
 
 [ion_chamber.scaler]
@@ -28,22 +50,9 @@ preamp_record = "SR570_1"
 
 pv_prefix = ""
 
-[facility]
-
-name = "Advanced Photon Source"
-xray_source = "insertion device"
 
 [motor]
 iocs = ["vme_crate_ioc"]
-
-[monochromator]
-
-ioc = "mono_ioc"
-energy_ioc = "mono_ioc"  # 25-ID has the Energy motor on separate PV
-
-[undulator]
-
-ioc = "id_ioc"
 
 [camera]
 

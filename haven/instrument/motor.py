@@ -36,6 +36,7 @@ def load_all_motors(config=None):
         log.info(f"Auto-detecing motors from IOC: {ioc}")
         load_ioc_motors(ioc)
 
+
 def load_ioc_motors(ioc):
     # Create motor objects
     motor_num = 0
