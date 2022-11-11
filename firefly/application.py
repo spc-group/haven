@@ -96,11 +96,17 @@ class FireflyApplication(PyDMApplication):
             # Window is not yet created, so create one
             w = self.create_window(WindowClass, ui_dir / ui_file, macros=macros)
             self.windows[name] = w
+            # Connect signals to remove the window when it closes
+            w.destroyed.connect(partial(self.forget_window, name=name))
         else:
             # Window already exists so just bring it to the front
             w.show()
             w.activateWindow()
         return w
+
+    def forget_window(self, obj, name):
+        """Forget this window exists."""
+        del self.windows[name]
 
     def create_window(self, WindowClass, ui_file, macros={}):
         # Create and save this window
