@@ -16,8 +16,9 @@ __all__ = [
 
 import logging
 from typing import Sequence
-
 import pathlib
+
+from mergedeep import merge
 import tomli
 
 log = logging.getLogger(__name__)
@@ -30,13 +31,20 @@ CONFIG_FILES = [
 ]
 
 
-def load_config(file_paths: Sequence[pathlib.Path] = CONFIG_FILES):
-    config = {}
+def load_files(file_paths: Sequence[pathlib.Path]):
+    """Generate the configs for files as dictionaries."""
     for fp in file_paths:
         if fp.exists():
             with open(fp, mode="rb") as fp:
-                config.update(tomli.load(fp))
-            log.info(f"Loaded config file: {fp}")
+                log.info(f"Loading config file: {fp}")
+                config = tomli.load(fp)
+                yield config
+                
         else:
             log.debug(f"Could not find config file, skipping: {fp}")
+
+
+def load_config(file_paths: Sequence[pathlib.Path] = CONFIG_FILES):
+    config = {}
+    merge(config, *load_files(file_paths))
     return config

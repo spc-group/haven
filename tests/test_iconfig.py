@@ -1,19 +1,24 @@
 import unittest
-import logging
 from pathlib import Path
 
 from haven._iconfig import load_config
 
 
-class IconfigTests(unittest.TestCase):
-    def test_default_values(self):
-        config = load_config()
-        self.assertIn("beamline", config.keys())
+def test_default_values():
+    config = load_config()
+    assert "beamline" in config.keys()
 
-    def test_loading_a_file(self):
-        test_file = Path(__file__).resolve().parent / "test_iconfig.toml"
-        config = load_config(file_paths=[test_file])
-        self.assertEqual(config["beamline"]["pv_prefix"], "spam")
+    
+def test_loading_a_file():
+    test_file = Path(__file__).resolve().parent / "test_iconfig.toml"
+    config = load_config(file_paths=[test_file])
+    assert config["beamline"]["pv_prefix"] == "spam"
 
-    # def test_merging_dicts(self):
-    #     """Do the entries from multiple dictioneries merge properly?"""
+    
+def test_merging_dicts():
+    """Do the entries from multiple dictioneries merge properly?"""
+    this_dir = Path(__file__).resolve().parent
+    default_file = this_dir.parent / "haven" / "iconfig_default.toml"
+    test_file = this_dir / "test_iconfig.toml"
+    config = load_config(file_paths=[default_file, test_file])
+    assert "description" in config["camera"]["camA"].keys()
