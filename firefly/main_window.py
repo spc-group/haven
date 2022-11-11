@@ -13,11 +13,16 @@ log = logging.getLogger(__name__)
 
 class FireflyMainWindow(PyDMMainWindow):
     hide_nav_bar: bool = True
-    
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.customize_ui()
         self.export_actions()
+
+    def closeEvent(self, event):
+        super().closeEvent(event)
+        # Delete the window so it's recreated next time it's opened
+        self.deleteLater()
 
     def add_menu_action(self, action_name: str, text: str, menu: QtWidgets.QMenu):
         """Add a new QAction to a menubar menu.
