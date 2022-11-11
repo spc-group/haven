@@ -24,56 +24,14 @@ log = logging.getLogger(__name__)
 
 
 CONFIG_FILES = [
+    pathlib.Path(__file__).parent / "iconfig_default.toml",
     pathlib.Path("~/bluesky/").expanduser() / "iconfig.toml",
     pathlib.Path("~/bluesky/instrument").expanduser() / "iconfig.toml",
 ]
 
-default_config = {
-    # Defaults go here, then get updated by toml loader
-    "beamline": {
-        "name": "SPC Beamline (sector unknown)",
-        "ioc_prefix": "",
-        "vme_prefix": "",
-        "is_connected": False,
-    },
-    "ion_chamber": {
-        "scaler": {"ioc": "scaler_ioc", "record": "scaler1"},
-        "preamp": {"ioc": "preamp_ioc"},
-        "ch2": {"preamp_record": "SR570_1"}
-    },
-    "fluorescence_detector": {
-        "vortex": {
-            "pv_prefix": "",
-        },
-    },
-    "facility": {
-        "name": "Advanced Photon Source",
-        "xray_source": "insertion device",
-    },
-    "motor": {
-        "iocs": ["vme_crate_ioc"],
-    },
-    "monochromator": {
-        "ioc": "mono_ioc",
-        "energy_ioc": "mono_ioc",  # 25-ID has the "Energy" motor on separate PV
-    },
-    "undulator": {
-        "ioc": "id_ioc",
-    },
-    "camera": {
-        "imagej_command": "imagej",
-        # Keys for camera definitions must begin with "cam" (e.g. "camA", "camB")
-        "camA": {
-            "name": "s25id-gige-A",
-            "description": "GigE Vision A",
-            "ioc": "camA_ioc",
-        },
-    },
-}
-
 
 def load_config(file_paths: Sequence[pathlib.Path] = CONFIG_FILES):
-    config = default_config.copy()
+    config = {}
     for fp in file_paths:
         if fp.exists():
             with open(fp, mode="rb") as fp:

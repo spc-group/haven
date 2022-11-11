@@ -14,3 +14,6 @@ class IconfigTests(unittest.TestCase):
         test_file = Path(__file__).resolve().parent / "test_iconfig.toml"
         config = load_config(file_paths=[test_file])
         self.assertEqual(config["beamline"]["pv_prefix"], "spam")
+
+    # def test_merging_dicts(self):
+    #     """Do the entries from multiple dictioneries merge properly?"""
