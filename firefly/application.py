@@ -124,7 +124,7 @@ class FireflyApplication(PyDMApplication):
     def show_motor_window(self, *args, motor: HavenMotor):
         """Instantiate a new main window for this application."""
         motor_name = motor.name.replace(" ", "_")
-        self.show_window(FireflyMainWindow, ui_dir / "motor.ui",
+        self.show_window(FireflyMainWindow, ui_dir / "motor.py",
                          name=f"FireflyMainWindow_motor_{motor_name}",
                          macros={"PREFIX": motor.prefix})
 

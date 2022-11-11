@@ -82,6 +82,42 @@
         </spacer>
        </item>
        <item>
+        <widget class="PyDMByteIndicator" name="limit_low_indicator">
+         <property name="toolTip">
+          <string/>
+         </property>
+         <property name="alarmSensitiveContent" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="alarmSensitiveBorder" stdset="0">
+          <bool>true</bool>
+         </property>
+         <property name="channel" stdset="0">
+          <string/>
+         </property>
+         <property name="showLabels" stdset="0">
+          <bool>true</bool>
+         </property>
+         <property name="bigEndian" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="circles" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="numBits" stdset="0">
+          <number>1</number>
+         </property>
+         <property name="shift" stdset="0">
+          <number>0</number>
+         </property>
+         <property name="labels" stdset="0">
+          <stringlist>
+           <string></string>
+          </stringlist>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="PyDMLineEdit" name="PyDMLineEdit">
          <property name="toolTip">
           <string/>
@@ -91,6 +127,42 @@
          </property>
          <property name="channel" stdset="0">
           <string>${PREFIX}.VAL</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="PyDMByteIndicator" name="limit_high_indicator">
+         <property name="toolTip">
+          <string/>
+         </property>
+         <property name="alarmSensitiveContent" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="alarmSensitiveBorder" stdset="0">
+          <bool>true</bool>
+         </property>
+         <property name="channel" stdset="0">
+          <string/>
+         </property>
+         <property name="showLabels" stdset="0">
+          <bool>true</bool>
+         </property>
+         <property name="bigEndian" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="circles" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="numBits" stdset="0">
+          <number>1</number>
+         </property>
+         <property name="shift" stdset="0">
+          <number>0</number>
+         </property>
+         <property name="labels" stdset="0">
+          <stringlist>
+           <string></string>
+          </stringlist>
          </property>
         </widget>
        </item>
@@ -110,7 +182,7 @@
       </layout>
      </item>
      <item>
-      <widget class="PyDMPushButton" name="PyDMPushButton_3">
+      <widget class="PyDMPushButton" name="stop_button">
        <property name="toolTip">
         <string/>
        </property>
@@ -243,7 +315,7 @@
         <number>0</number>
        </property>
        <item>
-        <widget class="QPushButton" name="pushButton_2">
+        <widget class="QPushButton" name="save_restore_button">
          <property name="enabled">
           <bool>false</bool>
          </property>
@@ -266,9 +338,9 @@
         </spacer>
        </item>
        <item>
-        <widget class="QPushButton" name="pushButton">
+        <widget class="QPushButton" name="debug_button">
          <property name="enabled">
-          <bool>false</bool>
+          <bool>true</bool>
          </property>
          <property name="text">
           <string>Debug</string>
@@ -286,6 +358,11 @@
    <class>PyDMLabel</class>
    <extends>QLabel</extends>
    <header>pydm.widgets.label</header>
+  </customwidget>
+  <customwidget>
+   <class>PyDMByteIndicator</class>
+   <extends>QWidget</extends>
+   <header>pydm.widgets.byte</header>
   </customwidget>
   <customwidget>
    <class>PyDMLineEdit</class>
