@@ -65,3 +65,9 @@ imagej_command = "imagej"
 name = "s25id-gige-A"
 description = "GigE Vision A"
 ioc = "camA_ioc"
+
+[stage.Aerotech]
+
+prefix = "vme_crate_ioc"
+pv_vert = ":m1"
+pv_horiz = ":m2"
