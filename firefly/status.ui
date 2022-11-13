@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>349</width>
+    <width>338</width>
     <height>225</height>
    </rect>
   </property>
@@ -78,7 +78,7 @@
      <item row="4" column="0">
       <widget class="QLabel" name="SCDS_label">
        <property name="text">
-        <string>Shutter C:</string>
+        <string>Shutter C/D:</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
