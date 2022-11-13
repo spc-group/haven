@@ -6,6 +6,7 @@ from qtpy import QtCore, QtGui, QtWidgets
 from pydm import data_plugins
 from haven.instrument import motor
 from haven.instrument import motor
+from haven import load_config
 
 
 log = logging.getLogger(__name__)
@@ -115,7 +116,10 @@ class FireflyMainWindow(PyDMMainWindow):
             title = self.current_file()
         else:
             title = self.display_widget().windowTitle()
-        title += " - Firefly"
+        # Add the beamline name
+        config = load_config()
+        beamline_name = config['beamline']['name']
+        title += f" - {beamline_name} - Firefly"
         if data_plugins.is_read_only():
             title += " [Read Only Mode]"
         self.setWindowTitle(title)
