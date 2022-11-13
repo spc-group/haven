@@ -136,7 +136,7 @@ class FireflyApplication(PyDMApplication):
 
     def show_status_window(self, stylesheet_path=None):
         """Instantiate a new main window for this application."""
-        self.show_window(FireflyMainWindow, ui_dir / "status.ui", name="beamline_status")
+        self.show_window(FireflyMainWindow, ui_dir / "status.py", name="beamline_status")
 
     make_main_window = show_status_window
 
