@@ -15,9 +15,11 @@ class Monochromator(Device):
     pitch2 = Cpt(EpicsMotor, ":m6", kind="config")
     roll_int = Cpt(EpicsMotor, ":m7", kind="config")
     pi_int = Cpt(EpicsMotor, ":m8", kind="config")
+    mode = Cpt(EpicsMotor, ":mode", kind="config")
     energy = FCpt(EpicsMotor, "{energy_prefix}:Energy")
 
-    def __init__(self, prefix, *args, name, energy_prefix=None, id_prefix=None, **kwargs):
+    def __init__(self, prefix, *args, name, energy_prefix=None,
+                 id_prefix=None, **kwargs):
         # Use the default ioc for energy if not explicitly set
         if energy_prefix is None:
             energy_prefix = prefix
@@ -25,8 +27,9 @@ class Monochromator(Device):
         self.id_prefix = id_prefix
         super().__init__(prefix, name=name, *args, **kwargs)
 
+
 def load_monochromator(config):
     monochromator = Monochromator(config["monochromator"]["ioc"],
                                   energy_prefix=config["monochromator"]["energy_ioc"],
                                   name="monochromator")
-    return
+    return monochromator
