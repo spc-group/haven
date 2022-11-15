@@ -102,6 +102,8 @@ dependencies:
   - tqdm
   - xraydb
   - xrayutilities
+  - pyviz
+  - hvplot
   
   # --- packaging and publishing
   - conda-build
