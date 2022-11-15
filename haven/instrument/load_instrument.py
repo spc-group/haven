@@ -5,7 +5,9 @@ from .ion_chamber import load_ion_chambers
 from .monochromator import load_monochromator
 from .camera import load_cameras
 from .shutter import load_shutters
+from .stage import load_stages
 from .._iconfig import load_config
+
 
 
 def load_instrument(registry=default_registry, config=None):
@@ -21,3 +23,4 @@ def load_instrument(registry=default_registry, config=None):
     load_monochromator(config=config)
     load_cameras(config=config)
     load_shutters(config=config)
+    load_stages(config=config)

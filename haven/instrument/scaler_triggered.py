@@ -19,7 +19,6 @@ class ScalerTriggered(Device):
             self.scaler_prefix = scaler_prefix
         else:
             self.scaler_prefix = prefix
-        print(super())
         super().__init__(prefix, **kwargs)
 
     def trigger(self, *args, **kwargs):

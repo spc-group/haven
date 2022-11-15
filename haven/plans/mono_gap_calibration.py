@@ -19,6 +19,25 @@ log = logging.getLogger(__name__)
 
 
 def knife_scan(knife_motor, knife_points, I0="I0", It="It", md={}):
+    """Plan to scan over a knife placed in the beam to measure its height.
+
+    Parameters
+    ==========
+    knife_motor
+      An ophyd device or name of a registered device that has a well
+      defined edge attached to it.
+    knife_points
+      Absolute motor positions at which to scan.
+    I0
+      Device or name of a registered ion chamber upstream from the
+      knife.
+    It
+      Device or name of a registered ion chamber downstream from the
+      knife.
+    md
+      Extra metadata to pass into the run engine.
+
+    """
     md_ = {}
     md_.update(md)
     I0 = registry.find(I0)
@@ -34,6 +53,26 @@ def knife_scan(knife_motor, knife_points, I0="I0", It="It", md={}):
 
 
 def align_pitch2(bec, distance=200, reverse=False, md={}):
+    """Tune the monochromator 2nd crystal pitch motor.
+
+    Find the position of maximum intensity in the ion chamber
+    "I0". The scanning range is relative to the current motor
+    position, and will go *distance* above and below it. For example,
+    if the current position is 1000, ``distance=200`` will scan from
+    800 to 1200.
+
+    Parameters
+    ==========
+    bec
+      A bluesky best effort callback for finding the peak position.
+    distance
+      Relative distance to scan in either direction.
+    reverse
+      Whether the scan goes low-to-high (False) or high-to-low (True).
+    md
+      Extra metadata to pass into the run engine.
+
+    """
     md_ = dict(**md)
     I0 = registry.find(name="I0")
     pitch2 = registry.find(name="monochromator").pitch2
