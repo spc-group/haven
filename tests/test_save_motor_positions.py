@@ -12,6 +12,7 @@ from haven import (
     get_motor_position,
     list_motor_positions,
     recall_motor_position,
+    HavenMotor,
 )
 
 from test_simulated_ioc import ioc_motor
@@ -34,49 +35,63 @@ def sim_registry():
     registry.components = components
 
 
-def test_save_motor_position_by_device(mongodb):
+def test_save_motor_position_by_device(mongodb, ioc_motor):
     # Check that no entry exists before saving it
     result = mongodb.motor_positions.find_one({"name": motor1.name})
     assert result is None
+    # Create motor devices
+    motorA = HavenMotor("vme_crate_ioc:m1", name="Motor A")
+    motorB = HavenMotor("vme_crate_ioc:m2", name="Motor B")
+    motorA.wait_for_connection()
+    motorB.wait_for_connection()
     # Move to some other motor position so we can tell it saved the right one
-    motor1.set(11.0)
-    motor2.set(23.0)
+    motorA.set(11.0)
+    motorB.set(23.0)
+    time.sleep(0.1)
     # Save the current motor position
-    new_id = save_motor_position(
-        motor1, motor2, name="Sample center", collection=mongodb.motor_positions
+    save_motor_position(
+        motorA, motorB, name="Sample center", collection=mongodb.motor_positions
     )
     # Check that the motors got saved
     result = mongodb.motor_positions.find_one({"name": "Sample center"})
     assert result is not None
-    assert result["motors"][0]["name"] == motor1.name
+    assert result["motors"][0]["name"] == motorA.name
     assert result["motors"][0]["readback"] == 11.0
     assert result["motors"][1]["readback"] == 23.0
 
 
-def test_save_motor_position_by_name(mongodb):
+def test_save_motor_position_by_name(mongodb, ioc_motor):
     # Check that no entry exists before saving it
     result = mongodb.motor_positions.find_one({"name": motor1.name})
     assert result is None
     # Get our simulated motors into the device registry
-    registry.register(motor1)
-    registry.register(motor2)
+    motorA = HavenMotor("vme_crate_ioc:m1", name="Motor A")
+    motorB = HavenMotor("vme_crate_ioc:m2", name="Motor B")
+    motorA.wait_for_connection()
+    motorB.wait_for_connection()
+    registry.register(motorA)
+    registry.register(motorB)
     # Move to some other motor position so we can tell it saved the right one
-    motor1.set(11.0)
-    motor2.set(23.0)
+    motorA.set(11.0)
+    motorA.user_offset.set(1.5)
+    motorB.set(23.0)
+    time.sleep(0.1)
     # Save the current motor position
     new_id = save_motor_position(
-        "motor1", "motor2", name="Sample center", collection=mongodb.motor_positions
+        "Motor A", "Motor B", name="Sample center", collection=mongodb.motor_positions
     )
     # Check that the motors got saved
     result = mongodb.motor_positions.find_one({"name": "Sample center"})
     assert result is not None
-    assert result["motors"][0]["name"] == motor1.name
+    assert result["motors"][0]["name"] == motorA.name
     assert result["motors"][0]["readback"] == 11.0
     assert result["motors"][1]["readback"] == 23.0
+    assert result["motors"][0]["offset"] == 1.5
 
 
 def test_get_motor_position_by_uid(mongodb):
-    result = get_motor_position(uid="abcd123", collection=mongodb.motor_positions)
+    uid = str(mongodb.motor_positions.find_one({'name': "Good position A"})['_id'])
+    result = get_motor_position(uid=uid, collection=mongodb.motor_positions)
     assert result.name == "Good position A"
     assert result.motors[0].name == "SLT V Upper"
     assert result.motors[0].readback == 510.5
@@ -85,20 +100,20 @@ def test_get_motor_position_by_uid(mongodb):
 def test_get_motor_position_by_name(mongodb):
     result = get_motor_position(name="Good position A", collection=mongodb.motor_positions)
     assert result.name == "Good position A"
-    assert result.uid == "abcd123"
     assert result.motors[0].name == "SLT V Upper"
-    assert result.motors[0].readback == 510.5        
+    assert result.motors[0].readback == 510.5
 
 
 def test_get_motor_position_exceptions(mongodb):
     # Fails when no query params are given
     with pytest.raises(TypeError):
-        result = get_motor_position(collection=mongodb.motor_positions)
-    
+        get_motor_position(collection=mongodb.motor_positions)
+
 
 def test_recall_motor_position(mongodb, sim_registry):
     # Re-set the previous value
-    plan = recall_motor_position(uid="abcd123", collection=mongodb.motor_positions)
+    uid = str(mongodb.motor_positions.find_one({'name': "Good position A"})['_id'])
+    plan = recall_motor_position(uid=uid, collection=mongodb.motor_positions)
     messages = list(plan)
     # Check the plan output
     msg0 = messages[0]
@@ -115,11 +130,12 @@ def test_list_motor_positions(mongodb, capsys):
     # Check stdout for printed motor positions
     captured = capsys.readouterr()
     assert len(captured.out) > 0
-    expected = ('\n"Good position A" (uid="abcd123")\n'
-                '┣━"SLT V Upper": 510.5\n'
-                '┗━"SLT V Lower": -211.93\n')
+    uid = str(mongodb.motor_positions.find_one({'name': "Good position A"})['_id'])
+    expected = (f'\n\033[1mGood position A\033[0m (uid="{uid}")\n'
+                '┣━SLT V Upper: 510.5\n'
+                '┗━SLT V Lower: -211.93\n')
     assert captured.out == expected
-    
+
 
 def test_motor_position_e2e(mongodb, ioc_motor):
     """Check that a motor position can be saved, then recalled using
@@ -135,8 +151,8 @@ def test_motor_position_e2e(mongodb, ioc_motor):
     registry.find(name="SLT V Upper")
     epics.caput(pv, 504.6)
     assert epics.caget(pv, use_monitor=False) == 504.6
-    assert motor1.get(use_monitor=False).user_readback == 504.6
     time.sleep(0.1)
+    assert motor1.get(use_monitor=False).user_readback == 504.6
     # Save motor position
     uid = save_motor_position(
         motor1, name="starting point", collection=mongodb.motor_positions

@@ -19,9 +19,10 @@ log = logging.getLogger(__name__)
 class MotorAxis(BaseModel):
     name: str
     readback: float
+    offset: float = None
 
     def as_dict(self):
-        return {"name": self.name, "readback": self.readback}
+        return {"name": self.name, "readback": self.readback, "offset": self.offset}
 
 
 class MotorPosition(BaseModel):
@@ -84,7 +85,7 @@ def save_motor_position(*motors, name: str, collection=None):
             motor_data = motor.get(use_monitor=False)
         except TypeError:
             log.debug("Failed to do get() with ``use_monitor=False``")
-            motor_data = motor.get()
+            motor_data = motor.get(use_monitor=False)
         if hasattr(motor_data, "readback"):
             return motor_data.readback
         elif hasattr(motor_data, "user_readback"):
@@ -92,7 +93,10 @@ def save_motor_position(*motors, name: str, collection=None):
         else:
             return motor_data
 
-    motor_axes = [MotorAxis(name=m.name, readback=rbv(m)) for m in motors]
+    motor_axes = []
+    for m in motors:
+        axis = MotorAxis(name=m.name, readback=rbv(m), offset=m.user_offset.get())
+        motor_axes.append(axis)
     position = MotorPosition(name=name, motors=motor_axes)
     # Write to the database
     pos_id = position.save(collection=collection)
@@ -163,7 +167,11 @@ def get_motor_position(uid: Optional[str] = None, name: Optional[str] = None, co
     if collection is None:
         collection = default_collection()
     # Build query for finding motor positions
-    query_params = {"_id": ObjectId(uid),
+    if uid is not None:
+        _id = ObjectId(uid)
+    else:
+        _id = None
+    query_params = {"_id": _id,
                     "name": name}
     # Filter out query parameters that are ``None``
     query_params = {k: v for k, v in query_params.items() if v is not None}

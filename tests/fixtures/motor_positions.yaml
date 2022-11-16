@@ -1,10 +1,10 @@
 -
   name: "Good position A"
-  _id: "abcd123"
   motors:
     -
       name: "SLT V Upper"
       readback: 510.5
+      offset: 0.
     -
       name: "SLT V Lower"
       readback: -211.93
