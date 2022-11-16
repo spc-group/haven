@@ -5,6 +5,7 @@ import logging
 from pydantic import BaseModel
 import intake
 import pymongo
+from bson.objectid import ObjectId
 from bluesky import plans as bp, plan_stubs as bps
 from ophyd import EpicsMotor
 
@@ -81,7 +82,6 @@ def save_motor_position(*motors, name: str, collection=None):
         try:
             # Wrap this in a try block because not every signal has this argument
             motor_data = motor.get(use_monitor=False)
-            print(motor_data)
         except TypeError:
             log.debug("Failed to do get() with ``use_monitor=False``")
             motor_data = motor.get()
@@ -101,6 +101,17 @@ def save_motor_position(*motors, name: str, collection=None):
 
 
 def list_motor_positions(collection=None):
+    """Print a list of saved motor positions.
+
+    The name and UID will be printed, along with each motor and it's
+    position.
+
+    Parameters
+    ==========
+    collection
+      The mongodb collection from which to print motor positions.
+    
+    """
     # Get default collection if none was given
     if collection is None:
         collection = default_collection()
@@ -108,23 +119,42 @@ def list_motor_positions(collection=None):
     results = collection.find()
     # Go through the results and display them
     were_found = False
+    BOLD = "\033[1m"
+    END = "\033[0m"
     for doc in results:
         were_found = True
         position = MotorPosition.load(doc)
-        output = f'\n"{position.name}" (uid="{position.uid}")\n'
+        output = f'\n{BOLD}{position.name}{END} (uid="{position.uid}")\n'
         for idx, motor in enumerate(position.motors):
             # Figure out some nice tree aesthetics
             is_last_motor = idx == (len(position.motors) - 1)
             box_char = "┗" if is_last_motor else "┣"
-            output += f'{box_char}━"{motor.name}": {motor.readback}\n'
+            output += f'{box_char}━{motor.name}: {motor.readback}\n'
         print(output, end="")
     # Some feedback in the case of empty motor positions
     if not were_found:
         print(f"No motor positions found: {collection}")
 
 
-def get_motor_position(uid: Optional[str] = None, name: Optional[str] = None, collection=None):
-    """Retrieve a previously saved motor position from the database."""
+def get_motor_position(uid: Optional[str] = None, name: Optional[str] = None, collection=None) -> MotorPosition:
+    """Retrieve a previously saved motor position from the database.
+
+    Parameters
+    ==========
+    uid
+      The universal identifier for the the document in the collection.
+    name
+      The name of the saved motor position, as given with the *name*
+      parameter to the ``save_motor_position`` function.
+    collection
+      The mongodb collection from which to print motor positions.
+
+    Returns
+    =======
+    position
+      The motor position with data retrieved from the database.
+
+    """
     # Check that at least one of the parameters is given
     has_query_param = any([val is not None for val in [uid, name]])
     if not has_query_param:
@@ -133,7 +163,7 @@ def get_motor_position(uid: Optional[str] = None, name: Optional[str] = None, co
     if collection is None:
         collection = default_collection()
     # Build query for finding motor positions
-    query_params = {"_id": uid,
+    query_params = {"_id": ObjectId(uid),
                     "name": name}
     # Filter out query parameters that are ``None``
     query_params = {k: v for k, v in query_params.items() if v is not None}
@@ -141,13 +171,26 @@ def get_motor_position(uid: Optional[str] = None, name: Optional[str] = None, co
     # Feedback for if no matching motor positions are in the database
     if result is None:
         raise exceptions.DocumentNotFound(
-            f'Could not find document matching: _id="{uid}", name="{name}"'
+            f'Could not find document matching: {query_params}"'
         )
     position = MotorPosition.load(result)
     return position
 
 
 def recall_motor_position(uid: Optional[str] = None, name: Optional[str] = None, collection=None):
+    """Set motors to their previously saved positions.
+
+    Parameters
+    ==========
+    uid
+      The universal identifier for the the document in the collection.
+    name
+      The name of the saved motor position, as given with the *name*
+      parameter to the ``save_motor_position`` function.
+    collection
+      The mongodb collection from which to print motor positions.
+
+    """
     # Get default collection if none was given
     if collection is None:
         collection = default_collection()
