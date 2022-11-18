@@ -85,7 +85,7 @@ def save_motor_position(*motors, name: str, collection=None):
             motor_data = motor.get(use_monitor=False)
         except TypeError:
             log.debug("Failed to do get() with ``use_monitor=False``")
-            motor_data = motor.get(use_monitor=False)
+            motor_data = motor.get()
         if hasattr(motor_data, "readback"):
             return motor_data.readback
         elif hasattr(motor_data, "user_readback"):
