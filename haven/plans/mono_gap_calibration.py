@@ -18,40 +18,6 @@ from .._iconfig import load_config
 log = logging.getLogger(__name__)
 
 
-def knife_scan(knife_motor, knife_points, I0="I0", It="It", md={}):
-    """Plan to scan over a knife placed in the beam to measure its height.
-
-    Parameters
-    ==========
-    knife_motor
-      An ophyd device or name of a registered device that has a well
-      defined edge attached to it.
-    knife_points
-      Absolute motor positions at which to scan.
-    I0
-      Device or name of a registered ion chamber upstream from the
-      knife.
-    It
-      Device or name of a registered ion chamber downstream from the
-      knife.
-    md
-      Extra metadata to pass into the run engine.
-
-    """
-    md_ = {}
-    md_.update(md)
-    I0 = registry.find(I0)
-    It = registry.find(It)
-    knife_motor = registry.find(knife_motor)
-    # Register all the callbacks
-    callbacks = []  # LiveTable([I0, It, knife])]
-    plan_func = bp.list_scan
-    for cb in callbacks:
-        plan_func = subs_decorator(cb)(plan_func)
-    # Compute the plan
-    yield from plan_func([I0, It], knife_motor, knife_points, md=md_)
-
-
 def align_pitch2(bec, distance=200, reverse=False, md={}):
     """Tune the monochromator 2nd crystal pitch motor.
 

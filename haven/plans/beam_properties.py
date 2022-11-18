@@ -1,8 +1,54 @@
 from collections import namedtuple
+from typing import Mapping
 
 import matplotlib.pyplot as plt
 import numpy as np
 from lmfit.models import StepModel
+from bluesky.preprocessors import subs_decorator
+from bluesky import plans as bp
+
+from ..instrument.instrument_registry import registry
+
+
+def knife_scan(knife_motor, start: float, end: float, num: int,
+               I0="I0", It="It", relative: bool = False, md: Mapping = {}):
+    """Plan to scan over a knife placed in the beam to measure its height.
+
+    Parameters
+    ==========
+    knife_motor
+      An ophyd device or name of a registered device that has a well
+      defined edge attached to it.
+    start
+      Motor position at which to start scanning.
+    end
+      Motor position at which to finish scanning.
+    num
+      How many points to measure between *start* and *end*.
+    I0
+      Device or name of a registered ion chamber upstream from the
+      knife.
+    It
+      Device or name of a registered ion chamber downstream from the
+      knife.
+    relative
+      If true, *start* and *end* will be interpreted as relative to
+      the current motor position.
+    md
+      Extra metadata to pass into the run engine.
+    
+    """
+    md_ = dict(plan_name="knife_scan", **md)
+    I0 = registry.find(I0)
+    It = registry.find(It)
+    knife_motor = registry.find(knife_motor)
+    # Check for relative or absolute scan
+    if relative:
+        plan_func = bp.rel_scan
+    else:
+        plan_func = bp.scan
+    # Compute the plan
+    yield from plan_func([I0, It], knife_motor, start, end, num=num, md=md_)
 
 
 def fit_step(x, y, plot=False):
