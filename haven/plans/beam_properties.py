@@ -39,9 +39,9 @@ def knife_scan(knife_motor, start: float, end: float, num: int,
     
     """
     md_ = dict(plan_name="knife_scan", **md)
-    I0 = registry.find(I0)
-    It = registry.find(It)
-    knife_motor = registry.find(knife_motor)
+    I0 = registry.find(name=I0)
+    It = registry.find(name=It)
+    knife_motor = registry.find(name=knife_motor)
     # Check for relative or absolute scan
     if relative:
         plan_func = bp.rel_scan

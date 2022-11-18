@@ -126,7 +126,7 @@ class IonChamber(Device):
         # Initialize all the other Device stuff
         super().__init__(prefix=prefix, name=name, *args, **kwargs)
 
-    def change_sensitivity(self, step) -> status.Status:
+    def change_sensitivity(self, step: int) -> status.Status:
         new_sens_level = self.sensitivity.sens_level.readback.get() + step
         try:
             status = self.sensitivity.sens_level.set(new_sens_level)
