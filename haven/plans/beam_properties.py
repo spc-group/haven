@@ -3,7 +3,7 @@ from typing import Mapping
 
 import matplotlib.pyplot as plt
 import numpy as np
-from lmfit.models import StepModel
+from lmfit.models import StepModel, GaussianModel, LorentzianModel, VoigtModel
 from bluesky.preprocessors import subs_decorator
 from bluesky import plans as bp
 
@@ -51,7 +51,7 @@ def knife_scan(knife_motor, start: float, end: float, num: int,
     yield from plan_func([I0, It], knife_motor, start, end, num=num, md=md_)
 
 
-def fit_step(x, y, plot=False):
+def fit_step(x, y, plot=False, plot_derivative=False):
     """Extract beam properties from a step scan over the beam profile.
 
     Parameters
@@ -63,6 +63,8 @@ def fit_step(x, y, plot=False):
       (e.g. transmitted intensity).
     plot
       If true, plot the fitting results.
+    plot_derivative
+      If true, also fit and plot the derivative of the step scan.
 
     Returns
     =======
@@ -87,15 +89,43 @@ def fit_step(x, y, plot=False):
     # Fit the model to the data
     result = model.fit(y, params=params, x=x)
     beam_position = result.values['center']
+    beam_hwhm = result.values['sigma']
+    # Do a fit of the derivative just for testing
     # Plot results
     if plot:
-        plt.figure()
-        result.plot(show_init=True, datafmt="x", xlabel="Knife position /µm", ylabel="Relative transmission")
-        plt.axvline(beam_position, color="C4", ls=":", label="Beam position")
-        plt.axhline(half_max, color="C4", ls=":")
-        plt.text(beam_position, half_max, s=f"{beam_position:.2f}", color="C4")
-        plt.legend()
+        # Plot knife scan and fit
+        fig = plt.figure()
+        result.plot(fig=fig, show_init=False, datafmt="x", xlabel="Knife position /µm", ylabel="Relative transmission")
+        ax_res, ax = fig.axes
+        line_kw = dict(color="C0", ls=":")
+        ax.axvline(beam_position, label="Beam position", **line_kw)
+        ax.axhline(half_max, **line_kw)
+        ax.text(beam_position, half_max, s=f"{beam_position:.2f}", color="C0")
+        ax.axvline(beam_position - beam_hwhm, label="FWHM (y)", **line_kw)
+        ax.axvline(beam_position + beam_hwhm, **line_kw)
+        ax.legend()
+    if plot and plot_derivative:
+        # Fit derivative
+        model = GaussianModel()
+        dy = np.gradient(y, x)
+        params = model.guess(dy, x)
+        dresult = model.fit(dy, params=params, x=x)
+        # Plot derivative of knife scan
+        color2 = "C3"
+        ax2 = ax.twinx()
+        ax2.plot(x, dy, color=color2, label="Derivative", marker='x', ls="None")
+        ax2.plot(x, dresult.eval(x=x), color=color2, alpha=0.5, label="Best fit")
+        ax2.plot(x, np.gradient(result.eval(x=x), x), color=color2, alpha=0.5, ls="--", label="Step fit gradient")
+        dy_half_max = (np.min(dy) + np.max(dy)) / 2
+        line_kw['color'] = color2
+        ax2.axhline(dy_half_max, **line_kw)
+        ax2.axvline(dresult.values['center'], **line_kw)
+        dfwhm = dresult.values['fwhm']
+        ax2.axvline(dresult.values['center'] - dfwhm/2, label="FWHM (dy/dx)", **line_kw)
+        ax2.axvline(dresult.values['center'] + dfwhm/2, **line_kw)
+        ax2.legend()
+        ax2.set_ylabel("Derivative /µm⁻")
     # Prepare results object
-    Properties = namedtuple("Properties", ["position"])
-    properties = Properties(position=beam_position)
+    Properties = namedtuple("Properties", ["position", "fwhm"])
+    properties = Properties(position=beam_position, fwhm=2*beam_hwhm)
     return properties

@@ -6,7 +6,7 @@ from ophyd.sim import motor1, det1, det2
 from haven.plans.beam_properties import fit_step, knife_scan
 
 
-@pytest.mark.xfail()
+# @pytest.mark.xfail()
 def test_fit_step():
     # Data taken from 25-ID-C scan 927fa7dd-e331-45ca-bb9d-3f89d7c65b17
     x = np.asarray(
@@ -143,9 +143,10 @@ def test_fit_step():
     )
     expected_center = 5960.94  # 5961.21
     # Do the fitting
-    result = fit_step(x, y, plot=True)
+    result = fit_step(x, y, plot=True, plot_derivative=True)
+    plt.show()
     assert result.position == pytest.approx(expected_center)
-    assert result.size == 15
+    assert result.fwhm == pytest.approx(1449.956)
 
 
 def test_knife_scan():
