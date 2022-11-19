@@ -120,6 +120,7 @@ dependencies:
   # --- packaging and publishing
   - poetry  # skip for conda-lock
   - sphinx
+  - nbsphinx
   # - conda-build
   - coverage
   - sphinxcontrib-napoleon
