@@ -1,2 +1,6 @@
 autoapi==2.0.1
 ophyd==1.6.4
+nbsphinx
+databroker
+lmfit
+bluesky

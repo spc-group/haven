@@ -19,6 +19,7 @@ build:
     # rust: "1.55"
     # golang: "1.17"
 
+# For some reason, I couldn't get conda environment to work
 conda:
   environment: environment.yml
 

@@ -15,6 +15,7 @@ Welcome to haven's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   tutorials/index.rst
    topic_guides/index.rst
    haven/haven.rst
 

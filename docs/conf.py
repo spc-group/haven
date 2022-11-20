@@ -35,6 +35,7 @@ extensions = [
     "sphinx.ext.inheritance_diagram",
     "autoapi.sphinx",
     "sphinx.ext.napoleon",
+    "nbsphinx",
 ]
 
 autoapi_modules = {"haven": None}
