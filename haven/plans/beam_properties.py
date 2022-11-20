@@ -73,6 +73,8 @@ def fit_step(x, y, plot=False, plot_derivative=False):
       units of *x*.
 
     """
+    x = np.asarray(x)
+    y = np.asarray(y)
     # Normalize data to start at zero
     y -= y[0]
     # Set up initial fitting parameters
