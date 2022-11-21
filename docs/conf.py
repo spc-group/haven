@@ -35,11 +35,25 @@ extensions = [
     "sphinx.ext.inheritance_diagram",
     "autoapi.sphinx",
     "sphinx.ext.napoleon",
+    "sphinx.ext.todo",
     "nbsphinx",
 ]
 
 autoapi_modules = {"haven": None}
 autodoc_typehints = "description"
+
+# Add custom pre-amble to the rendered jupyter notebooks
+nbsphinx_prolog = r"""
+
+This file is also available as an interactive jupyter notebook.
+
+`Download this file as a notebook`_ (hint: right-click -> "save as").
+
+.. _Download this file as a notebook: {{ env.doc2path(env.docname) }}
+
+"""
+
+nbsphinx_epilog = nbsphinx_prolog
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]

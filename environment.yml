@@ -121,6 +121,7 @@ dependencies:
   - poetry  # skip for conda-lock
   - sphinx
   - nbsphinx
+  - pandoc
   # - conda-build
   - coverage
   - sphinxcontrib-napoleon
