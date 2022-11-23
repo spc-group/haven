@@ -11,9 +11,6 @@ class CamerasDisplay(display.FireflyDisplay):
 
     def __init__(self, args=None, macros={}, **kwargs):
         self._camera_displays = []
-        # Determine macros programatically from config file
-        # config = haven.load_config()['ion_chamber']['scaler']
-        # macros["PREFIX"] = macros.get("PREFIX", f"{config['ioc']}:{config['record']}")
         super().__init__(args=args, macros=macros, **kwargs)
     
     def customize_ui(self):
