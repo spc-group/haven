@@ -90,7 +90,7 @@
       </layout>
      </item>
      <item>
-      <widget class="PyDMByteIndicator" name="camera_acquire_bit">
+      <widget class="PyDMByteIndicator" name="camera_status_indicator">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
          <horstretch>0</horstretch>
@@ -142,6 +142,16 @@
         <stringlist>
          <string></string>
         </stringlist>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="PyDMLabel" name="camera_status_label">
+       <property name="toolTip">
+        <string/>
+       </property>
+       <property name="channel" stdset="0">
+        <string>${PREFIX}cam1:DetectorState_RBV</string>
        </property>
       </widget>
      </item>
