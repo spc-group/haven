@@ -6,8 +6,10 @@ import logging
 import os
 
 import haven
-from pydm.data_plugins.epics_plugin import EPICSPlugin
+# from pydm.data_plugins.epics_plugin import EPICSPlugin
+from pydm.widgets.channel import PyDMChannel
 from qtpy.QtGui import QColor
+from qtpy.QtCore import Slot
 
 from firefly import display
 
@@ -41,9 +43,18 @@ class CameraDisplay(display.FireflyDisplay):
     def __init__(self, *, args=None, macros={}, **kwargs):
         self.prefix = macros.get("PREFIX", "")
         super().__init__(args=args, macros=macros, **kwargs)
-        Connection = EPICSPlugin().connection_class
-        self.detector_state = Connection(channel=None, pv=f"{self.prefix}cam1:DetectorState_RBV")
-        self.acquire_state = Connection(channel=None, pv=f"{self.prefix}cam1:Acquire")
+        # Disconnect previous channels to the indicator
+        byte = self.camera_status_indicator
+        for ch in byte.channels():
+            ch.disconnect()
+        # Channel for watching the detector state
+        self.detector_state = PyDMChannel(
+            address=self.camera_status_label.channel,
+            connection_slot=self.update_status_indicators,
+            value_slot=self.update_status_indicators,
+        )
+        self.detector_state.connect()
+        byte._channels.append(self.detector_state)
         # Color for various states
         self._ioc_disconnected_color = QColor(255, 255, 255)
         self._detector_disconnected_color = QColor(255, 0, 0)
@@ -85,18 +96,25 @@ class CameraDisplay(display.FireflyDisplay):
         log.info(f"Launching ImageJ: {cmds}")
         self.imagej_process = subprocess.Popen(cmds, env=imagej_env)
 
-    def update_status_indicator(self):
+    @Slot()
+    def update_status_indicators(self, new_state):
+        # Retrieve widgets we're going to change
         bit = self.camera_status_indicator._indicators[0]
         lbl = self.camera_status_label
-        if not self.detector_state.connected:
+        # Determine the new state of the camera
+        ioc_is_disconnected = new_state is False
+        camera_is_idle = new_state == DetectorStates.IDLE
+        camera_is_acquiring = new_state == DetectorStates.ACQUIRE
+        # Update the widgets
+        if ioc_is_disconnected:
             # IOC is not running or not available
             bit.setColor(self._ioc_disconnected_color)
             lbl.setVisible(False)
-        elif self.detector_state.value == DetectorStates.IDLE:
+        elif camera_is_idle:
             # Camera is idle
             bit.setColor(self._idle_color)
             lbl.setVisible(False)
-        elif self.detector_state.value == DetectorStates.ACQUIRE:
+        elif camera_is_acquiring:
             bit.setColor(self._acquire_color)
             lbl.setVisible(False)
         else:

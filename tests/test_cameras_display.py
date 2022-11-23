@@ -2,11 +2,15 @@ import json
 
 import haven
 from pydm.data_plugins.epics_plugin import EPICSPlugin
+from pydm.widgets.channel import PyDMChannel
 from qtpy.QtGui import QColor
 
 from firefly.main_window import FireflyMainWindow
 from firefly.cameras import CamerasDisplay
 from firefly.camera import CameraDisplay, DetectorStates
+
+
+macros = {"PREFIX": "camera_ioc:", "DESC": "Camera A"}
 
 
 def test_embedded_displays(qtbot):
@@ -26,49 +30,42 @@ def test_embedded_displays(qtbot):
     assert json.loads(display._camera_displays[0].macros) == expected_macros
 
 
-def test_camera_connection_status(qtbot):
+def test_camera_channel_status(qtbot):
     """Test that the camera status indicator responds to camera connection
     status PV.
 
     """
     FireflyMainWindow()
-    macros = {"PREFIX": "camera_ioc:", "DESC": "Camera A"}
     display = CameraDisplay(macros=macros)
     # Check that the pydm connections have been made to EPICS
-    assert isinstance(display.detector_state, EPICSPlugin.connection_class)
-    assert display.detector_state.pv.pvname == "camera_ioc:cam1:DetectorState_RBV"
-    assert isinstance(display.acquire_state, EPICSPlugin.connection_class)
-    assert display.acquire_state.pv.pvname == "camera_ioc:cam1:Acquire"
+    assert isinstance(display.detector_state, PyDMChannel)
+    assert display.detector_state.address == "camera_ioc:cam1:DetectorState_RBV"
+
 
 def test_set_status_byte(qtbot):
     FireflyMainWindow()
-    display = CameraDisplay()
+    display = CameraDisplay(macros=macros)
     display.show()
     # All devices are disconnected
-    assert not display.detector_state.connected
-    assert not display.acquire_state.connected
+    state = display.detector_state
     byte = display.camera_status_indicator
     bit = byte._indicators[0]
     label = display.camera_status_label
     # Set the color to something else, then check that it gets set back to white
     bit.setColor(QColor(255, 0, 0))
-    display.update_status_indicator()
+    # Simulated the IOC being disconnected
+    display.update_status_indicators(False)
     assert bit._brush.color().getRgb() == (255, 255, 255, 255)
     assert not label.isVisible(), "State label should be hidden by default"
     # Make the signals connected and see that it's green
-    display.detector_state.connected = True
-    display.acquire_state.connected = True
-    display.detector_state.value = DetectorStates.IDLE
-    display.update_status_indicator()
+    display.update_status_indicators(DetectorStates.IDLE)
     assert bit._brush.color().getRgb() == (0, 255, 0, 255)
     assert not label.isVisible(), "State label should be hidden by default"
     # Make the camera be disconnected and see if it's red
-    display.detector_state.value = DetectorStates.DISCONNECTED
-    display.update_status_indicator()
+    display.update_status_indicators(DetectorStates.DISCONNECTED)
     assert bit._brush.color().getRgb() == (255, 0, 0, 255)
     assert  label.isVisible(), "State label should be visible when disconnected"
     # Make the camera be acquiring and see if it's yellow
-    display.detector_state.value = DetectorStates.ACQUIRE
-    display.update_status_indicator()
+    display.update_status_indicators(DetectorStates.ACQUIRE)
     assert bit._brush.color().getRgb() == (255, 255, 0, 255)
     assert not label.isVisible(), "State label should be hidden by default"
