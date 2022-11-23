@@ -4,11 +4,42 @@ Making Changes to Haven and Contributing
 
 Two Scenarios are likely when proposing changes to Haven:
 
-* New feature or bugfix written in a development environment
-* Changes from the beamline during beamtime
+* New feature or bugfix written in a development environment (preferred)
+* Troubleshooting the beamline during beamtime
 
 From a Development Environment
 ==============================
+
+The preferred way to modify Haven is to fork the main repository on
+github, make changes on a new branch, and then submit a pull request
+back to the main repository. This section assumes you **have an
+activate github account** (if not, sign up for one first).
+
+The following steps are **only required the first time** you work on
+Haven. Once done, the forked repository and local environment can be
+reused.
+
+1. Install git on your local computer
+2. Create a fork of the `main Haven repository`_
+3. Install an anaconda-like distribution environment (`mamba-forge`_ is recommended)
+4. Create a new conda environment from *environment.yml* (e.g. ``mamba create -n haven -f environment.yml``)
+5. Activate the newly created conda environment (e.g. ``mamba activate haven``)
+6. Install haven in the environment (``poetry install``)
+
+The following steps should then be performed every time a new feature
+is being added or bug is being fixed.
+
+7. Sync your github fork with the main github repository
+8. Pull changes to your local repository (``git pull``)
+9. Create a new git branch for the task you are doing (e.g. ``git checkout -b area_detector_support``)
+10. Make changes to the Haven source code as needed
+11. Ensure all tests pass (``pytest``)
+12. Commit changes to your local branch (``git add file1.py file2.py ...`` and ``git commit``)
+13. Push changes back to github (``git push``)
+14. Create a pull request on github to send changes back to the main repository.
+
+.. _mamba-forge: https://mamba.readthedocs.io/en/latest/installation.html
+.. _main Haven repository: https://github.com/spc-group/haven
 
 From the Beamline
 =================
@@ -18,6 +49,9 @@ From the Beamline
    This section is intended for qualified beamline staff. **Users are
    not authorized** to make changes to the beamline software without
    staff involvement.
+
+   If at all possible, changes should be made through a development
+   environment as described above.
 
 User support often requires changes to be made quickly from the
 beamline computers.
