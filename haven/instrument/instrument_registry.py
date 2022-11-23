@@ -40,6 +40,7 @@ class InstrumentRegistry:
         *,
         label: Optional[str] = None,
         name: Optional[str] = None,
+            allow_none: Optional[str] = False,
     ) -> Component:
         """Find registered device components matching parameters.
 
@@ -56,6 +57,11 @@ class InstrumentRegistry:
           Search by the component's ``labels={"my_label"}`` parameter.
         name
           Search by the component's ``name="my_name"`` parameter.
+        allow_none
+          If false, missing components will raise an exception. If
+          true, an empty list is returned if no registered components
+          are found.
+
 
         Returns
         =======
@@ -73,13 +79,16 @@ class InstrumentRegistry:
           ``self.findall()`` method.
 
         """
-        results = self.findall(any_of=any_of, label=label, name=name)
-        if len(results) > 1:
+        results = self.findall(any_of=any_of, label=label, name=name, allow_none=allow_none)
+        if len(results) == 1:
+            result = results[0]
+        elif len(results) > 1:
             raise exceptions.MultipleComponentsFound(
                 f"Found {len(results)} components matching query. Consider using ``findall()``."
             )
         else:
-            return results[0]
+            result = None
+        return result
 
     def clear(self):
         """Remove the previously registered components."""
@@ -91,6 +100,7 @@ class InstrumentRegistry:
         *,
         label: Optional[str] = None,
         name: Optional[str] = None,
+            allow_none: Optional[bool] = False,
     ) -> Sequence[Component]:
         """Find registered device components matching parameters.
 
@@ -111,6 +121,10 @@ class InstrumentRegistry:
           Search by the component's ``labels={"my_label"}`` parameter.
         name
           Search by the component's ``name="my_name"`` parameter.
+        allow_none
+          If false, missing components will raise an exception. If
+          true, an empty list is returned if no registered components
+          are found.
 
         Returns
         =======
@@ -162,7 +176,7 @@ class InstrumentRegistry:
                     break
         # Check that the label is actually defined somewhere
         found_results = len(results) > 0
-        if not found_results:
+        if not found_results and not allow_none:
             raise exceptions.ComponentNotFound(
                 f'Could not find components matching: label="{_label}", name="{_name}"'
             )

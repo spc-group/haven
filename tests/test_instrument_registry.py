@@ -51,6 +51,16 @@ def test_find_missing_components():
     with pytest.raises(exceptions.ComponentNotFound):
         reg.findall(label="spam")
 
+def test_find_allow_missing_components():
+    """Test that registry tolerates missing components with the
+    *allow_none* argument.
+
+    """
+    reg = InstrumentRegistry()
+    # Get some non-existent devices and check that the right nothing is returned
+    assert reg.findall(label="spam", allow_none=True) == []
+    assert reg.find(name="eggs", allow_none=True) is None
+
 
 def test_exceptions():
     reg = InstrumentRegistry()
