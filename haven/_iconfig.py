@@ -14,6 +14,7 @@ __all__ = [
     "load_config",
 ]
 
+import os
 import logging
 from typing import Sequence
 import pathlib
@@ -29,6 +30,14 @@ CONFIG_FILES = [
     pathlib.Path("~/bluesky/").expanduser() / "iconfig.toml",
     pathlib.Path("~/bluesky/instrument").expanduser() / "iconfig.toml",
 ]
+
+# Add config file from environmental variable
+try:
+    CONFIG_FILES.extend(
+        [pathlib.Path(fp.strip()) for fp in os.environ["HAVEN_CONFIG_FILES"].split(',')]
+    )
+except KeyError:
+    pass
 
 
 def load_files(file_paths: Sequence[pathlib.Path]):

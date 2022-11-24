@@ -1,6 +1,9 @@
 import unittest
+import os
 from pathlib import Path
+import importlib
 
+from haven import _iconfig
 from haven._iconfig import load_config
 
 
@@ -13,6 +16,17 @@ def test_loading_a_file():
     test_file = Path(__file__).resolve().parent / "test_iconfig.toml"
     config = load_config(file_paths=[test_file])
     assert config["beamline"]["pv_prefix"] == "spam"
+
+
+def test_config_files_from_env():
+    # Set the environmental variable with the path to a test TOML file
+    test_file = Path(__file__).resolve().parent / "test_iconfig.toml"
+    os.environ["HAVEN_CONFIG_FILES"] = str(test_file)
+    # Load the configuration
+    importlib.reload(_iconfig)
+    config = _iconfig.load_config()
+    # Check that the test file was loaded
+    assert config["beamline"]["pv_prefix"] == "spam"    
 
     
 def test_merging_dicts():
