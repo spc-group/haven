@@ -102,7 +102,7 @@ dependencies:
   - tqdm
   - xraydb
   - xrayutilities
-  - pyviz
+  - pyviz_comms
   - hvplot
   
   # --- packaging and publishing
