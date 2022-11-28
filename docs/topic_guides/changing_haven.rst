@@ -21,10 +21,11 @@ reused.
 
 1. Install git on your local computer
 2. Create a fork of the `main Haven repository`_
-3. Install an anaconda-like distribution environment (`mamba-forge`_ is recommended)
-4. Create a new conda environment from *environment.yml* (e.g. ``mamba create -n haven -f environment.yml``)
-5. Activate the newly created conda environment (e.g. ``mamba activate haven``)
-6. Install haven in the environment (``poetry install``)
+3. Clone the forked repository to your local computer (e.g. ``git clone git@github.com:canismarko/haven.git``)
+4. Install an anaconda-like distribution environment (`mamba-forge`_ is recommended)
+5. Create a new conda environment from *environment.yml* (e.g. ``mamba create -n haven -f environment.yml``)
+6. Activate the newly created conda environment (e.g. ``mamba activate haven``)
+7. Install haven in the environment (``poetry install``)
 
 The following steps should then be performed every time a new feature
 is being added or bug is being fixed.
