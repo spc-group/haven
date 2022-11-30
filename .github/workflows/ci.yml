@@ -22,10 +22,11 @@ jobs:
     - name: Install micromamba
       uses: mamba-org/provision-with-micromamba@main
       with:
-        environment-file: environment.yml
-    # - name: Create conda environment
-    #   run: |
-    #     micromamba create -n haven -y -f environment-explicit.txt
+        environment-file: false
+        # environment-file: environment.yml
+    - name: Create conda environment
+      run: |
+        micromamba create -v -n haven -y -f /home/runner/work/haven/haven/environment.yml
     - name: Activate conda environment
       run: |
         micromamba activate haven

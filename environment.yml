@@ -90,12 +90,12 @@ dependencies:
   # --- user-requested packages
   - aps-dm-api >=5   # linux-64  osx-64
   # - c2dataviewer  # --- linux-64
-  - nexpy
-  - punx
+  # - nexpy
+  # - punx
   # - pvapy
   - mergedeep
   - pvview
-  - pymca
+  # - pymca
   - pyRestTable
   - spec2nexus
   - stdlogpj
