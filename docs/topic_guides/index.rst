@@ -11,8 +11,9 @@ These guides do not cover the individual beamlines thoroughly.
    :maxdepth: 2
    :caption: Contents:
 
-   energy_scans.rst   
-   define_new_motor.rst
-   xdi_writer.rst
-   instrument_registry.rst
    changing_haven.rst
+   define_new_motor.rst
+   energy_scans.rst
+   instrument_registry.rst
+   motor_positions.rst
+   xdi_writer.rst
