@@ -97,7 +97,7 @@ dependencies:
   - pvview
   # - pymca
   - pyRestTable
-  - spec2nexus
+  # - spec2nexus
   - stdlogpj
   - tqdm
   - xraydb
@@ -114,7 +114,7 @@ dependencies:
   - twine
   - versioneer
   - mamba
-  - micromamba
+  # - micromamba
   - pygithub
 
   # --- packaging and publishing
