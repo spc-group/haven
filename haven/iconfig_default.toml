@@ -50,16 +50,28 @@ preamp_record = "SR570_1"
 
 pv_prefix = ""
 
+# Motors
+# ======
+# 
+# Add a new section for each IOC (or IOC prefix) that has motors
+# matching the format {prefix}:m1. The heading of the subsection
+# ("VME_crate" in the example below) is a human-readable name that
+# will become a label on the Ophyd Device. *num_motors* determines how
+# many motors will be read. The example below will load three motors
+# with PVs: "vme_crate_ioc:m1", "vme_crate_ioc:m2", and
+# "vme_crate_ioc:m3".
+[motor.VME_crate]
+prefix = "vme_crate_ioc"
+num_motors = 3
 
-[motor]
-iocs = ["vme_crate_ioc"]
+# Cameras
+# =======
 
 [camera]
 
 imagej_command = "imagej"
 
 # Keys for camera definitions must begin with "cam" (e.g. "camA", "camB")
-
 [camera.camA]
 
 name = "s25id-gige-A"

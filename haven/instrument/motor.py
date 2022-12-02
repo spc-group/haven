@@ -32,18 +32,18 @@ def load_all_motors(config=None):
     if config is None:
         config = load_config()
     # Figure out the prefix
-    for ioc in config["motor"]["iocs"]:
-        log.info(f"Auto-detecing motors from IOC: {ioc}")
-        load_ioc_motors(ioc)
+    for name, config in config["motor"].items():
+        prefix = config['prefix']
+        num_motors = config['num_motors']
+        log.info(f"Loading {num_motors} motors from IOC: {name} ({prefix})")
+        load_ioc_motors(prefix=prefix, num_motors=num_motors, ioc_name=name)
 
 
-def load_ioc_motors(ioc):
+def load_ioc_motors(prefix, num_motors, ioc_name=None):
     # Create motor objects
-    motor_num = 0
     motors = []
-    while True:
-        motor_num += 1
-        pv = f"{ioc}:m{motor_num}"
+    for motor_num in range(num_motors):
+        pv = f"{prefix}:m{motor_num+1}"
         # Take the name of the ophyd motor from the epics description
         log.debug(f"Looking for motor {motor_num} at {pv}")
         name = epics.caget(f"{pv}.DESC", timeout=1)
@@ -56,10 +56,13 @@ def load_ioc_motors(ioc):
             log.debug(f"SKipping unnamed motor {motor_num}")
         else:
             # Create a new motor object
+            labels = {"motors"}
+            if ioc_name is not None:
+                labels = set([ioc_name, *labels])
             motor = HavenMotor(
                 prefix=pv,
                 name=name,
-                labels={"motors"},
+                labels=labels,
             )
             log.info(f"Created motor {motor}")
             motors.append(motor)
