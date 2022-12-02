@@ -51,6 +51,7 @@ def test_find_missing_components():
     with pytest.raises(exceptions.ComponentNotFound):
         reg.findall(label="spam")
 
+
 def test_find_allow_missing_components():
     """Test that registry tolerates missing components with the
     *allow_none* argument.
@@ -186,6 +187,7 @@ def test_find_by_device():
     # Pass the device itself to the find method
     result = reg.find(cptD)
     assert result is cptD
+
 
 def test_find_by_list_of_names():
     """Will the findall() method handle lists of things to look up."""

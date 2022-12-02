@@ -1,8 +1,5 @@
-import pytest
-
 from haven.instrument.instrument_registry import registry
 from haven.instrument import motor
-from test_simulated_ioc import ioc_motor
 
 
 def test_load_vme_motors(ioc_motor):

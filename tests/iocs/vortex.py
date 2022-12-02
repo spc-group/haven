@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
-from textwrap import dedent
 
 from caproto.server import (
     pvproperty,
     run,
-    PvpropertyDouble,
 )
 
-from haven.simulated_ioc import ResponsiveMotorFields, ioc_arg_parser, IOC as IOC_
+from haven.simulated_ioc import IOC as IOC_
 
 
 class IOC(IOC_):
@@ -34,6 +32,6 @@ class IOC(IOC_):
     default_prefix = "xspress:"
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pvdb, run_options = IOC.parse_args()
     run(pvdb, **run_options)

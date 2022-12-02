@@ -2,7 +2,6 @@ import pytest
 
 from epics import caget
 from haven.instrument.fluorescence_detector import XspressDetector
-from test_simulated_ioc import ioc_vortex
 
 
 @pytest.fixture

@@ -5,8 +5,6 @@ from haven.instrument.ion_chamber import IonChamber, SensitivityLevelPositioner
 from haven import exceptions
 import epics
 
-from test_simulated_ioc import ioc_preamp, ioc_scaler
-
 
 def test_gain_level(ioc_preamp, ioc_scaler):
     positioner = SensitivityLevelPositioner("preamp_ioc", name="positioner")

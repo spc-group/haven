@@ -2,11 +2,12 @@ import pytest
 
 from haven import registry, exceptions
 from haven.instrument import stage
-from test_simulated_ioc import ioc_motor
 
 
 def test_stage_init():
-    stage_ = stage.XYStage("motor_ioc", pv_vert=":m1", pv_horiz=":m2", labels={"stages"}, name="aerotech")
+    stage_ = stage.XYStage(
+        "motor_ioc", pv_vert=":m1", pv_horiz=":m2", labels={"stages"}, name="aerotech"
+    )
     assert stage_.name == "aerotech"
     assert stage_.vert.name == "aerotech_vert"
     # Check registry of the stage and the individiual motors
@@ -22,5 +23,8 @@ def test_stage_init():
 
 def test_load_aerotech_stage():
     stage.load_stages()
+    # Make sure these are findable
     stage_ = registry.find(name="Aerotech")
-    vert = registry.find(name="Aerotech_vert")
+    assert stage_ is not None
+    vert_ = registry.find(name="Aerotech_vert")
+    assert vert_ is not None

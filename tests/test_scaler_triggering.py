@@ -14,6 +14,7 @@ from ophyd import Device
 from haven.instrument.ion_chamber import ScalerTriggered
 from haven import exceptions
 
+
 @pytest.mark.skip("scaler_triggering is not needed right now")
 def test_trigger_fires():
     scaler_prefix = "myioc:myscaler"

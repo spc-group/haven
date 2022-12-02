@@ -5,8 +5,6 @@ import epics
 
 from haven.instrument.energy_positioner import EnergyPositioner
 
-from test_simulated_ioc import ioc_mono, ioc_undulator
-
 
 def test_pseudo_to_real_positioner(ioc_mono, ioc_undulator):
     positioner = EnergyPositioner(

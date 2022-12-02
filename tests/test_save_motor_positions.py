@@ -2,9 +2,7 @@ import time
 
 import epics
 import pytest
-from bluesky import RunEngine
-from bluesky.simulators import summarize_plan
-from ophyd.sim import motor1, motor2
+from ophyd.sim import motor1
 from ophyd import EpicsMotor
 from haven import (
     save_motor_position,
@@ -14,8 +12,6 @@ from haven import (
     recall_motor_position,
     HavenMotor,
 )
-
-from test_simulated_ioc import ioc_motor
 
 
 @pytest.fixture
@@ -77,7 +73,7 @@ def test_save_motor_position_by_name(mongodb, ioc_motor):
     motorB.set(23.0)
     time.sleep(0.1)
     # Save the current motor position
-    new_id = save_motor_position(
+    save_motor_position(
         "Motor A", "Motor B", name="Sample center", collection=mongodb.motor_positions
     )
     # Check that the motors got saved
@@ -90,7 +86,7 @@ def test_save_motor_position_by_name(mongodb, ioc_motor):
 
 
 def test_get_motor_position_by_uid(mongodb):
-    uid = str(mongodb.motor_positions.find_one({'name': "Good position A"})['_id'])
+    uid = str(mongodb.motor_positions.find_one({"name": "Good position A"})["_id"])
     result = get_motor_position(uid=uid, collection=mongodb.motor_positions)
     assert result.name == "Good position A"
     assert result.motors[0].name == "SLT V Upper"
@@ -98,7 +94,9 @@ def test_get_motor_position_by_uid(mongodb):
 
 
 def test_get_motor_position_by_name(mongodb):
-    result = get_motor_position(name="Good position A", collection=mongodb.motor_positions)
+    result = get_motor_position(
+        name="Good position A", collection=mongodb.motor_positions
+    )
     assert result.name == "Good position A"
     assert result.motors[0].name == "SLT V Upper"
     assert result.motors[0].readback == 510.5
@@ -112,7 +110,7 @@ def test_get_motor_position_exceptions(mongodb):
 
 def test_recall_motor_position(mongodb, sim_registry):
     # Re-set the previous value
-    uid = str(mongodb.motor_positions.find_one({'name': "Good position A"})['_id'])
+    uid = str(mongodb.motor_positions.find_one({"name": "Good position A"})["_id"])
     plan = recall_motor_position(uid=uid, collection=mongodb.motor_positions)
     messages = list(plan)
     # Check the plan output
@@ -130,10 +128,12 @@ def test_list_motor_positions(mongodb, capsys):
     # Check stdout for printed motor positions
     captured = capsys.readouterr()
     assert len(captured.out) > 0
-    uid = str(mongodb.motor_positions.find_one({'name': "Good position A"})['_id'])
-    expected = (f'\n\033[1mGood position A\033[0m (uid="{uid}")\n'
-                '┣━SLT V Upper: 510.5\n'
-                '┗━SLT V Lower: -211.93\n')
+    uid = str(mongodb.motor_positions.find_one({"name": "Good position A"})["_id"])
+    expected = (
+        f'\n\033[1mGood position A\033[0m (uid="{uid}")\n'
+        "┣━SLT V Upper: 510.5\n"
+        "┗━SLT V Lower: -211.93\n"
+    )
     assert captured.out == expected
 
 
@@ -163,9 +163,7 @@ def test_motor_position_e2e(mongodb, ioc_motor):
     assert epics.caget(pv, use_monitor=False) == 520
     assert motor1.get(use_monitor=False).user_readback == 520
     # Recall the saved position and see if it complies
-    RE = RunEngine()
     plan = recall_motor_position(uid=uid, collection=mongodb.motor_positions)
     msg = next(plan)
-    print(msg)
     assert msg.obj.name == "SLT V Upper"
     assert msg.args[0] == 504.6

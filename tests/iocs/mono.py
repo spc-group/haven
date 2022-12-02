@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
-from textwrap import dedent
 
 from caproto.server import (
     pvproperty,
     run,
-    PvpropertyDouble,
 )
 
-from haven.simulated_ioc import ResponsiveMotorFields, ioc_arg_parser, IOC as IOC_
+from haven.simulated_ioc import ResponsiveMotorFields, IOC as IOC_
 
 
 class IOC(IOC_):
@@ -25,10 +23,10 @@ class IOC(IOC_):
     m7 = pvproperty(value=0, doc="roll-int", record=ResponsiveMotorFields)
     m8 = pvproperty(value=0, doc="pi-int", record=ResponsiveMotorFields)
     Energy = pvproperty(value=10000.0, doc="Energy", record=ResponsiveMotorFields)
-    
+
     default_prefix = "mono_ioc:"
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pvdb, run_options = IOC.parse_args()
     run(pvdb, **run_options)

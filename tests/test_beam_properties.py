@@ -150,8 +150,7 @@ def test_fit_step():
 
 
 def test_knife_scan():
-    plan = knife_scan(motor1, -200, 200, 401, I0=det1, It=det2,
-                      relative=True)
+    plan = knife_scan(motor1, -200, 200, 401, I0=det1, It=det2, relative=True)
     # Check metadata
     open_msg = [m for m in plan if m.command == "open_run"][0]
     assert open_msg.kwargs["plan_name"] == "knife_scan"
