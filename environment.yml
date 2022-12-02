@@ -16,19 +16,14 @@ variables:
   PYDM_DEFAULT_PROTOCOL: ca
 
 channels:
-  - defaults
   - conda-forge
-  - apsu
+  - defaults
   - aps-anl-tag
-  - sveseli
-# channels:
-#   - conda-forge
-#   # - aps-anl-tag
-#   - defaults
+  - nsls2forge
 
 dependencies:
   # --- Python core packages
-  - python=3.9
+  - python=3.10
   - ipython
   - ipykernel
   - jupyter
@@ -106,27 +101,18 @@ dependencies:
   - hvplot
   
   # --- packaging and publishing
-  - conda-build
+  # - conda-build
   - coverage
   - poetry
   - sphinx
-  - sphinxcontrib-napoleon
-  - twine
-  - versioneer
-  - mamba
-  # - micromamba
-  - pygithub
-
-  # --- packaging and publishing
-  - poetry  # skip for conda-lock
-  - sphinx
-  - nbsphinx
   - pandoc
-  # - conda-build
-  - coverage
+  - nbsphinx
   - sphinxcontrib-napoleon
   # - twine
-  - versioneer
+  # - versioneer
+  # - mamba
+  # - micromamba
+  # - pygithub
 
   - pip:
     - time-machine

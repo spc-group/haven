@@ -22,24 +22,7 @@ jobs:
     - name: Install micromamba
       uses: mamba-org/provision-with-micromamba@main
       with:
-        environment-file: false
-        # environment-file: environment.yml
-    - name: Micromamba info
-      run: |
-        cat /home/runner/.condarc
-        which conda
-        which micromamba
-        conda config --add channels conda-forge
-        cat /home/runner/.condarc
-    - name: Create conda environment
-      run: |
-        micromamba create -v -n haven -y -f /home/runner/work/haven/haven/environment.yml
-    - name: Activate conda environment
-      run: |
-        micromamba activate haven
-    # - name: Install any missing dependencies (mostly via pip)
-    #   run: |
-    #     pip install time-machine autoapi pytest-mongodb        
+        environment-file: environment.yml
     - name: Install haven
       run: poetry install
       env:
