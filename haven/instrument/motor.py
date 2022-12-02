@@ -51,7 +51,7 @@ def load_ioc_motors(prefix, num_motors, ioc_name=None):
             # The PV doesn't exist, so we've probably reached the highest motor number
             break
         # Create the motor device
-        if name == f"motor {motor_num}":
+        if name == f"motor {motor_num+1}":
             # It's an unnamed motor, so skip it
             log.debug(f"SKipping unnamed motor {motor_num}")
         else:
