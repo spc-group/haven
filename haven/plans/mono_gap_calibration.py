@@ -12,6 +12,7 @@ from lmfit.models import StepModel
 from ..instrument.instrument_registry import registry
 from .set_energy import set_energy
 from .auto_gain import auto_gain
+from .beam_properties import knife_scan
 from .._iconfig import load_config
 
 

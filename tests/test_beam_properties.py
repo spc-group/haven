@@ -143,7 +143,7 @@ def test_fit_step():
     )
     expected_center = 5960.94  # 5961.21
     # Do the fitting
-    result = fit_step(x, y, plot=True, plot_derivative=True)
+    result = fit_step(x, y, plot=False, plot_derivative=False)
     plt.show()
     assert result.position == pytest.approx(expected_center)
     assert result.fwhm == pytest.approx(1449.956)
