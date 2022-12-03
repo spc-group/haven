@@ -28,7 +28,8 @@ def test_simulated_ioc(ioc_simple):
 
 
 def test_motor_ioc(ioc_motor):
-    assert caget("vme_crate_ioc:m1", use_monitor=False) == 5000.0
+    # Check that the starting value is different than what we'll set it to
+    assert caget("vme_crate_ioc:m1", use_monitor=False) != 4000
     # Change the value
     caput("vme_crate_ioc:m1", 4000.0)
     time.sleep(5)
@@ -60,7 +61,8 @@ def test_mono_ioc(ioc_mono):
     assert caget("mono_ioc:Energy.RBV", use_monitor=False) == 6000.0
 
 
-@pytest.mark.skipif(os.environ.get("IS_CI", False), reason="Caproto is too slow on CI.")
+@pytest.mark.skipif(os.environ.get("GITHUB_ACTIONS", "false") == "true",
+                    reason="Caproto is too slow on CI.")
 def test_ioc_timing():
     """Check that the IOC's don't take too long to load."""
     # Launch the IOC numerous times to see how reproducible it is

@@ -36,6 +36,9 @@ def test_gain_changes(ioc_preamp, ioc_scaler):
     )
     time.sleep(0.01)
     ion_chamber.wait_for_connection(timeout=20)
+    statuses = [ion_chamber.sensitivity.sens_value.set(2),
+                ion_chamber.sensitivity.sens_unit.set(1)]
+    [status.wait() for status in statuses]
     assert ion_chamber.sensitivity.sens_value.get(use_monitor=False).readback == 2
     assert ion_chamber.sensitivity.sens_unit.get(use_monitor=False).readback == 1
     # Change the gain without changing units

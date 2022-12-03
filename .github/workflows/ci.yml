@@ -9,8 +9,6 @@ on:
     branches:
       - main
 
-env:
-  IS_CI: true
 
 jobs:
   build-linux:
@@ -29,7 +27,12 @@ jobs:
     - name: Install haven
       run: poetry install
       env:
-        POETRY_VIRTUALENVS_CREATE: false      
+        POETRY_VIRTUALENVS_CREATE: false
+    - name: Environment info
+      run: |
+        env
+        micromamba info
+        micromamba list
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
