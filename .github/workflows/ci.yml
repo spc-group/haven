@@ -9,6 +9,9 @@ on:
     branches:
       - main
 
+env:
+  IS_CI: true
+
 jobs:
   build-linux:
     defaults:

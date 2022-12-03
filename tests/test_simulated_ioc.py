@@ -1,6 +1,7 @@
 import logging
 import time
 from pathlib import Path
+import os
 
 import pytest
 from caproto.server import (
@@ -59,6 +60,7 @@ def test_mono_ioc(ioc_mono):
     assert caget("mono_ioc:Energy.RBV", use_monitor=False) == 6000.0
 
 
+@pytest.mark.skipif(os.environ.get("IS_CI", False), reason="Caproto is too slow on CI.")
 def test_ioc_timing():
     """Check that the IOC's don't take too long to load."""
     # Launch the IOC numerous times to see how reproducible it is
@@ -68,7 +70,7 @@ def test_ioc_timing():
             caput("id_ioc:Energy", 100)
             new_value = caget("id_ioc:Energy", use_monitor=False)
         assert new_value == 100.0
-        print(f"Finish pass {pass_num} in {time.time() - start} seconds.")
+        log.info(f"Finish pass {pass_num} in {time.time() - start} seconds.")
         pass_time = time.time() - start
         msg = f"Pass {pass_num} took {pass_time} seconds."
         assert pass_time < 4, msg

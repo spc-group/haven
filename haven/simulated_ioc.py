@@ -73,16 +73,13 @@ class IOC(PVGroup):
         return ioc.pvdb, run_options
 
 
-def wait_for_ioc(pvdb, timeout=20):
+def wait_for_ioc(pvdb, timeout=60):
     """Block until all the PVs in the IOC have loaded."""
     # Build a list of PVs and PV fields
     all_fields = []
     fields_found = []
     for pv_name, prop in pvdb.items():
         all_fields.append(pv_name)
-        # for field in prop.fields:
-        #     pv = f"{pv_name}.{field}"
-        #     all_fields.append(pv)
     # Wait until all the PVs have responded
     start_time = time.time()
     deadline = start_time + timeout
@@ -100,7 +97,7 @@ def wait_for_ioc(pvdb, timeout=20):
                 field_times[field] = time.time() - start_time
             # Check for exceeding the timeout
             if time.time() > deadline:
-                msg = f"IOC ({pvdb.keys()[0]}) did not start within {timeout} seconds. Missing: {fields_left}"
+                msg = f"IOC ({list(pvdb)[0]}) did not start within {timeout} seconds. Missing: {fields_left}"
                 pbar.close()
                 raise exceptions.IOCTimeout(msg)
         time.sleep(0.1)
@@ -118,36 +115,7 @@ def simulated_ioc(fp):
     # Determine name of the IOC from filename
     fp = Path(fp)
     name = fp.stem
-    # Wait for all the other IOC's to be done
-    # if locks['caproto'] != "unlocked":
-    #     msg = f"{name} IOC could not start (locked by {locks['caproto']})."
-    #     raise exceptions.IOCTimeout(msg)
-        # assert False
-        # log.debug("Waiting on caproto server lock.")
-    # timeout = 20
-    # start_time = time.time()
-    # deadline = start_time + timeout
-    # while locks['caproto'] != "unlocked":
-    #     time.sleep(0.1)
-    #     if time.time() > deadline:
-    #         msg = f"{name} IOC not started within {timeout} seconds (locked by {locks['caproto']})."
-    #         raise exceptions.IOCTimeout(msg)
-    # log.debug(f"waiting for lock took {time.time() - start_time:.2f} seconds.")        
     locks['caproto'] = name
-    # full_pvdb = {}
-    # full_run_options = {}
-    # for IOC, prefix in zip(IOCs, prefixes):
-    #     ioc_options, run_options = ioc_arg_parser(
-    #         default_prefix=prefix, argv=[], desc=dedent(IOC.__doc__),
-    #     )
-    #     ioc = IOC(**ioc_options)
-    #     full_pvdb.update(**ioc.pvdb)
-    #     full_run_options.update(**run_options)
-    # Prepare the multiprocessing
-    # full_run_options["log_pv_names"] = False
-    # full_run_options["module_name"] = "caproto.curio.server"
-    # process = Process(target=run_ioc, kwargs=dict(pvdb=full_pvdb, **full_run_options), daemon=True)
-    # process.start()
     process = Popen(["python", str(fp.resolve())], stdout=PIPE, stderr=PIPE, text=True)
     # Build the pv database
     spec = importlib.util.spec_from_file_location("ioc", str(fp))
@@ -166,14 +134,6 @@ def simulated_ioc(fp):
     stdout, stderr = process.communicate()
     print(stdout)
     print(stderr)
-    # process.join(timeout=timeout)
-    # while process.is_alive():
-    #     if time.time() - kill_start > timeout:
-    #         raise exceptions.IOCTimeout(f"{IOC} not stopped within {timeout} seconds.")
-    #     time.sleep(0.1)
-    # process.kill()
-    # time.sleep(0.1)
-    # process.close()
     locks['caproto'] = "unlocked"
     log.debug(f"Shutting down took {time.time() - start_time:.2f} sec.")        
 
