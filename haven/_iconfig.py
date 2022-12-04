@@ -34,7 +34,7 @@ CONFIG_FILES = [
 # Add config file from environmental variable
 try:
     CONFIG_FILES.extend(
-        [pathlib.Path(fp.strip()) for fp in os.environ["HAVEN_CONFIG_FILES"].split(',')]
+        [pathlib.Path(fp.strip()) for fp in os.environ["HAVEN_CONFIG_FILES"].split(",")]
     )
 except KeyError:
     pass
@@ -48,7 +48,7 @@ def load_files(file_paths: Sequence[pathlib.Path]):
                 log.info(f"Loading config file: {fp}")
                 config = tomli.load(fp)
                 yield config
-                
+
         else:
             log.debug(f"Could not find config file, skipping: {fp}")
 

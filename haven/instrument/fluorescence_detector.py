@@ -1,18 +1,14 @@
 from ophyd import (
     Device,
-    EpicsMotor,
     EpicsSignal,
     Component as Cpt,
-    FormattedComponent as FCpt,
     Kind,
 )
 from enum import IntEnum
 
 
 from .scaler_triggered import ScalerTriggered
-from .instrument_registry import registry
 from .._iconfig import load_config
-from ..signal import Signal, SignalRO
 
 
 iconfig = load_config()

@@ -1,18 +1,12 @@
 from ophyd import (
     Device,
-    FormattedComponent as FCpt,
-    Kind,
 )
-
-from ..signal import Signal
 
 
 __all__ = ["ScalerTriggered"]
 
 
 class ScalerTriggered(Device):
-    
-
     def __init__(self, prefix="", *, scaler_prefix=None, **kwargs):
         # Determine which prefix to use for the scaler
         if scaler_prefix is not None:

@@ -1,4 +1,4 @@
-from .ion_chamber import IonChamber
-from .motor import HavenMotor
-from .monochromator import Monochromator
-from .instrument_registry import InstrumentRegistry, registry
+from .ion_chamber import IonChamber  # noqa: F401
+from .motor import HavenMotor  # noqa: F401
+from .monochromator import Monochromator  # noqa: F401
+from .instrument_registry import InstrumentRegistry, registry  # noqa: F401

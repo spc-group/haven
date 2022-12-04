@@ -1,7 +1,5 @@
 from ophyd import Device, Component as Cpt, FormattedComponent as FCpt, EpicsMotor
 
-from ..signal import Signal, SignalRO
-from .._iconfig import load_config
 from .instrument_registry import registry
 
 
@@ -18,8 +16,9 @@ class Monochromator(Device):
     mode = Cpt(EpicsMotor, ":mode", kind="config")
     energy = FCpt(EpicsMotor, "{energy_prefix}:Energy")
 
-    def __init__(self, prefix, *args, name, energy_prefix=None,
-                 id_prefix=None, **kwargs):
+    def __init__(
+        self, prefix, *args, name, energy_prefix=None, id_prefix=None, **kwargs
+    ):
         # Use the default ioc for energy if not explicitly set
         if energy_prefix is None:
             energy_prefix = prefix
@@ -29,7 +28,9 @@ class Monochromator(Device):
 
 
 def load_monochromator(config):
-    monochromator = Monochromator(config["monochromator"]["ioc"],
-                                  energy_prefix=config["monochromator"]["energy_ioc"],
-                                  name="monochromator")
+    monochromator = Monochromator(
+        config["monochromator"]["ioc"],
+        energy_prefix=config["monochromator"]["energy_ioc"],
+        name="monochromator",
+    )
     return monochromator

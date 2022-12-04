@@ -1,4 +1,4 @@
-from unittest import TestCase, expectedFailure, mock
+from unittest import TestCase, expectedFailure
 from io import StringIO
 import os
 import time
@@ -10,7 +10,6 @@ import logging
 import pytz
 import time_machine
 from bluesky import RunEngine
-from bluesky.simulators import summarize_plan
 from ophyd.sim import motor, SynGauss, SynAxis
 import numpy as np
 from numpy import asarray as array
@@ -120,7 +119,6 @@ class CallbackTests(TestCase):
 
     def setUp(self):
         self.stringio = StringIO()
-        fp = Path("20220819_nickel-oxide.xdi")
 
     def tearDown(self):
         for fp in [

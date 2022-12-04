@@ -18,9 +18,11 @@ class Shutter(ApsPssShutterWithStatus):
 
 def load_shutters(config=load_config()):
     for name, d in config["shutter"].items():
-        shutter = Shutter(open_pv=d["open_pv"],
-                          close_pv=d["close_pv"],
-                          state_pv=d["status_pv"],
-                          name=f"Shutter {name}",
-                          labels={"shutters"})
+        shutter = Shutter(
+            open_pv=d["open_pv"],
+            close_pv=d["close_pv"],
+            state_pv=d["status_pv"],
+            name=f"Shutter {name}",
+            labels={"shutters"},
+        )
         registry.register(shutter)

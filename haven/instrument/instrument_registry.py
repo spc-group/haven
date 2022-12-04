@@ -28,6 +28,7 @@ class InstrumentRegistry:
         self.clear()
 
     def clear(self):
+        """Remove the previously registered components."""
         self.components = []
 
     @property
@@ -40,7 +41,7 @@ class InstrumentRegistry:
         *,
         label: Optional[str] = None,
         name: Optional[str] = None,
-            allow_none: Optional[str] = False,
+        allow_none: Optional[str] = False,
     ) -> Component:
         """Find registered device components matching parameters.
 
@@ -79,20 +80,19 @@ class InstrumentRegistry:
           ``self.findall()`` method.
 
         """
-        results = self.findall(any_of=any_of, label=label, name=name, allow_none=allow_none)
+        results = self.findall(
+            any_of=any_of, label=label, name=name, allow_none=allow_none
+        )
         if len(results) == 1:
             result = results[0]
         elif len(results) > 1:
             raise exceptions.MultipleComponentsFound(
-                f"Found {len(results)} components matching query. Consider using ``findall()``."
+                f"Found {len(results)} components matching query. "
+                "Consider using ``findall()``."
             )
         else:
             result = None
         return result
-
-    def clear(self):
-        """Remove the previously registered components."""
-        self.components = []
 
     def findall(
         self,
@@ -100,7 +100,7 @@ class InstrumentRegistry:
         *,
         label: Optional[str] = None,
         name: Optional[str] = None,
-            allow_none: Optional[bool] = False,
+        allow_none: Optional[bool] = False,
     ) -> Sequence[Component]:
         """Find registered device components matching parameters.
 
@@ -140,7 +140,10 @@ class InstrumentRegistry:
         """
         results = []  # self.components.copy()
         # Define a helper to test for lists of search parameters
-        is_iterable = lambda obj: (not isinstance(obj, str)) and hasattr(obj, "__iter__")
+
+        def is_iterable(obj):
+            return (not isinstance(obj, str)) and hasattr(obj, "__iter__")
+
         if is_iterable(any_of):
             for a in any_of:
                 results.extend(self.findall(any_of=a))
@@ -149,7 +152,7 @@ class InstrumentRegistry:
             _label = label if label is not None else any_of
             if _label is not None:
                 if is_iterable(_label):
-                    [results.extend(self.findall(label=l)) for l in _label]
+                    [results.extend(self.findall(label=lbl)) for lbl in _label]
                 else:
                     try:
                         results.extend(
@@ -208,7 +211,8 @@ class InstrumentRegistry:
             component.__new__ = self.__new__wrapper
         else:  # An instance was given, so just save it in the register
             # Ignore any instances with the same name as a previous component
-            # (Needed for some sub-components that are just readback values of the parent)
+            # (Needed for some sub-components that are just readback
+            # values of the parent)
             duplicate_components = [
                 c for c in self.components if c.name == component.name
             ]

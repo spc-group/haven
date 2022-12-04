@@ -7,7 +7,9 @@ from .._iconfig import load_config
 
 
 class Camera(CamBase):
-    def __init__(self, prefix: str, name: str, description: Optional[str] = None, *args, **kwargs):
+    def __init__(
+        self, prefix: str, name: str, description: Optional[str] = None, *args, **kwargs
+    ):
         if description is None:
             description = name
         self.description = description
@@ -22,8 +24,12 @@ def load_cameras(config=None):
     # Load each camera
     cameras = []
     for (key, device) in devices.items():
-        cam = Camera(prefix=f"{device['ioc']}:", name=device["name"],
-                     description=device["description"], labels={"cameras"})
+        cam = Camera(
+            prefix=f"{device['ioc']}:",
+            name=device["name"],
+            description=device["description"],
+            labels={"cameras"},
+        )
         registry.register(cam)
         cameras.append(cam)
     return cameras

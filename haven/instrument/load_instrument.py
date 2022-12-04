@@ -9,7 +9,6 @@ from .stage import load_stages
 from .._iconfig import load_config
 
 
-
 def load_instrument(registry=default_registry, config=None):
     # Clear out any existing registry entries
     registry.clear()

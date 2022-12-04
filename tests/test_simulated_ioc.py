@@ -4,11 +4,6 @@ from pathlib import Path
 import os
 
 import pytest
-from caproto.server import (
-    PVGroup,
-    pvproperty,
-    PvpropertyDouble,
-)
 from epics import caget, caput
 
 from haven.simulated_ioc import simulated_ioc
@@ -61,8 +56,10 @@ def test_mono_ioc(ioc_mono):
     assert caget("mono_ioc:Energy.RBV", use_monitor=False) == 6000.0
 
 
-@pytest.mark.skipif(os.environ.get("GITHUB_ACTIONS", "false") == "true",
-                    reason="Caproto is too slow on CI.")
+@pytest.mark.skipif(
+    os.environ.get("GITHUB_ACTIONS", "false") == "true",
+    reason="Caproto is too slow on CI.",
+)
 def test_ioc_timing():
     """Check that the IOC's don't take too long to load."""
     # Launch the IOC numerous times to see how reproducible it is

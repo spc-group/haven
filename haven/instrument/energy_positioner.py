@@ -9,10 +9,8 @@ from ophyd import (
     EpicsSignalRO,
 )
 from ophyd.pseudopos import pseudo_position_argument, real_position_argument
-import epics
-from apstools.devices import ApsUndulator
 
-from ..signal import Signal
+
 from .._iconfig import load_config
 from .instrument_registry import registry
 from .monochromator import Monochromator
@@ -27,8 +25,8 @@ class Undulator(PVPositioner):
 
 # @registry.register
 class EnergyPositioner(PseudoPositioner):
-    id_offset = 155 # In eV
-    
+    id_offset = 155  # In eV
+
     # Pseudo axes
     energy = Cpt(PseudoSingle)
 
@@ -46,7 +44,7 @@ class EnergyPositioner(PseudoPositioner):
         "Given a target energy, transform to the mono and ID energies."
         return self.RealPosition(
             mono_energy=target_energy.energy,
-            id_energy=(target_energy.energy + self.id_offset) / 1000.,
+            id_energy=(target_energy.energy + self.id_offset) / 1000.0,
         )
 
     @real_position_argument

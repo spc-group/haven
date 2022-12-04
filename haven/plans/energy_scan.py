@@ -6,10 +6,10 @@ import logging
 import warnings
 from typing import Sequence, Union, Mapping
 
-from bluesky import plans as bp, utils
+from bluesky import plans as bp
 import numpy as np
 
-from .. import merge_ranges, exceptions
+from .. import merge_ranges
 from .._iconfig import load_config
 from ..instrument import registry
 from ..constants import edge_energy

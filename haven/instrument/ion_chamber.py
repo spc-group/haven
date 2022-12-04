@@ -2,13 +2,11 @@
 
 from typing import Sequence
 import logging
-import math
 
 import epics
 from ophyd import (
     Device,
     status,
-    EpicsMotor,
     EpicsSignal,
     PVPositionerPC,
     PseudoPositioner,
@@ -18,11 +16,8 @@ from ophyd import (
     Kind,
 )
 from ophyd.pseudopos import pseudo_position_argument, real_position_argument
-from ophyd.status import DeviceStatus
-from apstools.devices import SRS570_PreAmplifier
 
 from .instrument_registry import registry
-from .scaler_triggered import ScalerTriggered
 from .._iconfig import load_config
 
 # from ..signal import Signal, SignalRO
@@ -100,13 +95,26 @@ class IonChamber(Device):
     volts = FCpt(SignalRO, "{prefix}_calc{ch_num}.VAL", kind="hinted")
     exposure_time = FCpt(Signal, "{scaler_prefix}.TP", kind="normal")
     sensitivity = FCpt(SensitivityLevelPositioner, "{preamp_prefix}", kind="config")
-    read_attrs = ["raw_counts", "volts", "exposure_time",]
+    read_attrs = [
+        "raw_counts",
+        "volts",
+        "exposure_time",
+    ]
     # configuration_attrs = ["sensitivity_sens_level",
     #                        "sensitivity_sens_value",
     #                        "sensitivity_sens_unit"]
 
-    def __init__(self, prefix, ch_num, name, preamp_prefix=None,
-                 scaler_prefix=None, voltage_pv=None, *args, **kwargs):
+    def __init__(
+        self,
+        prefix,
+        ch_num,
+        name,
+        preamp_prefix=None,
+        scaler_prefix=None,
+        voltage_pv=None,
+        *args,
+        **kwargs,
+    ):
         # Set up the channel number for this scaler channel
         if ch_num < 1:
             raise ValueError(f"Scaler channels must be greater than 0: {ch_num}")
@@ -194,7 +202,7 @@ def load_ion_chambers(config=None):
             preamp_prefix = f"{preamp_ioc}:{ic_config['preamp_record']}"
             voltage_pv = f"{vme_ioc}:userCalc{ch_num-1}"
             desc_pv = f"{vme_ioc}:{scaler_record}.NM{ch_num}"
-            # Only use this ion chamber if it has a name 
+            # Only use this ion chamber if it has a name
             name = epics.caget(desc_pv)
             if name == "":
                 continue

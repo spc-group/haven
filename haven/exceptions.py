@@ -49,6 +49,8 @@ class DocumentNotFound(RuntimeError):
 
     ...
 
+
 class IOCTimeout(RuntimeError):
     """The IOC did not start within the allotted time."""
+
     ...

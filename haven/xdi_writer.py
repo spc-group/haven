@@ -6,7 +6,6 @@ import datetime as dt
 from pathlib import Path
 from typing import Sequence, Optional, Union
 
-import pytz
 from bluesky.callbacks import CallbackBase
 
 from . import exceptions
@@ -138,7 +137,8 @@ class XDIWriter(CallbackBase):
                 raise exceptions.XDIFilenameKeyNotFound(msg) from None
             fp = slugify(fp)
             self.fp = Path(fp)
-        # Save the rest of the start doc so we can write the headers when we get our first datum
+        # Save the rest of the start doc so we can write the headers
+        # when we get our first datum
         self.start_doc = doc
         # Open the file, just to be sure we can
         self.fd

@@ -77,7 +77,7 @@ def test_as_class_decorator():
     IonChamber = type("IonChamber", (Device,), {})
     IonChamber = reg.register(IonChamber)
     # Instantiate the class
-    ion_chamber = IonChamber("PV_PREFIX", name="I0", labels={"ion_chamber"})
+    IonChamber("PV_PREFIX", name="I0", labels={"ion_chamber"})
     # Check that it gets retrieved
     result = reg.find(label="ion_chamber")
     assert result.prefix == "PV_PREFIX"
@@ -166,7 +166,7 @@ def test_find_any():
     assert cptA in result
     assert cptB in result
     assert cptC in result
-    assert not cptD in result
+    assert cptD not in result
 
 
 def test_find_by_device():
@@ -228,4 +228,4 @@ def test_find_by_list_of_names():
     result = reg.findall(["sample motor A", "sample motor B"])
     assert cptA in result
     assert cptB in result
-    assert not cptC in result
+    assert cptC not in result

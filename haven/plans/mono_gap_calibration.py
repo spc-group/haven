@@ -4,7 +4,7 @@ import logging
 
 from bluesky.callbacks import LiveFit, best_effort, fitting, mpl_plotting
 from bluesky.preprocessors import subs_decorator
-from bluesky import plans as bp, plan_stubs as bps
+from bluesky import plan_stubs as bps
 from apstools.plans.alignment import lineup
 from matplotlib import pyplot as plt
 from lmfit.models import StepModel
@@ -45,21 +45,31 @@ def align_pitch2(bec, distance=200, reverse=False, md={}):
     pitch2 = registry.find(name="monochromator").pitch2
     plan_func = subs_decorator(bec)(lineup)
     start, end = (distance, -distance) if reverse else (-distance, distance)
-    plan = plan_func([I0.raw_counts, I0], pitch2, start, end, npts=40, feature="max", bec=bec, md=md_)
+    plan = plan_func(
+        [I0.raw_counts, I0], pitch2, start, end, npts=40, feature="max", bec=bec, md=md_
+    )
     yield from plan
 
 
-def calibrate_mono_gap(gap_list, mono_energies, id_energies, knife_motor, knife_points,
-                  beamline, md={}, folder=''):
+def calibrate_mono_gap(
+    gap_list,
+    mono_energies,
+    id_energies,
+    knife_motor,
+    knife_points,
+    beamline,
+    md={},
+    folder="",
+):
     """All energies in eV."""
     config = load_config()
-    md = dict(beamline=config['beamline']['name'], **md)
+    md = dict(beamline=config["beamline"]["name"], **md)
     now = dt.datetime.now()
     now_str = now.strftime("%Y-%m-%d_%H-%M")
     # Find registered ophyd devices
     monochromator = registry.find(name="monochromator")
     It = registry.find(name="It")
-    I0 = registry.find(name="I0")
+    registry.find(name="I0")
     knife_motor = registry.find(any=knife_motor)
     # Gap scans at each gap
     for new_gap in gap_list:
@@ -74,7 +84,10 @@ def calibrate_mono_gap(gap_list, mono_energies, id_energies, knife_motor, knife_
         yield from bps.mv(monochromator.gap, new_gap)
         # Open the file the write
         with open(fp, mode="x") as fd:
-            fd.write("mono_energy\tid_energy\tbragg_arcsec\tpitch2\t\tknife_cen\tknife_dcen\tknife_com\tknife_dcom\n")
+            fd.write(
+                "mono_energy\tid_energy\tbragg_arcsec\t"
+                "pitch2\t\tknife_cen\tknife_dcen\tknife_com\tknife_dcom\n"
+            )
         for mono_energy, id_energy in zip(mono_energies, id_energies):
             # Move to the new energy
             yield from set_energy(mono_energy=mono_energy, id_energy=id_energy)
@@ -82,12 +95,14 @@ def calibrate_mono_gap(gap_list, mono_energies, id_energies, knife_motor, knife_
             for key in ["pitch2"]:
                 if key in md.keys():
                     del md[key]
-            md.update({
-                "target_energy": mono_energy,
-                "actual_energy": monochromator.energy.get().user_readback,
-                "bragg_angle": monochromator.bragg.get().user_readback,
-                "undulator_sp": id_energy,
-            })
+            md.update(
+                {
+                    "target_energy": mono_energy,
+                    "actual_energy": monochromator.energy.get().user_readback,
+                    "bragg_angle": monochromator.bragg.get().user_readback,
+                    "undulator_sp": id_energy,
+                }
+            )
             # Align the mono pitch motor
             bec = best_effort.BestEffortCallback()
             bec.disable_table()
@@ -97,7 +112,9 @@ def calibrate_mono_gap(gap_list, mono_energies, id_energies, knife_motor, knife_
                 pitch_distance = 150
             # Do the cycle twice: align pitch motor, adjust gain, ...
             for idx in [0, 1]:
-                yield from subs_decorator(bec)(align_pitch2)(bec=bec, distance=pitch_distance, md=md)
+                yield from subs_decorator(bec)(align_pitch2)(
+                    bec=bec, distance=pitch_distance, md=md
+                )
                 new_pitch2 = bec.peaks["com"].get("I0_raw_counts", None)
                 md["pitch2"] = new_pitch2
                 plt.show()
@@ -108,30 +125,39 @@ def calibrate_mono_gap(gap_list, mono_energies, id_energies, knife_motor, knife_
                 yield from auto_gain()
             # Prepare callback for peak states
             knife_scan_ = knife_scan
-            peaks = fitting.PeakStats("knife", "It_raw_counts", calc_derivative_and_stats=True)
+            peaks = fitting.PeakStats(
+                "knife", "It_raw_counts", calc_derivative_and_stats=True
+            )
             knife_scan_ = subs_decorator(peaks)(knife_scan_)
             # Callback for fitting with a step function (erf)
             model = StepModel(form="erf")
-            fit_cb = LiveFit(model, It.raw_counts.name, {'x': knife_motor.name}, )
+            fit_cb = LiveFit(
+                model,
+                It.raw_counts.name,
+                {"x": knife_motor.name},
+            )
             knife_scan_ = subs_decorator(fit_cb)(knife_scan_)
             # Do the actual knife scan and fitting
-            yield from knife_scan_(knife_motor=knife_motor, knife_points=knife_points, md=md)
+            yield from knife_scan_(
+                knife_motor=knife_motor, knife_points=knife_points, md=md
+            )
             results = peaks
             # Save the energy and center of mass to disk
-            cen = getattr(results["stats"], 'cen', None)
-            dcen = getattr(results["derivative_stats"], 'cen', None)
-            com = getattr(results["stats"], 'com', None)
-            dcom = getattr(results["derivative_stats"], 'com', None)
+            getattr(results["stats"], "cen", None)
+            getattr(results["derivative_stats"], "cen", None)
+            getattr(results["stats"], "com", None)
+            getattr(results["derivative_stats"], "com", None)
             log.info(f"Knife center: {results['stats']}")
-            # pprint(results["derivative_stats"])
             with open(fp, mode="a") as fd:
-                fd.write(f"{mono_energy}\t{id_energy}\t{md['bragg_angle']}\t{new_pitch2}\t{cen}\t{dcen}\t{com}\t{dcom}\n")
+                fd.write(
+                    f"{mono_energy}\t{id_energy}\t{md['bragg_angle']}\t"
+                    "{new_pitch2}\t{cen}\t{dcen}\t{com}\t{dcom}\n"
+                )
             # Plot results
-            if hasattr(results, 'x_data'):
-                fig = plt.figure()
+            if hasattr(results, "x_data"):
+                plt.figure()
                 ax = plt.gca()
                 ax.set_title(f"{mono_energy:.1f} eV / {new_gap} µm gap")
                 mpl_plotting.plot_peak_stats(results, ax=ax)
-                ax.axvline(results["derivative_stats"].com, label="f' center of mass");
+                ax.axvline(results["derivative_stats"].com, label="f' center of mass")
                 plt.show()
-

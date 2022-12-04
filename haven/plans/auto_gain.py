@@ -37,7 +37,6 @@ class AutoGainCallback(CollectThenCompute):
                 in_range_series = series[(series > self.llim) & (series < self.hlim)]
                 best_level = in_range_series.idxmax()
                 self.best_sens_levels[device.name] = best_level
-            
 
 
 def auto_gain(devices="ion_chambers"):
@@ -51,12 +50,12 @@ def auto_gain(devices="ion_chambers"):
         hints.append(device.sensitivity.sens_level.name)
         hints.append(device.volts.name)
         limits = device.sensitivity.sens_level.limits
-        scan_args.extend([device.sensitivity.sens_level, np.arange(limits[0], limits[1]+1)])
+        scan_args.extend(
+            [device.sensitivity.sens_level, np.arange(limits[0], limits[1] + 1)]
+        )
     # Hinting to make the best effort callback work properly
     _md = {
-        "hints": {
-            "dimensions": [(hints, "primary")]
-        },
+        "hints": {"dimensions": [(hints, "primary")]},
     }
     # Prepare detectors (we need to include the sensitivity level)
     detectors = [(dev, dev.volts, dev.sensitivity.sens_level) for dev in devices]
@@ -85,7 +84,9 @@ def auto_gain(devices="ion_chambers"):
     while not is_done:
         is_done = True
         for dev in devices:
-            best_level = cb.best_sens_levels.get(dev.name, dev.sensitivity.sens_level.get().readback)
+            best_level = cb.best_sens_levels.get(
+                dev.name, dev.sensitivity.sens_level.get().readback
+            )
             if dev.sensitivity.sens_level.get().readback != best_level:
                 is_done = False
         yield from bps.mv(*mv_args)

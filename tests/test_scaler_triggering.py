@@ -11,8 +11,7 @@ import pytest
 from ophyd import Device
 
 
-from haven.instrument.ion_chamber import ScalerTriggered
-from haven import exceptions
+from haven.instrument.scaler_triggered import ScalerTriggered
 
 
 @pytest.mark.skip("scaler_triggering is not needed right now")
@@ -34,7 +33,7 @@ def test_trigger_fires():
     first_status.__class__.done = False
     try:
         device.trigger()
-    except:
+    except Exception:
         pass
     finally:
         first_status.__class__.done = old_done

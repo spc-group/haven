@@ -1,6 +1,5 @@
 import time
 
-import pytest
 import epics
 
 from haven.instrument.energy_positioner import EnergyPositioner

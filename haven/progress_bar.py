@@ -4,8 +4,9 @@ from tqdm import tqdm
 
 class ProgressBar(CallbackBase):
     num_points: int = 0
-    
+
     """A progress bar that tracks a scan."""
+
     def start(self, doc):
         self.num_points = doc["num_points"]
         self.plan_name = doc.get("plan_name", "Scanning")

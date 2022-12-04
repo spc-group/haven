@@ -1,6 +1,5 @@
 import time
 
-import pytest
 import epics
 
 from haven import Monochromator

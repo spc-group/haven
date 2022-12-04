@@ -3,15 +3,22 @@ from typing import Mapping
 
 import matplotlib.pyplot as plt
 import numpy as np
-from lmfit.models import StepModel, GaussianModel, LorentzianModel, VoigtModel
-from bluesky.preprocessors import subs_decorator
+from lmfit.models import StepModel, GaussianModel
 from bluesky import plans as bp
 
 from ..instrument.instrument_registry import registry
 
 
-def knife_scan(knife_motor, start: float, end: float, num: int,
-               I0="I0", It="It", relative: bool = False, md: Mapping = {}):
+def knife_scan(
+    knife_motor,
+    start: float,
+    end: float,
+    num: int,
+    I0="I0",
+    It="It",
+    relative: bool = False,
+    md: Mapping = {},
+):
     """Plan to scan over a knife placed in the beam to measure its height.
 
     Parameters
@@ -36,7 +43,7 @@ def knife_scan(knife_motor, start: float, end: float, num: int,
       the current motor position.
     md
       Extra metadata to pass into the run engine.
-    
+
     """
     md_ = dict(plan_name="knife_scan", **md)
     I0 = registry.find(name=I0)
@@ -81,23 +88,29 @@ def fit_step(x, y, plot=False, plot_derivative=False):
     model = StepModel(form="erf")
     params = model.guess(y, x)
     half_max = (np.min(y) + np.max(y)) / 2
-    center_idx = np.argmin(np.abs(y-half_max))
+    center_idx = np.argmin(np.abs(y - half_max))
     center_guess = x[center_idx]
-    params['center'].set(center_guess)
+    params["center"].set(center_guess)
     # Invert the amplitude if we started with full transmission
     is_inverted = np.mean(y) < 0
     if is_inverted:
-        params['amplitude'].set(-params['amplitude'].value)
+        params["amplitude"].set(-params["amplitude"].value)
     # Fit the model to the data
     result = model.fit(y, params=params, x=x)
-    beam_position = result.values['center']
-    beam_hwhm = result.values['sigma']
+    beam_position = result.values["center"]
+    beam_hwhm = result.values["sigma"]
     # Do a fit of the derivative just for testing
     # Plot results
     if plot:
         # Plot knife scan and fit
         fig = plt.figure()
-        result.plot(fig=fig, show_init=False, datafmt="x", xlabel="Knife position /µm", ylabel="Relative transmission")
+        result.plot(
+            fig=fig,
+            show_init=False,
+            datafmt="x",
+            xlabel="Knife position /µm",
+            ylabel="Relative transmission",
+        )
         ax_res, ax = fig.axes
         line_kw = dict(color="C0", ls=":")
         ax.axvline(beam_position, label="Beam position", **line_kw)
@@ -115,19 +128,28 @@ def fit_step(x, y, plot=False, plot_derivative=False):
         # Plot derivative of knife scan
         color2 = "C3"
         ax2 = ax.twinx()
-        ax2.plot(x, dy, color=color2, label="Derivative", marker='x', ls="None")
+        ax2.plot(x, dy, color=color2, label="Derivative", marker="x", ls="None")
         ax2.plot(x, dresult.eval(x=x), color=color2, alpha=0.5, label="Best fit")
-        ax2.plot(x, np.gradient(result.eval(x=x), x), color=color2, alpha=0.5, ls="--", label="Step fit gradient")
+        ax2.plot(
+            x,
+            np.gradient(result.eval(x=x), x),
+            color=color2,
+            alpha=0.5,
+            ls="--",
+            label="Step fit gradient",
+        )
         dy_half_max = (np.min(dy) + np.max(dy)) / 2
-        line_kw['color'] = color2
+        line_kw["color"] = color2
         ax2.axhline(dy_half_max, **line_kw)
-        ax2.axvline(dresult.values['center'], **line_kw)
-        dfwhm = dresult.values['fwhm']
-        ax2.axvline(dresult.values['center'] - dfwhm/2, label="FWHM (dy/dx)", **line_kw)
-        ax2.axvline(dresult.values['center'] + dfwhm/2, **line_kw)
+        ax2.axvline(dresult.values["center"], **line_kw)
+        dfwhm = dresult.values["fwhm"]
+        ax2.axvline(
+            dresult.values["center"] - dfwhm / 2, label="FWHM (dy/dx)", **line_kw
+        )
+        ax2.axvline(dresult.values["center"] + dfwhm / 2, **line_kw)
         ax2.legend()
         ax2.set_ylabel("Derivative /µm⁻")
     # Prepare results object
     Properties = namedtuple("Properties", ["position", "fwhm"])
-    properties = Properties(position=beam_position, fwhm=2*beam_hwhm)
+    properties = Properties(position=beam_position, fwhm=2 * beam_hwhm)
     return properties

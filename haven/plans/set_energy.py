@@ -1,6 +1,7 @@
-from bluesky import plans as bp, plan_stubs as bps
+from bluesky import plan_stubs as bps
 
 from ..instrument.instrument_registry import registry
+
 
 def set_energy(mono_energy, id_energy=None):
     """All energies in eV."""
@@ -10,5 +11,6 @@ def set_energy(mono_energy, id_energy=None):
         yield from bps.mv(energy, mono_energy)
     else:
         # Move them separately to different energies
-        yield from bps.mv(energy.mono_energy, mono_energy,
-                          energy.id_energy, id_energy / 1000)
+        yield from bps.mv(
+            energy.mono_energy, mono_energy, energy.id_energy, id_energy / 1000
+        )

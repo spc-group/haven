@@ -1,6 +1,7 @@
 import databroker
 
-def load_catalog(name: str="bluesky"):
+
+def load_catalog(name: str = "bluesky"):
     """Load a databroker catalog for retrieving data.
 
     To retrieve individual scans, consider the ``load_result`` and
@@ -11,16 +12,16 @@ def load_catalog(name: str="bluesky"):
     name
       The name of the catalog as defined in the Intake file
       (e.g. ~/.local/share/intake/catalogs.yml)
-    
+
     Returns
     =======
     catalog
       The databroker catalog.
     """
     return databroker.catalog[name]
-    
 
-def load_result(uid: str, catalog_name: str="bluesky", stream: str="primary"):
+
+def load_result(uid: str, catalog_name: str = "bluesky", stream: str = "primary"):
     """Load a past experiment from the database.
 
     The result contains metadata and scan parameters. The data
@@ -33,10 +34,10 @@ def load_result(uid: str, catalog_name: str="bluesky", stream: str="primary"):
       RunEngine.
     catalog_name
       The name of the catalog as defined in the Intake file
-      (e.g. ~/.local/share/intake/catalogs.yml)      
+      (e.g. ~/.local/share/intake/catalogs.yml)
     stream
       The data stream defined by the bluesky RunEngine.
-    
+
     Returns
     =======
     result
@@ -61,10 +62,10 @@ def load_data(uid, catalog_name="bluesky", stream="primary"):
       RunEngine.
     catalog_name
       The name of the catalog as defined in the Intake file
-      (e.g. ~/.local/share/intake/catalogs.yml)      
+      (e.g. ~/.local/share/intake/catalogs.yml)
     stream
       The data stream defined by the bluesky RunEngine.
-    
+
     Returns
     =======
     data

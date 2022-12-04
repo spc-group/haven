@@ -1,13 +1,10 @@
-import asyncio
 from typing import Optional, Sequence
 import logging
 
 from pydantic import BaseModel
 import intake
-import pymongo
 from bson.objectid import ObjectId
-from bluesky import plans as bp, plan_stubs as bps
-from ophyd import EpicsMotor
+from bluesky import plan_stubs as bps
 
 from .instrument.instrument_registry import registry
 from . import exceptions
@@ -42,14 +39,17 @@ class MotorPosition(BaseModel):
     def load(Cls, document):
         # Create a MotorPosition object
         motor_axes = [
-            MotorAxis(name=m["name"], readback=m["readback"]) for m in document["motors"]
+            MotorAxis(name=m["name"], readback=m["readback"])
+            for m in document["motors"]
         ]
-        position = Cls(name=document["name"], motors=motor_axes, uid=str(document["_id"]))
+        position = Cls(
+            name=document["name"], motors=motor_axes, uid=str(document["_id"])
+        )
         return position
 
 
 def default_collection():
-    catalog = intake.catalog.load_combo_catalog()['haven']
+    catalog = intake.catalog.load_combo_catalog()["haven"]
     client = catalog._asset_registry_db.client
     collection = client.get_database().get_collection("motor_positions")
     return collection
@@ -117,7 +117,7 @@ def list_motor_positions(collection=None):
     ==========
     collection
       The mongodb collection from which to print motor positions.
-    
+
     """
     # Get default collection if none was given
     if collection is None:
@@ -136,14 +136,16 @@ def list_motor_positions(collection=None):
             # Figure out some nice tree aesthetics
             is_last_motor = idx == (len(position.motors) - 1)
             box_char = "┗" if is_last_motor else "┣"
-            output += f'{box_char}━{motor.name}: {motor.readback}\n'
+            output += f"{box_char}━{motor.name}: {motor.readback}\n"
         print(output, end="")
     # Some feedback in the case of empty motor positions
     if not were_found:
         print(f"No motor positions found: {collection}")
 
 
-def get_motor_position(uid: Optional[str] = None, name: Optional[str] = None, collection=None) -> MotorPosition:
+def get_motor_position(
+    uid: Optional[str] = None, name: Optional[str] = None, collection=None
+) -> MotorPosition:
     """Retrieve a previously saved motor position from the database.
 
     Parameters
@@ -174,8 +176,7 @@ def get_motor_position(uid: Optional[str] = None, name: Optional[str] = None, co
         _id = ObjectId(uid)
     else:
         _id = None
-    query_params = {"_id": _id,
-                    "name": name}
+    query_params = {"_id": _id, "name": name}
     # Filter out query parameters that are ``None``
     query_params = {k: v for k, v in query_params.items() if v is not None}
     result = collection.find_one(query_params)
@@ -188,7 +189,9 @@ def get_motor_position(uid: Optional[str] = None, name: Optional[str] = None, co
     return position
 
 
-def recall_motor_position(uid: Optional[str] = None, name: Optional[str] = None, collection=None):
+def recall_motor_position(
+    uid: Optional[str] = None, name: Optional[str] = None, collection=None
+):
     """Set motors to their previously saved positions.
 
     Parameters

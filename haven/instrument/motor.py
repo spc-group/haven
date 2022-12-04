@@ -33,8 +33,8 @@ def load_all_motors(config=None):
         config = load_config()
     # Figure out the prefix
     for name, config in config["motor"].items():
-        prefix = config['prefix']
-        num_motors = config['num_motors']
+        prefix = config["prefix"]
+        num_motors = config["num_motors"]
         log.info(f"Loading {num_motors} motors from IOC: {name} ({prefix})")
         load_ioc_motors(prefix=prefix, num_motors=num_motors, ioc_name=name)
 

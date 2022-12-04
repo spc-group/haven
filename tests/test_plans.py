@@ -1,16 +1,11 @@
 import unittest
 import warnings
-import logging
 
 import numpy as np
 from ophyd import sim
-from bluesky.simulators import summarize_plan, check_limits
 
 from run_engine import RunEngineStub
-from haven import align_slits, energy_scan, xafs_scan, ERange, KRange, registry
-
-
-# logging.basicConfig(level=logging.WARNING)
+from haven import align_slits, energy_scan, xafs_scan, registry
 
 
 def my_callback(name, doc):
@@ -134,7 +129,7 @@ class EnergyScanTests(PlanUnitTests):
             energy_positioners=[self.mono_motor, self.id_gap_motor],
             time_positioners=[I0_exposure, It_exposure],
         )
-        result = self.RE(scan)
+        self.RE(scan)
         # Check that the mono and ID gap ended up in the right position
         self.assertEqual(self.mono_motor.get().readback, np.max(self.energies))
         self.assertEqual(self.id_gap_motor.get().readback, np.max(self.energies))

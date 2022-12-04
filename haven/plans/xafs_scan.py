@@ -7,7 +7,7 @@ from typing import Union, Sequence, Optional, Mapping
 
 import numpy as np
 
-from ..energy_ranges import ERange, KRange
+from ..energy_ranges import ERange
 from .energy_scan import energy_scan
 from ..typing import DetectorList
 
@@ -18,7 +18,7 @@ __all__ = ["xafs_scan"]
 def chunks(lst, n):
     """Yield successive n-sized chunks from lst."""
     for i in range(0, len(lst), n):
-        yield lst[i : i + n]
+        yield lst[i : i + n]  # noqa: E203
 
 
 def xafs_scan(
@@ -66,7 +66,9 @@ def xafs_scan(
 
     .. code-block:: python
 
-        xafs_scan(-100, 2, 0.5, -30, 0.1, 1., 50, k_step=0.2, k_exposure=1.5, k_max=8, E0="Ni_K")
+        xafs_scan(-100, 2, 0.5, -30, 0.1, 1., 50,
+                  k_step=0.2, k_exposure=1.5, k_max=8,
+                  E0="Ni_K")
 
     For measuring the extended structure (EXAFS) *k_step*, *k_max*,
     and *k_exposure* can be given instead of the equivalent

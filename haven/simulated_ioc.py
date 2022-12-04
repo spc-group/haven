@@ -3,9 +3,8 @@ import os
 import signal
 import logging
 from textwrap import dedent
-import sys
+
 import time
-from multiprocessing import Process
 from subprocess import Popen, PIPE
 from typing import Optional, List, Dict, Tuple, Any
 import contextlib
@@ -13,7 +12,6 @@ import importlib
 from pathlib import Path
 
 from tqdm import tqdm
-import pytest
 from caproto import ChannelType
 from caproto.server import (
     PVGroup,
@@ -21,9 +19,8 @@ from caproto.server import (
     pvproperty,
     run,
     records,
-    PvpropertyDouble,
 )
-from epics import caget, caput, camonitor
+from epics import caget
 
 from . import exceptions
 
@@ -32,7 +29,7 @@ log = logging.getLogger(__name__)
 
 
 locks = {
-    "caproto": 'unlocked',
+    "caproto": "unlocked",
 }
 
 
@@ -42,11 +39,12 @@ locks = {
 class ResponsiveMotorFields(records.MotorFields):
     # The custom fields are identified by this string, which is overridden from
     # the superclass _record_type of 'motor':
-    _record_type = 'responsive_motor'
+    _record_type = "responsive_motor"
 
     # To override or extend the motor fields, we have to duplicate them here:
-    user_readback_value = pvproperty(name='RBV', dtype=ChannelType.DOUBLE,
-                                     doc='User Readback Value', read_only=True)
+    user_readback_value = pvproperty(
+        name="RBV", dtype=ChannelType.DOUBLE, doc="User Readback Value", read_only=True
+    )
 
     # Then we are free to extend the fields as normal pvproperties:
     @user_readback_value.scan(period=0.1)
@@ -57,17 +55,15 @@ class ResponsiveMotorFields(records.MotorFields):
         timestamp = time.time()
         await instance.write(pos, timestamp=timestamp)
         await self.dial_readback_value.write(pos, timestamp=timestamp)
-        await self.raw_readback_value.write(int(pos * 100000.),
-                                            timestamp=timestamp)
+        await self.raw_readback_value.write(int(pos * 100000.0), timestamp=timestamp)
 
 
 class IOC(PVGroup):
     @classmethod
     def parse_args(Cls) -> Tuple[dict, dict]:
         ioc_options, run_options = ioc_arg_parser(
-            default_prefix=Cls.default_prefix,
-            argv=[],
-            desc=dedent(Cls.__doc__))
+            default_prefix=Cls.default_prefix, argv=[], desc=dedent(Cls.__doc__)
+        )
         ioc = Cls(**ioc_options)
         run_options["log_pv_names"] = True
         return ioc.pvdb, run_options
@@ -97,7 +93,10 @@ def wait_for_ioc(pvdb, timeout=60):
                 field_times[field] = time.time() - start_time
             # Check for exceeding the timeout
             if time.time() > deadline:
-                msg = f"IOC ({list(pvdb)[0]}) did not start within {timeout} seconds. Missing: {fields_left}"
+                msg = (
+                    f"IOC ({list(pvdb)[0]}) did not start within "
+                    f"{timeout} seconds. Missing: {fields_left}"
+                )
                 pbar.close()
                 raise exceptions.IOCTimeout(msg)
         time.sleep(0.1)
@@ -115,7 +114,7 @@ def simulated_ioc(fp):
     # Determine name of the IOC from filename
     fp = Path(fp)
     name = fp.stem
-    locks['caproto'] = name
+    locks["caproto"] = name
     process = Popen(["python", str(fp.resolve())], stdout=PIPE, stderr=PIPE, text=True)
     # Build the pv database
     spec = importlib.util.spec_from_file_location("ioc", str(fp))
@@ -129,13 +128,11 @@ def simulated_ioc(fp):
     # Stop the process now that the test is done
     start_time = time.time()
     os.kill(process.pid, signal.SIGINT)
-    kill_start = time.time()
-    timeout = 20
     stdout, stderr = process.communicate()
     print(stdout)
     print(stderr)
-    locks['caproto'] = "unlocked"
-    log.debug(f"Shutting down took {time.time() - start_time:.2f} sec.")        
+    locks["caproto"] = "unlocked"
+    log.debug(f"Shutting down took {time.time() - start_time:.2f} sec.")
 
 
 def ioc_arg_parser(
@@ -144,7 +141,7 @@ def ioc_arg_parser(
     default_prefix: str,
     argv: Optional[List[str]] = None,
     macros: Optional[Dict[str, str]] = None,
-    supported_async_libs: Optional[List[str]] = None
+    supported_async_libs: Optional[List[str]] = None,
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """A reusable ArgumentParser for basic example IOCs.
 
