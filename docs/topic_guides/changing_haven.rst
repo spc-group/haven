@@ -42,6 +42,27 @@ is being added or bug is being fixed.
 .. _mamba-forge: https://mamba.readthedocs.io/en/latest/installation.html
 .. _main Haven repository: https://github.com/spc-group/haven
 
+Running Tests
+-------------
+
+*Pytest* is the recommended runner for Haven. Once the environment is
+properly setup, the tests can be run using:
+
+.. code-block:: console
+
+   $ pytest
+
+Several simulated IOCs are started up in the process, and can be used
+in writing tests.
+
+.. code:: python
+
+   def test_mono(ioc_mono):
+       # Write tests here using the mono IOC
+       ...
+
+More details can be found in the file *haven/tests/conftest.py*.
+       
 From the Beamline
 =================
 
@@ -107,6 +128,7 @@ Now the new branch can be pushed to github with
 
 The ``-u`` option is only needed the first time: it tells git to
 connect the new branch to github (origin).
+
 
 Design Defense
 ==============
