@@ -9,6 +9,8 @@ following functions are related to motor positions:
 - :py:func:`~haven.motor_position.list_motor_positions`
 - :py:func:`~haven.motor_position.recall_motor_position`
 
+.. contents::
+
 Saving a Motor Position
 -----------------------
 
@@ -76,3 +78,18 @@ position is restored.
     # Restore the motor position
     plan = haven.recall_motor_position(uid=uid)
     RE(plan)
+
+
+The MotorPosition Data Model
+----------------------------
+
+:py:class:`haven.motor_position.MotorPosition` is a pydantic model
+that represents a set of motor positions in the database. Any
+attribute that has a type definition (e.g. ``offset: float = None``)
+is a data attribute and can be saved to the database.
+
+To **add a new database value**, add the appropriate attribute to the
+pydantic model, and modify the
+:py:meth:`~haven.motor_position.MotorPosition.save()` and
+:py:meth:`~haven.motor_position.MotorPosition.load()` methods to
+accomodate the new database value.
