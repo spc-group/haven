@@ -54,18 +54,19 @@ def test_set_status_byte(qtbot):
     # Set the color to something else, then check that it gets set back to white
     bit.setColor(QColor(255, 0, 0))
     # Simulated the IOC being disconnected
-    display.update_status_indicators(False)
+    display.update_camera_connection(False)
     assert bit._brush.color().getRgb() == (255, 255, 255, 255)
     assert not label.isVisible(), "State label should be hidden by default"
     # Make the signals connected and see that it's green
-    display.update_status_indicators(DetectorStates.IDLE)
+    display.update_camera_connection(True)
+    display.update_camera_state(DetectorStates.IDLE)
     assert bit._brush.color().getRgb() == (0, 255, 0, 255)
     assert not label.isVisible(), "State label should be hidden by default"
     # Make the camera be disconnected and see if it's red
-    display.update_status_indicators(DetectorStates.DISCONNECTED)
+    display.update_camera_state(DetectorStates.DISCONNECTED)
     assert bit._brush.color().getRgb() == (255, 0, 0, 255)
     assert  label.isVisible(), "State label should be visible when disconnected"
     # Make the camera be acquiring and see if it's yellow
-    display.update_status_indicators(DetectorStates.ACQUIRE)
+    display.update_camera_state(DetectorStates.ACQUIRE)
     assert bit._brush.color().getRgb() == (255, 255, 0, 255)
     assert not label.isVisible(), "State label should be hidden by default"

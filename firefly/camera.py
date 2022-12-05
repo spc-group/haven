@@ -39,6 +39,8 @@ class AcquireStates(IntEnum):
 class CameraDisplay(display.FireflyDisplay):
     prefix: str = ""
     properties_file: Path = Path("~/EPICS_AD_Viewer.properties").expanduser()
+    _camera_state: int = DetectorStates.IDLE
+    _camera_connected: bool = False
 
     def __init__(self, *, args=None, macros={}, **kwargs):
         self.prefix = macros.get("PREFIX", "")
@@ -50,8 +52,8 @@ class CameraDisplay(display.FireflyDisplay):
         # Channel for watching the detector state
         self.detector_state = PyDMChannel(
             address=self.camera_status_label.channel,
-            connection_slot=self.update_status_indicators,
-            value_slot=self.update_status_indicators,
+            connection_slot=self.update_camera_connection,
+            value_slot=self.update_camera_state,
         )
         self.detector_state.connect()
         byte._channels.append(self.detector_state)
@@ -96,13 +98,23 @@ class CameraDisplay(display.FireflyDisplay):
         log.info(f"Launching ImageJ: {cmds}")
         self.imagej_process = subprocess.Popen(cmds, env=imagej_env)
 
-    @Slot()
-    def update_status_indicators(self, new_state):
+    @Slot(int)
+    def update_camera_state(self, new_state):
+        self._camera_state = new_state
+        self.update_status_indicators()
+    
+    @Slot(bool)
+    def update_camera_connection(self, new_state):
+        self._camera_connected = new_state
+        self.update_status_indicators()
+
+    def update_status_indicators(self):
         # Retrieve widgets we're going to change
         bit = self.camera_status_indicator._indicators[0]
         lbl = self.camera_status_label
         # Determine the new state of the camera
-        ioc_is_disconnected = new_state is False
+        ioc_is_disconnected = not self._camera_connected
+        new_state = self._camera_state
         camera_is_idle = new_state == DetectorStates.IDLE
         camera_is_acquiring = new_state == DetectorStates.ACQUIRE
         # Update the widgets
