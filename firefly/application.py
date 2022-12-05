@@ -4,14 +4,15 @@ from dataclasses import dataclass, field
 from typing import Optional, Union, Mapping
 from functools import partial
 
-from qtpy import QtWidgets, QtCore
+from qtpy import QtWidgets, QtCore, QtGui
+import qtawesome as qta
 from pydm.application import PyDMApplication
 from pydm.display import load_file
 from pydm.utilities.stylesheet import apply_stylesheet
 from haven.exceptions import ComponentNotFound
 from haven import HavenMotor, registry
 
-from .main_window import FireflyMainWindow
+from .main_window import FireflyMainWindow, PlanMainWindow
 
 
 __all__ = ["ui_dir", "FireflyApplication"]
@@ -33,6 +34,8 @@ class FireflyApplication(PyDMApplication):
         self.windows = {}
         # Make actions for launching other windows
         self.setup_window_actions()
+        # Actions for controlling the bluesky run engine
+        self.setup_runengine_actions()
         # Launch the default display
         self.show_status_window()
 
@@ -49,6 +52,25 @@ class FireflyApplication(PyDMApplication):
         self.show_status_window_action.setObjectName(f"show_status_window_action")
         self.show_status_window_action.setText("Beamline Status")
         self.show_status_window_action.triggered.connect(self.show_status_window)
+
+    def setup_runengine_actions(self):
+        """Create QActions for controlling the bluesky runengine."""
+        # Action for controlling the run engine
+        actions = [
+            ("pause_runengine_action", "Pause", "fa5s.stopwatch"),
+            ("pause_runengine_now_action", "Pause Now", "fa5s.pause"),
+            ("resume_runengine_action", "Resume", "fa5s.play"),
+            ("stop_runengine_action", "Stop", "fa5s.stop"),
+            ("abort_runengine_action", "Abort", "fa5s.eject"),
+            ("halt_runengine_action", "Halt", "fa5s.ban"),
+        ]
+        for name, text, icon_name in actions:
+            action = QtWidgets.QAction(self)
+            icon = qta.icon(icon_name)
+            action.setText(text)
+            action.setIcon(icon)
+            setattr(self, name, action)
+            # action.triggered.connect(slot)
 
     def prepare_motor_windows(self):
         """Prepare the support for opening motor windows."""
@@ -106,7 +128,8 @@ class FireflyApplication(PyDMApplication):
 
     def forget_window(self, obj, name):
         """Forget this window exists."""
-        del self.windows[name]
+        if hasattr(self, 'windows'):
+            del self.windows[name]
 
     def create_window(self, WindowClass, ui_file, macros={}):
         # Create and save this window
@@ -144,7 +167,7 @@ class FireflyApplication(PyDMApplication):
 
     @QtCore.Slot()
     def show_xafs_scan_window(self):
-        self.show_window(FireflyMainWindow, ui_dir / "xafs_scan.py", name="xafs_scan")
+        self.show_window(PlanMainWindow, ui_dir / "xafs_scan.py", name="xafs_scan")
 
     @QtCore.Slot()
     def show_voltmeters_window(self):

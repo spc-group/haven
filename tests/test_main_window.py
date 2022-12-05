@@ -1,12 +1,27 @@
 import pytest
 
-from firefly.main_window import FireflyMainWindow
+from firefly.main_window import FireflyMainWindow, PlanMainWindow
 from firefly.application import FireflyApplication
 
 
 @pytest.fixture
 def app():
     yield FireflyApplication()
+
+
+def test_navbar(app):
+    window = PlanMainWindow()
+    # Check navbar actions on the app
+    assert hasattr(app, 'pause_runengine_action')
+    # Check that the navbar actions are set up properly
+    assert hasattr(window.ui, "navbar")
+    navbar = window.ui.navbar
+    # Navigation actions are removed
+    assert window.ui.actionHome not in navbar.actions()
+    # Run engine actions have been added to the navbar
+    assert app.pause_runengine_action in navbar.actions()
+    1/0
+    
 
 
 def test_add_menu_action(app):
