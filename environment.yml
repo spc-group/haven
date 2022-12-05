@@ -51,6 +51,7 @@ dependencies:
   # --- Qt
   - pyqt >=5.12
   - qt >=5.12
+  - qtawesome
 
   # --- general support packages
   - bitshuffle
