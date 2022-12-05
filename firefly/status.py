@@ -62,7 +62,7 @@ class StatusDisplay(display.FireflyDisplay):
         else:
             _macros.update({
                 "ENERGY_PV": mono.energy.user_readback.pvname,
-                "MONO_MODE_PV": mono.mode.prefix,
+                "MONO_MODE_PV": mono.mode.pvname,
             })            
         # Set default macros
         _macros.update(macros)
