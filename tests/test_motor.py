@@ -3,6 +3,7 @@ from haven.instrument import motor
 
 
 def test_load_vme_motors(ioc_motor):
+    registry.clear()
     motor.load_all_motors()
     # Were the motors imported correctly
     motors = registry.findall(label="motors")
