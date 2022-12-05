@@ -98,7 +98,11 @@ def save_motor_position(*motors, name: str, collection=None):
 
     motor_axes = []
     for m in motors:
-        axis = MotorAxis(name=m.name, readback=rbv(m), offset=m.user_offset.get())
+        payload = dict(name=m.name, readback=rbv(m))
+        # Save the calibration offset for motors
+        if hasattr(m, 'user_offset'):
+            payload['offset'] = m.user_offset.get()
+        axis = MotorAxis(**payload)
         motor_axes.append(axis)
     position = MotorPosition(name=name, motors=motor_axes)
     # Write to the database
