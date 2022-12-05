@@ -1,4 +1,6 @@
-from .instrument_registry import registry as default_registry
+from typing import Mapping
+
+from .instrument_registry import registry as default_registry, InstrumentRegistry
 from .energy_positioner import load_energy_positioner
 from .motor import load_all_motors
 from .ion_chamber import load_ion_chambers
@@ -9,7 +11,28 @@ from .stage import load_stages
 from .._iconfig import load_config
 
 
-def load_instrument(registry=default_registry, config=None):
+__all__ = ["load_instrument"]
+
+
+def load_instrument(registry: InstrumentRegistry = default_registry,
+                    config: Mapping = None):
+    """Load the beamline instrumentation into an instrument registry.
+
+    This function will reach out and query various IOCs for motor
+    information based on the information in *config* (see
+    ``iconfig_default.toml`` for examples). Based on the
+    configuration, it will create Ophyd devices and register them with
+    *registry*.
+
+    Parameters
+    ==========
+    registry:
+      The registry into which the ophyd devices will be placed.
+    config:
+      The beamline configuration read in from TOML files. Mostly
+    useful for testing.
+
+    """
     # Clear out any existing registry entries
     registry.clear()
     # Load the configuration
