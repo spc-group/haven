@@ -43,6 +43,20 @@ way to retrieve a motor position** from the database later, though it
 can be also be retrieved using the *name* argument provided it is
 unique.
 
+Saving All Motor Positions
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+It may be convenient to save all motor positions to the database as a
+sort of checkpoint before performing some non-routine operation. This
+can be done with the following line. Future work will provide a
+shorted version. **Remember to call**
+:py:func:`~haven.instrument.load_instrument.load_instrument()`
+**first**.
+
+.. code:: python
+
+    haven.save_motor_position(*haven.registry.findall(label="motors"), name="checkpoint before replacing monochromator")
+
 
 Viewing Saved Motor Positions
 -----------------------------
