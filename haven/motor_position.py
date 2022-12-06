@@ -9,6 +9,7 @@ from bluesky import plan_stubs as bps
 from .instrument.instrument_registry import registry
 from . import exceptions
 
+import time
 
 log = logging.getLogger(__name__)
 
@@ -31,7 +32,8 @@ class MotorPosition(BaseModel):
     uid: Optional[str] = None
 
     def save(self, collection):
-        payload = {"name": self.name, "motors": [m.as_dict() for m in self.motors]}
+        payload = {"name": self.name, "motors": [m.as_dict() for m in self.motors], "time": time.time()}
+        print(payload)
         item_id = collection.insert_one(payload).inserted_id
         return item_id
 
