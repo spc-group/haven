@@ -1,3 +1,6 @@
+# Automatic MacOS file
+.DS_Store
+
 # Emacs autosaves
 *~
 
