@@ -1,4 +1,8 @@
+import os
 import time
+import time_machine
+import pytz
+import datetime as dt
 
 import epics
 import pytest
@@ -13,6 +17,9 @@ from haven import (
     HavenMotor,
 )
 
+fake_time = pytz.timezone("America/New_York").localize(
+    dt.datetime(2022, 8, 19, 19, 10, 51)
+)
 
 @pytest.fixture
 def sim_registry():
@@ -56,7 +63,9 @@ def test_save_motor_position_by_device(mongodb, ioc_motor):
     assert result["motors"][1]["readback"] == 23.0
 
 
-def test_save_motor_position_by_name(mongodb, ioc_motor):
+
+@time_machine.travel(fake_time, tick=False)
+def test_save_motor_position_by_name(mongodb, ioc_motor):   
     # Check that no entry exists before saving it
     result = mongodb.motor_positions.find_one({"name": motor1.name})
     assert result is None
@@ -85,7 +94,9 @@ def test_save_motor_position_by_name(mongodb, ioc_motor):
     assert result["motors"][0]["readback"] == 11.0
     assert result["motors"][1]["readback"] == 23.0
     assert result["motors"][0]["offset"] == 1.5
-
+    # Check that the metadata saved
+    assert result["time"] == time.time()
+    
 
 def test_get_motor_position_by_uid(mongodb):
     uid = str(mongodb.motor_positions.find_one({"name": "Good position A"})["_id"])
