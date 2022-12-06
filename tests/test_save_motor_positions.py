@@ -63,8 +63,10 @@ def test_save_motor_position_by_name(mongodb, ioc_motor):
     # Get our simulated motors into the device registry
     motorA = HavenMotor("vme_crate_ioc:m1", name="Motor A")
     motorB = HavenMotor("vme_crate_ioc:m2", name="Motor B")
-    motorA.wait_for_connection()
-    motorB.wait_for_connection()
+    # Get the values to give the IOC a chance to spin up
+    epics.caget("vme_crate_ioc:m1.VAL", use_monitor=False, timeout=20)
+    epics.caget("vme_crate_ioc:m2.VAL", use_monitor=False, timeout=20)
+    # Register the new motors with the Haven instrument registry
     registry.register(motorA)
     registry.register(motorB)
     # Move to some other motor position so we can tell it saved the right one
