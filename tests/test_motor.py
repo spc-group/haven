@@ -5,6 +5,7 @@ from haven.instrument import motor
 
 
 def test_load_vme_motors(ioc_motor):
+    registry.clear()
     # Set the IOC motor descriptions to known values
     epics.caput('vme_crate_ioc:m1.DESC', "SLT V Upper")
     epics.caput('vme_crate_ioc:m2.DESC', "SLT V Lower")

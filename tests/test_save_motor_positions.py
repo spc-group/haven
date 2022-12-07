@@ -21,6 +21,8 @@ fake_time = pytz.timezone("America/New_York").localize(
     dt.datetime(2022, 8, 19, 19, 10, 51)
 )
 
+IOC_timeout = 40  # Wait up to this many seconds for the IOC to be ready
+
 @pytest.fixture
 def sim_registry():
     # Clean the registry so we can restore it later
@@ -45,8 +47,9 @@ def test_save_motor_position_by_device(mongodb, ioc_motor):
     # Create motor devices
     motorA = HavenMotor("vme_crate_ioc:m1", name="Motor A")
     motorB = HavenMotor("vme_crate_ioc:m2", name="Motor B")
-    motorA.wait_for_connection()
-    motorB.wait_for_connection()
+    # Get the values to give the IOC a chance to spin up
+    assert epics.caget("vme_crate_ioc:m1.VAL", use_monitor=False, timeout=IOC_timeout) is not None
+    assert epics.caget("vme_crate_ioc:m2.VAL", use_monitor=False, timeout=IOC_timeout) is not None    
     # Move to some other motor position so we can tell it saved the right one
     motorA.set(11.0)
     motorB.set(23.0)
@@ -73,8 +76,8 @@ def test_save_motor_position_by_name(mongodb, ioc_motor):
     motorA = HavenMotor("vme_crate_ioc:m1", name="Motor A")
     motorB = HavenMotor("vme_crate_ioc:m2", name="Motor B")
     # Get the values to give the IOC a chance to spin up
-    epics.caget("vme_crate_ioc:m1.VAL", use_monitor=False, timeout=20)
-    epics.caget("vme_crate_ioc:m2.VAL", use_monitor=False, timeout=20)
+    assert epics.caget("vme_crate_ioc:m1.VAL", use_monitor=False, timeout=IOC_timeout) is not None
+    assert epics.caget("vme_crate_ioc:m2.VAL", use_monitor=False, timeout=IOC_timeout) is not None
     # Register the new motors with the Haven instrument registry
     registry.register(motorA)
     registry.register(motorB)
