@@ -11,6 +11,10 @@ is_connected = false
 name = "Advanced Photon Source"
 xray_source = "insertion device"
 
+[database.databroker]
+
+catalog = "bluesky"
+
 [shutter]
 
 [shutter.A]
