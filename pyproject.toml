@@ -33,3 +33,6 @@ keywords = ["synchrotron", "xray", "bluesky"]
 
 # # Optional dependencies (extras)
 # pendulum = { version = "^1.4", optional = true }
+
+[tool.poetry.scripts]
+haven_config = "haven._iconfig:print_config_value"
