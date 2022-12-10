@@ -26,7 +26,6 @@ ioc = "id_ioc"
 [monochromator]
 
 ioc = "mono_ioc"
-energy_ioc = "mono_ioc"  # 25-ID has the Energy motor on separate PV
 
 [ion_chamber]
 
