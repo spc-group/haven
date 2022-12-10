@@ -1,4 +1,8 @@
+import os
 import time
+import time_machine
+import pytz
+import datetime as dt
 
 import epics
 import pytest
@@ -13,6 +17,11 @@ from haven import (
     HavenMotor,
 )
 
+fake_time = pytz.timezone("America/New_York").localize(
+    dt.datetime(2022, 8, 19, 19, 10, 51)
+)
+
+IOC_timeout = 40  # Wait up to this many seconds for the IOC to be ready
 
 @pytest.fixture
 def sim_registry():
@@ -38,8 +47,9 @@ def test_save_motor_position_by_device(mongodb, ioc_motor):
     # Create motor devices
     motorA = HavenMotor("vme_crate_ioc:m1", name="Motor A")
     motorB = HavenMotor("vme_crate_ioc:m2", name="Motor B")
-    motorA.wait_for_connection()
-    motorB.wait_for_connection()
+    # Get the values to give the IOC a chance to spin up
+    assert epics.caget("vme_crate_ioc:m1.VAL", use_monitor=False, timeout=IOC_timeout) is not None
+    assert epics.caget("vme_crate_ioc:m2.VAL", use_monitor=False, timeout=IOC_timeout) is not None    
     # Move to some other motor position so we can tell it saved the right one
     motorA.set(11.0)
     motorB.set(23.0)
@@ -56,15 +66,19 @@ def test_save_motor_position_by_device(mongodb, ioc_motor):
     assert result["motors"][1]["readback"] == 23.0
 
 
-def test_save_motor_position_by_name(mongodb, ioc_motor):
+
+@time_machine.travel(fake_time, tick=False)
+def test_save_motor_position_by_name(mongodb, ioc_motor):   
     # Check that no entry exists before saving it
     result = mongodb.motor_positions.find_one({"name": motor1.name})
     assert result is None
     # Get our simulated motors into the device registry
     motorA = HavenMotor("vme_crate_ioc:m1", name="Motor A")
     motorB = HavenMotor("vme_crate_ioc:m2", name="Motor B")
-    motorA.wait_for_connection()
-    motorB.wait_for_connection()
+    # Get the values to give the IOC a chance to spin up
+    assert epics.caget("vme_crate_ioc:m1.VAL", use_monitor=False, timeout=IOC_timeout) is not None
+    assert epics.caget("vme_crate_ioc:m2.VAL", use_monitor=False, timeout=IOC_timeout) is not None
+    # Register the new motors with the Haven instrument registry
     registry.register(motorA)
     registry.register(motorB)
     # Move to some other motor position so we can tell it saved the right one
@@ -83,7 +97,9 @@ def test_save_motor_position_by_name(mongodb, ioc_motor):
     assert result["motors"][0]["readback"] == 11.0
     assert result["motors"][1]["readback"] == 23.0
     assert result["motors"][0]["offset"] == 1.5
-
+    # Check that the metadata saved
+    assert result["time"] == time.time()
+    
 
 def test_get_motor_position_by_uid(mongodb):
     uid = str(mongodb.motor_positions.find_one({"name": "Good position A"})["_id"])

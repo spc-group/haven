@@ -36,7 +36,9 @@ def test_motor_ioc(ioc_motor):
 def test_mono_ioc(ioc_mono):
     # Test a regular motor
     caput("mono_ioc:m1", 0)
+    caput("mono_ioc:m1.VAL", 0)
     assert caget("mono_ioc:m1", use_monitor=False) == 0.0
+    assert caget("mono_ioc:m1.VAL", use_monitor=False) == 0.0
     # Change the value
     caput("mono_ioc:m1", 4000.0)
     time.sleep(0.1)
