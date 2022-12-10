@@ -3,7 +3,7 @@ from pathlib import Path
 import importlib
 
 from haven import _iconfig
-from haven._iconfig import load_config
+from haven._iconfig import load_config, print_config_value
 
 
 def test_default_values():
@@ -35,3 +35,11 @@ def test_merging_dicts():
     test_file = this_dir / "test_iconfig.toml"
     config = load_config(file_paths=[default_file, test_file])
     assert "description" in config["camera"]["camA"].keys()
+
+
+def test_haven_config_cli(capsys):
+    """Test the function used as a CLI way to get config values."""
+    print_config_value(["monochromator.ioc"])
+    # Check stdout for config value
+    captured = capsys.readouterr()
+    assert captured.out == "mono_ioc\n"
