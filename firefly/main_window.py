@@ -110,6 +110,7 @@ class FireflyMainWindow(PyDMMainWindow):
             self.ui.menuMotors.addAction(action)
         # Add other menu actions
         self.ui.menuView.addAction(app.show_status_window_action)
+        self.ui.menuPositioners.addAction(app.show_energy_window_action)
 
     def update_window_title(self):
         if self.showing_file_path_in_title_bar:
