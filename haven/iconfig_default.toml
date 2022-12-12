@@ -15,6 +15,9 @@ xray_source = "insertion device"
 
 catalog = "bluesky"
 
+[queueserver]
+kafka_topic = "s100idc_queueserver"
+
 [shutter]
 
 [shutter.A]

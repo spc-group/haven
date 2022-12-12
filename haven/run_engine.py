@@ -5,9 +5,9 @@ from ._iconfig import load_config
 
 
 class RunEngine(BlueskyRunEngine):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, connect_databroker=True, **kwargs):
         super().__init__(*args, **kwargs)
-        # Register the databroker catalog
-        config = load_config()["database"]["databroker"]
-        catalog = databroker.catalog[config["catalog"]]
-        self.subscribe(catalog.v1.insert)
+        if connect_databroker:
+            catalog_name = load_config()["database"]["databroker"]["catalog"]
+            catalog = databroker.catalog[catalog_name]
+            self.subscribe(catalog.v1.insert)
