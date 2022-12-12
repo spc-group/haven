@@ -7,9 +7,9 @@ from haven.instrument.energy_positioner import EnergyPositioner
 
 def test_pseudo_to_real_positioner(ioc_mono, ioc_undulator):
     positioner = EnergyPositioner(
-        name="energy", mono_energy_pv="mono_ioc:Energy", id_prefix="id_ioc"
+        name="energy", mono_pv="mono_ioc:Energy", id_prefix="id_ioc"
     )
-    positioner.wait_for_connection()
+    positioner.mono_energy.wait_for_connection()
     positioner.energy.set(10000)
     assert positioner.get(use_monitor=False).mono_energy.user_setpoint == 10000
     # Move the energy positioner
@@ -22,7 +22,7 @@ def test_pseudo_to_real_positioner(ioc_mono, ioc_undulator):
 
 def test_real_to_pseudo_positioner(ioc_mono, ioc_undulator):
     positioner = EnergyPositioner(
-        name="energy", mono_energy_pv="mono_ioc:Energy", id_prefix="id_ioc"
+        name="energy", mono_pv="mono_ioc:Energy", id_prefix="id_ioc"
     )
     positioner.wait_for_connection(timeout=10.0)
     # Move the mono energy positioner
