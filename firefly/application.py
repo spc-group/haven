@@ -36,6 +36,13 @@ class FireflyApplication(PyDMApplication):
         # Launch the default display
         self.show_status_window()
 
+    def _setup_window_action(self, action_name: str, text: str, slot: QtCore.Slot):
+        action = QtWidgets.QAction(self)
+        action.setObjectName(action_name)
+        action.setText(text)
+        action.triggered.connect(slot)
+        setattr(self, action_name, action)
+
     def setup_window_actions(self):
         """Create QActions for clicking on menu items, shortcuts, etc.
 
@@ -49,6 +56,7 @@ class FireflyApplication(PyDMApplication):
         self.show_status_window_action.setObjectName(f"show_status_window_action")
         self.show_status_window_action.setText("Beamline Status")
         self.show_status_window_action.triggered.connect(self.show_status_window)
+        self._setup_window_action(action_name="show_energy_window_action", text="Energy", slot=self.show_energy_window)
 
     def prepare_motor_windows(self):
         """Prepare the support for opening motor windows."""
@@ -157,3 +165,7 @@ class FireflyApplication(PyDMApplication):
     @QtCore.Slot()
     def show_cameras_window(self):
         self.show_window(FireflyMainWindow, ui_dir / "cameras.py", name="cameras")
+
+    @QtCore.Slot()
+    def show_energy_window(self):
+        self.show_window(FireflyMainWindow, ui_dir / "energy.py", name="energy")
