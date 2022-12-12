@@ -26,7 +26,7 @@ ioc = "id_ioc"
 [monochromator]
 
 ioc = "mono_ioc"
-energy_ioc = "mono_ioc"  # 25-ID has the Energy motor on separate PV
+ioc_branch = "UP"  # For caQtDM macros
 
 [ion_chamber]
 

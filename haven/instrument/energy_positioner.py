@@ -31,11 +31,11 @@ class EnergyPositioner(PseudoPositioner):
     energy = Cpt(PseudoSingle)
 
     # Equivalent real axes
-    mono_energy = FCpt(EpicsMotor, "{mono_energy_pv}")
+    mono_energy = FCpt(EpicsMotor, "{mono_pv}")
     id_energy = FCpt(Undulator, "{id_prefix}")
 
-    def __init__(self, mono_energy_pv, id_prefix, *args, **kwargs):
-        self.mono_energy_pv = mono_energy_pv
+    def __init__(self, mono_pv, id_prefix, *args, **kwargs):
+        self.mono_pv = mono_pv
         self.id_prefix = id_prefix
         super().__init__(*args, **kwargs)
 
@@ -56,14 +56,16 @@ class EnergyPositioner(PseudoPositioner):
 
 
 def load_energy_positioner(config=None):
+    # Load PV's from config
     if config is None:
         config = load_config()
-    mono_energy_pv = Monochromator.energy.suffix
-    energy_ioc = config["monochromator"]["energy_ioc"]
-    mono_energy_pv = mono_energy_pv.format(energy_prefix=energy_ioc)
+    mono_suffix = Monochromator.energy.suffix
+    mono_prefix = config["monochromator"]["ioc"]
+    id_prefix = config["undulator"]["ioc"]
+    # Create energy positioner
     energy_positioner = EnergyPositioner(
         name="energy",
-        mono_energy_pv=mono_energy_pv,
-        id_prefix=config["undulator"]["ioc"],
+        mono_pv=f"{mono_prefix}{mono_suffix}",
+        id_prefix=id_prefix,
     )
     registry.register(energy_positioner)
