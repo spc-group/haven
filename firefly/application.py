@@ -3,13 +3,14 @@ from pathlib import Path
 from dataclasses import dataclass, field
 from typing import Optional, Union, Mapping
 from functools import partial
+import subprocess
 
 from qtpy import QtWidgets, QtCore
 from pydm.application import PyDMApplication
 from pydm.display import load_file
 from pydm.utilities.stylesheet import apply_stylesheet
 from haven.exceptions import ComponentNotFound
-from haven import HavenMotor, registry
+from haven import HavenMotor, registry, load_config
 
 from .main_window import FireflyMainWindow
 
@@ -56,7 +57,22 @@ class FireflyApplication(PyDMApplication):
         self.show_status_window_action.setObjectName(f"show_status_window_action")
         self.show_status_window_action.setText("Beamline Status")
         self.show_status_window_action.triggered.connect(self.show_status_window)
+        # Action for launch queue-monitor
+        self.launch_queuemonitor_action = QtWidgets.QAction(self)
+        self.launch_queuemonitor_action.setObjectName(f"launch_queuemonitor_action")
+        self.launch_queuemonitor_action.setText("Queue Monitor")
+        self.launch_queuemonitor_action.triggered.connect(self.launch_queuemonitor)
+        # Launch energy window
         self._setup_window_action(action_name="show_energy_window_action", text="Energy", slot=self.show_energy_window)
+
+    def launch_queuemonitor(self):
+        config = load_config()["queueserver"]
+        zmq_info_addr = f"tcp://{config['info_host']}:{config['info_port']}"
+        zmq_ctrl_addr = f"tcp://{config['control_host']}:{config['control_port']}"
+        cmds = ['queue-monitor',
+                '--zmq-control-addr', zmq_ctrl_addr,
+                '--zmq-info-addr', zmq_info_addr]
+        subprocess.Popen(cmds)
 
     def prepare_motor_windows(self):
         """Prepare the support for opening motor windows."""
