@@ -11,6 +11,13 @@ is_connected = false
 name = "Advanced Photon Source"
 xray_source = "insertion device"
 
+[queueserver]
+kafka_topic = "s25idc_queueserver"
+control_host = "localhost"
+control_port = "60615"
+info_host = "localhost"
+info_port = "60625"
+
 [shutter]
 
 [shutter.A]
