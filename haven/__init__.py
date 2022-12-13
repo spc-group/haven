@@ -7,6 +7,7 @@ from .plans.beam_properties import knife_scan, fit_step  # noqa: F401
 from .energy_ranges import ERange, KRange, merge_ranges  # noqa: F401
 from .plans.energy_scan import energy_scan  # noqa: F401
 from .plans.xafs_scan import xafs_scan  # noqa: F401
+from .plans.beam_properties import knife_scan  # noqa: F401
 from .plans.auto_gain import auto_gain, AutoGainCallback  # noqa:F401
 from .plans.mono_gap_calibration import calibrate_mono_gap, align_pitch2  # noqa: F401
 from .run_engine import RunEngine  # noqa: F401

@@ -12,11 +12,15 @@ name = "Advanced Photon Source"
 xray_source = "insertion device"
 
 [queueserver]
-kafka_topic = "s25idc_queueserver"
+kafka_topic = "s100idc_queueserver"
 control_host = "localhost"
 control_port = "60615"
 info_host = "localhost"
 info_port = "60625"
+
+[database.databroker]
+
+catalog = "bluesky"
 
 [shutter]
 
@@ -33,7 +37,7 @@ ioc = "id_ioc"
 [monochromator]
 
 ioc = "mono_ioc"
-energy_ioc = "mono_ioc"  # 25-ID has the Energy motor on separate PV
+ioc_branch = "UP"  # For caQtDM macros
 
 [ion_chamber]
 

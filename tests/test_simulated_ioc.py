@@ -35,17 +35,17 @@ def test_motor_ioc(ioc_motor):
 
 def test_mono_ioc(ioc_mono):
     # Test a regular motor
-    caput("mono_ioc:m1", 0)
-    caput("mono_ioc:m1.VAL", 0)
-    assert caget("mono_ioc:m1", use_monitor=False) == 0.0
-    assert caget("mono_ioc:m1.VAL", use_monitor=False) == 0.0
+    caput("mono_ioc:ACS:m1", 0)
+    caput("mono_ioc:ACS:m1.VAL", 0)
+    assert caget("mono_ioc:ACS:m1", use_monitor=False) == 0.0
+    assert caget("mono_ioc:ACS:m1.VAL", use_monitor=False) == 0.0
     # Change the value
-    caput("mono_ioc:m1", 4000.0)
+    caput("mono_ioc:ACS:m1", 4000.0)
     time.sleep(0.1)
     # Check that the record got updated
-    assert caget("mono_ioc:m1", use_monitor=False) == 4000.0
-    assert caget("mono_ioc:m1.VAL", use_monitor=False) == 4000.0
-    assert caget("mono_ioc:m1.RBV", use_monitor=False) == 4000.0
+    assert caget("mono_ioc:ACS:m1", use_monitor=False) == 4000.0
+    assert caget("mono_ioc:ACS:m1.VAL", use_monitor=False) == 4000.0
+    assert caget("mono_ioc:ACS:m1.RBV", use_monitor=False) == 4000.0
     # Test the energy motor
     caput("mono_ioc:Energy", 10000.0)
     time.sleep(0.1)
