@@ -98,13 +98,19 @@ class FireflyApplication(PyDMApplication):
             config = load_config()["queueserver"]
             ctrl_addr = f"tcp://{config['control_host']}:{config['control_port']}"
             info_addr = f"tcp://{config['info_host']}:{config['info_port']}"
-            REManagerAPI(zmq_control_addr=ctrl_addr, zmq_info_addr=info_addr)
+            api = REManagerAPI(zmq_control_addr=ctrl_addr, zmq_info_addr=info_addr)
+        print(api)
         client = QueueClient(api=api)
         client.moveToThread(thread)
         # Prepare actions for controlling the run engine
         self.pause_run_engine = QAction(self)
+        self.pause_run_engine_now = QAction(self)
         # Connect actions to signals for controlling the run engine
-        # self.pause_run_engine.triggered.connect(runner.request_pause)
+        # self.pause_run_engine.triggered.connect(client.request_pause)
+        self.pause_run_engine.triggered.connect(
+            partial(client.request_pause, defer=True))        
+        self.pause_run_engine_now.triggered.connect(
+            partial(client.request_pause, defer=False))
         # self.run_plan.connect(runner.run_plan)
         # self.setup_run_engine.connect(runner.setup_run_engine)
         # run_engine = FireflyRunEngine()
