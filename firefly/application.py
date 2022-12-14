@@ -5,14 +5,17 @@ from typing import Optional, Union, Mapping
 from functools import partial
 
 from qtpy import QtWidgets, QtCore
+from qtpy.QtWidgets import QAction
+from qtpy.QtCore import Slot, QThread, Signal, QObject
 from pydm.application import PyDMApplication
 from pydm.display import load_file
 from pydm.utilities.stylesheet import apply_stylesheet
+from bluesky_queueserver_api.zmq import REManagerAPI
 from haven.exceptions import ComponentNotFound
-from haven import HavenMotor, registry
+from haven import HavenMotor, registry, load_config
 
 from .main_window import FireflyMainWindow
-from .engine_runner import EngineRunner, FireflyRunEngine
+from .queue_client import QueueClient
 
 generator = type((x for x in []))
 
@@ -28,14 +31,9 @@ ui_dir = Path(__file__).parent
 class FireflyApplication(PyDMApplication):
     xafs_scan_window = None
 
-<<<<<<< HEAD
-=======
     # Actions defined here
-    run_plan = Signal(generator)
-    pause_run_engine: QAction()
-    setup_run_engine = Signal(FireflyRunEngine)
+    pause_run_engine: QAction
 
->>>>>>> 189e873 (First attempt at a Qt-based RunEngine. Does not work yet.)
     def __init__(self, ui_file=None, use_main_window=False, *args, **kwargs):
         # Instantiate the parent class
         # (*ui_file* and *use_main_window* let us render the window here instead)
@@ -45,6 +43,9 @@ class FireflyApplication(PyDMApplication):
         self.setup_window_actions()
         # Launch the default display
         self.show_status_window()
+
+    def __del__(self):
+        self._queue_thread.quit()
 
     def _setup_window_action(self, action_name: str, text: str, slot: QtCore.Slot):
         action = QtWidgets.QAction(self)
@@ -90,27 +91,31 @@ class FireflyApplication(PyDMApplication):
             action.triggered.connect(slot)
             self.motor_window_slots.append(slot)
 
-    def prepare_run_engine(self, run_engine=None):
+    def prepare_queue_client(self, api=None):
         thread = QThread()
-        runner = EngineRunner(thread=thread)
-        # runner.moveToThread(thread)
+        self._queue_thread = thread
+        if api is None:
+            config = load_config()["queueserver"]
+            ctrl_addr = f"tcp://{config['control_host']}:{config['control_port']}"
+            info_addr = f"tcp://{config['info_host']}:{config['info_port']}"
+            REManagerAPI(zmq_control_addr=ctrl_addr, zmq_info_addr=info_addr)
+        client = QueueClient(api=api)
+        client.moveToThread(thread)
         # Prepare actions for controlling the run engine
-        print("prepare_run_engine: ", asyncio.get_event_loop())
         self.pause_run_engine = QAction(self)
         # Connect actions to signals for controlling the run engine
-        self.pause_run_engine.triggered.connect(runner.request_pause)
-        self.run_plan.connect(runner.run_plan)
-        self.setup_run_engine.connect(runner.setup_run_engine)
-        run_engine = FireflyRunEngine()
-        self.setup_run_engine.emit(run_engine)
-        # Start the thread
-        print("prepare_run_engine (pre_start): ", asyncio.get_event_loop())        
-        thread.start()
+        # self.pause_run_engine.triggered.connect(runner.request_pause)
+        # self.run_plan.connect(runner.run_plan)
+        # self.setup_run_engine.connect(runner.setup_run_engine)
+        # run_engine = FireflyRunEngine()
+        # self.setup_run_engine.emit(run_engine)
         
-        print("prepare_run_engine (post_start):", asyncio.get_event_loop())
-        # Save references to the thread and runner
-        self._engine_runner_thread = thread
-        self._engine_runner = runner
+        # Start the thread
+        thread.start()
+        # print("prepare_run_engine (post_start):", asyncio.get_event_loop())
+        # # Save references to the thread and runner
+        # self._engine_runner_thread = thread
+        self._queue_client = client
 
     def connect_menu_signals(self, window):
         """Connects application-level signals to the associated slots.
