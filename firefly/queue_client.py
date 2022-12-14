@@ -1,5 +1,3 @@
-import asyncio
-
 from qtpy.QtCore import QThread, QObject, Signal, Slot
 from bluesky_queueserver_api.zmq import REManagerAPI
 
@@ -8,8 +6,10 @@ from haven import RunEngine
 
 class QueueClient(QObject):
     api: REManagerAPI
+
+    # Signals responding to queue changes
     state_changed = Signal()
-    progress_updated = Signal(int)
+    length_changed = Signal(int)
 
     def __init__(self, *args, api, **kwargs):
         self.api = api
@@ -28,3 +28,13 @@ class QueueClient(QObject):
         """
         option = "deferred" if defer else "immediate"
         self.api.re_pause(option=option)
+
+    @Slot(dict)
+    def add_queue_item(self, item):
+        result = self.api.item_add(item=item)
+        if result['success']:
+            self.length_changed.emit(result['qsize'])
+
+    @Slot()
+    def start_queue(self):
+        self.api.queue_start()

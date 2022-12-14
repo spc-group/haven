@@ -31,8 +31,16 @@ ui_dir = Path(__file__).parent
 class FireflyApplication(PyDMApplication):
     xafs_scan_window = None
 
-    # Actions defined here
+    # Actions for controlling the queueserver
     pause_run_engine: QAction
+    pause_run_engine_now: QAction
+    start_queue: QAction
+
+    # Signals for running plans on the queueserver
+    queue_item_added = Signal(dict)
+
+    # Signals responding to queueserver changes
+    queue_length_changed = Signal(int)
 
     def __init__(self, ui_file=None, use_main_window=False, *args, **kwargs):
         # Instantiate the parent class
@@ -99,18 +107,22 @@ class FireflyApplication(PyDMApplication):
             ctrl_addr = f"tcp://{config['control_host']}:{config['control_port']}"
             info_addr = f"tcp://{config['info_host']}:{config['info_port']}"
             api = REManagerAPI(zmq_control_addr=ctrl_addr, zmq_info_addr=info_addr)
-        print(api)
         client = QueueClient(api=api)
         client.moveToThread(thread)
         # Prepare actions for controlling the run engine
         self.pause_run_engine = QAction(self)
         self.pause_run_engine_now = QAction(self)
-        # Connect actions to signals for controlling the run engine
-        # self.pause_run_engine.triggered.connect(client.request_pause)
+        self.start_queue = QAction(self)
+        # Connect actions to slots for controlling the queueserver
         self.pause_run_engine.triggered.connect(
             partial(client.request_pause, defer=True))        
         self.pause_run_engine_now.triggered.connect(
             partial(client.request_pause, defer=False))
+        self.start_queue.triggered.connect(client.start_queue)
+        # Connect signals to slots for executing plans on queueserver
+        self.queue_item_added.connect(client.add_queue_item)
+        # Connect signals/slots for queueserver state changes
+        client.length_changed.connect(self.queue_length_changed)
         # self.run_plan.connect(runner.run_plan)
         # self.setup_run_engine.connect(runner.setup_run_engine)
         # run_engine = FireflyRunEngine()
