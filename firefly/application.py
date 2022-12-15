@@ -6,14 +6,19 @@ from functools import partial
 import subprocess
 
 from qtpy import QtWidgets, QtCore
+from qtpy.QtWidgets import QAction
+from qtpy.QtCore import Slot, QThread, Signal, QObject
 from pydm.application import PyDMApplication
 from pydm.display import load_file
 from pydm.utilities.stylesheet import apply_stylesheet
+from bluesky_queueserver_api.zmq import REManagerAPI
 from haven.exceptions import ComponentNotFound
 from haven import HavenMotor, registry, load_config
 
 from .main_window import FireflyMainWindow
+from .queue_client import QueueClient
 
+generator = type((x for x in []))
 
 __all__ = ["ui_dir", "FireflyApplication"]
 
@@ -26,7 +31,18 @@ ui_dir = Path(__file__).parent
 
 class FireflyApplication(PyDMApplication):
     xafs_scan_window = None
-    
+
+    # Actions for controlling the queueserver
+    pause_run_engine: QAction
+    pause_run_engine_now: QAction
+    start_queue: QAction
+
+    # Signals for running plans on the queueserver
+    queue_item_added = Signal(dict)
+
+    # Signals responding to queueserver changes
+    queue_length_changed = Signal(int)
+
     def __init__(self, ui_file=None, use_main_window=False, *args, **kwargs):
         # Instantiate the parent class
         # (*ui_file* and *use_main_window* let us render the window here instead)
@@ -36,6 +52,9 @@ class FireflyApplication(PyDMApplication):
         self.setup_window_actions()
         # Launch the default display
         self.show_status_window()
+
+    def __del__(self):
+        self._queue_thread.quit()
 
     def _setup_window_action(self, action_name: str, text: str, slot: QtCore.Slot):
         action = QtWidgets.QAction(self)
@@ -74,6 +93,8 @@ class FireflyApplication(PyDMApplication):
                 '--zmq-info-addr', zmq_info_addr]
         subprocess.Popen(cmds)
 
+        self._setup_window_action(action_name="show_energy_window_action", text="Energy", slot=self.show_energy_window)
+
     def prepare_motor_windows(self):
         """Prepare the support for opening motor windows."""
         # Get active motors
@@ -95,6 +116,42 @@ class FireflyApplication(PyDMApplication):
             slot = partial(self.show_motor_window, motor=motor)
             action.triggered.connect(slot)
             self.motor_window_slots.append(slot)
+
+    def prepare_queue_client(self, api=None):
+        thread = QThread()
+        self._queue_thread = thread
+        if api is None:
+            config = load_config()["queueserver"]
+            ctrl_addr = f"tcp://{config['control_host']}:{config['control_port']}"
+            info_addr = f"tcp://{config['info_host']}:{config['info_port']}"
+            api = REManagerAPI(zmq_control_addr=ctrl_addr, zmq_info_addr=info_addr)
+        client = QueueClient(api=api)
+        client.moveToThread(thread)
+        # Prepare actions for controlling the run engine
+        self.pause_run_engine = QAction(self)
+        self.pause_run_engine_now = QAction(self)
+        self.start_queue = QAction(self)
+        # Connect actions to slots for controlling the queueserver
+        self.pause_run_engine.triggered.connect(
+            partial(client.request_pause, defer=True))        
+        self.pause_run_engine_now.triggered.connect(
+            partial(client.request_pause, defer=False))
+        self.start_queue.triggered.connect(client.start_queue)
+        # Connect signals to slots for executing plans on queueserver
+        self.queue_item_added.connect(client.add_queue_item)
+        # Connect signals/slots for queueserver state changes
+        client.length_changed.connect(self.queue_length_changed)
+        # self.run_plan.connect(runner.run_plan)
+        # self.setup_run_engine.connect(runner.setup_run_engine)
+        # run_engine = FireflyRunEngine()
+        # self.setup_run_engine.emit(run_engine)
+        
+        # Start the thread
+        thread.start()
+        # print("prepare_run_engine (post_start):", asyncio.get_event_loop())
+        # # Save references to the thread and runner
+        # self._engine_runner_thread = thread
+        self._queue_client = client
 
     def connect_menu_signals(self, window):
         """Connects application-level signals to the associated slots.

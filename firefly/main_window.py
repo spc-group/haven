@@ -8,7 +8,6 @@ from haven.instrument import motor
 from haven.instrument import motor
 from haven import load_config
 
-
 log = logging.getLogger(__name__)
 
 
