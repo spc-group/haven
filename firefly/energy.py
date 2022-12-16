@@ -1,5 +1,6 @@
 from qtpy import QtWidgets
 
+from bluesky_queueserver_api import BPlan
 from haven import registry, load_config
 from firefly import display
 
@@ -33,9 +34,17 @@ class EnergyDisplay(display.FireflyDisplay):
         }
         self.launch_caqtdm(macros=caqtdm_macros)
 
+    def set_energy(self, *args, **kwargs):
+        energy = float(self.ui.target_energy_lineedit.text())
+        # Build the queue item
+        item = BPlan("set_energy", energy=energy)
+        # Submit the item to the queueserver
+        app = QtWidgets.QApplication.instance()
+        app.add_queue_item(item)
+
     def customize_ui(self):
-        self.ui.mono_caqtdm_button.clicked.connect(
-            self.launch_mono_caqtdm)
+        self.ui.mono_caqtdm_button.clicked.connect(self.launch_mono_caqtdm)
+        self.ui.set_energy_button.clicked.connect(self.set_energy)
 
     def ui_filename(self):
         return "energy.ui"

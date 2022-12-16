@@ -11,6 +11,7 @@ from qtpy.QtCore import Slot, QThread, Signal, QObject
 from pydm.application import PyDMApplication
 from pydm.display import load_file
 from pydm.utilities.stylesheet import apply_stylesheet
+from bluesky_queueserver_api import BPlan
 from bluesky_queueserver_api.zmq import REManagerAPI
 from haven.exceptions import ComponentNotFound
 from haven import HavenMotor, registry, load_config
@@ -38,7 +39,7 @@ class FireflyApplication(PyDMApplication):
     start_queue: QAction
 
     # Signals for running plans on the queueserver
-    queue_item_added = Signal(dict)
+    queue_item_added = Signal(object)
 
     # Signals responding to queueserver changes
     queue_length_changed = Signal(int)
@@ -152,6 +153,9 @@ class FireflyApplication(PyDMApplication):
         # # Save references to the thread and runner
         # self._engine_runner_thread = thread
         self._queue_client = client
+
+    def add_queue_item(self, item):
+        self.queue_item_added.emit(item)
 
     def connect_menu_signals(self, window):
         """Connects application-level signals to the associated slots.
