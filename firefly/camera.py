@@ -77,7 +77,7 @@ class CameraDisplay(display.FireflyDisplay):
         cmd = f"start_{prefix}_caqtdm"
         # Launch caQtDM for the given IOC
         log.info(f"Launching caQtDM: {cmd}")
-        self.imagej_process = subprocess.Popen(cmd)
+        self.caqtdm_process = subprocess.Popen(cmd)
 
     def launch_imageJ(self):
         # Set the imageJ properties file

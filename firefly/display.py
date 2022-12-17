@@ -18,7 +18,7 @@ class FireflyDisplay(Display):
             ui_file = self.caqtdm_ui_file
         cmds = self.caqtdm_command.split()
         macro_str = ",".join(f"{key}={val}" for key, val in macros.items())
-        cmds = [*cmds, "-macro", macro_str, self.caqtdm_ui_file]
+        cmds = [*cmds, "-macro", macro_str, ui_file]
         subprocess.Popen(cmds)
 
     def customize_device(self):

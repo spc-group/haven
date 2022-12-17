@@ -46,6 +46,8 @@ class EnergyDisplay(display.FireflyDisplay):
         """Launch the pre-built caQtDM UI file for the ID."""
         config = load_config()
         prefix = config["undulator"]["ioc"]
+        # Strip leading "ID" from the mono IOC since caQtDM adds it
+        prefix = prefix.strip("ID")
         caqtdm_macros = {
             # No idea what "M", and "D" do, they're not in the UI
             # file.
