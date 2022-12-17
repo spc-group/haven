@@ -130,3 +130,26 @@ class FireflyMainWindow(PyDMMainWindow):
         self.actionShow_Log_Viewer = self.ui.actionShow_Log_Viewer
         self.actionShow_Xafs_Scan = self.ui.actionShow_Xafs_Scan
         self.actionShow_Voltmeters = self.ui.actionShow_Voltmeters
+
+
+class PlanMainWindow(FireflyMainWindow):
+    """A Qt window that has extra controls for a bluesky runengine.
+
+    """
+    hide_nav_bar: bool = False
+    
+    def customize_ui(self):
+        super().customize_ui()
+        # Remove previous navbar actions
+        navbar = self.ui.navbar
+        for action in navbar.actions():
+            navbar.removeAction(action)
+        # Add applications runengine actions
+        app = QtWidgets.QApplication.instance()
+        navbar.addAction(app.pause_runengine_action)
+        navbar.addAction(app.pause_runengine_now_action)
+        navbar.addSeparator()
+        navbar.addAction(app.resume_runengine_action)
+        navbar.addAction(app.stop_runengine_action)
+        navbar.addAction(app.abort_runengine_action)
+        navbar.addAction(app.halt_runengine_action)
