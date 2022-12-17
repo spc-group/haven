@@ -137,9 +137,8 @@ class PlanMainWindow(FireflyMainWindow):
 
     """
     hide_nav_bar: bool = False
-    
-    def customize_ui(self):
-        super().customize_ui()
+
+    def setup_navbar(self):
         # Remove previous navbar actions
         navbar = self.ui.navbar
         for action in navbar.actions():
@@ -153,3 +152,16 @@ class PlanMainWindow(FireflyMainWindow):
         navbar.addAction(app.stop_runengine_action)
         navbar.addAction(app.abort_runengine_action)
         navbar.addAction(app.halt_runengine_action)
+
+    def customize_ui(self):
+        super().customize_ui()
+        self.setup_navbar()
+        # Connect signals/slots
+        app = QtWidgets.QApplication.instance()
+        app.queue_length_changed.connect(self.set_navbar_visibility)
+
+    @QtCore.Slot(int)
+    def set_navbar_visibility(self, queue_length: int):
+        """Determine whether to make the navbar be visible."""
+        navbar = self.ui.navbar
+        navbar.setVisible(queue_length > 0)

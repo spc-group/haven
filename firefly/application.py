@@ -58,7 +58,8 @@ class FireflyApplication(PyDMApplication):
         self.show_status_window()
 
     def __del__(self):
-        self._queue_thread.quit()
+        if hasattr(self, "_queue_client"):
+            self._queue_client.quit()
 
     def _setup_window_action(self, action_name: str, text: str, slot: QtCore.Slot):
         action = QtWidgets.QAction(self)
@@ -96,8 +97,6 @@ class FireflyApplication(PyDMApplication):
                 '--zmq-control-addr', zmq_ctrl_addr,
                 '--zmq-info-addr', zmq_info_addr]
         subprocess.Popen(cmds)
-
-        self._setup_window_action(action_name="show_energy_window_action", text="Energy", slot=self.show_energy_window)
 
     def setup_runengine_actions(self):
         """Create QActions for controlling the bluesky runengine."""
@@ -268,4 +267,4 @@ class FireflyApplication(PyDMApplication):
 
     @QtCore.Slot()
     def show_energy_window(self):
-        self.show_window(FireflyMainWindow, ui_dir / "energy.py", name="energy")
+        self.show_window(PlanMainWindow, ui_dir / "energy.py", name="energy")

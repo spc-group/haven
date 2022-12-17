@@ -20,8 +20,16 @@ def test_navbar(app):
     assert window.ui.actionHome not in navbar.actions()
     # Run engine actions have been added to the navbar
     assert app.pause_runengine_action in navbar.actions()
-    1/0
-    
+
+def test_navbar_autohide(qapp, qtbot):
+    """Test that the queue navbar is only visible when plans are queued."""
+    window = PlanMainWindow()
+    window.show()
+    navbar = window.ui.navbar
+    assert navbar.isVisible()
+    # Make the queue be empty
+    qapp.queue_length_changed.emit(0)
+    assert not navbar.isVisible()
 
 
 def test_add_menu_action(app):
