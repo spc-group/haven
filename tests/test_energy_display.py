@@ -41,3 +41,21 @@ def test_move_energy(qtbot, qapp):
     with qtbot.waitSignal(qapp.queue_item_added, timeout=1000,
                           check_params_cb=check_item):
         qtbot.mouseClick(btn, QtCore.Qt.LeftButton)
+
+
+def test_predefined_energies(qtbot, qapp):
+    # Load display
+    FireflyMainWindow()
+    disp = EnergyDisplay()
+    # Check that the combo box was populated
+    combo_box = disp.ui.edge_combo_box
+    assert combo_box.count() > 0
+    assert combo_box.itemText(0) == "Select edge…"
+    assert combo_box.itemText(1) == "Ca K (4038 eV)"
+    # Does it filter energies outside the usable range?
+    assert combo_box.count() < 250
+    # Does it update the energy line edit?
+    with qtbot.waitSignal(combo_box.activated, timeout=1000):
+        qtbot.keyClicks(combo_box, "Ni K (8333 eV)\t")
+    line_edit = disp.ui.target_energy_lineedit
+    assert line_edit.text() == "8333.000"

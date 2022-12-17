@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>358</width>
+    <width>371</width>
     <height>352</height>
    </rect>
   </property>
@@ -27,6 +27,12 @@
           <property name="enabled">
            <bool>true</bool>
           </property>
+          <property name="toolTip">
+           <string>Enter desired energy in eV.</string>
+          </property>
+          <property name="placeholderText">
+           <string>Target energy (eV)</string>
+          </property>
          </widget>
         </item>
         <item row="0" column="2">
@@ -37,9 +43,24 @@
          </widget>
         </item>
         <item row="2" column="1">
-         <widget class="QComboBox" name="comboBox">
+         <widget class="QComboBox" name="edge_combo_box">
           <property name="enabled">
+           <bool>true</bool>
+          </property>
+          <property name="toolTip">
+           <string>Select an edge, or type one in the form &quot;Na L3&quot;, etc.</string>
+          </property>
+          <property name="autoFillBackground">
            <bool>false</bool>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">background: rgb(220, 53, 69); color: white; border-color: rgb(220, 53, 69)</string>
+          </property>
+          <property name="editable">
+           <bool>true</bool>
+          </property>
+          <property name="currentText">
+           <string>Ni K (8333 eV)</string>
           </property>
          </widget>
         </item>
@@ -66,7 +87,7 @@
         <item row="2" column="0">
          <widget class="QLabel" name="label_5">
           <property name="enabled">
-           <bool>false</bool>
+           <bool>true</bool>
           </property>
           <property name="text">
            <string>Edge:</string>

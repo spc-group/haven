@@ -1,12 +1,17 @@
-from qtpy import QtWidgets
-
+from qtpy import QtWidgets, QtCore
 from bluesky_queueserver_api import BPlan
 from haven import registry, load_config
+from xraydb.xraydb import XrayDB
+
 from firefly import display
 
 
 class EnergyDisplay(display.FireflyDisplay):
     caqtdm_ui_file = "/net/s25data/xorApps/ui/DCMControlCenter.ui"
+    min_energy = 4000
+    max_energy = 27000
+    stylesheet_danger = "background: rgb(220, 53, 69); color: white; border-color: rgb(220, 53, 69)"
+    stylesheet_normal = ""
 
     def __init__(self, args=None, macros={}, **kwargs):
         # Set up macros
@@ -17,6 +22,8 @@ class EnergyDisplay(display.FireflyDisplay):
         energy = registry.find(name="energy")
         _macros["ID_ENERGY_PV"] = _macros.get("ID_ENERGY_PV", f"{energy.id_prefix}:Energy.VAL")
         _macros["ID_GAP_PV"] = _macros.get("ID_GAP_PV", f"{energy.id_prefix}:Gap.VAL")
+        # Load X-ray database for calculating edge energies
+        self.xraydb = XrayDB()
         super().__init__(args=args, macros=_macros, **kwargs)
 
     def launch_mono_caqtdm(self):
@@ -45,6 +52,36 @@ class EnergyDisplay(display.FireflyDisplay):
     def customize_ui(self):
         self.ui.mono_caqtdm_button.clicked.connect(self.launch_mono_caqtdm)
         self.ui.set_energy_button.clicked.connect(self.set_energy)
+        # Set up the combo box with X-ray energies
+        combo_box = self.ui.edge_combo_box
+        ltab = self.xraydb.tables['xray_levels']
+        edges = self.xraydb.query(ltab)
+        edges = edges.filter(ltab.c.absorption_edge < self.max_energy,
+                             ltab.c.absorption_edge > self.min_energy)
+        items = [f"{r.element} {r.iupac_symbol} ({int(r.absorption_edge)} eV)"
+                 for r in edges.all()]
+        combo_box.addItems(["Select edge…", *items])
+        combo_box.activated.connect(self.select_edge)
+
+    @QtCore.Slot(int)
+    def select_edge(self, index):
+        if index == 0:
+            # The placeholder text was selected
+            return
+        # Parse the combo box text to get the selected edge
+        combo_box = self.ui.edge_combo_box
+        text = combo_box.itemText(index)
+        elem, edge = text.replace(" ", "_").split("_")[:2]
+        # Determine which energy was selected
+        edge_info = self.xraydb.xray_edge(element=elem, edge=edge)
+        if edge_info is None:
+            # Edge is not recognized, so provide feedback
+            combo_box.setStyleSheet(self.stylesheet_danger)
+        else:
+            # Set the text field to the selected edge's energy            
+            energy, fyield, edge_jump = edge_info
+            self.ui.target_energy_lineedit.setText(f"{energy:.3f}")
+            combo_box.setStyleSheet(self.stylesheet_normal)
 
     def ui_filename(self):
         return "energy.ui"
