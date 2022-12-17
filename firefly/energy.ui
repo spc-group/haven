@@ -54,7 +54,7 @@
            <bool>false</bool>
           </property>
           <property name="styleSheet">
-           <string notr="true">background: rgb(220, 53, 69); color: white; border-color: rgb(220, 53, 69)</string>
+           <string notr="true"/>
           </property>
           <property name="editable">
            <bool>true</bool>
@@ -68,6 +68,9 @@
          <widget class="QPushButton" name="set_energy_button">
           <property name="enabled">
            <bool>true</bool>
+          </property>
+          <property name="toolTip">
+           <string>Queue a plan to change the X-ray energy.</string>
           </property>
           <property name="text">
            <string>Set Energy</string>
@@ -261,8 +264,14 @@
           <property name="text">
            <string>8000 eV</string>
           </property>
+          <property name="precision" stdset="0">
+           <number>2</number>
+          </property>
           <property name="showUnits" stdset="0">
            <bool>true</bool>
+          </property>
+          <property name="precisionFromPV" stdset="0">
+           <bool>false</bool>
           </property>
           <property name="channel" stdset="0">
            <string>${MONO_ENERGY_PV}</string>
@@ -300,6 +309,9 @@
          <widget class="QPushButton" name="mono_caqtdm_button">
           <property name="enabled">
            <bool>true</bool>
+          </property>
+          <property name="toolTip">
+           <string>Launch caQtDM panel for this mono.</string>
           </property>
           <property name="text">
            <string>Advanced</string>
@@ -350,12 +362,18 @@
            </font>
           </property>
           <property name="toolTip">
-           <string/>
+           <string>Current set point for the ID (in keV).</string>
           </property>
           <property name="text">
            <string>8.14 keV</string>
           </property>
+          <property name="precision" stdset="0">
+           <number>0</number>
+          </property>
           <property name="showUnits" stdset="0">
+           <bool>true</bool>
+          </property>
+          <property name="precisionFromPV" stdset="0">
            <bool>true</bool>
           </property>
           <property name="channel" stdset="0">
@@ -421,6 +439,9 @@
          <widget class="QPushButton" name="id_caqtdm_button">
           <property name="enabled">
            <bool>false</bool>
+          </property>
+          <property name="toolTip">
+           <string>Launch caQtDM panel for this ID.</string>
           </property>
           <property name="text">
            <string>Advanced</string>
