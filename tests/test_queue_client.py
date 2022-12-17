@@ -53,3 +53,21 @@ def test_run_plan(qapp, qtbot):
         qapp.queue_item_added.emit({})
     # Check if the API sent it
     api.item_add.assert_called_once_with(item={})
+
+def test_check_queue_length(qapp, qtbot):
+    FireflyMainWindow()
+    api = MagicMock()
+    qapp.prepare_queue_client(api=api)
+    # Check that the queue length is changed
+    api.get_queue.return_value = []
+    with qtbot.waitSignal(qapp.queue_length_changed, timeout=1000,
+                          check_params_cb=lambda l: l == 0):
+        qapp._queue_client.check_queue_length()
+    # Check that it isn't emitted a second time
+    with qtbot.assertNotEmitted(qapp.queue_length_changed):
+        qapp._queue_client.check_queue_length()
+    # Now check a non-empty length queue
+    api.get_queue.return_value = ["hello", "world"]
+    with qtbot.waitSignal(qapp.queue_length_changed, timeout=1000,
+                          check_params_cb=lambda l: l == 2):
+        qapp._queue_client.check_queue_length()
