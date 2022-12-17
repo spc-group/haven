@@ -7,7 +7,8 @@ from firefly import display
 
 
 class EnergyDisplay(display.FireflyDisplay):
-    caqtdm_ui_file = "/net/s25data/xorApps/ui/DCMControlCenter.ui"
+    caqtdm_mono_ui_file = "/net/s25data/xorApps/ui/DCMControlCenter.ui"
+    caqtdm_id_ui_file = "/net/s25data/xorApps/epics/synApps_6_2/ioc/25ida/25idaApp/op/ui/IDControl.ui"
     min_energy = 4000
     max_energy = 27000
     stylesheet_danger = "background: rgb(220, 53, 69); color: white; border-color: rgb(220, 53, 69)"
@@ -39,7 +40,20 @@ class EnergyDisplay(display.FireflyDisplay):
             "OFFSET": registry.find(name="monochromator_offset").prefix.replace(prefix, ""),
             "IDENERGY": display_macros["ID_ENERGY_PV"],
         }
-        self.launch_caqtdm(macros=caqtdm_macros)
+        self.launch_caqtdm(macros=caqtdm_macros, ui_file=self.caqtdm_mono_ui_file)
+
+    def launch_id_caqtdm(self):
+        """Launch the pre-built caQtDM UI file for the ID."""
+        config = load_config()
+        prefix = config["undulator"]["ioc"]
+        caqtdm_macros = {
+            # No idea what "M", and "D" do, they're not in the UI
+            # file.
+            "ID": prefix,
+            "M": 2,
+            "D": 2,
+        }
+        self.launch_caqtdm(macros=caqtdm_macros, ui_file=self.caqtdm_id_ui_file)
 
     def set_energy(self, *args, **kwargs):
         energy = float(self.ui.target_energy_lineedit.text())
@@ -51,6 +65,7 @@ class EnergyDisplay(display.FireflyDisplay):
 
     def customize_ui(self):
         self.ui.mono_caqtdm_button.clicked.connect(self.launch_mono_caqtdm)
+        self.ui.id_caqtdm_button.clicked.connect(self.launch_id_caqtdm)
         self.ui.set_energy_button.clicked.connect(self.set_energy)
         # Set up the combo box with X-ray energies
         combo_box = self.ui.edge_combo_box

@@ -438,7 +438,7 @@
         <item row="1" column="3">
          <widget class="QPushButton" name="id_caqtdm_button">
           <property name="enabled">
-           <bool>false</bool>
+           <bool>true</bool>
           </property>
           <property name="toolTip">
            <string>Launch caQtDM panel for this ID.</string>
