@@ -18,7 +18,7 @@ from haven.exceptions import ComponentNotFound
 from haven import HavenMotor, registry, load_config
 
 from .main_window import FireflyMainWindow, PlanMainWindow
-from .queue_client import QueueClient
+from .queue_client import QueueClient, QueueClientThread
 
 generator = type((x for x in []))
 
@@ -140,14 +140,13 @@ class FireflyApplication(PyDMApplication):
             self.motor_window_slots.append(slot)
 
     def prepare_queue_client(self, api=None):
-        thread = QThread()
-        self._queue_thread = thread
         if api is None:
             config = load_config()["queueserver"]
             ctrl_addr = f"tcp://{config['control_host']}:{config['control_port']}"
             info_addr = f"tcp://{config['info_host']}:{config['info_port']}"
             api = REManagerAPI(zmq_control_addr=ctrl_addr, zmq_info_addr=info_addr)
         client = QueueClient(api=api)
+        thread = QueueClientThread(client=client)
         client.moveToThread(thread)
         # Prepare actions for controlling the run engine
         self.pause_run_engine = QAction(self)
@@ -170,12 +169,12 @@ class FireflyApplication(PyDMApplication):
         
         # Start the thread
         thread.start()
-        # print("prepare_run_engine (post_start):", asyncio.get_event_loop())
-        # # Save references to the thread and runner
-        # self._engine_runner_thread = thread
+        # Save references to the thread and runner
         self._queue_client = client
+        self._queue_thread = thread
 
     def add_queue_item(self, item):
+        log.debug(f"Application received item to add to queue: {item}")
         self.queue_item_added.emit(item)
 
     def connect_menu_signals(self, window):

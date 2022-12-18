@@ -59,7 +59,13 @@ def test_check_queue_length(qapp, qtbot):
     api = MagicMock()
     qapp.prepare_queue_client(api=api)
     # Check that the queue length is changed
-    api.get_queue.return_value = []
+    api.get_queue.return_value = {
+        'success': True,
+        'msg': '',
+        'items': [],
+        'running_item': {},
+        'plan_queue_uid': 'f682e6fa-983c-4bd8-b643-b3baec2ec764'
+    }
     with qtbot.waitSignal(qapp.queue_length_changed, timeout=1000,
                           check_params_cb=lambda l: l == 0):
         qapp._queue_client.check_queue_length()
@@ -67,7 +73,13 @@ def test_check_queue_length(qapp, qtbot):
     with qtbot.assertNotEmitted(qapp.queue_length_changed):
         qapp._queue_client.check_queue_length()
     # Now check a non-empty length queue
-    api.get_queue.return_value = ["hello", "world"]
+    api.get_queue.return_value = {
+        'success': True,
+        'msg': '',
+        'items': ["hello", "world"],
+        'running_item': {},
+        'plan_queue_uid': 'f682e6fa-983c-4bd8-b643-b3baec2ec764'
+    }
     with qtbot.waitSignal(qapp.queue_length_changed, timeout=1000,
                           check_params_cb=lambda l: l == 2):
         qapp._queue_client.check_queue_length()

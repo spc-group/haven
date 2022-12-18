@@ -136,7 +136,7 @@ class PlanMainWindow(FireflyMainWindow):
     """A Qt window that has extra controls for a bluesky runengine.
 
     """
-    hide_nav_bar: bool = False
+    hide_nav_bar: bool = True
 
     def setup_navbar(self):
         # Remove previous navbar actions
@@ -163,5 +163,6 @@ class PlanMainWindow(FireflyMainWindow):
     @QtCore.Slot(int)
     def set_navbar_visibility(self, queue_length: int):
         """Determine whether to make the navbar be visible."""
+        log.debug(f"Setting navbar visibility. Queue length: {queue_length}")
         navbar = self.ui.navbar
         navbar.setVisible(queue_length > 0)

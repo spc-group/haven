@@ -1,9 +1,14 @@
+import logging
+
 from qtpy import QtWidgets, QtCore
 from bluesky_queueserver_api import BPlan
 from haven import registry, load_config
 from xraydb.xraydb import XrayDB
 
 from firefly import display
+
+
+log = logging.getLogger(__name__)
 
 
 class EnergyDisplay(display.FireflyDisplay):
@@ -59,6 +64,7 @@ class EnergyDisplay(display.FireflyDisplay):
 
     def set_energy(self, *args, **kwargs):
         energy = float(self.ui.target_energy_lineedit.text())
+        log.info(f"Setting new energy: {energy}")
         # Build the queue item
         item = BPlan("set_energy", energy=energy)
         # Submit the item to the queueserver
