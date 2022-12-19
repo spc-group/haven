@@ -3,9 +3,10 @@ import warnings
 
 import numpy as np
 from ophyd import sim
+import pytest
 
 from run_engine import RunEngineStub
-from haven import align_slits, energy_scan, xafs_scan, registry
+from haven import align_slits, energy_scan, xafs_scan, registry, KRange
 
 
 def my_callback(name, doc):
@@ -62,7 +63,7 @@ class AlignSlitsTests(PlanUnitTests):
         # Execute the plan
         self.RE(align_slits(slit_motors=[slit_motor], ion_chamber=I0))
         # Check that the slit positions have been set
-        self.assertEqual(slit_motor.position, -0.5)
+        assert slit_motor.position == pytest.approx(-0.5)
 
     def test_warn_poor_fit(self):
         """Check that the plan emits a warning when no good fit is detected."""
@@ -204,13 +205,37 @@ class XafsScanTests(PlanUnitTests):
         ]
         np.testing.assert_equal(real_exposures, expected_exposures)
 
-    @unittest.expectedFailure
     def test_exafs_k_range(self):
         """Ensure that passing in k_min, etc. produces an energy range
         in K-space.
 
         """
-        assert False, "Write these tests"
+        krange = KRange(E_min=10, k_max=14, k_step=0.5, k_weight=0.5, exposure=0.75)
+        expected_energies = krange.energies() + self.E0
+        expected_exposures = krange.exposures()
+        scan = xafs_scan(
+            E_min=10,
+            k_step=0.5,
+            k_max=14,
+            k_exposure=0.75,
+            k_weight=0.5,
+            E0=self.E0,
+            energy_positioners=[self.mono_motor],
+            time_positioners=[self.exposure_motor],
+        )
+        # Check that the mono motor is moved to the correct positions
+        scan_list = list(scan)
+        real_energies = [
+            i.args[0]
+            for i in scan_list
+            if i[0] == "set" and i.obj.name == "mono_energy"
+        ]
+        np.testing.assert_equal(real_energies, expected_energies)
+        # Check that the exposure is set correctly
+        real_exposures = [
+            i.args[0] for i in scan_list if i[0] == "set" and i.obj.name == "exposure"
+        ]
+        np.testing.assert_equal(real_exposures, expected_exposures)
 
     def test_named_E0(self):
         expected_energies = np.concatenate(

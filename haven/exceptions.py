@@ -1,3 +1,8 @@
+class NoEnergies(ValueError):
+    """The plan parameters do not result in any energies being selected for scanning."""
+    ...
+
+
 class GainOverflow(RuntimeError):
     """The gain is trying to be set to a value that is not allowed."""
 
