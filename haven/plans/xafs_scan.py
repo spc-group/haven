@@ -5,6 +5,7 @@ capture detector signals.
 
 from typing import Union, Sequence, Optional, Mapping
 import warnings
+import logging
 
 import numpy as np
 
@@ -12,6 +13,9 @@ from ..energy_ranges import ERange, KRange
 from .. import exceptions
 from .energy_scan import energy_scan
 from ..typing import DetectorList
+
+
+log = logging.getLogger(__name__)
 
 
 __all__ = ["xafs_scan"]
