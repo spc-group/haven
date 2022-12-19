@@ -4,10 +4,12 @@ capture detector signals.
 """
 
 from typing import Union, Sequence, Optional, Mapping
+import warnings
 
 import numpy as np
 
-from ..energy_ranges import ERange
+from ..energy_ranges import ERange, KRange
+from .. import exceptions
 from .energy_scan import energy_scan
 from ..typing import DetectorList
 
@@ -116,6 +118,14 @@ def xafs_scan(
     for E_step, E_exposure, E_max in chunks(E_params, 3):
         energy_ranges.append(ERange(curr_E_min, E_max, E_step, exposure=E_exposure))
         curr_E_min = E_max
+    # Check for k-space region but no E0 specified
+    has_krange = not any([k is None for k in [k_step, k_exposure, k_max]])
+    if has_krange and E0 == 0:
+        msg = "Specified K-range for scan, but no *E0* given."
+        warnings.warn(msg)
+        log.warning(msg)
+    if has_krange:
+        energy_ranges.append(KRange(E_min=curr_E_min, k_max=k_max, k_step=k_step, k_weight=k_weight, exposure=k_exposure))
     # Convert energy ranges to energy list and exposure list
     energies = []
     exposures = []
@@ -124,6 +134,8 @@ def xafs_scan(
         exposures.extend(rng.exposures())
     energies = np.asarray(energies, dtype="float64")
     exposures = np.asarray(exposures, dtype="float64")
+    if len(energies) < 1:
+        raise exceptions.NoEnergies("Plan would not produce any energy points.")
     # Execute the energy scan
     yield from energy_scan(
         energies=energies,
