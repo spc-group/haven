@@ -165,7 +165,6 @@ class PlanMainWindow(FireflyMainWindow):
     @QtCore.Slot(int)
     def set_navbar_visibility(self, queue_length: int):
         """Determine whether to make the navbar be visible."""
-        log.info(f"Setting navbar visibility. Queue length: {queue_length}")
-        print(f"Setting navbar visibility. Queue length: {queue_length}")
+        log.debug(f"Setting navbar visibility. Queue length: {queue_length}")
         navbar = self.ui.navbar
         navbar.setVisible(queue_length > 0)
