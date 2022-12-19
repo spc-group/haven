@@ -13,6 +13,7 @@ log = logging.getLogger()
 
 
 class QueueClientThread(QThread):
+    
     def __init__(self, *args, client, **kwargs):
         self.client = client
         super().__init__(*args, **kwargs)
@@ -20,16 +21,6 @@ class QueueClientThread(QThread):
         self.timer = QTimer()
         self.timer.timeout.connect(self.client.update)
         self.timer.start(1000)
-
-    def __del__(self):
-        self.wait()
-   
-    # def run(self):
-    #     self.client.check_queue_length()
-    #     while True:
-    #         self.client.update()
-    #         time.sleep(1)
-            
 
 
 class QueueClient(QObject):

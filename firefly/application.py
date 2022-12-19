@@ -35,8 +35,13 @@ class FireflyApplication(PyDMApplication):
     xafs_scan_window = None
 
     # Actions for controlling the queueserver
-    pause_run_engine: QAction
-    pause_run_engine_now: QAction
+    start_queue_action: QAction
+    pause_runengine_action: QAction
+    pause_runengine_now_action: QAction
+    resume_runengine_action: QAction
+    stop_runengine_action: QAction
+    abort_runengine_action: QAction
+    halt_runengine_action: QAction
     start_queue: QAction
 
     # Signals for running plans on the queueserver
@@ -108,6 +113,7 @@ class FireflyApplication(PyDMApplication):
             ("stop_runengine_action", "Stop", "fa5s.stop"),
             ("abort_runengine_action", "Abort", "fa5s.eject"),
             ("halt_runengine_action", "Halt", "fa5s.ban"),
+            ("start_queue_action", "Start", "fa5s.play"),
         ]
         for name, text, icon_name in actions:
             action = QtWidgets.QAction(self)
@@ -148,25 +154,16 @@ class FireflyApplication(PyDMApplication):
         client = QueueClient(api=api)
         thread = QueueClientThread(client=client)
         client.moveToThread(thread)
-        # Prepare actions for controlling the run engine
-        self.pause_run_engine = QAction(self)
-        self.pause_run_engine_now = QAction(self)
-        self.start_queue = QAction(self)
         # Connect actions to slots for controlling the queueserver
-        self.pause_run_engine.triggered.connect(
+        self.pause_runengine_action.triggered.connect(
             partial(client.request_pause, defer=True))        
-        self.pause_run_engine_now.triggered.connect(
+        self.pause_runengine_now_action.triggered.connect(
             partial(client.request_pause, defer=False))
-        self.start_queue.triggered.connect(client.start_queue)
+        self.start_queue_action.triggered.connect(client.start_queue)
         # Connect signals to slots for executing plans on queueserver
         self.queue_item_added.connect(client.add_queue_item)
         # Connect signals/slots for queueserver state changes
         client.length_changed.connect(self.queue_length_changed)
-        # self.run_plan.connect(runner.run_plan)
-        # self.setup_run_engine.connect(runner.setup_run_engine)
-        # run_engine = FireflyRunEngine()
-        # self.setup_run_engine.emit(run_engine)
-        
         # Start the thread
         thread.start()
         # Save references to the thread and runner

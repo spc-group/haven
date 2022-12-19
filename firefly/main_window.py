@@ -145,6 +145,8 @@ class PlanMainWindow(FireflyMainWindow):
             navbar.removeAction(action)
         # Add applications runengine actions
         app = QtWidgets.QApplication.instance()
+        navbar.addAction(app.start_queue_action)        
+        navbar.addSeparator()
         navbar.addAction(app.pause_runengine_action)
         navbar.addAction(app.pause_runengine_now_action)
         navbar.addSeparator()
@@ -163,6 +165,7 @@ class PlanMainWindow(FireflyMainWindow):
     @QtCore.Slot(int)
     def set_navbar_visibility(self, queue_length: int):
         """Determine whether to make the navbar be visible."""
-        log.debug(f"Setting navbar visibility. Queue length: {queue_length}")
+        log.info(f"Setting navbar visibility. Queue length: {queue_length}")
+        print(f"Setting navbar visibility. Queue length: {queue_length}")
         navbar = self.ui.navbar
         navbar.setVisible(queue_length > 0)
