@@ -33,6 +33,7 @@ release = "0.1.0"
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.inheritance_diagram",
+    "sphinx.ext.graphviz",
     "autoapi.sphinx",
     "sphinx.ext.napoleon",
     "sphinx.ext.todo",

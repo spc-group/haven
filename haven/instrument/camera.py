@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Sequence
 
 from ophyd.areadetector.cam import CamBase
 
@@ -6,7 +6,23 @@ from .instrument_registry import registry
 from .._iconfig import load_config
 
 
+__all__ = ["Camera", "load_cameras"]
+
+
 class Camera(CamBase):
+    """One of the beamline's GigE Vision cameras.
+
+    Parameters
+    ==========
+    prefix:
+      The process variable prefix for the camera.
+    name:
+      The bluesky-compatible device name.
+    description:
+      The human-readable description of this device. If omitted,
+      *name* will be used.
+    
+    """
     def __init__(
         self, prefix: str, name: str, description: Optional[str] = None, *args, **kwargs
     ):
@@ -16,7 +32,15 @@ class Camera(CamBase):
         super().__init__(prefix, name=name, *args, **kwargs)
 
 
-def load_cameras(config=None):
+def load_cameras(config=None) -> Sequence[Camera]:
+    """Load cameras from config files and add to the registry.
+
+    Returns
+    =======
+    Sequence[Camera]
+      Sequence of the newly created and registered camera objects.
+
+    """
     if config is None:
         config = load_config()
     # Get configuration details for the cameras
