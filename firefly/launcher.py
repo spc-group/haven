@@ -151,6 +151,8 @@ def main():
     # pydm.utilities.shortcuts.install_connection_inspector(
     #     parent=None)
 
+    app.prepare_queue_client()
+
     exit_code = app.exec_()
 
     if pydm_args.profile:

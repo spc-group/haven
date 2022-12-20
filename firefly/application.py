@@ -8,15 +8,17 @@ import subprocess
 from qtpy import QtWidgets, QtCore
 from qtpy.QtWidgets import QAction
 from qtpy.QtCore import Slot, QThread, Signal, QObject
+import qtawesome as qta
 from pydm.application import PyDMApplication
 from pydm.display import load_file
 from pydm.utilities.stylesheet import apply_stylesheet
+from bluesky_queueserver_api import BPlan
 from bluesky_queueserver_api.zmq import REManagerAPI
 from haven.exceptions import ComponentNotFound
 from haven import HavenMotor, registry, load_config
 
-from .main_window import FireflyMainWindow
-from .queue_client import QueueClient
+from .main_window import FireflyMainWindow, PlanMainWindow
+from .queue_client import QueueClient, QueueClientThread
 
 generator = type((x for x in []))
 
@@ -33,12 +35,17 @@ class FireflyApplication(PyDMApplication):
     xafs_scan_window = None
 
     # Actions for controlling the queueserver
-    pause_run_engine: QAction
-    pause_run_engine_now: QAction
+    start_queue_action: QAction
+    pause_runengine_action: QAction
+    pause_runengine_now_action: QAction
+    resume_runengine_action: QAction
+    stop_runengine_action: QAction
+    abort_runengine_action: QAction
+    halt_runengine_action: QAction
     start_queue: QAction
 
     # Signals for running plans on the queueserver
-    queue_item_added = Signal(dict)
+    queue_item_added = Signal(object)
 
     # Signals responding to queueserver changes
     queue_length_changed = Signal(int)
@@ -50,11 +57,14 @@ class FireflyApplication(PyDMApplication):
         self.windows = {}
         # Make actions for launching other windows
         self.setup_window_actions()
+        # Actions for controlling the bluesky run engine
+        self.setup_runengine_actions()
         # Launch the default display
         self.show_status_window()
 
     def __del__(self):
-        self._queue_thread.quit()
+        if hasattr(self, "_queue_client"):
+            self._queue_client.quit()
 
     def _setup_window_action(self, action_name: str, text: str, slot: QtCore.Slot):
         action = QtWidgets.QAction(self)
@@ -93,7 +103,25 @@ class FireflyApplication(PyDMApplication):
                 '--zmq-info-addr', zmq_info_addr]
         subprocess.Popen(cmds)
 
-        self._setup_window_action(action_name="show_energy_window_action", text="Energy", slot=self.show_energy_window)
+    def setup_runengine_actions(self):
+        """Create QActions for controlling the bluesky runengine."""
+        # Action for controlling the run engine
+        actions = [
+            ("pause_runengine_action", "Pause", "fa5s.stopwatch"),
+            ("pause_runengine_now_action", "Pause Now", "fa5s.pause"),
+            ("resume_runengine_action", "Resume", "fa5s.play"),
+            ("stop_runengine_action", "Stop", "fa5s.stop"),
+            ("abort_runengine_action", "Abort", "fa5s.eject"),
+            ("halt_runengine_action", "Halt", "fa5s.ban"),
+            ("start_queue_action", "Start", "fa5s.play"),
+        ]
+        for name, text, icon_name in actions:
+            action = QtWidgets.QAction(self)
+            icon = qta.icon(icon_name)
+            action.setText(text)
+            action.setIcon(icon)
+            setattr(self, name, action)
+            # action.triggered.connect(slot)
 
     def prepare_motor_windows(self):
         """Prepare the support for opening motor windows."""
@@ -118,40 +146,33 @@ class FireflyApplication(PyDMApplication):
             self.motor_window_slots.append(slot)
 
     def prepare_queue_client(self, api=None):
-        thread = QThread()
-        self._queue_thread = thread
         if api is None:
             config = load_config()["queueserver"]
             ctrl_addr = f"tcp://{config['control_host']}:{config['control_port']}"
             info_addr = f"tcp://{config['info_host']}:{config['info_port']}"
             api = REManagerAPI(zmq_control_addr=ctrl_addr, zmq_info_addr=info_addr)
         client = QueueClient(api=api)
+        thread = QueueClientThread(client=client)
         client.moveToThread(thread)
-        # Prepare actions for controlling the run engine
-        self.pause_run_engine = QAction(self)
-        self.pause_run_engine_now = QAction(self)
-        self.start_queue = QAction(self)
         # Connect actions to slots for controlling the queueserver
-        self.pause_run_engine.triggered.connect(
+        self.pause_runengine_action.triggered.connect(
             partial(client.request_pause, defer=True))        
-        self.pause_run_engine_now.triggered.connect(
+        self.pause_runengine_now_action.triggered.connect(
             partial(client.request_pause, defer=False))
-        self.start_queue.triggered.connect(client.start_queue)
+        self.start_queue_action.triggered.connect(client.start_queue)
         # Connect signals to slots for executing plans on queueserver
         self.queue_item_added.connect(client.add_queue_item)
         # Connect signals/slots for queueserver state changes
         client.length_changed.connect(self.queue_length_changed)
-        # self.run_plan.connect(runner.run_plan)
-        # self.setup_run_engine.connect(runner.setup_run_engine)
-        # run_engine = FireflyRunEngine()
-        # self.setup_run_engine.emit(run_engine)
-        
         # Start the thread
         thread.start()
-        # print("prepare_run_engine (post_start):", asyncio.get_event_loop())
-        # # Save references to the thread and runner
-        # self._engine_runner_thread = thread
+        # Save references to the thread and runner
         self._queue_client = client
+        self._queue_thread = thread
+
+    def add_queue_item(self, item):
+        log.debug(f"Application received item to add to queue: {item}")
+        self.queue_item_added.emit(item)
 
     def connect_menu_signals(self, window):
         """Connects application-level signals to the associated slots.
@@ -187,7 +208,8 @@ class FireflyApplication(PyDMApplication):
 
     def forget_window(self, obj, name):
         """Forget this window exists."""
-        del self.windows[name]
+        if hasattr(self, 'windows'):
+            del self.windows[name]
 
     def create_window(self, WindowClass, ui_file, macros={}):
         # Create and save this window
@@ -225,7 +247,7 @@ class FireflyApplication(PyDMApplication):
 
     @QtCore.Slot()
     def show_xafs_scan_window(self):
-        self.show_window(FireflyMainWindow, ui_dir / "xafs_scan.py", name="xafs_scan")
+        self.show_window(PlanMainWindow, ui_dir / "xafs_scan.py", name="xafs_scan")
 
     @QtCore.Slot()
     def show_voltmeters_window(self):
@@ -241,4 +263,4 @@ class FireflyApplication(PyDMApplication):
 
     @QtCore.Slot()
     def show_energy_window(self):
-        self.show_window(FireflyMainWindow, ui_dir / "energy.py", name="energy")
+        self.show_window(PlanMainWindow, ui_dir / "energy.py", name="energy")

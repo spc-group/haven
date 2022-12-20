@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>338</width>
-    <height>225</height>
+    <width>353</width>
+    <height>243</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -119,8 +119,14 @@
        <property name="text">
         <string>4000 eV</string>
        </property>
+       <property name="precision" stdset="0">
+        <number>2</number>
+       </property>
        <property name="showUnits" stdset="0">
         <bool>true</bool>
+       </property>
+       <property name="precisionFromPV" stdset="0">
+        <bool>false</bool>
        </property>
        <property name="channel" stdset="0">
         <string>${ENERGY_PV}</string>
@@ -274,28 +280,6 @@
          </property>
          <property name="channel" stdset="0">
           <string>${FES_OPEN_PV}</string>
-         </property>
-         <property name="pressValue" stdset="0">
-          <string>1</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="PyDMPushButton" name="FES_close_button">
-         <property name="toolTip">
-          <string/>
-         </property>
-         <property name="text">
-          <string>Close</string>
-         </property>
-         <property name="alarmSensitiveBorder" stdset="0">
-          <bool>false</bool>
-         </property>
-         <property name="channel" stdset="0">
-          <string>${FES_CLOSE_PV}</string>
-         </property>
-         <property name="passwordProtected" stdset="0">
-          <bool>false</bool>
          </property>
          <property name="pressValue" stdset="0">
           <string>1</string>

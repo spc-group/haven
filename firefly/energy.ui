@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>357</width>
-    <height>324</height>
+    <width>371</width>
+    <height>352</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,15 +17,21 @@
    <item>
     <widget class="QWidget" name="widget" native="true">
      <property name="enabled">
-      <bool>false</bool>
+      <bool>true</bool>
      </property>
      <layout class="QHBoxLayout" name="horizontalLayout_4">
       <item>
        <layout class="QGridLayout" name="gridLayout">
         <item row="0" column="1">
-         <widget class="QLineEdit" name="lineEdit">
+         <widget class="QLineEdit" name="target_energy_lineedit">
           <property name="enabled">
-           <bool>false</bool>
+           <bool>true</bool>
+          </property>
+          <property name="toolTip">
+           <string>Enter desired energy in eV.</string>
+          </property>
+          <property name="placeholderText">
+           <string>Target energy (eV)</string>
           </property>
          </widget>
         </item>
@@ -37,16 +43,34 @@
          </widget>
         </item>
         <item row="2" column="1">
-         <widget class="QComboBox" name="comboBox">
+         <widget class="QComboBox" name="edge_combo_box">
           <property name="enabled">
+           <bool>true</bool>
+          </property>
+          <property name="toolTip">
+           <string>Select an edge, or type one in the form &quot;Na L3&quot;, etc.</string>
+          </property>
+          <property name="autoFillBackground">
            <bool>false</bool>
+          </property>
+          <property name="styleSheet">
+           <string notr="true"/>
+          </property>
+          <property name="editable">
+           <bool>true</bool>
+          </property>
+          <property name="currentText">
+           <string>Ni K (8333 eV)</string>
           </property>
          </widget>
         </item>
         <item row="0" column="3">
-         <widget class="QPushButton" name="pushButton">
+         <widget class="QPushButton" name="set_energy_button">
           <property name="enabled">
-           <bool>false</bool>
+           <bool>true</bool>
+          </property>
+          <property name="toolTip">
+           <string>Queue a plan to change the X-ray energy.</string>
           </property>
           <property name="text">
            <string>Set Energy</string>
@@ -65,6 +89,9 @@
         </item>
         <item row="2" column="0">
          <widget class="QLabel" name="label_5">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
           <property name="text">
            <string>Edge:</string>
           </property>
@@ -237,8 +264,14 @@
           <property name="text">
            <string>8000 eV</string>
           </property>
+          <property name="precision" stdset="0">
+           <number>2</number>
+          </property>
           <property name="showUnits" stdset="0">
            <bool>true</bool>
+          </property>
+          <property name="precisionFromPV" stdset="0">
+           <bool>false</bool>
           </property>
           <property name="channel" stdset="0">
            <string>${MONO_ENERGY_PV}</string>
@@ -276,6 +309,9 @@
          <widget class="QPushButton" name="mono_caqtdm_button">
           <property name="enabled">
            <bool>true</bool>
+          </property>
+          <property name="toolTip">
+           <string>Launch caQtDM panel for this mono.</string>
           </property>
           <property name="text">
            <string>Advanced</string>
@@ -326,12 +362,18 @@
            </font>
           </property>
           <property name="toolTip">
-           <string/>
+           <string>Current set point for the ID (in keV).</string>
           </property>
           <property name="text">
            <string>8.14 keV</string>
           </property>
+          <property name="precision" stdset="0">
+           <number>0</number>
+          </property>
           <property name="showUnits" stdset="0">
+           <bool>true</bool>
+          </property>
+          <property name="precisionFromPV" stdset="0">
            <bool>true</bool>
           </property>
           <property name="channel" stdset="0">
@@ -396,7 +438,10 @@
         <item row="1" column="3">
          <widget class="QPushButton" name="id_caqtdm_button">
           <property name="enabled">
-           <bool>false</bool>
+           <bool>true</bool>
+          </property>
+          <property name="toolTip">
+           <string>Launch caQtDM panel for this ID.</string>
           </property>
           <property name="text">
            <string>Advanced</string>
