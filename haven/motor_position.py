@@ -1,3 +1,4 @@
+
 from typing import Optional, Sequence
 import logging
 
@@ -30,9 +31,10 @@ class MotorPosition(BaseModel):
     name: str
     motors: Sequence[MotorAxis]
     uid: Optional[str] = None
+    savetime: float
 
     def save(self, collection):
-        payload = {"name": self.name, "motors": [m.as_dict() for m in self.motors], "time": time.time()}
+        payload = {"name": self.name, "motors": [m.as_dict() for m in self.motors], "savetime": self.savetime}
         print(payload)
         item_id = collection.insert_one(payload).inserted_id
         return item_id
@@ -45,7 +47,7 @@ class MotorPosition(BaseModel):
             for m in document["motors"]
         ]
         position = Cls(
-            name=document["name"], motors=motor_axes, uid=str(document["_id"])
+            name=document["name"], motors=motor_axes, uid=str(document["_id"]), savetime=document["savetime"]
         )
         return position
 
@@ -106,7 +108,8 @@ def save_motor_position(*motors, name: str, collection=None):
             payload['offset'] = m.user_offset.get()
         axis = MotorAxis(**payload)
         motor_axes.append(axis)
-    position = MotorPosition(name=name, motors=motor_axes)
+    savetime=time.time()    
+    position = MotorPosition(name=name, motors=motor_axes, savetime=savetime)
     # Write to the database
     pos_id = position.save(collection=collection)
     log.info(f"Saved motor position {name} (uid={pos_id})")
@@ -137,7 +140,7 @@ def list_motor_positions(collection=None):
     for doc in results:
         were_found = True
         position = MotorPosition.load(doc)
-        output = f'\n{BOLD}{position.name}{END} (uid="{position.uid}")\n'
+        output = f'\n{BOLD}{position.name}{END} (uid="{position.uid}") savetime={position.savetime}\n'
         for idx, motor in enumerate(position.motors):
             # Figure out some nice tree aesthetics
             is_last_motor = idx == (len(position.motors) - 1)
