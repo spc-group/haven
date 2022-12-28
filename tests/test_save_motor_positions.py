@@ -23,21 +23,16 @@ fake_time = pytz.timezone("America/New_York").localize(
 
 IOC_timeout = 40  # Wait up to this many seconds for the IOC to be ready
 
+
 @pytest.fixture
-def sim_registry():
-    # Clean the registry so we can restore it later
-    components = registry.components
-    registry.clear()
+def sim_motor_registry(sim_registry):
     # Create the motors
     pv = "vme_crate_ioc:m1"
     motor1 = EpicsMotor(pv, name="SLT V Upper")
-    registry.register(motor1)
+    sim_registry.register(motor1)
     motor2 = EpicsMotor(pv, name="SLT V Lower")
-    registry.register(motor2)
-    # Run the test
-    yield registry
-    # Restore the previous registry components
-    registry.components = components
+    sim_registry.register(motor2)
+    yield sim_registry
 
 
 def test_save_motor_position_by_device(mongodb, ioc_motor):
@@ -124,7 +119,7 @@ def test_get_motor_position_exceptions(mongodb):
         get_motor_position(collection=mongodb.motor_positions)
 
 
-def test_recall_motor_position(mongodb, sim_registry):
+def test_recall_motor_position(mongodb, sim_motor_registry):
     # Re-set the previous value
     uid = str(mongodb.motor_positions.find_one({"name": "Good position A"})["_id"])
     plan = recall_motor_position(uid=uid, collection=mongodb.motor_positions)

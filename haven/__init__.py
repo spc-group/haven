@@ -13,6 +13,7 @@ from .plans.mono_gap_calibration import calibrate_mono_gap, align_pitch2  # noqa
 from .plans.set_energy import set_energy  # noqa: F401
 from .run_engine import RunEngine  # noqa: F401
 from ._iconfig import load_config  # noqa: F401
+from .preprocessors import baseline_decorator, baseline_wrapper  # noqa: F401
 
 from .motor_position import (  # noqa: F401
     save_motor_position,
