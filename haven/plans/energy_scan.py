@@ -14,6 +14,7 @@ from .._iconfig import load_config
 from ..instrument import registry
 from ..constants import edge_energy
 from ..typing import DetectorList
+from ..preprocessors import baseline_decorator
 
 
 __all__ = ["energy_scan"]
@@ -22,6 +23,7 @@ __all__ = ["energy_scan"]
 log = logging.getLogger(__name__)
 
 
+@baseline_decorator()
 def energy_scan(
     energies: Sequence[float],
     exposure: Union[float, Sequence[float]] = 0.1,
