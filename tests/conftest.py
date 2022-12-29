@@ -2,9 +2,22 @@ from pathlib import Path
 import pytest
 
 from haven.simulated_ioc import simulated_ioc
+from haven import registry
 
 
 ioc_dir = Path(__file__).parent.resolve() / "iocs"
+
+
+@pytest.fixture
+def sim_registry():
+    # Clean the registry so we can restore it later
+    components = registry.components
+    registry.clear()
+    # Run the test
+    yield registry
+    # Restore the previous registry components
+    registry.components = components
+
 
 
 @pytest.fixture(scope="session")
