@@ -12,3 +12,4 @@ These guides do not cover the individual beamlines thoroughly.
    :caption: Contents:
 
    knife_scan.ipynb
+   xafs_energy_scan.ipynb
