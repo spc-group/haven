@@ -147,6 +147,7 @@ def list_motor_positions(collection=None):
     # Some feedback in the case of empty motor positions
     if not were_found:
         print(f"No motor positions found: {collection}")
+        print("This is only a test for git test")
 
 
 def get_motor_position(
