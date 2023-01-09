@@ -14,7 +14,7 @@ import time
 log = logging.getLogger(__name__)
 
 
-__all__ = ["save_motor_position", "list_motor_positions", "recall_motor_position"]
+__all__ = ["save_motor_position", "list_motor_positions", "recall_motor_position", "list_current_motor_positions"]
 
 
 class MotorAxis(BaseModel):
@@ -57,6 +57,20 @@ def default_collection():
     collection = client.get_database().get_collection("motor_positions")
     return collection
 
+def rbv(motor):
+    """Helper function to get readback value (rbv)."""
+    try:
+        # Wrap this in a try block because not every signal has this argument
+        motor_data = motor.get(use_monitor=False)
+    except TypeError:
+        log.debug("Failed to do get() with ``use_monitor=False``")
+        motor_data = motor.get()
+    if hasattr(motor_data, "readback"):
+        return motor_data.readback
+    elif hasattr(motor_data, "user_readback"):
+        return motor_data.user_readback
+    else:
+        return motor_data
 
 def save_motor_position(*motors, name: str, collection=None):
     """Save the current positions of a number of motors to a database.
@@ -84,20 +98,6 @@ def save_motor_position(*motors, name: str, collection=None):
     motors = [registry.find(name=m) for m in motors]
 
     # Prepare the motor positions
-    def rbv(motor):
-        """Helper function to get readback value (rbv)."""
-        try:
-            # Wrap this in a try block because not every signal has this argument
-            motor_data = motor.get(use_monitor=False)
-        except TypeError:
-            log.debug("Failed to do get() with ``use_monitor=False``")
-            motor_data = motor.get()
-        if hasattr(motor_data, "readback"):
-            return motor_data.readback
-        elif hasattr(motor_data, "user_readback"):
-            return motor_data.user_readback
-        else:
-            return motor_data
 
     motor_axes = []
     for m in motors:
@@ -225,3 +225,48 @@ def recall_motor_position(
         plan_args.append(motor)
         plan_args.append(axis.readback)
     yield from bps.mv(*plan_args)
+    
+
+def list_current_motor_positions(*motors, name, collection = None):
+    """list and print the current positions of a number of motors
+
+    Parameters
+    ==========
+    *motors
+      The list of motors (or motor names/labels) whose position to
+      save.
+    name
+      A human-readable name for this position (e.g. "sample center")
+    collection
+      A pymongo collection object to receive the data. Meant for
+      testing.
+
+    """
+    # Get default collection if none was given
+    if collection is None:
+        collection = default_collection()
+    
+    # Resolve device names or labels
+    motors = [registry.find(name=m) for m in motors]
+  
+    motor_axes = []
+    for m in motors:
+        payload = dict(name=m.name, readback=rbv(m))
+        # Save the calibration offset for motors
+        if hasattr(m, 'user_offset'):
+            payload['offset'] = m.user_offset.get()
+        axis = MotorAxis(**payload)
+        motor_axes.append(axis)   
+    position = MotorPosition(name=name, motors=motor_axes, savetime=time.time())
+  
+    BOLD = "\033[1m"
+    END = "\033[0m"
+    output = f'\n{BOLD}{position.name}{END}\n'
+    for idx, motor in enumerate(position.motors):
+        # Figure out some nice tree aesthetics
+        is_last_motor = idx == (len(position.motors) - 1)
+        box_char = "┗" if is_last_motor else "┣"
+        output += f"{box_char}━{motor.name}: {motor.readback}, offset: {motor.offset}\n"
+            
+
+    print(output, end="")
