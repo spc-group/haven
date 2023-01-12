@@ -34,7 +34,7 @@ def sim_motor_registry(sim_registry):
     sim_registry.register(motor2)
     yield sim_registry
 
-
+@time_machine.travel(fake_time, tick=False)
 def test_save_motor_position_by_device(mongodb, ioc_motor):
     # Check that no entry exists before saving it
     result = mongodb.motor_positions.find_one({"name": motor1.name})
@@ -59,6 +59,8 @@ def test_save_motor_position_by_device(mongodb, ioc_motor):
     assert result["motors"][0]["name"] == motorA.name
     assert result["motors"][0]["readback"] == 11.0
     assert result["motors"][1]["readback"] == 23.0
+    # Check that the metadata saved
+    assert result["savetime"] == time.time() 
 
 
 
@@ -93,7 +95,7 @@ def test_save_motor_position_by_name(mongodb, ioc_motor):
     assert result["motors"][1]["readback"] == 23.0
     assert result["motors"][0]["offset"] == 1.5
     # Check that the metadata saved
-    assert result["time"] == time.time()
+    assert result["savetime"] == time.time()
     
 
 def test_get_motor_position_by_uid(mongodb):
@@ -132,7 +134,7 @@ def test_recall_motor_position(mongodb, sim_motor_registry):
     assert msg1.obj.name == "SLT V Lower"
     assert msg1.args[0] == -211.93
 
-
+@time_machine.travel(fake_time, tick=False)
 def test_list_motor_positions(mongodb, capsys):
     # Do the listing
     list_motor_positions(collection=mongodb.motor_positions)
@@ -141,7 +143,7 @@ def test_list_motor_positions(mongodb, capsys):
     assert len(captured.out) > 0
     uid = str(mongodb.motor_positions.find_one({"name": "Good position A"})["_id"])
     expected = (
-        f'\n\033[1mGood position A\033[0m (uid="{uid}")\n'
+        f'\n\033[1mGood position A\033[0m (uid="{uid}") savetime={time.time()}\n'
         "┣━SLT V Upper: 510.5\n"
         "┗━SLT V Lower: -211.93\n"
     )
