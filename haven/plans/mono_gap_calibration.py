@@ -14,41 +14,11 @@ from .set_energy import set_energy
 from .auto_gain import auto_gain
 from .beam_properties import knife_scan
 from .._iconfig import load_config
+from .align_motor import align_pitch2
 
 
 log = logging.getLogger(__name__)
 
-
-def align_pitch2(bec, distance=200, reverse=False, md={}):
-    """Tune the monochromator 2nd crystal pitch motor.
-
-    Find the position of maximum intensity in the ion chamber
-    "I0". The scanning range is relative to the current motor
-    position, and will go *distance* above and below it. For example,
-    if the current position is 1000, ``distance=200`` will scan from
-    800 to 1200.
-
-    Parameters
-    ==========
-    bec
-      A bluesky best effort callback for finding the peak position.
-    distance
-      Relative distance to scan in either direction.
-    reverse
-      Whether the scan goes low-to-high (False) or high-to-low (True).
-    md
-      Extra metadata to pass into the run engine.
-
-    """
-    md_ = dict(**md)
-    I0 = registry.find(name="I0")
-    pitch2 = registry.find(name="monochromator").pitch2
-    plan_func = subs_decorator(bec)(lineup)
-    start, end = (distance, -distance) if reverse else (-distance, distance)
-    plan = plan_func(
-        [I0.raw_counts, I0], pitch2, start, end, npts=40, feature="max", bec=bec, md=md_
-    )
-    yield from plan
 
 
 def calibrate_mono_gap(
@@ -115,7 +85,7 @@ def calibrate_mono_gap(
                 yield from subs_decorator(bec)(align_pitch2)(
                     bec=bec, distance=pitch_distance, md=md
                 )
-                new_pitch2 = bec.peaks["com"].get("I0_raw_counts", None)
+                new_pitch2 = bec.peaks["cen"].get("I0_raw_counts", None)
                 md["pitch2"] = new_pitch2
                 plt.show()
                 # Set the pitch2 to the new value (from below accounting for hysteresis)
