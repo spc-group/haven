@@ -14,6 +14,7 @@ from ophyd import (
     Component as Cpt,
     FormattedComponent as FCpt,
     Kind,
+    OphydObject,
 )
 from ophyd.pseudopos import pseudo_position_argument, real_position_argument
 
@@ -77,23 +78,50 @@ class IonChamber(Device):
 
     Also includes the pre-amplifier as ``.pre_amp``.
 
-    Attributes
+    Parameters
     ==========
-
     prefix
       The PV prefix of the overall scaler.
-    scaler_ch
+    ch_num
       The number (1-index) of the channel on the scaler. 1 is the
       timer, so your channel number should start at 2.
+    name
+      The bluesky-compatible name for this device.
+    preamp_prefix
+      The process variable prefix to the pre-amp that controls this
+      ion chamber.
+    scaler_prefix
+      The process variable prefix for the scaler that measures this
+      ion chamber.
+    voltage_pv
+      The process variable that points to the voltage calculation
+      result for the ion chamber.
 
+    Attributes
+    ==========
+    ch_num
+      The channel number on the scaler, starting at 2 (1 is the timer).
+    count
+      The trigger to count scaler pulses.
+    raw_counts
+      The counts coming from the scaler without any correction.
+    volts
+      The volts produced by the pre-amp, calculated from scaler
+      counts.
+    exposure_time
+      Positioner for setting the count time on the scaler.
+    sensitivity
+      The positioner for changing the pre-amp gain/sensitivity.
+    
     """
 
     ch_num: int = 0
+    ch_char: str
     _statuses = {}
-    count = FCpt(Signal, "{scaler_prefix}.CNT", trigger_value=1, kind=Kind.omitted)
-    raw_counts = FCpt(SignalRO, "{prefix}.S{ch_num}", kind="hinted")
-    volts = FCpt(SignalRO, "{prefix}_calc{ch_num}.VAL", kind="hinted")
-    exposure_time = FCpt(Signal, "{scaler_prefix}.TP", kind="normal")
+    count: OphydObject = FCpt(Signal, "{scaler_prefix}.CNT", trigger_value=1, kind=Kind.omitted)
+    raw_counts: OphydObject = FCpt(SignalRO, "{prefix}.S{ch_num}", kind="hinted")
+    volts: OphydObject = FCpt(SignalRO, "{prefix}_calc{ch_num}.VAL", kind="hinted")
+    exposure_time: OphydObject = FCpt(Signal, "{scaler_prefix}.TP", kind="normal")
     sensitivity = FCpt(SensitivityLevelPositioner, "{preamp_prefix}", kind="config")
     read_attrs = [
         "raw_counts",
@@ -106,12 +134,12 @@ class IonChamber(Device):
 
     def __init__(
         self,
-        prefix,
-        ch_num,
-        name,
-        preamp_prefix=None,
-        scaler_prefix=None,
-        voltage_pv=None,
+        prefix: str,
+        ch_num: int,
+        name: str,
+        preamp_prefix: str=None,
+        scaler_prefix: str=None,
+        voltage_pv: str=None,
         *args,
         **kwargs,
     ):
@@ -134,7 +162,22 @@ class IonChamber(Device):
         # Initialize all the other Device stuff
         super().__init__(prefix=prefix, name=name, *args, **kwargs)
 
-    def change_sensitivity(self, step: int) -> status.Status:
+    def change_sensitivity(self, step: int) -> status.StatusBase:
+        """Change the gain on the pre-amp by the given number of steps.
+
+        Parameters
+        ==========
+        step
+          How many levels to change the sensitivity. Positive numbers
+          increase the gain, negative numbers decrease the gain.
+
+        Returns
+        =======
+        status.StatusBase
+          The status that will be marked complete once the sensitivity
+          is changed.
+
+        """
         new_sens_level = self.sensitivity.sens_level.readback.get() + step
         try:
             status = self.sensitivity.sens_level.set(new_sens_level)
@@ -142,26 +185,26 @@ class IonChamber(Device):
             raise exceptions.GainOverflow(self)
         return status
 
-    def increase_gain(self) -> Sequence[status.Status]:
+    def increase_gain(self) -> Sequence[status.StatusBase]:
         """Increase the gain (descrease the sensitivity) of the ion chamber's
         pre-amp.
 
         Returns
         =======
-        statuses
+        Sequence[status.StatusBase]
           Ophyd status objects for the value and gain of the
           sensitivity in the pre-amp.
 
         """
         return self.change_sensitivity(-1)
 
-    def decrease_gain(self) -> Sequence[status.Status]:
+    def decrease_gain(self) -> Sequence[status.StatusBase]:
         """Decrease the gain (increase the sensitivity) of the ion chamber's
         pre-amp.
 
         Returns
         =======
-        statuses
+        Sequence[status.StatusBase]
           Ophyd status objects for the value and gain of the
           sensitivity in the pre-amp.
 

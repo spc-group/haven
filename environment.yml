@@ -109,6 +109,7 @@ dependencies:
   - sphinx
   - pandoc
   - nbsphinx
+  - graphviz
   - sphinxcontrib-napoleon
   # - twine
   # - versioneer

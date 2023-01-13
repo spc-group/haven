@@ -1,3 +1,4 @@
+import pytest
 from unittest import TestCase, expectedFailure
 from io import StringIO
 import os
@@ -94,6 +95,11 @@ THIS_DIR = Path(__file__).parent
     "uid": "671c3c48-f014-421d-b3e0-57991b6745f6",
     "versions": {"bluesky": "1.8.3", "ophyd": "1.6.4"},
 }
+
+
+@pytest.fixture()
+def stringio():
+    yield StringIO()
 
 
 class CallbackTests(TestCase):
@@ -214,35 +220,36 @@ class CallbackTests(TestCase):
         self.assertIn("8330", xdi_output)
         self.assertIn("1660186828.0055554", xdi_output)
 
-    def test_with_plan(self):
-        I0 = SynGauss(
-            "I0",
-            motor,
-            "motor",
-            center=-0.5,
-            Imax=1,
-            sigma=1,
-            labels={"detectors"},
-        )
-        It = SynGauss(
-            "It",
-            motor,
-            "motor",
-            center=-0.5,
-            Imax=1,
-            sigma=1,
-            labels={"detectors"},
-        )
-        energy_motor = SynAxis(name="energy", labels={"motors", "energies"})
-        exposure = SynAxis(name="exposure", labels={"motors", "exposures"})
-        writer = XDIWriter(self.stringio)
-        RE = RunEngine()
-        energy_plan = energy_scan(
-            np.arange(8300.0, 8400.0, 10),
-            detectors=[I0, It],
-            E0="Ni_K",
-            energy_positioners=[energy_motor],
-            time_positioners=[exposure],
-            md=dict(sample_name="NiO_rock_salt"),
-        )
-        RE(energy_plan, writer)
+
+def test_with_plan(stringio, sim_registry):
+    I0 = SynGauss(
+        "I0",
+        motor,
+        "motor",
+        center=-0.5,
+        Imax=1,
+        sigma=1,
+        labels={"detectors"},
+    )
+    It = SynGauss(
+        "It",
+        motor,
+        "motor",
+        center=-0.5,
+        Imax=1,
+        sigma=1,
+        labels={"detectors"},
+    )
+    energy_motor = SynAxis(name="energy", labels={"motors", "energies"})
+    exposure = SynAxis(name="exposure", labels={"motors", "exposures"})
+    writer = XDIWriter(stringio)
+    RE = RunEngine()
+    energy_plan = energy_scan(
+        np.arange(8300.0, 8400.0, 10),
+        detectors=[I0, It],
+        E0="Ni_K",
+        energy_positioners=[energy_motor],
+        time_positioners=[exposure],
+        md=dict(sample_name="NiO_rock_salt"),
+    )
+    RE(energy_plan, writer)

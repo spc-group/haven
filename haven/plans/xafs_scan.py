@@ -13,6 +13,10 @@ from ..energy_ranges import ERange, KRange
 from .. import exceptions
 from .energy_scan import energy_scan
 from ..typing import DetectorList
+from ..preprocessors import baseline_decorator
+
+
+log = logging.getLogger(__name__)
 
 
 log = logging.getLogger(__name__)
@@ -27,6 +31,7 @@ def chunks(lst, n):
         yield lst[i : i + n]  # noqa: E203
 
 
+@baseline_decorator()
 def xafs_scan(
     E_min: float,
     *E_params: Sequence[float],
