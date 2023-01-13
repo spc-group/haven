@@ -76,7 +76,9 @@ def align_motor(detector, motor, distance=200, reverse=False, bec=None, md={}):
         bec.disable_table()
     # Determine plan parameters
     start, end = (distance, -distance) if reverse else (-distance, distance)
-    # Resolve detectors
+    # Resolve motors and detectors
+    motor = registry.find(motor)
+    detector = registry.find(detector)
     detectors = [detector]
     if hasattr(detector, 'raw_counts'):
         detectors.append(detector.raw_counts)

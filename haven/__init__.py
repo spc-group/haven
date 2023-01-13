@@ -10,7 +10,7 @@ from .plans.xafs_scan import xafs_scan  # noqa: F401
 from .plans.beam_properties import knife_scan  # noqa: F401
 from .plans.auto_gain import auto_gain, AutoGainCallback  # noqa:F401
 from .plans.mono_gap_calibration import calibrate_mono_gap  # noqa: F401
-# from .plans.mono_ID_calibration import mono_ID_calibration  # noqa: F401
+from .plans.mono_ID_calibration import mono_ID_calibration  # noqa: F401
 from .plans.set_energy import set_energy  # noqa: F401
 from .plans.align_motor import align_motor, align_pitch2  # noqa: F401
 from .run_engine import RunEngine  # noqa: F401
