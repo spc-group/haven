@@ -1,7 +1,7 @@
 import pytest
 import time
 
-from haven.instrument.ion_chamber import IonChamber, SensitivityLevelPositioner
+from haven.instrument.ion_chamber import IonChamber, SensitivityLevelPositioner, load_ion_chambers
 from haven import exceptions
 import epics
 
@@ -67,3 +67,12 @@ def test_gain_changes(ioc_preamp, ioc_scaler):
     ion_chamber.sensitivity.sens_unit.set(max_unit).wait()
     with pytest.raises(exceptions.GainOverflow):
         ion_chamber.decrease_gain()
+
+
+def test_load_ion_chambers(sim_registry):
+    load_ion_chambers()
+    # Test the channel info is extracted properly
+    ic = sim_registry.find(label="ion_chambers")
+    assert ic.ch_num == 2
+    assert ic.sensitivity.prefix.split(":")[-1] == "SR01"
+    
