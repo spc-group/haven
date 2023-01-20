@@ -12,6 +12,7 @@ import epics
 
 
 from .instrument.instrument_registry import registry
+from ._iconfig import load_config
 
 
 def baseline_wrapper(plan, devices: Union[Sequence, str]="motors", name: str="baseline"):
@@ -41,8 +42,8 @@ VERSIONS = dict(
 
 
 def inject_haven_md_wrapper(plan):
-    """
-    Inject additional metadata into a run.
+    """Inject additional metadata into a run.
+
     This takes precedences over the original metadata dict in the event of
     overlapping keys, but it does not mutate the original metadata dict.
     (It uses ChainMap.)
@@ -51,11 +52,35 @@ def inject_haven_md_wrapper(plan):
     ----------
     plan : iterable or iterator
         a generator, list, or similar containing `Msg` objects
+
     """
     def _inject_md(msg):
-        md = {"versions": VERSIONS}
+        config = load_config()
+        # Software versions
+        md = {
+            "versions": VERSIONS,
+            # Proposal-based metadata
+            "proposal_id": "",
+            "proposal_title": "",
+            "esaf_id": "",
+            "esaf_title": "",
+            "mail_in_flag": "",
+            "proprietary_flag": "",
+            "principal_user": "",
+            "bss_aps_cycle": "",
+            "bss_beamline_name": "",
+            # Controls meta-data
+            "EPICS_HOST_ARCH": "",
+            "epics_libca": "",
+            "EPICS_CA_MAX_ARRAY_BYTES": "",
+            # Facility metadata
+            "beamline_id": config["beamline"]["name"],
+            "facility_id": config["facility"]["name"],
+            "xray_source": config["facility"]["xray_source"],
+              }
         if msg.command == 'open_run':
             msg = msg._replace(kwargs=ChainMap(md, msg.kwargs))
+        # Proposal information
         return msg
 
     return (yield from msg_mutator(plan, _inject_md))  

@@ -67,8 +67,101 @@ def test_metadata():
     assert cb.start.called
     assert cb.start.call_count == 1
     start_doc = cb.start.call_args[0][0]
+    # Check versions
     assert "versions" in start_doc.keys()
     versions = start_doc["versions"]
     assert "haven" in versions.keys()
     assert versions["haven"] == "0.1.0"
     assert "bluesky" in versions.keys()
+    # Check other metadata
+    expected_keys = [ "uid", "time", "EPICS_HOST_ARCH", "beamline_id",
+                      "facility_id", "xray_source",
+                      "epics_libca", "EPICS_CA_MAX_ARRAY_BYTES",
+                      "login_id", "pid", "scan_id", "proposal_id",
+                      "versions", "plan_type", "plan_name",
+                      "detectors", "num_points", "num_intervals",
+                      "plan_args", "hints", "full_filename",
+                      "filename", "line_number", "action",
+                      "parameters", "iso8601", "purpose", "datetime",
+                      "thickness", "title", "bss_aps_cycle",
+                      "bss_beamline_name", "esaf_id", "esaf_title",
+                      "mail_in_flag", "principal_user",
+                      "proposal_title", "proprietary_flag",
+                      "hdf5_path", "hdf5_file", "sample_image_name",
+                      "sample_name", "method", "area_detector_name", ]
+    for key in expected_keys:
+        assert key in start_doc.keys()
+
+  # uid: 600852ca-3776-4e7a-ba29-f11786371e55
+  # time: 1667935604.6147602
+  # EPICS_HOST_ARCH: linux-x86_64
+  # beamline_id: APS 9-ID-C USAXS
+  # epics_libca: >-
+  #   /home/beams11/USAXS/micromamba/envs/bluesky_2022_3/lib/python3.10/site-packages/epics/clibs/linux64/libca.so
+  # EPICS_CA_MAX_ARRAY_BYTES: '1280000'
+  # login_id: usaxs@usaxscontrol.xray.aps.anl.gov
+  # pid: 1639175
+  # scan_id: 92
+  # proposal_id: ''
+  # versions:
+  #   apstools: 1.6.8
+  #   area_detector_handlers: 0.0.10
+  #   bluesky: 1.10.0
+  #   databroker: 1.2.5
+  #   epics_ca: 3.5.0
+  #   epics: 3.5.0
+  #   h5py: 3.7.0
+  #   matplotlib: 3.6.1
+  #   numpy: 1.23.3
+  #   ophyd: 1.7.0
+  #   pymongo: 4.2.0
+  #   pyRestTable: 2020.0.6
+  #   spec2nexus: 2021.2.4
+  # plan_type: generator
+  # plan_name: WAXS
+  # detectors:
+  #   - waxs_det
+  # num_points: 1
+  # num_intervals: 0
+  # plan_args:
+  #   detectors:
+  #     - >-
+  #       MyPilatusDetector(prefix='usaxs_pilatus2:', name='waxs_det',
+  #       read_attrs=['hdf1'], configuration_attrs=['cam', 'cam.acquire_period',
+  #       'cam.acquire_time', 'cam.image_mode', 'cam.manufacturer', 'cam.model',
+  #       'cam.num_exposures', 'cam.num_images', 'cam.trigger_mode', 'hdf1'])
+  #   num: 1
+  # hints:
+  #   dimensions:
+  #     - - - time
+  #       - primary
+  # full_filename: /share1/USAXS_data/2022-11/usaxs.mac
+  # filename: usaxs.mac
+  # line_number: 38
+  # action: waxsExp
+  # parameters:
+  #   - '40'
+  #   - '120'
+  #   - '3.77'
+  #   - Frye_VAC_Perp
+  # iso8601: '2022-11-08 13:26:41.101412'
+  # purpose: tuner
+  # datetime: '2022-11-08 12:48:48.735664'
+  # sx: 40
+  # sy: 120
+  # thickness: 3.77
+  # title: Frye_VAC_Perp
+  # bss_aps_cycle: ''
+  # bss_beamline_name: ''
+  # esaf_id: ''
+  # esaf_title: ''
+  # mail_in_flag: 'OFF'
+  # principal_user: no users listed
+  # proposal_title: ''
+  # proprietary_flag: 'OFF'
+  # sample_thickness_mm: 3.77
+  # hdf5_path: /share1/USAXS_data/2022-11/11_08_Frye/11_08_Frye_waxs
+  # hdf5_file: Frye_VAC_Perp_0009.hdf
+  # sample_image_name: /share1/USAXS_data/2022-11/11_08_Frye/11_08_Frye_waxs/Frye_VAC_Perp_0009.jpg
+  # method: areaDetectorAcquire
+  # area_detector_name: waxs_det
