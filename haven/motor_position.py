@@ -43,7 +43,7 @@ class MotorPosition(BaseModel):
     def load(Cls, document):
         # Create a MotorPosition object
         motor_axes = [
-            MotorAxis(name=m["name"], readback=m["readback"])
+            MotorAxis(name=m["name"], readback=m["readback"], offset = m.get("offset", None))
             for m in document["motors"]
         ]
         position = Cls(

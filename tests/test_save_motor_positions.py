@@ -146,7 +146,7 @@ def test_list_motor_positions(mongodb, capsys):
     uid = str(mongodb.motor_positions.find_one({"name": "Good position A"})["_id"])
     expected = (
         f'\n\033[1mGood position A\033[0m (uid="{uid}") savetime={datetime.fromtimestamp(time.time())}\n'
-        "┣━SLT V Upper: 510.5, offset: None\n"
+        "┣━SLT V Upper: 510.5, offset: 0.0\n"
         "┗━SLT V Lower: -211.93, offset: None\n"
     )
     assert captured.out == expected
