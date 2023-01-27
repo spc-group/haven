@@ -1,3 +1,4 @@
+import time
 import argparse
 import cProfile
 import logging
@@ -27,6 +28,9 @@ def main():
 
     setup_renderer()
 
+    from qtpy.QtWidgets import QSplashScreen, QApplication
+    from qtpy.QtGui import QPixmap
+    from qtpy import QtCore
     try:
         """
         We must import QtWebEngineWidgets before creating a QApplication
@@ -39,9 +43,8 @@ def main():
 
     import pydm
     # from pydm import PyDMApplication
-    from .application import FireflyApplication
     from pydm.utilities.macro import parse_macro_string
-    import haven
+    from .application import FireflyApplication
 
     parser = argparse.ArgumentParser(description="Python Display Manager")
     parser.add_argument(
@@ -131,9 +134,6 @@ def main():
         logger.setLevel(pydm_args.log_level)
         handler.setLevel(pydm_args.log_level)
 
-    # Define devices on the beamline
-    haven.load_instrument()
-
     app = FireflyApplication(
         ui_file=pydm_args.displayfile,
         command_line_args=pydm_args.display_args,
@@ -145,13 +145,22 @@ def main():
         macros=macros,
         stylesheet_path=pydm_args.stylesheet,
     )
-    
-    pydm.utilities.shortcuts.install_connection_inspector(
-        parent=app.windows["beamline_status"])
-    # pydm.utilities.shortcuts.install_connection_inspector(
-    #     parent=None)
 
-    app.prepare_queue_client()
+    # Set up splash screen
+    im_dir = Path(__file__).parent.resolve()
+    im_fp = str(im_dir / "splash.png")
+    pixmap = QPixmap(im_fp)
+    splash = QSplashScreen(pixmap, QtCore.Qt.WindowStaysOnTopHint)
+    splash.show()
+    QApplication.processEvents()
+    for i in range(100):
+        time.sleep(0.01)
+        QApplication.processEvents()
+    # Define devices on the beamline (slow!)
+    app.load_instrument()
+    QApplication.processEvents()
+
+    splash.finish(app.windows["beamline_status"])
 
     exit_code = app.exec_()
 

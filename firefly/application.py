@@ -9,6 +9,7 @@ from qtpy import QtWidgets, QtCore
 from qtpy.QtWidgets import QAction
 from qtpy.QtCore import Slot, QThread, Signal, QObject
 import qtawesome as qta
+import pydm
 from pydm.application import PyDMApplication
 from pydm.display import load_file
 from pydm.utilities.stylesheet import apply_stylesheet
@@ -16,6 +17,7 @@ from bluesky_queueserver_api import BPlan
 from bluesky_queueserver_api.zmq import REManagerAPI
 from haven.exceptions import ComponentNotFound
 from haven import HavenMotor, registry, load_config
+import haven
 
 from .main_window import FireflyMainWindow, PlanMainWindow
 from .queue_client import QueueClient, QueueClientThread
@@ -55,12 +57,6 @@ class FireflyApplication(PyDMApplication):
         # (*ui_file* and *use_main_window* let us render the window here instead)
         super().__init__(ui_file=None, use_main_window=use_main_window, *args, **kwargs)
         self.windows = {}
-        # Make actions for launching other windows
-        self.setup_window_actions()
-        # Actions for controlling the bluesky run engine
-        self.setup_runengine_actions()
-        # Launch the default display
-        self.show_status_window()
 
     def __del__(self):
         if hasattr(self, "_queue_client"):
@@ -72,6 +68,21 @@ class FireflyApplication(PyDMApplication):
         action.setText(text)
         action.triggered.connect(slot)
         setattr(self, action_name, action)
+
+    def load_instrument(self):
+        # Define devices on the beamline
+        haven.load_instrument()
+        # Make actions for launching other windows
+        self.setup_window_actions()
+        # Actions for controlling the bluesky run engine
+        self.setup_runengine_actions()
+        # Prepare the client for interacting with the queue server
+        self.prepare_queue_client()
+        # Launch the default display
+        self.show_status_window()
+        # Set up the window to show list of PV connections
+        pydm.utilities.shortcuts.install_connection_inspector(
+            parent=self.windows["beamline_status"])
 
     def setup_window_actions(self):
         """Create QActions for clicking on menu items, shortcuts, etc.
