@@ -6,14 +6,6 @@ import pstats
 import sys
 from pathlib import Path
 
-from pydm import config
-
-# Set EPICS as the default protocol
-config.DEFAULT_PROTOCOL = "ca"
-
-ui_folder = Path(__file__).parent.resolve()
-default_ui_file = ui_folder / "main.py"
-
 
 def main():
     logger = logging.getLogger('')
@@ -24,13 +16,6 @@ def main():
     logger.setLevel("INFO")
     handler.setLevel("INFO")
 
-    from pydm.utilities import setup_renderer
-
-    setup_renderer()
-
-    from qtpy.QtWidgets import QSplashScreen, QApplication
-    from qtpy.QtGui import QPixmap
-    from qtpy import QtCore
     try:
         """
         We must import QtWebEngineWidgets before creating a QApplication
@@ -40,6 +25,35 @@ def main():
         from qtpy import QtWebEngineWidgets
     except ImportError:
         logger.debug('QtWebEngine is not supported.')
+
+    from qtpy.QtWidgets import QSplashScreen, QApplication
+    from qtpy.QtGui import QPixmap
+    from qtpy import QtCore
+        
+    # Set up splash screen
+    fake_app = QApplication(sys.argv)
+    im_dir = Path(__file__).parent.resolve()
+    im_fp = str(im_dir / "splash.png")
+    pixmap = QPixmap(im_fp)
+    splash = QSplashScreen(pixmap, QtCore.Qt.WindowStaysOnTopHint)
+    splash.show()
+    QApplication.processEvents()
+    for i in range(10):
+        time.sleep(0.01)
+    QApplication.processEvents()
+
+    from pydm import config
+
+    # Set EPICS as the default protocol
+    config.DEFAULT_PROTOCOL = "ca"
+
+    ui_folder = Path(__file__).parent.resolve()
+    default_ui_file = ui_folder / "main.py"
+
+
+    from pydm.utilities import setup_renderer
+
+    setup_renderer()
 
     import pydm
     # from pydm import PyDMApplication
@@ -146,16 +160,6 @@ def main():
         stylesheet_path=pydm_args.stylesheet,
     )
 
-    # Set up splash screen
-    im_dir = Path(__file__).parent.resolve()
-    im_fp = str(im_dir / "splash.png")
-    pixmap = QPixmap(im_fp)
-    splash = QSplashScreen(pixmap, QtCore.Qt.WindowStaysOnTopHint)
-    splash.show()
-    QApplication.processEvents()
-    for i in range(100):
-        time.sleep(0.01)
-        QApplication.processEvents()
     # Define devices on the beamline (slow!)
     app.load_instrument()
     QApplication.processEvents()
