@@ -28,7 +28,7 @@ def main():
 
     setup_renderer()
 
-    from qtpy.QtWidgets import QSplashScreen
+    from qtpy.QtWidgets import QSplashScreen, QApplication
     from qtpy.QtGui import QPixmap
     from qtpy import QtCore
     try:
@@ -152,12 +152,13 @@ def main():
     pixmap = QPixmap(im_fp)
     splash = QSplashScreen(pixmap, QtCore.Qt.WindowStaysOnTopHint)
     splash.show()
-    app.processEvents()
-    time.sleep(0.1)
-    app.processEvents()
+    QApplication.processEvents()
+    for i in range(100):
+        time.sleep(0.01)
+        QApplication.processEvents()
     # Define devices on the beamline (slow!)
     app.load_instrument()
-    app.processEvents()
+    QApplication.processEvents()
 
     splash.finish(app.windows["beamline_status"])
 
