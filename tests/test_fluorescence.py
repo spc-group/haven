@@ -1,7 +1,7 @@
 import pytest
 
 from epics import caget
-from haven.instrument.fluorescence_detector import XspressDetector
+from haven.instrument.fluorescence_detector import XspressDetector, load_fluorescence_detectors
 
 
 @pytest.fixture
@@ -24,6 +24,13 @@ def test_staging(vortex, ioc_vortex):
     vortex.unstage()
     assert caget("xspress:NumImages") == 1
     assert caget("xspress:TriggerMode") == 1
+
+
+def test_load_dxp(sim_registry):
+    load_fluorescence_detectors(config=None)
+    # See if the device was loaded
+    sim_registry.find(name="vortex_me4")
+    
 
 
 @pytest.mark.xfail

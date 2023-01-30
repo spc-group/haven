@@ -1,4 +1,5 @@
 from ophyd import (
+    mca,
     Device,
     EpicsSignal,
     Component as Cpt,
@@ -8,12 +9,20 @@ from enum import IntEnum
 
 
 from .scaler_triggered import ScalerTriggered
+from .instrument_registry import registry
 from .._iconfig import load_config
+from .. import exceptions
 
 
-iconfig = load_config()
+@registry.register
+class DxpDetectorBase(mca.EpicsDXPMultiElementSystem):
+    """A fluorescence detector based on XIA-DXP XMAP electronics.
 
-pv_prefix = iconfig["fluorescence_detector"]["vortex"]["pv_prefix"]
+    By itself, this class has no multi-channel-analyzers, and so will
+    not really be very useful. It should have
+    ``ophyd.mca.EpicsMCARecord`` objects added as components.
+    
+    """
 
 
 class XspressDetector(ScalerTriggered, Device):
@@ -57,10 +66,30 @@ class XspressDetector(ScalerTriggered, Device):
         self.stage_sigs[self.num_frames] = val
 
 
-vortex_single = XspressDetector(
-    pv_prefix,
-    name="vortex_single",
-    labels={
-        "fluorescence_detectors",
-    },
-)
+def load_dxp_detector(device_name, prefix, num_elements):
+    # Build the mca components
+    mca_names = [f"mca{n}" for n in range(1, num_elements+1)]
+    mcas = {mname: Cpt(mca.EpicsMCARecord, prefix=mname, name=mname)
+            for mname in mca_names}
+    # Create a dynamic subclass
+    class_name = device_name.title().replace("_", "")
+    parent_classes = (DxpDetectorBase,)
+    Cls = type(class_name, parent_classes, mcas)
+    det = Cls(prefix=prefix, name=device_name)
+    
+
+def load_fluorescence_detectors(config=None):
+    # Get the detector definitions from config files
+    if config is None:
+        config = load_config()
+    for name, cfg in config.get("fluorescence_detector", {}).items():
+        if "prefix" not in cfg.keys():
+            continue
+        # Build the detector device
+        if cfg["electronics"] == "dxp":
+            load_dxp_detector(device_name=name, prefix=cfg["prefix"],
+                              num_elements=cfg["num_elements"])
+        else:
+            msg = f"Electronics '{cfg['electronics']}' for {name} not supported."
+            raise exceptions.UnknownDeviceConfiguration(msg)
+        

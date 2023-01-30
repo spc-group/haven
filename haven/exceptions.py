@@ -59,3 +59,9 @@ class IOCTimeout(RuntimeError):
     """The IOC did not start within the allotted time."""
 
     ...
+
+
+class UnknownDeviceConfiguration(ValueError):
+    """The configuration for a device does not match the known options."""
+
+    ...
