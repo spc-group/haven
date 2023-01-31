@@ -122,7 +122,7 @@ class IonChamber(Device):
     raw_counts: OphydObject = FCpt(SignalRO, "{prefix}.S{ch_num}", kind="hinted")
     volts: OphydObject = FCpt(SignalRO, "{prefix}_calc{ch_num}.VAL", kind="hinted")
     exposure_time: OphydObject = FCpt(Signal, "{scaler_prefix}.TP", kind="normal")
-    sensitivity = FCpt(SensitivityLevelPositioner, "{preamp_prefix}", kind="config")
+    sensitivity = FCpt(SensitivityLevelPositioner, "{preamp_prefix}", labels={"baseline"}, kind="config")
     read_attrs = [
         "raw_counts",
         "volts",

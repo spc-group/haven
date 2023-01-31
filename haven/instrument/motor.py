@@ -56,7 +56,7 @@ def load_ioc_motors(prefix, num_motors, ioc_name=None):
             log.debug(f"SKipping unnamed motor {motor_num}")
         else:
             # Create a new motor object
-            labels = {"motors"}
+            labels = {"motors", "baseline"}
             if ioc_name is not None:
                 labels = set([ioc_name, *labels])
             motor = HavenMotor(

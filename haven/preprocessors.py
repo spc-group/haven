@@ -15,7 +15,7 @@ from .instrument.instrument_registry import registry
 from ._iconfig import load_config
 
 
-def baseline_wrapper(plan, devices: Union[Sequence, str]="motors", name: str="baseline"):
+def baseline_wrapper(plan, devices: Union[Sequence, str]="baseline", name: str="baseline"):
     bluesky_baseline_wrapper.__doc__
     # Resolve devices
     devices = registry.findall(devices, allow_none=True)
@@ -56,10 +56,10 @@ def inject_haven_md_wrapper(plan):
     """
     def _inject_md(msg):
         config = load_config()
-        # Software versions
         md = {
+            # Software versions            
             "versions": VERSIONS,
-            # Proposal-based metadata
+            # Proposal
             "proposal_id": "",
             "proposal_title": "",
             "esaf_id": "",
@@ -69,15 +69,23 @@ def inject_haven_md_wrapper(plan):
             "principal_user": "",
             "bss_aps_cycle": "",
             "bss_beamline_name": "",
-            # Controls meta-data
+            # Controls
             "EPICS_HOST_ARCH": "",
             "epics_libca": "",
             "EPICS_CA_MAX_ARRAY_BYTES": "",
-            # Facility metadata
+            # Facility
             "beamline_id": config["beamline"]["name"],
             "facility_id": config["facility"]["name"],
             "xray_source": config["facility"]["xray_source"],
-              }
+            # Computer
+            "login_id": "",
+            "pid": "",
+            # User supplied
+            "sample_name": "",
+            # Bluesky
+            "parameters": "",
+            "purpose": "",
+        }
         if msg.command == 'open_run':
             msg = msg._replace(kwargs=ChainMap(md, msg.kwargs))
         # Proposal information
