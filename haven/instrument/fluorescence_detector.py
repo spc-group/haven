@@ -69,13 +69,13 @@ class XspressDetector(ScalerTriggered, Device):
 def load_dxp_detector(device_name, prefix, num_elements):
     # Build the mca components
     mca_names = [f"mca{n}" for n in range(1, num_elements+1)]
-    mcas = {mname: Cpt(mca.EpicsMCARecord, prefix=mname, name=mname)
+    mcas = {mname: Cpt(mca.EpicsMCARecord, suffix=mname, name=mname)
             for mname in mca_names}
     # Create a dynamic subclass
     class_name = device_name.title().replace("_", "")
     parent_classes = (DxpDetectorBase,)
     Cls = type(class_name, parent_classes, mcas)
-    det = Cls(prefix=prefix, name=device_name)
+    det = Cls(prefix=f"{prefix}:", name=device_name)
     
 
 def load_fluorescence_detectors(config=None):
