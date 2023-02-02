@@ -123,7 +123,7 @@ class IonChamber(Device):
     volts: OphydObject = FCpt(SignalRO, "{prefix}_calc{ch_num}.VAL", kind="hinted")
     exposure_time: OphydObject = FCpt(Signal, "{scaler_prefix}.TP", kind="normal")
     sensitivity = FCpt(SensitivityLevelPositioner, "{preamp_prefix}", kind="config")
-    read_attrs = [
+    _default_read_attrs = [
         "raw_counts",
         "volts",
         "exposure_time",
@@ -226,8 +226,15 @@ class IonChamber(Device):
 
 @registry.register
 class IonChamberWithOffset(IonChamber):
-    offset = FCpt(SignalRO, "{prefix}_offset0.{ch_char}")
-    net_counts = FCpt(SignalRO, "{prefix}_netA.{ch_char}")
+    offset = FCpt(SignalRO, "{prefix}_offset0.{ch_char}", kind=Kind.config)
+    net_counts = FCpt(SignalRO, "{prefix}_netA.{ch_char}", kind=Kind.hinted)
+
+    _default_read_attrs = [
+        "raw_counts",
+        "volts",
+        "exposure_time",
+        "net_counts",
+    ]
 
 
 def load_ion_chambers(config=None):
@@ -250,7 +257,7 @@ def load_ion_chambers(config=None):
             if name == "":
                 continue
             # Create the ion chamber
-            ic = IonChamber(
+            ic = IonChamberWithOffset(
                 prefix=pv_prefix,
                 ch_num=ch_num,
                 name=name,
