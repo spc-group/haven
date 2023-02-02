@@ -29,14 +29,10 @@ from .. import exceptions
 log = logging.getLogger(__name__)
 
 
-__all__ = ["IonChamber"]
+__all__ = ["IonChamber", "load_ion_chambers"]
 
 
 iconfig = load_config()
-
-ioc_prefix = iconfig["ion_chamber"]["scaler"]["ioc"]
-record_prefix = iconfig["ion_chamber"]["scaler"]["record"]
-pv_prefix = f"{ioc_prefix}:{record_prefix}"
 
 
 class SensitivityPositioner(PVPositionerPC):
@@ -89,13 +85,10 @@ class IonChamber(Device):
       The bluesky-compatible name for this device.
     preamp_prefix
       The process variable prefix to the pre-amp that controls this
-      ion chamber.
+      ion chamber (e.g. "25idc:SR01").
     scaler_prefix
       The process variable prefix for the scaler that measures this
       ion chamber.
-    voltage_pv
-      The process variable that points to the voltage calculation
-      result for the ion chamber.
 
     Attributes
     ==========
@@ -139,7 +132,6 @@ class IonChamber(Device):
         name: str,
         preamp_prefix: str=None,
         scaler_prefix: str=None,
-        voltage_pv: str=None,
         *args,
         **kwargs,
     ):
@@ -153,8 +145,6 @@ class IonChamber(Device):
             self.scaler_prefix = scaler_prefix
         else:
             self.scaler_prefix = prefix
-        # Determine pv for the voltage (e.g. user calc record)
-        self.voltage_pv = voltage_pv
         # Save an epics path to the preamp
         if preamp_prefix is None:
             preamp_prefix = prefix
@@ -238,32 +228,29 @@ class IonChamberWithOffset(IonChamber):
 
 
 def load_ion_chambers(config=None):
+    # Load IOC prefixes from the config file
     if config is None:
         config = load_config()
-    preamp_ioc = config["ion_chamber"]["preamp"]["ioc"]
     vme_ioc = config["ion_chamber"]["scaler"]["ioc"]
     scaler_record = config["ion_chamber"]["scaler"]["record"]
+    pv_prefix = f"{vme_ioc}:{scaler_record}"
+    preamp_ioc = config["ion_chamber"]["preamp"]["ioc"]
     # Loop through the configuration sections and create the ion chambers
-    for lbl, ic_config in config["ion_chamber"].items():
-        # Define ion chambers
-        if lbl.startswith("ch"):
-            # Determine ion_chamber configuration
-            ch_num = int(lbl[2:])
-            preamp_prefix = f"{preamp_ioc}:{ic_config['preamp_record']}"
-            voltage_pv = f"{vme_ioc}:userCalc{ch_num-1}"
-            desc_pv = f"{vme_ioc}:{scaler_record}.NM{ch_num}"
-            # Only use this ion chamber if it has a name
-            name = epics.caget(desc_pv)
-            if name == "":
-                continue
-            # Create the ion chamber
-            ic = IonChamberWithOffset(
-                prefix=pv_prefix,
-                ch_num=ch_num,
-                name=name,
-                voltage_pv=voltage_pv,
-                preamp_prefix=preamp_prefix,
-                labels={"ion_chambers"},
-            )
-            registry.register(ic)
-            log.info(f"Created ion chamber: {ic.name} ({ic.prefix}, ch {ic.ch_num})")
+    for ch_num in config["ion_chamber"]["scaler"]["channels"]:
+        # Determine ion_chamber configuration
+        preamp_prefix = f"{preamp_ioc}:SR{ch_num-1:02}"
+        desc_pv = f"{vme_ioc}:{scaler_record}.NM{ch_num}"
+        # Only use this ion chamber if it has a name
+        name = epics.caget(desc_pv)
+        if name == "":
+            continue
+        # Create the ion chamber
+        ic = IonChamberWithOffset(
+            prefix=pv_prefix,
+            ch_num=ch_num,
+            name=name,
+            preamp_prefix=preamp_prefix,
+            labels={"ion_chambers"},
+        )
+        registry.register(ic)
+        log.info(f"Created ion chamber: {ic.name} ({ic.prefix}, ch {ic.ch_num})")
