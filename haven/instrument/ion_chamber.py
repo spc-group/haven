@@ -34,6 +34,9 @@ __all__ = ["IonChamber", "load_ion_chambers"]
 
 iconfig = load_config()
 
+vme_ioc = iconfig["ion_chamber"]["scaler"]["ioc"]
+scaler_record = iconfig["ion_chamber"]["scaler"]["record"]
+pv_prefix = f"{vme_ioc}:{scaler_record}"
 
 class SensitivityPositioner(PVPositionerPC):
     setpoint = Cpt(EpicsSignal, ".VAL")
@@ -231,9 +234,6 @@ def load_ion_chambers(config=None):
     # Load IOC prefixes from the config file
     if config is None:
         config = load_config()
-    vme_ioc = config["ion_chamber"]["scaler"]["ioc"]
-    scaler_record = config["ion_chamber"]["scaler"]["record"]
-    pv_prefix = f"{vme_ioc}:{scaler_record}"
     preamp_ioc = config["ion_chamber"]["preamp"]["ioc"]
     # Loop through the configuration sections and create the ion chambers
     for ch_num in config["ion_chamber"]["scaler"]["channels"]:
