@@ -28,4 +28,4 @@ def test_staging(vortex, ioc_vortex):
 
 @pytest.mark.xfail
 def test_with_plan(vortex):
-    ...
+    assert False, "Write test"
