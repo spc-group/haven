@@ -19,6 +19,9 @@ from ..preprocessors import baseline_decorator
 log = logging.getLogger(__name__)
 
 
+log = logging.getLogger(__name__)
+
+
 __all__ = ["xafs_scan"]
 
 
