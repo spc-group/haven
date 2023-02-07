@@ -9,6 +9,7 @@ from ophyd import (
     status,
     EpicsSignal,
     PVPositionerPC,
+    PVPositioner,
     PseudoPositioner,
     PseudoSingle,
     Component as Cpt,
@@ -36,11 +37,16 @@ iconfig = load_config()
 
 vme_ioc = iconfig["ion_chamber"]["scaler"]["ioc"]
 scaler_record = iconfig["ion_chamber"]["scaler"]["record"]
-pv_prefix = f"{vme_ioc}:{scaler_record}"
+scaler_pv_prefix = f"{vme_ioc}:{scaler_record}"
 
 class SensitivityPositioner(PVPositionerPC):
     setpoint = Cpt(EpicsSignal, ".VAL")
     readback = Cpt(EpicsSignal, ".VAL")
+
+
+class SetAllPositioner(PVPositionerPC):
+    setpoint = Cpt(EpicsSignal, "")
+    readback = Cpt(EpicsSignal, "")
 
 
 class SensitivityLevelPositioner(PseudoPositioner):
@@ -50,18 +56,20 @@ class SensitivityLevelPositioner(PseudoPositioner):
     sens_level = Cpt(PseudoSingle, limits=(0, 27))
 
     # Sensitivity settings
-    sens_unit = Cpt(SensitivityPositioner, ":sens_unit", kind="config", settle_time=0.1)
-    sens_value = Cpt(SensitivityPositioner, ":sens_num", kind="config", settle_time=0.1)
+    sens_unit = Cpt(SensitivityPositioner, ":sens_unit", kind=Kind.config, settle_time=0.1)
+    sens_value = Cpt(SensitivityPositioner, ":sens_num", kind=Kind.config, settle_time=0.1)
+    set_all = Cpt(SetAllPositioner, ":init.PROC", kind=Kind.omitted, settle_time=0.1, limits=(0, 1))
 
     @pseudo_position_argument
     def forward(self, target_gain_level):
-        "Given a target energy, transform to the mono and ID energies."
+        "Given a target energy, transform to the desired target gain level."
         new_level = target_gain_level.sens_level
         new_value = new_level % len(self.values)
         new_unit = int(new_level / len(self.values))
         return self.RealPosition(
             sens_value=new_value,
             sens_unit=new_unit,
+            set_all=1,
         )
 
     @real_position_argument
@@ -119,14 +127,6 @@ class IonChamber(Device):
     volts: OphydObject = FCpt(SignalRO, "{prefix}_calc{ch_num}.VAL", kind="hinted")
     exposure_time: OphydObject = FCpt(Signal, "{scaler_prefix}.TP", kind="normal")
     sensitivity = FCpt(SensitivityLevelPositioner, "{preamp_prefix}", kind="config")
-    _default_read_attrs = [
-        "raw_counts",
-        "volts",
-        "exposure_time",
-    ]
-    # configuration_attrs = ["sensitivity_sens_level",
-    #                        "sensitivity_sens_value",
-    #                        "sensitivity_sens_unit"]
 
     def __init__(
         self,
@@ -174,8 +174,8 @@ class IonChamber(Device):
         new_sens_level = self.sensitivity.sens_level.readback.get() + step
         try:
             status = self.sensitivity.sens_level.set(new_sens_level)
-        except ValueError:
-            raise exceptions.GainOverflow(self)
+        except ValueError as e:
+            raise exceptions.GainOverflow(f"{self.name} -> {e}")
         return status
 
     def increase_gain(self) -> Sequence[status.StatusBase]:
@@ -239,14 +239,14 @@ def load_ion_chambers(config=None):
     for ch_num in config["ion_chamber"]["scaler"]["channels"]:
         # Determine ion_chamber configuration
         preamp_prefix = f"{preamp_ioc}:SR{ch_num-1:02}"
-        desc_pv = f"{vme_ioc}:{scaler_record}.NM{ch_num}"
+        desc_pv = f"{scaler_pv_prefix}.NM{ch_num}"
         # Only use this ion chamber if it has a name
         name = epics.caget(desc_pv)
         if name == "":
             continue
         # Create the ion chamber
         ic = IonChamberWithOffset(
-            prefix=pv_prefix,
+            prefix=scaler_pv_prefix,
             ch_num=ch_num,
             name=name,
             preamp_prefix=preamp_prefix,
