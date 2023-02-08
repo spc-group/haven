@@ -29,8 +29,8 @@ class MotorAxis(BaseModel):
 class MotorPosition(BaseModel):
     name: str
     motors: Sequence[MotorAxis]
-    uid: Optional[str] = None
-    savetime: float
+    uid:Optional[str] = None
+    savetime: Optional[float] = None
 
     def save(self, collection):
         payload = {"name": self.name, "motors": [m.as_dict() for m in self.motors], "savetime": self.savetime}
@@ -46,7 +46,7 @@ class MotorPosition(BaseModel):
             for m in document["motors"]
         ]
         position = Cls(
-            name=document["name"], motors=motor_axes, uid=str(document["_id"]),savetime=document["savetime"]
+            name=document["name"], motors=motor_axes, uid=str(document["_id"]),savetime=document.get("savetime")
         )
         return position
 
