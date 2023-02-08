@@ -10,6 +10,7 @@ from .instrument.instrument_registry import registry
 from . import exceptions
 
 import time
+from datetime import datetime
 
 log = logging.getLogger(__name__)
 
@@ -42,7 +43,7 @@ class MotorPosition(BaseModel):
     def load(Cls, document):
         # Create a MotorPosition object
         motor_axes = [
-            MotorAxis(name=m["name"], readback=m["readback"])
+            MotorAxis(name=m["name"], readback=m["readback"], offset = m.get("offset", None))
             for m in document["motors"]
         ]
         position = Cls(
@@ -57,6 +58,8 @@ def default_collection():
     collection = client.get_database().get_collection("motor_positions")
     return collection
 
+
+# Prepare the motor positions
 def rbv(motor):
     """Helper function to get readback value (rbv)."""
     try:
@@ -71,6 +74,7 @@ def rbv(motor):
         return motor_data.user_readback
     else:
         return motor_data
+
 
 def save_motor_position(*motors, name: str, collection=None):
     """Save the current positions of a number of motors to a database.
@@ -96,9 +100,7 @@ def save_motor_position(*motors, name: str, collection=None):
         collection = default_collection()
     # Resolve device names or labels
     motors = [registry.find(name=m) for m in motors]
-
     # Prepare the motor positions
-
     motor_axes = []
     for m in motors:
         payload = dict(name=m.name, readback=rbv(m))
@@ -113,6 +115,22 @@ def save_motor_position(*motors, name: str, collection=None):
     pos_id = position.save(collection=collection)
     log.info(f"Saved motor position {name} (uid={pos_id})")
     return pos_id
+
+
+def print_output(position):
+    BOLD = "\033[1m"
+    END = "\033[0m"
+    if position.savetime == None:
+        st = None
+    else:
+        st = datetime.fromtimestamp(position.savetime)
+    output = f'\n{BOLD}{position.name}{END} (uid="{position.uid}") savetime={st}\n'
+    for idx, motor in enumerate(position.motors):
+        # Figure out some nice tree aesthetics
+        is_last_motor = idx == (len(position.motors) - 1)
+        box_char = "┗" if is_last_motor else "┣"
+        output += f"{box_char}━{motor.name}: {motor.readback}, offset: {motor.offset}\n"
+    print(output, end="")
 
 
 def list_motor_positions(collection=None):
@@ -134,18 +152,10 @@ def list_motor_positions(collection=None):
     results = collection.find()
     # Go through the results and display them
     were_found = False
-    BOLD = "\033[1m"
-    END = "\033[0m"
     for doc in results:
         were_found = True
         position = MotorPosition.load(doc)
-        output = f'\n{BOLD}{position.name}{END} (uid="{position.uid}") savetime={position.savetime}\n'
-        for idx, motor in enumerate(position.motors):
-            # Figure out some nice tree aesthetics
-            is_last_motor = idx == (len(position.motors) - 1)
-            box_char = "┗" if is_last_motor else "┣"
-            output += f"{box_char}━{motor.name}: {motor.readback}\n"
-        print(output, end="")
+        print_output(position)     
     # Some feedback in the case of empty motor positions
     if not were_found:
         print(f"No motor positions found: {collection}")
@@ -227,7 +237,7 @@ def recall_motor_position(
     yield from bps.mv(*plan_args)
     
 
-def list_current_motor_positions(*motors, name="current motor", collection = None):
+def list_current_motor_positions(*motors, name="current motor", collection=None):
     """list and print the current positions of a number of motors
 
     Parameters
@@ -257,16 +267,7 @@ def list_current_motor_positions(*motors, name="current motor", collection = Non
             payload['offset'] = m.user_offset.get()
         axis = MotorAxis(**payload)
         motor_axes.append(axis)   
-    position = MotorPosition(name=name, motors=motor_axes, savetime=time.time())
-  
-    BOLD = "\033[1m"
-    END = "\033[0m"
-    output = f'\n{BOLD}{position.name}{END}\n'
-    for idx, motor in enumerate(position.motors):
-        # Figure out some nice tree aesthetics
-        is_last_motor = idx == (len(position.motors) - 1)
-        box_char = "┗" if is_last_motor else "┣"
-        output += f"{box_char}━{motor.name}: {motor.readback}, offset: {motor.offset}\n"
-            
+    position = MotorPosition(name=name, motors=motor_axes, uid = None, savetime=time.time())  
+    print_output(position)
+    
 
-    print(output, end="")
