@@ -227,7 +227,7 @@ def recall_motor_position(
     yield from bps.mv(*plan_args)
     
 
-def list_current_motor_positions(*motors, name, collection = None):
+def list_current_motor_positions(*motors, name="current motor", collection = None):
     """list and print the current positions of a number of motors
 
     Parameters
