@@ -1,6 +1,9 @@
 from typing import Sequence, Optional
+import warnings
+import logging
 
 from bluesky.callbacks.best_effort import BestEffortCallback
+from bluesky import plan_stubs as bps
 import pandas as pd
 from lmfit.model import Model
 from lmfit.models import QuadraticModel
@@ -14,7 +17,10 @@ from .align_motor import align_pitch2, align_motor
 __all__ = ["mono_ID_calibration"]
 
 
-def mono_ID_calibration(energies: Sequence, mono_motor: Motor="energy_mono_energy", id_motor: Motor = "energy_id_energy", fit_model: Optional[Model] = None):
+log = logging.getLogger(__name__)
+
+
+def mono_ID_calibration(energies: Sequence, mono_motor: Motor="energy_mono_energy", id_motor: Motor = "energy_id_energy", detector="I0", fit_model: Optional[Model] = None):
     """A bluesky plan to measure the offset between monochromator and
     insertion device energies.
 
@@ -43,6 +49,8 @@ def mono_ID_calibration(energies: Sequence, mono_motor: Motor="energy_mono_energ
     id_motor
       The motor to move for the insertion device (will not be
       scanned).
+    detector
+      The detector to measure.
     fit_model
       A lmfit model object that with determine the final fitting
       parameters for the calibration curve.
@@ -54,30 +62,45 @@ def mono_ID_calibration(energies: Sequence, mono_motor: Motor="energy_mono_energ
     results_df = pd.DataFrame(columns=["id_energy", "mono_energy"])
     # Do each energy point    
     for energy in energies:
-        # Set the mono and ID to the target energy
-        yield from set_energy(energy, positioners=[mono_motor, id_motor])
+        # Set the mono and ID to the target energy to get started
+        yield from set_energy(energy)
         # Align the pitch motor
-        yield from align_pitch2()
+        yield from align_pitch2(detector=detector)
         # Determine maximum mono energy
         bec = BestEffortCallback()
         bec.disable_plots()
         bec.disable_table()
-        detector = registry.find("I0")
-        yield from align_motor(motor=mono_motor, detector=detector)
+        detector_ = registry.find(detector)
+        # yield from align_motor(motor=mono_motor, detector=detector_,
+        #                        distance=400, bec=bec)
+        yield from align_motor(motor=id_motor, detector=detector_,
+                               distance=0.4, bec=bec)        
         # Save the results to the dataframe for fitting later
         peak_center = bec.peaks["cen"]
-        if detector.name in peak_center.keys():
-            results_df.append({
-                "id_energy": id_motor.readback.get(),
-                "mono_energy": bec.peaks["cen"][detector.name],
-            })
+        signal_name = getattr(detector_, "raw_counts", detector_).name
+        if signal_name in peak_center.keys():
+            results_df = results_df.append({
+                "id_energy": bec.peaks["cen"][signal_name],
+                "mono_energy": mono_motor.user_readback.get()
+            }, ignore_index=True,)
+            # results_df = results_df.append({
+            #     "id_energy": id_motor.readback.get(),
+            #     "mono_energy": bec.peaks["cen"][signal_name],
+            # }, ignore_index=True,)
+        print(results_df)
     # Fit the overall mono-ID calibration curve
     if fit_model is None:
         fit_model = QuadraticModel(nan_policy="omit")
     y = results_df.id_energy
     x = results_df.mono_energy
     params = fit_model.guess(y, x=x)
-    fit = fit_model.fit(y, params, x=x)
-    fit_model.fit_result = fit
-    # Print the results of the fit
-    print(fit)
+    try:
+        fit = fit_model.fit(y, params, x=x)
+    except Exception as e:
+        log.warning(str(e))
+        warnings.warn(str(e))
+        print(fit_model, results_df)
+    else:
+        fit_model.fit_result = fit
+        print(fit_model, fit, results_df)
+    fit_model.results_df = results_df

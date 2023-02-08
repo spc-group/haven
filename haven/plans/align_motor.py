@@ -15,7 +15,7 @@ log = logging.getLogger(__name__)
 __all__ = ["align_motor", "align_pitch2"]
 
 
-def align_pitch2(distance=200, reverse=False, bec=None, md={}):
+def align_pitch2(distance=200, reverse=False, detector="I0", bec=None, md={}):
     """Tune the monochromator 2nd crystal pitch motor.
 
     Find and set the position of maximum intensity in the ion chamber
@@ -32,6 +32,8 @@ def align_pitch2(distance=200, reverse=False, bec=None, md={}):
       Relative distance to scan in either direction.
     reverse
       Whether the scan goes low-to-high (False) or high-to-low (True).
+    detector
+      Which detector name to use.
     md
       Extra metadata to pass into the run engine.
 
@@ -39,10 +41,9 @@ def align_pitch2(distance=200, reverse=False, bec=None, md={}):
     md_ = dict(plan_name="align_pitch2")
     md_.update(md)
     # Get motors
-    I0 = registry.find(name="I0")
     pitch2 = registry.find(name="monochromator_pitch2")
     # Prepare and run the plan
-    yield from align_motor(detector=I0, motor=pitch2,
+    yield from align_motor(detector=detector, motor=pitch2,
                            distance=distance, reverse=reverse,
                            bec=bec, md=md_)
 
@@ -78,10 +79,10 @@ def align_motor(detector, motor, distance=200, reverse=False, bec=None, md={}):
     start, end = (distance, -distance) if reverse else (-distance, distance)
     # Resolve motors and detectors
     motor = registry.find(motor)
-    detector = registry.find(detector)
-    detectors = [detector]
-    if hasattr(detector, 'raw_counts'):
-        detectors.append(detector.raw_counts)
+    det = registry.find(detector)
+    detectors = [det]
+    if hasattr(det, 'raw_counts'):
+        detectors.insert(0, det.raw_counts)
     plan = lineup(
         detectors, motor, start, end, npts=40, feature="cen", bec=bec, md=md_
     )
@@ -90,16 +91,19 @@ def align_motor(detector, motor, distance=200, reverse=False, bec=None, md={}):
     # Wait for the callback to catch up
     t0 = time.time()
     timeout = 5
+    det_name = detectors[0].name
     while time.time() - t0 < timeout:
-        new_value = bec.peaks["cen"].get(detectors[0].name)
+        new_value = bec.peaks["max"].get(det_name)
         if new_value is not None:
+            new_value = new_value[0]
             break
-    # Set the motor to the new value (from below accounting for hysteresis)        
+    # Set the motor to the new value (from below accounting for hysteresis)
     if new_value is None:
         # Didn't find a peak position
-        msg = f"No peak position found, motor '{motor.name}' will not be set."
+        msg = (f"No peak position found for {det_name},"
+               f"motor '{motor.name}' will not be set.")
         log.error(msg)
         warnings.warn(msg)
     else:
-        yield from bps.mv(motor, start)
+        yield from bps.mv(motor, new_value - abs(end-start)/2)
         yield from bps.mv(motor, new_value)
