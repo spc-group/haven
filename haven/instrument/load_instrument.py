@@ -1,5 +1,7 @@
 from typing import Mapping
 
+from ophyd import sim
+
 from .instrument_registry import registry as default_registry, InstrumentRegistry
 from .energy_positioner import load_energy_positioner
 from .motor import load_all_motors
@@ -39,6 +41,7 @@ def load_instrument(registry: InstrumentRegistry = default_registry,
     if config is None:
         config = load_config()
     # Import each device type for the instrument
+    load_simulated_devices(config=config)
     load_energy_positioner(config=config)
     load_ion_chambers(config=config)
     load_all_motors(config=config)
@@ -46,3 +49,18 @@ def load_instrument(registry: InstrumentRegistry = default_registry,
     load_cameras(config=config)
     load_shutters(config=config)
     load_stages(config=config)
+
+
+def load_simulated_devices(config={}):
+    # Motors
+    motor = sim.SynAxis(name="sim_motor", labels={"motors"})
+    default_registry.register(motor)
+    # Detectors
+    detector = sim.SynGauss(
+        name="sim_detector",
+        motor=motor,
+        motor_field="sim_motor",
+        center=0,
+        Imax=1,
+    )
+    default_registry.register(detector)
