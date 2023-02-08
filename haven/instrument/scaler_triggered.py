@@ -1,21 +1,29 @@
 from ophyd import (
     Device,
+    Component,
+    FormattedComponent,
+    EpicsSignal,
+    EpicsSignalRO,
 )
 
 
 __all__ = ["ScalerTriggered"]
 
 
-class ScalerTriggered(Device):
-    def __init__(self, prefix="", *, scaler_prefix=None, **kwargs):
-        # Determine which prefix to use for the scaler
-        if scaler_prefix is not None:
-            self.scaler_prefix = scaler_prefix
-        else:
-            self.scaler_prefix = prefix
-        super().__init__(prefix, **kwargs)
-
+class ScalerTriggered():
+    scaler_prefix = None
+    _statuses = {}
+    
     def trigger(self, *args, **kwargs):
+        is_top_device = getattr(self, 'parent', None) is None
+        if is_top_device:
+            # This is the top-level device, so trigger it
+            return self._trigger_scaler(*args, **kwargs)
+        else:
+            # This is a sub-component of a device, so trigger the parent
+            self.parent.trigger()
+
+    def _trigger_scaler(self, *args, **kwargs):
         # Figure out if there's already a trigger active
         previous_status = self._statuses.get(self.scaler_prefix)
         is_idle = previous_status is None or previous_status.done
@@ -26,3 +34,10 @@ class ScalerTriggered(Device):
         else:
             new_status = previous_status
         return new_status
+
+
+class ScalerSignal(ScalerTriggered, EpicsSignal):
+    ...
+    
+class ScalerSignalRO(ScalerTriggered, EpicsSignalRO):
+    ...

@@ -8,6 +8,7 @@ from ophyd import (
     Device,
     status,
     EpicsSignal,
+    EpicsSignalRO,
     PVPositionerPC,
     PVPositioner,
     PseudoPositioner,
@@ -19,11 +20,9 @@ from ophyd import (
 )
 from ophyd.pseudopos import pseudo_position_argument, real_position_argument
 
+from .scaler_triggered import ScalerTriggered, ScalerSignal, ScalerSignalRO
 from .instrument_registry import registry
 from .._iconfig import load_config
-
-# from ..signal import Signal, SignalRO
-from ophyd import EpicsSignal as Signal, EpicsSignalRO as SignalRO
 from .. import exceptions
 
 
@@ -80,7 +79,7 @@ class SensitivityLevelPositioner(PseudoPositioner):
 
 
 # @registry.register
-class IonChamber(Device):
+class IonChamber(ScalerTriggered, Device):
     """An ion chamber at a spectroscopy beamline.
 
     Also includes the pre-amplifier as ``.pre_amp``.
@@ -121,12 +120,12 @@ class IonChamber(Device):
 
     ch_num: int = 0
     ch_char: str
-    _statuses = {}
-    count: OphydObject = FCpt(Signal, "{scaler_prefix}.CNT", trigger_value=1, kind=Kind.omitted)
-    raw_counts: OphydObject = FCpt(SignalRO, "{prefix}.S{ch_num}", kind="hinted")
-    volts: OphydObject = FCpt(SignalRO, "{prefix}_calc{ch_num}.VAL", kind="hinted")
-    exposure_time: OphydObject = FCpt(Signal, "{scaler_prefix}.TP", kind="normal")
-    sensitivity = FCpt(SensitivityLevelPositioner, "{preamp_prefix}", kind="config")
+    count: OphydObject = FCpt(EpicsSignal, "{scaler_prefix}.CNT", trigger_value=1, kind=Kind.omitted)
+    raw_counts: OphydObject = FCpt(ScalerSignalRO, "{prefix}.S{ch_num}", kind="hinted")
+    volts: OphydObject = FCpt(ScalerSignalRO, "{prefix}_calc{ch_num}.VAL", kind="hinted")
+    exposure_time: OphydObject = FCpt(EpicsSignal, "{scaler_prefix}.TP", kind="normal")
+    sensitivity: OphydObject = FCpt(SensitivityLevelPositioner, "{preamp_prefix}", kind="config")
+    auto_count: OphydObject = FCpt(EpicsSignal, "{scaler_prefix}.CONT", kind="config")
 
     def __init__(
         self,
@@ -154,6 +153,8 @@ class IonChamber(Device):
         self.preamp_prefix = preamp_prefix
         # Initialize all the other Device stuff
         super().__init__(prefix=prefix, name=name, *args, **kwargs)
+        # Set signal values to stage
+        self.stage_sigs[self.auto_count] = 0
 
     def change_sensitivity(self, step: int) -> status.StatusBase:
         """Change the gain on the pre-amp by the given number of steps.
@@ -204,23 +205,11 @@ class IonChamber(Device):
         """
         return self.change_sensitivity(1)
 
-    def trigger(self, *args, **kwargs):
-        # Figure out if there's already a trigger active
-        previous_status = self._statuses.get(self.scaler_prefix)
-        is_idle = previous_status is None or previous_status.done
-        # Trigger the detector if not already running, and update the status dict
-        if is_idle:
-            new_status = super().trigger(*args, **kwargs)
-            self._statuses[self.scaler_prefix] = new_status
-        else:
-            new_status = previous_status
-        return new_status
-
 
 @registry.register
 class IonChamberWithOffset(IonChamber):
-    offset = FCpt(SignalRO, "{prefix}_offset0.{ch_char}", kind=Kind.config)
-    net_counts = FCpt(SignalRO, "{prefix}_netA.{ch_char}", kind=Kind.hinted)
+    offset = FCpt(ScalerSignalRO, "{prefix}_offset0.{ch_char}", kind=Kind.config)
+    net_counts = FCpt(ScalerSignalRO, "{prefix}_netA.{ch_char}", kind=Kind.hinted)
 
     _default_read_attrs = [
         "raw_counts",
