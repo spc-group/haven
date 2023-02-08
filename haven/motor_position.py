@@ -15,7 +15,7 @@ from datetime import datetime
 log = logging.getLogger(__name__)
 
 
-__all__ = ["save_motor_position", "list_motor_positions", "recall_motor_position"]
+__all__ = ["save_motor_position", "list_motor_positions", "recall_motor_position", "list_current_motor_positions"]
 
 
 class MotorAxis(BaseModel):
@@ -30,8 +30,8 @@ class MotorAxis(BaseModel):
 class MotorPosition(BaseModel):
     name: str
     motors: Sequence[MotorAxis]
-    uid: Optional[str] = None
-    savetime: float
+    uid:Optional[str] = None
+    savetime: Optional[float] = None
 
     def save(self, collection):
         payload = {"name": self.name, "motors": [m.as_dict() for m in self.motors], "savetime": self.savetime}
@@ -47,7 +47,7 @@ class MotorPosition(BaseModel):
             for m in document["motors"]
         ]
         position = Cls(
-            name=document["name"], motors=motor_axes, uid=str(document["_id"]),savetime=document["savetime"]
+            name=document["name"], motors=motor_axes, uid=str(document["_id"]),savetime=document.get("savetime")
         )
         return position
 
@@ -100,7 +100,7 @@ def save_motor_position(*motors, name: str, collection=None):
         collection = default_collection()
     # Resolve device names or labels
     motors = [registry.find(name=m) for m in motors]
-
+    # Prepare the motor positions
     motor_axes = []
     for m in motors:
         payload = dict(name=m.name, readback=rbv(m))
@@ -120,7 +120,11 @@ def save_motor_position(*motors, name: str, collection=None):
 def print_output(position):
     BOLD = "\033[1m"
     END = "\033[0m"
-    output = f'\n{BOLD}{position.name}{END} (uid="{position.uid}") savetime={datetime.fromtimestamp(position.savetime)}\n'
+    if position.savetime == None:
+        st = None
+    else:
+        st = datetime.fromtimestamp(position.savetime)
+    output = f'\n{BOLD}{position.name}{END} (uid="{position.uid}") savetime={st}\n'
     for idx, motor in enumerate(position.motors):
         # Figure out some nice tree aesthetics
         is_last_motor = idx == (len(position.motors) - 1)
@@ -231,10 +235,9 @@ def recall_motor_position(
         plan_args.append(motor)
         plan_args.append(axis.readback)
     yield from bps.mv(*plan_args)
+    
 
-
-
-def list_current_motor_positions(*motors, name, collection = None):
+def list_current_motor_positions(*motors, name="current motor", collection=None):
     """list and print the current positions of a number of motors
 
     Parameters
@@ -267,4 +270,4 @@ def list_current_motor_positions(*motors, name, collection = None):
     position = MotorPosition(name=name, motors=motor_axes, uid = None, savetime=time.time())  
     print_output(position)
     
-    
+

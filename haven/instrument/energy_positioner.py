@@ -64,7 +64,7 @@ class EnergyPositioner(PseudoPositioner):
       f"{id_prefix}:Energy.VAL" reaches the energy readback value.
 
     """
-    id_offset: float = 155.  # In eV
+    id_offset: float = 300.  # In eV
 
     # Pseudo axes
     energy: OphydObject = Cpt(PseudoSingle)

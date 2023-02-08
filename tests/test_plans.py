@@ -1,3 +1,10 @@
+"""An assortment of tests for plans defined in Haven.
+
+NOTE: This file uses the older unittest framework. We have since moved
+to pytest, and new tests should be added to a plan-specific test file.
+
+"""
+
 import unittest
 import warnings
 
@@ -7,10 +14,6 @@ import pytest
 
 from run_engine import RunEngineStub
 from haven import align_slits, energy_scan, xafs_scan, registry, KRange
-
-
-def my_callback(name, doc):
-    print(name, doc)
 
 
 class PlanUnitTests(unittest.TestCase):

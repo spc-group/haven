@@ -182,7 +182,7 @@ def test_motor_position_e2e(mongodb, ioc_motor):
     msg = next(plan)
     assert msg.obj.name == "SLT V Upper"
     assert msg.args[0] == 504.6
-    
+
 
 @time_machine.travel(fake_time, tick=False)    
 def test_list_current_motor_positions(mongodb,capsys):
@@ -211,3 +211,4 @@ def test_list_current_motor_positions(mongodb,capsys):
         "┗━Motor B: 23.0, offset: 0.0\n"
     )
     assert captured.out == expected
+

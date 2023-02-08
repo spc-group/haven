@@ -44,16 +44,13 @@ ioc_branch = "UP"  # For caQtDM macros
 [ion_chamber.scaler]
 ioc = "scaler_ioc"
 record = "scaler1"
+channels = [2]
 
 [ion_chamber.preamp]
 
 ioc = "preamp_ioc"
 
 # Keys for ion_chamber definitions must begin with "ch" (e.g. "ch1", "ch2")
-
-[ion_chamber.ch2]
-
-preamp_record = "SR570_1"
 
 [fluorescence_detector]
 
