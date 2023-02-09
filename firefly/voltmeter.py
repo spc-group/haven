@@ -1,7 +1,7 @@
 import logging
 
 from pydm.widgets.channel import PyDMChannel
-from haven.instrument.ion_chamber import IonChamber, pv_prefix
+from haven.instrument.ion_chamber import IonChamber, scaler_pv_prefix
 from haven import load_config
 
 from firefly import display
@@ -30,7 +30,7 @@ class VoltmeterDisplay(display.FireflyDisplay):
         if self._device is None:
             if ch_num is not None:
                 # Create a new device
-                self._device = IonChamber(ch_num=ch_num, prefix=pv_prefix, preamp_prefix=preamp_prefix, name=f"ion chamber {ch_num}")
+                self._device = IonChamber(ch_num=ch_num, prefix=scaler_pv_prefix, preamp_prefix=preamp_prefix, name=f"ion chamber {ch_num}")
                 log.debug(f"Voltmeter created new device: {self._device}")
             else:
                 log.warning(f"No device loaded for voltmeter: {self.macros}.")

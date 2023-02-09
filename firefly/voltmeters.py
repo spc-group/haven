@@ -1,10 +1,15 @@
 import json
+import warnings
+import logging
 
 from pydm.widgets import PyDMEmbeddedDisplay
 import haven
 
 from firefly import display
 # from .voltmeter import VoltmeterDisplay
+
+
+log = logging.getLogger(__name__)
 
 
 class VoltmetersDisplay(display.FireflyDisplay):
@@ -22,7 +27,12 @@ class VoltmetersDisplay(display.FireflyDisplay):
         for idx in reversed(range(self.voltmeters_layout.count())):
             self.voltmeters_layout.takeAt(idx).widget().deleteLater()
         # Add embedded displays for all the ion chambers
-        ion_chambers = haven.registry.findall(label="ion_chambers")
+        try:
+            ion_chambers = haven.registry.findall(label="ion_chambers")
+        except haven.exceptions.ComponentNotFound as e:
+            warnings.warn(str(e))
+            log.warning(e)
+            ion_chambers = []
         for ic in sorted(ion_chambers, key=lambda c: c.ch_num):
             disp = PyDMEmbeddedDisplay(parent=self)
             disp.macros = json.dumps({"CHANNEL_NUMBER": ic.ch_num,
