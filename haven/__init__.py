@@ -22,6 +22,7 @@ from .motor_position import (  # noqa: F401
     list_motor_positions,
     get_motor_position,
     recall_motor_position,
+    list_current_motor_positions,
 )
 from .instrument import (  # noqa: F401
     ion_chamber,

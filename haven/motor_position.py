@@ -10,11 +10,12 @@ from .instrument.instrument_registry import registry
 from . import exceptions
 
 import time
+from datetime import datetime
 
 log = logging.getLogger(__name__)
 
 
-__all__ = ["save_motor_position", "list_motor_positions", "recall_motor_position"]
+__all__ = ["save_motor_position", "list_motor_positions", "recall_motor_position", "list_current_motor_positions"]
 
 
 class MotorAxis(BaseModel):
@@ -29,8 +30,8 @@ class MotorAxis(BaseModel):
 class MotorPosition(BaseModel):
     name: str
     motors: Sequence[MotorAxis]
-    uid: Optional[str] = None
-    savetime: float
+    uid:Optional[str] = None
+    savetime: Optional[float] = None
 
     def save(self, collection):
         payload = {"name": self.name, "motors": [m.as_dict() for m in self.motors], "savetime": self.savetime}
@@ -42,11 +43,11 @@ class MotorPosition(BaseModel):
     def load(Cls, document):
         # Create a MotorPosition object
         motor_axes = [
-            MotorAxis(name=m["name"], readback=m["readback"])
+            MotorAxis(name=m["name"], readback=m["readback"], offset = m.get("offset", None))
             for m in document["motors"]
         ]
         position = Cls(
-            name=document["name"], motors=motor_axes, uid=str(document["_id"]),savetime=document["savetime"]
+            name=document["name"], motors=motor_axes, uid=str(document["_id"]),savetime=document.get("savetime")
         )
         return position
 
@@ -56,6 +57,23 @@ def default_collection():
     client = catalog._asset_registry_db.client
     collection = client.get_database().get_collection("motor_positions")
     return collection
+
+
+# Prepare the motor positions
+def rbv(motor):
+    """Helper function to get readback value (rbv)."""
+    try:
+        # Wrap this in a try block because not every signal has this argument
+        motor_data = motor.get(use_monitor=False)
+    except TypeError:
+        log.debug("Failed to do get() with ``use_monitor=False``")
+        motor_data = motor.get()
+    if hasattr(motor_data, "readback"):
+        return motor_data.readback
+    elif hasattr(motor_data, "user_readback"):
+        return motor_data.user_readback
+    else:
+        return motor_data
 
 
 def save_motor_position(*motors, name: str, collection=None):
@@ -82,23 +100,7 @@ def save_motor_position(*motors, name: str, collection=None):
         collection = default_collection()
     # Resolve device names or labels
     motors = [registry.find(name=m) for m in motors]
-
     # Prepare the motor positions
-    def rbv(motor):
-        """Helper function to get readback value (rbv)."""
-        try:
-            # Wrap this in a try block because not every signal has this argument
-            motor_data = motor.get(use_monitor=False)
-        except TypeError:
-            log.debug("Failed to do get() with ``use_monitor=False``")
-            motor_data = motor.get()
-        if hasattr(motor_data, "readback"):
-            return motor_data.readback
-        elif hasattr(motor_data, "user_readback"):
-            return motor_data.user_readback
-        else:
-            return motor_data
-
     motor_axes = []
     for m in motors:
         payload = dict(name=m.name, readback=rbv(m))
@@ -113,6 +115,22 @@ def save_motor_position(*motors, name: str, collection=None):
     pos_id = position.save(collection=collection)
     log.info(f"Saved motor position {name} (uid={pos_id})")
     return pos_id
+
+
+def print_output(position):
+    BOLD = "\033[1m"
+    END = "\033[0m"
+    if position.savetime == None:
+        st = None
+    else:
+        st = datetime.fromtimestamp(position.savetime)
+    output = f'\n{BOLD}{position.name}{END} (uid="{position.uid}") savetime={st}\n'
+    for idx, motor in enumerate(position.motors):
+        # Figure out some nice tree aesthetics
+        is_last_motor = idx == (len(position.motors) - 1)
+        box_char = "┗" if is_last_motor else "┣"
+        output += f"{box_char}━{motor.name}: {motor.readback}, offset: {motor.offset}\n"
+    print(output, end="")
 
 
 def list_motor_positions(collection=None):
@@ -134,18 +152,10 @@ def list_motor_positions(collection=None):
     results = collection.find()
     # Go through the results and display them
     were_found = False
-    BOLD = "\033[1m"
-    END = "\033[0m"
     for doc in results:
         were_found = True
         position = MotorPosition.load(doc)
-        output = f'\n{BOLD}{position.name}{END} (uid="{position.uid}") savetime={position.savetime}\n'
-        for idx, motor in enumerate(position.motors):
-            # Figure out some nice tree aesthetics
-            is_last_motor = idx == (len(position.motors) - 1)
-            box_char = "┗" if is_last_motor else "┣"
-            output += f"{box_char}━{motor.name}: {motor.readback}\n"
-        print(output, end="")
+        print_output(position)     
     # Some feedback in the case of empty motor positions
     if not were_found:
         print(f"No motor positions found: {collection}")
@@ -225,3 +235,39 @@ def recall_motor_position(
         plan_args.append(motor)
         plan_args.append(axis.readback)
     yield from bps.mv(*plan_args)
+    
+
+def list_current_motor_positions(*motors, name="current motor", collection=None):
+    """list and print the current positions of a number of motors
+
+    Parameters
+    ==========
+    *motors
+      The list of motors (or motor names/labels) whose position to
+      save.
+    name
+      A human-readable name for this position (e.g. "sample center")
+    collection
+      A pymongo collection object to receive the data. Meant for
+      testing.
+
+    """
+    # Get default collection if none was given
+    if collection is None:
+        collection = default_collection()
+    
+    # Resolve device names or labels
+    motors = [registry.find(name=m) for m in motors]
+  
+    motor_axes = []
+    for m in motors:
+        payload = dict(name=m.name, readback=rbv(m))
+        # Save the calibration offset for motors
+        if hasattr(m, 'user_offset'):
+            payload['offset'] = m.user_offset.get()
+        axis = MotorAxis(**payload)
+        motor_axes.append(axis)   
+    position = MotorPosition(name=name, motors=motor_axes, uid = None, savetime=time.time())  
+    print_output(position)
+    
+
