@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 
 from pydm.main_window import PyDMMainWindow
 # from qtpy.QtCore import Slot
@@ -55,6 +56,10 @@ class FireflyMainWindow(PyDMMainWindow):
         return action
 
     def customize_ui(self):
+        # Add window icon
+        root_dir = Path(__file__).parent.absolute()
+        icon_path = root_dir / 'splash.png'
+        self.setWindowIcon(QtGui.QIcon(str(icon_path)))
         # Hide the nav bar
         if self.hide_nav_bar:
             self.toggle_nav_bar(False)

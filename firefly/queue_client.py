@@ -1,10 +1,11 @@
 import time
 from typing import Optional
 import logging
+import warnings
 
 from qtpy.QtCore import QThread, QObject, Signal, Slot, QTimer
 from bluesky_queueserver_api.zmq import REManagerAPI
-from bluesky_queueserver_api import BPlan
+from bluesky_queueserver_api import BPlan, comm_base
 
 from haven import RunEngine
 
@@ -26,6 +27,8 @@ class QueueClientThread(QThread):
 class QueueClient(QObject):
     api: REManagerAPI
     _last_queue_length: Optional[int] = None
+    last_update: float = -1
+    timeout: float = 1
 
     # Signals responding to queue changes
     state_changed = Signal()
@@ -36,8 +39,23 @@ class QueueClient(QObject):
         super().__init__(*args, **kwargs)
 
     def update(self):
-        log.debug("Updating queue client.")
-        self.check_queue_length()
+        now = time.time()
+        if now >= self.last_update + self.timeout:
+            log.debug("Updating queue client.")
+            try:
+                self.check_queue_length()
+            except comm_base.RequestTimeoutError as e:
+                # If we can't reach the server, wait for a minute and retry
+                self.timeout = min(60, self.timeout * 2)
+                log.warn(str(e))
+                warnings.warn(str(e))
+                log.info(f"Retrying in {self.timeout} seconds.")
+            else:
+                # Update succeeded, so wait for a second
+                self.timeout = 1
+            finally:
+                self.last_update = now
+        
 
     @Slot(bool)
     def request_pause(self, defer: bool = True):
