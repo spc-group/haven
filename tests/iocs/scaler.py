@@ -15,6 +15,7 @@ class IOC(IOC_):
     CNT = pvproperty(name=".CNT", value=1)
     TP = pvproperty(name=".TP", value=1.0)
     calc2 = pvproperty(name="_calc2.VAL", value=2.35)
+    CONT = pvproperty(name=".CONT", value=1, doc="Autocount")
 
     default_prefix = "vme_crate_ioc"
 

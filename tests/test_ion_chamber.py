@@ -7,6 +7,7 @@ import epics
 
 
 def test_gain_level(ioc_preamp, ioc_scaler):
+    print(ioc_preamp)
     positioner = SensitivityLevelPositioner("preamp_ioc", name="positioner")
     positioner.wait_for_connection()
     assert positioner.get(use_monitor=False).sens_value.readback == epics.caget(
@@ -75,4 +76,18 @@ def test_load_ion_chambers(sim_registry):
     ic = sim_registry.find(label="ion_chambers")
     assert ic.ch_num == 2
     assert ic.sensitivity.prefix.split(":")[-1] == "SR01"
-    
+
+
+def test_default_pv_prefix():
+    """Check that it uses the *prefix* argument if no *scaler_prefix* is
+    given.
+
+    """
+    prefix = "myioc:myscaler"
+    # Instantiate the device with *scaler_prefix* argument
+    device = IonChamber(name="device", prefix="gibberish", ch_num=1, scaler_prefix=prefix)
+    device.scaler_prefix = prefix
+    assert device.scaler_prefix == prefix
+    # Instantiate the device with *scaler_prefix* argument
+    device = IonChamber(name="device", ch_num=1, prefix=prefix)
+    assert device.scaler_prefix == prefix

@@ -15,7 +15,7 @@ log = logging.getLogger(__name__)
 __all__ = ["align_motor", "align_pitch2"]
 
 
-def align_pitch2(distance=200, reverse=False, detector="I0", bec=None, md={}):
+def align_pitch2(distance=200, reverse=False, detector="I0", bec=None, feature="cen", md={}):
     """Tune the monochromator 2nd crystal pitch motor.
 
     Find and set the position of maximum intensity in the ion chamber
@@ -34,6 +34,8 @@ def align_pitch2(distance=200, reverse=False, detector="I0", bec=None, md={}):
       Whether the scan goes low-to-high (False) or high-to-low (True).
     detector
       Which detector name to use.
+    feature
+      Which feature of the peak to use for alignment.
     md
       Extra metadata to pass into the run engine.
 
@@ -45,10 +47,10 @@ def align_pitch2(distance=200, reverse=False, detector="I0", bec=None, md={}):
     # Prepare and run the plan
     yield from align_motor(detector=detector, motor=pitch2,
                            distance=distance, reverse=reverse,
-                           bec=bec, md=md_)
+                           bec=bec, feature=feature, md=md_)
 
 
-def align_motor(detector, motor, distance=200, reverse=False, bec=None, md={}):
+def align_motor(detector, motor, distance=200, reverse=False, bec=None, feature="cen", md={}):
     """Center the given motor using the beam intensity.
 
     Find and set the position of maximum intensity in the ion chamber
@@ -65,6 +67,8 @@ def align_motor(detector, motor, distance=200, reverse=False, bec=None, md={}):
       Relative distance to scan in either direction.
     reverse
       Whether the scan goes low-to-high (False) or high-to-low (True).
+    feature
+      Which feature of the peak to use for alignment.
     md
       Extra metadata to pass into the run engine.
 
@@ -84,7 +88,7 @@ def align_motor(detector, motor, distance=200, reverse=False, bec=None, md={}):
     if hasattr(det, 'raw_counts'):
         detectors.insert(0, det.raw_counts)
     plan = lineup(
-        detectors, motor, start, end, npts=40, feature="cen", bec=bec, md=md_
+        detectors, motor, start, end, npts=40, feature=feature, bec=bec, md=md_
     )
     plan = subs_wrapper(plan, bec)
     yield from plan
@@ -93,9 +97,11 @@ def align_motor(detector, motor, distance=200, reverse=False, bec=None, md={}):
     timeout = 5
     det_name = detectors[0].name
     while time.time() - t0 < timeout:
-        new_value = bec.peaks["max"].get(det_name)
+        new_value = bec.peaks[feature].get(det_name)
         if new_value is not None:
-            new_value = new_value[0]
+            if feature in ["max", "min"]:
+                # Max and min also include the y-value
+                new_value, y_value = new_value
             break
     # Set the motor to the new value (from below accounting for hysteresis)
     if new_value is None:

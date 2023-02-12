@@ -11,6 +11,20 @@ __all__ = ["ScalerTriggered"]
 
 
 class ScalerTriggered():
+    """A mix-in for triggering a device using the scaler.
+
+    The device does not have to be a channel on the scaler, enabling
+    hardware triggering of other devices.
+
+    If this is a used as part of a component, then triggering is left
+    up to the parent device.
+
+    If this is used as part of a top-level Device, then the device
+    should have a *scaler_prefix* attribute with the PV prefix to the
+    scaler (e.g. "25idcVME:scaler1"), though this is only used to
+    coordinate statuses for multiple devices using the same scaler.
+
+    """
     scaler_prefix = None
     _statuses = {}
     

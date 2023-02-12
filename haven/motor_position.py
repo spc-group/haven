@@ -117,14 +117,23 @@ def save_motor_position(*motors, name: str, collection=None):
     return pos_id
 
 
-def print_output(position):
+def print_motor_position(position):
     BOLD = "\033[1m"
     END = "\033[0m"
-    if position.savetime == None:
-        st = None
+    # Prepare metadata strings for the header
+    metadata = []
+    if position.uid is not None:
+        metadata.append(f'uid="{position.uid}"')
+    if position.savetime is not None:
+        ts_str = f"timestamp={datetime.fromtimestamp(position.savetime)}"
+        metadata.append(ts_str)
+    if len(metadata) > 0:
+        metadata_str = f" ({', '.join(metadata)})"
     else:
-        st = datetime.fromtimestamp(position.savetime)
-    output = f'\n{BOLD}{position.name}{END} (uid="{position.uid}") savetime={st}\n'
+        metadata_str = ""
+    # Write the output header
+    output = f'\n{BOLD}{position.name}{END}{metadata_str}\n'
+    # Write the motor positions
     for idx, motor in enumerate(position.motors):
         # Figure out some nice tree aesthetics
         is_last_motor = idx == (len(position.motors) - 1)
@@ -155,7 +164,7 @@ def list_motor_positions(collection=None):
     for doc in results:
         were_found = True
         position = MotorPosition.load(doc)
-        print_output(position)     
+        print_motor_position(position)     
     # Some feedback in the case of empty motor positions
     if not were_found:
         print(f"No motor positions found: {collection}")
@@ -237,7 +246,7 @@ def recall_motor_position(
     yield from bps.mv(*plan_args)
     
 
-def list_current_motor_positions(*motors, name="current motor", collection=None):
+def list_current_motor_positions(*motors, name="current motor"):
     """list and print the current positions of a number of motors
 
     Parameters
@@ -247,18 +256,11 @@ def list_current_motor_positions(*motors, name="current motor", collection=None)
       save.
     name
       A human-readable name for this position (e.g. "sample center")
-    collection
-      A pymongo collection object to receive the data. Meant for
-      testing.
 
     """
-    # Get default collection if none was given
-    if collection is None:
-        collection = default_collection()
-    
     # Resolve device names or labels
     motors = [registry.find(name=m) for m in motors]
-  
+    # Build the list of motor positions
     motor_axes = []
     for m in motors:
         payload = dict(name=m.name, readback=rbv(m))
@@ -267,7 +269,8 @@ def list_current_motor_positions(*motors, name="current motor", collection=None)
             payload['offset'] = m.user_offset.get()
         axis = MotorAxis(**payload)
         motor_axes.append(axis)   
-    position = MotorPosition(name=name, motors=motor_axes, uid = None, savetime=time.time())  
-    print_output(position)
+    position = MotorPosition(name=name, motors=motor_axes, uid=None, savetime=time.time())
+    # Display the current motor positions
+    print_motor_position(position)
     
 

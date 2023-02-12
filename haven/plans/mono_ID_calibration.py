@@ -20,7 +20,7 @@ __all__ = ["mono_ID_calibration"]
 log = logging.getLogger(__name__)
 
 
-def mono_ID_calibration(energies: Sequence, mono_motor: Motor="energy_mono_energy", id_motor: Motor = "energy_id_energy", detector="I0", fit_model: Optional[Model] = None):
+def mono_ID_calibration(energies: Sequence, mono_motor: Motor="energy_mono_energy", id_motor: Motor = "energy_id_energy", energy_motor: Motor="energy", detector="I0", fit_model: Optional[Model] = None):
     """A bluesky plan to measure the offset between monochromator and
     insertion device energies.
 
@@ -49,6 +49,9 @@ def mono_ID_calibration(energies: Sequence, mono_motor: Motor="energy_mono_energ
     id_motor
       The motor to move for the insertion device (will not be
       scanned).
+    energy_motor
+      The motor to move when initially setting the energy for each
+      point.
     detector
       The detector to measure.
     fit_model
@@ -63,7 +66,7 @@ def mono_ID_calibration(energies: Sequence, mono_motor: Motor="energy_mono_energ
     # Do each energy point    
     for energy in energies:
         # Set the mono and ID to the target energy to get started
-        yield from set_energy(energy)
+        yield from set_energy(energy, positioners=[energy_motor])
         # Align the pitch motor
         yield from align_pitch2(detector=detector)
         # Determine maximum mono energy
@@ -71,22 +74,20 @@ def mono_ID_calibration(energies: Sequence, mono_motor: Motor="energy_mono_energ
         bec.disable_plots()
         bec.disable_table()
         detector_ = registry.find(detector)
-        # yield from align_motor(motor=mono_motor, detector=detector_,
-        #                        distance=400, bec=bec)
         yield from align_motor(motor=id_motor, detector=detector_,
-                               distance=0.4, bec=bec)        
+                               distance=0.4, bec=bec)
         # Save the results to the dataframe for fitting later
         peak_center = bec.peaks["cen"]
         signal_name = getattr(detector_, "raw_counts", detector_).name
+        try:
+            mono_energy = mono_motor.user_readback.get()
+        except AttributeError:
+            mono_energy = mono_motor.readback.get()
         if signal_name in peak_center.keys():
             results_df = results_df.append({
                 "id_energy": bec.peaks["cen"][signal_name],
-                "mono_energy": mono_motor.user_readback.get()
+                "mono_energy": mono_energy,
             }, ignore_index=True,)
-            # results_df = results_df.append({
-            #     "id_energy": id_motor.readback.get(),
-            #     "mono_energy": bec.peaks["cen"][signal_name],
-            # }, ignore_index=True,)
         print(results_df)
     # Fit the overall mono-ID calibration curve
     if fit_model is None:

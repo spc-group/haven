@@ -7,7 +7,7 @@ from datetime import datetime
 
 import epics
 import pytest
-from ophyd.sim import motor1
+from ophyd.sim import motor1, SynAxis
 from ophyd import EpicsMotor
 from haven import (
     save_motor_position,
@@ -44,6 +44,8 @@ def test_save_motor_position_by_device(mongodb, ioc_motor):
     # Create motor devices
     motorA = HavenMotor("vme_crate_ioc:m1", name="Motor A")
     motorB = HavenMotor("vme_crate_ioc:m2", name="Motor B")
+    motorA.wait_for_connection()
+    motorB.wait_for_connection()
     # Get the values to give the IOC a chance to spin up
     assert epics.caget("vme_crate_ioc:m1.VAL", use_monitor=False, timeout=IOC_timeout) is not None
     assert epics.caget("vme_crate_ioc:m2.VAL", use_monitor=False, timeout=IOC_timeout) is not None    
@@ -145,7 +147,7 @@ def test_list_motor_positions(mongodb, capsys):
     assert len(captured.out) > 0
     uid = str(mongodb.motor_positions.find_one({"name": "Good position A"})["_id"])
     expected = (
-        f'\n\033[1mGood position A\033[0m (uid="{uid}") savetime={datetime.fromtimestamp(time.time())}\n'
+        f'\n\033[1mGood position A\033[0m (uid="{uid}", timestamp={datetime.fromtimestamp(time.time())})\n'
         "┣━SLT V Upper: 510.5, offset: 0.0\n"
         "┗━SLT V Lower: -211.93, offset: None\n"
     )
@@ -170,7 +172,7 @@ def test_motor_position_e2e(mongodb, ioc_motor):
     assert motor1.get(use_monitor=False).user_readback == 504.6
     # Save motor position
     uid = save_motor_position(
-        motor1, name="starting point", collection=mongodb.motor_positions
+        motor1, name="starting point", collection=mongodb.motor_positions,
     )
     # Change to a different value
     epics.caput(pv, 520)
@@ -184,29 +186,29 @@ def test_motor_position_e2e(mongodb, ioc_motor):
     assert msg.args[0] == 504.6
 
 
-@time_machine.travel(fake_time, tick=False)    
-def test_list_current_motor_positions(mongodb,capsys):
-
+@time_machine.travel(fake_time, tick=False)
+def test_list_current_motor_positions(mongodb, capsys, ioc_motor):
     # Get our simulated motors into the device registry
-    motorA = HavenMotor("vme_crate_ioc:m1", name="Motor A")
-    motorB = HavenMotor("vme_crate_ioc:m2", name="Motor B")
-    # Get the values to give the IOC a chance to spin up
-    assert epics.caget("vme_crate_ioc:m1.VAL", use_monitor=False, timeout=IOC_timeout) is not None
-    assert epics.caget("vme_crate_ioc:m2.VAL", use_monitor=False, timeout=IOC_timeout) is not None
-    # Move to some other motor position so we can tell it saved the right one
-    motorA.set(11.0)
-    motorA.user_offset.set(1.5)
-    motorB.set(23.0)
-    time.sleep(0.1)
-    # list the current motor position
-    list_current_motor_positions(
-        motorA, motorB, name = "Current motor positions", collection = mongodb.motor_positions
-    )
+    with capsys.disabled():
+        motorA = HavenMotor("vme_crate_ioc:m1", name="Motor A")
+        motorB = HavenMotor("vme_crate_ioc:m2", name="Motor B")
+        motorA.wait_for_connection()
+        motorB.wait_for_connection()
+        # Get the values to give the IOC a chance to spin up
+        assert epics.caget("vme_crate_ioc:m1.VAL", use_monitor=False, timeout=IOC_timeout) is not None
+        assert epics.caget("vme_crate_ioc:m2.VAL", use_monitor=False, timeout=IOC_timeout) is not None
+        # Move to some other motor position so we can tell it saved the right one
+        motorA.set(11.0)
+        motorA.user_offset.set(1.5)
+        motorB.set(23.0)
+        time.sleep(0.1)
+    # List the current motor position
+    list_current_motor_positions(motorA, motorB, name="Current motor positions")
     # Check stdout for printed motor positions
     captured = capsys.readouterr()
     assert len(captured.out) > 0
     expected = (
-        f'\n\033[1mCurrent motor positions\033[0m (uid="None") savetime={datetime.fromtimestamp(time.time())}\n'
+        f'\n\033[1mCurrent motor positions\033[0m (timestamp={datetime.fromtimestamp(time.time())})\n'
         "┣━Motor A: 11.0, offset: 1.5\n"
         "┗━Motor B: 23.0, offset: 0.0\n"
     )
