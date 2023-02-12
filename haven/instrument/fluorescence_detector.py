@@ -17,7 +17,7 @@ from .._iconfig import load_config
 from .. import exceptions
 
 
-default_kind = Kind.normal | Kind.config
+active_kind = Kind.normal | Kind.config
 
 
 class ROI(mca.ROI):
@@ -31,10 +31,10 @@ class ROI(mca.ROI):
         "hi_chan",
         "lo_chan",
     ]
-    kind = default_kind
+    kind = active_kind
 
 
-def add_rois(range_, kind=Kind.omitted, **kwargs):
+def add_rois(range_: Sequence[int] = range(32), kind=Kind.omitted, **kwargs):
     """Add one or more ROIs to an MCA instance
     
     Parameters
@@ -49,7 +49,6 @@ def add_rois(range_, kind=Kind.omitted, **kwargs):
 
     """
     defn = OrderedDict()
-    # import pdb; pdb.set_trace()
     kwargs["kind"] = kind
     for roi in range_:
         if not (0 <= roi < 32):
@@ -60,9 +59,28 @@ def add_rois(range_, kind=Kind.omitted, **kwargs):
 
 
 class MCARecord(mca.EpicsMCARecord):
-    rois = DDC(add_rois(range(0, 32)), kind=default_kind)
+    rois = DDC(add_rois(), kind=active_kind)
     _default_read_attrs = ["rois"]
+    _default_configuration_attrs = ['rois']
+    kind = active_kind
 
+
+def add_mcas(range_, kind=active_kind, **kwargs):
+    """Add one or more MCARecords to a device
+    
+    Parameters
+    ----------
+    range_
+      Indices for which to create MCA records.
+
+    """
+    defn = OrderedDict()
+    kwargs["kind"] = kind
+    for idx in range_:
+        attr = f"mca{idx}"
+        defn[attr] = (MCARecord, f"mca{idx}", kwargs,)
+    return defn
+  
 
 @registry.register
 class DxpDetectorBase(mca.EpicsDXPMultiElementSystem):
@@ -71,16 +89,17 @@ class DxpDetectorBase(mca.EpicsDXPMultiElementSystem):
     Creates MCA components based on the number of elements.
     
     """
+    # By default, a 1-element detector, subclass for more elements
+    mcas = DDC(add_mcas(range_=range(1, 2)),
+               default_read_attrs=['mca1'],
+               default_configuration_attrs=['mca1'])
     _default_read_attrs = [
         'preset_live_time',
         'preset_real_time',
         'dead_time',
         'elapsed_live',
         'elapsed_real',
-        'mca1',
-        'mca2',
-        'mca3',
-        'mca4',
+        'mcas',
     ]
     _default_configuration_attrs = [
         'max_scas',
@@ -91,6 +110,7 @@ class DxpDetectorBase(mca.EpicsDXPMultiElementSystem):
         'preset_events',
         'preset_triggers',
         'snl_connected',
+        'mcas',
     ]
     _omitted_attrs = [  # Just save them here for easy reference
         'channel_advance',
@@ -142,14 +162,17 @@ class DxpDetectorBase(mca.EpicsDXPMultiElementSystem):
         'idead_time',
     ]
     
-    def mcas(self):
-        mcas = [getattr(self, m) for m in self.component_names if m.startswith("mca")]
+    def mca_records(self, mca_indices: Optional[Sequence[int]] = None):
+        mcas = [getattr(self.mcas, m) for m in self.mcas.component_names if m.startswith("mca")]
+        # Filter by element index
+        if mca_indices is not None:
+            mcas = [m for m in mcas if int(m.dotted_name.split('.')[-1][3:]) in mca_indices]
         return mcas
 
     def rois(self, roi_indices: Optional[Sequence[int]] = None):
         # Get the list of ROIs to activate
         all_rois = []
-        for mca in self.mcas():
+        for mca in self.mca_records():
             rois = mca.rois.component_names
             rois = [getattr(mca.rois, r) for r in rois]
             # Get sub-list if requested
@@ -168,8 +191,7 @@ class DxpDetectorBase(mca.EpicsDXPMultiElementSystem):
 
         """
         for roi in self.rois(roi_indices=rois):
-            roi.kind = default_kind
-
+            roi.kind = active_kind
 
     def disable_rois(self, rois: Optional[Sequence[int]] = None):
         """Remove some, or all, ROIs from the list of detectors to
@@ -182,7 +204,31 @@ class DxpDetectorBase(mca.EpicsDXPMultiElementSystem):
         """
         for roi in self.rois(roi_indices=rois):
             roi.kind = Kind.omitted
-               
+
+    def enable_elements(self, elements: Optional[Sequence[int]] = None):
+        """Include some, or all, elements in the list of detectors to
+        read.
+
+        elements
+          A list of indices for which elements to enable. Default is
+          to operate on all elements.
+
+        """
+        for elem in self.mca_records(mca_indices=elements):
+            elem.kind = active_kind
+
+    def disable_elements(self, elements: Optional[Sequence[int]] = None):
+        """Include some, or all, elements in the list of detectors to
+        read.
+
+        elements
+          A list of indices for which elements to enable. Default is
+          to operate on all elements.
+
+        """
+        for elem in self.mca_records(mca_indices=elements):
+            elem.kind = Kind.omitted
+
 
 class XspressDetector(ScalerTriggered, Device):
     """A fluorescence detector plugged into an Xspress3 readout."""
@@ -227,14 +273,16 @@ class XspressDetector(ScalerTriggered, Device):
 
 def load_dxp_detector(device_name, prefix, num_elements):
     # Build the mca components
-    mca_names = [f"mca{n}" for n in range(1, num_elements+1)]
-    mcas = {mname: Cpt(MCARecord, suffix=mname, name=mname)
-            for mname in mca_names}
+    # (Epics uses 1-index instead of 0-index)
+    mca_range = range(1, num_elements+1)
+    attrs = {"mcas": DDC(add_mcas(range_=mca_range), kind=active_kind,
+                         default_read_attrs=[f'mca{i}' for i in mca_range],
+                         default_configuration_attrs=[f'mca{i}' for i in mca_range])}
     # Add the ROIs to the list of readable detectors
     # Create a dynamic subclass
     class_name = device_name.title().replace("_", "")
     parent_classes = (DxpDetectorBase,)
-    Cls = type(class_name, parent_classes, mcas)
+    Cls = type(class_name, parent_classes, attrs)
     det = Cls(prefix=f"{prefix}:", name=device_name)
     
 
