@@ -97,7 +97,6 @@ dependencies:
   # - spec2nexus
   - stdlogpj
   - tqdm
-  - xraydb
   - xrayutilities
   - pyviz_comms
   - hvplot
@@ -122,6 +121,7 @@ dependencies:
     - autoapi
     - pytest-mongodb
     - StrEnum
+    - xraydb >=4.5.0
     # - https://github.com/BCDA-APS/adl2pydm/archive/main.zip
     # --- optional Bluesky framework packages for evaluation
     # - bluesky-webclient is NOT Python software, don't install it this way
