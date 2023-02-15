@@ -42,6 +42,9 @@ extensions = [
 
 autoapi_modules = {"haven": None}
 autodoc_typehints = "description"
+autodoc_mock_imports = [
+    "mergedeep",
+]
 
 # Add custom pre-amble to the rendered jupyter notebooks
 nbsphinx_prolog = r"""

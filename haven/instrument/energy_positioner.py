@@ -7,8 +7,8 @@ from ophyd import (
     PVPositioner,
     EpicsSignal,
     EpicsSignalRO,
-    OphydObject
 )
+from ophyd.ophydobj import OphydObject
 from ophyd.pseudopos import pseudo_position_argument, real_position_argument
 
 

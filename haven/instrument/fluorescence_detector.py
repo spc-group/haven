@@ -13,7 +13,7 @@ from .._iconfig import load_config
 
 iconfig = load_config()
 
-pv_prefix = iconfig["fluorescence_detector"]["vortex"]["pv_prefix"]
+# pv_prefix = iconfig["fluorescence_detector"]["vortex"]["pv_prefix"]
 
 
 class XspressDetector(ScalerTriggered, Device):
@@ -57,10 +57,10 @@ class XspressDetector(ScalerTriggered, Device):
         self.stage_sigs[self.num_frames] = val
 
 
-vortex_single = XspressDetector(
-    pv_prefix,
-    name="vortex_single",
-    labels={
-        "fluorescence_detectors",
-    },
-)
+# vortex_single = XspressDetector(
+#     pv_prefix,
+#     name="vortex_single",
+#     labels={
+#         "fluorescence_detectors",
+#     },
+# )

@@ -4,3 +4,12 @@ nbsphinx
 databroker
 lmfit
 bluesky
+mergedeep
+tomli
+pyepics
+ophyd
+xraydb
+apstools
+ipython
+pydantic
+caproto
