@@ -37,6 +37,7 @@ class VoltmetersDisplay(display.FireflyDisplay):
             disp = PyDMEmbeddedDisplay(parent=self)
             disp.macros = json.dumps({"CHANNEL_NUMBER": ic.ch_num,
                                       "PREAMP_PREFIX": ic.preamp_prefix,
+                                      "SCALER_PREFIX": ic.scaler_prefix,
                                       "PREFIX": ic.prefix})
             disp.filename = 'voltmeter.py'
             # Add the Embedded Display to the Results Layout
