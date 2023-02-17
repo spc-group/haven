@@ -54,9 +54,11 @@ ioc = "preamp_ioc"
 
 [fluorescence_detector]
 
-[fluorescence_detector.vortex]
+[fluorescence_detector.vortex_me4]
 
-pv_prefix = ""
+prefix = "vortex"
+electronics = "dxp"  # or "xspress3"
+num_elements = 4
 
 # Motors
 # ======

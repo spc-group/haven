@@ -80,7 +80,8 @@ dependencies:
   # - hklpy >=1.0.3  # --- linux-64
   - ophyd >=1.6.3
   - pydm >=1.16.0
-  # - tiled-server
+  - tiled-server
+  - tiled-client
   # https://github.com/pydata/xarray/issues/6818
   - xarray !=2022.6.0  # incompatible with numpy=1.20
 
