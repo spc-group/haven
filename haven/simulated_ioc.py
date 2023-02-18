@@ -69,7 +69,7 @@ class IOC(PVGroup):
         return ioc.pvdb, run_options
 
 
-def wait_for_ioc(pvdb, timeout=60):
+def wait_for_ioc(pvdb, timeout=120):
     """Block until all the PVs in the IOC have loaded."""
     # Build a list of PVs and PV fields
     all_fields = []
