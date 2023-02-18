@@ -20,6 +20,9 @@ class Monochromator(Device):
     pi_int = Cpt(EpicsMotor, ":ACS:m8", labels={"motors"}, kind="config")
 
 
-def load_monochromator(config):
+def load_monochromator(config=None):
+    # Load PV's from config
+    if config is None:
+        config = load_config()
     monochromator = Monochromator(config["monochromator"]["ioc"], name="monochromator")
     return monochromator
