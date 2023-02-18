@@ -14,6 +14,7 @@ log = logging.getLogger()
 
 
 class QueueClientThread(QThread):
+    timer: QTimer
     
     def __init__(self, *args, client, **kwargs):
         self.client = client
@@ -22,6 +23,12 @@ class QueueClientThread(QThread):
         self.timer = QTimer()
         self.timer.timeout.connect(self.client.update)
         self.timer.start(1000)
+
+    def quit(self, *args, **kwargs):
+        self.timer.stop()
+        # del self.timer
+        # del self.client
+        super().quit(*args, **kwargs)
 
 
 class QueueClient(QObject):
@@ -89,6 +96,7 @@ class QueueClient(QObject):
     @Slot()
     def check_queue_length(self):
         queue = self.api.queue_get()
+        print(queue)
         queue_length = len(queue['items'])
         log.debug(f"Queue length updated: {queue_length}")
         self.length_changed.emit(queue_length)

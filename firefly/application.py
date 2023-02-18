@@ -1,7 +1,7 @@
 import logging
 from pathlib import Path
 from dataclasses import dataclass, field
-from typing import Optional, Union, Mapping
+from typing import Optional, Union, Mapping, Sequence
 from functools import partial
 import subprocess
 
@@ -46,6 +46,15 @@ class FireflyApplication(PyDMApplication):
     halt_runengine_action: QAction
     start_queue: QAction
 
+    # Actions for showing window
+    show_status_window_action: QtWidgets.QAction
+    launch_queuemonitor_action: QtWidgets.QAction
+
+    # Keep track of motors
+    motor_actions: Sequence = []
+    motor_window_slots: Sequence = []
+    motor_windows: Mapping = {}
+
     # Signals for running plans on the queueserver
     queue_item_added = Signal(object)
 
@@ -59,8 +68,8 @@ class FireflyApplication(PyDMApplication):
         self.windows = {}
 
     def __del__(self):
-        if hasattr(self, "_queue_client"):
-            self._queue_client.quit()
+        if hasattr(self, "_queue_thread"):
+            self._queue_thread.quit()
 
     def _setup_window_action(self, action_name: str, text: str, slot: QtCore.Slot):
         action = QtWidgets.QAction(self)
@@ -179,6 +188,7 @@ class FireflyApplication(PyDMApplication):
         thread.start()
         # Save references to the thread and runner
         self._queue_client = client
+        # assert not hasattr(self, "_queue_thread")
         self._queue_thread = thread
 
     def add_queue_item(self, item):

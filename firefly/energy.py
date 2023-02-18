@@ -84,10 +84,12 @@ class EnergyDisplay(display.FireflyDisplay):
         items = [f"{r.element} {r.iupac_symbol} ({int(r.absorption_edge)} eV)"
                  for r in edges.all()]
         combo_box.addItems(["Select edge…", *items])
+        print("CUstomizing", combo_box, self.select_edge)
         combo_box.activated.connect(self.select_edge)
 
     @QtCore.Slot(int)
     def select_edge(self, index):
+        print("Selecting edge")
         if index == 0:
             # The placeholder text was selected
             return
