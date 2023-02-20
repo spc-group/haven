@@ -1,3 +1,4 @@
+import pytest
 import json
 
 import haven
@@ -13,12 +14,12 @@ from firefly.camera import CameraDisplay, DetectorStates
 macros = {"PREFIX": "camera_ioc:", "DESC": "Camera A"}
 
 
-def test_embedded_displays(qtbot):
+def test_embedded_displays(qtbot, ffapp, sim_registry):
     """Test that the embedded displays get loaded."""
     FireflyMainWindow()
     # Set up fake cameras
     camera = haven.Camera(prefix="camera_ioc:", name="Camera A", labels={"cameras"})
-    haven.registry.register(camera)
+    sim_registry.register(camera)
     # Load the display
     display = CamerasDisplay()
     # Check that the embedded display widgets get added correctly
@@ -30,7 +31,7 @@ def test_embedded_displays(qtbot):
     assert json.loads(display._camera_displays[0].macros) == expected_macros
 
 
-def test_camera_channel_status(qtbot):
+def test_camera_channel_status(qtbot, ffapp):
     """Test that the camera status indicator responds to camera connection
     status PV.
 
@@ -42,7 +43,7 @@ def test_camera_channel_status(qtbot):
     assert display.detector_state.address == "camera_ioc:cam1:DetectorState_RBV"
 
 
-def test_set_status_byte(qtbot):
+def test_set_status_byte(qtbot, ffapp):
     FireflyMainWindow()
     display = CameraDisplay(macros=macros)
     display.show()

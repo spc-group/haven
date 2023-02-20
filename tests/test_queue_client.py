@@ -20,6 +20,7 @@ def test_setup(ffapp):
     FireflyMainWindow()
     ffapp.prepare_queue_client(api=api)
 
+
 def test_queue_re_control(ffapp):
     """Test if the run engine can be controlled from the queue client."""
     api = MagicMock()

@@ -68,7 +68,8 @@ class EnergyDisplay(display.FireflyDisplay):
         # Build the queue item
         item = BPlan("set_energy", energy=energy)
         # Submit the item to the queueserver
-        app = QtWidgets.QApplication.instance()
+        from .application import FireflyApplication
+        app = FireflyApplication.instance()
         app.add_queue_item(item)
 
     def customize_ui(self):

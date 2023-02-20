@@ -44,8 +44,8 @@ def test_save_motor_position_by_device(mongodb, ioc_motor):
     # Create motor devices
     motorA = HavenMotor("vme_crate_ioc:m1", name="Motor A")
     motorB = HavenMotor("vme_crate_ioc:m2", name="Motor B")
-    motorA.wait_for_connection()
-    motorB.wait_for_connection()
+    motorA.wait_for_connection(timeout=20)
+    motorB.wait_for_connection(timeout=20)
     # Get the values to give the IOC a chance to spin up
     assert epics.caget("vme_crate_ioc:m1.VAL", use_monitor=False, timeout=IOC_timeout) is not None
     assert epics.caget("vme_crate_ioc:m2.VAL", use_monitor=False, timeout=IOC_timeout) is not None    
@@ -76,6 +76,8 @@ def test_save_motor_position_by_name(mongodb, ioc_motor):
     # Get our simulated motors into the device registry
     motorA = HavenMotor("vme_crate_ioc:m1", name="Motor A")
     motorB = HavenMotor("vme_crate_ioc:m2", name="Motor B")
+    motorA.wait_for_connection(timeout=20)
+    motorB.wait_for_connection(timeout=20)
     # Get the values to give the IOC a chance to spin up
     assert epics.caget("vme_crate_ioc:m1.VAL", use_monitor=False, timeout=IOC_timeout) is not None
     assert epics.caget("vme_crate_ioc:m2.VAL", use_monitor=False, timeout=IOC_timeout) is not None

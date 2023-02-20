@@ -40,6 +40,7 @@ dependencies:
   - pytest
   - pytest-cov
   - pytest-qt >=4.2.0
+  - pytest-xvfb
   - pytest-mock
   - caproto >=1.0.0
   # - pytest-notebook

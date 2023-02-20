@@ -1,3 +1,5 @@
+import pytest
+
 from firefly.main_window import FireflyMainWindow
 from firefly.xafs_scan import XafsScanDisplay
 
@@ -14,7 +16,6 @@ def test_region_number(qtbot):
     assert len(disp.regions) == 3
     # Check that regions can be inserted and removed
     
-
 
 def test_region(qtbot):
     """Does changing the region ui respond the way it should."""

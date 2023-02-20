@@ -26,21 +26,22 @@ def main():
     except ImportError:
         logger.debug('QtWebEngine is not supported.')
 
-    from qtpy.QtWidgets import QSplashScreen, QApplication
+    from qtpy.QtWidgets import QSplashScreen
+    from .application import FireflyApplication
     from qtpy.QtGui import QPixmap
     from qtpy import QtCore
         
     # Set up splash screen
-    fake_app = QApplication(sys.argv)
+    fake_app = FireflyApplication(sys.argv)
     im_dir = Path(__file__).parent.resolve()
     im_fp = str(im_dir / "splash.png")
     pixmap = QPixmap(im_fp)
     splash = QSplashScreen(pixmap, QtCore.Qt.WindowStaysOnTopHint)
     splash.show()
-    QApplication.processEvents()
+    FireflyApplication.processEvents()
     for i in range(10):
         time.sleep(0.01)
-    QApplication.processEvents()
+    FireflyApplication.processEvents()
 
     from pydm import config
 
@@ -56,9 +57,7 @@ def main():
     setup_renderer()
 
     import pydm
-    # from pydm import PyDMApplication
     from pydm.utilities.macro import parse_macro_string
-    from .application import FireflyApplication
 
     parser = argparse.ArgumentParser(description="Python Display Manager")
     parser.add_argument(
@@ -162,7 +161,7 @@ def main():
 
     # Define devices on the beamline (slow!)
     app.load_instrument()
-    QApplication.processEvents()
+    FireflyApplication.processEvents()
 
     splash.finish(app.windows["beamline_status"])
 

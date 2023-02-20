@@ -109,7 +109,8 @@ class FireflyMainWindow(PyDMMainWindow):
             text="Cameras",
             menu=self.ui.menuDetectors)
         # Add actions to the motors sub-menus
-        app = QtWidgets.QApplication.instance()
+        from .application import FireflyApplication
+        app = FireflyApplication.instance()
         for action in app.motor_actions:
             self.ui.menuMotors.addAction(action)
         # Add other menu actions
@@ -149,7 +150,8 @@ class PlanMainWindow(FireflyMainWindow):
         for action in navbar.actions():
             navbar.removeAction(action)
         # Add applications runengine actions
-        app = QtWidgets.QApplication.instance()
+        from .application import FireflyApplication
+        app = FireflyApplication.instance()
         navbar.addAction(app.start_queue_action)        
         navbar.addSeparator()
         navbar.addAction(app.pause_runengine_action)
@@ -164,7 +166,8 @@ class PlanMainWindow(FireflyMainWindow):
         super().customize_ui()
         self.setup_navbar()
         # Connect signals/slots
-        app = QtWidgets.QApplication.instance()
+        from .application import FireflyApplication
+        app = FireflyApplication.instance()
         app.queue_length_changed.connect(self.set_navbar_visibility)
 
     @QtCore.Slot(int)

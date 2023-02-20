@@ -19,7 +19,6 @@ def test_setup(ffapp):
     api = MagicMock()
     FireflyMainWindow()
     ffapp.prepare_queue_client(api=api)
-    # qapp._queue_thread.quit()
 
 
 def test_setup2(ffapp):
@@ -28,4 +27,3 @@ def test_setup2(ffapp):
     api = MagicMock()
     FireflyMainWindow()
     ffapp.prepare_queue_client(api=api)
-    # qapp._queue_thread.quit()
