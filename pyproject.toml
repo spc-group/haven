@@ -1,3 +1,10 @@
+[project]
+name = "haven"
+version = "0.1.0"
+
+[tool.setuptools]
+packages = ["haven", "firefly"]
+
 [tool.poetry]
 name = "haven"
 version = "0.1.0"
