@@ -103,3 +103,7 @@ pv_horiz = ":m2"
 
 prefix = "ps_ioc:NHQ01"
 n_channels = 2
+
+[slits.KB_slits]
+
+prefix = "vme_crate_ioc:KB"

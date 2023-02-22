@@ -219,10 +219,8 @@ class InstrumentRegistry:
             # Check that we're not adding a duplicate component name
             is_duplicate = component.name in [c.name for c in self.components]
             if is_duplicate:
-                log.warning(
-                    f"Ignoring components with duplicate name {component.name}: "
-                    ", ".join([c.name for c in duplicate_components])
-                )
+                msg = f"Ignoring components with duplicate name: '{component.name}'"
+                log.debug(msg)
                 return component
             # Register this component
             self.components.append(component)
