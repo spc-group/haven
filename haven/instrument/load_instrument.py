@@ -14,6 +14,7 @@ from .stage import load_stages
 from .aps import load_aps
 from .power_supply import load_power_supplies
 from .xray_source import load_xray_sources
+from .slits import load_slits
 from .._iconfig import load_config
 
 
@@ -53,6 +54,7 @@ def load_instrument(registry: InstrumentRegistry = default_registry,
     load_shutters(config=config)
     load_stages(config=config)
     load_power_supplies(config=config)
+    load_slits(config=config)
     # Detectors
     load_ion_chambers(config=config)
     load_fluorescence_detectors(config=config)
