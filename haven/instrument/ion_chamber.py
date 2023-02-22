@@ -33,8 +33,9 @@ __all__ = ["IonChamber", "load_ion_chambers"]
 
 
 class SensitivityPositioner(PVPositionerPC):
-    setpoint = Cpt(EpicsSignal, ".VAL")
-    readback = Cpt(EpicsSignal, ".VAL")
+    setpoint = Cpt(EpicsSignal, ".VAL", kind=(Kind.config|Kind.normal))
+    readback = Cpt(EpicsSignal, ".VAL", kind=(Kind.config|Kind.normal))
+    readback_string = Cpt(EpicsSignal, ".VAL", kind=(Kind.config|Kind.normal), string=True)
 
 
 class SetAllPositioner(PVPositionerPC):

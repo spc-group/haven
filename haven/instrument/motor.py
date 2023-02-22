@@ -47,7 +47,6 @@ def load_ioc_motors(prefix, num_motors, ioc_name=None):
         # Take the name of the ophyd motor from the epics description
         log.debug(f"Looking for motor {motor_num} at {pv}")
         name = epics.caget(f"{pv}.DESC", timeout=1, use_monitor=False)
-        print(pv, name)
         if name is None:
             # The PV doesn't exist, so we've probably reached the highest motor number
             break
