@@ -6,6 +6,9 @@ from .._iconfig import load_config
 
 @registry.register
 class Monochromator(Device):
+    # ID tracking PVs
+    id_tracking = Cpt(EpicsSignal, ":ID_tracking", kind="config")
+    id_offset = Cpt(EpicsSignal, ":ID_offset", kind="config")
     # Virtual positioners
     mode = Cpt(EpicsSignal, ":mode", labels={"motors"}, kind="config")
     energy = Cpt(EpicsMotor, ":Energy", labels={"motors"}, kind="hinted")
