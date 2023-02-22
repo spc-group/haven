@@ -12,6 +12,7 @@ from .camera import load_cameras
 from .shutter import load_shutters
 from .stage import load_stages
 from .aps import load_aps
+from .power_supply import load_power_supplies
 from .._iconfig import load_config
 
 
@@ -50,6 +51,7 @@ def load_instrument(registry: InstrumentRegistry = default_registry,
     load_cameras(config=config)
     load_shutters(config=config)
     load_stages(config=config)
+    load_power_supplies(config=config)
     # Detectors
     load_ion_chambers(config=config)
     load_fluorescence_detectors(config=config)

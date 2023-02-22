@@ -93,3 +93,8 @@ ioc = "camA_ioc"
 prefix = "vme_crate_ioc"
 pv_vert = ":m1"
 pv_horiz = ":m2"
+
+[power_supply.NHQ01]
+
+prefix = "ps_ioc:NHQ01"
+n_channels = 2
