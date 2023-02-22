@@ -83,9 +83,10 @@ class EnergyPositioner(PseudoPositioner):
     @pseudo_position_argument
     def forward(self, target_energy):
         "Given a target energy, transform to the mono and ID energies."
+        id_offset_ev = self.id_offset.get(use_monitor=True)
         return self.RealPosition(
             mono_energy=target_energy.energy,
-            id_energy=(target_energy.energy + self.id_offset) / 1000.0,
+            id_energy=(target_energy.energy + id_offset_ev) / 1000.0,
         )
 
     @real_position_argument

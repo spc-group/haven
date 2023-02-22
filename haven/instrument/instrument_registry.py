@@ -87,8 +87,10 @@ class InstrumentRegistry:
             result = results[0]
         elif len(results) > 1:
             raise exceptions.MultipleComponentsFound(
-                f"Found {len(results)} components matching query. "
-                "Consider using ``findall()``."
+                f"Found {len(results)} components matching query "
+                f"[any_of={any_of}, label={label}, name={name}]. "
+                "Consider using ``findall()``. "
+                f"{results}"
             )
         else:
             result = None
