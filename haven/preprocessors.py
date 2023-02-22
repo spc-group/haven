@@ -14,7 +14,7 @@ import epics
 from .instrument.instrument_registry import registry
 
 
-def baseline_wrapper(plan, devices: Union[Sequence, str]=["motors", "power_supplies", "undulator", "aps"], name: str="baseline"):
+def baseline_wrapper(plan, devices: Union[Sequence, str]=["motors", "power_supplies", "xray_sources", "APS"], name: str="baseline"):
     bluesky_baseline_wrapper.__doc__
     # Resolve devices
     devices = registry.findall(devices, allow_none=True)

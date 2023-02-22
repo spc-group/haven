@@ -11,6 +11,11 @@ is_connected = false
 name = "Advanced Photon Source"
 xray_source = "insertion device"
 
+[xray_source]
+
+type = "undulator"
+prefix = "ID100ds:"
+
 [queueserver]
 kafka_topic = "s100idc_queueserver"
 control_host = "localhost"

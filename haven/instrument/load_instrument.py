@@ -13,6 +13,7 @@ from .shutter import load_shutters
 from .stage import load_stages
 from .aps import load_aps
 from .power_supply import load_power_supplies
+from .xray_source import load_xray_sources
 from .._iconfig import load_config
 
 
@@ -57,6 +58,7 @@ def load_instrument(registry: InstrumentRegistry = default_registry,
     load_fluorescence_detectors(config=config)
     # Facility-related devices
     load_aps(config=config)
+    load_xray_sources(config=config)
 
 
 def load_simulated_devices(config={}):
