@@ -11,6 +11,7 @@ from .monochromator import load_monochromator
 from .camera import load_cameras
 from .shutter import load_shutters
 from .stage import load_stages
+from .aps import load_aps
 from .._iconfig import load_config
 
 
@@ -52,6 +53,8 @@ def load_instrument(registry: InstrumentRegistry = default_registry,
     # Detectors
     load_ion_chambers(config=config)
     load_fluorescence_detectors(config=config)
+    # Facility-related devices
+    load_aps(config=config)
 
 
 def load_simulated_devices(config={}):
