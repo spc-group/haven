@@ -11,6 +11,11 @@ is_connected = false
 name = "Advanced Photon Source"
 xray_source = "insertion device"
 
+[xray_source]
+
+type = "undulator"
+prefix = "ID100ds:"
+
 [queueserver]
 kafka_topic = "s100idc_queueserver"
 control_host = "localhost"
@@ -93,3 +98,12 @@ ioc = "camA_ioc"
 prefix = "vme_crate_ioc"
 pv_vert = ":m1"
 pv_horiz = ":m2"
+
+[power_supply.NHQ01]
+
+prefix = "ps_ioc:NHQ01"
+n_channels = 2
+
+[slits.KB_slits]
+
+prefix = "vme_crate_ioc:KB"

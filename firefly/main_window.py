@@ -2,6 +2,7 @@ import logging
 from pathlib import Path
 
 from pydm.main_window import PyDMMainWindow
+
 # from qtpy.QtCore import Slot
 from qtpy import QtCore, QtGui, QtWidgets
 from pydm import data_plugins
@@ -58,7 +59,7 @@ class FireflyMainWindow(PyDMMainWindow):
     def customize_ui(self):
         # Add window icon
         root_dir = Path(__file__).parent.absolute()
-        icon_path = root_dir / 'splash.png'
+        icon_path = root_dir / "splash.png"
         self.setWindowIcon(QtGui.QIcon(str(icon_path)))
         # Hide the nav bar
         if self.hide_nav_bar:
@@ -66,9 +67,8 @@ class FireflyMainWindow(PyDMMainWindow):
             self.ui.actionShow_Navigation_Bar.setChecked(False)
         # XAFS scan window
         self.add_menu_action(
-            action_name="actionShow_Log_Viewer",
-            text="Logs",
-            menu=self.ui.menuView)
+            action_name="actionShow_Log_Viewer", text="Logs", menu=self.ui.menuView
+        )
         # Positioners menu
         self.ui.menuPositioners = QtWidgets.QMenu(self.ui.menubar)
         self.ui.menuPositioners.setObjectName("menuPositioners")
@@ -78,7 +78,8 @@ class FireflyMainWindow(PyDMMainWindow):
         self.add_menu_action(
             action_name="actionShow_Sample_Viewer",
             text="Sample",
-            menu=self.ui.menuPositioners)
+            menu=self.ui.menuPositioners,
+        )
         # Motors sub-menu
         self.ui.menuMotors = QtWidgets.QMenu(self.ui.menubar)
         self.ui.menuMotors.setObjectName("menuMotors")
@@ -91,25 +92,25 @@ class FireflyMainWindow(PyDMMainWindow):
         self.ui.menubar.addAction(self.ui.menuScans.menuAction())
         # XAFS scan window
         self.add_menu_action(
-            action_name="actionShow_Xafs_Scan",
-            text="XAFS Scan",
-            menu=self.ui.menuScans)
+            action_name="actionShow_Xafs_Scan", text="XAFS Scan", menu=self.ui.menuScans
+        )
         # Detectors menu
         self.ui.menuDetectors = QtWidgets.QMenu(self.ui.menubar)
         self.ui.menuDetectors.setObjectName("menuDetectors")
         self.ui.menuDetectors.setTitle("Detectors")
-        self.ui.menubar.addAction(self.ui.menuDetectors.menuAction())        
+        self.ui.menubar.addAction(self.ui.menuDetectors.menuAction())
         # Voltmeters window
         self.add_menu_action(
             action_name="actionShow_Voltmeters",
             text="Ion Chambers",
-            menu=self.ui.menuDetectors)
+            menu=self.ui.menuDetectors,
+        )
         self.add_menu_action(
-            action_name="actionShow_Cameras",
-            text="Cameras",
-            menu=self.ui.menuDetectors)
+            action_name="actionShow_Cameras", text="Cameras", menu=self.ui.menuDetectors
+        )
         # Add actions to the motors sub-menus
         from .application import FireflyApplication
+
         app = FireflyApplication.instance()
         for action in app.motor_actions:
             self.ui.menuMotors.addAction(action)
@@ -125,12 +126,12 @@ class FireflyMainWindow(PyDMMainWindow):
             title = self.display_widget().windowTitle()
         # Add the beamline name
         config = load_config()
-        beamline_name = config['beamline']['name']
+        beamline_name = config["beamline"]["name"]
         title += f" - {beamline_name} - Firefly"
         if data_plugins.is_read_only():
             title += " [Read Only Mode]"
         self.setWindowTitle(title)
-    
+
     def export_actions(self):
         """Expose specific signals that might be useful for responding to window changes."""
         self.actionShow_Log_Viewer = self.ui.actionShow_Log_Viewer
@@ -139,9 +140,8 @@ class FireflyMainWindow(PyDMMainWindow):
 
 
 class PlanMainWindow(FireflyMainWindow):
-    """A Qt window that has extra controls for a bluesky runengine.
+    """A Qt window that has extra controls for a bluesky runengine."""
 
-    """
     hide_nav_bar: bool = True
 
     def setup_navbar(self):
@@ -151,8 +151,9 @@ class PlanMainWindow(FireflyMainWindow):
             navbar.removeAction(action)
         # Add applications runengine actions
         from .application import FireflyApplication
+
         app = FireflyApplication.instance()
-        navbar.addAction(app.start_queue_action)        
+        navbar.addAction(app.start_queue_action)
         navbar.addSeparator()
         navbar.addAction(app.pause_runengine_action)
         navbar.addAction(app.pause_runengine_now_action)
@@ -167,6 +168,7 @@ class PlanMainWindow(FireflyMainWindow):
         self.setup_navbar()
         # Connect signals/slots
         from .application import FireflyApplication
+
         app = FireflyApplication.instance()
         app.queue_length_changed.connect(self.set_navbar_visibility)
 

@@ -10,7 +10,7 @@ from ophyd import (
 __all__ = ["ScalerTriggered"]
 
 
-class ScalerTriggered():
+class ScalerTriggered:
     """A mix-in for triggering a device using the scaler.
 
     The device does not have to be a channel on the scaler, enabling
@@ -25,11 +25,12 @@ class ScalerTriggered():
     coordinate statuses for multiple devices using the same scaler.
 
     """
+
     scaler_prefix = None
     _statuses = {}
-    
+
     def trigger(self, *args, **kwargs):
-        is_top_device = getattr(self, 'parent', None) is None
+        is_top_device = getattr(self, "parent", None) is None
         if is_top_device:
             # This is the top-level device, so trigger it
             return self._trigger_scaler(*args, **kwargs)
@@ -52,6 +53,7 @@ class ScalerTriggered():
 
 class ScalerSignal(ScalerTriggered, EpicsSignal):
     ...
-    
+
+
 class ScalerSignalRO(ScalerTriggered, EpicsSignalRO):
     ...

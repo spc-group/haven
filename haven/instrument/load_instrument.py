@@ -12,14 +12,18 @@ from .camera import load_cameras
 from .shutter import load_shutters
 from .stage import load_stages
 from .aps import load_aps
+from .power_supply import load_power_supplies
+from .xray_source import load_xray_sources
+from .slits import load_slits
 from .._iconfig import load_config
 
 
 __all__ = ["load_instrument"]
 
 
-def load_instrument(registry: InstrumentRegistry = default_registry,
-                    config: Mapping = None):
+def load_instrument(
+    registry: InstrumentRegistry = default_registry, config: Mapping = None
+):
     """Load the beamline instrumentation into an instrument registry.
 
     This function will reach out and query various IOCs for motor
@@ -50,11 +54,14 @@ def load_instrument(registry: InstrumentRegistry = default_registry,
     load_cameras(config=config)
     load_shutters(config=config)
     load_stages(config=config)
+    load_power_supplies(config=config)
+    load_slits(config=config)
     # Detectors
     load_ion_chambers(config=config)
     load_fluorescence_detectors(config=config)
     # Facility-related devices
     load_aps(config=config)
+    load_xray_sources(config=config)
 
 
 def load_simulated_devices(config={}):

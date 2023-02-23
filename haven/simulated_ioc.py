@@ -122,10 +122,12 @@ def simulated_ioc(fp):
     pvdb, _ = ioc_mod.IOC.parse_args()
     # Make sure the IOC is not already running
     test_pv = list(pvdb.keys())[0]
-    response = caget(test_pv, timeout=1., connection_timeout=1.)
+    response = caget(test_pv, timeout=1.0, connection_timeout=1.0)
     if response is None:
         # IOC is not running, so start it
-        process = Popen(["python", str(fp.resolve())], stdout=PIPE, stderr=PIPE, text=True)
+        process = Popen(
+            ["python", str(fp.resolve())], stdout=PIPE, stderr=PIPE, text=True
+        )
     else:
         process = None
         log.warning(f"IOC already running: {test_pv} = {response}")

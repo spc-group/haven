@@ -15,7 +15,7 @@ log = logging.getLogger()
 
 class QueueClientThread(QThread):
     timer: QTimer
-    
+
     def __init__(self, *args, client, **kwargs):
         self.client = client
         super().__init__(*args, **kwargs)
@@ -62,12 +62,11 @@ class QueueClient(QObject):
                 self.timeout = 1
             finally:
                 self.last_update = now
-        
 
     @Slot(bool)
     def request_pause(self, defer: bool = True):
         """Ask the queueserver run engine to pause.
-        
+
         Parameters
         ==========
         defer
@@ -82,9 +81,9 @@ class QueueClient(QObject):
     def add_queue_item(self, item):
         log.info(f"Client adding item to queue: {item}")
         result = self.api.item_add(item=item)
-        if result['success']:
+        if result["success"]:
             log.info(f"Item added. New queue length: {result['qsize']}")
-            self.length_changed.emit(result['qsize'])
+            self.length_changed.emit(result["qsize"])
         else:
             log.error(f"Did not add queue item to queue: {result}")
             raise RuntimeError(result)
@@ -97,7 +96,7 @@ class QueueClient(QObject):
     def check_queue_length(self):
         queue = self.api.queue_get()
         print(queue)
-        queue_length = len(queue['items'])
+        queue_length = len(queue["items"])
         log.debug(f"Queue length updated: {queue_length}")
         self.length_changed.emit(queue_length)
         self._last_queue_length = queue_length

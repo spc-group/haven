@@ -34,8 +34,9 @@ from epics import caget
 
 
 def test_load_dxp(sim_registry, mocker):
-    mocker.patch('ophyd.signal.EpicsSignalBase._ensure_connected')
+    mocker.patch("ophyd.signal.EpicsSignalBase._ensure_connected")
     from haven.instrument.fluorescence_detector import load_fluorescence_detectors
+
     load_fluorescence_detectors(config=None)
     # See if the device was loaded
     vortex = sim_registry.find(name="vortex_me4")
@@ -51,8 +52,9 @@ def test_load_dxp(sim_registry, mocker):
 
 @pytest.fixture()
 def vortex(sim_registry, mocker):
-    mocker.patch('ophyd.signal.EpicsSignalBase._ensure_connected')
+    mocker.patch("ophyd.signal.EpicsSignalBase._ensure_connected")
     from haven.instrument.fluorescence_detector import load_fluorescence_detectors
+
     load_fluorescence_detectors(config=None)
     # See if the device was loaded
     vortex = sim_registry.find(name="vortex_me4")
@@ -67,14 +69,16 @@ def test_enable_rois(vortex):
     assert "preset_mode" in vortex.configuration_attrs
     # Make sure config attrs are in the right place
     config_signals = [
-        'mcas.mca3.rois.roi0.label',
-        'mcas.mca3.rois.roi0.bkgnd_chans',
-        'mcas.mca3.rois.roi0.hi_chan',
-        'mcas.mca3.rois.roi0.lo_chan',
+        "mcas.mca3.rois.roi0.label",
+        "mcas.mca3.rois.roi0.bkgnd_chans",
+        "mcas.mca3.rois.roi0.hi_chan",
+        "mcas.mca3.rois.roi0.lo_chan",
     ]
-    normal_signals = ['mcas.mca3.rois.roi0.count', 'mcas.mca3.rois.roi0.net_count']
-    omitted_signals = ['mcas.mca3.rois.roi0.preset_count',
-                     'mcas.mca3.rois.roi0.is_preset']
+    normal_signals = ["mcas.mca3.rois.roi0.count", "mcas.mca3.rois.roi0.net_count"]
+    omitted_signals = [
+        "mcas.mca3.rois.roi0.preset_count",
+        "mcas.mca3.rois.roi0.is_preset",
+    ]
     for attr in config_signals:
         assert attr not in vortex.configuration_attrs
         assert attr not in vortex.read_attrs
@@ -120,7 +124,7 @@ def test_enable_some_rois(vortex):
     vortex.enable_rois()
     vortex.disable_rois(rois=[0])
     assert "mcas.mca1.rois.roi0" not in vortex.read_attrs
-    assert "mcas.mca1.rois.roi1" in vortex.read_attrs    
+    assert "mcas.mca1.rois.roi1" in vortex.read_attrs
 
 
 def test_enable_all_elements(vortex):
@@ -136,8 +140,8 @@ def test_enable_all_elements(vortex):
     vortex.enable_elements()
     vortex.disable_elements(elements=[0])
     assert "mcas.mca0.rois.roi0" not in vortex.read_attrs
-    assert "mcas.mca1.rois.roi0" in vortex.read_attrs    
-    
+    assert "mcas.mca1.rois.roi0" in vortex.read_attrs
+
 
 @pytest.mark.xfail
 def test_with_plan(vortex):

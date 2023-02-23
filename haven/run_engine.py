@@ -19,7 +19,9 @@ class RunEngine(BlueskyRunEngine):
             try:
                 catalog = databroker.catalog[catalog_name]
             except KeyError as e:
-                msg = f"Data are not being saved! Could not load databroker catalog: {e}"
+                msg = (
+                    f"Data are not being saved! Could not load databroker catalog: {e}"
+                )
                 log.error(msg)
                 warnings.warn(msg)
             else:

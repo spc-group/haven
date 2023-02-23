@@ -21,4 +21,3 @@ def set_energy(energy: float, positioners: Sequence[Union[Device, str]] = ["ener
         args.extend([pos, energy])
     # Execute the plan
     yield from bps.mv(*args)
-        

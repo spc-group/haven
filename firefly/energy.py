@@ -13,10 +13,14 @@ log = logging.getLogger(__name__)
 
 class EnergyDisplay(display.FireflyDisplay):
     caqtdm_mono_ui_file = "/net/s25data/xorApps/ui/DCMControlCenter.ui"
-    caqtdm_id_ui_file = "/net/s25data/xorApps/epics/synApps_6_2/ioc/25ida/25idaApp/op/ui/IDControl.ui"
+    caqtdm_id_ui_file = (
+        "/net/s25data/xorApps/epics/synApps_6_2/ioc/25ida/25idaApp/op/ui/IDControl.ui"
+    )
     min_energy = 4000
     max_energy = 27000
-    stylesheet_danger = "background: rgb(220, 53, 69); color: white; border-color: rgb(220, 53, 69)"
+    stylesheet_danger = (
+        "background: rgb(220, 53, 69); color: white; border-color: rgb(220, 53, 69)"
+    )
     stylesheet_normal = ""
 
     def __init__(self, args=None, macros={}, **kwargs):
@@ -24,9 +28,13 @@ class EnergyDisplay(display.FireflyDisplay):
         mono = registry.find(name="monochromator")
         _macros = dict(**macros)
         _macros["MONO_MODE_PV"] = _macros.get("MONO_MODE_PV", mono.mode.pvname)
-        _macros["MONO_ENERGY_PV"] = _macros.get("MONO_ENERGY_PV", mono.energy.user_readback.pvname)
+        _macros["MONO_ENERGY_PV"] = _macros.get(
+            "MONO_ENERGY_PV", mono.energy.user_readback.pvname
+        )
         energy = registry.find(name="energy")
-        _macros["ID_ENERGY_PV"] = _macros.get("ID_ENERGY_PV", f"{energy.id_prefix}:Energy.VAL")
+        _macros["ID_ENERGY_PV"] = _macros.get(
+            "ID_ENERGY_PV", f"{energy.id_prefix}:Energy.VAL"
+        )
         _macros["ID_GAP_PV"] = _macros.get("ID_GAP_PV", f"{energy.id_prefix}:Gap.VAL")
         # Load X-ray database for calculating edge energies
         self.xraydb = XrayDB()
@@ -39,10 +47,16 @@ class EnergyDisplay(display.FireflyDisplay):
         caqtdm_macros = {
             "P": prefix,
             "MONO": config["monochromator"]["ioc_branch"],
-            "BRAGG": registry.find(name="monochromator_bragg").prefix.replace(prefix, ""),
+            "BRAGG": registry.find(name="monochromator_bragg").prefix.replace(
+                prefix, ""
+            ),
             "GAP": registry.find(name="monochromator_gap").prefix.replace(prefix, ""),
-            "ENERGY": registry.find(name="monochromator_energy").prefix.replace(prefix, ""),
-            "OFFSET": registry.find(name="monochromator_offset").prefix.replace(prefix, ""),
+            "ENERGY": registry.find(name="monochromator_energy").prefix.replace(
+                prefix, ""
+            ),
+            "OFFSET": registry.find(name="monochromator_offset").prefix.replace(
+                prefix, ""
+            ),
             "IDENERGY": display_macros["ID_ENERGY_PV"],
         }
         self.launch_caqtdm(macros=caqtdm_macros, ui_file=self.caqtdm_mono_ui_file)
@@ -69,6 +83,7 @@ class EnergyDisplay(display.FireflyDisplay):
         item = BPlan("set_energy", energy=energy)
         # Submit the item to the queueserver
         from .application import FireflyApplication
+
         app = FireflyApplication.instance()
         app.add_queue_item(item)
 
@@ -78,12 +93,16 @@ class EnergyDisplay(display.FireflyDisplay):
         self.ui.set_energy_button.clicked.connect(self.set_energy)
         # Set up the combo box with X-ray energies
         combo_box = self.ui.edge_combo_box
-        ltab = self.xraydb.tables['xray_levels']
+        ltab = self.xraydb.tables["xray_levels"]
         edges = self.xraydb.query(ltab)
-        edges = edges.filter(ltab.c.absorption_edge < self.max_energy,
-                             ltab.c.absorption_edge > self.min_energy)
-        items = [f"{r.element} {r.iupac_symbol} ({int(r.absorption_edge)} eV)"
-                 for r in edges.all()]
+        edges = edges.filter(
+            ltab.c.absorption_edge < self.max_energy,
+            ltab.c.absorption_edge > self.min_energy,
+        )
+        items = [
+            f"{r.element} {r.iupac_symbol} ({int(r.absorption_edge)} eV)"
+            for r in edges.all()
+        ]
         combo_box.addItems(["Select edge…", *items])
         print("CUstomizing", combo_box, self.select_edge)
         combo_box.activated.connect(self.select_edge)
@@ -104,7 +123,7 @@ class EnergyDisplay(display.FireflyDisplay):
             # Edge is not recognized, so provide feedback
             combo_box.setStyleSheet(self.stylesheet_danger)
         else:
-            # Set the text field to the selected edge's energy            
+            # Set the text field to the selected edge's energy
             energy, fyield, edge_jump = edge_info
             self.ui.target_energy_lineedit.setText(f"{energy:.3f}")
             combo_box.setStyleSheet(self.stylesheet_normal)

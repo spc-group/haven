@@ -57,8 +57,9 @@ def test_run_plan(ffapp, qtbot):
     api.item_add.return_value = {"success": True, "qsize": 2}
     ffapp.prepare_queue_client(api=api)
     # Send a plan
-    with qtbot.waitSignal(ffapp.queue_length_changed, timeout=1000,
-                          check_params_cb=lambda l: l == 2):
+    with qtbot.waitSignal(
+        ffapp.queue_length_changed, timeout=1000, check_params_cb=lambda l: l == 2
+    ):
         ffapp.queue_item_added.emit({})
     # Check if the API sent it
     api.item_add.assert_called_once_with(item={})
@@ -72,26 +73,28 @@ def test_check_queue_length(ffapp, qtbot):
     ffapp.prepare_queue_client(api=api)
     # Check that the queue length is changed
     api.get_queue.return_value = {
-        'success': True,
-        'msg': '',
-        'items': [],
-        'running_item': {},
-        'plan_queue_uid': 'f682e6fa-983c-4bd8-b643-b3baec2ec764'
+        "success": True,
+        "msg": "",
+        "items": [],
+        "running_item": {},
+        "plan_queue_uid": "f682e6fa-983c-4bd8-b643-b3baec2ec764",
     }
-    with qtbot.waitSignal(ffapp.queue_length_changed, timeout=1000,
-                          check_params_cb=lambda l: l == 0):
+    with qtbot.waitSignal(
+        ffapp.queue_length_changed, timeout=1000, check_params_cb=lambda l: l == 0
+    ):
         ffapp._queue_client.check_queue_length()
     # Check that it isn't emitted a second time
     # with qtbot.waitSignal(ffapp.queue_length_changed):
     #     ffapp._queue_client.check_queue_length()
     # Now check a non-empty length queue
     api.queue_get.return_value = {
-        'success': True,
-        'msg': '',
-        'items': ["hello", "world"],
-        'running_item': {},
-        'plan_queue_uid': 'f682e6fa-983c-4bd8-b643-b3baec2ec764'
+        "success": True,
+        "msg": "",
+        "items": ["hello", "world"],
+        "running_item": {},
+        "plan_queue_uid": "f682e6fa-983c-4bd8-b643-b3baec2ec764",
     }
-    with qtbot.waitSignal(ffapp.queue_length_changed, timeout=1000,
-                          check_params_cb=lambda l: l == 2):
+    with qtbot.waitSignal(
+        ffapp.queue_length_changed, timeout=1000, check_params_cb=lambda l: l == 2
+    ):
         ffapp._queue_client.check_queue_length()

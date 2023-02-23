@@ -39,5 +39,3 @@ def test_trigger_fires():
         first_status.__class__.done = old_done
     second_status = device._statuses[scaler_prefix]
     assert first_status is second_status
-
-
