@@ -27,17 +27,18 @@ def test_align_motor(ffapp):
     bec.disable_plots()
     bec.disable_table()
     # Prepare the plan
-    plan = align_motor(detector=detector,
-                       motor=motor,
-                       distance=40,
-                       bec=bec,
-                       md={'plan_name': 'test_plan'},
-                       )
+    plan = align_motor(
+        detector=detector,
+        motor=motor,
+        distance=40,
+        bec=bec,
+        md={"plan_name": "test_plan"},
+    )
     # Execute the plan
     RE = RunEngineStub(call_returns_result=True)
     result = RE(plan)
     # Check peak calculation results
-    assert bec.peaks['cen']['detector'] == pytest.approx(-3, rel=1e-3)
+    assert bec.peaks["cen"]["detector"] == pytest.approx(-3, rel=1e-3)
     assert motor.readback.get() == pytest.approx(-3, rel=1e-3)
 
 
@@ -57,7 +58,7 @@ def test_align_motor(ffapp):
 #     bec = BestEffortCallback()
 #     bec.disable_plots()
 #     bec.disable_table()
-#     # Prepare the plan    
+#     # Prepare the plan
 #     plan = align_pitch2(bec=bec, distance=40, reverse=True)
 #     # Execute the plan
 #     RE = RunEngineStub(call_returns_result=True)

@@ -15,7 +15,9 @@ log = logging.getLogger(__name__)
 __all__ = ["align_motor", "align_pitch2"]
 
 
-def align_pitch2(distance=200, reverse=False, detector="I0", bec=None, feature="cen", md={}):
+def align_pitch2(
+    distance=200, reverse=False, detector="I0", bec=None, feature="cen", md={}
+):
     """Tune the monochromator 2nd crystal pitch motor.
 
     Find and set the position of maximum intensity in the ion chamber
@@ -45,12 +47,20 @@ def align_pitch2(distance=200, reverse=False, detector="I0", bec=None, feature="
     # Get motors
     pitch2 = registry.find(name="monochromator_pitch2")
     # Prepare and run the plan
-    yield from align_motor(detector=detector, motor=pitch2,
-                           distance=distance, reverse=reverse,
-                           bec=bec, feature=feature, md=md_)
+    yield from align_motor(
+        detector=detector,
+        motor=pitch2,
+        distance=distance,
+        reverse=reverse,
+        bec=bec,
+        feature=feature,
+        md=md_,
+    )
 
 
-def align_motor(detector, motor, distance=200, reverse=False, bec=None, feature="cen", md={}):
+def align_motor(
+    detector, motor, distance=200, reverse=False, bec=None, feature="cen", md={}
+):
     """Center the given motor using the beam intensity.
 
     Find and set the position of maximum intensity in the ion chamber
@@ -85,7 +95,7 @@ def align_motor(detector, motor, distance=200, reverse=False, bec=None, feature=
     motor = registry.find(motor)
     det = registry.find(detector)
     detectors = [det]
-    if hasattr(det, 'raw_counts'):
+    if hasattr(det, "raw_counts"):
         detectors.insert(0, det.raw_counts)
     plan = lineup(
         detectors, motor, start, end, npts=40, feature=feature, bec=bec, md=md_
@@ -106,10 +116,12 @@ def align_motor(detector, motor, distance=200, reverse=False, bec=None, feature=
     # Set the motor to the new value (from below accounting for hysteresis)
     if new_value is None:
         # Didn't find a peak position
-        msg = (f"No peak position found for {det_name},"
-               f"motor '{motor.name}' will not be set.")
+        msg = (
+            f"No peak position found for {det_name},"
+            f"motor '{motor.name}' will not be set."
+        )
         log.error(msg)
         warnings.warn(msg)
     else:
-        yield from bps.mv(motor, new_value - abs(end-start)/2)
+        yield from bps.mv(motor, new_value - abs(end - start) / 2)
         yield from bps.mv(motor, new_value)

@@ -15,7 +15,12 @@ from datetime import datetime
 log = logging.getLogger(__name__)
 
 
-__all__ = ["save_motor_position", "list_motor_positions", "recall_motor_position", "list_current_motor_positions"]
+__all__ = [
+    "save_motor_position",
+    "list_motor_positions",
+    "recall_motor_position",
+    "list_current_motor_positions",
+]
 
 
 class MotorAxis(BaseModel):
@@ -30,11 +35,15 @@ class MotorAxis(BaseModel):
 class MotorPosition(BaseModel):
     name: str
     motors: Sequence[MotorAxis]
-    uid:Optional[str] = None
+    uid: Optional[str] = None
     savetime: Optional[float] = None
 
     def save(self, collection):
-        payload = {"name": self.name, "motors": [m.as_dict() for m in self.motors], "savetime": self.savetime}
+        payload = {
+            "name": self.name,
+            "motors": [m.as_dict() for m in self.motors],
+            "savetime": self.savetime,
+        }
         print(payload)
         item_id = collection.insert_one(payload).inserted_id
         return item_id
@@ -43,11 +52,16 @@ class MotorPosition(BaseModel):
     def load(Cls, document):
         # Create a MotorPosition object
         motor_axes = [
-            MotorAxis(name=m["name"], readback=m["readback"], offset = m.get("offset", None))
+            MotorAxis(
+                name=m["name"], readback=m["readback"], offset=m.get("offset", None)
+            )
             for m in document["motors"]
         ]
         position = Cls(
-            name=document["name"], motors=motor_axes, uid=str(document["_id"]),savetime=document.get("savetime")
+            name=document["name"],
+            motors=motor_axes,
+            uid=str(document["_id"]),
+            savetime=document.get("savetime"),
         )
         return position
 
@@ -105,11 +119,11 @@ def save_motor_position(*motors, name: str, collection=None):
     for m in motors:
         payload = dict(name=m.name, readback=rbv(m))
         # Save the calibration offset for motors
-        if hasattr(m, 'user_offset'):
-            payload['offset'] = m.user_offset.get()
+        if hasattr(m, "user_offset"):
+            payload["offset"] = m.user_offset.get()
         axis = MotorAxis(**payload)
         motor_axes.append(axis)
-    savetime=time.time() 
+    savetime = time.time()
     position = MotorPosition(name=name, motors=motor_axes, savetime=savetime)
     # Write to the database
     pos_id = position.save(collection=collection)
@@ -132,7 +146,7 @@ def print_motor_position(position):
     else:
         metadata_str = ""
     # Write the output header
-    output = f'\n{BOLD}{position.name}{END}{metadata_str}\n'
+    output = f"\n{BOLD}{position.name}{END}{metadata_str}\n"
     # Write the motor positions
     for idx, motor in enumerate(position.motors):
         # Figure out some nice tree aesthetics
@@ -164,7 +178,7 @@ def list_motor_positions(collection=None):
     for doc in results:
         were_found = True
         position = MotorPosition.load(doc)
-        print_motor_position(position)     
+        print_motor_position(position)
     # Some feedback in the case of empty motor positions
     if not were_found:
         print(f"No motor positions found: {collection}")
@@ -244,7 +258,7 @@ def recall_motor_position(
         plan_args.append(motor)
         plan_args.append(axis.readback)
     yield from bps.mv(*plan_args)
-    
+
 
 def list_current_motor_positions(*motors, name="current motor"):
     """list and print the current positions of a number of motors
@@ -265,12 +279,12 @@ def list_current_motor_positions(*motors, name="current motor"):
     for m in motors:
         payload = dict(name=m.name, readback=rbv(m))
         # Save the calibration offset for motors
-        if hasattr(m, 'user_offset'):
-            payload['offset'] = m.user_offset.get()
+        if hasattr(m, "user_offset"):
+            payload["offset"] = m.user_offset.get()
         axis = MotorAxis(**payload)
-        motor_axes.append(axis)   
-    position = MotorPosition(name=name, motors=motor_axes, uid=None, savetime=time.time())
+        motor_axes.append(axis)
+    position = MotorPosition(
+        name=name, motors=motor_axes, uid=None, savetime=time.time()
+    )
     # Display the current motor positions
     print_motor_position(position)
-    
-

@@ -21,8 +21,9 @@ from .._iconfig import load_config
 __all__ = ["load_instrument"]
 
 
-def load_instrument(registry: InstrumentRegistry = default_registry,
-                    config: Mapping = None):
+def load_instrument(
+    registry: InstrumentRegistry = default_registry, config: Mapping = None
+):
     """Load the beamline instrumentation into an instrument registry.
 
     This function will reach out and query various IOCs for motor

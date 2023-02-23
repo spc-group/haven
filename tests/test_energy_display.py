@@ -14,12 +14,17 @@ from firefly.energy import EnergyDisplay
 
 def test_energy_macros(qtbot, ffapp, sim_registry):
     # Create fake device
-    mono = haven.instrument.monochromator.Monochromator("mono_ioc", name="monochromator")
+    mono = haven.instrument.monochromator.Monochromator(
+        "mono_ioc", name="monochromator"
+    )
     sim_registry.register(
-        haven.instrument.energy_positioner.EnergyPositioner(mono_pv="mono_ioc:Energy",
-                                                            id_offset_pv="mono_ioc:ID_offset",
-                                                            id_prefix="id_ioc",
-                                                            name="energy"))
+        haven.instrument.energy_positioner.EnergyPositioner(
+            mono_pv="mono_ioc:Energy",
+            id_offset_pv="mono_ioc:ID_offset",
+            id_prefix="id_ioc",
+            name="energy",
+        )
+    )
     # Load display
     ffapp.setup_window_actions()
     ffapp.setup_runengine_actions()
@@ -34,12 +39,17 @@ def test_energy_macros(qtbot, ffapp, sim_registry):
 
 
 def test_move_energy(qtbot, ffapp, sim_registry):
-    mono = haven.instrument.monochromator.Monochromator("mono_ioc", name="monochromator")
+    mono = haven.instrument.monochromator.Monochromator(
+        "mono_ioc", name="monochromator"
+    )
     sim_registry.register(
-        haven.instrument.energy_positioner.EnergyPositioner(mono_pv="mono_ioc:Energy",
-                                                            id_offset_pv="mono_ioc:ID_offset",
-                                                            id_prefix="id_ioc",
-                                                            name="energy"))
+        haven.instrument.energy_positioner.EnergyPositioner(
+            mono_pv="mono_ioc:Energy",
+            id_offset_pv="mono_ioc:ID_offset",
+            id_prefix="id_ioc",
+            name="energy",
+        )
+    )
     # Load display
     ffapp.setup_window_actions()
     ffapp.setup_runengine_actions()
@@ -47,29 +57,39 @@ def test_move_energy(qtbot, ffapp, sim_registry):
     disp = EnergyDisplay()
     # Click the set energy button
     btn = disp.ui.set_energy_button
-    expected_item = BPlan('set_energy', energy=8402.0)
+    expected_item = BPlan("set_energy", energy=8402.0)
+
     def check_item(item):
         return item.to_dict() == expected_item.to_dict()
-    qtbot.keyClicks(disp.target_energy_lineedit, '8402')
-    with qtbot.waitSignal(ffapp.queue_item_added, timeout=1000,
-                          check_params_cb=check_item):
+
+    qtbot.keyClicks(disp.target_energy_lineedit, "8402")
+    with qtbot.waitSignal(
+        ffapp.queue_item_added, timeout=1000, check_params_cb=check_item
+    ):
         qtbot.mouseClick(btn, QtCore.Qt.LeftButton)
 
 
 def test_predefined_energies(qtbot, ffapp, ioc_mono, sim_registry):
-    load_monochromator(config={
-        "monochromator": {
-            "ioc": "mono_ioc",
-        },
-    })
+    load_monochromator(
+        config={
+            "monochromator": {
+                "ioc": "mono_ioc",
+            },
+        }
+    )
     load_energy_positioner()
     # Create fake device
-    mono = haven.instrument.monochromator.Monochromator("mono_ioc", name="monochromator")
+    mono = haven.instrument.monochromator.Monochromator(
+        "mono_ioc", name="monochromator"
+    )
     sim_registry.register(
-        haven.instrument.energy_positioner.EnergyPositioner(mono_pv="mono_ioc:Energy",
-                                                            id_offset_pv="mono_ioc:ID_offset",
-                                                            id_prefix="id_ioc",
-                                                            name="energy"))
+        haven.instrument.energy_positioner.EnergyPositioner(
+            mono_pv="mono_ioc:Energy",
+            id_offset_pv="mono_ioc:ID_offset",
+            id_prefix="id_ioc",
+            name="energy",
+        )
+    )
     # Set up the required Application state
     ffapp.setup_window_actions()
     ffapp.setup_runengine_actions()

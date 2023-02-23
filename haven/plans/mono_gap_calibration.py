@@ -20,7 +20,6 @@ from .align_motor import align_pitch2
 log = logging.getLogger(__name__)
 
 
-
 def calibrate_mono_gap(
     gap_list,
     mono_energies,

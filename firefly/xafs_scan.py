@@ -32,8 +32,7 @@ class XafsScanRegion:
         self.k_weight_line_edit.setEnabled(False)
         self.layout.addWidget(self.k_weight_line_edit)
         # Connect the k-space enabled checkbox to the relevant signals
-        self.k_space_checkbox.stateChanged.connect(
-            self.k_weight_line_edit.setEnabled)
+        self.k_space_checkbox.stateChanged.connect(self.k_weight_line_edit.setEnabled)
 
     def update_edge_enabled(self, is_checked: int):
         # Go back to real space if k-space was enabled
@@ -43,13 +42,11 @@ class XafsScanRegion:
         self.k_space_checkbox.setEnabled(is_checked)
 
 
-
 class XafsScanDisplay(display.FireflyDisplay):
     def customize_ui(self):
         self.reset_default_regions()
         # Connect the E0 checkbox to the E0 combobox
-        self.ui.use_edge_checkbox.stateChanged.connect(
-            self.edge_combo_box.setEnabled)
+        self.ui.use_edge_checkbox.stateChanged.connect(self.edge_combo_box.setEnabled)
 
     def reset_default_regions(self):
         self.regions = []
@@ -62,10 +59,9 @@ class XafsScanDisplay(display.FireflyDisplay):
             region = XafsScanRegion()
             self.ui.regions_layout.addLayout(region.layout)
             # Connect the E0 checkbox to each of the regions
-            self.ui.use_edge_checkbox.stateChanged.connect(
-                region.update_edge_enabled)
+            self.ui.use_edge_checkbox.stateChanged.connect(region.update_edge_enabled)
             # Save it to the list
             self.regions.append(region)
-        
+
     def ui_filename(self):
         return "xafs_scan.ui"

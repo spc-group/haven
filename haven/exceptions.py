@@ -1,5 +1,6 @@
 class NoEnergies(ValueError):
     """The plan parameters do not result in any energies being selected for scanning."""
+
     ...
 
 

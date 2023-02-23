@@ -64,6 +64,7 @@ class EnergyPositioner(PseudoPositioner):
       f"{id_prefix}:Energy.VAL" reaches the energy readback value.
 
     """
+
     # Pseudo axes
     energy: OphydObject = Cpt(PseudoSingle, kind="hinted")
 
@@ -73,7 +74,9 @@ class EnergyPositioner(PseudoPositioner):
     id_offset: OphydObject = FCpt(EpicsSignal, "{id_offset_pv}", kind="config")
     id_energy: OphydObject = FCpt(Undulator, "{id_prefix}", kind="normal")
 
-    def __init__(self, mono_pv: str, id_prefix: str, id_offset_pv: str, *args, **kwargs):
+    def __init__(
+        self, mono_pv: str, id_prefix: str, id_offset_pv: str, *args, **kwargs
+    ):
         """INIT DOCSTRING"""
         self.mono_pv = mono_pv
         self.id_offset_pv = id_offset_pv

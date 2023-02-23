@@ -42,7 +42,6 @@ def qapp_cls():
     return FireflyApplication
 
 
-
 @pytest.fixture
 def sim_registry():
     # Clean the registry so we can restore it later
@@ -52,7 +51,6 @@ def sim_registry():
     yield registry
     # Restore the previous registry components
     registry.components = components
-
 
 
 @pytest.fixture(scope="session")
@@ -117,6 +115,7 @@ def ioc_mono():
     with simulated_ioc(fp=ioc_dir / "mono.py") as pvdb:
         yield pvdb
 
+
 @pytest.fixture
 def sim_registry():
     # Clean the registry so we can restore it later
@@ -126,5 +125,3 @@ def sim_registry():
     yield registry
     # Restore the previous registry components
     registry.components = components
-
-

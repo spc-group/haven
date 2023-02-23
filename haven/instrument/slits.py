@@ -8,7 +8,8 @@ def load_slits(config=None):
     if config is None:
         config = load_config()
     # Create slits
-    for name, slit_config in config['slits'].items():
-        dev = Optics2Slit2D_HV(prefix=slit_config['prefix'], name=name,
-                               labels={"slits"})
+    for name, slit_config in config["slits"].items():
+        dev = Optics2Slit2D_HV(
+            prefix=slit_config["prefix"], name=name, labels={"slits"}
+        )
         registry.register(dev)

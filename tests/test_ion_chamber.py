@@ -1,7 +1,11 @@
 import pytest
 import time
 
-from haven.instrument.ion_chamber import IonChamber, SensitivityLevelPositioner, load_ion_chambers
+from haven.instrument.ion_chamber import (
+    IonChamber,
+    SensitivityLevelPositioner,
+    load_ion_chambers,
+)
 from haven import exceptions
 import epics
 
@@ -85,7 +89,9 @@ def test_default_pv_prefix():
     """
     prefix = "myioc:myscaler"
     # Instantiate the device with *scaler_prefix* argument
-    device = IonChamber(name="device", prefix="gibberish", ch_num=1, scaler_prefix=prefix)
+    device = IonChamber(
+        name="device", prefix="gibberish", ch_num=1, scaler_prefix=prefix
+    )
     device.scaler_prefix = prefix
     assert device.scaler_prefix == prefix
     # Instantiate the device with *scaler_prefix* argument

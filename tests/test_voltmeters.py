@@ -42,7 +42,7 @@ def test_gain_button(qtbot):
     button = display.ui.gain_up_button
     # Check that the button is a button
     assert type(button) is QtWidgets.QPushButton
-    assert hasattr(button, 'clicked')
+    assert hasattr(button, "clicked")
     # Click the button and check that the gain changed
     button.click()
     assert I0.increase_gain.called
@@ -73,9 +73,13 @@ def test_embedded_display_widgets(qtbot, registry):
     """
     window = FireflyMainWindow()
     # Set up fake ion chambers
-    I0 = haven.IonChamber(prefix="eggs_ioc", ch_num=2, name="I0", labels={"ion_chambers"})
+    I0 = haven.IonChamber(
+        prefix="eggs_ioc", ch_num=2, name="I0", labels={"ion_chambers"}
+    )
     registry.register(I0)
-    It = haven.IonChamber(prefix="spam_ioc", ch_num=3, name="It", labels={"ion_chambers"})
+    It = haven.IonChamber(
+        prefix="spam_ioc", ch_num=3, name="It", labels={"ion_chambers"}
+    )
     registry.register(It)
     # Load the display
     vms_display = VoltmetersDisplay()

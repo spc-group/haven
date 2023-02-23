@@ -6,6 +6,7 @@ import logging
 import os
 
 import haven
+
 # from pydm.data_plugins.epics_plugin import EPICSPlugin
 from pydm.widgets.channel import PyDMChannel
 from qtpy.QtGui import QColor
@@ -62,10 +63,10 @@ class CameraDisplay(display.FireflyDisplay):
         self._detector_disconnected_color = QColor(255, 0, 0)
         self._idle_color = QColor(0, 255, 0)
         self._acquire_color = QColor(255, 255, 0)
-        
+
     def ui_filename(self):
         return "camera.ui"
-    
+
     def customize_ui(self):
         self.imageJ_button.clicked.connect(self.launch_imageJ)
         self.caqtdm_button.clicked.connect(self.launch_caqtdm)
@@ -82,13 +83,13 @@ class CameraDisplay(display.FireflyDisplay):
     def launch_imageJ(self):
         # Set the imageJ properties file
         prefix = self.macros()["PREFIX"]
-        with open(self.properties_file, mode='w') as fd:
+        with open(self.properties_file, mode="w") as fd:
             fd.write("#EPICS_AD_Viewer Properties\n")
             # Write a line to match "#Fri Nov 04 15:44:30 CDT 2022"
             now_string = dt.datetime.now().strftime("%a %b %d %H:%M:%S %Y")
             fd.write(f"#{now_string}\n")
             # Write out the PV prefix (e.g. "PVPrefix=25idgigeB\:image1\:")
-            prefix_str = prefix.replace(':', '\\:')
+            prefix_str = prefix.replace(":", "\\:")
             fd.write(f"PVPrefix={prefix_str}image1\\:\n")
         # Launch ImageJ with AD viewer plugin
         imagej_env = os.environ.copy()
@@ -102,7 +103,7 @@ class CameraDisplay(display.FireflyDisplay):
     def update_camera_state(self, new_state):
         self._camera_state = new_state
         self.update_status_indicators()
-    
+
     @Slot(bool)
     def update_camera_connection(self, new_state):
         self._camera_connected = new_state

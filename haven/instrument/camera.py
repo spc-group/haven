@@ -21,8 +21,9 @@ class Camera(CamBase):
     description:
       The human-readable description of this device. If omitted,
       *name* will be used.
-    
+
     """
+
     def __init__(
         self, prefix: str, name: str, description: Optional[str] = None, *args, **kwargs
     ):

@@ -8,7 +8,7 @@ from firefly.application import FireflyApplication
 def test_navbar(ffapp):
     window = PlanMainWindow()
     # Check navbar actions on the app
-    assert hasattr(ffapp, 'pause_runengine_action')
+    assert hasattr(ffapp, "pause_runengine_action")
     # Check that the navbar actions are set up properly
     assert hasattr(window.ui, "navbar")
     navbar = window.ui.navbar
@@ -39,10 +39,11 @@ def test_add_menu_action(ffapp):
     # Check that it's not set up with the right menu yet
     assert not hasattr(window, "actionMake_Salad")
     # Add a menu item
-    action = window.add_menu_action(action_name="actionMake_Salad",
-                                    text="Make Salad", menu=window.ui.menuTools)
+    action = window.add_menu_action(
+        action_name="actionMake_Salad", text="Make Salad", menu=window.ui.menuTools
+    )
     assert hasattr(window.ui, "actionMake_Salad")
-    assert hasattr(window, "actionMake_Salad")    
+    assert hasattr(window, "actionMake_Salad")
     assert action.text() == "Make Salad"
     assert action.objectName() == "actionMake_Salad"
 

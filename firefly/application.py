@@ -91,7 +91,8 @@ class FireflyApplication(PyDMApplication):
         self.show_status_window()
         # Set up the window to show list of PV connections
         pydm.utilities.shortcuts.install_connection_inspector(
-            parent=self.windows["beamline_status"])
+            parent=self.windows["beamline_status"]
+        )
 
     def setup_window_actions(self):
         """Create QActions for clicking on menu items, shortcuts, etc.
@@ -112,15 +113,23 @@ class FireflyApplication(PyDMApplication):
         self.launch_queuemonitor_action.setText("Queue Monitor")
         self.launch_queuemonitor_action.triggered.connect(self.launch_queuemonitor)
         # Launch energy window
-        self._setup_window_action(action_name="show_energy_window_action", text="Energy", slot=self.show_energy_window)
+        self._setup_window_action(
+            action_name="show_energy_window_action",
+            text="Energy",
+            slot=self.show_energy_window,
+        )
 
     def launch_queuemonitor(self):
         config = load_config()["queueserver"]
         zmq_info_addr = f"tcp://{config['info_host']}:{config['info_port']}"
         zmq_ctrl_addr = f"tcp://{config['control_host']}:{config['control_port']}"
-        cmds = ['queue-monitor',
-                '--zmq-control-addr', zmq_ctrl_addr,
-                '--zmq-info-addr', zmq_info_addr]
+        cmds = [
+            "queue-monitor",
+            "--zmq-control-addr",
+            zmq_ctrl_addr,
+            "--zmq-info-addr",
+            zmq_info_addr,
+        ]
         subprocess.Popen(cmds)
 
     def setup_runengine_actions(self):
@@ -149,7 +158,9 @@ class FireflyApplication(PyDMApplication):
         try:
             motors = sorted(registry.findall(label="motors"), key=lambda x: x.name)
         except ComponentNotFound:
-            log.warning("No motors found, [Positioners] -> [Motors] menu will be empty.")
+            log.warning(
+                "No motors found, [Positioners] -> [Motors] menu will be empty."
+            )
             motors = []
         # Create menu actions for each motor
         self.motor_actions = []
@@ -177,9 +188,11 @@ class FireflyApplication(PyDMApplication):
         client.moveToThread(thread)
         # Connect actions to slots for controlling the queueserver
         self.pause_runengine_action.triggered.connect(
-            partial(client.request_pause, defer=True))        
+            partial(client.request_pause, defer=True)
+        )
         self.pause_runengine_now_action.triggered.connect(
-            partial(client.request_pause, defer=False))
+            partial(client.request_pause, defer=False)
+        )
         self.start_queue_action.triggered.connect(client.start_queue)
         # Connect signals to slots for executing plans on queueserver
         self.queue_item_added.connect(client.add_queue_item)
@@ -198,17 +211,19 @@ class FireflyApplication(PyDMApplication):
 
     def connect_menu_signals(self, window):
         """Connects application-level signals to the associated slots.
-        
+
         These signals should generally be applicable to multiple
         windows. If the signal and/or slot is specific to a given
         window, then it should be in that widnow's class definition
         and setup code.
-        
+
         """
         window.actionShow_Log_Viewer.triggered.connect(self.show_log_viewer_window)
         window.actionShow_Xafs_Scan.triggered.connect(self.show_xafs_scan_window)
         window.actionShow_Voltmeters.triggered.connect(self.show_voltmeters_window)
-        window.actionShow_Sample_Viewer.triggered.connect(self.show_sample_viewer_window)
+        window.actionShow_Sample_Viewer.triggered.connect(
+            self.show_sample_viewer_window
+        )
         window.actionShow_Cameras.triggered.connect(self.show_cameras_window)
 
     def show_window(self, WindowClass, ui_file, name=None, macros={}):
@@ -230,13 +245,14 @@ class FireflyApplication(PyDMApplication):
 
     def forget_window(self, obj, name):
         """Forget this window exists."""
-        if hasattr(self, 'windows'):
+        if hasattr(self, "windows"):
             del self.windows[name]
 
     def create_window(self, WindowClass, ui_file, macros={}):
         # Create and save this window
-        main_window = WindowClass(hide_menu_bar=self.hide_menu_bar,
-                                  hide_status_bar=self.hide_status_bar)
+        main_window = WindowClass(
+            hide_menu_bar=self.hide_menu_bar, hide_status_bar=self.hide_status_bar
+        )
         # Make it look pretty
         apply_stylesheet(self.stylesheet_path, widget=main_window)
         main_window.update_tools_menu()
@@ -253,13 +269,18 @@ class FireflyApplication(PyDMApplication):
     def show_motor_window(self, *args, motor: HavenMotor):
         """Instantiate a new main window for this application."""
         motor_name = motor.name.replace(" ", "_")
-        self.show_window(FireflyMainWindow, ui_dir / "motor.py",
-                         name=f"FireflyMainWindow_motor_{motor_name}",
-                         macros={"PREFIX": motor.prefix})
+        self.show_window(
+            FireflyMainWindow,
+            ui_dir / "motor.py",
+            name=f"FireflyMainWindow_motor_{motor_name}",
+            macros={"PREFIX": motor.prefix},
+        )
 
     def show_status_window(self, stylesheet_path=None):
         """Instantiate a new main window for this application."""
-        self.show_window(FireflyMainWindow, ui_dir / "status.py", name="beamline_status")
+        self.show_window(
+            FireflyMainWindow, ui_dir / "status.py", name="beamline_status"
+        )
 
     make_main_window = show_status_window
 
@@ -277,7 +298,9 @@ class FireflyApplication(PyDMApplication):
 
     @QtCore.Slot()
     def show_sample_viewer_window(self):
-        self.show_window(FireflyMainWindow, ui_dir / "sample_viewer.ui", name="sample_viewer")
+        self.show_window(
+            FireflyMainWindow, ui_dir / "sample_viewer.ui", name="sample_viewer"
+        )
 
     @QtCore.Slot()
     def show_cameras_window(self):

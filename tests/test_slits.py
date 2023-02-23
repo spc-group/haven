@@ -1,5 +1,6 @@
 from haven.instrument.slits import load_slits
 
+
 def test_load_slits(sim_registry):
     load_slits()
     # Check that the slits were loaded

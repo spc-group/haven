@@ -12,10 +12,10 @@ def test_region_number(qtbot):
     qtbot.addWidget(disp)
     # Check that the display has the right number of rows to start with
     assert disp.ui.regions_spin_box.value() == 3
-    assert hasattr(disp, 'regions')
+    assert hasattr(disp, "regions")
     assert len(disp.regions) == 3
     # Check that regions can be inserted and removed
-    
+
 
 def test_region(qtbot):
     """Does changing the region ui respond the way it should."""

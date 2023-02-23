@@ -33,9 +33,11 @@ __all__ = ["IonChamber", "load_ion_chambers"]
 
 
 class SensitivityPositioner(PVPositionerPC):
-    setpoint = Cpt(EpicsSignal, ".VAL", kind=(Kind.config|Kind.normal))
-    readback = Cpt(EpicsSignal, ".VAL", kind=(Kind.config|Kind.normal))
-    readback_string = Cpt(EpicsSignal, ".VAL", kind=(Kind.config|Kind.normal), string=True)
+    setpoint = Cpt(EpicsSignal, ".VAL", kind=(Kind.config | Kind.normal))
+    readback = Cpt(EpicsSignal, ".VAL", kind=(Kind.config | Kind.normal))
+    readback_string = Cpt(
+        EpicsSignal, ".VAL", kind=(Kind.config | Kind.normal), string=True
+    )
 
 
 class SetAllPositioner(PVPositionerPC):
@@ -50,9 +52,19 @@ class SensitivityLevelPositioner(PseudoPositioner):
     sens_level = Cpt(PseudoSingle, limits=(0, 27))
 
     # Sensitivity settings
-    sens_unit = Cpt(SensitivityPositioner, ":sens_unit", kind=Kind.config, settle_time=0.1)
-    sens_value = Cpt(SensitivityPositioner, ":sens_num", kind=Kind.config, settle_time=0.1)
-    set_all = Cpt(SetAllPositioner, ":init.PROC", kind=Kind.omitted, settle_time=0.1, limits=(0, 1))
+    sens_unit = Cpt(
+        SensitivityPositioner, ":sens_unit", kind=Kind.config, settle_time=0.1
+    )
+    sens_value = Cpt(
+        SensitivityPositioner, ":sens_num", kind=Kind.config, settle_time=0.1
+    )
+    set_all = Cpt(
+        SetAllPositioner,
+        ":init.PROC",
+        kind=Kind.omitted,
+        settle_time=0.1,
+        limits=(0, 1),
+    )
 
     @pseudo_position_argument
     def forward(self, target_gain_level):
@@ -110,16 +122,22 @@ class IonChamber(ScalerTriggered, Device):
       Positioner for setting the count time on the scaler.
     sensitivity
       The positioner for changing the pre-amp gain/sensitivity.
-    
+
     """
 
     ch_num: int = 0
     ch_char: str
-    count: OphydObject = FCpt(EpicsSignal, "{scaler_prefix}.CNT", trigger_value=1, kind=Kind.omitted)
+    count: OphydObject = FCpt(
+        EpicsSignal, "{scaler_prefix}.CNT", trigger_value=1, kind=Kind.omitted
+    )
     raw_counts: OphydObject = FCpt(ScalerSignalRO, "{prefix}.S{ch_num}", kind="hinted")
-    volts: OphydObject = FCpt(ScalerSignalRO, "{prefix}_calc{ch_num}.VAL", kind="hinted")
+    volts: OphydObject = FCpt(
+        ScalerSignalRO, "{prefix}_calc{ch_num}.VAL", kind="hinted"
+    )
     exposure_time: OphydObject = FCpt(EpicsSignal, "{scaler_prefix}.TP", kind="normal")
-    sensitivity: OphydObject = FCpt(SensitivityLevelPositioner, "{preamp_prefix}", kind="config")
+    sensitivity: OphydObject = FCpt(
+        SensitivityLevelPositioner, "{preamp_prefix}", kind="config"
+    )
     auto_count: OphydObject = FCpt(EpicsSignal, "{scaler_prefix}.CONT", kind="config")
 
     def __init__(
@@ -127,8 +145,8 @@ class IonChamber(ScalerTriggered, Device):
         prefix: str,
         ch_num: int,
         name: str,
-        preamp_prefix: str=None,
-        scaler_prefix: str=None,
+        preamp_prefix: str = None,
+        scaler_prefix: str = None,
         *args,
         **kwargs,
     ):

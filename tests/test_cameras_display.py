@@ -66,7 +66,7 @@ def test_set_status_byte(qtbot, ffapp):
     # Make the camera be disconnected and see if it's red
     display.update_camera_state(DetectorStates.DISCONNECTED)
     assert bit._brush.color().getRgb() == (255, 0, 0, 255)
-    assert  label.isVisible(), "State label should be visible when disconnected"
+    assert label.isVisible(), "State label should be visible when disconnected"
     # Make the camera be acquiring and see if it's yellow
     display.update_camera_state(DetectorStates.ACQUIRE)
     assert bit._brush.color().getRgb() == (255, 255, 0, 255)

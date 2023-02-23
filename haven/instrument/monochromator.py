@@ -1,4 +1,10 @@
-from ophyd import Device, Component as Cpt, FormattedComponent as FCpt, EpicsMotor, EpicsSignal
+from ophyd import (
+    Device,
+    Component as Cpt,
+    FormattedComponent as FCpt,
+    EpicsMotor,
+    EpicsSignal,
+)
 
 from .instrument_registry import registry
 from .._iconfig import load_config

@@ -142,9 +142,10 @@ class InstrumentRegistry:
         """
         results = []
         # If using *any_of*, search by label and name
-        _label = label if label is not None else any_of        
+        _label = label if label is not None else any_of
         # Define a helper to test for lists of search parameters
         _name = name if name is not None else any_of
+
         def is_iterable(obj):
             return (not isinstance(obj, str)) and hasattr(obj, "__iter__")
 
@@ -155,7 +156,10 @@ class InstrumentRegistry:
             # Filter by label
             if _label is not None:
                 if is_iterable(_label):
-                    [results.extend(self.findall(label=lbl, allow_none=allow_none)) for lbl in _label]
+                    [
+                        results.extend(self.findall(label=lbl, allow_none=allow_none))
+                        for lbl in _label
+                    ]
                 else:
                     try:
                         results.extend(

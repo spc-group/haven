@@ -2,6 +2,7 @@ from ophyd.sim import motor
 
 from haven import set_energy
 
+
 def test_plan_messages():
     """Check that the right messages are getting produced."""
     plan = set_energy(energy=8400, positioners=[motor])
