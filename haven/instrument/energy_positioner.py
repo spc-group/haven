@@ -110,6 +110,6 @@ def load_energy_positioner(config=None):
         name="energy",
         mono_pv=f"{mono_prefix}{mono_suffix}",
         id_offset_pv=f"{mono_prefix}{id_offset_suffix}",
-        id_prefix=id_prefix,
+        id_prefix=f"{id_prefix}",
     )
     registry.register(energy_positioner)

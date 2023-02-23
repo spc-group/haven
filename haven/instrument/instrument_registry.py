@@ -140,21 +140,22 @@ class InstrumentRegistry:
           parameters.
 
         """
-        results = []  # self.components.copy()
+        results = []
+        # If using *any_of*, search by label and name
+        _label = label if label is not None else any_of        
         # Define a helper to test for lists of search parameters
-
+        _name = name if name is not None else any_of
         def is_iterable(obj):
             return (not isinstance(obj, str)) and hasattr(obj, "__iter__")
 
         if is_iterable(any_of):
             for a in any_of:
-                results.extend(self.findall(any_of=a))
+                results.extend(self.findall(any_of=a, allow_none=allow_none))
         else:
             # Filter by label
-            _label = label if label is not None else any_of
             if _label is not None:
                 if is_iterable(_label):
-                    [results.extend(self.findall(label=lbl)) for lbl in _label]
+                    [results.extend(self.findall(label=lbl, allow_none=allow_none)) for lbl in _label]
                 else:
                     try:
                         results.extend(
@@ -167,7 +168,6 @@ class InstrumentRegistry:
                     except TypeError:
                         raise exceptions.InvalidComponentLabel(_label)
             # Filter by name
-            _name = name if name is not None else any_of
             if _name is not None:
                 if is_iterable(_name):
                     [results.extend(self.findall(name=n)) for n in _name]

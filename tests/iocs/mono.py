@@ -25,6 +25,7 @@ class IOC(IOC_):
     Energy = pvproperty(value=10000.0, doc="Energy", record=ResponsiveMotorFields)
     Offset = pvproperty(value=9009, doc="Offset", record=ResponsiveMotorFields)
     mode = pvproperty(value=1, doc="mode", record=ResponsiveMotorFields)
+    id_offset = pvproperty(value=0, doc="ID offset", name="ID_offset")
 
     default_prefix = "mono_ioc:"
 
