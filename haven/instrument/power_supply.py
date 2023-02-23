@@ -12,7 +12,8 @@ class NHQ203MChannel(Device):
     # Device components
     potential = FCpt(EpicsSignal, name="potential",
                      suffix="{prefix}:Volt{ch_num}_rbv",
-                     write_pv="{prefix}:SetVolt{ch_num}")
+                     write_pv="{prefix}:SetVolt{ch_num}",
+                     tolerance=2)
     current = FCpt(EpicsSignalRO, name="current",
                    suffix="{prefix}:Curr{ch_num}_rbv")
     ramp_rate = FCpt(EpicsSignal, name="ramp_rate",
