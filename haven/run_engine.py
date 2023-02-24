@@ -18,13 +18,13 @@ class RunEngine(BlueskyRunEngine):
             catalog_name = load_config()["database"]["databroker"]["catalog"]
             try:
                 catalog = databroker.catalog[catalog_name]
-            except KeyError as e:
+                self.subscribe(catalog.v1.insert)
+            except Exception as e:
                 msg = (
                     f"Data are not being saved! Could not load databroker catalog: {e}"
                 )
                 log.error(msg)
                 warnings.warn(msg)
-            else:
-                self.subscribe(catalog.v1.insert)
+                raise RuntimeError(msg)
         # Add metadata pre-processor
         self.preprocessors.append(inject_haven_md_wrapper)
