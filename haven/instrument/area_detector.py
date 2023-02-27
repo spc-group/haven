@@ -1,22 +1,44 @@
 from apstools.devices import CamMixin_V34
 from apstools.devices import SingleTrigger_V34
-from ophyd import ADComponent
+from ophyd import ADComponent, Component as Cpt, EpicsSignalRO
 from ophyd import DetectorBase
 from ophyd import SimDetectorCam
 from ophyd import Lambda750kCam
 from ophyd import SingleTrigger
+from ophyd import Device, Kind
 from ophyd.areadetector.filestore_mixins import FileStoreHDF5IterativeWrite
 from ophyd.areadetector.plugins import HDF5Plugin_V34, HDF5Plugin_V31
 from ophyd.areadetector.plugins import ImagePlugin_V34, ImagePlugin_V31
 from ophyd.areadetector.plugins import PvaPlugin_V34, PvaPlugin_V31
 from ophyd.areadetector.plugins import TIFFPlugin_V31
+from ophyd.areadetector.plugins import ROIStatPlugin_V31, ROIStatPlugin_V34
+from ophyd.areadetector.plugins import ROIPlugin_V31
+from ophyd.areadetector.plugins import StatsPlugin_V31
+
 
 from .._iconfig import load_config
+from .instrument_registry import registry
 from .. import exceptions
 
 
 class SimDetectorCam_V34(CamMixin_V34, SimDetectorCam):
     ...
+
+
+class StageCapture():
+    """Mixin to prepare NDPlugin file capture mode.
+
+    Sets the number of captures to zero (infinite), and starts
+    capturing. Then when the device gets unstaged, capturing turns
+    back off.
+
+    """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Stage the capture button as well
+        self.stage_sigs[self.capture] = 1
+        self.stage_sigs[self.num_capture] = 0
+    
     
 class MyHDF5Plugin(FileStoreHDF5IterativeWrite, HDF5Plugin_V34):
     """
@@ -43,13 +65,20 @@ class SimDetector(SingleTrigger_V34, DetectorBase):
     image = ADComponent(ImagePlugin_V34, "image1:")
     pva = ADComponent(PvaPlugin_V34, "Pva1:")
     hdf1 = ADComponent(
-        HDF5Plugin_V31,
+        type("HDF5Plugin", (StageCapture, HDF5Plugin_V34), {}),
         "HDF1:",
         #write_path_template="/tmp/",
         #read_path_template=READ_PATH_TEMPLATE,
     )
 
-# det = MySimDetector("25idSimDet:", name="sim_det")
+
+class StatsPlugin(StatsPlugin_V31):
+    _default_read_attrs = ["max_value", "min_value",
+                           "min_xy.x", "max_xy.x",
+                           "min_xy.y", "max_xy.y",
+                           "total", "net",
+                           "mean_value", "sigma_value",
+    ]
 
 
 class Lambda250K(SingleTrigger, DetectorBase):
@@ -59,13 +88,23 @@ class Lambda250K(SingleTrigger, DetectorBase):
     cam = ADComponent(Lambda750kCam, "cam1:")
     image = ADComponent(ImagePlugin_V31, "image1:")
     pva = ADComponent(PvaPlugin_V31, "Pva1:")
-    tiff = ADComponent(TIFFPlugin_V31, "TIFF1:")
-    hdf1 = ADComponent(HDF5Plugin_V31, "HDF1:")
-
-
-# Prepare the detector device
-# det = Lambda250K("25idLambda250K:", name="lambda250K")
-# det.wait_for_connection()
+    tiff = ADComponent(
+        type("TIFFPlugin", (StageCapture, TIFFPlugin_V31), {}),
+        "TIFF1:")
+    hdf1 = ADComponent(
+        type("HDF5Plugin", (StageCapture, HDF5Plugin_V31), {}),
+        "HDF1:")
+    roi1 = ADComponent(ROIPlugin_V31, "ROI1:", kind=Kind.config)
+    roi2 = ADComponent(ROIPlugin_V31, "ROI2:", kind=Kind.config)
+    roi3 = ADComponent(ROIPlugin_V31, "ROI3:", kind=Kind.config)
+    roi4 = ADComponent(ROIPlugin_V31, "ROI4:", kind=Kind.config)
+    stats1 = ADComponent(StatsPlugin, "Stats1:", kind=Kind.normal)
+    stats2 = ADComponent(StatsPlugin, "Stats2:", kind=Kind.normal)
+    stats3 = ADComponent(StatsPlugin, "Stats3:", kind=Kind.normal)
+    stats4 = ADComponent(StatsPlugin, "Stats4:", kind=Kind.normal)
+    stats5 = ADComponent(StatsPlugin, "Stats5:", kind=Kind.normal)
+    
+    _default_read_attrs = ["stats1", "stats2", "stats3", "stats4", "stats5"]
 
 
 def load_area_detectors(config=None):
@@ -82,3 +121,4 @@ def load_area_detectors(config=None):
         det = DeviceClass(prefix=f"{adconfig['prefix']}:",
                           name=name,
                           labels={"area_detectors"})
+        registry.register(det)
