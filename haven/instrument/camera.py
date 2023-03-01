@@ -60,13 +60,6 @@ def load_cameras(config=None) -> Sequence[Camera]:
             description=device["description"],
             labels={"cameras"},
         )
-        try:
-            cam.wait_for_connection()
-        except TimeoutError:
-            msg = f"Could not connect to camera {name} ({device['ioc']})"
-            log.warning(msg)
-            warnings.warn(msg)
-        else:
-            registry.register(cam)
-            cameras.append(cam)
+        registry.register(cam)
+        cameras.append(cam)
     return cameras

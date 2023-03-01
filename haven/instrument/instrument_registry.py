@@ -1,9 +1,11 @@
 from typing import Optional, Sequence
 import logging
+import warnings
 
 from ophyd import Component, ophydobj
 
 from .. import exceptions
+from .._iconfig import load_config
 from ..typing import Detector
 
 
@@ -212,6 +214,8 @@ class InstrumentRegistry:
           The same component as was provided as an input.
 
         """
+        beamline_is_connected = load_config()['beamline']['is_connected']
+        # Determine how to register the device
         if isinstance(component, type):
             # A class was given, so instances should be auto-registered
             component.__new__ = self.__new__wrapper
@@ -228,6 +232,15 @@ class InstrumentRegistry:
                 msg = f"Ignoring components with duplicate name: '{component.name}'"
                 log.debug(msg)
                 return component
+            # Test the connection to ensure the device is present
+            if beamline_is_connected and component.parent is None:
+                try:
+                    component.wait_for_connection()
+                except TimeoutError:
+                    msg = f"Could not connect to device {component.name} ({component.prefix})"
+                    log.warning(msg)
+                    warnings.warn(msg)
+                    return component
             # Register this component
             self.components.append(component)
             # Recusively register sub-components

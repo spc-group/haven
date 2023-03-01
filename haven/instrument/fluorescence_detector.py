@@ -309,7 +309,6 @@ def load_dxp_detector(device_name, prefix, num_elements):
     parent_classes = (DxpDetectorBase,)
     Cls = type(class_name, parent_classes, attrs)
     det = Cls(prefix=f"{prefix}:", name=device_name)
-    det.wait_for_connection()
     registry.register(det)
 
 
@@ -322,14 +321,9 @@ def load_fluorescence_detectors(config=None):
             continue
         # Build the detector device
         if cfg["electronics"] == "dxp":
-            try:
-                load_dxp_detector(
-                    device_name=name, prefix=cfg["prefix"], num_elements=cfg["num_elements"]
-                )
-            except TimeoutError:
-                msg = f"Could not connect to fluorescence detector {name} ({cfg['prefix']})"
-                log.warning(msg)
-                warnings.warn(msg)
+            load_dxp_detector(
+                device_name=name, prefix=cfg["prefix"], num_elements=cfg["num_elements"]
+            )
         else:
             msg = f"Electronics '{cfg['electronics']}' for {name} not supported."
             raise exceptions.UnknownDeviceConfiguration(msg)
