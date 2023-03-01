@@ -1,9 +1,14 @@
+import logging
+import warnings
 from typing import Optional, Sequence
 
 from ophyd.areadetector.cam import CamBase
 
 from .instrument_registry import registry
 from .._iconfig import load_config
+
+
+log = logging.getLogger(__name__)
 
 
 __all__ = ["Camera", "load_cameras"]
@@ -55,6 +60,13 @@ def load_cameras(config=None) -> Sequence[Camera]:
             description=device["description"],
             labels={"cameras"},
         )
-        registry.register(cam)
-        cameras.append(cam)
+        try:
+            cam.wait_for_connection()
+        except TimeoutError:
+            msg = f"Could not connect to camera {name} ({device['ioc']})"
+            log.warning(msg)
+            warnings.warn(msg)
+        else:
+            registry.register(cam)
+            cameras.append(cam)
     return cameras
