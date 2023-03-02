@@ -1,6 +1,8 @@
 from enum import IntEnum
 from collections import OrderedDict
 from typing import Optional, Sequence
+import warnings
+import logging
 
 from ophyd import (
     mca,
@@ -15,6 +17,9 @@ from .scaler_triggered import ScalerTriggered
 from .instrument_registry import registry
 from .._iconfig import load_config
 from .. import exceptions
+
+
+log = logging.getLogger(__name__)
 
 
 active_kind = Kind.normal | Kind.config
@@ -90,7 +95,6 @@ def add_mcas(range_, kind=active_kind, **kwargs):
     return defn
 
 
-@registry.register
 class DxpDetectorBase(mca.EpicsDXPMultiElementSystem):
     """A fluorescence detector based on XIA-DXP XMAP electronics.
 
@@ -300,12 +304,12 @@ def load_dxp_detector(device_name, prefix, num_elements):
             default_configuration_attrs=[f"mca{i}" for i in mca_range],
         )
     }
-    # Add the ROIs to the list of readable detectors
-    # Create a dynamic subclass
+    # Create a dynamic subclass with the MCAs
     class_name = device_name.title().replace("_", "")
     parent_classes = (DxpDetectorBase,)
     Cls = type(class_name, parent_classes, attrs)
     det = Cls(prefix=f"{prefix}:", name=device_name)
+    registry.register(det)
 
 
 def load_fluorescence_detectors(config=None):
