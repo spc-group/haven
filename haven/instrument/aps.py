@@ -1,5 +1,8 @@
 from apstools.devices.aps_machine import ApsMachineParametersDevice
+from apsbss.apsbss_ophyd import EpicsBssDevice
 from haven import registry
+
+from .._iconfig import load_config
 
 
 class ApsMachine(ApsMachineParametersDevice):
@@ -23,5 +26,12 @@ class ApsMachine(ApsMachineParametersDevice):
 
 def load_aps(config=None):
     """Load devices related to the synchrotron as a whole."""
+    if config is None:
+        config = load_config()
+    # Load storage ring device
     aps_ = ApsMachine(name="APS", labels={"synchrotrons"})
     registry.register(aps_)
+    # Load scheduling system device
+    bss_ = EpicsBssDevice(prefix=f"{config['bss']['prefix']}:", name="apsbss")
+    registry.register(bss_)
+    return [aps_, bss_]

@@ -2,14 +2,21 @@
 [beamline]
 
 name = "SPC Beamline (sector unknown)"
-ioc_prefix = ""
-vme_prefix = ""
 is_connected = false
 
 [facility]
 
 name = "Advanced Photon Source"
 xray_source = "insertion device"
+
+####################################################################
+# Configuration for interacting with the beamline scheduling system
+# using apsbss package
+####################################################################
+
+[bss]
+
+prefix = "100id:bss"
 
 [xray_source]
 

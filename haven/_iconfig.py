@@ -1,13 +1,8 @@
 """
-Provide information from the iconfig.toml file.
+Provide beamline configuration from the iconfig.toml file.
 
-Example TOML configuration file::
+Example TOML configuration file: iconfig_default.toml
 
-    # simple key:value pairs
-
-    ADSIM_IOC_PREFIX: "bdpad:"
-    GP_IOC_PREFIX: "bdp:"
-    catalog: bdp2022
 """
 
 __all__ = [

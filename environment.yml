@@ -119,6 +119,7 @@ dependencies:
   # - pygithub
 
   - pip:
+    - apsbss
     - time-machine
     - autoapi
     - pytest-mongodb

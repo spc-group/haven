@@ -32,3 +32,11 @@ def test_config_attrs():
     ]
     for attr in config_attrs:
         assert attr in device.configuration_attrs
+
+
+def test_load_apsbss(sim_registry):
+    load_aps()
+    bss = sim_registry.find(name="apsbss")
+    assert hasattr(bss, "esaf")
+    assert hasattr(bss.esaf, 'esaf_id')
+    assert bss.esaf.esaf_id.pvname == "100id:bss:esaf:id"
