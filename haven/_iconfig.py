@@ -73,10 +73,10 @@ def print_config_value(args: Sequence[str] = None):
     """
     # Set up command line arguments
     parser = argparse.ArgumentParser(
-        prog = 'haven_config',
-        description = "Retrieve a value from Haven's config files.",
+        prog="haven_config",
+        description="Retrieve a value from Haven's config files.",
     )
-    parser.add_argument('key', help="The dot-separated key to look up.")
+    parser.add_argument("key", help="The dot-separated key to look up.")
     args = parser.parse_args(args=args)
     # Get the keys from the config file
     value = load_config()

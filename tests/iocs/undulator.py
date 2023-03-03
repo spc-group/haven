@@ -21,8 +21,8 @@ class IOC(IOC_):
     Energy = pvproperty(
         value=0, doc="", record=ResponsiveMotorFields, dtype=PvpropertyDouble
     )
-    Busy = pvproperty(value=0, doc="")
-    Stop = pvproperty(value=0, doc="")
+    Busy = pvproperty(value=0, doc="", name="Busy.VAL")
+    Stop = pvproperty(value=0, doc="", name="Stop.VAL")
 
     default_prefix = "id_ioc:"
 

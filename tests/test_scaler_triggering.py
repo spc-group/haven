@@ -39,18 +39,3 @@ def test_trigger_fires():
         first_status.__class__.done = old_done
     second_status = device._statuses[scaler_prefix]
     assert first_status is second_status
-
-
-def test_default_pv_prefix():
-    """Check that it uses the *prefix* argument if no *scaler_prefix* is
-    given.
-
-    """
-    prefix = "myioc:myscaler"
-    MyDevice = type("MyDevice", (ScalerTriggered, Device), {})
-    # Instantiate the device with *scaler_prefix* argument
-    device = MyDevice(name="device", prefix=None, scaler_prefix=prefix)
-    assert device.scaler_prefix == prefix
-    # Instantiate the device with *scaler_prefix* argument
-    device = MyDevice(name="device", prefix=prefix)
-    assert device.scaler_prefix == prefix

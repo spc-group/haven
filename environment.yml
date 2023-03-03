@@ -40,6 +40,7 @@ dependencies:
   - pytest
   - pytest-cov
   - pytest-qt >=4.2.0
+  - pytest-xvfb
   - pytest-mock
   - caproto >=1.0.0
   # - pytest-notebook
@@ -80,7 +81,8 @@ dependencies:
   # - hklpy >=1.0.3  # --- linux-64
   - ophyd >=1.6.3
   - pydm >=1.16.0
-  # - tiled-server
+  - tiled-server
+  - tiled-client
   # https://github.com/pydata/xarray/issues/6818
   - xarray !=2022.6.0  # incompatible with numpy=1.20
 
@@ -97,7 +99,6 @@ dependencies:
   # - spec2nexus
   - stdlogpj
   - tqdm
-  - xraydb
   - xrayutilities
   - pyviz_comms
   - hvplot
@@ -122,6 +123,7 @@ dependencies:
     - autoapi
     - pytest-mongodb
     - StrEnum
+    - xraydb >=4.5.0
     # - https://github.com/BCDA-APS/adl2pydm/archive/main.zip
     # --- optional Bluesky framework packages for evaluation
     # - bluesky-webclient is NOT Python software, don't install it this way

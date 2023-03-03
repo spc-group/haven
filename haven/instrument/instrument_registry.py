@@ -1,9 +1,11 @@
 from typing import Optional, Sequence
 import logging
+import warnings
 
 from ophyd import Component, ophydobj
 
 from .. import exceptions
+from .._iconfig import load_config
 from ..typing import Detector
 
 
@@ -87,8 +89,10 @@ class InstrumentRegistry:
             result = results[0]
         elif len(results) > 1:
             raise exceptions.MultipleComponentsFound(
-                f"Found {len(results)} components matching query. "
-                "Consider using ``findall()``."
+                f"Found {len(results)} components matching query "
+                f"[any_of={any_of}, label={label}, name={name}]. "
+                "Consider using ``findall()``. "
+                f"{results}"
             )
         else:
             result = None
@@ -138,21 +142,26 @@ class InstrumentRegistry:
           parameters.
 
         """
-        results = []  # self.components.copy()
+        results = []
+        # If using *any_of*, search by label and name
+        _label = label if label is not None else any_of
         # Define a helper to test for lists of search parameters
+        _name = name if name is not None else any_of
 
         def is_iterable(obj):
             return (not isinstance(obj, str)) and hasattr(obj, "__iter__")
 
         if is_iterable(any_of):
             for a in any_of:
-                results.extend(self.findall(any_of=a))
+                results.extend(self.findall(any_of=a, allow_none=allow_none))
         else:
             # Filter by label
-            _label = label if label is not None else any_of
             if _label is not None:
                 if is_iterable(_label):
-                    [results.extend(self.findall(label=lbl)) for lbl in _label]
+                    [
+                        results.extend(self.findall(label=lbl, allow_none=allow_none))
+                        for lbl in _label
+                    ]
                 else:
                     try:
                         results.extend(
@@ -165,7 +174,6 @@ class InstrumentRegistry:
                     except TypeError:
                         raise exceptions.InvalidComponentLabel(_label)
             # Filter by name
-            _name = name if name is not None else any_of
             if _name is not None:
                 if is_iterable(_name):
                     [results.extend(self.findall(name=n)) for n in _name]
@@ -206,6 +214,8 @@ class InstrumentRegistry:
           The same component as was provided as an input.
 
         """
+        beamline_is_connected = load_config()['beamline']['is_connected']
+        # Determine how to register the device
         if isinstance(component, type):
             # A class was given, so instances should be auto-registered
             component.__new__ = self.__new__wrapper
@@ -219,11 +229,18 @@ class InstrumentRegistry:
             # Check that we're not adding a duplicate component name
             is_duplicate = component.name in [c.name for c in self.components]
             if is_duplicate:
-                log.warning(
-                    f"Ignoring components with duplicate name {component.name}: "
-                    ", ".join([c.name for c in duplicate_components])
-                )
+                msg = f"Ignoring components with duplicate name: '{component.name}'"
+                log.debug(msg)
                 return component
+            # Test the connection to ensure the device is present
+            if beamline_is_connected and component.parent is None:
+                try:
+                    component.wait_for_connection()
+                except TimeoutError:
+                    msg = f"Could not connect to device {component.name} ({component.prefix})"
+                    log.warning(msg)
+                    warnings.warn(msg)
+                    return component
             # Register this component
             self.components.append(component)
             # Recusively register sub-components

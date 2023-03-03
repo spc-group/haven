@@ -1,9 +1,14 @@
+import logging
+import warnings
 from typing import Optional, Sequence
 
 from ophyd.areadetector.cam import CamBase
 
 from .instrument_registry import registry
 from .._iconfig import load_config
+
+
+log = logging.getLogger(__name__)
 
 
 __all__ = ["Camera", "load_cameras"]
@@ -21,8 +26,9 @@ class Camera(CamBase):
     description:
       The human-readable description of this device. If omitted,
       *name* will be used.
-    
+
     """
+
     def __init__(
         self, prefix: str, name: str, description: Optional[str] = None, *args, **kwargs
     ):

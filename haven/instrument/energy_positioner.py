@@ -7,8 +7,8 @@ from ophyd import (
     PVPositioner,
     EpicsSignal,
     EpicsSignalRO,
-    OphydObject
 )
+from ophyd.ophydobj import OphydObject
 from ophyd.pseudopos import pseudo_position_argument, real_position_argument
 
 
@@ -64,27 +64,32 @@ class EnergyPositioner(PseudoPositioner):
       f"{id_prefix}:Energy.VAL" reaches the energy readback value.
 
     """
-    id_offset: float = 155.  # In eV
 
     # Pseudo axes
-    energy: OphydObject = Cpt(PseudoSingle)
+    energy: OphydObject = Cpt(PseudoSingle, kind="hinted")
 
     # Equivalent real axes
-    mono_energy: OphydObject = FCpt(EpicsMotor, "{mono_pv}")
-    id_energy: OphydObject = FCpt(Undulator, "{id_prefix}")
+    mono_energy: OphydObject = FCpt(EpicsMotor, "{mono_pv}", kind="normal")
+    # id_offset: float = 300.  # In eV
+    id_offset: OphydObject = FCpt(EpicsSignal, "{id_offset_pv}", kind="config")
+    id_energy: OphydObject = FCpt(Undulator, "{id_prefix}", kind="normal")
 
-    def __init__(self, mono_pv: str, id_prefix: str, *args, **kwargs):
+    def __init__(
+        self, mono_pv: str, id_prefix: str, id_offset_pv: str, *args, **kwargs
+    ):
         """INIT DOCSTRING"""
         self.mono_pv = mono_pv
+        self.id_offset_pv = id_offset_pv
         self.id_prefix = id_prefix
         super().__init__(*args, **kwargs)
 
     @pseudo_position_argument
     def forward(self, target_energy):
         "Given a target energy, transform to the mono and ID energies."
+        id_offset_ev = self.id_offset.get(use_monitor=True)
         return self.RealPosition(
             mono_energy=target_energy.energy,
-            id_energy=(target_energy.energy + self.id_offset) / 1000.0,
+            id_energy=(target_energy.energy + id_offset_ev) / 1000.0,
         )
 
     @real_position_argument
@@ -100,12 +105,14 @@ def load_energy_positioner(config=None):
     if config is None:
         config = load_config()
     mono_suffix = Monochromator.energy.suffix
+    id_offset_suffix = Monochromator.id_offset.suffix
     mono_prefix = config["monochromator"]["ioc"]
     id_prefix = config["undulator"]["ioc"]
     # Create energy positioner
     energy_positioner = EnergyPositioner(
         name="energy",
         mono_pv=f"{mono_prefix}{mono_suffix}",
-        id_prefix=id_prefix,
+        id_offset_pv=f"{mono_prefix}{id_offset_suffix}",
+        id_prefix=f"{id_prefix}",
     )
     registry.register(energy_positioner)

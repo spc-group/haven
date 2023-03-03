@@ -69,7 +69,7 @@ class IOC(PVGroup):
         return ioc.pvdb, run_options
 
 
-def wait_for_ioc(pvdb, timeout=60):
+def wait_for_ioc(pvdb, timeout=240):
     """Block until all the PVs in the IOC have loaded."""
     # Build a list of PVs and PV fields
     all_fields = []
@@ -115,24 +115,35 @@ def simulated_ioc(fp):
     fp = Path(fp)
     name = fp.stem
     locks["caproto"] = name
-    process = Popen(["python", str(fp.resolve())], stdout=PIPE, stderr=PIPE, text=True)
     # Build the pv database
     spec = importlib.util.spec_from_file_location("ioc", str(fp))
     ioc_mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(ioc_mod)
     pvdb, _ = ioc_mod.IOC.parse_args()
+    # Make sure the IOC is not already running
+    test_pv = list(pvdb.keys())[0]
+    response = caget(test_pv, timeout=1.0, connection_timeout=1.0)
+    if response is None:
+        # IOC is not running, so start it
+        process = Popen(
+            ["python", str(fp.resolve())], stdout=PIPE, stderr=PIPE, text=True
+        )
+    else:
+        process = None
+        log.warning(f"IOC already running: {test_pv} = {response}")
     # Wait for the ioc to load
     wait_for_ioc(pvdb=pvdb)
     # Drop into the calling code to run the tests
     yield pvdb
     # Stop the process now that the test is done
-    start_time = time.time()
-    os.kill(process.pid, signal.SIGINT)
-    stdout, stderr = process.communicate()
-    print(stdout)
-    print(stderr)
-    locks["caproto"] = "unlocked"
-    log.debug(f"Shutting down took {time.time() - start_time:.2f} sec.")
+    if process is not None:
+        start_time = time.time()
+        os.kill(process.pid, signal.SIGINT)
+        stdout, stderr = process.communicate()
+        print(stdout)
+        print(stderr)
+        locks["caproto"] = "unlocked"
+        log.debug(f"Shutting down took {time.time() - start_time:.2f} sec.")
 
 
 def ioc_arg_parser(

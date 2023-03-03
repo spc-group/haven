@@ -11,6 +11,11 @@ is_connected = false
 name = "Advanced Photon Source"
 xray_source = "insertion device"
 
+[xray_source]
+
+type = "undulator"
+prefix = "ID100ds:"
+
 [queueserver]
 kafka_topic = "s100idc_queueserver"
 control_host = "localhost"
@@ -44,6 +49,7 @@ ioc_branch = "UP"  # For caQtDM macros
 [ion_chamber.scaler]
 ioc = "scaler_ioc"
 record = "scaler1"
+channels = [2]
 
 [ion_chamber.preamp]
 
@@ -51,15 +57,13 @@ ioc = "preamp_ioc"
 
 # Keys for ion_chamber definitions must begin with "ch" (e.g. "ch1", "ch2")
 
-[ion_chamber.ch2]
-
-preamp_record = "SR570_1"
-
 [fluorescence_detector]
 
-[fluorescence_detector.vortex]
+[fluorescence_detector.vortex_me4]
 
-pv_prefix = ""
+prefix = "vortex"
+electronics = "dxp"  # or "xspress3"
+num_elements = 4
 
 # Motors
 # ======
@@ -94,3 +98,12 @@ ioc = "camA_ioc"
 prefix = "vme_crate_ioc"
 pv_vert = ":m1"
 pv_horiz = ":m2"
+
+[power_supply.NHQ01]
+
+prefix = "ps_ioc:NHQ01"
+n_channels = 2
+
+[slits.KB_slits]
+
+prefix = "vme_crate_ioc:KB"

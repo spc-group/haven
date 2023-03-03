@@ -1,10 +1,22 @@
-from ophyd import Device, Component as Cpt, FormattedComponent as FCpt, EpicsMotor, EpicsSignal, EpicsSignalRO
+from ophyd import (
+    Device,
+    Component as Cpt,
+    FormattedComponent as FCpt,
+    EpicsMotor,
+    EpicsSignal,
+    EpicsSignalRO
+)
 
 from .instrument_registry import registry
+from .._iconfig import load_config
 
 
 @registry.register
 class Monochromator(Device):
+    # ID tracking PVs
+    id_tracking = Cpt(EpicsSignal, ":ID_tracking", kind="config")
+    id_offset = Cpt(EpicsSignal, ":ID_offset", kind="config")
+    d_spacing = Cpt(EpicsSignal, ":dspacing", kind="config")
     # Virtual positioners
     mode = Cpt(EpicsSignal, ":mode", labels={"motors", "baseline"}, kind="config")
     energy = Cpt(EpicsMotor, ":Energy", labels={"motors"}, kind="hinted")
@@ -22,6 +34,9 @@ class Monochromator(Device):
     d_spacing = Cpt(EpicsSignalRO, ":dspacing", labels={"baseline"}, kind="config")
 
 
-def load_monochromator(config):
+def load_monochromator(config=None):
+    # Load PV's from config
+    if config is None:
+        config = load_config()
     monochromator = Monochromator(config["monochromator"]["ioc"], name="monochromator")
     return monochromator

@@ -1,3 +1,10 @@
+[project]
+name = "haven"
+version = "0.1.0"
+
+[tool.setuptools]
+packages = ["haven", "firefly"]
+
 [tool.poetry]
 name = "haven"
 version = "0.1.0"
@@ -12,7 +19,7 @@ authors = [
 readme = "README.md"  # Markdown files are supported
 
 repository = "https://github.com/spc-group/haven"
-homepage = "https://github.com/spc-group/haven"
+homepage = "https://haven-spc.readthedocs.io/en/latest/"
 
 keywords = ["synchrotron", "xray", "bluesky"]
 
@@ -36,3 +43,4 @@ keywords = ["synchrotron", "xray", "bluesky"]
 
 [tool.poetry.scripts]
 haven_config = "haven._iconfig:print_config_value"
+start_firefly = "firefly.launcher:main"

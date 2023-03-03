@@ -1,5 +1,6 @@
 class NoEnergies(ValueError):
     """The plan parameters do not result in any energies being selected for scanning."""
+
     ...
 
 
@@ -57,5 +58,11 @@ class DocumentNotFound(RuntimeError):
 
 class IOCTimeout(RuntimeError):
     """The IOC did not start within the allotted time."""
+
+    ...
+
+
+class UnknownDeviceConfiguration(ValueError):
+    """The configuration for a device does not match the known options."""
 
     ...

@@ -31,7 +31,7 @@ class IOC(IOC_):
         record="mbbi",
         dtype=ChannelType.ENUM,
     )
-
+    set_all = pvproperty(value=1, name="init.PROC", doc="")
     default_prefix = "preamp_ioc:"
 
 

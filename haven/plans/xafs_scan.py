@@ -19,6 +19,9 @@ from ..preprocessors import baseline_decorator
 log = logging.getLogger(__name__)
 
 
+log = logging.getLogger(__name__)
+
+
 __all__ = ["xafs_scan"]
 
 
@@ -131,7 +134,15 @@ def xafs_scan(
         warnings.warn(msg)
         log.warning(msg)
     if has_krange:
-        energy_ranges.append(KRange(E_min=curr_E_min, k_max=k_max, k_step=k_step, k_weight=k_weight, exposure=k_exposure))
+        energy_ranges.append(
+            KRange(
+                E_min=curr_E_min,
+                k_max=k_max,
+                k_step=k_step,
+                k_weight=k_weight,
+                exposure=k_exposure,
+            )
+        )
     # Convert energy ranges to energy list and exposure list
     energies = []
     exposures = []

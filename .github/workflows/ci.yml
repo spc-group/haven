@@ -9,6 +9,10 @@ on:
     branches:
       - main
 
+env:
+  DISPLAY: ":99"
+  PYDM_DEFAULT_PROTOCOL: ca
+
 
 jobs:
   build-linux:
@@ -24,6 +28,8 @@ jobs:
       uses: mamba-org/provision-with-micromamba@main
       with:
         environment-file: environment.yml
+    - name: Setup X virtual frame buffer
+      run: Xvfb $DISPLAY &
     - name: Install haven
       run: poetry install
       env:
@@ -40,5 +46,4 @@ jobs:
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with pytest
-      run: |
-        pytest
+      run: pytest
