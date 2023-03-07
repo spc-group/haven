@@ -166,7 +166,6 @@ class FireflyApplication(PyDMApplication):
         self.motor_actions = []
         self.motor_window_slots = []
         self.motor_windows = {}
-        print(motors)
         for motor in motors:
             action = QtWidgets.QAction(self)
             action.setObjectName(f"actionShow_Motor_{motor.name}")

@@ -67,9 +67,9 @@ def test_ioc_timing():
     # Launch the IOC numerous times to see how reproducible it is
     for pass_num in range(5):
         start = time.time()
-        with simulated_ioc(fp=ioc_dir / "undulator.py"):
-            caput("id_ioc:Energy", 100)
-            new_value = caget("id_ioc:Energy", use_monitor=False)
+        with simulated_ioc(fp=ioc_dir / "simple.py"):
+            caput("simple:A", 100)
+            new_value = caget("simple:A", use_monitor=False)
         assert new_value == 100.0
         log.info(f"Finish pass {pass_num} in {time.time() - start} seconds.")
         pass_time = time.time() - start
@@ -95,3 +95,8 @@ def test_mono_undulator_ioc_a_third_time(ioc_undulator):
 
     """
     pass
+
+
+def test_bss_ioc(ioc_bss):
+    val = caget("100id:bss:esaf:cycle", as_string=True, use_monitor=False)
+    assert val == "2023-2"

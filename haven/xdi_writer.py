@@ -107,11 +107,6 @@ class XDIWriter(CallbackBase):
             self._fd = open(self.fp, mode="x")
         return self._fd
 
-    # def __call__(self, name, doc):
-    #     from pprint import pprint as print
-    #     print(f"{name}: {doc}")
-    #     return super().__call__(name, doc)
-
     def _path_metadata(self, doc={}):
         """Prepare the metadata for string formatting the output file path."""
         md = {

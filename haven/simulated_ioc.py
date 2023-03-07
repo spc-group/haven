@@ -140,8 +140,8 @@ def simulated_ioc(fp):
         start_time = time.time()
         os.kill(process.pid, signal.SIGINT)
         stdout, stderr = process.communicate()
-        print(stdout)
-        print(stderr)
+        # print(stdout)
+        # print(stderr)
         locks["caproto"] = "unlocked"
         log.debug(f"Shutting down took {time.time() - start_time:.2f} sec.")
 

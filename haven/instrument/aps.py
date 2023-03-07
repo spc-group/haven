@@ -32,6 +32,6 @@ def load_aps(config=None):
     aps_ = ApsMachine(name="APS", labels={"synchrotrons"})
     registry.register(aps_)
     # Load scheduling system device
-    bss_ = EpicsBssDevice(prefix=f"{config['bss']['prefix']}:", name="apsbss")
+    bss_ = EpicsBssDevice(prefix=f"{config['bss']['prefix']}:", name="bss")
     registry.register(bss_)
     return [aps_, bss_]

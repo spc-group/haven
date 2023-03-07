@@ -12,7 +12,7 @@ from firefly.application import FireflyApplication
 ioc_dir = Path(__file__).parent.resolve() / "iocs"
 
 
-ophyd.set_cl("caproto")
+# ophyd.set_cl("caproto")
 
 # def pytest_collection_modifyitems(config, items):
 #     """Skip tests if no X server is available.
@@ -70,7 +70,7 @@ def ioc_mono():
 
 @pytest.fixture(scope="session")
 def ioc_bss():
-    with simulated_ioc(fp=ioc_dir / "apsbss.py") as pvdb:
+    with simulated_ioc(fp=ioc_dir / "apsbss_.py") as pvdb:
         yield pvdb
         
 

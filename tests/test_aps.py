@@ -36,7 +36,7 @@ def test_config_attrs():
 
 def test_load_apsbss(sim_registry):
     load_aps()
-    bss = sim_registry.find(name="apsbss")
+    bss = sim_registry.find(name="bss")
     assert hasattr(bss, "esaf")
     assert hasattr(bss.esaf, 'esaf_id')
     assert bss.esaf.esaf_id.pvname == "100id:bss:esaf:id"
