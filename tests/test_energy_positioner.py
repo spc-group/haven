@@ -13,6 +13,7 @@ def test_pseudo_to_real_positioner(ioc_mono, ioc_undulator):
         id_offset_pv="mono_ioc:ID_offset",
     )
     positioner.mono_energy.wait_for_connection()
+    positioner.id_energy.wait_for_connection()
     positioner.energy.set(10000, timeout=5.0)
     assert positioner.get(use_monitor=False).mono_energy.user_setpoint == 10000
     positioner.id_offset.set(230)
