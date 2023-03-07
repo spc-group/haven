@@ -107,3 +107,8 @@ n_channels = 2
 [slits.KB_slits]
 
 prefix = "vme_crate_ioc:KB"
+
+[area_detector.sim_det]
+
+prefix = "99idSimDet"
+device_class = "SimDetector"

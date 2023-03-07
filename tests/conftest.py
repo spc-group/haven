@@ -66,6 +66,12 @@ def ioc_mono():
 
 
 @pytest.fixture(scope="session")
+def ioc_area_detector():
+    with simulated_ioc(fp=ioc_dir / "area_detector.py") as pvdb:
+        yield pvdb
+        
+
+@pytest.fixture(scope="session")
 def ioc_scaler():
     with simulated_ioc(fp=ioc_dir / "scaler.py") as pvdb:
         yield pvdb
