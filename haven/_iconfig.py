@@ -14,6 +14,7 @@ import logging
 from typing import Sequence
 import pathlib
 import argparse
+from functools import lru_cache
 
 from mergedeep import merge
 import tomli
@@ -49,6 +50,7 @@ def load_files(file_paths: Sequence[pathlib.Path]):
             log.debug(f"Could not find config file, skipping: {fp}")
 
 
+@lru_cache()
 def load_config(file_paths: Sequence[pathlib.Path] = CONFIG_FILES):
     """Load TOML config files."""
     config = {}
