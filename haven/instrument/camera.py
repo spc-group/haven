@@ -1,9 +1,14 @@
+import logging
+import warnings
 from typing import Optional, Sequence
 
 from ophyd.areadetector.cam import CamBase
 
 from .instrument_registry import registry
 from .._iconfig import load_config
+
+
+log = logging.getLogger(__name__)
 
 
 __all__ = ["Camera", "load_cameras"]
