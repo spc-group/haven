@@ -19,6 +19,9 @@ from .._iconfig import load_config
 from .. import exceptions
 
 
+__all__ = ["DxpDetectorBase", "load_fluorescence_detectors", "load_dxp_detector"]
+
+
 log = logging.getLogger(__name__)
 
 

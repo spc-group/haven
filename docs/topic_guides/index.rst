@@ -14,6 +14,7 @@ These guides do not cover the individual beamlines thoroughly.
    changing_haven.rst
    define_new_motor.rst
    energy_scans.rst
+   fluorescence_detectors.rst
    instrument_registry.rst
    motor_positions.rst
    xdi_writer.rst

@@ -45,6 +45,7 @@ autodoc_typehints = "description"
 autodoc_mock_imports = [
     "mergedeep",
 ]
+napoleon_numpy_docstring = True
 
 # Add custom pre-amble to the rendered jupyter notebooks
 nbsphinx_prolog = r"""
