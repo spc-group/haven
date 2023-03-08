@@ -17,6 +17,7 @@ xray_source = "insertion device"
 [bss]
 
 prefix = "100id:bss"
+beamline = "100-ID-C"
 
 [xray_source]
 

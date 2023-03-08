@@ -48,6 +48,8 @@ class FireflyApplication(PyDMApplication):
 
     # Actions for showing window
     show_status_window_action: QtWidgets.QAction
+    show_energy_window_action: QtWidgets.QAction
+    show_bss_window_action: QtWidgets.QAction
     launch_queuemonitor_action: QtWidgets.QAction
 
     # Keep track of motors
@@ -103,15 +105,23 @@ class FireflyApplication(PyDMApplication):
         """
         self.prepare_motor_windows()
         # Action for showing the beamline status window
-        self.show_status_window_action = QtWidgets.QAction(self)
-        self.show_status_window_action.setObjectName(f"show_status_window_action")
-        self.show_status_window_action.setText("Beamline Status")
-        self.show_status_window_action.triggered.connect(self.show_status_window)
+        self._setup_window_action(
+            action_name="show_status_window_action",
+            text="Beamline Status",
+            slot=self.show_status_window
+        )
         # Action for launch queue-monitor
-        self.launch_queuemonitor_action = QtWidgets.QAction(self)
-        self.launch_queuemonitor_action.setObjectName(f"launch_queuemonitor_action")
-        self.launch_queuemonitor_action.setText("Queue Monitor")
-        self.launch_queuemonitor_action.triggered.connect(self.launch_queuemonitor)
+        self._setup_window_action(
+            action_name="launch_queuemonitor_action",
+            text="Queue Monitor",
+            slot=self.launch_queuemonitor
+        )
+        # Action for showing the beamline status window
+        self._setup_window_action(
+            action_name = "show_bss_window_action",
+            text="Scheduling (&BSS)",
+            slot=self.show_bss_window
+        )        
         # Launch energy window
         self._setup_window_action(
             action_name="show_energy_window_action",
@@ -308,3 +318,7 @@ class FireflyApplication(PyDMApplication):
     @QtCore.Slot()
     def show_energy_window(self):
         self.show_window(PlanMainWindow, ui_dir / "energy.py", name="energy")
+
+    @QtCore.Slot()
+    def show_bss_window(self):
+        self.show_window(PlanMainWindow, ui_dir / "bss.py", name="bss")

@@ -22,6 +22,7 @@ def test_setup(ffapp):
 
 
 def test_setup2(ffapp):
+    """Verify that multiple tests can use the app without crashing."""
     ffapp.setup_window_actions()
     ffapp.setup_runengine_actions()
     api = MagicMock()
