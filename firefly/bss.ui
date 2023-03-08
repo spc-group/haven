@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>737</width>
-    <height>483</height>
+    <height>488</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -52,6 +52,9 @@
           <property name="text">
            <string>688743</string>
           </property>
+          <property name="channel" stdset="0">
+           <string>${P}proposal:id</string>
+          </property>
          </widget>
         </item>
         <item row="1" column="0">
@@ -66,6 +69,12 @@
           <property name="toolTip">
            <string/>
           </property>
+          <property name="channel" stdset="0">
+           <string>${P}proposal:title</string>
+          </property>
+          <property name="displayFormat" stdset="0">
+           <enum>PyDMLineEdit::String</enum>
+          </property>
          </widget>
         </item>
         <item row="2" column="0">
@@ -78,12 +87,15 @@
         <item row="2" column="1">
          <layout class="QHBoxLayout" name="horizontalLayout_3">
           <item>
-           <widget class="PyDMDateTimeEdit" name="PyDMDateTimeEdit">
+           <widget class="PyDMLineEdit" name="PyDMLineEdit_5">
             <property name="toolTip">
              <string/>
             </property>
-            <property name="displayFormat">
-             <string>yyyy-MM-dd hh:mm:ss.zzz</string>
+            <property name="channel" stdset="0">
+             <string>${P}proposal:startDate</string>
+            </property>
+            <property name="displayFormat" stdset="0">
+             <enum>PyDMLineEdit::String</enum>
             </property>
            </widget>
           </item>
@@ -95,12 +107,15 @@
            </widget>
           </item>
           <item>
-           <widget class="PyDMDateTimeEdit" name="PyDMDateTimeEdit_2">
+           <widget class="PyDMLineEdit" name="PyDMLineEdit">
             <property name="toolTip">
              <string/>
             </property>
-            <property name="displayFormat">
-             <string>yyyy-MM-dd hh:mm:ss.zzz</string>
+            <property name="channel" stdset="0">
+             <string>${P}proposal:endDate</string>
+            </property>
+            <property name="displayFormat" stdset="0">
+             <enum>PyDMLineEdit::String</enum>
             </property>
            </widget>
           </item>
@@ -118,6 +133,12 @@
           <property name="toolTip">
            <string/>
           </property>
+          <property name="channel" stdset="0">
+           <string>${P}proposal:users</string>
+          </property>
+          <property name="displayFormat" stdset="0">
+           <enum>PyDMLineEdit::String</enum>
+          </property>
          </widget>
         </item>
         <item row="4" column="0">
@@ -131,6 +152,12 @@
          <widget class="PyDMLineEdit" name="proposal_badges_line_edit">
           <property name="toolTip">
            <string/>
+          </property>
+          <property name="channel" stdset="0">
+           <string>${P}proposal:userBadges</string>
+          </property>
+          <property name="displayFormat" stdset="0">
+           <enum>PyDMLineEdit::String</enum>
           </property>
          </widget>
         </item>
@@ -146,6 +173,9 @@
           <property name="toolTip">
            <string/>
           </property>
+          <property name="channel" stdset="0">
+           <string>${P}proposal:mailInFlag</string>
+          </property>
          </widget>
         </item>
         <item row="6" column="0">
@@ -159,6 +189,9 @@
          <widget class="PyDMCheckbox" name="PyDMCheckbox_2">
           <property name="toolTip">
            <string/>
+          </property>
+          <property name="channel" stdset="0">
+           <string>${P}proposal:proprietaryFlag</string>
           </property>
          </widget>
         </item>
@@ -205,6 +238,12 @@
           <property name="text">
            <string>257794</string>
           </property>
+          <property name="channel" stdset="0">
+           <string>${P}esaf:id</string>
+          </property>
+          <property name="displayFormat" stdset="0">
+           <enum>PyDMLabel::String</enum>
+          </property>
          </widget>
         </item>
         <item row="1" column="0">
@@ -222,6 +261,12 @@
           <property name="text">
            <string>Approved</string>
           </property>
+          <property name="channel" stdset="0">
+           <string>${P}esaf:status</string>
+          </property>
+          <property name="displayFormat" stdset="0">
+           <enum>PyDMLabel::String</enum>
+          </property>
          </widget>
         </item>
         <item row="2" column="0">
@@ -236,6 +281,12 @@
           <property name="toolTip">
            <string/>
           </property>
+          <property name="channel" stdset="0">
+           <string>${P}esaf:title</string>
+          </property>
+          <property name="displayFormat" stdset="0">
+           <enum>PyDMLineEdit::String</enum>
+          </property>
          </widget>
         </item>
         <item row="3" column="0">
@@ -248,15 +299,15 @@
         <item row="3" column="1">
          <layout class="QHBoxLayout" name="horizontalLayout_4">
           <item>
-           <widget class="PyDMDateTimeEdit" name="PyDMDateTimeEdit_4">
+           <widget class="PyDMLineEdit" name="PyDMLineEdit_7">
             <property name="toolTip">
              <string/>
             </property>
-            <property name="displayFormat">
-             <string>yyyy-MM-dd hh:mm:ss.zzz</string>
+            <property name="channel" stdset="0">
+             <string>${P}esaf:startDate</string>
             </property>
-            <property name="timeSpec">
-             <enum>Qt::LocalTime</enum>
+            <property name="displayFormat" stdset="0">
+             <enum>PyDMLineEdit::String</enum>
             </property>
            </widget>
           </item>
@@ -268,12 +319,15 @@
            </widget>
           </item>
           <item>
-           <widget class="PyDMDateTimeEdit" name="PyDMDateTimeEdit_3">
+           <widget class="PyDMLineEdit" name="PyDMLineEdit_6">
             <property name="toolTip">
              <string/>
             </property>
-            <property name="displayFormat">
-             <string>yyyy-MM-dd hh:mm:ss.zzz</string>
+            <property name="channel" stdset="0">
+             <string>${P}esaf:endDate</string>
+            </property>
+            <property name="displayFormat" stdset="0">
+             <enum>PyDMLineEdit::String</enum>
             </property>
            </widget>
           </item>
@@ -291,6 +345,12 @@
           <property name="toolTip">
            <string/>
           </property>
+          <property name="channel" stdset="0">
+           <string>${P}esaf:users</string>
+          </property>
+          <property name="displayFormat" stdset="0">
+           <enum>PyDMLineEdit::String</enum>
+          </property>
          </widget>
         </item>
         <item row="5" column="0">
@@ -304,6 +364,12 @@
          <widget class="PyDMLineEdit" name="PyDMLineEdit_4">
           <property name="toolTip">
            <string/>
+          </property>
+          <property name="channel" stdset="0">
+           <string>${P}esaf:userBadges</string>
+          </property>
+          <property name="displayFormat" stdset="0">
+           <enum>PyDMLineEdit::String</enum>
           </property>
          </widget>
         </item>
@@ -331,11 +397,6 @@
    <class>PyDMCheckbox</class>
    <extends>QCheckBox</extends>
    <header>pydm.widgets.checkbox</header>
-  </customwidget>
-  <customwidget>
-   <class>PyDMDateTimeEdit</class>
-   <extends>QDateTimeEdit</extends>
-   <header>pydm.widgets.datetime</header>
   </customwidget>
   <customwidget>
    <class>PyDMLineEdit</class>

@@ -321,4 +321,4 @@ class FireflyApplication(PyDMApplication):
 
     @QtCore.Slot()
     def show_bss_window(self):
-        self.show_window(PlanMainWindow, ui_dir / "bss.py", name="bss")
+        self.show_window(FireflyMainWindow, ui_dir / "bss.py", name="bss")

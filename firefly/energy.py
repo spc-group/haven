@@ -82,7 +82,7 @@ class EnergyDisplay(display.FireflyDisplay):
         # Build the queue item
         item = BPlan("set_energy", energy=energy)
         # Submit the item to the queueserver
-        from .application import FireflyApplication
+        from firefly.application import FireflyApplication
 
         app = FireflyApplication.instance()
         app.add_queue_item(item)

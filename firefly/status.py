@@ -89,7 +89,6 @@ class StatusDisplay(display.FireflyDisplay):
         super().__init__(args=args, macros=_macros, **kwargs)
 
     def customize_ui(self):
-        print("customizing UI")
         app = FireflyApplication.instance()
         self.ui.bss_modify_button.clicked.connect(
             app.show_bss_window_action.trigger
