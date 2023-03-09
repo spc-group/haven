@@ -122,7 +122,7 @@ def test_bss_proposal_response(qtbot, ffapp, bss_api, ioc_bss):
         qtbot.mouseClick(display.proposal_view.viewport(), Qt.LeftButton, pos=rect.center())
     pv_id = caget("99id:bss:proposal:id", use_monitor=False, as_string=True)
     assert pv_id == "74163"
-    bss_api.epicsUpdate.assert_called_once_with("99")
+    bss_api.epicsUpdate.assert_called_once_with("99id:bss:")
 
 
 def test_bss_esaf_model(qtbot, ffapp, bss_api):
@@ -150,3 +150,4 @@ def test_bss_esaf_response(qtbot, ffapp, bss_api, ioc_bss):
         qtbot.mouseClick(display.esaf_view.viewport(), Qt.LeftButton, pos=rect.center())
     pv_id = caget("99id:bss:esaf:id", use_monitor=False, as_string=True)
     assert pv_id == "269238"
+    bss_api.epicsUpdate.assert_called_once_with("99id:bss:")

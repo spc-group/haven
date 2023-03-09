@@ -76,8 +76,7 @@ class BssDisplay(display.FireflyDisplay):
         # Change the proposal in the EPICS record
         bss = haven.registry.find(name="bss")
         bss.proposal.proposal_id.set(new_id).wait()
-        config = haven.load_config()
-        self.api.epicsUpdate(config["bss"]["beamline"].split("-")[0])
+        self.api.epicsUpdate(bss.prefix)
         # Notify any interested parties that the proposal has been changed
         self.proposal_changed.emit()
 
@@ -88,15 +87,8 @@ class BssDisplay(display.FireflyDisplay):
         # Change the esaf in the EPICS record
         bss = haven.registry.find(name="bss")
         bss.wait_for_connection()
-        # print(bss.esaf.esaf_id.pvname)
-        # from epics import caget, caput
-        # caput("100id:bss:esaf:id", "8383289")
-        # print(caget("100id:bss:esaf:id", as_string=True), caget("100id:bss:esaf:cycle", as_string=True))
-        # assert False
-        print(bss.esaf.esaf_id.pvname)
         bss.esaf.esaf_id.set(new_id).wait(timeout=5)
-        config = haven.load_config()
-        self.api.epicsUpdate(config["bss"]["beamline"].split("-")[0])
+        self.api.epicsUpdate(bss.prefix)
         # Notify any interested parties that the esaf has been changed
         self.esaf_changed.emit()
 
