@@ -26,7 +26,13 @@ log = logging.getLogger()
 
 def baseline_wrapper(
     plan,
-    devices: Union[Sequence, str] = ["motors", "power_supplies", "xray_sources", "APS", "baseline"],
+    devices: Union[Sequence, str] = [
+        "motors",
+        "power_supplies",
+        "xray_sources",
+        "APS",
+        "baseline",
+    ],
     name: str = "baseline",
 ):
     bluesky_baseline_wrapper.__doc__
@@ -69,12 +75,12 @@ def inject_haven_md_wrapper(plan):
     """
 
     def _inject_md(msg):
-        if msg.command != 'open_run':
+        if msg.command != "open_run":
             return msg
         # Prepare the metadata dictionary
         config = load_config()
         md = {
-            # Software versions            
+            # Software versions
             "versions": VERSIONS,
             # Controls
             "EPICS_HOST_ARCH": os.environ.get("EPICS_HOST_ARCH"),
@@ -97,27 +103,29 @@ def inject_haven_md_wrapper(plan):
         try:
             bss = registry.find(name="bss")
         except ComponentNotFound as exc:
-            if config['beamline']['is_connected']:
+            if config["beamline"]["is_connected"]:
                 wmsg = "Could not find bss device, metadata may be missing."
                 warnings.warn(wmsg)
                 log.warning(wmsg)
             bss_md = None
         else:
             bss_md = bss.get()
-            md.update({
-                "proposal_id": bss_md.proposal.proposal_id,
-                "proposal_title": bss_md.proposal.title,
-                "proposal_users": bss_md.proposal.user_last_names,
-                "proposal_user_badges": bss_md.proposal.user_badges,
-                "esaf_id": bss_md.esaf.esaf_id,
-                "esaf_title": bss_md.esaf.title,
-                "esaf_users": bss_md.esaf.user_last_names,
-                "esaf_user_badges": bss_md.esaf.user_badges,
-                "mail_in_flag": bss_md.proposal.mail_in_flag,
-                "proprietary_flag": bss_md.proposal.proprietary_flag,
-                "bss_aps_cycle": bss_md.esaf.aps_cycle,
-                "bss_beamline_name": bss_md.proposal.beamline_name,
-            })
+            md.update(
+                {
+                    "proposal_id": bss_md.proposal.proposal_id,
+                    "proposal_title": bss_md.proposal.title,
+                    "proposal_users": bss_md.proposal.user_last_names,
+                    "proposal_user_badges": bss_md.proposal.user_badges,
+                    "esaf_id": bss_md.esaf.esaf_id,
+                    "esaf_title": bss_md.esaf.title,
+                    "esaf_users": bss_md.esaf.user_last_names,
+                    "esaf_user_badges": bss_md.esaf.user_badges,
+                    "mail_in_flag": bss_md.proposal.mail_in_flag,
+                    "proprietary_flag": bss_md.proposal.proprietary_flag,
+                    "bss_aps_cycle": bss_md.esaf.aps_cycle,
+                    "bss_beamline_name": bss_md.proposal.beamline_name,
+                }
+            )
         # Update the message
         msg = msg._replace(kwargs=ChainMap(md, msg.kwargs))
         return msg

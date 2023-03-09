@@ -90,9 +90,7 @@ class StatusDisplay(display.FireflyDisplay):
 
     def customize_ui(self):
         app = FireflyApplication.instance()
-        self.ui.bss_modify_button.clicked.connect(
-            app.show_bss_window_action.trigger
-        )
+        self.ui.bss_modify_button.clicked.connect(app.show_bss_window_action.trigger)
 
     def ui_filename(self):
         return "status.ui"

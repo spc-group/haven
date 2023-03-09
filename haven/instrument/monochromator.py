@@ -4,7 +4,7 @@ from ophyd import (
     FormattedComponent as FCpt,
     EpicsMotor,
     EpicsSignal,
-    EpicsSignalRO
+    EpicsSignalRO,
 )
 
 from .instrument_registry import registry

@@ -16,8 +16,8 @@ xray_source = "insertion device"
 
 [bss]
 
-prefix = "100id:bss"
-beamline = "100-ID-C"
+prefix = "99id:bss"
+beamline = "99-ID-C"
 
 [xray_source]
 

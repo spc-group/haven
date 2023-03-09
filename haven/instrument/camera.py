@@ -53,7 +53,7 @@ def load_cameras(config=None) -> Sequence[Camera]:
     devices = {k: v for (k, v) in config["camera"].items() if k.startswith("cam")}
     # Load each camera
     cameras = []
-    for (key, device) in devices.items():
+    for key, device in devices.items():
         cam = Camera(
             prefix=f"{device['ioc']}:",
             name=device["name"],

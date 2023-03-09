@@ -98,5 +98,5 @@ def test_mono_undulator_ioc_a_third_time(ioc_undulator):
 
 
 def test_bss_ioc(ioc_bss):
-    val = caget("100id:bss:esaf:cycle", as_string=True, use_monitor=False)
+    val = caget("99id:bss:esaf:cycle", as_string=True, use_monitor=False)
     assert val == "2023-2"

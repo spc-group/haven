@@ -21,7 +21,7 @@ class IOC(IOC_):
     esaf_cycle = pvproperty(value="2023-2", name="esaf:cycle")
     esaf_description = pvproperty(value="", name="esaf:description")
     esaf_enddate = pvproperty(value="", name="esaf:endDate")
-    esaf_id = pvproperty(value="12345", name="esaf:id")
+    esaf_id = pvproperty(value="12345", name="esaf:id", dtype=PvpropertyString)
     esaf_status = pvproperty(value="", name="esaf:status")
     esaf_number_users_in_pvs = pvproperty(name="esaf:users_in_pvs", value="")
     esaf_number_users_total = pvproperty(name="esaf:users_total", value="")
@@ -67,12 +67,12 @@ class IOC(IOC_):
     esaf_user9_email = pvproperty(name="esaf:user9:email", value="")
     esaf_user9_first_name = pvproperty(name="esaf:user9:firstName", value="")
     esaf_user9_last_name = pvproperty(name="esaf:user9:lastName", value="")
-    proposal_beamline_name = pvproperty(name="proposal:beamline", value="100ID-C")
+    proposal_beamline_name = pvproperty(name="proposal:beamline", value="99ID-C")
     proposal_end_date = pvproperty(name="proposal:endDate", value="")
     proposal_mail_in_flag = pvproperty(name="proposal:mailInFlag", value=1, dtype=PvpropertyInteger)
     proposal_number_users_in_pvs = pvproperty(name="proposal:users_in_pvs", value="")
     proposal_number_users_total = pvproperty(name="proposal:users_total", value="")
-    proposal_proposal_id = pvproperty(name="proposal:id", value="25873")
+    proposal_id = pvproperty(name="proposal:id", value="25873", dtype=PvpropertyString)
     proposal_proprietary_flag = pvproperty(name="proposal:proprietaryFlag", value=0, dtype=PvpropertyInteger)
     proposal_raw = pvproperty(name="proposal:raw", value="")
     proposal_start_date = pvproperty(name="proposal:startDate", value="")
@@ -156,7 +156,7 @@ class IOC(IOC_):
     ioc_user = pvproperty(name="ioc_user", value="")
     status_msg = pvproperty(name="status", value="")
 
-    default_prefix = "100id:bss:"
+    default_prefix = "99id:bss:"
 
 
 if __name__ == "__main__":

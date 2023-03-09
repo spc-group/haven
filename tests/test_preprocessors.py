@@ -58,7 +58,14 @@ def test_baseline_decorator(sim_registry):
 
 def test_metadata(sim_registry, ioc_bss, monkeypatch):
     """Similar to baseline wrapper test, but used as a decorator."""
-    bss = EpicsBssDevice(prefix="100id:bss:", name="bss")
+    # Load devices
+    bss = EpicsBssDevice(prefix="99id:bss:", name="bss")
+    statuses = [
+        bss.esaf.esaf_id.set("12345"),
+        bss.proposal.proposal_id.set("25873"),
+    ]
+    for status in statuses:
+        status.wait()
     bss.wait_for_connection(all_signals=True)
     sim_registry.register(bss)
     monkeypatch.setenv("EPICS_HOST_ARCH", "PDP11")
@@ -143,15 +150,10 @@ def test_metadata(sim_registry, ioc_bss, monkeypatch):
         "proprietary_flag": "0",
         "sample_name": "",
         "bss_aps_cycle": "2023-2",
-        "bss_beamline_name": "100ID-C",
+        "bss_beamline_name": "99ID-C",
     }
     for key, val in expected_data.items():
         assert start_doc[key] == val, f"{key}: {start_doc[key]}"
-    # missing_keys = set(expected_keys) - set(start_doc.keys())
-    # assert not missing_keys
-
-    # for key in expected_keys:
-    #     assert key in start_doc.keys()
 
 
 # uid: 600852ca-3776-4e7a-ba29-f11786371e55

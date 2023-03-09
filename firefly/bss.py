@@ -2,6 +2,7 @@ import logging
 
 from apsbss import apsbss
 from qtpy.QtGui import QStandardItemModel, QStandardItem
+from qtpy.QtCore import Signal, Slot
 
 import haven
 from firefly import display
@@ -11,6 +12,19 @@ log = logging.getLogger(__name__)
 
 class BssDisplay(display.FireflyDisplay):
     """A PyDM display for the beamline scheduling system (BSS)."""
+
+    _proposal_col_names = ["id", "title", "startTime", "endTime"]
+    _esaf_col_names = [
+        "esafId",
+        "esafTitle",
+        "experimentStartDate",
+        "experimentEndDate",
+    ]
+
+    # Signal
+    proposal_changed = Signal()
+    esaf_changed = Signal()
+
     def __init__(self, api=apsbss, args=None, macros={}, **kwargs):
         self.api = api
         # Set up macros
@@ -27,25 +41,64 @@ class BssDisplay(display.FireflyDisplay):
 
     def load_models(self):
         config = haven.load_config()
-        # Create model objects
+        # Create proposal model object
+        col_names = self._proposal_col_names
         self.proposal_model = QStandardItemModel()
-        col_names = ["id", "title"]
         header_labels = [c.title() for c in col_names]
         self.proposal_model.setHorizontalHeaderLabels(header_labels)
-        from pprint import pprint
-        # self.ui.proposal_view.currentChanged().connect(self.proposal_changed)
         # Load individual proposals
-        proposals = self.api.getCurrentProposals(config['bss']['beamline'])
+        proposals = self.api.getCurrentProposals(config["bss"]["beamline"])
         for proposal in proposals:
             items = [QStandardItem(str(proposal[col])) for col in col_names]
             self.proposal_model.appendRow(items)
         self.ui.proposal_view.setModel(self.proposal_model)
-        # Connect slots for when proposal is changed
+        # Create proposal model object
+        col_names = self._esaf_col_names
+        self.esaf_model = QStandardItemModel()
+        header_labels = [c.title() for c in col_names]
+        self.esaf_model.setHorizontalHeaderLabels(header_labels)
+        # Load individual esafs
+        esafs = self.api.getCurrentEsafs(config["bss"]["beamline"].split("-")[0])
+        for esaf in esafs:
+            items = [QStandardItem(str(esaf[col])) for col in col_names]
+            self.esaf_model.appendRow(items)
+        self.ui.esaf_view.setModel(self.esaf_model)
+        # Connect slots for when proposal/ESAF is changed
         self.ui.proposal_view.selectionModel().currentChanged.connect(
-            self.proposal_changed)
+            self.update_proposal
+        )
+        self.ui.esaf_view.selectionModel().currentChanged.connect(self.update_esaf)
 
-    def proposal_changed(self, current, previous):
-        print("Changed", current, previous)
-        
+    def update_proposal(self, current, previous):
+        # Determine which proposal was selected
+        id_col_idx = self._proposal_col_names.index("id")
+        new_id = current.siblingAtColumn(id_col_idx).data()
+        # Change the proposal in the EPICS record
+        bss = haven.registry.find(name="bss")
+        bss.proposal.proposal_id.set(new_id).wait()
+        config = haven.load_config()
+        self.api.epicsUpdate(config["bss"]["beamline"].split("-")[0])
+        # Notify any interested parties that the proposal has been changed
+        self.proposal_changed.emit()
+
+    def update_esaf(self, current, previous):
+        # Determine which esaf was selected
+        id_col_idx = self._esaf_col_names.index("esafId")
+        new_id = current.siblingAtColumn(id_col_idx).data()
+        # Change the esaf in the EPICS record
+        bss = haven.registry.find(name="bss")
+        bss.wait_for_connection()
+        # print(bss.esaf.esaf_id.pvname)
+        # from epics import caget, caput
+        # caput("100id:bss:esaf:id", "8383289")
+        # print(caget("100id:bss:esaf:id", as_string=True), caget("100id:bss:esaf:cycle", as_string=True))
+        # assert False
+        print(bss.esaf.esaf_id.pvname)
+        bss.esaf.esaf_id.set(new_id).wait(timeout=5)
+        config = haven.load_config()
+        self.api.epicsUpdate(config["bss"]["beamline"].split("-")[0])
+        # Notify any interested parties that the esaf has been changed
+        self.esaf_changed.emit()
+
     def ui_filename(self):
         return "bss.ui"

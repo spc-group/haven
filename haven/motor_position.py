@@ -185,7 +185,7 @@ def list_motor_positions(collection=None):
 
 
 def get_motor_position(
-        uid: Optional[str] = None, name: Optional[str] = None, collection=None
+    uid: Optional[str] = None, name: Optional[str] = None, collection=None
 ) -> MotorPosition:
     """Retrieve a previously saved motor position from the database.
 

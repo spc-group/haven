@@ -108,20 +108,20 @@ class FireflyApplication(PyDMApplication):
         self._setup_window_action(
             action_name="show_status_window_action",
             text="Beamline Status",
-            slot=self.show_status_window
+            slot=self.show_status_window,
         )
         # Action for launch queue-monitor
         self._setup_window_action(
             action_name="launch_queuemonitor_action",
             text="Queue Monitor",
-            slot=self.launch_queuemonitor
+            slot=self.launch_queuemonitor,
         )
         # Action for showing the beamline status window
         self._setup_window_action(
-            action_name = "show_bss_window_action",
+            action_name="show_bss_window_action",
             text="Scheduling (&BSS)",
-            slot=self.show_bss_window
-        )        
+            slot=self.show_bss_window,
+        )
         # Launch energy window
         self._setup_window_action(
             action_name="show_energy_window_action",
