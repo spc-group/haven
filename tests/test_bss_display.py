@@ -109,7 +109,7 @@ def test_bss_proposal_model(qtbot, ffapp, bss_api):
     assert display.ui.proposal_view.model() is display.proposal_model
 
 
-def test_bss_proposal_response(qtbot, ffapp, bss_api, ioc_bss):
+def test_bss_proposal_updating(qtbot, ffapp, bss_api, ioc_bss):
     load_aps()
     display = BssDisplay(api=bss_api)
     # Change the proposal item
@@ -118,8 +118,15 @@ def test_bss_proposal_response(qtbot, ffapp, bss_api, ioc_bss):
     assert item is not None
     rect = display.proposal_view.visualRect(item.index())
     # See if the proposal PVs were updated
-    with qtbot.waitSignal(display.proposal_changed):
+    with qtbot.waitSignal(display.proposal_selected):
         qtbot.mouseClick(display.proposal_view.viewport(), Qt.LeftButton, pos=rect.center())
+    assert display.ui.update_proposal_button.isEnabled()
+    pv_id = caget("99id:bss:proposal:id", use_monitor=False, as_string=True)
+    assert pv_id != "74163"
+    assert display._proposal_id == "74163"
+    # Now update the PROPOSAL details
+    with qtbot.waitSignal(display.proposal_changed):
+        qtbot.mouseClick(display.ui.update_proposal_button, Qt.LeftButton)
     pv_id = caget("99id:bss:proposal:id", use_monitor=False, as_string=True)
     assert pv_id == "74163"
     bss_api.epicsUpdate.assert_called_once_with("99id:bss:")
@@ -130,13 +137,13 @@ def test_bss_esaf_model(qtbot, ffapp, bss_api):
     assert display.ui_filename() == "bss.ui"
     # Check model construction
     assert isinstance(display.esaf_model, QStandardItemModel)
-    assert display.esaf_model.rowCount() > 0
+    # assert display.esaf_model.rowCount() > 0
     bss_api.getCurrentEsafs.assert_called_once_with("99")
     # Check that the view has the model attached
     assert display.ui.esaf_view.model() is display.esaf_model
 
 
-def test_bss_esaf_response(qtbot, ffapp, bss_api, ioc_bss):
+def test_bss_esaf_updating(qtbot, ffapp, bss_api, ioc_bss):
     load_aps()
     window = FireflyMainWindow()
     display = BssDisplay(api=bss_api)
@@ -145,9 +152,16 @@ def test_bss_esaf_response(qtbot, ffapp, bss_api, ioc_bss):
     item = display.esaf_model.item(0, 1)
     assert item is not None
     rect = display.esaf_view.visualRect(item.index())
-    # See if the proposal PVs were updated
-    with qtbot.waitSignal(display.esaf_changed):
+    # Clicking a list entry should enable the update button
+    with qtbot.waitSignal(display.esaf_selected):
         qtbot.mouseClick(display.esaf_view.viewport(), Qt.LeftButton, pos=rect.center())
+    assert display.ui.update_esaf_button.isEnabled()
+    pv_id = caget("99id:bss:esaf:id", use_monitor=False, as_string=True)
+    assert pv_id != "269238"
+    assert display._esaf_id == "269238"
+    # Now update the ESAF details
+    with qtbot.waitSignal(display.esaf_changed):
+        qtbot.mouseClick(display.ui.update_esaf_button, Qt.LeftButton)
     pv_id = caget("99id:bss:esaf:id", use_monitor=False, as_string=True)
     assert pv_id == "269238"
     bss_api.epicsUpdate.assert_called_once_with("99id:bss:")

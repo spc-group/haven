@@ -1,8 +1,10 @@
 import logging
+from functools import lru_cache
 
 from apsbss import apsbss
 from qtpy.QtGui import QStandardItemModel, QStandardItem
 from qtpy.QtCore import Signal, Slot
+import qtawesome as qta
 
 import haven
 from firefly import display
@@ -20,10 +22,14 @@ class BssDisplay(display.FireflyDisplay):
         "experimentStartDate",
         "experimentEndDate",
     ]
+    _esaf_id: str = ""
+    _psoporsal_id: str = ""
 
     # Signal
     proposal_changed = Signal()
+    proposal_selected = Signal()
     esaf_changed = Signal()
+    esaf_selected = Signal()
 
     def __init__(self, api=apsbss, args=None, macros={}, **kwargs):
         self.api = api
@@ -39,6 +45,28 @@ class BssDisplay(display.FireflyDisplay):
         # Load data models for proposals and ESAFs
         self.load_models()
 
+    def customize_ui(self):
+        super().customize_ui()
+        icon = qta.icon("fa5s.arrow-right")
+        self.ui.update_proposal_button.setIcon(icon)
+        self.ui.update_proposal_button.clicked.connect(self.update_proposal)
+        self.ui.update_esaf_button.setIcon(icon)
+        self.ui.update_esaf_button.clicked.connect(self.update_esaf)
+
+    @property
+    @lru_cache()
+    def proposals(self):
+        config = haven.load_config()
+        props = self.api.getCurrentProposals(config["bss"]["beamline"])
+        return props
+
+    @property
+    @lru_cache()
+    def esafs(self):
+        config = haven.load_config()
+        esafs = self.api.getCurrentEsafs(config["bss"]["beamline"].split("-")[0])
+        return esafs
+
     def load_models(self):
         config = haven.load_config()
         # Create proposal model object
@@ -47,7 +75,7 @@ class BssDisplay(display.FireflyDisplay):
         header_labels = [c.title() for c in col_names]
         self.proposal_model.setHorizontalHeaderLabels(header_labels)
         # Load individual proposals
-        proposals = self.api.getCurrentProposals(config["bss"]["beamline"])
+        proposals = self.proposals
         for proposal in proposals:
             items = [QStandardItem(str(proposal[col])) for col in col_names]
             self.proposal_model.appendRow(items)
@@ -58,21 +86,28 @@ class BssDisplay(display.FireflyDisplay):
         header_labels = [c.title() for c in col_names]
         self.esaf_model.setHorizontalHeaderLabels(header_labels)
         # Load individual esafs
-        esafs = self.api.getCurrentEsafs(config["bss"]["beamline"].split("-")[0])
+        esafs = self.esafs
         for esaf in esafs:
             items = [QStandardItem(str(esaf[col])) for col in col_names]
             self.esaf_model.appendRow(items)
         self.ui.esaf_view.setModel(self.esaf_model)
         # Connect slots for when proposal/ESAF is changed
         self.ui.proposal_view.selectionModel().currentChanged.connect(
-            self.update_proposal
+            self.select_proposal
         )
-        self.ui.esaf_view.selectionModel().currentChanged.connect(self.update_esaf)
+        self.ui.esaf_view.selectionModel().currentChanged.connect(self.select_esaf)
 
-    def update_proposal(self, current, previous):
+    def select_proposal(self, current, previous):
         # Determine which proposal was selected
         id_col_idx = self._proposal_col_names.index("id")
         new_id = current.siblingAtColumn(id_col_idx).data()
+        self._proposal_id = new_id
+        # Enable controls for updating the metadata
+        self.ui.update_proposal_button.setEnabled(True)
+        self.proposal_selected.emit()
+
+    def update_proposal(self):
+        new_id = self._proposal_id
         # Change the proposal in the EPICS record
         bss = haven.registry.find(name="bss")
         bss.proposal.proposal_id.set(new_id).wait()
@@ -80,10 +115,17 @@ class BssDisplay(display.FireflyDisplay):
         # Notify any interested parties that the proposal has been changed
         self.proposal_changed.emit()
 
-    def update_esaf(self, current, previous):
+    def select_esaf(self, current, previous):
         # Determine which esaf was selected
         id_col_idx = self._esaf_col_names.index("esafId")
         new_id = current.siblingAtColumn(id_col_idx).data()
+        self._esaf_id = new_id
+        # Enable controls for updating the metadata
+        self.ui.update_esaf_button.setEnabled(True)
+        self.esaf_selected.emit()
+
+    def update_esaf(self):
+        new_id = self._esaf_id
         # Change the esaf in the EPICS record
         bss = haven.registry.find(name="bss")
         bss.wait_for_connection()
