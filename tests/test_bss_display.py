@@ -132,6 +132,23 @@ def test_bss_proposal_updating(qtbot, ffapp, bss_api, ioc_bss):
     bss_api.epicsUpdate.assert_called_once_with("99id:bss:")
 
 
+def test_bss_proposals(ffapp, bss_api):
+    window = FireflyMainWindow()
+    display = BssDisplay(api=bss_api)
+    # Check values
+    api_proposal = bss_api.getCurrentProposals()[0]
+    proposals = display.proposals
+    proposal = proposals[0]
+    from pprint import pprint
+    pprint(proposal)
+    assert proposal['Title'] == api_proposal['title']
+    assert proposal["ID"] == api_proposal['id']
+    assert proposal["Users"] == "Botton, Karunakaran, Motta Meira"
+    assert proposal["Badges"] == "307373, 242561, 299574"
+    assert proposal["Start"] == "2023-02-14 08:00:00-06:00"
+    assert proposal["End"] == "2023-03-31 08:00:00-05:00"
+
+
 def test_bss_esaf_model(qtbot, ffapp, bss_api):
     display = BssDisplay(api=bss_api)
     assert display.ui_filename() == "bss.ui"
@@ -165,3 +182,18 @@ def test_bss_esaf_updating(qtbot, ffapp, bss_api, ioc_bss):
     pv_id = caget("99id:bss:esaf:id", use_monitor=False, as_string=True)
     assert pv_id == "269238"
     bss_api.epicsUpdate.assert_called_once_with("99id:bss:")
+
+
+def test_bss_esafs(ffapp, bss_api):
+    window = FireflyMainWindow()
+    display = BssDisplay(api=bss_api)
+    # Check values
+    api_esaf = bss_api.getCurrentEsafs()[0]
+    esafs = display.esafs
+    esaf = esafs[0]
+    assert esaf['Title'] == api_esaf['esafTitle']
+    assert esaf["ID"] == api_esaf['esafId']
+    assert esaf["Users"] == "Zhang, Chen, Motta Meira, Chen"
+    assert esaf["Badges"] == "86423, 302308, 299574, 300051"
+    assert esaf["Start"] == "2023-03-28 08:00:00"
+    assert esaf["End"] == "2023-03-31 08:00:00"

@@ -15,12 +15,14 @@ log = logging.getLogger(__name__)
 class BssDisplay(display.FireflyDisplay):
     """A PyDM display for the beamline scheduling system (BSS)."""
 
-    _proposal_col_names = ["id", "title", "startTime", "endTime"]
+    _proposal_col_names = ["ID", "Title", "Start", "End", "Users", "Badges"]
     _esaf_col_names = [
-        "esafId",
-        "esafTitle",
-        "experimentStartDate",
-        "experimentEndDate",
+        "ID",
+        "Title",
+        "Start",
+        "End",
+        "Users",
+        "Badges",
     ]
     _esaf_id: str = ""
     _psoporsal_id: str = ""
@@ -57,23 +59,42 @@ class BssDisplay(display.FireflyDisplay):
     @lru_cache()
     def proposals(self):
         config = haven.load_config()
-        props = self.api.getCurrentProposals(config["bss"]["beamline"])
-        return props
+        proposals = []
+        for proposal in self.api.getCurrentProposals(config["bss"]["beamline"]):
+            users = proposal['experimenters']
+            proposals.append({
+                "Title": proposal['title'],
+                "ID": proposal['id'],
+                "Start": proposal["startTime"],
+                "End": proposal["endTime"],
+                "Users": ", ".join([usr['lastName'] for usr in users]),
+                "Badges": ", ".join([usr['badge'] for usr in users]),
+            })
+        return proposals
 
     @property
     @lru_cache()
     def esafs(self):
         config = haven.load_config()
-        esafs = self.api.getCurrentEsafs(config["bss"]["beamline"].split("-")[0])
-        return esafs
+        esafs_ = []
+        for esaf in self.api.getCurrentEsafs(config["bss"]["beamline"].split("-")[0]):
+            users = esaf['experimentUsers']
+            esafs_.append({
+                "Title": esaf['esafTitle'],
+                "ID": esaf["esafId"],
+                "Start": esaf["experimentStartDate"],
+                "End": esaf["experimentEndDate"],
+                "Users": ", ".join([usr['lastName'] for usr in users]),
+                "Badges": ", ".join([usr['badge'] for usr in users]),
+            })
+        return esafs_
 
     def load_models(self):
         config = haven.load_config()
         # Create proposal model object
         col_names = self._proposal_col_names
         self.proposal_model = QStandardItemModel()
-        header_labels = [c.title() for c in col_names]
-        self.proposal_model.setHorizontalHeaderLabels(header_labels)
+        self.proposal_model.setHorizontalHeaderLabels(col_names)
         # Load individual proposals
         proposals = self.proposals
         for proposal in proposals:
@@ -83,8 +104,7 @@ class BssDisplay(display.FireflyDisplay):
         # Create proposal model object
         col_names = self._esaf_col_names
         self.esaf_model = QStandardItemModel()
-        header_labels = [c.title() for c in col_names]
-        self.esaf_model.setHorizontalHeaderLabels(header_labels)
+        self.esaf_model.setHorizontalHeaderLabels(col_names)
         # Load individual esafs
         esafs = self.esafs
         for esaf in esafs:
@@ -99,7 +119,7 @@ class BssDisplay(display.FireflyDisplay):
 
     def select_proposal(self, current, previous):
         # Determine which proposal was selected
-        id_col_idx = self._proposal_col_names.index("id")
+        id_col_idx = self._proposal_col_names.index("ID")
         new_id = current.siblingAtColumn(id_col_idx).data()
         self._proposal_id = new_id
         # Enable controls for updating the metadata
@@ -117,7 +137,7 @@ class BssDisplay(display.FireflyDisplay):
 
     def select_esaf(self, current, previous):
         # Determine which esaf was selected
-        id_col_idx = self._esaf_col_names.index("esafId")
+        id_col_idx = self._esaf_col_names.index("ID")
         new_id = current.siblingAtColumn(id_col_idx).data()
         self._esaf_id = new_id
         # Enable controls for updating the metadata
