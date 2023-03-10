@@ -13,7 +13,7 @@ def test_default_values():
 
 def test_loading_a_file():
     test_file = Path(__file__).resolve().parent / "test_iconfig.toml"
-    config = load_config(file_paths=[test_file])
+    config = load_config(file_paths=(test_file,))
     assert config["beamline"]["pv_prefix"] == "spam"
 
 
@@ -33,7 +33,7 @@ def test_merging_dicts():
     this_dir = Path(__file__).resolve().parent
     default_file = this_dir.parent / "haven" / "iconfig_default.toml"
     test_file = this_dir / "test_iconfig.toml"
-    config = load_config(file_paths=[default_file, test_file])
+    config = load_config(file_paths=(default_file, test_file))
     assert "description" in config["camera"]["camA"].keys()
 
 

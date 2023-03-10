@@ -82,7 +82,7 @@ class EnergyDisplay(display.FireflyDisplay):
         # Build the queue item
         item = BPlan("set_energy", energy=energy)
         # Submit the item to the queueserver
-        from .application import FireflyApplication
+        from firefly.application import FireflyApplication
 
         app = FireflyApplication.instance()
         app.add_queue_item(item)
@@ -104,12 +104,10 @@ class EnergyDisplay(display.FireflyDisplay):
             for r in edges.all()
         ]
         combo_box.addItems(["Select edge…", *items])
-        print("CUstomizing", combo_box, self.select_edge)
         combo_box.activated.connect(self.select_edge)
 
     @QtCore.Slot(int)
     def select_edge(self, index):
-        print("Selecting edge")
         if index == 0:
             # The placeholder text was selected
             return

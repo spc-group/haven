@@ -95,7 +95,6 @@ class QueueClient(QObject):
     @Slot()
     def check_queue_length(self):
         queue = self.api.queue_get()
-        print(queue)
         queue_length = len(queue["items"])
         log.debug(f"Queue length updated: {queue_length}")
         self.length_changed.emit(queue_length)

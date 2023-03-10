@@ -2,7 +2,7 @@ import logging
 
 import haven
 
-from firefly import display
+from firefly import display, FireflyApplication
 
 log = logging.getLogger(__name__)
 
@@ -77,9 +77,20 @@ class StatusDisplay(display.FireflyDisplay):
                     "MONO_MODE_PV": mono.mode.pvname,
                 }
             )
+        try:
+            bss = haven.registry.find(name="bss")
+        except haven.exceptions.ComponentNotFound:
+            log.warning("Could not find bss device in Haven registry.")
+            _macros.update({"P_BSS": "COMPONENT_NOT_FOUND"})
+        else:
+            _macros.update({"P_BSS": bss.prefix})
         # Set default macros
         _macros.update(macros)
         super().__init__(args=args, macros=_macros, **kwargs)
+
+    def customize_ui(self):
+        app = FireflyApplication.instance()
+        self.ui.bss_modify_button.clicked.connect(app.show_bss_window_action.trigger)
 
     def ui_filename(self):
         return "status.ui"

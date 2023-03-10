@@ -8,4 +8,3 @@ class XafsScanRegionDisplay(display.FireflyDisplay):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         obj = self.ui
-        print(type(obj), dir(obj))

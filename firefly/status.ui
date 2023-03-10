@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>716</width>
+    <width>670</width>
     <height>301</height>
    </rect>
   </property>
@@ -15,13 +15,13 @@
   </property>
   <layout class="QHBoxLayout" name="horizontalLayout_3">
    <item>
-    <widget class="QGroupBox" name="groupBox">
+    <widget class="QGroupBox" name="beamline_box">
      <property name="title">
       <string>Beamline</string>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout">
       <item>
-       <layout class="QFormLayout" name="formLayout">
+       <layout class="QFormLayout" name="beamline_layout">
         <property name="formAlignment">
          <set>Qt::AlignRight|Qt::AlignTop|Qt::AlignTrailing</set>
         </property>
@@ -413,13 +413,16 @@
     </widget>
    </item>
    <item>
-    <widget class="QGroupBox" name="groupBox_2">
+    <widget class="QGroupBox" name="bss_box">
      <property name="title">
       <string>Proposal/ESAF</string>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_2">
       <item>
-       <layout class="QFormLayout" name="formLayout_2">
+       <layout class="QFormLayout" name="bss_layout">
+        <property name="rowWrapPolicy">
+         <enum>QFormLayout::DontWrapRows</enum>
+        </property>
         <property name="labelAlignment">
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
@@ -431,22 +434,25 @@
          </widget>
         </item>
         <item row="0" column="1">
-         <layout class="QHBoxLayout" name="horizontalLayout_4">
+         <layout class="QHBoxLayout" name="proposal_layout">
           <property name="spacing">
            <number>6</number>
           </property>
           <item>
-           <widget class="PyDMLabel" name="PyDMLabel">
+           <widget class="PyDMLabel" name="proposal_id_label">
             <property name="toolTip">
              <string/>
             </property>
             <property name="text">
              <string>746328</string>
             </property>
+            <property name="channel" stdset="0">
+             <string>${P_BSS}proposal:id</string>
+            </property>
            </widget>
           </item>
           <item>
-           <widget class="PyDMLabel" name="PyDMLabel_2">
+           <widget class="PyDMLabel" name="proposal_title_label">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
               <horstretch>0</horstretch>
@@ -458,6 +464,15 @@
             </property>
             <property name="text">
              <string>Saving the world from everything</string>
+            </property>
+            <property name="wordWrap">
+             <bool>true</bool>
+            </property>
+            <property name="channel" stdset="0">
+             <string>${P_BSS}proposal:title</string>
+            </property>
+            <property name="displayFormat" stdset="0">
+             <enum>PyDMLabel::String</enum>
             </property>
            </widget>
           </item>
@@ -471,22 +486,25 @@
          </widget>
         </item>
         <item row="1" column="1">
-         <layout class="QHBoxLayout" name="horizontalLayout_5">
+         <layout class="QHBoxLayout" name="esaf_layout">
           <property name="spacing">
            <number>6</number>
           </property>
           <item>
-           <widget class="PyDMLabel" name="PyDMLabel_4">
+           <widget class="PyDMLabel" name="esaf_id_label">
             <property name="toolTip">
              <string/>
             </property>
             <property name="text">
              <string>5564987</string>
             </property>
+            <property name="channel" stdset="0">
+             <string>${P_BSS}esaf:id</string>
+            </property>
            </widget>
           </item>
           <item>
-           <widget class="PyDMLabel" name="PyDMLabel_3">
+           <widget class="PyDMLabel" name="esaf_title_label">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
               <horstretch>0</horstretch>
@@ -499,6 +517,15 @@
             <property name="text">
              <string>Testing the wetness of water</string>
             </property>
+            <property name="wordWrap">
+             <bool>true</bool>
+            </property>
+            <property name="channel" stdset="0">
+             <string>${P_BSS}esaf:title</string>
+            </property>
+            <property name="displayFormat" stdset="0">
+             <enum>PyDMLabel::String</enum>
+            </property>
            </widget>
           </item>
          </layout>
@@ -510,23 +537,19 @@
           </property>
          </widget>
         </item>
-        <item row="2" column="1">
-         <widget class="PyDMLabel" name="PyDMLabel_5">
-          <property name="toolTip">
-           <string/>
-          </property>
-          <property name="text">
-           <string>2023-03-17 08:00:00</string>
-          </property>
-         </widget>
-        </item>
         <item row="3" column="1">
-         <widget class="PyDMLabel" name="PyDMLabel_6">
+         <widget class="PyDMLabel" name="esaf_users_label">
           <property name="toolTip">
            <string/>
           </property>
           <property name="text">
-           <string>Wolfman, Cabana, Kumar</string>
+           <string>Franklin, Watson, Crick</string>
+          </property>
+          <property name="channel" stdset="0">
+           <string>${P_BSS}esaf:users</string>
+          </property>
+          <property name="displayFormat" stdset="0">
+           <enum>PyDMLabel::String</enum>
           </property>
          </widget>
         </item>
@@ -537,20 +560,23 @@
           </property>
          </widget>
         </item>
-       </layout>
-      </item>
-      <item>
-       <layout class="QHBoxLayout" name="horizontalLayout_6">
-        <item>
-         <widget class="PyDMPushButton" name="PyDMPushButton">
+        <item row="2" column="1">
+         <widget class="PyDMLabel" name="esaf_end_date_label">
           <property name="toolTip">
            <string/>
           </property>
           <property name="text">
-           <string>Modify</string>
+           <string>1901-01-01 8:00:00</string>
+          </property>
+          <property name="channel" stdset="0">
+           <string>${P_BSS}esaf:endDate</string>
           </property>
          </widget>
         </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_6">
         <item>
          <spacer name="horizontalSpacer_3">
           <property name="orientation">
@@ -563,6 +589,19 @@
            </size>
           </property>
          </spacer>
+        </item>
+        <item>
+         <widget class="PyDMPushButton" name="bss_modify_button">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
+          <property name="toolTip">
+           <string/>
+          </property>
+          <property name="text">
+           <string>Modify</string>
+          </property>
+         </widget>
         </item>
        </layout>
       </item>

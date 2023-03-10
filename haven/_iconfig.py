@@ -1,13 +1,8 @@
 """
-Provide information from the iconfig.toml file.
+Provide beamline configuration from the iconfig.toml file.
 
-Example TOML configuration file::
+Example TOML configuration file: iconfig_default.toml
 
-    # simple key:value pairs
-
-    ADSIM_IOC_PREFIX: "bdpad:"
-    GP_IOC_PREFIX: "bdp:"
-    catalog: bdp2022
 """
 
 __all__ = [
@@ -19,6 +14,7 @@ import logging
 from typing import Sequence
 import pathlib
 import argparse
+from functools import lru_cache
 
 from mergedeep import merge
 import tomli
@@ -54,6 +50,7 @@ def load_files(file_paths: Sequence[pathlib.Path]):
             log.debug(f"Could not find config file, skipping: {fp}")
 
 
+@lru_cache()
 def load_config(file_paths: Sequence[pathlib.Path] = CONFIG_FILES):
     """Load TOML config files."""
     config = {}

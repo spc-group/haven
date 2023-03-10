@@ -65,6 +65,11 @@ class FireflyMainWindow(PyDMMainWindow):
         if self.hide_nav_bar:
             self.toggle_nav_bar(False)
             self.ui.actionShow_Navigation_Bar.setChecked(False)
+        # Setup menu
+        self.ui.menuSetup = QtWidgets.QMenu(self.ui.menubar)
+        self.ui.menuSetup.setObjectName("menuSetup")
+        self.ui.menuSetup.setTitle("&Setup")
+        self.ui.menubar.addAction(self.ui.menuSetup.menuAction())
         # XAFS scan window
         self.add_menu_action(
             action_name="actionShow_Log_Viewer", text="Logs", menu=self.ui.menuView
@@ -117,6 +122,7 @@ class FireflyMainWindow(PyDMMainWindow):
         # Add other menu actions
         self.ui.menuView.addAction(app.show_status_window_action)
         self.ui.menuView.addAction(app.launch_queuemonitor_action)
+        self.ui.menuSetup.addAction(app.show_bss_window_action)
         self.ui.menuPositioners.addAction(app.show_energy_window_action)
 
     def update_window_title(self):

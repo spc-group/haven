@@ -11,7 +11,6 @@ import epics
 
 
 def test_gain_level(ioc_preamp, ioc_scaler):
-    print(ioc_preamp)
     positioner = SensitivityLevelPositioner("preamp_ioc", name="positioner")
     positioner.wait_for_connection()
     assert positioner.get(use_monitor=False).sens_value.readback == epics.caget(

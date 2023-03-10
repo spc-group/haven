@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 import pytest
 from qtpy import QtWidgets
+import ophyd
 
 from haven.simulated_ioc import simulated_ioc
 from haven import registry
@@ -10,6 +11,8 @@ from firefly.application import FireflyApplication
 
 ioc_dir = Path(__file__).parent.resolve() / "iocs"
 
+
+# ophyd.set_cl("caproto")
 
 # def pytest_collection_modifyitems(config, items):
 #     """Skip tests if no X server is available.
@@ -69,7 +72,13 @@ def ioc_mono():
 def ioc_area_detector():
     with simulated_ioc(fp=ioc_dir / "area_detector.py") as pvdb:
         yield pvdb
-        
+
+
+@pytest.fixture(scope="session")
+def ioc_bss():
+    with simulated_ioc(fp=ioc_dir / "apsbss_.py") as pvdb:
+        yield pvdb
+
 
 @pytest.fixture(scope="session")
 def ioc_scaler():
