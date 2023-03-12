@@ -174,7 +174,6 @@ class PlanMainWindow(FireflyMainWindow):
         self.setup_navbar()
         # Connect signals/slots
         from .application import FireflyApplication
-
         app = FireflyApplication.instance()
         app.queue_length_changed.connect(self.set_navbar_visibility)
 

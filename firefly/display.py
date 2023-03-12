@@ -14,6 +14,25 @@ class FireflyDisplay(Display):
         )
         self.customize_device()
         self.customize_ui()
+        self.find_plan_widgets()
+
+    def _all_children(self, widget):
+        for child in widget.children():
+            yield widget
+            yield from self._all_children(widget=child)
+
+    def find_plan_widgets(self):
+        """Look through widgets and determine if any of them are used for
+        bluesky plans.
+
+        """
+        # from pprint import pprint
+        # pprint([c.objectName() for c in self._all_children(self)])
+        # for child in self.ui.children():
+        #     if child.objectName() == "set_energy_button":
+        #         print(f"**{child.objectName()}**")
+        #     else:
+        #         print(child.objectName())
 
     def launch_caqtdm(self, macros={}, ui_file: str = None):
         """Launch a caQtDM window showing the window's panel."""

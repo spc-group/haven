@@ -8,6 +8,7 @@ import subprocess
 from qtpy import QtWidgets, QtCore
 from qtpy.QtWidgets import QAction
 from qtpy.QtCore import Slot, QThread, Signal, QObject
+from PyQt5.QtWidgets import QStyleFactory
 import qtawesome as qta
 import pydm
 from pydm.application import PyDMApplication
@@ -31,6 +32,11 @@ log = logging.getLogger(__name__)
 
 
 ui_dir = Path(__file__).parent
+
+
+stylesheet = """
+
+"""
 
 
 class FireflyApplication(PyDMApplication):
@@ -67,6 +73,11 @@ class FireflyApplication(PyDMApplication):
         # Instantiate the parent class
         # (*ui_file* and *use_main_window* let us render the window here instead)
         super().__init__(ui_file=None, use_main_window=use_main_window, *args, **kwargs)
+        qss_file = Path(__file__).parent / "firefly.qss"
+        self.setStyleSheet(qss_file.read_text())
+        log.info(f"Available styles: {QStyleFactory.keys()}")
+        # self.setStyle("Adwaita-dark")
+        # qdarktheme.setup_theme(additional_qss=qss_file.read_text())
         self.windows = {}
 
     def __del__(self):

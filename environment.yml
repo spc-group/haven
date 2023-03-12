@@ -80,7 +80,7 @@ dependencies:
   # - happi
   # - hklpy >=1.0.3  # --- linux-64
   - ophyd >=1.6.3
-  - pydm >=1.16.0
+  - pydm >=1.18.0
   - tiled-server
   - tiled-client
   # https://github.com/pydata/xarray/issues/6818
