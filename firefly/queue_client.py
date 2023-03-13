@@ -90,7 +90,8 @@ class QueueClient(QObject):
 
     @Slot()
     def start_queue(self):
-        self.api.queue_start()
+        result = self.api.queue_start()
+        log.debug(f"Started queue: {result}")
 
     @Slot()
     def check_queue_length(self):
