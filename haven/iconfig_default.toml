@@ -116,7 +116,13 @@ n_channels = 2
 
 prefix = "vme_crate_ioc:KB"
 
-[area_detector.sim_det]
+##########################################################
+# An example of a simulated area detector (synApps module
+# "SimDetector") named "sim_det" with PVs matching
+# "99idSimDet:cam1:AcquireRBV"
+##########################################################
 
-prefix = "99idSimDet"
-device_class = "SimDetector"
+# [area_detector.sim_det]
+
+# prefix = "99idSimDet"
+# device_class = "SimDetector"
