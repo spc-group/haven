@@ -62,7 +62,7 @@ class IOC(PVGroup):
     @classmethod
     def parse_args(Cls) -> Tuple[dict, dict]:
         ioc_options, run_options = ioc_arg_parser(
-            default_prefix=Cls.default_prefix, argv=[], desc=dedent(Cls.__doc__)
+            default_prefix=Cls.default_prefix, argv=[], desc=dedent(str(Cls.__doc__))
         )
         ioc = Cls(**ioc_options)
         run_options["log_pv_names"] = True

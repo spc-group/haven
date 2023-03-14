@@ -61,15 +61,17 @@ class BssDisplay(display.FireflyDisplay):
         config = haven.load_config()
         proposals = []
         for proposal in self.api.getCurrentProposals(config["bss"]["beamline"]):
-            users = proposal['experimenters']
-            proposals.append({
-                "Title": proposal['title'],
-                "ID": proposal['id'],
-                "Start": proposal["startTime"],
-                "End": proposal["endTime"],
-                "Users": ", ".join([usr['lastName'] for usr in users]),
-                "Badges": ", ".join([usr['badge'] for usr in users]),
-            })
+            users = proposal["experimenters"]
+            proposals.append(
+                {
+                    "Title": proposal["title"],
+                    "ID": proposal["id"],
+                    "Start": proposal["startTime"],
+                    "End": proposal["endTime"],
+                    "Users": ", ".join([usr["lastName"] for usr in users]),
+                    "Badges": ", ".join([usr["badge"] for usr in users]),
+                }
+            )
         return proposals
 
     @property
@@ -78,15 +80,17 @@ class BssDisplay(display.FireflyDisplay):
         config = haven.load_config()
         esafs_ = []
         for esaf in self.api.getCurrentEsafs(config["bss"]["beamline"].split("-")[0]):
-            users = esaf['experimentUsers']
-            esafs_.append({
-                "Title": esaf['esafTitle'],
-                "ID": esaf["esafId"],
-                "Start": esaf["experimentStartDate"],
-                "End": esaf["experimentEndDate"],
-                "Users": ", ".join([usr['lastName'] for usr in users]),
-                "Badges": ", ".join([usr['badge'] for usr in users]),
-            })
+            users = esaf["experimentUsers"]
+            esafs_.append(
+                {
+                    "Title": esaf["esafTitle"],
+                    "ID": esaf["esafId"],
+                    "Start": esaf["experimentStartDate"],
+                    "End": esaf["experimentEndDate"],
+                    "Users": ", ".join([usr["lastName"] for usr in users]),
+                    "Badges": ", ".join([usr["badge"] for usr in users]),
+                }
+            )
         return esafs_
 
     def load_models(self):

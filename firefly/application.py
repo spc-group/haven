@@ -51,6 +51,7 @@ class FireflyApplication(PyDMApplication):
     abort_runengine_action: QAction
     halt_runengine_action: QAction
     start_queue: QAction
+    queue_autoplay_action: QAction
 
     # Actions for showing window
     show_status_window_action: QtWidgets.QAction
@@ -218,6 +219,7 @@ class FireflyApplication(PyDMApplication):
         self.queue_item_added.connect(client.add_queue_item)
         # Connect signals/slots for queueserver state changes
         client.length_changed.connect(self.queue_length_changed)
+        self.queue_autoplay_action = client.autoplay_action
         # Start the thread
         thread.start()
         # Save references to the thread and runner

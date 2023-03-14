@@ -6,6 +6,7 @@ import asyncio
 from bluesky import RunEngine, plans as bp
 from qtpy.QtCore import QThread
 from qtpy.QtTest import QSignalSpy
+from bluesky_queueserver_api import BPlan
 from bluesky_queueserver_api.zmq import REManagerAPI
 
 from firefly.queue_client import QueueClient
@@ -24,6 +25,7 @@ def test_setup(ffapp):
 def test_queue_re_control(ffapp):
     """Test if the run engine can be controlled from the queue client."""
     api = MagicMock()
+    api.queue_start.return_value = {"success": True}
     ffapp.setup_window_actions()
     ffapp.setup_runengine_actions()
     ffapp.prepare_queue_client(api=api)
@@ -55,6 +57,7 @@ def test_run_plan(ffapp, qtbot):
     FireflyMainWindow()
     api = MagicMock()
     api.item_add.return_value = {"success": True, "qsize": 2}
+    api.queue_start.return_value = {"success": True}
     ffapp.prepare_queue_client(api=api)
     # Send a plan
     with qtbot.waitSignal(
@@ -63,6 +66,29 @@ def test_run_plan(ffapp, qtbot):
         ffapp.queue_item_added.emit({})
     # Check if the API sent it
     api.item_add.assert_called_once_with(item={})
+
+
+def test_autoplay(ffapp, qtbot):
+    """Test how queuing a plan starts the runengine."""
+    ffapp.setup_window_actions()
+    ffapp.setup_runengine_actions()
+    FireflyMainWindow()
+    api = MagicMock()
+    api.item_add.return_value = {"success": True, "qsize": 1}
+    api.queue_start.return_value = {"success": True}
+    ffapp.prepare_queue_client(api=api)
+    # Send a plan
+    plan = BPlan("set_energy", energy=8333)
+    ffapp._queue_client.add_queue_item(plan)
+    api.item_add.assert_called_once()
+    # Check the queue was started
+    api.queue_start.assert_called_once()
+    # Check that it doesn't start the queue if the autoplay action is off
+    api.reset_mock()
+    ffapp._queue_client.autoplay_action.trigger()
+    ffapp._queue_client.add_queue_item(plan)
+    # Check that the queue wasn't started
+    assert not api.queue_start.called
 
 
 def test_check_queue_length(ffapp, qtbot):

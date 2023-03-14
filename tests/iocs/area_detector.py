@@ -17,9 +17,13 @@ class IOC(IOC_):
 
     """
 
-    cam1_acquire_rbv = pvproperty(value=0, name="cam1:Acquire_RBV", dtype=PvpropertyInteger)
+    cam1_acquire_rbv = pvproperty(
+        value=0, name="cam1:Acquire_RBV", dtype=PvpropertyInteger
+    )
     cam1_acquire = pvproperty(value=0, name="cam1:Acquire", dtype=PvpropertyInteger)
-    cam1_acquire_busy = pvproperty(value=0, name="cam1:AcquireBusy", dtype=PvpropertyInteger)
+    cam1_acquire_busy = pvproperty(
+        value=0, name="cam1:AcquireBusy", dtype=PvpropertyInteger
+    )
     default_prefix = "99idSimDet:"
 
 

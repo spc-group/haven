@@ -57,6 +57,9 @@ class FireflyMainWindow(PyDMMainWindow):
         return action
 
     def customize_ui(self):
+        from .application import FireflyApplication
+
+        app = FireflyApplication.instance()
         # Add window icon
         root_dir = Path(__file__).parent.absolute()
         icon_path = root_dir / "splash.png"
@@ -99,6 +102,9 @@ class FireflyMainWindow(PyDMMainWindow):
         self.add_menu_action(
             action_name="actionShow_Xafs_Scan", text="XAFS Scan", menu=self.ui.menuScans
         )
+        # Auto-play setting for the queue client
+        if hasattr(app, "queue_autoplay_action"):
+            self.ui.menuScans.addAction(app.queue_autoplay_action)
         # Detectors menu
         self.ui.menuDetectors = QtWidgets.QMenu(self.ui.menubar)
         self.ui.menuDetectors.setObjectName("menuDetectors")
@@ -114,9 +120,6 @@ class FireflyMainWindow(PyDMMainWindow):
             action_name="actionShow_Cameras", text="Cameras", menu=self.ui.menuDetectors
         )
         # Add actions to the motors sub-menus
-        from .application import FireflyApplication
-
-        app = FireflyApplication.instance()
         for action in app.motor_actions:
             self.ui.menuMotors.addAction(action)
         # Add other menu actions
@@ -174,6 +177,7 @@ class PlanMainWindow(FireflyMainWindow):
         self.setup_navbar()
         # Connect signals/slots
         from .application import FireflyApplication
+
         app = FireflyApplication.instance()
         app.queue_length_changed.connect(self.set_navbar_visibility)
 
