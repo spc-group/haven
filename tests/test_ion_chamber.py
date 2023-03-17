@@ -25,9 +25,14 @@ def test_gain_level(ioc_preamp, ioc_scaler):
     # Check that the preamp sensitivities are moved
     assert positioner.get(use_monitor=False).sens_value.readback == 3
     assert positioner.get(use_monitor=False).sens_unit.readback == 1
+    # Check that the preamp sensitivity offsets are moved
+    assert positioner.get(use_monitor=False).offset_value.readback == 0
+    assert positioner.get(use_monitor=False).offset_unit.readback == 1
     # Change the preamp settings
     epics.caput("preamp_ioc:sens_num.VAL", 0)
     epics.caput("preamp_ioc:sens_unit.VAL", 3)
+    epics.caput("preamp_ioc:offset_num.VAL", 1)
+    epics.caput("preamp_ioc:offset_unit.VAL", 3)
     time.sleep(0.1)
     # Check that the gain level moved
     assert positioner.sens_level.get(use_monitor=False).readback == 27

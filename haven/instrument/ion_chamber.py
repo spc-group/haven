@@ -48,6 +48,7 @@ class SetAllPositioner(PVPositionerPC):
 class SensitivityLevelPositioner(PseudoPositioner):
     values = [1, 2, 5, 10, 20, 50, 100, 200, 500]
     units = ["pA/V", "nA/V", "µA/V", "mA/V"]
+    offset_difference = -3  # How many levels higher should the offset be
 
     sens_level = Cpt(PseudoSingle, limits=(0, 27))
 
@@ -58,6 +59,12 @@ class SensitivityLevelPositioner(PseudoPositioner):
     sens_value = Cpt(
         SensitivityPositioner, ":sens_num", kind=Kind.config, settle_time=0.1
     )
+    offset_unit = Cpt(
+        SensitivityPositioner, ":offset_unit", kind=Kind.config, settle_time=0.1
+    )
+    offset_value = Cpt(
+        SensitivityPositioner, ":offset_num", kind=Kind.config, settle_time=0.1
+    )
     set_all = Cpt(
         SetAllPositioner,
         ":init.PROC",
@@ -66,17 +73,25 @@ class SensitivityLevelPositioner(PseudoPositioner):
         limits=(0, 1),
     )
 
+    def _level_to_num(self, level):
+        return level % len(self.values)
+
+    def _level_to_unit(self, level):
+        return int(level / len(self.values))
+
     @pseudo_position_argument
     def forward(self, target_gain_level):
         "Given a target energy, transform to the desired target gain level."
         new_level = target_gain_level.sens_level
-        new_value = new_level % len(self.values)
-        new_unit = int(new_level / len(self.values))
-        return self.RealPosition(
-            sens_value=new_value,
-            sens_unit=new_unit,
+        new_offset = max(new_level + self.offset_difference, 0)
+        real_position = self.RealPosition(
+            sens_value=self._level_to_num(new_level),
+            sens_unit=self._level_to_unit(new_level),
+            offset_value=self._level_to_num(new_offset),
+            offset_unit=self._level_to_unit(new_offset),
             set_all=1,
         )
+        return real_position
 
     @real_position_argument
     def inverse(self, sensitivity):

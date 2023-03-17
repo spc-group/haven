@@ -31,6 +31,18 @@ class IOC(IOC_):
         record="mbbi",
         dtype=ChannelType.ENUM,
     )
+    offset_num = pvproperty(
+        value="5",
+        enum_strings=["1", "2", "5", "10", "20", "50", "100", "200", "500"],
+        record="mbbi",
+        dtype=ChannelType.ENUM,
+    )
+    offset_unit = pvproperty(
+        value="nA",
+        enum_strings=["pA", "nA", "uA", "mA"],
+        record="mbbi",
+        dtype=ChannelType.ENUM,
+    )
     set_all = pvproperty(value=1, name="init.PROC", doc="")
     default_prefix = "preamp_ioc:"
 
