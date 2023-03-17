@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>848</width>
-    <height>113</height>
+    <width>846</width>
+    <height>91</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -97,388 +97,154 @@
       </widget>
      </item>
      <item>
-      <layout class="QGridLayout" name="gridLayout">
+      <layout class="QHBoxLayout" name="horizontalLayout_2">
        <property name="rightMargin">
-        <number>5</number>
+        <number>0</number>
        </property>
-       <item row="0" column="2">
-        <widget class="QLabel" name="label_4">
-         <property name="text">
-          <string>Size</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="0">
-        <widget class="QLabel" name="label_2">
-         <property name="text">
-          <string>X</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="1">
-        <widget class="QLabel" name="label_3">
-         <property name="text">
-          <string>Center</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="0">
-        <widget class="QLabel" name="label_5">
-         <property name="text">
-          <string>Y</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="1">
-        <layout class="QHBoxLayout" name="horizontalLayout_2">
-         <property name="spacing">
-          <number>0</number>
-         </property>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_6">
          <item>
-          <widget class="PyDMPushButton" name="PyDMPushButton">
-           <property name="maximumSize">
-            <size>
-             <width>30</width>
-             <height>16777215</height>
-            </size>
-           </property>
+          <widget class="PyDMLabel" name="PyDMLabel">
            <property name="toolTip">
             <string/>
            </property>
            <property name="text">
-            <string>−</string>
+            <string>Ellipse</string>
            </property>
            <property name="channel" stdset="0">
-            <string>%{PREFIX}Over1:1:CenterX</string>
-           </property>
-           <property name="pressValue" stdset="0">
-            <string>1</string>
-           </property>
-           <property name="relativeChange" stdset="0">
-            <bool>true</bool>
+            <string>${PREFIX}Over1:1:Shape_RBV</string>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="PyDMLineEdit" name="PyDMLineEdit">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>70</width>
-             <height>16777215</height>
-            </size>
-           </property>
-           <property name="baseSize">
-            <size>
-             <width>20</width>
-             <height>0</height>
-            </size>
-           </property>
-           <property name="toolTip">
-            <string/>
-           </property>
-           <property name="channel" stdset="0">
-            <string>%{PREFIX}Over1:1:CenterX</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="PyDMPushButton" name="PyDMPushButton_2">
-           <property name="maximumSize">
-            <size>
-             <width>30</width>
-             <height>16777215</height>
-            </size>
-           </property>
+          <widget class="PyDMCheckbox" name="PyDMCheckbox">
            <property name="toolTip">
             <string/>
            </property>
            <property name="text">
-            <string>+</string>
+            <string/>
            </property>
            <property name="channel" stdset="0">
-            <string>%{PREFIX}Over1:1:CenterX</string>
-           </property>
-           <property name="pressValue" stdset="0">
-            <string>1</string>
-           </property>
-           <property name="relativeChange" stdset="0">
-            <bool>true</bool>
+            <string>${PREFIX}Over1:1:Use</string>
            </property>
           </widget>
          </item>
         </layout>
        </item>
-       <item row="2" column="1">
-        <layout class="QHBoxLayout" name="horizontalLayout_3">
-         <property name="spacing">
-          <number>0</number>
+       <item>
+        <widget class="PyDMSlider" name="PyDMSlider_3">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
          </property>
-         <item>
-          <widget class="PyDMPushButton" name="PyDMPushButton_4">
-           <property name="maximumSize">
-            <size>
-             <width>30</width>
-             <height>16777215</height>
-            </size>
-           </property>
-           <property name="toolTip">
-            <string/>
-           </property>
-           <property name="text">
-            <string>−</string>
-           </property>
-           <property name="channel" stdset="0">
-            <string>%{PREFIX}Over1:1:CenterY</string>
-           </property>
-           <property name="pressValue" stdset="0">
-            <string>1</string>
-           </property>
-           <property name="relativeChange" stdset="0">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="PyDMLineEdit" name="PyDMLineEdit_2">
-           <property name="maximumSize">
-            <size>
-             <width>70</width>
-             <height>16777215</height>
-            </size>
-           </property>
-           <property name="toolTip">
-            <string/>
-           </property>
-           <property name="channel" stdset="0">
-            <string>%{PREFIX}Over1:1:CenterY</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="PyDMPushButton" name="PyDMPushButton_5">
-           <property name="maximumSize">
-            <size>
-             <width>30</width>
-             <height>16777215</height>
-            </size>
-           </property>
-           <property name="toolTip">
-            <string/>
-           </property>
-           <property name="text">
-            <string>+</string>
-           </property>
-           <property name="channel" stdset="0">
-            <string>%{PREFIX}Over1:1:CenterY</string>
-           </property>
-           <property name="pressValue" stdset="0">
-            <string>1</string>
-           </property>
-           <property name="relativeChange" stdset="0">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item row="1" column="2">
-        <layout class="QHBoxLayout" name="horizontalLayout_4">
-         <property name="spacing">
-          <number>0</number>
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>1677215</height>
+          </size>
          </property>
-         <item>
-          <widget class="PyDMPushButton" name="PyDMPushButton_6">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>30</width>
-             <height>16777215</height>
-            </size>
-           </property>
-           <property name="baseSize">
-            <size>
-             <width>10</width>
-             <height>0</height>
-            </size>
-           </property>
-           <property name="toolTip">
-            <string/>
-           </property>
-           <property name="text">
-            <string>−</string>
-           </property>
-           <property name="channel" stdset="0">
-            <string>${PREFIX}Over1:1:SizeX</string>
-           </property>
-           <property name="pressValue" stdset="0">
-            <string>1</string>
-           </property>
-           <property name="relativeChange" stdset="0">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="PyDMLineEdit" name="PyDMLineEdit_3">
-           <property name="maximumSize">
-            <size>
-             <width>70</width>
-             <height>16777215</height>
-            </size>
-           </property>
-           <property name="toolTip">
-            <string/>
-           </property>
-           <property name="channel" stdset="0">
-            <string>${PREFIX}Over1:1:SizeX</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="PyDMPushButton" name="PyDMPushButton_7">
-           <property name="maximumSize">
-            <size>
-             <width>30</width>
-             <height>16777215</height>
-            </size>
-           </property>
-           <property name="toolTip">
-            <string/>
-           </property>
-           <property name="text">
-            <string>+</string>
-           </property>
-           <property name="channel" stdset="0">
-            <string>${PREFIX}Over1:1:SizeX</string>
-           </property>
-           <property name="pressValue" stdset="0">
-            <string>1</string>
-           </property>
-           <property name="relativeChange" stdset="0">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item row="2" column="2">
-        <layout class="QHBoxLayout" name="horizontalLayout_5">
-         <property name="spacing">
-          <number>0</number>
-         </property>
-         <item>
-          <widget class="PyDMPushButton" name="PyDMPushButton_8">
-           <property name="maximumSize">
-            <size>
-             <width>30</width>
-             <height>16777215</height>
-            </size>
-           </property>
-           <property name="toolTip">
-            <string/>
-           </property>
-           <property name="text">
-            <string>−</string>
-           </property>
-           <property name="channel" stdset="0">
-            <string>${PREFIX}Over1:1:SizeY</string>
-           </property>
-           <property name="pressValue" stdset="0">
-            <string>1</string>
-           </property>
-           <property name="relativeChange" stdset="0">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="PyDMLineEdit" name="PyDMLineEdit_4">
-           <property name="maximumSize">
-            <size>
-             <width>70</width>
-             <height>16777215</height>
-            </size>
-           </property>
-           <property name="toolTip">
-            <string/>
-           </property>
-           <property name="channel" stdset="0">
-            <string>${PREFIX}Over1:1:SizeX</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="PyDMPushButton" name="PyDMPushButton_9">
-           <property name="maximumSize">
-            <size>
-             <width>30</width>
-             <height>16777215</height>
-            </size>
-           </property>
-           <property name="toolTip">
-            <string/>
-           </property>
-           <property name="text">
-            <string>+</string>
-           </property>
-           <property name="channel" stdset="0">
-            <string>${PREFIX}Over1:1:SizeY</string>
-           </property>
-           <property name="pressValue" stdset="0">
-            <string>1</string>
-           </property>
-           <property name="releaseValue" stdset="0">
-            <string>None</string>
-           </property>
-           <property name="relativeChange" stdset="0">
-            <bool>true</bool>
-           </property>
-           <property name="writeWhenRelease" stdset="0">
-            <bool>false</bool>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item row="0" column="0">
-        <widget class="PyDMPushButton" name="PyDMPushButton_3">
          <property name="toolTip">
           <string/>
          </property>
-         <property name="text">
-          <string>Ellipse</string>
-         </property>
-         <property name="icon">
-          <iconset theme="arrowRight"/>
-         </property>
-         <property name="checkable">
-          <bool>true</bool>
+         <property name="precisionFromPV" stdset="0">
+          <bool>false</bool>
          </property>
          <property name="channel" stdset="0">
-          <string>${PREFIX}Over1:1:Use</string>
+          <string>${PREFIX}Over1:1:CenterY</string>
+         </property>
+         <property name="orientation" stdset="0">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="ignoreMouseWheel" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="step_size" stdset="0">
+          <number>0</number>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QVBoxLayout" name="verticalLayout_5">
+         <property name="topMargin">
+          <number>0</number>
+         </property>
+         <property name="rightMargin">
+          <number>0</number>
+         </property>
+         <item>
+          <widget class="QLabel" name="label_3">
+           <property name="text">
+            <string>Center</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="PyDMSlider" name="PyDMSlider_2">
+           <property name="toolTip">
+            <string/>
+           </property>
+           <property name="channel" stdset="0">
+            <string>${PREFIX}Over1:1:CenterX</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="Line" name="line_4">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QVBoxLayout" name="verticalLayout_6">
+         <property name="rightMargin">
+          <number>5</number>
+         </property>
+         <item>
+          <widget class="QLabel" name="label_4">
+           <property name="text">
+            <string>Size</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="PyDMSlider" name="PyDMSlider">
+           <property name="toolTip">
+            <string/>
+           </property>
+           <property name="channel" stdset="0">
+            <string>${PREFIX}Over1:1:SizeX</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="PyDMSlider" name="PyDMSlider_4">
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>16777215</height>
+          </size>
+         </property>
+         <property name="toolTip">
+          <string/>
+         </property>
+         <property name="channel" stdset="0">
+          <string>${PREFIX}Over1:1:SizeY</string>
+         </property>
+         <property name="orientation" stdset="0">
+          <enum>Qt::Vertical</enum>
          </property>
         </widget>
        </item>
@@ -551,6 +317,9 @@
       <widget class="PyDMLabel" name="camera_status_label">
        <property name="toolTip">
         <string/>
+       </property>
+       <property name="PyDMToolTip" stdset="0">
+        <string>${PREFIX}cam1:DetectorState_RBV</string>
        </property>
        <property name="channel" stdset="0">
         <string>${PREFIX}cam1:DetectorState_RBV</string>
@@ -652,14 +421,19 @@
    <header>pydm.widgets.byte</header>
   </customwidget>
   <customwidget>
-   <class>PyDMLineEdit</class>
-   <extends>QLineEdit</extends>
-   <header>pydm.widgets.line_edit</header>
+   <class>PyDMCheckbox</class>
+   <extends>QCheckBox</extends>
+   <header>pydm.widgets.checkbox</header>
   </customwidget>
   <customwidget>
    <class>PyDMPushButton</class>
    <extends>QPushButton</extends>
    <header>pydm.widgets.pushbutton</header>
+  </customwidget>
+  <customwidget>
+   <class>PyDMSlider</class>
+   <extends>QFrame</extends>
+   <header>pydm.widgets.slider</header>
   </customwidget>
  </customwidgets>
  <resources/>
