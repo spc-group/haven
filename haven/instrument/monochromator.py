@@ -1,3 +1,5 @@
+from enum import IntEnum
+
 from ophyd import (
     Device,
     Component as Cpt,
@@ -9,6 +11,11 @@ from ophyd import (
 
 from .instrument_registry import registry
 from .._iconfig import load_config
+
+
+class IDTracking(IntEnum):
+    OFF = 0
+    ON = 1
 
 
 @registry.register
