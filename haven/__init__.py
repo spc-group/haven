@@ -16,6 +16,7 @@ from .plans.align_motor import align_motor, align_pitch2  # noqa: F401
 from .run_engine import RunEngine  # noqa: F401
 from ._iconfig import load_config  # noqa: F401
 from .preprocessors import baseline_decorator, baseline_wrapper  # noqa: F401
+from .constants import edge_energy
 
 from .motor_position import (  # noqa: F401
     save_motor_position,
