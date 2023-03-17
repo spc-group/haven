@@ -127,7 +127,7 @@ def inject_haven_md_wrapper(plan):
                 }
             )
         # Update the message
-        msg = msg._replace(kwargs=ChainMap(md, msg.kwargs))
+        msg = msg._replace(kwargs=ChainMap(msg.kwargs, md))
         return msg
 
     return (yield from msg_mutator(plan, _inject_md))
