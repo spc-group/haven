@@ -97,6 +97,13 @@ def align_motor(
     detectors = [det]
     if hasattr(det, "raw_counts"):
         detectors.insert(0, det.raw_counts)
+    # from pprint import pprint
+    # pprint(detectors)
+    # print(motor)
+    # print(start, end)
+    # print(feature)
+    # print(bec, md_)
+    # assert False
     plan = lineup(
         detectors, motor, start, end, npts=40, feature=feature, bec=bec, md=md_
     )
