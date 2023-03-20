@@ -4,6 +4,7 @@ capture detector signals.
 """
 
 from typing import Union, Sequence, Optional, Mapping
+from collections import ChainMap
 import warnings
 import logging
 
@@ -13,8 +14,7 @@ from ..energy_ranges import ERange, KRange
 from .. import exceptions
 from .energy_scan import energy_scan
 from ..typing import DetectorList
-from ..preprocessors import baseline_decorator
-
+from ..preprocessors import baseline_decorator, shutter_suspend_decorator
 
 log = logging.getLogger(__name__)
 
@@ -31,6 +31,7 @@ def chunks(lst, n):
         yield lst[i : i + n]  # noqa: E203
 
 
+# @shutter_suspend_decorator()
 @baseline_decorator()
 def xafs_scan(
     E_min: float,
@@ -161,5 +162,5 @@ def xafs_scan(
         detectors=detectors,
         energy_positioners=energy_positioners,
         time_positioners=time_positioners,
-        md=md,
+        md=ChainMap(md, {"plan_name": "xafs_scan"}),
     )

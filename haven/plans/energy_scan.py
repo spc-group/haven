@@ -5,6 +5,7 @@
 import logging
 import warnings
 from typing import Sequence, Union, Mapping
+from collections import ChainMap
 
 from bluesky import plans as bp
 import numpy as np
@@ -14,7 +15,7 @@ from .._iconfig import load_config
 from ..instrument import registry
 from ..constants import edge_energy
 from ..typing import DetectorList
-from ..preprocessors import baseline_decorator
+from ..preprocessors import baseline_decorator, shutter_suspend_decorator
 
 
 __all__ = ["energy_scan"]
@@ -23,6 +24,7 @@ __all__ = ["energy_scan"]
 log = logging.getLogger(__name__)
 
 
+# @shutter_suspend_decorator()
 @baseline_decorator()
 def energy_scan(
     energies: Sequence[float],
@@ -133,5 +135,5 @@ def energy_scan(
     yield from bp.list_scan(
         real_detectors,
         *scan_args,
-        md={"edge": E0_str, "E0": E0, **md, **config},
+        md=ChainMap(md, {"edge": E0_str, "E0": E0}, config),
     )
