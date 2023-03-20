@@ -50,7 +50,9 @@ class SensitivityLevelPositioner(PseudoPositioner):
     units = ["pA/V", "nA/V", "µA/V", "mA/V"]
     offset_difference = -3  # How many levels higher should the offset be
 
-    sens_level = Cpt(PseudoSingle, limits=(0, 27))
+    sens_level = Cpt(PseudoSingle, limits=(0, 27),
+                     labels={"ion_chamber_sensitivities",
+                             "ion_chamber_gains"})
 
     # Sensitivity settings
     sens_unit = Cpt(
@@ -154,6 +156,8 @@ class IonChamber(ScalerTriggered, Device):
         SensitivityLevelPositioner, "{preamp_prefix}", kind="config"
     )
     auto_count: OphydObject = FCpt(EpicsSignal, "{scaler_prefix}.CONT", kind="config")
+    record_dark_current: OphydObject = FCpt(EpicsSignal, "{scaler_prefix}_offset_start.PROC", kind="omitted")
+    record_dark_time: OphydObject = FCpt(EpicsSignal, "{scaler_prefix}_offset_time.VAL", kind="config")
 
     def __init__(
         self,
