@@ -21,7 +21,9 @@ class Shutter(ApsPssShutterWithStatus):
 shutter_suspenders = []
 
 
-def load_shutters(config=load_config()):
+def load_shutters(config=None):
+    if config is None:
+        config = load_config()
     for name, d in config["shutter"].items():
         shutter = Shutter(
             open_pv=d["open_pv"],
