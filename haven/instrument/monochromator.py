@@ -27,6 +27,9 @@ class Monochromator(Device):
     # Virtual positioners
     mode = Cpt(EpicsSignal, ":mode", labels={"motors", "baseline"}, kind="config")
     energy = Cpt(EpicsMotor, ":Energy", labels={"motors"}, kind="hinted")
+    energy_constant1 = Cpt(EpicsSignal, ":EnergyC1.VAL", labels={"baseline"}, kind="config")
+    energy_constant2 = Cpt(EpicsSignal, ":EnergyC2.VAL", labels={"baseline"}, kind="config")
+    energy_constant3 = Cpt(EpicsSignal, ":EnergyC3.VAL", labels={"baseline"}, kind="config")
     offset = Cpt(EpicsMotor, ":Offset", labels={"motors", "baseline"}, kind="config")
     # ACS Motors
     horiz = Cpt(EpicsMotor, ":ACS:m1", labels={"motors", "baseline"}, kind="config")
