@@ -1,7 +1,7 @@
 """Tools for modifying plans and data streams as they are generated."""
 
 
-from typing import Union, Sequence, Callable
+from typing import Union, Sequence, Iterable
 from collections import ChainMap
 import pkg_resources
 import os
@@ -10,8 +10,13 @@ import getpass
 import warnings
 import logging
 
-from bluesky.preprocessors import baseline_wrapper as bluesky_baseline_wrapper
-from bluesky.utils import make_decorator
+from bluesky.preprocessors import (
+    baseline_wrapper as bluesky_baseline_wrapper,
+    finalize_wrapper,
+    suspend_wrapper,
+)
+from bluesky.suspenders import SuspendBoolLow
+from bluesky.utils import make_decorator, Msg
 from bluesky.preprocessors import msg_mutator
 import epics
 
@@ -102,7 +107,7 @@ def inject_haven_md_wrapper(plan):
         # Get metadata from the beamline scheduling system (bss)
         try:
             bss = registry.find(name="bss")
-        except ComponentNotFound as exc:
+        except ComponentNotFound:
             if config["beamline"]["is_connected"]:
                 wmsg = "Could not find bss device, metadata may be missing."
                 warnings.warn(wmsg)
@@ -133,4 +138,47 @@ def inject_haven_md_wrapper(plan):
     return (yield from msg_mutator(plan, _inject_md))
 
 
+def shutter_suspend_wrapper(plan, shutters=None):
+    """
+    Install suspenders to the RunEngine, and remove them at the end.
+
+    Parameters
+    ----------
+    plan : iterable or iterator
+        a generator, list, or similar containing `Msg` objects
+    suspenders : suspender or list of suspenders
+        Suspenders to use for the duration of the wrapper
+
+    Yields
+    ------
+    msg : Msg
+        messages from plan, with 'install_suspender' and 'remove_suspender'
+        messages inserted and appended
+    """
+    if shutters is None:
+        shutters = registry.findall("shutters")
+    # Create a suspender for each shutter
+    suspenders = []
+    for shutter in shutters:
+        suspender = SuspendBoolLow(shutter.pss_state, sleep=3.0)
+        suspenders.append(suspender)
+    if not isinstance(suspenders, Iterable):
+        suspenders = [suspenders]
+
+    def _install():
+        for susp in suspenders:
+            yield Msg("install_suspender", None, susp)
+
+    def _remove():
+        for susp in suspenders:
+            yield Msg("remove_suspender", None, susp)
+
+    def _inner_plan():
+        yield from _install()
+        return (yield from plan)
+
+    return (yield from finalize_wrapper(_inner_plan(), _remove()))
+
+
 baseline_decorator = make_decorator(baseline_wrapper)
+shutter_suspend_decorator = make_decorator(shutter_suspend_wrapper)
