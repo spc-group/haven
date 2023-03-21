@@ -7,8 +7,6 @@ from qtpy.QtCore import QThread, QObject, Signal, Slot, QTimer
 from bluesky_queueserver_api.zmq import REManagerAPI
 from bluesky_queueserver_api import BPlan, comm_base
 
-from haven import RunEngine
-
 
 log = logging.getLogger()
 

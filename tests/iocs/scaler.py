@@ -16,6 +16,8 @@ class IOC(IOC_):
     TP = pvproperty(name=".TP", value=1.0)
     calc2 = pvproperty(name="_calc2.VAL", value=2.35)
     CONT = pvproperty(name=".CONT", value=1, doc="Autocount")
+    offset_start = pvproperty(name="_offset_start.PROC")
+    offset_time = pvproperty(name="_offset_time.VAL", value=1.)
 
     default_prefix = "vme_crate_ioc"
 

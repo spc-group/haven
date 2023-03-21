@@ -21,6 +21,7 @@ def test_energy_macros(qtbot, ffapp, sim_registry):
         haven.instrument.energy_positioner.EnergyPositioner(
             mono_pv="mono_ioc:Energy",
             id_offset_pv="mono_ioc:ID_offset",
+            id_tracking_pv="mono_ioc:ID_tracking",
             id_prefix="id_ioc",
             name="energy",
         )
@@ -46,6 +47,7 @@ def test_move_energy(qtbot, ffapp, sim_registry):
         haven.instrument.energy_positioner.EnergyPositioner(
             mono_pv="mono_ioc:Energy",
             id_offset_pv="mono_ioc:ID_offset",
+            id_tracking_pv="mono_ioc:ID_tracking",
             id_prefix="id_ioc",
             name="energy",
         )
@@ -86,6 +88,7 @@ def test_predefined_energies(qtbot, ffapp, ioc_mono, sim_registry):
         haven.instrument.energy_positioner.EnergyPositioner(
             mono_pv="mono_ioc:Energy",
             id_offset_pv="mono_ioc:ID_offset",
+            id_tracking_pv="mono_ioc:ID_tracking",
             id_prefix="id_ioc",
             name="energy",
         )

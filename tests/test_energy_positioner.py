@@ -10,6 +10,7 @@ def test_pseudo_to_real_positioner(ioc_mono, ioc_undulator):
         name="energy",
         mono_pv="mono_ioc:Energy",
         id_prefix="id_ioc",
+        id_tracking_pv="mono_ioc:ID_tracking",
         id_offset_pv="mono_ioc:ID_offset",
     )
     positioner.mono_energy.wait_for_connection()
@@ -32,6 +33,7 @@ def test_real_to_pseudo_positioner(ioc_mono, ioc_undulator):
         name="energy",
         mono_pv="mono_ioc:Energy",
         id_prefix="id_ioc",
+        id_tracking_pv="mono_ioc:ID_tracking",
         id_offset_pv="mono_ioc:ID_offset",
     )
     positioner.wait_for_connection(timeout=10.0)

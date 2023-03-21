@@ -36,7 +36,7 @@ class ScalerTriggered:
             return self._trigger_scaler(*args, **kwargs)
         else:
             # This is a sub-component of a device, so trigger the parent
-            self.parent.trigger()
+            return self.parent.trigger()
 
     def _trigger_scaler(self, *args, **kwargs):
         # Figure out if there's already a trigger active

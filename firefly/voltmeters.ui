@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>642</width>
-    <height>380</height>
+    <width>608</width>
+    <height>411</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -97,17 +97,86 @@
       </layout>
      </item>
      <item>
-      <widget class="PyDMCheckbox" name="PyDMCheckbox">
-       <property name="toolTip">
-        <string/>
+      <layout class="QHBoxLayout" name="horizontalLayout">
+       <property name="bottomMargin">
+        <number>5</number>
        </property>
-       <property name="text">
-        <string>Auto Count</string>
-       </property>
-       <property name="channel" stdset="0">
-        <string>${PREFIX}.CONT</string>
-       </property>
-      </widget>
+       <item>
+        <widget class="PyDMCheckbox" name="PyDMCheckbox">
+         <property name="toolTip">
+          <string/>
+         </property>
+         <property name="text">
+          <string>Auto Count</string>
+         </property>
+         <property name="channel" stdset="0">
+          <string>${PREFIX}.CONT</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="PyDMPushButton" name="PyDMPushButton">
+         <property name="toolTip">
+          <string/>
+         </property>
+         <property name="text">
+          <string>Record Dark Current</string>
+         </property>
+         <property name="alarmSensitiveContent" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="alarmSensitiveBorder" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="PyDMToolTip" stdset="0">
+          <string>${PREFIX}_offset_start.PROC</string>
+         </property>
+         <property name="channel" stdset="0">
+          <string>${PREFIX}_offset_start.PROC</string>
+         </property>
+         <property name="passwordProtected" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="password" stdset="0">
+          <string/>
+         </property>
+         <property name="protectedPassword" stdset="0">
+          <string/>
+         </property>
+         <property name="showConfirmDialog" stdset="0">
+          <bool>true</bool>
+         </property>
+         <property name="confirmMessage" stdset="0">
+          <string>Is the shutter closed?</string>
+         </property>
+         <property name="pressValue" stdset="0">
+          <string>1</string>
+         </property>
+         <property name="releaseValue" stdset="0">
+          <string>None</string>
+         </property>
+         <property name="relativeChange" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="writeWhenRelease" stdset="0">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="horizontalSpacer">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
      </item>
     </layout>
    </item>
@@ -124,6 +193,11 @@
    <extends>QFrame</extends>
    <header>pydm.widgets.embedded_display</header>
    <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>PyDMPushButton</class>
+   <extends>QPushButton</extends>
+   <header>pydm.widgets.pushbutton</header>
   </customwidget>
  </customwidgets>
  <resources/>

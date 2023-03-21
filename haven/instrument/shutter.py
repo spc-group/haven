@@ -1,3 +1,4 @@
+from bluesky import suspenders
 from ophyd import FormattedComponent as FCpt, EpicsSignal
 from apstools.devices.shutters import ApsPssShutterWithStatus
 
@@ -16,7 +17,13 @@ class Shutter(ApsPssShutterWithStatus):
         super().__init__(prefix=self.open_pv, state_pv=self.state_pv, *args, **kwargs)
 
 
-def load_shutters(config=load_config()):
+# A list of suspenders that will get populated once the shutters get loaded
+shutter_suspenders = []
+
+
+def load_shutters(config=None):
+    if config is None:
+        config = load_config()
     for name, d in config["shutter"].items():
         shutter = Shutter(
             open_pv=d["open_pv"],

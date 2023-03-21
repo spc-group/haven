@@ -17,7 +17,7 @@ class EnergyDisplay(display.FireflyDisplay):
         "/net/s25data/xorApps/epics/synApps_6_2/ioc/25ida/25idaApp/op/ui/IDControl.ui"
     )
     min_energy = 4000
-    max_energy = 27000
+    max_energy = 33000
     stylesheet_danger = (
         "background: rgb(220, 53, 69); color: white; border-color: rgb(220, 53, 69)"
     )
