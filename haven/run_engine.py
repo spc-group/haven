@@ -45,7 +45,7 @@ def save_data(name, doc):
     catalog.v1.insert(name, doc)
 
 
-def run_engine() -> BlueskyRunEngine:
+def run_engine(connect_databroker=True) -> BlueskyRunEngine:
     RE = BlueskyRunEngine()
     # Install suspenders
     aps = registry.find("APS")
@@ -60,7 +60,8 @@ def run_engine() -> BlueskyRunEngine:
         )
     )
     # Install databroker connection
-    RE.subscribe(save_data)
+    if connect_databroker:
+        RE.subscribe(save_data)
     # Add preprocessors
     RE.preprocessors.append(inject_haven_md_wrapper)
     return RE

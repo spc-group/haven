@@ -4,11 +4,12 @@ from bluesky.callbacks import CallbackBase
 from ophyd.sim import det, motor, SynAxis
 import os
 
-from haven import RunEngine, plans, baseline_decorator, baseline_wrapper
-from haven.instrument.aps import EpicsBssDevice
+from haven import plans, baseline_decorator, baseline_wrapper, run_engine
+from haven.instrument.aps import EpicsBssDevice, load_aps
 
 
-def test_baseline_wrapper(sim_registry):
+def test_baseline_wrapper(sim_registry, ioc_bss):
+    load_aps()
     # Create a test device
     motor_baseline = SynAxis(name="baseline_motor", labels={"motors", "baseline"})
     sim_registry.register(motor_baseline)
@@ -18,7 +19,7 @@ def test_baseline_wrapper(sim_registry):
     cb.descriptor = MagicMock()
     cb.event = MagicMock()
     cb.stop = MagicMock()
-    RE = RunEngine(connect_databroker=False)
+    RE = run_engine(connect_databroker=False)
     plan = bp.count([det], num=1)
     plan = baseline_wrapper(plan, devices="baseline")
     RE(plan, cb)
@@ -31,8 +32,9 @@ def test_baseline_wrapper(sim_registry):
     assert "baseline_motor" in baseline_doc["data_keys"].keys()
 
 
-def test_baseline_decorator(sim_registry):
+def test_baseline_decorator(sim_registry, ioc_bss):
     """Similar to baseline wrapper test, but used as a decorator."""
+    load_aps()
     # Create the decorated function before anything else
     func = baseline_decorator(devices="motors")(bp.count)
     # Create a test device
@@ -44,7 +46,7 @@ def test_baseline_decorator(sim_registry):
     cb.descriptor = MagicMock()
     cb.event = MagicMock()
     cb.stop = MagicMock()
-    RE = RunEngine(connect_databroker=False)
+    RE = run_engine(connect_databroker=False)
     plan = func([det], num=1)
     RE(plan, cb)
     # Check that the callback has the baseline stream inserted
@@ -59,6 +61,7 @@ def test_baseline_decorator(sim_registry):
 def test_metadata(sim_registry, ioc_bss, monkeypatch):
     """Similar to baseline wrapper test, but used as a decorator."""
     # Load devices
+    load_aps()
     bss = EpicsBssDevice(prefix="99id:bss:", name="bss")
     statuses = [
         bss.esaf.esaf_id.set("12345"),
@@ -77,7 +80,7 @@ def test_metadata(sim_registry, ioc_bss, monkeypatch):
     cb.descriptor = MagicMock()
     cb.event = MagicMock()
     cb.stop = MagicMock()
-    RE = RunEngine(connect_databroker=False)
+    RE = run_engine(connect_databroker=False)
     plan = bp.count([det], num=1)
     RE(plan, cb)
     # Check that the callback has the correct metadata

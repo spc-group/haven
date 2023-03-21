@@ -156,7 +156,7 @@ def shutter_suspend_wrapper(plan, shutters=None):
         messages inserted and appended
     """
     if shutters is None:
-        shutters = registry.findall("shutters")
+        shutters = registry.findall("shutters", allow_none=True)
     # Create a suspender for each shutter
     suspenders = []
     for shutter in shutters:
