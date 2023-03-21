@@ -16,8 +16,8 @@ print("done")
 RE = haven.run_engine()
 
 # Add metadata and data-saving to the run engine
-catalog = databroker.catalog['bluesky']
-def save_data(name, doc):
-    catalog.v1.insert(name, doc)
-RE.subscribe(save_data)
+# catalog = databroker.catalog['bluesky']
+# def save_data(name, doc):
+#     catalog.v1.insert(name, doc)
+# RE.subscribe(save_data)
 RE.preprocessors.append(haven.preprocessors.inject_haven_md_wrapper)
