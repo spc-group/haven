@@ -214,7 +214,6 @@ class InstrumentRegistry:
           The same component as was provided as an input.
 
         """
-        print(component)
         beamline_is_connected = load_config()["beamline"]["is_connected"]
         # Determine how to register the device
         if isinstance(component, type):
