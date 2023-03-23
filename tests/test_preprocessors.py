@@ -8,10 +8,6 @@ from haven import plans, baseline_decorator, baseline_wrapper, run_engine
 from haven.instrument.aps import EpicsBssDevice, load_aps
 
 
-def test_shutter_suspend_wrapper():
-    assert False, "write tests"
-
-
 def test_baseline_wrapper(sim_registry, ioc_bss):
     load_aps()
     # Create a test device

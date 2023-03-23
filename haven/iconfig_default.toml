@@ -120,3 +120,10 @@ prefix = "vme_crate_ioc:KB"
 
 prefix = "99idSimDet"
 device_class = "SimDetector"
+
+[lerix.lerix.rowland]
+
+x_motor_pv = "vme_crate_ioc:m1"
+y_motor_pv = "vme_crate_ioc:m2"
+z_motor_pv = "vme_crate_ioc:m3"
+z1_motor_pv = "vme_crate_ioc:m4"
