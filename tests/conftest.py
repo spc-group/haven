@@ -3,9 +3,12 @@ from pathlib import Path
 import pytest
 from qtpy import QtWidgets
 import ophyd
+from ophyd.sim import instantiate_fake_device, make_fake_device
 
 from haven.simulated_ioc import simulated_ioc
 from haven import registry
+from haven.instrument.aps import ApsMachine
+from haven.instrument.shutter import Shutter
 from firefly.application import FireflyApplication
 
 
@@ -131,7 +134,7 @@ def ioc_mono():
         yield pvdb
 
 
-@pytest.fixture
+@pytest.fixture()
 def sim_registry():
     # Clean the registry so we can restore it later
     components = registry.components
@@ -140,3 +143,25 @@ def sim_registry():
     yield registry
     # Restore the previous registry components
     registry.components = components
+
+
+# Simulated devices
+@pytest.fixture()
+def sim_aps(sim_registry):
+    aps = instantiate_fake_device(ApsMachine, name="APS")
+    sim_registry.register(aps)
+    yield aps
+
+
+@pytest.fixture()
+def sim_shutters(sim_registry):
+    FakeShutter = make_fake_device(Shutter)
+    kw = dict(open_pv="_prefix", close_pv="_prefix2", state_pv="_prefix2", labels={"shutters"})
+    shutters = [
+        FakeShutter(name="Shutter A", **kw),
+        FakeShutter(name="Shutter C", **kw),
+    ]
+    # Registry with the simulated registry
+    for shutter in shutters:
+        sim_registry.register(shutter)
+    yield shutters
