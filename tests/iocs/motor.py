@@ -19,7 +19,6 @@ class IOC(IOC_):
     m1 = pvproperty(value=5000.0, doc="SLT V Upper", record=ResponsiveMotorFields)
     m2 = pvproperty(value=5000.0, doc="SLT V Lower", record=ResponsiveMotorFields)
     m3 = pvproperty(value=5000.0, doc="SLT H Inb", record=ResponsiveMotorFields)
-    m4 = pvproperty(value=5000.0, doc="SLT H Otb", record=ResponsiveMotorFields)
 
     default_prefix = "vme_crate_ioc:"
 
