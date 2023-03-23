@@ -7,7 +7,28 @@ from .._iconfig import load_config
 from .instrument_registry import registry
 
 
+um_per_mm = 1000
+
+
 class RowlandPositioner(PseudoPositioner):
+    """A pseudo positioner describing a rowland circle.
+
+    Real Axes
+    =========
+    x
+    y
+    z
+    z1
+
+    Pseudo Axes
+    ===========
+    D
+      In mm
+    theta
+      In degrees
+    alpha
+      In degrees
+    """
     def __init__(
         self,
         x_motor_pv: str,
@@ -37,8 +58,8 @@ class RowlandPositioner(PseudoPositioner):
     @pseudo_position_argument
     def forward(self, pseudo_pos):
         """Run a forward (pseudo -> real) calculation"""
-        # Convert degrees to radians
-        D = pseudo_pos.D
+        # Convert distance to microns and degrees to radians
+        D = pseudo_pos.D * um_per_mm
         theta = pseudo_pos.theta / 180.0 * np.pi
         alpha = pseudo_pos.alpha / 180.0 * np.pi
         # Convert virtual positions to real positions
