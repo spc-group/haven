@@ -67,9 +67,12 @@ def test_save_motor_position_by_device(mongodb, ioc_motor):
     # Check that the motors got saved
     result = mongodb.motor_positions.find_one({"name": "Sample center"})
     assert result is not None
-    assert result["motors"][0]["name"] == motorA.name
-    assert result["motors"][0]["readback"] == 11.0
-    assert result["motors"][1]["readback"] == 23.0
+    assert len(result['motors']) == 2
+    result_A = [r for r in result["motors"] if r["name"] == motorA.name][0]
+    result_B = [r for r in result["motors"] if r["name"] == motorB.name][0]
+    assert result_A["name"] == motorA.name
+    assert result_A["readback"] == 11.0
+    assert result_B["readback"] == 23.0
     # Check that the metadata saved
     assert result["savetime"] == time.time()
 
@@ -108,10 +111,13 @@ def test_save_motor_position_by_name(mongodb, ioc_motor):
     # Check that the motors got saved
     result = mongodb.motor_positions.find_one({"name": "Sample center"})
     assert result is not None
-    assert result["motors"][0]["name"] == motorA.name
-    assert result["motors"][0]["readback"] == 11.0
-    assert result["motors"][1]["readback"] == 23.0
-    assert result["motors"][0]["offset"] == 1.5
+    assert len(result['motors']) == 2
+    result_A = [r for r in result["motors"] if r["name"] == motorA.name][0]
+    result_B = [r for r in result["motors"] if r["name"] == motorB.name][0]
+    assert result_A["name"] == motorA.name
+    assert result_A["readback"] == 11.0
+    assert result_B["readback"] == 23.0
+    assert result_A["offset"] == 1.5
     # Check that the metadata saved
     assert result["savetime"] == time.time()
 
