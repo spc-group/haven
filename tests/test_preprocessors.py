@@ -5,7 +5,37 @@ from ophyd.sim import det, motor, SynAxis
 import os
 
 from haven import plans, baseline_decorator, baseline_wrapper, run_engine
-from haven.instrument.aps import EpicsBssDevice, load_aps
+from haven.preprocessors import shutter_suspend_wrapper, shutter_suspend_decorator
+from haven.instrument.aps import EpicsBssDevice, load_aps, ApsMachine
+
+
+def test_shutter_suspend_wrapper(sim_aps, sim_shutters, sim_registry):
+    # Check that the run engine does not have any shutter suspenders
+    # Currently this test is fragile since we might add non-shutter
+    # suspenders in the future.
+    RE = run_engine(connect_databroker=False)
+    assert len(RE.suspenders) == 1
+    # Check that the shutter suspenders get added
+    plan = bp.count([det])
+    msgs = list(plan)
+    sub_msgs = [m for m in msgs if m[0] == "install_suspender"]
+    unsub_msgs = [m for m in msgs if m[0] == "remove_suspender"]
+    assert len(sub_msgs) == 0
+    assert len(unsub_msgs) == 0
+    # Now wrap the plan in the suspend wrapper
+    plan = shutter_suspend_wrapper(bp.count([det]))
+    msgs = list(plan)
+    sub_msgs = [m for m in msgs if m[0] == "install_suspender"]
+    unsub_msgs = [m for m in msgs if m[0] == "remove_suspender"]
+    assert len(sub_msgs) == 2
+    assert len(unsub_msgs) == 2
+    # Now wrap the plan in the suspend decorator
+    plan = shutter_suspend_decorator()(bp.count)([det])
+    msgs = list(plan)
+    sub_msgs = [m for m in msgs if m[0] == "install_suspender"]
+    unsub_msgs = [m for m in msgs if m[0] == "remove_suspender"]
+    assert len(sub_msgs) == 2
+    assert len(unsub_msgs) == 2
 
 
 def test_baseline_wrapper(sim_registry, ioc_bss):

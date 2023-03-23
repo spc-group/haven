@@ -138,7 +138,7 @@ def inject_haven_md_wrapper(plan):
     return (yield from msg_mutator(plan, _inject_md))
 
 
-def shutter_suspend_wrapper(plan, shutters=None):
+def shutter_suspend_wrapper(plan, shutter_signals=None):
     """
     Install suspenders to the RunEngine, and remove them at the end.
 
@@ -155,16 +155,16 @@ def shutter_suspend_wrapper(plan, shutters=None):
         messages from plan, with 'install_suspender' and 'remove_suspender'
         messages inserted and appended
     """
-    if shutters is None:
+    if shutter_signals is None:
         shutters = registry.findall("shutters", allow_none=True)
+        shutter_signals = [s.pss_state for s in shutters]
     # Create a suspender for each shutter
     suspenders = []
-    for shutter in shutters:
-        suspender = SuspendBoolLow(shutter.pss_state, sleep=3.0)
+    for sig in shutter_signals:
+        suspender = SuspendBoolLow(sig, sleep=3.0)
         suspenders.append(suspender)
     if not isinstance(suspenders, Iterable):
         suspenders = [suspenders]
-
     def _install():
         for susp in suspenders:
             yield Msg("install_suspender", None, susp)
