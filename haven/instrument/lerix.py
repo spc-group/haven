@@ -79,7 +79,69 @@ class RowlandPositioner(PseudoPositioner):
     def inverse(self, real_pos):
         """Run an inverse (real -> pseudo) calculation"""
         return self.PseudoPosition(D=0, theta=0, alpha=0)
+        # Expand the variables
+        x = real_pos.x
+        y = real_pos.y
+        z = real_pos.z
+        z1 = real_pos.z1
+        # Invert the calculation, first for 'd'
+        a = y
+        b = -x
+        c = z1**2
+        d = -(z1 ** 2 * y) # Maybe needs parens?
+        p = (3 * a * c - b**2) / (3*a **2)
+        q = (2*b**3 - 9 * a * b * c + 27*a**2 * d) / (27*a**3)
+        D = (-(q/2) + (q ** 2 / 4 + p ** 3 / 27) ** 0.5) ** (1/3) + (-(q/2) - (q ** 2 / 4 + p ** 3 / 27) ** 0.5) ** (1/3)
+        # D = x / ((1 - (z1 ** 2 / (D ** 2 * y + z1 ** 2))) ** 2)
+        # cos(theta + alpha) = (z1 ** 2 / (D ** 2 * y + z1 ** 2)) ** 0.5
+        print(a, b, c, d)
+        print(p, q, D)
+        return self.PseudoPosition(D=D, theta=0, alpha=0)
 
+
+# Rewrite the following four equations so that they calculate D, theta and alpha based on inputting x, y, z1 and z.
+
+#         x = D * (sin(theta + alpha)) ** 2
+#         y = D * ((sin(theta + alpha)) ** 2 - (sin(theta - alpha)) ** 2)
+#         z1 = D * sin(theta - alpha) * cos(theta + alpha)
+#         z = z1 + D * sin(theta - alpha) * cos(theta - alpha)
+
+# To calculate D, theta, and alpha based on x, y, z1, and z, we can rearrange the given equations as follows:
+
+# D = x / (sin(theta + alpha)) ** 2
+
+# sin(theta - alpha) = z1 / (D * cos(theta + alpha))
+
+# cos(theta - alpha) = (z - z1) / (D * sin(theta - alpha))
+
+# Substitute the above two equations into the expression for y:
+
+# y = D * ((sin(theta + alpha)) ** 2 - (sin(theta - alpha)) ** 2)
+
+# y = D * ((sin(theta + alpha)) ** 2 - (z1 / (D * cos(theta + alpha))) ** 2)
+
+# y = D * ((sin(theta + alpha)) ** 2 - (z1 ** 2 / D ** 2) * (cos(theta + alpha)) ** (-2))
+
+# Solve for cos(theta + alpha) in the above equation:
+
+# cos(theta + alpha) = (z1 ** 2 / (D ** 2 * y + z1 ** 2)) ** 0.5
+
+# Substitute the value of cos(theta + alpha) into the equation for sin(theta - alpha):
+
+# sin(theta - alpha) = z1 / (D * (z1 ** 2 / (D ** 2 * y + z1 ** 2)) ** 0.5)
+
+# Simplify the above equation:
+
+# sin(theta - alpha) = (z1 ** 2 / (D ** 2 * y + z1 ** 2)) ** 0.5
+
+# Finally, substitute the values of cos(theta + alpha) and sin(theta - alpha) into the equation for D:
+
+# D = x / ((sin(theta + alpha)) ** 2)
+
+# D = x / ((1 - (z1 ** 2 / (D ** 2 * y + z1 ** 2))) ** 2)
+
+# This equation can be solved numerically to obtain the value of D. Once D is known, we can use the equations for cos(theta + alpha) and sin(theta - alpha) to calculate theta and alpha.
+    
 
 @registry.register
 class LERIXSpectrometer(Device):
