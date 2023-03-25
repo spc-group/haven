@@ -69,7 +69,7 @@ class CameraDisplay(display.FireflyDisplay):
 
     def customize_ui(self):
         self.imageJ_button.clicked.connect(self.launch_imageJ)
-        self.caqtdm_button.clicked.connect(self.launch_caqtdm)
+        # self.caqtdm_button.clicked.connect(self.launch_caqtdm)
 
     def launch_caqtdm(self):
         # Determine for which IOC to launch caQtDM panels

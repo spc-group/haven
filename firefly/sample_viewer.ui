@@ -41,6 +41,9 @@
            <property name="toolTip">
             <string/>
            </property>
+           <property name="text">
+            <string>${PREFIX}</string>
+           </property>
           </widget>
          </item>
          <item>
@@ -75,6 +78,18 @@
         <widget class="PyDMImageView" name="PyDMImageView">
          <property name="toolTip">
           <string/>
+         </property>
+         <property name="normalizeData" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="readingOrder" stdset="0">
+          <enum>PyDMImageView::Clike</enum>
+         </property>
+         <property name="imageChannel" stdset="0">
+          <string>${PREFIX}image1:ArrayData</string>
+         </property>
+         <property name="widthChannel" stdset="0">
+          <string>${PREFIX}cam1:ArraySizeX_RBV</string>
          </property>
         </widget>
        </item>
@@ -132,6 +147,9 @@
               <property name="text">
                <string>Auto</string>
               </property>
+              <property name="tristate">
+               <bool>true</bool>
+              </property>
               <property name="channel" stdset="0">
                <string>${PREFIX}cam1:GainAuto</string>
               </property>
@@ -144,6 +162,9 @@
               </property>
               <property name="text">
                <string>Auto</string>
+              </property>
+              <property name="tristate">
+               <bool>true</bool>
               </property>
               <property name="channel" stdset="0">
                <string>${PREFIX}cam1:ExposureAuto</string>

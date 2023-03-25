@@ -102,10 +102,10 @@
        <property name="toolTip">
         <string/>
        </property>
-       <property name="PyDMToolTip" stdset="0">
+       <property name="channel" stdset="0">
         <string>${PREFIX}cam1:DetectorState_RBV</string>
        </property>
-       <property name="channel" stdset="0">
+       <property name="PyDMToolTip" stdset="0">
         <string>${PREFIX}cam1:DetectorState_RBV</string>
        </property>
       </widget>
@@ -128,7 +128,20 @@
        <property name="text">
         <string>Viewer</string>
        </property>
+       <property name="filenames" stdset="0">
+        <stringlist>
+         <string>sample_viewer.ui</string>
+        </stringlist>
+       </property>
        <property name="showIcon" stdset="0">
+        <bool>false</bool>
+       </property>
+       <property name="macros" stdset="0">
+        <stringlist>
+         <string>PREFIX=${PREFIX},DESC=${DESC}</string>
+        </stringlist>
+       </property>
+       <property name="openInNewWindow" stdset="0">
         <bool>false</bool>
        </property>
       </widget>
