@@ -16,6 +16,7 @@ from .power_supply import load_power_supplies
 from .xray_source import load_xray_sources
 from .area_detector import load_area_detectors
 from .slits import load_slits
+from .heater import load_heaters
 from .._iconfig import load_config
 
 
@@ -57,6 +58,7 @@ def load_instrument(
     load_stages(config=config)
     load_power_supplies(config=config)
     load_slits(config=config)
+    load_heaters(config=config)
     # Detectors
     load_ion_chambers(config=config)
     load_fluorescence_detectors(config=config)

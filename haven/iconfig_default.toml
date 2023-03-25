@@ -120,3 +120,8 @@ prefix = "vme_crate_ioc:KB"
 
 prefix = "99idSimDet"
 device_class = "SimDetector"
+
+[heater.capillary_heater]
+
+prefix = "ptc10ioc"
+device_class = "CapillaryHeater"
