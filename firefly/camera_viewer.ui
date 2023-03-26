@@ -17,7 +17,7 @@
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
-      <layout class="QVBoxLayout" name="verticalLayout_2">
+      <layout class="QVBoxLayout" name="left_column_layout">
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_2">
          <item>
@@ -73,25 +73,6 @@
           </widget>
          </item>
         </layout>
-       </item>
-       <item>
-        <widget class="PyDMImageView" name="PyDMImageView">
-         <property name="toolTip">
-          <string/>
-         </property>
-         <property name="normalizeData" stdset="0">
-          <bool>false</bool>
-         </property>
-         <property name="readingOrder" stdset="0">
-          <enum>PyDMImageView::Clike</enum>
-         </property>
-         <property name="imageChannel" stdset="0">
-          <string>${PREFIX}image1:ArrayData</string>
-         </property>
-         <property name="widthChannel" stdset="0">
-          <string>${PREFIX}cam1:ArraySizeX_RBV</string>
-         </property>
-        </widget>
        </item>
       </layout>
      </item>
@@ -378,11 +359,6 @@
    <class>PyDMEnumComboBox</class>
    <extends>QComboBox</extends>
    <header>pydm.widgets.enum_combo_box</header>
-  </customwidget>
-  <customwidget>
-   <class>PyDMImageView</class>
-   <extends>QWidget</extends>
-   <header>pydm.widgets.image</header>
   </customwidget>
   <customwidget>
    <class>PyDMPushButton</class>
