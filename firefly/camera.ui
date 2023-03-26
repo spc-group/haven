@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>846</width>
-    <height>91</height>
+    <width>352</width>
+    <height>39</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -102,10 +102,10 @@
        <property name="toolTip">
         <string/>
        </property>
-       <property name="channel" stdset="0">
+       <property name="PyDMToolTip" stdset="0">
         <string>${PREFIX}cam1:DetectorState_RBV</string>
        </property>
-       <property name="PyDMToolTip" stdset="0">
+       <property name="channel" stdset="0">
         <string>${PREFIX}cam1:DetectorState_RBV</string>
        </property>
       </widget>
@@ -121,7 +121,10 @@
       </widget>
      </item>
      <item>
-      <widget class="PyDMRelatedDisplayButton" name="PyDMRelatedDisplayButton">
+      <widget class="PyDMRelatedDisplayButton" name="camera_viewer_button">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
        <property name="toolTip">
         <string/>
        </property>

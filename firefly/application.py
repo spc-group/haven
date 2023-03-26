@@ -55,7 +55,10 @@ class FireflyApplication(PyDMApplication):
     # Keep track of motors
     motor_actions: Sequence = []
     motor_window_slots: Sequence = []
-    motor_windows: Mapping = {}
+
+    # Keep track of cameras
+    camera_actions: Sequence = []
+    camera_window_slots: Sequence = []
 
     # Signals for running plans on the queueserver
     queue_item_added = Signal(object)
@@ -104,6 +107,7 @@ class FireflyApplication(PyDMApplication):
 
         """
         self.prepare_motor_windows()
+        self.prepare_camera_windows()
         # Action for showing the beamline status window
         self._setup_window_action(
             action_name="show_status_window_action",
@@ -127,6 +131,10 @@ class FireflyApplication(PyDMApplication):
             action_name="show_energy_window_action",
             text="Energy",
             slot=self.show_energy_window,
+        )
+        # Launch camera overview
+        self._setup_window_action(
+            action_name="show_cameras_window_action", text="All Cameras", slot=self.show_cameras_window
         )
 
     def launch_queuemonitor(self):
@@ -161,6 +169,28 @@ class FireflyApplication(PyDMApplication):
             action.setIcon(icon)
             setattr(self, name, action)
             # action.triggered.connect(slot)
+
+    def prepare_camera_windows(self):
+        try:
+            cameras = sorted(registry.findall(label="cameras"), key=lambda x: x.name)
+        except ComponentNotFound:
+            log.warning(
+                "No cameras found, [Detectors] -> [Cameras] menu will be empty."
+            )
+            cameras = []
+        # Create menu actions for each camera
+        self.camera_actions = []
+        self.camera_window_slots = []
+        self.camera_windows = {}
+        for camera in cameras:
+            action = QtWidgets.QAction(self)
+            action.setObjectName(f"actionShow_Camera_{camera.name}")
+            action.setText(camera.name)
+            self.camera_actions.append(action)
+            # Create a slot for opening the motor window
+            slot = partial(self.show_camera_window, camera=camera)
+            action.triggered.connect(slot)
+            self.camera_window_slots.append(slot)
 
     def prepare_motor_windows(self):
         """Prepare the support for opening motor windows."""
@@ -233,7 +263,6 @@ class FireflyApplication(PyDMApplication):
         window.actionShow_Sample_Viewer.triggered.connect(
             self.show_sample_viewer_window
         )
-        window.actionShow_Cameras.triggered.connect(self.show_cameras_window)
 
     def show_window(self, WindowClass, ui_file, name=None, macros={}):
         # Come up with the default key for saving in the windows dictionary
@@ -283,6 +312,16 @@ class FireflyApplication(PyDMApplication):
             ui_dir / "motor.py",
             name=f"FireflyMainWindow_motor_{motor_name}",
             macros={"PREFIX": motor.prefix},
+        )
+
+    def show_camera_window(self, *args, camera):
+        """Instantiate a new main window for this application."""
+        camera_name = camera.name.replace(" ", "_")
+        self.show_window(
+            FireflyMainWindow,
+            ui_dir / "camera_viewer.py",
+            name=f"FireflyMainWindow_camera_{camera_name}",
+            macros={"PREFIX": camera.prefix, "DESC": camera.description},
         )
 
     def show_status_window(self, stylesheet_path=None):

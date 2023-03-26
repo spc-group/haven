@@ -110,15 +110,22 @@ class FireflyMainWindow(PyDMMainWindow):
             text="Ion Chambers",
             menu=self.ui.menuDetectors,
         )
-        self.add_menu_action(
-            action_name="actionShow_Cameras", text="Cameras", menu=self.ui.menuDetectors
-        )
+        # Cameras sub-menu
+        self.ui.menuCameras = QtWidgets.QMenu(self.ui.menubar)
+        self.ui.menuCameras.setObjectName("menuCameras")
+        self.ui.menuCameras.setTitle("Cameras")
+        self.ui.menuDetectors.addAction(self.ui.menuCameras.menuAction())
         # Add actions to the motors sub-menus
         from .application import FireflyApplication
 
         app = FireflyApplication.instance()
         for action in app.motor_actions:
             self.ui.menuMotors.addAction(action)
+        # Add actions to the cameras sub-menus
+        self.ui.menuCameras.addAction(app.show_cameras_window_action)
+        self.ui.menuCameras.addSeparator()
+        for action in app.camera_actions:
+            self.ui.menuCameras.addAction(action)
         # Add other menu actions
         self.ui.menuView.addAction(app.show_status_window_action)
         self.ui.menuView.addAction(app.launch_queuemonitor_action)

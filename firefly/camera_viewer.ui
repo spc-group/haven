@@ -42,7 +42,7 @@
             <string/>
            </property>
            <property name="text">
-            <string>${PREFIX}</string>
+            <string>${DESC} (${PREFIX})</string>
            </property>
           </widget>
          </item>
