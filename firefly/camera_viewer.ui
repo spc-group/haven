@@ -6,18 +6,18 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>589</width>
-    <height>436</height>
+    <width>992</width>
+    <height>613</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string>${DESC}</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_3">
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout">
+    <layout class="QHBoxLayout" name="horizontalLayout" stretch="5,0">
      <item>
-      <layout class="QVBoxLayout" name="left_column_layout">
+      <layout class="QVBoxLayout" name="left_column_layout" stretch="0">
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_2">
          <item>
@@ -60,13 +60,7 @@
           </spacer>
          </item>
          <item>
-          <widget class="QPushButton" name="caqtdm_button">
-           <property name="enabled">
-            <bool>true</bool>
-           </property>
-           <property name="toolTip">
-            <string>Launch the ADAravis caQtDM window</string>
-           </property>
+          <widget class="QPushButton" name="settings_button">
            <property name="text">
             <string>Settings</string>
            </property>
@@ -77,268 +71,497 @@
       </layout>
      </item>
      <item>
-      <layout class="QVBoxLayout" name="controls_layout">
-       <item>
-        <widget class="QGroupBox" name="groupBox">
-         <property name="title">
-          <string>Camera</string>
-         </property>
-         <layout class="QVBoxLayout" name="verticalLayout_6">
+      <widget class="QFrame" name="controls_frame">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
+       <property name="frameShape">
+        <enum>QFrame::NoFrame</enum>
+       </property>
+       <property name="frameShadow">
+        <enum>QFrame::Raised</enum>
+       </property>
+       <layout class="QVBoxLayout" name="verticalLayout_7">
+        <item>
+         <widget class="QGroupBox" name="camera_group_box">
+          <property name="title">
+           <string>Camera</string>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_6">
+           <item>
+            <layout class="QGridLayout" name="gridLayout">
+             <item row="4" column="0">
+              <widget class="QLabel" name="label_8">
+               <property name="text">
+                <string>Shape:</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+               </property>
+              </widget>
+             </item>
+             <item row="4" column="1">
+              <layout class="QHBoxLayout" name="horizontalLayout_5">
+               <property name="spacing">
+                <number>0</number>
+               </property>
+               <item>
+                <widget class="PyDMLabel" name="PyDMLabel_5">
+                 <property name="toolTip">
+                  <string/>
+                 </property>
+                 <property name="text">
+                  <string>1024</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                 </property>
+                 <property name="channel" stdset="0">
+                  <string>${PREFIX}cam1:ArraySizeY_RBV</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="label_7">
+                 <property name="text">
+                  <string>×</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="PyDMLabel" name="PyDMLabel_3">
+                 <property name="toolTip">
+                  <string/>
+                 </property>
+                 <property name="text">
+                  <string>1224</string>
+                 </property>
+                 <property name="channel" stdset="0">
+                  <string>${PREFIX}cam1:ArraySizeX_RBV</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <spacer name="horizontalSpacer_2">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>40</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+              </layout>
+             </item>
+             <item row="0" column="0">
+              <widget class="QLabel" name="label_2">
+               <property name="text">
+                <string>Exposure:</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="0">
+              <widget class="QLabel" name="label">
+               <property name="text">
+                <string>Gain:</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="1">
+              <layout class="QHBoxLayout" name="horizontalLayout_6">
+               <item>
+                <widget class="PyDMSlider" name="PyDMSlider_2">
+                 <property name="toolTip">
+                  <string/>
+                 </property>
+                 <property name="rules" stdset="0">
+                  <string>[]</string>
+                 </property>
+                 <property name="channel" stdset="0">
+                  <string>${PREFIX}cam1:Gain</string>
+                 </property>
+                 <property name="tickPosition" stdset="0">
+                  <enum>QSlider::TicksBelow</enum>
+                 </property>
+                 <property name="userDefinedLimits" stdset="0">
+                  <bool>true</bool>
+                 </property>
+                 <property name="userMinimum" stdset="0">
+                  <double>0.000000000000000</double>
+                 </property>
+                 <property name="userMaximum" stdset="0">
+                  <double>20.000000000000000</double>
+                 </property>
+                 <property name="num_steps" stdset="0">
+                  <number>101</number>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="PyDMPushButton" name="PyDMPushButton_3">
+                 <property name="toolTip">
+                  <string/>
+                 </property>
+                 <property name="text">
+                  <string>Auto</string>
+                 </property>
+                 <property name="channel" stdset="0">
+                  <string>${PREFIX}cam1:GainAuto</string>
+                 </property>
+                 <property name="pressValue" stdset="0">
+                  <string>1</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+             <item row="0" column="1">
+              <layout class="QHBoxLayout" name="horizontalLayout_7">
+               <item>
+                <widget class="PyDMSlider" name="PyDMSlider">
+                 <property name="toolTip">
+                  <string/>
+                 </property>
+                 <property name="rules" stdset="0">
+                  <string>[]</string>
+                 </property>
+                 <property name="channel" stdset="0">
+                  <string>${PREFIX}cam1:AcquireTime</string>
+                 </property>
+                 <property name="tickPosition" stdset="0">
+                  <enum>QSlider::TicksBelow</enum>
+                 </property>
+                 <property name="userDefinedLimits" stdset="0">
+                  <bool>true</bool>
+                 </property>
+                 <property name="userMinimum" stdset="0">
+                  <double>0.000000000000000</double>
+                 </property>
+                 <property name="userMaximum" stdset="0">
+                  <double>0.200000000000000</double>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="PyDMPushButton" name="PyDMPushButton_4">
+                 <property name="toolTip">
+                  <string/>
+                 </property>
+                 <property name="text">
+                  <string>Auto</string>
+                 </property>
+                 <property name="channel" stdset="0">
+                  <string>${PREFIX}cam1:ExposureAuto</string>
+                 </property>
+                 <property name="pressValue" stdset="0">
+                  <string>1</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_4">
+             <item>
+              <widget class="PyDMPushButton" name="PyDMPushButton">
+               <property name="toolTip">
+                <string/>
+               </property>
+               <property name="text">
+                <string>Start</string>
+               </property>
+               <property name="rules" stdset="0">
+                <string>[{&quot;name&quot;: &quot;enable_acquire_buttons&quot;, &quot;property&quot;: &quot;Enable&quot;, &quot;initial_value&quot;: &quot;False&quot;, &quot;expression&quot;: &quot;ch[0] == 0&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;${PREFIX}cam1:Acquire&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}]}]</string>
+               </property>
+               <property name="alarmSensitiveContent" stdset="0">
+                <bool>false</bool>
+               </property>
+               <property name="alarmSensitiveBorder" stdset="0">
+                <bool>false</bool>
+               </property>
+               <property name="channel" stdset="0">
+                <string>${PREFIX}cam1:Acquire</string>
+               </property>
+               <property name="passwordProtected" stdset="0">
+                <bool>false</bool>
+               </property>
+               <property name="password" stdset="0">
+                <string/>
+               </property>
+               <property name="protectedPassword" stdset="0">
+                <string/>
+               </property>
+               <property name="showConfirmDialog" stdset="0">
+                <bool>false</bool>
+               </property>
+               <property name="confirmMessage" stdset="0">
+                <string>Are you sure you want to proceed?</string>
+               </property>
+               <property name="pressValue" stdset="0">
+                <string>1</string>
+               </property>
+               <property name="releaseValue" stdset="0">
+                <string>None</string>
+               </property>
+               <property name="relativeChange" stdset="0">
+                <bool>false</bool>
+               </property>
+               <property name="writeWhenRelease" stdset="0">
+                <bool>false</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="PyDMPushButton" name="PyDMPushButton_2">
+               <property name="toolTip">
+                <string/>
+               </property>
+               <property name="text">
+                <string>Stop</string>
+               </property>
+               <property name="rules" stdset="0">
+                <string>[{&quot;name&quot;: &quot;enable_acquire_buttons&quot;, &quot;property&quot;: &quot;Enable&quot;, &quot;initial_value&quot;: &quot;&quot;, &quot;expression&quot;: &quot;ch[0] == 1&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;${PREFIX}cam1:Acquire&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}]}]</string>
+               </property>
+               <property name="channel" stdset="0">
+                <string>${PREFIX}cam1:Acquire</string>
+               </property>
+               <property name="pressValue" stdset="0">
+                <string>0</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="horizontalSpacer_3">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="groupBox_2">
+          <property name="title">
+           <string>Beam Position</string>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout">
+           <item>
+            <layout class="QFormLayout" name="formLayout">
+             <item row="1" column="0">
+              <widget class="QLabel" name="label_3">
+               <property name="text">
+                <string>Shape:</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1">
+              <widget class="PyDMEnumComboBox" name="PyDMEnumComboBox">
+               <property name="toolTip">
+                <string/>
+               </property>
+               <property name="channel" stdset="0">
+                <string>${PREFIX}Over1:1:Shape</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="0">
+              <widget class="QLabel" name="label_4">
+               <property name="text">
+                <string>Show:</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="PyDMCheckbox" name="PyDMCheckbox_3">
+               <property name="toolTip">
+                <string/>
+               </property>
+               <property name="channel" stdset="0">
+                <string>${PREFIX}Over1:1:Use</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_3">
+             <item>
+              <widget class="PyDMSlider" name="PyDMSlider_3">
+               <property name="toolTip">
+                <string/>
+               </property>
+               <property name="channel" stdset="0">
+                <string>${PREFIX}Over1:1:CenterY</string>
+               </property>
+               <property name="orientation" stdset="0">
+                <enum>Qt::Vertical</enum>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <layout class="QVBoxLayout" name="verticalLayout_4">
+               <item>
+                <widget class="QLabel" name="label_5">
+                 <property name="text">
+                  <string>Center</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="PyDMSlider" name="PyDMSlider_4">
+                 <property name="toolTip">
+                  <string/>
+                 </property>
+                 <property name="channel" stdset="0">
+                  <string>${PREFIX}Over1:1:CenterX</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <spacer name="horizontalSpacer_4">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_8">
+             <item>
+              <widget class="PyDMSlider" name="PyDMSlider_6">
+               <property name="toolTip">
+                <string/>
+               </property>
+               <property name="channel" stdset="0">
+                <string>${PREFIX}Over1:1:SizeY</string>
+               </property>
+               <property name="orientation" stdset="0">
+                <enum>Qt::Vertical</enum>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <layout class="QVBoxLayout" name="verticalLayout_5">
+               <item>
+                <widget class="QLabel" name="label_6">
+                 <property name="text">
+                  <string>Size</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="PyDMSlider" name="PyDMSlider_5">
+                 <property name="toolTip">
+                  <string/>
+                 </property>
+                 <property name="channel" stdset="0">
+                  <string>${PREFIX}Over1:1:SizeX</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <spacer name="horizontalSpacer_5">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_9">
           <item>
-           <layout class="QGridLayout" name="gridLayout">
-            <item row="0" column="0">
-             <widget class="QLabel" name="label_2">
-              <property name="text">
-               <string>Exposure:</string>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="0">
-             <widget class="QLabel" name="label">
-              <property name="text">
-               <string>Gain:</string>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="1">
-             <widget class="PyDMSlider" name="PyDMSlider_2">
-              <property name="toolTip">
-               <string/>
-              </property>
-              <property name="channel" stdset="0">
-               <string>${PREFIX}cam1:Gain</string>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="1">
-             <widget class="PyDMSlider" name="PyDMSlider">
-              <property name="toolTip">
-               <string/>
-              </property>
-              <property name="channel" stdset="0">
-               <string>${PREFIX}cam1:Gain</string>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="2">
-             <widget class="PyDMCheckbox" name="PyDMCheckbox_2">
-              <property name="toolTip">
-               <string/>
-              </property>
-              <property name="text">
-               <string>Auto</string>
-              </property>
-              <property name="tristate">
-               <bool>true</bool>
-              </property>
-              <property name="channel" stdset="0">
-               <string>${PREFIX}cam1:GainAuto</string>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="2">
-             <widget class="PyDMCheckbox" name="PyDMCheckbox">
-              <property name="toolTip">
-               <string/>
-              </property>
-              <property name="text">
-               <string>Auto</string>
-              </property>
-              <property name="tristate">
-               <bool>true</bool>
-              </property>
-              <property name="channel" stdset="0">
-               <string>${PREFIX}cam1:ExposureAuto</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
+           <spacer name="horizontalSpacer_6">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
           </item>
           <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_4">
-            <item>
-             <widget class="PyDMPushButton" name="PyDMPushButton">
-              <property name="toolTip">
-               <string/>
-              </property>
-              <property name="text">
-               <string>Start</string>
-              </property>
-              <property name="channel" stdset="0">
-               <string>${PREFIX}cam1:Acquire</string>
-              </property>
-              <property name="pressValue" stdset="0">
-               <string>1</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="PyDMPushButton" name="PyDMPushButton_2">
-              <property name="toolTip">
-               <string/>
-              </property>
-              <property name="text">
-               <string>Stop</string>
-              </property>
-              <property name="channel" stdset="0">
-               <string>${PREFIX}cam1:Acquire</string>
-              </property>
-              <property name="pressValue" stdset="0">
-               <string>0</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
+           <widget class="QPushButton" name="caqtdm_button">
+            <property name="enabled">
+             <bool>true</bool>
+            </property>
+            <property name="toolTip">
+             <string>Launch the ADAravis caQtDM window</string>
+            </property>
+            <property name="text">
+             <string>Advanced</string>
+            </property>
+           </widget>
           </item>
          </layout>
-        </widget>
-       </item>
-       <item>
-        <widget class="QGroupBox" name="groupBox_2">
-         <property name="title">
-          <string>Beam Position</string>
-         </property>
-         <layout class="QVBoxLayout" name="verticalLayout">
-          <item>
-           <layout class="QFormLayout" name="formLayout">
-            <item row="1" column="0">
-             <widget class="QLabel" name="label_3">
-              <property name="text">
-               <string>Shape:</string>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="1">
-             <widget class="PyDMEnumComboBox" name="PyDMEnumComboBox">
-              <property name="toolTip">
-               <string/>
-              </property>
-              <property name="channel" stdset="0">
-               <string>${PREFIX}Over1:1:Shape</string>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="0">
-             <widget class="QLabel" name="label_4">
-              <property name="text">
-               <string>Show:</string>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="1">
-             <widget class="PyDMCheckbox" name="PyDMCheckbox_3">
-              <property name="toolTip">
-               <string/>
-              </property>
-              <property name="channel" stdset="0">
-               <string>${PREFIX}Over1:1:Use</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </item>
-          <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_3">
-            <item>
-             <widget class="PyDMSlider" name="PyDMSlider_3">
-              <property name="toolTip">
-               <string/>
-              </property>
-              <property name="channel" stdset="0">
-               <string>${PREFIX}Over1:1:CenterY</string>
-              </property>
-              <property name="orientation" stdset="0">
-               <enum>Qt::Vertical</enum>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <layout class="QVBoxLayout" name="verticalLayout_4">
-              <item>
-               <widget class="QLabel" name="label_5">
-                <property name="text">
-                 <string>Center</string>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignCenter</set>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="PyDMSlider" name="PyDMSlider_4">
-                <property name="toolTip">
-                 <string/>
-                </property>
-                <property name="channel" stdset="0">
-                 <string>${PREFIX}Over1:1:CenterX</string>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </item>
-            <item>
-             <widget class="Line" name="line">
-              <property name="orientation">
-               <enum>Qt::Vertical</enum>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <layout class="QVBoxLayout" name="verticalLayout_5">
-              <item>
-               <widget class="QLabel" name="label_6">
-                <property name="text">
-                 <string>Size</string>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignCenter</set>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="PyDMSlider" name="PyDMSlider_5">
-                <property name="toolTip">
-                 <string/>
-                </property>
-                <property name="channel" stdset="0">
-                 <string>${PREFIX}Over1:1:SizeX</string>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </item>
-            <item>
-             <widget class="PyDMSlider" name="PyDMSlider_6">
-              <property name="toolTip">
-               <string/>
-              </property>
-              <property name="channel" stdset="0">
-               <string>${PREFIX}Over1:1:SizeY</string>
-              </property>
-              <property name="orientation" stdset="0">
-               <enum>Qt::Vertical</enum>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </item>
-         </layout>
-        </widget>
-       </item>
-       <item>
-        <spacer name="verticalSpacer">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>40</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-      </layout>
+        </item>
+        <item>
+         <spacer name="verticalSpacer">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </widget>
      </item>
     </layout>
    </item>
