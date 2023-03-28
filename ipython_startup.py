@@ -1,7 +1,6 @@
-# get_ipython().run_line_magic("matplotlib",  "qt")
-
 from bluesky import plans as bp, plan_stubs as bps, RunEngine, suspenders
 from bluesky.simulators import summarize_plan
+from bluesky.callbacks.best_effort import BestEffortCallback
 import databroker
 
 # Set up live-plotting
@@ -15,9 +14,9 @@ haven.load_instrument()
 print("done")
 RE = haven.run_engine()
 
-# Add metadata and data-saving to the run engine
-# catalog = databroker.catalog['bluesky']
-# def save_data(name, doc):
-#     catalog.v1.insert(name, doc)
-# RE.subscribe(save_data)
+# Set up best effort callback for visualizing live data
+bec = BestEffortCallback()
+RE.subscribe(bec)
+
+# Add metadata to the run engine
 RE.preprocessors.append(haven.preprocessors.inject_haven_md_wrapper)
