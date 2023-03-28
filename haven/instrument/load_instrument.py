@@ -45,6 +45,8 @@ def load_instrument(
     """
     # Clear out any existing registry entries
     registry.clear()
+    # Make sure we have the most up-to-date configuration
+    load_config.cache_clear()
     # Load the configuration
     if config is None:
         config = load_config()
