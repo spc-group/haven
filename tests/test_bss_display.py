@@ -1,7 +1,7 @@
 import pytest
 from qtpy.QtGui import QStandardItemModel
 from qtpy.QtCore import Qt
-from epics import caget
+from epics import caget, caput
 
 from haven.instrument.aps import load_aps
 from firefly.bss import BssDisplay
@@ -142,6 +142,8 @@ def test_bss_proposal_model(qtbot, ffapp, bss_api):
 def test_bss_proposal_updating(qtbot, ffapp, bss_api, ioc_bss):
     load_aps()
     display = BssDisplay(api=bss_api)
+    # Set some base-line values on the IOC
+    caput("99id:bss:proposal:id", "")
     # Change the proposal item
     selection_model = display.ui.proposal_view.selectionModel()
     item = display.proposal_model.item(0, 1)
@@ -197,6 +199,8 @@ def test_bss_esaf_updating(qtbot, ffapp, bss_api, ioc_bss):
     load_aps()
     window = FireflyMainWindow()
     display = BssDisplay(api=bss_api)
+    # Set some base-line values on the IOC
+    caput("99id:bss:esaf:id", "")
     # Change the ESAF item
     selection_model = display.ui.esaf_view.selectionModel()
     item = display.esaf_model.item(0, 1)

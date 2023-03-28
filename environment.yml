@@ -82,6 +82,7 @@ dependencies:
   # - hklpy >=1.0.3  # --- linux-64
   - ophyd >=1.6.3
   - pydm >=1.16.0
+  - p4p
   - tiled-server
   - tiled-client
   # https://github.com/pydata/xarray/issues/6818

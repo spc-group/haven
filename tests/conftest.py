@@ -89,6 +89,12 @@ def ioc_scaler():
         yield pvdb
 
 
+@pytest.fixture(scope="session")
+def ioc_ptc10():
+    with simulated_ioc(fp=ioc_dir / "ptc10.py") as pvdb:
+        yield pvdb
+
+
 @pytest.fixture()
 def ffapp():
     # Get an instance of the application
