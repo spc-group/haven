@@ -121,14 +121,14 @@ def test_rowland_circle_component(ioc_motor):
     time.sleep(0.1)
     # Check that the virtual axes were set
     result = lerix.rowland.get(use_monitor=False)
-    assert caget("vme_crate_ioc:m1") == 500.0 * um_per_mm
-    assert result.x.user_readback == 500.0 * um_per_mm
-    assert caget("vme_crate_ioc:m2") == 375.0 * um_per_mm
-    assert result.y.user_readback == 375.0 * um_per_mm
-    assert caget("vme_crate_ioc:m3") == 216.50635094610968 * um_per_mm
-    assert result.z.user_readback == 216.50635094610968 * um_per_mm
-    assert caget("vme_crate_ioc:m4") == 1.5308084989341912e-14 * um_per_mm
-    assert result.z1.user_readback == 1.5308084989341912e-14 * um_per_mm
+    assert caget("vme_crate_ioc:m1") == pytest.approx(500.0 * um_per_mm)
+    assert result.x.user_readback == pytest.approx(500.0 * um_per_mm)
+    assert caget("vme_crate_ioc:m2") == pytest.approx(375.0 * um_per_mm)
+    assert result.y.user_readback == pytest.approx(375.0 * um_per_mm)
+    assert caget("vme_crate_ioc:m3") == pytest.approx(216.50635094610968 * um_per_mm)
+    assert result.z.user_readback == pytest.approx(216.50635094610968 * um_per_mm)
+    assert caget("vme_crate_ioc:m4") == pytest.approx(1.5308084989341912e-14 * um_per_mm)
+    assert result.z1.user_readback == pytest.approx(1.5308084989341912e-14 * um_per_mm)
 
 
 def test_load_lerix_spectrometers(sim_registry):
