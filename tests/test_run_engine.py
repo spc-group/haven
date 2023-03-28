@@ -33,5 +33,3 @@ def test_run_engine_created():
     load_aps()
     RE = run_engine()
     assert isinstance(RE, RunEngine)
-
-

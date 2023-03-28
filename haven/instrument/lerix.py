@@ -29,6 +29,7 @@ class RowlandPositioner(PseudoPositioner):
     alpha
       In degrees
     """
+
     def __init__(
         self,
         x_motor_pv: str,
@@ -88,10 +89,12 @@ class RowlandPositioner(PseudoPositioner):
         a = y
         b = -x
         c = z1**2
-        d = -(z1 ** 2 * y) # Maybe needs parens?
-        p = (3 * a * c - b**2) / (3*a **2)
-        q = (2*b**3 - 9 * a * b * c + 27*a**2 * d) / (27*a**3)
-        D = (-(q/2) + (q ** 2 / 4 + p ** 3 / 27) ** 0.5) ** (1/3) + (-(q/2) - (q ** 2 / 4 + p ** 3 / 27) ** 0.5) ** (1/3)
+        d = -(z1**2 * y)  # Maybe needs parens?
+        p = (3 * a * c - b**2) / (3 * a**2)
+        q = (2 * b**3 - 9 * a * b * c + 27 * a**2 * d) / (27 * a**3)
+        D = (-(q / 2) + (q**2 / 4 + p**3 / 27) ** 0.5) ** (1 / 3) + (
+            -(q / 2) - (q**2 / 4 + p**3 / 27) ** 0.5
+        ) ** (1 / 3)
         # D = x / ((1 - (z1 ** 2 / (D ** 2 * y + z1 ** 2))) ** 2)
         # cos(theta + alpha) = (z1 ** 2 / (D ** 2 * y + z1 ** 2)) ** 0.5
         print(a, b, c, d)
@@ -141,7 +144,7 @@ class RowlandPositioner(PseudoPositioner):
 # D = x / ((1 - (z1 ** 2 / (D ** 2 * y + z1 ** 2))) ** 2)
 
 # This equation can be solved numerically to obtain the value of D. Once D is known, we can use the equations for cos(theta + alpha) and sin(theta - alpha) to calculate theta and alpha.
-    
+
 
 @registry.register
 class LERIXSpectrometer(Device):

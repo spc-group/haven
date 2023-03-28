@@ -165,6 +165,7 @@ def shutter_suspend_wrapper(plan, shutter_signals=None):
         suspenders.append(suspender)
     if not isinstance(suspenders, Iterable):
         suspenders = [suspenders]
+
     def _install():
         for susp in suspenders:
             yield Msg("install_suspender", None, susp)

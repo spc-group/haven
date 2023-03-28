@@ -67,7 +67,7 @@ def test_save_motor_position_by_device(mongodb, ioc_motor):
     # Check that the motors got saved
     result = mongodb.motor_positions.find_one({"name": "Sample center"})
     assert result is not None
-    assert len(result['motors']) == 2
+    assert len(result["motors"]) == 2
     result_A = [r for r in result["motors"] if r["name"] == motorA.name][0]
     result_B = [r for r in result["motors"] if r["name"] == motorB.name][0]
     assert result_A["name"] == motorA.name
@@ -111,7 +111,7 @@ def test_save_motor_position_by_name(mongodb, ioc_motor):
     # Check that the motors got saved
     result = mongodb.motor_positions.find_one({"name": "Sample center"})
     assert result is not None
-    assert len(result['motors']) == 2
+    assert len(result["motors"]) == 2
     result_A = [r for r in result["motors"] if r["name"] == motorA.name][0]
     result_B = [r for r in result["motors"] if r["name"] == motorB.name][0]
     assert result_A["name"] == motorA.name

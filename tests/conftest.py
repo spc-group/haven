@@ -156,7 +156,9 @@ def sim_aps(sim_registry):
 @pytest.fixture()
 def sim_shutters(sim_registry):
     FakeShutter = make_fake_device(Shutter)
-    kw = dict(open_pv="_prefix", close_pv="_prefix2", state_pv="_prefix2", labels={"shutters"})
+    kw = dict(
+        open_pv="_prefix", close_pv="_prefix2", state_pv="_prefix2", labels={"shutters"}
+    )
     shutters = [
         FakeShutter(name="Shutter A", **kw),
         FakeShutter(name="Shutter C", **kw),

@@ -221,7 +221,7 @@ def get_motor_position(
     query_params = {"_id": _id, "name": name}
     # Filter out query parameters that are ``None``
     query_params = {k: v for k, v in query_params.items() if v is not None}
-    result = collection.find_one(query_params, sort=[('savetime', pymongo.DESCENDING)])
+    result = collection.find_one(query_params, sort=[("savetime", pymongo.DESCENDING)])
     # Feedback for if no matching motor positions are in the database
     if result is None:
         raise exceptions.DocumentNotFound(

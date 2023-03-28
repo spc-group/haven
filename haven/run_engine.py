@@ -40,7 +40,7 @@ def save_data(name, doc):
     # Create the databroker callback if necessary
     global catalog
     if catalog is None:
-        catalog = databroker.catalog['bluesky']
+        catalog = databroker.catalog["bluesky"]
     # Save the document
     catalog.v1.insert(name, doc)
 

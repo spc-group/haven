@@ -50,9 +50,11 @@ class SensitivityLevelPositioner(PseudoPositioner):
     units = ["pA/V", "nA/V", "µA/V", "mA/V"]
     offset_difference = -3  # How many levels higher should the offset be
 
-    sens_level = Cpt(PseudoSingle, limits=(0, 27),
-                     labels={"ion_chamber_sensitivities",
-                             "ion_chamber_gains"})
+    sens_level = Cpt(
+        PseudoSingle,
+        limits=(0, 27),
+        labels={"ion_chamber_sensitivities", "ion_chamber_gains"},
+    )
 
     # Sensitivity settings
     sens_unit = Cpt(
@@ -148,8 +150,12 @@ class IonChamber(ScalerTriggered, Device):
         EpicsSignal, "{scaler_prefix}.CNT", trigger_value=1, kind=Kind.omitted
     )
     raw_counts: OphydObject = FCpt(ScalerSignalRO, "{prefix}.S{ch_num}", kind="hinted")
-    offset: OphydObject = FCpt(ScalerSignalRO, "{prefix}_{offset_suffix}", kind=Kind.config)
-    net_counts: OphydObject = FCpt(ScalerSignalRO, "{prefix}_netA.{ch_char}", kind=Kind.hinted)
+    offset: OphydObject = FCpt(
+        ScalerSignalRO, "{prefix}_{offset_suffix}", kind=Kind.config
+    )
+    net_counts: OphydObject = FCpt(
+        ScalerSignalRO, "{prefix}_netA.{ch_char}", kind=Kind.hinted
+    )
     volts: OphydObject = FCpt(
         ScalerSignalRO, "{prefix}_calc{ch_num}.VAL", kind="hinted"
     )
@@ -158,8 +164,12 @@ class IonChamber(ScalerTriggered, Device):
         SensitivityLevelPositioner, "{preamp_prefix}", kind="config"
     )
     auto_count: OphydObject = FCpt(EpicsSignal, "{scaler_prefix}.CONT", kind="config")
-    record_dark_current: OphydObject = FCpt(EpicsSignal, "{scaler_prefix}_offset_start.PROC", kind="omitted")
-    record_dark_time: OphydObject = FCpt(EpicsSignal, "{scaler_prefix}_offset_time.VAL", kind="config")
+    record_dark_current: OphydObject = FCpt(
+        EpicsSignal, "{scaler_prefix}_offset_start.PROC", kind="omitted"
+    )
+    record_dark_time: OphydObject = FCpt(
+        EpicsSignal, "{scaler_prefix}_offset_time.VAL", kind="config"
+    )
 
     _default_read_attrs = [
         "raw_counts",
@@ -193,8 +203,8 @@ class IonChamber(ScalerTriggered, Device):
             preamp_prefix = prefix
         self.preamp_prefix = preamp_prefix
         # Determine the offset PV since it follows weird numbering conventions
-        calc_num = int((self.ch_num-1) / 4)
-        calc_char = self.num_to_char(((self.ch_num-1) % 4)+1)
+        calc_num = int((self.ch_num - 1) / 4)
+        calc_char = self.num_to_char(((self.ch_num - 1) % 4) + 1)
         self.offset_suffix = f"offset{calc_num}.{calc_char}"
         # Initialize all the other Device stuff
         super().__init__(prefix=prefix, name=name, *args, **kwargs)

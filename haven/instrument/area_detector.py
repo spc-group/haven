@@ -79,6 +79,7 @@ class SimDetector(SingleTrigger_V34, DetectorBase):
     * stop any current acquisition
     * sets image_mode to 'Multiple'
     """
+
     cam = ADComponent(SimDetectorCam_V34, "cam1:")
     image = ADComponent(ImagePlugin_V34, "image1:")
     pva = ADComponent(PvaPlugin_V34, "Pva1:")
@@ -156,6 +157,8 @@ def load_area_detectors(config=None):
             raise exceptions.UnknownDeviceConfiguration(msg)
         # Create the device
         det = DeviceClass(
-            prefix=f"{adconfig['prefix']}:", name=name, labels={"area_detectors"},
+            prefix=f"{adconfig['prefix']}:",
+            name=name,
+            labels={"area_detectors"},
         )
         registry.register(det)

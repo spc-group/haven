@@ -68,7 +68,7 @@ class EnergyPositioner(PseudoPositioner):
     id_tracking_pv
       The PV address for whether the ID gets tracked automatically in
       EPICS.
-    
+
     """
 
     # Pseudo axes
@@ -82,7 +82,13 @@ class EnergyPositioner(PseudoPositioner):
     id_energy: OphydObject = FCpt(Undulator, "{id_prefix}", kind="normal")
 
     def __init__(
-            self, mono_pv: str, id_prefix: str, id_offset_pv: str, id_tracking_pv: str, *args, **kwargs
+        self,
+        mono_pv: str,
+        id_prefix: str,
+        id_offset_pv: str,
+        id_tracking_pv: str,
+        *args,
+        **kwargs,
     ):
         """INIT DOCSTRING"""
         self.mono_pv = mono_pv
@@ -123,7 +129,7 @@ def load_energy_positioner(config=None):
         name="energy",
         mono_pv=f"{mono_prefix}{mono_suffix}",
         id_offset_pv=f"{mono_prefix}{id_offset_suffix}",
-        id_tracking_pv = f"{mono_prefix}{id_tracking_suffix}",
+        id_tracking_pv=f"{mono_prefix}{id_tracking_suffix}",
         id_prefix=f"{id_prefix}",
     )
     registry.register(energy_positioner)

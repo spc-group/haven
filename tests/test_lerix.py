@@ -21,44 +21,54 @@ def test_rowland_circle_forward():
     # Check one set of values
     um_per_mm
     result = rowland.forward(500, 60.0, 30.0)
-    assert result == pytest.approx((
-        500.0 * um_per_mm,  # x
-        375.0 * um_per_mm,  # y
-        216.50635094610968 * um_per_mm,  # z
-        1.5308084989341912e-14 * um_per_mm,  # z1
-    ))
+    assert result == pytest.approx(
+        (
+            500.0 * um_per_mm,  # x
+            375.0 * um_per_mm,  # y
+            216.50635094610968 * um_per_mm,  # z
+            1.5308084989341912e-14 * um_per_mm,  # z1
+        )
+    )
     # Check one set of values
     result = rowland.forward(500, 80.0, 0.0)
-    assert result == pytest.approx((
-        484.92315519647707 * um_per_mm,  # x
-        0.0 * um_per_mm,  # y
-        171.0100716628344 * um_per_mm,  # z
-        85.5050358314172 * um_per_mm,  # z1
-    ))
+    assert result == pytest.approx(
+        (
+            484.92315519647707 * um_per_mm,  # x
+            0.0 * um_per_mm,  # y
+            171.0100716628344 * um_per_mm,  # z
+            85.5050358314172 * um_per_mm,  # z1
+        )
+    )
     # Check one set of values
     result = rowland.forward(500, 70.0, 10.0)
-    assert result == pytest.approx((
-        484.92315519647707 * um_per_mm,  # x
-        109.92315519647711 * um_per_mm,  # y
-        291.6982175363274 * um_per_mm,  # z
-        75.19186659021767 * um_per_mm,  # z1
-    ))
+    assert result == pytest.approx(
+        (
+            484.92315519647707 * um_per_mm,  # x
+            109.92315519647711 * um_per_mm,  # y
+            291.6982175363274 * um_per_mm,  # z
+            75.19186659021767 * um_per_mm,  # z1
+        )
+    )
     # Check one set of values
     result = rowland.forward(500, 75.0, 15.0)
-    assert result == pytest.approx((
-        500.0 * um_per_mm,  # x
-        124.99999999999994 * um_per_mm,  # y
-        216.50635094610965 * um_per_mm,  # z
-        2.6514380968122676e-14 * um_per_mm,  # z1
-    ))
+    assert result == pytest.approx(
+        (
+            500.0 * um_per_mm,  # x
+            124.99999999999994 * um_per_mm,  # y
+            216.50635094610965 * um_per_mm,  # z
+            2.6514380968122676e-14 * um_per_mm,  # z1
+        )
+    )
     # Check one set of values
     result = rowland.forward(500, 71.0, 10.0)
-    assert result == pytest.approx((
-        487.7641290737884 * um_per_mm,  # x
-        105.28431301548724 * um_per_mm,  # y
-        280.42235703910393 * um_per_mm,  # z
-        68.41033299999741 * um_per_mm,  # z1
-    ))
+    assert result == pytest.approx(
+        (
+            487.7641290737884 * um_per_mm,  # x
+            105.28431301548724 * um_per_mm,  # y
+            280.42235703910393 * um_per_mm,  # z
+            68.41033299999741 * um_per_mm,  # z1
+        )
+    )
 
 
 @pytest.mark.xfail
@@ -106,7 +116,7 @@ def test_rowland_circle_inverse():
     #     280.42235703910393 * um_per_mm,  # z
     #     68.41033299999741 * um_per_mm,  # z1
     # ))
-    
+
 
 def test_rowland_circle_component(ioc_motor):
     lerix = LERIXSpectrometer(name="lerix")
@@ -127,7 +137,9 @@ def test_rowland_circle_component(ioc_motor):
     assert result.y.user_readback == pytest.approx(375.0 * um_per_mm)
     assert caget("vme_crate_ioc:m3") == pytest.approx(216.50635094610968 * um_per_mm)
     assert result.z.user_readback == pytest.approx(216.50635094610968 * um_per_mm)
-    assert caget("vme_crate_ioc:m4") == pytest.approx(1.5308084989341912e-14 * um_per_mm)
+    assert caget("vme_crate_ioc:m4") == pytest.approx(
+        1.5308084989341912e-14 * um_per_mm
+    )
     assert result.z1.user_readback == pytest.approx(1.5308084989341912e-14 * um_per_mm)
 
 
