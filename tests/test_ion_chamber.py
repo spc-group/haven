@@ -101,3 +101,38 @@ def test_default_pv_prefix():
     # Instantiate the device with *scaler_prefix* argument
     device = IonChamber(name="device", ch_num=1, prefix=prefix)
     assert device.scaler_prefix == prefix
+
+
+def test_offset_pv():
+    """Check that the device handles the weird offset numbering scheme.
+
+    Net count PVs in the scaler go as
+
+    - 25idcVME:3820:scaler1_netA.B
+    - 25idcVME:3820:scaler1_netA.C
+    - etc.
+
+    but the offset PVs go
+    - 25idcVME:3820:scaler1_offset0.B
+    - ...
+    - 25idcVME:3820:scaler1_offset0.D
+    - 25idcVME:3820:scaler1_offset1.A
+    - ...
+
+    """
+    channel_suffixes = [
+        (2, "offset0.B"),
+        (3, "offset0.C"),
+        (4, "offset0.D"),
+        (5, "offset1.A"),
+        (6, "offset1.B"),
+        (7, "offset1.C"),
+        (8, "offset1.D"),
+        (9, "offset2.A"),
+        (10, "offset2.B"),
+        (11, "offset2.C"),
+        (12, "offset2.D"),
+    ]
+    for ch_num, suffix in channel_suffixes:
+        ic = IonChamber(prefix="scaler_ioc:scaler1", ch_num=ch_num, name="ion_chamber")
+        assert ic.offset.pvname == f"scaler_ioc:scaler1_{suffix}", f"channel {ch_num}"

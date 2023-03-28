@@ -148,6 +148,8 @@ class IonChamber(ScalerTriggered, Device):
         EpicsSignal, "{scaler_prefix}.CNT", trigger_value=1, kind=Kind.omitted
     )
     raw_counts: OphydObject = FCpt(ScalerSignalRO, "{prefix}.S{ch_num}", kind="hinted")
+    offset: OphydObject = FCpt(ScalerSignalRO, "{prefix}_{offset_suffix}", kind=Kind.config)
+    net_counts: OphydObject = FCpt(ScalerSignalRO, "{prefix}_netA.{ch_char}", kind=Kind.hinted)
     volts: OphydObject = FCpt(
         ScalerSignalRO, "{prefix}_calc{ch_num}.VAL", kind="hinted"
     )
@@ -158,6 +160,13 @@ class IonChamber(ScalerTriggered, Device):
     auto_count: OphydObject = FCpt(EpicsSignal, "{scaler_prefix}.CONT", kind="config")
     record_dark_current: OphydObject = FCpt(EpicsSignal, "{scaler_prefix}_offset_start.PROC", kind="omitted")
     record_dark_time: OphydObject = FCpt(EpicsSignal, "{scaler_prefix}_offset_time.VAL", kind="config")
+
+    _default_read_attrs = [
+        "raw_counts",
+        "volts",
+        "exposure_time",
+        "net_counts",
+    ]
 
     def __init__(
         self,
@@ -173,7 +182,7 @@ class IonChamber(ScalerTriggered, Device):
         if ch_num < 1:
             raise ValueError(f"Scaler channels must be greater than 0: {ch_num}")
         self.ch_num = ch_num
-        self.ch_char = chr(64 + ch_num)
+        self.ch_char = self.num_to_char(ch_num)
         # Determine which prefix to use for the scaler
         if scaler_prefix is not None:
             self.scaler_prefix = scaler_prefix
@@ -183,10 +192,19 @@ class IonChamber(ScalerTriggered, Device):
         if preamp_prefix is None:
             preamp_prefix = prefix
         self.preamp_prefix = preamp_prefix
+        # Determine the offset PV since it follows weird numbering conventions
+        calc_num = int((self.ch_num-1) / 4)
+        calc_char = self.num_to_char(((self.ch_num-1) % 4)+1)
+        self.offset_suffix = f"offset{calc_num}.{calc_char}"
         # Initialize all the other Device stuff
         super().__init__(prefix=prefix, name=name, *args, **kwargs)
         # Set signal values to stage
         self.stage_sigs[self.auto_count] = 0
+
+    def num_to_char(self, num):
+        char = chr(64 + num)
+        print(num, char)
+        return char
 
     def change_sensitivity(self, step: int) -> status.StatusBase:
         """Change the gain on the pre-amp by the given number of steps.
@@ -238,19 +256,6 @@ class IonChamber(ScalerTriggered, Device):
         return self.change_sensitivity(1)
 
 
-@registry.register
-class IonChamberWithOffset(IonChamber):
-    offset = FCpt(ScalerSignalRO, "{prefix}_offset0.{ch_char}", kind=Kind.config)
-    net_counts = FCpt(ScalerSignalRO, "{prefix}_netA.{ch_char}", kind=Kind.hinted)
-
-    _default_read_attrs = [
-        "raw_counts",
-        "volts",
-        "exposure_time",
-        "net_counts",
-    ]
-
-
 def load_ion_chambers(config=None):
     # Load IOC prefixes from the config file
     if config is None:
@@ -269,7 +274,7 @@ def load_ion_chambers(config=None):
         if name == "":
             continue
         # Create the ion chamber
-        ic = IonChamberWithOffset(
+        ic = IonChamber(
             prefix=scaler_pv_prefix,
             ch_num=ch_num,
             name=name,

@@ -12,6 +12,8 @@ class IOC(IOC_):
     """An IOC mimicing a scaler connected to a VME crate."""
 
     S2 = pvproperty(name=".S2", value=21000000, doc="It")
+    offset2 = pvproperty(name="_offset0.B", value=1000000)
+    net2 = pvproperty(name="_netA.B", value=20000000)
     CNT = pvproperty(name=".CNT", value=1)
     TP = pvproperty(name=".TP", value=1.0)
     calc2 = pvproperty(name="_calc2.VAL", value=2.35)
