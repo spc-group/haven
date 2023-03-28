@@ -54,7 +54,6 @@ def load_cameras(config=None) -> Sequence[Camera]:
     # Load each camera
     cameras = []
     for key, device in devices.items():
-        print(key, device)
         cam = Camera(
             prefix=f"{device['ioc']}:",
             name=device["name"],

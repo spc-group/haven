@@ -213,7 +213,6 @@ class IonChamber(ScalerTriggered, Device):
 
     def num_to_char(self, num):
         char = chr(64 + num)
-        print(num, char)
         return char
 
     def change_sensitivity(self, step: int) -> status.StatusBase:

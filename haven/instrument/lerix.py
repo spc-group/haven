@@ -163,7 +163,6 @@ def load_lerix_spectrometers(config=None):
         config = load_config()
     # Create spectrometers
     for name, cfg in config["lerix"].items():
-        print(name, cfg)
         rowland = cfg["rowland"]
         device = RowlandPositioner(
             name=name,
