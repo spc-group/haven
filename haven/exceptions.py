@@ -66,3 +66,8 @@ class UnknownDeviceConfiguration(ValueError):
     """The configuration for a device does not match the known options."""
 
     ...
+
+
+class InvalidHarmonic(ValueError):
+    """The requested harmonic is invalid for this insertion device."""
+    ...
