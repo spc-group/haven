@@ -231,7 +231,6 @@ def test_find_by_list_of_names():
     assert cptC not in result
 
 
-
 def test_user_readback():
     """Edge case where EpicsMotor.user_readback is named the same as the motor itself."""
     registry = InstrumentRegistry()

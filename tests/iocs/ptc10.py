@@ -13,7 +13,10 @@ class IOC(IOC_):
     An IOC for a PTC10 temperature controller.
 
     """
-    tc_temperature = pvproperty(value=0, doc="Temperature from thermocouple", name="2A:temperature")
+
+    tc_temperature = pvproperty(
+        value=0, doc="Temperature from thermocouple", name="2A:temperature"
+    )
     pid_setpoint = pvproperty(value=0, doc="", name="5A:setPoint")
     pid_setpoint_rbv = pvproperty(value=0, doc="", name="5A:setPoint_RBV")
     pid_voltage = pvproperty(value=0, doc="", name="5A:output")

@@ -15,5 +15,3 @@ def test_capillary_device(ioc_ptc10):
     new_temp = device.readback.get(use_monitor=False)
     assert new_temp == 200
     # assert status.done
-
-

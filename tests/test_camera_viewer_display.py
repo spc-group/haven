@@ -8,7 +8,7 @@ from haven.instrument.camera import load_cameras
 
 
 def test_open_camera_viewer_actions(ffapp, qtbot):
-    assert hasattr(ffapp, 'camera_actions')
+    assert hasattr(ffapp, "camera_actions")
     # Now get the cameras ready
     load_cameras()
     ffapp.prepare_camera_windows()
@@ -20,8 +20,9 @@ def test_open_camera_viewer_actions(ffapp, qtbot):
 
 def test_image_plotting(ffapp, qtbot):
     FireflyMainWindow()
-    display = CameraViewerDisplay(macros={"PREFIX": "99idSimDet:",
-                                          "DESC": "Simulated detector"})
+    display = CameraViewerDisplay(
+        macros={"PREFIX": "99idSimDet:", "DESC": "Simulated detector"}
+    )
     assert isinstance(display.image_view, pyqtgraph.ImageView)
     assert isinstance(display.image_channel, pydm.PyDMChannel)
     # Give it some grayscale data

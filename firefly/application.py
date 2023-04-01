@@ -135,7 +135,9 @@ class FireflyApplication(PyDMApplication):
         )
         # Launch camera overview
         self._setup_window_action(
-            action_name="show_cameras_window_action", text="All Cameras", slot=self.show_cameras_window
+            action_name="show_cameras_window_action",
+            text="All Cameras",
+            slot=self.show_cameras_window,
         )
 
     def launch_queuemonitor(self):

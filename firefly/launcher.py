@@ -34,6 +34,7 @@ def main():
     # Add plugins for handling ophyd objects
     from pydm.data_plugins import add_plugin
     from .ophyd_plugin import OphydPlugin
+
     add_plugin(OphydPlugin)
 
     # Set up splash screen

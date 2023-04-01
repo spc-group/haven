@@ -10,24 +10,26 @@ import haven
 from firefly import display
 
 import sys
-np.set_printoptions(threshold=sys.maxsize)
 
+np.set_printoptions(threshold=sys.maxsize)
 
 
 log = logging.getLogger(__name__)
 
 
-pyqtgraph.setConfigOption('imageAxisOrder', 'row-major')
+pyqtgraph.setConfigOption("imageAxisOrder", "row-major")
 
 
 class CameraViewerDisplay(display.FireflyDisplay):
     image_is_new: bool = True
-    
+
     def customize_device(self):
         addr = f"pva://{self.macros()['PREFIX']}Pva1:Image"
-        self.image_channel = pydm.PyDMChannel(address=addr, value_slot=self.update_image)
+        self.image_channel = pydm.PyDMChannel(
+            address=addr, value_slot=self.update_image
+        )
         self.image_channel.connect()
-    
+
     def customize_ui(self):
         self.caqtdm_button.clicked.connect(self.launch_caqtdm)
         # Create the pyqtgraph image viewer
@@ -46,7 +48,9 @@ class CameraViewerDisplay(display.FireflyDisplay):
         new_shape = img.shape[::-1]
         img = np.reshape(img, new_shape)
         # Show the image data
-        self.image_view.setImage(img, autoRange=self.image_is_new, autoLevels=self.image_is_new)
+        self.image_view.setImage(
+            img, autoRange=self.image_is_new, autoLevels=self.image_is_new
+        )
         # Update the display to indicate that we don't need to update levels/scale in the future
         self.image_is_new = False
 
