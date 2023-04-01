@@ -175,7 +175,15 @@ class InstrumentRegistry:
                         raise exceptions.InvalidComponentLabel(_label)
             # Filter by name
             if _name is not None:
-                if is_iterable(_name):
+                # Check for an edge case with EpicsMotor objects (user_readback name is same as parent)
+                try:
+                    is_user_readback = _name[-13:] == "user_readback"
+                except TypeError:
+                    is_user_readback = False
+                if is_user_readback:
+                    parent_name = _name[:-14].strip("_")
+                    results.extend([self.find(name=parent_name).user_readback])
+                elif is_iterable(_name):
                     [results.extend(self.findall(name=n)) for n in _name]
                 results.extend([cpt for cpt in self.components if cpt.name == _name])
         # If a query term is itself a device, just return that

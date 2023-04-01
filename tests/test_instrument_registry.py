@@ -1,6 +1,6 @@
 import pytest
 
-from ophyd import sim, Device
+from ophyd import sim, Device, EpicsMotor
 
 from haven import exceptions
 from haven.instrument import InstrumentRegistry
@@ -229,3 +229,13 @@ def test_find_by_list_of_names():
     assert cptA in result
     assert cptB in result
     assert cptC not in result
+
+
+
+def test_user_readback():
+    """Edge case where EpicsMotor.user_readback is named the same as the motor itself."""
+    registry = InstrumentRegistry()
+    device = EpicsMotor("", name="epics_motor")
+    registry.register(device)
+    # See if requesting the device.user_readback returns the proper signal
+    registry.find("epics_motor_user_readback")

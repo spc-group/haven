@@ -20,6 +20,7 @@ from haven import HavenMotor, registry, load_config
 import haven
 
 from .main_window import FireflyMainWindow, PlanMainWindow
+from .ophyd_plugin import OphydPlugin
 from .queue_client import QueueClient, QueueClientThread
 
 generator = type((x for x in []))

@@ -135,7 +135,7 @@
            <bool>false</bool>
           </property>
           <property name="channel" stdset="0">
-           <string>${ENERGY_PV}</string>
+           <string>oph://monochromator_energy_user_readback</string>
           </property>
          </widget>
         </item>
