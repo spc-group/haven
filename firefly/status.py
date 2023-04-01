@@ -59,31 +59,6 @@ class StatusDisplay(display.FireflyDisplay):
                     "SCDS_CLOSE_PV": shutterCD.close_signal.pvname,
                 }
             )
-        try:
-            mono = haven.registry.find(name="monochromator")
-        except haven.exceptions.ComponentNotFound:
-            msg = "COMPONENT_NOT_FOUND"
-            log.warning("Could not find monochromator device in haven registry.")
-            _macros.update(
-                {
-                    "ENERGY_PV": msg,
-                    "MONO_MODE_PV": msg,
-                }
-            )
-        else:
-            _macros.update(
-                {
-                    "ENERGY_PV": mono.energy.user_readback.pvname,
-                    "MONO_MODE_PV": mono.mode.pvname,
-                }
-            )
-        try:
-            bss = haven.registry.find(name="bss")
-        except haven.exceptions.ComponentNotFound:
-            log.warning("Could not find bss device in Haven registry.")
-            _macros.update({"P_BSS": "COMPONENT_NOT_FOUND"})
-        else:
-            _macros.update({"P_BSS": bss.prefix})
         # Set default macros
         _macros.update(macros)
         super().__init__(args=args, macros=_macros, **kwargs)

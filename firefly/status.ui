@@ -196,7 +196,7 @@
            <string>Fixed offset</string>
           </property>
           <property name="channel" stdset="0">
-           <string>${MONO_MODE_PV}</string>
+           <string>oph://monochromator_mode</string>
           </property>
          </widget>
         </item>
@@ -447,7 +447,7 @@
              <string>746328</string>
             </property>
             <property name="channel" stdset="0">
-             <string>${P_BSS}proposal:id</string>
+             <string>oph://bss_proposal_proposal_id</string>
             </property>
            </widget>
           </item>
@@ -469,7 +469,7 @@
              <bool>true</bool>
             </property>
             <property name="channel" stdset="0">
-             <string>${P_BSS}proposal:title</string>
+             <string>oph://bss_proposal_title</string>
             </property>
             <property name="displayFormat" stdset="0">
              <enum>PyDMLabel::String</enum>
@@ -499,7 +499,7 @@
              <string>5564987</string>
             </property>
             <property name="channel" stdset="0">
-             <string>${P_BSS}esaf:id</string>
+             <string>oph://bss_esaf_esaf_id</string>
             </property>
            </widget>
           </item>
@@ -521,7 +521,7 @@
              <bool>true</bool>
             </property>
             <property name="channel" stdset="0">
-             <string>${P_BSS}esaf:title</string>
+             <string>oph://bss_esaf_title</string>
             </property>
             <property name="displayFormat" stdset="0">
              <enum>PyDMLabel::String</enum>
@@ -546,7 +546,7 @@
            <string>Franklin, Watson, Crick</string>
           </property>
           <property name="channel" stdset="0">
-           <string>${P_BSS}esaf:users</string>
+           <string>oph://bss_esaf_user_last_names</string>
           </property>
           <property name="displayFormat" stdset="0">
            <enum>PyDMLabel::String</enum>
@@ -569,7 +569,7 @@
            <string>1901-01-01 8:00:00</string>
           </property>
           <property name="channel" stdset="0">
-           <string>${P_BSS}esaf:endDate</string>
+           <string>oph://bss_esaf_end_date</string>
           </property>
          </widget>
         </item>

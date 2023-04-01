@@ -15,8 +15,6 @@ class OphydConnection(Connection):
     """
     def __init__(self, channel, name, protocol=None, parent=None):
         # Resolve the device based on the ohpyd name
-        from pprint import pprint
-        pprint(registry.component_names)
         try:
             component = registry.find(name)
         except exceptions.ComponentNotFound:
