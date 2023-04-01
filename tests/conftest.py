@@ -4,12 +4,14 @@ import pytest
 from qtpy import QtWidgets
 import ophyd
 from ophyd.sim import instantiate_fake_device, make_fake_device
+from pydm.data_plugins import add_plugin
 
 from haven.simulated_ioc import simulated_ioc
 from haven import registry
 from haven.instrument.aps import ApsMachine
 from haven.instrument.shutter import Shutter
 from firefly.application import FireflyApplication
+from firefly.ophyd_plugin import OphydPlugin
 
 
 ioc_dir = Path(__file__).parent.resolve() / "iocs"
@@ -95,8 +97,13 @@ def ioc_ptc10():
         yield pvdb
 
 
+@pytest.fixture(scope="session")
+def pydm_ophyd_plugin():
+    return add_plugin(OphydPlugin)
+
+
 @pytest.fixture()
-def ffapp():
+def ffapp(pydm_ophyd_plugin):
     # Get an instance of the application
     app = FireflyApplication.instance()
     if app is None:
