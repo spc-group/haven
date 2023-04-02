@@ -44,7 +44,7 @@
            <string>102.1 mA</string>
           </property>
           <property name="channel" stdset="0">
-           <string>S:SRcurrentAI</string>
+           <string>ca://S:SRcurrentAI</string>
           </property>
          </widget>
         </item>
@@ -67,7 +67,7 @@
            <string>Top-Up</string>
           </property>
           <property name="channel" stdset="0">
-           <string>S:ActualMode</string>
+           <string>ca://S:ActualMode</string>
           </property>
          </widget>
         </item>
@@ -157,7 +157,7 @@
            <bool>true</bool>
           </property>
           <property name="channel" stdset="0">
-           <string>ACIS:ShutterPermit</string>
+           <string>ca://ACIS:ShutterPermit</string>
           </property>
           <property name="showLabels" stdset="0">
            <bool>true</bool>
@@ -237,7 +237,7 @@
              <bool>true</bool>
             </property>
             <property name="channel" stdset="0">
-             <string>${FES_STATE_PV}</string>
+             <string>oph://front_end_shutter_pss_state</string>
             </property>
             <property name="showLabels" stdset="0">
              <bool>true</bool>
@@ -285,7 +285,7 @@
              <bool>false</bool>
             </property>
             <property name="channel" stdset="0">
-             <string>${FES_OPEN_PV}</string>
+             <string>oph://front_end_shutter_open_signal</string>
             </property>
             <property name="pressValue" stdset="0">
              <string>1</string>
@@ -330,7 +330,7 @@
              <bool>true</bool>
             </property>
             <property name="channel" stdset="0">
-             <string>${SCDS_STATE_PV}</string>
+             <string>oph://hutch_shutter_pss_state</string>
             </property>
             <property name="showLabels" stdset="0">
              <bool>true</bool>
@@ -366,7 +366,7 @@
              <string>Open</string>
             </property>
             <property name="channel" stdset="0">
-             <string>${SCDS_OPEN_PV}</string>
+             <string>oph://hutch_shutter_open_signal</string>
             </property>
             <property name="pressValue" stdset="0">
              <string>1</string>
@@ -385,7 +385,7 @@
              <string>Close</string>
             </property>
             <property name="channel" stdset="0">
-             <string>${SCDS_CLOSE_PV}</string>
+             <string>oph://hutch_shutter_close_signal</string>
             </property>
             <property name="pressValue" stdset="0">
              <string>1</string>
