@@ -24,21 +24,21 @@ class EnergyDisplay(display.FireflyDisplay):
     stylesheet_normal = ""
 
     def __init__(self, args=None, macros={}, **kwargs):
-        # Set up macros
-        mono = registry.find(name="monochromator")
-        _macros = dict(**macros)
-        _macros["MONO_MODE_PV"] = _macros.get("MONO_MODE_PV", mono.mode.pvname)
-        _macros["MONO_ENERGY_PV"] = _macros.get(
-            "MONO_ENERGY_PV", mono.energy.user_readback.pvname
-        )
-        energy = registry.find(name="energy")
-        _macros["ID_ENERGY_PV"] = _macros.get(
-            "ID_ENERGY_PV", f"{energy.id_prefix}:Energy.VAL"
-        )
-        _macros["ID_GAP_PV"] = _macros.get("ID_GAP_PV", f"{energy.id_prefix}:Gap.VAL")
+        # # Set up macros
+        # mono = registry.find(name="monochromator")
+        # _macros = dict(**macros)
+        # _macros["MONO_MODE_PV"] = _macros.get("MONO_MODE_PV", mono.mode.pvname)
+        # _macros["MONO_ENERGY_PV"] = _macros.get(
+        #     "MONO_ENERGY_PV", mono.energy.user_readback.pvname
+        # )
+        # energy = registry.find(name="energy")
+        # _macros["ID_ENERGY_PV"] = _macros.get(
+        #     "ID_ENERGY_PV", f"{energy.id_prefix}:Energy.VAL"
+        # )
+        # _macros["ID_GAP_PV"] = _macros.get("ID_GAP_PV", f"{energy.id_prefix}:Gap.VAL")
         # Load X-ray database for calculating edge energies
         self.xraydb = XrayDB()
-        super().__init__(args=args, macros=_macros, **kwargs)
+        super().__init__(args=args, macros=macros, **kwargs)
 
     def launch_mono_caqtdm(self):
         config = load_config()
