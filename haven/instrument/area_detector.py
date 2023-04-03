@@ -5,6 +5,7 @@ from ophyd import (
     DetectorBase,
     SimDetectorCam,
     Lambda750kCam,
+    EigerDetectorCam,
     SingleTrigger,
     Kind,
 )
@@ -16,9 +17,12 @@ from ophyd.areadetector.plugins import (
     ImagePlugin_V31,
     PvaPlugin_V34,
     PvaPlugin_V31,
+    TIFFPlugin_V34,
     TIFFPlugin_V31,
+    ROIPlugin_V34,
     ROIPlugin_V31,
     StatsPlugin_V31,
+    StatsPlugin_V34,
 )
 
 
@@ -118,7 +122,7 @@ class Lambda250K(SingleTrigger, DetectorBase):
     """
     A Lambda 250K area detector device.
     """
-
+    
     cam = ADComponent(Lambda750kCam, "cam1:")
     image = ADComponent(ImagePlugin_V31, "image1:")
     pva = ADComponent(PvaPlugin_V31, "Pva1:")
@@ -128,6 +132,37 @@ class Lambda250K(SingleTrigger, DetectorBase):
     roi2 = ADComponent(ROIPlugin_V31, "ROI2:", kind=Kind.config)
     roi3 = ADComponent(ROIPlugin_V31, "ROI3:", kind=Kind.config)
     roi4 = ADComponent(ROIPlugin_V31, "ROI4:", kind=Kind.config)
+    stats1 = ADComponent(StatsPlugin, "Stats1:", kind=Kind.normal)
+    stats2 = ADComponent(StatsPlugin, "Stats2:", kind=Kind.normal)
+    stats3 = ADComponent(StatsPlugin, "Stats3:", kind=Kind.normal)
+    stats4 = ADComponent(StatsPlugin, "Stats4:", kind=Kind.normal)
+    stats5 = ADComponent(StatsPlugin, "Stats5:", kind=Kind.normal)
+
+    _default_read_attrs = [
+        "stats1",
+        "stats2",
+        "stats3",
+        "stats4",
+        "stats5",
+        "hdf1",
+        "tiff",
+    ]
+
+
+class Eiger500K(SingleTrigger, DetectorBase):
+    """
+    A Eiger S 500K area detector device.
+    """
+    
+    cam = ADComponent(EigerDetectorCam, "cam1:")
+    image = ADComponent(ImagePlugin_V34, "image1:")
+    pva = ADComponent(PvaPlugin_V34, "Pva1:")
+    tiff = ADComponent(TIFFPlugin, "TIFF1:", kind=Kind.normal)
+    hdf1 = ADComponent(HDF5Plugin, "HDF1:", kind=Kind.normal)
+    roi1 = ADComponent(ROIPlugin_V34, "ROI1:", kind=Kind.config)
+    roi2 = ADComponent(ROIPlugin_V34, "ROI2:", kind=Kind.config)
+    roi3 = ADComponent(ROIPlugin_V34, "ROI3:", kind=Kind.config)
+    roi4 = ADComponent(ROIPlugin_V34, "ROI4:", kind=Kind.config)
     stats1 = ADComponent(StatsPlugin, "Stats1:", kind=Kind.normal)
     stats2 = ADComponent(StatsPlugin, "Stats2:", kind=Kind.normal)
     stats3 = ADComponent(StatsPlugin, "Stats3:", kind=Kind.normal)
