@@ -31,9 +31,10 @@ def test_config_files_from_env():
 def test_merging_dicts():
     """Do the entries from multiple dictioneries merge properly?"""
     this_dir = Path(__file__).resolve().parent
-    default_file = this_dir.parent / "haven" / "iconfig_default.toml"
+    default_files = [this_dir.parent / "haven" / "iconfig_default.toml",
+                     this_dir / "iconfig_testing.toml"]
     test_file = this_dir / "test_iconfig.toml"
-    config = load_config(file_paths=(default_file, test_file))
+    config = load_config(file_paths=(*default_files, test_file))
     assert "description" in config["camera"]["camA"].keys()
 
 

@@ -1,0 +1,33 @@
+# Keys for camera definitions must begin with "cam" (e.g. "camA", "camB")
+[camera.camA]
+
+name = "s25id-gige-A"
+description = "GigE Vision A"
+ioc = "camA_ioc"
+
+[stage.Aerotech]
+
+prefix = "vme_crate_ioc"
+pv_vert = ":m1"
+pv_horiz = ":m2"
+
+[power_supply.NHQ01]
+
+prefix = "ps_ioc:NHQ01"
+n_channels = 2
+
+[slits.KB_slits]
+
+prefix = "vme_crate_ioc:KB"
+
+[area_detector.sim_det]
+
+prefix = "99idSimDet"
+device_class = "SimDetector"
+
+[lerix.lerix.rowland]
+
+x_motor_pv = "vme_crate_ioc:m1"
+y_motor_pv = "vme_crate_ioc:m2"
+z_motor_pv = "vme_crate_ioc:m3"
+z1_motor_pv = "vme_crate_ioc:m4"

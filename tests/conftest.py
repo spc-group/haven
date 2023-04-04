@@ -6,15 +6,27 @@ import ophyd
 from ophyd.sim import instantiate_fake_device, make_fake_device
 from pydm.data_plugins import add_plugin
 
+
+top_dir = Path(__file__).parent.parent.resolve()
+ioc_dir = top_dir / "tests" / "iocs"
+haven_dir = top_dir / "haven"
+test_dir = top_dir / "tests"
+
+
 from haven.simulated_ioc import simulated_ioc
-from haven import registry
+from haven import registry, load_config
 from haven.instrument.aps import ApsMachine
 from haven.instrument.shutter import Shutter
 from firefly.application import FireflyApplication
 from firefly.ophyd_plugin import OphydPlugin
 
 
-ioc_dir = Path(__file__).parent.resolve() / "iocs"
+# Specify the configuration files to use for testing
+os.environ["HAVEN_CONFIG_FILES"] = ",".join([
+    f"{test_dir/'iconfig_testing.toml'}",
+    f"{haven_dir/'iconfig_default.toml'}",
+])
+load_config.cache_clear()
 
 
 # ophyd.set_cl("caproto")

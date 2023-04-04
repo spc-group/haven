@@ -28,14 +28,6 @@ CONFIG_FILES = [
     pathlib.Path("~/bluesky/instrument").expanduser() / "iconfig.toml",
 ]
 
-# Add config file from environmental variable
-try:
-    CONFIG_FILES.extend(
-        [pathlib.Path(fp.strip()) for fp in os.environ["HAVEN_CONFIG_FILES"].split(",")]
-    )
-except KeyError:
-    pass
-
 
 def load_files(file_paths: Sequence[pathlib.Path]):
     """Generate the configs for files as dictionaries."""
@@ -52,7 +44,21 @@ def load_files(file_paths: Sequence[pathlib.Path]):
 
 @lru_cache()
 def load_config(file_paths: Sequence[pathlib.Path] = CONFIG_FILES):
-    """Load TOML config files."""
+    """Load TOML config files.
+
+    Will load files specified in *file_paths* and $HAVEN_CONFIG_FILES
+    environmental variable.
+
+    """
+    file_paths = list(file_paths).copy()
+    # Add config file from environmental variable
+    try:
+        file_paths.extend(
+            [pathlib.Path(fp.strip()) for fp in os.environ["HAVEN_CONFIG_FILES"].split(",")]
+        )
+    except KeyError:
+        pass
+    # Load configuration from TOML files
     config = {}
     merge(config, *load_files(file_paths))
     return config

@@ -314,7 +314,7 @@ class FireflyApplication(PyDMApplication):
             FireflyMainWindow,
             ui_dir / "motor.py",
             name=f"FireflyMainWindow_motor_{motor_name}",
-            macros={"PREFIX": motor.prefix},
+            macros={"MOTOR": motor.name}, 
         )
 
     def show_camera_window(self, *args, camera):

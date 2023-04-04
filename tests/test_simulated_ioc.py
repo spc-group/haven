@@ -24,10 +24,11 @@ def test_simulated_ioc(ioc_simple):
 
 def test_motor_ioc(ioc_motor):
     # Check that the starting value is different than what we'll set it to
-    assert caget("vme_crate_ioc:m1", use_monitor=False) != 4000
+    assert caput("vme_crate_ioc:m1", 1000)
+    assert caget("vme_crate_ioc:m1", use_monitor=False) != pytest.approx(4000)
     # Change the value
     caput("vme_crate_ioc:m1", 4000.0)
-    time.sleep(5)
+    time.sleep(1)
     # Check that the record got updated
     assert caget("vme_crate_ioc:m1.VAL", use_monitor=False) == 4000.0
     assert caget("vme_crate_ioc:m1.RBV", use_monitor=False) == 4000.0

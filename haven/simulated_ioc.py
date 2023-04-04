@@ -66,11 +66,11 @@ class IOC(PVGroup):
         )
         ioc = Cls(**ioc_options)
         run_options["log_pv_names"] = True
-        run_options["interfaces"] = ["127.0.0.1"]
+        # run_options["interfaces"] = ["127.0.0.1"]
         return ioc.pvdb, run_options
 
 
-def wait_for_ioc(pvdb, timeout=240):
+def wait_for_ioc(pvdb, process=None, timeout=30):
     """Block until all the PVs in the IOC have loaded."""
     # Build a list of PVs and PV fields
     all_fields = []
@@ -98,6 +98,8 @@ def wait_for_ioc(pvdb, timeout=240):
                     f"IOC ({list(pvdb)[0]}) did not start within "
                     f"{timeout} seconds. Missing: {fields_left}"
                 )
+                if process is not None:
+                    log.error(f"IOC output: {process.stdout.read()}")
                 pbar.close()
                 raise exceptions.IOCTimeout(msg)
         time.sleep(0.1)
@@ -133,7 +135,7 @@ def simulated_ioc(fp):
         process = None
         log.warning(f"IOC already running: {test_pv} = {response}")
     # Wait for the ioc to load
-    wait_for_ioc(pvdb=pvdb)
+    wait_for_ioc(pvdb=pvdb, process=process)
     # Drop into the calling code to run the tests
     yield pvdb
     # Stop the process now that the test is done
