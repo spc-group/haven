@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>196</width>
-    <height>239</height>
+    <height>250</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -91,6 +91,9 @@
            <property name="toolTip">
             <string/>
            </property>
+           <property name="rules" stdset="0">
+            <string>[{&quot;name&quot;: &quot;limit_autohide&quot;, &quot;property&quot;: &quot;Visible&quot;, &quot;initial_value&quot;: &quot;False&quot;, &quot;expression&quot;: &quot;ch[0] &gt; 0&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;oph://${MOTOR}_low_limit_switch&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}]}]</string>
+           </property>
            <property name="alarmSensitiveContent" stdset="0">
             <bool>false</bool>
            </property>
@@ -98,7 +101,7 @@
             <bool>true</bool>
            </property>
            <property name="channel" stdset="0">
-            <string/>
+            <string>oph://${MOTOR}_low_limit_switch</string>
            </property>
            <property name="onColor" stdset="0">
             <color>
@@ -109,8 +112,8 @@
            </property>
            <property name="offColor" stdset="0">
             <color>
-             <red>220</red>
-             <green>53</green>
+             <red>40</red>
+             <green>167</green>
              <blue>69</blue>
             </color>
            </property>
@@ -141,6 +144,12 @@
            <property name="toolTip">
             <string/>
            </property>
+           <property name="rules" stdset="0">
+            <string>[{&quot;name&quot;: &quot;limit_autohide&quot;, &quot;property&quot;: &quot;Visible&quot;, &quot;initial_value&quot;: &quot;False&quot;, &quot;expression&quot;: &quot;ch[0] &gt; 0&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;oph://${MOTOR}_soft_limit_violation&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}]}]</string>
+           </property>
+           <property name="channel" stdset="0">
+            <string>oph://${MOTOR}_soft_limit_violation</string>
+           </property>
            <property name="onColor" stdset="0">
             <color>
              <red>255</red>
@@ -150,9 +159,9 @@
            </property>
            <property name="offColor" stdset="0">
             <color>
-             <red>255</red>
-             <green>193</green>
-             <blue>7</blue>
+             <red>40</red>
+             <green>167</green>
+             <blue>69</blue>
             </color>
            </property>
            <property name="showLabels" stdset="0">
@@ -185,6 +194,9 @@
            <property name="toolTip">
             <string/>
            </property>
+           <property name="rules" stdset="0">
+            <string>[{&quot;name&quot;: &quot;limit_autohide&quot;, &quot;property&quot;: &quot;Visible&quot;, &quot;initial_value&quot;: &quot;False&quot;, &quot;expression&quot;: &quot;ch[0] &gt; 0&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;oph://${MOTOR}_high_limit_switch&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}]}]</string>
+           </property>
            <property name="alarmSensitiveContent" stdset="0">
             <bool>false</bool>
            </property>
@@ -192,7 +204,7 @@
             <bool>true</bool>
            </property>
            <property name="channel" stdset="0">
-            <string/>
+            <string>oph://${MOTOR}_high_limit_switch</string>
            </property>
            <property name="onColor" stdset="0">
             <color>
@@ -203,8 +215,8 @@
            </property>
            <property name="offColor" stdset="0">
             <color>
-             <red>220</red>
-             <green>53</green>
+             <red>40</red>
+             <green>167</green>
              <blue>69</blue>
             </color>
            </property>
@@ -235,6 +247,12 @@
            <property name="toolTip">
             <string/>
            </property>
+           <property name="rules" stdset="0">
+            <string>[{&quot;name&quot;: &quot;limit_autohide&quot;, &quot;property&quot;: &quot;Visible&quot;, &quot;initial_value&quot;: &quot;False&quot;, &quot;expression&quot;: &quot;ch[0] &gt; 0&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;oph://${MOTOR}_soft_limit_violation&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}]}]</string>
+           </property>
+           <property name="channel" stdset="0">
+            <string>oph://${MOTOR}_soft_limit_violation</string>
+           </property>
            <property name="onColor" stdset="0">
             <color>
              <red>255</red>
@@ -244,9 +262,9 @@
            </property>
            <property name="offColor" stdset="0">
             <color>
-             <red>255</red>
-             <green>193</green>
-             <blue>7</blue>
+             <red>40</red>
+             <green>167</green>
+             <blue>69</blue>
             </color>
            </property>
            <property name="showLabels" stdset="0">

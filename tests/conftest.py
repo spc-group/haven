@@ -29,26 +29,6 @@ os.environ["HAVEN_CONFIG_FILES"] = ",".join([
 load_config.cache_clear()
 
 
-# ophyd.set_cl("caproto")
-
-# def pytest_collection_modifyitems(config, items):
-#     """Skip tests if no X server is available.
-
-#     Mark tests with ``@pytest.mark.needs_xserver`` to indicate tests
-#     that should be skipped if no X-server is present.
-
-#     """
-#     # Check if we have X server available
-#     has_x = os.environ.get('GITHUB_ACTIONS', 'false') != 'true'
-#     if has_x:
-#         return
-#     # Skip items marked as needing an X-server
-#     skip_nox = pytest.mark.skip(reason="No X-server available.")
-#     for item in items:
-#         if "needs_xserver" in item.keywords:
-#             item.add_marker(skip_nox)
-
-
 def pytest_configure(config):
     app = QtWidgets.QApplication.instance()
     assert app is None
