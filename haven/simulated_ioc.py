@@ -66,6 +66,7 @@ class IOC(PVGroup):
         )
         ioc = Cls(**ioc_options)
         run_options["log_pv_names"] = True
+        run_options["interfaces"] = ["127.0.0.1"]
         return ioc.pvdb, run_options
 
 
