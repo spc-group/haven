@@ -18,6 +18,7 @@ def test_load_vme_motors(ioc_motor):
     # Were the motors imported correctly
     motors = registry.findall(label="motors")
     assert len(motors) == 3
+    assert type(motors[0]) is motor.HavenMotor
     motor_names = [m.name for m in motors]
     assert "SLT V Upper" in motor_names
     assert "SLT V Lower" in motor_names
@@ -25,3 +26,12 @@ def test_load_vme_motors(ioc_motor):
     # Check that the IOC name is set in labels
     motor1 = registry.find(name="SLT V Upper")
     assert "VME_crate" in motor1._ophyd_labels_
+
+
+def test_motor_signals():
+    m = motor.HavenMotor("motor_ioc", name="test_motor")
+    assert m.description.pvname == "motor_ioc.DESC"
+    assert m.tweak_value.pvname == "motor_ioc.TWV"
+    assert m.tweak_forward.pvname == "motor_ioc.TWF"
+    assert m.tweak_reverse.pvname == "motor_ioc.TWR"
+    assert m.soft_limit_violation.pvname == "motor_ioc.LVIO"

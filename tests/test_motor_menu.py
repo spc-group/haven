@@ -40,6 +40,7 @@ def test_open_motor_window(sim_registry, ioc_motor, ffapp):
     # See if the window was created
     motor_1_name = "FireflyMainWindow_motor_SLT_H_Inb"
     assert motor_1_name in ffapp.windows.keys()
-    # assert ffapp.windows[motor_1_name].macros["PREFIX"] == ":m1"
+    macros = ffapp.windows[motor_1_name].display_widget().macros()
+    assert macros['MOTOR'] == motor_name
     # Clean up
     window.close()
