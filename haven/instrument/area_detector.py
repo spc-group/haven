@@ -31,6 +31,9 @@ from .instrument_registry import registry
 from .. import exceptions
 
 
+__all__ = ["Eiger500K", "Lambda250K", "SimDetector"]
+
+
 class SimDetectorCam_V34(CamMixin_V34, SimDetectorCam):
     ...
 
