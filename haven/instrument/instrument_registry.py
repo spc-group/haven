@@ -23,8 +23,7 @@ class InstrumentRegistry:
     can be registered outside of the main REPL loop.
 
     """
-
-    devices = []  # Replaced during __init__() since [] is mutable
+    components: Sequence
 
     def __init__(self):
         self.clear()
@@ -36,6 +35,10 @@ class InstrumentRegistry:
     @property
     def component_names(self):
         return [c.name for c in self.components]
+
+    @property
+    def device_names(self):
+        return [c.name for c in self.components if c.parent is None]    
 
     def find(
         self,
