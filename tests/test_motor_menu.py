@@ -11,7 +11,7 @@ from firefly.application import FireflyApplication
 
 
 def test_motor_menu(ioc_motor, sim_registry, qtbot, ffapp):
-    prefix = "vme_crate_ioc"
+    prefix = ioc_motor.prefix.strip(":")
     motor.load_ioc_motors(prefix=prefix, num_motors=3)
     ffapp.setup_window_actions()
     ffapp.setup_runengine_actions()
@@ -24,7 +24,7 @@ def test_motor_menu(ioc_motor, sim_registry, qtbot, ffapp):
 
 def test_open_motor_window(sim_registry, ioc_motor, ffapp):
     # Set up motors in epics
-    prefix = "vme_crate_ioc"
+    prefix = ioc_motor.prefix.strip(":")
     motor_name = "SLT_H_Inb"
     epics.caput(f"{prefix}:m1.DESC", motor_name, wait=True)
     motor.load_ioc_motors(prefix=prefix, num_motors=3)

@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
+from caproto import ChannelType
+from caproto.server import PVGroup, SubGroup, ioc_arg_parser, pvproperty, run
+from ophyd.tests.fake_motor_ioc import FakeMotorIOC
 
-from caproto.server import (
-    pvproperty,
-    run,
-)
-
-from haven.simulated_ioc import ResponsiveMotorFields, IOC as IOC_
+from haven.simulated_ioc import ResponsiveMotorFields# , IOC as IOC_
 
 
-class IOC(IOC_):
+
+
+class MonoGroup(PVGroup):
     """
     An IOC with a monochromator.
 
@@ -28,11 +28,16 @@ class IOC(IOC_):
     Offset = pvproperty(value=9009, doc="Offset", record=ResponsiveMotorFields)
     mode = pvproperty(value=1, doc="mode", record=ResponsiveMotorFields)
     id_tracking = pvproperty(value=0, name="ID_tracking", doc="IDTracking")
-    id_offset = pvproperty(value=0, doc="ID offset", name="ID_offset")
-
-    default_prefix = "mono_ioc:"
+    id_offset = pvproperty(value=0, name="ID_offset", doc="ID offset")
+    dspacing = pvproperty(value=3.135, doc="Crystal d-spacing", dtype=float)
+    EnergyC1 = pvproperty(value=1, name="EnergyC1.VAL", dtype=float)
+    EnergyC2 = pvproperty(value=1, name="EnergyC2.VAL", dtype=float)
+    EnergyC3 = pvproperty(value=1, name="EnergyC3.VAL", dtype=float)
 
 
 if __name__ == "__main__":
-    pvdb, run_options = IOC.parse_args()
-    run(pvdb, **run_options)
+    ioc_options, run_options = ioc_arg_parser(
+        default_prefix="255idMono:", desc="haven.tests.ioc_mono test IOC"
+    )
+    ioc = MonoGroup(**ioc_options)
+    run(ioc.pvdb, **run_options)

@@ -7,12 +7,12 @@ from haven.instrument import motor
 def test_load_vme_motors(ioc_motor):
     registry.clear()
     # Set the IOC motor descriptions to known values
-    epics.caput("vme_crate_ioc:m1.DESC", "SLT V Upper")
-    epics.caput("vme_crate_ioc:m2.DESC", "SLT V Lower")
-    epics.caput("vme_crate_ioc:m3.DESC", "SLT H Inbound")
-    assert epics.caget("vme_crate_ioc:m1.DESC", use_monitor=False) == "SLT V Upper"
-    assert epics.caget("vme_crate_ioc:m2.DESC", use_monitor=False) == "SLT V Lower"
-    assert epics.caget("vme_crate_ioc:m3.DESC", use_monitor=False) == "SLT H Inbound"
+    epics.caput("255idVME:m1.DESC", "SLT V Upper")
+    epics.caput("255idVME:m2.DESC", "SLT V Lower")
+    epics.caput("255idVME:m3.DESC", "SLT H Inbound")
+    assert epics.caget("255idVME:m1.DESC", use_monitor=False) == "SLT V Upper"
+    assert epics.caget("255idVME:m2.DESC", use_monitor=False) == "SLT V Lower"
+    assert epics.caget("255idVME:m3.DESC", use_monitor=False) == "SLT H Inbound"
     # Load the Ophyd motor definitions
     motor.load_all_motors()
     # Were the motors imported correctly

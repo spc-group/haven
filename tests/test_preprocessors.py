@@ -65,6 +65,9 @@ def test_baseline_wrapper(sim_registry, ioc_bss):
 def test_baseline_decorator(sim_registry, ioc_bss):
     """Similar to baseline wrapper test, but used as a decorator."""
     load_aps()
+    # from epics import caget
+    # assert caget("255idc:bss:esaf:user3:email") is not None
+    sim_registry.find("bss").wait_for_connection()
     # Create the decorated function before anything else
     func = baseline_decorator(devices="motors")(bp.count)
     # Create a test device
@@ -92,7 +95,8 @@ def test_metadata(sim_registry, ioc_bss, monkeypatch):
     """Similar to baseline wrapper test, but used as a decorator."""
     # Load devices
     load_aps()
-    bss = EpicsBssDevice(prefix="99id:bss:", name="bss")
+    bss = EpicsBssDevice(prefix=ioc_bss.prefix, name="bss")
+    bss.wait_for_connection()
     statuses = [
         bss.esaf.esaf_id.set("12345"),
         bss.proposal.proposal_id.set("25873"),

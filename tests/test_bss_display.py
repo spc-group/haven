@@ -1,4 +1,5 @@
 import pytest
+import time
 from qtpy.QtGui import QStandardItemModel
 from qtpy.QtCore import Qt
 from epics import caget, caput
@@ -139,11 +140,13 @@ def test_bss_proposal_model(qtbot, ffapp, bss_api):
     assert display.ui.proposal_view.model() is display.proposal_model
 
 
-def test_bss_proposal_updating(qtbot, ffapp, bss_api, ioc_bss):
+def test_bss_proposal_updating(qtbot, ffapp, bss_api, ioc_bss, sim_registry):
     load_aps()
+    bss = sim_registry.find(name="bss")
+    bss.wait_for_connection(timeout=20)
     display = BssDisplay(api=bss_api)
     # Set some base-line values on the IOC
-    caput("99id:bss:proposal:id", "")
+    caput(ioc_bss.pvs["proposal_id"], "")
     # Change the proposal item
     selection_model = display.ui.proposal_view.selectionModel()
     item = display.proposal_model.item(0, 1)
@@ -155,15 +158,15 @@ def test_bss_proposal_updating(qtbot, ffapp, bss_api, ioc_bss):
             display.proposal_view.viewport(), Qt.LeftButton, pos=rect.center()
         )
     assert display.ui.update_proposal_button.isEnabled()
-    pv_id = caget("99id:bss:proposal:id", use_monitor=False, as_string=True)
+    pv_id = caget(ioc_bss.pvs["proposal_id"], use_monitor=False, as_string=True)
     assert pv_id != "74163"
     assert display._proposal_id == "74163"
     # Now update the PROPOSAL details
     with qtbot.waitSignal(display.proposal_changed):
         qtbot.mouseClick(display.ui.update_proposal_button, Qt.LeftButton)
-    pv_id = caget("99id:bss:proposal:id", use_monitor=False, as_string=True)
+    pv_id = caget(ioc_bss.pvs["proposal_id"], use_monitor=False, as_string=True)
     assert pv_id == "74163"
-    bss_api.epicsUpdate.assert_called_once_with("99id:bss:")
+    bss_api.epicsUpdate.assert_called_once_with(ioc_bss.prefix)
 
 
 def test_bss_proposals(ffapp, bss_api):
@@ -173,9 +176,6 @@ def test_bss_proposals(ffapp, bss_api):
     api_proposal = bss_api.getCurrentProposals()[0]
     proposals = display.proposals
     proposal = proposals[0]
-    from pprint import pprint
-
-    pprint(proposal)
     assert proposal["Title"] == api_proposal["title"]
     assert proposal["ID"] == api_proposal["id"]
     assert proposal["Users"] == "Botton, Karunakaran, Motta Meira"
@@ -190,7 +190,7 @@ def test_bss_esaf_model(qtbot, ffapp, bss_api):
     # Check model construction
     assert isinstance(display.esaf_model, QStandardItemModel)
     # assert display.esaf_model.rowCount() > 0
-    bss_api.getCurrentEsafs.assert_called_once_with("99")
+    bss_api.getCurrentEsafs.assert_called_once_with("255")
     # Check that the view has the model attached
     assert display.ui.esaf_view.model() is display.esaf_model
 
@@ -200,7 +200,7 @@ def test_bss_esaf_updating(qtbot, ffapp, bss_api, ioc_bss):
     window = FireflyMainWindow()
     display = BssDisplay(api=bss_api)
     # Set some base-line values on the IOC
-    caput("99id:bss:esaf:id", "")
+    caput(ioc_bss.pvs['esaf_id'], "")
     # Change the ESAF item
     selection_model = display.ui.esaf_view.selectionModel()
     item = display.esaf_model.item(0, 1)
@@ -210,15 +210,15 @@ def test_bss_esaf_updating(qtbot, ffapp, bss_api, ioc_bss):
     with qtbot.waitSignal(display.esaf_selected):
         qtbot.mouseClick(display.esaf_view.viewport(), Qt.LeftButton, pos=rect.center())
     assert display.ui.update_esaf_button.isEnabled()
-    pv_id = caget("99id:bss:esaf:id", use_monitor=False, as_string=True)
+    pv_id = caget(ioc_bss.pvs['esaf_id'], use_monitor=False, as_string=True)
     assert pv_id != "269238"
     assert display._esaf_id == "269238"
     # Now update the ESAF details
     with qtbot.waitSignal(display.esaf_changed):
         qtbot.mouseClick(display.ui.update_esaf_button, Qt.LeftButton)
-    pv_id = caget("99id:bss:esaf:id", use_monitor=False, as_string=True)
+    pv_id = caget(ioc_bss.pvs['esaf_id'], use_monitor=False, as_string=True)
     assert pv_id == "269238"
-    bss_api.epicsUpdate.assert_called_once_with("99id:bss:")
+    bss_api.epicsUpdate.assert_called_once_with(ioc_bss.prefix)
 
 
 def test_bss_esafs(ffapp, bss_api):

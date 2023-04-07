@@ -1,14 +1,11 @@
 #!/usr/bin/env python3
+from caproto import ChannelType
+from caproto.server import PVGroup, SubGroup, ioc_arg_parser, pvproperty, run
 
-from caproto.server import (
-    pvproperty,
-    run,
-)
-
-from haven.simulated_ioc import ResponsiveMotorFields, IOC as IOC_
+from haven.simulated_ioc import ResponsiveMotorFields
 
 
-class IOC(IOC_):
+class MotorGroup(PVGroup):
     """
     An IOC with some motor records, similar to those found in a VME crate.
 
@@ -21,9 +18,10 @@ class IOC(IOC_):
     m3 = pvproperty(value=5000.0, doc="SLT H Inb", record=ResponsiveMotorFields)
     m4 = pvproperty(value=5000.0, doc="SLT H Otb", record=ResponsiveMotorFields)
 
-    default_prefix = "vme_crate_ioc:"
-
 
 if __name__ == "__main__":
-    pvdb, run_options = IOC.parse_args()
-    run(pvdb, **run_options)
+    ioc_options, run_options = ioc_arg_parser(
+        default_prefix="225idVME:", desc="haven.tests.ioc_motor test IOC"
+    )
+    ioc = MotorGroup(**ioc_options)
+    run(ioc.pvdb, **run_options)

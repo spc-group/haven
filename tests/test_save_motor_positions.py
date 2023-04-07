@@ -7,8 +7,8 @@ from datetime import datetime
 
 import epics
 import pytest
-from ophyd.sim import motor1, SynAxis
-from ophyd import EpicsMotor
+from ophyd.sim import motor1, SynAxis, make_fake_device
+from ophyd import EpicsMotor, Signal, Component as Cpt
 from haven import (
     save_motor_position,
     registry,
@@ -25,41 +25,35 @@ fake_time = pytz.timezone("America/New_York").localize(
 
 IOC_timeout = 40  # Wait up to this many seconds for the IOC to be ready
 
+motor_prefix = "255idVME:"
+
+class FakeHavenMotor(SynAxis):
+    user_offset = Cpt(Signal, value=0, kind="config")
+
 
 @pytest.fixture
 def sim_motor_registry(sim_registry):
     # Create the motors
-    pv = "vme_crate_ioc:m1"
-    motor1 = EpicsMotor(pv, name="SLT V Upper")
+    motor1 = FakeHavenMotor(name="SLT V Upper")
     sim_registry.register(motor1)
-    motor2 = EpicsMotor(pv, name="SLT V Lower")
+    motor2 = FakeHavenMotor(name="SLT V Lower")
     sim_registry.register(motor2)
     yield sim_registry
 
 
-@time_machine.travel(fake_time, tick=False)
-def test_save_motor_position_by_device(mongodb, ioc_motor):
+@time_machine.travel(fake_time, tick=True)
+def test_save_motor_position_by_device(mongodb):
     # Check that no entry exists before saving it
     result = mongodb.motor_positions.find_one({"name": motor1.name})
     assert result is None
     # Create motor devices
-    motorA = HavenMotor("vme_crate_ioc:m1", name="Motor A")
-    motorB = HavenMotor("vme_crate_ioc:m2", name="Motor B")
-    motorA.wait_for_connection(timeout=20)
-    motorB.wait_for_connection(timeout=20)
-    # Get the values to give the IOC a chance to spin up
-    assert (
-        epics.caget("vme_crate_ioc:m1.VAL", use_monitor=False, timeout=IOC_timeout)
-        is not None
-    )
-    assert (
-        epics.caget("vme_crate_ioc:m2.VAL", use_monitor=False, timeout=IOC_timeout)
-        is not None
-    )
+    motorA = SynAxis(name="Motor A")
+    motorB = SynAxis(name="Motor B")
+    motorA.wait_for_connection()
+    motorB.wait_for_connection()
     # Move to some other motor position so we can tell it saved the right one
-    motorA.set(11.0)
-    motorB.set(23.0)
-    time.sleep(0.1)
+    motorA.set(11.0).wait(timeout=10)
+    motorB.set(23.0).wait(timeout=10)
     # Save the current motor position
     save_motor_position(
         motorA, motorB, name="Sample center", collection=mongodb.motor_positions
@@ -73,36 +67,27 @@ def test_save_motor_position_by_device(mongodb, ioc_motor):
     assert result_A["name"] == motorA.name
     assert result_A["readback"] == 11.0
     assert result_B["readback"] == 23.0
-    # Check that the metadata saved
-    assert result["savetime"] == time.time()
+    # Check that the timestamp was saved (accurate to within a second)
+    assert result["savetime"] == pytest.approx(time.time(), abs=1)
 
 
-@time_machine.travel(fake_time, tick=False)
-def test_save_motor_position_by_name(mongodb, ioc_motor):
+@time_machine.travel(fake_time, tick=True)
+def test_save_motor_position_by_name(mongodb, sim_registry):
     # Check that no entry exists before saving it
     result = mongodb.motor_positions.find_one({"name": motor1.name})
     assert result is None
     # Get our simulated motors into the device registry
-    motorA = HavenMotor("vme_crate_ioc:m1", name="Motor A")
-    motorB = HavenMotor("vme_crate_ioc:m2", name="Motor B")
+    motorA = FakeHavenMotor(name="Motor A")
+    motorB = FakeHavenMotor(name="Motor B")
     motorA.wait_for_connection(timeout=20)
     motorB.wait_for_connection(timeout=20)
-    # Get the values to give the IOC a chance to spin up
-    assert (
-        epics.caget("vme_crate_ioc:m1.VAL", use_monitor=False, timeout=IOC_timeout)
-        is not None
-    )
-    assert (
-        epics.caget("vme_crate_ioc:m2.VAL", use_monitor=False, timeout=IOC_timeout)
-        is not None
-    )
     # Register the new motors with the Haven instrument registry
-    registry.register(motorA)
-    registry.register(motorB)
+    sim_registry.register(motorA)
+    sim_registry.register(motorB)
     # Move to some other motor position so we can tell it saved the right one
-    motorA.set(11.0)
-    motorA.user_offset.set(1.5)
-    motorB.set(23.0)
+    motorA.set(11.0).wait()
+    motorA.user_offset.set(1.5).wait()
+    motorB.set(23.0).wait()
     time.sleep(0.1)
     # Save the current motor position
     save_motor_position(
@@ -119,7 +104,7 @@ def test_save_motor_position_by_name(mongodb, ioc_motor):
     assert result_B["readback"] == 23.0
     assert result_A["offset"] == 1.5
     # Check that the metadata saved
-    assert result["savetime"] == time.time()
+    assert result["savetime"] == pytest.approx(time.time(), abs=1)
 
 
 def test_get_motor_position_by_uid(mongodb):
@@ -159,7 +144,7 @@ def test_recall_motor_position(mongodb, sim_motor_registry):
     assert msg1.args[0] == -211.93
 
 
-@time_machine.travel(fake_time, tick=False)
+@time_machine.travel(fake_time, tick=True)
 def test_list_motor_positions(mongodb, capsys):
     # Do the listing
     list_motor_positions(collection=mongodb.motor_positions)
@@ -167,8 +152,9 @@ def test_list_motor_positions(mongodb, capsys):
     captured = capsys.readouterr()
     assert len(captured.out) > 0
     uid = str(mongodb.motor_positions.find_one({"name": "Good position A"})["_id"])
+    timestamp = "2022-08-19 18:10:51"
     expected = (
-        f'\n\033[1mGood position A\033[0m (uid="{uid}", timestamp={datetime.fromtimestamp(time.time())})\n'
+        f'\n\033[1mGood position A\033[0m (uid="{uid}", timestamp={timestamp})\n'
         "┣━SLT V Upper: 510.5, offset: 0.0\n"
         "┗━SLT V Lower: -211.93, offset: None\n"
     )
@@ -181,9 +167,9 @@ def test_motor_position_e2e(mongodb, ioc_motor):
 
     """
     # Create an epics motor for setting values manually
-    pv = "vme_crate_ioc:m1"
+    pv = ioc_motor.pvs["m1"]
     motor1 = EpicsMotor(pv, name="SLT V Upper")
-    motor1.wait_for_connection()
+    motor1.wait_for_connection(timeout=20)
     assert motor1.connected
     registry.register(motor1)
     registry.find(name="SLT V Upper")
@@ -209,35 +195,26 @@ def test_motor_position_e2e(mongodb, ioc_motor):
     assert msg.args[0] == 504.6
 
 
-@time_machine.travel(fake_time, tick=False)
-def test_list_current_motor_positions(mongodb, capsys, ioc_motor):
+@time_machine.travel(fake_time, tick=True)
+def test_list_current_motor_positions(mongodb, capsys):
     # Get our simulated motors into the device registry
     with capsys.disabled():
-        motorA = HavenMotor("vme_crate_ioc:m1", name="Motor A")
-        motorB = HavenMotor("vme_crate_ioc:m2", name="Motor B")
+        motorA = FakeHavenMotor(name="Motor A")
+        motorB = FakeHavenMotor(name="Motor B")
         motorA.wait_for_connection()
         motorB.wait_for_connection()
-        # Get the values to give the IOC a chance to spin up
-        assert (
-            epics.caget("vme_crate_ioc:m1.VAL", use_monitor=False, timeout=IOC_timeout)
-            is not None
-        )
-        assert (
-            epics.caget("vme_crate_ioc:m2.VAL", use_monitor=False, timeout=IOC_timeout)
-            is not None
-        )
         # Move to some other motor position so we can tell it saved the right one
         motorA.set(11.0)
         motorA.user_offset.set(1.5)
         motorB.set(23.0)
-        time.sleep(0.1)
     # List the current motor position
     list_current_motor_positions(motorA, motorB, name="Current motor positions")
     # Check stdout for printed motor positions
     captured = capsys.readouterr()
     assert len(captured.out) > 0
+    timestamp = "2022-08-19 18:10:51"
     expected = (
-        f"\n\033[1mCurrent motor positions\033[0m (timestamp={datetime.fromtimestamp(time.time())})\n"
+        f"\n\033[1mCurrent motor positions\033[0m (timestamp={timestamp})\n"
         "┣━Motor A: 11.0, offset: 1.5\n"
         "┗━Motor B: 23.0, offset: 0.0\n"
     )

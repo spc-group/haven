@@ -16,16 +16,16 @@ xray_source = "insertion device"
 
 [bss]
 
-prefix = "99id:bss"
-beamline = "99-ID-C"
+prefix = "255idc:bss"
+beamline = "255-ID-C"
 
 [xray_source]
 
 type = "undulator"
-prefix = "ID100ds:"
+prefix = "ID255:"
 
 [queueserver]
-kafka_topic = "s100idc_queueserver"
+kafka_topic = "s255idc_queueserver"
 control_host = "localhost"
 control_port = "60615"
 info_host = "localhost"
@@ -93,7 +93,7 @@ num_elements = 4
 # with PVs: "vme_crate_ioc:m1", "vme_crate_ioc:m2", and
 # "vme_crate_ioc:m3".
 [motor.VME_crate]
-prefix = "vme_crate_ioc"
+prefix = "255idVME"
 num_motors = 3
 
 # Cameras
