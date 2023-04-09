@@ -324,7 +324,7 @@ class FireflyApplication(PyDMApplication):
             FireflyMainWindow,
             ui_dir / "camera_viewer.py",
             name=f"FireflyMainWindow_camera_{camera_name}",
-            macros={"PREFIX": camera.prefix, "DESC": camera.description},
+            macros={"CAMERA": camera.name},
         )
 
     def show_status_window(self, stylesheet_path=None):

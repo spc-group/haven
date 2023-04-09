@@ -24,7 +24,11 @@ class CameraViewerDisplay(display.FireflyDisplay):
     image_is_new: bool = True
 
     def customize_device(self):
-        addr = f"pva://{self.macros()['PREFIX']}Pva1:Image"
+        device_name = name=self.macros()["CAMERA"]
+        camera = haven.registry.find(device_name)
+        self.camera = camera
+        img_pv = camera.pva.pv_name.get(as_string=True)
+        addr = f"pva://{img_pv}"
         self.image_channel = pydm.PyDMChannel(
             address=addr, value_slot=self.update_image
         )
@@ -59,9 +63,7 @@ class CameraViewerDisplay(display.FireflyDisplay):
 
     def launch_caqtdm(self):
         # Determine for which IOC to launch caQtDM panels
-        prefix = self.macros()["PREFIX"]
-        prefix = prefix.strip(":")  # Remove trailing ':'s
-        cmd = f"start_{prefix}_caqtdm"
+        cmd = f"start_{self.camera.prefix}_caqtdm"
         # Launch caQtDM for the given IOC
         log.info(f"Launching caQtDM: {cmd}")
-        self.caqtdm_process = subprocess.Popen(cmd)
+        self._open_caqtdm_subprocess(cmd)

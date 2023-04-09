@@ -2,7 +2,12 @@ import logging
 import warnings
 from typing import Optional, Sequence
 
-from ophyd.areadetector.cam import CamBase
+from ophyd import CamBase, DetectorBase, SingleTrigger, Kind, ADComponent
+from ophyd.areadetector.plugins import (
+    ImagePlugin_V34,
+    PvaPlugin_V34,
+)
+
 
 from .instrument_registry import registry
 from .._iconfig import load_config
@@ -14,28 +19,14 @@ log = logging.getLogger(__name__)
 __all__ = ["Camera", "load_cameras"]
 
 
-class Camera(CamBase):
-    """One of the beamline's GigE Vision cameras.
-
-    Parameters
-    ==========
-    prefix:
-      The process variable prefix for the camera.
-    name:
-      The bluesky-compatible device name.
-    description:
-      The human-readable description of this device. If omitted,
-      *name* will be used.
-
+class Camera(SingleTrigger, DetectorBase):
+    """
+    A gige-vision camera described by EPICS.
     """
 
-    def __init__(
-        self, prefix: str, name: str, description: Optional[str] = None, *args, **kwargs
-    ):
-        if description is None:
-            description = name
-        self.description = description
-        super().__init__(prefix, name=name, *args, **kwargs)
+    cam = ADComponent(CamBase, "cam1:")
+    image = ADComponent(ImagePlugin_V34, "image1:")
+    pva = ADComponent(PvaPlugin_V34, "Pva1:")
 
 
 def load_cameras(config=None) -> Sequence[Camera]:
@@ -57,8 +48,7 @@ def load_cameras(config=None) -> Sequence[Camera]:
         cam = Camera(
             prefix=f"{device['ioc']}:",
             name=device["name"],
-            description=device["description"],
-            labels={"cameras"},
+            labels={"cameras", "area_detectors"},
         )
         registry.register(cam)
         cameras.append(cam)

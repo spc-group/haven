@@ -20,6 +20,7 @@ from haven.simulated_ioc import simulated_ioc
 from haven import registry, load_config
 from haven.instrument.aps import ApsMachine
 from haven.instrument.shutter import Shutter
+from haven.instrument.camera import Camera
 from firefly.application import FireflyApplication
 from firefly.ophyd_plugin import OphydPlugin
 
@@ -60,11 +61,6 @@ def sim_registry():
     registry.components = components
 
 
-# @pytest.fixture(scope="session")
-# def ioc_undulator():
-#     with simulated_ioc(fp=ioc_dir / "undulator.py") as pvdb:
-#         yield pvdb
-
 @pytest.fixture(scope=IOC_SCOPE)
 def ioc_undulator(request):
     prefix = "255ID:"
@@ -77,11 +73,19 @@ def ioc_undulator(request):
                         request=request)
 
 
+@pytest.fixture(scope=IOC_SCOPE)
+def ioc_camera(request):
+    prefix = "255idgigeA:"
+    pvs = dict(cam_acquire=f"{prefix}cam1:Acquire",
+               cam_acquire_busy=f"{prefix}cam1:AcquireBusy",
+    )
+    return run_fake_ioc(module_name="haven.tests.ioc_area_detector",
+                        name="Fake IOC for a simulated machine vision camera",
+                        prefix=prefix,
+                        pvs = pvs,
+                        pv_to_check=pvs["cam_acquire_busy"],
+                        request=request)
 
-# @pytest.fixture(scope="session")
-# def ioc_mono():
-#     with simulated_ioc(fp=ioc_dir / "mono.py") as pvdb:
-#         yield pvdb
 
 @pytest.fixture(scope=IOC_SCOPE)
 def ioc_area_detector(request):
@@ -97,18 +101,6 @@ def ioc_area_detector(request):
                         request=request)
 
 
-
-# @pytest.fixture(scope="session")
-# def ioc_area_detector():
-#     with simulated_ioc(fp=ioc_dir / "area_detector.py") as pvdb:
-#         yield pvdb
-
-
-# @pytest.fixture(scope="session")
-# def ioc_bss():
-#     with simulated_ioc(fp=ioc_dir / "apsbss_.py") as pvdb:
-#         yield pvdb
-
 @pytest.fixture(scope=IOC_SCOPE)
 def ioc_bss(request):
     prefix = "255idc:bss:"
@@ -122,13 +114,6 @@ def ioc_bss(request):
                         pvs = pvs,
                         pv_to_check=pvs["esaf_cycle"],
                         request=request)
-
-
-
-# @pytest.fixture(scope="session")
-# def ioc_scaler():
-#     with simulated_ioc(fp=ioc_dir / "scaler.py") as pvdb:
-#         yield pvdb
 
 
 def run_fake_ioc(module_name, prefix: str, request, name="Fake IOC", pvs=None, pv_to_check: str=None):
@@ -181,12 +166,6 @@ def ioc_ptc10(request):
                         request=request)
 
 
-# @pytest.fixture(scope="session")
-# def ioc_ptc10():
-#     with simulated_ioc(fp=ioc_dir / "ptc10.py") as pvdb:
-#         yield pvdb
-
-
 @pytest.fixture(scope="session")
 def pydm_ophyd_plugin():
     return add_plugin(OphydPlugin)
@@ -221,11 +200,6 @@ def ioc_motor(request):
                         pv_to_check=pvs["m1"],
                         request=request)
 
-# @pytest.fixture(scope="session")
-# def ioc_motor():
-#     with simulated_ioc(fp=ioc_dir / "motor.py") as pvdb:
-#         yield pvdb
-
 
 @pytest.fixture(scope=IOC_SCOPE)
 def ioc_preamp(request):
@@ -254,18 +228,6 @@ def ioc_preamp(request):
                         pvs = pvs,
                         pv_to_check=pvs["preamp1_sens_num"],
                         request=request)
-
-
-# @pytest.fixture(scope="session")
-# def ioc_preamp():
-#     with simulated_ioc(fp=ioc_dir / "preamp.py") as pvdb:
-#         yield pvdb
-
-
-# @pytest.fixture(scope="session")
-# def ioc_simple():
-#     with simulated_ioc(fp=ioc_dir / "simple.py") as pvdb:
-#         yield pvdb
 
 
 @pytest.fixture(scope=IOC_SCOPE)
@@ -298,12 +260,6 @@ def ioc_mono(request):
                         pvs = pvs,
                         pv_to_check=pvs["energy"],
                         request=request)
-
-
-# @pytest.fixture(scope="session")
-# def ioc_mono():
-#     with simulated_ioc(fp=ioc_dir / "mono.py") as pvdb:
-#         yield pvdb
 
 
 @pytest.fixture()
@@ -339,3 +295,14 @@ def sim_shutters(sim_registry):
     for shutter in shutters:
         sim_registry.register(shutter)
     yield shutters
+
+
+@pytest.fixture()
+def sim_camera(sim_registry):
+    FakeCamera = make_fake_device(Camera)
+    camera = FakeCamera(name="s255id-gige-A", labels={"cameras", "area_detectors"})
+    camera.pva.pv_name._readback = "255idSimDet:Pva1:Image"
+    # Registry with the simulated registry
+    sim_registry.register(camera)
+    yield camera
+    

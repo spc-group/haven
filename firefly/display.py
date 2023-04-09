@@ -15,6 +15,12 @@ class FireflyDisplay(Display):
         self.customize_device()
         self.customize_ui()
 
+    def _open_caqtdm_subprocess(self, cmds, *args, **kwargs):
+        """Launch a new subprocess and save it to self._caqtdm_process."""
+        # Try to leave this as just a simple call to Popen.
+        # It helps simplify testing
+        self._caqtdm_process = subprocess.Popen(cmds, *args, **kwargs)
+
     def launch_caqtdm(self, macros={}, ui_file: str = None):
         """Launch a caQtDM window showing the window's panel."""
         if ui_file is None:
@@ -22,7 +28,7 @@ class FireflyDisplay(Display):
         cmds = self.caqtdm_command.split()
         macro_str = ",".join(f"{key}={val}" for key, val in macros.items())
         cmds = [*cmds, "-macro", macro_str, ui_file]
-        subprocess.Popen(cmds)
+        self.open_caqtdm_subprocess(cmds)
 
     def customize_device(self):
         pass

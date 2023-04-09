@@ -3,7 +3,7 @@
 
 name = "s25id-gige-A"
 description = "GigE Vision A"
-ioc = "camA_ioc"
+ioc = "255idgigeA"
 
 [stage.Aerotech]
 
