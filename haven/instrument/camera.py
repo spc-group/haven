@@ -2,12 +2,15 @@ import logging
 import warnings
 from typing import Optional, Sequence
 
-from ophyd import CamBase, DetectorBase, SingleTrigger, Kind, ADComponent as ADCpt, EpicsSignal
-from ophyd.areadetector.plugins import (
-    ImagePlugin_V34,
-    PvaPlugin_V34,
-    OverlayPlugin
+from ophyd import (
+    CamBase,
+    DetectorBase,
+    SingleTrigger,
+    Kind,
+    ADComponent as ADCpt,
+    EpicsSignal,
 )
+from ophyd.areadetector.plugins import ImagePlugin_V34, PvaPlugin_V34, OverlayPlugin
 
 
 from .instrument_registry import registry

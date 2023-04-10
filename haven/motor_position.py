@@ -139,7 +139,9 @@ def print_motor_position(position):
     if position.uid is not None:
         metadata.append(f'uid="{position.uid}"')
     if position.savetime is not None:
-        timestamp = datetime.fromtimestamp(position.savetime).strftime("%Y-%m-%d %H:%M:%S")
+        timestamp = datetime.fromtimestamp(position.savetime).strftime(
+            "%Y-%m-%d %H:%M:%S"
+        )
         ts_str = f"timestamp={timestamp}"
         metadata.append(ts_str)
     if len(metadata) > 0:

@@ -7,7 +7,7 @@ from haven.instrument.camera import Camera, load_cameras
 def test_load_cameras(ioc_camera):
     load_cameras(config=load_config())
     # Check that cameras were registered
-    cameras = registry.findall(label="cameras")
+    cameras = list(registry.findall(label="cameras"))
     assert len(cameras) == 1
     assert isinstance(cameras[0], DetectorBase)
 

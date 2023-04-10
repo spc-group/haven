@@ -4,7 +4,7 @@ from haven import registry
 
 def test_shutter():
     load_shutters()
-    shutters = registry.findall(label="shutters")
+    shutters = list(registry.findall(label="shutters"))
     assert len(shutters) == 2
     shutterA = registry.find(name="front_end_shutter")
     assert shutterA.name == "front_end_shutter"

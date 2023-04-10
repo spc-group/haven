@@ -200,7 +200,7 @@ def test_bss_esaf_updating(qtbot, ffapp, bss_api, ioc_bss):
     window = FireflyMainWindow()
     display = BssDisplay(api=bss_api)
     # Set some base-line values on the IOC
-    caput(ioc_bss.pvs['esaf_id'], "")
+    caput(ioc_bss.pvs["esaf_id"], "")
     # Change the ESAF item
     selection_model = display.ui.esaf_view.selectionModel()
     item = display.esaf_model.item(0, 1)
@@ -210,13 +210,13 @@ def test_bss_esaf_updating(qtbot, ffapp, bss_api, ioc_bss):
     with qtbot.waitSignal(display.esaf_selected):
         qtbot.mouseClick(display.esaf_view.viewport(), Qt.LeftButton, pos=rect.center())
     assert display.ui.update_esaf_button.isEnabled()
-    pv_id = caget(ioc_bss.pvs['esaf_id'], use_monitor=False, as_string=True)
+    pv_id = caget(ioc_bss.pvs["esaf_id"], use_monitor=False, as_string=True)
     assert pv_id != "269238"
     assert display._esaf_id == "269238"
     # Now update the ESAF details
     with qtbot.waitSignal(display.esaf_changed):
         qtbot.mouseClick(display.ui.update_esaf_button, Qt.LeftButton)
-    pv_id = caget(ioc_bss.pvs['esaf_id'], use_monitor=False, as_string=True)
+    pv_id = caget(ioc_bss.pvs["esaf_id"], use_monitor=False, as_string=True)
     assert pv_id == "269238"
     bss_api.epicsUpdate.assert_called_once_with(ioc_bss.prefix)
 

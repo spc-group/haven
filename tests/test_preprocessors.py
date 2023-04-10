@@ -1,7 +1,8 @@
 from unittest.mock import MagicMock
 from bluesky import plans as bp
 from bluesky.callbacks import CallbackBase
-from ophyd.sim import det, motor, SynAxis
+from bluesky.simulators import summarize_plan
+from ophyd.sim import det, motor, SynAxis, make_fake_device, instantiate_fake_device
 import os
 
 from haven import plans, baseline_decorator, baseline_wrapper, run_engine
@@ -38,8 +39,7 @@ def test_shutter_suspend_wrapper(sim_aps, sim_shutters, sim_registry):
     assert len(unsub_msgs) == 2
 
 
-def test_baseline_wrapper(sim_registry, ioc_bss):
-    load_aps()
+def test_baseline_wrapper(sim_registry, sim_aps):
     # Create a test device
     motor_baseline = SynAxis(name="baseline_motor", labels={"motors", "baseline"})
     sim_registry.register(motor_baseline)
@@ -62,12 +62,8 @@ def test_baseline_wrapper(sim_registry, ioc_bss):
     assert "baseline_motor" in baseline_doc["data_keys"].keys()
 
 
-def test_baseline_decorator(sim_registry, ioc_bss):
+def test_baseline_decorator(sim_registry, sim_aps):
     """Similar to baseline wrapper test, but used as a decorator."""
-    load_aps()
-    # from epics import caget
-    # assert caget("255idc:bss:esaf:user3:email") is not None
-    sim_registry.find("bss").wait_for_connection()
     # Create the decorated function before anything else
     func = baseline_decorator(devices="motors")(bp.count)
     # Create a test device
@@ -91,19 +87,23 @@ def test_baseline_decorator(sim_registry, ioc_bss):
     assert "baseline_motor" in baseline_doc["data_keys"].keys()
 
 
-def test_metadata(sim_registry, ioc_bss, monkeypatch):
+def test_metadata(sim_registry, sim_aps, monkeypatch):
     """Similar to baseline wrapper test, but used as a decorator."""
     # Load devices
-    load_aps()
-    bss = EpicsBssDevice(prefix=ioc_bss.prefix, name="bss")
-    bss.wait_for_connection()
-    statuses = [
-        bss.esaf.esaf_id.set("12345"),
-        bss.proposal.proposal_id.set("25873"),
-    ]
-    for status in statuses:
-        status.wait()
-    bss.wait_for_connection(all_signals=True)
+    bss = instantiate_fake_device(EpicsBssDevice, name="bss", prefix="255id:bss:")
+    bss.esaf.esaf_id._readback = "12345"
+    bss.esaf.title._readback = "Testing the wetness of water."
+    bss.esaf.user_last_names._readback = "Bose, Einstein"
+    bss.esaf.user_badges._readback = "287341, 339203, 59208"
+    bss.proposal.proposal_id._readback = "25873"
+    bss.proposal.title._readback = "Making the world a more interesting place."
+    bss.proposal.user_last_names._readback = "Franklin, Watson, Crick"
+    bss.proposal.user_badges._readback = "287341, 203884, 59208"
+    bss.proposal.mail_in_flag._readback = "1"
+    bss.proposal.proprietary_flag._readback = "0"
+    bss.esaf.aps_cycle._readback = "2023-2"
+    bss.proposal.beamline_name._readback = "255ID-C"
+    # bss = FakeBss(name="bss")
     sim_registry.register(bss)
     monkeypatch.setenv("EPICS_HOST_ARCH", "PDP11")
     monkeypatch.setenv("EPICS_CA_MAX_ARRAY_BYTES", "16")
@@ -187,7 +187,7 @@ def test_metadata(sim_registry, ioc_bss, monkeypatch):
         "proprietary_flag": "0",
         "sample_name": "",
         "bss_aps_cycle": "2023-2",
-        "bss_beamline_name": "99ID-C",
+        "bss_beamline_name": "255ID-C",
     }
     for key, val in expected_data.items():
         assert start_doc[key] == val, f"{key}: {start_doc[key]}"
@@ -210,7 +210,7 @@ def test_metadata(sim_registry, ioc_bss, monkeypatch):
 #   bluesky: 1.10.0
 #   databroker: 1.2.5
 #   epics_ca: 3.5.0
-#   epics: 3.5.0
+#   Epics: 3.5.0
 #   h5py: 3.7.0
 #   matplotlib: 3.6.1
 #   numpy: 1.23.3

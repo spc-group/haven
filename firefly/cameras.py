@@ -31,7 +31,11 @@ class CamerasDisplay(display.FireflyDisplay):
             cameras = []
         for camera in sorted(cameras, key=lambda c: c.name):
             disp = PyDMEmbeddedDisplay(parent=self)
-            disp.macros = json.dumps({"CAMERA": camera.name,})
+            disp.macros = json.dumps(
+                {
+                    "CAMERA": camera.name,
+                }
+            )
             disp.filename = "camera.py"
             # Add the Embedded Display to the Results Layout
             self.cameras_layout.addWidget(disp)

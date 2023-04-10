@@ -41,6 +41,6 @@ def test_open_motor_window(sim_registry, ioc_motor, ffapp):
     motor_1_name = "FireflyMainWindow_motor_SLT_H_Inb"
     assert motor_1_name in ffapp.windows.keys()
     macros = ffapp.windows[motor_1_name].display_widget().macros()
-    assert macros['MOTOR'] == motor_name
+    assert macros["MOTOR"] == motor_name
     # Clean up
     window.close()

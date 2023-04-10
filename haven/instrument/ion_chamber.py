@@ -149,9 +149,7 @@ class IonChamber(ScalerTriggered, Device):
     count: OphydObject = FCpt(
         EpicsSignal, "{scaler_prefix}.CNT", trigger_value=1, kind=Kind.omitted
     )
-    description: OphydObject = FCpt(
-        EpicsSignalRO, "{prefix}.NM{ch_num}"
-    )
+    description: OphydObject = FCpt(EpicsSignalRO, "{prefix}.NM{ch_num}")
     raw_counts: OphydObject = FCpt(ScalerSignalRO, "{prefix}.S{ch_num}", kind="hinted")
     offset: OphydObject = FCpt(
         ScalerSignalRO, "{prefix}_{offset_suffix}", kind=Kind.config
@@ -287,7 +285,7 @@ def load_ion_chambers(config=None):
         if name == "":
             log.info(f"Skipping unnamed ion chamber: {desc_pv}")
             continue
-        if  name is None:
+        if name is None:
             name = "???"
         # Create the ion chamber
         ic = IonChamber(

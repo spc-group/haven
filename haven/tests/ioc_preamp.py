@@ -1,9 +1,17 @@
 #!/usr/bin/env python3
 from caproto import ChannelType
-from caproto.server import PVGroup, SubGroup, ioc_arg_parser, pvproperty, run, PvpropertyString, PvpropertyInteger
+from caproto.server import (
+    PVGroup,
+    SubGroup,
+    ioc_arg_parser,
+    pvproperty,
+    run,
+    PvpropertyString,
+    PvpropertyInteger,
+)
 from ophyd.tests.fake_motor_ioc import FakeMotorIOC
 
-from haven.simulated_ioc import ResponsiveMotorFields# , IOC as IOC_
+from haven.simulated_ioc import ResponsiveMotorFields  # , IOC as IOC_
 
 
 class PreampsGroup(PVGroup):

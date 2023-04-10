@@ -33,14 +33,21 @@ class VoltmeterDisplay(display.FireflyDisplay):
       (default).
 
     """
+
     _device: IonChamber = None
     gain_values = [1, 2, 5, 10, 20, 50, 100, 200, 500]
     gain_units = ["pA/V", "nA/V", "µA/V", "mA/V"]
-    gain = float('nan')
+    gain = float("nan")
     gain_unit = "A"
     last_voltage = 0
 
-    def __init__(self, device: IonChamber = None, args: Optional[Sequence]=None, macros: Mapping={}, **kwargs):
+    def __init__(
+        self,
+        device: IonChamber = None,
+        args: Optional[Sequence] = None,
+        macros: Mapping = {},
+        **kwargs,
+    ):
         self._device = device
         super().__init__(macros=macros, args=args, **kwargs)
 
@@ -55,8 +62,12 @@ class VoltmeterDisplay(display.FireflyDisplay):
             else:
                 log.debug(f"Voltmeter found device: {self._device}")
         # Setup a pydm channel to monitor the gain on the pre-amplifier
-        self._ch_gain_value = PyDMChannel(self.ui.sens_num_label.channel, value_slot=self.update_gain)
-        self._ch_gain_unit = PyDMChannel(self.ui.sens_unit_label.channel, value_slot=self.update_gain_unit)
+        self._ch_gain_value = PyDMChannel(
+            self.ui.sens_num_label.channel, value_slot=self.update_gain
+        )
+        self._ch_gain_unit = PyDMChannel(
+            self.ui.sens_unit_label.channel, value_slot=self.update_gain_unit
+        )
         self._ch_voltage = PyDMChannel(
             self.ui.ion_chamber_label.channel, value_slot=self.update_current
         )

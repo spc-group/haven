@@ -21,9 +21,7 @@ def test_open_camera_viewer_actions(ffapp, qtbot, sim_camera):
 
 def test_image_plotting(ffapp, qtbot, sim_camera):
     FireflyMainWindow()
-    display = CameraViewerDisplay(
-        macros={"CAMERA": sim_camera.name}
-    )
+    display = CameraViewerDisplay(macros={"CAMERA": sim_camera.name})
     assert isinstance(display.image_view, pyqtgraph.ImageView)
     assert isinstance(display.image_channel, pydm.PyDMChannel)
     # Give it some grayscale data
@@ -49,10 +47,10 @@ def test_image_plotting(ffapp, qtbot, sim_camera):
 
 def test_caqtdm_window(ffapp, sim_camera):
     FireflyMainWindow()
-    display = CameraViewerDisplay(
-        macros={"CAMERA": sim_camera.name}
-    )
+    display = CameraViewerDisplay(macros={"CAMERA": sim_camera.name})
     display._open_caqtdm_subprocess = mock.MagicMock()
     # Launch the caqtdm display
     display.launch_caqtdm()
-    display._open_caqtdm_subprocess.assert_called_once_with(f"start_{sim_camera.prefix}_caqtdm")
+    display._open_caqtdm_subprocess.assert_called_once_with(
+        f"start_{sim_camera.prefix}_caqtdm"
+    )

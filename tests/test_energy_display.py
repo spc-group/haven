@@ -38,7 +38,7 @@ def test_mono_caqtdm_macros(qtbot, ffapp, sim_registry):
     # Check that the various caqtdm calls set up the right macros
     display.launch_mono_caqtdm()
     assert display.launch_caqtdm.called
-    assert display.launch_caqtdm.call_args[1]['macros'] == {
+    assert display.launch_caqtdm.call_args[1]["macros"] == {
         "P": "mono_ioc:",
         "MONO": "UP",
         "BRAGG": "ACS:m3",
@@ -74,7 +74,7 @@ def test_id_caqtdm_macros(qtbot, ffapp, sim_registry):
     # Check that the various caqtdm calls set up the right macros
     display.launch_id_caqtdm()
     assert display.launch_caqtdm.called
-    assert display.launch_caqtdm.call_args[1]['macros'] == {
+    assert display.launch_caqtdm.call_args[1]["macros"] == {
         "ID": "id_ioc",
         "M": 2,
         "D": 2,

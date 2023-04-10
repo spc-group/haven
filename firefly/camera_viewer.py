@@ -24,7 +24,7 @@ class CameraViewerDisplay(display.FireflyDisplay):
     image_is_new: bool = True
 
     def customize_device(self):
-        device_name = name=self.macros()["CAMERA"]
+        device_name = name = self.macros()["CAMERA"]
         camera = haven.registry.find(device_name)
         self.camera = camera
         img_pv = camera.pva.pv_name.get(as_string=True)

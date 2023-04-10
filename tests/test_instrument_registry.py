@@ -59,7 +59,7 @@ def test_find_allow_missing_components():
     """
     reg = InstrumentRegistry()
     # Get some non-existent devices and check that the right nothing is returned
-    assert reg.findall(label="spam", allow_none=True) == []
+    assert list(reg.findall(label="spam", allow_none=True)) == []
     assert reg.find(name="eggs", allow_none=True) is None
 
 

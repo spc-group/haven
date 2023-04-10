@@ -16,6 +16,7 @@ class HavenMotor(EpicsMotor):
 
     Returns to the previous value when being unstaged.
     """
+
     description = Cpt(EpicsSignal, name="description", suffix=".DESC")
     tweak_value = Cpt(EpicsSignal, name="tweak_value", suffix=".TWV")
     tweak_forward = Cpt(EpicsSignal, name="tweak_forward", suffix=".TWF")

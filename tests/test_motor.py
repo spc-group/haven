@@ -16,7 +16,7 @@ def test_load_vme_motors(ioc_motor):
     # Load the Ophyd motor definitions
     motor.load_all_motors()
     # Were the motors imported correctly
-    motors = registry.findall(label="motors")
+    motors = list(registry.findall(label="motors"))
     assert len(motors) == 3
     assert type(motors[0]) is motor.HavenMotor
     motor_names = [m.name for m in motors]

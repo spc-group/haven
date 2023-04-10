@@ -12,4 +12,4 @@ def test_mono_energy_signal(ioc_mono):
     # Change mono energy
     mono.energy.set(5000)
     # Check new value on the IOC
-    assert epics.caget(ioc_mono.pvs['energy'], use_monitor=False) == 5000
+    assert epics.caget(ioc_mono.pvs["energy"], use_monitor=False) == 5000

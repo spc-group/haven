@@ -27,6 +27,7 @@ IOC_timeout = 40  # Wait up to this many seconds for the IOC to be ready
 
 motor_prefix = "255idVME:"
 
+
 class FakeHavenMotor(SynAxis):
     user_offset = Cpt(Signal, value=0, kind="config")
 
@@ -204,9 +205,9 @@ def test_list_current_motor_positions(mongodb, capsys):
         motorA.wait_for_connection()
         motorB.wait_for_connection()
         # Move to some other motor position so we can tell it saved the right one
-        motorA.set(11.0)
-        motorA.user_offset.set(1.5)
-        motorB.set(23.0)
+        motorA.set(11.0).wait()
+        motorA.user_offset.set(1.5).wait()
+        motorB.set(23.0).wait()
     # List the current motor position
     list_current_motor_positions(motorA, motorB, name="Current motor positions")
     # Check stdout for printed motor positions

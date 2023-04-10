@@ -19,14 +19,13 @@ def is_iterable(obj):
     return (not isinstance(obj, str)) and hasattr(obj, "__iter__")
 
 
-def remove_duplicates(items, key=None): 
+def remove_duplicates(items, key=None):
     unique_items = list()
     for item in items:
-        val = item if key is None else key(item) 
+        val = item if key is None else key(item)
         if val not in unique_items:
             yield item
             unique_items.append(val)
-
 
 
 class InstrumentRegistry:
@@ -102,9 +101,9 @@ class InstrumentRegistry:
           ``self.findall()`` method.
 
         """
-        results = list(self.findall(
-            any_of=any_of, label=label, name=name, allow_none=allow_none
-        ))
+        results = list(
+            self.findall(any_of=any_of, label=label, name=name, allow_none=allow_none)
+        )
         if len(results) == 1:
             result = results[0]
         elif len(results) > 1:
@@ -126,12 +125,16 @@ class InstrumentRegistry:
         else:
             # Split off label attributes
             try:
-                label, *attrs = label.split('.')
+                label, *attrs = label.split(".")
             except AttributeError:
                 attrs = []
             try:
                 results.extend(
-                    [cpt for cpt in self.components if label in getattr(cpt, "_ophyd_labels_", [])]
+                    [
+                        cpt
+                        for cpt in self.components
+                        if label in getattr(cpt, "_ophyd_labels_", [])
+                    ]
                 )
             except TypeError:
                 raise exceptions.InvalidComponentLabel(label)
@@ -153,7 +156,7 @@ class InstrumentRegistry:
         else:
             # Split off any dot notation parameters for later filtering
             try:
-                name, *attrs = name.split('.')
+                name, *attrs = name.split(".")
             except AttributeError:
                 attrs = []
             results.extend([cpt for cpt in self.components if cpt.name == name])
@@ -171,22 +174,22 @@ class InstrumentRegistry:
         allow_none: Optional[bool] = False,
     ) -> Sequence[Component]:
         """Find registered device components matching parameters.
-        
+
         Combining search terms works in an *or* fashion. For example,
         ``findall(name="my_device", label="ion_chambers")`` will find
         all devices that have either the name "my_device" or a label
         "ion_chambers".
-        
+
         The *any_of* keyword is a proxy for all the other keywords. For
         example ``findall(any_of="my_device")`` is equivalent to
         ``findall(name="my_device", label="my_device")``.
-        
+
         The name provided to *any_of*, *label*, or *name* can also
         include dot-separated attributes after the device name. For
         example, looking up ``name="eiger_500K.cam.gain"`` will look
         up the device named "eiger_500K" then return the
         Device.cam.gain attribute.
-        
+
         Parameters
         ==========
         any_of
@@ -297,8 +300,6 @@ class InstrumentRegistry:
             for cpt_name, cpt in sub_signals.items():
                 self.register(cpt)
         return component
-
-    
 
 
 registry = InstrumentRegistry()

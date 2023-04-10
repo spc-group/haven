@@ -80,9 +80,7 @@ def test_embedded_display_widgets(qtbot, sim_registry, ffapp):
     # Check that the embedded display widgets have the correct macros
     emb_disp = vms_display._ion_chamber_displays[0]
     disp = emb_disp.open_file(force=True)
-    macros =  disp.macros()
-    assert macros == {
-        "IC": "I0"
-    }
+    macros = disp.macros()
+    assert macros == {"IC": "I0"}
     # Check that a device has been created properly
     assert type(disp._device) is haven.IonChamber

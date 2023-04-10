@@ -1,6 +1,13 @@
 #!/usr/bin/env python3
 from caproto import ChannelType
-from caproto.server import PVGroup, SubGroup, ioc_arg_parser, pvproperty, run, PvpropertyInteger
+from caproto.server import (
+    PVGroup,
+    SubGroup,
+    ioc_arg_parser,
+    pvproperty,
+    run,
+    PvpropertyInteger,
+)
 
 from ophyd.tests.scaler_ioc import EpicsScalerGroup
 
@@ -14,14 +21,9 @@ class AreaDetectorGroup(PVGroup):
     """
 
     class CameraGroup(PVGroup):
-
-        acquire_rbv = pvproperty(
-            value=0, name="Acquire_RBV", dtype=PvpropertyInteger
-        )
+        acquire_rbv = pvproperty(value=0, name="Acquire_RBV", dtype=PvpropertyInteger)
         acquire = pvproperty(value=0, name="Acquire", dtype=PvpropertyInteger)
-        acquire_busy = pvproperty(
-            value=0, name="AcquireBusy", dtype=PvpropertyInteger
-        )
+        acquire_busy = pvproperty(value=0, name="AcquireBusy", dtype=PvpropertyInteger)
         gain = pvproperty(value=10, name="Gain")
         gain_rbv = pvproperty(value=10, name="Gain_RBV")
 

@@ -6,7 +6,6 @@ from .._iconfig import load_config
 from .instrument_registry import registry
 
 
-
 class Shutter(ApsPssShutterWithStatus):
     open_signal = FCpt(EpicsSignal, "{self.open_pv}")
     close_signal = FCpt(EpicsSignal, "{self.close_pv}")
@@ -31,12 +30,12 @@ class Shutter(ApsPssShutterWithStatus):
 def load_shutters(config=None):
     if config is None:
         config = load_config()
-    prefix = config['shutter']['prefix']
+    prefix = config["shutter"]["prefix"]
     for name, d in config["shutter"].items():
         if name == "prefix":
             continue
         # Calculate suitable PV values
-        hutch = d['hutch']
+        hutch = d["hutch"]
         acronym = "FES" if hutch == "A" else f"S{hutch}S"
         shutter = Shutter(
             prefix=f"{prefix}:{acronym}_OPEN_EPICS.VAL",

@@ -138,9 +138,7 @@ def test_rowland_circle_component(ioc_motor):
     assert result.y.user_readback == pytest.approx(375.0 * um_per_mm)
     assert caget("255idVME:m3") == pytest.approx(216.50635094610968 * um_per_mm)
     assert result.z.user_readback == pytest.approx(216.50635094610968 * um_per_mm)
-    assert caget("255idVME:m4") == pytest.approx(
-        1.5308084989341912e-14 * um_per_mm
-    )
+    assert caget("255idVME:m4") == pytest.approx(1.5308084989341912e-14 * um_per_mm)
     assert result.z1.user_readback == pytest.approx(1.5308084989341912e-14 * um_per_mm)
 
 

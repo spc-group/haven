@@ -7,8 +7,8 @@ from ophyd.tests.scaler_ioc import EpicsScalerGroup
 
 class SpectroscopyScalerGroup(EpicsScalerGroup):
     offset_start = pvproperty(value=0, name="_offset_start.PROC")
-    offset_time = pvproperty(value=5., name="_offset_time.VAL")
-    
+    offset_time = pvproperty(value=5.0, name="_offset_time.VAL")
+
     class CalcsGroup(PVGroup):
         calc1 = pvproperty(value=2.35, name="_calc1.VAL", dtype=float)
         calc2 = pvproperty(value=2.35, name="_calc2.VAL", dtype=float)
@@ -55,7 +55,7 @@ class SpectroscopyScalerGroup(EpicsScalerGroup):
         offset31 = pvproperty(value=500000, name="_offset7.C", dtype=int)
         offset32 = pvproperty(value=500000, name="_offset7.D", dtype=int)
 
-    offsets = SubGroup(OffsetsGroup, prefix="")        
+    offsets = SubGroup(OffsetsGroup, prefix="")
 
     class NetChannelsGroup(PVGroup):
         net1 = pvproperty(value=20000000, name="_netA.A", dtype=int)

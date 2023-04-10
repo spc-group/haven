@@ -88,7 +88,7 @@ def test_mono_ioc(ioc_mono):
 
 def test_undulator_ioc(ioc_undulator):
     val = caget(ioc_undulator.pvs["energy"], use_monitor=False)
-    assert val == 0.
+    assert val == 0.0
 
 
 # def test_mono_undulator_ioc_again(ioc_undulator):
@@ -112,22 +112,34 @@ def test_undulator_ioc(ioc_undulator):
 
 
 def test_bss_ioc(ioc_bss):
-    val = caget(ioc_bss.pvs['esaf_cycle'], as_string=True, use_monitor=False)
+    val = caget(ioc_bss.pvs["esaf_cycle"], as_string=True, use_monitor=False)
     assert val == "2023-2"
 
 
 def test_preamp_ioc(ioc_preamp):
     # Update PVs to recover from other tests
-    caput(ioc_preamp.pvs["preamp1_sens_num"], '5')
+    caput(ioc_preamp.pvs["preamp1_sens_num"], "5")
     caput(ioc_preamp.pvs["preamp1_sens_unit"], "nA/V")
-    caput(ioc_preamp.pvs["preamp4_sens_num"], '5')
+    caput(ioc_preamp.pvs["preamp4_sens_num"], "5")
     caput(ioc_preamp.pvs["preamp4_sens_unit"], "nA/V")
     # Check that the values were set
     assert caget(ioc_preamp.pvs["preamp1_sens_num"], use_monitor=False) == 2
-    assert caget(ioc_preamp.pvs["preamp1_sens_num"], use_monitor=False, as_string=True) == '5'
-    assert caget(ioc_preamp.pvs["preamp4_sens_num"], use_monitor=False, as_string=True) == '5'
-    assert caget(ioc_preamp.pvs["preamp1_sens_unit"], use_monitor=False, as_string=True) == "nA/V"
-    assert caget(ioc_preamp.pvs["preamp4_sens_unit"], use_monitor=False, as_string=True) == "nA/V"
+    assert (
+        caget(ioc_preamp.pvs["preamp1_sens_num"], use_monitor=False, as_string=True)
+        == "5"
+    )
+    assert (
+        caget(ioc_preamp.pvs["preamp4_sens_num"], use_monitor=False, as_string=True)
+        == "5"
+    )
+    assert (
+        caget(ioc_preamp.pvs["preamp1_sens_unit"], use_monitor=False, as_string=True)
+        == "nA/V"
+    )
+    assert (
+        caget(ioc_preamp.pvs["preamp4_sens_unit"], use_monitor=False, as_string=True)
+        == "nA/V"
+    )
 
 
 def test_ptc10_ioc(ioc_ptc10):
