@@ -19,6 +19,16 @@ def is_iterable(obj):
     return (not isinstance(obj, str)) and hasattr(obj, "__iter__")
 
 
+def remove_duplicates(items, key=None): 
+    unique_items = list()
+    for item in items:
+        val = item if key is None else key(item) 
+        if val not in unique_items:
+            yield item
+            unique_items.append(val)
+
+
+
 class InstrumentRegistry:
     """A registry keeps track of devices, signals, etc that have been
     previously registered.
@@ -92,9 +102,9 @@ class InstrumentRegistry:
           ``self.findall()`` method.
 
         """
-        results = self.findall(
+        results = list(self.findall(
             any_of=any_of, label=label, name=name, allow_none=allow_none
-        )
+        ))
         if len(results) == 1:
             result = results[0]
         elif len(results) > 1:
@@ -230,7 +240,7 @@ class InstrumentRegistry:
             raise exceptions.ComponentNotFound(
                 f'Could not find components matching: label="{_label}", name="{_name}"'
             )
-        return list(set(results))
+        return remove_duplicates(results)
 
     def __new__wrapper(self, cls, *args, **kwargs):
         # Create and instantiate the new object
@@ -287,6 +297,8 @@ class InstrumentRegistry:
             for cpt_name, cpt in sub_signals.items():
                 self.register(cpt)
         return component
+
+    
 
 
 registry = InstrumentRegistry()
