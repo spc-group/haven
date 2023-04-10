@@ -22,6 +22,8 @@ class AreaDetectorGroup(PVGroup):
         acquire_busy = pvproperty(
             value=0, name="AcquireBusy", dtype=PvpropertyInteger
         )
+        gain = pvproperty(value=10, name="Gain")
+        gain_rbv = pvproperty(value=10, name="Gain_RBV")
 
     cam = SubGroup(CameraGroup, prefix="cam1:")
 

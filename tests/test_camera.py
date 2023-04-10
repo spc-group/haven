@@ -16,3 +16,12 @@ def test_camera_device(ioc_camera):
     camera = Camera(ioc_camera.prefix, name="camera")
     assert isinstance(camera, DetectorBase)
     assert hasattr(camera, "cam")
+
+
+def test_camera_in_registry(sim_registry, ioc_camera):
+    camera = Camera(ioc_camera.prefix, name="camera")
+    sim_registry.register(camera)
+    # Check that all sub-components are accessible
+    camera = sim_registry.find(camera.name)
+    cam = sim_registry.find(f"{camera.name}_cam")
+    gain = sim_registry.find(f"{camera.name}_cam.gain")

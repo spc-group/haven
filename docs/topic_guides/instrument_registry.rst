@@ -1,8 +1,8 @@
-Instrument Registry for Looking Up Motors
-=========================================
+Instrument Registry for Looking Up Components
+=============================================
 
 The **instrument registry** in Haven provides a way to keep track of
-the devices (including components, motors, signal, etc.) that have
+the devices (including components, motors, signals, etc.) that have
 been defined across the package. In order for the registry to know of
 a device, that device must first be registered. Unless you are
 defining your own devices or components, this will have already been
@@ -10,6 +10,9 @@ done.
 
 It is a goal of this project that **executing simple scans will not
 require you to know about or interact directly with the registry.**
+However, more advanced scans, like using area detectors from the
+command line, may require you to look up devices in the registry prior
+to building the scan.
 
 This documentation is provided primarily for developers who are
 planning to register their own devices and components.
@@ -17,37 +20,66 @@ planning to register their own devices and components.
 Looking Up Registered Devices/Components
 ----------------------------------------
 
-In most cases, Haven will look up devices behind the scenes when
+In many cases, Haven will look up devices behind the scenes when
 executing a plan. However, it is possible to look up devices directly
 using the registry.
 
-The registry uses the built-in concept of device labels in
-Bluesky. The registry's
+The registry uses the built-in concept of device labels in Ophyd. The
+registry's
 :py:meth:`~haven.instrument.instrument_registry.InstrumentRegistry.find()`
-method allows devices to be looked up by label. For example, assuming
-four devices exist with the label "ion_chamber", then these devices
-can be retrieved using the registry:
+and
+:py:meth:`~haven.instrument.instrument_registry.InstrumentRegistry.findall()`
+methods allows devices to be looked up by label or device name. For
+example, assuming four devices exist with the label "ion_chamber",
+then these devices can be retrieved using the registry:
 
 .. code-block:: python
 
     from haven import registry
 
-    ion_chambers = registry.find(label="ion_chamber")
+    ion_chambers = registry.find(label="ion_chambers")
     assert len(ion_chambers) == 4
 
 Many plans in Haven accept lists of detectors and positioners. In some
 cases, it is possible to pass a string as these parameters as well, in
-which case the plan will assume that the string is a label and find
-all registered devices matching that label. The following will execute
-the :py:func:`~haven.plans.energy_scan.energy_scan()` plan using any
-device initialized with ``label={"ion_chamber"}`` and known to the
-registry.
+which case the plan will assume that the string is a device name or
+label and find all registered devices that match. The following will
+execute the :py:func:`~haven.plans.energy_scan.energy_scan()` plan
+using any device initialized with ``labels={"ion_chambers"}`` and
+known to the registry.
 
 .. code-block:: python
 
     from haven import energy_scan
 
-    RE(energy_scan(..., detectors="ion_chamber"))
+    RE(energy_scan(..., detectors="ion_chambers"))
+
+Looking Up Sub-Components by Dot-Notation
+-----------------------------------------
+
+For simple devices, the full name of the sub-component should be
+enough to retrieve the device. For example, to find the signal
+*preset_time* on the device named "vortex_me4", the following may work fine:
+
+.. code-block:: python
+
+   preset_time = haven.registry.find("vortex_me4_preset_time")
+
+However, **if the component is lazy** and has not been accessed prior
+to being registered, then **it will not be available in the
+registry**. Sub-components can instead be accessed by dot
+notation. Unlike the full device name, dot-notation names only resolve
+when the component is requested from the registry, at which point the
+lazy components can be accessed.
+
+For example, area detectors use many lazy components. If ``sim_det``
+is an area detector with a camera component ``sim_det.cam``, then the
+name of the gain channel is "sim_det_cam_gain", however this is a lazy
+component so is not available. Instead, retrieving the device by
+``haven.registry.find("sim_det.cam.gain")`` will first find the area
+detector ("sim_det"), then access the *cam* attribute, and then cam's
+*gain* attribute. This has the side-effect of instantiating the lazy
+components.
 
 Registering Individual Devices
 ------------------------------
