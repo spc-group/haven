@@ -1,7 +1,7 @@
 import logging
 
 import epics
-from ophyd import EpicsMotor
+from ophyd import EpicsMotor, EpicsSignal, Component as Cpt
 
 from .._iconfig import load_config
 from .instrument_registry import registry
@@ -16,6 +16,12 @@ class HavenMotor(EpicsMotor):
 
     Returns to the previous value when being unstaged.
     """
+
+    description = Cpt(EpicsSignal, name="description", suffix=".DESC")
+    tweak_value = Cpt(EpicsSignal, name="tweak_value", suffix=".TWV")
+    tweak_forward = Cpt(EpicsSignal, name="tweak_forward", suffix=".TWF")
+    tweak_reverse = Cpt(EpicsSignal, name="tweak_reverse", suffix=".TWR")
+    soft_limit_violation = Cpt(EpicsSignal, name="soft_limit_violation", suffix=".LVIO")
 
     def stage(self):
         super().stage()

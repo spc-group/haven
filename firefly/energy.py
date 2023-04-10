@@ -24,40 +24,23 @@ class EnergyDisplay(display.FireflyDisplay):
     stylesheet_normal = ""
 
     def __init__(self, args=None, macros={}, **kwargs):
-        # Set up macros
-        mono = registry.find(name="monochromator")
-        _macros = dict(**macros)
-        _macros["MONO_MODE_PV"] = _macros.get("MONO_MODE_PV", mono.mode.pvname)
-        _macros["MONO_ENERGY_PV"] = _macros.get(
-            "MONO_ENERGY_PV", mono.energy.user_readback.pvname
-        )
-        energy = registry.find(name="energy")
-        _macros["ID_ENERGY_PV"] = _macros.get(
-            "ID_ENERGY_PV", f"{energy.id_prefix}:Energy.VAL"
-        )
-        _macros["ID_GAP_PV"] = _macros.get("ID_GAP_PV", f"{energy.id_prefix}:Gap.VAL")
         # Load X-ray database for calculating edge energies
         self.xraydb = XrayDB()
-        super().__init__(args=args, macros=_macros, **kwargs)
+        super().__init__(args=args, macros=macros, **kwargs)
 
     def launch_mono_caqtdm(self):
         config = load_config()
-        display_macros = self.macros()
         prefix = config["monochromator"]["ioc"] + ":"
+        mono = registry.find(name="monochromator")
+        ID = registry.find(name="undulator")
         caqtdm_macros = {
             "P": prefix,
             "MONO": config["monochromator"]["ioc_branch"],
-            "BRAGG": registry.find(name="monochromator_bragg").prefix.replace(
-                prefix, ""
-            ),
-            "GAP": registry.find(name="monochromator_gap").prefix.replace(prefix, ""),
-            "ENERGY": registry.find(name="monochromator_energy").prefix.replace(
-                prefix, ""
-            ),
-            "OFFSET": registry.find(name="monochromator_offset").prefix.replace(
-                prefix, ""
-            ),
-            "IDENERGY": display_macros["ID_ENERGY_PV"],
+            "BRAGG": mono.bragg.prefix.replace(prefix, ""),
+            "GAP": mono.gap.prefix.replace(prefix, ""),
+            "ENERGY": mono.energy.prefix.replace(prefix, ""),
+            "OFFSET": mono.offset.prefix.replace(prefix, ""),
+            "IDENERGY": ID.energy.pvname,
         }
         self.launch_caqtdm(macros=caqtdm_macros, ui_file=self.caqtdm_mono_ui_file)
 

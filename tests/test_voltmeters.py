@@ -12,26 +12,16 @@ from firefly.voltmeter import VoltmeterDisplay
 from firefly.voltmeters import VoltmetersDisplay
 
 
-@pytest.fixture
-def registry():
-    registry = haven.registry
-    # Save registered components to be restored after the test
-    cpts = registry.components
-    # Give back a clean registry
-    registry.components = []
-    yield registry
-    # Restore previously registered components
-    registry.components = cpts
-
-
-def test_device(qtbot):
+def test_device(qtbot, ffapp, sim_registry):
     window = FireflyMainWindow()
-    display = VoltmeterDisplay(macros={"CHANNEL_NUMBER": 1})
+    ic = haven.IonChamber("", ch_num=1, name="my_ion_chamber", labels={"ion_chambers"})
+    sim_registry.register(ic)
+    display = VoltmeterDisplay(macros={"IC": "my_ion_chamber"})
     assert hasattr(display, "_device")
     assert isinstance(display._device, haven.IonChamber)
 
 
-def test_gain_button(qtbot):
+def test_gain_button(qtbot, ffapp):
     # Fake ion chamber to make sure the gain was actually changed
     I0 = mock.MagicMock()
     assert not I0.increase_gain.called
@@ -48,7 +38,7 @@ def test_gain_button(qtbot):
     assert I0.increase_gain.called
 
 
-def test_current_display(qtbot):
+def test_current_display(qtbot, ffapp):
     """Test the labels that show the voltage converted to current
     based on amplifier settings.
 
@@ -63,10 +53,10 @@ def test_current_display(qtbot):
     # Check that the label is updated
     assert display.gain == 10
     assert display.gain_unit == "µA"
-    assert display.ui.ion_chamber_current.text() == "(0.223 µA)"
+    assert display.ui.ion_chamber_current.text() == "(22.30 µA)"
 
 
-def test_embedded_display_widgets(qtbot, registry):
+def test_embedded_display_widgets(qtbot, sim_registry, ffapp):
     """Test the the voltmeters creates a new embedded display widget for
     each ion chamber.
 
@@ -76,15 +66,21 @@ def test_embedded_display_widgets(qtbot, registry):
     I0 = haven.IonChamber(
         prefix="eggs_ioc", ch_num=2, name="I0", labels={"ion_chambers"}
     )
-    registry.register(I0)
+    sim_registry.register(I0)
     It = haven.IonChamber(
         prefix="spam_ioc", ch_num=3, name="It", labels={"ion_chambers"}
     )
-    registry.register(It)
+    sim_registry.register(It)
     # Load the display
     vms_display = VoltmetersDisplay()
     # Check that the embedded display widgets get added correctly
     assert hasattr(vms_display, "_ion_chamber_displays")
     assert len(vms_display._ion_chamber_displays) == 2
     assert vms_display.voltmeters_layout.count() == 2
-    # import pdb; pdb.set_trace()
+    # Check that the embedded display widgets have the correct macros
+    emb_disp = vms_display._ion_chamber_displays[0]
+    disp = emb_disp.open_file(force=True)
+    macros = disp.macros()
+    assert macros == {"IC": "I0"}
+    # Check that a device has been created properly
+    assert type(disp._device) is haven.IonChamber

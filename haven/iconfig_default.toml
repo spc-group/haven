@@ -16,16 +16,16 @@ xray_source = "insertion device"
 
 [bss]
 
-prefix = "99id:bss"
-beamline = "99-ID-C"
+prefix = "255idc:bss"
+beamline = "255-ID-C"
 
 [xray_source]
 
 type = "undulator"
-prefix = "ID100ds:"
+prefix = "ID255:"
 
 [queueserver]
-kafka_topic = "s100idc_queueserver"
+kafka_topic = "s255idc_queueserver"
 control_host = "localhost"
 control_port = "60615"
 info_host = "localhost"
@@ -36,12 +36,21 @@ info_port = "60625"
 catalog = "bluesky"
 
 [shutter]
+prefix = "PSS:99ID"
 
-[shutter.A]
+[shutter.front_end_shutter]
 
-open_pv = "PSS:99ID:FES_OPEN_EPICS.VAL"
-close_pv = "PSS:99ID:FES_CLOSE_EPICS.VAL"
-status_pv = "PSS:99ID:A_BEAM_PRESENT"
+hutch = "A"
+# open_pv = "PSS:99ID:FES_OPEN_EPICS.VAL"
+# close_pv = "PSS:99ID:FES_CLOSE_EPICS.VAL"
+# status_pv = "PSS:99ID:A_BEAM_PRESENT"
+
+[shutter.hutch_shutter]
+
+hutch = "C"
+# open_pv = "PSS:99ID:SCS_OPEN_EPICS.VAL"
+# close_pv = "PSS:99ID:SCS_CLOSE_EPICS.VAL"
+# status_pv = "PSS:25ID:C_BEAM_PRESENT"
 
 [undulator]
 
@@ -84,7 +93,7 @@ num_elements = 4
 # with PVs: "vme_crate_ioc:m1", "vme_crate_ioc:m2", and
 # "vme_crate_ioc:m3".
 [motor.VME_crate]
-prefix = "vme_crate_ioc"
+prefix = "255idVME"
 num_motors = 3
 
 # Cameras
@@ -94,36 +103,3 @@ num_motors = 3
 
 imagej_command = "imagej"
 
-# Keys for camera definitions must begin with "cam" (e.g. "camA", "camB")
-[camera.camA]
-
-name = "s25id-gige-A"
-description = "GigE Vision A"
-ioc = "camA_ioc"
-
-[stage.Aerotech]
-
-prefix = "vme_crate_ioc"
-pv_vert = ":m1"
-pv_horiz = ":m2"
-
-[power_supply.NHQ01]
-
-prefix = "ps_ioc:NHQ01"
-n_channels = 2
-
-[slits.KB_slits]
-
-prefix = "vme_crate_ioc:KB"
-
-[area_detector.sim_det]
-
-prefix = "99idSimDet"
-device_class = "SimDetector"
-
-[lerix.lerix.rowland]
-
-x_motor_pv = "vme_crate_ioc:m1"
-y_motor_pv = "vme_crate_ioc:m2"
-z_motor_pv = "vme_crate_ioc:m3"
-z1_motor_pv = "vme_crate_ioc:m4"

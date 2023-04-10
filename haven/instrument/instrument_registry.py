@@ -15,6 +15,19 @@ log = logging.getLogger(__name__)
 __all__ = ["InstrumentRegistry", "registry"]
 
 
+def is_iterable(obj):
+    return (not isinstance(obj, str)) and hasattr(obj, "__iter__")
+
+
+def remove_duplicates(items, key=None):
+    unique_items = list()
+    for item in items:
+        val = item if key is None else key(item)
+        if val not in unique_items:
+            yield item
+            unique_items.append(val)
+
+
 class InstrumentRegistry:
     """A registry keeps track of devices, signals, etc that have been
     previously registered.
@@ -55,6 +68,12 @@ class InstrumentRegistry:
         equivalent to ``findall(name="my_device",
         label="my_device")``.
 
+        The name provided to *any_of*, *label*, or *name* can also
+        include dot-separated attributes after the device name. For
+        example, looking up ``name="eiger_500K.cam.gain"`` will look
+        up the device named "eiger_500K" then return the
+        Device.cam.gain attribute.
+
         Parameters
         ==========
         any_of
@@ -85,8 +104,8 @@ class InstrumentRegistry:
           ``self.findall()`` method.
 
         """
-        results = self.findall(
-            any_of=any_of, label=label, name=name, allow_none=allow_none
+        results = list(
+            self.findall(any_of=any_of, label=label, name=name, allow_none=allow_none)
         )
         if len(results) == 1:
             result = results[0]
@@ -100,6 +119,54 @@ class InstrumentRegistry:
         else:
             result = None
         return result
+
+    def _findall_by_label(self, label, allow_none):
+        results = []
+        if is_iterable(label):
+            for lbl in label:
+                results.extend(self.findall(label=lbl, allow_none=allow_none))
+        else:
+            # Split off label attributes
+            try:
+                label, *attrs = label.split(".")
+            except AttributeError:
+                attrs = []
+            try:
+                results.extend(
+                    [
+                        cpt
+                        for cpt in self.components
+                        if label in getattr(cpt, "_ophyd_labels_", [])
+                    ]
+                )
+            except TypeError:
+                raise exceptions.InvalidComponentLabel(label)
+        return results
+
+    def _findall_by_name(self, name):
+        results = []
+        # Check for an edge case with EpicsMotor objects (user_readback name is same as parent)
+        try:
+            is_user_readback = name[-13:] == "user_readback"
+        except TypeError:
+            is_user_readback = False
+        if is_user_readback:
+            parentname = name[:-14].strip("_")
+            results.extend([self.find(name=parentname).user_readback])
+        elif is_iterable(name):
+            for n in name:
+                results.extend(self.findall(name=n))
+        else:
+            # Split off any dot notation parameters for later filtering
+            try:
+                name, *attrs = name.split(".")
+            except AttributeError:
+                attrs = []
+            results.extend([cpt for cpt in self.components if cpt.name == name])
+            # Apply dot notation for sub-components
+            for attr in attrs:
+                results = [getattr(r, attr) for r in results]
+        return results
 
     def findall(
         self,
@@ -119,6 +186,12 @@ class InstrumentRegistry:
         The *any_of* keyword is a proxy for all the other keywords. For
         example ``findall(any_of="my_device")`` is equivalent to
         ``findall(name="my_device", label="my_device")``.
+
+        The name provided to *any_of*, *label*, or *name* can also
+        include dot-separated attributes after the device name. For
+        example, looking up ``name="eiger_500K.cam.gain"`` will look
+        up the device named "eiger_500K" then return the
+        Device.cam.gain attribute.
 
         Parameters
         ==========
@@ -148,39 +221,18 @@ class InstrumentRegistry:
         results = []
         # If using *any_of*, search by label and name
         _label = label if label is not None else any_of
-        # Define a helper to test for lists of search parameters
         _name = name if name is not None else any_of
-
-        def is_iterable(obj):
-            return (not isinstance(obj, str)) and hasattr(obj, "__iter__")
-
+        # Apply several filters against label, name, etc.
         if is_iterable(any_of):
             for a in any_of:
                 results.extend(self.findall(any_of=a, allow_none=allow_none))
         else:
             # Filter by label
             if _label is not None:
-                if is_iterable(_label):
-                    [
-                        results.extend(self.findall(label=lbl, allow_none=allow_none))
-                        for lbl in _label
-                    ]
-                else:
-                    try:
-                        results.extend(
-                            [
-                                cpt
-                                for cpt in self.components
-                                if _label in getattr(cpt, "_ophyd_labels_", [])
-                            ]
-                        )
-                    except TypeError:
-                        raise exceptions.InvalidComponentLabel(_label)
+                results.extend(self._findall_by_label(_label, allow_none=allow_none))
             # Filter by name
             if _name is not None:
-                if is_iterable(_name):
-                    [results.extend(self.findall(name=n)) for n in _name]
-                results.extend([cpt for cpt in self.components if cpt.name == _name])
+                results.extend(self._findall_by_name(_name))
         # If a query term is itself a device, just return that
         found_results = len(results) > 0
         if not found_results:
@@ -194,7 +246,7 @@ class InstrumentRegistry:
             raise exceptions.ComponentNotFound(
                 f'Could not find components matching: label="{_label}", name="{_name}"'
             )
-        return list(set(results))
+        return remove_duplicates(results)
 
     def __new__wrapper(self, cls, *args, **kwargs):
         # Create and instantiate the new object
@@ -248,7 +300,7 @@ class InstrumentRegistry:
             self.components.append(component)
             # Recusively register sub-components
             sub_signals = getattr(component, "_signals", {})
-            for attr_name, cpt in sub_signals.items():
+            for cpt_name, cpt in sub_signals.items():
                 self.register(cpt)
         return component
 

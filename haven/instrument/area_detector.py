@@ -187,7 +187,7 @@ def load_area_detectors(config=None):
     if config is None:
         config = load_config()
     # Create the area detectors defined in the configuration
-    for name, adconfig in config["area_detector"].items():
+    for name, adconfig in config.get("area_detector", {}).items():
         DeviceClass = globals().get(adconfig["device_class"])
         # Check that it's a valid device class
         if DeviceClass is None:

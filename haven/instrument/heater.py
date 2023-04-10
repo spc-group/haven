@@ -1,5 +1,9 @@
 from ophyd import PVPositioner, EpicsSignalRO, EpicsSignalWithRBV, Component as Cpt
-from apstools.devices import PTC10PositionerMixin, PTC10AioChannel as PTC10AioChannelBase, PTC10TcChannel
+from apstools.devices import (
+    PTC10PositionerMixin,
+    PTC10AioChannel as PTC10AioChannelBase,
+    PTC10TcChannel,
+)
 
 
 # The apstools version uses "voltage_RBV" as the PVname

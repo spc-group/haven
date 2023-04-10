@@ -20,6 +20,7 @@ from haven import HavenMotor, registry, load_config
 import haven
 
 from .main_window import FireflyMainWindow, PlanMainWindow
+from .ophyd_plugin import OphydPlugin
 from .queue_client import QueueClient, QueueClientThread
 
 generator = type((x for x in []))
@@ -134,7 +135,9 @@ class FireflyApplication(PyDMApplication):
         )
         # Launch camera overview
         self._setup_window_action(
-            action_name="show_cameras_window_action", text="All Cameras", slot=self.show_cameras_window
+            action_name="show_cameras_window_action",
+            text="All Cameras",
+            slot=self.show_cameras_window,
         )
 
     def launch_queuemonitor(self):
@@ -311,7 +314,7 @@ class FireflyApplication(PyDMApplication):
             FireflyMainWindow,
             ui_dir / "motor.py",
             name=f"FireflyMainWindow_motor_{motor_name}",
-            macros={"PREFIX": motor.prefix},
+            macros={"MOTOR": motor.name},
         )
 
     def show_camera_window(self, *args, camera):
@@ -321,7 +324,7 @@ class FireflyApplication(PyDMApplication):
             FireflyMainWindow,
             ui_dir / "camera_viewer.py",
             name=f"FireflyMainWindow_camera_{camera_name}",
-            macros={"PREFIX": camera.prefix, "DESC": camera.description},
+            macros={"CAMERA": camera.name},
         )
 
     def show_status_window(self, stylesheet_path=None):

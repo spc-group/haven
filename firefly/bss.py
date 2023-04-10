@@ -35,14 +35,6 @@ class BssDisplay(display.FireflyDisplay):
 
     def __init__(self, api=apsbss, args=None, macros={}, **kwargs):
         self.api = api
-        # Set up macros
-        try:
-            bss = haven.registry.find(name="bss")
-        except haven.exceptions.ComponentNotFound:
-            log.warning("Could not find bss device in Haven registry.")
-            macros["P"] = "COMPONENT_NOT_FOUND"
-        else:
-            macros["P"] = bss.prefix
         super().__init__(args=args, macros=macros, **kwargs)
         # Load data models for proposals and ESAFs
         self.load_models()

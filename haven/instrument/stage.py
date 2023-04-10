@@ -37,8 +37,10 @@ class XYStage(Device):
         super().__init__(prefix, labels=labels, *args, **kwargs)
 
 
-def load_stages(config=load_config()):
-    for name, stage_data in config["stage"].items():
+def load_stages(config=None):
+    if config is None:
+        config = load_config()
+    for name, stage_data in config.get("stage", {}).items():
         XYStage(
             name=name,
             prefix=stage_data["prefix"],

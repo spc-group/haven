@@ -2,7 +2,16 @@ import logging
 import warnings
 from typing import Optional, Sequence
 
-from ophyd.areadetector.cam import CamBase
+from ophyd import (
+    CamBase,
+    DetectorBase,
+    SingleTrigger,
+    Kind,
+    ADComponent as ADCpt,
+    EpicsSignal,
+)
+from ophyd.areadetector.plugins import ImagePlugin_V34, PvaPlugin_V34, OverlayPlugin
+
 
 from .instrument_registry import registry
 from .._iconfig import load_config
@@ -14,28 +23,26 @@ log = logging.getLogger(__name__)
 __all__ = ["Camera", "load_cameras"]
 
 
-class Camera(CamBase):
-    """One of the beamline's GigE Vision cameras.
+class AravisCam(CamBase):
+    gain_auto = ADCpt(EpicsSignal, "GainAuto")
+    acquire_time_auto = ADCpt(EpicsSignal, "ExposureAuto")
 
-    Parameters
-    ==========
-    prefix:
-      The process variable prefix for the camera.
-    name:
-      The bluesky-compatible device name.
-    description:
-      The human-readable description of this device. If omitted,
-      *name* will be used.
 
+class Camera(SingleTrigger, DetectorBase):
+    """
+    A gige-vision camera described by EPICS.
     """
 
-    def __init__(
-        self, prefix: str, name: str, description: Optional[str] = None, *args, **kwargs
-    ):
+    def __init__(self, *args, description=None, **kwargs):
+        super().__init__(*args, **kwargs)
         if description is None:
-            description = name
+            description = self.prefix
         self.description = description
-        super().__init__(prefix, name=name, *args, **kwargs)
+
+    cam = ADCpt(AravisCam, "cam1:")
+    image = ADCpt(ImagePlugin_V34, "image1:")
+    pva = ADCpt(PvaPlugin_V34, "Pva1:")
+    overlays = ADCpt(OverlayPlugin, "Over1:")
 
 
 def load_cameras(config=None) -> Sequence[Camera]:
@@ -57,7 +64,7 @@ def load_cameras(config=None) -> Sequence[Camera]:
         cam = Camera(
             prefix=f"{device['ioc']}:",
             name=device["name"],
-            description=device["description"],
+            description=device.get("description"),
             labels={"cameras"},
         )
         registry.register(cam)

@@ -14,12 +14,12 @@ from firefly.camera import CameraDisplay, DetectorStates
 macros = {"PREFIX": "camera_ioc:", "DESC": "Camera A"}
 
 
-def test_embedded_displays(qtbot, ffapp, sim_registry):
+def test_embedded_displays(qtbot, ffapp, sim_registry, sim_camera):
     """Test that the embedded displays get loaded."""
     FireflyMainWindow()
     # Set up fake cameras
-    camera = haven.Camera(prefix="camera_ioc:", name="Camera A", labels={"cameras"})
-    sim_registry.register(camera)
+    # camera = haven.Camera(prefix="camera_ioc:", name="Camera A", labels={"cameras"})
+    # sim_registry.register(camera)
     # Load the display
     display = CamerasDisplay()
     # Check that the embedded display widgets get added correctly
@@ -27,7 +27,7 @@ def test_embedded_displays(qtbot, ffapp, sim_registry):
     assert len(display._camera_displays) == 1
     # Check the embedded display macros
     # assert isinstance(display._camera_displays[0].macros, dict)
-    expected_macros = {"PREFIX": "camera_ioc:", "DESC": "Camera A"}
+    expected_macros = {"CAMERA": sim_camera.name}
     assert json.loads(display._camera_displays[0].macros) == expected_macros
 
 

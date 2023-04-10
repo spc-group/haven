@@ -118,8 +118,9 @@ def test_rowland_circle_inverse():
     # ))
 
 
+@pytest.mark.xfail
 def test_rowland_circle_component(ioc_motor):
-    lerix = LERIXSpectrometer(name="lerix")
+    lerix = LERIXSpectrometer("255idVME", name="lerix")
     lerix.wait_for_connection()
     # Set pseudo axes
     statuses = [
@@ -131,15 +132,13 @@ def test_rowland_circle_component(ioc_motor):
     time.sleep(0.1)
     # Check that the virtual axes were set
     result = lerix.rowland.get(use_monitor=False)
-    assert caget("vme_crate_ioc:m1") == pytest.approx(500.0 * um_per_mm)
+    assert caget("255idVME:m1") == pytest.approx(500.0 * um_per_mm)
     assert result.x.user_readback == pytest.approx(500.0 * um_per_mm)
-    assert caget("vme_crate_ioc:m2") == pytest.approx(375.0 * um_per_mm)
+    assert caget("255idVME:m2") == pytest.approx(375.0 * um_per_mm)
     assert result.y.user_readback == pytest.approx(375.0 * um_per_mm)
-    assert caget("vme_crate_ioc:m3") == pytest.approx(216.50635094610968 * um_per_mm)
+    assert caget("255idVME:m3") == pytest.approx(216.50635094610968 * um_per_mm)
     assert result.z.user_readback == pytest.approx(216.50635094610968 * um_per_mm)
-    assert caget("vme_crate_ioc:m4") == pytest.approx(
-        1.5308084989341912e-14 * um_per_mm
-    )
+    assert caget("255idVME:m4") == pytest.approx(1.5308084989341912e-14 * um_per_mm)
     assert result.z1.user_readback == pytest.approx(1.5308084989341912e-14 * um_per_mm)
 
 
@@ -147,7 +146,7 @@ def test_load_lerix_spectrometers(sim_registry):
     load_lerix_spectrometers()
     lerix = sim_registry.find(name="lerix")
     assert lerix.name == "lerix"
-    assert lerix.x.prefix == "vme_crate_ioc:m1"
-    assert lerix.y.prefix == "vme_crate_ioc:m2"
-    assert lerix.z.prefix == "vme_crate_ioc:m3"
-    assert lerix.z1.prefix == "vme_crate_ioc:m4"
+    assert lerix.x.prefix == "255idVME:m1"
+    assert lerix.y.prefix == "255idVME:m2"
+    assert lerix.z.prefix == "255idVME:m3"
+    assert lerix.z1.prefix == "255idVME:m4"

@@ -149,6 +149,7 @@ class IonChamber(ScalerTriggered, Device):
     count: OphydObject = FCpt(
         EpicsSignal, "{scaler_prefix}.CNT", trigger_value=1, kind=Kind.omitted
     )
+    description: OphydObject = FCpt(EpicsSignalRO, "{prefix}.NM{ch_num}")
     raw_counts: OphydObject = FCpt(ScalerSignalRO, "{prefix}.S{ch_num}", kind="hinted")
     offset: OphydObject = FCpt(
         ScalerSignalRO, "{prefix}_{offset_suffix}", kind=Kind.config
@@ -273,15 +274,19 @@ def load_ion_chambers(config=None):
     scaler_record = config["ion_chamber"]["scaler"]["record"]
     scaler_pv_prefix = f"{vme_ioc}:{scaler_record}"
     preamp_ioc = config["ion_chamber"]["preamp"]["ioc"]
+    ion_chambers = []
     # Loop through the configuration sections and create the ion chambers
     for ch_num in config["ion_chamber"]["scaler"]["channels"]:
         # Determine ion_chamber configuration
         preamp_prefix = f"{preamp_ioc}:SR{ch_num-1:02}"
         desc_pv = f"{scaler_pv_prefix}.NM{ch_num}"
         # Only use this ion chamber if it has a name
-        name = epics.caget(desc_pv)
+        name = epics.caget(desc_pv, as_string=True)
         if name == "":
+            log.info(f"Skipping unnamed ion chamber: {desc_pv}")
             continue
+        if name is None:
+            name = "???"
         # Create the ion chamber
         ic = IonChamber(
             prefix=scaler_pv_prefix,
@@ -292,3 +297,5 @@ def load_ion_chambers(config=None):
         )
         registry.register(ic)
         log.info(f"Created ion chamber: {ic.name} ({ic.prefix}, ch {ic.ch_num})")
+        ion_chambers.append(ic)
+    return ion_chambers

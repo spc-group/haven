@@ -29,12 +29,11 @@ class CamerasDisplay(display.FireflyDisplay):
                 "No cameras found, [Detectors] -> [Cameras] panel will be empty."
             )
             cameras = []
-        for cam in sorted(cameras, key=lambda c: c.name):
+        for camera in sorted(cameras, key=lambda c: c.name):
             disp = PyDMEmbeddedDisplay(parent=self)
             disp.macros = json.dumps(
                 {
-                    "PREFIX": cam.prefix,
-                    "DESC": cam.description,
+                    "CAMERA": camera.name,
                 }
             )
             disp.filename = "camera.py"
