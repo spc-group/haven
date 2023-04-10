@@ -118,7 +118,7 @@ class InstrumentRegistry:
             result = None
         return result
 
-    def _findall_by_label(self, label):
+    def _findall_by_label(self, label, allow_none):
         results = []
         if is_iterable(label):
             for lbl in label:
@@ -223,7 +223,7 @@ class InstrumentRegistry:
         else:
             # Filter by label
             if _label is not None:
-                results.extend(self._findall_by_label(_label))
+                results.extend(self._findall_by_label(_label, allow_none=allow_none))
             # Filter by name
             if _name is not None:
                 results.extend(self._findall_by_name(_name))
