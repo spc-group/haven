@@ -95,11 +95,11 @@ Now we can stage and trigger the detector.
    
    In [6]: eiger.unstage()
 
-.. _ad-xafs-scan:   
 
-=====================
+.. _ad-xafs-scan:
+
 Running an XAFS Scan
-=====================
+====================
 
 First, we will verify that the detector is going to measure the correct signals for this detector:
 
