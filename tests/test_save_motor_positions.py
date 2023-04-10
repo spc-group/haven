@@ -1,7 +1,9 @@
+import logging
 import os
 import time
 import time_machine
 import pytz
+from zoneinfo import ZoneInfo
 import datetime as dt
 from datetime import datetime
 
@@ -19,9 +21,10 @@ from haven import (
     HavenMotor,
 )
 
-fake_time = pytz.timezone("America/New_York").localize(
-    dt.datetime(2022, 8, 19, 19, 10, 51)
-)
+log = logging.getLogger(__name__)
+
+# Use a timezone we're not likely to be in for testing tz-aware behavior
+fake_time = dt.datetime(2022, 8, 19, 19, 10, 51, tzinfo=ZoneInfo("Asia/Taipei"))
 
 IOC_timeout = 40  # Wait up to this many seconds for the IOC to be ready
 
@@ -153,7 +156,7 @@ def test_list_motor_positions(mongodb, capsys):
     captured = capsys.readouterr()
     assert len(captured.out) > 0
     uid = str(mongodb.motor_positions.find_one({"name": "Good position A"})["_id"])
-    timestamp = "2022-08-19 18:10:51"
+    timestamp = "2022-08-19 19:10:51"
     expected = (
         f'\n\033[1mGood position A\033[0m (uid="{uid}", timestamp={timestamp})\n'
         "┣━SLT V Upper: 510.5, offset: 0.0\n"
@@ -213,7 +216,8 @@ def test_list_current_motor_positions(mongodb, capsys):
     # Check stdout for printed motor positions
     captured = capsys.readouterr()
     assert len(captured.out) > 0
-    timestamp = "2022-08-19 18:10:51"
+    timestamp = fake_time.strftime("%Y-%m-%d %H:%M:%S")
+    timestamp = "2022-08-19 19:10:51"
     expected = (
         f"\n\033[1mCurrent motor positions\033[0m (timestamp={timestamp})\n"
         "┣━Motor A: 11.0, offset: 1.5\n"
