@@ -20,7 +20,7 @@ from haven.simulated_ioc import simulated_ioc
 from haven import registry, load_config
 from haven.instrument.aps import ApsMachine
 from haven.instrument.shutter import Shutter
-from haven.instrument.camera import Camera
+from haven.instrument.camera import AravisDetector
 from firefly.application import FireflyApplication
 from firefly.ophyd_plugin import OphydPlugin
 
@@ -332,7 +332,7 @@ def sim_shutters(sim_registry):
 
 @pytest.fixture()
 def sim_camera(sim_registry):
-    FakeCamera = make_fake_device(Camera)
+    FakeCamera = make_fake_device(AravisDetector)
     camera = FakeCamera(name="s255id-gige-A", labels={"cameras", "area_detectors"})
     camera.pva.pv_name._readback = "255idSimDet:Pva1:Image"
     # Registry with the simulated registry

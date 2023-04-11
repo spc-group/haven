@@ -59,7 +59,7 @@ class FireflyApplication(PyDMApplication):
 
     # Keep track of cameras
     camera_actions: Sequence = []
-    camera_window_slots: Sequence = []
+    camera_window_slots: Sequence
 
     # Keep track of area detectors
     area_detector_actions: Sequence = []
@@ -211,29 +211,30 @@ class FireflyApplication(PyDMApplication):
             
     def prepare_area_detector_windows(self):
         """Prepare the support for opening motor windows."""
-        self._prepare_device_windows("area_detectors", "area_detector")
+        self._prepare_device_windows(device_label="area_detectors", attr_name="area_detector")
 
     def prepare_camera_windows(self):
-        try:
-            cameras = sorted(registry.findall(label="cameras"), key=lambda x: x.name)
-        except ComponentNotFound:
-            log.warning(
-                "No cameras found, [Detectors] -> [Cameras] menu will be empty."
-            )
-            cameras = []
-        # Create menu actions for each camera
-        self.camera_actions = []
-        self.camera_window_slots = []
-        self.camera_windows = {}
-        for camera in cameras:
-            action = QtWidgets.QAction(self)
-            action.setObjectName(f"actionShow_Camera_{camera.name}")
-            action.setText(camera.name)
-            self.camera_actions.append(action)
-            # Create a slot for opening the motor window
-            slot = partial(self.show_camera_window, device=camera)
-            action.triggered.connect(slot)
-            self.camera_window_slots.append(slot)
+        self._prepare_device_windows(device_label="cameras", attr_name="camera")
+        # try:
+        #     cameras = sorted(registry.findall(label="cameras"), key=lambda x: x.name)
+        # except ComponentNotFound:
+        #     log.warning(
+        #         "No cameras found, [Detectors] -> [Cameras] menu will be empty."
+        #     )
+        #     cameras = []
+        # # Create menu actions for each camera
+        # self.camera_actions = []
+        # self.camera_window_slots = []
+        # self.camera_windows = {}
+        # for camera in cameras:
+        #     action = QtWidgets.QAction(self)
+        #     action.setObjectName(f"actionShow_Camera_{camera.name}")
+        #     action.setText(camera.name)
+        #     self.camera_actions.append(action)
+        #     # Create a slot for opening the motor window
+        #     slot = partial(self.show_camera_window, device=camera)
+        #     action.triggered.connect(slot)
+        #     self.camera_window_slots.append(slot)
 
     def prepare_motor_windows(self):
         """Prepare the support for opening motor windows."""
