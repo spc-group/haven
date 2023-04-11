@@ -126,6 +126,11 @@ class FireflyMainWindow(PyDMMainWindow):
         self.ui.menuCameras.addSeparator()
         for action in app.camera_actions:
             self.ui.menuCameras.addAction(action)
+        # Add area detectors to detectors menu
+        if len(app.area_detector_actions) > 0:
+            self.ui.menuDetectors.addSeparator()
+        for action in app.area_detector_actions:
+            self.ui.menuDetectors.addAction(action)
         # Add other menu actions
         self.ui.menuView.addAction(app.show_status_window_action)
         self.ui.menuView.addAction(app.launch_queuemonitor_action)

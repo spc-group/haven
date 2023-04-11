@@ -61,6 +61,10 @@ class FireflyApplication(PyDMApplication):
     camera_actions: Sequence = []
     camera_window_slots: Sequence = []
 
+    # Keep track of area detectors
+    area_detector_actions: Sequence = []
+    area_detector_window_slots: Sequence
+    
     # Signals for running plans on the queueserver
     queue_item_added = Signal(object)
 
@@ -109,6 +113,7 @@ class FireflyApplication(PyDMApplication):
         """
         self.prepare_motor_windows()
         self.prepare_camera_windows()
+        self.prepare_area_detector_windows()
         # Action for showing the beamline status window
         self._setup_window_action(
             action_name="show_status_window_action",
@@ -173,6 +178,41 @@ class FireflyApplication(PyDMApplication):
             setattr(self, name, action)
             # action.triggered.connect(slot)
 
+    def _prepare_device_windows(self, device_label: str, attr_name: str):
+        """Generic routine to be called for individual classes of devices.
+
+        Sets up window actions, windows and window slots for each
+        instance of the this device class (specified by *device_label*).
+        
+        """
+        try:
+            devices = sorted(registry.findall(label=device_label), key=lambda x: x.name)
+        except ComponentNotFound:
+            log.warning(
+                f"No {device_label} found, menu will be empty."
+            )
+            devices = []
+        # Create menu actions for each device
+        actions = []
+        setattr(self, f"{attr_name}_actions", actions)
+        window_slots = []
+        setattr(self, f"{attr_name}_window_slots", window_slots)
+        setattr(self, f"{attr_name}_windows", {})
+        for device in devices:
+            action = QtWidgets.QAction(self)
+            action.setObjectName(f"actionShow_{attr_name}_{device.name}")
+            action.setText(device.name)
+            actions.append(action)
+            # Create a slot for opening the motor window
+            slot = getattr(self, f"show_{attr_name}_window")
+            slot = partial(slot, device=device)
+            action.triggered.connect(slot)
+            window_slots.append(slot)            
+            
+    def prepare_area_detector_windows(self):
+        """Prepare the support for opening motor windows."""
+        self._prepare_device_windows("area_detectors", "area_detector")
+
     def prepare_camera_windows(self):
         try:
             cameras = sorted(registry.findall(label="cameras"), key=lambda x: x.name)
@@ -191,7 +231,7 @@ class FireflyApplication(PyDMApplication):
             action.setText(camera.name)
             self.camera_actions.append(action)
             # Create a slot for opening the motor window
-            slot = partial(self.show_camera_window, camera=camera)
+            slot = partial(self.show_camera_window, device=camera)
             action.triggered.connect(slot)
             self.camera_window_slots.append(slot)
 
@@ -317,14 +357,24 @@ class FireflyApplication(PyDMApplication):
             macros={"MOTOR": motor.name},
         )
 
-    def show_camera_window(self, *args, camera):
+    def show_camera_window(self, *args, device):
         """Instantiate a new main window for this application."""
-        camera_name = camera.name.replace(" ", "_")
+        device_name = device.name.replace(" ", "_")
         self.show_window(
             FireflyMainWindow,
-            ui_dir / "camera_viewer.py",
-            name=f"FireflyMainWindow_camera_{camera_name}",
-            macros={"CAMERA": camera.name},
+            ui_dir / "area_detector_viewer.py",
+            name=f"FireflyMainWindow_camera_{device_name}",
+            macros={"AD": device.name},
+        )
+
+    def show_area_detector_window(self, *args, device):
+        """Instantiate a new main window for this application."""
+        device_name = device.name.replace(" ", "_")
+        self.show_window(
+            FireflyMainWindow,
+            ui_dir / "area_detector_viewer.py",
+            name=f"FireflyMainWindow_area_detector_{device_name}",
+            macros={"AD": device.name},
         )
 
     def show_status_window(self, stylesheet_path=None):

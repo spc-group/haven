@@ -20,11 +20,11 @@ log = logging.getLogger(__name__)
 pyqtgraph.setConfigOption("imageAxisOrder", "row-major")
 
 
-class CameraViewerDisplay(display.FireflyDisplay):
+class AreaDetectorViewerDisplay(display.FireflyDisplay):
     image_is_new: bool = True
 
     def customize_device(self):
-        device_name = name = self.macros()["CAMERA"]
+        device_name = name = self.macros()["AD"]
         camera = haven.registry.find(device_name)
         self.camera = camera
         img_pv = camera.pva.pv_name.get(as_string=True)
@@ -69,7 +69,7 @@ class CameraViewerDisplay(display.FireflyDisplay):
         self.image_is_new = False
 
     def ui_filename(self):
-        return "camera_viewer.ui"
+        return "area_detector_viewer.ui"
 
     def launch_caqtdm(self):
         # Determine for which IOC to launch caQtDM panels
