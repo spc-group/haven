@@ -21,9 +21,9 @@ def test_register_component():
     )
     # Make sure the component doesn't get found without being registered
     with pytest.raises(exceptions.ComponentNotFound):
-        reg.findall(label="ion_chamber")
+        list(reg.findall(label="ion_chamber"))
     with pytest.raises(exceptions.ComponentNotFound):
-        reg.findall(name="I0")
+        list(reg.findall(name="I0"))
     # Now register the component
     cpt = reg.register(cpt)
     # Confirm that it's findable by label
@@ -117,7 +117,7 @@ def test_find_component():
         result = reg.find(label="ion_chamber")
 
 
-def test_find_by_dot_notation():
+def test_find_name_by_dot_notation():
     # Prepare registry
     reg = InstrumentRegistry()
     # Create a simulated component
@@ -135,6 +135,25 @@ def test_find_by_dot_notation():
     result = reg.find(name="I0.val")
     assert result is cptA.val
 
+
+def test_find_labels_by_dot_notation():
+    # Prepare registry
+    reg = InstrumentRegistry()
+    # Create a simulated component
+    cptA = sim.SynGauss(
+        "I0",
+        sim.motor,
+        "motor",
+        center=-0.5,
+        Imax=1,
+        sigma=1,
+        labels={"ion_chamber"},
+    )
+    reg.register(cptA)
+    # Only one match should work fine
+    result = reg.find(label="ion_chamber.val")
+    assert result is cptA.val
+    
 
 def test_find_any():
     # Prepare registry

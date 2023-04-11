@@ -1,6 +1,7 @@
 from typing import Optional, Sequence
 import logging
 import warnings
+from itertools import chain
 
 from ophyd import Component, ophydobj
 
@@ -121,10 +122,14 @@ class InstrumentRegistry:
         return result
 
     def _findall_by_label(self, label, allow_none):
-        results = []
+        # Check for already created ophyd objects (return as is)
+        if isinstance(label, ophydobj.OphydObject):
+            yield label
+            return
+        # Recursively get lists of components
         if is_iterable(label):
             for lbl in label:
-                results.extend(self.findall(label=lbl, allow_none=allow_none))
+                yield from self.findall(label=lbl, allow_none=allow_none)
         else:
             # Split off label attributes
             try:
@@ -132,19 +137,21 @@ class InstrumentRegistry:
             except AttributeError:
                 attrs = []
             try:
-                results.extend(
-                    [
-                        cpt
-                        for cpt in self.components
-                        if label in getattr(cpt, "_ophyd_labels_", [])
-                    ]
-                )
+                for cpt in self.components:
+                    if label in getattr(cpt, "_ophyd_labels_", []):
+                        # Re-apply the dot-notation attributes
+                        cpt_ = cpt
+                        for attr in attrs:
+                            cpt_ = getattr(cpt_, attr)
+                        yield cpt_
             except TypeError:
                 raise exceptions.InvalidComponentLabel(label)
-        return results
 
     def _findall_by_name(self, name):
-        results = []
+        # Check for already created ophyd objects (return as is)
+        if isinstance(name, ophydobj.OphydObject):
+            yield name
+            return
         # Check for an edge case with EpicsMotor objects (user_readback name is same as parent)
         try:
             is_user_readback = name[-13:] == "user_readback"
@@ -152,21 +159,24 @@ class InstrumentRegistry:
             is_user_readback = False
         if is_user_readback:
             parentname = name[:-14].strip("_")
-            results.extend([self.find(name=parentname).user_readback])
+            yield self.find(name=parentname).user_readback
         elif is_iterable(name):
             for n in name:
-                results.extend(self.findall(name=n))
+                yield from self.findall(name=n)
         else:
             # Split off any dot notation parameters for later filtering
             try:
                 name, *attrs = name.split(".")
             except AttributeError:
                 attrs = []
-            results.extend([cpt for cpt in self.components if cpt.name == name])
-            # Apply dot notation for sub-components
-            for attr in attrs:
-                results = [getattr(r, attr) for r in results]
-        return results
+            # Find the matching components
+            for cpt in self.components:
+                if cpt.name == name:
+                    cpt_ = cpt
+                    # Re-apply dot-notation filter
+                    for attr in attrs:
+                        cpt_ = getattr(cpt_, attr)
+                    yield cpt_
 
     def findall(
         self,
@@ -225,27 +235,29 @@ class InstrumentRegistry:
         # Apply several filters against label, name, etc.
         if is_iterable(any_of):
             for a in any_of:
-                results.extend(self.findall(any_of=a, allow_none=allow_none))
+                results.append(self.findall(any_of=a, allow_none=allow_none))
         else:
             # Filter by label
             if _label is not None:
-                results.extend(self._findall_by_label(_label, allow_none=allow_none))
+                results.append(self._findall_by_label(_label, allow_none=allow_none))
             # Filter by name
             if _name is not None:
-                results.extend(self._findall_by_name(_name))
-        # If a query term is itself a device, just return that
-        found_results = len(results) > 0
-        if not found_results:
-            for obj in [_label, _name, any_of]:
-                if isinstance(obj, ophydobj.OphydObject):
-                    results = [obj]
-                    break
-        # Check that the label is actually defined somewhere
-        found_results = len(results) > 0
-        if not found_results and not allow_none:
-            raise exceptions.ComponentNotFound(
-                f'Could not find components matching: label="{_label}", name="{_name}"'
-            )
+                results.append(self._findall_by_name(_name))
+        # Peek at the first item to check for an empty result
+        results = chain(*results)
+        try:
+            first = next(results)
+        except StopIteration:
+            # No results were found
+            if allow_none:
+                results = []
+            else:
+                raise exceptions.ComponentNotFound(
+                    f'Could not find components matching: label="{_label}", name="{_name}"'
+                )
+        else:
+            # Stick the first entry back in the queue and yield it 
+            results = chain([first], results)
         return remove_duplicates(results)
 
     def __new__wrapper(self, cls, *args, **kwargs):
