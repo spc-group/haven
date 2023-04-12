@@ -1,6 +1,7 @@
 import json
 import warnings
 import logging
+from typing import Optional, Mapping, Sequence
 
 from pydm.widgets import PyDMEmbeddedDisplay
 import haven
@@ -16,16 +17,17 @@ log = logging.getLogger(__name__)
 class VoltmetersDisplay(display.FireflyDisplay):
     _ion_chamber_displays = []
 
-    # def __init__(
-    #     self,
-    #     args: Optional[Sequence] = None,
-    #     macros: Mapping = {},
-    #     **kwargs,
-    # ):
-    #     macros_ = macros.copy()
-    #     scaler_ioc =
-    #     macros_["SCALER"] == load_config()["ion_chamber"]["scaler"]["ioc"]
-    #     super().__init__(args=args, macros=macros, **kwargs)
+    def __init__(
+        self,
+        args: Optional[Sequence] = None,
+        macros: Mapping = {},
+        **kwargs,
+    ):
+        self.ion_chambers = list(haven.registry.findall(label="ion_chambers"))
+        macros_ = macros.copy()
+        if "SCALER" not in macros_.keys():
+            macros_["SCALER"] = self.ion_chambers[0].scaler_prefix
+        super().__init__(args=args, macros=macros_, **kwargs)
 
     def customize_ui(self):
         # Delete existing voltmeter widgets
@@ -33,7 +35,7 @@ class VoltmetersDisplay(display.FireflyDisplay):
             self.voltmeters_layout.takeAt(idx).widget().deleteLater()
         # Add embedded displays for all the ion chambers
         try:
-            ion_chambers = list(haven.registry.findall(label="ion_chambers"))
+            ion_chambers = self.ion_chambers
         except haven.exceptions.ComponentNotFound as e:
             warnings.warn(str(e))
             log.warning(e)
@@ -41,9 +43,6 @@ class VoltmetersDisplay(display.FireflyDisplay):
         scaler_prefix = "CPT NOT FOUND"            
         self._ion_chamber_displays = []
         for ic in sorted(ion_chambers, key=lambda c: c.ch_num):
-            # Get the scaler prefix for other macros
-            if "SCALER" not in self.macros().keys():
-                self._macros = dict(SCALER=ic.scaler_prefix, **self.macros())
             # Create the display object
             disp = PyDMEmbeddedDisplay(parent=self)
             disp.macros = json.dumps({"IC": ic.name})
