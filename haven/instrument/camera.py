@@ -15,12 +15,13 @@ from ophyd.areadetector.plugins import ImagePlugin_V34, PvaPlugin_V34, OverlayPl
 from .instrument_registry import registry
 from .area_detector import DetectorBase, StatsPlugin_V34, SimDetector
 from .._iconfig import load_config
+from .. import exceptions
 
 
 log = logging.getLogger(__name__)
 
 
-__all__ = ["Camera", "load_cameras"]
+__all__ = ["AravisDetector", "load_cameras"]
 
 
 class AravisCam(CamBase):
@@ -69,7 +70,7 @@ def load_cameras(config=None) -> Sequence[DetectorBase]:
         DeviceClass = globals().get(class_name)
         # Check that it's a valid device class
         if DeviceClass is None:
-            msg = f"camera.{name}.device_class={cam_config['device_class']}"
+            msg = f"camera.{key}.device_class={cam_config['device_class']}"
             raise exceptions.UnknownDeviceConfiguration(msg)
         device = DeviceClass(
             prefix=f"{cam_config['ioc']}:",
