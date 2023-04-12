@@ -1,7 +1,7 @@
 from ophyd import DetectorBase
 
 from haven import registry, load_config
-from haven.instrument.camera import Camera, load_cameras
+from haven.instrument.camera import AravisDetector, load_cameras
 
 
 def test_load_cameras(ioc_camera):
@@ -13,13 +13,13 @@ def test_load_cameras(ioc_camera):
 
 
 def test_camera_device(ioc_camera):
-    camera = Camera(ioc_camera.prefix, name="camera")
+    camera = AravisDetector(ioc_camera.prefix, name="camera")
     assert isinstance(camera, DetectorBase)
     assert hasattr(camera, "cam")
 
 
 def test_camera_in_registry(sim_registry, ioc_camera):
-    camera = Camera(ioc_camera.prefix, name="camera")
+    camera = AravisDetector(ioc_camera.prefix, name="camera")
     sim_registry.register(camera)
     # Check that all sub-components are accessible
     camera = sim_registry.find(camera.name)

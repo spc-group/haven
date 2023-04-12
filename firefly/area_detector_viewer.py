@@ -20,14 +20,14 @@ log = logging.getLogger(__name__)
 pyqtgraph.setConfigOption("imageAxisOrder", "row-major")
 
 
-class CameraViewerDisplay(display.FireflyDisplay):
+class AreaDetectorViewerDisplay(display.FireflyDisplay):
     image_is_new: bool = True
 
     def customize_device(self):
-        device_name = name = self.macros()["CAMERA"]
-        camera = haven.registry.find(device_name)
-        self.camera = camera
-        img_pv = camera.pva.pv_name.get(as_string=True)
+        device_name = name = self.macros()["AD"]
+        device = haven.registry.find(device_name)
+        self.device = device
+        img_pv = device.pva.pv_name.get(as_string=True)
         addr = f"pva://{img_pv}"
         self.image_channel = pydm.PyDMChannel(
             address=addr, value_slot=self.update_image
@@ -42,15 +42,16 @@ class CameraViewerDisplay(display.FireflyDisplay):
         # Connect signals for showing/hiding controls
         self.ui.settings_button.clicked.connect(self.toggle_controls)
         # Set some text about the camera
-        if self.camera.description == self.camera.prefix:
-            lbl_text = self.camera.cam.prefix
+        use_name = getattr(self.device, 'description', None) in [self.device.name, None]
+        if use_name:
+            lbl_text = self.device.cam.name
         else:
-            lbl_text = f"{self.camera.description} ({self.camera.cam.prefix})"
+            lbl_text = f"{self.device.description} ({self.device.cam.prefix})"
         self.ui.camera_description_label.setText(lbl_text)
-        self.setWindowTitle(self.camera.description)
+        self.setWindowTitle(lbl_text)
         # from pprint import pprint
         # pprint(dir(self))
-        # print(dir(self.camera_viewer_form))
+        # print(dir(self.device_viewer_form))
 
     def toggle_controls(self):
         # Show or hide the controls frame
@@ -69,11 +70,11 @@ class CameraViewerDisplay(display.FireflyDisplay):
         self.image_is_new = False
 
     def ui_filename(self):
-        return "camera_viewer.ui"
+        return "area_detector_viewer.ui"
 
     def launch_caqtdm(self):
         # Determine for which IOC to launch caQtDM panels
-        cmd = f"start_{self.camera.prefix.strip(':')}_caqtdm"
+        cmd = f"start_{self.device.prefix.strip(':')}_caqtdm"
         # Launch caQtDM for the given IOC
         log.info(f"Launching caQtDM: {cmd}")
         self._open_caqtdm_subprocess(cmd)

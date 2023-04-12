@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>992</width>
-    <height>613</height>
+    <width>1149</width>
+    <height>832</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -114,7 +114,7 @@
                   <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                  </property>
                  <property name="channel" stdset="0">
-                  <string>oph://${CAMERA}.cam.array_size.array_size_y</string>
+                  <string>oph://${AD}.cam.array_size.array_size_y</string>
                  </property>
                 </widget>
                </item>
@@ -137,7 +137,7 @@
                   <string>1224</string>
                  </property>
                  <property name="channel" stdset="0">
-                  <string>oph://${CAMERA}.cam.array_size.array_size_x</string>
+                  <string>oph://${AD}.cam.array_size.array_size_x</string>
                  </property>
                 </widget>
                </item>
@@ -190,7 +190,7 @@
                   <string>[]</string>
                  </property>
                  <property name="channel" stdset="0">
-                  <string>oph://${CAMERA}.cam.gain._write_pv</string>
+                  <string>oph://${AD}.cam.gain._write_pv</string>
                  </property>
                  <property name="tickPosition" stdset="0">
                   <enum>QSlider::TicksBelow</enum>
@@ -218,7 +218,7 @@
                   <string>Auto</string>
                  </property>
                  <property name="channel" stdset="0">
-                  <string>oph://${CAMERA}.cam.gain_auto</string>
+                  <string>oph://${AD}.cam.gain_auto</string>
                  </property>
                  <property name="pressValue" stdset="0">
                   <string>1</string>
@@ -241,7 +241,7 @@
                   <string>[]</string>
                  </property>
                  <property name="channel" stdset="0">
-                  <string>oph://${CAMERA}.cam.acquire_time._write_pv</string>
+                  <string>oph://${AD}.cam.acquire_time._write_pv</string>
                  </property>
                  <property name="tickPosition" stdset="0">
                   <enum>QSlider::TicksBelow</enum>
@@ -266,7 +266,7 @@
                   <string>Auto</string>
                  </property>
                  <property name="channel" stdset="0">
-                  <string>oph://${CAMERA}.cam.acquire_time_auto</string>
+                  <string>oph://${AD}.cam.acquire_time_auto</string>
                  </property>
                  <property name="pressValue" stdset="0">
                   <string>1</string>
@@ -297,7 +297,7 @@
                 <bool>false</bool>
                </property>
                <property name="channel" stdset="0">
-                <string>oph://${CAMERA}_cam_acquire._write_pv</string>
+                <string>oph://${AD}.cam.acquire._write_pv</string>
                </property>
                <property name="passwordProtected" stdset="0">
                 <bool>false</bool>
@@ -340,7 +340,7 @@
                 <string>[{&quot;name&quot;: &quot;enable_acquire_buttons&quot;, &quot;property&quot;: &quot;Enable&quot;, &quot;initial_value&quot;: &quot;&quot;, &quot;expression&quot;: &quot;ch[0] == 1&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;${PREFIX}cam1:Acquire&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}]}]</string>
                </property>
                <property name="channel" stdset="0">
-                <string>oph://${CAMERA}_cam_acquire._write_pv</string>
+                <string>oph://${AD}.cam.acquire._write_pv</string>
                </property>
                <property name="pressValue" stdset="0">
                 <string>0</string>
@@ -368,157 +368,249 @@
         <item>
          <widget class="QGroupBox" name="groupBox_2">
           <property name="title">
-           <string>Beam Position</string>
+           <string>Overlays</string>
           </property>
           <layout class="QVBoxLayout" name="verticalLayout">
            <item>
-            <layout class="QFormLayout" name="formLayout">
-             <item row="1" column="0">
-              <widget class="QLabel" name="label_3">
-               <property name="text">
-                <string>Shape:</string>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="1">
-              <widget class="PyDMEnumComboBox" name="PyDMEnumComboBox">
-               <property name="toolTip">
-                <string/>
-               </property>
-               <property name="channel" stdset="0">
-                <string>oph://${CAMERA}.overlays.overlay_1.shape._write_pv</string>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="0">
-              <widget class="QLabel" name="label_4">
-               <property name="text">
-                <string>Show:</string>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="1">
-              <widget class="PyDMCheckbox" name="PyDMCheckbox_3">
-               <property name="toolTip">
-                <string/>
-               </property>
-               <property name="channel" stdset="0">
-                <string>oph://${CAMERA}.overlays.overlay_1.use._write_pv</string>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </item>
-           <item>
-            <layout class="QHBoxLayout" name="horizontalLayout_3">
-             <item>
-              <widget class="PyDMSlider" name="PyDMSlider_3">
-               <property name="toolTip">
-                <string/>
-               </property>
-               <property name="channel" stdset="0">
-                <string>oph://${CAMERA}.overlays.overlay_1.position_y._write_pv</string>
-               </property>
-               <property name="orientation" stdset="0">
-                <enum>Qt::Vertical</enum>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <layout class="QVBoxLayout" name="verticalLayout_4">
-               <item>
-                <widget class="QLabel" name="label_5">
-                 <property name="text">
-                  <string>Center</string>
-                 </property>
-                 <property name="alignment">
-                  <set>Qt::AlignCenter</set>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="PyDMSlider" name="PyDMSlider_4">
-                 <property name="toolTip">
-                  <string/>
-                 </property>
-                 <property name="channel" stdset="0">
-                  <string>oph://${CAMERA}.overlays.overlay_1.position_x._write_pv</string>
-                 </property>
-                 <property name="step_size" stdset="0">
-                  <number>0</number>
-                 </property>
-                </widget>
-               </item>
-              </layout>
-             </item>
-             <item>
-              <spacer name="horizontalSpacer_4">
-               <property name="orientation">
-                <enum>Qt::Horizontal</enum>
-               </property>
-               <property name="sizeHint" stdset="0">
-                <size>
-                 <width>40</width>
-                 <height>20</height>
-                </size>
-               </property>
-              </spacer>
-             </item>
-            </layout>
-           </item>
-           <item>
-            <layout class="QHBoxLayout" name="horizontalLayout_8">
-             <item>
-              <widget class="PyDMSlider" name="PyDMSlider_6">
-               <property name="toolTip">
-                <string/>
-               </property>
-               <property name="channel" stdset="0">
-                <string>oph://${CAMERA}.overlays.overlay_1.size_y._write_pv</string>
-               </property>
-               <property name="orientation" stdset="0">
-                <enum>Qt::Vertical</enum>
-               </property>
-              </widget>
-             </item>
-             <item>
+            <widget class="PyDMTabWidget" name="PyDMTabWidget_2">
+             <property name="toolTip">
+              <string/>
+             </property>
+             <property name="whatsThis">
+              <string/>
+             </property>
+             <property name="currentIndex">
+              <number>0</number>
+             </property>
+             <property name="alarmChannels">
+              <stringlist>
+               <string></string>
+               <string></string>
+               <string></string>
+              </stringlist>
+             </property>
+             <widget class="QWidget" name="tab_6">
+              <attribute name="title">
+               <string>Cursor 1</string>
+              </attribute>
               <layout class="QVBoxLayout" name="verticalLayout_5">
                <item>
-                <widget class="QLabel" name="label_6">
-                 <property name="text">
-                  <string>Size</string>
-                 </property>
-                 <property name="alignment">
-                  <set>Qt::AlignCenter</set>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="PyDMSlider" name="PyDMSlider_5">
+                <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_8">
                  <property name="toolTip">
                   <string/>
                  </property>
-                 <property name="channel" stdset="0">
-                  <string>oph://${CAMERA}.overlays.overlay_1.size_x._write_pv</string>
+                 <property name="frameShape">
+                  <enum>QFrame::NoFrame</enum>
+                 </property>
+                 <property name="macros" stdset="0">
+                  <string>AD=${AD},OV=6</string>
+                 </property>
+                 <property name="filename" stdset="0">
+                  <string>area_detector_overlay.ui</string>
                  </property>
                 </widget>
                </item>
               </layout>
-             </item>
-             <item>
-              <spacer name="horizontalSpacer_5">
-               <property name="orientation">
-                <enum>Qt::Horizontal</enum>
-               </property>
-               <property name="sizeHint" stdset="0">
-                <size>
-                 <width>40</width>
-                 <height>20</height>
-                </size>
-               </property>
-              </spacer>
-             </item>
-            </layout>
+             </widget>
+             <widget class="QWidget" name="tab_7">
+              <attribute name="title">
+               <string>Cursor 2</string>
+              </attribute>
+              <layout class="QVBoxLayout" name="verticalLayout_12">
+               <item>
+                <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_7">
+                 <property name="toolTip">
+                  <string/>
+                 </property>
+                 <property name="frameShape">
+                  <enum>QFrame::NoFrame</enum>
+                 </property>
+                 <property name="macros" stdset="0">
+                  <string>AD=${AD},OV=7</string>
+                 </property>
+                 <property name="filename" stdset="0">
+                  <string>area_detector_overlay.ui</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+             <widget class="QWidget" name="tab_8">
+              <attribute name="title">
+               <string>Datetime</string>
+              </attribute>
+              <layout class="QVBoxLayout" name="verticalLayout_4">
+               <item>
+                <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_6">
+                 <property name="toolTip">
+                  <string/>
+                 </property>
+                 <property name="frameShape">
+                  <enum>QFrame::NoFrame</enum>
+                 </property>
+                 <property name="macros" stdset="0">
+                  <string>AD=${AD},OV=8</string>
+                 </property>
+                 <property name="filename" stdset="0">
+                  <string>area_detector_overlay.ui</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="groupBox">
+          <property name="title">
+           <string>ROIs</string>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_2">
+           <item>
+            <widget class="PyDMTabWidget" name="PyDMTabWidget">
+             <property name="toolTip">
+              <string/>
+             </property>
+             <property name="whatsThis">
+              <string/>
+             </property>
+             <property name="tabPosition">
+              <enum>QTabWidget::South</enum>
+             </property>
+             <property name="tabShape">
+              <enum>QTabWidget::Rounded</enum>
+             </property>
+             <property name="currentIndex">
+              <number>1</number>
+             </property>
+             <property name="tabBarAutoHide">
+              <bool>false</bool>
+             </property>
+             <property name="currentTabAlarmChannel" stdset="0">
+              <cstring></cstring>
+             </property>
+             <property name="alarmChannels">
+              <stringlist/>
+             </property>
+             <widget class="QWidget" name="tab">
+              <attribute name="title">
+               <string>Full</string>
+              </attribute>
+              <layout class="QHBoxLayout" name="horizontalLayout_11">
+               <item>
+                <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_5">
+                 <property name="toolTip">
+                  <string/>
+                 </property>
+                 <property name="frameShape">
+                  <enum>QFrame::NoFrame</enum>
+                 </property>
+                 <property name="macros" stdset="0">
+                  <string>AD=${AD},R=5</string>
+                 </property>
+                 <property name="filename" stdset="0">
+                  <string>area_detector_roi.ui</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+             <widget class="QWidget" name="tab_2">
+              <attribute name="title">
+               <string>1</string>
+              </attribute>
+              <layout class="QVBoxLayout" name="verticalLayout_8">
+               <item>
+                <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay">
+                 <property name="toolTip">
+                  <string/>
+                 </property>
+                 <property name="frameShape">
+                  <enum>QFrame::NoFrame</enum>
+                 </property>
+                 <property name="macros" stdset="0">
+                  <string>AD=${AD},R=1</string>
+                 </property>
+                 <property name="filename" stdset="0">
+                  <string>area_detector_roi.ui</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+             <widget class="QWidget" name="tab_5">
+              <attribute name="title">
+               <string>2</string>
+              </attribute>
+              <layout class="QVBoxLayout" name="verticalLayout_9">
+               <item>
+                <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_2">
+                 <property name="toolTip">
+                  <string/>
+                 </property>
+                 <property name="frameShape">
+                  <enum>QFrame::NoFrame</enum>
+                 </property>
+                 <property name="macros" stdset="0">
+                  <string>AD=${AD},R=2</string>
+                 </property>
+                 <property name="filename" stdset="0">
+                  <string>area_detector_roi.ui</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+             <widget class="QWidget" name="tab_4">
+              <attribute name="title">
+               <string>3</string>
+              </attribute>
+              <layout class="QVBoxLayout" name="verticalLayout_10">
+               <item>
+                <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_3">
+                 <property name="toolTip">
+                  <string/>
+                 </property>
+                 <property name="frameShape">
+                  <enum>QFrame::NoFrame</enum>
+                 </property>
+                 <property name="macros" stdset="0">
+                  <string>AD=${AD},R=3</string>
+                 </property>
+                 <property name="filename" stdset="0">
+                  <string>area_detector_roi.ui</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+             <widget class="QWidget" name="tab_3">
+              <attribute name="title">
+               <string>4</string>
+              </attribute>
+              <layout class="QVBoxLayout" name="verticalLayout_11">
+               <item>
+                <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_4">
+                 <property name="toolTip">
+                  <string/>
+                 </property>
+                 <property name="frameShape">
+                  <enum>QFrame::NoFrame</enum>
+                 </property>
+                 <property name="macros" stdset="0">
+                  <string>AD=${AD},R=4</string>
+                 </property>
+                 <property name="filename" stdset="0">
+                  <string>area_detector_roi.ui</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </widget>
            </item>
           </layout>
          </widget>
@@ -575,19 +667,19 @@
  </widget>
  <customwidgets>
   <customwidget>
+   <class>PyDMTabWidget</class>
+   <extends>QTabWidget</extends>
+   <header>pydm.widgets.tab_bar</header>
+  </customwidget>
+  <customwidget>
    <class>PyDMLabel</class>
    <extends>QLabel</extends>
    <header>pydm.widgets.label</header>
   </customwidget>
   <customwidget>
-   <class>PyDMCheckbox</class>
-   <extends>QCheckBox</extends>
-   <header>pydm.widgets.checkbox</header>
-  </customwidget>
-  <customwidget>
-   <class>PyDMEnumComboBox</class>
-   <extends>QComboBox</extends>
-   <header>pydm.widgets.enum_combo_box</header>
+   <class>PyDMEmbeddedDisplay</class>
+   <extends>QFrame</extends>
+   <header>pydm.widgets.embedded_display</header>
   </customwidget>
   <customwidget>
    <class>PyDMPushButton</class>

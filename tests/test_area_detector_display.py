@@ -4,24 +4,33 @@ import pydm
 from unittest import mock
 
 from firefly.main_window import FireflyMainWindow
-from firefly.camera_viewer import CameraViewerDisplay
+from firefly.area_detector_viewer import AreaDetectorViewerDisplay
 from haven.instrument.camera import load_cameras
 
 
 def test_open_camera_viewer_actions(ffapp, qtbot, sim_camera):
-    assert hasattr(ffapp, "camera_actions")
     # Now get the cameras ready
-    # sim_camera.pva.pv_name.set("test").wait()
     ffapp.prepare_camera_windows()
+    assert hasattr(ffapp, "camera_actions")
     assert len(ffapp.camera_actions) == 1
     # Launch an action and see that a window opens
     ffapp.camera_actions[0].trigger()
     assert "FireflyMainWindow_camera_s255id-gige-A" in ffapp.windows.keys()
 
 
+def test_open_area_detector_viewer_actions(ffapp, qtbot, sim_camera):
+    # Get the area detector parts ready
+    ffapp.prepare_area_detector_windows()
+    assert hasattr(ffapp, "area_detector_actions")
+    assert len(ffapp.area_detector_actions) == 1
+    # Launch an action and see that a window opens
+    ffapp.area_detector_actions[0].trigger()
+    assert "FireflyMainWindow_area_detector_s255id-gige-A" in ffapp.windows.keys()
+
+
 def test_image_plotting(ffapp, qtbot, sim_camera):
     FireflyMainWindow()
-    display = CameraViewerDisplay(macros={"CAMERA": sim_camera.name})
+    display = AreaDetectorViewerDisplay(macros={"AD": sim_camera.name})
     assert isinstance(display.image_view, pyqtgraph.ImageView)
     assert isinstance(display.image_channel, pydm.PyDMChannel)
     # Give it some grayscale data
@@ -47,7 +56,7 @@ def test_image_plotting(ffapp, qtbot, sim_camera):
 
 def test_caqtdm_window(ffapp, sim_camera):
     FireflyMainWindow()
-    display = CameraViewerDisplay(macros={"CAMERA": sim_camera.name})
+    display = AreaDetectorViewerDisplay(macros={"AD": sim_camera.name})
     display._open_caqtdm_subprocess = mock.MagicMock()
     # Launch the caqtdm display
     display.launch_caqtdm()

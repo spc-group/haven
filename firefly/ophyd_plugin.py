@@ -29,7 +29,7 @@ class OphydConnection(Connection):
         # Resolve the device based on the ohpyd name
         try:
             component = registry.find(name)
-        except exceptions.ComponentNotFound:
+        except (exceptions.ComponentNotFound, AttributeError):
             # Component does not exist, so make a dummy component
             log.warning(f"Could not find component {name} in instrument registry.")
             component = type("NullDevice", (), {"pvname": name})

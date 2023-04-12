@@ -45,7 +45,6 @@ from .instrument.fluorescence_detector import (
     load_fluorescence_detectors,
 )
 from .instrument.motor import HavenMotor  # noqa: F401
-from .instrument.camera import Camera  # noqa: F401
 
 from .xdi_writer import XDIWriter  # noqa: F401
 from .progress_bar import ProgressBar  # noqa: F401
