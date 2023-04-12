@@ -10,7 +10,7 @@ import logging
 
 import numpy as np
 
-from ..energy_ranges import ERange, KRange
+from ..energy_ranges import ERange, KRange, merge_ranges
 from .. import exceptions
 from .energy_scan import energy_scan
 from ..typing import DetectorList
@@ -145,13 +145,7 @@ def xafs_scan(
             )
         )
     # Convert energy ranges to energy list and exposure list
-    energies = []
-    exposures = []
-    for rng in energy_ranges:
-        energies.extend(rng.energies())
-        exposures.extend(rng.exposures())
-    energies = np.asarray(energies, dtype="float64")
-    exposures = np.asarray(exposures, dtype="float64")
+    energies, exposures = merge_ranges(*energy_ranges)
     if len(energies) < 1:
         raise exceptions.NoEnergies("Plan would not produce any energy points.")
     # Execute the energy scan

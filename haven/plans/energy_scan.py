@@ -112,8 +112,6 @@ def energy_scan(
     log.debug(f"Found registered detectors: {real_detectors}")
     energy_positioners = [registry.find(ep) for ep in energy_positioners]
     time_positioners = [registry.find(tp) for tp in time_positioners]
-    # Resolve the energy ranges if provided
-    merge_ranges(*energies, default_exposure=exposure)
     # Convert an individual exposure time to an array of exposure times
     if not hasattr(exposure, "__iter__"):
         exposure = [exposure] * len(energies)
