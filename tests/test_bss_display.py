@@ -142,8 +142,7 @@ def test_bss_proposal_model(qtbot, ffapp, bss_api):
 
 def test_bss_proposal_updating(qtbot, ffapp, bss_api, ioc_bss, sim_registry):
     load_aps()
-    bss = sim_registry.find(name="bss")
-    bss.wait_for_connection(timeout=20)
+    sim_registry.find(name="bss").wait_for_connection(timeout=60)
     display = BssDisplay(api=bss_api)
     # Set some base-line values on the IOC
     caput(ioc_bss.pvs["proposal_id"], "")
@@ -195,10 +194,11 @@ def test_bss_esaf_model(qtbot, ffapp, bss_api):
     assert display.ui.esaf_view.model() is display.esaf_model
 
 
-def test_bss_esaf_updating(qtbot, ffapp, bss_api, ioc_bss):
+def test_bss_esaf_updating(qtbot, ffapp, bss_api, ioc_bss, sim_registry):
     load_aps()
     window = FireflyMainWindow()
     display = BssDisplay(api=bss_api)
+    sim_registry.find(name="bss").wait_for_connection(timeout=60)
     # Set some base-line values on the IOC
     caput(ioc_bss.pvs["esaf_id"], "")
     # Change the ESAF item
