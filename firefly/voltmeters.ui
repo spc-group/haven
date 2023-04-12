@@ -110,7 +110,7 @@
           <string>Auto Count</string>
          </property>
          <property name="channel" stdset="0">
-          <string>${PREFIX}.CONT</string>
+          <string>${SCALER}.CONT</string>
          </property>
         </widget>
        </item>
@@ -129,10 +129,10 @@
           <bool>false</bool>
          </property>
          <property name="PyDMToolTip" stdset="0">
-          <string>${PREFIX}_offset_start.PROC</string>
+          <string>${SCALER}_offset_start.PROC</string>
          </property>
          <property name="channel" stdset="0">
-          <string>${PREFIX}_offset_start.PROC</string>
+          <string>${SCALER}_offset_start.PROC</string>
          </property>
          <property name="passwordProtected" stdset="0">
           <bool>false</bool>
