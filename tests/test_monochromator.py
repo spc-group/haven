@@ -7,7 +7,7 @@ from haven import Monochromator
 
 def test_mono_energy_signal(ioc_mono):
     mono = Monochromator(ioc_mono.prefix.strip(":"), name="monochromator")
-    mono.wait_for_connection()
+    mono.wait_for_connection(timeout=20)
     time.sleep(0.1)
     # Change mono energy
     mono.energy.set(5000)

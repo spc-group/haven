@@ -21,6 +21,23 @@ def test_device(qtbot, ffapp, sim_registry):
     assert isinstance(display._device, haven.IonChamber)
 
 
+def test_scaler_prefix(qtbot, ffapp, sim_registry):
+    """Make sure the scaler prefix gets passed in as a macro."""
+    # Set up fake ion chamber
+    window = FireflyMainWindow()
+    ic = haven.IonChamber(
+        "",
+        scaler_prefix="255idcVME:scaler1",
+        ch_num=1,
+        name="my_ion_chamber",
+        labels={"ion_chambers"},
+    )
+    sim_registry.register(ic)
+    # Check the macros
+    display = VoltmetersDisplay()
+    assert display.macros()["SCALER"] == "255idcVME:scaler1"
+
+
 def test_gain_button(qtbot, ffapp):
     # Fake ion chamber to make sure the gain was actually changed
     I0 = mock.MagicMock()
@@ -81,6 +98,6 @@ def test_embedded_display_widgets(qtbot, sim_registry, ffapp):
     emb_disp = vms_display._ion_chamber_displays[0]
     disp = emb_disp.open_file(force=True)
     macros = disp.macros()
-    assert macros == {"IC": "I0"}
+    assert macros == {"IC": "I0", "SCALER": "eggs_ioc"}
     # Check that a device has been created properly
     assert type(disp._device) is haven.IonChamber
