@@ -70,6 +70,10 @@ dependencies:
   - scikit-image
   - xlrd
 
+  # XES analysis packages
+  - scikit-learn
+  - kneed
+
   # --- Bluesky framework packages
   - adl2pydm
   - apstools
