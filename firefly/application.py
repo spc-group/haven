@@ -64,6 +64,10 @@ class FireflyApplication(PyDMApplication):
     # Keep track of area detectors
     area_detector_actions: Sequence = []
     area_detector_window_slots: Sequence
+
+    # Keep track of XRF detectors
+    xrf_detector_actions: Sequence = []
+    xrf_detector_window_slots: Sequence    
     
     # Signals for running plans on the queueserver
     queue_item_added = Signal(object)
@@ -114,6 +118,7 @@ class FireflyApplication(PyDMApplication):
         self.prepare_motor_windows()
         self.prepare_camera_windows()
         self.prepare_area_detector_windows()
+        self.prepare_xrf_detector_windows()
         # Action for showing the beamline status window
         self._setup_window_action(
             action_name="show_status_window_action",
@@ -210,31 +215,16 @@ class FireflyApplication(PyDMApplication):
             window_slots.append(slot)            
             
     def prepare_area_detector_windows(self):
-        """Prepare the support for opening motor windows."""
+        """Prepare the support for opening area detector windows."""
         self._prepare_device_windows(device_label="area_detectors", attr_name="area_detector")
+
+    def prepare_xrf_detector_windows(self):
+        """Prepare support to open X-ray fluorescence detector windows."""
+        self._prepare_device_windows(device_label="xrf_detectors",
+                                     attr_name="xrf_detector")
 
     def prepare_camera_windows(self):
         self._prepare_device_windows(device_label="cameras", attr_name="camera")
-        # try:
-        #     cameras = sorted(registry.findall(label="cameras"), key=lambda x: x.name)
-        # except ComponentNotFound:
-        #     log.warning(
-        #         "No cameras found, [Detectors] -> [Cameras] menu will be empty."
-        #     )
-        #     cameras = []
-        # # Create menu actions for each camera
-        # self.camera_actions = []
-        # self.camera_window_slots = []
-        # self.camera_windows = {}
-        # for camera in cameras:
-        #     action = QtWidgets.QAction(self)
-        #     action.setObjectName(f"actionShow_Camera_{camera.name}")
-        #     action.setText(camera.name)
-        #     self.camera_actions.append(action)
-        #     # Create a slot for opening the motor window
-        #     slot = partial(self.show_camera_window, device=camera)
-        #     action.triggered.connect(slot)
-        #     self.camera_window_slots.append(slot)
 
     def prepare_motor_windows(self):
         """Prepare the support for opening motor windows."""
@@ -377,6 +367,17 @@ class FireflyApplication(PyDMApplication):
             name=f"FireflyMainWindow_area_detector_{device_name}",
             macros={"AD": device.name},
         )
+
+    def show_xrf_detector_window(self, *args, device):
+        """Instantiate a new main window for this application."""
+        device_name = device.name.replace(" ", "_")
+        self.show_window(
+            FireflyMainWindow,
+            ui_dir / "xrf_detector.ui",
+            name=f"FireflyMainWindow_xrf_detector_{device_name}",
+            macros={"DEV": device.name},
+        )
+        
 
     def show_status_window(self, stylesheet_path=None):
         """Instantiate a new main window for this application."""

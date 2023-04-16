@@ -319,7 +319,7 @@ def load_dxp_detector(device_name, prefix, num_elements):
     class_name = device_name.title().replace("_", "")
     parent_classes = (DxpDetectorBase,)
     Cls = type(class_name, parent_classes, attrs)
-    det = Cls(prefix=f"{prefix}:", name=device_name)
+    det = Cls(prefix=f"{prefix}:", name=device_name, labels={"xrf_detectors"})
     registry.register(det)
 
 

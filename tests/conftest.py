@@ -21,6 +21,7 @@ from haven import registry, load_config
 from haven.instrument.aps import ApsMachine
 from haven.instrument.shutter import Shutter
 from haven.instrument.camera import AravisDetector
+from haven.instrument.fluorescence_detector import DxpDetectorBase
 from firefly.application import FireflyApplication
 from firefly.ophyd_plugin import OphydPlugin
 
@@ -327,3 +328,11 @@ def sim_camera(sim_registry):
     # Registry with the simulated registry
     sim_registry.register(camera)
     yield camera
+
+
+@pytest.fixture()
+def sim_vortex(sim_registry):
+    FakeDXP = make_fake_device(DxpDetectorBase)
+    vortex = FakeDXP(name="vortex_me4", labels={"xrf_detectors"})
+    sim_registry.register(vortex)
+    yield vortex
