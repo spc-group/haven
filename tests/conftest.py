@@ -2,6 +2,10 @@ import os
 from pathlib import Path
 from types import SimpleNamespace
 from collections import OrderedDict
+from subprocess import Popen, TimeoutExpired, PIPE
+import subprocess
+import shutil
+import time
 
 import pytest
 from qtpy import QtWidgets
@@ -327,3 +331,5 @@ def sim_camera(sim_registry):
     # Registry with the simulated registry
     sim_registry.register(camera)
     yield camera
+
+

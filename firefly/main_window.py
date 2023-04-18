@@ -133,6 +133,7 @@ class FireflyMainWindow(PyDMMainWindow):
             self.ui.menuDetectors.addAction(action)
         # Add other menu actions
         self.ui.menuView.addAction(app.show_status_window_action)
+        self.ui.menuView.addAction(app.show_run_browser_action)
         self.ui.menuView.addAction(app.launch_queuemonitor_action)
         self.ui.menuSetup.addAction(app.show_bss_window_action)
         self.ui.menuPositioners.addAction(app.show_energy_window_action)

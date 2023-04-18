@@ -49,6 +49,7 @@ class FireflyApplication(PyDMApplication):
 
     # Actions for showing window
     show_status_window_action: QtWidgets.QAction
+    show_runs_window_action: QtWidgets.QAction
     show_energy_window_action: QtWidgets.QAction
     show_bss_window_action: QtWidgets.QAction
     launch_queuemonitor_action: QtWidgets.QAction
@@ -119,6 +120,12 @@ class FireflyApplication(PyDMApplication):
             action_name="show_status_window_action",
             text="Beamline Status",
             slot=self.show_status_window,
+        )
+        # Action for showing the run browser window
+        self._setup_window_action(
+            action_name="show_run_browser_action",
+            text="Browse Runs",
+            slot=self.show_run_browser,
         )
         # Action for launch queue-monitor
         self._setup_window_action(
@@ -382,6 +389,12 @@ class FireflyApplication(PyDMApplication):
         """Instantiate a new main window for this application."""
         self.show_window(
             FireflyMainWindow, ui_dir / "status.py", name="beamline_status"
+        )
+
+    @QtCore.Slot()
+    def show_run_browser(self):
+        self.show_window(
+            PlanMainWindow, ui_dir / "run_browser.py", name="run_browser"
         )
 
     make_main_window = show_status_window

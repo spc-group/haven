@@ -1,4 +1,7 @@
 import databroker
+from tiled import client
+
+from ._iconfig import load_config
 
 
 def load_catalog(name: str = "bluesky"):
@@ -76,3 +79,11 @@ def load_data(uid, catalog_name="bluesky", stream="primary"):
     res = load_result(uid=uid, catalog_name=catalog_name, stream=stream)
     data = res.read()
     return data
+
+
+def tiled_client(entry_node=None):
+    config = load_config()
+    client_ = client.from_uri(config['database']['tiled']['uri'])
+    if entry_node is not None:
+        client_ = client_[entry_node]
+    return client_
