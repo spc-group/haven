@@ -37,8 +37,8 @@ catalog = "bluesky"
 
 [database.tiled]
 
-uri = "http://localhost:8337/"
-entry_node = "255id_testing"
+uri = "http://fedorov.xray.aps.anl.gov:8001/"
+entry_node = "25idc_microprobe"
 
 [shutter]
 prefix = "PSS:99ID"

@@ -1,3 +1,9 @@
+[database.tiled]
+
+uri = "http://localhost:8337/"
+entry_node = "255id_testing"
+
+
 # Keys for camera definitions must begin with "cam" (e.g. "camA", "camB")
 [camera.camA]
 

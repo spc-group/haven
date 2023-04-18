@@ -22,7 +22,7 @@
      <widget class="QWidget" name="verticalLayoutWidget">
       <layout class="QVBoxLayout" name="verticalLayout_2" stretch="1,0,0">
        <item>
-        <widget class="QTableView" name="run_table">
+        <widget class="QTableView" name="run_tableview">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
            <horstretch>1</horstretch>
@@ -245,7 +245,7 @@
        </sizepolicy>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="metadata_tab">
        <attribute name="title">
@@ -253,20 +253,21 @@
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout">
         <item>
-         <widget class="QScrollArea" name="scrollArea">
-          <property name="widgetResizable">
+         <widget class="QPlainTextEdit" name="metadata_textedit">
+          <property name="font">
+           <font>
+            <family>Monospace</family>
+           </font>
+          </property>
+          <property name="readOnly">
            <bool>true</bool>
           </property>
-          <widget class="QWidget" name="scrollAreaWidgetContents">
-           <property name="geometry">
-            <rect>
-             <x>0</x>
-             <y>0</y>
-             <width>629</width>
-             <height>493</height>
-            </rect>
-           </property>
-          </widget>
+          <property name="plainText">
+           <string/>
+          </property>
+          <property name="placeholderText">
+           <string>Select a run from the table on the left to view metadata.</string>
+          </property>
          </widget>
         </item>
        </layout>
@@ -362,6 +363,22 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>run_tableview</tabstop>
+  <tabstop>filters_button</tabstop>
+  <tabstop>pushButton</tabstop>
+  <tabstop>lineEdit</tabstop>
+  <tabstop>proposal_combobox</tabstop>
+  <tabstop>proposal_current_checkbox</tabstop>
+  <tabstop>esaf_combobox</tabstop>
+  <tabstop>esaf_current_checkbox</tabstop>
+  <tabstop>comboBox_3</tabstop>
+  <tabstop>lineEdit_2</tabstop>
+  <tabstop>comboBox_4</tabstop>
+  <tabstop>tabWidget</tabstop>
+  <tabstop>checkBox</tabstop>
+  <tabstop>scrollArea_2</tabstop>
+ </tabstops>
  <resources/>
  <connections>
   <connection>
@@ -372,11 +389,11 @@
    <hints>
     <hint type="sourcelabel">
      <x>50</x>
-     <y>220</y>
+     <y>341</y>
     </hint>
     <hint type="destinationlabel">
      <x>149</x>
-     <y>14</y>
+     <y>365</y>
     </hint>
    </hints>
   </connection>
