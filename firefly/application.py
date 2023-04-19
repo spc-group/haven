@@ -107,10 +107,10 @@ class FireflyApplication(PyDMApplication):
 
     def setup_window_actions(self):
         """Create QActions for clicking on menu items, shortcuts, etc.
-
+        
         These actions should be usable by multiple
         windows. Window-specific actions belong with the window.
-
+        
         """
         self.prepare_motor_windows()
         self.prepare_camera_windows()

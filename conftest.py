@@ -2,6 +2,7 @@ import subprocess
 from subprocess import Popen, PIPE
 import shutil
 import time
+from tiled.client import from_uri
 
 import pytest
 
@@ -22,11 +23,11 @@ def tiled_is_running(port, match_command=True):
 def sim_tiled():
     """Start a tiled server using production data from 25-ID."""
     timeout = 20
-    port = 8337
+    port = "8337"
     if tiled_is_running(port, match_command=False):
         raise RuntimeError(f"Port {port} is already in use.")
     tiled_bin = shutil.which("tiled")
-    process = Popen([tiled_bin, "serve", "pyobject", "--public", "--port", "8337", "haven.tests.tiled_example:tree"], stdout=PIPE, stderr=PIPE)
+    process = Popen([tiled_bin, "serve", "pyobject", "--public", "--port", str(port), "haven.tests.tiled_example:tree"])
     # Wait for start to complete
     for i in range(timeout):
         if tiled_is_running(port):
@@ -36,7 +37,9 @@ def sim_tiled():
         # Timeout finished without startup or error
         process.kill()
         raise TimeoutError
-    yield process
+    # Prepare the client
+    client = from_uri(f"http://localhost:{port}")
+    yield client
     # Shut down
     process.terminate()
     # Wait for start to complete

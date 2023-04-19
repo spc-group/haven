@@ -84,6 +84,7 @@ def load_data(uid, catalog_name="bluesky", stream="primary"):
 def tiled_client(entry_node=None):
     config = load_config()
     client_ = client.from_uri(config['database']['tiled']['uri'])
-    if entry_node is not None:
-        client_ = client_[entry_node]
+    if entry_node is None:
+        entry_node = config['database']['tiled']['entry_node']
+    client_ = client_[entry_node]
     return client_
