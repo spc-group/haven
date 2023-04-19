@@ -45,18 +45,27 @@ run1 = pd.DataFrame({
     })
 
 print("Done generating example data.", file=sys.stderr)
+hints = {
+    'energy':
+    {'fields': ['energy_energy', 'energy_id_energy_readback']},
+}
 
 bluesky_mapping = {
     '7d1daf1d-60c7-4aa7-a668-d1cd97e5335f': MapAdapter(
         {
             "primary": MapAdapter({
                 "data": DatasetAdapter.from_dataset(run1.to_xarray()),
-            }),
+            }, metadata={"descriptors": [{"hints": hints}]}),
         },
         metadata = {
             "start": {
                 "plan_name": "xafs_scan",
                 "uid": "7d1daf1d-60c7-4aa7-a668-d1cd97e5335f",
+                "hints": {'dimensions': [
+                    [
+                        ['energy_energy'],
+                        'primary']]}
+
             }
         }),
     # '1942a888-2627-43e6-ad36-82f0022e2c57': MapAdapter({

@@ -1,3 +1,4 @@
+import time
 from unittest.mock import MagicMock
 from collections import namedtuple
 
@@ -54,7 +55,7 @@ def test_metadata(qtbot, ffapp, sim_tiled):
     assert "xafs_scan" in text
 
 
-def test_1d_plot_controls(qtbot, ffapp, sim_tiled):
+def test_1d_plot_signals(qtbot, ffapp, sim_tiled):
     client = sim_tiled["255id_testing"]
     display = RunBrowserDisplay(client=client)
     # Check that the 1D plot was created
@@ -71,6 +72,46 @@ def test_1d_plot_controls(qtbot, ffapp, sim_tiled):
                      display.ui.signal_x_combobox]:
         assert combobox.findText("energy_energy") > -1, f"energy_energy signal not in {combobox.objectName()}."
 
+
+def test_1d_plot_signal_memory(qtbot, ffapp, sim_tiled):
+    """Do we remember the signals that were previously selected."""
+    client = sim_tiled["255id_testing"]
+    display = RunBrowserDisplay(client=client)
+    # Check that the 1D plot was created
+    plot_widget = display.ui.plot_1d_view
+    plot_item = display.plot_1d_item
+    assert isinstance(plot_widget, PlotWidget)
+    assert isinstance(plot_item, PlotItem)
+    # Update the list of runs and see if the controsl get updated
+    display._selected_runs = client.values()
+    display.update_1d_signals()
+    # Check signals in comboboxes
+    cb = display.ui.signal_y_combobox
+    assert cb.currentText() == "energy_energy"
+    cb.setCurrentIndex(1)
+    assert cb.currentText() == "energy_id_energy_readback"
+    # # Update the combobox signals and make sure the text didn't change
+    display.update_1d_signals()
+    assert cb.currentText() == "energy_id_energy_readback"
+    
+
+def test_1d_hinted_signals(qtbot, ffapp, sim_tiled):
+    client = sim_tiled["255id_testing"]
+    display = RunBrowserDisplay(client=client)
+    display.ui.plot_1d_hints_checkbox.setChecked(True)
+    # Check that the 1D plot was created
+    plot_widget = display.ui.plot_1d_view
+    plot_item = display.plot_1d_item
+    assert isinstance(plot_widget, PlotWidget)
+    assert isinstance(plot_item, PlotItem)
+    # Update the list of runs and see if the controsl get updated
+    display._selected_runs = client.values()
+    display.update_1d_signals()
+    # Check signals in checkboxes
+    combobox = display.ui.signal_x_combobox
+    assert combobox.findText("energy_energy") > -1, f"hinted signal not in {combobox.objectName()}."
+    assert combobox.findText("It_net_counts") == -1, f"unhinted signal found in {combobox.objectName()}."
+        
 
 def test_update_1d_plot(qtbot, ffapp, sim_tiled):
     client = sim_tiled["255id_testing"]
@@ -102,4 +143,3 @@ def test_update_1d_plot(qtbot, ffapp, sim_tiled):
     expected_ydata = np.gradient(expected_ydata, expected_xdata)
     np.testing.assert_almost_equal(xdata, expected_xdata)
     np.testing.assert_almost_equal(ydata, expected_ydata)
-    # assert False

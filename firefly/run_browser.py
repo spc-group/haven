@@ -49,29 +49,50 @@ class RunBrowserDisplay(display.FireflyDisplay):
         self.ui.logarithm_checkbox.stateChanged.connect(self.update_1d_plot)
         self.ui.invert_checkbox.stateChanged.connect(self.update_1d_plot)
         self.ui.gradient_checkbox.stateChanged.connect(self.update_1d_plot)
+        self.ui.plot_1d_hints_checkbox.stateChanged.connect(self.update_1d_signals)
         # Set up 1D plotting widgets
         self.plot_1d_item = self.ui.plot_1d_view.getPlotItem()
         self.plot_1d_item.addLegend()
+
+    def get_signals(self, run, hinted_only=False):
+        if hinted_only:
+            xsignals = run.metadata['start']['hints']['dimensions'][0][0]
+            ysignals = []
+            hints = run['primary'].metadata['descriptors'][0]['hints']
+            for device, dev_hints in hints.items():
+                ysignals.extend(dev_hints['fields'])
+        else:
+            xsignals = ysignals = run['primary']['data'].keys()
+        return xsignals, ysignals
     
     def update_1d_signals(self, *args):
+        # Store old values for restoring later
+        comboboxes = [self.ui.signal_x_combobox, self.ui.signal_y_combobox, self.ui.signal_r_combobox]
+        old_values = [cb.currentText() for cb in comboboxes]
         # Determine valid list of columns to choose from
-        cols = set()
+        xcols = set()
+        ycols = set()
         runs = self._selected_runs
+        use_hints = self.ui.plot_1d_hints_checkbox.isChecked()
         for run in runs:
             try:
-                data = run['primary']['data']
+                _xcols, _ycols = self.get_signals(run, hinted_only=use_hints)
             except KeyError:
                 continue
             else:
-                cols.update(data.keys())
+                xcols.update(_xcols)
+                ycols.update(_ycols)
         # Update the UI with the list of controls
-        for cb in [self.ui.signal_x_combobox,
-                   self.ui.signal_y_combobox,
+        cb = self.ui.signal_x_combobox
+        cb.clear()
+        cb.addItems(sorted(list(xcols)))
+        for cb in [self.ui.signal_y_combobox,
                    self.ui.signal_r_combobox,]:
             cb.clear()
-            cb.addItems(sorted(list(cols)))
-        # Update the plot with new run data
-        self.update_1d_plot(runs)
+            cb.addItems(sorted(list(ycols)))
+        # Restore previous values
+        for val, cb in zip(old_values, comboboxes):
+            cb.setCurrentText(val)
 
     def update_small_multiples(self, *args):
         ...
@@ -115,7 +136,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
         except KeyError as e:
             # No data, so nothing to plot
             msg = f"Cannot find key {e} in {run}."
-            log.warning(e)
+            log.warning(msg)
             raise exceptions.SignalNotFound(msg)
         return x_data, y_data, r_data
 
