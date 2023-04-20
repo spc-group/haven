@@ -37,7 +37,8 @@ catalog = "bluesky"
 
 [database.tiled]
 
-uri = "http://fedorov.xray.aps.anl.gov:8001/"
+# uri = "http://fedorov.xray.aps.anl.gov:8001/"
+uri = "http://hood.xray.aps.anl.gov:8001/"
 entry_node = "25idc_microprobe"
 
 [shutter]

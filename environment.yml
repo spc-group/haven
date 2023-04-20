@@ -49,7 +49,7 @@ dependencies:
   # Database management
   - pymongo
   - databroker-pack
-  - databroker =1.2
+  - databroker =1.2.5
 
   # --- Qt
   - pyqt >=5.12
@@ -72,7 +72,7 @@ dependencies:
 
   # --- Bluesky framework packages
   - adl2pydm
-  - apstools
+  - apstools >=1.6.15
   - area-detector-handlers
   - bluesky-queueserver
   - bluesky-queueserver-api

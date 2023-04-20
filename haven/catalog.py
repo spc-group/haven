@@ -1,5 +1,6 @@
 import databroker
-from tiled import client
+from tiled.client import from_uri
+from tiled.client.cache import Cache
 
 from ._iconfig import load_config
 
@@ -81,9 +82,11 @@ def load_data(uid, catalog_name="bluesky", stream="primary"):
     return data
 
 
-def tiled_client(entry_node=None):
+def tiled_client(entry_node=None, uri=None):
     config = load_config()
-    client_ = client.from_uri(config['database']['tiled']['uri'])
+    if uri is None:
+        uri = config['database']['tiled']['uri']
+    client_ = from_uri(uri, cache=Cache.in_memory(2e9))
     if entry_node is None:
         entry_node = config['database']['tiled']['entry_node']
     client_ = client_[entry_node]

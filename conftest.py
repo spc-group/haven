@@ -3,6 +3,7 @@ from subprocess import Popen, PIPE
 import shutil
 import time
 from tiled.client import from_uri
+from tiled.client.cache import Cache
 
 import pytest
 
@@ -38,7 +39,7 @@ def sim_tiled():
         process.kill()
         raise TimeoutError
     # Prepare the client
-    client = from_uri(f"http://localhost:{port}")
+    client = from_uri(f"http://localhost:{port}", cache=Cache.in_memory(2e9))
     yield client
     # Shut down
     process.terminate()

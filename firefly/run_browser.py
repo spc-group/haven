@@ -3,45 +3,58 @@ import datetime as dt
 from typing import Sequence
 import yaml
 from httpx import HTTPStatusError
+from contextlib import contextmanager
 
 import numpy as np
 from qtpy.QtGui import QStandardItemModel, QStandardItem
-from qtpy.QtCore import Signal, Slot
+from qtpy.QtCore import Signal, Slot, QThread
 from pyqtgraph import PlotItem
 
 from firefly import display, FireflyApplication
+from firefly.run_client import DatabaseWorker
 from haven import tiled_client, load_config, exceptions
 
 log = logging.getLogger(__name__)
 
 
 class RunBrowserDisplay(display.FireflyDisplay):
-    # def customize_ui(self):
-    #     app = FireflyApplication.instance()
-    #     self.ui.bss_modify_button.clicked.connect(app.show_bss_window_action.trigger)
-
     runs_model: QStandardItemModel
     _run_col_names: Sequence = ["UID", "Plan", "Sample", "Datetime", "Proposal", "ESAF", "Edge"]
-    _selected_runs: Sequence = []
 
     # Signals
     runs_selected = Signal(list)
+    runs_model_changed = Signal(QStandardItemModel)
+    plot_1d_changed = Signal(object)
 
-    def __init__(self, client=None, args=None, macros=None, **kwargs):
-        if client is None:
-            client = tiled_client()
-        self.client = client
+    def __init__(self, root_node=None, args=None, macros=None, **kwargs):
+        # self.prepare_run_client(root_node=root_node)
         super().__init__(args=args, macros=macros, **kwargs)
+        self.start_run_client(root_node=root_node)
+
+    def start_run_client(self, root_node):
+        """Set up the database client in a separate thread."""
+        # Create the thread and worker
+        thread = QThread(parent=self)
+        self._thread = thread
+        worker = DatabaseWorker(root_node=root_node)
+        self._db_worker = worker
+        worker.moveToThread(thread)
+        # Connect signals/slots
+        thread.started.connect(worker.load_all_runs)
+        worker.all_runs_changed.connect(self.set_runs_model_items)
+        worker.selected_runs_changed.connect(self.update_metadata)
+        worker.selected_runs_changed.connect(self.update_1d_signals)
+        worker.selected_runs_changed.connect(self.update_1d_plot)
+        self.runs_selected.connect(worker.load_selected_runs)
+        # Start the thread
+        thread.start()
 
     def customize_ui(self):
-        # Setup controls for select which run to show
         self.load_models()
+        # Setup controls for select which run to show
         self.ui.run_tableview.selectionModel().selectionChanged.connect(
             self.update_selected_runs
         )
-        self.runs_selected.connect(self.update_metadata)
-        self.runs_selected.connect(self.update_1d_signals)
-        self.runs_selected.connect(self.update_1d_plot)
         self.ui.signal_y_combobox.currentTextChanged.connect(self.update_1d_plot)
         self.ui.signal_x_combobox.currentTextChanged.connect(self.update_1d_plot)
         self.ui.signal_r_combobox.currentTextChanged.connect(self.update_1d_plot)
@@ -64,6 +77,14 @@ class RunBrowserDisplay(display.FireflyDisplay):
         else:
             xsignals = ysignals = run['primary']['data'].keys()
         return xsignals, ysignals
+
+    def set_runs_model_items(self, runs):
+        self.runs_model.clear()
+        self.runs_model.setHorizontalHeaderLabels(self._run_col_names)
+        for run in runs:
+            items = [QStandardItem(val) for val in run.values()]
+            self.ui.runs_model.appendRow(items)
+        self.runs_model_changed.emit(self.ui.runs_model)
     
     def update_1d_signals(self, *args):
         # Store old values for restoring later
@@ -72,7 +93,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
         # Determine valid list of columns to choose from
         xcols = set()
         ycols = set()
-        runs = self._selected_runs
+        runs = self._db_worker.selected_runs
         use_hints = self.ui.plot_1d_hints_checkbox.isChecked()
         for run in runs:
             try:
@@ -142,6 +163,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
 
 
     def update_1d_plot(self, *args):
+        print("Clearing")
         self.plot_1d_item.clear()
         # Figure out which signals to plot
         y_signal = self.ui.signal_y_combobox.currentText()
@@ -156,7 +178,8 @@ class RunBrowserDisplay(display.FireflyDisplay):
         use_grad = self.ui.gradient_checkbox.isChecked()
         # Do the plotting for each run
         y_string = ""
-        for idx, run in enumerate(self._selected_runs):
+        for idx, run in enumerate(self._db_worker.selected_runs):
+            print(run, y_signal)
             # Load datasets from the database
             try:
                 x_data, y_data, r_data = self.load_run_data(run, x_signal,
@@ -189,12 +212,13 @@ class RunBrowserDisplay(display.FireflyDisplay):
             self.plot_1d_item.plot(x=x_data, y=y_data, pen=idx, name=run.metadata['start']['uid'], clear=False)
         # Axis formatting
         self.plot_1d_item.setLabels(left=y_string, bottom=x_signal)
+        self.plot_1d_changed.emit(self.plot_1d_item)
         
     def update_metadata(self, *args):
         """Render metadata for the runs into the metadata widget."""
         # Combine the metadata in a human-readable output
         text = ""
-        runs = self._selected_runs
+        runs = self._db_worker.selected_runs
         for run in runs:
             md_dict = dict(**run.metadata)
             text += yaml.dump(md_dict)
@@ -208,62 +232,13 @@ class RunBrowserDisplay(display.FireflyDisplay):
         col_idx = self._run_col_names.index("UID")
         indexes = self.ui.run_tableview.selectedIndexes()
         uids = [i.siblingAtColumn(col_idx).data() for i in indexes]
-        # Retrieve runs from the database
-        runs = [self.client[uid] for uid in uids]
-        self._selected_runs = runs
-        self.runs_selected.emit(runs)
+        self.runs_selected.emit(uids)
 
     def load_models(self):
         # Set up the model
-        col_names = self._run_col_names
         self.runs_model = QStandardItemModel()
-        self.runs_model.setHorizontalHeaderLabels(col_names)
         # Add the model to the UI element
         self.ui.run_tableview.setModel(self.runs_model)
-        self.load_list_of_runs()
-
-    def load_list_of_runs(self):
-        for uid, node in self.client.items():
-            metadata = node.metadata
-            try:
-                start_doc = node.metadata['start']
-            except KeyError:
-                log.debug(f"Skipping run with no start doc: {uid}")
-                continue
-            # Get a human-readable timestamp for the run
-            timestamp = start_doc.get('time')
-            if timestamp is None:
-                run_datetime = ""
-            else:
-                run_datetime = dt.datetime.fromtimestamp(timestamp)
-                run_datetime = run_datetime.strftime("%Y-%m-%d %H:%M:%S")
-            # Get the X-ray edge scanned
-            edge = start_doc.get("edge")
-            E0 = start_doc.get("E0")
-            if edge and E0:
-                edge_str = f"{edge} ({E0} eV)"
-            elif edge:
-                edge_str = edge
-            elif E0:
-                edge_str = str(E0)
-            else:
-                edge_str = ""
-            # Build the table item
-            # Get sample data from: dd80f432-c849-4749-a8f3-bdeec6f9c1f0
-            items = [
-                uid,
-                start_doc.get('plan_name', ""),
-                start_doc.get('sample_name', ""),
-                run_datetime,
-                start_doc.get("proposal_id", ""),
-                start_doc.get("esaf_id", ""),
-                edge_str,
-            ]
-            try:
-                items = [QStandardItem(item) for item in items]
-            except:
-                raise
-            self.ui.runs_model.appendRow(items)
 
     def ui_filename(self):
         return "run_browser.ui"

@@ -92,13 +92,12 @@ def mono_ID_calibration(
         except AttributeError:
             mono_energy = mono_motor.readback.get()
         if signal_name in peak_center.keys():
-            results_df = results_df.append(
-                {
-                    "id_energy": bec.peaks["cen"][signal_name],
-                    "mono_energy": mono_energy,
-                },
-                ignore_index=True,
-            )
+            # results_df = results_df.append(
+            new_row = {
+                "id_energy": bec.peaks["cen"][signal_name],
+                "mono_energy": mono_energy,
+            }
+            results_df = pd.concat([results_df, pd.DataFrame([new_row])], ignore_index=True)
         print(results_df)
     # Fit the overall mono-ID calibration curve
     if fit_model is None:

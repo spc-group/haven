@@ -331,5 +331,3 @@ def sim_camera(sim_registry):
     # Registry with the simulated registry
     sim_registry.register(camera)
     yield camera
-
-
