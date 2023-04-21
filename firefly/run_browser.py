@@ -7,8 +7,9 @@ from contextlib import contextmanager
 
 import numpy as np
 from qtpy.QtGui import QStandardItemModel, QStandardItem
-from qtpy.QtCore import Signal, Slot, QThread
+from qtpy.QtCore import Signal, Slot, QThread, Qt
 from pyqtgraph import PlotItem
+import qtawesome as qta
 
 from firefly import display, FireflyApplication
 from firefly.run_client import DatabaseWorker
@@ -18,8 +19,9 @@ log = logging.getLogger(__name__)
 
 
 class RunBrowserDisplay(display.FireflyDisplay):
+    
     runs_model: QStandardItemModel
-    _run_col_names: Sequence = ["UID", "Plan", "Sample", "Datetime", "Proposal", "ESAF", "Edge"]
+    _run_col_names: Sequence = ["Plan", "Sample", "Edge", "Exit Status", "Datetime", "UID", "Proposal", "ESAF", "ESAF Users"]
 
     # Signals
     runs_selected = Signal(list)
@@ -46,6 +48,8 @@ class RunBrowserDisplay(display.FireflyDisplay):
         worker.selected_runs_changed.connect(self.update_1d_signals)
         worker.selected_runs_changed.connect(self.update_1d_plot)
         self.runs_selected.connect(worker.load_selected_runs)
+        self.ui.refresh_runs_button.clicked.connect(worker.load_all_runs)
+        worker.new_message.connect(self.show_message)
         # Start the thread
         thread.start()
 
@@ -63,6 +67,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
         self.ui.invert_checkbox.stateChanged.connect(self.update_1d_plot)
         self.ui.gradient_checkbox.stateChanged.connect(self.update_1d_plot)
         self.ui.plot_1d_hints_checkbox.stateChanged.connect(self.update_1d_signals)
+        self.ui.refresh_runs_button.setIcon(qta.icon("fa5s.sync"))
         # Set up 1D plotting widgets
         self.plot_1d_item = self.ui.plot_1d_view.getPlotItem()
         self.plot_1d_item.addLegend()
@@ -84,6 +89,11 @@ class RunBrowserDisplay(display.FireflyDisplay):
         for run in runs:
             items = [QStandardItem(val) for val in run.values()]
             self.ui.runs_model.appendRow(items)
+        # Adjust the layout of the data table
+        sort_col = self._run_col_names.index("Datetime")
+        self.ui.run_tableview.sortByColumn(sort_col, Qt.DescendingOrder)
+        self.ui.run_tableview.resizeColumnsToContents()
+        # Let slots know that the model data have changed
         self.runs_model_changed.emit(self.ui.runs_model)
     
     def update_1d_signals(self, *args):
@@ -143,9 +153,11 @@ class RunBrowserDisplay(display.FireflyDisplay):
             log.warning(msg)
             raise exceptions.InvalidTransformation(msg)
         return y, y_string
-
-
+    
     def load_run_data(self, run, x_signal, y_signal, r_signal, use_reference=True):
+        if "" in [x_signal, y_signal] or (use_reference and r_signal==""):
+            log.debug(f"Empty signal name requested: x='{x_signal}', y='{y_signal}', r='{r_signal}'")
+            raise exceptions.EmptySignalName
         try:
             data = run['primary']['data'].read()
             y_data = data[y_signal]
@@ -163,7 +175,6 @@ class RunBrowserDisplay(display.FireflyDisplay):
 
 
     def update_1d_plot(self, *args):
-        print("Clearing")
         self.plot_1d_item.clear()
         # Figure out which signals to plot
         y_signal = self.ui.signal_y_combobox.currentText()
@@ -179,7 +190,6 @@ class RunBrowserDisplay(display.FireflyDisplay):
         # Do the plotting for each run
         y_string = ""
         for idx, run in enumerate(self._db_worker.selected_runs):
-            print(run, y_signal)
             # Load datasets from the database
             try:
                 x_data, y_data, r_data = self.load_run_data(run, x_signal,
@@ -187,7 +197,9 @@ class RunBrowserDisplay(display.FireflyDisplay):
                                                             r_signal,
                                                             use_reference=use_reference)
             except exceptions.SignalNotFound as e:
-                self.ui.plot_1d_message_label.setText(str(e))
+                self.show_message(str(e), 0)
+                continue
+            except exceptions.EmptySignalName:
                 continue
             # Screen out non-numeric data types
             try:
@@ -197,7 +209,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
             except TypeError as e:
                 msg = str(e)
                 log.warning(msg)
-                self.ui.plot_1d_message_label.setText(msg)
+                self.show_message(msg)
                 continue
             # Calculate plotting data
             try:
@@ -206,7 +218,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
                                                          use_reference=use_reference, use_log=use_log,
                                                          use_invert=use_invert, use_grad=use_grad)
             except exceptions.InvalidTransformation as e:
-                self.ui.plot_1d_message_label.setText(str(e))
+                self.show_message(str(e))
                 continue
             # Plot this run's data
             self.plot_1d_item.plot(x=x_data, y=y_data, pen=idx, name=run.metadata['start']['uid'], clear=False)

@@ -77,6 +77,9 @@ class SignalNotFound(KeyError):
     """The dataset is not present in the run."""
     ...
 
+class EmptySignalName(ValueError):
+    ...
+
 class InvalidTransformation(TypeError):
     """The data cannot be transformed to a new y-data signal."""
     ...

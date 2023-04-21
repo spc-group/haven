@@ -307,6 +307,9 @@
      </item>
      <item>
       <layout class="QHBoxLayout" name="horizontalLayout">
+       <property name="spacing">
+        <number>0</number>
+       </property>
        <property name="bottomMargin">
         <number>0</number>
        </property>
@@ -346,7 +349,7 @@
        <item>
         <widget class="PyDMLineEdit" name="PyDMLineEdit_2">
          <property name="sizePolicy">
-          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
@@ -354,8 +357,14 @@
          <property name="toolTip">
           <string/>
          </property>
+         <property name="text">
+          <string>100.0</string>
+         </property>
          <property name="alignment">
           <set>Qt::AlignCenter</set>
+         </property>
+         <property name="placeholderText">
+          <string>Jog step</string>
          </property>
          <property name="channel" stdset="0">
           <string>oph://${MOTOR}_tweak_value</string>

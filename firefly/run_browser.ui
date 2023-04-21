@@ -41,6 +41,9 @@
            <height>0</height>
           </size>
          </property>
+         <property name="sortingEnabled">
+          <bool>true</bool>
+         </property>
         </widget>
        </item>
        <item>
@@ -52,7 +55,7 @@
           <number>0</number>
          </property>
          <item>
-          <widget class="QPushButton" name="filters_button">
+          <widget class="RevealButton" name="filters_button">
            <property name="text">
             <string>Filters</string>
            </property>
@@ -78,7 +81,7 @@
           </spacer>
          </item>
          <item>
-          <widget class="QPushButton" name="pushButton">
+          <widget class="QPushButton" name="refresh_runs_button">
            <property name="text">
             <string>Refresh</string>
            </property>
@@ -474,21 +477,17 @@
          </layout>
         </item>
         <item>
+         <widget class="PlotWidget" name="plot_1d_view" native="true">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+         </widget>
+        </item>
+        <item>
          <layout class="QHBoxLayout" name="horizontalLayout_7">
-          <item>
-           <widget class="QLabel" name="label_9">
-            <property name="text">
-             <string>Message:</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QLabel" name="plot_1d_message_label">
-            <property name="text">
-             <string>Everything is working great!</string>
-            </property>
-           </widget>
-          </item>
           <item>
            <spacer name="horizontalSpacer_3">
             <property name="orientation">
@@ -502,24 +501,27 @@
             </property>
            </spacer>
           </item>
+          <item>
+           <widget class="QPushButton" name="pushButton">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>Export</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="pushButton_2">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>Larch</string>
+            </property>
+           </widget>
+          </item>
          </layout>
-        </item>
-        <item>
-         <widget class="Line" name="line_4">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="PlotWidget" name="plot_1d_view" native="true">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-         </widget>
         </item>
        </layout>
       </widget>
@@ -559,11 +561,16 @@
    <header>pyqtgraph</header>
    <container>1</container>
   </customwidget>
+  <customwidget>
+   <class>RevealButton</class>
+   <extends>QPushButton</extends>
+   <header>firefly.button</header>
+  </customwidget>
  </customwidgets>
  <tabstops>
   <tabstop>run_tableview</tabstop>
   <tabstop>filters_button</tabstop>
-  <tabstop>pushButton</tabstop>
+  <tabstop>refresh_runs_button</tabstop>
   <tabstop>lineEdit</tabstop>
   <tabstop>proposal_combobox</tabstop>
   <tabstop>proposal_current_checkbox</tabstop>

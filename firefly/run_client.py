@@ -17,6 +17,7 @@ class DatabaseWorker(QObject):
     # Signals
     all_runs_changed = Signal(list)
     selected_runs_changed = Signal(list)
+    new_message = Signal(str, int)
 
     def __init__(self, root_node, *args, **kwargs):
         if root_node is None:
@@ -26,14 +27,18 @@ class DatabaseWorker(QObject):
 
     @Slot()
     def load_all_runs(self):
+        self.new_message.emit("Loading runs...", 0)
         all_runs = []
         for uid, node in self.root.items():
+            # Get meta-data documents
             metadata = node.metadata
-            try:
-                start_doc = node.metadata['start']
-            except KeyError:
+            start_doc = metadata.get('start')
+            if start_doc is None:
                 log.debug(f"Skipping run with no start doc: {uid}")
                 continue
+            stop_doc = node.metadata.get("stop")
+            if stop_doc is None:
+                stop_doc = {}
             # Get a human-readable timestamp for the run
             timestamp = start_doc.get('time')
             if timestamp is None:
@@ -55,15 +60,18 @@ class DatabaseWorker(QObject):
             # Build the table item
             # Get sample data from: dd80f432-c849-4749-a8f3-bdeec6f9c1f0
             run_data = OrderedDict(
-                uid=uid,
                 plan_name=start_doc.get('plan_name', ""),
                 sample_name=start_doc.get('sample_name', ""),
+                edge=edge_str,
+                exit_status=stop_doc.get("exit_status", ""),
                 run_datetime=run_datetime,
+                uid=uid,
                 proposal_id=start_doc.get("proposal_id", ""),
                 esaf_id=start_doc.get("esaf_id", ""),
-                edge=edge_str,
+                esaf_users=start_doc.get("esaf_users", ""),
             )
             all_runs.append(run_data)
+        self.new_message.emit("Runs loaded.", 5000)
         self.all_runs_changed.emit(all_runs)
 
     @Slot(list)

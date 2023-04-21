@@ -51,3 +51,10 @@ def test_add_menu_action(ffapp):
 def test_customize_ui(ffapp):
     window = FireflyMainWindow()
     assert hasattr(window.ui, "menuScans")
+
+
+def test_show_message(ffapp):
+    window = FireflyMainWindow()
+    status_bar = window.statusBar()
+    # Send a message
+    window.show_status("Hello, APS.")

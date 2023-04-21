@@ -21,6 +21,12 @@ class FireflyMainWindow(PyDMMainWindow):
         self.customize_ui()
         self.export_actions()
 
+    def open(self, *args, **kwargs):
+        widget = super().open(*args, **kwargs)
+        # Connect signals for showing message in the window's status bar
+        widget.status_message_changed.connect(self.show_status)
+        return widget
+
     def closeEvent(self, event):
         super().closeEvent(event)
         # Delete the window so it's recreated next time it's opened
@@ -138,6 +144,11 @@ class FireflyMainWindow(PyDMMainWindow):
         self.ui.menuPositioners.addAction(app.show_energy_window_action)
         self.ui.menuScans.addSeparator()
         self.ui.menuScans.addAction(app.show_run_browser_action)
+
+    def show_status(self, message, timeout=0):
+        """Show a message in the status bar."""
+        bar = self.statusBar()
+        bar.showMessage(message, timeout)
 
     def update_window_title(self):
         if self.showing_file_path_in_title_bar:
