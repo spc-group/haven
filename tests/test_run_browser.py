@@ -11,6 +11,7 @@ import numpy as np
 from haven import tiled_client
 from firefly.main_window import PlanMainWindow
 from firefly.run_browser import RunBrowserDisplay
+from firefly.run_client import DatabaseWorker
 
 
 log = logging.getLogger(__name__)
@@ -18,7 +19,8 @@ log = logging.getLogger(__name__)
 
 def wait_for_runs_model(display, qtbot):
     with qtbot.waitSignal(display.runs_model_changed):
-        ...
+        pass
+
 
 @pytest.fixture()
 def client(sim_tiled):
@@ -41,6 +43,7 @@ def test_run_viewer_action(ffapp, monkeypatch, sim_tiled):
 
 def test_load_runs(display):
     assert display.runs_model.rowCount() > 0
+    assert display.ui.runs_total_label.text() == str(display.runs_model.rowCount())
 
 
 def test_update_selected_runs(qtbot, display):
@@ -157,3 +160,43 @@ def test_update_1d_plot(client, display, qtbot):
     np.testing.assert_almost_equal(xdata, expected_xdata)
     print("=== End test ===")
     np.testing.assert_almost_equal(ydata, expected_ydata)
+
+
+def test_filter_controls(client, display, qtbot):
+    # Does editing text change the filters?
+    with qtbot.waitSignal(display.filters_changed):
+        qtbot.keyClicks(display.ui.filter_user_combobox, "wolfman")
+    # Set some values for the rest of the controls
+    display.ui.filter_proposal_combobox.setCurrentText("12345")
+    display.ui.filter_esaf_combobox.setCurrentText("678901")
+    display.ui.filter_current_proposal_checkbox.setChecked(True)
+    display.ui.filter_current_esaf_checkbox.setChecked(True)
+    display.ui.filter_plan_combobox.addItem("cake")
+    display.ui.filter_plan_combobox.setCurrentText("cake")
+    display.ui.filter_full_text_lineedit.setText("Aperature Science")
+    display.ui.filter_edge_combobox.setCurrentText("U-K")
+    with qtbot.waitSignal(display.filters_changed) as blocker:
+        display.update_filters()
+    # Check if the filters were update correctly
+    filters = blocker.args[0]
+    assert filters == {
+        "user": "wolfman",
+        "proposal": "12345",
+        "esaf": "678901",
+        "use_current_proposal": True,
+        "use_current_esaf": True,
+        "exit_status": "success",
+        "plan": "cake",
+        "full_text": "Aperature Science",
+        "edge": "U-K",
+    }
+    
+
+def test_filter_runs(client, qtbot):
+    worker = DatabaseWorker(root_node=client)
+    worker._filters['plan'] = "xafs_scan"
+    with qtbot.waitSignal(worker.all_runs_changed) as blocker:
+        worker.load_all_runs()
+    # Check that the runs were filtered
+    runs = blocker.args[0]
+    assert len(runs) == 1

@@ -58,12 +58,30 @@ bluesky_mapping = {
             }, metadata={"descriptors": [{"hints": hints}]}),
         },
         metadata = {
+            "plan_name": "xafs_scan",
             "start": {
                 "plan_name": "xafs_scan",
                 "uid": "7d1daf1d-60c7-4aa7-a668-d1cd97e5335f",
                 "hints": {'dimensions': [
                     [
                         ['energy_energy'],
+                        'primary']]}
+
+            }
+        }),
+    '9d33bf66-9701-4ee3-90f4-3be730bc226c': MapAdapter(
+        {
+            "primary": MapAdapter({
+                "data": DatasetAdapter.from_dataset(run1.to_xarray()),
+            }, metadata={"descriptors": [{"hints": hints}]}),
+        },
+        metadata = {
+            "start": {
+                "plan_name": "rel_scan",
+                "uid": "9d33bf66-9701-4ee3-90f4-3be730bc226c",
+                "hints": {'dimensions': [
+                    [
+                        ['pitch2'],
                         'primary']]}
 
             }
