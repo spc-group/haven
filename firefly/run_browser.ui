@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>956</width>
+    <width>888</width>
     <height>562</height>
    </rect>
   </property>
@@ -198,6 +198,9 @@
               <property name="editable">
                <bool>true</bool>
               </property>
+              <property name="currentText">
+               <string>xafs</string>
+              </property>
              </widget>
             </item>
             <item row="1" column="0">
@@ -211,6 +214,9 @@
              <widget class="QComboBox" name="filter_sample_combobox">
               <property name="editable">
                <bool>true</bool>
+              </property>
+              <property name="currentText">
+               <string>Sb.*Te</string>
               </property>
              </widget>
             </item>
@@ -226,6 +232,9 @@
               <property name="editable">
                <bool>true</bool>
               </property>
+              <property name="currentText">
+               <string>Sb</string>
+              </property>
              </widget>
             </item>
             <item row="4" column="0">
@@ -239,6 +248,9 @@
              <widget class="QComboBox" name="filter_user_combobox">
               <property name="editable">
                <bool>true</bool>
+              </property>
+              <property name="currentText">
+               <string>wolfman</string>
               </property>
              </widget>
             </item>
@@ -283,6 +295,9 @@
                 </property>
                 <property name="text">
                  <string>Current</string>
+                </property>
+                <property name="checked">
+                 <bool>true</bool>
                 </property>
                </widget>
               </item>
@@ -373,7 +388,7 @@
        </sizepolicy>
       </property>
       <property name="currentIndex">
-       <number>2</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="metadata_tab">
        <attribute name="title">
@@ -400,56 +415,87 @@
         </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="all_plots_tab">
+      <widget class="QWidget" name="multi_plots_tab">
        <property name="enabled">
-        <bool>false</bool>
+        <bool>true</bool>
        </property>
        <attribute name="title">
         <string>All Plots</string>
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout_5">
         <item>
-         <widget class="QCheckBox" name="checkBox">
-          <property name="text">
-           <string>Use Hints</string>
-          </property>
-          <property name="checked">
-           <bool>true</bool>
-          </property>
-         </widget>
+         <layout class="QHBoxLayout" name="horizontalLayout_10">
+          <item>
+           <spacer name="horizontalSpacer_7">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="checkBox">
+            <property name="text">
+             <string>Use Hints</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="label_10">
+            <property name="text">
+             <string>X:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QComboBox" name="multi_signal_x_combobox"/>
+          </item>
+         </layout>
         </item>
         <item>
-         <widget class="QScrollArea" name="scrollArea_2">
+         <widget class="QScrollArea" name="multiplot_scrollarea">
+          <property name="verticalScrollBarPolicy">
+           <enum>Qt::ScrollBarAlwaysOn</enum>
+          </property>
+          <property name="horizontalScrollBarPolicy">
+           <enum>Qt::ScrollBarAsNeeded</enum>
+          </property>
+          <property name="sizeAdjustPolicy">
+           <enum>QAbstractScrollArea::AdjustIgnored</enum>
+          </property>
           <property name="widgetResizable">
            <bool>true</bool>
           </property>
-          <widget class="QWidget" name="scrollAreaWidgetContents_2">
+          <widget class="QWidget" name="scrollAreaWidgetContents">
            <property name="geometry">
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>652</width>
-             <height>464</height>
+             <width>589</width>
+             <height>471</height>
             </rect>
            </property>
-           <layout class="QGridLayout" name="gridLayout_2">
-            <item row="1" column="1">
-             <widget class="QWidget" name="widget_6" native="true"/>
-            </item>
-            <item row="0" column="0">
-             <widget class="QWidget" name="widget" native="true"/>
-            </item>
-            <item row="1" column="0">
-             <widget class="QWidget" name="widget_3" native="true"/>
-            </item>
-            <item row="0" column="1">
-             <widget class="QWidget" name="widget_2" native="true"/>
-            </item>
-            <item row="0" column="2">
-             <widget class="QWidget" name="widget_4" native="true"/>
-            </item>
-            <item row="1" column="2">
-             <widget class="QWidget" name="widget_5" native="true"/>
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <layout class="QVBoxLayout" name="verticalLayout_7">
+            <item>
+             <widget class="GraphicsLayoutWidget" name="plot_multi_view" native="true">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+             </widget>
             </item>
            </layout>
           </widget>
@@ -697,6 +743,12 @@
    <header>firefly.run_browser</header>
    <container>1</container>
   </customwidget>
+  <customwidget>
+   <class>GraphicsLayoutWidget</class>
+   <extends>QWidget</extends>
+   <header>pyqtgraph</header>
+   <container>1</container>
+  </customwidget>
  </customwidgets>
  <tabstops>
   <tabstop>run_tableview</tabstop>
@@ -707,8 +759,6 @@
   <tabstop>filter_esaf_combobox</tabstop>
   <tabstop>filter_current_esaf_checkbox</tabstop>
   <tabstop>detail_tabwidget</tabstop>
-  <tabstop>checkBox</tabstop>
-  <tabstop>scrollArea_2</tabstop>
  </tabstops>
  <resources/>
  <connections>

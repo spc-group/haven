@@ -86,7 +86,8 @@ def test_1d_plot_signals(client, display):
     display._db_worker.selected_runs = client.values()
     display._db_worker.selected_runs_changed.emit([])
     # Check signals in checkboxes
-    for combobox in [display.ui.signal_y_combobox,
+    for combobox in [display.ui.multi_signal_x_combobox,
+                     display.ui.signal_y_combobox,
                      display.ui.signal_r_combobox,
                      display.ui.signal_x_combobox]:
         assert combobox.findText("energy_energy") > -1, f"energy_energy signal not in {combobox.objectName()}."
@@ -152,18 +153,40 @@ def test_update_1d_plot(client, display, qtbot):
     display.ui.gradient_checkbox.setChecked(True)
     # Update the plots
     display._db_worker.selected_runs = [run]
-    print("=== Start test ===")
     display.update_1d_plot()
     # Check that the data were added
     data_item = display.plot_1d_item.listDataItems()[0]
     xdata, ydata = data_item.getData()
     np.testing.assert_almost_equal(xdata, expected_xdata)
-    print("=== End test ===")
     np.testing.assert_almost_equal(ydata, expected_ydata)
+
+
+def test_update_multi_plot(client, display, qtbot):
+    print("Current text", display.ui.multi_signal_x_combobox.currentText())
+    run = client.values()[0]
+    run_data = run['primary']['data'].read()
+    expected_xdata = run_data.energy_energy
+    expected_ydata = np.log(run_data.I0_net_counts / run_data.It_net_counts)
+    expected_ydata = np.gradient(expected_ydata, expected_xdata)
+    with qtbot.waitSignal(display.plot_1d_changed):
+        display._db_worker.selected_runs_changed.emit([])
+    # Configure signals
+    display.ui.multi_signal_x_combobox.addItem("energy_energy")
+    display.ui.multi_signal_x_combobox.setCurrentText("energy_energy")
+    display.multi_y_signals = ["energy_energy"]
+    display._db_worker.selected_runs = [run]
+    # Update the plots
+    display.update_multi_plot()
+    # Check that the data were added
+    # data_item = display._multiplot_items[0].listDataItems()[0]
+    # xdata, ydata = data_item.getData()
+    # np.testing.assert_almost_equal(xdata, expected_xdata)
+    # np.testing.assert_almost_equal(ydata, expected_ydata)
 
 
 def test_filter_controls(client, display, qtbot):
     # Does editing text change the filters?
+    display.ui.filter_user_combobox.setCurrentText("")
     with qtbot.waitSignal(display.filters_changed):
         qtbot.keyClicks(display.ui.filter_user_combobox, "wolfman")
     # Set some values for the rest of the controls
@@ -175,6 +198,7 @@ def test_filter_controls(client, display, qtbot):
     display.ui.filter_plan_combobox.setCurrentText("cake")
     display.ui.filter_full_text_lineedit.setText("Aperature Science")
     display.ui.filter_edge_combobox.setCurrentText("U-K")
+    display.ui.filter_sample_combobox.setCurrentText("Pb.*")
     with qtbot.waitSignal(display.filters_changed) as blocker:
         display.update_filters()
     # Check if the filters were update correctly
@@ -189,6 +213,7 @@ def test_filter_controls(client, display, qtbot):
         "plan": "cake",
         "full_text": "Aperature Science",
         "edge": "U-K",
+        "sample": "Pb.*",
     }
     
 

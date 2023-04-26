@@ -123,8 +123,8 @@ class DatabaseWorker(QObject):
         uids = list(set(uids))
         self.db_op_started.emit()
         # Download each item, maybe we can find a more efficient way to do this
-        runs = [self.root[uid] for uid in uids]
         try:
+            runs = [self.root[uid] for uid in uids]
             for run in runs:
                 run['primary'].download()
         except Exception as exc:

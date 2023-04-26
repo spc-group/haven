@@ -4,12 +4,13 @@ from typing import Sequence
 import yaml
 from httpx import HTTPStatusError
 from contextlib import contextmanager
+from itertools import count
 
 import numpy as np
 from qtpy.QtWidgets import QWidget
 from qtpy.QtGui import QStandardItemModel, QStandardItem
 from qtpy.QtCore import Signal, Slot, QThread, Qt
-from pyqtgraph import PlotItem
+from pyqtgraph import PlotItem, GraphicsLayoutWidget
 import qtawesome as qta
 
 from firefly import display, FireflyApplication
@@ -33,6 +34,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
     
     runs_model: QStandardItemModel
     _run_col_names: Sequence = ["Plan", "Sample", "Edge", "E0", "Exit Status", "Datetime", "UID", "Proposal", "ESAF", "ESAF Users"]
+    _multiplot_items = {}
 
     # Signals
     runs_selected = Signal(list)
@@ -59,6 +61,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
         worker.selected_runs_changed.connect(self.update_metadata)
         worker.selected_runs_changed.connect(self.update_1d_signals)
         worker.selected_runs_changed.connect(self.update_1d_plot)
+        worker.selected_runs_changed.connect(self.update_multi_plot)
         worker.db_op_started.connect(self.disable_run_widgets)
         worker.db_op_ended.connect(self.enable_run_widgets)
         self.runs_selected.connect(worker.load_selected_runs)
@@ -100,6 +103,12 @@ class RunBrowserDisplay(display.FireflyDisplay):
         # Set up 1D plotting widgets
         self.plot_1d_item = self.ui.plot_1d_view.getPlotItem()
         self.plot_1d_item.addLegend()
+        # Set up multi-plot scrolling
+        # self.multi_plot_view = GraphicsLayoutWidget()
+        # self.ui.multiplot_scrollarea.setWidget(self.multi_plot_view)
+        # self.ui.multiplot_scrollarea.setWidgetResizable(True)
+        # self.ui.multiplot_scrollarea.setWidget(self.ui.plot_multi_view)
+        
 
     def get_signals(self, run, hinted_only=False):
         if hinted_only:
@@ -166,19 +175,20 @@ class RunBrowserDisplay(display.FireflyDisplay):
                 xcols.update(_xcols)
                 ycols.update(_ycols)
         # Update the UI with the list of controls
-        cb = self.ui.signal_x_combobox
-        cb.clear()
-        cb.addItems(sorted(list(xcols)))
+        xcols = sorted(list(set(xcols)))
+        ycols = sorted(list(set(ycols)))
+        self.multi_y_signals = ycols
+        for cb in [self.ui.multi_signal_x_combobox,
+                   self.ui.signal_x_combobox]:
+            cb.clear()
+            cb.addItems(xcols)
         for cb in [self.ui.signal_y_combobox,
                    self.ui.signal_r_combobox,]:
             cb.clear()
-            cb.addItems(sorted(list(ycols)))
+            cb.addItems(ycols)
         # Restore previous values
         for val, cb in zip(old_values, comboboxes):
             cb.setCurrentText(val)
-
-    def update_small_multiples(self, *args):
-        ...
 
     def calculate_ydata(self, x_data, y_data, r_data, x_signal, y_signal, r_signal,
                         use_reference=False, use_log=False, use_invert=False,
@@ -224,7 +234,59 @@ class RunBrowserDisplay(display.FireflyDisplay):
             log.warning(msg)
             raise exceptions.SignalNotFound(msg)
         return x_data, y_data, r_data
+    
+    def multiplot_items(self, n_cols: int = 3):
+        view = self.ui.plot_multi_view
+        item0 = None
+        for idx in count():
+            row = int(idx / n_cols)
+            col = idx % n_cols
+            # Make a new plot item if one doesn't exist
+            if (row, col) not in self._multiplot_items:
+                self._multiplot_items[(row, col)] = view.addPlot(row=row, col=col)
+            new_item = self._multiplot_items[(row, col)]
+            # Link the X-axes together
+            if item0 is None:
+                item0 = new_item
+            else:
+                new_item.setXLink(item0)
+            # Resize the viewing area to fit the contents
+            width = view.width()
+            plot_width = width / n_cols
+            # view.resize(int(width), int(plot_width * row))
+            view.setFixedHeight(1200)
+            yield new_item
 
+    def update_multi_plot(self, *args):
+        x_signal = self.ui.multi_signal_x_combobox.currentText()
+        if x_signal == "":
+            return
+        y_signals = self.multi_y_signals
+        all_signals = set((x_signal, *y_signals))
+        view = self.ui.plot_multi_view
+        view.clear()
+        self._multiplot_items = {}
+        n_cols = 3
+        runs = self._db_worker.selected_runs
+        for run in runs:
+            # print(run.metadata['start']['uid'], run['primary']['data'])
+            data = run['primary']['data'].read(all_signals)
+            try:
+                xdata = data[x_signal]
+            except KeyError:
+                log.warning(f"Cannot plot x='{x_signal}' for {list(data.keys())}")
+                continue
+            for y_signal, plot_item in zip(y_signals, self.multiplot_items()):
+                # Get data from the database
+                try:
+                    plot_item.plot(xdata, data[y_signal])
+                except KeyError:
+                    log.warning(f"Cannot plot y='{y_signal}' for {list(data.keys())}")
+                    continue
+                else:
+                    log.debug(f"Plotted {y_signal} vs. {x_signal} for {data}")
+                finally:
+                    plot_item.setTitle(y_signal)
 
     def update_1d_plot(self, *args):
         self.plot_1d_item.clear()
