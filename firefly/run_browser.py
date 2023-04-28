@@ -80,7 +80,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
         self._db_worker = worker
         worker.moveToThread(thread)
         # Connect signals/slots
-        # thread.started.connect(worker.load_all_runs)
+        thread.started.connect(worker.load_all_runs)
         worker.all_runs_changed.connect(self.set_runs_model_items)
         worker.selected_runs_changed.connect(self.update_metadata)
         worker.selected_runs_changed.connect(self.update_1d_signals)
