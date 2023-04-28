@@ -1,12 +1,16 @@
 import subprocess
 from pathlib import Path
 
+from qtpy.QtCore import Signal
 from pydm import Display
 
 
 class FireflyDisplay(Display):
     caqtdm_ui_file: str = ""
     caqtdm_command: str = "/APSshare/bin/caQtDM -style plastique -noMsg"
+
+    # Signals
+    status_message_changed = Signal(str, int)
 
     def __init__(self, parent=None, args=None, macros=None, ui_filename=None, **kwargs):
         super().__init__(
@@ -35,6 +39,10 @@ class FireflyDisplay(Display):
 
     def customize_ui(self):
         pass
+
+    def show_message(self, message, timeout=0):
+        """Display a message in the status bar."""
+        self.status_message_changed.emit(str(message), timeout)
 
     def ui_filename(self):
         raise NotImplementedError

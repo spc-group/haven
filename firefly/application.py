@@ -15,10 +15,11 @@ from pydm.display import load_file
 from pydm.utilities.stylesheet import apply_stylesheet
 from bluesky_queueserver_api import BPlan
 from bluesky_queueserver_api.zmq import REManagerAPI
+import pyqtgraph as pg
+
 from haven.exceptions import ComponentNotFound
 from haven import HavenMotor, registry, load_config
 import haven
-
 from .main_window import FireflyMainWindow, PlanMainWindow
 from .ophyd_plugin import OphydPlugin
 from .queue_client import QueueClient, QueueClientThread
@@ -32,6 +33,10 @@ log = logging.getLogger(__name__)
 
 
 ui_dir = Path(__file__).parent
+
+
+pg.setConfigOption("background", (252, 252, 252))
+pg.setConfigOption("foreground", (0, 0, 0))
 
 
 class FireflyApplication(PyDMApplication):
@@ -49,6 +54,7 @@ class FireflyApplication(PyDMApplication):
 
     # Actions for showing window
     show_status_window_action: QtWidgets.QAction
+    show_runs_window_action: QtWidgets.QAction
     show_energy_window_action: QtWidgets.QAction
     show_bss_window_action: QtWidgets.QAction
     launch_queuemonitor_action: QtWidgets.QAction
@@ -106,10 +112,10 @@ class FireflyApplication(PyDMApplication):
 
     def setup_window_actions(self):
         """Create QActions for clicking on menu items, shortcuts, etc.
-
+        
         These actions should be usable by multiple
         windows. Window-specific actions belong with the window.
-
+        
         """
         self.prepare_motor_windows()
         self.prepare_camera_windows()
@@ -119,6 +125,12 @@ class FireflyApplication(PyDMApplication):
             action_name="show_status_window_action",
             text="Beamline Status",
             slot=self.show_status_window,
+        )
+        # Action for showing the run browser window
+        self._setup_window_action(
+            action_name="show_run_browser_action",
+            text="Browse Runs",
+            slot=self.show_run_browser,
         )
         # Action for launch queue-monitor
         self._setup_window_action(
@@ -382,6 +394,12 @@ class FireflyApplication(PyDMApplication):
         """Instantiate a new main window for this application."""
         self.show_window(
             FireflyMainWindow, ui_dir / "status.py", name="beamline_status"
+        )
+
+    @QtCore.Slot()
+    def show_run_browser(self):
+        self.show_window(
+            PlanMainWindow, ui_dir / "run_browser.py", name="run_browser"
         )
 
     make_main_window = show_status_window
