@@ -15,10 +15,11 @@ from pydm.display import load_file
 from pydm.utilities.stylesheet import apply_stylesheet
 from bluesky_queueserver_api import BPlan
 from bluesky_queueserver_api.zmq import REManagerAPI
+import pyqtgraph as pg
+
 from haven.exceptions import ComponentNotFound
 from haven import HavenMotor, registry, load_config
 import haven
-
 from .main_window import FireflyMainWindow, PlanMainWindow
 from .ophyd_plugin import OphydPlugin
 from .queue_client import QueueClient, QueueClientThread
@@ -32,6 +33,10 @@ log = logging.getLogger(__name__)
 
 
 ui_dir = Path(__file__).parent
+
+
+pg.setConfigOption("background", (252, 252, 252))
+pg.setConfigOption("foreground", (0, 0, 0))
 
 
 class FireflyApplication(PyDMApplication):
