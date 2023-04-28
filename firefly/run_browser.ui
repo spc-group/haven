@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>888</width>
+    <width>1244</width>
     <height>562</height>
    </rect>
   </property>
@@ -20,7 +20,7 @@
       <enum>Qt::Horizontal</enum>
      </property>
      <widget class="QWidget" name="verticalLayoutWidget">
-      <layout class="QVBoxLayout" name="verticalLayout_2" stretch="1,0,0">
+      <layout class="QVBoxLayout" name="run_list_layout" stretch="1,0,0">
        <item>
         <widget class="QTableView" name="run_tableview">
          <property name="sizePolicy">
@@ -199,7 +199,7 @@
                <bool>true</bool>
               </property>
               <property name="currentText">
-               <string>xafs</string>
+               <string>xafs_scan</string>
               </property>
              </widget>
             </item>
@@ -388,7 +388,7 @@
        </sizepolicy>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>2</number>
       </property>
       <widget class="QWidget" name="metadata_tab">
        <attribute name="title">
@@ -476,8 +476,8 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>589</width>
-             <height>471</height>
+             <width>84</width>
+             <height>28</height>
             </rect>
            </property>
            <property name="sizePolicy">
@@ -645,10 +645,43 @@
             </property>
            </widget>
           </item>
+          <item>
+           <widget class="QComboBox" name="comboBox">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <item>
+             <property name="text">
+              <string>All</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Sum</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Avg</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Mean</string>
+             </property>
+            </item>
+           </widget>
+          </item>
          </layout>
         </item>
         <item>
-         <widget class="PlotWidget" name="plot_1d_view" native="true">
+         <widget class="Browser1DPlotWidget" name="plot_1d_view" native="true">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
             <horstretch>0</horstretch>
@@ -659,6 +692,20 @@
         </item>
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout_7">
+          <item>
+           <widget class="QLabel" name="label_12">
+            <property name="text">
+             <string>Mouse:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="hover_coords_label">
+            <property name="text">
+             <string>(252, 119)</string>
+            </property>
+           </widget>
+          </item>
           <item>
            <spacer name="horizontalSpacer_3">
             <property name="orientation">
@@ -727,12 +774,6 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>PlotWidget</class>
-   <extends>QWidget</extends>
-   <header>pyqtgraph</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
    <class>RevealButton</class>
    <extends>QPushButton</extends>
    <header>firefly.button</header>
@@ -747,6 +788,12 @@
    <class>GraphicsLayoutWidget</class>
    <extends>QWidget</extends>
    <header>pyqtgraph</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>Browser1DPlotWidget</class>
+   <extends>QWidget</extends>
+   <header>firefly.run_browser</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

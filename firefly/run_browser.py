@@ -10,14 +10,18 @@ import numpy as np
 from qtpy.QtWidgets import QWidget
 from qtpy.QtGui import QStandardItemModel, QStandardItem
 from qtpy.QtCore import Signal, Slot, QThread, Qt
-from pyqtgraph import PlotItem, GraphicsLayoutWidget
+from pyqtgraph import PlotItem, GraphicsLayoutWidget, PlotWidget, PlotDataItem
 import qtawesome as qta
+from matplotlib.colors import TABLEAU_COLORS
 
 from firefly import display, FireflyApplication
 from firefly.run_client import DatabaseWorker
 from haven import tiled_client, load_config, exceptions
 
 log = logging.getLogger(__name__)
+
+
+colors = list(TABLEAU_COLORS.values())
 
 
 class FiltersWidget(QWidget):
@@ -30,8 +34,28 @@ class FiltersWidget(QWidget):
             self.returnPressed.emit()
 
 
-class RunBrowserDisplay(display.FireflyDisplay):
+class Browser1DPlotItem(PlotItem):
+    hover_coords_changed = Signal(str)
     
+    def hoverEvent(self, event):
+        super().hoverEvent(event)
+        if event.isExit():
+            self.hover_coords_changed.emit("NaN")
+            return
+        # Get data coordinates from event
+        pos = event.scenePos()
+        data_pos = self.vb.mapSceneToView(pos)
+        pos_str = f"({data_pos.x():.3f}, {data_pos.y():.3f})"
+        self.hover_coords_changed.emit(pos_str)
+
+
+class Browser1DPlotWidget(PlotWidget):
+    def __init__(self, parent=None, background='default', plotItem=None, **kargs):
+        plot_item = Browser1DPlotItem(**kargs)
+        super().__init__(parent=parent, background=background, plotItem=plot_item)
+
+
+class RunBrowserDisplay(display.FireflyDisplay):
     runs_model: QStandardItemModel
     _run_col_names: Sequence = ["Plan", "Sample", "Edge", "E0", "Exit Status", "Datetime", "UID", "Proposal", "ESAF", "ESAF Users"]
     _multiplot_items = {}
@@ -56,7 +80,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
         self._db_worker = worker
         worker.moveToThread(thread)
         # Connect signals/slots
-        thread.started.connect(worker.load_all_runs)
+        # thread.started.connect(worker.load_all_runs)
         worker.all_runs_changed.connect(self.set_runs_model_items)
         worker.selected_runs_changed.connect(self.update_metadata)
         worker.selected_runs_changed.connect(self.update_1d_signals)
@@ -103,6 +127,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
         # Set up 1D plotting widgets
         self.plot_1d_item = self.ui.plot_1d_view.getPlotItem()
         self.plot_1d_item.addLegend()
+        self.plot_1d_item.hover_coords_changed.connect(self.ui.hover_coords_label.setText)
         # Set up multi-plot scrolling
         # self.multi_plot_view = GraphicsLayoutWidget()
         # self.ui.multiplot_scrollarea.setWidget(self.multi_plot_view)
@@ -303,6 +328,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
         use_grad = self.ui.gradient_checkbox.isChecked()
         # Do the plotting for each run
         y_string = ""
+        x_data = None
         for idx, run in enumerate(self._db_worker.selected_runs):
             # Load datasets from the database
             try:
@@ -335,9 +361,12 @@ class RunBrowserDisplay(display.FireflyDisplay):
                 self.show_message(str(e))
                 continue
             # Plot this run's data
-            self.plot_1d_item.plot(x=x_data, y=y_data, pen=idx, name=run.metadata['start']['uid'], clear=False)
+            color = colors[idx % len(colors)]
+            self.plot_1d_item.plot(x=x_data, y=y_data, pen=color, name=run.metadata['start']['uid'], clear=False)
         # Axis formatting
         self.plot_1d_item.setLabels(left=y_string, bottom=x_signal)
+        if x_data is not None:
+            self.plot_1d_item.addLine(x=np.median(x_data), movable=True, label="{value:.3f}")
         self.plot_1d_changed.emit(self.plot_1d_item)
         
     def update_metadata(self, *args):
