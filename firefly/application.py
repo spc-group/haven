@@ -1,4 +1,5 @@
 import logging
+from collections import OrderedDict
 from pathlib import Path
 from dataclasses import dataclass, field
 from typing import Optional, Union, Mapping, Sequence
@@ -40,6 +41,7 @@ pg.setConfigOption("foreground", (0, 0, 0))
 
 
 class FireflyApplication(PyDMApplication):
+    default_display = None
     xafs_scan_window = None
 
     # Actions for controlling the queueserver
@@ -77,11 +79,12 @@ class FireflyApplication(PyDMApplication):
     # Signals responding to queueserver changes
     queue_length_changed = Signal(int)
 
-    def __init__(self, ui_file=None, use_main_window=False, *args, **kwargs):
+    def __init__(self, display="status", use_main_window=False, *args, **kwargs):
         # Instantiate the parent class
         # (*ui_file* and *use_main_window* let us render the window here instead)
+        self.default_display = display
         super().__init__(ui_file=None, use_main_window=use_main_window, *args, **kwargs)
-        self.windows = {}
+        self.windows = OrderedDict()
 
     def __del__(self):
         if hasattr(self, "_queue_thread"):
@@ -104,10 +107,11 @@ class FireflyApplication(PyDMApplication):
         # Prepare the client for interacting with the queue server
         self.prepare_queue_client()
         # Launch the default display
-        self.show_status_window()
+        show_default_window = getattr(self, f"show_{self.default_display}_window")
+        default_window = show_default_window()
         # Set up the window to show list of PV connections
         pydm.utilities.shortcuts.install_connection_inspector(
-            parent=self.windows["beamline_status"]
+            parent=default_window
         )
 
     def setup_window_actions(self):
@@ -398,11 +402,9 @@ class FireflyApplication(PyDMApplication):
 
     @QtCore.Slot()
     def show_run_browser(self):
-        self.show_window(
+        return self.show_window(
             PlanMainWindow, ui_dir / "run_browser.py", name="run_browser"
         )
-
-    make_main_window = show_status_window
 
     @QtCore.Slot()
     def show_log_viewer_window(self):
@@ -410,26 +412,26 @@ class FireflyApplication(PyDMApplication):
 
     @QtCore.Slot()
     def show_xafs_scan_window(self):
-        self.show_window(PlanMainWindow, ui_dir / "xafs_scan.py", name="xafs_scan")
+        return self.show_window(PlanMainWindow, ui_dir / "xafs_scan.py", name="xafs_scan")
 
     @QtCore.Slot()
     def show_voltmeters_window(self):
-        self.show_window(FireflyMainWindow, ui_dir / "voltmeters.py", name="voltmeters")
+        return self.show_window(FireflyMainWindow, ui_dir / "voltmeters.py", name="voltmeters")
 
     @QtCore.Slot()
     def show_sample_viewer_window(self):
-        self.show_window(
+        return self.show_window(
             FireflyMainWindow, ui_dir / "sample_viewer.ui", name="sample_viewer"
         )
 
     @QtCore.Slot()
     def show_cameras_window(self):
-        self.show_window(FireflyMainWindow, ui_dir / "cameras.py", name="cameras")
+        return self.show_window(FireflyMainWindow, ui_dir / "cameras.py", name="cameras")
 
     @QtCore.Slot()
     def show_energy_window(self):
-        self.show_window(PlanMainWindow, ui_dir / "energy.py", name="energy")
+        return self.show_window(PlanMainWindow, ui_dir / "energy.py", name="energy")
 
     @QtCore.Slot()
     def show_bss_window(self):
-        self.show_window(FireflyMainWindow, ui_dir / "bss.py", name="bss")
+        return self.show_window(FireflyMainWindow, ui_dir / "bss.py", name="bss")

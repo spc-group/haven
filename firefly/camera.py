@@ -67,28 +67,6 @@ class CameraDisplay(display.FireflyDisplay):
     def ui_filename(self):
         return "camera.ui"
 
-    def customize_ui(self):
-        self.imageJ_button.clicked.connect(self.launch_imageJ)
-
-    def launch_imageJ(self):
-        # Set the imageJ properties file
-        prefix = self.macros()["PREFIX"]
-        with open(self.properties_file, mode="w") as fd:
-            fd.write("#EPICS_AD_Viewer Properties\n")
-            # Write a line to match "#Fri Nov 04 15:44:30 CDT 2022"
-            now_string = dt.datetime.now().strftime("%a %b %d %H:%M:%S %Y")
-            fd.write(f"#{now_string}\n")
-            # Write out the PV prefix (e.g. "PVPrefix=25idgigeB\:image1\:")
-            prefix_str = prefix.replace(":", "\\:")
-            fd.write(f"PVPrefix={prefix_str}image1\\:\n")
-        # Launch ImageJ with AD viewer plugin
-        imagej_env = os.environ.copy()
-        imagej_env["EPICS_CA_ARRAY_MAX_BYTES"] = "10000000"
-        imagej_cmd = haven.load_config()["camera"]["imagej_command"]
-        cmds = [imagej_cmd, "--run", "EPICS_AD_Viewer"]
-        log.info(f"Launching ImageJ: {cmds}")
-        self.imagej_process = subprocess.Popen(cmds, env=imagej_env)
-
     @Slot(int)
     def update_camera_state(self, new_state):
         self._camera_state = new_state

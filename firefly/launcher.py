@@ -7,7 +7,10 @@ import sys
 from pathlib import Path
 
 
-def main():
+import haven
+
+
+def main(default_fullscreen=False, default_display="status"):
     logger = logging.getLogger("")
     handler = logging.StreamHandler()
     formatter = logging.Formatter("[%(asctime)s] [%(levelname)-8s] - %(message)s")
@@ -55,7 +58,6 @@ def main():
     config.DEFAULT_PROTOCOL = "ca"
 
     ui_folder = Path(__file__).parent.resolve()
-    default_ui_file = ui_folder / "main.py"
 
     from pydm.utilities import setup_renderer
 
@@ -66,11 +68,10 @@ def main():
 
     parser = argparse.ArgumentParser(description="Python Display Manager")
     parser.add_argument(
-        "displayfile",
-        help="A PyDM file to display."
-        + "    Can be either a Qt .ui file, or a Python file.",
+        "display",
+        help="The name of a Firefly display to open.",
         nargs="?",
-        default=default_ui_file,
+        default=default_display,
     )
     parser.add_argument(
         "--perfmon",
@@ -92,11 +93,16 @@ def main():
         action="store_true",
         help="Start PyDM with the status bar hidden.",
     )
+    if default_fullscreen:
+        parser.add_argument(
+            "--no-fullscreen", dest="fullscreen", action="store_false", help="Start Firefly in normal (non-fullscreen) mode."
+        )
+    else:
+        parser.add_argument(
+            "--fullscreen", action="store_true", help="Start Firefly in full screen mode."
+        )
     parser.add_argument(
-        "--fullscreen", action="store_true", help="Start PyDM in full screen mode."
-    )
-    parser.add_argument(
-        "--read-only", action="store_true", help="Start PyDM in a Read-Only mode."
+        "--read-only", action="store_true", help="Start Firefly in a Read-Only mode."
     )
     parser.add_argument(
         "--log_level",
@@ -107,8 +113,8 @@ def main():
     parser.add_argument(
         "--version",
         action="version",
-        version="PyDM {version}".format(version=pydm.__version__),
-        help="Show PyDM's version number and exit.",
+        version="Firefly {version}".format(version=haven.__version__),
+        help="Show Firefly's version number and exit.",
     )
     parser.add_argument(
         "-m",
@@ -126,7 +132,7 @@ def main():
     parser.add_argument(
         "--stylesheet",
         help="Specify the full path to a CSS stylesheet file, which"
-        + " can be used to customize the appearance of PyDM and"
+        + " can be used to customize the appearance of Firefly and"
         + " Qt widgets.",
         default=None,
     )
@@ -152,7 +158,7 @@ def main():
         handler.setLevel(pydm_args.log_level)
 
     app = FireflyApplication(
-        ui_file=pydm_args.displayfile,
+        display=pydm_args.display,
         command_line_args=pydm_args.display_args,
         perfmon=pydm_args.perfmon,
         hide_menu_bar=pydm_args.hide_menu_bar,
@@ -167,7 +173,9 @@ def main():
     app.load_instrument()
     FireflyApplication.processEvents()
 
-    splash.finish(app.windows["beamline_status"])
+    # Show the first window
+    first_window = list(app.windows.values())[0]
+    splash.finish(first_window)
 
     exit_code = app.exec_()
 
@@ -180,6 +188,10 @@ def main():
         stats.print_stats()
 
     sys.exit(exit_code)
+
+
+def cameras():
+    main(default_fullscreen=True, default_display="cameras")
 
 
 if __name__ == "__main__":

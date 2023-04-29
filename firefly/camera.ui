@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>352</width>
-    <height>39</height>
+    <height>45</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -111,19 +111,9 @@
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="imageJ_button">
-       <property name="toolTip">
-        <string>Launch ImageJ with the EPICS AD Viewer plugin loaded for this camera</string>
-       </property>
-       <property name="text">
-        <string>ImageJ</string>
-       </property>
-      </widget>
-     </item>
-     <item>
       <widget class="PyDMRelatedDisplayButton" name="camera_viewer_button">
        <property name="enabled">
-        <bool>false</bool>
+        <bool>true</bool>
        </property>
        <property name="toolTip">
         <string/>
