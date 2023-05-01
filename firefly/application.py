@@ -66,11 +66,11 @@ class FireflyApplication(PyDMApplication):
     motor_window_slots: Sequence = []
 
     # Keep track of cameras
-    camera_actions: Sequence = []
+    camera_actions: Mapping = {}
     camera_window_slots: Sequence
 
     # Keep track of area detectors
-    area_detector_actions: Sequence = []
+    area_detector_actions: Mapping = {}
     area_detector_window_slots: Sequence
     
     # Signals for running plans on the queueserver
@@ -209,7 +209,7 @@ class FireflyApplication(PyDMApplication):
             )
             devices = []
         # Create menu actions for each device
-        actions = []
+        actions = {}
         setattr(self, f"{attr_name}_actions", actions)
         window_slots = []
         setattr(self, f"{attr_name}_window_slots", window_slots)
@@ -218,7 +218,7 @@ class FireflyApplication(PyDMApplication):
             action = QtWidgets.QAction(self)
             action.setObjectName(f"actionShow_{attr_name}_{device.name}")
             action.setText(device.name)
-            actions.append(action)
+            actions[device.name] = action
             # Create a slot for opening the motor window
             slot = getattr(self, f"show_{attr_name}_window")
             slot = partial(slot, device=device)

@@ -12,7 +12,7 @@ from pydm.widgets.channel import PyDMChannel
 from qtpy.QtGui import QColor
 from qtpy.QtCore import Slot
 
-from firefly import display
+from firefly import display, FireflyApplication
 
 
 log = logging.getLogger(__name__)
@@ -63,6 +63,16 @@ class CameraDisplay(display.FireflyDisplay):
         self._detector_disconnected_color = QColor(255, 0, 0)
         self._idle_color = QColor(0, 255, 0)
         self._acquire_color = QColor(255, 255, 0)
+
+    def customize_ui(self):
+        # Connect button for opening the individual camera viewers
+        app = FireflyApplication.instance()
+        try:
+            action = app.camera_actions[self.macros()['CAMERA']]
+        except KeyError:
+            pass
+        else:
+            self.ui.viewer_button.clicked.connect(action.trigger)
 
     def ui_filename(self):
         return "camera.ui"
