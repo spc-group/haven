@@ -137,6 +137,11 @@ class FireflyMainWindow(PyDMMainWindow):
             self.ui.menuDetectors.addSeparator()
         for action in app.area_detector_actions:
             self.ui.menuDetectors.addAction(action)
+        # Add XRF detectors to detectors menu
+        if len(app.xrf_detector_actions) > 0:
+            self.ui.menuDetectors.addSeparator()
+        for action in app.xrf_detector_actions:
+            self.ui.menuDetectors.addAction(action)            
         # Add other menu actions
         self.ui.menuView.addAction(app.show_status_window_action)
         self.ui.menuView.addAction(app.launch_queuemonitor_action)

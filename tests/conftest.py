@@ -339,4 +339,4 @@ def sim_vortex(sim_registry):
     FakeDXP = make_fake_device(DxpDetectorBase)
     vortex = FakeDXP(name="vortex_me4", labels={"xrf_detectors"})
     sim_registry.register(vortex)
-    yield vortex    
+    yield vortex
