@@ -43,4 +43,6 @@ keywords = ["synchrotron", "xray", "bluesky"]
 
 [tool.poetry.scripts]
 haven_config = "haven._iconfig:print_config_value"
-start_firefly = "firefly.launcher:main"
+firefly = "firefly.launcher:main"
+start_firefly = "firefly.launcher:main"  # Deprecated
+firefly_cameras = "firefly.launcher:cameras"

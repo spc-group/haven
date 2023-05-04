@@ -109,3 +109,10 @@ num_motors = 3
 
 imagej_command = "imagej"
 
+# [camera.sim_det]
+
+# prefix = "25idSimDet"
+# name = "sim_det"
+# description = "Simulated Camera"
+# device_class = "SimDetector"
+
