@@ -8,10 +8,12 @@ from ophyd import (
     mca,
     Device,
     EpicsSignal,
+    EpicsSignalRO,
     Component as Cpt,
     DynamicDeviceComponent as DDC,
     Kind,
 )
+from apstools.utils import cleanupText
 
 from .scaler_triggered import ScalerTriggered
 from .instrument_registry import registry
@@ -39,10 +41,38 @@ class ROI(mca.ROI):
         "hi_chan",
         "lo_chan",
     ]
+    # hints = {"fields": ["net_count"]}
     kind = active_kind
+    _original_name = None
+    _original_kinds = {}
+    _dynamic_hint_fields = ['net_count']
+    # Signals
+    # net_count = Cpt(EpicsSignalRO, "N", kind=Kind.hinted, lazy=True)
+    user_kind = Cpt(EpicsSignal, "_BS_KIND", lazy=True)
+
+    def stage(self):
+        self._original_name = self.name
+        # Append the ROI label to the signal name
+        label = cleanupText(str(self.label.get()))
+        if label != "":
+            self.name = f"{self.name}_{label}"
+        # Set the kind based on the user-settable ".R0_BS_KIND" PV
+        new_kind = self.user_kind.get()
+        self._original_kinds = {fld: getattr(self, fld).kind for fld in self._dynamic_hint_fields}
+        for fld in self._dynamic_hint_fields:
+            getattr(self, fld).kind = new_kind
+        super().stage()
+
+    def unstage(self):
+        # Restore the original (pre-staged) name
+        self.name = self._original_name
+        # Restore original signal kinds
+        for fld, kind in self._original_kinds.items():
+            getattr(self, fld).kind = kind
+        super().unstage()
 
 
-def add_rois(range_: Sequence[int] = range(32), kind=Kind.omitted, **kwargs):
+def add_rois(range_: Sequence[int] = range(32), kind=Kind.normal, **kwargs):
     """Add one or more ROIs to an MCA instance
 
     Parameters

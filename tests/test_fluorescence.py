@@ -146,3 +146,57 @@ def test_enable_all_elements(vortex):
 @pytest.mark.xfail
 def test_with_plan(vortex):
     assert False, "Write test"
+
+
+def test_stage_signal_names(sim_vortex):
+    """Check that we can set the name of the detector ROIs dynamically."""
+    dev = sim_vortex.mcas.mca1.rois.roi1
+    dev.label.put("Ni-Ka")
+    # Ensure the name isn't changed yet
+    assert "Ni-Ka" not in dev.name
+    assert "Ni_Ka" not in dev.name
+    orig_name = dev.name
+    dev.stage()
+    try:
+        result = dev.read()
+    except Exception:
+        raise
+    else:
+        assert "Ni-Ka" not in dev.name  # Make sure it gets sanitized
+        assert "Ni_Ka" in dev.name
+    finally:
+        dev.unstage()
+    # Name gets reset when unstaged
+    assert dev.name == orig_name
+    # Check acquired data uses dynamic names
+    for res in result.keys():
+        assert "Ni_Ka" in res
+
+
+def test_stage_signal_kinds(sim_vortex):
+    dev = sim_vortex.mcas.mca1.rois.roi1
+    # Check that ROI is not hinted by default
+    assert dev.name not in sim_vortex.hints
+    # Enable the ROI by setting it's kind PV to "hinted"
+    # from pprint import pprint
+    # pprint(dir(dev.label))
+    dev.user_kind.put(Kind.hinted)
+    # Ensure signals are not hinted before being staged
+    assert dev.net_count.name not in sim_vortex.hints['fields']
+    try:
+        dev.stage()
+    except Exception:
+        raise
+    else:
+        # print(dev.kind, dev.net_count.kind, dev.hints)
+        # parent = dev
+        # while parent is not None:
+        #     print(parent.name, parent.kind)
+        #     parent = parent.parent
+        assert dev.net_count.name in sim_vortex.hints['fields']
+        assert sim_vortex.mcas.mca1.rois.roi0.net_count.name not in sim_vortex.hints['fields']
+    finally:
+        dev.unstage()
+    # Did it restore kinds properly when unstaging
+    assert dev.net_count.name not in sim_vortex.hints['fields']
+    assert sim_vortex.mcas.mca1.rois.roi0.net_count.name not in sim_vortex.hints['fields']

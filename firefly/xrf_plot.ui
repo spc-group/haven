@@ -27,7 +27,7 @@
           <x>0</x>
           <y>0</y>
           <width>446</width>
-          <height>860</height>
+          <height>857</height>
          </rect>
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -73,6 +73,16 @@
           </size>
          </property>
         </spacer>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="checkBox">
+         <property name="toolTip">
+          <string>Select whether to show all spectra combined on one plot, or split among many plots.</string>
+         </property>
+         <property name="text">
+          <string>Combine Plots</string>
+         </property>
+        </widget>
        </item>
       </layout>
      </item>

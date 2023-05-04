@@ -30,7 +30,7 @@
     <number>0</number>
    </property>
    <item>
-    <widget class="PyDMLabel" name="PyDMLabel">
+    <widget class="PyDMLabel" name="roi_index_label">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
        <horstretch>0</horstretch>
@@ -67,14 +67,19 @@
     </widget>
    </item>
    <item>
-    <widget class="PyDMCheckbox" name="PyDMCheckbox">
+    <widget class="PyDMCheckbox" name="enabled_checkbox">
      <property name="toolTip">
       <string/>
+     </property>
+     <property name="PyDMToolTip" stdset="0">
+      <string>Enable or disable this ROI.
+
+Data will be saved either way, but disabled channels will not appear in the list of hinted signals.</string>
      </property>
     </widget>
    </item>
    <item>
-    <widget class="PyDMLineEdit" name="PyDMLineEdit_2">
+    <widget class="PyDMLineEdit" name="roilabel_label">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
        <horstretch>0</horstretch>
@@ -105,7 +110,7 @@
     </widget>
    </item>
    <item>
-    <widget class="PyDMLineEdit" name="PyDMLineEdit">
+    <widget class="PyDMLineEdit" name="lower_label">
      <property name="toolTip">
       <string/>
      </property>
@@ -118,7 +123,7 @@
     </widget>
    </item>
    <item>
-    <widget class="PyDMLineEdit" name="PyDMLineEdit_3">
+    <widget class="PyDMLineEdit" name="upper_label">
      <property name="toolTip">
       <string/>
      </property>
@@ -131,7 +136,7 @@
     </widget>
    </item>
    <item>
-    <widget class="QPushButton" name="pushButton_5">
+    <widget class="QPushButton" name="set_roi_button">
      <property name="text">
       <string>Set</string>
      </property>
@@ -160,5 +165,86 @@
   </customwidget>
  </customwidgets>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>enabled_checkbox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>lower_label</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>36</x>
+     <y>12</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>149</x>
+     <y>13</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>enabled_checkbox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>upper_label</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>36</x>
+     <y>12</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>214</x>
+     <y>13</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>enabled_checkbox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>roi_index_label</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>36</x>
+     <y>12</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>9</x>
+     <y>13</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>enabled_checkbox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>set_roi_button</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>36</x>
+     <y>12</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>289</x>
+     <y>13</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>enabled_checkbox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>roilabel_label</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>36</x>
+     <y>12</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>83</x>
+     <y>13</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
 </ui>
