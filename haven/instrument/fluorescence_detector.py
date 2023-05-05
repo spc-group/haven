@@ -218,6 +218,17 @@ class DxpDetectorBase(mca.EpicsDXPMultiElementSystem):
         "idead_time",
     ]
 
+    @property
+    def num_rois(self):
+        n_rois = float("inf")
+        for mca in self.mca_records():
+            n_rois = min(n_rois, len(mca.rois.signal_names))
+        return n_rois
+
+    @property
+    def num_elements(self):
+        return len(self.mca_records())
+
     def mca_records(self, mca_indices: Optional[Sequence[int]] = None):
         mcas = [
             getattr(self.mcas, m)

@@ -74,7 +74,7 @@ class FireflyApplication(PyDMApplication):
     area_detector_window_slots: Sequence
 
     # Keep track of XRF detectors
-    xrf_detector_actions: Sequence = []
+    xrf_detector_actions: Mapping = {}
     xrf_detector_window_slots: Sequence    
     
     # Signals for running plans on the queueserver
@@ -389,7 +389,7 @@ class FireflyApplication(PyDMApplication):
         device_name = device.name.replace(" ", "_")
         self.show_window(
             FireflyMainWindow,
-            ui_dir / "xrf_detector.ui",
+            ui_dir / "xrf_detector.py",
             name=f"FireflyMainWindow_xrf_detector_{device_name}",
             macros={"DEV": device.name},
         )

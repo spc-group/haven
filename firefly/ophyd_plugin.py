@@ -41,7 +41,7 @@ class OphydConnection(Connection):
                 f"Component {name} does not have a pv, consider using one of its children."
             )
         # Use the new PV to get a regular PV connection
-        log.info(f"Converted ophyd name {name} to PV {pv}")
+        log.debug(f"Converted ophyd name {name} to PV {pv}")
         super().__init__(channel=channel, pv=pv, protocol=protocol, parent=parent)
 
 

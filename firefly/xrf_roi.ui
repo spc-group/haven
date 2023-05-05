@@ -59,7 +59,7 @@
       <string/>
      </property>
      <property name="text">
-      <string>${ROI}</string>
+      <string>${NUM}</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -107,6 +107,12 @@ Data will be saved either way, but disabled channels will not appear in the list
      <property name="placeholderText">
       <string>ROI Name</string>
      </property>
+     <property name="channel" stdset="0">
+      <string>oph://${DEV}.mcas.mca${MCA}.rois.roi${ROI}.label._write_pv</string>
+     </property>
+     <property name="displayFormat" stdset="0">
+      <enum>PyDMLineEdit::String</enum>
+     </property>
     </widget>
    </item>
    <item>
@@ -120,6 +126,12 @@ Data will be saved either way, but disabled channels will not appear in the list
      <property name="placeholderText">
       <string>Lower bound</string>
      </property>
+     <property name="channel" stdset="0">
+      <string>oph://${DEV}.mcas.mca${MCA}.rois.roi${ROI}.lo_chan._write_pv</string>
+     </property>
+     <property name="displayFormat" stdset="0">
+      <enum>PyDMLineEdit::Default</enum>
+     </property>
     </widget>
    </item>
    <item>
@@ -132,6 +144,12 @@ Data will be saved either way, but disabled channels will not appear in the list
      </property>
      <property name="placeholderText">
       <string>Upper bound</string>
+     </property>
+     <property name="channel" stdset="0">
+      <string>oph://${DEV}.mcas.mca${MCA}.rois.roi${ROI}.hi_chan._write_pv</string>
+     </property>
+     <property name="displayFormat" stdset="0">
+      <enum>PyDMLineEdit::Default</enum>
      </property>
     </widget>
    </item>
