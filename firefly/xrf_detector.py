@@ -5,7 +5,7 @@ import json
 from contextlib import contextmanager
 from functools import partial
 
-from qtpy.QtCore import Qt
+from qtpy.QtCore import Qt, Signal
 import qtawesome as qta
 import pyqtgraph
 import pydm
@@ -25,6 +25,18 @@ log = logging.getLogger(__name__)
 
 
 pyqtgraph.setConfigOption("imageAxisOrder", "row-major")
+
+
+class ROIEmbeddedDisplay(PyDMEmbeddedDisplay):
+    # Signals
+    selected = Signal(bool)
+
+    def open_file(self, **kwargs):
+        widget = super().open_file(**kwargs)
+        # Connect signals if necessary
+        if widget is not None:
+            widget.selected.connect(self.selected)
+        return widget
 
 
 class XRFDetectorDisplay(display.FireflyDisplay):
@@ -83,6 +95,39 @@ class XRFDetectorDisplay(display.FireflyDisplay):
         widget.setEnabled(True)
         widget.setCursor(old_cursor)
 
+    def roi_selected(self, is_selected: bool, roi_idx=None):
+        """Handler for when an ROI is selected for editing.
+        
+        Parameters
+        ==========
+        is_selected
+          Will be true if the ROI was selected, or false if the ROI
+          was deselected.
+        
+        """
+        for idx, disp in enumerate(self.roi_displays):
+            if is_selected and idx != roi_idx:
+                disp.setEnabled(False)
+            else:
+                disp.setEnabled(True)
+
+    def mca_selected(self, is_selected: bool, mca_idx=None):
+        """Handler for when an MCA row is selected for editing.
+        
+        Parameters
+        ==========
+        is_selected
+          Will be true if the MCA row was selected, or false if the
+          MCA row was deselected.
+
+        """
+        print(f"MCA {mca_idx}: {is_selected}")
+        for idx, disp in enumerate(self.mca_displays):
+            if is_selected and idx != mca_idx:
+                disp.setEnabled(False)
+            else:
+                disp.setEnabled(True)
+                
     def draw_roi_widgets(self, element_idx):
         with self.disable_ui():
             # Prepare all the ROI widgets
@@ -90,7 +135,7 @@ class XRFDetectorDisplay(display.FireflyDisplay):
             self.remove_widgets_from_layout(layout)
             self.roi_displays = []
             for roi_idx in range(self.device.num_rois):
-                disp = PyDMEmbeddedDisplay(parent=self)
+                disp = ROIEmbeddedDisplay(parent=self)
                 disp.macros = json.dumps(
                     {
                         "DEV": self.device.name,
@@ -100,6 +145,8 @@ class XRFDetectorDisplay(display.FireflyDisplay):
                     }
                 )
                 disp.filename = "xrf_roi.py"
+                # Respond when this ROI is selected
+                disp.selected.connect(partial(self.roi_selected, roi_idx=roi_idx))
                 # Add the Embedded Display to the ROI Layout
                 layout.addWidget(disp)
                 self.roi_displays.append(disp)
@@ -110,35 +157,23 @@ class XRFDetectorDisplay(display.FireflyDisplay):
             layout = self.ui.mcas_layout
             self.remove_widgets_from_layout(layout)
             self.mca_displays = []
-            for mca_idx in range(1, self.device.num_elements+1):
-                disp = PyDMEmbeddedDisplay(parent=self)
+            for mca_num in range(1, self.device.num_elements+1):
+                disp = ROIEmbeddedDisplay(parent=self)
                 disp.macros = json.dumps(
                     {
                         "DEV": self.device.name,
-                        "MCA": mca_idx,
+                        "MCA": mca_num,
                         "ROI": roi_idx,
-                        "NUM": mca_idx,
+                        "NUM": mca_num,
                     }
                 )
                 disp.filename = "xrf_roi.py"
+                # Respond when this MCA is selected
+                disp.selected.connect(partial(self.mca_selected, mca_idx=mca_num-1))
                 # Add the Embedded Display to the ROI Layout
                 layout.addWidget(disp)
                 self.mca_displays.append(disp)
-                
 
-    # def update_roi_widget_mca(self, mca_idx):
-    #     try:
-    #         disp = self.roi_displays[0]
-    #     except Exception:
-    #         print("Failed")
-    #     else:
-    #         from pprint import pprint
-    #         pprint(dir(disp))
-    #         pprint(dir(disp.embedded_widget))
-    #     for disp in self.roi_displays:
-    #         disp.embedded_widget._macros['MCA'] = mca_idx + 1
-    #         # disp.macros['MCA'] = mca_idx + 1
-        
     def remove_widgets_from_layout(self, layout):
         # Delete existing camera widgets
         for idx in reversed(range(layout.count())):

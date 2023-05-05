@@ -48,7 +48,8 @@ class ROI(mca.ROI):
     _dynamic_hint_fields = ['net_count']
     # Signals
     # net_count = Cpt(EpicsSignalRO, "N", kind=Kind.hinted, lazy=True)
-    user_kind = Cpt(EpicsSignal, "_BS_KIND", lazy=True)
+    # user_kind = Cpt(EpicsSignal, "_BS_KIND", lazy=True)
+    is_hinted = Cpt(EpicsSignal, "BH", lazy=True)
 
     def stage(self):
         self._original_name = self.name
@@ -56,8 +57,11 @@ class ROI(mca.ROI):
         label = cleanupText(str(self.label.get()))
         if label != "":
             self.name = f"{self.name}_{label}"
-        # Set the kind based on the user-settable ".R0_BS_KIND" PV
-        new_kind = self.user_kind.get()
+        # Set the kind based on the user-settable ".R0_BS_HINTED" PV
+        if self.is_hinted.get():
+            new_kind = Kind.hinted
+        else:
+            new_kind = Kind.normal
         self._original_kinds = {fld: getattr(self, fld).kind for fld in self._dynamic_hint_fields}
         for fld in self._dynamic_hint_fields:
             getattr(self, fld).kind = new_kind
@@ -145,7 +149,7 @@ class DxpDetectorBase(mca.EpicsDXPMultiElementSystem):
 
     # By default, a 1-element detector, subclass for more elements
     mcas = DDC(
-        add_mcas(range_=range(1, 2)),
+        add_mcas(range_=range(1, 3)),
         default_read_attrs=["mca1"],
         default_configuration_attrs=["mca1"],
     )
@@ -222,7 +226,7 @@ class DxpDetectorBase(mca.EpicsDXPMultiElementSystem):
     def num_rois(self):
         n_rois = float("inf")
         for mca in self.mca_records():
-            n_rois = min(n_rois, len(mca.rois.signal_names))
+            n_rois = min(n_rois, len(mca.rois.component_names))
         return n_rois
 
     @property

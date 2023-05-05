@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1071</width>
-    <height>760</height>
+    <height>759</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -137,7 +137,7 @@
      </property>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>3</number>
+       <number>2</number>
       </property>
       <widget class="QWidget" name="stats_tab">
        <attribute name="title">
@@ -683,13 +683,6 @@
              </layout>
             </item>
             <item>
-             <widget class="Line" name="line">
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-             </widget>
-            </item>
-            <item>
              <widget class="QScrollArea" name="scrollArea">
               <property name="horizontalScrollBarPolicy">
                <enum>Qt::ScrollBarAlwaysOff</enum>
@@ -702,18 +695,18 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>628</width>
-                 <height>505</height>
+                 <width>642</width>
+                 <height>416</height>
                 </rect>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_7">
                 <item>
                  <layout class="QVBoxLayout" name="rois_layout">
                   <property name="spacing">
-                   <number>5</number>
+                   <number>0</number>
                   </property>
                   <property name="topMargin">
-                   <number>5</number>
+                   <number>0</number>
                   </property>
                   <item>
                    <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay">
@@ -741,230 +734,6 @@
                     </property>
                     <property name="macros" stdset="0">
                      <string>ROI=2</string>
-                    </property>
-                    <property name="filename" stdset="0">
-                     <string>xrf_roi.ui</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
-                   <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_3">
-                    <property name="toolTip">
-                     <string/>
-                    </property>
-                    <property name="frameShape">
-                     <enum>QFrame::NoFrame</enum>
-                    </property>
-                    <property name="macros" stdset="0">
-                     <string>ROI=3</string>
-                    </property>
-                    <property name="filename" stdset="0">
-                     <string>xrf_roi.ui</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
-                   <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_4">
-                    <property name="toolTip">
-                     <string/>
-                    </property>
-                    <property name="frameShape">
-                     <enum>QFrame::NoFrame</enum>
-                    </property>
-                    <property name="macros" stdset="0">
-                     <string>ROI=4</string>
-                    </property>
-                    <property name="filename" stdset="0">
-                     <string>xrf_roi.ui</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
-                   <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_6">
-                    <property name="toolTip">
-                     <string/>
-                    </property>
-                    <property name="frameShape">
-                     <enum>QFrame::NoFrame</enum>
-                    </property>
-                    <property name="macros" stdset="0">
-                     <string>ROI=5</string>
-                    </property>
-                    <property name="filename" stdset="0">
-                     <string>xrf_roi.ui</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
-                   <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_5">
-                    <property name="toolTip">
-                     <string/>
-                    </property>
-                    <property name="frameShape">
-                     <enum>QFrame::NoFrame</enum>
-                    </property>
-                    <property name="macros" stdset="0">
-                     <string>ROI=6</string>
-                    </property>
-                    <property name="filename" stdset="0">
-                     <string>xrf_roi.ui</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
-                   <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_7">
-                    <property name="toolTip">
-                     <string/>
-                    </property>
-                    <property name="frameShape">
-                     <enum>QFrame::NoFrame</enum>
-                    </property>
-                    <property name="macros" stdset="0">
-                     <string>ROI=7</string>
-                    </property>
-                    <property name="filename" stdset="0">
-                     <string>xrf_roi.ui</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
-                   <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_8">
-                    <property name="toolTip">
-                     <string/>
-                    </property>
-                    <property name="frameShape">
-                     <enum>QFrame::NoFrame</enum>
-                    </property>
-                    <property name="macros" stdset="0">
-                     <string>ROI=8</string>
-                    </property>
-                    <property name="filename" stdset="0">
-                     <string>xrf_roi.ui</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
-                   <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_10">
-                    <property name="toolTip">
-                     <string/>
-                    </property>
-                    <property name="frameShape">
-                     <enum>QFrame::NoFrame</enum>
-                    </property>
-                    <property name="macros" stdset="0">
-                     <string>ROI=9</string>
-                    </property>
-                    <property name="filename" stdset="0">
-                     <string>xrf_roi.ui</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
-                   <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_11">
-                    <property name="toolTip">
-                     <string/>
-                    </property>
-                    <property name="frameShape">
-                     <enum>QFrame::NoFrame</enum>
-                    </property>
-                    <property name="macros" stdset="0">
-                     <string>ROI=10</string>
-                    </property>
-                    <property name="filename" stdset="0">
-                     <string>xrf_roi.ui</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
-                   <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_15">
-                    <property name="toolTip">
-                     <string/>
-                    </property>
-                    <property name="frameShape">
-                     <enum>QFrame::NoFrame</enum>
-                    </property>
-                    <property name="macros" stdset="0">
-                     <string>ROI=11</string>
-                    </property>
-                    <property name="filename" stdset="0">
-                     <string>xrf_roi.ui</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
-                   <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_14">
-                    <property name="toolTip">
-                     <string/>
-                    </property>
-                    <property name="frameShape">
-                     <enum>QFrame::NoFrame</enum>
-                    </property>
-                    <property name="macros" stdset="0">
-                     <string>ROI=12</string>
-                    </property>
-                    <property name="filename" stdset="0">
-                     <string>xrf_roi.ui</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
-                   <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_16">
-                    <property name="toolTip">
-                     <string/>
-                    </property>
-                    <property name="frameShape">
-                     <enum>QFrame::NoFrame</enum>
-                    </property>
-                    <property name="macros" stdset="0">
-                     <string>ROI=13</string>
-                    </property>
-                    <property name="filename" stdset="0">
-                     <string>xrf_roi.ui</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
-                   <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_13">
-                    <property name="toolTip">
-                     <string/>
-                    </property>
-                    <property name="frameShape">
-                     <enum>QFrame::NoFrame</enum>
-                    </property>
-                    <property name="macros" stdset="0">
-                     <string>ROI=14</string>
-                    </property>
-                    <property name="filename" stdset="0">
-                     <string>xrf_roi.ui</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
-                   <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_12">
-                    <property name="toolTip">
-                     <string/>
-                    </property>
-                    <property name="frameShape">
-                     <enum>QFrame::NoFrame</enum>
-                    </property>
-                    <property name="macros" stdset="0">
-                     <string>ROI=15</string>
-                    </property>
-                    <property name="filename" stdset="0">
-                     <string>xrf_roi.ui</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
-                   <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_9">
-                    <property name="toolTip">
-                     <string/>
-                    </property>
-                    <property name="frameShape">
-                     <enum>QFrame::NoFrame</enum>
-                    </property>
-                    <property name="macros" stdset="0">
-                     <string>ROI=16</string>
                     </property>
                     <property name="filename" stdset="0">
                      <string>xrf_roi.ui</string>
@@ -1108,13 +877,6 @@
              </layout>
             </item>
             <item>
-             <widget class="Line" name="line_2">
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-             </widget>
-            </item>
-            <item>
              <widget class="QScrollArea" name="scrollArea_2">
               <property name="horizontalScrollBarPolicy">
                <enum>Qt::ScrollBarAlwaysOff</enum>
@@ -1128,12 +890,15 @@
                  <x>0</x>
                  <y>0</y>
                  <width>677</width>
-                 <height>406</height>
+                 <height>415</height>
                 </rect>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_8">
                 <item>
                  <layout class="QVBoxLayout" name="mcas_layout">
+                  <property name="spacing">
+                   <number>0</number>
+                  </property>
                   <item>
                    <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_17">
                     <property name="toolTip">
@@ -1144,102 +909,6 @@
                     </property>
                     <property name="macros" stdset="0">
                      <string>ROI=0,MCA=1</string>
-                    </property>
-                    <property name="filename" stdset="0">
-                     <string>xrf_mca.ui</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
-                   <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_20">
-                    <property name="toolTip">
-                     <string/>
-                    </property>
-                    <property name="frameShape">
-                     <enum>QFrame::NoFrame</enum>
-                    </property>
-                    <property name="macros" stdset="0">
-                     <string>ROI=0,MCA=2</string>
-                    </property>
-                    <property name="filename" stdset="0">
-                     <string>xrf_mca.ui</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
-                   <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_21">
-                    <property name="toolTip">
-                     <string/>
-                    </property>
-                    <property name="frameShape">
-                     <enum>QFrame::NoFrame</enum>
-                    </property>
-                    <property name="macros" stdset="0">
-                     <string>ROI=0,MCA=3</string>
-                    </property>
-                    <property name="filename" stdset="0">
-                     <string>xrf_mca.ui</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
-                   <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_26">
-                    <property name="toolTip">
-                     <string/>
-                    </property>
-                    <property name="frameShape">
-                     <enum>QFrame::NoFrame</enum>
-                    </property>
-                    <property name="macros" stdset="0">
-                     <string>ROI=0,MCA=4</string>
-                    </property>
-                    <property name="filename" stdset="0">
-                     <string>xrf_mca.ui</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
-                   <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_27">
-                    <property name="toolTip">
-                     <string/>
-                    </property>
-                    <property name="frameShape">
-                     <enum>QFrame::NoFrame</enum>
-                    </property>
-                    <property name="macros" stdset="0">
-                     <string>ROI=0,MCA=5</string>
-                    </property>
-                    <property name="filename" stdset="0">
-                     <string>xrf_mca.ui</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
-                   <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_28">
-                    <property name="toolTip">
-                     <string/>
-                    </property>
-                    <property name="frameShape">
-                     <enum>QFrame::NoFrame</enum>
-                    </property>
-                    <property name="macros" stdset="0">
-                     <string>ROI=0,MCA=6</string>
-                    </property>
-                    <property name="filename" stdset="0">
-                     <string>xrf_mca.ui</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
-                   <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_29">
-                    <property name="toolTip">
-                     <string/>
-                    </property>
-                    <property name="frameShape">
-                     <enum>QFrame::NoFrame</enum>
-                    </property>
-                    <property name="macros" stdset="0">
-                     <string>ROI=0,MCA=7</string>
                     </property>
                     <property name="filename" stdset="0">
                      <string>xrf_mca.ui</string>

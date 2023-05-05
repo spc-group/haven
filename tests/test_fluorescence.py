@@ -7,32 +7,6 @@ import pytest
 from epics import caget
 
 
-# @pytest.fixture
-# def vortex():
-#     return XspressDetector("xspress:", name="vortex")
-
-
-# def test_staging(vortex, ioc_vortex):
-#     # Check starting conditions
-#     assert vortex.num_frames.get() == 1
-#     assert caget("xspress:NumImages") == 1
-#     assert caget("xspress:TriggerMode") == 1
-#     # Check that the number of frames gets set
-#     vortex.stage_num_frames = 48
-#     # Check the detector was set up correctly
-#     vortex.stage()
-#     assert caget("xspress:NumImages") == 48
-#     assert caget("xspress:TriggerMode") == 3
-#     # Did the values get reset when unstaged
-#     vortex.unstage()
-#     assert caget("xspress:NumImages") == 1
-#     assert caget("xspress:TriggerMode") == 1
-
-
-# def _ensure_connected(*args, **kwargs):
-#     pass
-
-
 def test_load_dxp(sim_registry, mocker):
     mocker.patch("ophyd.signal.EpicsSignalBase._ensure_connected")
     from haven.instrument.fluorescence_detector import load_fluorescence_detectors
@@ -173,14 +147,12 @@ def test_stage_signal_names(sim_vortex):
         assert "Ni_Ka" in res
 
 
-def test_stage_signal_kinds(sim_vortex):
+def test_stage_signal_hinted(sim_vortex):
     dev = sim_vortex.mcas.mca1.rois.roi1
     # Check that ROI is not hinted by default
     assert dev.name not in sim_vortex.hints
     # Enable the ROI by setting it's kind PV to "hinted"
-    # from pprint import pprint
-    # pprint(dir(dev.label))
-    dev.user_kind.put(Kind.hinted)
+    dev.is_hinted.put(True)
     # Ensure signals are not hinted before being staged
     assert dev.net_count.name not in sim_vortex.hints['fields']
     try:
@@ -188,11 +160,6 @@ def test_stage_signal_kinds(sim_vortex):
     except Exception:
         raise
     else:
-        # print(dev.kind, dev.net_count.kind, dev.hints)
-        # parent = dev
-        # while parent is not None:
-        #     print(parent.name, parent.kind)
-        #     parent = parent.parent
         assert dev.net_count.name in sim_vortex.hints['fields']
         assert sim_vortex.mcas.mca1.rois.roi0.net_count.name not in sim_vortex.hints['fields']
     finally:
