@@ -15,7 +15,7 @@ class XRFROIDisplay(display.FireflyDisplay):
         return "xrf_roi.ui"
 
     def customize_ui(self):
-        self.ui.set_roi_button.setIcon(qta.icon("fa5s.chart-area"))
+        self.ui.set_roi_button.setIcon(qta.icon("fa5s.chart-line"))
         self.ui.enabled_checkbox.toggled.connect(self.set_backgrounds)
         self.ui.set_roi_button.toggled.connect(self.set_backgrounds)        
         self.ui.enabled_checkbox.toggled.connect(self.enable_roi)

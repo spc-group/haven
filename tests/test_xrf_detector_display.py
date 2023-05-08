@@ -1,9 +1,13 @@
 import time
 from ophyd import Kind
 
+import numpy as np
+from pyqtgraph import PlotItem
+
 from firefly.main_window import FireflyMainWindow
-from firefly.xrf_detector import XRFDetectorDisplay
+from firefly.xrf_detector import XRFDetectorDisplay, XRFPlotWidget
 from firefly.xrf_roi import XRFROIDisplay
+
 
 def test_open_xrf_detector_viewer_actions(ffapp, qtbot, sim_vortex):
     # Get the area detector parts ready
@@ -73,3 +77,51 @@ def test_all_mcas_selection(ffapp, qtbot, sim_vortex):
     mca_display.selected.emit(True)
     # Check that a different ROI display was disabled
     assert not display.mca_displays[1].isEnabled()
+
+
+def test_update_roi_spectra(ffapp, qtbot, sim_vortex):
+    FireflyMainWindow()
+    display = XRFDetectorDisplay(macros={"DEV": sim_vortex.name})
+    spectra = np.random.default_rng(seed=0).integers(0, 65536, dtype=np.int_, size=(4, 1024))
+    roi_plot_widget = display.ui.roi_plot_widget
+    assert roi_plot_widget.ui.plot_widget.getItem(0, 0) is None
+    # plot_widget.update_spectrum(spectrum=spectra[0], mca_idx=1)
+    with qtbot.waitSignal(roi_plot_widget.plot_changed):
+        display._spectrum_channels[0].value_slot(spectra[0])
+        display._spectrum_channels[1].value_slot(spectra[1])
+    # Check that a PlotItem was created
+    plot_item = roi_plot_widget.ui.plot_widget.getItem(0, 0)
+    assert isinstance(plot_item, PlotItem)
+    # Check that the spectrum was plotted
+    data_items = plot_item.listDataItems()
+    assert len(data_items) == 2
+    # Check that previous plots get cleared
+    spectra2 = np.random.default_rng(seed=1).integers(0, 65536, dtype=np.int_, size=(4, 1024))
+    with qtbot.waitSignal(roi_plot_widget.plot_changed):
+        display._spectrum_channels[0].value_slot(spectra2[0])
+    data_items = plot_item.listDataItems()
+    assert len(data_items) == 2
+
+
+def test_update_mca_spectra(ffapp, qtbot, sim_vortex):
+    FireflyMainWindow()
+    display = XRFDetectorDisplay(macros={"DEV": sim_vortex.name})
+    spectra = np.random.default_rng(seed=0).integers(0, 65536, dtype=np.int_, size=(4, 1024))
+    mca_plot_widget = display.ui.mca_plot_widget
+    assert mca_plot_widget.ui.plot_widget.getItem(0, 0) is None
+    # plot_widget.update_spectrum(spectrum=spectra[0], mca_idx=1)
+    with qtbot.waitSignal(mca_plot_widget.plot_changed):
+        display._spectrum_channels[0].value_slot(spectra[0])
+        display._spectrum_channels[1].value_slot(spectra[1])
+    # Check that a PlotItem was created
+    plot_item = mca_plot_widget.ui.plot_widget.getItem(0, 0)
+    assert isinstance(plot_item, PlotItem)
+    # Check that the spectrum was plotted
+    data_items = plot_item.listDataItems()
+    assert len(data_items) == 2
+    # Check that previous plots get cleared
+    spectra2 = np.random.default_rng(seed=1).integers(0, 65536, dtype=np.int_, size=(4, 1024))
+    with qtbot.waitSignal(mca_plot_widget.plot_changed):
+        display._spectrum_channels[0].value_slot(spectra2[0])
+    data_items = plot_item.listDataItems()
+    assert len(data_items) == 2

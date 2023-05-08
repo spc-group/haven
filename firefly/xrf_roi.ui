@@ -194,8 +194,11 @@ Data will be saved either way, but disabled channels will not appear in the list
          </item>
          <item>
           <widget class="QPushButton" name="set_roi_button">
+           <property name="toolTip">
+            <string>Select this ROI to be shown on the plot.</string>
+           </property>
            <property name="text">
-            <string>Set</string>
+            <string/>
            </property>
            <property name="iconSize">
             <size>

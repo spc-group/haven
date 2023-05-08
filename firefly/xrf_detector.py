@@ -1,11 +1,15 @@
 import logging
 import subprocess
-from typing import Sequence
+from pathlib import Path
+from typing import Sequence, Optional
 import json
 from contextlib import contextmanager
 from functools import partial
+from collections import defaultdict
 
+from qtpy import uic
 from qtpy.QtCore import Qt, Signal
+from qtpy.QtWidgets import QWidget
 import qtawesome as qta
 import pyqtgraph
 import pydm
@@ -27,6 +31,34 @@ log = logging.getLogger(__name__)
 pyqtgraph.setConfigOption("imageAxisOrder", "row-major")
 
 
+class XRFPlotWidget(QWidget):
+    ui_dir = Path(__file__).parent
+    _data_items: defaultdict
+
+    # Signals
+    plot_changed = Signal()
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._data_items = defaultdict(lambda: None)
+        self.ui = uic.loadUi(self.ui_dir / "xrf_plot.ui", self)
+
+    def update_spectrum(self, mca_idx, spectrum):
+        """Plot the spectrum associated with the given MCA index."""
+        # Create the plot item itself if necessary
+        row, col = (0, 0)
+        if (plot_item := self.ui.plot_widget.getItem(row=row, col=col)) is None:
+            plot_item = self.ui.plot_widget.addPlot(row=row, col=col)
+        # Get ride of the previous plots
+        if (existing_item := self._data_items[mca_idx]) is not None:
+            plot_item.removeItem(existing_item)
+        # Plot the spectrum
+        xdata = np.arange(len(spectrum))
+        self._data_items[mca_idx] = plot_item.plot(xdata, spectrum, label=mca_idx)
+        self.plot_changed.emit()
+        
+
+
 class ROIEmbeddedDisplay(PyDMEmbeddedDisplay):
     # Signals
     selected = Signal(bool)
@@ -42,12 +74,15 @@ class ROIEmbeddedDisplay(PyDMEmbeddedDisplay):
 class XRFDetectorDisplay(display.FireflyDisplay):
     roi_displays: Sequence = []
 
+    # Signals
+    spectrum_changed = Signal(int, object)  # (MCA index, spectrum)
+    _spectrum_channels: Sequence
+
     def ui_filename(self):
         return "xrf_detector.ui"
 
     def customize_ui(self):
-        device_name = self.macros()["DEV"]
-        self.device = device = haven.registry.find(device_name)
+        device = self.device
         # Set ROI and element selection comboboxes
         self.ui.mca_combobox.currentIndexChanged.connect(self.draw_roi_widgets)
         self.ui.roi_combobox.currentIndexChanged.connect(self.draw_mca_widgets)
@@ -74,6 +109,23 @@ class XRFDetectorDisplay(display.FireflyDisplay):
         )
         # Button for starting/stopping the detector
         self.ui.acquire_button.setIcon(qta.icon("fa5s.play"))
+        # Connect signals for when spectra change
+        self.spectrum_changed.connect(self.ui.roi_plot_widget.update_spectrum)
+        self.spectrum_changed.connect(self.ui.mca_plot_widget.update_spectrum)
+
+    def customize_device(self):
+        # Load the device from the registry
+        device_name = self.macros()["DEV"]
+        self.device = device = haven.registry.find(device_name)
+        # Set up data channels
+        self._spectrum_channels = []
+        for mca_idx in range(1, self.device.num_elements+1):
+            address = f"oph://{device.name}.mcas.mca{mca_idx}.spectrum"
+            channel = pydm.PyDMChannel(
+                address=address,
+                value_slot=partial(self.spectrum_changed.emit, mca_idx),
+            )
+            self._spectrum_channels.append(channel)
 
     def increment_combobox(self, combobox, step):
         n_items = combobox.count()
@@ -175,16 +227,7 @@ class XRFDetectorDisplay(display.FireflyDisplay):
                 self.mca_displays.append(disp)
 
     def remove_widgets_from_layout(self, layout):
-        # Delete existing camera widgets
+        # Delete existing ROI widgets
         for idx in reversed(range(layout.count())):
             layout.takeAt(idx).widget().deleteLater()
 
-    def draw_widgets(self, layout):
-        # Add embedded displays for all the cameras
-        try:
-            cameras = haven.registry.findall(label="cameras")
-        except haven.exceptions.ComponentNotFound:
-            log.warning(
-                "No cameras found, [Detectors] -> [Cameras] panel will be empty."
-            )
-            cameras = []

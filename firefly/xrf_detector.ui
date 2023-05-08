@@ -137,7 +137,7 @@
      </property>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>2</number>
+       <number>3</number>
       </property>
       <widget class="QWidget" name="stats_tab">
        <attribute name="title">
@@ -580,14 +580,14 @@
        <attribute name="title">
         <string>ROIs</string>
        </attribute>
-       <layout class="QVBoxLayout" name="verticalLayout_5">
+       <layout class="QVBoxLayout" name="verticalLayout_9">
         <item>
          <widget class="QSplitter" name="splitter_2">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>
           <widget class="QWidget" name="verticalLayoutWidget">
-           <layout class="QVBoxLayout" name="verticalLayout">
+           <layout class="QVBoxLayout" name="roi_controls_layout">
             <property name="spacing">
              <number>5</number>
             </property>
@@ -695,8 +695,8 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>642</width>
-                 <height>416</height>
+                 <width>647</width>
+                 <height>333</height>
                 </rect>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_7">
@@ -761,16 +761,24 @@
             </item>
            </layout>
           </widget>
-          <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_19">
-           <property name="toolTip">
-            <string/>
+          <widget class="XRFPlotWidget" name="roi_plot_widget" native="true">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
            </property>
-           <property name="frameShape">
-            <enum>QFrame::NoFrame</enum>
-           </property>
-           <property name="filename" stdset="0">
-            <string>xrf_plot</string>
-           </property>
+           <layout class="QVBoxLayout" name="verticalLayout_5">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+           </layout>
           </widget>
          </widget>
         </item>
@@ -780,7 +788,7 @@
        <attribute name="title">
         <string>Elements</string>
        </attribute>
-       <layout class="QVBoxLayout" name="verticalLayout_3">
+       <layout class="QVBoxLayout" name="verticalLayout">
         <item>
          <widget class="QSplitter" name="splitter_3">
           <property name="orientation">
@@ -889,8 +897,8 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>677</width>
-                 <height>415</height>
+                 <width>830</width>
+                 <height>333</height>
                 </rect>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_8">
@@ -936,18 +944,12 @@
             </item>
            </layout>
           </widget>
-          <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_18">
-           <property name="toolTip">
-            <string/>
-           </property>
-           <property name="frameShape">
-            <enum>QFrame::NoFrame</enum>
-           </property>
-           <property name="frameShadow">
-            <enum>QFrame::Raised</enum>
-           </property>
-           <property name="filename" stdset="0">
-            <string>xrf_plot.ui</string>
+          <widget class="XRFPlotWidget" name="mca_plot_widget" native="true">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
            </property>
           </widget>
          </widget>
@@ -969,6 +971,12 @@
    <class>PyDMEmbeddedDisplay</class>
    <extends>QFrame</extends>
    <header>pydm.widgets.embedded_display</header>
+  </customwidget>
+  <customwidget>
+   <class>XRFPlotWidget</class>
+   <extends>QWidget</extends>
+   <header>firefly.xrf_detector</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources/>
