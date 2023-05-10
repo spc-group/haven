@@ -29,11 +29,11 @@ should already be imported for you in the ipython environment.
 Absolute vs. Relative Scans
 ---------------------------
 
-In some cases, it is more intuitive to describe the energy ranges
-relative to some absorption edge (*E0*). The energy of the edge can be
-given directly to :py:func:`~haven.plans.xafs_scan.xafs_scan` as *E0*,
-then all energy points will be interpreted as relative to this
-energy. The same scan from above would be:
+In many cases, it is more intuitive to describe the energy ranges
+relative to some absorption edge (*E0*). If this *E0* energy is given
+directly to :py:func:`~haven.plans.xafs_scan.xafs_scan` via the *E0*
+argument, then all energy points will be interpreted as relative to
+this energy. The same scan from above would be:
 
 .. code:: python
 
@@ -170,7 +170,7 @@ additional detectors. By default,
 :py:func:`~haven.plans.xafs_scan.xafs_scan()` and
 :py:func:`~haven.plans.energy_scan.energy_scan()` will measure the ion
 chambers as detectors (those returned by
-``haven.registry.findall("ion_chambers")``). Both accept the
+``haven.registry.findall("ion_chambers")``). Both plans accept the
 *detectors* argument, which can be any of the following:
 
 1. A list of devices.
@@ -220,7 +220,7 @@ time positioner:
 Lastly, we may want to **specify a different energy position** for
 example when using a secondary monocrhomator. By default the "energy"
 positioner is used, which is a pseudo-positioner that controls both
-the monochromator and the insertion device (is present). This
+the monochromator and the insertion device (if present). This
 positioner temporariy **disables the EPICS-based pseudo-motor** in use
 at sector 25-ID since the done status is not properly reported for the
 insertion device when using the EPICS implementation.
@@ -234,3 +234,10 @@ monochromator energy we could do:
 
    mono_energy = haven.registry.find("monochromator.energy")
    plan = haven.energy_scan(..., energy_positioners=[mono_energy])
+
+or equivalently:
+
+.. code-block:: python
+
+   plan = haven.energy_scan(..., energy_positioners="monochromator.energy")
+
