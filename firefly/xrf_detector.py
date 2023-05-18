@@ -16,6 +16,7 @@ import pydm
 from pydm.widgets import PyDMEmbeddedDisplay
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.colors import TABLEAU_COLORS
 
 import haven
 from firefly import display, FireflyApplication
@@ -30,6 +31,8 @@ log = logging.getLogger(__name__)
 
 pyqtgraph.setConfigOption("imageAxisOrder", "row-major")
 
+colors = list(TABLEAU_COLORS.values())
+
 
 class XRFPlotWidget(QWidget):
     ui_dir = Path(__file__).parent
@@ -43,25 +46,44 @@ class XRFPlotWidget(QWidget):
         self._data_items = defaultdict(lambda: None)
         self.ui = uic.loadUi(self.ui_dir / "xrf_plot.ui", self)
 
-    def update_spectrum(self, mca_idx, spectrum):
+    def update_spectrum(self, mca_num, spectrum):
         """Plot the spectrum associated with the given MCA index."""
         # Create the plot item itself if necessary
+        log.debug(f"New spectrum ({mca_num}): {repr(spectrum)}")
         row, col = (0, 0)
         if (plot_item := self.ui.plot_widget.getItem(row=row, col=col)) is None:
             plot_item = self.ui.plot_widget.addPlot(row=row, col=col)
         # Get ride of the previous plots
-        if (existing_item := self._data_items[mca_idx]) is not None:
+        if (existing_item := self._data_items[mca_num]) is not None:
             plot_item.removeItem(existing_item)
         # Plot the spectrum
         xdata = np.arange(len(spectrum))
-        self._data_items[mca_idx] = plot_item.plot(xdata, spectrum, label=mca_idx)
+        color = colors[(mca_num-1) % len(colors)]
+        self._data_items[mca_num] = plot_item.plot(xdata, spectrum, label=mca_num, pen=color)
         self.plot_changed.emit()
-        
+
+    def highlight_spectrum(self, mca_num, hovered):
+        """Highlight a spectrum and lowlight the rest.
+
+        *mca_num* is the number (1-indexed) of the spectrum plotted.
+
+        If *hovered* is true, then set the highlights, otherwise clear
+        them.
+
+        """
+        # Get the actual line plot
+        for key, data_item in self._data_items.items():
+            is_dimmed = (key != mca_num) and hovered
+            if is_dimmed:
+                data_item.setOpacity(0.2)
+            else:
+                data_item.setOpacity(1.)
 
 
 class ROIEmbeddedDisplay(PyDMEmbeddedDisplay):
     # Signals
     selected = Signal(bool)
+    hovered = Signal(bool)
 
     def open_file(self, **kwargs):
         widget = super().open_file(**kwargs)
@@ -69,14 +91,22 @@ class ROIEmbeddedDisplay(PyDMEmbeddedDisplay):
         if widget is not None:
             widget.selected.connect(self.selected)
         return widget
+    
+    def enterEvent(self, event=None):
+        self.hovered.emit(True)
+    
+    def leaveEvent(self, event=None):
+        self.hovered.emit(False)
 
 
 class XRFDetectorDisplay(display.FireflyDisplay):
     roi_displays: Sequence = []
-
+    mca_displays: Sequence = []
+    _spectrum_channels: Sequence
+    
     # Signals
     spectrum_changed = Signal(int, object)  # (MCA index, spectrum)
-    _spectrum_channels: Sequence
+    mca_row_hovered = Signal(int, bool)  # (MCA num, entered)
 
     def ui_filename(self):
         return "xrf_detector.ui"
@@ -112,6 +142,10 @@ class XRFDetectorDisplay(display.FireflyDisplay):
         # Connect signals for when spectra change
         self.spectrum_changed.connect(self.ui.roi_plot_widget.update_spectrum)
         self.spectrum_changed.connect(self.ui.mca_plot_widget.update_spectrum)
+        self.mca_row_hovered.connect(self.ui.mca_plot_widget.highlight_spectrum)
+
+    def handle_new_spectrum(self, new_spectrum, mca_num):
+        self.spectrum_changed.emit(mca_num, new_spectrum)
 
     def customize_device(self):
         # Load the device from the registry
@@ -119,12 +153,14 @@ class XRFDetectorDisplay(display.FireflyDisplay):
         self.device = device = haven.registry.find(device_name)
         # Set up data channels
         self._spectrum_channels = []
-        for mca_idx in range(1, self.device.num_elements+1):
-            address = f"oph://{device.name}.mcas.mca{mca_idx}.spectrum"
+        for mca_num in range(1, self.device.num_elements+1):
+            address = f"oph://{device.name}.mcas.mca{mca_num}.spectrum"
             channel = pydm.PyDMChannel(
                 address=address,
-                value_slot=partial(self.spectrum_changed.emit, mca_idx),
+                # value_slot=partial(self.spectrum_changed.emit, mca_num),
+                value_slot=partial(self.handle_new_spectrum, mca_num=mca_num),
             )
+            channel.connect()
             self._spectrum_channels.append(channel)
 
     def increment_combobox(self, combobox, step):
@@ -173,7 +209,6 @@ class XRFDetectorDisplay(display.FireflyDisplay):
           MCA row was deselected.
 
         """
-        print(f"MCA {mca_idx}: {is_selected}")
         for idx, disp in enumerate(self.mca_displays):
             if is_selected and idx != mca_idx:
                 disp.setEnabled(False)
@@ -204,6 +239,11 @@ class XRFDetectorDisplay(display.FireflyDisplay):
                 self.roi_displays.append(disp)
 
     def draw_mca_widgets(self, roi_idx):
+        """Prepare a row for each element in the detector.
+
+        I.e. the "ROIs" tab
+
+        """
         with self.disable_ui():
             # Prepare all the ROI widgets
             layout = self.ui.mcas_layout
@@ -220,8 +260,11 @@ class XRFDetectorDisplay(display.FireflyDisplay):
                     }
                 )
                 disp.filename = "xrf_roi.py"
-                # Respond when this MCA is selected
-                disp.selected.connect(partial(self.mca_selected, mca_idx=mca_num-1))
+                # Respond when this MCA is interacted with
+                disp.selected.connect(
+                    partial(self.mca_selected, mca_idx=mca_num-1))
+                disp.hovered.connect(
+                    partial(self.mca_row_hovered.emit, mca_num))
                 # Add the Embedded Display to the ROI Layout
                 layout.addWidget(disp)
                 self.mca_displays.append(disp)

@@ -125,3 +125,24 @@ def test_update_mca_spectra(ffapp, qtbot, sim_vortex):
         display._spectrum_channels[0].value_slot(spectra2[0])
     data_items = plot_item.listDataItems()
     assert len(data_items) == 2
+
+
+def test_hover_roi_row(ffapp, qtbot, sim_vortex):
+    FireflyMainWindow()
+    display = XRFDetectorDisplay(macros={"DEV": sim_vortex.name})
+    spectra = np.random.default_rng(seed=0).integers(0, 65536, dtype=np.int_, size=(4, 1024))
+    plot_widget = display.mca_plot_widget
+    plot_widget.update_spectrum(1, spectra[0])
+    plot_widget.update_spectrum(2, spectra[1])
+    row = display.mca_displays[0]
+    this_data_item = display.mca_plot_widget._data_items[1]
+    other_data_item = display.mca_plot_widget._data_items[2]
+    this_data_item.setOpacity(0.77)
+    # Check that the plot opacity was changed
+    row.enterEvent()
+    assert this_data_item.opacity() == 1.0
+    assert other_data_item.opacity() == 0.25
+    # Remove the mouse from the row and check that the opacity was set back
+    row.leaveEvent()
+    assert this_data_item.opacity() == 1.0
+    assert other_data_item.opacity() == 1.0

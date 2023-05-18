@@ -47,13 +47,60 @@
      <item>
       <widget class="QPushButton" name="acquire_button">
        <property name="text">
-        <string>Acquire</string>
+        <string>Continuous</string>
        </property>
        <property name="iconSize">
         <size>
          <width>12</width>
          <height>12</height>
         </size>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="PyDMPushButton" name="PyDMPushButton">
+       <property name="toolTip">
+        <string/>
+       </property>
+       <property name="text">
+        <string>1-Shot</string>
+       </property>
+       <property name="channel" stdset="0">
+        <string>oph://${DEV}.erase_start._write_pv</string>
+       </property>
+       <property name="pressValue" stdset="0">
+        <string>1</string>
+       </property>
+       <property name="releaseValue" stdset="0">
+        <string>1</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="PyDMLabel" name="PyDMLabel_35">
+       <property name="toolTip">
+        <string/>
+       </property>
+       <property name="precision" stdset="0">
+        <number>0</number>
+       </property>
+       <property name="showUnits" stdset="0">
+        <bool>false</bool>
+       </property>
+       <property name="precisionFromPV" stdset="0">
+        <bool>true</bool>
+       </property>
+       <property name="alarmSensitiveContent" stdset="0">
+        <bool>false</bool>
+       </property>
+       <property name="alarmSensitiveBorder" stdset="0">
+        <bool>true</bool>
+       </property>
+       <property name="PyDMToolTip" stdset="0">
+        <string/>
+       </property>
+       <property name="channel" stdset="0">
+        <string>oph://${DEV}.acquiring</string>
        </property>
       </widget>
      </item>
@@ -137,7 +184,7 @@
      </property>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>3</number>
+       <number>2</number>
       </property>
       <widget class="QWidget" name="stats_tab">
        <attribute name="title">
@@ -695,8 +742,8 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>647</width>
-                 <height>333</height>
+                 <width>1023</width>
+                 <height>394</height>
                 </rect>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_7">
@@ -897,8 +944,8 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>830</width>
-                 <height>333</height>
+                 <width>197</width>
+                 <height>57</height>
                 </rect>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_8">
@@ -919,7 +966,7 @@
                      <string>ROI=0,MCA=1</string>
                     </property>
                     <property name="filename" stdset="0">
-                     <string>xrf_mca.ui</string>
+                     <string>xrf_roi.ui</string>
                     </property>
                    </widget>
                   </item>
@@ -971,6 +1018,11 @@
    <class>PyDMEmbeddedDisplay</class>
    <extends>QFrame</extends>
    <header>pydm.widgets.embedded_display</header>
+  </customwidget>
+  <customwidget>
+   <class>PyDMPushButton</class>
+   <extends>QPushButton</extends>
+   <header>pydm.widgets.pushbutton</header>
   </customwidget>
   <customwidget>
    <class>XRFPlotWidget</class>

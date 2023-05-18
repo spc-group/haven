@@ -29,8 +29,8 @@
          <rect>
           <x>0</x>
           <y>0</y>
-          <width>450</width>
-          <height>865</height>
+          <width>448</width>
+          <height>857</height>
          </rect>
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -90,13 +90,30 @@
         </spacer>
        </item>
        <item>
-        <widget class="QCheckBox" name="checkBox">
-         <property name="toolTip">
-          <string>Select whether to show all spectra combined on one plot, or split among many plots.</string>
-         </property>
+        <widget class="QLabel" name="label">
          <property name="text">
-          <string>Combine Plots</string>
+          <string>Domain:</string>
          </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QComboBox" name="comboBox">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="currentText">
+          <string>Energy</string>
+         </property>
+         <item>
+          <property name="text">
+           <string>Energy</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Index</string>
+          </property>
+         </item>
         </widget>
        </item>
       </layout>
