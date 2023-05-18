@@ -69,6 +69,7 @@ dependencies:
   - pyEpics >=3.5.0
   - scikit-image
   - xlrd
+  - peakutils
 
   # XES analysis packages
   - scikit-learn

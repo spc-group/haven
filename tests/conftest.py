@@ -289,6 +289,20 @@ def ioc_mono(request):
     )
 
 
+@pytest.fixture(scope=IOC_SCOPE)
+def ioc_dxp(request):
+    prefix = "255idDXP:"
+    pvs = dict(acquiring=f"{prefix}Acquiring")
+    return run_fake_ioc(
+        module_name="haven.tests.ioc_dxp",
+        name="Fake DXP-based detector IOC",
+        prefix=prefix,
+        pvs=pvs,
+        pv_to_check=pvs["acquiring"],
+        request=request,
+    )
+
+
 @pytest.fixture()
 def sim_registry():
     # Clean the registry so we can restore it later

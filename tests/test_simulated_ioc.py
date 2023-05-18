@@ -152,3 +152,29 @@ def test_ptc10_ioc(ioc_ptc10):
 
 def test_area_detector_ioc(ioc_area_detector):
     assert caget(ioc_area_detector.pvs["cam_acquire_busy"], use_monitor=False) == 0
+
+
+def test_dxp_ioc_mca_propogation(ioc_dxp):
+    # See if settings propogate to the MCAs
+    caput("255idDXP:PresetLive", 1.5)
+    caput("255idDXP:PresetReal", 2.5)
+    # Check that the values were propogated
+    preset_time = caget("255idDXP:mca1.PLTM", use_monitor=False)
+    assert preset_time == 1.5
+    real_time = caget("255idDXP:mca1.PRTM", use_monitor=False)
+    assert real_time == 2.5
+
+
+def test_dxp_ioc_spectra(ioc_dxp):
+    # Get the starting spectrum
+    spectrum = caget("255idDXP:mca1.VAL")
+    assert not any(spectrum)
+    # Start acquring spectra
+    caput("255idDXP:PresetReal", 1.0)
+    caput("255idDXP:StartAll", 1)
+    assert caget("255idDXP:Acquiring", use_monitor=False) == 1
+    time.sleep(1.1)
+    # Check that acquiring is finished and the spectrum was updated
+    assert caget("255idDXP:Acquiring", use_monitor=False) == 0
+    spectrum = caget("255idDXP:mca1.VAL")
+    assert any(spectrum)
