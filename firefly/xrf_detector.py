@@ -37,6 +37,7 @@ colors = list(TABLEAU_COLORS.values())
 class XRFPlotWidget(QWidget):
     ui_dir = Path(__file__).parent
     _data_items: defaultdict
+    _selected_spectrum: int = None
 
     # Signals
     plot_changed = Signal()
@@ -62,6 +63,12 @@ class XRFPlotWidget(QWidget):
         self._data_items[mca_num] = plot_item.plot(xdata, spectrum, label=mca_num, pen=color)
         self.plot_changed.emit()
 
+    def select_spectrum(self, mca_num, is_selected):
+        """Select an active spectrum to modify."""
+        log.debug(f"Selecting spectrum {mca_num}")
+        self._selected_spectrum = mca_num if is_selected else None
+        self.highlight_spectrum(mca_num=mca_num, hovered=is_selected)
+
     def highlight_spectrum(self, mca_num, hovered):
         """Highlight a spectrum and lowlight the rest.
 
@@ -72,12 +79,28 @@ class XRFPlotWidget(QWidget):
 
         """
         # Get the actual line plot
+        solid, semisolid, transparent = (1., 0.55, 0.15)
         for key, data_item in self._data_items.items():
-            is_dimmed = (key != mca_num) and hovered
-            if is_dimmed:
-                data_item.setOpacity(0.2)
+            if hovered:
+                # Highlight this specific spectrum
+                if key == mca_num:
+                    opacity = solid
+                elif key == self._selected_spectrum:
+                    opacity = semisolid
+                else:
+                    opacity = transparent
+                data_item.setOpacity(opacity)
+            elif self._selected_spectrum is not None:
+                # Highlight the spectrum that was previously selected
+                log.debug(f"Reverting to previously selected spectrum: {self._selected_spectrum}")
+                is_dimmed = (key != self._selected_spectrum)
+                if is_dimmed:
+                    data_item.setOpacity(transparent)
+                else:
+                    data_item.setOpacity(solid)
             else:
-                data_item.setOpacity(1.)
+                # Just make them all solid again
+                data_item.setOpacity(solid)
 
 
 class ROIEmbeddedDisplay(PyDMEmbeddedDisplay):
@@ -199,7 +222,7 @@ class XRFDetectorDisplay(display.FireflyDisplay):
             else:
                 disp.setEnabled(True)
 
-    def mca_selected(self, is_selected: bool, mca_idx=None):
+    def mca_selected(self, is_selected: bool, mca_num=None):
         """Handler for when an MCA row is selected for editing.
         
         Parameters
@@ -209,11 +232,14 @@ class XRFDetectorDisplay(display.FireflyDisplay):
           MCA row was deselected.
 
         """
+        mca_idx = mca_num - 1
         for idx, disp in enumerate(self.mca_displays):
             if is_selected and idx != mca_idx:
                 disp.setEnabled(False)
             else:
                 disp.setEnabled(True)
+        # Show this spectrum highlighted in the plots
+        self.mca_plot_widget.select_spectrum(mca_num, is_selected=is_selected)
                 
     def draw_roi_widgets(self, element_idx):
         with self.disable_ui():
@@ -239,11 +265,7 @@ class XRFDetectorDisplay(display.FireflyDisplay):
                 self.roi_displays.append(disp)
 
     def draw_mca_widgets(self, roi_idx):
-        """Prepare a row for each element in the detector.
-
-        I.e. the "ROIs" tab
-
-        """
+        """Prepare a row for each element in the detector."""
         with self.disable_ui():
             # Prepare all the ROI widgets
             layout = self.ui.mcas_layout
@@ -262,7 +284,7 @@ class XRFDetectorDisplay(display.FireflyDisplay):
                 disp.filename = "xrf_roi.py"
                 # Respond when this MCA is interacted with
                 disp.selected.connect(
-                    partial(self.mca_selected, mca_idx=mca_num-1))
+                    partial(self.mca_selected, mca_num=mca_num))
                 disp.hovered.connect(
                     partial(self.mca_row_hovered.emit, mca_num))
                 # Add the Embedded Display to the ROI Layout

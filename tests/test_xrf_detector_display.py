@@ -141,8 +141,33 @@ def test_hover_roi_row(ffapp, qtbot, sim_vortex):
     # Check that the plot opacity was changed
     row.enterEvent()
     assert this_data_item.opacity() == 1.0
-    assert other_data_item.opacity() == 0.25
+    assert other_data_item.opacity() == 0.15
     # Remove the mouse from the row and check that the opacity was set back
     row.leaveEvent()
     assert this_data_item.opacity() == 1.0
     assert other_data_item.opacity() == 1.0
+    
+
+def test_roi_selected_highlights(ffapp, qtbot, sim_vortex):
+    """Is the spectrum highlighted when the element row is selected."""
+    FireflyMainWindow()
+    display = XRFDetectorDisplay(macros={"DEV": sim_vortex.name})
+    mca_display = display.mca_displays[1]
+    spectra = np.random.default_rng(seed=0).integers(0, 65536, dtype=np.int_, size=(4, 1024))
+    plot_widget = display.mca_plot_widget
+    plot_widget.update_spectrum(1, spectra[0])
+    plot_widget.update_spectrum(2, spectra[1])
+    this_data_item = display.mca_plot_widget._data_items[2]
+    other_data_item = display.mca_plot_widget._data_items[1]
+    this_data_item.setOpacity(0.77)
+    # Select this display and check if the spectrum is highlighted
+    mca_display.selected.emit(True)
+    assert this_data_item.opacity() == 1.0
+    assert other_data_item.opacity() == 0.15
+    # Hovering other rows should not affect the opacity
+    display.mca_displays[0].enterEvent()
+    assert this_data_item.opacity() == 0.55
+    assert other_data_item.opacity() == 1.0
+    display.mca_displays[0].leaveEvent()
+    assert this_data_item.opacity() == 1.0
+    assert other_data_item.opacity() == 0.15
