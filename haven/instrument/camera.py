@@ -9,7 +9,12 @@ from ophyd import (
     ADComponent as ADCpt,
     EpicsSignal,
 )
-from ophyd.areadetector.plugins import ImagePlugin_V34, PvaPlugin_V34, OverlayPlugin, ROIPlugin_V34
+from ophyd.areadetector.plugins import (
+    ImagePlugin_V34,
+    PvaPlugin_V34,
+    OverlayPlugin,
+    ROIPlugin_V34,
+)
 
 
 from .instrument_registry import registry
@@ -47,7 +52,6 @@ class AravisDetector(SingleTrigger, DetectorBase):
     stats3 = ADCpt(StatsPlugin_V34, "Stats3:", kind=Kind.normal)
     stats4 = ADCpt(StatsPlugin_V34, "Stats4:", kind=Kind.normal)
     stats5 = ADCpt(StatsPlugin_V34, "Stats5:", kind=Kind.normal)
-    
 
 
 def load_cameras(config=None) -> Sequence[DetectorBase]:
@@ -62,7 +66,11 @@ def load_cameras(config=None) -> Sequence[DetectorBase]:
     if config is None:
         config = load_config()
     # Get configuration details for the cameras
-    devices = {k: v for (k, v) in config["camera"].items() if hasattr(v, 'keys') and "prefix" in v.keys()}
+    devices = {
+        k: v
+        for (k, v) in config["camera"].items()
+        if hasattr(v, "keys") and "prefix" in v.keys()
+    }
     # Load each camera
     cameras = []
     for key, cam_config in devices.items():

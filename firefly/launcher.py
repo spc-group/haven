@@ -95,11 +95,16 @@ def main(default_fullscreen=False, default_display="status"):
     )
     if default_fullscreen:
         parser.add_argument(
-            "--no-fullscreen", dest="fullscreen", action="store_false", help="Start Firefly in normal (non-fullscreen) mode."
+            "--no-fullscreen",
+            dest="fullscreen",
+            action="store_false",
+            help="Start Firefly in normal (non-fullscreen) mode.",
         )
     else:
         parser.add_argument(
-            "--fullscreen", action="store_true", help="Start Firefly in full screen mode."
+            "--fullscreen",
+            action="store_true",
+            help="Start Firefly in full screen mode.",
         )
     parser.add_argument(
         "--read-only", action="store_true", help="Start Firefly in a Read-Only mode."

@@ -68,7 +68,7 @@ class CameraDisplay(display.FireflyDisplay):
         # Connect button for opening the individual camera viewers
         app = FireflyApplication.instance()
         try:
-            action = app.camera_actions[self.macros()['CAMERA']]
+            action = app.camera_actions[self.macros()["CAMERA"]]
         except KeyError:
             pass
         else:

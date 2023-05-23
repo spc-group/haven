@@ -40,7 +40,7 @@ class VoltmetersDisplay(display.FireflyDisplay):
             warnings.warn(str(e))
             log.warning(e)
             ion_chambers = []
-        scaler_prefix = "CPT NOT FOUND"            
+        scaler_prefix = "CPT NOT FOUND"
         self._ion_chamber_displays = []
         for ic in sorted(ion_chambers, key=lambda c: c.ch_num):
             # Create the display object

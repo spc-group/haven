@@ -38,54 +38,55 @@ from tiled.adapters.xarray import DatasetAdapter
 # sparse_arr = numpy.random.random((100, 100))
 # sparse_arr[sparse_arr < 0.9] = 0  # fill most of the array with zeros
 
-run1 = pd.DataFrame({
-    "energy_energy": np.linspace(8300, 8400, num=100),
-    "It_net_counts": np.abs(np.sin(np.linspace(0, 4*np.pi, num=100))),
-    "I0_net_counts": np.linspace(1, 2, num=100),
-    })
+run1 = pd.DataFrame(
+    {
+        "energy_energy": np.linspace(8300, 8400, num=100),
+        "It_net_counts": np.abs(np.sin(np.linspace(0, 4 * np.pi, num=100))),
+        "I0_net_counts": np.linspace(1, 2, num=100),
+    }
+)
 
 print("Done generating example data.", file=sys.stderr)
 hints = {
-    'energy':
-    {'fields': ['energy_energy', 'energy_id_energy_readback']},
+    "energy": {"fields": ["energy_energy", "energy_id_energy_readback"]},
 }
 
 bluesky_mapping = {
-    '7d1daf1d-60c7-4aa7-a668-d1cd97e5335f': MapAdapter(
+    "7d1daf1d-60c7-4aa7-a668-d1cd97e5335f": MapAdapter(
         {
-            "primary": MapAdapter({
-                "data": DatasetAdapter.from_dataset(run1.to_xarray()),
-            }, metadata={"descriptors": [{"hints": hints}]}),
+            "primary": MapAdapter(
+                {
+                    "data": DatasetAdapter.from_dataset(run1.to_xarray()),
+                },
+                metadata={"descriptors": [{"hints": hints}]},
+            ),
         },
-        metadata = {
+        metadata={
             "plan_name": "xafs_scan",
             "start": {
                 "plan_name": "xafs_scan",
                 "uid": "7d1daf1d-60c7-4aa7-a668-d1cd97e5335f",
-                "hints": {'dimensions': [
-                    [
-                        ['energy_energy'],
-                        'primary']]}
-
-            }
-        }),
-    '9d33bf66-9701-4ee3-90f4-3be730bc226c': MapAdapter(
-        {
-            "primary": MapAdapter({
-                "data": DatasetAdapter.from_dataset(run1.to_xarray()),
-            }, metadata={"descriptors": [{"hints": hints}]}),
+                "hints": {"dimensions": [[["energy_energy"], "primary"]]},
+            },
         },
-        metadata = {
+    ),
+    "9d33bf66-9701-4ee3-90f4-3be730bc226c": MapAdapter(
+        {
+            "primary": MapAdapter(
+                {
+                    "data": DatasetAdapter.from_dataset(run1.to_xarray()),
+                },
+                metadata={"descriptors": [{"hints": hints}]},
+            ),
+        },
+        metadata={
             "start": {
                 "plan_name": "rel_scan",
                 "uid": "9d33bf66-9701-4ee3-90f4-3be730bc226c",
-                "hints": {'dimensions': [
-                    [
-                        ['pitch2'],
-                        'primary']]}
-
+                "hints": {"dimensions": [[["pitch2"], "primary"]]},
             }
-        }),
+        },
+    ),
     # '1942a888-2627-43e6-ad36-82f0022e2c57': MapAdapter({
     #     "start": {
     #         "plan_name": "xafs_scan"

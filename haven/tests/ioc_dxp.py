@@ -9,6 +9,7 @@ from caproto.server import (
     get_pv_pair_wrapper,
     ioc_arg_parser,
     pvproperty,
+    PvpropertyDouble,
     run,
 )
 from caproto import ChannelType
@@ -20,19 +21,28 @@ unknown = int
 
 
 class DXPGroup(EpicsDXPGroup):
-    mca_bin_width = pvproperty(value=0.03, name="MCABinWidth_RBV", dtype=float, read_only=True)
+    mca_bin_width = pvproperty(
+        value=0.03, name="MCABinWidth_RBV", dtype=float, read_only=True
+    )
 
 
 class ROIGroup(MCAROIGroup):
     is_hinted = pvproperty(name="BH", dtype=bool)
+    hi_chan = pvproperty(name="HI", value=2048)
+    lo_chan = pvproperty(name="LO", value=0)
+    # hi_chan = pvproperty(name="HI", dtype=int, value=2048)
+    # lo_chan = pvproperty(name="LO", dtype=int, value=0)
 
 
 class MCAGroup(EpicsMCAGroup):
-    RoisGroup = type("RoisGroup", (PVGroup,),
-                     {f"roi{i}": SubGroup(ROIGroup, prefix=f".R{i}") for i in range(32)})
+    RoisGroup = type(
+        "RoisGroup",
+        (PVGroup,),
+        {f"roi{i}": SubGroup(ROIGroup, prefix=f".R{i}") for i in range(32)},
+    )
 
     rois = SubGroup(RoisGroup, prefix="")
-    
+
     start = pvproperty(name="Start", dtype=unknown)
     preset_real_time = pvproperty(name=".PRTM", dtype=float)
     preset_live_time = pvproperty(name=".PLTM", dtype=float)
@@ -56,25 +66,24 @@ class MCAGroup(EpicsMCAGroup):
         # Empty spectrum
         spectrum = np.zeros(shape)
         # Add peaks
-        peaks= [
-            ( 8.047, 100, 0.2),  # Cu Ka1
-            ( 8.905,  50, 0.2),  # Cu Kb
+        peaks = [
+            (8.047, 100, 0.2),  # Cu Ka1
+            (8.905, 50, 0.2),  # Cu Kb
             (22.163, 150, 0.5),  # Ag Ka
-            (24.942,  75, 0.5),  # Ag Kb
-            (49.128,  20, 0.7),  # Er Ka
-            (55.681,  10, 0.7),  # Er Kb
+            (24.942, 75, 0.5),  # Ag Kb
+            (49.128, 20, 0.7),  # Er Ka
+            (55.681, 10, 0.7),  # Er Kb
         ]
         for energy, height, sigma in peaks:
-            height *= (np.random.rand() * 0.2 + 0.9)
-            energy *= (np.random.rand() * 0.05 + 0.975)
-            sigma *= (np.random.rand() * 0.2 + 0.9)
+            height *= np.random.rand() * 0.2 + 0.9
+            energy *= np.random.rand() * 0.05 + 0.975
+            sigma *= np.random.rand() * 0.2 + 0.9
             spectrum += gaussian(energies, height, energy, sigma)
         # Add noise
         spectrum += 3 * np.random.rand(*shape)
         return spectrum
-    
-    spectrum = pvproperty(name="", dtype=float, read_only=True,
-                          value=np.zeros((2048,)))
+
+    spectrum = pvproperty(name="", dtype=float, read_only=True, value=np.zeros((2048,)))
 
     # @spectrum.startup
     # async def spectrum(self, instance, async_lib):
@@ -92,7 +101,6 @@ class MCAGroup(EpicsMCAGroup):
 
 
 class VortexME4IOC(PVGroup):
-
     async def propogate_to_mcas(self, instance, value, field):
         """Share this value with all the elements in the detector."""
         # print(f"Propogating {value} to {field} (async_lib: {self._async_lib}.")
@@ -109,19 +117,35 @@ class VortexME4IOC(PVGroup):
     dxp3 = SubGroup(DXPGroup, prefix="dxp3:")
     dxp4 = SubGroup(DXPGroup, prefix="dxp4:")
 
-    start_all = pvproperty(name="StartAll", value="Done", record="mbbi",
-                           enum_strings=("Done", "Start"),
-                           dtype=ChannelType.ENUM)
+    start_all = pvproperty(
+        name="StartAll",
+        value="Done",
+        record="mbbi",
+        enum_strings=("Done", "Start"),
+        dtype=ChannelType.ENUM,
+    )
     erase_all = pvproperty(name="EraseAll", dtype=unknown)
     erase_start = pvproperty(name="EraseStart", dtype=unknown)
     stop_all = pvproperty(name="StopAll", dtype=unknown)
-    acquiring = pvproperty(name="Acquiring", record="mbbi",
-                           value="Done", enum_strings=("Done", "Acquiring"),
-                           dtype=ChannelType.ENUM)
-    preset_real_time = pvproperty(name="PresetReal", value=0.1, dtype=float,
-                                  put=partial(propogate_to_mcas, field="preset_real_time"))
-    preset_live_time = pvproperty(name="PresetLive", value=0.1, dtype=float,
-                                  put=partial(propogate_to_mcas, field="preset_live_time"))
+    acquiring = pvproperty(
+        name="Acquiring",
+        record="mbbi",
+        value="Done",
+        enum_strings=("Done", "Acquiring"),
+        dtype=ChannelType.ENUM,
+    )
+    preset_real_time = pvproperty(
+        name="PresetReal",
+        value=0.1,
+        dtype=float,
+        put=partial(propogate_to_mcas, field="preset_real_time"),
+    )
+    preset_live_time = pvproperty(
+        name="PresetLive",
+        value=0.1,
+        dtype=float,
+        put=partial(propogate_to_mcas, field="preset_live_time"),
+    )
 
     @start_all.startup
     async def start_all(self, instance, async_lib):
@@ -142,7 +166,7 @@ class VortexME4IOC(PVGroup):
     async def erase_start(self, instance, value):
         # Erasing is a no-op for now so just start
         await self.start_all.write(value)
-        
+
 
 if __name__ == "__main__":
     ioc_options, run_options = ioc_arg_parser(

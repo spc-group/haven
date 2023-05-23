@@ -184,7 +184,7 @@
      </property>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>2</number>
+       <number>3</number>
       </property>
       <widget class="QWidget" name="stats_tab">
        <attribute name="title">
@@ -727,6 +727,16 @@
                 </property>
                </spacer>
               </item>
+              <item>
+               <widget class="QPushButton" name="pushButton">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
+                <property name="text">
+                 <string>Copy To All</string>
+                </property>
+               </widget>
+              </item>
              </layout>
             </item>
             <item>
@@ -929,6 +939,16 @@
                 </property>
                </spacer>
               </item>
+              <item>
+               <widget class="QPushButton" name="pushButton_2">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
+                <property name="text">
+                 <string>Copy To All</string>
+                </property>
+               </widget>
+              </item>
              </layout>
             </item>
             <item>
@@ -944,8 +964,8 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>197</width>
-                 <height>57</height>
+                 <width>854</width>
+                 <height>393</height>
                 </rect>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_8">

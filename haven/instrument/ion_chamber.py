@@ -149,8 +149,12 @@ class IonChamber(ScalerTriggered, Device):
     count: OphydObject = FCpt(
         EpicsSignal, "{scaler_prefix}.CNT", trigger_value=1, kind=Kind.omitted
     )
-    description: OphydObject = FCpt(EpicsSignalRO, "{prefix}.NM{ch_num}", kind=Kind.config)
-    raw_counts: OphydObject = FCpt(ScalerSignalRO, "{prefix}.S{ch_num}", kind=Kind.normal)
+    description: OphydObject = FCpt(
+        EpicsSignalRO, "{prefix}.NM{ch_num}", kind=Kind.config
+    )
+    raw_counts: OphydObject = FCpt(
+        ScalerSignalRO, "{prefix}.S{ch_num}", kind=Kind.normal
+    )
     offset: OphydObject = FCpt(
         ScalerSignalRO, "{prefix}_{offset_suffix}", kind=Kind.config
     )
@@ -160,11 +164,15 @@ class IonChamber(ScalerTriggered, Device):
     volts: OphydObject = FCpt(
         ScalerSignalRO, "{prefix}_calc{ch_num}.VAL", kind=Kind.normal
     )
-    exposure_time: OphydObject = FCpt(EpicsSignal, "{scaler_prefix}.TP", kind=Kind.normal)
+    exposure_time: OphydObject = FCpt(
+        EpicsSignal, "{scaler_prefix}.TP", kind=Kind.normal
+    )
     sensitivity: OphydObject = FCpt(
         SensitivityLevelPositioner, "{preamp_prefix}", kind=Kind.config
     )
-    auto_count: OphydObject = FCpt(EpicsSignal, "{scaler_prefix}.CONT", kind=Kind.omitted)
+    auto_count: OphydObject = FCpt(
+        EpicsSignal, "{scaler_prefix}.CONT", kind=Kind.omitted
+    )
     record_dark_current: OphydObject = FCpt(
         EpicsSignal, "{scaler_prefix}_offset_start.PROC", kind=Kind.omitted
     )

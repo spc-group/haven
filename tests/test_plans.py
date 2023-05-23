@@ -276,16 +276,22 @@ class XafsScanTests(PlanUnitTests):
 
     def test_remove_duplicate_energies(self):
         plan = xafs_scan(
-            -4, 2, 1.,
-            6, 34, 1.,
+            -4,
+            2,
+            1.0,
+            6,
+            34,
+            1.0,
             40,
             E0=8333,
             energy_positioners=[self.mono_motor],
             time_positioners=[self.exposure_motor],
         )
         msgs = list(plan)
-        set_msgs = [m for m in msgs if m.command == 'set' and m.obj.name == "mono_energy"]
-        read_msgs = [m for m in msgs if m.command == 'read' and m.obj.name == "I0"]
+        set_msgs = [
+            m for m in msgs if m.command == "set" and m.obj.name == "mono_energy"
+        ]
+        read_msgs = [m for m in msgs if m.command == "read" and m.obj.name == "I0"]
         energies = [m.args[0] for m in set_msgs]
         # Make sure we only read each point once
         assert len(read_msgs) == len(energies)

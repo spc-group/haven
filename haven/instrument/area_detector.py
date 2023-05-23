@@ -81,20 +81,16 @@ class MyHDF5Plugin(FileStoreHDF5IterativeWrite, HDF5Plugin_V34):
 
 
 class DetectorBase(OphydDetectorBase):
-
     def __init__(self, *args, description=None, **kwargs):
         super().__init__(*args, **kwargs)
         if description is None:
             description = self.name
         self.description = description
-    
+
     overlays = ADCpt(OverlayPlugin, "Over1:")
 
 
-    
-
-
-class StatsMixin():
+class StatsMixin:
     _default_read_attrs = [
         "max_value",
         "min_value",
@@ -157,7 +153,7 @@ class Lambda250K(SingleTrigger, DetectorBase):
     """
     A Lambda 250K area detector device.
     """
-    
+
     cam = ADCpt(Lambda750kCam, "cam1:")
     image = ADCpt(ImagePlugin_V31, "image1:")
     pva = ADCpt(PvaPlugin_V31, "Pva1:")
@@ -172,7 +168,6 @@ class Lambda250K(SingleTrigger, DetectorBase):
     stats3 = ADCpt(StatsPlugin_V31, "Stats3:", kind=Kind.normal)
     stats4 = ADCpt(StatsPlugin_V31, "Stats4:", kind=Kind.normal)
     stats5 = ADCpt(StatsPlugin_V31, "Stats5:", kind=Kind.normal)
-
 
     _default_read_attrs = [
         "stats1",
@@ -189,7 +184,7 @@ class Eiger500K(SingleTrigger, DetectorBase):
     """
     A Eiger S 500K area detector device.
     """
-    
+
     cam = ADCpt(EigerDetectorCam, "cam1:")
     image = ADCpt(ImagePlugin_V34, "image1:")
     pva = ADCpt(PvaPlugin_V34, "Pva1:")

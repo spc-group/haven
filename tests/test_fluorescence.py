@@ -154,16 +154,21 @@ def test_stage_signal_hinted(sim_vortex):
     # Enable the ROI by setting it's kind PV to "hinted"
     dev.is_hinted.put(True)
     # Ensure signals are not hinted before being staged
-    assert dev.net_count.name not in sim_vortex.hints['fields']
+    assert dev.net_count.name not in sim_vortex.hints["fields"]
     try:
         dev.stage()
     except Exception:
         raise
     else:
-        assert dev.net_count.name in sim_vortex.hints['fields']
-        assert sim_vortex.mcas.mca1.rois.roi0.net_count.name not in sim_vortex.hints['fields']
+        assert dev.net_count.name in sim_vortex.hints["fields"]
+        assert (
+            sim_vortex.mcas.mca1.rois.roi0.net_count.name
+            not in sim_vortex.hints["fields"]
+        )
     finally:
         dev.unstage()
     # Did it restore kinds properly when unstaging
-    assert dev.net_count.name not in sim_vortex.hints['fields']
-    assert sim_vortex.mcas.mca1.rois.roi0.net_count.name not in sim_vortex.hints['fields']
+    assert dev.net_count.name not in sim_vortex.hints["fields"]
+    assert (
+        sim_vortex.mcas.mca1.rois.roi0.net_count.name not in sim_vortex.hints["fields"]
+    )

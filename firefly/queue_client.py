@@ -48,7 +48,7 @@ class QueueClient(QObject):
     def update(self):
         now = time.time()
         if now >= self.last_update + self.timeout:
-            if not load_config()['beamline']['is_connected']:
+            if not load_config()["beamline"]["is_connected"]:
                 log.warning("Beamline not connected, skipping queue client update.")
                 self.timeout = 60  # Just update every 1 minute
                 self.last_update = now

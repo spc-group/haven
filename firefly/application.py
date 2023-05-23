@@ -75,8 +75,8 @@ class FireflyApplication(PyDMApplication):
 
     # Keep track of XRF detectors
     xrf_detector_actions: Mapping = {}
-    xrf_detector_window_slots: Sequence    
-    
+    xrf_detector_window_slots: Sequence
+
     # Signals for running plans on the queueserver
     queue_item_added = Signal(object)
 
@@ -114,16 +114,14 @@ class FireflyApplication(PyDMApplication):
         show_default_window = getattr(self, f"show_{self.default_display}_window")
         default_window = show_default_window()
         # Set up the window to show list of PV connections
-        pydm.utilities.shortcuts.install_connection_inspector(
-            parent=default_window
-        )
+        pydm.utilities.shortcuts.install_connection_inspector(parent=default_window)
 
     def setup_window_actions(self):
         """Create QActions for clicking on menu items, shortcuts, etc.
-        
+
         These actions should be usable by multiple
         windows. Window-specific actions belong with the window.
-        
+
         """
         self.prepare_motor_windows()
         self.prepare_camera_windows()
@@ -204,14 +202,12 @@ class FireflyApplication(PyDMApplication):
 
         Sets up window actions, windows and window slots for each
         instance of the this device class (specified by *device_label*).
-        
+
         """
         try:
             devices = sorted(registry.findall(label=device_label), key=lambda x: x.name)
         except ComponentNotFound:
-            log.warning(
-                f"No {device_label} found, menu will be empty."
-            )
+            log.warning(f"No {device_label} found, menu will be empty.")
             devices = []
         # Create menu actions for each device
         actions = {}
@@ -228,16 +224,19 @@ class FireflyApplication(PyDMApplication):
             slot = getattr(self, f"show_{attr_name}_window")
             slot = partial(slot, device=device)
             action.triggered.connect(slot)
-            window_slots.append(slot)            
-            
+            window_slots.append(slot)
+
     def prepare_area_detector_windows(self):
         """Prepare the support for opening area detector windows."""
-        self._prepare_device_windows(device_label="area_detectors", attr_name="area_detector")
+        self._prepare_device_windows(
+            device_label="area_detectors", attr_name="area_detector"
+        )
 
     def prepare_xrf_detector_windows(self):
         """Prepare support to open X-ray fluorescence detector windows."""
-        self._prepare_device_windows(device_label="xrf_detectors",
-                                     attr_name="xrf_detector")
+        self._prepare_device_windows(
+            device_label="xrf_detectors", attr_name="xrf_detector"
+        )
 
     def prepare_camera_windows(self):
         self._prepare_device_windows(device_label="cameras", attr_name="camera")
@@ -393,7 +392,6 @@ class FireflyApplication(PyDMApplication):
             name=f"FireflyMainWindow_xrf_detector_{device_name}",
             macros={"DEV": device.name},
         )
-        
 
     def show_status_window(self, stylesheet_path=None):
         """Instantiate a new main window for this application."""
@@ -413,11 +411,15 @@ class FireflyApplication(PyDMApplication):
 
     @QtCore.Slot()
     def show_xafs_scan_window(self):
-        return self.show_window(PlanMainWindow, ui_dir / "xafs_scan.py", name="xafs_scan")
+        return self.show_window(
+            PlanMainWindow, ui_dir / "xafs_scan.py", name="xafs_scan"
+        )
 
     @QtCore.Slot()
     def show_voltmeters_window(self):
-        return self.show_window(FireflyMainWindow, ui_dir / "voltmeters.py", name="voltmeters")
+        return self.show_window(
+            FireflyMainWindow, ui_dir / "voltmeters.py", name="voltmeters"
+        )
 
     @QtCore.Slot()
     def show_sample_viewer_window(self):
@@ -427,7 +429,9 @@ class FireflyApplication(PyDMApplication):
 
     @QtCore.Slot()
     def show_cameras_window(self):
-        return self.show_window(FireflyMainWindow, ui_dir / "cameras.py", name="cameras")
+        return self.show_window(
+            FireflyMainWindow, ui_dir / "cameras.py", name="cameras"
+        )
 
     @QtCore.Slot()
     def show_energy_window(self):

@@ -155,7 +155,7 @@ Data will be saved either way, but disabled channels will not appear in the list
           </widget>
          </item>
          <item>
-          <widget class="PyDMLineEdit" name="lower_label">
+          <widget class="PyDMLineEdit" name="lower_lineedit">
            <property name="toolTip">
             <string/>
            </property>
@@ -169,12 +169,12 @@ Data will be saved either way, but disabled channels will not appear in the list
             <string>oph://${DEV}.mcas.mca${MCA}.rois.roi${ROI}.lo_chan._write_pv</string>
            </property>
            <property name="displayFormat" stdset="0">
-            <enum>PyDMLineEdit::Default</enum>
+            <enum>PyDMLineEdit::Decimal</enum>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="PyDMLineEdit" name="upper_label">
+          <widget class="PyDMLineEdit" name="upper_lineedit">
            <property name="toolTip">
             <string/>
            </property>
@@ -188,7 +188,7 @@ Data will be saved either way, but disabled channels will not appear in the list
             <string>oph://${DEV}.mcas.mca${MCA}.rois.roi${ROI}.hi_chan._write_pv</string>
            </property>
            <property name="displayFormat" stdset="0">
-            <enum>PyDMLineEdit::Default</enum>
+            <enum>PyDMLineEdit::Decimal</enum>
            </property>
           </widget>
          </item>

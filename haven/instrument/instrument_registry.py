@@ -37,6 +37,7 @@ class InstrumentRegistry:
     can be registered outside of the main REPL loop.
 
     """
+
     components: Sequence
 
     def __init__(self):
@@ -52,7 +53,7 @@ class InstrumentRegistry:
 
     @property
     def device_names(self):
-        return [c.name for c in self.components if c.parent is None]    
+        return [c.name for c in self.components if c.parent is None]
 
     def find(
         self,
@@ -256,7 +257,7 @@ class InstrumentRegistry:
                     f'Could not find components matching: label="{_label}", name="{_name}"'
                 )
         else:
-            # Stick the first entry back in the queue and yield it 
+            # Stick the first entry back in the queue and yield it
             results = chain([first], results)
         return remove_duplicates(results)
 

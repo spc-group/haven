@@ -3,10 +3,24 @@ from ophyd import Kind
 
 import numpy as np
 from pyqtgraph import PlotItem
+import pytest
 
 from firefly.main_window import FireflyMainWindow
 from firefly.xrf_detector import XRFDetectorDisplay, XRFPlotWidget
 from firefly.xrf_roi import XRFROIDisplay
+
+
+@pytest.fixture()
+def xrf_display(sim_vortex):
+    FireflyMainWindow()
+    display = XRFDetectorDisplay(macros={"DEV": sim_vortex.name})
+    spectra = np.random.default_rng(seed=0).integers(
+        0, 65536, dtype=np.int_, size=(4, 1024)
+    )
+    plot_widget = display.mca_plot_widget
+    plot_widget.update_spectrum(1, spectra[0])
+    plot_widget.update_spectrum(2, spectra[1])
+    return display
 
 
 def test_open_xrf_detector_viewer_actions(ffapp, qtbot, sim_vortex):
@@ -40,10 +54,9 @@ def test_roi_element_comboboxes(ffapp, qtbot, sim_vortex):
 
 def test_roi_selection(ffapp, qtbot, sim_vortex):
     FireflyMainWindow()
-    display = XRFROIDisplay(macros={"DEV": sim_vortex.name,
-                                    "NUM": 2,
-                                    "MCA": 2,
-                                    "ROI": 2})
+    display = XRFROIDisplay(
+        macros={"DEV": sim_vortex.name, "NUM": 2, "MCA": 2, "ROI": 2}
+    )
     # Unchecked box should be bland
     assert "background" not in display.styleSheet()
     # Make the ROI selected and check for a distinct background
@@ -82,7 +95,9 @@ def test_all_mcas_selection(ffapp, qtbot, sim_vortex):
 def test_update_roi_spectra(ffapp, qtbot, sim_vortex):
     FireflyMainWindow()
     display = XRFDetectorDisplay(macros={"DEV": sim_vortex.name})
-    spectra = np.random.default_rng(seed=0).integers(0, 65536, dtype=np.int_, size=(4, 1024))
+    spectra = np.random.default_rng(seed=0).integers(
+        0, 65536, dtype=np.int_, size=(4, 1024)
+    )
     roi_plot_widget = display.ui.roi_plot_widget
     assert roi_plot_widget.ui.plot_widget.getItem(0, 0) is None
     # plot_widget.update_spectrum(spectrum=spectra[0], mca_idx=1)
@@ -96,7 +111,9 @@ def test_update_roi_spectra(ffapp, qtbot, sim_vortex):
     data_items = plot_item.listDataItems()
     assert len(data_items) == 2
     # Check that previous plots get cleared
-    spectra2 = np.random.default_rng(seed=1).integers(0, 65536, dtype=np.int_, size=(4, 1024))
+    spectra2 = np.random.default_rng(seed=1).integers(
+        0, 65536, dtype=np.int_, size=(4, 1024)
+    )
     with qtbot.waitSignal(roi_plot_widget.plot_changed):
         display._spectrum_channels[0].value_slot(spectra2[0])
     data_items = plot_item.listDataItems()
@@ -106,7 +123,9 @@ def test_update_roi_spectra(ffapp, qtbot, sim_vortex):
 def test_update_mca_spectra(ffapp, qtbot, sim_vortex):
     FireflyMainWindow()
     display = XRFDetectorDisplay(macros={"DEV": sim_vortex.name})
-    spectra = np.random.default_rng(seed=0).integers(0, 65536, dtype=np.int_, size=(4, 1024))
+    spectra = np.random.default_rng(seed=0).integers(
+        0, 65536, dtype=np.int_, size=(4, 1024)
+    )
     mca_plot_widget = display.ui.mca_plot_widget
     assert mca_plot_widget.ui.plot_widget.getItem(0, 0) is None
     # plot_widget.update_spectrum(spectrum=spectra[0], mca_idx=1)
@@ -120,7 +139,9 @@ def test_update_mca_spectra(ffapp, qtbot, sim_vortex):
     data_items = plot_item.listDataItems()
     assert len(data_items) == 2
     # Check that previous plots get cleared
-    spectra2 = np.random.default_rng(seed=1).integers(0, 65536, dtype=np.int_, size=(4, 1024))
+    spectra2 = np.random.default_rng(seed=1).integers(
+        0, 65536, dtype=np.int_, size=(4, 1024)
+    )
     with qtbot.waitSignal(mca_plot_widget.plot_changed):
         display._spectrum_channels[0].value_slot(spectra2[0])
     data_items = plot_item.listDataItems()
@@ -130,7 +151,9 @@ def test_update_mca_spectra(ffapp, qtbot, sim_vortex):
 def test_hover_roi_row(ffapp, qtbot, sim_vortex):
     FireflyMainWindow()
     display = XRFDetectorDisplay(macros={"DEV": sim_vortex.name})
-    spectra = np.random.default_rng(seed=0).integers(0, 65536, dtype=np.int_, size=(4, 1024))
+    spectra = np.random.default_rng(seed=0).integers(
+        0, 65536, dtype=np.int_, size=(4, 1024)
+    )
     plot_widget = display.mca_plot_widget
     plot_widget.update_spectrum(1, spectra[0])
     plot_widget.update_spectrum(2, spectra[1])
@@ -146,14 +169,16 @@ def test_hover_roi_row(ffapp, qtbot, sim_vortex):
     row.leaveEvent()
     assert this_data_item.opacity() == 1.0
     assert other_data_item.opacity() == 1.0
-    
+
 
 def test_roi_selected_highlights(ffapp, qtbot, sim_vortex):
     """Is the spectrum highlighted when the element row is selected."""
     FireflyMainWindow()
     display = XRFDetectorDisplay(macros={"DEV": sim_vortex.name})
     mca_display = display.mca_displays[1]
-    spectra = np.random.default_rng(seed=0).integers(0, 65536, dtype=np.int_, size=(4, 1024))
+    spectra = np.random.default_rng(seed=0).integers(
+        0, 65536, dtype=np.int_, size=(4, 1024)
+    )
     plot_widget = display.mca_plot_widget
     plot_widget.update_spectrum(1, spectra[0])
     plot_widget.update_spectrum(2, spectra[1])
@@ -171,3 +196,34 @@ def test_roi_selected_highlights(ffapp, qtbot, sim_vortex):
     display.mca_displays[0].leaveEvent()
     assert this_data_item.opacity() == 1.0
     assert other_data_item.opacity() == 0.15
+
+
+def test_show_mca_region_visibility(ffapp, xrf_display):
+    """Is the spectrum highlighted when the element row is selected."""
+    # Check that the region is hidden at startup
+    plot_widget = xrf_display.mca_plot_widget
+    assert not plot_widget.ui.region.isVisible()
+    # Now highlight a spectrum, and confirm it is visible
+    plot_widget.highlight_spectrum(mca_num=2, hovered=True)
+    assert plot_widget.ui.region.isVisible()
+    assert plot_widget.ui.region.brush.color().name() == "#ff7f0e"
+    # Unhighlight and confirm it is invisible
+    plot_widget.highlight_spectrum(mca_num=1, hovered=False)
+    assert not plot_widget.ui.region.isVisible()
+
+
+def test_mca_region_channels(ffapp, xrf_display):
+    """Are the channel access connections between the ROI selection region
+    and the hi/lo channel PVs correct?
+
+    """
+    plot_widget = xrf_display.mca_plot_widget
+    mca_display = xrf_display.mca_displays[1]
+    mca_display._embedded_widget = mca_display.open_file(force=True)
+    xrf_display.mca_selected(is_selected=True, mca_num=2)
+    correct_address = "oph://vortex_me4_mcas_mca2.rois.roi0.hi_chan._write_pv"
+    assert xrf_display.mca_hi_channel.address == correct_address
+    xrf_display.mca_hi_channel.value_slot(47)
+    assert plot_widget.region.getRegion()[0] == 47
+    xrf_display.mca_lo_channel.value_slot(108)
+    assert plot_widget.region.getRegion()[0] == 108

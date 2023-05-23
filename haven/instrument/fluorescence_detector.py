@@ -45,7 +45,7 @@ class ROI(mca.ROI):
     kind = active_kind
     _original_name = None
     _original_kinds = {}
-    _dynamic_hint_fields = ['net_count']
+    _dynamic_hint_fields = ["net_count"]
     # Signals
     # net_count = Cpt(EpicsSignalRO, "N", kind=Kind.hinted, lazy=True)
     # user_kind = Cpt(EpicsSignal, "_BS_KIND", lazy=True)
@@ -62,7 +62,9 @@ class ROI(mca.ROI):
             new_kind = Kind.hinted
         else:
             new_kind = Kind.normal
-        self._original_kinds = {fld: getattr(self, fld).kind for fld in self._dynamic_hint_fields}
+        self._original_kinds = {
+            fld: getattr(self, fld).kind for fld in self._dynamic_hint_fields
+        }
         for fld in self._dynamic_hint_fields:
             getattr(self, fld).kind = new_kind
         super().stage()
