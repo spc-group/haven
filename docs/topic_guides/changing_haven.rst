@@ -12,35 +12,40 @@ From a Development Environment
 
 The preferred way to modify Haven is to fork the main repository on
 github, make changes on a new branch, and then submit a pull request
-back to the main repository. This section assumes you **have an
-activate github account** (if not, sign up for one first).
+back to the main repository. This section assumes you **have an active
+github account** (if not, sign up for one first).
 
 The following steps are **only required the first time** you work on
 Haven. Once done, the forked repository and local environment can be
 reused.
 
-1. Install git on your local computer
+1. Install a git client on your local computer (e.g. `git`_ or  `Github Desktop`_)
 2. Create a fork of the `main Haven repository`_
 3. Clone the forked repository to your local computer (e.g. ``git clone git@github.com:canismarko/haven.git``)
 4. Install an anaconda-like distribution environment (`mamba-forge`_ is recommended)
 5. Create a new conda environment from *environment.yml* (e.g. ``mamba create -n haven -f environment.yml``)
 6. Activate the newly created conda environment (e.g. ``mamba activate haven``)
 7. Install haven in the environment (``poetry install``)
+8. Verify that the :ref:`test-suite passes<Running Tests>`
 
 The following steps should then be performed every time a new feature
 is being added or bug is being fixed.
 
-7. Sync your github fork with the main github repository
-8. Pull changes to your local repository (``git pull``)
-9. Create a new git branch for the task you are doing (e.g. ``git checkout -b area_detector_support``)
-10. Make changes to the Haven source code as needed
-11. Ensure all tests pass (``pytest``)
-12. Commit changes to your local branch (``git add file1.py file2.py ...`` and ``git commit``)
-13. Push changes back to github (``git push``)
-14. Create a pull request on github to send changes back to the main repository.
+9. Sync your github fork with the main github repository
+10. Pull changes to your local repository (``git pull``)
+11. Create a new git branch for the task you are doing (e.g. ``git checkout -b area_detector_support``)
+12. Make changes to the Haven source code as needed
+13. Ensure all tests pass (``pytest``)
+14. Commit changes to your local branch (``git add file1.py file2.py ...`` and ``git commit``)
+15. Push changes back to github (``git push``)
+16. Create a pull request on github to send changes back to the main repository.
 
 .. _mamba-forge: https://mamba.readthedocs.io/en/latest/installation.html
 .. _main Haven repository: https://github.com/spc-group/haven
+.. _git: https://git-scm.com/download/
+.. _Github Desktop: https://desktop.github.com/
+
+.. _running tests:
 
 Running Tests
 -------------
@@ -51,6 +56,9 @@ properly setup, the tests can be run using:
 .. code-block:: console
 
    $ pytest
+
+``pytest`` should not report any errors or failures, though skipped,
+xfailed, and warnings are expected.
 
 Several simulated IOCs are started up in the process, and can be used
 in writing tests.
