@@ -76,7 +76,7 @@ dependencies:
 
   # --- Bluesky framework packages
   - adl2pydm
-  - apstools >=1.6.15
+  - apstools >=1.6.16
   - area-detector-handlers
   - bluesky-queueserver
   - bluesky-queueserver-api

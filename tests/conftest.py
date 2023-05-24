@@ -311,7 +311,7 @@ def sim_aps(sim_registry):
 def sim_shutters(sim_registry):
     FakeShutter = make_fake_device(Shutter)
     kw = dict(
-        open_pv="_prefix", close_pv="_prefix2", state_pv="_prefix2", labels={"shutters"}
+        prefix="_prefix", open_pv="_prefix", close_pv="_prefix2", state_pv="_prefix2", labels={"shutters"}
     )
     shutters = [
         FakeShutter(name="Shutter A", **kw),
