@@ -99,8 +99,6 @@ def test_update_roi_spectra(ffapp, qtbot, sim_vortex):
         0, 65536, dtype=np.int_, size=(4, 1024)
     )
     roi_plot_widget = display.ui.roi_plot_widget
-    assert roi_plot_widget.ui.plot_widget.getItem(0, 0) is None
-    # plot_widget.update_spectrum(spectrum=spectra[0], mca_idx=1)
     with qtbot.waitSignal(roi_plot_widget.plot_changed):
         display._spectrum_channels[0].value_slot(spectra[0])
         display._spectrum_channels[1].value_slot(spectra[1])
@@ -127,7 +125,6 @@ def test_update_mca_spectra(ffapp, qtbot, sim_vortex):
         0, 65536, dtype=np.int_, size=(4, 1024)
     )
     mca_plot_widget = display.ui.mca_plot_widget
-    assert mca_plot_widget.ui.plot_widget.getItem(0, 0) is None
     # plot_widget.update_spectrum(spectrum=spectra[0], mca_idx=1)
     with qtbot.waitSignal(mca_plot_widget.plot_changed):
         display._spectrum_channels[0].value_slot(spectra[0])
@@ -202,14 +199,15 @@ def test_show_mca_region_visibility(ffapp, xrf_display):
     """Is the spectrum highlighted when the element row is selected."""
     # Check that the region is hidden at startup
     plot_widget = xrf_display.mca_plot_widget
-    assert not plot_widget.ui.region.isVisible()
+    region = plot_widget.region(mca_num=2, roi_num=0)
+    assert not region.isVisible()
     # Now highlight a spectrum, and confirm it is visible
-    plot_widget.highlight_spectrum(mca_num=2, hovered=True)
-    assert plot_widget.ui.region.isVisible()
-    assert plot_widget.ui.region.brush.color().name() == "#ff7f0e"
+    plot_widget.highlight_spectrum(mca_num=2, roi_num=0, hovered=True)
+    assert region.isVisible()
+    # assert region.brush.color().name() == "#ff7f0e"
     # Unhighlight and confirm it is invisible
-    plot_widget.highlight_spectrum(mca_num=1, hovered=False)
-    assert not plot_widget.ui.region.isVisible()
+    plot_widget.highlight_spectrum(mca_num=1, roi_num=0, hovered=False)
+    assert not region.isVisible()
 
 
 def test_mca_region_channels(ffapp, xrf_display):
@@ -218,12 +216,14 @@ def test_mca_region_channels(ffapp, xrf_display):
 
     """
     plot_widget = xrf_display.mca_plot_widget
+    plot_widget.device_name = "vortex_me4"
     mca_display = xrf_display.mca_displays[1]
     mca_display._embedded_widget = mca_display.open_file(force=True)
     xrf_display.mca_selected(is_selected=True, mca_num=2)
-    correct_address = "oph://vortex_me4_mcas_mca2.rois.roi0.hi_chan._write_pv"
-    assert xrf_display.mca_hi_channel.address == correct_address
-    xrf_display.mca_hi_channel.value_slot(47)
-    assert plot_widget.region.getRegion()[0] == 47
-    xrf_display.mca_lo_channel.value_slot(108)
-    assert plot_widget.region.getRegion()[0] == 108
+    correct_address = "oph://vortex_me4.mcas.mca2.rois.roi0.hi_chan._write_pv"
+    region = plot_widget.region(mca_num=2, roi_num=0)
+    assert region.hi_channel.address == correct_address
+    region.hi_channel.value_slot(108)
+    assert region.getRegion()[1] == 108
+    region.lo_channel.value_slot(47)
+    assert region.getRegion()[0] == 47

@@ -35,9 +35,72 @@ pyqtgraph.setConfigOption("imageAxisOrder", "row-major")
 colors = list(TABLEAU_COLORS.values())
 
 
-class FireflyChannel(PyDMChannel):
-    def disconnect(self, destroying=False):
-        super().disconnect(destroying=destroying)
+class ROIRegion(pyqtgraph.LinearRegionItem):
+    mca_num: int
+    roi_num: int
+
+    lo_channel: PyDMChannel
+    hi_channel: PyDMChannel
+
+    region_upper_changed = Signal(int)
+    region_lower_changed = Signal(int)
+
+    _last_upper: int = None
+    _last_lower: int = None
+
+    def __init__(self, address: str, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.address = address
+        # Set up channels to the IOC
+        self.hi_channel = PyDMChannel(
+            address=f"{address}.hi_chan._write_pv",
+            value_slot=self.set_region_upper,
+            value_signal=self.region_upper_changed
+        )
+        self.hi_channel.connect()
+        self.lo_channel = PyDMChannel(
+            address=f"{address}.lo_chan._write_pv",
+            value_slot=self.set_region_lower,
+            value_signal=self.region_lower_changed
+        )
+        self.lo_channel.connect()
+        self.sigRegionChangeFinished.connect(self.handle_region_change)
+        # Set initial display state
+        self.setVisible(False)
+
+    def handle_region_change(self):
+        lower, upper = self.getRegion()
+        lower = round(lower)
+        upper = round(upper)
+        if lower != self._last_lower:
+            log.debug(f"Changing lower from {self._last_lower} to {lower}")
+            if self._last_lower is not None:
+                self.region_lower_changed.emit(lower)
+            self._last_lower = lower                
+        if upper != self._last_upper:
+            log.debug(f"Changing upper from {self._last_upper} to {upper}")
+            if self._last_upper is not None:
+                self.region_upper_changed.emit(upper)
+            self._last_upper = upper
+    
+    def set_region_lower(self, new_lower):
+        """Set the upper value of the highlighted region."""
+        log.debug(f"Setting new region lower bound: {new_lower}")
+        old_region = self.getRegion()
+        new_region = (new_lower, old_region[1])
+        if new_region != old_region:
+            self.setRegion(new_region)
+        self._last_lower = new_lower
+    
+    def set_region_upper(self, new_upper):
+        """Set the upper value of the highlighted region."""
+        log.debug(f"Setting new region upper bound: {new_upper}")
+        old_region = self.getRegion()
+        new_region = (old_region[0], new_upper)
+        if new_region != old_region:
+            self.setRegion(new_region)
+        self._last_upper = new_upper
+   
 
 
 class XRFPlotWidget(QWidget):
@@ -45,54 +108,120 @@ class XRFPlotWidget(QWidget):
     _data_items: defaultdict
     _selected_spectrum: int = None
     _region_items: dict
-    _old_lower: int = None
-    _old_upper: int = None
+    device_name: str = ""
 
     # Signals
     plot_changed = Signal()
-    region_lower_changed = Signal(int)
-    region_upper_changed = Signal(int)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._data_items = defaultdict(lambda: None)
+        # self._lo_channels = {}
+        # self._hi_channels = {}
+        # self._lo_signals = {}
+        # self._hi_signals = {}
+        self._region_items = {}
         self.ui = uic.loadUi(self.ui_dir / "xrf_plot.ui", self)
-        self.ui.region = pyqtgraph.LinearRegionItem(values=(512, 1024))
-        self.ui.region.setVisible(False)
-        self.ui.region.sigRegionChangeFinished.connect(self.handle_region_change)
+        # Create plotting items
+        self.plot_item = self.ui.plot_widget.addPlot(row=0, col=0)
+        self.plot_item.addLegend()
+        # self.ui.region.sigRegionChangeFinished.connect(self.handle_region_change)
 
-    def handle_region_change(self):
-        lower, upper = self.ui.region.getRegion()
+    # def new_region(self, idx):
+    #     """Create a new pyqtgraph region for selecting ROI range."""
+    #     new_region = pyqtgraph.LinearRegionItem()
+    #     new_region.setVisible(False)
+    #     color = self.mca_color(idx)
+    #     new_region.setBrush(f"{color}10")
+    #     new_region.setHoverBrush(f"{color}20")
+    #     for line in new_region.lines:
+    #         line.setPen(f"{color}50")
+    #     self.plot_item.addItem(new_region)
+    #     return new_region
+
+    def region(self, mca_num, roi_num):
+        key = (mca_num, roi_num)
+        # Create a new region item if necessary
+        if key not in self._region_items.keys():
+            address = f"oph://{self.device_name}.mcas.mca{mca_num}.rois.roi{roi_num}"
+            color = self.mca_color(mca_num)
+            region = ROIRegion(address=address,
+                               brush=f"{color}10",
+                               hoverBrush=f"{color}20",
+                               pen=f"{color}50",)
+            self.plot_item.addItem(region)
+            self._region_items[key] = region
+            # self.hi_channel(mca_num=mca_num, roi_num=roi_num)
+            # self.lo_channel(mca_num=mca_num, roi_num=roi_num)
+            # changed_slot = partial(self.handle_region_change,
+            #                        mca_num=mca_num, roi_num=roi_num, region=region)
+            # region.sigRegionChangeFinished.connect(changed_slot)
+        # Return the region item
+        return self._region_items[key]
+
+    # def hi_signal(self, mca_num, roi_num):
+    #     key = (mca_num, roi_num)
+    #     # Create a new signal
+    #     if key not in self._hi_signals.keys():
+    #         self._hi_signals[key] = Signal(int)
+    #     # Return the signal
+    #     return self._hi_signals[key]
+
+    # def lo_signal(self, mca_num, roi_num):
+    #     key = (mca_num, roi_num)
+    #     # Create a new signal
+    #     if key not in self._lo_signals.keys():
+    #         self._lo_signals[key] = Signal(int)
+    #     # Return the signal
+    #     return self._lo_signals[key]
+    
+    # def hi_channel(self, mca_num, roi_num):
+    #     key = (mca_num, roi_num)
+    #     # Create a new hi channel if necessary
+    #     if key not in self._hi_channels.keys():
+    #         address = f"oph://{self.device_name}.mcas.mca{mca_num}.rois.roi{roi_num}.hi_chan._write_pv"
+    #         new_chan = pydm.PyDMChannel(
+    #             address=address,
+    #             value_slot=partial(self.set_region_upper, mca_num=mca_num, roi_num=roi_num),
+    #             value_signal=self.hi_signal(mca_num=mca_num, roi_num=roi_num),
+    #         )
+    #         new_chan.connect()
+    #         self._hi_channels[key] = new_chan
+    #     return self._hi_channels[key]
+
+    # def lo_channel(self, mca_num, roi_num):
+    #     key = (mca_num, roi_num)
+    #     # Create a new hi channel if necessary
+    #     if key not in self._lo_channels.keys():
+    #         address = f"oph://{self.device_name}.mcas.mca{mca_num}.rois.roi{roi_num}.lo_chan._write_pv"
+    #         new_chan = pydm.PyDMChannel(
+    #             address=address,
+    #             value_slot=partial(self.set_region_lower, mca_num=mca_num, roi_num=roi_num),
+    #             value_signal=self.lo_signal(mca_num=mca_num, roi_num=roi_num),
+    #         )
+    #         new_chan.connect()
+    #         self._lo_channels[key] = new_chan
+    #     return self._lo_channels[key]
+    
+    def handle_region_change(self, mca_num, roi_num, region):
+        lower, upper = region.getRegion()
         lower = round(lower)
         upper = round(upper)
-        if lower != self._old_lower:
-            self._old_lower = lower
-            self.region_lower_changed.emit(lower)
-        if upper != self._old_upper:
-            self._old_upper = upper
-            self.region_upper_changed.emit(upper)
+        self.lo_signal(mca_num=mca_num, roi_num=roi_num).emit(lower)
+        self.hi_signal(mca_num=mca_num, roi_num=roi_num).emit(upper)
 
-    def set_region_upper(self, new_upper):
-        log.debug(f"Setting new region upper bound: {new_upper}")
-        lower = self.ui.region.getRegion()[0]
-        if new_upper != self._old_upper:
-            self.ui.region.setRegion((lower, new_upper))
-
-    def set_region_lower(self, new_lower):
-        log.debug(f"Setting new region lower bound: {new_lower}")
-        upper = self.ui.region.getRegion()[1]
-        if new_lower != self._old_lower:
-            self.ui.region.setRegion((new_lower, upper))
+    # def set_region_lower(self, new_lower: int, mca_num: int, roi_num: int):
+    #     log.debug(f"Setting new region lower bound: {new_lower}")
+    #     region = self.region(mca_num=mca_num, roi_num=roi_num)
+    #     upper = region.getRegion()[1]
+    #     region.setRegion((new_lower, upper))
 
     def update_spectrum(self, mca_num, spectrum):
         """Plot the spectrum associated with the given MCA index."""
         # Create the plot item itself if necessary
         log.debug(f"New spectrum ({mca_num}): {repr(spectrum)}")
         row, col = (0, 0)
-        if (plot_item := self.ui.plot_widget.getItem(row=row, col=col)) is None:
-            plot_item = self.ui.plot_widget.addPlot(row=row, col=col)
-            plot_item.addLegend()
-            plot_item.addItem(self.ui.region)
+        plot_item = self.ui.plot_widget.getItem(row=row, col=col)
         # Get rid of the previous plots
         if (existing_item := self._data_items[mca_num]) is not None:
             plot_item.removeItem(existing_item)
@@ -108,14 +237,13 @@ class XRFPlotWidget(QWidget):
     def mca_color(self, mca_num):
         return colors[(mca_num - 1) % len(colors)]
 
-    def select_spectrum(self, mca_num, is_selected):
+    def select_spectrum(self, mca_num, roi_num, is_selected):
         """Select an active spectrum to modify."""
         log.debug(f"Selecting spectrum {mca_num}")
         self._selected_spectrum = mca_num if is_selected else None
-        self.highlight_spectrum(mca_num=mca_num, hovered=is_selected)
-        # Establish connections to the hi/lo channel PVs
+        self.highlight_spectrum(mca_num=mca_num, roi_num=roi_num, hovered=is_selected)
 
-    def highlight_spectrum(self, mca_num, hovered):
+    def highlight_spectrum(self, mca_num, roi_num, hovered):
         """Highlight a spectrum and lowlight the rest.
 
         *mca_num* is the number (1-indexed) of the spectrum plotted.
@@ -151,18 +279,19 @@ class XRFPlotWidget(QWidget):
                 data_item.setOpacity(solid)
         # Hide or unhide the selecting region
         is_selected = self._selected_spectrum is not None
-        if is_selected or hovered:
-            self.show_region(show=True, mca_num=mca_num)
+        if hovered:
+            self.show_region(show=True, mca_num=mca_num, roi_num=roi_num)
+        elif is_selected:
+            self.show_region(show=True, mca_num=self._selected_spectrum, roi_num=roi_num)
         else:
-            self.show_region(show=False, mca_num=mca_num)
+            self.show_region(show=False, mca_num=mca_num, roi_num=roi_num)
 
-    def show_region(self, show: bool, mca_num: int = 1):
-        self.ui.region.setVisible(show)
-        color = self.mca_color(mca_num)
-        self.ui.region.setBrush(f"{color}10")
-        self.ui.region.setHoverBrush(f"{color}20")
-        for line in self.ui.region.lines:
-            line.setPen(f"{color}50")
+    def show_region(self, show: bool, mca_num: int = 1, roi_num: int=0):
+        # Hide all the other regions
+        for (mca, roi), region in self._region_items.items():
+            region.setVisible(False)
+        # Show/hide the specific region requested
+        self.region(mca_num=mca_num, roi_num=roi_num).setVisible(show)
 
 
 class ROIEmbeddedDisplay(PyDMEmbeddedDisplay):
@@ -194,17 +323,18 @@ class XRFDetectorDisplay(display.FireflyDisplay):
 
     # Signals
     spectrum_changed = Signal(int, object)  # (MCA index, spectrum)
-    mca_row_hovered = Signal(int, bool)  # (MCA num, entered)
+    mca_row_hovered = Signal(int, int, bool)  # (MCA num, roi_num, entered)
 
-    # PyDM Channels
-    mca_hi_channel: FireflyChannel = None
-    mca_lo_channel: FireflyChannel = None
+    # # PyDM Channels
+    # mca_hi_channel: FireflyChannel = None
+    # mca_lo_channel: FireflyChannel = None
 
     def ui_filename(self):
         return "xrf_detector.ui"
 
     def customize_ui(self):
         device = self.device
+        self.ui.mca_plot_widget.device_name = self.device.name
         # Set ROI and element selection comboboxes
         self.ui.mca_combobox.currentIndexChanged.connect(self.draw_roi_widgets)
         self.ui.roi_combobox.currentIndexChanged.connect(self.draw_mca_widgets)
@@ -313,64 +443,65 @@ class XRFDetectorDisplay(display.FireflyDisplay):
             else:
                 disp.setEnabled(True)
         # Show this spectrum highlighted in the plots
-        self.mca_plot_widget.select_spectrum(mca_num, is_selected=is_selected)
-        # Setup data channels
-        self.setup_mca_channels(mca_num, connect=is_selected)
-
-    def setup_mca_channels(self, mca_num: int, connect: bool):
-        """Connect the PVs for changing the ROI selection region on the plot.
-
-        Parameters
-        ==========
-        mca_num
-          The 1-index number for this MCA.
-        connect
-          Whether to connect (``True``) or disconnect (``False``) the
-          channels.
-
-        """
-        # Disconnect old PV channels
-        old_channels = [self.mca_hi_channel, self.mca_lo_channel]
-        log.debug(f"Disconnecting previous MCA channels: {old_channels}")
-        for channel in old_channels:
-            if channel is not None:
-                channel.disconnect()
-        gc.collect()
-        # Set a new addresses
         roi_num = self.ui.roi_combobox.currentIndex()
-        # oph://${DEV}.mcas.mca${MCA}.rois.roi${ROI}.lo_chan._write_pv
-        if connect:
-            mca_cpt = getattr(self.device.mcas, f"mca{mca_num}")
-        elif self._selected_mca is not None:
-            # Connect the previously selected MCA bounds
-            mca_cpt = getattr(self.device.mcas, f"mca{self._selected_mca}")
-            # Kludge to make sure the colors are right
-            self.mca_plot_widget.show_region(show=True, mca_num=self._selected_mca)
-        else:
-            mca_cpt = None
-        # Create and connect the channels
-        try:
-            roi = getattr(mca_cpt.rois, f"roi{roi_num}")
-            hi_address = f"ca://{roi.hi_chan.pvname}"
-            lo_address = f"ca://{roi.lo_chan.pvname}"
-        except AttributeError:
-            log.warning(f"Cannot find hi/lo channels for {mca_cpt}")
-            roi = None
-            hi_address = f"oph://{getattr(mca_cpt, 'name', 'unknown')}.rois.roi{roi_num}.hi_chan._write_pv"
-            lo_address = f"oph://{getattr(mca_cpt, 'name', 'unknown')}.rois.roi{roi_num}.lo_chan"
-        log.debug(f"Creating new channels: {lo_address}, {hi_address}")
-        self.mca_hi_channel = FireflyChannel(
-            address=hi_address,
-            value_slot=self.mca_plot_widget.set_region_upper,
-            value_signal=self.mca_plot_widget.region_upper_changed,
-        )
-        self.mca_hi_channel.connect()
-        self.mca_lo_channel = FireflyChannel(
-            address=lo_address,
-            value_slot=self.mca_plot_widget.set_region_lower,
-            value_signal=self.mca_plot_widget.region_lower_changed,
-        )
-        self.mca_lo_channel.connect()
+        self.mca_plot_widget.select_spectrum(mca_num=mca_num, roi_num=roi_num,
+                                             is_selected=is_selected)
+
+    # def setup_mca_channels(self, mca_num: int, connect: bool):
+    #     """Connect the PVs for changing the ROI selection region on the plot.
+
+    #     Parameters
+    #     ==========
+    #     mca_num
+    #       The 1-index number for this MCA.
+    #     connect
+    #       Whether to connect (``True``) or disconnect (``False``) the
+    #       channels.
+
+    #     """
+    #     # Disconnect old PV channels
+    #     old_channels = [self.mca_hi_channel, self.mca_lo_channel]
+    #     log.debug(f"Disconnecting previous MCA channels: {old_channels}")
+    #     for channel in old_channels:
+    #         if channel is not None:
+    #             channel.disconnect()
+    #             channel = None
+    #     # gc.collect()
+    #     # Set a new addresses
+    #     roi_num = self.ui.roi_combobox.currentIndex()
+    #     # oph://${DEV}.mcas.mca${MCA}.rois.roi${ROI}.lo_chan._write_pv
+    #     if connect:
+    #         mca_cpt = getattr(self.device.mcas, f"mca{mca_num}")
+    #     elif self._selected_mca is not None:
+    #         # Connect the previously selected MCA bounds
+    #         mca_cpt = getattr(self.device.mcas, f"mca{self._selected_mca}")
+    #         # Kludge to make sure the colors are right
+    #         self.mca_plot_widget.show_region(show=True, mca_num=self._selected_mca)
+    #     else:
+    #         mca_cpt = None
+    #     # Create and connect the channels
+    #     try:
+    #         roi = getattr(mca_cpt.rois, f"roi{roi_num}")
+    #         hi_address = f"ca://{roi.hi_chan.pvname}"
+    #         lo_address = f"ca://{roi.lo_chan.pvname}"
+    #     except AttributeError:
+    #         log.warning(f"Cannot find hi/lo channels for {mca_cpt}")
+    #         roi = None
+    #         hi_address = f"oph://{getattr(mca_cpt, 'name', 'unknown')}.rois.roi{roi_num}.hi_chan._write_pv"
+    #         lo_address = f"oph://{getattr(mca_cpt, 'name', 'unknown')}.rois.roi{roi_num}.lo_chan"
+    #     log.debug(f"Creating new channels: {lo_address}, {hi_address}")
+    #     self.mca_hi_channel = FireflyChannel(
+    #         address=hi_address,
+    #         value_slot=self.mca_plot_widget.set_region_upper,
+    #         value_signal=self.mca_plot_widget.region_upper_changed,
+    #     )
+    #     self.mca_hi_channel.connect()
+    #     self.mca_lo_channel = FireflyChannel(
+    #         address=lo_address,
+    #         value_slot=self.mca_plot_widget.set_region_lower,
+    #         value_signal=self.mca_plot_widget.region_lower_changed,
+    #     )
+    #     self.mca_lo_channel.connect()
 
     def draw_roi_widgets(self, element_idx):
         with self.disable_ui():
@@ -415,8 +546,7 @@ class XRFDetectorDisplay(display.FireflyDisplay):
                 disp.filename = "xrf_roi.py"
                 # Respond when this MCA is interacted with
                 disp.selected.connect(partial(self.mca_selected, mca_num=mca_num))
-                disp.hovered.connect(partial(self.mca_row_hovered.emit, mca_num))
-                disp.hovered.connect(partial(self.setup_mca_channels, mca_num))
+                disp.hovered.connect(partial(self.mca_row_hovered.emit, mca_num, roi_idx))
                 # Add the Embedded Display to the ROI Layout
                 layout.addWidget(disp)
                 self.mca_displays.append(disp)
