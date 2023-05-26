@@ -361,10 +361,40 @@ class XRFDetectorDisplay(display.FireflyDisplay):
         )
         # Button for starting/stopping the detector
         self.ui.acquire_button.setIcon(qta.icon("fa5s.play"))
+        # Buttons for modifying all ROI settings
+        self.ui.mca_copyall_button.setIcon(qta.icon("fa5.clone"))
+        self.ui.mca_copyall_button.clicked.connect(self.copy_selected_mca)
+        self.ui.mca_enableall_checkbox.setCheckState(Qt.PartiallyChecked)
         # Connect signals for when spectra change
         self.spectrum_changed.connect(self.ui.roi_plot_widget.update_spectrum)
         self.spectrum_changed.connect(self.ui.mca_plot_widget.update_spectrum)
         self.mca_row_hovered.connect(self.ui.mca_plot_widget.highlight_spectrum)
+
+    def copy_selected_mca(self):
+        """Copy the label, hi channel, and lo channel values from the selected
+        MCA row to all other visible MCA rows.
+
+        """
+        log.debug(f"Copying MCA {self._selected_mca}")
+        # Get existing values from selected MCA row
+        mca_idx = self._selected_mca - 1
+        source_display = self.mca_displays[mca_idx]
+        new_label = source_display.embedded_widget.ui.label_lineedit.text()
+        new_lower = source_display.embedded_widget.ui.lower_lineedit.text()
+        new_upper = source_display.embedded_widget.ui.upper_lineedit.text()
+        widget = source_display.embedded_widget.ui.upper_lineedit
+        # Set all the other MCA rows with values from selected MCA row
+        for idx, display in enumerate(self.mca_displays):
+            if idx != mca_idx:
+                display.embedded_widget.ui.label_lineedit.setText(new_label)
+                display.embedded_widget.ui.lower_lineedit.setText(new_lower)
+                display.embedded_widget.ui.upper_lineedit.setText(new_upper)
+                # Send the new value over the wire
+                for widget in [display.embedded_widget.ui.label_lineedit,
+                               display.embedded_widget.ui.lower_lineedit,
+                               display.embedded_widget.ui.upper_lineedit]:
+                    if widget._connected:
+                        widget.send_value()
 
     def handle_new_spectrum(self, new_spectrum, mca_num):
         self.spectrum_changed.emit(mca_num, new_spectrum)
@@ -435,6 +465,8 @@ class XRFDetectorDisplay(display.FireflyDisplay):
             self._selected_mca = mca_num
         else:
             self._selected_mca = None
+        # Set global controls for this MCA
+        self.ui.mca_copyall_button.setEnabled(is_selected)
         # Disable the other rows
         mca_idx = mca_num - 1
         for idx, disp in enumerate(self.mca_displays):

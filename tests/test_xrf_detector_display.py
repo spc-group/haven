@@ -4,6 +4,7 @@ from ophyd import Kind
 import numpy as np
 from pyqtgraph import PlotItem
 import pytest
+from qtpy import QtCore
 
 from firefly.main_window import FireflyMainWindow
 from firefly.xrf_detector import XRFDetectorDisplay, XRFPlotWidget
@@ -227,3 +228,24 @@ def test_mca_region_channels(ffapp, xrf_display):
     assert region.getRegion()[1] == 108
     region.lo_channel.value_slot(47)
     assert region.getRegion()[0] == 47
+
+
+def test_mca_copyall_button(ffapp, xrf_display, qtbot):
+    xrf_display.mca_selected(is_selected=True, mca_num=2)
+    assert xrf_display.ui.mca_copyall_button.isEnabled()
+    # Set up ROI displays to test
+    this_display = xrf_display.mca_displays[1]
+    this_display._embedded_widget = this_display.open_file(force=True)
+    other_display = xrf_display.mca_displays[0]
+    other_display._embedded_widget = other_display.open_file(force=True)
+    # Change the values on the MCA displays
+    this_display.embedded_widget.ui.lower_lineedit.setText("111")
+    this_display.embedded_widget.ui.upper_lineedit.setText("131")
+    this_display.embedded_widget.ui.label_lineedit.setText("Ni Ka")
+    # Copy to the other MCA display
+    qtbot.mouseClick(xrf_display.ui.mca_copyall_button, QtCore.Qt.LeftButton)
+    assert other_display.embedded_widget.ui.lower_lineedit.text() == "111"
+    assert other_display.embedded_widget.ui.upper_lineedit.text() == "131"
+    # Does the button get disabled on un-select?
+    xrf_display.mca_selected(is_selected=False, mca_num=2)
+    assert not xrf_display.ui.mca_copyall_button.isEnabled()

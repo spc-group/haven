@@ -184,7 +184,7 @@
      </property>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>3</number>
+       <number>2</number>
       </property>
       <widget class="QWidget" name="stats_tab">
        <attribute name="title">
@@ -728,6 +728,19 @@
                </spacer>
               </item>
               <item>
+               <widget class="QCheckBox" name="roi_enableall_checkbox">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
+                <property name="text">
+                 <string>All</string>
+                </property>
+                <property name="tristate">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
                <widget class="QPushButton" name="pushButton">
                 <property name="enabled">
                  <bool>false</bool>
@@ -940,7 +953,20 @@
                </spacer>
               </item>
               <item>
-               <widget class="QPushButton" name="pushButton_2">
+               <widget class="QCheckBox" name="mca_enableall_checkbox">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
+                <property name="text">
+                 <string>All</string>
+                </property>
+                <property name="tristate">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="mca_copyall_button">
                 <property name="enabled">
                  <bool>false</bool>
                 </property>

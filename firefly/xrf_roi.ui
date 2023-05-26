@@ -118,7 +118,7 @@ Data will be saved either way, but disabled channels will not appear in the list
           <number>3</number>
          </property>
          <item>
-          <widget class="PyDMLineEdit" name="roilabel_label">
+          <widget class="PyDMLineEdit" name="label_lineedit">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
              <horstretch>0</horstretch>
