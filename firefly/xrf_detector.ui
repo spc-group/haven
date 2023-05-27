@@ -184,7 +184,7 @@
      </property>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>2</number>
+       <number>3</number>
       </property>
       <widget class="QWidget" name="stats_tab">
        <attribute name="title">
@@ -897,6 +897,9 @@
                     <verstretch>0</verstretch>
                    </sizepolicy>
                   </property>
+                  <property name="toolTip">
+                   <string>Select the previous ROI in order to view.</string>
+                  </property>
                   <property name="text">
                    <string/>
                   </property>
@@ -916,6 +919,9 @@
                     <verstretch>0</verstretch>
                    </sizepolicy>
                   </property>
+                  <property name="toolTip">
+                   <string>Select a new ROI for which to view elements.</string>
+                  </property>
                  </widget>
                 </item>
                 <item>
@@ -925,6 +931,9 @@
                     <horstretch>0</horstretch>
                     <verstretch>0</verstretch>
                    </sizepolicy>
+                  </property>
+                  <property name="toolTip">
+                   <string>Select the next ROI in order to view.</string>
                   </property>
                   <property name="text">
                    <string/>
@@ -955,7 +964,10 @@
               <item>
                <widget class="QCheckBox" name="mca_enableall_checkbox">
                 <property name="enabled">
-                 <bool>false</bool>
+                 <bool>true</bool>
+                </property>
+                <property name="toolTip">
+                 <string>Enable or disable all the elements for this ROI.</string>
                 </property>
                 <property name="text">
                  <string>All</string>
@@ -969,6 +981,9 @@
                <widget class="QPushButton" name="mca_copyall_button">
                 <property name="enabled">
                  <bool>false</bool>
+                </property>
+                <property name="toolTip">
+                 <string>Copy the settings from the selected element to all elements for this ROI.</string>
                 </property>
                 <property name="text">
                  <string>Copy To All</string>

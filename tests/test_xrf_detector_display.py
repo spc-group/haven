@@ -249,3 +249,21 @@ def test_mca_copyall_button(ffapp, xrf_display, qtbot):
     # Does the button get disabled on un-select?
     xrf_display.mca_selected(is_selected=False, mca_num=2)
     assert not xrf_display.ui.mca_copyall_button.isEnabled()
+
+
+def test_mca_enableall_checkbox(ffapp, xrf_display):
+    checkbox = xrf_display.ui.mca_enableall_checkbox
+    assert checkbox.checkState() == QtCore.Qt.PartiallyChecked
+    assert checkbox.isTristate()
+    for display in xrf_display.mca_displays:
+        display._embedded_widget = display.open_file(force=True)
+        assert not display.embedded_widget.ui.enabled_checkbox.checkState()
+    # Set it to checked and make sure all the ROI checkboxes respond
+    checkbox.setCheckState(QtCore.Qt.Checked)
+    assert not checkbox.isTristate()
+    for display in xrf_display.mca_displays:
+        assert display.embedded_widget.ui.enabled_checkbox.isChecked()
+    # Un-enable all, does it go back?
+    checkbox.setCheckState(QtCore.Qt.Unchecked)
+    for display in xrf_display.mca_displays:
+        assert not display.embedded_widget.ui.enabled_checkbox.isChecked()
