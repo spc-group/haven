@@ -45,9 +45,28 @@
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="acquire_button">
+      <widget class="QPushButton" name="continuous_button">
+       <property name="toolTip">
+        <string>Continuously capture exposures, accumulating them together.</string>
+       </property>
        <property name="text">
         <string>Continuous</string>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>12</width>
+         <height>12</height>
+        </size>
+       </property>
+       <property name="checkable">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="oneshot_button">
+       <property name="text">
+        <string>One-Shot</string>
        </property>
        <property name="iconSize">
         <size>
@@ -58,28 +77,50 @@
       </widget>
      </item>
      <item>
-      <widget class="PyDMPushButton" name="PyDMPushButton">
+      <widget class="QCheckBox" name="accumulate_checkbox">
        <property name="toolTip">
-        <string/>
+        <string>If checked, successive frames will be added together, if unchecked, each acquisition will be a new frame.</string>
        </property>
        <property name="text">
-        <string>1-Shot</string>
+        <string>Accumulate</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="PyDMPushButton" name="erase_button">
+       <property name="toolTip">
+        <string>Erase the accumulated spectra.</string>
+       </property>
+       <property name="text">
+        <string>Erase</string>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>12</width>
+         <height>12</height>
+        </size>
        </property>
        <property name="channel" stdset="0">
-        <string>oph://${DEV}.erase_start._write_pv</string>
+        <string>oph://${DEV}.erase_all._write_pv</string>
        </property>
        <property name="pressValue" stdset="0">
-        <string>1</string>
-       </property>
-       <property name="releaseValue" stdset="0">
         <string>1</string>
        </property>
       </widget>
      </item>
      <item>
       <widget class="PyDMLabel" name="PyDMLabel_35">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
        <property name="toolTip">
-        <string/>
+        <string>Currest status of the detector.</string>
+       </property>
+       <property name="text">
+        <string>Acquiring</string>
        </property>
        <property name="precision" stdset="0">
         <number>0</number>
@@ -147,19 +188,86 @@
       </widget>
      </item>
      <item>
-      <widget class="PyDMLabel" name="PyDMLabel_34">
+      <widget class="QWidget" name="deadtime_layout" native="true">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
        </property>
-       <property name="toolTip">
-        <string/>
+       <property name="minimumSize">
+        <size>
+         <width>0</width>
+         <height>0</height>
+        </size>
        </property>
-       <property name="text">
-        <string>22.8 %</string>
+       <property name="baseSize">
+        <size>
+         <width>0</width>
+         <height>0</height>
+        </size>
        </property>
+       <property name="styleSheet">
+        <string notr="true"/>
+       </property>
+       <layout class="QHBoxLayout" name="horizontalLayout_5">
+        <property name="spacing">
+         <number>3</number>
+        </property>
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
+        <item>
+         <widget class="PyDMLabel" name="deadtime_label">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="toolTip">
+           <string>The overall live time across elements for the last acquisition.</string>
+          </property>
+          <property name="text">
+           <string>22.8</string>
+          </property>
+          <property name="precision" stdset="0">
+           <number>2</number>
+          </property>
+          <property name="precisionFromPV" stdset="0">
+           <bool>false</bool>
+          </property>
+          <property name="channel" stdset="0">
+           <string>oph://${DEV}.dead_time</string>
+          </property>
+          <property name="displayFormat" stdset="0">
+           <enum>PyDMLabel::Decimal</enum>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="label_3">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="text">
+           <string>%</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </widget>
      </item>
      <item>
@@ -1093,5 +1201,22 @@
   </customwidget>
  </customwidgets>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>accumulate_checkbox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>erase_button</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>469</x>
+     <y>135</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>561</x>
+     <y>135</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
 </ui>

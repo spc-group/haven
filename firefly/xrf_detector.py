@@ -1,3 +1,4 @@
+import time
 import logging
 import subprocess
 from pathlib import Path
@@ -7,9 +8,10 @@ from contextlib import contextmanager
 from functools import partial
 from collections import defaultdict
 import gc
+from enum import IntEnum
 
 from qtpy import uic
-from qtpy.QtCore import Qt, Signal
+from qtpy.QtCore import Qt, Signal, QObject, QThread
 from qtpy.QtWidgets import QWidget
 import qtawesome as qta
 import pyqtgraph
@@ -33,6 +35,11 @@ log = logging.getLogger(__name__)
 pyqtgraph.setConfigOption("imageAxisOrder", "row-major")
 
 colors = list(TABLEAU_COLORS.values())
+
+
+class AcquireStates(IntEnum):
+    DONE = 0
+    ACQUIRING = 1
 
 
 class ROIRegion(pyqtgraph.LinearRegionItem):
@@ -116,16 +123,11 @@ class XRFPlotWidget(QWidget):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._data_items = defaultdict(lambda: None)
-        # self._lo_channels = {}
-        # self._hi_channels = {}
-        # self._lo_signals = {}
-        # self._hi_signals = {}
         self._region_items = {}
         self.ui = uic.loadUi(self.ui_dir / "xrf_plot.ui", self)
         # Create plotting items
         self.plot_item = self.ui.plot_widget.addPlot(row=0, col=0)
         self.plot_item.addLegend()
-        # self.ui.region.sigRegionChangeFinished.connect(self.handle_region_change)
 
     def region(self, mca_num, roi_num):
         key = (mca_num, roi_num)
@@ -246,6 +248,66 @@ class ROIEmbeddedDisplay(PyDMEmbeddedDisplay):
         self.hovered.emit(False)
 
 
+class XrfTriggers(QObject):
+    accumulate: bool = False
+
+    # Signals
+    start_all = Signal(int)  # is_started
+    start_erase = Signal(int)  # (is_started)
+
+    def __init__(self, device, *args, **kwargs):
+        self.device = device
+        super().__init__(*args, **kwargs)
+        self.setup_trigger_channels()
+
+    def set_accumulate(self, accumulate):
+        self.accumulate = accumulate
+
+    def setup_trigger_channels(self):
+        # Set up a channel for starting detector acquisition
+        device = self.device
+        self.start_channel = PyDMChannel(
+            address=f"oph://{device.name}.start_all",
+            value_signal=self.start_all,
+        )
+        self.start_channel.connect()
+        self.start_erase_channel = PyDMChannel(
+            address=f"oph://{device.name}.erase_start",
+            value_signal=self.start_erase,
+        )
+        self.start_erase_channel.connect()
+        # This one gets (dis)connected in response to the continuous button
+        self.acquiring_channel = PyDMChannel(
+            address=f"oph://{device.name}.acquiring",
+            value_slot=self.trigger_next,
+        )
+
+    def trigger_continuously(self, is_started):
+        if is_started:
+            self.acquiring_channel.connect()
+            # Trigger once to start the process
+            self.trigger_once(is_started=is_started)
+        else:
+            self.acquiring_channel.disconnect()
+
+    def trigger_next(self, acquire_state):
+        """Check if acquiring is done and start the next frame.
+
+        Mostly used for continuous acquisition.
+
+        """
+        is_started = acquire_state == AcquireStates.DONE
+        self.trigger_once(is_started=is_started)
+
+    def trigger_once(self, is_started):
+        log.debug("Triggering once")
+        if self.accumulate:
+            start_signal = self.start_all
+        else:
+            start_signal = self.start_erase
+        start_signal.emit(1)
+
+
 class XRFDetectorDisplay(display.FireflyDisplay):
     roi_displays: Sequence = []
     mca_displays: Sequence = []
@@ -263,6 +325,7 @@ class XRFDetectorDisplay(display.FireflyDisplay):
 
     def customize_ui(self):
         device = self.device
+        self.setWindowTitle(device.name)
         self.ui.mca_plot_widget.device_name = self.device.name
         # Set ROI and element selection comboboxes
         self.ui.mca_combobox.currentIndexChanged.connect(self.draw_roi_widgets)
@@ -289,7 +352,19 @@ class XRFDetectorDisplay(display.FireflyDisplay):
             partial(self.increment_combobox, combobox=self.ui.roi_combobox, step=-1)
         )
         # Button for starting/stopping the detector
-        self.ui.acquire_button.setIcon(qta.icon("fa5s.play"))
+        triggers = XrfTriggers(device=self.device)
+        self.ui.continuous_button.setIcon(qta.icon("fa5s.play"))
+        self.ui.erase_button.setIcon(qta.icon("fa5s.eraser"))
+        self.ui.continuous_button.toggled.connect(triggers.trigger_continuously)
+        self.ui.oneshot_button.clicked.connect(triggers.trigger_once)
+        self.ui.accumulate_checkbox.toggled.connect(triggers.set_accumulate)
+        self.triggers = triggers
+        # Run the worker for starting/stopping the detector in a separate thread
+        thread = QThread()
+        triggers.moveToThread(thread)
+        thread.finished.connect(triggers.deleteLater)
+        thread.start()
+        self.triggers_thread = thread
         # Buttons for modifying all ROI settings
         self.ui.mca_copyall_button.setIcon(qta.icon("fa5.clone"))
         self.ui.mca_copyall_button.clicked.connect(self.copy_selected_mca)

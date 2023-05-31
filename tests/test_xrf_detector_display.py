@@ -12,7 +12,7 @@ from firefly.xrf_roi import XRFROIDisplay
 
 
 @pytest.fixture()
-def xrf_display(sim_vortex):
+def xrf_display(ffapp, sim_vortex):
     FireflyMainWindow()
     display = XRFDetectorDisplay(macros={"DEV": sim_vortex.name})
     spectra = np.random.default_rng(seed=0).integers(
@@ -267,3 +267,23 @@ def test_mca_enableall_checkbox(ffapp, xrf_display):
     checkbox.setCheckState(QtCore.Qt.Unchecked)
     for display in xrf_display.mca_displays:
         assert not display.embedded_widget.ui.enabled_checkbox.isChecked()
+
+
+def test_oneshot_acquisition(xrf_display, qtbot):
+    """Check that clicking the one-shot acquisition button works."""
+    with qtbot.waitSignal(xrf_display.triggers.start_erase) as val:
+        xrf_display.ui.oneshot_button.click()
+    # Check the accumulate box and see that we don't erase
+    xrf_display.ui.accumulate_checkbox.setChecked(True)
+    with qtbot.waitSignal(xrf_display.triggers.start_all) as val:
+        xrf_display.ui.oneshot_button.click()
+
+
+def test_continuous_acquisition(xrf_display, qtbot):
+    """Check that clicking the one-shot acquisition button works."""
+    with qtbot.waitSignal(xrf_display.start_erase) as val:
+        xrf_display.ui.continuous_button.click()
+    # Simulated acquisition finishing and then set up the next one
+    with qtbot.waitSignal(xrf_display.start_erase) as val:
+        xrf_display.acquiring_channel.value_slot(0)
+

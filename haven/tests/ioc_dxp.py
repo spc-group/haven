@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from functools import partial
+import logging
 
 import numpy as np
 from caproto.server import (
@@ -18,6 +19,9 @@ from peakutils.peak import gaussian
 
 pvproperty_with_rbv = get_pv_pair_wrapper(setpoint_suffix="", readback_suffix="_RBV")
 unknown = int
+
+
+log = logging.getLogger(__name__)
 
 
 class DXPGroup(EpicsDXPGroup):
@@ -43,9 +47,24 @@ class MCAGroup(EpicsMCAGroup):
 
     rois = SubGroup(RoisGroup, prefix="")
 
+    erase = pvproperty(name="Erase", dtype=unknown)
     start = pvproperty(name="Start", dtype=unknown)
-    preset_real_time = pvproperty(name=".PRTM", dtype=float)
-    preset_live_time = pvproperty(name=".PLTM", dtype=float)
+    preset_real_time = pvproperty(name=".PRTM", value=1.0, dtype=float)
+    preset_live_time = pvproperty(name=".PLTM", value=1.0, dtype=float)
+
+    _accumulated_spectrum = None
+    spectrum_shape = (2048,)
+
+    @erase.startup
+    async def erase(self, instance, async_lib):
+        await self.erase.write(1)
+
+    @erase.putter
+    async def erase(self, instance, value):
+        if value == 1:
+            zeros = np.zeros(shape=self.spectrum_shape)
+            self._accumulated_spectrum = zeros
+            # await self.spectrum.write(self._accumulated_spectrum)
 
     @start.startup
     async def start(self, instance, async_lib):
@@ -61,7 +80,7 @@ class MCAGroup(EpicsMCAGroup):
 
     def _generate_spectrum(self):
         bin_width = self.parent.dxp1.mca_bin_width.value
-        shape = (2048,)
+        shape = self.spectrum_shape
         energies = np.arange(*shape) * bin_width
         # Empty spectrum
         spectrum = np.zeros(shape)
@@ -81,23 +100,11 @@ class MCAGroup(EpicsMCAGroup):
             spectrum += gaussian(energies, height, energy, sigma)
         # Add noise
         spectrum += 3 * np.random.rand(*shape)
-        return spectrum
+        # Add it to the list of accumulated spectra
+        self._accumulated_spectrum += spectrum
+        return self._accumulated_spectrum
 
     spectrum = pvproperty(name="", dtype=float, read_only=True, value=np.zeros((2048,)))
-
-    # @spectrum.startup
-    # async def spectrum(self, instance, async_lib):
-    #     'Periodically update the value'
-    #     while True:
-    #         print("Hello", instance, self, self.parent.preset_real_time)
-    #         # compute next value
-    #         # x = self.x.value + 2 * random.random() - 1
-
-    #         # # update the ChannelData instance and notify any subscribers
-    #         # await instance.write(value=x)
-
-    #         # # Let the async library wait for the next iteration
-    #         await async_lib.library.sleep(self.preset_real_time.value+5)
 
 
 class VortexME4IOC(PVGroup):
@@ -119,13 +126,17 @@ class VortexME4IOC(PVGroup):
 
     start_all = pvproperty(
         name="StartAll",
-        value="Done",
-        record="mbbi",
-        enum_strings=("Done", "Start"),
-        dtype=ChannelType.ENUM,
+        dtype=unknown,
+        # value="Done",
+        # record="mbbi",
+        # enum_strings=("Done", "Start"),
+        # dtype=ChannelType.ENUM,
     )
+    erase_start = pvproperty(name="EraseStart", dtype=unknown)# value="Done",
+                             # record="mbbi",
+                             # enum_strings=("Done", "Start"),
+                             # dtype=ChannelType.ENUM)
     erase_all = pvproperty(name="EraseAll", dtype=unknown)
-    erase_start = pvproperty(name="EraseStart", dtype=unknown)
     stop_all = pvproperty(name="StopAll", dtype=unknown)
     acquiring = pvproperty(
         name="Acquiring",
@@ -136,16 +147,17 @@ class VortexME4IOC(PVGroup):
     )
     preset_real_time = pvproperty(
         name="PresetReal",
-        value=0.1,
+        value=1.0,
         dtype=float,
         put=partial(propogate_to_mcas, field="preset_real_time"),
     )
     preset_live_time = pvproperty(
         name="PresetLive",
-        value=0.1,
+        value=1.0,
         dtype=float,
         put=partial(propogate_to_mcas, field="preset_live_time"),
     )
+    dead_time = pvproperty(name="DeadTime", dtype=float, read_only=True)
 
     @start_all.startup
     async def start_all(self, instance, async_lib):
@@ -154,18 +166,27 @@ class VortexME4IOC(PVGroup):
     @start_all.putter
     async def start_all(self, instance, value):
         """Start all the elements in the detector."""
-        if value == "Done":
+        log.debug(f"Received start_all value: {value}")
+        if value in ("Done", 0):
             # No-op for setting "Done"
             return
         await self.acquiring.write("Acquiring")
         await self.propogate_to_mcas(instance, value, field="start")
         # await self._async_lib.library.sleep(self.preset_real_time.value)
+        dead_time = np.random.rand() * 30 + 5
+        await self.dead_time.write(dead_time)
         await self.acquiring.write("Done")
 
     @erase_start.putter
     async def erase_start(self, instance, value):
-        # Erasing is a no-op for now so just start
+        log.debug(f"Erase-starting: {value}")
+        await self.erase_all.write(value)
         await self.start_all.write(value)
+
+    @erase_all.putter
+    async def erase_all(self, instance, value):
+        log.debug(f"Erasing all: {value}")
+        await self.propogate_to_mcas(instance, value, field="erase")
 
 
 if __name__ == "__main__":
