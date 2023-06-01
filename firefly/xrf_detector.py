@@ -107,10 +107,33 @@ class ROIRegion(pyqtgraph.LinearRegionItem):
         if new_region != old_region:
             self.setRegion(new_region)
         self._last_upper = new_upper
-   
+
+
+class XRF1DPlotItem(pyqtgraph.PlotItem):
+    """The axes used for plotting."""
+    hover_coords_changed = Signal(str)
+
+    def hoverEvent(self, event):
+        super().hoverEvent(event)
+        if event.isExit():
+            self.hover_coords_changed.emit("NaN")
+            return
+        # Get data coordinates from event
+        pos = event.scenePos()
+        data_pos = self.vb.mapSceneToView(pos)
+        pos_str = f"({data_pos.x():.3f}, {data_pos.y():.3f})"
+        self.hover_coords_changed.emit(pos_str)
+
+
+class XRF1DPlotWidget(pyqtgraph.PlotWidget):
+    """The inner widget containing just the plot."""
+    def __init__(self, parent=None, background="default", plotItem=None, **kargs):
+        plot_item = XRF1DPlotItem(**kargs)
+        super().__init__(parent=parent, background=background, plotItem=plot_item)
 
 
 class XRFPlotWidget(QWidget):
+    """The outer widget, containing the plot and related controls."""
     ui_dir = Path(__file__).parent
     _data_items: defaultdict
     _selected_spectrum: int = None
@@ -127,11 +150,13 @@ class XRFPlotWidget(QWidget):
         self._region_items = {}
         self.ui = uic.loadUi(self.ui_dir / "xrf_plot.ui", self)
         # Create plotting items
-        self.plot_item = self.ui.plot_widget.addPlot(row=0, col=0)
-        self.plot_item.addLegend()
+        plot_item = self.ui.plot_widget.getPlotItem()
+        plot_item.addLegend()
+        plot_item.hover_coords_changed.connect(self.ui.coords_label.setText)
 
     def region(self, mca_num, roi_num):
         key = (mca_num, roi_num)
+        plot_item = self.ui.plot_widget.getPlotItem()
         # Create a new region item if necessary
         if key not in self._region_items.keys():
             address = f"oph://{self.device_name}.mcas.mca{mca_num}.rois.roi{roi_num}"
@@ -140,7 +165,7 @@ class XRFPlotWidget(QWidget):
                                brush=f"{color}10",
                                hoverBrush=f"{color}20",
                                pen=f"{color}50",)
-            self.plot_item.addItem(region)
+            plot_item.addItem(region)
             self._region_items[key] = region
         # Return the region item
         return self._region_items[key]
@@ -161,7 +186,7 @@ class XRFPlotWidget(QWidget):
             mca_num == self.target_mca
         )
         row, col = (0, 0)
-        plot_item = self.ui.plot_widget.getItem(row=row, col=col)
+        plot_item = self.ui.plot_widget.getPlotItem()
         # Get rid of the previous plots
         if (existing_item := self._data_items[mca_num]) is not None:
             plot_item.removeItem(existing_item)

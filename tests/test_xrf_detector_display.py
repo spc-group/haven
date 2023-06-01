@@ -104,7 +104,7 @@ def test_update_roi_spectra(ffapp, qtbot, sim_vortex):
         display._spectrum_channels[0].value_slot(spectra[0])
         display._spectrum_channels[1].value_slot(spectra[1])
     # Check that a PlotItem was created
-    plot_item = roi_plot_widget.ui.plot_widget.getItem(0, 0)
+    plot_item = roi_plot_widget.ui.plot_widget.getPlotItem()
     assert isinstance(plot_item, PlotItem)
     # Check that the spectrum was plotted
     data_items = plot_item.listDataItems()
@@ -131,7 +131,7 @@ def test_update_mca_spectra(ffapp, qtbot, sim_vortex):
         display._spectrum_channels[0].value_slot(spectra[0])
         display._spectrum_channels[1].value_slot(spectra[1])
     # Check that a PlotItem was created
-    plot_item = mca_plot_widget.ui.plot_widget.getItem(0, 0)
+    plot_item = mca_plot_widget.ui.plot_widget.getPlotItem()
     assert isinstance(plot_item, PlotItem)
     # Check that the spectrum was plotted
     data_items = plot_item.listDataItems()
