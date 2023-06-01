@@ -116,6 +116,7 @@ class XRFPlotWidget(QWidget):
     _selected_spectrum: int = None
     _region_items: dict
     device_name: str = ""
+    target_mca: int = None
 
     # Signals
     plot_changed = Signal()
@@ -134,7 +135,7 @@ class XRFPlotWidget(QWidget):
         # Create a new region item if necessary
         if key not in self._region_items.keys():
             address = f"oph://{self.device_name}.mcas.mca{mca_num}.rois.roi{roi_num}"
-            color = self.mca_color(mca_num)
+            color = self.region_color(mca_num=mca_num, roi_num=roi_num)
             region = ROIRegion(address=address,
                                brush=f"{color}10",
                                hoverBrush=f"{color}20",
@@ -155,28 +156,52 @@ class XRFPlotWidget(QWidget):
         """Plot the spectrum associated with the given MCA index."""
         # Create the plot item itself if necessary
         log.debug(f"New spectrum ({mca_num}): {repr(spectrum)}")
+        show_spectrum = (
+            self.target_mca is None or
+            mca_num == self.target_mca
+        )
         row, col = (0, 0)
         plot_item = self.ui.plot_widget.getItem(row=row, col=col)
         # Get rid of the previous plots
         if (existing_item := self._data_items[mca_num]) is not None:
             plot_item.removeItem(existing_item)
         # Plot the spectrum
-        xdata = np.arange(len(spectrum))
-        color = self.mca_color(mca_num)
-        self._data_items[mca_num] = plot_item.plot(
-            xdata, spectrum, name=mca_num, pen=color
-        )
-        # Add region markers
-        self.plot_changed.emit()
+        if show_spectrum:                
+            xdata = np.arange(len(spectrum))
+            color = self.spectrum_color(mca_num)
+            self._data_items[mca_num] = plot_item.plot(
+                xdata, spectrum, name=mca_num, pen=color
+            )
+            # Add region markers
+            self.plot_changed.emit()
 
-    def mca_color(self, mca_num):
+    def spectrum_color(self, mca_num):
         return colors[(mca_num - 1) % len(colors)]
+    
+    def highlight_spectrum(self, mca_num, roi_num, hovered):
+        """Highlight a spectrum and lowlight the rest.
 
-    def select_spectrum(self, mca_num, roi_num, is_selected):
-        """Select an active spectrum to modify."""
-        log.debug(f"Selecting spectrum {mca_num}")
-        self._selected_spectrum = mca_num if is_selected else None
-        self.highlight_spectrum(mca_num=mca_num, roi_num=roi_num, hovered=is_selected)
+        *mca_num* is the number (1-indexed) of the spectrum plotted.
+
+        If *hovered* is true, then set the highlights, otherwise clear
+        them.
+
+        """
+        raise NotImplementedError
+
+    def show_region(self, show: bool, mca_num: int = 1, roi_num: int=0):
+        # Hide all the other regions
+        for (mca, roi), region in self._region_items.items():
+            region.setVisible(False)
+        # Show/hide the specific region requested
+        if show:
+            log.debug(f"Showing region mca={mca_num} roi={roi_num}")
+            self.region(mca_num=mca_num, roi_num=roi_num).setVisible(show)
+
+
+class MCAPlotWidget(XRFPlotWidget):
+    def region_color(self, mca_num, roi_num):
+        return self.spectrum_color(mca_num)
 
     def highlight_spectrum(self, mca_num, roi_num, hovered):
         """Highlight a spectrum and lowlight the rest.
@@ -190,7 +215,9 @@ class XRFPlotWidget(QWidget):
         # Get the actual line plot
         solid, semisolid, transparent = (1.0, 0.55, 0.15)
         for key, data_item in self._data_items.items():
-            if hovered:
+            if data_item is None:
+                continue
+            elif hovered:
                 # Highlight this specific spectrum
                 if key == mca_num:
                     opacity = solid
@@ -221,13 +248,42 @@ class XRFPlotWidget(QWidget):
         else:
             self.show_region(show=False, mca_num=mca_num, roi_num=roi_num)
 
-    def show_region(self, show: bool, mca_num: int = 1, roi_num: int=0):
-        # Hide all the other regions
-        for (mca, roi), region in self._region_items.items():
-            region.setVisible(False)
-        # Show/hide the specific region requested
-        self.region(mca_num=mca_num, roi_num=roi_num).setVisible(show)
+    def select_spectrum(self, mca_num, roi_num, is_selected):
+        """Select an active spectrum to modify."""
+        log.debug(f"Selecting spectrum {mca_num}")
+        self._selected_spectrum = mca_num if is_selected else None
+        self.highlight_spectrum(mca_num=mca_num, roi_num=roi_num, hovered=is_selected)    
 
+
+class ROIPlotWidget(XRFPlotWidget):
+
+    def region_color(self, mca_num, roi_num):
+        return colors[(roi_num) % len(colors)]
+
+    def select_roi(self, mca_num, roi_num, is_selected):
+        """Select an active spectrum to modify."""
+        log.debug(f"Selecting ROI {roi_num}")
+        self._selected_roi = roi_num if is_selected else None
+        self.highlight_spectrum(mca_num=mca_num, roi_num=roi_num, hovered=is_selected)    
+
+    def highlight_spectrum(self, mca_num, roi_num, hovered):
+        """Highlight a spectrum and lowlight the rest.
+
+        *mca_num* is the number (1-indexed) of the spectrum plotted.
+
+        If *hovered* is true, then set the highlights, otherwise clear
+        them.
+
+        """
+        # Hide or unhide the selecting region
+        is_selected = self._selected_roi is not None
+        if hovered:
+            self.show_region(show=True, mca_num=mca_num, roi_num=roi_num)
+        elif is_selected:
+            self.show_region(show=True, mca_num=mca_num, roi_num=self._selected_roi)
+        else:
+            self.show_region(show=False, mca_num=mca_num, roi_num=roi_num)
+        
 
 class ROIEmbeddedDisplay(PyDMEmbeddedDisplay):
     # Signals
@@ -319,6 +375,7 @@ class XRFDetectorDisplay(display.FireflyDisplay):
     # Signals
     spectrum_changed = Signal(int, object)  # (MCA index, spectrum)
     mca_row_hovered = Signal(int, int, bool)  # (MCA num, roi_num, entered)
+    roi_row_hovered = Signal(int, int, bool)  # (MCA num, roi_num, entered)
 
     def ui_filename(self):
         return "xrf_detector.ui"
@@ -327,6 +384,7 @@ class XRFDetectorDisplay(display.FireflyDisplay):
         device = self.device
         self.setWindowTitle(device.name)
         self.ui.mca_plot_widget.device_name = self.device.name
+        self.ui.roi_plot_widget.device_name = self.device.name
         # Set ROI and element selection comboboxes
         self.ui.mca_combobox.currentIndexChanged.connect(self.draw_roi_widgets)
         self.ui.roi_combobox.currentIndexChanged.connect(self.draw_mca_widgets)
@@ -368,12 +426,17 @@ class XRFDetectorDisplay(display.FireflyDisplay):
         # Buttons for modifying all ROI settings
         self.ui.mca_copyall_button.setIcon(qta.icon("fa5.clone"))
         self.ui.mca_copyall_button.clicked.connect(self.copy_selected_mca)
+        self.ui.roi_copyall_button.setIcon(qta.icon("fa5.clone"))
+        self.ui.roi_copyall_button.clicked.connect(self.copy_selected_roi)
         self.ui.mca_enableall_checkbox.setCheckState(Qt.PartiallyChecked)
         self.ui.mca_enableall_checkbox.stateChanged.connect(self.enable_mca_checkboxes)
+        self.ui.roi_enableall_checkbox.setCheckState(Qt.PartiallyChecked)
+        self.ui.roi_enableall_checkbox.stateChanged.connect(self.enable_roi_checkboxes)
         # Connect signals for when spectra change
-        self.spectrum_changed.connect(self.ui.roi_plot_widget.update_spectrum)
         self.spectrum_changed.connect(self.ui.mca_plot_widget.update_spectrum)
+        self.spectrum_changed.connect(self.ui.roi_plot_widget.update_spectrum)
         self.mca_row_hovered.connect(self.ui.mca_plot_widget.highlight_spectrum)
+        self.roi_row_hovered.connect(self.ui.roi_plot_widget.highlight_spectrum)
 
     def enable_mca_checkboxes(self, new_state):
         """Check/uncheck the hinting checkboxes in response to the
@@ -383,12 +446,64 @@ class XRFDetectorDisplay(display.FireflyDisplay):
         is_checked = new_state == Qt.Checked
         log.debug(f"Setting all MCA elements enabled: {new_state} / {is_checked}")
         self.ui.mca_enableall_checkbox.setTristate(False)
-        for display in self.mca_displays:
+        self.enable_row_checkboxes(displays=self.mca_displays, is_checked=is_checked)
+
+    def enable_roi_checkboxes(self, new_state):
+        is_checked = new_state == Qt.Checked
+        log.debug(f"Setting all ROI elements enabled: {new_state} / {is_checked}")
+        self.ui.roi_enableall_checkbox.setTristate(False)
+        self.enable_row_checkboxes(displays=self.roi_displays, is_checked=is_checked)
+
+    def enable_row_checkboxes(self, displays, is_checked):
+        """Check/uncheck the hinting checkboxes in response to the "Enable
+        all" checkbox.
+
+        """
+        for display in displays:
             try:
                 checkbox = display.embedded_widget.ui.enabled_checkbox
                 checkbox.setChecked(is_checked)
             except AttributeError:
                 pass
+
+    def copy_selected_row(self, displays, source_display):
+        """Copy the name, upper limit, and lower limits from one ROI|MCA row to all the rest.
+
+        Parameters
+        ==========
+        display
+          A sequence of all the displays to copy to.
+        source_display
+          The embedded display for the row from which to copy.
+        
+        """
+        new_label = source_display.embedded_widget.ui.label_lineedit.text()
+        new_lower = source_display.embedded_widget.ui.lower_lineedit.text()
+        new_upper = source_display.embedded_widget.ui.upper_lineedit.text()
+        # widget = source_display.embedded_widget.ui.upper_lineedit
+        # Set all the other MCA rows with values from selected MCA row
+        for display in displays:
+            if display is not source_display:
+                display.embedded_widget.ui.label_lineedit.setText(new_label)
+                display.embedded_widget.ui.lower_lineedit.setText(new_lower)
+                display.embedded_widget.ui.upper_lineedit.setText(new_upper)
+                # Send the new value over the wire
+                for widget in [display.embedded_widget.ui.label_lineedit,
+                               display.embedded_widget.ui.lower_lineedit,
+                               display.embedded_widget.ui.upper_lineedit]:
+                    if widget._connected:
+                        widget.send_value()
+
+    def copy_selected_roi(self):
+        """Copy the label, hi channel, and lo channel values from the selected
+        ROI row to all other visible ROI rows.
+
+        """
+        log.debug(f"Copying ROI {self._selected_roi}")
+        # Get existing values from selected ROI row
+        roi_idx = self._selected_roi
+        source_display = self.roi_displays[roi_idx]
+        self.copy_selected_row(source_display=source_display, displays=self.roi_displays)
 
     def copy_selected_mca(self):
         """Copy the label, hi channel, and lo channel values from the selected
@@ -399,22 +514,7 @@ class XRFDetectorDisplay(display.FireflyDisplay):
         # Get existing values from selected MCA row
         mca_idx = self._selected_mca - 1
         source_display = self.mca_displays[mca_idx]
-        new_label = source_display.embedded_widget.ui.label_lineedit.text()
-        new_lower = source_display.embedded_widget.ui.lower_lineedit.text()
-        new_upper = source_display.embedded_widget.ui.upper_lineedit.text()
-        widget = source_display.embedded_widget.ui.upper_lineedit
-        # Set all the other MCA rows with values from selected MCA row
-        for idx, display in enumerate(self.mca_displays):
-            if idx != mca_idx:
-                display.embedded_widget.ui.label_lineedit.setText(new_label)
-                display.embedded_widget.ui.lower_lineedit.setText(new_lower)
-                display.embedded_widget.ui.upper_lineedit.setText(new_upper)
-                # Send the new value over the wire
-                for widget in [display.embedded_widget.ui.label_lineedit,
-                               display.embedded_widget.ui.lower_lineedit,
-                               display.embedded_widget.ui.upper_lineedit]:
-                    if widget._connected:
-                        widget.send_value()
+        self.copy_selected_row(source_display=source_display, displays=self.mca_displays)
 
     def handle_new_spectrum(self, new_spectrum, mca_num):
         self.spectrum_changed.emit(mca_num, new_spectrum)
@@ -454,7 +554,7 @@ class XRFDetectorDisplay(display.FireflyDisplay):
         widget.setEnabled(True)
         widget.setCursor(old_cursor)
 
-    def roi_selected(self, is_selected: bool, roi_idx=None):
+    def roi_selected(self, is_selected: bool, roi_num=None):
         """Handler for when an ROI is selected for editing.
 
         Parameters
@@ -464,12 +564,24 @@ class XRFDetectorDisplay(display.FireflyDisplay):
           was deselected.
 
         """
+        # Save the selected ROI number for later
+        if is_selected:
+            self._selected_roi = roi_num
+        else:
+            self._selected_roi = None
+        # Set global controls for this ROI
+        self.ui.roi_copyall_button.setEnabled(is_selected)
+        # Disable the other rows
         for idx, disp in enumerate(self.roi_displays):
-            if is_selected and idx != roi_idx:
+            if is_selected and idx != roi_num:
                 disp.setEnabled(False)
             else:
                 disp.setEnabled(True)
-
+        # Show this spectrum highlighted in the plots
+        mca_num = self.ui.mca_combobox.currentIndex() + 1
+        self.roi_plot_widget.select_roi(mca_num=mca_num, roi_num=roi_num,
+                                        is_selected=is_selected)
+    
     def mca_selected(self, is_selected: bool, mca_num: int = 0):
         """Handler for when an MCA row is selected for editing.
 
@@ -498,29 +610,37 @@ class XRFDetectorDisplay(display.FireflyDisplay):
         roi_num = self.ui.roi_combobox.currentIndex()
         self.mca_plot_widget.select_spectrum(mca_num=mca_num, roi_num=roi_num,
                                              is_selected=is_selected)
-
-    def draw_roi_widgets(self, element_idx):
+    
+    def draw_roi_widgets(self, mca_idx):
+        mca_num = mca_idx + 1
         with self.disable_ui():
+            # Update the plot widget with the new MCA number
+            self.roi_plot_widget.target_mca = mca_num
             # Prepare all the ROI widgets
             layout = self.ui.rois_layout
             self.remove_widgets_from_layout(layout)
             self.roi_displays = []
-            for roi_idx in range(self.device.num_rois):
+            for roi_num in range(self.device.num_rois):
                 disp = ROIEmbeddedDisplay(parent=self)
                 disp.macros = json.dumps(
                     {
                         "DEV": self.device.name,
-                        "MCA": element_idx + 1,
-                        "ROI": roi_idx,
-                        "NUM": roi_idx,
+                        "MCA": mca_num,
+                        "ROI": roi_num,
+                        "NUM": roi_num,
                     }
                 )
                 disp.filename = "xrf_roi.py"
                 # Respond when this ROI is selected
-                disp.selected.connect(partial(self.roi_selected, roi_idx=roi_idx))
+                disp.selected.connect(partial(self.roi_selected, roi_num=roi_num))
+                disp.hovered.connect(partial(self.roi_row_hovered.emit, mca_num, roi_num))
                 # Add the Embedded Display to the ROI Layout
                 layout.addWidget(disp)
                 self.roi_displays.append(disp)
+            # Reset the selected ROI
+            self.roi_selected(is_selected=False)
+            # Make the global enable checkbox tri-state again
+            self.ui.roi_enableall_checkbox.setCheckState(Qt.PartiallyChecked)
 
     def draw_mca_widgets(self, roi_idx):
         """Prepare a row for each element in the detector."""

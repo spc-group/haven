@@ -108,7 +108,7 @@ def test_update_roi_spectra(ffapp, qtbot, sim_vortex):
     assert isinstance(plot_item, PlotItem)
     # Check that the spectrum was plotted
     data_items = plot_item.listDataItems()
-    assert len(data_items) == 2
+    assert len(data_items) == 1
     # Check that previous plots get cleared
     spectra2 = np.random.default_rng(seed=1).integers(
         0, 65536, dtype=np.int_, size=(4, 1024)
@@ -116,7 +116,7 @@ def test_update_roi_spectra(ffapp, qtbot, sim_vortex):
     with qtbot.waitSignal(roi_plot_widget.plot_changed):
         display._spectrum_channels[0].value_slot(spectra2[0])
     data_items = plot_item.listDataItems()
-    assert len(data_items) == 2
+    assert len(data_items) == 1
 
 
 def test_update_mca_spectra(ffapp, qtbot, sim_vortex):
@@ -146,30 +146,7 @@ def test_update_mca_spectra(ffapp, qtbot, sim_vortex):
     assert len(data_items) == 2
 
 
-def test_hover_roi_row(ffapp, qtbot, sim_vortex):
-    FireflyMainWindow()
-    display = XRFDetectorDisplay(macros={"DEV": sim_vortex.name})
-    spectra = np.random.default_rng(seed=0).integers(
-        0, 65536, dtype=np.int_, size=(4, 1024)
-    )
-    plot_widget = display.mca_plot_widget
-    plot_widget.update_spectrum(1, spectra[0])
-    plot_widget.update_spectrum(2, spectra[1])
-    row = display.mca_displays[0]
-    this_data_item = display.mca_plot_widget._data_items[1]
-    other_data_item = display.mca_plot_widget._data_items[2]
-    this_data_item.setOpacity(0.77)
-    # Check that the plot opacity was changed
-    row.enterEvent()
-    assert this_data_item.opacity() == 1.0
-    assert other_data_item.opacity() == 0.15
-    # Remove the mouse from the row and check that the opacity was set back
-    row.leaveEvent()
-    assert this_data_item.opacity() == 1.0
-    assert other_data_item.opacity() == 1.0
-
-
-def test_roi_selected_highlights(ffapp, qtbot, sim_vortex):
+def test_mca_selected_highlights(ffapp, qtbot, sim_vortex):
     """Is the spectrum highlighted when the element row is selected."""
     FireflyMainWindow()
     display = XRFDetectorDisplay(macros={"DEV": sim_vortex.name})
@@ -209,6 +186,26 @@ def test_show_mca_region_visibility(ffapp, xrf_display):
     # Unhighlight and confirm it is invisible
     plot_widget.highlight_spectrum(mca_num=1, roi_num=0, hovered=False)
     assert not region.isVisible()
+
+
+def test_show_roi_region(ffapp, xrf_display):
+    """Is the spectrum highlighted when the element row is selected."""
+    # Check that the region is hidden at startup
+    plot_widget = xrf_display.roi_plot_widget
+    hovered_region = plot_widget.region(mca_num=1, roi_num=1)
+    plot_widget.select_roi(mca_num=1, roi_num=0, is_selected=True)
+    selected_region = plot_widget.region(mca_num=1, roi_num=0)
+    assert not hovered_region.isVisible()
+    assert selected_region.isVisible()
+    # Now highlight a spectrum, and confirm it is visible
+    plot_widget.highlight_spectrum(mca_num=1, roi_num=1, hovered=True)
+    assert hovered_region.isVisible()
+    assert not selected_region.isVisible()
+    # assert region.brush.color().name() == "#ff7f0e"
+    # Unhighlight and confirm it is invisible
+    plot_widget.highlight_spectrum(mca_num=1, roi_num=0, hovered=False)
+    assert not hovered_region.isVisible()
+    assert selected_region.isVisible()
 
 
 def test_mca_region_channels(ffapp, xrf_display):
@@ -251,6 +248,31 @@ def test_mca_copyall_button(ffapp, xrf_display, qtbot):
     assert not xrf_display.ui.mca_copyall_button.isEnabled()
 
 
+def test_roi_copyall_button(ffapp, xrf_display, qtbot):
+    # Set up ROI rows embedded display widgets
+    for disp in xrf_display.roi_displays:
+        disp._embedded_widget = disp.open_file(force=True)
+    # Select an ROI
+    xrf_display.roi_selected(is_selected=True, roi_num=1)
+    assert xrf_display.ui.roi_copyall_button.isEnabled()
+    # Set up ROI displays to test
+    this_display = xrf_display.roi_displays[1]
+    this_display._embedded_widget = this_display.open_file(force=True)
+    other_display = xrf_display.roi_displays[0]
+    other_display._embedded_widget = other_display.open_file(force=True)
+    # Change the values on the MCA displays
+    this_display.embedded_widget.ui.lower_lineedit.setText("111")
+    this_display.embedded_widget.ui.upper_lineedit.setText("131")
+    this_display.embedded_widget.ui.label_lineedit.setText("Ni Ka")
+    # Copy to the other ROI display
+    qtbot.mouseClick(xrf_display.ui.roi_copyall_button, QtCore.Qt.LeftButton)
+    assert other_display.embedded_widget.ui.lower_lineedit.text() == "111"
+    assert other_display.embedded_widget.ui.upper_lineedit.text() == "131"
+    # Does the button get disabled on un-select?
+    xrf_display.roi_selected(is_selected=False, roi_num=1)
+    assert not xrf_display.ui.roi_copyall_button.isEnabled()
+    
+
 def test_mca_enableall_checkbox(ffapp, xrf_display):
     checkbox = xrf_display.ui.mca_enableall_checkbox
     assert checkbox.checkState() == QtCore.Qt.PartiallyChecked
@@ -269,6 +291,24 @@ def test_mca_enableall_checkbox(ffapp, xrf_display):
         assert not display.embedded_widget.ui.enabled_checkbox.isChecked()
 
 
+def test_roi_enableall_checkbox(ffapp, xrf_display):
+    checkbox = xrf_display.ui.roi_enableall_checkbox
+    assert checkbox.checkState() == QtCore.Qt.PartiallyChecked
+    assert checkbox.isTristate()
+    for display in xrf_display.roi_displays:
+        display._embedded_widget = display.open_file(force=True)
+        assert not display.embedded_widget.ui.enabled_checkbox.checkState()
+    # Set it to checked and make sure all the ROI checkboxes respond
+    checkbox.setCheckState(QtCore.Qt.Checked)
+    assert not checkbox.isTristate()
+    for display in xrf_display.roi_displays:
+        assert display.embedded_widget.ui.enabled_checkbox.isChecked()
+    # Un-enable all, does it go back?
+    checkbox.setCheckState(QtCore.Qt.Unchecked)
+    for display in xrf_display.roi_displays:
+        assert not display.embedded_widget.ui.enabled_checkbox.isChecked()
+        
+
 def test_oneshot_acquisition(xrf_display, qtbot):
     """Check that clicking the one-shot acquisition button works."""
     with qtbot.waitSignal(xrf_display.triggers.start_erase) as val:
@@ -281,9 +321,9 @@ def test_oneshot_acquisition(xrf_display, qtbot):
 
 def test_continuous_acquisition(xrf_display, qtbot):
     """Check that clicking the one-shot acquisition button works."""
-    with qtbot.waitSignal(xrf_display.start_erase) as val:
+    with qtbot.waitSignal(xrf_display.triggers.start_erase) as val:
         xrf_display.ui.continuous_button.click()
     # Simulated acquisition finishing and then set up the next one
-    with qtbot.waitSignal(xrf_display.start_erase) as val:
-        xrf_display.acquiring_channel.value_slot(0)
+    with qtbot.waitSignal(xrf_display.triggers.start_erase) as val:
+        xrf_display.triggers.acquiring_channel.value_slot(0)
 

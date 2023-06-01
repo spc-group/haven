@@ -292,7 +292,7 @@
      </property>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>3</number>
+       <number>2</number>
       </property>
       <widget class="QWidget" name="stats_tab">
        <attribute name="title">
@@ -838,7 +838,7 @@
               <item>
                <widget class="QCheckBox" name="roi_enableall_checkbox">
                 <property name="enabled">
-                 <bool>false</bool>
+                 <bool>true</bool>
                 </property>
                 <property name="text">
                  <string>All</string>
@@ -849,7 +849,7 @@
                </widget>
               </item>
               <item>
-               <widget class="QPushButton" name="pushButton">
+               <widget class="QPushButton" name="roi_copyall_button">
                 <property name="enabled">
                  <bool>false</bool>
                 </property>
@@ -939,7 +939,7 @@
             </item>
            </layout>
           </widget>
-          <widget class="XRFPlotWidget" name="roi_plot_widget" native="true">
+          <widget class="ROIPlotWidget" name="roi_plot_widget" native="true">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
              <horstretch>0</horstretch>
@@ -1160,7 +1160,7 @@
             </item>
            </layout>
           </widget>
-          <widget class="XRFPlotWidget" name="mca_plot_widget" native="true">
+          <widget class="MCAPlotWidget" name="mca_plot_widget" native="true">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
              <horstretch>0</horstretch>
@@ -1194,7 +1194,13 @@
    <header>pydm.widgets.pushbutton</header>
   </customwidget>
   <customwidget>
-   <class>XRFPlotWidget</class>
+   <class>MCAPlotWidget</class>
+   <extends>QWidget</extends>
+   <header>firefly.xrf_detector</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>ROIPlotWidget</class>
    <extends>QWidget</extends>
    <header>firefly.xrf_detector</header>
    <container>1</container>
