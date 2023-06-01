@@ -72,8 +72,16 @@ def add_rois(range_: Sequence[int] = range(32), kind=Kind.omitted, **kwargs):
 
 class MCARecord(mca.EpicsMCARecord):
     rois = DDC(add_rois(), kind=active_kind)
-    _default_read_attrs = ["rois"]
-    _default_configuration_attrs = ["rois"]
+    _default_read_attrs = [
+        "rois",
+        "spectrum",
+        "preset_real_time",
+        "preset_live_time",
+        "elapsed_real_time",
+        "elapsed_live_time",
+        "background",
+    ]
+    _default_configuration_attrs = ["rois", "mode"]
     kind = active_kind
 
 

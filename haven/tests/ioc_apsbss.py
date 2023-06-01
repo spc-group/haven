@@ -1,17 +1,20 @@
 #!/usr/bin/env python3
-
+from caproto import ChannelType
 from caproto.server import (
+    PVGroup,
+    SubGroup,
+    ioc_arg_parser,
     pvproperty,
     run,
-    PvpropertyDouble,
     PvpropertyString,
     PvpropertyInteger,
 )
+from ophyd.tests.fake_motor_ioc import FakeMotorIOC
 
-from haven.simulated_ioc import ResponsiveMotorFields, IOC as IOC_
+from haven.simulated_ioc import ResponsiveMotorFields  # , IOC as IOC_
 
 
-class IOC(IOC_):
+class SimpleGroup(PVGroup):
     """
     An IOC that looks like an undulator.
 
@@ -189,5 +192,8 @@ class IOC(IOC_):
 
 
 if __name__ == "__main__":
-    pvdb, run_options = IOC.parse_args()
-    run(pvdb, **run_options)
+    ioc_options, run_options = ioc_arg_parser(
+        default_prefix="255idc:bss:", desc="haven.tests.ioc_apsbss test IOC"
+    )
+    ioc = SimpleGroup(**ioc_options)
+    run(ioc.pvdb, **run_options)

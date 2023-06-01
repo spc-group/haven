@@ -4,7 +4,7 @@ import json
 import haven
 from pydm.data_plugins.epics_plugin import EPICSPlugin
 from pydm.widgets.channel import PyDMChannel
-from qtpy.QtGui import QColor
+from qtpy import QtWidgets, QtGui, QtCore
 
 from firefly.main_window import FireflyMainWindow
 from firefly.cameras import CamerasDisplay
@@ -14,12 +14,12 @@ from firefly.camera import CameraDisplay, DetectorStates
 macros = {"PREFIX": "camera_ioc:", "DESC": "Camera A"}
 
 
-def test_embedded_displays(qtbot, ffapp, sim_registry):
+def test_embedded_displays(qtbot, ffapp, sim_registry, sim_camera):
     """Test that the embedded displays get loaded."""
     FireflyMainWindow()
     # Set up fake cameras
-    camera = haven.Camera(prefix="camera_ioc:", name="Camera A", labels={"cameras"})
-    sim_registry.register(camera)
+    # camera = haven.Camera(prefix="camera_ioc:", name="Camera A", labels={"cameras"})
+    # sim_registry.register(camera)
     # Load the display
     display = CamerasDisplay()
     # Check that the embedded display widgets get added correctly
@@ -27,7 +27,7 @@ def test_embedded_displays(qtbot, ffapp, sim_registry):
     assert len(display._camera_displays) == 1
     # Check the embedded display macros
     # assert isinstance(display._camera_displays[0].macros, dict)
-    expected_macros = {"PREFIX": "camera_ioc:", "DESC": "Camera A"}
+    expected_macros = {"CAMERA": sim_camera.name}
     assert json.loads(display._camera_displays[0].macros) == expected_macros
 
 
@@ -53,7 +53,7 @@ def test_set_status_byte(qtbot, ffapp):
     bit = byte._indicators[0]
     label = display.camera_status_label
     # Set the color to something else, then check that it gets set back to white
-    bit.setColor(QColor(255, 0, 0))
+    bit.setColor(QtGui.QColor(255, 0, 0))
     # Simulated the IOC being disconnected
     display.update_camera_connection(False)
     assert bit._brush.color().getRgb() == (255, 255, 255, 255)
@@ -71,3 +71,16 @@ def test_set_status_byte(qtbot, ffapp):
     display.update_camera_state(DetectorStates.ACQUIRE)
     assert bit._brush.color().getRgb() == (255, 255, 0, 255)
     assert not label.isVisible(), "State label should be hidden by default"
+
+
+@pytest.mark.xfail
+def test_camera_viewer_button(qtbot, ffapp, ioc_area_detector, mocker):
+    action = QtWidgets.QAction(ffapp)
+    ffapp.camera_actions.append(action)
+    FireflyMainWindow()
+    display = CameraDisplay(macros=macros)
+    display.show()
+    # Click the button
+    btn = display.ui.camera_viewer_button
+    with qtbot.waitSignal(action.triggered):
+        qtbot.mouseClick(btn, QtCore.Qt.LeftButton)

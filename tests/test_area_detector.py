@@ -8,7 +8,7 @@ def test_load_area_detectors(sim_registry, ioc_area_detector):
         {
             "area_detector": {
                 "sim_det": {
-                    "prefix": "99idSimDet",
+                    "prefix": "255idSimDet",
                     "device_class": "SimDetector",
                 }
             }

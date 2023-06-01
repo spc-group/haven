@@ -16,6 +16,7 @@ from .power_supply import load_power_supplies
 from .xray_source import load_xray_sources
 from .area_detector import load_area_detectors
 from .slits import load_slits
+from .lerix import load_lerix_spectrometers
 from .._iconfig import load_config
 
 
@@ -44,6 +45,8 @@ def load_instrument(
     """
     # Clear out any existing registry entries
     registry.clear()
+    # Make sure we have the most up-to-date configuration
+    load_config.cache_clear()
     # Load the configuration
     if config is None:
         config = load_config()
@@ -61,6 +64,7 @@ def load_instrument(
     load_ion_chambers(config=config)
     load_fluorescence_detectors(config=config)
     load_area_detectors(config=config)
+    load_lerix_spectrometers(config=config)
     # Facility-related devices
     load_aps(config=config)
     load_xray_sources(config=config)

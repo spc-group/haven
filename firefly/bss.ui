@@ -88,7 +88,7 @@
            <string>688743</string>
           </property>
           <property name="channel" stdset="0">
-           <string>${P}proposal:id</string>
+           <string>oph://bss_proposal_proposal_id</string>
           </property>
          </widget>
         </item>
@@ -105,7 +105,7 @@
            <string/>
           </property>
           <property name="channel" stdset="0">
-           <string>${P}proposal:title</string>
+           <string>oph://bss_proposal_title</string>
           </property>
           <property name="displayFormat" stdset="0">
            <enum>PyDMLineEdit::String</enum>
@@ -127,7 +127,7 @@
              <string/>
             </property>
             <property name="channel" stdset="0">
-             <string>${P}proposal:startDate</string>
+             <string>oph://bss_proposal_start_date</string>
             </property>
             <property name="displayFormat" stdset="0">
              <enum>PyDMLineEdit::String</enum>
@@ -147,7 +147,7 @@
              <string/>
             </property>
             <property name="channel" stdset="0">
-             <string>${P}proposal:endDate</string>
+             <string>oph://bss_proposal_end_date</string>
             </property>
             <property name="displayFormat" stdset="0">
              <enum>PyDMLineEdit::String</enum>
@@ -169,7 +169,7 @@
            <string/>
           </property>
           <property name="channel" stdset="0">
-           <string>${P}proposal:users</string>
+           <string>oph://bss_proposal_user_last_names</string>
           </property>
           <property name="displayFormat" stdset="0">
            <enum>PyDMLineEdit::String</enum>
@@ -189,7 +189,7 @@
            <string/>
           </property>
           <property name="channel" stdset="0">
-           <string>${P}proposal:userBadges</string>
+           <string>oph://bss_proposal_user_badges</string>
           </property>
           <property name="displayFormat" stdset="0">
            <enum>PyDMLineEdit::String</enum>
@@ -209,7 +209,7 @@
            <string/>
           </property>
           <property name="channel" stdset="0">
-           <string>${P}proposal:mailInFlag</string>
+           <string>oph://bss_proposal_mail_in_flag</string>
           </property>
          </widget>
         </item>
@@ -226,7 +226,7 @@
            <string/>
           </property>
           <property name="channel" stdset="0">
-           <string>${P}proposal:proprietaryFlag</string>
+           <string>oph://bss_proposal_proprietary_flag</string>
           </property>
          </widget>
         </item>
@@ -302,6 +302,9 @@
           <property name="text">
            <string>257794</string>
           </property>
+          <property name="channel" stdset="0">
+           <string>oph://bss_esaf_esaf_id</string>
+          </property>
          </widget>
         </item>
         <item row="1" column="0">
@@ -319,6 +322,9 @@
           <property name="text">
            <string>Approved</string>
           </property>
+          <property name="channel" stdset="0">
+           <string>oph://bss_esaf_esaf_status</string>
+          </property>
          </widget>
         </item>
         <item row="2" column="0">
@@ -334,7 +340,7 @@
            <string/>
           </property>
           <property name="channel" stdset="0">
-           <string>${P}esaf:title</string>
+           <string>oph://bss_esaf_title</string>
           </property>
           <property name="displayFormat" stdset="0">
            <enum>PyDMLineEdit::String</enum>
@@ -356,7 +362,7 @@
              <string/>
             </property>
             <property name="channel" stdset="0">
-             <string>${P}esaf:startDate</string>
+             <string>oph://bss_esaf_start_date</string>
             </property>
             <property name="displayFormat" stdset="0">
              <enum>PyDMLineEdit::String</enum>
@@ -376,7 +382,7 @@
              <string/>
             </property>
             <property name="channel" stdset="0">
-             <string>${P}esaf:endDate</string>
+             <string>oph://bss_esaf_end_date</string>
             </property>
             <property name="displayFormat" stdset="0">
              <enum>PyDMLineEdit::String</enum>
@@ -398,7 +404,7 @@
            <string/>
           </property>
           <property name="channel" stdset="0">
-           <string>${P}esaf:users</string>
+           <string>oph://bss_esaf_user_last_names</string>
           </property>
           <property name="displayFormat" stdset="0">
            <enum>PyDMLineEdit::String</enum>
@@ -418,7 +424,7 @@
            <string/>
           </property>
           <property name="channel" stdset="0">
-           <string>${P}esaf:userBadges</string>
+           <string>oph://bss_esaf_user_badges</string>
           </property>
           <property name="displayFormat" stdset="0">
            <enum>PyDMLineEdit::String</enum>

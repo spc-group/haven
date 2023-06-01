@@ -8,6 +8,7 @@ from bluesky import plan_stubs as bps
 from apstools.plans.alignment import lineup
 
 from ..instrument.instrument_registry import registry
+from ..preprocessors import shutter_suspend_decorator
 
 log = logging.getLogger(__name__)
 
@@ -15,6 +16,7 @@ log = logging.getLogger(__name__)
 __all__ = ["align_motor", "align_pitch2"]
 
 
+# @shutter_suspend_decorator()
 def align_pitch2(
     distance=200, reverse=False, detector="I0", bec=None, feature="cen", md={}
 ):
@@ -58,6 +60,7 @@ def align_pitch2(
     )
 
 
+@shutter_suspend_decorator()
 def align_motor(
     detector, motor, distance=200, reverse=False, bec=None, feature="cen", md={}
 ):
@@ -97,6 +100,13 @@ def align_motor(
     detectors = [det]
     if hasattr(det, "raw_counts"):
         detectors.insert(0, det.raw_counts)
+    # from pprint import pprint
+    # pprint(detectors)
+    # print(motor)
+    # print(start, end)
+    # print(feature)
+    # print(bec, md_)
+    # assert False
     plan = lineup(
         detectors, motor, start, end, npts=40, feature=feature, bec=bec, md=md_
     )

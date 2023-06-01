@@ -4,15 +4,16 @@ from unittest import mock
 import pytest
 from qtpy import QtWidgets, QtCore
 from bluesky_queueserver_api import BPlan
+from apstools.devices.aps_undulator import ApsUndulator
+
 import haven
 from haven.instrument.monochromator import load_monochromator
 from haven.instrument.energy_positioner import load_energy_positioner
-
 from firefly.main_window import FireflyMainWindow
 from firefly.energy import EnergyDisplay
 
 
-def test_energy_macros(qtbot, ffapp, sim_registry):
+def test_mono_caqtdm_macros(qtbot, ffapp, sim_registry):
     # Create fake device
     mono = haven.instrument.monochromator.Monochromator(
         "mono_ioc", name="monochromator"
@@ -21,21 +22,63 @@ def test_energy_macros(qtbot, ffapp, sim_registry):
         haven.instrument.energy_positioner.EnergyPositioner(
             mono_pv="mono_ioc:Energy",
             id_offset_pv="mono_ioc:ID_offset",
+            id_tracking_pv="mono_ioc:ID_tracking",
             id_prefix="id_ioc",
             name="energy",
         )
     )
+    undulator = ApsUndulator("id_ioc:", name="undulator", labels={"xray_sources"})
+    sim_registry.register(undulator)
     # Load display
     ffapp.setup_window_actions()
     ffapp.setup_runengine_actions()
     FireflyMainWindow()
     display = EnergyDisplay()
-    # Check macros
-    macros = display.macros()
-    assert macros["MONO_MODE_PV"] == "mono_ioc:mode"
-    assert macros["MONO_ENERGY_PV"] == "mono_ioc:Energy.RBV"
-    assert macros["ID_ENERGY_PV"] == "id_ioc:Energy.VAL"
-    assert macros["ID_GAP_PV"] == "id_ioc:Gap.VAL"
+    display.launch_caqtdm = mock.MagicMock()
+    # Check that the various caqtdm calls set up the right macros
+    display.launch_mono_caqtdm()
+    assert display.launch_caqtdm.called
+    assert display.launch_caqtdm.call_args[1]["macros"] == {
+        "P": "mono_ioc:",
+        "MONO": "UP",
+        "BRAGG": "ACS:m3",
+        "GAP": "ACS:m4",
+        "ENERGY": "Energy",
+        "OFFSET": "Offset",
+        "IDENERGY": "id_ioc:Energy",
+    }
+
+
+def test_id_caqtdm_macros(qtbot, ffapp, sim_registry):
+    # Create fake device
+    mono = haven.instrument.monochromator.Monochromator(
+        "mono_ioc", name="monochromator"
+    )
+    sim_registry.register(
+        haven.instrument.energy_positioner.EnergyPositioner(
+            mono_pv="mono_ioc:Energy",
+            id_offset_pv="mono_ioc:ID_offset",
+            id_tracking_pv="mono_ioc:ID_tracking",
+            id_prefix="id_ioc",
+            name="energy",
+        )
+    )
+    undulator = ApsUndulator("id_ioc:", name="undulator", labels={"xray_sources"})
+    sim_registry.register(undulator)
+    # Load display
+    ffapp.setup_window_actions()
+    ffapp.setup_runengine_actions()
+    FireflyMainWindow()
+    display = EnergyDisplay()
+    display.launch_caqtdm = mock.MagicMock()
+    # Check that the various caqtdm calls set up the right macros
+    display.launch_id_caqtdm()
+    assert display.launch_caqtdm.called
+    assert display.launch_caqtdm.call_args[1]["macros"] == {
+        "ID": "id_ioc",
+        "M": 2,
+        "D": 2,
+    }
 
 
 def test_move_energy(qtbot, ffapp, sim_registry):
@@ -46,6 +89,7 @@ def test_move_energy(qtbot, ffapp, sim_registry):
         haven.instrument.energy_positioner.EnergyPositioner(
             mono_pv="mono_ioc:Energy",
             id_offset_pv="mono_ioc:ID_offset",
+            id_tracking_pv="mono_ioc:ID_tracking",
             id_prefix="id_ioc",
             name="energy",
         )
@@ -86,6 +130,7 @@ def test_predefined_energies(qtbot, ffapp, ioc_mono, sim_registry):
         haven.instrument.energy_positioner.EnergyPositioner(
             mono_pv="mono_ioc:Energy",
             id_offset_pv="mono_ioc:ID_offset",
+            id_tracking_pv="mono_ioc:ID_tracking",
             id_prefix="id_ioc",
             name="energy",
         )

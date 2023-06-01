@@ -11,13 +11,16 @@ import epics
 
 
 def test_gain_level(ioc_preamp, ioc_scaler):
-    positioner = SensitivityLevelPositioner("preamp_ioc", name="positioner")
+    print(ioc_preamp)
+    positioner = SensitivityLevelPositioner(
+        f"{ioc_preamp.prefix}SR01", name="positioner"
+    )
     positioner.wait_for_connection()
     assert positioner.get(use_monitor=False).sens_value.readback == epics.caget(
-        "preamp_ioc:sens_num.VAL"
+        ioc_preamp.pvs["preamp1_sens_num"]
     )
     assert positioner.get(use_monitor=False).sens_unit.readback == epics.caget(
-        "preamp_ioc:sens_unit.VAL"
+        ioc_preamp.pvs["preamp1_sens_unit"]
     )
     # Move the gain level
     positioner.sens_level.set(12)
@@ -25,9 +28,14 @@ def test_gain_level(ioc_preamp, ioc_scaler):
     # Check that the preamp sensitivities are moved
     assert positioner.get(use_monitor=False).sens_value.readback == 3
     assert positioner.get(use_monitor=False).sens_unit.readback == 1
+    # Check that the preamp sensitivity offsets are moved
+    assert positioner.get(use_monitor=False).offset_value.readback == 0
+    assert positioner.get(use_monitor=False).offset_unit.readback == 1
     # Change the preamp settings
-    epics.caput("preamp_ioc:sens_num.VAL", 0)
-    epics.caput("preamp_ioc:sens_unit.VAL", 3)
+    epics.caput(ioc_preamp.pvs["preamp1_sens_num"], 0)
+    epics.caput(ioc_preamp.pvs["preamp1_sens_unit"], 3)
+    epics.caput(ioc_preamp.pvs["preamp1_offset_num"], 1)
+    epics.caput(ioc_preamp.pvs["preamp1_offset_unit"], 3)
     time.sleep(0.1)
     # Check that the gain level moved
     assert positioner.sens_level.get(use_monitor=False).readback == 27
@@ -36,7 +44,10 @@ def test_gain_level(ioc_preamp, ioc_scaler):
 def test_gain_changes(ioc_preamp, ioc_scaler):
     # Setup the ion chamber and connect to the IOC
     ion_chamber = IonChamber(
-        prefix="vme_crate_ioc", preamp_prefix="preamp_ioc", ch_num=2, name="ion_chamber"
+        prefix=ioc_scaler.prefix,
+        preamp_prefix=f"{ioc_preamp.prefix}SR01",
+        ch_num=2,
+        name="ion_chamber",
     )
     time.sleep(0.01)
     ion_chamber.wait_for_connection(timeout=20)
@@ -96,3 +107,40 @@ def test_default_pv_prefix():
     # Instantiate the device with *scaler_prefix* argument
     device = IonChamber(name="device", ch_num=1, prefix=prefix)
     assert device.scaler_prefix == prefix
+
+
+def test_offset_pv(sim_registry):
+    """Check that the device handles the weird offset numbering scheme.
+
+    Net count PVs in the scaler go as
+
+    - 25idcVME:3820:scaler1_netA.B
+    - 25idcVME:3820:scaler1_netA.C
+    - etc.
+
+    but the offset PVs go
+    - 25idcVME:3820:scaler1_offset0.B
+    - ...
+    - 25idcVME:3820:scaler1_offset0.D
+    - 25idcVME:3820:scaler1_offset1.A
+    - ...
+
+    """
+    channel_suffixes = [
+        (2, "offset0.B"),
+        (3, "offset0.C"),
+        (4, "offset0.D"),
+        (5, "offset1.A"),
+        (6, "offset1.B"),
+        (7, "offset1.C"),
+        (8, "offset1.D"),
+        (9, "offset2.A"),
+        (10, "offset2.B"),
+        (11, "offset2.C"),
+        (12, "offset2.D"),
+    ]
+    for ch_num, suffix in channel_suffixes:
+        ic = IonChamber(
+            prefix="scaler_ioc:scaler1", ch_num=ch_num, name=f"ion_chamber_{ch_num}"
+        )
+        assert ic.offset.pvname == f"scaler_ioc:scaler1_{suffix}", f"channel {ch_num}"

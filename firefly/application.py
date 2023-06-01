@@ -16,11 +16,13 @@ from pydm.display import load_file
 from pydm.utilities.stylesheet import apply_stylesheet
 from bluesky_queueserver_api import BPlan
 from bluesky_queueserver_api.zmq import REManagerAPI
+import pyqtgraph as pg
+
 from haven.exceptions import ComponentNotFound
 from haven import HavenMotor, registry, load_config
 import haven
-
 from .main_window import FireflyMainWindow, PlanMainWindow
+from .ophyd_plugin import OphydPlugin
 from .queue_client import QueueClient, QueueClientThread
 
 generator = type((x for x in []))
@@ -34,9 +36,8 @@ log = logging.getLogger(__name__)
 ui_dir = Path(__file__).parent
 
 
-stylesheet = """
-
-"""
+pg.setConfigOption("background", (252, 252, 252))
+pg.setConfigOption("foreground", (0, 0, 0))
 
 
 class FireflyApplication(PyDMApplication):
@@ -55,6 +56,7 @@ class FireflyApplication(PyDMApplication):
 
     # Actions for showing window
     show_status_window_action: QtWidgets.QAction
+    show_runs_window_action: QtWidgets.QAction
     show_energy_window_action: QtWidgets.QAction
     show_bss_window_action: QtWidgets.QAction
     launch_queuemonitor_action: QtWidgets.QAction
@@ -62,8 +64,15 @@ class FireflyApplication(PyDMApplication):
     # Keep track of motors
     motor_actions: Sequence = []
     motor_window_slots: Sequence = []
-    motor_windows: Mapping = {}
 
+    # Keep track of cameras
+    camera_actions: Sequence = []
+    camera_window_slots: Sequence
+
+    # Keep track of area detectors
+    area_detector_actions: Sequence = []
+    area_detector_window_slots: Sequence
+    
     # Signals for running plans on the queueserver
     queue_item_added = Signal(object)
 
@@ -110,17 +119,25 @@ class FireflyApplication(PyDMApplication):
 
     def setup_window_actions(self):
         """Create QActions for clicking on menu items, shortcuts, etc.
-
+        
         These actions should be usable by multiple
         windows. Window-specific actions belong with the window.
-
+        
         """
         self.prepare_motor_windows()
+        self.prepare_camera_windows()
+        self.prepare_area_detector_windows()
         # Action for showing the beamline status window
         self._setup_window_action(
             action_name="show_status_window_action",
             text="Beamline Status",
             slot=self.show_status_window,
+        )
+        # Action for showing the run browser window
+        self._setup_window_action(
+            action_name="show_run_browser_action",
+            text="Browse Runs",
+            slot=self.show_run_browser,
         )
         # Action for launch queue-monitor
         self._setup_window_action(
@@ -139,6 +156,12 @@ class FireflyApplication(PyDMApplication):
             action_name="show_energy_window_action",
             text="Energy",
             slot=self.show_energy_window,
+        )
+        # Launch camera overview
+        self._setup_window_action(
+            action_name="show_cameras_window_action",
+            text="All Cameras",
+            slot=self.show_cameras_window,
         )
 
     def launch_queuemonitor(self):
@@ -173,6 +196,64 @@ class FireflyApplication(PyDMApplication):
             action.setIcon(icon)
             setattr(self, name, action)
             # action.triggered.connect(slot)
+
+    def _prepare_device_windows(self, device_label: str, attr_name: str):
+        """Generic routine to be called for individual classes of devices.
+
+        Sets up window actions, windows and window slots for each
+        instance of the this device class (specified by *device_label*).
+        
+        """
+        try:
+            devices = sorted(registry.findall(label=device_label), key=lambda x: x.name)
+        except ComponentNotFound:
+            log.warning(
+                f"No {device_label} found, menu will be empty."
+            )
+            devices = []
+        # Create menu actions for each device
+        actions = []
+        setattr(self, f"{attr_name}_actions", actions)
+        window_slots = []
+        setattr(self, f"{attr_name}_window_slots", window_slots)
+        setattr(self, f"{attr_name}_windows", {})
+        for device in devices:
+            action = QtWidgets.QAction(self)
+            action.setObjectName(f"actionShow_{attr_name}_{device.name}")
+            action.setText(device.name)
+            actions.append(action)
+            # Create a slot for opening the motor window
+            slot = getattr(self, f"show_{attr_name}_window")
+            slot = partial(slot, device=device)
+            action.triggered.connect(slot)
+            window_slots.append(slot)            
+            
+    def prepare_area_detector_windows(self):
+        """Prepare the support for opening motor windows."""
+        self._prepare_device_windows(device_label="area_detectors", attr_name="area_detector")
+
+    def prepare_camera_windows(self):
+        self._prepare_device_windows(device_label="cameras", attr_name="camera")
+        # try:
+        #     cameras = sorted(registry.findall(label="cameras"), key=lambda x: x.name)
+        # except ComponentNotFound:
+        #     log.warning(
+        #         "No cameras found, [Detectors] -> [Cameras] menu will be empty."
+        #     )
+        #     cameras = []
+        # # Create menu actions for each camera
+        # self.camera_actions = []
+        # self.camera_window_slots = []
+        # self.camera_windows = {}
+        # for camera in cameras:
+        #     action = QtWidgets.QAction(self)
+        #     action.setObjectName(f"actionShow_Camera_{camera.name}")
+        #     action.setText(camera.name)
+        #     self.camera_actions.append(action)
+        #     # Create a slot for opening the motor window
+        #     slot = partial(self.show_camera_window, device=camera)
+        #     action.triggered.connect(slot)
+        #     self.camera_window_slots.append(slot)
 
     def prepare_motor_windows(self):
         """Prepare the support for opening motor windows."""
@@ -246,7 +327,6 @@ class FireflyApplication(PyDMApplication):
         window.actionShow_Sample_Viewer.triggered.connect(
             self.show_sample_viewer_window
         )
-        window.actionShow_Cameras.triggered.connect(self.show_cameras_window)
 
     def show_window(self, WindowClass, ui_file, name=None, macros={}):
         # Come up with the default key for saving in the windows dictionary
@@ -295,13 +375,39 @@ class FireflyApplication(PyDMApplication):
             FireflyMainWindow,
             ui_dir / "motor.py",
             name=f"FireflyMainWindow_motor_{motor_name}",
-            macros={"PREFIX": motor.prefix},
+            macros={"MOTOR": motor.name},
+        )
+
+    def show_camera_window(self, *args, device):
+        """Instantiate a new main window for this application."""
+        device_name = device.name.replace(" ", "_")
+        self.show_window(
+            FireflyMainWindow,
+            ui_dir / "area_detector_viewer.py",
+            name=f"FireflyMainWindow_camera_{device_name}",
+            macros={"AD": device.name},
+        )
+
+    def show_area_detector_window(self, *args, device):
+        """Instantiate a new main window for this application."""
+        device_name = device.name.replace(" ", "_")
+        self.show_window(
+            FireflyMainWindow,
+            ui_dir / "area_detector_viewer.py",
+            name=f"FireflyMainWindow_area_detector_{device_name}",
+            macros={"AD": device.name},
         )
 
     def show_status_window(self, stylesheet_path=None):
         """Instantiate a new main window for this application."""
         self.show_window(
             FireflyMainWindow, ui_dir / "status.py", name="beamline_status"
+        )
+
+    @QtCore.Slot()
+    def show_run_browser(self):
+        self.show_window(
+            PlanMainWindow, ui_dir / "run_browser.py", name="run_browser"
         )
 
     make_main_window = show_status_window

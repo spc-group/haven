@@ -23,7 +23,7 @@ channels:
 
 dependencies:
   # --- Python core packages
-  - python=3.10
+  - python=3.9  # Until this is fixed in pydm: https://github.com/slaclab/pydm/issues/951
   - ipython
   - ipykernel
   - jupyter
@@ -31,6 +31,7 @@ dependencies:
   - notebook
   - pip
   - psutil
+  - numba>=0.56  # Ensures 0.53 (broken) isn't installed
 
   # --- testing and quality assurance
   - black
@@ -48,7 +49,7 @@ dependencies:
   # Database management
   - pymongo
   - databroker-pack
-  - databroker =1.2
+  - databroker =1.2.5
 
   # --- Qt
   - pyqt >=5.12
@@ -69,9 +70,13 @@ dependencies:
   - scikit-image
   - xlrd
 
+  # XES analysis packages
+  - scikit-learn
+  - kneed
+
   # --- Bluesky framework packages
   - adl2pydm
-  - apstools
+  - apstools >=1.6.16
   - area-detector-handlers
   - bluesky-queueserver
   - bluesky-queueserver-api
@@ -81,6 +86,7 @@ dependencies:
   # - hklpy >=1.0.3  # --- linux-64
   - ophyd >=1.6.3
   - pydm >=1.18.0
+  - p4p
   - tiled-server
   - tiled-client
   # https://github.com/pydata/xarray/issues/6818
@@ -125,6 +131,7 @@ dependencies:
     - pytest-mongodb
     - StrEnum
     - xraydb >=4.5.0
+    - pytest-timeout  # Get rid of this if tests are not hanging
     # - https://github.com/BCDA-APS/adl2pydm/archive/main.zip
     # --- optional Bluesky framework packages for evaluation
     # - bluesky-webclient is NOT Python software, don't install it this way

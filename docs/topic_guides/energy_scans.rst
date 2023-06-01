@@ -29,11 +29,11 @@ should already be imported for you in the ipython environment.
 Absolute vs. Relative Scans
 ---------------------------
 
-In some cases, it is more intuitive to describe the energy ranges
-relative to some absorption edge (*E0*). The energy of the edge can be
-given directly to :py:func:`~haven.plans.xafs_scan.xafs_scan` as *E0*,
-then all energy points will be interpreted as relative to this
-energy. The same scan from above would be:
+In many cases, it is more intuitive to describe the energy ranges
+relative to some absorption edge (*E0*). If this *E0* energy is given
+directly to :py:func:`~haven.plans.xafs_scan.xafs_scan` via the *E0*
+argument, then all energy points will be interpreted as relative to
+this energy. The same scan from above would be:
 
 .. code:: python
 
@@ -164,3 +164,80 @@ exposure, energy, ...)``, and convert them to
 
 Changing Detectors or Positioners
 =================================
+
+For more sophisticated scans, it may be necessary to include
+additional detectors. By default,
+:py:func:`~haven.plans.xafs_scan.xafs_scan()` and
+:py:func:`~haven.plans.energy_scan.energy_scan()` will measure the ion
+chambers as detectors (those returned by
+``haven.registry.findall("ion_chambers")``). Both plans accept the
+*detectors* argument, which can be any of the following:
+
+1. A list of devices.
+2. A list of names/labels of devices.
+3. A single name/label for devices.
+
+Options 1 and 2 can be intermingled. For example:
+
+.. code-block:: python
+
+   eiger = haven.registry.find("eiger")
+   detectors = [eiger, "ion_chambers"]
+   plan = haven.xafs_scan(..., detectors=detectors)
+
+Supplying the *detectors* argument will ensure that the detectors are
+captured in the data streams, but it may still be necessary to
+**specify positioners for setting the exposure time**. By default,
+only the ion chambers will receive have their exposure time set. This
+is especially important when using the *k_weight* parameter to
+:py:func:`~haven.plans.xafs_scan.xafs_scan()` or the *exposure*
+parameter to :py:func:`~haven.plans.energy_scan.energy_scan()`.
+
+Both plans accept a *time_positioners* argument for this purpose,
+which should be a list of entries similar to those accepted for
+*detectors* described above but with positioners for the various
+detectors. Extending the above example:
+
+.. code-block:: python
+
+   eiger = haven.registry.find("eiger")
+   detectors = [eiger, "ion_chambers"]
+   time_positioners = [eiger.cam.acquire_time, "ion_chambers.exposure_time"]
+   plan = haven.xafs_scan(..., detectors=detectors, time_positioners=time_positioners)
+
+The above example actually uses all of the ion chambers' exposure
+times as separate positioners. This will work but produces extra
+messages and may be confusing. Since counting is handled by the
+scaler, any of the ion chambers on the same scaler can be used as a
+time positioner:
+
+.. code-block:: python
+   
+   ion_chambers = haven.registry.findall("ion_chambers")
+   time_positioners = [eiger.cam.acquire_time, ion_chambers[0].exposure_time]
+   plan = haven.xafs_scan(..., time_positioners=time_positioners)
+
+Lastly, we may want to **specify a different energy position** for
+example when using a secondary monocrhomator. By default the "energy"
+positioner is used, which is a pseudo-positioner that controls both
+the monochromator and the insertion device (if present). This
+positioner temporariy **disables the EPICS-based pseudo-motor** in use
+at sector 25-ID since the done status is not properly reported for the
+insertion device when using the EPICS implementation.
+
+The *energy_positioners* argument accepts similar types as the
+previous options just discussed, and each one will be set to the
+energy in electron-volts at each point. For example, to scan only the
+monochromator energy we could do:
+
+.. code-block:: python
+
+   mono_energy = haven.registry.find("monochromator.energy")
+   plan = haven.energy_scan(..., energy_positioners=[mono_energy])
+
+or equivalently:
+
+.. code-block:: python
+
+   plan = haven.energy_scan(..., energy_positioners="monochromator.energy")
+

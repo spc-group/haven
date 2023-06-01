@@ -17,8 +17,8 @@ def test_stage_init():
     with pytest.raises(exceptions.ComponentNotFound):
         registry.findall(label="stages")
     registry.register(stage_)
-    assert len(registry.findall(label="motors")) == 2
-    assert len(registry.findall(label="stages")) == 1
+    assert len(list(registry.findall(label="motors"))) == 2
+    assert len(list(registry.findall(label="stages"))) == 1
 
 
 def test_load_aerotech_stage():

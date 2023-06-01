@@ -1,28 +1,27 @@
+from bluesky import suspenders
 from ophyd import FormattedComponent as FCpt, EpicsSignal
-from apstools.devices.shutters import ApsPssShutterWithStatus
+from apstools.devices.shutters import ApsPssShutterWithStatus as Shutter
 
 from .._iconfig import load_config
 from .instrument_registry import registry
 
 
-class Shutter(ApsPssShutterWithStatus):
-    open_signal = FCpt(EpicsSignal, "{self.open_pv}")
-    close_signal = FCpt(EpicsSignal, "{self.close_pv}")
-
-    def __init__(self, open_pv, close_pv, state_pv, *args, **kwargs):
-        self.open_pv = open_pv
-        self.close_pv = close_pv
-        self.state_pv = state_pv
-        super().__init__(prefix=self.open_pv, state_pv=self.state_pv, *args, **kwargs)
-
-
-def load_shutters(config=load_config()):
+def load_shutters(config=None):
+    if config is None:
+        config = load_config()
+    prefix = config["shutter"]["prefix"]
     for name, d in config["shutter"].items():
+        if name == "prefix":
+            continue
+        # Calculate suitable PV values
+        hutch = d["hutch"]
+        acronym = "FES" if hutch == "A" else f"S{hutch}S"
         shutter = Shutter(
-            open_pv=d["open_pv"],
-            close_pv=d["close_pv"],
-            state_pv=d["status_pv"],
-            name=f"Shutter {name}",
+            prefix=f"{prefix}:{acronym}",
+            open_pv = f"{prefix}:{acronym}_OPEN_EPICS.VAL",
+            close_pv=f"{prefix}:{acronym}_CLOSE_EPICS.VAL",
+            state_pv=f"{prefix}:{hutch}_BEAM_PRESENT",
+            name=name,
             labels={"shutters"},
         )
         registry.register(shutter)

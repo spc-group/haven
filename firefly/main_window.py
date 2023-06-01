@@ -21,6 +21,12 @@ class FireflyMainWindow(PyDMMainWindow):
         self.customize_ui()
         self.export_actions()
 
+    def open(self, *args, **kwargs):
+        widget = super().open(*args, **kwargs)
+        # Connect signals for showing message in the window's status bar
+        widget.status_message_changed.connect(self.show_status)
+        return widget
+
     def closeEvent(self, event):
         super().closeEvent(event)
         # Delete the window so it's recreated next time it's opened
@@ -116,17 +122,36 @@ class FireflyMainWindow(PyDMMainWindow):
             text="Ion Chambers",
             menu=self.ui.menuDetectors,
         )
-        self.add_menu_action(
-            action_name="actionShow_Cameras", text="Cameras", menu=self.ui.menuDetectors
-        )
+        # Cameras sub-menu
+        self.ui.menuCameras = QtWidgets.QMenu(self.ui.menubar)
+        self.ui.menuCameras.setObjectName("menuCameras")
+        self.ui.menuCameras.setTitle("Cameras")
+        self.ui.menuDetectors.addAction(self.ui.menuCameras.menuAction())
         # Add actions to the motors sub-menus
         for action in app.motor_actions:
             self.ui.menuMotors.addAction(action)
+        # Add actions to the cameras sub-menus
+        self.ui.menuCameras.addAction(app.show_cameras_window_action)
+        self.ui.menuCameras.addSeparator()
+        for action in app.camera_actions:
+            self.ui.menuCameras.addAction(action)
+        # Add area detectors to detectors menu
+        if len(app.area_detector_actions) > 0:
+            self.ui.menuDetectors.addSeparator()
+        for action in app.area_detector_actions:
+            self.ui.menuDetectors.addAction(action)
         # Add other menu actions
         self.ui.menuView.addAction(app.show_status_window_action)
         self.ui.menuView.addAction(app.launch_queuemonitor_action)
         self.ui.menuSetup.addAction(app.show_bss_window_action)
         self.ui.menuPositioners.addAction(app.show_energy_window_action)
+        self.ui.menuScans.addSeparator()
+        self.ui.menuScans.addAction(app.show_run_browser_action)
+
+    def show_status(self, message, timeout=0):
+        """Show a message in the status bar."""
+        bar = self.statusBar()
+        bar.showMessage(message, timeout)
 
     def update_window_title(self):
         if self.showing_file_path_in_title_bar:

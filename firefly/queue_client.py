@@ -8,7 +8,7 @@ from qtpy.QtCore import QThread, QObject, Signal, Slot, QTimer
 from bluesky_queueserver_api.zmq import REManagerAPI
 from bluesky_queueserver_api import BPlan, comm_base
 
-from haven import RunEngine
+from haven import load_config
 
 
 log = logging.getLogger()
@@ -60,6 +60,11 @@ class QueueClient(QObject):
     def update(self):
         now = time.time()
         if now >= self.last_update + self.timeout:
+            if not load_config()['beamline']['is_connected']:
+                log.warning("Beamline not connected, skipping queue client update.")
+                self.timeout = 60  # Just update every 1 minute
+                self.last_update = now
+                return
             log.debug("Updating queue client.")
             try:
                 self.check_queue_length()

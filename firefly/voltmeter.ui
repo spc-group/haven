@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>579</width>
+    <width>486</width>
     <height>76</height>
    </rect>
   </property>
@@ -59,13 +59,13 @@
         <string/>
        </property>
        <property name="text">
-        <string>[Ion Chamber Name]</string>
+        <string>Ipreslit</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
        </property>
        <property name="channel" stdset="0">
-        <string>${PREFIX}.NM${CHANNEL_NUMBER}</string>
+        <string>oph://${IC}_description</string>
        </property>
        <property name="displayFormat" stdset="0">
         <enum>PyDMLabel::String</enum>
@@ -92,7 +92,7 @@
         <bool>true</bool>
        </property>
        <property name="channel" stdset="0">
-        <string>${PREFIX}_calc${CHANNEL_NUMBER}.VAL</string>
+        <string>oph://${IC}_volts</string>
        </property>
        <property name="showValue" stdset="0">
         <bool>false</bool>
@@ -176,7 +176,7 @@
             <bool>false</bool>
            </property>
            <property name="channel" stdset="0">
-            <string>${PREFIX}_calc${CHANNEL_NUMBER}.VAL</string>
+            <string>oph://${IC}_volts</string>
            </property>
           </widget>
          </item>
@@ -204,13 +204,16 @@
        </item>
        <item>
         <widget class="QLabel" name="ion_chamber_current">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
          <property name="font">
           <font>
            <pointsize>9</pointsize>
           </font>
          </property>
          <property name="text">
-          <string>(0.5 µA)</string>
+          <string>(?.?? µA)</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignHCenter|Qt::AlignTop</set>
@@ -324,7 +327,7 @@
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
            <property name="channel" stdset="0">
-            <string>${PREAMP_PREFIX}:sens_num.VAL</string>
+            <string>oph://${IC}_sensitivity_sens_value_readback</string>
            </property>
           </widget>
          </item>
@@ -337,7 +340,7 @@
             <string>mA/V</string>
            </property>
            <property name="channel" stdset="0">
-            <string>${PREAMP_PREFIX}:sens_unit.VAL</string>
+            <string>oph://${IC}_sensitivity_sens_unit_readback</string>
            </property>
           </widget>
          </item>

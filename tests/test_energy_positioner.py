@@ -8,9 +8,10 @@ from haven.instrument.energy_positioner import EnergyPositioner
 def test_pseudo_to_real_positioner(ioc_mono, ioc_undulator):
     positioner = EnergyPositioner(
         name="energy",
-        mono_pv="mono_ioc:Energy",
-        id_prefix="id_ioc",
-        id_offset_pv="mono_ioc:ID_offset",
+        mono_pv=ioc_mono.pvs["energy"],
+        id_prefix=ioc_undulator.prefix.strip(":"),
+        id_tracking_pv=ioc_mono.pvs["id_tracking"],
+        id_offset_pv=ioc_mono.pvs["id_offset"],
     )
     positioner.mono_energy.wait_for_connection()
     positioner.id_energy.wait_for_connection()
@@ -30,15 +31,16 @@ def test_pseudo_to_real_positioner(ioc_mono, ioc_undulator):
 def test_real_to_pseudo_positioner(ioc_mono, ioc_undulator):
     positioner = EnergyPositioner(
         name="energy",
-        mono_pv="mono_ioc:Energy",
-        id_prefix="id_ioc",
-        id_offset_pv="mono_ioc:ID_offset",
+        mono_pv=ioc_mono.pvs["energy"],
+        id_prefix=ioc_undulator.prefix.strip(":"),
+        id_tracking_pv=ioc_mono.pvs["id_tracking"],
+        id_offset_pv=ioc_mono.pvs["id_offset"],
     )
     positioner.wait_for_connection(timeout=10.0)
     # Move the mono energy positioner
-    epics.caput("mono_ioc:Energy", 5000.0)
+    epics.caput(ioc_mono.pvs["energy"], 5000.0)
     time.sleep(0.1)  # Caproto breaks pseudopositioner status
-    assert epics.caget("mono_ioc:Energy.VAL") == 5000.0
+    assert epics.caget(ioc_mono.pvs["energy"], use_monitor=False) == 5000.0
     # assert epics.caget("mono_ioc:Energy.RBV") == 5000.0
     # Check that the pseudo single is updated
     assert positioner.energy.get(use_monitor=False).readback == 5000.0

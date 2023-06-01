@@ -48,8 +48,13 @@ class SetAllPositioner(PVPositionerPC):
 class SensitivityLevelPositioner(PseudoPositioner):
     values = [1, 2, 5, 10, 20, 50, 100, 200, 500]
     units = ["pA/V", "nA/V", "µA/V", "mA/V"]
+    offset_difference = -3  # How many levels higher should the offset be
 
-    sens_level = Cpt(PseudoSingle, limits=(0, 27))
+    sens_level = Cpt(
+        PseudoSingle,
+        limits=(0, 27),
+        labels={"ion_chamber_sensitivities", "ion_chamber_gains"},
+    )
 
     # Sensitivity settings
     sens_unit = Cpt(
@@ -57,6 +62,12 @@ class SensitivityLevelPositioner(PseudoPositioner):
     )
     sens_value = Cpt(
         SensitivityPositioner, ":sens_num", kind=Kind.config, settle_time=0.1
+    )
+    offset_unit = Cpt(
+        SensitivityPositioner, ":offset_unit", kind=Kind.config, settle_time=0.1
+    )
+    offset_value = Cpt(
+        SensitivityPositioner, ":offset_num", kind=Kind.config, settle_time=0.1
     )
     set_all = Cpt(
         SetAllPositioner,
@@ -66,17 +77,25 @@ class SensitivityLevelPositioner(PseudoPositioner):
         limits=(0, 1),
     )
 
+    def _level_to_num(self, level):
+        return level % len(self.values)
+
+    def _level_to_unit(self, level):
+        return int(level / len(self.values))
+
     @pseudo_position_argument
     def forward(self, target_gain_level):
         "Given a target energy, transform to the desired target gain level."
         new_level = target_gain_level.sens_level
-        new_value = new_level % len(self.values)
-        new_unit = int(new_level / len(self.values))
-        return self.RealPosition(
-            sens_value=new_value,
-            sens_unit=new_unit,
+        new_offset = max(new_level + self.offset_difference, 0)
+        real_position = self.RealPosition(
+            sens_value=self._level_to_num(new_level),
+            sens_unit=self._level_to_unit(new_level),
+            offset_value=self._level_to_num(new_offset),
+            offset_unit=self._level_to_unit(new_offset),
             set_all=1,
         )
+        return real_position
 
     @real_position_argument
     def inverse(self, sensitivity):
@@ -130,15 +149,35 @@ class IonChamber(ScalerTriggered, Device):
     count: OphydObject = FCpt(
         EpicsSignal, "{scaler_prefix}.CNT", trigger_value=1, kind=Kind.omitted
     )
-    raw_counts: OphydObject = FCpt(ScalerSignalRO, "{prefix}.S{ch_num}", kind="hinted")
+    description: OphydObject = FCpt(EpicsSignalRO, "{prefix}.NM{ch_num}", kind=Kind.config)
+    raw_counts: OphydObject = FCpt(ScalerSignalRO, "{prefix}.S{ch_num}", kind=Kind.normal)
+    offset: OphydObject = FCpt(
+        ScalerSignalRO, "{prefix}_{offset_suffix}", kind=Kind.config
+    )
+    net_counts: OphydObject = FCpt(
+        ScalerSignalRO, "{prefix}_netA.{ch_char}", kind=Kind.hinted
+    )
     volts: OphydObject = FCpt(
-        ScalerSignalRO, "{prefix}_calc{ch_num}.VAL", kind="hinted"
+        ScalerSignalRO, "{prefix}_calc{ch_num}.VAL", kind=Kind.normal
     )
-    exposure_time: OphydObject = FCpt(EpicsSignal, "{scaler_prefix}.TP", kind="normal")
+    exposure_time: OphydObject = FCpt(EpicsSignal, "{scaler_prefix}.TP", kind=Kind.normal)
     sensitivity: OphydObject = FCpt(
-        SensitivityLevelPositioner, "{preamp_prefix}", kind="config"
+        SensitivityLevelPositioner, "{preamp_prefix}", kind=Kind.config
     )
-    auto_count: OphydObject = FCpt(EpicsSignal, "{scaler_prefix}.CONT", kind="config")
+    auto_count: OphydObject = FCpt(EpicsSignal, "{scaler_prefix}.CONT", kind=Kind.omitted)
+    record_dark_current: OphydObject = FCpt(
+        EpicsSignal, "{scaler_prefix}_offset_start.PROC", kind=Kind.omitted
+    )
+    record_dark_time: OphydObject = FCpt(
+        EpicsSignal, "{scaler_prefix}_offset_time.VAL", kind=Kind.config
+    )
+
+    _default_read_attrs = [
+        "raw_counts",
+        "volts",
+        "exposure_time",
+        "net_counts",
+    ]
 
     def __init__(
         self,
@@ -154,7 +193,7 @@ class IonChamber(ScalerTriggered, Device):
         if ch_num < 1:
             raise ValueError(f"Scaler channels must be greater than 0: {ch_num}")
         self.ch_num = ch_num
-        self.ch_char = chr(64 + ch_num)
+        self.ch_char = self.num_to_char(ch_num)
         # Determine which prefix to use for the scaler
         if scaler_prefix is not None:
             self.scaler_prefix = scaler_prefix
@@ -164,10 +203,18 @@ class IonChamber(ScalerTriggered, Device):
         if preamp_prefix is None:
             preamp_prefix = prefix
         self.preamp_prefix = preamp_prefix
+        # Determine the offset PV since it follows weird numbering conventions
+        calc_num = int((self.ch_num - 1) / 4)
+        calc_char = self.num_to_char(((self.ch_num - 1) % 4) + 1)
+        self.offset_suffix = f"offset{calc_num}.{calc_char}"
         # Initialize all the other Device stuff
         super().__init__(prefix=prefix, name=name, *args, **kwargs)
         # Set signal values to stage
         self.stage_sigs[self.auto_count] = 0
+
+    def num_to_char(self, num):
+        char = chr(64 + num)
+        return char
 
     def change_sensitivity(self, step: int) -> status.StatusBase:
         """Change the gain on the pre-amp by the given number of steps.
@@ -219,19 +266,6 @@ class IonChamber(ScalerTriggered, Device):
         return self.change_sensitivity(1)
 
 
-@registry.register
-class IonChamberWithOffset(IonChamber):
-    offset = FCpt(ScalerSignalRO, "{prefix}_offset0.{ch_char}", kind=Kind.config)
-    net_counts = FCpt(ScalerSignalRO, "{prefix}_netA.{ch_char}", kind=Kind.hinted)
-
-    _default_read_attrs = [
-        "raw_counts",
-        "volts",
-        "exposure_time",
-        "net_counts",
-    ]
-
-
 def load_ion_chambers(config=None):
     # Load IOC prefixes from the config file
     if config is None:
@@ -240,17 +274,21 @@ def load_ion_chambers(config=None):
     scaler_record = config["ion_chamber"]["scaler"]["record"]
     scaler_pv_prefix = f"{vme_ioc}:{scaler_record}"
     preamp_ioc = config["ion_chamber"]["preamp"]["ioc"]
+    ion_chambers = []
     # Loop through the configuration sections and create the ion chambers
     for ch_num in config["ion_chamber"]["scaler"]["channels"]:
         # Determine ion_chamber configuration
         preamp_prefix = f"{preamp_ioc}:SR{ch_num-1:02}"
         desc_pv = f"{scaler_pv_prefix}.NM{ch_num}"
         # Only use this ion chamber if it has a name
-        name = epics.caget(desc_pv)
+        name = epics.caget(desc_pv, as_string=True)
         if name == "":
+            log.info(f"Skipping unnamed ion chamber: {desc_pv}")
             continue
+        if name is None:
+            name = "???"
         # Create the ion chamber
-        ic = IonChamberWithOffset(
+        ic = IonChamber(
             prefix=scaler_pv_prefix,
             ch_num=ch_num,
             name=name,
@@ -259,3 +297,5 @@ def load_ion_chambers(config=None):
         )
         registry.register(ic)
         log.info(f"Created ion chamber: {ic.name} ({ic.prefix}, ch {ic.ch_num})")
+        ion_chambers.append(ic)
+    return ion_chambers

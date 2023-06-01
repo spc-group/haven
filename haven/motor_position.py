@@ -1,6 +1,7 @@
 from typing import Optional, Sequence
 import logging
 
+import pymongo
 from pydantic import BaseModel
 import intake
 from bson.objectid import ObjectId
@@ -44,7 +45,6 @@ class MotorPosition(BaseModel):
             "motors": [m.as_dict() for m in self.motors],
             "savetime": self.savetime,
         }
-        print(payload)
         item_id = collection.insert_one(payload).inserted_id
         return item_id
 
@@ -113,7 +113,7 @@ def save_motor_position(*motors, name: str, collection=None):
     if collection is None:
         collection = default_collection()
     # Resolve device names or labels
-    motors = [registry.find(name=m) for m in motors]
+    motors = registry.findall(motors)
     # Prepare the motor positions
     motor_axes = []
     for m in motors:
@@ -139,7 +139,10 @@ def print_motor_position(position):
     if position.uid is not None:
         metadata.append(f'uid="{position.uid}"')
     if position.savetime is not None:
-        ts_str = f"timestamp={datetime.fromtimestamp(position.savetime)}"
+        timestamp = datetime.fromtimestamp(position.savetime).strftime(
+            "%Y-%m-%d %H:%M:%S"
+        )
+        ts_str = f"timestamp={timestamp}"
         metadata.append(ts_str)
     if len(metadata) > 0:
         metadata_str = f" ({', '.join(metadata)})"
@@ -202,7 +205,8 @@ def get_motor_position(
     Returns
     =======
     position
-      The motor position with data retrieved from the database.
+      The most recent motor position with data retrieved from the
+      database.
 
     """
     # Check that at least one of the parameters is given
@@ -220,7 +224,7 @@ def get_motor_position(
     query_params = {"_id": _id, "name": name}
     # Filter out query parameters that are ``None``
     query_params = {k: v for k, v in query_params.items() if v is not None}
-    result = collection.find_one(query_params)
+    result = collection.find_one(query_params, sort=[("savetime", pymongo.DESCENDING)])
     # Feedback for if no matching motor positions are in the database
     if result is None:
         raise exceptions.DocumentNotFound(

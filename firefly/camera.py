@@ -69,16 +69,6 @@ class CameraDisplay(display.FireflyDisplay):
 
     def customize_ui(self):
         self.imageJ_button.clicked.connect(self.launch_imageJ)
-        self.caqtdm_button.clicked.connect(self.launch_caqtdm)
-
-    def launch_caqtdm(self):
-        # Determine for which IOC to launch caQtDM panels
-        prefix = self.macros()["PREFIX"]
-        prefix = prefix.strip(":")  # Remove trailing ':'s
-        cmd = f"start_{prefix}_caqtdm"
-        # Launch caQtDM for the given IOC
-        log.info(f"Launching caQtDM: {cmd}")
-        self.caqtdm_process = subprocess.Popen(cmd)
 
     def launch_imageJ(self):
         # Set the imageJ properties file

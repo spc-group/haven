@@ -1,10 +1,11 @@
 from enum import IntEnum
 from apstools.devices import CamMixin_V34, SingleTrigger_V34
 from ophyd import (
-    ADComponent,
-    DetectorBase,
+    ADComponent as ADCpt,
+    DetectorBase as OphydDetectorBase,
     SimDetectorCam,
     Lambda750kCam,
+    EigerDetectorCam,
     SingleTrigger,
     Kind,
 )
@@ -16,15 +17,22 @@ from ophyd.areadetector.plugins import (
     ImagePlugin_V31,
     PvaPlugin_V34,
     PvaPlugin_V31,
+    TIFFPlugin_V34,
     TIFFPlugin_V31,
+    ROIPlugin_V34,
     ROIPlugin_V31,
-    StatsPlugin_V31,
+    StatsPlugin_V31 as OphydStatsPlugin_V31,
+    StatsPlugin_V34 as OphydStatsPlugin_V34,
+    OverlayPlugin,
 )
 
 
 from .._iconfig import load_config
 from .instrument_registry import registry
 from .. import exceptions
+
+
+__all__ = ["Eiger500K", "Lambda250K", "SimDetector"]
 
 
 class SimDetectorCam_V34(CamMixin_V34, SimDetectorCam):
@@ -72,26 +80,18 @@ class MyHDF5Plugin(FileStoreHDF5IterativeWrite, HDF5Plugin_V34):
         super().stage()
 
 
-class SimDetector(SingleTrigger_V34, DetectorBase):
-    """
-    ADSimDetector
-    SingleTrigger:
-    * stop any current acquisition
-    * sets image_mode to 'Multiple'
-    """
+class DetectorBase(OphydDetectorBase):
 
-    cam = ADComponent(SimDetectorCam_V34, "cam1:")
-    image = ADComponent(ImagePlugin_V34, "image1:")
-    pva = ADComponent(PvaPlugin_V34, "Pva1:")
-    hdf1 = ADComponent(
-        type("HDF5Plugin", (StageCapture, HDF5Plugin_V34), {}),
-        "HDF1:",
-        # write_path_template="/tmp/",
-        # read_path_template=READ_PATH_TEMPLATE,
-    )
+    def __init__(self, *args, description=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if description is None:
+            description = self.name
+        self.description = description
+    
+    overlays = ADCpt(OverlayPlugin, "Over1:")
 
 
-class StatsPlugin(StatsPlugin_V31):
+class StatsMixin():
     _default_read_attrs = [
         "max_value",
         "min_value",
@@ -106,6 +106,42 @@ class StatsPlugin(StatsPlugin_V31):
     ]
 
 
+class StatsPlugin_V31(StatsMixin, OphydStatsPlugin_V31):
+    ...
+
+
+class StatsPlugin_V34(StatsMixin, OphydStatsPlugin_V34):
+    ...
+
+
+class SimDetector(SingleTrigger_V34, DetectorBase):
+    """
+    ADSimDetector
+    SingleTrigger:
+    * stop any current acquisition
+    * sets image_mode to 'Multiple'
+    """
+
+    cam = ADCpt(SimDetectorCam_V34, "cam1:")
+    image = ADCpt(ImagePlugin_V34, "image1:")
+    pva = ADCpt(PvaPlugin_V34, "Pva1:")
+    hdf1 = ADCpt(
+        type("HDF5Plugin", (StageCapture, HDF5Plugin_V34), {}),
+        "HDF1:",
+        # write_path_template="/tmp/",
+        # read_path_template=READ_PATH_TEMPLATE,
+    )
+    roi1 = ADCpt(ROIPlugin_V34, "ROI1:", kind=Kind.config)
+    roi2 = ADCpt(ROIPlugin_V34, "ROI2:", kind=Kind.config)
+    roi3 = ADCpt(ROIPlugin_V34, "ROI3:", kind=Kind.config)
+    roi4 = ADCpt(ROIPlugin_V34, "ROI4:", kind=Kind.config)
+    stats1 = ADCpt(StatsPlugin_V34, "Stats1:", kind=Kind.normal)
+    stats2 = ADCpt(StatsPlugin_V34, "Stats2:", kind=Kind.normal)
+    stats3 = ADCpt(StatsPlugin_V34, "Stats3:", kind=Kind.normal)
+    stats4 = ADCpt(StatsPlugin_V34, "Stats4:", kind=Kind.normal)
+    stats5 = ADCpt(StatsPlugin_V34, "Stats5:", kind=Kind.normal)
+
+
 class TIFFPlugin(StageCapture, TIFFPlugin_V31):
     _default_read_attrs = ["full_file_name"]
 
@@ -118,21 +154,53 @@ class Lambda250K(SingleTrigger, DetectorBase):
     """
     A Lambda 250K area detector device.
     """
+    
+    cam = ADCpt(Lambda750kCam, "cam1:")
+    image = ADCpt(ImagePlugin_V31, "image1:")
+    pva = ADCpt(PvaPlugin_V31, "Pva1:")
+    tiff = ADCpt(TIFFPlugin, "TIFF1:", kind=Kind.normal)
+    hdf1 = ADCpt(HDF5Plugin, "HDF1:", kind=Kind.normal)
+    roi1 = ADCpt(ROIPlugin_V31, "ROI1:", kind=Kind.config)
+    roi2 = ADCpt(ROIPlugin_V31, "ROI2:", kind=Kind.config)
+    roi3 = ADCpt(ROIPlugin_V31, "ROI3:", kind=Kind.config)
+    roi4 = ADCpt(ROIPlugin_V31, "ROI4:", kind=Kind.config)
+    stats1 = ADCpt(StatsPlugin_V31, "Stats1:", kind=Kind.normal)
+    stats2 = ADCpt(StatsPlugin_V31, "Stats2:", kind=Kind.normal)
+    stats3 = ADCpt(StatsPlugin_V31, "Stats3:", kind=Kind.normal)
+    stats4 = ADCpt(StatsPlugin_V31, "Stats4:", kind=Kind.normal)
+    stats5 = ADCpt(StatsPlugin_V31, "Stats5:", kind=Kind.normal)
 
-    cam = ADComponent(Lambda750kCam, "cam1:")
-    image = ADComponent(ImagePlugin_V31, "image1:")
-    pva = ADComponent(PvaPlugin_V31, "Pva1:")
-    tiff = ADComponent(TIFFPlugin, "TIFF1:", kind=Kind.normal)
-    hdf1 = ADComponent(HDF5Plugin, "HDF1:", kind=Kind.normal)
-    roi1 = ADComponent(ROIPlugin_V31, "ROI1:", kind=Kind.config)
-    roi2 = ADComponent(ROIPlugin_V31, "ROI2:", kind=Kind.config)
-    roi3 = ADComponent(ROIPlugin_V31, "ROI3:", kind=Kind.config)
-    roi4 = ADComponent(ROIPlugin_V31, "ROI4:", kind=Kind.config)
-    stats1 = ADComponent(StatsPlugin, "Stats1:", kind=Kind.normal)
-    stats2 = ADComponent(StatsPlugin, "Stats2:", kind=Kind.normal)
-    stats3 = ADComponent(StatsPlugin, "Stats3:", kind=Kind.normal)
-    stats4 = ADComponent(StatsPlugin, "Stats4:", kind=Kind.normal)
-    stats5 = ADComponent(StatsPlugin, "Stats5:", kind=Kind.normal)
+
+    _default_read_attrs = [
+        "stats1",
+        "stats2",
+        "stats3",
+        "stats4",
+        "stats5",
+        "hdf1",
+        "tiff",
+    ]
+
+
+class Eiger500K(SingleTrigger, DetectorBase):
+    """
+    A Eiger S 500K area detector device.
+    """
+    
+    cam = ADCpt(EigerDetectorCam, "cam1:")
+    image = ADCpt(ImagePlugin_V34, "image1:")
+    pva = ADCpt(PvaPlugin_V34, "Pva1:")
+    tiff = ADCpt(TIFFPlugin, "TIFF1:", kind=Kind.normal)
+    hdf1 = ADCpt(HDF5Plugin, "HDF1:", kind=Kind.normal)
+    roi1 = ADCpt(ROIPlugin_V34, "ROI1:", kind=Kind.config)
+    roi2 = ADCpt(ROIPlugin_V34, "ROI2:", kind=Kind.config)
+    roi3 = ADCpt(ROIPlugin_V34, "ROI3:", kind=Kind.config)
+    roi4 = ADCpt(ROIPlugin_V34, "ROI4:", kind=Kind.config)
+    stats1 = ADCpt(StatsPlugin_V34, "Stats1:", kind=Kind.normal)
+    stats2 = ADCpt(StatsPlugin_V34, "Stats2:", kind=Kind.normal)
+    stats3 = ADCpt(StatsPlugin_V34, "Stats3:", kind=Kind.normal)
+    stats4 = ADCpt(StatsPlugin_V34, "Stats4:", kind=Kind.normal)
+    stats5 = ADCpt(StatsPlugin_V34, "Stats5:", kind=Kind.normal)
 
     _default_read_attrs = [
         "stats1",
