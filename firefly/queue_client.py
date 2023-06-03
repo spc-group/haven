@@ -14,6 +14,14 @@ from haven import load_config
 log = logging.getLogger()
 
 
+def queueserver_api():
+    config = load_config()["queueserver"]
+    ctrl_addr = f"tcp://{config['control_host']}:{config['control_port']}"
+    info_addr = f"tcp://{config['info_host']}:{config['info_port']}"
+    api = REManagerAPI(zmq_control_addr=ctrl_addr, zmq_info_addr=info_addr)
+    return api
+
+
 class QueueClientThread(QThread):
     timer: QTimer
 
@@ -34,16 +42,22 @@ class QueueClientThread(QThread):
 
 class QueueClient(QObject):
     api: REManagerAPI
-    _last_queue_length: Optional[int] = None
+    _last_queue_status: Optional[dict] = None
     last_update: float = -1
     timeout: float = 1
 
     # Signals responding to queue changes
-    state_changed = Signal()
+    status_changed = Signal(dict)
     length_changed = Signal(int)
+    environment_opened = Signal(bool)  # Opened (True) or closed (False)
+    environment_state_changed = Signal(str)  # New state
+    manager_state_changed = Signal(str)  # New state
+    re_state_changed = Signal(str)  # New state
 
     # Actions for changing the queue settings in menubars
     autoplay_action: QAction
+    open_environment_action: QAction
+    close_environment_action: QAction
 
     def __init__(self, *args, api, **kwargs):
         self.api = api
@@ -51,23 +65,46 @@ class QueueClient(QObject):
         self.setup_actions()
 
     def setup_actions(self):
-        self.autoplay_action = QAction()
+        actions = [
+            # Attr, object name, text, checkable
+            ('autoplay_action', 'queue_autoplay_action', "&Autoplay"),
+            ('open_environment_action', 'queue_open_environment_action', "&Open Environment"),
+        ]
+        for attr, obj_name, text in actions:
+            action = QAction()
+            action.setObjectName(obj_name)
+            action.setText(text)
+            setattr(self, attr, action)
+        # Customize some specific actions
         self.autoplay_action.setCheckable(True)
-        self.autoplay_action.setObjectName("queue_autoplay_action")
-        self.autoplay_action.setText("Autoplay queue")
         self.autoplay_action.setChecked(True)
+        self.open_environment_action.setCheckable(True)
+        # Connect actions to signal handlers
+        self.open_environment_action.triggered.connect(self.open_environment)
+
+    def open_environment(self):
+        to_open = self.open_environment_action.isChecked()
+        if to_open:
+            api_call = self.api.environment_open
+        else:
+            api_call = self.api.environment_close
+        result = api_call()
+        if result['success']:
+            self.environment_opened.emit(to_open)
+        else:
+            log.error(f"Failed to open/close environment: {result['msg']}")
 
     def update(self):
         now = time.time()
         if now >= self.last_update + self.timeout:
-            if not load_config()['beamline']['is_connected']:
+            if False and not load_config()['beamline']['is_connected']:
                 log.warning("Beamline not connected, skipping queue client update.")
                 self.timeout = 60  # Just update every 1 minute
                 self.last_update = now
                 return
             log.debug("Updating queue client.")
             try:
-                self.check_queue_length()
+                self.check_queue_status()
             except comm_base.RequestTimeoutError as e:
                 # If we can't reach the server, wait for a minute and retry
                 self.timeout = min(60, self.timeout * 2)
@@ -121,9 +158,22 @@ class QueueClient(QObject):
             raise RuntimeError(result)
 
     @Slot()
-    def check_queue_length(self):
-        queue = self.api.queue_get()
-        queue_length = len(queue["items"])
-        log.debug(f"Queue length updated: {queue_length}")
-        self.length_changed.emit(queue_length)
-        self._last_queue_length = queue_length
+    def check_queue_status(self):
+        new_status = self.api.status()
+        # Check individual components of the status if they've changed
+        signals_to_check = [
+            # (status key, signal to emit)
+            ('worker_environment_exists', self.environment_opened),
+            ('worker_environment_state', self.environment_state_changed),
+            ('manager_state', self.manager_state_changed),
+            ('re_state', self.re_state_changed),
+        ]
+        for key, signal in signals_to_check:
+            has_changed = (self._last_queue_status is None or
+                           new_status[key] != self._last_queue_status[key])
+            if has_changed:
+                signal.emit(new_status[key])
+        # check the whole status to see if it's changed
+        if new_status != self._last_queue_status:
+            self.status_changed.emit(new_status)
+            self._last_queue_status = new_status

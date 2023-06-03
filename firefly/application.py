@@ -23,7 +23,7 @@ from haven import HavenMotor, registry, load_config
 import haven
 from .main_window import FireflyMainWindow, PlanMainWindow
 from .ophyd_plugin import OphydPlugin
-from .queue_client import QueueClient, QueueClientThread
+from .queue_client import QueueClient, QueueClientThread, queueserver_api
 
 generator = type((x for x in []))
 
@@ -42,17 +42,6 @@ pg.setConfigOption("foreground", (0, 0, 0))
 
 class FireflyApplication(PyDMApplication):
     xafs_scan_window = None
-
-    # Actions for controlling the queueserver
-    start_queue_action: QAction
-    pause_runengine_action: QAction
-    pause_runengine_now_action: QAction
-    resume_runengine_action: QAction
-    stop_runengine_action: QAction
-    abort_runengine_action: QAction
-    halt_runengine_action: QAction
-    start_queue: QAction
-    queue_autoplay_action: QAction
 
     # Actions for showing window
     show_status_window_action: QtWidgets.QAction
@@ -78,6 +67,23 @@ class FireflyApplication(PyDMApplication):
 
     # Signals responding to queueserver changes
     queue_length_changed = Signal(int)
+    queue_status_changed = Signal(dict)
+    queue_environment_opened = Signal(bool)  # Opened or closed
+    queue_environment_state_changed = Signal(str)  # New state
+    queue_manager_state_changed = Signal(str)  # New state
+    queue_re_state_changed = Signal(str)  # New state
+
+    # Actions for controlling the queueserver
+    start_queue_action: QAction
+    pause_runengine_action: QAction
+    pause_runengine_now_action: QAction
+    resume_runengine_action: QAction
+    stop_runengine_action: QAction
+    abort_runengine_action: QAction
+    halt_runengine_action: QAction
+    start_queue: QAction
+    queue_autoplay_action: QAction
+    queue_open_environment_action: QAction
 
     def __init__(self, ui_file=None, use_main_window=False, *args, **kwargs):
         # Instantiate the parent class
@@ -189,10 +195,12 @@ class FireflyApplication(PyDMApplication):
             ("halt_runengine_action", "Halt", "fa5s.ban"),
             ("start_queue_action", "Start", "fa5s.play"),
         ]
+        self.queue_action_group = QtWidgets.QActionGroup(self)
         for name, text, icon_name in actions:
-            action = QtWidgets.QAction(self)
+            action = QtWidgets.QAction(self.queue_action_group)
             icon = qta.icon(icon_name)
             action.setText(text)
+            action.setCheckable(True)
             action.setIcon(icon)
             setattr(self, name, action)
             # action.triggered.connect(slot)
@@ -234,26 +242,6 @@ class FireflyApplication(PyDMApplication):
 
     def prepare_camera_windows(self):
         self._prepare_device_windows(device_label="cameras", attr_name="camera")
-        # try:
-        #     cameras = sorted(registry.findall(label="cameras"), key=lambda x: x.name)
-        # except ComponentNotFound:
-        #     log.warning(
-        #         "No cameras found, [Detectors] -> [Cameras] menu will be empty."
-        #     )
-        #     cameras = []
-        # # Create menu actions for each camera
-        # self.camera_actions = []
-        # self.camera_window_slots = []
-        # self.camera_windows = {}
-        # for camera in cameras:
-        #     action = QtWidgets.QAction(self)
-        #     action.setObjectName(f"actionShow_Camera_{camera.name}")
-        #     action.setText(camera.name)
-        #     self.camera_actions.append(action)
-        #     # Create a slot for opening the motor window
-        #     slot = partial(self.show_camera_window, device=camera)
-        #     action.triggered.connect(slot)
-        #     self.camera_window_slots.append(slot)
 
     def prepare_motor_windows(self):
         """Prepare the support for opening motor windows."""
@@ -281,10 +269,7 @@ class FireflyApplication(PyDMApplication):
 
     def prepare_queue_client(self, api=None):
         if api is None:
-            config = load_config()["queueserver"]
-            ctrl_addr = f"tcp://{config['control_host']}:{config['control_port']}"
-            info_addr = f"tcp://{config['info_host']}:{config['info_port']}"
-            api = REManagerAPI(zmq_control_addr=ctrl_addr, zmq_info_addr=info_addr)
+            api = queueserver_api()
         client = QueueClient(api=api)
         thread = QueueClientThread(client=client)
         client.moveToThread(thread)
@@ -299,13 +284,18 @@ class FireflyApplication(PyDMApplication):
         # Connect signals to slots for executing plans on queueserver
         self.queue_item_added.connect(client.add_queue_item)
         # Connect signals/slots for queueserver state changes
+        client.status_changed.connect(self.queue_status_changed)
         client.length_changed.connect(self.queue_length_changed)
+        client.environment_opened.connect(self.queue_environment_opened)
+        client.environment_state_changed.connect(self.queue_environment_state_changed)
+        client.manager_state_changed.connect(self.queue_manager_state_changed)
+        client.re_state_changed.connect(self.queue_re_state_changed)
         self.queue_autoplay_action = client.autoplay_action
+        self.queue_open_environment_action = client.open_environment_action
         # Start the thread
         thread.start()
         # Save references to the thread and runner
         self._queue_client = client
-        # assert not hasattr(self, "_queue_thread")
         self._queue_thread = thread
 
     def add_queue_item(self, item):
