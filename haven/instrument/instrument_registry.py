@@ -306,7 +306,6 @@ class InstrumentRegistry:
                 except TimeoutError:
                     msg = f"Could not connect to device {component.name} ({component.prefix})"
                     log.warning(msg)
-                    warnings.warn(msg)
                     return component
             # Register this component
             self.components.append(component)
