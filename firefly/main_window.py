@@ -13,6 +13,9 @@ from haven import load_config
 log = logging.getLogger(__name__)
 
 
+
+
+
 class FireflyMainWindow(PyDMMainWindow):
     hide_nav_bar: bool = True
 

@@ -158,7 +158,22 @@ class QueueClient(QObject):
             raise RuntimeError(result)
 
     @Slot()
-    def check_queue_status(self):
+    def check_queue_status(self, force: bool = False):
+        """Get an update queue status from queue server and notify slots.
+
+        Parameters
+        ==========
+        force
+          If false (default), the ``queue_status_changed`` signal will
+          be emitted only if the queue status has changed since last
+          check.
+
+        Emits
+        =====
+        self.check_queue_status
+          With the updated queue status.
+
+        """
         new_status = self.api.status()
         # Check individual components of the status if they've changed
         signals_to_check = [
@@ -168,12 +183,15 @@ class QueueClient(QObject):
             ('manager_state', self.manager_state_changed),
             ('re_state', self.re_state_changed),
         ]
+        if force:
+            print(f"Forcing queue server status update: {new_status}")
         for key, signal in signals_to_check:
             has_changed = (self._last_queue_status is None or
                            new_status[key] != self._last_queue_status[key])
-            if has_changed:
+            if has_changed or force:
                 signal.emit(new_status[key])
         # check the whole status to see if it's changed
-        if new_status != self._last_queue_status:
+        has_changed = new_status != self._last_queue_status
+        if has_changed or force:
             self.status_changed.emit(new_status)
             self._last_queue_status = new_status

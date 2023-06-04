@@ -84,6 +84,7 @@ class FireflyApplication(PyDMApplication):
     start_queue: QAction
     queue_autoplay_action: QAction
     queue_open_environment_action: QAction
+    check_queue_status_action: QAction
 
     def __init__(self, ui_file=None, use_main_window=False, *args, **kwargs):
         # Instantiate the parent class
@@ -185,7 +186,9 @@ class FireflyApplication(PyDMApplication):
 
     def setup_runengine_actions(self):
         """Create QActions for controlling the bluesky runengine."""
-        # Action for controlling the run engine
+        # Internal actions for interacting with the run engine
+        self.check_queue_status_action = QtWidgets.QAction(self)
+        # Navbar actions for controlling the run engine
         actions = [
             ("pause_runengine_action", "Pause", "fa5s.stopwatch"),
             ("pause_runengine_now_action", "Pause Now", "fa5s.pause"),
@@ -203,7 +206,6 @@ class FireflyApplication(PyDMApplication):
             action.setCheckable(True)
             action.setIcon(icon)
             setattr(self, name, action)
-            # action.triggered.connect(slot)
 
     def _prepare_device_windows(self, device_label: str, attr_name: str):
         """Generic routine to be called for individual classes of devices.
@@ -281,16 +283,25 @@ class FireflyApplication(PyDMApplication):
             partial(client.request_pause, defer=False)
         )
         self.start_queue_action.triggered.connect(client.start_queue)
+        self.check_queue_status_action.triggered.connect(
+            partial(client.check_queue_status, True)
+        )
         # Connect signals to slots for executing plans on queueserver
         self.queue_item_added.connect(client.add_queue_item)
         # Connect signals/slots for queueserver state changes
         client.status_changed.connect(self.queue_status_changed)
         client.length_changed.connect(self.queue_length_changed)
         client.environment_opened.connect(self.queue_environment_opened)
+        self.queue_environment_opened.connect(
+            self.set_open_environment_action_state
+        )
         client.environment_state_changed.connect(self.queue_environment_state_changed)
         client.manager_state_changed.connect(self.queue_manager_state_changed)
         client.re_state_changed.connect(self.queue_re_state_changed)
         self.queue_autoplay_action = client.autoplay_action
+        self.queue_autoplay_action.toggled.connect(
+            self.check_queue_status_action.trigger
+        )
         self.queue_open_environment_action = client.open_environment_action
         # Start the thread
         thread.start()
@@ -356,6 +367,7 @@ class FireflyApplication(PyDMApplication):
             main_window.enter_fullscreen()
         else:
             main_window.show()
+        self.check_queue_status_action.trigger()
         return main_window
 
     def show_motor_window(self, *args, motor: HavenMotor):
@@ -431,3 +443,9 @@ class FireflyApplication(PyDMApplication):
     @QtCore.Slot()
     def show_bss_window(self):
         self.show_window(FireflyMainWindow, ui_dir / "bss.py", name="bss")
+
+    @QtCore.Slot(bool)
+    def set_open_environment_action_state(self, is_open: bool):
+        self.queue_open_environment_action.blockSignals(True)
+        self.queue_open_environment_action.setChecked(is_open)
+        self.queue_open_environment_action.blockSignals(False)

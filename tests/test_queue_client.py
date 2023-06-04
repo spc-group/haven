@@ -42,22 +42,6 @@ qs_status = {
 }
 
 
-@pytest.fixture()
-def queue_api():
-    api = MagicMock()
-    api.status.return_value = qs_status
-    yield api
-
-
-@pytest.fixture()
-def queue_app(ffapp, queue_api):
-    ffapp.setup_window_actions()
-    ffapp.setup_runengine_actions()
-    ffapp.prepare_queue_client(api=queue_api)
-    FireflyMainWindow()
-    yield ffapp
-
-
 def test_setup(ffapp):
     ffapp.setup_window_actions()
     ffapp.setup_runengine_actions()

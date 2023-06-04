@@ -6,6 +6,7 @@ import databroker
 
 from ._iconfig import load_config
 from .preprocessors import inject_haven_md_wrapper
+from .exceptions import ComponentNotFound
 from .instrument.instrument_registry import registry
 
 log = logging.getLogger(__name__)
@@ -48,17 +49,21 @@ def save_data(name, doc):
 def run_engine(connect_databroker=True) -> BlueskyRunEngine:
     RE = BlueskyRunEngine()
     # Install suspenders
-    aps = registry.find("APS")
-    # Suspend when shutter permit is disabled
-    RE.install_suspender(
-        suspenders.SuspendWhenChanged(
-            signal=aps.shutter_permit,
-            expected_value="PERMIT",
-            allow_resume=True,
-            sleep=3,
-            tripped_message="Shutter permit revoked.",
+    try:
+        aps = registry.find("APS")
+    except ComponentNotFound:
+        # Suspend when shutter permit is disabled
+        log.warning("Could not find APS. Shutter permit suspender not enabled.")
+    else:
+        RE.install_suspender(
+            suspenders.SuspendWhenChanged(
+                signal=aps.shutter_permit,
+                expected_value="PERMIT",
+                allow_resume=True,
+                sleep=3,
+                tripped_message="Shutter permit revoked.",
+            )
         )
-    )
     # Install databroker connection
     if connect_databroker:
         RE.subscribe(save_data)
