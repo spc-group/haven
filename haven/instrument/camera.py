@@ -62,7 +62,7 @@ def load_cameras(config=None) -> Sequence[DetectorBase]:
     if config is None:
         config = load_config()
     # Get configuration details for the cameras
-    devices = {k: v for (k, v) in config["camera"].items() if k.startswith("cam")}
+    devices = {k: v for (k, v) in config["camera"].items() if hasattr(v, 'keys') and "prefix" in v.keys()}
     # Load each camera
     cameras = []
     for key, cam_config in devices.items():
@@ -73,9 +73,9 @@ def load_cameras(config=None) -> Sequence[DetectorBase]:
             msg = f"camera.{key}.device_class={cam_config['device_class']}"
             raise exceptions.UnknownDeviceConfiguration(msg)
         device = DeviceClass(
-            prefix=f"{cam_config['ioc']}:",
-            name=cam_config["name"],
-            description=cam_config.get("description", cam_config["name"]),
+            prefix=f"{cam_config['prefix']}:",
+            name=cam_config.get("name", key),
+            description=cam_config.get("description", cam_config.get("name", key)),
             labels={"cameras"},
         )
         registry.register(device)

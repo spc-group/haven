@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1149</width>
-    <height>832</height>
+    <height>863</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,7 +17,7 @@
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout" stretch="5,0">
      <item>
-      <layout class="QVBoxLayout" name="left_column_layout" stretch="0">
+      <layout class="QVBoxLayout" name="left_column_layout" stretch="0,0">
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_2">
          <item>
@@ -61,9 +61,25 @@
            <property name="text">
             <string>Settings</string>
            </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
           </widget>
          </item>
         </layout>
+       </item>
+       <item>
+        <widget class="ImageView" name="image_view" native="true">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+        </widget>
        </item>
       </layout>
      </item>
@@ -181,7 +197,7 @@
                <item>
                 <widget class="PyDMSlider" name="PyDMSlider_2">
                  <property name="enabled">
-                  <bool>true</bool>
+                  <bool>false</bool>
                  </property>
                  <property name="toolTip">
                   <string/>
@@ -232,7 +248,7 @@
                <item>
                 <widget class="PyDMSlider" name="PyDMSlider">
                  <property name="enabled">
-                  <bool>true</bool>
+                  <bool>false</bool>
                  </property>
                  <property name="toolTip">
                   <string/>
@@ -484,7 +500,7 @@
               <enum>QTabWidget::Rounded</enum>
              </property>
              <property name="currentIndex">
-              <number>1</number>
+              <number>0</number>
              </property>
              <property name="tabBarAutoHide">
               <bool>false</bool>
@@ -493,7 +509,13 @@
               <cstring></cstring>
              </property>
              <property name="alarmChannels">
-              <stringlist/>
+              <stringlist>
+               <string></string>
+               <string></string>
+               <string></string>
+               <string></string>
+               <string></string>
+              </stringlist>
              </property>
              <widget class="QWidget" name="tab">
               <attribute name="title">
@@ -690,6 +712,12 @@
    <class>PyDMSlider</class>
    <extends>QFrame</extends>
    <header>pydm.widgets.slider</header>
+  </customwidget>
+  <customwidget>
+   <class>ImageView</class>
+   <extends>QWidget</extends>
+   <header>pyqtgraph</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources/>

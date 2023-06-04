@@ -1,5 +1,6 @@
 import logging
 from pathlib import Path
+import warnings
 
 from pydm.main_window import PyDMMainWindow
 
@@ -27,7 +28,12 @@ class FireflyMainWindow(PyDMMainWindow):
     def open(self, *args, **kwargs):
         widget = super().open(*args, **kwargs)
         # Connect signals for showing message in the window's status bar
-        widget.status_message_changed.connect(self.show_status)
+        try:
+            widget.status_message_changed.connect(self.show_status)
+        except AttributeError:
+            msg = f"No status messages on window: {args}, {kwargs}. Possibly you're not using FireflyMainWindow?"
+            log.warning(msg)
+            warnings.warn(msg)
         return widget
 
     def closeEvent(self, event):
@@ -164,12 +170,13 @@ class FireflyMainWindow(PyDMMainWindow):
         # Add actions to the cameras sub-menus
         self.ui.menuCameras.addAction(app.show_cameras_window_action)
         self.ui.menuCameras.addSeparator()
-        for action in app.camera_actions:
+        for action in app.camera_actions.values():
             self.ui.menuCameras.addAction(action)
         # Add area detectors to detectors menu
-        if len(app.area_detector_actions) > 0:
+        ad_actions = app.area_detector_actions.values()
+        if len(ad_actions) > 0:
             self.ui.menuDetectors.addSeparator()
-        for action in app.area_detector_actions:
+        for action in ad_actions:
             self.ui.menuDetectors.addAction(action)
         # Add other menu actions
         self.ui.menuView.addAction(app.show_status_window_action)
