@@ -72,12 +72,17 @@ def load_cameras(config=None) -> Sequence[DetectorBase]:
         if DeviceClass is None:
             msg = f"camera.{key}.device_class={cam_config['device_class']}"
             raise exceptions.UnknownDeviceConfiguration(msg)
-        device = DeviceClass(
-            prefix=f"{cam_config['prefix']}:",
-            name=cam_config.get("name", key),
-            description=cam_config.get("description", cam_config.get("name", key)),
-            labels={"cameras"},
-        )
-        registry.register(device)
-        cameras.append(device)
+        description = cam_config.get("description", cam_config.get("name", key))
+        try:
+            device = DeviceClass(
+                prefix=f"{cam_config['prefix']}:",
+                name=cam_config.get("name", key),
+                description=description,
+                labels={"cameras"},
+            )
+        except TimeoutError as e:
+            log.warning(str(e))
+        else:
+            registry.register(device)
+            cameras.append(device)
     return cameras
