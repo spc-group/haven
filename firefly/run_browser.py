@@ -96,6 +96,21 @@ class RunBrowserDisplay(display.FireflyDisplay):
         self.update_filters()
         # Start the thread
         thread.start()
+        # Get distinct fields so we can populate the comboboxes
+        worker.distinct_fields_changed.connect(self.update_combobox_items)
+        worker.load_distinct_fields()
+
+    def update_combobox_items(self, fields):
+        for field_name, cb in [
+                ('proposal_users', self.ui.filter_proposal_combobox),
+                ('proposal_id', self.ui.filter_user_combobox),
+                ('esaf_id', self.ui.filter_esaf_combobox),
+                ('sample_name', self.ui.filter_sample_combobox),
+                ('plan_name', self.ui.filter_plan_combobox),
+                ('edge', self.ui.filter_edge_combobox),
+        ]:
+            cb.clear()
+            cb.addItems(fields[field_name])
 
     def customize_ui(self):
         self.load_models()
@@ -128,12 +143,6 @@ class RunBrowserDisplay(display.FireflyDisplay):
         self.plot_1d_item = self.ui.plot_1d_view.getPlotItem()
         self.plot_1d_item.addLegend()
         self.plot_1d_item.hover_coords_changed.connect(self.ui.hover_coords_label.setText)
-        # Set up multi-plot scrolling
-        # self.multi_plot_view = GraphicsLayoutWidget()
-        # self.ui.multiplot_scrollarea.setWidget(self.multi_plot_view)
-        # self.ui.multiplot_scrollarea.setWidgetResizable(True)
-        # self.ui.multiplot_scrollarea.setWidget(self.ui.plot_multi_view)
-        
 
     def get_signals(self, run, hinted_only=False):
         if hinted_only:

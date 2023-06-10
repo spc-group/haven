@@ -225,3 +225,13 @@ def test_filter_runs(client, qtbot):
     # Check that the runs were filtered
     runs = blocker.args[0]
     assert len(runs) == 1
+
+
+def test_distinct_fields(client, qtbot, display):
+    worker = DatabaseWorker(root_node=client)
+    with qtbot.waitSignal(worker.distinct_fields_changed) as blocker:
+        worker.load_distinct_fields()
+    # Check that the dictionary has the right structure
+    distinct_fields = blocker.args[0]
+    for key in ['sample_name']:
+        assert key in distinct_fields.keys()
