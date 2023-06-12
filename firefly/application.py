@@ -112,8 +112,11 @@ class FireflyApplication(PyDMApplication):
         setattr(self, action_name, action)
 
     def load_instrument(self):
-        # Define devices on the beamline
-        haven.load_instrument()
+        """Set up the application to use a previously loaded instrument.
+
+        Expects devices, plans, etc to have been created already.
+
+        """
         # Make actions for launching other windows
         self.setup_window_actions()
         # Actions for controlling the bluesky run engine
