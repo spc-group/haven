@@ -22,6 +22,9 @@ def test_load_dxp(sim_registry, mocker):
     # Check that MCA's have ROI's available
     assert hasattr(vortex.mcas.mca1, "rois")
     assert hasattr(vortex.mcas.mca1.rois, "roi1")
+    # Check that bluesky hints were added
+    assert hasattr(vortex.mcas.mca1.rois.roi1, 'is_hinted')
+    assert vortex.mcas.mca1.rois.roi1.is_hinted.pvname == "vortex_me4:mca1_R1BH"
 
 
 @pytest.fixture()

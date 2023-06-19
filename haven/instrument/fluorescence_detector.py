@@ -17,6 +17,7 @@ from apstools.utils import cleanupText
 
 from .scaler_triggered import ScalerTriggered
 from .instrument_registry import registry
+from .device import RegexComponent as RECpt
 from .._iconfig import load_config
 from .. import exceptions
 
@@ -49,7 +50,7 @@ class ROI(mca.ROI):
     # Signals
     # net_count = Cpt(EpicsSignalRO, "N", kind=Kind.hinted, lazy=True)
     # user_kind = Cpt(EpicsSignal, "_BS_KIND", lazy=True)
-    is_hinted = Cpt(EpicsSignal, "BH", lazy=True)
+    is_hinted = RECpt(EpicsSignal, "BH", pattern=r"^(.+)\.R(\d+)", repl=r"\1_R\2", lazy=True)
 
     def stage(self):
         self._original_name = self.name
