@@ -42,8 +42,7 @@ class RegexComponent(Component[K]):
     """
 
     def __init__(self, *args, pattern: str, repl: Union[str, Callable], **kwargs):
-
-    """*pattern* and *repl* match their use in ``re.sub``."""
+        """*pattern* and *repl* match their use in ``re.sub``."""
         self.pattern = pattern
         self.repl = repl
         super().__init__(*args, **kwargs)

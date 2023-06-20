@@ -75,17 +75,22 @@ def load_cameras(config=None) -> Sequence[DetectorBase]:
     cameras = []
     for key, cam_config in devices.items():
         class_name = cam_config.get("device_class", "AravisDetector")
+        camera_name = cam_config.get("name", key)
         DeviceClass = globals().get(class_name)
         # Check that it's a valid device class
         if DeviceClass is None:
             msg = f"camera.{key}.device_class={cam_config['device_class']}"
             raise exceptions.UnknownDeviceConfiguration(msg)
-        device = DeviceClass(
-            prefix=f"{cam_config['prefix']}:",
-            name=cam_config.get("name", key),
-            description=cam_config.get("description", cam_config.get("name", key)),
-            labels={"cameras"},
-        )
-        registry.register(device)
-        cameras.append(device)
+        try:
+            device = DeviceClass(
+                prefix=f"{cam_config['prefix']}:",
+                name=camera_name,
+                description=cam_config.get("description", cam_config.get("name", key)),
+                labels={"cameras"},
+            )
+        except TimeoutError:
+            log.warning(f"Could not connect to camera: {camera_name}.")
+        else:
+            registry.register(device)
+            cameras.append(device)
     return cameras
