@@ -37,8 +37,7 @@ class AreaDetectorViewerDisplay(display.FireflyDisplay):
     def customize_ui(self):
         self.caqtdm_button.clicked.connect(self.launch_caqtdm)
         # Create the pyqtgraph image viewer
-        self.image_view = pyqtgraph.ImageView(parent=self)
-        self.ui.left_column_layout.addWidget(self.image_view)
+        self.image_view = self.ui.image_view
         # Connect signals for showing/hiding controls
         self.ui.settings_button.clicked.connect(self.toggle_controls)
         # Set some text about the camera
@@ -49,9 +48,6 @@ class AreaDetectorViewerDisplay(display.FireflyDisplay):
             lbl_text = f"{self.device.description} ({self.device.cam.prefix})"
         self.ui.camera_description_label.setText(lbl_text)
         self.setWindowTitle(lbl_text)
-        # from pprint import pprint
-        # pprint(dir(self))
-        # print(dir(self.device_viewer_form))
 
     def toggle_controls(self):
         # Show or hide the controls frame

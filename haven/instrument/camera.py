@@ -62,7 +62,7 @@ def load_cameras(config=None) -> Sequence[DetectorBase]:
     if config is None:
         config = load_config()
     # Get configuration details for the cameras
-    devices = {k: v for (k, v) in config["camera"].items() if k.startswith("cam")}
+    devices = {k: v for (k, v) in config["camera"].items() if hasattr(v, 'keys') and "prefix" in v.keys()}
     # Load each camera
     cameras = []
     for key, cam_config in devices.items():
@@ -72,12 +72,17 @@ def load_cameras(config=None) -> Sequence[DetectorBase]:
         if DeviceClass is None:
             msg = f"camera.{key}.device_class={cam_config['device_class']}"
             raise exceptions.UnknownDeviceConfiguration(msg)
-        device = DeviceClass(
-            prefix=f"{cam_config['ioc']}:",
-            name=cam_config["name"],
-            description=cam_config.get("description", cam_config["name"]),
-            labels={"cameras"},
-        )
-        registry.register(device)
-        cameras.append(device)
+        description = cam_config.get("description", cam_config.get("name", key))
+        try:
+            device = DeviceClass(
+                prefix=f"{cam_config['prefix']}:",
+                name=cam_config.get("name", key),
+                description=description,
+                labels={"cameras"},
+            )
+        except TimeoutError as e:
+            log.warning(str(e))
+        else:
+            registry.register(device)
+            cameras.append(device)
     return cameras

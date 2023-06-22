@@ -21,7 +21,7 @@ class CamerasDisplay(display.FireflyDisplay):
         # Delete existing camera widgets
         for idx in reversed(range(self.cameras_layout.count())):
             self.cameras_layout.takeAt(idx).widget().deleteLater()
-        # Add embedded displays for all the ion chambers
+        # Add embedded displays for all the cameras
         try:
             cameras = haven.registry.findall(label="cameras")
         except haven.exceptions.ComponentNotFound:
@@ -34,6 +34,7 @@ class CamerasDisplay(display.FireflyDisplay):
             disp.macros = json.dumps(
                 {
                     "CAMERA": camera.name,
+                    "DESC": camera.description,
                 }
             )
             disp.filename = "camera.py"

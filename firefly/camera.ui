@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>352</width>
-    <height>39</height>
+    <height>45</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -59,7 +59,7 @@
         <bool>true</bool>
        </property>
        <property name="channel" stdset="0">
-        <string>${PREFIX}cam1:Acquire</string>
+        <string>oph://${CAMERA}.cam.acquire</string>
        </property>
        <property name="onColor" stdset="0">
         <color>
@@ -76,7 +76,7 @@
         </color>
        </property>
        <property name="showLabels" stdset="0">
-        <bool>true</bool>
+        <bool>false</bool>
        </property>
        <property name="bigEndian" stdset="0">
         <bool>false</bool>
@@ -111,41 +111,9 @@
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="imageJ_button">
-       <property name="toolTip">
-        <string>Launch ImageJ with the EPICS AD Viewer plugin loaded for this camera</string>
-       </property>
-       <property name="text">
-        <string>ImageJ</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="PyDMRelatedDisplayButton" name="camera_viewer_button">
-       <property name="enabled">
-        <bool>false</bool>
-       </property>
-       <property name="toolTip">
-        <string/>
-       </property>
+      <widget class="QPushButton" name="viewer_button">
        <property name="text">
         <string>Viewer</string>
-       </property>
-       <property name="filenames" stdset="0">
-        <stringlist>
-         <string>sample_viewer.ui</string>
-        </stringlist>
-       </property>
-       <property name="showIcon" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="macros" stdset="0">
-        <stringlist>
-         <string>PREFIX=${PREFIX},DESC=${DESC}</string>
-        </stringlist>
-       </property>
-       <property name="openInNewWindow" stdset="0">
-        <bool>false</bool>
        </property>
       </widget>
      </item>
@@ -163,11 +131,6 @@
    <class>PyDMByteIndicator</class>
    <extends>QWidget</extends>
    <header>pydm.widgets.byte</header>
-  </customwidget>
-  <customwidget>
-   <class>PyDMRelatedDisplayButton</class>
-   <extends>QPushButton</extends>
-   <header>pydm.widgets.related_display_button</header>
   </customwidget>
  </customwidgets>
  <resources/>
