@@ -32,7 +32,7 @@ class FireflyDisplay(Display):
         cmds = self.caqtdm_command.split()
         macro_str = ",".join(f"{key}={val}" for key, val in macros.items())
         cmds = [*cmds, "-macro", macro_str, ui_file]
-        self.open_caqtdm_subprocess(cmds)
+        self._open_caqtdm_subprocess(cmds)
 
     def customize_device(self):
         pass
