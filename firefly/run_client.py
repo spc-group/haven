@@ -21,6 +21,7 @@ class DatabaseWorker(QObject):
     # Signals
     all_runs_changed = Signal(list)
     selected_runs_changed = Signal(list)
+    distinct_fields_changed = Signal(dict)
     new_message = Signal(str, int)
     db_op_started = Signal()
     db_op_ended = Signal(list)  # (list of exceptions thrown)
@@ -58,6 +59,28 @@ class DatabaseWorker(QObject):
         if full_text != "":
             runs = runs.search(queries.FullText(full_text, case_sensitive=case_sensitive))
         return runs
+
+    @Slot()
+    def load_distinct_fields(self):
+        """Get distinct metadata fields for filterable metadata.
+
+        Emits
+        =====
+        distinct_fields_changed
+          Emitted with the new dictionary of distinct metadata choices
+          for each metadata key.
+
+        """
+        new_fields = {}
+        target_fields = ['sample_name','proposal_users','proposal_id',
+                         'esaf_id', 'sample_name', 'plan_name', 'edge',]
+        # Get fields from the database
+        response = self.root.distinct(*target_fields)
+        # Build into a new dictionary
+        for key, result in response['metadata'].items():
+            field = key.split('.')[-1]
+            new_fields[field] = [r['value'] for r in result]
+        self.distinct_fields_changed.emit(new_fields)
 
     @Slot()
     def load_all_runs(self):
