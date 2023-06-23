@@ -50,7 +50,7 @@ class ROI(mca.ROI):
     # Signals
     # net_count = Cpt(EpicsSignalRO, "N", kind=Kind.hinted, lazy=True)
     # user_kind = Cpt(EpicsSignal, "_BS_KIND", lazy=True)
-    is_hinted = RECpt(EpicsSignal, "BH", pattern=r"^(.+)\.R(\d+)", repl=r"\1_R\2", lazy=True)
+    is_hinted = RECpt(EpicsSignal, "BH", pattern=r"\.R", repl="_R", lazy=True)
 
     def stage(self):
         self._original_name = self.name

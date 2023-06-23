@@ -54,8 +54,8 @@ class RegexComponent(Component[K]):
         Parameters
         ----------
         instance : Device
-            The instance to extract the prefix to maybe append to the
-            suffix from.
+            The instance from which to extract the prefix to maybe
+            append to the suffix.
 
         kw : str
             The key of associated with the suffix.  If this key is
@@ -68,13 +68,11 @@ class RegexComponent(Component[K]):
         Returns
         -------
         str
+
         """
         new_val = super().maybe_add_prefix(instance, kw, suffix)
-        print(f"{kw}: {suffix} -> {new_val}")
         try:
             new_val = re.sub(self.pattern, self.repl, new_val)
         except TypeError:
             pass
-        print(f"{kw}: {suffix} -> {new_val}")
         return new_val
-
