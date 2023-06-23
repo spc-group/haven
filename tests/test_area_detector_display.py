@@ -14,7 +14,7 @@ def test_open_camera_viewer_actions(ffapp, qtbot, sim_camera):
     assert hasattr(ffapp, "camera_actions")
     assert len(ffapp.camera_actions) == 1
     # Launch an action and see that a window opens
-    ffapp.camera_actions[0].trigger()
+    list(ffapp.camera_actions.values())[0].trigger()
     assert "FireflyMainWindow_camera_s255id-gige-A" in ffapp.windows.keys()
 
 
@@ -24,7 +24,7 @@ def test_open_area_detector_viewer_actions(ffapp, qtbot, sim_camera):
     assert hasattr(ffapp, "area_detector_actions")
     assert len(ffapp.area_detector_actions) == 1
     # Launch an action and see that a window opens
-    ffapp.area_detector_actions[0].trigger()
+    list(ffapp.area_detector_actions.values())[0].trigger()
     assert "FireflyMainWindow_area_detector_s255id-gige-A" in ffapp.windows.keys()
 
 

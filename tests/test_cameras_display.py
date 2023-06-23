@@ -27,7 +27,8 @@ def test_embedded_displays(qtbot, ffapp, sim_registry, sim_camera):
     assert len(display._camera_displays) == 1
     # Check the embedded display macros
     # assert isinstance(display._camera_displays[0].macros, dict)
-    expected_macros = {"CAMERA": sim_camera.name}
+    expected_macros = {"CAMERA": sim_camera.name,
+                       "DESC": sim_camera.description}
     assert json.loads(display._camera_displays[0].macros) == expected_macros
 
 

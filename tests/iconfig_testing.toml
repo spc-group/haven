@@ -9,7 +9,7 @@ entry_node = "255id_testing"
 
 name = "s25id-gige-A"
 description = "GigE Vision A"
-ioc = "255idgigeA"
+prefix = "255idgigeA"
 
 [stage.Aerotech]
 
