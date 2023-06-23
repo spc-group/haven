@@ -84,9 +84,16 @@ ioc = "preamp_ioc"
 
 [fluorescence_detector.vortex_me4]
 
-prefix = "vortex"
+prefix = "vortex_me4"
 electronics = "dxp"  # or "xspress3"
 num_elements = 4
+
+[fluorescence_detector.canberra_Ge7]
+
+prefix = "20xmap8"
+electronics = "dxp"  # or "xspress3"
+num_elements = 4
+
 
 # Motors
 # ======

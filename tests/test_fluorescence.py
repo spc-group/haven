@@ -7,32 +7,6 @@ import pytest
 from epics import caget
 
 
-# @pytest.fixture
-# def vortex():
-#     return XspressDetector("xspress:", name="vortex")
-
-
-# def test_staging(vortex, ioc_vortex):
-#     # Check starting conditions
-#     assert vortex.num_frames.get() == 1
-#     assert caget("xspress:NumImages") == 1
-#     assert caget("xspress:TriggerMode") == 1
-#     # Check that the number of frames gets set
-#     vortex.stage_num_frames = 48
-#     # Check the detector was set up correctly
-#     vortex.stage()
-#     assert caget("xspress:NumImages") == 48
-#     assert caget("xspress:TriggerMode") == 3
-#     # Did the values get reset when unstaged
-#     vortex.unstage()
-#     assert caget("xspress:NumImages") == 1
-#     assert caget("xspress:TriggerMode") == 1
-
-
-# def _ensure_connected(*args, **kwargs):
-#     pass
-
-
 def test_load_dxp(sim_registry, mocker):
     mocker.patch("ophyd.signal.EpicsSignalBase._ensure_connected")
     from haven.instrument.fluorescence_detector import load_fluorescence_detectors
@@ -48,6 +22,9 @@ def test_load_dxp(sim_registry, mocker):
     # Check that MCA's have ROI's available
     assert hasattr(vortex.mcas.mca1, "rois")
     assert hasattr(vortex.mcas.mca1.rois, "roi1")
+    # Check that bluesky hints were added
+    assert hasattr(vortex.mcas.mca1.rois.roi1, 'is_hinted')
+    assert vortex.mcas.mca1.rois.roi1.is_hinted.pvname == "vortex_me4:mca1_R1BH"
 
 
 @pytest.fixture()
@@ -146,3 +123,55 @@ def test_enable_all_elements(vortex):
 @pytest.mark.xfail
 def test_with_plan(vortex):
     assert False, "Write test"
+
+
+def test_stage_signal_names(sim_vortex):
+    """Check that we can set the name of the detector ROIs dynamically."""
+    dev = sim_vortex.mcas.mca1.rois.roi1
+    dev.label.put("Ni-Ka")
+    # Ensure the name isn't changed yet
+    assert "Ni-Ka" not in dev.name
+    assert "Ni_Ka" not in dev.name
+    orig_name = dev.name
+    dev.stage()
+    try:
+        result = dev.read()
+    except Exception:
+        raise
+    else:
+        assert "Ni-Ka" not in dev.name  # Make sure it gets sanitized
+        assert "Ni_Ka" in dev.name
+    finally:
+        dev.unstage()
+    # Name gets reset when unstaged
+    assert dev.name == orig_name
+    # Check acquired data uses dynamic names
+    for res in result.keys():
+        assert "Ni_Ka" in res
+
+
+def test_stage_signal_hinted(sim_vortex):
+    dev = sim_vortex.mcas.mca1.rois.roi1
+    # Check that ROI is not hinted by default
+    assert dev.name not in sim_vortex.hints
+    # Enable the ROI by setting it's kind PV to "hinted"
+    dev.is_hinted.put(True)
+    # Ensure signals are not hinted before being staged
+    assert dev.net_count.name not in sim_vortex.hints["fields"]
+    try:
+        dev.stage()
+    except Exception:
+        raise
+    else:
+        assert dev.net_count.name in sim_vortex.hints["fields"]
+        assert (
+            sim_vortex.mcas.mca1.rois.roi0.net_count.name
+            not in sim_vortex.hints["fields"]
+        )
+    finally:
+        dev.unstage()
+    # Did it restore kinds properly when unstaging
+    assert dev.net_count.name not in sim_vortex.hints["fields"]
+    assert (
+        sim_vortex.mcas.mca1.rois.roi0.net_count.name not in sim_vortex.hints["fields"]
+    )

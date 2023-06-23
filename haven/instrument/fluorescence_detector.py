@@ -8,13 +8,16 @@ from ophyd import (
     mca,
     Device,
     EpicsSignal,
+    EpicsSignalRO,
     Component as Cpt,
     DynamicDeviceComponent as DDC,
     Kind,
 )
+from apstools.utils import cleanupText
 
 from .scaler_triggered import ScalerTriggered
 from .instrument_registry import registry
+from .device import RegexComponent as RECpt
 from .._iconfig import load_config
 from .. import exceptions
 
@@ -39,10 +42,44 @@ class ROI(mca.ROI):
         "hi_chan",
         "lo_chan",
     ]
+    # hints = {"fields": ["net_count"]}
     kind = active_kind
+    _original_name = None
+    _original_kinds = {}
+    _dynamic_hint_fields = ["net_count"]
+    # Signals
+    # net_count = Cpt(EpicsSignalRO, "N", kind=Kind.hinted, lazy=True)
+    # user_kind = Cpt(EpicsSignal, "_BS_KIND", lazy=True)
+    is_hinted = RECpt(EpicsSignal, "BH", pattern=r"\.R", repl="_R", lazy=True)
+
+    def stage(self):
+        self._original_name = self.name
+        # Append the ROI label to the signal name
+        label = cleanupText(str(self.label.get()))
+        if label != "":
+            self.name = f"{self.name}_{label}"
+        # Set the kind based on the user-settable ".R0_BS_HINTED" PV
+        if self.is_hinted.get():
+            new_kind = Kind.hinted
+        else:
+            new_kind = Kind.normal
+        self._original_kinds = {
+            fld: getattr(self, fld).kind for fld in self._dynamic_hint_fields
+        }
+        for fld in self._dynamic_hint_fields:
+            getattr(self, fld).kind = new_kind
+        super().stage()
+
+    def unstage(self):
+        # Restore the original (pre-staged) name
+        self.name = self._original_name
+        # Restore original signal kinds
+        for fld, kind in self._original_kinds.items():
+            getattr(self, fld).kind = kind
+        super().unstage()
 
 
-def add_rois(range_: Sequence[int] = range(32), kind=Kind.omitted, **kwargs):
+def add_rois(range_: Sequence[int] = range(32), kind=Kind.normal, **kwargs):
     """Add one or more ROIs to an MCA instance
 
     Parameters
@@ -115,7 +152,7 @@ class DxpDetectorBase(mca.EpicsDXPMultiElementSystem):
 
     # By default, a 1-element detector, subclass for more elements
     mcas = DDC(
-        add_mcas(range_=range(1, 2)),
+        add_mcas(range_=range(1, 3)),
         default_read_attrs=["mca1"],
         default_configuration_attrs=["mca1"],
     )
@@ -187,6 +224,17 @@ class DxpDetectorBase(mca.EpicsDXPMultiElementSystem):
         "trace_times",
         "idead_time",
     ]
+
+    @property
+    def num_rois(self):
+        n_rois = float("inf")
+        for mca in self.mca_records():
+            n_rois = min(n_rois, len(mca.rois.component_names))
+        return n_rois
+
+    @property
+    def num_elements(self):
+        return len(self.mca_records())
 
     def mca_records(self, mca_indices: Optional[Sequence[int]] = None):
         mcas = [
@@ -319,7 +367,7 @@ def load_dxp_detector(device_name, prefix, num_elements):
     class_name = device_name.title().replace("_", "")
     parent_classes = (DxpDetectorBase,)
     Cls = type(class_name, parent_classes, attrs)
-    det = Cls(prefix=f"{prefix}:", name=device_name)
+    det = Cls(prefix=f"{prefix}:", name=device_name, labels={"xrf_detectors"})
     registry.register(det)
 
 

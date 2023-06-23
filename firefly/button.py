@@ -8,7 +8,7 @@ class RevealButton(QtWidgets.QPushButton):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Set up signals 
+        # Set up signals
         self.toggled.connect(self.toggle_icon)
         self.toggle_icon(self.isChecked())
 

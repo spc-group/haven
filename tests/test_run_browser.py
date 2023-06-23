@@ -24,8 +24,9 @@ def wait_for_runs_model(display, qtbot):
 
 @pytest.fixture()
 def client(sim_tiled):
-    return sim_tiled['255id_testing']
-        
+    return sim_tiled["255id_testing"]
+
+
 @pytest.fixture()
 def display(client, qtbot, ffapp):
     display = RunBrowserDisplay(root_node=client)
@@ -35,7 +36,7 @@ def display(client, qtbot, ffapp):
 
 
 def test_run_viewer_action(ffapp, monkeypatch, sim_tiled):
-    monkeypatch.setattr(ffapp, 'create_window', MagicMock())
+    monkeypatch.setattr(ffapp, "create_window", MagicMock())
     assert hasattr(ffapp, "show_run_browser_action")
     ffapp.show_run_browser_action.trigger()
     assert isinstance(ffapp.windows["run_browser"], MagicMock)
@@ -86,11 +87,15 @@ def test_1d_plot_signals(client, display):
     display._db_worker.selected_runs = client.values()
     display._db_worker.selected_runs_changed.emit([])
     # Check signals in checkboxes
-    for combobox in [display.ui.multi_signal_x_combobox,
-                     display.ui.signal_y_combobox,
-                     display.ui.signal_r_combobox,
-                     display.ui.signal_x_combobox]:
-        assert combobox.findText("energy_energy") > -1, f"energy_energy signal not in {combobox.objectName()}."
+    for combobox in [
+        display.ui.multi_signal_x_combobox,
+        display.ui.signal_y_combobox,
+        display.ui.signal_r_combobox,
+        display.ui.signal_x_combobox,
+    ]:
+        assert (
+            combobox.findText("energy_energy") > -1
+        ), f"energy_energy signal not in {combobox.objectName()}."
 
 
 def test_1d_plot_signal_memory(client, display):
@@ -111,7 +116,7 @@ def test_1d_plot_signal_memory(client, display):
     # Update the combobox signals and make sure the text didn't change
     display.update_1d_signals()
     assert cb.currentText() == "energy_id_energy_readback"
-    
+
 
 def test_1d_hinted_signals(client, display):
     display.ui.plot_1d_hints_checkbox.setChecked(True)
@@ -125,13 +130,17 @@ def test_1d_hinted_signals(client, display):
     display.update_1d_signals()
     # Check signals in checkboxes
     combobox = display.ui.signal_x_combobox
-    assert combobox.findText("energy_energy") > -1, f"hinted signal not in {combobox.objectName()}."
-    assert combobox.findText("It_net_counts") == -1, f"unhinted signal found in {combobox.objectName()}."
-        
+    assert (
+        combobox.findText("energy_energy") > -1
+    ), f"hinted signal not in {combobox.objectName()}."
+    assert (
+        combobox.findText("It_net_counts") == -1
+    ), f"unhinted signal found in {combobox.objectName()}."
+
 
 def test_update_1d_plot(client, display, qtbot):
     run = client.values()[0]
-    run_data = run['primary']['data'].read()
+    run_data = run["primary"]["data"].read()
     expected_xdata = run_data.energy_energy
     expected_ydata = np.log(run_data.I0_net_counts / run_data.It_net_counts)
     expected_ydata = np.gradient(expected_ydata, expected_xdata)
@@ -140,7 +149,7 @@ def test_update_1d_plot(client, display, qtbot):
     # Set the controls to describe the data we want to test
     x_combobox = display.ui.signal_x_combobox
     x_combobox.addItem("energy_energy")
-    x_combobox.setCurrentText("energy_energy")    
+    x_combobox.setCurrentText("energy_energy")
     y_combobox = display.ui.signal_y_combobox
     y_combobox.addItem("It_net_counts")
     y_combobox.setCurrentText("It_net_counts")
@@ -164,7 +173,7 @@ def test_update_1d_plot(client, display, qtbot):
 def test_update_multi_plot(client, display, qtbot):
     print("Current text", display.ui.multi_signal_x_combobox.currentText())
     run = client.values()[0]
-    run_data = run['primary']['data'].read()
+    run_data = run["primary"]["data"].read()
     expected_xdata = run_data.energy_energy
     expected_ydata = np.log(run_data.I0_net_counts / run_data.It_net_counts)
     expected_ydata = np.gradient(expected_ydata, expected_xdata)
@@ -215,11 +224,11 @@ def test_filter_controls(client, display, qtbot):
         "edge": "U-K",
         "sample": "Pb.*",
     }
-    
+
 
 def test_filter_runs(client, qtbot):
     worker = DatabaseWorker(root_node=client)
-    worker._filters['plan'] = "xafs_scan"
+    worker._filters["plan"] = "xafs_scan"
     with qtbot.waitSignal(worker.all_runs_changed) as blocker:
         worker.load_all_runs()
     # Check that the runs were filtered

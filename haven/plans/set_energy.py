@@ -32,12 +32,16 @@ def auto_harmonic(energy: float, harmonic: Harmonic) -> Harmonic:
             return 3
     # If we get here, the harmonic was not a valid option
     raise exceptions.InvalidHarmonic(
-        f"Insertion device cannot accept harmonic: {harmonic}")
-    
+        f"Insertion device cannot accept harmonic: {harmonic}"
+    )
 
 
-def set_energy(energy: float, harmonic: Harmonic = None, positioners: DetectorList = ["energy"],
-               harmonic_positioners: DetectorList = ["undulator_harmonic_value"]):
+def set_energy(
+    energy: float,
+    harmonic: Harmonic = None,
+    positioners: DetectorList = ["energy"],
+    harmonic_positioners: DetectorList = ["undulator_harmonic_value"],
+):
     """Set the energy of the beamline, in electron volts.
 
     Moves both the mono energy, and the undulator energy with a

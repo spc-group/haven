@@ -36,7 +36,7 @@ class FiltersWidget(QWidget):
 
 class Browser1DPlotItem(PlotItem):
     hover_coords_changed = Signal(str)
-    
+
     def hoverEvent(self, event):
         super().hoverEvent(event)
         if event.isExit():
@@ -50,14 +50,25 @@ class Browser1DPlotItem(PlotItem):
 
 
 class Browser1DPlotWidget(PlotWidget):
-    def __init__(self, parent=None, background='default', plotItem=None, **kargs):
+    def __init__(self, parent=None, background="default", plotItem=None, **kargs):
         plot_item = Browser1DPlotItem(**kargs)
         super().__init__(parent=parent, background=background, plotItem=plot_item)
 
 
 class RunBrowserDisplay(display.FireflyDisplay):
     runs_model: QStandardItemModel
-    _run_col_names: Sequence = ["Plan", "Sample", "Edge", "E0", "Exit Status", "Datetime", "UID", "Proposal", "ESAF", "ESAF Users"]
+    _run_col_names: Sequence = [
+        "Plan",
+        "Sample",
+        "Edge",
+        "E0",
+        "Exit Status",
+        "Datetime",
+        "UID",
+        "Proposal",
+        "ESAF",
+        "ESAF Users",
+    ]
     _multiplot_items = {}
 
     # Signals
@@ -131,9 +142,13 @@ class RunBrowserDisplay(display.FireflyDisplay):
         self.ui.filter_user_combobox.currentTextChanged.connect(self.update_filters)
         self.ui.filter_proposal_combobox.currentTextChanged.connect(self.update_filters)
         self.ui.filter_sample_combobox.currentTextChanged.connect(self.update_filters)
-        self.ui.filter_exit_status_combobox.currentTextChanged.connect(self.update_filters)
+        self.ui.filter_exit_status_combobox.currentTextChanged.connect(
+            self.update_filters
+        )
         self.ui.filter_esaf_combobox.currentTextChanged.connect(self.update_filters)
-        self.ui.filter_current_proposal_checkbox.stateChanged.connect(self.update_filters)
+        self.ui.filter_current_proposal_checkbox.stateChanged.connect(
+            self.update_filters
+        )
         self.ui.filter_current_esaf_checkbox.stateChanged.connect(self.update_filters)
         self.ui.filter_plan_combobox.currentTextChanged.connect(self.update_filters)
         self.ui.filter_full_text_lineedit.textChanged.connect(self.update_filters)
@@ -146,13 +161,13 @@ class RunBrowserDisplay(display.FireflyDisplay):
 
     def get_signals(self, run, hinted_only=False):
         if hinted_only:
-            xsignals = run.metadata['start']['hints']['dimensions'][0][0]
+            xsignals = run.metadata["start"]["hints"]["dimensions"][0][0]
             ysignals = []
-            hints = run['primary'].metadata['descriptors'][0]['hints']
+            hints = run["primary"].metadata["descriptors"][0]["hints"]
             for device, dev_hints in hints.items():
-                ysignals.extend(dev_hints['fields'])
+                ysignals.extend(dev_hints["fields"])
         else:
-            xsignals = ysignals = run['primary']['data'].keys()
+            xsignals = ysignals = run["primary"]["data"].keys()
         return xsignals, ysignals
 
     def set_runs_model_items(self, runs):
@@ -171,11 +186,13 @@ class RunBrowserDisplay(display.FireflyDisplay):
 
     def disable_run_widgets(self):
         self.show_message("Loading...")
-        widgets = [self.ui.run_tableview,
-                   self.ui.refresh_runs_button,
-                   self.ui.detail_tabwidget,
-                   self.ui.runs_total_layout,
-                   self.ui.filters_widget,]
+        widgets = [
+            self.ui.run_tableview,
+            self.ui.refresh_runs_button,
+            self.ui.detail_tabwidget,
+            self.ui.runs_total_layout,
+            self.ui.filters_widget,
+        ]
         for widget in widgets:
             widget.setEnabled(False)
         self.disabled_widgets = widgets
@@ -190,10 +207,14 @@ class RunBrowserDisplay(display.FireflyDisplay):
         for widget in self.disabled_widgets:
             widget.setEnabled(True)
         self.setCursor(Qt.ArrowCursor)
-    
+
     def update_1d_signals(self, *args):
         # Store old values for restoring later
-        comboboxes = [self.ui.signal_x_combobox, self.ui.signal_y_combobox, self.ui.signal_r_combobox]
+        comboboxes = [
+            self.ui.signal_x_combobox,
+            self.ui.signal_y_combobox,
+            self.ui.signal_r_combobox,
+        ]
         old_values = [cb.currentText() for cb in comboboxes]
         # Determine valid list of columns to choose from
         xcols = set()
@@ -212,21 +233,32 @@ class RunBrowserDisplay(display.FireflyDisplay):
         xcols = sorted(list(set(xcols)))
         ycols = sorted(list(set(ycols)))
         self.multi_y_signals = ycols
-        for cb in [self.ui.multi_signal_x_combobox,
-                   self.ui.signal_x_combobox]:
+        for cb in [self.ui.multi_signal_x_combobox, self.ui.signal_x_combobox]:
             cb.clear()
             cb.addItems(xcols)
-        for cb in [self.ui.signal_y_combobox,
-                   self.ui.signal_r_combobox,]:
+        for cb in [
+            self.ui.signal_y_combobox,
+            self.ui.signal_r_combobox,
+        ]:
             cb.clear()
             cb.addItems(ycols)
         # Restore previous values
         for val, cb in zip(old_values, comboboxes):
             cb.setCurrentText(val)
 
-    def calculate_ydata(self, x_data, y_data, r_data, x_signal, y_signal, r_signal,
-                        use_reference=False, use_log=False, use_invert=False,
-                        use_grad=False):
+    def calculate_ydata(
+        self,
+        x_data,
+        y_data,
+        r_data,
+        x_signal,
+        y_signal,
+        r_signal,
+        use_reference=False,
+        use_log=False,
+        use_invert=False,
+        use_grad=False,
+    ):
         """Take raw y and reference data and calculate a new y_data signal."""
         # Apply transformations
         y = y_data
@@ -249,13 +281,15 @@ class RunBrowserDisplay(display.FireflyDisplay):
             log.warning(msg)
             raise exceptions.InvalidTransformation(msg)
         return y, y_string
-    
+
     def load_run_data(self, run, x_signal, y_signal, r_signal, use_reference=True):
-        if "" in [x_signal, y_signal] or (use_reference and r_signal==""):
-            log.debug(f"Empty signal name requested: x='{x_signal}', y='{y_signal}', r='{r_signal}'")
+        if "" in [x_signal, y_signal] or (use_reference and r_signal == ""):
+            log.debug(
+                f"Empty signal name requested: x='{x_signal}', y='{y_signal}', r='{r_signal}'"
+            )
             raise exceptions.EmptySignalName
         try:
-            data = run['primary']['data'].read()
+            data = run["primary"]["data"].read()
             y_data = data[y_signal]
             x_data = data[x_signal]
             if use_reference:
@@ -268,7 +302,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
             log.warning(msg)
             raise exceptions.SignalNotFound(msg)
         return x_data, y_data, r_data
-    
+
     def multiplot_items(self, n_cols: int = 3):
         view = self.ui.plot_multi_view
         item0 = None
@@ -304,7 +338,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
         runs = self._db_worker.selected_runs
         for run in runs:
             # print(run.metadata['start']['uid'], run['primary']['data'])
-            data = run['primary']['data'].read(all_signals)
+            data = run["primary"]["data"].read(all_signals)
             try:
                 xdata = data[x_signal]
             except KeyError:
@@ -341,10 +375,9 @@ class RunBrowserDisplay(display.FireflyDisplay):
         for idx, run in enumerate(self._db_worker.selected_runs):
             # Load datasets from the database
             try:
-                x_data, y_data, r_data = self.load_run_data(run, x_signal,
-                                                            y_signal,
-                                                            r_signal,
-                                                            use_reference=use_reference)
+                x_data, y_data, r_data = self.load_run_data(
+                    run, x_signal, y_signal, r_signal, use_reference=use_reference
+                )
             except exceptions.SignalNotFound as e:
                 self.show_message(str(e), 0)
                 continue
@@ -362,22 +395,38 @@ class RunBrowserDisplay(display.FireflyDisplay):
                 continue
             # Calculate plotting data
             try:
-                y_data, y_string = self.calculate_ydata( x_data, y_data, r_data,
-                                                         x_signal, y_signal, r_signal,
-                                                         use_reference=use_reference, use_log=use_log,
-                                                         use_invert=use_invert, use_grad=use_grad)
+                y_data, y_string = self.calculate_ydata(
+                    x_data,
+                    y_data,
+                    r_data,
+                    x_signal,
+                    y_signal,
+                    r_signal,
+                    use_reference=use_reference,
+                    use_log=use_log,
+                    use_invert=use_invert,
+                    use_grad=use_grad,
+                )
             except exceptions.InvalidTransformation as e:
                 self.show_message(str(e))
                 continue
             # Plot this run's data
             color = colors[idx % len(colors)]
-            self.plot_1d_item.plot(x=x_data, y=y_data, pen=color, name=run.metadata['start']['uid'], clear=False)
+            self.plot_1d_item.plot(
+                x=x_data,
+                y=y_data,
+                pen=color,
+                name=run.metadata["start"]["uid"],
+                clear=False,
+            )
         # Axis formatting
         self.plot_1d_item.setLabels(left=y_string, bottom=x_signal)
         if x_data is not None:
-            self.plot_1d_item.addLine(x=np.median(x_data), movable=True, label="{value:.3f}")
+            self.plot_1d_item.addLine(
+                x=np.median(x_data), movable=True, label="{value:.3f}"
+            )
         self.plot_1d_changed.emit(self.plot_1d_item)
-        
+
     def update_metadata(self, *args):
         """Render metadata for the runs into the metadata widget."""
         # Combine the metadata in a human-readable output
@@ -404,7 +453,9 @@ class RunBrowserDisplay(display.FireflyDisplay):
             "esaf": self.ui.filter_esaf_combobox.currentText(),
             "sample": self.ui.filter_sample_combobox.currentText(),
             "exit_status": self.ui.filter_exit_status_combobox.currentText(),
-            "use_current_proposal": bool(self.ui.filter_current_proposal_checkbox.checkState()),
+            "use_current_proposal": bool(
+                self.ui.filter_current_proposal_checkbox.checkState()
+            ),
             "use_current_esaf": bool(self.ui.filter_current_esaf_checkbox.checkState()),
             "plan": self.ui.filter_plan_combobox.currentText(),
             "full_text": self.ui.filter_full_text_lineedit.text(),

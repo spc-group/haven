@@ -11,13 +11,11 @@ from haven import tiled_client
 
 log = logging.getLogger(__name__)
 
-class DatabaseWorker(QObject):
 
+class DatabaseWorker(QObject):
     selected_runs: Sequence = []
-    _filters = {
-        "exit_status": "success"
-    }
-    
+    _filters = {"exit_status": "success"}
+
     # Signals
     all_runs_changed = Signal(list)
     selected_runs_changed = Signal(list)
@@ -43,13 +41,13 @@ class DatabaseWorker(QObject):
         log.debug(f"Filtering nodes: {filters}")
         filter_params = [
             # (filter_name, query type, metadata key)
-            ('user', queries.Regex, "proposal_users"),
-            ('proposal', queries.Regex, "proposal_id"),
-            ('esaf', queries.Regex, "esaf_id"),
-            ('sample', queries.Regex, "sample_name"),
+            ("user", queries.Regex, "proposal_users"),
+            ("proposal", queries.Regex, "proposal_id"),
+            ("esaf", queries.Regex, "esaf_id"),
+            ("sample", queries.Regex, "sample_name"),
             # ('exit_status', queries.Regex, "exit_status"),
-            ('plan', queries.Regex, "plan_name"),
-            ('edge', queries.Regex, "edge"),
+            ("plan", queries.Regex, "plan_name"),
+            ("edge", queries.Regex, "edge"),
         ]
         for filter_name, Query, md_name in filter_params:
             val = filters.get(filter_name, "")
@@ -57,7 +55,9 @@ class DatabaseWorker(QObject):
                 runs = runs.search(Query(md_name, val, case_sensitive=case_sensitive))
         full_text = filters.get("full_text", "")
         if full_text != "":
-            runs = runs.search(queries.FullText(full_text, case_sensitive=case_sensitive))
+            runs = runs.search(
+                queries.FullText(full_text, case_sensitive=case_sensitive)
+            )
         return runs
 
     @Slot()
@@ -91,7 +91,7 @@ class DatabaseWorker(QObject):
             for uid, node in nodes.items():
                 # Get meta-data documents
                 metadata = node.metadata
-                start_doc = metadata.get('start')
+                start_doc = metadata.get("start")
                 if start_doc is None:
                     log.debug(f"Skipping run with no start doc: {uid}")
                     continue
@@ -99,7 +99,7 @@ class DatabaseWorker(QObject):
                 if stop_doc is None:
                     stop_doc = {}
                 # Get a human-readable timestamp for the run
-                timestamp = start_doc.get('time')
+                timestamp = start_doc.get("time")
                 if timestamp is None:
                     run_datetime = ""
                 else:
@@ -120,8 +120,8 @@ class DatabaseWorker(QObject):
                 # Build the table item
                 # Get sample data from: dd80f432-c849-4749-a8f3-bdeec6f9c1f0
                 run_data = OrderedDict(
-                    plan_name=start_doc.get('plan_name', ""),
-                    sample_name=start_doc.get('sample_name', ""),
+                    plan_name=start_doc.get("plan_name", ""),
+                    sample_name=start_doc.get("sample_name", ""),
                     edge=edge_str,
                     E0=E0_str,
                     exit_status=stop_doc.get("exit_status", ""),
@@ -149,7 +149,7 @@ class DatabaseWorker(QObject):
         try:
             runs = [self.root[uid] for uid in uids]
             for run in runs:
-                run['primary'].download()
+                run["primary"].download()
         except Exception as exc:
             self.db_op_ended.emit([exc])
             raise

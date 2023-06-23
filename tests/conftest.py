@@ -25,6 +25,7 @@ from haven import registry, load_config
 from haven.instrument.aps import ApsMachine
 from haven.instrument.shutter import Shutter
 from haven.instrument.camera import AravisDetector
+from haven.instrument.fluorescence_detector import DxpDetectorBase
 from firefly.application import FireflyApplication
 from firefly.ophyd_plugin import OphydPlugin
 
@@ -288,6 +289,20 @@ def ioc_mono(request):
     )
 
 
+@pytest.fixture(scope=IOC_SCOPE)
+def ioc_dxp(request):
+    prefix = "255idDXP:"
+    pvs = dict(acquiring=f"{prefix}Acquiring")
+    return run_fake_ioc(
+        module_name="haven.tests.ioc_dxp",
+        name="Fake DXP-based detector IOC",
+        prefix=prefix,
+        pvs=pvs,
+        pv_to_check=pvs["acquiring"],
+        request=request,
+    )
+
+
 @pytest.fixture()
 def sim_registry():
     # Clean the registry so we can restore it later
@@ -331,3 +346,11 @@ def sim_camera(sim_registry):
     # Registry with the simulated registry
     sim_registry.register(camera)
     yield camera
+
+
+@pytest.fixture()
+def sim_vortex(sim_registry):
+    FakeDXP = make_fake_device(DxpDetectorBase)
+    vortex = FakeDXP(name="vortex_me4", labels={"xrf_detectors"})
+    sim_registry.register(vortex)
+    yield vortex

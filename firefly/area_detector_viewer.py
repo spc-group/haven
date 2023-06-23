@@ -41,7 +41,7 @@ class AreaDetectorViewerDisplay(display.FireflyDisplay):
         # Connect signals for showing/hiding controls
         self.ui.settings_button.clicked.connect(self.toggle_controls)
         # Set some text about the camera
-        use_name = getattr(self.device, 'description', None) in [self.device.name, None]
+        use_name = getattr(self.device, "description", None) in [self.device.name, None]
         if use_name:
             lbl_text = self.device.cam.name
         else:

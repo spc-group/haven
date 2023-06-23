@@ -9,7 +9,12 @@ from ophyd import (
     ADComponent as ADCpt,
     EpicsSignal,
 )
-from ophyd.areadetector.plugins import ImagePlugin_V34, PvaPlugin_V34, OverlayPlugin, ROIPlugin_V34
+from ophyd.areadetector.plugins import (
+    ImagePlugin_V34,
+    PvaPlugin_V34,
+    OverlayPlugin,
+    ROIPlugin_V34,
+)
 
 
 from .instrument_registry import registry
@@ -47,7 +52,6 @@ class AravisDetector(SingleTrigger, DetectorBase):
     stats3 = ADCpt(StatsPlugin_V34, "Stats3:", kind=Kind.normal)
     stats4 = ADCpt(StatsPlugin_V34, "Stats4:", kind=Kind.normal)
     stats5 = ADCpt(StatsPlugin_V34, "Stats5:", kind=Kind.normal)
-    
 
 
 def load_cameras(config=None) -> Sequence[DetectorBase]:
@@ -62,26 +66,31 @@ def load_cameras(config=None) -> Sequence[DetectorBase]:
     if config is None:
         config = load_config()
     # Get configuration details for the cameras
-    devices = {k: v for (k, v) in config["camera"].items() if hasattr(v, 'keys') and "prefix" in v.keys()}
+    devices = {
+        k: v
+        for (k, v) in config["camera"].items()
+        if hasattr(v, "keys") and "prefix" in v.keys()
+    }
     # Load each camera
     cameras = []
     for key, cam_config in devices.items():
         class_name = cam_config.get("device_class", "AravisDetector")
+        camera_name = cam_config.get("name", key)
+        description = cam_config.get("description", cam_config.get("name", key))
         DeviceClass = globals().get(class_name)
         # Check that it's a valid device class
         if DeviceClass is None:
             msg = f"camera.{key}.device_class={cam_config['device_class']}"
             raise exceptions.UnknownDeviceConfiguration(msg)
-        description = cam_config.get("description", cam_config.get("name", key))
         try:
             device = DeviceClass(
                 prefix=f"{cam_config['prefix']}:",
-                name=cam_config.get("name", key),
+                name=camera_name,
                 description=description,
                 labels={"cameras"},
             )
         except TimeoutError as e:
-            log.warning(str(e))
+            log.warning(f"Could not connect to camera: {camera_name}: {e}.")
         else:
             registry.register(device)
             cameras.append(device)
