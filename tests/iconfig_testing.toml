@@ -37,3 +37,8 @@ x_motor_pv = "255idVME:m1"
 y_motor_pv = "255idVME:m2"
 z_motor_pv = "255idVME:m3"
 z1_motor_pv = "255idVME:m4"
+
+[heater.capillary_heater]
+
+prefix = "255idptc10"
+device_class = "CapillaryHeater"
