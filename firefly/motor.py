@@ -15,6 +15,5 @@ class MotorDisplay(display.FireflyDisplay):
 
     def launch_motor_caqtdm(self):
         warnings.warn("TODO: Set macros for launching motor window caqtdm.")
-        caqtdm_macros = {
-        }
+        caqtdm_macros = {}
         self.launch_caqtdm(macros=caqtdm_macros)

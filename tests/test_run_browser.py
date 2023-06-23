@@ -242,5 +242,5 @@ def test_distinct_fields(client, qtbot, display):
         worker.load_distinct_fields()
     # Check that the dictionary has the right structure
     distinct_fields = blocker.args[0]
-    for key in ['sample_name']:
+    for key in ["sample_name"]:
         assert key in distinct_fields.keys()

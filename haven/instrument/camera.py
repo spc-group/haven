@@ -65,7 +65,7 @@ def load_cameras(config=None) -> Sequence[DetectorBase]:
     """
     if config is None:
         config = load_config()
-    print(config['camera'])
+    print(config["camera"])
     # Get configuration details for the cameras
     devices = {
         k: v

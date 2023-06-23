@@ -33,8 +33,8 @@ def load_heaters(config=None):
         config = load_config()
     # Load the heaters
     heaters = []
-    for name, cfg in config['heater'].items():
-        Cls = globals().get(cfg['device_class'])
+    for name, cfg in config["heater"].items():
+        Cls = globals().get(cfg["device_class"])
         device = Cls(prefix=f"{cfg['prefix']}:", name=name)
         heaters.append(device)
     return heaters

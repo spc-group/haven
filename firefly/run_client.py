@@ -72,14 +72,21 @@ class DatabaseWorker(QObject):
 
         """
         new_fields = {}
-        target_fields = ['sample_name','proposal_users','proposal_id',
-                         'esaf_id', 'sample_name', 'plan_name', 'edge',]
+        target_fields = [
+            "sample_name",
+            "proposal_users",
+            "proposal_id",
+            "esaf_id",
+            "sample_name",
+            "plan_name",
+            "edge",
+        ]
         # Get fields from the database
         response = self.root.distinct(*target_fields)
         # Build into a new dictionary
-        for key, result in response['metadata'].items():
-            field = key.split('.')[-1]
-            new_fields[field] = [r['value'] for r in result]
+        for key, result in response["metadata"].items():
+            field = key.split(".")[-1]
+            new_fields[field] = [r["value"] for r in result]
         self.distinct_fields_changed.emit(new_fields)
 
     @Slot()

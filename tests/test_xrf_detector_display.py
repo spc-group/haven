@@ -271,7 +271,7 @@ def test_roi_copyall_button(ffapp, xrf_display, qtbot):
     # Does the button get disabled on un-select?
     xrf_display.roi_selected(is_selected=False, roi_num=1)
     assert not xrf_display.ui.roi_copyall_button.isEnabled()
-    
+
 
 def test_mca_enableall_checkbox(ffapp, xrf_display):
     checkbox = xrf_display.ui.mca_enableall_checkbox
@@ -307,7 +307,7 @@ def test_roi_enableall_checkbox(ffapp, xrf_display):
     checkbox.setCheckState(QtCore.Qt.Unchecked)
     for display in xrf_display.roi_displays:
         assert not display.embedded_widget.ui.enabled_checkbox.isChecked()
-        
+
 
 def test_oneshot_acquisition(xrf_display, qtbot):
     """Check that clicking the one-shot acquisition button works."""
@@ -326,4 +326,3 @@ def test_continuous_acquisition(xrf_display, qtbot):
     # Simulated acquisition finishing and then set up the next one
     with qtbot.waitSignal(xrf_display.triggers.start_erase) as val:
         xrf_display.triggers.acquiring_channel.value_slot(0)
-

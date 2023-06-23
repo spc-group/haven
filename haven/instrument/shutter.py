@@ -18,7 +18,7 @@ def load_shutters(config=None):
         acronym = "FES" if hutch == "A" else f"S{hutch}S"
         shutter = Shutter(
             prefix=f"{prefix}:{acronym}",
-            open_pv = f"{prefix}:{acronym}_OPEN_EPICS.VAL",
+            open_pv=f"{prefix}:{acronym}_OPEN_EPICS.VAL",
             close_pv=f"{prefix}:{acronym}_CLOSE_EPICS.VAL",
             state_pv=f"{prefix}:{hutch}_BEAM_PRESENT",
             name=name,

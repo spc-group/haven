@@ -132,10 +132,10 @@ class VortexME4IOC(PVGroup):
         # enum_strings=("Done", "Start"),
         # dtype=ChannelType.ENUM,
     )
-    erase_start = pvproperty(name="EraseStart", dtype=unknown)# value="Done",
-                             # record="mbbi",
-                             # enum_strings=("Done", "Start"),
-                             # dtype=ChannelType.ENUM)
+    erase_start = pvproperty(name="EraseStart", dtype=unknown)  # value="Done",
+    # record="mbbi",
+    # enum_strings=("Done", "Start"),
+    # dtype=ChannelType.ENUM)
     erase_all = pvproperty(name="EraseAll", dtype=unknown)
     stop_all = pvproperty(name="StopAll", dtype=unknown)
     acquiring = pvproperty(

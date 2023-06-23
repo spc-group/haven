@@ -113,12 +113,12 @@ class RunBrowserDisplay(display.FireflyDisplay):
 
     def update_combobox_items(self, fields):
         for field_name, cb in [
-                ('proposal_users', self.ui.filter_proposal_combobox),
-                ('proposal_id', self.ui.filter_user_combobox),
-                ('esaf_id', self.ui.filter_esaf_combobox),
-                ('sample_name', self.ui.filter_sample_combobox),
-                ('plan_name', self.ui.filter_plan_combobox),
-                ('edge', self.ui.filter_edge_combobox),
+            ("proposal_users", self.ui.filter_proposal_combobox),
+            ("proposal_id", self.ui.filter_user_combobox),
+            ("esaf_id", self.ui.filter_esaf_combobox),
+            ("sample_name", self.ui.filter_sample_combobox),
+            ("plan_name", self.ui.filter_plan_combobox),
+            ("edge", self.ui.filter_edge_combobox),
         ]:
             cb.clear()
             cb.addItems(fields[field_name])
@@ -157,7 +157,9 @@ class RunBrowserDisplay(display.FireflyDisplay):
         # Set up 1D plotting widgets
         self.plot_1d_item = self.ui.plot_1d_view.getPlotItem()
         self.plot_1d_item.addLegend()
-        self.plot_1d_item.hover_coords_changed.connect(self.ui.hover_coords_label.setText)
+        self.plot_1d_item.hover_coords_changed.connect(
+            self.ui.hover_coords_label.setText
+        )
 
     def get_signals(self, run, hinted_only=False):
         if hinted_only:

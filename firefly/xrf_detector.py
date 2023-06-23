@@ -62,13 +62,13 @@ class ROIRegion(pyqtgraph.LinearRegionItem):
         self.hi_channel = PyDMChannel(
             address=f"{address}.hi_chan._write_pv",
             value_slot=self.set_region_upper,
-            value_signal=self.region_upper_changed
+            value_signal=self.region_upper_changed,
         )
         self.hi_channel.connect()
         self.lo_channel = PyDMChannel(
             address=f"{address}.lo_chan._write_pv",
             value_slot=self.set_region_lower,
-            value_signal=self.region_lower_changed
+            value_signal=self.region_lower_changed,
         )
         self.lo_channel.connect()
         self.sigRegionChangeFinished.connect(self.handle_region_change)
@@ -83,13 +83,13 @@ class ROIRegion(pyqtgraph.LinearRegionItem):
             log.debug(f"Changing lower from {self._last_lower} to {lower}")
             if self._last_lower is not None:
                 self.region_lower_changed.emit(lower)
-            self._last_lower = lower                
+            self._last_lower = lower
         if upper != self._last_upper:
             log.debug(f"Changing upper from {self._last_upper} to {upper}")
             if self._last_upper is not None:
                 self.region_upper_changed.emit(upper)
             self._last_upper = upper
-    
+
     def set_region_lower(self, new_lower):
         """Set the upper value of the highlighted region."""
         log.debug(f"Setting new region lower bound: {new_lower}")
@@ -98,7 +98,7 @@ class ROIRegion(pyqtgraph.LinearRegionItem):
         if new_region != old_region:
             self.setRegion(new_region)
         self._last_lower = new_lower
-    
+
     def set_region_upper(self, new_upper):
         """Set the upper value of the highlighted region."""
         log.debug(f"Setting new region upper bound: {new_upper}")
@@ -111,6 +111,7 @@ class ROIRegion(pyqtgraph.LinearRegionItem):
 
 class XRF1DPlotItem(pyqtgraph.PlotItem):
     """The axes used for plotting."""
+
     hover_coords_changed = Signal(str)
 
     def hoverEvent(self, event):
@@ -127,6 +128,7 @@ class XRF1DPlotItem(pyqtgraph.PlotItem):
 
 class XRF1DPlotWidget(pyqtgraph.PlotWidget):
     """The inner widget containing just the plot."""
+
     def __init__(self, parent=None, background="default", plotItem=None, **kargs):
         plot_item = XRF1DPlotItem(**kargs)
         super().__init__(parent=parent, background=background, plotItem=plot_item)
@@ -134,6 +136,7 @@ class XRF1DPlotWidget(pyqtgraph.PlotWidget):
 
 class XRFPlotWidget(QWidget):
     """The outer widget, containing the plot and related controls."""
+
     ui_dir = Path(__file__).parent
     _data_items: defaultdict
     _selected_spectrum: int = None
@@ -161,10 +164,12 @@ class XRFPlotWidget(QWidget):
         if key not in self._region_items.keys():
             address = f"oph://{self.device_name}.mcas.mca{mca_num}.rois.roi{roi_num}"
             color = self.region_color(mca_num=mca_num, roi_num=roi_num)
-            region = ROIRegion(address=address,
-                               brush=f"{color}10",
-                               hoverBrush=f"{color}20",
-                               pen=f"{color}50",)
+            region = ROIRegion(
+                address=address,
+                brush=f"{color}10",
+                hoverBrush=f"{color}20",
+                pen=f"{color}50",
+            )
             plot_item.addItem(region)
             self._region_items[key] = region
         # Return the region item
@@ -181,17 +186,14 @@ class XRFPlotWidget(QWidget):
         """Plot the spectrum associated with the given MCA index."""
         # Create the plot item itself if necessary
         log.debug(f"New spectrum ({mca_num}): {repr(spectrum)}")
-        show_spectrum = (
-            self.target_mca is None or
-            mca_num == self.target_mca
-        )
+        show_spectrum = self.target_mca is None or mca_num == self.target_mca
         row, col = (0, 0)
         plot_item = self.ui.plot_widget.getPlotItem()
         # Get rid of the previous plots
         if (existing_item := self._data_items[mca_num]) is not None:
             plot_item.removeItem(existing_item)
         # Plot the spectrum
-        if show_spectrum:                
+        if show_spectrum:
             xdata = np.arange(len(spectrum))
             color = self.spectrum_color(mca_num)
             self._data_items[mca_num] = plot_item.plot(
@@ -202,7 +204,7 @@ class XRFPlotWidget(QWidget):
 
     def spectrum_color(self, mca_num):
         return colors[(mca_num - 1) % len(colors)]
-    
+
     def highlight_spectrum(self, mca_num, roi_num, hovered):
         """Highlight a spectrum and lowlight the rest.
 
@@ -214,7 +216,7 @@ class XRFPlotWidget(QWidget):
         """
         raise NotImplementedError
 
-    def show_region(self, show: bool, mca_num: int = 1, roi_num: int=0):
+    def show_region(self, show: bool, mca_num: int = 1, roi_num: int = 0):
         # Hide all the other regions
         for (mca, roi), region in self._region_items.items():
             region.setVisible(False)
@@ -269,7 +271,9 @@ class MCAPlotWidget(XRFPlotWidget):
         if hovered:
             self.show_region(show=True, mca_num=mca_num, roi_num=roi_num)
         elif is_selected:
-            self.show_region(show=True, mca_num=self._selected_spectrum, roi_num=roi_num)
+            self.show_region(
+                show=True, mca_num=self._selected_spectrum, roi_num=roi_num
+            )
         else:
             self.show_region(show=False, mca_num=mca_num, roi_num=roi_num)
 
@@ -277,11 +281,10 @@ class MCAPlotWidget(XRFPlotWidget):
         """Select an active spectrum to modify."""
         log.debug(f"Selecting spectrum {mca_num}")
         self._selected_spectrum = mca_num if is_selected else None
-        self.highlight_spectrum(mca_num=mca_num, roi_num=roi_num, hovered=is_selected)    
+        self.highlight_spectrum(mca_num=mca_num, roi_num=roi_num, hovered=is_selected)
 
 
 class ROIPlotWidget(XRFPlotWidget):
-
     def region_color(self, mca_num, roi_num):
         return colors[(roi_num) % len(colors)]
 
@@ -289,7 +292,7 @@ class ROIPlotWidget(XRFPlotWidget):
         """Select an active spectrum to modify."""
         log.debug(f"Selecting ROI {roi_num}")
         self._selected_roi = roi_num if is_selected else None
-        self.highlight_spectrum(mca_num=mca_num, roi_num=roi_num, hovered=is_selected)    
+        self.highlight_spectrum(mca_num=mca_num, roi_num=roi_num, hovered=is_selected)
 
     def highlight_spectrum(self, mca_num, roi_num, hovered):
         """Highlight a spectrum and lowlight the rest.
@@ -308,7 +311,7 @@ class ROIPlotWidget(XRFPlotWidget):
             self.show_region(show=True, mca_num=mca_num, roi_num=self._selected_roi)
         else:
             self.show_region(show=False, mca_num=mca_num, roi_num=roi_num)
-        
+
 
 class ROIEmbeddedDisplay(PyDMEmbeddedDisplay):
     # Signals
@@ -324,7 +327,7 @@ class ROIEmbeddedDisplay(PyDMEmbeddedDisplay):
 
     def enterEvent(self, event=None):
         self.hovered.emit(True)
-    
+
     def leaveEvent(self, event=None):
         self.hovered.emit(False)
 
@@ -500,7 +503,7 @@ class XRFDetectorDisplay(display.FireflyDisplay):
           A sequence of all the displays to copy to.
         source_display
           The embedded display for the row from which to copy.
-        
+
         """
         new_label = source_display.embedded_widget.ui.label_lineedit.text()
         new_lower = source_display.embedded_widget.ui.lower_lineedit.text()
@@ -513,9 +516,11 @@ class XRFDetectorDisplay(display.FireflyDisplay):
                 display.embedded_widget.ui.lower_lineedit.setText(new_lower)
                 display.embedded_widget.ui.upper_lineedit.setText(new_upper)
                 # Send the new value over the wire
-                for widget in [display.embedded_widget.ui.label_lineedit,
-                               display.embedded_widget.ui.lower_lineedit,
-                               display.embedded_widget.ui.upper_lineedit]:
+                for widget in [
+                    display.embedded_widget.ui.label_lineedit,
+                    display.embedded_widget.ui.lower_lineedit,
+                    display.embedded_widget.ui.upper_lineedit,
+                ]:
                     if widget._connected:
                         widget.send_value()
 
@@ -528,7 +533,9 @@ class XRFDetectorDisplay(display.FireflyDisplay):
         # Get existing values from selected ROI row
         roi_idx = self._selected_roi
         source_display = self.roi_displays[roi_idx]
-        self.copy_selected_row(source_display=source_display, displays=self.roi_displays)
+        self.copy_selected_row(
+            source_display=source_display, displays=self.roi_displays
+        )
 
     def copy_selected_mca(self):
         """Copy the label, hi channel, and lo channel values from the selected
@@ -539,7 +546,9 @@ class XRFDetectorDisplay(display.FireflyDisplay):
         # Get existing values from selected MCA row
         mca_idx = self._selected_mca - 1
         source_display = self.mca_displays[mca_idx]
-        self.copy_selected_row(source_display=source_display, displays=self.mca_displays)
+        self.copy_selected_row(
+            source_display=source_display, displays=self.mca_displays
+        )
 
     def handle_new_spectrum(self, new_spectrum, mca_num):
         self.spectrum_changed.emit(mca_num, new_spectrum)
@@ -604,9 +613,10 @@ class XRFDetectorDisplay(display.FireflyDisplay):
                 disp.setEnabled(True)
         # Show this spectrum highlighted in the plots
         mca_num = self.ui.mca_combobox.currentIndex() + 1
-        self.roi_plot_widget.select_roi(mca_num=mca_num, roi_num=roi_num,
-                                        is_selected=is_selected)
-    
+        self.roi_plot_widget.select_roi(
+            mca_num=mca_num, roi_num=roi_num, is_selected=is_selected
+        )
+
     def mca_selected(self, is_selected: bool, mca_num: int = 0):
         """Handler for when an MCA row is selected for editing.
 
@@ -633,9 +643,10 @@ class XRFDetectorDisplay(display.FireflyDisplay):
                 disp.setEnabled(True)
         # Show this spectrum highlighted in the plots
         roi_num = self.ui.roi_combobox.currentIndex()
-        self.mca_plot_widget.select_spectrum(mca_num=mca_num, roi_num=roi_num,
-                                             is_selected=is_selected)
-    
+        self.mca_plot_widget.select_spectrum(
+            mca_num=mca_num, roi_num=roi_num, is_selected=is_selected
+        )
+
     def draw_roi_widgets(self, mca_idx):
         mca_num = mca_idx + 1
         with self.disable_ui():
@@ -658,7 +669,9 @@ class XRFDetectorDisplay(display.FireflyDisplay):
                 disp.filename = "xrf_roi.py"
                 # Respond when this ROI is selected
                 disp.selected.connect(partial(self.roi_selected, roi_num=roi_num))
-                disp.hovered.connect(partial(self.roi_row_hovered.emit, mca_num, roi_num))
+                disp.hovered.connect(
+                    partial(self.roi_row_hovered.emit, mca_num, roi_num)
+                )
                 # Add the Embedded Display to the ROI Layout
                 layout.addWidget(disp)
                 self.roi_displays.append(disp)
@@ -687,7 +700,9 @@ class XRFDetectorDisplay(display.FireflyDisplay):
                 disp.filename = "xrf_roi.py"
                 # Respond when this MCA is interacted with
                 disp.selected.connect(partial(self.mca_selected, mca_num=mca_num))
-                disp.hovered.connect(partial(self.mca_row_hovered.emit, mca_num, roi_idx))
+                disp.hovered.connect(
+                    partial(self.mca_row_hovered.emit, mca_num, roi_idx)
+                )
                 # Add the Embedded Display to the ROI Layout
                 layout.addWidget(disp)
                 self.mca_displays.append(disp)
