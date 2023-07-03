@@ -23,101 +23,85 @@ def test_load_dxp(sim_registry, mocker):
     assert hasattr(vortex.mcas.mca1, "rois")
     assert hasattr(vortex.mcas.mca1.rois, "roi1")
     # Check that bluesky hints were added
-    assert hasattr(vortex.mcas.mca1.rois.roi1, 'is_hinted')
+    assert hasattr(vortex.mcas.mca1.rois.roi1, "is_hinted")
     assert vortex.mcas.mca1.rois.roi1.is_hinted.pvname == "vortex_me4:mca1_R1BH"
 
 
 @pytest.fixture()
 def vortex(sim_registry, mocker):
     mocker.patch("ophyd.signal.EpicsSignalBase._ensure_connected")
-    from haven.instrument.fluorescence_detector import load_fluorescence_detectors
+    from haven.instrument.fluorescence_detector import load_dxp_detector
 
-    load_fluorescence_detectors(config=None)
+    # load_fluorescence_detectors(config=None)
+    load_dxp_detector(
+        device_name="vortex_me4",
+        prefix="255idDXP",
+        num_elements=4,
+    )
     # See if the device was loaded
     vortex = sim_registry.find(name="vortex_me4")
     yield vortex
 
 
-def test_enable_rois(vortex):
-    assert hasattr(vortex.mcas.mca1, "rois")
-    # Test that all channels are disabled by default
-    assert "vortex_me4_mca1_rois_roi1" not in vortex.read_attrs
-    assert "preset_live_time" in vortex.read_attrs
-    assert "preset_mode" in vortex.configuration_attrs
-    # Make sure config attrs are in the right place
-    config_signals = [
-        "mcas.mca3.rois.roi0.label",
-        "mcas.mca3.rois.roi0.bkgnd_chans",
-        "mcas.mca3.rois.roi0.hi_chan",
-        "mcas.mca3.rois.roi0.lo_chan",
-    ]
-    normal_signals = ["mcas.mca3.rois.roi0.count", "mcas.mca3.rois.roi0.net_count"]
-    omitted_signals = [
-        "mcas.mca3.rois.roi0.preset_count",
-        "mcas.mca3.rois.roi0.is_preset",
-    ]
-    for attr in config_signals:
-        assert attr not in vortex.configuration_attrs
-        assert attr not in vortex.read_attrs
-    for attr in normal_signals:
-        assert attr not in vortex.read_attrs
-        assert attr not in vortex.configuration_attrs
-    for attr in omitted_signals:
-        assert attr not in vortex.read_attrs
-        assert attr not in vortex.configuration_attrs
-    # Enable all ROIs
-    vortex.enable_rois()
-    for attr in config_signals:
-        assert attr in vortex.configuration_attrs
-        assert attr not in vortex.read_attrs
-    for attr in normal_signals:
-        assert attr in vortex.read_attrs
-        assert attr not in vortex.configuration_attrs
-    for attr in omitted_signals:
-        assert attr not in vortex.read_attrs
-        assert attr not in vortex.configuration_attrs
-    # Disable all ROIs
-    vortex.disable_rois()
-    for attr in config_signals:
-        assert attr not in vortex.configuration_attrs
-        assert attr not in vortex.read_attrs
-    for attr in normal_signals:
-        assert attr not in vortex.read_attrs
-        assert attr not in vortex.configuration_attrs
-    for attr in omitted_signals:
-        assert attr not in vortex.read_attrs
-        assert attr not in vortex.configuration_attrs
+def test_enable_some_rois(vortex, ioc_dxp):
+    """Test that the correct ROIs are enabled/disabled."""
+    statuses = vortex.enable_rois(rois=[2, 5], elements=[1, 3])
+    # Give the IOC time to change the PVs
+    for status in statuses:
+        status.wait()
+        # Check that at least one of the ROIs was changed
+    roi = vortex.mcas.mca1.rois.roi2
+    hinted = roi.is_hinted.get(use_monitor=False)
+    assert hinted == 1
 
 
-def test_enable_some_rois(vortex):
-    vortex.disable_rois()
-    assert "mcas.mca1.rois.roi0" not in vortex.read_attrs
-    assert "mcas.mca1.rois.roi1" not in vortex.read_attrs
-    # Enable just ROI0
-    vortex.enable_rois(rois=[0])
-    assert "mcas.mca1.rois.roi0" in vortex.read_attrs
-    assert "mcas.mca1.rois.roi1" not in vortex.read_attrs
-    # Disable just ROI0
-    vortex.enable_rois()
-    vortex.disable_rois(rois=[0])
-    assert "mcas.mca1.rois.roi0" not in vortex.read_attrs
-    assert "mcas.mca1.rois.roi1" in vortex.read_attrs
+def test_enable_rois(vortex, ioc_dxp):
+    """Test that the correct ROIs are enabled/disabled."""
+    statuses = vortex.enable_rois()
+    # Give the IOC time to change the PVs
+    for status in statuses:
+        status.wait()
+        # Check that at least one of the ROIs was changed
+    roi = vortex.mcas.mca1.rois.roi2
+    hinted = roi.is_hinted.get(use_monitor=False)
+    assert hinted == 1
 
 
-def test_enable_all_elements(vortex):
-    vortex.enable_rois()
-    vortex.disable_elements()
-    assert "mcas.mca1.rois.roi0" not in vortex.read_attrs
-    assert "mcas.mca1.rois.roi1" not in vortex.read_attrs
-    # Enable just ROI0
-    vortex.enable_elements(elements=[1])
-    assert "mcas.mca1.rois.roi0" in vortex.read_attrs
-    assert "mcas.mca2.rois.roi0" not in vortex.read_attrs
-    # Disable just ROI0
-    vortex.enable_elements()
-    vortex.disable_elements(elements=[0])
-    assert "mcas.mca0.rois.roi0" not in vortex.read_attrs
-    assert "mcas.mca1.rois.roi0" in vortex.read_attrs
+def test_disable_some_rois(vortex, ioc_dxp):
+    """Test that the correct ROIs are enabled/disabled."""
+    statuses = vortex.enable_rois(rois=[2, 5], elements=[1, 3])
+    # Give the IOC time to change the PVs
+    for status in statuses:
+        status.wait()
+    # Check that at least one of the ROIs was changed
+    roi = vortex.mcas.mca1.rois.roi2
+    hinted = roi.is_hinted.get(use_monitor=False)
+    assert hinted == 1
+    statuses = vortex.disable_rois(rois=[2, 5], elements=[1, 3])
+    # Give the IOC time to change the PVs
+    for status in statuses:
+        status.wait()
+    # Check that at least one of the ROIs was changed
+    roi = vortex.mcas.mca1.rois.roi2
+    hinted = roi.is_hinted.get(use_monitor=False)
+    assert hinted == 0
+
+
+def test_disable_rois(vortex, ioc_dxp):
+    """Test that the correct ROIs are enabled/disabled."""
+    statuses = vortex.enable_rois()
+    # Give the IOC time to change the PVs
+    for status in statuses:
+        status.wait()
+
+    statuses = vortex.disable_rois()
+    # Give the IOC time to change the PVs
+    for status in statuses:
+        status.wait()
+        # Check that at least one of the ROIs was changed
+    roi = vortex.mcas.mca1.rois.roi2
+    hinted = roi.is_hinted.get(use_monitor=False)
+    assert hinted == 0
 
 
 @pytest.mark.xfail

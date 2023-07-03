@@ -3,6 +3,7 @@ from typing import Callable, Union
 
 from ophyd import Component, K
 
+
 class RegexComponent(Component[K]):
     """A component with regular expression matching.
 
@@ -36,7 +37,7 @@ class RegexComponent(Component[K]):
     assert mca.roi0.name.pvname == "mca.R0NM"
     # *is_hinted* has regex substitution
     assert mca.roi0.is_hinted.pvname == "mca_R0BH"
-        
+
     ```
 
     """
@@ -76,4 +77,3 @@ class RegexComponent(Component[K]):
             pass
         print(f"{kw}: {suffix} -> {new_val}")
         return new_val
-
