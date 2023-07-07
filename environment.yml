@@ -55,6 +55,7 @@ dependencies:
   - pyqt >=5.12
   - qt >=5.12
   - qtawesome
+  - pyqtgraph
 
   # --- general support packages
   - bitshuffle
@@ -112,6 +113,8 @@ dependencies:
   
   # --- packaging and publishing
   # - conda-build
+  - build
+  - twine
   - coverage
   - poetry
   - sphinx
@@ -119,7 +122,6 @@ dependencies:
   - nbsphinx
   - graphviz
   - sphinxcontrib-napoleon
-  # - twine
   # - versioneer
   # - mamba
   # - micromamba

@@ -1,29 +1,60 @@
 [project]
-name = "haven"
-version = "0.1.0"
-
-[tool.setuptools]
-packages = ["haven", "firefly"]
-
-[tool.poetry]
-name = "haven"
-version = "0.1.0"
-description = "Runs the spectroscopy group beamlines."
-
-license = "all-rights-reserved"
-
+name = "haven-spc"
+version = "23.7.1"
 authors = [
-    "Mark Wolfman <wolfman@anl.gov>"
+  { name="Mark Wolfman", email="wolfman@anl.gov" },
 ]
-
-readme = "README.md"  # Markdown files are supported
-
-repository = "https://github.com/spc-group/haven"
-homepage = "https://haven-spc.readthedocs.io/en/latest/"
-
+description = "Tools and GUI for running the spectroscopy group beamlines at the Advanced Photon Source."
+readme = "README.md"
+requires-python = ">=3.7,<3.11"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+    "Development Status :: 3 - Alpha",
+    "Topic :: Scientific/Engineering",
+    "Topic :: System :: Hardware",
+]
 keywords = ["synchrotron", "xray", "bluesky"]
+dependencies = ["bluesky", "ophyd", "databroker", "apsbss", "xraydb", "mergedeep", "xrayutilities", "bluesky-queueserver-api", "apstools", "databroker"]
 
-[tool.poetry.dependencies]
+[project.optional-dependencies]
+
+dev = ["black", "pytest", "pytest-mongodb", "build", "twine",
+       "time-machine", "pytest-mock", "pytest-qt", "flake8"]
+gui = ["pyqt>=5.12", "tiled-client", "qtawesome", "pydm", "pyqtgraph"]
+
+[project.urls]
+"Homepage" = "https://haven-spc.readthedocs.io/en/latest/"
+"Bug Tracker" = "https://github.com/spc-group/haven/issues"
+
+[project.scripts]
+haven_config = "haven._iconfig:print_config_value"
+
+[project.gui-scripts]
+firefly = "firefly.launcher:main"
+firefly_cameras = "firefly.launcher:cameras"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+# [tool.poetry]
+# name = "haven"
+# version = "0.1.0"
+
+
+# license = "all-rights-reserved"
+
+# authors = [
+#     "Mark Wolfman <wolfman@anl.gov>"
+# ]
+
+# readme = "README.md"  # Markdown files are supported
+
+
+# keywords = ["synchrotron", "xray", "bluesky"]
+
+# [tool.poetry.dependencies]
 
 # time-machine = {}
 # autoapi = {}
@@ -41,8 +72,14 @@ keywords = ["synchrotron", "xray", "bluesky"]
 # # Optional dependencies (extras)
 # pendulum = { version = "^1.4", optional = true }
 
-[tool.poetry.scripts]
-haven_config = "haven._iconfig:print_config_value"
-firefly = "firefly.launcher:main"
-start_firefly = "firefly.launcher:main"  # Deprecated
-firefly_cameras = "firefly.launcher:cameras"
+# [tool.poetry.scripts]
+# haven_config = "haven._iconfig:print_config_value"
+# firefly = "firefly.launcher:main"
+# start_firefly = "firefly.launcher:main"  # Deprecated
+# firefly_cameras = "firefly.launcher:cameras"
+
+# [tool.poetry.scripts]
+# haven_config = "haven._iconfig:print_config_value"
+# firefly = "firefly.launcher:main"
+# start_firefly = "firefly.launcher:main"  # Deprecated
+# firefly_cameras = "firefly.launcher:cameras"

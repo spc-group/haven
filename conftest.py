@@ -28,12 +28,22 @@ def sim_tiled():
     if tiled_is_running(port, match_command=False):
         raise RuntimeError(f"Port {port} is already in use.")
     tiled_bin = shutil.which("tiled")
-    process = Popen([tiled_bin, "serve", "pyobject", "--public", "--port", str(port), "haven.tests.tiled_example:tree"])
+    process = Popen(
+        [
+            tiled_bin,
+            "serve",
+            "pyobject",
+            "--public",
+            "--port",
+            str(port),
+            "haven.tests.tiled_example:tree",
+        ]
+    )
     # Wait for start to complete
     for i in range(timeout):
         if tiled_is_running(port):
             break
-        time.sleep(1.)
+        time.sleep(1.0)
     else:
         # Timeout finished without startup or error
         process.kill()
@@ -47,7 +57,7 @@ def sim_tiled():
     for i in range(timeout):
         if not tiled_is_running(port):
             break
-        time.sleep(1.)
+        time.sleep(1.0)
     else:
         process.kill()
         time.sleep(1)

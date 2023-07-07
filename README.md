@@ -12,19 +12,29 @@ of the sky."
 
 ## Installation
 
-*haven* uses *mamba* for dependency management, and *poetry* for
-installation and development. First create the conda environment with
-mamba:
+### Python Packing Index
+
+Easiest way to install haven is using pip.
+
+```
+$ python -m pip install 'haven-spc'
+```
+
+### Development (Conda)
+
+*haven* can also use *mamba* for dependency management, and
+*setuptools* for installation and development. First create the conda
+environment with mamba:
 
 ```
 $ mamba env create -f environment.yml -n haven
 ```
 
-then install the package, with dependencies, in developer mode:
+then install the package, in developer mode:
 
 ```
 $ conda activate haven
-$ poetry install
+$ pip install -e .
 ```
 
 ## Running Tests
@@ -36,4 +46,30 @@ $ pytest
 ```
 
 # firefly
-User-facing applications for controlling the beamlines managed by the spectroscopy group
+
+User-facing applications for controlling the beamlines managed by the
+spectroscopy group. Be sure to include the [gui] extras if you plan
+to use the GUI.
+
+```
+$ python -m pip install 'haven-spc[gui]'
+$ firefly
+```
+
+# Versioning
+
+Haven/Firefly uses calendar versioning, with short year and short
+month for the MAJOR and MINOR versions, then a incremental MICRO
+version. For example, version *23.7.2* is the 2nd (*2*) release in
+July (*7*) 2023 (*23*).
+
+# Packaging
+
+## Python Package Index (PyPI)
+
+To deploy to PyPI:
+
+```
+$ python -m build
+$ python -m twine check dist/*
+$ python -m twine upload dist/*
