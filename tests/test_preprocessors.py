@@ -125,7 +125,7 @@ def test_metadata(sim_registry, sim_aps, monkeypatch):
     assert "versions" in start_doc.keys()
     versions = start_doc["versions"]
     assert "haven" in versions.keys()
-    assert versions["haven"] == "0.1.0"
+    assert versions["haven"] == "23.7.1"
     assert "bluesky" in versions.keys()
     # Check metadata keys
     expected_keys = [
