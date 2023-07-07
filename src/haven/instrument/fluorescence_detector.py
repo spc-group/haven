@@ -261,53 +261,85 @@ class DxpDetectorBase(mca.EpicsDXPMultiElementSystem):
             all_rois.extend(rois)
         return all_rois
 
-    def enable_rois(self, rois: Optional[Sequence[int]] = None):
+    def get_roi(self, mca_num: int, roi_num: int):
+        """Get a specific ROI component based on
+        its MCA number and then the ROI number.
+        """
+        mca = getattr(self.mcas, f"mca{mca_num}")
+        roi = getattr(mca.rois, f"roi{roi_num}")
+        return roi
+
+    def enable_rois(
+        self,
+        rois: Optional[Sequence[int]] = None,
+        elements: Optional[Sequence[int]] = None,
+    ) -> list:
         """Include some, or all, ROIs in the list of detectors to
         read.
 
+        elements
+          A list of indices for which elements to enable. Default is
+          to operate on all elements.
+
         rois
           A list of indices for which ROIs to enable. Default is to
           operate on all ROIs.
 
+        Returns
+        =======
+        statuses
+          The status object for each ROI that was changed
         """
-        for roi in self.rois(roi_indices=rois):
-            roi.kind = active_kind
+        statuses = []
 
-    def disable_rois(self, rois: Optional[Sequence[int]] = None):
+        if rois is None:
+            rois = range(self.num_rois)
+
+        if elements is None:
+            elements = range(1, self.num_elements + 1)
+
+        for mca_num in elements:
+            for roi_num in rois:
+                roi = self.get_roi(mca_num, roi_num)
+                status = roi.is_hinted.set(1)
+                statuses.append(status)
+        return statuses
+
+    def disable_rois(
+        self,
+        rois: Optional[Sequence[int]] = None,
+        elements: Optional[Sequence[int]] = None,
+    ) -> list:
         """Remove some, or all, ROIs from the list of detectors to
         read.
 
+        elements
+          A list of indices for which elements to enable. Default is
+          to operate on all elements.
+
         rois
           A list of indices for which ROIs to enable. Default is to
           operate on all ROIs.
 
+        Returns
+        =======
+        statuses
+          The status object for each ROI that was changed
         """
-        for roi in self.rois(roi_indices=rois):
-            roi.kind = Kind.omitted
+        statuses = []
+        # Default to all elements and all ROIs
+        if rois is None:
+            rois = range(self.num_rois)
 
-    def enable_elements(self, elements: Optional[Sequence[int]] = None):
-        """Include some, or all, elements in the list of detectors to
-        read.
-
-        elements
-          A list of indices for which elements to enable. Default is
-          to operate on all elements.
-
-        """
-        for elem in self.mca_records(mca_indices=elements):
-            elem.kind = active_kind
-
-    def disable_elements(self, elements: Optional[Sequence[int]] = None):
-        """Include some, or all, elements in the list of detectors to
-        read.
-
-        elements
-          A list of indices for which elements to enable. Default is
-          to operate on all elements.
-
-        """
-        for elem in self.mca_records(mca_indices=elements):
-            elem.kind = Kind.omitted
+        if elements is None:
+            elements = range(1, self.num_elements + 1)
+        # Go through and set the hint on requested ROIs
+        for mca_num in elements:
+            for roi_num in rois:
+                roi = self.get_roi(mca_num, roi_num)
+                status = roi.is_hinted.set(0)
+                statuses.append(status)
+        return statuses
 
 
 class XspressDetector(ScalerTriggered, Device):

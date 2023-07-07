@@ -31,7 +31,7 @@ class DXPGroup(EpicsDXPGroup):
 
 
 class ROIGroup(MCAROIGroup):
-    is_hinted = pvproperty(name="BH", dtype=bool)
+    # is_hinted = pvproperty(name="BH", dtype=bool)
     hi_chan = pvproperty(name="HI", value=2048)
     lo_chan = pvproperty(name="LO", value=0)
     # hi_chan = pvproperty(name="HI", dtype=int, value=2048)
@@ -45,7 +45,17 @@ class MCAGroup(EpicsMCAGroup):
         {f"roi{i}": SubGroup(ROIGroup, prefix=f".R{i}") for i in range(32)},
     )
 
+    HintsGroup = type(
+        "HintsGroup",
+        (PVGroup,),
+        {
+            f"hint{i}": pvproperty(name=f"_R{i}BH", dtype=bool, value="Off")
+            for i in range(32)
+        },
+    )
+
     rois = SubGroup(RoisGroup, prefix="")
+    bluesky_hints = SubGroup(HintsGroup, prefix="")
 
     erase = pvproperty(name="Erase", dtype=unknown)
     start = pvproperty(name="Start", dtype=unknown)
