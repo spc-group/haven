@@ -1,7 +1,52 @@
 import re
+import time as ttime
 from typing import Callable, Union
+import asyncio
 
 from ophyd import Component, K
+
+
+async def await_for_connection(dev, all_signals=False, timeout=2.0):
+    """Wait for signals to connect
+
+        Parameters
+        ----------
+        all_signals : bool, optional
+            Wait for all signals to connect (including lazy ones)
+        timeout : float or None
+            Overall timeout
+    """
+    signals = [walk.item for walk in dev.walk_signals(include_lazy=all_signals)]
+ 
+    pending_funcs = {
+                    dev: getattr(dev, "_required_for_connection", {})
+                    for name, dev in dev.walk_subdevices(include_lazy=all_signals)
+                }
+    pending_funcs[dev] = dev._required_for_connection
+ 
+    t0 = ttime.time()
+    while timeout is None or (ttime.time() - t0) < timeout:
+        connected = all(sig.connected for sig in signals)
+        if connected and not any(pending_funcs.values()):
+            return
+        await asyncio.sleep(min((0.05, timeout / 10.0)))
+ 
+    def get_name(sig):
+        sig_name = f"{dev.name}.{sig.dotted_name}"
+        return f"{sig_name} ({sig.pvname})" if hasattr(sig, "pvname") else sig_name
+ 
+    reasons = []
+    unconnected = ", ".join(get_name(sig) for sig in signals if not sig.connected)
+    if unconnected:
+        reasons.append(f"Failed to connect to all signals: {unconnected}")
+    if any(pending_funcs.values()):
+        pending = ", ".join(
+                            description.format(device=dev)
+                            for dev, funcs in pending_funcs.items()
+                            for obj, description in funcs.items()
+                        )
+        reasons.append(f"Pending operations: {pending}")
+    raise TimeoutError("; ".join(reasons))
 
 
 class RegexComponent(Component[K]):
