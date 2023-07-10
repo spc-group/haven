@@ -2,7 +2,8 @@ import asyncio
 
 from epics import PV
 
-async def caget(pvname: str, timeout: float=1.0):
+
+async def caget(pvname: str, timeout: float = 1.0):
     """Asynchronous wrapper around pyepics.caget.
 
     Returns

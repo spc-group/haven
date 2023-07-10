@@ -9,7 +9,7 @@ from .motor import load_all_motor_coros
 from .ion_chamber import load_ion_chambers
 from .fluorescence_detector import load_fluorescence_detectors
 from .monochromator import load_monochromator
-from .camera import load_cameras
+from .camera import load_camera_coros
 from .shutter import load_shutters
 from .stage import load_stages
 from .aps import load_aps
@@ -48,9 +48,11 @@ async def aload_instrument(
     """
     coros = [
         *load_all_motor_coros(config=config),
+        *load_camera_coros(config=config),
     ]
     results = await asyncio.gather(*coros)
     return results
+
 
 def load_instrument(
     registry: InstrumentRegistry = default_registry, config: Mapping = None
@@ -81,11 +83,12 @@ def load_instrument(
         config = load_config()
     # Import devices asynchronously
     devices = asyncio.run(aload_instrument(registry=registry, config=config))
+    return devices
     # Import each device type for the instrument
     load_simulated_devices(config=config)
     load_energy_positioner(config=config)
     load_monochromator(config=config)
-    load_cameras(config=config)
+    # load_cameras(config=config)
     load_shutters(config=config)
     load_stages(config=config)
     load_power_supplies(config=config)
@@ -99,6 +102,8 @@ def load_instrument(
     # Facility-related devices
     load_aps(config=config)
     load_xray_sources(config=config)
+    # Filter out devices that couldn't be reached
+    devices = [d for d in devices if d is not None]
     return devices
 
 

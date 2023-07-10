@@ -51,11 +51,15 @@ def load_all_motor_coros(config=None):
         prefix = config["prefix"]
         num_motors = config["num_motors"]
         log.info(f"Loading {num_motors} motors from IOC: {name} ({prefix})")
-        coros.extend(load_ioc_motor_coros(prefix=prefix, num_motors=num_motors, ioc_name=name))
+        coros.extend(
+            load_ioc_motor_coros(prefix=prefix, num_motors=num_motors, ioc_name=name)
+        )
     return coros
 
 
-def load_ioc_motor_coros(prefix: str, num_motors: int, ioc_name: Optional[str]=None) -> list:
+def load_ioc_motor_coros(
+    prefix: str, num_motors: int, ioc_name: Optional[str] = None
+) -> list:
     """Create co-routines for loading IOC motors.
 
     These co-routines can then be run asynchronously by the caller
@@ -96,7 +100,7 @@ async def make_motor_device(pv, name, labels):
     return motor
 
 
-async def load_motor(prefix: str, motor_num: int, ioc_name: str=None):
+async def load_motor(prefix: str, motor_num: int, ioc_name: str = None):
     """Create the requested motor if it is reachable."""
     loop = asyncio.get_running_loop()
     pv = f"{prefix}:m{motor_num+1}"
@@ -118,4 +122,3 @@ async def load_motor(prefix: str, motor_num: int, ioc_name: str=None):
         if ioc_name is not None:
             labels = set([ioc_name, *labels])
         return await make_motor_device(pv, name, labels)
-
