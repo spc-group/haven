@@ -37,7 +37,7 @@ class RowlandPositioner(PseudoPositioner):
         z_motor_pv: str,
         z1_motor_pv: str,
         *args,
-        **kwargs
+        **kwargs,
     ):
         self.x_motor_pv = x_motor_pv
         self.y_motor_pv = y_motor_pv

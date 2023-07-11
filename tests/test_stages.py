@@ -28,3 +28,15 @@ def test_load_aerotech_stage():
     assert stage_ is not None
     vert_ = registry.find(name="Aerotech_vert")
     assert vert_ is not None
+
+
+def test_Aerotech_flyer():
+    aeroflyer = stage.AerotechFlyer(name="aerotech_flyer")
+    assert aeroflyer is not None
+
+
+def test_aerotech_stage():
+    flyer = stage.AerotechFlyStage(
+        "motor_ioc", pv_vert=":m1", pv_horiz=":m2", labels={"stages"}, name="aerotech"
+    )
+    assert flyer is not None
