@@ -36,7 +36,7 @@ async def make_aps_device():
     try:
         await await_for_connection(aps_)
     except TimeoutError as exc:
-        msg = f"Could not connect to APS machine: {repr(exc)}"
+        msg = f"Could not connect to APS machine."
         log.warning(msg)
     else:
         registry.register(aps_)
@@ -49,7 +49,7 @@ async def make_bss_device(prefix):
     try:
         await await_for_connection(bss_)
     except TimeoutError as exc:
-        msg = f"Could not connect to BSS machine: {repr(exc)}"
+        msg = f"Could not connect to BSS system: {prefix}"
         log.warning(msg)
     else:
         registry.register(bss_)

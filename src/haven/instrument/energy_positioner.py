@@ -1,3 +1,5 @@
+import logging
+
 from ophyd import (
     PseudoPositioner,
     EpicsMotor,
@@ -11,10 +13,13 @@ from ophyd import (
 from ophyd.ophydobj import OphydObject
 from ophyd.pseudopos import pseudo_position_argument, real_position_argument
 
-
 from .._iconfig import load_config
 from .instrument_registry import registry
 from .monochromator import Monochromator, IDTracking
+from .device import await_for_connection
+
+
+log = logging.getLogger(__name__)
 
 
 __all__ = ["EnergyPositioner", "load_energy_positioner"]
@@ -115,21 +120,38 @@ class EnergyPositioner(PseudoPositioner):
         )
 
 
-def load_energy_positioner(config=None):
-    # Load PV's from config
-    if config is None:
-        config = load_config()
-    mono_suffix = Monochromator.energy.suffix
-    id_offset_suffix = Monochromator.id_offset.suffix
-    id_tracking_suffix = Monochromator.id_tracking.suffix
-    mono_prefix = config["monochromator"]["ioc"]
-    id_prefix = config["undulator"]["ioc"]
-    # Create energy positioner
-    energy_positioner = EnergyPositioner(
-        name="energy",
+async def make_energy_device(name, mono_prefix, mono_suffix, id_prefix, id_offset_suffix, id_tracking_suffix):
+    dev = EnergyPositioner(
+        name=name,
         mono_pv=f"{mono_prefix}{mono_suffix}",
         id_offset_pv=f"{mono_prefix}{id_offset_suffix}",
         id_tracking_pv=f"{mono_prefix}{id_tracking_suffix}",
-        id_prefix=f"{id_prefix}",
+        id_prefix=id_prefix,
     )
-    registry.register(energy_positioner)
+    try:
+        await await_for_connection(dev)
+    except TimeoutError as exc:
+        msg = f"Could not connect to energy positioner: {name}"
+        log.warning(msg)
+    else:
+        registry.register(dev)
+        return dev
+
+
+
+def load_energy_positioner_coros(config=None):
+    # Load PV's from config
+    if config is None:
+        config = load_config()
+    coros = {
+        make_energy_device(
+            name="energy",
+            mono_suffix = Monochromator.energy.suffix,
+            id_offset_suffix = Monochromator.id_offset.suffix,
+            id_tracking_suffix = Monochromator.id_tracking.suffix,
+            mono_prefix = config["monochromator"]["ioc"],
+            id_prefix = config["undulator"]["ioc"],
+        )
+    }
+    # Create energy positioner
+    return coros

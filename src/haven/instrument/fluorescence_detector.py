@@ -17,12 +17,12 @@ from apstools.utils import cleanupText
 
 from .scaler_triggered import ScalerTriggered
 from .instrument_registry import registry
-from .device import RegexComponent as RECpt
+from .device import RegexComponent as RECpt, await_for_connection
 from .._iconfig import load_config
 from .. import exceptions
 
 
-__all__ = ["DxpDetectorBase", "load_fluorescence_detectors", "load_dxp_detector"]
+__all__ = ["DxpDetectorBase", "load_fluorescence_detectors"]
 
 
 log = logging.getLogger(__name__)
@@ -383,7 +383,7 @@ class XspressDetector(ScalerTriggered, Device):
         self.stage_sigs[self.num_frames] = val
 
 
-def load_dxp_detector(device_name, prefix, num_elements):
+async def make_dxp_device(device_name, prefix, num_elements):
     # Build the mca components
     # (Epics uses 1-index instead of 0-index)
     mca_range = range(1, num_elements + 1)
@@ -400,21 +400,33 @@ def load_dxp_detector(device_name, prefix, num_elements):
     parent_classes = (DxpDetectorBase,)
     Cls = type(class_name, parent_classes, attrs)
     det = Cls(prefix=f"{prefix}:", name=device_name, labels={"xrf_detectors"})
-    registry.register(det)
+    # Verify it is connection
+    try:
+        await await_for_connection(det)
+    except TimeoutError as exc:
+        msg = f"Could not connect to xray source: {prefix}"
+        log.warning(msg)
+    else:
+        registry.register(det)
+        return det
 
 
-def load_fluorescence_detectors(config=None):
+def load_fluorescence_detector_coros(config=None):
     # Get the detector definitions from config files
     if config is None:
         config = load_config()
+    coros = set()
     for name, cfg in config.get("fluorescence_detector", {}).items():
         if "prefix" not in cfg.keys():
             continue
         # Build the detector device
         if cfg["electronics"] == "dxp":
-            load_dxp_detector(
-                device_name=name, prefix=cfg["prefix"], num_elements=cfg["num_elements"]
+            coros.add(
+                make_dxp_device(
+                    device_name=name, prefix=cfg["prefix"], num_elements=cfg["num_elements"]
+                )
             )
         else:
             msg = f"Electronics '{cfg['electronics']}' for {name} not supported."
             raise exceptions.UnknownDeviceConfiguration(msg)
+    return coros

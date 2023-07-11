@@ -23,7 +23,7 @@ async def make_shutter_device(prefix, open_pv, close_pv, state_pv, name):
     try:
         await await_for_connection(shutter)
     except TimeoutError as exc:
-        log.warning(f"Could not connect to shutters: {name}; {exc}")
+        log.warning(f"Could not connect to shutters: {name}")
     else:
         registry.register(shutter)
         return shutter
