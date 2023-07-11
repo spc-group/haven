@@ -12,7 +12,7 @@ from .monochromator import load_monochromator
 from .camera import load_camera_coros
 from .shutter import load_shutter_coros
 from .stage import load_stages
-from .aps import load_aps
+from .aps import load_aps_coros
 from .power_supply import load_power_supplies
 from .xray_source import load_xray_sources
 from .area_detector import load_area_detectors
@@ -50,6 +50,7 @@ async def aload_instrument(
         *load_all_motor_coros(config=config),
         *load_camera_coros(config=config),
         *load_shutter_coros(config=config),
+        *load_aps_coros(config=config),
     ]
     results = await asyncio.gather(*coros)
     return results
@@ -101,7 +102,7 @@ def load_instrument(
     load_area_detectors(config=config)
     load_lerix_spectrometers(config=config)
     # Facility-related devices
-    load_aps(config=config)
+    # load_aps(config=config)
     load_xray_sources(config=config)
     # Filter out devices that couldn't be reached
     devices = [d for d in devices if d is not None]
