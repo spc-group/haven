@@ -57,46 +57,6 @@ class AravisDetector(SingleTrigger, DetectorBase):
     stats5 = ADCpt(StatsPlugin_V34, "Stats5:", kind=Kind.normal)
 
 
-def load_camera_coros(config=None) -> Sequence[DetectorBase]:
-    """Create co-routines for loading cameras from config files.
-
-    Returns
-    =======
-    coros
-      A set of co-routines that can be awaited to load the cameras.
-
-    """
-    if config is None:
-        config = load_config()
-    # Get configuration details for the cameras
-    devices = {
-        k: v
-        for (k, v) in config["camera"].items()
-        if hasattr(v, "keys") and "prefix" in v.keys()
-    }
-    # Load each camera
-    coros = set()
-    for key, cam_config in devices.items():
-        class_name = cam_config.get("device_class", "AravisDetector")
-        camera_name = cam_config.get("name", key)
-        description = cam_config.get("description", cam_config.get("name", key))
-        DeviceClass = globals().get(class_name)
-        # Check that it's a valid device class
-        if DeviceClass is None:
-            msg = f"camera.{key}.device_class={cam_config['device_class']}"
-            raise exceptions.UnknownDeviceConfiguration(msg)
-        coros.add(
-            make_camera_device(
-                DeviceClass=DeviceClass,
-                prefix=f"{cam_config['prefix']}:",
-                name=camera_name,
-                description=description,
-                labels={"cameras"},
-            )
-        )
-    return coros
-
-
 async def make_camera_device(
     DeviceClass, prefix: str, name: str, description: str, labels: set[str]
 ) -> DetectorBase:
@@ -123,3 +83,39 @@ async def make_camera_device(
     else:
         registry.register(device)
         return device
+
+
+def load_camera_coros(config=None) -> Sequence[DetectorBase]:
+    """Create co-routines for loading cameras from config files.
+
+    Returns
+    =======
+    coros
+      A set of co-routines that can be awaited to load the cameras.
+
+    """
+    if config is None:
+        config = load_config()
+    # Get configuration details for the cameras
+    devices = {
+        k: v
+        for (k, v) in config["camera"].items()
+        if hasattr(v, "keys") and "prefix" in v.keys()
+    }
+    # Load each camera
+    for key, cam_config in devices.items():
+        class_name = cam_config.get("device_class", "AravisDetector")
+        camera_name = cam_config.get("name", key)
+        description = cam_config.get("description", cam_config.get("name", key))
+        DeviceClass = globals().get(class_name)
+        # Check that it's a valid device class
+        if DeviceClass is None:
+            msg = f"camera.{key}.device_class={cam_config['device_class']}"
+            raise exceptions.UnknownDeviceConfiguration(msg)
+        yield make_camera_device(
+            DeviceClass=DeviceClass,
+            prefix=f"{cam_config['prefix']}:",
+            name=camera_name,
+            description=description,
+            labels={"cameras"},
+        )

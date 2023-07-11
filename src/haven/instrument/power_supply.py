@@ -67,16 +67,11 @@ def load_power_supply_coros(config=None):
         config = load_config()
     # Determine if any power supplies are available
     ps_configs = config.get("power_supply", {})
-    coros = set()
     for name, ps_config in ps_configs.items():
         # Do it once for each channel
-        print(name)
         for ch_num in range(1, ps_config["n_channels"] + 1):
-            coros.add(
-                make_power_supply_device(
-                    name=f"{name}_ch{ch_num}",
-                    prefix=ps_config["prefix"],
-                    ch_num=ch_num,
-                )
+            yield make_power_supply_device(
+                name=f"{name}_ch{ch_num}",
+                prefix=ps_config["prefix"],
+                ch_num=ch_num,
             )
-    return coros

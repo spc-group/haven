@@ -81,11 +81,9 @@ def load_ioc_motor_coros(
 
     """
     # Co-routines for creating motor objects
-    coros = []
     for motor_num in range(num_motors):
         log.debug(f"Making coro for {prefix}, {motor_num}")
-        coros.append(load_motor(prefix, motor_num, ioc_name))
-    return coros
+        yield load_motor(prefix, motor_num, ioc_name)
 
 
 async def make_motor_device(pv, name, labels):
@@ -104,7 +102,7 @@ async def load_motor(prefix: str, motor_num: int, ioc_name: str = None):
     """Create the requested motor if it is reachable."""
     pv = f"{prefix}:m{motor_num+1}"
     try:
-        name = await caget(f"{pv}.DESC", timeout=1.0)
+        name = await caget(f"{pv}.DESC")
     except asyncio.exceptions.TimeoutError:
         # Motor is unreachable, so skip it
         log.warning(f"Could not connect to motor: {pv}")

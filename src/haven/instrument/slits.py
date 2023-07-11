@@ -10,7 +10,7 @@ from .device import await_for_connection
 log = logging.getLogger(__name__)
 
 
-async def make_shutter_device(prefix, name):
+async def make_slits_device(prefix, name):
     slits = Optics2Slit2D_HV(prefix=prefix, name=name, labels={"slits"})
     try:
         await await_for_connection(slits)
@@ -25,8 +25,6 @@ async def make_shutter_device(prefix, name):
 def load_slit_coros(config=None):
     if config is None:
         config = load_config()
-    coros = set()
     # Create slits
     for name, slit_config in config.get("slits", {}).items():
-        coros.add(make_shutter_device(prefix=slit_config["prefix"], name=name))
-    return coros
+        yield make_slits_device(prefix=slit_config["prefix"], name=name)

@@ -68,14 +68,10 @@ def load_stage_coros(config=None):
     """
     if config is None:
         config = load_config()
-    coros = set()
     for name, stage_data in config.get("stage", {}).items():
-        coros.add(
-            make_stage_device(
-                name=name,
-                prefix=stage_data["prefix"],
-                pv_vert=stage_data["pv_vert"],
-                pv_horiz=stage_data["pv_horiz"],
-            )
+        yield make_stage_device(
+            name=name,
+            prefix=stage_data["prefix"],
+            pv_vert=stage_data["pv_vert"],
+            pv_horiz=stage_data["pv_horiz"],
         )
-    return coros

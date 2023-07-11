@@ -416,20 +416,16 @@ def load_fluorescence_detector_coros(config=None):
     # Get the detector definitions from config files
     if config is None:
         config = load_config()
-    coros = set()
     for name, cfg in config.get("fluorescence_detector", {}).items():
         if "prefix" not in cfg.keys():
             continue
         # Build the detector device
         if cfg["electronics"] == "dxp":
-            coros.add(
-                make_dxp_device(
-                    device_name=name,
-                    prefix=cfg["prefix"],
-                    num_elements=cfg["num_elements"],
-                )
+            yield make_dxp_device(
+                device_name=name,
+                prefix=cfg["prefix"],
+                num_elements=cfg["num_elements"],
             )
         else:
             msg = f"Electronics '{cfg['electronics']}' for {name} not supported."
             raise exceptions.UnknownDeviceConfiguration(msg)
-    return coros

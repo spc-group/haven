@@ -257,7 +257,6 @@ def load_area_detector_coros(config=None) -> set:
     if config is None:
         config = load_config()
     # Create the area detectors defined in the configuration
-    coros = set()
     for name, adconfig in config.get("area_detector", {}).items():
         DeviceClass = globals().get(adconfig["device_class"])
         # Check that it's a valid device class
@@ -265,11 +264,8 @@ def load_area_detector_coros(config=None) -> set:
             msg = f"area_detector.{name}.device_class={adconfig['device_class']}"
             raise exceptions.UnknownDeviceConfiguration(msg)
         # Create the device co-routine
-        coros.add(
-            make_area_detector_device(
-                Cls=DeviceClass,
-                prefix=f"{adconfig['prefix']}:",
-                name=name,
-            )
+        yield make_area_detector_device(
+            Cls=DeviceClass,
+            prefix=f"{adconfig['prefix']}:",
+            name=name,
         )
-    return coros

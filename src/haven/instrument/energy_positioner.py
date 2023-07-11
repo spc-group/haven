@@ -144,15 +144,11 @@ def load_energy_positioner_coros(config=None):
     # Load PV's from config
     if config is None:
         config = load_config()
-    coros = {
-        make_energy_device(
-            name="energy",
-            mono_suffix=Monochromator.energy.suffix,
-            id_offset_suffix=Monochromator.id_offset.suffix,
-            id_tracking_suffix=Monochromator.id_tracking.suffix,
-            mono_prefix=config["monochromator"]["ioc"],
-            id_prefix=config["undulator"]["ioc"],
-        )
-    }
-    # Create energy positioner
-    return coros
+    yield make_energy_device(
+        name="energy",
+        mono_suffix=Monochromator.energy.suffix,
+        id_offset_suffix=Monochromator.id_offset.suffix,
+        id_tracking_suffix=Monochromator.id_tracking.suffix,
+        mono_prefix=config["monochromator"]["ioc"],
+        id_prefix=config["undulator"]["ioc"],
+    )

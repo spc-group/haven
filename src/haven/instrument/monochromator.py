@@ -71,5 +71,4 @@ def load_monochromator_coros(config=None):
     # Load PV's from config
     if config is None:
         config = load_config()
-    coros = {make_monochromator_device(prefix=config["monochromator"]["ioc"])}
-    return coros
+    yield make_monochromator_device(prefix=config["monochromator"]["ioc"])

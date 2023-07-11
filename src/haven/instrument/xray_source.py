@@ -26,7 +26,5 @@ def load_xray_source_coros(config=None):
         config = load_config()
     # Determine the X-ray source type (undulator vs bending magnet)
     data = config["xray_source"]
-    coros = set()
     if data["type"] == "undulator":
-        coros.add(make_xray_device(prefix=data["prefix"]))
-    return coros
+        yield make_xray_device(prefix=data["prefix"])

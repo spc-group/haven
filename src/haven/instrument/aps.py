@@ -58,10 +58,8 @@ async def make_bss_device(prefix):
 
 def load_aps_coros(config=None):
     """Load devices related to the synchrotron as a whole."""
-    coros = set()
     if config is None:
         config = load_config()
     # Load storage ring device
-    coros.add(make_aps_device())
-    coros.add(make_bss_device(prefix=f"{config['bss']['prefix']}:"))
-    return coros
+    yield make_aps_device()
+    yield make_bss_device(prefix=f"{config['bss']['prefix']}:")

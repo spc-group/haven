@@ -49,8 +49,6 @@ def load_heater_coros(config=None):
     if config is None:
         config = load_config()
     # Load the heaters
-    coros = set()
     for name, cfg in config.get("heater", {}).items():
         Cls = globals().get(cfg["device_class"])
-        coros.add(make_heater_device(Cls=Cls, prefix=f"{cfg['prefix']}:", name=name))
-    return coros
+        yield make_heater_device(Cls=Cls, prefix=f"{cfg['prefix']}:", name=name)

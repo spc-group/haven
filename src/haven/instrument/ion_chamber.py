@@ -277,24 +277,26 @@ class IonChamber(ScalerTriggered, Device):
         return self.change_sensitivity(1)
 
 
-def load_ion_chamber_coros(config=None):
-    # Load IOC prefixes from the config file
-    if config is None:
-        config = load_config()
-    vme_ioc = config["ion_chamber"]["scaler"]["ioc"]
-    scaler_record = config["ion_chamber"]["scaler"]["record"]
-    scaler_pv_prefix = f"{vme_ioc}:{scaler_record}"
-    preamp_ioc = config["ion_chamber"]["preamp"]["ioc"]
-    ion_chambers = []
-    # Loop through the configuration sections and create ion chambers co-routines
-    coros = set()
-    for ch_num in config["ion_chamber"]["scaler"]["channels"]:
-        coros.add(
-            load_ion_chamber(
-                preamp_ioc=preamp_ioc, scaler_prefix=scaler_pv_prefix, ch_num=ch_num
-            )
+async def make_ion_chamber_device(
+    prefix: str, ch_num: int, name: str, preamp_prefix: str
+):
+    ic = IonChamber(
+        prefix=prefix,
+        ch_num=ch_num,
+        name=name,
+        preamp_prefix=preamp_prefix,
+        labels={"ion_chambers"},
+    )
+    try:
+        await await_for_connection(ic)
+    except TimeoutError as exc:
+        log.warning(
+            f"Could not connect to ion_chamber: {name} ({prefix}, {preamp_prefix})"
         )
-    return coros
+    else:
+        log.info(f"Created heater: {name} ({prefix}, {preamp_prefix})")
+        registry.register(ic)
+        return ic
 
 
 async def load_ion_chamber(preamp_ioc: str, scaler_prefix: str, ch_num: int):
@@ -320,23 +322,17 @@ async def load_ion_chamber(preamp_ioc: str, scaler_prefix: str, ch_num: int):
     )
 
 
-async def make_ion_chamber_device(
-    prefix: str, ch_num: int, name: str, preamp_prefix: str
-):
-    ic = IonChamber(
-        prefix=prefix,
-        ch_num=ch_num,
-        name=name,
-        preamp_prefix=preamp_prefix,
-        labels={"ion_chambers"},
-    )
-    try:
-        await await_for_connection(ic)
-    except TimeoutError as exc:
-        log.warning(
-            f"Could not connect to ion_chamber: {name} ({prefix}, {preamp_prefix})"
+def load_ion_chamber_coros(config=None):
+    # Load IOC prefixes from the config file
+    if config is None:
+        config = load_config()
+    vme_ioc = config["ion_chamber"]["scaler"]["ioc"]
+    scaler_record = config["ion_chamber"]["scaler"]["record"]
+    scaler_pv_prefix = f"{vme_ioc}:{scaler_record}"
+    preamp_ioc = config["ion_chamber"]["preamp"]["ioc"]
+    ion_chambers = []
+    # Loop through the configuration sections and create ion chambers co-routines
+    for ch_num in config["ion_chamber"]["scaler"]["channels"]:
+        yield load_ion_chamber(
+            preamp_ioc=preamp_ioc, scaler_prefix=scaler_pv_prefix, ch_num=ch_num
         )
-    else:
-        log.info(f"Created heater: {name} ({prefix}, {preamp_prefix})")
-        registry.register(ic)
-        return ic
