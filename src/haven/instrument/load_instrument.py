@@ -17,7 +17,7 @@ from .power_supply import load_power_supply_coros
 from .xray_source import load_xray_source_coros
 from .area_detector import load_area_detector_coros
 from .slits import load_slit_coros
-from .lerix import load_lerix_spectrometers
+from .lerix import load_lerix_spectrometer_coros
 from .heater import load_heater_coros
 from .._iconfig import load_config
 
@@ -46,7 +46,7 @@ async def aload_instrument(
     useful for testing.
 
     """
-    coros = [
+    coros = (
         *load_all_motor_coros(config=config),
         *load_camera_coros(config=config),
         *load_shutter_coros(config=config),
@@ -61,7 +61,8 @@ async def aload_instrument(
         *load_slit_coros(config=config),
         *load_ion_chamber_coros(config=config),
         *load_area_detector_coros(config=config),
-    ]
+        *load_lerix_spectrometer_coros(config=config),
+    )
     devices = await asyncio.gather(*coros)
     return devices
 
@@ -101,7 +102,6 @@ def load_instrument(
     devices = asyncio.run(aload_instrument(registry=registry, config=config))
     # Also import some simulated devices for testing
     devices += load_simulated_devices(config=config)
-    # load_lerix_spectrometers(config=config)
     # Filter out devices that couldn't be reached
     if return_devices:
         devices = [d for d in devices if d is not None]
