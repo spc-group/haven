@@ -62,17 +62,14 @@ async def make_monochromator_device(prefix):
         msg = f"Could not connect to monochromator: {prefix}"
         log.warning(msg)
     else:
+        log.info(f"Created monochromator: {prefix}")
         registry.register(mono)
         return mono
-        
+
 
 def load_monochromator_coros(config=None):
     # Load PV's from config
     if config is None:
         config = load_config()
-    coros = {
-        make_monochromator_device(
-            prefix=config["monochromator"]["ioc"]
-        )
-    }
+    coros = {make_monochromator_device(prefix=config["monochromator"]["ioc"])}
     return coros

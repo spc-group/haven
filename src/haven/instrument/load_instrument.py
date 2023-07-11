@@ -6,19 +6,19 @@ from ophyd import sim
 from .instrument_registry import registry as default_registry, InstrumentRegistry
 from .energy_positioner import load_energy_positioner_coros
 from .motor import load_all_motor_coros
-from .ion_chamber import load_ion_chambers
+from .ion_chamber import load_ion_chamber_coros
 from .fluorescence_detector import load_fluorescence_detector_coros
 from .monochromator import load_monochromator_coros
 from .camera import load_camera_coros
 from .shutter import load_shutter_coros
-from .stage import load_stages
+from .stage import load_stage_coros
 from .aps import load_aps_coros
-from .power_supply import load_power_supplies
+from .power_supply import load_power_supply_coros
 from .xray_source import load_xray_source_coros
 from .area_detector import load_area_detectors
-from .slits import load_slits
+from .slits import load_slit_coros
 from .lerix import load_lerix_spectrometers
-from .heater import load_heaters
+from .heater import load_heater_coros
 from .._iconfig import load_config
 
 
@@ -55,13 +55,20 @@ async def aload_instrument(
         *load_xray_source_coros(config=config),
         *load_energy_positioner_coros(config=config),
         *load_fluorescence_detector_coros(config=config),
+        *load_stage_coros(config=config),
+        *load_heater_coros(config=config),
+        *load_power_supply_coros(config=config),
+        *load_slit_coros(config=config),
+        *load_ion_chamber_coros(config=config),
     ]
     devices = await asyncio.gather(*coros)
     return devices
 
 
 def load_instrument(
-    registry: InstrumentRegistry = default_registry, config: Mapping = None
+    registry: InstrumentRegistry = default_registry,
+    config: Mapping = None,
+    return_devices: bool = False,
 ):
     """Load the beamline instrumentation into an instrument registry.
 
@@ -77,7 +84,9 @@ def load_instrument(
       The registry into which the ophyd devices will be placed.
     config:
       The beamline configuration read in from TOML files. Mostly
-    useful for testing.
+      useful for testing.
+    return_devices
+      If true, return the newly loaded devices when complete.
 
     """
     # Clear out any existing registry entries
@@ -87,21 +96,17 @@ def load_instrument(
     # Load the configuration
     if config is None:
         config = load_config()
-    # Import devices asynchronously
+    # Import devices concurrently
     devices = asyncio.run(aload_instrument(registry=registry, config=config))
-    # # Import each device type for the instrument
-    # load_simulated_devices(config=config)
-    # load_stages(config=config)
-    # load_power_supplies(config=config)
-    # load_slits(config=config)
-    # load_heaters(config=config)
+    # Also import some simulated devices for testing
+    devices += load_simulated_devices(config=config)
     # # Detectors
-    # load_ion_chambers(config=config)
-    # load_area_detectors(config=config)
+    load_area_detectors(config=config)
     # load_lerix_spectrometers(config=config)
     # Filter out devices that couldn't be reached
-    devices = [d for d in devices if d is not None]
-    # return devices
+    if return_devices:
+        devices = [d for d in devices if d is not None]
+        return devices
 
 
 def load_simulated_devices(config={}):
@@ -117,3 +122,4 @@ def load_simulated_devices(config={}):
         Imax=1,
     )
     default_registry.register(detector)
+    return (motor, detector)

@@ -28,7 +28,5 @@ def load_xray_source_coros(config=None):
     data = config["xray_source"]
     coros = set()
     if data["type"] == "undulator":
-        coros.add(
-            make_xray_device(prefix=data["prefix"])
-        )
+        coros.add(make_xray_device(prefix=data["prefix"]))
     return coros

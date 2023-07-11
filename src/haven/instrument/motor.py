@@ -102,7 +102,6 @@ async def make_motor_device(pv, name, labels):
 
 async def load_motor(prefix: str, motor_num: int, ioc_name: str = None):
     """Create the requested motor if it is reachable."""
-    loop = asyncio.get_running_loop()
     pv = f"{prefix}:m{motor_num+1}"
     try:
         name = await caget(f"{pv}.DESC", timeout=1.0)

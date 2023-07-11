@@ -404,9 +404,10 @@ async def make_dxp_device(device_name, prefix, num_elements):
     try:
         await await_for_connection(det)
     except TimeoutError as exc:
-        msg = f"Could not connect to xray source: {prefix}"
+        msg = f"Could not connect to fluorescence detector: {device_name} ({prefix}:)"
         log.warning(msg)
     else:
+        log.info(f"Created fluorescence detecotr: {device_name} ({prefix})")
         registry.register(det)
         return det
 
@@ -423,7 +424,9 @@ def load_fluorescence_detector_coros(config=None):
         if cfg["electronics"] == "dxp":
             coros.add(
                 make_dxp_device(
-                    device_name=name, prefix=cfg["prefix"], num_elements=cfg["num_elements"]
+                    device_name=name,
+                    prefix=cfg["prefix"],
+                    num_elements=cfg["num_elements"],
                 )
             )
         else:

@@ -146,7 +146,6 @@ class RowlandPositioner(PseudoPositioner):
 # This equation can be solved numerically to obtain the value of D. Once D is known, we can use the equations for cos(theta + alpha) and sin(theta - alpha) to calculate theta and alpha.
 
 
-@registry.register
 class LERIXSpectrometer(Device):
     rowland = Cpt(
         RowlandPositioner,

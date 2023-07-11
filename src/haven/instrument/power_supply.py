@@ -1,3 +1,5 @@
+import logging
+
 from ophyd import (
     Device,
     Component as Cpt,
@@ -9,9 +11,12 @@ from ophyd import (
 
 from .._iconfig import load_config
 from .instrument_registry import registry
+from .device import await_for_connection
 
 
-@registry.register
+log = logging.getLogger(__name__)
+
+
 class NHQ203MChannel(Device):
     """A single channel on a controllable power supply."""
 
@@ -39,18 +44,39 @@ class NHQ203MChannel(Device):
         super().__init__(prefix=prefix, name=name, *args, **kwargs)
 
 
-def load_power_supplies(config=None):
+async def make_power_supply_device(prefix, name, ch_num):
+    dev = NHQ203MChannel(
+        name=name,
+        prefix=prefix,
+        ch_num=ch_num,
+        labels={"power_supplies"},
+    )
+    try:
+        await await_for_connection(dev)
+    except TimeoutError as exc:
+        msg = f"Could not connect to power supply: {name} ({prefix})"
+        log.warning(msg)
+    else:
+        log.info(f"Created power supply: {name}")
+        registry.register(dev)
+        return dev
+
+
+def load_power_supply_coros(config=None):
     if config is None:
         config = load_config()
     # Determine if any power supplies are available
     ps_configs = config.get("power_supply", {})
+    coros = set()
     for name, ps_config in ps_configs.items():
         # Do it once for each channel
+        print(name)
         for ch_num in range(1, ps_config["n_channels"] + 1):
-            this_name = f"{name}_ch{ch_num}"
-            NHQ203MChannel(
-                name=this_name,
-                prefix=ps_config["prefix"],
-                ch_num=ch_num,
-                labels={"power_supplies"},
+            coros.add(
+                make_power_supply_device(
+                    name=f"{name}_ch{ch_num}",
+                    prefix=ps_config["prefix"],
+                    ch_num=ch_num,
+                )
             )
+    return coros

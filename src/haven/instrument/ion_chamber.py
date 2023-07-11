@@ -2,6 +2,7 @@
 
 from typing import Sequence
 import logging
+import asyncio
 
 import epics
 from ophyd import (
@@ -22,6 +23,8 @@ from ophyd.pseudopos import pseudo_position_argument, real_position_argument
 
 from .scaler_triggered import ScalerTriggered, ScalerSignal, ScalerSignalRO
 from .instrument_registry import registry
+from .epics import caget
+from .device import await_for_connection
 from .._iconfig import load_config
 from .. import exceptions
 
@@ -274,7 +277,7 @@ class IonChamber(ScalerTriggered, Device):
         return self.change_sensitivity(1)
 
 
-def load_ion_chambers(config=None):
+def load_ion_chamber_coros(config=None):
     # Load IOC prefixes from the config file
     if config is None:
         config = load_config()
@@ -283,27 +286,57 @@ def load_ion_chambers(config=None):
     scaler_pv_prefix = f"{vme_ioc}:{scaler_record}"
     preamp_ioc = config["ion_chamber"]["preamp"]["ioc"]
     ion_chambers = []
-    # Loop through the configuration sections and create the ion chambers
+    # Loop through the configuration sections and create ion chambers co-routines
+    coros = set()
     for ch_num in config["ion_chamber"]["scaler"]["channels"]:
-        # Determine ion_chamber configuration
-        preamp_prefix = f"{preamp_ioc}:SR{ch_num-1:02}"
-        desc_pv = f"{scaler_pv_prefix}.NM{ch_num}"
-        # Only use this ion chamber if it has a name
-        name = epics.caget(desc_pv, as_string=True)
-        if name == "":
-            log.info(f"Skipping unnamed ion chamber: {desc_pv}")
-            continue
-        if name is None:
-            name = "???"
-        # Create the ion chamber
-        ic = IonChamber(
-            prefix=scaler_pv_prefix,
-            ch_num=ch_num,
-            name=name,
-            preamp_prefix=preamp_prefix,
-            labels={"ion_chambers"},
+        coros.add(
+            load_ion_chamber(
+                preamp_ioc=preamp_ioc, scaler_prefix=scaler_pv_prefix, ch_num=ch_num
+            )
         )
+    return coros
+
+
+async def load_ion_chamber(preamp_ioc: str, scaler_prefix: str, ch_num: int):
+    # Determine ion_chamber configuration
+    preamp_prefix = f"{preamp_ioc}:SR{ch_num-1:02}"
+    desc_pv = f"{scaler_prefix}.NM{ch_num}"
+    # Only use this ion chamber if it has a name
+    try:
+        name = await caget(desc_pv)
+    except asyncio.exceptions.TimeoutError:
+        # Scaler channel is unreachable, so skip it
+        log.warning(f"Could not connect to ion_chamber: {desc_pv}")
+        return
+    if name == "":
+        log.info(f"Skipping unnamed ion chamber: {desc_pv}")
+        return
+    # Create the ion chamber device
+    return await make_ion_chamber_device(
+        prefix=scaler_prefix,
+        ch_num=ch_num,
+        name=name,
+        preamp_prefix=preamp_prefix,
+    )
+
+
+async def make_ion_chamber_device(
+    prefix: str, ch_num: int, name: str, preamp_prefix: str
+):
+    ic = IonChamber(
+        prefix=prefix,
+        ch_num=ch_num,
+        name=name,
+        preamp_prefix=preamp_prefix,
+        labels={"ion_chambers"},
+    )
+    try:
+        await await_for_connection(ic)
+    except TimeoutError as exc:
+        log.warning(
+            f"Could not connect to ion_chamber: {name} ({prefix}, {preamp_prefix})"
+        )
+    else:
+        log.info(f"Created heater: {name} ({prefix}, {preamp_prefix})")
         registry.register(ic)
-        log.info(f"Created ion chamber: {ic.name} ({ic.prefix}, ch {ic.ch_num})")
-        ion_chambers.append(ic)
-    return ion_chambers
+        return ic

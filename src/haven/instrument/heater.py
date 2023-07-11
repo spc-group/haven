@@ -1,3 +1,5 @@
+import logging
+
 from ophyd import PVPositioner, EpicsSignalRO, EpicsSignalWithRBV, Component as Cpt
 from apstools.devices import (
     PTC10PositionerMixin,
@@ -7,6 +9,10 @@ from apstools.devices import (
 
 from .._iconfig import load_config
 from .instrument_registry import registry
+from .device import await_for_connection
+
+
+log = logging.getLogger(__name__)
 
 
 # The apstools version uses "voltage_RBV" as the PVname
@@ -18,7 +24,6 @@ class PTC10AioChannel(PTC10AioChannelBase):
     voltage = Cpt(EpicsSignalRO, "output_RBV", kind="config")
 
 
-@registry.register
 class CapillaryHeater(PTC10PositionerMixin, PVPositioner):
     readback = Cpt(EpicsSignalRO, "2A:temperature", kind="hinted")
     setpoint = Cpt(EpicsSignalWithRBV, "5A:setPoint", kind="hinted")
@@ -28,13 +33,24 @@ class CapillaryHeater(PTC10PositionerMixin, PVPositioner):
     tc = Cpt(PTC10TcChannel, "2A:")
 
 
-def load_heaters(config=None):
+async def make_heater_device(Cls, prefix, name):
+    heater = Cls(prefix=prefix, name=name, labels={"heaters"})
+    try:
+        await await_for_connection(heater)
+    except TimeoutError as exc:
+        log.warning(f"Could not connect to heater: {name} ({prefix})")
+    else:
+        log.info(f"Created heater: {name} ({prefix})")
+        registry.register(heater)
+        return heater
+
+
+def load_heater_coros(config=None):
     if config is None:
         config = load_config()
     # Load the heaters
-    heaters = []
+    coros = set()
     for name, cfg in config.get("heater", {}).items():
         Cls = globals().get(cfg["device_class"])
-        device = Cls(prefix=f"{cfg['prefix']}:", name=name)
-        heaters.append(device)
-    return heaters
+        coros.add(make_heater_device(Cls=Cls, prefix=f"{cfg['prefix']}:", name=name))
+    return coros

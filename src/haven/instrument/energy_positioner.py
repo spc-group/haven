@@ -120,7 +120,9 @@ class EnergyPositioner(PseudoPositioner):
         )
 
 
-async def make_energy_device(name, mono_prefix, mono_suffix, id_prefix, id_offset_suffix, id_tracking_suffix):
+async def make_energy_device(
+    name, mono_prefix, mono_suffix, id_prefix, id_offset_suffix, id_tracking_suffix
+):
     dev = EnergyPositioner(
         name=name,
         mono_pv=f"{mono_prefix}{mono_suffix}",
@@ -138,7 +140,6 @@ async def make_energy_device(name, mono_prefix, mono_suffix, id_prefix, id_offse
         return dev
 
 
-
 def load_energy_positioner_coros(config=None):
     # Load PV's from config
     if config is None:
@@ -146,11 +147,11 @@ def load_energy_positioner_coros(config=None):
     coros = {
         make_energy_device(
             name="energy",
-            mono_suffix = Monochromator.energy.suffix,
-            id_offset_suffix = Monochromator.id_offset.suffix,
-            id_tracking_suffix = Monochromator.id_tracking.suffix,
-            mono_prefix = config["monochromator"]["ioc"],
-            id_prefix = config["undulator"]["ioc"],
+            mono_suffix=Monochromator.energy.suffix,
+            id_offset_suffix=Monochromator.id_offset.suffix,
+            id_tracking_suffix=Monochromator.id_tracking.suffix,
+            mono_prefix=config["monochromator"]["ioc"],
+            id_prefix=config["undulator"]["ioc"],
         )
     }
     # Create energy positioner
