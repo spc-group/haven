@@ -20,7 +20,7 @@ from ophyd.areadetector.plugins import (
 
 
 from .instrument_registry import registry
-from .area_detector import DetectorBase, StatsPlugin_V34, SimDetector
+from .area_detector import DetectorBase, StatsPlugin_V34, SimDetector, AsyncCamMixin
 from .device import await_for_connection
 from .._iconfig import load_config
 from .. import exceptions
@@ -32,10 +32,7 @@ log = logging.getLogger(__name__)
 __all__ = ["AravisDetector", "load_cameras"]
 
 
-class AravisCam(CamBase):
-    lazy_wait_for_connection = False
-    # Components
-    acquire = ADCpt(SignalWithRBV, "Acquire")
+class AravisCam(AsyncCamMixin, CamBase):
     gain_auto = ADCpt(EpicsSignal, "GainAuto")
     acquire_time_auto = ADCpt(EpicsSignal, "ExposureAuto")
 

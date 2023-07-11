@@ -1,3 +1,4 @@
+import logging
 from enum import IntEnum
 from apstools.devices import CamMixin_V34, SingleTrigger_V34
 from ophyd import (
@@ -8,7 +9,9 @@ from ophyd import (
     EigerDetectorCam,
     SingleTrigger,
     Kind,
+    OphydObject,
 )
+from ophyd.areadetector.base import EpicsSignalWithRBV as SignalWithRBV
 from ophyd.areadetector.filestore_mixins import FileStoreHDF5IterativeWrite
 from ophyd.areadetector.plugins import (
     HDF5Plugin_V34,
@@ -30,12 +33,39 @@ from ophyd.areadetector.plugins import (
 from .._iconfig import load_config
 from .instrument_registry import registry
 from .. import exceptions
+from .device import await_for_connection
+
+log = logging.getLogger(__name__)
 
 
-__all__ = ["Eiger500K", "Lambda250K", "SimDetector"]
+__all__ = ["Eiger500K", "Lambda250K", "SimDetector", "AsyncCamMixin"]
+
+
+class AsyncCamMixin(OphydObject):
+    """A mixin that allows for delayed evaluation of the connection status.
+
+    Ordinarily, and area detector gets the camera acquire signal,
+    which requires that it be connected. With this mixin, you can skip
+    that step, so that you can ``wait_for_connection()`` fully at a
+    later time.
+
+    """
+
+    lazy_wait_for_connection = False
+
+    # Components
+    acquire = ADCpt(SignalWithRBV, "Acquire")
 
 
 class SimDetectorCam_V34(CamMixin_V34, SimDetectorCam):
+    ...
+
+
+class EigerCam(AsyncCamMixin, EigerDetectorCam):
+    ...
+
+
+class LambdaCam(AsyncCamMixin, Lambda750kCam):
     ...
 
 
@@ -154,7 +184,7 @@ class Lambda250K(SingleTrigger, DetectorBase):
     A Lambda 250K area detector device.
     """
 
-    cam = ADCpt(Lambda750kCam, "cam1:")
+    cam = ADCpt(LambdaCam, "cam1:")
     image = ADCpt(ImagePlugin_V31, "image1:")
     pva = ADCpt(PvaPlugin_V31, "Pva1:")
     tiff = ADCpt(TIFFPlugin, "TIFF1:", kind=Kind.normal)
@@ -185,7 +215,7 @@ class Eiger500K(SingleTrigger, DetectorBase):
     A Eiger S 500K area detector device.
     """
 
-    cam = ADCpt(EigerDetectorCam, "cam1:")
+    cam = ADCpt(EigerCam, "cam1:")
     image = ADCpt(ImagePlugin_V34, "image1:")
     pva = ADCpt(PvaPlugin_V34, "Pva1:")
     tiff = ADCpt(TIFFPlugin, "TIFF1:", kind=Kind.normal)
@@ -211,20 +241,35 @@ class Eiger500K(SingleTrigger, DetectorBase):
     ]
 
 
-def load_area_detectors(config=None):
+async def make_area_detector_device(Cls, prefix, name):
+    ad = Cls(prefix=prefix, name=name, labels={"area_detectors"})
+    try:
+        await await_for_connection(ad)
+    except TimeoutError as exc:
+        log.warning(f"Could not connect to area detector: {name} ({prefix})")
+    else:
+        log.info(f"Created area detector: {name} ({prefix})")
+        registry.register(ad)
+        return ad
+
+
+def load_area_detector_coros(config=None) -> set:
     if config is None:
         config = load_config()
     # Create the area detectors defined in the configuration
+    coros = set()
     for name, adconfig in config.get("area_detector", {}).items():
         DeviceClass = globals().get(adconfig["device_class"])
         # Check that it's a valid device class
         if DeviceClass is None:
             msg = f"area_detector.{name}.device_class={adconfig['device_class']}"
             raise exceptions.UnknownDeviceConfiguration(msg)
-        # Create the device
-        det = DeviceClass(
-            prefix=f"{adconfig['prefix']}:",
-            name=name,
-            labels={"area_detectors"},
+        # Create the device co-routine
+        coros.add(
+            make_area_detector_device(
+                Cls=DeviceClass,
+                prefix=f"{adconfig['prefix']}:",
+                name=name,
+            )
         )
-        registry.register(det)
+    return coros
