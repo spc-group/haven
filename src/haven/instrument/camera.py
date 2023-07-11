@@ -125,3 +125,4 @@ async def make_camera_device(
         return None
     else:
         registry.register(device)
+        return device

@@ -10,7 +10,7 @@ from .ion_chamber import load_ion_chambers
 from .fluorescence_detector import load_fluorescence_detectors
 from .monochromator import load_monochromator
 from .camera import load_camera_coros
-from .shutter import load_shutters
+from .shutter import load_shutter_coros
 from .stage import load_stages
 from .aps import load_aps
 from .power_supply import load_power_supplies
@@ -49,6 +49,7 @@ async def aload_instrument(
     coros = [
         *load_all_motor_coros(config=config),
         *load_camera_coros(config=config),
+        *load_shutter_coros(config=config),
     ]
     results = await asyncio.gather(*coros)
     return results
@@ -83,13 +84,13 @@ def load_instrument(
         config = load_config()
     # Import devices asynchronously
     devices = asyncio.run(aload_instrument(registry=registry, config=config))
-    return devices
+    # return devices
     # Import each device type for the instrument
     load_simulated_devices(config=config)
     load_energy_positioner(config=config)
     load_monochromator(config=config)
     # load_cameras(config=config)
-    load_shutters(config=config)
+    # load_shutters(config=config)
     load_stages(config=config)
     load_power_supplies(config=config)
     load_slits(config=config)
