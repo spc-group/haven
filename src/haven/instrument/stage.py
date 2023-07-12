@@ -7,11 +7,16 @@ from ophyd import (
     SignalRO,
     Kind,
     EpicsSignal,
+    flyers,
 )
 from apstools.synApps.asyn import AsynRecord
+import pint
 
 from .instrument_registry import registry
 from .._iconfig import load_config
+
+
+ureg = pint.UnitRegistry()
 
 
 @registry.register
@@ -47,19 +52,7 @@ class XYStage(Device):
         super().__init__(prefix, labels=labels, *args, **kwargs)
 
 
-def load_stages(config=None):
-    if config is None:
-        config = load_config()
-    for name, stage_data in config.get("stage", {}).items():
-        XYStage(
-            name=name,
-            prefix=stage_data["prefix"],
-            pv_vert=stage_data["pv_vert"],
-            pv_horiz=stage_data["pv_horiz"],
-        )
-
-
-class AerotechFlyer(EpicsMotor):
+class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
     """Allow an Aerotech stage to fly-scan via the Ophyd FlyerInterface.
 
     Set *start_position*, *stop_position*, and *step_size* in units of
@@ -98,8 +91,12 @@ class AerotechFlyer(EpicsMotor):
 
     """
 
+    axis: str
     # Internal encoder in the Ensemble to track for flying
     encoder: int
+
+    # Extra motor record components
+    encoder_resolution = Cpt(EpicsSignal, ".ERES", kind=Kind.config)
 
     # Desired fly parameters
     start_position = Cpt(Signal, name="start_position", kind=Kind.config)
@@ -112,6 +109,8 @@ class AerotechFlyer(EpicsMotor):
     taxi_start = Cpt(Signal, kind=Kind.config)
     taxi_end = Cpt(Signal, kind=Kind.config)
     encoder_step_size = Cpt(Signal, kind=Kind.config)
+    encoder_window_start = Cpt(Signal, kind=Kind.config)
+    encoder_window_end = Cpt(Signal, kind=Kind.config)
 
     def __init__(self, *args, axis: str, encoder: int, **kwargs):
         super().__init__(*args, **kwargs)
@@ -119,9 +118,83 @@ class AerotechFlyer(EpicsMotor):
         self.encoder = encoder
         # Set up auto-calculations for the flyer
         self.start_position.subscribe(self._update_fly_params)
+        self.end_position.subscribe(self._update_fly_params)
+        self.step_size.subscribe(self._update_fly_params)
+        self.dwell_time.subscribe(self._update_fly_params)
+
+    def kickoff(self):
+        """Start a flyer
+
+        The status object return is marked as done once flying
+        has started.
+
+        Returns
+        -------
+        kickoff_status : StatusBase
+            Indicate when flying has started.
+
+        """
+        # Create a status object
+        raise NotImplementedError()
+        # Initalize the PSO
+        self.init_pso()
+        # Move motor the scan start point
+        # Set the speed on the motor
+        # Arm the PSO
+        self.arm_pso()
+        # Move the motor to the taxi position
+        # Start the trajectory
+
+    def complete(self):
+        # Create a status object
+        raise NotImplementedError()
+        # Prepare a callback to check when the motor has stopped moving
+        # Return the status object
+
+    @property
+    def motor_egu_pint(self):
+        egu = ureg(self.motor_egu.get())
+        return egu
 
     def _update_fly_params(self, *args, **kwargs):
-        """Calculate new fly-scan parameters based on signal values."""
+        """Calculate new fly-scan parameters based on signal values.
+
+        Implementation courtesy of Alan Kastengren.
+
+        Computes several parameters describing the fly scan motion.
+        These include the actual start position of the motor, the
+        actual distance (in encoder counts and distance) between PSO
+        pulses, the end position of the motor, and where PSO pulses
+        are expected to occcur.  This code ensures that each PSO delta
+        is an integer number of encoder counts, since this is how the
+        PSO triggering works in hardware.
+
+        These calculations are for MCS scans, where for N bins we need
+        N+1 pulses.
+
+        Several fields are set in the class:
+
+        direction
+          1 if we are moving positive in user coordinates, −1 if
+          negative
+        overall_sense
+          is our fly motion + or - with respect to encoder counts
+        delta_encoder_counts
+          integer number of encoder counts per PSO delta
+        delta_egu
+          delta_encoder_counts in engineering units.  May not = delta
+        motor_start
+          where motor will be to start motion.  Accounts for accel
+          distance
+        motor_end
+          where motor will stop motion.  Accounts for decel distance
+        actual_end
+          center of last data point.  May not = req_end due to integer
+          delta_encoder_counts
+        PSO_positions
+          array of places where PSO pulses should occur
+
+        """
         print("To-do: calculate fly-scanning parameters.")
 
     def send_command(self, cmd: str):
@@ -153,7 +226,9 @@ class AerotechFlyer(EpicsMotor):
             # multiplier) input. For Ensemble lab, 6 is horizontal encoder
             self.send_command(f"PSOTRACK {self.axis} INPUT {self.encoder}"),
             # Set the distance between pulses in encoder counts
-            self.send_command(f"PSODISTANCE {self.axis} FIXED {self.encoder_step_size.get()}"),
+            self.send_command(
+                f"PSODISTANCE {self.axis} FIXED {self.encoder_step_size.get()}"
+            ),
             # Which encoder is being used to calculate whether we are
             # in the window.
             self.send_command(f"PSOWINDOW {self.axis} {num_axis} INPUT {self.encoder}"),
@@ -162,12 +237,15 @@ class AerotechFlyer(EpicsMotor):
             # we arm the PSO
             self.send_command(
                 f"PSOWINDOW {self.axis} {num_axis} RANGE "
-                f"{self.taxi_start.get()},{self.taxi_end.get()}"
+                f"{self.encoder_window_start.get()},{self.encoder_window_end.get()}"
             ),
         ]
 
         for status in statuses:
             status.wait()
+
+    def arm_pso(self):
+        self.send_command(f"PSOCONTROL {self.axis} ARM").wait()
 
 
 class AerotechFlyStage(XYStage):
@@ -197,3 +275,15 @@ class AerotechFlyStage(XYStage):
         labels={"motors", "flyers"},
     )
     asyn = Cpt(AsynRecord, ":asynEns", name="async", labels={"asyns"})
+
+
+def load_stages(config=None):
+    if config is None:
+        config = load_config()
+    for name, stage_data in config.get("stage", {}).items():
+        XYStage(
+            name=name,
+            prefix=stage_data["prefix"],
+            pv_vert=stage_data["pv_vert"],
+            pv_horiz=stage_data["pv_horiz"],
+        )

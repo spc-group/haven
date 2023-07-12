@@ -1,5 +1,7 @@
 from unittest import mock
+
 import pytest
+from ophyd.sim import instantiate_fake_device
 
 from haven import registry, exceptions
 from haven.instrument import stage
@@ -44,24 +46,33 @@ def test_aerotech_stage():
     assert fly_stage.asyn.ascii_output.pvname == "motor_ioc:asynEns.AOUT"
 
 
-def test_aerotech_slew_speed():
-    flyer = stage.AerotechFlyer(name="flyer", axis="@0", encoder=0)
+def test_aerotech_fly_params():
+    flyer = instantiate_fake_device(
+        stage.AerotechFlyer, name="flyer", axis="@0", encoder=0
+    )
     # Set some example positions
     flyer.motor_egu.set("micron").wait()
-    flyer.start_position.set(10).wait()
-    flyer.end_position.set(20).wait()
-    flyer.step_size.set(0.1).wait()
-    flyer.dwell_time.set(1).wait()
-    assert flyer.slew_speed.get(use_monitor=False) == 0.1
+    flyer.encoder_resolution.set(0.001).wait()  # µm
+    flyer.start_position.set(20).wait()  # µm
+    flyer.end_position.set(10).wait()  # µm
+    flyer.step_size.set(0.1).wait()  # µm
+    flyer.dwell_time.set(1).wait()  # sec
+    # Check that the fly-scan parameters were calculated correctly
+    assert flyer.slew_speed.get(use_monitor=False) == 0.1  # µm/sec
+    assert flyer.taxi_start.get(use_monitor=False) == 20.5  # µm
+    assert flyer.taxi_end.get(use_monitor=False) == 9.5  # µm
+    assert flyer.encoder_step_size.get(use_monitor=False) == 100
+    assert flyer.encoder_window_start.get(use_monitor=False) == 5
+    assert flyer.encoder_window_end.get(use_monitor=False) == -1005
 
 
 def test_enable_pso():
     flyer = stage.AerotechFlyer(name="flyer", axis="@0", encoder=6)
     flyer.send_command = mock.MagicMock()
     # Set up scan parameters
-    flyer.encoder_step_size.set(50).wait()   # In encoder counts
-    flyer.taxi_start.set(-0.025).wait()  # In encoder counts
-    flyer.taxi_end.set(9999.975).wait()  # In encoder counts
+    flyer.encoder_step_size.set(50).wait()  # In encoder counts
+    flyer.encoder_window_start.set(-5).wait()  # In encoder counts
+    flyer.encoder_window_end.set(10000).wait()  # In encoder counts
     # Check that commands are sent to set up the controller for flying
     flyer.enable_pso()
     assert flyer.send_command.called
@@ -74,5 +85,15 @@ def test_enable_pso():
         "PSOTRACK @0 INPUT 6",
         "PSODISTANCE @0 FIXED 50",
         "PSOWINDOW @0 1 INPUT 6",
-        "PSOWINDOW @0 1 RANGE -0.025,9999.975",
+        "PSOWINDOW @0 1 RANGE -5,10000",
     ]
+
+
+def test_arm_pso():
+    flyer = stage.AerotechFlyer(name="flyer", axis="@0", encoder=6)
+    flyer.send_command = mock.MagicMock()
+    assert not flyer.send_command.called
+    flyer.arm_pso()
+    assert flyer.send_command.called
+    command = flyer.send_command.call_args.args[0]
+    assert command == "PSOCONTROL @0 ARM"
