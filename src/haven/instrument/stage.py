@@ -137,7 +137,7 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         # Create a status object
         raise NotImplementedError()
         # Initalize the PSO
-        self.init_pso()
+        self.enable_pso()
         # Move motor the scan start point
         # Set the speed on the motor
         # Arm the PSO

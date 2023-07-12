@@ -46,10 +46,16 @@ def test_aerotech_stage():
     assert fly_stage.asyn.ascii_output.pvname == "motor_ioc:asynEns.AOUT"
 
 
-def test_aerotech_fly_params():
+@pytest.fixture()
+def sim_aerotech_flyer():
     flyer = instantiate_fake_device(
         stage.AerotechFlyer, name="flyer", axis="@0", encoder=0
     )
+    return flyer
+
+
+def test_aerotech_fly_params(sim_aerotech_flyer):
+    flyer = sim_aerotech_flyer
     # Set some example positions
     flyer.motor_egu.set("micron").wait()
     flyer.encoder_resolution.set(0.001).wait()  # µm
@@ -97,3 +103,11 @@ def test_arm_pso():
     assert flyer.send_command.called
     command = flyer.send_command.call_args.args[0]
     assert command == "PSOCONTROL @0 ARM"
+
+
+def test_motor_units(sim_aerotech_flyer):
+    """Check that the motor and flyer handle enginering units properly."""
+    flyer = sim_aerotech_flyer
+    flyer.motor_egu.set("micron").wait()
+    unit = flyer.motor_egu_pint
+    assert unit ==  stage.ureg("1e-6 m")
