@@ -1,5 +1,7 @@
 import logging
+import asyncio
 from enum import IntEnum
+
 from apstools.devices import CamMixin_V34, SingleTrigger_V34
 from ophyd import (
     ADComponent as ADCpt,
@@ -29,11 +31,10 @@ from ophyd.areadetector.plugins import (
     OverlayPlugin,
 )
 
-
 from .._iconfig import load_config
 from .instrument_registry import registry
 from .. import exceptions
-from .device import await_for_connection
+from .device import await_for_connection, aload_devices
 
 log = logging.getLogger(__name__)
 
@@ -269,3 +270,7 @@ def load_area_detector_coros(config=None) -> set:
             prefix=f"{adconfig['prefix']}:",
             name=name,
         )
+
+
+def load_area_detectors(config=None):
+    asyncio.run(aload_devices(*load_area_detector_coros(config=config)))

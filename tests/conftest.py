@@ -59,7 +59,7 @@ def qapp_cls():
 
 @pytest.fixture(scope=IOC_SCOPE)
 def ioc_undulator(request):
-    prefix = "255ID:"
+    prefix = "ID255:"
     pvs = dict(energy=f"{prefix}Energy.VAL")
     return run_fake_ioc(
         module_name="haven.tests.ioc_undulator",

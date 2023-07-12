@@ -1,12 +1,13 @@
 import logging
 import warnings
+import asyncio
 
 from apstools.devices.aps_machine import ApsMachineParametersDevice
 from apsbss.apsbss_ophyd import EpicsBssDevice
 
 from haven import registry
 from .._iconfig import load_config
-from .device import await_for_connection
+from .device import await_for_connection, aload_devices
 
 
 log = logging.getLogger(__name__)
@@ -63,3 +64,7 @@ def load_aps_coros(config=None):
     # Load storage ring device
     yield make_aps_device()
     yield make_bss_device(prefix=f"{config['bss']['prefix']}:")
+
+
+def load_aps(config=None):
+    asyncio.run(aload_devices(*load_aps_coros(config=config)))

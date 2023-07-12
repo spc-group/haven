@@ -7,7 +7,6 @@ import io
 import contextlib
 
 import epics
-from pyepics_asyncio import Pv
 from ophyd import EpicsMotor, EpicsSignal, Component as Cpt
 
 from .epics import caget

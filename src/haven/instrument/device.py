@@ -6,6 +6,10 @@ import asyncio
 from ophyd import Component, K
 
 
+async def aload_devices(*coros):
+    await asyncio.gather(*coros)
+
+
 async def await_for_connection(dev, all_signals=False, timeout=2.0):
     """Wait for signals to connect
 
