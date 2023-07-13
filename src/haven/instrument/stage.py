@@ -1,3 +1,5 @@
+import threading
+
 from ophyd import (
     Device,
     FormattedComponent as FCpt,
@@ -9,6 +11,7 @@ from ophyd import (
     EpicsSignal,
     flyers,
 )
+from ophyd.status import SubscriptionStatus
 from apstools.synApps.asyn import AsynRecord
 import pint
 
@@ -112,6 +115,9 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
     encoder_window_start = Cpt(Signal, kind=Kind.config)
     encoder_window_end = Cpt(Signal, kind=Kind.config)
 
+    # Status signals
+    is_flying = Cpt(Signal, kind=Kind.omitted)
+
     def __init__(self, *args, axis: str, encoder: int, **kwargs):
         super().__init__(*args, **kwargs)
         self.axis = axis
@@ -134,22 +140,73 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
             Indicate when flying has started.
 
         """
-        # Create a status object
-        raise NotImplementedError()
-        # Initalize the PSO
-        self.enable_pso()
-        # Move motor the scan start point
-        # Set the speed on the motor
-        # Arm the PSO
-        self.arm_pso()
-        # Move the motor to the taxi position
-        # Start the trajectory
+
+        def check_flying(*args, old_value, value, **kwargs) -> bool:
+            "Check if taxiing is complete and flying has begun."
+            return not bool(old_value) and bool(value)
+
+        # Status object is complete when flying has started
+        status = SubscriptionStatus(self.is_flying, check_flying)
+        # Start the flying process
+        th = threading.Thread(target=self.fly)
+        th.start()
+        # Save thread to avoid garbage-collection
+        self.th = th
+        return status
 
     def complete(self):
-        # Create a status object
-        raise NotImplementedError()
+        """Wait for flying to be complete.
+
+        This can either be a question ("are you done yet") or a
+        command ("please wrap up") to accommodate flyers that have a
+        fixed trajectory (ex. high-speed raster scans) or that are
+        passive collectors (ex MAIA or a hardware buffer).
+
+        In either case, the returned status object should indicate when
+        the device is actually finished flying.
+
+        Returns
+        -------
+        complete_status : StatusBase
+            Indicate when flying has completed
+        """
+
         # Prepare a callback to check when the motor has stopped moving
-        # Return the status object
+        def check_flying(*args, old_value, value, **kwargs) -> bool:
+            "Check if flying is complete."
+            return not bool(value)
+
+        # Status object is complete when flying has started
+        status = SubscriptionStatus(self.is_flying, check_flying)
+        return status
+
+    def fly(self):
+        self.taxi()
+        # Start the trajectory
+        flight_status = self.user_setpoint.set(self.taxi_end.get())
+        self.is_flying.set(True).wait()
+        # Wait for the landing
+        flight_status.wait()
+        self.is_flying.set(False).wait()
+
+    def taxi(self):
+        # Move motor to the scan start point
+        motor_move = self.user_setpoint.set(self.start_position.get())
+        # Initalize the PSO
+        self.enable_pso()
+        # Arm the PSO
+        motor_move.wait()
+        self.arm_pso()
+        # Move the motor to the taxi position
+        self.user_setpoint.set(self.taxi_start.get()).wait()
+        # Set the speed on the motor
+        self.velocity.set(self.slew_speed.get()).wait()
+
+    def stage(self):
+        self.old_velocity = self.velocity.get()
+
+    def unstage(self):
+        return [self.velocity.set(self.old_velocity)]
 
     @property
     def motor_egu_pint(self):
