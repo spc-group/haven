@@ -1,4 +1,5 @@
 import threading
+import time
 
 from ophyd import (
     Device,
@@ -20,6 +21,10 @@ from .._iconfig import load_config
 
 
 ureg = pint.UnitRegistry()
+
+
+class AerotechAsyn(AsynRecord):
+    binary_output = Cpt(EpicsSignal, ".BOUT", kind="normal", string=True)
 
 
 @registry.register
@@ -183,7 +188,7 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
     def fly(self):
         self.taxi()
         # Start the trajectory
-        flight_status = self.user_setpoint.set(self.taxi_end.get())
+        flight_status = self.move(self.taxi_end.get())
         self.is_flying.set(True).wait()
         # Wait for the landing
         flight_status.wait()
@@ -191,14 +196,14 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
 
     def taxi(self):
         # Move motor to the scan start point
-        motor_move = self.user_setpoint.set(self.start_position.get())
+        motor_move = self.move(self.start_position.get(), wait=False)
         # Initalize the PSO
         self.enable_pso()
         # Arm the PSO
         motor_move.wait()
         self.arm_pso()
         # Move the motor to the taxi position
-        self.user_setpoint.set(self.taxi_start.get()).wait()
+        self.move(self.taxi_start.get())
         # Set the speed on the motor
         self.velocity.set(self.slew_speed.get()).wait()
 
@@ -263,46 +268,40 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
           The Ophyd status object for this write.
 
         """
-        status = self.parent.asyn.ascii_output.set(cmd)
-        return status
+        return self.parent.asyn.binary_output.set(cmd).wait()
 
     def enable_pso(self):
         num_axis = 1
-        statuses = [
-            # Make sure the PSO control is off
-            self.send_command(f"PSOCONTROL {self.axis} RESET"),
-            # Set the output to occur from the I/O terminal on the
-            # controller
-            self.send_command(f"PSOOUTPUT {self.axis} CONTROL {num_axis}"),
-            # Set a pulse 10 us long, 20 us total duration, so 10 us
-            # on, 10 us off
-            self.send_command(f"PSOPULSE {self.axis} TIME 20,10"),
-            # Set the pulses to only occur in a specific window
-            self.send_command(f"PSOOUTPUT {self.axis} PULSE WINDOW MASK"),
-            # Set which encoder we will use.  3 = the MXH (encoder
-            # multiplier) input. For Ensemble lab, 6 is horizontal encoder
-            self.send_command(f"PSOTRACK {self.axis} INPUT {self.encoder}"),
-            # Set the distance between pulses in encoder counts
-            self.send_command(
-                f"PSODISTANCE {self.axis} FIXED {self.encoder_step_size.get()}"
-            ),
-            # Which encoder is being used to calculate whether we are
-            # in the window.
-            self.send_command(f"PSOWINDOW {self.axis} {num_axis} INPUT {self.encoder}"),
-            # Calculate window function parameters. Must be in encoder
-            # counts, and is referenced from the stage location where
-            # we arm the PSO
-            self.send_command(
-                f"PSOWINDOW {self.axis} {num_axis} RANGE "
-                f"{self.encoder_window_start.get()},{self.encoder_window_end.get()}"
-            ),
-        ]
-
-        for status in statuses:
-            status.wait()
+        # Make sure the PSO control is off
+        self.send_command(f"PSOCONTROL {self.axis} RESET")
+        # Set the output to occur from the I/O terminal on the
+        # controller
+        self.send_command(f"PSOOUTPUT {self.axis} CONTROL {num_axis}")
+        # Set a pulse 10 us long, 20 us total duration, so 10 us
+        # on, 10 us off
+        self.send_command(f"PSOPULSE {self.axis} TIME 20,10")
+        # Set the pulses to only occur in a specific window
+        self.send_command(f"PSOOUTPUT {self.axis} PULSE WINDOW MASK")
+        # Set which encoder we will use.  3 = the MXH (encoder
+        # multiplier) input. For Ensemble lab, 6 is horizontal encoder
+        self.send_command(f"PSOTRACK {self.axis} INPUT {self.encoder}")
+        # Set the distance between pulses in encoder counts
+        self.send_command(
+            f"PSODISTANCE {self.axis} FIXED {self.encoder_step_size.get()}"
+        )
+        # Which encoder is being used to calculate whether we are
+        # in the window.
+        self.send_command(f"PSOWINDOW {self.axis} {num_axis} INPUT {self.encoder}")
+        # Calculate window function parameters. Must be in encoder
+        # counts, and is referenced from the stage location where
+        # we arm the PSO
+        self.send_command(
+            f"PSOWINDOW {self.axis} {num_axis} RANGE "
+            f"{self.encoder_window_start.get()},{self.encoder_window_end.get()}"
+        )
 
     def arm_pso(self):
-        self.send_command(f"PSOCONTROL {self.axis} ARM").wait()
+        self.send_command(f"PSOCONTROL {self.axis} ARM")
 
 
 class AerotechFlyStage(XYStage):
@@ -316,22 +315,21 @@ class AerotechFlyStage(XYStage):
     pv_horiz
       The suffix to the PV for the horizontal motor.
     """
-
-    vert = FCpt(
-        AerotechFlyer,
-        "{prefix}{pv_vert}",
-        axis="@1",
-        encoder=6,
-        labels={"motors", "flyers"},
-    )
     horiz = FCpt(
         AerotechFlyer,
         "{prefix}{pv_horiz}",
         axis="@0",
+        encoder=6,
+        labels={"motors", "flyers"},
+    )
+    vert = FCpt(
+        AerotechFlyer,
+        "{prefix}{pv_vert}",
+        axis="@1",
         encoder=7,
         labels={"motors", "flyers"},
     )
-    asyn = Cpt(AsynRecord, ":asynEns", name="async", labels={"asyns"})
+    asyn = Cpt(AerotechAsyn, ":aerotech:cmdWriteRead", name="async", labels={"asyns"})
 
 
 def load_stages(config=None):
