@@ -193,6 +193,7 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         # Wait for the landing
         flight_status.wait()
         self.is_flying.set(False).wait()
+        self.disable_pso()
 
     def taxi(self):
         # Move motor to the scan start point
@@ -207,11 +208,13 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         # Set the speed on the motor
         self.velocity.set(self.slew_speed.get()).wait()
 
-    def stage(self):
+    def stage(self, *args, **kwargs):
         self.old_velocity = self.velocity.get()
+        super().stage(*args, **kwargs)
 
-    def unstage(self):
-        return [self.velocity.set(self.old_velocity)]
+    def unstage(self, *args, **kwargs):
+        self.velocity.set(self.old_velocity).wait()
+        return super().unstage(*args, **kwargs)
 
     @property
     def motor_egu_pint(self):
@@ -268,7 +271,12 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
           The Ophyd status object for this write.
 
         """
-        return self.parent.asyn.binary_output.set(cmd).wait()
+        status = self.parent.asyn.ascii_output.set(cmd, settle_time=0.1)
+        status.wait()
+        return status
+
+    def disable_pso(self):
+        self.send_command(f"PSOCONTROL {self.axis} OFF")
 
     def enable_pso(self):
         num_axis = 1
@@ -329,7 +337,7 @@ class AerotechFlyStage(XYStage):
         encoder=7,
         labels={"motors", "flyers"},
     )
-    asyn = Cpt(AerotechAsyn, ":aerotech:cmdWriteRead", name="async", labels={"asyns"})
+    asyn = Cpt(AerotechAsyn, ":asynEns", name="async", labels={"asyns"})
 
 
 def load_stages(config=None):
