@@ -115,10 +115,6 @@ def inject_haven_md_wrapper(plan):
             bss_md = None
         else:
             bss_md = bss.get()
-            from pprint import pprint
-
-            pprint(bss_md._asdict())
-            # pprint({k: v for k, v in bss_md})
             md.update(
                 {
                     "proposal_id": bss_md.proposal.proposal_id,
