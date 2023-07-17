@@ -6,6 +6,7 @@ from subprocess import Popen, TimeoutExpired, PIPE
 import subprocess
 import shutil
 import time
+from unittest import mock
 
 import pytest
 from qtpy import QtWidgets
@@ -20,6 +21,7 @@ haven_dir = top_dir / "haven"
 test_dir = top_dir / "tests"
 
 
+import haven
 from haven.simulated_ioc import simulated_ioc
 from haven import registry, load_config
 from haven.instrument.aps import ApsMachine
@@ -304,7 +306,20 @@ def ioc_dxp(request):
 
 
 @pytest.fixture()
-def sim_registry():
+def sim_registry(monkeypatch):
+    # mock out Ophyd connections so devices can be created
+    modules = [
+        haven.instrument.aps,
+        haven.instrument.fluorescence_detector,
+        haven.instrument.monochromator,
+        haven.instrument.ion_chamber,
+        haven.instrument.motor,
+    ]
+    for mod in modules:
+        monkeypatch.setattr(mod, "await_for_connection", mock.AsyncMock())
+    monkeypatch.setattr(
+        haven.instrument.ion_chamber, "caget", mock.AsyncMock(return_value="I0")
+    )
     # Clean the registry so we can restore it later
     components = registry.components
     registry.clear()

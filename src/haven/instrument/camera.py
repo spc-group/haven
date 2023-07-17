@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import warnings
 from typing import Optional, Sequence
@@ -21,7 +22,7 @@ from ophyd.areadetector.plugins import (
 
 from .instrument_registry import registry
 from .area_detector import DetectorBase, StatsPlugin_V34, SimDetector, AsyncCamMixin
-from .device import await_for_connection
+from .device import await_for_connection, aload_devices
 from .._iconfig import load_config
 from .. import exceptions
 
@@ -119,3 +120,7 @@ def load_camera_coros(config=None) -> Sequence[DetectorBase]:
             description=description,
             labels={"cameras"},
         )
+
+
+def load_cameras(config=None):
+    asyncio.run(aload_devices(*load_camera_coros(config=config)))

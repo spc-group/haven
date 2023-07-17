@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import numpy as np
 from ophyd.pseudopos import pseudo_position_argument, real_position_argument
@@ -6,7 +7,7 @@ from ophyd import Component as Cpt, FormattedComponent as FCpt, Device
 
 from .._iconfig import load_config
 from .instrument_registry import registry
-from .device import await_for_connection
+from .device import await_for_connection, aload_devices
 
 
 log = logging.getLogger(__name__)
@@ -198,3 +199,7 @@ def load_lerix_spectrometer_coros(config=None):
             z_pv=rowland["z_motor_pv"],
             z1_pv=rowland["z1_motor_pv"],
         )
+
+
+def load_lerix_spectrometers(config=None):
+    asyncio.run(aload_devices(*load_lerix_spectrometer_coros(config=config)))

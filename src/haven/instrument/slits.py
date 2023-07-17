@@ -1,10 +1,11 @@
 import logging
+import asyncio
 
 from apstools.synApps.db_2slit import Optics2Slit2D_HV
 
 from .._iconfig import load_config
 from .instrument_registry import registry
-from .device import await_for_connection
+from .device import await_for_connection, aload_devices
 
 
 log = logging.getLogger(__name__)
@@ -28,3 +29,7 @@ def load_slit_coros(config=None):
     # Create slits
     for name, slit_config in config.get("slits", {}).items():
         yield make_slits_device(prefix=slit_config["prefix"], name=name)
+
+
+def load_slits(config=None):
+    asyncio.run(aload_devices(*load_slit_coros(config=config)))

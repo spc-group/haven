@@ -1,3 +1,4 @@
+import asyncio
 import logging
 
 from ophyd import PVPositioner, EpicsSignalRO, EpicsSignalWithRBV, Component as Cpt
@@ -9,7 +10,7 @@ from apstools.devices import (
 
 from .._iconfig import load_config
 from .instrument_registry import registry
-from .device import await_for_connection
+from .device import await_for_connection, aload_devices
 
 
 log = logging.getLogger(__name__)
@@ -52,3 +53,7 @@ def load_heater_coros(config=None):
     for name, cfg in config.get("heater", {}).items():
         Cls = globals().get(cfg["device_class"])
         yield make_heater_device(Cls=Cls, prefix=f"{cfg['prefix']}:", name=name)
+
+
+def load_heaters(config=None):
+    return asyncio.run(aload_devices(*load_heater_coros(config=config)))

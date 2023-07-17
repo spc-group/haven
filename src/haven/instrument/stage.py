@@ -1,10 +1,11 @@
 import logging
+import asyncio
 
 from ophyd import Device, FormattedComponent as FCpt, EpicsMotor
 
 from .instrument_registry import registry
 from .._iconfig import load_config
-from .device import await_for_connection
+from .device import await_for_connection, aload_devices
 
 
 log = logging.getLogger(__name__)
@@ -75,3 +76,7 @@ def load_stage_coros(config=None):
             pv_vert=stage_data["pv_vert"],
             pv_horiz=stage_data["pv_horiz"],
         )
+
+
+def load_stages(config=None):
+    asyncio.run(aload_devices(*load_stage_coros(config=config)))

@@ -1,4 +1,5 @@
 import logging
+import asyncio
 
 from ophyd import (
     Device,
@@ -11,7 +12,7 @@ from ophyd import (
 
 from .._iconfig import load_config
 from .instrument_registry import registry
-from .device import await_for_connection
+from .device import await_for_connection, aload_devices
 
 
 log = logging.getLogger(__name__)
@@ -75,3 +76,7 @@ def load_power_supply_coros(config=None):
                 prefix=ps_config["prefix"],
                 ch_num=ch_num,
             )
+
+
+def load_power_supplies(config=None):
+    asyncio.run(aload_devices(*load_power_supply_coros(config=config)))

@@ -3,6 +3,7 @@ from collections import OrderedDict
 from typing import Optional, Sequence
 import warnings
 import logging
+import asyncio
 
 from ophyd import (
     mca,
@@ -17,7 +18,7 @@ from apstools.utils import cleanupText
 
 from .scaler_triggered import ScalerTriggered
 from .instrument_registry import registry
-from .device import RegexComponent as RECpt, await_for_connection
+from .device import RegexComponent as RECpt, await_for_connection, aload_devices
 from .._iconfig import load_config
 from .. import exceptions
 
@@ -150,9 +151,9 @@ class DxpDetectorBase(mca.EpicsDXPMultiElementSystem):
 
     """
 
-    # By default, a 1-element detector, subclass for more elements
+    # By default, a 4-element detector, subclass for more elements
     mcas = DDC(
-        add_mcas(range_=range(1, 3)),
+        add_mcas(range_=range(1, 5)),
         default_read_attrs=["mca1"],
         default_configuration_attrs=["mca1"],
     )
@@ -429,3 +430,7 @@ def load_fluorescence_detector_coros(config=None):
         else:
             msg = f"Electronics '{cfg['electronics']}' for {name} not supported."
             raise exceptions.UnknownDeviceConfiguration(msg)
+
+
+def load_fluorescence_detectors(config=None):
+    asyncio.run(aload_devices(*load_fluorescence_detector_coros(config=config)))

@@ -1,18 +1,30 @@
 import time
 import pytest
 import logging
+import asyncio
+from unittest import mock
 
 import epics
 from haven.instrument import motor, registry
 from qtpy import QtWidgets
+from ophyd.sim import instantiate_fake_device, make_fake_device
 
 from firefly.main_window import FireflyMainWindow
 from firefly.application import FireflyApplication
 
 
-def test_motor_menu(ioc_motor, sim_registry, qtbot, ffapp):
-    prefix = ioc_motor.prefix.strip(":")
-    motor.load_ioc_motors(prefix=prefix, num_motors=3)
+@pytest.fixture
+def fake_motors(sim_registry):
+    motor_names = ["motorA", "motorB", "motorC"]
+    motors = []
+    for name in motor_names:
+        this_motor = make_fake_device(motor.HavenMotor)(name=name, labels={"motors"})
+        sim_registry.register(this_motor)
+        motors.append(this_motor)
+    return motors
+
+
+def test_motor_menu(fake_motors, qtbot, ffapp):
     ffapp.setup_window_actions()
     ffapp.setup_runengine_actions()
     # Create the window
@@ -22,14 +34,7 @@ def test_motor_menu(ioc_motor, sim_registry, qtbot, ffapp):
     assert len(ffapp.motor_actions) == 3
 
 
-def test_open_motor_window(sim_registry, ioc_motor, ffapp):
-    # Set up motors in epics
-    prefix = ioc_motor.prefix.strip(":")
-    motor_name = "SLT_H_Inb"
-    epics.caput(f"{prefix}:m1.DESC", motor_name, wait=True)
-    motor.load_ioc_motors(prefix=prefix, num_motors=3)
-    for m in sim_registry.findall(label="motors"):
-        m.wait_for_connection()
+def test_open_motor_window(fake_motors, monkeypatch, ffapp):
     # Set up the application
     ffapp.setup_window_actions()
     ffapp.setup_runengine_actions()
@@ -38,9 +43,9 @@ def test_open_motor_window(sim_registry, ioc_motor, ffapp):
     action = ffapp.motor_actions[2]
     action.trigger()
     # See if the window was created
-    motor_1_name = "FireflyMainWindow_motor_SLT_H_Inb"
-    assert motor_1_name in ffapp.windows.keys()
-    macros = ffapp.windows[motor_1_name].display_widget().macros()
-    assert macros["MOTOR"] == motor_name
+    motor_3_name = "FireflyMainWindow_motor_motorC"
+    assert motor_3_name in ffapp.windows.keys()
+    macros = ffapp.windows[motor_3_name].display_widget().macros()
+    assert macros["MOTOR"] == "motorC"
     # Clean up
     window.close()

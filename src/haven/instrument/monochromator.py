@@ -1,3 +1,4 @@
+import asyncio
 from enum import IntEnum
 import logging
 
@@ -12,7 +13,7 @@ from ophyd import (
 
 from .instrument_registry import registry
 from .._iconfig import load_config
-from .device import await_for_connection
+from .device import await_for_connection, aload_devices
 
 
 log = logging.getLogger(__name__)
@@ -72,3 +73,7 @@ def load_monochromator_coros(config=None):
     if config is None:
         config = load_config()
     yield make_monochromator_device(prefix=config["monochromator"]["ioc"])
+
+
+def load_monochromator(config=None):
+    asyncio.run(aload_devices(*load_monochromator_coros(config=config)))

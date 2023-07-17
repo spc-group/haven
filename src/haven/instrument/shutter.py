@@ -1,11 +1,12 @@
 import logging
+import asyncio
 from bluesky import suspenders
 from ophyd import FormattedComponent as FCpt, EpicsSignal
 from apstools.devices.shutters import ApsPssShutterWithStatus as Shutter
 
 from .._iconfig import load_config
 from .instrument_registry import registry
-from .device import await_for_connection
+from .device import await_for_connection, aload_devices
 
 
 log = logging.getLogger(__name__)
@@ -47,3 +48,7 @@ def load_shutter_coros(config=None):
             state_pv=f"{prefix}:{hutch}_BEAM_PRESENT",
             name=name,
         )
+
+
+def load_shutters(config=None):
+    asyncio.run(aload_devices(*load_shutter_coros(config=config)))

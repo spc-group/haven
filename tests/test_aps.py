@@ -7,9 +7,7 @@ from haven.instrument import aps
 
 @pytest.fixture()
 def fake_connection(monkeypatch):
-    monkeypatch.setattr(
-        aps, "await_for_connection", mock.AsyncMock()
-    )    
+    monkeypatch.setattr(aps, "await_for_connection", mock.AsyncMock())
 
 
 def test_load_aps(sim_registry, fake_connection):

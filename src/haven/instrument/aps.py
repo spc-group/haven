@@ -33,8 +33,8 @@ class ApsMachine(ApsMachineParametersDevice):
 
 
 async def make_aps_device():
-    aps_ = ApsMachine(name="APS", labels={"synchrotrons"})
     try:
+        aps_ = ApsMachine(name="APS", labels={"synchrotrons"})
         await await_for_connection(aps_)
     except TimeoutError as exc:
         msg = f"Could not connect to APS machine."

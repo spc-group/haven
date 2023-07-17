@@ -24,7 +24,7 @@ from ophyd.pseudopos import pseudo_position_argument, real_position_argument
 from .scaler_triggered import ScalerTriggered, ScalerSignal, ScalerSignalRO
 from .instrument_registry import registry
 from .epics import caget
-from .device import await_for_connection
+from .device import await_for_connection, aload_devices
 from .._iconfig import load_config
 from .. import exceptions
 
@@ -336,3 +336,7 @@ def load_ion_chamber_coros(config=None):
         yield load_ion_chamber(
             preamp_ioc=preamp_ioc, scaler_prefix=scaler_pv_prefix, ch_num=ch_num
         )
+
+
+def load_ion_chambers(config=None):
+    return asyncio.run(aload_devices(*load_ion_chamber_coros(config=config)))

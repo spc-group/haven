@@ -1,3 +1,4 @@
+import asyncio
 import logging
 
 from ophyd import (
@@ -16,7 +17,7 @@ from ophyd.pseudopos import pseudo_position_argument, real_position_argument
 from .._iconfig import load_config
 from .instrument_registry import registry
 from .monochromator import Monochromator, IDTracking
-from .device import await_for_connection
+from .device import await_for_connection, aload_devices
 
 
 log = logging.getLogger(__name__)
@@ -152,3 +153,7 @@ def load_energy_positioner_coros(config=None):
         mono_prefix=config["monochromator"]["ioc"],
         id_prefix=config["undulator"]["ioc"],
     )
+
+
+def load_energy_positioner(config=None):
+    asyncio.run(aload_devices(*load_energy_positioner_coros(config=config)))

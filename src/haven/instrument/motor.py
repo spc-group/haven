@@ -11,7 +11,7 @@ from ophyd import EpicsMotor, EpicsSignal, Component as Cpt
 
 from .epics import caget
 from .._iconfig import load_config
-from .device import await_for_connection
+from .device import await_for_connection, aload_devices
 from .instrument_registry import registry
 
 
@@ -118,3 +118,7 @@ async def load_motor(prefix: str, motor_num: int, ioc_name: str = None):
         if ioc_name is not None:
             labels = set([ioc_name, *labels])
         return await make_motor_device(pv, name, labels)
+
+
+def load_all_motors(config=None):
+    asyncio.run(aload_devices(*load_all_motor_coros(config=config)))
