@@ -48,7 +48,7 @@ def ion_chamber(sim_registry, id_motor):
     yield I0
 
 
-def test_moves_energy(mono_motor, id_motor, ion_chamber, pitch2_motor):
+def test_moves_energy(mono_motor, id_motor, ion_chamber, pitch2_motor, event_loop):
     """Simple test to ensure that the plan moves the mono and undulators
     to the right starting energy."""
     # Execute the plan
@@ -87,7 +87,7 @@ def test_aligns_mono_energy(mono_motor, id_motor, ion_chamber, pitch2_motor):
     assert len(id_messages) >= npts
 
 
-def test_fitting_callback(mono_motor, id_motor, ion_chamber, pitch2_motor):
+def test_fitting_callback(mono_motor, id_motor, ion_chamber, pitch2_motor, event_loop):
     fit_model = MagicMock()
     plan = mono_ID_calibration(
         energies=[8000, 9000], energy_motor=mono_motor, fit_model=fit_model

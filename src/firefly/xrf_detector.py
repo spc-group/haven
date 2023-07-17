@@ -495,7 +495,8 @@ class XRFDetectorDisplay(display.FireflyDisplay):
                 pass
 
     def copy_selected_row(self, displays, source_display):
-        """Copy the name, upper limit, and lower limits from one ROI|MCA row to all the rest.
+        """Copy the name, upper limit, and lower limits from one ROI|MCA row
+        to all the rest.
 
         Parameters
         ==========
@@ -512,6 +513,8 @@ class XRFDetectorDisplay(display.FireflyDisplay):
         # Set all the other MCA rows with values from selected MCA row
         for display in displays:
             if display is not source_display:
+                if display.embedded_widget is None:
+                    continue
                 display.embedded_widget.ui.label_lineedit.setText(new_label)
                 display.embedded_widget.ui.lower_lineedit.setText(new_lower)
                 display.embedded_widget.ui.upper_lineedit.setText(new_upper)

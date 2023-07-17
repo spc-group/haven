@@ -1,4 +1,6 @@
+import asyncio
 from enum import IntEnum
+import logging
 
 from ophyd import (
     Device,
@@ -11,6 +13,10 @@ from ophyd import (
 
 from .instrument_registry import registry
 from .._iconfig import load_config
+from .device import await_for_connection, aload_devices
+
+
+log = logging.getLogger(__name__)
 
 
 class IDTracking(IntEnum):
@@ -18,7 +24,6 @@ class IDTracking(IntEnum):
     ON = 1
 
 
-@registry.register
 class Monochromator(Device):
     # ID tracking PVs
     id_tracking = Cpt(EpicsSignal, ":ID_tracking", kind="config")
@@ -50,9 +55,25 @@ class Monochromator(Device):
     d_spacing = Cpt(EpicsSignalRO, ":dspacing", labels={"baseline"}, kind="config")
 
 
-def load_monochromator(config=None):
+async def make_monochromator_device(prefix):
+    mono = Monochromator(prefix, name="monochromator")
+    try:
+        await await_for_connection(mono)
+    except TimeoutError as exc:
+        msg = f"Could not connect to monochromator: {prefix}"
+        log.warning(msg)
+    else:
+        log.info(f"Created monochromator: {prefix}")
+        registry.register(mono)
+        return mono
+
+
+def load_monochromator_coros(config=None):
     # Load PV's from config
     if config is None:
         config = load_config()
-    monochromator = Monochromator(config["monochromator"]["ioc"], name="monochromator")
-    return monochromator
+    yield make_monochromator_device(prefix=config["monochromator"]["ioc"])
+
+
+def load_monochromator(config=None):
+    asyncio.run(aload_devices(*load_monochromator_coros(config=config)))

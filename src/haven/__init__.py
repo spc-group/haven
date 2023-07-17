@@ -42,10 +42,6 @@ from .instrument import (  # noqa: F401
     Monochromator,
 )
 from .instrument.load_instrument import load_instrument  # noqa: F401
-from .instrument.fluorescence_detector import (
-    load_dxp_detector,
-    load_fluorescence_detectors,
-)
 from .instrument.motor import HavenMotor  # noqa: F401
 
 from .xdi_writer import XDIWriter  # noqa: F401
