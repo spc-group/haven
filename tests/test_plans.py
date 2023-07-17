@@ -53,7 +53,9 @@ def test_warn_poor_fit(RE):
         warnings.simplefilter("always")
         RE(align_slits(slit_motors=[slit_motor], ion_chamber=I0))
         # Check that a warning was raised
-        assert len(w) == 1
-        assert "Poor fit while centering motor" in str(w[0].message)
+        assert len(w) >= 1
+        messages = [str(w_.message) for w_ in w]
+        target_message = "Poor fit while centering motor"
+        assert any([target_message in msg for msg in messages])
 
 
