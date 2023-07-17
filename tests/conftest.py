@@ -7,6 +7,7 @@ import subprocess
 import shutil
 import time
 from unittest import mock
+import asyncio
 
 import pytest
 from qtpy import QtWidgets
@@ -30,6 +31,7 @@ from haven.instrument.camera import AravisDetector
 from haven.instrument.fluorescence_detector import DxpDetectorBase
 from firefly.application import FireflyApplication
 from firefly.ophyd_plugin import OphydPlugin
+from run_engine import RunEngineStub
 
 
 IOC_SCOPE = "function"
@@ -52,6 +54,9 @@ def pytest_configure(config):
     app = FireflyApplication()
     app = QtWidgets.QApplication.instance()
     assert isinstance(app, FireflyApplication)
+    # # Create event loop for asyncio stuff
+    # loop = asyncio.new_event_loop()
+    # asyncio.set_event_loop(loop)
 
 
 @pytest.fixture(scope="session")
@@ -373,3 +378,9 @@ def sim_vortex(sim_registry):
     vortex = FakeDXP(name="vortex_me4", labels={"xrf_detectors"})
     sim_registry.register(vortex)
     yield vortex
+
+
+@pytest.fixture()
+def RE(event_loop):
+    return RunEngineStub(call_returns_result=True)
+    
