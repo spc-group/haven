@@ -17,7 +17,6 @@ async def make_xray_device(prefix: str):
     try:
         await await_for_connection(dev)
     except TimeoutError as exc:
-        raise
         msg = f"Could not connect to xray source: {prefix}"
         log.warning(msg)
     else:
