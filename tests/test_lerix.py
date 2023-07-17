@@ -117,7 +117,7 @@ def test_rowland_circle_inverse():
 
 @pytest.mark.xfail
 def test_rowland_circle_component(ioc_motor):
-    device = LERIXSpectrometer("255idVME", name="lerix")
+    device = lerix.LERIXSpectrometer("255idVME", name="lerix")
     device.wait_for_connection()
     # Set pseudo axes
     statuses = [
