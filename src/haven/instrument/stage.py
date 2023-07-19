@@ -1,5 +1,6 @@
 import threading
 import time
+import logging
 
 from ophyd import (
     Device,
@@ -15,9 +16,13 @@ from ophyd import (
 from ophyd.status import SubscriptionStatus
 from apstools.synApps.asyn import AsynRecord
 import pint
+import numpy as np
 
 from .instrument_registry import registry
 from .._iconfig import load_config
+
+
+log = logging.getLogger()
 
 
 ureg = pint.UnitRegistry()
@@ -100,8 +105,10 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
     """
 
     axis: str
+    pso_positions: np.ndarray = None
     # Internal encoder in the Ensemble to track for flying
     encoder: int
+    encoder_direction: int = 1
 
     # Extra motor record components
     encoder_resolution = Cpt(EpicsSignal, ".ERES", kind=Kind.config)
@@ -109,11 +116,11 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
     # Desired fly parameters
     start_position = Cpt(Signal, name="start_position", kind=Kind.config)
     end_position = Cpt(Signal, name="end_position", kind=Kind.config)
-    step_size = Cpt(Signal, name="step_size", kind=Kind.config)
-    dwell_time = Cpt(Signal, name="dwell_time", kind=Kind.config)
+    step_size = Cpt(Signal, name="step_size", value=1, kind=Kind.config)
+    dwell_time = Cpt(Signal, name="dwell_time", value=1, kind=Kind.config)
 
     # Calculated signals
-    slew_speed = Cpt(Signal, kind=Kind.config)
+    slew_speed = Cpt(Signal, value=1, kind=Kind.config)
     taxi_start = Cpt(Signal, kind=Kind.config)
     taxi_end = Cpt(Signal, kind=Kind.config)
     encoder_step_size = Cpt(Signal, kind=Kind.config)
@@ -260,7 +267,52 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
           array of places where PSO pulses should occur
 
         """
-        print("To-do: calculate fly-scanning parameters.")
+        window_buffer = 5
+        # Grab any neccessary signals For calculation
+        start_position = self.start_position.get()
+        end_position = self.end_position.get()
+        dwell_time = self.dwell_time.get()
+        step_size = self.step_size.get()
+        encoder_resolution = self.encoder_resolution.get()
+        motor_accel = self.acceleration.get()
+        egu = self.motor_egu.get()
+        # Check for sane values
+        if dwell_time == 0:
+            log.warning(f'{self} dwell_time is zero. Could not update fly scan parameters.')
+            return
+        if encoder_resolution == 0:
+            log.warning(f'{self} encoder resolution is zero. Could not update fly scan parameters.')
+            return
+        if motor_accel <= 0:
+            log.warning(f'{self} acceleration is non-positive. Could not update fly scan parameters.')
+            return
+        # Determine the desired direction of travel and overal sense
+        # +1 when moving in +1 encoder direction, -1 if else
+        direction = 1 if start_position < end_position else -1
+        overall_sense = direction * self.encoder_direction
+		# Calculate the step size in encoder steps
+        encoder_step_size = round(step_size / encoder_resolution)
+        self.encoder_step_size.set(encoder_step_size).wait()
+        delta_egu = egu * encoder_step_size
+        slew_speed = (step_size / dwell_time)
+        # Determine taxi distance to accelerate to req speed, v^2/(2*a) = d
+        # x3 for margin of error
+        taxi_dist = slew_speed ** 2 / (2 * motor_accel) * 3
+        taxi_start =  start_position - (direction * taxi_dist)
+        taxi_end =  end_position + (direction * taxi_dist)
+        # Calculate encoder counts within the requested window of the scan
+        encoder_window_start = taxi_dist / encoder_step_size
+        encoder_window_end = (taxi_dist + abs(end_position - start_position)) / encoder_step_size
+        #Create a list of PSO positions and grab the end to find end of scan
+        self.pso_positions = list(np.arange(start_position, end_position, (direction*step_size)))
+        actual_end = self.pso_positions[-1]
+        # Set all the calculated variables
+        self.slew_speed.set(slew_speed).wait()
+        self.taxi_start.set(taxi_start).wait()
+        self.taxi_end.set(taxi_end).wait()
+        self.encoder_window_start.set(encoder_window_start).wait()
+        self.encoder_window_end.set(encoder_window_end).wait()
+        #self.pso_positions.set(pso_positions).wait()
 
     def send_command(self, cmd: str):
         """Send commands directly to the aerotech ensemble controller.
