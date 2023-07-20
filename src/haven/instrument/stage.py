@@ -77,6 +77,22 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
     which case they are in units of encoder pulses based on the
     encoder resolution.
 
+    The following diagram describes how the various components relate
+    to each other. Distances are not to scale.
+
+               ┌─ encoder_window_start         ┌─ encoder_window_stop
+               │                               │
+               │ |┄┄┄| *step_size*             │
+               │ │   │ encoder_step_size       │
+               │ │   │                         │
+    Window:    ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┤    
+    
+    Pulses: ┄┄┄┄┄╨───╨───╨───╨───╨───╨───╨───╨┄┄┄┄┄
+             │   │ │                       │ │   └─ taxi_end
+             │   │ └─ *start_position*     │ └─ pso_end
+             │   └─ pso_start              └─ *end position*
+             └─ taxi_start                      
+
     Parameters
     ==========
     axis
@@ -89,18 +105,40 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
     Components
     ==========
     start_position
-      Where the fly scan begins
+      User-requested center of the first scan pixel.
     stop_position
-      Where the fly scan ends
-    step_size
-      How much space desired between points. Note this is not
+      User-requested center of the last scan pixel. This is not
       guaranteed and may be adjusted to match the encoder resolution
       of the stage.
+    step_size
+      How much space desired between points. This is not guaranteed
+      and may be adjusted to match the encoder resolution of the
+      stage.
     dwell_time
       How long to take, in seconds, moving between points.
     slew_speed
       How fast to move the stage. Calculated from the remaining
       components.
+    taxi_start
+      The starting point for motor movement during flying, accounts
+      for needed acceleration of the motor.
+    taxi_end
+      The target point for motor movement during flying, accounts
+      for needed acceleration of the motor.
+    pso_start
+      The motor position corresponding to the first PSO pulse.
+    pso_end
+      The motor position corresponding to the last PSO pulse.
+    encoder_step_size
+      The number of encoder counts for each pixel.
+    encoder_window_start
+      The start of the window within which PSO pulses may be emitted,
+      in encoder counts. Should be slightly wider than the actual PSO
+      range.
+    encoder_window_end
+      The end of the window within which PSO pulses may be emitted,
+      in encoder counts. Should be slightly wider than the actual PSO
+      range.
 
     """
 
@@ -123,6 +161,8 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
     slew_speed = Cpt(Signal, value=1, kind=Kind.config)
     taxi_start = Cpt(Signal, kind=Kind.config)
     taxi_end = Cpt(Signal, kind=Kind.config)
+    pso_start = Cpt(Signal, kind=Kind.config)
+    pso_end = Cpt(Signal, kind=Kind.config)
     encoder_step_size = Cpt(Signal, kind=Kind.config)
     encoder_window_start = Cpt(Signal, kind=Kind.config)
     encoder_window_end = Cpt(Signal, kind=Kind.config)
@@ -204,7 +244,7 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
 
     def taxi(self):
         # Move motor to the scan start point
-        motor_move = self.move(self.start_position.get(), wait=False)
+        motor_move = self.move(self.pso_start.get(), wait=False)
         # Initalize the PSO
         self.enable_pso()
         # Arm the PSO
@@ -268,7 +308,7 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
 
         """
         window_buffer = 5
-        # Grab any neccessary signals For calculation
+        # Grab any neccessary signals for calculation
         start_position = self.start_position.get()
         end_position = self.end_position.get()
         dwell_time = self.dwell_time.get()
@@ -287,10 +327,10 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
             log.warning(f'{self} acceleration is non-positive. Could not update fly scan parameters.')
             return
         # Determine the desired direction of travel and overal sense
-        # +1 when moving in +1 encoder direction, -1 if else
+        # +1 when moving in + encoder direction, -1 if else
         direction = 1 if start_position < end_position else -1
         overall_sense = direction * self.encoder_direction
-		# Calculate the step size in encoder steps
+	# Calculate the step size in encoder steps
         encoder_step_size = round(step_size / encoder_resolution)
         self.encoder_step_size.set(encoder_step_size).wait()
         delta_egu = egu * encoder_step_size

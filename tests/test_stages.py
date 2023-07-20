@@ -2,7 +2,7 @@ from unittest import mock
 
 import pytest
 from ophyd import StatusBase
-from ophyd.sim import instantiate_fake_device
+from ophyd.sim import instantiate_fake_device, make_fake_device
 
 from haven import registry, exceptions
 from haven.instrument import stage
@@ -10,9 +10,9 @@ from haven.instrument import stage
 
 @pytest.fixture()
 def sim_aerotech_flyer():
-    flyer = instantiate_fake_device(
-        stage.AerotechFlyer, name="flyer", axis="@0", encoder=6
-    )
+    Flyer = make_fake_device(
+        stage.AerotechFlyer,      )
+    flyer = Flyer(name="flyer", axis="@0", encoder=6,)
     flyer.send_command = mock.MagicMock()
     return flyer
 
@@ -62,12 +62,14 @@ def test_aerotech_fly_params(sim_aerotech_flyer):
     flyer.motor_egu.set("micron").wait()
     flyer.acceleration.set(.5).wait() # µm/sec^2
     flyer.encoder_resolution.set(0.001).wait()  # µm
-    flyer.start_position.set(20).wait()  # µm
-    flyer.end_position.set(10).wait()  # µm
+    flyer.start_position.set(19.95).wait()  # µm
+    flyer.end_position.set(10.05).wait()  # µm
     flyer.step_size.set(0.1).wait()  # µm
     flyer.dwell_time.set(1).wait()  # sec
     
     # Check that the fly-scan parameters were calculated correctly
+    assert flyer.pso_start.get(use_monitor=False) == 20.
+    assert flyer.pso_end.get(use_monitor=False) == 10.
     assert flyer.slew_speed.get(use_monitor=False) == 0.1  # µm/sec
     assert flyer.taxi_start.get(use_monitor=False) == 20.03  # µm
     assert flyer.taxi_end.get(use_monitor=False) == 9.97  # µm
@@ -151,18 +153,19 @@ def test_fly_motor_positions(sim_aerotech_flyer):
     # Set example fly scan parameters
     flyer.taxi_start.set(5)
     flyer.start_position.set(10)
+    flyer.pso_start.set(9.5)
     flyer.taxi_end.set(105)
     # Mock the motor position so that it returns a status we control
     motor_status = StatusBase()
     motor_status.set_finished()
-    setter = mock.MagicMock(return_value=motor_status)
-    flyer.user_setpoint.set = setter
+    mover = mock.MagicMock(return_value=motor_status)
+    flyer.move = mover
     # Check the fly scan moved the motors in the right order
     flyer.fly()
-    assert setter.called
-    positions = [c.args[0] for c in setter.call_args_list]
+    assert mover.called
+    positions = [c.args[0] for c in mover.call_args_list]
     assert len(positions) == 3
-    start, taxi, end = positions
-    assert start == 10
+    pso_start, taxi, end = positions
+    assert pso_start == 9.5
     assert taxi == 5
     assert end == 105
