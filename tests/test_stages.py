@@ -3,6 +3,7 @@ from unittest import mock
 import pytest
 from ophyd import StatusBase
 from ophyd.sim import instantiate_fake_device, make_fake_device
+import numpy as np
 
 from haven import registry, exceptions
 from haven.instrument import stage
@@ -56,7 +57,35 @@ def test_aerotech_stage():
     assert fly_stage.asyn.ascii_output.pvname == "motor_ioc:asynEns.AOUT"
 
 
-def test_aerotech_fly_params(sim_aerotech_flyer):
+def test_aerotech_fly_params_forward(sim_aerotech_flyer):
+    flyer = sim_aerotech_flyer
+    # Set some example positions
+    flyer.motor_egu.set("micron").wait()
+    flyer.acceleration.set(.5).wait() # µm/sec^2
+    flyer.encoder_resolution.set(0.001).wait()  # µm
+    flyer.start_position.set(10.05).wait()  # µm
+    flyer.end_position.set(19.95).wait()  # µm
+    flyer.step_size.set(0.1).wait()  # µm
+    flyer.dwell_time.set(1).wait()  # sec
+    
+    # Check that the fly-scan parameters were calculated correctly
+    assert flyer.pso_start.get(use_monitor=False) == 10.0
+    assert flyer.pso_end.get(use_monitor=False) == 20.0
+    assert flyer.slew_speed.get(use_monitor=False) == 0.1  # µm/sec
+    assert flyer.taxi_start.get(use_monitor=False) == 9.97  # µm
+    assert flyer.taxi_end.get(use_monitor=False) == 20.03  # µm
+    assert flyer.encoder_step_size.get(use_monitor=False) == 100
+    assert flyer.encoder_window_start.get(use_monitor=False) == -5
+    assert flyer.encoder_window_end.get(use_monitor=False) == 10005
+    i = 10.05
+    pso = []
+    while i<=19.95:
+        pso.append(i)
+        i = i+0.1
+    np.testing.assert_allclose(flyer.pso_positions, pso)
+
+
+def test_aerotech_fly_params_reverse(sim_aerotech_flyer):
     flyer = sim_aerotech_flyer
     # Set some example positions
     flyer.motor_egu.set("micron").wait()
@@ -75,8 +104,14 @@ def test_aerotech_fly_params(sim_aerotech_flyer):
     assert flyer.taxi_end.get(use_monitor=False) == 9.97  # µm
     assert flyer.encoder_step_size.get(use_monitor=False) == 100
     assert flyer.encoder_window_start.get(use_monitor=False) == 5
-    assert flyer.encoder_window_end.get(use_monitor=False) == -1005
-    assert flyer.pso_positions == ...
+    assert flyer.encoder_window_end.get(use_monitor=False) == -10005
+    
+    i = 19.95
+    pso = []
+    while i>=10.05:
+        pso.append(i)
+        i = i-0.1
+    np.testing.assert_allclose(flyer.pso_positions, pso)
 
 
 def test_enable_pso(sim_aerotech_flyer):
