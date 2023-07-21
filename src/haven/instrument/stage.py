@@ -347,7 +347,6 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         taxi_end =  pso_end + (direction * taxi_dist)
         #Create a list of PSO positions and grab the end to find end of scan
         pso_positions = np.arange(start_position, end_position, (direction*step_size))
-        actual_end = pso_positions[-1]
         # Calculate encoder counts within the requested window of the scan
         encoder_window_start = int(-direction * window_buffer)
         # import pdb; pdb.set_trace()
