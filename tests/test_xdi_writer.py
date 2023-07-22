@@ -221,7 +221,7 @@ class CallbackTests(TestCase):
         self.assertIn("1660186828.0055554", xdi_output)
 
 
-def test_with_plan(stringio, sim_registry):
+def test_with_plan(stringio, sim_registry, event_loop):
     I0 = SynGauss(
         "I0",
         motor,

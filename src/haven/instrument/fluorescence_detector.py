@@ -3,6 +3,7 @@ from collections import OrderedDict
 from typing import Optional, Sequence
 import warnings
 import logging
+import asyncio
 
 from ophyd import (
     mca,
@@ -17,12 +18,12 @@ from apstools.utils import cleanupText
 
 from .scaler_triggered import ScalerTriggered
 from .instrument_registry import registry
-from .device import RegexComponent as RECpt
+from .device import RegexComponent as RECpt, await_for_connection, aload_devices
 from .._iconfig import load_config
 from .. import exceptions
 
 
-__all__ = ["DxpDetectorBase", "load_fluorescence_detectors", "load_dxp_detector"]
+__all__ = ["DxpDetectorBase", "load_fluorescence_detectors"]
 
 
 log = logging.getLogger(__name__)
@@ -150,9 +151,9 @@ class DxpDetectorBase(mca.EpicsDXPMultiElementSystem):
 
     """
 
-    # By default, a 1-element detector, subclass for more elements
+    # By default, a 4-element detector, subclass for more elements
     mcas = DDC(
-        add_mcas(range_=range(1, 3)),
+        add_mcas(range_=range(1, 5)),
         default_read_attrs=["mca1"],
         default_configuration_attrs=["mca1"],
     )
@@ -383,7 +384,7 @@ class XspressDetector(ScalerTriggered, Device):
         self.stage_sigs[self.num_frames] = val
 
 
-def load_dxp_detector(device_name, prefix, num_elements):
+async def make_dxp_device(device_name, prefix, num_elements):
     # Build the mca components
     # (Epics uses 1-index instead of 0-index)
     mca_range = range(1, num_elements + 1)
@@ -400,10 +401,19 @@ def load_dxp_detector(device_name, prefix, num_elements):
     parent_classes = (DxpDetectorBase,)
     Cls = type(class_name, parent_classes, attrs)
     det = Cls(prefix=f"{prefix}:", name=device_name, labels={"xrf_detectors"})
-    registry.register(det)
+    # Verify it is connection
+    try:
+        await await_for_connection(det)
+    except TimeoutError as exc:
+        msg = f"Could not connect to fluorescence detector: {device_name} ({prefix}:)"
+        log.warning(msg)
+    else:
+        log.info(f"Created fluorescence detecotr: {device_name} ({prefix})")
+        registry.register(det)
+        return det
 
 
-def load_fluorescence_detectors(config=None):
+def load_fluorescence_detector_coros(config=None):
     # Get the detector definitions from config files
     if config is None:
         config = load_config()
@@ -412,9 +422,15 @@ def load_fluorescence_detectors(config=None):
             continue
         # Build the detector device
         if cfg["electronics"] == "dxp":
-            load_dxp_detector(
-                device_name=name, prefix=cfg["prefix"], num_elements=cfg["num_elements"]
+            yield make_dxp_device(
+                device_name=name,
+                prefix=cfg["prefix"],
+                num_elements=cfg["num_elements"],
             )
         else:
             msg = f"Electronics '{cfg['electronics']}' for {name} not supported."
             raise exceptions.UnknownDeviceConfiguration(msg)
+
+
+def load_fluorescence_detectors(config=None):
+    asyncio.run(aload_devices(*load_fluorescence_detector_coros(config=config)))

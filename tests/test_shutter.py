@@ -1,9 +1,11 @@
-from haven.instrument.shutter import load_shutters
+from unittest import mock
+from haven.instrument import shutter
 from haven import registry
 
 
-def test_shutter():
-    load_shutters()
+def test_shutter(monkeypatch):
+    monkeypatch.setattr(shutter, "await_for_connection", mock.AsyncMock())
+    shutter.load_shutters()
     shutters = list(registry.findall(label="shutters"))
     assert len(shutters) == 2
     shutterA = registry.find(name="front_end_shutter")

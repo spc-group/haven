@@ -1,8 +1,11 @@
-from haven.instrument.power_supply import load_power_supplies
+from unittest import mock
+
+from haven.instrument import power_supply
 
 
-def test_load_power_supplies(sim_registry):
-    load_power_supplies()
+def test_load_power_supplies(sim_registry, monkeypatch):
+    monkeypatch.setattr(power_supply, "await_for_connection", mock.AsyncMock())
+    power_supply.load_power_supplies()
     # Test that the device has the right configuration
     devices = list(sim_registry.findall(label="power_supplies"))
     assert len(devices) == 2  # 2 channels on the device

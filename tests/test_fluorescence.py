@@ -1,10 +1,12 @@
+import asyncio
+import pytest
+from epics import caget
+
 from unittest.mock import MagicMock
-from ophyd import Kind
+from ophyd import Kind, DynamicDeviceComponent as DDC
 from bluesky import plans as bp
 
-import pytest
-
-from epics import caget
+from haven.instrument import fluorescence_detector
 
 
 def test_load_dxp(sim_registry, mocker):
@@ -27,24 +29,35 @@ def test_load_dxp(sim_registry, mocker):
     assert vortex.mcas.mca1.rois.roi1.is_hinted.pvname == "vortex_me4:mca1_R1BH"
 
 
-@pytest.fixture()
-def vortex(sim_registry, mocker):
-    mocker.patch("ophyd.signal.EpicsSignalBase._ensure_connected")
-    from haven.instrument.fluorescence_detector import load_dxp_detector
-
-    # load_fluorescence_detectors(config=None)
-    load_dxp_detector(
-        device_name="vortex_me4",
-        prefix="255idDXP",
-        num_elements=4,
-    )
-    # See if the device was loaded
-    vortex = sim_registry.find(name="vortex_me4")
-    yield vortex
+# class Vortex(DxpDetectorBase):
+#     mcas = DDC(
+#         fluorescence_detector.add_mcas(range_=mca_range),
+#         kind=active_kind,
+#         default_read_attrs=[f"mca{i}" for i in mca_range],
+#         default_configuration_attrs=[f"mca{i}" for i in mca_range],
+#     )
 
 
-def test_enable_some_rois(vortex, ioc_dxp):
+# @pytest.fixture()
+# def vortex(sim_registry, mocker):
+#     mocker.patch("ophyd.signal.EpicsSignalBase._ensure_connected")
+#     from haven.instrument.fluorescence_detector import make_dxp_device
+
+#     # load_fluorescence_detectors(config=None)
+#     vortex = asyncio.run(
+#         make_dxp_device(
+#             device_name="vortex_me4",
+#             prefix="255idDXP",
+#             num_elements=4,
+#         )
+#     )
+#     # See if the device was loaded
+#     return vortex
+
+
+def test_enable_some_rois(sim_vortex):
     """Test that the correct ROIs are enabled/disabled."""
+    vortex = sim_vortex
     statuses = vortex.enable_rois(rois=[2, 5], elements=[1, 3])
     # Give the IOC time to change the PVs
     for status in statuses:
@@ -55,8 +68,9 @@ def test_enable_some_rois(vortex, ioc_dxp):
     assert hinted == 1
 
 
-def test_enable_rois(vortex, ioc_dxp):
+def test_enable_rois(sim_vortex):
     """Test that the correct ROIs are enabled/disabled."""
+    vortex = sim_vortex
     statuses = vortex.enable_rois()
     # Give the IOC time to change the PVs
     for status in statuses:
@@ -67,8 +81,9 @@ def test_enable_rois(vortex, ioc_dxp):
     assert hinted == 1
 
 
-def test_disable_some_rois(vortex, ioc_dxp):
+def test_disable_some_rois(sim_vortex):
     """Test that the correct ROIs are enabled/disabled."""
+    vortex = sim_vortex
     statuses = vortex.enable_rois(rois=[2, 5], elements=[1, 3])
     # Give the IOC time to change the PVs
     for status in statuses:
@@ -87,8 +102,9 @@ def test_disable_some_rois(vortex, ioc_dxp):
     assert hinted == 0
 
 
-def test_disable_rois(vortex, ioc_dxp):
+def test_disable_rois(sim_vortex):
     """Test that the correct ROIs are enabled/disabled."""
+    vortex = sim_vortex
     statuses = vortex.enable_rois()
     # Give the IOC time to change the PVs
     for status in statuses:

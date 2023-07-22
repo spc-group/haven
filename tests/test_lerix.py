@@ -1,13 +1,10 @@
+from unittest import mock
 import time
 
 from epics import caget
 import pytest
 
-from haven.instrument.lerix import (
-    RowlandPositioner,
-    LERIXSpectrometer,
-    load_lerix_spectrometers,
-)
+from haven.instrument import lerix
 import haven
 
 
@@ -15,7 +12,7 @@ um_per_mm = 1000
 
 
 def test_rowland_circle_forward():
-    rowland = RowlandPositioner(
+    rowland = lerix.RowlandPositioner(
         name="rowland", x_motor_pv="", y_motor_pv="", z_motor_pv="", z1_motor_pv=""
     )
     # Check one set of values
@@ -73,7 +70,7 @@ def test_rowland_circle_forward():
 
 @pytest.mark.xfail
 def test_rowland_circle_inverse():
-    rowland = RowlandPositioner(
+    rowland = lerix.RowlandPositioner(
         name="rowland", x_motor_pv="", y_motor_pv="", z_motor_pv="", z1_motor_pv=""
     )
     # Check one set of values
@@ -120,18 +117,18 @@ def test_rowland_circle_inverse():
 
 @pytest.mark.xfail
 def test_rowland_circle_component(ioc_motor):
-    lerix = LERIXSpectrometer("255idVME", name="lerix")
-    lerix.wait_for_connection()
+    device = lerix.LERIXSpectrometer("255idVME", name="lerix")
+    device.wait_for_connection()
     # Set pseudo axes
     statuses = [
-        lerix.rowland.D.set(500.0),
-        lerix.rowland.theta.set(60.0),
-        lerix.rowland.alpha.set(30.0),
+        device.rowland.D.set(500.0),
+        device.rowland.theta.set(60.0),
+        device.rowland.alpha.set(30.0),
     ]
     # [s.wait() for s in statuses]  # <- this should work, need to come back to it
     time.sleep(0.1)
     # Check that the virtual axes were set
-    result = lerix.rowland.get(use_monitor=False)
+    result = device.rowland.get(use_monitor=False)
     assert caget("255idVME:m1") == pytest.approx(500.0 * um_per_mm)
     assert result.x.user_readback == pytest.approx(500.0 * um_per_mm)
     assert caget("255idVME:m2") == pytest.approx(375.0 * um_per_mm)
@@ -142,11 +139,12 @@ def test_rowland_circle_component(ioc_motor):
     assert result.z1.user_readback == pytest.approx(1.5308084989341912e-14 * um_per_mm)
 
 
-def test_load_lerix_spectrometers(sim_registry):
-    load_lerix_spectrometers()
-    lerix = sim_registry.find(name="lerix")
-    assert lerix.name == "lerix"
-    assert lerix.x.prefix == "255idVME:m1"
-    assert lerix.y.prefix == "255idVME:m2"
-    assert lerix.z.prefix == "255idVME:m3"
-    assert lerix.z1.prefix == "255idVME:m4"
+def test_load_lerix_spectrometers(sim_registry, monkeypatch):
+    monkeypatch.setattr(lerix, "await_for_connection", mock.AsyncMock())
+    lerix.load_lerix_spectrometers()
+    device = sim_registry.find(name="lerix")
+    assert device.name == "lerix"
+    assert device.x.prefix == "255idVME:m1"
+    assert device.y.prefix == "255idVME:m2"
+    assert device.z.prefix == "255idVME:m3"
+    assert device.z1.prefix == "255idVME:m4"

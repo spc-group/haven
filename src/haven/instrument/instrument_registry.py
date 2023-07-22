@@ -269,6 +269,7 @@ class InstrumentRegistry:
         self.register(obj)
         return obj
 
+    # @profile
     def register(self, component: Detector) -> Detector:
         """Register a device, component, etc so that it can be retrieved later.
 
@@ -304,7 +305,7 @@ class InstrumentRegistry:
             if beamline_is_connected and component.parent is None:
                 try:
                     component.wait_for_connection()
-                except TimeoutError:
+                except TimeoutError as exc:
                     msg = f"Could not connect to device {component.name} ({component.prefix})"
                     log.warning(msg)
                     return component

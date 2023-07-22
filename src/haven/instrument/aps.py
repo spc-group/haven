@@ -1,11 +1,13 @@
 import logging
 import warnings
+import asyncio
 
 from apstools.devices.aps_machine import ApsMachineParametersDevice
 from apsbss.apsbss_ophyd import EpicsBssDevice
 
 from haven import registry
 from .._iconfig import load_config
+from .device import await_for_connection, aload_devices
 
 
 log = logging.getLogger(__name__)
@@ -30,23 +32,39 @@ class ApsMachine(ApsMachineParametersDevice):
     ]
 
 
-def load_aps(config=None):
+async def make_aps_device():
+    try:
+        aps_ = ApsMachine(name="APS", labels={"synchrotrons"})
+        await await_for_connection(aps_)
+    except TimeoutError as exc:
+        msg = f"Could not connect to APS machine."
+        log.warning(msg)
+    else:
+        registry.register(aps_)
+        return aps_
+
+
+async def make_bss_device(prefix):
+    # Load scheduling system device
+    bss_ = EpicsBssDevice(prefix=prefix, name="bss")
+    try:
+        await await_for_connection(bss_)
+    except TimeoutError as exc:
+        msg = f"Could not connect to BSS system: {prefix}"
+        log.warning(msg)
+    else:
+        registry.register(bss_)
+        return bss_
+
+
+def load_aps_coros(config=None):
     """Load devices related to the synchrotron as a whole."""
-    devices = []
     if config is None:
         config = load_config()
     # Load storage ring device
-    try:
-        aps_ = ApsMachine(name="APS", labels={"synchrotrons"})
-    except Exception as exc:
-        msg = f"Could not instantiate APS machine: {repr(exc)}"
-        log.warning(msg)
-        warnings.warn(msg)
-    else:
-        registry.register(aps_)
-        devices.append(aps_)
-    # Load scheduling system device
-    bss_ = EpicsBssDevice(prefix=f"{config['bss']['prefix']}:", name="bss")
-    registry.register(bss_)
-    devices.append(bss_)
-    return devices
+    yield make_aps_device()
+    yield make_bss_device(prefix=f"{config['bss']['prefix']}:")
+
+
+def load_aps(config=None):
+    asyncio.run(aload_devices(*load_aps_coros(config=config)))

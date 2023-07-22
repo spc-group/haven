@@ -15,8 +15,8 @@ from firefly.energy import EnergyDisplay
 
 def test_mono_caqtdm_macros(qtbot, ffapp, sim_registry):
     # Create fake device
-    mono = haven.instrument.monochromator.Monochromator(
-        "mono_ioc", name="monochromator"
+    mono = sim_registry.register(
+        haven.instrument.monochromator.Monochromator("mono_ioc", name="monochromator")
     )
     sim_registry.register(
         haven.instrument.energy_positioner.EnergyPositioner(
