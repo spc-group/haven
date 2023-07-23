@@ -14,7 +14,7 @@ from ophyd import (
     EpicsSignal,
     flyers,
 )
-from ophyd.status import SubscriptionStatus
+from ophyd.status import SubscriptionStatus, AndStatus
 from apstools.synApps.asyn import AsynRecord
 import pint
 import numpy as np
@@ -268,6 +268,21 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
     def unstage(self, *args, **kwargs):
         self.velocity.set(self.old_velocity).wait()
         return super().unstage(*args, **kwargs)
+
+    def move(self, position, wait=True, *args, **kwargs):
+        motor_status = super().move(position, wait=wait, *args, **kwargs)
+
+        def check_readback(*args, old_value, value, **kwargs) -> bool:
+            "Check if taxiing is complete and flying has begun."
+            return value == position
+
+        # Status object is complete motor reaches target value
+        readback_status = SubscriptionStatus(self.user_readback, check_readback)
+        # Prepare the combined status object
+        status = AndStatus(motor_status, readback_status)
+        if wait:
+            status.wait()
+        return readback_status
 
     @property
     def motor_egu_pint(self):

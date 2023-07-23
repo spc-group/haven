@@ -14,6 +14,7 @@ def sim_aerotech_flyer():
     Flyer = make_fake_device(
         stage.AerotechFlyer,      )
     flyer = Flyer(name="flyer", axis="@0", encoder=6,)
+    flyer.user_setpoint._limits = (0, 1000)
     flyer.send_command = mock.MagicMock()
     return flyer
 
@@ -205,3 +206,12 @@ def test_fly_motor_positions(sim_aerotech_flyer):
     assert pso_start == 9.5
     assert taxi == 5
     assert end == 105
+
+
+def test_aerotech_move_status(sim_aerotech_flyer):
+    """Check that the flyer only finishes when the readback value is reached."""
+    flyer = sim_aerotech_flyer
+    status = flyer.move(100, wait=False)
+    assert not status.done
+    # To-Do: figure out how to make this be done in the fake device
+    # assert status.done
