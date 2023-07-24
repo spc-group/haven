@@ -81,7 +81,7 @@ def test_aerotech_fly_params_forward(sim_aerotech_flyer):
     assert flyer.encoder_window_end.get(use_monitor=False) == 10005
     i = 10.05
     pso = []
-    while i<=19.95:
+    while i<=19.98:
         pso.append(i)
         i = i+0.1
     np.testing.assert_allclose(flyer.pso_positions, pso)
@@ -110,7 +110,7 @@ def test_aerotech_fly_params_reverse(sim_aerotech_flyer):
     
     i = 19.95
     pso = []
-    while i>=10.05:
+    while i>=10.03:
         pso.append(i)
         i = i-0.1
     np.testing.assert_allclose(flyer.pso_positions, pso)
