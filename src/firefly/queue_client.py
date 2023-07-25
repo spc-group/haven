@@ -94,6 +94,7 @@ class QueueClient(QObject):
         else:
             log.error(f"Failed to open/close environment: {result['msg']}")
 
+    @Slot()
     def update(self):
         now = time.time()
         if now >= self.last_update + self.timeout:
@@ -104,7 +105,7 @@ class QueueClient(QObject):
                 return
             log.debug("Updating queue client.")
             try:
-                self.check_queue_status()
+                self._check_queue_status()
             except comm_base.RequestTimeoutError as e:
                 # If we can't reach the server, wait for a minute and retry
                 self.timeout = min(60, self.timeout * 2)
@@ -158,7 +159,7 @@ class QueueClient(QObject):
             raise RuntimeError(result)
 
     @Slot()
-    def check_queue_status(self, force: bool = False):
+    def check_queue_status(self):
         """Get an update queue status from queue server and notify slots.
 
         Parameters
@@ -170,7 +171,32 @@ class QueueClient(QObject):
 
         Emits
         =====
-        self.check_queue_status
+        self.status_changed
+          With the updated queue status.
+
+        """
+        try:
+            self._check_queue_status()
+        except comm_base.RequestTimeoutError as e:
+            log.warn(str(e))
+            warnings.warn(str(e))
+    
+    def _check_queue_status(self, force: bool = False):
+        """Get an update queue status from queue server and notify slots.
+
+        Similar to ``check_queue_status`` but without the exception
+        handling.
+
+        Parameters
+        ==========
+        force
+          If false (default), the ``queue_status_changed`` signal will
+          be emitted only if the queue status has changed since last
+          check.
+
+        Emits
+        =====
+        self.status_changed
           With the updated queue status.
 
         """

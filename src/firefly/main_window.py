@@ -103,7 +103,7 @@ class FireflyMainWindow(PyDMMainWindow):
         # Setup menu
         self.ui.menuSetup = QtWidgets.QMenu(self.ui.menubar)
         self.ui.menuSetup.setObjectName("menuSetup")
-        self.ui.menuSetup.setTitle("&Setup")
+        self.ui.menuSetup.setTitle("Set&up")
         self.ui.menubar.addAction(self.ui.menuSetup.menuAction())
         # Menu for managing the Queue server
         self.ui.queue_menu = QtWidgets.QMenu(self.ui.menubar)
@@ -116,14 +116,14 @@ class FireflyMainWindow(PyDMMainWindow):
         self.ui.queue_menu.addAction(app.queue_autoplay_action)
         self.ui.queue_menu.addAction(app.queue_open_environment_action)
         self.ui.menuView.addAction(app.launch_queuemonitor_action)
-        # XAFS scan window
+        # Log viewer window
         self.add_menu_action(
             action_name="actionShow_Log_Viewer", text="Logs", menu=self.ui.menuView
         )
         # Positioners menu
         self.ui.menuPositioners = QtWidgets.QMenu(self.ui.menubar)
         self.ui.menuPositioners.setObjectName("menuPositioners")
-        self.ui.menuPositioners.setTitle("Positioners")
+        self.ui.menuPositioners.setTitle("&Positioners")
         self.ui.menubar.addAction(self.ui.menuPositioners.menuAction())
         # Sample viewer
         self.add_menu_action(
@@ -139,8 +139,9 @@ class FireflyMainWindow(PyDMMainWindow):
         # Scans menu
         self.ui.menuScans = QtWidgets.QMenu(self.ui.menubar)
         self.ui.menuScans.setObjectName("menuScans")
-        self.ui.menuScans.setTitle("Scans")
+        self.ui.menuScans.setTitle("&Scans")
         self.ui.menubar.addAction(self.ui.menuScans.menuAction())
+        self.ui.menuScans.addAction(app.show_count_plan_window_action)
         # XAFS scan window
         self.add_menu_action(
             action_name="actionShow_Xafs_Scan", text="XAFS Scan", menu=self.ui.menuScans
@@ -151,7 +152,7 @@ class FireflyMainWindow(PyDMMainWindow):
         # Detectors menu
         self.ui.menuDetectors = QtWidgets.QMenu(self.ui.menubar)
         self.ui.menuDetectors.setObjectName("menuDetectors")
-        self.ui.menuDetectors.setTitle("Detectors")
+        self.ui.menuDetectors.setTitle("&Detectors")
         self.ui.menubar.addAction(self.ui.menuDetectors.menuAction())
         # Voltmeters window
         self.add_menu_action(

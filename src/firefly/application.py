@@ -44,6 +44,7 @@ pg.setConfigOption("foreground", (0, 0, 0))
 class FireflyApplication(PyDMApplication):
     default_display = None
     xafs_scan_window = None
+    count_plan_window = None
 
     # Actions for showing window
     show_status_window_action: QtWidgets.QAction
@@ -179,6 +180,12 @@ class FireflyApplication(PyDMApplication):
             action_name="show_cameras_window_action",
             text="All Cameras",
             slot=self.show_cameras_window,
+        )
+        # Launch windows for plans
+        self._setup_window_action(
+            action_name="show_count_plan_window_action",
+            text="&Count",
+            slot=self.show_count_plan_window,
         )
 
     def launch_queuemonitor(self):
@@ -447,6 +454,13 @@ class FireflyApplication(PyDMApplication):
         return self.show_window(
             PlanMainWindow, ui_dir / "xafs_scan.py", name="xafs_scan"
         )
+
+    @QtCore.Slot()
+    def show_count_plan_window(self):
+        return self.show_window(
+            PlanMainWindow, ui_dir / "plans" / "count.ui", name="count_plan"
+        )
+    
 
     @QtCore.Slot()
     def show_voltmeters_window(self):
