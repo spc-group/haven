@@ -312,21 +312,28 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
           negative
         overall_sense
           is our fly motion + or - with respect to encoder counts
-        delta_encoder_counts
-          integer number of encoder counts per PSO delta
-        delta_egu
-          delta_encoder_counts in engineering units.  May not = delta
-        motor_start
-          where motor will be to start motion.  Accounts for accel
-          distance
-        motor_end
-          where motor will stop motion.  Accounts for decel distance
-        actual_end
-          center of last data point.  May not = req_end due to integer
-          delta_encoder_counts
+        taxi_start
+          The starting point for motor movement during flying, accounts
+          for needed acceleration of the motor.
+        taxi_end
+          The target point for motor movement during flying, accounts
+          for needed acceleration of the motor.
+        pso_start
+          The motor position corresponding to the first PSO pulse.
+        pso_end
+           The motor position corresponding to the last PSO pulse.
+        encoder_step_size
+          The number of encoder counts for each pixel.
+        encoder_window_start
+          The start of the window within which PSO pulses may be emitted,
+          in encoder counts. Should be slightly wider than the actual PSO
+          range.
+        encoder_window_end
+          The end of the window within which PSO pulses may be emitted,
+          in encoder counts. Should be slightly wider than the actual PSO
         PSO_positions
-          array of places where PSO pulses should occur
-
+          array of places where PSO pulses should occur calculated from 
+          encoder counts then translated to motor positions
         """
         window_buffer = 5
         # Grab any neccessary signals for calculation
@@ -354,7 +361,8 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
 	    # Calculate the step size in encoder steps
         encoder_step_size = int(step_size / encoder_resolution)
         self.encoder_step_size.set(encoder_step_size).wait()
-        # Determine the position speed needs to be reached to match with the start of PSO pulses
+        # Pso start/end should be located to where req. start/end are in between steps 
+        # Also doubles as the location where slew speed must be met
         pso_start = start_position - (direction * (step_size / 2))
         pso_end = end_position + (direction * (step_size / 2))
         # Determine taxi distance to accelerate to req speed, v^2/(2*a) = d
@@ -363,16 +371,15 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         taxi_dist = slew_speed ** 2 / (2 * motor_accel) * 3
         taxi_start =  pso_start - (direction * taxi_dist)
         taxi_end =  pso_end + (direction * taxi_dist)
-        #Create a list of PSO positions and grab the end to find end of scan
-        pso_positions_step = direction*step_size
-        pso_positions = np.arange(start_position, end_position+0.5*pso_positions_step, pso_positions_step)
         # Calculate encoder counts within the requested window of the scan
         encoder_window_start = int(-direction * window_buffer)
-        # import pdb; pdb.set_trace()
         encoder_distance = abs(pso_start - pso_end) / encoder_resolution
         encoder_window_end = overall_sense * (encoder_distance + window_buffer)
         encoder_window_end = int(encoder_window_end)
-        # encoder_window_end = ((( * encoder_resolution * direction) + (direction * window_buffer))
+        # Create np array of PSO positions in encoder counts
+        # Tranforms that array to motor positions
+        encoder_pso_positions = np.arange(0, (encoder_distance * overall_sense), (encoder_step_size * overall_sense))
+        pso_positions = (encoder_pso_positions * encoder_resolution) + start_position
         # Set all the calculated variables
         self.pso_start.set(pso_start).wait() 
         self.pso_end.set(pso_end).wait()
