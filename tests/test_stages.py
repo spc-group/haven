@@ -1,4 +1,5 @@
 import pytest
+from unittest import mock
 
 from haven import registry, exceptions
 from haven.instrument import stage
@@ -21,7 +22,8 @@ def test_stage_init():
     assert len(list(registry.findall(label="stages"))) == 1
 
 
-def test_load_aerotech_stage():
+def test_load_aerotech_stage(monkeypatch):
+    monkeypatch.setattr(stage, "await_for_connection", mock.AsyncMock())
     stage.load_stages()
     # Make sure these are findable
     stage_ = registry.find(name="Aerotech")

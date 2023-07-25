@@ -31,9 +31,7 @@ jobs:
     - name: Setup X virtual frame buffer
       run: Xvfb $DISPLAY &
     - name: Install haven
-      run: poetry install
-      env:
-        POETRY_VIRTUALENVS_CREATE: false
+      run: pip install -e .
     - name: Environment info
       run: |
         env

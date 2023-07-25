@@ -153,7 +153,7 @@ def test_find_labels_by_dot_notation():
     # Only one match should work fine
     result = reg.find(label="ion_chamber.val")
     assert result is cptA.val
-    
+
 
 def test_find_any():
     # Prepare registry

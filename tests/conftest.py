@@ -7,6 +7,8 @@ from subprocess import Popen, TimeoutExpired, PIPE
 import subprocess
 import shutil
 import time
+from unittest import mock
+import asyncio
 
 import pytest
 from qtpy import QtWidgets
@@ -21,14 +23,20 @@ haven_dir = top_dir / "haven"
 test_dir = top_dir / "tests"
 
 
+import haven
 from haven.simulated_ioc import simulated_ioc
 from haven import registry, load_config
 from haven.instrument.aps import ApsMachine
 from haven.instrument.shutter import Shutter
 from haven.instrument.camera import AravisDetector
+from haven.instrument.fluorescence_detector import DxpDetectorBase
 from firefly.application import FireflyApplication
 from firefly.ophyd_plugin import OphydPlugin
+<<<<<<< HEAD
 from firefly.main_window import FireflyMainWindow
+=======
+from run_engine import RunEngineStub
+>>>>>>> main
 
 
 IOC_SCOPE = "function"
@@ -51,6 +59,9 @@ def pytest_configure(config):
     app = FireflyApplication()
     app = QtWidgets.QApplication.instance()
     assert isinstance(app, FireflyApplication)
+    # # Create event loop for asyncio stuff
+    # loop = asyncio.new_event_loop()
+    # asyncio.set_event_loop(loop)
 
 
 @pytest.fixture(scope="session")
@@ -60,7 +71,7 @@ def qapp_cls():
 
 @pytest.fixture(scope=IOC_SCOPE)
 def ioc_undulator(request):
-    prefix = "255ID:"
+    prefix = "ID255:"
     pvs = dict(energy=f"{prefix}Energy.VAL")
     return run_fake_ioc(
         module_name="haven.tests.ioc_undulator",
@@ -290,8 +301,35 @@ def ioc_mono(request):
     )
 
 
+@pytest.fixture(scope=IOC_SCOPE)
+def ioc_dxp(request):
+    prefix = "255idDXP:"
+    pvs = dict(acquiring=f"{prefix}Acquiring")
+    return run_fake_ioc(
+        module_name="haven.tests.ioc_dxp",
+        name="Fake DXP-based detector IOC",
+        prefix=prefix,
+        pvs=pvs,
+        pv_to_check=pvs["acquiring"],
+        request=request,
+    )
+
+
 @pytest.fixture()
-def sim_registry():
+def sim_registry(monkeypatch):
+    # mock out Ophyd connections so devices can be created
+    modules = [
+        haven.instrument.aps,
+        haven.instrument.fluorescence_detector,
+        haven.instrument.monochromator,
+        haven.instrument.ion_chamber,
+        haven.instrument.motor,
+    ]
+    for mod in modules:
+        monkeypatch.setattr(mod, "await_for_connection", mock.AsyncMock())
+    monkeypatch.setattr(
+        haven.instrument.ion_chamber, "caget", mock.AsyncMock(return_value="I0")
+    )
     # Clean the registry so we can restore it later
     components = registry.components
     registry.clear()
@@ -313,7 +351,11 @@ def sim_aps(sim_registry):
 def sim_shutters(sim_registry):
     FakeShutter = make_fake_device(Shutter)
     kw = dict(
-        prefix="_prefix", open_pv="_prefix", close_pv="_prefix2", state_pv="_prefix2", labels={"shutters"}
+        prefix="_prefix",
+        open_pv="_prefix",
+        close_pv="_prefix2",
+        state_pv="_prefix2",
+        labels={"shutters"},
     )
     shutters = [
         FakeShutter(name="Shutter A", **kw),
@@ -333,7 +375,6 @@ def sim_camera(sim_registry):
     # Registry with the simulated registry
     sim_registry.register(camera)
     yield camera
-
 
 
 qs_status = {
@@ -371,3 +412,17 @@ def queue_app(ffapp):
     ffapp.prepare_queue_client(api=queue_api)
     FireflyMainWindow()
     yield ffapp
+
+
+@pytest.fixture()
+def sim_vortex(sim_registry):
+    FakeDXP = make_fake_device(DxpDetectorBase)
+    vortex = FakeDXP(name="vortex_me4", labels={"xrf_detectors"})
+    sim_registry.register(vortex)
+    yield vortex
+
+
+@pytest.fixture()
+def RE(event_loop):
+    return RunEngineStub(call_returns_result=True)
+    

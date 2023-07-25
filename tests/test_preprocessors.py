@@ -1,4 +1,6 @@
 from unittest.mock import MagicMock
+
+import pytest
 from bluesky import plans as bp
 from bluesky.callbacks import CallbackBase
 from bluesky.simulators import summarize_plan
@@ -39,7 +41,7 @@ def test_shutter_suspend_wrapper(sim_aps, sim_shutters, sim_registry):
     assert len(unsub_msgs) == 2
 
 
-def test_baseline_wrapper(sim_registry, sim_aps):
+def test_baseline_wrapper(sim_registry, sim_aps, event_loop):
     # Create a test device
     motor_baseline = SynAxis(name="baseline_motor", labels={"motors", "baseline"})
     sim_registry.register(motor_baseline)
@@ -125,7 +127,7 @@ def test_metadata(sim_registry, sim_aps, monkeypatch):
     assert "versions" in start_doc.keys()
     versions = start_doc["versions"]
     assert "haven" in versions.keys()
-    assert versions["haven"] == "0.1.0"
+    assert versions["haven"] == "23.7.1"
     assert "bluesky" in versions.keys()
     # Check metadata keys
     expected_keys = [

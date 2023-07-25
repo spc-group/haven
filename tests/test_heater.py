@@ -1,7 +1,7 @@
 import time
 
 from epics import caget, caput
-from haven.instrument.heater import CapillaryHeater
+from haven.instrument.heater import CapillaryHeater, load_heaters
 
 
 def test_capillary_device(ioc_ptc10):
@@ -14,3 +14,12 @@ def test_capillary_device(ioc_ptc10):
     caput(ioc_ptc10.pvs["tc1_temperature"], 200)
     new_temp = device.readback.get(use_monitor=False)
     assert new_temp == 200
+
+
+def test_load_heaters(ioc_ptc10):
+    heaters = load_heaters()
+    assert len(heaters) == 1
+    heater = heaters[0]
+    print(heater)
+    heaters[0].wait_for_connection()
+    assert heaters[0].name == "capillary_heater"
