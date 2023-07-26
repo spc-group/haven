@@ -9,12 +9,13 @@ from firefly import FireflyApplication
 class QueueButton(QtWidgets.QPushButton):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # Initially disable the button until the status of the queue can be determined
+        self.setDisabled(True)
         # Listen for changes to the run engine
         app = FireflyApplication.instance()
         app.queue_status_changed.connect(self.handle_queue_status_change)
 
     def handle_queue_status_change(self, status: dict):
-        print(f"Received {status}")
         if status['worker_environment_exists']:
             self.setEnabled(True)
         else:
@@ -27,11 +28,13 @@ class QueueButton(QtWidgets.QPushButton):
             self.setStyleSheet("background-color: rgb(25, 135, 84);\n"
                                "border-color: rgb(25, 135, 84);")
             self.setIcon(qta.icon("fa5s.play"))
+            self.setText("Run")
         elif status['worker_environment_exists']:
             # Will be added to the queue
             self.setStyleSheet("background-color: rgb(0, 123, 255);\n"
                                "border-color: rgb(0, 123, 255);")
             self.setIcon(qta.icon("fa5s.list"))
+            self.setText("Add to Queue")
         else:
             # Regular old (probably disabled) button
             self.setStyleSheet("")

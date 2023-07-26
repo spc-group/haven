@@ -32,11 +32,8 @@ from haven.instrument.camera import AravisDetector
 from haven.instrument.fluorescence_detector import DxpDetectorBase
 from firefly.application import FireflyApplication
 from firefly.ophyd_plugin import OphydPlugin
-<<<<<<< HEAD
 from firefly.main_window import FireflyMainWindow
-=======
 from run_engine import RunEngineStub
->>>>>>> main
 
 
 IOC_SCOPE = "function"
