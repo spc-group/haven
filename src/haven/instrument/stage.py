@@ -274,7 +274,9 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
 
         def check_readback(*args, old_value, value, **kwargs) -> bool:
             "Check if taxiing is complete and flying has begun."
-            return value == position
+            has_arrived = np.isclose(value, position, atol=0.001)
+            log.debug(f"Checking readback: {value=}, target: {position}, {has_arrived=}")
+            return has_arrived
 
         # Status object is complete motor reaches target value
         readback_status = SubscriptionStatus(self.user_readback, check_readback)
@@ -366,9 +368,9 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         pso_start = start_position - (direction * (step_size / 2))
         pso_end = end_position + (direction * (step_size / 2))
         # Determine taxi distance to accelerate to req speed, v^2/(2*a) = d
-        # x3 for margin of error
+        # x1.5 for safety margin
         slew_speed = (step_size / dwell_time)
-        taxi_dist = slew_speed ** 2 / (2 * motor_accel) * 3
+        taxi_dist = slew_speed ** 2 / (2 * motor_accel) * 1.5
         taxi_start =  pso_start - (direction * taxi_dist)
         taxi_end =  pso_end + (direction * taxi_dist)
         # Calculate encoder counts within the requested window of the scan

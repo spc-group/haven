@@ -74,8 +74,8 @@ def test_aerotech_fly_params_forward(sim_aerotech_flyer):
     assert flyer.pso_start.get(use_monitor=False) == 10.0
     assert flyer.pso_end.get(use_monitor=False) == 20.0
     assert flyer.slew_speed.get(use_monitor=False) == 0.1  # µm/sec
-    assert flyer.taxi_start.get(use_monitor=False) == 9.97  # µm
-    assert flyer.taxi_end.get(use_monitor=False) == 20.03  # µm
+    assert flyer.taxi_start.get(use_monitor=False) == 9.985  # µm
+    assert flyer.taxi_end.get(use_monitor=False) == 20.015  # µm
     assert flyer.encoder_step_size.get(use_monitor=False) == 100
     assert flyer.encoder_window_start.get(use_monitor=False) == -5
     assert flyer.encoder_window_end.get(use_monitor=False) == 10005
