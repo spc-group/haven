@@ -5,23 +5,10 @@ import epics
 
 from .instrument_registry import registry
 from .._iconfig import load_config
-from .device import await_for_connection, aload_devices
+from .device import await_for_connection, aload_devices, make_device
 
 
 log = logging.getLogger(__name__)
-
-
-async def make_xray_device(prefix: str):
-    dev = ApsUndulator(prefix=prefix, name="undulator", labels={"xray_sources"})
-    print(epics.caget("ID255:Energy"))
-    try:
-        await await_for_connection(dev)
-    except TimeoutError as exc:
-        msg = f"Could not connect to xray source: {prefix}"
-        log.warning(msg)
-    else:
-        registry.register(dev)
-        return dev
 
 
 def load_xray_source_coros(config=None):
@@ -30,7 +17,12 @@ def load_xray_source_coros(config=None):
     # Determine the X-ray source type (undulator vs bending magnet)
     data = config["xray_source"]
     if data["type"] == "undulator":
-        yield make_xray_device(prefix=data["prefix"])
+        yield make_device(
+            ApsUndulator,
+            prefix=data["prefix"],
+            name="undulator",
+            labels={"xray_sources"},
+        )
 
 
 def load_xray_sources(config=None):

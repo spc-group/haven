@@ -1,13 +1,51 @@
+import logging
 import re
 import time as ttime
 from typing import Callable, Union
 import asyncio
 
-from ophyd import Component, K
+from ophyd import Component, K, Device
+from .instrument_registry import registry
+
+
+log = logging.getLogger(__name__)
 
 
 async def aload_devices(*coros):
     return await asyncio.gather(*coros)
+
+
+async def make_device(DeviceClass, *args, **kwargs) -> Device:
+    """Create camera device and add it to the registry.
+
+    Returns
+    =======
+    device
+      The newly created and registered camera object.
+
+    """
+    device = DeviceClass(
+        *args,
+        **kwargs,
+    )
+    # Make sure we can connect
+    name = kwargs.get("name", "unknown")
+    try:
+        t0 = ttime.monotonic()
+        await await_for_connection(device)
+    except TimeoutError as e:
+        if "Failed" not in str(e):
+            raise
+        log.warning(
+            f"Could not connect to {DeviceClass.__name__} in {round(ttime.monotonic() - t0, 2)} sec: {name}."
+        )
+        log.info(f"Reason for {name} failure: {e}.")
+        return None
+    else:
+        # Register the device
+        registry.register(device)
+        log.debug(f"Connected to {name} in {round(ttime.monotonic() - t0, 2)} sec.")
+        return device
 
 
 async def await_for_connection(dev, all_signals=False, timeout=2.0):
@@ -50,7 +88,7 @@ async def await_for_connection(dev, all_signals=False, timeout=2.0):
             for obj, description in funcs.items()
         )
         reasons.append(f"Pending operations: {pending}")
-    raise TimeoutError("; ".join(reasons))
+    raise TimeoutError(dev.name + "; ".join(reasons))
 
 
 class RegexComponent(Component[K]):

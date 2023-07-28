@@ -22,7 +22,7 @@ from ophyd.areadetector.plugins import (
 
 from .instrument_registry import registry
 from .area_detector import DetectorBase, StatsPlugin_V34, SimDetector, AsyncCamMixin
-from .device import await_for_connection, aload_devices
+from .device import await_for_connection, aload_devices, make_device
 from .._iconfig import load_config
 from .. import exceptions
 
@@ -58,34 +58,6 @@ class AravisDetector(SingleTrigger, DetectorBase):
     stats5 = ADCpt(StatsPlugin_V34, "Stats5:", kind=Kind.normal)
 
 
-async def make_camera_device(
-    DeviceClass, prefix: str, name: str, description: str, labels: set[str]
-) -> DetectorBase:
-    """Create camera device and add it to the registry.
-
-    Returns
-    =======
-    device
-      The newly created and registered camera object.
-
-    """
-    device = DeviceClass(
-        prefix=prefix,
-        name=name,
-        description=description,
-        labels=labels,
-    )
-    # Make sure we can connect
-    try:
-        await await_for_connection(device)
-    except TimeoutError as e:
-        log.warning(f"Could not connect to camera: {name}: {e}.")
-        return None
-    else:
-        registry.register(device)
-        return device
-
-
 def load_camera_coros(config=None) -> Sequence[DetectorBase]:
     """Create co-routines for loading cameras from config files.
 
@@ -113,7 +85,7 @@ def load_camera_coros(config=None) -> Sequence[DetectorBase]:
         if DeviceClass is None:
             msg = f"camera.{key}.device_class={cam_config['device_class']}"
             raise exceptions.UnknownDeviceConfiguration(msg)
-        yield make_camera_device(
+        yield make_device(
             DeviceClass=DeviceClass,
             prefix=f"{cam_config['prefix']}:",
             name=camera_name,

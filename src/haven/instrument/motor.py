@@ -11,7 +11,7 @@ from ophyd import EpicsMotor, EpicsSignal, Component as Cpt
 
 from .epics import caget
 from .._iconfig import load_config
-from .device import await_for_connection, aload_devices
+from .device import await_for_connection, aload_devices, make_device
 from .instrument_registry import registry
 
 
@@ -85,18 +85,6 @@ def load_ioc_motor_coros(
         yield load_motor(prefix, motor_num, ioc_name)
 
 
-async def make_motor_device(pv, name, labels):
-    motor = HavenMotor(
-        prefix=pv,
-        name=name,
-        labels=labels,
-    )
-    await await_for_connection(motor)
-    registry.register(motor)
-    log.info(f"Created motor {motor}")
-    return motor
-
-
 async def load_motor(prefix: str, motor_num: int, ioc_name: str = None):
     """Create the requested motor if it is reachable."""
     pv = f"{prefix}:m{motor_num+1}"
@@ -117,7 +105,7 @@ async def load_motor(prefix: str, motor_num: int, ioc_name: str = None):
         labels = {"motors", "baseline"}
         if ioc_name is not None:
             labels = set([ioc_name, *labels])
-        return await make_motor_device(pv, name, labels)
+        return await make_device(HavenMotor, prefix=pv, name=name, labels=labels)
 
 
 def load_all_motors(config=None):
