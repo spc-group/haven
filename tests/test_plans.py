@@ -32,6 +32,7 @@ def test_align_slits(RE):
     # Check that the slit positions have been set
     assert slit_motor.position == pytest.approx(-0.5)
 
+
 def test_warn_poor_fit(RE):
     """Check that the plan emits a warning when no good fit is detected."""
     # Prepare a fake detector and slit motor
@@ -57,5 +58,3 @@ def test_warn_poor_fit(RE):
         messages = [str(w_.message) for w_ in w]
         target_message = "Poor fit while centering motor"
         assert any([target_message in msg for msg in messages])
-
-

@@ -14,9 +14,6 @@ from haven import load_config
 log = logging.getLogger(__name__)
 
 
-
-
-
 class FireflyMainWindow(PyDMMainWindow):
     hide_nav_bar: bool = True
 
@@ -144,7 +141,9 @@ class FireflyMainWindow(PyDMMainWindow):
         self.ui.menuScans.addAction(app.show_count_plan_window_action)
         # XAFS scan window
         self.add_menu_action(
-            action_name="actionShow_Xafs_Scan", text="XAFS Scan", menu=self.ui.menuScans
+            action_name="actionShow_Xafs_Scan",
+            text="&XAFS Scan",
+            menu=self.ui.menuScans,
         )
         # Auto-play setting for the queue client
         if hasattr(app, "queue_autoplay_action"):

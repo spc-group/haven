@@ -315,9 +315,7 @@ class FireflyApplication(PyDMApplication):
         client.status_changed.connect(self.queue_status_changed)
         client.length_changed.connect(self.queue_length_changed)
         client.environment_opened.connect(self.queue_environment_opened)
-        self.queue_environment_opened.connect(
-            self.set_open_environment_action_state
-        )
+        self.queue_environment_opened.connect(self.set_open_environment_action_state)
         client.environment_state_changed.connect(self.queue_environment_state_changed)
         client.manager_state_changed.connect(self.queue_manager_state_changed)
         client.re_state_changed.connect(self.queue_re_state_changed)
@@ -460,7 +458,6 @@ class FireflyApplication(PyDMApplication):
         return self.show_window(
             PlanMainWindow, ui_dir / "plans" / "count.ui", name="count_plan"
         )
-    
 
     @QtCore.Slot()
     def show_voltmeters_window(self):

@@ -375,28 +375,28 @@ def sim_camera(sim_registry):
 
 
 qs_status = {
-    'msg': 'RE Manager v0.0.18',
-    'items_in_queue': 0,
-    'items_in_history': 0,
-    'running_item_uid': None,
-    'manager_state': 'idle',
-    'queue_stop_pending': False,
-    'worker_environment_exists': False,
-    'worker_environment_state': 'closed',
-    'worker_background_tasks': 0,
-    're_state': None,
-    'pause_pending': False,
-    'run_list_uid': '4f2d48cc-980d-4472-b62b-6686caeb3833',
-    'plan_queue_uid': '2b99ccd8-f69b-4a44-82d0-947d32c5d0a2',
-    'plan_history_uid': '9af8e898-0f00-4e7a-8d97-0964c8d43f47',
-    'devices_existing_uid': '51d8b88d-7457-42c4-b67f-097b168be96d',
-    'plans_existing_uid': '65f11f60-0049-46f5-9eb3-9f1589c4a6dd',
-    'devices_allowed_uid': 'a5ddff29-917c-462e-ba66-399777d2442a',
-    'plans_allowed_uid': 'd1e907cd-cb92-4d68-baab-fe195754827e',
-    'plan_queue_mode': {'loop': False},
-    'task_results_uid': '159e1820-32be-4e01-ab03-e3478d12d288',
-    'lock_info_uid': 'c7fe6f73-91fc-457d-8db0-dfcecb2f2aba',
-    'lock': {'environment': False, 'queue': False}
+    "msg": "RE Manager v0.0.18",
+    "items_in_queue": 0,
+    "items_in_history": 0,
+    "running_item_uid": None,
+    "manager_state": "idle",
+    "queue_stop_pending": False,
+    "worker_environment_exists": False,
+    "worker_environment_state": "closed",
+    "worker_background_tasks": 0,
+    "re_state": None,
+    "pause_pending": False,
+    "run_list_uid": "4f2d48cc-980d-4472-b62b-6686caeb3833",
+    "plan_queue_uid": "2b99ccd8-f69b-4a44-82d0-947d32c5d0a2",
+    "plan_history_uid": "9af8e898-0f00-4e7a-8d97-0964c8d43f47",
+    "devices_existing_uid": "51d8b88d-7457-42c4-b67f-097b168be96d",
+    "plans_existing_uid": "65f11f60-0049-46f5-9eb3-9f1589c4a6dd",
+    "devices_allowed_uid": "a5ddff29-917c-462e-ba66-399777d2442a",
+    "plans_allowed_uid": "d1e907cd-cb92-4d68-baab-fe195754827e",
+    "plan_queue_mode": {"loop": False},
+    "task_results_uid": "159e1820-32be-4e01-ab03-e3478d12d288",
+    "lock_info_uid": "c7fe6f73-91fc-457d-8db0-dfcecb2f2aba",
+    "lock": {"environment": False, "queue": False},
 }
 
 
@@ -414,7 +414,7 @@ def queue_app(ffapp):
 @pytest.fixture()
 def sim_vortex(sim_registry):
     FakeDXP = make_fake_device(DxpDetectorBase)
-    vortex = FakeDXP(name="vortex_me4", labels={"xrf_detectors"})
+    vortex = FakeDXP(name="vortex_me4", labels={"xrf_detectors", "detectors"})
     sim_registry.register(vortex)
     yield vortex
 
@@ -422,4 +422,3 @@ def sim_vortex(sim_registry):
 @pytest.fixture()
 def RE(event_loop):
     return RunEngineStub(call_returns_result=True)
-    

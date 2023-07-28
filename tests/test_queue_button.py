@@ -1,5 +1,6 @@
 from firefly.queue_button import QueueButton
 
+
 def test_queue_button_style(queue_app):
     """Does the queue button change color/icon based."""
     btn = QueueButton()

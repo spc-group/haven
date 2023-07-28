@@ -64,7 +64,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QListWidget" name="detectors_list"/>
+        <widget class="DetectorView" name="detectors_list"/>
        </item>
       </layout>
      </item>
@@ -101,6 +101,11 @@
    <class>QueueButton</class>
    <extends>QPushButton</extends>
    <header>firefly.queue_button</header>
+  </customwidget>
+  <customwidget>
+   <class>DetectorView</class>
+   <extends>QListWidget</extends>
+   <header>firefly.detector_view</header>
   </customwidget>
  </customwidgets>
  <resources/>

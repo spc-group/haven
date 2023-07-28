@@ -67,8 +67,12 @@ class QueueClient(QObject):
     def setup_actions(self):
         actions = [
             # Attr, object name, text, checkable
-            ('autoplay_action', 'queue_autoplay_action', "&Autoplay"),
-            ('open_environment_action', 'queue_open_environment_action', "&Open Environment"),
+            ("autoplay_action", "queue_autoplay_action", "&Autoplay"),
+            (
+                "open_environment_action",
+                "queue_open_environment_action",
+                "&Open Environment",
+            ),
         ]
         for attr, obj_name, text in actions:
             action = QAction()
@@ -89,7 +93,7 @@ class QueueClient(QObject):
         else:
             api_call = self.api.environment_close
         result = api_call()
-        if result['success']:
+        if result["success"]:
             self.environment_opened.emit(to_open)
         else:
             log.error(f"Failed to open/close environment: {result['msg']}")
@@ -180,7 +184,7 @@ class QueueClient(QObject):
         except comm_base.RequestTimeoutError as e:
             log.warn(str(e))
             warnings.warn(str(e))
-    
+
     def _check_queue_status(self, force: bool = False):
         """Get an update queue status from queue server and notify slots.
 
@@ -204,16 +208,18 @@ class QueueClient(QObject):
         # Check individual components of the status if they've changed
         signals_to_check = [
             # (status key, signal to emit)
-            ('worker_environment_exists', self.environment_opened),
-            ('worker_environment_state', self.environment_state_changed),
-            ('manager_state', self.manager_state_changed),
-            ('re_state', self.re_state_changed),
+            ("worker_environment_exists", self.environment_opened),
+            ("worker_environment_state", self.environment_state_changed),
+            ("manager_state", self.manager_state_changed),
+            ("re_state", self.re_state_changed),
         ]
         if force:
             print(f"Forcing queue server status update: {new_status}")
         for key, signal in signals_to_check:
-            has_changed = (self._last_queue_status is None or
-                           new_status[key] != self._last_queue_status[key])
+            has_changed = (
+                self._last_queue_status is None
+                or new_status[key] != self._last_queue_status[key]
+            )
             if has_changed or force:
                 signal.emit(new_status[key])
         # check the whole status to see if it's changed
