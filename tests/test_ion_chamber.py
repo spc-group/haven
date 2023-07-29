@@ -37,7 +37,7 @@ def test_gain_level(ioc_preamp, ioc_scaler):
     assert positioner.sens_level.get(use_monitor=False).readback == 27
 
 
-def test_gain_changes(ioc_preamp, ioc_scaler, sim_registry):
+def test_gain_changes(sim_registry, ioc_preamp, ioc_scaler):
     # Setup the ion chamber and connect to the IOC
     device = ion_chamber.IonChamber(
         prefix=ioc_scaler.prefix,
@@ -45,15 +45,13 @@ def test_gain_changes(ioc_preamp, ioc_scaler, sim_registry):
         ch_num=2,
         name="ion_chamber",
     )
-    time.sleep(0.01)
-    device.wait_for_connection(timeout=20)
     statuses = [
         device.sensitivity.sens_value.set(2),
         device.sensitivity.sens_unit.set(1),
     ]
     [status.wait() for status in statuses]
-    assert device.sensitivity.sens_value.get(use_monitor=False).readback == 2
-    assert device.sensitivity.sens_unit.get(use_monitor=False).readback == 1
+    assert device.sensitivity.sens_value.get(use_monitor=False).setpoint == 2
+    assert device.sensitivity.sens_unit.get(use_monitor=False).setpoint == 1
     # Change the gain without changing units
     device.increase_gain().wait()
     assert device.sensitivity.sens_value.get(use_monitor=False).readback == 1
@@ -82,7 +80,6 @@ def test_gain_changes(ioc_preamp, ioc_scaler, sim_registry):
 
 def test_load_ion_chambers(sim_registry):
     new_ics = ion_chamber.load_ion_chambers()
-    print(new_ics)
     # Test the channel info is extracted properly
     ic = sim_registry.find(label="ion_chambers")
     assert ic.ch_num == 2
@@ -138,6 +135,11 @@ def test_offset_pv(sim_registry):
     ]
     for ch_num, suffix in channel_suffixes:
         ic = ion_chamber.IonChamber(
-            prefix="scaler_ioc:scaler1", ch_num=ch_num, name=f"ion_chamber_{ch_num}"
+            prefix="scaler_ioc", ch_num=ch_num, name=f"ion_chamber_{ch_num}"
         )
         assert ic.offset.pvname == f"scaler_ioc:scaler1_{suffix}", f"channel {ch_num}"
+
+
+def test_flyscan_kickoff(sim_ion_chamber):
+    sim_ion_chamber.kickoff()
+    

@@ -20,6 +20,7 @@ from ophyd import (
 )
 from ophyd.ophydobj import OphydObject
 from ophyd.pseudopos import pseudo_position_argument, real_position_argument
+from ophyd.mca import EpicsMCARecord
 
 from .scaler_triggered import ScalerTriggered, ScalerSignal, ScalerSignalRO
 from .instrument_registry import registry
@@ -102,7 +103,10 @@ class SensitivityLevelPositioner(PseudoPositioner):
 
     @real_position_argument
     def inverse(self, sensitivity):
-        "Given a position in mono and ID energy, transform to the target energy."
+        """Given a sensitivity value and unit, convert to a numeric energy
+        level (1, 2, 3, etc).
+
+        """
         new_gain = sensitivity.sens_value + sensitivity.sens_unit * len(self.values)
         return self.PseudoPosition(sens_level=new_gain)
 
@@ -150,38 +154,60 @@ class IonChamber(ScalerTriggered, Device):
     ch_num: int = 0
     ch_char: str
     count: OphydObject = FCpt(
-        EpicsSignal, "{scaler_prefix}.CNT", trigger_value=1, kind=Kind.omitted
+        EpicsSignal, "{scaler_prefix}:scaler1.CNT", trigger_value=1, kind=Kind.omitted
     )
     description: OphydObject = FCpt(
-        EpicsSignalRO, "{prefix}.NM{ch_num}", kind=Kind.config
+        EpicsSignalRO, "{scaler_prefix}:scaler1.NM{ch_num}", kind=Kind.config
+    )
+    clock: OphydObject = FCpt(
+        EpicsSignal, "{scaler_prefix}:scaler1.FREQ", kind=Kind.config,
     )
     raw_counts: OphydObject = FCpt(
-        ScalerSignalRO, "{prefix}.S{ch_num}", kind=Kind.normal
+        ScalerSignalRO, "{scaler_prefix}:scaler1.S{ch_num}", kind=Kind.normal
     )
     offset: OphydObject = FCpt(
-        ScalerSignalRO, "{prefix}_{offset_suffix}", kind=Kind.config
+        ScalerSignalRO, "{scaler_prefix}:scaler1_{offset_suffix}", kind=Kind.config
     )
     net_counts: OphydObject = FCpt(
-        ScalerSignalRO, "{prefix}_netA.{ch_char}", kind=Kind.hinted
+        ScalerSignalRO, "{scaler_prefix}:scaler1_netA.{ch_char}", kind=Kind.hinted
     )
     volts: OphydObject = FCpt(
-        ScalerSignalRO, "{prefix}_calc{ch_num}.VAL", kind=Kind.normal
+        ScalerSignalRO, "{scaler_prefix}:scaler1_calc{ch_num}.VAL", kind=Kind.normal
     )
     exposure_time: OphydObject = FCpt(
-        EpicsSignal, "{scaler_prefix}.TP", kind=Kind.normal
+        EpicsSignal, "{scaler_prefix}:scaler1.TP", kind=Kind.normal
     )
     sensitivity: OphydObject = FCpt(
         SensitivityLevelPositioner, "{preamp_prefix}", kind=Kind.config
     )
     auto_count: OphydObject = FCpt(
-        EpicsSignal, "{scaler_prefix}.CONT", kind=Kind.omitted
+        EpicsSignal, "{scaler_prefix}:scaler1.CONT", kind=Kind.omitted
     )
     record_dark_current: OphydObject = FCpt(
-        EpicsSignal, "{scaler_prefix}_offset_start.PROC", kind=Kind.omitted
+        EpicsSignal, "{scaler_prefix}:scaler1_offset_start.PROC", kind=Kind.omitted
     )
     record_dark_time: OphydObject = FCpt(
-        EpicsSignal, "{scaler_prefix}_offset_time.VAL", kind=Kind.config
+        EpicsSignal, "{scaler_prefix}:scaler1_offset_time.VAL", kind=Kind.config
     )
+    channel_advance_source: OphydObject = FCpt(
+        EpicsSignal, "{scaler_prefix}:channelAdvance", kind=Kind.config,
+    )
+    num_channels_to_use: OphydObject = FCpt(
+        EpicsSignal, "{scaler_prefix}:NuseAll", kind=Kind.config,
+    )
+    max_channels: OphydObject = FCpt(
+        EpicsSignal, "{scaler_prefix}:MaxChannels", kind=Kind.config
+    )
+    current_channel: OphydObject = FCpt(
+        EpicsSignal, "{scaler_prefix}:CurrentChannel", kind=Kind.normal,
+    )
+    channel_one_source: OphydObject = FCpt(
+        EpicsSignal, "{scaler_prefix}:Channel1Source", kind=Kind.config
+    )
+    mca: OphydObject = FCpt(
+        EpicsMCARecord, "{scaler_prefix}:mca{ch_num}", kind=Kind.normal
+    )
+    
 
     _default_read_attrs = [
         "raw_counts",
@@ -250,31 +276,34 @@ class IonChamber(ScalerTriggered, Device):
             raise exceptions.GainOverflow(f"{self.name} -> {e}")
         return status
 
-    def increase_gain(self) -> Sequence[status.StatusBase]:
+    def increase_gain(self) -> status.StatusBase:
         """Increase the gain (descrease the sensitivity) of the ion chamber's
         pre-amp.
 
         Returns
         =======
-        Sequence[status.StatusBase]
-          Ophyd status objects for the value and gain of the
+        status.StatusBase
+          Ophyd status object for the value and gain of the
           sensitivity in the pre-amp.
 
         """
         return self.change_sensitivity(-1)
 
-    def decrease_gain(self) -> Sequence[status.StatusBase]:
+    def decrease_gain(self) -> status.StatusBase:
         """Decrease the gain (increase the sensitivity) of the ion chamber's
         pre-amp.
 
         Returns
         =======
-        Sequence[status.StatusBase]
-          Ophyd status objects for the value and gain of the
+        status.StatusBase
+          Ophyd status object for the value and gain of the
           sensitivity in the pre-amp.
 
         """
         return self.change_sensitivity(1)
+
+    def kickoff(self) -> status.StatusBase:
+        pass
 
 
 async def make_ion_chamber_device(
@@ -299,9 +328,9 @@ async def make_ion_chamber_device(
         return ic
 
 
-async def load_ion_chamber(preamp_ioc: str, scaler_prefix: str, ch_num: int):
+async def load_ion_chamber(preamp_prefix: str, scaler_prefix: str, ch_num: int):
     # Determine ion_chamber configuration
-    preamp_prefix = f"{preamp_ioc}:SR{ch_num-1:02}"
+    preamp_prefix = f"{preamp_prefix}:SR{ch_num-1:02}"
     desc_pv = f"{scaler_prefix}.NM{ch_num}"
     # Only use this ion chamber if it has a name
     try:
@@ -326,15 +355,15 @@ def load_ion_chamber_coros(config=None):
     # Load IOC prefixes from the config file
     if config is None:
         config = load_config()
-    vme_ioc = config["ion_chamber"]["scaler"]["ioc"]
-    scaler_record = config["ion_chamber"]["scaler"]["record"]
-    scaler_pv_prefix = f"{vme_ioc}:{scaler_record}"
-    preamp_ioc = config["ion_chamber"]["preamp"]["ioc"]
+    # vme_ioc = config["ion_chamber"]["scaler"]["ioc"]
+    # scaler_record = config["ion_chamber"]["scaler"]["record"]
+    scaler_prefix = config['ion_chamber']['scaler']['prefix']
+    preamp_prefix = config["ion_chamber"]["preamp"]["prefix"]
     ion_chambers = []
     # Loop through the configuration sections and create ion chambers co-routines
     for ch_num in config["ion_chamber"]["scaler"]["channels"]:
         yield load_ion_chamber(
-            preamp_ioc=preamp_ioc, scaler_prefix=scaler_pv_prefix, ch_num=ch_num
+            preamp_prefix=preamp_prefix, scaler_prefix=scaler_prefix, ch_num=ch_num
         )
 
 

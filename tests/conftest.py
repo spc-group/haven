@@ -29,6 +29,7 @@ from haven.instrument.aps import ApsMachine
 from haven.instrument.shutter import Shutter
 from haven.instrument.camera import AravisDetector
 from haven.instrument.fluorescence_detector import DxpDetectorBase
+from haven.instrument.ion_chamber import IonChamber
 from firefly.application import FireflyApplication
 from firefly.ophyd_plugin import OphydPlugin
 from run_engine import RunEngineStub
@@ -378,6 +379,14 @@ def sim_vortex(sim_registry):
     vortex = FakeDXP(name="vortex_me4", labels={"xrf_detectors"})
     sim_registry.register(vortex)
     yield vortex
+
+
+@pytest.fixture()
+def sim_ion_chamber(sim_registry):
+    FakeIonChamber = make_fake_device(IonChamber)
+    ion_chamber = FakeIonChamber(prefix="scaler_ioc", name="I00", labels={"ion_chambers"}, ch_num=2)
+    sim_registry.register(ion_chamber)
+    return ion_chamber
 
 
 @pytest.fixture()
