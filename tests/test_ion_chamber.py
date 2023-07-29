@@ -142,4 +142,3 @@ def test_offset_pv(sim_registry):
 
 def test_flyscan_kickoff(sim_ion_chamber):
     sim_ion_chamber.kickoff()
-    

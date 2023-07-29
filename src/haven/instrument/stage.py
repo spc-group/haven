@@ -88,13 +88,13 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
                │ |┄┄┄| *step_size*             │
                │ │   │ encoder_step_size       │
                │ │   │                         │
-    Window:    ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┤    
-    
+    Window:    ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┤
+
     Pulses: ┄┄┄┄┄╨───╨───╨───╨───╨───╨───╨───╨┄┄┄┄┄
              │   │ │                       │ │   └─ taxi_end
              │   │ └─ *start_position*     │ └─ pso_end
              │   └─ pso_start              └─ *end position*
-             └─ taxi_start                      
+             └─ taxi_start
 
     Parameters
     ==========
@@ -278,7 +278,9 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         def check_readback(*args, old_value, value, **kwargs) -> bool:
             "Check if taxiing is complete and flying has begun."
             has_arrived = np.isclose(value, position, atol=0.001)
-            log.debug(f"Checking readback: {value=}, target: {position}, {has_arrived=}")
+            log.debug(
+                f"Checking readback: {value=}, target: {position}, {has_arrived=}"
+            )
             return has_arrived
 
         # Status object is complete motor reaches target value
@@ -337,43 +339,49 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
           The end of the window within which PSO pulses may be emitted,
           in encoder counts. Should be slightly wider than the actual PSO
         PSO_positions
-          array of places where PSO pulses should occur calculated from 
+          array of places where PSO pulses should occur calculated from
           encoder counts then translated to motor positions
         """
         window_buffer = 5
         # Grab any neccessary signals for calculation
         egu = self.motor_egu.get()
-        start_position = self.start_position.get() 
-        end_position = self.end_position.get() 
-        dwell_time = self.dwell_time.get() 
-        step_size = self.step_size.get() 
+        start_position = self.start_position.get()
+        end_position = self.end_position.get()
+        dwell_time = self.dwell_time.get()
+        step_size = self.step_size.get()
         encoder_resolution = self.encoder_resolution.get()
         motor_accel = self.acceleration.get()
         # Check for sane values
         if dwell_time == 0:
-            log.warning(f'{self} dwell_time is zero. Could not update fly scan parameters.')
+            log.warning(
+                f"{self} dwell_time is zero. Could not update fly scan parameters."
+            )
             return
         if encoder_resolution == 0:
-            log.warning(f'{self} encoder resolution is zero. Could not update fly scan parameters.')
+            log.warning(
+                f"{self} encoder resolution is zero. Could not update fly scan parameters."
+            )
             return
         if motor_accel <= 0:
-            log.warning(f'{self} acceleration is non-positive. Could not update fly scan parameters.')
+            log.warning(
+                f"{self} acceleration is non-positive. Could not update fly scan parameters."
+            )
             return
         # Determine the desired direction of travel and overal sense
         # +1 when moving in + encoder direction, -1 if else
         direction = 1 if start_position < end_position else -1
         overall_sense = direction * self.encoder_direction
-	    # Calculate the step size in encoder steps
+        # Calculate the step size in encoder steps
         encoder_step_size = int(step_size / encoder_resolution)
         self.encoder_step_size.set(encoder_step_size).wait()
-        # Pso start/end should be located to where req. start/end are in between steps 
+        # Pso start/end should be located to where req. start/end are in between steps
         # Also doubles as the location where slew speed must be met
         pso_start = start_position - (direction * (step_size / 2))
         pso_end = end_position + (direction * (step_size / 2))
         # Determine taxi distance to accelerate to req speed, v^2/(2*a) = d
         # x1.5 for safety margin
-        slew_speed = (step_size / dwell_time)
-        taxi_dist = slew_speed ** 2 / (2 * motor_accel) * 1.5
+        slew_speed = step_size / dwell_time
+        taxi_dist = slew_speed**2 / (2 * motor_accel) * 1.5
         taxi_dist = 20  # Until we get the motor acceleration set up right
         taxi_start = pso_start - (direction * taxi_dist)
         taxi_end = pso_end + (direction * taxi_dist)
@@ -384,10 +392,12 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         encoder_window_end = int(encoder_window_end)
         # Create np array of PSO positions in encoder counts
         # Tranforms that array to motor positions
-        encoder_pso_positions = np.arange(0, (encoder_distance * overall_sense), (encoder_step_size * overall_sense))
+        encoder_pso_positions = np.arange(
+            0, (encoder_distance * overall_sense), (encoder_step_size * overall_sense)
+        )
         pso_positions = (encoder_pso_positions * encoder_resolution) + start_position
         # Set all the calculated variables
-        self.pso_start.set(pso_start).wait() 
+        self.pso_start.set(pso_start).wait()
         self.pso_end.set(pso_end).wait()
         self.slew_speed.set(slew_speed).wait()
         self.taxi_start.set(taxi_start).wait()
@@ -457,6 +467,7 @@ class AerotechFlyStage(XYStage):
     pv_horiz
       The suffix to the PV for the horizontal motor.
     """
+
     horiz = FCpt(
         AerotechFlyer,
         "{prefix}{pv_horiz}",

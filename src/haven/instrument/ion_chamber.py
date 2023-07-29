@@ -160,7 +160,9 @@ class IonChamber(ScalerTriggered, Device):
         EpicsSignalRO, "{scaler_prefix}:scaler1.NM{ch_num}", kind=Kind.config
     )
     clock: OphydObject = FCpt(
-        EpicsSignal, "{scaler_prefix}:scaler1.FREQ", kind=Kind.config,
+        EpicsSignal,
+        "{scaler_prefix}:scaler1.FREQ",
+        kind=Kind.config,
     )
     raw_counts: OphydObject = FCpt(
         ScalerSignalRO, "{scaler_prefix}:scaler1.S{ch_num}", kind=Kind.normal
@@ -190,16 +192,22 @@ class IonChamber(ScalerTriggered, Device):
         EpicsSignal, "{scaler_prefix}:scaler1_offset_time.VAL", kind=Kind.config
     )
     channel_advance_source: OphydObject = FCpt(
-        EpicsSignal, "{scaler_prefix}:channelAdvance", kind=Kind.config,
+        EpicsSignal,
+        "{scaler_prefix}:channelAdvance",
+        kind=Kind.config,
     )
     num_channels_to_use: OphydObject = FCpt(
-        EpicsSignal, "{scaler_prefix}:NuseAll", kind=Kind.config,
+        EpicsSignal,
+        "{scaler_prefix}:NuseAll",
+        kind=Kind.config,
     )
     max_channels: OphydObject = FCpt(
         EpicsSignal, "{scaler_prefix}:MaxChannels", kind=Kind.config
     )
     current_channel: OphydObject = FCpt(
-        EpicsSignal, "{scaler_prefix}:CurrentChannel", kind=Kind.normal,
+        EpicsSignal,
+        "{scaler_prefix}:CurrentChannel",
+        kind=Kind.normal,
     )
     channel_one_source: OphydObject = FCpt(
         EpicsSignal, "{scaler_prefix}:Channel1Source", kind=Kind.config
@@ -207,7 +215,6 @@ class IonChamber(ScalerTriggered, Device):
     mca: OphydObject = FCpt(
         EpicsMCARecord, "{scaler_prefix}:mca{ch_num}", kind=Kind.normal
     )
-    
 
     _default_read_attrs = [
         "raw_counts",
@@ -357,7 +364,7 @@ def load_ion_chamber_coros(config=None):
         config = load_config()
     # vme_ioc = config["ion_chamber"]["scaler"]["ioc"]
     # scaler_record = config["ion_chamber"]["scaler"]["record"]
-    scaler_prefix = config['ion_chamber']['scaler']['prefix']
+    scaler_prefix = config["ion_chamber"]["scaler"]["prefix"]
     preamp_prefix = config["ion_chamber"]["preamp"]["prefix"]
     ion_chambers = []
     # Loop through the configuration sections and create ion chambers co-routines

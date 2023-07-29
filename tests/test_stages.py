@@ -12,8 +12,13 @@ from haven.instrument import stage
 @pytest.fixture()
 def sim_aerotech_flyer():
     Flyer = make_fake_device(
-        stage.AerotechFlyer,      )
-    flyer = Flyer(name="flyer", axis="@0", encoder=6,)
+        stage.AerotechFlyer,
+    )
+    flyer = Flyer(
+        name="flyer",
+        axis="@0",
+        encoder=6,
+    )
     flyer.user_setpoint._limits = (0, 1000)
     flyer.send_command = mock.MagicMock()
     return flyer
@@ -63,13 +68,13 @@ def test_aerotech_fly_params_forward(sim_aerotech_flyer):
     flyer = sim_aerotech_flyer
     # Set some example positions
     flyer.motor_egu.set("micron").wait()
-    flyer.acceleration.set(.5).wait() # µm/sec^2
+    flyer.acceleration.set(0.5).wait()  # µm/sec^2
     flyer.encoder_resolution.set(0.001).wait()  # µm
     flyer.start_position.set(10.05).wait()  # µm
     flyer.end_position.set(19.95).wait()  # µm
     flyer.step_size.set(0.1).wait()  # µm
     flyer.dwell_time.set(1).wait()  # sec
-    
+
     # Check that the fly-scan parameters were calculated correctly
     assert flyer.pso_start.get(use_monitor=False) == 10.0
     assert flyer.pso_end.get(use_monitor=False) == 20.0
@@ -81,9 +86,9 @@ def test_aerotech_fly_params_forward(sim_aerotech_flyer):
     assert flyer.encoder_window_end.get(use_monitor=False) == 10005
     i = 10.05
     pso = []
-    while i<=19.98:
+    while i <= 19.98:
         pso.append(i)
-        i = i+0.1
+        i = i + 0.1
     np.testing.assert_allclose(flyer.pso_positions, pso)
 
 
@@ -91,28 +96,28 @@ def test_aerotech_fly_params_reverse(sim_aerotech_flyer):
     flyer = sim_aerotech_flyer
     # Set some example positions
     flyer.motor_egu.set("micron").wait()
-    flyer.acceleration.set(.5).wait() # µm/sec^2
+    flyer.acceleration.set(0.5).wait()  # µm/sec^2
     flyer.encoder_resolution.set(0.001).wait()  # µm
     flyer.start_position.set(19.95).wait()  # µm
     flyer.end_position.set(10.05).wait()  # µm
     flyer.step_size.set(0.1).wait()  # µm
     flyer.dwell_time.set(1).wait()  # sec
-    
+
     # Check that the fly-scan parameters were calculated correctly
-    assert flyer.pso_start.get(use_monitor=False) == 20.
-    assert flyer.pso_end.get(use_monitor=False) == 10.
+    assert flyer.pso_start.get(use_monitor=False) == 20.0
+    assert flyer.pso_end.get(use_monitor=False) == 10.0
     assert flyer.slew_speed.get(use_monitor=False) == 0.1  # µm/sec
     assert flyer.taxi_start.get(use_monitor=False) == 20.03  # µm
     assert flyer.taxi_end.get(use_monitor=False) == 9.97  # µm
     assert flyer.encoder_step_size.get(use_monitor=False) == 100
     assert flyer.encoder_window_start.get(use_monitor=False) == 5
     assert flyer.encoder_window_end.get(use_monitor=False) == -10005
-    
+
     i = 19.95
     pso = []
-    while i>=10.03:
+    while i >= 10.03:
         pso.append(i)
-        i = i-0.1
+        i = i - 0.1
     np.testing.assert_allclose(flyer.pso_positions, pso)
 
 

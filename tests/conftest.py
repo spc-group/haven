@@ -384,7 +384,9 @@ def sim_vortex(sim_registry):
 @pytest.fixture()
 def sim_ion_chamber(sim_registry):
     FakeIonChamber = make_fake_device(IonChamber)
-    ion_chamber = FakeIonChamber(prefix="scaler_ioc", name="I00", labels={"ion_chambers"}, ch_num=2)
+    ion_chamber = FakeIonChamber(
+        prefix="scaler_ioc", name="I00", labels={"ion_chambers"}, ch_num=2
+    )
     sim_registry.register(ion_chamber)
     return ion_chamber
 
