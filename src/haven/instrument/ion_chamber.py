@@ -8,6 +8,7 @@ import epics
 from ophyd import (
     Device,
     status,
+    Signal,
     EpicsSignal,
     EpicsSignalRO,
     PVPositionerPC,
@@ -117,6 +118,14 @@ class IonChamber(ScalerTriggered, Device):
 
     Also includes the pre-amplifier as ``.pre_amp``.
 
+    This class also implements the bluesky/ophyd flyer
+    interface. During *kickoff()*, previous data are erased and
+    acquisition is started as a multi-channel scaler. It also watches
+    for changes in the number of data collected and collects
+    timestamps each time a new datum is captured. *complete()* stops
+    acquisition. These timestamps, along with the measured data, are
+    generated during *collect()*.
+    
     Parameters
     ==========
     prefix
@@ -159,6 +168,7 @@ class IonChamber(ScalerTriggered, Device):
     description: OphydObject = FCpt(
         EpicsSignalRO, "{scaler_prefix}:scaler1.NM{ch_num}", kind=Kind.config
     )
+    # Scaler mode support
     clock: OphydObject = FCpt(
         EpicsSignal,
         "{scaler_prefix}:scaler1.FREQ",
@@ -191,6 +201,22 @@ class IonChamber(ScalerTriggered, Device):
     record_dark_time: OphydObject = FCpt(
         EpicsSignal, "{scaler_prefix}:scaler1_offset_time.VAL", kind=Kind.config
     )
+    # Multi-channel scaler support
+    start_all: OphydObject = FCpt(
+        EpicsSignal, "{scaler_prefix}:StartAll", kind=Kind.omitted
+    )
+    stop_all: OphydObject = FCpt(
+        EpicsSignal, "{scaler_prefix}:StopAll", kind=Kind.omitted
+    )
+    erase_all: OphydObject = FCpt(
+        EpicsSignal, "{scaler_prefix}:EraseAll", kind=Kind.omitted
+    )
+    erase_start: OphydObject = FCpt(
+        EpicsSignal, "{scaler_prefix}:EraseStart", kind=Kind.omitted
+    )
+    acquiring: OphydObject = FCpt(
+        EpicsSignal, "{scaler_prefix}:Acquiring", kind=Kind.omitted
+    )
     channel_advance_source: OphydObject = FCpt(
         EpicsSignal,
         "{scaler_prefix}:channelAdvance",
@@ -215,6 +241,10 @@ class IonChamber(ScalerTriggered, Device):
     mca: OphydObject = FCpt(
         EpicsMCARecord, "{scaler_prefix}:mca{ch_num}", kind=Kind.normal
     )
+
+    # Virtual signals to handle fly-scanning
+    timestamps: list = []
+    num_bins = Cpt(Signal)
 
     _default_read_attrs = [
         "raw_counts",
@@ -309,8 +339,18 @@ class IonChamber(ScalerTriggered, Device):
         """
         return self.change_sensitivity(1)
 
+    def record_timestamp(self, *, old_value, value, timestamp, **kwargs):
+        self.timestamps.append(timestamp)
+
     def kickoff(self) -> status.StatusBase:
-        pass
+        # Set number of frames to capture
+        status = self.num_channels_to_use.set(self.num_bins.get())
+        # Start acquiring data
+        status &= self.erase_start.set(1)
+        # Watch for new data being collected so we can save timestamps
+        self.timestamps = []
+        self.current_channel.subscribe(self.record_timestamp)
+        return status
 
 
 async def make_ion_chamber_device(

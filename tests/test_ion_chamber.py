@@ -141,4 +141,16 @@ def test_offset_pv(sim_registry):
 
 
 def test_flyscan_kickoff(sim_ion_chamber):
-    sim_ion_chamber.kickoff()
+    flyer = sim_ion_chamber
+    flyer.num_bins.set(10)
+    status = flyer.kickoff()
+    status.wait()
+    assert status.success
+    assert status.done
+    # Check that the device was properly configured for fly-scanning
+    assert flyer.num_channels_to_use._readback == 10
+    assert flyer.erase_start._readback == 1
+    assert flyer.timestamps == []
+    # Check that timestamps get recorded when new data are available
+    flyer.current_channel.set(1).wait()
+    assert flyer.timestamps[0] == pytest.approx(time.time())
