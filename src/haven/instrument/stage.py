@@ -241,7 +241,9 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
     def fly(self):
         self.taxi()
         # Start the trajectory
-        flight_status = self.move(self.taxi_end.get())
+        destination = self.taxi_end.get()
+        log.debug(f"Flying to {destination}.")
+        flight_status = self.move(destination)
         self.is_flying.set(True).wait()
         # Wait for the landing
         flight_status.wait()
@@ -249,15 +251,16 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         self.disable_pso()
 
     def taxi(self):
-        # Move motor to the scan start point
-        motor_move = self.move(self.pso_start.get(), wait=False)
         # Initalize the PSO
         self.enable_pso()
+        # Move motor to the scan start point
+        self.move(self.pso_start.get(), wait=True)
         # Arm the PSO
-        motor_move.wait()
         self.arm_pso()
         # Move the motor to the taxi position
-        self.move(self.taxi_start.get())
+        taxi_start = self.taxi_start.get()
+        log.debug(f"Taxiing to {taxi_start}.")
+        self.move(taxi_start)
         # Set the speed on the motor
         self.velocity.set(self.slew_speed.get()).wait()
 
@@ -371,8 +374,9 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         # x1.5 for safety margin
         slew_speed = (step_size / dwell_time)
         taxi_dist = slew_speed ** 2 / (2 * motor_accel) * 1.5
-        taxi_start =  pso_start - (direction * taxi_dist)
-        taxi_end =  pso_end + (direction * taxi_dist)
+        taxi_dist = 20  # Until we get the motor acceleration set up right
+        taxi_start = pso_start - (direction * taxi_dist)
+        taxi_end = pso_end + (direction * taxi_dist)
         # Calculate encoder counts within the requested window of the scan
         encoder_window_start = int(-direction * window_buffer)
         encoder_distance = abs(pso_start - pso_end) / encoder_resolution
