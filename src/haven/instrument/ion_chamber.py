@@ -18,6 +18,7 @@ from ophyd import (
     Component as Cpt,
     FormattedComponent as FCpt,
     Kind,
+    flyers,
 )
 from ophyd.ophydobj import OphydObject
 from ophyd.pseudopos import pseudo_position_argument, real_position_argument
@@ -113,7 +114,7 @@ class SensitivityLevelPositioner(PseudoPositioner):
 
 
 # @registry.register
-class IonChamber(ScalerTriggered, Device):
+class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
     """An ion chamber at a spectroscopy beamline.
 
     Also includes the pre-amplifier as ``.pre_amp``.
@@ -125,7 +126,7 @@ class IonChamber(ScalerTriggered, Device):
     timestamps each time a new datum is captured. *complete()* stops
     acquisition. These timestamps, along with the measured data, are
     generated during *collect()*.
-    
+
     Parameters
     ==========
     prefix
@@ -350,6 +351,10 @@ class IonChamber(ScalerTriggered, Device):
         # Watch for new data being collected so we can save timestamps
         self.timestamps = []
         self.current_channel.subscribe(self.record_timestamp)
+        return status
+
+    def complete(self) -> status.StatusBase:
+        status = self.stop_all.set(1)
         return status
 
 

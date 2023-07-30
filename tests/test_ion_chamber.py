@@ -154,3 +154,12 @@ def test_flyscan_kickoff(sim_ion_chamber):
     # Check that timestamps get recorded when new data are available
     flyer.current_channel.set(1).wait()
     assert flyer.timestamps[0] == pytest.approx(time.time())
+
+
+def test_flyscan_complete(sim_ion_chamber):
+    flyer = sim_ion_chamber
+    # Run the complete method
+    status = flyer.complete()
+    status.wait()
+    # Check that the detector is stopped
+    assert flyer.stop_all._readback == 1
