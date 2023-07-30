@@ -2,6 +2,8 @@ import pytest
 import time
 from unittest import mock
 
+import numpy as np
+
 from haven.instrument import ion_chamber
 from haven import exceptions
 import epics
@@ -163,3 +165,25 @@ def test_flyscan_complete(sim_ion_chamber):
     status.wait()
     # Check that the detector is stopped
     assert flyer.stop_all._readback == 1
+
+
+def test_flyscan_collect(sim_ion_chamber):
+    flyer = sim_ion_chamber
+    name = flyer.net_counts.name
+    # Make fake fly-scan data
+    sim_data = np.zeros(shape=(8000,))
+    sim_data[:6] = [3, 5, 8, 13, 2, 33]
+    flyer.mca.spectrum._readback = sim_data
+    # Ignore the first collected data point because it's during taxiing
+    expected_data = sim_data[1:]
+    # The real timestamps should be midway between PSO pulses
+    flyer.timestamps = [1000, 1004, 1008, 1012, 1016, 1020]
+    expected_timestamps = [1002.0, 1006.0, 1010.0, 1014.0, 1018.0]
+    payload = list(flyer.collect())
+    # Confirm data have the right structure
+    for datum, value, timestamp in zip(payload, expected_data, expected_timestamps):
+        assert datum == {
+            "data": {name: [value]},
+            "timestamps": {name: [timestamp]},
+            "time": timestamp,
+        }

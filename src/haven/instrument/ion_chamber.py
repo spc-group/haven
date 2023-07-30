@@ -1,8 +1,9 @@
 """Holds ion chamber detector descriptions and assignments to EPICS PVs."""
 
-from typing import Sequence
+from typing import Sequence, Generator, Dict
 import logging
 import asyncio
+from collections import OrderedDict
 
 import epics
 from ophyd import (
@@ -23,6 +24,7 @@ from ophyd import (
 from ophyd.ophydobj import OphydObject
 from ophyd.pseudopos import pseudo_position_argument, real_position_argument
 from ophyd.mca import EpicsMCARecord
+import numpy as np
 
 from .scaler_triggered import ScalerTriggered, ScalerSignal, ScalerSignalRO
 from .instrument_registry import registry
@@ -161,6 +163,7 @@ class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
 
     """
 
+    stream_name: str = "primary"
     ch_num: int = 0
     ch_char: str
     count: OphydObject = FCpt(
@@ -356,6 +359,27 @@ class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
     def complete(self) -> status.StatusBase:
         status = self.stop_all.set(1)
         return status
+
+    def collect(self) -> Generator[Dict, None, None]:
+        net_counts = self.net_counts.name
+        # Retrieve data, except for first point (during taxiing)
+        data = self.mca.spectrum.get()[1:]
+        # Convert timestamps from PSO pulses to pixels
+        pso_timestamps = np.asarray(self.timestamps)
+        pixel_timestamps = (pso_timestamps[1:] + pso_timestamps[:-1]) / 2
+        # Create data events
+        for ts, value in zip(pixel_timestamps, data):
+            yield {
+                "data": {net_counts: [value]},
+                "timestamps": {net_counts: [ts]},
+                "time": ts,
+            }
+
+    def describe_collect(self) -> Dict[str, Dict]:
+        """Describe details for the flyer collect() method"""
+        desc = OrderedDict()
+        desc.update(self.net_counts.describe())
+        return {self.stream_name: desc}
 
 
 async def make_ion_chamber_device(
