@@ -2,6 +2,9 @@ import threading
 import time
 import logging
 import asyncio
+from typing import Generator, Dict
+from datetime import datetime, timedelta
+from collections import OrderedDict
 
 from ophyd import (
     Device,
@@ -18,7 +21,6 @@ from ophyd.status import SubscriptionStatus, AndStatus, StatusBase
 from apstools.synApps.asyn import AsynRecord
 import pint
 import numpy as np
-
 
 from .instrument_registry import registry
 from .._iconfig import load_config
@@ -146,11 +148,13 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
     """
 
     axis: str
-    pso_positions: np.ndarray = None
+    pixel_positions: np.ndarray = None
     # Internal encoder in the Ensemble to track for flying
     encoder: int
     encoder_direction: int = 1
 
+    
+ 
     # Extra motor record components
     encoder_resolution = Cpt(EpicsSignal, ".ERES", kind=Kind.config)
 
@@ -202,12 +206,14 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
 
         def flight_check(*args, old_value, value, **kwargs) -> bool:
             return not bool(old_value) and bool(value)
-
+           
         # Status object is complete when flying has started
         status = SubscriptionStatus(self.ready_to_fly, flight_check)
         # Taxi the motor
         th = threading.Thread(target=self.taxi)
         th.start()
+        # Record time of fly start of scan
+        self.starttime = time.time()
         self._taxi_thread = th  # Prevents garbage collection
         return status
 
@@ -240,6 +246,48 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         self._fly_thread = th  # Prevents garbage collection
         return status
 
+    def collect(self) -> Generator[Dict, None, None]:
+        """Retrieve data from the flyer as proto-events
+        Yields
+        ------
+        event_data : dict
+            Must have the keys {'time', 'timestamps', 'data'}.
+
+        """
+        # np array of pixel location
+        pixels = self.pixel_positions
+        # time of scans start taken at Kickoff
+        starttime = self.starttime
+        # time of scans at movement stop    
+        endtime = self.endtime
+        # grab necessary for calculation
+        motor_accel = self.acceleration.get()
+        dwell_time = self.dwell_time.get() 
+        step_size = self.step_size.get() 
+        slew_speed = step_size / dwell_time
+        # Calculate the time it takes for taxi to reach first pixel
+        accel_time = (slew_speed / motor_accel) 
+        extrataxi = ((1.5 * (slew_speed ** 2) / (2 * motor_accel))/slew_speed) + (dwell_time / 2)
+        taxi_time = accel_time + extrataxi
+        # Create np array of times for each pixel in seconds since epoch
+        startpixeltime = starttime + taxi_time
+        endpixeltime = endtime - taxi_time
+        scan_time = (endpixeltime - startpixeltime) 
+        timestamps1 = np.linspace(startpixeltime, startpixeltime + scan_time, num=len(pixels))
+        timestamps = [round(ts,8) for ts in timestamps1] 
+        for value, ts in zip(pixels, timestamps):
+            yield {
+            'data' : [value],
+            'timestamps' : [ts],
+            'time' : ts
+            }
+         
+    def describe_collect(self):
+        """Describe details for the collect() method"""
+        desc = OrderedDict()
+        desc.update(self.describe())
+        return {'primary' : desc}
+        
     def fly(self):
         # Start the trajectory
         destination = self.taxi_end.get()
@@ -250,7 +298,9 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         flight_status.wait()
         self.disable_pso()
         self.is_flying.set(False).wait()
-
+        # Record end time of flight
+        self.endtime = time.time()
+        
     def taxi(self):
         self.is_flying.set(False).wait
         # Initalize the PSO
@@ -341,8 +391,8 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         encoder_window_end
           The end of the window within which PSO pulses may be emitted,
           in encoder counts. Should be slightly wider than the actual PSO
-        PSO_positions
-          array of places where PSO pulses should occur calculated from
+        pixel_positions
+          array of places where pixels are, should occur calculated from
           encoder counts then translated to motor positions
         """
         window_buffer = 5
@@ -398,7 +448,7 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         encoder_pso_positions = np.arange(
             0, (encoder_distance * overall_sense), (encoder_step_size * overall_sense)
         )
-        pso_positions = (encoder_pso_positions * encoder_resolution) + start_position
+        pixel_positions = (encoder_pso_positions * encoder_resolution) + start_position
         # Set all the calculated variables
         self.pso_start.set(pso_start).wait()
         self.pso_end.set(pso_end).wait()
@@ -407,7 +457,7 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         self.taxi_end.set(taxi_end).wait()
         self.encoder_window_start.set(encoder_window_start).wait()
         self.encoder_window_end.set(encoder_window_end).wait()
-        self.pso_positions = pso_positions
+        self.pixel_positions = pixel_positions
 
     def send_command(self, cmd: str):
         """Send commands directly to the aerotech ensemble controller.
