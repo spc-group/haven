@@ -191,41 +191,69 @@ def test_complete(sim_aerotech_flyer):
     # Check status behavior matches flyer interface
     assert isinstance(status, StatusBase)
     assert status.done
-    
+
+
 def test_collect(sim_aerotech_flyer):
     flyer = sim_aerotech_flyer
     # Set up needed parameters
-    flyer.pixel_positions = [1,2,3,4,5,6,7,8,9,10]
+    flyer.pixel_positions = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     flyer.starttime = 0
     flyer.endtime = flyer.starttime + 9.7
-    motor_accel = flyer.acceleration.set(.5).wait()  # µm/s^2
+    motor_accel = flyer.acceleration.set(0.5).wait()  # µm/s^2
     flyer.step_size.set(0.1).wait()  # µm
-    flyer.dwell_time.set(1).wait()  # sec 
-    expected_timestamps = [0.85, 1.73888889,2.62777778,3.51666667,4.40555556,
-    5.29444444, 6.18333333, 7.07222222, 7.96111111,8.85] 
+    flyer.dwell_time.set(1).wait()  # sec
+    expected_timestamps = [
+        0.85,
+        1.73888889,
+        2.62777778,
+        3.51666667,
+        4.40555556,
+        5.29444444,
+        6.18333333,
+        7.07222222,
+        7.96111111,
+        8.85,
+    ]
     payload = list(flyer.collect())
     # Confirm data have the right structure
-    for datum, value, timestamp in zip(payload, flyer.pixel_positions, expected_timestamps):
+    for datum, value, timestamp in zip(
+        payload, flyer.pixel_positions, expected_timestamps
+    ):
         assert datum == {
             "data": [value],
             "timestamps": [timestamp],
             "time": timestamp,
         }
-    
-    
+
+
 def test_describe_collect(sim_aerotech_flyer):
-    expected = {'primary': OrderedDict([('flyer',
-           {'source': 'SIM:flyer',
-           'dtype': 'integer',
-           'shape': [],
-           'precision': 3}),
-           ('flyer_user_setpoint',
-           {'source': 'SIM:flyer_user_setpoint',
-           'dtype': 'integer',
-           'shape': [],
-           'precision': 3})])}
-             
-    assert sim_aerotech_flyer.describe_collect()['primary'] == expected['primary']
+    expected = {
+        "primary": OrderedDict(
+            [
+                (
+                    "flyer",
+                    {
+                        "source": "SIM:flyer",
+                        "dtype": "integer",
+                        "shape": [],
+                        "precision": 3,
+                    },
+                ),
+                (
+                    "flyer_user_setpoint",
+                    {
+                        "source": "SIM:flyer_user_setpoint",
+                        "dtype": "integer",
+                        "shape": [],
+                        "precision": 3,
+                    },
+                ),
+            ]
+        )
+    }
+
+    assert sim_aerotech_flyer.describe_collect()["primary"] == expected["primary"]
+
 
 def test_fly_motor_positions(sim_aerotech_flyer):
     flyer = sim_aerotech_flyer

@@ -153,8 +153,6 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
     encoder: int
     encoder_direction: int = 1
 
-    
- 
     # Extra motor record components
     encoder_resolution = Cpt(EpicsSignal, ".ERES", kind=Kind.config)
 
@@ -206,7 +204,7 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
 
         def flight_check(*args, old_value, value, **kwargs) -> bool:
             return not bool(old_value) and bool(value)
-           
+
         # Status object is complete when flying has started
         status = SubscriptionStatus(self.ready_to_fly, flight_check)
         # Taxi the motor
@@ -233,6 +231,7 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         complete_status : StatusBase
             Indicate when flying has completed
         """
+
         # Prepare a callback to check when the motor has stopped moving
         def check_flying(*args, old_value, value, **kwargs) -> bool:
             "Check if flying is complete."
@@ -258,36 +257,36 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         pixels = self.pixel_positions
         # time of scans start taken at Kickoff
         starttime = self.starttime
-        # time of scans at movement stop    
+        # time of scans at movement stop
         endtime = self.endtime
         # grab necessary for calculation
         motor_accel = self.acceleration.get()
-        dwell_time = self.dwell_time.get() 
-        step_size = self.step_size.get() 
+        dwell_time = self.dwell_time.get()
+        step_size = self.step_size.get()
         slew_speed = step_size / dwell_time
         # Calculate the time it takes for taxi to reach first pixel
-        accel_time = (slew_speed / motor_accel) 
-        extrataxi = ((1.5 * (slew_speed ** 2) / (2 * motor_accel))/slew_speed) + (dwell_time / 2)
+        accel_time = slew_speed / motor_accel
+        extrataxi = ((1.5 * (slew_speed**2) / (2 * motor_accel)) / slew_speed) + (
+            dwell_time / 2
+        )
         taxi_time = accel_time + extrataxi
         # Create np array of times for each pixel in seconds since epoch
         startpixeltime = starttime + taxi_time
         endpixeltime = endtime - taxi_time
-        scan_time = (endpixeltime - startpixeltime) 
-        timestamps1 = np.linspace(startpixeltime, startpixeltime + scan_time, num=len(pixels))
-        timestamps = [round(ts,8) for ts in timestamps1] 
+        scan_time = endpixeltime - startpixeltime
+        timestamps1 = np.linspace(
+            startpixeltime, startpixeltime + scan_time, num=len(pixels)
+        )
+        timestamps = [round(ts, 8) for ts in timestamps1]
         for value, ts in zip(pixels, timestamps):
-            yield {
-            'data' : [value],
-            'timestamps' : [ts],
-            'time' : ts
-            }
-         
+            yield {"data": [value], "timestamps": [ts], "time": ts}
+
     def describe_collect(self):
         """Describe details for the collect() method"""
         desc = OrderedDict()
         desc.update(self.describe())
-        return {'primary' : desc}
-        
+        return {"primary": desc}
+
     def fly(self):
         # Start the trajectory
         destination = self.taxi_end.get()
@@ -300,7 +299,7 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         self.is_flying.set(False).wait()
         # Record end time of flight
         self.endtime = time.time()
-        
+
     def taxi(self):
         self.is_flying.set(False).wait
         # Initalize the PSO
