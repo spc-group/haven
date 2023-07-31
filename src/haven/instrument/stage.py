@@ -14,7 +14,7 @@ from ophyd import (
     EpicsSignal,
     flyers,
 )
-from ophyd.status import SubscriptionStatus, AndStatus
+from ophyd.status import SubscriptionStatus, AndStatus, StatusBase
 from apstools.synApps.asyn import AsynRecord
 import pint
 import numpy as np
@@ -172,6 +172,7 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
 
     # Status signals
     is_flying = Cpt(Signal, kind=Kind.omitted)
+    ready_to_fly = Cpt(Signal, kind=Kind.omitted)
 
     def __init__(self, *args, axis: str, encoder: int, **kwargs):
         super().__init__(*args, **kwargs)
@@ -199,17 +200,15 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
 
         """
 
-        def check_flying(*args, old_value, value, **kwargs) -> bool:
-            "Check if taxiing is complete and flying has begun."
+        def flight_check(*args, old_value, value, **kwargs) -> bool:
             return not bool(old_value) and bool(value)
 
         # Status object is complete when flying has started
-        status = SubscriptionStatus(self.is_flying, check_flying)
-        # Start the flying process
-        th = threading.Thread(target=self.fly)
+        status = SubscriptionStatus(self.ready_to_fly, flight_check)
+        # Taxi the motor
+        th = threading.Thread(target=self.taxi)
         th.start()
-        # Save thread to avoid garbage-collection
-        self.th = th
+        self._taxi_thread = th  # Prevents garbage collection
         return status
 
     def complete(self):
@@ -228,7 +227,6 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         complete_status : StatusBase
             Indicate when flying has completed
         """
-
         # Prepare a callback to check when the motor has stopped moving
         def check_flying(*args, old_value, value, **kwargs) -> bool:
             "Check if flying is complete."
@@ -236,10 +234,13 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
 
         # Status object is complete when flying has started
         status = SubscriptionStatus(self.is_flying, check_flying)
+        # Iniate the fly scan
+        th = threading.Thread(target=self.fly)
+        th.start()
+        self._fly_thread = th  # Prevents garbage collection
         return status
 
     def fly(self):
-        self.taxi()
         # Start the trajectory
         destination = self.taxi_end.get()
         log.debug(f"Flying to {destination}.")
@@ -247,10 +248,11 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         self.is_flying.set(True).wait()
         # Wait for the landing
         flight_status.wait()
-        self.is_flying.set(False).wait()
         self.disable_pso()
+        self.is_flying.set(False).wait()
 
     def taxi(self):
+        self.is_flying.set(False).wait
         # Initalize the PSO
         self.enable_pso()
         # Move motor to the scan start point
@@ -260,9 +262,10 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         # Move the motor to the taxi position
         taxi_start = self.taxi_start.get()
         log.debug(f"Taxiing to {taxi_start}.")
-        self.move(taxi_start)
+        self.move(taxi_start, wait=True)
         # Set the speed on the motor
         self.velocity.set(self.slew_speed.get()).wait()
+        self.ready_to_fly.set(True)
 
     def stage(self, *args, **kwargs):
         self.old_velocity = self.velocity.get()
@@ -286,7 +289,7 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         # Status object is complete motor reaches target value
         readback_status = SubscriptionStatus(self.user_readback, check_readback)
         # Prepare the combined status object
-        status = AndStatus(motor_status, readback_status)
+        status = motor_status & readback_status
         if wait:
             status.wait()
         return readback_status

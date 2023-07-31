@@ -1,3 +1,4 @@
+import time
 from unittest import mock
 
 import pytest
@@ -170,21 +171,23 @@ def test_kickoff(sim_aerotech_flyer):
     assert isinstance(status, StatusBase)
     assert not status.done
     # Start flying and see if the status is done
-    flyer.is_flying.set(True).wait()
+    flyer.ready_to_fly.set(True).wait()
     assert status.done
 
 
 def test_complete(sim_aerotech_flyer):
     # Set up fake flyer with mocked fly method
     flyer = sim_aerotech_flyer
+    flyer.move = mock.MagicMock()
     flyer.is_flying.set(False).wait()
+    assert flyer.user_setpoint.get() == 0
+    flyer.taxi_end.set(10).wait()
     # Complete flying
     status = flyer.complete()
+    # Check that the motor was moved
+    assert flyer.move.called_with(9)
     # Check status behavior matches flyer interface
     assert isinstance(status, StatusBase)
-    assert not status.done
-    # Start flying and see if the status is done
-    flyer.is_flying.set(True).wait()
     assert status.done
 
 
@@ -203,6 +206,7 @@ def test_fly_motor_positions(sim_aerotech_flyer):
     mover = mock.MagicMock(return_value=motor_status)
     flyer.move = mover
     # Check the fly scan moved the motors in the right order
+    flyer.taxi()
     flyer.fly()
     assert mover.called
     positions = [c.args[0] for c in mover.call_args_list]
