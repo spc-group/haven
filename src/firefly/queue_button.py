@@ -31,6 +31,7 @@ class QueueButton(QtWidgets.QPushButton):
             )
             self.setIcon(qta.icon("fa5s.play"))
             self.setText("Run")
+            self.setToolTip("Add this plan to the queue and start it immediately.")
         elif status["worker_environment_exists"]:
             # Will be added to the queue
             self.setStyleSheet(
@@ -39,6 +40,7 @@ class QueueButton(QtWidgets.QPushButton):
             )
             self.setIcon(qta.icon("fa5s.list"))
             self.setText("Add to Queue")
+            self.setToolTip("Add this plan to the queue to run later.")
         else:
             # Regular old (probably disabled) button
             self.setStyleSheet("")
