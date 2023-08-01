@@ -58,3 +58,4 @@ def test_warn_poor_fit(RE):
         messages = [str(w_.message) for w_ in w]
         target_message = "Poor fit while centering motor"
         assert any([target_message in msg for msg in messages])
+    

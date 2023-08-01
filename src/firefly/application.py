@@ -456,7 +456,7 @@ class FireflyApplication(PyDMApplication):
     @QtCore.Slot()
     def show_count_plan_window(self):
         return self.show_window(
-            PlanMainWindow, ui_dir / "plans" / "count.ui", name="count_plan"
+            PlanMainWindow, ui_dir / "plans" / "count.py", name="count_plan"
         )
 
     @QtCore.Slot()
