@@ -10,7 +10,10 @@ def test_count_plan_queued(ffapp, qtbot, sim_registry):
     display.ui.run_button.setEnabled(True)
     display.ui.num_spinbox.setValue(5)
     display.ui.delay_spinbox.setValue(0.5)
-    expected_item = BPlan("count", num=5, detectors=[], delay=0.5)
+    display.ui.detectors_list.selected_detectors = mock.MagicMock(
+        return_value = ["vortex_me4", "I0"]
+    )
+    expected_item = BPlan("count", num=5, detectors=["vortex_me4", "I0"], delay=0.5)
 
     def check_item(item):
         from pprint import pprint

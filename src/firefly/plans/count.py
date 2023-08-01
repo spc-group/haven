@@ -18,8 +18,9 @@ class CountDisplay(display.FireflyDisplay):
         # Get scan parameters from widgets
         num_readings = self.ui.num_spinbox.value()
         delay = self.ui.delay_spinbox.value()
+        detectors = self.ui.detectors_list.selected_detectors()
         # Build the queue item
-        item = BPlan("count", delay=delay, num=num_readings, detectors=[])
+        item = BPlan("count", delay=delay, num=num_readings, detectors=detectors)
         # Submit the item to the queueserver
         from firefly.application import FireflyApplication
         app = FireflyApplication.instance()
