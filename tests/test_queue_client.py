@@ -42,6 +42,181 @@ qs_status = {
 }
 
 
+devices_allowed = {
+    "devices_allowed": {
+        "cpt": {
+            "classname": "Signal",
+            "is_flyable": False,
+            "is_movable": True,
+            "is_readable": True,
+            "module": "ophyd.signal",
+        },
+        "sim_detector": {
+            "classname": "SynGauss",
+            "components": {
+                "Imax": {
+                    "classname": "Signal",
+                    "is_flyable": False,
+                    "is_movable": True,
+                    "is_readable": True,
+                    "module": "ophyd.signal",
+                },
+                "center": {
+                    "classname": "Signal",
+                    "is_flyable": False,
+                    "is_movable": True,
+                    "is_readable": True,
+                    "module": "ophyd.signal",
+                },
+                "noise": {
+                    "classname": "EnumSignal",
+                    "is_flyable": False,
+                    "is_movable": True,
+                    "is_readable": True,
+                    "module": "ophyd.sim",
+                },
+                "noise_multiplier": {
+                    "classname": "Signal",
+                    "is_flyable": False,
+                    "is_movable": True,
+                    "is_readable": True,
+                    "module": "ophyd.signal",
+                },
+                "sigma": {
+                    "classname": "Signal",
+                    "is_flyable": False,
+                    "is_movable": True,
+                    "is_readable": True,
+                    "module": "ophyd.signal",
+                },
+                "val": {
+                    "classname": "SynSignal",
+                    "is_flyable": False,
+                    "is_movable": True,
+                    "is_readable": True,
+                    "module": "ophyd.sim",
+                },
+            },
+            "is_flyable": False,
+            "is_movable": False,
+            "is_readable": True,
+            "module": "ophyd.sim",
+        },
+        "sim_detector_Imax": {
+            "classname": "Signal",
+            "is_flyable": False,
+            "is_movable": True,
+            "is_readable": True,
+            "module": "ophyd.signal",
+        },
+        "sim_detector_center": {
+            "classname": "Signal",
+            "is_flyable": False,
+            "is_movable": True,
+            "is_readable": True,
+            "module": "ophyd.signal",
+        },
+        "sim_detector_noise": {
+            "classname": "EnumSignal",
+            "is_flyable": False,
+            "is_movable": True,
+            "is_readable": True,
+            "module": "ophyd.sim",
+        },
+        "sim_detector_noise_multiplier": {
+            "classname": "Signal",
+            "is_flyable": False,
+            "is_movable": True,
+            "is_readable": True,
+            "module": "ophyd.signal",
+        },
+        "sim_detector_sigma": {
+            "classname": "Signal",
+            "is_flyable": False,
+            "is_movable": True,
+            "is_readable": True,
+            "module": "ophyd.signal",
+        },
+        "sim_motor": {
+            "classname": "SynAxis",
+            "components": {
+                "acceleration": {
+                    "classname": "Signal",
+                    "is_flyable": False,
+                    "is_movable": True,
+                    "is_readable": True,
+                    "module": "ophyd.signal",
+                },
+                "readback": {
+                    "classname": "_ReadbackSignal",
+                    "is_flyable": False,
+                    "is_movable": True,
+                    "is_readable": True,
+                    "module": "ophyd.sim",
+                },
+                "setpoint": {
+                    "classname": "_SetpointSignal",
+                    "is_flyable": False,
+                    "is_movable": True,
+                    "is_readable": True,
+                    "module": "ophyd.sim",
+                },
+                "unused": {
+                    "classname": "Signal",
+                    "is_flyable": False,
+                    "is_movable": True,
+                    "is_readable": True,
+                    "module": "ophyd.signal",
+                },
+                "velocity": {
+                    "classname": "Signal",
+                    "is_flyable": False,
+                    "is_movable": True,
+                    "is_readable": True,
+                    "module": "ophyd.signal",
+                },
+            },
+            "is_flyable": False,
+            "is_movable": True,
+            "is_readable": True,
+            "module": "ophyd.sim",
+        },
+        "sim_motor_acceleration": {
+            "classname": "Signal",
+            "is_flyable": False,
+            "is_movable": True,
+            "is_readable": True,
+            "module": "ophyd.signal",
+        },
+        "sim_motor_setpoint": {
+            "classname": "_SetpointSignal",
+            "is_flyable": False,
+            "is_movable": True,
+            "is_readable": True,
+            "module": "ophyd.sim",
+        },
+        "sim_motor_unused": {
+            "classname": "Signal",
+            "is_flyable": False,
+            "is_movable": True,
+            "is_readable": True,
+            "module": "ophyd.signal",
+        },
+        "sim_motor_velocity": {
+            "classname": "Signal",
+            "is_flyable": False,
+            "is_movable": True,
+            "is_readable": True,
+            "module": "ophyd.signal",
+        },
+    },
+    "devices_allowed_uid": "3664551b-368c-4a47-906a-b9f1ff6c8a91",
+    "msg": "",
+    "success": True,
+}
+
+
+
 def test_setup(ffapp):
     ffapp.setup_window_actions()
     ffapp.setup_runengine_actions()
@@ -96,25 +271,20 @@ def test_run_plan(ffapp, qtbot):
     api.item_add.assert_called_once_with(item={})
 
 
-def test_autoplay(ffapp, qtbot):
+def test_autoplay(queue_app, qtbot):
     """Test how queuing a plan starts the runengine."""
-    ffapp.setup_window_actions()
-    ffapp.setup_runengine_actions()
     FireflyMainWindow()
-    api = MagicMock()
-    api.item_add.return_value = {"success": True, "qsize": 1}
-    api.queue_start.return_value = {"success": True}
-    ffapp.prepare_queue_client(api=api)
+    api = queue_app._queue_client.api
     # Send a plan
     plan = BPlan("set_energy", energy=8333)
-    ffapp._queue_client.add_queue_item(plan)
+    queue_app._queue_client.add_queue_item(plan)
     api.item_add.assert_called_once()
     # Check the queue was started
     api.queue_start.assert_called_once()
     # Check that it doesn't start the queue if the autoplay action is off
     api.reset_mock()
-    ffapp._queue_client.autoplay_action.trigger()
-    ffapp._queue_client.add_queue_item(plan)
+    queue_app._queue_client.autoplay_action.trigger()
+    queue_app._queue_client.add_queue_item(plan)
     # Check that the queue wasn't started
     assert not api.queue_start.called
 
@@ -171,3 +341,14 @@ def test_open_environment(queue_app, qtbot):
         queue_app.queue_open_environment_action.trigger()
     assert blocker.args == [False]
     assert api.environment_close.called
+
+def test_devices_available(queue_app, qtbot):
+    api = queue_app._queue_client.api
+    api.devices_allowed.return_value = devices_allowed
+    client = queue_app._queue_client
+    # Ask for updated list of devices
+    with qtbot.waitSignal(queue_app.queue_devices_changed) as blocker:
+        client.update_devices()
+    # Check that the data have the right form
+    devices = blocker.args[0]
+    assert "sim_detector" in devices.keys()

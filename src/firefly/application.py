@@ -79,6 +79,7 @@ class FireflyApplication(PyDMApplication):
     queue_environment_state_changed = Signal(str)  # New state
     queue_manager_state_changed = Signal(str)  # New state
     queue_re_state_changed = Signal(str)  # New state
+    queue_devices_changed = Signal(dict)  # New list of devices
 
     # Actions for controlling the queueserver
     start_queue_action: QAction
@@ -319,6 +320,7 @@ class FireflyApplication(PyDMApplication):
         client.environment_state_changed.connect(self.queue_environment_state_changed)
         client.manager_state_changed.connect(self.queue_manager_state_changed)
         client.re_state_changed.connect(self.queue_re_state_changed)
+        client.devices_changed.connect(self.queue_devices_changed)
         self.queue_autoplay_action = client.autoplay_action
         self.queue_autoplay_action.toggled.connect(
             self.check_queue_status_action.trigger

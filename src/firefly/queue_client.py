@@ -53,6 +53,7 @@ class QueueClient(QObject):
     environment_state_changed = Signal(str)  # New state
     manager_state_changed = Signal(str)  # New state
     re_state_changed = Signal(str)  # New state
+    devices_changed = Signal(dict)
 
     # Actions for changing the queue settings in menubars
     autoplay_action: QAction
@@ -163,7 +164,7 @@ class QueueClient(QObject):
             raise RuntimeError(result)
 
     @Slot()
-    def check_queue_status(self):
+    def check_queue_status(self, force=False, *args, **kwargs):
         """Get an update queue status from queue server and notify slots.
 
         Parameters
@@ -172,6 +173,8 @@ class QueueClient(QObject):
           If false (default), the ``queue_status_changed`` signal will
           be emitted only if the queue status has changed since last
           check.
+        *args, *kwargs
+          Unused arguments from qt widgets
 
         Emits
         =====
@@ -180,7 +183,7 @@ class QueueClient(QObject):
 
         """
         try:
-            self._check_queue_status()
+            self._check_queue_status(force=force)
         except comm_base.RequestTimeoutError as e:
             log.warn(str(e))
             warnings.warn(str(e))
@@ -214,7 +217,7 @@ class QueueClient(QObject):
             ("re_state", self.re_state_changed),
         ]
         if force:
-            print(f"Forcing queue server status update: {new_status}")
+            log.debug(f"Forcing queue server status update: {new_status}")
         for key, signal in signals_to_check:
             has_changed = (
                 self._last_queue_status is None
@@ -222,8 +225,20 @@ class QueueClient(QObject):
             )
             if has_changed or force:
                 signal.emit(new_status[key])
+        # Check for new available devices
+        if new_status['devices_allowed_uid'] != self._last_queue_status['devices_allowed_uid']:
+            self.update_devices()
         # check the whole status to see if it's changed
         has_changed = new_status != self._last_queue_status
         if has_changed or force:
             self.status_changed.emit(new_status)
             self._last_queue_status = new_status
+
+    def update_devices(self):
+        "Emit the latest dict of available devices."
+        response = self.api.devices_allowed()
+        if response['success']:
+            devices = response['devices_allowed']
+            self.devices_changed.emit(devices)
+        else:
+            log.warning(f"Could not poll devices_allowed: {response.get('msg', 'reason unknown.')}")

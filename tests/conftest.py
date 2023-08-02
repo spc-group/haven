@@ -404,6 +404,7 @@ qs_status = {
 def queue_app(ffapp):
     queue_api = MagicMock()
     queue_api.status.return_value = qs_status
+    queue_api.queue_start.return_value = {"success": True}
     ffapp.setup_window_actions()
     ffapp.setup_runengine_actions()
     ffapp.prepare_queue_client(api=queue_api)
