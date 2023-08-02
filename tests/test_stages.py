@@ -70,7 +70,7 @@ def test_aerotech_fly_params_forward(sim_aerotech_flyer):
     flyer = sim_aerotech_flyer
     # Set some example positions
     flyer.motor_egu.set("micron").wait()
-    flyer.acceleration.set(0.5).wait()  # µm/sec^2
+    flyer.acceleration.set(0.5).wait()  # sec
     flyer.encoder_resolution.set(0.001).wait()  # µm
     flyer.start_position.set(10.05).wait()  # µm
     flyer.end_position.set(19.95).wait()  # µm
@@ -81,8 +81,8 @@ def test_aerotech_fly_params_forward(sim_aerotech_flyer):
     assert flyer.pso_start.get(use_monitor=False) == 10.0
     assert flyer.pso_end.get(use_monitor=False) == 20.0
     assert flyer.slew_speed.get(use_monitor=False) == 0.1  # µm/sec
-    assert flyer.taxi_start.get(use_monitor=False) == 9.985  # µm
-    assert flyer.taxi_end.get(use_monitor=False) == 20.015  # µm
+    assert flyer.taxi_start.get(use_monitor=False) == 9.9625  # µm
+    assert flyer.taxi_end.get(use_monitor=False) == 20.0375  # µm
     assert flyer.encoder_step_size.get(use_monitor=False) == 100
     assert flyer.encoder_window_start.get(use_monitor=False) == -5
     assert flyer.encoder_window_end.get(use_monitor=False) == 10005
@@ -98,7 +98,7 @@ def test_aerotech_fly_params_reverse(sim_aerotech_flyer):
     flyer = sim_aerotech_flyer
     # Set some example positions
     flyer.motor_egu.set("micron").wait()
-    flyer.acceleration.set(0.5).wait()  # µm/sec^2
+    flyer.acceleration.set(0.5).wait()  # sec
     flyer.encoder_resolution.set(0.001).wait()  # µm
     flyer.start_position.set(19.95).wait()  # µm
     flyer.end_position.set(10.05).wait()  # µm
@@ -109,8 +109,8 @@ def test_aerotech_fly_params_reverse(sim_aerotech_flyer):
     assert flyer.pso_start.get(use_monitor=False) == 20.0
     assert flyer.pso_end.get(use_monitor=False) == 10.0
     assert flyer.slew_speed.get(use_monitor=False) == 0.1  # µm/sec
-    assert flyer.taxi_start.get(use_monitor=False) == 20.015  # µm
-    assert flyer.taxi_end.get(use_monitor=False) == 9.985  # µm
+    assert flyer.taxi_start.get(use_monitor=False) == 20.0375  # µm
+    assert flyer.taxi_end.get(use_monitor=False) == 9.9625  # µm
     assert flyer.encoder_step_size.get(use_monitor=False) == 100
     assert flyer.encoder_window_start.get(use_monitor=False) == 5
     assert flyer.encoder_window_end.get(use_monitor=False) == -10005
@@ -198,21 +198,21 @@ def test_collect(sim_aerotech_flyer):
     # Set up needed parameters
     flyer.pixel_positions = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     flyer.starttime = 0
-    flyer.endtime = flyer.starttime + 9.7
+    flyer.endtime = flyer.starttime + 11.25
     motor_accel = flyer.acceleration.set(0.5).wait()  # µm/s^2
     flyer.step_size.set(0.1).wait()  # µm
     flyer.dwell_time.set(1).wait()  # sec
     expected_timestamps = [
-        0.85,
-        1.73888889,
-        2.62777778,
-        3.51666667,
-        4.40555556,
-        5.29444444,
-        6.18333333,
-        7.07222222,
-        7.96111111,
-        8.85,
+        1.125,
+        2.125,
+        3.125,
+        4.125,
+        5.125,
+        6.125,
+        7.125,
+        8.125,
+        9.125,
+        10.125,
     ]
     payload = list(flyer.collect())
     # Confirm data have the right structure

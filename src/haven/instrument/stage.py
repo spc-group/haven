@@ -260,13 +260,13 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         # time of scans at movement stop
         endtime = self.endtime
         # grab necessary for calculation
-        motor_accel = self.acceleration.get()
+        accel_time = self.acceleration.get()
         dwell_time = self.dwell_time.get()
         step_size = self.step_size.get()
         slew_speed = step_size / dwell_time
+        motor_accel = slew_speed / accel_time
         # Calculate the time it takes for taxi to reach first pixel
-        accel_time = slew_speed / motor_accel
-        extrataxi = ((1.5 * (slew_speed**2) / (2 * motor_accel)) / slew_speed) + (
+        extrataxi = ((0.5 * ((slew_speed**2) / (2 * motor_accel))) / slew_speed) + (
             dwell_time / 2
         )
         taxi_time = accel_time + extrataxi
@@ -402,7 +402,7 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         dwell_time = self.dwell_time.get()
         step_size = self.step_size.get()
         encoder_resolution = self.encoder_resolution.get()
-        motor_accel = self.acceleration.get()
+        accel_time = self.acceleration.get()
         # Check for sane values
         if dwell_time == 0:
             log.warning(
@@ -414,7 +414,7 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
                 f"{self} encoder resolution is zero. Could not update fly scan parameters."
             )
             return
-        if motor_accel <= 0:
+        if accel_time <= 0:
             log.warning(
                 f"{self} acceleration is non-positive. Could not update fly scan parameters."
             )
@@ -433,8 +433,8 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         # Determine taxi distance to accelerate to req speed, v^2/(2*a) = d
         # x1.5 for safety margin
         slew_speed = step_size / dwell_time
+        motor_accel = slew_speed / accel_time
         taxi_dist = slew_speed**2 / (2 * motor_accel) * 1.5
-        taxi_dist = 20  # Until we get the motor acceleration set up right
         taxi_start = pso_start - (direction * taxi_dist)
         taxi_end = pso_end + (direction * taxi_dist)
         # Calculate encoder counts within the requested window of the scan
