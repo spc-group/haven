@@ -279,7 +279,7 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         )
         timestamps = [round(ts, 8) for ts in timestamps1]
         for value, ts in zip(pixels, timestamps):
-            yield {"data": [value], "timestamps": [ts], "time": ts}
+            yield {"data": {self.name: value}, "timestamps": {self.name: ts}, "time": ts}
 
     def describe_collect(self):
         """Describe details for the collect() method"""
