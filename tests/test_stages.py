@@ -23,7 +23,7 @@ def sim_aerotech_flyer():
     )
     flyer.user_setpoint._limits = (0, 1000)
     flyer.send_command = mock.MagicMock()
-    return flyer
+    yield flyer
 
 
 def test_stage_init():
@@ -123,6 +123,28 @@ def test_aerotech_fly_params_reverse(sim_aerotech_flyer):
     np.testing.assert_allclose(flyer.pixel_positions, pixel)
 
 
+def test_aerotech_fly_params_no_window(sim_aerotech_flyer):
+    """Test the fly scan params when the range is too large for the PSO window."""
+    flyer = sim_aerotech_flyer
+    # Set some example positions
+    flyer.motor_egu.set("micron").wait()
+    flyer.acceleration.set(0.5).wait()  # sec
+    flyer.encoder_resolution.set(0.001).wait()  # µm
+    flyer.start_position.set(0).wait()  # µm
+    flyer.end_position.set(9000).wait()  # µm
+    flyer.step_size.set(0.1).wait()  # µm
+    flyer.dwell_time.set(1).wait()  # sec
+
+    # Check that the fly-scan parameters were calculated correctly
+    assert flyer.pso_start.get(use_monitor=False) == -0.05
+    assert flyer.pso_end.get(use_monitor=False) == 9000.05
+    assert flyer.taxi_start.get(use_monitor=False) == pytest.approx(-0.0875)  # µm
+    assert flyer.taxi_end.get(use_monitor=False) == 9000.0875  # µm
+    assert flyer.encoder_step_size.get(use_monitor=False) == 100
+    assert flyer.encoder_window_start.get(use_monitor=False) is -5
+    assert flyer.encoder_window_end.get(use_monitor=False) is None
+
+
 def test_enable_pso(sim_aerotech_flyer):
     flyer = sim_aerotech_flyer
     # Set up scan parameters
@@ -136,13 +158,74 @@ def test_enable_pso(sim_aerotech_flyer):
     assert commands == [
         "PSOCONTROL @0 RESET",
         "PSOOUTPUT @0 CONTROL 1",
-        "PSOPULSE @0 TIME 20,10",
+        "PSOPULSE @0 TIME 20, 10",
         "PSOOUTPUT @0 PULSE WINDOW MASK",
         "PSOTRACK @0 INPUT 6",
         "PSODISTANCE @0 FIXED 50",
         "PSOWINDOW @0 1 INPUT 6",
         "PSOWINDOW @0 1 RANGE -5,10000",
     ]
+
+
+def test_enable_pso_no_window(sim_aerotech_flyer):
+    flyer = sim_aerotech_flyer
+    # Set up scan parameters
+    flyer.encoder_step_size.set(50).wait()  # In encoder counts
+    flyer.encoder_window_start.set(-5).wait()  # In encoder counts
+    flyer.encoder_window_end.set(None).wait()  # High end is outside the window range
+    # Check that commands are sent to set up the controller for flying
+    flyer.enable_pso()
+    assert flyer.send_command.called
+    commands = [c.args[0] for c in flyer.send_command.call_args_list]
+    assert commands == [
+        "PSOCONTROL @0 RESET",
+        "PSOOUTPUT @0 CONTROL 1",
+        "PSOPULSE @0 TIME 20, 10",
+        "PSOOUTPUT @0 PULSE",
+        "PSOTRACK @0 INPUT 6",
+        "PSODISTANCE @0 FIXED 50",
+        # "PSOWINDOW @0 1 INPUT 6",
+        # "PSOWINDOW @0 1 RANGE -5,10000",
+    ]
+
+
+def test_pso_bad_window_forward(sim_aerotech_flyer):
+    """Check for an exception when the window is needed but not enabled.
+
+    I.e. when the taxi distance is larger than the encoder step size."""
+    flyer = sim_aerotech_flyer
+    # Set up scan parameters
+    flyer.encoder_resolution.set(1).wait()
+    flyer.encoder_step_size.set(
+        5 / flyer.encoder_resolution.get()
+    ).wait()  # In encoder counts
+    flyer.encoder_window_start.set(-5).wait()  # In encoder counts
+    flyer.encoder_window_end.set(None).wait()  # High end is outside the window range
+    flyer.pso_end.set(100)
+    flyer.taxi_end.set(110)
+    # Check that commands are sent to set up the controller for flying
+    with pytest.raises(exceptions.InvalidScanParameters):
+        flyer.enable_pso()
+
+
+def test_pso_bad_window_reverse(sim_aerotech_flyer):
+    """Check for an exception when the window is needed but not enabled.
+
+    I.e. when the taxi distance is larger than the encoder step size."""
+    flyer = sim_aerotech_flyer
+    # Set up scan parameters
+    flyer.encoder_resolution.set(1).wait()
+    flyer.step_size.set(5).wait()
+    flyer.encoder_step_size.set(
+        flyer.step_size.get() / flyer.encoder_resolution.get()
+    ).wait()  # In encoder counts
+    flyer.encoder_window_start.set(114).wait()  # In encoder counts
+    flyer.encoder_window_start.set(None).wait()  # High end is outside the window range
+    flyer.pso_start.set(100)
+    flyer.taxi_start.set(94)
+    # Check that commands are sent to set up the controller for flying
+    with pytest.raises(exceptions.InvalidScanParameters):
+        flyer.enable_pso()
 
 
 def test_arm_pso(sim_aerotech_flyer):
@@ -165,7 +248,7 @@ def test_motor_units(sim_aerotech_flyer):
 def test_kickoff(sim_aerotech_flyer):
     # Set up fake flyer with mocked fly method
     flyer = sim_aerotech_flyer
-    flyer.fly = mock.MagicMock()
+    flyer.taxi = mock.MagicMock()
     # Start flying
     status = flyer.kickoff()
     # Check status behavior matches flyer interface
@@ -173,6 +256,7 @@ def test_kickoff(sim_aerotech_flyer):
     assert not status.done
     # Start flying and see if the status is done
     flyer.ready_to_fly.set(True).wait()
+    status.wait()
     assert status.done
     assert type(flyer.starttime) == float
 
@@ -190,6 +274,7 @@ def test_complete(sim_aerotech_flyer):
     assert flyer.move.called_with(9)
     # Check status behavior matches flyer interface
     assert isinstance(status, StatusBase)
+    status.wait()
     assert status.done
 
 
@@ -220,8 +305,8 @@ def test_collect(sim_aerotech_flyer):
         payload, flyer.pixel_positions, expected_timestamps
     ):
         assert datum == {
-            "data": [value],
-            "timestamps": [timestamp],
+            "data": {"flyer": value},
+            "timestamps": {"flyer": timestamp},
             "time": timestamp,
         }
 

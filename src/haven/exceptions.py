@@ -88,3 +88,9 @@ class InvalidTransformation(TypeError):
     """The data cannot be transformed to a new y-data signal."""
 
     ...
+
+
+class InvalidScanParameters(ValueError):
+    """The given scan parameters will not produce a sane scan."""
+
+    ...

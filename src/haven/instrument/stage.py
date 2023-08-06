@@ -24,6 +24,7 @@ import numpy as np
 
 from .instrument_registry import registry
 from .._iconfig import load_config
+from ..exceptions import InvalidScanParameters
 from .device import await_for_connection, aload_devices
 
 
@@ -152,6 +153,8 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
     # Internal encoder in the Ensemble to track for flying
     encoder: int
     encoder_direction: int = 1
+    encoder_window_min: int = -8e6
+    encoder_window_max: int = 8e6
 
     # Extra motor record components
     encoder_resolution = Cpt(EpicsSignal, ".ERES", kind=Kind.config)
@@ -279,7 +282,11 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         )
         timestamps = [round(ts, 8) for ts in timestamps1]
         for value, ts in zip(pixels, timestamps):
-            yield {"data": {self.name: value}, "timestamps": {self.name: ts}, "time": ts}
+            yield {
+                "data": {self.name: value},
+                "timestamps": {self.name: ts},
+                "time": ts,
+            }
 
     def describe_collect(self):
         """Describe details for the collect() method"""
@@ -425,7 +432,6 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         overall_sense = direction * self.encoder_direction
         # Calculate the step size in encoder steps
         encoder_step_size = int(step_size / encoder_resolution)
-        self.encoder_step_size.set(encoder_step_size).wait()
         # Pso start/end should be located to where req. start/end are in between steps
         # Also doubles as the location where slew speed must be met
         pso_start = start_position - (direction * (step_size / 2))
@@ -442,6 +448,16 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         encoder_distance = abs(pso_start - pso_end) / encoder_resolution
         encoder_window_end = overall_sense * (encoder_distance + window_buffer)
         encoder_window_end = int(encoder_window_end)
+        # Check for values outside of the window range for this controller
+        def is_valid_window(value):
+            return self.encoder_window_min < value < self.encoder_window_max
+
+        encoder_window_start = (
+            encoder_window_start if is_valid_window(encoder_window_start) else None
+        )
+        encoder_window_end = (
+            encoder_window_end if is_valid_window(encoder_window_end) else None
+        )
         # Create np array of PSO positions in encoder counts
         # Tranforms that array to motor positions
         encoder_pso_positions = np.arange(
@@ -449,13 +465,19 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         )
         pixel_positions = (encoder_pso_positions * encoder_resolution) + start_position
         # Set all the calculated variables
-        self.pso_start.set(pso_start).wait()
-        self.pso_end.set(pso_end).wait()
-        self.slew_speed.set(slew_speed).wait()
-        self.taxi_start.set(taxi_start).wait()
-        self.taxi_end.set(taxi_end).wait()
-        self.encoder_window_start.set(encoder_window_start).wait()
-        self.encoder_window_end.set(encoder_window_end).wait()
+        [
+            stat.wait()
+            for stat in [
+                self.encoder_step_size.set(encoder_step_size),
+                self.pso_start.set(pso_start),
+                self.pso_end.set(pso_end),
+                self.slew_speed.set(slew_speed),
+                self.taxi_start.set(taxi_start),
+                self.taxi_end.set(taxi_end),
+                self.encoder_window_start.set(encoder_window_start),
+                self.encoder_window_end.set(encoder_window_end),
+            ]
+        ]
         self.pixel_positions = pixel_positions
 
     def send_command(self, cmd: str):
@@ -474,18 +496,43 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
     def disable_pso(self):
         self.send_command(f"PSOCONTROL {self.axis} OFF")
 
+    def check_flyscan_bounds(self):
+        """Check that the fly-scan params are sane at the scan start and end.
+
+        This checks to make sure no spurious pulses are expected from taxiing.
+
+        """
+        end_points = [(self.taxi_start, self.pso_start), (self.taxi_end, self.pso_end)]
+        step_size = self.step_size.get()
+        for taxi, pso in end_points:
+            # Make sure we're not going to have extra pulses
+            taxi_distance = abs(taxi.get() - pso.get())
+            if taxi_distance > (1.1 * step_size):
+                raise InvalidScanParameters(
+                    f"Scan parameters for {taxi}, {pso} would produce extra pulses."
+                )
+
     def enable_pso(self):
         num_axis = 1
-        # Make sure the PSO control is off
+        use_window = (
+            self.encoder_window_start.get() is not None
+            and self.encoder_window_end.get() is not None
+        )
+        if not use_window:
+            self.check_flyscan_bounds()
+        # Erase any previous PSO control
         self.send_command(f"PSOCONTROL {self.axis} RESET")
         # Set the output to occur from the I/O terminal on the
         # controller
         self.send_command(f"PSOOUTPUT {self.axis} CONTROL {num_axis}")
         # Set a pulse 10 us long, 20 us total duration, so 10 us
         # on, 10 us off
-        self.send_command(f"PSOPULSE {self.axis} TIME 20,10")
+        self.send_command(f"PSOPULSE {self.axis} TIME 20, 10")
         # Set the pulses to only occur in a specific window
-        self.send_command(f"PSOOUTPUT {self.axis} PULSE WINDOW MASK")
+        if use_window:
+            self.send_command(f"PSOOUTPUT {self.axis} PULSE WINDOW MASK")
+        else:
+            self.send_command(f"PSOOUTPUT {self.axis} PULSE")
         # Set which encoder we will use.  3 = the MXH (encoder
         # multiplier) input. For Ensemble lab, 6 is horizontal encoder
         self.send_command(f"PSOTRACK {self.axis} INPUT {self.encoder}")
@@ -495,14 +542,15 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         )
         # Which encoder is being used to calculate whether we are
         # in the window.
-        self.send_command(f"PSOWINDOW {self.axis} {num_axis} INPUT {self.encoder}")
-        # Calculate window function parameters. Must be in encoder
-        # counts, and is referenced from the stage location where
-        # we arm the PSO
-        self.send_command(
-            f"PSOWINDOW {self.axis} {num_axis} RANGE "
-            f"{self.encoder_window_start.get()},{self.encoder_window_end.get()}"
-        )
+        if use_window:
+            self.send_command(f"PSOWINDOW {self.axis} {num_axis} INPUT {self.encoder}")
+            # Calculate window function parameters. Must be in encoder
+            # counts, and is referenced from the stage location where
+            # we arm the PSO
+            self.send_command(
+                f"PSOWINDOW {self.axis} {num_axis} RANGE "
+                f"{self.encoder_window_start.get()},{self.encoder_window_end.get()}"
+            )
 
     def arm_pso(self):
         self.send_command(f"PSOCONTROL {self.axis} ARM")
