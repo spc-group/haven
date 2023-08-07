@@ -7,7 +7,7 @@ from apsbss.apsbss_ophyd import EpicsBssDevice
 
 from haven import registry
 from .._iconfig import load_config
-from .device import await_for_connection, aload_devices, make_device
+from .device import aload_devices, make_device
 
 
 log = logging.getLogger(__name__)

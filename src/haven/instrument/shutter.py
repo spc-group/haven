@@ -29,6 +29,7 @@ def load_shutter_coros(config=None):
             close_pv=f"{prefix}:{acronym}_CLOSE_EPICS.VAL",
             state_pv=f"{prefix}:{hutch}_BEAM_PRESENT",
             name=name,
+            labels={"shutters"},
         )
 
 

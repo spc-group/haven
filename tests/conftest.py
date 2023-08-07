@@ -315,11 +315,11 @@ def ioc_dxp(request):
 def sim_registry(monkeypatch):
     # mock out Ophyd connections so devices can be created
     modules = [
-        haven.instrument.aps,
         haven.instrument.fluorescence_detector,
         haven.instrument.monochromator,
         haven.instrument.ion_chamber,
         haven.instrument.motor,
+        haven.instrument.device,
     ]
     for mod in modules:
         monkeypatch.setattr(mod, "await_for_connection", mock.AsyncMock())
