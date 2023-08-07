@@ -24,6 +24,7 @@ from ophyd import (
 from ophyd.ophydobj import OphydObject
 from ophyd.pseudopos import pseudo_position_argument, real_position_argument
 from ophyd.mca import EpicsMCARecord
+from ophyd.status import SubscriptionStatus
 import numpy as np
 
 from .scaler_triggered import ScalerTriggered, ScalerSignal, ScalerSignalRO
@@ -223,7 +224,7 @@ class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
     )
     channel_advance_source: OphydObject = FCpt(
         EpicsSignal,
-        "{scaler_prefix}:channelAdvance",
+        "{scaler_prefix}:ChannelAdvance",
         kind=Kind.config,
     )
     num_channels_to_use: OphydObject = FCpt(
@@ -243,7 +244,10 @@ class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
         EpicsSignal, "{scaler_prefix}:Channel1Source", kind=Kind.config
     )
     mca: OphydObject = FCpt(
-        EpicsMCARecord, "{scaler_prefix}:mca{ch_num}", kind=Kind.normal
+        EpicsMCARecord, "{scaler_prefix}:mca{ch_num}", kind=Kind.omitted
+    )
+    mca_times: OphydObject = FCpt(
+        EpicsMCARecord, "{scaler_prefix}:mca1", kind=Kind.omitted
     )
 
     # Virtual signals to handle fly-scanning
@@ -347,10 +351,13 @@ class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
         self.timestamps.append(timestamp)
 
     def kickoff(self) -> status.StatusBase:
-        # Set number of frames to capture
-        status = self.num_channels_to_use.set(self.num_bins.get())
+        def check_acquiring(*, old_value, value, **kwargs):
+            return bool(value)
+
         # Start acquiring data
-        status &= self.erase_start.set(1)
+        self.erase_start.set(1).wait()
+        # Wait for the "Acquiring" to start
+        status = SubscriptionStatus(self.acquiring, check_acquiring)
         # Watch for new data being collected so we can save timestamps
         self.timestamps = []
         self.current_channel.subscribe(self.record_timestamp)
@@ -361,17 +368,18 @@ class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
         return status
 
     def collect(self) -> Generator[Dict, None, None]:
-        net_counts = self.net_counts.name
+        net_counts_name = self.net_counts.name
         # Retrieve data, except for first point (during taxiing)
-        data = self.mca.spectrum.get()[1:]
+        data = self.mca.spectrum.get()
         # Convert timestamps from PSO pulses to pixels
         pso_timestamps = np.asarray(self.timestamps)
         pixel_timestamps = (pso_timestamps[1:] + pso_timestamps[:-1]) / 2
         # Create data events
+        print(len(pso_timestamps), len(data))
         for ts, value in zip(pixel_timestamps, data):
             yield {
-                "data": {net_counts: [value]},
-                "timestamps": {net_counts: [ts]},
+                "data": {net_counts_name: [value]},
+                "timestamps": {net_counts_name: [ts]},
                 "time": ts,
             }
 
@@ -379,7 +387,7 @@ class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
         """Describe details for the flyer collect() method"""
         desc = OrderedDict()
         desc.update(self.net_counts.describe())
-        return {self.stream_name: desc}
+        return {self.name: desc}
 
 
 async def make_ion_chamber_device(
@@ -395,11 +403,12 @@ async def make_ion_chamber_device(
     try:
         await await_for_connection(ic)
     except TimeoutError as exc:
+        raise
         log.warning(
-            f"Could not connect to ion_chamber: {name} ({prefix}, {preamp_prefix})"
+            f"Could not connect to ion chamber: {name} ({prefix}, {preamp_prefix})"
         )
     else:
-        log.info(f"Created heater: {name} ({prefix}, {preamp_prefix})")
+        log.info(f"Created ion chamber: {name} ({prefix}, {preamp_prefix})")
         registry.register(ic)
         return ic
 
@@ -407,7 +416,7 @@ async def make_ion_chamber_device(
 async def load_ion_chamber(preamp_prefix: str, scaler_prefix: str, ch_num: int):
     # Determine ion_chamber configuration
     preamp_prefix = f"{preamp_prefix}:SR{ch_num-1:02}"
-    desc_pv = f"{scaler_prefix}.NM{ch_num}"
+    desc_pv = f"{scaler_prefix}:scaler1.NM{ch_num}"
     # Only use this ion chamber if it has a name
     try:
         name = await caget(desc_pv)

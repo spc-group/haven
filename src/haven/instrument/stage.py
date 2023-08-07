@@ -153,8 +153,8 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
     # Internal encoder in the Ensemble to track for flying
     encoder: int
     encoder_direction: int = 1
-    encoder_window_min: int = -8e6
-    encoder_window_max: int = 8e6
+    encoder_window_min: int = -8388607
+    encoder_window_max: int = 8388607
 
     # Extra motor record components
     encoder_resolution = Cpt(EpicsSignal, ".ERES", kind=Kind.config)
@@ -174,9 +174,10 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
     encoder_step_size = Cpt(Signal, kind=Kind.config)
     encoder_window_start = Cpt(Signal, kind=Kind.config)
     encoder_window_end = Cpt(Signal, kind=Kind.config)
+    encoder_use_window = Cpt(Signal, value=False, kind=Kind.config)
 
     # Status signals
-    is_flying = Cpt(Signal, kind=Kind.omitted)
+    flying_complete = Cpt(Signal, kind=Kind.omitted)
     ready_to_fly = Cpt(Signal, kind=Kind.omitted)
 
     def __init__(self, *args, axis: str, encoder: int, **kwargs):
@@ -209,6 +210,7 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
             return not bool(old_value) and bool(value)
 
         # Status object is complete when flying has started
+        self.ready_to_fly.set(False).wait()
         status = SubscriptionStatus(self.ready_to_fly, flight_check)
         # Taxi the motor
         th = threading.Thread(target=self.taxi)
@@ -238,10 +240,11 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         # Prepare a callback to check when the motor has stopped moving
         def check_flying(*args, old_value, value, **kwargs) -> bool:
             "Check if flying is complete."
-            return not bool(value)
+            return bool(value)
 
         # Status object is complete when flying has started
-        status = SubscriptionStatus(self.is_flying, check_flying)
+        self.flying_complete.set(False).wait()
+        status = SubscriptionStatus(self.flying_complete, check_flying)
         # Iniate the fly scan
         th = threading.Thread(target=self.fly)
         th.start()
@@ -256,6 +259,7 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
             Must have the keys {'time', 'timestamps', 'data'}.
 
         """
+        time.sleep(5)
         # np array of pixel location
         pixels = self.pixel_positions
         # time of scans start taken at Kickoff
@@ -283,8 +287,8 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         timestamps = [round(ts, 8) for ts in timestamps1]
         for value, ts in zip(pixels, timestamps):
             yield {
-                "data": {self.name: value},
-                "timestamps": {self.name: ts},
+                "data": {self.name: value, self.user_setpoint.name: value},
+                "timestamps": {self.name: ts, self.user_setpoint.name: value},
                 "time": ts,
             }
 
@@ -292,27 +296,27 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         """Describe details for the collect() method"""
         desc = OrderedDict()
         desc.update(self.describe())
-        return {"primary": desc}
+        return {"positions": desc}
 
     def fly(self):
         # Start the trajectory
         destination = self.taxi_end.get()
         log.debug(f"Flying to {destination}.")
         flight_status = self.move(destination)
-        self.is_flying.set(True).wait()
         # Wait for the landing
         flight_status.wait()
         self.disable_pso()
-        self.is_flying.set(False).wait()
+        self.flying_complete.set(True)
         # Record end time of flight
         self.endtime = time.time()
 
     def taxi(self):
-        self.is_flying.set(False).wait
+        self.disable_pso()
+        self.move(self.start_position.get()).wait()
         # Initalize the PSO
         self.enable_pso()
         # Move motor to the scan start point
-        self.move(self.pso_start.get(), wait=True)
+        self.move(self.pso_start.get()).wait()
         # Arm the PSO
         self.arm_pso()
         # Move the motor to the taxi position
@@ -324,6 +328,11 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         self.ready_to_fly.set(True)
 
     def stage(self, *args, **kwargs):
+        self.ready_to_fly.set(False).wait()
+        self.flying_complete.set(False).wait()
+        self.starttime = None
+        self.endtime = None
+        # Save old veolcity to be restored after flying
         self.old_velocity = self.velocity.get()
         super().stage(*args, **kwargs)
 
@@ -448,16 +457,13 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         encoder_distance = abs(pso_start - pso_end) / encoder_resolution
         encoder_window_end = overall_sense * (encoder_distance + window_buffer)
         encoder_window_end = int(encoder_window_end)
+
         # Check for values outside of the window range for this controller
         def is_valid_window(value):
             return self.encoder_window_min < value < self.encoder_window_max
 
-        encoder_window_start = (
-            encoder_window_start if is_valid_window(encoder_window_start) else None
-        )
-        encoder_window_end = (
-            encoder_window_end if is_valid_window(encoder_window_end) else None
-        )
+        window_range = [encoder_window_start, encoder_window_end]
+        encoder_use_window = all([is_valid_window(v) for v in window_range])
         # Create np array of PSO positions in encoder counts
         # Tranforms that array to motor positions
         encoder_pso_positions = np.arange(
@@ -478,6 +484,7 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
                 self.encoder_window_end.set(encoder_window_end),
             ]
         ]
+        self.encoder_pso_positions = encoder_pso_positions
         self.pixel_positions = pixel_positions
 
     def send_command(self, cmd: str):
@@ -514,10 +521,7 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
 
     def enable_pso(self):
         num_axis = 1
-        use_window = (
-            self.encoder_window_start.get() is not None
-            and self.encoder_window_end.get() is not None
-        )
+        use_window = self.encoder_use_window.get()
         if not use_window:
             self.check_flyscan_bounds()
         # Erase any previous PSO control

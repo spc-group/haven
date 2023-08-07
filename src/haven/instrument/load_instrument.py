@@ -99,7 +99,10 @@ def load_instrument(
     if config is None:
         config = load_config()
     # Import devices concurrently
-    devices = asyncio.run(aload_instrument(registry=registry, config=config))
+    loop = asyncio.get_event_loop()
+    devices = loop.run_until_complete(
+        aload_instrument(registry=registry, config=config)
+    )
     # Also import some simulated devices for testing
     devices += load_simulated_devices(config=config)
     # Filter out devices that couldn't be reached
