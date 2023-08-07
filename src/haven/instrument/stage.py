@@ -463,11 +463,13 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         window_range = [encoder_window_start, encoder_window_end]
         encoder_use_window = all([is_valid_window(v) for v in window_range])
         # Create np array of PSO positions in encoder counts
-        # Tranforms that array to motor positions
-        encoder_pso_positions = np.arange(
-            0, (encoder_distance * overall_sense), (encoder_step_size * overall_sense)
-        )
-        pixel_positions = (encoder_pso_positions * encoder_resolution) + start_position
+        _pso_step = (encoder_step_size * overall_sense)
+        _pso_end = (encoder_distance * overall_sense) + 0.5 * _pso_step 
+        encoder_pso_positions = np.arange(0, _pso_end, _pso_step)
+        # Transform from PSO positions from encoder counts to engineering units
+        pso_positions = (encoder_pso_positions * encoder_resolution) + pso_start
+        # Tranforms from pulse positions to pixel centers
+        pixel_positions = (pso_positions[1:] + pso_positions[:-1]) / 2
         # Set all the calculated variables
         [
             stat.wait()
@@ -483,6 +485,7 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
             ]
         ]
         self.encoder_pso_positions = encoder_pso_positions
+        self.pso_positions = pso_positions
         self.pixel_positions = pixel_positions
 
     def send_command(self, cmd: str):

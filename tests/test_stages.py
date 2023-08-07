@@ -115,13 +115,6 @@ def test_aerotech_fly_params_reverse(sim_aerotech_flyer):
     assert flyer.encoder_window_start.get(use_monitor=False) == 5
     assert flyer.encoder_window_end.get(use_monitor=False) == -10005
 
-    i = 19.95
-    pixel = []
-    while i >= 10.03:
-        pixel.append(i)
-        i = i - 0.1
-    np.testing.assert_allclose(flyer.pixel_positions, pixel)
-
 
 def test_aerotech_fly_params_no_window(sim_aerotech_flyer):
     """Test the fly scan params when the range is too large for the PSO window."""
@@ -145,6 +138,33 @@ def test_aerotech_fly_params_no_window(sim_aerotech_flyer):
     assert flyer.encoder_window_end.get(use_monitor=False) == 9000104
     assert flyer.encoder_use_window.get(use_monitor=False) is False
 
+
+def test_aerotech_predicted_positions(sim_aerotech_flyer):
+    """Check that the fly-scan positions are calculated properly."""
+    flyer = sim_aerotech_flyer
+    # Set some example positions
+    flyer.motor_egu.set("micron").wait()
+    flyer.acceleration.set(0.5).wait()  # sec
+    flyer.encoder_resolution.set(0.001).wait()  # µm
+    flyer.start_position.set(10.05).wait()  # µm
+    flyer.end_position.set(19.95).wait()  # µm
+    flyer.step_size.set(0.1).wait()  # µm
+    flyer.dwell_time.set(1).wait()  # sec
+
+    # Check that the fly-scan parameters were calculated correctly
+    i = 10.05
+    pixel_positions = []
+    while i <= 19.98:
+        pixel_positions.append(i)
+        i = i + 0.1
+    num_pulses = len(pixel_positions) + 1
+    pso_positions = np.linspace(10, 20, num=num_pulses)
+    encoder_pso_positions = np.linspace(0, 10000, num=num_pulses)
+    np.testing.assert_allclose(flyer.encoder_pso_positions, encoder_pso_positions)
+    np.testing.assert_allclose(flyer.pso_positions, pso_positions)
+    np.testing.assert_allclose(flyer.pixel_positions, pixel_positions)
+
+    
 
 def test_enable_pso(sim_aerotech_flyer):
     flyer = sim_aerotech_flyer
