@@ -141,8 +141,9 @@ def test_aerotech_fly_params_no_window(sim_aerotech_flyer):
     assert flyer.taxi_start.get(use_monitor=False) == pytest.approx(-0.0875)  # µm
     assert flyer.taxi_end.get(use_monitor=False) == 9000.0875  # µm
     assert flyer.encoder_step_size.get(use_monitor=False) == 100
-    assert flyer.encoder_window_start.get(use_monitor=False) is -5
-    assert flyer.encoder_window_end.get(use_monitor=False) is None
+    assert flyer.encoder_window_start.get(use_monitor=False) == -5
+    assert flyer.encoder_window_end.get(use_monitor=False) == 9000104
+    assert flyer.encoder_use_window.get(use_monitor=False) is False
 
 
 def test_enable_pso(sim_aerotech_flyer):
@@ -151,6 +152,7 @@ def test_enable_pso(sim_aerotech_flyer):
     flyer.encoder_step_size.set(50).wait()  # In encoder counts
     flyer.encoder_window_start.set(-5).wait()  # In encoder counts
     flyer.encoder_window_end.set(10000).wait()  # In encoder counts
+    flyer.encoder_use_window.set(True).wait()
     # Check that commands are sent to set up the controller for flying
     flyer.enable_pso()
     assert flyer.send_command.called
@@ -265,7 +267,6 @@ def test_complete(sim_aerotech_flyer):
     # Set up fake flyer with mocked fly method
     flyer = sim_aerotech_flyer
     flyer.move = mock.MagicMock()
-    flyer.is_flying.set(False).wait()
     assert flyer.user_setpoint.get() == 0
     flyer.taxi_end.set(10).wait()
     # Complete flying
@@ -305,15 +306,18 @@ def test_collect(sim_aerotech_flyer):
         payload, flyer.pixel_positions, expected_timestamps
     ):
         assert datum == {
-            "data": {"flyer": value},
-            "timestamps": {"flyer": timestamp},
+            "data": {
+                "flyer": value,
+                "flyer_user_setpoint": value,
+            },
+            "timestamps": {"flyer": timestamp, "flyer_user_setpoint": timestamp},
             "time": timestamp,
         }
 
 
 def test_describe_collect(sim_aerotech_flyer):
     expected = {
-        "primary": OrderedDict(
+        "positions": OrderedDict(
             [
                 (
                     "flyer",
@@ -337,18 +341,19 @@ def test_describe_collect(sim_aerotech_flyer):
         )
     }
 
-    assert sim_aerotech_flyer.describe_collect()["primary"] == expected["primary"]
+    assert sim_aerotech_flyer.describe_collect() == expected
 
 
 def test_fly_motor_positions(sim_aerotech_flyer):
     flyer = sim_aerotech_flyer
     # Arbitrary rest position
-    flyer.user_setpoint.set(255)
+    flyer.user_setpoint.set(255).wait()
     # Set example fly scan parameters
-    flyer.taxi_start.set(5)
-    flyer.start_position.set(10)
-    flyer.pso_start.set(9.5)
-    flyer.taxi_end.set(105)
+    flyer.taxi_start.set(5).wait()
+    flyer.start_position.set(10).wait()
+    flyer.pso_start.set(9.5).wait()
+    flyer.taxi_end.set(105).wait()
+    flyer.encoder_use_window.set(True).wait()
     # Mock the motor position so that it returns a status we control
     motor_status = StatusBase()
     motor_status.set_finished()

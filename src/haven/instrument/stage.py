@@ -288,7 +288,7 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         for value, ts in zip(pixels, timestamps):
             yield {
                 "data": {self.name: value, self.user_setpoint.name: value},
-                "timestamps": {self.name: ts, self.user_setpoint.name: value},
+                "timestamps": {self.name: ts, self.user_setpoint.name: ts},
                 "time": ts,
             }
 
@@ -311,8 +311,6 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         self.endtime = time.time()
 
     def taxi(self):
-        self.disable_pso()
-        self.move(self.start_position.get()).wait()
         # Initalize the PSO
         self.enable_pso()
         # Move motor to the scan start point
@@ -516,7 +514,7 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
             taxi_distance = abs(taxi.get() - pso.get())
             if taxi_distance > (1.1 * step_size):
                 raise InvalidScanParameters(
-                    f"Scan parameters for {taxi}, {pso} would produce extra pulses."
+                    f"Scan parameters for {taxi}, {pso}, {self.step_size} would produce extra pulses without a window."
                 )
 
     def enable_pso(self):
