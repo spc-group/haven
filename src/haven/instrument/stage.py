@@ -172,7 +172,7 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
     taxi_end = Cpt(Signal, kind=Kind.config)
     pso_start = Cpt(Signal, kind=Kind.config)
     pso_end = Cpt(Signal, kind=Kind.config)
-    pso_arm = Cpt(Signal, kind=Kind.config)
+    pso_zero = Cpt(Signal, kind=Kind.config)
     encoder_step_size = Cpt(Signal, kind=Kind.config)
     encoder_window_start = Cpt(Signal, kind=Kind.config)
     encoder_window_end = Cpt(Signal, kind=Kind.config)
@@ -314,7 +314,7 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         # Initalize the PSO
         self.enable_pso()
         # Move motor to the scan start point
-        self.move(self.pso_arm.get(), wait=True)
+        self.move(self.pso_zero.get(), wait=True)
         # Arm the PSO
         self.arm_pso()
         # Move the motor to the taxi position
@@ -400,6 +400,8 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
           The motor position corresponding to the first PSO pulse.
         pso_end
            The motor position corresponding to the last PSO pulse.
+        pso_zero
+           The motor position where the PSO counter is set to zero.
         encoder_step_size
           The number of encoder counts for each pixel.
         encoder_window_start
@@ -462,13 +464,15 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
             rounder = math.floor
         else:
             rounder = math.ceil
-        encoder_pso_arm = rounder(encoder_taxi_start / encoder_step_size) * encoder_step_size
-        pso_arm = pso_start + encoder_pso_arm * encoder_resolution
+        encoder_pso_zero = rounder(encoder_taxi_start / encoder_step_size) * encoder_step_size
+        pso_zero = pso_start + encoder_pso_zero * encoder_resolution
         # Calculate encoder counts within the requested window of the scan
-        encoder_window_start = int(-direction * window_buffer)
-        encoder_distance = abs(pso_start - pso_end) / encoder_resolution
-        encoder_window_end = overall_sense * (encoder_distance + window_buffer)
-        encoder_window_end = int(encoder_window_end)
+        encoder_window_start = round((pso_start - pso_zero) / encoder_resolution)
+        encoder_distance = (pso_end - pso_start) / encoder_resolution
+        encoder_window_end = round(encoder_window_start + encoder_distance)
+        # Widen the bound a little to make sure we capture the pulse
+        encoder_window_start -= (overall_sense * window_buffer)
+        encoder_window_end += (overall_sense * window_buffer)
 
         # Check for values outside of the window range for this controller
         def is_valid_window(value):
@@ -491,7 +495,7 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
                 self.encoder_step_size.set(encoder_step_size),
                 self.pso_start.set(pso_start),
                 self.pso_end.set(pso_end),
-                self.pso_arm.set(pso_arm),
+                self.pso_zero.set(pso_zero),
                 self.slew_speed.set(slew_speed),
                 self.taxi_start.set(taxi_start),
                 self.taxi_end.set(taxi_end),
