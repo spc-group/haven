@@ -303,11 +303,10 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         # Start the trajectory
         destination = self.taxi_end.get()
         log.debug(f"Flying to {destination}.")
-        flight_status = self.move(destination)
+        flight_status = self.move(destination, wait=True)
         # Wait for the landing
-        flight_status.wait()
         self.disable_pso()
-        self.flying_complete.set(True)
+        self.flying_complete.set(True).wait()
         # Record end time of flight
         self.endtime = time.time()
 
@@ -315,7 +314,7 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         # Initalize the PSO
         self.enable_pso()
         # Move motor to the scan start point
-        self.move(self.pso_arm.get()).wait()
+        self.move(self.pso_arm.get(), wait=True)
         # Arm the PSO
         self.arm_pso()
         # Move the motor to the taxi position
@@ -324,6 +323,11 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         self.move(taxi_start, wait=True)
         # Set the speed on the motor
         self.velocity.set(self.slew_speed.get()).wait()
+        # Count-down timer
+        for i in range(10, 0, -1):
+            print(f"{i}...", end="", flush=True)
+            time.sleep(1)
+        print("Go!")
         self.ready_to_fly.set(True)
 
     def stage(self, *args, **kwargs):
@@ -440,8 +444,9 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         overall_sense = direction * self.encoder_direction
         # Calculate the step size in encoder steps
         encoder_step_size = int(step_size / encoder_resolution)
-        # Pso start/end should be located to where req. start/end are in between steps
-        # Also doubles as the location where slew speed must be met
+        # PSO start/end should be located to where req. start/end are
+        # in between steps. Also doubles as the location where slew
+        # speed must be met.
         pso_start = start_position - (direction * (step_size / 2))
         pso_end = end_position + (direction * (step_size / 2))
         # Determine taxi distance to accelerate to req speed, v^2/(2*a) = d
@@ -492,6 +497,7 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
                 self.taxi_end.set(taxi_end),
                 self.encoder_window_start.set(encoder_window_start),
                 self.encoder_window_end.set(encoder_window_end),
+                self.encoder_use_window.set(encoder_use_window),
             ]
         ]
         self.encoder_pso_positions = encoder_pso_positions

@@ -4,6 +4,7 @@ from typing import Sequence, Generator, Dict
 import logging
 import asyncio
 from collections import OrderedDict
+import time
 
 import epics
 from ophyd import (
@@ -356,6 +357,7 @@ class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
 
         # Start acquiring data
         self.erase_start.set(1).wait()
+        time.sleep(2)
         # Wait for the "Acquiring" to start
         status = SubscriptionStatus(self.acquiring, check_acquiring)
         # Watch for new data being collected so we can save timestamps
@@ -365,6 +367,7 @@ class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
 
     def complete(self) -> status.StatusBase:
         status = self.stop_all.set(1)
+        time.sleep(1)
         return status
 
     def collect(self) -> Generator[Dict, None, None]:
