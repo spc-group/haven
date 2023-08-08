@@ -86,6 +86,7 @@ def test_aerotech_fly_params_forward(sim_aerotech_flyer):
     assert flyer.encoder_step_size.get(use_monitor=False) == 100
     assert flyer.encoder_window_start.get(use_monitor=False) == -5
     assert flyer.encoder_window_end.get(use_monitor=False) == 10005
+    assert flyer.pso_arm.get(use_monitor=False) == 9.9
     i = 10.05
     pixel = []
     while i <= 19.98:
@@ -114,6 +115,7 @@ def test_aerotech_fly_params_reverse(sim_aerotech_flyer):
     assert flyer.encoder_step_size.get(use_monitor=False) == 100
     assert flyer.encoder_window_start.get(use_monitor=False) == 5
     assert flyer.encoder_window_end.get(use_monitor=False) == -10005
+    assert flyer.pso_arm.get(use_monitor=False) == 20.1
 
 
 def test_aerotech_fly_params_no_window(sim_aerotech_flyer):
@@ -374,6 +376,7 @@ def test_fly_motor_positions(sim_aerotech_flyer):
     flyer.pso_start.set(9.5).wait()
     flyer.taxi_end.set(105).wait()
     flyer.encoder_use_window.set(True).wait()
+    flyer.pso_arm.set(9.0).wait()
     # Mock the motor position so that it returns a status we control
     motor_status = StatusBase()
     motor_status.set_finished()
@@ -385,8 +388,8 @@ def test_fly_motor_positions(sim_aerotech_flyer):
     assert mover.called
     positions = [c.args[0] for c in mover.call_args_list]
     assert len(positions) == 3
-    pso_start, taxi, end = positions
-    assert pso_start == 9.5
+    pso_arm, taxi, end = positions
+    assert pso_arm == 9.0
     assert taxi == 5
     assert end == 105
 

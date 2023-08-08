@@ -2,6 +2,7 @@ import threading
 import time
 import logging
 import asyncio
+import math
 from typing import Generator, Dict
 from datetime import datetime, timedelta
 from collections import OrderedDict
@@ -171,6 +172,7 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
     taxi_end = Cpt(Signal, kind=Kind.config)
     pso_start = Cpt(Signal, kind=Kind.config)
     pso_end = Cpt(Signal, kind=Kind.config)
+    pso_arm = Cpt(Signal, kind=Kind.config)
     encoder_step_size = Cpt(Signal, kind=Kind.config)
     encoder_window_start = Cpt(Signal, kind=Kind.config)
     encoder_window_end = Cpt(Signal, kind=Kind.config)
@@ -259,7 +261,6 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
             Must have the keys {'time', 'timestamps', 'data'}.
 
         """
-        time.sleep(5)
         # np array of pixel location
         pixels = self.pixel_positions
         # time of scans start taken at Kickoff
@@ -314,7 +315,7 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         # Initalize the PSO
         self.enable_pso()
         # Move motor to the scan start point
-        self.move(self.pso_start.get()).wait()
+        self.move(self.pso_arm.get()).wait()
         # Arm the PSO
         self.arm_pso()
         # Move the motor to the taxi position
@@ -450,6 +451,14 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         taxi_dist = slew_speed**2 / (2 * motor_accel) * 1.5
         taxi_start = pso_start - (direction * taxi_dist)
         taxi_end = pso_end + (direction * taxi_dist)
+        # Arm the PSO at the first PSO position before the taxi position
+        encoder_taxi_start = (taxi_start - pso_start) / encoder_resolution
+        if overall_sense > 0:
+            rounder = math.floor
+        else:
+            rounder = math.ceil
+        encoder_pso_arm = rounder(encoder_taxi_start / encoder_step_size) * encoder_step_size
+        pso_arm = pso_start + encoder_pso_arm * encoder_resolution
         # Calculate encoder counts within the requested window of the scan
         encoder_window_start = int(-direction * window_buffer)
         encoder_distance = abs(pso_start - pso_end) / encoder_resolution
@@ -477,6 +486,7 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
                 self.encoder_step_size.set(encoder_step_size),
                 self.pso_start.set(pso_start),
                 self.pso_end.set(pso_end),
+                self.pso_arm.set(pso_arm),
                 self.slew_speed.set(slew_speed),
                 self.taxi_start.set(taxi_start),
                 self.taxi_end.set(taxi_end),
