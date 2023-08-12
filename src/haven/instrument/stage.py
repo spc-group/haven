@@ -468,7 +468,7 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         encoder_taxi_start = rounder(encoder_taxi_start / encoder_step_size) * encoder_step_size
         taxi_start = pso_start + encoder_taxi_start * encoder_resolution
         # Calculate encoder counts within the requested window of the scan
-        encoder_window_start = round(pso_start / encoder_resolution)
+        encoder_window_start = 0 # round(pso_start / encoder_resolution)
         encoder_distance = (pso_end - pso_start) / encoder_resolution
         encoder_window_end = round(encoder_window_start + encoder_distance)
         # Widen the bound a little to make sure we capture the pulse

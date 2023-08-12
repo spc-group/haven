@@ -81,12 +81,11 @@ def test_aerotech_fly_params_forward(sim_aerotech_flyer):
     assert flyer.pso_start.get(use_monitor=False) == 10.0
     assert flyer.pso_end.get(use_monitor=False) == 20.0
     assert flyer.slew_speed.get(use_monitor=False) == 0.1  # µm/sec
-    assert flyer.taxi_start.get(use_monitor=False) == 9.9625  # µm
+    assert flyer.taxi_start.get(use_monitor=False) == 9.9  # µm
     assert flyer.taxi_end.get(use_monitor=False) == 20.0375  # µm
     assert flyer.encoder_step_size.get(use_monitor=False) == 100
-    assert flyer.encoder_window_start.get(use_monitor=False) == 95
-    assert flyer.encoder_window_end.get(use_monitor=False) == 10105
-    assert flyer.pso_zero.get(use_monitor=False) == 9.9
+    assert flyer.encoder_window_start.get(use_monitor=False) == -5
+    assert flyer.encoder_window_end.get(use_monitor=False) == 10005
     i = 10.05
     pixel = []
     while i <= 19.98:
@@ -110,12 +109,11 @@ def test_aerotech_fly_params_reverse(sim_aerotech_flyer):
     assert flyer.pso_start.get(use_monitor=False) == 20.0
     assert flyer.pso_end.get(use_monitor=False) == 10.0
     assert flyer.slew_speed.get(use_monitor=False) == 0.1  # µm/sec
-    assert flyer.taxi_start.get(use_monitor=False) == 20.0375  # µm
+    assert flyer.taxi_start.get(use_monitor=False) == 20.1  # µm
     assert flyer.taxi_end.get(use_monitor=False) == 9.9625  # µm
     assert flyer.encoder_step_size.get(use_monitor=False) == 100
-    assert flyer.encoder_window_start.get(use_monitor=False) == -95
-    assert flyer.encoder_window_end.get(use_monitor=False) == -10105
-    assert flyer.pso_zero.get(use_monitor=False) == 20.1
+    assert flyer.encoder_window_start.get(use_monitor=False) == 5
+    assert flyer.encoder_window_end.get(use_monitor=False) == -10005
 
 
 def test_aerotech_fly_params_no_window(sim_aerotech_flyer):
@@ -133,11 +131,11 @@ def test_aerotech_fly_params_no_window(sim_aerotech_flyer):
     # Check that the fly-scan parameters were calculated correctly
     assert flyer.pso_start.get(use_monitor=False) == -0.05
     assert flyer.pso_end.get(use_monitor=False) == 9000.05
-    assert flyer.taxi_start.get(use_monitor=False) == pytest.approx(-0.0875)  # µm
+    assert flyer.taxi_start.get(use_monitor=False) == pytest.approx(-0.15)  # µm
     assert flyer.taxi_end.get(use_monitor=False) == 9000.0875  # µm
     assert flyer.encoder_step_size.get(use_monitor=False) == 100
-    assert flyer.encoder_window_start.get(use_monitor=False) == 95
-    assert flyer.encoder_window_end.get(use_monitor=False) == 9000205
+    assert flyer.encoder_window_start.get(use_monitor=False) == -5
+    assert flyer.encoder_window_end.get(use_monitor=False) == 9000105
     assert flyer.encoder_use_window.get(use_monitor=False) is False
 
 
@@ -376,7 +374,6 @@ def test_fly_motor_positions(sim_aerotech_flyer):
     flyer.pso_start.set(9.5).wait()
     flyer.taxi_end.set(105).wait()
     flyer.encoder_use_window.set(True).wait()
-    flyer.pso_zero.set(9.0).wait()
     # Mock the motor position so that it returns a status we control
     motor_status = StatusBase()
     motor_status.set_finished()
@@ -389,7 +386,7 @@ def test_fly_motor_positions(sim_aerotech_flyer):
     positions = [c.args[0] for c in mover.call_args_list]
     assert len(positions) == 3
     pso_arm, taxi, end = positions
-    assert pso_arm == 9.0
+    assert pso_arm == 9.5
     assert taxi == 5
     assert end == 105
 
