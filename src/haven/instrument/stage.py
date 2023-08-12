@@ -172,7 +172,6 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
     taxi_end = Cpt(Signal, kind=Kind.config)
     pso_start = Cpt(Signal, kind=Kind.config)
     pso_end = Cpt(Signal, kind=Kind.config)
-    pso_zero = Cpt(Signal, kind=Kind.config)
     encoder_step_size = Cpt(Signal, kind=Kind.config)
     encoder_window_start = Cpt(Signal, kind=Kind.config)
     encoder_window_end = Cpt(Signal, kind=Kind.config)
@@ -311,11 +310,13 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         self.endtime = time.time()
 
     def taxi(self):
+        # import pdb; pdb.set_trace()
+        self.disable_pso()
         # Initalize the PSO
-        self.enable_pso()
         # Move motor to the scan start point
-        self.move(self.pso_zero.get(), wait=True)
+        self.move(self.pso_start.get(), wait=True)
         # Arm the PSO
+        self.enable_pso()
         self.arm_pso()
         # Move the motor to the taxi position
         taxi_start = self.taxi_start.get()
@@ -324,10 +325,10 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         # Set the speed on the motor
         self.velocity.set(self.slew_speed.get()).wait()
         # Count-down timer
-        for i in range(10, 0, -1):
-            print(f"{i}...", end="", flush=True)
-            time.sleep(1)
-        print("Go!")
+        # for i in range(10, 0, -1):
+        #     print(f"{i}...", end="", flush=True)
+        #     time.sleep(1)
+        # print("Go!")
         self.ready_to_fly.set(True)
 
     def stage(self, *args, **kwargs):
@@ -458,16 +459,16 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         taxi_dist = slew_speed**2 / (2 * motor_accel) * 1.5
         taxi_start = pso_start - (direction * taxi_dist)
         taxi_end = pso_end + (direction * taxi_dist)
-        # Arm the PSO at the first PSO position before the taxi position
+        # Actually taxi to the first PSO position before the taxi position
         encoder_taxi_start = (taxi_start - pso_start) / encoder_resolution
         if overall_sense > 0:
             rounder = math.floor
         else:
             rounder = math.ceil
-        encoder_pso_zero = rounder(encoder_taxi_start / encoder_step_size) * encoder_step_size
-        pso_zero = pso_start + encoder_pso_zero * encoder_resolution
+        encoder_taxi_start = rounder(encoder_taxi_start / encoder_step_size) * encoder_step_size
+        taxi_start = pso_start + encoder_taxi_start * encoder_resolution
         # Calculate encoder counts within the requested window of the scan
-        encoder_window_start = round((pso_start - pso_zero) / encoder_resolution)
+        encoder_window_start = round(pso_start / encoder_resolution)
         encoder_distance = (pso_end - pso_start) / encoder_resolution
         encoder_window_end = round(encoder_window_start + encoder_distance)
         # Widen the bound a little to make sure we capture the pulse
@@ -482,7 +483,7 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         encoder_use_window = all([is_valid_window(v) for v in window_range])
         # Create np array of PSO positions in encoder counts
         _pso_step = (encoder_step_size * overall_sense)
-        _pso_end = (encoder_distance * overall_sense) + 0.5 * _pso_step 
+        _pso_end = encoder_distance + 0.5 * _pso_step
         encoder_pso_positions = np.arange(0, _pso_end, _pso_step)
         # Transform from PSO positions from encoder counts to engineering units
         pso_positions = (encoder_pso_positions * encoder_resolution) + pso_start
@@ -495,7 +496,6 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
                 self.encoder_step_size.set(encoder_step_size),
                 self.pso_start.set(pso_start),
                 self.pso_end.set(pso_end),
-                self.pso_zero.set(pso_zero),
                 self.slew_speed.set(slew_speed),
                 self.taxi_start.set(taxi_start),
                 self.taxi_end.set(taxi_end),

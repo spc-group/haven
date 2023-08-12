@@ -218,7 +218,7 @@ class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
         EpicsSignal, "{scaler_prefix}:EraseAll", kind=Kind.omitted
     )
     erase_start: OphydObject = FCpt(
-        EpicsSignal, "{scaler_prefix}:EraseStart", kind=Kind.omitted
+        EpicsSignal, "{scaler_prefix}:EraseStart", kind=Kind.omitted,
     )
     acquiring: OphydObject = FCpt(
         EpicsSignal, "{scaler_prefix}:Acquiring", kind=Kind.omitted
@@ -356,8 +356,7 @@ class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
             return bool(value)
 
         # Start acquiring data
-        self.erase_start.set(1).wait()
-        time.sleep(2)
+        self.erase_start.set(1, settle_time=0.05).wait()
         # Wait for the "Acquiring" to start
         status = SubscriptionStatus(self.acquiring, check_acquiring)
         # Watch for new data being collected so we can save timestamps
@@ -366,8 +365,7 @@ class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
         return status
 
     def complete(self) -> status.StatusBase:
-        status = self.stop_all.set(1)
-        time.sleep(1)
+        status = self.stop_all.set(1, settle_time=0.05)
         return status
 
     def collect(self) -> Generator[Dict, None, None]:
