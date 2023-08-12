@@ -572,9 +572,13 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
             # Calculate window function parameters. Must be in encoder
             # counts, and is referenced from the stage location where
             # we arm the PSO
+            window_range = (
+                self.encoder_window_start.get(),
+                self.encoder_window_end.get()
+            )
             self.send_command(
                 f"PSOWINDOW {self.axis} {num_axis} RANGE "
-                f"{self.encoder_window_start.get()},{self.encoder_window_end.get()}"
+                f"{min(window_range)},{max(window_range)}"
             )
 
     def arm_pso(self):

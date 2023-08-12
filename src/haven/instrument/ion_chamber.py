@@ -168,6 +168,7 @@ class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
     stream_name: str = "primary"
     ch_num: int = 0
     ch_char: str
+    start_timestamp: float = None
     count: OphydObject = FCpt(
         EpicsSignal, "{scaler_prefix}:scaler1.CNT", trigger_value=1, kind=Kind.omitted
     )
@@ -243,6 +244,9 @@ class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
     )
     channel_one_source: OphydObject = FCpt(
         EpicsSignal, "{scaler_prefix}:Channel1Source", kind=Kind.config
+    )
+    count_on_start: OphydObject = FCpt(
+        EpicsSignal, "{scaler_prefix}:CountOnStart", kind=Kind.config
     )
     mca: OphydObject = FCpt(
         EpicsMCARecord, "{scaler_prefix}:mca{ch_num}", kind=Kind.omitted
@@ -353,10 +357,16 @@ class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
 
     def kickoff(self) -> status.StatusBase:
         def check_acquiring(*, old_value, value, **kwargs):
-            return bool(value)
+            is_acquiring = bool(value)
+            if is_acquiring:
+                self.start_timestamp = time.time()
+            return is_acquiring
 
+        self.start_timestamp = None
+        # Set some configuration PVs on the MCS
+        self.count_on_start.set(1).wait()
         # Start acquiring data
-        self.erase_start.set(1, settle_time=0.05).wait()
+        self.erase_start.set(1).wait()
         # Wait for the "Acquiring" to start
         status = SubscriptionStatus(self.acquiring, check_acquiring)
         # Watch for new data being collected so we can save timestamps
@@ -370,13 +380,15 @@ class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
 
     def collect(self) -> Generator[Dict, None, None]:
         net_counts_name = self.net_counts.name
+        # Use the scaler's clock counter to calculate timestamps
+        times = self.mca_times.spectrum.get()
+        times = np.divide(times, self.clock.get(), casting="safe")
+        pso_timestamps = times + self.start_timestamp
         # Retrieve data, except for first point (during taxiing)
-        data = self.mca.spectrum.get()
+        data = self.mca.spectrum.get()[1:]
         # Convert timestamps from PSO pulses to pixels
-        pso_timestamps = np.asarray(self.timestamps)
         pixel_timestamps = (pso_timestamps[1:] + pso_timestamps[:-1]) / 2
         # Create data events
-        print(len(pso_timestamps), len(data))
         for ts, value in zip(pixel_timestamps, data):
             yield {
                 "data": {net_counts_name: [value]},
