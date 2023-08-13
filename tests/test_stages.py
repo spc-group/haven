@@ -11,21 +11,6 @@ from haven import registry, exceptions
 from haven.instrument import stage
 
 
-@pytest.fixture()
-def sim_aerotech_flyer():
-    Flyer = make_fake_device(
-        stage.AerotechFlyer,
-    )
-    flyer = Flyer(
-        name="flyer",
-        axis="@0",
-        encoder=6,
-    )
-    flyer.user_setpoint._limits = (0, 1000)
-    flyer.send_command = mock.MagicMock()
-    yield flyer
-
-
 def test_stage_init():
     stage_ = stage.XYStage(
         "motor_ioc", pv_vert=":m1", pv_horiz=":m2", labels={"stages"}, name="aerotech"

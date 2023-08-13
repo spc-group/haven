@@ -25,6 +25,7 @@ test_dir = top_dir / "tests"
 import haven
 from haven.simulated_ioc import simulated_ioc
 from haven import registry, load_config
+from haven.instrument.stage import AerotechFlyer
 from haven.instrument.aps import ApsMachine
 from haven.instrument.shutter import Shutter
 from haven.instrument.camera import AravisDetector
@@ -389,6 +390,21 @@ def sim_ion_chamber(sim_registry):
     )
     sim_registry.register(ion_chamber)
     return ion_chamber
+
+
+@pytest.fixture()
+def sim_aerotech_flyer():
+    Flyer = make_fake_device(
+        AerotechFlyer,
+    )
+    flyer = Flyer(
+        name="flyer",
+        axis="@0",
+        encoder=6,
+    )
+    flyer.user_setpoint._limits = (0, 1000)
+    flyer.send_command = mock.MagicMock()
+    yield flyer
 
 
 @pytest.fixture()
