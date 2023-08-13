@@ -30,12 +30,10 @@ def fly_scan(detectors, flyer, start, stop, num, dwell_time, md=None):
     uid = yield from bps.open_run(md)
     # Set fly-scan parameters on the motor
     step_size = abs(start - stop) / (num - 1)
-    yield from bps.mv(
-        flyer.start_position, start,
-        flyer.end_position, stop,
-        flyer.step_size, step_size,
-        flyer.dwell_time, dwell_time
-    )
+    yield from bps.mv(flyer.start_position, start)
+    yield from bps.mv(flyer.end_position, stop)
+    yield from bps.mv(flyer.step_size, step_size)
+    yield from bps.mv(flyer.dwell_time, dwell_time)
     # Perform the fly scan
     flyers = [flyer, *detectors]
     for flyer in flyers:
