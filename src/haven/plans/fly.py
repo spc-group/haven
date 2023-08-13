@@ -1,5 +1,6 @@
 from collections import OrderedDict
 
+import numpy as np
 from bluesky import plan_stubs as bps
 from ophyd import Device
 from ophyd.flyers import FlyerInterface
@@ -60,9 +61,33 @@ class FlyerCollector(FlyerInterface):
         self.flyers = flyers
         self.stream_name = stream_name
 
+    def kickoff(self):
+        pass
+
+    def complete(self):
+        pass
+
     def collect(self):
-        for flyer in self.flyers:
-            yield from flyer.collect()
+        collections = [iter(flyer.collect()) for flyer in self.flyers]
+        while True:
+            event = {
+                "data": {},
+                "timestamps": {},
+            }
+            try:
+                for coll in collections:
+                    datum = next(coll)
+                    event["data"].update(datum["data"])
+                    event["timestamps"].update(datum["timestamps"])
+            except StopIteration:
+                break
+            # Use the median time stamps for the overall event time
+            timestamps = []
+            for ts in event['timestamps'].values():
+                timestamps.extend(np.asarray(ts).flatten())
+            print(timestamps)
+            event['time'] = np.median(timestamps)
+            yield event
 
     def describe_collect(self):
         desc = OrderedDict()

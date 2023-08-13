@@ -13,15 +13,19 @@ def test_set_fly_params(sim_aerotech_flyer):
     )
     messages = list(plan)
     open_msg = messages[0]
-    param_msgs = messages[1:5]
-    fly_msgs = messages[5:-1]
+    param_msgs = messages[1:9]
+    fly_msgs = messages[9:-1]
     close_msg = messages[:-1]
+    print([m.command for m in messages])
     assert param_msgs[0].command == "set"
-    assert param_msgs[1].command == "set"
+    assert param_msgs[1].command == "wait"
     assert param_msgs[2].command == "set"
-    assert param_msgs[3].command == "set"
+    assert param_msgs[3].command == "wait"
+    assert param_msgs[4].command == "set"
+    assert param_msgs[5].command == "wait"
+    assert param_msgs[6].command == "set"
     # Make sure the step size is calculated properly
-    new_step_size = param_msgs[2].args[0]
+    new_step_size = param_msgs[4].args[0]
     assert new_step_size == 10
 
 
@@ -130,8 +134,33 @@ def test_collector_collect():
     flyers = [aerotech, I0]
     collector = FlyerCollector(flyers, stream_name="primary")
     events = list(collector.collect())
-    assert len(events) == 4
-    assert events[0] == aerotech.collect()[0]
-    assert events[1] == aerotech.collect()[1]
-    assert events[2] == I0.collect()[0]
-    assert events[3] == I0.collect()[1]
+    expected_events = [
+        {
+            "data": {
+                "I0_net_counts": [0],
+                "aerotech_horiz": -1000.0,
+                "aerotech_horiz_user_setpoint": -1000.0,
+            },
+            "timestamps": {
+                "I0_net_counts": [1691957269.1575842],
+                "aerotech_horiz": 1691957265.6073308,
+                "aerotech_horiz_user_setpoint": 1691957265.6073308,
+            },
+            "time": 1691957265.6073308,
+        },
+        {
+            "data": {
+                "I0_net_counts": [0],
+                "aerotech_horiz": -800.0,
+                "aerotech_horiz_user_setpoint": -800.0,
+            },
+            "timestamps": {
+                "I0_net_counts": [1691957269.0734286],
+                "aerotech_horiz": 1691957266.1137164,
+                "aerotech_horiz_user_setpoint": 1691957266.1137164,
+            },
+            "time": 1691957266.1137164,
+        },
+    ]
+    assert len(events) == 2
+    assert events == expected_events
