@@ -465,15 +465,17 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
             rounder = math.floor
         else:
             rounder = math.ceil
-        encoder_taxi_start = rounder(encoder_taxi_start / encoder_step_size) * encoder_step_size
+        encoder_taxi_start = (
+            rounder(encoder_taxi_start / encoder_step_size) * encoder_step_size
+        )
         taxi_start = pso_start + encoder_taxi_start * encoder_resolution
         # Calculate encoder counts within the requested window of the scan
-        encoder_window_start = 0 # round(pso_start / encoder_resolution)
+        encoder_window_start = 0  # round(pso_start / encoder_resolution)
         encoder_distance = (pso_end - pso_start) / encoder_resolution
         encoder_window_end = round(encoder_window_start + encoder_distance)
         # Widen the bound a little to make sure we capture the pulse
-        encoder_window_start -= (overall_sense * window_buffer)
-        encoder_window_end += (overall_sense * window_buffer)
+        encoder_window_start -= overall_sense * window_buffer
+        encoder_window_end += overall_sense * window_buffer
 
         # Check for values outside of the window range for this controller
         def is_valid_window(value):
@@ -482,7 +484,7 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         window_range = [encoder_window_start, encoder_window_end]
         encoder_use_window = all([is_valid_window(v) for v in window_range])
         # Create np array of PSO positions in encoder counts
-        _pso_step = (encoder_step_size * overall_sense)
+        _pso_step = encoder_step_size * overall_sense
         _pso_end = encoder_distance + 0.5 * _pso_step
         encoder_pso_positions = np.arange(0, _pso_end, _pso_step)
         # Transform from PSO positions from encoder counts to engineering units
@@ -574,7 +576,7 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
             # we arm the PSO
             window_range = (
                 self.encoder_window_start.get(),
-                self.encoder_window_end.get()
+                self.encoder_window_end.get(),
             )
             self.send_command(
                 f"PSOWINDOW {self.axis} {num_axis} RANGE "

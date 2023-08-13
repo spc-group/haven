@@ -149,7 +149,6 @@ def test_aerotech_predicted_positions(sim_aerotech_flyer):
     np.testing.assert_allclose(flyer.pso_positions, pso_positions)
     np.testing.assert_allclose(flyer.pixel_positions, pixel_positions)
 
-    
 
 def test_enable_pso(sim_aerotech_flyer):
     flyer = sim_aerotech_flyer

@@ -219,7 +219,9 @@ class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
         EpicsSignal, "{scaler_prefix}:EraseAll", kind=Kind.omitted
     )
     erase_start: OphydObject = FCpt(
-        EpicsSignal, "{scaler_prefix}:EraseStart", kind=Kind.omitted,
+        EpicsSignal,
+        "{scaler_prefix}:EraseStart",
+        kind=Kind.omitted,
     )
     acquiring: OphydObject = FCpt(
         EpicsSignal, "{scaler_prefix}:Acquiring", kind=Kind.omitted

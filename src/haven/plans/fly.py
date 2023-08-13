@@ -1,8 +1,13 @@
+from collections import OrderedDict
+
 from bluesky import plan_stubs as bps
+from ophyd import Device
+from ophyd.flyers import FlyerInterface
+
 
 def fly_scan(detectors, flyer, start, stop, num, dwell_time, md=None):
     """Do a fly scan with a 'flyer' motor and some 'flyer' detectors.
-    
+
     Parameters
     ----------
     detectors : list
@@ -19,7 +24,7 @@ def fly_scan(detectors, flyer, start, stop, num, dwell_time, md=None):
       How long should the flyer take to traverse each measurement, in
       seconds.
     md : dict, optional
-      metadata    
+      metadata
 
     Yields
     ------
@@ -40,7 +45,28 @@ def fly_scan(detectors, flyer, start, stop, num, dwell_time, md=None):
         yield from bps.kickoff(flyer, wait=True)
     for flyer in flyers:
         yield from bps.complete(flyer, wait=True)
-    for flyer in flyers:
-        yield from bps.collect(flyer)
+    # Collect the data after flying
+    collector = FlyerCollector(flyers=flyers)
+    yield from bps.collect(collector)
     yield from bps.close_run()
     return uid
+
+
+class FlyerCollector(FlyerInterface):
+    stream_name: str
+    flyers: list
+
+    def __init__(self, flyers, stream_name: str = "primary"):
+        self.flyers = flyers
+        self.stream_name = stream_name
+
+    def collect(self):
+        for flyer in self.flyers:
+            yield from flyer.collect()
+
+    def describe_collect(self):
+        desc = OrderedDict()
+        for flyer in self.flyers:
+            for stream, this_desc in flyer.describe_collect().items():
+                desc.update(this_desc)
+        return {self.stream_name: desc}
