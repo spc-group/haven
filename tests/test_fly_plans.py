@@ -1,7 +1,10 @@
 from unittest.mock import MagicMock
 from collections import OrderedDict
 
-from haven.plans.fly import fly_scan, FlyerCollector
+from ophyd import sim
+import numpy as np
+
+from haven.plans.fly import fly_scan, grid_fly_scan, FlyerCollector
 
 
 def test_set_fly_params(sim_aerotech_flyer):
@@ -13,7 +16,7 @@ def test_set_fly_params(sim_aerotech_flyer):
     )
     messages = list(plan)
     open_msg = messages[0]
-    param_msgs = messages[1:9]
+    param_msgs = messages[1:7]
     fly_msgs = messages[9:-1]
     close_msg = messages[:-1]
     print([m.command for m in messages])
@@ -22,8 +25,6 @@ def test_set_fly_params(sim_aerotech_flyer):
     assert param_msgs[2].command == "set"
     assert param_msgs[3].command == "wait"
     assert param_msgs[4].command == "set"
-    assert param_msgs[5].command == "wait"
-    assert param_msgs[6].command == "set"
     # Make sure the step size is calculated properly
     new_step_size = param_msgs[4].args[0]
     assert new_step_size == 10
@@ -164,3 +165,40 @@ def test_collector_collect():
     ]
     assert len(events) == 2
     assert events == expected_events
+
+
+def test_fly_grid_scan(sim_aerotech_flyer):
+    flyer = sim_aerotech_flyer
+    stepper = sim.motor
+    # step size == 10
+    plan = grid_fly_scan([], stepper, -100, 100, 11, flyer, -20, 30, 6, snake_axes=[flyer])
+    messages = list(plan)
+    # from pprint import pprint
+    for msg in messages:
+        print(f"{msg.command:<10}\t{getattr(msg.obj, 'name', 'None'):<20}\t{msg.args}")
+    assert messages[0].command == "stage"
+    assert messages[1].command == "open_run"
+    # Check that we move the stepper first
+    assert messages[2].command == "checkpoint"
+    assert messages[3].command == "set"
+    assert messages[3].args == (-100,)
+    assert messages[4].command == "wait"
+    # Check that flyer motor positions snake back and forth
+    stepper_positions = [
+        msg.args[0]
+        for msg in messages
+        if (msg.command == "set" and msg.obj.name == "motor")
+    ]
+    flyer_start_positions = [
+        msg.args[0]
+        for msg in messages
+        if (msg.command == "set" and msg.obj.name == "flyer_start_position")
+    ]
+    flyer_end_positions = [
+        msg.args[0]
+        for msg in messages
+        if (msg.command == "set" and msg.obj.name == "flyer_end_position")
+    ]    
+    assert stepper_positions == list(np.linspace(-100, 100, num=11))
+    assert flyer_start_positions == [-20, 30, -20, 30, -20, 30, -20, 30, -20, 30, -20]
+    assert flyer_end_positions == [30, -20, 30, -20, 30, -20, 30, -20, 30, -20, 30]
