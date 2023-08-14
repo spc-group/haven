@@ -17,7 +17,7 @@ from .plans.set_energy import set_energy  # noqa: F401
 from .plans.align_motor import align_motor, align_pitch2  # noqa: F401
 from .plans.shutters import open_shutters, close_shutters  # noqa: F401
 from .plans.record_dark_current import record_dark_current  # noqa: F401
-from .plans.fly import fly_scan  # noqa: F401
+from .plans.fly import fly_scan, grid_fly_scan  # noqa: F401
 from .run_engine import run_engine  # noqa: F401
 from ._iconfig import load_config  # noqa: F401
 from .preprocessors import (

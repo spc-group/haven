@@ -22,12 +22,12 @@ def fly_line_scan(detectors, flyer, start, stop, num):
     for flyer in flyers:
         yield from bps.complete(flyer, wait=True)
     # Collect the data after flying
-    collector = FlyerCollector(flyers=flyers)
+    collector = FlyerCollector(flyers=flyers, name="flyer_collector")
     yield from bps.collect(collector)
 
 
 def fly_scan(
-    detectors, flyer, start: float, stop: float, num: int, dwell_time, md: dict = None
+    detectors, flyer, start: float, stop: float, num: int, md: dict = None
 ):
     """Do a fly scan with a 'flyer' motor and some 'flyer' detectors.
 
@@ -43,9 +43,6 @@ def fly_scan(
       The center of the last measurement in *flyer*.
     num
       Number of measurements to take.
-    dwell_time
-      How long should the flyer take to traverse each measurement, in
-      seconds.
     md : dict, optional
       metadata
 
@@ -152,7 +149,7 @@ class Snaker:
         )
 
 
-class FlyerCollector(FlyerInterface):
+class FlyerCollector(FlyerInterface, Device):
     stream_name: str
     flyers: list
 
@@ -191,7 +188,6 @@ class FlyerCollector(FlyerInterface):
             timestamps = []
             for ts in event["timestamps"].values():
                 timestamps.extend(np.asarray(ts).flatten())
-            print(timestamps)
             event["time"] = np.median(timestamps)
             yield event
 

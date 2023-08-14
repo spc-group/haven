@@ -26,7 +26,7 @@ import numpy as np
 from .instrument_registry import registry
 from .._iconfig import load_config
 from ..exceptions import InvalidScanParameters
-from .device import await_for_connection, aload_devices
+from .device import await_for_connection, aload_devices, make_device
 
 
 log = logging.getLogger(__name__)
@@ -587,7 +587,7 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         self.send_command(f"PSOCONTROL {self.axis} ARM")
 
 
-class AerotechFlyStage(XYStage):
+class AerotechStage(XYStage):
     """An XY stage for an Aerotech stage with fly-scanning capabilities.
 
     Parameters
@@ -616,24 +616,6 @@ class AerotechFlyStage(XYStage):
     asyn = Cpt(AerotechAsyn, ":asynEns", name="async", labels={"asyns"})
 
 
-async def make_stage_device(
-    name: str,
-    prefix: str,
-    pv_vert: str,
-    pv_horiz: str,
-):
-    stage = XYStage(prefix, name=name, pv_vert=pv_vert, pv_horiz=pv_horiz)
-    try:
-        await await_for_connection(stage)
-    except TimeoutError as exc:
-        msg = f"Could not connect to stage: {name} ({prefix})"
-        log.warning(msg)
-    else:
-        log.info(f"Created stage: {name} ({prefix})")
-        registry.register(stage)
-        return stage
-
-
 def load_stage_coros(config=None):
     """Provide co-routines for loading the stages defined in the
     configuration files.
@@ -642,12 +624,21 @@ def load_stage_coros(config=None):
     if config is None:
         config = load_config()
     for name, stage_data in config.get("stage", {}).items():
-        yield make_stage_device(
+        yield make_device(
+            XYStage,
             name=name,
             prefix=stage_data["prefix"],
             pv_vert=stage_data["pv_vert"],
             pv_horiz=stage_data["pv_horiz"],
         )
+    for name, stage_data in config.get("aerotech_stage", {}).items():
+        yield make_device(
+            AerotechStage,
+            name=name,
+            prefix=stage_data["prefix"],
+            pv_vert=stage_data["pv_vert"],
+            pv_horiz=stage_data["pv_horiz"],
+        )        
 
 
 def load_stages(config=None):
