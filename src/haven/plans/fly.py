@@ -4,6 +4,7 @@ import numpy as np
 from bluesky import plan_stubs as bps
 from ophyd import Device
 from ophyd.flyers import FlyerInterface
+from ophyd.status import StatusBase
 
 
 def fly_scan(detectors, flyer, start, stop, num, dwell_time, md=None):
@@ -47,19 +48,26 @@ def fly_scan(detectors, flyer, start, stop, num, dwell_time, md=None):
     for flyer in flyers:
         yield from bps.complete(flyer, wait=True)
     # Collect the data after flying
-    collector = FlyerCollector(flyers=flyers)
+    collector = FlyerCollector(flyers=flyers, name="flyer_collector")
     yield from bps.collect(collector)
     yield from bps.close_run()
     return uid
 
 
-class FlyerCollector(FlyerInterface):
+class FlyerCollector(FlyerInterface, Device):
     stream_name: str
     flyers: list
 
-    def __init__(self, flyers, stream_name: str = "primary"):
+    def __init__(self, flyers, stream_name: str = "primary", *args, **kwargs):
         self.flyers = flyers
         self.stream_name = stream_name
+        super().__init__(*args, **kwargs)
+
+    def kickoff(self):
+        return StatusBase(success=True)
+
+    def complete(self):
+        return StatusBase(success=True)
 
     def kickoff(self):
         pass
