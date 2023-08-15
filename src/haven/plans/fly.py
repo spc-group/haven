@@ -50,9 +50,17 @@ def fly_scan(detectors, flyer, start: float, stop: float, num: int, md: dict = N
         'kickoff', 'wait', 'complete, 'wait', 'collect' messages
 
     """
+    # Stage the devices
+    devices = [flyer, *detectors]
+    for device in devices:
+        yield from bps.stage(device)
+    # Execute the plan
     uid = yield from bps.open_run(md)
     yield from fly_line_scan(detectors, flyer, start, stop, num)
     yield from bps.close_run()
+    # Unstage the devices
+    for device in devices:
+        yield from bps.unstage(device)
     return uid
 
 
