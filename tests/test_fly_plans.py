@@ -11,15 +11,12 @@ def test_set_fly_params(sim_aerotech_flyer):
     """Does the plan set the parameters of the flyer motor."""
     flyer = sim_aerotech_flyer
     # step size == 10
-    plan = fly_scan(
-        detectors=[], flyer=flyer, start=-20, stop=30, num=6, dwell_time=0.15
-    )
+    plan = fly_scan(detectors=[], flyer=flyer, start=-20, stop=30, num=6)
     messages = list(plan)
     open_msg = messages[0]
     param_msgs = messages[1:7]
     fly_msgs = messages[9:-1]
     close_msg = messages[:-1]
-    print([m.command for m in messages])
     assert param_msgs[0].command == "set"
     assert param_msgs[1].command == "wait"
     assert param_msgs[2].command == "set"
@@ -31,6 +28,7 @@ def test_set_fly_params(sim_aerotech_flyer):
 
 
 def test_collector_describe():
+    # Dummy devices with data taken from actual ophyd devices
     aerotech = MagicMock()
     aerotech.describe_collect.return_value = {
         "positions": OrderedDict(
@@ -81,14 +79,41 @@ def test_collector_describe():
             ]
         )
     }
+    motor = MagicMock()
+    motor.describe.return_value = OrderedDict(
+        [
+            (
+                "motor",
+                {
+                    "source": "SIM:motor",
+                    "dtype": "integer",
+                    "shape": [],
+                    "precision": 3,
+                },
+            ),
+            (
+                "motor_setpoint",
+                {
+                    "source": "SIM:motor_setpoint",
+                    "dtype": "integer",
+                    "shape": [],
+                    "precision": 3,
+                },
+            ),
+        ]
+    )
     flyers = [aerotech, I0]
-    collector = FlyerCollector(flyers, stream_name="primary")
+    collector = FlyerCollector(
+        flyers, stream_name="primary", extra_signals=[motor], name="collector"
+    )
     desc = collector.describe_collect()
     assert "primary" in desc.keys()
     assert list(desc["primary"].keys()) == [
         "aerotech_horiz",
         "aerotech_horiz_user_setpoint",
         "I0_net_counts",
+        "motor",
+        "motor_setpoint",
     ]
     assert (
         desc["primary"]["aerotech_horiz"]
@@ -133,7 +158,17 @@ def test_collector_collect():
         },
     ]
     flyers = [aerotech, I0]
-    collector = FlyerCollector(flyers, stream_name="primary")
+    motor = MagicMock()
+    motor.read.return_value = OrderedDict(
+        [
+            ("motor", {"value": 119.983, "timestamp": 1692072398.879956}),
+            ("motor_setpoint", {"value": 120.0, "timestamp": 1692072398.8799553}),
+        ]
+    )
+
+    collector = FlyerCollector(
+        flyers, stream_name="primary", name="flyer_collector", extra_signals=[motor]
+    )
     events = list(collector.collect())
     expected_events = [
         {
@@ -141,11 +176,15 @@ def test_collector_collect():
                 "I0_net_counts": [0],
                 "aerotech_horiz": -1000.0,
                 "aerotech_horiz_user_setpoint": -1000.0,
+                "motor": 119.983,
+                "motor_setpoint": 120.0,
             },
             "timestamps": {
                 "I0_net_counts": [1691957269.1575842],
                 "aerotech_horiz": 1691957265.6073308,
                 "aerotech_horiz_user_setpoint": 1691957265.6073308,
+                "motor": 1692072398.879956,
+                "motor_setpoint": 1692072398.8799553,
             },
             "time": 1691957265.6073308,
         },
@@ -154,11 +193,15 @@ def test_collector_collect():
                 "I0_net_counts": [0],
                 "aerotech_horiz": -800.0,
                 "aerotech_horiz_user_setpoint": -800.0,
+                "motor": 119.983,
+                "motor_setpoint": 120.0,
             },
             "timestamps": {
                 "I0_net_counts": [1691957269.0734286],
                 "aerotech_horiz": 1691957266.1137164,
                 "aerotech_horiz_user_setpoint": 1691957266.1137164,
+                "motor": 1692072398.879956,
+                "motor_setpoint": 1692072398.8799553,
             },
             "time": 1691957266.1137164,
         },
@@ -171,11 +214,12 @@ def test_fly_grid_scan(sim_aerotech_flyer):
     flyer = sim_aerotech_flyer
     stepper = sim.motor
     # step size == 10
-    plan = grid_fly_scan([], stepper, -100, 100, 11, flyer, -20, 30, 6, snake_axes=[flyer])
+    plan = grid_fly_scan(
+        [], stepper, -100, 100, 11, flyer, -20, 30, 6, snake_axes=[flyer]
+    )
     messages = list(plan)
-    # from pprint import pprint
-    for msg in messages:
-        print(f"{msg.command:<10}\t{getattr(msg.obj, 'name', 'None'):<20}\t{msg.args}")
+    # for msg in messages:
+    #     print(f"{msg.command:<10}\t{getattr(msg.obj, 'name', 'None'):<20}\t{msg.args}")
     assert messages[0].command == "stage"
     assert messages[1].command == "open_run"
     # Check that we move the stepper first
@@ -198,7 +242,7 @@ def test_fly_grid_scan(sim_aerotech_flyer):
         msg.args[0]
         for msg in messages
         if (msg.command == "set" and msg.obj.name == "flyer_end_position")
-    ]    
+    ]
     assert stepper_positions == list(np.linspace(-100, 100, num=11))
     assert flyer_start_positions == [-20, 30, -20, 30, -20, 30, -20, 30, -20, 30, -20]
     assert flyer_end_positions == [30, -20, 30, -20, 30, -20, 30, -20, 30, -20, 30]

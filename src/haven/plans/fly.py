@@ -8,7 +8,7 @@ from ophyd.flyers import FlyerInterface
 from ophyd.status import StatusBase
 
 
-def fly_line_scan(detectors, flyer, start, stop, num):
+def fly_line_scan(detectors, flyer, start, stop, num, extra_signals=()):
     """A plan stub for fly-scanning a single trajectory."""
     # Calculate parameters for the fly-scan
     step_size = abs(start - stop) / (num - 1)
@@ -22,13 +22,11 @@ def fly_line_scan(detectors, flyer, start, stop, num):
     for flyer in flyers:
         yield from bps.complete(flyer, wait=True)
     # Collect the data after flying
-    collector = FlyerCollector(flyers=flyers, name="flyer_collector")
+    collector = FlyerCollector(flyers=flyers, name="flyer_collector", extra_signals=extra_signals)
     yield from bps.collect(collector)
 
 
-def fly_scan(
-    detectors, flyer, start: float, stop: float, num: int, md: dict = None
-):
+def fly_scan(detectors, flyer, start: float, stop: float, num: int, md: dict = None):
     """Do a fly scan with a 'flyer' motor and some 'flyer' detectors.
 
     Parameters
@@ -89,7 +87,9 @@ def grid_fly_scan(detectors, *args, snake_axes: bool = None, md=None):
     # Extract the step-scan vs fly-scan arguments
     *step_args, flyer, fly_start, fly_stop, fly_num = args
     # Handle giving snaked axes as a list
-    num_steppers = len(list(plan_patterns.chunk_outer_product_args(step_args)))
+    arg_chunks = list(plan_patterns.chunk_outer_product_args(step_args))
+    num_steppers = len(arg_chunks)
+    motors = [m[0] for m in arg_chunks]
     if isinstance(snake_axes, abc.Iterable) and not isinstance(snake_axes, str):
         snake_steppers = snake_axes.copy()
         try:
@@ -103,7 +103,12 @@ def grid_fly_scan(detectors, *args, snake_axes: bool = None, md=None):
         snake_flyer = snake_axes
     # Set up the plan
     per_step = Snaker(
-        snake_axes=snake_flyer, flyer=flyer, start=fly_start, stop=fly_stop, num=fly_num
+        snake_axes=snake_flyer,
+        flyer=flyer,
+        start=fly_start,
+        stop=fly_stop,
+        num=fly_num,
+        extra_signals=motors,
     )
     uid = yield from bp.grid_scan(
         detectors, *step_args, snake_axes=snake_steppers, per_step=per_step
@@ -122,14 +127,16 @@ class Snaker:
     detector, a whole fly-scan is performed."
 
     """
+
     reverse: bool = False
 
-    def __init__(self, snake_axes, flyer, start, stop, num):
+    def __init__(self, snake_axes, flyer, start, stop, num, extra_signals):
         self.snake_axes = snake_axes
         self.flyer = flyer
         self.start = start
         self.stop = stop
         self.num = num
+        self.extra_signals = extra_signals
 
     def __call__(self, detectors, step, pos_cache):
         # Move the step-scanning motors to the correct position
@@ -146,6 +153,7 @@ class Snaker:
             start=start,
             stop=stop,
             num=self.num,
+            extra_signals=step.keys(),
         )
 
 
@@ -153,9 +161,12 @@ class FlyerCollector(FlyerInterface, Device):
     stream_name: str
     flyers: list
 
-    def __init__(self, flyers, stream_name: str = "primary", *args, **kwargs):
+    def __init__(
+        self, flyers, stream_name: str = "primary", extra_signals=(), *args, **kwargs
+    ):
         self.flyers = flyers
         self.stream_name = stream_name
+        self.extra_signals = extra_signals
         super().__init__(*args, **kwargs)
 
     def kickoff(self):
@@ -163,12 +174,6 @@ class FlyerCollector(FlyerInterface, Device):
 
     def complete(self):
         return StatusBase(success=True)
-
-    def kickoff(self):
-        pass
-
-    def complete(self):
-        pass
 
     def collect(self):
         collections = [iter(flyer.collect()) for flyer in self.flyers]
@@ -189,6 +194,11 @@ class FlyerCollector(FlyerInterface, Device):
             for ts in event["timestamps"].values():
                 timestamps.extend(np.asarray(ts).flatten())
             event["time"] = np.median(timestamps)
+            # Add extra non-flying signals (not inc. in event time)
+            for signal in self.extra_signals:
+                for signal_name, reading in signal.read().items():
+                    event["data"][signal_name] = reading["value"]
+                    event["timestamps"][signal_name] = reading["timestamp"]
             yield event
 
     def describe_collect(self):
@@ -196,4 +206,7 @@ class FlyerCollector(FlyerInterface, Device):
         for flyer in self.flyers:
             for stream, this_desc in flyer.describe_collect().items():
                 desc.update(this_desc)
+        # Add extra signals, e.g. slow motor during a grid fly scan
+        for signal in self.extra_signals:
+            desc.update(signal.describe())
         return {self.stream_name: desc}

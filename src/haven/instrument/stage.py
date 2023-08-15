@@ -638,7 +638,7 @@ def load_stage_coros(config=None):
             prefix=stage_data["prefix"],
             pv_vert=stage_data["pv_vert"],
             pv_horiz=stage_data["pv_horiz"],
-        )        
+        )
 
 
 def load_stages(config=None):
