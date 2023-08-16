@@ -2,6 +2,7 @@ from unittest.mock import MagicMock
 from collections import OrderedDict
 
 from ophyd import sim
+from bluesky import plan_patterns
 import numpy as np
 
 from haven.plans.fly import fly_scan, grid_fly_scan, FlyerCollector
@@ -13,8 +14,10 @@ def test_set_fly_params(sim_aerotech_flyer):
     # step size == 10
     plan = fly_scan(detectors=[], flyer=flyer, start=-20, stop=30, num=6)
     messages = list(plan)
-    open_msg = messages[0]
-    param_msgs = messages[1:7]
+    for msg in messages:
+        print(msg.command)
+    open_msg = messages[1]
+    param_msgs = messages[2:8]
     fly_msgs = messages[9:-1]
     close_msg = messages[:-1]
     assert param_msgs[0].command == "set"
@@ -25,6 +28,33 @@ def test_set_fly_params(sim_aerotech_flyer):
     # Make sure the step size is calculated properly
     new_step_size = param_msgs[4].args[0]
     assert new_step_size == 10
+
+
+def test_fly_scan_metadata(sim_aerotech_flyer, sim_ion_chamber):
+    """Does the plan set the parameters of the flyer motor."""
+    flyer = sim_aerotech_flyer
+    md = {"spam": "eggs"}
+    plan = fly_scan(
+        detectors=[sim_ion_chamber], flyer=flyer, start=-20, stop=30, num=6, md=md
+    )
+    messages = list(plan)
+    open_msg = messages[2]
+    assert open_msg.command == "open_run"
+    real_md = open_msg.kwargs
+    expected_md = {
+        "plan_args": {
+            "detectors": list([repr(sim_ion_chamber)]),
+            "num": 6,
+            "flyer": repr(flyer),
+            "start": -20,
+            "stop": 30,
+        },
+        "plan_name": "fly_scan",
+        "motors": ["flyer"],
+        "detectors": ["I00"],
+        "spam": "eggs",
+    }
+    assert real_md == expected_md
 
 
 def test_collector_describe():
@@ -246,3 +276,58 @@ def test_fly_grid_scan(sim_aerotech_flyer):
     assert stepper_positions == list(np.linspace(-100, 100, num=11))
     assert flyer_start_positions == [-20, 30, -20, 30, -20, 30, -20, 30, -20, 30, -20]
     assert flyer_end_positions == [30, -20, 30, -20, 30, -20, 30, -20, 30, -20, 30]
+
+
+def test_fly_grid_scan_metadata(sim_aerotech_flyer, sim_ion_chamber):
+    """Does the plan set the parameters of the flyer motor."""
+    flyer = sim_aerotech_flyer
+    stepper = sim.motor
+    md = {"spam": "eggs"}
+    plan = grid_fly_scan(
+        [sim_ion_chamber],
+        stepper,
+        -100,
+        100,
+        11,
+        flyer,
+        -20,
+        30,
+        6,
+        snake_axes=[flyer],
+        md=md,
+    )
+    # Check the metadata contained in the "open_run" message
+    messages = list(plan)
+    open_msg = messages[2]
+    assert open_msg.command == "open_run"
+    real_md = open_msg.kwargs
+    expected_md = {
+        "detectors": ["I00"],
+        "motors": ("motor", "flyer"),
+        "num_points": 66,
+        "num_intervals": 65,
+        "plan_args": {
+            "detectors": [repr(sim_ion_chamber)],
+            "args": [repr(stepper), -100, 100, 11, repr(flyer), -20, 30, 6],
+        },
+        "plan_name": "grid_fly_scan",
+        "hints": {
+            "gridding": "rectilinear",
+            "dimensions": [(["motor"], "primary"), (["flyer"], "primary")],
+        },
+        "shape": (11, 6),
+        "extents": ([-100, 100], [-20, 30]),
+        "snaking": (False, True),
+        "plan_pattern": "outer_product",
+        "plan_pattern_args": {
+            "args": [
+                repr(stepper),
+                -100,
+                100,
+                11,
+            ]
+        },
+        "plan_pattern_module": "bluesky.plan_patterns",
+        "spam": "eggs",
+    }
+    assert real_md == expected_md

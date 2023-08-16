@@ -2,7 +2,7 @@ from collections import OrderedDict, abc
 from functools import partial
 
 import numpy as np
-from bluesky import plans as bp, plan_stubs as bps, plan_patterns
+from bluesky import plans as bp, plan_stubs as bps, plan_patterns, preprocessors as bpp
 from ophyd import Device
 from ophyd.flyers import FlyerInterface
 from ophyd.status import StatusBase
@@ -22,7 +22,9 @@ def fly_line_scan(detectors, flyer, start, stop, num, extra_signals=()):
     for flyer in flyers:
         yield from bps.complete(flyer, wait=True)
     # Collect the data after flying
-    collector = FlyerCollector(flyers=flyers, name="flyer_collector", extra_signals=extra_signals)
+    collector = FlyerCollector(
+        flyers=flyers, name="flyer_collector", extra_signals=extra_signals
+    )
     yield from bps.collect(collector)
 
 
@@ -52,16 +54,25 @@ def fly_scan(detectors, flyer, start: float, stop: float, num: int, md: dict = N
     """
     # Stage the devices
     devices = [flyer, *detectors]
-    for device in devices:
-        yield from bps.stage(device)
+    # Prepare metadata
+    md_ = {
+        "plan_name": "fly_scan",
+        "motors": [flyer.name],
+        "detectors": [det.name for det in detectors],
+        "plan_args": {
+            "detectors": list(map(repr, detectors)),
+            "flyer": repr(flyer),
+            "start": start,
+            "stop": stop,
+            "num": num,
+        },
+    }
+    md_.update(md or {})
     # Execute the plan
-    uid = yield from bps.open_run(md)
-    yield from fly_line_scan(detectors, flyer, start, stop, num)
-    yield from bps.close_run()
-    # Unstage the devices
-    for device in devices:
-        yield from bps.unstage(device)
-    return uid
+    line_scan = fly_line_scan(detectors, flyer, start, stop, num)
+    line_scan = bpp.run_wrapper(line_scan, md=md_)
+    line_scan = bpp.stage_wrapper(line_scan, devices)
+    yield from line_scan
 
 
 def grid_fly_scan(detectors, *args, snake_axes: bool = None, md=None):
@@ -95,9 +106,10 @@ def grid_fly_scan(detectors, *args, snake_axes: bool = None, md=None):
     # Extract the step-scan vs fly-scan arguments
     *step_args, flyer, fly_start, fly_stop, fly_num = args
     # Handle giving snaked axes as a list
-    arg_chunks = list(plan_patterns.chunk_outer_product_args(step_args))
-    num_steppers = len(arg_chunks)
-    motors = [m[0] for m in arg_chunks]
+    step_chunks = list(plan_patterns.chunk_outer_product_args(step_args))
+    num_steppers = len(step_chunks)
+    motors = [m[0] for m in step_chunks]
+    all_motors = [*motors, flyer]
     if isinstance(snake_axes, abc.Iterable) and not isinstance(snake_axes, str):
         snake_steppers = snake_axes.copy()
         try:
@@ -106,9 +118,47 @@ def grid_fly_scan(detectors, *args, snake_axes: bool = None, md=None):
             snake_flyer = False
         else:
             snake_flyer = True
+        # Save for metadata processing
+        snaking = [
+            (motor in snake_steppers) for motor, start, stop, num, snake in step_chunks
+        ]
+        snaking = (False, *snaking[1:], snake_flyer)
     else:
         snake_steppers = snake_axes
         snake_flyer = snake_axes
+        snaking = [False, *[snake_axes for _ in step_chunks[1:]], snake_flyer]
+    # Prepare metadata
+    chunk_args = list(plan_patterns.chunk_outer_product_args(args))
+    md_args = []
+    motor_names = []
+    for i, (motor, start, stop, num, snake) in enumerate(chunk_args):
+        md_args.extend([repr(motor), start, stop, num])
+        motor_names.append(motor.name)
+    num_points = np.prod([num for motor, start, stop, num, snake in chunk_args])
+    md_ = {
+        "shape": tuple(num for motor, start, stop, num, snake in chunk_args),
+        "extents": tuple(
+            [start, stop] for motor, start, stop, num, snake in chunk_args
+        ),
+        "plan_args": {
+            "detectors": list(map(repr, detectors)),
+            "args": md_args,
+        },
+        "plan_name": "grid_fly_scan",
+        "num_points": num_points,
+        "num_intervals": num_points - 1,
+        "motors": tuple(motor_names),
+        "snaking": snaking,
+        "hints": {},
+    }
+    # Add metadata hints for plotting, etc
+    md_['hints'].setdefault('gridding', 'rectilinear')
+    try:
+        md_['hints'].setdefault('dimensions', [(m.hints['fields'], 'primary')
+                                               for m in all_motors])
+    except (AttributeError, KeyError):
+        ...
+    md_.update(md or {})
     # Set up the plan
     per_step = Snaker(
         snake_axes=snake_flyer,
@@ -119,7 +169,11 @@ def grid_fly_scan(detectors, *args, snake_axes: bool = None, md=None):
         extra_signals=motors,
     )
     uid = yield from bp.grid_scan(
-        detectors, *step_args, snake_axes=snake_steppers, per_step=per_step
+        detectors,
+        *step_args,
+        snake_axes=snake_steppers,
+        per_step=per_step,
+        md=md_,
     )
     return uid
 
