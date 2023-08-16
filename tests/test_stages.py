@@ -44,7 +44,7 @@ def test_aerotech_flyer():
 
 
 def test_aerotech_stage():
-    fly_stage = stage.AerotechFlyStage(
+    fly_stage = stage.AerotechStage(
         "motor_ioc", pv_vert=":m1", pv_horiz=":m2", labels={"stages"}, name="aerotech"
     )
     assert fly_stage is not None

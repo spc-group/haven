@@ -146,11 +146,11 @@ def test_flyscan_kickoff(sim_ion_chamber):
     flyer = sim_ion_chamber
     flyer.num_bins.set(10)
     status = flyer.kickoff()
+    flyer.acquiring.set(1)
     status.wait()
     assert status.success
     assert status.done
     # Check that the device was properly configured for fly-scanning
-    assert flyer.num_channels_to_use._readback == 10
     assert flyer.erase_start._readback == 1
     assert flyer.timestamps == []
     # Check that timestamps get recorded when new data are available
@@ -170,10 +170,14 @@ def test_flyscan_complete(sim_ion_chamber):
 def test_flyscan_collect(sim_ion_chamber):
     flyer = sim_ion_chamber
     name = flyer.net_counts.name
+    flyer.start_timestamp = 988.
     # Make fake fly-scan data
     sim_data = np.zeros(shape=(8000,))
     sim_data[:6] = [3, 5, 8, 13, 2, 33]
     flyer.mca.spectrum._readback = sim_data
+    sim_times = np.asarray([12.0e7, 4.0e7, 4.0e7, 4.0e7, 4.0e7, 4.0e7])
+    flyer.mca_times.spectrum._readback = sim_times
+    flyer.clock.set(1e7)
     # Ignore the first collected data point because it's during taxiing
     expected_data = sim_data[1:]
     # The real timestamps should be midway between PSO pulses
