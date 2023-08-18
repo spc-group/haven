@@ -215,7 +215,7 @@ class Snaker:
         yield from bps.move_per_step(step, pos_cache)
         # Determine line scans range based on snaking
         start, stop = (self.start, self.stop)
-        if self.reverse:
+        if self.reverse and self.snake_axes:
             start, stop = stop, start
         self.reverse = not self.reverse
         # Launch the fly scan
