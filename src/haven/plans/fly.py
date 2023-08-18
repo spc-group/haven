@@ -1,5 +1,6 @@
 from collections import OrderedDict, abc
 from functools import partial
+from typing import Sequence, Mapping, Union, Optional
 
 import numpy as np
 from bluesky import plans as bp, plan_stubs as bps, plan_patterns, preprocessors as bpp
@@ -8,7 +9,10 @@ from ophyd.flyers import FlyerInterface
 from ophyd.status import StatusBase
 
 
-def fly_line_scan(detectors, flyer, start, stop, num, extra_signals=()):
+__all__ = ["fly_scan", "grid_fly_scan"]
+
+
+def fly_line_scan(detectors: list, flyer, start, stop, num, extra_signals=()):
     """A plan stub for fly-scanning a single trajectory."""
     # Calculate parameters for the fly-scan
     step_size = abs(start - stop) / (num - 1)
@@ -28,13 +32,13 @@ def fly_line_scan(detectors, flyer, start, stop, num, extra_signals=()):
     yield from bps.collect(collector)
 
 
-def fly_scan(detectors, flyer, start: float, stop: float, num: int, md: dict = None):
+def fly_scan(detectors: Sequence[FlyerInterface], flyer: FlyerInterface, start: float, stop: float, num: int, md: Mapping | None = None):
     """Do a fly scan with a 'flyer' motor and some 'flyer' detectors.
 
     Parameters
     ----------
-    detectors : list
-        list of 'readable' objects that support the flyer interface
+    detectors
+      List of 'readable' objects that support the flyer interface
     flyer
       The thing going to get moved.
     start
@@ -43,13 +47,13 @@ def fly_scan(detectors, flyer, start: float, stop: float, num: int, md: dict = N
       The center of the last measurement in *flyer*.
     num
       Number of measurements to take.
-    md : dict, optional
+    md
       metadata
 
     Yields
     ------
-    msg : Msg
-        'kickoff', 'wait', 'complete, 'wait', 'collect' messages
+    msg
+      'kickoff', 'wait', 'complete, 'wait', 'collect' messages
 
     """
     # Stage the devices
@@ -75,32 +79,38 @@ def fly_scan(detectors, flyer, start: float, stop: float, num: int, md: dict = N
     yield from line_scan
 
 
-def grid_fly_scan(detectors, *args, snake_axes: bool = None, md=None):
-    """Scan over a mesh with one of the axes collects without stopping.
+def grid_fly_scan(detectors: Sequence[FlyerInterface], *args, snake_axes: bool | Sequence[Device] = False, md: Mapping=None):
+    """Scan over a mesh with one of the axes collecting without stopping.
 
     Parameters
     ----------
-    detectors: list
-        list of 'readable' objects
-    ``*args``
-        patterned like (``motor1, start1, stop1, num1,``
-                        ``motor2, start2, stop2, num2,``
-                        ``motor3, start3, stop3, num3,`` ...
-                        ``motorN, startN, stopN, numN``)
-        The first motor is the "slowest", the outer loop. The last
-        motor should be flyable. For all motors except the first
-        motor, there is a "snake" argument: a boolean indicating
-        whether to following snake-like, winding trajectory or a
-        simple left-to-right trajectory.
-    snake_axes: boolean or iterable, optional
-        which axes should be snaked, either ``False`` (do not snake any axes),
-        ``True`` (snake all axes) or a list of axes to snake. "Snaking" an axis
-        is defined as following snake-like, winding trajectory instead of a
-        simple left-to-right trajectory. The elements of the list are motors
-        that are listed in `args`. The list must not contain the slowest
-        (first) motor, since it can't be snaked.
+    detectors
+      list of 'readable' objects
+    *args
+      patterned like::
+
+        motor1, start1, stop1, num1,
+        motor2, start2, stop2, num2,
+        ...
+        flyer, flyer_start, flyer_stop, flyer_num
+
+      The first motor is the "slowest", the outer loop. The last
+      motor should be flyable.
+    snake_axes
+      which axes should be snaked, either ``False`` (do not snake any axes),
+      ``True`` (snake all axes) or a list of axes to snake. "Snaking" an axis
+      is defined as following snake-like, winding trajectory instead of a
+      simple left-to-right trajectory. The elements of the list are motors
+      that are listed in `args`. The list must not contain the slowest
+      (first) motor, since it can't be snaked.
     md: dict, optional
-        metadata
+      metadata
+
+    Yields
+    ------
+    msg
+      'stage', 'open_run', 'mv', 'kickoff', 'wait', 'complete, 'wait',
+      'collect', 'close_run', 'stage' messages.
 
     """
     # Extract the step-scan vs fly-scan arguments

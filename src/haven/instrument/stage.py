@@ -29,6 +29,9 @@ from ..exceptions import InvalidScanParameters
 from .device import await_for_connection, aload_devices, make_device
 
 
+__all__ = ["XYStage", "AerotechFlyer", "AerotechStage", "load_stages"]
+
+
 log = logging.getLogger(__name__)
 
 
@@ -80,26 +83,26 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
     remaining components will be calculated accordingly.
 
     All position or distance components are assumed to be in motor
-    record engineering units, unless preceded with "encoder_", in
+    record engineering units, unless preceded with "encoder\_", in
     which case they are in units of encoder pulses based on the
     encoder resolution.
 
     The following diagram describes how the various components relate
-    to each other. Distances are not to scale.
+    to each other. Distances are not to scale::
 
-               ┌─ encoder_window_start         ┌─ encoder_window_stop
-               │                               │
-               │ |┄┄┄| *step_size*             │
-               │ │   │ encoder_step_size       │
-               │ │   │                         │
-    Window:    ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┤
-
-    Pulses: ┄┄┄┄┄╨───╨───╨───╨───╨───╨───╨───╨┄┄┄┄┄
-             │   │ │                       │ │   └─ taxi_end
-             │   │ └─ *start_position*     │ └─ pso_end
-             │   └─ pso_start              └─ *end position*
-             └─ taxi_start
-
+                 ┌─ encoder_window_start         ┌─ encoder_window_stop
+                 │                               │
+                 │ |┄┄┄| *step_size*             │
+                 │ │   │ encoder_step_size       │
+                 │ │   │                         │
+      Window:    ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┤
+  
+      Pulses: ┄┄┄┄┄╨───╨───╨───╨───╨───╨───╨───╨┄┄┄┄┄
+               │   │ │                       │ │   └─ taxi_end
+               │   │ └─ *start_position*     │ └─ pso_end
+               │   └─ pso_start              └─ *end position*
+               └─ taxi_start
+  
     Parameters
     ==========
     axis
@@ -642,4 +645,5 @@ def load_stage_coros(config=None):
 
 
 def load_stages(config=None):
+    """Load the XY stages defined in the config ``[stage]`` section."""
     asyncio.run(aload_devices(*load_stage_coros(config=config)))

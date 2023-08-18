@@ -11,11 +11,13 @@ These guides do not cover the individual beamlines thoroughly.
    :maxdepth: 2
    :caption: Contents:
 
+   area_detectors.rst	     
    changing_haven.rst
    define_new_motor.rst
    energy_scans.rst
-   area_detectors.rst
    fluorescence_detectors.rst
+   fly_scanning.rst
+   hardware_triggering.rst
    instrument_registry.rst
    motor_positions.rst
    xdi_writer.rst
