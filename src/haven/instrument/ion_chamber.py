@@ -394,8 +394,8 @@ class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
         # Create data events
         for ts, value in zip(pixel_timestamps, data):
             yield {
-                "data": {net_counts_name: [value]},
-                "timestamps": {net_counts_name: [ts]},
+                "data": {net_counts_name: value},
+                "timestamps": {net_counts_name: ts},
                 "time": ts,
             }
 

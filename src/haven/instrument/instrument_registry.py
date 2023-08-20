@@ -259,7 +259,7 @@ class InstrumentRegistry:
         else:
             # Stick the first entry back in the queue and yield it
             results = chain([first], results)
-        return remove_duplicates(results)
+        return list(remove_duplicates(results))
 
     def __new__wrapper(self, cls, *args, **kwargs):
         # Create and instantiate the new object
