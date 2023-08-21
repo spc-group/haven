@@ -1,3 +1,6 @@
+from .instrument.instrument_registry import ComponentNotFound, MultipleComponentsFound, InvalidComponentLabel
+
+
 class NoEnergies(ValueError):
     """The plan parameters do not result in any energies being selected for scanning."""
 
@@ -10,22 +13,22 @@ class GainOverflow(RuntimeError):
     ...
 
 
-class ComponentNotFound(IndexError):
-    """Registry looked for a component, but it wasn't registered."""
+# class ComponentNotFound(IndexError):
+#     """Registry looked for a component, but it wasn't registered."""
 
-    ...
-
-
-class MultipleComponentsFound(IndexError):
-    """Registry looked for a single component, but found more than one."""
-
-    ...
+#     ...
 
 
-class InvalidComponentLabel(TypeError):
-    """Registry looked for a component, but the label provided is not vlaid."""
+# class MultipleComponentsFound(IndexError):
+#     """Registry looked for a single component, but found more than one."""
 
-    ...
+#     ...
+
+
+# class InvalidComponentLabel(TypeError):
+#     """Registry looked for a component, but the label provided is not vlaid."""
+
+#     ...
 
 
 class FileNotWritable(IOError):

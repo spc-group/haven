@@ -2,8 +2,8 @@ import pytest
 
 from ophyd import sim, Device, EpicsMotor
 
-from haven import exceptions
 from haven.instrument import InstrumentRegistry
+from haven.instrument.instrument_registry import ComponentNotFound, MultipleComponentsFound
 
 
 def test_register_component():
@@ -20,9 +20,9 @@ def test_register_component():
         labels={"ion_chamber"},
     )
     # Make sure the component doesn't get found without being registered
-    with pytest.raises(exceptions.ComponentNotFound):
+    with pytest.raises(ComponentNotFound):
         list(reg.findall(label="ion_chamber"))
-    with pytest.raises(exceptions.ComponentNotFound):
+    with pytest.raises(ComponentNotFound):
         list(reg.findall(name="I0"))
     # Now register the component
     cpt = reg.register(cpt)
@@ -48,7 +48,7 @@ def test_find_missing_components():
     )
     reg.register(cpt)
     # Now make sure a different query still returns no results
-    with pytest.raises(exceptions.ComponentNotFound):
+    with pytest.raises(ComponentNotFound):
         reg.findall(label="spam")
 
 
@@ -67,7 +67,7 @@ def test_exceptions():
     reg = InstrumentRegistry()
     reg.register(Device("", name="It"))
     # Test if a non-existent labels throws an exception
-    with pytest.raises(exceptions.ComponentNotFound):
+    with pytest.raises(ComponentNotFound):
         reg.find(label="spam")
 
 
@@ -113,7 +113,7 @@ def test_find_component():
     result = reg.find(name="I0")
     assert result is cptA
     # Multiple matches should raise an exception
-    with pytest.raises(exceptions.MultipleComponentsFound):
+    with pytest.raises(MultipleComponentsFound):
         result = reg.find(label="ion_chamber")
 
 

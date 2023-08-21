@@ -2,18 +2,16 @@ from typing import Optional, Sequence
 import logging
 import warnings
 from itertools import chain
+from typing import Sequence
 
-from ophyd import Component, ophydobj, Device
-
-from .. import exceptions
-from .._iconfig import load_config
-from ..typing import Detector
+from ophyd import ophydobj
 
 
 log = logging.getLogger(__name__)
 
 
 __all__ = ["InstrumentRegistry", "registry"]
+
 
 
 def is_iterable(obj):
@@ -62,7 +60,7 @@ class InstrumentRegistry:
         label: Optional[str] = None,
         name: Optional[str] = None,
         allow_none: Optional[str] = False,
-    ) -> Component:
+    ) -> ophydobj:
         """Find registered device components matching parameters.
 
         The *any_of* keyword is a proxy for all the other
@@ -112,7 +110,7 @@ class InstrumentRegistry:
         if len(results) == 1:
             result = results[0]
         elif len(results) > 1:
-            raise exceptions.MultipleComponentsFound(
+            raise MultipleComponentsFound(
                 f"Found {len(results)} components matching query "
                 f"[any_of={any_of}, label={label}, name={name}]. "
                 "Consider using ``findall()``. "
@@ -146,7 +144,7 @@ class InstrumentRegistry:
                             cpt_ = getattr(cpt_, attr)
                         yield cpt_
             except TypeError:
-                raise exceptions.InvalidComponentLabel(label)
+                raise InvalidComponentLabel(label)
 
     def _findall_by_name(self, name):
         # Check for already created ophyd objects (return as is)
@@ -186,7 +184,7 @@ class InstrumentRegistry:
         label: Optional[str] = None,
         name: Optional[str] = None,
         allow_none: Optional[bool] = False,
-    ) -> list[Device]:
+    ) -> list[ophydobj]:
         """Find registered device components matching parameters.
 
         Combining search terms works in an *or* fashion. For example,
@@ -253,7 +251,7 @@ class InstrumentRegistry:
             if allow_none:
                 results = []
             else:
-                raise exceptions.ComponentNotFound(
+                raise ComponentNotFound(
                     f'Could not find components matching: label="{_label}", name="{_name}"'
                 )
         else:
@@ -269,8 +267,7 @@ class InstrumentRegistry:
         self.register(obj)
         return obj
 
-    # @profile
-    def register(self, component: Detector) -> Detector:
+    def register(self, component: ophydobj) -> ophydobj:
         """Register a device, component, etc so that it can be retrieved later.
 
         If *component* is a class, then any instances created will
@@ -283,7 +280,6 @@ class InstrumentRegistry:
           The same component as was provided as an input.
 
         """
-        beamline_is_connected = load_config()["beamline"]["is_connected"]
         # Determine how to register the device
         if isinstance(component, type):
             # A class was given, so instances should be auto-registered
@@ -301,14 +297,6 @@ class InstrumentRegistry:
                 msg = f"Ignoring components with duplicate name: '{component.name}'"
                 log.debug(msg)
                 return component
-            # Test the connection to ensure the device is present
-            if beamline_is_connected and component.parent is None:
-                try:
-                    component.wait_for_connection()
-                except TimeoutError as exc:
-                    msg = f"Could not connect to device {component.name} ({component.prefix})"
-                    log.warning(msg)
-                    return component
             # Register this component
             self.components.append(component)
             # Recusively register sub-components
@@ -319,3 +307,21 @@ class InstrumentRegistry:
 
 
 registry = InstrumentRegistry()
+
+
+class ComponentNotFound(IndexError):
+    """Registry looked for a component, but it wasn't registered."""
+
+    ...
+
+
+class MultipleComponentsFound(IndexError):
+    """Registry looked for a single component, but found more than one."""
+
+    ...
+
+
+class InvalidComponentLabel(TypeError):
+    """Registry looked for a component, but the label provided is not vlaid."""
+
+    ...
