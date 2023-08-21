@@ -3,7 +3,7 @@ import logging
 import warnings
 from itertools import chain
 
-from ophyd import Component, ophydobj
+from ophyd import Component, ophydobj, Device
 
 from .. import exceptions
 from .._iconfig import load_config
@@ -186,7 +186,7 @@ class InstrumentRegistry:
         label: Optional[str] = None,
         name: Optional[str] = None,
         allow_none: Optional[bool] = False,
-    ) -> Sequence[Component]:
+    ) -> list[Device]:
         """Find registered device components matching parameters.
 
         Combining search terms works in an *or* fashion. For example,
@@ -259,7 +259,7 @@ class InstrumentRegistry:
         else:
             # Stick the first entry back in the queue and yield it
             results = chain([first], results)
-        return remove_duplicates(results)
+        return list(remove_duplicates(results))
 
     def __new__wrapper(self, cls, *args, **kwargs):
         # Create and instantiate the new object
