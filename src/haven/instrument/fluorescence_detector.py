@@ -17,7 +17,7 @@ from ophyd import (
     flyers,
 )
 from ophyd.areadetector.plugins import NetCDFPlugin_V34
-from ophyd.status import SubscriptionStatus
+from ophyd.status import SubscriptionStatus, StatusBase
 from apstools.utils import cleanupText
 
 from .scaler_triggered import ScalerTriggered
@@ -154,7 +154,13 @@ class DxpDetectorBase(flyers.FlyerInterface, mca.EpicsDXPMapping, mca.EpicsDXPMu
     Creates MCA components based on the number of elements.
 
     """
-    write_path: str = "M:\\tmp\\"
+    class CollectMode(IntEnum):
+        MCA_SPECTRA = 0
+        MCA_MAPPING = 1
+        SCA_MAPPING = 2
+        LIST_MAPPING = 3
+    
+    write_path: str = "M:\\epics\\fly_scanning\\"
     read_path: str = "/net/s20data/sector20/tmp/"
     # By default, a 4-element detector, subclass for more elements
     mcas = DDC(
@@ -231,6 +237,10 @@ class DxpDetectorBase(flyers.FlyerInterface, mca.EpicsDXPMapping, mca.EpicsDXPMu
         "trace_times",
         "idead_time",
     ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.stage_sigs[self.collect_mode] = self.CollectMode.MCA_SPECTRA
 
     @property
     def num_rois(self):
@@ -349,28 +359,44 @@ class DxpDetectorBase(flyers.FlyerInterface, mca.EpicsDXPMapping, mca.EpicsDXPMu
         return statuses
 
     def kickoff(self):
+        # Make sure the CDF file write plugin is primed (assumes
+        # dimensions will be empty when not primed)
+        is_primed = len(self.net_cdf.dimensions.get()) > 0
+        if not is_primed:
+            msg = f"{self.net_cdf.name} plugin not primed."
+            warnings.warn(msg, RuntimeWarning)
+            exc = exceptions.PluginNotPrimed(msg)
+            status = StatusBase()
+            status.set_exception(exc)
+            return status
+        # Set up the status for when the detector is ready to fly
         def check_acquiring(*, old_value, value, **kwargs):
             is_acquiring = bool(value)
             if is_acquiring:
                 self.start_timestamp = time.time()
             return is_acquiring
 
-        # Set up the status for when the detector is ready to fly
         status = SubscriptionStatus(self.acquiring, check_acquiring)
         # Configure the mapping controls
-        self.collect_mode.set("MCA Mapping")
+        self.collect_mode.set(self.CollectMode.MCA_MAPPING)
         self.pixel_advance_mode.set("Gate")
         # Configure the netCDF file writer
         self.net_cdf.enable.set("Enable").wait()
-        self.net_cdf.file_path.set(self.write_path).wait()
-        self.net_cdf.file_name.set("fly_scan_temp.nc").wait()
+        [status.wait() for status in [
+            self.net_cdf.file_path.set(self.write_path),
+            self.net_cdf.file_name.set("fly_scan_temp.nc"),
+            self.net_cdf.file_write_mode.set("Capture"),
+        ]]
         self.net_cdf.capture.set(1).wait()
         # Start the detector
         self.erase_start.set(1)
         return status
 
     def complete(self):
+        # Stop the CDF file writer
+        self.net_cdf.capture.set(0).wait()
         self.stop_all.set(1)
+        
         # Set up the status for when the detector is done collecting
         def check_acquiring(*, old_value, value, **kwargs):
             is_acquiring = bool(value)

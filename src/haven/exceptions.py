@@ -94,3 +94,14 @@ class InvalidScanParameters(ValueError):
     """The given scan parameters will not produce a sane scan."""
 
     ...
+
+
+class PluginNotPrimed(RuntimeError):
+    """The detector plugin has not yet received a dataframe.
+    
+    Prior to starting capture for some detector file writer plugins,
+    the plugin need to receive at least one dataframe in order to
+    extract the dimensions, type, etc. of the data it will receive.
+
+    """
+    ...
