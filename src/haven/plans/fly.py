@@ -32,7 +32,14 @@ def fly_line_scan(detectors: list, flyer, start, stop, num, extra_signals=()):
     yield from bps.collect(collector)
 
 
-def fly_scan(detectors: Sequence[FlyerInterface], flyer: FlyerInterface, start: float, stop: float, num: int, md: Mapping = {}):
+def fly_scan(
+    detectors: Sequence[FlyerInterface],
+    flyer: FlyerInterface,
+    start: float,
+    stop: float,
+    num: int,
+    md: Mapping = {},
+):
     """Do a fly scan with a 'flyer' motor and some 'flyer' detectors.
 
     Parameters
@@ -79,7 +86,12 @@ def fly_scan(detectors: Sequence[FlyerInterface], flyer: FlyerInterface, start: 
     yield from line_scan
 
 
-def grid_fly_scan(detectors: Sequence[FlyerInterface], *args, snake_axes: Union[bool, Sequence[Device]] = False, md: Mapping = {}):
+def grid_fly_scan(
+    detectors: Sequence[FlyerInterface],
+    *args,
+    snake_axes: Union[bool, Sequence[Device]] = False,
+    md: Mapping = {}
+):
     """Scan over a mesh with one of the axes collecting without stopping.
 
     Parameters
@@ -162,10 +174,11 @@ def grid_fly_scan(detectors: Sequence[FlyerInterface], *args, snake_axes: Union[
         "hints": {},
     }
     # Add metadata hints for plotting, etc
-    md_['hints'].setdefault('gridding', 'rectilinear')
+    md_["hints"].setdefault("gridding", "rectilinear")
     try:
-        md_['hints'].setdefault('dimensions', [(m.hints['fields'], 'primary')
-                                               for m in all_motors])
+        md_["hints"].setdefault(
+            "dimensions", [(m.hints["fields"], "primary") for m in all_motors]
+        )
     except (AttributeError, KeyError):
         ...
     md_.update(md)

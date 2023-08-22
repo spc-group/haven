@@ -4,6 +4,7 @@ __version__ = "0.1.0"
 
 # Allow for nested asyncio event loops
 import nest_asyncio
+
 nest_asyncio.apply()
 
 #  Top-level imports

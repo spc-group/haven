@@ -148,18 +148,21 @@ def add_mcas(range_, kind=active_kind, **kwargs):
     return defn
 
 
-class DxpDetectorBase(flyers.FlyerInterface, mca.EpicsDXPMapping, mca.EpicsDXPMultiElementSystem):
+class DxpDetectorBase(
+    flyers.FlyerInterface, mca.EpicsDXPMapping, mca.EpicsDXPMultiElementSystem
+):
     """A fluorescence detector based on XIA-DXP XMAP electronics.
 
     Creates MCA components based on the number of elements.
 
     """
+
     class CollectMode(IntEnum):
         MCA_SPECTRA = 0
         MCA_MAPPING = 1
         SCA_MAPPING = 2
         LIST_MAPPING = 3
-    
+
     write_path: str = "M:\\epics\\fly_scanning\\"
     read_path: str = "/net/s20data/sector20/tmp/"
     # By default, a 4-element detector, subclass for more elements
@@ -382,11 +385,14 @@ class DxpDetectorBase(flyers.FlyerInterface, mca.EpicsDXPMapping, mca.EpicsDXPMu
         self.pixel_advance_mode.set("Gate")
         # Configure the netCDF file writer
         self.net_cdf.enable.set("Enable").wait()
-        [status.wait() for status in [
-            self.net_cdf.file_path.set(self.write_path),
-            self.net_cdf.file_name.set("fly_scan_temp.nc"),
-            self.net_cdf.file_write_mode.set("Capture"),
-        ]]
+        [
+            status.wait()
+            for status in [
+                self.net_cdf.file_path.set(self.write_path),
+                self.net_cdf.file_name.set("fly_scan_temp.nc"),
+                self.net_cdf.file_write_mode.set("Capture"),
+            ]
+        ]
         self.net_cdf.capture.set(1).wait()
         # Start the detector
         self.erase_start.set(1)
@@ -396,7 +402,7 @@ class DxpDetectorBase(flyers.FlyerInterface, mca.EpicsDXPMapping, mca.EpicsDXPMu
         # Stop the CDF file writer
         self.net_cdf.capture.set(0).wait()
         self.stop_all.set(1)
-        
+
         # Set up the status for when the detector is done collecting
         def check_acquiring(*, old_value, value, **kwargs):
             is_acquiring = bool(value)

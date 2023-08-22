@@ -96,13 +96,13 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
                  │ │   │ encoder_step_size       │
                  │ │   │                         │
       Window:    ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┤
-  
+
       Pulses: ┄┄┄┄┄╨───╨───╨───╨───╨───╨───╨───╨┄┄┄┄┄
                │   │ │                       │ │   └─ taxi_end
                │   │ └─ *start_position*     │ └─ pso_end
                │   └─ pso_start              └─ *end position*
                └─ taxi_start
-  
+
     Parameters
     ==========
     axis

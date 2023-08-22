@@ -155,12 +155,15 @@ def test_vortex_kickoff(sim_vortex):
     vortex = sim_vortex
     vortex.write_path = "M:\\tmp\\"
     vortex.read_path = "/net/s20data/sector20/tmp/"
-    [s.wait() for s in [
-        vortex.acquiring.set(0),
-        vortex.collect_mode.set("MCA Spectrum"),
-        vortex.erase_start.set(0),
-        vortex.pixel_advance_mode.set("Sync"),
-    ]]
+    [
+        s.wait()
+        for s in [
+            vortex.acquiring.set(0),
+            vortex.collect_mode.set("MCA Spectrum"),
+            vortex.erase_start.set(0),
+            vortex.pixel_advance_mode.set("Sync"),
+        ]
+    ]
     # Ensure that the vortex is in its normal operating state
     assert vortex.collect_mode.get(use_monitor=False) == "MCA Spectrum"
     # Check that the kickoff status ended properly
@@ -185,10 +188,13 @@ def test_vortex_complete(sim_vortex):
     vortex = sim_vortex
     vortex.write_path = "M:\\tmp\\"
     vortex.read_path = "/net/s20data/sector20/tmp/"
-    [s.wait() for s in [
-        vortex.acquiring.set(1),
-        vortex.stop_all.set(0),
-    ]]
+    [
+        s.wait()
+        for s in [
+            vortex.acquiring.set(1),
+            vortex.stop_all.set(0),
+        ]
+    ]
     status = vortex.complete()
     assert vortex.stop_all.get(use_monitor=False) == 1
     assert not status.done

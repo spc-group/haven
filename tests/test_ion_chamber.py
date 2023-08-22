@@ -170,7 +170,7 @@ def test_flyscan_complete(sim_ion_chamber):
 def test_flyscan_collect(sim_ion_chamber):
     flyer = sim_ion_chamber
     name = flyer.net_counts.name
-    flyer.start_timestamp = 988.
+    flyer.start_timestamp = 988.0
     # Make fake fly-scan data
     sim_data = np.zeros(shape=(8000,))
     sim_data[:6] = [3, 5, 8, 13, 2, 33]
