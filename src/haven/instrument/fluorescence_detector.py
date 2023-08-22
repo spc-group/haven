@@ -412,6 +412,35 @@ class DxpDetectorBase(
         return status
 
 
+def parse_xmap_buffer(buff):
+    """Extract meaningful data from an XMAP internal buffer during mapping.
+
+    For more information, see section 5.3.3 of
+    https://cars9.uchicago.edu/software/epics/XMAP_User_Manual.pdf
+
+    """
+    data = {
+        "header": {}
+    }
+    header = buff[:256]
+    # Verify tag words
+    assert header[0] == 0x55AA
+    assert header[1] == 0xAA55
+    # Parse remaining buffer header
+    head_data = data["header"]
+    head_data["buffer_header_size"] = header[2]
+    head_data["mapping_mode"] = header[3]
+    head_data["run_number"] = header[4]
+    head_data["buffer_number"] = header[5:7]
+    head_data["buffer_id"] = header[7]
+    head_data["num_pixels"] = header[8]
+    head_data["starting_pixel"] = header[9:11]
+    head_data["module"] = header[11]
+    head_data["buffer_overrun"] = header[24]
+    # head_data[""] = 
+    return data
+
+
 class XspressDetector(ScalerTriggered, Device):
     """A fluorescence detector plugged into an Xspress3 readout."""
 

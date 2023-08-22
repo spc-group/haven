@@ -1,12 +1,14 @@
+from pathlib import Path
 import asyncio
+from unittest.mock import MagicMock
+
+import numpy as np
 import pytest
 from epics import caget
-
-from unittest.mock import MagicMock
 from ophyd import Kind, DynamicDeviceComponent as DDC
 from bluesky import plans as bp
 
-from haven.instrument import fluorescence_detector
+from haven.instrument.fluorescence_detector import parse_xmap_buffer
 
 
 def test_load_dxp(sim_registry, mocker):
@@ -151,7 +153,7 @@ def test_stage_signal_hinted(sim_vortex):
     )
 
 
-def test_vortex_kickoff(sim_vortex):
+def test_dxp_kickoff(sim_vortex):
     vortex = sim_vortex
     vortex.write_path = "M:\\tmp\\"
     vortex.read_path = "/net/s20data/sector20/tmp/"
@@ -184,7 +186,7 @@ def test_vortex_kickoff(sim_vortex):
     assert vortex.net_cdf.capture.get(use_monitor=False) == 1
 
 
-def test_vortex_complete(sim_vortex):
+def test_dxp_complete(sim_vortex):
     vortex = sim_vortex
     vortex.write_path = "M:\\tmp\\"
     vortex.read_path = "/net/s20data/sector20/tmp/"
@@ -201,3 +203,19 @@ def test_vortex_complete(sim_vortex):
     vortex.acquiring.set(0)
     status.wait()
     assert status.done
+
+
+@pytest.mark.xfail
+def test_parse_xmap_buffer(sim_vortex):
+    """The output for fly-scanning with the DXP-based readout electronics
+    is a raw uint16 buffer that must be parsed by the ophyd device
+    according to section 5.3.3 of
+    https://cars9.uchicago.edu/software/epics/XMAP_User_Manual.pdf
+
+    """
+    fp = Path(__file__)
+    buff = np.loadtxt(fp.parent / "dxp_3px_4elem_Fe55.txt")
+    data = parse_xmap_buffer(buff)
+    assert isinstance(data, dict)
+    assert data["num_pixels"] == 3
+    assert len(data["pixels"]) == 3
