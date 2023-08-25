@@ -45,7 +45,7 @@ def test_aerotech_flyer():
 
 def test_aerotech_stage():
     fly_stage = stage.AerotechStage(
-        "motor_ioc", pv_vert=":m1", pv_horiz=":m2", labels={"stages"}, name="aerotech"
+        "motor_ioc", pv_vert=":m1", pv_horiz=":m2", labels={"stages"}, name="aerotech", delay_prefix="",
     )
     assert fly_stage is not None
     assert fly_stage.asyn.ascii_output.pvname == "motor_ioc:asynEns.AOUT"
@@ -255,11 +255,14 @@ def test_kickoff(sim_aerotech_flyer):
     # Set up fake flyer with mocked fly method
     flyer = sim_aerotech_flyer
     flyer.taxi = mock.MagicMock()
+    flyer.dwell_time.set(1.)
     # Start flying
     status = flyer.kickoff()
     # Check status behavior matches flyer interface
     assert isinstance(status, StatusBase)
     assert not status.done
+    # Check that the delay generator is properly configured
+    assert flyer.delay.channel_D.delay.get(use_monitor=False) == 0.95
     # Start flying and see if the status is done
     flyer.ready_to_fly.set(True).wait()
     status.wait()

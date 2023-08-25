@@ -23,6 +23,7 @@ from apstools.synApps.asyn import AsynRecord
 import pint
 import numpy as np
 
+from .delay import DG645Delay
 from .instrument_registry import registry
 from .._iconfig import load_config
 from ..exceptions import InvalidScanParameters
@@ -617,6 +618,12 @@ class AerotechStage(XYStage):
         labels={"motors", "flyers"},
     )
     asyn = Cpt(AerotechAsyn, ":asynEns", name="async", labels={"asyns"})
+    # A digital delay generator for providing a gate signal
+    delay = FCpt(DG645Delay, "{delay_prefix}", kind=Kind.config)
+
+    def __init__(self, *args, delay_prefix, **kwargs):
+        self.delay_prefix = delay_prefix
+        super().__init__(*args, **kwargs)
 
 
 def load_stage_coros(config=None):

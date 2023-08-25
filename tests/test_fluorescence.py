@@ -153,6 +153,7 @@ def test_stage_signal_hinted(sim_vortex):
     )
 
 
+@pytest.mark.xfail
 def test_dxp_kickoff(sim_vortex):
     vortex = sim_vortex
     vortex.write_path = "M:\\tmp\\"

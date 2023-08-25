@@ -71,8 +71,6 @@ ioc_branch = "UP"  # For caQtDM macros
 
 [ion_chamber.scaler]
 prefix = "scaler_ioc"
-# ioc = "scaler_ioc"
-# record = "scaler1"
 channels = [2]
 
 [ion_chamber.preamp]

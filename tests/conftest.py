@@ -379,6 +379,7 @@ def sim_vortex(sim_registry):
     FakeDXP = make_fake_device(DxpDetectorBase)
     vortex = FakeDXP(name="vortex_me4", labels={"xrf_detectors"})
     sim_registry.register(vortex)
+    vortex.net_cdf.dimensions.set([1477326, 1, 1])
     yield vortex
 
 
