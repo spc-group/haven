@@ -5,7 +5,7 @@ from ophyd import sim
 
 from .instrument_registry import registry as default_registry, InstrumentRegistry
 from .energy_positioner import load_energy_positioner_coros
-from .motor import load_all_motor_coros
+from .motor import load_all_motor_coros, HavenMotor
 from .ion_chamber import load_ion_chamber_coros
 from .fluorescence_detector import load_fluorescence_detector_coros
 from .monochromator import load_monochromator_coros
@@ -110,7 +110,8 @@ def load_instrument(
 
 def load_simulated_devices(config={}):
     # Motors
-    motor = sim.SynAxis(name="sim_motor", labels={"motors"})
+    FakeMotor = sim.make_fake_device(HavenMotor)
+    motor = FakeMotor(name="sim_motor", labels={"motors"})
     default_registry.register(motor)
     # Detectors
     detector = sim.SynGauss(

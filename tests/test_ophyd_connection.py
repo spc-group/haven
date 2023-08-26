@@ -1,8 +1,43 @@
-from ophyd import EpicsSignal, EpicsMotor
+import time
+import pytest
+from ophyd import EpicsSignal, EpicsMotor, sim
+from ophyd.sim import instantiate_fake_device, make_fake_device
 from pydm.data_plugins import plugin_for_address, add_plugin
 from pydm import PyDMChannel
+from qtpy import QtCore
+from unittest.mock import MagicMock
 
+from haven import HavenMotor
 from firefly.ophyd_plugin import OphydConnection, OphydPlugin
+from firefly.main_window import FireflyMainWindow
+
+
+class DummyObject(QtCore.QObject):
+    signal = QtCore.Signal()
+
+
+@pytest.fixture()
+def sim_motor(sim_registry):
+    FakeMotor = make_fake_device(HavenMotor)
+    motor = FakeMotor("255idVME:m1", name="motor")
+    motor.user_setpoint.sim_set_limits((0, 1000))
+    sim_registry.register(motor)
+    return motor
+
+
+@pytest.fixture()
+def ophyd_channel(sim_motor):
+    channel = PyDMChannel(address="oph://motor.user_setpoint")
+    return channel
+
+
+@pytest.fixture()
+def ophyd_connection(sim_motor, ophyd_channel, pydm_ophyd_plugin):
+    channel = ophyd_channel
+    pydm_ophyd_plugin.add_connection(channel)
+    connection = pydm_ophyd_plugin.connections["motor.user_setpoint"]
+    yield connection
+    pydm_ophyd_plugin.remove_connection(channel)
 
 
 def test_ophyd_pydm_ophyd_plugin(pydm_ophyd_plugin):
@@ -10,48 +45,158 @@ def test_ophyd_pydm_ophyd_plugin(pydm_ophyd_plugin):
     assert isinstance(plugin, OphydPlugin)
 
 
-def test_signal_pv_lookup(sim_registry, pydm_ophyd_plugin):
-    """Check that the device name gets converted to a PV for a simple ophyd.EpicsSignal."""
-    # Create a ophyd signal
-    signal = EpicsSignal("the_pv", name="epics_signal")
-    sim_registry.register(signal)
-    # Have the pydm_ophyd_plugin handle a channel
-    channel = PyDMChannel(address="oph://epics_signal")
-    pydm_ophyd_plugin.add_connection(channel)
-    # Check that the connection was correctly retrieved from the
-    # device registry
-    connection = pydm_ophyd_plugin.connections["epics_signal"]
-    assert connection.pv.pvname == "the_pv"
+def test_new_value(sim_motor, ophyd_connection, qtbot):
+    with qtbot.waitSignal(ophyd_connection.new_value_signal) as blocker:
+        sim_motor.set(45.0)
+    assert blocker.args[0] == 45.0
 
 
-def test_device_pv_lookup(sim_registry, pydm_ophyd_plugin):
-    """Check that the device name gets converted to a PV for a simple ophyd.EpicsSignal."""
-    # Create an ophyd device
-    signal = EpicsMotor("the_record", name="epics_motor")
-    sim_registry.register(signal)
-    # Have the pydm_ophyd_plugin handle a channel
-    channel = PyDMChannel(address="oph://epics_motor_user_setpoint")
-    pydm_ophyd_plugin.add_connection(channel)
-    # Check that the connection was correctly retrieved from the
-    # device registry
-    connection = pydm_ophyd_plugin.connections["epics_motor_user_setpoint"]
-    assert connection.pv.pvname == "the_record.VAL"
+def test_set_value(sim_motor, ophyd_connection, ophyd_channel):
+    ophyd_connection.set_value(87.0)
+    assert sim_motor.user_setpoint.get(use_monitor=False) == 87.0
 
 
-def test_bad_pv_lookup(sim_registry, pydm_ophyd_plugin):
-    """Check that invalid or missing ophyd names are handled gracefully."""
-    # Create a ophyd device
-    signal = EpicsMotor("the_record", name="epics_motor")
-    sim_registry.register(signal)
-    # Look for a component that isn't a leaf (i.e. not an EpicsSignal)
-    channel = PyDMChannel(address="oph://epics_motor")
+def test_missing_device(sim_motor, pydm_ophyd_plugin, qtbot, ffapp):
+    """See if the connection responds properly if the device is not there."""
+    connection_slot = MagicMock()
+    channel = PyDMChannel(
+        address="oph://motor.nonsense_parts", connection_slot=connection_slot
+    )
     pydm_ophyd_plugin.add_connection(channel)
-    # Check that the original address is set for widget feedback
-    connection = pydm_ophyd_plugin.connections["epics_motor"]
-    assert connection.pv.pvname == "epics_motor"
-    # Look for a component that isn't in the registry
-    channel = PyDMChannel(address="oph://jabberwocky")
-    pydm_ophyd_plugin.add_connection(channel)
-    # Check that the original address is set for widget feedback
-    connection = pydm_ophyd_plugin.connections["jabberwocky"]
-    assert connection.pv.pvname == "jabberwocky"
+
+
+def test_update_ctrl_vals(sim_motor, ophyd_connection, qtbot):
+    conn = ophyd_connection
+    conn._ctrl_vars = {}
+    # Check if the connection state is updated
+    with qtbot.waitSignal(conn.connection_state_signal) as blocker:
+        conn.update_ctrl_vars(connected=True)
+    assert blocker.args[0] is True
+    # Make sure it isn't emitted a second time if it doesn't change
+    conn._ctrl_vars = {"connected": True}
+    conn.connection_state_signal = MagicMock()
+    conn.update_ctrl_vars(connected=True)
+    assert not conn.connection_state_signal.emit.called
+    # Check other metadata signals
+    conn._ctrl_vars = {}
+    with qtbot.waitSignal(conn.new_severity_signal) as blocker:
+        conn.update_ctrl_vars(severity=2)
+    assert blocker.args[0] == 2
+
+    conn._ctrl_vars = {}
+    with qtbot.waitSignal(conn.write_access_signal) as blocker:
+        conn.update_ctrl_vars(write_access=True)
+    assert blocker.args[0] is True
+
+    conn._ctrl_vars = {}
+    with qtbot.waitSignal(conn.enum_strings_signal) as blocker:
+        conn.update_ctrl_vars(enum_strs=("Option 1", "Option 2"))
+    assert blocker.args[0] == ("Option 1", "Option 2")
+
+    conn._ctrl_vars = {}
+    with qtbot.waitSignal(conn.unit_signal) as blocker:
+        conn.update_ctrl_vars(units="µm")
+    assert blocker.args[0] == "µm"
+
+    conn._ctrl_vars = {}
+    with qtbot.waitSignal(conn.prec_signal) as blocker:
+        conn.update_ctrl_vars(precision=5)
+    assert blocker.args[0] == 5
+
+    conn._ctrl_vars = {}
+    with qtbot.waitSignal(conn.lower_ctrl_limit_signal) as blocker:
+        conn.update_ctrl_vars(lower_ctrl_limit=-200)
+    assert blocker.args[0] == -200
+
+    conn._ctrl_vars = {}
+    with qtbot.waitSignal(conn.upper_ctrl_limit_signal) as blocker:
+        conn.update_ctrl_vars(upper_ctrl_limit=850.3)
+    assert blocker.args[0] == 850.3
+
+    conn._ctrl_vars = {}
+    with qtbot.waitSignal(conn.timestamp_signal) as blocker:
+        conn.update_ctrl_vars(timestamp=1693014035.3913143)
+    assert blocker.args[0] == 1693014035.3913143
+    {
+        "connected": True,
+        "read_access": True,
+        "write_access": True,
+        "timestamp": 1693014035.3913143,
+        "status": None,
+        "severity": None,
+        "precision": None,
+        "lower_ctrl_limit": None,
+        "upper_ctrl_limit": None,
+        "units": None,
+        "enum_strs": None,
+        "setpoint_status": None,
+        "setpoint_severity": None,
+        "setpoint_precision": None,
+        "setpoint_timestamp": None,
+        "sub_type": "meta",
+        # 'obj': FakeEpicsSignal(name='sim_motor_tweak_forward',
+        # parent='sim_motor',
+        # value=0,
+        # timestamp=1693014035.3913143)
+    }
+
+    # connection_state_signal = Signal(bool)
+    # new_severity_signal = Signal(int)
+    # write_access_signal = Signal(bool)
+    # enum_strings_signal = Signal(tuple)
+    # unit_signal = Signal(str)
+    # prec_signal = Signal(int)
+    # upper_ctrl_limit_signal = Signal([float], [int])
+    # lower_ctrl_limit_signal = Signal([float], [int])
+    # upper_alarm_limit_signal = Signal([float], [int])
+    # lower_alarm_limit_signal = Signal([float], [int])
+    # upper_warning_limit_signal = Signal([float], [int])
+    # lower_warning_limit_signal = Signal([float], [int])
+    # timestamp_signal = Signal(float)
+
+
+# def test_signal_pv_lookup(sim_registry, pydm_ophyd_plugin):
+#     """Check that the device name gets converted to a PV for a simple ophyd.EpicsSignal."""
+#     # Create a ophyd signal
+#     signal = EpicsSignal("the_pv", name="epics_signal")
+#     sim_registry.register(signal)
+#     # Have the pydm_ophyd_plugin handle a channel
+#     channel = PyDMChannel(address="oph://epics_signal")
+#     pydm_ophyd_plugin.add_connection(channel)
+#     # Check that the connection was correctly retrieved from the
+#     # device registry
+#     connection = pydm_ophyd_plugin.connections["epics_signal"]
+#     assert connection.pv.pvname == "the_pv"
+
+
+# def test_device_pv_lookup(sim_registry, pydm_ophyd_plugin):
+#     """Check that the device name gets converted to a PV for a simple ophyd.EpicsSignal."""
+#     # Create an ophyd device
+#     signal = EpicsMotor("the_record", name="epics_motor")
+#     sim_registry.register(signal)
+#     # Have the pydm_ophyd_plugin handle a channel
+#     channel = PyDMChannel(address="oph://epics_motor_user_setpoint")
+#     pydm_ophyd_plugin.add_connection(channel)
+#     # Check that the connection was correctly retrieved from the
+#     # device registry
+#     connection = pydm_ophyd_plugin.connections["epics_motor_user_setpoint"]
+#     assert connection.pv.pvname == "the_record.VAL"
+
+
+# def test_bad_pv_lookup(sim_registry, pydm_ophyd_plugin):
+#     """Check that invalid or missing ophyd names are handled gracefully."""
+#     # Create a ophyd device
+#     signal = EpicsMotor("the_record", name="epics_motor")
+#     sim_registry.register(signal)
+#     # Look for a component that isn't a leaf (i.e. not an EpicsSignal)
+#     channel = PyDMChannel(address="oph://epics_motor")
+#     pydm_ophyd_plugin.add_connection(channel)
+#     # Check that the original address is set for widget feedback
+#     connection = pydm_ophyd_plugin.connections["epics_motor"]
+#     assert connection.pv.pvname == "epics_motor"
+#     # Look for a component that isn't in the registry
+#     channel = PyDMChannel(address="oph://jabberwocky")
+#     pydm_ophyd_plugin.add_connection(channel)
+#     # Check that the original address is set for widget feedback
+#     connection = pydm_ophyd_plugin.connections["jabberwocky"]
+#     assert connection.pv.pvname == "jabberwocky"

@@ -7,7 +7,7 @@ import io
 import contextlib
 
 import epics
-from ophyd import EpicsMotor, EpicsSignal, Component as Cpt
+from ophyd import EpicsMotor, EpicsSignal, Component as Cpt, sim
 
 from .epics import caget
 from .._iconfig import load_config

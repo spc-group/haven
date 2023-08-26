@@ -59,7 +59,7 @@
         <bool>true</bool>
        </property>
        <property name="channel" stdset="0">
-        <string>oph://${MOTOR}_user_readback</string>
+        <string>oph://${MOTOR}.user_readback</string>
        </property>
       </widget>
      </item>
@@ -180,7 +180,7 @@
           <string>5000.0281</string>
          </property>
          <property name="channel" stdset="0">
-          <string>oph://${MOTOR}_user_setpoint</string>
+          <string>oph://${MOTOR}.user_setpoint</string>
          </property>
         </widget>
        </item>
@@ -298,7 +298,7 @@
         <string>Stop</string>
        </property>
        <property name="channel" stdset="0">
-        <string>oph://${MOTOR}_motor_stop</string>
+        <string>oph://${MOTOR}.motor_stop</string>
        </property>
        <property name="pressValue" stdset="0">
         <string>1</string>
@@ -320,6 +320,12 @@
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>25</height>
+          </size>
          </property>
          <property name="maximumSize">
           <size>
@@ -349,10 +355,16 @@
        <item>
         <widget class="PyDMLineEdit" name="PyDMLineEdit_2">
          <property name="sizePolicy">
-          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>25</height>
+          </size>
          </property>
          <property name="toolTip">
           <string/>
@@ -367,7 +379,7 @@
           <string>Jog step</string>
          </property>
          <property name="channel" stdset="0">
-          <string>oph://${MOTOR}_tweak_value</string>
+          <string>oph://${MOTOR}.tweak_value</string>
          </property>
         </widget>
        </item>
@@ -378,6 +390,12 @@
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>25</height>
+          </size>
          </property>
          <property name="maximumSize">
           <size>
