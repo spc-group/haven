@@ -23,6 +23,7 @@ class Connection(PyDMConnection):
 
     def __init__(self, channel, address, protocol=None, parent=None):
         name = address
+        self._cids = {}
         super().__init__(channel, address, protocol, parent)
         # Resolve the device based on the ohpyd name
         try:
@@ -40,22 +41,21 @@ class Connection(PyDMConnection):
         """Set up routines to respond to changes in the ophyd object."""
         if self._cpt is not None:
             log.debug(f"Preparing subscriptions for {self._cpt.name}")
-            self._cpt.subscribe(self.send_new_value, run=False)
-            # Set up metadata callbacks
-            self._cpt.subscribe(self.update_ctrl_vars, event_type="meta", run=False)
+            self._cids['meta'] = self._cpt.subscribe(self.update_ctrl_vars, event_type="meta", run=False)
+            event_type = self._cpt._default_sub
+            self._cids[event_type] = self._cpt.subscribe(self.send_new_value, event_type=event_type, run=False)
 
     def send_new_value(self, *args, **kwargs):
-        if "value" in kwargs:
+        if "value" in kwargs.keys():
             value = kwargs["value"]
+            log.debug(f"Received new value for {self._cpt.name}: {value}")
         else:
+            log.debug(f"Did not receive a new value. Skipping update for {self._cpt.name}.")
             return
         log.debug(f"Sending new {type(value)} value for {self._cpt.name}: {value}")
         self.new_value_signal[type(value)].emit(value)
 
     def update_ctrl_vars(self, *args, **kwargs):
-        # See which control variables have changed
-        new_vars = {k: v for k, v in kwargs.items() if v != self._ctrl_vars.get(k)}
-        log.debug(f"Updating ctrl vars for {self._cpt.name}: {new_vars}")
         # Emit signal if variable has changed
         var_signals = {
             "connected": self.connection_state_signal,
@@ -70,10 +70,19 @@ class Connection(PyDMConnection):
         if hasattr(self, 'timestamp_signal'):
             # The timestamp_signal is a recent addition to PyDM
             var_signals["timestamp"] = self.timestamp_signal
+        # Process the individual control variable arguments
         for key, signal in var_signals.items():
-            if value := new_vars.get(key):
-                signal.emit(value)
-        self._ctrl_vars.update(new_vars)
+            if kwargs.get(key) is not None:
+                # Use the argument value
+                val = kwargs[key]
+            else:
+                print(f"Could not find {key} for {self._cpt.name}.")
+                continue
+            # Emit the new value if is different from last time
+            if val != self._ctrl_vars.get(key, None):
+                print(f"Emitting new {key}: {val}")
+                signal.emit(val)
+                self._ctrl_vars[key] = val
 
     def add_listener(self, channel):
         super(Connection, self).add_listener(channel)
@@ -86,9 +95,21 @@ class Connection(PyDMConnection):
         self.run_callbacks()
 
     def run_callbacks(self):
-        if self._cpt is  None:
-            self._cpt._run_subs(sub_type=self._cpt._default_sub)
-            self._cpt._run_metadata_callbacks()
+        if self._cpt is not None:
+            cpt = self._cpt
+            for event_type in [cpt._default_sub, 'meta']:
+                cached = cpt._args_cache[event_type]
+                print(f"Running {event_type} callbacks: {cached}")
+                if cached is not None:
+                    args, kwargs = cached
+                elif event_type == "meta":
+                    args = ()
+                    kwargs = cpt.metadata
+                else:
+                    continue
+                cid = self._cids[event_type]
+                callback = cpt._callbacks[event_type][cid]
+                callback(*args, **kwargs)
 
     @Slot(float)
     @Slot(int)

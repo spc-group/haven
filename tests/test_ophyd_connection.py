@@ -3,12 +3,14 @@ import pytest
 from ophyd import EpicsSignal, EpicsMotor, sim
 from ophyd.sim import instantiate_fake_device, make_fake_device
 from pydm.data_plugins import plugin_for_address, add_plugin
+from pydm.main_window import PyDMMainWindow
+from pydm.widgets import PyDMLineEdit
 from pydm import PyDMChannel
 from qtpy import QtCore
 from unittest.mock import MagicMock
 
 from haven import HavenMotor
-from firefly.ophyd_plugin import OphydConnection, OphydPlugin
+from firefly.ophyd_plugin import Connection as OphydConnection, OphydPlugin
 from firefly.main_window import FireflyMainWindow
 
 
@@ -134,69 +136,16 @@ def test_update_ctrl_vals(sim_motor, ophyd_connection, qtbot):
         "setpoint_precision": None,
         "setpoint_timestamp": None,
         "sub_type": "meta",
-        # 'obj': FakeEpicsSignal(name='sim_motor_tweak_forward',
-        # parent='sim_motor',
-        # value=0,
-        # timestamp=1693014035.3913143)
     }
 
-    # connection_state_signal = Signal(bool)
-    # new_severity_signal = Signal(int)
-    # write_access_signal = Signal(bool)
-    # enum_strings_signal = Signal(tuple)
-    # unit_signal = Signal(str)
-    # prec_signal = Signal(int)
-    # upper_ctrl_limit_signal = Signal([float], [int])
-    # lower_ctrl_limit_signal = Signal([float], [int])
-    # upper_alarm_limit_signal = Signal([float], [int])
-    # lower_alarm_limit_signal = Signal([float], [int])
-    # upper_warning_limit_signal = Signal([float], [int])
-    # lower_warning_limit_signal = Signal([float], [int])
-    # timestamp_signal = Signal(float)
 
-
-# def test_signal_pv_lookup(sim_registry, pydm_ophyd_plugin):
-#     """Check that the device name gets converted to a PV for a simple ophyd.EpicsSignal."""
-#     # Create a ophyd signal
-#     signal = EpicsSignal("the_pv", name="epics_signal")
-#     sim_registry.register(signal)
-#     # Have the pydm_ophyd_plugin handle a channel
-#     channel = PyDMChannel(address="oph://epics_signal")
-#     pydm_ophyd_plugin.add_connection(channel)
-#     # Check that the connection was correctly retrieved from the
-#     # device registry
-#     connection = pydm_ophyd_plugin.connections["epics_signal"]
-#     assert connection.pv.pvname == "the_pv"
-
-
-# def test_device_pv_lookup(sim_registry, pydm_ophyd_plugin):
-#     """Check that the device name gets converted to a PV for a simple ophyd.EpicsSignal."""
-#     # Create an ophyd device
-#     signal = EpicsMotor("the_record", name="epics_motor")
-#     sim_registry.register(signal)
-#     # Have the pydm_ophyd_plugin handle a channel
-#     channel = PyDMChannel(address="oph://epics_motor_user_setpoint")
-#     pydm_ophyd_plugin.add_connection(channel)
-#     # Check that the connection was correctly retrieved from the
-#     # device registry
-#     connection = pydm_ophyd_plugin.connections["epics_motor_user_setpoint"]
-#     assert connection.pv.pvname == "the_record.VAL"
-
-
-# def test_bad_pv_lookup(sim_registry, pydm_ophyd_plugin):
-#     """Check that invalid or missing ophyd names are handled gracefully."""
-#     # Create a ophyd device
-#     signal = EpicsMotor("the_record", name="epics_motor")
-#     sim_registry.register(signal)
-#     # Look for a component that isn't a leaf (i.e. not an EpicsSignal)
-#     channel = PyDMChannel(address="oph://epics_motor")
-#     pydm_ophyd_plugin.add_connection(channel)
-#     # Check that the original address is set for widget feedback
-#     connection = pydm_ophyd_plugin.connections["epics_motor"]
-#     assert connection.pv.pvname == "epics_motor"
-#     # Look for a component that isn't in the registry
-#     channel = PyDMChannel(address="oph://jabberwocky")
-#     pydm_ophyd_plugin.add_connection(channel)
-#     # Check that the original address is set for widget feedback
-#     connection = pydm_ophyd_plugin.connections["jabberwocky"]
-#     assert connection.pv.pvname == "jabberwocky"
+def test_widget_signals(sim_motor, ffapp, qtbot):
+    """Does this work with a real widget in a real window."""
+    sim_motor.user_setpoint.set(5.15)
+    sim_motor.user_setpoint._metadata['precision'] = 3
+    window = PyDMMainWindow()
+    widget = PyDMLineEdit(parent=window, init_channel="oph://motor.user_setpoint")
+    # widget.precisionChanged(3)
+    ffapp.processEvents()
+    time.sleep(1)
+    assert widget.text() == "5.150"
