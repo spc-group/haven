@@ -1,7 +1,8 @@
 import logging
 
 import numpy as np
-from qtpy.QtCore import Qt, Slot
+from qtpy.QtCore import Qt, Slot, QTimer
+from qtpy.QtWidgets import QApplication
 from ophyd import OphydObject
 from haven import registry, exceptions
 from pydm.data_plugins import add_plugin
@@ -15,7 +16,7 @@ from pydm.data_plugins.plugin import PyDMConnection, PyDMPlugin
 log = logging.getLogger(__name__)
 
 
-class OphydConnection(PyDMConnection):
+class Connection(PyDMConnection):
     _cpt: OphydObject = None
     _ctrl_vars: dict = {}
     """A pydm connection for hardware abstraction through Ophyd objects."""
@@ -27,29 +28,29 @@ class OphydConnection(PyDMConnection):
         try:
             self._cpt = registry.find(address)
         except (AttributeError, exceptions.ComponentNotFound):
-            print(f"Could not find device: {address}")
+            log.warning(f"Could not find device: {address}")
             self.connection_state_signal.emit(False)
         else:
-            print(f"Found device: {address}: {self._cpt.name}")
+            log.debug(f"Found device: {address}: {self._cpt.name}")
             # Listen for changes
             self.prepare_subscriptions()
             self.add_listener(channel)
     
     def prepare_subscriptions(self):
         """Set up routines to respond to changes in the ophyd object."""
-        print(f"Preparing subs for {self._cpt.name}")
         if self._cpt is not None:
-            self._cpt.subscribe(self.send_new_value, run=True)
+            log.debug(f"Preparing subscriptions for {self._cpt.name}")
+            self._cpt.subscribe(self.send_new_value, run=False)
             # Set up metadata callbacks
-            self._cpt.subscribe(self.update_ctrl_vars, event_type="meta", run=True)
+            self._cpt.subscribe(self.update_ctrl_vars, event_type="meta", run=False)
 
     def send_new_value(self, *args, **kwargs):
         if "value" in kwargs:
             value = kwargs["value"]
         else:
             return
-        log.debug(f"Sending new value for {self._cpt.name}: {value}")
-        self.new_value_signal.emit(value)
+        log.debug(f"Sending new {type(value)} value for {self._cpt.name}: {value}")
+        self.new_value_signal[type(value)].emit(value)
 
     def update_ctrl_vars(self, *args, **kwargs):
         # See which control variables have changed
@@ -65,22 +66,27 @@ class OphydConnection(PyDMConnection):
             "precision": self.prec_signal,
             "lower_ctrl_limit": self.lower_ctrl_limit_signal,
             "upper_ctrl_limit": self.upper_ctrl_limit_signal,
-            "timestamp": self.timestamp_signal,
         }
+        if hasattr(self, 'timestamp_signal'):
+            # The timestamp_signal is a recent addition to PyDM
+            var_signals["timestamp"] = self.timestamp_signal
         for key, signal in var_signals.items():
             if value := new_vars.get(key):
                 signal.emit(value)
         self._ctrl_vars.update(new_vars)
 
     def add_listener(self, channel):
+        super(Connection, self).add_listener(channel)
         # Clear cached control variables so they can get remitted
         self._ctrl_vars = {}
-        super().add_listener(channel)
         # If the channel is used for writing to components, hook it up
         if channel.value_signal is not None:
             channel.value_signal.connect(self.set_value, Qt.QueuedConnection)
         # Run the callbacks to make sure the new listener gets notified
-        if self._cpt is not None:
+        self.run_callbacks()
+
+    def run_callbacks(self):
+        if self._cpt is  None:
             self._cpt._run_subs(sub_type=self._cpt._default_sub)
             self._cpt._run_metadata_callbacks()
 
@@ -89,11 +95,12 @@ class OphydConnection(PyDMConnection):
     @Slot(str)
     @Slot(np.ndarray)
     def set_value(self, new_value):
+        log.debug(f"Setting new value for {self._cpt.name}: {new_value}")
         self._cpt.set(new_value).wait()
 
 class OphydPlugin(PyDMPlugin):
     protocol = "oph"
-    connection_class = OphydConnection
+    connection_class = Connection
 
     # def add_connection(self, channel):
     #     import pdb; pdb.set_trace()
