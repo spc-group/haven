@@ -15,6 +15,7 @@ def mono_motor():
 def id_gap_motor():
     return sim.SynAxis(name="id_gap_energy", labels={"motors", "energies"})
 
+
 @pytest.fixture()
 def exposure_motor():
     return sim.Signal(name="exposure")
@@ -85,6 +86,7 @@ def test_energy_scan_basics(mono_motor, id_gap_motor, energies, RE):
     assert I0_exposure.get().readback == exposure_time
     assert It_exposure.get().readback == exposure_time
 
+
 def test_raises_on_empty_positioners(RE, energies):
     with pytest.raises(ValueError):
         RE(energy_scan(energies, energy_positioners=[]))
@@ -106,9 +108,7 @@ def test_single_range(mono_motor, exposure_motor, I0):
     # Check that the mono motor is moved to the correct positions
     scan_list = list(scan)
     real_energies = [
-        i.args[0]
-        for i in scan_list
-        if i[0] == "set" and i.obj.name == "mono_energy"
+        i.args[0] for i in scan_list if i[0] == "set" and i.obj.name == "mono_energy"
     ]
     np.testing.assert_equal(real_energies, expected_energies)
     # Check that the exposure is set correctly
@@ -116,6 +116,7 @@ def test_single_range(mono_motor, exposure_motor, I0):
         i.args[0] for i in scan_list if i[0] == "set" and i.obj.name == "exposure"
     ]
     np.testing.assert_equal(real_exposures, expected_exposures)
+
 
 def test_multi_range(mono_motor, exposure_motor, I0):
     E0 = 10000
@@ -141,9 +142,7 @@ def test_multi_range(mono_motor, exposure_motor, I0):
     # Check that the mono motor is moved to the correct positions
     scan_list = list(scan)
     real_energies = [
-        i.args[0]
-        for i in scan_list
-        if i[0] == "set" and i.obj.name == "mono_energy"
+        i.args[0] for i in scan_list if i[0] == "set" and i.obj.name == "mono_energy"
     ]
     np.testing.assert_equal(real_energies, expected_energies)
     # Check that the exposure is set correctly
@@ -151,6 +150,7 @@ def test_multi_range(mono_motor, exposure_motor, I0):
         i.args[0] for i in scan_list if i[0] == "set" and i.obj.name == "exposure"
     ]
     np.testing.assert_equal(real_exposures, expected_exposures)
+
 
 def test_exafs_k_range(mono_motor, exposure_motor, I0):
     """Ensure that passing in k_min, etc. produces an energy range
@@ -174,9 +174,7 @@ def test_exafs_k_range(mono_motor, exposure_motor, I0):
     # Check that the mono motor is moved to the correct positions
     scan_list = list(scan)
     real_energies = [
-        i.args[0]
-        for i in scan_list
-        if i[0] == "set" and i.obj.name == "mono_energy"
+        i.args[0] for i in scan_list if i[0] == "set" and i.obj.name == "mono_energy"
     ]
     np.testing.assert_equal(real_energies, expected_energies)
     # Check that the exposure is set correctly
@@ -184,6 +182,7 @@ def test_exafs_k_range(mono_motor, exposure_motor, I0):
         i.args[0] for i in scan_list if i[0] == "set" and i.obj.name == "exposure"
     ]
     np.testing.assert_equal(real_exposures, expected_exposures)
+
 
 def test_named_E0(mono_motor, exposure_motor, I0):
     expected_energies = np.concatenate(
@@ -208,9 +207,7 @@ def test_named_E0(mono_motor, exposure_motor, I0):
     # Check that the mono motor is moved to the correct positions
     scan_list = list(scan)
     real_energies = [
-        i.args[0]
-        for i in scan_list
-        if i[0] == "set" and i.obj.name == "mono_energy"
+        i.args[0] for i in scan_list if i[0] == "set" and i.obj.name == "mono_energy"
     ]
     np.testing.assert_equal(real_energies, expected_energies)
     # Check that the exposure is set correctly
@@ -218,6 +215,7 @@ def test_named_E0(mono_motor, exposure_motor, I0):
         i.args[0] for i in scan_list if i[0] == "set" and i.obj.name == "exposure"
     ]
     np.testing.assert_equal(real_exposures, expected_exposures)
+
 
 def test_remove_duplicate_energies(mono_motor, exposure_motor, I0):
     plan = xafs_scan(
@@ -233,9 +231,7 @@ def test_remove_duplicate_energies(mono_motor, exposure_motor, I0):
         time_positioners=[exposure_motor],
     )
     msgs = list(plan)
-    set_msgs = [
-        m for m in msgs if m.command == "set" and m.obj.name == "mono_energy"
-    ]
+    set_msgs = [m for m in msgs if m.command == "set" and m.obj.name == "mono_energy"]
     read_msgs = [m for m in msgs if m.command == "read" and m.obj.name == "I0"]
     energies = [m.args[0] for m in set_msgs]
     # Make sure we only read each point once
