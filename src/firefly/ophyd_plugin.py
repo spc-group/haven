@@ -7,6 +7,7 @@ from ophyd import OphydObject
 from haven import registry, exceptions
 from pydm.data_plugins import add_plugin
 from pydm.data_plugins.plugin import PyDMConnection, PyDMPlugin
+
 # from pydm.data_plugins.epics_plugins.pyepics_plugin_component import (
 #     Connection,
 #     PyEPICSPlugin,
@@ -17,9 +18,20 @@ log = logging.getLogger(__name__)
 
 
 class Connection(PyDMConnection):
+    """A pydm connection for hardware abstraction through Ophyd objects.
+
+    This makes use of Haven's instrument registry, and the channel
+    address should be the name of the device to be manipulated as
+    known to the registry. For example, if you have an epics motor
+    device named "stage_vert", then to manipulate the setpoint, use
+    "oph://stage_vert.user_setpoint", and for retrieving the readback
+    value, use "oph://stage_vert.user_readback". The exact name will
+    depend on the specifics of the ophyd device being used.
+
+    """
+
     _cpt: OphydObject = None
     _ctrl_vars: dict = {}
-    """A pydm connection for hardware abstraction through Ophyd objects."""
 
     def __init__(self, channel, address, protocol=None, parent=None):
         name = address
@@ -35,21 +47,27 @@ class Connection(PyDMConnection):
         # Listen for changes
         self.prepare_subscriptions()
         self.add_listener(channel)
-    
+
     def prepare_subscriptions(self):
         """Set up routines to respond to changes in the ophyd object."""
         if self._cpt is not None:
             log.debug(f"Preparing subscriptions for {self._cpt.name}")
-            self._cids['meta'] = self._cpt.subscribe(self.update_ctrl_vars, event_type="meta", run=False)
+            self._cids["meta"] = self._cpt.subscribe(
+                self.update_ctrl_vars, event_type="meta", run=False
+            )
             event_type = self._cpt._default_sub
-            self._cids[event_type] = self._cpt.subscribe(self.send_new_value, event_type=event_type, run=False)
+            self._cids[event_type] = self._cpt.subscribe(
+                self.send_new_value, event_type=event_type, run=False
+            )
 
     def send_new_value(self, *args, **kwargs):
         if "value" in kwargs.keys():
             value = kwargs["value"]
             log.debug(f"Received new value for {self._cpt.name}: {value}")
         else:
-            log.debug(f"Did not receive a new value. Skipping update for {self._cpt.name}.")
+            log.debug(
+                f"Did not receive a new value. Skipping update for {self._cpt.name}."
+            )
             return
         log.debug(f"Sending new {type(value)} value for {self._cpt.name}: {value}")
         self.new_value_signal[type(value)].emit(value)
@@ -66,7 +84,7 @@ class Connection(PyDMConnection):
             "lower_ctrl_limit": self.lower_ctrl_limit_signal,
             "upper_ctrl_limit": self.upper_ctrl_limit_signal,
         }
-        if hasattr(self, 'timestamp_signal'):
+        if hasattr(self, "timestamp_signal"):
             # The timestamp_signal is a recent addition to PyDM
             var_signals["timestamp"] = self.timestamp_signal
         # Process the individual control variable arguments
@@ -75,7 +93,9 @@ class Connection(PyDMConnection):
                 # Use the argument value
                 val = kwargs[key]
             else:
-                log.debug(f"Could not find {key} control variable for {self._cpt.name}.")
+                log.debug(
+                    f"Could not find {key} control variable for {self._cpt.name}."
+                )
                 continue
             # Emit the new value if is different from last time
             if val != self._ctrl_vars.get(key, None):
@@ -103,7 +123,7 @@ class Connection(PyDMConnection):
             self.connection_state_signal.emit(False)
         else:
             cpt = self._cpt
-            for event_type in [cpt._default_sub, 'meta']:
+            for event_type in [cpt._default_sub, "meta"]:
                 cached = cpt._args_cache[event_type]
                 log.debug(f"Running {event_type} callbacks: {cached}")
                 if cached is not None:
@@ -128,8 +148,14 @@ class Connection(PyDMConnection):
     @Slot(str)
     @Slot(np.ndarray)
     def set_value(self, new_value):
-        log.debug(f"Setting new value for {self._cpt.name}: {new_value}")
-        self._cpt.set(new_value)
+        if self._cpt is None:
+            log.warning(
+                "Cannot set value {new_value} for missing component {self._cpt.name}"
+            )
+        else:
+            log.debug(f"Setting new value for {self._cpt.name}: {new_value}")
+            return self._cpt.set(new_value)
+
 
 class OphydPlugin(PyDMPlugin):
     protocol = "oph"

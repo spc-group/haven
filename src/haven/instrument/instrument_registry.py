@@ -13,7 +13,6 @@ log = logging.getLogger(__name__)
 __all__ = ["InstrumentRegistry", "registry"]
 
 
-
 def is_iterable(obj):
     return (not isinstance(obj, str)) and hasattr(obj, "__iter__")
 

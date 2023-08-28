@@ -3,7 +3,10 @@ import pytest
 from ophyd import sim, Device, EpicsMotor
 
 from haven.instrument import InstrumentRegistry
-from haven.instrument.instrument_registry import ComponentNotFound, MultipleComponentsFound
+from haven.instrument.instrument_registry import (
+    ComponentNotFound,
+    MultipleComponentsFound,
+)
 
 
 def test_register_component():

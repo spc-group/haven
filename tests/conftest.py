@@ -383,4 +383,3 @@ def sim_vortex(sim_registry):
 @pytest.fixture()
 def RE(event_loop):
     return RunEngineStub(call_returns_result=True)
-    

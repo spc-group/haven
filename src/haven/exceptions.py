@@ -1,4 +1,8 @@
-from .instrument.instrument_registry import ComponentNotFound, MultipleComponentsFound, InvalidComponentLabel
+from .instrument.instrument_registry import (
+    ComponentNotFound,
+    MultipleComponentsFound,
+    InvalidComponentLabel,
+)
 
 
 class NoEnergies(ValueError):

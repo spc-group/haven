@@ -54,7 +54,7 @@ def test_new_value(sim_motor, ophyd_connection, qtbot):
 
 
 def test_set_value(sim_motor, ophyd_connection, ophyd_channel):
-    ophyd_connection.set_value(87.0)
+    ophyd_connection.set_value(87.0).wait()
     assert sim_motor.user_setpoint.get(use_monitor=False) == 87.0
 
 
@@ -142,13 +142,15 @@ def test_update_ctrl_vals(sim_motor, ophyd_connection, qtbot):
 def test_widget_signals(sim_motor, ffapp, qtbot):
     """Does this work with a real widget in a real window."""
     sim_motor.user_setpoint.set(5.15)
-    sim_motor.user_setpoint._metadata['precision'] = 3
+    sim_motor.user_setpoint._metadata["precision"] = 3
     window = PyDMMainWindow()
     widget = PyDMLineEdit(parent=window, init_channel="oph://motor.user_setpoint")
     # widget.precisionChanged(3)
     ffapp.processEvents()
+    time.sleep(0.05)
     assert widget.text() == "5.150"
     # Now check that we can set the widget text and have it update the ophyd device
     widget.send_value_signal[float].emit(4.9)
     ffapp.processEvents()
+    time.sleep(0.05)
     assert sim_motor.user_setpoint.get(use_monitor=False) == 4.9
