@@ -4,12 +4,14 @@ import pytest
 import matplotlib.pyplot as plt
 from bluesky.callbacks.best_effort import BestEffortCallback
 from bluesky.callbacks.fitting import PeakStats
+from bluesky import RunEngine
 from ophyd import sim
 
 from haven import align_motor, align_pitch2, registry
-from run_engine import RunEngineStub
+# from run_engine import RunEngineStub
 
 
+@pytest.mark.skip(reason="Deprecated, use bluesky.plans.tune_centroid")
 def test_align_motor(ffapp):
     # Set up simulated motors and detectors
     motor = sim.SynAxis(name="motor", labels={"motors"})
@@ -35,7 +37,7 @@ def test_align_motor(ffapp):
         md={"plan_name": "test_plan"},
     )
     # Execute the plan
-    RE = RunEngineStub(call_returns_result=True)
+    RE = RunEngine(call_returns_result=True)
     result = RE(plan)
     # Check peak calculation results
     assert bec.peaks["cen"]["detector"] == pytest.approx(-3, rel=1e-3)

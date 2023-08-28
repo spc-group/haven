@@ -48,6 +48,7 @@ def ion_chamber(sim_registry, id_motor):
     yield I0
 
 
+@pytest.mark.skip(reason="``haven.plans.align_motor`` is deprecated.")
 def test_moves_energy(mono_motor, id_motor, ion_chamber, pitch2_motor, event_loop):
     """Simple test to ensure that the plan moves the mono and undulators
     to the right starting energy."""
@@ -87,6 +88,7 @@ def test_aligns_mono_energy(mono_motor, id_motor, ion_chamber, pitch2_motor):
     assert len(id_messages) >= npts
 
 
+@pytest.mark.skip(reason="``haven.plans.align_motor`` is deprecated.")
 def test_fitting_callback(mono_motor, id_motor, ion_chamber, pitch2_motor, event_loop):
     fit_model = MagicMock()
     plan = mono_ID_calibration(
