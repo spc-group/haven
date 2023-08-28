@@ -12,6 +12,7 @@ on:
 env:
   DISPLAY: ":99"
   PYDM_DEFAULT_PROTOCOL: ca
+  BLUESKY_DEBUG_CALLBACKS: 1
 
 
 jobs:
