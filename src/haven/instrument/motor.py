@@ -7,7 +7,7 @@ import io
 import contextlib
 
 import epics
-from ophyd import EpicsMotor, EpicsSignal, Component as Cpt, sim
+from ophyd import EpicsMotor, EpicsSignal, EpicsSignalRO, Component as Cpt, sim
 
 from .epics import caget
 from .._iconfig import load_config
@@ -24,11 +24,12 @@ class HavenMotor(EpicsMotor):
     Returns to the previous value when being unstaged.
     """
 
-    description = Cpt(EpicsSignal, name="description", suffix=".DESC")
-    tweak_value = Cpt(EpicsSignal, name="tweak_value", suffix=".TWV")
-    tweak_forward = Cpt(EpicsSignal, name="tweak_forward", suffix=".TWF")
-    tweak_reverse = Cpt(EpicsSignal, name="tweak_reverse", suffix=".TWR")
-    soft_limit_violation = Cpt(EpicsSignal, name="soft_limit_violation", suffix=".LVIO")
+    description = Cpt(EpicsSignal, ".DESC", kind="omitted")
+    tweak_value = Cpt(EpicsSignal, ".TWV", kind="omitted")
+    tweak_forward = Cpt(EpicsSignal, ".TWF", kind="omitted", tolerance=2)
+    tweak_reverse = Cpt(EpicsSignal, ".TWR",kind="omitted", tolerance=2)
+    motor_stop = Cpt(EpicsSignal, ".STOP", kind="omitted", tolerance=2)
+    soft_limit_violation = Cpt(EpicsSignalRO, ".LVIO", kind="omitted")
 
     def stage(self):
         super().stage()

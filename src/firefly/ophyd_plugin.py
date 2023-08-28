@@ -29,13 +29,12 @@ class Connection(PyDMConnection):
         try:
             self._cpt = registry.find(address)
         except (AttributeError, exceptions.ComponentNotFound):
-            log.warning(f"Could not find device: {address}")
-            self.connection_state_signal.emit(False)
+            log.warning(f"Couldn't find ophyd plugin device: {address}")
         else:
             log.debug(f"Found device: {address}: {self._cpt.name}")
-            # Listen for changes
-            self.prepare_subscriptions()
-            self.add_listener(channel)
+        # Listen for changes
+        self.prepare_subscriptions()
+        self.add_listener(channel)
     
     def prepare_subscriptions(self):
         """Set up routines to respond to changes in the ophyd object."""
@@ -100,7 +99,9 @@ class Connection(PyDMConnection):
 
     def run_callbacks(self):
         """Run the existing callbacks of the Ophyd object."""
-        if self._cpt is not None:
+        if self._cpt is None:
+            self.connection_state_signal.emit(False)
+        else:
             cpt = self._cpt
             for event_type in [cpt._default_sub, 'meta']:
                 cached = cpt._args_cache[event_type]
@@ -116,18 +117,20 @@ class Connection(PyDMConnection):
                 callback = cpt._callbacks[event_type][cid]
                 callback(*args, **kwargs)
 
+    def close(self):
+        """Remove any callbacks previously set up for this connection."""
+        if self._cpt is not None:
+            for cid in self._cids.values():
+                self._cpt.unsubscribe(cid)
+
     @Slot(float)
     @Slot(int)
     @Slot(str)
     @Slot(np.ndarray)
     def set_value(self, new_value):
         log.debug(f"Setting new value for {self._cpt.name}: {new_value}")
-        self._cpt.set(new_value).wait()
+        self._cpt.set(new_value)
 
 class OphydPlugin(PyDMPlugin):
     protocol = "oph"
     connection_class = Connection
-
-    # def add_connection(self, channel):
-    #     import pdb; pdb.set_trace()
-    #     super().add_connection(channel)
