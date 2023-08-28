@@ -86,6 +86,10 @@ def align_motor(
       Extra metadata to pass into the run engine.
 
     """
+    msg = ("The ``align_motor`` plan is deprecated. "
+           "Consider using ``bluesky.plans.tune_centroid`` instead")
+    warnings.warn(msg, DeprecationWarning)
+    # Prepare metadata
     md_ = dict(plan_name="align_motor")
     md_.update(md)
     # Set up the best effort callback
