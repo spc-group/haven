@@ -76,11 +76,11 @@ class Connection(PyDMConnection):
                 # Use the argument value
                 val = kwargs[key]
             else:
-                print(f"Could not find {key} for {self._cpt.name}.")
+                log.debug(f"Could not find {key} control variable for {self._cpt.name}.")
                 continue
             # Emit the new value if is different from last time
             if val != self._ctrl_vars.get(key, None):
-                print(f"Emitting new {key}: {val}")
+                log.debug(f"Emitting new {key}: {val}")
                 signal.emit(val)
                 self._ctrl_vars[key] = val
 
@@ -89,17 +89,22 @@ class Connection(PyDMConnection):
         # Clear cached control variables so they can get remitted
         self._ctrl_vars = {}
         # If the channel is used for writing to components, hook it up
-        if channel.value_signal is not None:
-            channel.value_signal.connect(self.set_value, Qt.QueuedConnection)
+        if (sig := channel.value_signal) is not None:
+            for dtype in [float, int, str, np.ndarray]:
+                try:
+                    sig[dtype].connect(self.set_value, Qt.QueuedConnection)
+                except KeyError:
+                    pass
         # Run the callbacks to make sure the new listener gets notified
         self.run_callbacks()
 
     def run_callbacks(self):
+        """Run the existing callbacks of the Ophyd object."""
         if self._cpt is not None:
             cpt = self._cpt
             for event_type in [cpt._default_sub, 'meta']:
                 cached = cpt._args_cache[event_type]
-                print(f"Running {event_type} callbacks: {cached}")
+                log.debug(f"Running {event_type} callbacks: {cached}")
                 if cached is not None:
                     args, kwargs = cached
                 elif event_type == "meta":

@@ -147,5 +147,8 @@ def test_widget_signals(sim_motor, ffapp, qtbot):
     widget = PyDMLineEdit(parent=window, init_channel="oph://motor.user_setpoint")
     # widget.precisionChanged(3)
     ffapp.processEvents()
-    time.sleep(1)
     assert widget.text() == "5.150"
+    # Now check that we can set the widget text and have it update the ophyd device
+    widget.send_value_signal[float].emit(4.9)
+    ffapp.processEvents()
+    assert sim_motor.user_setpoint.get(use_monitor=False) == 4.9
