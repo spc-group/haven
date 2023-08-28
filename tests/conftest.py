@@ -25,10 +25,12 @@ test_dir = top_dir / "tests"
 import haven
 from haven.simulated_ioc import simulated_ioc
 from haven import registry, load_config
+from haven.instrument.stage import AerotechFlyer
 from haven.instrument.aps import ApsMachine
 from haven.instrument.shutter import Shutter
 from haven.instrument.camera import AravisDetector
 from haven.instrument.fluorescence_detector import DxpDetectorBase
+from haven.instrument.ion_chamber import IonChamber
 from firefly.application import FireflyApplication
 from firefly.ophyd_plugin import OphydPlugin
 from run_engine import RunEngineStub
@@ -314,11 +316,11 @@ def ioc_dxp(request):
 def sim_registry(monkeypatch):
     # mock out Ophyd connections so devices can be created
     modules = [
-        haven.instrument.aps,
         haven.instrument.fluorescence_detector,
         haven.instrument.monochromator,
         haven.instrument.ion_chamber,
         haven.instrument.motor,
+        haven.instrument.device,
     ]
     for mod in modules:
         monkeypatch.setattr(mod, "await_for_connection", mock.AsyncMock())
@@ -377,7 +379,33 @@ def sim_vortex(sim_registry):
     FakeDXP = make_fake_device(DxpDetectorBase)
     vortex = FakeDXP(name="vortex_me4", labels={"xrf_detectors"})
     sim_registry.register(vortex)
+    vortex.net_cdf.dimensions.set([1477326, 1, 1])
     yield vortex
+
+
+@pytest.fixture()
+def sim_ion_chamber(sim_registry):
+    FakeIonChamber = make_fake_device(IonChamber)
+    ion_chamber = FakeIonChamber(
+        prefix="scaler_ioc", name="I00", labels={"ion_chambers"}, ch_num=2
+    )
+    sim_registry.register(ion_chamber)
+    return ion_chamber
+
+
+@pytest.fixture()
+def sim_aerotech_flyer():
+    Flyer = make_fake_device(
+        AerotechFlyer,
+    )
+    flyer = Flyer(
+        name="flyer",
+        axis="@0",
+        encoder=6,
+    )
+    flyer.user_setpoint._limits = (0, 1000)
+    flyer.send_command = mock.MagicMock()
+    yield flyer
 
 
 @pytest.fixture()

@@ -1,13 +1,16 @@
 """Holds ion chamber detector descriptions and assignments to EPICS PVs."""
 
-from typing import Sequence
+from typing import Sequence, Generator, Dict
 import logging
 import asyncio
+from collections import OrderedDict
+import time
 
 import epics
 from ophyd import (
     Device,
     status,
+    Signal,
     EpicsSignal,
     EpicsSignalRO,
     PVPositionerPC,
@@ -17,9 +20,13 @@ from ophyd import (
     Component as Cpt,
     FormattedComponent as FCpt,
     Kind,
+    flyers,
 )
 from ophyd.ophydobj import OphydObject
 from ophyd.pseudopos import pseudo_position_argument, real_position_argument
+from ophyd.mca import EpicsMCARecord
+from ophyd.status import SubscriptionStatus
+import numpy as np
 
 from .scaler_triggered import ScalerTriggered, ScalerSignal, ScalerSignalRO
 from .instrument_registry import registry
@@ -102,16 +109,27 @@ class SensitivityLevelPositioner(PseudoPositioner):
 
     @real_position_argument
     def inverse(self, sensitivity):
-        "Given a position in mono and ID energy, transform to the target energy."
+        """Given a sensitivity value and unit, convert to a numeric energy
+        level (1, 2, 3, etc).
+
+        """
         new_gain = sensitivity.sens_value + sensitivity.sens_unit * len(self.values)
         return self.PseudoPosition(sens_level=new_gain)
 
 
 # @registry.register
-class IonChamber(ScalerTriggered, Device):
+class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
     """An ion chamber at a spectroscopy beamline.
 
     Also includes the pre-amplifier as ``.pre_amp``.
+
+    This class also implements the bluesky/ophyd flyer
+    interface. During *kickoff()*, previous data are erased and
+    acquisition is started as a multi-channel scaler. It also watches
+    for changes in the number of data collected and collects
+    timestamps each time a new datum is captured. *complete()* stops
+    acquisition. These timestamps, along with the measured data, are
+    generated during *collect()*.
 
     Parameters
     ==========
@@ -147,41 +165,101 @@ class IonChamber(ScalerTriggered, Device):
 
     """
 
+    stream_name: str = "primary"
     ch_num: int = 0
     ch_char: str
+    start_timestamp: float = None
     count: OphydObject = FCpt(
-        EpicsSignal, "{scaler_prefix}.CNT", trigger_value=1, kind=Kind.omitted
+        EpicsSignal, "{scaler_prefix}:scaler1.CNT", trigger_value=1, kind=Kind.omitted
     )
     description: OphydObject = FCpt(
-        EpicsSignalRO, "{prefix}.NM{ch_num}", kind=Kind.config
+        EpicsSignalRO, "{scaler_prefix}:scaler1.NM{ch_num}", kind=Kind.config
+    )
+    # Scaler mode support
+    clock: OphydObject = FCpt(
+        EpicsSignal,
+        "{scaler_prefix}:scaler1.FREQ",
+        kind=Kind.config,
     )
     raw_counts: OphydObject = FCpt(
-        ScalerSignalRO, "{prefix}.S{ch_num}", kind=Kind.normal
+        ScalerSignalRO, "{scaler_prefix}:scaler1.S{ch_num}", kind=Kind.normal
     )
     offset: OphydObject = FCpt(
-        ScalerSignalRO, "{prefix}_{offset_suffix}", kind=Kind.config
+        ScalerSignalRO, "{scaler_prefix}:scaler1_{offset_suffix}", kind=Kind.config
     )
     net_counts: OphydObject = FCpt(
-        ScalerSignalRO, "{prefix}_netA.{ch_char}", kind=Kind.hinted
+        ScalerSignalRO, "{scaler_prefix}:scaler1_netA.{ch_char}", kind=Kind.hinted
     )
     volts: OphydObject = FCpt(
-        ScalerSignalRO, "{prefix}_calc{ch_num}.VAL", kind=Kind.normal
+        ScalerSignalRO, "{scaler_prefix}:scaler1_calc{ch_num}.VAL", kind=Kind.normal
     )
     exposure_time: OphydObject = FCpt(
-        EpicsSignal, "{scaler_prefix}.TP", kind=Kind.normal
+        EpicsSignal, "{scaler_prefix}:scaler1.TP", kind=Kind.normal
     )
     sensitivity: OphydObject = FCpt(
         SensitivityLevelPositioner, "{preamp_prefix}", kind=Kind.config
     )
     auto_count: OphydObject = FCpt(
-        EpicsSignal, "{scaler_prefix}.CONT", kind=Kind.omitted
+        EpicsSignal, "{scaler_prefix}:scaler1.CONT", kind=Kind.omitted
     )
     record_dark_current: OphydObject = FCpt(
-        EpicsSignal, "{scaler_prefix}_offset_start.PROC", kind=Kind.omitted
+        EpicsSignal, "{scaler_prefix}:scaler1_offset_start.PROC", kind=Kind.omitted
     )
     record_dark_time: OphydObject = FCpt(
-        EpicsSignal, "{scaler_prefix}_offset_time.VAL", kind=Kind.config
+        EpicsSignal, "{scaler_prefix}:scaler1_offset_time.VAL", kind=Kind.config
     )
+    # Multi-channel scaler support
+    start_all: OphydObject = FCpt(
+        EpicsSignal, "{scaler_prefix}:StartAll", kind=Kind.omitted
+    )
+    stop_all: OphydObject = FCpt(
+        EpicsSignal, "{scaler_prefix}:StopAll", kind=Kind.omitted
+    )
+    erase_all: OphydObject = FCpt(
+        EpicsSignal, "{scaler_prefix}:EraseAll", kind=Kind.omitted
+    )
+    erase_start: OphydObject = FCpt(
+        EpicsSignal,
+        "{scaler_prefix}:EraseStart",
+        kind=Kind.omitted,
+    )
+    acquiring: OphydObject = FCpt(
+        EpicsSignal, "{scaler_prefix}:Acquiring", kind=Kind.omitted
+    )
+    channel_advance_source: OphydObject = FCpt(
+        EpicsSignal,
+        "{scaler_prefix}:ChannelAdvance",
+        kind=Kind.config,
+    )
+    num_channels_to_use: OphydObject = FCpt(
+        EpicsSignal,
+        "{scaler_prefix}:NuseAll",
+        kind=Kind.config,
+    )
+    max_channels: OphydObject = FCpt(
+        EpicsSignal, "{scaler_prefix}:MaxChannels", kind=Kind.config
+    )
+    current_channel: OphydObject = FCpt(
+        EpicsSignal,
+        "{scaler_prefix}:CurrentChannel",
+        kind=Kind.normal,
+    )
+    channel_one_source: OphydObject = FCpt(
+        EpicsSignal, "{scaler_prefix}:Channel1Source", kind=Kind.config
+    )
+    count_on_start: OphydObject = FCpt(
+        EpicsSignal, "{scaler_prefix}:CountOnStart", kind=Kind.config
+    )
+    mca: OphydObject = FCpt(
+        EpicsMCARecord, "{scaler_prefix}:mca{ch_num}", kind=Kind.omitted
+    )
+    mca_times: OphydObject = FCpt(
+        EpicsMCARecord, "{scaler_prefix}:mca1", kind=Kind.omitted
+    )
+
+    # Virtual signals to handle fly-scanning
+    timestamps: list = []
+    num_bins = Cpt(Signal)
 
     _default_read_attrs = [
         "raw_counts",
@@ -250,31 +328,82 @@ class IonChamber(ScalerTriggered, Device):
             raise exceptions.GainOverflow(f"{self.name} -> {e}")
         return status
 
-    def increase_gain(self) -> Sequence[status.StatusBase]:
+    def increase_gain(self) -> status.StatusBase:
         """Increase the gain (descrease the sensitivity) of the ion chamber's
         pre-amp.
 
         Returns
         =======
-        Sequence[status.StatusBase]
-          Ophyd status objects for the value and gain of the
+        status.StatusBase
+          Ophyd status object for the value and gain of the
           sensitivity in the pre-amp.
 
         """
         return self.change_sensitivity(-1)
 
-    def decrease_gain(self) -> Sequence[status.StatusBase]:
+    def decrease_gain(self) -> status.StatusBase:
         """Decrease the gain (increase the sensitivity) of the ion chamber's
         pre-amp.
 
         Returns
         =======
-        Sequence[status.StatusBase]
-          Ophyd status objects for the value and gain of the
+        status.StatusBase
+          Ophyd status object for the value and gain of the
           sensitivity in the pre-amp.
 
         """
         return self.change_sensitivity(1)
+
+    def record_timestamp(self, *, old_value, value, timestamp, **kwargs):
+        self.timestamps.append(timestamp)
+
+    def kickoff(self) -> status.StatusBase:
+        def check_acquiring(*, old_value, value, **kwargs):
+            is_acquiring = bool(value)
+            if is_acquiring:
+                self.start_timestamp = time.time()
+            return is_acquiring
+
+        self.start_timestamp = None
+        # Set some configuration PVs on the MCS
+        self.count_on_start.set(1).wait()
+        # Start acquiring data
+        self.erase_start.set(1).wait()
+        # Wait for the "Acquiring" to start
+        status = SubscriptionStatus(self.acquiring, check_acquiring)
+        # Watch for new data being collected so we can save timestamps
+        self.timestamps = []
+        self.current_channel.subscribe(self.record_timestamp)
+        return status
+
+    def complete(self) -> status.StatusBase:
+        status = self.stop_all.set(1, settle_time=0.05)
+        return status
+
+    def collect(self) -> Generator[Dict, None, None]:
+        net_counts_name = self.net_counts.name
+        # Use the scaler's clock counter to calculate timestamps
+        times = self.mca_times.spectrum.get()
+        times = np.divide(times, self.clock.get(), casting="safe")
+        times = np.cumsum(times)
+        pso_timestamps = times + self.start_timestamp
+        # Retrieve data, except for first point (during taxiing)
+        data = self.mca.spectrum.get()[1:]
+        # Convert timestamps from PSO pulses to pixels
+        pixel_timestamps = (pso_timestamps[1:] + pso_timestamps[:-1]) / 2
+        # Create data events
+        for ts, value in zip(pixel_timestamps, data):
+            yield {
+                "data": {net_counts_name: value},
+                "timestamps": {net_counts_name: ts},
+                "time": ts,
+            }
+
+    def describe_collect(self) -> Dict[str, Dict]:
+        """Describe details for the flyer collect() method"""
+        desc = OrderedDict()
+        desc.update(self.net_counts.describe())
+        return {self.name: desc}
 
 
 async def make_ion_chamber_device(
@@ -290,19 +419,20 @@ async def make_ion_chamber_device(
     try:
         await await_for_connection(ic)
     except TimeoutError as exc:
+        raise
         log.warning(
-            f"Could not connect to ion_chamber: {name} ({prefix}, {preamp_prefix})"
+            f"Could not connect to ion chamber: {name} ({prefix}, {preamp_prefix})"
         )
     else:
-        log.info(f"Created heater: {name} ({prefix}, {preamp_prefix})")
+        log.info(f"Created ion chamber: {name} ({prefix}, {preamp_prefix})")
         registry.register(ic)
         return ic
 
 
-async def load_ion_chamber(preamp_ioc: str, scaler_prefix: str, ch_num: int):
+async def load_ion_chamber(preamp_prefix: str, scaler_prefix: str, ch_num: int):
     # Determine ion_chamber configuration
-    preamp_prefix = f"{preamp_ioc}:SR{ch_num-1:02}"
-    desc_pv = f"{scaler_prefix}.NM{ch_num}"
+    preamp_prefix = f"{preamp_prefix}:SR{ch_num-1:02}"
+    desc_pv = f"{scaler_prefix}:scaler1.NM{ch_num}"
     # Only use this ion chamber if it has a name
     try:
         name = await caget(desc_pv)
@@ -326,15 +456,15 @@ def load_ion_chamber_coros(config=None):
     # Load IOC prefixes from the config file
     if config is None:
         config = load_config()
-    vme_ioc = config["ion_chamber"]["scaler"]["ioc"]
-    scaler_record = config["ion_chamber"]["scaler"]["record"]
-    scaler_pv_prefix = f"{vme_ioc}:{scaler_record}"
-    preamp_ioc = config["ion_chamber"]["preamp"]["ioc"]
+    # vme_ioc = config["ion_chamber"]["scaler"]["ioc"]
+    # scaler_record = config["ion_chamber"]["scaler"]["record"]
+    scaler_prefix = config["ion_chamber"]["scaler"]["prefix"]
+    preamp_prefix = config["ion_chamber"]["preamp"]["prefix"]
     ion_chambers = []
     # Loop through the configuration sections and create ion chambers co-routines
     for ch_num in config["ion_chamber"]["scaler"]["channels"]:
         yield load_ion_chamber(
-            preamp_ioc=preamp_ioc, scaler_prefix=scaler_pv_prefix, ch_num=ch_num
+            preamp_prefix=preamp_prefix, scaler_prefix=scaler_prefix, ch_num=ch_num
         )
 
 

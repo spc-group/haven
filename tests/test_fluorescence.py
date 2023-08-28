@@ -1,12 +1,14 @@
+from pathlib import Path
 import asyncio
+from unittest.mock import MagicMock
+
+import numpy as np
 import pytest
 from epics import caget
-
-from unittest.mock import MagicMock
 from ophyd import Kind, DynamicDeviceComponent as DDC
 from bluesky import plans as bp
 
-from haven.instrument import fluorescence_detector
+from haven.instrument.fluorescence_detector import parse_xmap_buffer
 
 
 def test_load_dxp(sim_registry, mocker):
@@ -27,32 +29,6 @@ def test_load_dxp(sim_registry, mocker):
     # Check that bluesky hints were added
     assert hasattr(vortex.mcas.mca1.rois.roi1, "is_hinted")
     assert vortex.mcas.mca1.rois.roi1.is_hinted.pvname == "vortex_me4:mca1_R1BH"
-
-
-# class Vortex(DxpDetectorBase):
-#     mcas = DDC(
-#         fluorescence_detector.add_mcas(range_=mca_range),
-#         kind=active_kind,
-#         default_read_attrs=[f"mca{i}" for i in mca_range],
-#         default_configuration_attrs=[f"mca{i}" for i in mca_range],
-#     )
-
-
-# @pytest.fixture()
-# def vortex(sim_registry, mocker):
-#     mocker.patch("ophyd.signal.EpicsSignalBase._ensure_connected")
-#     from haven.instrument.fluorescence_detector import make_dxp_device
-
-#     # load_fluorescence_detectors(config=None)
-#     vortex = asyncio.run(
-#         make_dxp_device(
-#             device_name="vortex_me4",
-#             prefix="255idDXP",
-#             num_elements=4,
-#         )
-#     )
-#     # See if the device was loaded
-#     return vortex
 
 
 def test_enable_some_rois(sim_vortex):
@@ -175,3 +151,72 @@ def test_stage_signal_hinted(sim_vortex):
     assert (
         sim_vortex.mcas.mca1.rois.roi0.net_count.name not in sim_vortex.hints["fields"]
     )
+
+
+@pytest.mark.xfail
+def test_dxp_kickoff(sim_vortex):
+    vortex = sim_vortex
+    vortex.write_path = "M:\\tmp\\"
+    vortex.read_path = "/net/s20data/sector20/tmp/"
+    [
+        s.wait()
+        for s in [
+            vortex.acquiring.set(0),
+            vortex.collect_mode.set("MCA Spectrum"),
+            vortex.erase_start.set(0),
+            vortex.pixel_advance_mode.set("Sync"),
+        ]
+    ]
+    # Ensure that the vortex is in its normal operating state
+    assert vortex.collect_mode.get(use_monitor=False) == "MCA Spectrum"
+    # Check that the kickoff status ended properly
+    status = vortex.kickoff()
+    assert not status.done
+    vortex.acquiring.set(1)
+    status.wait()
+    assert status.done
+    assert status.success
+    # Check that the right signals were set during  kick off
+    assert vortex.collect_mode.get(use_monitor=False) == "MCA Mapping"
+    assert vortex.erase_start.get(use_monitor=False) == 1
+    assert vortex.pixel_advance_mode.get(use_monitor=False) == "Gate"
+    # Check that the netCDF writer was setup properly
+    assert vortex.net_cdf.enable.get(use_monitor=False) == "Enable"
+    assert vortex.net_cdf.file_path.get(use_monitor=False) == "M:\\tmp\\"
+    assert vortex.net_cdf.file_name.get(use_monitor=False) == "fly_scan_temp.nc"
+    assert vortex.net_cdf.capture.get(use_monitor=False) == 1
+
+
+def test_dxp_complete(sim_vortex):
+    vortex = sim_vortex
+    vortex.write_path = "M:\\tmp\\"
+    vortex.read_path = "/net/s20data/sector20/tmp/"
+    [
+        s.wait()
+        for s in [
+            vortex.acquiring.set(1),
+            vortex.stop_all.set(0),
+        ]
+    ]
+    status = vortex.complete()
+    assert vortex.stop_all.get(use_monitor=False) == 1
+    assert not status.done
+    vortex.acquiring.set(0)
+    status.wait()
+    assert status.done
+
+
+@pytest.mark.xfail
+def test_parse_xmap_buffer(sim_vortex):
+    """The output for fly-scanning with the DXP-based readout electronics
+    is a raw uint16 buffer that must be parsed by the ophyd device
+    according to section 5.3.3 of
+    https://cars9.uchicago.edu/software/epics/XMAP_User_Manual.pdf
+
+    """
+    fp = Path(__file__)
+    buff = np.loadtxt(fp.parent / "dxp_3px_4elem_Fe55.txt")
+    data = parse_xmap_buffer(buff)
+    assert isinstance(data, dict)
+    assert data["num_pixels"] == 3
+    assert len(data["pixels"]) == 3

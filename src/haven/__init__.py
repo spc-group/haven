@@ -2,6 +2,11 @@ __all__ = ["energy_scan"]
 
 __version__ = "0.1.0"
 
+# Allow for nested asyncio event loops
+import nest_asyncio
+
+nest_asyncio.apply()
+
 #  Top-level imports
 from .catalog import load_catalog, load_result, load_data, tiled_client  # noqa: F401
 from .energy_ranges import ERange, KRange, merge_ranges  # noqa: F401
@@ -17,6 +22,7 @@ from .plans.set_energy import set_energy  # noqa: F401
 from .plans.align_motor import align_motor, align_pitch2  # noqa: F401
 from .plans.shutters import open_shutters, close_shutters  # noqa: F401
 from .plans.record_dark_current import record_dark_current  # noqa: F401
+from .plans.fly import fly_scan, grid_fly_scan  # noqa: F401
 from .run_engine import run_engine  # noqa: F401
 from ._iconfig import load_config  # noqa: F401
 from .preprocessors import (

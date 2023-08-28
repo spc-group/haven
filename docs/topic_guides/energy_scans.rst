@@ -1,6 +1,6 @@
-############################
-Running Energy Scans (XAFS)
-############################
+###################
+Energy Scans (XAFS)
+###################
 
 :py:func:`~haven.plans.xafs_scan.xafs_scan()` for Straight-Forward XAFS Scans
 =============================================================================

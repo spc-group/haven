@@ -2,15 +2,10 @@ from unittest import mock
 
 import pytest
 
-from haven.instrument import aps
+from haven.instrument import aps, device
 
 
-@pytest.fixture()
-def fake_connection(monkeypatch):
-    monkeypatch.setattr(aps, "await_for_connection", mock.AsyncMock())
-
-
-def test_load_aps(sim_registry, fake_connection):
+def test_load_aps(sim_registry):
     aps.load_aps()
     aps_ = sim_registry.find(name="APS")
     assert hasattr(aps_, "current")
@@ -41,7 +36,7 @@ def test_config_attrs():
         assert attr in device.configuration_attrs
 
 
-def test_load_apsbss(sim_registry, fake_connection):
+def test_load_apsbss(sim_registry):
     aps.load_aps()
     bss = sim_registry.find(name="bss")
     assert hasattr(bss, "esaf")

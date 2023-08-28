@@ -3,8 +3,7 @@ from haven.instrument import shutter
 from haven import registry
 
 
-def test_shutter(monkeypatch):
-    monkeypatch.setattr(shutter, "await_for_connection", mock.AsyncMock())
+def test_shutter(sim_registry):
     shutter.load_shutters()
     shutters = list(registry.findall(label="shutters"))
     assert len(shutters) == 2

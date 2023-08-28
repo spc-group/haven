@@ -4,6 +4,7 @@ from typing import Optional, Sequence
 import warnings
 import logging
 import asyncio
+import time
 
 from ophyd import (
     mca,
@@ -13,7 +14,10 @@ from ophyd import (
     Component as Cpt,
     DynamicDeviceComponent as DDC,
     Kind,
+    flyers,
 )
+from ophyd.areadetector.plugins import NetCDFPlugin_V34
+from ophyd.status import SubscriptionStatus, StatusBase
 from apstools.utils import cleanupText
 
 from .scaler_triggered import ScalerTriggered
@@ -144,19 +148,30 @@ def add_mcas(range_, kind=active_kind, **kwargs):
     return defn
 
 
-class DxpDetectorBase(mca.EpicsDXPMultiElementSystem):
+class DxpDetectorBase(
+    flyers.FlyerInterface, mca.EpicsDXPMapping, mca.EpicsDXPMultiElementSystem
+):
     """A fluorescence detector based on XIA-DXP XMAP electronics.
 
     Creates MCA components based on the number of elements.
 
     """
 
+    class CollectMode(IntEnum):
+        MCA_SPECTRA = 0
+        MCA_MAPPING = 1
+        SCA_MAPPING = 2
+        LIST_MAPPING = 3
+
+    write_path: str = "M:\\epics\\fly_scanning\\"
+    read_path: str = "/net/s20data/sector20/tmp/"
     # By default, a 4-element detector, subclass for more elements
     mcas = DDC(
         add_mcas(range_=range(1, 5)),
         default_read_attrs=["mca1"],
         default_configuration_attrs=["mca1"],
     )
+    net_cdf = Cpt(NetCDFPlugin_V34, "netCDF1:")
     _default_read_attrs = [
         "preset_live_time",
         "preset_real_time",
@@ -225,6 +240,10 @@ class DxpDetectorBase(mca.EpicsDXPMultiElementSystem):
         "trace_times",
         "idead_time",
     ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.stage_sigs[self.collect_mode] = self.CollectMode.MCA_SPECTRA
 
     @property
     def num_rois(self):
@@ -341,6 +360,85 @@ class DxpDetectorBase(mca.EpicsDXPMultiElementSystem):
                 status = roi.is_hinted.set(0)
                 statuses.append(status)
         return statuses
+
+    def kickoff(self):
+        # Make sure the CDF file write plugin is primed (assumes
+        # dimensions will be empty when not primed)
+        is_primed = len(self.net_cdf.dimensions.get()) > 0
+        if not is_primed:
+            msg = f"{self.net_cdf.name} plugin not primed."
+            warnings.warn(msg, RuntimeWarning)
+            exc = exceptions.PluginNotPrimed(msg)
+            status = StatusBase()
+            status.set_exception(exc)
+            return status
+        # Set up the status for when the detector is ready to fly
+        def check_acquiring(*, old_value, value, **kwargs):
+            is_acquiring = bool(value)
+            if is_acquiring:
+                self.start_timestamp = time.time()
+            return is_acquiring
+
+        status = SubscriptionStatus(self.acquiring, check_acquiring)
+        # Configure the mapping controls
+        self.collect_mode.set(self.CollectMode.MCA_MAPPING)
+        self.pixel_advance_mode.set("Gate")
+        # Configure the netCDF file writer
+        self.net_cdf.enable.set("Enable").wait()
+        [
+            status.wait()
+            for status in [
+                self.net_cdf.file_path.set(self.write_path),
+                self.net_cdf.file_name.set("fly_scan_temp.nc"),
+                self.net_cdf.file_write_mode.set("Capture"),
+            ]
+        ]
+        self.net_cdf.capture.set(1).wait()
+        # Start the detector
+        self.erase_start.set(1)
+        return status
+
+    def complete(self):
+        # Stop the CDF file writer
+        self.net_cdf.capture.set(0).wait()
+        self.stop_all.set(1)
+
+        # Set up the status for when the detector is done collecting
+        def check_acquiring(*, old_value, value, **kwargs):
+            is_acquiring = bool(value)
+            return not is_acquiring
+
+        status = SubscriptionStatus(self.acquiring, check_acquiring)
+        return status
+
+
+def parse_xmap_buffer(buff):
+    """Extract meaningful data from an XMAP internal buffer during mapping.
+
+    For more information, see section 5.3.3 of
+    https://cars9.uchicago.edu/software/epics/XMAP_User_Manual.pdf
+
+    """
+    data = {
+        "header": {}
+    }
+    header = buff[:256]
+    # Verify tag words
+    assert header[0] == 0x55AA
+    assert header[1] == 0xAA55
+    # Parse remaining buffer header
+    head_data = data["header"]
+    head_data["buffer_header_size"] = header[2]
+    head_data["mapping_mode"] = header[3]
+    head_data["run_number"] = header[4]
+    head_data["buffer_number"] = header[5:7]
+    head_data["buffer_id"] = header[7]
+    head_data["num_pixels"] = header[8]
+    head_data["starting_pixel"] = header[9:11]
+    head_data["module"] = header[11]
+    head_data["buffer_overrun"] = header[24]
+    # head_data[""] = 
+    return data
 
 
 class XspressDetector(ScalerTriggered, Device):

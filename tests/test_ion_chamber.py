@@ -2,6 +2,8 @@ import pytest
 import time
 from unittest import mock
 
+import numpy as np
+
 from haven.instrument import ion_chamber
 from haven import exceptions
 import epics
@@ -37,7 +39,7 @@ def test_gain_level(ioc_preamp, ioc_scaler):
     assert positioner.sens_level.get(use_monitor=False).readback == 27
 
 
-def test_gain_changes(ioc_preamp, ioc_scaler, sim_registry):
+def test_gain_changes(sim_registry, ioc_preamp, ioc_scaler):
     # Setup the ion chamber and connect to the IOC
     device = ion_chamber.IonChamber(
         prefix=ioc_scaler.prefix,
@@ -45,15 +47,13 @@ def test_gain_changes(ioc_preamp, ioc_scaler, sim_registry):
         ch_num=2,
         name="ion_chamber",
     )
-    time.sleep(0.01)
-    device.wait_for_connection(timeout=20)
     statuses = [
         device.sensitivity.sens_value.set(2),
         device.sensitivity.sens_unit.set(1),
     ]
     [status.wait() for status in statuses]
-    assert device.sensitivity.sens_value.get(use_monitor=False).readback == 2
-    assert device.sensitivity.sens_unit.get(use_monitor=False).readback == 1
+    assert device.sensitivity.sens_value.get(use_monitor=False).setpoint == 2
+    assert device.sensitivity.sens_unit.get(use_monitor=False).setpoint == 1
     # Change the gain without changing units
     device.increase_gain().wait()
     assert device.sensitivity.sens_value.get(use_monitor=False).readback == 1
@@ -82,7 +82,6 @@ def test_gain_changes(ioc_preamp, ioc_scaler, sim_registry):
 
 def test_load_ion_chambers(sim_registry):
     new_ics = ion_chamber.load_ion_chambers()
-    print(new_ics)
     # Test the channel info is extracted properly
     ic = sim_registry.find(label="ion_chambers")
     assert ic.ch_num == 2
@@ -138,6 +137,57 @@ def test_offset_pv(sim_registry):
     ]
     for ch_num, suffix in channel_suffixes:
         ic = ion_chamber.IonChamber(
-            prefix="scaler_ioc:scaler1", ch_num=ch_num, name=f"ion_chamber_{ch_num}"
+            prefix="scaler_ioc", ch_num=ch_num, name=f"ion_chamber_{ch_num}"
         )
         assert ic.offset.pvname == f"scaler_ioc:scaler1_{suffix}", f"channel {ch_num}"
+
+
+def test_flyscan_kickoff(sim_ion_chamber):
+    flyer = sim_ion_chamber
+    flyer.num_bins.set(10)
+    status = flyer.kickoff()
+    flyer.acquiring.set(1)
+    status.wait()
+    assert status.success
+    assert status.done
+    # Check that the device was properly configured for fly-scanning
+    assert flyer.erase_start._readback == 1
+    assert flyer.timestamps == []
+    # Check that timestamps get recorded when new data are available
+    flyer.current_channel.set(1).wait()
+    assert flyer.timestamps[0] == pytest.approx(time.time())
+
+
+def test_flyscan_complete(sim_ion_chamber):
+    flyer = sim_ion_chamber
+    # Run the complete method
+    status = flyer.complete()
+    status.wait()
+    # Check that the detector is stopped
+    assert flyer.stop_all._readback == 1
+
+
+def test_flyscan_collect(sim_ion_chamber):
+    flyer = sim_ion_chamber
+    name = flyer.net_counts.name
+    flyer.start_timestamp = 988.0
+    # Make fake fly-scan data
+    sim_data = np.zeros(shape=(8000,))
+    sim_data[:6] = [3, 5, 8, 13, 2, 33]
+    flyer.mca.spectrum._readback = sim_data
+    sim_times = np.asarray([12.0e7, 4.0e7, 4.0e7, 4.0e7, 4.0e7, 4.0e7])
+    flyer.mca_times.spectrum._readback = sim_times
+    flyer.clock.set(1e7)
+    # Ignore the first collected data point because it's during taxiing
+    expected_data = sim_data[1:]
+    # The real timestamps should be midway between PSO pulses
+    flyer.timestamps = [1000, 1004, 1008, 1012, 1016, 1020]
+    expected_timestamps = [1002.0, 1006.0, 1010.0, 1014.0, 1018.0]
+    payload = list(flyer.collect())
+    # Confirm data have the right structure
+    for datum, value, timestamp in zip(payload, expected_data, expected_timestamps):
+        assert datum == {
+            "data": {name: [value]},
+            "timestamps": {name: [timestamp]},
+            "time": timestamp,
+        }
