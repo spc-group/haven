@@ -142,6 +142,14 @@ def add_mcas(range_, kind=active_kind, **kwargs):
 class Xspress3Detector(DetectorBase):
     """A fluorescence detector plugged into an Xspress3 readout."""
     cam = ADCpt(CamBase, "det1:")
+
+    # Number of elements is overridden by subclasses
+    mcas = DDC(
+            add_mcas(range_=range(1, 2)),
+            kind=active_kind,
+            default_read_attrs=["mca1"],
+            default_configuration_attrs=["mca1"],
+        )
     
     class erase_states(IntEnum):
         DONE = 0
@@ -192,19 +200,7 @@ async def make_xspress_device(name, prefix, num_elements):
     class_name = name.title().replace("_", "")
     parent_classes = (Xspress3Detector,)
     Cls = type(class_name, parent_classes, attrs)
-    det = Cls(prefix=f"{prefix}:", name=name, labels={"xrf_detectors"})
-    # Verify it is connection
-    try:
-        await await_for_connection(det)
-    except TimeoutError as exc:
-        msg = f"Could not connect to Xspress3 detector: {name} ({prefix}:)"
-        log.warning(msg)
-        raise
-    else:
-        log.info(f"Created Xspress3 detector: {name} ({prefix})")
-        registry.register(det)
-        return det
-        
+    return await make_device(Cls, name=name, prefix=prefix, labels={"xrf_detectors"})
 
 
 def load_xspress_coros(config=None):

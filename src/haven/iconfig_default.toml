@@ -93,6 +93,10 @@ prefix = "20xmap8"
 electronics = "dxp"  # or "xspress3"
 num_elements = 4
 
+[xspress.vortex_me5]
+
+prefix = "vortex_me5"
+num_elements = 5
 
 # Motors
 # ======
