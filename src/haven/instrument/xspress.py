@@ -42,6 +42,7 @@ from ophyd.areadetector.plugins import (
 
 from .._iconfig import load_config
 from .instrument_registry import registry
+from .fluorescence_detector import XRFMixin
 from .device import await_for_connection, aload_devices, make_device
 
 
@@ -139,7 +140,7 @@ def add_mcas(range_, kind=active_kind, **kwargs):
     return defn
 
 
-class Xspress3Detector(DetectorBase):
+class Xspress3Detector(DetectorBase, XRFMixin):
     """A fluorescence detector plugged into an Xspress3 readout."""
     cam = ADCpt(CamBase, "det1:")
 
@@ -182,6 +183,10 @@ class Xspress3Detector(DetectorBase):
     @stage_num_frames.setter
     def stage_num_frames(self, val):
         self.stage_sigs[self.num_frames] = val
+
+    @property
+    def num_elements(self):
+        return len(self.mcas.component_names)
 
 
 async def make_xspress_device(name, prefix, num_elements):

@@ -36,6 +36,34 @@ log = logging.getLogger(__name__)
 active_kind = Kind.normal | Kind.config
 
 
+class XRFMixin():
+    """Properties common to all XRF detectors."""
+    @property
+    def num_rois(self):
+        n_rois = float("inf")
+        for mca in self.mca_records():
+            n_rois = min(n_rois, len(mca.rois.component_names))
+        return n_rois
+
+    @property
+    def num_elements(self):
+        return len(self.mca_records())
+
+    def mca_records(self, mca_indices: Optional[Sequence[int]] = None):
+        mcas = [
+            getattr(self.mcas, m)
+            for m in self.mcas.component_names
+            if m.startswith("mca")
+        ]
+        # Filter by element index
+        if mca_indices is not None:
+            mcas = [
+                m for m in mcas if int(m.dotted_name.split(".")[-1][3:]) in mca_indices
+            ]
+        return mcas
+
+
+
 class ROI(mca.ROI):
     _default_read_attrs = [
         "count",
@@ -149,7 +177,7 @@ def add_mcas(range_, kind=active_kind, **kwargs):
 
 
 class DxpDetectorBase(
-    flyers.FlyerInterface, mca.EpicsDXPMapping, mca.EpicsDXPMultiElementSystem
+        flyers.FlyerInterface, mca.EpicsDXPMapping, mca.EpicsDXPMultiElementSystem, XRFMixin,
 ):
     """A fluorescence detector based on XIA-DXP XMAP electronics.
 
@@ -244,30 +272,6 @@ class DxpDetectorBase(
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.stage_sigs[self.collect_mode] = self.CollectMode.MCA_SPECTRA
-
-    @property
-    def num_rois(self):
-        n_rois = float("inf")
-        for mca in self.mca_records():
-            n_rois = min(n_rois, len(mca.rois.component_names))
-        return n_rois
-
-    @property
-    def num_elements(self):
-        return len(self.mca_records())
-
-    def mca_records(self, mca_indices: Optional[Sequence[int]] = None):
-        mcas = [
-            getattr(self.mcas, m)
-            for m in self.mcas.component_names
-            if m.startswith("mca")
-        ]
-        # Filter by element index
-        if mca_indices is not None:
-            mcas = [
-                m for m in mcas if int(m.dotted_name.split(".")[-1][3:]) in mca_indices
-            ]
-        return mcas
 
     def rois(self, roi_indices: Optional[Sequence[int]] = None):
         # Get the list of ROIs to activate

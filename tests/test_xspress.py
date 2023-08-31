@@ -3,6 +3,13 @@ from ophyd.device import do_not_wait_for_lazy_connection
 from haven.instrument.xspress import Xspress3Detector
 
 
+def test_num_elements(xspress):
+    assert xspress.num_elements == 1
+
+def test_num_rois(xspress):
+    assert xspress.num_rois == 48
+   
+
 def test_mca_signals():
     xsp = Xspress3Detector("255id_xsp:", name="spcxsp")
     assert not xsp.connected

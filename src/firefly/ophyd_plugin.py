@@ -1,4 +1,5 @@
 import logging
+import warnings
 
 import numpy as np
 from qtpy.QtCore import Qt, Slot, QTimer
@@ -154,7 +155,14 @@ class Connection(PyDMConnection):
             )
         else:
             log.debug(f"Setting new value for {self._cpt.name}: {new_value}")
-            return self._cpt.set(new_value)
+            try:
+                return self._cpt.set(new_value)
+            except RuntimeError:
+                msg = (f"Previous set for {self._cpt.name} still in progress,"
+                       "skipping set to {new_value}")
+                warnings.warn(msg)
+                log.warning(msg)
+                return None
 
 
 class OphydPlugin(PyDMPlugin):

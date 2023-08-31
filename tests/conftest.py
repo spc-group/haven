@@ -12,6 +12,7 @@ import asyncio
 import pytest
 from qtpy import QtWidgets
 import ophyd
+from ophyd import DynamicDeviceComponent as DDC, Kind
 from ophyd.sim import instantiate_fake_device, make_fake_device
 from pydm.data_plugins import add_plugin
 
@@ -31,6 +32,7 @@ from haven.instrument.shutter import Shutter
 from haven.instrument.camera import AravisDetector
 from haven.instrument.fluorescence_detector import DxpDetectorBase
 from haven.instrument.ion_chamber import IonChamber
+from haven.instrument.xspress import Xspress3Detector, add_mcas as add_xspress_mcas
 from firefly.application import FireflyApplication
 from firefly.ophyd_plugin import OphydPlugin
 from run_engine import RunEngineStub
@@ -377,11 +379,33 @@ def sim_camera(sim_registry):
 
 
 @pytest.fixture()
-def sim_vortex(sim_registry):
+def dxp(sim_registry):
     FakeDXP = make_fake_device(DxpDetectorBase)
     vortex = FakeDXP(name="vortex_me4", labels={"xrf_detectors"})
     sim_registry.register(vortex)
     vortex.net_cdf.dimensions.set([1477326, 1, 1])
+    yield vortex
+
+@pytest.fixture()
+def sim_vortex(dxp):
+    return dxp
+
+
+class Xspress3Vortex(Xspress3Detector):
+    mcas = DDC(
+        add_xspress_mcas(range_=[0, 1, 2, 3]),
+        kind=Kind.normal | Kind.hinted,
+        default_read_attrs=[f"mca{i}" for i in [0, 1, 2, 3]],
+        default_configuration_attrs=[f"mca{i}" for i in [0, 1, 2, 3]],
+    )
+
+
+
+@pytest.fixture()
+def xspress(sim_registry):
+    FakeXspress = make_fake_device(Xspress3Vortex)
+    vortex = FakeXspress(name="vortex_me4", labels={"xrf_detectors"})
+    sim_registry.register(vortex)
     yield vortex
 
 
