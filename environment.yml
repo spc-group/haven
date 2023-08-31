@@ -135,6 +135,7 @@ dependencies:
     - autoapi
     - pytest-mongodb
     - StrEnum
+    - ophyd-registry >= 0.4
     - xraydb >=4.5.0
     - pytest-timeout  # Get rid of this if tests are not hanging
     # - https://github.com/BCDA-APS/adl2pydm/archive/main.zip
