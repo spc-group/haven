@@ -11,7 +11,7 @@ from haven.instrument.instrument_registry import (
 
 def test_register_component():
     # Prepare registry
-    reg = InstrumentRegistry()
+    reg = InstrumentRegistry(auto_register=False)
     # Create an unregistered component
     cpt = sim.SynGauss(
         "I0",

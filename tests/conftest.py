@@ -24,7 +24,7 @@ test_dir = top_dir / "tests"
 
 import haven
 from haven.simulated_ioc import simulated_ioc
-from haven import registry, load_config
+from haven import load_config, registry
 from haven.instrument.stage import AerotechFlyer
 from haven.instrument.aps import ApsMachine
 from haven.instrument.shutter import Shutter
@@ -328,12 +328,14 @@ def sim_registry(monkeypatch):
         haven.instrument.ion_chamber, "caget", mock.AsyncMock(return_value="I0")
     )
     # Clean the registry so we can restore it later
-    components = registry.components
+    objects_by_name = registry._objects_by_name
+    objects_by_label = registry._objects_by_label
     registry.clear()
     # Run the test
     yield registry
     # Restore the previous registry components
-    registry.components = components
+    registry._objects_by_name =     objects_by_name
+    registry._objects_by_label = objects_by_label
 
 
 # Simulated devices

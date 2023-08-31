@@ -15,7 +15,7 @@ classifiers = [
     "Topic :: System :: Hardware",
 ]
 keywords = ["synchrotron", "xray", "bluesky"]
-dependencies = ["bluesky", "ophyd", "databroker", "apsbss", "xraydb", "mergedeep", "xrayutilities", "bluesky-queueserver-api", "apstools", "databroker"]
+dependencies = ["bluesky", "ophyd", "databroker", "apsbss", "xraydb", "mergedeep", "xrayutilities", "bluesky-queueserver-api", "apstools", "databroker", "ophyd-registry"]
 
 [project.optional-dependencies]
 
@@ -37,49 +37,3 @@ firefly_cameras = "firefly.launcher:cameras"
 [build-system]
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
-
-# [tool.poetry]
-# name = "haven"
-# version = "0.1.0"
-
-
-# license = "all-rights-reserved"
-
-# authors = [
-#     "Mark Wolfman <wolfman@anl.gov>"
-# ]
-
-# readme = "README.md"  # Markdown files are supported
-
-
-# keywords = ["synchrotron", "xray", "bluesky"]
-
-# [tool.poetry.dependencies]
-
-# time-machine = {}
-# autoapi = {}
-
-# [tool.poetry.scripts]
-# my-script = "my_package:main"
-
-# Dependencies with extras
-# requests = { version = "^2.13", extras = [ "security" ] }
-# # Python specific dependencies with prereleases allowed
-# pathlib2 = { version = "^2.2", python = "~2.7", allow-prereleases = true }
-# # Git dependencies
-# cleo = { git = "https://github.com/sdispater/cleo.git", branch = "master" }
-
-# # Optional dependencies (extras)
-# pendulum = { version = "^1.4", optional = true }
-
-# [tool.poetry.scripts]
-# haven_config = "haven._iconfig:print_config_value"
-# firefly = "firefly.launcher:main"
-# start_firefly = "firefly.launcher:main"  # Deprecated
-# firefly_cameras = "firefly.launcher:cameras"
-
-# [tool.poetry.scripts]
-# haven_config = "haven._iconfig:print_config_value"
-# firefly = "firefly.launcher:main"
-# start_firefly = "firefly.launcher:main"  # Deprecated
-# firefly_cameras = "firefly.launcher:cameras"
