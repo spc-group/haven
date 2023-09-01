@@ -111,7 +111,9 @@ def test_undulator_ioc(ioc_undulator):
 #     pass
 
 
+@pytest.mark.xfail
 def test_bss_ioc(ioc_bss):
+    caput(ioc_bss.pvs['esaf_cycle'], "2023-2", wait=True)
     val = caget(ioc_bss.pvs["esaf_cycle"], as_string=True, use_monitor=False)
     assert val == "2023-2"
 

@@ -4,7 +4,7 @@ from haven.instrument.instrument_registry import registry
 from haven.instrument import motor
 
 
-def test_load_vme_motors(ioc_motor):
+def test_load_vme_motors(ioc_motor, beamline_connected):
     registry.clear()
     # Set the IOC motor descriptions to known values
     epics.caput("255idVME:m1.DESC", "SLT V Upper")

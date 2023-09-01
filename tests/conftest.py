@@ -26,6 +26,7 @@ test_dir = top_dir / "tests"
 import haven
 from haven.simulated_ioc import simulated_ioc
 from haven import load_config, registry
+from haven._iconfig import beamline_connected as _beamline_connected
 from haven.instrument.stage import AerotechFlyer
 from haven.instrument.aps import ApsMachine
 from haven.instrument.shutter import Shutter
@@ -49,7 +50,6 @@ os.environ["HAVEN_CONFIG_FILES"] = ",".join(
         f"{haven_dir/'iconfig_default.toml'}",
     ]
 )
-load_config.cache_clear()
 
 
 def pytest_configure(config):
@@ -336,7 +336,7 @@ def sim_registry(monkeypatch):
     # Run the test
     yield registry
     # Restore the previous registry components
-    registry._objects_by_name =     objects_by_name
+    registry._objects_by_name = objects_by_name
     registry._objects_by_label = objects_by_label
 
 
@@ -437,3 +437,9 @@ def sim_aerotech_flyer():
 @pytest.fixture()
 def RE(event_loop):
     return RunEngineStub(call_returns_result=True)
+
+
+@pytest.fixture()
+def beamline_connected():
+    with _beamline_connected(True):
+        yield

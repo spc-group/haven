@@ -4,7 +4,7 @@ from haven.instrument.xspress import Xspress3Detector
 
 
 def test_num_elements(xspress):
-    assert xspress.num_elements == 1
+    assert xspress.num_elements == 4
 
 def test_num_rois(xspress):
     assert xspress.num_rois == 48

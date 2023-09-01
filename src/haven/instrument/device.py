@@ -5,7 +5,9 @@ from typing import Callable, Union
 import asyncio
 
 from ophyd import Component, K, Device
+from ophyd.sim import make_fake_device
 from .instrument_registry import registry
+from .._iconfig import load_config
 
 
 log = logging.getLogger(__name__)
@@ -15,8 +17,22 @@ async def aload_devices(*coros):
     return await asyncio.gather(*coros)
 
 
-async def make_device(DeviceClass, *args, **kwargs) -> Device:
+async def make_device(DeviceClass, *args, FakeDeviceClass=None, **kwargs) -> Device:
     """Create camera device and add it to the registry.
+
+    If the beamline is not connected, i.e. the config file has:
+
+        [beamline]
+        is_connected = false
+
+    then the created device will be simulated.
+
+    Parameters
+    ==========
+    DeviceClass
+      The device class to use for making this device.
+    FakeDeviceClass
+      If the beamline is not connected, use this device instead.
 
     Returns
     =======
@@ -24,7 +40,18 @@ async def make_device(DeviceClass, *args, **kwargs) -> Device:
       The newly created and registered camera object.
 
     """
-    device = DeviceClass(
+    # Make a fake device if the beamline is not connected
+    config = load_config()
+    if config['beamline']['is_connected']:
+        Cls = DeviceClass
+    else:
+        # Make fake device
+        if FakeDeviceClass is None:
+            Cls = make_fake_device(DeviceClass)
+        else:
+            Cls = FakeDeviceClass
+    # Create the ophyd object
+    device = Cls(
         *args,
         **kwargs,
     )

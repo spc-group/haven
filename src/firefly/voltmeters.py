@@ -23,7 +23,8 @@ class VoltmetersDisplay(display.FireflyDisplay):
         macros: Mapping = {},
         **kwargs,
     ):
-        self.ion_chambers = list(haven.registry.findall(label="ion_chambers"))
+        ion_chambers = haven.registry.findall(label="ion_chambers")
+        self.ion_chambers = sorted(ion_chambers, key=lambda c: c.ch_num)
         macros_ = macros.copy()
         if "SCALER" not in macros_.keys():
             macros_["SCALER"] = self.ion_chambers[0].scaler_prefix
@@ -34,15 +35,8 @@ class VoltmetersDisplay(display.FireflyDisplay):
         for idx in reversed(range(self.voltmeters_layout.count())):
             self.voltmeters_layout.takeAt(idx).widget().deleteLater()
         # Add embedded displays for all the ion chambers
-        try:
-            ion_chambers = self.ion_chambers
-        except haven.exceptions.ComponentNotFound as e:
-            warnings.warn(str(e))
-            log.warning(e)
-            ion_chambers = []
-        scaler_prefix = "CPT NOT FOUND"
         self._ion_chamber_displays = []
-        for ic in sorted(ion_chambers, key=lambda c: c.ch_num):
+        for ic in self.ion_chambers:
             # Create the display object
             disp = PyDMEmbeddedDisplay(parent=self)
             disp.macros = json.dumps({"IC": ic.name})

@@ -191,13 +191,8 @@ def test_dxp_complete(sim_vortex):
     vortex = sim_vortex
     vortex.write_path = "M:\\tmp\\"
     vortex.read_path = "/net/s20data/sector20/tmp/"
-    [
-        s.wait()
-        for s in [
-            vortex.acquiring.set(1),
-            vortex.stop_all.set(0),
-        ]
-    ]
+    vortex.acquiring.set(1).wait()
+    vortex.stop_all.set(0).wait()
     status = vortex.complete()
     assert vortex.stop_all.get(use_monitor=False) == 1
     assert not status.done

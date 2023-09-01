@@ -139,8 +139,7 @@ def test_rowland_circle_component(ioc_motor):
     assert result.z1.user_readback == pytest.approx(1.5308084989341912e-14 * um_per_mm)
 
 
-def test_load_lerix_spectrometers(sim_registry, monkeypatch):
-    monkeypatch.setattr(lerix, "await_for_connection", mock.AsyncMock())
+def test_load_lerix_spectrometers(sim_registry):
     lerix.load_lerix_spectrometers()
     device = sim_registry.find(name="lerix")
     assert device.name == "lerix"

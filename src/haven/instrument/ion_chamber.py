@@ -113,6 +113,7 @@ class SensitivityLevelPositioner(PseudoPositioner):
         level (1, 2, 3, etc).
 
         """
+        print(sensitivity)
         new_gain = sensitivity.sens_value + sensitivity.sens_unit * len(self.values)
         return self.PseudoPosition(sens_level=new_gain)
 
