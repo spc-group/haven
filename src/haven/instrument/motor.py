@@ -89,14 +89,22 @@ def load_ioc_motor_coros(
 async def load_motor(prefix: str, motor_num: int, ioc_name: str = None):
     """Create the requested motor if it is reachable."""
     pv = f"{prefix}:m{motor_num+1}"
-    try:
-        name = await caget(f"{pv}.DESC")
-    except asyncio.exceptions.TimeoutError:
-        # Motor is unreachable, so skip it
-        log.warning(f"Could not connect to motor: {pv}")
-        return
+    # Get motor names
+    config = load_config()
+    if not config['beamline']['is_connected']:
+        # Just use a generic name
+        name = f"{prefix}_m{motor_num+1}"
     else:
-        log.debug(f"Resolved motor {pv} to '{name}'")
+        # Get the motor name from the description PV
+        try:
+            name = await caget(f"{pv}.DESC")
+        except asyncio.exceptions.TimeoutError:
+            # Motor is unreachable, so skip it
+            log.warning(f"Could not connect to motor: {pv}")
+            return
+        else:
+            log.debug(f"Resolved motor {pv} to '{name}'")
+    
     # Create the motor device
     if name == f"motor {motor_num+1}":
         # It's an unnamed motor, so skip it

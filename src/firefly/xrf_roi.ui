@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>525</width>
-    <height>31</height>
+    <width>602</width>
+    <height>28</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -95,7 +95,7 @@
 Data will be saved either way, but disabled channels will not appear in the list of hinted signals.</string>
         </property>
         <property name="channel" stdset="0">
-         <string>oph://${DEV}.mcas.mca${MCA}.rois.roi${ROI}.is_hinted._write_pv</string>
+         <string>oph://${DEV}.mcas.mca${MCA}.rois.roi${ROI}.use</string>
         </property>
        </widget>
       </item>
@@ -147,7 +147,7 @@ Data will be saved either way, but disabled channels will not appear in the list
             <string>ROI Name</string>
            </property>
            <property name="channel" stdset="0">
-            <string>oph://${DEV}.mcas.mca${MCA}.rois.roi${ROI}.label._write_pv</string>
+            <string>oph://${DEV}.mcas.mca${MCA}.rois.roi${ROI}.label</string>
            </property>
            <property name="displayFormat" stdset="0">
             <enum>PyDMLineEdit::String</enum>
@@ -165,8 +165,11 @@ Data will be saved either way, but disabled channels will not appear in the list
            <property name="placeholderText">
             <string>Lower bound</string>
            </property>
+           <property name="PyDMToolTip" stdset="0">
+            <string>The channel number at the low end of the ROI.</string>
+           </property>
            <property name="channel" stdset="0">
-            <string>oph://${DEV}.mcas.mca${MCA}.rois.roi${ROI}.lo_chan._write_pv</string>
+            <string>oph://${DEV}.mcas.mca${MCA}.rois.roi${ROI}.lo_chan</string>
            </property>
            <property name="displayFormat" stdset="0">
             <enum>PyDMLineEdit::Decimal</enum>
@@ -184,11 +187,27 @@ Data will be saved either way, but disabled channels will not appear in the list
            <property name="placeholderText">
             <string>Upper bound</string>
            </property>
+           <property name="PyDMToolTip" stdset="0">
+            <string>The channel number at the low end of the ROI.</string>
+           </property>
            <property name="channel" stdset="0">
-            <string>oph://${DEV}.mcas.mca${MCA}.rois.roi${ROI}.hi_chan._write_pv</string>
+            <string>oph://${DEV}.mcas.mca${MCA}.rois.roi${ROI}.hi_chan</string>
            </property>
            <property name="displayFormat" stdset="0">
             <enum>PyDMLineEdit::Decimal</enum>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="PyDMLabel" name="size_label">
+           <property name="toolTip">
+            <string/>
+           </property>
+           <property name="PyDMToolTip" stdset="0">
+            <string>The size of the ROI, in number of channels.</string>
+           </property>
+           <property name="channel" stdset="0">
+            <string>oph://${DEV}.mcas.mca${MCA}.rois.roi${ROI}.size</string>
            </property>
           </widget>
          </item>

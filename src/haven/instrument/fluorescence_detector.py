@@ -22,7 +22,7 @@ from apstools.utils import cleanupText
 
 from .scaler_triggered import ScalerTriggered
 from .instrument_registry import registry
-from .device import RegexComponent as RECpt, await_for_connection, aload_devices
+from .device import RegexComponent as RECpt, await_for_connection, aload_devices, make_device
 from .._iconfig import load_config
 from .. import exceptions
 
@@ -463,17 +463,8 @@ async def make_dxp_device(device_name, prefix, num_elements):
     class_name = device_name.title().replace("_", "")
     parent_classes = (DxpDetectorBase,)
     Cls = type(class_name, parent_classes, attrs)
-    det = Cls(prefix=f"{prefix}:", name=device_name, labels={"xrf_detectors"})
-    # Verify it is connection
-    try:
-        await await_for_connection(det)
-    except TimeoutError as exc:
-        msg = f"Could not connect to fluorescence detector: {device_name} ({prefix}:)"
-        log.warning(msg)
-    else:
-        log.info(f"Created fluorescence detecotr: {device_name} ({prefix})")
-        registry.register(det)
-        return det
+    print("Making device!!!!!!!!!")
+    return make_device(Cls, prefix=f"{prefix}:", name=device_name, labels={"xrf_detectors"})
 
 
 def load_fluorescence_detector_coros(config=None):

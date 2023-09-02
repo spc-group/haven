@@ -21,6 +21,7 @@ from ophyd import (
     Kind,
     OphydObject,
     Device,
+    Signal,
 )
 from ophyd.areadetector.base import EpicsSignalWithRBV as SignalWithRBV
 from ophyd.areadetector.filestore_mixins import FileStoreHDF5IterativeWrite
@@ -53,9 +54,9 @@ active_kind = Kind.normal | Kind.config
 
 
 class ROI(Device):
-
-    minimum = Cpt(EpicsSignal, "MinX", kind="config")
+    lo_chan = Cpt(EpicsSignal, "MinX", kind="config")
     label = Cpt(EpicsSignal, "Name", kind="config")
+    hi_chan = Cpt(Signal, kind="config")
     size = Cpt(EpicsSignal, "SizeX", kind="config")
     background_width = Cpt(EpicsSignal, "BgdWidth", kind="config")
     use = Cpt(EpicsSignalWithRBV, "Use", kind="config")
@@ -65,7 +66,21 @@ class ROI(Device):
     min_count = Cpt(EpicsSignalRO, "MinValue_RBV", kind="normal")
     max_count = Cpt(EpicsSignalRO, "MaxValue_RBV", kind="normal")
     mean_count = Cpt(EpicsSignalRO, "MeanValue_RBV", kind="normal")
-    
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Connect signals for auto-updated the size/max of the ROI range
+        self.size.subscribe(self._update_range_params)
+        self.hi_chan.subscribe(self._update_range_params)
+        self.lo_chan.subscribe(self._update_range_params)
+
+    def _update_range_params(self, *args, old_value, value, obj, **kwargs):
+        if obj is self.size:
+            self.hi_chan.set(self.lo_chan.get() + value).wait()
+        elif obj is self.hi_chan:
+            self.size.set(value - self.lo_chan.get()).wait()
+        elif obj is self.lo_chan:
+            self.size.set(self.hi_chan.get() - value).wait()
                   
     _default_read_attrs = [
         # "count",
@@ -81,7 +96,7 @@ class ROI(Device):
     kind = active_kind
 
 
-def add_rois(range_: Sequence[int] = range(1, 49), kind=Kind.normal, **kwargs):
+def add_rois(range_: Sequence[int] = range(48), kind=Kind.normal, **kwargs):
     """Add one or more ROIs to an MCA instance
 
     Parameters
@@ -98,12 +113,12 @@ def add_rois(range_: Sequence[int] = range(1, 49), kind=Kind.normal, **kwargs):
     defn = OrderedDict()
     kwargs["kind"] = kind
     for roi in range_:
-        if not (1 <= roi <= 48):
-            raise ValueError("roi must be in the set [0,31]")
+        if not (0 <= roi <= 47):
+            raise ValueError(f"roi {roi} must be in the set [0,47]")
         attr = f"roi{roi}"
         defn[attr] = (
             ROI,
-            f"ROI:{roi}:",
+            f"ROI:{roi+1}:",
             kwargs,
         )
     return defn
@@ -134,9 +149,10 @@ def add_mcas(range_, kind=active_kind, **kwargs):
         attr = f"mca{idx}"
         defn[attr] = (
             MCARecord,
-            f"MCA{idx}",
+            f"MCA{idx+1}",
             kwargs,
         )
+    print(defn)
     return defn
 
 
@@ -146,10 +162,10 @@ class Xspress3Detector(DetectorBase, XRFMixin):
 
     # Number of elements is overridden by subclasses
     mcas = DDC(
-            add_mcas(range_=range(1, 2)),
+            add_mcas(range_=range(1)),
             kind=active_kind,
-            default_read_attrs=["mca1"],
-            default_configuration_attrs=["mca1"],
+            default_read_attrs=["mca0"],
+            default_configuration_attrs=["mca0"],
         )
     
     class erase_states(IntEnum):
@@ -192,7 +208,7 @@ class Xspress3Detector(DetectorBase, XRFMixin):
 async def make_xspress_device(name, prefix, num_elements):
     # Build the mca components
     # (Epics uses 1-index instead of 0-index)
-    mca_range = range(1, num_elements + 1)
+    mca_range = range(num_elements)
     attrs = {
         "mcas": DDC(
             add_mcas(range_=mca_range),
@@ -211,7 +227,7 @@ async def make_xspress_device(name, prefix, num_elements):
 def load_xspress_coros(config=None):
     if config is None:
         config = load_config()
-    # Create slits
+    # Create detector device
     for name, cfg in config.get("xspress", {}).items():
         yield make_xspress_device(prefix=cfg["prefix"], num_elements=cfg["num_elements"], name=name)
 

@@ -203,7 +203,7 @@ class XRFPlotWidget(QWidget):
             self.plot_changed.emit()
 
     def spectrum_color(self, mca_num):
-        return colors[(mca_num - 1) % len(colors)]
+        return colors[(mca_num) % len(colors)]
 
     def highlight_spectrum(self, mca_num, roi_num, hovered):
         """Highlight a spectrum and lowlight the rest.
@@ -416,7 +416,7 @@ class XRFDetectorDisplay(display.FireflyDisplay):
         # Set ROI and element selection comboboxes
         self.ui.mca_combobox.currentIndexChanged.connect(self.draw_roi_widgets)
         self.ui.roi_combobox.currentIndexChanged.connect(self.draw_mca_widgets)
-        elements = [str(i) for i in range(1, device.num_elements + 1)]
+        elements = [str(i) for i in range(device.num_elements)]
         self.ui.mca_combobox.addItems(elements)
         rois = [str(i) for i in range(device.num_rois)]
         self.ui.roi_combobox.addItems(rois)
@@ -547,7 +547,7 @@ class XRFDetectorDisplay(display.FireflyDisplay):
         """
         log.debug(f"Copying MCA {self._selected_mca}")
         # Get existing values from selected MCA row
-        mca_idx = self._selected_mca - 1
+        mca_idx = self._selected_mca
         source_display = self.mca_displays[mca_idx]
         self.copy_selected_row(
             source_display=source_display, displays=self.mca_displays
@@ -562,7 +562,7 @@ class XRFDetectorDisplay(display.FireflyDisplay):
         self.device = device = haven.registry.find(device_name)
         # Set up data channels
         self._spectrum_channels = []
-        for mca_num in range(1, self.device.num_elements + 1):
+        for mca_num in range(self.device.num_elements):
             address = f"oph://{device.name}.mcas.mca{mca_num}.spectrum"
             channel = pydm.PyDMChannel(
                 address=address,
@@ -615,7 +615,7 @@ class XRFDetectorDisplay(display.FireflyDisplay):
             else:
                 disp.setEnabled(True)
         # Show this spectrum highlighted in the plots
-        mca_num = self.ui.mca_combobox.currentIndex() + 1
+        mca_num = self.ui.mca_combobox.currentIndex()
         self.roi_plot_widget.select_roi(
             mca_num=mca_num, roi_num=roi_num, is_selected=is_selected
         )
@@ -638,7 +638,7 @@ class XRFDetectorDisplay(display.FireflyDisplay):
         # Set global controls for this MCA
         self.ui.mca_copyall_button.setEnabled(is_selected)
         # Disable the other rows
-        mca_idx = mca_num - 1
+        mca_idx = mca_num
         for idx, disp in enumerate(self.mca_displays):
             if is_selected and idx != mca_idx:
                 disp.setEnabled(False)
@@ -651,7 +651,7 @@ class XRFDetectorDisplay(display.FireflyDisplay):
         )
 
     def draw_roi_widgets(self, mca_idx):
-        mca_num = mca_idx + 1
+        mca_num = mca_idx
         with self.disable_ui():
             # Update the plot widget with the new MCA number
             self.roi_plot_widget.target_mca = mca_num
@@ -690,7 +690,7 @@ class XRFDetectorDisplay(display.FireflyDisplay):
             layout = self.ui.mcas_layout
             self.remove_widgets_from_layout(layout)
             self.mca_displays = []
-            for mca_num in range(1, self.device.num_elements + 1):
+            for mca_num in range(self.device.num_elements):
                 disp = ROIEmbeddedDisplay(parent=self)
                 disp.macros = json.dumps(
                     {

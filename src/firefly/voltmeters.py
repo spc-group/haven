@@ -23,7 +23,7 @@ class VoltmetersDisplay(display.FireflyDisplay):
         macros: Mapping = {},
         **kwargs,
     ):
-        ion_chambers = haven.registry.findall(label="ion_chambers")
+        ion_chambers = haven.registry.findall(label="ion_chambers", allow_none=True)
         self.ion_chambers = sorted(ion_chambers, key=lambda c: c.ch_num)
         macros_ = macros.copy()
         if "SCALER" not in macros_.keys():
