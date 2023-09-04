@@ -37,9 +37,3 @@ def test_roi_size(xspress):
     assert roi.size.get() == 3
 
 
-def test_load_xspress(sim_registry, mocker):
-    mocker.patch("ophyd.signal.EpicsSignalBase._ensure_connected")
-    from haven.instrument.xspress import load_xspress
-    load_xspress(config=None)
-    vortex = sim_registry.find(name="vortex_me5")
-    assert vortex.mcas.component_names == ("mca0", "mca1", "mca2", "mca3", "mca4")

@@ -43,7 +43,7 @@ from ophyd.areadetector.plugins import (
 
 from .._iconfig import load_config
 from .instrument_registry import registry
-from .fluorescence_detector import XRFMixin
+from .fluorescence_detector import XRFMixin, ROIMixin
 from .device import await_for_connection, aload_devices, make_device
 
 
@@ -53,7 +53,7 @@ log = logging.getLogger(__name__)
 active_kind = Kind.normal | Kind.config
 
 
-class ROI(Device):
+class ROI(ROIMixin):
     lo_chan = Cpt(EpicsSignal, "MinX", kind="config")
     label = Cpt(EpicsSignal, "Name", kind="config")
     hi_chan = Cpt(Signal, kind="config")
@@ -67,21 +67,6 @@ class ROI(Device):
     max_count = Cpt(EpicsSignalRO, "MaxValue_RBV", kind="normal")
     mean_count = Cpt(EpicsSignalRO, "MeanValue_RBV", kind="normal")
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Connect signals for auto-updated the size/max of the ROI range
-        self.size.subscribe(self._update_range_params)
-        self.hi_chan.subscribe(self._update_range_params)
-        self.lo_chan.subscribe(self._update_range_params)
-
-    def _update_range_params(self, *args, old_value, value, obj, **kwargs):
-        if obj is self.size:
-            self.hi_chan.set(self.lo_chan.get() + value).wait()
-        elif obj is self.hi_chan:
-            self.size.set(value - self.lo_chan.get()).wait()
-        elif obj is self.lo_chan:
-            self.size.set(self.hi_chan.get() - value).wait()
-                  
     _default_read_attrs = [
         # "count",
         # "net_count",
@@ -152,21 +137,32 @@ def add_mcas(range_, kind=active_kind, **kwargs):
             f"MCA{idx+1}",
             kwargs,
         )
-    print(defn)
     return defn
 
 
 class Xspress3Detector(DetectorBase, XRFMixin):
     """A fluorescence detector plugged into an Xspress3 readout."""
     cam = ADCpt(CamBase, "det1:")
+    # Core control interface signals
+    acquiring = Cpt(EpicsSignalRO, "det1:AcquireBusy", kind="omitted")
+    stop_all = Cpt(Signal, kind="omitted")
 
     # Number of elements is overridden by subclasses
     mcas = DDC(
-            add_mcas(range_=range(1)),
-            kind=active_kind,
-            default_read_attrs=["mca0"],
-            default_configuration_attrs=["mca0"],
-        )
+        add_mcas(range_=range(1)),
+        kind=active_kind,
+        default_read_attrs=["mca0"],
+        default_configuration_attrs=["mca0"],
+    )
+
+    _default_read_attrs = [
+        "cam",
+        "mcas",
+    ]
+    _default_configuration_attrs = [
+        "cam",
+        "mcas",
+    ]
     
     class erase_states(IntEnum):
         DONE = 0

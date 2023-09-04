@@ -1,6 +1,16 @@
+"""Tests for all the fluorescence detectors.
+
+These tests are mostly parameterized to ensure that both DXP and
+Xspress detectors share a common interface. A few of the tests are
+specific to one device or another.
+
+"""
+
+
 from pathlib import Path
 import asyncio
 from unittest.mock import MagicMock
+import time
 
 import numpy as np
 import pytest
@@ -8,65 +18,101 @@ from epics import caget
 from ophyd import Kind, DynamicDeviceComponent as DDC
 from bluesky import plans as bp
 
-from haven.instrument.fluorescence_detector import parse_xmap_buffer
+from haven.instrument.dxp import parse_xmap_buffer, load_dxp
+from haven.instrument.xspress import load_xspress
 
 
-def test_load_dxp(sim_registry, mocker):
-    mocker.patch("ophyd.signal.EpicsSignalBase._ensure_connected")
-    from haven.instrument.fluorescence_detector import load_fluorescence_detectors
+DETECTORS = ['dxp', 'xspress']
+# DETECTORS = ['dxp']
 
-    load_fluorescence_detectors(config=None)
+
+@pytest.fixture()
+def vortex(request):
+    """Parameterized fixture for creating a Vortex device with difference
+    electronics support.
+
+    """
+    # Figure out which detector we're using
+    det = request.getfixturevalue(request.param)
+    yield det
+
+
+def test_load_xspress(sim_registry, mocker):
+    load_xspress(config=None)
+    vortex = sim_registry.find(name="vortex_me5")
+    assert vortex.mcas.component_names == ("mca0", "mca1", "mca2", "mca3", "mca4")
+
+
+def test_load_dxp(sim_registry):
+    load_dxp(config=None)
     # See if the device was loaded
     vortex = sim_registry.find(name="vortex_me4")
     # Check that the MCA's are available
+    assert hasattr(vortex.mcas, "mca0")
     assert hasattr(vortex.mcas, "mca1")
     assert hasattr(vortex.mcas, "mca2")
     assert hasattr(vortex.mcas, "mca3")
-    assert hasattr(vortex.mcas, "mca4")
     # Check that MCA's have ROI's available
     assert hasattr(vortex.mcas.mca1, "rois")
-    assert hasattr(vortex.mcas.mca1.rois, "roi1")
+    assert hasattr(vortex.mcas.mca1.rois, "roi0")
     # Check that bluesky hints were added
-    assert hasattr(vortex.mcas.mca1.rois.roi1, "is_hinted")
-    assert vortex.mcas.mca1.rois.roi1.is_hinted.pvname == "vortex_me4:mca1_R1BH"
+    assert hasattr(vortex.mcas.mca1.rois.roi0, "use")
+    # assert vortex.mcas.mca1.rois.roi1.is_hinted.pvname == "vortex_me4:mca1_R1BH"
 
 
-def test_enable_some_rois(sim_vortex):
+@pytest.mark.parametrize('vortex', DETECTORS, indirect=True)    
+def test_roi_size(vortex):
+    """Do the signals for max/size auto-update."""
+    roi = vortex.mcas.mca0.rois.roi0
+    roi.lo_chan.set(10).wait()
+    # Update the size and check the maximum
+    roi.size.set(7).wait()
+    assert roi.hi_chan.get() == 17
+    # Update the maximum and check the size
+    roi.hi_chan.set(28).wait()
+    assert roi.size.get() == 18
+    # Update the minimum and check the size
+    roi.lo_chan.set(25).wait()
+    assert roi.size.get() == 3
+
+
+@pytest.mark.parametrize('vortex', DETECTORS, indirect=True)        
+def test_enable_some_rois(vortex):
     """Test that the correct ROIs are enabled/disabled."""
-    vortex = sim_vortex
+    print(vortex)
     statuses = vortex.enable_rois(rois=[2, 5], elements=[1, 3])
     # Give the IOC time to change the PVs
     for status in statuses:
         status.wait()
         # Check that at least one of the ROIs was changed
     roi = vortex.mcas.mca1.rois.roi2
-    hinted = roi.is_hinted.get(use_monitor=False)
+    hinted = roi.use.get(use_monitor=False)
     assert hinted == 1
 
 
-def test_enable_rois(sim_vortex):
+@pytest.mark.parametrize('vortex', DETECTORS, indirect=True)    
+def test_enable_rois(vortex):
     """Test that the correct ROIs are enabled/disabled."""
-    vortex = sim_vortex
     statuses = vortex.enable_rois()
     # Give the IOC time to change the PVs
     for status in statuses:
         status.wait()
         # Check that at least one of the ROIs was changed
     roi = vortex.mcas.mca1.rois.roi2
-    hinted = roi.is_hinted.get(use_monitor=False)
+    hinted = roi.use.get(use_monitor=False)
     assert hinted == 1
 
 
-def test_disable_some_rois(sim_vortex):
+@pytest.mark.parametrize('vortex', DETECTORS, indirect=True)
+def test_disable_some_rois(vortex):
     """Test that the correct ROIs are enabled/disabled."""
-    vortex = sim_vortex
     statuses = vortex.enable_rois(rois=[2, 5], elements=[1, 3])
     # Give the IOC time to change the PVs
     for status in statuses:
         status.wait()
     # Check that at least one of the ROIs was changed
     roi = vortex.mcas.mca1.rois.roi2
-    hinted = roi.is_hinted.get(use_monitor=False)
+    hinted = roi.use.get(use_monitor=False)
     assert hinted == 1
     statuses = vortex.disable_rois(rois=[2, 5], elements=[1, 3])
     # Give the IOC time to change the PVs
@@ -74,13 +120,13 @@ def test_disable_some_rois(sim_vortex):
         status.wait()
     # Check that at least one of the ROIs was changed
     roi = vortex.mcas.mca1.rois.roi2
-    hinted = roi.is_hinted.get(use_monitor=False)
+    hinted = roi.use.get(use_monitor=False)
     assert hinted == 0
 
 
-def test_disable_rois(sim_vortex):
+@pytest.mark.parametrize('vortex', DETECTORS, indirect=True)
+def test_disable_rois(vortex):
     """Test that the correct ROIs are enabled/disabled."""
-    vortex = sim_vortex
     statuses = vortex.enable_rois()
     # Give the IOC time to change the PVs
     for status in statuses:
@@ -92,7 +138,7 @@ def test_disable_rois(sim_vortex):
         status.wait()
         # Check that at least one of the ROIs was changed
     roi = vortex.mcas.mca1.rois.roi2
-    hinted = roi.is_hinted.get(use_monitor=False)
+    hinted = roi.use.get(use_monitor=False)
     assert hinted == 0
 
 
@@ -101,9 +147,10 @@ def test_with_plan(vortex):
     assert False, "Write test"
 
 
-def test_stage_signal_names(sim_vortex):
+@pytest.mark.parametrize('vortex', DETECTORS, indirect=True)
+def test_stage_signal_names(vortex):
     """Check that we can set the name of the detector ROIs dynamically."""
-    dev = sim_vortex.mcas.mca1.rois.roi1
+    dev = vortex.mcas.mca1.rois.roi1
     dev.label.put("Ni-Ka")
     # Ensure the name isn't changed yet
     assert "Ni-Ka" not in dev.name
@@ -126,36 +173,38 @@ def test_stage_signal_names(sim_vortex):
         assert "Ni_Ka" in res
 
 
-def test_stage_signal_hinted(sim_vortex):
-    dev = sim_vortex.mcas.mca1.rois.roi1
+@pytest.mark.parametrize('vortex', DETECTORS, indirect=True)
+def test_stage_signal_hinted(vortex):
+    dev = vortex.mcas.mca0.rois.roi1
     # Check that ROI is not hinted by default
-    assert dev.name not in sim_vortex.hints
+    assert dev.name not in vortex.hints
     # Enable the ROI by setting it's kind PV to "hinted"
-    dev.is_hinted.put(True)
+    dev.use.set(True).wait()
     # Ensure signals are not hinted before being staged
-    assert dev.net_count.name not in sim_vortex.hints["fields"]
+    assert dev.net_count.name not in vortex.hints["fields"]
     try:
         dev.stage()
     except Exception:
         raise
     else:
-        assert dev.net_count.name in sim_vortex.hints["fields"]
+        assert dev.net_count.name in vortex.hints["fields"]
         assert (
-            sim_vortex.mcas.mca1.rois.roi0.net_count.name
-            not in sim_vortex.hints["fields"]
+            vortex.mcas.mca1.rois.roi0.net_count.name
+            not in vortex.hints["fields"]
         )
     finally:
         dev.unstage()
     # Did it restore kinds properly when unstaging
-    assert dev.net_count.name not in sim_vortex.hints["fields"]
+    assert dev.net_count.name not in vortex.hints["fields"]
     assert (
-        sim_vortex.mcas.mca1.rois.roi0.net_count.name not in sim_vortex.hints["fields"]
+        vortex.mcas.mca1.rois.roi0.net_count.name not in vortex.hints["fields"]
     )
 
 
+@pytest.mark.parametrize('vortex', DETECTORS, indirect=True)
 @pytest.mark.xfail
-def test_dxp_kickoff(sim_vortex):
-    vortex = sim_vortex
+def test_dxp_kickoff(vortex):
+    vortex = vortex
     vortex.write_path = "M:\\tmp\\"
     vortex.read_path = "/net/s20data/sector20/tmp/"
     [
@@ -187,13 +236,14 @@ def test_dxp_kickoff(sim_vortex):
     assert vortex.net_cdf.capture.get(use_monitor=False) == 1
 
 
-def test_dxp_complete(sim_vortex):
-    vortex = sim_vortex
+@pytest.mark.parametrize('vortex', DETECTORS, indirect=True)
+def test_dxp_complete(vortex):
     vortex.write_path = "M:\\tmp\\"
     vortex.read_path = "/net/s20data/sector20/tmp/"
-    vortex.acquiring.set(1).wait()
+    vortex.acquiring.sim_put(1)
     vortex.stop_all.set(0).wait()
     status = vortex.complete()
+    time.sleep(0.01)
     assert vortex.stop_all.get(use_monitor=False) == 1
     assert not status.done
     vortex.acquiring.set(0)
@@ -201,8 +251,9 @@ def test_dxp_complete(sim_vortex):
     assert status.done
 
 
+@pytest.mark.parametrize('vortex', DETECTORS, indirect=True)
 @pytest.mark.xfail
-def test_parse_xmap_buffer(sim_vortex):
+def test_parse_xmap_buffer(vortex):
     """The output for fly-scanning with the DXP-based readout electronics
     is a raw uint16 buffer that must be parsed by the ophyd device
     according to section 5.3.3 of

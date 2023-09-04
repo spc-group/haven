@@ -7,7 +7,7 @@ from .instrument_registry import registry as default_registry, InstrumentRegistr
 from .energy_positioner import load_energy_positioner_coros
 from .motor import load_all_motor_coros, HavenMotor
 from .ion_chamber import load_ion_chamber_coros
-from .fluorescence_detector import load_fluorescence_detector_coros
+from .dxp import load_dxp_coros
 from .monochromator import load_monochromator_coros
 from .camera import load_camera_coros
 from .shutter import load_shutter_coros
@@ -55,7 +55,7 @@ async def aload_instrument(
         *load_monochromator_coros(config=config),
         *load_xray_source_coros(config=config),
         *load_energy_positioner_coros(config=config),
-        *load_fluorescence_detector_coros(config=config),
+        *load_dxp_coros(config=config),
         *load_xspress_coros(config=config),
         *load_stage_coros(config=config),
         *load_heater_coros(config=config),

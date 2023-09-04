@@ -31,7 +31,7 @@ from haven.instrument.stage import AerotechFlyer
 from haven.instrument.aps import ApsMachine
 from haven.instrument.shutter import Shutter
 from haven.instrument.camera import AravisDetector
-from haven.instrument.fluorescence_detector import DxpDetectorBase
+from haven.instrument.dxp import DxpDetectorBase
 from haven.instrument.ion_chamber import IonChamber
 from haven.instrument.xspress import Xspress3Detector, add_mcas as add_xspress_mcas
 from firefly.application import FireflyApplication
