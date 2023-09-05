@@ -236,12 +236,32 @@ def test_dxp_kickoff(vortex):
     assert vortex.net_cdf.capture.get(use_monitor=False) == 1
 
 
-@pytest.mark.parametrize('vortex', DETECTORS, indirect=True)
-def test_dxp_complete(vortex):
+def test_dxp_acquire(dxp):
+    """Check that the DXP acquire mimics that of the area detector base."""
+    assert dxp.stop_all.get(use_monitor=False) == 0
+    assert dxp.erase_start.get(use_monitor=False) == 0
+    dxp.acquire.set(1).wait()
+    assert dxp.stop_all.get(use_monitor=False) == 0
+    assert dxp.erase_start.get(use_monitor=False) == 1
+    dxp.acquire.set(0).wait()
+    assert dxp.stop_all.get(use_monitor=False) == 1
+    assert dxp.erase_start.get(use_monitor=False) == 1
+
+    # Now test the reverse behavior
+    dxp.acquire.set(0).wait()
+    assert dxp.acquire.get(use_monitor=False) == 0
+    dxp.acquiring.set(1).wait()
+    assert dxp.acquire.get(use_monitor=False) == 1
+    dxp.acquiring.set(0).wait()
+    assert dxp.acquire.get(use_monitor=False) == 0
+
+
+def test_complete_dxp(dxp):
+    """Check the behavior of the DXP electornic's fly-scan complete call."""
+    vortex = dxp
     vortex.write_path = "M:\\tmp\\"
     vortex.read_path = "/net/s20data/sector20/tmp/"
-    vortex.acquiring.sim_put(1)
-    vortex.stop_all.set(0).wait()
+    vortex.acquire._readback = 1
     status = vortex.complete()
     time.sleep(0.01)
     assert vortex.stop_all.get(use_monitor=False) == 1
@@ -250,6 +270,14 @@ def test_dxp_complete(vortex):
     status.wait()
     assert status.done
 
+
+def test_complete_xspress(xspress):
+    """Check the behavior of the Xspress3 electornic's fly-scan complete call."""
+    vortex = xspress
+    vortex.acquire.sim_put(1)
+    status = vortex.complete()
+    assert vortex.acquire.get(use_monitor=False) == 0
+    
 
 @pytest.mark.parametrize('vortex', DETECTORS, indirect=True)
 @pytest.mark.xfail

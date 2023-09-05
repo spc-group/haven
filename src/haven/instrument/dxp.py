@@ -7,6 +7,7 @@ import asyncio
 import time
 
 from ophyd import (
+    OphydObject,
     mca,
     Device,
     EpicsSignal,
@@ -20,6 +21,12 @@ from ophyd import (
 from ophyd.areadetector.plugins import NetCDFPlugin_V34
 from ophyd.status import SubscriptionStatus, StatusBase
 from apstools.utils import cleanupText
+from ophyd.pseudopos import (
+    PseudoPositioner,
+    PseudoSingle,
+    pseudo_position_argument,
+    real_position_argument
+)
 
 from .scaler_triggered import ScalerTriggered
 from .instrument_registry import registry
@@ -140,6 +147,7 @@ class DxpDetectorBase(
 
     write_path: str = "M:\\epics\\fly_scanning\\"
     read_path: str = "/net/s20data/sector20/tmp/"
+    acquire = Cpt(Signal, value=0)
     # By default, a 4-element detector, subclass for more elements
     mcas = DDC(
         add_mcas(range_=range(4)),
@@ -219,6 +227,24 @@ class DxpDetectorBase(
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.stage_sigs[self.collect_mode] = self.CollectMode.MCA_SPECTRA
+        # Listen for changes to the ``acquire`` channel.
+        self.acquire.subscribe(self._acquire)
+        self.acquiring.subscribe(self._acquire)
+
+    def _acquire(self, *args, old_value, value, obj, **kwargs):
+        """Mimic the Xspress3 AD interface for acquiring data."""
+        # print(obj is self.acquiring)
+        if obj is self.acquire:
+            # Update the real signals
+            if bool(value):
+                # Start
+                self.erase_start.set(1).wait()
+            else:
+                # Stop
+                self.stop_all.set(1).wait()
+        elif obj is self.acquiring:
+            # Update the virtual signal
+            self.acquire.set(value).wait()
 
     def rois(self, roi_indices: Optional[Sequence[int]] = None):
         # Get the list of ROIs to activate

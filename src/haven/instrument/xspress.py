@@ -22,6 +22,7 @@ from ophyd import (
     OphydObject,
     Device,
     Signal,
+    StatusBase,
 )
 from ophyd.areadetector.base import EpicsSignalWithRBV as SignalWithRBV
 from ophyd.areadetector.filestore_mixins import FileStoreHDF5IterativeWrite
@@ -144,8 +145,9 @@ class Xspress3Detector(DetectorBase, XRFMixin):
     """A fluorescence detector plugged into an Xspress3 readout."""
     cam = ADCpt(CamBase, "det1:")
     # Core control interface signals
-    acquiring = Cpt(EpicsSignalRO, "det1:AcquireBusy", kind="omitted")
-    stop_all = Cpt(Signal, kind="omitted")
+    acquire = ADCpt(SignalWithRBV, "det1:Acquire")
+    acquire_period = ADCpt(SignalWithRBV, "det1:AcquirePeriod")
+    acquire_time = ADCpt(SignalWithRBV, "det1:AcquireTime")
 
     # Number of elements is overridden by subclasses
     mcas = DDC(
@@ -199,6 +201,18 @@ class Xspress3Detector(DetectorBase, XRFMixin):
     @property
     def num_elements(self):
         return len(self.mcas.component_names)
+
+    def complete(self) -> StatusBase:
+        """Wait for flying to be complete.
+
+        This commands the Xspress to stop acquiring fly-scan data.
+
+        Returns
+        -------
+        complete_status : StatusBase
+          Indicate when flying has completed
+        """
+        return self.acquire.set(0)
 
 
 async def make_xspress_device(name, prefix, num_elements):
