@@ -61,24 +61,24 @@ class ROI(ROIMixin):
     size = Cpt(EpicsSignal, "SizeX", kind="config")
     background_width = Cpt(EpicsSignal, "BgdWidth", kind="config")
     use = Cpt(EpicsSignalWithRBV, "Use", kind="config")
-    
-    total_count = Cpt(EpicsSignalRO, "Total_RBV", kind="normal")
+
+    raw_count = Cpt(EpicsSignalRO, "Total_RBV", kind="normal")
     net_count = Cpt(EpicsSignalRO, "Net_RBV", kind="normal")
     min_count = Cpt(EpicsSignalRO, "MinValue_RBV", kind="normal")
     max_count = Cpt(EpicsSignalRO, "MaxValue_RBV", kind="normal")
     mean_count = Cpt(EpicsSignalRO, "MeanValue_RBV", kind="normal")
 
     _default_read_attrs = [
-        # "count",
-        # "net_count",
+        "raw_count",
+        "net_count",
     ]
     _default_configuration_attrs = [
-        # "label",
-        # "bkgnd_chans",
-        # "hi_chan",
-        # "lo_chan",
+        "label",
+        "background_width",
+        "hi_chan",
+        "lo_chan",
     ]
-    # hints = {"fields": ["net_count"]}
+    hints = {"fields": ["net_count"]}
     kind = active_kind
 
 
@@ -115,6 +115,7 @@ class MCARecord(Device):
     spectrum = Cpt(EpicsSignalRO, ":ArrayData", kind="normal")
     _default_read_attrs = [
         "rois",
+        "spectrum",
     ]
     _default_configuration_attrs = ["rois"]
     kind = active_kind

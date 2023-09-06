@@ -173,6 +173,30 @@ def test_stage_signal_names(vortex):
         assert "Ni_Ka" in res
 
 
+@pytest.mark.parametrize("vortex", DETECTORS, indirect=True)
+def test_read_and_config_attrs(vortex):
+    expected_read_attrs = [
+        "cam",
+        "mcas",
+        
+    ]
+    # Add attrs for each MCA and ROI.
+    for mca in range(vortex.num_elements):
+        expected_read_attrs.extend([
+            f"mcas.mca{mca}",
+            f"mcas.mca{mca}.rois",
+            f"mcas.mca{mca}.spectrum",
+            # f"mcas.mca{mca}.background",
+        ])
+        for roi in range(vortex.num_rois):
+            expected_read_attrs.extend([
+                f"mcas.mca{mca}.rois.roi{roi}",
+                f"mcas.mca{mca}.rois.roi{roi}.raw_count",
+                f"mcas.mca{mca}.rois.roi{roi}.net_count",
+            ])
+    assert sorted(vortex.read_attrs) == sorted(expected_read_attrs)
+
+
 @pytest.mark.parametrize('vortex', DETECTORS, indirect=True)
 def test_stage_signal_hinted(vortex):
     dev = vortex.mcas.mca0.rois.roi1
