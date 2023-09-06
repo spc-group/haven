@@ -51,9 +51,10 @@ class ROIMixin(Device):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Connect signals for auto-updated the size/max of the ROI range
-        self.size.subscribe(self._update_range_params)
-        self.hi_chan.subscribe(self._update_range_params)
-        self.lo_chan.subscribe(self._update_range_params)
+        #   Currently this results in an endless loop
+        # self.size.subscribe(self._update_range_params)
+        # self.hi_chan.subscribe(self._update_range_params)
+        # self.lo_chan.subscribe(self._update_range_params)
 
     def _update_range_params(self, *args, old_value, value, obj, **kwargs):
         if obj is self.size:
@@ -82,7 +83,6 @@ class ROIMixin(Device):
         self._original_kinds = {
             fld: getattr(self, fld).kind for fld in self._dynamic_hint_fields
         }
-        print(self._dynamic_hint_fields)
         for fld in self._dynamic_hint_fields:
             getattr(self, fld).kind = new_kind
         super().stage()

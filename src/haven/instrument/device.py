@@ -50,18 +50,18 @@ async def make_device(DeviceClass, *args, FakeDeviceClass=None, **kwargs) -> Dev
             Cls = make_fake_device(DeviceClass)
         else:
             Cls = FakeDeviceClass
-    # Create the ophyd object
-    device = Cls(
-        *args,
-        **kwargs,
-    )
     # Make sure we can connect
     name = kwargs.get("name", "unknown")
+    t0 = ttime.monotonic()
     try:
-        t0 = ttime.monotonic()
+        # Create the ophyd object
+        device = Cls(
+            *args,
+            **kwargs,
+        )        
         await await_for_connection(device)
     except TimeoutError as e:
-        if "Failed" not in str(e):
+        if DeviceClass.__name__ == "VortexEx":
             raise
         log.warning(
             f"Could not connect to {DeviceClass.__name__} in {round(ttime.monotonic() - t0, 2)} sec: {name}."

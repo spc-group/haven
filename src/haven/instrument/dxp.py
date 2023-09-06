@@ -126,7 +126,6 @@ def add_mcas(range_, kind=active_kind, **kwargs):
             f"mca{idx+1}", # (Epics uses 1-index instead of 0-index)
             kwargs,
         )
-    print(defn)
     return defn
 
 

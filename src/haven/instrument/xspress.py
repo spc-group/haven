@@ -141,7 +141,7 @@ def add_mcas(range_, kind=active_kind, **kwargs):
     return defn
 
 
-class Xspress3Detector(DetectorBase, XRFMixin):
+class Xspress3Detector(SingleTrigger, DetectorBase, XRFMixin):
     """A fluorescence detector plugged into an Xspress3 readout."""
     cam = ADCpt(CamBase, "det1:")
     # Core control interface signals
@@ -188,6 +188,9 @@ class Xspress3Detector(DetectorBase, XRFMixin):
         # self.stage_sigs[self.erase] = self.erase_states.ERASE
         # self.stage_sigs[self.trigger_mode] = self.mode.TTL_VETO_ONLY
         # self.stage_sigs[self.acquire] = self.acquire_states.ACQUIRE
+        self.stage_sigs[self.cam.num_images] = 1
+        # The image mode is not a real signal in the Xspress3 IOC
+        del self.stage_sigs['cam.image_mode']
 
     @property
     def stage_num_frames(self):
@@ -231,7 +234,7 @@ async def make_xspress_device(name, prefix, num_elements):
     class_name = name.title().replace("_", "")
     parent_classes = (Xspress3Detector,)
     Cls = type(class_name, parent_classes, attrs)
-    return await make_device(Cls, name=name, prefix=prefix, labels={"xrf_detectors"})
+    return await make_device(Cls, name=name, prefix=f"{prefix}:", labels={"xrf_detectors"})
 
 
 def load_xspress_coros(config=None):
