@@ -276,8 +276,13 @@ def test_complete_xspress(xspress):
     vortex = xspress
     vortex.acquire.sim_put(1)
     status = vortex.complete()
+    time.sleep(0.01)
     assert vortex.acquire.get(use_monitor=False) == 0
-    
+    assert not status.done
+    vortex.acquiring.set(0)
+    status.wait()
+    assert status.done
+
 
 @pytest.mark.parametrize('vortex', DETECTORS, indirect=True)
 @pytest.mark.xfail
