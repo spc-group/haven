@@ -6,7 +6,7 @@ specific to one device or another.
 
 """
 
-
+import logging
 from pathlib import Path
 import asyncio
 from unittest.mock import MagicMock
@@ -60,11 +60,16 @@ def test_load_dxp(sim_registry):
     # assert vortex.mcas.mca1.rois.roi1.is_hinted.pvname == "vortex_me4:mca1_R1BH"
 
 
-@pytest.mark.parametrize('vortex', DETECTORS, indirect=True)    
-def test_roi_size(vortex):
+@pytest.mark.parametrize('vortex', DETECTORS, indirect=True)
+def test_roi_size(vortex, caplog):
     """Do the signals for max/size auto-update."""
+    from pprint import pprint
     roi = vortex.mcas.mca0.rois.roi0
-    roi.lo_chan.set(10).wait()
+    # Check that we can set the lo_chan without error in the callback
+    with caplog.at_level(logging.ERROR):
+        roi.lo_chan.set(10).wait()
+    for record in caplog.records:
+        assert "Another set() call is still in progress" not in record.exc_text, record.exc_text
     # Update the size and check the maximum
     roi.size.set(7).wait()
     assert roi.hi_chan.get() == 17

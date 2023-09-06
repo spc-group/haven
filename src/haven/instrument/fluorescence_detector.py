@@ -52,17 +52,23 @@ class ROIMixin(Device):
         super().__init__(*args, **kwargs)
         # Connect signals for auto-updated the size/max of the ROI range
         #   Currently this results in an endless loop
-        # self.size.subscribe(self._update_range_params)
-        # self.hi_chan.subscribe(self._update_range_params)
-        # self.lo_chan.subscribe(self._update_range_params)
+        self.size.subscribe(self._update_range_params)
+        self.hi_chan.subscribe(self._update_range_params)
+        self.lo_chan.subscribe(self._update_range_params)
 
     def _update_range_params(self, *args, old_value, value, obj, **kwargs):
         if obj is self.size:
-            self.hi_chan.set(self.lo_chan.get() + value).wait()
+            new_val = self.lo_chan.get() + value
+            if new_val != self.hi_chan.get():
+                self.hi_chan.set(new_val).wait()
         elif obj is self.hi_chan:
-            self.size.set(value - self.lo_chan.get()).wait()
+            new_val = value - self.lo_chan.get()
+            if new_val != self.size.get():
+                self.size.set(new_val).wait()
         elif obj is self.lo_chan:
-            self.size.set(self.hi_chan.get() - value).wait()
+            new_val = self.hi_chan.get() - value
+            if new_val != self.size.get():
+                self.size.set(new_val).wait()
 
     def stage(self):
         self._original_name = self.name
