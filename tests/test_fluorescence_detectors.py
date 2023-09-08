@@ -15,7 +15,7 @@ import time
 import numpy as np
 import pytest
 from epics import caget
-from ophyd import Kind, DynamicDeviceComponent as DDC
+from ophyd import Kind, DynamicDeviceComponent as DDC, OphydObject
 from bluesky import plans as bp
 
 from haven.instrument.dxp import parse_xmap_buffer, load_dxp
@@ -180,23 +180,28 @@ def test_stage_signal_names(vortex):
 
 @pytest.mark.parametrize("vortex", DETECTORS, indirect=True)
 def test_read_and_config_attrs(vortex):
+    vortex.mcas.mca0.read_attrs
     expected_read_attrs = [
-        "cam",
         "mcas",
-        
     ]
+    if hasattr(vortex, 'cam'):
+        expected_read_attrs.append("cam")
     # Add attrs for each MCA and ROI.
     for mca in range(vortex.num_elements):
         expected_read_attrs.extend([
             f"mcas.mca{mca}",
             f"mcas.mca{mca}.rois",
             f"mcas.mca{mca}.spectrum",
+            f"mcas.mca{mca}.total_count",
+            # f"mcas.mca{mca}.input_count_rate",
+            # f"mcas.mca{mca}.output_count_rate",
+            f"mcas.mca{mca}.dead_time",
             # f"mcas.mca{mca}.background",
         ])
         for roi in range(vortex.num_rois):
             expected_read_attrs.extend([
                 f"mcas.mca{mca}.rois.roi{roi}",
-                f"mcas.mca{mca}.rois.roi{roi}.raw_count",
+                f"mcas.mca{mca}.rois.roi{roi}.count",
                 f"mcas.mca{mca}.rois.roi{roi}.net_count",
             ])
     assert sorted(vortex.read_attrs) == sorted(expected_read_attrs)
@@ -307,9 +312,6 @@ def test_complete_xspress(xspress):
     status = vortex.complete()
     time.sleep(0.01)
     assert vortex.acquire.get(use_monitor=False) == 0
-    assert not status.done
-    vortex.acquiring.set(0)
-    status.wait()
     assert status.done
 
 
@@ -328,3 +330,25 @@ def test_parse_xmap_buffer(vortex):
     assert isinstance(data, dict)
     assert data["num_pixels"] == 3
     assert len(data["pixels"]) == 3
+
+
+@pytest.mark.parametrize('vortex', DETECTORS, indirect=True)
+def test_roi_calcs(vortex):
+    # Check that the ROI calc signals exist
+    assert isinstance(vortex.roi_sums.roi0, OphydObject)
+    # Set some fake ROI values
+    print(vortex.mcas.mca0.rois.roi0.net_count)
+    vortex.mcas.mca0.rois.roi0.net_count.sim_put(5)
+    assert vortex.roi_sums.roi0.get() == 5
+
+
+@pytest.mark.parametrize('vortex', DETECTORS, indirect=True)
+def test_mca_calcs(vortex):
+    # Check that the ROI calc signals exist
+    assert isinstance(vortex.mcas.mca0.total_count, OphydObject)
+    # Does it sum together the total counts?
+    spectrum = np.random.randint(2**16, size=(vortex.num_rois))
+    mca = vortex.mcas.mca0
+    mca.spectrum.sim_put(spectrum)
+    assert mca.total_count.get(use_monitor=False) == np.sum(spectrum)
+

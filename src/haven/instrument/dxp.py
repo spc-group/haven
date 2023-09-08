@@ -30,13 +30,16 @@ from ophyd.pseudopos import (
 
 from .scaler_triggered import ScalerTriggered
 from .instrument_registry import registry
-from .fluorescence_detector import XRFMixin, active_kind, ROIMixin
+from .fluorescence_detector import XRFMixin, active_kind, ROIMixin, MCASumMixin, add_roi_sums
 from .device import RegexComponent as RECpt, await_for_connection, aload_devices, make_device
 from .._iconfig import load_config
 from .. import exceptions
 
 
 __all__ = ["DxpDetectorBase", "load_dxp_detectors"]
+
+
+NUM_ROIS = 32
 
 
 class ROI(ROIMixin, mca.ROI):
@@ -50,11 +53,8 @@ class ROI(ROIMixin, mca.ROI):
         "hi_chan",
         "lo_chan",
     ]
-    # hints = {"fields": ["net_count"]}
     kind = active_kind
     # Signals
-    # net_count = Cpt(EpicsSignalRO, "N", kind=Kind.hinted, lazy=True)
-    # user_kind = Cpt(EpicsSignal, "_BS_KIND", lazy=True)
     use = RECpt(EpicsSignal, "BH", pattern=r"\.R", repl="_R", lazy=True)
     size = Cpt(Signal, kind="config")
 
@@ -65,7 +65,7 @@ class ROI(ROIMixin, mca.ROI):
         super().unstage()
 
 
-def add_rois(range_: Sequence[int] = range(32), kind=Kind.normal, **kwargs):
+def add_rois(range_: Sequence[int] = range(NUM_ROIS), kind=Kind.normal, **kwargs):
     """Add one or more ROIs to an MCA instance
 
     Parameters
@@ -93,16 +93,19 @@ def add_rois(range_: Sequence[int] = range(32), kind=Kind.normal, **kwargs):
     return defn
 
 
-class MCARecord(mca.EpicsMCARecord):
+class MCARecord(MCASumMixin, mca.EpicsMCARecord):
     rois = DDC(add_rois(), kind=active_kind)
+    dead_time = Cpt(Signal, kind=Kind.normal)
     _default_read_attrs = [
         "rois",
+        "total_count",
         "spectrum",
-        "preset_real_time",
-        "preset_live_time",
-        "elapsed_real_time",
-        "elapsed_live_time",
-        "background",
+        "dead_time",
+        # "preset_real_time",
+        # "preset_live_time",
+        # "elapsed_real_time",
+        # "elapsed_live_time",
+        # "background",
     ]
     _default_configuration_attrs = ["rois", "mode"]
     kind = active_kind
@@ -150,16 +153,23 @@ class DxpDetectorBase(
     # By default, a 4-element detector, subclass for more elements
     mcas = DDC(
         add_mcas(range_=range(4)),
-        default_read_attrs=["mca0"],
-        default_configuration_attrs=["mca0"],
+        default_read_attrs=["mca0", "mca1", "mca2", "mca3"],
+        default_configuration_attrs=["mca0", "mca1", "mca2", "mca3"],
     )
+    roi_sums = DDC(
+        add_roi_sums(mcas=range(1), rois=range(NUM_ROIS)),
+        kind=active_kind,
+        default_read_attrs=[f"roi{i}" for i in range(NUM_ROIS)],
+        default_configuration_attrs=[f"roi{i}" for i in range(NUM_ROIS)],
+    )
+
     net_cdf = Cpt(NetCDFPlugin_V34, "netCDF1:")
     _default_read_attrs = [
-        "preset_live_time",
-        "preset_real_time",
-        "dead_time",
-        "elapsed_live",
-        "elapsed_real",
+        # "preset_live_time",
+        # "preset_real_time",
+        # "dead_time",
+        # "elapsed_live",
+        # "elapsed_real",
         "mcas",
     ]
     _default_configuration_attrs = [
@@ -346,7 +356,13 @@ async def make_dxp_device(device_name, prefix, num_elements):
             kind=active_kind,
             default_read_attrs=[f"mca{i}" for i in mca_range],
             default_configuration_attrs=[f"mca{i}" for i in mca_range],
-        )
+        ),
+        "roi_sums": DDC(
+            add_roi_sums(mcas=mca_range, rois=range(NUM_ROIS)),
+            kind=active_kind,
+            default_read_attrs=[f"roi{i}" for i in range(NUM_ROIS)],
+            default_configuration_attrs=[f"roi{i}" for i in range(NUM_ROIS)],
+        ),
     }
     # Create a dynamic subclass with the MCAs
     class_name = device_name.title().replace("_", "")

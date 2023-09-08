@@ -4,6 +4,7 @@ import asyncio
 from typing import Optional, Sequence
 from collections import OrderedDict
 
+import numpy as np
 from apstools.devices import CamMixin_V34, SingleTrigger_V34
 from ophyd import (
     ADComponent as ADCpt,
@@ -44,14 +45,17 @@ from ophyd.areadetector.plugins import (
 
 from .._iconfig import load_config
 from .instrument_registry import registry
-from .fluorescence_detector import XRFMixin, ROIMixin
-from .device import await_for_connection, aload_devices, make_device
+from .fluorescence_detector import XRFMixin, ROIMixin, MCASumMixin, add_roi_sums
+from .device import await_for_connection, aload_devices, make_device, RegexComponent as RECpt
 
 
 log = logging.getLogger(__name__)
 
 
 active_kind = Kind.normal | Kind.config
+
+
+NUM_ROIS = 16
 
 
 class ROI(ROIMixin):
@@ -62,14 +66,14 @@ class ROI(ROIMixin):
     background_width = Cpt(EpicsSignal, "BgdWidth", kind="config")
     use = Cpt(EpicsSignalWithRBV, "Use", kind="config")
 
-    raw_count = Cpt(EpicsSignalRO, "Total_RBV", kind="normal")
+    count = Cpt(EpicsSignalRO, "Total_RBV", kind="normal")
     net_count = Cpt(EpicsSignalRO, "Net_RBV", kind="normal")
     min_count = Cpt(EpicsSignalRO, "MinValue_RBV", kind="normal")
     max_count = Cpt(EpicsSignalRO, "MaxValue_RBV", kind="normal")
     mean_count = Cpt(EpicsSignalRO, "MeanValue_RBV", kind="normal")
 
     _default_read_attrs = [
-        "raw_count",
+        "count",
         "net_count",
     ]
     _default_configuration_attrs = [
@@ -78,11 +82,10 @@ class ROI(ROIMixin):
         "hi_chan",
         "lo_chan",
     ]
-    hints = {"fields": ["net_count"]}
     kind = active_kind
 
 
-def add_rois(range_: Sequence[int] = range(48), kind=Kind.normal, **kwargs):
+def add_rois(range_: Sequence[int] = range(NUM_ROIS), kind=Kind.normal, **kwargs):
     """Add one or more ROIs to an MCA instance
 
     Parameters
@@ -110,15 +113,19 @@ def add_rois(range_: Sequence[int] = range(48), kind=Kind.normal, **kwargs):
     return defn
 
 
-class MCARecord(Device):
+class MCARecord(MCASumMixin, Device):
     rois = DDC(add_rois(), kind=active_kind)
     spectrum = Cpt(EpicsSignalRO, ":ArrayData", kind="normal")
+    dead_time = RECpt(EpicsSignalRO, ":DeadTime_RBV", pattern=r":MCA", repl=":C", lazy=True)
     _default_read_attrs = [
         "rois",
         "spectrum",
+        "dead_time",
+        "total_count",
     ]
     _default_configuration_attrs = ["rois"]
     kind = active_kind
+
 
 
 def add_mcas(range_, kind=active_kind, **kwargs):
@@ -156,6 +163,12 @@ class Xspress3Detector(SingleTrigger, DetectorBase, XRFMixin):
         kind=active_kind,
         default_read_attrs=["mca0"],
         default_configuration_attrs=["mca0"],
+    )
+    roi_sums = DDC(
+        add_roi_sums(mcas=range(1), rois=range(NUM_ROIS)),
+        kind=active_kind,
+        default_read_attrs=[f"roi{i}" for i in range(NUM_ROIS)],
+        default_configuration_attrs=[f"roi{i}" for i in range(NUM_ROIS)],
     )
 
     _default_read_attrs = [
@@ -229,7 +242,13 @@ async def make_xspress_device(name, prefix, num_elements):
             kind=active_kind,
             default_read_attrs=[f"mca{i}" for i in mca_range],
             default_configuration_attrs=[f"mca{i}" for i in mca_range],
-        )
+        ),
+        "roi_sums": DDC(
+            add_roi_sums(mcas=mca_range, rois=range(NUM_ROIS)),
+            kind=active_kind,
+            default_read_attrs=[f"roi{i}" for i in range(NUM_ROIS)],
+            default_configuration_attrs=[f"roi{i}" for i in range(NUM_ROIS)],
+        ),
     }
     # Create a dynamic subclass with the MCAs
     class_name = name.title().replace("_", "")

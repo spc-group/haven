@@ -14,6 +14,7 @@ import logging
 import asyncio
 import time
 
+import numpy as np
 from ophyd import (
     mca,
     Device,
@@ -22,8 +23,10 @@ from ophyd import (
     Component as Cpt,
     DynamicDeviceComponent as DDC,
     Kind,
+    Signal,
     flyers,
 )
+from ophyd.signal import InternalSignal
 from ophyd.areadetector.plugins import NetCDFPlugin_V34
 from ophyd.status import SubscriptionStatus, StatusBase
 from apstools.utils import cleanupText
@@ -42,6 +45,58 @@ log = logging.getLogger(__name__)
 
 
 active_kind = Kind.normal | Kind.config
+
+
+class ROISumSignal(InternalSignal):
+    """Like an InternalSignal, but compatible with DynamicDeviceComponent."""
+    def __init__(self, roi_name, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        device = self.parent.parent
+        self.root_device = device
+        self.roi_num = int(roi_name.split(":")[-1])
+        # Watch for changes to ROI values to compute new sums
+        for roi in self._roi_signals():
+            roi.net_count.subscribe(self._update_roi_sum)
+
+    def _roi_signals(self):
+        signals = []
+        for mca in self.root_device.mca_records():
+            roi = getattr(mca.rois, f"roi{self.roi_num}")
+            signals.append(roi)
+        return signals
+
+    def _update_roi_sum(self, *args, value, **kwargs):
+        rois = self._roi_signals()
+        total = np.sum([roi.net_count.get() for roi in rois])
+        self.put(total, internal=True)
+
+
+def add_roi_sums(mcas, rois):
+    """Add a set of signals to sum the ROI over all elements."""
+    defn = OrderedDict()
+    for roi in rois:
+        attr = f"roi{roi}"
+        defn[attr] = (
+            ROISumSignal,
+            roi,
+            {},
+        )
+    return defn
+
+
+class MCASumMixin(Device):
+    """Adds a signal that reports the sum of the *spectrum* signal."""
+    total_count = Cpt(InternalSignal, kind="normal")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Update the total count when the spectrum changes
+        self.spectrum.subscribe(self._update_total_count)
+
+    def _update_total_count(self, *args, old_value, value, **kwargs):
+        # print(value)
+        total = np.sum(value)
+        self.total_count.put(total, internal=True)
 
 
 class ROIMixin(Device):
