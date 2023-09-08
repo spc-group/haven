@@ -60,13 +60,13 @@ class ROIRegion(pyqtgraph.LinearRegionItem):
         self.address = address
         # Set up channels to the IOC
         self.hi_channel = PyDMChannel(
-            address=f"{address}.hi_chan._write_pv",
+            address=f"{address}.hi_chan",
             value_slot=self.set_region_upper,
             value_signal=self.region_upper_changed,
         )
         self.hi_channel.connect()
         self.lo_channel = PyDMChannel(
-            address=f"{address}.lo_chan._write_pv",
+            address=f"{address}.lo_chan",
             value_slot=self.set_region_lower,
             value_signal=self.region_lower_changed,
         )
@@ -351,12 +351,12 @@ class XrfTriggers(QObject):
         # Set up a channel for starting detector acquisition
         device = self.device
         self.start_channel = PyDMChannel(
-            address=f"oph://{device.name}.start_all",
+            address=f"oph://{device.name}.acquire",
             value_signal=self.start_all,
         )
         self.start_channel.connect()
         self.start_erase_channel = PyDMChannel(
-            address=f"oph://{device.name}.erase_start",
+            address=f"oph://{device.name}.acquire",
             value_signal=self.start_erase,
         )
         self.start_erase_channel.connect()
@@ -506,6 +506,7 @@ class XRFDetectorDisplay(display.FireflyDisplay):
           The embedded display for the row from which to copy.
 
         """
+        # print(source_display.ui)
         new_label = source_display.embedded_widget.ui.label_lineedit.text()
         new_lower = source_display.embedded_widget.ui.lower_lineedit.text()
         new_upper = source_display.embedded_widget.ui.upper_lineedit.text()
@@ -549,6 +550,7 @@ class XRFDetectorDisplay(display.FireflyDisplay):
         # Get existing values from selected MCA row
         mca_idx = self._selected_mca
         source_display = self.mca_displays[mca_idx]
+        print(mca_idx, source_display)
         self.copy_selected_row(
             source_display=source_display, displays=self.mca_displays
         )

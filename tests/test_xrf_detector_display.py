@@ -27,8 +27,10 @@ def xrf_display(ffapp, request):
         0, 65536, dtype=np.int_, size=(4, 1024)
     )
     plot_widget = display.mca_plot_widget
-    plot_widget.update_spectrum(1, spectra[0])
-    plot_widget.update_spectrum(2, spectra[1])
+    plot_widget.update_spectrum(0, spectra[0])
+    plot_widget.update_spectrum(1, spectra[1])
+    plot_widget.update_spectrum(2, spectra[2])
+    plot_widget.update_spectrum(3, spectra[3])
     return display
 
 
@@ -132,13 +134,15 @@ def test_update_mca_spectra(xrf_display, qtbot):
         0, 65536, dtype=np.int_, size=(4, 1024)
     )
     mca_plot_widget = xrf_display.ui.mca_plot_widget
+    # Check that a PlotItem was created in the fixture
+    plot_item = mca_plot_widget.ui.plot_widget.getPlotItem()
+    assert isinstance(plot_item, PlotItem)
+    # Clear the data items so we can test them later
+    plot_item.clear()
     # plot_widget.update_spectrum(spectrum=spectra[0], mca_idx=1)
     with qtbot.waitSignal(mca_plot_widget.plot_changed):
         xrf_display._spectrum_channels[0].value_slot(spectra[0])
         xrf_display._spectrum_channels[1].value_slot(spectra[1])
-    # Check that a PlotItem was created
-    plot_item = mca_plot_widget.ui.plot_widget.getPlotItem()
-    assert isinstance(plot_item, PlotItem)
     # Check that the spectrum was plotted
     data_items = plot_item.listDataItems()
     assert len(data_items) == 2
@@ -160,10 +164,10 @@ def test_mca_selected_highlights(qtbot, xrf_display):
         0, 65536, dtype=np.int_, size=(4, 1024)
     )
     plot_widget = xrf_display.mca_plot_widget
-    plot_widget.update_spectrum(1, spectra[0])
-    plot_widget.update_spectrum(2, spectra[1])
-    this_data_item = xrf_display.mca_plot_widget._data_items[2]
-    other_data_item = xrf_display.mca_plot_widget._data_items[1]
+    plot_widget.update_spectrum(0, spectra[0])
+    plot_widget.update_spectrum(1, spectra[1])
+    this_data_item = xrf_display.mca_plot_widget._data_items[1]
+    other_data_item = xrf_display.mca_plot_widget._data_items[0]
     this_data_item.setOpacity(0.77)
     # Select this display and check if the spectrum is highlighted
     mca_display.selected.emit(True)
@@ -226,7 +230,7 @@ def test_mca_region_channels(xrf_display):
     mca_display = xrf_display.mca_displays[1]
     mca_display._embedded_widget = mca_display.open_file(force=True)
     xrf_display.mca_selected(is_selected=True, mca_num=2)
-    correct_address = "oph://vortex_me4.mcas.mca2.rois.roi0.hi_chan._write_pv"
+    correct_address = "oph://vortex_me4.mcas.mca2.rois.roi0.hi_chan"
     region = plot_widget.region(mca_num=2, roi_num=0)
     assert region.hi_channel.address == correct_address
     region.hi_channel.value_slot(108)
@@ -237,7 +241,7 @@ def test_mca_region_channels(xrf_display):
 
 @pytest.mark.parametrize('xrf_display', ["dxp", "xspress"], indirect=True)
 def test_mca_copyall_button(xrf_display, qtbot):
-    xrf_display.mca_selected(is_selected=True, mca_num=2)
+    xrf_display.mca_selected(is_selected=True, mca_num=1)
     assert xrf_display.ui.mca_copyall_button.isEnabled()
     # Set up ROI displays to test
     this_display = xrf_display.mca_displays[1]

@@ -156,6 +156,7 @@ class Xspress3Detector(SingleTrigger, DetectorBase, XRFMixin):
     acquire = ADCpt(SignalWithRBV, "det1:Acquire")
     acquire_period = ADCpt(SignalWithRBV, "det1:AcquirePeriod")
     acquire_time = ADCpt(SignalWithRBV, "det1:AcquireTime")
+    erase = ADCpt(EpicsSignal, "det1:ERASE")
 
     # Number of elements is overridden by subclasses
     mcas = DDC(

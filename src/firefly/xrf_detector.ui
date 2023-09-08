@@ -78,6 +78,9 @@
      </item>
      <item>
       <widget class="QCheckBox" name="accumulate_checkbox">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
        <property name="toolTip">
         <string>If checked, successive frames will be added together, if unchecked, each acquisition will be a new frame.</string>
        </property>
@@ -101,7 +104,7 @@
         </size>
        </property>
        <property name="channel" stdset="0">
-        <string>oph://${DEV}.erase_all._write_pv</string>
+        <string>oph://${DEV}.erase</string>
        </property>
        <property name="pressValue" stdset="0">
         <string>1</string>
@@ -141,7 +144,7 @@
         <string/>
        </property>
        <property name="channel" stdset="0">
-        <string>oph://${DEV}.acquiring</string>
+        <string>oph://${DEV}.acquire</string>
        </property>
       </widget>
      </item>
@@ -292,7 +295,7 @@
      </property>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>2</number>
+       <number>3</number>
       </property>
       <widget class="QWidget" name="stats_tab">
        <attribute name="title">
@@ -1113,7 +1116,7 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>854</width>
+                 <width>869</width>
                  <height>393</height>
                 </rect>
                </property>
