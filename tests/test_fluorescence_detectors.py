@@ -183,6 +183,9 @@ def test_read_and_config_attrs(vortex):
     vortex.mcas.mca0.read_attrs
     expected_read_attrs = [
         "mcas",
+        "dead_time_average",
+        "dead_time_min",
+        "dead_time_max",
     ]
     if hasattr(vortex, 'cam'):
         expected_read_attrs.append("cam")
@@ -195,7 +198,8 @@ def test_read_and_config_attrs(vortex):
             f"mcas.mca{mca}.total_count",
             # f"mcas.mca{mca}.input_count_rate",
             # f"mcas.mca{mca}.output_count_rate",
-            f"mcas.mca{mca}.dead_time",
+            f"mcas.mca{mca}.dead_time_percent",
+            f"mcas.mca{mca}.dead_time_factor",
             # f"mcas.mca{mca}.background",
         ])
         for roi in range(vortex.num_rois):
@@ -352,3 +356,16 @@ def test_mca_calcs(vortex):
     mca.spectrum.sim_put(spectrum)
     assert mca.total_count.get(use_monitor=False) == np.sum(spectrum)
 
+@pytest.mark.parametrize("vortex", ["xspress"], indirect=True)
+def test_dead_time_calc(vortex):
+    assert vortex.dead_time_average.get(use_monitor=False) == 0
+    assert vortex.dead_time_max.get(use_monitor=False) == 0
+    assert vortex.dead_time_min.get(use_monitor=False) == 0
+    # Set the per-element dead-times
+    dead_times = [3, 4, 5, 6]
+    for mca, dt in zip(vortex.mca_records(), dead_times):
+        mca.dead_time_percent.sim_put(dt)
+    # Check that the stats get updated
+    assert vortex.dead_time_min.get(use_monitor=False) == 3
+    assert vortex.dead_time_max.get(use_monitor=False) == 6
+    assert vortex.dead_time_average.get(use_monitor=False) == 4.5

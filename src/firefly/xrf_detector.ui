@@ -250,7 +250,7 @@
            <bool>false</bool>
           </property>
           <property name="channel" stdset="0">
-           <string>oph://${DEV}.dead_time</string>
+           <string>oph://${DEV}.dead_time_average</string>
           </property>
           <property name="displayFormat" stdset="0">
            <enum>PyDMLabel::Decimal</enum>
@@ -272,6 +272,57 @@
         </item>
        </layout>
       </widget>
+     </item>
+     <item>
+      <layout class="QHBoxLayout" name="horizontalLayout_7">
+       <property name="spacing">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <item>
+        <widget class="QLabel" name="label_11">
+         <property name="text">
+          <string>(</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="PyDMLabel" name="dead_time_min_label">
+         <property name="toolTip">
+          <string/>
+         </property>
+         <property name="text">
+          <string>14.0</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_12">
+         <property name="text">
+          <string>−</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="PyDMLabel" name="PyDMLabel_34">
+         <property name="toolTip">
+          <string/>
+         </property>
+         <property name="text">
+          <string>24.0</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_13">
+         <property name="text">
+          <string>)</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </item>
      <item>
       <spacer name="horizontalSpacer_2">

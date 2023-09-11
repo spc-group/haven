@@ -20,6 +20,7 @@ from ophyd import (
 )
 from ophyd.areadetector.plugins import NetCDFPlugin_V34
 from ophyd.status import SubscriptionStatus, StatusBase
+from ophyd.signal import InternalSignal
 from apstools.utils import cleanupText
 from ophyd.pseudopos import (
     PseudoPositioner,
@@ -95,12 +96,14 @@ def add_rois(range_: Sequence[int] = range(NUM_ROIS), kind=Kind.normal, **kwargs
 
 class MCARecord(MCASumMixin, mca.EpicsMCARecord):
     rois = DDC(add_rois(), kind=active_kind)
-    dead_time = Cpt(Signal, kind=Kind.normal)
+    dead_time_factor = Cpt(Signal, kind=Kind.normal)
+    dead_time_percent = Cpt(Signal, kind=Kind.normal)
     _default_read_attrs = [
         "rois",
         "total_count",
         "spectrum",
-        "dead_time",
+        "dead_time_factor",
+        "dead_time_percent",
         # "preset_real_time",
         # "preset_live_time",
         # "elapsed_real_time",
@@ -150,6 +153,12 @@ class DxpDetectorBase(
     write_path: str = "M:\\epics\\fly_scanning\\"
     read_path: str = "/net/s20data/sector20/tmp/"
     acquire = Cpt(Signal, value=0)
+
+    # Dead time aggregate statistics
+    dead_time_average = Cpt(InternalSignal, kind="normal")
+    dead_time_min = Cpt(InternalSignal, kind="normal")
+    dead_time_max = Cpt(InternalSignal, kind="normal")
+
     # By default, a 4-element detector, subclass for more elements
     mcas = DDC(
         add_mcas(range_=range(4)),
@@ -171,6 +180,9 @@ class DxpDetectorBase(
         # "elapsed_live",
         # "elapsed_real",
         "mcas",
+        "dead_time_average",
+        "dead_time_max",
+        "dead_time_min",
     ]
     _default_configuration_attrs = [
         "max_scas",

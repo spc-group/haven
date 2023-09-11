@@ -25,6 +25,7 @@ from ophyd import (
     Signal,
     StatusBase,
 )
+from ophyd.signal import InternalSignal
 from ophyd.areadetector.base import EpicsSignalWithRBV as SignalWithRBV
 from ophyd.areadetector.filestore_mixins import FileStoreHDF5IterativeWrite
 from ophyd.areadetector.plugins import (
@@ -116,11 +117,13 @@ def add_rois(range_: Sequence[int] = range(NUM_ROIS), kind=Kind.normal, **kwargs
 class MCARecord(MCASumMixin, Device):
     rois = DDC(add_rois(), kind=active_kind)
     spectrum = Cpt(EpicsSignalRO, ":ArrayData", kind="normal")
-    dead_time = RECpt(EpicsSignalRO, ":DeadTime_RBV", pattern=r":MCA", repl=":C", lazy=True)
+    dead_time_percent = RECpt(EpicsSignalRO, ":DeadTime_RBV", pattern=r":MCA", repl=":C", lazy=True)
+    dead_time_factor = RECpt(EpicsSignalRO, ":DTFactor_RBV", pattern=r":MCA", repl=":C", lazy=True)
     _default_read_attrs = [
         "rois",
         "spectrum",
-        "dead_time",
+        "dead_time_percent",
+        "dead_time_factor",
         "total_count",
     ]
     _default_configuration_attrs = ["rois"]
@@ -151,12 +154,18 @@ def add_mcas(range_, kind=active_kind, **kwargs):
 
 class Xspress3Detector(SingleTrigger, DetectorBase, XRFMixin):
     """A fluorescence detector plugged into an Xspress3 readout."""
+    _dead_times: dict
+    
     cam = ADCpt(CamBase, "det1:")
     # Core control interface signals
     acquire = ADCpt(SignalWithRBV, "det1:Acquire")
     acquire_period = ADCpt(SignalWithRBV, "det1:AcquirePeriod")
     acquire_time = ADCpt(SignalWithRBV, "det1:AcquireTime")
     erase = ADCpt(EpicsSignal, "det1:ERASE")
+    # Dead time aggregate statistics
+    dead_time_average = ADCpt(InternalSignal, kind="normal")
+    dead_time_min = ADCpt(InternalSignal, kind="normal")
+    dead_time_max = ADCpt(InternalSignal, kind="normal")
 
     # Number of elements is overridden by subclasses
     mcas = DDC(
@@ -175,6 +184,9 @@ class Xspress3Detector(SingleTrigger, DetectorBase, XRFMixin):
     _default_read_attrs = [
         "cam",
         "mcas",
+        "dead_time_average",
+        "dead_time_min",
+        "dead_time_max",
     ]
     _default_configuration_attrs = [
         "cam",
@@ -206,6 +218,19 @@ class Xspress3Detector(SingleTrigger, DetectorBase, XRFMixin):
         self.stage_sigs[self.cam.num_images] = 1
         # The image mode is not a real signal in the Xspress3 IOC
         del self.stage_sigs['cam.image_mode']
+        # Set up subscriptions for dead-time calculations
+        self._dead_times = {}
+        for mca in self.mca_records():
+            mca.dead_time_percent.subscribe(self._update_dead_time_calcs)
+
+    def _update_dead_time_calcs(self, *args, value, obj, **kwargs):
+        self._dead_times[obj.name] = value
+        # Calculate aggregate dead time stats
+        dead_times = np.asarray(list(self._dead_times.values()))
+        self.dead_time_average.put(np.mean(dead_times), internal=True)
+        self.dead_time_min.put(np.min(dead_times), internal=True)
+        self.dead_time_max.put(np.max(dead_times), internal=True)
+        
 
     @property
     def stage_num_frames(self):
