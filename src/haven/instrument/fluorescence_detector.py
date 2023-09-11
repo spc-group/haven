@@ -9,6 +9,7 @@ hardware, e.g. ``dxp.py`` for XIA's XMAP, Mercury, Saturn, and
 from enum import IntEnum
 from collections import OrderedDict
 from typing import Optional, Sequence
+from contextlib import contextmanager
 import warnings
 import logging
 import asyncio
@@ -103,27 +104,59 @@ class ROIMixin(Device):
     _original_name = None
     _original_kinds = {}
     _dynamic_hint_fields = ["net_count"]
+    _callback_ids: dict
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Connect signals for auto-updated the size/max of the ROI range
         #   Currently this results in an endless loop
-        self.size.subscribe(self._update_range_params)
-        self.hi_chan.subscribe(self._update_range_params)
-        self.lo_chan.subscribe(self._update_range_params)
+        self._callback_ids = {}
+        self._subscribe_range_param_callback(self.size)
+        self._subscribe_range_param_callback(self.hi_chan)
+        self._subscribe_range_param_callback(self.lo_chan)
+
+    def _subscribe_range_param_callback(self, sig):
+        name = sig.name
+        # Make sure we're not setting a callback to already exists
+        assert sig.name not in self._callback_ids.keys()
+        # Register the callback
+        self._callback_ids[name] = sig.subscribe(self._update_range_params)
+
+    @contextmanager
+    def _pause_range_param_callback(self, sig):
+        name = sig.name
+        # Unsubscribe the previous callback
+        if name in self._callback_ids.keys():
+            sig.unsubscribe(self._callback_ids[name])
+            del self._callback_ids[name]
+        # Run the enclosed code
+        try:
+            yield
+        finally:
+            # Re-subscribe the callback
+            self._subscribe_range_param_callback(sig)
 
     def _update_range_params(self, *args, old_value, value, obj, **kwargs):
+        """Set the remaining range parameter based on two that were
+        updated.
+
+        """
+        def set_new_val(sig, val):
+            """Helper to update the signal if value has changed."""
+            if val != sig.get():
+                log.debug(f"Setting {sig.name} to {val}.")
+                # Pause the callbacks to make sure we don't end up in a loop
+                with self._pause_range_param_callback(sig):
+                    sig.put(val)
+        
         if obj is self.size:
             new_val = self.lo_chan.get() + value
-            if new_val != self.hi_chan.get():
-                self.hi_chan.set(new_val).wait()
+            set_new_val(self.hi_chan, new_val)
         elif obj is self.hi_chan:
             new_val = value - self.lo_chan.get()
-            if new_val != self.size.get():
-                self.size.set(new_val).wait()
+            set_new_val(self.size, new_val)
         elif obj is self.lo_chan:
             new_val = self.hi_chan.get() - value
-            if new_val != self.size.get():
-                self.size.set(new_val).wait()
+            set_new_val(self.size, new_val)
 
     def stage(self):
         self._original_name = self.name
