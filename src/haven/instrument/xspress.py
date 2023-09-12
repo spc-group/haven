@@ -43,6 +43,8 @@ from ophyd.areadetector.plugins import (
     StatsPlugin_V34 as OphydStatsPlugin_V34,
     OverlayPlugin,
 )
+from pcdsdevices.signal import MultiDerivedSignal
+from pcdsdevices.type_hints import SignalToValue, OphydDataType
 
 from .._iconfig import load_config
 from .instrument_registry import registry
@@ -72,10 +74,43 @@ class HiChanSignal(DerivedSignal):
 
 
 class ROI(ROIMixin):
+    def _get_hi_chan(self, mds: MultiDerivedSignal, items: SignalToValue) -> int:
+        lo = items[self._lo_chan]
+        size = items[self.size]
+        return lo + size
+
+    def _put_hi_chan(self, mds: MultiDerivedSignal, value: OphydDataType) -> SignalToValue:
+        lo = self._lo_chan.get()
+        new_size = value - lo
+        return {
+            self.size: new_size
+        }
+
+    def _get_lo_chan(self, mds: MultiDerivedSignal, items: SignalToValue) -> int:
+        return items[self._lo_chan]
+
+    def _put_lo_chan(self, mds: MultiDerivedSignal, value: OphydDataType) -> SignalToValue:
+        hi = self.hi_chan.get()
+        return {
+            self._lo_chan: value,
+            self.size: hi - value,
+        }
+
     label = Cpt(EpicsSignal, "Name", kind="config")
-    lo_chan = Cpt(EpicsSignal, "MinX", kind="config")
-    hi_chan = Cpt(HiChanSignal, derived_from="size", kind="config")
+    _lo_chan = Cpt(EpicsSignal, "MinX", kind="omitted")
     size = Cpt(EpicsSignal, "SizeX", kind="config")
+    hi_chan = Cpt(
+        MultiDerivedSignal,
+        attrs=["_lo_chan", "size"],
+        calculate_on_get=_get_hi_chan,
+        calculate_on_put=_put_hi_chan,
+    )
+    lo_chan = Cpt(
+        MultiDerivedSignal,
+        attrs=["_lo_chan", "size"],
+        calculate_on_get=_get_lo_chan,
+        calculate_on_put=_put_lo_chan,
+    )
     background_width = Cpt(EpicsSignal, "BgdWidth", kind="config")
     use = Cpt(EpicsSignalWithRBV, "Use", kind="config")
 
