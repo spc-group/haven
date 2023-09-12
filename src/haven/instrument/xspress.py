@@ -25,7 +25,7 @@ from ophyd import (
     Signal,
     StatusBase,
 )
-from ophyd.signal import InternalSignal
+from ophyd.signal import InternalSignal, DerivedSignal
 from ophyd.areadetector.base import EpicsSignalWithRBV as SignalWithRBV
 from ophyd.areadetector.filestore_mixins import FileStoreHDF5IterativeWrite
 from ophyd.areadetector.plugins import (
@@ -59,10 +59,22 @@ active_kind = Kind.normal | Kind.config
 NUM_ROIS = 16
 
 
+class HiChanSignal(DerivedSignal):
+    def forward(self, hi):
+        lo = self.parent.lo_chan.get()
+        size = hi - lo
+        return size
+
+    def inverse(self, size):
+        lo = self.parent.lo_chan.get()
+        hi = lo + size
+        return hi
+
+
 class ROI(ROIMixin):
-    lo_chan = Cpt(EpicsSignal, "MinX", kind="config")
     label = Cpt(EpicsSignal, "Name", kind="config")
-    hi_chan = Cpt(Signal, kind="config")
+    lo_chan = Cpt(EpicsSignal, "MinX", kind="config")
+    hi_chan = Cpt(HiChanSignal, derived_from="size", kind="config")
     size = Cpt(EpicsSignal, "SizeX", kind="config")
     background_width = Cpt(EpicsSignal, "BgdWidth", kind="config")
     use = Cpt(EpicsSignalWithRBV, "Use", kind="config")

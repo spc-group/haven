@@ -20,7 +20,7 @@ from ophyd import (
 )
 from ophyd.areadetector.plugins import NetCDFPlugin_V34
 from ophyd.status import SubscriptionStatus, StatusBase
-from ophyd.signal import InternalSignal
+from ophyd.signal import InternalSignal, DerivedSignal
 from apstools.utils import cleanupText
 from ophyd.pseudopos import (
     PseudoPositioner,
@@ -43,6 +43,19 @@ __all__ = ["DxpDetectorBase", "load_dxp_detectors"]
 NUM_ROIS = 32
 
 
+class SizeSignal(DerivedSignal):
+    def inverse(self, hi):
+        lo = self.parent.lo_chan.get()
+        size = hi - lo
+        return size
+
+    def forward(self, size):
+        lo = self.parent.lo_chan.get()
+        hi = lo + size
+        return hi
+
+
+
 class ROI(ROIMixin, mca.ROI):
     _default_read_attrs = [
         "count",
@@ -57,7 +70,7 @@ class ROI(ROIMixin, mca.ROI):
     kind = active_kind
     # Signals
     use = RECpt(EpicsSignal, "BH", pattern=r"\.R", repl="_R", lazy=True)
-    size = Cpt(Signal, kind="config")
+    size = Cpt(SizeSignal, derived_from="hi_chan", kind="config")
 
     def unstage(self):
         # Restore original signal kinds
