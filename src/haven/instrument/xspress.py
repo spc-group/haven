@@ -61,20 +61,9 @@ active_kind = Kind.normal | Kind.config
 NUM_ROIS = 16
 
 
-class HiChanSignal(DerivedSignal):
-    def forward(self, hi):
-        lo = self.parent.lo_chan.get()
-        size = hi - lo
-        return size
-
-    def inverse(self, size):
-        lo = self.parent.lo_chan.get()
-        hi = lo + size
-        return hi
-
-
 class ROI(ROIMixin):
     def _get_hi_chan(self, mds: MultiDerivedSignal, items: SignalToValue) -> int:
+        # Make sure other signals don't have pending threads
         lo = items[self._lo_chan]
         size = items[self.size]
         return lo + size
@@ -274,9 +263,9 @@ class Xspress3Detector(SingleTrigger, DetectorBase, XRFMixin):
         self._dead_times[obj.name] = value
         # Calculate aggregate dead time stats
         dead_times = np.asarray(list(self._dead_times.values()))
-        self.dead_time_average.put(np.mean(dead_times), internal=True)
-        self.dead_time_min.put(np.min(dead_times), internal=True)
-        self.dead_time_max.put(np.max(dead_times), internal=True)
+        self.dead_time_average.put(float(np.mean(dead_times)), internal=True)
+        self.dead_time_min.put(float(np.min(dead_times)), internal=True)
+        self.dead_time_max.put(float(np.max(dead_times)), internal=True)
         
 
     @property

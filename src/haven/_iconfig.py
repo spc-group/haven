@@ -39,7 +39,7 @@ def load_files(file_paths: Sequence[pathlib.Path]):
     for fp in file_paths:
         if fp.exists():
             with open(fp, mode="rb") as fp:
-                log.info(f"Loading config file: {fp}")
+                log.debug(f"Loading config file: {fp}")
                 config = tomli.load(fp)
                 yield config
 

@@ -43,6 +43,7 @@ class AcquireStates(IntEnum):
 
 
 class ROIRegion(pyqtgraph.LinearRegionItem):
+    """A selection on the XRF plot, showing the current ROI."""
     mca_num: int
     roi_num: int
 
@@ -76,16 +77,17 @@ class ROIRegion(pyqtgraph.LinearRegionItem):
         self.setVisible(False)
 
     def handle_region_change(self):
+        # Get new region boundary
         lower, upper = self.getRegion()
         lower = round(lower)
         upper = round(upper)
         if lower != self._last_lower:
-            log.debug(f"Changing lower from {self._last_lower} to {lower}")
+            print(f"Changing lower from {self._last_lower} to {lower}")
             if self._last_lower is not None:
                 self.region_lower_changed.emit(lower)
             self._last_lower = lower
         if upper != self._last_upper:
-            log.debug(f"Changing upper from {self._last_upper} to {upper}")
+            print(f"Changing upper from {self._last_upper} to {upper}")
             if self._last_upper is not None:
                 self.region_upper_changed.emit(upper)
             self._last_upper = upper
@@ -103,6 +105,7 @@ class ROIRegion(pyqtgraph.LinearRegionItem):
         """Set the upper value of the highlighted region."""
         log.debug(f"Setting new region upper bound: {new_upper}")
         old_region = self.getRegion()
+        print(new_upper, self._last_upper)
         new_region = (old_region[0], new_upper)
         if new_region != old_region:
             self.setRegion(new_region)
