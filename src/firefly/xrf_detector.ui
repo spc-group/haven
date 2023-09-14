@@ -45,34 +45,40 @@
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="continuous_button">
+      <widget class="PyDMPushButton" name="continuous_button">
        <property name="toolTip">
-        <string>Continuously capture exposures, accumulating them together.</string>
+        <string>Acquire frames continuously and display them on the plot.</string>
        </property>
        <property name="text">
         <string>Continuous</string>
        </property>
-       <property name="iconSize">
-        <size>
-         <width>12</width>
-         <height>12</height>
-        </size>
-       </property>
        <property name="checkable">
         <bool>true</bool>
+       </property>
+       <property name="channel" stdset="0">
+        <string>oph://${DEV}.acquire_multiple</string>
+       </property>
+       <property name="pressValue" stdset="0">
+        <string>1</string>
+       </property>
+       <property name="releaseValue" stdset="0">
+        <string>0</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="oneshot_button">
-       <property name="text">
-        <string>One-Shot</string>
+      <widget class="PyDMPushButton" name="oneshot_button">
+       <property name="toolTip">
+        <string>Collect a single frame to show on the plot.</string>
        </property>
-       <property name="iconSize">
-        <size>
-         <width>12</width>
-         <height>12</height>
-        </size>
+       <property name="text">
+        <string>Acquire</string>
+       </property>
+       <property name="channel" stdset="0">
+        <string>oph://${DEV}.acquire_single</string>
+       </property>
+       <property name="pressValue" stdset="0">
+        <string>1</string>
        </property>
       </widget>
      </item>
@@ -86,28 +92,6 @@
        </property>
        <property name="text">
         <string>Accumulate</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="PyDMPushButton" name="erase_button">
-       <property name="toolTip">
-        <string>Erase the accumulated spectra.</string>
-       </property>
-       <property name="text">
-        <string>Erase</string>
-       </property>
-       <property name="iconSize">
-        <size>
-         <width>12</width>
-         <height>12</height>
-        </size>
-       </property>
-       <property name="channel" stdset="0">
-        <string>oph://${DEV}.erase</string>
-       </property>
-       <property name="pressValue" stdset="0">
-        <string>1</string>
        </property>
       </widget>
      </item>
@@ -140,55 +124,52 @@
        <property name="alarmSensitiveBorder" stdset="0">
         <bool>true</bool>
        </property>
-       <property name="channel" stdset="0">
-        <string>oph://${DEV}.acquire</string>
-       </property>
        <property name="PyDMToolTip" stdset="0">
         <string/>
        </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="label_4">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="text">
-        <string>Total:</string>
+       <property name="channel" stdset="0">
+        <string>oph://${DEV}.acquire</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="PyDMLabel" name="PyDMLabel_33">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
+      <layout class="QHBoxLayout" name="horizontalLayout_8">
+       <property name="spacing">
+        <number>0</number>
        </property>
-       <property name="toolTip">
-        <string/>
+       <property name="rightMargin">
+        <number>0</number>
        </property>
-       <property name="text">
-        <string>76321</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="label_6">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="text">
-        <string>Dead Time:</string>
-       </property>
-      </widget>
+       <item>
+        <widget class="QLabel" name="label_4">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text">
+          <string>Total:</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="PyDMLabel" name="total_counts_label">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="toolTip">
+          <string>Total number of detection events over all elements.</string>
+         </property>
+         <property name="text">
+          <string>76321</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </item>
      <item>
       <widget class="QWidget" name="deadtime_layout" native="true">
@@ -230,6 +211,19 @@
          <number>0</number>
         </property>
         <item>
+         <widget class="QLabel" name="label_6">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="text">
+           <string>Dead Time:</string>
+          </property>
+         </widget>
+        </item>
+        <item>
          <widget class="PyDMLabel" name="deadtime_label">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
@@ -238,7 +232,7 @@
            </sizepolicy>
           </property>
           <property name="toolTip">
-           <string>The overall live time across elements for the last acquisition.</string>
+           <string>Overall dead time (in per-cent) across all elements for the last acquisition.</string>
           </property>
           <property name="text">
            <string>22.8</string>
@@ -303,13 +297,10 @@
           </sizepolicy>
          </property>
          <property name="toolTip">
-          <string/>
+          <string>Minimum dead time (in per-cent) across all elements for the last acquisition.</string>
          </property>
          <property name="text">
           <string>14.0</string>
-         </property>
-         <property name="channel" stdset="0">
-          <string>oph://${DEV}.dead_time_min</string>
          </property>
         </widget>
        </item>
@@ -327,7 +318,7 @@
         </widget>
        </item>
        <item>
-        <widget class="PyDMLabel" name="PyDMLabel_34">
+        <widget class="PyDMLabel" name="dead_time_max_label">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
            <horstretch>0</horstretch>
@@ -335,13 +326,10 @@
           </sizepolicy>
          </property>
          <property name="toolTip">
-          <string/>
+          <string>Maximum dead time (in per-cent) across all elements for the last acquisition.</string>
          </property>
          <property name="text">
           <string>24.0</string>
-         </property>
-         <property name="channel" stdset="0">
-          <string>oph://${DEV}.dead_time_max</string>
          </property>
         </widget>
        </item>
@@ -963,8 +951,8 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>297</width>
-                 <height>84</height>
+                 <width>1023</width>
+                 <height>394</height>
                 </rect>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_7">
@@ -1203,8 +1191,8 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>863</width>
-                 <height>363</height>
+                 <width>869</width>
+                 <height>393</height>
                 </rect>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_8">
@@ -1299,17 +1287,17 @@
  <resources/>
  <connections>
   <connection>
-   <sender>accumulate_checkbox</sender>
+   <sender>continuous_button</sender>
    <signal>toggled(bool)</signal>
-   <receiver>erase_button</receiver>
-   <slot>setEnabled(bool)</slot>
+   <receiver>oneshot_button</receiver>
+   <slot>setDisabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>469</x>
+     <x>119</x>
      <y>135</y>
     </hint>
     <hint type="destinationlabel">
-     <x>561</x>
+     <x>205</x>
      <y>135</y>
     </hint>
    </hints>

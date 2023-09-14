@@ -1,4 +1,5 @@
 from enum import IntEnum
+from functools import partial
 import logging
 import asyncio
 from typing import Optional, Sequence
@@ -210,6 +211,15 @@ def add_mcas(range_, kind=active_kind, **kwargs):
 class Xspress3Detector(SingleTrigger, DetectorBase, XRFMixin):
     """A fluorescence detector plugged into an Xspress3 readout."""
     _dead_times: dict
+
+    def get_acquire_frames(self, mds: MultiDerivedSignal, items: SignalToValue) -> int:
+        return items[self.acquire]
+    
+    def put_acquire_frames(self, mds: MultiDerivedSignal, value: OphydDataType, num_frames: int) -> SignalToValue:
+        return {
+            self.cam.num_images: num_frames,
+            self.acquire: value,
+        }
     
     cam = ADCpt(CamBase, "det1:")
     # Core control interface signals
@@ -217,6 +227,18 @@ class Xspress3Detector(SingleTrigger, DetectorBase, XRFMixin):
     acquire_period = ADCpt(SignalWithRBV, "det1:AcquirePeriod")
     acquire_time = ADCpt(SignalWithRBV, "det1:AcquireTime")
     erase = ADCpt(EpicsSignal, "det1:ERASE")
+    acquire_single = ADCpt(
+        MultiDerivedSignal,
+        attrs=["acquire", "cam.num_images"],
+        calculate_on_get=get_acquire_frames,
+        calculate_on_put=partial(put_acquire_frames, num_frames=1),
+    )
+    acquire_multiple = ADCpt(
+        MultiDerivedSignal,
+        attrs=["acquire", "cam.num_images"],
+        calculate_on_get=get_acquire_frames,
+        calculate_on_put=partial(put_acquire_frames, num_frames=2000),
+    )
     # Dead time aggregate statistics
     dead_time_average = ADCpt(InternalSignal, kind="normal")
     dead_time_min = ADCpt(InternalSignal, kind="normal")

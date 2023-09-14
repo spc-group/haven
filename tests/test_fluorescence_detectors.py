@@ -60,6 +60,28 @@ def test_load_dxp(sim_registry):
     # assert vortex.mcas.mca1.rois.roi1.is_hinted.pvname == "vortex_me4:mca1_R1BH"
 
 
+# @pytest.mark.parametrize("vortex", ["xspress"], indirect=True)
+def test_acquire_frames_xspress(xspress):
+    """Can we acquire a single frame using the dedicated signal."""
+    vortex = xspress
+    # Acquire a single frame
+    assert vortex.acquire.get() == 0
+    vortex.acquire_single.set(1).wait()
+    # Check that the num of frames and the acquire button were set
+    assert vortex.acquire.get() == 1
+    assert vortex.cam.num_images.get() == 1
+    assert vortex.acquire_single.get() == 1
+    # Does it stop as well
+    vortex.acquire_single.set(0).wait()
+    assert vortex.acquire.get() == 0
+    # Acquire multiple frames
+    vortex.acquire_multiple.set(1).wait()
+    # Check that the num of frames and the acquire button were set
+    assert vortex.acquire.get() == 1
+    assert vortex.cam.num_images.get() == 2000
+    assert vortex.acquire_single.get() == 1
+
+
 @pytest.mark.parametrize('vortex', DETECTORS, indirect=True)
 def test_roi_size(vortex, caplog):
     """Do the signals for max/size auto-update."""
