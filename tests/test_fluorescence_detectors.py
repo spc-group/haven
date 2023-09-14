@@ -80,6 +80,26 @@ def test_roi_size(vortex, caplog):
     assert roi.size.get() == 3
 
 
+@pytest.mark.parametrize('vortex', DETECTORS, indirect=True)
+def test_roi_size_concurrency(vortex, caplog):
+    roi = vortex.mcas.mca0.rois.roi0
+    # Set up the roi limits
+    roi.lo_chan.set(12).wait()
+    roi.size.set(13).wait()
+    assert roi.hi_chan.get() == 25
+    # Change two signals together
+    statuses = [
+        roi.lo_chan.set(3),
+        roi.hi_chan.set(5),
+    ]
+    for st in statuses:
+        st.wait()
+    # Check that the signals were set correctly
+    assert roi.lo_chan.get() == 3
+    assert roi.hi_chan.get() == 5
+    assert roi.size.get() == 2
+
+
 @pytest.mark.parametrize('vortex', DETECTORS, indirect=True)        
 def test_enable_some_rois(vortex):
     """Test that the correct ROIs are enabled/disabled."""
