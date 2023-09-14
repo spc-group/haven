@@ -447,7 +447,7 @@ class XRFDetectorDisplay(display.FireflyDisplay):
         )
         # Button for starting/stopping the detector
         # triggers = XrfTriggers(device=self.device)
-        self.ui.continuous_button.setIcon(qta.icon("fa5s.play"))
+        # self.ui.continuous_checkbox.setIcon(qta.icon("fa5s.play"))
         self.ui.oneshot_button.setIcon(qta.icon("fa5s.camera"))
         # self.ui.erase_button.setIcon(qta.icon("fa5s.eraser"))
         # self.ui.continuous_button.toggled.connect(triggers.trigger_continuously)

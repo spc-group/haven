@@ -45,24 +45,15 @@
       </widget>
      </item>
      <item>
-      <widget class="PyDMPushButton" name="continuous_button">
+      <widget class="PyDMCheckbox" name="continuous_checkbox">
        <property name="toolTip">
         <string>Acquire frames continuously and display them on the plot.</string>
        </property>
        <property name="text">
         <string>Continuous</string>
        </property>
-       <property name="checkable">
-        <bool>true</bool>
-       </property>
        <property name="channel" stdset="0">
         <string>oph://${DEV}.acquire_multiple</string>
-       </property>
-       <property name="pressValue" stdset="0">
-        <string>1</string>
-       </property>
-       <property name="releaseValue" stdset="0">
-        <string>0</string>
        </property>
       </widget>
      </item>
@@ -124,11 +115,11 @@
        <property name="alarmSensitiveBorder" stdset="0">
         <bool>true</bool>
        </property>
-       <property name="PyDMToolTip" stdset="0">
-        <string/>
-       </property>
        <property name="channel" stdset="0">
         <string>oph://${DEV}.acquire</string>
+       </property>
+       <property name="PyDMToolTip" stdset="0">
+        <string/>
        </property>
       </widget>
      </item>
@@ -952,7 +943,7 @@
                  <x>0</x>
                  <y>0</y>
                  <width>1023</width>
-                 <height>394</height>
+                 <height>364</height>
                 </rect>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_7">
@@ -1191,8 +1182,8 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>869</width>
-                 <height>393</height>
+                 <width>863</width>
+                 <height>363</height>
                 </rect>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_8">
@@ -1262,6 +1253,11 @@
    <header>pydm.widgets.label</header>
   </customwidget>
   <customwidget>
+   <class>PyDMCheckbox</class>
+   <extends>QCheckBox</extends>
+   <header>pydm.widgets.checkbox</header>
+  </customwidget>
+  <customwidget>
    <class>PyDMEmbeddedDisplay</class>
    <extends>QFrame</extends>
    <header>pydm.widgets.embedded_display</header>
@@ -1287,18 +1283,18 @@
  <resources/>
  <connections>
   <connection>
-   <sender>continuous_button</sender>
+   <sender>continuous_checkbox</sender>
    <signal>toggled(bool)</signal>
    <receiver>oneshot_button</receiver>
    <slot>setDisabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>119</x>
-     <y>135</y>
+     <x>131</x>
+     <y>152</y>
     </hint>
     <hint type="destinationlabel">
-     <x>205</x>
-     <y>135</y>
+     <x>223</x>
+     <y>152</y>
     </hint>
    </hints>
   </connection>
