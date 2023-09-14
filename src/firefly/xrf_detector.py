@@ -57,7 +57,7 @@ class ROIRegion(pyqtgraph.LinearRegionItem):
     _last_lower: int = None
 
     def __init__(self, address: str, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super().__init__(*args, swapMode="block", **kwargs)
         self.address = address
         # Set up channels to the IOC
         self.hi_channel = PyDMChannel(
@@ -82,34 +82,39 @@ class ROIRegion(pyqtgraph.LinearRegionItem):
         lower = round(lower)
         upper = round(upper)
         if lower != self._last_lower:
-            print(f"Changing lower from {self._last_lower} to {lower}")
+            log.debug(f"Changing lower from {self._last_lower} to {lower}")
             if self._last_lower is not None:
                 self.region_lower_changed.emit(lower)
             self._last_lower = lower
         if upper != self._last_upper:
-            print(f"Changing upper from {self._last_upper} to {upper}")
+            log.debug(f"Changing upper from {self._last_upper} to {upper}")
             if self._last_upper is not None:
                 self.region_upper_changed.emit(upper)
             self._last_upper = upper
 
     def set_region_lower(self, new_lower):
         """Set the upper value of the highlighted region."""
-        log.debug(f"Setting new region lower bound: {new_lower}")
-        old_region = self.getRegion()
-        new_region = (new_lower, old_region[1])
-        if new_region != old_region:
-            self.setRegion(new_region)
-        self._last_lower = new_lower
-
+        if new_lower == self._last_lower:
+            return
+        log.debug("Setting new region lower bound: "
+                  f"{new_lower} from {self._last_lower}")
+        self._last_lower = new_lower        
+        self.blockLineSignal = True
+        self.lines[0].setValue(new_lower)
+        self.blockLineSignal = False
+        
     def set_region_upper(self, new_upper):
         """Set the upper value of the highlighted region."""
-        log.debug(f"Setting new region upper bound: {new_upper}")
-        old_region = self.getRegion()
-        print(new_upper, self._last_upper)
-        new_region = (old_region[0], new_upper)
-        if new_region != old_region:
-            self.setRegion(new_region)
+        if new_upper == self._last_upper:
+            return
+        log.debug("Setting new region upper bound: "
+                  f"{new_upper} from {self._last_upper}")
         self._last_upper = new_upper
+        self.blockLineSignal = True
+        self.lines[1].setValue(new_upper)
+        # self.setRegion(new_region)
+        self.blockLineSignal = False
+        
 
 
 class XRF1DPlotItem(pyqtgraph.PlotItem):
@@ -509,11 +514,9 @@ class XRFDetectorDisplay(display.FireflyDisplay):
           The embedded display for the row from which to copy.
 
         """
-        # print(source_display.ui)
         new_label = source_display.embedded_widget.ui.label_lineedit.text()
         new_lower = source_display.embedded_widget.ui.lower_lineedit.text()
         new_upper = source_display.embedded_widget.ui.upper_lineedit.text()
-        # widget = source_display.embedded_widget.ui.upper_lineedit
         # Set all the other MCA rows with values from selected MCA row
         for display in displays:
             if display is not source_display:
@@ -553,7 +556,6 @@ class XRFDetectorDisplay(display.FireflyDisplay):
         # Get existing values from selected MCA row
         mca_idx = self._selected_mca
         source_display = self.mca_displays[mca_idx]
-        print(mca_idx, source_display)
         self.copy_selected_row(
             source_display=source_display, displays=self.mca_displays
         )

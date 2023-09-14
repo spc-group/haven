@@ -61,6 +61,25 @@ active_kind = Kind.normal | Kind.config
 NUM_ROIS = 16
 
 
+class ChannelSignal(MultiDerivedSignal):
+    def set(
+        self,
+        value: OphydDataType,
+        *,
+        timeout: Optional[float] = None,
+        settle_time: Optional[float] = None
+    ) -> StatusBase:
+        # Check for existing signals and, if necessary, wait them out
+        signals = [self.parent.hi_chan, self.parent.lo_chan, self.parent.size, self.parent._lo_chan]
+        def get_threads():
+            thds = [sig._set_thread for sig in signals if sig._set_thread]
+            return [th for th in thds if th is not None]
+        while len(threads := get_threads()) > 0:
+            for th in threads:
+                th.join()
+        # Set the signal like normal
+        return super().set(value, timeout=timeout, settle_time=settle_time)
+
 class ROI(ROIMixin):
     def _get_hi_chan(self, mds: MultiDerivedSignal, items: SignalToValue) -> int:
         # Make sure other signals don't have pending threads
@@ -89,13 +108,13 @@ class ROI(ROIMixin):
     _lo_chan = Cpt(EpicsSignal, "MinX", kind="omitted")
     size = Cpt(EpicsSignal, "SizeX", kind="config")
     hi_chan = Cpt(
-        MultiDerivedSignal,
+        ChannelSignal,
         attrs=["_lo_chan", "size"],
         calculate_on_get=_get_hi_chan,
         calculate_on_put=_put_hi_chan,
     )
     lo_chan = Cpt(
-        MultiDerivedSignal,
+        ChannelSignal,
         attrs=["_lo_chan", "size"],
         calculate_on_get=_get_lo_chan,
         calculate_on_put=_put_lo_chan,

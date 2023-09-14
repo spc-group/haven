@@ -308,6 +308,9 @@
          <property name="text">
           <string>14.0</string>
          </property>
+         <property name="channel" stdset="0">
+          <string>oph://${DEV}.dead_time_min</string>
+         </property>
         </widget>
        </item>
        <item>
@@ -336,6 +339,9 @@
          </property>
          <property name="text">
           <string>24.0</string>
+         </property>
+         <property name="channel" stdset="0">
+          <string>oph://${DEV}.dead_time_max</string>
          </property>
         </widget>
        </item>
