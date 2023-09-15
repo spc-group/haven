@@ -4,6 +4,7 @@ import logging
 import asyncio
 from typing import Optional, Sequence
 from collections import OrderedDict
+import time
 
 import numpy as np
 from apstools.devices import CamMixin_V34, SingleTrigger_V34
@@ -24,8 +25,8 @@ from ophyd import (
     OphydObject,
     Device,
     Signal,
-    StatusBase,
 )
+from ophyd.status import SubscriptionStatus, StatusBase
 from ophyd.signal import InternalSignal, DerivedSignal
 from ophyd.areadetector.base import EpicsSignalWithRBV as SignalWithRBV
 from ophyd.areadetector.filestore_mixins import FileStoreHDF5IterativeWrite
@@ -223,10 +224,11 @@ class Xspress3Detector(SingleTrigger, DetectorBase, XRFMixin):
     
     cam = ADCpt(CamBase, "det1:")
     # Core control interface signals
-    acquire = ADCpt(SignalWithRBV, "det1:Acquire")
-    acquire_period = ADCpt(SignalWithRBV, "det1:AcquirePeriod")
-    acquire_time = ADCpt(SignalWithRBV, "det1:AcquireTime")
-    erase = ADCpt(EpicsSignal, "det1:ERASE")
+    detector_state = ADCpt(EpicsSignalRO, "det1:DetectorState_RBV", kind="omitted")
+    acquire = ADCpt(SignalWithRBV, "det1:Acquire", kind="omitted")
+    acquire_period = ADCpt(SignalWithRBV, "det1:AcquirePeriod", kind="omitted")
+    acquire_time = ADCpt(SignalWithRBV, "det1:AcquireTime", kind="normal")
+    erase = ADCpt(EpicsSignal, "det1:ERASE", kind="omitted")
     acquire_single = ADCpt(
         MultiDerivedSignal,
         attrs=["acquire", "cam.num_images"],
@@ -278,7 +280,20 @@ class Xspress3Detector(SingleTrigger, DetectorBase, XRFMixin):
         DONE = 0
         ACQUIRE = 1
 
-    class mode(IntEnum):
+    class detector_states(IntEnum):
+        IDLE = 0
+        ACQUIRE = 1
+        READOUT = 2
+        CORRECT = 3
+        SAVING = 4
+        ABORTING = 5
+        ERROR = 6
+        WAITING = 7
+        INITIALIZING = 8
+        DISCONNECTED = 9
+        ABORTED = 10
+
+    class trigger_modes(IntEnum):
         SOFTWARE = 0
         INTERNAL = 1
         IDC = 2
@@ -289,9 +304,7 @@ class Xspress3Detector(SingleTrigger, DetectorBase, XRFMixin):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # self.stage_sigs[self.erase] = self.erase_states.ERASE
-        # self.stage_sigs[self.trigger_mode] = self.mode.TTL_VETO_ONLY
-        # self.stage_sigs[self.acquire] = self.acquire_states.ACQUIRE
+        self.stage_sigs[self.cam.trigger_mode] = self.trigger_modes.INTERNAL
         self.stage_sigs[self.cam.num_images] = 1
         # The image mode is not a real signal in the Xspress3 IOC
         del self.stage_sigs['cam.image_mode']
@@ -322,6 +335,55 @@ class Xspress3Detector(SingleTrigger, DetectorBase, XRFMixin):
     def num_elements(self):
         return len(self.mcas.component_names)
 
+    def save_fly_datum(self, *, value, timestamp, obj, **kwargs):
+        """Callback to save data from a signal during fly-scanning."""
+        datum = (timestamp, value)
+        self._fly_data.setdefault(obj, []).append(datum)
+
+    def walk_fly_signals(self, *, include_lazy=False):
+        """Walk all signals in the Device hierarchy that are to be read during
+        fly-scanning.
+
+        Parameters
+        ----------
+        include_lazy : bool, optional
+            Include not-yet-instantiated lazy signals
+
+        Yields
+        ------
+        ComponentWalk
+            Where ancestors is all ancestors of the signal, including the
+            top-level device `walk_signals` was called on.
+
+        """
+        for walk in self.walk_signals():
+            # ROI sums do not get captured properly during flying
+            # Instead, they should be calculated at the end
+            if self.roi_sums in walk.ancestors:
+                continue
+            yield walk
+
+    def kickoff(self) -> StatusBase:
+        # Set up subscriptions for capturing data
+        self._fly_data = {}
+        for walk in self.walk_fly_signals():
+            cpt = walk.item
+            if (cpt.kind & Kind.normal):
+                cpt.subscribe(self.save_fly_datum)
+                
+        # Set up the status for when the detector is ready to fly
+        def check_acquiring(*, old_value, value, **kwargs):
+            is_acquiring = value == self.detector_states.ACQUIRE
+            if is_acquiring:
+                self.start_fly_timestamp = time.time()
+            return is_acquiring
+
+        status = SubscriptionStatus(self.detector_state, check_acquiring)
+        # Set the right parameters
+        status &= self.cam.trigger_mode.set(self.trigger_modes.TTL_VETO_ONLY)
+        status &= self.acquire.set(self.acquire_states.ACQUIRE)
+        return status
+
     def complete(self) -> StatusBase:
         """Wait for flying to be complete.
 
@@ -333,6 +395,27 @@ class Xspress3Detector(SingleTrigger, DetectorBase, XRFMixin):
           Indicate when flying has completed
         """
         return self.acquire.set(0)
+
+    def collect(self) -> dict:
+        # Parse the collected data into the right shape
+        all_values = OrderedDict()
+        all_timestamps = OrderedDict()
+        for sig, data_points in self._fly_data.items():
+            timestamps = [pt[0] for pt in data_points]
+            values = [pt[1] for pt in data_points]
+            print(sig.name, values)
+            for idx, (ts, val) in enumerate(zip(timestamps, values)):
+                all_values.setdefault(idx, {})[sig.name] = val
+                all_timestamps.setdefault(idx, {})[sig.name] = ts
+        # Emit the collected and parsed data points
+        for data, timestamps in zip(all_values.values(), all_timestamps.values()):
+            overall_time = np.median(list(timestamps.values()))
+            yield {
+                "data": data,
+                "timestamps": timestamps,
+                "time": overall_time,
+            }
+
 
 
 async def make_xspress_device(name, prefix, num_elements):

@@ -39,8 +39,8 @@ def vortex(request):
 
 def test_load_xspress(sim_registry, mocker):
     load_xspress(config=None)
-    vortex = sim_registry.find(name="vortex_me5")
-    assert vortex.mcas.component_names == ("mca0", "mca1", "mca2", "mca3", "mca4")
+    vortex = sim_registry.find(name="vortex_me4_xsp")
+    assert vortex.mcas.component_names == ("mca0", "mca1", "mca2", "mca3")
 
 
 def test_load_dxp(sim_registry):
@@ -282,12 +282,12 @@ def test_stage_signal_hinted(vortex):
 
 @pytest.mark.parametrize('vortex', DETECTORS, indirect=True)
 @pytest.mark.xfail
-def test_dxp_kickoff(vortex):
+def test_kickoff_dxp(vortex):
     vortex = vortex
     vortex.write_path = "M:\\tmp\\"
     vortex.read_path = "/net/s20data/sector20/tmp/"
     [
-        s.wait()
+        s.wait(timeout=3)
         for s in [
             vortex.acquiring.set(0),
             vortex.collect_mode.set("MCA Spectrum"),
@@ -301,7 +301,7 @@ def test_dxp_kickoff(vortex):
     status = vortex.kickoff()
     assert not status.done
     vortex.acquiring.set(1)
-    status.wait()
+    status.wait(timeout=3)
     assert status.done
     assert status.success
     # Check that the right signals were set during  kick off
@@ -350,6 +350,20 @@ def test_complete_dxp(dxp):
     assert status.done
 
 
+def test_kickoff_xspress(xspress):
+    """Check the behavior of the Xspress3 electornic's fly-scan complete call."""
+    vortex = xspress
+    vortex.acquire.sim_put(0)
+    status = vortex.kickoff()
+    assert not status.done
+    # Set the acquire signal to true to test that signals got set
+    vortex.detector_state.sim_put(vortex.detector_states.ACQUIRE)
+    status.wait(timeout=3)
+    assert status.done
+    assert vortex.cam.trigger_mode.get() == vortex.trigger_modes.TTL_VETO_ONLY
+    assert vortex.acquire.get() == vortex.acquire_states.ACQUIRE
+    
+
 def test_complete_xspress(xspress):
     """Check the behavior of the Xspress3 electornic's fly-scan complete call."""
     vortex = xspress
@@ -358,6 +372,29 @@ def test_complete_xspress(xspress):
     time.sleep(0.01)
     assert vortex.acquire.get(use_monitor=False) == 0
     assert status.done
+
+
+def test_collect_xspress(xspress):
+    """Check the Xspress3 collects data during fly-scanning."""
+    vortex = xspress
+    # Kick off the detector
+    status = vortex.kickoff()
+    vortex.detector_state.sim_put(vortex.detector_states.ACQUIRE)
+    status.wait(timeout=3)
+    # Set some data so we have something to report
+    roi = vortex.mcas.mca0.rois.roi0
+    roi.net_count.sim_put(281)
+    assert vortex._fly_data[roi.net_count][0][1] == 281
+    roi = vortex.mcas.mca1.rois.roi0
+    roi.net_count.sim_put(217)
+    assert vortex._fly_data[roi.net_count][0][1] == 217
+    # Make sure the element sums aren't collected here, but calculated later
+    assert vortex.roi_sums.roi0 not in vortex._fly_data.keys()
+    # Get data and check its structure
+    data = list(vortex.collect())
+    datum = data[0]
+    assert datum["data"][vortex.mcas.mca0.rois.roi0.net_count.name] == 281
+    assert datum["data"][vortex.mcas.mca1.rois.roi0.net_count.name] == 217
 
 
 @pytest.mark.parametrize('vortex', DETECTORS, indirect=True)
