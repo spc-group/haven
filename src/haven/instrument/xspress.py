@@ -2,7 +2,7 @@ from enum import IntEnum
 from functools import partial
 import logging
 import asyncio
-from typing import Optional, Sequence
+from typing import Optional, Sequence, Dict
 from collections import OrderedDict
 import time
 
@@ -357,6 +357,9 @@ class Xspress3Detector(SingleTrigger, DetectorBase, XRFMixin):
 
         """
         for walk in self.walk_signals():
+            # Only include readable signals
+            if not bool(walk.item.kind & Kind.normal):
+                continue
             # ROI sums do not get captured properly during flying
             # Instead, they should be calculated at the end
             if self.roi_sums in walk.ancestors:
@@ -367,10 +370,8 @@ class Xspress3Detector(SingleTrigger, DetectorBase, XRFMixin):
         # Set up subscriptions for capturing data
         self._fly_data = {}
         for walk in self.walk_fly_signals():
-            cpt = walk.item
-            if (cpt.kind & Kind.normal):
-                cpt.subscribe(self.save_fly_datum, run=False)
-                
+            sig = walk.item
+            sig.subscribe(self.save_fly_datum)
         # Set up the status for when the detector is ready to fly
         def check_acquiring(*, old_value, value, **kwargs):
             is_acquiring = value == self.detector_states.ACQUIRE
@@ -416,6 +417,12 @@ class Xspress3Detector(SingleTrigger, DetectorBase, XRFMixin):
                 "time": overall_time,
             }
 
+    def describe_collect(self) -> Dict[str, Dict]:
+        """Describe details for the flyer collect() method"""
+        desc = OrderedDict()
+        for walk in self.walk_fly_signals():
+            desc.update(walk.item.describe())
+        return {self.name: desc}
 
 
 async def make_xspress_device(name, prefix, num_elements):

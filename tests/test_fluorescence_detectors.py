@@ -397,6 +397,19 @@ def test_collect_xspress(xspress):
     assert datum["data"][vortex.mcas.mca1.rois.roi0.net_count.name] == 217
 
 
+def test_describe_collect_xspress(xspress):
+    vortex = xspress
+    desc = vortex.describe_collect()
+    # Perform some spot-checks for descriptions
+    assert vortex.name in desc.keys()
+    sub_desc = desc[vortex.name]
+    assert vortex.mcas.mca0.total_count.name in sub_desc.keys()
+    assert vortex.mcas.mca0.dead_time_percent.name in sub_desc.keys()
+    assert vortex.mcas.mca0.spectrum.name in sub_desc.keys()
+    assert vortex.mcas.mca0.rois.roi0.net_count.name in sub_desc.keys()
+    assert vortex.mcas.mca0.rois.roi0.count.name in sub_desc.keys()
+
+
 @pytest.mark.parametrize('vortex', DETECTORS, indirect=True)
 @pytest.mark.xfail
 def test_parse_xmap_buffer(vortex):
