@@ -369,7 +369,7 @@ class Xspress3Detector(SingleTrigger, DetectorBase, XRFMixin):
         for walk in self.walk_fly_signals():
             cpt = walk.item
             if (cpt.kind & Kind.normal):
-                cpt.subscribe(self.save_fly_datum)
+                cpt.subscribe(self.save_fly_datum, run=False)
                 
         # Set up the status for when the detector is ready to fly
         def check_acquiring(*, old_value, value, **kwargs):
@@ -381,6 +381,7 @@ class Xspress3Detector(SingleTrigger, DetectorBase, XRFMixin):
         status = SubscriptionStatus(self.detector_state, check_acquiring)
         # Set the right parameters
         status &= self.cam.trigger_mode.set(self.trigger_modes.TTL_VETO_ONLY)
+        status &= self.cam.num_images.set(2**14)
         status &= self.acquire.set(self.acquire_states.ACQUIRE)
         return status
 
@@ -403,7 +404,6 @@ class Xspress3Detector(SingleTrigger, DetectorBase, XRFMixin):
         for sig, data_points in self._fly_data.items():
             timestamps = [pt[0] for pt in data_points]
             values = [pt[1] for pt in data_points]
-            print(sig.name, values)
             for idx, (ts, val) in enumerate(zip(timestamps, values)):
                 all_values.setdefault(idx, {})[sig.name] = val
                 all_timestamps.setdefault(idx, {})[sig.name] = ts
