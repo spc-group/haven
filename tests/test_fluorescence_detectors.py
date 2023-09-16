@@ -66,16 +66,16 @@ def test_acquire_frames_xspress(xspress):
     vortex = xspress
     # Acquire a single frame
     assert vortex.acquire.get() == 0
-    vortex.acquire_single.set(1).wait()
+    vortex.acquire_single.set(1).wait(timeout=3)
     # Check that the num of frames and the acquire button were set
     assert vortex.acquire.get() == 1
     assert vortex.cam.num_images.get() == 1
     assert vortex.acquire_single.get() == 1
     # Does it stop as well
-    vortex.acquire_single.set(0).wait()
+    vortex.acquire_single.set(0).wait(timeout=3)
     assert vortex.acquire.get() == 0
     # Acquire multiple frames
-    vortex.acquire_multiple.set(1).wait()
+    vortex.acquire_multiple.set(1).wait(timeout=3)
     # Check that the num of frames and the acquire button were set
     assert vortex.acquire.get() == 1
     assert vortex.cam.num_images.get() == 2000
@@ -88,17 +88,17 @@ def test_roi_size(vortex, caplog):
     roi = vortex.mcas.mca0.rois.roi0
     # Check that we can set the lo_chan without error in the callback
     with caplog.at_level(logging.ERROR):
-        roi.lo_chan.set(10).wait()
+        roi.lo_chan.set(10).wait(timeout=3)
     for record in caplog.records:
         assert "Another set() call is still in progress" not in record.exc_text, record.exc_text
     # Update the size and check the maximum
-    roi.size.set(7).wait()
+    roi.size.set(7).wait(timeout=3)
     assert roi.hi_chan.get() == 17
     # Update the maximum and check the size
-    roi.hi_chan.set(28).wait()
+    roi.hi_chan.set(28).wait(timeout=3)
     assert roi.size.get() == 18
     # Update the minimum and check the size
-    roi.lo_chan.set(25).wait()
+    roi.lo_chan.set(25).wait(timeout=3)
     assert roi.size.get() == 3
 
 
@@ -106,8 +106,8 @@ def test_roi_size(vortex, caplog):
 def test_roi_size_concurrency(vortex, caplog):
     roi = vortex.mcas.mca0.rois.roi0
     # Set up the roi limits
-    roi.lo_chan.set(12).wait()
-    roi.size.set(13).wait()
+    roi.lo_chan.set(12).wait(timeout=3)
+    roi.size.set(13).wait(timeout=3)
     assert roi.hi_chan.get() == 25
     # Change two signals together
     statuses = [
@@ -115,7 +115,7 @@ def test_roi_size_concurrency(vortex, caplog):
         roi.hi_chan.set(5),
     ]
     for st in statuses:
-        st.wait()
+        st.wait(timeout=3)
     # Check that the signals were set correctly
     assert roi.lo_chan.get() == 3
     assert roi.hi_chan.get() == 5
@@ -129,7 +129,7 @@ def test_enable_some_rois(vortex):
     statuses = vortex.enable_rois(rois=[2, 5], elements=[1, 3])
     # Give the IOC time to change the PVs
     for status in statuses:
-        status.wait()
+        status.wait(timeout=3)
         # Check that at least one of the ROIs was changed
     roi = vortex.mcas.mca1.rois.roi2
     hinted = roi.use.get(use_monitor=False)
@@ -142,7 +142,7 @@ def test_enable_rois(vortex):
     statuses = vortex.enable_rois()
     # Give the IOC time to change the PVs
     for status in statuses:
-        status.wait()
+        status.wait(timeout=3)
         # Check that at least one of the ROIs was changed
     roi = vortex.mcas.mca1.rois.roi2
     hinted = roi.use.get(use_monitor=False)
@@ -155,7 +155,7 @@ def test_disable_some_rois(vortex):
     statuses = vortex.enable_rois(rois=[2, 5], elements=[1, 3])
     # Give the IOC time to change the PVs
     for status in statuses:
-        status.wait()
+        status.wait(timeout=3)
     # Check that at least one of the ROIs was changed
     roi = vortex.mcas.mca1.rois.roi2
     hinted = roi.use.get(use_monitor=False)
@@ -163,7 +163,7 @@ def test_disable_some_rois(vortex):
     statuses = vortex.disable_rois(rois=[2, 5], elements=[1, 3])
     # Give the IOC time to change the PVs
     for status in statuses:
-        status.wait()
+        status.wait(timeout=3)
     # Check that at least one of the ROIs was changed
     roi = vortex.mcas.mca1.rois.roi2
     hinted = roi.use.get(use_monitor=False)
@@ -176,12 +176,12 @@ def test_disable_rois(vortex):
     statuses = vortex.enable_rois()
     # Give the IOC time to change the PVs
     for status in statuses:
-        status.wait()
+        status.wait(timeout=3)
 
     statuses = vortex.disable_rois()
     # Give the IOC time to change the PVs
     for status in statuses:
-        status.wait()
+        status.wait(timeout=3)
         # Check that at least one of the ROIs was changed
     roi = vortex.mcas.mca1.rois.roi2
     hinted = roi.use.get(use_monitor=False)
@@ -253,12 +253,34 @@ def test_read_and_config_attrs(vortex):
 
 
 @pytest.mark.parametrize('vortex', DETECTORS, indirect=True)
+def test_use_signal(vortex):
+    """Check that the ``.use`` ROI signal properly mangles the label.
+
+    It uses label mangling instead of any underlying PVs because
+    different detector types don't have this feature or use it in an
+    undesirable way.
+
+    """
+    roi = vortex.mcas.mca0.rois.roi1
+    roi.label.sim_put("Fe-55")
+    # Enable the ROI and see if the name is updated
+    roi.use.set(False).wait(timeout=3)
+    assert roi.label.get() == "~Fe-55"
+    # Disable the ROI and see if it goes back
+    roi.use.set(True).wait(timeout=3)
+    assert roi.label.get() == "Fe-55"
+    # Set the label manually and see if the use signal changes
+    roi.label.set("~Fe-55").wait(timeout=3)
+    assert not bool(roi.use.get())
+
+    
+@pytest.mark.parametrize('vortex', DETECTORS, indirect=True)
 def test_stage_signal_hinted(vortex):
     dev = vortex.mcas.mca0.rois.roi1
     # Check that ROI is not hinted by default
     assert dev.name not in vortex.hints
     # Enable the ROI by setting it's kind PV to "hinted"
-    dev.use.set(True).wait()
+    dev.use.set(True).wait(timeout=3)
     # Ensure signals are not hinted before being staged
     assert dev.net_count.name not in vortex.hints["fields"]
     try:
@@ -319,19 +341,19 @@ def test_dxp_acquire(dxp):
     """Check that the DXP acquire mimics that of the area detector base."""
     assert dxp.stop_all.get(use_monitor=False) == 0
     assert dxp.erase_start.get(use_monitor=False) == 0
-    dxp.acquire.set(1).wait()
+    dxp.acquire.set(1).wait(timeout=3)
     assert dxp.stop_all.get(use_monitor=False) == 0
     assert dxp.erase_start.get(use_monitor=False) == 1
-    dxp.acquire.set(0).wait()
+    dxp.acquire.set(0).wait(timeout=3)
     assert dxp.stop_all.get(use_monitor=False) == 1
     assert dxp.erase_start.get(use_monitor=False) == 1
 
     # Now test the reverse behavior
-    dxp.acquire.set(0).wait()
+    dxp.acquire.set(0).wait(timeout=3)
     assert dxp.acquire.get(use_monitor=False) == 0
-    dxp.acquiring.set(1).wait()
+    dxp.acquiring.set(1).wait(timeout=3)
     assert dxp.acquire.get(use_monitor=False) == 1
-    dxp.acquiring.set(0).wait()
+    dxp.acquiring.set(0).wait(timeout=3)
     assert dxp.acquire.get(use_monitor=False) == 0
 
 
@@ -346,7 +368,7 @@ def test_complete_dxp(dxp):
     assert vortex.stop_all.get(use_monitor=False) == 1
     assert not status.done
     vortex.acquiring.set(0)
-    status.wait()
+    status.wait(timeout=3)
     assert status.done
 
 
@@ -443,15 +465,15 @@ def test_roi_counts(vortex):
     spectrum[512:1024] = 1
     mca.spectrum.sim_put(spectrum)
     # Does the total count only pull from the given ROI limits
-    roi.lo_chan.set(800).wait()
-    roi.size.set(100).wait()
+    roi.lo_chan.set(800).wait(timeout=3)
+    roi.size.set(100).wait(timeout=3)
     # Does the total count add together the spectrum?
     count = roi.count.get()
     assert type(count) is int
     assert count == 101
     # Try setting bounds outside the spectrum size
-    roi.lo_chan.set(-100).wait()
-    roi.hi_chan.set(spectrum_size + 100).wait()
+    roi.lo_chan.set(-100).wait(timeout=3)
+    roi.hi_chan.set(spectrum_size + 100).wait(timeout=3)
     assert roi.count.get() == 512
     
 

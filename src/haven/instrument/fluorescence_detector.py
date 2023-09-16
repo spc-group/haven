@@ -27,7 +27,7 @@ from ophyd import (
     Signal,
     flyers,
 )
-from ophyd.signal import InternalSignal
+from ophyd.signal import InternalSignal, DerivedSignal
 from ophyd.areadetector.plugins import NetCDFPlugin_V34
 from ophyd.status import SubscriptionStatus, StatusBase
 from apstools.utils import cleanupText
@@ -100,6 +100,30 @@ class MCASumMixin(Device):
         # print(value)
         total = np.sum(value)
         self.total_count.put(total, internal=True)
+
+
+class UseROISignal(DerivedSignal):
+    """Check that the ``.use`` ROI signal properly mangles the label.
+
+    It uses label mangling instead of any underlying PVs because
+    different detector types don't have this feature or use it in an
+    undesirable way.
+
+    """
+    sentinel_char = "~"
+    
+    def inverse(self, value):
+        """Compute original signal value -> derived signal value"""
+        disabled = value.startswith(self.sentinel_char)
+        return not disabled
+
+    def forward(self, value):
+        """Compute derived signal value -> original signal value"""
+        label = str(self._derived_from.get()).strip(self.sentinel_char)
+        disable_roi = not bool(value)
+        if disable_roi:
+            label = f"{self.sentinel_char}{label}"
+        return label
 
 
 class ROIMixin(Device):

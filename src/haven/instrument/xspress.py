@@ -50,7 +50,7 @@ from pcdsdevices.type_hints import SignalToValue, OphydDataType
 
 from .._iconfig import load_config
 from .instrument_registry import registry
-from .fluorescence_detector import XRFMixin, ROIMixin, MCASumMixin, add_roi_sums
+from .fluorescence_detector import XRFMixin, ROIMixin, MCASumMixin, add_roi_sums, UseROISignal
 from .device import await_for_connection, aload_devices, make_device, RegexComponent as RECpt
 
 
@@ -125,7 +125,7 @@ class ROI(ROIMixin):
         calculate_on_put=_put_lo_chan,
     )
     background_width = Cpt(EpicsSignal, "BgdWidth", kind="config")
-    use = Cpt(EpicsSignalWithRBV, "Use", kind="config")
+    use = Cpt(UseROISignal, derived_from="label", kind="config")
 
     net_count = Cpt(EpicsSignalRO, "Net_RBV", kind="normal")
     min_count = Cpt(EpicsSignalRO, "MinValue_RBV", kind="normal")

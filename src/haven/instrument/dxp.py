@@ -31,7 +31,7 @@ from ophyd.pseudopos import (
 
 from .scaler_triggered import ScalerTriggered
 from .instrument_registry import registry
-from .fluorescence_detector import XRFMixin, active_kind, ROIMixin, MCASumMixin, add_roi_sums
+from .fluorescence_detector import XRFMixin, active_kind, ROIMixin, MCASumMixin, add_roi_sums, UseROISignal
 from .device import RegexComponent as RECpt, await_for_connection, aload_devices, make_device
 from .._iconfig import load_config
 from .. import exceptions
@@ -69,7 +69,7 @@ class ROI(ROIMixin, mca.ROI):
     ]
     kind = active_kind
     # Signals
-    use = RECpt(EpicsSignal, "BH", pattern=r"\.R", repl="_R", lazy=True)
+    use = Cpt(UseROISignal, derived_from="label", kind="config")
     size = Cpt(SizeSignal, derived_from="hi_chan", kind="config")
 
     def unstage(self):
