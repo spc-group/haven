@@ -45,7 +45,7 @@ from ophyd.areadetector.plugins import (
     StatsPlugin_V34 as OphydStatsPlugin_V34,
     OverlayPlugin,
 )
-from pcdsdevices.signal import MultiDerivedSignal
+from pcdsdevices.signal import MultiDerivedSignal, MultiDerivedSignalRO
 from pcdsdevices.type_hints import SignalToValue, OphydDataType
 
 from .._iconfig import load_config
@@ -64,6 +64,7 @@ NUM_ROIS = 16
 
 
 class ChannelSignal(MultiDerivedSignal):
+    """A high/low range limit channel for an ROI."""
     def set(
         self,
         value: OphydDataType,
@@ -81,6 +82,7 @@ class ChannelSignal(MultiDerivedSignal):
                 th.join()
         # Set the signal like normal
         return super().set(value, timeout=timeout, settle_time=settle_time)
+
 
 class ROI(ROIMixin):
     def _get_hi_chan(self, mds: MultiDerivedSignal, items: SignalToValue) -> int:
@@ -106,6 +108,7 @@ class ROI(ROIMixin):
             self.size: hi - value,
         }
 
+
     label = Cpt(EpicsSignal, "Name", kind="config")
     _lo_chan = Cpt(EpicsSignal, "MinX", kind="omitted")
     size = Cpt(EpicsSignal, "SizeX", kind="config")
@@ -124,7 +127,6 @@ class ROI(ROIMixin):
     background_width = Cpt(EpicsSignal, "BgdWidth", kind="config")
     use = Cpt(EpicsSignalWithRBV, "Use", kind="config")
 
-    count = Cpt(EpicsSignalRO, "Total_RBV", kind="normal")
     net_count = Cpt(EpicsSignalRO, "Net_RBV", kind="normal")
     min_count = Cpt(EpicsSignalRO, "MinValue_RBV", kind="normal")
     max_count = Cpt(EpicsSignalRO, "MaxValue_RBV", kind="normal")

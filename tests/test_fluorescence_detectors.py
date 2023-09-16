@@ -399,6 +399,11 @@ def test_collect_xspress(xspress):
 
 def test_describe_collect_xspress(xspress):
     vortex = xspress
+    # Force all the ROI counts to update
+    for mca_num, mca in enumerate(vortex.mca_records()):
+        for roi_num in range(vortex.num_rois):
+            roi = vortex.get_roi(mca_num, roi_num)
+            roi.count.get()
     desc = vortex.describe_collect()
     # Perform some spot-checks for descriptions
     assert vortex.name in desc.keys()
@@ -425,6 +430,30 @@ def test_parse_xmap_buffer(vortex):
     assert isinstance(data, dict)
     assert data["num_pixels"] == 3
     assert len(data["pixels"]) == 3
+
+
+@pytest.mark.parametrize('vortex', DETECTORS, indirect=True)
+def test_roi_counts(vortex):
+    """Check that the ROIs determine their counts from the spectrum."""
+    mca = vortex.mcas.mca0
+    roi = mca.rois.roi0
+    # Create a fake spectrum
+    spectrum_size = 4096
+    spectrum = np.zeros(spectrum_size)
+    spectrum[512:1024] = 1
+    mca.spectrum.sim_put(spectrum)
+    # Does the total count only pull from the given ROI limits
+    roi.lo_chan.set(800).wait()
+    roi.size.set(100).wait()
+    # Does the total count add together the spectrum?
+    count = roi.count.get()
+    assert type(count) is int
+    assert count == 101
+    # Try setting bounds outside the spectrum size
+    roi.lo_chan.set(-100).wait()
+    roi.hi_chan.set(spectrum_size + 100).wait()
+    assert roi.count.get() == 512
+    
 
 
 @pytest.mark.parametrize('vortex', DETECTORS, indirect=True)

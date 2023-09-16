@@ -31,6 +31,8 @@ from ophyd.signal import InternalSignal
 from ophyd.areadetector.plugins import NetCDFPlugin_V34
 from ophyd.status import SubscriptionStatus, StatusBase
 from apstools.utils import cleanupText
+from pcdsdevices.signal import MultiDerivedSignal, MultiDerivedSignalRO
+from pcdsdevices.type_hints import SignalToValue, OphydDataType
 
 from .scaler_triggered import ScalerTriggered
 from .instrument_registry import registry
@@ -135,6 +137,27 @@ class ROIMixin(Device):
         for fld, kind in self._original_kinds.items():
             getattr(self, fld).kind = kind
         super().unstage()
+
+    def _get_counts(self, mds: MultiDerivedSignalRO, items: SignalToValue) -> int:
+        spectrum = items[self.parent.parent.spectrum]
+        # Sometimes we get non-array spectra in here
+        if not hasattr(spectrum, "shape"):
+            return spectrum
+        # Force the hi/lo boundaries to be within range
+        hi = min(items[self.hi_chan], spectrum.shape[0])
+        lo = max(items[self.lo_chan], 0)
+        # Sum bins with the ROI range
+        counts = np.sum(spectrum[lo:hi+1])
+        counts = int(counts)
+        if counts == 389:
+            print(lo, hi, spectrum.shape)
+        return counts
+
+    count = Cpt(
+        MultiDerivedSignalRO,
+        attrs=["hi_chan", "lo_chan", "parent.parent.spectrum"],
+        calculate_on_get=_get_counts,
+    )        
 
 
 class XRFMixin(Device):
