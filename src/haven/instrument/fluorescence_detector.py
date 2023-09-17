@@ -25,6 +25,7 @@ from ophyd import (
     DynamicDeviceComponent as DDC,
     Kind,
     Signal,
+    SignalRO,
     flyers,
 )
 from ophyd.signal import InternalSignal, DerivedSignal
@@ -126,6 +127,23 @@ class UseROISignal(DerivedSignal):
         return label
 
 
+class ROICountSignal(SignalRO, DerivedSignal):
+    """A signal with the ROI event count derived from the histogram spectrum."""
+    def inverse(self, value):
+        """Compute original signal value -> derived signal value"""
+        spectrum = value
+        # Sometimes we get non-array spectra in here
+        if not hasattr(spectrum, "shape"):
+            return spectrum
+        # Force the hi/lo boundaries to be within range
+        hi = min(self.parent.hi_chan.get(), spectrum.shape[0])
+        lo = max(self.parent.lo_chan.get(), 0)
+        # Sum bins with the ROI range
+        counts = np.sum(spectrum[lo:hi+1])
+        counts = int(counts)
+        return counts
+
+
 class ROIMixin(Device):
     _original_name = None
     _original_kinds = {}
@@ -153,7 +171,7 @@ class ROIMixin(Device):
         for fld in self._dynamic_hint_fields:
             getattr(self, fld).kind = new_kind
         super().stage()
-
+    
     def unstage(self):        
         # Restore the original (pre-staged) name
         self.name = self._original_name
@@ -161,27 +179,11 @@ class ROIMixin(Device):
         for fld, kind in self._original_kinds.items():
             getattr(self, fld).kind = kind
         super().unstage()
-
-    def _get_counts(self, mds: MultiDerivedSignalRO, items: SignalToValue) -> int:
-        spectrum = items[self.parent.parent.spectrum]
-        # Sometimes we get non-array spectra in here
-        if not hasattr(spectrum, "shape"):
-            return spectrum
-        # Force the hi/lo boundaries to be within range
-        hi = min(items[self.hi_chan], spectrum.shape[0])
-        lo = max(items[self.lo_chan], 0)
-        # Sum bins with the ROI range
-        counts = np.sum(spectrum[lo:hi+1])
-        counts = int(counts)
-        if counts == 389:
-            print(lo, hi, spectrum.shape)
-        return counts
-
+    
     count = Cpt(
-        MultiDerivedSignalRO,
-        attrs=["hi_chan", "lo_chan", "parent.parent.spectrum"],
-        calculate_on_get=_get_counts,
-    )        
+        ROICountSignal,
+        derived_from="parent.parent.spectrum",
+    )
 
 
 class XRFMixin(Device):

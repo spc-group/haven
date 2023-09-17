@@ -125,7 +125,6 @@ def test_roi_size_concurrency(vortex, caplog):
 @pytest.mark.parametrize('vortex', DETECTORS, indirect=True)        
 def test_enable_some_rois(vortex):
     """Test that the correct ROIs are enabled/disabled."""
-    print(vortex)
     statuses = vortex.enable_rois(rois=[2, 5], elements=[1, 3])
     # Give the IOC time to change the PVs
     for status in statuses:
@@ -475,7 +474,6 @@ def test_roi_counts(vortex):
     roi.lo_chan.set(-100).wait(timeout=3)
     roi.hi_chan.set(spectrum_size + 100).wait(timeout=3)
     assert roi.count.get() == 512
-    
 
 
 @pytest.mark.parametrize('vortex', DETECTORS, indirect=True)
@@ -483,7 +481,6 @@ def test_roi_calcs(vortex):
     # Check that the ROI calc signals exist
     assert isinstance(vortex.roi_sums.roi0, OphydObject)
     # Set some fake ROI values
-    print(vortex.mcas.mca0.rois.roi0.net_count)
     vortex.mcas.mca0.rois.roi0.net_count.sim_put(5)
     assert vortex.roi_sums.roi0.get() == 5
 
