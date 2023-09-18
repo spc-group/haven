@@ -350,8 +350,10 @@ class Xspress3Detector(SingleTrigger, DetectorBase, XRFMixin):
         # Build all the individual signals' dataframes
         dfs = []
         for sig, data in self._fly_data.items():
-            # ts, data = zip(*data)
             df = pd.DataFrame(data, columns=["timestamps", sig])
+            old_shape = df.shape
+            # Remove duplicates
+            df.drop_duplicates("timestamps", inplace=True)
             nums = (df.timestamps - image_counter.timestamps).abs()
             # Assign each datum an image number based on timestamp
             def get_image_num(ts):
@@ -374,6 +376,9 @@ class Xspress3Detector(SingleTrigger, DetectorBase, XRFMixin):
         # change so no new camonitor reply was received
         data = data.ffill(axis=0)
         timestamps = timestamps.ffill(axis=1)
+        # Drop the zero-th rows, they're nothing
+        data.drop(0, inplace=True)
+        timestamps.drop(0, inplace=True)
         return data, timestamps
 
     def walk_fly_signals(self, *, include_lazy=False):
@@ -411,7 +416,7 @@ class Xspress3Detector(SingleTrigger, DetectorBase, XRFMixin):
         self._fly_data = {}
         for walk in self.walk_fly_signals():
             sig = walk.item
-            sig.subscribe(self.save_fly_datum)
+            sig.subscribe(self.save_fly_datum, run=False)
         # Set up the status for when the detector is ready to fly
         def check_acquiring(*, old_value, value, **kwargs):
             is_acquiring = value == self.detector_states.ACQUIRE
