@@ -7,6 +7,7 @@ from collections import OrderedDict
 import time
 
 import numpy as np
+import pandas as pd
 from apstools.devices import CamMixin_V34, SingleTrigger_V34
 from ophyd import (
     ADComponent as ADCpt,
@@ -342,6 +343,39 @@ class Xspress3Detector(SingleTrigger, DetectorBase, XRFMixin):
         datum = (timestamp, value)
         self._fly_data.setdefault(obj, []).append(datum)
 
+    def fly_data(self):
+        # Get the data for frame number as a reference
+        image_counter = pd.DataFrame(self._fly_data[self.cam.array_counter],
+                            columns=["timestamps", "image_counter"])
+        # Build all the individual signals' dataframes
+        dfs = []
+        for sig, data in self._fly_data.items():
+            # ts, data = zip(*data)
+            df = pd.DataFrame(data, columns=["timestamps", sig])
+            nums = (df.timestamps - image_counter.timestamps).abs()
+            # Assign each datum an image number based on timestamp
+            def get_image_num(ts):
+                """Get the image number taken closest to a given timestamp."""
+                num = image_counter.iloc[(image_counter['timestamps']-ts).abs().argsort()[:1]]
+                num = num["image_counter"].iloc[0]
+                return num
+            im_nums = [get_image_num(ts) for ts in df.timestamps.values]
+            df.index = im_nums
+            dfs.append(df)
+        # Combine frames into monolithic dataframes
+        data = image_counter.copy()
+        data = data.set_index("image_counter", drop=True)
+        timestamps = data.copy()
+        for df in dfs:
+            sig = df.columns[1]
+            data[sig] = df[sig]
+            timestamps[sig] = df["timestamps"]
+        # Fill in missing values, most likely because the value didn't
+        # change so no new camonitor reply was received
+        data = data.ffill(axis=0)
+        timestamps = timestamps.ffill(axis=1)
+        return data, timestamps
+
     def walk_fly_signals(self, *, include_lazy=False):
         """Walk all signals in the Device hierarchy that are to be read during
         fly-scanning.
@@ -359,6 +393,10 @@ class Xspress3Detector(SingleTrigger, DetectorBase, XRFMixin):
 
         """
         for walk in self.walk_signals():
+            # Image counter has to be included for data alignment
+            if walk.item is self.cam.array_counter:
+                yield walk
+                continue
             # Only include readable signals
             if not bool(walk.item.kind & Kind.normal):
                 continue
@@ -401,23 +439,19 @@ class Xspress3Detector(SingleTrigger, DetectorBase, XRFMixin):
         return self.acquire.set(0)
 
     def collect(self) -> dict:
-        # Parse the collected data into the right shape
-        all_values = OrderedDict()
-        all_timestamps = OrderedDict()
-        for sig, data_points in self._fly_data.items():
-            timestamps = [pt[0] for pt in data_points]
-            values = [pt[1] for pt in data_points]
-            for idx, (ts, val) in enumerate(zip(timestamps, values)):
-                all_values.setdefault(idx, {})[sig.name] = val
-                all_timestamps.setdefault(idx, {})[sig.name] = ts
-        # Emit the collected and parsed data points
-        for data, timestamps in zip(all_values.values(), all_timestamps.values()):
-            overall_time = np.median(list(timestamps.values()))
-            yield {
-                "data": data,
-                "timestamps": timestamps,
-                "time": overall_time,
+        """Generate the data events that were collected during the fly scan."""
+        # Load the collected data, and get rid of extras
+        fly_data, fly_ts = self.fly_data()
+        fly_data.drop("timestamps", inplace=True, axis="columns")
+        fly_ts.drop("timestamps", inplace=True, axis="columns")
+        # Yield each row one at a time
+        for data_row, ts_row in zip(fly_data.iterrows(), fly_ts.iterrows()):
+            payload = {
+                "data": {sig.name: val for (sig, val) in data_row[1].items()},
+                "timestamps": {sig.name: val for (sig, val) in ts_row[1].items()},
+                "time": float(np.median(np.unique(ts_row[1].values))),
             }
+            yield payload
 
     def describe_collect(self) -> Dict[str, Dict]:
         """Describe details for the flyer collect() method"""

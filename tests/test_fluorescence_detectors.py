@@ -272,6 +272,7 @@ def test_use_signal(vortex):
     roi.label.set("~Fe-55").wait(timeout=3)
     assert not bool(roi.use.get())
 
+
     
 @pytest.mark.parametrize('vortex', DETECTORS, indirect=True)
 def test_stage_signal_hinted(vortex):
@@ -374,6 +375,10 @@ def test_complete_dxp(dxp):
 def test_kickoff_xspress(xspress):
     """Check the behavior of the Xspress3 electornic's fly-scan complete call."""
     vortex = xspress
+    # Make sure the num_images is included
+    fly_sigs = [walk.item for walk in vortex.walk_fly_signals()]
+    assert vortex.cam.array_counter in fly_sigs
+    # Do the kickoff
     vortex.acquire.sim_put(0)
     status = vortex.kickoff()
     assert not status.done
@@ -403,6 +408,7 @@ def test_collect_xspress(xspress):
     vortex.detector_state.sim_put(vortex.detector_states.ACQUIRE)
     status.wait(timeout=3)
     # Set some data so we have something to report
+    vortex.cam.array_counter.sim_put(1)
     roi = vortex.mcas.mca0.rois.roi0
     roi.net_count.sim_put(281)
     assert vortex._fly_data[roi.net_count][0][1] == 281
@@ -416,8 +422,53 @@ def test_collect_xspress(xspress):
     datum = data[0]
     assert datum["data"][vortex.mcas.mca0.rois.roi0.net_count.name] == 281
     assert datum["data"][vortex.mcas.mca1.rois.roi0.net_count.name] == 217
+    assert type(datum["time"]) is float
 
 
+def test_fly_data_xspress(xspress):
+    """Check the Xspress3 processes fly-scanning data."""
+    vortex = xspress
+    # Set come incomplete fly-scan data
+    vortex._fly_data = {
+        vortex.cam.array_counter: [
+            # (timestamp, value)
+            (100.1, 1),
+            (100.2, 2),
+            (100.3, 3),
+        ],
+        vortex.mcas.mca0.rois.roi0.net_count: [
+            # (timestamp, value)
+            (100.11, 500),
+            (100.21, 498),
+            (100.31, 502),
+        ],
+        vortex.mcas.mca1.rois.roi0.net_count: [
+            # (timestamp, value)
+            (100.12, 12.3),
+            # This value is omitted to test for filling in missing values
+            # (100.22, 14.4),
+            (100.32, 9.84),
+        ],
+    }
+    # Check the process dataframe
+    fly_data, fly_ts = vortex.fly_data()
+    expected_columns = [
+        "timestamps",
+        vortex.cam.array_counter,
+        vortex.mcas.mca0.rois.roi0.net_count,
+        vortex.mcas.mca1.rois.roi0.net_count,
+    ]
+    assert list(fly_data.columns) == expected_columns
+    assert list(fly_ts.columns) == expected_columns
+    # Check that it fills in missing data
+    series = fly_data[vortex.mcas.mca1.rois.roi0.net_count]
+    np.testing.assert_equal(series.values, [12.3, 12.3, 9.84])
+    assert not fly_data.isnull().values.any()
+    # Check that it fills in missing timestamps
+    series = fly_ts[vortex.mcas.mca1.rois.roi0.net_count]
+    np.testing.assert_equal(series.values, [100.12, 100.21, 100.32])
+    assert not fly_ts.isnull().values.any()
+    
 def test_describe_collect_xspress(xspress):
     vortex = xspress
     # Force all the ROI counts to update
