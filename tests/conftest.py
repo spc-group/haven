@@ -13,7 +13,7 @@ import pytest
 from qtpy import QtWidgets
 import ophyd
 from ophyd import DynamicDeviceComponent as DDC, Kind
-from ophyd.sim import instantiate_fake_device, make_fake_device
+from ophyd.sim import instantiate_fake_device, make_fake_device, fake_device_cache, FakeEpicsSignal
 from pydm.data_plugins import add_plugin
 
 
@@ -27,10 +27,11 @@ import haven
 from haven.simulated_ioc import simulated_ioc
 from haven import load_config, registry
 from haven._iconfig import beamline_connected as _beamline_connected
-from haven.instrument.stage import AerotechFlyer
+from haven.instrument.stage import AerotechFlyer, AerotechStage
 from haven.instrument.aps import ApsMachine
 from haven.instrument.shutter import Shutter
 from haven.instrument.camera import AravisDetector
+from haven.instrument.delay import EpicsSignalWithIO
 from haven.instrument.dxp import DxpDetectorBase, add_mcas as add_dxp_mcas
 from haven.instrument.ion_chamber import IonChamber
 from haven.instrument.xspress import Xspress3Detector, add_mcas as add_xspress_mcas
@@ -50,6 +51,17 @@ os.environ["HAVEN_CONFIG_FILES"] = ",".join(
         f"{haven_dir/'iconfig_default.toml'}",
     ]
 )
+
+class FakeEpicsSignalWithIO(FakeEpicsSignal):
+    # An EPICS signal that simply uses the DG-645 convention of
+    # 'AO' being the setpoint and 'AI' being the read-back
+    _metadata_keys = EpicsSignalWithIO._metadata_keys
+
+    def __init__(self, prefix, **kwargs):
+        super().__init__(f"{prefix}I", write_pv=f"{prefix}O", **kwargs)
+
+
+fake_device_cache[EpicsSignalWithIO] = FakeEpicsSignalWithIO
 
 
 def pytest_configure(config):
@@ -429,17 +441,21 @@ def sim_ion_chamber(sim_registry):
 
 
 @pytest.fixture()
-def sim_aerotech_flyer():
-    Flyer = make_fake_device(
-        AerotechFlyer,
+def sim_aerotech():
+    Stage = make_fake_device(
+        AerotechStage,
     )
-    flyer = Flyer(
-        name="flyer",
-        axis="@0",
-        encoder=6,
-    )
+    stage = Stage("255id", delay_prefix="255id:DG645", pv_horiz=":m1", pv_vert=":m2", name="aerotech")
+    return stage
+    
+
+@pytest.fixture()
+def sim_aerotech_flyer(sim_aerotech):
+    flyer = sim_aerotech.horiz
     flyer.user_setpoint._limits = (0, 1000)
     flyer.send_command = mock.MagicMock()
+    # flyer.encoder_resolution.put(0.001)
+    # flyer.acceleration.put(1)
     yield flyer
 
 

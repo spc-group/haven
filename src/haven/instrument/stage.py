@@ -39,10 +39,6 @@ log = logging.getLogger(__name__)
 ureg = pint.UnitRegistry()
 
 
-class AerotechAsyn(AsynRecord):
-    binary_output = Cpt(EpicsSignal, ".BOUT", kind="normal", string=True)
-
-
 @registry.register
 class XYStage(Device):
     """An XY stage with two motors operating in orthogonal directions.
@@ -328,6 +324,11 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         self.move(taxi_start, wait=True)
         # Set the speed on the motor
         self.velocity.set(self.slew_speed.get()).wait()
+        # Set timing on the delay for triggering detectors, etc
+        reset_time = 0.001
+        delay_time = self.dwell_time.get() - reset_time
+        self.parent.delay.channel_C.delay.put(delay_time)
+        self.parent.delay.channel_D.delay.put(delay_time)
         # Count-down timer
         # for i in range(10, 0, -1):
         #     print(f"{i}...", end="", flush=True)
@@ -617,9 +618,9 @@ class AerotechStage(XYStage):
         encoder=7,
         labels={"motors", "flyers"},
     )
-    asyn = Cpt(AerotechAsyn, ":asynEns", name="async", labels={"asyns"})
+    asyn = Cpt(AsynRecord, ":asynEns", name="async", labels={"asyns"})
     # A digital delay generator for providing a gate signal
-    delay = FCpt(DG645Delay, "{delay_prefix}", kind=Kind.config)
+    delay = FCpt(DG645Delay, "{delay_prefix}:", kind=Kind.config)
 
     def __init__(self, *args, delay_prefix, **kwargs):
         self.delay_prefix = delay_prefix

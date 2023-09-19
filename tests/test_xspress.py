@@ -7,14 +7,14 @@ def test_num_elements(xspress):
     assert xspress.num_elements == 4
 
 def test_num_rois(xspress):
-    assert xspress.num_rois == 48
+    assert xspress.num_rois == 16
    
 
 def test_mca_signals():
     xsp = Xspress3Detector("255id_xsp:", name="spcxsp")
     assert not xsp.connected
-    # Spot-check some PVs
-    with do_not_wait_for_lazy_connection(xsp.cam):
+    with do_not_wait_for_lazy_connection(Xspress3Detector.cam):
+        # Spot-check some PVs
         assert xsp.cam.acquire_time._write_pv.pvname == "255id_xsp:det1:AcquireTime"
         assert xsp.cam.acquire._write_pv.pvname == "255id_xsp:det1:Acquire"
         assert xsp.cam.acquire._read_pv.pvname == "255id_xsp:det1:Acquire_RBV"

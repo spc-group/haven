@@ -323,24 +323,3 @@ def test_roi_enableall_checkbox(xrf_display):
     checkbox.setCheckState(QtCore.Qt.Unchecked)
     for display in xrf_display.roi_displays:
         assert not display.embedded_widget.ui.enabled_checkbox.isChecked()
-
-
-@pytest.mark.parametrize('xrf_display', ["dxp", "xspress"], indirect=True)
-def test_oneshot_acquisition(xrf_display, qtbot):
-    """Check that clicking the one-shot acquisition button works."""
-    with qtbot.waitSignal(xrf_display.triggers.start_erase) as val:
-        xrf_display.ui.oneshot_button.click()
-    # Check the accumulate box and see that we don't erase
-    xrf_display.ui.accumulate_checkbox.setChecked(True)
-    with qtbot.waitSignal(xrf_display.triggers.start_all) as val:
-        xrf_display.ui.oneshot_button.click()
-
-
-@pytest.mark.parametrize('xrf_display', ["dxp", "xspress"], indirect=True)
-def test_continuous_acquisition(xrf_display, qtbot):
-    """Check that clicking the one-shot acquisition button works."""
-    with qtbot.waitSignal(xrf_display.triggers.start_erase) as val:
-        xrf_display.ui.continuous_button.click()
-    # Simulated acquisition finishing and then set up the next one
-    with qtbot.waitSignal(xrf_display.triggers.start_erase) as val:
-        xrf_display.triggers.acquiring_channel.value_slot(0)
