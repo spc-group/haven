@@ -8,6 +8,8 @@ from ophyd import Device
 from ophyd.flyers import FlyerInterface
 from ophyd.status import StatusBase
 
+from ..preprocessors import baseline_decorator, shutter_suspend_decorator
+
 
 __all__ = ["fly_scan", "grid_fly_scan"]
 
@@ -32,6 +34,7 @@ def fly_line_scan(detectors: list, flyer, start, stop, num, extra_signals=()):
     yield from bps.collect(collector)
 
 
+@baseline_decorator()
 def fly_scan(
     detectors: Sequence[FlyerInterface],
     flyer: FlyerInterface,
@@ -86,6 +89,7 @@ def fly_scan(
     yield from line_scan
 
 
+@baseline_decorator()
 def grid_fly_scan(
     detectors: Sequence[FlyerInterface],
     *args,
