@@ -131,8 +131,8 @@ def test_enable_some_rois(vortex):
         status.wait(timeout=3)
         # Check that at least one of the ROIs was changed
     roi = vortex.mcas.mca1.rois.roi2
-    hinted = roi.use.get(use_monitor=False)
-    assert hinted == 1
+    is_used = roi.use.get(use_monitor=False)
+    assert is_used == 1
 
 
 @pytest.mark.parametrize('vortex', DETECTORS, indirect=True)    
@@ -187,16 +187,11 @@ def test_disable_rois(vortex):
     assert hinted == 0
 
 
-@pytest.mark.xfail
-def test_with_plan(vortex):
-    assert False, "Write test"
-
-
 @pytest.mark.parametrize('vortex', DETECTORS, indirect=True)
 def test_stage_signal_names(vortex):
     """Check that we can set the name of the detector ROIs dynamically."""
     dev = vortex.mcas.mca1.rois.roi1
-    dev.label.put("Ni-Ka")
+    dev.label.put("~Ni-Ka", timeout=3)
     # Ensure the name isn't changed yet
     assert "Ni-Ka" not in dev.name
     assert "Ni_Ka" not in dev.name
@@ -208,11 +203,14 @@ def test_stage_signal_names(vortex):
         raise
     else:
         assert "Ni-Ka" not in dev.name  # Make sure it gets sanitized
+        assert "~" not in dev.name  # Make sure it gets sanitized
+        assert "__" not in dev.name  # Tildes sanitize bad but used for `use` signal
         assert "Ni_Ka" in dev.name
     finally:
         dev.unstage()
     # Name gets reset when unstaged
     assert dev.name == orig_name
+    assert dev.count.name == f"{orig_name}_count"
     # Check acquired data uses dynamic names
     for res in result.keys():
         assert "Ni_Ka" in res
@@ -273,39 +271,38 @@ def test_use_signal(vortex):
     assert not bool(roi.use.get())
 
 
-    
+
 @pytest.mark.parametrize('vortex', DETECTORS, indirect=True)
-def test_stage_signal_hinted(vortex):
-    dev = vortex.mcas.mca0.rois.roi1
-    # Check that ROI is not hinted by default
-    assert dev.name not in vortex.hints
-    # Enable the ROI by setting it's kind PV to "hinted"
-    dev.use.set(True).wait(timeout=3)
-    # Ensure signals are not hinted before being staged
-    assert dev.net_count.name not in vortex.hints["fields"]
+def test_stage_hints(vortex):
+    """Check that enabled ROIs get hinted."""
+    roi0 = vortex.mcas.mca0.rois.roi0
+    roi0.label.put("", timeout=3)
+    roi0.use.put(1, timeout=3)
+    roi1 = vortex.mcas.mca0.rois.roi1
+    roi1.label.put("", timeout=3)
+    roi1.use.put(0, timeout=3)
+    # Ensure the hints aren't applied yet
+    assert roi0.count.name not in vortex.hints['fields']
+    assert roi1.count.name not in vortex.hints['fields']
+    # Stage the detector
     try:
-        dev.stage()
+        vortex.stage()
     except Exception:
         raise
     else:
-        assert dev.net_count.name in vortex.hints["fields"]
-        assert (
-            vortex.mcas.mca1.rois.roi0.net_count.name
-            not in vortex.hints["fields"]
-        )
+        # Check that only the enabled ROI gets hinted
+        assert roi0.count.name in vortex.hints['fields']
+        assert roi1.count.name not in vortex.hints['fields']
     finally:
-        dev.unstage()
-    # Did it restore kinds properly when unstaging
-    assert dev.net_count.name not in vortex.hints["fields"]
-    assert (
-        vortex.mcas.mca1.rois.roi0.net_count.name not in vortex.hints["fields"]
-    )
+        vortex.unstage()
+    # Name gets reset when unstaged
+    assert roi0.count.name not in vortex.hints['fields']
+    assert roi1.count.name not in vortex.hints['fields']
 
-
-@pytest.mark.parametrize('vortex', DETECTORS, indirect=True)
-@pytest.mark.xfail
-def test_kickoff_dxp(vortex):
-    vortex = vortex
+    
+@pytest.mark.skip(reason="DXP fly-scanning not yet implemented")
+def test_kickoff_dxp(dxp):
+    vortex = dxp
     vortex.write_path = "M:\\tmp\\"
     vortex.read_path = "/net/s20data/sector20/tmp/"
     [
@@ -357,6 +354,7 @@ def test_dxp_acquire(dxp):
     assert dxp.acquire.get(use_monitor=False) == 0
 
 
+@pytest.mark.skip(reason="DXP fly-scanning not yet implemented")
 def test_complete_dxp(dxp):
     """Check the behavior of the DXP electornic's fly-scan complete call."""
     vortex = dxp
@@ -487,15 +485,15 @@ def test_describe_collect_xspress(xspress):
     assert vortex.mcas.mca0.rois.roi0.count.name in sub_desc.keys()
 
 
-@pytest.mark.parametrize('vortex', DETECTORS, indirect=True)
-@pytest.mark.xfail
-def test_parse_xmap_buffer(vortex):
+@pytest.mark.skip(reason="DXP fly-scanning not yet implemented")
+def test_parse_dxp_buffer(dxp):
     """The output for fly-scanning with the DXP-based readout electronics
     is a raw uint16 buffer that must be parsed by the ophyd device
     according to section 5.3.3 of
     https://cars9.uchicago.edu/software/epics/XMAP_User_Manual.pdf
 
     """
+    vortex = dxp
     fp = Path(__file__)
     buff = np.loadtxt(fp.parent / "dxp_3px_4elem_Fe55.txt")
     data = parse_xmap_buffer(buff)

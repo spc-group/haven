@@ -7,6 +7,7 @@ import asyncio
 import time
 
 from ophyd import (
+    ADComponent as ADCpt,
     OphydObject,
     mca,
     Device,
@@ -185,7 +186,7 @@ class DxpDetectorBase(
         default_configuration_attrs=[f"roi{i}" for i in range(NUM_ROIS)],
     )
 
-    net_cdf = Cpt(NetCDFPlugin_V34, "netCDF1:")
+    # net_cdf = Cpt(NetCDFPlugin_V34, "netCDF1:")
     _default_read_attrs = [
         # "preset_live_time",
         # "preset_real_time",

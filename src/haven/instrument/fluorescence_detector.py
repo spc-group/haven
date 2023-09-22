@@ -115,7 +115,10 @@ class UseROISignal(DerivedSignal):
     
     def inverse(self, value):
         """Compute original signal value -> derived signal value"""
-        disabled = value.startswith(self.sentinel_char)
+        try:
+            disabled = value.startswith(self.sentinel_char)
+        except AttributeError:
+            disabled = True
         return not disabled
 
     def forward(self, value):
@@ -147,19 +150,23 @@ class ROICountSignal(SignalRO, DerivedSignal):
 class ROIMixin(Device):
     _original_name = None
     _original_kinds = {}
-    _dynamic_hint_fields = ["net_count"]
+    _dynamic_hint_fields = ["count"]
 
     def stage(self):
         self._original_name = self.name
         # Append the ROI label to the signal name
-        label = cleanupText(str(self.label.get()))
+        label = str(self.label.get()).strip("~")
+        label = cleanupText(label)
         old_name_base = self.name
         new_name_base = f"{self.name}_{label}"
+        
         if label != "":
+            log.debug(f"Mangling ROI label '{self.label.get()}' -> "
+                      f"'{label}' ('{new_name_base}')")
             self.name = new_name_base
-        # Update the device name for children
-        for walk in self.walk_signals():
-            walk.item.name = walk.item.name.replace(old_name_base, new_name_base)
+            # Update the device name for children
+            for walk in self.walk_signals():
+                walk.item.name = walk.item.name.replace(old_name_base, new_name_base)
         # Set the kind based on the user-settable ".R0_BS_HINTED" PV
         if bool(self.use.get()):
             new_kind = Kind.hinted
@@ -174,7 +181,10 @@ class ROIMixin(Device):
     
     def unstage(self):        
         # Restore the original (pre-staged) name
-        self.name = self._original_name
+        if self.name != self._original_name:
+            for walk in self.walk_signals():
+                walk.item.name = walk.item.name.replace(self.name, self._original_name)
+            self.name = self._original_name
         # Restore original signal kinds
         for fld, kind in self._original_kinds.items():
             getattr(self, fld).kind = kind
