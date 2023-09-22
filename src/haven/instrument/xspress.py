@@ -177,13 +177,15 @@ def add_rois(range_: Sequence[int] = range(NUM_ROIS), kind=Kind.normal, **kwargs
 class MCARecord(MCASumMixin, Device):
     rois = DDC(add_rois(), kind=active_kind)
     spectrum = Cpt(EpicsSignalRO, ":ArrayData", kind="normal")
-    dead_time_percent = RECpt(EpicsSignalRO, ":DeadTime_RBV", pattern=r":MCA", repl=":C", lazy=True)
-    dead_time_factor = RECpt(EpicsSignalRO, ":DTFactor_RBV", pattern=r":MCA", repl=":C", lazy=True)
+    dead_time_percent = RECpt(EpicsSignalRO, ":DeadTime_RBV", pattern=r":MCA", repl=":C", lazy=True, kind="normal")
+    dead_time_factor = RECpt(EpicsSignalRO, ":DTFactor_RBV", pattern=r":MCA", repl=":C", lazy=True, kind="normal")
+    clock_ticks = RECpt(EpicsSignalRO, "SCA:0:Value_RBV", pattern=r":MCA", repl=":C", lazy=True, kind="normal")
     _default_read_attrs = [
         "rois",
         "spectrum",
         "dead_time_percent",
         "dead_time_factor",
+        "clock_ticks",
         "total_count",
     ]
     _default_configuration_attrs = ["rois"]
@@ -347,6 +349,7 @@ class Xspress3Detector(SingleTrigger, DetectorBase, XRFMixin):
         # Get the data for frame number as a reference
         image_counter = pd.DataFrame(self._fly_data[self.cam.array_counter],
                             columns=["timestamps", "image_counter"])
+        image_counter['image_counter'] -= 1
         # Build all the individual signals' dataframes
         dfs = []
         for sig, data in self._fly_data.items():
@@ -376,9 +379,10 @@ class Xspress3Detector(SingleTrigger, DetectorBase, XRFMixin):
         # change so no new camonitor reply was received
         data = data.ffill(axis=0)
         timestamps = timestamps.ffill(axis=1)
-        # Drop the zero-th rows, they're nothing
-        data.drop(0, inplace=True)
-        timestamps.drop(0, inplace=True)
+        # Drop extra rows before and during taxi, they're nothing
+        for idx in [-1, 0]:
+            data.drop(idx, inplace=True)
+            timestamps.drop(idx, inplace=True)
         return data, timestamps
 
     def walk_fly_signals(self, *, include_lazy=False):
@@ -441,6 +445,10 @@ class Xspress3Detector(SingleTrigger, DetectorBase, XRFMixin):
         complete_status : StatusBase
           Indicate when flying has completed
         """
+        # Remove subscriptions for capturing fly-scan data
+        for walk in self.walk_fly_signals():
+            sig = walk.item
+            sig.clear_sub(self.save_fly_datum)
         return self.acquire.set(0)
 
     def collect(self) -> dict:

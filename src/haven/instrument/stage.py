@@ -325,10 +325,10 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         # Set the speed on the motor
         self.velocity.set(self.slew_speed.get()).wait()
         # Set timing on the delay for triggering detectors, etc
-        reset_time = 0.001
+        reset_time = 0.02
         delay_time = self.dwell_time.get() - reset_time
-        self.parent.delay.channel_C.delay.put(delay_time)
-        self.parent.delay.channel_D.delay.put(delay_time)
+        self.parent.delay.channel_C.delay.put(0)
+        # self.parent.delay.channel_D.delay.put(delay_time)
         # Count-down timer
         # for i in range(10, 0, -1):
         #     print(f"{i}...", end="", flush=True)

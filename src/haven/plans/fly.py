@@ -23,10 +23,10 @@ def fly_line_scan(detectors: list, flyer, start, stop, num, extra_signals=()):
     yield from bps.mv(flyer.step_size, step_size)
     # Perform the fly scan
     flyers = [flyer, *detectors]
-    for flyer in flyers:
-        yield from bps.kickoff(flyer, wait=True)
-    for flyer in flyers:
-        yield from bps.complete(flyer, wait=True)
+    for flyer_ in flyers:
+        yield from bps.kickoff(flyer_, wait=True)
+    for flyer_ in flyers:
+        yield from bps.complete(flyer_, wait=True)
     # Collect the data after flying
     collector = FlyerCollector(
         flyers=flyers, name="flyer_collector", extra_signals=extra_signals
