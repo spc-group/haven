@@ -381,8 +381,11 @@ class Xspress3Detector(SingleTrigger, DetectorBase, XRFMixin):
         timestamps = timestamps.ffill(axis=1)
         # Drop extra rows before and during taxi, they're nothing
         for idx in [-1, 0]:
-            data.drop(idx, inplace=True)
-            timestamps.drop(idx, inplace=True)
+            try:
+                data.drop(idx, inplace=True)
+                timestamps.drop(idx, inplace=True)
+            except KeyError:
+                continue
         return data, timestamps
 
     def walk_fly_signals(self, *, include_lazy=False):

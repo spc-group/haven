@@ -240,6 +240,8 @@ def test_read_and_config_attrs(vortex):
             f"mcas.mca{mca}.dead_time_factor",
             # f"mcas.mca{mca}.background",
         ])
+        if hasattr(vortex.mcas.mca0, 'clock_ticks'):
+            expected_read_attrs.append(f"mcas.mca{mca}.clock_ticks")
         for roi in range(vortex.num_rois):
             expected_read_attrs.extend([
                 f"mcas.mca{mca}.rois.roi{roi}",
@@ -406,13 +408,19 @@ def test_collect_xspress(xspress):
     vortex.detector_state.sim_put(vortex.detector_states.ACQUIRE)
     status.wait(timeout=3)
     # Set some data so we have something to report
+    roi0 = vortex.mcas.mca0.rois.roi0
+    roi1 = vortex.mcas.mca1.rois.roi0
+    # First data point
     vortex.cam.array_counter.sim_put(1)
-    roi = vortex.mcas.mca0.rois.roi0
-    roi.net_count.sim_put(281)
-    assert vortex._fly_data[roi.net_count][0][1] == 281
-    roi = vortex.mcas.mca1.rois.roi0
-    roi.net_count.sim_put(217)
-    assert vortex._fly_data[roi.net_count][0][1] == 217
+    roi0.net_count.sim_put(280)
+    roi1.net_count.sim_put(216)
+    # Second data point
+    time.sleep(0.1)  # Simulate the frame being acquired for 0.1 seconds
+    vortex.cam.array_counter.sim_put(2)
+    roi0.net_count.sim_put(281)
+    roi1.net_count.sim_put(217)    
+    assert vortex._fly_data[roi0.net_count][1][1] == 281
+    assert vortex._fly_data[roi1.net_count][1][1] == 217
     # Make sure the element sums aren't collected here, but calculated later
     assert vortex.roi_sums.roi0 not in vortex._fly_data.keys()
     # Get data and check its structure
@@ -430,9 +438,9 @@ def test_fly_data_xspress(xspress):
     vortex._fly_data = {
         vortex.cam.array_counter: [
             # (timestamp, value)
-            (100.1, 1),
-            (100.2, 2),
-            (100.3, 3),
+            (100.1, 2),
+            (100.2, 3),
+            (100.3, 4),
         ],
         vortex.mcas.mca0.rois.roi0.net_count: [
             # (timestamp, value)
