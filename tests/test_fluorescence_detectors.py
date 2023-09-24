@@ -412,27 +412,27 @@ def test_collect_xspress(xspress):
     roi1 = vortex.mcas.mca1.rois.roi0
     # First data point
     vortex.cam.array_counter.sim_put(1)
-    roi0.net_count.sim_put(280)
-    roi1.net_count.sim_put(216)
+    roi0.count.sim_put(280)
+    roi1.count.sim_put(216)
     # Second data point
     time.sleep(0.1)  # Simulate the frame being acquired for 0.1 seconds
     vortex.cam.array_counter.sim_put(2)
-    roi0.net_count.sim_put(281)
-    roi1.net_count.sim_put(217)    
-    assert vortex._fly_data[roi0.net_count][1][1] == 281
-    assert vortex._fly_data[roi1.net_count][1][1] == 217
-    # Make sure the element sums aren't collected here, but calculated later
-    assert vortex.roi_sums.roi0 not in vortex._fly_data.keys()
+    roi0.count.sim_put(281)
+    roi1.count.sim_put(217)
+    assert vortex._fly_data[vortex.roi_sums.roi0][-1][1] == 281 + 217
+    assert vortex._fly_data[roi0.count][1][1] == 281
+    assert vortex._fly_data[roi1.count][1][1] == 217
     # Get data and check its structure
     data = list(vortex.collect())
     datum = data[0]
-    assert datum["data"][vortex.mcas.mca0.rois.roi0.net_count.name] == 281
-    assert datum["data"][vortex.mcas.mca1.rois.roi0.net_count.name] == 217
+    assert datum["data"][vortex.mcas.mca0.rois.roi0.count.name] == 281
+    assert datum["data"][vortex.mcas.mca1.rois.roi0.count.name] == 217
+    assert datum["data"][vortex.roi_sums.roi0] == 281 + 217
     assert type(datum["time"]) is float
 
 
 def test_fly_data_xspress(xspress):
-    """Check the Xspress3 processes fly-scanning data."""
+    """Check that the Xspress3 processes fly-scanning data."""
     vortex = xspress
     # Set come incomplete fly-scan data
     vortex._fly_data = {
@@ -455,6 +455,15 @@ def test_fly_data_xspress(xspress):
             # (100.22, 14.4),
             (100.32, 9.84),
         ],
+        # Make the ROI sums the same as how they get updated from real data
+        vortex.roi_sums.roi0: [
+            # (timestamp, value)
+            (100.11, 500 + 0),
+            (100.12, 500 + 12.3),
+            (100.21, 498 + 12.3),
+            (100.31, 502 + 12.3),
+            (100.32, 502 + 9.84),
+        ]
     }
     # Check the process dataframe
     fly_data, fly_ts = vortex.fly_data()
@@ -463,6 +472,7 @@ def test_fly_data_xspress(xspress):
         vortex.cam.array_counter,
         vortex.mcas.mca0.rois.roi0.net_count,
         vortex.mcas.mca1.rois.roi0.net_count,
+        vortex.roi_sums.roi0,
     ]
     assert list(fly_data.columns) == expected_columns
     assert list(fly_ts.columns) == expected_columns
@@ -474,6 +484,9 @@ def test_fly_data_xspress(xspress):
     series = fly_ts[vortex.mcas.mca1.rois.roi0.net_count]
     np.testing.assert_equal(series.values, [100.12, 100.21, 100.32])
     assert not fly_ts.isnull().values.any()
+    # Check that ROI sums are included properly
+    mca_sum = fly_data[vortex.roi_sums.roi0]
+    np.testing.assert_equal(mca_sum.values, [512.3, 510.3, 511.84])
     
 def test_describe_collect_xspress(xspress):
     vortex = xspress
@@ -534,12 +547,13 @@ def test_roi_counts(vortex):
 
 
 @pytest.mark.parametrize('vortex', DETECTORS, indirect=True)
-def test_roi_calcs(vortex):
+def test_roi_sums(vortex):
+    """Check that we get the sum over all elements for an ROI."""
     # Check that the ROI calc signals exist
     assert isinstance(vortex.roi_sums.roi0, OphydObject)
     # Set some fake ROI values
-    vortex.mcas.mca0.rois.roi0.net_count.sim_put(5)
-    assert vortex.roi_sums.roi0.get() == 5
+    vortex.mcas.mca0.rois.roi0.count.sim_put(5)
+    assert vortex.roi_sums.roi0.count.get() == 5
 
 
 @pytest.mark.parametrize('vortex', DETECTORS, indirect=True)

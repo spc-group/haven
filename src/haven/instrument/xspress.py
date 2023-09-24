@@ -128,6 +128,7 @@ class ROI(ROIMixin):
     background_width = Cpt(EpicsSignal, "BgdWidth", kind="config")
     use = Cpt(UseROISignal, derived_from="label", kind="config")
 
+    count = Cpt(EpicsSignalRO, "Total_RBV", kind="normal")
     net_count = Cpt(EpicsSignalRO, "Net_RBV", kind="normal")
     min_count = Cpt(EpicsSignalRO, "MinValue_RBV", kind="normal")
     max_count = Cpt(EpicsSignalRO, "MaxValue_RBV", kind="normal")
@@ -268,6 +269,7 @@ class Xspress3Detector(SingleTrigger, DetectorBase, XRFMixin):
     _default_read_attrs = [
         "cam",
         "mcas",
+        "roi_sums",
         "dead_time_average",
         "dead_time_min",
         "dead_time_max",
@@ -355,8 +357,6 @@ class Xspress3Detector(SingleTrigger, DetectorBase, XRFMixin):
         for sig, data in self._fly_data.items():
             df = pd.DataFrame(data, columns=["timestamps", sig])
             old_shape = df.shape
-            # Remove duplicates
-            df.drop_duplicates("timestamps", inplace=True)
             nums = (df.timestamps - image_counter.timestamps).abs()
             # Assign each datum an image number based on timestamp
             def get_image_num(ts):
@@ -366,6 +366,9 @@ class Xspress3Detector(SingleTrigger, DetectorBase, XRFMixin):
                 return num
             im_nums = [get_image_num(ts) for ts in df.timestamps.values]
             df.index = im_nums
+            # Remove duplicates and intermediate ROI sums
+            df.sort_values("timestamps")
+            df = df.groupby(df.index).last()            
             dfs.append(df)
         # Combine frames into monolithic dataframes
         data = image_counter.copy()
@@ -386,6 +389,12 @@ class Xspress3Detector(SingleTrigger, DetectorBase, XRFMixin):
                 timestamps.drop(idx, inplace=True)
             except KeyError:
                 continue
+        # # Sum each ROI across elements
+        # for roi_idx in range(self.num_rois):
+        #     sum_sig = getattr(self.roi_sums, f"roi{roi_idx}")
+        #     roi_sigs = [self.get_roi(mca_idx, roi_idx).count for mca_idx in range(self.num_elements)]
+        #     print(data.columns)
+        #     print(data[roi_sigs])
         return data, timestamps
 
     def walk_fly_signals(self, *, include_lazy=False):
@@ -414,8 +423,8 @@ class Xspress3Detector(SingleTrigger, DetectorBase, XRFMixin):
                 continue
             # ROI sums do not get captured properly during flying
             # Instead, they should be calculated at the end
-            if self.roi_sums in walk.ancestors:
-                continue
+            # if self.roi_sums in walk.ancestors:
+            #     continue
             yield walk
 
     def kickoff(self) -> StatusBase:
@@ -423,6 +432,7 @@ class Xspress3Detector(SingleTrigger, DetectorBase, XRFMixin):
         self._fly_data = {}
         for walk in self.walk_fly_signals():
             sig = walk.item
+            print(sig.name)
             sig.subscribe(self.save_fly_datum, run=False)
         # Set up the status for when the detector is ready to fly
         def check_acquiring(*, old_value, value, **kwargs):

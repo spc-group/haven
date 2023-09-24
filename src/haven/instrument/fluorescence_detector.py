@@ -60,7 +60,7 @@ class ROISumSignal(InternalSignal):
         self.roi_num = int(roi_name.split(":")[-1])
         # Watch for changes to ROI values to compute new sums
         for roi in self._roi_signals():
-            roi.net_count.subscribe(self._update_roi_sum)
+            roi.count.subscribe(self._update_roi_sum)
 
     def _roi_signals(self):
         signals = []
@@ -71,7 +71,7 @@ class ROISumSignal(InternalSignal):
 
     def _update_roi_sum(self, *args, value, **kwargs):
         rois = self._roi_signals()
-        total = np.sum([roi.net_count.get() for roi in rois])
+        total = np.sum([roi.count.get() for roi in rois])
         self.put(total, internal=True)
 
 
@@ -130,23 +130,6 @@ class UseROISignal(DerivedSignal):
         return label
 
 
-class ROICountSignal(SignalRO, DerivedSignal):
-    """A signal with the ROI event count derived from the histogram spectrum."""
-    def inverse(self, value):
-        """Compute original signal value -> derived signal value"""
-        spectrum = value
-        # Sometimes we get non-array spectra in here
-        if not hasattr(spectrum, "shape"):
-            return spectrum
-        # Force the hi/lo boundaries to be within range
-        hi = min(self.parent.hi_chan.get(), spectrum.shape[0])
-        lo = max(self.parent.lo_chan.get(), 0)
-        # Sum bins with the ROI range
-        counts = np.sum(spectrum[lo:hi+1])
-        counts = int(counts)
-        return counts
-
-
 class ROIMixin(Device):
     _original_name = None
     _original_kinds = {}
@@ -190,11 +173,6 @@ class ROIMixin(Device):
             getattr(self, fld).kind = kind
         super().unstage()
     
-    count = Cpt(
-        ROICountSignal,
-        derived_from="parent.parent.spectrum",
-    )
-
 
 class XRFMixin(Device):
     """Properties common to all XRF detectors."""
