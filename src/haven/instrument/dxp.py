@@ -193,6 +193,7 @@ class DxpDetectorBase(
         # "dead_time",
         # "elapsed_live",
         # "elapsed_real",
+        "roi_sums",
         "mcas",
         "dead_time_average",
         "dead_time_max",
@@ -268,7 +269,6 @@ class DxpDetectorBase(
 
     def _acquire(self, *args, old_value, value, obj, **kwargs):
         """Mimic the Xspress3 AD interface for acquiring data."""
-        # print(obj is self.acquiring)
         if obj is self.acquire:
             # Update the real signals
             if bool(value):

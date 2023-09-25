@@ -389,12 +389,6 @@ class Xspress3Detector(SingleTrigger, DetectorBase, XRFMixin):
                 timestamps.drop(idx, inplace=True)
             except KeyError:
                 continue
-        # # Sum each ROI across elements
-        # for roi_idx in range(self.num_rois):
-        #     sum_sig = getattr(self.roi_sums, f"roi{roi_idx}")
-        #     roi_sigs = [self.get_roi(mca_idx, roi_idx).count for mca_idx in range(self.num_elements)]
-        #     print(data.columns)
-        #     print(data[roi_sigs])
         return data, timestamps
 
     def walk_fly_signals(self, *, include_lazy=False):
@@ -432,7 +426,6 @@ class Xspress3Detector(SingleTrigger, DetectorBase, XRFMixin):
         self._fly_data = {}
         for walk in self.walk_fly_signals():
             sig = walk.item
-            print(sig.name)
             sig.subscribe(self.save_fly_datum, run=False)
         # Set up the status for when the detector is ready to fly
         def check_acquiring(*, old_value, value, **kwargs):

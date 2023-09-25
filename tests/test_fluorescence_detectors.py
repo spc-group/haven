@@ -221,12 +221,20 @@ def test_read_and_config_attrs(vortex):
     vortex.mcas.mca0.read_attrs
     expected_read_attrs = [
         "mcas",
+        "roi_sums",
         "dead_time_average",
         "dead_time_min",
         "dead_time_max",
     ]
     if hasattr(vortex, 'cam'):
         expected_read_attrs.append("cam")
+    # Add attrs for summing ROIs across elements
+    for roi in range(vortex.num_rois):
+        expected_read_attrs.extend([
+            f"roi_sums.roi{roi}",
+            f"roi_sums.roi{roi}.count",
+            f"roi_sums.roi{roi}.net_count",
+        ])
     # Add attrs for each MCA and ROI.
     for mca in range(vortex.num_elements):
         expected_read_attrs.extend([
@@ -419,15 +427,15 @@ def test_collect_xspress(xspress):
     vortex.cam.array_counter.sim_put(2)
     roi0.count.sim_put(281)
     roi1.count.sim_put(217)
-    assert vortex._fly_data[vortex.roi_sums.roi0][-1][1] == 281 + 217
     assert vortex._fly_data[roi0.count][1][1] == 281
     assert vortex._fly_data[roi1.count][1][1] == 217
+    assert vortex._fly_data[vortex.roi_sums.roi0.count][-1][1] == 281 + 217
     # Get data and check its structure
     data = list(vortex.collect())
     datum = data[0]
     assert datum["data"][vortex.mcas.mca0.rois.roi0.count.name] == 281
     assert datum["data"][vortex.mcas.mca1.rois.roi0.count.name] == 217
-    assert datum["data"][vortex.roi_sums.roi0] == 281 + 217
+    assert datum["data"][vortex.roi_sums.roi0.count.name] == 281 + 217
     assert type(datum["time"]) is float
 
 
@@ -524,29 +532,6 @@ def test_parse_dxp_buffer(dxp):
 
 
 @pytest.mark.parametrize('vortex', DETECTORS, indirect=True)
-def test_roi_counts(vortex):
-    """Check that the ROIs determine their counts from the spectrum."""
-    mca = vortex.mcas.mca0
-    roi = mca.rois.roi0
-    # Create a fake spectrum
-    spectrum_size = 4096
-    spectrum = np.zeros(spectrum_size)
-    spectrum[512:1024] = 1
-    mca.spectrum.sim_put(spectrum)
-    # Does the total count only pull from the given ROI limits
-    roi.lo_chan.set(800).wait(timeout=3)
-    roi.size.set(100).wait(timeout=3)
-    # Does the total count add together the spectrum?
-    count = roi.count.get()
-    assert type(count) is int
-    assert count == 101
-    # Try setting bounds outside the spectrum size
-    roi.lo_chan.set(-100).wait(timeout=3)
-    roi.hi_chan.set(spectrum_size + 100).wait(timeout=3)
-    assert roi.count.get() == 512
-
-
-@pytest.mark.parametrize('vortex', DETECTORS, indirect=True)
 def test_roi_sums(vortex):
     """Check that we get the sum over all elements for an ROI."""
     # Check that the ROI calc signals exist
@@ -554,6 +539,8 @@ def test_roi_sums(vortex):
     # Set some fake ROI values
     vortex.mcas.mca0.rois.roi0.count.sim_put(5)
     assert vortex.roi_sums.roi0.count.get() == 5
+    vortex.mcas.mca0.rois.roi0.net_count.sim_put(13)
+    assert vortex.roi_sums.roi0.net_count.get() == 13
 
 
 @pytest.mark.parametrize('vortex', DETECTORS, indirect=True)
