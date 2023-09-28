@@ -40,6 +40,14 @@
        </item>
        <item>
         <widget class="QLabel" name="coords_label">
+         <property name="font">
+          <font>
+           <family>Monospace</family>
+           <strikeout>false</strikeout>
+           <stylestrategy>PreferDefault</stylestrategy>
+           <kerning>true</kerning>
+          </font>
+         </property>
          <property name="text">
           <string>(8333, 102485)</string>
          </property>

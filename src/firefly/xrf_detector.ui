@@ -81,14 +81,22 @@
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
+         <property name="font">
+          <font>
+           <family>Monospace</family>
+          </font>
+         </property>
          <property name="toolTip">
-          <string/>
+          <string>The wall time (in seconds) for acquiring each frame. Applies to both setup and scanning.</string>
          </property>
          <property name="text">
           <string/>
          </property>
          <property name="placeholderText">
           <string>Dwell time (s)</string>
+         </property>
+         <property name="showUnits" stdset="0">
+          <bool>true</bool>
          </property>
          <property name="channel" stdset="0">
           <string>oph://${DEV}.dwell_time</string>
@@ -147,46 +155,94 @@
       </widget>
      </item>
      <item>
-      <widget class="PyDMLabel" name="PyDMLabel_35">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="font">
-        <font>
-         <family>Monospace</family>
-        </font>
-       </property>
-       <property name="toolTip">
-        <string>Currest status of the detector.</string>
-       </property>
-       <property name="text">
-        <string>Acquiring</string>
-       </property>
-       <property name="precision" stdset="0">
+      <layout class="QHBoxLayout" name="horizontalLayout_5">
+       <property name="spacing">
         <number>0</number>
        </property>
-       <property name="showUnits" stdset="0">
-        <bool>false</bool>
+       <property name="leftMargin">
+        <number>6</number>
        </property>
-       <property name="precisionFromPV" stdset="0">
-        <bool>true</bool>
-       </property>
-       <property name="alarmSensitiveContent" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="alarmSensitiveBorder" stdset="0">
-        <bool>true</bool>
-       </property>
-       <property name="PyDMToolTip" stdset="0">
-        <string/>
-       </property>
-       <property name="channel" stdset="0">
-        <string>oph://${DEV}.acquire</string>
-       </property>
-      </widget>
+       <item>
+        <widget class="PyDMLabel" name="PyDMLabel_35">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="font">
+          <font>
+           <family>Monospace</family>
+          </font>
+         </property>
+         <property name="toolTip">
+          <string>Currest status of the detector.</string>
+         </property>
+         <property name="text">
+          <string>Acquiring</string>
+         </property>
+         <property name="precision" stdset="0">
+          <number>0</number>
+         </property>
+         <property name="showUnits" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="precisionFromPV" stdset="0">
+          <bool>true</bool>
+         </property>
+         <property name="alarmSensitiveContent" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="alarmSensitiveBorder" stdset="0">
+          <bool>true</bool>
+         </property>
+         <property name="channel" stdset="0">
+          <string>oph://${DEV}.acquire</string>
+         </property>
+         <property name="PyDMToolTip" stdset="0">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_17">
+         <property name="text">
+          <string>(</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="PyDMLabel" name="PyDMLabel_33">
+         <property name="font">
+          <font>
+           <family>Monospace</family>
+          </font>
+         </property>
+         <property name="toolTip">
+          <string>Number of frames captured in the current acquisition.</string>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">padding: 0;</string>
+         </property>
+         <property name="text">
+          <string>0</string>
+         </property>
+         <property name="textInteractionFlags">
+          <set>Qt::TextSelectableByMouse</set>
+         </property>
+         <property name="channel" stdset="0">
+          <string>oph://${DEV}.cam.array_counter</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_18">
+         <property name="text">
+          <string>)</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </item>
      <item>
       <widget class="Line" name="line_3">
@@ -245,7 +301,7 @@
           <string notr="true">padding: 0;</string>
          </property>
          <property name="text">
-          <string>76321</string>
+          <string>N/A</string>
          </property>
          <property name="channel" stdset="0">
           <string>oph://${DEV}.total_count</string>
@@ -377,11 +433,11 @@
          <property name="text">
           <string>14.0</string>
          </property>
-         <property name="PyDMToolTip" stdset="0">
-          <string>Lowest dead time across all elements.</string>
-         </property>
          <property name="channel" stdset="0">
           <string>oph://${DEV}.dead_time_min</string>
+         </property>
+         <property name="PyDMToolTip" stdset="0">
+          <string>Lowest dead time across all elements.</string>
          </property>
         </widget>
        </item>
@@ -432,11 +488,11 @@
          <property name="text">
           <string>24.0</string>
          </property>
-         <property name="PyDMToolTip" stdset="0">
-          <string>Highest dead time across all elements.</string>
-         </property>
          <property name="channel" stdset="0">
           <string>oph://${DEV}.dead_time_max</string>
+         </property>
+         <property name="PyDMToolTip" stdset="0">
+          <string>Highest dead time across all elements.</string>
          </property>
         </widget>
        </item>
@@ -1071,7 +1127,7 @@
                  <x>0</x>
                  <y>0</y>
                  <width>1023</width>
-                 <height>394</height>
+                 <height>364</height>
                 </rect>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_7">
@@ -1310,8 +1366,8 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>243</width>
-                 <height>57</height>
+                 <width>863</width>
+                 <height>363</height>
                 </rect>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_8">

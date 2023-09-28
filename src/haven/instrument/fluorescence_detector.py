@@ -109,7 +109,7 @@ class MCASumMixin(Device):
         self.spectrum.subscribe(self._update_total_count)
 
     def _update_total_count(self, *args, old_value, value, **kwargs):
-        total = np.sum(value)
+        total = int(np.sum(value))
         self.total_count.put(total, internal=True)
 
 

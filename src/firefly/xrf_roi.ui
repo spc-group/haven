@@ -137,6 +137,11 @@ Data will be saved either way, but disabled channels will not appear in the list
              <height>0</height>
             </size>
            </property>
+           <property name="font">
+            <font>
+             <family>Monospace</family>
+            </font>
+           </property>
            <property name="toolTip">
             <string/>
            </property>
@@ -156,6 +161,11 @@ Data will be saved either way, but disabled channels will not appear in the list
          </item>
          <item>
           <widget class="PyDMLineEdit" name="lower_lineedit">
+           <property name="font">
+            <font>
+             <family>Monospace</family>
+            </font>
+           </property>
            <property name="toolTip">
             <string/>
            </property>
@@ -178,6 +188,11 @@ Data will be saved either way, but disabled channels will not appear in the list
          </item>
          <item>
           <widget class="PyDMLineEdit" name="upper_lineedit">
+           <property name="font">
+            <font>
+             <family>Monospace</family>
+            </font>
+           </property>
            <property name="toolTip">
             <string/>
            </property>
@@ -206,8 +221,16 @@ Data will be saved either way, but disabled channels will not appear in the list
              <height>0</height>
             </size>
            </property>
+           <property name="font">
+            <font>
+             <family>Monospace</family>
+            </font>
+           </property>
            <property name="toolTip">
             <string/>
+           </property>
+           <property name="text">
+            <string>34</string>
            </property>
            <property name="channel" stdset="0">
             <string>oph://${DEV}.mcas.mca${MCA}.rois.roi${ROI}.size</string>
