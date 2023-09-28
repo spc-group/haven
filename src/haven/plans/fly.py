@@ -34,7 +34,7 @@ def fly_line_scan(detectors: list, flyer, start, stop, num, extra_signals=()):
     yield from bps.collect(collector)
 
 
-@baseline_decorator()
+# @baseline_decorator()
 def fly_scan(
     detectors: Sequence[FlyerInterface],
     flyer: FlyerInterface,
@@ -89,7 +89,7 @@ def fly_scan(
     yield from line_scan
 
 
-@baseline_decorator()
+# @baseline_decorator()
 def grid_fly_scan(
     detectors: Sequence[FlyerInterface],
     *args,

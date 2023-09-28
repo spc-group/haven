@@ -27,7 +27,7 @@ from ophyd import (
     Device,
     Signal,
 )
-from ophyd.status import SubscriptionStatus, StatusBase
+from ophyd.status import SubscriptionStatus, StatusBase, AndStatus
 from ophyd.signal import InternalSignal, DerivedSignal
 from ophyd.areadetector.base import EpicsSignalWithRBV as SignalWithRBV
 from ophyd.areadetector.filestore_mixins import FileStoreHDF5IterativeWrite
@@ -327,7 +327,11 @@ class Xspress3Detector(SingleTrigger, DetectorBase, XRFMixin):
         self.dead_time_average.put(float(np.mean(dead_times)), internal=True)
         self.dead_time_min.put(float(np.min(dead_times)), internal=True)
         self.dead_time_max.put(float(np.max(dead_times)), internal=True)
-        
+
+    def trigger(self):
+        trig_status = super().trigger()
+        return trig_status
+        # return AndStatus(trig_status, trig_status, settle_time=0.2)
 
     @property
     def stage_num_frames(self):
@@ -348,10 +352,20 @@ class Xspress3Detector(SingleTrigger, DetectorBase, XRFMixin):
         self._fly_data.setdefault(obj, []).append(datum)
 
     def fly_data(self):
+        """Compile the fly-scan data into a pandas dataframe.
+
+        Some stray rows show up at the beginning that get dropped:
+
+        - Old image counter with previous values capturing when
+          subscribing. Needed to make sure we have an entry for all
+          the signals.
+        - The counts collected during taxiing.
+
+        """
         # Get the data for frame number as a reference
         image_counter = pd.DataFrame(self._fly_data[self.cam.array_counter],
                             columns=["timestamps", "image_counter"])
-        image_counter['image_counter'] -= 1
+        image_counter['image_counter'] -= 2  # Correct for stray frames
         # Build all the individual signals' dataframes
         dfs = []
         for sig, data in self._fly_data.items():
@@ -383,12 +397,15 @@ class Xspress3Detector(SingleTrigger, DetectorBase, XRFMixin):
         data = data.ffill(axis=0)
         timestamps = timestamps.ffill(axis=1)
         # Drop extra rows before and during taxi, they're nothing
-        for idx in [-1, 0]:
-            try:
-                data.drop(idx, inplace=True)
-                timestamps.drop(idx, inplace=True)
-            except KeyError:
-                continue
+        # for idx in [-2, -1]:
+        #     try:
+        #         data.drop(idx, inplace=True)
+        #         timestamps.drop(idx, inplace=True)
+        #     except KeyError:
+        #         continue
+        # Drop the extra rows that come from the subscription setup and taxiing
+        data = data.iloc[3:]
+        timestamps = timestamps.iloc[3:]
         return data, timestamps
 
     def walk_fly_signals(self, *, include_lazy=False):
@@ -426,7 +443,7 @@ class Xspress3Detector(SingleTrigger, DetectorBase, XRFMixin):
         self._fly_data = {}
         for walk in self.walk_fly_signals():
             sig = walk.item
-            sig.subscribe(self.save_fly_datum, run=False)
+            sig.subscribe(self.save_fly_datum, run=True)
         # Set up the status for when the detector is ready to fly
         def check_acquiring(*, old_value, value, **kwargs):
             is_acquiring = value == self.detector_states.ACQUIRE

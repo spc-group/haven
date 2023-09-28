@@ -2,6 +2,7 @@ import logging
 import warnings
 
 from bluesky import RunEngine as BlueskyRunEngine, suspenders
+from bluesky.callbacks.best_effort import BestEffortCallback
 import databroker
 
 from ._iconfig import load_config
@@ -46,8 +47,11 @@ def save_data(name, doc):
     catalog.v1.insert(name, doc)
 
 
-def run_engine(connect_databroker=True) -> BlueskyRunEngine:
+def run_engine(connect_databroker=True, use_bec=True) -> BlueskyRunEngine:
     RE = BlueskyRunEngine()
+    # Add the best-effort callback
+    if use_bec:
+        RE.subscribe(BestEffortCallback())
     # Install suspenders
     try:
         aps = registry.find("APS")
