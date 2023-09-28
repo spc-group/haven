@@ -52,7 +52,7 @@ active_kind = Kind.normal | Kind.config
 
 
 class ROISum(Device):
-    """Like an InternalSignal, but compatible with DynamicDeviceComponent."""
+    """Sums an ROI across multiple elements."""
     count = Cpt(InternalSignal, name="count")
     net_count = Cpt(InternalSignal, name="net_count")
 
@@ -182,10 +182,29 @@ class ROIMixin(Device):
         for fld, kind in self._original_kinds.items():
             getattr(self, fld).kind = kind
         super().unstage()
-    
+
 
 class XRFMixin(Device):
     """Properties common to all XRF detectors."""
+
+    total_count = Cpt(InternalSignal, kind=active_kind)
+    _mca_count_cache: dict
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._mca_count_cache = {}
+        # Monitor the individual MCAs to keep track of their sums
+        for mca in self.mca_records():
+            mca.total_count.subscribe(self._update_total_count)
+
+    def _update_total_count(self, *args, obj, value, timestamp, **kwargs):
+        """Callback for summing the total counts across all MCAs."""
+        # Update caches values
+        self._mca_count_cache[obj] = value
+        # Calculate new sum
+        new_total = sum(self._mca_count_cache.values())
+        self.total_count.put(new_total, internal=True, timestamp=timestamp)
+        
 
     def enable_rois(
         self,
@@ -290,6 +309,3 @@ class XRFMixin(Device):
                 m for m in mcas if int(m.dotted_name.split(".")[-1][3:]) in mca_indices
             ]
         return mcas
-
-
-

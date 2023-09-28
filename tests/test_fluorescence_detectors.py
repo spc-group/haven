@@ -15,7 +15,7 @@ import time
 import numpy as np
 import pytest
 from epics import caget
-from ophyd import Kind, DynamicDeviceComponent as DDC, OphydObject
+from ophyd import Kind, DynamicDeviceComponent as DDC, OphydObject, Signal
 from bluesky import plans as bp
 
 from haven.instrument.dxp import parse_xmap_buffer, load_dxp
@@ -529,6 +529,21 @@ def test_parse_dxp_buffer(dxp):
     assert isinstance(data, dict)
     assert data["num_pixels"] == 3
     assert len(data["pixels"]) == 3
+
+
+@pytest.mark.parametrize('vortex', DETECTORS, indirect=True)
+def test_device_sums(vortex):
+    """Does the device correctly calculate the overall counts, etc."""
+    assert isinstance(vortex.total_count, Signal)
+    spectrum = np.arange(256)
+    vortex.mcas.mca0.spectrum.sim_put(spectrum)
+    expected = spectrum.sum()
+    assert vortex.total_count.get() == expected
+    # Add a second spectrum
+    spectrum_2 = np.arange(256, 512)
+    vortex.mcas.mca1.spectrum.sim_put(spectrum_2)
+    expected += spectrum_2.sum()
+    assert vortex.total_count.get() == expected
 
 
 @pytest.mark.parametrize('vortex', DETECTORS, indirect=True)

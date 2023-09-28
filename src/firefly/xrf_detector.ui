@@ -39,10 +39,63 @@
          <verstretch>0</verstretch>
         </sizepolicy>
        </property>
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+         <weight>75</weight>
+         <bold>true</bold>
+        </font>
+       </property>
        <property name="text">
-        <string>Vortex ME4</string>
+        <string>Tardis</string>
        </property>
       </widget>
+     </item>
+     <item>
+      <widget class="Line" name="line">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <layout class="QHBoxLayout" name="dwell_time_layout">
+       <property name="spacing">
+        <number>3</number>
+       </property>
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <item>
+        <widget class="QLabel" name="label_14">
+         <property name="text">
+          <string>Dwell Time:</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="PyDMLineEdit" name="PyDMLineEdit">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="toolTip">
+          <string/>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+         <property name="placeholderText">
+          <string>Dwell time (s)</string>
+         </property>
+         <property name="channel" stdset="0">
+          <string>oph://${DEV}.dwell_time</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </item>
      <item>
       <widget class="PyDMCheckbox" name="continuous_checkbox">
@@ -87,12 +140,24 @@
       </widget>
      </item>
      <item>
+      <widget class="Line" name="line_2">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="PyDMLabel" name="PyDMLabel_35">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
+       </property>
+       <property name="font">
+        <font>
+         <family>Monospace</family>
+        </font>
        </property>
        <property name="toolTip">
         <string>Currest status of the detector.</string>
@@ -115,18 +180,25 @@
        <property name="alarmSensitiveBorder" stdset="0">
         <bool>true</bool>
        </property>
-       <property name="channel" stdset="0">
-        <string>oph://${DEV}.acquire</string>
-       </property>
        <property name="PyDMToolTip" stdset="0">
         <string/>
+       </property>
+       <property name="channel" stdset="0">
+        <string>oph://${DEV}.acquire</string>
        </property>
       </widget>
      </item>
      <item>
-      <layout class="QHBoxLayout" name="horizontalLayout_8">
+      <widget class="Line" name="line_3">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <layout class="QHBoxLayout" name="total_layout">
        <property name="spacing">
-        <number>0</number>
+        <number>3</number>
        </property>
        <property name="rightMargin">
         <number>0</number>
@@ -138,6 +210,12 @@
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
+         </property>
+         <property name="font">
+          <font>
+           <weight>50</weight>
+           <bold>false</bold>
+          </font>
          </property>
          <property name="text">
           <string>Total:</string>
@@ -152,116 +230,114 @@
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
+         <property name="font">
+          <font>
+           <family>Monospace</family>
+           <pointsize>9</pointsize>
+           <weight>50</weight>
+           <bold>false</bold>
+          </font>
+         </property>
          <property name="toolTip">
           <string>Total number of detection events over all elements.</string>
          </property>
+         <property name="styleSheet">
+          <string notr="true">padding: 0;</string>
+         </property>
          <property name="text">
           <string>76321</string>
+         </property>
+         <property name="channel" stdset="0">
+          <string>oph://${DEV}.total_count</string>
          </property>
         </widget>
        </item>
       </layout>
      </item>
      <item>
-      <widget class="QWidget" name="deadtime_layout" native="true">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
+      <layout class="QHBoxLayout" name="dead_time_layout">
+       <property name="spacing">
+        <number>3</number>
        </property>
-       <property name="minimumSize">
-        <size>
-         <width>0</width>
-         <height>0</height>
-        </size>
+       <property name="leftMargin">
+        <number>0</number>
        </property>
-       <property name="baseSize">
-        <size>
-         <width>0</width>
-         <height>0</height>
-        </size>
-       </property>
-       <property name="styleSheet">
-        <string notr="true"/>
-       </property>
-       <layout class="QHBoxLayout" name="horizontalLayout_5">
-        <property name="spacing">
-         <number>3</number>
-        </property>
-        <property name="leftMargin">
-         <number>0</number>
-        </property>
-        <property name="topMargin">
-         <number>0</number>
-        </property>
-        <property name="rightMargin">
-         <number>0</number>
-        </property>
-        <property name="bottomMargin">
-         <number>0</number>
-        </property>
-        <item>
-         <widget class="QLabel" name="label_6">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="text">
-           <string>Dead Time:</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="PyDMLabel" name="deadtime_label">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="toolTip">
-           <string>Overall dead time (in per-cent) across all elements for the last acquisition.</string>
-          </property>
-          <property name="text">
-           <string>22.8</string>
-          </property>
-          <property name="precision" stdset="0">
-           <number>2</number>
-          </property>
-          <property name="precisionFromPV" stdset="0">
-           <bool>false</bool>
-          </property>
-          <property name="channel" stdset="0">
-           <string>oph://${DEV}.dead_time_average</string>
-          </property>
-          <property name="displayFormat" stdset="0">
-           <enum>PyDMLabel::Decimal</enum>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QLabel" name="label_3">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="text">
-           <string>%</string>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </widget>
+       <item>
+        <widget class="QLabel" name="label_6">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text">
+          <string>Dead Time:</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="PyDMLabel" name="deadtime_label">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="font">
+          <font>
+           <family>Monospace</family>
+          </font>
+         </property>
+         <property name="toolTip">
+          <string>Overall dead time (in per-cent) across all elements for the last acquisition.</string>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">padding: 0;</string>
+         </property>
+         <property name="text">
+          <string>22.8</string>
+         </property>
+         <property name="margin">
+          <number>0</number>
+         </property>
+         <property name="precision" stdset="0">
+          <number>2</number>
+         </property>
+         <property name="precisionFromPV" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="channel" stdset="0">
+          <string>oph://${DEV}.dead_time_average</string>
+         </property>
+         <property name="displayFormat" stdset="0">
+          <enum>PyDMLabel::Decimal</enum>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_3">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="font">
+          <font>
+           <family>Monospace</family>
+          </font>
+         </property>
+         <property name="text">
+          <string>%</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </item>
      <item>
-      <layout class="QHBoxLayout" name="horizontalLayout_7">
+      <layout class="QHBoxLayout" name="dead_time_range_layout">
        <property name="spacing">
-        <number>0</number>
+        <number>2</number>
        </property>
        <property name="rightMargin">
         <number>0</number>
@@ -287,11 +363,37 @@
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
+         <property name="font">
+          <font>
+           <family>Monospace</family>
+          </font>
+         </property>
          <property name="toolTip">
           <string>Minimum dead time (in per-cent) across all elements for the last acquisition.</string>
          </property>
+         <property name="styleSheet">
+          <string notr="true">padding: 0;</string>
+         </property>
          <property name="text">
           <string>14.0</string>
+         </property>
+         <property name="PyDMToolTip" stdset="0">
+          <string>Lowest dead time across all elements.</string>
+         </property>
+         <property name="channel" stdset="0">
+          <string>oph://${DEV}.dead_time_min</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_15">
+         <property name="font">
+          <font>
+           <family>Monospace</family>
+          </font>
+         </property>
+         <property name="text">
+          <string>%</string>
          </property>
         </widget>
        </item>
@@ -316,11 +418,37 @@
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
+         <property name="font">
+          <font>
+           <family>Monospace</family>
+          </font>
+         </property>
          <property name="toolTip">
           <string>Maximum dead time (in per-cent) across all elements for the last acquisition.</string>
          </property>
+         <property name="styleSheet">
+          <string notr="true">padding: 0;</string>
+         </property>
          <property name="text">
           <string>24.0</string>
+         </property>
+         <property name="PyDMToolTip" stdset="0">
+          <string>Highest dead time across all elements.</string>
+         </property>
+         <property name="channel" stdset="0">
+          <string>oph://${DEV}.dead_time_max</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_16">
+         <property name="font">
+          <font>
+           <family>Monospace</family>
+          </font>
+         </property>
+         <property name="text">
+          <string>%</string>
          </property>
         </widget>
        </item>
@@ -361,7 +489,7 @@
      </property>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>3</number>
+       <number>2</number>
       </property>
       <widget class="QWidget" name="stats_tab">
        <attribute name="title">
@@ -943,7 +1071,7 @@
                  <x>0</x>
                  <y>0</y>
                  <width>1023</width>
-                 <height>364</height>
+                 <height>394</height>
                 </rect>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_7">
@@ -1182,8 +1310,8 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>863</width>
-                 <height>363</height>
+                 <width>243</width>
+                 <height>57</height>
                 </rect>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_8">
@@ -1261,6 +1389,11 @@
    <class>PyDMEmbeddedDisplay</class>
    <extends>QFrame</extends>
    <header>pydm.widgets.embedded_display</header>
+  </customwidget>
+  <customwidget>
+   <class>PyDMLineEdit</class>
+   <extends>QLineEdit</extends>
+   <header>pydm.widgets.line_edit</header>
   </customwidget>
   <customwidget>
    <class>PyDMPushButton</class>

@@ -233,7 +233,7 @@ class Xspress3Detector(SingleTrigger, DetectorBase, XRFMixin):
     detector_state = ADCpt(EpicsSignalRO, "det1:DetectorState_RBV", kind="omitted")
     acquire = ADCpt(SignalWithRBV, "det1:Acquire", kind="omitted")
     acquire_period = ADCpt(SignalWithRBV, "det1:AcquirePeriod", kind="omitted")
-    acquire_time = ADCpt(SignalWithRBV, "det1:AcquireTime", kind="normal")
+    dwell_time = ADCpt(SignalWithRBV, "det1:AcquireTime", kind="normal")
     erase = ADCpt(EpicsSignal, "det1:ERASE", kind="omitted")
     acquire_single = ADCpt(
         MultiDerivedSignal,
