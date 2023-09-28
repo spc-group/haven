@@ -445,18 +445,24 @@ def test_fly_data_xspress(xspress):
     # Set come incomplete fly-scan data
     vortex._fly_data = {
         vortex.cam.array_counter: [
+            # From last run, read during ``subscribe(read=True)``
+            (51.0, 22),
             # (timestamp, value)
             (100.1, 2),
             (100.2, 3),
             (100.3, 4),
         ],
         vortex.mcas.mca0.rois.roi0.net_count: [
+            # From last run, read during ``subscribe(read=True)``
+            (51.01, 0),
             # (timestamp, value)
             (100.11, 500),
             (100.21, 498),
             (100.31, 502),
         ],
         vortex.mcas.mca1.rois.roi0.net_count: [
+            # From last run, read during ``subscribe(read=True)``
+            (51.02, 0),
             # (timestamp, value)
             (100.12, 12.3),
             # This value is omitted to test for filling in missing values
@@ -465,6 +471,8 @@ def test_fly_data_xspress(xspress):
         ],
         # Make the ROI sums the same as how they get updated from real data
         vortex.roi_sums.roi0: [
+            # From last run, read during ``subscribe(read=True)``
+            (51.02, 0),
             # (timestamp, value)
             (100.11, 500 + 0),
             (100.12, 500 + 12.3),

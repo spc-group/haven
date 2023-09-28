@@ -396,16 +396,16 @@ class Xspress3Detector(SingleTrigger, DetectorBase, XRFMixin):
         # change so no new camonitor reply was received
         data = data.ffill(axis=0)
         timestamps = timestamps.ffill(axis=1)
-        # Drop extra rows before and during taxi, they're nothing
-        # for idx in [-2, -1]:
-        #     try:
-        #         data.drop(idx, inplace=True)
-        #         timestamps.drop(idx, inplace=True)
-        #     except KeyError:
-        #         continue
-        # Drop the extra rows that come from the subscription setup and taxiing
-        data = data.iloc[3:]
-        timestamps = timestamps.iloc[3:]
+        # Drop the extra rows that come from the subscription setup
+        data = data.iloc[1:]
+        timestamps = timestamps.iloc[1:]
+        # Drop extra rows from before and during taxi
+        for idx in [-2, -1]:
+            try:
+                data.drop(idx, inplace=True)
+                timestamps.drop(idx, inplace=True)
+            except KeyError:
+                continue
         return data, timestamps
 
     def walk_fly_signals(self, *, include_lazy=False):
