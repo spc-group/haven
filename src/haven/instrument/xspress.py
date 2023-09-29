@@ -215,7 +215,7 @@ def add_mcas(range_, kind=active_kind, **kwargs):
     return defn
 
 
-class Xspress3Detector(SingleTrigger, DetectorBase, XRFMixin):
+class Xspress3Detector(SingleTrigger_V34, DetectorBase, XRFMixin):
     """A fluorescence detector plugged into an Xspress3 readout."""
     _dead_times: dict
 
@@ -228,10 +228,11 @@ class Xspress3Detector(SingleTrigger, DetectorBase, XRFMixin):
             self.acquire: value,
         }
     
-    cam = ADCpt(CamBase, "det1:")
+    cam = ADCpt(CamMixin_V34, "det1:")
     # Core control interface signals
     detector_state = ADCpt(EpicsSignalRO, "det1:DetectorState_RBV", kind="omitted")
     acquire = ADCpt(SignalWithRBV, "det1:Acquire", kind="omitted")
+    acquire_busy = ADCpt(EpicsSignalRO, "det1:AcquireBusy", kind="omitted")
     acquire_period = ADCpt(SignalWithRBV, "det1:AcquirePeriod", kind="omitted")
     dwell_time = ADCpt(SignalWithRBV, "det1:AcquireTime", kind="normal")
     erase = ADCpt(EpicsSignal, "det1:ERASE", kind="omitted")
@@ -327,11 +328,6 @@ class Xspress3Detector(SingleTrigger, DetectorBase, XRFMixin):
         self.dead_time_average.put(float(np.mean(dead_times)), internal=True)
         self.dead_time_min.put(float(np.min(dead_times)), internal=True)
         self.dead_time_max.put(float(np.max(dead_times)), internal=True)
-
-    def trigger(self):
-        trig_status = super().trigger()
-        return trig_status
-        # return AndStatus(trig_status, trig_status, settle_time=0.2)
 
     @property
     def stage_num_frames(self):
