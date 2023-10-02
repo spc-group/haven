@@ -38,7 +38,7 @@ from .._iconfig import load_config
 from .. import exceptions
 
 
-__all__ = ["DxpDetectorBase", "load_dxp_detectors"]
+__all__ = ["DxpDetectorBase", "load_dxp"]
 
 
 NUM_ROIS = 32
