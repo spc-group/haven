@@ -21,6 +21,7 @@ pyqtgraph.setConfigOption("imageAxisOrder", "row-major")
 
 
 class AreaDetectorViewerDisplay(display.FireflyDisplay):
+    caqtdm_ui_file: str = "/APSshare/epics/synApps_6_2_1/support/areaDetector-R3-12-1/ADAravis/aravisApp/op/ui/autoconvert/ADAravis.ui"
     image_is_new: bool = True
 
     def customize_device(self):
@@ -35,7 +36,6 @@ class AreaDetectorViewerDisplay(display.FireflyDisplay):
         self.image_channel.connect()
 
     def customize_ui(self):
-        self.caqtdm_button.clicked.connect(self.launch_caqtdm)
         # Create the pyqtgraph image viewer
         self.image_view = self.ui.image_view
         # Connect signals for showing/hiding controls

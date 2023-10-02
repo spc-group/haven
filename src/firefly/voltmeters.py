@@ -4,7 +4,9 @@ import logging
 from typing import Optional, Mapping, Sequence
 
 from pydm.widgets import PyDMEmbeddedDisplay
+from qtpy import QtWidgets
 import haven
+import qtawesome as qta
 
 from firefly import display
 
@@ -16,6 +18,8 @@ log = logging.getLogger(__name__)
 
 class VoltmetersDisplay(display.FireflyDisplay):
     _ion_chamber_displays = []
+    caqtdm_scaler_ui_file: str = "/net/s25data/xorApps/ui/scaler32_full_offset.ui"
+    caqtdm_mcs_ui_file: str = "/APSshare/epics/synApps_6_2_1/support/mca-R7-9//mcaApp/op/ui/autoconvert/SIS38XX.ui"
 
     def __init__(
         self,
@@ -29,6 +33,32 @@ class VoltmetersDisplay(display.FireflyDisplay):
         if "SCALER" not in macros_.keys():
             macros_["SCALER"] = self.ion_chambers[0].scaler_prefix
         super().__init__(args=args, macros=macros_, **kwargs)
+
+    def prepare_caqtdm_actions(self):
+        """Create QActions for opening scaler/MCS caQtDM panels.
+
+        Creates two actions, one for the scaler counter and one for
+        the multi-channel-scaler (MCS) controls.
+
+        """
+        self.caqtdm_actions = []
+        # Create an action for launching the scaler caQtDM file
+        action = QtWidgets.QAction(self)
+        action.setObjectName("launch_scaler_caqtdm_action")
+        action.setText("Scaler caQtDM")
+        action.triggered.connect(self.launch_scaler_caqtdm)
+        action.setIcon(qta.icon("fa5s.wrench"))
+        action.setToolTip("Launch the caQtDM panel for the scaler.")
+        self.caqtdm_actions.append(action)
+        # Create an action for launching the MCS caQtDM file
+        action = QtWidgets.QAction(self)
+        action.setObjectName("launch_mcs_caqtdm_action")
+        action.setText("MCS caQtDM")
+        action.triggered.connect(self.launch_mcs_caqtdm)
+        action.setIcon(qta.icon("fa5s.wrench"))
+        action.setToolTip("Launch the caQtDM panel for the multi-channel scaler controls.")
+        self.caqtdm_actions.append(action)
+
 
     def customize_ui(self):
         # Delete existing voltmeter widgets
@@ -47,3 +77,19 @@ class VoltmetersDisplay(display.FireflyDisplay):
 
     def ui_filename(self):
         return "voltmeters.ui"
+
+    def launch_scaler_caqtdm(self):
+        device = self.ion_chambers[0]
+        caqtdm_macros = {
+            "P": f"{device.scaler_prefix}:",
+            "S": "scaler1",
+        }
+        super().launch_caqtdm(macros=caqtdm_macros, ui_file=self.caqtdm_scaler_ui_file)
+
+    def launch_mcs_caqtdm(self):
+        device = self.ion_chambers[0]
+        caqtdm_macros = {
+            "P": f"{device.scaler_prefix}:",
+        }
+        super().launch_caqtdm(macros=caqtdm_macros, ui_file=self.caqtdm_mcs_ui_file)
+        

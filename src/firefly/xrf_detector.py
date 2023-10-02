@@ -401,6 +401,8 @@ class ROIEmbeddedDisplay(PyDMEmbeddedDisplay):
 
 
 class XRFDetectorDisplay(display.FireflyDisplay):
+    caqtdm_ui_file = "/APSshare/epics/synApps_6_2_1/support/xspress3-2-5/xspress3App/opi/ui/xspress3_1chan.ui"
+
     roi_displays: Sequence = []
     mca_displays: Sequence = []
     _spectrum_channels: Sequence
@@ -446,20 +448,7 @@ class XRFDetectorDisplay(display.FireflyDisplay):
             partial(self.increment_combobox, combobox=self.ui.roi_combobox, step=-1)
         )
         # Button for starting/stopping the detector
-        # triggers = XrfTriggers(device=self.device)
-        # self.ui.continuous_checkbox.setIcon(qta.icon("fa5s.play"))
         self.ui.oneshot_button.setIcon(qta.icon("fa5s.camera"))
-        # self.ui.erase_button.setIcon(qta.icon("fa5s.eraser"))
-        # self.ui.continuous_button.toggled.connect(triggers.trigger_continuously)
-        # self.ui.oneshot_button.clicked.connect(triggers.trigger_once)
-        # self.ui.accumulate_checkbox.toggled.connect(triggers.set_accumulate)
-        # self.triggers = triggers
-        # Run the worker for starting/stopping the detector in a separate thread
-        # thread = QThread()
-        # triggers.moveToThread(thread)
-        # thread.finished.connect(triggers.deleteLater)
-        # thread.start()
-        # self.triggers_thread = thread
         # Buttons for modifying all ROI settings
         self.ui.mca_copyall_button.setIcon(qta.icon("fa5.clone"))
         self.ui.mca_copyall_button.clicked.connect(self.copy_selected_mca)
@@ -474,6 +463,10 @@ class XRFDetectorDisplay(display.FireflyDisplay):
         self.spectrum_changed.connect(self.ui.roi_plot_widget.update_spectrum)
         self.mca_row_hovered.connect(self.ui.mca_plot_widget.highlight_spectrum)
         self.roi_row_hovered.connect(self.ui.roi_plot_widget.highlight_spectrum)
+
+    def launch_caqtdm(self,):
+        super().launch_caqtdm(macros={"P": self.device.prefix.strip(":")})
+                      
 
     def enable_mca_checkboxes(self, new_state):
         """Check/uncheck the hinting checkboxes in response to the
