@@ -17,6 +17,14 @@ from firefly.run_client import DatabaseWorker
 log = logging.getLogger(__name__)
 
 
+httpx_reason = ("v0.1.0a106 of tiled client broke the run_browser"
+                "giving an httpx.PoolTimeout exception. "
+                "Happens when calling ``run['primary']['data'] on "
+                "in *run_browser.py* ln 294")
+
+pytest.skip(reason=httpx_reason, allow_module_level=True)
+
+
 def wait_for_runs_model(display, qtbot):
     with qtbot.waitSignal(display.runs_model_changed):
         pass
@@ -77,6 +85,7 @@ def test_metadata(qtbot, display):
     assert "xafs_scan" in text
 
 
+@pytest.mark.skip(reason=httpx_reason)
 def test_1d_plot_signals(client, display):
     # Check that the 1D plot was created
     plot_widget = display.ui.plot_1d_view
@@ -105,7 +114,7 @@ def test_1d_plot_signal_memory(client, display):
     plot_item = display.plot_1d_item
     assert isinstance(plot_widget, PlotWidget)
     assert isinstance(plot_item, PlotItem)
-    # Update the list of runs and see if the controsl get updated
+    # Update the list of runs and see if the controls get updated
     display._db_worker.selected_runs = client.values()
     display.update_1d_signals()
     # Check signals in comboboxes
@@ -118,6 +127,7 @@ def test_1d_plot_signal_memory(client, display):
     assert cb.currentText() == "energy_id_energy_readback"
 
 
+@pytest.mark.skip(reason=httpx_reason)
 def test_1d_hinted_signals(client, display):
     display.ui.plot_1d_hints_checkbox.setChecked(True)
     # Check that the 1D plot was created
@@ -138,6 +148,7 @@ def test_1d_hinted_signals(client, display):
     ), f"unhinted signal found in {combobox.objectName()}."
 
 
+@pytest.mark.skip(reason=httpx_reason)
 def test_update_1d_plot(client, display, qtbot):
     run = client.values()[0]
     run_data = run["primary"]["data"].read()
@@ -170,6 +181,7 @@ def test_update_1d_plot(client, display, qtbot):
     np.testing.assert_almost_equal(ydata, expected_ydata)
 
 
+@pytest.mark.skip(reason=httpx_reason)
 def test_update_multi_plot(client, display, qtbot):
     print("Current text", display.ui.multi_signal_x_combobox.currentText())
     run = client.values()[0]
@@ -193,6 +205,7 @@ def test_update_multi_plot(client, display, qtbot):
     # np.testing.assert_almost_equal(ydata, expected_ydata)
 
 
+@pytest.mark.skip(reason=httpx_reason)
 def test_filter_controls(client, display, qtbot):
     # Does editing text change the filters?
     display.ui.filter_user_combobox.setCurrentText("")
@@ -226,6 +239,7 @@ def test_filter_controls(client, display, qtbot):
     }
 
 
+@pytest.mark.skip(reason=httpx_reason)
 def test_filter_runs(client, qtbot):
     worker = DatabaseWorker(root_node=client)
     worker._filters["plan"] = "xafs_scan"
@@ -236,6 +250,7 @@ def test_filter_runs(client, qtbot):
     assert len(runs) == 1
 
 
+@pytest.mark.skip(reason=httpx_reason)
 def test_distinct_fields(client, qtbot, display):
     worker = DatabaseWorker(root_node=client)
     with qtbot.waitSignal(worker.distinct_fields_changed) as blocker:

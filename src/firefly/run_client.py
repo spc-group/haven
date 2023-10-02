@@ -155,8 +155,6 @@ class DatabaseWorker(QObject):
         # Download each item, maybe we can find a more efficient way to do this
         try:
             runs = [self.root[uid] for uid in uids]
-            for run in runs:
-                run["primary"].download()
         except Exception as exc:
             self.db_op_ended.emit([exc])
             raise

@@ -353,6 +353,8 @@ def test_fly_motor_positions(sim_aerotech_flyer):
     flyer = sim_aerotech_flyer
     # Arbitrary rest position
     flyer.user_setpoint.set(255).wait()
+    flyer.parent.delay.channel_C.delay.sim_put(1.5)
+    flyer.parent.delay.output_CD.polarity.sim_put(1)
     # Set example fly scan parameters
     flyer.taxi_start.set(5).wait()
     flyer.start_position.set(10).wait()
@@ -375,7 +377,8 @@ def test_fly_motor_positions(sim_aerotech_flyer):
     assert taxi == 5
     assert end == 105
     # Check that the delay generator is properly configured
-    assert flyer.parent.delay.channel_D.delay.get(use_monitor=False) == 0.999
+    assert flyer.parent.delay.channel_C.delay.get(use_monitor=False) == 0.
+    assert flyer.parent.delay.output_CD.polarity.get(use_monitor=False) == 0
 
 
 def test_aerotech_move_status(sim_aerotech_flyer):

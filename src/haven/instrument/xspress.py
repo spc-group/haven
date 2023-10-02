@@ -147,7 +147,7 @@ class ROI(ROIMixin):
     kind = active_kind
 
 
-def add_rois(range_: Sequence[int] = range(NUM_ROIS), kind=Kind.normal, **kwargs):
+def add_rois(range_: Sequence[int] = range(NUM_ROIS), kind=Kind.normal, lazy=True, **kwargs):
     """Add one or more ROIs to an MCA instance
 
     Parameters
@@ -163,6 +163,7 @@ def add_rois(range_: Sequence[int] = range(NUM_ROIS), kind=Kind.normal, **kwargs
     """
     defn = OrderedDict()
     kwargs["kind"] = kind
+    kwargs["lazy"] = lazy
     for roi in range_:
         if not (0 <= roi <= 47):
             raise ValueError(f"roi {roi} must be in the set [0,47]")
@@ -177,7 +178,7 @@ def add_rois(range_: Sequence[int] = range(NUM_ROIS), kind=Kind.normal, **kwargs
 
 class MCARecord(MCASumMixin, Device):
     rois = DDC(add_rois(), kind=active_kind)
-    spectrum = Cpt(EpicsSignalRO, ":ArrayData", kind="normal")
+    spectrum = ADCpt(EpicsSignalRO, ":ArrayData", kind="normal", lazy=True)
     dead_time_percent = RECpt(EpicsSignalRO, ":DeadTime_RBV", pattern=r":MCA", repl=":C", lazy=True, kind="normal")
     dead_time_factor = RECpt(EpicsSignalRO, ":DTFactor_RBV", pattern=r":MCA", repl=":C", lazy=True, kind="normal")
     clock_ticks = RECpt(EpicsSignalRO, "SCA:0:Value_RBV", pattern=r":MCA", repl=":C", lazy=True, kind="normal")
@@ -205,6 +206,7 @@ def add_mcas(range_, kind=active_kind, **kwargs):
     """
     defn = OrderedDict()
     kwargs["kind"] = kind
+    kwargs['lazy'] = True
     for idx in range_:
         attr = f"mca{idx}"
         defn[attr] = (
