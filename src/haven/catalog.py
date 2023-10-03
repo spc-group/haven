@@ -86,7 +86,7 @@ def tiled_client(entry_node=None, uri=None):
     config = load_config()
     if uri is None:
         uri = config["database"]["tiled"]["uri"]
-    client_ = from_uri(uri, cache=Cache.in_memory(2e9))
+    client_ = from_uri(uri, cache=Cache())
     if entry_node is None:
         entry_node = config["database"]["tiled"]["entry_node"]
     client_ = client_[entry_node]

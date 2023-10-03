@@ -16,7 +16,7 @@ def test_shutter_suspend_wrapper(sim_aps, sim_shutters, sim_registry):
     # Check that the run engine does not have any shutter suspenders
     # Currently this test is fragile since we might add non-shutter
     # suspenders in the future.
-    RE = run_engine(connect_databroker=False)
+    RE = run_engine(use_bec=False, connect_databroker=False)
     assert len(RE.suspenders) == 1
     # Check that the shutter suspenders get added
     plan = bp.count([det])
@@ -51,7 +51,7 @@ def test_baseline_wrapper(sim_registry, sim_aps, event_loop):
     cb.descriptor = MagicMock()
     cb.event = MagicMock()
     cb.stop = MagicMock()
-    RE = run_engine(connect_databroker=False)
+    RE = run_engine(use_bec=False, connect_databroker=False)
     plan = bp.count([det], num=1)
     plan = baseline_wrapper(plan, devices="baseline")
     RE(plan, cb)
@@ -77,7 +77,7 @@ def test_baseline_decorator(sim_registry, sim_aps):
     cb.descriptor = MagicMock()
     cb.event = MagicMock()
     cb.stop = MagicMock()
-    RE = run_engine(connect_databroker=False)
+    RE = run_engine(use_bec=False, connect_databroker=False)
     plan = func([det], num=1)
     RE(plan, cb)
     # Check that the callback has the baseline stream inserted
@@ -116,7 +116,7 @@ def test_metadata(sim_registry, sim_aps, monkeypatch):
     cb.descriptor = MagicMock()
     cb.event = MagicMock()
     cb.stop = MagicMock()
-    RE = run_engine(connect_databroker=False)
+    RE = run_engine(use_bec=False, connect_databroker=False)
     plan = bp.count([det], num=1)
     RE(plan, cb)
     # Check that the callback has the correct metadata

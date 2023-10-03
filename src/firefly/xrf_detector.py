@@ -43,6 +43,7 @@ class AcquireStates(IntEnum):
 
 
 class ROIRegion(pyqtgraph.LinearRegionItem):
+    """A selection on the XRF plot, showing the current ROI."""
     mca_num: int
     roi_num: int
 
@@ -56,17 +57,17 @@ class ROIRegion(pyqtgraph.LinearRegionItem):
     _last_lower: int = None
 
     def __init__(self, address: str, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super().__init__(*args, swapMode="block", **kwargs)
         self.address = address
         # Set up channels to the IOC
         self.hi_channel = PyDMChannel(
-            address=f"{address}.hi_chan._write_pv",
+            address=f"{address}.hi_chan",
             value_slot=self.set_region_upper,
             value_signal=self.region_upper_changed,
         )
         self.hi_channel.connect()
         self.lo_channel = PyDMChannel(
-            address=f"{address}.lo_chan._write_pv",
+            address=f"{address}.lo_chan",
             value_slot=self.set_region_lower,
             value_signal=self.region_lower_changed,
         )
@@ -76,6 +77,7 @@ class ROIRegion(pyqtgraph.LinearRegionItem):
         self.setVisible(False)
 
     def handle_region_change(self):
+        # Get new region boundary
         lower, upper = self.getRegion()
         lower = round(lower)
         upper = round(upper)
@@ -92,21 +94,27 @@ class ROIRegion(pyqtgraph.LinearRegionItem):
 
     def set_region_lower(self, new_lower):
         """Set the upper value of the highlighted region."""
-        log.debug(f"Setting new region lower bound: {new_lower}")
-        old_region = self.getRegion()
-        new_region = (new_lower, old_region[1])
-        if new_region != old_region:
-            self.setRegion(new_region)
-        self._last_lower = new_lower
-
+        if new_lower == self._last_lower:
+            return
+        log.debug("Setting new region lower bound: "
+                  f"{new_lower} from {self._last_lower}")
+        self._last_lower = new_lower        
+        self.blockLineSignal = True
+        self.lines[0].setValue(new_lower)
+        self.blockLineSignal = False
+        
     def set_region_upper(self, new_upper):
         """Set the upper value of the highlighted region."""
-        log.debug(f"Setting new region upper bound: {new_upper}")
-        old_region = self.getRegion()
-        new_region = (old_region[0], new_upper)
-        if new_region != old_region:
-            self.setRegion(new_region)
+        if new_upper == self._last_upper:
+            return
+        log.debug("Setting new region upper bound: "
+                  f"{new_upper} from {self._last_upper}")
         self._last_upper = new_upper
+        self.blockLineSignal = True
+        self.lines[1].setValue(new_upper)
+        # self.setRegion(new_region)
+        self.blockLineSignal = False
+        
 
 
 class XRF1DPlotItem(pyqtgraph.PlotItem):
@@ -203,7 +211,7 @@ class XRFPlotWidget(QWidget):
             self.plot_changed.emit()
 
     def spectrum_color(self, mca_num):
-        return colors[(mca_num - 1) % len(colors)]
+        return colors[(mca_num) % len(colors)]
 
     def highlight_spectrum(self, mca_num, roi_num, hovered):
         """Highlight a spectrum and lowlight the rest.
@@ -332,67 +340,69 @@ class ROIEmbeddedDisplay(PyDMEmbeddedDisplay):
         self.hovered.emit(False)
 
 
-class XrfTriggers(QObject):
-    accumulate: bool = False
+# class XrfTriggers(QObject):
+#     accumulate: bool = False
 
-    # Signals
-    start_all = Signal(int)  # is_started
-    start_erase = Signal(int)  # (is_started)
+#     # Signals
+#     start_all = Signal(int)  # is_started
+#     start_erase = Signal(int)  # (is_started)
 
-    def __init__(self, device, *args, **kwargs):
-        self.device = device
-        super().__init__(*args, **kwargs)
-        self.setup_trigger_channels()
+#     def __init__(self, device, *args, **kwargs):
+#         self.device = device
+#         super().__init__(*args, **kwargs)
+#         # self.setup_trigger_channels()
 
-    def set_accumulate(self, accumulate):
-        self.accumulate = accumulate
+#     def set_accumulate(self, accumulate):
+#         self.accumulate = accumulate
 
-    def setup_trigger_channels(self):
-        # Set up a channel for starting detector acquisition
-        device = self.device
-        self.start_channel = PyDMChannel(
-            address=f"oph://{device.name}.start_all",
-            value_signal=self.start_all,
-        )
-        self.start_channel.connect()
-        self.start_erase_channel = PyDMChannel(
-            address=f"oph://{device.name}.erase_start",
-            value_signal=self.start_erase,
-        )
-        self.start_erase_channel.connect()
-        # This one gets (dis)connected in response to the continuous button
-        self.acquiring_channel = PyDMChannel(
-            address=f"oph://{device.name}.acquiring",
-            value_slot=self.trigger_next,
-        )
+    # def setup_trigger_channels(self):
+    #     # Set up a channel for starting detector acquisition
+    #     device = self.device
+    #     self.start_channel = PyDMChannel(
+    #         address=f"oph://{device.name}.acquire",
+    #         value_signal=self.start_all,
+    #     )
+    #     self.start_channel.connect()
+    #     self.start_erase_channel = PyDMChannel(
+    #         address=f"oph://{device.name}.acquire",
+    #         value_signal=self.start_erase,
+    #     )
+    #     self.start_erase_channel.connect()
+    #     # This one gets (dis)connected in response to the continuous button
+    #     self.acquiring_channel = PyDMChannel(
+    #         address=f"oph://{device.name}.acquiring",
+    #         value_slot=self.trigger_next,
+    #     )
 
-    def trigger_continuously(self, is_started):
-        if is_started:
-            self.acquiring_channel.connect()
-            # Trigger once to start the process
-            self.trigger_once(is_started=is_started)
-        else:
-            self.acquiring_channel.disconnect()
+    # def trigger_continuously(self, is_started):
+    #     if is_started:
+    #         self.acquiring_channel.connect()
+    #         # Trigger once to start the process
+    #         self.trigger_once(is_started=is_started)
+    #     else:
+    #         self.acquiring_channel.disconnect()
 
-    def trigger_next(self, acquire_state):
-        """Check if acquiring is done and start the next frame.
+    # def trigger_next(self, acquire_state):
+    #     """Check if acquiring is done and start the next frame.
 
-        Mostly used for continuous acquisition.
+    #     Mostly used for continuous acquisition.
 
-        """
-        is_started = acquire_state == AcquireStates.DONE
-        self.trigger_once(is_started=is_started)
+    #     """
+    #     is_started = acquire_state == AcquireStates.DONE
+    #     self.trigger_once(is_started=is_started)
 
-    def trigger_once(self, is_started):
-        log.debug("Triggering once")
-        if self.accumulate:
-            start_signal = self.start_all
-        else:
-            start_signal = self.start_erase
-        start_signal.emit(1)
+    # def trigger_once(self, is_started):
+    #     log.debug("Triggering once")
+    #     if self.accumulate:
+    #         start_signal = self.start_all
+    #     else:
+    #         start_signal = self.start_erase
+    #     start_signal.emit(1)
 
 
 class XRFDetectorDisplay(display.FireflyDisplay):
+    caqtdm_ui_file = "/APSshare/epics/synApps_6_2_1/support/xspress3-2-5/xspress3App/opi/ui/xspress3_1chan.ui"
+
     roi_displays: Sequence = []
     mca_displays: Sequence = []
     _spectrum_channels: Sequence
@@ -416,7 +426,7 @@ class XRFDetectorDisplay(display.FireflyDisplay):
         # Set ROI and element selection comboboxes
         self.ui.mca_combobox.currentIndexChanged.connect(self.draw_roi_widgets)
         self.ui.roi_combobox.currentIndexChanged.connect(self.draw_mca_widgets)
-        elements = [str(i) for i in range(1, device.num_elements + 1)]
+        elements = [str(i) for i in range(device.num_elements)]
         self.ui.mca_combobox.addItems(elements)
         rois = [str(i) for i in range(device.num_rois)]
         self.ui.roi_combobox.addItems(rois)
@@ -438,19 +448,7 @@ class XRFDetectorDisplay(display.FireflyDisplay):
             partial(self.increment_combobox, combobox=self.ui.roi_combobox, step=-1)
         )
         # Button for starting/stopping the detector
-        triggers = XrfTriggers(device=self.device)
-        self.ui.continuous_button.setIcon(qta.icon("fa5s.play"))
-        self.ui.erase_button.setIcon(qta.icon("fa5s.eraser"))
-        self.ui.continuous_button.toggled.connect(triggers.trigger_continuously)
-        self.ui.oneshot_button.clicked.connect(triggers.trigger_once)
-        self.ui.accumulate_checkbox.toggled.connect(triggers.set_accumulate)
-        self.triggers = triggers
-        # Run the worker for starting/stopping the detector in a separate thread
-        thread = QThread()
-        triggers.moveToThread(thread)
-        thread.finished.connect(triggers.deleteLater)
-        thread.start()
-        self.triggers_thread = thread
+        self.ui.oneshot_button.setIcon(qta.icon("fa5s.camera"))
         # Buttons for modifying all ROI settings
         self.ui.mca_copyall_button.setIcon(qta.icon("fa5.clone"))
         self.ui.mca_copyall_button.clicked.connect(self.copy_selected_mca)
@@ -465,6 +463,10 @@ class XRFDetectorDisplay(display.FireflyDisplay):
         self.spectrum_changed.connect(self.ui.roi_plot_widget.update_spectrum)
         self.mca_row_hovered.connect(self.ui.mca_plot_widget.highlight_spectrum)
         self.roi_row_hovered.connect(self.ui.roi_plot_widget.highlight_spectrum)
+
+    def launch_caqtdm(self,):
+        super().launch_caqtdm(macros={"P": self.device.prefix.strip(":")})
+                      
 
     def enable_mca_checkboxes(self, new_state):
         """Check/uncheck the hinting checkboxes in response to the
@@ -509,7 +511,6 @@ class XRFDetectorDisplay(display.FireflyDisplay):
         new_label = source_display.embedded_widget.ui.label_lineedit.text()
         new_lower = source_display.embedded_widget.ui.lower_lineedit.text()
         new_upper = source_display.embedded_widget.ui.upper_lineedit.text()
-        # widget = source_display.embedded_widget.ui.upper_lineedit
         # Set all the other MCA rows with values from selected MCA row
         for display in displays:
             if display is not source_display:
@@ -547,7 +548,7 @@ class XRFDetectorDisplay(display.FireflyDisplay):
         """
         log.debug(f"Copying MCA {self._selected_mca}")
         # Get existing values from selected MCA row
-        mca_idx = self._selected_mca - 1
+        mca_idx = self._selected_mca
         source_display = self.mca_displays[mca_idx]
         self.copy_selected_row(
             source_display=source_display, displays=self.mca_displays
@@ -562,7 +563,7 @@ class XRFDetectorDisplay(display.FireflyDisplay):
         self.device = device = haven.registry.find(device_name)
         # Set up data channels
         self._spectrum_channels = []
-        for mca_num in range(1, self.device.num_elements + 1):
+        for mca_num in range(self.device.num_elements):
             address = f"oph://{device.name}.mcas.mca{mca_num}.spectrum"
             channel = pydm.PyDMChannel(
                 address=address,
@@ -615,7 +616,7 @@ class XRFDetectorDisplay(display.FireflyDisplay):
             else:
                 disp.setEnabled(True)
         # Show this spectrum highlighted in the plots
-        mca_num = self.ui.mca_combobox.currentIndex() + 1
+        mca_num = self.ui.mca_combobox.currentIndex()
         self.roi_plot_widget.select_roi(
             mca_num=mca_num, roi_num=roi_num, is_selected=is_selected
         )
@@ -638,7 +639,7 @@ class XRFDetectorDisplay(display.FireflyDisplay):
         # Set global controls for this MCA
         self.ui.mca_copyall_button.setEnabled(is_selected)
         # Disable the other rows
-        mca_idx = mca_num - 1
+        mca_idx = mca_num
         for idx, disp in enumerate(self.mca_displays):
             if is_selected and idx != mca_idx:
                 disp.setEnabled(False)
@@ -651,7 +652,7 @@ class XRFDetectorDisplay(display.FireflyDisplay):
         )
 
     def draw_roi_widgets(self, mca_idx):
-        mca_num = mca_idx + 1
+        mca_num = mca_idx
         with self.disable_ui():
             # Update the plot widget with the new MCA number
             self.roi_plot_widget.target_mca = mca_num
@@ -690,7 +691,7 @@ class XRFDetectorDisplay(display.FireflyDisplay):
             layout = self.ui.mcas_layout
             self.remove_widgets_from_layout(layout)
             self.mca_displays = []
-            for mca_num in range(1, self.device.num_elements + 1):
+            for mca_num in range(self.device.num_elements):
                 disp = ROIEmbeddedDisplay(parent=self)
                 disp.macros = json.dumps(
                     {

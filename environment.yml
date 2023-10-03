@@ -89,9 +89,10 @@ dependencies:
   # - hklpy >=1.0.3  # --- linux-64
   - ophyd >=1.6.3
   - pydm >=1.16.0
+  - pcdsdevices  # For extra signal types
   - p4p
   - tiled-server
-  - tiled-client
+  - tiled-client >= 0.1.0a106  # 2023-10-02 to get new Cache() behavior
   - pydantic >=1.8.2,<2  # tiled fails with pydantic 2
   # https://github.com/pydata/xarray/issues/6818
   - xarray !=2022.6.0  # incompatible with numpy=1.20

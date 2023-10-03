@@ -12,19 +12,31 @@ from firefly.xrf_roi import XRFROIDisplay
 
 
 @pytest.fixture()
-def xrf_display(ffapp, sim_vortex):
+def xrf_display(ffapp, request):
+    """Parameterized fixture for creating a display based on a specific
+    detector class.
+
+    """
+    # Figure out which detector we're using
+    det = request.getfixturevalue(request.param)
+    # Create the display
     FireflyMainWindow()
-    display = XRFDetectorDisplay(macros={"DEV": sim_vortex.name})
+    display = XRFDetectorDisplay(macros={"DEV": det.name})
+    # Set sensible starting values
     spectra = np.random.default_rng(seed=0).integers(
         0, 65536, dtype=np.int_, size=(4, 1024)
     )
     plot_widget = display.mca_plot_widget
-    plot_widget.update_spectrum(1, spectra[0])
-    plot_widget.update_spectrum(2, spectra[1])
+    plot_widget.update_spectrum(0, spectra[0])
+    plot_widget.update_spectrum(1, spectra[1])
+    plot_widget.update_spectrum(2, spectra[2])
+    plot_widget.update_spectrum(3, spectra[3])
     return display
 
 
-def test_open_xrf_detector_viewer_actions(ffapp, qtbot, sim_vortex):
+@pytest.mark.parametrize('det_fixture', ["dxp", "xspress"])
+def test_open_xrf_detector_viewer_actions(ffapp, qtbot, det_fixture, request):
+    sim_det = request.getfixturevalue(det_fixture)
     # Get the area detector parts ready
     ffapp.prepare_xrf_detector_windows()
     assert hasattr(ffapp, "xrf_detector_actions")
@@ -34,29 +46,29 @@ def test_open_xrf_detector_viewer_actions(ffapp, qtbot, sim_vortex):
     assert "FireflyMainWindow_xrf_detector_vortex_me4" in ffapp.windows.keys()
 
 
-def test_roi_widgets(ffapp, sim_vortex):
-    FireflyMainWindow()
-    display = XRFDetectorDisplay(macros={"DEV": sim_vortex.name})
-    display.draw_roi_widgets(2)
+@pytest.mark.parametrize('xrf_display', ["dxp", "xspress"], indirect=True)    
+def test_roi_widgets(xrf_display):
+    xrf_display.draw_roi_widgets(2)
     # Check that the widgets were drawn
-    assert len(display.roi_displays) == sim_vortex.num_rois
-    disp = display.roi_displays[0]
+    assert len(xrf_display.roi_displays) == xrf_display.device.num_rois
+    disp = xrf_display.roi_displays[0]
 
 
-def test_roi_element_comboboxes(ffapp, qtbot, sim_vortex):
-    FireflyMainWindow()
-    display = XRFDetectorDisplay(macros={"DEV": sim_vortex.name})
+@pytest.mark.parametrize('xrf_display', ["dxp", "xspress"], indirect=True)
+def test_roi_element_comboboxes(ffapp, qtbot, xrf_display):
     # Check that the comboboxes have the right number of entries
-    element_cb = display.ui.mca_combobox
-    assert element_cb.count() == sim_vortex.num_elements
-    roi_cb = display.ui.roi_combobox
-    assert roi_cb.count() == sim_vortex.num_rois
+    element_cb = xrf_display.ui.mca_combobox
+    assert element_cb.count() == xrf_display.device.num_elements
+    roi_cb = xrf_display.ui.roi_combobox
+    assert roi_cb.count() == xrf_display.device.num_rois
 
 
-def test_roi_selection(ffapp, qtbot, sim_vortex):
+@pytest.mark.parametrize('det_fixture', ["dxp", "xspress"])
+def test_roi_selection(ffapp, qtbot, det_fixture, request):
+    det = request.getfixturevalue(det_fixture)
     FireflyMainWindow()
     display = XRFROIDisplay(
-        macros={"DEV": sim_vortex.name, "NUM": 2, "MCA": 2, "ROI": 2}
+        macros={"DEV": det.name, "NUM": 2, "MCA": 2, "ROI": 2}
     )
     # Unchecked box should be bland
     assert "background" not in display.styleSheet()
@@ -71,38 +83,35 @@ def test_roi_selection(ffapp, qtbot, sim_vortex):
     assert f"background: {display.selected_background}" not in display.styleSheet()
 
 
-def test_all_rois_selection(ffapp, qtbot, sim_vortex):
+@pytest.mark.parametrize('xrf_display', ["dxp", "xspress"], indirect=True)
+def test_all_rois_selection(xrf_display):
     """Are all the other ROIs disabled when one is selected?"""
-    FireflyMainWindow()
-    display = XRFDetectorDisplay(macros={"DEV": sim_vortex.name})
-    roi_display = display.roi_displays[0]
+    roi_display = xrf_display.roi_displays[0]
     # Pretend an ROI display was selected
     roi_display.selected.emit(True)
     # Check that a different ROI display was disabled
-    assert not display.roi_displays[1].isEnabled()
+    assert not xrf_display.roi_displays[1].isEnabled()
 
 
-def test_all_mcas_selection(ffapp, qtbot, sim_vortex):
+@pytest.mark.parametrize('xrf_display', ["dxp", "xspress"], indirect=True)
+def test_all_mcas_selection(xrf_display):
     """Are all the other ROIs disabled when one is selected?"""
-    FireflyMainWindow()
-    display = XRFDetectorDisplay(macros={"DEV": sim_vortex.name})
-    mca_display = display.mca_displays[0]
+    mca_display = xrf_display.mca_displays[0]
     # Pretend an ROI display was selected
     mca_display.selected.emit(True)
     # Check that a different ROI display was disabled
-    assert not display.mca_displays[1].isEnabled()
+    assert not xrf_display.mca_displays[1].isEnabled()
 
 
-def test_update_roi_spectra(ffapp, qtbot, sim_vortex):
-    FireflyMainWindow()
-    display = XRFDetectorDisplay(macros={"DEV": sim_vortex.name})
+@pytest.mark.parametrize('xrf_display', ["dxp", "xspress"], indirect=True)    
+def test_update_roi_spectra(qtbot, xrf_display):
     spectra = np.random.default_rng(seed=0).integers(
         0, 65536, dtype=np.int_, size=(4, 1024)
     )
-    roi_plot_widget = display.ui.roi_plot_widget
+    roi_plot_widget = xrf_display.ui.roi_plot_widget
     with qtbot.waitSignal(roi_plot_widget.plot_changed):
-        display._spectrum_channels[0].value_slot(spectra[0])
-        display._spectrum_channels[1].value_slot(spectra[1])
+        xrf_display._spectrum_channels[0].value_slot(spectra[0])
+        xrf_display._spectrum_channels[1].value_slot(spectra[1])
     # Check that a PlotItem was created
     plot_item = roi_plot_widget.ui.plot_widget.getPlotItem()
     assert isinstance(plot_item, PlotItem)
@@ -114,25 +123,26 @@ def test_update_roi_spectra(ffapp, qtbot, sim_vortex):
         0, 65536, dtype=np.int_, size=(4, 1024)
     )
     with qtbot.waitSignal(roi_plot_widget.plot_changed):
-        display._spectrum_channels[0].value_slot(spectra2[0])
+        xrf_display._spectrum_channels[0].value_slot(spectra2[0])
     data_items = plot_item.listDataItems()
     assert len(data_items) == 1
 
 
-def test_update_mca_spectra(ffapp, qtbot, sim_vortex):
-    FireflyMainWindow()
-    display = XRFDetectorDisplay(macros={"DEV": sim_vortex.name})
+@pytest.mark.parametrize('xrf_display', ["dxp", "xspress"], indirect=True)    
+def test_update_mca_spectra(xrf_display, qtbot):
     spectra = np.random.default_rng(seed=0).integers(
         0, 65536, dtype=np.int_, size=(4, 1024)
     )
-    mca_plot_widget = display.ui.mca_plot_widget
-    # plot_widget.update_spectrum(spectrum=spectra[0], mca_idx=1)
-    with qtbot.waitSignal(mca_plot_widget.plot_changed):
-        display._spectrum_channels[0].value_slot(spectra[0])
-        display._spectrum_channels[1].value_slot(spectra[1])
-    # Check that a PlotItem was created
+    mca_plot_widget = xrf_display.ui.mca_plot_widget
+    # Check that a PlotItem was created in the fixture
     plot_item = mca_plot_widget.ui.plot_widget.getPlotItem()
     assert isinstance(plot_item, PlotItem)
+    # Clear the data items so we can test them later
+    plot_item.clear()
+    # plot_widget.update_spectrum(spectrum=spectra[0], mca_idx=1)
+    with qtbot.waitSignal(mca_plot_widget.plot_changed):
+        xrf_display._spectrum_channels[0].value_slot(spectra[0])
+        xrf_display._spectrum_channels[1].value_slot(spectra[1])
     # Check that the spectrum was plotted
     data_items = plot_item.listDataItems()
     assert len(data_items) == 2
@@ -141,39 +151,39 @@ def test_update_mca_spectra(ffapp, qtbot, sim_vortex):
         0, 65536, dtype=np.int_, size=(4, 1024)
     )
     with qtbot.waitSignal(mca_plot_widget.plot_changed):
-        display._spectrum_channels[0].value_slot(spectra2[0])
+        xrf_display._spectrum_channels[0].value_slot(spectra2[0])
     data_items = plot_item.listDataItems()
     assert len(data_items) == 2
 
 
-def test_mca_selected_highlights(ffapp, qtbot, sim_vortex):
+@pytest.mark.parametrize('xrf_display', ["dxp", "xspress"], indirect=True)    
+def test_mca_selected_highlights(qtbot, xrf_display):
     """Is the spectrum highlighted when the element row is selected."""
-    FireflyMainWindow()
-    display = XRFDetectorDisplay(macros={"DEV": sim_vortex.name})
-    mca_display = display.mca_displays[1]
+    mca_display = xrf_display.mca_displays[1]
     spectra = np.random.default_rng(seed=0).integers(
         0, 65536, dtype=np.int_, size=(4, 1024)
     )
-    plot_widget = display.mca_plot_widget
-    plot_widget.update_spectrum(1, spectra[0])
-    plot_widget.update_spectrum(2, spectra[1])
-    this_data_item = display.mca_plot_widget._data_items[2]
-    other_data_item = display.mca_plot_widget._data_items[1]
+    plot_widget = xrf_display.mca_plot_widget
+    plot_widget.update_spectrum(0, spectra[0])
+    plot_widget.update_spectrum(1, spectra[1])
+    this_data_item = xrf_display.mca_plot_widget._data_items[1]
+    other_data_item = xrf_display.mca_plot_widget._data_items[0]
     this_data_item.setOpacity(0.77)
     # Select this display and check if the spectrum is highlighted
     mca_display.selected.emit(True)
     assert this_data_item.opacity() == 1.0
     assert other_data_item.opacity() == 0.15
     # Hovering other rows should not affect the opacity
-    display.mca_displays[0].enterEvent()
+    xrf_display.mca_displays[0].enterEvent()
     assert this_data_item.opacity() == 0.55
     assert other_data_item.opacity() == 1.0
-    display.mca_displays[0].leaveEvent()
+    xrf_display.mca_displays[0].leaveEvent()
     assert this_data_item.opacity() == 1.0
     assert other_data_item.opacity() == 0.15
 
 
-def test_show_mca_region_visibility(ffapp, xrf_display):
+@pytest.mark.parametrize('xrf_display', ["dxp", "xspress"], indirect=True)
+def test_show_mca_region_visibility(xrf_display):
     """Is the spectrum highlighted when the element row is selected."""
     # Check that the region is hidden at startup
     plot_widget = xrf_display.mca_plot_widget
@@ -188,7 +198,8 @@ def test_show_mca_region_visibility(ffapp, xrf_display):
     assert not region.isVisible()
 
 
-def test_show_roi_region(ffapp, xrf_display):
+@pytest.mark.parametrize('xrf_display', ["dxp", "xspress"], indirect=True)
+def test_show_roi_region(xrf_display):
     """Is the spectrum highlighted when the element row is selected."""
     # Check that the region is hidden at startup
     plot_widget = xrf_display.roi_plot_widget
@@ -208,7 +219,8 @@ def test_show_roi_region(ffapp, xrf_display):
     assert selected_region.isVisible()
 
 
-def test_mca_region_channels(ffapp, xrf_display):
+@pytest.mark.parametrize('xrf_display', ["dxp", "xspress"], indirect=True)
+def test_mca_region_channels(xrf_display):
     """Are the channel access connections between the ROI selection region
     and the hi/lo channel PVs correct?
 
@@ -218,7 +230,7 @@ def test_mca_region_channels(ffapp, xrf_display):
     mca_display = xrf_display.mca_displays[1]
     mca_display._embedded_widget = mca_display.open_file(force=True)
     xrf_display.mca_selected(is_selected=True, mca_num=2)
-    correct_address = "oph://vortex_me4.mcas.mca2.rois.roi0.hi_chan._write_pv"
+    correct_address = "oph://vortex_me4.mcas.mca2.rois.roi0.hi_chan"
     region = plot_widget.region(mca_num=2, roi_num=0)
     assert region.hi_channel.address == correct_address
     region.hi_channel.value_slot(108)
@@ -227,8 +239,9 @@ def test_mca_region_channels(ffapp, xrf_display):
     assert region.getRegion()[0] == 47
 
 
-def test_mca_copyall_button(ffapp, xrf_display, qtbot):
-    xrf_display.mca_selected(is_selected=True, mca_num=2)
+@pytest.mark.parametrize('xrf_display', ["dxp", "xspress"], indirect=True)
+def test_mca_copyall_button(xrf_display, qtbot):
+    xrf_display.mca_selected(is_selected=True, mca_num=1)
     assert xrf_display.ui.mca_copyall_button.isEnabled()
     # Set up ROI displays to test
     this_display = xrf_display.mca_displays[1]
@@ -248,7 +261,8 @@ def test_mca_copyall_button(ffapp, xrf_display, qtbot):
     assert not xrf_display.ui.mca_copyall_button.isEnabled()
 
 
-def test_roi_copyall_button(ffapp, xrf_display, qtbot):
+@pytest.mark.parametrize('xrf_display', ["dxp", "xspress"], indirect=True)
+def test_roi_copyall_button(xrf_display, qtbot):
     # Set up ROI rows embedded display widgets
     for disp in xrf_display.roi_displays:
         disp._embedded_widget = disp.open_file(force=True)
@@ -273,7 +287,8 @@ def test_roi_copyall_button(ffapp, xrf_display, qtbot):
     assert not xrf_display.ui.roi_copyall_button.isEnabled()
 
 
-def test_mca_enableall_checkbox(ffapp, xrf_display):
+@pytest.mark.parametrize('xrf_display', ["dxp", "xspress"], indirect=True)
+def test_mca_enableall_checkbox(xrf_display):
     checkbox = xrf_display.ui.mca_enableall_checkbox
     assert checkbox.checkState() == QtCore.Qt.PartiallyChecked
     assert checkbox.isTristate()
@@ -291,7 +306,8 @@ def test_mca_enableall_checkbox(ffapp, xrf_display):
         assert not display.embedded_widget.ui.enabled_checkbox.isChecked()
 
 
-def test_roi_enableall_checkbox(ffapp, xrf_display):
+@pytest.mark.parametrize('xrf_display', ["dxp", "xspress"], indirect=True)
+def test_roi_enableall_checkbox(xrf_display):
     checkbox = xrf_display.ui.roi_enableall_checkbox
     assert checkbox.checkState() == QtCore.Qt.PartiallyChecked
     assert checkbox.isTristate()
@@ -307,22 +323,3 @@ def test_roi_enableall_checkbox(ffapp, xrf_display):
     checkbox.setCheckState(QtCore.Qt.Unchecked)
     for display in xrf_display.roi_displays:
         assert not display.embedded_widget.ui.enabled_checkbox.isChecked()
-
-
-def test_oneshot_acquisition(xrf_display, qtbot):
-    """Check that clicking the one-shot acquisition button works."""
-    with qtbot.waitSignal(xrf_display.triggers.start_erase) as val:
-        xrf_display.ui.oneshot_button.click()
-    # Check the accumulate box and see that we don't erase
-    xrf_display.ui.accumulate_checkbox.setChecked(True)
-    with qtbot.waitSignal(xrf_display.triggers.start_all) as val:
-        xrf_display.ui.oneshot_button.click()
-
-
-def test_continuous_acquisition(xrf_display, qtbot):
-    """Check that clicking the one-shot acquisition button works."""
-    with qtbot.waitSignal(xrf_display.triggers.start_erase) as val:
-        xrf_display.ui.continuous_button.click()
-    # Simulated acquisition finishing and then set up the next one
-    with qtbot.waitSignal(xrf_display.triggers.start_erase) as val:
-        xrf_display.triggers.acquiring_channel.value_slot(0)

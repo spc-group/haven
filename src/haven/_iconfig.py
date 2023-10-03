@@ -15,6 +15,8 @@ from typing import Sequence
 import pathlib
 import argparse
 from functools import lru_cache
+from contextlib import contextmanager
+from copy import deepcopy
 
 from mergedeep import merge
 import tomli
@@ -29,12 +31,15 @@ CONFIG_FILES = [
 ]
 
 
+_local_overrides = {}
+
+
 def load_files(file_paths: Sequence[pathlib.Path]):
     """Generate the configs for files as dictionaries."""
     for fp in file_paths:
         if fp.exists():
             with open(fp, mode="rb") as fp:
-                log.info(f"Loading config file: {fp}")
+                log.debug(f"Loading config file: {fp}")
                 config = tomli.load(fp)
                 yield config
 
@@ -42,7 +47,6 @@ def load_files(file_paths: Sequence[pathlib.Path]):
             log.debug(f"Could not find config file, skipping: {fp}")
 
 
-@lru_cache()
 def load_config(file_paths: Sequence[pathlib.Path] = CONFIG_FILES):
     """Load TOML config files.
 
@@ -63,7 +67,7 @@ def load_config(file_paths: Sequence[pathlib.Path] = CONFIG_FILES):
         pass
     # Load configuration from TOML files
     config = {}
-    merge(config, *load_files(file_paths))
+    merge(config, *load_files(file_paths), _local_overrides)
     return config
 
 
@@ -89,3 +93,18 @@ def print_config_value(args: Sequence[str] = None):
     for part in args.key.split("."):
         value = value[part]
     print(value.strip())
+
+
+@contextmanager
+def beamline_connected(is_connected=True):
+    global _local_overrides
+    # Save old value
+    old_dict = deepcopy(_local_overrides)
+    # Set temporary value
+    if "beamline" not in _local_overrides.keys():
+        _local_overrides['beamline'] = {}
+    _local_overrides['beamline']['is_connected'] = is_connected
+    # Return to enclosing code
+    yield
+    # Restore old value
+    _local_overrides = old_dict

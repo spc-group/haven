@@ -33,6 +33,7 @@ from ophyd.areadetector.plugins import (
 
 from .._iconfig import load_config
 from .instrument_registry import registry
+from .device import make_device
 from .. import exceptions
 from .device import await_for_connection, aload_devices
 
@@ -242,17 +243,6 @@ class Eiger500K(SingleTrigger, DetectorBase):
     ]
 
 
-async def make_area_detector_device(Cls, prefix, name):
-    ad = Cls(prefix=prefix, name=name, labels={"area_detectors"})
-    try:
-        await await_for_connection(ad)
-    except TimeoutError as exc:
-        log.warning(f"Could not connect to area detector: {name} ({prefix})")
-    else:
-        log.info(f"Created area detector: {name} ({prefix})")
-        registry.register(ad)
-        return ad
-
 
 def load_area_detector_coros(config=None) -> set:
     if config is None:
@@ -265,10 +255,11 @@ def load_area_detector_coros(config=None) -> set:
             msg = f"area_detector.{name}.device_class={adconfig['device_class']}"
             raise exceptions.UnknownDeviceConfiguration(msg)
         # Create the device co-routine
-        yield make_area_detector_device(
-            Cls=DeviceClass,
+        yield make_device(
+            DeviceClass,
             prefix=f"{adconfig['prefix']}:",
             name=name,
+            labels={"area_detectors"},
         )
 
 

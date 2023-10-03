@@ -2,7 +2,7 @@ import logging
 import datetime as dt
 from typing import Sequence
 import yaml
-from httpx import HTTPStatusError
+from httpx import HTTPStatusError, PoolTimeout
 from contextlib import contextmanager
 from itertools import count
 
@@ -291,7 +291,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
             )
             raise exceptions.EmptySignalName
         try:
-            data = run["primary"]["data"].read()
+            data = run["primary"]["data"]
             y_data = data[y_signal]
             x_data = data[x_signal]
             if use_reference:

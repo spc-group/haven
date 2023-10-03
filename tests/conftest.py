@@ -12,7 +12,8 @@ import asyncio
 import pytest
 from qtpy import QtWidgets
 import ophyd
-from ophyd.sim import instantiate_fake_device, make_fake_device
+from ophyd import DynamicDeviceComponent as DDC, Kind
+from ophyd.sim import instantiate_fake_device, make_fake_device, fake_device_cache, FakeEpicsSignal
 from pydm.data_plugins import add_plugin
 
 
@@ -25,12 +26,15 @@ test_dir = top_dir / "tests"
 import haven
 from haven.simulated_ioc import simulated_ioc
 from haven import load_config, registry
-from haven.instrument.stage import AerotechFlyer
+from haven._iconfig import beamline_connected as _beamline_connected
+from haven.instrument.stage import AerotechFlyer, AerotechStage
 from haven.instrument.aps import ApsMachine
 from haven.instrument.shutter import Shutter
 from haven.instrument.camera import AravisDetector
-from haven.instrument.fluorescence_detector import DxpDetectorBase
+from haven.instrument.delay import EpicsSignalWithIO
+from haven.instrument.dxp import DxpDetectorBase, add_mcas as add_dxp_mcas
 from haven.instrument.ion_chamber import IonChamber
+from haven.instrument.xspress import Xspress3Detector, add_mcas as add_xspress_mcas
 from firefly.application import FireflyApplication
 from firefly.ophyd_plugin import OphydPlugin
 from run_engine import RunEngineStub
@@ -47,7 +51,17 @@ os.environ["HAVEN_CONFIG_FILES"] = ",".join(
         f"{haven_dir/'iconfig_default.toml'}",
     ]
 )
-load_config.cache_clear()
+
+class FakeEpicsSignalWithIO(FakeEpicsSignal):
+    # An EPICS signal that simply uses the DG-645 convention of
+    # 'AO' being the setpoint and 'AI' being the read-back
+    _metadata_keys = EpicsSignalWithIO._metadata_keys
+
+    def __init__(self, prefix, **kwargs):
+        super().__init__(f"{prefix}I", write_pv=f"{prefix}O", **kwargs)
+
+
+fake_device_cache[EpicsSignalWithIO] = FakeEpicsSignalWithIO
 
 
 def pytest_configure(config):
@@ -334,7 +348,7 @@ def sim_registry(monkeypatch):
     # Run the test
     yield registry
     # Restore the previous registry components
-    registry._objects_by_name =     objects_by_name
+    registry._objects_by_name = objects_by_name
     registry._objects_by_label = objects_by_label
 
 
@@ -376,12 +390,43 @@ def sim_camera(sim_registry):
     yield camera
 
 
+class DxpVortex(DxpDetectorBase):
+    mcas = DDC(
+        add_dxp_mcas(range_=[0, 1, 2, 3]),
+        kind=Kind.normal | Kind.hinted,
+        default_read_attrs=[f"mca{i}" for i in [0, 1, 2, 3]],
+        default_configuration_attrs=[f"mca{i}" for i in [0, 1, 2, 3]],
+    )
+
+
 @pytest.fixture()
-def sim_vortex(sim_registry):
-    FakeDXP = make_fake_device(DxpDetectorBase)
+def dxp(sim_registry):
+    FakeDXP = make_fake_device(DxpVortex)
     vortex = FakeDXP(name="vortex_me4", labels={"xrf_detectors"})
     sim_registry.register(vortex)
-    vortex.net_cdf.dimensions.set([1477326, 1, 1])
+    # vortex.net_cdf.dimensions.set([1477326, 1, 1])
+    yield vortex
+
+
+@pytest.fixture()
+def sim_vortex(dxp):
+    return dxp
+
+
+class Xspress3Vortex(Xspress3Detector):
+    mcas = DDC(
+        add_xspress_mcas(range_=[0, 1, 2, 3]),
+        kind=Kind.normal | Kind.hinted,
+        default_read_attrs=[f"mca{i}" for i in [0, 1, 2, 3]],
+        default_configuration_attrs=[f"mca{i}" for i in [0, 1, 2, 3]],
+    )
+
+
+@pytest.fixture()
+def xspress(sim_registry):
+    FakeXspress = make_fake_device(Xspress3Vortex)
+    vortex = FakeXspress(name="vortex_me4", labels={"xrf_detectors"})
+    sim_registry.register(vortex)
     yield vortex
 
 
@@ -396,20 +441,30 @@ def sim_ion_chamber(sim_registry):
 
 
 @pytest.fixture()
-def sim_aerotech_flyer():
-    Flyer = make_fake_device(
-        AerotechFlyer,
+def sim_aerotech():
+    Stage = make_fake_device(
+        AerotechStage,
     )
-    flyer = Flyer(
-        name="flyer",
-        axis="@0",
-        encoder=6,
-    )
+    stage = Stage("255id", delay_prefix="255id:DG645", pv_horiz=":m1", pv_vert=":m2", name="aerotech")
+    return stage
+    
+
+@pytest.fixture()
+def sim_aerotech_flyer(sim_aerotech):
+    flyer = sim_aerotech.horiz
     flyer.user_setpoint._limits = (0, 1000)
     flyer.send_command = mock.MagicMock()
+    # flyer.encoder_resolution.put(0.001)
+    # flyer.acceleration.put(1)
     yield flyer
 
 
 @pytest.fixture()
 def RE(event_loop):
     return RunEngineStub(call_returns_result=True)
+
+
+@pytest.fixture()
+def beamline_connected():
+    with _beamline_connected(True):
+        yield

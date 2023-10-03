@@ -17,7 +17,7 @@ def test_subscribers_garbage_collection(monkeypatch, sim_registry):
     """
     monkeypatch.setattr(databroker, "catalog", {"bluesky": databroker.temp()})
     load_aps()
-    RE = run_engine()
+    RE = run_engine(use_bec=False)
     assert len(RE.dispatcher.cb_registry.callbacks) == 12
     gc.collect()
     assert len(RE.dispatcher.cb_registry.callbacks) == 12
@@ -25,11 +25,11 @@ def test_subscribers_garbage_collection(monkeypatch, sim_registry):
 
 def test_run_engine_preprocessors(sim_registry):
     load_aps()
-    RE = run_engine()
+    RE = run_engine(use_bec=False)
     assert len(RE.preprocessors) > 0
 
 
 def test_run_engine_created(sim_registry):
     load_aps()
-    RE = run_engine()
+    RE = run_engine(use_bec=False)
     assert isinstance(RE, RunEngine)

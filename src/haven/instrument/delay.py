@@ -1,3 +1,5 @@
+import enum
+
 from ophyd import Device, Component as Cpt, EpicsSignal, EpicsSignalRO, Kind
 
 
@@ -91,3 +93,20 @@ class DG645Delay(Device):
     burst_mode = Cpt(EpicsSignalWithIO, "BurstConfigB", kind=Kind.config)
     burst_delay = Cpt(EpicsSignalWithIO, "BurstDelayA", kind=Kind.config)
     burst_period = Cpt(EpicsSignalWithIO, "BurstPeriodA", kind=Kind.config)
+
+    class trigger_sources(enum.IntEnum):
+        INTERNAL = 0
+        EXT_RISING_EDGE = 1
+        EXT_FALLING_EDGE = 2
+        SS_EXT_RISE_EDGE = 3
+        SS_EXT_FALL_EDGE = 4
+        SINGLE_SHOT = 5
+        LINE = 6
+
+    class polarities(enum.IntEnum):
+        NEGATIVE = 0
+        POSITIVE = 1
+        
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.stage_sigs[self.trigger_source] = self.trigger_sources.EXT_RISING_EDGE

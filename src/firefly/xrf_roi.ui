@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>525</width>
-    <height>31</height>
+    <width>602</width>
+    <height>29</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -89,13 +89,13 @@
         <property name="toolTip">
          <string/>
         </property>
+        <property name="channel" stdset="0">
+         <string>oph://${DEV}.mcas.mca${MCA}.rois.roi${ROI}.use</string>
+        </property>
         <property name="PyDMToolTip" stdset="0">
          <string>Enable or disable this ROI.
 
 Data will be saved either way, but disabled channels will not appear in the list of hinted signals.</string>
-        </property>
-        <property name="channel" stdset="0">
-         <string>oph://${DEV}.mcas.mca${MCA}.rois.roi${ROI}.is_hinted._write_pv</string>
         </property>
        </widget>
       </item>
@@ -137,6 +137,11 @@ Data will be saved either way, but disabled channels will not appear in the list
              <height>0</height>
             </size>
            </property>
+           <property name="font">
+            <font>
+             <family>Monospace</family>
+            </font>
+           </property>
            <property name="toolTip">
             <string/>
            </property>
@@ -147,7 +152,7 @@ Data will be saved either way, but disabled channels will not appear in the list
             <string>ROI Name</string>
            </property>
            <property name="channel" stdset="0">
-            <string>oph://${DEV}.mcas.mca${MCA}.rois.roi${ROI}.label._write_pv</string>
+            <string>oph://${DEV}.mcas.mca${MCA}.rois.roi${ROI}.label</string>
            </property>
            <property name="displayFormat" stdset="0">
             <enum>PyDMLineEdit::String</enum>
@@ -156,6 +161,11 @@ Data will be saved either way, but disabled channels will not appear in the list
          </item>
          <item>
           <widget class="PyDMLineEdit" name="lower_lineedit">
+           <property name="font">
+            <font>
+             <family>Monospace</family>
+            </font>
+           </property>
            <property name="toolTip">
             <string/>
            </property>
@@ -166,15 +176,23 @@ Data will be saved either way, but disabled channels will not appear in the list
             <string>Lower bound</string>
            </property>
            <property name="channel" stdset="0">
-            <string>oph://${DEV}.mcas.mca${MCA}.rois.roi${ROI}.lo_chan._write_pv</string>
+            <string>oph://${DEV}.mcas.mca${MCA}.rois.roi${ROI}.lo_chan</string>
            </property>
            <property name="displayFormat" stdset="0">
             <enum>PyDMLineEdit::Decimal</enum>
+           </property>
+           <property name="PyDMToolTip" stdset="0">
+            <string>The channel number at the low end of the ROI.</string>
            </property>
           </widget>
          </item>
          <item>
           <widget class="PyDMLineEdit" name="upper_lineedit">
+           <property name="font">
+            <font>
+             <family>Monospace</family>
+            </font>
+           </property>
            <property name="toolTip">
             <string/>
            </property>
@@ -185,10 +203,40 @@ Data will be saved either way, but disabled channels will not appear in the list
             <string>Upper bound</string>
            </property>
            <property name="channel" stdset="0">
-            <string>oph://${DEV}.mcas.mca${MCA}.rois.roi${ROI}.hi_chan._write_pv</string>
+            <string>oph://${DEV}.mcas.mca${MCA}.rois.roi${ROI}.hi_chan</string>
            </property>
            <property name="displayFormat" stdset="0">
             <enum>PyDMLineEdit::Decimal</enum>
+           </property>
+           <property name="PyDMToolTip" stdset="0">
+            <string>The channel number at the low end of the ROI.</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="PyDMLabel" name="size_label">
+           <property name="minimumSize">
+            <size>
+             <width>40</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="font">
+            <font>
+             <family>Monospace</family>
+            </font>
+           </property>
+           <property name="toolTip">
+            <string/>
+           </property>
+           <property name="text">
+            <string>34</string>
+           </property>
+           <property name="channel" stdset="0">
+            <string>oph://${DEV}.mcas.mca${MCA}.rois.roi${ROI}.size</string>
+           </property>
+           <property name="PyDMToolTip" stdset="0">
+            <string>The size of the ROI, in number of channels.</string>
            </property>
           </widget>
          </item>

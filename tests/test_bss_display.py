@@ -140,12 +140,12 @@ def test_bss_proposal_model(qtbot, ffapp, bss_api):
     assert display.ui.proposal_view.model() is display.proposal_model
 
 
-def test_bss_proposal_updating(qtbot, ffapp, bss_api, ioc_bss, sim_registry):
+def test_bss_proposal_updating(qtbot, ffapp, bss_api, sim_registry):
     load_aps()
-    sim_registry.find(name="bss").wait_for_connection(timeout=60)
+    bss = sim_registry.find(name="bss")
     display = BssDisplay(api=bss_api)
     # Set some base-line values on the IOC
-    caput(ioc_bss.pvs["proposal_id"], "")
+    bss.proposal.proposal_id.set("").wait()
     # Change the proposal item
     selection_model = display.ui.proposal_view.selectionModel()
     item = display.proposal_model.item(0, 1)
@@ -157,15 +157,15 @@ def test_bss_proposal_updating(qtbot, ffapp, bss_api, ioc_bss, sim_registry):
             display.proposal_view.viewport(), Qt.LeftButton, pos=rect.center()
         )
     assert display.ui.update_proposal_button.isEnabled()
-    pv_id = caget(ioc_bss.pvs["proposal_id"], use_monitor=False, as_string=True)
+    pv_id = bss.proposal.proposal_id.get(use_monitor=False)
     assert pv_id != "74163"
     assert display._proposal_id == "74163"
     # Now update the PROPOSAL details
     with qtbot.waitSignal(display.proposal_changed):
         qtbot.mouseClick(display.ui.update_proposal_button, Qt.LeftButton)
-    pv_id = caget(ioc_bss.pvs["proposal_id"], use_monitor=False, as_string=True)
+    pv_id = bss.proposal.proposal_id.get(use_monitor=False)
     assert pv_id == "74163"
-    bss_api.epicsUpdate.assert_called_once_with(ioc_bss.prefix)
+    bss_api.epicsUpdate.assert_called_once_with("255idc:bss:")
 
 
 def test_bss_proposals(ffapp, bss_api):
@@ -194,13 +194,13 @@ def test_bss_esaf_model(qtbot, ffapp, bss_api):
     assert display.ui.esaf_view.model() is display.esaf_model
 
 
-def test_bss_esaf_updating(qtbot, ffapp, bss_api, ioc_bss, sim_registry):
+def test_bss_esaf_updating(qtbot, ffapp, bss_api, sim_registry):
     load_aps()
     window = FireflyMainWindow()
     display = BssDisplay(api=bss_api)
-    sim_registry.find(name="bss").wait_for_connection(timeout=60)
+    bss = sim_registry.find(name="bss")
     # Set some base-line values on the IOC
-    caput(ioc_bss.pvs["esaf_id"], "")
+    bss.esaf.esaf_id.set("").wait()
     # Change the ESAF item
     selection_model = display.ui.esaf_view.selectionModel()
     item = display.esaf_model.item(0, 1)
@@ -210,15 +210,15 @@ def test_bss_esaf_updating(qtbot, ffapp, bss_api, ioc_bss, sim_registry):
     with qtbot.waitSignal(display.esaf_selected):
         qtbot.mouseClick(display.esaf_view.viewport(), Qt.LeftButton, pos=rect.center())
     assert display.ui.update_esaf_button.isEnabled()
-    pv_id = caget(ioc_bss.pvs["esaf_id"], use_monitor=False, as_string=True)
+    pv_id = bss.esaf.esaf_id.get(use_monitor=False)
     assert pv_id != "269238"
     assert display._esaf_id == "269238"
     # Now update the ESAF details
     with qtbot.waitSignal(display.esaf_changed):
         qtbot.mouseClick(display.ui.update_esaf_button, Qt.LeftButton)
-    pv_id = caget(ioc_bss.pvs["esaf_id"], use_monitor=False, as_string=True)
+    pv_id = bss.esaf.esaf_id.get(use_monitor=False)
     assert pv_id == "269238"
-    bss_api.epicsUpdate.assert_called_once_with(ioc_bss.prefix)
+    bss_api.epicsUpdate.assert_called_once_with("255idc:bss:")
 
 
 def test_bss_esafs(ffapp, bss_api):

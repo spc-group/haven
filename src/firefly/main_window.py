@@ -31,7 +31,12 @@ class FireflyMainWindow(PyDMMainWindow):
             msg = f"No status messages on window: {args}, {kwargs}. Possibly you're not using FireflyMainWindow?"
             log.warning(msg)
             warnings.warn(msg)
-        return widget
+        # Add the caQtDM action to the menubar
+        caqtdm_menu = self.ui.menuSetup
+        if len(widget.caqtdm_actions) > 0:
+            caqtdm_menu.addSeparator()
+        for action in widget.caqtdm_actions:
+            caqtdm_menu.addAction(action)
 
     def closeEvent(self, event):
         super().closeEvent(event)
@@ -69,6 +74,9 @@ class FireflyMainWindow(PyDMMainWindow):
         return action
 
     def customize_ui(self):
+        from .application import FireflyApplication
+
+        app = FireflyApplication.instance()
         # Add window icon
         root_dir = Path(__file__).parent.absolute()
         icon_path = root_dir / "splash.png"
@@ -82,15 +90,29 @@ class FireflyMainWindow(PyDMMainWindow):
         self.ui.menuSetup.setObjectName("menuSetup")
         self.ui.menuSetup.setTitle("&Setup")
         self.ui.menubar.addAction(self.ui.menuSetup.menuAction())
-        # XAFS scan window
-        self.add_menu_action(
-            action_name="actionShow_Log_Viewer", text="Logs", menu=self.ui.menuView
-        )
         # Positioners menu
         self.ui.menuPositioners = QtWidgets.QMenu(self.ui.menubar)
         self.ui.menuPositioners.setObjectName("menuPositioners")
         self.ui.menuPositioners.setTitle("Positioners")
         self.ui.menubar.addAction(self.ui.menuPositioners.menuAction())
+        # Detectors menu
+        self.ui.menuDetectors = QtWidgets.QMenu(self.ui.menubar)
+        self.ui.menuDetectors.setObjectName("menuDetectors")
+        self.ui.menuDetectors.setTitle("&Detectors")
+        self.ui.menubar.addAction(self.ui.menuDetectors.menuAction())
+        # Scans menu
+        self.ui.menuScans = QtWidgets.QMenu(self.ui.menubar)
+        self.ui.menuScans.setObjectName("menuScans")
+        self.ui.menuScans.setTitle("Scans")
+        self.ui.menubar.addAction(self.ui.menuScans.menuAction())
+        # Add entries for general scan management
+        self.ui.menuScans.addAction(app.launch_queuemonitor_action)
+        self.ui.menuScans.addAction(app.show_run_browser_action)
+        self.ui.menuScans.addSeparator()
+        # XAFS scan window
+        self.add_menu_action(
+            action_name="actionShow_Log_Viewer", text="Logs", menu=self.ui.menuView
+        )
         # Sample viewer
         self.add_menu_action(
             action_name="actionShow_Sample_Viewer",
@@ -102,20 +124,10 @@ class FireflyMainWindow(PyDMMainWindow):
         self.ui.menuMotors.setObjectName("menuMotors")
         self.ui.menuMotors.setTitle("Motors")
         self.ui.menuPositioners.addAction(self.ui.menuMotors.menuAction())
-        # Scans menu
-        self.ui.menuScans = QtWidgets.QMenu(self.ui.menubar)
-        self.ui.menuScans.setObjectName("menuScans")
-        self.ui.menuScans.setTitle("Scans")
-        self.ui.menubar.addAction(self.ui.menuScans.menuAction())
         # XAFS scan window
         self.add_menu_action(
             action_name="actionShow_Xafs_Scan", text="XAFS Scan", menu=self.ui.menuScans
         )
-        # Detectors menu
-        self.ui.menuDetectors = QtWidgets.QMenu(self.ui.menubar)
-        self.ui.menuDetectors.setObjectName("menuDetectors")
-        self.ui.menuDetectors.setTitle("Detectors")
-        self.ui.menubar.addAction(self.ui.menuDetectors.menuAction())
         # Voltmeters window
         self.add_menu_action(
             action_name="actionShow_Voltmeters",
@@ -128,9 +140,6 @@ class FireflyMainWindow(PyDMMainWindow):
         self.ui.menuCameras.setTitle("Cameras")
         self.ui.menuDetectors.addAction(self.ui.menuCameras.menuAction())
         # Add actions to the motors sub-menus
-        from .application import FireflyApplication
-
-        app = FireflyApplication.instance()
         for action in app.motor_actions:
             self.ui.menuMotors.addAction(action)
         # Add actions to the cameras sub-menus
@@ -152,11 +161,8 @@ class FireflyMainWindow(PyDMMainWindow):
             self.ui.menuDetectors.addAction(action)
         # Add other menu actions
         self.ui.menuView.addAction(app.show_status_window_action)
-        self.ui.menuView.addAction(app.launch_queuemonitor_action)
         self.ui.menuSetup.addAction(app.show_bss_window_action)
         self.ui.menuPositioners.addAction(app.show_energy_window_action)
-        self.ui.menuScans.addSeparator()
-        self.ui.menuScans.addAction(app.show_run_browser_action)
 
     def show_status(self, message, timeout=0):
         """Show a message in the status bar."""

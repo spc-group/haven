@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>202</width>
-    <height>250</height>
+    <width>190</width>
+    <height>270</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -471,16 +471,6 @@
           </size>
          </property>
         </spacer>
-       </item>
-       <item>
-        <widget class="QPushButton" name="debug_button">
-         <property name="enabled">
-          <bool>true</bool>
-         </property>
-         <property name="text">
-          <string>Debug</string>
-         </property>
-        </widget>
        </item>
       </layout>
      </item>

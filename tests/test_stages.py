@@ -261,8 +261,6 @@ def test_kickoff(sim_aerotech_flyer):
     # Check status behavior matches flyer interface
     assert isinstance(status, StatusBase)
     assert not status.done
-    # Check that the delay generator is properly configured
-    # assert flyer.delay.channel_D.delay.get(use_monitor=False) == 0.95
     # Start flying and see if the status is done
     flyer.ready_to_fly.set(True).wait()
     status.wait()
@@ -314,10 +312,10 @@ def test_collect(sim_aerotech_flyer):
     ):
         assert datum == {
             "data": {
-                "flyer": value,
-                "flyer_user_setpoint": value,
+                "aerotech_horiz": value,
+                "aerotech_horiz_user_setpoint": value,
             },
-            "timestamps": {"flyer": timestamp, "flyer_user_setpoint": timestamp},
+            "timestamps": {"aerotech_horiz": timestamp, "aerotech_horiz_user_setpoint": timestamp},
             "time": timestamp,
         }
 
@@ -327,18 +325,18 @@ def test_describe_collect(sim_aerotech_flyer):
         "positions": OrderedDict(
             [
                 (
-                    "flyer",
+                    "aerotech_horiz",
                     {
-                        "source": "SIM:flyer",
+                        "source": "SIM:aerotech_horiz",
                         "dtype": "integer",
                         "shape": [],
                         "precision": 3,
                     },
                 ),
                 (
-                    "flyer_user_setpoint",
+                    "aerotech_horiz_user_setpoint",
                     {
-                        "source": "SIM:flyer_user_setpoint",
+                        "source": "SIM:aerotech_horiz_user_setpoint",
                         "dtype": "integer",
                         "shape": [],
                         "precision": 3,
@@ -355,6 +353,8 @@ def test_fly_motor_positions(sim_aerotech_flyer):
     flyer = sim_aerotech_flyer
     # Arbitrary rest position
     flyer.user_setpoint.set(255).wait()
+    flyer.parent.delay.channel_C.delay.sim_put(1.5)
+    flyer.parent.delay.output_CD.polarity.sim_put(1)
     # Set example fly scan parameters
     flyer.taxi_start.set(5).wait()
     flyer.start_position.set(10).wait()
@@ -376,6 +376,9 @@ def test_fly_motor_positions(sim_aerotech_flyer):
     assert pso_arm == 9.5
     assert taxi == 5
     assert end == 105
+    # Check that the delay generator is properly configured
+    assert flyer.parent.delay.channel_C.delay.get(use_monitor=False) == 0.
+    assert flyer.parent.delay.output_CD.polarity.get(use_monitor=False) == 0
 
 
 def test_aerotech_move_status(sim_aerotech_flyer):

@@ -50,7 +50,7 @@ def test_fly_scan_metadata(sim_aerotech_flyer, sim_ion_chamber):
             "stop": 30,
         },
         "plan_name": "fly_scan",
-        "motors": ["flyer"],
+        "motors": ["aerotech_horiz"],
         "detectors": ["I00"],
         "spam": "eggs",
     }
@@ -266,12 +266,12 @@ def test_fly_grid_scan(sim_aerotech_flyer):
     flyer_start_positions = [
         msg.args[0]
         for msg in messages
-        if (msg.command == "set" and msg.obj.name == "flyer_start_position")
+        if (msg.command == "set" and msg.obj.name == f"{flyer.name}_start_position")
     ]
     flyer_end_positions = [
         msg.args[0]
         for msg in messages
-        if (msg.command == "set" and msg.obj.name == "flyer_end_position")
+        if (msg.command == "set" and msg.obj.name == f"{flyer.name}_end_position")
     ]
     assert stepper_positions == list(np.linspace(-100, 100, num=11))
     assert flyer_start_positions == [-20, 30, -20, 30, -20, 30, -20, 30, -20, 30, -20]
@@ -303,7 +303,7 @@ def test_fly_grid_scan_metadata(sim_aerotech_flyer, sim_ion_chamber):
     real_md = open_msg.kwargs
     expected_md = {
         "detectors": ["I00"],
-        "motors": ("motor", "flyer"),
+        "motors": ("motor", flyer.name),
         "num_points": 66,
         "num_intervals": 65,
         "plan_args": {
@@ -313,7 +313,7 @@ def test_fly_grid_scan_metadata(sim_aerotech_flyer, sim_ion_chamber):
         "plan_name": "grid_fly_scan",
         "hints": {
             "gridding": "rectilinear",
-            "dimensions": [(["motor"], "primary"), (["flyer"], "primary")],
+            "dimensions": [(["motor"], "primary"), ([flyer.name], "primary")],
         },
         "shape": (11, 6),
         "extents": ([-100, 100], [-20, 30]),

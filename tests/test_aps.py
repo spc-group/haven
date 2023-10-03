@@ -36,7 +36,7 @@ def test_config_attrs():
         assert attr in device.configuration_attrs
 
 
-def test_load_apsbss(sim_registry):
+def test_load_apsbss(sim_registry, beamline_connected):
     aps.load_aps()
     bss = sim_registry.find(name="bss")
     assert hasattr(bss, "esaf")

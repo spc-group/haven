@@ -3,7 +3,7 @@ from haven.instrument import shutter
 from haven import registry
 
 
-def test_shutter(sim_registry):
+def test_shutter(sim_registry, beamline_connected):
     shutter.load_shutters()
     shutters = list(registry.findall(label="shutters"))
     assert len(shutters) == 2

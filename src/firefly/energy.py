@@ -2,8 +2,9 @@ import logging
 
 from qtpy import QtWidgets, QtCore
 from bluesky_queueserver_api import BPlan
-from haven import registry, load_config
+from haven import registry, load_config, exceptions
 from xraydb.xraydb import XrayDB
+import qtawesome as qta
 
 from firefly import display
 
@@ -27,6 +28,35 @@ class EnergyDisplay(display.FireflyDisplay):
         # Load X-ray database for calculating edge energies
         self.xraydb = XrayDB()
         super().__init__(args=args, macros=macros, **kwargs)
+
+    def prepare_caqtdm_actions(self):
+        """Create QActions for opening mono/ID caQtDM panels.
+
+        Creates two actions, one for the mono and one for the
+        insertion device.
+
+        """
+        self.caqtdm_actions = []
+        # Create an action for launching the mono caQtDM file
+        action = QtWidgets.QAction(self)
+        action.setObjectName("launch_mono_caqtdm_action")
+        action.setText("Mono caQtDM")
+        action.triggered.connect(self.launch_mono_caqtdm)
+        action.setIcon(qta.icon("fa5s.wrench"))
+        action.setToolTip("Launch the caQtDM panel for the monochromator.")
+        try:
+            registry.find(name="monochromator")
+        except exceptions.ComponentNotFound:
+            action.setDisabled(True)
+        self.caqtdm_actions.append(action)
+        # Create an action for launching the ID caQtDM file
+        action = QtWidgets.QAction(self)
+        action.setObjectName("launch_id_caqtdm_action")
+        action.setText("ID caQtDM")
+        action.triggered.connect(self.launch_id_caqtdm)
+        action.setIcon(qta.icon("fa5s.wrench"))
+        action.setToolTip("Launch the caQtDM panel for the insertion device.")
+        self.caqtdm_actions.append(action)
 
     def launch_mono_caqtdm(self):
         config = load_config()
@@ -71,8 +101,6 @@ class EnergyDisplay(display.FireflyDisplay):
         app.add_queue_item(item)
 
     def customize_ui(self):
-        self.ui.mono_caqtdm_button.clicked.connect(self.launch_mono_caqtdm)
-        self.ui.id_caqtdm_button.clicked.connect(self.launch_id_caqtdm)
         self.ui.set_energy_button.clicked.connect(self.set_energy)
         # Set up the combo box with X-ray energies
         combo_box = self.ui.edge_combo_box

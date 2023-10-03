@@ -10,7 +10,7 @@ from apstools.devices import (
 
 from .._iconfig import load_config
 from .instrument_registry import registry
-from .device import await_for_connection, aload_devices
+from .device import await_for_connection, aload_devices, make_device
 
 
 log = logging.getLogger(__name__)
@@ -34,25 +34,13 @@ class CapillaryHeater(PTC10PositionerMixin, PVPositioner):
     tc = Cpt(PTC10TcChannel, "2A:")
 
 
-async def make_heater_device(Cls, prefix, name):
-    heater = Cls(prefix=prefix, name=name, labels={"heaters"})
-    try:
-        await await_for_connection(heater)
-    except TimeoutError as exc:
-        log.warning(f"Could not connect to heater: {name} ({prefix})")
-    else:
-        log.info(f"Created heater: {name} ({prefix})")
-        registry.register(heater)
-        return heater
-
-
 def load_heater_coros(config=None):
     if config is None:
         config = load_config()
     # Load the heaters
     for name, cfg in config.get("heater", {}).items():
         Cls = globals().get(cfg["device_class"])
-        yield make_heater_device(Cls=Cls, prefix=f"{cfg['prefix']}:", name=name)
+        yield make_device(Cls, prefix=f"{cfg['prefix']}:", name=name, labels={"heaters"})
 
 
 def load_heaters(config=None):

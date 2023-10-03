@@ -25,6 +25,7 @@ def sim_tiled():
     """Start a tiled server using production data from 25-ID."""
     timeout = 20
     port = "8337"
+    
     if tiled_is_running(port, match_command=False):
         raise RuntimeError(f"Port {port} is already in use.")
     tiled_bin = shutil.which("tiled")
@@ -49,15 +50,17 @@ def sim_tiled():
         process.kill()
         raise TimeoutError
     # Prepare the client
-    client = from_uri(f"http://localhost:{port}", cache=Cache.in_memory(2e9))
-    yield client
-    # Shut down
-    process.terminate()
-    # Wait for start to complete
-    for i in range(timeout):
-        if not tiled_is_running(port):
-            break
-        time.sleep(1.0)
-    else:
-        process.kill()
-        time.sleep(1)
+    client = from_uri(f"http://localhost:{port}", cache=Cache())
+    try:
+        yield client
+    finally:
+        # Shut down
+        process.terminate()
+        # Wait for start to complete
+        for i in range(timeout):
+            if not tiled_is_running(port):
+                break
+            time.sleep(1.0)
+        else:
+            process.kill()
+            time.sleep(1)
