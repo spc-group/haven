@@ -38,7 +38,7 @@ from .._iconfig import load_config
 from .. import exceptions
 
 
-__all__ = ["DxpDetectorBase", "load_dxp"]
+__all__ = ["DxpDetector", "load_dxp"]
 
 
 NUM_ROIS = 32
@@ -149,7 +149,7 @@ def add_mcas(range_, kind=active_kind, **kwargs):
     return defn
 
 
-class DxpDetectorBase(
+class DxpDetector(
         XRFMixin, flyers.FlyerInterface, mca.EpicsDXPMapping, mca.EpicsDXPMultiElementSystem, 
 ):
     """A fluorescence detector based on XIA-DXP XMAP electronics.
@@ -392,7 +392,7 @@ async def make_dxp_device(device_name, prefix, num_elements):
     }
     # Create a dynamic subclass with the MCAs
     class_name = device_name.title().replace("_", "")
-    parent_classes = (DxpDetectorBase,)
+    parent_classes = (DxpDetector,)
     Cls = type(class_name, parent_classes, attrs)
     return await make_device(Cls, prefix=f"{prefix}:", name=device_name, labels={"xrf_detectors"})
 
@@ -401,19 +401,12 @@ def load_dxp_coros(config=None):
     # Get the detector definitions from config files
     if config is None:
         config = load_config()
-    for name, cfg in config.get("fluorescence_detector", {}).items():
-        if "prefix" not in cfg.keys():
-            continue
-        # Build the detector device
-        if cfg["electronics"] == "dxp":
-            yield make_dxp_device(
-                device_name=name,
-                prefix=cfg["prefix"],
-                num_elements=cfg["num_elements"],
-            )
-        else:
-            msg = f"Electronics '{cfg['electronics']}' for {name} not supported."
-            raise exceptions.UnknownDeviceConfiguration(msg)
+    for name, cfg in config.get("xspress", {}).items():
+        yield make_dxp_device(
+            device_name=name,
+            prefix=cfg["prefix"],
+            num_elements=cfg["num_elements"],
+        )        
 
 
 def load_dxp(config=None):

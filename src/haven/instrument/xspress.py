@@ -55,6 +55,9 @@ from .fluorescence_detector import XRFMixin, ROIMixin, MCASumMixin, add_roi_sums
 from .device import await_for_connection, aload_devices, make_device, RegexComponent as RECpt
 
 
+__all__ = ["load_xspress", "Xspress3Detector"]
+
+
 log = logging.getLogger(__name__)
 
 
