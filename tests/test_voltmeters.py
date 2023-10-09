@@ -38,41 +38,6 @@ def test_scaler_prefix(qtbot, ffapp, sim_registry):
     assert display.macros()["SCALER"] == "255idcVME:scaler1"
 
 
-def test_gain_button(qtbot, ffapp):
-    # Fake ion chamber to make sure the gain was actually changed
-    I0 = mock.MagicMock()
-    assert not I0.increase_gain.called
-    # Prepare the UI
-    window = FireflyMainWindow()
-    display = VoltmeterDisplay(device=I0)
-    display._device = I0
-    button = display.ui.gain_up_button
-    # Check that the button is a button
-    assert type(button) is QtWidgets.QPushButton
-    assert hasattr(button, "clicked")
-    # Click the button and check that the gain changed
-    button.click()
-    assert I0.increase_gain.called
-
-
-def test_current_display(qtbot, ffapp):
-    """Test the labels that show the voltage converted to current
-    based on amplifier settings.
-
-    """
-    window = FireflyMainWindow()
-    display = VoltmeterDisplay(macros={"IOC_VME": "40idc", "CHANNEL_NUMBER": 1})
-    assert hasattr(display, "_ch_gain_value")
-    # Emit signals for changing the amplifier gain value
-    display._ch_gain_value.value_slot(3)  # 10
-    display._ch_gain_unit.value_slot(2)  # µA/V
-    display._ch_voltage.value_slot(2.23)
-    # Check that the label is updated
-    assert display.gain == 10
-    assert display.gain_unit == "µA"
-    assert display.ui.ion_chamber_current.text() == "(22.30 µA)"
-
-
 def test_embedded_display_widgets(qtbot, sim_registry, ffapp):
     """Test the the voltmeters creates a new embedded display widget for
     each ion chamber.

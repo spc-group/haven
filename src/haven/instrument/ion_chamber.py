@@ -5,6 +5,7 @@ import logging
 import asyncio
 from collections import OrderedDict
 import time
+import warnings
 
 import epics
 from ophyd import (
@@ -26,6 +27,9 @@ from ophyd.ophydobj import OphydObject
 from ophyd.pseudopos import pseudo_position_argument, real_position_argument
 from ophyd.mca import EpicsMCARecord
 from ophyd.status import SubscriptionStatus
+from apstools.devices import SRS570_PreAmplifier
+from pcdsdevices.signal import MultiDerivedSignal, MultiDerivedSignalRO
+from pcdsdevices.type_hints import SignalToValue, OphydDataType
 import numpy as np
 
 from .scaler_triggered import ScalerTriggered, ScalerSignal, ScalerSignalRO
@@ -42,79 +46,80 @@ log = logging.getLogger(__name__)
 __all__ = ["IonChamber", "load_ion_chambers"]
 
 
-class SensitivityPositioner(PVPositionerPC):
-    setpoint = Cpt(EpicsSignal, ".VAL", kind=(Kind.config | Kind.normal))
-    readback = Cpt(EpicsSignal, ".VAL", kind=(Kind.config | Kind.normal))
-    readback_string = Cpt(
-        EpicsSignal, ".VAL", kind=(Kind.config | Kind.normal), string=True
-    )
 
+class IonChamberPreAmplifier(SRS570_PreAmplifier):
+    """An SRS-570 pre-amplifier driven by an ion chamber.
 
-class SetAllPositioner(PVPositionerPC):
-    setpoint = Cpt(EpicsSignal, "")
-    readback = Cpt(EpicsSignal, "")
+    Has extra signals for walking up and down the sensitivity
+    range. By setting the *sensitivity_level* signal, the offset is
+    also set to be 10% of the sensitivity.
 
+    The signal *sensitivity_tweak* can also be used to move by a given
+    number of sensitivity levels, e.g. if currently at 50 µA/V,
+    setting ``sensitivity_tweak.set(-2)`` would go to 10 µA/V.
 
-class SensitivityLevelPositioner(PseudoPositioner):
-    values = [1, 2, 5, 10, 20, 50, 100, 200, 500]
-    units = ["pA/V", "nA/V", "µA/V", "mA/V"]
+    """
+    values = ["1", "2", "5", "10", "20", "50", "100", "200", "500"]
+    units = ["pA/V", "nA/V", "uA/V", "mA/V"]
     offset_difference = -3  # How many levels higher should the offset be
 
-    sens_level = Cpt(
-        PseudoSingle,
-        limits=(0, 27),
-        labels={"ion_chamber_sensitivities", "ion_chamber_gains"},
-    )
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.sensitivity_tweak.subscribe(self.tweak_sensitivity, run=False)
 
-    # Sensitivity settings
-    sens_unit = Cpt(
-        SensitivityPositioner, ":sens_unit", kind=Kind.config, settle_time=0.1
-    )
-    sens_value = Cpt(
-        SensitivityPositioner, ":sens_num", kind=Kind.config, settle_time=0.1
-    )
-    offset_unit = Cpt(
-        SensitivityPositioner, ":offset_unit", kind=Kind.config, settle_time=0.1
-    )
-    offset_value = Cpt(
-        SensitivityPositioner, ":offset_num", kind=Kind.config, settle_time=0.1
-    )
-    set_all = Cpt(
-        SetAllPositioner,
-        ":init.PROC",
-        kind=Kind.omitted,
-        settle_time=0.1,
-        limits=(0, 1),
-    )
+    def tweak_sensitivity(self, *args, obj: OphydObject, value: int, **kwargs):
+        new_level = self.sensitivity_level.get() + value
+        self.sensitivity_level.put(new_level)
 
-    def _level_to_num(self, level):
-        return level % len(self.values)
+    def _level_to_value(self, level):
+        return self.values[level % len(self.values)]
 
     def _level_to_unit(self, level):
-        return int(level / len(self.values))
-
-    @pseudo_position_argument
-    def forward(self, target_gain_level):
-        "Given a target energy, transform to the desired target gain level."
-        new_level = target_gain_level.sens_level
+        return self.units[int(level / len(self.values))]
+    
+    def _get_sensitivity_level(self, mds: MultiDerivedSignal, items: SignalToValue) -> int:
+        "Given a sensitivity value and unit , transform to the desired level."
+        value = items[self.sensitivity_value]
+        unit = items[self.sensitivity_unit]
+        new_gain =  self.values.index(value) + self.units.index(unit) * len(self.values)        
+        return new_gain
+        
+    def _put_sensitivity_level(self, mds: MultiDerivedSignal, value: OphydDataType) -> SignalToValue:
+        "Given a sensitivity level, transform to the desired value and unit."
+        # Determine new values
+        new_level = value
         new_offset = max(new_level + self.offset_difference, 0)
-        real_position = self.RealPosition(
-            sens_value=self._level_to_num(new_level),
-            sens_unit=self._level_to_unit(new_level),
-            offset_value=self._level_to_num(new_offset),
-            offset_unit=self._level_to_unit(new_offset),
-            set_all=1,
-        )
-        return real_position
+        # Check for out of bounds
+        lmin, lmax = (0, 27)
+        msg = f"Cannot set {self.name} outside range ({lmin}, {lmax}), received {new_level}."
+        if new_level < lmin:
+            new_level = lmin
+            warnings.warn(msg)
+        elif new_level > lmax:
+            new_level = lmax
+            warnings.warn(msg)
+        # Return calculated gain and offset
+        result = {
+            self.sensitivity_value: self._level_to_value(new_level),
+            self.sensitivity_unit: self._level_to_unit(new_level),
+            self.offset_value: self._level_to_value(new_offset),
+            self.offset_unit: self._level_to_unit(new_offset),
+            # set_all=1,
+        }
+        return result
 
-    @real_position_argument
-    def inverse(self, sensitivity):
-        """Given a sensitivity value and unit, convert to a numeric energy
-        level (1, 2, 3, etc).
+    sensitivity_level = Cpt(
+        MultiDerivedSignal,
+        attrs=["sensitivity_value", "sensitivity_unit"],
+        calculate_on_get=_get_sensitivity_level,
+        calculate_on_put=_put_sensitivity_level,
+        kind=Kind.omitted,
+    )
 
-        """
-        new_gain = sensitivity.sens_value + sensitivity.sens_unit * len(self.values)
-        return self.PseudoPosition(sens_level=new_gain)
+    sensitivity_tweak = Cpt(
+        Signal,
+        kind=Kind.omitted,
+    )
 
 
 # @registry.register
@@ -175,7 +180,9 @@ class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
     description: OphydObject = FCpt(
         EpicsSignalRO, "{scaler_prefix}:scaler1.NM{ch_num}", kind=Kind.config
     )
-    # Scaler mode support
+    # Signal chain devices
+    preamp = FCpt(IonChamberPreAmplifier, "{preamp_prefix}")
+    # Old Scaler mode support
     clock: OphydObject = FCpt(
         EpicsSignal,
         "{scaler_prefix}:scaler1.FREQ",
@@ -195,9 +202,6 @@ class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
     )
     exposure_time: OphydObject = FCpt(
         EpicsSignal, "{scaler_prefix}:scaler1.TP", kind=Kind.normal
-    )
-    sensitivity: OphydObject = FCpt(
-        SensitivityLevelPositioner, "{preamp_prefix}", kind=Kind.config
     )
     auto_count: OphydObject = FCpt(
         EpicsSignal, "{scaler_prefix}:scaler1.CONT", kind=Kind.omitted

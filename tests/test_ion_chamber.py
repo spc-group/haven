@@ -1,6 +1,6 @@
 import pytest
 import time
-from unittest import mock
+import warnings
 
 import numpy as np
 
@@ -9,75 +9,69 @@ from haven import exceptions
 import epics
 
 
-def test_gain_level(ioc_preamp, ioc_scaler):
-    positioner = ion_chamber.SensitivityLevelPositioner(
-        f"{ioc_preamp.prefix}SR01", name="positioner"
-    )
-    positioner.wait_for_connection()
-    assert positioner.get(use_monitor=False).sens_value.readback == epics.caget(
-        ioc_preamp.pvs["preamp1_sens_num"]
-    )
-    assert positioner.get(use_monitor=False).sens_unit.readback == epics.caget(
-        ioc_preamp.pvs["preamp1_sens_unit"]
-    )
-    # Move the gain level
-    positioner.sens_level.set(12)
-    time.sleep(0.1)  # Caproto breaks pseudopositioner status
-    # Check that the preamp sensitivities are moved
-    assert positioner.get(use_monitor=False).sens_value.readback == 3
-    assert positioner.get(use_monitor=False).sens_unit.readback == 1
-    # Check that the preamp sensitivity offsets are moved
-    assert positioner.get(use_monitor=False).offset_value.readback == 0
-    assert positioner.get(use_monitor=False).offset_unit.readback == 1
+def test_gain_level(sim_ion_chamber):
+    preamp = sim_ion_chamber.preamp
+    assert isinstance(preamp.sensitivity_value.get(use_monitor=False), str)
+    assert isinstance(preamp.sensitivity_unit.get(use_monitor=False), str)
     # Change the preamp settings
-    epics.caput(ioc_preamp.pvs["preamp1_sens_num"], 0)
-    epics.caput(ioc_preamp.pvs["preamp1_sens_unit"], 3)
-    epics.caput(ioc_preamp.pvs["preamp1_offset_num"], 1)
-    epics.caput(ioc_preamp.pvs["preamp1_offset_unit"], 3)
-    time.sleep(0.1)
+    preamp.sensitivity_value.put("20"),
+    preamp.sensitivity_unit.put("uA/V"),
+    preamp.offset_value.put("2"),
+    preamp.offset_unit.put("uA/V"),
     # Check that the gain level moved
-    assert positioner.sens_level.get(use_monitor=False).readback == 27
+    assert preamp.sensitivity_level.get(use_monitor=False) == 22
+    # Move the gain level
+    preamp.sensitivity_level.set(12).wait(timeout=3)
+    # Check that the preamp sensitivities are moved
+    assert preamp.sensitivity_value.get(use_monitor=False) == "10"
+    assert preamp.sensitivity_unit.get(use_monitor=False) == "nA/V"
+    # Check that the preamp sensitivity offsets are moved
+    assert preamp.offset_value.get(use_monitor=False) == "1"
+    assert preamp.offset_unit.get(use_monitor=False) == "nA/V"
 
 
-def test_gain_changes(sim_registry, ioc_preamp, ioc_scaler):
-    # Setup the ion chamber and connect to the IOC
-    device = ion_chamber.IonChamber(
-        prefix=ioc_scaler.prefix,
-        preamp_prefix=f"{ioc_preamp.prefix}SR01",
-        ch_num=2,
-        name="ion_chamber",
-    )
-    statuses = [
-        device.sensitivity.sens_value.set(2),
-        device.sensitivity.sens_unit.set(1),
-    ]
-    [status.wait() for status in statuses]
-    assert device.sensitivity.sens_value.get(use_monitor=False).setpoint == 2
-    assert device.sensitivity.sens_unit.get(use_monitor=False).setpoint == 1
+def test_gain_changes(sim_ion_chamber):
+    """Check that the gain can be turned up and down."""
+    # Set some starting values
+    device = sim_ion_chamber
+    preamp = device.preamp
+    preamp.sensitivity_value.put("5"),
+    preamp.sensitivity_unit.put("nA/V"),
+    assert preamp.sensitivity_value.get(use_monitor=False) == "5"
+    assert preamp.sensitivity_unit.get(use_monitor=False) == "nA/V"
     # Change the gain without changing units
-    device.increase_gain().wait()
-    assert device.sensitivity.sens_value.get(use_monitor=False).readback == 1
-    assert device.sensitivity.sens_unit.get(use_monitor=False).readback == 1
-    device.decrease_gain().wait()
-    assert device.sensitivity.sens_value.get(use_monitor=False).readback == 2
-    assert device.sensitivity.sens_unit.get(use_monitor=False).readback == 1
+    preamp.sensitivity_tweak.put(1)
+    assert preamp.sensitivity_value.get(use_monitor=False) == "10"
+    assert preamp.sensitivity_unit.get(use_monitor=False) == "nA/V"
+    preamp.sensitivity_tweak.put(-1)
+    assert preamp.sensitivity_value.get(use_monitor=False) == "5"
+    assert preamp.sensitivity_unit.get(use_monitor=False) == "nA/V"
     # Change the gain so that it overflows and we have to change units
-    max_sensitivity = len(device.sensitivity.values) - 1
-    max_unit = len(device.sensitivity.units) - 1
-    device.sensitivity.sens_value.set(max_sensitivity).wait()
-    assert device.sensitivity.sens_value.get(use_monitor=False).readback == 8
-    device.decrease_gain().wait()
-    assert device.sensitivity.sens_value.get(use_monitor=False).readback == 0
-    assert device.sensitivity.sens_unit.get(use_monitor=False).readback == 2
-    # Check that the gain can't overflow the acceptable values
-    device.sensitivity.sens_value.set(0).wait()
-    device.sensitivity.sens_unit.set(0).wait()
-    with pytest.raises(exceptions.GainOverflow):
-        device.increase_gain()
-    device.sensitivity.sens_value.set(0).wait()
-    device.sensitivity.sens_unit.set(max_unit).wait()
-    with pytest.raises(exceptions.GainOverflow):
-        device.decrease_gain()
+    max_sensitivity = preamp.values[-1]
+    max_unit = preamp.units[-1]
+    preamp.sensitivity_value.put(max_sensitivity)
+    assert preamp.sensitivity_value.get(use_monitor=False) == "500"
+    preamp.sensitivity_tweak.set(1).wait()
+    assert preamp.sensitivity_value.get(use_monitor=False) == "1"
+    assert preamp.sensitivity_unit.get(use_monitor=False) == "uA/V"
+    # Check that the gain can't go too low
+    preamp.sensitivity_value.put("1")
+    preamp.sensitivity_unit.put("pA/V")
+    with warnings.catch_warnings(record=True) as ws:
+        preamp.sensitivity_tweak.set(-1).wait()
+        has_warning = any(["outside range" in str(w.message) for w in ws])
+        assert has_warning, ws
+    assert preamp.sensitivity_value.get(use_monitor=False) == "1"
+    assert preamp.sensitivity_unit.get(use_monitor=False) == "pA/V"
+    # Check that the gain can't go too high
+    preamp.sensitivity_value.set(max_sensitivity).wait()
+    preamp.sensitivity_unit.set(max_unit).wait()
+    with warnings.catch_warnings(record=True) as ws:
+        preamp.sensitivity_tweak.set(1).wait()
+        has_warning = any(["outside range" in str(w.message) for w in ws])
+        assert has_warning, ws
+    assert preamp.sensitivity_value.get(use_monitor=False) == "1"
+    assert preamp.sensitivity_unit.get(use_monitor=False) == "mA/V"
 
 
 def test_load_ion_chambers(sim_registry):
@@ -85,7 +79,7 @@ def test_load_ion_chambers(sim_registry):
     # Test the channel info is extracted properly
     ic = sim_registry.find(label="ion_chambers")
     assert ic.ch_num == 2
-    assert ic.sensitivity.prefix.split(":")[-1] == "SR01"
+    assert ic.preamp.prefix.split(":")[-1] == "SR01"
 
 
 def test_default_pv_prefix():
