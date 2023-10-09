@@ -47,7 +47,6 @@ log = logging.getLogger(__name__)
 __all__ = ["IonChamber", "load_ion_chambers"]
 
 
-
 class IonChamberPreAmplifier(SRS570_PreAmplifier):
     """An SRS-570 pre-amplifier driven by an ion chamber.
 
@@ -56,6 +55,7 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
     also set to be 10% of the sensitivity.
 
     """
+
     values = ["1", "2", "5", "10", "20", "50", "100", "200", "500"]
     units = ["pA/V", "nA/V", "uA/V", "mA/V"]
     offset_difference = -3  # How many levels higher should the offset be
@@ -71,10 +71,14 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
         """
         Amplifier gain (A/V), as floating-point number.
         """
-        return pint.Quantity(
-            float(self.values[self.sensitivity_value.get()]),
-            self.units[self.sensitivity_unit.get()]
-        ).to("A/V").magnitude    
+        return (
+            pint.Quantity(
+                float(self.values[self.sensitivity_value.get()]),
+                self.units[self.sensitivity_unit.get()],
+            )
+            .to("A/V")
+            .magnitude
+        )
 
     def update_sensitivity_text(self, *args, obj: OphydObject, **kwargs):
         val = self.values[self.sensitivity_value.get()]
@@ -87,17 +91,23 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
 
     def _level_to_unit(self, level):
         return int(level / len(self.values))
-    
-    def _get_sensitivity_level(self, mds: MultiDerivedSignal, items: SignalToValue) -> int:
+
+    def _get_sensitivity_level(
+        self, mds: MultiDerivedSignal, items: SignalToValue
+    ) -> int:
         "Given a sensitivity value and unit , transform to the desired level."
         value = items[self.sensitivity_value]
         unit = items[self.sensitivity_unit]
         # Determine sensitivity level
         new_level = value + unit * len(self.values)
-        log.debug(f"Getting sensitivity level {self.name}: {value} {unit} -> {new_level}")
+        log.debug(
+            f"Getting sensitivity level {self.name}: {value} {unit} -> {new_level}"
+        )
         return new_level
-        
-    def _put_sensitivity_level(self, mds: MultiDerivedSignal, value: OphydDataType) -> SignalToValue:
+
+    def _put_sensitivity_level(
+        self, mds: MultiDerivedSignal, value: OphydDataType
+    ) -> SignalToValue:
         "Given a sensitivity level, transform to the desired value and unit."
         # Determine new values
         new_level = value
@@ -111,7 +121,7 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
             raise exceptions.GainOverflow(msg)
         # Return calculated gain and offset
         offset_value = self.values[self._level_to_value(new_offset)]
-        offset_unit = self.units[self._level_to_unit(new_offset)].split('/')[0]
+        offset_unit = self.units[self._level_to_unit(new_offset)].split("/")[0]
         result = {
             self.sensitivity_value: self._level_to_value(new_level),
             self.sensitivity_unit: self._level_to_unit(new_level),

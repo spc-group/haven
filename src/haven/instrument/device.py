@@ -42,7 +42,7 @@ async def make_device(DeviceClass, *args, FakeDeviceClass=None, **kwargs) -> Dev
     """
     # Make a fake device if the beamline is not connected
     config = load_config()
-    if config['beamline']['is_connected']:
+    if config["beamline"]["is_connected"]:
         Cls = DeviceClass
     else:
         # Make fake device
@@ -58,7 +58,7 @@ async def make_device(DeviceClass, *args, FakeDeviceClass=None, **kwargs) -> Dev
         device = Cls(
             *args,
             **kwargs,
-        )        
+        )
         await await_for_connection(device)
     except TimeoutError as e:
         if DeviceClass.__name__ == "VortexEx":

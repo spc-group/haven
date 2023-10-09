@@ -51,8 +51,19 @@ from pcdsdevices.type_hints import SignalToValue, OphydDataType
 
 from .._iconfig import load_config
 from .instrument_registry import registry
-from .fluorescence_detector import XRFMixin, ROIMixin, MCASumMixin, add_roi_sums, UseROISignal
-from .device import await_for_connection, aload_devices, make_device, RegexComponent as RECpt
+from .fluorescence_detector import (
+    XRFMixin,
+    ROIMixin,
+    MCASumMixin,
+    add_roi_sums,
+    UseROISignal,
+)
+from .device import (
+    await_for_connection,
+    aload_devices,
+    make_device,
+    RegexComponent as RECpt,
+)
 
 
 log = logging.getLogger(__name__)
@@ -66,18 +77,26 @@ NUM_ROIS = 16
 
 class ChannelSignal(MultiDerivedSignal):
     """A high/low range limit channel for an ROI."""
+
     def set(
         self,
         value: OphydDataType,
         *,
         timeout: Optional[float] = None,
-        settle_time: Optional[float] = None
+        settle_time: Optional[float] = None,
     ) -> StatusBase:
         # Check for existing signals and, if necessary, wait them out
-        signals = [self.parent.hi_chan, self.parent.lo_chan, self.parent.size, self.parent._lo_chan]
+        signals = [
+            self.parent.hi_chan,
+            self.parent.lo_chan,
+            self.parent.size,
+            self.parent._lo_chan,
+        ]
+
         def get_threads():
             thds = [sig._set_thread for sig in signals if sig._set_thread]
             return [th for th in thds if th is not None]
+
         while len(threads := get_threads()) > 0:
             for th in threads:
                 th.join()
@@ -92,23 +111,24 @@ class ROI(ROIMixin):
         size = items[self.size]
         return lo + size
 
-    def _put_hi_chan(self, mds: MultiDerivedSignal, value: OphydDataType) -> SignalToValue:
+    def _put_hi_chan(
+        self, mds: MultiDerivedSignal, value: OphydDataType
+    ) -> SignalToValue:
         lo = self._lo_chan.get()
         new_size = value - lo
-        return {
-            self.size: new_size
-        }
+        return {self.size: new_size}
 
     def _get_lo_chan(self, mds: MultiDerivedSignal, items: SignalToValue) -> int:
         return items[self._lo_chan]
 
-    def _put_lo_chan(self, mds: MultiDerivedSignal, value: OphydDataType) -> SignalToValue:
+    def _put_lo_chan(
+        self, mds: MultiDerivedSignal, value: OphydDataType
+    ) -> SignalToValue:
         hi = self.hi_chan.get()
         return {
             self._lo_chan: value,
             self.size: hi - value,
         }
-
 
     label = Cpt(EpicsSignal, "Name", kind="config")
     _lo_chan = Cpt(EpicsSignal, "MinX", kind="omitted")
@@ -147,7 +167,9 @@ class ROI(ROIMixin):
     kind = active_kind
 
 
-def add_rois(range_: Sequence[int] = range(NUM_ROIS), kind=Kind.normal, lazy=True, **kwargs):
+def add_rois(
+    range_: Sequence[int] = range(NUM_ROIS), kind=Kind.normal, lazy=True, **kwargs
+):
     """Add one or more ROIs to an MCA instance
 
     Parameters
@@ -179,9 +201,30 @@ def add_rois(range_: Sequence[int] = range(NUM_ROIS), kind=Kind.normal, lazy=Tru
 class MCARecord(MCASumMixin, Device):
     rois = DDC(add_rois(), kind=active_kind)
     spectrum = ADCpt(EpicsSignalRO, ":ArrayData", kind="normal", lazy=True)
-    dead_time_percent = RECpt(EpicsSignalRO, ":DeadTime_RBV", pattern=r":MCA", repl=":C", lazy=True, kind="normal")
-    dead_time_factor = RECpt(EpicsSignalRO, ":DTFactor_RBV", pattern=r":MCA", repl=":C", lazy=True, kind="normal")
-    clock_ticks = RECpt(EpicsSignalRO, "SCA:0:Value_RBV", pattern=r":MCA", repl=":C", lazy=True, kind="normal")
+    dead_time_percent = RECpt(
+        EpicsSignalRO,
+        ":DeadTime_RBV",
+        pattern=r":MCA",
+        repl=":C",
+        lazy=True,
+        kind="normal",
+    )
+    dead_time_factor = RECpt(
+        EpicsSignalRO,
+        ":DTFactor_RBV",
+        pattern=r":MCA",
+        repl=":C",
+        lazy=True,
+        kind="normal",
+    )
+    clock_ticks = RECpt(
+        EpicsSignalRO,
+        "SCA:0:Value_RBV",
+        pattern=r":MCA",
+        repl=":C",
+        lazy=True,
+        kind="normal",
+    )
     _default_read_attrs = [
         "rois",
         "spectrum",
@@ -192,7 +235,6 @@ class MCARecord(MCASumMixin, Device):
     ]
     _default_configuration_attrs = ["rois"]
     kind = active_kind
-
 
 
 def add_mcas(range_, kind=active_kind, **kwargs):
@@ -206,7 +248,7 @@ def add_mcas(range_, kind=active_kind, **kwargs):
     """
     defn = OrderedDict()
     kwargs["kind"] = kind
-    kwargs['lazy'] = True
+    kwargs["lazy"] = True
     for idx in range_:
         attr = f"mca{idx}"
         defn[attr] = (
@@ -219,17 +261,20 @@ def add_mcas(range_, kind=active_kind, **kwargs):
 
 class Xspress3Detector(SingleTrigger_V34, DetectorBase, XRFMixin):
     """A fluorescence detector plugged into an Xspress3 readout."""
+
     _dead_times: dict
 
     def get_acquire_frames(self, mds: MultiDerivedSignal, items: SignalToValue) -> int:
         return items[self.acquire]
-    
-    def put_acquire_frames(self, mds: MultiDerivedSignal, value: OphydDataType, num_frames: int) -> SignalToValue:
+
+    def put_acquire_frames(
+        self, mds: MultiDerivedSignal, value: OphydDataType, num_frames: int
+    ) -> SignalToValue:
         return {
             self.cam.num_images: num_frames,
             self.acquire: value,
         }
-    
+
     cam = ADCpt(CamMixin_V34, "det1:")
     # Core control interface signals
     detector_state = ADCpt(EpicsSignalRO, "det1:DetectorState_RBV", kind="omitted")
@@ -281,7 +326,7 @@ class Xspress3Detector(SingleTrigger_V34, DetectorBase, XRFMixin):
         "cam",
         "mcas",
     ]
-    
+
     class erase_states(IntEnum):
         DONE = 0
         ERASE = 1
@@ -317,7 +362,7 @@ class Xspress3Detector(SingleTrigger_V34, DetectorBase, XRFMixin):
         self.stage_sigs[self.cam.trigger_mode] = self.trigger_modes.INTERNAL
         self.stage_sigs[self.cam.num_images] = 1
         # The image mode is not a real signal in the Xspress3 IOC
-        del self.stage_sigs['cam.image_mode']
+        del self.stage_sigs["cam.image_mode"]
         # Set up subscriptions for dead-time calculations
         self._dead_times = {}
         for mca in self.mca_records():
@@ -361,26 +406,32 @@ class Xspress3Detector(SingleTrigger_V34, DetectorBase, XRFMixin):
 
         """
         # Get the data for frame number as a reference
-        image_counter = pd.DataFrame(self._fly_data[self.cam.array_counter],
-                            columns=["timestamps", "image_counter"])
-        image_counter['image_counter'] -= 2  # Correct for stray frames
+        image_counter = pd.DataFrame(
+            self._fly_data[self.cam.array_counter],
+            columns=["timestamps", "image_counter"],
+        )
+        image_counter["image_counter"] -= 2  # Correct for stray frames
         # Build all the individual signals' dataframes
         dfs = []
         for sig, data in self._fly_data.items():
             df = pd.DataFrame(data, columns=["timestamps", sig])
             old_shape = df.shape
             nums = (df.timestamps - image_counter.timestamps).abs()
+
             # Assign each datum an image number based on timestamp
             def get_image_num(ts):
                 """Get the image number taken closest to a given timestamp."""
-                num = image_counter.iloc[(image_counter['timestamps']-ts).abs().argsort()[:1]]
+                num = image_counter.iloc[
+                    (image_counter["timestamps"] - ts).abs().argsort()[:1]
+                ]
                 num = num["image_counter"].iloc[0]
                 return num
+
             im_nums = [get_image_num(ts) for ts in df.timestamps.values]
             df.index = im_nums
             # Remove duplicates and intermediate ROI sums
             df.sort_values("timestamps")
-            df = df.groupby(df.index).last()            
+            df = df.groupby(df.index).last()
             dfs.append(df)
         # Combine frames into monolithic dataframes
         data = image_counter.copy()
@@ -442,6 +493,7 @@ class Xspress3Detector(SingleTrigger_V34, DetectorBase, XRFMixin):
         for walk in self.walk_fly_signals():
             sig = walk.item
             sig.subscribe(self.save_fly_datum, run=True)
+
         # Set up the status for when the detector is ready to fly
         def check_acquiring(*, old_value, value, **kwargs):
             is_acquiring = value == self.detector_states.ACQUIRE
@@ -517,7 +569,9 @@ async def make_xspress_device(name, prefix, num_elements):
     class_name = name.title().replace("_", "")
     parent_classes = (Xspress3Detector,)
     Cls = type(class_name, parent_classes, attrs)
-    return await make_device(Cls, name=name, prefix=f"{prefix}:", labels={"xrf_detectors"})
+    return await make_device(
+        Cls, name=name, prefix=f"{prefix}:", labels={"xrf_detectors"}
+    )
 
 
 def load_xspress_coros(config=None):
@@ -525,7 +579,9 @@ def load_xspress_coros(config=None):
         config = load_config()
     # Create detector device
     for name, cfg in config.get("xspress", {}).items():
-        yield make_xspress_device(prefix=cfg["prefix"], num_elements=cfg["num_elements"], name=name)
+        yield make_xspress_device(
+            prefix=cfg["prefix"], num_elements=cfg["num_elements"], name=name
+        )
 
 
 def load_xspress(config=None):

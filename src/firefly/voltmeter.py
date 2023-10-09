@@ -33,6 +33,7 @@ class VoltmeterDisplay(display.FireflyDisplay):
       (default).
 
     """
+
     _device: IonChamber = None
 
     def __init__(

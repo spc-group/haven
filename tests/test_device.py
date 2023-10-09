@@ -27,4 +27,3 @@ async def test_accept_fake_device(sim_registry):
     FakeMotor = sim.make_fake_device(EpicsMotor)
     motor = await make_device(HavenMotor, name="real_motor", FakeDeviceClass=FakeMotor)
     assert isinstance(motor, FakeMotor)
-    

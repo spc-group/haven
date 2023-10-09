@@ -27,13 +27,25 @@ from ophyd.pseudopos import (
     PseudoPositioner,
     PseudoSingle,
     pseudo_position_argument,
-    real_position_argument
+    real_position_argument,
 )
 
 from .scaler_triggered import ScalerTriggered
 from .instrument_registry import registry
-from .fluorescence_detector import XRFMixin, active_kind, ROIMixin, MCASumMixin, add_roi_sums, UseROISignal
-from .device import RegexComponent as RECpt, await_for_connection, aload_devices, make_device
+from .fluorescence_detector import (
+    XRFMixin,
+    active_kind,
+    ROIMixin,
+    MCASumMixin,
+    add_roi_sums,
+    UseROISignal,
+)
+from .device import (
+    RegexComponent as RECpt,
+    await_for_connection,
+    aload_devices,
+    make_device,
+)
 from .._iconfig import load_config
 from .. import exceptions
 
@@ -54,7 +66,6 @@ class SizeSignal(DerivedSignal):
         lo = self.parent.lo_chan.get()
         hi = lo + size
         return hi
-
 
 
 class ROI(ROIMixin, mca.ROI):
@@ -143,14 +154,17 @@ def add_mcas(range_, kind=active_kind, **kwargs):
         attr = f"mca{idx}"
         defn[attr] = (
             MCARecord,
-            f"mca{idx+1}", # (Epics uses 1-index instead of 0-index)
+            f"mca{idx+1}",  # (Epics uses 1-index instead of 0-index)
             kwargs,
         )
     return defn
 
 
 class DxpDetectorBase(
-        XRFMixin, flyers.FlyerInterface, mca.EpicsDXPMapping, mca.EpicsDXPMultiElementSystem, 
+    XRFMixin,
+    flyers.FlyerInterface,
+    mca.EpicsDXPMapping,
+    mca.EpicsDXPMultiElementSystem,
 ):
     """A fluorescence detector based on XIA-DXP XMAP electronics.
 
@@ -304,6 +318,7 @@ class DxpDetectorBase(
             status = StatusBase()
             status.set_exception(exc)
             return status
+
         # Set up the status for when the detector is ready to fly
         def check_acquiring(*, old_value, value, **kwargs):
             is_acquiring = bool(value)
@@ -351,9 +366,7 @@ def parse_xmap_buffer(buff):
     https://cars9.uchicago.edu/software/epics/XMAP_User_Manual.pdf
 
     """
-    data = {
-        "header": {}
-    }
+    data = {"header": {}}
     header = buff[:256]
     # Verify tag words
     assert header[0] == 0x55AA
@@ -369,7 +382,7 @@ def parse_xmap_buffer(buff):
     head_data["starting_pixel"] = header[9:11]
     head_data["module"] = header[11]
     head_data["buffer_overrun"] = header[24]
-    # head_data[""] = 
+    # head_data[""] =
     return data
 
 
@@ -394,7 +407,9 @@ async def make_dxp_device(device_name, prefix, num_elements):
     class_name = device_name.title().replace("_", "")
     parent_classes = (DxpDetectorBase,)
     Cls = type(class_name, parent_classes, attrs)
-    return await make_device(Cls, prefix=f"{prefix}:", name=device_name, labels={"xrf_detectors"})
+    return await make_device(
+        Cls, prefix=f"{prefix}:", name=device_name, labels={"xrf_detectors"}
+    )
 
 
 def load_dxp_coros(config=None):

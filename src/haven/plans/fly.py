@@ -94,7 +94,7 @@ def grid_fly_scan(
     detectors: Sequence[FlyerInterface],
     *args,
     snake_axes: Union[bool, Sequence[Device]] = False,
-    md: Mapping = {}
+    md: Mapping = {},
 ):
     """Scan over a mesh with one of the axes collecting without stopping.
 

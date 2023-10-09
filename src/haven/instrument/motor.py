@@ -27,7 +27,7 @@ class HavenMotor(EpicsMotor):
     description = Cpt(EpicsSignal, ".DESC", kind="omitted")
     tweak_value = Cpt(EpicsSignal, ".TWV", kind="omitted")
     tweak_forward = Cpt(EpicsSignal, ".TWF", kind="omitted", tolerance=2)
-    tweak_reverse = Cpt(EpicsSignal, ".TWR",kind="omitted", tolerance=2)
+    tweak_reverse = Cpt(EpicsSignal, ".TWR", kind="omitted", tolerance=2)
     motor_stop = Cpt(EpicsSignal, ".STOP", kind="omitted", tolerance=2)
     soft_limit_violation = Cpt(EpicsSignalRO, ".LVIO", kind="omitted")
 
@@ -91,7 +91,7 @@ async def load_motor(prefix: str, motor_num: int, ioc_name: str = None):
     pv = f"{prefix}:m{motor_num+1}"
     # Get motor names
     config = load_config()
-    if not config['beamline']['is_connected']:
+    if not config["beamline"]["is_connected"]:
         # Just use a generic name
         name = f"{prefix}_m{motor_num+1}"
     else:
@@ -104,7 +104,7 @@ async def load_motor(prefix: str, motor_num: int, ioc_name: str = None):
             return
         else:
             log.debug(f"Resolved motor {pv} to '{name}'")
-    
+
     # Create the motor device
     if name == f"motor {motor_num+1}":
         # It's an unnamed motor, so skip it

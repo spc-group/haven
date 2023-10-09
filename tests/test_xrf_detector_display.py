@@ -34,7 +34,7 @@ def xrf_display(ffapp, request):
     return display
 
 
-@pytest.mark.parametrize('det_fixture', ["dxp", "xspress"])
+@pytest.mark.parametrize("det_fixture", ["dxp", "xspress"])
 def test_open_xrf_detector_viewer_actions(ffapp, qtbot, det_fixture, request):
     sim_det = request.getfixturevalue(det_fixture)
     # Get the area detector parts ready
@@ -46,7 +46,7 @@ def test_open_xrf_detector_viewer_actions(ffapp, qtbot, det_fixture, request):
     assert "FireflyMainWindow_xrf_detector_vortex_me4" in ffapp.windows.keys()
 
 
-@pytest.mark.parametrize('xrf_display', ["dxp", "xspress"], indirect=True)    
+@pytest.mark.parametrize("xrf_display", ["dxp", "xspress"], indirect=True)
 def test_roi_widgets(xrf_display):
     xrf_display.draw_roi_widgets(2)
     # Check that the widgets were drawn
@@ -54,7 +54,7 @@ def test_roi_widgets(xrf_display):
     disp = xrf_display.roi_displays[0]
 
 
-@pytest.mark.parametrize('xrf_display', ["dxp", "xspress"], indirect=True)
+@pytest.mark.parametrize("xrf_display", ["dxp", "xspress"], indirect=True)
 def test_roi_element_comboboxes(ffapp, qtbot, xrf_display):
     # Check that the comboboxes have the right number of entries
     element_cb = xrf_display.ui.mca_combobox
@@ -63,13 +63,11 @@ def test_roi_element_comboboxes(ffapp, qtbot, xrf_display):
     assert roi_cb.count() == xrf_display.device.num_rois
 
 
-@pytest.mark.parametrize('det_fixture', ["dxp", "xspress"])
+@pytest.mark.parametrize("det_fixture", ["dxp", "xspress"])
 def test_roi_selection(ffapp, qtbot, det_fixture, request):
     det = request.getfixturevalue(det_fixture)
     FireflyMainWindow()
-    display = XRFROIDisplay(
-        macros={"DEV": det.name, "NUM": 2, "MCA": 2, "ROI": 2}
-    )
+    display = XRFROIDisplay(macros={"DEV": det.name, "NUM": 2, "MCA": 2, "ROI": 2})
     # Unchecked box should be bland
     assert "background" not in display.styleSheet()
     # Make the ROI selected and check for a distinct background
@@ -83,7 +81,7 @@ def test_roi_selection(ffapp, qtbot, det_fixture, request):
     assert f"background: {display.selected_background}" not in display.styleSheet()
 
 
-@pytest.mark.parametrize('xrf_display', ["dxp", "xspress"], indirect=True)
+@pytest.mark.parametrize("xrf_display", ["dxp", "xspress"], indirect=True)
 def test_all_rois_selection(xrf_display):
     """Are all the other ROIs disabled when one is selected?"""
     roi_display = xrf_display.roi_displays[0]
@@ -93,7 +91,7 @@ def test_all_rois_selection(xrf_display):
     assert not xrf_display.roi_displays[1].isEnabled()
 
 
-@pytest.mark.parametrize('xrf_display', ["dxp", "xspress"], indirect=True)
+@pytest.mark.parametrize("xrf_display", ["dxp", "xspress"], indirect=True)
 def test_all_mcas_selection(xrf_display):
     """Are all the other ROIs disabled when one is selected?"""
     mca_display = xrf_display.mca_displays[0]
@@ -103,7 +101,7 @@ def test_all_mcas_selection(xrf_display):
     assert not xrf_display.mca_displays[1].isEnabled()
 
 
-@pytest.mark.parametrize('xrf_display', ["dxp", "xspress"], indirect=True)    
+@pytest.mark.parametrize("xrf_display", ["dxp", "xspress"], indirect=True)
 def test_update_roi_spectra(qtbot, xrf_display):
     spectra = np.random.default_rng(seed=0).integers(
         0, 65536, dtype=np.int_, size=(4, 1024)
@@ -128,7 +126,7 @@ def test_update_roi_spectra(qtbot, xrf_display):
     assert len(data_items) == 1
 
 
-@pytest.mark.parametrize('xrf_display', ["dxp", "xspress"], indirect=True)    
+@pytest.mark.parametrize("xrf_display", ["dxp", "xspress"], indirect=True)
 def test_update_mca_spectra(xrf_display, qtbot):
     spectra = np.random.default_rng(seed=0).integers(
         0, 65536, dtype=np.int_, size=(4, 1024)
@@ -156,7 +154,7 @@ def test_update_mca_spectra(xrf_display, qtbot):
     assert len(data_items) == 2
 
 
-@pytest.mark.parametrize('xrf_display', ["dxp", "xspress"], indirect=True)    
+@pytest.mark.parametrize("xrf_display", ["dxp", "xspress"], indirect=True)
 def test_mca_selected_highlights(qtbot, xrf_display):
     """Is the spectrum highlighted when the element row is selected."""
     mca_display = xrf_display.mca_displays[1]
@@ -182,7 +180,7 @@ def test_mca_selected_highlights(qtbot, xrf_display):
     assert other_data_item.opacity() == 0.15
 
 
-@pytest.mark.parametrize('xrf_display', ["dxp", "xspress"], indirect=True)
+@pytest.mark.parametrize("xrf_display", ["dxp", "xspress"], indirect=True)
 def test_show_mca_region_visibility(xrf_display):
     """Is the spectrum highlighted when the element row is selected."""
     # Check that the region is hidden at startup
@@ -198,7 +196,7 @@ def test_show_mca_region_visibility(xrf_display):
     assert not region.isVisible()
 
 
-@pytest.mark.parametrize('xrf_display', ["dxp", "xspress"], indirect=True)
+@pytest.mark.parametrize("xrf_display", ["dxp", "xspress"], indirect=True)
 def test_show_roi_region(xrf_display):
     """Is the spectrum highlighted when the element row is selected."""
     # Check that the region is hidden at startup
@@ -219,7 +217,7 @@ def test_show_roi_region(xrf_display):
     assert selected_region.isVisible()
 
 
-@pytest.mark.parametrize('xrf_display', ["dxp", "xspress"], indirect=True)
+@pytest.mark.parametrize("xrf_display", ["dxp", "xspress"], indirect=True)
 def test_mca_region_channels(xrf_display):
     """Are the channel access connections between the ROI selection region
     and the hi/lo channel PVs correct?
@@ -239,7 +237,7 @@ def test_mca_region_channels(xrf_display):
     assert region.getRegion()[0] == 47
 
 
-@pytest.mark.parametrize('xrf_display', ["dxp", "xspress"], indirect=True)
+@pytest.mark.parametrize("xrf_display", ["dxp", "xspress"], indirect=True)
 def test_mca_copyall_button(xrf_display, qtbot):
     xrf_display.mca_selected(is_selected=True, mca_num=1)
     assert xrf_display.ui.mca_copyall_button.isEnabled()
@@ -261,7 +259,7 @@ def test_mca_copyall_button(xrf_display, qtbot):
     assert not xrf_display.ui.mca_copyall_button.isEnabled()
 
 
-@pytest.mark.parametrize('xrf_display', ["dxp", "xspress"], indirect=True)
+@pytest.mark.parametrize("xrf_display", ["dxp", "xspress"], indirect=True)
 def test_roi_copyall_button(xrf_display, qtbot):
     # Set up ROI rows embedded display widgets
     for disp in xrf_display.roi_displays:
@@ -287,7 +285,7 @@ def test_roi_copyall_button(xrf_display, qtbot):
     assert not xrf_display.ui.roi_copyall_button.isEnabled()
 
 
-@pytest.mark.parametrize('xrf_display', ["dxp", "xspress"], indirect=True)
+@pytest.mark.parametrize("xrf_display", ["dxp", "xspress"], indirect=True)
 def test_mca_enableall_checkbox(xrf_display):
     checkbox = xrf_display.ui.mca_enableall_checkbox
     assert checkbox.checkState() == QtCore.Qt.PartiallyChecked
@@ -306,7 +304,7 @@ def test_mca_enableall_checkbox(xrf_display):
         assert not display.embedded_widget.ui.enabled_checkbox.isChecked()
 
 
-@pytest.mark.parametrize('xrf_display', ["dxp", "xspress"], indirect=True)
+@pytest.mark.parametrize("xrf_display", ["dxp", "xspress"], indirect=True)
 def test_roi_enableall_checkbox(xrf_display):
     checkbox = xrf_display.ui.roi_enableall_checkbox
     assert checkbox.checkState() == QtCore.Qt.PartiallyChecked
