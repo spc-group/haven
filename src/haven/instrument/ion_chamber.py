@@ -31,6 +31,7 @@ from apstools.devices import SRS570_PreAmplifier
 from pcdsdevices.signal import MultiDerivedSignal, MultiDerivedSignalRO
 from pcdsdevices.type_hints import SignalToValue, OphydDataType
 import numpy as np
+import pint
 
 from .scaler_triggered import ScalerTriggered, ScalerSignal, ScalerSignalRO
 from .instrument_registry import registry
@@ -54,10 +55,6 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
     range. By setting the *sensitivity_level* signal, the offset is
     also set to be 10% of the sensitivity.
 
-    The signal *sensitivity_tweak* can also be used to move by a given
-    number of sensitivity levels, e.g. if currently at 50 µA/V,
-    setting ``sensitivity_tweak.set(-2)`` would go to 10 µA/V.
-
     """
     values = ["1", "2", "5", "10", "20", "50", "100", "200", "500"]
     units = ["pA/V", "nA/V", "uA/V", "mA/V"]
@@ -65,24 +62,40 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.sensitivity_tweak.subscribe(self.tweak_sensitivity, run=False)
+        # Subscriptions for updating the sensitivity text
+        self.sensitivity_value.subscribe(self.update_sensitivity_text, run=False)
+        self.sensitivity_unit.subscribe(self.update_sensitivity_text, run=True)
 
-    def tweak_sensitivity(self, *args, obj: OphydObject, value: int, **kwargs):
-        new_level = self.sensitivity_level.get() + value
-        self.sensitivity_level.put(new_level)
+    @property
+    def computed_gain(self):
+        """
+        Amplifier gain (A/V), as floating-point number.
+        """
+        return pint.Quantity(
+            float(self.values[self.sensitivity_value.get()]),
+            self.units[self.sensitivity_unit.get()]
+        ).to("A/V").magnitude    
+
+    def update_sensitivity_text(self, *args, obj: OphydObject, **kwargs):
+        val = self.values[self.sensitivity_value.get()]
+        unit = self.units[self.sensitivity_unit.get()]
+        text = f"{val} {unit}"
+        self.sensitivity_text.put(text)
 
     def _level_to_value(self, level):
-        return self.values[level % len(self.values)]
+        return level % len(self.values)
 
     def _level_to_unit(self, level):
-        return self.units[int(level / len(self.values))]
+        return int(level / len(self.values))
     
     def _get_sensitivity_level(self, mds: MultiDerivedSignal, items: SignalToValue) -> int:
         "Given a sensitivity value and unit , transform to the desired level."
         value = items[self.sensitivity_value]
         unit = items[self.sensitivity_unit]
-        new_gain =  self.values.index(value) + self.units.index(unit) * len(self.values)        
-        return new_gain
+        # Determine sensitivity level
+        new_level = value + unit * len(self.values)
+        log.debug(f"Getting sensitivity level {self.name}: {value} {unit} -> {new_level}")
+        return new_level
         
     def _put_sensitivity_level(self, mds: MultiDerivedSignal, value: OphydDataType) -> SignalToValue:
         "Given a sensitivity level, transform to the desired value and unit."
@@ -93,11 +106,9 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
         lmin, lmax = (0, 27)
         msg = f"Cannot set {self.name} outside range ({lmin}, {lmax}), received {new_level}."
         if new_level < lmin:
-            new_level = lmin
-            warnings.warn(msg)
+            raise exceptions.GainOverflow(msg)
         elif new_level > lmax:
-            new_level = lmax
-            warnings.warn(msg)
+            raise exceptions.GainOverflow(msg)
         # Return calculated gain and offset
         result = {
             self.sensitivity_value: self._level_to_value(new_level),
@@ -108,6 +119,9 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
         }
         return result
 
+    sensitivity_value = Cpt(EpicsSignal, "sens_num", kind="config", string=False)
+    sensitivity_unit = Cpt(EpicsSignal, "sens_unit", kind="config", string=False)
+
     sensitivity_level = Cpt(
         MultiDerivedSignal,
         attrs=["sensitivity_value", "sensitivity_unit"],
@@ -116,7 +130,8 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
         kind=Kind.omitted,
     )
 
-    sensitivity_tweak = Cpt(
+    # A text description of the what the current sensitivity settings are
+    sensitivity_text = Cpt(
         Signal,
         kind=Kind.omitted,
     )
@@ -435,7 +450,7 @@ async def make_ion_chamber_device(
 
 async def load_ion_chamber(preamp_prefix: str, scaler_prefix: str, ch_num: int):
     # Determine ion_chamber configuration
-    preamp_prefix = f"{preamp_prefix}:SR{ch_num-1:02}"
+    preamp_prefix = f"{preamp_prefix}:SR{ch_num:02}:"
     desc_pv = f"{scaler_prefix}:scaler1.NM{ch_num}"
     # Only use this ion chamber if it has a name
     try:

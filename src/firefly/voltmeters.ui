@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>608</width>
-    <height>411</height>
+    <height>445</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -36,6 +36,9 @@
      </property>
      <item>
       <layout class="QVBoxLayout" name="voltmeters_layout">
+       <property name="spacing">
+        <number>0</number>
+       </property>
        <property name="rightMargin">
         <number>0</number>
        </property>
@@ -47,8 +50,11 @@
          <property name="toolTip">
           <string/>
          </property>
+         <property name="styleSheet">
+          <string notr="true"/>
+         </property>
          <property name="macros" stdset="0">
-          <string>{&quot;CHANNEL_NUMBER&quot;: 2, &quot;PREAMP_PREFIX&quot;: &quot;SR01:IpreSlit&quot;}</string>
+          <string>{&quot;IC&quot;: &quot;fakeIpreKB&quot;}</string>
          </property>
          <property name="filename" stdset="0">
           <string>voltmeter.py</string>
@@ -61,7 +67,7 @@
           <string/>
          </property>
          <property name="macros" stdset="0">
-          <string>{&quot;CHANNEL_NUMBER&quot;: 4, &quot;PREAMP_PREFIX&quot;: &quot;SR03:I0&quot;}</string>
+          <string>{&quot;IC&quot;: &quot;fakeI0&quot;}</string>
          </property>
          <property name="filename" stdset="0">
           <string>voltmeter.py</string>
@@ -74,7 +80,7 @@
           <string/>
          </property>
          <property name="macros" stdset="0">
-          <string>{&quot;CHANNEL_NUMBER&quot;: 3, &quot;PREAMP_PREFIX&quot;: &quot;SR02:IpreKB&quot;}</string>
+          <string>{&quot;IC&quot;: &quot;fakeIt&quot;}</string>
          </property>
          <property name="filename" stdset="0">
           <string>voltmeter.py</string>
@@ -87,7 +93,7 @@
           <string/>
          </property>
          <property name="macros" stdset="0">
-          <string>{&quot;CHANNEL_NUMBER&quot;: 5, &quot;PREAMP_PREFIX&quot;: &quot;SR04:It&quot;}</string>
+          <string>{&quot;IC&quot;: &quot;fakeIref&quot;}</string>
          </property>
          <property name="filename" stdset="0">
           <string>voltmeter.py</string>

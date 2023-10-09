@@ -124,6 +124,7 @@ class Connection(PyDMConnection):
             self.connection_state_signal.emit(False)
         else:
             cpt = self._cpt
+            cpt.get(use_monitor=False)
             for event_type in [cpt._default_sub, "meta"]:
                 cached = cpt._args_cache[event_type]
                 log.debug(f"Running {event_type} callbacks: {cached}")
