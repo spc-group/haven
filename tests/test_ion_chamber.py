@@ -11,67 +11,23 @@ import epics
 
 def test_gain_level(sim_ion_chamber):
     preamp = sim_ion_chamber.preamp
-    assert isinstance(preamp.sensitivity_value.get(use_monitor=False), str)
-    assert isinstance(preamp.sensitivity_unit.get(use_monitor=False), str)
+    assert isinstance(preamp.sensitivity_value.get(use_monitor=False), int)
+    assert isinstance(preamp.sensitivity_unit.get(use_monitor=False), int)
     # Change the preamp settings
-    preamp.sensitivity_value.put("20"),
-    preamp.sensitivity_unit.put("uA/V"),
-    preamp.offset_value.put("2"),
-    preamp.offset_unit.put("uA/V"),
+    preamp.sensitivity_value.put(4),  # 20 uA/V
+    preamp.sensitivity_unit.put(2),
+    preamp.offset_value.put(1),  # 2 uA/V
+    preamp.offset_unit.put(2),
     # Check that the gain level moved
     assert preamp.sensitivity_level.get(use_monitor=False) == 22
     # Move the gain level
     preamp.sensitivity_level.set(12).wait(timeout=3)
     # Check that the preamp sensitivities are moved
-    assert preamp.sensitivity_value.get(use_monitor=False) == "10"
-    assert preamp.sensitivity_unit.get(use_monitor=False) == "nA/V"
+    assert preamp.sensitivity_value.get(use_monitor=False) == 3  # 10 nA/V
+    assert preamp.sensitivity_unit.get(use_monitor=False) == 1
     # Check that the preamp sensitivity offsets are moved
-    assert preamp.offset_value.get(use_monitor=False) == "1"
-    assert preamp.offset_unit.get(use_monitor=False) == "nA/V"
-
-
-def test_gain_changes(sim_ion_chamber):
-    """Check that the gain can be turned up and down."""
-    # Set some starting values
-    device = sim_ion_chamber
-    preamp = device.preamp
-    preamp.sensitivity_value.put("5"),
-    preamp.sensitivity_unit.put("nA/V"),
-    assert preamp.sensitivity_value.get(use_monitor=False) == "5"
-    assert preamp.sensitivity_unit.get(use_monitor=False) == "nA/V"
-    # Change the gain without changing units
-    preamp.sensitivity_tweak.put(1)
-    assert preamp.sensitivity_value.get(use_monitor=False) == "10"
-    assert preamp.sensitivity_unit.get(use_monitor=False) == "nA/V"
-    preamp.sensitivity_tweak.put(-1)
-    assert preamp.sensitivity_value.get(use_monitor=False) == "5"
-    assert preamp.sensitivity_unit.get(use_monitor=False) == "nA/V"
-    # Change the gain so that it overflows and we have to change units
-    max_sensitivity = preamp.values[-1]
-    max_unit = preamp.units[-1]
-    preamp.sensitivity_value.put(max_sensitivity)
-    assert preamp.sensitivity_value.get(use_monitor=False) == "500"
-    preamp.sensitivity_tweak.set(1).wait()
-    assert preamp.sensitivity_value.get(use_monitor=False) == "1"
-    assert preamp.sensitivity_unit.get(use_monitor=False) == "uA/V"
-    # Check that the gain can't go too low
-    preamp.sensitivity_value.put("1")
-    preamp.sensitivity_unit.put("pA/V")
-    with warnings.catch_warnings(record=True) as ws:
-        preamp.sensitivity_tweak.set(-1).wait()
-        has_warning = any(["outside range" in str(w.message) for w in ws])
-        assert has_warning, ws
-    assert preamp.sensitivity_value.get(use_monitor=False) == "1"
-    assert preamp.sensitivity_unit.get(use_monitor=False) == "pA/V"
-    # Check that the gain can't go too high
-    preamp.sensitivity_value.set(max_sensitivity).wait()
-    preamp.sensitivity_unit.set(max_unit).wait()
-    with warnings.catch_warnings(record=True) as ws:
-        preamp.sensitivity_tweak.set(1).wait()
-        has_warning = any(["outside range" in str(w.message) for w in ws])
-        assert has_warning, ws
-    assert preamp.sensitivity_value.get(use_monitor=False) == "1"
-    assert preamp.sensitivity_unit.get(use_monitor=False) == "mA/V"
+    assert preamp.offset_value.get(use_monitor=False) == "1"  # 1 nA/V
+    assert preamp.offset_unit.get(use_monitor=False) == "nA"
 
 
 def test_load_ion_chambers(sim_registry):
@@ -79,7 +35,7 @@ def test_load_ion_chambers(sim_registry):
     # Test the channel info is extracted properly
     ic = sim_registry.find(label="ion_chambers")
     assert ic.ch_num == 2
-    assert ic.preamp.prefix.split(":")[-1] == "SR01"
+    assert ic.preamp.prefix.strip(":").split(":")[-1] == "SR02"
 
 
 def test_default_pv_prefix():

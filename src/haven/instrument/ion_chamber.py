@@ -110,21 +110,24 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
         elif new_level > lmax:
             raise exceptions.GainOverflow(msg)
         # Return calculated gain and offset
+        offset_value = self.values[self._level_to_value(new_offset)]
+        offset_unit = self.units[self._level_to_unit(new_offset)].split('/')[0]
         result = {
             self.sensitivity_value: self._level_to_value(new_level),
             self.sensitivity_unit: self._level_to_unit(new_level),
-            self.offset_value: self._level_to_value(new_offset),
-            self.offset_unit: self._level_to_unit(new_offset),
+            self.offset_value: offset_value,
+            self.offset_unit: offset_unit
             # set_all=1,
         }
         return result
 
+    # It's easier to calculate gains by enum index, so override the apstools signals
     sensitivity_value = Cpt(EpicsSignal, "sens_num", kind="config", string=False)
     sensitivity_unit = Cpt(EpicsSignal, "sens_unit", kind="config", string=False)
 
     sensitivity_level = Cpt(
         MultiDerivedSignal,
-        attrs=["sensitivity_value", "sensitivity_unit"],
+        attrs=["sensitivity_value", "sensitivity_unit", "offset_value", "offset_unit"],
         calculate_on_get=_get_sensitivity_level,
         calculate_on_put=_put_sensitivity_level,
         kind=Kind.omitted,
@@ -133,7 +136,7 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
     # A text description of the what the current sensitivity settings are
     sensitivity_text = Cpt(
         Signal,
-        kind=Kind.omitted,
+        kind=Kind.config,
     )
 
 
