@@ -55,6 +55,40 @@ def test_default_pv_prefix():
     assert device.scaler_prefix == prefix
 
 
+def test_volts_signal(sim_ion_chamber):
+    """Test that the scaler tick counts get properly converted to pre-amp voltage."""
+    chamber = sim_ion_chamber
+    # Set the necessary dependent signals
+    chamber.counts.sim_put(int(0.13e7))  # 1.3 V
+    chamber.clock_ticks.sim_put(1e7)  # 10 MHz clock
+    # Check the volts answer
+    assert chamber.volts.get() == 1.30
+
+
+def test_amps_signal(sim_ion_chamber):
+    """Test that the scaler tick counts get properly converted to pre-amp voltage."""
+    chamber = sim_ion_chamber
+    # Set the necessary dependent signals
+    chamber.counts.sim_put(int(0.13e7))  # 1.3V
+    chamber.clock_ticks.sim_put(1e7)  # 10 MHz clock
+    chamber.preamp.gain.put(2e-5)  # 20 µA/V
+    # Check the current answer
+    assert chamber.amps.get() == pytest.approx(2.6e-5)
+
+
+def test_amps_signal_with_offset(sim_ion_chamber):
+    """Test that the scaler tick counts get properly converted to pre-amp voltage."""
+    chamber = sim_ion_chamber
+    # Set the necessary dependent signals
+    chamber.counts.sim_put(int(0.13e7))  # 1.3V
+    chamber.clock_ticks.sim_put(1e7)  # 10 MHz clock
+    chamber.preamp.gain.put(2e-5)  # 20 µA/V
+    chamber.preamp.offset_value.put("2")  # 2
+    chamber.preamp.offset_unit.put("uA")  #  µA
+    # Check the current answer
+    assert chamber.amps.get() == pytest.approx(2.4e-5)
+
+
 def test_offset_pv(sim_registry):
     """Check that the device handles the weird offset numbering scheme.
 
@@ -127,7 +161,7 @@ def test_flyscan_collect(sim_ion_chamber):
     flyer.mca.spectrum._readback = sim_data
     sim_times = np.asarray([12.0e7, 4.0e7, 4.0e7, 4.0e7, 4.0e7, 4.0e7])
     flyer.mca_times.spectrum._readback = sim_times
-    flyer.clock.set(1e7)
+    flyer.frequency.set(1e7)
     # Ignore the first collected data point because it's during taxiing
     expected_data = sim_data[1:]
     # The real timestamps should be midway between PSO pulses

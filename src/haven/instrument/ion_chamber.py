@@ -23,6 +23,7 @@ from ophyd import (
     Kind,
     flyers,
 )
+from ophyd.signal import InternalSignal, DerivedSignal
 from ophyd.ophydobj import OphydObject
 from ophyd.pseudopos import pseudo_position_argument, real_position_argument
 from ophyd.mca import EpicsMCARecord
@@ -131,6 +132,16 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
         }
         return result
 
+    def _get_offset_current(self, *, mds: MultiDerivedSignal, items: SignalToValue) -> float:
+        """Calculate the current in amps added to the signal before amplification."""
+        val = items[self.offset_value]
+        unit = items[self.offset_unit]
+        try:
+            current = pint.Quantity(float(val), unit).to("A").magnitude
+        except ValueError:
+            return 0
+        return current
+
     # It's easier to calculate gains by enum index, so override the apstools signals
     sensitivity_value = Cpt(EpicsSignal, "sens_num", kind="config", string=False)
     sensitivity_unit = Cpt(EpicsSignal, "sens_unit", kind="config", string=False)
@@ -142,6 +153,12 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
         calculate_on_put=_put_sensitivity_level,
         kind=Kind.omitted,
     )
+    offset_current = Cpt(
+        MultiDerivedSignalRO,
+        attrs=["offset_value", "offset_unit"],
+        calculate_on_get=_get_offset_current,
+        kind=Kind.config
+    )
 
     # A text description of the what the current sensitivity settings are
     sensitivity_text = Cpt(
@@ -149,6 +166,26 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
         kind=Kind.config,
     )
 
+
+class VoltageSignal(DerivedSignal):
+    """Calculate the voltage at the output of the pre-amp."""
+    max_volts: float = 10.0
+    def inverse(self, value):
+        """Calculate the voltage given a scaler count."""
+        clock_ticks = self.parent.clock_ticks.get()
+        if clock_ticks == 0:
+            return 0
+        return self.max_volts * value / clock_ticks
+
+
+class CurrentSignal(DerivedSignal):
+    """Calculate the current in amps at the input of the pre-amp."""
+    def inverse(self, value):
+        """Calculate the current given a output voltage."""
+        volts = value
+        gain = self.parent.preamp.gain.get()
+        offset_current = self.parent.preamp.offset_current.get()
+        return volts * gain - offset_current
 
 # @registry.register
 class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
@@ -186,18 +223,20 @@ class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
       The channel number on the scaler, starting at 2 (1 is the timer).
     count
       The trigger to count scaler pulses.
-    raw_counts
+    counts
       The counts coming from the scaler without any correction.
     volts
       The volts produced by the pre-amp, calculated from scaler
       counts.
+    amps
+      The current produced by the ion chamber, calculated from scaler
+      counts and preamp settings.
     exposure_time
       Positioner for setting the count time on the scaler.
-    sensitivity
-      The positioner for changing the pre-amp gain/sensitivity.
+    preamp
+      The SR570 pre-amplifier driving the signal.
 
     """
-
     stream_name: str = "primary"
     ch_num: int = 0
     ch_char: str
@@ -210,23 +249,28 @@ class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
     )
     # Signal chain devices
     preamp = FCpt(IonChamberPreAmplifier, "{preamp_prefix}")
-    # Old Scaler mode support
-    clock: OphydObject = FCpt(
+    # Measurement signals
+    volts: OphydObject = Cpt(VoltageSignal, derived_from="counts", kind=Kind.normal)
+    amps: OphydObject = Cpt(CurrentSignal, derived_from="volts", kind=Kind.hinted)
+    counts: OphydObject = FCpt(
+        EpicsSignalRO, "{scaler_prefix}:scaler1.S{ch_num}", kind=Kind.normal
+    )
+    frequency: OphydObject = FCpt(
         EpicsSignal,
         "{scaler_prefix}:scaler1.FREQ",
         kind=Kind.config,
     )
-    raw_counts: OphydObject = FCpt(
-        ScalerSignalRO, "{scaler_prefix}:scaler1.S{ch_num}", kind=Kind.normal
+    clock_ticks: OphydObject = FCpt(
+        EpicsSignalRO,
+        "{scaler_prefix}:scaler1.S1",
+        kind=Kind.normal,
     )
+    # Old Scaler mode support
     offset: OphydObject = FCpt(
         ScalerSignalRO, "{scaler_prefix}:scaler1_{offset_suffix}", kind=Kind.config
     )
     net_counts: OphydObject = FCpt(
         ScalerSignalRO, "{scaler_prefix}:scaler1_netA.{ch_char}", kind=Kind.hinted
-    )
-    volts: OphydObject = FCpt(
-        ScalerSignalRO, "{scaler_prefix}:scaler1_calc{ch_num}.VAL", kind=Kind.normal
     )
     exposure_time: OphydObject = FCpt(
         EpicsSignal, "{scaler_prefix}:scaler1.TP", kind=Kind.normal
@@ -294,7 +338,7 @@ class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
     num_bins = Cpt(Signal)
 
     _default_read_attrs = [
-        "raw_counts",
+        "counts",
         "volts",
         "exposure_time",
         "net_counts",
@@ -416,7 +460,7 @@ class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
         net_counts_name = self.net_counts.name
         # Use the scaler's clock counter to calculate timestamps
         times = self.mca_times.spectrum.get()
-        times = np.divide(times, self.clock.get(), casting="safe")
+        times = np.divide(times, self.frequency.get(), casting="safe")
         times = np.cumsum(times)
         pso_timestamps = times + self.start_timestamp
         # Retrieve data, except for first point (during taxiing)
