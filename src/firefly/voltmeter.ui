@@ -209,6 +209,9 @@
            <property name="channel" stdset="0">
             <string>oph://${IC}.amps</string>
            </property>
+           <property name="displayFormat" stdset="0">
+            <enum>PyDMLabel::Exponential</enum>
+           </property>
           </widget>
          </item>
          <item>
@@ -225,7 +228,7 @@
             <string>A</string>
            </property>
            <property name="alignment">
-            <set>Qt::AlignHCenter|Qt::AlignTop</set>
+            <set>Qt::AlignCenter</set>
            </property>
           </widget>
          </item>
