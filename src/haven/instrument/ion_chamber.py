@@ -132,11 +132,18 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
         }
         return result
 
-    def _get_offset_current(self, *, mds: MultiDerivedSignal, items: SignalToValue) -> float:
+    def _get_offset_current(
+        self, *, mds: MultiDerivedSignal, items: SignalToValue
+    ) -> float:
         """Calculate the current in amps added to the signal before amplification."""
+        if items[self.offset_on] in ["OFF", "0", 0]:
+            return 0
+        # Calculate offset current
         val = items[self.offset_value]
+        sign = items[self.offset_sign]
         unit = items[self.offset_unit]
         try:
+            val = float(f"{sign}{val}")
             current = pint.Quantity(float(val), unit).to("A").magnitude
         except ValueError:
             return 0
@@ -155,9 +162,9 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
     )
     offset_current = Cpt(
         MultiDerivedSignalRO,
-        attrs=["offset_value", "offset_unit"],
+        attrs=["offset_value", "offset_unit", "offset_on", "offset_sign"],
         calculate_on_get=_get_offset_current,
-        kind=Kind.config
+        kind=Kind.config,
     )
 
     # A text description of the what the current sensitivity settings are
@@ -169,7 +176,9 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
 
 class VoltageSignal(DerivedSignal):
     """Calculate the voltage at the output of the pre-amp."""
+
     max_volts: float = 10.0
+
     def inverse(self, value):
         """Calculate the voltage given a scaler count."""
         clock_ticks = self.parent.clock_ticks.get()
@@ -180,12 +189,14 @@ class VoltageSignal(DerivedSignal):
 
 class CurrentSignal(DerivedSignal):
     """Calculate the current in amps at the input of the pre-amp."""
+
     def inverse(self, value):
         """Calculate the current given a output voltage."""
         volts = value
         gain = self.parent.preamp.gain.get()
         offset_current = self.parent.preamp.offset_current.get()
         return volts * gain - offset_current
+
 
 # @registry.register
 class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
@@ -237,6 +248,7 @@ class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
       The SR570 pre-amplifier driving the signal.
 
     """
+
     stream_name: str = "primary"
     ch_num: int = 0
     ch_char: str

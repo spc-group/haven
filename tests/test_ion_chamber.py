@@ -72,6 +72,10 @@ def test_amps_signal(sim_ion_chamber):
     chamber.counts.sim_put(int(0.13e7))  # 1.3V
     chamber.clock_ticks.sim_put(1e7)  # 10 MHz clock
     chamber.preamp.gain.put(2e-5)  # 20 µA/V
+    # Make sure it ignores the offset if it's off
+    chamber.preamp.offset_on.put("OFF")
+    chamber.preamp.offset_value.put("2")  # 2
+    chamber.preamp.offset_unit.put("uA")  #  µA
     # Check the current answer
     assert chamber.amps.get() == pytest.approx(2.6e-5)
 
@@ -83,10 +87,12 @@ def test_amps_signal_with_offset(sim_ion_chamber):
     chamber.counts.sim_put(int(0.13e7))  # 1.3V
     chamber.clock_ticks.sim_put(1e7)  # 10 MHz clock
     chamber.preamp.gain.put(2e-5)  # 20 µA/V
+    chamber.preamp.offset_on.put("ON")
+    chamber.preamp.offset_sign.put("-")
     chamber.preamp.offset_value.put("2")  # 2
     chamber.preamp.offset_unit.put("uA")  #  µA
     # Check the current answer
-    assert chamber.amps.get() == pytest.approx(2.4e-5)
+    assert chamber.amps.get() == pytest.approx(2.8e-5)
 
 
 def test_offset_pv(sim_registry):
