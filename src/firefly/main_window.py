@@ -28,14 +28,17 @@ class FireflyMainWindow(PyDMMainWindow):
         try:
             widget.status_message_changed.connect(self.show_status)
         except AttributeError:
-            msg = f"No status messages on window: {args}, {kwargs}. Possibly you're not using FireflyMainWindow?"
+            msg = (f"No status messages on window: {args}, {kwargs}. "
+                   "Possibly you're not using FireflyMainWindow "
+                   "or FireflyDisplay?")
             log.warning(msg)
             warnings.warn(msg)
         # Add the caQtDM action to the menubar
         caqtdm_menu = self.ui.menuSetup
-        if len(widget.caqtdm_actions) > 0:
+        caqtdm_actions = getattr(widget, "caqtdm_actions", [])
+        if len(caqtdm_actions) > 0:
             caqtdm_menu.addSeparator()
-        for action in widget.caqtdm_actions:
+        for action in caqtdm_actions:
             caqtdm_menu.addAction(action)
 
     def closeEvent(self, event):
@@ -142,6 +145,14 @@ class FireflyMainWindow(PyDMMainWindow):
         # Add actions to the motors sub-menus
         for action in app.motor_actions:
             self.ui.menuMotors.addAction(action)
+        # Add an ion chamber sub-menu
+        self.ui.menuIonChambers = QtWidgets.QMenu(self.ui.menubar)
+        self.ui.menuIonChambers.setObjectName("menuIonChambers")
+        self.ui.menuIonChambers.setTitle("&Ion Chambers")
+        self.ui.menuPositioners.addAction(self.ui.menuIonChambers.menuAction())
+        # Add actions for the individual ion chambers
+        for action in app.ion_chamber_actions.values():
+            self.ui.menuIonChambers.addAction(action)
         # Add actions to the cameras sub-menus
         self.ui.menuCameras.addAction(app.show_cameras_window_action)
         self.ui.menuCameras.addSeparator()

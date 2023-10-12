@@ -124,6 +124,7 @@ class FireflyApplication(PyDMApplication):
 
         """
         self.prepare_motor_windows()
+        self.prepare_ion_chamber_windows()
         self.prepare_camera_windows()
         self.prepare_area_detector_windows()
         self.prepare_xrf_detector_windows()
@@ -215,6 +216,8 @@ class FireflyApplication(PyDMApplication):
         window_slots = []
         setattr(self, f"{attr_name}_window_slots", window_slots)
         setattr(self, f"{attr_name}_windows", {})
+        # if attr_name == "ion_chamber":
+        #     breakpoint()
         for device in devices:
             action = QtWidgets.QAction(self)
             action.setObjectName(f"actionShow_{attr_name}_{device.name}")
@@ -241,8 +244,12 @@ class FireflyApplication(PyDMApplication):
     def prepare_camera_windows(self):
         self._prepare_device_windows(device_label="cameras", attr_name="camera")
 
+    def prepare_ion_chamber_windows(self):
+        self._prepare_device_windows(device_label="ion_chambers", attr_name="ion_chamber")
+        
     def prepare_motor_windows(self):
         """Prepare the support for opening motor windows."""
+        ### TODO: Can we re-factor this to use _prepare_device_windows()?
         # Get active motors
         try:
             motors = sorted(registry.findall(label="motors"), key=lambda x: x.name)
@@ -371,6 +378,16 @@ class FireflyApplication(PyDMApplication):
             ui_dir / "area_detector_viewer.py",
             name=f"FireflyMainWindow_camera_{device_name}",
             macros={"AD": device.name},
+        )
+
+    def show_ion_chamber_window(self, *args, device):
+        """Instantiate a window for an ion chamber."""
+        device_name = device.name.replace(" ", "_")
+        self.show_window(
+            FireflyMainWindow,
+            ui_dir / "ion_chamber.ui",
+            name=f"FireflyMainWindow_ion_chamber_{device_name}",
+            macros={"IC": device.name},
         )
 
     def show_area_detector_window(self, *args, device):

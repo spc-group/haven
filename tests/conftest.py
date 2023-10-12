@@ -447,6 +447,28 @@ def sim_ion_chamber(sim_registry):
 
 
 @pytest.fixture()
+def I0(sim_registry):
+    """A fake ion chamber named 'I0' on scaler channel 2."""
+    FakeIonChamber = make_fake_device(IonChamber)
+    ion_chamber = FakeIonChamber(
+        prefix="scaler_ioc", name="I0", labels={"ion_chambers"}, ch_num=2
+    )
+    sim_registry.register(ion_chamber)
+    return ion_chamber
+
+
+@pytest.fixture()
+def It(sim_registry):
+    """A fake ion chamber named 'It' on scaler channel 3."""
+    FakeIonChamber = make_fake_device(IonChamber)
+    ion_chamber = FakeIonChamber(
+        prefix="scaler_ioc", name="It", labels={"ion_chambers"}, ch_num=3
+    )
+    sim_registry.register(ion_chamber)
+    return ion_chamber
+
+
+@pytest.fixture()
 def sim_aerotech():
     Stage = make_fake_device(
         AerotechStage,

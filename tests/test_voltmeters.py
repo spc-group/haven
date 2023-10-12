@@ -12,15 +12,8 @@ from firefly.voltmeter import VoltmeterDisplay
 from firefly.voltmeters import VoltmetersDisplay
 
 
-def fake_ion_chambers(sim_registry):
-    I0 = haven.IonChamber(
-        prefix="eggs_ioc", ch_num=2, name="I0", labels={"ion_chambers"}
-    )
-    sim_registry.register(I0)
-    It = haven.IonChamber(
-        prefix="spam_ioc", ch_num=3, name="It", labels={"ion_chambers"}
-    )
-    sim_registry.register(It)
+@pytest.fixture()
+def fake_ion_chambers(I0, It):
     return [I0, It]
 
 
@@ -77,22 +70,23 @@ def test_ion_chamber_menu(fake_ion_chambers, qtbot, ffapp):
     # Create the window
     window = FireflyMainWindow()
     # Check that the menu items have been created
-    assert hasattr(window.ui, "menuPositioners")
-    assert len(ffapp.motor_actions) == 3
+    assert hasattr(window.ui, "menuDetectors")
+    assert hasattr(window.ui, "menuIonChambers")
+    assert len(ffapp.ion_chamber_actions) == 2
 
 
-def test_open_motor_window(fake_ion_chambers, monkeypatch, ffapp):
+def test_open_ion_chamber_window(fake_ion_chambers, ffapp):
     # Set up the application
     ffapp.setup_window_actions()
     ffapp.setup_runengine_actions()
     # Simulate clicking on the menu action (they're in alpha order)
     window = FireflyMainWindow()
-    action = ffapp.motor_actions[2]
+    action = ffapp.ion_chamber_actions["It"]
     action.trigger()
     # See if the window was created
-    motor_3_name = "FireflyMainWindow_motor_motorC"
-    assert motor_3_name in ffapp.windows.keys()
-    macros = ffapp.windows[motor_3_name].display_widget().macros()
-    assert macros["MOTOR"] == "motorC"
+    ion_chamber_name = "FireflyMainWindow_ion_chamber_It"
+    assert ion_chamber_name in ffapp.windows.keys()
+    macros = ffapp.windows[ion_chamber_name].display_widget().macros()
+    assert macros["IC"] == "It"
     # Clean up
     window.close()
