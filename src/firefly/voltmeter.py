@@ -4,8 +4,9 @@ from typing import Sequence, Mapping, Optional
 from pydm.widgets.channel import PyDMChannel
 from haven.instrument.ion_chamber import IonChamber
 from haven import load_config, exceptions, registry
+import qtawesome as qta
 
-from firefly import display
+from firefly import display, FireflyApplication
 
 log = logging.getLogger(__name__)
 
@@ -45,6 +46,13 @@ class VoltmeterDisplay(display.FireflyDisplay):
     ):
         self._device = device
         super().__init__(macros=macros, args=args, **kwargs)
+
+    def customize_ui(self):
+        # Wire up the "settings" button the ion chamber's config window
+        app = FireflyApplication.instance()
+        ic_action = app.ion_chamber_actions[self._device.name]
+        self.ui.settings_button.clicked.connect(ic_action.trigger)
+        self.ui.settings_button.setIcon(qta.icon("fa5s.cog"))
 
     def customize_device(self):
         # Find and store the hardware device

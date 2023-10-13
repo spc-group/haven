@@ -134,14 +134,9 @@ class FireflyMainWindow(PyDMMainWindow):
         # Voltmeters window
         self.add_menu_action(
             action_name="actionShow_Voltmeters",
-            text="Ion Chambers",
+            text="&Voltmeters",
             menu=self.ui.menuDetectors,
         )
-        # Cameras sub-menu
-        self.ui.menuCameras = QtWidgets.QMenu(self.ui.menubar)
-        self.ui.menuCameras.setObjectName("menuCameras")
-        self.ui.menuCameras.setTitle("Cameras")
-        self.ui.menuDetectors.addAction(self.ui.menuCameras.menuAction())
         # Add actions to the motors sub-menus
         for action in app.motor_actions:
             self.ui.menuMotors.addAction(action)
@@ -149,10 +144,15 @@ class FireflyMainWindow(PyDMMainWindow):
         self.ui.menuIonChambers = QtWidgets.QMenu(self.ui.menubar)
         self.ui.menuIonChambers.setObjectName("menuIonChambers")
         self.ui.menuIonChambers.setTitle("&Ion Chambers")
-        self.ui.menuPositioners.addAction(self.ui.menuIonChambers.menuAction())
+        self.ui.menuDetectors.addAction(self.ui.menuIonChambers.menuAction())
         # Add actions for the individual ion chambers
         for action in app.ion_chamber_actions.values():
             self.ui.menuIonChambers.addAction(action)
+        # Cameras sub-menu
+        self.ui.menuCameras = QtWidgets.QMenu(self.ui.menubar)
+        self.ui.menuCameras.setObjectName("menuCameras")
+        self.ui.menuCameras.setTitle("Cameras")
+        self.ui.menuDetectors.addAction(self.ui.menuCameras.menuAction())
         # Add actions to the cameras sub-menus
         self.ui.menuCameras.addAction(app.show_cameras_window_action)
         self.ui.menuCameras.addSeparator()

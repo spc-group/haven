@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>730</width>
+    <width>694</width>
     <height>90</height>
    </rect>
   </property>
@@ -20,8 +20,23 @@
    <string>Form</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
+   <property name="spacing">
+    <number>0</number>
+   </property>
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
+   </property>
+   <property name="bottomMargin">
+    <number>0</number>
+   </property>
    <item>
-    <layout class="QHBoxLayout" name="lytVoltmeterHoriz" stretch="0,6,0,0,0,0">
+    <layout class="QHBoxLayout" name="lytVoltmeterHoriz" stretch="0,6,0,0,0">
      <property name="leftMargin">
       <number>0</number>
      </property>
@@ -35,6 +50,12 @@
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>100</width>
+         <height>0</height>
+        </size>
        </property>
        <property name="font">
         <font>
@@ -53,7 +74,7 @@
         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
        </property>
        <property name="channel" stdset="0">
-        <string>oph://${IC}_description</string>
+        <string>oph://${IC}.description</string>
        </property>
        <property name="displayFormat" stdset="0">
         <enum>PyDMLabel::String</enum>
@@ -126,6 +147,19 @@
         <number>0</number>
        </property>
        <item>
+        <spacer name="verticalSpacer">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
         <layout class="QHBoxLayout" name="horizontalLayout_2">
          <property name="spacing">
           <number>0</number>
@@ -165,6 +199,9 @@
            </property>
            <property name="channel" stdset="0">
             <string>oph://${IC}_volts</string>
+           </property>
+           <property name="displayFormat" stdset="0">
+            <enum>PyDMLabel::Decimal</enum>
            </property>
           </widget>
          </item>
@@ -234,40 +271,18 @@
          </item>
         </layout>
        </item>
-      </layout>
-     </item>
-     <item>
-      <layout class="QVBoxLayout" name="verticalLayout">
        <item>
-        <widget class="QLabel" name="label">
-         <property name="text">
-          <string>Acquire Time</string>
+        <spacer name="verticalSpacer_2">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
          </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
          </property>
-        </widget>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_4">
-         <item>
-          <widget class="PyDMLineEdit" name="PyDMLineEdit">
-           <property name="toolTip">
-            <string/>
-           </property>
-           <property name="PyDMToolTip" stdset="0">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The time the ion chamber's scaler will acquire for during scans. &lt;span style=&quot; font-weight:600;&quot;&gt;Ion chambers that use the same scaler must have the same acquire time.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_2">
-           <property name="text">
-            <string>s</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
+        </spacer>
        </item>
       </layout>
      </item>
@@ -301,7 +316,7 @@
           </sizepolicy>
          </property>
          <property name="text">
-          <string>Gain</string>
+          <string>Gain/Offset</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignCenter</set>
@@ -462,19 +477,6 @@
         </layout>
        </item>
        <item>
-        <spacer name="verticalSpacer_5">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>40</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item>
         <spacer name="verticalSpacer_6">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
@@ -490,15 +492,15 @@
       </layout>
      </item>
      <item>
-      <widget class="QPushButton" name="pushButton">
+      <widget class="QPushButton" name="settings_button">
        <property name="enabled">
-        <bool>false</bool>
+        <bool>true</bool>
        </property>
        <property name="toolTip">
         <string>Open a new window with settings specific to this ion chamber.</string>
        </property>
        <property name="text">
-        <string>Settings</string>
+        <string/>
        </property>
       </widget>
      </item>
@@ -511,11 +513,6 @@
    <class>PyDMLabel</class>
    <extends>QLabel</extends>
    <header>pydm.widgets.label</header>
-  </customwidget>
-  <customwidget>
-   <class>PyDMLineEdit</class>
-   <extends>QLineEdit</extends>
-   <header>pydm.widgets.line_edit</header>
   </customwidget>
   <customwidget>
    <class>PyDMPushButton</class>

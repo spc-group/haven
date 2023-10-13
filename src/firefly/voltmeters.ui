@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>608</width>
-    <height>445</height>
+    <height>402</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -105,7 +105,7 @@
      <item>
       <layout class="QHBoxLayout" name="horizontalLayout">
        <property name="bottomMargin">
-        <number>5</number>
+        <number>0</number>
        </property>
        <item>
         <widget class="PyDMCheckbox" name="PyDMCheckbox">
