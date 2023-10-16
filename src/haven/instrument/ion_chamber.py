@@ -37,7 +37,8 @@ import pint
 from .scaler_triggered import ScalerTriggered, ScalerSignal, ScalerSignalRO
 from .instrument_registry import registry
 from .epics import caget
-from .device import await_for_connection, aload_devices
+from .device import await_for_connection, aload_devices, make_device
+from .labjack import AnalogInput
 from .._iconfig import load_config
 from .. import exceptions
 
@@ -46,6 +47,51 @@ log = logging.getLogger(__name__)
 
 
 __all__ = ["IonChamber", "load_ion_chambers"]
+
+
+class VoltageSignal(DerivedSignal):
+    """Calculate the voltage at the output of the pre-amp."""
+
+    max_volts: float = 10.0
+
+    def inverse(self, value):
+        """Calculate the voltage given a scaler count."""
+        clock_ticks = self.parent.clock_ticks.get()
+        if clock_ticks == 0:
+            return 0
+        return self.max_volts * value / clock_ticks
+
+
+class CurrentSignal(DerivedSignal):
+    """Calculate the current in amps at the input of the pre-amp."""
+
+    def preamp(self):
+        """Find which parent in the device hierarchy has the preamp."""
+        device = self
+        while device is not None:
+            if isinstance(getattr(device, "preamp", None), IonChamberPreAmplifier):
+                return device.preamp
+            else:
+                # Move up a step in the hierarchy
+                device = device.parent
+        # If we get here, there's no pre-amp
+        raise Attribute(f"No ancestor of {self} has a pre-amp.")
+
+    def inverse(self, value):
+        """Calculate the current given a output voltage."""
+        volts = value
+        preamp = self.preamp()
+        gain = preamp.gain.get()
+        offset_current = preamp.offset_current.get()
+        print(volts, gain, offset_current)
+        return volts * gain - offset_current
+
+
+class Voltmeter(AnalogInput):
+    amps: OphydObject = Cpt(CurrentSignal, derived_from="volts", kind="normal")
+    # Rename ``final_value`` to ``volts``
+    final_value = None
+    volts = Cpt(EpicsSignal, ".VAL", kind="normal")
 
 
 class IonChamberPreAmplifier(SRS570_PreAmplifier):
@@ -174,30 +220,6 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
     )
 
 
-class VoltageSignal(DerivedSignal):
-    """Calculate the voltage at the output of the pre-amp."""
-
-    max_volts: float = 10.0
-
-    def inverse(self, value):
-        """Calculate the voltage given a scaler count."""
-        clock_ticks = self.parent.clock_ticks.get()
-        if clock_ticks == 0:
-            return 0
-        return self.max_volts * value / clock_ticks
-
-
-class CurrentSignal(DerivedSignal):
-    """Calculate the current in amps at the input of the pre-amp."""
-
-    def inverse(self, value):
-        """Calculate the current given a output voltage."""
-        volts = value
-        gain = self.parent.preamp.gain.get()
-        offset_current = self.parent.preamp.offset_current.get()
-        return volts * gain - offset_current
-
-
 # @registry.register
 class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
     """An ion chamber at a spectroscopy beamline.
@@ -227,6 +249,10 @@ class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
     scaler_prefix
       The process variable prefix for the scaler that measures this
       ion chamber.
+    voltmeter_prefix
+      The process variable prefix for the voltmeter. This might be an
+      analog input for a labjack, in which case try something like
+      "LabJackT7_1:Ai0".
 
     Attributes
     ==========
@@ -261,6 +287,7 @@ class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
     )
     # Signal chain devices
     preamp = FCpt(IonChamberPreAmplifier, "{preamp_prefix}")
+    voltmeter = FCpt(Voltmeter, "{voltmeter_prefix}")
     # Measurement signals
     volts: OphydObject = Cpt(VoltageSignal, derived_from="counts", kind=Kind.normal)
     amps: OphydObject = Cpt(CurrentSignal, derived_from="volts", kind=Kind.hinted)
@@ -363,6 +390,7 @@ class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
         name: str,
         preamp_prefix: str = None,
         scaler_prefix: str = None,
+        voltmeter_prefix: str = None,
         *args,
         **kwargs,
     ):
@@ -380,6 +408,8 @@ class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
         if preamp_prefix is None:
             preamp_prefix = prefix
         self.preamp_prefix = preamp_prefix
+        # Save an epics path for the voltmeter (nominally a labjack)
+        self.voltmeter_prefix = voltmeter_prefix
         # Determine the offset PV since it follows weird numbering conventions
         calc_num = int((self.ch_num - 1) / 4)
         calc_char = self.num_to_char(((self.ch_num - 1) % 4) + 1)
@@ -517,10 +547,23 @@ async def make_ion_chamber_device(
         return ic
 
 
-async def load_ion_chamber(preamp_prefix: str, scaler_prefix: str, ch_num: int):
+async def load_ion_chamber(
+    preamp_prefix: str, scaler_prefix: str, voltmeter_prefix: str, ch_num: int
+):
+    """Create an IonChamber ophyd device.
+
+    When autoloading the ion chambers from the config file, this
+    function will parse the config file arguments and convert them
+    into the forms needed for the IonChamber device itself.
+
+    """
     # Determine ion_chamber configuration
     preamp_prefix = f"{preamp_prefix}:SR{ch_num:02}:"
     desc_pv = f"{scaler_prefix}:scaler1.NM{ch_num}"
+    # Determine which labjack channel is measuring the voltmeter
+    ic_idx = ch_num - 2
+    lj_num = int(ic_idx / 5) + 1
+    lj_chan = (ic_idx % 5) * 2 + 4
     # Only use this ion chamber if it has a name
     try:
         name = await caget(desc_pv)
@@ -532,12 +575,22 @@ async def load_ion_chamber(preamp_prefix: str, scaler_prefix: str, ch_num: int):
         log.info(f"Skipping unnamed ion chamber: {desc_pv}")
         return
     # Create the ion chamber device
-    return await make_ion_chamber_device(
+    return await make_device(
+        IonChamber,
         prefix=scaler_prefix,
         ch_num=ch_num,
         name=name,
         preamp_prefix=preamp_prefix,
+        voltmeter_prefix=f"{voltmeter_prefix}{lj_num}:Ai{lj_chan}",
+        labels={"ion_chambers"},
     )
+
+    # return await make_ion_chamber_device(
+    #     prefix=scaler_prefix,
+    #     ch_num=ch_num,
+    #     name=name,
+    #     preamp_prefix=preamp_prefix,
+    # )
 
 
 def load_ion_chamber_coros(config=None):
@@ -548,11 +601,15 @@ def load_ion_chamber_coros(config=None):
     # scaler_record = config["ion_chamber"]["scaler"]["record"]
     scaler_prefix = config["ion_chamber"]["scaler"]["prefix"]
     preamp_prefix = config["ion_chamber"]["preamp"]["prefix"]
+    voltmeter_prefix = config["ion_chamber"]["voltmeter"]["prefix"]
     ion_chambers = []
     # Loop through the configuration sections and create ion chambers co-routines
     for ch_num in config["ion_chamber"]["scaler"]["channels"]:
         yield load_ion_chamber(
-            preamp_prefix=preamp_prefix, scaler_prefix=scaler_prefix, ch_num=ch_num
+            preamp_prefix=preamp_prefix,
+            scaler_prefix=scaler_prefix,
+            ch_num=ch_num,
+            voltmeter_prefix=voltmeter_prefix,
         )
 
 

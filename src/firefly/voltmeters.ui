@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>608</width>
-    <height>402</height>
+    <height>449</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -108,19 +108,6 @@
         <number>0</number>
        </property>
        <item>
-        <widget class="PyDMCheckbox" name="PyDMCheckbox">
-         <property name="toolTip">
-          <string/>
-         </property>
-         <property name="text">
-          <string>Auto Count</string>
-         </property>
-         <property name="channel" stdset="0">
-          <string>${SCALER}.CONT</string>
-         </property>
-        </widget>
-       </item>
-       <item>
         <widget class="PyDMPushButton" name="PyDMPushButton">
          <property name="toolTip">
           <string/>
@@ -170,6 +157,19 @@
         </widget>
        </item>
        <item>
+        <widget class="QPushButton" name="pushButton">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="toolTip">
+          <string>Queue a plan to automatically set the selected ion chamber gains to within the range 0.5V to 4.5V.</string>
+         </property>
+         <property name="text">
+          <string>Auto-gain</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <spacer name="horizontalSpacer">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
@@ -189,11 +189,6 @@
   </layout>
  </widget>
  <customwidgets>
-  <customwidget>
-   <class>PyDMCheckbox</class>
-   <extends>QCheckBox</extends>
-   <header>pydm.widgets.checkbox</header>
-  </customwidget>
   <customwidget>
    <class>PyDMEmbeddedDisplay</class>
    <extends>QFrame</extends>

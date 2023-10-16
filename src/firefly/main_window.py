@@ -28,9 +28,11 @@ class FireflyMainWindow(PyDMMainWindow):
         try:
             widget.status_message_changed.connect(self.show_status)
         except AttributeError:
-            msg = (f"No status messages on window: {args}, {kwargs}. "
-                   "Possibly you're not using FireflyMainWindow "
-                   "or FireflyDisplay?")
+            msg = (
+                f"No status messages on window: {args}, {kwargs}. "
+                "Possibly you're not using FireflyMainWindow "
+                "or FireflyDisplay?"
+            )
             log.warning(msg)
             warnings.warn(msg)
         # Add the caQtDM action to the menubar

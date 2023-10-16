@@ -36,6 +36,7 @@ def test_load_ion_chambers(sim_registry):
     ic = sim_registry.find(label="ion_chambers")
     assert ic.ch_num == 2
     assert ic.preamp.prefix.strip(":").split(":")[-1] == "SR02"
+    assert ic.voltmeter.prefix == "255idc:LabjackT7_1:Ai4"
 
 
 def test_default_pv_prefix():
@@ -66,7 +67,7 @@ def test_volts_signal(sim_ion_chamber):
 
 
 def test_amps_signal(sim_ion_chamber):
-    """Test that the scaler tick counts get properly converted to pre-amp voltage."""
+    """Test that the scaler tick counts get properly converted to ion chamber current."""
     chamber = sim_ion_chamber
     # Set the necessary dependent signals
     chamber.counts.sim_put(int(0.13e7))  # 1.3V
@@ -75,7 +76,7 @@ def test_amps_signal(sim_ion_chamber):
     # Make sure it ignores the offset if it's off
     chamber.preamp.offset_on.put("OFF")
     chamber.preamp.offset_value.put("2")  # 2
-    chamber.preamp.offset_unit.put("uA")  #  µA
+    chamber.preamp.offset_unit.put("uA")  # µA
     # Check the current answer
     assert chamber.amps.get() == pytest.approx(2.6e-5)
 
@@ -90,9 +91,26 @@ def test_amps_signal_with_offset(sim_ion_chamber):
     chamber.preamp.offset_on.put("ON")
     chamber.preamp.offset_sign.put("-")
     chamber.preamp.offset_value.put("2")  # 2
-    chamber.preamp.offset_unit.put("uA")  #  µA
+    chamber.preamp.offset_unit.put("uA")  # µA
     # Check the current answer
     assert chamber.amps.get() == pytest.approx(2.8e-5)
+
+
+def test_voltmeter_amps_signal(sim_ion_chamber):
+    """Test that the voltmeter voltage gets properly converted to ion
+    chamber current.
+
+    """
+    chamber = sim_ion_chamber
+    # Set the necessary dependent signals
+    chamber.voltmeter.volts.sim_put(1.3)  # 1.3V
+    chamber.preamp.gain.put(2e-5)  # 20 µA/V
+    # Make sure it ignores the offset if it's off
+    chamber.preamp.offset_on.put("OFF")
+    chamber.preamp.offset_value.put("2")  # 2
+    chamber.preamp.offset_unit.put("uA")  # µA
+    # Check the current answer
+    assert chamber.voltmeter.amps.get() == pytest.approx(2.6e-5)
 
 
 def test_offset_pv(sim_registry):

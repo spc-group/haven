@@ -245,8 +245,10 @@ class FireflyApplication(PyDMApplication):
         self._prepare_device_windows(device_label="cameras", attr_name="camera")
 
     def prepare_ion_chamber_windows(self):
-        self._prepare_device_windows(device_label="ion_chambers", attr_name="ion_chamber")
-        
+        self._prepare_device_windows(
+            device_label="ion_chambers", attr_name="ion_chamber"
+        )
+
     def prepare_motor_windows(self):
         """Prepare the support for opening motor windows."""
         ### TODO: Can we re-factor this to use _prepare_device_windows()?
