@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>534</width>
-    <height>375</height>
+    <width>595</width>
+    <height>470</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -98,6 +98,11 @@
         </item>
         <item>
          <widget class="PyDMLabel" name="PyDMLabel_2">
+          <property name="font">
+           <font>
+            <family>Monospace</family>
+           </font>
+          </property>
           <property name="toolTip">
            <string/>
           </property>
@@ -132,6 +137,11 @@
         </item>
         <item>
          <widget class="QLabel" name="label_3">
+          <property name="font">
+           <font>
+            <family>Monospace</family>
+           </font>
+          </property>
           <property name="text">
            <string>dB (V/I)</string>
           </property>
@@ -374,17 +384,22 @@
         <property name="labelAlignment">
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
-        <item row="0" column="0">
+        <item row="1" column="0">
          <widget class="QLabel" name="label_6">
           <property name="text">
            <string>Voltage:</string>
           </property>
          </widget>
         </item>
-        <item row="0" column="1">
+        <item row="1" column="1">
          <layout class="QHBoxLayout" name="horizontalLayout_6">
           <item>
            <widget class="PyDMLabel" name="PyDMLabel_5">
+            <property name="font">
+             <font>
+              <family>Monospace</family>
+             </font>
+            </property>
             <property name="toolTip">
              <string/>
             </property>
@@ -392,13 +407,13 @@
              <string>#.##</string>
             </property>
             <property name="precision" stdset="0">
-             <number>0</number>
+             <number>2</number>
             </property>
             <property name="showUnits" stdset="0">
              <bool>false</bool>
             </property>
             <property name="precisionFromPV" stdset="0">
-             <bool>true</bool>
+             <bool>false</bool>
             </property>
             <property name="alarmSensitiveContent" stdset="0">
              <bool>false</bool>
@@ -422,6 +437,11 @@
           </item>
           <item>
            <widget class="QLabel" name="label_10">
+            <property name="font">
+             <font>
+              <family>Monospace</family>
+             </font>
+            </property>
             <property name="text">
              <string>V</string>
             </property>
@@ -442,22 +462,33 @@
           </item>
          </layout>
         </item>
-        <item row="1" column="0">
+        <item row="2" column="0">
          <widget class="QLabel" name="label_7">
           <property name="text">
            <string>Current:</string>
           </property>
          </widget>
         </item>
-        <item row="1" column="1">
+        <item row="2" column="1">
          <layout class="QHBoxLayout" name="horizontalLayout_7">
           <item>
            <widget class="PyDMLabel" name="PyDMLabel_6">
+            <property name="font">
+             <font>
+              <family>Monospace</family>
+             </font>
+            </property>
             <property name="toolTip">
              <string/>
             </property>
             <property name="text">
              <string>#.##e##</string>
+            </property>
+            <property name="precision" stdset="0">
+             <number>2</number>
+            </property>
+            <property name="precisionFromPV" stdset="0">
+             <bool>false</bool>
             </property>
             <property name="PyDMToolTip" stdset="0">
              <string>The calculated current based on the voltage and pre-amp settings.</string>
@@ -472,6 +503,11 @@
           </item>
           <item>
            <widget class="QLabel" name="label_11">
+            <property name="font">
+             <font>
+              <family>Monospace</family>
+             </font>
+            </property>
             <property name="text">
              <string>A</string>
             </property>
@@ -492,14 +528,14 @@
           </item>
          </layout>
         </item>
-        <item row="2" column="0">
+        <item row="3" column="0">
          <widget class="QLabel" name="label_4">
           <property name="text">
-           <string>Acquire time (s):</string>
+           <string>Acquire time:</string>
           </property>
          </widget>
         </item>
-        <item row="2" column="1">
+        <item row="3" column="1">
          <layout class="QHBoxLayout" name="horizontalLayout_8">
           <item>
            <widget class="PyDMLineEdit" name="PyDMLineEdit">
@@ -534,6 +570,11 @@
           </item>
           <item>
            <widget class="QLabel" name="label_12">
+            <property name="font">
+             <font>
+              <family>Monospace</family>
+             </font>
+            </property>
             <property name="text">
              <string>s</string>
             </property>
@@ -554,11 +595,166 @@
           </item>
          </layout>
         </item>
+        <item row="4" column="0">
+         <widget class="QLabel" name="label_15">
+          <property name="text">
+           <string>Preset Counts:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="0">
+         <widget class="QLabel" name="label_16">
+          <property name="text">
+           <string>Clock:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="1">
+         <layout class="QHBoxLayout" name="horizontalLayout_11">
+          <item>
+           <widget class="PyDMLabel" name="PyDMLabel_3">
+            <property name="font">
+             <font>
+              <family>Monospace</family>
+             </font>
+            </property>
+            <property name="toolTip">
+             <string>The reference clock for the scaler. This is the frequency corresponding to a 10V signal.</string>
+            </property>
+            <property name="text">
+             <string>#e##</string>
+            </property>
+            <property name="channel" stdset="0">
+             <string>oph://${IC}.frequency</string>
+            </property>
+            <property name="displayFormat" stdset="0">
+             <enum>PyDMLabel::Exponential</enum>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="label_17">
+            <property name="font">
+             <font>
+              <family>Monospace</family>
+             </font>
+            </property>
+            <property name="text">
+             <string>Hz</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer_9">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </item>
+        <item row="4" column="1">
+         <widget class="PyDMLineEdit" name="PyDMLineEdit_2">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Stop collecting data when the tick counts for this scaler channel reaches a certain preset value.&lt;/p&gt;&lt;p&gt;To help decide this value, consider that the clock gives the number of counts that a 10V signal produces in 1 sec. So if the clock is 1e7 Hz, then a &lt;span style=&quot; font-style:italic;&quot;&gt;preset count&lt;/span&gt; of 2.5e6 would be the equivalent of counting a 2.5V signal for 1 sec.&lt;/p&gt;&lt;p&gt;The scaler will stop when either &lt;span style=&quot; font-style:italic;&quot;&gt;acquire time&lt;/span&gt; is reached, or &lt;span style=&quot; font-style:italic;&quot;&gt;preset count&lt;/span&gt; is reached for any channel on that scaler.&lt;/p&gt;&lt;p&gt;A &lt;span style=&quot; font-style:italic;&quot;&gt;preset count&lt;/span&gt; of 0 will disable this behavior.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+          <property name="channel" stdset="0">
+           <string>oph://${IC}.preset_count</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="0">
+         <widget class="QLabel" name="label_18">
+          <property name="text">
+           <string>Counts:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="PyDMLabel" name="PyDMLabel_7">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The number of counts measured by the scaler.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;This is the counts produced by the voltage-to-frequency convertor, and &lt;span style=&quot; font-weight:600;&quot;&gt;not&lt;/span&gt; the photon count.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+          <property name="channel" stdset="0">
+           <string>oph://${IC}.counts</string>
+          </property>
+         </widget>
+        </item>
+        <item row="6" column="1">
+         <layout class="QHBoxLayout" name="horizontalLayout_12">
+          <item>
+           <widget class="PyDMPushButton" name="PyDMPushButton_2">
+            <property name="toolTip">
+             <string>Count once with the scaler.</string>
+            </property>
+            <property name="text">
+             <string>Count</string>
+            </property>
+            <property name="channel" stdset="0">
+             <string>oph://${IC}.count</string>
+            </property>
+            <property name="pressValue" stdset="0">
+             <string>1</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="PyDMCheckbox" name="PyDMCheckbox">
+            <property name="toolTip">
+             <string>Count repeatedly with the scaler.</string>
+            </property>
+            <property name="text">
+             <string>Autocount</string>
+            </property>
+            <property name="channel" stdset="0">
+             <string>oph://${IC}.auto_count</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer_10">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </item>
        </layout>
       </widget>
      </item>
      <item>
       <widget class="QGroupBox" name="groupBox_3">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>230</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="baseSize">
+        <size>
+         <width>0</width>
+         <height>0</height>
+        </size>
+       </property>
        <property name="title">
         <string>Voltmeter</string>
        </property>
@@ -569,14 +765,14 @@
         <item row="0" column="0">
          <widget class="QLabel" name="label_5">
           <property name="text">
-           <string>Voltage (V):</string>
+           <string>Voltage:</string>
           </property>
          </widget>
         </item>
         <item row="1" column="0">
          <widget class="QLabel" name="label_8">
           <property name="text">
-           <string>Current (A):</string>
+           <string>Current:</string>
           </property>
          </widget>
         </item>
@@ -587,28 +783,41 @@
           </property>
          </widget>
         </item>
-        <item row="2" column="1">
-         <widget class="PyDMEnumComboBox" name="PyDMEnumComboBox_6">
-          <property name="toolTip">
-           <string/>
-          </property>
-          <property name="PyDMToolTip" stdset="0">
-           <string>How often to report new signals for this voltmeter.</string>
-          </property>
-          <property name="channel" stdset="0">
-           <string>oph://${IC}.voltmeter.interval</string>
-          </property>
-         </widget>
-        </item>
         <item row="0" column="1">
          <layout class="QHBoxLayout" name="horizontalLayout_9">
           <item>
            <widget class="PyDMLabel" name="PyDMLabel_4">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="font">
+             <font>
+              <family>Monospace</family>
+             </font>
+            </property>
             <property name="toolTip">
              <string/>
             </property>
             <property name="text">
              <string>#.##</string>
+            </property>
+            <property name="textFormat">
+             <enum>Qt::PlainText</enum>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+            </property>
+            <property name="precision" stdset="0">
+             <number>2</number>
+            </property>
+            <property name="showUnits" stdset="0">
+             <bool>true</bool>
+            </property>
+            <property name="precisionFromPV" stdset="0">
+             <bool>false</bool>
             </property>
             <property name="PyDMToolTip" stdset="0">
              <string>The measured voltage output from the pre-amp.</string>
@@ -616,10 +825,18 @@
             <property name="channel" stdset="0">
              <string>oph://${IC}.voltmeter.volts</string>
             </property>
+            <property name="displayFormat" stdset="0">
+             <enum>PyDMLabel::Decimal</enum>
+            </property>
            </widget>
           </item>
           <item>
            <widget class="QLabel" name="label_13">
+            <property name="font">
+             <font>
+              <family>Monospace</family>
+             </font>
+            </property>
             <property name="text">
              <string>V</string>
             </property>
@@ -644,11 +861,34 @@
          <layout class="QHBoxLayout" name="horizontalLayout_10">
           <item>
            <widget class="PyDMLabel" name="voltmeter_current_label">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="font">
+             <font>
+              <family>Monospace</family>
+             </font>
+            </property>
             <property name="toolTip">
              <string/>
             </property>
             <property name="text">
              <string>#.##e##</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+            </property>
+            <property name="precision" stdset="0">
+             <number>2</number>
+            </property>
+            <property name="showUnits" stdset="0">
+             <bool>true</bool>
+            </property>
+            <property name="precisionFromPV" stdset="0">
+             <bool>false</bool>
             </property>
             <property name="PyDMToolTip" stdset="0">
              <string>The calculated current based on the voltage and pre-amp settings.</string>
@@ -656,10 +896,18 @@
             <property name="channel" stdset="0">
              <string>oph://${IC}.voltmeter.amps</string>
             </property>
+            <property name="displayFormat" stdset="0">
+             <enum>PyDMLabel::Exponential</enum>
+            </property>
            </widget>
           </item>
           <item>
            <widget class="QLabel" name="label_14">
+            <property name="font">
+             <font>
+              <family>Monospace</family>
+             </font>
+            </property>
             <property name="text">
              <string>A</string>
             </property>
@@ -679,6 +927,19 @@
            </spacer>
           </item>
          </layout>
+        </item>
+        <item row="2" column="1">
+         <widget class="PyDMEnumComboBox" name="PyDMEnumComboBox_6">
+          <property name="toolTip">
+           <string/>
+          </property>
+          <property name="PyDMToolTip" stdset="0">
+           <string>How often to report new signals for this voltmeter.</string>
+          </property>
+          <property name="channel" stdset="0">
+           <string>oph://${IC}.voltmeter.scanning_rate</string>
+          </property>
+         </widget>
         </item>
        </layout>
       </widget>
@@ -705,6 +966,11 @@
    <class>PyDMLabel</class>
    <extends>QLabel</extends>
    <header>pydm.widgets.label</header>
+  </customwidget>
+  <customwidget>
+   <class>PyDMCheckbox</class>
+   <extends>QCheckBox</extends>
+   <header>pydm.widgets.checkbox</header>
   </customwidget>
   <customwidget>
    <class>PyDMEnumComboBox</class>

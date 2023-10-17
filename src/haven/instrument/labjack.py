@@ -5,10 +5,10 @@ from ophyd import (
     Component as Cpt,
     FormattedComponent as FCpt,
 )
-from apstools.synApps import EpicsRecordInputFields
+from apstools.synApps import EpicsRecordInputFields, EpicsRecordDeviceCommonAll
 
 
-class AnalogInput(EpicsRecordInputFields):
+class AnalogInput(EpicsRecordInputFields, EpicsRecordDeviceCommonAll):
 
     differential = FCpt(
         EpicsSignal, "{self.base_prefix}Diff{self.ch_num}", string=True, kind="config"

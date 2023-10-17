@@ -83,7 +83,6 @@ class CurrentSignal(DerivedSignal):
         preamp = self.preamp()
         gain = preamp.gain.get()
         offset_current = preamp.offset_current.get()
-        print(volts, gain, offset_current)
         return volts * gain - offset_current
 
 
@@ -293,6 +292,9 @@ class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
     amps: OphydObject = Cpt(CurrentSignal, derived_from="volts", kind=Kind.hinted)
     counts: OphydObject = FCpt(
         EpicsSignalRO, "{scaler_prefix}:scaler1.S{ch_num}", kind=Kind.normal
+    )
+    preset_count: OphydObject = FCpt(
+        EpicsSignal, "{scaler_prefix}:scaler1.PR{ch_num}", kind=Kind.config
     )
     frequency: OphydObject = FCpt(
         EpicsSignal,

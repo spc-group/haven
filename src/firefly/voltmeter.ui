@@ -90,7 +90,7 @@
       <bool>true</bool>
      </property>
      <property name="channel" stdset="0">
-      <string>oph://${IC}_volts</string>
+      <string>oph://${IC}.voltmeter.volts</string>
      </property>
      <property name="showValue" stdset="0">
       <bool>false</bool>
@@ -206,7 +206,7 @@
           <bool>false</bool>
          </property>
          <property name="channel" stdset="0">
-          <string>oph://${IC}_volts</string>
+          <string>oph://${IC}.voltmeter.volts</string>
          </property>
          <property name="displayFormat" stdset="0">
           <enum>PyDMLabel::Decimal</enum>
@@ -278,7 +278,7 @@
           <bool>false</bool>
          </property>
          <property name="channel" stdset="0">
-          <string>oph://${IC}.amps</string>
+          <string>oph://${IC}.voltmeter.amps</string>
          </property>
          <property name="displayFormat" stdset="0">
           <enum>PyDMLabel::Exponential</enum>
