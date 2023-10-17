@@ -6,6 +6,7 @@ import asyncio
 from collections import OrderedDict
 import time
 import warnings
+import math
 
 import epics
 from ophyd import (
@@ -112,25 +113,30 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
         self.sensitivity_value.subscribe(self.update_sensitivity_text, run=False)
         self.sensitivity_unit.subscribe(self.update_sensitivity_text, run=True)
 
+    def cb_gain(self, *args, **kwargs):
+        """
+        Called when sensitivity changes (EPICS CA monitor event).
+        """
+        gain = self.computed_gain
+        self.gain.put(gain)
+        print(gain)
+        self.gain_db.put(10*math.log10(gain), internal=True)
+
     @property
     def computed_gain(self):
         """
-        Amplifier gain (A/V), as floating-point number.
+        Amplifier gain (V/A), as floating-point number.
         """
-        return (
-            pint.Quantity(
-                float(self.values[self.sensitivity_value.get()]),
-                self.units[self.sensitivity_unit.get()],
-            )
-            .to("A/V")
-            .magnitude
-        )
+        val = float(self.values[self.sensitivity_value.get()])
+        units = self.units[self.sensitivity_unit.get()]
+        inverse_gain = pint.Quantity(val, units).to("A/V").magnitude
+        return 1/inverse_gain
 
     def update_sensitivity_text(self, *args, obj: OphydObject, **kwargs):
         val = self.values[self.sensitivity_value.get()]
         unit = self.units[self.sensitivity_unit.get()]
         text = f"{val} {unit}"
-        self.sensitivity_text.put(text)
+        self.sensitivity_text.put(text, internal=True)
 
     def _level_to_value(self, level):
         return level % len(self.values)
@@ -214,8 +220,13 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
 
     # A text description of the what the current sensitivity settings are
     sensitivity_text = Cpt(
-        Signal,
+        InternalSignal,
         kind=Kind.config,
+    )
+    # Gain, but measured in decibels
+    gain_db = Cpt(
+        InternalSignal,
+        kind=Kind.config
     )
 
 

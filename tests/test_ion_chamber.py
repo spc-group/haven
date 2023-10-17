@@ -30,6 +30,20 @@ def test_gain_level(sim_ion_chamber):
     assert preamp.offset_unit.get(use_monitor=False) == "nA"
 
 
+def test_gain_signals(sim_ion_chamber):
+    preamp = sim_ion_chamber.preamp
+    assert isinstance(preamp.sensitivity_value.get(use_monitor=False), int)
+    assert isinstance(preamp.sensitivity_unit.get(use_monitor=False), int)
+    # Change the preamp settings
+    preamp.sensitivity_value.put(4)  # 20 uA/V
+    preamp.sensitivity_unit.put(2)
+    preamp.offset_value.put(1)  # 2 uA/V
+    preamp.offset_unit.put(2)
+    # Check the gain and gain_db signals
+    assert preamp.gain.get(use_monitor=False) == pytest.approx(1/20e-6)
+    assert preamp.gain_db.get(use_monitor=False) == pytest.approx(46.9897)
+
+
 def test_load_ion_chambers(sim_registry):
     new_ics = ion_chamber.load_ion_chambers()
     # Test the channel info is extracted properly
