@@ -394,7 +394,7 @@ async def make_dxp_device(device_name, prefix, num_elements):
     class_name = device_name.title().replace("_", "")
     parent_classes = (DxpDetector,)
     Cls = type(class_name, parent_classes, attrs)
-    return await make_device(Cls, prefix=f"{prefix}:", name=device_name, labels={"xrf_detectors"})
+    return await make_device(Cls, prefix=f"{prefix}:", name=device_name, labels={"xrf_detectors", "fluorescence_detectors"})
 
 
 def load_dxp_coros(config=None):

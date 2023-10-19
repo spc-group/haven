@@ -55,7 +55,7 @@ from .fluorescence_detector import XRFMixin, ROIMixin, MCASumMixin, add_roi_sums
 from .device import await_for_connection, aload_devices, make_device, RegexComponent as RECpt
 
 
-__all__ = ["load_xspress", "Xspress3Detector"]
+__all__ = ["load_xspress", "Xspress3Detector", "ROI"]
 
 
 log = logging.getLogger(__name__)
@@ -520,7 +520,7 @@ async def make_xspress_device(name, prefix, num_elements):
     class_name = name.title().replace("_", "")
     parent_classes = (Xspress3Detector,)
     Cls = type(class_name, parent_classes, attrs)
-    return await make_device(Cls, name=name, prefix=f"{prefix}:", labels={"xrf_detectors"})
+    return await make_device(Cls, name=name, prefix=f"{prefix}:", labels={"xrf_detectors", "fluorescence_detectors"})
 
 
 def load_xspress_coros(config=None):

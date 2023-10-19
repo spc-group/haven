@@ -42,6 +42,9 @@ from .._iconfig import load_config
 from .. import exceptions
 
 
+__all__ = ["XRFMixin"]
+
+
 
 log = logging.getLogger(__name__)
 
@@ -142,7 +145,7 @@ class ROIMixin(Device):
     _original_name = None
     _original_kinds = {}
     _dynamic_hint_fields = ["count"]
-
+    
     def stage(self):
         self._original_name = self.name
         # Append the ROI label to the signal name
