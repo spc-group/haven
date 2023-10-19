@@ -50,7 +50,7 @@ def test_load_ion_chambers(sim_registry):
     ic = sim_registry.find(label="ion_chambers")
     assert ic.ch_num == 2
     assert ic.preamp.prefix.strip(":").split(":")[-1] == "SR02"
-    assert ic.voltmeter.prefix == "255idc:LabjackT7_1:Ai4"
+    assert ic.voltmeter.prefix == "255idc:LabjackT7_0:Ai0"
 
 
 def test_default_pv_prefix():
@@ -86,7 +86,7 @@ def test_amps_signal(sim_ion_chamber):
     # Set the necessary dependent signals
     chamber.counts.sim_put(int(0.13e7))  # 1.3V
     chamber.clock_ticks.sim_put(1e7)  # 10 MHz clock
-    chamber.preamp.gain.put(2e-5)  # 20 µA/V
+    chamber.preamp.gain.put(1/2e-5)  # 20 µA/V to V/A
     # Make sure it ignores the offset if it's off
     chamber.preamp.offset_on.put("OFF")
     chamber.preamp.offset_value.put("2")  # 2
@@ -101,7 +101,7 @@ def test_amps_signal_with_offset(sim_ion_chamber):
     # Set the necessary dependent signals
     chamber.counts.sim_put(int(0.13e7))  # 1.3V
     chamber.clock_ticks.sim_put(1e7)  # 10 MHz clock
-    chamber.preamp.gain.put(2e-5)  # 20 µA/V
+    chamber.preamp.gain.put(1/2e-5)  # 20 µA/V to V/A
     chamber.preamp.offset_on.put("ON")
     chamber.preamp.offset_sign.put("-")
     chamber.preamp.offset_value.put("2")  # 2
@@ -118,7 +118,7 @@ def test_voltmeter_amps_signal(sim_ion_chamber):
     chamber = sim_ion_chamber
     # Set the necessary dependent signals
     chamber.voltmeter.volts.sim_put(1.3)  # 1.3V
-    chamber.preamp.gain.put(2e-5)  # 20 µA/V
+    chamber.preamp.gain.put(1/2e-5)  # 20 µA/V to V/A
     # Make sure it ignores the offset if it's off
     chamber.preamp.offset_on.put("OFF")
     chamber.preamp.offset_value.put("2")  # 2

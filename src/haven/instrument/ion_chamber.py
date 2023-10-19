@@ -84,7 +84,7 @@ class CurrentSignal(DerivedSignal):
         preamp = self.preamp()
         gain = preamp.gain.get()
         offset_current = preamp.offset_current.get()
-        return volts * gain - offset_current
+        return volts / gain - offset_current
 
 
 class Voltmeter(AnalogInput):
