@@ -48,7 +48,6 @@ class FireflyDisplay(Display):
         """Launch a new subprocess and save it to self._caqtdm_process."""
         # Try to leave this as just a simple call to Popen.
         # It helps simplify testing
-        print(cmds)
         self._caqtdm_process = subprocess.Popen(cmds, *args, **kwargs)
 
     @Slot()

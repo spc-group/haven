@@ -53,6 +53,11 @@ class VoltmeterDisplay(display.FireflyDisplay):
         ic_action = app.ion_chamber_actions[self._device.name]
         self.ui.settings_button.clicked.connect(ic_action.trigger)
         self.ui.settings_button.setIcon(qta.icon("fa5s.cog"))
+        # Use qtawesome icons instead of unicode arrows
+        self.ui.gain_down_button.setText("")
+        self.ui.gain_down_button.setIcon(qta.icon("fa5s.arrow-left"))
+        self.ui.gain_up_button.setText("")
+        self.ui.gain_up_button.setIcon(qta.icon("fa5s.arrow-right"))
 
     def customize_device(self):
         # Find and store the hardware device

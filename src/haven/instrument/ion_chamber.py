@@ -119,7 +119,6 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
         """
         gain = self.computed_gain
         self.gain.put(gain)
-        print(gain)
         self.gain_db.put(10*math.log10(gain), internal=True)
 
     @property
@@ -174,13 +173,13 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
         # Return calculated gain and offset
         offset_value = self.values[self._level_to_value(new_offset)]
         offset_unit = self.units[self._level_to_unit(new_offset)].split("/")[0]
-        result = {
-            self.sensitivity_value: self._level_to_value(new_level),
-            self.sensitivity_unit: self._level_to_unit(new_level),
-            self.offset_value: offset_value,
-            self.offset_unit: offset_unit
-            # set_all=1,
-        }
+        result = OrderedDict()
+        result.update({self.sensitivity_unit: self._level_to_unit(new_level)})
+        result.update({self.sensitivity_value: self._level_to_value(new_level)})
+        result.update({self.offset_value: offset_value})
+        result.update({self.offset_unit: offset_unit})
+        #     # set_all=1,
+        # }
         return result
 
     def _get_offset_current(
@@ -303,6 +302,9 @@ class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
     amps: OphydObject = Cpt(CurrentSignal, derived_from="volts", kind=Kind.hinted)
     counts: OphydObject = FCpt(
         EpicsSignalRO, "{scaler_prefix}:scaler1.S{ch_num}", kind=Kind.normal
+    )
+    gate: OphydObject = FCpt(
+        EpicsSignal, "{scaler_prefix}:scaler1.G{ch_num}", kind=Kind.config,
     )
     preset_count: OphydObject = FCpt(
         EpicsSignal, "{scaler_prefix}:scaler1.PR{ch_num}", kind=Kind.config
@@ -575,8 +577,10 @@ async def load_ion_chamber(
     desc_pv = f"{scaler_prefix}:scaler1.NM{ch_num}"
     # Determine which labjack channel is measuring the voltmeter
     ic_idx = ch_num - 2
-    lj_num = int(ic_idx / 5) + 1
-    lj_chan = (ic_idx % 5) * 2 + 4
+    # 5 pre-amps per labjack
+    lj_num = int(ic_idx / 5)
+    # Only use even labjack channels since it's a differential signal
+    lj_chan = (ic_idx % 5) * 2
     # Only use this ion chamber if it has a name
     try:
         name = await caget(desc_pv)
@@ -588,7 +592,7 @@ async def load_ion_chamber(
         log.info(f"Skipping unnamed ion chamber: {desc_pv}")
         return
     # Create the ion chamber device
-    return await make_device(
+    ion_chamber = await make_device(
         IonChamber,
         prefix=scaler_prefix,
         ch_num=ch_num,
@@ -597,6 +601,7 @@ async def load_ion_chamber(
         voltmeter_prefix=f"{voltmeter_prefix}{lj_num}:Ai{lj_chan}",
         labels={"ion_chambers"},
     )
+    return ion_chamber
 
     # return await make_ion_chamber_device(
     #     prefix=scaler_prefix,

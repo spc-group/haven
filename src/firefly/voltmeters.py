@@ -67,7 +67,15 @@ class VoltmetersDisplay(display.FireflyDisplay):
             self.voltmeters_layout.takeAt(idx).widget().deleteLater()
         # Add embedded displays for all the ion chambers
         self._ion_chamber_displays = []
-        for ic in self.ion_chambers:
+        for idx, ic in enumerate(self.ion_chambers):
+            # Add a separator
+            if idx > 0:
+                line = QtWidgets.QFrame(self.ui)
+                line.setObjectName("line")
+                # line->setGeometry(QRect(140, 80, 118, 3));
+                line.setFrameShape(QtWidgets.QFrame.HLine)
+                line.setFrameShadow(QtWidgets.QFrame.Sunken)
+                self.voltmeters_layout.addWidget(line)
             # Create the display object
             disp = PyDMEmbeddedDisplay(parent=self)
             disp.macros = json.dumps({"IC": ic.name})

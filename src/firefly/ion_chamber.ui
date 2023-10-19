@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>595</width>
-    <height>470</height>
+    <height>472</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -77,6 +77,79 @@
          <number>0</number>
         </property>
         <item>
+         <widget class="PyDMPushButton" name="gain_down_button">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>32</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string/>
+          </property>
+          <property name="text">
+           <string>←</string>
+          </property>
+          <property name="iconSize">
+           <size>
+            <width>12</width>
+            <height>12</height>
+           </size>
+          </property>
+          <property name="rules" stdset="0">
+           <string>[{&quot;name&quot;: &quot;Gain button lower range&quot;, &quot;property&quot;: &quot;Enable&quot;, &quot;initial_value&quot;: &quot;True&quot;, &quot;expression&quot;: &quot;ch[0] &lt; 27&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;oph://${IC}.preamp.sensitivity_level&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}], &quot;notes&quot;: &quot;If the sensitivity is at its highest setting, disable the button so users don't click it unnecessarily.&quot;}]</string>
+          </property>
+          <property name="alarmSensitiveContent" stdset="0">
+           <bool>false</bool>
+          </property>
+          <property name="alarmSensitiveBorder" stdset="0">
+           <bool>false</bool>
+          </property>
+          <property name="PyDMToolTip" stdset="0">
+           <string>Decrease the pre-amp gain (higher sensitivity values)</string>
+          </property>
+          <property name="monitorDisp" stdset="0">
+           <bool>false</bool>
+          </property>
+          <property name="channel" stdset="0">
+           <string>oph://${IC}.preamp.sensitivity_level</string>
+          </property>
+          <property name="passwordProtected" stdset="0">
+           <bool>false</bool>
+          </property>
+          <property name="password" stdset="0">
+           <string/>
+          </property>
+          <property name="protectedPassword" stdset="0">
+           <string/>
+          </property>
+          <property name="showConfirmDialog" stdset="0">
+           <bool>false</bool>
+          </property>
+          <property name="confirmMessage" stdset="0">
+           <string>Are you sure you want to proceed?</string>
+          </property>
+          <property name="pressValue" stdset="0">
+           <string>1</string>
+          </property>
+          <property name="releaseValue" stdset="0">
+           <string>None</string>
+          </property>
+          <property name="relativeChange" stdset="0">
+           <bool>true</bool>
+          </property>
+          <property name="writeWhenRelease" stdset="0">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
          <widget class="PyDMEnumComboBox" name="PyDMEnumComboBox">
           <property name="toolTip">
            <string/>
@@ -93,6 +166,79 @@
           </property>
           <property name="channel" stdset="0">
            <string>oph://${IC}.preamp.sensitivity_unit</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="PyDMPushButton" name="gain_up_button">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>32</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string/>
+          </property>
+          <property name="text">
+           <string>→</string>
+          </property>
+          <property name="iconSize">
+           <size>
+            <width>12</width>
+            <height>12</height>
+           </size>
+          </property>
+          <property name="rules" stdset="0">
+           <string>[{&quot;name&quot;: &quot;Gain button upper range&quot;, &quot;property&quot;: &quot;Enable&quot;, &quot;initial_value&quot;: &quot;True&quot;, &quot;expression&quot;: &quot;ch[0] &gt; 0&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;oph://${IC}.preamp.sensitivity_level&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}], &quot;notes&quot;: &quot;&quot;}]</string>
+          </property>
+          <property name="alarmSensitiveContent" stdset="0">
+           <bool>false</bool>
+          </property>
+          <property name="alarmSensitiveBorder" stdset="0">
+           <bool>false</bool>
+          </property>
+          <property name="PyDMToolTip" stdset="0">
+           <string>Increase the pre-amp gain (lower sensitivity values)</string>
+          </property>
+          <property name="monitorDisp" stdset="0">
+           <bool>false</bool>
+          </property>
+          <property name="channel" stdset="0">
+           <string>oph://${IC}.preamp.sensitivity_level</string>
+          </property>
+          <property name="passwordProtected" stdset="0">
+           <bool>false</bool>
+          </property>
+          <property name="password" stdset="0">
+           <string/>
+          </property>
+          <property name="protectedPassword" stdset="0">
+           <string/>
+          </property>
+          <property name="showConfirmDialog" stdset="0">
+           <bool>false</bool>
+          </property>
+          <property name="confirmMessage" stdset="0">
+           <string>Are you sure you want to proceed?</string>
+          </property>
+          <property name="pressValue" stdset="0">
+           <string>-1</string>
+          </property>
+          <property name="releaseValue" stdset="0">
+           <string>None</string>
+          </property>
+          <property name="relativeChange" stdset="0">
+           <bool>true</bool>
+          </property>
+          <property name="writeWhenRelease" stdset="0">
+           <bool>false</bool>
           </property>
          </widget>
         </item>
@@ -659,16 +805,6 @@
           </item>
          </layout>
         </item>
-        <item row="4" column="1">
-         <widget class="PyDMLineEdit" name="PyDMLineEdit_2">
-          <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Stop collecting data when the tick counts for this scaler channel reaches a certain preset value.&lt;/p&gt;&lt;p&gt;To help decide this value, consider that the clock gives the number of counts that a 10V signal produces in 1 sec. So if the clock is 1e7 Hz, then a &lt;span style=&quot; font-style:italic;&quot;&gt;preset count&lt;/span&gt; of 2.5e6 would be the equivalent of counting a 2.5V signal for 1 sec.&lt;/p&gt;&lt;p&gt;The scaler will stop when either &lt;span style=&quot; font-style:italic;&quot;&gt;acquire time&lt;/span&gt; is reached, or &lt;span style=&quot; font-style:italic;&quot;&gt;preset count&lt;/span&gt; is reached for any channel on that scaler.&lt;/p&gt;&lt;p&gt;A &lt;span style=&quot; font-style:italic;&quot;&gt;preset count&lt;/span&gt; of 0 will disable this behavior.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-          </property>
-          <property name="channel" stdset="0">
-           <string>oph://${IC}.preset_count</string>
-          </property>
-         </widget>
-        </item>
         <item row="0" column="0">
          <widget class="QLabel" name="label_18">
           <property name="text">
@@ -729,6 +865,54 @@
              </size>
             </property>
            </spacer>
+          </item>
+         </layout>
+        </item>
+        <item row="4" column="1">
+         <layout class="QHBoxLayout" name="horizontalLayout_13">
+          <item>
+           <widget class="PyDMCheckbox" name="gate_checkbox">
+            <property name="toolTip">
+             <string/>
+            </property>
+            <property name="channel" stdset="0">
+             <string>oph://${IC}.gate</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="PyDMLineEdit" name="preset_count_line_edit">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Stop collecting data when the tick counts for this scaler channel reaches a certain preset value.&lt;/p&gt;&lt;p&gt;To help decide this value, consider that the clock gives the number of counts that a 10V signal produces in 1 sec. So if the clock is 1e7 Hz, then a &lt;span style=&quot; font-style:italic;&quot;&gt;preset count&lt;/span&gt; of 2.5e6 would be the equivalent of counting a 2.5V signal for 1 sec.&lt;/p&gt;&lt;p&gt;The scaler will stop when either &lt;span style=&quot; font-style:italic;&quot;&gt;acquire time&lt;/span&gt; is reached, or &lt;span style=&quot; font-style:italic;&quot;&gt;preset count&lt;/span&gt; is reached for any channel on that scaler.&lt;/p&gt;&lt;p&gt;A &lt;span style=&quot; font-style:italic;&quot;&gt;preset count&lt;/span&gt; of 0 will disable this behavior.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="rules" stdset="0">
+             <string>[{&quot;name&quot;: &quot;Disable Present Counts&quot;, &quot;property&quot;: &quot;Enable&quot;, &quot;initial_value&quot;: &quot;True&quot;, &quot;expression&quot;: &quot;ch[0]&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;oph://${IC}.gate&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}], &quot;notes&quot;: &quot;The preset-counts should only be editable when the channel is set to respond to the gate. If users really want to set it but disable the gate, then they'll need to just check the box first.&quot;}]</string>
+            </property>
+            <property name="precision" stdset="0">
+             <number>0</number>
+            </property>
+            <property name="showUnits" stdset="0">
+             <bool>false</bool>
+            </property>
+            <property name="precisionFromPV" stdset="0">
+             <bool>true</bool>
+            </property>
+            <property name="alarmSensitiveContent" stdset="0">
+             <bool>false</bool>
+            </property>
+            <property name="alarmSensitiveBorder" stdset="0">
+             <bool>true</bool>
+            </property>
+            <property name="PyDMToolTip" stdset="0">
+             <string/>
+            </property>
+            <property name="monitorDisp" stdset="0">
+             <bool>false</bool>
+            </property>
+            <property name="channel" stdset="0">
+             <string>oph://${IC}.preset_count</string>
+            </property>
+           </widget>
           </item>
          </layout>
         </item>

@@ -9,11 +9,6 @@ from haven import registry, exceptions
 from pydm.data_plugins import add_plugin
 from pydm.data_plugins.plugin import PyDMConnection, PyDMPlugin
 
-# from pydm.data_plugins.epics_plugins.pyepics_plugin_component import (
-#     Connection,
-#     PyEPICSPlugin,
-# )
-
 
 log = logging.getLogger(__name__)
 
@@ -33,10 +28,13 @@ class Connection(PyDMConnection):
 
     _cpt: OphydObject = None
     _ctrl_vars: dict = {}
+    _known_signals: list
+    _cids: dict
 
     def __init__(self, channel, address, protocol=None, parent=None):
         name = address
         self._cids = {}
+        self._known_signals = []
         super().__init__(channel, address, protocol, parent)
         # Resolve the device based on the ohpyd name
         try:
@@ -47,7 +45,7 @@ class Connection(PyDMConnection):
             log.debug(f"Found device: {address}: {self._cpt.name}")
         # Listen for changes
         self.prepare_subscriptions()
-        self.add_listener(channel)
+        self.add_listener(channel)  # Think this might not be needed, but should check
 
     def prepare_subscriptions(self):
         """Set up routines to respond to changes in the ophyd object."""
@@ -109,12 +107,16 @@ class Connection(PyDMConnection):
         # Clear cached control variables so they can get remitted
         self._ctrl_vars = {}
         # If the channel is used for writing to components, hook it up
-        if (sig := channel.value_signal) is not None:
+        sig = channel.value_signal
+        is_new_signal = sig not in self._known_signals
+        if sig is not None and is_new_signal:
+            # Connect new signals
             for dtype in [float, int, str, np.ndarray]:
                 try:
                     sig[dtype].connect(self.set_value, Qt.QueuedConnection)
                 except KeyError:
                     pass
+            self._known_signals.append(sig)
         # Run the callbacks to make sure the new listener gets notified
         self.run_callbacks()
 
@@ -165,7 +167,6 @@ class Connection(PyDMConnection):
                 )
                 warnings.warn(msg)
                 log.warning(msg)
-                raise
                 return None
 
 
