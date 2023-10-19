@@ -292,7 +292,7 @@ class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
         EpicsSignal, "{scaler_prefix}:scaler1.CNT", trigger_value=1, kind=Kind.omitted
     )
     description: OphydObject = FCpt(
-        EpicsSignalRO, "{scaler_prefix}:scaler1.NM{ch_num}", kind=Kind.config
+        EpicsSignal, "{scaler_prefix}:scaler1.NM{ch_num}", kind=Kind.config
     )
     # Signal chain devices
     preamp = FCpt(IonChamberPreAmplifier, "{preamp_prefix}")
@@ -433,6 +433,13 @@ class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
         super().__init__(prefix=prefix, name=name, *args, **kwargs)
         # Set signal values to stage
         self.stage_sigs[self.auto_count] = 0
+        # Sync the ion chamber description with the voltmeter description
+        self.description.subscribe(self.update_voltmeter_description, run=True)
+        # Ensure the voltmeter is in differential mode to measure pre-amp
+        self.voltmeter.differential.set(1).wait()
+
+    def update_voltmeter_description(self, *args, value, **kwargs):
+        self.voltmeter.description.put(value)
 
     def num_to_char(self, num):
         char = chr(64 + num)
@@ -602,13 +609,6 @@ async def load_ion_chamber(
         labels={"ion_chambers"},
     )
     return ion_chamber
-
-    # return await make_ion_chamber_device(
-    #     prefix=scaler_prefix,
-    #     ch_num=ch_num,
-    #     name=name,
-    #     preamp_prefix=preamp_prefix,
-    # )
 
 
 def load_ion_chamber_coros(config=None):

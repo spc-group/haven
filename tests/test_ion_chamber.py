@@ -127,6 +127,14 @@ def test_voltmeter_amps_signal(sim_ion_chamber):
     assert chamber.voltmeter.amps.get() == pytest.approx(2.6e-5)
 
 
+def test_voltmeter_name(sim_ion_chamber):
+    chamber = sim_ion_chamber
+    assert chamber.voltmeter.description.get() != "Icake"
+    # Change the ion chamber name, and see if the voltmeter name updates
+    chamber.description.put("Icake")
+    assert chamber.voltmeter.description.get() == "Icake"
+
+
 def test_offset_pv(sim_registry):
     """Check that the device handles the weird offset numbering scheme.
 
