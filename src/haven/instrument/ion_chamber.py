@@ -29,6 +29,7 @@ from ophyd.ophydobj import OphydObject
 from ophyd.pseudopos import pseudo_position_argument, real_position_argument
 from ophyd.mca import EpicsMCARecord
 from ophyd.status import SubscriptionStatus
+from ophyd.utils.errors import OpException
 from apstools.devices import SRS570_PreAmplifier
 from pcdsdevices.signal import MultiDerivedSignal, MultiDerivedSignalRO
 from pcdsdevices.type_hints import SignalToValue, OphydDataType
@@ -436,7 +437,12 @@ class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
         # Sync the ion chamber description with the voltmeter description
         self.description.subscribe(self.update_voltmeter_description, run=True)
         # Ensure the voltmeter is in differential mode to measure pre-amp
-        self.voltmeter.differential.set(1).wait()
+        try:
+            self.voltmeter.differential.set(1).wait(timeout=1)
+        except OpException:
+            msg = f"Could not set voltmeter {self.name} channel differential state."
+            log.warning(msg)
+            warnings.warn(msg)
 
     def update_voltmeter_description(self, *args, value, **kwargs):
         self.voltmeter.description.put(value)
