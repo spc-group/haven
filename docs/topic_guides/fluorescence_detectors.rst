@@ -167,12 +167,31 @@ specified, the methods will operate on all ROIs or elements
     # Unmark the third ROI on the second element
     det.enable_rois(rois=[2], elements=[1])
 
+Xspress 3
+=========
 
-XIA DXP
-=======
+Support for Quantum Detectors' Xspress3 Family of detectors is
+provided by the :py:class:`~haven.instrument.xspress.Xspress3Detector`
+base class. The EPICS support for Xspress3 detectors is based on the
+EPICS area detector module, and so the
+:py:class:`~haven.instrument.xspress.Xspress3Detector` is a customized
+:py:class:`ophyd.DetectorBase`.
 
-DXP electronics use the bluesky multi-channel analyzer (MCA) device,
-packaged in Haven as the
-:py:class:`~haven.instrument.fluorescence_detector.DxpDetectorBase`
-class.
+XIA DXP (XMAP)
+==============
+
+DXP (XMAP, Mercury, Saturn) electronics use the bluesky multi-channel
+analyzer (MCA) device, packaged in Haven as the
+:py:class:`~haven.instrument.dxp.DxpDetector` class.
+
+The DXP electronics are **not yet compatible** with :doc:`fly-scanning
+<fly_scanning>`. The :py:class:`~haven.instrument.dxp.DxpDetector`
+does implement the
+:py:meth:`~haven.instrument.dxp.DxpDetector.kickoff()` and
+:py:meth:`~haven.instrument.dxp.DxpDetector.complete()` methods, but
+does not yet handle data collection. This is because the data are
+reported as a byte stream that must first be decoded. The DXP manual
+describes the structure of this byte-stream, so in principle it is
+possible to parse this in the
+:py:meth:`~haven.instrument.dxp.DxpDetector.collect()` method.
 

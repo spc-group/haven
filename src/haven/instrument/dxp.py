@@ -293,7 +293,21 @@ class DxpDetector(
             all_rois.extend(rois)
         return all_rois
 
-    def kickoff(self):
+    def kickoff(self) -> StatusBase:
+        """Start the detector flying.
+
+        This starts acquisition, starts the file writer, and sets the
+        detector to advance to the next when it receives a gate
+        signal. The returned status object will be complete when the
+        detector reports that it is acquiring.
+
+        Returns
+        =======
+        StatusBase
+          Becomes complete once the detector is acquiring and ready to
+          measure data.
+
+        """
         # Make sure the CDF file write plugin is primed (assumes
         # dimensions will be empty when not primed)
         is_primed = len(self.net_cdf.dimensions.get()) > 0
@@ -330,7 +344,21 @@ class DxpDetector(
         self.erase_start.set(1)
         return status
 
-    def complete(self):
+    def complete(self) -> StatusBase:
+        """Wait for the detector to finish flying.
+
+        This will stop the file writers and acquisition then return a
+        status object. The status object will report complete once the
+        detector acquire status reports that the detector is not
+        acquiring.
+
+        Returns
+        =======
+        StatusBase
+          Becomes complete once the detector has finished acquiring
+          and is ready to report the collected data.
+
+        """
         # Stop the CDF file writer
         self.net_cdf.capture.set(0).wait()
         self.stop_all.set(1)
@@ -410,4 +438,13 @@ def load_dxp_coros(config=None):
 
 
 def load_dxp(config=None):
+    """Load all the DXP-based detector devices.
+
+    Configuration is determined from the iconfig.toml file.
+
+    Optionally, *config* can be given a dictionary with configuration
+    matching the iconfig.toml file to use instead. Mostly useful for
+    testing.
+
+    """
     asyncio.run(aload_devices(*load_dxp_coros(config=config)))
