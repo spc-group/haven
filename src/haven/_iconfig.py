@@ -102,8 +102,8 @@ def beamline_connected(is_connected=True):
     old_dict = deepcopy(_local_overrides)
     # Set temporary value
     if "beamline" not in _local_overrides.keys():
-        _local_overrides['beamline'] = {}
-    _local_overrides['beamline']['is_connected'] = is_connected
+        _local_overrides["beamline"] = {}
+    _local_overrides["beamline"]["is_connected"] = is_connected
     # Return to enclosing code
     yield
     # Restore old value

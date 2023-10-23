@@ -106,7 +106,7 @@ class DG645Delay(Device):
     class polarities(enum.IntEnum):
         NEGATIVE = 0
         POSITIVE = 1
-        
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.stage_sigs[self.trigger_source] = self.trigger_sources.EXT_RISING_EDGE

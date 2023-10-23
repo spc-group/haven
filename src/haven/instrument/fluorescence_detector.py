@@ -37,13 +37,17 @@ from pcdsdevices.type_hints import SignalToValue, OphydDataType
 
 from .scaler_triggered import ScalerTriggered
 from .instrument_registry import registry
-from .device import RegexComponent as RECpt, await_for_connection, aload_devices, make_device
+from .device import (
+    RegexComponent as RECpt,
+    await_for_connection,
+    aload_devices,
+    make_device,
+)
 from .._iconfig import load_config
 from .. import exceptions
 
 
 __all__ = ["XRFMixin"]
-
 
 
 log = logging.getLogger(__name__)
@@ -54,6 +58,7 @@ active_kind = Kind.normal | Kind.config
 
 class ROISum(Device):
     """Sums an ROI across multiple elements."""
+
     count = Cpt(InternalSignal, name="count")
     net_count = Cpt(InternalSignal, name="net_count")
 
@@ -85,7 +90,6 @@ class ROISum(Device):
         net = np.sum([roi.net_count.get() for roi in rois])
         self.net_count.put(net, internal=True)
 
-        
 
 def add_roi_sums(mcas, rois):
     """Add a set of signals to sum the ROI over all elements."""
@@ -102,6 +106,7 @@ def add_roi_sums(mcas, rois):
 
 class MCASumMixin(Device):
     """Adds a signal that reports the sum of the *spectrum* signal."""
+
     total_count = Cpt(InternalSignal, kind="normal")
 
     def __init__(self, *args, **kwargs):
@@ -122,8 +127,9 @@ class UseROISignal(DerivedSignal):
     undesirable way.
 
     """
+
     sentinel_char = "~"
-    
+
     def inverse(self, value):
         """Compute original signal value -> derived signal value"""
         try:
@@ -145,7 +151,7 @@ class ROIMixin(Device):
     _original_name = None
     _original_kinds = {}
     _dynamic_hint_fields = ["count"]
-    
+
     def stage(self):
         self._original_name = self.name
         # Append the ROI label to the signal name
@@ -153,10 +159,12 @@ class ROIMixin(Device):
         label = cleanupText(label)
         old_name_base = self.name
         new_name_base = f"{self.name}_{label}"
-        
+
         if label != "":
-            log.debug(f"Mangling ROI label '{self.label.get()}' -> "
-                      f"'{label}' ('{new_name_base}')")
+            log.debug(
+                f"Mangling ROI label '{self.label.get()}' -> "
+                f"'{label}' ('{new_name_base}')"
+            )
             self.name = new_name_base
             # Update the device name for children
             for walk in self.walk_signals():
@@ -172,8 +180,8 @@ class ROIMixin(Device):
         for fld in self._dynamic_hint_fields:
             getattr(self, fld).kind = new_kind
         super().stage()
-    
-    def unstage(self):        
+
+    def unstage(self):
         # Restore the original (pre-staged) name
         if self.name != self._original_name:
             for walk in self.walk_signals():
@@ -205,7 +213,6 @@ class XRFMixin(Device):
         # Calculate new sum
         new_total = sum(self._mca_count_cache.values())
         self.total_count.put(new_total, internal=True, timestamp=timestamp)
-        
 
     def enable_rois(
         self,

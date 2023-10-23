@@ -13,7 +13,12 @@ import pytest
 from qtpy import QtWidgets
 import ophyd
 from ophyd import DynamicDeviceComponent as DDC, Kind
-from ophyd.sim import instantiate_fake_device, make_fake_device, fake_device_cache, FakeEpicsSignal
+from ophyd.sim import (
+    instantiate_fake_device,
+    make_fake_device,
+    fake_device_cache,
+    FakeEpicsSignal,
+)
 from pydm.data_plugins import add_plugin
 
 
@@ -51,6 +56,7 @@ os.environ["HAVEN_CONFIG_FILES"] = ",".join(
         f"{haven_dir/'iconfig_default.toml'}",
     ]
 )
+
 
 class FakeEpicsSignalWithIO(FakeEpicsSignal):
     # An EPICS signal that simply uses the DG-645 convention of
@@ -445,9 +451,15 @@ def sim_aerotech():
     Stage = make_fake_device(
         AerotechStage,
     )
-    stage = Stage("255id", delay_prefix="255id:DG645", pv_horiz=":m1", pv_vert=":m2", name="aerotech")
+    stage = Stage(
+        "255id",
+        delay_prefix="255id:DG645",
+        pv_horiz=":m1",
+        pv_vert=":m2",
+        name="aerotech",
+    )
     return stage
-    
+
 
 @pytest.fixture()
 def sim_aerotech_flyer(sim_aerotech):

@@ -22,7 +22,7 @@ from haven.instrument.dxp import parse_xmap_buffer, load_dxp
 from haven.instrument.xspress import load_xspress
 
 
-DETECTORS = ['dxp', 'xspress']
+DETECTORS = ["dxp", "xspress"]
 # DETECTORS = ['dxp']
 
 
@@ -82,7 +82,7 @@ def test_acquire_frames_xspress(xspress):
     assert vortex.acquire_single.get() == 1
 
 
-@pytest.mark.parametrize('vortex', DETECTORS, indirect=True)
+@pytest.mark.parametrize("vortex", DETECTORS, indirect=True)
 def test_roi_size(vortex, caplog):
     """Do the signals for max/size auto-update."""
     roi = vortex.mcas.mca0.rois.roi0
@@ -90,7 +90,9 @@ def test_roi_size(vortex, caplog):
     with caplog.at_level(logging.ERROR):
         roi.lo_chan.set(10).wait(timeout=3)
     for record in caplog.records:
-        assert "Another set() call is still in progress" not in record.exc_text, record.exc_text
+        assert (
+            "Another set() call is still in progress" not in record.exc_text
+        ), record.exc_text
     # Update the size and check the maximum
     roi.size.set(7).wait(timeout=3)
     assert roi.hi_chan.get() == 17
@@ -102,7 +104,7 @@ def test_roi_size(vortex, caplog):
     assert roi.size.get() == 3
 
 
-@pytest.mark.parametrize('vortex', DETECTORS, indirect=True)
+@pytest.mark.parametrize("vortex", DETECTORS, indirect=True)
 def test_roi_size_concurrency(vortex, caplog):
     roi = vortex.mcas.mca0.rois.roi0
     # Set up the roi limits
@@ -122,7 +124,7 @@ def test_roi_size_concurrency(vortex, caplog):
     assert roi.size.get() == 2
 
 
-@pytest.mark.parametrize('vortex', DETECTORS, indirect=True)        
+@pytest.mark.parametrize("vortex", DETECTORS, indirect=True)
 def test_enable_some_rois(vortex):
     """Test that the correct ROIs are enabled/disabled."""
     statuses = vortex.enable_rois(rois=[2, 5], elements=[1, 3])
@@ -135,7 +137,7 @@ def test_enable_some_rois(vortex):
     assert is_used == 1
 
 
-@pytest.mark.parametrize('vortex', DETECTORS, indirect=True)    
+@pytest.mark.parametrize("vortex", DETECTORS, indirect=True)
 def test_enable_rois(vortex):
     """Test that the correct ROIs are enabled/disabled."""
     statuses = vortex.enable_rois()
@@ -148,7 +150,7 @@ def test_enable_rois(vortex):
     assert hinted == 1
 
 
-@pytest.mark.parametrize('vortex', DETECTORS, indirect=True)
+@pytest.mark.parametrize("vortex", DETECTORS, indirect=True)
 def test_disable_some_rois(vortex):
     """Test that the correct ROIs are enabled/disabled."""
     statuses = vortex.enable_rois(rois=[2, 5], elements=[1, 3])
@@ -169,7 +171,7 @@ def test_disable_some_rois(vortex):
     assert hinted == 0
 
 
-@pytest.mark.parametrize('vortex', DETECTORS, indirect=True)
+@pytest.mark.parametrize("vortex", DETECTORS, indirect=True)
 def test_disable_rois(vortex):
     """Test that the correct ROIs are enabled/disabled."""
     statuses = vortex.enable_rois()
@@ -187,7 +189,7 @@ def test_disable_rois(vortex):
     assert hinted == 0
 
 
-@pytest.mark.parametrize('vortex', DETECTORS, indirect=True)
+@pytest.mark.parametrize("vortex", DETECTORS, indirect=True)
 def test_stage_signal_names(vortex):
     """Check that we can set the name of the detector ROIs dynamically."""
     dev = vortex.mcas.mca1.rois.roi1
@@ -226,40 +228,46 @@ def test_read_and_config_attrs(vortex):
         "dead_time_min",
         "dead_time_max",
     ]
-    if hasattr(vortex, 'cam'):
+    if hasattr(vortex, "cam"):
         expected_read_attrs.append("cam")
     # Add attrs for summing ROIs across elements
     for roi in range(vortex.num_rois):
-        expected_read_attrs.extend([
-            f"roi_sums.roi{roi}",
-            f"roi_sums.roi{roi}.count",
-            f"roi_sums.roi{roi}.net_count",
-        ])
+        expected_read_attrs.extend(
+            [
+                f"roi_sums.roi{roi}",
+                f"roi_sums.roi{roi}.count",
+                f"roi_sums.roi{roi}.net_count",
+            ]
+        )
     # Add attrs for each MCA and ROI.
     for mca in range(vortex.num_elements):
-        expected_read_attrs.extend([
-            f"mcas.mca{mca}",
-            f"mcas.mca{mca}.rois",
-            f"mcas.mca{mca}.spectrum",
-            f"mcas.mca{mca}.total_count",
-            # f"mcas.mca{mca}.input_count_rate",
-            # f"mcas.mca{mca}.output_count_rate",
-            f"mcas.mca{mca}.dead_time_percent",
-            f"mcas.mca{mca}.dead_time_factor",
-            # f"mcas.mca{mca}.background",
-        ])
-        if hasattr(vortex.mcas.mca0, 'clock_ticks'):
+        expected_read_attrs.extend(
+            [
+                f"mcas.mca{mca}",
+                f"mcas.mca{mca}.rois",
+                f"mcas.mca{mca}.spectrum",
+                f"mcas.mca{mca}.total_count",
+                # f"mcas.mca{mca}.input_count_rate",
+                # f"mcas.mca{mca}.output_count_rate",
+                f"mcas.mca{mca}.dead_time_percent",
+                f"mcas.mca{mca}.dead_time_factor",
+                # f"mcas.mca{mca}.background",
+            ]
+        )
+        if hasattr(vortex.mcas.mca0, "clock_ticks"):
             expected_read_attrs.append(f"mcas.mca{mca}.clock_ticks")
         for roi in range(vortex.num_rois):
-            expected_read_attrs.extend([
-                f"mcas.mca{mca}.rois.roi{roi}",
-                f"mcas.mca{mca}.rois.roi{roi}.count",
-                f"mcas.mca{mca}.rois.roi{roi}.net_count",
-            ])
+            expected_read_attrs.extend(
+                [
+                    f"mcas.mca{mca}.rois.roi{roi}",
+                    f"mcas.mca{mca}.rois.roi{roi}.count",
+                    f"mcas.mca{mca}.rois.roi{roi}.net_count",
+                ]
+            )
     assert sorted(vortex.read_attrs) == sorted(expected_read_attrs)
 
 
-@pytest.mark.parametrize('vortex', DETECTORS, indirect=True)
+@pytest.mark.parametrize("vortex", DETECTORS, indirect=True)
 def test_use_signal(vortex):
     """Check that the ``.use`` ROI signal properly mangles the label.
 
@@ -281,8 +289,7 @@ def test_use_signal(vortex):
     assert not bool(roi.use.get())
 
 
-
-@pytest.mark.parametrize('vortex', DETECTORS, indirect=True)
+@pytest.mark.parametrize("vortex", DETECTORS, indirect=True)
 def test_stage_hints(vortex):
     """Check that enabled ROIs get hinted."""
     roi0 = vortex.mcas.mca0.rois.roi0
@@ -292,8 +299,8 @@ def test_stage_hints(vortex):
     roi1.label.put("", timeout=3)
     roi1.use.put(0, timeout=3)
     # Ensure the hints aren't applied yet
-    assert roi0.count.name not in vortex.hints['fields']
-    assert roi1.count.name not in vortex.hints['fields']
+    assert roi0.count.name not in vortex.hints["fields"]
+    assert roi1.count.name not in vortex.hints["fields"]
     # Stage the detector
     try:
         vortex.stage()
@@ -301,15 +308,15 @@ def test_stage_hints(vortex):
         raise
     else:
         # Check that only the enabled ROI gets hinted
-        assert roi0.count.name in vortex.hints['fields']
-        assert roi1.count.name not in vortex.hints['fields']
+        assert roi0.count.name in vortex.hints["fields"]
+        assert roi1.count.name not in vortex.hints["fields"]
     finally:
         vortex.unstage()
     # Name gets reset when unstaged
-    assert roi0.count.name not in vortex.hints['fields']
-    assert roi1.count.name not in vortex.hints['fields']
+    assert roi0.count.name not in vortex.hints["fields"]
+    assert roi1.count.name not in vortex.hints["fields"]
 
-    
+
 @pytest.mark.skip(reason="DXP fly-scanning not yet implemented")
 def test_kickoff_dxp(dxp):
     vortex = dxp
@@ -396,7 +403,7 @@ def test_kickoff_xspress(xspress):
     assert status.done
     assert vortex.cam.trigger_mode.get() == vortex.trigger_modes.TTL_VETO_ONLY
     assert vortex.acquire.get() == vortex.acquire_states.ACQUIRE
-    
+
 
 def test_complete_xspress(xspress):
     """Check the behavior of the Xspress3 electornic's fly-scan complete call."""
@@ -479,7 +486,7 @@ def test_fly_data_xspress(xspress):
             (100.21, 498 + 12.3),
             (100.31, 502 + 12.3),
             (100.32, 502 + 9.84),
-        ]
+        ],
     }
     # Check the process dataframe
     fly_data, fly_ts = vortex.fly_data()
@@ -503,7 +510,8 @@ def test_fly_data_xspress(xspress):
     # Check that ROI sums are included properly
     mca_sum = fly_data[vortex.roi_sums.roi0]
     np.testing.assert_equal(mca_sum.values, [512.3, 510.3, 511.84])
-    
+
+
 def test_describe_collect_xspress(xspress):
     vortex = xspress
     # Force all the ROI counts to update
@@ -539,7 +547,7 @@ def test_parse_dxp_buffer(dxp):
     assert len(data["pixels"]) == 3
 
 
-@pytest.mark.parametrize('vortex', DETECTORS, indirect=True)
+@pytest.mark.parametrize("vortex", DETECTORS, indirect=True)
 def test_device_sums(vortex):
     """Does the device correctly calculate the overall counts, etc."""
     assert isinstance(vortex.total_count, Signal)
@@ -554,7 +562,7 @@ def test_device_sums(vortex):
     assert vortex.total_count.get() == expected
 
 
-@pytest.mark.parametrize('vortex', DETECTORS, indirect=True)
+@pytest.mark.parametrize("vortex", DETECTORS, indirect=True)
 def test_roi_sums(vortex):
     """Check that we get the sum over all elements for an ROI."""
     # Check that the ROI calc signals exist
@@ -566,7 +574,7 @@ def test_roi_sums(vortex):
     assert vortex.roi_sums.roi0.net_count.get() == 13
 
 
-@pytest.mark.parametrize('vortex', DETECTORS, indirect=True)
+@pytest.mark.parametrize("vortex", DETECTORS, indirect=True)
 def test_mca_calcs(vortex):
     # Check that the ROI calc signals exist
     assert isinstance(vortex.mcas.mca0.total_count, OphydObject)
@@ -575,6 +583,7 @@ def test_mca_calcs(vortex):
     mca = vortex.mcas.mca0
     mca.spectrum.sim_put(spectrum)
     assert mca.total_count.get(use_monitor=False) == np.sum(spectrum)
+
 
 @pytest.mark.parametrize("vortex", ["xspress"], indirect=True)
 def test_dead_time_calc(vortex):

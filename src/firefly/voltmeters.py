@@ -56,9 +56,10 @@ class VoltmetersDisplay(display.FireflyDisplay):
         action.setText("MCS caQtDM")
         action.triggered.connect(self.launch_mcs_caqtdm)
         action.setIcon(qta.icon("fa5s.wrench"))
-        action.setToolTip("Launch the caQtDM panel for the multi-channel scaler controls.")
+        action.setToolTip(
+            "Launch the caQtDM panel for the multi-channel scaler controls."
+        )
         self.caqtdm_actions.append(action)
-
 
     def customize_ui(self):
         # Delete existing voltmeter widgets
@@ -92,4 +93,3 @@ class VoltmetersDisplay(display.FireflyDisplay):
             "P": f"{device.scaler_prefix}:",
         }
         super().launch_caqtdm(macros=caqtdm_macros, ui_file=self.caqtdm_mcs_ui_file)
-        

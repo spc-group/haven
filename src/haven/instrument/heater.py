@@ -40,7 +40,9 @@ def load_heater_coros(config=None):
     # Load the heaters
     for name, cfg in config.get("heater", {}).items():
         Cls = globals().get(cfg["device_class"])
-        yield make_device(Cls, prefix=f"{cfg['prefix']}:", name=name, labels={"heaters"})
+        yield make_device(
+            Cls, prefix=f"{cfg['prefix']}:", name=name, labels={"heaters"}
+        )
 
 
 def load_heaters(config=None):

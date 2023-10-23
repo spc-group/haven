@@ -645,7 +645,7 @@ def load_stage_coros(config=None):
             AerotechStage,
             name=name,
             prefix=stage_data["prefix"],
-            delay_prefix=stage_data['delay_prefix'],
+            delay_prefix=stage_data["delay_prefix"],
             pv_vert=stage_data["pv_vert"],
             pv_horiz=stage_data["pv_horiz"],
         )
