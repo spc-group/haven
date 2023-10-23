@@ -384,9 +384,13 @@ class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
         net_counts_name = self.net_counts.name
         # Use the scaler's clock counter to calculate timestamps
         times = self.mca_times.spectrum.get()
+        print(f"{time=}")
         times = np.divide(times, self.clock.get(), casting="safe")
+        print(f"{time=}")
         times = np.cumsum(times)
+        print(f"{time=}")
         pso_timestamps = times + self.start_timestamp
+        print(f"{pso_timestamps=}")
         # Retrieve data, except for first point (during taxiing)
         data = self.mca.spectrum.get()[1:]
         # Convert timestamps from PSO pulses to pixels

@@ -37,7 +37,7 @@ from haven.instrument.aps import ApsMachine
 from haven.instrument.shutter import Shutter
 from haven.instrument.camera import AravisDetector
 from haven.instrument.delay import EpicsSignalWithIO
-from haven.instrument.dxp import DxpDetectorBase, add_mcas as add_dxp_mcas
+from haven.instrument.dxp import DxpDetector, add_mcas as add_dxp_mcas
 from haven.instrument.ion_chamber import IonChamber
 from haven.instrument.xspress import Xspress3Detector, add_mcas as add_xspress_mcas
 from firefly.application import FireflyApplication
@@ -396,7 +396,7 @@ def sim_camera(sim_registry):
     yield camera
 
 
-class DxpVortex(DxpDetectorBase):
+class DxpVortex(DxpDetector):
     mcas = DDC(
         add_dxp_mcas(range_=[0, 1, 2, 3]),
         kind=Kind.normal | Kind.hinted,

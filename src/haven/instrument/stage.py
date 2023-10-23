@@ -80,7 +80,7 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
     remaining components will be calculated accordingly.
 
     All position or distance components are assumed to be in motor
-    record engineering units, unless preceded with "encoder\_", in
+    record engineering units, unless preceded with "encoder_", in
     which case they are in units of encoder pulses based on the
     encoder resolution.
 

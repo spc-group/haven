@@ -24,7 +24,8 @@ httpx_reason = (
     "in *run_browser.py* ln 294"
 )
 
-pytest.skip(reason=httpx_reason, allow_module_level=True)
+
+# pytest.skip(reason=httpx_reason, allow_module_level=True)
 
 
 def wait_for_runs_model(display, qtbot):

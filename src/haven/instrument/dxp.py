@@ -447,7 +447,8 @@ def load_dxp_coros(config=None):
     # Get the detector definitions from config files
     if config is None:
         config = load_config()
-    for name, cfg in config.get("xspress", {}).items():
+    for name, cfg in config.get("dxp", {}).items():
+        print(name, cfg)
         yield make_dxp_device(
             device_name=name,
             prefix=cfg["prefix"],
