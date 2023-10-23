@@ -10,7 +10,7 @@ from unittest import mock
 import asyncio
 
 import pytest
-from qtpy import QtWidgets
+
 import ophyd
 from ophyd import DynamicDeviceComponent as DDC, Kind
 from ophyd.sim import (
@@ -19,13 +19,8 @@ from ophyd.sim import (
     fake_device_cache,
     FakeEpicsSignal,
 )
-from pydm.data_plugins import add_plugin
 
 
-top_dir = Path(__file__).parent.parent.resolve()
-ioc_dir = top_dir / "tests" / "iocs"
-haven_dir = top_dir / "haven"
-test_dir = top_dir / "tests"
 
 
 import haven
@@ -38,7 +33,6 @@ from haven.instrument.shutter import Shutter
 from haven.instrument.camera import AravisDetector
 from haven.instrument.delay import EpicsSignalWithIO
 from haven.instrument.dxp import DxpDetectorBase, add_mcas as add_dxp_mcas
-from haven.instrument.ion_chamber import IonChamber
 from haven.instrument.xspress import Xspress3Detector, add_mcas as add_xspress_mcas
 from firefly.application import FireflyApplication
 from firefly.ophyd_plugin import OphydPlugin
@@ -49,41 +43,6 @@ IOC_SCOPE = "function"
 IOC_SCOPE = "session"
 
 
-# Specify the configuration files to use for testing
-os.environ["HAVEN_CONFIG_FILES"] = ",".join(
-    [
-        f"{test_dir/'iconfig_testing.toml'}",
-        f"{haven_dir/'iconfig_default.toml'}",
-    ]
-)
-
-
-class FakeEpicsSignalWithIO(FakeEpicsSignal):
-    # An EPICS signal that simply uses the DG-645 convention of
-    # 'AO' being the setpoint and 'AI' being the read-back
-    _metadata_keys = EpicsSignalWithIO._metadata_keys
-
-    def __init__(self, prefix, **kwargs):
-        super().__init__(f"{prefix}I", write_pv=f"{prefix}O", **kwargs)
-
-
-fake_device_cache[EpicsSignalWithIO] = FakeEpicsSignalWithIO
-
-
-def pytest_configure(config):
-    app = QtWidgets.QApplication.instance()
-    assert app is None
-    app = FireflyApplication()
-    app = QtWidgets.QApplication.instance()
-    assert isinstance(app, FireflyApplication)
-    # # Create event loop for asyncio stuff
-    # loop = asyncio.new_event_loop()
-    # asyncio.set_event_loop(loop)
-
-
-@pytest.fixture(scope="session")
-def qapp_cls():
-    return FireflyApplication
 
 
 @pytest.fixture(scope=IOC_SCOPE)
@@ -215,25 +174,6 @@ def ioc_ptc10(request):
     )
 
 
-@pytest.fixture(scope="session")
-def pydm_ophyd_plugin():
-    return add_plugin(OphydPlugin)
-
-
-@pytest.fixture()
-def ffapp(pydm_ophyd_plugin):
-    # Get an instance of the application
-    app = FireflyApplication.instance()
-    if app is None:
-        app = FireflyApplication()
-    # Set up the actions and other boildplate stuff
-    app.setup_window_actions()
-    app.setup_runengine_actions()
-    assert isinstance(app, FireflyApplication)
-    yield app
-    if hasattr(app, "_queue_thread"):
-        app._queue_thread.quit()
-
 
 @pytest.fixture(scope=IOC_SCOPE)
 def ioc_motor(request):
@@ -332,30 +272,6 @@ def ioc_dxp(request):
     )
 
 
-@pytest.fixture()
-def sim_registry(monkeypatch):
-    # mock out Ophyd connections so devices can be created
-    modules = [
-        haven.instrument.fluorescence_detector,
-        haven.instrument.monochromator,
-        haven.instrument.ion_chamber,
-        haven.instrument.motor,
-        haven.instrument.device,
-    ]
-    for mod in modules:
-        monkeypatch.setattr(mod, "await_for_connection", mock.AsyncMock())
-    monkeypatch.setattr(
-        haven.instrument.ion_chamber, "caget", mock.AsyncMock(return_value="I0")
-    )
-    # Clean the registry so we can restore it later
-    objects_by_name = registry._objects_by_name
-    objects_by_label = registry._objects_by_label
-    registry.clear()
-    # Run the test
-    yield registry
-    # Restore the previous registry components
-    registry._objects_by_name = objects_by_name
-    registry._objects_by_label = objects_by_label
 
 
 # Simulated devices
@@ -436,36 +352,6 @@ def xspress(sim_registry):
     yield vortex
 
 
-@pytest.fixture()
-def sim_ion_chamber(sim_registry):
-    FakeIonChamber = make_fake_device(IonChamber)
-    ion_chamber = FakeIonChamber(
-        prefix="scaler_ioc", name="I00", labels={"ion_chambers"}, ch_num=2
-    )
-    sim_registry.register(ion_chamber)
-    return ion_chamber
-
-
-@pytest.fixture()
-def I0(sim_registry):
-    """A fake ion chamber named 'I0' on scaler channel 2."""
-    FakeIonChamber = make_fake_device(IonChamber)
-    ion_chamber = FakeIonChamber(
-        prefix="scaler_ioc", name="I0", labels={"ion_chambers"}, ch_num=2
-    )
-    sim_registry.register(ion_chamber)
-    return ion_chamber
-
-
-@pytest.fixture()
-def It(sim_registry):
-    """A fake ion chamber named 'It' on scaler channel 3."""
-    FakeIonChamber = make_fake_device(IonChamber)
-    ion_chamber = FakeIonChamber(
-        prefix="scaler_ioc", name="It", labels={"ion_chambers"}, ch_num=3
-    )
-    sim_registry.register(ion_chamber)
-    return ion_chamber
 
 
 @pytest.fixture()
@@ -496,9 +382,3 @@ def sim_aerotech_flyer(sim_aerotech):
 @pytest.fixture()
 def RE(event_loop):
     return RunEngineStub(call_returns_result=True)
-
-
-@pytest.fixture()
-def beamline_connected():
-    with _beamline_connected(True):
-        yield

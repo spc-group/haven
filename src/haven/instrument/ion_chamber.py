@@ -436,13 +436,6 @@ class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
         self.stage_sigs[self.auto_count] = 0
         # Sync the ion chamber description with the voltmeter description
         self.description.subscribe(self.update_voltmeter_description, run=True)
-        # Ensure the voltmeter is in differential mode to measure pre-amp
-        try:
-            self.voltmeter.differential.set(1).wait(timeout=1)
-        except OpException:
-            msg = f"Could not set voltmeter {self.name} channel differential state."
-            log.warning(msg)
-            warnings.warn(msg)
 
     def update_voltmeter_description(self, *args, value, **kwargs):
         self.voltmeter.description.put(value)
@@ -614,6 +607,13 @@ async def load_ion_chamber(
         voltmeter_prefix=f"{voltmeter_prefix}{lj_num}:Ai{lj_chan}",
         labels={"ion_chambers"},
     )
+    # Ensure the voltmeter is in differential mode to measure pre-amp
+    try:
+        ion_chamber.voltmeter.differential.set(1).wait(timeout=1)
+    except OpException as exc:
+        msg = f"Could not set voltmeter {self.name} channel differential state: {exc}"
+        log.warning(msg)
+        warnings.warn(msg)
     return ion_chamber
 
 

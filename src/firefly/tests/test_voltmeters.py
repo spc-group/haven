@@ -17,11 +17,10 @@ def fake_ion_chambers(I0, It):
     return [I0, It]
 
 
-def test_device(qtbot, ffapp, sim_registry):
+def test_device(qtbot, ffapp, I0):
+    ffapp.setup_window_actions()
     window = FireflyMainWindow()
-    ic = haven.IonChamber("", ch_num=1, name="my_ion_chamber", labels={"ion_chambers"})
-    sim_registry.register(ic)
-    display = VoltmeterDisplay(macros={"IC": "my_ion_chamber"})
+    display = VoltmeterDisplay(macros={"IC": "I0"})
     assert hasattr(display, "_device")
     assert isinstance(display._device, haven.IonChamber)
 
@@ -54,14 +53,15 @@ def test_embedded_display_widgets(qtbot, fake_ion_chambers, ffapp):
     # Check that the embedded display widgets get added correctly
     assert hasattr(vms_display, "_ion_chamber_displays")
     assert len(vms_display._ion_chamber_displays) == 2
-    assert vms_display.voltmeters_layout.count() == 2
+    # two displays and a separator
+    assert vms_display.voltmeters_layout.count() == 3
     # Check that the embedded display widgets have the correct macros
     emb_disp = vms_display._ion_chamber_displays[0]
     disp = emb_disp.open_file(force=True)
     macros = disp.macros()
-    assert macros == {"IC": "I0", "SCALER": "eggs_ioc"}
+    assert macros == {"IC": "I0", "SCALER": "scaler_ioc"}
     # Check that a device has been created properly
-    assert type(disp._device) is haven.IonChamber
+    assert isinstance(disp._device, haven.IonChamber)
 
 
 def test_ion_chamber_menu(fake_ion_chambers, qtbot, ffapp):
