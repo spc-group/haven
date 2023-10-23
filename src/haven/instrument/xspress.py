@@ -591,4 +591,13 @@ def load_xspress_coros(config=None):
 
 
 def load_xspress(config=None):
+    """Load all the xspress-based detector devices.
+
+    Configuration is determined from the iconfig.toml file.
+
+    Optionally, *config* can be given a dictionary with configuration
+    matching the iconfig.toml file to use instead. Mostly useful for
+    testing.
+
+    """
     asyncio.run(aload_devices(*load_xspress_coros(config=config)))
