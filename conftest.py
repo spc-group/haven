@@ -32,6 +32,7 @@ from haven.instrument.ion_chamber import IonChamber
 from haven.instrument.xspress import Xspress3Detector, add_mcas as add_xspress_mcas
 from firefly.application import FireflyApplication
 from firefly.ophyd_plugin import OphydPlugin
+
 # from run_engine import RunEngineStub
 from firefly.application import FireflyApplication
 
@@ -61,7 +62,6 @@ class FakeEpicsSignalWithIO(FakeEpicsSignal):
 
 
 fake_device_cache[EpicsSignalWithIO] = FakeEpicsSignalWithIO
-
 
 
 @pytest.fixture()
@@ -177,7 +177,6 @@ def sim_ion_chamber(sim_registry):
     )
     sim_registry.register(ion_chamber)
     return ion_chamber
-    
 
 
 @pytest.fixture()
@@ -200,7 +199,7 @@ def It(sim_registry):
     )
     sim_registry.register(ion_chamber)
     return ion_chamber
-            
+
 
 @pytest.fixture(scope="session")
 def pydm_ophyd_plugin():

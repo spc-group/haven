@@ -40,7 +40,7 @@ def test_gain_signals(sim_ion_chamber):
     preamp.offset_value.put(1)  # 2 uA/V
     preamp.offset_unit.put(2)
     # Check the gain and gain_db signals
-    assert preamp.gain.get(use_monitor=False) == pytest.approx(1/20e-6)
+    assert preamp.gain.get(use_monitor=False) == pytest.approx(1 / 20e-6)
     assert preamp.gain_db.get(use_monitor=False) == pytest.approx(46.9897)
 
 
@@ -86,7 +86,7 @@ def test_amps_signal(sim_ion_chamber):
     # Set the necessary dependent signals
     chamber.counts.sim_put(int(0.13e7))  # 1.3V
     chamber.clock_ticks.sim_put(1e7)  # 10 MHz clock
-    chamber.preamp.gain.put(1/2e-5)  # 20 µA/V to V/A
+    chamber.preamp.gain.put(1 / 2e-5)  # 20 µA/V to V/A
     # Make sure it ignores the offset if it's off
     chamber.preamp.offset_on.put("OFF")
     chamber.preamp.offset_value.put("2")  # 2
@@ -101,7 +101,7 @@ def test_amps_signal_with_offset(sim_ion_chamber):
     # Set the necessary dependent signals
     chamber.counts.sim_put(int(0.13e7))  # 1.3V
     chamber.clock_ticks.sim_put(1e7)  # 10 MHz clock
-    chamber.preamp.gain.put(1/2e-5)  # 20 µA/V to V/A
+    chamber.preamp.gain.put(1 / 2e-5)  # 20 µA/V to V/A
     chamber.preamp.offset_on.put("ON")
     chamber.preamp.offset_sign.put("-")
     chamber.preamp.offset_value.put("2")  # 2
@@ -118,7 +118,7 @@ def test_voltmeter_amps_signal(sim_ion_chamber):
     chamber = sim_ion_chamber
     # Set the necessary dependent signals
     chamber.voltmeter.volts.sim_put(1.3)  # 1.3V
-    chamber.preamp.gain.put(1/2e-5)  # 20 µA/V to V/A
+    chamber.preamp.gain.put(1 / 2e-5)  # 20 µA/V to V/A
     # Make sure it ignores the offset if it's off
     chamber.preamp.offset_on.put("OFF")
     chamber.preamp.offset_value.put("2")  # 2

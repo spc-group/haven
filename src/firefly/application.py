@@ -312,7 +312,7 @@ class FireflyApplication(PyDMApplication):
           queueserver API. Used for testing.
         start_thread
           Whether to start the newly create queue client thread.
-        
+
         """
         if api is None:
             api = queueserver_api()
@@ -377,7 +377,7 @@ class FireflyApplication(PyDMApplication):
                 self.stop_runengine_action,
                 self.resume_runengine_action,
                 self.halt_runengine_action,
-                self.abort_runengine_action
+                self.abort_runengine_action,
             ]
         elif re_state == "running":
             enabled_signals = [

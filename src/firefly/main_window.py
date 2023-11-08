@@ -225,8 +225,6 @@ class FireflyMainWindow(PyDMMainWindow):
         self.ui.menuSetup.addAction(app.show_bss_window_action)
         self.ui.menuPositioners.addAction(app.show_energy_window_action)
 
-       
-
     def show_status(self, message, timeout=0):
         """Show a message in the status bar."""
         bar = self.statusBar()

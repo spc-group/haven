@@ -216,7 +216,6 @@ devices_allowed = {
 }
 
 
-
 def test_setup(ffapp):
     ffapp.setup_window_actions()
     ffapp.setup_runengine_actions()
@@ -342,6 +341,7 @@ def test_open_environment(queue_app, qtbot):
     assert blocker.args == [False]
     assert api.environment_close.called
 
+
 def test_devices_available(queue_app, qtbot):
     """Check that the queue client provides a list of devices that can be
     used in plans.
@@ -356,4 +356,3 @@ def test_devices_available(queue_app, qtbot):
     # Check that the data have the right form
     devices = blocker.args[0]
     assert "sim_detector" in devices.keys()
-    

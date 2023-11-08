@@ -226,7 +226,10 @@ class QueueClient(QObject):
             if has_changed or force:
                 signal.emit(new_status[key])
         # Check for new available devices
-        if new_status['devices_allowed_uid'] != self._last_queue_status['devices_allowed_uid']:
+        if (
+            new_status["devices_allowed_uid"]
+            != self._last_queue_status["devices_allowed_uid"]
+        ):
             self.update_devices()
         # check the whole status to see if it's changed
         has_changed = new_status != self._last_queue_status
@@ -237,8 +240,10 @@ class QueueClient(QObject):
     def update_devices(self):
         "Emit the latest dict of available devices."
         response = self.api.devices_allowed()
-        if response['success']:
-            devices = response['devices_allowed']
+        if response["success"]:
+            devices = response["devices_allowed"]
             self.devices_changed.emit(devices)
         else:
-            log.warning(f"Could not poll devices_allowed: {response.get('msg', 'reason unknown.')}")
+            log.warning(
+                f"Could not poll devices_allowed: {response.get('msg', 'reason unknown.')}"
+            )

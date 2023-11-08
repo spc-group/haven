@@ -120,7 +120,7 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
         """
         gain = self.computed_gain
         self.gain.put(gain)
-        self.gain_db.put(10*math.log10(gain), internal=True)
+        self.gain_db.put(10 * math.log10(gain), internal=True)
 
     @property
     def computed_gain(self):
@@ -130,7 +130,7 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
         val = float(self.values[self.sensitivity_value.get()])
         units = self.units[self.sensitivity_unit.get()]
         inverse_gain = pint.Quantity(val, units).to("A/V").magnitude
-        return 1/inverse_gain
+        return 1 / inverse_gain
 
     def update_sensitivity_text(self, *args, obj: OphydObject, **kwargs):
         val = self.values[self.sensitivity_value.get()]
@@ -224,10 +224,7 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
         kind=Kind.config,
     )
     # Gain, but measured in decibels
-    gain_db = Cpt(
-        InternalSignal,
-        kind=Kind.config
-    )
+    gain_db = Cpt(InternalSignal, kind=Kind.config)
 
 
 # @registry.register
@@ -305,7 +302,9 @@ class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
         EpicsSignalRO, "{scaler_prefix}:scaler1.S{ch_num}", kind=Kind.normal
     )
     gate: OphydObject = FCpt(
-        EpicsSignal, "{scaler_prefix}:scaler1.G{ch_num}", kind=Kind.config,
+        EpicsSignal,
+        "{scaler_prefix}:scaler1.G{ch_num}",
+        kind=Kind.config,
     )
     preset_count: OphydObject = FCpt(
         EpicsSignal, "{scaler_prefix}:scaler1.PR{ch_num}", kind=Kind.config
@@ -523,13 +522,9 @@ class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
         net_counts_name = self.net_counts.name
         # Use the scaler's clock counter to calculate timestamps
         times = self.mca_times.spectrum.get()
-        times = np.divide(times, self.clock.get(), casting="safe")
         times = np.divide(times, self.frequency.get(), casting="safe")
->>>>>>> ion_chambers
         times = np.cumsum(times)
-        print(f"{time=}")
         pso_timestamps = times + self.start_timestamp
-        print(f"{pso_timestamps=}")
         # Retrieve data, except for first point (during taxiing)
         data = self.mca.spectrum.get()[1:]
         # Convert timestamps from PSO pulses to pixels

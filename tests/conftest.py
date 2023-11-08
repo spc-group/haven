@@ -332,8 +332,6 @@ def ioc_dxp(request):
     )
 
 
-
-
 # Simulated devices
 @pytest.fixture()
 def sim_aps(sim_registry):
@@ -454,8 +452,6 @@ def xspress(sim_registry):
     vortex = FakeXspress(name="vortex_me4", labels={"xrf_detectors"})
     sim_registry.register(vortex)
     yield vortex
-
-
 
 
 @pytest.fixture()

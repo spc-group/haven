@@ -11,7 +11,6 @@ from apstools.synApps import EpicsRecordInputFields, EpicsRecordDeviceCommonAll
 
 
 class AnalogInput(EpicsRecordInputFields, EpicsRecordDeviceCommonAll):
-
     class DiffStates(StrEnum):
         single_ended = "Single-Ended"
         differential = "Differential"
@@ -30,7 +29,9 @@ class AnalogInput(EpicsRecordInputFields, EpicsRecordDeviceCommonAll):
         EpicsSignal, "{self.base_prefix}Resolution{self.ch_num}", kind="config"
     )
     range = FCpt(
-        EpicsSignal, "{self.base_prefix}Range{self.ch_num}", kind="config",
+        EpicsSignal,
+        "{self.base_prefix}Range{self.ch_num}",
+        kind="config",
     )
     mode = FCpt(EpicsSignal, "{self.base_prefix}Mode{self.ch_num}", kind="config")
     enable = FCpt(EpicsSignal, "{self.base_prefix}Enable{self.ch_num}")
