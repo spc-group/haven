@@ -206,6 +206,7 @@ def ffapp(pydm_ophyd_plugin):
     app = FireflyApplication.instance()
     if app is None:
         app = FireflyApplication()
+        app._dummy_main_window = FireflyMainWindow()
     # Set up the actions and other boildplate stuff
     app.setup_window_actions()
     app.setup_runengine_actions()
@@ -412,7 +413,7 @@ def queue_app(ffapp):
     ffapp.setup_window_actions()
     ffapp.setup_runengine_actions()
     ffapp.prepare_queue_client(api=queue_api, start_thread=False)
-    FireflyMainWindow()
+
     try:
         yield ffapp
     finally:
