@@ -85,15 +85,47 @@ class FireflyMainWindow(PyDMMainWindow):
         if self.hide_nav_bar:
             self.toggle_nav_bar(False)
             self.ui.actionShow_Navigation_Bar.setChecked(False)
+        # Prepare the status bar
+        bar = self.statusBar()
+        _label = QtWidgets.QLabel()
+        _label.setText("Queue:")
+        bar.addPermanentWidget(_label)
+        self.ui.environment_label = QtWidgets.QLabel()
+        self.ui.environment_label.setText("N/A")
+        bar.addPermanentWidget(self.ui.environment_label)
+        _label = QtWidgets.QLabel()
+        _label.setText("/")
+        bar.addPermanentWidget(_label)
+        self.ui.re_label = QtWidgets.QLabel()
+        self.ui.re_label.setText("N/A")
+        bar.addPermanentWidget(self.ui.re_label)
+        # Connect signals to the status bar
+        app.queue_environment_state_changed.connect(self.ui.environment_label.setText)
+        app.queue_re_state_changed.connect(self.ui.re_label.setText)
         # Setup menu
         self.ui.menuSetup = QtWidgets.QMenu(self.ui.menubar)
         self.ui.menuSetup.setObjectName("menuSetup")
-        self.ui.menuSetup.setTitle("&Setup")
+        self.ui.menuSetup.setTitle("Set&up")
         self.ui.menubar.addAction(self.ui.menuSetup.menuAction())
+        # Menu for managing the Queue server
+        self.ui.queue_menu = QtWidgets.QMenu(self.ui.menubar)
+        self.ui.queue_menu.setObjectName("menuQueue")
+        self.ui.queue_menu.setTitle("&Queue")
+        self.ui.menubar.addAction(self.ui.queue_menu.menuAction())
+        for action in app.queue_action_group.actions():
+            self.ui.queue_menu.addAction(action)
+        self.ui.queue_menu.addSeparator()
+        self.ui.queue_menu.addAction(app.queue_autoplay_action)
+        self.ui.queue_menu.addAction(app.queue_open_environment_action)
+        self.ui.menuView.addAction(app.launch_queuemonitor_action)
+        # Log viewer window
+        self.add_menu_action(
+            action_name="actionShow_Log_Viewer", text="Logs", menu=self.ui.menuView
+        )
         # Positioners menu
         self.ui.menuPositioners = QtWidgets.QMenu(self.ui.menubar)
         self.ui.menuPositioners.setObjectName("menuPositioners")
-        self.ui.menuPositioners.setTitle("Positioners")
+        self.ui.menuPositioners.setTitle("&Positioners")
         self.ui.menubar.addAction(self.ui.menuPositioners.menuAction())
         # Detectors menu
         self.ui.menuDetectors = QtWidgets.QMenu(self.ui.menubar)
@@ -124,10 +156,26 @@ class FireflyMainWindow(PyDMMainWindow):
         self.ui.menuMotors.setObjectName("menuMotors")
         self.ui.menuMotors.setTitle("Motors")
         self.ui.menuPositioners.addAction(self.ui.menuMotors.menuAction())
+        # Scans menu
+        self.ui.menuScans = QtWidgets.QMenu(self.ui.menubar)
+        self.ui.menuScans.setObjectName("menuScans")
+        self.ui.menuScans.setTitle("&Scans")
+        self.ui.menubar.addAction(self.ui.menuScans.menuAction())
+        self.ui.menuScans.addAction(app.show_count_plan_window_action)
         # XAFS scan window
         self.add_menu_action(
-            action_name="actionShow_Xafs_Scan", text="XAFS Scan", menu=self.ui.menuScans
+            action_name="actionShow_Xafs_Scan",
+            text="&XAFS Scan",
+            menu=self.ui.menuScans,
         )
+        # Auto-play setting for the queue client
+        if hasattr(app, "queue_autoplay_action"):
+            self.ui.menuScans.addAction(app.queue_autoplay_action)
+        # Detectors menu
+        self.ui.menuDetectors = QtWidgets.QMenu(self.ui.menubar)
+        self.ui.menuDetectors.setObjectName("menuDetectors")
+        self.ui.menuDetectors.setTitle("&Detectors")
+        self.ui.menubar.addAction(self.ui.menuDetectors.menuAction())
         # Voltmeters window
         self.add_menu_action(
             action_name="actionShow_Voltmeters",
@@ -163,6 +211,8 @@ class FireflyMainWindow(PyDMMainWindow):
         self.ui.menuView.addAction(app.show_status_window_action)
         self.ui.menuSetup.addAction(app.show_bss_window_action)
         self.ui.menuPositioners.addAction(app.show_energy_window_action)
+
+       
 
     def show_status(self, message, timeout=0):
         """Show a message in the status bar."""

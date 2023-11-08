@@ -123,6 +123,7 @@ def load_simulated_devices(config={}):
         name="sim_detector",
         motor=motor,
         motor_field="sim_motor",
+        labels={"detectors"},
         center=0,
         Imax=1,
     )

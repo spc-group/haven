@@ -220,9 +220,9 @@
         </spacer>
        </item>
        <item>
-        <widget class="QPushButton" name="run_scan_button">
+        <widget class="QueueButton" name="run_scan_button">
          <property name="styleSheet">
-          <string notr="true">background-color: #28a745</string>
+          <string notr="true"># background-color: #28a745</string>
          </property>
          <property name="text">
           <string>Run Scan</string>
@@ -235,6 +235,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>QueueButton</class>
+   <extends>QPushButton</extends>
+   <header>firefly.queue_button</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

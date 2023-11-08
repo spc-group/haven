@@ -119,4 +119,3 @@ imagej_command = "imagej"
 # name = "sim_det"
 # description = "Simulated Camera"
 # device_class = "SimDetector"
-

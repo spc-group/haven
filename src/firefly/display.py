@@ -22,6 +22,7 @@ class FireflyDisplay(Display):
         self.customize_device()
         self.customize_ui()
         self.prepare_caqtdm_actions()
+        # self.find_plan_widgets()
 
     def prepare_caqtdm_actions(self):
         """Create QActions for opening caQtDM panels.
@@ -43,6 +44,24 @@ class FireflyDisplay(Display):
             action.triggered.connect(self.launch_caqtdm)
             action.setToolTip("Launch the caQtDM panel for {self.device.name}.")
             self.caqtdm_actions.append(action)
+
+    def _all_children(self, widget):
+        for child in widget.children():
+            yield widget
+            yield from self._all_children(widget=child)
+
+    def find_plan_widgets(self):
+        """Look through widgets and determine if any of them are used for
+        bluesky plans.
+
+        """
+        # from pprint import pprint
+        # pprint([c.objectName() for c in self._all_children(self)])
+        # for child in self.ui.children():
+        #     if child.objectName() == "set_energy_button":
+        #         print(f"**{child.objectName()}**")
+        #     else:
+        #         print(child.objectName())
 
     def _open_caqtdm_subprocess(self, cmds, *args, **kwargs):
         """Launch a new subprocess and save it to self._caqtdm_process."""

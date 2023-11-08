@@ -74,6 +74,11 @@ def main(default_fullscreen=False, default_display="status"):
         default=default_display,
     )
     parser.add_argument(
+        "--no-instrument",
+        action="store_true",
+        help="Do not try to create devices. Useful for development if much beamline hardware is offline.",
+    )
+    parser.add_argument(
         "--perfmon",
         action="store_true",
         help="Enable performance monitoring," + " and print CPU usage to the terminal.",
@@ -175,6 +180,8 @@ def main(default_fullscreen=False, default_display="status"):
     )
 
     # Define devices on the beamline (slow!)
+    if not pydm_args.no_instrument:
+        haven.load_instrument()
     app.load_instrument()
     FireflyApplication.processEvents()
 
