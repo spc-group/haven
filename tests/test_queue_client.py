@@ -343,6 +343,10 @@ def test_open_environment(queue_app, qtbot):
     assert api.environment_close.called
 
 def test_devices_available(queue_app, qtbot):
+    """Check that the queue client provides a list of devices that can be
+    used in plans.
+
+    """
     api = queue_app._queue_client.api
     api.devices_allowed.return_value = devices_allowed
     client = queue_app._queue_client
@@ -352,3 +356,4 @@ def test_devices_available(queue_app, qtbot):
     # Check that the data have the right form
     devices = blocker.args[0]
     assert "sim_detector" in devices.keys()
+    

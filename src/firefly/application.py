@@ -105,6 +105,7 @@ class FireflyApplication(PyDMApplication):
         # self.setStyle("Adwaita-dark")
         # qdarktheme.setup_theme(additional_qss=qss_file.read_text())
         self.windows = OrderedDict()
+        self.queue_re_state_changed.connect(self.enable_queue_controls)
 
     def __del__(self):
         if hasattr(self, "_queue_thread"):
@@ -293,12 +294,24 @@ class FireflyApplication(PyDMApplication):
             action.triggered.connect(slot)
             self.motor_window_slots.append(slot)
 
-    def prepare_queue_client(self, api=None):
+    def prepare_queue_client(self, start_thread: bool = True, api=None):
+        """Set up the QueueClient object that talks to the queue server.
+
+        Parameters
+        ==========
+        api
+          queueserver API. Used for testing.
+        start_thread
+          Whether to start the newly create queue client thread.
+        
+        """
         if api is None:
             api = queueserver_api()
         client = QueueClient(api=api)
         thread = QueueClientThread(client=client)
         client.moveToThread(thread)
+        self._queue_client = client
+        self._queue_thread = thread
         # Connect actions to slots for controlling the queueserver
         self.pause_runengine_action.triggered.connect(
             partial(client.request_pause, defer=True)
@@ -327,10 +340,46 @@ class FireflyApplication(PyDMApplication):
         )
         self.queue_open_environment_action = client.open_environment_action
         # Start the thread
-        thread.start()
-        # Save references to the thread and runner
-        self._queue_client = client
-        self._queue_thread = thread
+        if start_thread:
+            thread.start()
+
+    def enable_queue_controls(self, re_state):
+        """Enable/disable the navbar buttons that control the queue.
+
+        Most buttons are only relevant when the run engine is in
+        certain states. For exmple, you can't click Play if the run
+        engine is already running.
+
+        """
+        all_actions = [
+            self.start_queue_action,
+            self.stop_runengine_action,
+            self.pause_runengine_action,
+            self.pause_runengine_now_action,
+            self.resume_runengine_action,
+            self.abort_runengine_action,
+            self.halt_runengine_action,
+        ]
+        # Decide which signals to enable
+        if re_state == "idle":
+            enabled_signals = [self.start_queue_action]
+        elif re_state == "paused":
+            enabled_signals = [
+                self.stop_runengine_action,
+                self.resume_runengine_action,
+                self.halt_runengine_action,
+                self.abort_runengine_action
+            ]
+        elif re_state == "running":
+            enabled_signals = [
+                self.pause_runengine_action,
+                self.pause_runengine_now_action,
+            ]
+        else:
+            raise ValueError(f"Unknown run engine state: {re_state}")
+        # Enable/disable the relevant signals
+        for action in all_actions:
+            action.setEnabled(action in enabled_signals)
 
     def add_queue_item(self, item):
         log.debug(f"Application received item to add to queue: {item}")

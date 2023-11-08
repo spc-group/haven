@@ -210,9 +210,13 @@ def ffapp(pydm_ophyd_plugin):
     app.setup_window_actions()
     app.setup_runengine_actions()
     assert isinstance(app, FireflyApplication)
-    yield app
-    if hasattr(app, "_queue_thread"):
-        app._queue_thread.quit()
+    try:
+        yield app
+    finally:
+        if hasattr(app, "_queue_thread"):
+            app._queue_thread.quit()
+        app.quit()
+        del app
 
 
 @pytest.fixture(scope=IOC_SCOPE)
@@ -407,9 +411,15 @@ def queue_app(ffapp):
     queue_api.queue_start.return_value = {"success": True}
     ffapp.setup_window_actions()
     ffapp.setup_runengine_actions()
-    ffapp.prepare_queue_client(api=queue_api)
+    ffapp.prepare_queue_client(api=queue_api, start_thread=False)
     FireflyMainWindow()
-    yield ffapp
+    try:
+        yield ffapp
+    finally:
+        # print(self._queue_thread)
+        print("Exiting")
+        ffapp._queue_thread.quit()
+        ffapp._queue_thread.wait(5)
 
 
 @pytest.fixture()

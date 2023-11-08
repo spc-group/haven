@@ -191,6 +191,8 @@ class FireflyMainWindow(PyDMMainWindow):
         self.ui.menuScans.addSeparator()
         self.ui.menuScans.addAction(app.show_run_browser_action)
 
+       
+
     def show_status(self, message, timeout=0):
         """Show a message in the status bar."""
         bar = self.statusBar()
