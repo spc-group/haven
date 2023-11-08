@@ -11,7 +11,7 @@ from unittest import mock
 import asyncio
 
 import pytest
-from qtpy import QtWidgets
+
 import ophyd
 from ophyd import DynamicDeviceComponent as DDC, Kind
 from ophyd.sim import (
@@ -21,13 +21,6 @@ from ophyd.sim import (
     FakeEpicsSignal,
 )
 from pydm.data_plugins import add_plugin
-
-
-top_dir = Path(__file__).parent.parent.resolve()
-ioc_dir = top_dir / "tests" / "iocs"
-haven_dir = top_dir / "haven"
-test_dir = top_dir / "tests"
-
 
 import haven
 from haven.simulated_ioc import simulated_ioc
@@ -339,30 +332,6 @@ def ioc_dxp(request):
     )
 
 
-@pytest.fixture()
-def sim_registry(monkeypatch):
-    # mock out Ophyd connections so devices can be created
-    modules = [
-        haven.instrument.fluorescence_detector,
-        haven.instrument.monochromator,
-        haven.instrument.ion_chamber,
-        haven.instrument.motor,
-        haven.instrument.device,
-    ]
-    for mod in modules:
-        monkeypatch.setattr(mod, "await_for_connection", mock.AsyncMock())
-    monkeypatch.setattr(
-        haven.instrument.ion_chamber, "caget", mock.AsyncMock(return_value="I0")
-    )
-    # Clean the registry so we can restore it later
-    objects_by_name = registry._objects_by_name
-    objects_by_label = registry._objects_by_label
-    registry.clear()
-    # Run the test
-    yield registry
-    # Restore the previous registry components
-    registry._objects_by_name = objects_by_name
-    registry._objects_by_label = objects_by_label
 
 
 # Simulated devices
@@ -487,14 +456,6 @@ def xspress(sim_registry):
     yield vortex
 
 
-@pytest.fixture()
-def sim_ion_chamber(sim_registry):
-    FakeIonChamber = make_fake_device(IonChamber)
-    ion_chamber = FakeIonChamber(
-        prefix="scaler_ioc", name="I00", labels={"ion_chambers"}, ch_num=2
-    )
-    sim_registry.register(ion_chamber)
-    return ion_chamber
 
 
 @pytest.fixture()
@@ -525,6 +486,7 @@ def sim_aerotech_flyer(sim_aerotech):
 @pytest.fixture()
 def RE(event_loop):
     return RunEngineStub(call_returns_result=True)
+
 
 @pytest.fixture()
 def beamline_connected():

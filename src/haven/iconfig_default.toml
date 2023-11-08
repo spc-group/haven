@@ -74,8 +74,12 @@ prefix = "scaler_ioc"
 channels = [2]
 
 [ion_chamber.preamp]
-
 prefix = "preamp_ioc"
+
+[ion_chamber.voltmeter]
+prefix = "255idc:LabjackT7_"  # Don't include the labjack number
+
+[fluorescence_detector]
 
 [dxp.vortex_me4]
 

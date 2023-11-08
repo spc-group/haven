@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>608</width>
-    <height>411</height>
+    <height>449</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -36,6 +36,9 @@
      </property>
      <item>
       <layout class="QVBoxLayout" name="voltmeters_layout">
+       <property name="spacing">
+        <number>0</number>
+       </property>
        <property name="rightMargin">
         <number>0</number>
        </property>
@@ -47,8 +50,11 @@
          <property name="toolTip">
           <string/>
          </property>
+         <property name="styleSheet">
+          <string notr="true"/>
+         </property>
          <property name="macros" stdset="0">
-          <string>{&quot;CHANNEL_NUMBER&quot;: 2, &quot;PREAMP_PREFIX&quot;: &quot;SR01:IpreSlit&quot;}</string>
+          <string>{&quot;IC&quot;: &quot;fakeIpreKB&quot;}</string>
          </property>
          <property name="filename" stdset="0">
           <string>voltmeter.py</string>
@@ -61,7 +67,7 @@
           <string/>
          </property>
          <property name="macros" stdset="0">
-          <string>{&quot;CHANNEL_NUMBER&quot;: 4, &quot;PREAMP_PREFIX&quot;: &quot;SR03:I0&quot;}</string>
+          <string>{&quot;IC&quot;: &quot;fakeI0&quot;}</string>
          </property>
          <property name="filename" stdset="0">
           <string>voltmeter.py</string>
@@ -74,7 +80,7 @@
           <string/>
          </property>
          <property name="macros" stdset="0">
-          <string>{&quot;CHANNEL_NUMBER&quot;: 3, &quot;PREAMP_PREFIX&quot;: &quot;SR02:IpreKB&quot;}</string>
+          <string>{&quot;IC&quot;: &quot;fakeIt&quot;}</string>
          </property>
          <property name="filename" stdset="0">
           <string>voltmeter.py</string>
@@ -87,7 +93,7 @@
           <string/>
          </property>
          <property name="macros" stdset="0">
-          <string>{&quot;CHANNEL_NUMBER&quot;: 5, &quot;PREAMP_PREFIX&quot;: &quot;SR04:It&quot;}</string>
+          <string>{&quot;IC&quot;: &quot;fakeIref&quot;}</string>
          </property>
          <property name="filename" stdset="0">
           <string>voltmeter.py</string>
@@ -99,21 +105,8 @@
      <item>
       <layout class="QHBoxLayout" name="horizontalLayout">
        <property name="bottomMargin">
-        <number>5</number>
+        <number>0</number>
        </property>
-       <item>
-        <widget class="PyDMCheckbox" name="PyDMCheckbox">
-         <property name="toolTip">
-          <string/>
-         </property>
-         <property name="text">
-          <string>Auto Count</string>
-         </property>
-         <property name="channel" stdset="0">
-          <string>${SCALER}.CONT</string>
-         </property>
-        </widget>
-       </item>
        <item>
         <widget class="PyDMPushButton" name="PyDMPushButton">
          <property name="toolTip">
@@ -164,6 +157,19 @@
         </widget>
        </item>
        <item>
+        <widget class="QPushButton" name="pushButton">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="toolTip">
+          <string>Queue a plan to automatically set the selected ion chamber gains to within the range 0.5V to 4.5V.</string>
+         </property>
+         <property name="text">
+          <string>Auto-gain</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <spacer name="horizontalSpacer">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
@@ -183,11 +189,6 @@
   </layout>
  </widget>
  <customwidgets>
-  <customwidget>
-   <class>PyDMCheckbox</class>
-   <extends>QCheckBox</extends>
-   <header>pydm.widgets.checkbox</header>
-  </customwidget>
   <customwidget>
    <class>PyDMEmbeddedDisplay</class>
    <extends>QFrame</extends>
