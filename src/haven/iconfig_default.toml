@@ -77,20 +77,14 @@ channels = [2]
 
 prefix = "preamp_ioc"
 
-# Keys for ion_chamber definitions must begin with "ch" (e.g. "ch1", "ch2")
-
-[fluorescence_detector]
-
-[fluorescence_detector.vortex_me4]
+[dxp.vortex_me4]
 
 prefix = "vortex_me4"
-electronics = "dxp"  # or "xspress3"
 num_elements = 4
 
-[fluorescence_detector.canberra_Ge7]
+[dxp.canberra_Ge7]
 
 prefix = "20xmap8"
-electronics = "dxp"  # or "xspress3"
 num_elements = 4
 
 [xspress.vortex_me4_xsp]

@@ -243,7 +243,6 @@ class Eiger500K(SingleTrigger, DetectorBase):
     ]
 
 
-
 def load_area_detector_coros(config=None) -> set:
     if config is None:
         config = load_config()

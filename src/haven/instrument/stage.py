@@ -80,7 +80,7 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
     remaining components will be calculated accordingly.
 
     All position or distance components are assumed to be in motor
-    record engineering units, unless preceded with "encoder\_", in
+    record engineering units, unless preceded with "encoder_", in
     which case they are in units of encoder pulses based on the
     encoder resolution.
 
@@ -645,7 +645,7 @@ def load_stage_coros(config=None):
             AerotechStage,
             name=name,
             prefix=stage_data["prefix"],
-            delay_prefix=stage_data['delay_prefix'],
+            delay_prefix=stage_data["delay_prefix"],
             pv_vert=stage_data["pv_vert"],
             pv_horiz=stage_data["pv_horiz"],
         )

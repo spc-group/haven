@@ -158,8 +158,10 @@ class Connection(PyDMConnection):
             try:
                 return self._cpt.set(new_value, timeout=1)
             except RuntimeError:
-                msg = (f"Previous set for {self._cpt.name} still in progress, "
-                       f"skipping set to {new_value}")
+                msg = (
+                    f"Previous set for {self._cpt.name} still in progress, "
+                    f"skipping set to {new_value}"
+                )
                 warnings.warn(msg)
                 log.warning(msg)
                 raise

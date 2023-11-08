@@ -33,6 +33,7 @@ class VoltmeterDisplay(display.FireflyDisplay):
       (default).
 
     """
+
     _device: IonChamber = None
     gain_values = [1, 2, 5, 10, 20, 50, 100, 200, 500]
     gain_units = ["pA/V", "nA/V", "µA/V", "mA/V"]

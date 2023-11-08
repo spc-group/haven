@@ -17,12 +17,15 @@ from firefly.run_client import DatabaseWorker
 log = logging.getLogger(__name__)
 
 
-httpx_reason = ("v0.1.0a106 of tiled client broke the run_browser"
-                "giving an httpx.PoolTimeout exception. "
-                "Happens when calling ``run['primary']['data'] on "
-                "in *run_browser.py* ln 294")
+httpx_reason = (
+    "v0.1.0a106 of tiled client broke the run_browser"
+    "giving an httpx.PoolTimeout exception. "
+    "Happens when calling ``run['primary']['data'] on "
+    "in *run_browser.py* ln 294"
+)
 
-pytest.skip(reason=httpx_reason, allow_module_level=True)
+
+# pytest.skip(reason=httpx_reason, allow_module_level=True)
 
 
 def wait_for_runs_model(display, qtbot):

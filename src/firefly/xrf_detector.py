@@ -44,6 +44,7 @@ class AcquireStates(IntEnum):
 
 class ROIRegion(pyqtgraph.LinearRegionItem):
     """A selection on the XRF plot, showing the current ROI."""
+
     mca_num: int
     roi_num: int
 
@@ -96,25 +97,26 @@ class ROIRegion(pyqtgraph.LinearRegionItem):
         """Set the upper value of the highlighted region."""
         if new_lower == self._last_lower:
             return
-        log.debug("Setting new region lower bound: "
-                  f"{new_lower} from {self._last_lower}")
-        self._last_lower = new_lower        
+        log.debug(
+            "Setting new region lower bound: " f"{new_lower} from {self._last_lower}"
+        )
+        self._last_lower = new_lower
         self.blockLineSignal = True
         self.lines[0].setValue(new_lower)
         self.blockLineSignal = False
-        
+
     def set_region_upper(self, new_upper):
         """Set the upper value of the highlighted region."""
         if new_upper == self._last_upper:
             return
-        log.debug("Setting new region upper bound: "
-                  f"{new_upper} from {self._last_upper}")
+        log.debug(
+            "Setting new region upper bound: " f"{new_upper} from {self._last_upper}"
+        )
         self._last_upper = new_upper
         self.blockLineSignal = True
         self.lines[1].setValue(new_upper)
         # self.setRegion(new_region)
         self.blockLineSignal = False
-        
 
 
 class XRF1DPlotItem(pyqtgraph.PlotItem):
@@ -355,49 +357,49 @@ class ROIEmbeddedDisplay(PyDMEmbeddedDisplay):
 #     def set_accumulate(self, accumulate):
 #         self.accumulate = accumulate
 
-    # def setup_trigger_channels(self):
-    #     # Set up a channel for starting detector acquisition
-    #     device = self.device
-    #     self.start_channel = PyDMChannel(
-    #         address=f"oph://{device.name}.acquire",
-    #         value_signal=self.start_all,
-    #     )
-    #     self.start_channel.connect()
-    #     self.start_erase_channel = PyDMChannel(
-    #         address=f"oph://{device.name}.acquire",
-    #         value_signal=self.start_erase,
-    #     )
-    #     self.start_erase_channel.connect()
-    #     # This one gets (dis)connected in response to the continuous button
-    #     self.acquiring_channel = PyDMChannel(
-    #         address=f"oph://{device.name}.acquiring",
-    #         value_slot=self.trigger_next,
-    #     )
+# def setup_trigger_channels(self):
+#     # Set up a channel for starting detector acquisition
+#     device = self.device
+#     self.start_channel = PyDMChannel(
+#         address=f"oph://{device.name}.acquire",
+#         value_signal=self.start_all,
+#     )
+#     self.start_channel.connect()
+#     self.start_erase_channel = PyDMChannel(
+#         address=f"oph://{device.name}.acquire",
+#         value_signal=self.start_erase,
+#     )
+#     self.start_erase_channel.connect()
+#     # This one gets (dis)connected in response to the continuous button
+#     self.acquiring_channel = PyDMChannel(
+#         address=f"oph://{device.name}.acquiring",
+#         value_slot=self.trigger_next,
+#     )
 
-    # def trigger_continuously(self, is_started):
-    #     if is_started:
-    #         self.acquiring_channel.connect()
-    #         # Trigger once to start the process
-    #         self.trigger_once(is_started=is_started)
-    #     else:
-    #         self.acquiring_channel.disconnect()
+# def trigger_continuously(self, is_started):
+#     if is_started:
+#         self.acquiring_channel.connect()
+#         # Trigger once to start the process
+#         self.trigger_once(is_started=is_started)
+#     else:
+#         self.acquiring_channel.disconnect()
 
-    # def trigger_next(self, acquire_state):
-    #     """Check if acquiring is done and start the next frame.
+# def trigger_next(self, acquire_state):
+#     """Check if acquiring is done and start the next frame.
 
-    #     Mostly used for continuous acquisition.
+#     Mostly used for continuous acquisition.
 
-    #     """
-    #     is_started = acquire_state == AcquireStates.DONE
-    #     self.trigger_once(is_started=is_started)
+#     """
+#     is_started = acquire_state == AcquireStates.DONE
+#     self.trigger_once(is_started=is_started)
 
-    # def trigger_once(self, is_started):
-    #     log.debug("Triggering once")
-    #     if self.accumulate:
-    #         start_signal = self.start_all
-    #     else:
-    #         start_signal = self.start_erase
-    #     start_signal.emit(1)
+# def trigger_once(self, is_started):
+#     log.debug("Triggering once")
+#     if self.accumulate:
+#         start_signal = self.start_all
+#     else:
+#         start_signal = self.start_erase
+#     start_signal.emit(1)
 
 
 class XRFDetectorDisplay(display.FireflyDisplay):
@@ -464,9 +466,10 @@ class XRFDetectorDisplay(display.FireflyDisplay):
         self.mca_row_hovered.connect(self.ui.mca_plot_widget.highlight_spectrum)
         self.roi_row_hovered.connect(self.ui.roi_plot_widget.highlight_spectrum)
 
-    def launch_caqtdm(self,):
+    def launch_caqtdm(
+        self,
+    ):
         super().launch_caqtdm(macros={"P": self.device.prefix.strip(":")})
-                      
 
     def enable_mca_checkboxes(self, new_state):
         """Check/uncheck the hinting checkboxes in response to the

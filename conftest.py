@@ -25,7 +25,7 @@ def sim_tiled():
     """Start a tiled server using production data from 25-ID."""
     timeout = 20
     port = "8337"
-    
+
     if tiled_is_running(port, match_command=False):
         raise RuntimeError(f"Port {port} is already in use.")
     tiled_bin = shutil.which("tiled")
