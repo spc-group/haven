@@ -40,45 +40,8 @@ from firefly.main_window import FireflyMainWindow
 from run_engine import RunEngineStub
 
 
-IOC_SCOPE = "function"
+# IOC_SCOPE = "function"
 IOC_SCOPE = "session"
-
-
-# Specify the configuration files to use for testing
-os.environ["HAVEN_CONFIG_FILES"] = ",".join(
-    [
-        f"{test_dir/'iconfig_testing.toml'}",
-        f"{haven_dir/'iconfig_default.toml'}",
-    ]
-)
-
-
-class FakeEpicsSignalWithIO(FakeEpicsSignal):
-    # An EPICS signal that simply uses the DG-645 convention of
-    # 'AO' being the setpoint and 'AI' being the read-back
-    _metadata_keys = EpicsSignalWithIO._metadata_keys
-
-    def __init__(self, prefix, **kwargs):
-        super().__init__(f"{prefix}I", write_pv=f"{prefix}O", **kwargs)
-
-
-fake_device_cache[EpicsSignalWithIO] = FakeEpicsSignalWithIO
-
-
-def pytest_configure(config):
-    app = QtWidgets.QApplication.instance()
-    assert app is None
-    app = FireflyApplication()
-    app = QtWidgets.QApplication.instance()
-    assert isinstance(app, FireflyApplication)
-    # # Create event loop for asyncio stuff
-    # loop = asyncio.new_event_loop()
-    # asyncio.set_event_loop(loop)
-
-
-@pytest.fixture(scope="session")
-def qapp_cls():
-    return FireflyApplication
 
 
 @pytest.fixture(scope=IOC_SCOPE)
@@ -213,26 +176,6 @@ def ioc_ptc10(request):
 @pytest.fixture(scope="session")
 def pydm_ophyd_plugin():
     return add_plugin(OphydPlugin)
-
-
-@pytest.fixture()
-def ffapp(pydm_ophyd_plugin):
-    # Get an instance of the application
-    app = FireflyApplication.instance()
-    if app is None:
-        app = FireflyApplication()
-        app._dummy_main_window = FireflyMainWindow()
-    # Set up the actions and other boildplate stuff
-    app.setup_window_actions()
-    app.setup_runengine_actions()
-    assert isinstance(app, FireflyApplication)
-    try:
-        yield app
-    finally:
-        if hasattr(app, "_queue_thread"):
-            app._queue_thread.quit()
-        app.quit()
-        del app
 
 
 @pytest.fixture(scope=IOC_SCOPE)
@@ -370,49 +313,14 @@ def sim_camera(sim_registry):
     yield camera
 
 
-qs_status = {
-    "msg": "RE Manager v0.0.18",
-    "items_in_queue": 0,
-    "items_in_history": 0,
-    "running_item_uid": None,
-    "manager_state": "idle",
-    "queue_stop_pending": False,
-    "worker_environment_exists": False,
-    "worker_environment_state": "closed",
-    "worker_background_tasks": 0,
-    "re_state": None,
-    "pause_pending": False,
-    "run_list_uid": "4f2d48cc-980d-4472-b62b-6686caeb3833",
-    "plan_queue_uid": "2b99ccd8-f69b-4a44-82d0-947d32c5d0a2",
-    "plan_history_uid": "9af8e898-0f00-4e7a-8d97-0964c8d43f47",
-    "devices_existing_uid": "51d8b88d-7457-42c4-b67f-097b168be96d",
-    "plans_existing_uid": "65f11f60-0049-46f5-9eb3-9f1589c4a6dd",
-    "devices_allowed_uid": "a5ddff29-917c-462e-ba66-399777d2442a",
-    "plans_allowed_uid": "d1e907cd-cb92-4d68-baab-fe195754827e",
-    "plan_queue_mode": {"loop": False},
-    "task_results_uid": "159e1820-32be-4e01-ab03-e3478d12d288",
-    "lock_info_uid": "c7fe6f73-91fc-457d-8db0-dfcecb2f2aba",
-    "lock": {"environment": False, "queue": False},
-}
-
-
 @pytest.fixture()
 def queue_app(ffapp):
-    queue_api = MagicMock()
-    queue_api.status.return_value = qs_status
-    queue_api.queue_start.return_value = {"success": True}
-    ffapp.setup_window_actions()
-    ffapp.setup_runengine_actions()
-    ffapp.prepare_queue_client(api=queue_api, start_thread=False)
+    """An application that is set up to interact (fakely) with the queue
+    server.
 
-    try:
-        yield ffapp
-    finally:
-        # print(self._queue_thread)
-        print("Exiting")
-        ffapp._queue_thread.quit()
-        ffapp._queue_thread.wait(5)
-
+    """
+    print("queue_app is deprecated, just use ffapp instead.")
+    return ffapp
 
 class DxpVortex(DxpDetector):
     mcas = DDC(

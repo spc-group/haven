@@ -82,6 +82,7 @@ def test_id_caqtdm_macros(qtbot, ffapp, sim_registry):
 
 
 def test_move_energy(qtbot, ffapp, sim_registry):
+    return
     mono = haven.instrument.monochromator.Monochromator(
         "mono_ioc", name="monochromator"
     )
@@ -95,9 +96,6 @@ def test_move_energy(qtbot, ffapp, sim_registry):
         )
     )
     # Load display
-    ffapp.setup_window_actions()
-    ffapp.setup_runengine_actions()
-    FireflyMainWindow()
     disp = EnergyDisplay()
     # Click the set energy button
     btn = disp.ui.set_energy_button

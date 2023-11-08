@@ -1,4 +1,5 @@
 import pytest
+import time
 
 from ophyd import sim
 import numpy as np
@@ -79,9 +80,11 @@ def test_energy_scan_basics(mono_motor, id_gap_motor, energies, RE):
         energy_positioners=[mono_motor, id_gap_motor],
         time_positioners=[I0_exposure, It_exposure],
     )
-    RE(scan)
+    result = RE(scan)
     # Check that the mono and ID gap ended up in the right position
-    assert mono_motor.get().readback == np.max(energies)
+    # time.sleep(1.0)
+    assert mono_motor.readback.get() == np.max(energies) 
+    # assert mono_motor.get().readback == np.max(energies)
     assert id_gap_motor.get().readback == np.max(energies)
     assert I0_exposure.get().readback == exposure_time
     assert It_exposure.get().readback == exposure_time

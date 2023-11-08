@@ -370,7 +370,11 @@ class FireflyApplication(PyDMApplication):
             self.halt_runengine_action,
         ]
         # Decide which signals to enable
-        if re_state == "idle":
+        unknown_re_state = re_state is None or re_state.strip() == ""
+        if unknown_re_state:
+            # Unknown state, no button should work
+            enabled_signals = []
+        elif re_state == "idle":
             enabled_signals = [self.start_queue_action]
         elif re_state == "paused":
             enabled_signals = [

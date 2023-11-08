@@ -70,3 +70,6 @@ def test_queue_actions_enabled(ffapp, qtbot):
     assert not ffapp.resume_runengine_action.isEnabled()
     assert not ffapp.abort_runengine_action.isEnabled()
     assert not ffapp.halt_runengine_action.isEnabled()
+    # Pretend the queue is in an unknown state (maybe the environment is closed)
+    with qtbot.waitSignal(ffapp.queue_re_state_changed):
+        ffapp.queue_re_state_changed.emit(None)

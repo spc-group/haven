@@ -64,10 +64,11 @@ class QueueClient(QObject):
         self.api = api
         super().__init__(*args, **kwargs)
         self.setup_actions()
+        self._last_queue_status = {}
 
     def setup_actions(self):
         actions = [
-            # Attr, object name, text, checkable
+            # Attr, object name, text
             ("autoplay_action", "queue_autoplay_action", "&Autoplay"),
             (
                 "open_environment_action",
@@ -219,16 +220,14 @@ class QueueClient(QObject):
         if force:
             log.debug(f"Forcing queue server status update: {new_status}")
         for key, signal in signals_to_check:
-            has_changed = (
-                self._last_queue_status is None
-                or new_status[key] != self._last_queue_status[key]
-            )
-            if has_changed or force:
+            is_new = key not in self._last_queue_status
+            has_changed = new_status[key] != self._last_queue_status.get(key)
+            if is_new or has_changed or force:
                 signal.emit(new_status[key])
         # Check for new available devices
         if (
             new_status["devices_allowed_uid"]
-            != self._last_queue_status["devices_allowed_uid"]
+            != self._last_queue_status.get("devices_allowed_uid")
         ):
             self.update_devices()
         # check the whole status to see if it's changed
