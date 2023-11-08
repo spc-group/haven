@@ -439,7 +439,7 @@ async def make_dxp_device(device_name, prefix, num_elements):
         Cls,
         prefix=f"{prefix}:",
         name=device_name,
-        labels={"xrf_detectors", "fluorescence_detectors"},
+        labels={"xrf_detectors", "fluorescence_detectors", "detectors"},
     )
 
 

@@ -3,13 +3,13 @@ from qtpy.QtCore import Qt
 from firefly.detector_list import DetectorListView
 
 
-def test_detector_model(ffapp, sim_registry, sim_vortex):
+def test_detector_model(ffapp, dxp):
     view = DetectorListView()
     assert hasattr(view, "detector_model")
     assert view.detector_model.item(0).text() == "vortex_me4"
 
 
-def test_selected_detectors(ffapp, sim_vortex, qtbot):
+def test_selected_detectors(ffapp, dxp, qtbot):
     """Do we get the list of detectors after they have been selected?"""
     # No detectors selected, so empty list
     view = DetectorListView()
