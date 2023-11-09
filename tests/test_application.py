@@ -10,14 +10,12 @@ from bluesky_queueserver_api.zmq import REManagerAPI
 
 from firefly.queue_client import QueueClient
 from firefly.application import REManagerAPI
-from firefly.main_window import FireflyMainWindow
 
 
 def test_setup(queue_app):
     queue_app.setup_window_actions()
     queue_app.setup_runengine_actions()
     api = MagicMock()
-    FireflyMainWindow()
     queue_app.prepare_queue_client(api=api)
 
 
@@ -26,7 +24,6 @@ def test_setup2(queue_app):
     queue_app.setup_window_actions()
     queue_app.setup_runengine_actions()
     api = MagicMock()
-    FireflyMainWindow()
     queue_app.prepare_queue_client(api=api)
 
 

@@ -1,13 +1,10 @@
 import pytest
 
-from firefly.main_window import FireflyMainWindow
 from firefly.xafs_scan import XafsScanDisplay
 
 
 def test_region_number(qtbot):
     """Does changing the region number affect the UI?"""
-    window = FireflyMainWindow()
-    qtbot.addWidget(window)
     disp = XafsScanDisplay()
     qtbot.addWidget(disp)
     # Check that the display has the right number of rows to start with
@@ -19,8 +16,6 @@ def test_region_number(qtbot):
 
 def test_region(qtbot):
     """Does changing the region ui respond the way it should."""
-    window = FireflyMainWindow()
-    qtbot.addWidget(window)
     disp = XafsScanDisplay()
     qtbot.addWidget(disp)
     # Does the k-space checkbox enable the k-weight edit line
@@ -31,8 +26,6 @@ def test_region(qtbot):
 
 def test_E0_checkbox(qtbot):
     """Does selecting the E0 checkbox adjust the UI properly?"""
-    window = FireflyMainWindow()
-    qtbot.addWidget(window)
     disp = XafsScanDisplay()
     qtbot.addWidget(disp)
     # K-space checkboxes should be disabled when E0 is unchecked

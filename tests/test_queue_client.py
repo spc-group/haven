@@ -13,7 +13,6 @@ from pytestqt.exceptions import TimeoutError
 
 from firefly.queue_client import QueueClient
 from firefly.application import REManagerAPI
-from firefly.main_window import FireflyMainWindow
 
 
 qs_status = {
@@ -221,7 +220,6 @@ def test_setup(ffapp):
     ffapp.setup_runengine_actions()
     api = MagicMock()
     ffapp.prepare_queue_client(api=api)
-    FireflyMainWindow()
 
 
 def test_queue_re_control(ffapp):
@@ -231,8 +229,6 @@ def test_queue_re_control(ffapp):
     ffapp.setup_window_actions()
     ffapp.setup_runengine_actions()
     ffapp.prepare_queue_client(api=api)
-    window = FireflyMainWindow()
-    window.show()
     # Try and pause the run engine
     ffapp.pause_runengine_action.trigger()
     # Check if the API paused
@@ -260,7 +256,6 @@ def test_run_plan(ffapp, qtbot):
     api.item_add.return_value = {"success": True, "qsize": 2}
     api.queue_start.return_value = {"success": True}
     ffapp.prepare_queue_client(api=api)
-    FireflyMainWindow()
     # Send a plan
     with qtbot.waitSignal(
         ffapp.queue_length_changed, timeout=1000, check_params_cb=lambda l: l == 2
@@ -272,7 +267,6 @@ def test_run_plan(ffapp, qtbot):
 
 def test_autoplay(ffapp, qtbot):
     """Test how queuing a plan starts the runengine."""
-    FireflyMainWindow()
     api = ffapp._queue_client.api
     # Send a plan
     plan = BPlan("set_energy", energy=8333)

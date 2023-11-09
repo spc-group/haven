@@ -6,7 +6,6 @@ from epics import caget, caput
 
 from haven.instrument.aps import load_aps
 from firefly.bss import BssDisplay
-from firefly.main_window import FireflyMainWindow
 
 
 @pytest.fixture()
@@ -169,7 +168,6 @@ def test_bss_proposal_updating(qtbot, ffapp, bss_api, sim_registry):
 
 
 def test_bss_proposals(ffapp, bss_api):
-    window = FireflyMainWindow()
     display = BssDisplay(api=bss_api)
     # Check values
     api_proposal = bss_api.getCurrentProposals()[0]
@@ -196,7 +194,6 @@ def test_bss_esaf_model(qtbot, ffapp, bss_api):
 
 def test_bss_esaf_updating(qtbot, ffapp, bss_api, sim_registry):
     load_aps()
-    window = FireflyMainWindow()
     display = BssDisplay(api=bss_api)
     bss = sim_registry.find(name="bss")
     # Set some base-line values on the IOC
@@ -222,7 +219,6 @@ def test_bss_esaf_updating(qtbot, ffapp, bss_api, sim_registry):
 
 
 def test_bss_esafs(ffapp, bss_api):
-    window = FireflyMainWindow()
     display = BssDisplay(api=bss_api)
     # Check values
     api_esaf = bss_api.getCurrentEsafs()[0]

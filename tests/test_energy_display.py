@@ -9,7 +9,6 @@ from apstools.devices.aps_undulator import ApsUndulator
 import haven
 from haven.instrument.monochromator import load_monochromator
 from haven.instrument.energy_positioner import load_energy_positioner
-from firefly.main_window import FireflyMainWindow
 from firefly.energy import EnergyDisplay
 
 
@@ -32,7 +31,6 @@ def test_mono_caqtdm_macros(qtbot, ffapp, sim_registry):
     # Load display
     ffapp.setup_window_actions()
     ffapp.setup_runengine_actions()
-    FireflyMainWindow()
     display = EnergyDisplay()
     display.launch_caqtdm = mock.MagicMock()
     # Check that the various caqtdm calls set up the right macros
@@ -68,7 +66,6 @@ def test_id_caqtdm_macros(qtbot, ffapp, sim_registry):
     # Load display
     ffapp.setup_window_actions()
     ffapp.setup_runengine_actions()
-    FireflyMainWindow()
     display = EnergyDisplay()
     display.launch_caqtdm = mock.MagicMock()
     # Check that the various caqtdm calls set up the right macros
@@ -137,7 +134,6 @@ def test_predefined_energies(qtbot, ffapp, ioc_mono, sim_registry):
     ffapp.setup_window_actions()
     ffapp.setup_runengine_actions()
     # Load display
-    FireflyMainWindow()
     disp = EnergyDisplay()
     # Check that the combo box was populated
     combo_box = disp.ui.edge_combo_box

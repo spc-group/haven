@@ -6,7 +6,6 @@ from pydm.data_plugins.epics_plugin import EPICSPlugin
 from pydm.widgets.channel import PyDMChannel
 from qtpy import QtWidgets, QtGui, QtCore
 
-from firefly.main_window import FireflyMainWindow
 from firefly.cameras import CamerasDisplay
 from firefly.camera import CameraDisplay, DetectorStates
 
@@ -16,10 +15,6 @@ macros = {"PREFIX": "camera_ioc:", "DESC": "Camera A"}
 
 def test_embedded_displays(qtbot, ffapp, sim_registry, sim_camera):
     """Test that the embedded displays get loaded."""
-    FireflyMainWindow()
-    # Set up fake cameras
-    # camera = haven.Camera(prefix="camera_ioc:", name="Camera A", labels={"cameras"})
-    # sim_registry.register(camera)
     # Load the display
     display = CamerasDisplay()
     # Check that the embedded display widgets get added correctly
@@ -36,7 +31,6 @@ def test_camera_channel_status(qtbot, ffapp):
     status PV.
 
     """
-    FireflyMainWindow()
     display = CameraDisplay(macros=macros)
     # Check that the pydm connections have been made to EPICS
     assert isinstance(display.detector_state, PyDMChannel)
@@ -44,7 +38,6 @@ def test_camera_channel_status(qtbot, ffapp):
 
 
 def test_set_status_byte(qtbot, ffapp):
-    FireflyMainWindow()
     display = CameraDisplay(macros=macros)
     display.show()
     # All devices are disconnected
@@ -77,7 +70,6 @@ def test_set_status_byte(qtbot, ffapp):
 def test_camera_viewer_button(qtbot, ffapp, ioc_area_detector, mocker):
     action = QtWidgets.QAction(ffapp)
     ffapp.camera_actions.append(action)
-    FireflyMainWindow()
     display = CameraDisplay(macros=macros)
     display.show()
     # Click the button

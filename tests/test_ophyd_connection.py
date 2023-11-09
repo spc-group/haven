@@ -11,7 +11,6 @@ from unittest.mock import MagicMock
 
 from haven import HavenMotor
 from firefly.ophyd_plugin import Connection as OphydConnection, OphydPlugin
-from firefly.main_window import FireflyMainWindow
 
 
 class DummyObject(QtCore.QObject):
