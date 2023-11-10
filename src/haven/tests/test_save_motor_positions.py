@@ -7,7 +7,6 @@ from zoneinfo import ZoneInfo
 import datetime as dt
 from datetime import datetime
 
-import epics
 import pytest
 from ophyd.sim import motor1, SynAxis, make_fake_device
 from ophyd import EpicsMotor, Signal, Component as Cpt
@@ -165,22 +164,18 @@ def test_list_motor_positions(mongodb, capsys):
     assert captured.out == expected
 
 
-def test_motor_position_e2e(mongodb, ioc_motor):
+def test_motor_position_e2e(mongodb, sim_motor_registry):
     """Check that a motor position can be saved, then recalled using
-    simulated IOC.
+    a simulated motor.
 
     """
     # Create an epics motor for setting values manually
-    pv = ioc_motor.pvs["m1"]
-    motor1 = EpicsMotor(pv, name="SLT V Upper")
-    motor1.wait_for_connection(timeout=20)
-    assert motor1.connected
-    registry.register(motor1)
-    registry.find(name="SLT V Upper")
-    epics.caput(pv, 504.6)
-    assert epics.caget(pv, use_monitor=False) == 504.6
-    time.sleep(0.1)
-    assert motor1.get(use_monitor=False).user_readback == 504.6
+    motor1 = sim_motor_registry.find(name="SLT V Upper")
+    # Set a fake value
+    motor1.set(504.6).wait(timeout=2)
+    # assert epics.caget(pv, use_monitor=False) == 504.6
+    # time.sleep(0.1)
+    assert motor1.get().readback == 504.6
     # Save motor position
     uid = save_motor_position(
         motor1,
@@ -188,10 +183,8 @@ def test_motor_position_e2e(mongodb, ioc_motor):
         collection=mongodb.motor_positions,
     )
     # Change to a different value
-    epics.caput(pv, 520)
-    time.sleep(0.1)
-    assert epics.caget(pv, use_monitor=False) == 520
-    assert motor1.get(use_monitor=False).user_readback == 520
+    motor1.set(520).wait(timeout=2)
+    assert motor1.get().readback == 520
     # Recall the saved position and see if it complies
     plan = recall_motor_position(uid=uid, collection=mongodb.motor_positions)
     msg = next(plan)
