@@ -18,12 +18,12 @@ def test_load_aerotech_stage(sim_registry):
     assert vert_ is not None
 
 
-def test_aerotech_flyer():
+def test_aerotech_flyer(sim_registry):
     aeroflyer = AerotechFlyer(name="aerotech_flyer", axis="@0", encoder=6)
     assert aeroflyer is not None
 
 
-def test_aerotech_stage():
+def test_aerotech_stage(sim_registry):
     fly_stage = AerotechStage(
         "motor_ioc",
         pv_vert=":m1",

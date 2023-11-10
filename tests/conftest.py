@@ -27,7 +27,7 @@ import haven
 from haven.simulated_ioc import simulated_ioc
 from haven import load_config, registry
 from haven._iconfig import beamline_connected as _beamline_connected
-from haven.instrument.stage import AerotechFlyer, AerotechStage
+from haven.instrument.aerotech import AerotechFlyer, AerotechStage
 from haven.instrument.aps import ApsMachine
 from haven.instrument.shutter import Shutter
 from haven.instrument.camera import AravisDetector
@@ -38,7 +38,6 @@ from haven.instrument.xspress import Xspress3Detector, add_mcas as add_xspress_m
 from firefly.application import FireflyApplication
 from firefly.ophyd_plugin import OphydPlugin
 from firefly.main_window import FireflyMainWindow
-from run_engine import RunEngineStub
 
 
 # IOC_SCOPE = "function"
@@ -278,33 +277,6 @@ def ioc_dxp(request):
 
 # Simulated devices
 @pytest.fixture()
-def sim_aps(sim_registry):
-    aps = instantiate_fake_device(ApsMachine, name="APS")
-    sim_registry.register(aps)
-    yield aps
-
-
-@pytest.fixture()
-def sim_shutters(sim_registry):
-    FakeShutter = make_fake_device(Shutter)
-    kw = dict(
-        prefix="_prefix",
-        open_pv="_prefix",
-        close_pv="_prefix2",
-        state_pv="_prefix2",
-        labels={"shutters"},
-    )
-    shutters = [
-        FakeShutter(name="Shutter A", **kw),
-        FakeShutter(name="Shutter C", **kw),
-    ]
-    # Registry with the simulated registry
-    for shutter in shutters:
-        sim_registry.register(shutter)
-    yield shutters
-
-
-@pytest.fixture()
 def queue_app(ffapp):
     """An application that is set up to interact (fakely) with the queue
     server.
@@ -316,40 +288,5 @@ def queue_app(ffapp):
 
 @pytest.fixture()
 def sim_vortex(dxp):
+    warnings.warn("sim_vortex is deprecated, just use ``dxp`` instead.")
     return dxp
-
-
-@pytest.fixture()
-def sim_aerotech():
-    Stage = make_fake_device(
-        AerotechStage,
-    )
-    stage = Stage(
-        "255id",
-        delay_prefix="255id:DG645",
-        pv_horiz=":m1",
-        pv_vert=":m2",
-        name="aerotech",
-    )
-    return stage
-
-
-@pytest.fixture()
-def sim_aerotech_flyer(sim_aerotech):
-    flyer = sim_aerotech.horiz
-    flyer.user_setpoint._limits = (0, 1000)
-    flyer.send_command = mock.MagicMock()
-    # flyer.encoder_resolution.put(0.001)
-    # flyer.acceleration.put(1)
-    yield flyer
-
-
-@pytest.fixture()
-def RE(event_loop):
-    return RunEngineStub(call_returns_result=True)
-
-
-@pytest.fixture()
-def beamline_connected():
-    with _beamline_connected(True):
-        yield

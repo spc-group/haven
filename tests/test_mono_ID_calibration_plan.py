@@ -5,7 +5,6 @@ from bluesky.callbacks.best_effort import BestEffortCallback
 from lmfit.models import QuadraticModel
 
 from haven import mono_ID_calibration
-from run_engine import RunEngineStub
 
 
 @pytest.fixture()
@@ -49,13 +48,12 @@ def ion_chamber(sim_registry, id_motor):
 
 
 @pytest.mark.skip(reason="``haven.plans.align_motor`` is deprecated.")
-def test_moves_energy(mono_motor, id_motor, ion_chamber, pitch2_motor, event_loop):
+def test_moves_energy(mono_motor, id_motor, ion_chamber, pitch2_motor, event_loop, RE):
     """Simple test to ensure that the plan moves the mono and undulators
     to the right starting energy."""
     # Execute the plan
     id_motor.set(8)
     fit_model = MagicMock()
-    RE = RunEngineStub()
     RE(
         mono_ID_calibration(
             energies=[8000], energy_motor=mono_motor, fit_model=fit_model
@@ -89,13 +87,12 @@ def test_aligns_mono_energy(mono_motor, id_motor, ion_chamber, pitch2_motor):
 
 
 @pytest.mark.skip(reason="``haven.plans.align_motor`` is deprecated.")
-def test_fitting_callback(mono_motor, id_motor, ion_chamber, pitch2_motor, event_loop):
+def test_fitting_callback(mono_motor, id_motor, ion_chamber, pitch2_motor, event_loop, RE):
     fit_model = MagicMock()
     plan = mono_ID_calibration(
         energies=[8000, 9000], energy_motor=mono_motor, fit_model=fit_model
     )
     # Execute the plan in the runengine
-    RE = RunEngineStub()
     result = RE(plan)
     # Check that the fitting results are available
     fit_model.fit.assert_called_once()

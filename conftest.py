@@ -11,6 +11,7 @@ from qtpy import QtWidgets
 from qtpy.QtWidgets import QAction
 from tiled.client import from_uri
 from tiled.client.cache import Cache
+from bluesky import RunEngine
 import pytest
 from ophyd import DynamicDeviceComponent as DDC, Kind
 from ophyd.sim import (
@@ -72,6 +73,16 @@ fake_device_cache[EpicsSignalWithIO] = FakeEpicsSignalWithIO
 def beamline_connected():
     with _beamline_connected(True):
         yield
+
+
+class RunEngineStub(RunEngine):
+    def __repr__(self):
+        return "<run_engine.RunEngineStub>"
+        
+
+@pytest.fixture()
+def RE(event_loop):
+    return RunEngineStub(call_returns_result=True)
 
 
 @pytest.fixture(scope="session")
@@ -272,6 +283,33 @@ def aerotech_flyer(aerotech):
     flyer.send_command = mock.MagicMock()
     yield flyer
 
+
+@pytest.fixture()
+def aps(sim_registry):
+    aps = instantiate_fake_device(ApsMachine, name="APS")
+    sim_registry.register(aps)
+    yield aps
+
+
+@pytest.fixture()
+def shutters(sim_registry):
+    FakeShutter = make_fake_device(Shutter)
+    kw = dict(
+        prefix="_prefix",
+        open_pv="_prefix",
+        close_pv="_prefix2",
+        state_pv="_prefix2",
+        labels={"shutters"},
+    )
+    shutters = [
+        FakeShutter(name="Shutter A", **kw),
+        FakeShutter(name="Shutter C", **kw),
+    ]
+    # Registry with the simulated registry
+    for shutter in shutters:
+        sim_registry.register(shutter)
+    yield shutters
+  
 
 @pytest.fixture(scope="session")
 def pydm_ophyd_plugin():
