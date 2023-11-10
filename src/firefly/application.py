@@ -480,7 +480,7 @@ class FireflyApplication(PyDMApplication):
         device_name = device.name.replace(" ", "_")
         self.show_window(
             FireflyMainWindow,
-            ui_dir / "ion_chamber.ui",
+            ui_dir / "ion_chamber.py",
             name=f"FireflyMainWindow_ion_chamber_{device_name}",
             macros={"IC": device.name},
         )

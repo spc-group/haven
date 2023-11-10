@@ -12,19 +12,15 @@ from firefly.queue_client import QueueClient
 from firefly.application import REManagerAPI
 
 
-def test_setup(queue_app):
-    queue_app.setup_window_actions()
-    queue_app.setup_runengine_actions()
+def test_setup(ffapp):
     api = MagicMock()
-    queue_app.prepare_queue_client(api=api)
+    ffapp.prepare_queue_client(api=api)
 
 
-def test_setup2(queue_app):
+def test_setup2(ffapp):
     """Verify that multiple tests can use the app without crashing."""
-    queue_app.setup_window_actions()
-    queue_app.setup_runengine_actions()
     api = MagicMock()
-    queue_app.prepare_queue_client(api=api)
+    ffapp.prepare_queue_client(api=api)
 
 
 def test_queue_actions_enabled(ffapp, qtbot):

@@ -1,4 +1,5 @@
 import os
+import warnings
 from pathlib import Path
 from unittest.mock import MagicMock
 from types import SimpleNamespace
@@ -304,62 +305,18 @@ def sim_shutters(sim_registry):
 
 
 @pytest.fixture()
-def sim_camera(sim_registry):
-    FakeCamera = make_fake_device(AravisDetector)
-    camera = FakeCamera(name="s255id-gige-A", labels={"cameras", "area_detectors"})
-    camera.pva.pv_name._readback = "255idSimDet:Pva1:Image"
-    # Registry with the simulated registry
-    sim_registry.register(camera)
-    yield camera
-
-
-@pytest.fixture()
 def queue_app(ffapp):
     """An application that is set up to interact (fakely) with the queue
     server.
 
     """
-    print("queue_app is deprecated, just use ffapp instead.")
+    warnings.warn("queue_app is deprecated, just use ffapp instead.")
     return ffapp
-
-class DxpVortex(DxpDetector):
-    mcas = DDC(
-        add_dxp_mcas(range_=[0, 1, 2, 3]),
-        kind=Kind.normal | Kind.hinted,
-        default_read_attrs=[f"mca{i}" for i in [0, 1, 2, 3]],
-        default_configuration_attrs=[f"mca{i}" for i in [0, 1, 2, 3]],
-    )
-
-
-@pytest.fixture()
-def dxp(sim_registry):
-    FakeDXP = make_fake_device(DxpVortex)
-    vortex = FakeDXP(name="vortex_me4", labels={"xrf_detectors", "detectors"})
-    sim_registry.register(vortex)
-    # vortex.net_cdf.dimensions.set([1477326, 1, 1])
-    yield vortex
 
 
 @pytest.fixture()
 def sim_vortex(dxp):
     return dxp
-
-
-class Xspress3Vortex(Xspress3Detector):
-    mcas = DDC(
-        add_xspress_mcas(range_=[0, 1, 2, 3]),
-        kind=Kind.normal | Kind.hinted,
-        default_read_attrs=[f"mca{i}" for i in [0, 1, 2, 3]],
-        default_configuration_attrs=[f"mca{i}" for i in [0, 1, 2, 3]],
-    )
-
-
-@pytest.fixture()
-def xspress(sim_registry):
-    FakeXspress = make_fake_device(Xspress3Vortex)
-    vortex = FakeXspress(name="vortex_me4", labels={"xrf_detectors"})
-    sim_registry.register(vortex)
-    yield vortex
 
 
 @pytest.fixture()

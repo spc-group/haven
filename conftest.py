@@ -1,3 +1,4 @@
+from unittest import mock
 import subprocess
 from subprocess import Popen, PIPE
 from unittest import mock
@@ -11,7 +12,7 @@ from qtpy.QtWidgets import QAction
 from tiled.client import from_uri
 from tiled.client.cache import Cache
 import pytest
-from unittest import mock
+from ophyd import DynamicDeviceComponent as DDC, Kind
 from ophyd.sim import (
     instantiate_fake_device,
     make_fake_device,
@@ -204,25 +205,55 @@ def It(sim_registry):
     return ion_chamber
 
 
+@pytest.fixture()
+def sim_camera(sim_registry):
+    FakeCamera = make_fake_device(AravisDetector)
+    camera = FakeCamera(name="s255id-gige-A", labels={"cameras", "area_detectors"})
+    camera.pva.pv_name._readback = "255idSimDet:Pva1:Image"
+    # Registry with the simulated registry
+    sim_registry.register(camera)
+    yield camera
+
+
+class DxpVortex(DxpDetector):
+    mcas = DDC(
+        add_dxp_mcas(range_=[0, 1, 2, 3]),
+        kind=Kind.normal | Kind.hinted,
+        default_read_attrs=[f"mca{i}" for i in [0, 1, 2, 3]],
+        default_configuration_attrs=[f"mca{i}" for i in [0, 1, 2, 3]],
+    )
+
+
+@pytest.fixture()
+def dxp(sim_registry):
+    FakeDXP = make_fake_device(DxpVortex)
+    vortex = FakeDXP(name="vortex_me4", labels={"xrf_detectors", "detectors"})
+    sim_registry.register(vortex)
+    # vortex.net_cdf.dimensions.set([1477326, 1, 1])
+    yield vortex
+
+
+class Xspress3Vortex(Xspress3Detector):
+    mcas = DDC(
+        add_xspress_mcas(range_=[0, 1, 2, 3]),
+        kind=Kind.normal | Kind.hinted,
+        default_read_attrs=[f"mca{i}" for i in [0, 1, 2, 3]],
+        default_configuration_attrs=[f"mca{i}" for i in [0, 1, 2, 3]],
+    )
+
+
+@pytest.fixture()
+def xspress(sim_registry):
+    FakeXspress = make_fake_device(Xspress3Vortex)
+    vortex = FakeXspress(name="vortex_me4", labels={"xrf_detectors"})
+    sim_registry.register(vortex)
+    yield vortex
+
+
 @pytest.fixture(scope="session")
 def pydm_ophyd_plugin():
     return add_plugin(OphydPlugin)
 
-
-# @pytest.fixture()
-# def ffapp(pydm_ophyd_plugin):
-#     # Get an instance of the application
-#     app = FireflyApplication.instance()
-#     assert isinstance(app, FireflyApplication)
-#     if app is None:
-#         app = FireflyApplication()
-#     # Set up the actions and other boildplate stuff
-#     app.setup_window_actions()
-#     app.setup_runengine_actions()
-#     assert isinstance(app, FireflyApplication)
-#     yield app
-#     if hasattr(app, "_queue_thread"):
-#         app._queue_thread.quit()
 
 qs_status = {
     "msg": "RE Manager v0.0.18",
