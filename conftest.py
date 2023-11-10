@@ -25,7 +25,7 @@ import haven
 from haven.simulated_ioc import simulated_ioc
 from haven import load_config, registry
 from haven._iconfig import beamline_connected as _beamline_connected
-from haven.instrument.stage import AerotechFlyer, AerotechStage
+from haven.instrument.aerotech import AerotechFlyer, AerotechStage
 from haven.instrument.aps import ApsMachine
 from haven.instrument.shutter import Shutter
 from haven.instrument.camera import AravisDetector
@@ -50,7 +50,7 @@ test_dir = top_dir / "tests"
 # Specify the configuration files to use for testing
 os.environ["HAVEN_CONFIG_FILES"] = ",".join(
     [
-        f"{test_dir/'iconfig_testing.toml'}",
+        f"{haven_dir/'iconfig_testing.toml'}",
         f"{haven_dir/'iconfig_default.toml'}",
     ]
 )
@@ -248,6 +248,29 @@ def xspress(sim_registry):
     vortex = FakeXspress(name="vortex_me4", labels={"xrf_detectors"})
     sim_registry.register(vortex)
     yield vortex
+
+
+@pytest.fixture()
+def aerotech():
+    Stage = make_fake_device(
+        AerotechStage,
+    )
+    stage = Stage(
+        "255id",
+        delay_prefix="255id:DG645",
+        pv_horiz=":m1",
+        pv_vert=":m2",
+        name="aerotech",
+    )
+    return stage
+    
+
+@pytest.fixture()
+def aerotech_flyer(aerotech):
+    flyer = aerotech.horiz
+    flyer.user_setpoint._limits = (0, 1000)
+    flyer.send_command = mock.MagicMock()
+    yield flyer
 
 
 @pytest.fixture(scope="session")
