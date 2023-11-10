@@ -5,6 +5,7 @@ import pytest
 from qtpy import QtWidgets, QtCore
 from bluesky_queueserver_api import BPlan
 from apstools.devices.aps_undulator import ApsUndulator
+from ophyd.sim import make_fake_device
 
 import haven
 from haven.instrument.monochromator import load_monochromator
@@ -12,13 +13,18 @@ from haven.instrument.energy_positioner import load_energy_positioner
 from firefly.energy import EnergyDisplay
 
 
+FakeMonochromator = make_fake_device(haven.instrument.monochromator.Monochromator)
+FakeEnergyPositioner = make_fake_device(haven.instrument.energy_positioner.EnergyPositioner)
+FakeUndulator = make_fake_device(ApsUndulator)
+
+
 def test_mono_caqtdm_macros(qtbot, ffapp, sim_registry):
     # Create fake device
     mono = sim_registry.register(
-        haven.instrument.monochromator.Monochromator("mono_ioc", name="monochromator")
+        FakeMonochromator("mono_ioc", name="monochromator")
     )
     sim_registry.register(
-        haven.instrument.energy_positioner.EnergyPositioner(
+        FakeEnergyPositioner(
             mono_pv="mono_ioc:Energy",
             id_offset_pv="mono_ioc:ID_offset",
             id_tracking_pv="mono_ioc:ID_tracking",
@@ -26,11 +32,10 @@ def test_mono_caqtdm_macros(qtbot, ffapp, sim_registry):
             name="energy",
         )
     )
-    undulator = ApsUndulator("id_ioc:", name="undulator", labels={"xray_sources"})
+    undulator = FakeUndulator("id_ioc:", name="undulator", labels={"xray_sources"})
+    undulator.energy.pvname = "id_ioc:Energy"
     sim_registry.register(undulator)
     # Load display
-    ffapp.setup_window_actions()
-    ffapp.setup_runengine_actions()
     display = EnergyDisplay()
     display.launch_caqtdm = mock.MagicMock()
     # Check that the various caqtdm calls set up the right macros
@@ -49,11 +54,11 @@ def test_mono_caqtdm_macros(qtbot, ffapp, sim_registry):
 
 def test_id_caqtdm_macros(qtbot, ffapp, sim_registry):
     # Create fake device
-    mono = haven.instrument.monochromator.Monochromator(
+    mono = FakeMonochromator(
         "mono_ioc", name="monochromator"
     )
     sim_registry.register(
-        haven.instrument.energy_positioner.EnergyPositioner(
+        FakeEnergyPositioner(
             mono_pv="mono_ioc:Energy",
             id_offset_pv="mono_ioc:ID_offset",
             id_tracking_pv="mono_ioc:ID_tracking",
@@ -61,11 +66,9 @@ def test_id_caqtdm_macros(qtbot, ffapp, sim_registry):
             name="energy",
         )
     )
-    undulator = ApsUndulator("id_ioc:", name="undulator", labels={"xray_sources"})
+    undulator = FakeUndulator("id_ioc:", name="undulator", labels={"xray_sources"})
     sim_registry.register(undulator)
     # Load display
-    ffapp.setup_window_actions()
-    ffapp.setup_runengine_actions()
     display = EnergyDisplay()
     display.launch_caqtdm = mock.MagicMock()
     # Check that the various caqtdm calls set up the right macros
@@ -79,12 +82,11 @@ def test_id_caqtdm_macros(qtbot, ffapp, sim_registry):
 
 
 def test_move_energy(qtbot, ffapp, sim_registry):
-    return
-    mono = haven.instrument.monochromator.Monochromator(
+    mono = FakeMonochromator(
         "mono_ioc", name="monochromator"
     )
     sim_registry.register(
-        haven.instrument.energy_positioner.EnergyPositioner(
+        FakeEnergyPositioner(
             mono_pv="mono_ioc:Energy",
             id_offset_pv="mono_ioc:ID_offset",
             id_tracking_pv="mono_ioc:ID_tracking",
@@ -108,21 +110,13 @@ def test_move_energy(qtbot, ffapp, sim_registry):
         qtbot.mouseClick(btn, QtCore.Qt.LeftButton)
 
 
-def test_predefined_energies(qtbot, ffapp, ioc_mono, sim_registry):
-    load_monochromator(
-        config={
-            "monochromator": {
-                "ioc": "mono_ioc",
-            },
-        }
-    )
-    load_energy_positioner()
+def test_predefined_energies(qtbot, ffapp, sim_registry):
     # Create fake device
-    mono = haven.instrument.monochromator.Monochromator(
+    mono = FakeMonochromator(
         "mono_ioc", name="monochromator"
     )
     sim_registry.register(
-        haven.instrument.energy_positioner.EnergyPositioner(
+        FakeEnergyPositioner(
             mono_pv="mono_ioc:Energy",
             id_offset_pv="mono_ioc:ID_offset",
             id_tracking_pv="mono_ioc:ID_tracking",
@@ -131,8 +125,6 @@ def test_predefined_energies(qtbot, ffapp, ioc_mono, sim_registry):
         )
     )
     # Set up the required Application state
-    ffapp.setup_window_actions()
-    ffapp.setup_runengine_actions()
     # Load display
     disp = EnergyDisplay()
     # Check that the combo box was populated
