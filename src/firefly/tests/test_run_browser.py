@@ -44,6 +44,7 @@ def display(client, qtbot, ffapp):
     wait_for_runs_model(display, qtbot)
     yield display
     display._thread.quit()
+    display._thread.wait()
 
 
 

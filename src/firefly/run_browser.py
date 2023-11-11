@@ -78,7 +78,6 @@ class RunBrowserDisplay(display.FireflyDisplay):
     filters_changed = Signal(dict)
 
     def __init__(self, root_node=None, args=None, macros=None, **kwargs):
-        # self.prepare_run_client(root_node=root_node)
         super().__init__(args=args, macros=macros, **kwargs)
         self.start_run_client(root_node=root_node)
 
