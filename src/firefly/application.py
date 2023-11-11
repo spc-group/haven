@@ -110,6 +110,7 @@ class FireflyApplication(PyDMApplication):
     def __del__(self):
         if hasattr(self, "_queue_thread"):
             self._queue_thread.quit()
+            self._queue_thread.wait()
 
     def _setup_window_action(self, action_name: str, text: str, slot: QtCore.Slot):
         action = QtWidgets.QAction(self)

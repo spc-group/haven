@@ -3,6 +3,7 @@ import subprocess
 from subprocess import Popen, PIPE
 from unittest import mock
 import shutil
+import psutil
 import time
 from pathlib import Path
 import os
@@ -111,14 +112,27 @@ def tiled_is_running(port, match_command=True):
     return is_running
 
 
+def kill_process(process_name):
+    processes = []
+    for proc in psutil.process_iter():
+        # check whether the process name matches
+        if proc.name() == process_name:
+            proc.kill()
+            processes.append(proc)
+    # Wait for them all the terminate
+    [proc.wait(timeout=5) for proc in processes]
+
+
+
 @pytest.fixture(scope="session")
 def sim_tiled():
     """Start a tiled server using production data from 25-ID."""
     timeout = 20
     port = "8337"
-
+    # Check for existing tiled instances (e.g. when test segfault)
     if tiled_is_running(port, match_command=False):
-        raise RuntimeError(f"Port {port} is already in use.")
+        kill_process("tiled")
+        assert not tiled_is_running(port, match_command=False)
     tiled_bin = shutil.which("tiled")
     process = Popen(
         [
@@ -344,9 +358,11 @@ qs_status = {
 
 
 @pytest.fixture()
-def ffapp(pydm_ophyd_plugin):
+def ffapp(pydm_ophyd_plugin, qapp):
+    print(qapp)
     # Get an instance of the application
-    app = FireflyApplication.instance()
+    app = qapp
+    # app = FireflyApplication.instance()
     if app is None:
         # New Application
         app = FireflyApplication()
