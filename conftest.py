@@ -7,7 +7,6 @@ import psutil
 import time
 from pathlib import Path
 import os
-import gc
 
 from qtpy import QtWidgets
 from qtpy.QtWidgets import QAction
@@ -197,7 +196,6 @@ def sim_registry(monkeypatch):
     # Restore the previous registry components
     registry._objects_by_name = objects_by_name
     registry._objects_by_label = objects_by_label
-    gc.collect()
 
 
 @pytest.fixture()
