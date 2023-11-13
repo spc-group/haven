@@ -14,13 +14,21 @@ from firefly.application import REManagerAPI
 
 def test_setup(ffapp):
     api = MagicMock()
-    ffapp.prepare_queue_client(api=api)
+    try:
+        ffapp.prepare_queue_client(api=api)
+    finally:
+        ffapp._queue_thread.quit()
+        ffapp._queue_thread.wait(msecs=5000)
 
 
 def test_setup2(ffapp):
     """Verify that multiple tests can use the app without crashing."""
     api = MagicMock()
-    ffapp.prepare_queue_client(api=api)
+    try:
+        ffapp.prepare_queue_client(api=api)
+    finally:
+        ffapp._queue_thread.quit()
+        ffapp._queue_thread.wait(msecs=5000)
 
 
 def test_queue_actions_enabled(ffapp, qtbot):
@@ -66,3 +74,8 @@ def test_queue_actions_enabled(ffapp, qtbot):
     # Pretend the queue is in an unknown state (maybe the environment is closed)
     with qtbot.waitSignal(ffapp.queue_re_state_changed):
         ffapp.queue_re_state_changed.emit(None)
+
+
+@pytest.mark.xfail
+def test_prepare_queue_client(ffapp):
+    assert False, "Write tests for prepare_queue_client."

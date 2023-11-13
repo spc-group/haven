@@ -23,21 +23,27 @@ def queueserver_api():
 
 
 class QueueClientThread(QThread):
+    """A thread for handling the queue client.
+
+    Every *poll_time* seconds, the timer will emit its *timeout*
+    signal. You can connect a slot to the
+    :py:cls:`QueueClientThread.timer.timeout()` signal.
+
+    """
     timer: QTimer
 
-    def __init__(self, *args, client, **kwargs):
-        self.client = client
+    def __init__(self, *args, poll_time=1000, **kwargs):
         super().__init__(*args, **kwargs)
-        # Timer for polling the queueserver
         self.timer = QTimer()
-        self.timer.timeout.connect(self.client.update)
-        self.timer.start(1000)
 
     def quit(self, *args, **kwargs):
-        self.timer.stop()
-        # del self.timer
-        # del self.client
+        if hasattr(self, "timer"):
+            self.timer.stop()
         super().quit(*args, **kwargs)
+
+    def start(self, *args, **kwargs):
+        super().start(*args, **kwargs)
+        self.timer.start(1000)
 
 
 class QueueClient(QObject):
@@ -58,35 +64,20 @@ class QueueClient(QObject):
     # Actions for changing the queue settings in menubars
     autoplay_action: QAction
     open_environment_action: QAction
-    close_environment_action: QAction
 
-    def __init__(self, *args, api, **kwargs):
+    def __init__(self, *args, api, autoplay_action, open_environment_action, **kwargs):
         self.api = api
         super().__init__(*args, **kwargs)
+        # Set up actions coming from the parent
+        self.autoplay_action = autoplay_action
+        self.open_environment_action = open_environment_action
         self.setup_actions()
         self._last_queue_status = {}
 
     def setup_actions(self):
-        actions = [
-            # Attr, object name, text
-            ("autoplay_action", "queue_autoplay_action", "&Autoplay"),
-            (
-                "open_environment_action",
-                "queue_open_environment_action",
-                "&Open Environment",
-            ),
-        ]
-        for attr, obj_name, text in actions:
-            action = QAction()
-            action.setObjectName(obj_name)
-            action.setText(text)
-            setattr(self, attr, action)
-        # Customize some specific actions
-        self.autoplay_action.setCheckable(True)
-        self.autoplay_action.setChecked(True)
-        self.open_environment_action.setCheckable(True)
         # Connect actions to signal handlers
-        self.open_environment_action.triggered.connect(self.open_environment)
+        if self.open_environment_action is not None:
+            self.open_environment_action.triggered.connect(self.open_environment)
 
     def open_environment(self):
         to_open = self.open_environment_action.isChecked()
@@ -95,6 +86,7 @@ class QueueClient(QObject):
         else:
             api_call = self.api.environment_close
         result = api_call()
+        print(result, to_open)
         if result["success"]:
             self.environment_opened.emit(to_open)
         else:
@@ -147,7 +139,7 @@ class QueueClient(QObject):
             new_length = result["qsize"]
             self.length_changed.emit(result["qsize"])
             # Automatically run the queue if this is the first item
-            # from pprint import pprint
+            print(self.autoplay_action.isChecked())
             if self.autoplay_action.isChecked():
                 self.start_queue()
         else:

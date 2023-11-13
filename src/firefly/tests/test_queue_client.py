@@ -7,6 +7,7 @@ from collections import ChainMap
 from bluesky import RunEngine, plans as bp
 from qtpy.QtCore import QThread
 from qtpy.QtTest import QSignalSpy
+from qtpy.QtWidgets import QAction
 from bluesky_queueserver_api import BPlan
 from bluesky_queueserver_api.zmq import REManagerAPI
 from pytestqt.exceptions import TimeoutError
@@ -215,89 +216,86 @@ devices_allowed = {
 }
 
 
-def test_setup(ffapp):
-    ffapp.setup_window_actions()
-    ffapp.setup_runengine_actions()
-    api = MagicMock()
-    ffapp.prepare_queue_client(api=api)
-
-
-def test_queue_re_control(ffapp):
-    """Test if the run engine can be controlled from the queue client."""
+@pytest.fixture()
+def client():
+    # Create a fake API with known responses
     api = MagicMock()
     api.queue_start.return_value = {"success": True}
-    ffapp.setup_window_actions()
-    ffapp.setup_runengine_actions()
-    ffapp.prepare_queue_client(api=api)
+    api.status.return_value = qs_status
+    api.queue_start.return_value = {"success": True,}
+    api.devices_allowed.return_value = {"success": True, "devices_allowed": {}}
+    api.environment_open.return_value = {"success": True}
+    api.environment_close.return_value = {"success": True}
+    # Create the client using the fake API
+    autoplay_action = QAction()
+    autoplay_action.setCheckable(True)
+    open_environment_action = QAction()
+    open_environment_action.setCheckable(True)
+    client = QueueClient(api=api, autoplay_action=autoplay_action, open_environment_action=open_environment_action)
+    yield client
+
+
+def test_queue_re_control(client):
+    """Test if the run engine can be controlled from the queue client."""
+    api = client.api
     # Try and pause the run engine
-    ffapp.pause_runengine_action.trigger()
+    client.request_pause(defer=True)
     # Check if the API paused
-    time.sleep(0.1)
     api.re_pause.assert_called_once_with(option="deferred")
     # Pause the run engine now!
     api.reset_mock()
-    ffapp.pause_runengine_now_action.trigger()
+    client.request_pause(defer=False)
     # Check if the API paused now
-    time.sleep(0.1)
     api.re_pause.assert_called_once_with(option="immediate")
     # Start the queue
     api.reset_mock()
-    ffapp.start_queue_action.trigger()
+    client.start_queue()
     # Check if the queue started
-    time.sleep(0.1)
     api.queue_start.assert_called_once()
 
 
-def test_run_plan(ffapp, qtbot):
+def test_run_plan(client, qtbot):
     """Test if a plan can be queued in the queueserver."""
-    ffapp.setup_window_actions()
-    ffapp.setup_runengine_actions()
-    api = MagicMock()
+    api = client.api
     api.item_add.return_value = {"success": True, "qsize": 2}
-    api.queue_start.return_value = {"success": True}
-    ffapp.prepare_queue_client(api=api)
     # Send a plan
     with qtbot.waitSignal(
-        ffapp.queue_length_changed, timeout=1000, check_params_cb=lambda l: l == 2
+        client.length_changed, timeout=1000, check_params_cb=lambda l: l == 2
     ):
-        ffapp.queue_item_added.emit({})
+        client.add_queue_item({})
     # Check if the API sent it
     api.item_add.assert_called_once_with(item={})
 
 
-def test_autoplay(ffapp, qtbot):
+def test_autoplay(client, qtbot):
     """Test how queuing a plan starts the runengine."""
-    api = ffapp._queue_client.api
-    # Send a plan
-    plan = BPlan("set_energy", energy=8333)
-    ffapp._queue_client.add_queue_item(plan)
-    api.item_add.assert_called_once()
-    # Check the queue was started
-    api.queue_start.assert_called_once()
+    api = client.api
     # Check that it doesn't start the queue if the autoplay action is off
-    api.reset_mock()
-    ffapp._queue_client.autoplay_action.trigger()
-    ffapp._queue_client.add_queue_item(plan)
-    # Check that the queue wasn't started
+    plan = BPlan("set_energy", energy=8333)
+    client.add_queue_item(plan)
     assert not api.queue_start.called
+    # Check the queue was started now that autoplay is on
+    client.autoplay_action.toggle()
+    client.add_queue_item(plan)
+    api.queue_start.assert_called_once()
 
 
-def test_check_queue_status(ffapp, qtbot):
+def test_check_queue_status(client, qtbot):
     # Check that the queue length is changed
     signals = [
-        ffapp.queue_status_changed,
-        ffapp.queue_environment_opened,
-        ffapp.queue_environment_state_changed,
-        ffapp.queue_re_state_changed,
-        ffapp.queue_manager_state_changed,
+        client.status_changed,
+        client.environment_opened,
+        client.environment_state_changed,
+        client.re_state_changed,
+        client.manager_state_changed,
     ]
     with qtbot.waitSignals(signals):
-        ffapp._queue_client.check_queue_status()
+        client.check_queue_status()
     return
     # Check that it isn't emitted a second time
     with pytest.raises(TimeoutError):
         with qtbot.waitSignals(signals, timeout=10):
-            ffapp._queue_client.check_queue_status()
+            client.check_queue_status()
     # Now check a non-empty length queue
     new_status = qs_status.copy()
     new_status.update(
@@ -313,40 +311,40 @@ def test_check_queue_status(ffapp, qtbot):
             # "plan_queue_uid": "f682e6fa-983c-4bd8-b643-b3baec2ec764",
         }
     )
-    ffapp._queue_client.api.status.return_value = new_status
+    client.api.status.return_value = new_status
     with qtbot.waitSignals(signals):
-        ffapp._queue_client.check_queue_status()
+        client.check_queue_status()
 
 
-def test_open_environment(ffapp, qtbot):
+def test_open_environment(client, qtbot):
     """Check that the 'open environment' action sends the right command to
     the queue.
 
     """
-    api = ffapp._queue_client.api
+    api = client.api
     # Open the environment
-    ffapp.queue_open_environment_action.setChecked(False)
-    with qtbot.waitSignal(ffapp.queue_environment_opened) as blocker:
-        ffapp.queue_open_environment_action.trigger()
+    client.open_environment_action.setChecked(False)
+    print(client.open_environment_action.isCheckable())
+    with qtbot.waitSignal(client.environment_opened) as blocker:
+        client.open_environment_action.trigger()
     assert blocker.args == [True]
     assert api.environment_open.called
     # Close the environment
-    with qtbot.waitSignal(ffapp.queue_environment_opened) as blocker:
-        ffapp.queue_open_environment_action.trigger()
+    with qtbot.waitSignal(client.environment_opened) as blocker:
+        client.open_environment_action.trigger()
     assert blocker.args == [False]
     assert api.environment_close.called
 
 
-def test_devices_available(ffapp, qtbot):
+def test_devices_available(client, qtbot):
     """Check that the queue client provides a list of devices that can be
     used in plans.
-
+    
     """
-    api = ffapp._queue_client.api
+    api = client.api
     api.devices_allowed.return_value = devices_allowed
-    client = ffapp._queue_client
     # Ask for updated list of devices
-    with qtbot.waitSignal(ffapp.queue_devices_changed) as blocker:
+    with qtbot.waitSignal(client.devices_changed) as blocker:
         client.update_devices()
     # Check that the data have the right form
     devices = blocker.args[0]

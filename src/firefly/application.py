@@ -110,7 +110,8 @@ class FireflyApplication(PyDMApplication):
     def __del__(self):
         if hasattr(self, "_queue_thread"):
             self._queue_thread.quit()
-            self._queue_thread.wait()
+            self._queue_thread.wait(msecs=5000)
+            assert not self._queue_thread.isRunning()
 
     def _setup_window_action(self, action_name: str, text: str, slot: QtCore.Slot):
         action = QtWidgets.QAction(self)
@@ -227,6 +228,25 @@ class FireflyApplication(PyDMApplication):
             action.setCheckable(True)
             action.setIcon(icon)
             setattr(self, name, action)
+        # Actions that control how the queue operates
+        actions = [
+            # Attr, object name, text
+            ("queue_autoplay_action", "queue_autoplay_action", "&Autoplay"),
+            (
+                "queue_open_environment_action",
+                "queue_open_environment_action",
+                "&Open Environment",
+            ),
+        ]
+        for attr, obj_name, text in actions:
+            action = QAction()
+            action.setObjectName(obj_name)
+            action.setText(text)
+            setattr(self, attr, action)
+        # Customize some specific actions
+        self.queue_autoplay_action.setCheckable(True)
+        self.queue_autoplay_action.setChecked(True)
+        self.queue_open_environment_action.setCheckable(True)
 
     def _prepare_device_windows(self, device_label: str, attr_name: str):
         """Generic routine to be called for individual classes of devices.
@@ -304,24 +324,27 @@ class FireflyApplication(PyDMApplication):
             action.triggered.connect(slot)
             self.motor_window_slots.append(slot)
 
-    def prepare_queue_client(self, start_thread: bool = True, api=None):
+    def prepare_queue_client(self, api=None):
         """Set up the QueueClient object that talks to the queue server.
 
         Parameters
         ==========
         api
           queueserver API. Used for testing.
-        start_thread
-          Whether to start the newly create queue client thread.
 
         """
         if api is None:
             api = queueserver_api()
-        client = QueueClient(api=api)
-        thread = QueueClientThread(client=client)
+        # Create a thread in which the api can run
+        thread = getattr(self, "_queue_thread", None)
+        if thread is None:
+            thread = QueueClientThread()
+            self._queue_thread = thread
+        # Create the client object
+        client = QueueClient(api=api, autoplay_action=self.queue_autoplay_action, open_environment_action=self.queue_open_environment_action)
         client.moveToThread(thread)
+        thread.timer.timeout.connect(client.update)
         self._queue_client = client
-        self._queue_thread = thread
         # Connect actions to slots for controlling the queueserver
         self.pause_runengine_action.triggered.connect(
             partial(client.request_pause, defer=True)
@@ -344,13 +367,11 @@ class FireflyApplication(PyDMApplication):
         client.manager_state_changed.connect(self.queue_manager_state_changed)
         client.re_state_changed.connect(self.queue_re_state_changed)
         client.devices_changed.connect(self.queue_devices_changed)
-        self.queue_autoplay_action = client.autoplay_action
         self.queue_autoplay_action.toggled.connect(
             self.check_queue_status_action.trigger
         )
-        self.queue_open_environment_action = client.open_environment_action
         # Start the thread
-        if start_thread:
+        if not thread.isRunning():
             thread.start()
 
     def enable_queue_controls(self, re_state):
@@ -562,6 +583,9 @@ class FireflyApplication(PyDMApplication):
 
     @QtCore.Slot(bool)
     def set_open_environment_action_state(self, is_open: bool):
-        self.queue_open_environment_action.blockSignals(True)
-        self.queue_open_environment_action.setChecked(is_open)
-        self.queue_open_environment_action.blockSignals(False)
+        """Update the readback value for opening the queueserver environment."""
+        action = self.queue_open_environment_action
+        if action is not None:
+            action.blockSignals(True)
+            action.setChecked(is_open)
+            action.blockSignals(False)

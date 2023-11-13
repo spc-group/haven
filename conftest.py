@@ -22,6 +22,7 @@ from ophyd.sim import (
     FakeEpicsSignal,
 )
 from pydm.data_plugins import add_plugin
+from pytestqt.qt_compat import qt_api
 
 import haven
 from haven.simulated_ioc import simulated_ioc
@@ -91,15 +92,15 @@ def qapp_cls():
     return FireflyApplication
 
 
-def pytest_configure(config):
-    app = QtWidgets.QApplication.instance()
-    assert app is None
-    app = FireflyApplication()
-    app = QtWidgets.QApplication.instance()
-    assert isinstance(app, FireflyApplication)
-    # # Create event loop for asyncio stuff
-    # loop = asyncio.new_event_loop()
-    # asyncio.set_event_loop(loop)
+# def pytest_configure(config):
+#     app = QtWidgets.QApplication.instance()
+#     assert app is None
+#     app = FireflyApplication()
+#     app = QtWidgets.QApplication.instance()
+#     assert isinstance(app, FireflyApplication)
+#     # # Create event loop for asyncio stuff
+#     # loop = asyncio.new_event_loop()
+#     # asyncio.set_event_loop(loop)
 
 
 def tiled_is_running(port, match_command=True):
@@ -357,32 +358,48 @@ qs_status = {
 
 
 
-@pytest.fixture()
-def ffapp(pydm_ophyd_plugin, qapp):
-    print(qapp)
+@pytest.fixture(scope="session")
+def ffapp(pydm_ophyd_plugin, qapp_cls, qapp_args, pytestconfig):
     # Get an instance of the application
-    app = qapp
-    # app = FireflyApplication.instance()
+    app = qt_api.QtWidgets.QApplication.instance()
     if app is None:
+        print("Setting up app.")
         # New Application
-        app = FireflyApplication()
-    # Set up the actions and other boildplate stuff
-    app.setup_window_actions()
-    app.setup_runengine_actions()
-    # Create a fake queue server client API
-    queue_api = mock.MagicMock()
-    queue_api.status.return_value = qs_status
-    queue_api.queue_start.return_value = {"success": True,}
-    queue_api.devices_allowed.return_value = {"success": True, "devices_allowed": {}}
-    app.prepare_queue_client(api=queue_api, start_thread=False)
-    assert isinstance(app.queue_autoplay_action, QAction)
+        global _ffapp_instance
+        _ffapp_instance = qapp_cls(qapp_args)
+        app = _ffapp_instance
+        name = pytestconfig.getini("qt_qapp_name")
+        app.setApplicationName(name)
+        # Set up the actions and other boildplate stuff
+        app.setup_window_actions()
+        app.setup_runengine_actions()
+        # # Create a fake queue server client API
+        # Set up the queue client
+        # api = mock.MagicMock()
+        # api.queue_start.return_value = {"success": True}
+        # api.status.return_value = qs_status
+        # api.devices_allowed.return_value = {"success": True, "devices_allowed": {}}
+        # app.prepare_queue_client(api=api)
+        # queue_api = mock.MagicMock()
+        # queue_api.status.return_value = qs_status
+        # queue_api.queue_start.return_value = {"success": True,}
+        # queue_api.devices_allowed.return_value = {"success": True, "devices_allowed": {}}
+        # _ffapp_instance.prepare_queue_client(api=queue_api, start_thread=False)
+        # assert isinstance(_ffapp_instance.queue_autoplay_action, QAction)
     # Make sure there's at least one Window, otherwise things get weird
-    app._dummy_main_window = FireflyMainWindow()
+    if getattr(app, "_dummy_main_window", None) is None:
+        app._dummy_main_window = FireflyMainWindow()
     # Sanity check to make sure a QApplication was not created by mistake
     assert isinstance(app, FireflyApplication)
     # Yield the finalized application object
+    # yield app
     try:
         yield app
     finally:
         if hasattr(app, "_queue_thread"):
             app._queue_thread.quit()
+            app._queue_thread.wait(msecs=5000)
+
+# holds a global QApplication instance created in the qapp fixture; keeping
+# this reference alive avoids it being garbage collected too early
+_ffapp_instance = None
