@@ -2,11 +2,6 @@ __all__ = ["energy_scan"]
 
 __version__ = "0.1.0"
 
-# Allow for nested asyncio event loops
-import nest_asyncio
-
-nest_asyncio.apply()
-
 #  Top-level imports
 from .catalog import load_catalog, load_result, load_data, tiled_client  # noqa: F401
 from .energy_ranges import ERange, KRange, merge_ranges  # noqa: F401

@@ -1,17 +1,9 @@
 from unittest import mock
 import subprocess
-from subprocess import Popen, PIPE
-from unittest import mock
-import shutil
 import psutil
-import time
 from pathlib import Path
 import os
 
-from qtpy import QtWidgets
-from qtpy.QtWidgets import QAction
-from tiled.client import from_uri
-from tiled.client.cache import Cache
 from bluesky import RunEngine
 import pytest
 from ophyd import DynamicDeviceComponent as DDC, Kind
@@ -25,10 +17,8 @@ from pydm.data_plugins import add_plugin
 from pytestqt.qt_compat import qt_api
 
 import haven
-from haven.simulated_ioc import simulated_ioc
-from haven import load_config, registry
 from haven._iconfig import beamline_connected as _beamline_connected
-from haven.instrument.aerotech import AerotechFlyer, AerotechStage
+from haven.instrument.aerotech import AerotechStage
 from haven.instrument.aps import ApsMachine
 from haven.instrument.shutter import Shutter
 from haven.instrument.camera import AravisDetector
@@ -39,9 +29,6 @@ from haven.instrument.xspress import Xspress3Detector, add_mcas as add_xspress_m
 from firefly.application import FireflyApplication
 from firefly.main_window import FireflyMainWindow
 from firefly.ophyd_plugin import OphydPlugin
-
-# from run_engine import RunEngineStub
-from firefly.application import FireflyApplication
 
 
 top_dir = Path(__file__).parent.resolve()
@@ -80,7 +67,7 @@ def beamline_connected():
 class RunEngineStub(RunEngine):
     def __repr__(self):
         return "<run_engine.RunEngineStub>"
-        
+
 
 @pytest.fixture()
 def RE(event_loop):
@@ -122,54 +109,6 @@ def kill_process(process_name):
             processes.append(proc)
     # Wait for them all the terminate
     [proc.wait(timeout=5) for proc in processes]
-
-
-
-@pytest.fixture(scope="session")
-def sim_tiled():
-    """Start a tiled server using production data from 25-ID."""
-    timeout = 20
-    port = "8337"
-    # Check for existing tiled instances (e.g. when test segfault)
-    if tiled_is_running(port, match_command=False):
-        kill_process("tiled")
-        assert not tiled_is_running(port, match_command=False)
-    tiled_bin = shutil.which("tiled")
-    process = Popen(
-        [
-            tiled_bin,
-            "serve",
-            "pyobject",
-            "--public",
-            "--port",
-            str(port),
-            "haven.tests.tiled_example:tree",
-        ]
-    )
-    # Wait for start to complete
-    for i in range(timeout):
-        if tiled_is_running(port):
-            break
-        time.sleep(1.0)
-    else:
-        # Timeout finished without startup or error
-        process.kill()
-        raise TimeoutError
-    # Prepare the client
-    client = from_uri(f"http://localhost:{port}", cache=Cache())
-    try:
-        yield client
-    finally:
-        # Shut down
-        process.terminate()
-        # Wait for start to complete
-        for i in range(timeout):
-            if not tiled_is_running(port):
-                break
-            time.sleep(1.0)
-        else:
-            process.kill()
-            time.sleep(1)
 
 
 @pytest.fixture()
@@ -289,7 +228,7 @@ def aerotech():
         name="aerotech",
     )
     return stage
-    
+
 
 @pytest.fixture()
 def aerotech_flyer(aerotech):
@@ -324,7 +263,7 @@ def shutters(sim_registry):
     for shutter in shutters:
         sim_registry.register(shutter)
     yield shutters
-  
+
 
 @pytest.fixture(scope="session")
 def pydm_ophyd_plugin():
@@ -357,48 +296,33 @@ qs_status = {
 }
 
 
-
 @pytest.fixture(scope="session")
 def ffapp(pydm_ophyd_plugin, qapp_cls, qapp_args, pytestconfig):
     # Get an instance of the application
     app = qt_api.QtWidgets.QApplication.instance()
     if app is None:
-        print("Setting up app.")
         # New Application
         global _ffapp_instance
         _ffapp_instance = qapp_cls(qapp_args)
         app = _ffapp_instance
         name = pytestconfig.getini("qt_qapp_name")
         app.setApplicationName(name)
+    # Make sure there's at least one Window, otherwise things get weird
+    if getattr(app, "_dummy_main_window", None) is None:
         # Set up the actions and other boildplate stuff
         app.setup_window_actions()
         app.setup_runengine_actions()
-        # # Create a fake queue server client API
-        # Set up the queue client
-        # api = mock.MagicMock()
-        # api.queue_start.return_value = {"success": True}
-        # api.status.return_value = qs_status
-        # api.devices_allowed.return_value = {"success": True, "devices_allowed": {}}
-        # app.prepare_queue_client(api=api)
-        # queue_api = mock.MagicMock()
-        # queue_api.status.return_value = qs_status
-        # queue_api.queue_start.return_value = {"success": True,}
-        # queue_api.devices_allowed.return_value = {"success": True, "devices_allowed": {}}
-        # _ffapp_instance.prepare_queue_client(api=queue_api, start_thread=False)
-        # assert isinstance(_ffapp_instance.queue_autoplay_action, QAction)
-    # Make sure there's at least one Window, otherwise things get weird
-    if getattr(app, "_dummy_main_window", None) is None:
         app._dummy_main_window = FireflyMainWindow()
     # Sanity check to make sure a QApplication was not created by mistake
     assert isinstance(app, FireflyApplication)
     # Yield the finalized application object
-    # yield app
     try:
         yield app
     finally:
         if hasattr(app, "_queue_thread"):
             app._queue_thread.quit()
             app._queue_thread.wait(msecs=5000)
+
 
 # holds a global QApplication instance created in the qapp fixture; keeping
 # this reference alive avoids it being garbage collected too early
