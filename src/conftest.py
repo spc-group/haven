@@ -32,9 +32,7 @@ from firefly.ophyd_plugin import OphydPlugin
 
 
 top_dir = Path(__file__).parent.resolve()
-ioc_dir = top_dir / "tests" / "iocs"
-haven_dir = top_dir / "src" / "haven"
-test_dir = top_dir / "tests"
+haven_dir = top_dir / "haven"
 
 
 # Specify the configuration files to use for testing
