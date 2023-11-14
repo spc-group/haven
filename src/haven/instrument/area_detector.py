@@ -119,10 +119,9 @@ class DetectorBase(OphydDetectorBase):
             description = self.name
         self.description = description
 
-    overlays = ADCpt(OverlayPlugin, "Over1:")
-
 
 class StatsMixin:
+    overlays = ADCpt(OverlayPlugin, "Over1:")
     _default_read_attrs = [
         "max_value",
         "min_value",
@@ -241,7 +240,6 @@ class Eiger500K(SingleTrigger, DetectorBase):
         "hdf1",
         "tiff",
     ]
-
 
 
 def load_area_detector_coros(config=None) -> set:

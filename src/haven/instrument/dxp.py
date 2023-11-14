@@ -27,18 +27,30 @@ from ophyd.pseudopos import (
     PseudoPositioner,
     PseudoSingle,
     pseudo_position_argument,
-    real_position_argument
+    real_position_argument,
 )
 
 from .scaler_triggered import ScalerTriggered
 from .instrument_registry import registry
-from .fluorescence_detector import XRFMixin, active_kind, ROIMixin, MCASumMixin, add_roi_sums, UseROISignal
-from .device import RegexComponent as RECpt, await_for_connection, aload_devices, make_device
+from .fluorescence_detector import (
+    XRFMixin,
+    active_kind,
+    ROIMixin,
+    MCASumMixin,
+    add_roi_sums,
+    UseROISignal,
+)
+from .device import (
+    RegexComponent as RECpt,
+    await_for_connection,
+    aload_devices,
+    make_device,
+)
 from .._iconfig import load_config
 from .. import exceptions
 
 
-__all__ = ["DxpDetectorBase", "load_dxp"]
+__all__ = ["DxpDetector", "load_dxp"]
 
 
 NUM_ROIS = 32
@@ -54,7 +66,6 @@ class SizeSignal(DerivedSignal):
         lo = self.parent.lo_chan.get()
         hi = lo + size
         return hi
-
 
 
 class ROI(ROIMixin, mca.ROI):
@@ -143,14 +154,17 @@ def add_mcas(range_, kind=active_kind, **kwargs):
         attr = f"mca{idx}"
         defn[attr] = (
             MCARecord,
-            f"mca{idx+1}", # (Epics uses 1-index instead of 0-index)
+            f"mca{idx+1}",  # (Epics uses 1-index instead of 0-index)
             kwargs,
         )
     return defn
 
 
-class DxpDetectorBase(
-        XRFMixin, flyers.FlyerInterface, mca.EpicsDXPMapping, mca.EpicsDXPMultiElementSystem, 
+class DxpDetector(
+    XRFMixin,
+    flyers.FlyerInterface,
+    mca.EpicsDXPMapping,
+    mca.EpicsDXPMultiElementSystem,
 ):
     """A fluorescence detector based on XIA-DXP XMAP electronics.
 
@@ -293,7 +307,21 @@ class DxpDetectorBase(
             all_rois.extend(rois)
         return all_rois
 
-    def kickoff(self):
+    def kickoff(self) -> StatusBase:
+        """Start the detector flying.
+
+        This starts acquisition, starts the file writer, and sets the
+        detector to advance to the next when it receives a gate
+        signal. The returned status object will be complete when the
+        detector reports that it is acquiring.
+
+        Returns
+        =======
+        StatusBase
+          Becomes complete once the detector is acquiring and ready to
+          measure data.
+
+        """
         # Make sure the CDF file write plugin is primed (assumes
         # dimensions will be empty when not primed)
         is_primed = len(self.net_cdf.dimensions.get()) > 0
@@ -304,6 +332,7 @@ class DxpDetectorBase(
             status = StatusBase()
             status.set_exception(exc)
             return status
+
         # Set up the status for when the detector is ready to fly
         def check_acquiring(*, old_value, value, **kwargs):
             is_acquiring = bool(value)
@@ -330,7 +359,21 @@ class DxpDetectorBase(
         self.erase_start.set(1)
         return status
 
-    def complete(self):
+    def complete(self) -> StatusBase:
+        """Wait for the detector to finish flying.
+
+        This will stop the file writers and acquisition then return a
+        status object. The status object will report complete once the
+        detector acquire status reports that the detector is not
+        acquiring.
+
+        Returns
+        =======
+        StatusBase
+          Becomes complete once the detector has finished acquiring
+          and is ready to report the collected data.
+
+        """
         # Stop the CDF file writer
         self.net_cdf.capture.set(0).wait()
         self.stop_all.set(1)
@@ -351,9 +394,7 @@ def parse_xmap_buffer(buff):
     https://cars9.uchicago.edu/software/epics/XMAP_User_Manual.pdf
 
     """
-    data = {
-        "header": {}
-    }
+    data = {"header": {}}
     header = buff[:256]
     # Verify tag words
     assert header[0] == 0x55AA
@@ -369,7 +410,7 @@ def parse_xmap_buffer(buff):
     head_data["starting_pixel"] = header[9:11]
     head_data["module"] = header[11]
     head_data["buffer_overrun"] = header[24]
-    # head_data[""] = 
+    # head_data[""] =
     return data
 
 
@@ -392,29 +433,37 @@ async def make_dxp_device(device_name, prefix, num_elements):
     }
     # Create a dynamic subclass with the MCAs
     class_name = device_name.title().replace("_", "")
-    parent_classes = (DxpDetectorBase,)
+    parent_classes = (DxpDetector,)
     Cls = type(class_name, parent_classes, attrs)
-    return await make_device(Cls, prefix=f"{prefix}:", name=device_name, labels={"xrf_detectors"})
+    return await make_device(
+        Cls,
+        prefix=f"{prefix}:",
+        name=device_name,
+        labels={"xrf_detectors", "fluorescence_detectors", "detectors"},
+    )
 
 
 def load_dxp_coros(config=None):
     # Get the detector definitions from config files
     if config is None:
         config = load_config()
-    for name, cfg in config.get("fluorescence_detector", {}).items():
-        if "prefix" not in cfg.keys():
-            continue
-        # Build the detector device
-        if cfg["electronics"] == "dxp":
-            yield make_dxp_device(
-                device_name=name,
-                prefix=cfg["prefix"],
-                num_elements=cfg["num_elements"],
-            )
-        else:
-            msg = f"Electronics '{cfg['electronics']}' for {name} not supported."
-            raise exceptions.UnknownDeviceConfiguration(msg)
+    for name, cfg in config.get("dxp", {}).items():
+        print(name, cfg)
+        yield make_dxp_device(
+            device_name=name,
+            prefix=cfg["prefix"],
+            num_elements=cfg["num_elements"],
+        )
 
 
 def load_dxp(config=None):
+    """Load all the DXP-based detector devices.
+
+    Configuration is determined from the iconfig.toml file.
+
+    Optionally, *config* can be given a dictionary with configuration
+    matching the iconfig.toml file to use instead. Mostly useful for
+    testing.
+
+    """
     asyncio.run(aload_devices(*load_dxp_coros(config=config)))

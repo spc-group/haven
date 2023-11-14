@@ -88,8 +88,8 @@ dependencies:
   # - happi
   # - hklpy >=1.0.3  # --- linux-64
   - ophyd >=1.6.3
-  - pydm >=1.16.0
   - pcdsdevices  # For extra signal types
+  - pydm >=1.18.0
   - p4p
   - tiled-server
   - tiled-client >= 0.1.0a106  # 2023-10-02 to get new Cache() behavior

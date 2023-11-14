@@ -1,6 +1,7 @@
 import logging
 import datetime as dt
 from typing import Sequence
+import warnings
 import yaml
 from httpx import HTTPStatusError, PoolTimeout
 from contextlib import contextmanager
@@ -13,6 +14,7 @@ from qtpy.QtCore import Signal, Slot, QThread, Qt
 from pyqtgraph import PlotItem, GraphicsLayoutWidget, PlotWidget, PlotDataItem
 import qtawesome as qta
 from matplotlib.colors import TABLEAU_COLORS
+from pydantic.error_wrappers import ValidationError
 
 from firefly import display, FireflyApplication
 from firefly.run_client import DatabaseWorker
@@ -78,7 +80,6 @@ class RunBrowserDisplay(display.FireflyDisplay):
     filters_changed = Signal(dict)
 
     def __init__(self, root_node=None, args=None, macros=None, **kwargs):
-        # self.prepare_run_client(root_node=root_node)
         super().__init__(args=args, macros=macros, **kwargs)
         self.start_run_client(root_node=root_node)
 
@@ -120,8 +121,9 @@ class RunBrowserDisplay(display.FireflyDisplay):
             ("plan_name", self.ui.filter_plan_combobox),
             ("edge", self.ui.filter_edge_combobox),
         ]:
-            cb.clear()
-            cb.addItems(fields[field_name])
+            if field_name in fields.keys():
+                cb.clear()
+                cb.addItems(fields[field_name])
 
     def customize_ui(self):
         self.load_models()
@@ -278,8 +280,8 @@ class RunBrowserDisplay(display.FireflyDisplay):
             if use_grad:
                 y = np.gradient(y, x_data)
                 y_string = f"d({y_string})/d[{r_signal}]"
-        except TypeError:
-            msg = f"Could not calculate transformation."
+        except TypeError as exc:
+            msg = f"Could not calculate transformation: {exc}"
             log.warning(msg)
             raise exceptions.InvalidTransformation(msg)
         return y, y_string
@@ -290,6 +292,9 @@ class RunBrowserDisplay(display.FireflyDisplay):
                 f"Empty signal name requested: x='{x_signal}', y='{y_signal}', r='{r_signal}'"
             )
             raise exceptions.EmptySignalName
+        signals = [x_signal, y_signal]
+        if use_reference:
+            signals.append(r_signal)
         try:
             data = run["primary"]["data"]
             y_data = data[y_signal]
@@ -303,6 +308,9 @@ class RunBrowserDisplay(display.FireflyDisplay):
             msg = f"Cannot find key {e} in {run}."
             log.warning(msg)
             raise exceptions.SignalNotFound(msg)
+        except ValidationError:
+            print("Pydantic error:", run)
+            raise
         return x_data, y_data, r_data
 
     def multiplot_items(self, n_cols: int = 3):
@@ -339,7 +347,6 @@ class RunBrowserDisplay(display.FireflyDisplay):
         n_cols = 3
         runs = self._db_worker.selected_runs
         for run in runs:
-            # print(run.metadata['start']['uid'], run['primary']['data'])
             data = run["primary"]["data"].read(all_signals)
             try:
                 xdata = data[x_signal]

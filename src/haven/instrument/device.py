@@ -42,7 +42,7 @@ async def make_device(DeviceClass, *args, FakeDeviceClass=None, **kwargs) -> Dev
     """
     # Make a fake device if the beamline is not connected
     config = load_config()
-    if config['beamline']['is_connected']:
+    if config["beamline"]["is_connected"]:
         Cls = DeviceClass
     else:
         # Make fake device
@@ -58,7 +58,7 @@ async def make_device(DeviceClass, *args, FakeDeviceClass=None, **kwargs) -> Dev
         device = Cls(
             *args,
             **kwargs,
-        )        
+        )
         await await_for_connection(device)
     except TimeoutError as e:
         if DeviceClass.__name__ == "VortexEx":
@@ -119,7 +119,7 @@ async def await_for_connection(dev, all_signals=False, timeout=2.0):
 
 
 class RegexComponent(Component[K]):
-    """A component with regular expression matching.
+    r"""A component with regular expression matching.
 
     In EPICS, it is not possible to add a field to an existing record,
     e.g. adding a ``.RnXY`` field to go alongside ``mca1.RnNM`` and
@@ -134,25 +134,24 @@ class RegexComponent(Component[K]):
     Example
     =======
 
-    ```
-    class ROI(mca.ROI):
-        name = RECpt(EpicsSignal, "NM", lazy=True)
-        is_hinted = RECpt(EpicsSignal, "BH",
-                          pattern=r"^(.+)\.R(\d+)",
-                          repl=r"\1_R\2",
-                          lazy=True)
+    .. code:: python
 
-    class MCA(mca.EpicsMCARecord):
-        roi0 = Cpt(ROI, ".R0")
-        roi1 = Cpt(ROI, ".R1")
+        class ROI(mca.ROI):
+            name = RECpt(EpicsSignal, "NM", lazy=True)
+            is_hinted = RECpt(EpicsSignal, "BH",
+                              pattern=r"^(.+)\.R(\d+)",
+                              repl=r"\1_R\2",
+                              lazy=True)
 
-    mca = MCA(prefix="mca")
-    # *name* has the normal concatination
-    assert mca.roi0.name.pvname == "mca.R0NM"
-    # *is_hinted* has regex substitution
-    assert mca.roi0.is_hinted.pvname == "mca_R0BH"
+        class MCA(mca.EpicsMCARecord):
+            roi0 = Cpt(ROI, ".R0")
+            roi1 = Cpt(ROI, ".R1")
 
-    ```
+        mca = MCA(prefix="mca")
+        # *name* has the normal concatination
+        assert mca.roi0.name.pvname == "mca.R0NM"
+        # *is_hinted* has regex substitution
+        assert mca.roi0.is_hinted.pvname == "mca_R0BH"
 
     """
 

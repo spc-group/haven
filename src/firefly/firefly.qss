@@ -1,0 +1,11 @@
+QPushButton[willRunPlan=true] {
+    background-color: green;
+}
+QPushButton[willRunPlan=false] {
+    background-color: rgb(0, 123, 255); 
+    border-color: rgb(0, 123, 255)
+}
+/* QWidget { */
+/*     background-color: black; */
+/*     color: rgb(201, 209, 217); */
+/* } */

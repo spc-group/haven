@@ -2,11 +2,6 @@ __all__ = ["energy_scan"]
 
 __version__ = "0.1.0"
 
-# Allow for nested asyncio event loops
-import nest_asyncio
-
-nest_asyncio.apply()
-
 #  Top-level imports
 from .catalog import load_catalog, load_result, load_data, tiled_client  # noqa: F401
 from .energy_ranges import ERange, KRange, merge_ranges  # noqa: F401
@@ -49,6 +44,8 @@ from .instrument import (  # noqa: F401
 )
 from .instrument.load_instrument import load_instrument  # noqa: F401
 from .instrument.motor import HavenMotor  # noqa: F401
+from .instrument.dxp import load_dxp  # noqa: F401
+from .instrument.xspress import load_xspress  # noqa: F401
 
 from .xdi_writer import XDIWriter  # noqa: F401
 from .progress_bar import ProgressBar  # noqa: F401

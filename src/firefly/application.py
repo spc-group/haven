@@ -9,6 +9,7 @@ import subprocess
 from qtpy import QtWidgets, QtCore
 from qtpy.QtWidgets import QAction
 from qtpy.QtCore import Slot, QThread, Signal, QObject
+from PyQt5.QtWidgets import QStyleFactory
 import qtawesome as qta
 import pydm
 from pydm.application import PyDMApplication
@@ -23,7 +24,7 @@ from haven import HavenMotor, registry, load_config
 import haven
 from .main_window import FireflyMainWindow, PlanMainWindow
 from .ophyd_plugin import OphydPlugin
-from .queue_client import QueueClient, QueueClientThread
+from .queue_client import QueueClient, QueueClientThread, queueserver_api
 
 generator = type((x for x in []))
 
@@ -43,16 +44,7 @@ pg.setConfigOption("foreground", (0, 0, 0))
 class FireflyApplication(PyDMApplication):
     default_display = None
     xafs_scan_window = None
-
-    # Actions for controlling the queueserver
-    start_queue_action: QAction
-    pause_runengine_action: QAction
-    pause_runengine_now_action: QAction
-    resume_runengine_action: QAction
-    stop_runengine_action: QAction
-    abort_runengine_action: QAction
-    halt_runengine_action: QAction
-    start_queue: QAction
+    count_plan_window = None
 
     # Actions for showing window
     show_status_window_action: QtWidgets.QAction
@@ -82,17 +74,44 @@ class FireflyApplication(PyDMApplication):
 
     # Signals responding to queueserver changes
     queue_length_changed = Signal(int)
+    queue_status_changed = Signal(dict)
+    queue_environment_opened = Signal(bool)  # Opened or closed
+    queue_environment_state_changed = Signal(str)  # New state
+    queue_manager_state_changed = Signal(str)  # New state
+    queue_re_state_changed = Signal(str)  # New state
+    queue_devices_changed = Signal(dict)  # New list of devices
+
+    # Actions for controlling the queueserver
+    start_queue_action: QAction
+    pause_runengine_action: QAction
+    pause_runengine_now_action: QAction
+    resume_runengine_action: QAction
+    stop_runengine_action: QAction
+    abort_runengine_action: QAction
+    halt_runengine_action: QAction
+    start_queue: QAction
+    queue_autoplay_action: QAction
+    queue_open_environment_action: QAction
+    check_queue_status_action: QAction
 
     def __init__(self, display="status", use_main_window=False, *args, **kwargs):
         # Instantiate the parent class
         # (*ui_file* and *use_main_window* let us render the window here instead)
         self.default_display = display
         super().__init__(ui_file=None, use_main_window=use_main_window, *args, **kwargs)
+        qss_file = Path(__file__).parent / "firefly.qss"
+        self.setStyleSheet(qss_file.read_text())
+        log.info(f"Available styles: {QStyleFactory.keys()}")
+        # self.setStyle("Adwaita-dark")
+        # qdarktheme.setup_theme(additional_qss=qss_file.read_text())
         self.windows = OrderedDict()
+        self.queue_re_state_changed.connect(self.enable_queue_controls)
 
     def __del__(self):
         if hasattr(self, "_queue_thread"):
             self._queue_thread.quit()
+            self._queue_thread.wait(msecs=5000)
+            assert not self._queue_thread.isRunning()
 
     def _setup_window_action(self, action_name: str, text: str, slot: QtCore.Slot):
         action = QtWidgets.QAction(self)
@@ -102,8 +121,11 @@ class FireflyApplication(PyDMApplication):
         setattr(self, action_name, action)
 
     def load_instrument(self):
-        # Define devices on the beamline
-        haven.load_instrument()
+        """Set up the application to use a previously loaded instrument.
+
+        Expects devices, plans, etc to have been created already.
+
+        """
         # Make actions for launching other windows
         self.setup_window_actions()
         # Actions for controlling the bluesky run engine
@@ -124,6 +146,7 @@ class FireflyApplication(PyDMApplication):
 
         """
         self.prepare_motor_windows()
+        self.prepare_ion_chamber_windows()
         self.prepare_camera_windows()
         self.prepare_area_detector_windows()
         self.prepare_xrf_detector_windows()
@@ -163,6 +186,12 @@ class FireflyApplication(PyDMApplication):
             text="All Cameras",
             slot=self.show_cameras_window,
         )
+        # Launch windows for plans
+        self._setup_window_action(
+            action_name="show_count_plan_window_action",
+            text="&Count",
+            slot=self.show_count_plan_window,
+        )
 
     def launch_queuemonitor(self):
         config = load_config()["queueserver"]
@@ -179,7 +208,9 @@ class FireflyApplication(PyDMApplication):
 
     def setup_runengine_actions(self):
         """Create QActions for controlling the bluesky runengine."""
-        # Action for controlling the run engine
+        # Internal actions for interacting with the run engine
+        self.check_queue_status_action = QtWidgets.QAction(self)
+        # Navbar actions for controlling the run engine
         actions = [
             ("pause_runengine_action", "Pause", "fa5s.stopwatch"),
             ("pause_runengine_now_action", "Pause Now", "fa5s.pause"),
@@ -189,13 +220,33 @@ class FireflyApplication(PyDMApplication):
             ("halt_runengine_action", "Halt", "fa5s.ban"),
             ("start_queue_action", "Start", "fa5s.play"),
         ]
+        self.queue_action_group = QtWidgets.QActionGroup(self)
         for name, text, icon_name in actions:
-            action = QtWidgets.QAction(self)
+            action = QtWidgets.QAction(self.queue_action_group)
             icon = qta.icon(icon_name)
             action.setText(text)
+            action.setCheckable(True)
             action.setIcon(icon)
             setattr(self, name, action)
-            # action.triggered.connect(slot)
+        # Actions that control how the queue operates
+        actions = [
+            # Attr, object name, text
+            ("queue_autoplay_action", "queue_autoplay_action", "&Autoplay"),
+            (
+                "queue_open_environment_action",
+                "queue_open_environment_action",
+                "&Open Environment",
+            ),
+        ]
+        for attr, obj_name, text in actions:
+            action = QAction()
+            action.setObjectName(obj_name)
+            action.setText(text)
+            setattr(self, attr, action)
+        # Customize some specific actions
+        self.queue_autoplay_action.setCheckable(True)
+        self.queue_autoplay_action.setChecked(True)
+        self.queue_open_environment_action.setCheckable(True)
 
     def _prepare_device_windows(self, device_label: str, attr_name: str):
         """Generic routine to be called for individual classes of devices.
@@ -215,6 +266,8 @@ class FireflyApplication(PyDMApplication):
         window_slots = []
         setattr(self, f"{attr_name}_window_slots", window_slots)
         setattr(self, f"{attr_name}_windows", {})
+        # if attr_name == "ion_chamber":
+        #     breakpoint()
         for device in devices:
             action = QtWidgets.QAction(self)
             action.setObjectName(f"actionShow_{attr_name}_{device.name}")
@@ -241,8 +294,14 @@ class FireflyApplication(PyDMApplication):
     def prepare_camera_windows(self):
         self._prepare_device_windows(device_label="cameras", attr_name="camera")
 
+    def prepare_ion_chamber_windows(self):
+        self._prepare_device_windows(
+            device_label="ion_chambers", attr_name="ion_chamber"
+        )
+
     def prepare_motor_windows(self):
         """Prepare the support for opening motor windows."""
+        ### TODO: Can we re-factor this to use _prepare_device_windows()?
         # Get active motors
         try:
             motors = sorted(registry.findall(label="motors"), key=lambda x: x.name)
@@ -266,14 +325,26 @@ class FireflyApplication(PyDMApplication):
             self.motor_window_slots.append(slot)
 
     def prepare_queue_client(self, api=None):
+        """Set up the QueueClient object that talks to the queue server.
+
+        Parameters
+        ==========
+        api
+          queueserver API. Used for testing.
+
+        """
         if api is None:
-            config = load_config()["queueserver"]
-            ctrl_addr = f"tcp://{config['control_host']}:{config['control_port']}"
-            info_addr = f"tcp://{config['info_host']}:{config['info_port']}"
-            api = REManagerAPI(zmq_control_addr=ctrl_addr, zmq_info_addr=info_addr)
-        client = QueueClient(api=api)
-        thread = QueueClientThread(client=client)
+            api = queueserver_api()
+        # Create a thread in which the api can run
+        thread = getattr(self, "_queue_thread", None)
+        if thread is None:
+            thread = QueueClientThread()
+            self._queue_thread = thread
+        # Create the client object
+        client = QueueClient(api=api, autoplay_action=self.queue_autoplay_action, open_environment_action=self.queue_open_environment_action)
         client.moveToThread(thread)
+        thread.timer.timeout.connect(client.update)
+        self._queue_client = client
         # Connect actions to slots for controlling the queueserver
         self.pause_runengine_action.triggered.connect(
             partial(client.request_pause, defer=True)
@@ -282,16 +353,68 @@ class FireflyApplication(PyDMApplication):
             partial(client.request_pause, defer=False)
         )
         self.start_queue_action.triggered.connect(client.start_queue)
+        self.check_queue_status_action.triggered.connect(
+            partial(client.check_queue_status, True)
+        )
         # Connect signals to slots for executing plans on queueserver
         self.queue_item_added.connect(client.add_queue_item)
         # Connect signals/slots for queueserver state changes
+        client.status_changed.connect(self.queue_status_changed)
         client.length_changed.connect(self.queue_length_changed)
+        client.environment_opened.connect(self.queue_environment_opened)
+        self.queue_environment_opened.connect(self.set_open_environment_action_state)
+        client.environment_state_changed.connect(self.queue_environment_state_changed)
+        client.manager_state_changed.connect(self.queue_manager_state_changed)
+        client.re_state_changed.connect(self.queue_re_state_changed)
+        client.devices_changed.connect(self.queue_devices_changed)
+        self.queue_autoplay_action.toggled.connect(
+            self.check_queue_status_action.trigger
+        )
         # Start the thread
-        thread.start()
-        # Save references to the thread and runner
-        self._queue_client = client
-        # assert not hasattr(self, "_queue_thread")
-        self._queue_thread = thread
+        if not thread.isRunning():
+            thread.start()
+
+    def enable_queue_controls(self, re_state):
+        """Enable/disable the navbar buttons that control the queue.
+
+        Most buttons are only relevant when the run engine is in
+        certain states. For exmple, you can't click Play if the run
+        engine is already running.
+
+        """
+        all_actions = [
+            self.start_queue_action,
+            self.stop_runengine_action,
+            self.pause_runengine_action,
+            self.pause_runengine_now_action,
+            self.resume_runengine_action,
+            self.abort_runengine_action,
+            self.halt_runengine_action,
+        ]
+        # Decide which signals to enable
+        unknown_re_state = re_state is None or re_state.strip() == ""
+        if unknown_re_state:
+            # Unknown state, no button should work
+            enabled_signals = []
+        elif re_state == "idle":
+            enabled_signals = [self.start_queue_action]
+        elif re_state == "paused":
+            enabled_signals = [
+                self.stop_runengine_action,
+                self.resume_runengine_action,
+                self.halt_runengine_action,
+                self.abort_runengine_action,
+            ]
+        elif re_state == "running":
+            enabled_signals = [
+                self.pause_runengine_action,
+                self.pause_runengine_now_action,
+            ]
+        else:
+            raise ValueError(f"Unknown run engine state: {re_state}")
+        # Enable/disable the relevant signals
+        for action in all_actions:
+            action.setEnabled(action in enabled_signals)
 
     def add_queue_item(self, item):
         log.debug(f"Application received item to add to queue: {item}")
@@ -351,6 +474,7 @@ class FireflyApplication(PyDMApplication):
             main_window.enter_fullscreen()
         else:
             main_window.show()
+        self.check_queue_status_action.trigger()
         return main_window
 
     def show_motor_window(self, *args, motor: HavenMotor):
@@ -371,6 +495,16 @@ class FireflyApplication(PyDMApplication):
             ui_dir / "area_detector_viewer.py",
             name=f"FireflyMainWindow_camera_{device_name}",
             macros={"AD": device.name},
+        )
+
+    def show_ion_chamber_window(self, *args, device):
+        """Instantiate a window for an ion chamber."""
+        device_name = device.name.replace(" ", "_")
+        self.show_window(
+            FireflyMainWindow,
+            ui_dir / "ion_chamber.py",
+            name=f"FireflyMainWindow_ion_chamber_{device_name}",
+            macros={"IC": device.name},
         )
 
     def show_area_detector_window(self, *args, device):
@@ -416,6 +550,12 @@ class FireflyApplication(PyDMApplication):
         )
 
     @QtCore.Slot()
+    def show_count_plan_window(self):
+        return self.show_window(
+            PlanMainWindow, ui_dir / "plans" / "count.py", name="count_plan"
+        )
+
+    @QtCore.Slot()
     def show_voltmeters_window(self):
         return self.show_window(
             FireflyMainWindow, ui_dir / "voltmeters.py", name="voltmeters"
@@ -440,3 +580,12 @@ class FireflyApplication(PyDMApplication):
     @QtCore.Slot()
     def show_bss_window(self):
         return self.show_window(FireflyMainWindow, ui_dir / "bss.py", name="bss")
+
+    @QtCore.Slot(bool)
+    def set_open_environment_action_state(self, is_open: bool):
+        """Update the readback value for opening the queueserver environment."""
+        action = self.queue_open_environment_action
+        if action is not None:
+            action.blockSignals(True)
+            action.setChecked(is_open)
+            action.blockSignals(False)

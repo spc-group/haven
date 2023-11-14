@@ -1,5 +1,7 @@
 import os
+import warnings
 from pathlib import Path
+from unittest.mock import MagicMock
 from types import SimpleNamespace
 from collections import OrderedDict
 from subprocess import Popen, TimeoutExpired, PIPE
@@ -10,74 +12,36 @@ from unittest import mock
 import asyncio
 
 import pytest
-from qtpy import QtWidgets
+
 import ophyd
 from ophyd import DynamicDeviceComponent as DDC, Kind
-from ophyd.sim import instantiate_fake_device, make_fake_device, fake_device_cache, FakeEpicsSignal
+from ophyd.sim import (
+    instantiate_fake_device,
+    make_fake_device,
+    fake_device_cache,
+    FakeEpicsSignal,
+)
 from pydm.data_plugins import add_plugin
-
-
-top_dir = Path(__file__).parent.parent.resolve()
-ioc_dir = top_dir / "tests" / "iocs"
-haven_dir = top_dir / "haven"
-test_dir = top_dir / "tests"
-
 
 import haven
 from haven.simulated_ioc import simulated_ioc
 from haven import load_config, registry
 from haven._iconfig import beamline_connected as _beamline_connected
-from haven.instrument.stage import AerotechFlyer, AerotechStage
+from haven.instrument.aerotech import AerotechFlyer, AerotechStage
 from haven.instrument.aps import ApsMachine
 from haven.instrument.shutter import Shutter
 from haven.instrument.camera import AravisDetector
 from haven.instrument.delay import EpicsSignalWithIO
-from haven.instrument.dxp import DxpDetectorBase, add_mcas as add_dxp_mcas
+from haven.instrument.dxp import DxpDetector, add_mcas as add_dxp_mcas
 from haven.instrument.ion_chamber import IonChamber
 from haven.instrument.xspress import Xspress3Detector, add_mcas as add_xspress_mcas
 from firefly.application import FireflyApplication
 from firefly.ophyd_plugin import OphydPlugin
-from run_engine import RunEngineStub
+from firefly.main_window import FireflyMainWindow
 
 
-IOC_SCOPE = "function"
+# IOC_SCOPE = "function"
 IOC_SCOPE = "session"
-
-
-# Specify the configuration files to use for testing
-os.environ["HAVEN_CONFIG_FILES"] = ",".join(
-    [
-        f"{test_dir/'iconfig_testing.toml'}",
-        f"{haven_dir/'iconfig_default.toml'}",
-    ]
-)
-
-class FakeEpicsSignalWithIO(FakeEpicsSignal):
-    # An EPICS signal that simply uses the DG-645 convention of
-    # 'AO' being the setpoint and 'AI' being the read-back
-    _metadata_keys = EpicsSignalWithIO._metadata_keys
-
-    def __init__(self, prefix, **kwargs):
-        super().__init__(f"{prefix}I", write_pv=f"{prefix}O", **kwargs)
-
-
-fake_device_cache[EpicsSignalWithIO] = FakeEpicsSignalWithIO
-
-
-def pytest_configure(config):
-    app = QtWidgets.QApplication.instance()
-    assert app is None
-    app = FireflyApplication()
-    app = QtWidgets.QApplication.instance()
-    assert isinstance(app, FireflyApplication)
-    # # Create event loop for asyncio stuff
-    # loop = asyncio.new_event_loop()
-    # asyncio.set_event_loop(loop)
-
-
-@pytest.fixture(scope="session")
-def qapp_cls():
-    return FireflyApplication
 
 
 @pytest.fixture(scope=IOC_SCOPE)
@@ -214,21 +178,6 @@ def pydm_ophyd_plugin():
     return add_plugin(OphydPlugin)
 
 
-@pytest.fixture()
-def ffapp(pydm_ophyd_plugin):
-    # Get an instance of the application
-    app = FireflyApplication.instance()
-    if app is None:
-        app = FireflyApplication()
-    # Set up the actions and other boildplate stuff
-    app.setup_window_actions()
-    app.setup_runengine_actions()
-    assert isinstance(app, FireflyApplication)
-    yield app
-    if hasattr(app, "_queue_thread"):
-        app._queue_thread.quit()
-
-
 @pytest.fixture(scope=IOC_SCOPE)
 def ioc_motor(request):
     prefix = "255idVME:"
@@ -326,145 +275,18 @@ def ioc_dxp(request):
     )
 
 
-@pytest.fixture()
-def sim_registry(monkeypatch):
-    # mock out Ophyd connections so devices can be created
-    modules = [
-        haven.instrument.fluorescence_detector,
-        haven.instrument.monochromator,
-        haven.instrument.ion_chamber,
-        haven.instrument.motor,
-        haven.instrument.device,
-    ]
-    for mod in modules:
-        monkeypatch.setattr(mod, "await_for_connection", mock.AsyncMock())
-    monkeypatch.setattr(
-        haven.instrument.ion_chamber, "caget", mock.AsyncMock(return_value="I0")
-    )
-    # Clean the registry so we can restore it later
-    objects_by_name = registry._objects_by_name
-    objects_by_label = registry._objects_by_label
-    registry.clear()
-    # Run the test
-    yield registry
-    # Restore the previous registry components
-    registry._objects_by_name = objects_by_name
-    registry._objects_by_label = objects_by_label
-
-
 # Simulated devices
 @pytest.fixture()
-def sim_aps(sim_registry):
-    aps = instantiate_fake_device(ApsMachine, name="APS")
-    sim_registry.register(aps)
-    yield aps
+def queue_app(ffapp):
+    """An application that is set up to interact (fakely) with the queue
+    server.
 
-
-@pytest.fixture()
-def sim_shutters(sim_registry):
-    FakeShutter = make_fake_device(Shutter)
-    kw = dict(
-        prefix="_prefix",
-        open_pv="_prefix",
-        close_pv="_prefix2",
-        state_pv="_prefix2",
-        labels={"shutters"},
-    )
-    shutters = [
-        FakeShutter(name="Shutter A", **kw),
-        FakeShutter(name="Shutter C", **kw),
-    ]
-    # Registry with the simulated registry
-    for shutter in shutters:
-        sim_registry.register(shutter)
-    yield shutters
-
-
-@pytest.fixture()
-def sim_camera(sim_registry):
-    FakeCamera = make_fake_device(AravisDetector)
-    camera = FakeCamera(name="s255id-gige-A", labels={"cameras", "area_detectors"})
-    camera.pva.pv_name._readback = "255idSimDet:Pva1:Image"
-    # Registry with the simulated registry
-    sim_registry.register(camera)
-    yield camera
-
-
-class DxpVortex(DxpDetectorBase):
-    mcas = DDC(
-        add_dxp_mcas(range_=[0, 1, 2, 3]),
-        kind=Kind.normal | Kind.hinted,
-        default_read_attrs=[f"mca{i}" for i in [0, 1, 2, 3]],
-        default_configuration_attrs=[f"mca{i}" for i in [0, 1, 2, 3]],
-    )
-
-
-@pytest.fixture()
-def dxp(sim_registry):
-    FakeDXP = make_fake_device(DxpVortex)
-    vortex = FakeDXP(name="vortex_me4", labels={"xrf_detectors"})
-    sim_registry.register(vortex)
-    # vortex.net_cdf.dimensions.set([1477326, 1, 1])
-    yield vortex
+    """
+    warnings.warn("queue_app is deprecated, just use ffapp instead.")
+    return ffapp
 
 
 @pytest.fixture()
 def sim_vortex(dxp):
+    warnings.warn("sim_vortex is deprecated, just use ``dxp`` instead.")
     return dxp
-
-
-class Xspress3Vortex(Xspress3Detector):
-    mcas = DDC(
-        add_xspress_mcas(range_=[0, 1, 2, 3]),
-        kind=Kind.normal | Kind.hinted,
-        default_read_attrs=[f"mca{i}" for i in [0, 1, 2, 3]],
-        default_configuration_attrs=[f"mca{i}" for i in [0, 1, 2, 3]],
-    )
-
-
-@pytest.fixture()
-def xspress(sim_registry):
-    FakeXspress = make_fake_device(Xspress3Vortex)
-    vortex = FakeXspress(name="vortex_me4", labels={"xrf_detectors"})
-    sim_registry.register(vortex)
-    yield vortex
-
-
-@pytest.fixture()
-def sim_ion_chamber(sim_registry):
-    FakeIonChamber = make_fake_device(IonChamber)
-    ion_chamber = FakeIonChamber(
-        prefix="scaler_ioc", name="I00", labels={"ion_chambers"}, ch_num=2
-    )
-    sim_registry.register(ion_chamber)
-    return ion_chamber
-
-
-@pytest.fixture()
-def sim_aerotech():
-    Stage = make_fake_device(
-        AerotechStage,
-    )
-    stage = Stage("255id", delay_prefix="255id:DG645", pv_horiz=":m1", pv_vert=":m2", name="aerotech")
-    return stage
-    
-
-@pytest.fixture()
-def sim_aerotech_flyer(sim_aerotech):
-    flyer = sim_aerotech.horiz
-    flyer.user_setpoint._limits = (0, 1000)
-    flyer.send_command = mock.MagicMock()
-    # flyer.encoder_resolution.put(0.001)
-    # flyer.acceleration.put(1)
-    yield flyer
-
-
-@pytest.fixture()
-def RE(event_loop):
-    return RunEngineStub(call_returns_result=True)
-
-
-@pytest.fixture()
-def beamline_connected():
-    with _beamline_connected(True):
-        yield

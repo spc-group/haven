@@ -15,6 +15,7 @@ log = logging.getLogger(__name__)
 ioc_dir = Path(__file__).parent.resolve() / "iocs"
 
 
+@pytest.mark.skip(reason="Simulated IOCs are deprecated.")
 def test_simulated_ioc(ioc_simple):
     assert caget(ioc_simple.pvs["B"], use_monitor=False) == 2.0
     caput(ioc_simple.pvs["B"], 5)
@@ -22,6 +23,7 @@ def test_simulated_ioc(ioc_simple):
     assert caget(ioc_simple.pvs["B"], use_monitor=False) == 5
 
 
+@pytest.mark.skip(reason="Simulated IOCs are deprecated.")
 def test_motor_ioc(ioc_motor):
     prefix = "255idVME:"
     # Check that the starting value is different than what we'll set it to
@@ -34,14 +36,14 @@ def test_motor_ioc(ioc_motor):
     assert caget(f"{prefix}m1.VAL", use_monitor=False) == 4000.0
     assert caget(f"{prefix}m1.RBV", use_monitor=False) == 4000.0
 
-
+@pytest.mark.skip(reason="Simulated IOCs are deprecated.")
 def test_scaler_ioc(ioc_scaler):
     # Check that all the channels have the right counts
     for ch_num in range(1, 32):
         pv = f"255idVME:scaler1.S{ch_num}"
         assert caget(pv) is not None, pv
 
-
+@pytest.mark.skip(reason="Simulated IOCs are deprecated.")
 def test_mono_ioc(ioc_mono):
     # Test a regular motor
     caput("255idMono:ACS:m1", 0)
@@ -86,6 +88,7 @@ def test_mono_ioc(ioc_mono):
 #         assert pass_time < 4, msg
 
 
+@pytest.mark.skip(reason="Simulated IOCs are deprecated.")
 def test_undulator_ioc(ioc_undulator):
     val = caget(ioc_undulator.pvs["energy"], use_monitor=False)
     assert val == 0.0
@@ -111,13 +114,15 @@ def test_undulator_ioc(ioc_undulator):
 #     pass
 
 
+@pytest.mark.skip(reason="Simulated IOCs are deprecated.")
 @pytest.mark.xfail
 def test_bss_ioc(ioc_bss):
-    caput(ioc_bss.pvs['esaf_cycle'], "2023-2", wait=True)
+    caput(ioc_bss.pvs["esaf_cycle"], "2023-2", wait=True)
     val = caget(ioc_bss.pvs["esaf_cycle"], as_string=True, use_monitor=False)
     assert val == "2023-2"
 
 
+@pytest.mark.skip(reason="Simulated IOCs are deprecated.")
 def test_preamp_ioc(ioc_preamp):
     # Update PVs to recover from other tests
     caput(ioc_preamp.pvs["preamp1_sens_num"], "5")
@@ -144,6 +149,7 @@ def test_preamp_ioc(ioc_preamp):
     )
 
 
+@pytest.mark.skip(reason="Simulated IOCs are deprecated.")
 def test_ptc10_ioc(ioc_ptc10):
     assert caput(ioc_ptc10.pvs["tc1_temperature"], 21.3)
     # Check that the values were set
@@ -151,11 +157,12 @@ def test_ptc10_ioc(ioc_ptc10):
     assert caget(ioc_ptc10.pvs["pid1_voltage_rbv"], use_monitor=False) == 0
     assert caget(ioc_ptc10.pvs["tc1_temperature"], use_monitor=False) == 21.3
 
-
+@pytest.mark.skip(reason="Simulated IOCs are deprecated.")
 def test_area_detector_ioc(ioc_area_detector):
     assert caget(ioc_area_detector.pvs["cam_acquire_busy"], use_monitor=False) == 0
 
 
+@pytest.mark.skip(reason="Simulated IOCs are deprecated.")
 def test_dxp_ioc_mca_propogation(ioc_dxp):
     # See if settings propogate to the MCAs
     caput("255idDXP:PresetLive", 1.5)
@@ -167,6 +174,7 @@ def test_dxp_ioc_mca_propogation(ioc_dxp):
     assert real_time == 2.5
 
 
+@pytest.mark.skip(reason="Simulated IOCs are deprecated.")
 def test_dxp_ioc_spectra(ioc_dxp):
     # Get the starting spectrum
     spectrum = caget("255idDXP:mca1.VAL")

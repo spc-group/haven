@@ -14,3 +14,4 @@ These guides do not cover the individual beamlines thoroughly.
    knife_scan.ipynb
    xafs_energy_scan.rst
    area_detectors.rst
+   fly_scanning.ipynb
