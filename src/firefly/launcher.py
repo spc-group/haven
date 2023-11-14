@@ -34,12 +34,6 @@ def main(default_fullscreen=False, default_display="status"):
     from qtpy.QtGui import QPixmap
     from qtpy import QtCore
 
-    # Add plugins for handling ophyd objects
-    from pydm.data_plugins import add_plugin
-    from .ophyd_plugin import OphydPlugin
-
-    add_plugin(OphydPlugin)
-
     # Set up splash screen
     fake_app = FireflyApplication(sys.argv)
     im_dir = Path(__file__).parent.resolve()

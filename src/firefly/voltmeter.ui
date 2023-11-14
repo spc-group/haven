@@ -63,7 +63,7 @@
       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
      </property>
      <property name="channel" stdset="0">
-      <string>oph://${IC}.description</string>
+      <string>sig://${IC}.description</string>
      </property>
      <property name="displayFormat" stdset="0">
       <enum>PyDMLabel::String</enum>
@@ -93,7 +93,7 @@
       <string>The measured voltage output from the pre-amp.</string>
      </property>
      <property name="channel" stdset="0">
-      <string>oph://${IC}.voltmeter.volts</string>
+      <string>sig://${IC}.voltmeter.volts</string>
      </property>
      <property name="showValue" stdset="0">
       <bool>false</bool>
@@ -212,7 +212,7 @@
           <string>The measured voltage output from the pre-amp.</string>
          </property>
          <property name="channel" stdset="0">
-          <string>oph://${IC}.voltmeter.volts</string>
+          <string>sig://${IC}.voltmeter.volts</string>
          </property>
          <property name="enableRichText" stdset="0">
           <bool>false</bool>
@@ -290,7 +290,7 @@
           <string>The calculated current based on the voltage from the voltmeter and the pre-amp settings.</string>
          </property>
          <property name="channel" stdset="0">
-          <string>oph://${IC}.voltmeter.amps</string>
+          <string>sig://${IC}.voltmeter.amps</string>
          </property>
          <property name="displayFormat" stdset="0">
           <enum>PyDMLabel::Exponential</enum>
@@ -427,13 +427,13 @@
           </size>
          </property>
          <property name="rules" stdset="0">
-          <string>[{&quot;name&quot;: &quot;Gain button lower range&quot;, &quot;property&quot;: &quot;Enable&quot;, &quot;initial_value&quot;: &quot;True&quot;, &quot;expression&quot;: &quot;ch[0] &lt; 27&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;oph://${IC}.preamp.sensitivity_level&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}], &quot;notes&quot;: &quot;If the sensitivity is at its highest setting, disable the button so users don't click it unnecessarily.&quot;}]</string>
+          <string>[{&quot;name&quot;: &quot;Gain button lower range&quot;, &quot;property&quot;: &quot;Enable&quot;, &quot;initial_value&quot;: &quot;True&quot;, &quot;expression&quot;: &quot;ch[0] &lt; 27&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;sig://${IC}.preamp.sensitivity_level&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}], &quot;notes&quot;: &quot;If the sensitivity is at its highest setting, disable the button so users don't click it unnecessarily.&quot;}]</string>
          </property>
          <property name="PyDMToolTip" stdset="0">
           <string>Decrease the pre-amp gain (higher sensitivity values)</string>
          </property>
          <property name="channel" stdset="0">
-          <string>oph://${IC}.preamp.sensitivity_level</string>
+          <string>sig://${IC}.preamp.sensitivity_level</string>
          </property>
          <property name="confirmMessage" stdset="0">
           <string>Are you sure you want to proceed?</string>
@@ -473,7 +473,7 @@
           </size>
          </property>
          <property name="rules" stdset="0">
-          <string>[{&quot;name&quot;: &quot;Gain button upper range&quot;, &quot;property&quot;: &quot;Enable&quot;, &quot;initial_value&quot;: &quot;True&quot;, &quot;expression&quot;: &quot;ch[0] &gt; 0&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;oph://${IC}.preamp.sensitivity_level&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}], &quot;notes&quot;: &quot;&quot;}]</string>
+          <string>[{&quot;name&quot;: &quot;Gain button upper range&quot;, &quot;property&quot;: &quot;Enable&quot;, &quot;initial_value&quot;: &quot;True&quot;, &quot;expression&quot;: &quot;ch[0] &gt; 0&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;sig://${IC}.preamp.sensitivity_level&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}], &quot;notes&quot;: &quot;&quot;}]</string>
          </property>
          <property name="alarmSensitiveContent" stdset="0">
           <bool>false</bool>
@@ -488,7 +488,7 @@
           <bool>false</bool>
          </property>
          <property name="channel" stdset="0">
-          <string>oph://${IC}.preamp.sensitivity_level</string>
+          <string>sig://${IC}.preamp.sensitivity_level</string>
          </property>
          <property name="passwordProtected" stdset="0">
           <bool>false</bool>
@@ -570,7 +570,7 @@
           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
          </property>
          <property name="channel" stdset="0">
-          <string>oph://${IC}.preamp.sensitivity_text</string>
+          <string>sig://${IC}.preamp.sensitivity_text</string>
          </property>
          <property name="displayFormat" stdset="0">
           <enum>PyDMLabel::String</enum>

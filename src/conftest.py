@@ -13,7 +13,8 @@ from ophyd.sim import (
     fake_device_cache,
     FakeEpicsSignal,
 )
-from pydm.data_plugins import add_plugin
+# from pydm.data_plugins import plugin_modules, add_plugin
+import pydm
 from pytestqt.qt_compat import qt_api
 
 import haven
@@ -28,7 +29,6 @@ from haven.instrument.ion_chamber import IonChamber
 from haven.instrument.xspress import Xspress3Detector, add_mcas as add_xspress_mcas
 from firefly.application import FireflyApplication
 from firefly.main_window import FireflyMainWindow
-from firefly.ophyd_plugin import OphydPlugin
 
 
 top_dir = Path(__file__).parent.resolve()
@@ -124,16 +124,21 @@ def sim_registry(monkeypatch):
     monkeypatch.setattr(
         haven.instrument.ion_chamber, "caget", mock.AsyncMock(return_value="I0")
     )
-    # Clean the registry so we can restore it later
+    # Save the registry so we can restore it later
     registry = haven.registry
+    use_typhos = registry.use_typhos
     objects_by_name = registry._objects_by_name
     objects_by_label = registry._objects_by_label
     registry.clear()
     # Run the test
-    yield registry
-    # Restore the previous registry components
-    registry._objects_by_name = objects_by_name
-    registry._objects_by_label = objects_by_label
+    try:
+        yield registry
+    finally:
+        # Restore the previous registry components
+        registry.clear(clear_typhos=True)
+        registry._objects_by_name = objects_by_name
+        registry._objects_by_label = objects_by_label
+        registry.use_typhos = use_typhos
 
 
 @pytest.fixture()
@@ -265,7 +270,7 @@ def shutters(sim_registry):
 
 @pytest.fixture(scope="session")
 def pydm_ophyd_plugin():
-    return add_plugin(OphydPlugin)
+    return pydm.data_plugins.plugin_for_address("sig://")
 
 
 qs_status = {

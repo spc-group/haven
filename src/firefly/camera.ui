@@ -59,7 +59,7 @@
         <bool>true</bool>
        </property>
        <property name="channel" stdset="0">
-        <string>oph://${CAMERA}.cam.acquire</string>
+        <string>sig://${CAMERA}.cam.acquire</string>
        </property>
        <property name="onColor" stdset="0">
         <color>
