@@ -207,7 +207,7 @@ def test_flyscan_collect(sim_ion_chamber):
     flyer.mca.spectrum._readback = sim_data
     sim_times = np.asarray([12.0e7, 4.0e7, 4.0e7, 4.0e7, 4.0e7, 4.0e7])
     flyer.mca_times.spectrum._readback = sim_times
-    flyer.frequency.set(1e7)
+    flyer.frequency.set(1e7).wait()
     # Ignore the first collected data point because it's during taxiing
     expected_data = sim_data[1:]
     # The real timestamps should be midway between PSO pulses

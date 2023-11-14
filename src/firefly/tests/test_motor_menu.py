@@ -32,6 +32,7 @@ def test_motor_menu(fake_motors, qtbot, ffapp):
     # Check that the menu items have been created
     assert hasattr(window.ui, "menuPositioners")
     assert len(ffapp.motor_actions) == 3
+    window.destroy()
 
 
 def test_open_motor_window(fake_motors, monkeypatch, ffapp):
@@ -39,7 +40,6 @@ def test_open_motor_window(fake_motors, monkeypatch, ffapp):
     ffapp.setup_window_actions()
     ffapp.setup_runengine_actions()
     # Simulate clicking on the menu action (they're in alpha order)
-    window = FireflyMainWindow()
     action = ffapp.motor_actions[2]
     action.trigger()
     # See if the window was created
@@ -47,5 +47,3 @@ def test_open_motor_window(fake_motors, monkeypatch, ffapp):
     assert motor_3_name in ffapp.windows.keys()
     macros = ffapp.windows[motor_3_name].display_widget().macros()
     assert macros["MOTOR"] == "motorC"
-    # Clean up
-    window.close()

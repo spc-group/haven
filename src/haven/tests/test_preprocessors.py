@@ -12,7 +12,7 @@ from haven.preprocessors import shutter_suspend_wrapper, shutter_suspend_decorat
 from haven.instrument.aps import EpicsBssDevice, load_aps, ApsMachine
 
 
-def test_shutter_suspend_wrapper(sim_aps, sim_shutters, sim_registry):
+def test_shutter_suspend_wrapper(aps, shutters, sim_registry):
     # Check that the run engine does not have any shutter suspenders
     # Currently this test is fragile since we might add non-shutter
     # suspenders in the future.
@@ -41,7 +41,7 @@ def test_shutter_suspend_wrapper(sim_aps, sim_shutters, sim_registry):
     assert len(unsub_msgs) == 2
 
 
-def test_baseline_wrapper(sim_registry, sim_aps, event_loop):
+def test_baseline_wrapper(sim_registry, aps, event_loop):
     # Create a test device
     motor_baseline = SynAxis(name="baseline_motor", labels={"motors", "baseline"})
     sim_registry.register(motor_baseline)
@@ -64,7 +64,7 @@ def test_baseline_wrapper(sim_registry, sim_aps, event_loop):
     assert "baseline_motor" in baseline_doc["data_keys"].keys()
 
 
-def test_baseline_decorator(sim_registry, sim_aps):
+def test_baseline_decorator(sim_registry, aps):
     """Similar to baseline wrapper test, but used as a decorator."""
     # Create the decorated function before anything else
     func = baseline_decorator(devices="motors")(bp.count)
@@ -89,7 +89,7 @@ def test_baseline_decorator(sim_registry, sim_aps):
     assert "baseline_motor" in baseline_doc["data_keys"].keys()
 
 
-def test_metadata(sim_registry, sim_aps, monkeypatch):
+def test_metadata(sim_registry, aps, monkeypatch):
     """Similar to baseline wrapper test, but used as a decorator."""
     # Load devices
     bss = instantiate_fake_device(EpicsBssDevice, name="bss", prefix="255id:bss:")

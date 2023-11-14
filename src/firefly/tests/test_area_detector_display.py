@@ -3,7 +3,6 @@ import numpy as np
 import pydm
 from unittest import mock
 
-from firefly.main_window import FireflyMainWindow
 from firefly.area_detector_viewer import AreaDetectorViewerDisplay
 from haven.instrument.camera import load_cameras
 
@@ -29,7 +28,6 @@ def test_open_area_detector_viewer_actions(ffapp, qtbot, sim_camera):
 
 
 def test_image_plotting(ffapp, qtbot, sim_camera):
-    FireflyMainWindow()
     display = AreaDetectorViewerDisplay(macros={"AD": sim_camera.name})
     assert isinstance(display.image_view, pyqtgraph.ImageView)
     assert isinstance(display.image_channel, pydm.PyDMChannel)
@@ -55,7 +53,6 @@ def test_image_plotting(ffapp, qtbot, sim_camera):
 
 
 def test_caqtdm_window(ffapp, sim_camera):
-    FireflyMainWindow()
     display = AreaDetectorViewerDisplay(macros={"AD": sim_camera.name})
     display._open_caqtdm_subprocess = mock.MagicMock()
     # Launch the caqtdm display

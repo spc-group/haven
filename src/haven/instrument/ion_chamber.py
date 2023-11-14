@@ -77,7 +77,7 @@ class CurrentSignal(DerivedSignal):
                 # Move up a step in the hierarchy
                 device = device.parent
         # If we get here, there's no pre-amp
-        raise Attribute(f"No ancestor of {self} has a pre-amp.")
+        raise AttributeError(f"No ancestor of {self} has a pre-amp.")
 
     def inverse(self, value):
         """Calculate the current given a output voltage."""
@@ -610,7 +610,7 @@ async def load_ion_chamber(
     try:
         ion_chamber.voltmeter.differential.set(1).wait(timeout=1)
     except OpException as exc:
-        msg = f"Could not set voltmeter {self.name} channel differential state: {exc}"
+        msg = f"Could not set voltmeter {ion_chamber.name} channel differential state: {exc}"
         log.warning(msg)
         warnings.warn(msg)
     return ion_chamber

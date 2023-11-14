@@ -1,7 +1,7 @@
 from firefly.queue_button import QueueButton
 
 
-def test_queue_button_style(queue_app):
+def test_queue_button_style(ffapp):
     """Does the queue button change color/icon based."""
     btn = QueueButton()
     # Initial style should be disabled and plain
@@ -13,7 +13,7 @@ def test_queue_button_style(queue_app):
         "items_in_queue": 0,
         "re_state": "idle",
     }
-    queue_app.queue_status_changed.emit(queue_state)
+    ffapp.queue_status_changed.emit(queue_state)
     assert btn.isEnabled()
     assert "rgb(25, 135, 84)" in btn.styleSheet()
     assert btn.text() == "Run"
@@ -23,7 +23,7 @@ def test_queue_button_style(queue_app):
         "items_in_queue": 0,
         "re_state": "running",
     }
-    queue_app.queue_status_changed.emit(queue_state)
+    ffapp.queue_status_changed.emit(queue_state)
     assert btn.isEnabled()
     assert "rgb(0, 123, 255)" in btn.styleSheet()
     assert btn.text() == "Add to Queue"

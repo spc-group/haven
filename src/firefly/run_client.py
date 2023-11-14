@@ -144,7 +144,6 @@ class DatabaseWorker(QObject):
             raise
         else:
             self.db_op_ended.emit([])
-
         self.all_runs_changed.emit(all_runs)
 
     @Slot(list)

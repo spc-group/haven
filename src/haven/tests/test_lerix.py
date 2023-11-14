@@ -3,6 +3,7 @@ import time
 
 from epics import caget
 import pytest
+from ophyd.sim import instantiate_fake_device
 
 from haven.instrument import lerix
 import haven
@@ -70,8 +71,13 @@ def test_rowland_circle_forward():
 
 @pytest.mark.xfail
 def test_rowland_circle_inverse():
-    rowland = lerix.RowlandPositioner(
-        name="rowland", x_motor_pv="", y_motor_pv="", z_motor_pv="", z1_motor_pv=""
+    rowland = instantiate_fake_device(
+        lerix.RowlandPositioner,
+        name="rowland",
+        x_motor_pv="",
+        y_motor_pv="",
+        z_motor_pv="",
+        z1_motor_pv="",
     )
     # Check one set of values
     result = rowland.inverse(
@@ -115,10 +121,14 @@ def test_rowland_circle_inverse():
     # ))
 
 
-@pytest.mark.xfail
-def test_rowland_circle_component(ioc_motor):
-    device = lerix.LERIXSpectrometer("255idVME", name="lerix")
-    device.wait_for_connection()
+def test_rowland_circle_component():
+    device = instantiate_fake_device(
+        lerix.LERIXSpectrometer, prefix="255idVME", name="lerix"
+    )
+    device.rowland.x.user_setpoint._use_limits = False
+    device.rowland.y.user_setpoint._use_limits = False
+    device.rowland.z.user_setpoint._use_limits = False
+    device.rowland.z1.user_setpoint._use_limits = False
     # Set pseudo axes
     statuses = [
         device.rowland.D.set(500.0),
@@ -129,14 +139,10 @@ def test_rowland_circle_component(ioc_motor):
     time.sleep(0.1)
     # Check that the virtual axes were set
     result = device.rowland.get(use_monitor=False)
-    assert caget("255idVME:m1") == pytest.approx(500.0 * um_per_mm)
-    assert result.x.user_readback == pytest.approx(500.0 * um_per_mm)
-    assert caget("255idVME:m2") == pytest.approx(375.0 * um_per_mm)
-    assert result.y.user_readback == pytest.approx(375.0 * um_per_mm)
-    assert caget("255idVME:m3") == pytest.approx(216.50635094610968 * um_per_mm)
-    assert result.z.user_readback == pytest.approx(216.50635094610968 * um_per_mm)
-    assert caget("255idVME:m4") == pytest.approx(1.5308084989341912e-14 * um_per_mm)
-    assert result.z1.user_readback == pytest.approx(1.5308084989341912e-14 * um_per_mm)
+    assert result.x.user_setpoint == pytest.approx(500.0 * um_per_mm)
+    assert result.y.user_setpoint == pytest.approx(375.0 * um_per_mm)
+    assert result.z.user_setpoint == pytest.approx(216.50635094610968 * um_per_mm)
+    assert result.z1.user_setpoint == pytest.approx(1.5308084989341912e-14 * um_per_mm)
 
 
 def test_load_lerix_spectrometers(sim_registry):

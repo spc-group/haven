@@ -10,24 +10,25 @@ from bluesky_queueserver_api.zmq import REManagerAPI
 
 from firefly.queue_client import QueueClient
 from firefly.application import REManagerAPI
-from firefly.main_window import FireflyMainWindow
 
 
-def test_setup(queue_app):
-    queue_app.setup_window_actions()
-    queue_app.setup_runengine_actions()
+def test_setup(ffapp):
     api = MagicMock()
-    FireflyMainWindow()
-    queue_app.prepare_queue_client(api=api)
+    try:
+        ffapp.prepare_queue_client(api=api)
+    finally:
+        ffapp._queue_thread.quit()
+        ffapp._queue_thread.wait(msecs=5000)
 
 
-def test_setup2(queue_app):
+def test_setup2(ffapp):
     """Verify that multiple tests can use the app without crashing."""
-    queue_app.setup_window_actions()
-    queue_app.setup_runengine_actions()
     api = MagicMock()
-    FireflyMainWindow()
-    queue_app.prepare_queue_client(api=api)
+    try:
+        ffapp.prepare_queue_client(api=api)
+    finally:
+        ffapp._queue_thread.quit()
+        ffapp._queue_thread.wait(msecs=5000)
 
 
 def test_queue_actions_enabled(ffapp, qtbot):
@@ -70,3 +71,11 @@ def test_queue_actions_enabled(ffapp, qtbot):
     assert not ffapp.resume_runengine_action.isEnabled()
     assert not ffapp.abort_runengine_action.isEnabled()
     assert not ffapp.halt_runengine_action.isEnabled()
+    # Pretend the queue is in an unknown state (maybe the environment is closed)
+    with qtbot.waitSignal(ffapp.queue_re_state_changed):
+        ffapp.queue_re_state_changed.emit(None)
+
+
+@pytest.mark.xfail
+def test_prepare_queue_client(ffapp):
+    assert False, "Write tests for prepare_queue_client."

@@ -8,9 +8,9 @@ import numpy as np
 from haven.plans.fly import fly_scan, grid_fly_scan, FlyerCollector
 
 
-def test_set_fly_params(sim_aerotech_flyer):
+def test_set_fly_params(aerotech_flyer):
     """Does the plan set the parameters of the flyer motor."""
-    flyer = sim_aerotech_flyer
+    flyer = aerotech_flyer
     # step size == 10
     plan = fly_scan(detectors=[], flyer=flyer, start=-20, stop=30, num=6)
     messages = list(plan)
@@ -30,9 +30,9 @@ def test_set_fly_params(sim_aerotech_flyer):
     assert new_step_size == 10
 
 
-def test_fly_scan_metadata(sim_aerotech_flyer, sim_ion_chamber):
+def test_fly_scan_metadata(aerotech_flyer, sim_ion_chamber):
     """Does the plan set the parameters of the flyer motor."""
-    flyer = sim_aerotech_flyer
+    flyer = aerotech_flyer
     md = {"spam": "eggs"}
     plan = fly_scan(
         detectors=[sim_ion_chamber], flyer=flyer, start=-20, stop=30, num=6, md=md
@@ -240,8 +240,8 @@ def test_collector_collect():
     assert events == expected_events
 
 
-def test_fly_grid_scan(sim_aerotech_flyer):
-    flyer = sim_aerotech_flyer
+def test_fly_grid_scan(aerotech_flyer):
+    flyer = aerotech_flyer
     stepper = sim.motor
     # step size == 10
     plan = grid_fly_scan(
@@ -278,9 +278,9 @@ def test_fly_grid_scan(sim_aerotech_flyer):
     assert flyer_end_positions == [30, -20, 30, -20, 30, -20, 30, -20, 30, -20, 30]
 
 
-def test_fly_grid_scan_metadata(sim_aerotech_flyer, sim_ion_chamber):
+def test_fly_grid_scan_metadata(aerotech_flyer, sim_ion_chamber):
     """Does the plan set the parameters of the flyer motor."""
-    flyer = sim_aerotech_flyer
+    flyer = aerotech_flyer
     stepper = sim.motor
     md = {"spam": "eggs"}
     plan = grid_fly_scan(

@@ -6,7 +6,6 @@ from pyqtgraph import PlotItem
 import pytest
 from qtpy import QtCore
 
-from firefly.main_window import FireflyMainWindow
 from firefly.xrf_detector import XRFDetectorDisplay, XRFPlotWidget
 from firefly.xrf_roi import XRFROIDisplay
 
@@ -20,7 +19,6 @@ def xrf_display(ffapp, request):
     # Figure out which detector we're using
     det = request.getfixturevalue(request.param)
     # Create the display
-    FireflyMainWindow()
     display = XRFDetectorDisplay(macros={"DEV": det.name})
     # Set sensible starting values
     spectra = np.random.default_rng(seed=0).integers(
@@ -66,7 +64,6 @@ def test_roi_element_comboboxes(ffapp, qtbot, xrf_display):
 @pytest.mark.parametrize("det_fixture", ["dxp", "xspress"])
 def test_roi_selection(ffapp, qtbot, det_fixture, request):
     det = request.getfixturevalue(det_fixture)
-    FireflyMainWindow()
     display = XRFROIDisplay(macros={"DEV": det.name, "NUM": 2, "MCA": 2, "ROI": 2})
     # Unchecked box should be bland
     assert "background" not in display.styleSheet()

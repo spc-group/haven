@@ -7,6 +7,12 @@ import pytest
 from qtpy.QtCore import Qt
 from pyqtgraph import PlotItem, PlotWidget
 import numpy as np
+import pandas as pd
+from tiled.adapters.mapping import MapAdapter
+from tiled.adapters.array import ArrayAdapter
+from tiled.adapters.xarray import DatasetAdapter
+from tiled.server.app import build_app
+from tiled.client import Context, from_context
 
 from haven import tiled_client
 from firefly.main_window import PlanMainWindow
@@ -17,36 +23,93 @@ from firefly.run_client import DatabaseWorker
 log = logging.getLogger(__name__)
 
 
-httpx_reason = (
-    "v0.1.0a106 of tiled client broke the run_browser"
-    "giving an httpx.PoolTimeout exception. "
-    "Happens when calling ``run['primary']['data'] on "
-    "in *run_browser.py* ln 294"
-)
-
-
-# pytest.skip(reason=httpx_reason, allow_module_level=True)
-
-
 def wait_for_runs_model(display, qtbot):
     with qtbot.waitSignal(display.runs_model_changed):
         pass
 
 
-@pytest.fixture()
-def client(sim_tiled):
-    return sim_tiled["255id_testing"]
+run1 = pd.DataFrame(
+    {
+        "energy_energy": np.linspace(8300, 8400, num=100),
+        "It_net_counts": np.abs(np.sin(np.linspace(0, 4 * np.pi, num=100))),
+        "I0_net_counts": np.linspace(1, 2, num=100),
+    }
+)
+
+hints = {
+    "energy": {"fields": ["energy_energy", "energy_id_energy_readback"]},
+}
+
+bluesky_mapping = {
+    "7d1daf1d-60c7-4aa7-a668-d1cd97e5335f": MapAdapter(
+        {
+            "primary": MapAdapter(
+                {
+                    "data": DatasetAdapter.from_dataset(run1.to_xarray()),
+                },
+                metadata={"descriptors": [{"hints": hints}]},
+            ),
+        },
+        metadata={
+            "plan_name": "xafs_scan",
+            "start": {
+                "plan_name": "xafs_scan",
+                "uid": "7d1daf1d-60c7-4aa7-a668-d1cd97e5335f",
+                "hints": {"dimensions": [[["energy_energy"], "primary"]]},
+            },
+        },
+    ),
+    "9d33bf66-9701-4ee3-90f4-3be730bc226c": MapAdapter(
+        {
+            "primary": MapAdapter(
+                {
+                    "data": DatasetAdapter.from_dataset(run1.to_xarray()),
+                },
+                metadata={"descriptors": [{"hints": hints}]},
+            ),
+        },
+        metadata={
+            "start": {
+                "plan_name": "rel_scan",
+                "uid": "9d33bf66-9701-4ee3-90f4-3be730bc226c",
+                "hints": {"dimensions": [[["pitch2"], "primary"]]},
+            }
+        },
+    ),
+}
 
 
+mapping = {
+    "255id_testing": MapAdapter(bluesky_mapping),
+}
+
+tree = MapAdapter(mapping)
+
+
+@pytest.fixture(scope="module")
+def client():
+    app = build_app(tree)
+    with Context.from_app(app) as context:
+        client = from_context(context)
+        yield client["255id_testing"]
+        
+
+def test_client_fixture(client):
+    """Does the client fixture load without stalling the test runner?"""
+    pass
+
 @pytest.fixture()
-def display(client, qtbot, ffapp):
+def display(ffapp, client, qtbot):
     display = RunBrowserDisplay(root_node=client)
     wait_for_runs_model(display, qtbot)
-    yield display
-    display._thread.quit()
+    try:
+        yield display
+    finally:
+        display._thread.quit()
+        display._thread.wait(msecs=5000)
 
 
-def test_run_viewer_action(ffapp, monkeypatch, sim_tiled):
+def test_run_viewer_action(ffapp, monkeypatch):
     monkeypatch.setattr(ffapp, "create_window", MagicMock())
     assert hasattr(ffapp, "show_run_browser_action")
     ffapp.show_run_browser_action.trigger()
@@ -88,7 +151,6 @@ def test_metadata(qtbot, display):
     assert "xafs_scan" in text
 
 
-@pytest.mark.skip(reason=httpx_reason)
 def test_1d_plot_signals(client, display):
     # Check that the 1D plot was created
     plot_widget = display.ui.plot_1d_view
@@ -130,7 +192,6 @@ def test_1d_plot_signal_memory(client, display):
     assert cb.currentText() == "energy_id_energy_readback"
 
 
-@pytest.mark.skip(reason=httpx_reason)
 def test_1d_hinted_signals(client, display):
     display.ui.plot_1d_hints_checkbox.setChecked(True)
     # Check that the 1D plot was created
@@ -151,7 +212,7 @@ def test_1d_hinted_signals(client, display):
     ), f"unhinted signal found in {combobox.objectName()}."
 
 
-@pytest.mark.skip(reason=httpx_reason)
+@pytest.mark.skip(reason="Need to figure out why tiled fails with this test.")
 def test_update_1d_plot(client, display, qtbot):
     run = client.values()[0]
     run_data = run["primary"]["data"].read()
@@ -184,9 +245,7 @@ def test_update_1d_plot(client, display, qtbot):
     np.testing.assert_almost_equal(ydata, expected_ydata)
 
 
-@pytest.mark.skip(reason=httpx_reason)
 def test_update_multi_plot(client, display, qtbot):
-    print("Current text", display.ui.multi_signal_x_combobox.currentText())
     run = client.values()[0]
     run_data = run["primary"]["data"].read()
     expected_xdata = run_data.energy_energy
@@ -208,7 +267,6 @@ def test_update_multi_plot(client, display, qtbot):
     # np.testing.assert_almost_equal(ydata, expected_ydata)
 
 
-@pytest.mark.skip(reason=httpx_reason)
 def test_filter_controls(client, display, qtbot):
     # Does editing text change the filters?
     display.ui.filter_user_combobox.setCurrentText("")
@@ -242,7 +300,6 @@ def test_filter_controls(client, display, qtbot):
     }
 
 
-@pytest.mark.skip(reason=httpx_reason)
 def test_filter_runs(client, qtbot):
     worker = DatabaseWorker(root_node=client)
     worker._filters["plan"] = "xafs_scan"
@@ -253,7 +310,6 @@ def test_filter_runs(client, qtbot):
     assert len(runs) == 1
 
 
-@pytest.mark.skip(reason=httpx_reason)
 def test_distinct_fields(client, qtbot, display):
     worker = DatabaseWorker(root_node=client)
     with qtbot.waitSignal(worker.distinct_fields_changed) as blocker:

@@ -7,7 +7,7 @@ from ophyd import Component as Cpt, FormattedComponent as FCpt, Device
 
 from .._iconfig import load_config
 from .instrument_registry import registry
-from .device import await_for_connection, aload_devices
+from .device import await_for_connection, aload_devices, make_device
 
 
 log = logging.getLogger(__name__)
@@ -74,6 +74,7 @@ class RowlandPositioner(PseudoPositioner):
         z1 = D * np.sin(theta - alpha) * np.cos(theta + alpha)
         z2 = D * np.sin(theta - alpha) * np.cos(theta - alpha)
         z = z1 + z2
+        print(x, y, z1, z)
         return self.RealPosition(
             x=x,
             y=y,
@@ -162,24 +163,24 @@ class LERIXSpectrometer(Device):
     )
 
 
-async def make_lerix_device(name: str, x_pv: str, y_pv: str, z_pv: str, z1_pv: str):
-    dev = RowlandPositioner(
-        name=name,
-        x_motor_pv=x_pv,
-        y_motor_pv=y_pv,
-        z_motor_pv=z_pv,
-        z1_motor_pv=z1_pv,
-        labels={"lerix_spectrometers"},
-    )
-    pvs = ", ".join((x_pv, y_pv, z_pv, z1_pv))
-    try:
-        await await_for_connection(dev)
-    except TimeoutError as exc:
-        log.warning(f"Could not connect to LERIX spectrometer: {name} ({pvs})")
-    else:
-        log.info(f"Created area detector: {name} ({pvs})")
-        registry.register(dev)
-        return dev
+# async def make_lerix_device(name: str, x_pv: str, y_pv: str, z_pv: str, z1_pv: str):
+#     dev = RowlandPositioner(
+#         name=name,
+#         x_motor_pv=x_pv,
+#         y_motor_pv=y_pv,
+#         z_motor_pv=z_pv,
+#         z1_motor_pv=z1_pv,
+#         labels={"lerix_spectrometers"},
+#     )
+#     pvs = ", ".join((x_pv, y_pv, z_pv, z1_pv))
+#     try:
+#         await await_for_connection(dev)
+#     except TimeoutError as exc:
+#         log.warning(f"Could not connect to LERIX spectrometer: {name} ({pvs})")
+#     else:
+#         log.info(f"Created area detector: {name} ({pvs})")
+#         registry.register(dev)
+#         return dev
 
 
 def load_lerix_spectrometer_coros(config=None):
@@ -192,12 +193,14 @@ def load_lerix_spectrometer_coros(config=None):
     # Create spectrometers
     for name, cfg in config.get("lerix", {}).items():
         rowland = cfg["rowland"]
-        yield make_lerix_device(
+        yield make_device(
+            RowlandPositioner,
             name=name,
-            x_pv=rowland["x_motor_pv"],
-            y_pv=rowland["y_motor_pv"],
-            z_pv=rowland["z_motor_pv"],
-            z1_pv=rowland["z1_motor_pv"],
+            x_motor_pv=rowland["x_motor_pv"],
+            y_motor_pv=rowland["y_motor_pv"],
+            z_motor_pv=rowland["z_motor_pv"],
+            z1_motor_pv=rowland["z1_motor_pv"],
+            labels={"lerix_spectromoters"},
         )
 
 

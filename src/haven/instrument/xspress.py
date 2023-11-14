@@ -576,7 +576,7 @@ async def make_xspress_device(name, prefix, num_elements):
         Cls,
         name=name,
         prefix=f"{prefix}:",
-        labels={"xrf_detectors", "fluorescence_detectors"},
+        labels={"xrf_detectors", "fluorescence_detectors", "detectors"},
     )
 
 

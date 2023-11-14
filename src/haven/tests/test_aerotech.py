@@ -1,50 +1,30 @@
-import time
 from unittest import mock
 from collections import OrderedDict
+
+import numpy as np
 import pytest
 from ophyd import StatusBase
-from ophyd.sim import instantiate_fake_device, make_fake_device
-import numpy as np
-from datetime import datetime
 
-from haven import registry, exceptions
-from haven.instrument import stage
+from haven.instrument.aerotech import AerotechFlyer, AerotechStage, load_aerotech_stages, ureg
+from haven import exceptions
 
 
-def test_stage_init():
-    stage_ = stage.XYStage(
-        "motor_ioc", pv_vert=":m1", pv_horiz=":m2", labels={"stages"}, name="aerotech"
-    )
-    assert stage_.name == "aerotech"
-    assert stage_.vert.name == "aerotech_vert"
-    # Check registry of the stage and the individiual motors
-    registry.clear()
-    with pytest.raises(exceptions.ComponentNotFound):
-        registry.findall(label="motors")
-    with pytest.raises(exceptions.ComponentNotFound):
-        registry.findall(label="stages")
-    registry.register(stage_)
-    assert len(list(registry.findall(label="motors"))) == 2
-    assert len(list(registry.findall(label="stages"))) == 1
-
-
-def test_load_aerotech_stage(monkeypatch):
-    monkeypatch.setattr(stage, "await_for_connection", mock.AsyncMock())
-    stage.load_stages()
+def test_load_aerotech_stage(sim_registry):
+    load_aerotech_stages()
     # Make sure these are findable
-    stage_ = registry.find(name="Aerotech")
+    stage_ = sim_registry.find(name="aerotech")
     assert stage_ is not None
-    vert_ = registry.find(name="Aerotech_vert")
+    vert_ = sim_registry.find(name="aerotech_vert")
     assert vert_ is not None
 
 
-def test_aerotech_flyer():
-    aeroflyer = stage.AerotechFlyer(name="aerotech_flyer", axis="@0", encoder=6)
+def test_aerotech_flyer(sim_registry):
+    aeroflyer = AerotechFlyer(name="aerotech_flyer", axis="@0", encoder=6)
     assert aeroflyer is not None
 
 
-def test_aerotech_stage():
-    fly_stage = stage.AerotechStage(
+def test_aerotech_stage(sim_registry):
+    fly_stage = AerotechStage(
         "motor_ioc",
         pv_vert=":m1",
         pv_horiz=":m2",
@@ -56,8 +36,8 @@ def test_aerotech_stage():
     assert fly_stage.asyn.ascii_output.pvname == "motor_ioc:asynEns.AOUT"
 
 
-def test_aerotech_fly_params_forward(sim_aerotech_flyer):
-    flyer = sim_aerotech_flyer
+def test_aerotech_fly_params_forward(aerotech_flyer):
+    flyer = aerotech_flyer
     # Set some example positions
     flyer.motor_egu.set("micron").wait()
     flyer.acceleration.set(0.5).wait()  # sec
@@ -84,8 +64,8 @@ def test_aerotech_fly_params_forward(sim_aerotech_flyer):
     np.testing.assert_allclose(flyer.pixel_positions, pixel)
 
 
-def test_aerotech_fly_params_reverse(sim_aerotech_flyer):
-    flyer = sim_aerotech_flyer
+def test_aerotech_fly_params_reverse(aerotech_flyer):
+    flyer = aerotech_flyer
     # Set some example positions
     flyer.motor_egu.set("micron").wait()
     flyer.acceleration.set(0.5).wait()  # sec
@@ -106,9 +86,9 @@ def test_aerotech_fly_params_reverse(sim_aerotech_flyer):
     assert flyer.encoder_window_end.get(use_monitor=False) == -10005
 
 
-def test_aerotech_fly_params_no_window(sim_aerotech_flyer):
+def test_aerotech_fly_params_no_window(aerotech_flyer):
     """Test the fly scan params when the range is too large for the PSO window."""
-    flyer = sim_aerotech_flyer
+    flyer = aerotech_flyer
     # Set some example positions
     flyer.motor_egu.set("micron").wait()
     flyer.acceleration.set(0.5).wait()  # sec
@@ -129,9 +109,9 @@ def test_aerotech_fly_params_no_window(sim_aerotech_flyer):
     assert flyer.encoder_use_window.get(use_monitor=False) is False
 
 
-def test_aerotech_predicted_positions(sim_aerotech_flyer):
+def test_aerotech_predicted_positions(aerotech_flyer):
     """Check that the fly-scan positions are calculated properly."""
-    flyer = sim_aerotech_flyer
+    flyer = aerotech_flyer
     # Set some example positions
     flyer.motor_egu.set("micron").wait()
     flyer.acceleration.set(0.5).wait()  # sec
@@ -155,8 +135,8 @@ def test_aerotech_predicted_positions(sim_aerotech_flyer):
     np.testing.assert_allclose(flyer.pixel_positions, pixel_positions)
 
 
-def test_enable_pso(sim_aerotech_flyer):
-    flyer = sim_aerotech_flyer
+def test_enable_pso(aerotech_flyer):
+    flyer = aerotech_flyer
     # Set up scan parameters
     flyer.encoder_step_size.set(50).wait()  # In encoder counts
     flyer.encoder_window_start.set(-5).wait()  # In encoder counts
@@ -178,8 +158,8 @@ def test_enable_pso(sim_aerotech_flyer):
     ]
 
 
-def test_enable_pso_no_window(sim_aerotech_flyer):
-    flyer = sim_aerotech_flyer
+def test_enable_pso_no_window(aerotech_flyer):
+    flyer = aerotech_flyer
     # Set up scan parameters
     flyer.encoder_step_size.set(50).wait()  # In encoder counts
     flyer.encoder_window_start.set(-5).wait()  # In encoder counts
@@ -200,11 +180,11 @@ def test_enable_pso_no_window(sim_aerotech_flyer):
     ]
 
 
-def test_pso_bad_window_forward(sim_aerotech_flyer):
+def test_pso_bad_window_forward(aerotech_flyer):
     """Check for an exception when the window is needed but not enabled.
 
     I.e. when the taxi distance is larger than the encoder step size."""
-    flyer = sim_aerotech_flyer
+    flyer = aerotech_flyer
     # Set up scan parameters
     flyer.encoder_resolution.set(1).wait()
     flyer.encoder_step_size.set(
@@ -219,11 +199,11 @@ def test_pso_bad_window_forward(sim_aerotech_flyer):
         flyer.enable_pso()
 
 
-def test_pso_bad_window_reverse(sim_aerotech_flyer):
+def test_pso_bad_window_reverse(aerotech_flyer):
     """Check for an exception when the window is needed but not enabled.
 
     I.e. when the taxi distance is larger than the encoder step size."""
-    flyer = sim_aerotech_flyer
+    flyer = aerotech_flyer
     # Set up scan parameters
     flyer.encoder_resolution.set(1).wait()
     flyer.step_size.set(5).wait()
@@ -239,8 +219,8 @@ def test_pso_bad_window_reverse(sim_aerotech_flyer):
         flyer.enable_pso()
 
 
-def test_arm_pso(sim_aerotech_flyer):
-    flyer = sim_aerotech_flyer
+def test_arm_pso(aerotech_flyer):
+    flyer = aerotech_flyer
     assert not flyer.send_command.called
     flyer.arm_pso()
     assert flyer.send_command.called
@@ -248,17 +228,17 @@ def test_arm_pso(sim_aerotech_flyer):
     assert command == "PSOCONTROL @0 ARM"
 
 
-def test_motor_units(sim_aerotech_flyer):
+def test_motor_units(aerotech_flyer):
     """Check that the motor and flyer handle enginering units properly."""
-    flyer = sim_aerotech_flyer
+    flyer = aerotech_flyer
     flyer.motor_egu.set("micron").wait()
     unit = flyer.motor_egu_pint
-    assert unit == stage.ureg("1e-6 m")
+    assert unit == ureg("1e-6 m")
 
 
-def test_kickoff(sim_aerotech_flyer):
+def test_kickoff(aerotech_flyer):
     # Set up fake flyer with mocked fly method
-    flyer = sim_aerotech_flyer
+    flyer = aerotech_flyer
     flyer.taxi = mock.MagicMock()
     flyer.dwell_time.set(1.0)
     # Start flying
@@ -273,9 +253,9 @@ def test_kickoff(sim_aerotech_flyer):
     assert type(flyer.starttime) == float
 
 
-def test_complete(sim_aerotech_flyer):
+def test_complete(aerotech_flyer):
     # Set up fake flyer with mocked fly method
-    flyer = sim_aerotech_flyer
+    flyer = aerotech_flyer
     flyer.move = mock.MagicMock()
     assert flyer.user_setpoint.get() == 0
     flyer.taxi_end.set(10).wait()
@@ -289,8 +269,8 @@ def test_complete(sim_aerotech_flyer):
     assert status.done
 
 
-def test_collect(sim_aerotech_flyer):
-    flyer = sim_aerotech_flyer
+def test_collect(aerotech_flyer):
+    flyer = aerotech_flyer
     # Set up needed parameters
     flyer.pixel_positions = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     flyer.starttime = 0
@@ -328,7 +308,7 @@ def test_collect(sim_aerotech_flyer):
         }
 
 
-def test_describe_collect(sim_aerotech_flyer):
+def test_describe_collect(aerotech_flyer):
     expected = {
         "positions": OrderedDict(
             [
@@ -354,11 +334,11 @@ def test_describe_collect(sim_aerotech_flyer):
         )
     }
 
-    assert sim_aerotech_flyer.describe_collect() == expected
+    assert aerotech_flyer.describe_collect() == expected
 
 
-def test_fly_motor_positions(sim_aerotech_flyer):
-    flyer = sim_aerotech_flyer
+def test_fly_motor_positions(aerotech_flyer):
+    flyer = aerotech_flyer
     # Arbitrary rest position
     flyer.user_setpoint.set(255).wait()
     flyer.parent.delay.channel_C.delay.sim_put(1.5)
@@ -389,9 +369,9 @@ def test_fly_motor_positions(sim_aerotech_flyer):
     assert flyer.parent.delay.output_CD.polarity.get(use_monitor=False) == 0
 
 
-def test_aerotech_move_status(sim_aerotech_flyer):
+def test_aerotech_move_status(aerotech_flyer):
     """Check that the flyer only finishes when the readback value is reached."""
-    flyer = sim_aerotech_flyer
+    flyer = aerotech_flyer
     status = flyer.move(100, wait=False)
     assert not status.done
     # To-Do: figure out how to make this be done in the fake device

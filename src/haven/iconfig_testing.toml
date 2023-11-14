@@ -11,9 +11,10 @@ name = "s25id-gige-A"
 description = "GigE Vision A"
 prefix = "255idgigeA"
 
-[stage.Aerotech]
+[aerotech_stage.aerotech]
 
-prefix = "vme_crate_ioc"
+prefix = "255idc"
+delay_prefix = "255idc:DG645"
 pv_vert = ":m1"
 pv_horiz = ":m2"
 
