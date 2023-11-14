@@ -294,12 +294,12 @@ class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
     )
     # Signal chain devices
     preamp = FCpt(IonChamberPreAmplifier, "{preamp_prefix}")
-    voltmeter = FCpt(Voltmeter, "{voltmeter_prefix}")
+    voltmeter = FCpt(Voltmeter, "{voltmeter_prefix}", kind=Kind.hinted)
     # Measurement signals
     volts: OphydObject = Cpt(VoltageSignal, derived_from="counts", kind=Kind.normal)
     amps: OphydObject = Cpt(CurrentSignal, derived_from="volts", kind=Kind.hinted)
     counts: OphydObject = FCpt(
-        EpicsSignalRO, "{scaler_prefix}:scaler1.S{ch_num}", kind=Kind.normal
+        EpicsSignalRO, "{scaler_prefix}:scaler1.S{ch_num}", kind=Kind.normal, auto_monitor=False,
     )
     gate: OphydObject = FCpt(
         EpicsSignal,
@@ -396,6 +396,7 @@ class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
         "volts",
         "exposure_time",
         "net_counts",
+        "voltmeter",
     ]
 
     def __init__(
