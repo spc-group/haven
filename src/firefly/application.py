@@ -265,10 +265,7 @@ class FireflyApplication(PyDMApplication):
         window_slots = []
         setattr(self, f"{attr_name}_window_slots", window_slots)
         setattr(self, f"{attr_name}_windows", {})
-        # if attr_name == "ion_chamber":
-        #     breakpoint()
         for device in devices:
-            # Check that we don't already have actions set
             # Create the window action
             action = QtWidgets.QAction(self)
             action.setObjectName(f"actionShow_{attr_name}_{device.name}")

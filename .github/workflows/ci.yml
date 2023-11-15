@@ -20,7 +20,7 @@ jobs:
     defaults:
       run:
         shell: bash -l {0}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     strategy:
       max-parallel: 5
     steps:
@@ -29,8 +29,8 @@ jobs:
       uses: mamba-org/setup-micromamba@v1
       with:
         environment-file: environment.yml
-    - name: Setup X virtual frame buffer
-      run: Xvfb $DISPLAY &
+    # - name: Setup X virtual frame buffer
+    #   run: Xvfb $DISPLAY &
     - name: Install haven
       run: pip install -e .
     - name: Environment info
@@ -45,4 +45,4 @@ jobs:
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with pytest
-      run: pytest --timeout=120 src/firefly/tests/test_run_browser.py src/firefly/tests/test_voltmeters.py src/firefly/tests/test_xrf_detector_display.py
+      run: xvfb-run python -m pytest -vv --timeout=120 src/firefly/tests/test_run_browser.py src/firefly/tests/test_voltmeters.py src/firefly/tests/test_xrf_detector_display.py

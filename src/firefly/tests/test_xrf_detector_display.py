@@ -10,6 +10,9 @@ from firefly.xrf_detector import XRFDetectorDisplay, XRFPlotWidget
 from firefly.xrf_roi import XRFROIDisplay
 
 
+detectors = ['xspress',]
+
+
 @pytest.fixture()
 def xrf_display(ffapp, request):
     """Parameterized fixture for creating a display based on a specific
@@ -29,10 +32,10 @@ def xrf_display(ffapp, request):
     plot_widget.update_spectrum(1, spectra[1])
     plot_widget.update_spectrum(2, spectra[2])
     plot_widget.update_spectrum(3, spectra[3])
-    return display
+    yield display
 
 
-@pytest.mark.parametrize("det_fixture", ["dxp", "xspress"])
+@pytest.mark.parametrize("det_fixture", detectors)
 def test_open_xrf_detector_viewer_actions(ffapp, qtbot, det_fixture, request):
     sim_det = request.getfixturevalue(det_fixture)
     # Get the area detector parts ready
@@ -44,7 +47,7 @@ def test_open_xrf_detector_viewer_actions(ffapp, qtbot, det_fixture, request):
     assert "FireflyMainWindow_xrf_detector_vortex_me4" in ffapp.windows.keys()
 
 
-@pytest.mark.parametrize("xrf_display", ["dxp", "xspress"], indirect=True)
+@pytest.mark.parametrize("xrf_display", detectors, indirect=True)
 def test_roi_widgets(xrf_display):
     xrf_display.draw_roi_widgets(2)
     # Check that the widgets were drawn
@@ -52,7 +55,7 @@ def test_roi_widgets(xrf_display):
     disp = xrf_display.roi_displays[0]
 
 
-@pytest.mark.parametrize("xrf_display", ["dxp", "xspress"], indirect=True)
+@pytest.mark.parametrize("xrf_display", detectors, indirect=True)
 def test_roi_element_comboboxes(ffapp, qtbot, xrf_display):
     # Check that the comboboxes have the right number of entries
     element_cb = xrf_display.ui.mca_combobox
@@ -61,7 +64,7 @@ def test_roi_element_comboboxes(ffapp, qtbot, xrf_display):
     assert roi_cb.count() == xrf_display.device.num_rois
 
 
-@pytest.mark.parametrize("det_fixture", ["dxp", "xspress"])
+@pytest.mark.parametrize("det_fixture", detectors)
 def test_roi_selection(ffapp, qtbot, det_fixture, request):
     det = request.getfixturevalue(det_fixture)
     display = XRFROIDisplay(macros={"DEV": det.name, "NUM": 2, "MCA": 2, "ROI": 2})
@@ -78,7 +81,7 @@ def test_roi_selection(ffapp, qtbot, det_fixture, request):
     assert f"background: {display.selected_background}" not in display.styleSheet()
 
 
-@pytest.mark.parametrize("xrf_display", ["dxp", "xspress"], indirect=True)
+@pytest.mark.parametrize("xrf_display", detectors, indirect=True)
 def test_all_rois_selection(xrf_display):
     """Are all the other ROIs disabled when one is selected?"""
     roi_display = xrf_display.roi_displays[0]
