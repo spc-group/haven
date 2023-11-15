@@ -268,11 +268,13 @@ class FireflyApplication(PyDMApplication):
         # if attr_name == "ion_chamber":
         #     breakpoint()
         for device in devices:
+            # Check that we don't already have actions set
+            # Create the window action
             action = QtWidgets.QAction(self)
             action.setObjectName(f"actionShow_{attr_name}_{device.name}")
             action.setText(device.name)
             actions[device.name] = action
-            # Create a slot for opening the motor window
+            # Create a slot for opening the device window
             slot = getattr(self, f"show_{attr_name}_window")
             slot = partial(slot, device=device)
             action.triggered.connect(slot)
