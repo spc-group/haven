@@ -39,7 +39,6 @@ pg.setConfigOption("foreground", (0, 0, 0))
 class FireflyApplication(PyDMApplication):
     default_display = None
     xafs_scan_window = None
-    count_plan_window = None
 
     # Actions for showing window
     show_status_window_action: QtWidgets.QAction
@@ -53,6 +52,9 @@ class FireflyApplication(PyDMApplication):
     # Keep track of motors
     motor_actions: Sequence = []
     motor_window_slots: Sequence = []
+
+    # Keep track of plans
+    plan_actions: Sequence = []
 
     # Keep track of cameras
     camera_actions: Mapping = {}
@@ -116,6 +118,7 @@ class FireflyApplication(PyDMApplication):
         action.setText(text)
         action.triggered.connect(slot)
         setattr(self, action_name, action)
+        return action
 
     def load_instrument(self):
         """Set up the application to use a previously loaded instrument.
@@ -143,6 +146,7 @@ class FireflyApplication(PyDMApplication):
 
         """
         self.prepare_motor_windows()
+        self.prepare_plan_windows()
         self.prepare_ion_chamber_windows()
         self.prepare_camera_windows()
         self.prepare_area_detector_windows()
@@ -194,12 +198,6 @@ class FireflyApplication(PyDMApplication):
             action_name="show_cameras_window_action",
             text="All Cameras",
             slot=self.show_cameras_window,
-        )
-        # Launch windows for plans
-        self._setup_window_action(
-            action_name="show_count_plan_window_action",
-            text="&Count",
-            slot=self.show_count_plan_window,
         )
 
     def launch_queuemonitor(self):
@@ -306,6 +304,24 @@ class FireflyApplication(PyDMApplication):
         self._prepare_device_windows(
             device_label="ion_chambers", attr_name="ion_chamber"
         )
+
+    def prepare_plan_windows(self):
+        """Prepare support for openning Blueksy plan windows."""
+        plans = [
+            # (plan_name, text, display file)
+            ("count", "&Count", "count.py"),
+            ("xafs_scan", "&XAFS Scan", "xafs_scan.py"),
+        ]
+        self.plan_actions = []
+        for plan_name, text, display_file in plans:
+            slot = partial(self.show_plan_window, name=plan_name, display_file=display_file)
+            action_name = f"show_{plan_name}_plan_window_action"
+            # Launch windows for plans
+            action = QtWidgets.QAction(self)
+            action.setObjectName(action_name)
+            action.setText(text)
+            action.triggered.connect(slot)
+            self.plan_actions.append(action)
 
     def prepare_motor_windows(self):
         """Prepare the support for opening motor windows."""
@@ -441,7 +457,6 @@ class FireflyApplication(PyDMApplication):
         and setup code.
 
         """
-        window.actionShow_Xafs_Scan.triggered.connect(self.show_xafs_scan_window)
         window.actionShow_Sample_Viewer.triggered.connect(
             self.show_sample_viewer_window
         )
@@ -560,9 +575,18 @@ class FireflyApplication(PyDMApplication):
         )
 
     @QtCore.Slot()
-    def show_count_plan_window(self):
+    def show_plan_window(self, name: str, display_file: str):
+        """Launch a window for a given plan.
+
+        Parameters
+        ==========
+        ui_file
+          Can be the name of .ui file or the .py file for the PyDM
+          display.
+
+        """
         return self.show_window(
-            PlanMainWindow, ui_dir / "plans" / "count.py", name="count_plan"
+            PlanMainWindow, ui_dir / "plans" / display_file, name=f"{name}_plan",
         )
 
     @QtCore.Slot()

@@ -64,4 +64,4 @@ class XafsScanDisplay(display.FireflyDisplay):
             self.regions.append(region)
 
     def ui_filename(self):
-        return "xafs_scan.ui"
+        return "plans/xafs_scan.ui"
