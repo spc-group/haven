@@ -1,40 +1,31 @@
+import asyncio
+import logging
+import math
 import threading
 import time
-import logging
-import asyncio
-import math
-from typing import Generator, Dict
-from datetime import datetime, timedelta
 from collections import OrderedDict
+from datetime import datetime, timedelta
+from typing import Dict, Generator
 
-from ophyd import (
-    Device,
-    FormattedComponent as FCpt,
-    EpicsMotor,
-    Component as Cpt,
-    Signal,
-    SignalRO,
-    Kind,
-    EpicsSignal,
-    flyers,
-)
-from ophyd.status import SubscriptionStatus, AndStatus, StatusBase
-from apstools.synApps.asyn import AsynRecord
-import pint
 import numpy as np
+import pint
+from apstools.synApps.asyn import AsynRecord
+from ophyd import Component as Cpt
+from ophyd import Device, EpicsMotor, EpicsSignal
+from ophyd import FormattedComponent as FCpt
+from ophyd import Kind, Signal, SignalRO, flyers
+from ophyd.status import AndStatus, StatusBase, SubscriptionStatus
 
-from .delay import DG645Delay
-from .instrument_registry import registry
 from .._iconfig import load_config
 from ..exceptions import InvalidScanParameters
-from .device import await_for_connection, aload_devices, make_device
-
+from .delay import DG645Delay
+from .device import aload_devices, await_for_connection, make_device
+from .instrument_registry import registry
 
 __all__ = ["XYStage", "load_stages"]
 
 
 log = logging.getLogger(__name__)
-
 
 
 @registry.register

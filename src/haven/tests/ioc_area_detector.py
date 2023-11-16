@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 from caproto.server import (
     PVGroup,
+    PvpropertyInteger,
     SubGroup,
     ioc_arg_parser,
     pvproperty,
     run,
-    PvpropertyInteger,
 )
-
 from ophyd.tests.scaler_ioc import EpicsScalerGroup
 
 

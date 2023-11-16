@@ -1,14 +1,16 @@
 import asyncio
 import logging
+
 import numpy as np
+from ophyd import Component as Cpt
+from ophyd import Device, EpicsMotor
+from ophyd import FormattedComponent as FCpt
+from ophyd import PseudoPositioner, PseudoSingle
 from ophyd.pseudopos import pseudo_position_argument, real_position_argument
-from ophyd import PseudoPositioner, PseudoSingle, EpicsMotor
-from ophyd import Component as Cpt, FormattedComponent as FCpt, Device
 
 from .._iconfig import load_config
+from .device import aload_devices, await_for_connection, make_device
 from .instrument_registry import registry
-from .device import await_for_connection, aload_devices, make_device
-
 
 log = logging.getLogger(__name__)
 

@@ -1,15 +1,15 @@
 import logging
-from pathlib import Path
 import warnings
+from pathlib import Path
 
+from pydm import data_plugins
 from pydm.main_window import PyDMMainWindow
 
 # from qtpy.QtCore import Slot
 from qtpy import QtCore, QtGui, QtWidgets
-from pydm import data_plugins
-from haven.instrument import motor
-from haven.instrument import motor
+
 from haven import load_config
+from haven.instrument import motor
 
 log = logging.getLogger(__name__)
 

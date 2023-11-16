@@ -1,10 +1,10 @@
-import pytest
 import time
 
-from ophyd import sim
 import numpy as np
+import pytest
+from ophyd import sim
 
-from haven import align_slits, energy_scan, xafs_scan, registry, KRange
+from haven import KRange, align_slits, energy_scan, registry, xafs_scan
 
 
 @pytest.fixture()
@@ -83,7 +83,7 @@ def test_energy_scan_basics(mono_motor, id_gap_motor, energies, RE):
     result = RE(scan)
     # Check that the mono and ID gap ended up in the right position
     # time.sleep(1.0)
-    assert mono_motor.readback.get() == np.max(energies) 
+    assert mono_motor.readback.get() == np.max(energies)
     # assert mono_motor.get().readback == np.max(energies)
     assert id_gap_motor.get().readback == np.max(energies)
     assert I0_exposure.get().readback == exposure_time

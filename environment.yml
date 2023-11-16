@@ -34,7 +34,7 @@ dependencies:
   - numba>=0.56  # Ensures 0.53 (broken) isn't installed
 
   # --- testing and quality assurance
-  - black
+  - black >=22.1
   - flake8
   - pre-commit
   - pylint

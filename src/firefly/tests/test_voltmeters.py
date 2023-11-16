@@ -1,13 +1,12 @@
 import time
-
 from unittest import mock
+
 import pytest
 from qtpy import QtWidgets
 
 import haven
-
-from firefly.main_window import FireflyMainWindow
 from firefly.application import FireflyApplication
+from firefly.main_window import FireflyMainWindow
 from firefly.voltmeter import VoltmeterDisplay
 from firefly.voltmeters import VoltmetersDisplay
 

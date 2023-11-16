@@ -1,14 +1,12 @@
 """Tests to check that the simulated tiled client works properly."""
 
-import pytest
-
 import numpy
-from tiled.adapters.mapping import MapAdapter
+import pytest
 from tiled.adapters.array import ArrayAdapter
+from tiled.adapters.mapping import MapAdapter
 from tiled.adapters.xarray import DatasetAdapter
-from tiled.server.app import build_app
 from tiled.client import Context, from_context
-
+from tiled.server.app import build_app
 
 simple_tree = MapAdapter(
     {

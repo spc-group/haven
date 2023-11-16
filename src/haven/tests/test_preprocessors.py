@@ -1,15 +1,15 @@
+import os
 from unittest.mock import MagicMock
 
 import pytest
 from bluesky import plans as bp
 from bluesky.callbacks import CallbackBase
 from bluesky.simulators import summarize_plan
-from ophyd.sim import det, motor, SynAxis, make_fake_device, instantiate_fake_device
-import os
+from ophyd.sim import SynAxis, det, instantiate_fake_device, make_fake_device, motor
 
-from haven import plans, baseline_decorator, baseline_wrapper, run_engine
-from haven.preprocessors import shutter_suspend_wrapper, shutter_suspend_decorator
-from haven.instrument.aps import EpicsBssDevice, load_aps, ApsMachine
+from haven import baseline_decorator, baseline_wrapper, plans, run_engine
+from haven.instrument.aps import ApsMachine, EpicsBssDevice, load_aps
+from haven.preprocessors import shutter_suspend_decorator, shutter_suspend_wrapper
 
 
 def test_shutter_suspend_wrapper(aps, shutters, sim_registry):

@@ -1,14 +1,14 @@
+import asyncio
 import logging
 import re
 import time as ttime
 from typing import Callable, Union
-import asyncio
 
-from ophyd import Component, K, Device
+from ophyd import Component, Device, K
 from ophyd.sim import make_fake_device
-from .instrument_registry import registry
-from .._iconfig import load_config
 
+from .._iconfig import load_config
+from .instrument_registry import registry
 
 log = logging.getLogger(__name__)
 
@@ -64,7 +64,8 @@ async def make_device(DeviceClass, *args, FakeDeviceClass=None, **kwargs) -> Dev
         if DeviceClass.__name__ == "VortexEx":
             raise
         log.warning(
-            f"Could not connect to {DeviceClass.__name__} in {round(ttime.monotonic() - t0, 2)} sec: {name}."
+            f"Could not connect to {DeviceClass.__name__} in"
+            f" {round(ttime.monotonic() - t0, 2)} sec: {name}."
         )
         log.info(f"Reason for {name} failure: {e}.")
         return None

@@ -1,49 +1,46 @@
 """Holds ion chamber detector descriptions and assignments to EPICS PVs."""
 
-from typing import Sequence, Generator, Dict
-import logging
 import asyncio
-from collections import OrderedDict
+import logging
+import math
 import time
 import warnings
-import math
+from collections import OrderedDict
+from typing import Dict, Generator, Sequence
 
 import epics
-from ophyd import (
-    Device,
-    status,
-    Signal,
-    EpicsSignal,
-    EpicsSignalRO,
-    PVPositionerPC,
-    PVPositioner,
-    PseudoPositioner,
-    PseudoSingle,
-    Component as Cpt,
-    FormattedComponent as FCpt,
-    Kind,
-    flyers,
-)
-from ophyd.signal import InternalSignal, DerivedSignal
-from ophyd.ophydobj import OphydObject
-from ophyd.pseudopos import pseudo_position_argument, real_position_argument
-from ophyd.mca import EpicsMCARecord
-from ophyd.status import SubscriptionStatus
-from ophyd.utils.errors import OpException
-from apstools.devices import SRS570_PreAmplifier
-from pcdsdevices.signal import MultiDerivedSignal, MultiDerivedSignalRO
-from pcdsdevices.type_hints import SignalToValue, OphydDataType
 import numpy as np
 import pint
+from apstools.devices import SRS570_PreAmplifier
+from ophyd import Component as Cpt
+from ophyd import Device, EpicsSignal, EpicsSignalRO
+from ophyd import FormattedComponent as FCpt
+from ophyd import (
+    Kind,
+    PseudoPositioner,
+    PseudoSingle,
+    PVPositioner,
+    PVPositionerPC,
+    Signal,
+    flyers,
+    status,
+)
+from ophyd.mca import EpicsMCARecord
+from ophyd.ophydobj import OphydObject
+from ophyd.pseudopos import pseudo_position_argument, real_position_argument
+from ophyd.signal import DerivedSignal, InternalSignal
+from ophyd.status import SubscriptionStatus
+from ophyd.utils.errors import OpException
+from pcdsdevices.signal import MultiDerivedSignal, MultiDerivedSignalRO
+from pcdsdevices.type_hints import OphydDataType, SignalToValue
 
-from .scaler_triggered import ScalerTriggered, ScalerSignal, ScalerSignalRO
-from .instrument_registry import registry
-from .epics import caget
-from .device import await_for_connection, aload_devices, make_device
-from .labjack import AnalogInput
-from .._iconfig import load_config
 from .. import exceptions
-
+from .._iconfig import load_config
+from .device import aload_devices, await_for_connection, make_device
+from .epics import caget
+from .instrument_registry import registry
+from .labjack import AnalogInput
+from .scaler_triggered import ScalerSignal, ScalerSignalRO, ScalerTriggered
 
 log = logging.getLogger(__name__)
 
@@ -166,7 +163,10 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
         new_offset = max(new_level + self.offset_difference, 0)
         # Check for out of bounds
         lmin, lmax = (0, 27)
-        msg = f"Cannot set {self.name} outside range ({lmin}, {lmax}), received {new_level}."
+        msg = (
+            f"Cannot set {self.name} outside range ({lmin}, {lmax}), received"
+            f" {new_level}."
+        )
         if new_level < lmin:
             raise exceptions.GainOverflow(msg)
         elif new_level > lmax:
@@ -610,7 +610,10 @@ async def load_ion_chamber(
     try:
         ion_chamber.voltmeter.differential.set(1).wait(timeout=1)
     except OpException as exc:
-        msg = f"Could not set voltmeter {ion_chamber.name} channel differential state: {exc}"
+        msg = (
+            f"Could not set voltmeter {ion_chamber.name} channel differential state:"
+            f" {exc}"
+        )
         log.warning(msg)
         warnings.warn(msg)
     return ion_chamber

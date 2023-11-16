@@ -1,10 +1,10 @@
-from typing import Sequence
 import subprocess
 from pathlib import Path
+from typing import Sequence
 
-from qtpy.QtCore import Signal, Slot
-from qtpy import QtWidgets
 from pydm import Display
+from qtpy import QtWidgets
+from qtpy.QtCore import Signal, Slot
 
 
 class FireflyDisplay(Display):

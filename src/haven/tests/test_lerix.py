@@ -1,13 +1,12 @@
-from unittest import mock
 import time
+from unittest import mock
 
-from epics import caget
 import pytest
+from epics import caget
 from ophyd.sim import instantiate_fake_device
 
-from haven.instrument import lerix
 import haven
-
+from haven.instrument import lerix
 
 um_per_mm = 1000
 

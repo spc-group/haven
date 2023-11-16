@@ -8,10 +8,10 @@ import unittest
 import warnings
 
 import numpy as np
-from ophyd import sim
 import pytest
+from ophyd import sim
 
-from haven import align_slits, energy_scan, xafs_scan, registry, KRange
+from haven import KRange, align_slits, energy_scan, registry, xafs_scan
 
 
 def test_align_slits(RE):

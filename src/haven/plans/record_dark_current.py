@@ -1,7 +1,8 @@
-from bluesky import plans as bp, plan_stubs as bps
+from bluesky import plan_stubs as bps
+from bluesky import plans as bp
 
-from .shutters import open_shutters, close_shutters
 from ..instrument.instrument_registry import registry
+from .shutters import close_shutters, open_shutters
 
 
 def record_dark_current(ion_chambers, shutters, time):

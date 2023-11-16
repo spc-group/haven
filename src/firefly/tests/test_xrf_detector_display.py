@@ -1,16 +1,15 @@
 import time
-from ophyd import Kind
 
 import numpy as np
-from pyqtgraph import PlotItem
 import pytest
+from ophyd import Kind
+from pyqtgraph import PlotItem
 from qtpy import QtCore
 
 from firefly.xrf_detector import XRFDetectorDisplay, XRFPlotWidget
 from firefly.xrf_roi import XRFROIDisplay
 
-
-detectors = ["dxp", 'xspress']
+detectors = ["dxp", "xspress"]
 
 
 @pytest.fixture()

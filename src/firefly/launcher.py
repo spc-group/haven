@@ -1,11 +1,10 @@
-import time
 import argparse
 import cProfile
 import logging
 import pstats
 import sys
+import time
 from pathlib import Path
-
 
 import haven
 
@@ -29,10 +28,11 @@ def main(default_fullscreen=False, default_display="status"):
     except ImportError:
         logger.debug("QtWebEngine is not supported.")
 
-    from qtpy.QtWidgets import QSplashScreen
-    from .application import FireflyApplication
-    from qtpy.QtGui import QPixmap
     from qtpy import QtCore
+    from qtpy.QtGui import QPixmap
+    from qtpy.QtWidgets import QSplashScreen
+
+    from .application import FireflyApplication
 
     # Set up splash screen
     fake_app = FireflyApplication(sys.argv)
@@ -70,7 +70,10 @@ def main(default_fullscreen=False, default_display="status"):
     parser.add_argument(
         "--no-instrument",
         action="store_true",
-        help="Do not try to create devices. Useful for development if much beamline hardware is offline.",
+        help=(
+            "Do not try to create devices. Useful for development if much beamline"
+            " hardware is offline."
+        ),
     )
     parser.add_argument(
         "--perfmon",

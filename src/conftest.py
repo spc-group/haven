@@ -1,35 +1,38 @@
-from unittest import mock
-import subprocess
-import psutil
-from pathlib import Path
 import os
+import subprocess
+from pathlib import Path
+from unittest import mock
 
-from bluesky import RunEngine
-import pytest
-from ophyd import DynamicDeviceComponent as DDC, Kind
-from ophyd.sim import (
-    instantiate_fake_device,
-    make_fake_device,
-    fake_device_cache,
-    FakeEpicsSignal,
-)
+import psutil
+
 # from pydm.data_plugins import plugin_modules, add_plugin
 import pydm
+import pytest
+from bluesky import RunEngine
+from ophyd import DynamicDeviceComponent as DDC
+from ophyd import Kind
+from ophyd.sim import (
+    FakeEpicsSignal,
+    fake_device_cache,
+    instantiate_fake_device,
+    make_fake_device,
+)
 from pytestqt.qt_compat import qt_api
 
 import haven
+from firefly.application import FireflyApplication
+from firefly.main_window import FireflyMainWindow
 from haven._iconfig import beamline_connected as _beamline_connected
 from haven.instrument.aerotech import AerotechStage
 from haven.instrument.aps import ApsMachine
-from haven.instrument.shutter import Shutter
 from haven.instrument.camera import AravisDetector
 from haven.instrument.delay import EpicsSignalWithIO
-from haven.instrument.dxp import DxpDetector, add_mcas as add_dxp_mcas
+from haven.instrument.dxp import DxpDetector
+from haven.instrument.dxp import add_mcas as add_dxp_mcas
 from haven.instrument.ion_chamber import IonChamber
-from haven.instrument.xspress import Xspress3Detector, add_mcas as add_xspress_mcas
-from firefly.application import FireflyApplication
-from firefly.main_window import FireflyMainWindow
-
+from haven.instrument.shutter import Shutter
+from haven.instrument.xspress import Xspress3Detector
+from haven.instrument.xspress import add_mcas as add_xspress_mcas
 
 top_dir = Path(__file__).parent.resolve()
 haven_dir = top_dir / "haven"

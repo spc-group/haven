@@ -1,13 +1,13 @@
 import time
-import pytest
 from unittest.mock import MagicMock
 
-from ophyd import EpicsSignal, EpicsMotor, sim
+import pytest
+from ophyd import EpicsMotor, EpicsSignal, sim
 from ophyd.sim import instantiate_fake_device, make_fake_device
-from pydm.data_plugins import plugin_for_address, add_plugin
+from pydm import PyDMChannel
+from pydm.data_plugins import add_plugin, plugin_for_address
 from pydm.main_window import PyDMMainWindow
 from pydm.widgets import PyDMLineEdit
-from pydm import PyDMChannel
 from qtpy import QtCore
 from typhos.plugins.core import SignalPlugin
 
@@ -25,7 +25,7 @@ def sim_motor(sim_registry):
     motor = FakeMotor("255idVME:m1", name="motor")
     motor.user_setpoint.sim_set_limits((0, 1000))
     sim_registry.register(motor)
-    
+
     return motor
 
 

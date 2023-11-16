@@ -1,12 +1,12 @@
-import pytest
 import time
 import warnings
 
-import numpy as np
-
-from haven.instrument import ion_chamber
-from haven import exceptions
 import epics
+import numpy as np
+import pytest
+
+from haven import exceptions
+from haven.instrument import ion_chamber
 
 
 def test_gain_level(sim_ion_chamber):

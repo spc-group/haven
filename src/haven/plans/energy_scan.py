@@ -4,19 +4,18 @@
 
 import logging
 import warnings
-from typing import Sequence, Union, Mapping
 from collections import ChainMap
+from typing import Mapping, Sequence, Union
 
-from bluesky import plans as bp
 import numpy as np
+from bluesky import plans as bp
 
 from .. import merge_ranges
 from .._iconfig import load_config
-from ..instrument import registry
 from ..constants import edge_energy
-from ..typing import DetectorList
+from ..instrument import registry
 from ..preprocessors import baseline_decorator, shutter_suspend_decorator
-
+from ..typing import DetectorList
 
 __all__ = ["energy_scan"]
 

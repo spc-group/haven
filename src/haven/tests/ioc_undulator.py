@@ -2,11 +2,11 @@
 from caproto import ChannelType
 from caproto.server import (
     PVGroup,
+    PvpropertyDouble,
     SubGroup,
     ioc_arg_parser,
     pvproperty,
     run,
-    PvpropertyDouble,
 )
 from ophyd.tests.fake_motor_ioc import FakeMotorIOC
 

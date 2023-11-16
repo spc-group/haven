@@ -1,11 +1,11 @@
-from unittest.mock import MagicMock
 from collections import OrderedDict
+from unittest.mock import MagicMock
 
-from ophyd import sim
-from bluesky import plan_patterns
 import numpy as np
+from bluesky import plan_patterns
+from ophyd import sim
 
-from haven.plans.fly import fly_scan, grid_fly_scan, FlyerCollector
+from haven.plans.fly import FlyerCollector, fly_scan, grid_fly_scan
 
 
 def test_set_fly_params(aerotech_flyer):

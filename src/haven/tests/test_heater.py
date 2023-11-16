@@ -1,8 +1,8 @@
 import time
 
 from epics import caget, caput
-from haven.instrument.heater import CapillaryHeater, load_heaters
 
+from haven.instrument.heater import CapillaryHeater, load_heaters
 
 PREFIX = "255idptc10:"
 

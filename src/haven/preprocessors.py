@@ -1,30 +1,24 @@
 """Tools for modifying plans and data streams as they are generated."""
 
 
-from typing import Union, Sequence, Iterable
-from collections import ChainMap
-import pkg_resources
+import getpass
+import logging
 import os
 import socket
-import getpass
 import warnings
-import logging
+from collections import ChainMap
+from typing import Iterable, Sequence, Union
 
-from bluesky.preprocessors import (
-    baseline_wrapper as bluesky_baseline_wrapper,
-    finalize_wrapper,
-    suspend_wrapper,
-)
-from bluesky.suspenders import SuspendBoolLow
-from bluesky.utils import make_decorator, Msg
-from bluesky.preprocessors import msg_mutator
 import epics
+import pkg_resources
+from bluesky.preprocessors import baseline_wrapper as bluesky_baseline_wrapper
+from bluesky.preprocessors import finalize_wrapper, msg_mutator, suspend_wrapper
+from bluesky.suspenders import SuspendBoolLow
+from bluesky.utils import Msg, make_decorator
 
-
-from .instrument.instrument_registry import registry
-from .exceptions import ComponentNotFound
 from ._iconfig import load_config
-
+from .exceptions import ComponentNotFound
+from .instrument.instrument_registry import registry
 
 log = logging.getLogger()
 

@@ -9,17 +9,17 @@ __all__ = [
     "load_config",
 ]
 
-import os
-import logging
-from typing import Sequence
-import pathlib
 import argparse
-from functools import lru_cache
+import logging
+import os
+import pathlib
 from contextlib import contextmanager
 from copy import deepcopy
+from functools import lru_cache
+from typing import Sequence
 
-from mergedeep import merge
 import tomli
+from mergedeep import merge
 
 log = logging.getLogger(__name__)
 

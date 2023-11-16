@@ -1,8 +1,7 @@
 import logging
 
 import haven
-
-from firefly import display, FireflyApplication
+from firefly import FireflyApplication, display
 
 log = logging.getLogger(__name__)
 

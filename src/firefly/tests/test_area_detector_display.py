@@ -1,7 +1,8 @@
-import pyqtgraph
+from unittest import mock
+
 import numpy as np
 import pydm
-from unittest import mock
+import pyqtgraph
 
 from firefly.area_detector_viewer import AreaDetectorViewerDisplay
 from haven.instrument.camera import load_cameras

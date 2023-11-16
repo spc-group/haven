@@ -1,27 +1,28 @@
 import logging
-from collections import OrderedDict
-from pathlib import Path
-from dataclasses import dataclass, field
-from typing import Optional, Union, Mapping, Sequence
-from functools import partial
 import subprocess
+from collections import OrderedDict
+from dataclasses import dataclass, field
+from functools import partial
+from pathlib import Path
+from typing import Mapping, Optional, Sequence, Union
 
-from qtpy import QtWidgets, QtCore
-from qtpy.QtWidgets import QAction
-from qtpy.QtCore import Slot, QThread, Signal, QObject
-from PyQt5.QtWidgets import QStyleFactory
-import qtawesome as qta
 import pydm
+import pyqtgraph as pg
+import qtawesome as qta
+from bluesky_queueserver_api import BPlan
+from bluesky_queueserver_api.zmq import REManagerAPI
 from pydm.application import PyDMApplication
 from pydm.display import load_file
 from pydm.utilities.stylesheet import apply_stylesheet
-from bluesky_queueserver_api import BPlan
-from bluesky_queueserver_api.zmq import REManagerAPI
-import pyqtgraph as pg
+from PyQt5.QtWidgets import QStyleFactory
+from qtpy import QtCore, QtWidgets
+from qtpy.QtCore import QObject, QThread, Signal, Slot
+from qtpy.QtWidgets import QAction
 
-from haven.exceptions import ComponentNotFound
-from haven import HavenMotor, registry, load_config
 import haven
+from haven import HavenMotor, load_config, registry
+from haven.exceptions import ComponentNotFound
+
 from .main_window import FireflyMainWindow, PlanMainWindow
 from .queue_client import QueueClient, QueueClientThread, queueserver_api
 
@@ -339,7 +340,11 @@ class FireflyApplication(PyDMApplication):
             thread = QueueClientThread()
             self._queue_thread = thread
         # Create the client object
-        client = QueueClient(api=api, autoplay_action=self.queue_autoplay_action, open_environment_action=self.queue_open_environment_action)
+        client = QueueClient(
+            api=api,
+            autoplay_action=self.queue_autoplay_action,
+            open_environment_action=self.queue_open_environment_action,
+        )
         client.moveToThread(thread)
         thread.timer.timeout.connect(client.update)
         self._queue_client = client

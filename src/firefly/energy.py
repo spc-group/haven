@@ -1,13 +1,12 @@
 import logging
 
-from qtpy import QtWidgets, QtCore
-from bluesky_queueserver_api import BPlan
-from haven import registry, load_config, exceptions
-from xraydb.xraydb import XrayDB
 import qtawesome as qta
+from bluesky_queueserver_api import BPlan
+from qtpy import QtCore, QtWidgets
+from xraydb.xraydb import XrayDB
 
 from firefly import display
-
+from haven import exceptions, load_config, registry
 
 log = logging.getLogger(__name__)
 

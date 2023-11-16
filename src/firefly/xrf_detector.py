@@ -1,30 +1,29 @@
-import time
+import gc
+import json
 import logging
 import subprocess
-from pathlib import Path
-from typing import Sequence, Optional
-import json
-from contextlib import contextmanager
-from functools import partial
+import sys
+import time
 from collections import defaultdict
-import gc
+from contextlib import contextmanager
 from enum import IntEnum
+from functools import partial
+from pathlib import Path
+from typing import Optional, Sequence
 
-from qtpy import uic
-from qtpy.QtCore import Qt, Signal, QObject, QThread
-from qtpy.QtWidgets import QWidget
-import qtawesome as qta
-import pyqtgraph
-import pydm
-from pydm.widgets import PyDMEmbeddedDisplay, PyDMChannel
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+import pydm
+import pyqtgraph
+import qtawesome as qta
 from matplotlib.colors import TABLEAU_COLORS
+from pydm.widgets import PyDMChannel, PyDMEmbeddedDisplay
+from qtpy import uic
+from qtpy.QtCore import QObject, Qt, QThread, Signal
+from qtpy.QtWidgets import QWidget
 
 import haven
-from firefly import display, FireflyApplication
-
-import sys
+from firefly import FireflyApplication, display
 
 np.set_printoptions(threshold=sys.maxsize)
 
@@ -98,7 +97,7 @@ class ROIRegion(pyqtgraph.LinearRegionItem):
         if new_lower == self._last_lower:
             return
         log.debug(
-            "Setting new region lower bound: " f"{new_lower} from {self._last_lower}"
+            f"Setting new region lower bound: {new_lower} from {self._last_lower}"
         )
         self._last_lower = new_lower
         self.blockLineSignal = True
@@ -110,7 +109,7 @@ class ROIRegion(pyqtgraph.LinearRegionItem):
         if new_upper == self._last_upper:
             return
         log.debug(
-            "Setting new region upper bound: " f"{new_upper} from {self._last_upper}"
+            f"Setting new region upper bound: {new_upper} from {self._last_upper}"
         )
         self._last_upper = new_upper
         self.blockLineSignal = True
@@ -266,7 +265,8 @@ class MCAPlotWidget(XRFPlotWidget):
             elif self._selected_spectrum is not None:
                 # Highlight the spectrum that was previously selected
                 log.debug(
-                    f"Reverting to previously selected spectrum: {self._selected_spectrum}"
+                    "Reverting to previously selected spectrum:"
+                    f" {self._selected_spectrum}"
                 )
                 is_dimmed = key != self._selected_spectrum
                 if is_dimmed:

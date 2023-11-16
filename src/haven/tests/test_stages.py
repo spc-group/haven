@@ -2,14 +2,15 @@
 
 
 import time
-from unittest import mock
 from collections import OrderedDict
+from datetime import datetime
+from unittest import mock
+
+import numpy as np
 import pytest
 from ophyd.sim import instantiate_fake_device, make_fake_device
-import numpy as np
-from datetime import datetime
 
-from haven import registry, exceptions
+from haven import exceptions, registry
 from haven.instrument import stage
 
 

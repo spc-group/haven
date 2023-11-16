@@ -1,7 +1,7 @@
 import time
 
-import pytest
 import epics
+import pytest
 from ophyd.sim import instantiate_fake_device
 
 from haven.instrument.energy_positioner import EnergyPositioner

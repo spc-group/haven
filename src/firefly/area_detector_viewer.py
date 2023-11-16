@@ -1,15 +1,14 @@
 import logging
 import subprocess
+import sys
 
-import pyqtgraph
-import pydm
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+import pydm
+import pyqtgraph
 
 import haven
 from firefly import display
-
-import sys
 
 np.set_printoptions(threshold=sys.maxsize)
 

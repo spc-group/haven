@@ -1,12 +1,17 @@
-from unittest import mock
 from collections import OrderedDict
+from unittest import mock
 
 import numpy as np
 import pytest
 from ophyd import StatusBase
 
-from haven.instrument.aerotech import AerotechFlyer, AerotechStage, load_aerotech_stages, ureg
 from haven import exceptions
+from haven.instrument.aerotech import (
+    AerotechFlyer,
+    AerotechStage,
+    load_aerotech_stages,
+    ureg,
+)
 
 
 def test_load_aerotech_stage(sim_registry):

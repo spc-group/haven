@@ -1,21 +1,20 @@
 import datetime as dt
-from pathlib import Path
 import logging
+from pathlib import Path
 
+from apstools.plans.alignment import lineup
+from bluesky import plan_stubs as bps
 from bluesky.callbacks import LiveFit, best_effort, fitting, mpl_plotting
 from bluesky.preprocessors import subs_decorator
-from bluesky import plan_stubs as bps
-from apstools.plans.alignment import lineup
-from matplotlib import pyplot as plt
 from lmfit.models import StepModel
+from matplotlib import pyplot as plt
 
+from .._iconfig import load_config
 from ..instrument.instrument_registry import registry
-from .set_energy import set_energy
+from .align_motor import align_pitch2
 from .auto_gain import auto_gain
 from .beam_properties import knife_scan
-from .._iconfig import load_config
-from .align_motor import align_pitch2
-
+from .set_energy import set_energy
 
 log = logging.getLogger(__name__)
 

@@ -1,24 +1,17 @@
 import asyncio
 import logging
 
-from ophyd import (
-    PseudoPositioner,
-    EpicsMotor,
-    Component as Cpt,
-    FormattedComponent as FCpt,
-    PseudoSingle,
-    PVPositioner,
-    EpicsSignal,
-    EpicsSignalRO,
-)
+from ophyd import Component as Cpt
+from ophyd import EpicsMotor, EpicsSignal, EpicsSignalRO
+from ophyd import FormattedComponent as FCpt
+from ophyd import PseudoPositioner, PseudoSingle, PVPositioner
 from ophyd.ophydobj import OphydObject
 from ophyd.pseudopos import pseudo_position_argument, real_position_argument
 
 from .._iconfig import load_config
+from .device import aload_devices, await_for_connection
 from .instrument_registry import registry
-from .monochromator import Monochromator, IDTracking
-from .device import await_for_connection, aload_devices
-
+from .monochromator import IDTracking, Monochromator
 
 log = logging.getLogger(__name__)
 

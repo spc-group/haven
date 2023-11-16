@@ -1,7 +1,7 @@
 from .instrument.instrument_registry import (
     ComponentNotFound,
-    MultipleComponentsFound,
     InvalidComponentLabel,
+    MultipleComponentsFound,
 )
 
 

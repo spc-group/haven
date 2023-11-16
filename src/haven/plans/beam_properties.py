@@ -3,8 +3,8 @@ from typing import Mapping
 
 import matplotlib.pyplot as plt
 import numpy as np
-from lmfit.models import StepModel, GaussianModel
 from bluesky import plans as bp
+from lmfit.models import GaussianModel, StepModel
 
 from ..instrument.instrument_registry import registry
 

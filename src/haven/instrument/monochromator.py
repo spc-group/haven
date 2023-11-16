@@ -1,20 +1,14 @@
 import asyncio
-from enum import IntEnum
 import logging
+from enum import IntEnum
 
-from ophyd import (
-    Device,
-    Component as Cpt,
-    FormattedComponent as FCpt,
-    EpicsMotor,
-    EpicsSignal,
-    EpicsSignalRO,
-)
+from ophyd import Component as Cpt
+from ophyd import Device, EpicsMotor, EpicsSignal, EpicsSignalRO
+from ophyd import FormattedComponent as FCpt
 
-from .instrument_registry import registry
 from .._iconfig import load_config
-from .device import await_for_connection, aload_devices, make_device
-
+from .device import aload_devices, await_for_connection, make_device
+from .instrument_registry import registry
 
 log = logging.getLogger(__name__)
 

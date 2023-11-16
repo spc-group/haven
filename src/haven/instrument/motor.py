@@ -1,19 +1,19 @@
-import logging
-from typing import Optional
 import asyncio
+import contextlib
+import io
+import logging
 import time
 from functools import partial
-import io
-import contextlib
+from typing import Optional
 
 import epics
-from ophyd import EpicsMotor, EpicsSignal, EpicsSignalRO, Component as Cpt, sim
+from ophyd import Component as Cpt
+from ophyd import EpicsMotor, EpicsSignal, EpicsSignalRO, sim
 
-from .epics import caget
 from .._iconfig import load_config
-from .device import await_for_connection, aload_devices, make_device
+from .device import aload_devices, await_for_connection, make_device
+from .epics import caget
 from .instrument_registry import registry
-
 
 log = logging.getLogger(__name__)
 
@@ -105,7 +105,7 @@ async def load_motor(prefix: str, motor_num: int, ioc_name: str = None):
             return
     else:
         log.debug(f"Resolved motor {pv} to '{name}'")
-            
+
     # Create the motor device
     if name == f"motor {motor_num+1}":
         # It's an unnamed motor, so skip it

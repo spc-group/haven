@@ -1,19 +1,13 @@
-import logging
 import asyncio
+import logging
 
-from ophyd import (
-    Device,
-    Component as Cpt,
-    FormattedComponent as FCpt,
-    EpicsSignal,
-    EpicsSignalRO,
-    EpicsMotor,
-)
+from ophyd import Component as Cpt
+from ophyd import Device, EpicsMotor, EpicsSignal, EpicsSignalRO
+from ophyd import FormattedComponent as FCpt
 
 from .._iconfig import load_config
+from .device import aload_devices, await_for_connection
 from .instrument_registry import registry
-from .device import await_for_connection, aload_devices
-
 
 log = logging.getLogger(__name__)
 
