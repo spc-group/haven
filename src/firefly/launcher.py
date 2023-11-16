@@ -24,7 +24,6 @@ def main(default_fullscreen=False, default_display="status"):
         otherwise we get the following error if someone adds a WebView at Designer:
         ImportError: QtWebEngineWidgets must be imported before a QCoreApplication instance is created
         """
-        from qtpy import QtWebEngineWidgets
     except ImportError:
         logger.debug("QtWebEngine is not supported.")
 
@@ -57,7 +56,6 @@ def main(default_fullscreen=False, default_display="status"):
 
     setup_renderer()
 
-    import pydm
     from pydm.utilities.macro import parse_macro_string
 
     parser = argparse.ArgumentParser(description="Python Display Manager")

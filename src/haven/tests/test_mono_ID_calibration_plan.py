@@ -1,8 +1,6 @@
 from unittest.mock import MagicMock
 
 import pytest
-from bluesky.callbacks.best_effort import BestEffortCallback
-from lmfit.models import QuadraticModel
 from ophyd import sim
 
 from haven import mono_ID_calibration

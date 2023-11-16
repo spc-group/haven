@@ -1,16 +1,12 @@
-import time
 from unittest import mock
 
-import pytest
 from apstools.devices.aps_undulator import ApsUndulator
 from bluesky_queueserver_api import BPlan
 from ophyd.sim import make_fake_device
-from qtpy import QtCore, QtWidgets
+from qtpy import QtCore
 
 import haven
 from firefly.energy import EnergyDisplay
-from haven.instrument.energy_positioner import load_energy_positioner
-from haven.instrument.monochromator import load_monochromator
 
 FakeMonochromator = make_fake_device(haven.instrument.monochromator.Monochromator)
 FakeEnergyPositioner = make_fake_device(

@@ -1,24 +1,20 @@
 import datetime as dt
 import logging
-import os
 import time
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
 import pytest
-import pytz
 import time_machine
 from ophyd import Component as Cpt
-from ophyd import EpicsMotor, Signal
-from ophyd.sim import SynAxis, make_fake_device, motor1
+from ophyd import Signal
+from ophyd.sim import SynAxis, motor1
 
 from haven import (
-    HavenMotor,
     get_motor_position,
     list_current_motor_positions,
     list_motor_positions,
     recall_motor_position,
-    registry,
     save_motor_position,
 )
 

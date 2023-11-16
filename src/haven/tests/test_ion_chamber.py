@@ -1,11 +1,8 @@
 import time
-import warnings
 
-import epics
 import numpy as np
 import pytest
 
-from haven import exceptions
 from haven.instrument import ion_chamber
 
 

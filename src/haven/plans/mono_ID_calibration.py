@@ -3,7 +3,6 @@ import warnings
 from typing import Optional, Sequence
 
 import pandas as pd
-from bluesky import plan_stubs as bps
 from bluesky.callbacks.best_effort import BestEffortCallback
 from lmfit.model import Model
 from lmfit.models import QuadraticModel

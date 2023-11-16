@@ -1,19 +1,13 @@
 import asyncio
-import contextlib
-import io
 import logging
-import time
-from functools import partial
 from typing import Optional
 
-import epics
 from ophyd import Component as Cpt
-from ophyd import EpicsMotor, EpicsSignal, EpicsSignalRO, sim
+from ophyd import EpicsMotor, EpicsSignal, EpicsSignalRO
 
 from .._iconfig import load_config
-from .device import aload_devices, await_for_connection, make_device
+from .device import aload_devices, make_device
 from .epics import caget
-from .instrument_registry import registry
 
 log = logging.getLogger(__name__)
 

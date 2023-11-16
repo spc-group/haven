@@ -1,5 +1,4 @@
 import qtawesome as qta
-from pydm import PyDMChannel
 from qtpy.QtCore import Signal
 
 from firefly import display

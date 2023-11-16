@@ -9,7 +9,6 @@ from pydm.main_window import PyDMMainWindow
 from qtpy import QtCore, QtGui, QtWidgets
 
 from haven import load_config
-from haven.instrument import motor
 
 log = logging.getLogger(__name__)
 

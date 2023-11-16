@@ -1,16 +1,8 @@
-import asyncio
-import logging
-import time
-from unittest import mock
-
-import epics
 import pytest
-from ophyd.sim import instantiate_fake_device, make_fake_device
-from qtpy import QtWidgets
+from ophyd.sim import make_fake_device
 
-from firefly.application import FireflyApplication
 from firefly.main_window import FireflyMainWindow
-from haven.instrument import motor, registry
+from haven.instrument import motor
 
 
 @pytest.fixture

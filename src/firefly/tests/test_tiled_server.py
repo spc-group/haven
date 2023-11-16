@@ -4,7 +4,6 @@ import numpy
 import pytest
 from tiled.adapters.array import ArrayAdapter
 from tiled.adapters.mapping import MapAdapter
-from tiled.adapters.xarray import DatasetAdapter
 from tiled.client import Context, from_context
 from tiled.server.app import build_app
 
@@ -33,4 +32,3 @@ def client():
 
 def test_client_fixture(client):
     """Does the client fixture load without stalling the test runner?"""
-    pass

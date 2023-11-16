@@ -1,12 +1,9 @@
-import time
-
 import numpy as np
 import pytest
-from ophyd import Kind
 from pyqtgraph import PlotItem
 from qtpy import QtCore
 
-from firefly.xrf_detector import XRFDetectorDisplay, XRFPlotWidget
+from firefly.xrf_detector import XRFDetectorDisplay
 from firefly.xrf_roi import XRFROIDisplay
 
 detectors = ["dxp", "xspress"]

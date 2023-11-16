@@ -1,25 +1,20 @@
 import logging
 import subprocess
 from collections import OrderedDict
-from dataclasses import dataclass, field
 from functools import partial
 from pathlib import Path
-from typing import Mapping, Optional, Sequence, Union
+from typing import Mapping, Sequence
 
 import pydm
 import pyqtgraph as pg
 import qtawesome as qta
-from bluesky_queueserver_api import BPlan
-from bluesky_queueserver_api.zmq import REManagerAPI
 from pydm.application import PyDMApplication
-from pydm.display import load_file
 from pydm.utilities.stylesheet import apply_stylesheet
 from PyQt5.QtWidgets import QStyleFactory
 from qtpy import QtCore, QtWidgets
-from qtpy.QtCore import QObject, QThread, Signal, Slot
+from qtpy.QtCore import Signal
 from qtpy.QtWidgets import QAction
 
-import haven
 from haven import HavenMotor, load_config, registry
 from haven.exceptions import ComponentNotFound
 

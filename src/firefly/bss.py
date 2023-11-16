@@ -3,7 +3,7 @@ from functools import lru_cache
 
 import qtawesome as qta
 from apsbss import apsbss
-from qtpy.QtCore import Signal, Slot
+from qtpy.QtCore import Signal
 from qtpy.QtGui import QStandardItem, QStandardItemModel
 
 import haven

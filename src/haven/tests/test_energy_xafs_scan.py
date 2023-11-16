@@ -1,10 +1,8 @@
-import time
-
 import numpy as np
 import pytest
 from ophyd import sim
 
-from haven import KRange, align_slits, energy_scan, registry, xafs_scan
+from haven import KRange, energy_scan, xafs_scan
 
 
 @pytest.fixture()

@@ -1,5 +1,3 @@
-from unittest import mock
-
 from haven import registry
 from haven.instrument import shutter
 

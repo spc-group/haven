@@ -116,10 +116,7 @@ def kill_process(process_name):
 def sim_registry(monkeypatch):
     # mock out Ophyd connections so devices can be created
     modules = [
-        haven.instrument.fluorescence_detector,
-        haven.instrument.monochromator,
         haven.instrument.ion_chamber,
-        haven.instrument.motor,
         haven.instrument.device,
     ]
     for mod in modules:

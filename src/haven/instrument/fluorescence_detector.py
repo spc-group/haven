@@ -6,33 +6,15 @@ hardware, e.g. ``dxp.py`` for XIA's XMAP, Mercury, Saturn, and
 
 """
 
-import asyncio
 import logging
-import time
-import warnings
 from collections import OrderedDict
-from contextlib import contextmanager
-from enum import IntEnum
 from typing import Optional, Sequence
 
 import numpy as np
 from apstools.utils import cleanupText
 from ophyd import Component as Cpt
-from ophyd import Device
-from ophyd import DynamicDeviceComponent as DDC
-from ophyd import EpicsSignal, EpicsSignalRO, Kind, Signal, SignalRO, flyers, mca
-from ophyd.areadetector.plugins import NetCDFPlugin_V34
+from ophyd import Device, Kind
 from ophyd.signal import DerivedSignal, InternalSignal
-from ophyd.status import StatusBase, SubscriptionStatus
-from pcdsdevices.signal import MultiDerivedSignal, MultiDerivedSignalRO
-from pcdsdevices.type_hints import OphydDataType, SignalToValue
-
-from .. import exceptions
-from .._iconfig import load_config
-from .device import RegexComponent as RECpt
-from .device import aload_devices, await_for_connection, make_device
-from .instrument_registry import registry
-from .scaler_triggered import ScalerTriggered
 
 __all__ = ["XRFMixin"]
 

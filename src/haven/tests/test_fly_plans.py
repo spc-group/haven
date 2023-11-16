@@ -2,7 +2,6 @@ from collections import OrderedDict
 from unittest.mock import MagicMock
 
 import numpy as np
-from bluesky import plan_patterns
 from ophyd import sim
 
 from haven.plans.fly import FlyerCollector, fly_scan, grid_fly_scan

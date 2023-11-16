@@ -1,17 +1,13 @@
-import gc
 import json
 import logging
-import subprocess
 import sys
-import time
 from collections import defaultdict
 from contextlib import contextmanager
 from enum import IntEnum
 from functools import partial
 from pathlib import Path
-from typing import Optional, Sequence
+from typing import Sequence
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pydm
 import pyqtgraph
@@ -19,7 +15,7 @@ import qtawesome as qta
 from matplotlib.colors import TABLEAU_COLORS
 from pydm.widgets import PyDMChannel, PyDMEmbeddedDisplay
 from qtpy import uic
-from qtpy.QtCore import QObject, Qt, QThread, Signal
+from qtpy.QtCore import Qt, Signal
 from qtpy.QtWidgets import QWidget
 
 import haven

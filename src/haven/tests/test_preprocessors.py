@@ -1,14 +1,11 @@
-import os
 from unittest.mock import MagicMock
 
-import pytest
 from bluesky import plans as bp
 from bluesky.callbacks import CallbackBase
-from bluesky.simulators import summarize_plan
-from ophyd.sim import SynAxis, det, instantiate_fake_device, make_fake_device, motor
+from ophyd.sim import SynAxis, det, instantiate_fake_device
 
-from haven import baseline_decorator, baseline_wrapper, plans, run_engine
-from haven.instrument.aps import ApsMachine, EpicsBssDevice, load_aps
+from haven import baseline_decorator, baseline_wrapper, run_engine
+from haven.instrument.aps import EpicsBssDevice
 from haven.preprocessors import shutter_suspend_decorator, shutter_suspend_wrapper
 
 

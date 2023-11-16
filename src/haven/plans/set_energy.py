@@ -1,7 +1,6 @@
-from typing import Sequence, Union
+from typing import Union
 
 from bluesky import plan_stubs as bps
-from ophyd import Device
 
 from .. import exceptions
 from ..instrument.instrument_registry import registry

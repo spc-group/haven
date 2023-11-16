@@ -1,10 +1,10 @@
-from bluesky import plans as bp, plan_stubs as bps, RunEngine, suspenders
-from bluesky.simulators import summarize_plan
-from bluesky.callbacks.best_effort import BestEffortCallback
-import databroker
-import matplotlib.pyplot as plt
+from bluesky import plans as bp, plan_stubs as bps, RunEngine, suspenders  # noqa: F401
+from bluesky.simulators import summarize_plan  # noqa: F401
+from bluesky.callbacks.best_effort import BestEffortCallback  # noqa: F401
+import databroker  # noqa: F401
+import matplotlib.pyplot as plt  # noqa: F401
 
-import haven
+import haven  # noqa: F401
 
 # Prepare the haven instrument
 config = haven.load_config()

@@ -6,28 +6,17 @@ import math
 import time
 import warnings
 from collections import OrderedDict
-from typing import Dict, Generator, Sequence
+from typing import Dict, Generator
 
-import epics
 import numpy as np
 import pint
 from apstools.devices import SRS570_PreAmplifier
 from ophyd import Component as Cpt
 from ophyd import Device, EpicsSignal, EpicsSignalRO
 from ophyd import FormattedComponent as FCpt
-from ophyd import (
-    Kind,
-    PseudoPositioner,
-    PseudoSingle,
-    PVPositioner,
-    PVPositionerPC,
-    Signal,
-    flyers,
-    status,
-)
+from ophyd import Kind, Signal, flyers, status
 from ophyd.mca import EpicsMCARecord
 from ophyd.ophydobj import OphydObject
-from ophyd.pseudopos import pseudo_position_argument, real_position_argument
 from ophyd.signal import DerivedSignal, InternalSignal
 from ophyd.status import SubscriptionStatus
 from ophyd.utils.errors import OpException
@@ -40,7 +29,7 @@ from .device import aload_devices, await_for_connection, make_device
 from .epics import caget
 from .instrument_registry import registry
 from .labjack import AnalogInput
-from .scaler_triggered import ScalerSignal, ScalerSignalRO, ScalerTriggered
+from .scaler_triggered import ScalerSignalRO, ScalerTriggered
 
 log = logging.getLogger(__name__)
 

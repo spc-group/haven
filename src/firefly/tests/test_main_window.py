@@ -1,9 +1,3 @@
-import time
-from unittest import mock
-
-import pytest
-
-from firefly.application import FireflyApplication
 from firefly.main_window import FireflyMainWindow, PlanMainWindow
 
 

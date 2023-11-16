@@ -7,7 +7,6 @@ from caproto.server import (
     pvproperty,
     run,
 )
-from ophyd.tests.scaler_ioc import EpicsScalerGroup
 
 
 class AreaDetectorGroup(PVGroup):

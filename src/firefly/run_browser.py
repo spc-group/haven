@@ -1,24 +1,20 @@
-import datetime as dt
 import logging
-import warnings
-from contextlib import contextmanager
 from itertools import count
 from typing import Sequence
 
 import numpy as np
 import qtawesome as qta
 import yaml
-from httpx import HTTPStatusError, PoolTimeout
 from matplotlib.colors import TABLEAU_COLORS
 from pydantic.error_wrappers import ValidationError
-from pyqtgraph import GraphicsLayoutWidget, PlotDataItem, PlotItem, PlotWidget
-from qtpy.QtCore import Qt, QThread, Signal, Slot
+from pyqtgraph import PlotItem, PlotWidget
+from qtpy.QtCore import Qt, QThread, Signal
 from qtpy.QtGui import QStandardItem, QStandardItemModel
 from qtpy.QtWidgets import QWidget
 
-from firefly import FireflyApplication, display
+from haven import exceptions
+from firefly import display
 from firefly.run_client import DatabaseWorker
-from haven import exceptions, load_config, tiled_client
 
 log = logging.getLogger(__name__)
 

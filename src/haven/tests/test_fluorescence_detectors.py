@@ -6,18 +6,13 @@ specific to one device or another.
 
 """
 
-import asyncio
 import logging
 import time
 from pathlib import Path
-from unittest.mock import MagicMock
 
 import numpy as np
 import pytest
-from bluesky import plans as bp
-from epics import caget
-from ophyd import DynamicDeviceComponent as DDC
-from ophyd import Kind, OphydObject, Signal
+from ophyd import OphydObject, Signal
 
 from haven.instrument.dxp import load_dxp, parse_xmap_buffer
 from haven.instrument.xspress import load_xspress

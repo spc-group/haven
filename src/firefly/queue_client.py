@@ -3,7 +3,7 @@ import time
 import warnings
 from typing import Optional
 
-from bluesky_queueserver_api import BPlan, comm_base
+from bluesky_queueserver_api import comm_base
 from bluesky_queueserver_api.zmq import REManagerAPI
 from qtpy.QtCore import QObject, QThread, QTimer, Signal, Slot
 from qtpy.QtWidgets import QAction

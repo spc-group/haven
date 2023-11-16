@@ -1,31 +1,19 @@
 import asyncio
-import logging
 import time
 import warnings
 from collections import OrderedDict
 from enum import IntEnum
 from typing import Optional, Sequence
 
-from apstools.utils import cleanupText
-from ophyd import ADComponent as ADCpt
 from ophyd import Component as Cpt
-from ophyd import Device
 from ophyd import DynamicDeviceComponent as DDC
-from ophyd import EpicsSignal, EpicsSignalRO, Kind, OphydObject, Signal, flyers, mca
-from ophyd.areadetector.plugins import NetCDFPlugin_V34
-from ophyd.pseudopos import (
-    PseudoPositioner,
-    PseudoSingle,
-    pseudo_position_argument,
-    real_position_argument,
-)
+from ophyd import Kind, Signal, flyers, mca
 from ophyd.signal import DerivedSignal, InternalSignal
 from ophyd.status import StatusBase, SubscriptionStatus
 
 from .. import exceptions
 from .._iconfig import load_config
-from .device import RegexComponent as RECpt
-from .device import aload_devices, await_for_connection, make_device
+from .device import aload_devices, make_device
 from .fluorescence_detector import (
     MCASumMixin,
     ROIMixin,
@@ -34,8 +22,6 @@ from .fluorescence_detector import (
     active_kind,
     add_roi_sums,
 )
-from .instrument_registry import registry
-from .scaler_triggered import ScalerTriggered
 
 __all__ = ["DxpDetector", "load_dxp"]
 

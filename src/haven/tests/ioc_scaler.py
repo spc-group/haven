@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from caproto import ChannelType
 from caproto.server import PVGroup, SubGroup, ioc_arg_parser, pvproperty, run
 from ophyd.tests.scaler_ioc import EpicsScalerGroup
 

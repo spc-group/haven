@@ -1,6 +1,5 @@
 import json
 import logging
-import warnings
 from typing import Mapping, Optional, Sequence
 
 import qtawesome as qta

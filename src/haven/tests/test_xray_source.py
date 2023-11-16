@@ -1,6 +1,3 @@
-from unittest import mock
-
-import haven
 from haven.instrument.xray_source import load_xray_sources
 
 

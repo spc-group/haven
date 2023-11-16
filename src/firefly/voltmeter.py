@@ -2,10 +2,9 @@ import logging
 from typing import Mapping, Optional, Sequence
 
 import qtawesome as qta
-from pydm.widgets.channel import PyDMChannel
 
 from firefly import FireflyApplication, display
-from haven import exceptions, load_config, registry
+from haven import exceptions, registry
 from haven.instrument.ion_chamber import IonChamber
 
 log = logging.getLogger(__name__)

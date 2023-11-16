@@ -1,5 +1,4 @@
 from bluesky import plan_stubs as bps
-from bluesky import plans as bp
 
 from ..instrument.instrument_registry import registry
 from .shutters import close_shutters, open_shutters

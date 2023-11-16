@@ -1,19 +1,10 @@
-import asyncio
-import time
-from collections import ChainMap
 from unittest.mock import MagicMock
 
 import pytest
-from bluesky import RunEngine
-from bluesky import plans as bp
 from bluesky_queueserver_api import BPlan
-from bluesky_queueserver_api.zmq import REManagerAPI
 from pytestqt.exceptions import TimeoutError
-from qtpy.QtCore import QThread
-from qtpy.QtTest import QSignalSpy
 from qtpy.QtWidgets import QAction
 
-from firefly.application import REManagerAPI
 from firefly.queue_client import QueueClient
 
 qs_status = {

@@ -10,46 +10,19 @@ import numpy as np
 import pandas as pd
 from apstools.devices import CamMixin_V34, SingleTrigger_V34
 from ophyd import ADComponent as ADCpt
-from ophyd import CamBase
 from ophyd import Component as Cpt
 from ophyd import DetectorBase, Device
 from ophyd import DynamicDeviceComponent as DDC
-from ophyd import (
-    EigerDetectorCam,
-    EpicsSignal,
-    EpicsSignalRO,
-    EpicsSignalWithRBV,
-    Kind,
-    Lambda750kCam,
-    OphydObject,
-    Signal,
-    SimDetectorCam,
-    SingleTrigger,
-)
+from ophyd import EpicsSignal, EpicsSignalRO, Kind
 from ophyd.areadetector.base import EpicsSignalWithRBV as SignalWithRBV
-from ophyd.areadetector.filestore_mixins import FileStoreHDF5IterativeWrite
-from ophyd.areadetector.plugins import (
-    HDF5Plugin_V31,
-    HDF5Plugin_V34,
-    ImagePlugin_V31,
-    ImagePlugin_V34,
-    OverlayPlugin,
-    PvaPlugin_V31,
-    PvaPlugin_V34,
-    ROIPlugin_V31,
-    ROIPlugin_V34,
-)
-from ophyd.areadetector.plugins import StatsPlugin_V31 as OphydStatsPlugin_V31
-from ophyd.areadetector.plugins import StatsPlugin_V34 as OphydStatsPlugin_V34
-from ophyd.areadetector.plugins import TIFFPlugin_V31, TIFFPlugin_V34
-from ophyd.signal import DerivedSignal, InternalSignal
-from ophyd.status import AndStatus, StatusBase, SubscriptionStatus
-from pcdsdevices.signal import MultiDerivedSignal, MultiDerivedSignalRO
+from ophyd.signal import InternalSignal
+from ophyd.status import StatusBase, SubscriptionStatus
+from pcdsdevices.signal import MultiDerivedSignal
 from pcdsdevices.type_hints import OphydDataType, SignalToValue
 
 from .._iconfig import load_config
 from .device import RegexComponent as RECpt
-from .device import aload_devices, await_for_connection, make_device
+from .device import aload_devices, make_device
 from .fluorescence_detector import (
     MCASumMixin,
     ROIMixin,
@@ -57,7 +30,6 @@ from .fluorescence_detector import (
     XRFMixin,
     add_roi_sums,
 )
-from .instrument_registry import registry
 
 __all__ = ["load_xspress", "Xspress3Detector", "ROI"]
 

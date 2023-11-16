@@ -1,7 +1,4 @@
-import datetime as dt
 import logging
-import os
-import subprocess
 from enum import IntEnum
 from pathlib import Path
 
@@ -10,7 +7,6 @@ from pydm.widgets.channel import PyDMChannel
 from qtpy.QtCore import Slot
 from qtpy.QtGui import QColor
 
-import haven
 from firefly import FireflyApplication, display
 
 log = logging.getLogger(__name__)

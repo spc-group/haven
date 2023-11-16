@@ -12,7 +12,7 @@ from typing import Iterable, Sequence, Union
 import epics
 import pkg_resources
 from bluesky.preprocessors import baseline_wrapper as bluesky_baseline_wrapper
-from bluesky.preprocessors import finalize_wrapper, msg_mutator, suspend_wrapper
+from bluesky.preprocessors import finalize_wrapper, msg_mutator
 from bluesky.suspenders import SuspendBoolLow
 from bluesky.utils import Msg, make_decorator
 

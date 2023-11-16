@@ -1,6 +1,3 @@
-import warnings
-
-import haven
 from firefly import display
 
 

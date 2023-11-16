@@ -1,8 +1,6 @@
 import logging
-import subprocess
 import sys
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pydm
 import pyqtgraph

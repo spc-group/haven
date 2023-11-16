@@ -4,23 +4,21 @@ import math
 import threading
 import time
 from collections import OrderedDict
-from datetime import datetime, timedelta
 from typing import Dict, Generator
 
 import numpy as np
 import pint
 from apstools.synApps.asyn import AsynRecord
 from ophyd import Component as Cpt
-from ophyd import Device, EpicsMotor, EpicsSignal
+from ophyd import EpicsMotor, EpicsSignal
 from ophyd import FormattedComponent as FCpt
-from ophyd import Kind, Signal, SignalRO, flyers
-from ophyd.status import AndStatus, StatusBase, SubscriptionStatus
+from ophyd import Kind, Signal, flyers
+from ophyd.status import SubscriptionStatus
 
 from .._iconfig import load_config
 from ..exceptions import InvalidScanParameters
 from .delay import DG645Delay
-from .device import aload_devices, await_for_connection, make_device
-from .instrument_registry import registry
+from .device import aload_devices, make_device
 from .stage import XYStage
 
 log = logging.getLogger(__name__)

@@ -2,7 +2,7 @@ import pytest
 from ophyd import Device, EpicsMotor, sim
 
 from haven.instrument import InstrumentRegistry
-from haven.instrument.instrument_registry import (
+from haven.exceptions import (
     ComponentNotFound,
     MultipleComponentsFound,
 )

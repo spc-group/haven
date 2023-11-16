@@ -7,8 +7,7 @@ from ophyd import Component as Cpt
 from ophyd import EpicsSignalRO, EpicsSignalWithRBV, PVPositioner
 
 from .._iconfig import load_config
-from .device import aload_devices, await_for_connection, make_device
-from .instrument_registry import registry
+from .device import aload_devices, make_device
 
 log = logging.getLogger(__name__)
 

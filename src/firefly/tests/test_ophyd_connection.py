@@ -2,10 +2,9 @@ import time
 from unittest.mock import MagicMock
 
 import pytest
-from ophyd import EpicsMotor, EpicsSignal, sim
-from ophyd.sim import instantiate_fake_device, make_fake_device
+from ophyd.sim import make_fake_device
 from pydm import PyDMChannel
-from pydm.data_plugins import add_plugin, plugin_for_address
+from pydm.data_plugins import plugin_for_address
 from pydm.main_window import PyDMMainWindow
 from pydm.widgets import PyDMLineEdit
 from qtpy import QtCore

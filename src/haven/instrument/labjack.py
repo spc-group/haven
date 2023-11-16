@@ -1,6 +1,5 @@
 from apstools.synApps import EpicsRecordDeviceCommonAll, EpicsRecordInputFields
-from ophyd import Component as Cpt
-from ophyd import Device, EpicsSignal, EpicsSignalRO
+from ophyd import Device, EpicsSignal
 from ophyd import FormattedComponent as FCpt
 from strenum import StrEnum
 

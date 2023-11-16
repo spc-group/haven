@@ -1,11 +1,9 @@
 import json
 
 import pytest
-from pydm.data_plugins.epics_plugin import EPICSPlugin
 from pydm.widgets.channel import PyDMChannel
 from qtpy import QtCore, QtGui, QtWidgets
 
-import haven
 from firefly.camera import CameraDisplay, DetectorStates
 from firefly.cameras import CamerasDisplay
 

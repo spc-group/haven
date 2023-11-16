@@ -5,7 +5,6 @@ import pydm
 import pyqtgraph
 
 from firefly.area_detector_viewer import AreaDetectorViewerDisplay
-from haven.instrument.camera import load_cameras
 
 
 def test_open_camera_viewer_actions(ffapp, qtbot, sim_camera):

@@ -7,7 +7,6 @@ import numpy as np
 from caproto import ChannelType
 from caproto.server import (
     PVGroup,
-    PvpropertyDouble,
     SubGroup,
     get_pv_pair_wrapper,
     ioc_arg_parser,

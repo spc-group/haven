@@ -1,8 +1,7 @@
 import asyncio
 import logging
 
-from ophyd import Component as Cpt
-from ophyd import Device, EpicsMotor, EpicsSignal, EpicsSignalRO
+from ophyd import Device, EpicsSignal, EpicsSignalRO
 from ophyd import FormattedComponent as FCpt
 
 from .._iconfig import load_config

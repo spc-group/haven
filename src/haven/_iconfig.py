@@ -15,7 +15,6 @@ import os
 import pathlib
 from contextlib import contextmanager
 from copy import deepcopy
-from functools import lru_cache
 from typing import Sequence
 
 import tomli

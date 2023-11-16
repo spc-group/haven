@@ -1,5 +1,3 @@
-import pytest
-
 from firefly.xafs_scan import XafsScanDisplay
 
 

@@ -28,12 +28,11 @@ from ophyd.areadetector.plugins import (
 )
 from ophyd.areadetector.plugins import StatsPlugin_V31 as OphydStatsPlugin_V31
 from ophyd.areadetector.plugins import StatsPlugin_V34 as OphydStatsPlugin_V34
-from ophyd.areadetector.plugins import TIFFPlugin_V31, TIFFPlugin_V34
+from ophyd.areadetector.plugins import TIFFPlugin_V31
 
 from .. import exceptions
 from .._iconfig import load_config
-from .device import aload_devices, await_for_connection, make_device
-from .instrument_registry import registry
+from .device import aload_devices, make_device
 
 log = logging.getLogger(__name__)
 

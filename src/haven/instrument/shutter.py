@@ -2,13 +2,9 @@ import asyncio
 import logging
 
 from apstools.devices.shutters import ApsPssShutterWithStatus as Shutter
-from bluesky import suspenders
-from ophyd import EpicsSignal
-from ophyd import FormattedComponent as FCpt
 
 from .._iconfig import load_config
-from .device import aload_devices, await_for_connection, make_device
-from .instrument_registry import registry
+from .device import aload_devices, make_device
 
 log = logging.getLogger(__name__)
 

@@ -1,14 +1,7 @@
 """Tests for a generic X-Y stage."""
 
 
-import time
-from collections import OrderedDict
-from datetime import datetime
-from unittest import mock
-
-import numpy as np
 import pytest
-from ophyd.sim import instantiate_fake_device, make_fake_device
 
 from haven import exceptions, registry
 from haven.instrument import stage

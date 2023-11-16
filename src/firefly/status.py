@@ -1,6 +1,5 @@
 import logging
 
-import haven
 from firefly import FireflyApplication, display
 
 log = logging.getLogger(__name__)

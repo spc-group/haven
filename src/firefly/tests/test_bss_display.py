@@ -1,7 +1,4 @@
-import time
-
 import pytest
-from epics import caget, caput
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QStandardItemModel
 

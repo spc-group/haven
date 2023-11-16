@@ -1,4 +1,4 @@
-from .instrument.instrument_registry import (
+from ophydregistry.exceptions import (  # noqa: F401
     ComponentNotFound,
     InvalidComponentLabel,
     MultipleComponentsFound,

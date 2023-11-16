@@ -1,6 +1,4 @@
 import logging
-import time
-from collections import namedtuple
 from unittest.mock import MagicMock
 
 import numpy as np
@@ -8,16 +6,13 @@ import pandas as pd
 import pytest
 from pyqtgraph import PlotItem, PlotWidget
 from qtpy.QtCore import Qt
-from tiled.adapters.array import ArrayAdapter
 from tiled.adapters.mapping import MapAdapter
 from tiled.adapters.xarray import DatasetAdapter
 from tiled.client import Context, from_context
 from tiled.server.app import build_app
 
-from firefly.main_window import PlanMainWindow
 from firefly.run_browser import RunBrowserDisplay
 from firefly.run_client import DatabaseWorker
-from haven import tiled_client
 
 log = logging.getLogger(__name__)
 
@@ -108,7 +103,6 @@ def display(ffapp, client, qtbot):
 
 def test_client_fixture(client):
     """Does the client fixture load without stalling the test runner?"""
-    pass
 
 
 def test_run_viewer_action(ffapp, monkeypatch):

@@ -8,11 +8,9 @@ import warnings
 from collections import ChainMap
 from typing import Mapping, Optional, Sequence, Union
 
-import numpy as np
-
 from .. import exceptions
 from ..energy_ranges import ERange, KRange, merge_ranges
-from ..preprocessors import baseline_decorator, shutter_suspend_decorator
+from ..preprocessors import baseline_decorator
 from ..typing import DetectorList
 from .energy_scan import energy_scan
 

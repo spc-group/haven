@@ -1,6 +1,5 @@
 import time
 
-import epics
 import pytest
 from ophyd.sim import instantiate_fake_device
 
