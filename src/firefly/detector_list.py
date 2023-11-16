@@ -1,4 +1,4 @@
-from PyQt5.QtGui import QStandardItemModel, QStandardItem
+from PyQt5.QtGui import QStandardItem, QStandardItemModel
 from qtpy.QtWidgets import QListView
 
 from haven import registry

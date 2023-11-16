@@ -1,6 +1,7 @@
 import enum
 
-from ophyd import Device, Component as Cpt, EpicsSignal, EpicsSignalRO, Kind
+from ophyd import Component as Cpt
+from ophyd import Device, EpicsSignal, EpicsSignalRO, Kind
 
 
 class EpicsSignalWithIO(EpicsSignal):

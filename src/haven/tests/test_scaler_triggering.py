@@ -10,7 +10,6 @@ devices, like the Xspress3 fluorescence detector readout electronics.
 import pytest
 from ophyd import Device
 
-
 from haven.instrument.scaler_triggered import ScalerTriggered
 
 

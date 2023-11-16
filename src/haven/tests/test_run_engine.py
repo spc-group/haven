@@ -3,8 +3,8 @@ import gc
 import databroker
 from bluesky import RunEngine
 
-from haven.instrument.aps import load_aps
 from haven import run_engine
+from haven.instrument.aps import load_aps
 
 
 def test_subscribers_garbage_collection(monkeypatch, sim_registry):

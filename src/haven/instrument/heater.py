@@ -1,17 +1,13 @@
 import asyncio
 import logging
 
-from ophyd import PVPositioner, EpicsSignalRO, EpicsSignalWithRBV, Component as Cpt
-from apstools.devices import (
-    PTC10PositionerMixin,
-    PTC10AioChannel as PTC10AioChannelBase,
-    PTC10TcChannel,
-)
+from apstools.devices import PTC10AioChannel as PTC10AioChannelBase
+from apstools.devices import PTC10PositionerMixin, PTC10TcChannel
+from ophyd import Component as Cpt
+from ophyd import EpicsSignalRO, EpicsSignalWithRBV, PVPositioner
 
 from .._iconfig import load_config
-from .instrument_registry import registry
-from .device import await_for_connection, aload_devices, make_device
-
+from .device import aload_devices, make_device
 
 log = logging.getLogger(__name__)
 

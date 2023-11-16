@@ -1,10 +1,4 @@
-from unittest import mock
-
-import time
-import pytest
-
 from firefly.main_window import FireflyMainWindow, PlanMainWindow
-from firefly.application import FireflyApplication
 
 
 def test_navbar(ffapp):

@@ -1,29 +1,24 @@
 import logging
-from collections import OrderedDict
-from pathlib import Path
-from dataclasses import dataclass, field
-from typing import Optional, Union, Mapping, Sequence
-from functools import partial
 import subprocess
+from collections import OrderedDict
+from functools import partial
+from pathlib import Path
+from typing import Mapping, Sequence
 
-from qtpy import QtWidgets, QtCore
-from qtpy.QtWidgets import QAction
-from qtpy.QtCore import Slot, QThread, Signal, QObject
-from PyQt5.QtWidgets import QStyleFactory
-import qtawesome as qta
 import pydm
-from pydm.application import PyDMApplication
-from pydm.display import load_file
-from pydm.utilities.stylesheet import apply_stylesheet
-from bluesky_queueserver_api import BPlan
-from bluesky_queueserver_api.zmq import REManagerAPI
 import pyqtgraph as pg
+import qtawesome as qta
+from pydm.application import PyDMApplication
+from pydm.utilities.stylesheet import apply_stylesheet
+from PyQt5.QtWidgets import QStyleFactory
+from qtpy import QtCore, QtWidgets
+from qtpy.QtCore import Signal
+from qtpy.QtWidgets import QAction
 
+from haven import HavenMotor, load_config, registry
 from haven.exceptions import ComponentNotFound
-from haven import HavenMotor, registry, load_config
-import haven
+
 from .main_window import FireflyMainWindow, PlanMainWindow
-from .ophyd_plugin import OphydPlugin
 from .queue_client import QueueClient, QueueClientThread, queueserver_api
 
 generator = type((x for x in []))
@@ -51,6 +46,8 @@ class FireflyApplication(PyDMApplication):
     show_runs_window_action: QtWidgets.QAction
     show_energy_window_action: QtWidgets.QAction
     show_bss_window_action: QtWidgets.QAction
+    show_voltmeters_window_action: QtWidgets.QAction
+    show_logs_window_action: QtWidgets.QAction
     launch_queuemonitor_action: QtWidgets.QAction
 
     # Keep track of motors
@@ -174,6 +171,18 @@ class FireflyApplication(PyDMApplication):
             text="Scheduling (&BSS)",
             slot=self.show_bss_window,
         )
+        # Launch ion chamber voltmeters window
+        self._setup_window_action(
+            action_name="show_voltmeters_window_action",
+            text="&Voltmeters",
+            slot=self.show_voltmeters_window,
+        )
+        # Launch log window
+        self._setup_window_action(
+            action_name="show_logs_window_action",
+            text="Logs",
+            slot=self.show_logs_window,
+        )
         # Launch energy window
         self._setup_window_action(
             action_name="show_energy_window_action",
@@ -266,14 +275,13 @@ class FireflyApplication(PyDMApplication):
         window_slots = []
         setattr(self, f"{attr_name}_window_slots", window_slots)
         setattr(self, f"{attr_name}_windows", {})
-        # if attr_name == "ion_chamber":
-        #     breakpoint()
         for device in devices:
+            # Create the window action
             action = QtWidgets.QAction(self)
             action.setObjectName(f"actionShow_{attr_name}_{device.name}")
             action.setText(device.name)
             actions[device.name] = action
-            # Create a slot for opening the motor window
+            # Create a slot for opening the device window
             slot = getattr(self, f"show_{attr_name}_window")
             slot = partial(slot, device=device)
             action.triggered.connect(slot)
@@ -341,7 +349,11 @@ class FireflyApplication(PyDMApplication):
             thread = QueueClientThread()
             self._queue_thread = thread
         # Create the client object
-        client = QueueClient(api=api, autoplay_action=self.queue_autoplay_action, open_environment_action=self.queue_open_environment_action)
+        client = QueueClient(
+            api=api,
+            autoplay_action=self.queue_autoplay_action,
+            open_environment_action=self.queue_open_environment_action,
+        )
         client.moveToThread(thread)
         thread.timer.timeout.connect(client.update)
         self._queue_client = client
@@ -429,9 +441,7 @@ class FireflyApplication(PyDMApplication):
         and setup code.
 
         """
-        window.actionShow_Log_Viewer.triggered.connect(self.show_log_viewer_window)
         window.actionShow_Xafs_Scan.triggered.connect(self.show_xafs_scan_window)
-        window.actionShow_Voltmeters.triggered.connect(self.show_voltmeters_window)
         window.actionShow_Sample_Viewer.triggered.connect(
             self.show_sample_viewer_window
         )
@@ -540,7 +550,7 @@ class FireflyApplication(PyDMApplication):
         )
 
     @QtCore.Slot()
-    def show_log_viewer_window(self):
+    def show_logs_window(self):
         self.show_window(FireflyMainWindow, ui_dir / "log_viewer.ui", name="log_viewer")
 
     @QtCore.Slot()

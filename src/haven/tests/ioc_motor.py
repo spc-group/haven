@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-from caproto import ChannelType
-from caproto.server import PVGroup, SubGroup, ioc_arg_parser, pvproperty, run
+from caproto.server import PVGroup, ioc_arg_parser, pvproperty, run
 
 from haven.simulated_ioc import ResponsiveMotorFields
 

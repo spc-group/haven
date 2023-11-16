@@ -1,19 +1,13 @@
+import asyncio
 import logging
 from typing import Optional
-import asyncio
-import time
-from functools import partial
-import io
-import contextlib
 
-import epics
-from ophyd import EpicsMotor, EpicsSignal, EpicsSignalRO, Component as Cpt, sim
+from ophyd import Component as Cpt
+from ophyd import EpicsMotor, EpicsSignal, EpicsSignalRO
 
-from .epics import caget
 from .._iconfig import load_config
-from .device import await_for_connection, aload_devices, make_device
-from .instrument_registry import registry
-
+from .device import aload_devices, make_device
+from .epics import caget
 
 log = logging.getLogger(__name__)
 
@@ -94,7 +88,6 @@ async def load_motor(prefix: str, motor_num: int, ioc_name: str = None):
     # Get the motor name from the description PV
     try:
         name = await caget(f"{pv}.DESC")
-        print(name)
     except asyncio.exceptions.TimeoutError:
         if not config["beamline"]["is_connected"]:
             # Beamline is not connected, so just use a generic name
@@ -105,7 +98,7 @@ async def load_motor(prefix: str, motor_num: int, ioc_name: str = None):
             return
     else:
         log.debug(f"Resolved motor {pv} to '{name}'")
-            
+
     # Create the motor device
     if name == f"motor {motor_num+1}":
         # It's an unnamed motor, so skip it

@@ -1,7 +1,7 @@
 from unittest import mock
 
-from qtpy import QtCore
 from bluesky_queueserver_api import BPlan
+from qtpy import QtCore
 
 from firefly.plans.count import CountDisplay
 

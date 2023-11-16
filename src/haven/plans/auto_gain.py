@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
-from bluesky import plans as bp, plan_stubs as bps
+from bluesky import plan_stubs as bps
+from bluesky import plans as bp
 from bluesky.callbacks.core import CollectThenCompute
 from bluesky.preprocessors import subs_decorator
 

@@ -1,11 +1,4 @@
-from ophyd import (
-    Device,
-    Component,
-    FormattedComponent,
-    EpicsSignal,
-    EpicsSignalRO,
-)
-
+from ophyd import EpicsSignal, EpicsSignalRO
 
 __all__ = ["ScalerTriggered"]
 

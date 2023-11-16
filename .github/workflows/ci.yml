@@ -20,7 +20,7 @@ jobs:
     defaults:
       run:
         shell: bash -l {0}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     strategy:
       max-parallel: 5
     steps:
@@ -29,8 +29,6 @@ jobs:
       uses: mamba-org/setup-micromamba@v1
       with:
         environment-file: environment.yml
-    - name: Setup X virtual frame buffer
-      run: Xvfb $DISPLAY &
     - name: Install haven
       run: pip install -e .
     - name: Environment info
@@ -38,11 +36,15 @@ jobs:
         env
         micromamba info
         micromamba list
-    - name: Lint with flake8
+    - name: Lint
       run: |
-        # stop the build if there are Python syntax errors or undefined names
+        # Check for syntax errors or undefined names
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        # Make sure black code formatting is applied
+        black --check --preview src/
+        # Make sure import orders are correct
+        isort --check src/
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-    - name: Test with pytest
-      run: pytest --timeout=120
+    - name: Test with pytest in Xvfb
+      run: xvfb-run python -m pytest -vv --timeout=120

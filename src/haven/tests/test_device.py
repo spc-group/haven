@@ -1,8 +1,8 @@
 import pytest
-from ophyd import sim, EpicsMotor
+from ophyd import EpicsMotor, sim
 
-from haven.instrument.load_instrument import load_simulated_devices
 from haven.instrument.device import make_device
+from haven.instrument.load_instrument import load_simulated_devices
 from haven.instrument.motor import HavenMotor
 
 

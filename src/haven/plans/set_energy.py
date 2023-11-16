@@ -1,12 +1,10 @@
-from typing import Union, Sequence
+from typing import Union
 
 from bluesky import plan_stubs as bps
-from ophyd import Device
 
+from .. import exceptions
 from ..instrument.instrument_registry import registry
 from ..typing import DetectorList
-from .. import exceptions
-
 
 __all__ = ["set_energy"]
 

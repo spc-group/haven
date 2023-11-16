@@ -3,11 +3,10 @@ import logging
 from collections import OrderedDict
 from typing import Sequence
 
-from qtpy.QtCore import QObject, Slot, Signal
+from qtpy.QtCore import QObject, Signal, Slot
 from tiled import queries
 
 from haven import tiled_client
-
 
 log = logging.getLogger(__name__)
 

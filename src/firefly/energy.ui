@@ -216,7 +216,7 @@
            <string/>
           </property>
           <property name="channel" stdset="0">
-           <string>oph://monochromator_mode</string>
+           <string>sig://monochromator_mode</string>
           </property>
          </widget>
         </item>
@@ -254,7 +254,7 @@
            <bool>false</bool>
           </property>
           <property name="channel" stdset="0">
-           <string>oph://monochromator_energy_user_readback</string>
+           <string>sig://monochromator_energy_user_readback</string>
           </property>
          </widget>
         </item>
@@ -383,7 +383,7 @@
            <bool>true</bool>
           </property>
           <property name="channel" stdset="0">
-           <string>oph://undulator_gap</string>
+           <string>sig://undulator_gap</string>
           </property>
          </widget>
         </item>
@@ -440,7 +440,7 @@
            <bool>true</bool>
           </property>
           <property name="channel" stdset="0">
-           <string>oph://undulator_energy</string>
+           <string>sig://undulator_energy</string>
           </property>
          </widget>
         </item>

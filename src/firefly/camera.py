@@ -1,19 +1,13 @@
+import logging
 from enum import IntEnum
 from pathlib import Path
-import datetime as dt
-import subprocess
-import logging
-import os
-
-import haven
 
 # from pydm.data_plugins.epics_plugin import EPICSPlugin
 from pydm.widgets.channel import PyDMChannel
-from qtpy.QtGui import QColor
 from qtpy.QtCore import Slot
+from qtpy.QtGui import QColor
 
-from firefly import display, FireflyApplication
-
+from firefly import FireflyApplication, display
 
 log = logging.getLogger(__name__)
 

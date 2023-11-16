@@ -1,24 +1,18 @@
-import time
-from unittest.mock import MagicMock
-from collections import namedtuple
 import logging
-import pytest
+from unittest.mock import MagicMock
 
-from qtpy.QtCore import Qt
-from pyqtgraph import PlotItem, PlotWidget
 import numpy as np
 import pandas as pd
+import pytest
+from pyqtgraph import PlotItem, PlotWidget
+from qtpy.QtCore import Qt
 from tiled.adapters.mapping import MapAdapter
-from tiled.adapters.array import ArrayAdapter
 from tiled.adapters.xarray import DatasetAdapter
-from tiled.server.app import build_app
 from tiled.client import Context, from_context
+from tiled.server.app import build_app
 
-from haven import tiled_client
-from firefly.main_window import PlanMainWindow
 from firefly.run_browser import RunBrowserDisplay
 from firefly.run_client import DatabaseWorker
-
 
 log = logging.getLogger(__name__)
 
@@ -28,6 +22,7 @@ def wait_for_runs_model(display, qtbot):
         pass
 
 
+# Some mocked test data
 run1 = pd.DataFrame(
     {
         "energy_energy": np.linspace(8300, 8400, num=100),
@@ -92,11 +87,7 @@ def client():
     with Context.from_app(app) as context:
         client = from_context(context)
         yield client["255id_testing"]
-        
 
-def test_client_fixture(client):
-    """Does the client fixture load without stalling the test runner?"""
-    pass
 
 @pytest.fixture()
 def display(ffapp, client, qtbot):
@@ -107,6 +98,11 @@ def display(ffapp, client, qtbot):
     finally:
         display._thread.quit()
         display._thread.wait(msecs=5000)
+        assert not display._thread.isRunning()
+
+
+def test_client_fixture(client):
+    """Does the client fixture load without stalling the test runner?"""
 
 
 def test_run_viewer_action(ffapp, monkeypatch):

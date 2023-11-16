@@ -1,11 +1,10 @@
-import time
 import argparse
 import cProfile
 import logging
 import pstats
 import sys
+import time
 from pathlib import Path
-
 
 import haven
 
@@ -25,20 +24,14 @@ def main(default_fullscreen=False, default_display="status"):
         otherwise we get the following error if someone adds a WebView at Designer:
         ImportError: QtWebEngineWidgets must be imported before a QCoreApplication instance is created
         """
-        from qtpy import QtWebEngineWidgets
     except ImportError:
         logger.debug("QtWebEngine is not supported.")
 
-    from qtpy.QtWidgets import QSplashScreen
-    from .application import FireflyApplication
-    from qtpy.QtGui import QPixmap
     from qtpy import QtCore
+    from qtpy.QtGui import QPixmap
+    from qtpy.QtWidgets import QSplashScreen
 
-    # Add plugins for handling ophyd objects
-    from pydm.data_plugins import add_plugin
-    from .ophyd_plugin import OphydPlugin
-
-    add_plugin(OphydPlugin)
+    from .application import FireflyApplication
 
     # Set up splash screen
     fake_app = FireflyApplication(sys.argv)
@@ -63,7 +56,6 @@ def main(default_fullscreen=False, default_display="status"):
 
     setup_renderer()
 
-    import pydm
     from pydm.utilities.macro import parse_macro_string
 
     parser = argparse.ArgumentParser(description="Python Display Manager")
@@ -76,7 +68,10 @@ def main(default_fullscreen=False, default_display="status"):
     parser.add_argument(
         "--no-instrument",
         action="store_true",
-        help="Do not try to create devices. Useful for development if much beamline hardware is offline.",
+        help=(
+            "Do not try to create devices. Useful for development if much beamline"
+            " hardware is offline."
+        ),
     )
     parser.add_argument(
         "--perfmon",

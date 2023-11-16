@@ -1,15 +1,14 @@
-import logging
-import warnings
-import unicodedata
-import re
 import datetime as dt
+import logging
+import re
+import unicodedata
+import warnings
 from pathlib import Path
-from typing import Sequence, Optional, Union
+from typing import Optional, Sequence, Union
 
 from bluesky.callbacks import CallbackBase
 
 from . import exceptions
-
 
 log = logging.getLogger(__name__)
 

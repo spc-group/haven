@@ -1,23 +1,22 @@
-import pytest
-from unittest import TestCase, expectedFailure
-from io import StringIO
-import os
-import time
-from pathlib import Path
 import datetime as dt
 import logging
+import os
+import time
+from io import StringIO
+from pathlib import Path
+from unittest import TestCase, expectedFailure
+
+import numpy as np
+import pytest
 
 # from freezegun import freeze_time
 import pytz
 import time_machine
 from bluesky import RunEngine
-from ophyd.sim import motor, SynGauss, SynAxis
-import numpy as np
 from numpy import asarray as array
+from ophyd.sim import SynAxis, SynGauss, motor
 
-
-from haven import XDIWriter, exceptions, energy_scan
-
+from haven import XDIWriter, energy_scan, exceptions
 
 fake_time = pytz.timezone("America/New_York").localize(
     dt.datetime(2022, 8, 19, 19, 10, 51)
@@ -51,23 +50,31 @@ THIS_DIR = Path(__file__).parent
     "num_points": 10,
     "plan_args": {
         "args": [
-            "SynAxis(prefix='', name='energy', "
-            "read_attrs=['readback', 'setpoint'], "
-            "configuration_attrs=['velocity', 'acceleration'])",
+            (
+                "SynAxis(prefix='', name='energy', "
+                "read_attrs=['readback', 'setpoint'], "
+                "configuration_attrs=['velocity', 'acceleration'])"
+            ),
             array([8300, 8310, 8320, 8330, 8340, 8350, 8360, 8370, 8380, 8390]),
-            "SynAxis(prefix='', name='exposure', "
-            "read_attrs=['readback', 'setpoint'], "
-            "configuration_attrs=['velocity', 'acceleration'])",
+            (
+                "SynAxis(prefix='', name='exposure', "
+                "read_attrs=['readback', 'setpoint'], "
+                "configuration_attrs=['velocity', 'acceleration'])"
+            ),
             [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1],
         ],
         "detectors": [
-            "SynGauss(prefix='', name='I0', "
-            "read_attrs=['val'], configuration_attrs=['Imax', "
-            "'center', 'sigma', 'noise', 'noise_multiplier'])",
-            "SynGauss(prefix='', name='It', "
-            "read_attrs=['val'], configuration_attrs=['Imax', "
-            "'center', 'sigma', 'noise', "
-            "'noise_multiplier'])",
+            (
+                "SynGauss(prefix='', name='I0', "
+                "read_attrs=['val'], configuration_attrs=['Imax', "
+                "'center', 'sigma', 'noise', 'noise_multiplier'])"
+            ),
+            (
+                "SynGauss(prefix='', name='It', "
+                "read_attrs=['val'], configuration_attrs=['Imax', "
+                "'center', 'sigma', 'noise', "
+                "'noise_multiplier'])"
+            ),
         ],
         "per_step": "None",
     },
@@ -75,15 +82,19 @@ THIS_DIR = Path(__file__).parent
     "plan_pattern": "inner_list_product",
     "plan_pattern_args": {
         "args": [
-            "SynAxis(prefix='', name='energy', "
-            "read_attrs=['readback', 'setpoint'], "
-            "configuration_attrs=['velocity', "
-            "'acceleration'])",
+            (
+                "SynAxis(prefix='', name='energy', "
+                "read_attrs=['readback', 'setpoint'], "
+                "configuration_attrs=['velocity', "
+                "'acceleration'])"
+            ),
             array([8300, 8310, 8320, 8330, 8340, 8350, 8360, 8370, 8380, 8390]),
-            "SynAxis(prefix='', name='exposure', "
-            "read_attrs=['readback', 'setpoint'], "
-            "configuration_attrs=['velocity', "
-            "'acceleration'])",
+            (
+                "SynAxis(prefix='', name='exposure', "
+                "read_attrs=['readback', 'setpoint'], "
+                "configuration_attrs=['velocity', "
+                "'acceleration'])"
+            ),
             [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1],
         ]
     },

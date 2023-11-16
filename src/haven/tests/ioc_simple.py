@@ -1,16 +1,5 @@
 #!/usr/bin/env python3
-from caproto import ChannelType
-from caproto.server import (
-    PVGroup,
-    SubGroup,
-    ioc_arg_parser,
-    pvproperty,
-    run,
-    PvpropertyDouble,
-)
-from ophyd.tests.fake_motor_ioc import FakeMotorIOC
-
-from haven.simulated_ioc import ResponsiveMotorFields  # , IOC as IOC_
+from caproto.server import PVGroup, ioc_arg_parser, pvproperty, run
 
 
 class SimpleGroup(PVGroup):

@@ -1,23 +1,21 @@
-import logging
-import os
-import time
-import time_machine
-import pytz
-from zoneinfo import ZoneInfo
 import datetime as dt
+import logging
+import time
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 import pytest
-from ophyd.sim import motor1, SynAxis, make_fake_device
-from ophyd import EpicsMotor, Signal, Component as Cpt
+import time_machine
+from ophyd import Component as Cpt
+from ophyd import Signal
+from ophyd.sim import SynAxis, motor1
+
 from haven import (
-    save_motor_position,
-    registry,
     get_motor_position,
+    list_current_motor_positions,
     list_motor_positions,
     recall_motor_position,
-    list_current_motor_positions,
-    HavenMotor,
+    save_motor_position,
 )
 
 log = logging.getLogger(__name__)

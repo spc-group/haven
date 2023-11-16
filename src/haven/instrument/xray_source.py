@@ -1,12 +1,10 @@
-import logging
 import asyncio
+import logging
+
 from apstools.devices.aps_undulator import ApsUndulator
-import epics
 
-from .instrument_registry import registry
 from .._iconfig import load_config
-from .device import await_for_connection, aload_devices, make_device
-
+from .device import aload_devices, make_device
 
 log = logging.getLogger(__name__)
 

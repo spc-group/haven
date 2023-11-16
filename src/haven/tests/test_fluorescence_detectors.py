@@ -7,20 +7,15 @@ specific to one device or another.
 """
 
 import logging
-from pathlib import Path
-import asyncio
-from unittest.mock import MagicMock
 import time
+from pathlib import Path
 
 import numpy as np
 import pytest
-from epics import caget
-from ophyd import Kind, DynamicDeviceComponent as DDC, OphydObject, Signal
-from bluesky import plans as bp
+from ophyd import OphydObject, Signal
 
-from haven.instrument.dxp import parse_xmap_buffer, load_dxp
+from haven.instrument.dxp import load_dxp, parse_xmap_buffer
 from haven.instrument.xspress import load_xspress
-
 
 DETECTORS = ["dxp", "xspress"]
 # DETECTORS = ['dxp']

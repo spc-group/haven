@@ -1,24 +1,20 @@
 import logging
-import datetime as dt
-from typing import Sequence
-import warnings
-import yaml
-from httpx import HTTPStatusError, PoolTimeout
-from contextlib import contextmanager
 from itertools import count
+from typing import Sequence
 
 import numpy as np
-from qtpy.QtWidgets import QWidget
-from qtpy.QtGui import QStandardItemModel, QStandardItem
-from qtpy.QtCore import Signal, Slot, QThread, Qt
-from pyqtgraph import PlotItem, GraphicsLayoutWidget, PlotWidget, PlotDataItem
 import qtawesome as qta
+import yaml
 from matplotlib.colors import TABLEAU_COLORS
 from pydantic.error_wrappers import ValidationError
+from pyqtgraph import PlotItem, PlotWidget
+from qtpy.QtCore import Qt, QThread, Signal
+from qtpy.QtGui import QStandardItem, QStandardItemModel
+from qtpy.QtWidgets import QWidget
 
-from firefly import display, FireflyApplication
+from haven import exceptions
+from firefly import display
 from firefly.run_client import DatabaseWorker
-from haven import tiled_client, load_config, exceptions
 
 log = logging.getLogger(__name__)
 
@@ -289,7 +285,8 @@ class RunBrowserDisplay(display.FireflyDisplay):
     def load_run_data(self, run, x_signal, y_signal, r_signal, use_reference=True):
         if "" in [x_signal, y_signal] or (use_reference and r_signal == ""):
             log.debug(
-                f"Empty signal name requested: x='{x_signal}', y='{y_signal}', r='{r_signal}'"
+                f"Empty signal name requested: x='{x_signal}', y='{y_signal}',"
+                f" r='{r_signal}'"
             )
             raise exceptions.EmptySignalName
         signals = [x_signal, y_signal]

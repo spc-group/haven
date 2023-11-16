@@ -1,11 +1,11 @@
+import logging
 import time
 import warnings
-import logging
 
-from bluesky.preprocessors import subs_decorator, subs_wrapper
-from bluesky.callbacks import best_effort
-from bluesky import plan_stubs as bps
 from apstools.plans.alignment import lineup
+from bluesky import plan_stubs as bps
+from bluesky.callbacks import best_effort
+from bluesky.preprocessors import subs_wrapper
 
 from ..instrument.instrument_registry import registry
 from ..preprocessors import shutter_suspend_decorator

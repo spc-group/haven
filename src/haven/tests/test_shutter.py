@@ -1,6 +1,5 @@
-from unittest import mock
-from haven.instrument import shutter
 from haven import registry
+from haven.instrument import shutter
 
 
 def test_shutter(sim_registry, beamline_connected):

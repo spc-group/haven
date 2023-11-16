@@ -1,35 +1,25 @@
+import asyncio
+import logging
+import math
 import threading
 import time
-import logging
-import asyncio
-import math
-from typing import Generator, Dict
-from datetime import datetime, timedelta
 from collections import OrderedDict
+from typing import Dict, Generator
 
-from ophyd import (
-    Device,
-    FormattedComponent as FCpt,
-    EpicsMotor,
-    Component as Cpt,
-    Signal,
-    SignalRO,
-    Kind,
-    EpicsSignal,
-    flyers,
-)
-from ophyd.status import SubscriptionStatus, AndStatus, StatusBase
-from apstools.synApps.asyn import AsynRecord
-import pint
 import numpy as np
+import pint
+from apstools.synApps.asyn import AsynRecord
+from ophyd import Component as Cpt
+from ophyd import EpicsMotor, EpicsSignal
+from ophyd import FormattedComponent as FCpt
+from ophyd import Kind, Signal, flyers
+from ophyd.status import SubscriptionStatus
 
-from .delay import DG645Delay
-from .stage import XYStage
-from .instrument_registry import registry
 from .._iconfig import load_config
 from ..exceptions import InvalidScanParameters
-from .device import await_for_connection, aload_devices, make_device
-
+from .delay import DG645Delay
+from .device import aload_devices, make_device
+from .stage import XYStage
 
 log = logging.getLogger(__name__)
 
@@ -400,12 +390,14 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
             return
         if encoder_resolution == 0:
             log.warning(
-                f"{self} encoder resolution is zero. Could not update fly scan parameters."
+                f"{self} encoder resolution is zero. Could not update fly scan"
+                " parameters."
             )
             return
         if accel_time <= 0:
             log.warning(
-                f"{self} acceleration is non-positive. Could not update fly scan parameters."
+                f"{self} acceleration is non-positive. Could not update fly scan"
+                " parameters."
             )
             return
         # Determine the desired direction of travel and overal sense
@@ -506,7 +498,8 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
             taxi_distance = abs(taxi.get() - pso.get())
             if taxi_distance > (1.1 * step_size):
                 raise InvalidScanParameters(
-                    f"Scan parameters for {taxi}, {pso}, {self.step_size} would produce extra pulses without a window."
+                    f"Scan parameters for {taxi}, {pso}, {self.step_size} would produce"
+                    " extra pulses without a window."
                 )
 
     def enable_pso(self):
@@ -610,4 +603,3 @@ def load_aerotech_stage_coros(config=None):
 def load_aerotech_stages(config=None):
     """Load the XY stages defined in the config ``[stage]`` section."""
     asyncio.run(aload_devices(*load_aerotech_stage_coros(config=config)))
-        

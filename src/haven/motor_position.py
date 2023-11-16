@@ -1,17 +1,16 @@
-from typing import Optional, Sequence
 import logging
-
-import pymongo
-from pydantic import BaseModel
-import intake
-from bson.objectid import ObjectId
-from bluesky import plan_stubs as bps
-
-from .instrument.instrument_registry import registry
-from . import exceptions
-
 import time
 from datetime import datetime
+from typing import Optional, Sequence
+
+import intake
+import pymongo
+from bluesky import plan_stubs as bps
+from bson.objectid import ObjectId
+from pydantic import BaseModel
+
+from . import exceptions
+from .instrument.instrument_registry import registry
 
 log = logging.getLogger(__name__)
 

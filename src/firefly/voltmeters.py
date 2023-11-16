@@ -1,13 +1,12 @@
 import json
-import warnings
 import logging
-from typing import Optional, Mapping, Sequence
+from typing import Mapping, Optional, Sequence
 
+import qtawesome as qta
 from pydm.widgets import PyDMEmbeddedDisplay
 from qtpy import QtWidgets
-import haven
-import qtawesome as qta
 
+import haven
 from firefly import display
 
 # from .voltmeter import VoltmeterDisplay

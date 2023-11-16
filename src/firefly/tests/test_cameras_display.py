@@ -1,14 +1,11 @@
-import pytest
 import json
 
-import haven
-from pydm.data_plugins.epics_plugin import EPICSPlugin
+import pytest
 from pydm.widgets.channel import PyDMChannel
-from qtpy import QtWidgets, QtGui, QtCore
+from qtpy import QtCore, QtGui, QtWidgets
 
-from firefly.cameras import CamerasDisplay
 from firefly.camera import CameraDisplay, DetectorStates
-
+from firefly.cameras import CamerasDisplay
 
 macros = {"PREFIX": "camera_ioc:", "DESC": "Camera A"}
 

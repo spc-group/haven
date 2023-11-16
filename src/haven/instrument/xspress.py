@@ -1,70 +1,35 @@
+import asyncio
+import logging
+import time
+from collections import OrderedDict
 from enum import IntEnum
 from functools import partial
-import logging
-import asyncio
-from typing import Optional, Sequence, Dict
-from collections import OrderedDict
-import time
+from typing import Dict, Optional, Sequence
 
 import numpy as np
 import pandas as pd
 from apstools.devices import CamMixin_V34, SingleTrigger_V34
-from ophyd import (
-    ADComponent as ADCpt,
-    DetectorBase,
-    CamBase,
-    SimDetectorCam,
-    Lambda750kCam,
-    EigerDetectorCam,
-    Component as Cpt,
-    EpicsSignal,
-    EpicsSignalRO,
-    EpicsSignalWithRBV,
-    DynamicDeviceComponent as DDC,
-    SingleTrigger,
-    Kind,
-    OphydObject,
-    Device,
-    Signal,
-)
-from ophyd.status import SubscriptionStatus, StatusBase, AndStatus
-from ophyd.signal import InternalSignal, DerivedSignal
+from ophyd import ADComponent as ADCpt
+from ophyd import Component as Cpt
+from ophyd import DetectorBase, Device
+from ophyd import DynamicDeviceComponent as DDC
+from ophyd import EpicsSignal, EpicsSignalRO, Kind
 from ophyd.areadetector.base import EpicsSignalWithRBV as SignalWithRBV
-from ophyd.areadetector.filestore_mixins import FileStoreHDF5IterativeWrite
-from ophyd.areadetector.plugins import (
-    HDF5Plugin_V34,
-    HDF5Plugin_V31,
-    ImagePlugin_V34,
-    ImagePlugin_V31,
-    PvaPlugin_V34,
-    PvaPlugin_V31,
-    TIFFPlugin_V34,
-    TIFFPlugin_V31,
-    ROIPlugin_V34,
-    ROIPlugin_V31,
-    StatsPlugin_V31 as OphydStatsPlugin_V31,
-    StatsPlugin_V34 as OphydStatsPlugin_V34,
-    OverlayPlugin,
-)
-from pcdsdevices.signal import MultiDerivedSignal, MultiDerivedSignalRO
-from pcdsdevices.type_hints import SignalToValue, OphydDataType
+from ophyd.signal import InternalSignal
+from ophyd.status import StatusBase, SubscriptionStatus
+from pcdsdevices.signal import MultiDerivedSignal
+from pcdsdevices.type_hints import OphydDataType, SignalToValue
 
 from .._iconfig import load_config
-from .instrument_registry import registry
+from .device import RegexComponent as RECpt
+from .device import aload_devices, make_device
 from .fluorescence_detector import (
-    XRFMixin,
-    ROIMixin,
     MCASumMixin,
-    add_roi_sums,
+    ROIMixin,
     UseROISignal,
+    XRFMixin,
+    add_roi_sums,
 )
-from .device import (
-    await_for_connection,
-    aload_devices,
-    make_device,
-    RegexComponent as RECpt,
-)
-
 
 __all__ = ["load_xspress", "Xspress3Detector", "ROI"]
 

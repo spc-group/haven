@@ -1,5 +1,6 @@
+from typing import Literal, Sequence, Union
+
 from bluesky import plan_stubs as bps
-from typing import Literal, Union, Sequence
 
 from ..instrument.instrument_registry import registry
 from ..typing import Motor

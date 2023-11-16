@@ -1,9 +1,9 @@
+import importlib
 import os
 from pathlib import Path
-import importlib
 
 from haven import _iconfig
-from haven._iconfig import load_config, print_config_value, beamline_connected
+from haven._iconfig import beamline_connected, load_config, print_config_value
 
 
 def test_default_values():

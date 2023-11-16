@@ -1,8 +1,7 @@
 from unittest.mock import MagicMock
+
 import pytest
 from ophyd import sim
-from bluesky.callbacks.best_effort import BestEffortCallback
-from lmfit.models import QuadraticModel
 
 from haven import mono_ID_calibration
 
@@ -87,7 +86,9 @@ def test_aligns_mono_energy(mono_motor, id_motor, ion_chamber, pitch2_motor):
 
 
 @pytest.mark.skip(reason="``haven.plans.align_motor`` is deprecated.")
-def test_fitting_callback(mono_motor, id_motor, ion_chamber, pitch2_motor, event_loop, RE):
+def test_fitting_callback(
+    mono_motor, id_motor, ion_chamber, pitch2_motor, event_loop, RE
+):
     fit_model = MagicMock()
     plan = mono_ID_calibration(
         energies=[8000, 9000], energy_motor=mono_motor, fit_model=fit_model
