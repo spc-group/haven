@@ -46,6 +46,8 @@ class FireflyApplication(PyDMApplication):
     show_runs_window_action: QtWidgets.QAction
     show_energy_window_action: QtWidgets.QAction
     show_bss_window_action: QtWidgets.QAction
+    show_voltmeters_window_action: QtWidgets.QAction
+    show_logs_window_action: QtWidgets.QAction
     launch_queuemonitor_action: QtWidgets.QAction
 
     # Keep track of motors
@@ -168,6 +170,18 @@ class FireflyApplication(PyDMApplication):
             action_name="show_bss_window_action",
             text="Scheduling (&BSS)",
             slot=self.show_bss_window,
+        )
+        # Launch ion chamber voltmeters window
+        self._setup_window_action(
+            action_name="show_voltmeters_window_action",
+            text="&Voltmeters",
+            slot=self.show_voltmeters_window,
+        )
+        # Launch log window
+        self._setup_window_action(
+            action_name="show_logs_window_action",
+            text="Logs",
+            slot=self.show_logs_window,
         )
         # Launch energy window
         self._setup_window_action(
@@ -427,9 +441,7 @@ class FireflyApplication(PyDMApplication):
         and setup code.
 
         """
-        window.actionShow_Log_Viewer.triggered.connect(self.show_log_viewer_window)
         window.actionShow_Xafs_Scan.triggered.connect(self.show_xafs_scan_window)
-        window.actionShow_Voltmeters.triggered.connect(self.show_voltmeters_window)
         window.actionShow_Sample_Viewer.triggered.connect(
             self.show_sample_viewer_window
         )
@@ -538,7 +550,7 @@ class FireflyApplication(PyDMApplication):
         )
 
     @QtCore.Slot()
-    def show_log_viewer_window(self):
+    def show_logs_window(self):
         self.show_window(FireflyMainWindow, ui_dir / "log_viewer.ui", name="log_viewer")
 
     @QtCore.Slot()

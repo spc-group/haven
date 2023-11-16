@@ -597,15 +597,16 @@ async def load_ion_chamber(
         labels={"ion_chambers"},
     )
     # Ensure the voltmeter is in differential mode to measure pre-amp
-    try:
-        ion_chamber.voltmeter.differential.set(1).wait(timeout=1)
-    except OpException as exc:
-        msg = (
-            f"Could not set voltmeter {ion_chamber.name} channel differential state:"
-            f" {exc}"
-        )
-        log.warning(msg)
-        warnings.warn(msg)
+    if hasattr(ion_chamber, 'voltmeter'):
+        try:
+            ion_chamber.voltmeter.differential.set(1).wait(timeout=1)
+        except OpException as exc:
+            msg = (
+                f"Could not set voltmeter {ion_chamber.name} channel differential state:"
+                f" {exc}"
+            )
+            log.warning(msg)
+            warnings.warn(msg)
     return ion_chamber
 
 

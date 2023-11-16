@@ -106,6 +106,8 @@ class FireflyMainWindow(PyDMMainWindow):
         # Connect signals to the status bar
         app.queue_environment_state_changed.connect(self.ui.environment_label.setText)
         app.queue_re_state_changed.connect(self.ui.re_label.setText)
+        # Log viewer window
+        self.ui.menuView.addAction(app.show_logs_window_action)
         # Setup menu
         self.ui.menuSetup = QtWidgets.QMenu(self.ui.menubar)
         self.ui.menuSetup.setObjectName("menuSetup")
@@ -119,36 +121,15 @@ class FireflyMainWindow(PyDMMainWindow):
         for action in app.queue_action_group.actions():
             self.ui.queue_menu.addAction(action)
         self.ui.queue_menu.addSeparator()
+        # Queue settings for the queue client
+        self.ui.queue_menu.addAction(app.launch_queuemonitor_action)
         self.ui.queue_menu.addAction(app.queue_autoplay_action)
         self.ui.queue_menu.addAction(app.queue_open_environment_action)
-        self.ui.menuView.addAction(app.launch_queuemonitor_action)
-        # Log viewer window
-        self.add_menu_action(
-            action_name="actionShow_Log_Viewer", text="Logs", menu=self.ui.menuView
-        )
         # Positioners menu
         self.ui.menuPositioners = QtWidgets.QMenu(self.ui.menubar)
         self.ui.menuPositioners.setObjectName("menuPositioners")
         self.ui.menuPositioners.setTitle("&Positioners")
         self.ui.menubar.addAction(self.ui.menuPositioners.menuAction())
-        # Detectors menu
-        self.ui.menuDetectors = QtWidgets.QMenu(self.ui.menubar)
-        self.ui.menuDetectors.setObjectName("menuDetectors")
-        self.ui.menuDetectors.setTitle("&Detectors")
-        self.ui.menubar.addAction(self.ui.menuDetectors.menuAction())
-        # Scans menu
-        self.ui.menuScans = QtWidgets.QMenu(self.ui.menubar)
-        self.ui.menuScans.setObjectName("menuScans")
-        self.ui.menuScans.setTitle("Scans")
-        self.ui.menubar.addAction(self.ui.menuScans.menuAction())
-        # Add entries for general scan management
-        self.ui.menuScans.addAction(app.launch_queuemonitor_action)
-        self.ui.menuScans.addAction(app.show_run_browser_action)
-        self.ui.menuScans.addSeparator()
-        # XAFS scan window
-        self.add_menu_action(
-            action_name="actionShow_Log_Viewer", text="Logs", menu=self.ui.menuView
-        )
         # Sample viewer
         self.add_menu_action(
             action_name="actionShow_Sample_Viewer",
@@ -172,36 +153,32 @@ class FireflyMainWindow(PyDMMainWindow):
             text="&XAFS Scan",
             menu=self.ui.menuScans,
         )
-        # Auto-play setting for the queue client
-        if hasattr(app, "queue_autoplay_action"):
-            self.ui.menuScans.addAction(app.queue_autoplay_action)
+        # Add entries for general scan management
+        self.ui.menuScans.addSeparator()
+        self.ui.menuScans.addAction(app.show_run_browser_action)
         # Detectors menu
-        self.ui.menuDetectors = QtWidgets.QMenu(self.ui.menubar)
-        self.ui.menuDetectors.setObjectName("menuDetectors")
-        self.ui.menuDetectors.setTitle("&Detectors")
-        self.ui.menubar.addAction(self.ui.menuDetectors.menuAction())
+        self.ui.detectors_menu = QtWidgets.QMenu(self.ui.menubar)
+        self.ui.detectors_menu.setObjectName("detectors_menu")
+        self.ui.detectors_menu.setTitle("&Detectors")
+        self.ui.menubar.addAction(self.ui.detectors_menu.menuAction())
         # Voltmeters window
-        self.add_menu_action(
-            action_name="actionShow_Voltmeters",
-            text="&Voltmeters",
-            menu=self.ui.menuDetectors,
-        )
+        self.ui.detectors_menu.addAction(app.show_voltmeters_window_action)
         # Add actions to the motors sub-menus
         for action in app.motor_actions:
             self.ui.menuMotors.addAction(action)
         # Add an ion chamber sub-menu
-        self.ui.menuIonChambers = QtWidgets.QMenu(self.ui.menubar)
-        self.ui.menuIonChambers.setObjectName("menuIonChambers")
-        self.ui.menuIonChambers.setTitle("&Ion Chambers")
-        self.ui.menuDetectors.addAction(self.ui.menuIonChambers.menuAction())
+        self.ui.ion_chambers_menu = QtWidgets.QMenu(self.ui.menubar)
+        self.ui.ion_chambers_menu.setObjectName("ion_chambers_menu")
+        self.ui.ion_chambers_menu.setTitle("&Ion Chambers")
+        self.ui.detectors_menu.addAction(self.ui.ion_chambers_menu.menuAction())
         # Add actions for the individual ion chambers
         for action in app.ion_chamber_actions.values():
-            self.ui.menuIonChambers.addAction(action)
+            self.ui.ion_chambers_menu.addAction(action)
         # Cameras sub-menu
         self.ui.menuCameras = QtWidgets.QMenu(self.ui.menubar)
         self.ui.menuCameras.setObjectName("menuCameras")
         self.ui.menuCameras.setTitle("Cameras")
-        self.ui.menuDetectors.addAction(self.ui.menuCameras.menuAction())
+        self.ui.detectors_menu.addAction(self.ui.menuCameras.menuAction())
         # Add actions to the cameras sub-menus
         self.ui.menuCameras.addAction(app.show_cameras_window_action)
         self.ui.menuCameras.addSeparator()
@@ -210,15 +187,15 @@ class FireflyMainWindow(PyDMMainWindow):
         # Add area detectors to detectors menu
         ad_actions = app.area_detector_actions.values()
         if len(ad_actions) > 0:
-            self.ui.menuDetectors.addSeparator()
+            self.ui.detectors_menu.addSeparator()
         for action in ad_actions:
-            self.ui.menuDetectors.addAction(action)
+            self.ui.detectors_menu.addAction(action)
         # Add XRF detectors to detectors menu
         xrf_actions = app.xrf_detector_actions.values()
         if len(xrf_actions) > 0:
-            self.ui.menuDetectors.addSeparator()
+            self.ui.detectors_menu.addSeparator()
         for action in xrf_actions:
-            self.ui.menuDetectors.addAction(action)
+            self.ui.detectors_menu.addAction(action)
         # Add other menu actions
         self.ui.menuView.addAction(app.show_status_window_action)
         self.ui.menuSetup.addAction(app.show_bss_window_action)
@@ -244,9 +221,7 @@ class FireflyMainWindow(PyDMMainWindow):
 
     def export_actions(self):
         """Expose specific signals that might be useful for responding to window changes."""
-        self.actionShow_Log_Viewer = self.ui.actionShow_Log_Viewer
         self.actionShow_Xafs_Scan = self.ui.actionShow_Xafs_Scan
-        self.actionShow_Voltmeters = self.ui.actionShow_Voltmeters
 
 
 class PlanMainWindow(FireflyMainWindow):
