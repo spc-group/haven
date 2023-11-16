@@ -1,28 +1,23 @@
-import time
 from unittest import mock
 
-import pytest
-from qtpy import QtWidgets, QtCore
-from bluesky_queueserver_api import BPlan
 from apstools.devices.aps_undulator import ApsUndulator
+from bluesky_queueserver_api import BPlan
 from ophyd.sim import make_fake_device
+from qtpy import QtCore
 
 import haven
-from haven.instrument.monochromator import load_monochromator
-from haven.instrument.energy_positioner import load_energy_positioner
 from firefly.energy import EnergyDisplay
 
-
 FakeMonochromator = make_fake_device(haven.instrument.monochromator.Monochromator)
-FakeEnergyPositioner = make_fake_device(haven.instrument.energy_positioner.EnergyPositioner)
+FakeEnergyPositioner = make_fake_device(
+    haven.instrument.energy_positioner.EnergyPositioner
+)
 FakeUndulator = make_fake_device(ApsUndulator)
 
 
 def test_mono_caqtdm_macros(qtbot, ffapp, sim_registry):
     # Create fake device
-    mono = sim_registry.register(
-        FakeMonochromator("mono_ioc", name="monochromator")
-    )
+    mono = sim_registry.register(FakeMonochromator("mono_ioc", name="monochromator"))
     sim_registry.register(
         FakeEnergyPositioner(
             mono_pv="mono_ioc:Energy",
@@ -54,9 +49,7 @@ def test_mono_caqtdm_macros(qtbot, ffapp, sim_registry):
 
 def test_id_caqtdm_macros(qtbot, ffapp, sim_registry):
     # Create fake device
-    mono = FakeMonochromator(
-        "mono_ioc", name="monochromator"
-    )
+    mono = FakeMonochromator("mono_ioc", name="monochromator")
     sim_registry.register(
         FakeEnergyPositioner(
             mono_pv="mono_ioc:Energy",
@@ -82,9 +75,7 @@ def test_id_caqtdm_macros(qtbot, ffapp, sim_registry):
 
 
 def test_move_energy(qtbot, ffapp, sim_registry):
-    mono = FakeMonochromator(
-        "mono_ioc", name="monochromator"
-    )
+    mono = FakeMonochromator("mono_ioc", name="monochromator")
     sim_registry.register(
         FakeEnergyPositioner(
             mono_pv="mono_ioc:Energy",
@@ -112,9 +103,7 @@ def test_move_energy(qtbot, ffapp, sim_registry):
 
 def test_predefined_energies(qtbot, ffapp, sim_registry):
     # Create fake device
-    mono = FakeMonochromator(
-        "mono_ioc", name="monochromator"
-    )
+    mono = FakeMonochromator("mono_ioc", name="monochromator")
     sim_registry.register(
         FakeEnergyPositioner(
             mono_pv="mono_ioc:Energy",

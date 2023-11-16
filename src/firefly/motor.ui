@@ -35,7 +35,7 @@
         <set>Qt::AlignCenter</set>
        </property>
        <property name="channel" stdset="0">
-        <string>oph://${MOTOR}_description</string>
+        <string>sig://${MOTOR}_description</string>
        </property>
       </widget>
      </item>
@@ -59,7 +59,7 @@
         <bool>true</bool>
        </property>
        <property name="channel" stdset="0">
-        <string>oph://${MOTOR}.user_readback</string>
+        <string>sig://${MOTOR}.user_readback</string>
        </property>
       </widget>
      </item>
@@ -92,7 +92,7 @@
             <string/>
            </property>
            <property name="rules" stdset="0">
-            <string>[{&quot;name&quot;: &quot;limit_autohide&quot;, &quot;property&quot;: &quot;Visible&quot;, &quot;initial_value&quot;: &quot;False&quot;, &quot;expression&quot;: &quot;ch[0] &gt; 0&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;oph://${MOTOR}_low_limit_switch&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}]}]</string>
+            <string>[{&quot;name&quot;: &quot;limit_autohide&quot;, &quot;property&quot;: &quot;Visible&quot;, &quot;initial_value&quot;: &quot;False&quot;, &quot;expression&quot;: &quot;ch[0] &gt; 0&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;sig://${MOTOR}_low_limit_switch&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}]}]</string>
            </property>
            <property name="alarmSensitiveContent" stdset="0">
             <bool>false</bool>
@@ -101,7 +101,7 @@
             <bool>true</bool>
            </property>
            <property name="channel" stdset="0">
-            <string>oph://${MOTOR}_low_limit_switch</string>
+            <string>sig://${MOTOR}_low_limit_switch</string>
            </property>
            <property name="onColor" stdset="0">
             <color>
@@ -145,10 +145,10 @@
             <string/>
            </property>
            <property name="rules" stdset="0">
-            <string>[{&quot;name&quot;: &quot;limit_autohide&quot;, &quot;property&quot;: &quot;Visible&quot;, &quot;initial_value&quot;: &quot;False&quot;, &quot;expression&quot;: &quot;ch[0] &gt; 0&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;oph://${MOTOR}_soft_limit_violation&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}]}]</string>
+            <string>[{&quot;name&quot;: &quot;limit_autohide&quot;, &quot;property&quot;: &quot;Visible&quot;, &quot;initial_value&quot;: &quot;False&quot;, &quot;expression&quot;: &quot;ch[0] &gt; 0&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;sig://${MOTOR}_soft_limit_violation&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}]}]</string>
            </property>
            <property name="channel" stdset="0">
-            <string>oph://${MOTOR}_soft_limit_violation</string>
+            <string>sig://${MOTOR}_soft_limit_violation</string>
            </property>
            <property name="onColor" stdset="0">
             <color>
@@ -180,7 +180,7 @@
           <string>5000.0281</string>
          </property>
          <property name="channel" stdset="0">
-          <string>oph://${MOTOR}.user_setpoint</string>
+          <string>sig://${MOTOR}.user_setpoint</string>
          </property>
         </widget>
        </item>
@@ -195,7 +195,7 @@
             <string/>
            </property>
            <property name="rules" stdset="0">
-            <string>[{&quot;name&quot;: &quot;limit_autohide&quot;, &quot;property&quot;: &quot;Visible&quot;, &quot;initial_value&quot;: &quot;False&quot;, &quot;expression&quot;: &quot;ch[0] &gt; 0&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;oph://${MOTOR}_high_limit_switch&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}]}]</string>
+            <string>[{&quot;name&quot;: &quot;limit_autohide&quot;, &quot;property&quot;: &quot;Visible&quot;, &quot;initial_value&quot;: &quot;False&quot;, &quot;expression&quot;: &quot;ch[0] &gt; 0&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;sig://${MOTOR}_high_limit_switch&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}]}]</string>
            </property>
            <property name="alarmSensitiveContent" stdset="0">
             <bool>false</bool>
@@ -204,7 +204,7 @@
             <bool>true</bool>
            </property>
            <property name="channel" stdset="0">
-            <string>oph://${MOTOR}_high_limit_switch</string>
+            <string>sig://${MOTOR}_high_limit_switch</string>
            </property>
            <property name="onColor" stdset="0">
             <color>
@@ -248,10 +248,10 @@
             <string/>
            </property>
            <property name="rules" stdset="0">
-            <string>[{&quot;name&quot;: &quot;limit_autohide&quot;, &quot;property&quot;: &quot;Visible&quot;, &quot;initial_value&quot;: &quot;False&quot;, &quot;expression&quot;: &quot;ch[0] &gt; 0&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;oph://${MOTOR}_soft_limit_violation&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}]}]</string>
+            <string>[{&quot;name&quot;: &quot;limit_autohide&quot;, &quot;property&quot;: &quot;Visible&quot;, &quot;initial_value&quot;: &quot;False&quot;, &quot;expression&quot;: &quot;ch[0] &gt; 0&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;sig://${MOTOR}_soft_limit_violation&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}]}]</string>
            </property>
            <property name="channel" stdset="0">
-            <string>oph://${MOTOR}_soft_limit_violation</string>
+            <string>sig://${MOTOR}_soft_limit_violation</string>
            </property>
            <property name="onColor" stdset="0">
             <color>
@@ -298,7 +298,7 @@
         <string>Stop</string>
        </property>
        <property name="channel" stdset="0">
-        <string>oph://${MOTOR}.motor_stop</string>
+        <string>sig://${MOTOR}.motor_stop</string>
        </property>
        <property name="pressValue" stdset="0">
         <string>1</string>
@@ -345,7 +345,7 @@
           <string>❰</string>
          </property>
          <property name="channel" stdset="0">
-          <string>oph://${MOTOR}_tweak_reverse</string>
+          <string>sig://${MOTOR}_tweak_reverse</string>
          </property>
          <property name="pressValue" stdset="0">
           <string>1</string>
@@ -379,7 +379,7 @@
           <string>Jog step</string>
          </property>
          <property name="channel" stdset="0">
-          <string>oph://${MOTOR}.tweak_value</string>
+          <string>sig://${MOTOR}.tweak_value</string>
          </property>
         </widget>
        </item>
@@ -415,7 +415,7 @@
           <string>❱</string>
          </property>
          <property name="channel" stdset="0">
-          <string>oph://${MOTOR}_tweak_forward</string>
+          <string>sig://${MOTOR}_tweak_forward</string>
          </property>
          <property name="pressValue" stdset="0">
           <string>1</string>

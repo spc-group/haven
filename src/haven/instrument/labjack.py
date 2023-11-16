@@ -1,13 +1,7 @@
+from apstools.synApps import EpicsRecordDeviceCommonAll, EpicsRecordInputFields
+from ophyd import Device, EpicsSignal
+from ophyd import FormattedComponent as FCpt
 from strenum import StrEnum
-
-from ophyd import (
-    Device,
-    EpicsSignal,
-    EpicsSignalRO,
-    Component as Cpt,
-    FormattedComponent as FCpt,
-)
-from apstools.synApps import EpicsRecordInputFields, EpicsRecordDeviceCommonAll
 
 
 class AnalogInput(EpicsRecordInputFields, EpicsRecordDeviceCommonAll):

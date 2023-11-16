@@ -1,30 +1,25 @@
-import time
-import logging
-import subprocess
-from pathlib import Path
-from typing import Sequence, Optional
 import json
-from contextlib import contextmanager
-from functools import partial
+import logging
+import sys
 from collections import defaultdict
-import gc
+from contextlib import contextmanager
 from enum import IntEnum
+from functools import partial
+from pathlib import Path
+from typing import Sequence
 
-from qtpy import uic
-from qtpy.QtCore import Qt, Signal, QObject, QThread
-from qtpy.QtWidgets import QWidget
-import qtawesome as qta
-import pyqtgraph
-import pydm
-from pydm.widgets import PyDMEmbeddedDisplay, PyDMChannel
 import numpy as np
-import matplotlib.pyplot as plt
+import pydm
+import pyqtgraph
+import qtawesome as qta
 from matplotlib.colors import TABLEAU_COLORS
+from pydm.widgets import PyDMChannel, PyDMEmbeddedDisplay
+from qtpy import uic
+from qtpy.QtCore import Qt, Signal
+from qtpy.QtWidgets import QWidget
 
 import haven
-from firefly import display, FireflyApplication
-
-import sys
+from firefly import FireflyApplication, display
 
 np.set_printoptions(threshold=sys.maxsize)
 
@@ -98,7 +93,7 @@ class ROIRegion(pyqtgraph.LinearRegionItem):
         if new_lower == self._last_lower:
             return
         log.debug(
-            "Setting new region lower bound: " f"{new_lower} from {self._last_lower}"
+            f"Setting new region lower bound: {new_lower} from {self._last_lower}"
         )
         self._last_lower = new_lower
         self.blockLineSignal = True
@@ -110,7 +105,7 @@ class ROIRegion(pyqtgraph.LinearRegionItem):
         if new_upper == self._last_upper:
             return
         log.debug(
-            "Setting new region upper bound: " f"{new_upper} from {self._last_upper}"
+            f"Setting new region upper bound: {new_upper} from {self._last_upper}"
         )
         self._last_upper = new_upper
         self.blockLineSignal = True
@@ -172,7 +167,7 @@ class XRFPlotWidget(QWidget):
         plot_item = self.ui.plot_widget.getPlotItem()
         # Create a new region item if necessary
         if key not in self._region_items.keys():
-            address = f"oph://{self.device_name}.mcas.mca{mca_num}.rois.roi{roi_num}"
+            address = f"sig://{self.device_name}.mcas.mca{mca_num}.rois.roi{roi_num}"
             color = self.region_color(mca_num=mca_num, roi_num=roi_num)
             region = ROIRegion(
                 address=address,
@@ -266,7 +261,8 @@ class MCAPlotWidget(XRFPlotWidget):
             elif self._selected_spectrum is not None:
                 # Highlight the spectrum that was previously selected
                 log.debug(
-                    f"Reverting to previously selected spectrum: {self._selected_spectrum}"
+                    "Reverting to previously selected spectrum:"
+                    f" {self._selected_spectrum}"
                 )
                 is_dimmed = key != self._selected_spectrum
                 if is_dimmed:
@@ -361,18 +357,18 @@ class ROIEmbeddedDisplay(PyDMEmbeddedDisplay):
 #     # Set up a channel for starting detector acquisition
 #     device = self.device
 #     self.start_channel = PyDMChannel(
-#         address=f"oph://{device.name}.acquire",
+#         address=f"sig://{device.name}.acquire",
 #         value_signal=self.start_all,
 #     )
 #     self.start_channel.connect()
 #     self.start_erase_channel = PyDMChannel(
-#         address=f"oph://{device.name}.acquire",
+#         address=f"sig://{device.name}.acquire",
 #         value_signal=self.start_erase,
 #     )
 #     self.start_erase_channel.connect()
 #     # This one gets (dis)connected in response to the continuous button
 #     self.acquiring_channel = PyDMChannel(
-#         address=f"oph://{device.name}.acquiring",
+#         address=f"sig://{device.name}.acquiring",
 #         value_slot=self.trigger_next,
 #     )
 
@@ -567,7 +563,7 @@ class XRFDetectorDisplay(display.FireflyDisplay):
         # Set up data channels
         self._spectrum_channels = []
         for mca_num in range(self.device.num_elements):
-            address = f"oph://{device.name}.mcas.mca{mca_num}.spectrum"
+            address = f"sig://{device.name}.mcas.mca{mca_num}.spectrum"
             channel = pydm.PyDMChannel(
                 address=address,
                 value_slot=partial(self.handle_new_spectrum, mca_num=mca_num),

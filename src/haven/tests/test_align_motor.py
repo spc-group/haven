@@ -1,13 +1,9 @@
-import time
 import pytest
-
-import matplotlib.pyplot as plt
-from bluesky.callbacks.best_effort import BestEffortCallback
-from bluesky.callbacks.fitting import PeakStats
 from bluesky import RunEngine
+from bluesky.callbacks.best_effort import BestEffortCallback
 from ophyd import sim
 
-from haven import align_motor, align_pitch2, registry
+from haven import align_motor
 
 # from run_engine import RunEngineStub
 

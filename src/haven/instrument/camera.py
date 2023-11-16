@@ -1,31 +1,20 @@
 import asyncio
 import logging
-import warnings
-from typing import Optional, Sequence
+from typing import Sequence
 
-from ophyd import (
-    CamBase,
-    SingleTrigger,
-    Kind,
-    ADComponent as ADCpt,
-    EpicsSignal,
-    do_not_wait_for_lazy_connection,
-)
-from ophyd.areadetector.base import EpicsSignalWithRBV as SignalWithRBV
+from ophyd import ADComponent as ADCpt
+from ophyd import CamBase, EpicsSignal, Kind, SingleTrigger
 from ophyd.areadetector.plugins import (
     ImagePlugin_V34,
-    PvaPlugin_V34,
     OverlayPlugin,
+    PvaPlugin_V34,
     ROIPlugin_V34,
 )
 
-
-from .instrument_registry import registry
-from .area_detector import DetectorBase, StatsPlugin_V34, SimDetector, AsyncCamMixin
-from .device import await_for_connection, aload_devices, make_device
-from .._iconfig import load_config
 from .. import exceptions
-
+from .._iconfig import load_config
+from .area_detector import AsyncCamMixin, DetectorBase, SimDetector, StatsPlugin_V34  # noqa: F401
+from .device import aload_devices, make_device
 
 log = logging.getLogger(__name__)
 

@@ -1,6 +1,5 @@
 import pytest
-from ophyd.sim import make_fake_device
-from ophyd.device import do_not_wait_for_lazy_connection
+
 from haven.instrument.xspress import Xspress3Detector
 
 

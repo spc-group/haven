@@ -1,10 +1,10 @@
 import logging
 from functools import lru_cache
 
-from apsbss import apsbss
-from qtpy.QtGui import QStandardItemModel, QStandardItem
-from qtpy.QtCore import Signal, Slot
 import qtawesome as qta
+from apsbss import apsbss
+from qtpy.QtCore import Signal
+from qtpy.QtGui import QStandardItem, QStandardItemModel
 
 import haven
 from firefly import display

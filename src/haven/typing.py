@@ -1,7 +1,6 @@
-from typing import Union, Sequence
+from typing import Sequence, Union
 
-from ophyd import Device, Component, Signal
-
+from ophyd import Component, Device, Signal
 
 Detector = Union[Device, Component, Signal, str]
 

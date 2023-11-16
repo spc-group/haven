@@ -1,20 +1,11 @@
-import time
-import pytest
 from unittest.mock import MagicMock
-import asyncio
-from collections import ChainMap
 
-from bluesky import RunEngine, plans as bp
-from qtpy.QtCore import QThread
-from qtpy.QtTest import QSignalSpy
-from qtpy.QtWidgets import QAction
+import pytest
 from bluesky_queueserver_api import BPlan
-from bluesky_queueserver_api.zmq import REManagerAPI
 from pytestqt.exceptions import TimeoutError
+from qtpy.QtWidgets import QAction
 
 from firefly.queue_client import QueueClient
-from firefly.application import REManagerAPI
-
 
 qs_status = {
     "msg": "RE Manager v0.0.18",
@@ -222,7 +213,9 @@ def client():
     api = MagicMock()
     api.queue_start.return_value = {"success": True}
     api.status.return_value = qs_status
-    api.queue_start.return_value = {"success": True,}
+    api.queue_start.return_value = {
+        "success": True,
+    }
     api.devices_allowed.return_value = {"success": True, "devices_allowed": {}}
     api.environment_open.return_value = {"success": True}
     api.environment_close.return_value = {"success": True}
@@ -231,7 +224,11 @@ def client():
     autoplay_action.setCheckable(True)
     open_environment_action = QAction()
     open_environment_action.setCheckable(True)
-    client = QueueClient(api=api, autoplay_action=autoplay_action, open_environment_action=open_environment_action)
+    client = QueueClient(
+        api=api,
+        autoplay_action=autoplay_action,
+        open_environment_action=open_environment_action,
+    )
     yield client
 
 
@@ -339,7 +336,7 @@ def test_open_environment(client, qtbot):
 def test_devices_available(client, qtbot):
     """Check that the queue client provides a list of devices that can be
     used in plans.
-    
+
     """
     api = client.api
     api.devices_allowed.return_value = devices_allowed

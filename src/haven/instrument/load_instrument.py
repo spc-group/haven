@@ -1,27 +1,27 @@
-from typing import Mapping
 import asyncio
+from typing import Mapping
 
 from ophyd import sim
 
-from .instrument_registry import registry as default_registry, InstrumentRegistry
-from .energy_positioner import load_energy_positioner_coros
-from .motor import load_all_motor_coros, HavenMotor
-from .ion_chamber import load_ion_chamber_coros
-from .dxp import load_dxp_coros
-from .monochromator import load_monochromator_coros
-from .camera import load_camera_coros
-from .shutter import load_shutter_coros
-from .stage import load_stage_coros
-from .aps import load_aps_coros
-from .power_supply import load_power_supply_coros
-from .xray_source import load_xray_source_coros
-from .area_detector import load_area_detector_coros
-from .slits import load_slit_coros
-from .lerix import load_lerix_spectrometer_coros
-from .heater import load_heater_coros
-from .xspress import load_xspress_coros
 from .._iconfig import load_config
-
+from .aps import load_aps_coros
+from .area_detector import load_area_detector_coros
+from .camera import load_camera_coros
+from .dxp import load_dxp_coros
+from .energy_positioner import load_energy_positioner_coros
+from .heater import load_heater_coros
+from .instrument_registry import InstrumentRegistry
+from .instrument_registry import registry as default_registry
+from .ion_chamber import load_ion_chamber_coros
+from .lerix import load_lerix_spectrometer_coros
+from .monochromator import load_monochromator_coros
+from .motor import HavenMotor, load_all_motor_coros
+from .power_supply import load_power_supply_coros
+from .shutter import load_shutter_coros
+from .slits import load_slit_coros
+from .stage import load_stage_coros
+from .xray_source import load_xray_source_coros
+from .xspress import load_xspress_coros
 
 __all__ = ["load_instrument"]
 

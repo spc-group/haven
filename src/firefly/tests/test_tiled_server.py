@@ -1,14 +1,11 @@
 """Tests to check that the simulated tiled client works properly."""
 
-import pytest
-
 import numpy
-from tiled.adapters.mapping import MapAdapter
+import pytest
 from tiled.adapters.array import ArrayAdapter
-from tiled.adapters.xarray import DatasetAdapter
-from tiled.server.app import build_app
+from tiled.adapters.mapping import MapAdapter
 from tiled.client import Context, from_context
-
+from tiled.server.app import build_app
 
 simple_tree = MapAdapter(
     {
@@ -35,4 +32,3 @@ def client():
 
 def test_client_fixture(client):
     """Does the client fixture load without stalling the test runner?"""
-    pass

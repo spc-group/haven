@@ -2,10 +2,9 @@ import json
 import logging
 
 from pydm.widgets import PyDMEmbeddedDisplay
+
 import haven
-
 from firefly import display
-
 
 log = logging.getLogger(__name__)
 

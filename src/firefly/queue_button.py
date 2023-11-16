@@ -1,7 +1,7 @@
 """A QPushButton that responds to the state of the queue server."""
 
-from qtpy import QtWidgets, QtGui
 import qtawesome as qta
+from qtpy import QtGui, QtWidgets
 
 from firefly import FireflyApplication
 
@@ -26,8 +26,7 @@ class QueueButton(QtWidgets.QPushButton):
         if status["re_state"] == "idle" and app.queue_autoplay_action.isChecked():
             # Will play immediately
             self.setStyleSheet(
-                "background-color: rgb(25, 135, 84);\n"
-                "border-color: rgb(25, 135, 84);"
+                "background-color: rgb(25, 135, 84);\nborder-color: rgb(25, 135, 84);"
             )
             self.setIcon(qta.icon("fa5s.play"))
             self.setText("Run")
@@ -35,8 +34,7 @@ class QueueButton(QtWidgets.QPushButton):
         elif status["worker_environment_exists"]:
             # Will be added to the queue
             self.setStyleSheet(
-                "background-color: rgb(0, 123, 255);\n"
-                "border-color: rgb(0, 123, 255);"
+                "background-color: rgb(0, 123, 255);\nborder-color: rgb(0, 123, 255);"
             )
             self.setIcon(qta.icon("fa5s.list"))
             self.setText("Add to Queue")

@@ -6,12 +6,12 @@ to that position.
 import logging
 import warnings
 
-import numpy as np
 import lmfit
-from bluesky import plans as bp, plan_stubs as bps
-from bluesky.preprocessors import subs_decorator
+import numpy as np
+from bluesky import plan_stubs as bps
+from bluesky import plans as bp
 from bluesky.callbacks import LiveFit
-
+from bluesky.preprocessors import subs_decorator
 
 __all__ = ["align_slits"]
 

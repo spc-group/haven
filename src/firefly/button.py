@@ -1,6 +1,6 @@
+import qtawesome as qta
 from qtpy import QtWidgets
 from qtpy.QtGui import QIcon
-import qtawesome as qta
 
 
 class RevealButton(QtWidgets.QPushButton):

@@ -1,15 +1,14 @@
-import time
-from typing import Optional
 import logging
+import time
 import warnings
+from typing import Optional
 
-from qtpy.QtWidgets import QAction
-from qtpy.QtCore import QThread, QObject, Signal, Slot, QTimer
+from bluesky_queueserver_api import comm_base
 from bluesky_queueserver_api.zmq import REManagerAPI
-from bluesky_queueserver_api import BPlan, comm_base
+from qtpy.QtCore import QObject, QThread, QTimer, Signal, Slot
+from qtpy.QtWidgets import QAction
 
 from haven import load_config
-
 
 log = logging.getLogger()
 
@@ -30,6 +29,7 @@ class QueueClientThread(QThread):
     :py:cls:`QueueClientThread.timer.timeout()` signal.
 
     """
+
     timer: QTimer
 
     def __init__(self, *args, poll_time=1000, **kwargs):
@@ -217,9 +217,8 @@ class QueueClient(QObject):
             if is_new or has_changed or force:
                 signal.emit(new_status[key])
         # Check for new available devices
-        if (
-            new_status["devices_allowed_uid"]
-            != self._last_queue_status.get("devices_allowed_uid")
+        if new_status["devices_allowed_uid"] != self._last_queue_status.get(
+            "devices_allowed_uid"
         ):
             self.update_devices()
         # check the whole status to see if it's changed
@@ -236,5 +235,6 @@ class QueueClient(QObject):
             self.devices_changed.emit(devices)
         else:
             log.warning(
-                f"Could not poll devices_allowed: {response.get('msg', 'reason unknown.')}"
+                "Could not poll devices_allowed:"
+                f" {response.get('msg', 'reason unknown.')}"
             )

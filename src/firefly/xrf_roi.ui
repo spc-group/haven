@@ -90,7 +90,7 @@
          <string/>
         </property>
         <property name="channel" stdset="0">
-         <string>oph://${DEV}.mcas.mca${MCA}.rois.roi${ROI}.use</string>
+         <string>sig://${DEV}.mcas.mca${MCA}.rois.roi${ROI}.use</string>
         </property>
         <property name="PyDMToolTip" stdset="0">
          <string>Enable or disable this ROI.
@@ -152,7 +152,7 @@ Data will be saved either way, but disabled channels will not appear in the list
             <string>ROI Name</string>
            </property>
            <property name="channel" stdset="0">
-            <string>oph://${DEV}.mcas.mca${MCA}.rois.roi${ROI}.label</string>
+            <string>sig://${DEV}.mcas.mca${MCA}.rois.roi${ROI}.label</string>
            </property>
            <property name="displayFormat" stdset="0">
             <enum>PyDMLineEdit::String</enum>
@@ -176,7 +176,7 @@ Data will be saved either way, but disabled channels will not appear in the list
             <string>Lower bound</string>
            </property>
            <property name="channel" stdset="0">
-            <string>oph://${DEV}.mcas.mca${MCA}.rois.roi${ROI}.lo_chan</string>
+            <string>sig://${DEV}.mcas.mca${MCA}.rois.roi${ROI}.lo_chan</string>
            </property>
            <property name="displayFormat" stdset="0">
             <enum>PyDMLineEdit::Decimal</enum>
@@ -203,7 +203,7 @@ Data will be saved either way, but disabled channels will not appear in the list
             <string>Upper bound</string>
            </property>
            <property name="channel" stdset="0">
-            <string>oph://${DEV}.mcas.mca${MCA}.rois.roi${ROI}.hi_chan</string>
+            <string>sig://${DEV}.mcas.mca${MCA}.rois.roi${ROI}.hi_chan</string>
            </property>
            <property name="displayFormat" stdset="0">
             <enum>PyDMLineEdit::Decimal</enum>
@@ -233,7 +233,7 @@ Data will be saved either way, but disabled channels will not appear in the list
             <string>34</string>
            </property>
            <property name="channel" stdset="0">
-            <string>oph://${DEV}.mcas.mca${MCA}.rois.roi${ROI}.size</string>
+            <string>sig://${DEV}.mcas.mca${MCA}.rois.roi${ROI}.size</string>
            </property>
            <property name="PyDMToolTip" stdset="0">
             <string>The size of the ROI, in number of channels.</string>

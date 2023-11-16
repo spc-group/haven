@@ -1,13 +1,7 @@
-import time
-
-from unittest import mock
 import pytest
-from qtpy import QtWidgets
 
 import haven
-
 from firefly.main_window import FireflyMainWindow
-from firefly.application import FireflyApplication
 from firefly.voltmeter import VoltmeterDisplay
 from firefly.voltmeters import VoltmetersDisplay
 
@@ -70,8 +64,8 @@ def test_ion_chamber_menu(fake_ion_chambers, qtbot, ffapp):
     # Create the window
     window = FireflyMainWindow()
     # Check that the menu items have been created
-    assert hasattr(window.ui, "menuDetectors")
-    assert hasattr(window.ui, "menuIonChambers")
+    assert hasattr(window.ui, "detectors_menu")
+    assert hasattr(window.ui, "ion_chambers_menu")
     assert len(ffapp.ion_chamber_actions) == 2
 
 

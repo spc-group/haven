@@ -4,14 +4,12 @@ More critical plans (e.g. xafs_scan) are tested in other test files.
 
 """
 
-import unittest
 import warnings
 
-import numpy as np
-from ophyd import sim
 import pytest
+from ophyd import sim
 
-from haven import align_slits, energy_scan, xafs_scan, registry, KRange
+from haven import align_slits
 
 
 def test_align_slits(RE):

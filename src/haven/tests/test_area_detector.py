@@ -1,5 +1,3 @@
-from ophyd.device import do_not_wait_for_lazy_connection
-
 from haven.instrument.area_detector import load_area_detectors
 
 

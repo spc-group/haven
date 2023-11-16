@@ -3,18 +3,16 @@ capture detector signals.
 
 """
 
-from typing import Union, Sequence, Optional, Mapping
-from collections import ChainMap
-import warnings
 import logging
+import warnings
+from collections import ChainMap
+from typing import Mapping, Optional, Sequence, Union
 
-import numpy as np
-
-from ..energy_ranges import ERange, KRange, merge_ranges
 from .. import exceptions
-from .energy_scan import energy_scan
+from ..energy_ranges import ERange, KRange, merge_ranges
+from ..preprocessors import baseline_decorator
 from ..typing import DetectorList
-from ..preprocessors import baseline_decorator, shutter_suspend_decorator
+from .energy_scan import energy_scan
 
 log = logging.getLogger(__name__)
 

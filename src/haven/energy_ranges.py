@@ -4,7 +4,6 @@ import numpy as np
 import pint
 from scipy import constants
 
-
 __all__ = ["ERange", "KRange"]
 
 

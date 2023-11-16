@@ -1,12 +1,9 @@
 import logging
 import time
 from pathlib import Path
-import os
 
 import pytest
 from epics import caget, caput
-
-from haven.simulated_ioc import simulated_ioc
 
 
 log = logging.getLogger(__name__)

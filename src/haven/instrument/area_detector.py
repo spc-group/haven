@@ -1,41 +1,38 @@
-import logging
 import asyncio
+import logging
 from enum import IntEnum
 
 from apstools.devices import CamMixin_V34, SingleTrigger_V34
+from ophyd import ADComponent as ADCpt
+from ophyd import DetectorBase as OphydDetectorBase
 from ophyd import (
-    ADComponent as ADCpt,
-    DetectorBase as OphydDetectorBase,
-    SimDetectorCam,
-    Lambda750kCam,
     EigerDetectorCam,
-    SingleTrigger,
     Kind,
+    Lambda750kCam,
     OphydObject,
+    SimDetectorCam,
+    SingleTrigger,
 )
 from ophyd.areadetector.base import EpicsSignalWithRBV as SignalWithRBV
 from ophyd.areadetector.filestore_mixins import FileStoreHDF5IterativeWrite
 from ophyd.areadetector.plugins import (
-    HDF5Plugin_V34,
     HDF5Plugin_V31,
-    ImagePlugin_V34,
+    HDF5Plugin_V34,
     ImagePlugin_V31,
-    PvaPlugin_V34,
-    PvaPlugin_V31,
-    TIFFPlugin_V34,
-    TIFFPlugin_V31,
-    ROIPlugin_V34,
-    ROIPlugin_V31,
-    StatsPlugin_V31 as OphydStatsPlugin_V31,
-    StatsPlugin_V34 as OphydStatsPlugin_V34,
+    ImagePlugin_V34,
     OverlayPlugin,
+    PvaPlugin_V31,
+    PvaPlugin_V34,
+    ROIPlugin_V31,
+    ROIPlugin_V34,
 )
+from ophyd.areadetector.plugins import StatsPlugin_V31 as OphydStatsPlugin_V31
+from ophyd.areadetector.plugins import StatsPlugin_V34 as OphydStatsPlugin_V34
+from ophyd.areadetector.plugins import TIFFPlugin_V31
 
-from .._iconfig import load_config
-from .instrument_registry import registry
-from .device import make_device
 from .. import exceptions
-from .device import await_for_connection, aload_devices
+from .._iconfig import load_config
+from .device import aload_devices, make_device
 
 log = logging.getLogger(__name__)
 

@@ -1,8 +1,7 @@
 from ophyd import DetectorBase
 
-from haven import registry, load_config
+from haven import load_config, registry
 from haven.instrument.camera import AravisDetector, load_cameras
-
 
 PREFIX = "255idgigeA:"
 

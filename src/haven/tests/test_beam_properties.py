@@ -1,7 +1,6 @@
-import pytest
 import numpy as np
-import matplotlib.pyplot as plt
-from ophyd.sim import motor1, det1, det2
+import pytest
+from ophyd.sim import det1, det2, motor1
 
 from haven.plans.beam_properties import fit_step, knife_scan
 

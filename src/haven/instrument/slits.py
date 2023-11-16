@@ -1,12 +1,11 @@
-import logging
 import asyncio
+import logging
 
 from apstools.synApps.db_2slit import Optics2Slit2D_HV
 
 from .._iconfig import load_config
+from .device import aload_devices, await_for_connection
 from .instrument_registry import registry
-from .device import await_for_connection, aload_devices
-
 
 log = logging.getLogger(__name__)
 

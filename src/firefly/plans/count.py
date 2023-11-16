@@ -1,6 +1,5 @@
 import logging
 
-from qtpy import QtWidgets
 from bluesky_queueserver_api import BPlan
 
 from firefly import display

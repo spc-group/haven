@@ -1,8 +1,4 @@
-from unittest import mock
-
-import pytest
-
-from haven.instrument import aps, device
+from haven.instrument import aps
 
 
 def test_load_aps(sim_registry):

@@ -1,5 +1,3 @@
-import epics
-
 from haven.instrument import motor
 
 

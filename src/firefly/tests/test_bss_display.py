@@ -1,11 +1,9 @@
 import pytest
-import time
-from qtpy.QtGui import QStandardItemModel
 from qtpy.QtCore import Qt
-from epics import caget, caput
+from qtpy.QtGui import QStandardItemModel
 
-from haven.instrument.aps import load_aps
 from firefly.bss import BssDisplay
+from haven.instrument.aps import load_aps
 
 
 @pytest.fixture()
@@ -13,25 +11,29 @@ def bss_api(mocker):
     api = mocker.MagicMock()
     api.getCurrentEsafs.return_value = [
         {
-            "description": "We will perform some K-edge and L-edge XAFS measurements of "
-            "some transition metal nanoparticle powder samples such as "
-            "silver, palladium, gold, copper and platinum. \r\n"
-            "\r\n"
-            "Some of the measurements will need in situ gas adsorption "
-            "and/or heating conditions. Standard beamline temperature "
-            "controller and power supply will be used to heat samples to "
-            "100C. Some of the samples may be in solution phase. We will "
-            "also perform Au L2 edge XAFS measurement in HERFD mode of "
-            "some metal nanoparticle samples. The nanoparticle samples "
-            "are all unbound nanostructured materials. Samples will be "
-            "encapsulated in Kapton tape or prepared by using capillaries "
-            "and quartz wool. For solution phase measurements, the Teflon "
-            "sample holder will be used.",
+            "description": (
+                "We will perform some K-edge and L-edge XAFS measurements of "
+                "some transition metal nanoparticle powder samples such as "
+                "silver, palladium, gold, copper and platinum. \r\n"
+                "\r\n"
+                "Some of the measurements will need in situ gas adsorption "
+                "and/or heating conditions. Standard beamline temperature "
+                "controller and power supply will be used to heat samples to "
+                "100C. Some of the samples may be in solution phase. We will "
+                "also perform Au L2 edge XAFS measurement in HERFD mode of "
+                "some metal nanoparticle samples. The nanoparticle samples "
+                "are all unbound nanostructured materials. Samples will be "
+                "encapsulated in Kapton tape or prepared by using capillaries "
+                "and quartz wool. For solution phase measurements, the Teflon "
+                "sample holder will be used."
+            ),
             "esafId": 269238,
             "esafStatus": "Pending",
-            "esafTitle": "A Partner User Proposal to Continue the Successful "
-            "Collaboration between the Canadian Light Source Inc. and the "
-            "Advanced Photon Source",
+            "esafTitle": (
+                "A Partner User Proposal to Continue the Successful "
+                "Collaboration between the Canadian Light Source Inc. and the "
+                "Advanced Photon Source"
+            ),
             "experimentEndDate": "2023-03-31 08:00:00",
             "experimentStartDate": "2023-03-28 08:00:00",
             "experimentUsers": [
@@ -74,7 +76,10 @@ def bss_api(mocker):
 
     api.getCurrentProposals.return_value = [
         {
-            "title": "A Partner User Proposal to Continue the Successful Collaboration between the Canadian Light Source Inc. and the Advanced Photon Source",
+            "title": (
+                "A Partner User Proposal to Continue the Successful Collaboration"
+                " between the Canadian Light Source Inc. and the Advanced Photon Source"
+            ),
             "id": 74163,
             "experimenters": [
                 {

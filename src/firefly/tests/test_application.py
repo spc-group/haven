@@ -1,15 +1,6 @@
-import time
-import pytest
 from unittest.mock import MagicMock
-import asyncio
 
-from bluesky import RunEngine, plans as bp
-from qtpy.QtCore import QThread
-from qtpy.QtTest import QSignalSpy
-from bluesky_queueserver_api.zmq import REManagerAPI
-
-from firefly.queue_client import QueueClient
-from firefly.application import REManagerAPI
+import pytest
 
 
 def test_setup(ffapp):

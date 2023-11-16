@@ -1,20 +1,19 @@
 #!/usr/bin/env python3
 
-from functools import partial
 import logging
+from functools import partial
 
 import numpy as np
+from caproto import ChannelType
 from caproto.server import (
     PVGroup,
     SubGroup,
     get_pv_pair_wrapper,
     ioc_arg_parser,
     pvproperty,
-    PvpropertyDouble,
     run,
 )
-from caproto import ChannelType
-from ophyd.tests.mca_ioc import EpicsMCAGroup, EpicsDXPGroup, MCAROIGroup
+from ophyd.tests.mca_ioc import EpicsDXPGroup, EpicsMCAGroup, MCAROIGroup
 from peakutils.peak import gaussian
 
 pvproperty_with_rbv = get_pv_pair_wrapper(setpoint_suffix="", readback_suffix="_RBV")

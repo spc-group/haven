@@ -1,29 +1,21 @@
 #!/usr/bin/env python3
-import os
-import signal
-import logging
-from textwrap import dedent
-
-import time
-from subprocess import Popen, PIPE
-from typing import Optional, List, Dict, Tuple, Any
 import contextlib
 import importlib
+import logging
+import os
+import signal
+import time
 from pathlib import Path
+from subprocess import PIPE, Popen
+from textwrap import dedent
+from typing import Any, Dict, List, Optional, Tuple
 
-from tqdm import tqdm
 from caproto import ChannelType
-from caproto.server import (
-    PVGroup,
-    template_arg_parser,
-    pvproperty,
-    run,
-    records,
-)
+from caproto.server import PVGroup, pvproperty, records, run, template_arg_parser
 from epics import caget
+from tqdm import tqdm
 
 from . import exceptions
-
 
 log = logging.getLogger(__name__)
 
