@@ -4,7 +4,7 @@ import logging
 from apstools.synApps.db_2slit import Optics2Slit2D_HV
 
 from .._iconfig import load_config
-from .device import aload_devices, await_for_connection
+from .device import aload_devices, await_for_connection, make_device
 from .instrument_registry import registry
 
 log = logging.getLogger(__name__)
@@ -27,7 +27,7 @@ def load_slit_coros(config=None):
         config = load_config()
     # Create slits
     for name, slit_config in config.get("slits", {}).items():
-        yield make_slits_device(prefix=slit_config["prefix"], name=name)
+        yield make_device(Optics2Slit2D_HV, prefix=slit_config["prefix"], name=name, labels={"slits"})
 
 
 def load_slits(config=None):

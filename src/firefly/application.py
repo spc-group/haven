@@ -20,6 +20,7 @@ from haven.exceptions import ComponentNotFound
 
 from .main_window import FireflyMainWindow, PlanMainWindow
 from .queue_client import QueueClient, QueueClientThread, queueserver_api
+from . import beamline_components_rc
 
 generator = type((x for x in []))
 
@@ -61,6 +62,10 @@ class FireflyApplication(PyDMApplication):
     # Keep track of area detectors
     area_detector_actions: Mapping = {}
     area_detector_window_slots: Sequence
+
+    # Keep track of slits
+    slits_actions: Mapping = {}
+    slits_window_slots: Sequence
 
     # Keep track of XRF detectors
     xrf_detector_actions: Mapping = {}
@@ -142,10 +147,14 @@ class FireflyApplication(PyDMApplication):
         windows. Window-specific actions belong with the window.
 
         """
+        # Setup actions for the various categories of devices
         self.prepare_motor_windows()
         self.prepare_ion_chamber_windows()
         self.prepare_camera_windows()
         self.prepare_area_detector_windows()
+        self._prepare_device_windows(
+            device_label="slits", attr_name="slits", ui_file="slits.py",
+        )
         self.prepare_xrf_detector_windows()
         # Action for showing the beamline status window
         self._setup_window_action(
@@ -257,13 +266,39 @@ class FireflyApplication(PyDMApplication):
         self.queue_autoplay_action.setChecked(True)
         self.queue_open_environment_action.setCheckable(True)
 
-    def _prepare_device_windows(self, device_label: str, attr_name: str):
+    def _prepare_device_windows(self, device_label: str, attr_name: str, ui_file=None, window_slot=None):
         """Generic routine to be called for individual classes of devices.
 
         Sets up window actions, windows and window slots for each
         instance of the this device class (specified by *device_label*).
 
+        For example, to set up device windows for all a Tardis (Ophyd
+        devices with the "tardis_ship" label), call:
+
+        .. code:: python
+
+            app._prepare_device_windows(device_label="tardis_ship", attr_name="tardis")
+
+        This will create ``app.tardis_actions``,
+        ``app.tardis_window_slots`` and
+        ``app.tardis_windows``.
+
+        Parameters
+        ==========
+        device_label
+          The Ophyd label by which to find the devices.
+        attr_name
+          An arbitrary name to use for keeping track of windows, actions, etc.
+        window_slot
+          A Qt slot that gets called when an action is triggered. This
+          slot receive a *device* positional argument for which it is expected
+          to show a new FireflyWindow.
+
         """
+        # We need a UI file, unless a custom window_slot is given
+        if ui_file is None and window_slot is None:
+            raise ValueError("Parameters *ui_file* and *window_slot* cannot both be None.")
+        # Get needed devices from the device registry
         try:
             devices = sorted(registry.findall(label=device_label), key=lambda x: x.name)
         except ComponentNotFound:
@@ -282,29 +317,34 @@ class FireflyApplication(PyDMApplication):
             action.setText(device.name)
             actions[device.name] = action
             # Create a slot for opening the device window
-            slot = getattr(self, f"show_{attr_name}_window")
-            slot = partial(slot, device=device)
+            if window_slot is not None:
+                # A device specific window loader was provided
+                slot = partial(window_slot, device=device)
+            else:
+                # No device specific loader, use the generic loader
+                slot = getattr(self, f"show_device_window")
+                slot = partial(slot, device=device, device_class=attr_name, ui_file=ui_file)
             action.triggered.connect(slot)
             window_slots.append(slot)
 
     def prepare_area_detector_windows(self):
         """Prepare the support for opening area detector windows."""
         self._prepare_device_windows(
-            device_label="area_detectors", attr_name="area_detector"
+            device_label="area_detectors", attr_name="area_detector", window_slot=self.show_area_detector_window
         )
 
     def prepare_xrf_detector_windows(self):
         """Prepare support to open X-ray fluorescence detector windows."""
         self._prepare_device_windows(
-            device_label="xrf_detectors", attr_name="xrf_detector"
+            device_label="xrf_detectors", attr_name="xrf_detector", window_slot=self.show_xrf_detector_window
         )
 
     def prepare_camera_windows(self):
-        self._prepare_device_windows(device_label="cameras", attr_name="camera")
+        self._prepare_device_windows(device_label="cameras", attr_name="camera", window_slot=self.show_camera_window)
 
     def prepare_ion_chamber_windows(self):
         self._prepare_device_windows(
-            device_label="ion_chambers", attr_name="ion_chamber"
+            device_label="ion_chambers", attr_name="ion_chamber", window_slot=self.show_ion_chamber_window
         )
 
     def prepare_motor_windows(self):
@@ -525,6 +565,25 @@ class FireflyApplication(PyDMApplication):
             ui_dir / "area_detector_viewer.py",
             name=f"FireflyMainWindow_area_detector_{device_name}",
             macros={"AD": device.name},
+        )
+
+    def show_device_window(self, *args, device, device_class: str, ui_file: str):
+        """Instantiate a new main window for the given device.
+
+        This is a generalized version of the more specific slots, such
+        as ``self.show_area_detector_window()``.
+
+        It loads a window with the given UI file *ui_file* (relative
+        to the ui directory). The macros will be ``{"DEV":
+        device.name}``.
+
+        """
+        device_name = device.name.replace(" ", "_")
+        self.show_window(
+            FireflyMainWindow,
+            ui_dir / ui_file,
+            name=f"FireflyMainWindow_{device_class}_{device_name}",
+            macros={"DEVICE": device.name},
         )
 
     def show_xrf_detector_window(self, *args, device):

@@ -167,13 +167,14 @@ class FireflyMainWindow(PyDMMainWindow):
         for action in app.motor_actions:
             self.ui.menuMotors.addAction(action)
         # Add an ion chamber sub-menu
-        self.ui.ion_chambers_menu = QtWidgets.QMenu(self.ui.menubar)
-        self.ui.ion_chambers_menu.setObjectName("ion_chambers_menu")
-        self.ui.ion_chambers_menu.setTitle("&Ion Chambers")
-        self.ui.detectors_menu.addAction(self.ui.ion_chambers_menu.menuAction())
-        # Add actions for the individual ion chambers
-        for action in app.ion_chamber_actions.values():
-            self.ui.ion_chambers_menu.addAction(action)
+        if hasattr(app, "ion_chamber_actions"):
+            self.ui.ion_chambers_menu = QtWidgets.QMenu(self.ui.menubar)
+            self.ui.ion_chambers_menu.setObjectName("ion_chambers_menu")
+            self.ui.ion_chambers_menu.setTitle("&Ion Chambers")
+            self.ui.detectors_menu.addAction(self.ui.ion_chambers_menu.menuAction())
+            # Add actions for the individual ion chambers
+            for action in app.ion_chamber_actions.values():
+                self.ui.ion_chambers_menu.addAction(action)
         # Cameras sub-menu
         self.ui.menuCameras = QtWidgets.QMenu(self.ui.menubar)
         self.ui.menuCameras.setObjectName("menuCameras")

@@ -1,5 +1,7 @@
 from unittest.mock import MagicMock
 
+from ophyd.sim import make_fake_device
+from ophyd import Device
 import pytest
 
 
@@ -70,3 +72,57 @@ def test_queue_actions_enabled(ffapp, qtbot):
 @pytest.mark.xfail
 def test_prepare_queue_client(ffapp):
     assert False, "Write tests for prepare_queue_client."
+
+
+@pytest.fixture()
+def tardis(sim_registry):
+    Tardis = make_fake_device(Device)
+    tardis = Tardis(name="my_tardis", labels={"tardis"})
+    sim_registry.register(tardis)
+    return tardis
+
+
+def test_prepare_generic_device_windows(ffapp, tardis, mocker):
+    """Check for preparing devices with the ``show_device_window`` slot."""
+    mocker.patch.object(ffapp, "show_device_window", autospec=True)
+    ffapp._prepare_device_windows(
+        device_label="tardis", attr_name="tardis", ui_file="tardis.ui"
+    )
+    # Check that actions were created
+    assert hasattr(ffapp, "tardis_actions")
+    assert "my_tardis" in ffapp.tardis_actions
+    # Check that slots were set up to open the window
+    assert hasattr(ffapp, "tardis_window_slots")
+    assert len(ffapp.tardis_window_slots) == 1
+    # Call the slot and see that the right one was used
+    ffapp.tardis_window_slots[0]()
+    ffapp.show_device_window.assert_called_once_with(
+        device=tardis, device_class="tardis", ui_file="tardis.ui"
+    )
+    # Check that there's a dictionary to keep track of open windows
+    assert hasattr(ffapp, "tardis_windows")
+
+
+def test_prepare_device_specific_windows(ffapp, tardis):
+    """Check for preparing devices with device specific
+    ``show_<device_class>_window`` slot.
+    
+    """
+    slot = MagicMock()
+    ffapp._prepare_device_windows(
+        device_label="tardis", attr_name="tardis", ui_file="tardis.ui", window_slot=slot
+    )
+    # Check that actions were created
+    assert hasattr(ffapp, "tardis_actions")
+    assert "my_tardis" in ffapp.tardis_actions
+    # Check that slots were set up to open the window
+    assert hasattr(ffapp, "tardis_window_slots")
+    assert len(ffapp.tardis_window_slots) == 1
+    # Call the slot and see that the right one was used
+    ffapp.tardis_window_slots[0]()
+    slot.assert_called_once_with(
+        device=tardis,
+    )
+    # Check that there's a dictionary to keep track of open windows
+    assert hasattr(ffapp, "tardis_windows")
+    
