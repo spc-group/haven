@@ -171,7 +171,7 @@ class FireflyMainWindow(PyDMMainWindow):
         # Voltmeters window
         self.ui.detectors_menu.addAction(app.show_voltmeters_window_action)
         # Add actions to the motors sub-menus
-        for action in app.motor_actions:
+        for action in app.motor_actions.values():
             self.ui.menuMotors.addAction(action)
         # Add an ion chamber sub-menu
         if hasattr(app, "ion_chamber_actions"):
