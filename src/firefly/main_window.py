@@ -107,7 +107,8 @@ class FireflyMainWindow(PyDMMainWindow):
         app.queue_environment_state_changed.connect(self.ui.environment_label.setText)
         app.queue_re_state_changed.connect(self.ui.re_label.setText)
         # Log viewer window
-        self.ui.menuView.addAction(app.show_logs_window_action)
+        if hasattr(app, "show_logs_window_action"):
+            self.ui.menuView.addAction(app.show_logs_window_action)
         # Setup menu
         self.ui.menuSetup = QtWidgets.QMenu(self.ui.menubar)
         self.ui.menuSetup.setObjectName("menuSetup")
@@ -126,21 +127,27 @@ class FireflyMainWindow(PyDMMainWindow):
         self.ui.queue_menu.addAction(app.queue_autoplay_action)
         self.ui.queue_menu.addAction(app.queue_open_environment_action)
         # Positioners menu
-        self.ui.menuPositioners = QtWidgets.QMenu(self.ui.menubar)
-        self.ui.menuPositioners.setObjectName("menuPositioners")
-        self.ui.menuPositioners.setTitle("&Positioners")
-        self.ui.menubar.addAction(self.ui.menuPositioners.menuAction())
+        self.ui.positioners_menu = QtWidgets.QMenu(self.ui.menubar)
+        self.ui.positioners_menu.setObjectName("menuPositioners")
+        self.ui.positioners_menu.setTitle("&Positioners")
+        self.ui.menubar.addAction(self.ui.positioners_menu.menuAction())
         # Sample viewer
         self.add_menu_action(
             action_name="actionShow_Sample_Viewer",
             text="Sample",
-            menu=self.ui.menuPositioners,
+            menu=self.ui.positioners_menu,
         )
         # Motors sub-menu
         self.ui.menuMotors = QtWidgets.QMenu(self.ui.menubar)
         self.ui.menuMotors.setObjectName("menuMotors")
         self.ui.menuMotors.setTitle("Motors")
-        self.ui.menuPositioners.addAction(self.ui.menuMotors.menuAction())
+        self.ui.positioners_menu.addAction(self.ui.menuMotors.menuAction())
+        # Menu to launch the Window to change energy
+        self.ui.positioners_menu.addAction(app.show_energy_window_action)
+        # Add optical components
+        self.ui.positioners_menu.addSeparator()
+        for action in app.slits_actions.values():
+            self.ui.positioners_menu.addAction(action)
         # Scans menu
         self.ui.menuScans = QtWidgets.QMenu(self.ui.menubar)
         self.ui.menuScans.setObjectName("menuScans")
@@ -200,7 +207,6 @@ class FireflyMainWindow(PyDMMainWindow):
         # Add other menu actions
         self.ui.menuView.addAction(app.show_status_window_action)
         self.ui.menuSetup.addAction(app.show_bss_window_action)
-        self.ui.menuPositioners.addAction(app.show_energy_window_action)
 
     def show_status(self, message, timeout=0):
         """Show a message in the status bar."""

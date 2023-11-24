@@ -153,7 +153,7 @@ class FireflyApplication(PyDMApplication):
         self.prepare_camera_windows()
         self.prepare_area_detector_windows()
         self._prepare_device_windows(
-            device_label="slits", attr_name="slits", ui_file="slits.py",
+            device_label="slits", attr_name="slits", ui_file="slits.py"
         )
         self.prepare_xrf_detector_windows()
         # Action for showing the beamline status window
@@ -313,7 +313,7 @@ class FireflyApplication(PyDMApplication):
         for device in devices:
             # Create the window action
             action = QtWidgets.QAction(self)
-            action.setObjectName(f"actionShow_{attr_name}_{device.name}")
+            action.setObjectName(f"action_show_{attr_name}_{device.name}")
             action.setText(device.name)
             actions[device.name] = action
             # Create a slot for opening the device window
@@ -322,8 +322,7 @@ class FireflyApplication(PyDMApplication):
                 slot = partial(window_slot, device=device)
             else:
                 # No device specific loader, use the generic loader
-                slot = getattr(self, f"show_device_window")
-                slot = partial(slot, device=device, device_class=attr_name, ui_file=ui_file)
+                slot = partial(self.show_device_window, device=device, device_label=attr_name, ui_file=ui_file)
             action.triggered.connect(slot)
             window_slots.append(slot)
 
@@ -567,7 +566,7 @@ class FireflyApplication(PyDMApplication):
             macros={"AD": device.name},
         )
 
-    def show_device_window(self, *args, device, device_class: str, ui_file: str):
+    def show_device_window(self, *args, device, device_label: str, ui_file: str):
         """Instantiate a new main window for the given device.
 
         This is a generalized version of the more specific slots, such
@@ -578,11 +577,11 @@ class FireflyApplication(PyDMApplication):
         device.name}``.
 
         """
-        device_name = device.name.replace(" ", "_")
+        device_pyname = device.name.replace(" ", "_")
         self.show_window(
             FireflyMainWindow,
             ui_dir / ui_file,
-            name=f"FireflyMainWindow_{device_class}_{device_name}",
+            name=f"FireflyMainWindow_{device_label}_{device_pyname}",
             macros={"DEVICE": device.name},
         )
 
