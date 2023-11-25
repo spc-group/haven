@@ -175,6 +175,17 @@ def It(sim_registry):
 
 
 @pytest.fixture()
+def slits(sim_registry):
+    """A fake ion chamber named 'I0' on scaler channel 2."""
+    FakeSlits = make_fake_device(Optics2Slit2D_HV)
+    slits = FakeSlits(
+        prefix="255idc:KB_slits", name="kb_slits", labels={"slits"}
+    )
+    sim_registry.register(slits)
+    return slits
+
+
+@pytest.fixture()
 def sim_camera(sim_registry):
     FakeCamera = make_fake_device(AravisDetector)
     camera = FakeCamera(name="s255id-gige-A", labels={"cameras", "area_detectors"})
