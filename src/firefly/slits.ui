@@ -6,12 +6,12 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>412</width>
-    <height>362</height>
+    <width>432</width>
+    <height>393</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string>${DEVICE}</string>
   </property>
   <widget class="QLabel" name="label">
    <property name="geometry">
@@ -30,9 +30,9 @@
    <property name="geometry">
     <rect>
      <x>210</x>
-     <y>147</y>
-     <width>51</width>
-     <height>111</height>
+     <y>170</y>
+     <width>16</width>
+     <height>121</height>
     </rect>
    </property>
    <property name="toolTip">
@@ -49,38 +49,17 @@
     <double>3.000000000000000</double>
    </property>
    <property name="rotation" stdset="0">
-    <double>-55.000000000000000</double>
+    <double>90.000000000000000</double>
    </property>
    <property name="arrowEndPoint" stdset="0">
     <bool>false</bool>
    </property>
   </widget>
-  <widget class="QLabel" name="label_2">
-   <property name="geometry">
-    <rect>
-     <x>290</x>
-     <y>180</y>
-     <width>71</width>
-     <height>31</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>14</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>Center</string>
-   </property>
-   <property name="alignment">
-    <set>Qt::AlignCenter</set>
-   </property>
-  </widget>
   <widget class="PyDMDrawingLine" name="PyDMDrawingLine_2">
    <property name="geometry">
     <rect>
-     <x>211</x>
-     <y>70</y>
+     <x>215</x>
+     <y>51</y>
      <width>81</width>
      <height>181</height>
     </rect>
@@ -99,74 +78,10 @@
     <double>3.000000000000000</double>
    </property>
    <property name="rotation" stdset="0">
-    <double>15.000000000000000</double>
+    <double>40.000000000000000</double>
    </property>
    <property name="arrowEndPoint" stdset="0">
     <bool>false</bool>
-   </property>
-  </widget>
-  <widget class="QWidget" name="verticalLayoutWidget_5">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>160</y>
-     <width>121</width>
-     <height>104</height>
-    </rect>
-   </property>
-   <layout class="QVBoxLayout" name="verticalLayout_5">
-    <property name="spacing">
-     <number>0</number>
-    </property>
-    <item>
-     <widget class="QLabel" name="label_7">
-      <property name="font">
-       <font>
-        <pointsize>9</pointsize>
-       </font>
-      </property>
-      <property name="text">
-       <string>Vertical</string>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignCenter</set>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_4">
-      <property name="toolTip">
-       <string/>
-      </property>
-      <property name="frameShape">
-       <enum>QFrame::NoFrame</enum>
-      </property>
-      <property name="filename" stdset="0">
-       <string>slit_motor.ui</string>
-      </property>
-     </widget>
-    </item>
-   </layout>
-  </widget>
-  <widget class="QLabel" name="label_4">
-   <property name="geometry">
-    <rect>
-     <x>60</x>
-     <y>120</y>
-     <width>71</width>
-     <height>31</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>14</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>Size</string>
-   </property>
-   <property name="alignment">
-    <set>Qt::AlignCenter</set>
    </property>
   </widget>
   <widget class="PyDMDrawingLine" name="PyDMDrawingLine_3">
@@ -377,139 +292,10 @@
     <double>90.000000000000000</double>
    </property>
   </widget>
-  <widget class="QWidget" name="verticalLayoutWidget_6">
-   <property name="geometry">
-    <rect>
-     <x>230</x>
-     <y>220</y>
-     <width>121</width>
-     <height>104</height>
-    </rect>
-   </property>
-   <layout class="QVBoxLayout" name="verticalLayout_6">
-    <property name="spacing">
-     <number>0</number>
-    </property>
-    <item>
-     <widget class="QLabel" name="label_8">
-      <property name="font">
-       <font>
-        <pointsize>9</pointsize>
-       </font>
-      </property>
-      <property name="text">
-       <string>Vertical</string>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignCenter</set>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_5">
-      <property name="toolTip">
-       <string/>
-      </property>
-      <property name="frameShape">
-       <enum>QFrame::NoFrame</enum>
-      </property>
-      <property name="filename" stdset="0">
-       <string>slit_motor.ui</string>
-      </property>
-     </widget>
-    </item>
-   </layout>
-  </widget>
-  <widget class="QWidget" name="verticalLayoutWidget_7">
-   <property name="geometry">
-    <rect>
-     <x>290</x>
-     <y>80</y>
-     <width>121</width>
-     <height>104</height>
-    </rect>
-   </property>
-   <layout class="QVBoxLayout" name="verticalLayout_7">
-    <property name="spacing">
-     <number>0</number>
-    </property>
-    <item>
-     <widget class="QLabel" name="label_9">
-      <property name="font">
-       <font>
-        <pointsize>9</pointsize>
-       </font>
-      </property>
-      <property name="text">
-       <string>Horizontal</string>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignCenter</set>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_6">
-      <property name="toolTip">
-       <string/>
-      </property>
-      <property name="frameShape">
-       <enum>QFrame::NoFrame</enum>
-      </property>
-      <property name="filename" stdset="0">
-       <string>slit_motor.ui</string>
-      </property>
-     </widget>
-    </item>
-   </layout>
-  </widget>
-  <widget class="QWidget" name="verticalLayoutWidget_8">
-   <property name="geometry">
-    <rect>
-     <x>60</x>
-     <y>23</y>
-     <width>121</width>
-     <height>104</height>
-    </rect>
-   </property>
-   <layout class="QVBoxLayout" name="verticalLayout_8">
-    <property name="spacing">
-     <number>0</number>
-    </property>
-    <item>
-     <widget class="QLabel" name="label_10">
-      <property name="font">
-       <font>
-        <pointsize>9</pointsize>
-       </font>
-      </property>
-      <property name="text">
-       <string>Horizontal</string>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignCenter</set>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_7">
-      <property name="toolTip">
-       <string/>
-      </property>
-      <property name="frameShape">
-       <enum>QFrame::NoFrame</enum>
-      </property>
-      <property name="filename" stdset="0">
-       <string>slit_motor.ui</string>
-      </property>
-     </widget>
-    </item>
-   </layout>
-  </widget>
   <widget class="PyDMLabel" name="PyDMLabel">
    <property name="geometry">
     <rect>
-     <x>185</x>
+     <x>200</x>
      <y>0</y>
      <width>221</width>
      <height>41</height>
@@ -524,17 +310,128 @@
     <string/>
    </property>
    <property name="text">
-    <string>JJ Slits US</string>
+    <string>${DEVICE}</string>
    </property>
    <property name="alignment">
     <set>Qt::AlignRight|Qt::AlignTop|Qt::AlignTrailing</set>
    </property>
   </widget>
+  <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_6">
+   <property name="geometry">
+    <rect>
+     <x>300</x>
+     <y>40</y>
+     <width>119</width>
+     <height>111</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string/>
+   </property>
+   <property name="frameShape">
+    <enum>QFrame::NoFrame</enum>
+   </property>
+   <property name="macros" stdset="0">
+    <string>TITLE=Horizontal Center,AXIS=${DEVICE}.h.center</string>
+   </property>
+   <property name="filename" stdset="0">
+    <string>slits_motor.py</string>
+   </property>
+  </widget>
+  <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_7">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>150</y>
+     <width>119</width>
+     <height>111</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string/>
+   </property>
+   <property name="frameShape">
+    <enum>QFrame::NoFrame</enum>
+   </property>
+   <property name="macros" stdset="0">
+    <string>TITLE=Vertical Size,AXIS=${DEVICE}.v.size</string>
+   </property>
+   <property name="filename" stdset="0">
+    <string>slits_motor.py</string>
+   </property>
+  </widget>
+  <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_4">
+   <property name="geometry">
+    <rect>
+     <x>66</x>
+     <y>4</y>
+     <width>119</width>
+     <height>111</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string/>
+   </property>
+   <property name="frameShape">
+    <enum>QFrame::NoFrame</enum>
+   </property>
+   <property name="macros" stdset="0">
+    <string>TITLE=Horizontal Size,AXIS=${DEVICE}.h.size</string>
+   </property>
+   <property name="filename" stdset="0">
+    <string>slits_motor.py</string>
+   </property>
+  </widget>
+  <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_5">
+   <property name="geometry">
+    <rect>
+     <x>220</x>
+     <y>260</y>
+     <width>119</width>
+     <height>111</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string/>
+   </property>
+   <property name="frameShape">
+    <enum>QFrame::NoFrame</enum>
+   </property>
+   <property name="macros" stdset="0">
+    <string>TITLE=Vertical Center,AXIS=${DEVICE}.v.center</string>
+   </property>
+   <property name="filename" stdset="0">
+    <string>slits_motor.py</string>
+   </property>
+  </widget>
+  <widget class="PyDMDrawingArc" name="PyDMDrawingArc">
+   <property name="geometry">
+    <rect>
+     <x>208</x>
+     <y>158</y>
+     <width>21</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string/>
+   </property>
+   <property name="penColor" stdset="0">
+    <color>
+     <red>255</red>
+     <green>128</green>
+     <blue>0</blue>
+    </color>
+   </property>
+   <property name="penWidth" stdset="0">
+    <double>3.000000000000000</double>
+   </property>
+   <property name="spanAngle" stdset="0">
+    <double>360.000000000000000</double>
+   </property>
+  </widget>
   <zorder>label</zorder>
   <zorder>PyDMDrawingLine</zorder>
-  <zorder>label_2</zorder>
-  <zorder>verticalLayoutWidget_5</zorder>
-  <zorder>label_4</zorder>
   <zorder>PyDMDrawingLine_3</zorder>
   <zorder>PyDMDrawingLine_4</zorder>
   <zorder>PyDMDrawingLine_5</zorder>
@@ -543,17 +440,24 @@
   <zorder>PyDMDrawingLine_9</zorder>
   <zorder>PyDMDrawingLine_10</zorder>
   <zorder>PyDMDrawingLine_11</zorder>
-  <zorder>verticalLayoutWidget_6</zorder>
   <zorder>PyDMDrawingLine_2</zorder>
-  <zorder>verticalLayoutWidget_7</zorder>
-  <zorder>verticalLayoutWidget_8</zorder>
   <zorder>PyDMLabel</zorder>
+  <zorder>PyDMEmbeddedDisplay_6</zorder>
+  <zorder>PyDMEmbeddedDisplay_7</zorder>
+  <zorder>PyDMEmbeddedDisplay_4</zorder>
+  <zorder>PyDMEmbeddedDisplay_5</zorder>
+  <zorder>PyDMDrawingArc</zorder>
  </widget>
  <customwidgets>
   <customwidget>
    <class>PyDMLabel</class>
    <extends>QLabel</extends>
    <header>pydm.widgets.label</header>
+  </customwidget>
+  <customwidget>
+   <class>PyDMDrawingArc</class>
+   <extends>QWidget</extends>
+   <header>pydm.widgets.drawing</header>
   </customwidget>
   <customwidget>
    <class>PyDMDrawingLine</class>
