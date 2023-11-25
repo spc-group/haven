@@ -53,7 +53,9 @@ dependencies:
   - databroker =1.2.5
 
   # --- Qt
-  - pyqt >=5.12
+  # Pin at 5.12.3 until pydm figures out how to designer widgets
+  - pyqt ==5.12.3
+  # - pyqt >=5.12, <5.13  
   - qt >=5.12
   - qtawesome
   - pyqtgraph
