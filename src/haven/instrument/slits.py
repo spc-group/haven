@@ -68,18 +68,6 @@ class Optics2Slit2D_HV(Device):
         self.v.center.move(y)
 
 
-async def make_slits_device(prefix, name):
-    slits = Optics2Slit2D_HV(prefix=prefix, name=name, labels={"slits"})
-    try:
-        await await_for_connection(slits)
-    except TimeoutError as exc:
-        log.warning(f"Could not connect to slits: {name} ({prefix})")
-    else:
-        log.info(f"Created slits: {name} ({prefix})")
-        registry.register(slits)
-        return slits
-
-
 def load_slit_coros(config=None):
     if config is None:
         config = load_config()

@@ -11,9 +11,13 @@ class SlitsDisplay(display.FireflyDisplay):
     def launch_caqtdm(self):
         device = haven.registry.find(self.macros()["DEVICE"])
         P, SLIT = device.prefix.split(":")[0:2]
+        H = device.h.prefix.split(":")[1]
+        V = device.v.prefix.split(":")[1]
         caqtdm_macros = {
             "P": f"{P}:",
             "SLIT": SLIT,
+            "H": H,
+            "V": V,
         }
         super().launch_caqtdm(macros=caqtdm_macros)
     
