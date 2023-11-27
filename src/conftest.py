@@ -31,6 +31,7 @@ from haven.instrument.dxp import DxpDetector
 from haven.instrument.dxp import add_mcas as add_dxp_mcas
 from haven.instrument.ion_chamber import IonChamber
 from haven.instrument.shutter import Shutter
+from haven.instrument.slits import ApertureSlits, BladeSlits
 from haven.instrument.xspress import Xspress3Detector
 from haven.instrument.xspress import add_mcas as add_xspress_mcas
 
@@ -171,6 +172,26 @@ def It(sim_registry):
     )
     sim_registry.register(ion_chamber)
     return ion_chamber
+
+
+@pytest.fixture()
+def blade_slits(sim_registry):
+    """A fake set of slits using the 4-blade setup."""
+    FakeSlits = make_fake_device(BladeSlits)
+    slits = FakeSlits(prefix="255idc:KB_slits", name="kb_slits", labels={"slits"})
+    sim_registry.register(slits)
+    return slits
+
+
+@pytest.fixture()
+def aperture_slits(sim_registry):
+    """A fake slit assembling using the rotary aperture design."""
+    FakeSlits = make_fake_device(ApertureSlits)
+    slits = FakeSlits(
+        prefix="255ida:slits:US:", name="whitebeam_slits", labels={"slits"}
+    )
+    sim_registry.register(slits)
+    return slits
 
 
 @pytest.fixture()

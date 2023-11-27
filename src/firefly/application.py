@@ -18,6 +18,7 @@ from qtpy.QtWidgets import QAction
 from haven import HavenMotor, load_config, registry
 from haven.exceptions import ComponentNotFound
 
+from . import beamline_components_rc
 from .main_window import FireflyMainWindow, PlanMainWindow
 from .queue_client import QueueClient, QueueClientThread, queueserver_api
 
@@ -61,6 +62,10 @@ class FireflyApplication(PyDMApplication):
     # Keep track of area detectors
     area_detector_actions: Mapping = {}
     area_detector_window_slots: Sequence
+
+    # Keep track of slits
+    slits_actions: Mapping = {}
+    slits_window_slots: Sequence
 
     # Keep track of XRF detectors
     xrf_detector_actions: Mapping = {}
@@ -142,11 +147,43 @@ class FireflyApplication(PyDMApplication):
         windows. Window-specific actions belong with the window.
 
         """
-        self.prepare_motor_windows()
-        self.prepare_ion_chamber_windows()
-        self.prepare_camera_windows()
-        self.prepare_area_detector_windows()
-        self.prepare_xrf_detector_windows()
+        # Setup actions for the various categories of devices
+        self._prepare_device_windows(
+            device_label="motors",
+            attr_name="motor",
+            ui_file="motor.py",
+            device_key="MOTOR",
+        )
+        self._prepare_device_windows(
+            device_label="ion_chambers",
+            attr_name="ion_chamber",
+            ui_file="ion_chamber.py",
+            device_key="IC",
+        )
+        self._prepare_device_windows(
+            device_label="cameras",
+            attr_name="camera",
+            ui_file="area_detector_viewer.py",
+            device_key="AD",
+        )
+        self._prepare_device_windows(
+            device_label="area_detectors",
+            attr_name="area_detector",
+            ui_file="area_detector_viewer.py",
+            device_key="AD",
+        )
+        self._prepare_device_windows(
+            device_label="slits",
+            attr_name="slits",
+            ui_file="slits.py",
+            device_key="DEVICE",
+        )
+        self._prepare_device_windows(
+            device_label="xrf_detectors",
+            attr_name="xrf_detector",
+            ui_file="xrf_detector.py",
+            device_key="DEV",
+        )
         # Action for showing the beamline status window
         self._setup_window_action(
             action_name="show_status_window_action",
@@ -257,13 +294,55 @@ class FireflyApplication(PyDMApplication):
         self.queue_autoplay_action.setChecked(True)
         self.queue_open_environment_action.setCheckable(True)
 
-    def _prepare_device_windows(self, device_label: str, attr_name: str):
+    def _prepare_device_windows(
+        self,
+        device_label: str,
+        attr_name: str,
+        ui_file=None,
+        window_slot=None,
+        device_key="DEVICE",
+    ):
         """Generic routine to be called for individual classes of devices.
 
         Sets up window actions, windows and window slots for each
         instance of the this device class (specified by *device_label*).
 
+        For example, to set up device windows for all a Tardis (Ophyd
+        devices with the "tardis_ship" label), call:
+
+        .. code:: python
+
+            app._prepare_device_windows(device_label="tardis_ship", attr_name="tardis")
+
+        This will create ``app.tardis_actions``,
+        ``app.tardis_window_slots`` and
+        ``app.tardis_windows``.
+
+        Parameters
+        ==========
+        device_label
+          The Ophyd label by which to find the devices.
+        attr_name
+          An arbitrary name to use for keeping track of windows, actions, etc.
+        window_slot
+          A Qt slot that gets called when an action is triggered. This
+          slot receive a *device* positional argument for which it is expected
+          to show a new FireflyWindow.
+        device_key
+          A key to use for the device name in the macros
+          dictionary. If *device_key* is "DEVICE" (default), then the
+          macros will be {"DEVICE": device.name}. Has no effect if
+          *window_slot* is used.
+
         """
+        # if device_label == "motors":
+        #     breakpoint()
+        # We need a UI file, unless a custom window_slot is given
+        if ui_file is None and window_slot is None:
+            raise ValueError(
+                "Parameters *ui_file* and *window_slot* cannot both be None."
+            )
+        # Get needed devices from the device registry
         try:
             devices = sorted(registry.findall(label=device_label), key=lambda x: x.name)
         except ComponentNotFound:
@@ -278,59 +357,24 @@ class FireflyApplication(PyDMApplication):
         for device in devices:
             # Create the window action
             action = QtWidgets.QAction(self)
-            action.setObjectName(f"actionShow_{attr_name}_{device.name}")
+            action.setObjectName(f"action_show_{attr_name}_{device.name}")
             action.setText(device.name)
             actions[device.name] = action
             # Create a slot for opening the device window
-            slot = getattr(self, f"show_{attr_name}_window")
-            slot = partial(slot, device=device)
+            if window_slot is not None:
+                # A device specific window loader was provided
+                slot = partial(window_slot, device=device)
+            else:
+                # No device specific loader, use the generic loader
+                slot = partial(
+                    self.show_device_window,
+                    device=device,
+                    device_label=attr_name,
+                    ui_file=ui_file,
+                    device_key=device_key,
+                )
             action.triggered.connect(slot)
             window_slots.append(slot)
-
-    def prepare_area_detector_windows(self):
-        """Prepare the support for opening area detector windows."""
-        self._prepare_device_windows(
-            device_label="area_detectors", attr_name="area_detector"
-        )
-
-    def prepare_xrf_detector_windows(self):
-        """Prepare support to open X-ray fluorescence detector windows."""
-        self._prepare_device_windows(
-            device_label="xrf_detectors", attr_name="xrf_detector"
-        )
-
-    def prepare_camera_windows(self):
-        self._prepare_device_windows(device_label="cameras", attr_name="camera")
-
-    def prepare_ion_chamber_windows(self):
-        self._prepare_device_windows(
-            device_label="ion_chambers", attr_name="ion_chamber"
-        )
-
-    def prepare_motor_windows(self):
-        """Prepare the support for opening motor windows."""
-        ### TODO: Can we re-factor this to use _prepare_device_windows()?
-        # Get active motors
-        try:
-            motors = sorted(registry.findall(label="motors"), key=lambda x: x.name)
-        except ComponentNotFound:
-            log.warning(
-                "No motors found, [Positioners] -> [Motors] menu will be empty."
-            )
-            motors = []
-        # Create menu actions for each motor
-        self.motor_actions = []
-        self.motor_window_slots = []
-        self.motor_windows = {}
-        for motor in motors:
-            action = QtWidgets.QAction(self)
-            action.setObjectName(f"actionShow_Motor_{motor.name}")
-            action.setText(motor.name)
-            self.motor_actions.append(action)
-            # Create a slot for opening the motor window
-            slot = partial(self.show_motor_window, motor=motor)
-            action.triggered.connect(slot)
-            self.motor_window_slots.append(slot)
 
     def prepare_queue_client(self, api=None):
         """Set up the QueueClient object that talks to the queue server.
@@ -487,54 +531,25 @@ class FireflyApplication(PyDMApplication):
         self.check_queue_status_action.trigger()
         return main_window
 
-    def show_motor_window(self, *args, motor: HavenMotor):
-        """Instantiate a new main window for this application."""
-        motor_name = motor.name.replace(" ", "_")
-        self.show_window(
-            FireflyMainWindow,
-            ui_dir / "motor.py",
-            name=f"FireflyMainWindow_motor_{motor_name}",
-            macros={"MOTOR": motor.name},
-        )
+    def show_device_window(
+        self, *args, device, device_label: str, ui_file: str, device_key: str
+    ):
+        """Instantiate a new main window for the given device.
 
-    def show_camera_window(self, *args, device):
-        """Instantiate a new main window for this application."""
-        device_name = device.name.replace(" ", "_")
-        self.show_window(
-            FireflyMainWindow,
-            ui_dir / "area_detector_viewer.py",
-            name=f"FireflyMainWindow_camera_{device_name}",
-            macros={"AD": device.name},
-        )
+        This is a generalized version of the more specific slots, such
+        as ``self.show_area_detector_window()``.
 
-    def show_ion_chamber_window(self, *args, device):
-        """Instantiate a window for an ion chamber."""
-        device_name = device.name.replace(" ", "_")
-        self.show_window(
-            FireflyMainWindow,
-            ui_dir / "ion_chamber.py",
-            name=f"FireflyMainWindow_ion_chamber_{device_name}",
-            macros={"IC": device.name},
-        )
+        It loads a window with the given UI file *ui_file* (relative
+        to the ui directory). The macros will be ``{"DEV":
+        device.name}``.
 
-    def show_area_detector_window(self, *args, device):
-        """Instantiate a new main window for this application."""
-        device_name = device.name.replace(" ", "_")
+        """
+        device_pyname = device.name.replace(" ", "_")
         self.show_window(
             FireflyMainWindow,
-            ui_dir / "area_detector_viewer.py",
-            name=f"FireflyMainWindow_area_detector_{device_name}",
-            macros={"AD": device.name},
-        )
-
-    def show_xrf_detector_window(self, *args, device):
-        """Instantiate a new main window for this application."""
-        device_name = device.name.replace(" ", "_")
-        self.show_window(
-            FireflyMainWindow,
-            ui_dir / "xrf_detector.py",
-            name=f"FireflyMainWindow_xrf_detector_{device_name}",
-            macros={"DEV": device.name},
+            ui_dir / ui_file,
+            name=f"FireflyMainWindow_{device_label}_{device_pyname}",
+            macros={device_key: device.name},
         )
 
     def show_status_window(self, stylesheet_path=None):

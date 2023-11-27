@@ -12,9 +12,9 @@ from qtpy.QtCore import Qt, QThread, Signal
 from qtpy.QtGui import QStandardItem, QStandardItemModel
 from qtpy.QtWidgets import QWidget
 
-from haven import exceptions
 from firefly import display
 from firefly.run_client import DatabaseWorker
+from haven import exceptions
 
 log = logging.getLogger(__name__)
 

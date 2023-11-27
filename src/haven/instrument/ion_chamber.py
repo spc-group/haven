@@ -288,7 +288,10 @@ class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
     volts: OphydObject = Cpt(VoltageSignal, derived_from="counts", kind=Kind.normal)
     amps: OphydObject = Cpt(CurrentSignal, derived_from="volts", kind=Kind.hinted)
     counts: OphydObject = FCpt(
-        EpicsSignalRO, "{scaler_prefix}:scaler1.S{ch_num}", kind=Kind.normal, auto_monitor=False,
+        EpicsSignalRO,
+        "{scaler_prefix}:scaler1.S{ch_num}",
+        kind=Kind.normal,
+        auto_monitor=False,
     )
     gate: OphydObject = FCpt(
         EpicsSignal,
@@ -597,7 +600,7 @@ async def load_ion_chamber(
         labels={"ion_chambers"},
     )
     # Ensure the voltmeter is in differential mode to measure pre-amp
-    if hasattr(ion_chamber, 'voltmeter'):
+    if hasattr(ion_chamber, "voltmeter"):
         try:
             ion_chamber.voltmeter.differential.set(1).wait(timeout=1)
         except OpException as exc:

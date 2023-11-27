@@ -199,7 +199,13 @@ class XRFPlotWidget(QWidget):
             plot_item.removeItem(existing_item)
         # Plot the spectrum
         if show_spectrum:
-            xdata = np.arange(len(spectrum))
+            try:
+                length = len(spectrum)
+            except TypeError:
+                # Probably this means the spectrum is really just a scaler
+                length = 1
+                spectrum = np.asarray([spectrum])
+            xdata = np.arange(length)
             color = self.spectrum_color(mca_num)
             self._data_items[mca_num] = plot_item.plot(
                 xdata, spectrum, name=mca_num, pen=color

@@ -2,6 +2,7 @@ import asyncio
 import logging
 import re
 import time as ttime
+import warnings
 from typing import Callable, Union
 
 from ophyd import Component, Device, K
@@ -61,8 +62,6 @@ async def make_device(DeviceClass, *args, FakeDeviceClass=None, **kwargs) -> Dev
         )
         await await_for_connection(device)
     except TimeoutError as e:
-        if DeviceClass.__name__ == "VortexEx":
-            raise
         log.warning(
             f"Could not connect to {DeviceClass.__name__} in"
             f" {round(ttime.monotonic() - t0, 2)} sec: {name}."
@@ -76,7 +75,7 @@ async def make_device(DeviceClass, *args, FakeDeviceClass=None, **kwargs) -> Dev
         return device
 
 
-async def await_for_connection(dev, all_signals=False, timeout=2.0):
+async def await_for_connection(dev, all_signals=False, timeout=10.0):
     """Wait for signals to connect
 
     Parameters
@@ -94,12 +93,26 @@ async def await_for_connection(dev, all_signals=False, timeout=2.0):
     }
     pending_funcs[dev] = dev._required_for_connection
 
-    t0 = ttime.time()
-    while timeout is None or (ttime.time() - t0) < timeout:
+    t0 = ttime.monotonic()
+    # Wait until all the signals have connected
+    while True:
         connected = all(sig.connected for sig in signals)
         if connected and not any(pending_funcs.values()):
             return
-        await asyncio.sleep(min((0.05, timeout / 10.0)))
+        # Since we're not connected, sleep for a short time and try again
+        real_timeout = min((0.05, timeout / 10.0))
+        tn = ttime.monotonic()
+        await asyncio.sleep(real_timeout)
+        # Detect other co-routines blocking for too long
+        tdelay = ttime.monotonic() - tn
+        if tdelay > (real_timeout * 5):
+            msg = f"{real_timeout} sec sleep for {dev.name} took "
+            msg += f"{tdelay:.4f} sec. "
+            msg += "Maybe another co-routine is blocking."
+            log.info(msg)
+        elapsed_time = ttime.monotonic() - t0
+        if timeout is not None and elapsed_time > timeout:
+            break
 
     def get_name(sig):
         sig_name = f"{dev.name}.{sig.dotted_name}"

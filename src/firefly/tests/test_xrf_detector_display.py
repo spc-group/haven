@@ -35,7 +35,12 @@ def xrf_display(ffapp, request):
 def test_open_xrf_detector_viewer_actions(ffapp, qtbot, det_fixture, request):
     sim_det = request.getfixturevalue(det_fixture)
     # Get the area detector parts ready
-    ffapp.prepare_xrf_detector_windows()
+    ffapp._prepare_device_windows(
+        device_label="xrf_detectors",
+        attr_name="xrf_detector",
+        ui_file="xrf_detector.py",
+        device_key="DEV",
+    )
     assert hasattr(ffapp, "xrf_detector_actions")
     assert len(ffapp.xrf_detector_actions) == 1
     # Launch an action and see that a window opens

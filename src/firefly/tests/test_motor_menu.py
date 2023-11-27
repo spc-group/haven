@@ -13,6 +13,7 @@ def fake_motors(sim_registry):
         this_motor = make_fake_device(motor.HavenMotor)(name=name, labels={"motors"})
         sim_registry.register(this_motor)
         motors.append(this_motor)
+    print(sim_registry.device_names)
     return motors
 
 
@@ -22,7 +23,7 @@ def test_motor_menu(fake_motors, qtbot, ffapp):
     # Create the window
     window = FireflyMainWindow()
     # Check that the menu items have been created
-    assert hasattr(window.ui, "menuPositioners")
+    assert hasattr(window.ui, "positioners_menu")
     assert len(ffapp.motor_actions) == 3
     window.destroy()
 
@@ -32,7 +33,7 @@ def test_open_motor_window(fake_motors, monkeypatch, ffapp):
     ffapp.setup_window_actions()
     ffapp.setup_runengine_actions()
     # Simulate clicking on the menu action (they're in alpha order)
-    action = ffapp.motor_actions[2]
+    action = ffapp.motor_actions["motorC"]
     action.trigger()
     # See if the window was created
     motor_3_name = "FireflyMainWindow_motor_motorC"

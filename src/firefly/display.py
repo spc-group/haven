@@ -22,7 +22,6 @@ class FireflyDisplay(Display):
         self.customize_device()
         self.customize_ui()
         self.prepare_caqtdm_actions()
-        # self.find_plan_widgets()
 
     def prepare_caqtdm_actions(self):
         """Create QActions for opening caQtDM panels.

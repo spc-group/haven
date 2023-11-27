@@ -8,4 +8,4 @@ log = logging.getLogger(__name__)
 __all__ = ["InstrumentRegistry", "registry"]
 
 
-registry = InstrumentRegistry(auto_register=False)
+registry = InstrumentRegistry(auto_register=False, use_typhos=True)
