@@ -1,6 +1,6 @@
 import haven
-from haven.instrument import slits
 from firefly import display
+from haven.instrument import slits
 
 
 class SlitsDisplay(display.FireflyDisplay):
