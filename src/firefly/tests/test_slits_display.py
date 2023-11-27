@@ -18,4 +18,4 @@ def test_slit_caqtdm(display, slits):
     # Check that the right macros are sent
     cmds = display._open_caqtdm_subprocess.call_args[0][0]
     macros = [cmds[i+1] for i in range(len(cmds)) if cmds[i] == "-macro"][0]
-    assert macros == 'P=255idc:,SLIT=KB_slits'
+    assert macros == 'P=255idc:,SLIT=KB_slits,H=KB_slitsH,V=KB_slitsV'

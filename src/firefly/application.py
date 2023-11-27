@@ -335,6 +335,8 @@ class FireflyApplication(PyDMApplication):
           *window_slot* is used.
 
         """
+        # if device_label == "motors":
+        #     breakpoint()
         # We need a UI file, unless a custom window_slot is given
         if ui_file is None and window_slot is None:
             raise ValueError(

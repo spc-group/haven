@@ -97,7 +97,7 @@ def test_prepare_generic_device_windows(ffapp, tardis, mocker):
     # Call the slot and see that the right one was used
     ffapp.tardis_window_slots[0]()
     ffapp.show_device_window.assert_called_once_with(
-        device=tardis, device_class="tardis", ui_file="tardis.ui"
+        device=tardis, device_label="tardis", ui_file="tardis.ui", device_key="DEVICE"
     )
     # Check that there's a dictionary to keep track of open windows
     assert hasattr(ffapp, "tardis_windows")
