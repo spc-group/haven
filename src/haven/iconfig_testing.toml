@@ -26,6 +26,12 @@ n_channels = 2
 [slits.KB_slits]
 
 prefix = "vme_crate_ioc:KB"
+device_class = "BladeSlits"
+
+[slits.whitebeam_slits]
+
+prefix = "255ida:slits:US:"
+device_class = "ApertureSlits"
 
 [area_detector.sim_det]
 

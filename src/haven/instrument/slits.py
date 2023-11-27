@@ -7,15 +7,23 @@ import logging
 from ophyd import FormattedComponent as FCpt, Component as Cpt
 from ophyd import Device
 from ophyd import EpicsSignal
+from ophyd import DerivedSignal
 from apstools.synApps.db_2slit import Optics2Slit2D_HV
 from apstools.devices import PVPositionerSoftDone
 from apstools.utils import SlitGeometry
 
 from .._iconfig import load_config
+from .. import exceptions
 from .device import aload_devices, await_for_connection, make_device
+from .motor import HavenMotor
 from .instrument_registry import registry
 
 log = logging.getLogger(__name__)
+
+
+class SlitMotor(HavenMotor):
+    readback = Cpt(DerivedSignal, derived_from="user_readback")
+    setpoint = Cpt(DerivedSignal, derived_from="user_setpoint")
 
 
 class PVPositionerWithTweaks(PVPositionerSoftDone):
@@ -24,7 +32,7 @@ class PVPositionerWithTweaks(PVPositionerSoftDone):
     tweak_reverse = FCpt(EpicsSignal, "{prefix}{_setpoint_pv}_tweak.A")
 
 
-class Optics2Slit1D(Device):
+class BladePair(Device):
     """
     EPICS synApps optics 2slit.db 1D support: xn, xp, size, center, sync
 
@@ -40,13 +48,13 @@ class Optics2Slit1D(Device):
     sync = Cpt(EpicsSignal, "sync", put_complete=True, kind="omitted")
 
 
-class Optics2Slit2D_HV(Device):
-    """
-    EPICS synApps optics 2slit.db 2D support: h.xn, h.xp, v.xn, v.xp
+class BladeSlits(Device):
+    """Set of slits with blades that move in and out to control beam size.
+
     """
 
-    h = Cpt(Optics2Slit1D, "H")
-    v = Cpt(Optics2Slit1D, "V")
+    h = Cpt(BladePair, "H")
+    v = Cpt(BladePair, "V")
 
     @property
     def geometry(self):
@@ -68,12 +76,34 @@ class Optics2Slit2D_HV(Device):
         self.v.center.move(y)
 
 
+class ApertureSlits(Device):
+    """A rotating aperture that functions like a set of slits.
+
+    Unlike the blades slits, there are no independent parts to move,
+    so each axis only has center and size.
+
+    Based on the 25-ID-A whitebeam slits.
+
+    """
+    class SlitAxis(Device):
+        size = Cpt(SlitMotor, "Size")
+        center = Cpt(SlitMotor, "Center")
+    
+    h = Cpt(SlitAxis, "h")
+    v = Cpt(SlitAxis, "v")
+
+
 def load_slit_coros(config=None):
     if config is None:
         config = load_config()
     # Create slits
     for name, slit_config in config.get("slits", {}).items():
-        yield make_device(Optics2Slit2D_HV, prefix=slit_config["prefix"], name=name, labels={"slits"})
+        DeviceClass = globals().get(slit_config["device_class"])
+        # Check that it's a valid device class
+        if DeviceClass is None:
+            msg = f"slits.{name}.device_class={slit_config['device_class']}"
+            raise exceptions.UnknownDeviceConfiguration(msg)
+        yield make_device(DeviceClass, prefix=slit_config["prefix"], name=name, labels={"slits"})
 
 
 def load_slits(config=None):
