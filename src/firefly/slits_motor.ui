@@ -28,14 +28,23 @@
    </property>
    <item>
     <widget class="PyDMLabel" name="axis_name_line_edit">
+     <property name="font">
+      <font>
+       <weight>75</weight>
+       <bold>true</bold>
+      </font>
+     </property>
      <property name="toolTip">
       <string/>
      </property>
      <property name="text">
-      <string>${TITLE}</string>
+      <string>&lt;b&gt;${TITLE}&lt;b&gt;</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>
+     </property>
+     <property name="enableRichText" stdset="0">
+      <bool>true</bool>
      </property>
     </widget>
    </item>

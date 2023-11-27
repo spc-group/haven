@@ -6,7 +6,11 @@ from firefly import display
 class SlitsMotorDisplay(display.FireflyDisplay):
     def customize_ui(self):
         # Make the tweak buttons use proper arrow icons
-        if "Vertical" in self.macros()["TITLE"]:
+        title = self.macros()["TITLE"]
+        if "Size" in title:
+            forward_icon = qta.icon("fa5s.plus")
+            reverse_icon = qta.icon("fa5s.minus")
+        elif "Vertical Center" in title:
             forward_icon = qta.icon("fa5s.arrow-up")
             reverse_icon = qta.icon("fa5s.arrow-down")
         else:
