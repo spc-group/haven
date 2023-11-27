@@ -10,7 +10,9 @@ def test_slits_tweak():
     assert slits_obj.v.center.setpoint.pvname == "255idc:KB_slitsVcenter"
     assert slits_obj.v.center.readback.pvname == "255idc:KB_slitsVt2.D"
     # Check the tweak PVs
-    assert slits_obj.v.center.tweak_value.pvname == "255idc:KB_slitsVcenter_tweakVal.VAL"
+    assert (
+        slits_obj.v.center.tweak_value.pvname == "255idc:KB_slitsVcenter_tweakVal.VAL"
+    )
     assert slits_obj.v.center.tweak_reverse.pvname == "255idc:KB_slitsVcenter_tweak.A"
     assert slits_obj.v.center.tweak_forward.pvname == "255idc:KB_slitsVcenter_tweak.B"
 

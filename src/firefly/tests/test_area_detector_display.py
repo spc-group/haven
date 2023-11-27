@@ -10,11 +10,11 @@ from firefly.area_detector_viewer import AreaDetectorViewerDisplay
 def test_open_camera_viewer_actions(ffapp, qtbot, sim_camera):
     # Now get the cameras ready
     ffapp._prepare_device_windows(
-            device_label="cameras",
-            attr_name="camera",
-            ui_file="area_detector_viewer.py",
-            device_key="AD",
-        )
+        device_label="cameras",
+        attr_name="camera",
+        ui_file="area_detector_viewer.py",
+        device_key="AD",
+    )
     assert hasattr(ffapp, "camera_actions")
     assert len(ffapp.camera_actions) == 1
     # Launch an action and see that a window opens

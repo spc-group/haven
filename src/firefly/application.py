@@ -18,9 +18,9 @@ from qtpy.QtWidgets import QAction
 from haven import HavenMotor, load_config, registry
 from haven.exceptions import ComponentNotFound
 
+from . import beamline_components_rc
 from .main_window import FireflyMainWindow, PlanMainWindow
 from .queue_client import QueueClient, QueueClientThread, queueserver_api
-from . import beamline_components_rc
 
 generator = type((x for x in []))
 

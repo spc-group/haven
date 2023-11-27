@@ -4,19 +4,18 @@
 import asyncio
 import logging
 
-from ophyd import FormattedComponent as FCpt, Component as Cpt
-from ophyd import Device
-from ophyd import EpicsSignal
-from ophyd import DerivedSignal
-from apstools.synApps.db_2slit import Optics2Slit2D_HV
 from apstools.devices import PVPositionerSoftDone
+from apstools.synApps.db_2slit import Optics2Slit2D_HV
 from apstools.utils import SlitGeometry
+from ophyd import Component as Cpt
+from ophyd import DerivedSignal, Device, EpicsSignal
+from ophyd import FormattedComponent as FCpt
 
-from .._iconfig import load_config
 from .. import exceptions
+from .._iconfig import load_config
 from .device import aload_devices, await_for_connection, make_device
-from .motor import HavenMotor
 from .instrument_registry import registry
+from .motor import HavenMotor
 
 log = logging.getLogger(__name__)
 
@@ -49,9 +48,7 @@ class BladePair(Device):
 
 
 class BladeSlits(Device):
-    """Set of slits with blades that move in and out to control beam size.
-
-    """
+    """Set of slits with blades that move in and out to control beam size."""
 
     h = Cpt(BladePair, "H")
     v = Cpt(BladePair, "V")
@@ -60,7 +57,8 @@ class BladeSlits(Device):
     def geometry(self):
         """Return the slit 2D size and center as a namedtuple."""
         pppp = [
-            round(obj.position, obj.precision) for obj in (self.h.size, self.v.size, self.h.center, self.v.center)
+            round(obj.position, obj.precision)
+            for obj in (self.h.size, self.v.size, self.h.center, self.v.center)
         ]
 
         return SlitGeometry(*pppp)
@@ -85,10 +83,11 @@ class ApertureSlits(Device):
     Based on the 25-ID-A whitebeam slits.
 
     """
+
     class SlitAxis(Device):
         size = Cpt(SlitMotor, "Size")
         center = Cpt(SlitMotor, "Center")
-    
+
     h = Cpt(SlitAxis, "h")
     v = Cpt(SlitAxis, "v")
 
@@ -103,7 +102,9 @@ def load_slit_coros(config=None):
         if DeviceClass is None:
             msg = f"slits.{name}.device_class={slit_config['device_class']}"
             raise exceptions.UnknownDeviceConfiguration(msg)
-        yield make_device(DeviceClass, prefix=slit_config["prefix"], name=name, labels={"slits"})
+        yield make_device(
+            DeviceClass, prefix=slit_config["prefix"], name=name, labels={"slits"}
+        )
 
 
 def load_slits(config=None):

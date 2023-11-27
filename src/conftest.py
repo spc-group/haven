@@ -30,8 +30,8 @@ from haven.instrument.delay import EpicsSignalWithIO
 from haven.instrument.dxp import DxpDetector
 from haven.instrument.dxp import add_mcas as add_dxp_mcas
 from haven.instrument.ion_chamber import IonChamber
-from haven.instrument.slits import Optics2Slit2D_HV
 from haven.instrument.shutter import Shutter
+from haven.instrument.slits import Optics2Slit2D_HV
 from haven.instrument.xspress import Xspress3Detector
 from haven.instrument.xspress import add_mcas as add_xspress_mcas
 
@@ -178,9 +178,7 @@ def It(sim_registry):
 def slits(sim_registry):
     """A fake ion chamber named 'I0' on scaler channel 2."""
     FakeSlits = make_fake_device(Optics2Slit2D_HV)
-    slits = FakeSlits(
-        prefix="255idc:KB_slits", name="kb_slits", labels={"slits"}
-    )
+    slits = FakeSlits(prefix="255idc:KB_slits", name="kb_slits", labels={"slits"})
     sim_registry.register(slits)
     return slits
 

@@ -1,8 +1,8 @@
 from unittest.mock import MagicMock
 
-from ophyd.sim import make_fake_device
-from ophyd import Device
 import pytest
+from ophyd import Device
+from ophyd.sim import make_fake_device
 
 
 def test_setup(ffapp):
@@ -106,7 +106,7 @@ def test_prepare_generic_device_windows(ffapp, tardis, mocker):
 def test_prepare_device_specific_windows(ffapp, tardis):
     """Check for preparing devices with device specific
     ``show_<device_class>_window`` slot.
-    
+
     """
     slot = MagicMock()
     ffapp._prepare_device_windows(
@@ -125,4 +125,3 @@ def test_prepare_device_specific_windows(ffapp, tardis):
     )
     # Check that there's a dictionary to keep track of open windows
     assert hasattr(ffapp, "tardis_windows")
-    

@@ -1,10 +1,10 @@
 import pytest
+from ophyd.sim import instantiate_fake_device
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QStandardItemModel
 
 from firefly.bss import BssDisplay
-from haven.instrument.aps import load_aps, EpicsBssDevice
-from ophyd.sim import instantiate_fake_device
+from haven.instrument.aps import EpicsBssDevice, load_aps
 
 
 @pytest.fixture()

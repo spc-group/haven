@@ -6,7 +6,7 @@ from firefly import display
 class SlitsMotorDisplay(display.FireflyDisplay):
     def customize_ui(self):
         # Make the tweak buttons use proper arrow icons
-        if "Vertical" in self.macros()['TITLE']:
+        if "Vertical" in self.macros()["TITLE"]:
             forward_icon = qta.icon("fa5s.arrow-up")
             reverse_icon = qta.icon("fa5s.arrow-down")
         else:
@@ -16,6 +16,6 @@ class SlitsMotorDisplay(display.FireflyDisplay):
         self.ui.tweak_reverse_button.setIcon(reverse_icon)
         for btn in [self.ui.tweak_reverse_button, self.ui.tweak_forward_button]:
             btn.setText("")
-        
+
     def ui_filename(self):
         return "slits_motor.ui"
