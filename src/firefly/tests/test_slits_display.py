@@ -42,4 +42,7 @@ def test_aperture_slit_caqtdm(display, aperture_slits):
     # Check that the right UI file is being used
     ui_file = cmds[-1]
     assert ui_file.split("/")[-1] == "maskApertureSlit.ui"
-    
+    # To-do: get the remaining macros for caQtDM
+    # Full command should be:
+    # /net/s25data/xorApps/epics/synApps_6_2/ioc/25ida/25idaApp/op/ui/maskApertureSlit.ui
+    # macro: P=25ida:slits:,SLITS=US,HOR=m1,DIAG=m2,PITCH=m3,YAW=m4
