@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Form</class>
+ <widget class="QWidget" name="Form">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>691</width>
+    <height>514</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay">
+   <property name="geometry">
+    <rect>
+     <x>580</x>
+     <y>200</y>
+     <width>100</width>
+     <height>100</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Sans Serif</family>
+    </font>
+   </property>
+   <property name="toolTip">
+    <string/>
+   </property>
+   <property name="frameShape">
+    <enum>QFrame::NoFrame</enum>
+   </property>
+   <property name="macros" stdset="0">
+    <string>TITLE=Height</string>
+   </property>
+   <property name="filename" stdset="0">
+    <string>slits_motor.py</string>
+   </property>
+  </widget>
+  <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_2">
+   <property name="geometry">
+    <rect>
+     <x>140</x>
+     <y>280</y>
+     <width>100</width>
+     <height>100</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Sans Serif</family>
+    </font>
+   </property>
+   <property name="toolTip">
+    <string/>
+   </property>
+   <property name="frameShape">
+    <enum>QFrame::NoFrame</enum>
+   </property>
+   <property name="macros" stdset="0">
+    <string>TITLE=Angle</string>
+   </property>
+   <property name="filename" stdset="0">
+    <string>slits_motor.py</string>
+   </property>
+  </widget>
+  <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_3">
+   <property name="geometry">
+    <rect>
+     <x>330</x>
+     <y>60</y>
+     <width>100</width>
+     <height>100</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Sans Serif</family>
+    </font>
+   </property>
+   <property name="toolTip">
+    <string/>
+   </property>
+   <property name="frameShape">
+    <enum>QFrame::NoFrame</enum>
+   </property>
+   <property name="macros" stdset="0">
+    <string>TITLE=Height</string>
+   </property>
+   <property name="filename" stdset="0">
+    <string>slits_motor.py</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_2">
+   <property name="geometry">
+    <rect>
+     <x>150</x>
+     <y>100</y>
+     <width>161</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>14</pointsize>
+     <weight>75</weight>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="text">
+    <string>Vertical Mirror</string>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignCenter</set>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_3">
+   <property name="geometry">
+    <rect>
+     <x>390</x>
+     <y>210</y>
+     <width>181</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>14</pointsize>
+     <weight>75</weight>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="text">
+    <string>Horizontal Mirror</string>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignCenter</set>
+   </property>
+  </widget>
+  <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_4">
+   <property name="geometry">
+    <rect>
+     <x>350</x>
+     <y>370</y>
+     <width>100</width>
+     <height>100</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Sans Serif</family>
+    </font>
+   </property>
+   <property name="toolTip">
+    <string/>
+   </property>
+   <property name="frameShape">
+    <enum>QFrame::NoFrame</enum>
+   </property>
+   <property name="macros" stdset="0">
+    <string>TITLE=Angle</string>
+   </property>
+   <property name="filename" stdset="0">
+    <string>slits_motor.py</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label">
+   <property name="geometry">
+    <rect>
+     <x>-30</x>
+     <y>-30</y>
+     <width>741</width>
+     <height>551</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;img src=&quot;:/slits_3d/kb_mirrors.png&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
+  </widget>
+  <zorder>label</zorder>
+  <zorder>PyDMEmbeddedDisplay</zorder>
+  <zorder>PyDMEmbeddedDisplay_2</zorder>
+  <zorder>PyDMEmbeddedDisplay_3</zorder>
+  <zorder>label_2</zorder>
+  <zorder>label_3</zorder>
+  <zorder>PyDMEmbeddedDisplay_4</zorder>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>PyDMEmbeddedDisplay</class>
+   <extends>QFrame</extends>
+   <header>pydm.widgets.embedded_display</header>
+  </customwidget>
+ </customwidgets>
+ <resources>
+  <include location="resources/beamline_components.qrc"/>
+ </resources>
+ <connections/>
+</ui>
