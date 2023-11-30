@@ -75,7 +75,7 @@ async def make_device(DeviceClass, *args, FakeDeviceClass=None, **kwargs) -> Dev
         return device
 
 
-async def await_for_connection(dev, all_signals=False, timeout=10.0):
+async def await_for_connection(dev, all_signals=False, timeout=60.0):
     """Wait for signals to connect
 
     Parameters
