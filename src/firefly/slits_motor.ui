@@ -40,6 +40,9 @@
      <property name="text">
       <string>&lt;b&gt;${TITLE}&lt;b&gt;</string>
      </property>
+     <property name="textFormat">
+      <enum>Qt::RichText</enum>
+     </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>
      </property>
