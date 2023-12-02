@@ -6,14 +6,9 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>743</width>
-    <height>553</height>
+    <width>602</width>
+    <height>431</height>
    </rect>
-  </property>
-  <property name="font">
-   <font>
-    <family>Sans Serif</family>
-   </font>
   </property>
   <property name="windowTitle">
    <string>Form</string>
@@ -21,10 +16,10 @@
   <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay">
    <property name="geometry">
     <rect>
-     <x>580</x>
-     <y>210</y>
+     <x>430</x>
+     <y>190</y>
      <width>100</width>
-     <height>111</height>
+     <height>100</height>
     </rect>
    </property>
    <property name="font">
@@ -48,10 +43,10 @@
   <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_2">
    <property name="geometry">
     <rect>
-     <x>350</x>
-     <y>80</y>
-     <width>100</width>
-     <height>111</height>
+     <x>230</x>
+     <y>40</y>
+     <width>101</width>
+     <height>100</height>
     </rect>
    </property>
    <property name="font">
@@ -75,10 +70,10 @@
   <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_3">
    <property name="geometry">
     <rect>
-     <x>120</x>
-     <y>300</y>
+     <x>65</x>
+     <y>150</y>
      <width>100</width>
-     <height>111</height>
+     <height>100</height>
     </rect>
    </property>
    <property name="font">
@@ -102,33 +97,10 @@
   <widget class="QLabel" name="label_2">
    <property name="geometry">
     <rect>
-     <x>409</x>
-     <y>244</y>
-     <width>161</width>
+     <x>42</x>
+     <y>50</y>
+     <width>191</width>
      <height>20</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>14</pointsize>
-     <weight>75</weight>
-     <bold>true</bold>
-    </font>
-   </property>
-   <property name="text">
-    <string>Vertical Mirror</string>
-   </property>
-   <property name="alignment">
-    <set>Qt::AlignCenter</set>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_3">
-   <property name="geometry">
-    <rect>
-     <x>166</x>
-     <y>131</y>
-     <width>181</width>
-     <height>16</height>
     </rect>
    </property>
    <property name="font">
@@ -145,13 +117,36 @@
     <set>Qt::AlignCenter</set>
    </property>
   </widget>
+  <widget class="QLabel" name="label_3">
+   <property name="geometry">
+    <rect>
+     <x>280</x>
+     <y>163</y>
+     <width>181</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>14</pointsize>
+     <weight>75</weight>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="text">
+    <string>Vertical Mirror</string>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignCenter</set>
+   </property>
+  </widget>
   <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_4">
    <property name="geometry">
     <rect>
-     <x>338</x>
-     <y>384</y>
+     <x>230</x>
+     <y>310</y>
      <width>100</width>
-     <height>111</height>
+     <height>100</height>
     </rect>
    </property>
    <property name="font">
@@ -175,10 +170,10 @@
   <widget class="QLabel" name="label">
    <property name="geometry">
     <rect>
-     <x>0</x>
-     <y>0</y>
+     <x>-118</x>
+     <y>-11</y>
      <width>741</width>
-     <height>551</height>
+     <height>540</height>
     </rect>
    </property>
    <property name="text">
@@ -188,10 +183,10 @@
   <widget class="PyDMDrawingPolyline" name="PyDMDrawingPolyline">
    <property name="geometry">
     <rect>
-     <x>250</x>
-     <y>155</y>
-     <width>91</width>
-     <height>31</height>
+     <x>226</x>
+     <y>256</y>
+     <width>161</width>
+     <height>81</height>
     </rect>
    </property>
    <property name="toolTip">
@@ -219,26 +214,67 @@
    <property name="penWidth" stdset="0">
     <double>3.000000000000000</double>
    </property>
+   <property name="arrowEndPoint" stdset="0">
+    <bool>false</bool>
+   </property>
+   <property name="arrowStartPoint" stdset="0">
+    <bool>false</bool>
+   </property>
+   <property name="arrowMidPoint" stdset="0">
+    <bool>false</bool>
+   </property>
+   <property name="flipMidPointArrow" stdset="0">
+    <bool>false</bool>
+   </property>
    <property name="points">
     <stringlist>
-     <string>85.0, 0.0</string>
-     <string>0.0, 0.0</string>
-     <string>85.0, 15.0</string>
+     <string>17.41, 0.0</string>
+     <string>149.41, 70.0</string>
+     <string>0.0, 70.0</string>
     </stringlist>
    </property>
   </widget>
-  <widget class="PyDMDrawingPolyline" name="PyDMDrawingPolyline_2">
+  <widget class="PyDMDrawingArc" name="PyDMDrawingArc">
    <property name="geometry">
     <rect>
-     <x>360</x>
-     <y>336</y>
-     <width>241</width>
+     <x>300</x>
+     <y>278</y>
+     <width>81</width>
      <height>101</height>
     </rect>
    </property>
    <property name="toolTip">
     <string/>
    </property>
+   <property name="penColor" stdset="0">
+    <color>
+     <red>255</red>
+     <green>128</green>
+     <blue>0</blue>
+    </color>
+   </property>
+   <property name="penWidth" stdset="0">
+    <double>3.000000000000000</double>
+   </property>
+   <property name="startAngle" stdset="0">
+    <double>180.000000000000000</double>
+   </property>
+   <property name="spanAngle" stdset="0">
+    <double>-45.000000000000000</double>
+   </property>
+  </widget>
+  <widget class="PyDMDrawingPolyline" name="PyDMDrawingPolyline_2">
+   <property name="geometry">
+    <rect>
+     <x>136</x>
+     <y>76</y>
+     <width>91</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string/>
+   </property>
    <property name="alarmSensitiveContent" stdset="0">
     <bool>false</bool>
    </property>
@@ -261,12 +297,53 @@
    <property name="penWidth" stdset="0">
     <double>3.000000000000000</double>
    </property>
+   <property name="arrowEndPoint" stdset="0">
+    <bool>false</bool>
+   </property>
+   <property name="arrowStartPoint" stdset="0">
+    <bool>false</bool>
+   </property>
+   <property name="arrowMidPoint" stdset="0">
+    <bool>false</bool>
+   </property>
+   <property name="flipMidPointArrow" stdset="0">
+    <bool>false</bool>
+   </property>
    <property name="points">
     <stringlist>
+     <string>80.6, 0.0</string>
      <string>0.0, 0.0</string>
-     <string>130.0, 70.0</string>
-     <string>0.0, 70.0</string>
+     <string>79.0, 16.0</string>
     </stringlist>
+   </property>
+  </widget>
+  <widget class="PyDMDrawingArc" name="PyDMDrawingArc_2">
+   <property name="geometry">
+    <rect>
+     <x>110</x>
+     <y>30</y>
+     <width>81</width>
+     <height>101</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string/>
+   </property>
+   <property name="penColor" stdset="0">
+    <color>
+     <red>255</red>
+     <green>128</green>
+     <blue>0</blue>
+    </color>
+   </property>
+   <property name="penWidth" stdset="0">
+    <double>3.000000000000000</double>
+   </property>
+   <property name="startAngle" stdset="0">
+    <double>0.000000000000000</double>
+   </property>
+   <property name="spanAngle" stdset="0">
+    <double>-10.000000000000000</double>
    </property>
   </widget>
   <zorder>label</zorder>
@@ -277,9 +354,16 @@
   <zorder>label_3</zorder>
   <zorder>PyDMEmbeddedDisplay_4</zorder>
   <zorder>PyDMDrawingPolyline</zorder>
+  <zorder>PyDMDrawingArc</zorder>
   <zorder>PyDMDrawingPolyline_2</zorder>
+  <zorder>PyDMDrawingArc_2</zorder>
  </widget>
  <customwidgets>
+  <customwidget>
+   <class>PyDMDrawingArc</class>
+   <extends>QWidget</extends>
+   <header>pydm.widgets.drawing</header>
+  </customwidget>
   <customwidget>
    <class>PyDMDrawingPolyline</class>
    <extends>QWidget</extends>
