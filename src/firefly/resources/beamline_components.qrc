@@ -1,6 +1,6 @@
 <RCC>
-  <qresource prefix="slits_3d">
-    <file>slits_3d.png</file>
+  <qresource prefix="optics">
     <file>kb_mirrors.png</file>
+    <file>slits_3d.png</file>
   </qresource>
 </RCC>

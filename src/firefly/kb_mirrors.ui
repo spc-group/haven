@@ -6,361 +6,1034 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>602</width>
-    <height>431</height>
+    <width>580</width>
+    <height>419</height>
    </rect>
+  </property>
+  <property name="font">
+   <font>
+    <family>Sans Serif</family>
+   </font>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay">
+  <widget class="PyDMLabel" name="device_name_label">
    <property name="geometry">
     <rect>
-     <x>430</x>
-     <y>190</y>
-     <width>100</width>
-     <height>100</height>
+     <x>350</x>
+     <y>0</y>
+     <width>221</width>
+     <height>34</height>
     </rect>
    </property>
    <property name="font">
     <font>
-     <family>Sans Serif</family>
+     <pointsize>16</pointsize>
     </font>
    </property>
    <property name="toolTip">
     <string/>
-   </property>
-   <property name="frameShape">
-    <enum>QFrame::NoFrame</enum>
-   </property>
-   <property name="macros" stdset="0">
-    <string>TITLE=Normal</string>
-   </property>
-   <property name="filename" stdset="0">
-    <string>slits_motor.py</string>
-   </property>
-  </widget>
-  <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_2">
-   <property name="geometry">
-    <rect>
-     <x>230</x>
-     <y>40</y>
-     <width>101</width>
-     <height>100</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <family>Sans Serif</family>
-    </font>
-   </property>
-   <property name="toolTip">
-    <string/>
-   </property>
-   <property name="frameShape">
-    <enum>QFrame::NoFrame</enum>
-   </property>
-   <property name="macros" stdset="0">
-    <string>TITLE=Pitch</string>
-   </property>
-   <property name="filename" stdset="0">
-    <string>slits_motor.py</string>
-   </property>
-  </widget>
-  <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_3">
-   <property name="geometry">
-    <rect>
-     <x>65</x>
-     <y>150</y>
-     <width>100</width>
-     <height>100</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <family>Sans Serif</family>
-    </font>
-   </property>
-   <property name="toolTip">
-    <string/>
-   </property>
-   <property name="frameShape">
-    <enum>QFrame::NoFrame</enum>
-   </property>
-   <property name="macros" stdset="0">
-    <string>TITLE=Normal</string>
-   </property>
-   <property name="filename" stdset="0">
-    <string>slits_motor.py</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_2">
-   <property name="geometry">
-    <rect>
-     <x>42</x>
-     <y>50</y>
-     <width>191</width>
-     <height>20</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>14</pointsize>
-     <weight>75</weight>
-     <bold>true</bold>
-    </font>
    </property>
    <property name="text">
-    <string>Horizontal Mirror</string>
+    <string>${DEVICE}</string>
    </property>
    <property name="alignment">
-    <set>Qt::AlignCenter</set>
+    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
    </property>
   </widget>
-  <widget class="QLabel" name="label_3">
+  <widget class="QTabWidget" name="tabWidget">
    <property name="geometry">
     <rect>
-     <x>280</x>
-     <y>163</y>
-     <width>181</width>
-     <height>16</height>
+     <x>10</x>
+     <y>10</y>
+     <width>561</width>
+     <height>401</height>
     </rect>
    </property>
-   <property name="font">
-    <font>
-     <pointsize>14</pointsize>
-     <weight>75</weight>
-     <bold>true</bold>
-    </font>
+   <property name="autoFillBackground">
+    <bool>false</bool>
    </property>
-   <property name="text">
-    <string>Vertical Mirror</string>
+   <property name="styleSheet">
+    <string notr="true"/>
    </property>
-   <property name="alignment">
-    <set>Qt::AlignCenter</set>
+   <property name="tabShape">
+    <enum>QTabWidget::Rounded</enum>
    </property>
+   <property name="currentIndex">
+    <number>0</number>
+   </property>
+   <property name="elideMode">
+    <enum>Qt::ElideNone</enum>
+   </property>
+   <widget class="QWidget" name="positions_tab">
+    <property name="styleSheet">
+     <string notr="true"/>
+    </property>
+    <attribute name="title">
+     <string>Positions</string>
+    </attribute>
+    <widget class="QLabel" name="label_3">
+     <property name="geometry">
+      <rect>
+       <x>250</x>
+       <y>123</y>
+       <width>181</width>
+       <height>16</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <pointsize>14</pointsize>
+       <weight>75</weight>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="text">
+      <string>Vertical Mirror</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_2">
+     <property name="geometry">
+      <rect>
+       <x>12</x>
+       <y>10</y>
+       <width>191</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <pointsize>14</pointsize>
+       <weight>75</weight>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="text">
+      <string>Horizontal Mirror</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+    <widget class="PyDMDrawingPolyline" name="vertical_pitch_polyline">
+     <property name="geometry">
+      <rect>
+       <x>195</x>
+       <y>216</y>
+       <width>161</width>
+       <height>81</height>
+      </rect>
+     </property>
+     <property name="toolTip">
+      <string/>
+     </property>
+     <property name="alarmSensitiveContent" stdset="0">
+      <bool>false</bool>
+     </property>
+     <property name="alarmSensitiveBorder" stdset="0">
+      <bool>false</bool>
+     </property>
+     <property name="PyDMToolTip" stdset="0">
+      <string/>
+     </property>
+     <property name="channel" stdset="0">
+      <string/>
+     </property>
+     <property name="penColor" stdset="0">
+      <color>
+       <red>255</red>
+       <green>128</green>
+       <blue>0</blue>
+      </color>
+     </property>
+     <property name="penWidth" stdset="0">
+      <double>3.000000000000000</double>
+     </property>
+     <property name="arrowEndPoint" stdset="0">
+      <bool>false</bool>
+     </property>
+     <property name="arrowStartPoint" stdset="0">
+      <bool>false</bool>
+     </property>
+     <property name="arrowMidPoint" stdset="0">
+      <bool>false</bool>
+     </property>
+     <property name="flipMidPointArrow" stdset="0">
+      <bool>false</bool>
+     </property>
+     <property name="points">
+      <stringlist>
+       <string>17.41, 0.0</string>
+       <string>149.41, 70.0</string>
+       <string>0.0, 70.0</string>
+      </stringlist>
+     </property>
+    </widget>
+    <widget class="PyDMEmbeddedDisplay" name="vertical_normal_display">
+     <property name="geometry">
+      <rect>
+       <x>430</x>
+       <y>144</y>
+       <width>100</width>
+       <height>100</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>Sans Serif</family>
+      </font>
+     </property>
+     <property name="toolTip">
+      <string/>
+     </property>
+     <property name="frameShape">
+      <enum>QFrame::NoFrame</enum>
+     </property>
+     <property name="macros" stdset="0">
+      <string>TITLE=Normal</string>
+     </property>
+     <property name="filename" stdset="0">
+      <string>slits_motor.py</string>
+     </property>
+    </widget>
+    <widget class="PyDMEmbeddedDisplay" name="horizontal_pitch_display">
+     <property name="geometry">
+      <rect>
+       <x>199</x>
+       <y>0</y>
+       <width>101</width>
+       <height>100</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>Sans Serif</family>
+      </font>
+     </property>
+     <property name="toolTip">
+      <string/>
+     </property>
+     <property name="frameShape">
+      <enum>QFrame::NoFrame</enum>
+     </property>
+     <property name="macros" stdset="0">
+      <string>TITLE=Pitch</string>
+     </property>
+     <property name="filename" stdset="0">
+      <string>slits_motor.py</string>
+     </property>
+    </widget>
+    <widget class="PyDMDrawingArc" name="vertical_pitch_arc">
+     <property name="geometry">
+      <rect>
+       <x>269</x>
+       <y>238</y>
+       <width>81</width>
+       <height>101</height>
+      </rect>
+     </property>
+     <property name="toolTip">
+      <string/>
+     </property>
+     <property name="penColor" stdset="0">
+      <color>
+       <red>255</red>
+       <green>128</green>
+       <blue>0</blue>
+      </color>
+     </property>
+     <property name="penWidth" stdset="0">
+      <double>3.000000000000000</double>
+     </property>
+     <property name="startAngle" stdset="0">
+      <double>180.000000000000000</double>
+     </property>
+     <property name="spanAngle" stdset="0">
+      <double>-45.000000000000000</double>
+     </property>
+    </widget>
+    <widget class="PyDMDrawingArc" name="horizontal_pitch_arc">
+     <property name="geometry">
+      <rect>
+       <x>79</x>
+       <y>-10</y>
+       <width>81</width>
+       <height>101</height>
+      </rect>
+     </property>
+     <property name="toolTip">
+      <string/>
+     </property>
+     <property name="penColor" stdset="0">
+      <color>
+       <red>255</red>
+       <green>128</green>
+       <blue>0</blue>
+      </color>
+     </property>
+     <property name="penWidth" stdset="0">
+      <double>3.000000000000000</double>
+     </property>
+     <property name="startAngle" stdset="0">
+      <double>0.000000000000000</double>
+     </property>
+     <property name="spanAngle" stdset="0">
+      <double>-10.000000000000000</double>
+     </property>
+    </widget>
+    <widget class="PyDMDrawingPolyline" name="hoizontal_pitch_polyline">
+     <property name="geometry">
+      <rect>
+       <x>105</x>
+       <y>36</y>
+       <width>91</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="toolTip">
+      <string/>
+     </property>
+     <property name="alarmSensitiveContent" stdset="0">
+      <bool>false</bool>
+     </property>
+     <property name="alarmSensitiveBorder" stdset="0">
+      <bool>false</bool>
+     </property>
+     <property name="PyDMToolTip" stdset="0">
+      <string/>
+     </property>
+     <property name="channel" stdset="0">
+      <string/>
+     </property>
+     <property name="penColor" stdset="0">
+      <color>
+       <red>255</red>
+       <green>128</green>
+       <blue>0</blue>
+      </color>
+     </property>
+     <property name="penWidth" stdset="0">
+      <double>3.000000000000000</double>
+     </property>
+     <property name="arrowEndPoint" stdset="0">
+      <bool>false</bool>
+     </property>
+     <property name="arrowStartPoint" stdset="0">
+      <bool>false</bool>
+     </property>
+     <property name="arrowMidPoint" stdset="0">
+      <bool>false</bool>
+     </property>
+     <property name="flipMidPointArrow" stdset="0">
+      <bool>false</bool>
+     </property>
+     <property name="points">
+      <stringlist>
+       <string>80.6, 0.0</string>
+       <string>0.0, 0.0</string>
+       <string>79.0, 16.0</string>
+      </stringlist>
+     </property>
+    </widget>
+    <widget class="PyDMEmbeddedDisplay" name="horizontal_normal_display">
+     <property name="geometry">
+      <rect>
+       <x>15</x>
+       <y>193</y>
+       <width>100</width>
+       <height>100</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>Sans Serif</family>
+      </font>
+     </property>
+     <property name="toolTip">
+      <string/>
+     </property>
+     <property name="frameShape">
+      <enum>QFrame::NoFrame</enum>
+     </property>
+     <property name="macros" stdset="0">
+      <string>TITLE=Normal</string>
+     </property>
+     <property name="filename" stdset="0">
+      <string>slits_motor.py</string>
+     </property>
+    </widget>
+    <widget class="PyDMEmbeddedDisplay" name="vertical_pitch_display">
+     <property name="geometry">
+      <rect>
+       <x>199</x>
+       <y>270</y>
+       <width>100</width>
+       <height>100</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>Sans Serif</family>
+      </font>
+     </property>
+     <property name="toolTip">
+      <string/>
+     </property>
+     <property name="frameShape">
+      <enum>QFrame::NoFrame</enum>
+     </property>
+     <property name="macros" stdset="0">
+      <string>TITLE=Pitch</string>
+     </property>
+     <property name="filename" stdset="0">
+      <string>slits_motor.py</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label">
+     <property name="geometry">
+      <rect>
+       <x>-151</x>
+       <y>-51</y>
+       <width>741</width>
+       <height>540</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;img src=&quot;:/optics/kb_mirrors.png&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+    </widget>
+    <widget class="PyDMDrawingLine" name="PyDMDrawingLine_4">
+     <property name="geometry">
+      <rect>
+       <x>348</x>
+       <y>184</y>
+       <width>31</width>
+       <height>41</height>
+      </rect>
+     </property>
+     <property name="toolTip">
+      <string/>
+     </property>
+     <property name="penStyle" stdset="0">
+      <enum>Qt::SolidLine</enum>
+     </property>
+     <property name="penColor" stdset="0">
+      <color>
+       <red>255</red>
+       <green>128</green>
+       <blue>0</blue>
+      </color>
+     </property>
+     <property name="penWidth" stdset="0">
+      <double>3.000000000000000</double>
+     </property>
+     <property name="rotation" stdset="0">
+      <double>85.000000000000000</double>
+     </property>
+     <property name="arrowEndPoint" stdset="0">
+      <bool>true</bool>
+     </property>
+    </widget>
+    <widget class="PyDMDrawingLine" name="PyDMDrawingLine_5">
+     <property name="geometry">
+      <rect>
+       <x>90</x>
+       <y>111</y>
+       <width>31</width>
+       <height>31</height>
+      </rect>
+     </property>
+     <property name="toolTip">
+      <string/>
+     </property>
+     <property name="penStyle" stdset="0">
+      <enum>Qt::SolidLine</enum>
+     </property>
+     <property name="penColor" stdset="0">
+      <color>
+       <red>255</red>
+       <green>128</green>
+       <blue>0</blue>
+      </color>
+     </property>
+     <property name="penWidth" stdset="0">
+      <double>3.000000000000000</double>
+     </property>
+     <property name="rotation" stdset="0">
+      <double>70.000000000000000</double>
+     </property>
+     <property name="arrowStartPoint" stdset="0">
+      <bool>true</bool>
+     </property>
+    </widget>
+    <widget class="PyDMDrawingPolyline" name="PyDMDrawingPolyline_2">
+     <property name="geometry">
+      <rect>
+       <x>88</x>
+       <y>129</y>
+       <width>31</width>
+       <height>211</height>
+      </rect>
+     </property>
+     <property name="toolTip">
+      <string/>
+     </property>
+     <property name="alarmSensitiveContent" stdset="0">
+      <bool>false</bool>
+     </property>
+     <property name="alarmSensitiveBorder" stdset="0">
+      <bool>false</bool>
+     </property>
+     <property name="PyDMToolTip" stdset="0">
+      <string/>
+     </property>
+     <property name="channel" stdset="0">
+      <string/>
+     </property>
+     <property name="penStyle" stdset="0">
+      <enum>Qt::DotLine</enum>
+     </property>
+     <property name="penColor" stdset="0">
+      <color>
+       <red>255</red>
+       <green>128</green>
+       <blue>0</blue>
+      </color>
+     </property>
+     <property name="penWidth" stdset="0">
+      <double>3.000000000000000</double>
+     </property>
+     <property name="arrowEndPoint" stdset="0">
+      <bool>false</bool>
+     </property>
+     <property name="arrowStartPoint" stdset="0">
+      <bool>false</bool>
+     </property>
+     <property name="arrowMidPoint" stdset="0">
+      <bool>false</bool>
+     </property>
+     <property name="flipMidPointArrow" stdset="0">
+      <bool>false</bool>
+     </property>
+     <property name="points">
+      <stringlist>
+       <string>15.0, 0.0</string>
+       <string>15.0, 70.0</string>
+       <string>0.0, 70.0</string>
+      </stringlist>
+     </property>
+    </widget>
+    <widget class="PyDMDrawingLine" name="PyDMDrawingLine_6">
+     <property name="geometry">
+      <rect>
+       <x>363</x>
+       <y>193</y>
+       <width>61</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="toolTip">
+      <string/>
+     </property>
+     <property name="penStyle" stdset="0">
+      <enum>Qt::DotLine</enum>
+     </property>
+     <property name="penColor" stdset="0">
+      <color>
+       <red>255</red>
+       <green>128</green>
+       <blue>0</blue>
+      </color>
+     </property>
+     <property name="penWidth" stdset="0">
+      <double>3.000000000000000</double>
+     </property>
+     <property name="rotation" stdset="0">
+      <double>0.000000000000000</double>
+     </property>
+    </widget>
+    <zorder>label</zorder>
+    <zorder>label_3</zorder>
+    <zorder>label_2</zorder>
+    <zorder>vertical_pitch_polyline</zorder>
+    <zorder>vertical_normal_display</zorder>
+    <zorder>horizontal_pitch_display</zorder>
+    <zorder>vertical_pitch_arc</zorder>
+    <zorder>horizontal_pitch_arc</zorder>
+    <zorder>hoizontal_pitch_polyline</zorder>
+    <zorder>horizontal_normal_display</zorder>
+    <zorder>vertical_pitch_display</zorder>
+    <zorder>PyDMDrawingLine_4</zorder>
+    <zorder>PyDMDrawingLine_5</zorder>
+    <zorder>PyDMDrawingPolyline_2</zorder>
+    <zorder>PyDMDrawingLine_6</zorder>
+   </widget>
+   <widget class="QWidget" name="benders_tab">
+    <property name="styleSheet">
+     <string notr="true"/>
+    </property>
+    <attribute name="title">
+     <string>Benders</string>
+    </attribute>
+    <widget class="QLabel" name="label_4">
+     <property name="geometry">
+      <rect>
+       <x>-151</x>
+       <y>-51</y>
+       <width>741</width>
+       <height>540</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;img src=&quot;:/optics/kb_mirrors.png&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_5">
+     <property name="geometry">
+      <rect>
+       <x>250</x>
+       <y>123</y>
+       <width>181</width>
+       <height>16</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <pointsize>14</pointsize>
+       <weight>75</weight>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="text">
+      <string>Vertical Mirror</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_6">
+     <property name="geometry">
+      <rect>
+       <x>12</x>
+       <y>10</y>
+       <width>191</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <pointsize>14</pointsize>
+       <weight>75</weight>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="text">
+      <string>Horizontal Mirror</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+    <widget class="PyDMEmbeddedDisplay" name="vertical_upstream_display">
+     <property name="geometry">
+      <rect>
+       <x>430</x>
+       <y>90</y>
+       <width>101</width>
+       <height>100</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>Sans Serif</family>
+      </font>
+     </property>
+     <property name="toolTip">
+      <string/>
+     </property>
+     <property name="frameShape">
+      <enum>QFrame::NoFrame</enum>
+     </property>
+     <property name="macros" stdset="0">
+      <string>{&quot;TITLE&quot;: &quot;Upstream&quot;}</string>
+     </property>
+     <property name="filename" stdset="0">
+      <string>slits_motor.py</string>
+     </property>
+     <property name="loadWhenShown" stdset="0">
+      <bool>true</bool>
+     </property>
+     <property name="disconnectWhenHidden" stdset="0">
+      <bool>true</bool>
+     </property>
+     <property name="followSymlinks" stdset="0">
+      <bool>false</bool>
+     </property>
+    </widget>
+    <widget class="PyDMEmbeddedDisplay" name="horizontal_downstream_display">
+     <property name="geometry">
+      <rect>
+       <x>18</x>
+       <y>150</y>
+       <width>101</width>
+       <height>100</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>Sans Serif</family>
+      </font>
+     </property>
+     <property name="toolTip">
+      <string/>
+     </property>
+     <property name="frameShape">
+      <enum>QFrame::NoFrame</enum>
+     </property>
+     <property name="macros" stdset="0">
+      <string>{&quot;TITLE&quot;: &quot;Downstream&quot;}</string>
+     </property>
+     <property name="filename" stdset="0">
+      <string>slits_motor.py</string>
+     </property>
+     <property name="loadWhenShown" stdset="0">
+      <bool>true</bool>
+     </property>
+     <property name="disconnectWhenHidden" stdset="0">
+      <bool>true</bool>
+     </property>
+     <property name="followSymlinks" stdset="0">
+      <bool>false</bool>
+     </property>
+    </widget>
+    <widget class="PyDMEmbeddedDisplay" name="horizontal_upstream_display">
+     <property name="geometry">
+      <rect>
+       <x>230</x>
+       <y>0</y>
+       <width>101</width>
+       <height>100</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>Sans Serif</family>
+      </font>
+     </property>
+     <property name="toolTip">
+      <string/>
+     </property>
+     <property name="frameShape">
+      <enum>QFrame::NoFrame</enum>
+     </property>
+     <property name="macros" stdset="0">
+      <string>{&quot;TITLE&quot;: &quot;Upstream&quot;}</string>
+     </property>
+     <property name="filename" stdset="0">
+      <string>slits_motor.py</string>
+     </property>
+     <property name="loadWhenShown" stdset="0">
+      <bool>true</bool>
+     </property>
+     <property name="disconnectWhenHidden" stdset="0">
+      <bool>true</bool>
+     </property>
+     <property name="followSymlinks" stdset="0">
+      <bool>false</bool>
+     </property>
+    </widget>
+    <widget class="PyDMEmbeddedDisplay" name="vertical_downstream_display">
+     <property name="geometry">
+      <rect>
+       <x>157</x>
+       <y>260</y>
+       <width>101</width>
+       <height>100</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>Sans Serif</family>
+      </font>
+     </property>
+     <property name="toolTip">
+      <string/>
+     </property>
+     <property name="frameShape">
+      <enum>QFrame::NoFrame</enum>
+     </property>
+     <property name="macros" stdset="0">
+      <string>{&quot;TITLE&quot;: &quot;Downstream&quot;}</string>
+     </property>
+     <property name="filename" stdset="0">
+      <string>slits_motor.py</string>
+     </property>
+     <property name="loadWhenShown" stdset="0">
+      <bool>true</bool>
+     </property>
+     <property name="disconnectWhenHidden" stdset="0">
+      <bool>true</bool>
+     </property>
+     <property name="followSymlinks" stdset="0">
+      <bool>false</bool>
+     </property>
+    </widget>
+    <widget class="PyDMDrawingArc" name="vertical_downstream_arc">
+     <property name="geometry">
+      <rect>
+       <x>185</x>
+       <y>154</y>
+       <width>231</width>
+       <height>141</height>
+      </rect>
+     </property>
+     <property name="toolTip">
+      <string/>
+     </property>
+     <property name="penColor" stdset="0">
+      <color>
+       <red>255</red>
+       <green>128</green>
+       <blue>0</blue>
+      </color>
+     </property>
+     <property name="penWidth" stdset="0">
+      <double>3.000000000000000</double>
+     </property>
+     <property name="rotation" stdset="0">
+      <double>-15.000000000000000</double>
+     </property>
+     <property name="startAngle" stdset="0">
+      <double>180.000000000000000</double>
+     </property>
+    </widget>
+    <widget class="PyDMDrawingArc" name="vertical_downstream_arc_2">
+     <property name="geometry">
+      <rect>
+       <x>310</x>
+       <y>199</y>
+       <width>231</width>
+       <height>141</height>
+      </rect>
+     </property>
+     <property name="toolTip">
+      <string/>
+     </property>
+     <property name="penColor" stdset="0">
+      <color>
+       <red>255</red>
+       <green>128</green>
+       <blue>0</blue>
+      </color>
+     </property>
+     <property name="penWidth" stdset="0">
+      <double>3.000000000000000</double>
+     </property>
+     <property name="rotation" stdset="0">
+      <double>-20.000000000000000</double>
+     </property>
+     <property name="startAngle" stdset="0">
+      <double>-90.000000000000000</double>
+     </property>
+    </widget>
+    <widget class="PyDMDrawingArc" name="vertical_downstream_arc_3">
+     <property name="geometry">
+      <rect>
+       <x>5</x>
+       <y>29</y>
+       <width>131</width>
+       <height>71</height>
+      </rect>
+     </property>
+     <property name="toolTip">
+      <string/>
+     </property>
+     <property name="penColor" stdset="0">
+      <color>
+       <red>255</red>
+       <green>128</green>
+       <blue>0</blue>
+      </color>
+     </property>
+     <property name="penWidth" stdset="0">
+      <double>3.000000000000000</double>
+     </property>
+     <property name="rotation" stdset="0">
+      <double>-5.000000000000000</double>
+     </property>
+     <property name="startAngle" stdset="0">
+      <double>90.000000000000000</double>
+     </property>
+    </widget>
+    <widget class="PyDMDrawingArc" name="vertical_downstream_arc_4">
+     <property name="geometry">
+      <rect>
+       <x>66</x>
+       <y>34</y>
+       <width>131</width>
+       <height>71</height>
+      </rect>
+     </property>
+     <property name="toolTip">
+      <string/>
+     </property>
+     <property name="penColor" stdset="0">
+      <color>
+       <red>255</red>
+       <green>128</green>
+       <blue>0</blue>
+      </color>
+     </property>
+     <property name="penWidth" stdset="0">
+      <double>3.000000000000000</double>
+     </property>
+     <property name="rotation" stdset="0">
+      <double>-3.000000000000000</double>
+     </property>
+     <property name="startAngle" stdset="0">
+      <double>0.000000000000000</double>
+     </property>
+    </widget>
+    <widget class="PyDMDrawingLine" name="PyDMDrawingLine">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>38</y>
+       <width>100</width>
+       <height>111</height>
+      </rect>
+     </property>
+     <property name="toolTip">
+      <string/>
+     </property>
+     <property name="penStyle" stdset="0">
+      <enum>Qt::DotLine</enum>
+     </property>
+     <property name="penColor" stdset="0">
+      <color>
+       <red>255</red>
+       <green>128</green>
+       <blue>0</blue>
+      </color>
+     </property>
+     <property name="penWidth" stdset="0">
+      <double>3.000000000000000</double>
+     </property>
+     <property name="rotation" stdset="0">
+      <double>90.000000000000000</double>
+     </property>
+    </widget>
+    <widget class="PyDMDrawingLine" name="PyDMDrawingLine_2">
+     <property name="geometry">
+      <rect>
+       <x>170</x>
+       <y>0</y>
+       <width>55</width>
+       <height>101</height>
+      </rect>
+     </property>
+     <property name="toolTip">
+      <string/>
+     </property>
+     <property name="penStyle" stdset="0">
+      <enum>Qt::DotLine</enum>
+     </property>
+     <property name="penColor" stdset="0">
+      <color>
+       <red>255</red>
+       <green>128</green>
+       <blue>0</blue>
+      </color>
+     </property>
+     <property name="penWidth" stdset="0">
+      <double>3.000000000000000</double>
+     </property>
+     <property name="rotation" stdset="0">
+      <double>0.000000000000000</double>
+     </property>
+    </widget>
+    <widget class="PyDMDrawingPolyline" name="PyDMDrawingPolyline">
+     <property name="geometry">
+      <rect>
+       <x>204</x>
+       <y>230</y>
+       <width>31</width>
+       <height>31</height>
+      </rect>
+     </property>
+     <property name="toolTip">
+      <string/>
+     </property>
+     <property name="penStyle" stdset="0">
+      <enum>Qt::DotLine</enum>
+     </property>
+     <property name="penColor" stdset="0">
+      <color>
+       <red>255</red>
+       <green>128</green>
+       <blue>0</blue>
+      </color>
+     </property>
+     <property name="penWidth" stdset="0">
+      <double>3.000000000000000</double>
+     </property>
+     <property name="points">
+      <stringlist>
+       <string>20.0, 0.0</string>
+       <string>0.0, 0.0</string>
+       <string>0.0, 20.0</string>
+      </stringlist>
+     </property>
+    </widget>
+    <widget class="PyDMDrawingLine" name="PyDMDrawingLine_3">
+     <property name="geometry">
+      <rect>
+       <x>420</x>
+       <y>194</y>
+       <width>100</width>
+       <height>121</height>
+      </rect>
+     </property>
+     <property name="toolTip">
+      <string/>
+     </property>
+     <property name="penStyle" stdset="0">
+      <enum>Qt::DotLine</enum>
+     </property>
+     <property name="penColor" stdset="0">
+      <color>
+       <red>255</red>
+       <green>128</green>
+       <blue>0</blue>
+      </color>
+     </property>
+     <property name="penWidth" stdset="0">
+      <double>3.000000000000000</double>
+     </property>
+     <property name="rotation" stdset="0">
+      <double>90.000000000000000</double>
+     </property>
+    </widget>
+   </widget>
   </widget>
-  <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_4">
-   <property name="geometry">
-    <rect>
-     <x>230</x>
-     <y>310</y>
-     <width>100</width>
-     <height>100</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <family>Sans Serif</family>
-    </font>
-   </property>
-   <property name="toolTip">
-    <string/>
-   </property>
-   <property name="frameShape">
-    <enum>QFrame::NoFrame</enum>
-   </property>
-   <property name="macros" stdset="0">
-    <string>TITLE=Pitch</string>
-   </property>
-   <property name="filename" stdset="0">
-    <string>slits_motor.py</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label">
-   <property name="geometry">
-    <rect>
-     <x>-118</x>
-     <y>-11</y>
-     <width>741</width>
-     <height>540</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;img src=&quot;:/slits_3d/kb_mirrors.png&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-   </property>
-  </widget>
-  <widget class="PyDMDrawingPolyline" name="PyDMDrawingPolyline">
-   <property name="geometry">
-    <rect>
-     <x>226</x>
-     <y>256</y>
-     <width>161</width>
-     <height>81</height>
-    </rect>
-   </property>
-   <property name="toolTip">
-    <string/>
-   </property>
-   <property name="alarmSensitiveContent" stdset="0">
-    <bool>false</bool>
-   </property>
-   <property name="alarmSensitiveBorder" stdset="0">
-    <bool>false</bool>
-   </property>
-   <property name="PyDMToolTip" stdset="0">
-    <string/>
-   </property>
-   <property name="channel" stdset="0">
-    <string/>
-   </property>
-   <property name="penColor" stdset="0">
-    <color>
-     <red>255</red>
-     <green>128</green>
-     <blue>0</blue>
-    </color>
-   </property>
-   <property name="penWidth" stdset="0">
-    <double>3.000000000000000</double>
-   </property>
-   <property name="arrowEndPoint" stdset="0">
-    <bool>false</bool>
-   </property>
-   <property name="arrowStartPoint" stdset="0">
-    <bool>false</bool>
-   </property>
-   <property name="arrowMidPoint" stdset="0">
-    <bool>false</bool>
-   </property>
-   <property name="flipMidPointArrow" stdset="0">
-    <bool>false</bool>
-   </property>
-   <property name="points">
-    <stringlist>
-     <string>17.41, 0.0</string>
-     <string>149.41, 70.0</string>
-     <string>0.0, 70.0</string>
-    </stringlist>
-   </property>
-  </widget>
-  <widget class="PyDMDrawingArc" name="PyDMDrawingArc">
-   <property name="geometry">
-    <rect>
-     <x>300</x>
-     <y>278</y>
-     <width>81</width>
-     <height>101</height>
-    </rect>
-   </property>
-   <property name="toolTip">
-    <string/>
-   </property>
-   <property name="penColor" stdset="0">
-    <color>
-     <red>255</red>
-     <green>128</green>
-     <blue>0</blue>
-    </color>
-   </property>
-   <property name="penWidth" stdset="0">
-    <double>3.000000000000000</double>
-   </property>
-   <property name="startAngle" stdset="0">
-    <double>180.000000000000000</double>
-   </property>
-   <property name="spanAngle" stdset="0">
-    <double>-45.000000000000000</double>
-   </property>
-  </widget>
-  <widget class="PyDMDrawingPolyline" name="PyDMDrawingPolyline_2">
-   <property name="geometry">
-    <rect>
-     <x>136</x>
-     <y>76</y>
-     <width>91</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="toolTip">
-    <string/>
-   </property>
-   <property name="alarmSensitiveContent" stdset="0">
-    <bool>false</bool>
-   </property>
-   <property name="alarmSensitiveBorder" stdset="0">
-    <bool>false</bool>
-   </property>
-   <property name="PyDMToolTip" stdset="0">
-    <string/>
-   </property>
-   <property name="channel" stdset="0">
-    <string/>
-   </property>
-   <property name="penColor" stdset="0">
-    <color>
-     <red>255</red>
-     <green>128</green>
-     <blue>0</blue>
-    </color>
-   </property>
-   <property name="penWidth" stdset="0">
-    <double>3.000000000000000</double>
-   </property>
-   <property name="arrowEndPoint" stdset="0">
-    <bool>false</bool>
-   </property>
-   <property name="arrowStartPoint" stdset="0">
-    <bool>false</bool>
-   </property>
-   <property name="arrowMidPoint" stdset="0">
-    <bool>false</bool>
-   </property>
-   <property name="flipMidPointArrow" stdset="0">
-    <bool>false</bool>
-   </property>
-   <property name="points">
-    <stringlist>
-     <string>80.6, 0.0</string>
-     <string>0.0, 0.0</string>
-     <string>79.0, 16.0</string>
-    </stringlist>
-   </property>
-  </widget>
-  <widget class="PyDMDrawingArc" name="PyDMDrawingArc_2">
-   <property name="geometry">
-    <rect>
-     <x>110</x>
-     <y>30</y>
-     <width>81</width>
-     <height>101</height>
-    </rect>
-   </property>
-   <property name="toolTip">
-    <string/>
-   </property>
-   <property name="penColor" stdset="0">
-    <color>
-     <red>255</red>
-     <green>128</green>
-     <blue>0</blue>
-    </color>
-   </property>
-   <property name="penWidth" stdset="0">
-    <double>3.000000000000000</double>
-   </property>
-   <property name="startAngle" stdset="0">
-    <double>0.000000000000000</double>
-   </property>
-   <property name="spanAngle" stdset="0">
-    <double>-10.000000000000000</double>
-   </property>
-  </widget>
-  <zorder>label</zorder>
-  <zorder>PyDMEmbeddedDisplay</zorder>
-  <zorder>PyDMEmbeddedDisplay_2</zorder>
-  <zorder>PyDMEmbeddedDisplay_3</zorder>
-  <zorder>label_2</zorder>
-  <zorder>label_3</zorder>
-  <zorder>PyDMEmbeddedDisplay_4</zorder>
-  <zorder>PyDMDrawingPolyline</zorder>
-  <zorder>PyDMDrawingArc</zorder>
-  <zorder>PyDMDrawingPolyline_2</zorder>
-  <zorder>PyDMDrawingArc_2</zorder>
  </widget>
  <customwidgets>
   <customwidget>
+   <class>PyDMLabel</class>
+   <extends>QLabel</extends>
+   <header>pydm.widgets.label</header>
+  </customwidget>
+  <customwidget>
    <class>PyDMDrawingArc</class>
+   <extends>QWidget</extends>
+   <header>pydm.widgets.drawing</header>
+  </customwidget>
+  <customwidget>
+   <class>PyDMDrawingLine</class>
    <extends>QWidget</extends>
    <header>pydm.widgets.drawing</header>
   </customwidget>

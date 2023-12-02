@@ -6,9 +6,14 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>432</width>
-    <height>393</height>
+    <width>431</width>
+    <height>383</height>
    </rect>
+  </property>
+  <property name="font">
+   <font>
+    <family>Sans Serif</family>
+   </font>
   </property>
   <property name="windowTitle">
    <string>${DEVICE}</string>
@@ -16,14 +21,14 @@
   <widget class="QLabel" name="label">
    <property name="geometry">
     <rect>
-     <x>0</x>
-     <y>0</y>
-     <width>391</width>
-     <height>361</height>
+     <x>-50</x>
+     <y>-98</y>
+     <width>500</width>
+     <height>500</height>
     </rect>
    </property>
    <property name="text">
-    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;img src=&quot;:/slits_3d/slits_3d.png&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;img src=&quot;:/optics/slits_3d.png&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
   </widget>
   <widget class="PyDMDrawingLine" name="PyDMDrawingLine">
@@ -37,6 +42,9 @@
    </property>
    <property name="toolTip">
     <string/>
+   </property>
+   <property name="penStyle" stdset="0">
+    <enum>Qt::DotLine</enum>
    </property>
    <property name="penColor" stdset="0">
     <color>
@@ -67,6 +75,9 @@
    <property name="toolTip">
     <string/>
    </property>
+   <property name="penStyle" stdset="0">
+    <enum>Qt::DotLine</enum>
+   </property>
    <property name="penColor" stdset="0">
     <color>
      <red>255</red>
@@ -95,6 +106,9 @@
    </property>
    <property name="toolTip">
     <string/>
+   </property>
+   <property name="penStyle" stdset="0">
+    <enum>Qt::DotLine</enum>
    </property>
    <property name="penColor" stdset="0">
     <color>
@@ -236,6 +250,9 @@
    <property name="rotation" stdset="0">
     <double>45.000000000000000</double>
    </property>
+   <property name="arrowEndPoint" stdset="0">
+    <bool>false</bool>
+   </property>
   </widget>
   <widget class="PyDMDrawingLine" name="PyDMDrawingLine_10">
    <property name="geometry">
@@ -248,6 +265,9 @@
    </property>
    <property name="toolTip">
     <string/>
+   </property>
+   <property name="penStyle" stdset="0">
+    <enum>Qt::DotLine</enum>
    </property>
    <property name="penColor" stdset="0">
     <color>
@@ -363,7 +383,7 @@
   <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_4">
    <property name="geometry">
     <rect>
-     <x>66</x>
+     <x>60</x>
      <y>4</y>
      <width>119</width>
      <height>111</height>
