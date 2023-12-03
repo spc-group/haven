@@ -15,6 +15,7 @@ from .instrument import (  # noqa: F401
     ion_chamber,
     registry,
 )
+from .instrument.device import RegexComponent
 from .instrument.dxp import load_dxp  # noqa: F401
 from .instrument.load_instrument import load_instrument  # noqa: F401
 from .instrument.motor import HavenMotor  # noqa: F401
