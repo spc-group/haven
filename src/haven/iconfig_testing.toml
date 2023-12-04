@@ -47,7 +47,13 @@ bendable = false
 
 prefix = "25ida:ORM1:"
 device_class = "HighHeatLoadMirror"
-bendable = false
+# bendable = false
+
+[mirrors.ORM2]
+
+prefix = "25ida:ORM2:"
+device_class = "HighHeatLoadMirror"
+bendable = true
 
 [area_detector.sim_det]
 

@@ -14,7 +14,6 @@ class HighHeatLoadMirror(Device):
     roll = Cpt(HavenMotor, "m2")
     upstream = Cpt(HavenMotor, "m3")
     downstream = Cpt(HavenMotor, "m4")
-    bender = Cpt(HavenMotor, "m5")
 
     # Pseudo motors
     pitch = Cpt(HavenMotor, "coarsePitch", kind=Kind.hinted)
@@ -28,6 +27,9 @@ class HighHeatLoadMirror(Device):
         TransformRecord, "lats:Readback", kind=Kind.config
     )
 
+
+class BendableHighHeatLoadMirror(HighHeatLoadMirror):
+    bender = Cpt(HavenMotor, "m5")
 
 
 class KBMirror(Device):
@@ -61,7 +63,11 @@ def load_mirror_coros(config=None):
         )
     # Create single-bounce mirrors
     for name, mirror_config in config.get("mirrors", {}).items():
-        DeviceClass = globals().get(mirror_config["device_class"])
+        # Decide which base class of mirror to use
+        class_name = mirror_config["device_class"]
+        if mirror_config.get('bendable', False):
+            class_name = f"Bendable{class_name}"
+        DeviceClass = globals().get(class_name)
         # Check that it's a valid device class
         if DeviceClass is None:
             msg = f"mirrors.{name}.device_class={mirror_config['device_class']}"

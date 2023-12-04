@@ -3,11 +3,12 @@ from haven.instrument.mirrors import (
     KBMirror,
     load_mirrors,
     HighHeatLoadMirror,
+    BendableHighHeatLoadMirror,
 )
 
 
 def test_high_heat_load_mirror_PVs():
-    mirror = HighHeatLoadMirror(prefix="255ida:ORM2:", name="orm2")
+    mirror = BendableHighHeatLoadMirror(prefix="255ida:ORM2:", name="orm2")
     # Check the motor PVs
     assert mirror.transverse.user_readback.pvname == "255ida:ORM2:m1.RBV"
     assert mirror.roll.user_setpoint.pvname == "255ida:ORM2:m2.VAL"
@@ -57,3 +58,7 @@ def test_load_mirrors(sim_registry):
     # Check that the HHL mirrors were created
     hhl_mirrors = sim_registry.find(name="ORM1")
     assert isinstance(hhl_mirrors, HighHeatLoadMirror)
+    assert not isinstance(hhl_mirrors, BendableHighHeatLoadMirror)
+    # Check that the HHL mirror selects the bendable version
+    hhl_mirrors = sim_registry.find(name="ORM2")
+    assert isinstance(hhl_mirrors, BendableHighHeatLoadMirror)
