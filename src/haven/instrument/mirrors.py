@@ -1,6 +1,6 @@
 import asyncio
 
-from ophyd import Device, Component as Cpt
+from ophyd import Device, Component as Cpt, Kind
 from apstools.synApps import TransformRecord
 
 from .._iconfig import load_config
@@ -9,7 +9,25 @@ from .device import aload_devices, make_device
 
 
 class HighHeatLoadMirror(Device):
-    pass
+    # Physical motors
+    transverse = Cpt(HavenMotor, "m1")
+    roll = Cpt(HavenMotor, "m2")
+    upstream = Cpt(HavenMotor, "m3")
+    downstream = Cpt(HavenMotor, "m4")
+    bender = Cpt(HavenMotor, "m5")
+
+    # Pseudo motors
+    pitch = Cpt(HavenMotor, "coarsePitch", kind=Kind.hinted)
+    normal = Cpt(HavenMotor, "lateral", kind=Kind.hinted)
+
+    # Standard transform records for the pseudo motors
+    drive_transform = Cpt(
+        TransformRecord, "lats:Drive", kind=Kind.config
+    )
+    readback_transform = Cpt(
+        TransformRecord, "lats:Readback", kind=Kind.config
+    )
+
 
 
 class KBMirror(Device):
@@ -21,10 +39,10 @@ class KBMirror(Device):
     # The pseudo motor transform records have
     # a missing ':', so we need to remove it.
     drive_transform = RCpt(
-        TransformRecord, "Drive", pattern=":([HV]):", repl=r"\1:", kind="config"
+        TransformRecord, "Drive", pattern=":([HV]):", repl=r"\1:", kind=Kind.config
     )
     readback_transform = RCpt(
-        TransformRecord, "Readback", pattern=":([HV]):", repl=r"\1:", kind="config"
+        TransformRecord, "Readback", pattern=":([HV]):", repl=r"\1:", kind=Kind.config
     )
 
 

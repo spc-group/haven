@@ -43,6 +43,9 @@
    </property>
   </widget>
   <widget class="QTabWidget" name="tabWidget">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
    <property name="geometry">
     <rect>
      <x>10</x>
@@ -194,7 +197,7 @@
       <enum>QFrame::NoFrame</enum>
      </property>
      <property name="macros" stdset="0">
-      <string>TITLE=Normal</string>
+      <string>TITLE=Normal,AXIS=${DEVICE}.vert.normal</string>
      </property>
      <property name="filename" stdset="0">
       <string>slits_motor.py</string>
@@ -221,7 +224,7 @@
       <enum>QFrame::NoFrame</enum>
      </property>
      <property name="macros" stdset="0">
-      <string>TITLE=Pitch</string>
+      <string>TITLE=Pitch,AXIS=${DEVICE}.horiz.pitch</string>
      </property>
      <property name="filename" stdset="0">
       <string>slits_motor.py</string>
@@ -360,7 +363,7 @@
       <enum>QFrame::NoFrame</enum>
      </property>
      <property name="macros" stdset="0">
-      <string>TITLE=Normal</string>
+      <string>TITLE=Normal,AXIS=${DEVICE}.horiz.normal</string>
      </property>
      <property name="filename" stdset="0">
       <string>slits_motor.py</string>
@@ -387,7 +390,7 @@
       <enum>QFrame::NoFrame</enum>
      </property>
      <property name="macros" stdset="0">
-      <string>TITLE=Pitch</string>
+      <string>TITLE=Pitch,AXIS=${DEVICE}.vert.pitch</string>
      </property>
      <property name="filename" stdset="0">
       <string>slits_motor.py</string>
@@ -476,7 +479,7 @@
        <x>88</x>
        <y>129</y>
        <width>31</width>
-       <height>211</height>
+       <height>81</height>
       </rect>
      </property>
      <property name="toolTip">
@@ -573,6 +576,9 @@
     <zorder>PyDMDrawingLine_6</zorder>
    </widget>
    <widget class="QWidget" name="benders_tab">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
     <property name="styleSheet">
      <string notr="true"/>
     </property>
@@ -690,6 +696,11 @@
      </property>
      <property name="toolTip">
       <string/>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">#axis_name_line_edit {
+color: white;
+}</string>
      </property>
      <property name="frameShape">
       <enum>QFrame::NoFrame</enum>

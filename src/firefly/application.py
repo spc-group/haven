@@ -179,6 +179,18 @@ class FireflyApplication(PyDMApplication):
             device_key="DEVICE",
         )
         self._prepare_device_windows(
+            device_label="kb_mirrors",
+            attr_name="kb_mirrors",
+            ui_file="kb_mirrors.ui",
+            device_key="DEVICE",
+        )
+        self._prepare_device_windows(
+            device_label="mirrors",
+            attr_name="mirror",
+            ui_file="mirror.ui",
+            device_key="DEVICE",
+        )
+        self._prepare_device_windows(
             device_label="xrf_detectors",
             attr_name="xrf_detector",
             ui_file="xrf_detector.py",

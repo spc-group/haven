@@ -1,0 +1,371 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Form</class>
+ <widget class="QWidget" name="Form">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>318</width>
+    <height>332</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <widget class="QLabel" name="label">
+   <property name="geometry">
+    <rect>
+     <x>-37</x>
+     <y>0</y>
+     <width>360</width>
+     <height>335</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;img src=&quot;:/optics/mirror.png&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
+  </widget>
+  <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay">
+   <property name="geometry">
+    <rect>
+     <x>167</x>
+     <y>71</y>
+     <width>100</width>
+     <height>111</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string/>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">PyDMLabel {
+color: white;
+}</string>
+   </property>
+   <property name="frameShape">
+    <enum>QFrame::NoFrame</enum>
+   </property>
+   <property name="macros" stdset="0">
+    <string>TITLE=Pitch,AXIS=${DEVICE}.pitch</string>
+   </property>
+   <property name="filename" stdset="0">
+    <string>slits_motor.py</string>
+   </property>
+  </widget>
+  <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_2">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="geometry">
+    <rect>
+     <x>39</x>
+     <y>50</y>
+     <width>100</width>
+     <height>111</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string/>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">PyDMLabel {
+color: white;
+
+}</string>
+   </property>
+   <property name="frameShape">
+    <enum>QFrame::NoFrame</enum>
+   </property>
+   <property name="macros" stdset="0">
+    <string>TITLE=Bender</string>
+   </property>
+   <property name="filename" stdset="0">
+    <string>slits_motor.py</string>
+   </property>
+  </widget>
+  <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_3">
+   <property name="geometry">
+    <rect>
+     <x>33</x>
+     <y>190</y>
+     <width>100</width>
+     <height>111</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string/>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">#axis_name_line_edit {
+color: white;
+}</string>
+   </property>
+   <property name="frameShape">
+    <enum>QFrame::NoFrame</enum>
+   </property>
+   <property name="macros" stdset="0">
+    <string>TITLE=Normal,AXIS=${DEVICE}.normalpitch</string>
+   </property>
+   <property name="filename" stdset="0">
+    <string>slits_motor.py</string>
+   </property>
+  </widget>
+  <widget class="PyDMDrawingLine" name="PyDMDrawingLine_5">
+   <property name="geometry">
+    <rect>
+     <x>121</x>
+     <y>157</y>
+     <width>31</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string/>
+   </property>
+   <property name="penStyle" stdset="0">
+    <enum>Qt::SolidLine</enum>
+   </property>
+   <property name="penColor" stdset="0">
+    <color>
+     <red>255</red>
+     <green>128</green>
+     <blue>0</blue>
+    </color>
+   </property>
+   <property name="penWidth" stdset="0">
+    <double>3.000000000000000</double>
+   </property>
+   <property name="rotation" stdset="0">
+    <double>65.000000000000000</double>
+   </property>
+   <property name="arrowStartPoint" stdset="0">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="PyDMDrawingPolyline" name="PyDMDrawingPolyline_2">
+   <property name="geometry">
+    <rect>
+     <x>123</x>
+     <y>170</y>
+     <width>31</width>
+     <height>81</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string/>
+   </property>
+   <property name="alarmSensitiveContent" stdset="0">
+    <bool>false</bool>
+   </property>
+   <property name="alarmSensitiveBorder" stdset="0">
+    <bool>false</bool>
+   </property>
+   <property name="PyDMToolTip" stdset="0">
+    <string/>
+   </property>
+   <property name="channel" stdset="0">
+    <string/>
+   </property>
+   <property name="penStyle" stdset="0">
+    <enum>Qt::DotLine</enum>
+   </property>
+   <property name="penColor" stdset="0">
+    <color>
+     <red>255</red>
+     <green>128</green>
+     <blue>0</blue>
+    </color>
+   </property>
+   <property name="penWidth" stdset="0">
+    <double>3.000000000000000</double>
+   </property>
+   <property name="arrowEndPoint" stdset="0">
+    <bool>false</bool>
+   </property>
+   <property name="arrowStartPoint" stdset="0">
+    <bool>false</bool>
+   </property>
+   <property name="arrowMidPoint" stdset="0">
+    <bool>false</bool>
+   </property>
+   <property name="flipMidPointArrow" stdset="0">
+    <bool>false</bool>
+   </property>
+   <property name="points">
+    <stringlist>
+     <string>15.0, 0.0</string>
+     <string>15.0, 52.0</string>
+     <string>0.0, 52.0</string>
+    </stringlist>
+   </property>
+  </widget>
+  <widget class="PyDMDrawingPolyline" name="hoizontal_pitch_polyline">
+   <property name="geometry">
+    <rect>
+     <x>166</x>
+     <y>48</y>
+     <width>121</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string/>
+   </property>
+   <property name="alarmSensitiveContent" stdset="0">
+    <bool>false</bool>
+   </property>
+   <property name="alarmSensitiveBorder" stdset="0">
+    <bool>false</bool>
+   </property>
+   <property name="PyDMToolTip" stdset="0">
+    <string/>
+   </property>
+   <property name="channel" stdset="0">
+    <string/>
+   </property>
+   <property name="penColor" stdset="0">
+    <color>
+     <red>255</red>
+     <green>128</green>
+     <blue>0</blue>
+    </color>
+   </property>
+   <property name="penWidth" stdset="0">
+    <double>3.000000000000000</double>
+   </property>
+   <property name="arrowEndPoint" stdset="0">
+    <bool>false</bool>
+   </property>
+   <property name="arrowStartPoint" stdset="0">
+    <bool>false</bool>
+   </property>
+   <property name="arrowMidPoint" stdset="0">
+    <bool>false</bool>
+   </property>
+   <property name="flipMidPointArrow" stdset="0">
+    <bool>false</bool>
+   </property>
+   <property name="points">
+    <stringlist>
+     <string>112.8, 0.0</string>
+     <string>0.0, 0.0</string>
+     <string>111.0, 25.0</string>
+    </stringlist>
+   </property>
+  </widget>
+  <widget class="PyDMDrawingArc" name="horizontal_pitch_arc">
+   <property name="geometry">
+    <rect>
+     <x>143</x>
+     <y>0</y>
+     <width>81</width>
+     <height>101</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string/>
+   </property>
+   <property name="penColor" stdset="0">
+    <color>
+     <red>255</red>
+     <green>128</green>
+     <blue>0</blue>
+    </color>
+   </property>
+   <property name="penWidth" stdset="0">
+    <double>3.000000000000000</double>
+   </property>
+   <property name="startAngle" stdset="0">
+    <double>0.000000000000000</double>
+   </property>
+   <property name="spanAngle" stdset="0">
+    <double>-10.000000000000000</double>
+   </property>
+  </widget>
+  <widget class="PyDMDrawingArc" name="vertical_downstream_arc_5">
+   <property name="geometry">
+    <rect>
+     <x>3</x>
+     <y>16</y>
+     <width>201</width>
+     <height>131</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string/>
+   </property>
+   <property name="penColor" stdset="0">
+    <color>
+     <red>255</red>
+     <green>128</green>
+     <blue>0</blue>
+    </color>
+   </property>
+   <property name="penWidth" stdset="0">
+    <double>3.000000000000000</double>
+   </property>
+   <property name="rotation" stdset="0">
+    <double>-15.000000000000000</double>
+   </property>
+   <property name="startAngle" stdset="0">
+    <double>90.000000000000000</double>
+   </property>
+  </widget>
+  <widget class="PyDMDrawingLine" name="PyDMDrawingLine">
+   <property name="geometry">
+    <rect>
+     <x>40</x>
+     <y>30</y>
+     <width>100</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string/>
+   </property>
+   <property name="penStyle" stdset="0">
+    <enum>Qt::DotLine</enum>
+   </property>
+   <property name="penColor" stdset="0">
+    <color>
+     <red>255</red>
+     <green>128</green>
+     <blue>0</blue>
+    </color>
+   </property>
+   <property name="penWidth" stdset="0">
+    <double>3.000000000000000</double>
+   </property>
+   <property name="rotation" stdset="0">
+    <double>90.000000000000000</double>
+   </property>
+  </widget>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>PyDMDrawingArc</class>
+   <extends>QWidget</extends>
+   <header>pydm.widgets.drawing</header>
+  </customwidget>
+  <customwidget>
+   <class>PyDMDrawingLine</class>
+   <extends>QWidget</extends>
+   <header>pydm.widgets.drawing</header>
+  </customwidget>
+  <customwidget>
+   <class>PyDMDrawingPolyline</class>
+   <extends>QWidget</extends>
+   <header>pydm.widgets.drawing</header>
+  </customwidget>
+  <customwidget>
+   <class>PyDMEmbeddedDisplay</class>
+   <extends>QFrame</extends>
+   <header>pydm.widgets.embedded_display</header>
+  </customwidget>
+ </customwidgets>
+ <resources>
+  <include location="../../../../../src/haven/src/firefly/resources/beamline_components.qrc"/>
+ </resources>
+ <connections/>
+</ui>
