@@ -310,6 +310,7 @@ class FireflyApplication(PyDMApplication):
         plans = [
             # (plan_name, text, display file)
             ("count", "&Count", "count.py"),
+            ("line_scan", "&Line scan", "line_scan.py"),
             ("xafs_scan", "&XAFS Scan", "xafs_scan.py"),
         ]
         self.plan_actions = []
