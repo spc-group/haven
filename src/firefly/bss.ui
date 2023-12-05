@@ -88,7 +88,7 @@
            <string>688743</string>
           </property>
           <property name="channel" stdset="0">
-           <string>sig://bss_proposal_proposal_id</string>
+           <string>haven://bss_proposal_proposal_id</string>
           </property>
          </widget>
         </item>
@@ -105,7 +105,7 @@
            <string/>
           </property>
           <property name="channel" stdset="0">
-           <string>sig://bss_proposal_title</string>
+           <string>haven://bss_proposal_title</string>
           </property>
           <property name="displayFormat" stdset="0">
            <enum>PyDMLineEdit::String</enum>
@@ -127,7 +127,7 @@
              <string/>
             </property>
             <property name="channel" stdset="0">
-             <string>sig://bss_proposal_start_date</string>
+             <string>haven://bss_proposal_start_date</string>
             </property>
             <property name="displayFormat" stdset="0">
              <enum>PyDMLineEdit::String</enum>
@@ -147,7 +147,7 @@
              <string/>
             </property>
             <property name="channel" stdset="0">
-             <string>sig://bss_proposal_end_date</string>
+             <string>haven://bss_proposal_end_date</string>
             </property>
             <property name="displayFormat" stdset="0">
              <enum>PyDMLineEdit::String</enum>
@@ -169,7 +169,7 @@
            <string/>
           </property>
           <property name="channel" stdset="0">
-           <string>sig://bss_proposal_user_last_names</string>
+           <string>haven://bss_proposal_user_last_names</string>
           </property>
           <property name="displayFormat" stdset="0">
            <enum>PyDMLineEdit::String</enum>
@@ -189,7 +189,7 @@
            <string/>
           </property>
           <property name="channel" stdset="0">
-           <string>sig://bss_proposal_user_badges</string>
+           <string>haven://bss_proposal_user_badges</string>
           </property>
           <property name="displayFormat" stdset="0">
            <enum>PyDMLineEdit::String</enum>
@@ -209,7 +209,7 @@
            <string/>
           </property>
           <property name="channel" stdset="0">
-           <string>sig://bss.proposal.mail_in_flag</string>
+           <string>haven://bss.proposal.mail_in_flag</string>
           </property>
          </widget>
         </item>
@@ -226,7 +226,7 @@
            <string/>
           </property>
           <property name="channel" stdset="0">
-           <string>sig://bss_proposal_proprietary_flag</string>
+           <string>haven://bss_proposal_proprietary_flag</string>
           </property>
          </widget>
         </item>
@@ -303,7 +303,7 @@
            <string>257794</string>
           </property>
           <property name="channel" stdset="0">
-           <string>sig://bss_esaf_esaf_id</string>
+           <string>haven://bss_esaf_esaf_id</string>
           </property>
          </widget>
         </item>
@@ -323,7 +323,7 @@
            <string>Approved</string>
           </property>
           <property name="channel" stdset="0">
-           <string>sig://bss_esaf_esaf_status</string>
+           <string>haven://bss_esaf_esaf_status</string>
           </property>
          </widget>
         </item>
@@ -340,7 +340,7 @@
            <string/>
           </property>
           <property name="channel" stdset="0">
-           <string>sig://bss_esaf_title</string>
+           <string>haven://bss_esaf_title</string>
           </property>
           <property name="displayFormat" stdset="0">
            <enum>PyDMLineEdit::String</enum>
@@ -362,7 +362,7 @@
              <string/>
             </property>
             <property name="channel" stdset="0">
-             <string>sig://bss_esaf_start_date</string>
+             <string>haven://bss_esaf_start_date</string>
             </property>
             <property name="displayFormat" stdset="0">
              <enum>PyDMLineEdit::String</enum>
@@ -382,7 +382,7 @@
              <string/>
             </property>
             <property name="channel" stdset="0">
-             <string>sig://bss_esaf_end_date</string>
+             <string>haven://bss_esaf_end_date</string>
             </property>
             <property name="displayFormat" stdset="0">
              <enum>PyDMLineEdit::String</enum>
@@ -404,7 +404,7 @@
            <string/>
           </property>
           <property name="channel" stdset="0">
-           <string>sig://bss_esaf_user_last_names</string>
+           <string>haven://bss_esaf_user_last_names</string>
           </property>
           <property name="displayFormat" stdset="0">
            <enum>PyDMLineEdit::String</enum>
@@ -424,7 +424,7 @@
            <string/>
           </property>
           <property name="channel" stdset="0">
-           <string>sig://bss_esaf_user_badges</string>
+           <string>haven://bss_esaf_user_badges</string>
           </property>
           <property name="displayFormat" stdset="0">
            <enum>PyDMLineEdit::String</enum>

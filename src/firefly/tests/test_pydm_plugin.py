@@ -1,10 +1,13 @@
 from ophyd import Signal
 from pydm.widgets import PyDMLineEdit
-from pydm.data_plugins import plugin_modules
+from pydm.data_plugins import plugin_for_address
+
+from firefly.pydm_plugin import HavenPlugin
 
 def test_plugin_registered(ffapp):
     assert "haven" in ffapp.plugins.keys()
-
+    plugin = plugin_for_address("haven://")
+    assert isinstance(plugin, HavenPlugin)
 
 def test_signal_connection(qapp, qtbot, sim_registry):
     # Create a signal and attach our listener

@@ -50,7 +50,7 @@
         <string>NaN</string>
        </property>
        <property name="channel" stdset="0">
-        <string>sig://${AD}.stats${R}.mean_value</string>
+        <string>haven://${AD}.stats${R}.mean_value</string>
        </property>
       </widget>
      </item>
@@ -77,7 +77,7 @@
         <string>NaN</string>
        </property>
        <property name="channel" stdset="0">
-        <string>sig://${AD}.stats${R}.min_value</string>
+        <string>haven://${AD}.stats${R}.min_value</string>
        </property>
       </widget>
      </item>
@@ -104,7 +104,7 @@
         <string>NaN</string>
        </property>
        <property name="channel" stdset="0">
-        <string>sig://${AD}.stats${R}.max_value</string>
+        <string>haven://${AD}.stats${R}.max_value</string>
        </property>
       </widget>
      </item>
@@ -132,7 +132,7 @@
       <string>Show</string>
      </property>
      <property name="channel" stdset="0">
-      <string>sig://${AD}.overlays.overlay_${R}.use</string>
+      <string>haven://${AD}.overlays.overlay_${R}.use</string>
      </property>
     </widget>
    </item>
@@ -144,7 +144,7 @@
         <string/>
        </property>
        <property name="channel" stdset="0">
-        <string>sig://${AD}.roi${R}.min_xyz.min_y</string>
+        <string>haven://${AD}.roi${R}.min_xyz.min_y</string>
        </property>
        <property name="orientation" stdset="0">
         <enum>Qt::Vertical</enum>
@@ -169,7 +169,7 @@
           <string/>
          </property>
          <property name="channel" stdset="0">
-          <string>sig://${AD}.roi${R}.min_xyz.min_x</string>
+          <string>haven://${AD}.roi${R}.min_xyz.min_x</string>
          </property>
          <property name="step_size" stdset="0">
           <number>0</number>
@@ -201,7 +201,7 @@
         <string/>
        </property>
        <property name="channel" stdset="0">
-        <string>sig://${AD}.roi${R}.size.y</string>
+        <string>haven://${AD}.roi${R}.size.y</string>
        </property>
        <property name="orientation" stdset="0">
         <enum>Qt::Vertical</enum>
@@ -226,7 +226,7 @@
           <string/>
          </property>
          <property name="channel" stdset="0">
-          <string>sig://${AD}.roi${R}.size.x</string>
+          <string>haven://${AD}.roi${R}.size.x</string>
          </property>
         </widget>
        </item>

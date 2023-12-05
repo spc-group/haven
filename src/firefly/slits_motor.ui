@@ -71,10 +71,10 @@
       <bool>true</bool>
      </property>
      <property name="PyDMToolTip" stdset="0">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Curent value for this on signal.&lt;/p&gt;&lt;p&gt;sig://${AXIS}.readback&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Curent value for this on signal.&lt;/p&gt;&lt;p&gt;haven://${AXIS}.readback&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="channel" stdset="0">
-      <string>sig://${AXIS}.readback</string>
+      <string>haven://${AXIS}.readback</string>
      </property>
     </widget>
    </item>
@@ -87,10 +87,10 @@
       <string>5000.0281</string>
      </property>
      <property name="PyDMToolTip" stdset="0">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Directly change the setpoint for this set of slits.&lt;/p&gt;&lt;p&gt;sig://${AXIS}.readback&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Directly change the setpoint for this set of slits.&lt;/p&gt;&lt;p&gt;haven://${AXIS}.readback&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="channel" stdset="0">
-      <string>sig://${AXIS}.setpoint</string>
+      <string>haven://${AXIS}.setpoint</string>
      </property>
     </widget>
    </item>
@@ -138,7 +138,7 @@
          <normaloff>.</normaloff>.</iconset>
        </property>
        <property name="channel" stdset="0">
-        <string>sig://${AXIS}.tweak_reverse</string>
+        <string>haven://${AXIS}.tweak_reverse</string>
        </property>
        <property name="pressValue" stdset="0">
         <string>1</string>
@@ -172,7 +172,7 @@
         <string>Jog step</string>
        </property>
        <property name="channel" stdset="0">
-        <string>sig://${AXIS}.tweak_value</string>
+        <string>haven://${AXIS}.tweak_value</string>
        </property>
       </widget>
      </item>
@@ -208,7 +208,7 @@
         <string>❱</string>
        </property>
        <property name="channel" stdset="0">
-        <string>sig://${AXIS}.tweak_forward</string>
+        <string>haven://${AXIS}.tweak_forward</string>
        </property>
        <property name="pressValue" stdset="0">
         <string>1</string>
