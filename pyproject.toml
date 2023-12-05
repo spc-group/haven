@@ -28,6 +28,9 @@ gui = ["pyqt>=5.12", "tiled-client", "qtawesome", "pydm", "pyqtgraph"]
 "Homepage" = "https://haven-spc.readthedocs.io/en/latest/"
 "Bug Tracker" = "https://github.com/spc-group/haven/issues"
 
+[project.entry-points."pydm.data_plugin"]
+HavenPlugin = "firefly.pydm_plugin:HavenPlugin"
+
 [project.scripts]
 haven_config = "haven._iconfig:print_config_value"
 
