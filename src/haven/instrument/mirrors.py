@@ -4,8 +4,9 @@ from ophyd import Device, Component as Cpt, Kind
 from apstools.synApps import TransformRecord
 
 from .._iconfig import load_config
-from haven import HavenMotor, RegexComponent as RCpt, exceptions
-from .device import aload_devices, make_device
+from .motor import HavenMotor
+from .. import exceptions
+from .device import aload_devices, make_device, RegexComponent as RCpt
 
 
 class HighHeatLoadMirror(Device):

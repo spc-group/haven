@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string>${DEVICE_TITLE}</string>
   </property>
   <widget class="QLabel" name="label">
    <property name="geometry">
@@ -29,9 +29,9 @@
   <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay">
    <property name="geometry">
     <rect>
-     <x>167</x>
-     <y>71</y>
-     <width>100</width>
+     <x>154</x>
+     <y>67</y>
+     <width>131</width>
      <height>111</height>
     </rect>
    </property>
@@ -59,9 +59,9 @@ color: white;
    </property>
    <property name="geometry">
     <rect>
-     <x>39</x>
+     <x>8</x>
      <y>50</y>
-     <width>100</width>
+     <width>131</width>
      <height>111</height>
     </rect>
    </property>
@@ -87,9 +87,9 @@ color: white;
   <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_3">
    <property name="geometry">
     <rect>
-     <x>33</x>
-     <y>190</y>
-     <width>100</width>
+     <x>5</x>
+     <y>191</y>
+     <width>131</width>
      <height>111</height>
     </rect>
    </property>
@@ -105,7 +105,7 @@ color: white;
     <enum>QFrame::NoFrame</enum>
    </property>
    <property name="macros" stdset="0">
-    <string>TITLE=Normal,AXIS=${DEVICE}.normalpitch</string>
+    <string>TITLE=Normal,AXIS=${DEVICE}.normal</string>
    </property>
    <property name="filename" stdset="0">
     <string>slits_motor.py</string>
@@ -195,8 +195,8 @@ color: white;
    <property name="points">
     <stringlist>
      <string>15.0, 0.0</string>
-     <string>15.0, 52.0</string>
-     <string>0.0, 52.0</string>
+     <string>15.0, 58.0</string>
+     <string>0.0, 58.0</string>
     </stringlist>
    </property>
   </widget>
@@ -365,7 +365,7 @@ color: white;
   </customwidget>
  </customwidgets>
  <resources>
-  <include location="../../../../../src/haven/src/firefly/resources/beamline_components.qrc"/>
+  <include location="resources/beamline_components.qrc"/>
  </resources>
  <connections/>
 </ui>

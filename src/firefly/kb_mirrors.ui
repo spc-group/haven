@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>580</width>
-    <height>419</height>
+    <width>613</width>
+    <height>431</height>
    </rect>
   </property>
   <property name="font">
@@ -16,7 +16,7 @@
    </font>
   </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string>${DEVICE_TITLE}</string>
   </property>
   <widget class="PyDMLabel" name="device_name_label">
    <property name="geometry">
@@ -50,8 +50,8 @@
     <rect>
      <x>10</x>
      <y>10</y>
-     <width>561</width>
-     <height>401</height>
+     <width>591</width>
+     <height>411</height>
     </rect>
    </property>
    <property name="autoFillBackground">
@@ -181,8 +181,8 @@
       <rect>
        <x>430</x>
        <y>144</y>
-       <width>100</width>
-       <height>100</height>
+       <width>151</width>
+       <height>111</height>
       </rect>
      </property>
      <property name="font">
@@ -208,8 +208,8 @@
       <rect>
        <x>199</x>
        <y>0</y>
-       <width>101</width>
-       <height>100</height>
+       <width>151</width>
+       <height>111</height>
       </rect>
      </property>
      <property name="font">
@@ -345,10 +345,10 @@
     <widget class="PyDMEmbeddedDisplay" name="horizontal_normal_display">
      <property name="geometry">
       <rect>
-       <x>15</x>
-       <y>193</y>
-       <width>100</width>
-       <height>100</height>
+       <x>10</x>
+       <y>210</y>
+       <width>151</width>
+       <height>111</height>
       </rect>
      </property>
      <property name="font">
@@ -372,10 +372,10 @@
     <widget class="PyDMEmbeddedDisplay" name="vertical_pitch_display">
      <property name="geometry">
       <rect>
-       <x>199</x>
-       <y>270</y>
-       <width>100</width>
-       <height>100</height>
+       <x>176</x>
+       <y>260</y>
+       <width>151</width>
+       <height>111</height>
       </rect>
      </property>
      <property name="font">

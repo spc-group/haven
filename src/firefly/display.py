@@ -1,7 +1,9 @@
 import subprocess
 from pathlib import Path
-from typing import Sequence
+from typing import Sequence, Optional
 
+from haven import registry
+from ophyd import Device
 from pydm import Display
 from qtpy import QtWidgets
 from qtpy.QtCore import Signal, Slot
@@ -11,14 +13,14 @@ class FireflyDisplay(Display):
     caqtdm_ui_file: str = ""
     caqtdm_command: str = "/APSshare/bin/caQtDM -style plastique -noMsg -attach"
     caqtdm_actions: Sequence
+    device: Optional[Device]
 
     # Signals
     status_message_changed = Signal(str, int)
 
     def __init__(self, parent=None, args=None, macros=None, ui_filename=None, **kwargs):
-        super().__init__(
-            parent=parent, args=args, macros=macros, ui_filename=ui_filename, **kwargs
-        )
+        super().__init__(parent=parent, args=args, macros=macros,
+                         ui_filename=ui_filename, **kwargs )
         self.customize_device()
         self.customize_ui()
         self.prepare_caqtdm_actions()
@@ -41,7 +43,11 @@ class FireflyDisplay(Display):
             action.setObjectName("launch_caqtdm_action")
             action.setText("ca&QtDM")
             action.triggered.connect(self.launch_caqtdm)
-            action.setToolTip("Launch the caQtDM panel for {self.device.name}.")
+            try:
+                tooltip = f"Launch the caQtDM panel for {self.device.name}"
+            except AttributeError:
+                tooltip = "Launch the caQtDM panel for this display."
+            action.setToolTip(tooltip)
             self.caqtdm_actions.append(action)
 
     def _all_children(self, widget):
@@ -83,7 +89,12 @@ class FireflyDisplay(Display):
         self._open_caqtdm_subprocess(cmds)
 
     def customize_device(self):
-        pass
+        # Retrieve the device
+        device = self.macros().get("DEVICE")
+        if device is not None:
+            device = registry.find(device)
+        self.device = device
+        return device
 
     def customize_ui(self):
         pass

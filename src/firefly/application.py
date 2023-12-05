@@ -347,8 +347,6 @@ class FireflyApplication(PyDMApplication):
           *window_slot* is used.
 
         """
-        # if device_label == "motors":
-        #     breakpoint()
         # We need a UI file, unless a custom window_slot is given
         if ui_file is None and window_slot is None:
             raise ValueError(
@@ -370,7 +368,8 @@ class FireflyApplication(PyDMApplication):
             # Create the window action
             action = QtWidgets.QAction(self)
             action.setObjectName(f"action_show_{attr_name}_{device.name}")
-            action.setText(device.name)
+            display_text = device.name.replace("_", " ").title()
+            action.setText(display_text)
             actions[device.name] = action
             # Create a slot for opening the device window
             if window_slot is not None:
@@ -557,11 +556,13 @@ class FireflyApplication(PyDMApplication):
 
         """
         device_pyname = device.name.replace(" ", "_")
+        device_title = device.name.replace("_", " ").title()
         self.show_window(
             FireflyMainWindow,
             ui_dir / ui_file,
             name=f"FireflyMainWindow_{device_label}_{device_pyname}",
-            macros={device_key: device.name},
+            macros={device_key: device.name,
+                    f"{device_key}_TITLE": device_title},
         )
 
     def show_status_window(self, stylesheet_path=None):

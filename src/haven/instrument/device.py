@@ -75,7 +75,7 @@ async def make_device(DeviceClass, *args, FakeDeviceClass=None, **kwargs) -> Dev
         return device
 
 
-async def await_for_connection(dev, all_signals=False, timeout=10.0):
+async def await_for_connection(dev, all_signals=False, timeout=3.0):
     """Wait for signals to connect
 
     Parameters
@@ -95,8 +95,12 @@ async def await_for_connection(dev, all_signals=False, timeout=10.0):
 
     t0 = ttime.monotonic()
     # Wait until all the signals have connected
+    loop_idx = 0
+    connected = False
     while True:
-        connected = all(sig.connected for sig in signals)
+        # Check if the device is ready
+        if not connected:
+            connected = all(sig.connected for sig in signals)
         if connected and not any(pending_funcs.values()):
             return
         # Since we're not connected, sleep for a short time and try again
@@ -111,7 +115,8 @@ async def await_for_connection(dev, all_signals=False, timeout=10.0):
             msg += "Maybe another co-routine is blocking."
             log.info(msg)
         elapsed_time = ttime.monotonic() - t0
-        if timeout is not None and elapsed_time > timeout:
+        loop_idx += 1
+        if timeout is not None and elapsed_time > timeout and loop_idx > 2:
             break
 
     def get_name(sig):
