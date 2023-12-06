@@ -21,9 +21,9 @@
   <widget class="PyDMLabel" name="device_name_label">
    <property name="geometry">
     <rect>
-     <x>350</x>
+     <x>170</x>
      <y>0</y>
-     <width>221</width>
+     <width>431</width>
      <height>34</height>
     </rect>
    </property>
@@ -36,7 +36,10 @@
     <string/>
    </property>
    <property name="text">
-    <string>${DEVICE}</string>
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;${DEVICE_TITLE}&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
+   <property name="textFormat">
+    <enum>Qt::RichText</enum>
    </property>
    <property name="alignment">
     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>

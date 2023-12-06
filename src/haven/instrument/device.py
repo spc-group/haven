@@ -14,6 +14,18 @@ from .instrument_registry import registry
 log = logging.getLogger(__name__)
 
 
+def titelize(name):
+    """Convert a device name into a human-readable title."""
+    title = name.replace("_", " ").title()
+    # Replace select phrases that are known to be incorrect
+    replacements = {
+        "Kb ": "KB "
+    }
+    for orig, new in replacements.items():
+        title = title.replace(orig, new)
+    return title
+
+
 async def aload_devices(*coros):
     return await asyncio.gather(*coros)
 

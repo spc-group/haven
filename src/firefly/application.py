@@ -17,6 +17,7 @@ from qtpy.QtWidgets import QAction
 
 from haven import HavenMotor, load_config, registry
 from haven.exceptions import ComponentNotFound
+from haven.instrument.device import titelize
 
 from . import beamline_components_rc
 from .main_window import FireflyMainWindow, PlanMainWindow
@@ -187,7 +188,7 @@ class FireflyApplication(PyDMApplication):
         self._prepare_device_windows(
             device_label="mirrors",
             attr_name="mirror",
-            ui_file="mirror.ui",
+            ui_file="mirror.py",
             device_key="DEVICE",
         )
         self._prepare_device_windows(
@@ -368,7 +369,7 @@ class FireflyApplication(PyDMApplication):
             # Create the window action
             action = QtWidgets.QAction(self)
             action.setObjectName(f"action_show_{attr_name}_{device.name}")
-            display_text = device.name.replace("_", " ").title()
+            display_text = titelize(device.name)
             action.setText(display_text)
             actions[device.name] = action
             # Create a slot for opening the device window
@@ -556,7 +557,7 @@ class FireflyApplication(PyDMApplication):
 
         """
         device_pyname = device.name.replace(" ", "_")
-        device_title = device.name.replace("_", " ").title()
+        device_title = titelize(device.name)
         self.show_window(
             FireflyMainWindow,
             ui_dir / ui_file,

@@ -16,7 +16,7 @@
    </font>
   </property>
   <property name="windowTitle">
-   <string>${DEVICE}</string>
+   <string>${DEVICE_TITLE}</string>
   </property>
   <widget class="QLabel" name="label">
    <property name="geometry">
@@ -315,9 +315,9 @@
   <widget class="PyDMLabel" name="PyDMLabel">
    <property name="geometry">
     <rect>
-     <x>200</x>
+     <x>180</x>
      <y>0</y>
-     <width>221</width>
+     <width>241</width>
      <height>41</height>
     </rect>
    </property>
@@ -330,7 +330,10 @@
     <string/>
    </property>
    <property name="text">
-    <string>${DEVICE}</string>
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;${DEVICE_TITLE}&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
+   <property name="textFormat">
+    <enum>Qt::RichText</enum>
    </property>
    <property name="alignment">
     <set>Qt::AlignRight|Qt::AlignTop|Qt::AlignTrailing</set>

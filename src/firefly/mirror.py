@@ -10,7 +10,7 @@ class MirrorDisplay(SlitsDisplay):
     }
 
     def ui_filename(self):
-        return "kb_mirrors.ui"
+        return "mirror.ui"
 
     def launch_caqtdm(self):
         # Sort out the prefix from the slit designator

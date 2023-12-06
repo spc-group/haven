@@ -21,6 +21,8 @@ log = logging.getLogger(__name__)
 
 
 class PVPositionerWithTweaks(PVPositionerSoftDone):
+    user_readback = Cpt(DerivedSignal, derived_from="readback")
+    user_setpoint = Cpt(DerivedSignal, derived_from="setpoint")
     tweak_value = FCpt(EpicsSignal, "{prefix}{_setpoint_pv}_tweakVal.VAL")
     tweak_forward = FCpt(EpicsSignal, "{prefix}{_setpoint_pv}_tweak.B")
     tweak_reverse = FCpt(EpicsSignal, "{prefix}{_setpoint_pv}_tweak.A")
@@ -41,7 +43,7 @@ class BladePair(Optics2Slit1D):
     center = Cpt(PVPositionerWithTweaks, "", setpoint_pv="center", readback_pv="t2.D")
 
 
-class BladeSlits(Optics2Slit2D_HV, BladePair):
+class BladeSlits(Optics2Slit2D_HV):
     """Set of slits with blades that move in and out to control beam size."""
 
     h = Cpt(BladePair, "H")
