@@ -24,7 +24,8 @@ class SlitsDisplay(display.FireflyDisplay):
             except KeyError:
                 continue
         # We didn't find any supported classes of slits
-        raise KeyError(f"Could not find caQtDM filename for slits {self.device.name}.")
+        raise KeyError("Could not find caQtDM filename for optic "
+                       f"{self.device.name} ({self.device.__class__}).")
 
     def launch_caqtdm(self):
         # Sort out the prefix from the slit designator

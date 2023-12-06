@@ -181,7 +181,7 @@ class FireflyApplication(PyDMApplication):
         self._prepare_device_windows(
             device_label="kb_mirrors",
             attr_name="kb_mirrors",
-            ui_file="kb_mirrors.ui",
+            ui_file="kb_mirrors.py",
             device_key="DEVICE",
         )
         self._prepare_device_windows(
