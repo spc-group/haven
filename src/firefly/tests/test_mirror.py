@@ -3,7 +3,7 @@ from unittest import mock
 import pytest
 from ophyd.sim import make_fake_device
 
-from haven.instrument.mirrors import HighHeatLoadMirror
+from haven.instrument.mirrors import BendableHighHeatLoadMirror, HighHeatLoadMirror
 from firefly.mirror import MirrorDisplay
 
 
@@ -14,6 +14,16 @@ def hhl_mirror(sim_registry):
     mirr = FakeMirrors(prefix="255ida:ORM1:", name="hhl_mirror", labels={"mirrors"})
     sim_registry.register(mirr)
     return mirr
+
+
+@pytest.fixture()
+def hhl_bendable_mirror(sim_registry):
+    """A fake set of slits using the 4-blade setup."""
+    FakeMirrors = make_fake_device(BendableHighHeatLoadMirror)
+    mirr = FakeMirrors(prefix="255ida:ORM1:", name="hhl_mirror", labels={"mirrors"})
+    sim_registry.register(mirr)
+    return mirr
+
 
 
 @pytest.fixture()
@@ -43,3 +53,10 @@ def test_kb_mirrors_caqtdm(display, hhl_mirror):
     # Check that the right UI file is being used
     ui_file = cmds[-1]
     assert ui_file.split("/")[-1] == "HHLM_4.ui"
+
+
+def test_bendable_mirror(hhl_bendable_mirror):
+    mirror = hhl_bendable_mirror
+    display = MirrorDisplay(macros={"DEVICE": mirror.name})
+    # Check that the bender controls are unlocked
+    assert display.ui.bender_embedded_display.isEnabled()

@@ -31,7 +31,7 @@
     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;img src=&quot;:/optics/mirror.png&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
   </widget>
-  <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay">
+  <widget class="PyDMEmbeddedDisplay" name="pitch_embedded_display">
    <property name="geometry">
     <rect>
      <x>154</x>
@@ -58,7 +58,7 @@ color: white;
     <string>slits_motor.py</string>
    </property>
   </widget>
-  <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_2">
+  <widget class="PyDMEmbeddedDisplay" name="bender_embedded_display">
    <property name="enabled">
     <bool>false</bool>
    </property>
@@ -89,7 +89,7 @@ color: white;
     <string>slits_motor.py</string>
    </property>
   </widget>
-  <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_3">
+  <widget class="PyDMEmbeddedDisplay" name="normal_embedded_display">
    <property name="geometry">
     <rect>
      <x>5</x>

@@ -53,8 +53,13 @@ def test_kb_mirrors_PVs():
 def test_load_mirrors(sim_registry):
     load_mirrors()
     # Check that the KB mirrors were created
-    kb_mirrors = sim_registry.find(name="LongKB_Cdn")
+    kb_mirrors = sim_registry.find(name="KB")
     assert isinstance(kb_mirrors, KBMirrors)
+    # Check that the KB mirrors selects the bendable version
+    # kb_mirrors = sim_registry.find(name="LongKB_Cdn")
+    # assert isinstance(kb_mirrors, BendableKBMirrors)
+    # assert hasattr(kb_mirrors.horiz.bender_upstream)
+    # assert hasattr(kb_mirrors.horiz.bender_downstream)
     # Check that the HHL mirrors were created
     hhl_mirrors = sim_registry.find(name="ORM1")
     assert isinstance(hhl_mirrors, HighHeatLoadMirror)

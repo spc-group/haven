@@ -9,6 +9,11 @@ class MirrorDisplay(SlitsDisplay):
         mirrors.HighHeatLoadMirror: "/net/s25data/xorApps/epics/synApps_6_2/ioc/25ida/25idaApp/op/ui/HHLM_4.ui",
     }
 
+    def customize_ui(self):
+        # Enable the bender controls if the mirror is bendable
+        if self.device.bendable:
+            self.ui.bender_embedded_display.setEnabled(True)
+
     def ui_filename(self):
         return "mirror.ui"
 

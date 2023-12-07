@@ -10,6 +10,7 @@ from .device import aload_devices, make_device, RegexComponent as RCpt
 
 
 class HighHeatLoadMirror(Device):
+    bendable = False
     # Physical motors
     transverse = Cpt(HavenMotor, "m1")
     roll = Cpt(HavenMotor, "m2")
@@ -30,6 +31,7 @@ class HighHeatLoadMirror(Device):
 
 
 class BendableHighHeatLoadMirror(HighHeatLoadMirror):
+    bendable = True
     bender = Cpt(HavenMotor, "m5")
 
 
