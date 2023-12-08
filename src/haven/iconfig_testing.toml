@@ -33,6 +33,28 @@ device_class = "BladeSlits"
 prefix = "255ida:slits:US:"
 device_class = "ApertureSlits"
 
+[kb_mirrors.LongKB_Cdn]
+
+prefix = "255idcVME:LongKB_Cdn:"
+bendable = true
+
+[kb_mirrors.KB]
+
+prefix = "255idcVME:KB:"
+bendable = false
+
+[mirrors.ORM1]
+
+prefix = "25ida:ORM1:"
+device_class = "HighHeatLoadMirror"
+# bendable = false
+
+[mirrors.ORM2]
+
+prefix = "25ida:ORM2:"
+device_class = "HighHeatLoadMirror"
+bendable = true
+
 [area_detector.sim_det]
 
 prefix = "255idSimDet"

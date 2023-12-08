@@ -1,6 +1,12 @@
+import warnings
+import logging
+
 import haven
 from firefly import display
 from haven.instrument import slits
+
+
+log = logging.getLogger(__name__)
 
 
 class SlitsDisplay(display.FireflyDisplay):
@@ -24,7 +30,12 @@ class SlitsDisplay(display.FireflyDisplay):
             except KeyError:
                 continue
         # We didn't find any supported classes of slits
-        raise KeyError(f"Could not find caQtDM filename for slits {self.device.name}.")
+        msg = ("Could not find caQtDM filename for optic "
+               f"{self.device.name} ({self.device.__class__}).")
+        warnings.warn(msg)
+        log.warning(msg)
+        return ""
+        
 
     def launch_caqtdm(self):
         # Sort out the prefix from the slit designator

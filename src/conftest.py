@@ -291,7 +291,7 @@ def shutters(sim_registry):
 
 @pytest.fixture(scope="session")
 def pydm_ophyd_plugin():
-    return pydm.data_plugins.plugin_for_address("sig://")
+    return pydm.data_plugins.plugin_for_address("haven://")
 
 
 qs_status = {

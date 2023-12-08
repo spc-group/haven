@@ -48,7 +48,7 @@
       <string>The name of this ion chamber.</string>
      </property>
      <property name="channel" stdset="0">
-      <string>sig://${IC}.description</string>
+      <string>haven://${IC}.description</string>
      </property>
      <property name="enableRichText" stdset="0">
       <bool>false</bool>
@@ -103,7 +103,7 @@
            </size>
           </property>
           <property name="rules" stdset="0">
-           <string>[{&quot;name&quot;: &quot;Gain button lower range&quot;, &quot;property&quot;: &quot;Enable&quot;, &quot;initial_value&quot;: &quot;True&quot;, &quot;expression&quot;: &quot;ch[0] &lt; 27&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;sig://${IC}.preamp.sensitivity_level&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}], &quot;notes&quot;: &quot;If the sensitivity is at its highest setting, disable the button so users don't click it unnecessarily.&quot;}]</string>
+           <string>[{&quot;name&quot;: &quot;Gain button lower range&quot;, &quot;property&quot;: &quot;Enable&quot;, &quot;initial_value&quot;: &quot;True&quot;, &quot;expression&quot;: &quot;ch[0] &lt; 27&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;haven://${IC}.preamp.sensitivity_level&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}], &quot;notes&quot;: &quot;If the sensitivity is at its highest setting, disable the button so users don't click it unnecessarily.&quot;}]</string>
           </property>
           <property name="alarmSensitiveContent" stdset="0">
            <bool>false</bool>
@@ -118,7 +118,7 @@
            <bool>false</bool>
           </property>
           <property name="channel" stdset="0">
-           <string>sig://${IC}.preamp.sensitivity_level</string>
+           <string>haven://${IC}.preamp.sensitivity_level</string>
           </property>
           <property name="passwordProtected" stdset="0">
            <bool>false</bool>
@@ -155,7 +155,7 @@
            <string/>
           </property>
           <property name="channel" stdset="0">
-           <string>sig://${IC}.preamp.sensitivity_value</string>
+           <string>haven://${IC}.preamp.sensitivity_value</string>
           </property>
          </widget>
         </item>
@@ -165,7 +165,7 @@
            <string/>
           </property>
           <property name="channel" stdset="0">
-           <string>sig://${IC}.preamp.sensitivity_unit</string>
+           <string>haven://${IC}.preamp.sensitivity_unit</string>
           </property>
          </widget>
         </item>
@@ -196,7 +196,7 @@
            </size>
           </property>
           <property name="rules" stdset="0">
-           <string>[{&quot;name&quot;: &quot;Gain button upper range&quot;, &quot;property&quot;: &quot;Enable&quot;, &quot;initial_value&quot;: &quot;True&quot;, &quot;expression&quot;: &quot;ch[0] &gt; 0&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;sig://${IC}.preamp.sensitivity_level&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}], &quot;notes&quot;: &quot;&quot;}]</string>
+           <string>[{&quot;name&quot;: &quot;Gain button upper range&quot;, &quot;property&quot;: &quot;Enable&quot;, &quot;initial_value&quot;: &quot;True&quot;, &quot;expression&quot;: &quot;ch[0] &gt; 0&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;haven://${IC}.preamp.sensitivity_level&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}], &quot;notes&quot;: &quot;&quot;}]</string>
           </property>
           <property name="alarmSensitiveContent" stdset="0">
            <bool>false</bool>
@@ -211,7 +211,7 @@
            <bool>false</bool>
           </property>
           <property name="channel" stdset="0">
-           <string>sig://${IC}.preamp.sensitivity_level</string>
+           <string>haven://${IC}.preamp.sensitivity_level</string>
           </property>
           <property name="passwordProtected" stdset="0">
            <bool>false</bool>
@@ -274,7 +274,7 @@
            <string>The gain of the amplifier</string>
           </property>
           <property name="channel" stdset="0">
-           <string>sig://${IC}.preamp.gain_db</string>
+           <string>haven://${IC}.preamp.gain_db</string>
           </property>
           <property name="enableRichText" stdset="0">
            <bool>false</bool>
@@ -359,7 +359,7 @@
               <string/>
              </property>
              <property name="channel" stdset="0">
-              <string>sig://${IC}.preamp.offset_on</string>
+              <string>haven://${IC}.preamp.offset_on</string>
              </property>
             </widget>
            </item>
@@ -369,7 +369,7 @@
               <string/>
              </property>
              <property name="rules" stdset="0">
-              <string>[{&quot;name&quot;: &quot;Offset disabled&quot;, &quot;property&quot;: &quot;Enable&quot;, &quot;initial_value&quot;: &quot;False&quot;, &quot;expression&quot;: &quot;bool(ch[0])&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;sig://${IC}.preamp.offset_on&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: true}], &quot;notes&quot;: &quot;&quot;}]</string>
+              <string>[{&quot;name&quot;: &quot;Offset disabled&quot;, &quot;property&quot;: &quot;Enable&quot;, &quot;initial_value&quot;: &quot;False&quot;, &quot;expression&quot;: &quot;bool(ch[0])&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;haven://${IC}.preamp.offset_on&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: true}], &quot;notes&quot;: &quot;&quot;}]</string>
              </property>
              <property name="alarmSensitiveContent" stdset="0">
               <bool>false</bool>
@@ -384,7 +384,7 @@
               <bool>false</bool>
              </property>
              <property name="channel" stdset="0">
-              <string>sig://${IC}.preamp.offset_sign</string>
+              <string>haven://${IC}.preamp.offset_sign</string>
              </property>
             </widget>
            </item>
@@ -406,7 +406,7 @@
               <bool>false</bool>
              </property>
              <property name="channel" stdset="0">
-              <string>sig://${IC}.preamp.offset_value</string>
+              <string>haven://${IC}.preamp.offset_value</string>
              </property>
             </widget>
            </item>
@@ -428,7 +428,7 @@
               <bool>false</bool>
              </property>
              <property name="channel" stdset="0">
-              <string>sig://${IC}.preamp.offset_unit</string>
+              <string>haven://${IC}.preamp.offset_unit</string>
              </property>
             </widget>
            </item>
@@ -473,7 +473,7 @@
            <bool>false</bool>
           </property>
           <property name="channel" stdset="0">
-           <string>sig://${IC}.preamp.set_all</string>
+           <string>haven://${IC}.preamp.set_all</string>
           </property>
           <property name="passwordProtected" stdset="0">
            <bool>false</bool>
@@ -571,7 +571,7 @@
              <string>The calculate voltage based on scaler counts and clock speed.</string>
             </property>
             <property name="channel" stdset="0">
-             <string>sig://${IC}.volts</string>
+             <string>haven://${IC}.volts</string>
             </property>
             <property name="enableRichText" stdset="0">
              <bool>false</bool>
@@ -640,7 +640,7 @@
              <string>The calculated current based on the voltage and pre-amp settings.</string>
             </property>
             <property name="channel" stdset="0">
-             <string>sig://${IC}.amps</string>
+             <string>haven://${IC}.amps</string>
             </property>
             <property name="displayFormat" stdset="0">
              <enum>PyDMLabel::Exponential</enum>
@@ -710,7 +710,7 @@
              <bool>false</bool>
             </property>
             <property name="channel" stdset="0">
-             <string>sig://${IC}.exposure_time</string>
+             <string>haven://${IC}.exposure_time</string>
             </property>
            </widget>
           </item>
@@ -771,7 +771,7 @@
              <string>#e##</string>
             </property>
             <property name="channel" stdset="0">
-             <string>sig://${IC}.frequency</string>
+             <string>haven://${IC}.frequency</string>
             </property>
             <property name="displayFormat" stdset="0">
              <enum>PyDMLabel::Exponential</enum>
@@ -818,7 +818,7 @@
            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The number of counts measured by the scaler.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;This is the counts produced by the voltage-to-frequency convertor, and &lt;span style=&quot; font-weight:600;&quot;&gt;not&lt;/span&gt; the photon count.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
           <property name="channel" stdset="0">
-           <string>sig://${IC}.counts</string>
+           <string>haven://${IC}.counts</string>
           </property>
          </widget>
         </item>
@@ -833,7 +833,7 @@
              <string>Count</string>
             </property>
             <property name="channel" stdset="0">
-             <string>sig://${IC}.count</string>
+             <string>haven://${IC}.count</string>
             </property>
             <property name="pressValue" stdset="0">
              <string>1</string>
@@ -849,7 +849,7 @@
              <string>Autocount</string>
             </property>
             <property name="channel" stdset="0">
-             <string>sig://${IC}.auto_count</string>
+             <string>haven://${IC}.auto_count</string>
             </property>
            </widget>
           </item>
@@ -876,7 +876,7 @@
              <string/>
             </property>
             <property name="channel" stdset="0">
-             <string>sig://${IC}.gate</string>
+             <string>haven://${IC}.gate</string>
             </property>
            </widget>
           </item>
@@ -886,7 +886,7 @@
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Stop collecting data when the tick counts for this scaler channel reaches a certain preset value.&lt;/p&gt;&lt;p&gt;To help decide this value, consider that the clock gives the number of counts that a 10V signal produces in 1 sec. So if the clock is 1e7 Hz, then a &lt;span style=&quot; font-style:italic;&quot;&gt;preset count&lt;/span&gt; of 2.5e6 would be the equivalent of counting a 2.5V signal for 1 sec.&lt;/p&gt;&lt;p&gt;The scaler will stop when either &lt;span style=&quot; font-style:italic;&quot;&gt;acquire time&lt;/span&gt; is reached, or &lt;span style=&quot; font-style:italic;&quot;&gt;preset count&lt;/span&gt; is reached for any channel on that scaler.&lt;/p&gt;&lt;p&gt;A &lt;span style=&quot; font-style:italic;&quot;&gt;preset count&lt;/span&gt; of 0 will disable this behavior.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="rules" stdset="0">
-             <string>[{&quot;name&quot;: &quot;Disable Present Counts&quot;, &quot;property&quot;: &quot;Enable&quot;, &quot;initial_value&quot;: &quot;True&quot;, &quot;expression&quot;: &quot;ch[0]&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;sig://${IC}.gate&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}], &quot;notes&quot;: &quot;The preset-counts should only be editable when the channel is set to respond to the gate. If users really want to set it but disable the gate, then they'll need to just check the box first.&quot;}]</string>
+             <string>[{&quot;name&quot;: &quot;Disable Present Counts&quot;, &quot;property&quot;: &quot;Enable&quot;, &quot;initial_value&quot;: &quot;True&quot;, &quot;expression&quot;: &quot;ch[0]&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;haven://${IC}.gate&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}], &quot;notes&quot;: &quot;The preset-counts should only be editable when the channel is set to respond to the gate. If users really want to set it but disable the gate, then they'll need to just check the box first.&quot;}]</string>
             </property>
             <property name="precision" stdset="0">
              <number>0</number>
@@ -910,7 +910,7 @@
              <bool>false</bool>
             </property>
             <property name="channel" stdset="0">
-             <string>sig://${IC}.preset_count</string>
+             <string>haven://${IC}.preset_count</string>
             </property>
            </widget>
           </item>
@@ -1007,7 +1007,7 @@
              <string>The measured voltage output from the pre-amp.</string>
             </property>
             <property name="channel" stdset="0">
-             <string>sig://${IC}.voltmeter.volts</string>
+             <string>haven://${IC}.voltmeter.volts</string>
             </property>
             <property name="displayFormat" stdset="0">
              <enum>PyDMLabel::Decimal</enum>
@@ -1078,7 +1078,7 @@
              <string>The calculated current based on the voltage and pre-amp settings.</string>
             </property>
             <property name="channel" stdset="0">
-             <string>sig://${IC}.voltmeter.amps</string>
+             <string>haven://${IC}.voltmeter.amps</string>
             </property>
             <property name="displayFormat" stdset="0">
              <enum>PyDMLabel::Exponential</enum>
@@ -1121,7 +1121,7 @@
            <string>How often to report new signals for this voltmeter.</string>
           </property>
           <property name="channel" stdset="0">
-           <string>sig://${IC}.voltmeter.scanning_rate</string>
+           <string>haven://${IC}.voltmeter.scanning_rate</string>
           </property>
          </widget>
         </item>

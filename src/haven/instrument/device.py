@@ -14,6 +14,18 @@ from .instrument_registry import registry
 log = logging.getLogger(__name__)
 
 
+def titelize(name):
+    """Convert a device name into a human-readable title."""
+    title = name.replace("_", " ").title()
+    # Replace select phrases that are known to be incorrect
+    replacements = {
+        "Kb ": "KB "
+    }
+    for orig, new in replacements.items():
+        title = title.replace(orig, new)
+    return title
+
+
 async def aload_devices(*coros):
     return await asyncio.gather(*coros)
 
@@ -74,8 +86,8 @@ async def make_device(DeviceClass, *args, FakeDeviceClass=None, **kwargs) -> Dev
         log.debug(f"Connected to {name} in {round(ttime.monotonic() - t0, 2)} sec.")
         return device
 
-
-async def await_for_connection(dev, all_signals=False, timeout=60.0):
+      
+async def await_for_connection(dev, all_signals=False, timeout=3.0):
     """Wait for signals to connect
 
     Parameters
@@ -95,8 +107,12 @@ async def await_for_connection(dev, all_signals=False, timeout=60.0):
 
     t0 = ttime.monotonic()
     # Wait until all the signals have connected
+    loop_idx = 0
+    connected = False
     while True:
-        connected = all(sig.connected for sig in signals)
+        # Check if the device is ready
+        if not connected:
+            connected = all(sig.connected for sig in signals)
         if connected and not any(pending_funcs.values()):
             return
         # Since we're not connected, sleep for a short time and try again
@@ -111,7 +127,8 @@ async def await_for_connection(dev, all_signals=False, timeout=60.0):
             msg += "Maybe another co-routine is blocking."
             log.info(msg)
         elapsed_time = ttime.monotonic() - t0
-        if timeout is not None and elapsed_time > timeout:
+        loop_idx += 1
+        if timeout is not None and elapsed_time > timeout and loop_idx > 2:
             break
 
     def get_name(sig):

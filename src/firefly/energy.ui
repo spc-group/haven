@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>371</width>
-    <height>372</height>
+    <width>424</width>
+    <height>467</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -144,143 +144,16 @@
      <property name="title">
       <string>Monochromator</string>
      </property>
-     <layout class="QVBoxLayout" name="verticalLayout_2">
+     <layout class="QHBoxLayout" name="horizontalLayout_5">
       <item>
        <layout class="QGridLayout" name="gridLayout_2">
-        <item row="3" column="2">
-         <spacer name="horizontalSpacer">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>40</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item row="2" column="1">
-         <layout class="QHBoxLayout" name="horizontalLayout">
-          <item>
-           <widget class="PyDMByteIndicator" name="PyDMByteIndicator">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="toolTip">
-             <string/>
-            </property>
-            <property name="offColor" stdset="0">
-             <color>
-              <red>255</red>
-              <green>0</green>
-              <blue>0</blue>
-             </color>
-            </property>
-            <property name="showLabels" stdset="0">
-             <bool>false</bool>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="PyDMPushButton" name="PyDMPushButton">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
-            <property name="toolTip">
-             <string/>
-            </property>
-            <property name="text">
-             <string>Disable</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </item>
-        <item row="3" column="0">
-         <widget class="QLabel" name="label_9">
-          <property name="text">
-           <string>Feedback χ:</string>
-          </property>
-         </widget>
-        </item>
         <item row="1" column="1">
          <widget class="PyDMEnumComboBox" name="PyDMEnumComboBox">
           <property name="toolTip">
            <string/>
           </property>
           <property name="channel" stdset="0">
-           <string>sig://monochromator_mode</string>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="0">
-         <widget class="QLabel" name="label_8">
-          <property name="text">
-           <string>Feedback θ:</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="1">
-         <widget class="PyDMLabel" name="PyDMLabel_3">
-          <property name="font">
-           <font>
-            <weight>75</weight>
-            <bold>true</bold>
-           </font>
-          </property>
-          <property name="toolTip">
-           <string/>
-          </property>
-          <property name="text">
-           <string>8000 eV</string>
-          </property>
-          <property name="precision" stdset="0">
-           <number>2</number>
-          </property>
-          <property name="showUnits" stdset="0">
-           <bool>true</bool>
-          </property>
-          <property name="precisionFromPV" stdset="0">
-           <bool>false</bool>
-          </property>
-          <property name="channel" stdset="0">
-           <string>sig://monochromator_energy_user_readback</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="0">
-         <widget class="QLabel" name="label_7">
-          <property name="font">
-           <font>
-            <weight>75</weight>
-            <bold>true</bold>
-           </font>
-          </property>
-          <property name="text">
-           <string>Energy:</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="0">
-         <widget class="QLabel" name="label">
-          <property name="text">
-           <string>Mode:</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+           <string>haven://monochromator_mode</string>
           </property>
          </widget>
         </item>
@@ -327,7 +200,141 @@
           </item>
          </layout>
         </item>
+        <item row="0" column="0">
+         <widget class="QLabel" name="label_7">
+          <property name="font">
+           <font>
+            <weight>75</weight>
+            <bold>true</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>Energy:</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="1">
+         <layout class="QHBoxLayout" name="horizontalLayout">
+          <item>
+           <widget class="PyDMByteIndicator" name="PyDMByteIndicator">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="toolTip">
+             <string/>
+            </property>
+            <property name="offColor" stdset="0">
+             <color>
+              <red>255</red>
+              <green>0</green>
+              <blue>0</blue>
+             </color>
+            </property>
+            <property name="showLabels" stdset="0">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="PyDMPushButton" name="PyDMPushButton">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="toolTip">
+             <string/>
+            </property>
+            <property name="text">
+             <string>Disable</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item row="2" column="0">
+         <widget class="QLabel" name="label_8">
+          <property name="text">
+           <string>Feedback θ:</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="label">
+          <property name="text">
+           <string>Mode:</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="0">
+         <widget class="QLabel" name="label_9">
+          <property name="text">
+           <string>Feedback χ:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="PyDMLabel" name="PyDMLabel_3">
+          <property name="font">
+           <font>
+            <weight>75</weight>
+            <bold>true</bold>
+           </font>
+          </property>
+          <property name="toolTip">
+           <string/>
+          </property>
+          <property name="text">
+           <string>8000 eV</string>
+          </property>
+          <property name="precision" stdset="0">
+           <number>2</number>
+          </property>
+          <property name="showUnits" stdset="0">
+           <bool>true</bool>
+          </property>
+          <property name="precisionFromPV" stdset="0">
+           <bool>false</bool>
+          </property>
+          <property name="channel" stdset="0">
+           <string>haven://monochromator_energy_user_readback</string>
+          </property>
+         </widget>
+        </item>
        </layout>
+      </item>
+      <item>
+       <spacer name="horizontalSpacer">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QLabel" name="label_11">
+        <property name="text">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;img width=&quot;150&quot; src=&quot;:/optics/monochromator.png&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+       </widget>
       </item>
      </layout>
     </widget>
@@ -343,13 +350,13 @@
      <property name="title">
       <string>Insertion Device</string>
      </property>
-     <layout class="QVBoxLayout" name="verticalLayout_3">
+     <layout class="QHBoxLayout" name="horizontalLayout_3">
       <item>
        <layout class="QGridLayout" name="gridLayout_4">
         <property name="bottomMargin">
          <number>5</number>
         </property>
-        <item row="0" column="0">
+        <item row="1" column="0">
          <widget class="QLabel" name="label_3">
           <property name="font">
            <font>
@@ -365,29 +372,20 @@
           </property>
          </widget>
         </item>
-        <item row="1" column="1">
-         <widget class="PyDMLabel" name="PyDMLabel_2">
-          <property name="font">
-           <font>
-            <weight>50</weight>
-            <bold>false</bold>
-           </font>
+        <item row="0" column="0">
+         <spacer name="verticalSpacer">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
           </property>
-          <property name="toolTip">
-           <string/>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
           </property>
-          <property name="text">
-           <string>22.3 mm</string>
-          </property>
-          <property name="showUnits" stdset="0">
-           <bool>true</bool>
-          </property>
-          <property name="channel" stdset="0">
-           <string>sig://undulator_gap</string>
-          </property>
-         </widget>
+         </spacer>
         </item>
-        <item row="1" column="0">
+        <item row="2" column="0">
          <widget class="QLabel" name="label_4">
           <property name="font">
            <font>
@@ -403,20 +401,7 @@
           </property>
          </widget>
         </item>
-        <item row="1" column="2">
-         <spacer name="horizontalSpacer_3">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>40</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item row="0" column="1">
+        <item row="1" column="1">
          <widget class="PyDMLabel" name="PyDMLabel">
           <property name="font">
            <font>
@@ -440,11 +425,78 @@
            <bool>true</bool>
           </property>
           <property name="channel" stdset="0">
-           <string>sig://undulator_energy</string>
+           <string>haven://undulator_energy</string>
           </property>
          </widget>
         </item>
+        <item row="2" column="1">
+         <widget class="PyDMLabel" name="PyDMLabel_2">
+          <property name="font">
+           <font>
+            <weight>50</weight>
+            <bold>false</bold>
+           </font>
+          </property>
+          <property name="toolTip">
+           <string/>
+          </property>
+          <property name="text">
+           <string>22.3 mm</string>
+          </property>
+          <property name="showUnits" stdset="0">
+           <bool>true</bool>
+          </property>
+          <property name="channel" stdset="0">
+           <string>haven://undulator_gap</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="0">
+         <spacer name="verticalSpacer_2">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
        </layout>
+      </item>
+      <item>
+       <spacer name="horizontalSpacer_3">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QLabel" name="label_10">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="baseSize">
+         <size>
+          <width>150</width>
+          <height>200</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;img src=&quot;:/xray_source/insertion_device.png&quot; width=&quot;150&quot; /&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+       </widget>
       </item>
      </layout>
     </widget>
@@ -473,6 +525,8 @@
    <header>pydm.widgets.pushbutton</header>
   </customwidget>
  </customwidgets>
- <resources/>
+ <resources>
+  <include location="resources/beamline_components.qrc"/>
+ </resources>
  <connections/>
 </ui>

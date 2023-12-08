@@ -167,7 +167,7 @@ class XRFPlotWidget(QWidget):
         plot_item = self.ui.plot_widget.getPlotItem()
         # Create a new region item if necessary
         if key not in self._region_items.keys():
-            address = f"sig://{self.device_name}.mcas.mca{mca_num}.rois.roi{roi_num}"
+            address = f"haven://{self.device_name}.mcas.mca{mca_num}.rois.roi{roi_num}"
             color = self.region_color(mca_num=mca_num, roi_num=roi_num)
             region = ROIRegion(
                 address=address,
@@ -363,18 +363,18 @@ class ROIEmbeddedDisplay(PyDMEmbeddedDisplay):
 #     # Set up a channel for starting detector acquisition
 #     device = self.device
 #     self.start_channel = PyDMChannel(
-#         address=f"sig://{device.name}.acquire",
+#         address=f"haven://{device.name}.acquire",
 #         value_signal=self.start_all,
 #     )
 #     self.start_channel.connect()
 #     self.start_erase_channel = PyDMChannel(
-#         address=f"sig://{device.name}.acquire",
+#         address=f"haven://{device.name}.acquire",
 #         value_signal=self.start_erase,
 #     )
 #     self.start_erase_channel.connect()
 #     # This one gets (dis)connected in response to the continuous button
 #     self.acquiring_channel = PyDMChannel(
-#         address=f"sig://{device.name}.acquiring",
+#         address=f"haven://{device.name}.acquiring",
 #         value_slot=self.trigger_next,
 #     )
 
@@ -569,7 +569,7 @@ class XRFDetectorDisplay(display.FireflyDisplay):
         # Set up data channels
         self._spectrum_channels = []
         for mca_num in range(self.device.num_elements):
-            address = f"sig://{device.name}.mcas.mca{mca_num}.spectrum"
+            address = f"haven://{device.name}.mcas.mca{mca_num}.spectrum"
             channel = pydm.PyDMChannel(
                 address=address,
                 value_slot=partial(self.handle_new_spectrum, mca_num=mca_num),
