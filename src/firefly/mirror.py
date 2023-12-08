@@ -1,12 +1,13 @@
 import haven
 from firefly import display
 from haven.instrument import mirrors
-from firefly.slits import SlitsDisplay
+from firefly import slits
 
 
-class MirrorDisplay(SlitsDisplay):
+class MirrorDisplay(slits.SlitsDisplay):
     caqtdm_ui_filenames = {
         mirrors.HighHeatLoadMirror: "/net/s25data/xorApps/epics/synApps_6_2/ioc/25ida/25idaApp/op/ui/HHLM_4.ui",
+        mirrors.HighHeatLoadMirror: "/net/s25data/xorApps/epics/synApps_6_2/ioc/25ida/25idaApp/op/ui/HHLM_6.ui",
     }
 
     def customize_ui(self):
@@ -23,11 +24,9 @@ class MirrorDisplay(SlitsDisplay):
         pieces = prefix.split(":")
         # Build the macros for the caQtDM panels
         P = ":".join(pieces[:-1])
-        P = f"{P}:"
-        MIR = pieces[-1]
         caqtdm_macros = {
-            "P": P,
-            "MIR": pieces[-1],
+            "P": f"{P}:",
+            "MIR": f"{pieces[-1]}:",
             "Y": self.device.transverse.prefix.split(":")[-1],
             "ROLL": self.device.roll.prefix.split(":")[-1],
             "LAT": self.device.normal.prefix.split(":")[-1],
@@ -35,5 +34,7 @@ class MirrorDisplay(SlitsDisplay):
             "UPL": self.device.upstream.prefix.split(":")[-1],
             "DNL": self.device.downstream.prefix.split(":")[-1],
         }
+        if self.device.bendable:
+            caqtdm_macros["BEND"] = self.device.bender.prefix.split(":")[-1]
         # Launch the caQtDM panel
-        super(SlitsDisplay, self).launch_caqtdm(macros=caqtdm_macros)
+        super(slits.SlitsDisplay, self).launch_caqtdm(macros=caqtdm_macros)

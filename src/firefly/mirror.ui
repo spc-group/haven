@@ -74,16 +74,13 @@ color: white;
     <string/>
    </property>
    <property name="styleSheet">
-    <string notr="true">PyDMLabel {
-color: white;
-
-}</string>
+    <string notr="true"/>
    </property>
    <property name="frameShape">
     <enum>QFrame::NoFrame</enum>
    </property>
    <property name="macros" stdset="0">
-    <string>TITLE=Bender</string>
+    <string>TITLE=Bender,AXIS=${DEVICE}.bender</string>
    </property>
    <property name="filename" stdset="0">
     <string>slits_motor.py</string>
@@ -368,6 +365,17 @@ color: white;
     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
    </property>
   </widget>
+  <zorder>label</zorder>
+  <zorder>pitch_embedded_display</zorder>
+  <zorder>normal_embedded_display</zorder>
+  <zorder>PyDMDrawingLine_5</zorder>
+  <zorder>PyDMDrawingPolyline_2</zorder>
+  <zorder>hoizontal_pitch_polyline</zorder>
+  <zorder>horizontal_pitch_arc</zorder>
+  <zorder>vertical_downstream_arc_5</zorder>
+  <zorder>PyDMDrawingLine</zorder>
+  <zorder>PyDMLabel</zorder>
+  <zorder>bender_embedded_display</zorder>
  </widget>
  <customwidgets>
   <customwidget>

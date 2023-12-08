@@ -60,3 +60,7 @@ def test_bendable_mirror(hhl_bendable_mirror):
     display = MirrorDisplay(macros={"DEVICE": mirror.name})
     # Check that the bender controls are unlocked
     assert display.ui.bender_embedded_display.isEnabled()
+
+
+    # For a bendable HHL mirror
+    # /net/s25data/xorApps/epics/synApps_6_2/ioc/25ida/25idaApp/op/ui/HHLM_6.ui, macro: P=25ida:,MIR=ORM2:,Y=m1,ROLL=m2,LAT=lateral,CP=coarsePitch,FP=PZT:m1,BEND=m5,UPL=m3,DNL=m4
