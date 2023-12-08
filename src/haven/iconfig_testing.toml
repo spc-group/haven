@@ -33,21 +33,31 @@ device_class = "BladeSlits"
 prefix = "255ida:slits:US:"
 device_class = "ApertureSlits"
 
+# A bendable mirror, like the long KB at 25-ID-C
 [kb_mirrors.LongKB_Cdn]
-
 prefix = "255idcVME:LongKB_Cdn:"
-bendable = true
+horiz_upstream_motor = "m33"
+horiz_downstream_motor = "m34"
+horiz_upstream_bender = "m21"
+horiz_downstream_bender = "m22"
+vert_upstream_motor = "m46"
+vert_downstream_motor = "m47"
+vert_upstream_bender = "m56"
+vert_downstream_bender = "m57"
 
+# A non-bendable mirror, like the KB at 25-ID-C
 [kb_mirrors.KB]
-
 prefix = "255idcVME:KB:"
-bendable = false
+horiz_upstream_motor = "m35"
+horiz_downstream_motor = "m36"
+vert_upstream_motor = "m48"
+vert_downstream_motor = "m49"
 
+# A single bounch, high heat load mirror
 [mirrors.ORM1]
-
 prefix = "25ida:ORM1:"
 device_class = "HighHeatLoadMirror"
-# bendable = false
+bendable = false
 
 [mirrors.ORM2]
 
