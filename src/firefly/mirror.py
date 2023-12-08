@@ -7,7 +7,7 @@ from firefly import slits
 class MirrorDisplay(slits.SlitsDisplay):
     caqtdm_ui_filenames = {
         mirrors.HighHeatLoadMirror: "/net/s25data/xorApps/epics/synApps_6_2/ioc/25ida/25idaApp/op/ui/HHLM_4.ui",
-        mirrors.HighHeatLoadMirror: "/net/s25data/xorApps/epics/synApps_6_2/ioc/25ida/25idaApp/op/ui/HHLM_6.ui",
+        mirrors.BendableHighHeatLoadMirror: "/net/s25data/xorApps/epics/synApps_6_2/ioc/25ida/25idaApp/op/ui/HHLM_6.ui",
     }
 
     def customize_ui(self):
