@@ -41,28 +41,27 @@ def test_align_motor(ffapp):
     assert motor.readback.get() == pytest.approx(-3, rel=1e-3)
 
 
-# def test_align_pitch2():
-#     # Prepare fake motors
-#     motor = registry.register(sim.SynAxis(name="monochromator_pitch2", labels={"motors"}))
-#     detector = registry.register(sim.SynGauss(
-#         name="I0",
-#         motor=motor,
-#         motor_field="monochromator_pitch2",
-#         center=-3,
-#         Imax=1,
-#         sigma=20,
-#         labels={"detectors"},
-#     ))
-#     # Prepare the callback to check results
-#     bec = BestEffortCallback()
-#     bec.disable_plots()
-#     bec.disable_table()
-#     # Prepare the plan
-#     plan = align_pitch2(bec=bec, distance=40, reverse=True)
-#     # Execute the plan
-#     RE = RunEngineStub(call_returns_result=True)
-#     result = RE(plan)
-#     # Check that the pitch motor gets moved
-#     assert "I0" in bec.peaks['cen'].keys()
-#     assert bec.peaks['cen']['I0'] == pytest.approx(-3, rel=1e-3)
-#     assert motor.readback.get() == pytest.approx(-3, rel=1e-3)
+# -----------------------------------------------------------------------------
+# :author:    Mark Wolfman
+# :email:     wolfman@anl.gov
+# :copyright: Copyright © 2023, UChicago Argonne, LLC
+#
+# Distributed under the terms of the 3-Clause BSD License
+#
+# The full license is in the file LICENSE, distributed with this software.
+#
+# DISCLAIMER
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+# HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# -----------------------------------------------------------------------------
