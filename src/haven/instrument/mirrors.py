@@ -96,7 +96,7 @@ class KBMirrors(Device):
                 downstream_motor=horiz_downstream_motor,
                 upstream_bender=horiz_upstream_bender,
                 downstream_bender=horiz_downstream_bender,
-                labels={"mirrors"},
+                # labels={"mirrors"},
             ),
             vert=Cpt(
                 VertClass,
@@ -105,7 +105,7 @@ class KBMirrors(Device):
                 downstream_motor=vert_downstream_motor,
                 upstream_bender=vert_upstream_bender,
                 downstream_bender=vert_downstream_bender,
-                labels={"mirrors"},
+                # labels={"mirrors"},
             ),
         )
         NewMirrors = type("KBMirrors", (cls,), attrs)
