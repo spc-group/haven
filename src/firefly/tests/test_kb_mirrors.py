@@ -11,7 +11,36 @@ from firefly.kb_mirrors import KBMirrorsDisplay
 def kb_mirrors(sim_registry):
     """A fake set of slits using the 4-blade setup."""
     FakeMirrors = make_fake_device(KBMirrors)
-    kb = FakeMirrors(prefix="255idc:KB:", name="kb_mirrors", labels={"kb_mirrors"})
+    kb = FakeMirrors(
+        prefix="255idc:KB:",
+        name="kb_mirrors",
+        horiz_upstream_motor="255idc:m1",
+        vert_upstream_motor="255idc:m2",
+        horiz_downstream_motor="255idc:m3",
+        vert_downstream_motor="255idc:m4",
+        labels={"kb_mirrors"},
+    )
+    sim_registry.register(kb)
+    return kb
+
+
+@pytest.fixture()
+def kb_bendable_mirrors(sim_registry):
+    """A fake set of slits using the 4-blade setup."""
+    FakeMirrors = make_fake_device(KBMirrors)
+    kb = FakeMirrors(
+        prefix="255idc:KB:",
+        name="kb_bendable_mirrors",
+        horiz_upstream_motor="255idc:m5",
+        vert_upstream_motor="255idc:m6",
+        horiz_downstream_motor="255idc:m7",
+        vert_downstream_motor="255idc:m8",
+        horiz_upstream_bender="255idc:m21",
+        vert_upstream_bender="255idc:m22",
+        horiz_downstream_bender="255idc:m23",
+        vert_downstream_bender="255idc:m24",
+        labels={"kb_mirrors"},
+    )
     sim_registry.register(kb)
     return kb
 
@@ -20,6 +49,18 @@ def kb_mirrors(sim_registry):
 def display(ffapp, kb_mirrors):
     disp = KBMirrorsDisplay(macros={"DEVICE": kb_mirrors.name})
     return disp
+
+
+def test_bender_widgets(ffapp, kb_bendable_mirrors):
+    # Make the display object
+    mirrors = kb_bendable_mirrors
+    disp = KBMirrorsDisplay(macros={"DEVICE": mirrors.name})
+    # Check that the bender control widgets were enabled
+    assert disp.ui.horizontal_upstream_display.isEnabled()
+    assert disp.ui.horizontal_downstream_display.isEnabled()
+    assert disp.ui.vertical_upstream_display.isEnabled()
+    assert disp.ui.vertical_downstream_display.isEnabled()
+    
 
 
 def test_kb_mirrors_caqtdm(display, kb_mirrors):

@@ -12,6 +12,15 @@ class KBMirrorsDisplay(SlitsDisplay):
     def ui_filename(self):
         return "kb_mirrors.ui"
 
+    def customize_ui(self):
+        # Enable/disable bender controls
+        horiz = self.device.horiz
+        self.ui.horizontal_upstream_display.setEnabled(horiz.bendable)
+        self.ui.horizontal_downstream_display.setEnabled(horiz.bendable)
+        vert = self.device.vert
+        self.ui.vertical_upstream_display.setEnabled(vert.bendable)
+        self.ui.vertical_downstream_display.setEnabled(vert.bendable)
+
     def launch_caqtdm(self):
         # Sort out the prefix from the slit designator
         prefix = self.device.prefix.strip(":")

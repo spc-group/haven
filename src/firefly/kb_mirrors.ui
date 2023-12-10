@@ -67,7 +67,7 @@
     <enum>QTabWidget::Rounded</enum>
    </property>
    <property name="currentIndex">
-    <number>0</number>
+    <number>1</number>
    </property>
    <property name="elideMode">
     <enum>Qt::ElideNone</enum>
@@ -159,6 +159,13 @@
      <property name="penWidth" stdset="0">
       <double>3.000000000000000</double>
      </property>
+     <property name="points">
+      <stringlist>
+       <string>17.41, 0.0</string>
+       <string>149.41, 70.0</string>
+       <string>0.0, 70.0</string>
+      </stringlist>
+     </property>
      <property name="arrowEndPoint" stdset="0">
       <bool>false</bool>
      </property>
@@ -170,13 +177,6 @@
      </property>
      <property name="flipMidPointArrow" stdset="0">
       <bool>false</bool>
-     </property>
-     <property name="points">
-      <stringlist>
-       <string>17.41, 0.0</string>
-       <string>149.41, 70.0</string>
-       <string>0.0, 70.0</string>
-      </stringlist>
      </property>
     </widget>
     <widget class="PyDMEmbeddedDisplay" name="vertical_normal_display">
@@ -325,6 +325,13 @@
      <property name="penWidth" stdset="0">
       <double>3.000000000000000</double>
      </property>
+     <property name="points">
+      <stringlist>
+       <string>80.6, 0.0</string>
+       <string>0.0, 0.0</string>
+       <string>79.0, 16.0</string>
+      </stringlist>
+     </property>
      <property name="arrowEndPoint" stdset="0">
       <bool>false</bool>
      </property>
@@ -336,13 +343,6 @@
      </property>
      <property name="flipMidPointArrow" stdset="0">
       <bool>false</bool>
-     </property>
-     <property name="points">
-      <stringlist>
-       <string>80.6, 0.0</string>
-       <string>0.0, 0.0</string>
-       <string>79.0, 16.0</string>
-      </stringlist>
      </property>
     </widget>
     <widget class="PyDMEmbeddedDisplay" name="horizontal_normal_display">
@@ -513,6 +513,13 @@
      <property name="penWidth" stdset="0">
       <double>3.000000000000000</double>
      </property>
+     <property name="points">
+      <stringlist>
+       <string>15.0, 0.0</string>
+       <string>15.0, 70.0</string>
+       <string>0.0, 70.0</string>
+      </stringlist>
+     </property>
      <property name="arrowEndPoint" stdset="0">
       <bool>false</bool>
      </property>
@@ -524,13 +531,6 @@
      </property>
      <property name="flipMidPointArrow" stdset="0">
       <bool>false</bool>
-     </property>
-     <property name="points">
-      <stringlist>
-       <string>15.0, 0.0</string>
-       <string>15.0, 70.0</string>
-       <string>0.0, 70.0</string>
-      </stringlist>
      </property>
     </widget>
     <widget class="PyDMDrawingLine" name="PyDMDrawingLine_6">
@@ -566,21 +566,21 @@
     <zorder>label_3</zorder>
     <zorder>label_2</zorder>
     <zorder>vertical_pitch_polyline</zorder>
-    <zorder>vertical_normal_display</zorder>
-    <zorder>horizontal_pitch_display</zorder>
     <zorder>vertical_pitch_arc</zorder>
     <zorder>horizontal_pitch_arc</zorder>
     <zorder>hoizontal_pitch_polyline</zorder>
-    <zorder>horizontal_normal_display</zorder>
-    <zorder>vertical_pitch_display</zorder>
     <zorder>PyDMDrawingLine_4</zorder>
     <zorder>PyDMDrawingLine_5</zorder>
     <zorder>PyDMDrawingPolyline_2</zorder>
     <zorder>PyDMDrawingLine_6</zorder>
+    <zorder>vertical_pitch_display</zorder>
+    <zorder>horizontal_pitch_display</zorder>
+    <zorder>vertical_normal_display</zorder>
+    <zorder>horizontal_normal_display</zorder>
    </widget>
    <widget class="QWidget" name="benders_tab">
     <property name="enabled">
-     <bool>false</bool>
+     <bool>true</bool>
     </property>
     <property name="styleSheet">
      <string notr="true"/>
@@ -648,12 +648,15 @@
      </property>
     </widget>
     <widget class="PyDMEmbeddedDisplay" name="vertical_upstream_display">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
      <property name="geometry">
       <rect>
        <x>430</x>
-       <y>90</y>
+       <y>79</y>
        <width>101</width>
-       <height>100</height>
+       <height>111</height>
       </rect>
      </property>
      <property name="font">
@@ -684,12 +687,15 @@
      </property>
     </widget>
     <widget class="PyDMEmbeddedDisplay" name="horizontal_downstream_display">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
      <property name="geometry">
       <rect>
        <x>18</x>
        <y>150</y>
        <width>101</width>
-       <height>100</height>
+       <height>111</height>
       </rect>
      </property>
      <property name="font">
@@ -725,12 +731,15 @@ color: white;
      </property>
     </widget>
     <widget class="PyDMEmbeddedDisplay" name="horizontal_upstream_display">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
      <property name="geometry">
       <rect>
        <x>230</x>
        <y>0</y>
        <width>101</width>
-       <height>100</height>
+       <height>111</height>
       </rect>
      </property>
      <property name="font">
@@ -761,12 +770,15 @@ color: white;
      </property>
     </widget>
     <widget class="PyDMEmbeddedDisplay" name="vertical_downstream_display">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
      <property name="geometry">
       <rect>
        <x>157</x>
        <y>260</y>
        <width>101</width>
-       <height>100</height>
+       <height>111</height>
       </rect>
      </property>
      <property name="font">
@@ -1032,6 +1044,21 @@ color: white;
       <double>90.000000000000000</double>
      </property>
     </widget>
+    <zorder>label_4</zorder>
+    <zorder>label_5</zorder>
+    <zorder>label_6</zorder>
+    <zorder>vertical_downstream_arc</zorder>
+    <zorder>vertical_downstream_arc_2</zorder>
+    <zorder>vertical_downstream_arc_3</zorder>
+    <zorder>vertical_downstream_arc_4</zorder>
+    <zorder>PyDMDrawingLine</zorder>
+    <zorder>PyDMDrawingLine_2</zorder>
+    <zorder>PyDMDrawingPolyline</zorder>
+    <zorder>PyDMDrawingLine_3</zorder>
+    <zorder>vertical_upstream_display</zorder>
+    <zorder>vertical_downstream_display</zorder>
+    <zorder>horizontal_upstream_display</zorder>
+    <zorder>horizontal_downstream_display</zorder>
    </widget>
   </widget>
  </widget>
