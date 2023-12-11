@@ -12,14 +12,14 @@ from .device import aload_devices, make_device, RegexComponent as RCpt
 class HighHeatLoadMirror(Device):
     bendable = False
     # Physical motors
-    transverse = Cpt(HavenMotor, "m1")
-    roll = Cpt(HavenMotor, "m2")
-    upstream = Cpt(HavenMotor, "m3")
-    downstream = Cpt(HavenMotor, "m4")
+    transverse = Cpt(HavenMotor, "m1", labels={"motors"})
+    roll = Cpt(HavenMotor, "m2", labels={"motors"})
+    upstream = Cpt(HavenMotor, "m3", labels={"motors"})
+    downstream = Cpt(HavenMotor, "m4", labels={"motors"})
 
     # Pseudo motors
-    pitch = Cpt(HavenMotor, "coarsePitch", kind=Kind.hinted)
-    normal = Cpt(HavenMotor, "lateral", kind=Kind.hinted)
+    pitch = Cpt(HavenMotor, "coarsePitch", kind=Kind.hinted, labels={"motors"})
+    normal = Cpt(HavenMotor, "lateral", kind=Kind.hinted, labels={"motors"})
 
     # Standard transform records for the pseudo motors
     drive_transform = Cpt(TransformRecord, "lats:Drive", kind=Kind.config)
@@ -28,17 +28,17 @@ class HighHeatLoadMirror(Device):
 
 class BendableHighHeatLoadMirror(HighHeatLoadMirror):
     bendable = True
-    bender = Cpt(HavenMotor, "m5")
+    bender = Cpt(HavenMotor, "m5", labels={"motors"})
 
 
 class KBMirror(Device):
     """A single mirror in a KB mirror set."""
     bendable = False
 
-    pitch = Cpt(HavenMotor, "pitch")
-    normal = Cpt(HavenMotor, "height")
-    upstream = FCpt(HavenMotor, "{upstream_motor}")
-    downstream = FCpt(HavenMotor, "{downstream_motor}")
+    pitch = Cpt(HavenMotor, "pitch", labels={"motors"})
+    normal = Cpt(HavenMotor, "height", labels={"motors"})
+    upstream = FCpt(HavenMotor, "{upstream_motor}", labels={"motors"})
+    downstream = FCpt(HavenMotor, "{downstream_motor}", labels={"motors"})
 
     # The pseudo motor transform records have
     # a missing ':', so we need to remove it.
@@ -63,8 +63,8 @@ class BendableKBMirror(KBMirror):
     """A single bendable mirror in a KB mirror set."""
     bendable = True
     
-    bender_upstream = FCpt(HavenMotor, "{_upstream_bender}")
-    bender_downstream = FCpt(HavenMotor, "{_downstream_bender}")
+    bender_upstream = FCpt(HavenMotor, "{_upstream_bender}", labels={"motors"})
+    bender_downstream = FCpt(HavenMotor, "{_downstream_bender}", labels={"motors"})
 
 
 class KBMirrors(Device):
@@ -96,7 +96,6 @@ class KBMirrors(Device):
                 downstream_motor=horiz_downstream_motor,
                 upstream_bender=horiz_upstream_bender,
                 downstream_bender=horiz_downstream_bender,
-                # labels={"mirrors"},
             ),
             vert=Cpt(
                 VertClass,
@@ -105,7 +104,6 @@ class KBMirrors(Device):
                 downstream_motor=vert_downstream_motor,
                 upstream_bender=vert_upstream_bender,
                 downstream_bender=vert_downstream_bender,
-                # labels={"mirrors"},
             ),
         )
         NewMirrors = type("KBMirrors", (cls,), attrs)
@@ -175,3 +173,29 @@ def load_mirror_coros(config=None):
 
 def load_mirrors(config=None):
     asyncio.run(aload_devices(*load_mirror_coros(config=config)))
+
+
+# -----------------------------------------------------------------------------
+# :author:    Mark Wolfman
+# :email:     wolfman@anl.gov
+# :copyright: Copyright © 2023, UChicago Argonne, LLC
+#
+# Distributed under the terms of the 3-Clause BSD License
+#
+# The full license is in the file LICENSE, distributed with this software.
+#
+# DISCLAIMER
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+# HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# -----------------------------------------------------------------------------

@@ -140,7 +140,7 @@ class FireflyMainWindow(PyDMMainWindow):
         # Motors sub-menu
         self.ui.menuMotors = QtWidgets.QMenu(self.ui.menubar)
         self.ui.menuMotors.setObjectName("menuMotors")
-        self.ui.menuMotors.setTitle("Motors")
+        self.ui.menuMotors.setTitle("Extra &Motors")
         self.ui.positioners_menu.addAction(self.ui.menuMotors.menuAction())
         # Menu to launch the Window to change energy
         self.ui.positioners_menu.addAction(app.show_energy_window_action)

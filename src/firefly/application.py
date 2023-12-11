@@ -150,7 +150,7 @@ class FireflyApplication(PyDMApplication):
         """
         # Setup actions for the various categories of devices
         self._prepare_device_windows(
-            device_label="motors",
+            device_label="extra_motors",
             attr_name="motor",
             ui_file="motor.py",
             device_key="MOTOR",
