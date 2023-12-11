@@ -88,6 +88,7 @@ class KBMirrors(Device):
         if bool(vert_upstream_bender) and bool(vert_downstream_bender):
             VertClass = BendableKBMirror
         # Create a customized subclass based on the configuration attrs
+        print(HorizClass, VertClass)
         attrs = dict(
             horiz=Cpt(
                 HorizClass,
@@ -147,7 +148,7 @@ def load_mirror_coros(config=None):
                 vert_downstream_bender=kb_config.get("vert_downstream_bender", ""),
             )
             # Convert motors to fully qualified PV names (if not empty)
-            motors = {key: f"{prefix}:{val}" for key, val in motors.items() if bool(val)}
+            motors = {key: f"{ioc_prefix}:{val}" for key, val in motors.items() if bool(val)}
         except KeyError as ex:
             raise exceptions.UnknownDeviceConfiguration(
                 f"Device {name} missing '{ex.args[0]}': {kb_config}"

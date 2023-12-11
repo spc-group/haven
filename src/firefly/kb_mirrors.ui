@@ -67,7 +67,7 @@
     <enum>QTabWidget::Rounded</enum>
    </property>
    <property name="currentIndex">
-    <number>1</number>
+    <number>0</number>
    </property>
    <property name="elideMode">
     <enum>Qt::ElideNone</enum>
@@ -159,13 +159,6 @@
      <property name="penWidth" stdset="0">
       <double>3.000000000000000</double>
      </property>
-     <property name="points">
-      <stringlist>
-       <string>17.41, 0.0</string>
-       <string>149.41, 70.0</string>
-       <string>0.0, 70.0</string>
-      </stringlist>
-     </property>
      <property name="arrowEndPoint" stdset="0">
       <bool>false</bool>
      </property>
@@ -177,6 +170,13 @@
      </property>
      <property name="flipMidPointArrow" stdset="0">
       <bool>false</bool>
+     </property>
+     <property name="points">
+      <stringlist>
+       <string>17.41, 0.0</string>
+       <string>149.41, 70.0</string>
+       <string>0.0, 70.0</string>
+      </stringlist>
      </property>
     </widget>
     <widget class="PyDMEmbeddedDisplay" name="vertical_normal_display">
@@ -325,13 +325,6 @@
      <property name="penWidth" stdset="0">
       <double>3.000000000000000</double>
      </property>
-     <property name="points">
-      <stringlist>
-       <string>80.6, 0.0</string>
-       <string>0.0, 0.0</string>
-       <string>79.0, 16.0</string>
-      </stringlist>
-     </property>
      <property name="arrowEndPoint" stdset="0">
       <bool>false</bool>
      </property>
@@ -343,6 +336,13 @@
      </property>
      <property name="flipMidPointArrow" stdset="0">
       <bool>false</bool>
+     </property>
+     <property name="points">
+      <stringlist>
+       <string>80.6, 0.0</string>
+       <string>0.0, 0.0</string>
+       <string>79.0, 16.0</string>
+      </stringlist>
      </property>
     </widget>
     <widget class="PyDMEmbeddedDisplay" name="horizontal_normal_display">
@@ -513,13 +513,6 @@
      <property name="penWidth" stdset="0">
       <double>3.000000000000000</double>
      </property>
-     <property name="points">
-      <stringlist>
-       <string>15.0, 0.0</string>
-       <string>15.0, 70.0</string>
-       <string>0.0, 70.0</string>
-      </stringlist>
-     </property>
      <property name="arrowEndPoint" stdset="0">
       <bool>false</bool>
      </property>
@@ -531,6 +524,13 @@
      </property>
      <property name="flipMidPointArrow" stdset="0">
       <bool>false</bool>
+     </property>
+     <property name="points">
+      <stringlist>
+       <string>15.0, 0.0</string>
+       <string>15.0, 70.0</string>
+       <string>0.0, 70.0</string>
+      </stringlist>
      </property>
     </widget>
     <widget class="PyDMDrawingLine" name="PyDMDrawingLine_6">
@@ -671,7 +671,7 @@
       <enum>QFrame::NoFrame</enum>
      </property>
      <property name="macros" stdset="0">
-      <string>{&quot;TITLE&quot;: &quot;Upstream&quot;}</string>
+      <string>TITLE=Upstream,AXIS=${DEVICE}.vert.bender_upstream</string>
      </property>
      <property name="filename" stdset="0">
       <string>slits_motor.py</string>
@@ -715,7 +715,7 @@ color: white;
       <enum>QFrame::NoFrame</enum>
      </property>
      <property name="macros" stdset="0">
-      <string>{&quot;TITLE&quot;: &quot;Downstream&quot;}</string>
+      <string>TITLE=Downstream,AXIS=${DEVICE}.horiz.bender_downstream</string>
      </property>
      <property name="filename" stdset="0">
       <string>slits_motor.py</string>
@@ -754,7 +754,7 @@ color: white;
       <enum>QFrame::NoFrame</enum>
      </property>
      <property name="macros" stdset="0">
-      <string>{&quot;TITLE&quot;: &quot;Upstream&quot;}</string>
+      <string>TITLE=Upstream,AXIS=${DEVICE}.horiz.bender_upstream</string>
      </property>
      <property name="filename" stdset="0">
       <string>slits_motor.py</string>
@@ -793,7 +793,7 @@ color: white;
       <enum>QFrame::NoFrame</enum>
      </property>
      <property name="macros" stdset="0">
-      <string>{&quot;TITLE&quot;: &quot;Downstream&quot;}</string>
+      <string>TITLE=Downstream,AXIS=${DEVICE}.vert.bender_downstream</string>
      </property>
      <property name="filename" stdset="0">
       <string>slits_motor.py</string>

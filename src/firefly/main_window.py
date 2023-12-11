@@ -148,6 +148,7 @@ class FireflyMainWindow(PyDMMainWindow):
         self.ui.positioners_menu.addSeparator()
         for action in app.slits_actions.values():
             self.ui.positioners_menu.addAction(action)
+        self.ui.positioners_menu.addSeparator()
         for action in app.kb_mirrors_actions.values():
             self.ui.positioners_menu.addAction(action)
         for action in app.mirror_actions.values():
