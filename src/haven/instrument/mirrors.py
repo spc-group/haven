@@ -146,7 +146,8 @@ def load_mirror_coros(config=None):
                 vert_upstream_bender=kb_config.get("vert_upstream_bender", ""),
                 vert_downstream_bender=kb_config.get("vert_downstream_bender", ""),
             )
-            motors = {key: f"{prefix}:{val}" for key, val in motors.items()}
+            # Convert motors to fully qualified PV names (if not empty)
+            motors = {key: f"{prefix}:{val}" for key, val in motors.items() if bool(val)}
         except KeyError as ex:
             raise exceptions.UnknownDeviceConfiguration(
                 f"Device {name} missing '{ex.args[0]}': {kb_config}"
