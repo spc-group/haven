@@ -49,7 +49,6 @@ async def aload_instrument(
 
     """
     coros = (
-        *load_all_motor_coros(config=config),
         *load_camera_coros(config=config),
         *load_shutter_coros(config=config),
         *load_aps_coros(config=config),
@@ -68,6 +67,10 @@ async def aload_instrument(
         *load_lerix_spectrometer_coros(config=config),
     )
     devices = await asyncio.gather(*coros)
+    # Load the motor devices last so that we can check for existing
+    # motors in the registry
+    extra_motors = await asyncio.gather(*load_all_motor_coros(config=config))
+    devices.extend(extra_motors)
     return devices
 
 

@@ -66,8 +66,8 @@ class ApertureSlits(Device):
     """
 
     class SlitAxis(Device):
-        size = Cpt(SlitMotor, "Size")
-        center = Cpt(SlitMotor, "Center")
+        size = Cpt(SlitMotor, "Size", labels={"motors"})
+        center = Cpt(SlitMotor, "Center", labels={"motors"})
 
     h = Cpt(SlitAxis, "h")
     v = Cpt(SlitAxis, "v")
