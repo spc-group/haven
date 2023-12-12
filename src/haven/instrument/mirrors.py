@@ -88,7 +88,6 @@ class KBMirrors(Device):
         if bool(vert_upstream_bender) and bool(vert_downstream_bender):
             VertClass = BendableKBMirror
         # Create a customized subclass based on the configuration attrs
-        print(HorizClass, VertClass)
         attrs = dict(
             horiz=Cpt(
                 HorizClass,

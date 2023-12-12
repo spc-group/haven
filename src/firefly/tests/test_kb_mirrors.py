@@ -29,7 +29,7 @@ def kb_bendable_mirrors(sim_registry):
     """A fake set of slits using the 4-blade setup."""
     FakeMirrors = make_fake_device(KBMirrors)
     kb = FakeMirrors(
-        prefix="255idc:KB:",
+        prefix="255idc:Long_KB:",
         name="kb_bendable_mirrors",
         horiz_upstream_motor="255idc:m5",
         vert_upstream_motor="255idc:m6",
@@ -42,6 +42,7 @@ def kb_bendable_mirrors(sim_registry):
         labels={"kb_mirrors"},
     )
     sim_registry.register(kb)
+    # print(kb.horiz.__class__)
     return kb
 
 
@@ -77,6 +78,43 @@ def test_kb_mirrors_caqtdm(display, kb_mirrors):
     assert "KB=KB" in macros
     assert "KBH=KB:H" in macros
     assert "KBV=KB:V" in macros
+    assert "KBHUS=m1" in macros
+    assert "KBHDS=m3" in macros
+    assert "KBVUS=m2" in macros
+    assert "KBVDS=m4" in macros
+    assert "KB1=KBH" in macros
+    assert "KB2=KBV" in macros
     # Check that the right UI file is being used
     ui_file = cmds[-1]
     assert ui_file.split("/")[-1] == "KB_mirrors.ui"
+
+
+def test_kb_bendable_mirrors_caqtdm(ffapp, kb_bendable_mirrors):
+    mirrors = kb_bendable_mirrors
+    disp = KBMirrorsDisplay(macros={"DEVICE": mirrors.name})
+    disp._open_caqtdm_subprocess = mock.MagicMock()
+    # Launch the caqtdm display
+    disp.launch_caqtdm()
+    assert disp._open_caqtdm_subprocess.called
+    cmds = disp._open_caqtdm_subprocess.call_args[0][0]
+    # Check that the right macros are sent
+    # /net/s25data/xorApps/ui/KB_mirrors_and_benders.ui, macro: P=25idcVME:,PM=25idcVME:,KB=LongKB_Cdn,KBH=LongKB_Cdn:H,KBV=LongKB_Cdn:V,KBHUS=m50,KBHDS=m49,KBVUS=m56,KBVDS=m55,KB1=LongKB_CdnH, KB2=LongKB_CdnV,HBUS=m52,HBDS=m51,VBUS=m54,VBDS=m53
+    macros = [cmds[i + 1] for i in range(len(cmds)) if cmds[i] == "-macro"][0]
+    assert "P=255idc:" in macros
+    assert "PM=255idc:" in macros
+    assert "KB=Long_KB" in macros
+    assert "KBH=Long_KB:H" in macros
+    assert "KBV=Long_KB:V" in macros
+    assert "KBHUS=m5" in macros
+    assert "KBHDS=m7" in macros
+    assert "KBVUS=m6" in macros
+    assert "KBVDS=m8" in macros
+    assert "KB1=Long_KBH" in macros
+    assert "KB2=Long_KBV" in macros
+    assert "HBUS=m21" in macros
+    assert "HBDS=m23" in macros
+    assert "VBUS=m22" in macros
+    assert "VBDS=m24" in macros
+    # Check that the right UI file is being used
+    ui_file = cmds[-1]
+    assert ui_file.split("/")[-1] == "KB_mirrors_and_benders.ui"

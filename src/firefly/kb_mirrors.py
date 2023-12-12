@@ -5,9 +5,15 @@ from firefly.slits import SlitsDisplay
 
 
 class KBMirrorsDisplay(SlitsDisplay):
-    caqtdm_ui_filenames = {
-        mirrors.KBMirrors: "/net/s25data/xorApps/ui/KB_mirrors.ui",
-    }
+
+    @property
+    def caqtdm_ui_file(self):
+        # Go up the class list until we find a class that is recognized
+        if self.device.horiz.bendable or self.device.vert.bendable:
+            ui_file = "/net/s25data/xorApps/ui/KB_mirrors_and_benders.ui"
+        else:
+            ui_file = "/net/s25data/xorApps/ui/KB_mirrors.ui"
+        return ui_file
 
     def ui_filename(self):
         return "kb_mirrors.ui"
@@ -31,12 +37,43 @@ class KBMirrorsDisplay(SlitsDisplay):
         KB = pieces[-1]
         KBH = self.device.horiz.prefix.replace(P, "")
         KBV = self.device.vert.prefix.replace(P, "")
+        def suffix(signal):
+            return signal.prefix.split(":")[-1]
+        
         caqtdm_macros = {
             "P": f"{P}",
             "KB": KB,
             "KBH": KBH,
             "KBV": KBV,
+            # Macros for the real motors
+            "KBHUS": suffix(self.device.horiz.upstream),
+            "KBHDS": suffix(self.device.horiz.downstream),
+            "KBVUS": suffix(self.device.vert.upstream),
+            "KBVDS": suffix(self.device.vert.downstream),
+            # Macros for the transform records
+            "KB1": KBH.replace(":", ""),
+            "KB2": KBV.replace(":", ""),
         }
+        # Macros only needed by bendable mirrors
+        is_bendable = self.device.horiz.bendable or self.device.vert.bendable
+        if is_bendable:
+            # Macros for both mirror benders    
+            caqtdm_macros.update({
+                "PM": P,
+            })
+        # Macros for each mirror's bender motors
+        horiz = self.device.horiz
+        if horiz.bendable:
+            caqtdm_macros.update({
+                "HBUS": suffix(horiz.bender_upstream),
+                "HBDS": suffix(horiz.bender_downstream),
+            })
+        vert = self.device.vert
+        if vert.bendable:
+            caqtdm_macros.update({
+                "VBUS": suffix(vert.bender_upstream),
+                "VBDS": suffix(vert.bender_downstream),
+            })
         # Launch the caQtDM panel
         super(SlitsDisplay, self).launch_caqtdm(macros=caqtdm_macros)
 
