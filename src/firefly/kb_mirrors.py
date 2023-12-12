@@ -35,13 +35,14 @@ class KBMirrorsDisplay(SlitsDisplay):
         P = ":".join(pieces[:-1])
         P = f"{P}:"
         KB = pieces[-1]
-        KBH = self.device.horiz.prefix.replace(P, "")
-        KBV = self.device.vert.prefix.replace(P, "")
+        KBH = self.device.horiz.prefix.replace(P, "").strip(":")
+        KBV = self.device.vert.prefix.replace(P, "").strip(":")
         def suffix(signal):
             return signal.prefix.split(":")[-1]
         
         caqtdm_macros = {
             "P": f"{P}",
+            "PM": P,
             "KB": KB,
             "KBH": KBH,
             "KBV": KBV,
@@ -54,13 +55,6 @@ class KBMirrorsDisplay(SlitsDisplay):
             "KB1": KBH.replace(":", ""),
             "KB2": KBV.replace(":", ""),
         }
-        # Macros only needed by bendable mirrors
-        is_bendable = self.device.horiz.bendable or self.device.vert.bendable
-        if is_bendable:
-            # Macros for both mirror benders    
-            caqtdm_macros.update({
-                "PM": P,
-            })
         # Macros for each mirror's bender motors
         horiz = self.device.horiz
         if horiz.bendable:

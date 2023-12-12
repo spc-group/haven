@@ -4,9 +4,8 @@ from pathlib import Path
 
 from pydm import data_plugins
 from pydm.main_window import PyDMMainWindow
-
-# from qtpy.QtCore import Slot
 from qtpy import QtCore, QtGui, QtWidgets
+import qtawesome as qta
 
 from haven import load_config
 
@@ -40,6 +39,7 @@ class FireflyMainWindow(PyDMMainWindow):
         if len(caqtdm_actions) > 0:
             caqtdm_menu.addSeparator()
         for action in caqtdm_actions:
+            action.setIcon(qta.icon("fa5s.wrench"))
             caqtdm_menu.addAction(action)
 
     def closeEvent(self, event):
