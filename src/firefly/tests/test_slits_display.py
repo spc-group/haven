@@ -39,6 +39,10 @@ def test_aperture_slit_caqtdm(display, aperture_slits):
     macros = [cmds[i + 1] for i in range(len(cmds)) if cmds[i] == "-macro"][0]
     assert "P=255ida:slits:" in macros
     assert "SLITS=US" in macros
+    assert "HOR=m1" in macros
+    assert "DIAG=m2" in macros
+    assert "PITCH=m3" in macros
+    assert "YAW=m4" in macros
     # Check that the right UI file is being used
     ui_file = cmds[-1]
     assert ui_file.split("/")[-1] == "maskApertureSlit.ui"

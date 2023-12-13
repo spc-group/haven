@@ -29,9 +29,13 @@ prefix = "vme_crate_ioc:KB"
 device_class = "BladeSlits"
 
 [slits.whitebeam_slits]
-
+# A single rotating aperture slit, like the 25-ID white/pinkbeam slits
 prefix = "255ida:slits:US:"
 device_class = "ApertureSlits"
+pitch_motor = "m33"
+yaw_motor = "m34"
+horizontal_motor = "m35"
+diagonal_motor = "m36"
 
 # A bendable mirror, like the long KB at 25-ID-C
 [kb_mirrors.LongKB_Cdn]

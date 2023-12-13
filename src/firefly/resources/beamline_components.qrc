@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="optics">
+    <file>table.png</file>
     <file>monochromator.png</file>
     <file>mirror.png</file>
     <file>kb_mirrors.png</file>
