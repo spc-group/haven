@@ -69,6 +69,18 @@ prefix = "25ida:ORM2:"
 device_class = "HighHeatLoadMirror"
 bendable = true
 
+# An optical table with two vertical motors
+[table.downstream_table]
+prefix = "255idcVME:table_ds:"
+upstream_motor = "m21"
+downstream_motor = "m22"
+
+# An optical table with one vertical motor and one horizontal motor
+[table.upstream_table]
+prefix = "255idcVME:table_ds:"
+vertical_motor = "m26"
+horizontal_motor = "m25"
+
 [area_detector.sim_det]
 
 prefix = "255idSimDet"

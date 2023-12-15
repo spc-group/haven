@@ -1,9 +1,9 @@
-from haven.instrument import table
+from haven.instrument import Table, load_tables
 
 
 def test_vertical_table():
     """A table that can only move up and down."""
-    tbl = table.Table("255idcVME:table_ds:", vertical_motor="m3", name="my_table")
+    tbl = Table("255idcVME:table_ds:", vertical_motor="m3", name="my_table")
     # Check that the correct components were created
     assert hasattr(tbl, "vertical")
     assert tbl.vertical.prefix == "255idcVME:m3"
@@ -17,7 +17,7 @@ def test_vertical_table():
 
 def test_horizontal_table():
     """A table that can only move left and right."""
-    tbl = table.Table("255idcVME:table_ds:", horizontal_motor="m3", name="my_table")
+    tbl = Table("255idcVME:table_ds:", horizontal_motor="m3", name="my_table")
     # Check that the correct components were created
     assert not hasattr(tbl, "vertical")
     assert hasattr(tbl, "horizontal")
@@ -31,7 +31,7 @@ def test_horizontal_table():
 
 def test_pitch_table():
     """A table that can move vertical and adjust the angle."""
-    tbl = table.Table("255idcVME:table_us:", upstream_motor="m3", downstream_motor="m4", name="my_table")
+    tbl = Table("255idcVME:table_us:", upstream_motor="m3", downstream_motor="m4", name="my_table")
     # Check that the correct components were created (or not)
     assert not hasattr(tbl, "horizontal")
     assert hasattr(tbl, "upstream")
@@ -48,3 +48,21 @@ def test_pitch_table():
     assert hasattr(tbl, "vertical_readback_transform")
     assert tbl.vertical_readback_transform.prefix == "255idcVME:table_us_trans:Readback"
     
+
+
+def test_load_tables(sim_registry):
+    load_tables()
+    # Check that the vertical/horizontal table has the right motors
+    table = sim_registry.find(name="downstream_table")
+    assert isinstance(table, Table)
+    assert table._upstream_motor == "m21"
+    assert table._downstream_motor == "m22"
+    assert table._vertical_motor == ""
+    assert table._horizontal_motor == ""
+    # Check that the 2-leg table has the right motors
+    table = sim_registry.find(name="upstream_table")
+    assert isinstance(table, Table)
+    assert table._upstream_motor == ""
+    assert table._downstream_motor == ""
+    assert table._vertical_motor == "m26"
+    assert table._horizontal_motor == "m25"
