@@ -26,7 +26,7 @@
     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;img width=500 src=&quot;:/optics/table.png&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
   </widget>
-  <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay">
+  <widget class="PyDMEmbeddedDisplay" name="vertical_embedded_display">
    <property name="geometry">
     <rect>
      <x>250</x>
@@ -51,7 +51,7 @@
     <string>slits_motor.ui</string>
    </property>
   </widget>
-  <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_2">
+  <widget class="PyDMEmbeddedDisplay" name="pitch_embedded_display">
    <property name="geometry">
     <rect>
      <x>80</x>
@@ -110,13 +110,6 @@
    <property name="penWidth" stdset="0">
     <double>3.000000000000000</double>
    </property>
-   <property name="points">
-    <stringlist>
-     <string>0.4494, 0.0</string>
-     <string>160.4494, 12.0</string>
-     <string>0.4494, 12.0</string>
-    </stringlist>
-   </property>
    <property name="arrowEndPoint" stdset="0">
     <bool>false</bool>
    </property>
@@ -128,6 +121,13 @@
    </property>
    <property name="flipMidPointArrow" stdset="0">
     <bool>false</bool>
+   </property>
+   <property name="points">
+    <stringlist>
+     <string>0.4494, 0.0</string>
+     <string>160.4494, 12.0</string>
+     <string>0.4494, 12.0</string>
+    </stringlist>
    </property>
   </widget>
   <widget class="PyDMDrawingArc" name="vertical_pitch_arc">
@@ -220,7 +220,7 @@
     <bool>true</bool>
    </property>
   </widget>
-  <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_3">
+  <widget class="PyDMEmbeddedDisplay" name="horizontal_embedded_display">
    <property name="geometry">
     <rect>
      <x>200</x>
