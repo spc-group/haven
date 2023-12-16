@@ -178,18 +178,21 @@ class FireflyApplication(PyDMApplication):
             attr_name="slits",
             ui_file="slits.py",
             device_key="DEVICE",
+            icon=qta.icon("mdi.crop"),
         )
         self._prepare_device_windows(
             device_label="kb_mirrors",
             attr_name="kb_mirrors",
             ui_file="kb_mirrors.py",
             device_key="DEVICE",
+            icon=qta.icon("msc.mirror"),
         )
         self._prepare_device_windows(
             device_label="mirrors",
             attr_name="mirror",
             ui_file="mirror.py",
             device_key="DEVICE",
+            icon=qta.icon("msc.mirror"),
         )
         self._prepare_device_windows(
             device_label="tables",

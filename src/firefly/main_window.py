@@ -145,10 +145,10 @@ class FireflyMainWindow(PyDMMainWindow):
         # Menu to launch the Window to change energy
         self.ui.positioners_menu.addAction(app.show_energy_window_action)
         # Add optical components
-        self.ui.positioners_menu.addSection(qta.icon("mdi.crop"), "Slits")
+        self.ui.positioners_menu.addSection("Slits")
         for action in app.slits_actions.values():
             self.ui.positioners_menu.addAction(action)
-        self.ui.positioners_menu.addSection(qta.icon("msc.mirror"), "Mirrors")
+        self.ui.positioners_menu.addSection("Mirrors")
         for action in app.kb_mirrors_actions.values():
             self.ui.positioners_menu.addAction(action)
         for action in app.mirror_actions.values():
