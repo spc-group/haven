@@ -1,6 +1,6 @@
 import asyncio
 
-from ophyd import Device, Component as Cpt, FormattedComponent as FCpt, Kind, OphydObj
+from ophyd import Device, Component as Cpt, FormattedComponent as FCpt, Kind, OphydObject
 from apstools.synApps import TransformRecord
 
 from .device import aload_devices, make_device
@@ -16,17 +16,71 @@ class Table(Device):
     of motors provided. For example, if *horizontal_motor* is
     provided, then the device will have a ``horizontal`` attribute
     that is the corresponding horizontal motor.
-    
+
+    There are several dynamic parameters when creating an object that
+    control the structure of the resulting device. These are described
+    individually below and are assumed relative to *prefix*. If
+    *upstream_motor* and *downstream_motor* are not empty, then
+    *vertical* and *pitch* will point to a pseudo motor who's PV is
+    determined by *pseudo_motors* (the value of *vertical_motor* will
+    be ignored in this case). For example:
+
+    .. code:: python
+
+        tbl = Table(
+            "255idcVME:",
+            pseudo_motors="table_us:",
+            transforms="table_us_trans:",
+            upstream_motor="m3",
+            downstream_motor="m4",
+            name="my_table",
+        )
+
+    will produce a table with the following components:
+
+    - *upstream*: "255idcVME:m3"
+    - *downstream*: "255idcVME:m4"
+    - *vertical*: "255idcVME:table_us:height"
+    - *pitch*: "255idcVME:table_us:pitch"
+    - *drive*: transform "255idcVME:table_us_trans:Drive"
+    - *readback*: transform "255idcVME:table_us_trans:Readback"
+
+    Parameters
+    ==========
+    prefix
+      The PV prefix common to all components. E.g. "25idcVME:".
+    vertical_motor
+      The suffix for the real motor controlling the height of the
+      table (e.g. "m1"). Ignored if *upstream_motor* and
+      *downstream_motor* are provided.
+    horizontal_motor
+      The suffix for the real motor controlling the lateral movement
+      of the table (e.g. "m1").
+    upstream_motor
+      The suffix for the real motor controlling the height of the
+      upstream leg of the table (e.g. "m1").
+    downstream_motor
+      The suffix for the real motor controlling the height of the
+      downstream leg of the table (e.g. "m1").
+    pseudo_motors
+      The suffix for the pseudo motors controlling the orientation of
+      the table. E.g. "table_ds:". Creates the components: *height*
+      and *pitch*.
+    transforms
+      The suffix for the pseudo motor transform records
+      (e.g. "table_ds_trans:"). Creates the components:
+      *vertical_drive_transform" and "vertical_readback_transform".
+
     """
 
     # These are the possible components that could be present
-    vertical: OphydObj
-    horizontal: OphydObj
-    upstream: OphydObj
-    downstream: OphydObj
-    pitch: OphydObj
-    horizontal_drive_transform: OphydObj
-    horizontal_readback_transform: OphydObj
+    vertical: OphydObject
+    horizontal: OphydObject
+    upstream: OphydObject
+    downstream: OphydObject
+    pitch: OphydObject
+    horizontal_drive_transform: OphydObject
+    horizontal_readback_transform: OphydObject
     
     def __new__(
         cls,
@@ -36,54 +90,56 @@ class Table(Device):
         horizontal_motor: str = "",
         upstream_motor: str = "",
         downstream_motor: str = "",
+        pseudo_motors: str = "",
+        transforms: str = "",
         **kwargs,
     ):
         # See if we have direct control over the vertical/horizontal positions
         comps = {}
         if bool(vertical_motor):
-            comps["vertical"] = FCpt(
+            comps["vertical"] = Cpt(
                 HavenMotor,
-                "{self.motor_prefix}:{self._vertical_motor}",
+                vertical_motor,
                 labels={"motors"},
             )
         if bool(horizontal_motor):
-            comps["horizontal"] = FCpt(
+            comps["horizontal"] = Cpt(
                 HavenMotor,
-                "{self.motor_prefix}:{self._horizontal_motor}",
+                horizontal_motor,
                 labels={"motors"},
             )
         if bool(upstream_motor):
-            comps["upstream"] = FCpt(
+            comps["upstream"] = Cpt(
                 HavenMotor,
-                "{self.motor_prefix}:{self._upstream_motor}",
+                upstream_motor,
                 labels={"motors"},
             )
         if bool(downstream_motor):
-            comps["downstream"] = FCpt(
+            comps["downstream"] = Cpt(
                 HavenMotor,
-                "{self.motor_prefix}:{self._downstream_motor}",
+                downstream_motor,
                 labels={"motors"},
             )
         # Check if we need to add the pseudo motors and tranforms
         if bool(upstream_motor) and bool(downstream_motor):
             comps["vertical"] = Cpt(
                 HavenMotor,
-                "height",
+                f"{pseudo_motors}height",
                 labels={"motors"}
             )
             comps["pitch"] = Cpt(
                 HavenMotor,
-                "pitch",
+                f"{pseudo_motors}pitch",
                 labels={"motors"}
             )
-            comps["vertical_drive_transform"] = FCpt(
+            comps["vertical_drive_transform"] = Cpt(
                 TransformRecord,
-                "{self.transform_prefix}:Drive",
+                f"{transforms}Drive",
                 kind=Kind.config
             )
-            comps["vertical_readback_transform"] = FCpt(
+            comps["vertical_readback_transform"] = Cpt(
                 TransformRecord,
-                "{self.transform_prefix}:Readback",
+                f"{transforms}Readback",
                 kind=Kind.config
             )
         # Now create a customized class for all the motors given
@@ -92,30 +148,17 @@ class Table(Device):
 
     def __init__(
         self,
-        prefix,
         *args,
+        pseudo_motors: str = "",
+        transforms: str = "",
         vertical_motor: str = "",
         horizontal_motor: str = "",
         upstream_motor: str = "",
         downstream_motor: str = "",
         **kwargs,
     ):
-        # Add a suffix for the tables transform records
-        self.transform_prefix = f"{prefix.strip(':')}_trans"
-        # Remove the last part of the prefix to get the prefix for the motors
-        self.motor_prefix = ":".join(prefix.strip(":").split(":")[:-1])
-        if self.motor_prefix == "":
-            msg = f"*prefix* argument to {type(self)} is expected "
-            msg += f"to include the pseudo motors' path. "
-            msg += f"E.g. '255idcVME:table_us:'. Received '{prefix}'."
-            raise ValueError(msg)
-        # Save all the motor record names
-        self._vertical_motor = vertical_motor
-        self._horizontal_motor = horizontal_motor
-        self._upstream_motor = upstream_motor
-        self._downstream_motor = downstream_motor
-        # Create the table as normal
-        super().__init__(prefix, *args, **kwargs)
+        # __init__ needs to accept the arguments accepted by __new__.
+        super().__init__(*args, **kwargs)
 
 
 
@@ -127,17 +170,17 @@ def load_table_coros(config=None):
         # Build the motor prefixes
         try:
             prefix = tbl_config["prefix"]
-            motor_names = ["upstream_motor", "downstream_motor",
-                           "horizontal_motor", "vertical_motor"]
-            motors = {attr: tbl_config.get(attr, "") for attr in motor_names}
-            
+            attr_names = ["upstream_motor", "downstream_motor",
+                          "horizontal_motor", "vertical_motor",
+                          "transforms", "pseudo_motors"]
+            attrs = {attr: tbl_config.get(attr, "") for attr in attr_names}
         except KeyError as ex:
             raise exceptions.UnknownDeviceConfiguration(
                 f"Device {name} missing '{ex.args[0]}': {tbl_config}"
             ) from ex
         # Make the device
         yield make_device(
-            Table, prefix=prefix, name=name, labels={"tables"}, **motors,
+            Table, prefix=prefix, name=name, labels={"tables"}, **attrs,
         )
 
 

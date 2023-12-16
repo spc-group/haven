@@ -71,13 +71,15 @@ bendable = true
 
 # An optical table with two vertical motors
 [table.downstream_table]
-prefix = "255idcVME:table_ds:"
+prefix = "255idcVME:"
+transforms = "table_ds_trans:"
+pseudo_motors = "table_ds:"
 upstream_motor = "m21"
 downstream_motor = "m22"
 
 # An optical table with one vertical motor and one horizontal motor
 [table.upstream_table]
-prefix = "255idcVME:table_ds:"
+prefix = "255idcVME:"
 vertical_motor = "m26"
 horizontal_motor = "m25"
 
