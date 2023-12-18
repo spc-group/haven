@@ -158,6 +158,8 @@ class Table(Device):
         **kwargs,
     ):
         # __init__ needs to accept the arguments accepted by __new__.
+        self.pseudo_motors = pseudo_motors
+        self.transforms = transforms
         super().__init__(*args, **kwargs)
 
 
