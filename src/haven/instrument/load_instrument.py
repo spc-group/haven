@@ -21,6 +21,7 @@ from .power_supply import load_power_supply_coros
 from .shutter import load_shutter_coros
 from .slits import load_slit_coros
 from .stage import load_stage_coros
+from .table import load_table_coros
 from .xray_source import load_xray_source_coros
 from .xspress import load_xspress_coros
 
@@ -49,7 +50,6 @@ async def aload_instrument(
 
     """
     coros = (
-        *load_all_motor_coros(config=config),
         *load_camera_coros(config=config),
         *load_shutter_coros(config=config),
         *load_aps_coros(config=config),
@@ -63,11 +63,16 @@ async def aload_instrument(
         *load_power_supply_coros(config=config),
         *load_slit_coros(config=config),
         *load_mirror_coros(config=config),
+        *load_table_coros(config=config),
         *load_ion_chamber_coros(config=config),
         *load_area_detector_coros(config=config),
         *load_lerix_spectrometer_coros(config=config),
     )
     devices = await asyncio.gather(*coros)
+    # Load the motor devices last so that we can check for existing
+    # motors in the registry
+    extra_motors = await asyncio.gather(*load_all_motor_coros(config=config))
+    devices.extend(extra_motors)
     return devices
 
 

@@ -1,6 +1,7 @@
 from haven.instrument.mirrors import (
     KBMirrors,
     KBMirror,
+    BendableKBMirror,
     load_mirrors,
     HighHeatLoadMirror,
     BendableHighHeatLoadMirror,
@@ -28,9 +29,15 @@ def test_high_heat_load_mirror_PVs():
     )
 
 
-
 def test_kb_mirrors_PVs():
-    kb = KBMirrors(prefix="255idcVME:LongKB_Cdn:", name="kb")
+    kb = KBMirrors(
+        prefix="255idcVME:LongKB_Cdn:",
+        horiz_upstream_motor="255idcVME:m33",
+        horiz_downstream_motor="255idcVME:m34",
+        vert_upstream_motor="255idcVME:m35",
+        vert_downstream_motor="255idcVME:m36",
+        name="kb",
+    )
     # assert not kb.connected
     assert isinstance(kb.vert, KBMirror)
     assert isinstance(kb.horiz, KBMirror)
@@ -39,6 +46,10 @@ def test_kb_mirrors_PVs():
     # "25idcVME:LongKB_Cdn:H:pitch.VAL"
     assert kb.horiz.pitch.user_setpoint.pvname == "255idcVME:LongKB_Cdn:H:pitch.VAL"
     assert kb.vert.normal.user_setpoint.pvname == "255idcVME:LongKB_Cdn:V:height.VAL"
+    assert kb.horiz.upstream.user_setpoint.pvname == "255idcVME:m33.VAL"
+    assert kb.horiz.downstream.user_setpoint.pvname == "255idcVME:m34.VAL"
+    assert kb.vert.upstream.user_setpoint.pvname == "255idcVME:m35.VAL"
+    assert kb.vert.downstream.user_setpoint.pvname == "255idcVME:m36.VAL"
     # Check the transforms
     assert (
         kb.horiz.drive_transform.channels.B.input_pv.pvname
@@ -55,11 +66,15 @@ def test_load_mirrors(sim_registry):
     # Check that the KB mirrors were created
     kb_mirrors = sim_registry.find(name="KB")
     assert isinstance(kb_mirrors, KBMirrors)
+    assert not isinstance(kb_mirrors.horiz, BendableKBMirror)
+    assert not isinstance(kb_mirrors.vert, BendableKBMirror) 
     # Check that the KB mirrors selects the bendable version
-    # kb_mirrors = sim_registry.find(name="LongKB_Cdn")
-    # assert isinstance(kb_mirrors, BendableKBMirrors)
-    # assert hasattr(kb_mirrors.horiz.bender_upstream)
-    # assert hasattr(kb_mirrors.horiz.bender_downstream)
+    kb_mirrors = sim_registry.find(name="LongKB_Cdn")
+    assert isinstance(kb_mirrors, KBMirrors)
+    assert kb_mirrors.horiz.bendable
+    assert kb_mirrors.vert.bendable
+    assert hasattr(kb_mirrors.horiz, "bender_upstream")
+    assert hasattr(kb_mirrors.horiz, "bender_downstream")
     # Check that the HHL mirrors were created
     hhl_mirrors = sim_registry.find(name="ORM1")
     assert isinstance(hhl_mirrors, HighHeatLoadMirror)

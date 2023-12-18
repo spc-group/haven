@@ -55,10 +55,10 @@ dependencies:
   # --- Qt
   # Pin at 5.12.3 until pydm figures out how to designer widgets
   - pyqt ==5.12.3
+  - pyqtgraph < 0.13.0  # Last version to support pyqt 5.12
   # - pyqt >=5.12, <5.13  
   - qt >=5.12
   - qtawesome
-  - pyqtgraph
 
   # --- general support packages
   - bitshuffle

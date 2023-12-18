@@ -10,7 +10,7 @@ def fake_motors(sim_registry):
     motor_names = ["motorA", "motorB", "motorC"]
     motors = []
     for name in motor_names:
-        this_motor = make_fake_device(motor.HavenMotor)(name=name, labels={"motors"})
+        this_motor = make_fake_device(motor.HavenMotor)(name=name, labels={"extra_motors"})
         sim_registry.register(this_motor)
         motors.append(this_motor)
     print(sim_registry.device_names)

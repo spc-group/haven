@@ -25,7 +25,6 @@ def hhl_bendable_mirror(sim_registry):
     return mirr
 
 
-
 @pytest.fixture()
 def display(ffapp, hhl_mirror):
     disp = MirrorDisplay(macros={"DEVICE": hhl_mirror.name})
@@ -54,7 +53,7 @@ def test_mirror_caqtdm(display, hhl_mirror):
     ui_file = cmds[-1]
     assert ui_file.split("/")[-1] == "HHLM_4.ui"
 
-    
+
 def test_bendable_mirror_caqtdm(hhl_bendable_mirror):
     mirror = hhl_bendable_mirror
     display = MirrorDisplay(macros={"DEVICE": mirror.name})
@@ -72,14 +71,12 @@ def test_bendable_mirror_caqtdm(hhl_bendable_mirror):
     ui_file = cmds[-1]
     assert ui_file.split("/")[-1] == "HHLM_6.ui"
 
-    
 
 def test_bendable_mirror(hhl_bendable_mirror):
     mirror = hhl_bendable_mirror
     display = MirrorDisplay(macros={"DEVICE": mirror.name})
     # Check that the bender controls are unlocked
     assert display.ui.bender_embedded_display.isEnabled()
-
 
     # For a bendable HHL mirror
     # /net/s25data/xorApps/epics/synApps_6_2/ioc/25ida/25idaApp/op/ui/HHLM_6.ui, macro: P=25ida:,MIR=ORM2:,Y=m1,ROLL=m2,LAT=lateral,CP=coarsePitch,FP=PZT:m1,BEND=m5,UPL=m3,DNL=m4
