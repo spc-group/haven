@@ -126,7 +126,6 @@ def sim_registry(monkeypatch):
     )
     # Save the registry so we can restore it later
     registry = haven.registry
-    use_typhos = registry.use_typhos
     objects_by_name = registry._objects_by_name
     objects_by_label = registry._objects_by_label
     registry.clear()
@@ -135,10 +134,9 @@ def sim_registry(monkeypatch):
         yield registry
     finally:
         # Restore the previous registry components
-        registry.clear(clear_typhos=True)
+        registry.clear()
         registry._objects_by_name = objects_by_name
         registry._objects_by_label = objects_by_label
-        registry.use_typhos = use_typhos
 
 
 @pytest.fixture()

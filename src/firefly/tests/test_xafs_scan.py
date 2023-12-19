@@ -1,4 +1,4 @@
-from firefly.xafs_scan import XafsScanDisplay
+from firefly.plans.xafs_scan import XafsScanDisplay
 
 
 def test_region_number(qtbot):
