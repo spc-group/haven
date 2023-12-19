@@ -7,7 +7,7 @@ from firefly import display
 log = logging.getLogger()
 
 
-class CountDisplay(display.FireflyDisplay):
+class LineScanDisplay(display.FireflyDisplay):
     def customize_ui(self):
         # self.ui.run_button.setEnabled(True) for testing
         self.ui.run_button.clicked.connect(self.queue_plan)
