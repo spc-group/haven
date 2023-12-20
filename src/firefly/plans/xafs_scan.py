@@ -47,14 +47,19 @@ class XafsScanDisplay(display.FireflyDisplay):
         self.reset_default_regions()
         # Connect the E0 checkbox to the E0 combobox
         self.ui.use_edge_checkbox.stateChanged.connect(self.edge_combo_box.setEnabled)
-        self.ui.regions_spin_box.valueChanged.connect(self.update_regions)
-        #TODO self.ui.pushButton.clicked.connect(self.reset_default_regions) 
+        # update only after enter is hit instead of immediately changing
+        # self.ui.regions_spin_box.valueChanged.connect(self.update_regions)
+        self.ui.regions_spin_box.editingFinished.connect(self.update_regions)
+        #TODO 
+        self.ui.pushButton.clicked.connect(self.reset_default_regions) 
 
     def reset_default_regions(self):
-        self.regions = []
         default_num_regions = 3
-        self.add_regions(default_num_regions)
+        if not hasattr(self, 'regions'):
+            self.regions = []
+            self.add_regions(default_num_regions)
         self.ui.regions_spin_box.setValue(default_num_regions)
+        self.update_regions()
 
     def add_regions(self, num=1):
         for i in range(num):
@@ -78,7 +83,6 @@ class XafsScanDisplay(display.FireflyDisplay):
     def update_regions(self):
         new_region_num = self.ui.regions_spin_box.value()
         old_region_num = len(self.regions)
-
         diff_region_num = new_region_num - old_region_num
 
         if diff_region_num < 0:
