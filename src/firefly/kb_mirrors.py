@@ -5,7 +5,6 @@ from firefly.slits import SlitsDisplay
 
 
 class KBMirrorsDisplay(SlitsDisplay):
-
     @property
     def caqtdm_ui_file(self):
         # Go up the class list until we find a class that is recognized
@@ -37,9 +36,10 @@ class KBMirrorsDisplay(SlitsDisplay):
         KB = pieces[-1]
         KBH = self.device.horiz.prefix.replace(P, "").strip(":")
         KBV = self.device.vert.prefix.replace(P, "").strip(":")
+
         def suffix(signal):
             return signal.prefix.split(":")[-1]
-        
+
         caqtdm_macros = {
             "P": f"{P}",
             "PM": P,
@@ -58,16 +58,20 @@ class KBMirrorsDisplay(SlitsDisplay):
         # Macros for each mirror's bender motors
         horiz = self.device.horiz
         if horiz.bendable:
-            caqtdm_macros.update({
-                "HBUS": suffix(horiz.bender_upstream),
-                "HBDS": suffix(horiz.bender_downstream),
-            })
+            caqtdm_macros.update(
+                {
+                    "HBUS": suffix(horiz.bender_upstream),
+                    "HBDS": suffix(horiz.bender_downstream),
+                }
+            )
         vert = self.device.vert
         if vert.bendable:
-            caqtdm_macros.update({
-                "VBUS": suffix(vert.bender_upstream),
-                "VBDS": suffix(vert.bender_downstream),
-            })
+            caqtdm_macros.update(
+                {
+                    "VBUS": suffix(vert.bender_upstream),
+                    "VBDS": suffix(vert.bender_downstream),
+                }
+            )
         # Launch the caQtDM panel
         super(SlitsDisplay, self).launch_caqtdm(macros=caqtdm_macros)
 

@@ -30,12 +30,13 @@ class SlitsDisplay(display.FireflyDisplay):
             except KeyError:
                 continue
         # We didn't find any supported classes of slits
-        msg = ("Could not find caQtDM filename for optic "
-               f"{self.device.name} ({self.device.__class__}).")
+        msg = (
+            "Could not find caQtDM filename for optic "
+            f"{self.device.name} ({self.device.__class__})."
+        )
         warnings.warn(msg)
         log.warning(msg)
         return ""
-        
 
     def launch_caqtdm(self):
         # Sort out the prefix from the slit designator
@@ -56,10 +57,12 @@ class SlitsDisplay(display.FireflyDisplay):
             "SLITS": SLIT,
         }
         # Add extra motors if applicable
-        motors = {"HOR": "horizontal",
-                  "DIAG": "diagonal",
-                   "YAW": "yaw",
-                  "PITCH": "pitch"}
+        motors = {
+            "HOR": "horizontal",
+            "DIAG": "diagonal",
+            "YAW": "yaw",
+            "PITCH": "pitch",
+        }
         for key, attr in motors.items():
             print(key, attr)
             if not hasattr(self.device, attr):

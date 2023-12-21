@@ -1,7 +1,16 @@
 import logging
 from pprint import pprint
 
-from qtpy.QtWidgets import QWidget, QComboBox, QHBoxLayout, QVBoxLayout, QPushButton, QDialog, QTreeView, QToolButton
+from qtpy.QtWidgets import (
+    QWidget,
+    QComboBox,
+    QHBoxLayout,
+    QVBoxLayout,
+    QPushButton,
+    QDialog,
+    QTreeView,
+    QToolButton,
+)
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QStandardItemModel, QStandardItem
 import qtawesome as qta
@@ -10,13 +19,14 @@ from ophyd import sim
 log = logging.getLogger(__name__)
 
 
-class TreeComponent():
+class TreeComponent:
     """Representation of an ophyd Component/Device in a tree view."""
+
     child_components: list
     dotted_name: str
     component_item: QStandardItem
     type_item: QStandardItem
-    
+
     def __init__(self, *args, device, text, parent, registry=None, **kwargs):
         self.device = device
         self.text = text
@@ -67,9 +77,17 @@ class TreeComponent():
         # Decide on an icon for this component
         icons = {
             "mdi.cog-clockwise": {"SynAxis"},
-            "mdi.connection": {"_ReadbackSignal", "_SetpointSignal", "Signal", "SynSignal", "EnumSignal"},
+            "mdi.connection": {
+                "_ReadbackSignal",
+                "_SetpointSignal",
+                "Signal",
+                "SynSignal",
+                "EnumSignal",
+            },
             "mdi.tape-drive": {},
-            "mdi.router-network": {"SynGauss", },
+            "mdi.router-network": {
+                "SynGauss",
+            },
         }
         for icon, types in icons.items():
             if type_name in types:
@@ -85,7 +103,9 @@ class TreeComponent():
         self.child_components = []
         # Add the children
         for name in child_names:
-            child = self.__class__(device=getattr(self.device, name), text=name, parent=self.component_item)
+            child = self.__class__(
+                device=getattr(self.device, name), text=name, parent=self.component_item
+            )
             self.child_components.append(child)
 
 
@@ -108,12 +128,14 @@ class ComponentTreeModel(QStandardItemModel):
     def component_from_index(self, index):
         item = self.itemFromIndex(index)
         return item.data()
-    
+
     def update_devices(self, registry):
         parent_item = self.invisibleRootItem()
         self.root_components = []
         for device in registry.root_devices():
-            cpt = self.Component(device=device, text=device.name, parent=parent_item, registry=registry)
+            cpt = self.Component(
+                device=device, text=device.name, parent=parent_item, registry=registry
+            )
             self.root_components.append(cpt)
 
 
@@ -130,13 +152,14 @@ class ComboBoxComponent(TreeComponent):
         # Add the children
         for name in child_names:
             dotted_name = ".".join([self.text, name])
-            child = self.__class__(device=getattr(self.device, name), text=dotted_name, parent=self.parent)
+            child = self.__class__(
+                device=getattr(self.device, name), text=dotted_name, parent=self.parent
+            )
             self.child_components.append(child)
-        
 
 
 class ComponentComboBoxModel(ComponentTreeModel):
-    Component: type = ComboBoxComponent            
+    Component: type = ComboBoxComponent
 
 
 class TreeDialog(QDialog):
@@ -192,14 +215,22 @@ class ComponentSelector(QWidget):
 
         """Only for testing."""
         from unittest import mock
+
         registry = mock.MagicMock()
-        registry.root_devices.return_value = [sim.motor1, sim.motor2, sim.motor3, sim.det]
+        registry.root_devices.return_value = [
+            sim.motor1,
+            sim.motor2,
+            sim.motor3,
+            sim.det,
+        ]
         self.update_devices(registry)
 
     def connect_signals(self):
         self.tree_button.toggled.connect(self.tree_view.setVisible)
         self.combo_box.currentTextChanged.connect(self.update_tree_model)
-        self.tree_view.selectionModel().currentChanged.connect(self.update_combo_box_model)
+        self.tree_view.selectionModel().currentChanged.connect(
+            self.update_combo_box_model
+        )
 
     def update_tree_model(self, new_name):
         log.debug(f"Updating tree: {new_name=}")
@@ -211,7 +242,9 @@ class ComponentSelector(QWidget):
             print(f"Could not find component for {new_name}, skipping.")
             return
         log.debug(f"Selecting combobox entry: {component.component_item.text()}")
-        selection.setCurrentIndex(component.component_item.index(), selection.ClearAndSelect | selection.Rows)
+        selection.setCurrentIndex(
+            component.component_item.index(), selection.ClearAndSelect | selection.Rows
+        )
 
     def update_combo_box_model(self, index, previous):
         cpt = self.tree_model.component_from_index(index)

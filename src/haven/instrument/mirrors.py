@@ -33,6 +33,7 @@ class BendableHighHeatLoadMirror(HighHeatLoadMirror):
 
 class KBMirror(Device):
     """A single mirror in a KB mirror set."""
+
     bendable = False
 
     pitch = Cpt(HavenMotor, "pitch", labels={"motors"})
@@ -49,9 +50,15 @@ class KBMirror(Device):
         TransformRecord, "Readback", pattern=":([HV]):", repl=r"\1:", kind=Kind.config
     )
 
-    def __init__(self, *args, upstream_motor: str, downstream_motor:
-                 str, upstream_bender: str = "", downstream_bender: str = "",
-                 **kwargs):
+    def __init__(
+        self,
+        *args,
+        upstream_motor: str,
+        downstream_motor: str,
+        upstream_bender: str = "",
+        downstream_bender: str = "",
+        **kwargs,
+    ):
         self.upstream_motor = upstream_motor
         self.downstream_motor = downstream_motor
         self._upstream_bender = upstream_bender
@@ -61,8 +68,9 @@ class KBMirror(Device):
 
 class BendableKBMirror(KBMirror):
     """A single bendable mirror in a KB mirror set."""
+
     bendable = True
-    
+
     bender_upstream = FCpt(HavenMotor, "{_upstream_bender}", labels={"motors"})
     bender_downstream = FCpt(HavenMotor, "{_downstream_bender}", labels={"motors"})
 
@@ -147,7 +155,9 @@ def load_mirror_coros(config=None):
                 vert_downstream_bender=kb_config.get("vert_downstream_bender", ""),
             )
             # Convert motors to fully qualified PV names (if not empty)
-            motors = {key: f"{ioc_prefix}:{val}" for key, val in motors.items() if bool(val)}
+            motors = {
+                key: f"{ioc_prefix}:{val}" for key, val in motors.items() if bool(val)
+            }
         except KeyError as ex:
             raise exceptions.UnknownDeviceConfiguration(
                 f"Device {name} missing '{ex.args[0]}': {kb_config}"

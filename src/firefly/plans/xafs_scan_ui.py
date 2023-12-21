@@ -37,10 +37,14 @@ class Ui_Form(object):
         self.line_2.setObjectName("line_2")
         self.horizontalLayout.addWidget(self.line_2)
         self.regions_label = QtWidgets.QLabel(Form)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Preferred
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.regions_label.sizePolicy().hasHeightForWidth())
+        sizePolicy.setHeightForWidth(
+            self.regions_label.sizePolicy().hasHeightForWidth()
+        )
         self.regions_label.setSizePolicy(sizePolicy)
         self.regions_label.setObjectName("regions_label")
         self.horizontalLayout.addWidget(self.regions_label)
@@ -55,7 +59,9 @@ class Ui_Form(object):
         self.line_3.setFrameShadow(QtWidgets.QFrame.Sunken)
         self.line_3.setObjectName("line_3")
         self.horizontalLayout.addWidget(self.line_3)
-        spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        spacerItem = QtWidgets.QSpacerItem(
+            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
+        )
         self.horizontalLayout.addItem(spacerItem)
         self.verticalLayout.addLayout(self.horizontalLayout)
         self.line = QtWidgets.QFrame(Form)
@@ -78,7 +84,9 @@ class Ui_Form(object):
         self.region_layout.setContentsMargins(1, -1, -1, 0)
         self.region_layout.setObjectName("region_layout")
         self.lineEdit_2 = QtWidgets.QLineEdit(self.scrollAreaWidgetContents)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Fixed
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.lineEdit_2.sizePolicy().hasHeightForWidth())
@@ -88,7 +96,9 @@ class Ui_Form(object):
         self.lineEdit_2.setObjectName("lineEdit_2")
         self.region_layout.addWidget(self.lineEdit_2)
         self.lineEdit_3 = QtWidgets.QLineEdit(self.scrollAreaWidgetContents)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Fixed
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.lineEdit_3.sizePolicy().hasHeightForWidth())
@@ -96,7 +106,9 @@ class Ui_Form(object):
         self.lineEdit_3.setObjectName("lineEdit_3")
         self.region_layout.addWidget(self.lineEdit_3)
         self.lineEdit = QtWidgets.QLineEdit(self.scrollAreaWidgetContents)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Fixed
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.lineEdit.sizePolicy().hasHeightForWidth())
@@ -104,7 +116,9 @@ class Ui_Form(object):
         self.lineEdit.setObjectName("lineEdit")
         self.region_layout.addWidget(self.lineEdit)
         self.checkBox = QtWidgets.QCheckBox(self.scrollAreaWidgetContents)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.checkBox.sizePolicy().hasHeightForWidth())
@@ -126,7 +140,9 @@ class Ui_Form(object):
         self.pushButton.setStyleSheet("")
         self.pushButton.setObjectName("pushButton")
         self.buttons_layout.addWidget(self.pushButton)
-        spacerItem1 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        spacerItem1 = QtWidgets.QSpacerItem(
+            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
+        )
         self.buttons_layout.addItem(spacerItem1)
         self.run_scan_button = QueueButton(Form)
         self.run_scan_button.setStyleSheet("# background-color: #28a745")
@@ -149,4 +165,6 @@ class Ui_Form(object):
         self.checkBox.setText(_translate("Form", "K-space"))
         self.pushButton.setText(_translate("Form", "Reset Defaults"))
         self.run_scan_button.setText(_translate("Form", "Run Scan"))
+
+
 from firefly.queue_button import QueueButton

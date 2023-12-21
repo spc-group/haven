@@ -4,7 +4,11 @@ from qtpy.QtCore import Qt
 from ophyd import sim
 from pprint import pprint
 
-from firefly.component_selector import ComponentSelector, ComponentTreeModel, ComponentComboBoxModel
+from firefly.component_selector import (
+    ComponentSelector,
+    ComponentTreeModel,
+    ComponentComboBoxModel,
+)
 
 
 @pytest.fixture()
@@ -13,6 +17,7 @@ def motor_registry(ffapp):
     registry = mock.MagicMock()
     registry.root_devices.return_value = [sim.motor1, sim.motor2, sim.motor3]
     return registry
+
 
 def test_selector_adds_devices(ffapp, motor_registry):
     """Check that the combobox editable options are set based on the allowed detectors."""
@@ -26,6 +31,7 @@ def test_selector_adds_devices(ffapp, motor_registry):
     # Check that devices were added to the tree model
     tree_model = selector.tree_model
     assert tree_model.item(0).text() == "motor1"
+
 
 def test_tree_model_adds_devices(ffapp, motor_registry):
     model = ComponentTreeModel()
@@ -54,7 +60,9 @@ def test_tree_changes_combobox(ffapp, motor_registry, qtbot):
     # Select a tree item
     item = selector.tree_model.item(0).child(1, column=0)
     with qtbot.waitSignal(selector.combo_box.currentTextChanged, timeout=1):
-        selector.tree_view.selectionModel().currentChanged.emit(item.index(), item.index())
+        selector.tree_view.selectionModel().currentChanged.emit(
+            item.index(), item.index()
+        )
     assert selector.combo_box.currentText() == "motor1.setpoint"
 
 
@@ -64,7 +72,9 @@ def test_combobox_changes_tree(ffapp, motor_registry, qtbot):
     selector.update_devices(motor_registry)
     # Select a combobox item
     item = selector.tree_model.item(0).child(1, column=0)
-    with qtbot.waitSignal(selector.tree_view.selectionModel().currentChanged, timeout=1):
+    with qtbot.waitSignal(
+        selector.tree_view.selectionModel().currentChanged, timeout=1
+    ):
         selector.combo_box.setCurrentIndex(3)
     # assert selector.combo_box.currentText() == "motor1.setpoint"
 

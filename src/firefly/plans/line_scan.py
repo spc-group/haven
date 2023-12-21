@@ -22,7 +22,16 @@ class LineScanDisplay(display.FireflyDisplay):
         num_points = self.ui.scan_pts_spin_box.value()
 
         # # Build the queue item
-        item = BPlan("scan", detectors, motor, start, stop, num=num_points, per_step=None, md=None)
+        item = BPlan(
+            "scan",
+            detectors,
+            motor,
+            start,
+            stop,
+            num=num_points,
+            per_step=None,
+            md=None,
+        )
 
         # Submit the item to the queueserver
         from firefly.application import FireflyApplication

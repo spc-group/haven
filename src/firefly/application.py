@@ -572,8 +572,7 @@ class FireflyApplication(PyDMApplication):
             FireflyMainWindow,
             ui_dir / ui_file,
             name=f"FireflyMainWindow_{device_label}_{device_pyname}",
-            macros={device_key: device.name,
-                    f"{device_key}_TITLE": device_title},
+            macros={device_key: device.name, f"{device_key}_TITLE": device_title},
         )
 
     def show_status_window(self, stylesheet_path=None):
@@ -610,7 +609,9 @@ class FireflyApplication(PyDMApplication):
 
         """
         return self.show_window(
-            PlanMainWindow, ui_dir / "plans" / display_file, name=f"{name}_plan",
+            PlanMainWindow,
+            ui_dir / "plans" / display_file,
+            name=f"{name}_plan",
         )
 
     @QtCore.Slot()
