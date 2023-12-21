@@ -34,11 +34,11 @@ def test_line_scan_plan_queued(ffapp, qtbot, sim_registry):
 
     # Adding fake motor options to motor combobox
     motor_options = ["MotorA_m1", "MotorA_m2", "MotorA_m3"]
-    display.ui.motorA_comboBox.addItems(motor_options)
+    display.ui.motor_selector.combo_box.addItems(motor_options)
     # Choose motorA_m1
-    index = display.ui.combo.findText("MotorA_m1")
+    index = display.ui.motor_selector.combo_box.findText("MotorA_m1")
     if index >= 0:
-        display.ui.combo.setCurrentIndex(index)
+        display.ui.motor_selector.combo_box.setCurrentIndex(index)
 
     expected_item = BPlan("scan", ["vortex_me4", "I0"], fake_motors, 10, 20, num=5)
 

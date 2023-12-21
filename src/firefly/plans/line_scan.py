@@ -16,7 +16,7 @@ class LineScanDisplay(display.FireflyDisplay):
         """Execute this plan on the queueserver."""
         # Get scan parameters from widgets
         detectors = self.ui.detectors_list.selected_detectors()
-        motor = self.ui.motorA_comboBox.currentText()
+        motor = self.ui.motor_selector.current_component()
         start = float(self.ui.scan_start_lineEdit.text())
         stop = float(self.ui.scan_stop_lineEdit.text())
         num_points = self.ui.scan_pts_spin_box.value()
