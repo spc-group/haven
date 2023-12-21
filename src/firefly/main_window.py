@@ -4,9 +4,8 @@ from pathlib import Path
 
 from pydm import data_plugins
 from pydm.main_window import PyDMMainWindow
-
-# from qtpy.QtCore import Slot
 from qtpy import QtCore, QtGui, QtWidgets
+import qtawesome as qta
 
 from haven import load_config
 
@@ -39,6 +38,7 @@ class FireflyMainWindow(PyDMMainWindow):
         if len(caqtdm_actions) > 0:
             caqtdm_menu.addSeparator()
         for action in caqtdm_actions:
+            action.setIcon(qta.icon("fa5s.wrench"))
             caqtdm_menu.addAction(action)
 
     def closeEvent(self, event):
@@ -106,7 +106,8 @@ class FireflyMainWindow(PyDMMainWindow):
         app.queue_environment_state_changed.connect(self.ui.environment_label.setText)
         app.queue_re_state_changed.connect(self.ui.re_label.setText)
         # Log viewer window
-        self.ui.menuView.addAction(app.show_logs_window_action)
+        if hasattr(app, "show_logs_window_action"):
+            self.ui.menuView.addAction(app.show_logs_window_action)
         # Setup menu
         self.ui.menuSetup = QtWidgets.QMenu(self.ui.menubar)
         self.ui.menuSetup.setObjectName("menuSetup")
@@ -125,21 +126,35 @@ class FireflyMainWindow(PyDMMainWindow):
         self.ui.queue_menu.addAction(app.queue_autoplay_action)
         self.ui.queue_menu.addAction(app.queue_open_environment_action)
         # Positioners menu
-        self.ui.menuPositioners = QtWidgets.QMenu(self.ui.menubar)
-        self.ui.menuPositioners.setObjectName("menuPositioners")
-        self.ui.menuPositioners.setTitle("&Positioners")
-        self.ui.menubar.addAction(self.ui.menuPositioners.menuAction())
+        self.ui.positioners_menu = QtWidgets.QMenu(self.ui.menubar)
+        self.ui.positioners_menu.setObjectName("menuPositioners")
+        self.ui.positioners_menu.setTitle("&Positioners")
+        self.ui.menubar.addAction(self.ui.positioners_menu.menuAction())
         # Sample viewer
         self.add_menu_action(
             action_name="actionShow_Sample_Viewer",
             text="Sample",
-            menu=self.ui.menuPositioners,
+            menu=self.ui.positioners_menu,
         )
         # Motors sub-menu
         self.ui.menuMotors = QtWidgets.QMenu(self.ui.menubar)
         self.ui.menuMotors.setObjectName("menuMotors")
-        self.ui.menuMotors.setTitle("Motors")
-        self.ui.menuPositioners.addAction(self.ui.menuMotors.menuAction())
+        self.ui.menuMotors.setTitle("Extra &Motors")
+        self.ui.positioners_menu.addAction(self.ui.menuMotors.menuAction())
+        # Menu to launch the Window to change energy
+        self.ui.positioners_menu.addAction(app.show_energy_window_action)
+        # Add optical components
+        self.ui.positioners_menu.addSection("Slits")
+        for action in app.slits_actions.values():
+            self.ui.positioners_menu.addAction(action)
+        self.ui.positioners_menu.addSection("Mirrors")
+        for action in app.kb_mirrors_actions.values():
+            self.ui.positioners_menu.addAction(action)
+        for action in app.mirror_actions.values():
+            self.ui.positioners_menu.addAction(action)
+        self.ui.positioners_menu.addSection("Tables")
+        for action in app.table_actions.values():
+            self.ui.positioners_menu.addAction(action)
         # Scans menu
         self.ui.menuScans = QtWidgets.QMenu(self.ui.menubar)
         self.ui.menuScans.setObjectName("menuScans")
@@ -159,16 +174,17 @@ class FireflyMainWindow(PyDMMainWindow):
         # Voltmeters window
         self.ui.detectors_menu.addAction(app.show_voltmeters_window_action)
         # Add actions to the motors sub-menus
-        for action in app.motor_actions:
+        for action in app.motor_actions.values():
             self.ui.menuMotors.addAction(action)
         # Add an ion chamber sub-menu
-        self.ui.ion_chambers_menu = QtWidgets.QMenu(self.ui.menubar)
-        self.ui.ion_chambers_menu.setObjectName("ion_chambers_menu")
-        self.ui.ion_chambers_menu.setTitle("&Ion Chambers")
-        self.ui.detectors_menu.addAction(self.ui.ion_chambers_menu.menuAction())
-        # Add actions for the individual ion chambers
-        for action in app.ion_chamber_actions.values():
-            self.ui.ion_chambers_menu.addAction(action)
+        if hasattr(app, "ion_chamber_actions"):
+            self.ui.ion_chambers_menu = QtWidgets.QMenu(self.ui.menubar)
+            self.ui.ion_chambers_menu.setObjectName("ion_chambers_menu")
+            self.ui.ion_chambers_menu.setTitle("&Ion Chambers")
+            self.ui.detectors_menu.addAction(self.ui.ion_chambers_menu.menuAction())
+            # Add actions for the individual ion chambers
+            for action in app.ion_chamber_actions.values():
+                self.ui.ion_chambers_menu.addAction(action)
         # Cameras sub-menu
         self.ui.menuCameras = QtWidgets.QMenu(self.ui.menubar)
         self.ui.menuCameras.setObjectName("menuCameras")
@@ -194,7 +210,6 @@ class FireflyMainWindow(PyDMMainWindow):
         # Add other menu actions
         self.ui.menuView.addAction(app.show_status_window_action)
         self.ui.menuSetup.addAction(app.show_bss_window_action)
-        self.ui.menuPositioners.addAction(app.show_energy_window_action)
 
     def show_status(self, message, timeout=0):
         """Show a message in the status bar."""
@@ -254,3 +269,29 @@ class PlanMainWindow(FireflyMainWindow):
         log.debug(f"Setting navbar visibility. Queue length: {queue_length}")
         navbar = self.ui.navbar
         navbar.setVisible(queue_length > 0)
+
+
+# -----------------------------------------------------------------------------
+# :author:    Mark Wolfman
+# :email:     wolfman@anl.gov
+# :copyright: Copyright © 2023, UChicago Argonne, LLC
+#
+# Distributed under the terms of the 3-Clause BSD License
+#
+# The full license is in the file LICENSE, distributed with this software.
+#
+# DISCLAIMER
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+# HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# -----------------------------------------------------------------------------

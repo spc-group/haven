@@ -16,10 +16,12 @@ from .ion_chamber import load_ion_chamber_coros
 from .lerix import load_lerix_spectrometer_coros
 from .monochromator import load_monochromator_coros
 from .motor import HavenMotor, load_all_motor_coros
+from .mirrors import load_mirror_coros
 from .power_supply import load_power_supply_coros
 from .shutter import load_shutter_coros
 from .slits import load_slit_coros
 from .stage import load_stage_coros
+from .table import load_table_coros
 from .xray_source import load_xray_source_coros
 from .xspress import load_xspress_coros
 
@@ -48,7 +50,6 @@ async def aload_instrument(
 
     """
     coros = (
-        *load_all_motor_coros(config=config),
         *load_camera_coros(config=config),
         *load_shutter_coros(config=config),
         *load_aps_coros(config=config),
@@ -61,11 +62,17 @@ async def aload_instrument(
         *load_heater_coros(config=config),
         *load_power_supply_coros(config=config),
         *load_slit_coros(config=config),
+        *load_mirror_coros(config=config),
+        *load_table_coros(config=config),
         *load_ion_chamber_coros(config=config),
         *load_area_detector_coros(config=config),
         *load_lerix_spectrometer_coros(config=config),
     )
     devices = await asyncio.gather(*coros)
+    # Load the motor devices last so that we can check for existing
+    # motors in the registry
+    extra_motors = await asyncio.gather(*load_all_motor_coros(config=config))
+    devices.extend(extra_motors)
     return devices
 
 
@@ -129,3 +136,29 @@ def load_simulated_devices(config={}):
     )
     default_registry.register(detector)
     return (motor, detector)
+
+
+# -----------------------------------------------------------------------------
+# :author:    Mark Wolfman
+# :email:     wolfman@anl.gov
+# :copyright: Copyright © 2023, UChicago Argonne, LLC
+#
+# Distributed under the terms of the 3-Clause BSD License
+#
+# The full license is in the file LICENSE, distributed with this software.
+#
+# DISCLAIMER
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+# HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# -----------------------------------------------------------------------------

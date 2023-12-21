@@ -35,7 +35,12 @@ def xrf_display(ffapp, request):
 def test_open_xrf_detector_viewer_actions(ffapp, qtbot, det_fixture, request):
     sim_det = request.getfixturevalue(det_fixture)
     # Get the area detector parts ready
-    ffapp.prepare_xrf_detector_windows()
+    ffapp._prepare_device_windows(
+        device_label="xrf_detectors",
+        attr_name="xrf_detector",
+        ui_file="xrf_detector.py",
+        device_key="DEV",
+    )
     assert hasattr(ffapp, "xrf_detector_actions")
     assert len(ffapp.xrf_detector_actions) == 1
     # Launch an action and see that a window opens
@@ -224,7 +229,7 @@ def test_mca_region_channels(xrf_display):
     mca_display = xrf_display.mca_displays[1]
     mca_display._embedded_widget = mca_display.open_file(force=True)
     xrf_display.mca_selected(is_selected=True, mca_num=2)
-    correct_address = "sig://vortex_me4.mcas.mca2.rois.roi0.hi_chan"
+    correct_address = "haven://vortex_me4.mcas.mca2.rois.roi0.hi_chan"
     region = plot_widget.region(mca_num=2, roi_num=0)
     assert region.hi_channel.address == correct_address
     region.hi_channel.value_slot(108)
@@ -317,3 +322,29 @@ def test_roi_enableall_checkbox(xrf_display):
     checkbox.setCheckState(QtCore.Qt.Unchecked)
     for display in xrf_display.roi_displays:
         assert not display.embedded_widget.ui.enabled_checkbox.isChecked()
+
+
+# -----------------------------------------------------------------------------
+# :author:    Mark Wolfman
+# :email:     wolfman@anl.gov
+# :copyright: Copyright © 2023, UChicago Argonne, LLC
+#
+# Distributed under the terms of the 3-Clause BSD License
+#
+# The full license is in the file LICENSE, distributed with this software.
+#
+# DISCLAIMER
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+# HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# -----------------------------------------------------------------------------

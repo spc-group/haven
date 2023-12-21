@@ -31,6 +31,7 @@ from haven.instrument.dxp import DxpDetector
 from haven.instrument.dxp import add_mcas as add_dxp_mcas
 from haven.instrument.ion_chamber import IonChamber
 from haven.instrument.shutter import Shutter
+from haven.instrument.slits import ApertureSlits, BladeSlits
 from haven.instrument.xspress import Xspress3Detector
 from haven.instrument.xspress import add_mcas as add_xspress_mcas
 
@@ -172,6 +173,28 @@ def It(sim_registry):
 
 
 @pytest.fixture()
+def blade_slits(sim_registry):
+    """A fake set of slits using the 4-blade setup."""
+    FakeSlits = make_fake_device(BladeSlits)
+    slits = FakeSlits(prefix="255idc:KB_slits", name="kb_slits", labels={"slits"})
+    sim_registry.register(slits)
+    return slits
+
+
+@pytest.fixture()
+def aperture_slits(sim_registry):
+    """A fake slit assembling using the rotary aperture design."""
+    FakeSlits = make_fake_device(ApertureSlits)
+    slits = FakeSlits( prefix="255ida:slits:US:",
+                       name="whitebeam_slits", pitch_motor="m3",
+                       yaw_motor="m4",
+                       horizontal_motor="m1",
+                       diagonal_motor="m2", labels={"slits"})
+    sim_registry.register(slits)
+    return slits
+
+
+@pytest.fixture()
 def sim_camera(sim_registry):
     FakeCamera = make_fake_device(AravisDetector)
     camera = FakeCamera(name="s255id-gige-A", labels={"cameras", "area_detectors"})
@@ -268,7 +291,7 @@ def shutters(sim_registry):
 
 @pytest.fixture(scope="session")
 def pydm_ophyd_plugin():
-    return pydm.data_plugins.plugin_for_address("sig://")
+    return pydm.data_plugins.plugin_for_address("haven://")
 
 
 qs_status = {
@@ -328,3 +351,29 @@ def ffapp(pydm_ophyd_plugin, qapp_cls, qapp_args, pytestconfig):
 # holds a global QApplication instance created in the qapp fixture; keeping
 # this reference alive avoids it being garbage collected too early
 _ffapp_instance = None
+
+
+# -----------------------------------------------------------------------------
+# :author:    Mark Wolfman
+# :email:     wolfman@anl.gov
+# :copyright: Copyright © 2023, UChicago Argonne, LLC
+#
+# Distributed under the terms of the 3-Clause BSD License
+#
+# The full license is in the file LICENSE, distributed with this software.
+#
+# DISCLAIMER
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+# HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# -----------------------------------------------------------------------------

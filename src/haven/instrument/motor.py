@@ -8,6 +8,7 @@ from ophyd import EpicsMotor, EpicsSignal, EpicsSignalRO
 from .._iconfig import load_config
 from .device import aload_devices, make_device
 from .epics import caget
+from .instrument_registry import registry
 
 log = logging.getLogger(__name__)
 
@@ -83,6 +84,11 @@ def load_ioc_motor_coros(
 async def load_motor(prefix: str, motor_num: int, ioc_name: str = None):
     """Create the requested motor if it is reachable."""
     pv = f"{prefix}:m{motor_num+1}"
+    # Check that we're not duplicating a motor somewhere else (e.g. KB mirrors)
+    existing_pvs = [m.prefix for m in registry.findall(label="motors", allow_none=True)]
+    if pv in existing_pvs:
+        log.info(f"Motor for prefix {pv} already exists. Skipping.")
+        return
     # Get motor names
     config = load_config()
     # Get the motor name from the description PV
@@ -105,7 +111,7 @@ async def load_motor(prefix: str, motor_num: int, ioc_name: str = None):
         log.info(f"SKipping unnamed motor {motor_num}")
     else:
         # Create a new motor object
-        labels = {"motors", "baseline"}
+        labels = {"motors", "extra_motors", "baseline"}
         if ioc_name is not None:
             labels = set([ioc_name, *labels])
         return await make_device(HavenMotor, prefix=pv, name=name, labels=labels)
@@ -113,3 +119,29 @@ async def load_motor(prefix: str, motor_num: int, ioc_name: str = None):
 
 def load_all_motors(config=None):
     asyncio.run(aload_devices(*load_all_motor_coros(config=config)))
+
+
+# -----------------------------------------------------------------------------
+# :author:    Mark Wolfman
+# :email:     wolfman@anl.gov
+# :copyright: Copyright © 2023, UChicago Argonne, LLC
+#
+# Distributed under the terms of the 3-Clause BSD License
+#
+# The full license is in the file LICENSE, distributed with this software.
+#
+# DISCLAIMER
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+# HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# -----------------------------------------------------------------------------

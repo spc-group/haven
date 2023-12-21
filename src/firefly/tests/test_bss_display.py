@@ -1,9 +1,10 @@
 import pytest
+from ophyd.sim import instantiate_fake_device
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QStandardItemModel
 
 from firefly.bss import BssDisplay
-from haven.instrument.aps import load_aps
+from haven.instrument.aps import EpicsBssDevice, load_aps
 
 
 @pytest.fixture()
@@ -134,7 +135,17 @@ def bss_api(mocker):
     yield api
 
 
-def test_bss_proposal_model(qtbot, ffapp, bss_api):
+@pytest.fixture()
+def bss(sim_registry):
+    bss = instantiate_fake_device(EpicsBssDevice, name="bss", prefix="255idc:bss:")
+    sim_registry.register(bss)
+    # Make sure the fake signals have reasonable values
+    bss.proposal.mail_in_flag.sim_put(1)
+    bss.proposal.proprietary_flag.sim_put(1)
+    return bss
+
+
+def test_bss_proposal_model(qtbot, ffapp, bss_api, bss):
     display = BssDisplay(api=bss_api)
     assert display.ui_filename() == "bss.ui"
     # Check model construction
@@ -144,9 +155,7 @@ def test_bss_proposal_model(qtbot, ffapp, bss_api):
     assert display.ui.proposal_view.model() is display.proposal_model
 
 
-def test_bss_proposal_updating(qtbot, ffapp, bss_api, sim_registry):
-    load_aps()
-    bss = sim_registry.find(name="bss")
+def test_bss_proposal_updating(qtbot, ffapp, bss_api, bss):
     display = BssDisplay(api=bss_api)
     # Set some base-line values on the IOC
     bss.proposal.proposal_id.set("").wait()
@@ -197,10 +206,8 @@ def test_bss_esaf_model(qtbot, ffapp, bss_api):
     assert display.ui.esaf_view.model() is display.esaf_model
 
 
-def test_bss_esaf_updating(qtbot, ffapp, bss_api, sim_registry):
-    load_aps()
+def test_bss_esaf_updating(qtbot, ffapp, bss_api, bss):
     display = BssDisplay(api=bss_api)
-    bss = sim_registry.find(name="bss")
     # Set some base-line values on the IOC
     bss.esaf.esaf_id.set("").wait()
     # Change the ESAF item
@@ -223,7 +230,7 @@ def test_bss_esaf_updating(qtbot, ffapp, bss_api, sim_registry):
     bss_api.epicsUpdate.assert_called_once_with("255idc:bss:")
 
 
-def test_bss_esafs(ffapp, bss_api):
+def test_bss_esafs(ffapp, bss_api, bss):
     display = BssDisplay(api=bss_api)
     # Check values
     api_esaf = bss_api.getCurrentEsafs()[0]
@@ -235,3 +242,29 @@ def test_bss_esafs(ffapp, bss_api):
     assert esaf["Badges"] == "86423, 302308, 299574, 300051"
     assert esaf["Start"] == "2023-03-28 08:00:00"
     assert esaf["End"] == "2023-03-31 08:00:00"
+
+
+# -----------------------------------------------------------------------------
+# :author:    Mark Wolfman
+# :email:     wolfman@anl.gov
+# :copyright: Copyright © 2023, UChicago Argonne, LLC
+#
+# Distributed under the terms of the 3-Clause BSD License
+#
+# The full license is in the file LICENSE, distributed with this software.
+#
+# DISCLAIMER
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+# HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# -----------------------------------------------------------------------------

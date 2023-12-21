@@ -1,0 +1,12 @@
+<RCC>
+  <qresource prefix="optics">
+    <file>table.png</file>
+    <file>monochromator.png</file>
+    <file>mirror.png</file>
+    <file>kb_mirrors.png</file>
+    <file>slits_3d.png</file>
+  </qresource>
+  <qresource prefix="xray_source">
+    <file>insertion_device.png</file>
+  </qresource>
+</RCC>

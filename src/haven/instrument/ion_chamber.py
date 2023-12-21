@@ -288,7 +288,10 @@ class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
     volts: OphydObject = Cpt(VoltageSignal, derived_from="counts", kind=Kind.normal)
     amps: OphydObject = Cpt(CurrentSignal, derived_from="volts", kind=Kind.hinted)
     counts: OphydObject = FCpt(
-        EpicsSignalRO, "{scaler_prefix}:scaler1.S{ch_num}", kind=Kind.normal, auto_monitor=False,
+        EpicsSignalRO,
+        "{scaler_prefix}:scaler1.S{ch_num}",
+        kind=Kind.normal,
+        auto_monitor=False,
     )
     gate: OphydObject = FCpt(
         EpicsSignal,
@@ -597,7 +600,7 @@ async def load_ion_chamber(
         labels={"ion_chambers"},
     )
     # Ensure the voltmeter is in differential mode to measure pre-amp
-    if hasattr(ion_chamber, 'voltmeter'):
+    if hasattr(ion_chamber, "voltmeter"):
         try:
             ion_chamber.voltmeter.differential.set(1).wait(timeout=1)
         except OpException as exc:
@@ -632,3 +635,29 @@ def load_ion_chamber_coros(config=None):
 
 def load_ion_chambers(config=None):
     return asyncio.run(aload_devices(*load_ion_chamber_coros(config=config)))
+
+
+# -----------------------------------------------------------------------------
+# :author:    Mark Wolfman
+# :email:     wolfman@anl.gov
+# :copyright: Copyright © 2023, UChicago Argonne, LLC
+#
+# Distributed under the terms of the 3-Clause BSD License
+#
+# The full license is in the file LICENSE, distributed with this software.
+#
+# DISCLAIMER
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+# HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# -----------------------------------------------------------------------------

@@ -30,7 +30,7 @@ def sim_motor(sim_registry):
 
 @pytest.fixture()
 def ophyd_channel(sim_motor):
-    channel = PyDMChannel(address="sig://motor.user_setpoint")
+    channel = PyDMChannel(address="haven://motor.user_setpoint")
     return channel
 
 
@@ -44,7 +44,7 @@ def ophyd_connection(sim_motor, ophyd_channel, pydm_ophyd_plugin):
 
 
 def test_ophyd_pydm_ophyd_plugin(pydm_ophyd_plugin):
-    plugin = plugin_for_address("sig://sim_detector")
+    plugin = plugin_for_address("haven://sim_detector")
     assert isinstance(plugin, SignalPlugin)
 
 
@@ -64,7 +64,7 @@ def test_missing_device(sim_motor, pydm_ophyd_plugin, qtbot, ffapp):
     """See if the connection responds properly if the device is not there."""
     connection_slot = MagicMock()
     channel = PyDMChannel(
-        address="sig://motor.nonsense_parts", connection_slot=connection_slot
+        address="haven://motor.nonsense_parts", connection_slot=connection_slot
     )
     pydm_ophyd_plugin.add_connection(channel)
 
@@ -146,7 +146,7 @@ def test_widget_signals(sim_motor, ffapp, qtbot):
     sim_motor.user_setpoint.set(5.15)
     sim_motor.user_setpoint._metadata["precision"] = 3
     window = PyDMMainWindow()
-    widget = PyDMLineEdit(parent=window, init_channel="sig://motor.user_setpoint")
+    widget = PyDMLineEdit(parent=window, init_channel="haven://motor.user_setpoint")
     ffapp.processEvents()
     time.sleep(0.05)
     assert widget.text() == "5.150"
@@ -155,3 +155,29 @@ def test_widget_signals(sim_motor, ffapp, qtbot):
     ffapp.processEvents()
     time.sleep(0.05)
     assert sim_motor.user_setpoint.get(use_monitor=False) == 4.9
+
+
+# -----------------------------------------------------------------------------
+# :author:    Mark Wolfman
+# :email:     wolfman@anl.gov
+# :copyright: Copyright © 2023, UChicago Argonne, LLC
+#
+# Distributed under the terms of the 3-Clause BSD License
+#
+# The full license is in the file LICENSE, distributed with this software.
+#
+# DISCLAIMER
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+# HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# -----------------------------------------------------------------------------

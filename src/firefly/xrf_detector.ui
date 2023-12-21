@@ -99,7 +99,7 @@
           <bool>true</bool>
          </property>
          <property name="channel" stdset="0">
-          <string>sig://${DEV}.dwell_time</string>
+          <string>haven://${DEV}.dwell_time</string>
          </property>
         </widget>
        </item>
@@ -114,7 +114,7 @@
         <string>Continuous</string>
        </property>
        <property name="channel" stdset="0">
-        <string>sig://${DEV}.acquire_multiple</string>
+        <string>haven://${DEV}.acquire_multiple</string>
        </property>
       </widget>
      </item>
@@ -127,7 +127,7 @@
         <string>Acquire</string>
        </property>
        <property name="channel" stdset="0">
-        <string>sig://${DEV}.acquire_single</string>
+        <string>haven://${DEV}.acquire_single</string>
        </property>
        <property name="pressValue" stdset="0">
         <string>1</string>
@@ -197,7 +197,7 @@
           <bool>true</bool>
          </property>
          <property name="channel" stdset="0">
-          <string>sig://${DEV}.acquire</string>
+          <string>haven://${DEV}.acquire</string>
          </property>
          <property name="PyDMToolTip" stdset="0">
           <string/>
@@ -231,7 +231,7 @@
           <set>Qt::TextSelectableByMouse</set>
          </property>
          <property name="channel" stdset="0">
-          <string>sig://${DEV}.cam.array_counter</string>
+          <string>haven://${DEV}.cam.array_counter</string>
          </property>
         </widget>
        </item>
@@ -304,7 +304,7 @@
           <string>N/A</string>
          </property>
          <property name="channel" stdset="0">
-          <string>sig://${DEV}.total_count</string>
+          <string>haven://${DEV}.total_count</string>
          </property>
         </widget>
        </item>
@@ -363,7 +363,7 @@
           <bool>false</bool>
          </property>
          <property name="channel" stdset="0">
-          <string>sig://${DEV}.dead_time_average</string>
+          <string>haven://${DEV}.dead_time_average</string>
          </property>
          <property name="displayFormat" stdset="0">
           <enum>PyDMLabel::Decimal</enum>
@@ -434,7 +434,7 @@
           <string>14.0</string>
          </property>
          <property name="channel" stdset="0">
-          <string>sig://${DEV}.dead_time_min</string>
+          <string>haven://${DEV}.dead_time_min</string>
          </property>
          <property name="PyDMToolTip" stdset="0">
           <string>Lowest dead time across all elements.</string>
@@ -489,7 +489,7 @@
           <string>24.0</string>
          </property>
          <property name="channel" stdset="0">
-          <string>sig://${DEV}.dead_time_max</string>
+          <string>haven://${DEV}.dead_time_max</string>
          </property>
          <property name="PyDMToolTip" stdset="0">
           <string>Highest dead time across all elements.</string>

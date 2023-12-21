@@ -2,6 +2,7 @@ import asyncio
 import logging
 import re
 import time as ttime
+import warnings
 from typing import Callable, Union
 
 from ophyd import Component, Device, K
@@ -11,6 +12,18 @@ from .._iconfig import load_config
 from .instrument_registry import registry
 
 log = logging.getLogger(__name__)
+
+
+def titelize(name):
+    """Convert a device name into a human-readable title."""
+    title = name.replace("_", " ").title()
+    # Replace select phrases that are known to be incorrect
+    replacements = {
+        "Kb ": "KB "
+    }
+    for orig, new in replacements.items():
+        title = title.replace(orig, new)
+    return title
 
 
 async def aload_devices(*coros):
@@ -61,8 +74,6 @@ async def make_device(DeviceClass, *args, FakeDeviceClass=None, **kwargs) -> Dev
         )
         await await_for_connection(device)
     except TimeoutError as e:
-        if DeviceClass.__name__ == "VortexEx":
-            raise
         log.warning(
             f"Could not connect to {DeviceClass.__name__} in"
             f" {round(ttime.monotonic() - t0, 2)} sec: {name}."
@@ -75,8 +86,8 @@ async def make_device(DeviceClass, *args, FakeDeviceClass=None, **kwargs) -> Dev
         log.debug(f"Connected to {name} in {round(ttime.monotonic() - t0, 2)} sec.")
         return device
 
-
-async def await_for_connection(dev, all_signals=False, timeout=2.0):
+      
+async def await_for_connection(dev, all_signals=False, timeout=3.0):
     """Wait for signals to connect
 
     Parameters
@@ -94,12 +105,31 @@ async def await_for_connection(dev, all_signals=False, timeout=2.0):
     }
     pending_funcs[dev] = dev._required_for_connection
 
-    t0 = ttime.time()
-    while timeout is None or (ttime.time() - t0) < timeout:
-        connected = all(sig.connected for sig in signals)
+    t0 = ttime.monotonic()
+    # Wait until all the signals have connected
+    loop_idx = 0
+    connected = False
+    while True:
+        # Check if the device is ready
+        if not connected:
+            connected = all(sig.connected for sig in signals)
         if connected and not any(pending_funcs.values()):
             return
-        await asyncio.sleep(min((0.05, timeout / 10.0)))
+        # Since we're not connected, sleep for a short time and try again
+        real_timeout = min((0.05, timeout / 10.0))
+        tn = ttime.monotonic()
+        await asyncio.sleep(real_timeout)
+        # Detect other co-routines blocking for too long
+        tdelay = ttime.monotonic() - tn
+        if tdelay > (real_timeout * 5):
+            msg = f"{real_timeout} sec sleep for {dev.name} took "
+            msg += f"{tdelay:.4f} sec. "
+            msg += "Maybe another co-routine is blocking."
+            log.info(msg)
+        elapsed_time = ttime.monotonic() - t0
+        loop_idx += 1
+        if timeout is not None and elapsed_time > timeout and loop_idx > 2:
+            break
 
     def get_name(sig):
         sig_name = f"{dev.name}.{sig.dotted_name}"
@@ -190,3 +220,29 @@ class RegexComponent(Component[K]):
         except TypeError:
             pass
         return new_val
+
+
+# -----------------------------------------------------------------------------
+# :author:    Mark Wolfman
+# :email:     wolfman@anl.gov
+# :copyright: Copyright © 2023, UChicago Argonne, LLC
+#
+# Distributed under the terms of the 3-Clause BSD License
+#
+# The full license is in the file LICENSE, distributed with this software.
+#
+# DISCLAIMER
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+# HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# -----------------------------------------------------------------------------

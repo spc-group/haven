@@ -5,7 +5,6 @@ from pathlib import Path
 import pytest
 from epics import caget, caput
 
-
 log = logging.getLogger(__name__)
 
 
@@ -33,12 +32,14 @@ def test_motor_ioc(ioc_motor):
     assert caget(f"{prefix}m1.VAL", use_monitor=False) == 4000.0
     assert caget(f"{prefix}m1.RBV", use_monitor=False) == 4000.0
 
+
 @pytest.mark.skip(reason="Simulated IOCs are deprecated.")
 def test_scaler_ioc(ioc_scaler):
     # Check that all the channels have the right counts
     for ch_num in range(1, 32):
         pv = f"255idVME:scaler1.S{ch_num}"
         assert caget(pv) is not None, pv
+
 
 @pytest.mark.skip(reason="Simulated IOCs are deprecated.")
 def test_mono_ioc(ioc_mono):
@@ -153,6 +154,7 @@ def test_ptc10_ioc(ioc_ptc10):
     assert caget(ioc_ptc10.pvs["pid1_voltage"], use_monitor=False) == 0
     assert caget(ioc_ptc10.pvs["pid1_voltage_rbv"], use_monitor=False) == 0
     assert caget(ioc_ptc10.pvs["tc1_temperature"], use_monitor=False) == 21.3
+
 
 @pytest.mark.skip(reason="Simulated IOCs are deprecated.")
 def test_area_detector_ioc(ioc_area_detector):

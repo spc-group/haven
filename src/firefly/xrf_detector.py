@@ -167,7 +167,7 @@ class XRFPlotWidget(QWidget):
         plot_item = self.ui.plot_widget.getPlotItem()
         # Create a new region item if necessary
         if key not in self._region_items.keys():
-            address = f"sig://{self.device_name}.mcas.mca{mca_num}.rois.roi{roi_num}"
+            address = f"haven://{self.device_name}.mcas.mca{mca_num}.rois.roi{roi_num}"
             color = self.region_color(mca_num=mca_num, roi_num=roi_num)
             region = ROIRegion(
                 address=address,
@@ -199,7 +199,13 @@ class XRFPlotWidget(QWidget):
             plot_item.removeItem(existing_item)
         # Plot the spectrum
         if show_spectrum:
-            xdata = np.arange(len(spectrum))
+            try:
+                length = len(spectrum)
+            except TypeError:
+                # Probably this means the spectrum is really just a scaler
+                length = 1
+                spectrum = np.asarray([spectrum])
+            xdata = np.arange(length)
             color = self.spectrum_color(mca_num)
             self._data_items[mca_num] = plot_item.plot(
                 xdata, spectrum, name=mca_num, pen=color
@@ -357,18 +363,18 @@ class ROIEmbeddedDisplay(PyDMEmbeddedDisplay):
 #     # Set up a channel for starting detector acquisition
 #     device = self.device
 #     self.start_channel = PyDMChannel(
-#         address=f"sig://{device.name}.acquire",
+#         address=f"haven://{device.name}.acquire",
 #         value_signal=self.start_all,
 #     )
 #     self.start_channel.connect()
 #     self.start_erase_channel = PyDMChannel(
-#         address=f"sig://{device.name}.acquire",
+#         address=f"haven://{device.name}.acquire",
 #         value_signal=self.start_erase,
 #     )
 #     self.start_erase_channel.connect()
 #     # This one gets (dis)connected in response to the continuous button
 #     self.acquiring_channel = PyDMChannel(
-#         address=f"sig://{device.name}.acquiring",
+#         address=f"haven://{device.name}.acquiring",
 #         value_slot=self.trigger_next,
 #     )
 
@@ -563,7 +569,7 @@ class XRFDetectorDisplay(display.FireflyDisplay):
         # Set up data channels
         self._spectrum_channels = []
         for mca_num in range(self.device.num_elements):
-            address = f"sig://{device.name}.mcas.mca{mca_num}.spectrum"
+            address = f"haven://{device.name}.mcas.mca{mca_num}.spectrum"
             channel = pydm.PyDMChannel(
                 address=address,
                 value_slot=partial(self.handle_new_spectrum, mca_num=mca_num),
@@ -718,3 +724,29 @@ class XRFDetectorDisplay(display.FireflyDisplay):
         # Delete existing ROI widgets
         for idx in reversed(range(layout.count())):
             layout.takeAt(idx).widget().deleteLater()
+
+
+# -----------------------------------------------------------------------------
+# :author:    Mark Wolfman
+# :email:     wolfman@anl.gov
+# :copyright: Copyright © 2023, UChicago Argonne, LLC
+#
+# Distributed under the terms of the 3-Clause BSD License
+#
+# The full license is in the file LICENSE, distributed with this software.
+#
+# DISCLAIMER
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+# HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# -----------------------------------------------------------------------------
