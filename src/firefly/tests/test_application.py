@@ -136,6 +136,7 @@ def test_load_instrument_registry(ffapp, qtbot, monkeypatch):
     # Mock the underlying haven instrument loader
     loader = MagicMock()
     monkeypatch.setattr(firefly.application, "load_haven_instrument", loader)
+    monkeypatch.setattr(ffapp, "prepare_queue_client", MagicMock())
     # Reload the devices and see if the registry is changed
     with qtbot.waitSignal(ffapp.registry_changed):
         ffapp.setup_instrument(load_instrument=True)

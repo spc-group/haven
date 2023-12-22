@@ -152,6 +152,7 @@ class FireflyApplication(PyDMApplication):
         load_instrument
           If true, re-read configuration files and create ophyd
           devices. This process is slow.
+
         Emits
         =====
         registry_changed
