@@ -14,8 +14,9 @@ from PyQt5.QtWidgets import QStyleFactory
 from qtpy import QtCore, QtWidgets
 from qtpy.QtCore import Signal
 from qtpy.QtWidgets import QAction
+from ophydregistry import Registry
 
-from haven import HavenMotor, load_config, registry
+from haven import HavenMotor, load_config, registry, load_instrument as load_haven_instrument
 from haven.exceptions import ComponentNotFound
 from haven.instrument.device import titelize
 
@@ -41,6 +42,10 @@ pg.setConfigOption("foreground", (0, 0, 0))
 class FireflyApplication(PyDMApplication):
     default_display = None
     xafs_scan_window = None
+
+    # For keeping track of ophyd devices used by the Firefly
+    registry: Registry = None
+    registry_changed = Signal(Registry)
 
     # Actions for showing window
     show_status_window_action: QtWidgets.QAction
@@ -84,7 +89,7 @@ class FireflyApplication(PyDMApplication):
     queue_environment_state_changed = Signal(str)  # New state
     queue_manager_state_changed = Signal(str)  # New state
     queue_re_state_changed = Signal(str)  # New state
-    queue_devices_changed = Signal(dict)  # New list of devices
+    # queue_devices_changed = Signal(dict)  # New list of devices
 
     # Actions for controlling the queueserver
     start_queue_action: QAction
@@ -111,6 +116,7 @@ class FireflyApplication(PyDMApplication):
         # qdarktheme.setup_theme(additional_qss=qss_file.read_text())
         self.windows = OrderedDict()
         self.queue_re_state_changed.connect(self.enable_queue_controls)
+        self.registry = registry
 
     def __del__(self):
         if hasattr(self, "_queue_thread"):
@@ -126,12 +132,33 @@ class FireflyApplication(PyDMApplication):
         setattr(self, action_name, action)
         return action
 
-    def load_instrument(self):
+    def reload_instrument(self, load_instrument=True):
+        """(Re)load all the instrument devices.
+
+        
+        """
+        load_haven_instrument(registry=self.registry)
+        self.registry_changed.emit(self.registry)
+
+    def setup_instrument(self, load_instrument=True):
         """Set up the application to use a previously loaded instrument.
 
         Expects devices, plans, etc to have been created already.
 
+        Parameters
+        ==========
+        load_instrument
+          If true, re-read configuration files and create ophyd
+          devices. This process is slow.
+        Emits
+        =====
+        registry_changed
+          Signal that allows windows to update their widgets for the
+          new list of instruments.
+
         """
+        if load_instrument:
+            load_haven_instrument(registry=self.registry)
         # Make actions for launching other windows
         self.setup_window_actions()
         # Actions for controlling the bluesky run engine
@@ -143,6 +170,7 @@ class FireflyApplication(PyDMApplication):
         default_window = show_default_window()
         # Set up the window to show list of PV connections
         pydm.utilities.shortcuts.install_connection_inspector(parent=default_window)
+        self.registry_changed.emit(self.registry)
 
     def setup_window_actions(self):
         """Create QActions for clicking on menu items, shortcuts, etc.
@@ -216,6 +244,23 @@ class FireflyApplication(PyDMApplication):
             text="Beamline Status",
             slot=self.show_status_window,
         )
+        # Actions for executing plans
+        plans = [
+            # (plan_name, text, display file)
+            ("count", "&Count", "count.py"),
+            ("line_scan", "&Line scan", "line_scan.py"),
+            ("xafs_scan", "&XAFS Scan", "xafs_scan.py"),
+        ]
+        self.plan_actions = []
+        for plan_name, text, display_file in plans:
+            slot = partial(self.show_plan_window, name=plan_name, display_file=display_file)
+            action_name = f"show_{plan_name}_plan_window_action"
+            # Launch windows for plans
+            action = QtWidgets.QAction(self)
+            action.setObjectName(action_name)
+            action.setText(text)
+            action.triggered.connect(slot)
+            self.plan_actions.append(action)
         # Action for showing the run browser window
         self._setup_window_action(
             action_name="show_run_browser_action",
@@ -364,7 +409,7 @@ class FireflyApplication(PyDMApplication):
             )
         # Get needed devices from the device registry
         try:
-            devices = sorted(registry.findall(label=device_label), key=lambda x: x.name)
+            devices = sorted(self.registry.findall(label=device_label), key=lambda x: x.name)
         except ComponentNotFound:
             log.warning(f"No {device_label} found, menu will be empty.")
             devices = []
@@ -445,13 +490,16 @@ class FireflyApplication(PyDMApplication):
         client.environment_state_changed.connect(self.queue_environment_state_changed)
         client.manager_state_changed.connect(self.queue_manager_state_changed)
         client.re_state_changed.connect(self.queue_re_state_changed)
-        client.devices_changed.connect(self.queue_devices_changed)
+        client.devices_changed.connect(self.update_devices_allowed)
         self.queue_autoplay_action.toggled.connect(
             self.check_queue_status_action.trigger
         )
         # Start the thread
         if not thread.isRunning():
             thread.start()
+
+    def update_devices_allowed(self, devices):
+        pass
 
     def enable_queue_controls(self, re_state):
         """Enable/disable the navbar buttons that control the queue.

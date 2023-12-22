@@ -175,9 +175,7 @@ def main(default_fullscreen=False, default_display="status"):
     )
 
     # Define devices on the beamline (slow!)
-    if not pydm_args.no_instrument:
-        haven.load_instrument()
-    app.load_instrument()
+    app.setup_instrument(load_instrument=(not pydm_args.no_instrument))
     FireflyApplication.processEvents()
 
     # Show the first window

@@ -178,7 +178,7 @@ class QueueClient(QObject):
         try:
             self._check_queue_status(force=force)
         except comm_base.RequestTimeoutError as e:
-            log.warn(str(e))
+            log.warning(str(e))
             warnings.warn(str(e))
 
     def _check_queue_status(self, force: bool = False):

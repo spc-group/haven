@@ -3,6 +3,9 @@ from unittest.mock import MagicMock
 import pytest
 from ophyd import Device
 from ophyd.sim import make_fake_device
+from ophydregistry import Registry
+
+import firefly
 
 
 def test_setup(ffapp):
@@ -125,6 +128,19 @@ def test_prepare_device_specific_windows(ffapp, tardis):
     )
     # Check that there's a dictionary to keep track of open windows
     assert hasattr(ffapp, "tardis_windows")
+
+
+def test_load_instrument_registry(ffapp, qtbot, monkeypatch):
+    """Check that the instrument registry gets created."""
+    assert isinstance(ffapp.registry, Registry)
+    # Mock the underlying haven instrument loader
+    loader = MagicMock()
+    monkeypatch.setattr(firefly.application, "load_haven_instrument", loader)
+    # Reload the devices and see if the registry is changed
+    with qtbot.waitSignal(ffapp.registry_changed):
+        ffapp.setup_instrument(load_instrument=True)
+    # Make sure we loaded the instrument
+    assert loader.called
 
 
 # -----------------------------------------------------------------------------
