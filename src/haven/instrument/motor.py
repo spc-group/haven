@@ -86,7 +86,7 @@ async def load_motor(prefix: str, motor_num: int, ioc_name: str = None):
     pv = f"{prefix}:m{motor_num+1}"
     # Check that we're not duplicating a motor somewhere else (e.g. KB mirrors)
     existing_motors = registry.findall(label="motors", allow_none=True)
-    existing_pvs = [m.prefix for m in existing_motors if hasattr(m, 'prefix')]
+    existing_pvs = [m.prefix for m in existing_motors if hasattr(m, "prefix")]
     if pv in existing_pvs:
         log.info(f"Motor for prefix {pv} already exists. Skipping.")
         return

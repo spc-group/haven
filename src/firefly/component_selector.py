@@ -1,5 +1,6 @@
 import logging
 from pprint import pprint
+from collections import OrderedDict
 
 from qtpy.QtWidgets import (
     QWidget,
@@ -12,9 +13,11 @@ from qtpy.QtWidgets import (
     QToolButton,
 )
 from qtpy.QtCore import Qt
-from qtpy.QtGui import QStandardItemModel, QStandardItem
+from qtpy.QtGui import QStandardItemModel, QStandardItem, QFont
 import qtawesome as qta
-from ophyd import sim
+from ophyd import sim, EpicsMotor, Signal, Device, PositionerBase
+
+from .application import FireflyApplication
 
 log = logging.getLogger(__name__)
 
@@ -61,8 +64,8 @@ class TreeComponent:
             names.append(obj.attr_name)
             obj = obj.parent
         # Add the root devices name
-        names.insert(0, obj.name)
-        return ".".join(names)
+        names.append(obj.name)
+        return ".".join(reversed(names))
 
     def set_items(self):
         """Add model items to the parent item."""
@@ -74,6 +77,11 @@ class TreeComponent:
         self.type_item = QStandardItem(type_name)
         column = 1
         self.parent.setChild(row, column, self.type_item)
+        # Make the component item bold if it's a positioner
+        if isinstance(self.device, PositionerBase):
+            font = QFont()
+            font.setBold(True)
+            self.component_item.setFont(font)
         # Decide on an icon for this component
         icons = {
             "mdi.cog-clockwise": {"SynAxis"},
@@ -89,8 +97,15 @@ class TreeComponent:
                 "SynGauss",
             },
         }
-        for icon, types in icons.items():
-            if type_name in types:
+        icons = OrderedDict(
+            {
+                EpicsMotor: "mdi.cog-clockwise",
+                Device: "mdi.router-network",
+                Signal: "mdi.connection",
+            }
+        )
+        for cls, icon in icons.items():
+            if isinstance(self.device, cls):
                 self.type_item.setIcon(qta.icon(icon))
                 break
         # Keep a reference to the component that created the items
@@ -132,7 +147,8 @@ class ComponentTreeModel(QStandardItemModel):
     def update_devices(self, registry):
         parent_item = self.invisibleRootItem()
         self.root_components = []
-        for device in registry.root_devices():
+        devices = sorted(registry.root_devices, key=lambda dev: dev.name.lower())
+        for device in devices:
             cpt = self.Component(
                 device=device, text=device.name, parent=parent_item, registry=registry
             )
@@ -143,7 +159,9 @@ class ComboBoxComponent(TreeComponent):
     def set_items(self):
         """Add model items to the parent item."""
         self.component_item = QStandardItem(self.text)
-        self.parent.appendRow(self.component_item)
+        if isinstance(self.device, PositionerBase):
+            # Only include motors, positioners, etc in the combobox
+            self.parent.appendRow(self.component_item)
 
     def add_children(self):
         """Add components of the device as extra options."""
@@ -160,6 +178,9 @@ class ComboBoxComponent(TreeComponent):
 
 class ComponentComboBoxModel(ComponentTreeModel):
     Component: type = ComboBoxComponent
+
+    def update_devices(self, registry):
+        super().update_devices(registry)
 
 
 class TreeDialog(QDialog):
@@ -198,10 +219,13 @@ class TreeDialog(QDialog):
 class ComponentSelector(QWidget):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.app = FireflyApplication.instance()
         self.create_models()
         self.add_widgets()
         self.connect_signals()
-        self.make_fake_motors()
+        self.update_devices(self.app.registry)
+        # Clear the combobox text so it doesn't auto-select the first entry
+        self.combo_box.setCurrentText("")
 
     def current_component(self):
         return self.combo_box.currentText()
@@ -211,26 +235,13 @@ class ComponentSelector(QWidget):
         self.tree_model.setHorizontalHeaderLabels(["Component", "Type"])
         self.combo_box_model = ComponentComboBoxModel(0, 1)
 
-    def make_fake_motors(self):
-
-        """Only for testing."""
-        from unittest import mock
-
-        registry = mock.MagicMock()
-        registry.root_devices.return_value = [
-            sim.motor1,
-            sim.motor2,
-            sim.motor3,
-            sim.det,
-        ]
-        self.update_devices(registry)
-
     def connect_signals(self):
         self.tree_button.toggled.connect(self.tree_view.setVisible)
         self.combo_box.currentTextChanged.connect(self.update_tree_model)
         self.tree_view.selectionModel().currentChanged.connect(
             self.update_combo_box_model
         )
+        self.app.registry_changed.connect(self.update_devices)
 
     def update_tree_model(self, new_name):
         log.debug(f"Updating tree: {new_name=}")
@@ -239,7 +250,7 @@ class ComponentSelector(QWidget):
             component = self.tree_model.component_from_dotted_name(new_name)
         except KeyError:
             # It's not a real component, so give up
-            print(f"Could not find component for {new_name}, skipping.")
+            log.debug(f"Could not find component for {new_name}, skipping.")
             return
         log.debug(f"Selecting combobox entry: {component.component_item.text()}")
         selection.setCurrentIndex(
@@ -266,7 +277,6 @@ class ComponentSelector(QWidget):
         log.debug("Changing selected motor.")
 
     def update_devices(self, registry):
-        devices = registry.root_devices()
         self.combo_box_model.update_devices(registry)
         self.tree_model.update_devices(registry)
 

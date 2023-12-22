@@ -12,11 +12,12 @@ from firefly.component_selector import (
 
 
 @pytest.fixture()
-def motor_registry(ffapp):
+def motor_registry(ffapp, sim_registry):
     """A simulated motor registry. Like the ophyd-registry but connected to the queueserver."""
-    registry = mock.MagicMock()
-    registry.root_devices.return_value = [sim.motor1, sim.motor2, sim.motor3]
-    return registry
+    sim_registry.register(sim.motor1)
+    sim_registry.register(sim.motor2)
+    sim_registry.register(sim.motor3)
+    return sim_registry
 
 
 def test_selector_adds_devices(ffapp, motor_registry):
@@ -107,3 +108,11 @@ def test_model_component_from_dotted_index(ffapp, motor_registry):
     item = model.item(1).child(1, column=0)
     cpt = model.component_from_dotted_name("motor2.setpoint")
     assert cpt.component_item is item
+
+
+def test_loads_devices_from_registry(ffapp, motor_registry, qtbot):
+    selector = ComponentSelector()
+    selector.combo_box_model.update_devices = mock.MagicMock()
+    ffapp.registry_changed.emit(motor_registry)
+    qtbot.wait(0.1)
+    selector.combo_box_model.update_devices.assert_called_once_with(motor_registry)

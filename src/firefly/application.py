@@ -16,7 +16,12 @@ from qtpy.QtCore import Signal
 from qtpy.QtWidgets import QAction
 from ophydregistry import Registry
 
-from haven import HavenMotor, load_config, registry, load_instrument as load_haven_instrument
+from haven import (
+    HavenMotor,
+    load_config,
+    registry,
+    load_instrument as load_haven_instrument,
+)
 from haven.exceptions import ComponentNotFound
 from haven.instrument.device import titelize
 
@@ -133,10 +138,7 @@ class FireflyApplication(PyDMApplication):
         return action
 
     def reload_instrument(self, load_instrument=True):
-        """(Re)load all the instrument devices.
-
-        
-        """
+        """(Re)load all the instrument devices."""
         load_haven_instrument(registry=self.registry)
         self.registry_changed.emit(self.registry)
 
@@ -253,7 +255,9 @@ class FireflyApplication(PyDMApplication):
         ]
         self.plan_actions = []
         for plan_name, text, display_file in plans:
-            slot = partial(self.show_plan_window, name=plan_name, display_file=display_file)
+            slot = partial(
+                self.show_plan_window, name=plan_name, display_file=display_file
+            )
             action_name = f"show_{plan_name}_plan_window_action"
             # Launch windows for plans
             action = QtWidgets.QAction(self)
@@ -409,7 +413,9 @@ class FireflyApplication(PyDMApplication):
             )
         # Get needed devices from the device registry
         try:
-            devices = sorted(self.registry.findall(label=device_label), key=lambda x: x.name)
+            devices = sorted(
+                self.registry.findall(label=device_label), key=lambda x: x.name
+            )
         except ComponentNotFound:
             log.warning(f"No {device_label} found, menu will be empty.")
             devices = []
