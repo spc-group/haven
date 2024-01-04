@@ -31,6 +31,7 @@ class GainRecommender:
 
     volts_min: float
     volts_max: float
+    gain_max: int = 28
 
     def __init__(self, volts_min: float = 0.5, volts_max: float = 4.5):
         self.volts_min = volts_min
@@ -43,6 +44,9 @@ class GainRecommender:
         gains[is_low] -= 1
         is_high = volts > self.volts_max
         gains[is_high] += 1
+        # Ensure we're within the bounds for gain values
+        gains[gains<0] = 0
+        gains[gains>self.gain_max] = self.gain_max
         # Check whether we need to move to a new point of not
         if np.logical_or(is_low, is_high).any():
             self.next_point = gains
@@ -111,10 +115,22 @@ def auto_gain(
     first_point = {
         det.preamp.sensitivity_level: det.preamp.sensitivity_level.get() for det in dets
     }
+    # Make sure the detectors have the correct read attrs.
+    old_kinds = {}
+    signals = [(det.preamp, det.preamp.sensitivity_level) for det in dets]
+    signals = [sig for tpl in signals for sig in tpl]
+    for sig in signals:
+        old_kinds[sig] = sig.kind
+        sig.kind = "normal"
     # Execute the adaptive plan
-    yield from adaptive_plan(
-        dets=dets, first_point=first_point, to_recommender=rr, from_recommender=queue
-    )
+    try:
+        yield from adaptive_plan(
+            dets=dets, first_point=first_point, to_recommender=rr, from_recommender=queue
+        )
+    finally:
+        # Restore the detector signal kinds
+        for sig in signals:
+            sig.kind = old_kinds[sig]
 
 
 # -----------------------------------------------------------------------------
