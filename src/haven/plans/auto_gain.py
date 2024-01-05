@@ -32,24 +32,30 @@ class GainRecommender:
     volts_min: float
     volts_max: float
     gain_max: int = 28
+    last_point: np.ndarray = None
 
     def __init__(self, volts_min: float = 0.5, volts_max: float = 4.5):
         self.volts_min = volts_min
         self.volts_max = volts_max
 
     def tell(self, gains, volts):
-        gains = np.copy(gains)
-        # Adjust gains for devices that are out of range
+        new_gains = np.copy(gains)
+        # Adjust new_gains for devices that are out of range, with hysteresis
+        if self.last_point is None:
+            is_hysteretical = np.full_like(gains, True, dtype=bool)
+        else:
+            is_hysteretical = gains < self.last_point
+        self.last_point = gains        
         is_low = volts < self.volts_min
-        gains[is_low] -= 1
+        new_gains[np.logical_or(is_low, is_hysteretical)] -= 1
         is_high = volts > self.volts_max
-        gains[is_high] += 1
+        new_gains[is_high] += 1
         # Ensure we're within the bounds for gain values
-        gains[gains<0] = 0
-        gains[gains>self.gain_max] = self.gain_max
+        new_gains[new_gains<0] = 0
+        new_gains[new_gains>self.gain_max] = self.gain_max
         # Check whether we need to move to a new point of not
         if np.logical_or(is_low, is_high).any():
-            self.next_point = gains
+            self.next_point = new_gains
         else:
             self.next_point = None
 

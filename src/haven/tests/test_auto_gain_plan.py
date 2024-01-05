@@ -48,6 +48,7 @@ def test_recommender_some_low(recommender):
     # Gain sensitivity levels
     gains = np.asarray([[10, 13]])
     assert gains.shape == (1, 2)
+    recommender.last_point = np.asarray([10, 13])
     # Corresponding volts
     volts = np.asarray([[0.1, 2.5]])
     assert volts.shape == (1, 2)
@@ -60,6 +61,7 @@ def test_recommender_all_high(recommender):
     # Gain sensitivity levels
     gains = np.asarray([[10, 13]])
     assert gains.shape == (1, 2)
+    recommender.last_point = np.asarray([10, 13])
     # Corresponding volts
     volts = np.asarray([[4.6, 5.2]])
     assert volts.shape == (1, 2)
@@ -72,6 +74,7 @@ def test_recommender_some_high(recommender):
     # Gain sensitivity levels
     gains = np.asarray([[10, 13]])
     assert gains.shape == (1, 2)
+    recommender.last_point = np.asarray([10, 13])
     # Corresponding volts
     volts = np.asarray([[5.7, 2.5]])
     assert volts.shape == (1, 2)
@@ -84,6 +87,7 @@ def test_recommender_high_and_low(recommender):
     # Gain sensitivity levels
     gains = np.asarray([[10, 13]])
     assert gains.shape == (1, 2)
+    recommender.last_point = np.asarray([10, 13])
     # Corresponding volts
     volts = np.asarray([[5.7, 0.23]])
     assert volts.shape == (1, 2)
@@ -103,3 +107,19 @@ def test_recommender_no_change(recommender):
     recommender.tell_many(gains, volts)
     with pytest.raises(NoRecommendation):
         recommender.ask(1)
+
+
+def test_recommender_hysteresis(recommender):
+    """Test that we can avoid getting caught at the bottom of the voltage
+    range."""
+    # Gain sensitivity levels
+    gains = np.asarray([[10, 13]])
+    assert gains.shape == (1, 2)
+    # Corresponding volts
+    volts = np.asarray([[0.1, 2.3]])
+    recommender.last_point = np.asarray([10, 14])
+    assert volts.shape == (1, 2)
+    # Check recommendations, second gain should still go up
+    recommender.tell_many(gains, volts)
+    np.testing.assert_equal(recommender.ask(1), (9, 12))
+    
