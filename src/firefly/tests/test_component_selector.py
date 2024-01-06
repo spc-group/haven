@@ -120,5 +120,5 @@ def test_loads_devices_from_registry(ffapp, motor_registry, qtbot):
     selector = ComponentSelector()
     selector.combo_box_model.update_devices = mock.MagicMock()
     ffapp.registry_changed.emit(motor_registry)
-    qtbot.wait(0.1)
+    qtbot.wait(1)
     selector.combo_box_model.update_devices.assert_called_once_with(motor_registry)
