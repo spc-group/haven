@@ -86,6 +86,7 @@ dependencies:
   - bluesky-queueserver
   - bluesky-queueserver-api
   - bluesky-widgets
+  - bluesky-adaptive
   - bluesky >=1.8.1
   # - happi
   # - hklpy >=1.0.3  # --- linux-64
