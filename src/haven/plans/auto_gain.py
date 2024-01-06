@@ -1,102 +1,148 @@
+from queue import Queue
+
 import numpy as np
 import pandas as pd
 from bluesky import plan_stubs as bps
 from bluesky import plans as bp
 from bluesky.callbacks.core import CollectThenCompute
 from bluesky.preprocessors import subs_decorator
+from bluesky_adaptive.per_event import adaptive_plan, recommender_factory
+from bluesky_adaptive.recommendations import NoRecommendation
+from ophyd.sim import motor
 
-from haven import instrument
-
-
-class AutoGainCallback(CollectThenCompute):
-    def __init__(self, devices, voltage_limits=(0.5, 4.5), *args, **kwargs):
-        self.devices = devices
-        self.best_sens_levels = {}
-        self.llim = min(voltage_limits)
-        self.hlim = max(voltage_limits)
-        super().__init__(*args, **kwargs)
-
-    def compute(self):
-        # Empty dictionaries to hold results
-        voltages = {dev.name: [] for dev in self.devices}
-        sens_levels = {dev.name: [] for dev in self.devices}
-        self.best_sens_levels = {}
-        # Extract data from the events list
-        for event in self._events:
-            data = event["data"]
-            for dev in self.devices:
-                voltages[dev.name].append(data[f"{dev.name}_volts"])
-                sens_levels[dev.name].append(data[f"{dev.name}_sensitivity_sens_level"])
-        # Turn data into pandas series
-        for device in self.devices:
-            series = pd.Series(voltages[device.name], index=sens_levels[device.name])
-            if (series < self.llim).all():
-                best_level = series.index.max()
-            elif (series > self.hlim).all():
-                best_level = series.index.min()
-            else:
-                in_range_series = series[(series > self.llim) & (series < self.hlim)]
-                best_level = in_range_series.idxmax()
-                self.best_sens_levels[device.name] = best_level
+from ..instrument.instrument_registry import registry
 
 
-def auto_gain(devices="ion_chambers"):
-    """A plan to automatically set the gain on an ion chamber."""
-    if isinstance(devices, str):
-        devices = instrument.registry.findall(any=devices)
-    # Prepare devices and device range arguments
-    scan_args = []
-    hints = []
-    for device in devices:
-        hints.append(device.sensitivity.sens_level.name)
-        hints.append(device.volts.name)
-        limits = device.sensitivity.sens_level.limits
-        scan_args.extend(
-            [device.sensitivity.sens_level, np.arange(limits[0], limits[1] + 1)]
-        )
-    # Hinting to make the best effort callback work properly
-    _md = {
-        "hints": {"dimensions": [(hints, "primary")]},
+__all__ = ["GainRecommender", "auto_gain"]
+
+
+class GainRecommender:
+    """A recommendation engine for finding the best ion chamber gain*.
+
+    Responds to ion chamber voltage as the dependent variable but
+    changing the gain. If the voltage is above *volts_max* then the
+    next gain* level will be one higher, and if the voltage is below
+    *volts_min* then the next gain* level will be one lower.
+
+    *Gain is actually sensitivity in the case of an SRS-570 preamp, so
+     raising the sensitivity results in a lower gain.
+
+    """
+
+    volts_min: float
+    volts_max: float
+    gain_max: int = 27
+    last_point: np.ndarray = None
+
+    def __init__(self, volts_min: float = 0.5, volts_max: float = 4.5):
+        self.volts_min = volts_min
+        self.volts_max = volts_max
+
+    def tell(self, gains, volts):
+        new_gains = np.copy(gains)
+        # Adjust new_gains for devices that are out of range, with hysteresis
+        if self.last_point is None:
+            is_hysteretical = np.full_like(gains, True, dtype=bool)
+        else:
+            is_hysteretical = gains < self.last_point
+        self.last_point = gains        
+        is_low = volts < self.volts_min
+        new_gains[np.logical_or(is_low, is_hysteretical)] -= 1
+        is_high = volts > self.volts_max
+        new_gains[is_high] += 1
+        # Ensure we're within the bounds for gain values
+        new_gains[new_gains<0] = 0
+        new_gains[new_gains>self.gain_max] = self.gain_max
+        # Check whether we need to move to a new point of not
+        if np.logical_or(is_low, is_high).any():
+            self.next_point = new_gains
+        else:
+            self.next_point = None
+
+    def tell_many(self, xs, ys):
+        for x, y in zip(xs, ys):
+            self.tell(x, y)
+
+    def ask(self, n, tell_pending=True):
+        if n != 1:
+            raise NotImplementedError
+        if self.next_point is None:
+            raise NoRecommendation
+        return self.next_point
+
+
+def auto_gain(
+    dets="ion_chambers",
+    volts_min: float = 0.5,
+    volts_max: float = 4.5,
+    max_count: int = 28,
+    queue: Queue = None,
+):
+    """An adaptive Bluesky plan for optimizing pre-amp gains.
+
+    At each step, the plan will measure the pre-amp voltage via the
+    scaler. If the measured voltage for a pre-amp is outside the range
+    (*volts_min*, *volts_max*), then the gain for the next step will
+    be adjusted by one level. Once all detectors are within the
+    optimal range (or *max_count* iterations have been done), the scan
+    will end.
+
+    Parameters
+    ==========
+    dets
+      A sequence of detectors to scan. Can be devices, names, or Ophyd
+      labels.
+    volts_min
+      The minimum acceptable range for each ion chamber's voltage.
+    volts_max
+      The maximum acceptable range for each ion chamber's voltage.
+    max_count
+      The scan will end after *max_count* iterations even if an
+      optimal gain has not been found for all pre-amps.
+    queue
+      [Testing] A Queue object for passing recommendations between the
+      plan and the recommendation engine.
+
+    """
+    # Resolve the detector list into real devices
+    dets = registry.findall(dets)
+    # Prepare the recommendation enginer
+    recommender = GainRecommender(volts_min=volts_min, volts_max=volts_max)
+    ind_keys = [det.preamp.sensitivity_level.name for det in dets]
+    dep_keys = [det.volts.name for det in dets]
+    rr, queue = recommender_factory(
+        recommender,
+        independent_keys=ind_keys,
+        dependent_keys=dep_keys,
+        max_count=max_count,
+        queue=queue,
+    )
+    # Start from the current gain settings
+    first_point = {
+        det.preamp.sensitivity_level: det.preamp.sensitivity_level.get() for det in dets
     }
-    # Prepare detectors (we need to include the sensitivity level)
-    detectors = [(dev, dev.volts, dev.sensitivity.sens_level) for dev in devices]
-    detectors = [det for sublist in detectors for det in sublist]
-    # Save motor kinds to restore later
-    kinds = {dev.name: dev.sensitivity.kind for dev in devices}
-    # Set up the callback to do the calculating
-    cb = AutoGainCallback(devices=devices)
-    plan_func = subs_decorator(cb)(bp.list_scan)
+    # Make sure the detectors have the correct read attrs.
+    old_kinds = {}
+    signals = [(det.preamp, det.preamp.sensitivity_level) for det in dets]
+    signals = [sig for tpl in signals for sig in tpl]
+    for sig in signals:
+        old_kinds[sig] = sig.kind
+        sig.kind = "normal"
+    # Execute the adaptive plan
     try:
-        # Set motor kinds so they get tracked during acquisition
-        for dev in devices:
-            dev.sensitivity.kind = "normal"
-        yield from plan_func(detectors, *scan_args, md=_md)
+        yield from adaptive_plan(
+            dets=dets, first_point=first_point, to_recommender=rr, from_recommender=queue
+        )
     finally:
-        for dev in devices:
-            dev.sensitivity.kind = kinds[dev.name]
-    # Update the devices with the new values
-    mv_args = []
-    for dev in devices:
-        mv_args.append(dev.sensitivity.sens_level)
-        mv_args.append(cb.best_sens_levels.get(dev.name, None))
-    # For some reason, just doing to mv plan once doesn't set the values.
-    # Should investigate more
-    is_done = False
-    while not is_done:
-        is_done = True
-        for dev in devices:
-            best_level = cb.best_sens_levels.get(
-                dev.name, dev.sensitivity.sens_level.get().readback
-            )
-            if dev.sensitivity.sens_level.get().readback != best_level:
-                is_done = False
-        yield from bps.mv(*mv_args)
+        # Restore the detector signal kinds
+        for sig in signals:
+            sig.kind = old_kinds[sig]
 
 
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov
-# :copyright: Copyright © 2023, UChicago Argonne, LLC
+# :copyright: Copyright © 2024, UChicago Argonne, LLC
 #
 # Distributed under the terms of the 3-Clause BSD License
 #
