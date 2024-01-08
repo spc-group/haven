@@ -583,7 +583,7 @@ async def load_ion_chamber(
     # 5 pre-amps per labjack
     lj_num = int(ic_idx / 5)
     # Only use even labjack channels since it's a differential signal
-    lj_chan = (ic_idx % 5) * 2
+    lj_chan = (ic_idx % 5)
     # Only use this ion chamber if it has a name
     try:
         name = await caget(desc_pv)
@@ -604,13 +604,13 @@ async def load_ion_chamber(
         voltmeter_prefix=f"{voltmeter_prefix}{lj_num}:Ai{lj_chan}",
         labels={"ion_chambers"},
     )
-    # Ensure the voltmeter is in differential mode to measure pre-amp
+    # Ensure the voltmeter is in single-ended mode to measure pre-amp
     if hasattr(ion_chamber, "voltmeter"):
         try:
-            ion_chamber.voltmeter.differential.set(1).wait(timeout=1)
+            ion_chamber.voltmeter.differential.set(0).wait(timeout=1)
         except OpException as exc:
             msg = (
-                f"Could not set voltmeter {ion_chamber.name} channel differential state:"
+                f"Could not set voltmeter {ion_chamber.name} channel to single-ended mode:"
                 f" {exc}"
             )
             log.warning(msg)
