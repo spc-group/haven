@@ -93,6 +93,16 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
     values = ["1", "2", "5", "10", "20", "50", "100", "200", "500"]
     units = ["pA/V", "nA/V", "uA/V", "mA/V"]
     offset_difference = -3  # How many levels higher should the offset be
+    current_multipliers = {
+        0: 1e-12,  # pA
+        1:    1e-9,  # nA
+        2:    1e-6,  # µA
+        3:    1e-3,  # mA
+        "pA": 1e-12,
+        "nA": 1e-9,
+        "µA": 1e-6,
+        "mA": 1e-3,
+    }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -113,13 +123,7 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
         Amplifier gain (V/A), as floating-point number.
         """
         val = float(self.values[self.sensitivity_value.get()])
-        amps = [
-            1e-12,  # pA
-            1e-9,  # nA
-            1e-6,  # µA
-            1e-3,  # mA
-        ]
-        multiplier = amps[self.sensitivity_unit.get()]
+        multiplier = self.current_multipliers[self.sensitivity_unit.get()]
         inverse_gain = val * multiplier
         return 1 / inverse_gain
 
@@ -189,7 +193,8 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
         unit = items[self.offset_unit]
         try:
             val = float(f"{sign}{val}")
-            current = pint.Quantity(float(val), unit).to("A").magnitude
+            multiplier = self.current_multipliers[unit]
+            current = val * multiplier
         except ValueError:
             return 0
         return current
