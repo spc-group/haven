@@ -45,6 +45,9 @@ class XafsScanRegion:
 
 class XafsScanDisplay(display.FireflyDisplay):
     def customize_ui(self):
+        # Remove the default XAFS layout from .ui file
+        self.clearLayout(self.ui.region_layout)
+
         self.reset_default_regions()
         # Connect the E0 checkbox to the E0 combobox
         self.ui.use_edge_checkbox.stateChanged.connect(self.edge_combo_box.setEnabled)
@@ -53,6 +56,13 @@ class XafsScanDisplay(display.FireflyDisplay):
         self.ui.regions_spin_box.editingFinished.connect(self.update_regions)
         # TODO
         self.ui.pushButton.clicked.connect(self.reset_default_regions)
+    
+    def clearLayout(self, layout):
+        if layout is not None:
+            while layout.count():
+                item = layout.takeAt(0)
+                if item.widget():
+                    item.widget().deleteLater()
 
     def reset_default_regions(self):
         default_num_regions = 3
