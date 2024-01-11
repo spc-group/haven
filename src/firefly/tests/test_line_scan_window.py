@@ -25,22 +25,29 @@ def fake_motors(sim_registry):
 def test_line_scan_plan_queued(ffapp, qtbot, sim_registry):
     display = LineScanDisplay()
     display.ui.run_button.setEnabled(True)
-    display.ui.scan_start_lineEdit.setText("10")
-    display.ui.scan_stop_lineEdit.setText("20")
-    display.ui.scan_pts_spin_box.setValue(5)
+    display.ui.num_motor_spin_box.setValue(2)
+    display.update_regions()
+    
+    # set up a test motor 1
+    display.regions[0].motor_box.combo_box.setCurrentText("test_motor1")
+    display.regions[0].start_line_edit.setText("1")
+    display.regions[0].stop_line_edit.setText("111")
+    
+    # set up a test motor 2
+    display.regions[1].motor_box.combo_box.setCurrentText("test_motor2")
+    display.regions[1].start_line_edit.setText("2")
+    display.regions[1].stop_line_edit.setText("222")
+
+    # set up scan num of points
+    display.ui.scan_pts_spin_box.setValue(10)
+
+    # set up detector list
     display.ui.detectors_list.selected_detectors = mock.MagicMock(
         return_value=["vortex_me4", "I0"]
     )
+    
 
-    # Adding fake motor options to motor combobox
-    motor_options = ["MotorA_m1", "MotorA_m2", "MotorA_m3"]
-    display.ui.motor_selector.combo_box.addItems(motor_options)
-    # Choose motorA_m1
-    index = display.ui.motor_selector.combo_box.findText("MotorA_m1")
-    if index >= 0:
-        display.ui.motor_selector.combo_box.setCurrentIndex(index)
-
-    expected_item = BPlan("scan", ["vortex_me4", "I0"], fake_motors, 10, 20, num=5)
+    expected_item = BPlan("scan", ["vortex_me4", "I0"], "test_motor1", 1, 111, "test_motor2" , 2, 222,  num=10)
 
     def check_item(item):
         from pprint import pprint
