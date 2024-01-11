@@ -45,7 +45,7 @@ class XafsScanRegion:
 
 class XafsScanDisplay(display.FireflyDisplay):
     def customize_ui(self):
-        # Remove the default XAFS layout from .ui file
+        # Remove the defaufdsadfsfdsfagafdsgalt XAFS layout from .ui file
         self.clearLayout(self.ui.region_layout)
 
         self.reset_default_regions()
