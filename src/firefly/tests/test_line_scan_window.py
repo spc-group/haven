@@ -47,7 +47,7 @@ def test_line_scan_plan_queued(ffapp, qtbot, sim_registry):
     )
     
 
-    expected_item = BPlan("scan", ["vortex_me4", "I0"], "test_motor1", 1, 111, "test_motor2" , 2, 222,  num=10)
+    expected_item = BPlan("scan", ["vortex_me4", "I0"], "test_motor1", 1, 111, "test_motor2" , 2, 222,  num=10, md=None)
 
     def check_item(item):
         from pprint import pprint

@@ -109,7 +109,10 @@ class LineScanDisplay(display.FireflyDisplay):
         
         print(motor_args)
         # # Build the queue item
-        item = BPlan("scan", detectors, *motor_args, num=num_points, per_step=None, md=None)
+        item = BPlan("scan", detectors, *motor_args, num=num_points, 
+                     #per_step=None, 
+                     md=None
+                     )
         print(item)
 
         # Submit the item to the queueserver
