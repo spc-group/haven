@@ -26,7 +26,9 @@ def test_skip_existing_motors(sim_registry, mocker):
 
     """
     # Create an existing fake motor
-    m1 = motor.HavenMotor("255idVME:m1", name="kb_mirrors_horiz_upstream", labels={"motors"})
+    m1 = motor.HavenMotor(
+        "255idVME:m1", name="kb_mirrors_horiz_upstream", labels={"motors"}
+    )
     sim_registry.register(m1)
     # Mock the caget calls used to get the motor name
     mocked_caget = mocker.patch.object(motor, "caget")
@@ -44,7 +46,7 @@ def test_skip_existing_motors(sim_registry, mocker):
     # Check that the IOC name is set in labels
     motor1 = sim_registry.find(name="SLT V Upper")
     assert "VME_crate" in motor1._ophyd_labels_
-    
+
 
 def test_motor_signals():
     m = motor.HavenMotor("motor_ioc", name="test_motor")
