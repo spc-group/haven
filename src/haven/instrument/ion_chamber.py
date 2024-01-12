@@ -7,6 +7,7 @@ import time
 import warnings
 from collections import OrderedDict
 from typing import Dict, Generator
+from pprint import pprint
 
 import numpy as np
 import pint
@@ -92,6 +93,7 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
 
     values = ["1", "2", "5", "10", "20", "50", "100", "200", "500"]
     units = ["pA/V", "nA/V", "uA/V", "mA/V"]
+    offset_units = [s.split("/")[0] for s in units]
     offset_difference = -3  # How many levels higher should the offset be
 
     def __init__(self, *args, **kwargs):
@@ -112,20 +114,24 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
         """
         Amplifier gain (V/A), as floating-point number.
         """
-        val = float(self.values[self.sensitivity_value.get()])
+        # Convert the sensitivity to a proper number
+        val_idx = int(self.sensitivity_value.get(as_string=False))
+        val = float(self.values[val_idx])
+        # Determine multiplier based on the gain unit
         amps = [
             1e-12,  # pA
             1e-9,  # nA
-            1e-6,  # µA
+            1e-6,  # μA
             1e-3,  # mA
         ]
-        multiplier = amps[self.sensitivity_unit.get()]
+        unit_idx = int(self.sensitivity_unit.get(as_string=False))
+        multiplier = amps[unit_idx]
         inverse_gain = val * multiplier
         return 1 / inverse_gain
 
     def update_sensitivity_text(self, *args, obj: OphydObject, **kwargs):
-        val = self.values[self.sensitivity_value.get()]
-        unit = self.units[self.sensitivity_unit.get()]
+        val = self.values[int(self.sensitivity_value.get(as_string=False))]
+        unit = self.units[int(self.sensitivity_unit.get(as_string=False))]
         text = f"{val} {unit}"
         self.sensitivity_text.put(text, internal=True)
 
@@ -133,14 +139,14 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
         return level % len(self.values)
 
     def _level_to_unit(self, level):
-        return int(level / len(self.values))
+        return self.units[int(level / len(self.values))]
 
     def _get_sensitivity_level(
         self, mds: MultiDerivedSignal, items: SignalToValue
     ) -> int:
         "Given a sensitivity value and unit , transform to the desired level."
-        value = items[self.sensitivity_value]
-        unit = items[self.sensitivity_unit]
+        value = self.values.index(items[self.sensitivity_value])
+        unit = self.units.index(items[self.sensitivity_unit])
         # Determine sensitivity level
         new_level = value + unit * len(self.values)
         log.debug(
@@ -167,14 +173,12 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
             raise exceptions.GainOverflow(msg)
         # Return calculated gain and offset
         offset_value = self.values[self._level_to_value(new_offset)]
-        offset_unit = self.units[self._level_to_unit(new_offset)].split("/")[0]
+        offset_unit = self._level_to_unit(new_offset).split("/")[0]
         result = OrderedDict()
         result.update({self.sensitivity_unit: self._level_to_unit(new_level)})
         result.update({self.sensitivity_value: self._level_to_value(new_level)})
         result.update({self.offset_value: offset_value})
         result.update({self.offset_unit: offset_unit})
-        #     # set_all=1,
-        # }
         return result
 
     def _get_offset_current(
@@ -193,10 +197,6 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
         except ValueError:
             return 0
         return current
-
-    # It's easier to calculate gains by enum index, so override the apstools signals
-    sensitivity_value = Cpt(EpicsSignal, "sens_num", kind="config", string=False)
-    sensitivity_unit = Cpt(EpicsSignal, "sens_unit", kind="config", string=False)
 
     sensitivity_level = Cpt(
         MultiDerivedSignal,
