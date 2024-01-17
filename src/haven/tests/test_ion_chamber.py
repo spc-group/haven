@@ -1,4 +1,5 @@
 import time
+from unittest import mock
 
 import numpy as np
 import pytest
@@ -13,6 +14,7 @@ def preamp(sim_ion_chamber):
     preamp.sensitivity_unit._enum_strs = tuple(preamp.units)
     preamp.offset_value._enum_strs = tuple(preamp.values)
     preamp.offset_unit._enum_strs = tuple(preamp.offset_units)
+    preamp.gain_mode._enum_strs = ("LOW NOISE", "HIGH BW", "LOW DRIFT")
     return preamp
 
 
@@ -37,6 +39,21 @@ def test_put_gain_level(preamp):
     # Check that the preamp sensitivity offsets are moved
     assert preamp.offset_value.get(use_monitor=False) == "1"
     assert preamp.offset_unit.get(use_monitor=False) == "nA"
+
+
+def test_gain_level_settling(preamp, monkeypatch):
+    # Make it really low to start
+    preamp.sensitivity_level.set(27).wait(timeout=3)
+    preamp.gain_mode.set("LOW NOISE").wait(timeout=3)
+    # Set up patches to watch the real signals getting set
+    monkeypatch.setattr(preamp.sensitivity_value, 'set', mock.MagicMock())
+    monkeypatch.setattr(preamp.sensitivity_unit, 'set', mock.MagicMock()) 
+    # Now make the gain high so we can check the settle time
+    preamp.sensitivity_level.set(0)
+    # Check that the right settle time was used
+    preamp.sensitivity_value.set.assert_called_with(0, timeout=None, settle_time=2)
+    preamp.sensitivity_unit.set.assert_called_with("pA/V", timeout=None, settle_time=2)
+    
 
 
 def test_gain_signals(preamp):

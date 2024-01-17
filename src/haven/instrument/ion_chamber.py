@@ -6,12 +6,12 @@ import math
 import time
 import warnings
 from collections import OrderedDict
-from typing import Dict, Generator
+from typing import Dict, Generator, Optional
 from pprint import pprint
 
 import numpy as np
 import pint
-from apstools.devices import SRS570_PreAmplifier
+from apstools.devices.srs570_preamplifier import SRS570_PreAmplifier, calculate_settle_time
 from ophyd import Component as Cpt
 from ophyd import Device, EpicsSignal, EpicsSignalRO
 from ophyd import FormattedComponent as FCpt
@@ -81,6 +81,26 @@ class Voltmeter(AnalogInput):
     final_value = None
     volts = Cpt(EpicsSignal, ".VAL", kind="normal")
 
+
+class GainDerivedSignal(MultiDerivedSignal):
+    """A gain level signal that incorporates dynamic settling time."""
+    def set(self, value: OphydDataType, *, timeout: Optional[float] = None, settle_time: Optional[float] = "auto"):
+        # Calculate an auto settling time
+        if settle_time == "auto":
+            # Determine the new values that will be set
+            to_write = self.calculate_on_put(mds=self, value=value) or {}
+            # Calculate the correct settling time
+            settle_time_ = calculate_settle_time(
+                gain_value=to_write[self.parent.sensitivity_value],
+                gain_unit=to_write[self.parent.sensitivity_unit],
+                gain_mode=self.parent.gain_mode.get(),
+            )
+            print(to_write, settle_time_)
+        else:
+            settle_time_ = settle_time
+        # Call the actual set method to move the gain
+        return super().set(value, timeout=timeout, settle_time=settle_time_)
+        
 
 class IonChamberPreAmplifier(SRS570_PreAmplifier):
     """An SRS-570 pre-amplifier driven by an ion chamber.
@@ -199,7 +219,7 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
         return current
 
     sensitivity_level = Cpt(
-        MultiDerivedSignal,
+        GainDerivedSignal,
         attrs=["sensitivity_value", "sensitivity_unit", "offset_value", "offset_unit"],
         calculate_on_get=_get_sensitivity_level,
         calculate_on_put=_put_sensitivity_level,
