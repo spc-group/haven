@@ -198,7 +198,7 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
         result.update({self.sensitivity_value: self._level_to_value(new_level)})
         result.update({self.offset_value: offset_value})
         result.update({self.offset_unit: offset_unit})
-        result[self.set_all] = 1
+        # result[self.set_all] = 1
         return result
 
     def _get_offset_current(
