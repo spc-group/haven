@@ -95,7 +95,6 @@ class GainDerivedSignal(MultiDerivedSignal):
                 gain_unit=to_write[self.parent.sensitivity_unit],
                 gain_mode=self.parent.gain_mode.get(),
             )
-            print(to_write, settle_time_)
         else:
             settle_time_ = settle_time
         # Call the actual set method to move the gain
@@ -199,6 +198,7 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
         result.update({self.sensitivity_value: self._level_to_value(new_level)})
         result.update({self.offset_value: offset_value})
         result.update({self.offset_unit: offset_unit})
+        result[self.set_all] = 1
         return result
 
     def _get_offset_current(
@@ -220,7 +220,7 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
 
     sensitivity_level = Cpt(
         GainDerivedSignal,
-        attrs=["sensitivity_value", "sensitivity_unit", "offset_value", "offset_unit"],
+        attrs=["sensitivity_value", "sensitivity_unit", "offset_value", "offset_unit", "set_all"],
         calculate_on_get=_get_sensitivity_level,
         calculate_on_put=_put_sensitivity_level,
         kind=Kind.omitted,
