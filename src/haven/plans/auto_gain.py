@@ -19,10 +19,13 @@ __all__ = ["GainRecommender", "auto_gain"]
 class GainRecommender:
     """A recommendation engine for finding the best ion chamber gain*.
 
-    Responds to ion chamber voltage as the dependent variable but
+    Responds to ion chamber voltage as the dependent variable by
     changing the gain. If the voltage is above *volts_max* then the
-    next gain* level will be one higher, and if the voltage is below
-    *volts_min* then the next gain* level will be one lower.
+    next gain* level will be higher, and if the voltage is below
+    *volts_min* then the next gain* level will be lower. This engine
+    will find all the values between *volts_min* and *volts_max*,
+    assuming the output of the pre-amp changes monotonically with
+    gain.
 
     *Gain is actually sensitivity in the case of an SRS-570 preamp, so
      raising the sensitivity results in a lower gain.
@@ -31,44 +34,76 @@ class GainRecommender:
 
     volts_min: float
     volts_max: float
+    gain_min: int = 0
     gain_max: int = 27
     last_point: np.ndarray = None
+    dfs: list = None
+    big_step: int = 3
 
     def __init__(self, volts_min: float = 0.5, volts_max: float = 4.5):
         self.volts_min = volts_min
         self.volts_max = volts_max
 
     def tell(self, gains, volts):
-        new_gains = np.copy(gains)
-        # Adjust new_gains for devices that are out of range, with hysteresis
-        if self.last_point is None:
-            is_hysteretical = np.full_like(gains, True, dtype=bool)
-        else:
-            is_hysteretical = gains < self.last_point
         self.last_point = gains
-        is_low = volts < self.volts_min
-        new_gains[np.logical_or(is_low, is_hysteretical)] -= 1
-        is_high = volts > self.volts_max
-        new_gains[is_high] += 1
-        # Ensure we're within the bounds for gain values
-        new_gains[new_gains < 0] = 0
-        new_gains[new_gains > self.gain_max] = self.gain_max
-        # Check whether we need to move to a new point of not
-        if np.logical_or(is_low, is_high).any():
-            self.next_point = new_gains
-        else:
-            self.next_point = None
+        # Check if dataframes exist yet
+        if self.dfs is None:
+            self.dfs = [pd.DataFrame() for i in gains]
+        # Add this measurement to the dataframes
+        self.dfs = [pd.concat([df, pd.DataFrame(data={"gain": [gain], "volts": [volt]})], ignore_index=True)
+                    for gain, volt, df in zip(gains, volts, self.dfs)]
 
     def tell_many(self, xs, ys):
         for x, y in zip(xs, ys):
             self.tell(x, y)
 
     def ask(self, n, tell_pending=True):
+        """Figure out the next gain point based on the past ones we've measured."""
         if n != 1:
             raise NotImplementedError
-        if self.next_point is None:
+        # Get the gains to try next
+        next_point = [self.next_gain(df) for df in self.dfs]
+        if np.array_equal(next_point, self.last_point):
+            # We've already found the best point, so end the scan
             raise NoRecommendation
-        return self.next_point
+        return next_point
+
+    def next_gain(self, df: pd.DataFrame):
+        """Determine the next gain for this preamp based on past measurements.
+        
+        Parameters
+        ==========
+        df
+          The past measurements for this preamp. Expected to have
+          columns ["gain", "volts"].
+
+        """
+        # We're too low, so go up in gain (down in sensitivity)
+        if np.all(df.volts < self.volts_max):
+            # Determine step size
+            step = self.big_step if np.all(df.volts < self.volts_min) else 1
+            print(df.gain.min(), step)
+            # Determine next gain to use
+            new_gain = df.gain.min() - step
+            return np.min([new_gain, self.gain_max])
+        # We're too high, so go down in big steps
+        if np.all(df.volts > self.volts_min):
+            step = self.big_step if np.all(df.volts > self.volts_max) else 1
+            new_gain = df.gain.max() + step
+            return np.max([new_gain, self.gain_min])
+        # Fill in any missing values through the correct gain
+        values_in_range = df[(df.volts < self.volts_max) & (df.volts > self.volts_min)]
+        needed_gains = np.arange(
+            df[df.volts < self.volts_min].gain.max() + 1,
+            df[df.volts > self.volts_max].gain.max()
+        )
+        missing_gains = [gain for gain in needed_gains if gain not in values_in_range.gain]
+        if len(missing_gains) > 0:
+            return min(missing_gains)
+        # We have all the data we need, now decide on the best gain to use
+        target = (self.volts_min + self.volts_max) / 2
+        best = df.iloc[(df.volts - target).abs().argmin()]
+        return best.gain
 
 
 def auto_gain(
@@ -80,12 +115,10 @@ def auto_gain(
 ):
     """An adaptive Bluesky plan for optimizing pre-amp gains.
 
-    At each step, the plan will measure the pre-amp voltage via the
-    scaler. If the measured voltage for a pre-amp is outside the range
-    (*volts_min*, *volts_max*), then the gain for the next step will
-    be adjusted by one level. Once all detectors are within the
-    optimal range (or *max_count* iterations have been done), the scan
-    will end.
+    For each detector, the plan will search for the range of gains
+    within which the pre-amp output is between *volts_min* and
+    *volts_max*, and select the gain that produces a voltage closest
+    to the mid-point between *volts_min* and *volts_max*.
 
     Parameters
     ==========

@@ -10,11 +10,6 @@ from haven.instrument import ion_chamber
 @pytest.fixture()
 def preamp(sim_ion_chamber):
     preamp = sim_ion_chamber.preamp
-    preamp.sensitivity_value._enum_strs = tuple(preamp.values)
-    preamp.sensitivity_unit._enum_strs = tuple(preamp.units)
-    preamp.offset_value._enum_strs = tuple(preamp.values)
-    preamp.offset_unit._enum_strs = tuple(preamp.offset_units)
-    preamp.gain_mode._enum_strs = ("LOW NOISE", "HIGH BW", "LOW DRIFT")
     return preamp
 
 

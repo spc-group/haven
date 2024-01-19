@@ -152,6 +152,13 @@ def sim_ion_chamber(sim_registry):
         prefix="scaler_ioc", name="I00", labels={"ion_chambers"}, ch_num=2
     )
     sim_registry.register(ion_chamber)
+    # Set metadata
+    preamp = ion_chamber.preamp
+    preamp.sensitivity_value._enum_strs = tuple(preamp.values)
+    preamp.sensitivity_unit._enum_strs = tuple(preamp.units)
+    preamp.offset_value._enum_strs = tuple(preamp.values)
+    preamp.offset_unit._enum_strs = tuple(preamp.offset_units)
+    preamp.gain_mode._enum_strs = ("LOW NOISE", "HIGH BW", "LOW DRIFT")
     return ion_chamber
 
 
