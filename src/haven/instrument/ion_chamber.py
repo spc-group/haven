@@ -138,11 +138,13 @@ By setting the *gain_level* signal, the offset is
     def _get_gain_level(
         self, mds: MultiDerivedSignal, items: SignalToValue
     ) -> int:
-        "Given a sensitivity value and unit , transform to the desired gain level."
+        "Given a sensitivity value and unit, transform to the desired gain level."
         value = items[self.sensitivity_value]
         unit = items[self.sensitivity_unit]
         # Determine sensitivity level
         new_level = value + unit * len(self.values)
+        # Convert to gain by inverting
+        new_level = 27 - new_level
         log.debug(
             f"Getting sensitivity level {self.name}: {value} {unit} -> {new_level}"
         )
@@ -153,7 +155,7 @@ By setting the *gain_level* signal, the offset is
     ) -> SignalToValue:
         "Given a gain level, transform to the desired sensitivity value and unit."
         # Determine new values
-        new_level = value
+        new_level = 27 - value
         new_offset = max(new_level + self.offset_difference, 0)
         # Check for out of bounds
         lmin, lmax = (0, 27)

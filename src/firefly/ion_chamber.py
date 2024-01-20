@@ -1,8 +1,17 @@
+import qtawesome as qta
+
 from firefly import display
 
 
 class IonChamberDisplay(display.FireflyDisplay):
     """A GUI window for changing settings in an ion chamber."""
+
+    def customize_ui(self):
+        # Use qtawesome icons instead of unicode arrows
+        self.ui.gain_down_button.setText("")
+        self.ui.gain_down_button.setIcon(qta.icon("fa5s.arrow-left"))
+        self.ui.gain_up_button.setText("")
+        self.ui.gain_up_button.setIcon(qta.icon("fa5s.arrow-right"))
 
     def ui_filename(self):
         return "ion_chamber.ui"

@@ -214,11 +214,11 @@
          <property name="channel" stdset="0">
           <string>sig://${IC}.voltmeter.volts</string>
          </property>
-         <property name="enableRichText" stdset="0">
-          <bool>false</bool>
-         </property>
          <property name="displayFormat" stdset="0">
           <enum>PyDMLabel::Decimal</enum>
+         </property>
+         <property name="enableRichText" stdset="0">
+          <bool>false</bool>
          </property>
         </widget>
        </item>
@@ -439,7 +439,7 @@
           <string>Are you sure you want to proceed?</string>
          </property>
          <property name="pressValue" stdset="0">
-          <string>1</string>
+          <string>-1</string>
          </property>
          <property name="relativeChange" stdset="0">
           <bool>true</bool>
@@ -484,9 +484,6 @@
          <property name="PyDMToolTip" stdset="0">
           <string>Increase the pre-amp gain (lower sensitivity values)</string>
          </property>
-         <property name="monitorDisp" stdset="0">
-          <bool>false</bool>
-         </property>
          <property name="channel" stdset="0">
           <string>sig://${IC}.preamp.gain_level</string>
          </property>
@@ -506,7 +503,7 @@
           <string>Are you sure you want to proceed?</string>
          </property>
          <property name="pressValue" stdset="0">
-          <string>-1</string>
+          <string>1</string>
          </property>
          <property name="releaseValue" stdset="0">
           <string>None</string>
@@ -515,6 +512,9 @@
           <bool>true</bool>
          </property>
          <property name="writeWhenRelease" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="monitorDisp" stdset="0">
           <bool>false</bool>
          </property>
         </widget>

@@ -114,9 +114,6 @@
           <property name="PyDMToolTip" stdset="0">
            <string>Decrease the pre-amp gain (higher sensitivity values)</string>
           </property>
-          <property name="monitorDisp" stdset="0">
-           <bool>false</bool>
-          </property>
           <property name="channel" stdset="0">
            <string>sig://${IC}.preamp.gain_level</string>
           </property>
@@ -136,7 +133,7 @@
            <string>Are you sure you want to proceed?</string>
           </property>
           <property name="pressValue" stdset="0">
-           <string>1</string>
+           <string>-1</string>
           </property>
           <property name="releaseValue" stdset="0">
            <string>None</string>
@@ -145,6 +142,9 @@
            <bool>true</bool>
           </property>
           <property name="writeWhenRelease" stdset="0">
+           <bool>false</bool>
+          </property>
+          <property name="monitorDisp" stdset="0">
            <bool>false</bool>
           </property>
          </widget>
@@ -207,9 +207,6 @@
           <property name="PyDMToolTip" stdset="0">
            <string>Increase the pre-amp gain (lower sensitivity values)</string>
           </property>
-          <property name="monitorDisp" stdset="0">
-           <bool>false</bool>
-          </property>
           <property name="channel" stdset="0">
            <string>sig://${IC}.preamp.gain_level</string>
           </property>
@@ -229,7 +226,7 @@
            <string>Are you sure you want to proceed?</string>
           </property>
           <property name="pressValue" stdset="0">
-           <string>-1</string>
+           <string>1</string>
           </property>
           <property name="releaseValue" stdset="0">
            <string>None</string>
@@ -238,6 +235,9 @@
            <bool>true</bool>
           </property>
           <property name="writeWhenRelease" stdset="0">
+           <bool>false</bool>
+          </property>
+          <property name="monitorDisp" stdset="0">
            <bool>false</bool>
           </property>
          </widget>
@@ -380,11 +380,11 @@
              <property name="PyDMToolTip" stdset="0">
               <string>Whether the offset current is positive (+) or negative (-).</string>
              </property>
-             <property name="monitorDisp" stdset="0">
-              <bool>false</bool>
-             </property>
              <property name="channel" stdset="0">
               <string>sig://${IC}.preamp.offset_sign</string>
+             </property>
+             <property name="monitorDisp" stdset="0">
+              <bool>false</bool>
              </property>
             </widget>
            </item>
@@ -402,11 +402,11 @@
              <property name="PyDMToolTip" stdset="0">
               <string>The value for the sensitivity offset.</string>
              </property>
-             <property name="monitorDisp" stdset="0">
-              <bool>false</bool>
-             </property>
              <property name="channel" stdset="0">
               <string>sig://${IC}.preamp.offset_value</string>
+             </property>
+             <property name="monitorDisp" stdset="0">
+              <bool>false</bool>
              </property>
             </widget>
            </item>
@@ -424,11 +424,11 @@
              <property name="PyDMToolTip" stdset="0">
               <string>The units for the sensitivity offset.</string>
              </property>
-             <property name="monitorDisp" stdset="0">
-              <bool>false</bool>
-             </property>
              <property name="channel" stdset="0">
               <string>sig://${IC}.preamp.offset_unit</string>
+             </property>
+             <property name="monitorDisp" stdset="0">
+              <bool>false</bool>
              </property>
             </widget>
            </item>
@@ -469,9 +469,6 @@
           <property name="PyDMToolTip" stdset="0">
            <string>Force an update of the pre-amp's settings from the currently selected values.</string>
           </property>
-          <property name="monitorDisp" stdset="0">
-           <bool>false</bool>
-          </property>
           <property name="channel" stdset="0">
            <string>sig://${IC}.preamp.set_all</string>
           </property>
@@ -497,6 +494,9 @@
            <bool>false</bool>
           </property>
           <property name="writeWhenRelease" stdset="0">
+           <bool>false</bool>
+          </property>
+          <property name="monitorDisp" stdset="0">
            <bool>false</bool>
           </property>
          </widget>
@@ -573,11 +573,11 @@
             <property name="channel" stdset="0">
              <string>sig://${IC}.volts</string>
             </property>
-            <property name="enableRichText" stdset="0">
-             <bool>false</bool>
-            </property>
             <property name="displayFormat" stdset="0">
              <enum>PyDMLabel::Decimal</enum>
+            </property>
+            <property name="enableRichText" stdset="0">
+             <bool>false</bool>
             </property>
            </widget>
           </item>
@@ -706,11 +706,11 @@
             <property name="PyDMToolTip" stdset="0">
              <string>How long to measure when the detector is triggered.</string>
             </property>
-            <property name="monitorDisp" stdset="0">
-             <bool>false</bool>
-            </property>
             <property name="channel" stdset="0">
              <string>sig://${IC}.exposure_time</string>
+            </property>
+            <property name="monitorDisp" stdset="0">
+             <bool>false</bool>
             </property>
            </widget>
           </item>
@@ -906,11 +906,11 @@
             <property name="PyDMToolTip" stdset="0">
              <string/>
             </property>
-            <property name="monitorDisp" stdset="0">
-             <bool>false</bool>
-            </property>
             <property name="channel" stdset="0">
              <string>sig://${IC}.preset_count</string>
+            </property>
+            <property name="monitorDisp" stdset="0">
+             <bool>false</bool>
             </property>
            </widget>
           </item>
