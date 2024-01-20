@@ -103,7 +103,7 @@
            </size>
           </property>
           <property name="rules" stdset="0">
-           <string>[{&quot;name&quot;: &quot;Gain button lower range&quot;, &quot;property&quot;: &quot;Enable&quot;, &quot;initial_value&quot;: &quot;True&quot;, &quot;expression&quot;: &quot;ch[0] &lt; 27&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;sig://${IC}.preamp.sensitivity_level&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}], &quot;notes&quot;: &quot;If the sensitivity is at its highest setting, disable the button so users don't click it unnecessarily.&quot;}]</string>
+           <string>[{&quot;name&quot;: &quot;Gain button lower range&quot;, &quot;property&quot;: &quot;Enable&quot;, &quot;initial_value&quot;: &quot;True&quot;, &quot;expression&quot;: &quot;ch[0] &lt; 27&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;sig://${IC}.preamp.gain_level&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}], &quot;notes&quot;: &quot;If the sensitivity is at its highest setting, disable the button so users don't click it unnecessarily.&quot;}]</string>
           </property>
           <property name="alarmSensitiveContent" stdset="0">
            <bool>false</bool>
@@ -118,7 +118,7 @@
            <bool>false</bool>
           </property>
           <property name="channel" stdset="0">
-           <string>sig://${IC}.preamp.sensitivity_level</string>
+           <string>sig://${IC}.preamp.gain_level</string>
           </property>
           <property name="passwordProtected" stdset="0">
            <bool>false</bool>
@@ -196,7 +196,7 @@
            </size>
           </property>
           <property name="rules" stdset="0">
-           <string>[{&quot;name&quot;: &quot;Gain button upper range&quot;, &quot;property&quot;: &quot;Enable&quot;, &quot;initial_value&quot;: &quot;True&quot;, &quot;expression&quot;: &quot;ch[0] &gt; 0&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;sig://${IC}.preamp.sensitivity_level&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}], &quot;notes&quot;: &quot;&quot;}]</string>
+           <string>[{&quot;name&quot;: &quot;Gain button upper range&quot;, &quot;property&quot;: &quot;Enable&quot;, &quot;initial_value&quot;: &quot;True&quot;, &quot;expression&quot;: &quot;ch[0] &gt; 0&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;sig://${IC}.preamp.gain_level&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}], &quot;notes&quot;: &quot;&quot;}]</string>
           </property>
           <property name="alarmSensitiveContent" stdset="0">
            <bool>false</bool>
@@ -211,7 +211,7 @@
            <bool>false</bool>
           </property>
           <property name="channel" stdset="0">
-           <string>sig://${IC}.preamp.sensitivity_level</string>
+           <string>sig://${IC}.preamp.gain_level</string>
           </property>
           <property name="passwordProtected" stdset="0">
            <bool>false</bool>

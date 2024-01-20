@@ -16,9 +16,9 @@ def test_gain_level(sim_ion_chamber):
     preamp.offset_value.put(1),  # 2 uA/V
     preamp.offset_unit.put(2),
     # Check that the gain level moved
-    assert preamp.sensitivity_level.get(use_monitor=False) == 22
+    assert preamp.gain_level.get(use_monitor=False) == 22
     # Move the gain level
-    preamp.sensitivity_level.set(12).wait(timeout=3)
+    preamp.gain_level.set(12).wait(timeout=3)
     # Check that the preamp sensitivities are moved
     assert preamp.sensitivity_value.get(use_monitor=False) == 3  # 10 nA/V
     assert preamp.sensitivity_unit.get(use_monitor=False) == 1

@@ -85,7 +85,12 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
     """An SRS-570 pre-amplifier driven by an ion chamber.
 
     Has extra signals for walking up and down the sensitivity
-    range. By setting the *sensitivity_level* signal, the offset is
+    range. *gain_level* is corresponds to the inverse of the
+    combination of *sensitivity_value* and *sensitivity_unit*. Setting
+    *gain_level* to 0 sets *sensitivity_value* and *sensitivity_unit*
+    to "1 mA/V".
+
+By setting the *gain_level* signal, the offset is
     also set to be 10% of the sensitivity.
 
     """
@@ -130,10 +135,10 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
     def _level_to_unit(self, level):
         return int(level / len(self.values))
 
-    def _get_sensitivity_level(
+    def _get_gain_level(
         self, mds: MultiDerivedSignal, items: SignalToValue
     ) -> int:
-        "Given a sensitivity value and unit , transform to the desired level."
+        "Given a sensitivity value and unit , transform to the desired gain level."
         value = items[self.sensitivity_value]
         unit = items[self.sensitivity_unit]
         # Determine sensitivity level
@@ -143,10 +148,10 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
         )
         return new_level
 
-    def _put_sensitivity_level(
+    def _put_gain_level(
         self, mds: MultiDerivedSignal, value: OphydDataType
     ) -> SignalToValue:
-        "Given a sensitivity level, transform to the desired value and unit."
+        "Given a gain level, transform to the desired sensitivity value and unit."
         # Determine new values
         new_level = value
         new_offset = max(new_level + self.offset_difference, 0)
@@ -193,11 +198,11 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
     sensitivity_value = Cpt(EpicsSignal, "sens_num", kind="config", string=False)
     sensitivity_unit = Cpt(EpicsSignal, "sens_unit", kind="config", string=False)
 
-    sensitivity_level = Cpt(
+    gain_level = Cpt(
         MultiDerivedSignal,
         attrs=["sensitivity_value", "sensitivity_unit", "offset_value", "offset_unit"],
-        calculate_on_get=_get_sensitivity_level,
-        calculate_on_put=_put_sensitivity_level,
+        calculate_on_get=_get_gain_level,
+        calculate_on_put=_put_gain_level,
         kind=Kind.omitted,
     )
     offset_current = Cpt(
