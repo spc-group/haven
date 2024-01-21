@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>595</width>
-    <height>472</height>
+    <width>587</width>
+    <height>463</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -15,16 +15,22 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="PyDMLabel" name="PyDMLabel">
+    <widget class="PyDMLabel" name="name_label">
      <property name="font">
       <font>
+       <family>Sans Serif</family>
        <pointsize>14</pointsize>
        <weight>75</weight>
+       <italic>false</italic>
        <bold>true</bold>
       </font>
      </property>
      <property name="toolTip">
       <string/>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">font: 14pt &quot;Sans Serif&quot;;
+font-weight: bold;</string>
      </property>
      <property name="text">
       <string>I0</string>
@@ -67,14 +73,14 @@
       <item row="0" column="0">
        <widget class="QLabel" name="label">
         <property name="text">
-         <string>Sensitivity:</string>
+         <string>Gain:</string>
         </property>
        </widget>
       </item>
       <item row="0" column="1">
        <layout class="QHBoxLayout" name="horizontalLayout">
         <property name="spacing">
-         <number>0</number>
+         <number>5</number>
         </property>
         <item>
          <widget class="PyDMPushButton" name="gain_down_button">
@@ -103,7 +109,7 @@
            </size>
           </property>
           <property name="rules" stdset="0">
-           <string>[{&quot;name&quot;: &quot;Gain button lower range&quot;, &quot;property&quot;: &quot;Enable&quot;, &quot;initial_value&quot;: &quot;True&quot;, &quot;expression&quot;: &quot;ch[0] &lt; 27&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;sig://${IC}.preamp.gain_level&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}], &quot;notes&quot;: &quot;If the sensitivity is at its highest setting, disable the button so users don't click it unnecessarily.&quot;}]</string>
+           <string>[{&quot;name&quot;: &quot;Gain button lower range&quot;, &quot;property&quot;: &quot;Enable&quot;, &quot;initial_value&quot;: &quot;True&quot;, &quot;expression&quot;: &quot;ch[0] &gt; 0&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;sig://${IC}.preamp.gain_level&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}], &quot;notes&quot;: &quot;If the sensitivity is at its highest setting, disable the button so users don't click it unnecessarily.&quot;}]</string>
           </property>
           <property name="alarmSensitiveContent" stdset="0">
            <bool>false</bool>
@@ -113,6 +119,9 @@
           </property>
           <property name="PyDMToolTip" stdset="0">
            <string>Decrease the pre-amp gain (higher sensitivity values)</string>
+          </property>
+          <property name="monitorDisp" stdset="0">
+           <bool>false</bool>
           </property>
           <property name="channel" stdset="0">
            <string>sig://${IC}.preamp.gain_level</string>
@@ -144,30 +153,98 @@
           <property name="writeWhenRelease" stdset="0">
            <bool>false</bool>
           </property>
-          <property name="monitorDisp" stdset="0">
-           <bool>false</bool>
-          </property>
          </widget>
         </item>
         <item>
-         <widget class="PyDMEnumComboBox" name="PyDMEnumComboBox">
-          <property name="toolTip">
-           <string/>
+         <layout class="QHBoxLayout" name="horizontalLayout_15">
+          <property name="spacing">
+           <number>0</number>
           </property>
-          <property name="channel" stdset="0">
-           <string>sig://${IC}.preamp.sensitivity_value</string>
+          <property name="rightMargin">
+           <number>0</number>
           </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="PyDMEnumComboBox" name="PyDMEnumComboBox_2">
-          <property name="toolTip">
-           <string/>
-          </property>
-          <property name="channel" stdset="0">
-           <string>sig://${IC}.preamp.sensitivity_unit</string>
-          </property>
-         </widget>
+          <item>
+           <widget class="PyDMLabel" name="PyDMLabel_8">
+            <property name="font">
+             <font>
+              <family>Monospace</family>
+             </font>
+            </property>
+            <property name="toolTip">
+             <string/>
+            </property>
+            <property name="PyDMToolTip" stdset="0">
+             <string>The current gain level of the pre-amp.</string>
+            </property>
+            <property name="channel" stdset="0">
+             <string>sig://${IC}.preamp.gain_level</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="label_19">
+            <property name="font">
+             <font>
+              <family>Monospace</family>
+             </font>
+            </property>
+            <property name="text">
+             <string>:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="PyDMLabel" name="PyDMLabel_2">
+            <property name="font">
+             <font>
+              <family>Monospace</family>
+             </font>
+            </property>
+            <property name="toolTip">
+             <string/>
+            </property>
+            <property name="text">
+             <string>#.##</string>
+            </property>
+            <property name="precision" stdset="0">
+             <number>1</number>
+            </property>
+            <property name="showUnits" stdset="0">
+             <bool>false</bool>
+            </property>
+            <property name="precisionFromPV" stdset="0">
+             <bool>false</bool>
+            </property>
+            <property name="alarmSensitiveContent" stdset="0">
+             <bool>false</bool>
+            </property>
+            <property name="alarmSensitiveBorder" stdset="0">
+             <bool>true</bool>
+            </property>
+            <property name="PyDMToolTip" stdset="0">
+             <string>The gain of the amplifier</string>
+            </property>
+            <property name="channel" stdset="0">
+             <string>sig://${IC}.preamp.gain_db</string>
+            </property>
+            <property name="enableRichText" stdset="0">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="label_3">
+            <property name="font">
+             <font>
+              <family>Monospace</family>
+             </font>
+            </property>
+            <property name="text">
+             <string>dB (V/I)</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
         </item>
         <item>
          <widget class="PyDMPushButton" name="gain_up_button">
@@ -196,7 +273,7 @@
            </size>
           </property>
           <property name="rules" stdset="0">
-           <string>[{&quot;name&quot;: &quot;Gain button upper range&quot;, &quot;property&quot;: &quot;Enable&quot;, &quot;initial_value&quot;: &quot;True&quot;, &quot;expression&quot;: &quot;ch[0] &gt; 0&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;sig://${IC}.preamp.gain_level&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}], &quot;notes&quot;: &quot;&quot;}]</string>
+           <string>[{&quot;name&quot;: &quot;Gain button upper range&quot;, &quot;property&quot;: &quot;Enable&quot;, &quot;initial_value&quot;: &quot;True&quot;, &quot;expression&quot;: &quot;ch[0] &lt; 27&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;sig://${IC}.preamp.gain_level&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}], &quot;notes&quot;: &quot;&quot;}]</string>
           </property>
           <property name="alarmSensitiveContent" stdset="0">
            <bool>false</bool>
@@ -206,6 +283,9 @@
           </property>
           <property name="PyDMToolTip" stdset="0">
            <string>Increase the pre-amp gain (lower sensitivity values)</string>
+          </property>
+          <property name="monitorDisp" stdset="0">
+           <bool>false</bool>
           </property>
           <property name="channel" stdset="0">
            <string>sig://${IC}.preamp.gain_level</string>
@@ -237,61 +317,44 @@
           <property name="writeWhenRelease" stdset="0">
            <bool>false</bool>
           </property>
-          <property name="monitorDisp" stdset="0">
-           <bool>false</bool>
+         </widget>
+        </item>
+        <item>
+         <widget class="Line" name="line">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="PyDMLabel" name="PyDMLabel_2">
-          <property name="font">
-           <font>
-            <family>Monospace</family>
-           </font>
-          </property>
-          <property name="toolTip">
-           <string/>
-          </property>
-          <property name="text">
-           <string>#.##</string>
-          </property>
-          <property name="precision" stdset="0">
+         <layout class="QHBoxLayout" name="horizontalLayout_14">
+          <property name="spacing">
            <number>0</number>
           </property>
-          <property name="showUnits" stdset="0">
-           <bool>false</bool>
+          <property name="rightMargin">
+           <number>0</number>
           </property>
-          <property name="precisionFromPV" stdset="0">
-           <bool>true</bool>
-          </property>
-          <property name="alarmSensitiveContent" stdset="0">
-           <bool>false</bool>
-          </property>
-          <property name="alarmSensitiveBorder" stdset="0">
-           <bool>true</bool>
-          </property>
-          <property name="PyDMToolTip" stdset="0">
-           <string>The gain of the amplifier</string>
-          </property>
-          <property name="channel" stdset="0">
-           <string>sig://${IC}.preamp.gain_db</string>
-          </property>
-          <property name="enableRichText" stdset="0">
-           <bool>false</bool>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QLabel" name="label_3">
-          <property name="font">
-           <font>
-            <family>Monospace</family>
-           </font>
-          </property>
-          <property name="text">
-           <string>dB (V/I)</string>
-          </property>
-         </widget>
+          <item>
+           <widget class="PyDMEnumComboBox" name="sensitivity_value_combobox">
+            <property name="toolTip">
+             <string/>
+            </property>
+            <property name="channel" stdset="0">
+             <string>sig://${IC}.preamp.sensitivity_value</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="PyDMEnumComboBox" name="sensitivity_unit_combobox">
+            <property name="toolTip">
+             <string/>
+            </property>
+            <property name="channel" stdset="0">
+             <string>sig://${IC}.preamp.sensitivity_unit</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
         </item>
         <item>
          <spacer name="horizontalSpacer_2">
@@ -380,11 +443,11 @@
              <property name="PyDMToolTip" stdset="0">
               <string>Whether the offset current is positive (+) or negative (-).</string>
              </property>
-             <property name="channel" stdset="0">
-              <string>sig://${IC}.preamp.offset_sign</string>
-             </property>
              <property name="monitorDisp" stdset="0">
               <bool>false</bool>
+             </property>
+             <property name="channel" stdset="0">
+              <string>sig://${IC}.preamp.offset_sign</string>
              </property>
             </widget>
            </item>
@@ -402,11 +465,11 @@
              <property name="PyDMToolTip" stdset="0">
               <string>The value for the sensitivity offset.</string>
              </property>
-             <property name="channel" stdset="0">
-              <string>sig://${IC}.preamp.offset_value</string>
-             </property>
              <property name="monitorDisp" stdset="0">
               <bool>false</bool>
+             </property>
+             <property name="channel" stdset="0">
+              <string>sig://${IC}.preamp.offset_value</string>
              </property>
             </widget>
            </item>
@@ -424,11 +487,11 @@
              <property name="PyDMToolTip" stdset="0">
               <string>The units for the sensitivity offset.</string>
              </property>
-             <property name="channel" stdset="0">
-              <string>sig://${IC}.preamp.offset_unit</string>
-             </property>
              <property name="monitorDisp" stdset="0">
               <bool>false</bool>
+             </property>
+             <property name="channel" stdset="0">
+              <string>sig://${IC}.preamp.offset_unit</string>
              </property>
             </widget>
            </item>
@@ -445,74 +508,57 @@
              </property>
             </spacer>
            </item>
+           <item>
+            <widget class="PyDMPushButton" name="PyDMPushButton">
+             <property name="toolTip">
+              <string/>
+             </property>
+             <property name="text">
+              <string>Set All</string>
+             </property>
+             <property name="alarmSensitiveContent" stdset="0">
+              <bool>false</bool>
+             </property>
+             <property name="alarmSensitiveBorder" stdset="0">
+              <bool>false</bool>
+             </property>
+             <property name="PyDMToolTip" stdset="0">
+              <string>Force an update of the pre-amp's settings from the currently selected values.</string>
+             </property>
+             <property name="monitorDisp" stdset="0">
+              <bool>false</bool>
+             </property>
+             <property name="channel" stdset="0">
+              <string>sig://${IC}.preamp.set_all</string>
+             </property>
+             <property name="passwordProtected" stdset="0">
+              <bool>false</bool>
+             </property>
+             <property name="protectedPassword" stdset="0">
+              <string/>
+             </property>
+             <property name="showConfirmDialog" stdset="0">
+              <bool>false</bool>
+             </property>
+             <property name="confirmMessage" stdset="0">
+              <string>Are you sure you want to proceed?</string>
+             </property>
+             <property name="pressValue" stdset="0">
+              <string>1</string>
+             </property>
+             <property name="releaseValue" stdset="0">
+              <string>None</string>
+             </property>
+             <property name="relativeChange" stdset="0">
+              <bool>false</bool>
+             </property>
+             <property name="writeWhenRelease" stdset="0">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
           </layout>
          </widget>
-        </item>
-       </layout>
-      </item>
-      <item row="2" column="1">
-       <layout class="QHBoxLayout" name="horizontalLayout_4">
-        <item>
-         <widget class="PyDMPushButton" name="PyDMPushButton">
-          <property name="toolTip">
-           <string/>
-          </property>
-          <property name="text">
-           <string>Set All</string>
-          </property>
-          <property name="alarmSensitiveContent" stdset="0">
-           <bool>false</bool>
-          </property>
-          <property name="alarmSensitiveBorder" stdset="0">
-           <bool>false</bool>
-          </property>
-          <property name="PyDMToolTip" stdset="0">
-           <string>Force an update of the pre-amp's settings from the currently selected values.</string>
-          </property>
-          <property name="channel" stdset="0">
-           <string>sig://${IC}.preamp.set_all</string>
-          </property>
-          <property name="passwordProtected" stdset="0">
-           <bool>false</bool>
-          </property>
-          <property name="protectedPassword" stdset="0">
-           <string/>
-          </property>
-          <property name="showConfirmDialog" stdset="0">
-           <bool>false</bool>
-          </property>
-          <property name="confirmMessage" stdset="0">
-           <string>Are you sure you want to proceed?</string>
-          </property>
-          <property name="pressValue" stdset="0">
-           <string>1</string>
-          </property>
-          <property name="releaseValue" stdset="0">
-           <string>None</string>
-          </property>
-          <property name="relativeChange" stdset="0">
-           <bool>false</bool>
-          </property>
-          <property name="writeWhenRelease" stdset="0">
-           <bool>false</bool>
-          </property>
-          <property name="monitorDisp" stdset="0">
-           <bool>false</bool>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <spacer name="horizontalSpacer_3">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>40</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
         </item>
        </layout>
       </item>
@@ -573,11 +619,11 @@
             <property name="channel" stdset="0">
              <string>sig://${IC}.volts</string>
             </property>
-            <property name="displayFormat" stdset="0">
-             <enum>PyDMLabel::Decimal</enum>
-            </property>
             <property name="enableRichText" stdset="0">
              <bool>false</bool>
+            </property>
+            <property name="displayFormat" stdset="0">
+             <enum>PyDMLabel::Decimal</enum>
             </property>
            </widget>
           </item>
@@ -706,11 +752,11 @@
             <property name="PyDMToolTip" stdset="0">
              <string>How long to measure when the detector is triggered.</string>
             </property>
-            <property name="channel" stdset="0">
-             <string>sig://${IC}.exposure_time</string>
-            </property>
             <property name="monitorDisp" stdset="0">
              <bool>false</bool>
+            </property>
+            <property name="channel" stdset="0">
+             <string>sig://${IC}.exposure_time</string>
             </property>
            </widget>
           </item>
@@ -906,11 +952,11 @@
             <property name="PyDMToolTip" stdset="0">
              <string/>
             </property>
-            <property name="channel" stdset="0">
-             <string>sig://${IC}.preset_count</string>
-            </property>
             <property name="monitorDisp" stdset="0">
              <bool>false</bool>
+            </property>
+            <property name="channel" stdset="0">
+             <string>sig://${IC}.preset_count</string>
             </property>
            </widget>
           </item>
