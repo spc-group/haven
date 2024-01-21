@@ -33,33 +33,6 @@ class VoltmetersDisplay(display.FireflyDisplay):
             macros_["SCALER"] = self.ion_chambers[0].scaler_prefix
         super().__init__(args=args, macros=macros_, **kwargs)
 
-    def prepare_caqtdm_actions(self):
-        """Create QActions for opening scaler/MCS caQtDM panels.
-
-        Creates two actions, one for the scaler counter and one for
-        the multi-channel-scaler (MCS) controls.
-
-        """
-        self.caqtdm_actions = []
-        # Create an action for launching the scaler caQtDM file
-        action = QtWidgets.QAction(self)
-        action.setObjectName("launch_scaler_caqtdm_action")
-        action.setText("Scaler caQtDM")
-        action.triggered.connect(self.launch_scaler_caqtdm)
-        action.setIcon(qta.icon("fa5s.wrench"))
-        action.setToolTip("Launch the caQtDM panel for the scaler.")
-        self.caqtdm_actions.append(action)
-        # Create an action for launching the MCS caQtDM file
-        action = QtWidgets.QAction(self)
-        action.setObjectName("launch_mcs_caqtdm_action")
-        action.setText("MCS caQtDM")
-        action.triggered.connect(self.launch_mcs_caqtdm)
-        action.setIcon(qta.icon("fa5s.wrench"))
-        action.setToolTip(
-            "Launch the caQtDM panel for the multi-channel scaler controls."
-        )
-        self.caqtdm_actions.append(action)
-
     def customize_ui(self):
         # Delete existing voltmeter widgets
         for idx in reversed(range(self.voltmeters_layout.count())):
@@ -85,21 +58,6 @@ class VoltmetersDisplay(display.FireflyDisplay):
 
     def ui_filename(self):
         return "voltmeters.ui"
-
-    def launch_scaler_caqtdm(self):
-        device = self.ion_chambers[0]
-        caqtdm_macros = {
-            "P": f"{device.scaler_prefix}:",
-            "S": "scaler1",
-        }
-        super().launch_caqtdm(macros=caqtdm_macros, ui_file=self.caqtdm_scaler_ui_file)
-
-    def launch_mcs_caqtdm(self):
-        device = self.ion_chambers[0]
-        caqtdm_macros = {
-            "P": f"{device.scaler_prefix}:",
-        }
-        super().launch_caqtdm(macros=caqtdm_macros, ui_file=self.caqtdm_mcs_ui_file)
 
 
 # -----------------------------------------------------------------------------

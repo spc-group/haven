@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>595</width>
-    <height>472</height>
+    <width>587</width>
+    <height>463</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -15,16 +15,22 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="PyDMLabel" name="PyDMLabel">
+    <widget class="PyDMLabel" name="name_label">
      <property name="font">
       <font>
+       <family>Sans Serif</family>
        <pointsize>14</pointsize>
        <weight>75</weight>
+       <italic>false</italic>
        <bold>true</bold>
       </font>
      </property>
      <property name="toolTip">
       <string/>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">font: 14pt &quot;Sans Serif&quot;;
+font-weight: bold;</string>
      </property>
      <property name="text">
       <string>I0</string>
@@ -67,14 +73,14 @@
       <item row="0" column="0">
        <widget class="QLabel" name="label">
         <property name="text">
-         <string>Sensitivity:</string>
+         <string>Gain:</string>
         </property>
        </widget>
       </item>
       <item row="0" column="1">
        <layout class="QHBoxLayout" name="horizontalLayout">
         <property name="spacing">
-         <number>0</number>
+         <number>5</number>
         </property>
         <item>
          <widget class="PyDMPushButton" name="gain_down_button">
@@ -103,7 +109,7 @@
            </size>
           </property>
           <property name="rules" stdset="0">
-           <string>[{&quot;name&quot;: &quot;Gain button lower range&quot;, &quot;property&quot;: &quot;Enable&quot;, &quot;initial_value&quot;: &quot;True&quot;, &quot;expression&quot;: &quot;ch[0] &lt; 27&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;haven://${IC}.preamp.sensitivity_level&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}], &quot;notes&quot;: &quot;If the sensitivity is at its highest setting, disable the button so users don't click it unnecessarily.&quot;}]</string>
+           <string>[{&quot;name&quot;: &quot;Gain button lower range&quot;, &quot;property&quot;: &quot;Enable&quot;, &quot;initial_value&quot;: &quot;True&quot;, &quot;expression&quot;: &quot;ch[0] &gt; 0&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;haven://${IC}.preamp.gain_level&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}], &quot;notes&quot;: &quot;If the sensitivity is at its highest setting, disable the button so users don't click it unnecessarily.&quot;}]</string>
           </property>
           <property name="alarmSensitiveContent" stdset="0">
            <bool>false</bool>
@@ -118,100 +124,7 @@
            <bool>false</bool>
           </property>
           <property name="channel" stdset="0">
-           <string>haven://${IC}.preamp.sensitivity_level</string>
-          </property>
-          <property name="passwordProtected" stdset="0">
-           <bool>false</bool>
-          </property>
-          <property name="password" stdset="0">
-           <string/>
-          </property>
-          <property name="protectedPassword" stdset="0">
-           <string/>
-          </property>
-          <property name="showConfirmDialog" stdset="0">
-           <bool>false</bool>
-          </property>
-          <property name="confirmMessage" stdset="0">
-           <string>Are you sure you want to proceed?</string>
-          </property>
-          <property name="pressValue" stdset="0">
-           <string>1</string>
-          </property>
-          <property name="releaseValue" stdset="0">
-           <string>None</string>
-          </property>
-          <property name="relativeChange" stdset="0">
-           <bool>true</bool>
-          </property>
-          <property name="writeWhenRelease" stdset="0">
-           <bool>false</bool>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="PyDMEnumComboBox" name="PyDMEnumComboBox">
-          <property name="toolTip">
-           <string/>
-          </property>
-          <property name="channel" stdset="0">
-           <string>haven://${IC}.preamp.sensitivity_value</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="PyDMEnumComboBox" name="PyDMEnumComboBox_2">
-          <property name="toolTip">
-           <string/>
-          </property>
-          <property name="channel" stdset="0">
-           <string>haven://${IC}.preamp.sensitivity_unit</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="PyDMPushButton" name="gain_up_button">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="maximumSize">
-           <size>
-            <width>32</width>
-            <height>16777215</height>
-           </size>
-          </property>
-          <property name="toolTip">
-           <string/>
-          </property>
-          <property name="text">
-           <string>→</string>
-          </property>
-          <property name="iconSize">
-           <size>
-            <width>12</width>
-            <height>12</height>
-           </size>
-          </property>
-          <property name="rules" stdset="0">
-           <string>[{&quot;name&quot;: &quot;Gain button upper range&quot;, &quot;property&quot;: &quot;Enable&quot;, &quot;initial_value&quot;: &quot;True&quot;, &quot;expression&quot;: &quot;ch[0] &gt; 0&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;haven://${IC}.preamp.sensitivity_level&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}], &quot;notes&quot;: &quot;&quot;}]</string>
-          </property>
-          <property name="alarmSensitiveContent" stdset="0">
-           <bool>false</bool>
-          </property>
-          <property name="alarmSensitiveBorder" stdset="0">
-           <bool>false</bool>
-          </property>
-          <property name="PyDMToolTip" stdset="0">
-           <string>Increase the pre-amp gain (lower sensitivity values)</string>
-          </property>
-          <property name="monitorDisp" stdset="0">
-           <bool>false</bool>
-          </property>
-          <property name="channel" stdset="0">
-           <string>haven://${IC}.preamp.sensitivity_level</string>
+           <string>haven://${IC}.preamp.gain_level</string>
           </property>
           <property name="passwordProtected" stdset="0">
            <bool>false</bool>
@@ -243,55 +156,205 @@
          </widget>
         </item>
         <item>
-         <widget class="PyDMLabel" name="PyDMLabel_2">
-          <property name="font">
-           <font>
-            <family>Monospace</family>
-           </font>
+         <layout class="QHBoxLayout" name="horizontalLayout_15">
+          <property name="spacing">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <item>
+           <widget class="PyDMLabel" name="PyDMLabel_8">
+            <property name="font">
+             <font>
+              <family>Monospace</family>
+             </font>
+            </property>
+            <property name="toolTip">
+             <string/>
+            </property>
+            <property name="PyDMToolTip" stdset="0">
+             <string>The current gain level of the pre-amp.</string>
+            </property>
+            <property name="channel" stdset="0">
+             <string>haven://${IC}.preamp.gain_level</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="label_19">
+            <property name="font">
+             <font>
+              <family>Monospace</family>
+             </font>
+            </property>
+            <property name="text">
+             <string>:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="PyDMLabel" name="PyDMLabel_2">
+            <property name="font">
+             <font>
+              <family>Monospace</family>
+             </font>
+            </property>
+            <property name="toolTip">
+             <string/>
+            </property>
+            <property name="text">
+             <string>#.##</string>
+            </property>
+            <property name="precision" stdset="0">
+             <number>1</number>
+            </property>
+            <property name="showUnits" stdset="0">
+             <bool>false</bool>
+            </property>
+            <property name="precisionFromPV" stdset="0">
+             <bool>false</bool>
+            </property>
+            <property name="alarmSensitiveContent" stdset="0">
+             <bool>false</bool>
+            </property>
+            <property name="alarmSensitiveBorder" stdset="0">
+             <bool>true</bool>
+            </property>
+            <property name="PyDMToolTip" stdset="0">
+             <string>The gain of the amplifier</string>
+            </property>
+            <property name="channel" stdset="0">
+             <string>haven://${IC}.preamp.gain_db</string>
+            </property>
+            <property name="enableRichText" stdset="0">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="label_3">
+            <property name="font">
+             <font>
+              <family>Monospace</family>
+             </font>
+            </property>
+            <property name="text">
+             <string>dB (V/I)</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="PyDMPushButton" name="gain_up_button">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>32</width>
+            <height>16777215</height>
+           </size>
           </property>
           <property name="toolTip">
            <string/>
           </property>
           <property name="text">
-           <string>#.##</string>
+           <string>→</string>
           </property>
-          <property name="precision" stdset="0">
-           <number>0</number>
+          <property name="iconSize">
+           <size>
+            <width>12</width>
+            <height>12</height>
+           </size>
           </property>
-          <property name="showUnits" stdset="0">
-           <bool>false</bool>
-          </property>
-          <property name="precisionFromPV" stdset="0">
-           <bool>true</bool>
+          <property name="rules" stdset="0">
+           <string>[{&quot;name&quot;: &quot;Gain button upper range&quot;, &quot;property&quot;: &quot;Enable&quot;, &quot;initial_value&quot;: &quot;True&quot;, &quot;expression&quot;: &quot;ch[0] &lt; 27&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;haven://${IC}.preamp.gain_level&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}], &quot;notes&quot;: &quot;&quot;}]</string>
           </property>
           <property name="alarmSensitiveContent" stdset="0">
            <bool>false</bool>
           </property>
           <property name="alarmSensitiveBorder" stdset="0">
-           <bool>true</bool>
+           <bool>false</bool>
           </property>
           <property name="PyDMToolTip" stdset="0">
-           <string>The gain of the amplifier</string>
+           <string>Increase the pre-amp gain (lower sensitivity values)</string>
+          </property>
+          <property name="monitorDisp" stdset="0">
+           <bool>false</bool>
           </property>
           <property name="channel" stdset="0">
-           <string>haven://${IC}.preamp.gain_db</string>
+           <string>haven://${IC}.preamp.gain_level</string>
           </property>
-          <property name="enableRichText" stdset="0">
+          <property name="passwordProtected" stdset="0">
+           <bool>false</bool>
+          </property>
+          <property name="password" stdset="0">
+           <string/>
+          </property>
+          <property name="protectedPassword" stdset="0">
+           <string/>
+          </property>
+          <property name="showConfirmDialog" stdset="0">
+           <bool>false</bool>
+          </property>
+          <property name="confirmMessage" stdset="0">
+           <string>Are you sure you want to proceed?</string>
+          </property>
+          <property name="pressValue" stdset="0">
+           <string>1</string>
+          </property>
+          <property name="releaseValue" stdset="0">
+           <string>None</string>
+          </property>
+          <property name="relativeChange" stdset="0">
+           <bool>true</bool>
+          </property>
+          <property name="writeWhenRelease" stdset="0">
            <bool>false</bool>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QLabel" name="label_3">
-          <property name="font">
-           <font>
-            <family>Monospace</family>
-           </font>
-          </property>
-          <property name="text">
-           <string>dB (V/I)</string>
+         <widget class="Line" name="line">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
           </property>
          </widget>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_14">
+          <property name="spacing">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <item>
+           <widget class="PyDMEnumComboBox" name="sensitivity_value_combobox">
+            <property name="toolTip">
+             <string/>
+            </property>
+            <property name="channel" stdset="0">
+             <string>haven://${IC}.preamp.sensitivity_value</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="PyDMEnumComboBox" name="sensitivity_unit_combobox">
+            <property name="toolTip">
+             <string/>
+            </property>
+            <property name="channel" stdset="0">
+             <string>haven://${IC}.preamp.sensitivity_unit</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
         </item>
         <item>
          <spacer name="horizontalSpacer_2">
@@ -445,74 +508,57 @@
              </property>
             </spacer>
            </item>
+           <item>
+            <widget class="PyDMPushButton" name="PyDMPushButton">
+             <property name="toolTip">
+              <string/>
+             </property>
+             <property name="text">
+              <string>Set All</string>
+             </property>
+             <property name="alarmSensitiveContent" stdset="0">
+              <bool>false</bool>
+             </property>
+             <property name="alarmSensitiveBorder" stdset="0">
+              <bool>false</bool>
+             </property>
+             <property name="PyDMToolTip" stdset="0">
+              <string>Force an update of the pre-amp's settings from the currently selected values.</string>
+             </property>
+             <property name="monitorDisp" stdset="0">
+              <bool>false</bool>
+             </property>
+             <property name="channel" stdset="0">
+              <string>haven://${IC}.preamp.set_all</string>
+             </property>
+             <property name="passwordProtected" stdset="0">
+              <bool>false</bool>
+             </property>
+             <property name="protectedPassword" stdset="0">
+              <string/>
+             </property>
+             <property name="showConfirmDialog" stdset="0">
+              <bool>false</bool>
+             </property>
+             <property name="confirmMessage" stdset="0">
+              <string>Are you sure you want to proceed?</string>
+             </property>
+             <property name="pressValue" stdset="0">
+              <string>1</string>
+             </property>
+             <property name="releaseValue" stdset="0">
+              <string>None</string>
+             </property>
+             <property name="relativeChange" stdset="0">
+              <bool>false</bool>
+             </property>
+             <property name="writeWhenRelease" stdset="0">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
           </layout>
          </widget>
-        </item>
-       </layout>
-      </item>
-      <item row="2" column="1">
-       <layout class="QHBoxLayout" name="horizontalLayout_4">
-        <item>
-         <widget class="PyDMPushButton" name="PyDMPushButton">
-          <property name="toolTip">
-           <string/>
-          </property>
-          <property name="text">
-           <string>Set All</string>
-          </property>
-          <property name="alarmSensitiveContent" stdset="0">
-           <bool>false</bool>
-          </property>
-          <property name="alarmSensitiveBorder" stdset="0">
-           <bool>false</bool>
-          </property>
-          <property name="PyDMToolTip" stdset="0">
-           <string>Force an update of the pre-amp's settings from the currently selected values.</string>
-          </property>
-          <property name="monitorDisp" stdset="0">
-           <bool>false</bool>
-          </property>
-          <property name="channel" stdset="0">
-           <string>haven://${IC}.preamp.set_all</string>
-          </property>
-          <property name="passwordProtected" stdset="0">
-           <bool>false</bool>
-          </property>
-          <property name="protectedPassword" stdset="0">
-           <string/>
-          </property>
-          <property name="showConfirmDialog" stdset="0">
-           <bool>false</bool>
-          </property>
-          <property name="confirmMessage" stdset="0">
-           <string>Are you sure you want to proceed?</string>
-          </property>
-          <property name="pressValue" stdset="0">
-           <string>1</string>
-          </property>
-          <property name="releaseValue" stdset="0">
-           <string>None</string>
-          </property>
-          <property name="relativeChange" stdset="0">
-           <bool>false</bool>
-          </property>
-          <property name="writeWhenRelease" stdset="0">
-           <bool>false</bool>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <spacer name="horizontalSpacer_3">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>40</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
         </item>
        </layout>
       </item>
