@@ -22,12 +22,12 @@ def test_get_gain_level(preamp):
     preamp.offset_value.put(1),  # 2 uA/V
     preamp.offset_unit.put(2),
     # Check that the gain level moved
-    assert preamp.sensitivity_level.get(use_monitor=False) == 22
+    assert preamp.gain_level.get(use_monitor=False) == 5
 
 
 def test_put_gain_level(preamp):
     # Move the gain level
-    preamp.sensitivity_level.set(12).wait(timeout=3)
+    preamp.gain_level.set(15).wait(timeout=3)
     # Check that the preamp sensitivities are moved
     assert preamp.sensitivity_value.get(use_monitor=False) == "10"
     assert preamp.sensitivity_unit.get(use_monitor=False) == "nA/V"
@@ -38,18 +38,17 @@ def test_put_gain_level(preamp):
 
 def test_gain_level_settling(preamp, monkeypatch):
     # Make it really low to start
-    preamp.sensitivity_level.set(27).wait(timeout=3)
+    preamp.gain_level.set(0).wait(timeout=3)
     preamp.gain_mode.set("LOW NOISE").wait(timeout=3)
     # Set up patches to watch the real signals getting set
     monkeypatch.setattr(preamp.sensitivity_value, 'set', mock.MagicMock())
     monkeypatch.setattr(preamp.sensitivity_unit, 'set', mock.MagicMock()) 
     # Now make the gain high so we can check the settle time
-    preamp.sensitivity_level.set(0)
+    preamp.gain_level.set(27)
     # Check that the right settle time was used
-    preamp.sensitivity_value.set.assert_called_with(0, timeout=None, settle_time=2)
-    preamp.sensitivity_unit.set.assert_called_with("pA/V", timeout=None, settle_time=2)
+    preamp.sensitivity_value.set.assert_called_with(0, timeout=None, settle_time=3)
+    preamp.sensitivity_unit.set.assert_called_with("pA/V", timeout=None, settle_time=3)
     
-
 
 def test_gain_signals(preamp):
     # Change the preamp settings

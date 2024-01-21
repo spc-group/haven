@@ -159,6 +159,7 @@ def sim_ion_chamber(sim_registry):
     preamp.offset_value._enum_strs = tuple(preamp.values)
     preamp.offset_unit._enum_strs = tuple(preamp.offset_units)
     preamp.gain_mode._enum_strs = ("LOW NOISE", "HIGH BW", "LOW DRIFT")
+    preamp.gain_mode.set("LOW NOISE").wait(timeout=3)
     return ion_chamber
 
 
@@ -167,7 +168,11 @@ def I0(sim_registry):
     """A fake ion chamber named 'I0' on scaler channel 2."""
     FakeIonChamber = make_fake_device(IonChamber)
     ion_chamber = FakeIonChamber(
-        prefix="scaler_ioc", name="I0", labels={"ion_chambers"}, ch_num=2
+        prefix="scaler_ioc",
+        preamp_prefix="preamp_ioc:SR04:",
+        name="I0",
+        labels={"ion_chambers"},
+        ch_num=2,
     )
     sim_registry.register(ion_chamber)
     return ion_chamber

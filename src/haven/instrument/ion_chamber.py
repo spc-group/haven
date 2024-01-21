@@ -104,9 +104,14 @@ class GainDerivedSignal(MultiDerivedSignal):
 class IonChamberPreAmplifier(SRS570_PreAmplifier):
     """An SRS-570 pre-amplifier driven by an ion chamber.
 
-    Has extra signals for walking up and down the sensitivity
-    range. By setting the *sensitivity_level* signal, the offset is
-    also set to be 10% of the sensitivity.
+        Has extra signals for walking up and down the sensitivity
+        range. *gain_level* is corresponds to the inverse of the
+        combination of *sensitivity_value* and *sensitivity_unit*. Setting
+        *gain_level* to 0 sets *sensitivity_value* and *sensitivity_unit*
+        to "1 mA/V".
+
+    By setting the *gain_level* signal, the offset is
+        also set to be 10% of the sensitivity.
 
     """
 
@@ -160,7 +165,7 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
     def _level_to_unit(self, level):
         return self.units[int(level / len(self.values))]
 
-    def _get_sensitivity_level(
+    def _get_gain_level(
         self, mds: MultiDerivedSignal, items: SignalToValue
     ) -> int:
         "Given a sensitivity value and unit , transform to the desired level."
@@ -168,17 +173,19 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
         unit = self.units.index(items[self.sensitivity_unit])
         # Determine sensitivity level
         new_level = value + unit * len(self.values)
+        # Convert to gain by inverting
+        new_level = 27 - new_level
         log.debug(
             f"Getting sensitivity level {self.name}: {value} {unit} -> {new_level}"
         )
         return new_level
 
-    def _put_sensitivity_level(
+    def _put_gain_level(
         self, mds: MultiDerivedSignal, value: OphydDataType
     ) -> SignalToValue:
-        "Given a sensitivity level, transform to the desired value and unit."
+        "Given a gain level, transform to the desired sensitivity value and unit."
         # Determine new values
-        new_level = value
+        new_level = 27 - value
         new_offset = max(new_level + self.offset_difference, 0)
         # Check for out of bounds
         lmin, lmax = (0, 27)
@@ -218,11 +225,11 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
             return 0
         return current
 
-    sensitivity_level = Cpt(
+    gain_level = Cpt(
         GainDerivedSignal,
         attrs=["sensitivity_value", "sensitivity_unit", "offset_value", "offset_unit", "set_all"],
-        calculate_on_get=_get_sensitivity_level,
-        calculate_on_put=_put_sensitivity_level,
+        calculate_on_get=_get_gain_level,
+        calculate_on_put=_put_gain_level,
         kind=Kind.omitted,
     )
     offset_current = Cpt(
@@ -433,10 +440,9 @@ class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
         self.ch_num = ch_num
         self.ch_char = self.num_to_char(ch_num)
         # Determine which prefix to use for the scaler
-        if scaler_prefix is not None:
-            self.scaler_prefix = scaler_prefix
-        else:
-            self.scaler_prefix = prefix
+        if scaler_prefix is None:
+            scaler_prefix = prefix
+        self.scaler_prefix = scaler_prefix
         # Save an epics path to the preamp
         if preamp_prefix is None:
             preamp_prefix = prefix
@@ -602,7 +608,7 @@ async def load_ion_chamber(
     ic_idx = ch_num - 2
     # 5 pre-amps per labjack
     lj_num = int(ic_idx / 5)
-    lj_chan = (ic_idx % 5)
+    lj_chan = ic_idx % 5
     # Only use this ion chamber if it has a name
     try:
         name = await caget(desc_pv)
@@ -623,13 +629,13 @@ async def load_ion_chamber(
         voltmeter_prefix=f"{voltmeter_prefix}{lj_num}:Ai{lj_chan}",
         labels={"ion_chambers"},
     )
-    # Ensure the voltmeter is in differential mode to measure pre-amp
+    # Ensure the voltmeter is in single-ended mode to measure pre-amp
     if hasattr(ion_chamber, "voltmeter"):
         try:
             ion_chamber.voltmeter.differential.set(0).wait(timeout=1)
         except OpException as exc:
             msg = (
-                f"Could not set voltmeter {ion_chamber.name} channel differential state:"
+                f"Could not set voltmeter {ion_chamber.name} channel to single-ended mode:"
                 f" {exc}"
             )
             log.warning(msg)

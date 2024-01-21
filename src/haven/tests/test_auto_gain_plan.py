@@ -8,10 +8,10 @@ from haven import auto_gain, GainRecommender
 
 
 def test_plan_recommendations(sim_ion_chamber):
-    sim_ion_chamber.preamp.sensitivity_level.set(9).wait()
+    sim_ion_chamber.preamp.gain_level.set(18).wait()
     # Make a fake queue that accepts the second step
     queue = Queue()
-    queue.put({sim_ion_chamber.preamp.sensitivity_level.name: 10})
+    queue.put({sim_ion_chamber.preamp.gain_level.name: 17})
     queue.put(None)
     # Prepare the plan and make sure it generates messages
     plan = auto_gain(dets=[sim_ion_chamber], queue=queue)
@@ -19,8 +19,8 @@ def test_plan_recommendations(sim_ion_chamber):
     # Make sure the plan sets the gain values properly
     set_msgs = [msg for msg in msgs if msg.command == "set"]
     assert len(set_msgs) == 2
-    assert set_msgs[0].args[0] == 9.0  # Starting point
-    assert set_msgs[1].args[0] == 10.0  # First adaptive point
+    assert set_msgs[0].args[0] == 18  # Starting point
+    assert set_msgs[1].args[0] == 17  # First adaptive point
     # Make sure the plan triggers the ion chamber
     trigger_msgs = [msg for msg in msgs if msg.command == "trigger"]
     assert len(trigger_msgs) == 2

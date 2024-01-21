@@ -27,9 +27,6 @@ class GainRecommender:
     assuming the output of the pre-amp changes monotonically with
     gain.
 
-    *Gain is actually sensitivity in the case of an SRS-570 preamp, so
-     raising the sensitivity results in a lower gain.
-
     """
 
     volts_min: float
@@ -141,7 +138,7 @@ def auto_gain(
     dets = registry.findall(dets)
     # Prepare the recommendation enginer
     recommender = GainRecommender(volts_min=volts_min, volts_max=volts_max)
-    ind_keys = [det.preamp.sensitivity_level.name for det in dets]
+    ind_keys = [det.preamp.gain_level.name for det in dets]
     dep_keys = [det.volts.name for det in dets]
     rr, queue = recommender_factory(
         recommender,
@@ -152,11 +149,11 @@ def auto_gain(
     )
     # Start from the current gain settings
     first_point = {
-        det.preamp.sensitivity_level: det.preamp.sensitivity_level.get() for det in dets
+        det.preamp.gain_level: det.preamp.gain_level.get() for det in dets
     }
     # Make sure the detectors have the correct read attrs.
     old_kinds = {}
-    signals = [(det.preamp, det.preamp.sensitivity_level) for det in dets]
+    signals = [(det.preamp, det.preamp.gain_level) for det in dets]
     signals = [sig for tpl in signals for sig in tpl]
     for sig in signals:
         old_kinds[sig] = sig.kind
