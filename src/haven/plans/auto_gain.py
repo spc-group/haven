@@ -75,18 +75,17 @@ class GainRecommender:
           columns ["gain", "volts"].
 
         """
-        # We're too low, so go up in gain (down in sensitivity)
+        # We're too low, so go up in gain
         if np.all(df.volts < self.volts_max):
             # Determine step size
             step = self.big_step if np.all(df.volts < self.volts_min) else 1
-            print(df.gain.min(), step)
             # Determine next gain to use
-            new_gain = df.gain.min() - step
+            new_gain = df.gain.max() + step
             return np.min([new_gain, self.gain_max])
-        # We're too high, so go down in big steps
+        # We're too high, so go down in gain
         if np.all(df.volts > self.volts_min):
             step = self.big_step if np.all(df.volts > self.volts_max) else 1
-            new_gain = df.gain.max() + step
+            new_gain = df.gain.min() - step
             return np.max([new_gain, self.gain_min])
         # Fill in any missing values through the correct gain
         values_in_range = df[(df.volts < self.volts_max) & (df.volts > self.volts_min)]
@@ -96,7 +95,7 @@ class GainRecommender:
         )
         missing_gains = [gain for gain in needed_gains if gain not in values_in_range.gain]
         if len(missing_gains) > 0:
-            return min(missing_gains)
+            return max(missing_gains)
         # We have all the data we need, now decide on the best gain to use
         target = (self.volts_min + self.volts_max) / 2
         best = df.iloc[(df.volts - target).abs().argmin()]
