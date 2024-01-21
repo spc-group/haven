@@ -157,7 +157,11 @@ def I0(sim_registry):
     """A fake ion chamber named 'I0' on scaler channel 2."""
     FakeIonChamber = make_fake_device(IonChamber)
     ion_chamber = FakeIonChamber(
-        prefix="scaler_ioc", name="I0", labels={"ion_chambers"}, ch_num=2
+        prefix="scaler_ioc",
+        preamp_prefix="preamp_ioc:SR04:",
+        name="I0",
+        labels={"ion_chambers"},
+        ch_num=2,
     )
     sim_registry.register(ion_chamber)
     return ion_chamber

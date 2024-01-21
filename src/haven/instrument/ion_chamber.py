@@ -84,14 +84,14 @@ class Voltmeter(AnalogInput):
 class IonChamberPreAmplifier(SRS570_PreAmplifier):
     """An SRS-570 pre-amplifier driven by an ion chamber.
 
-    Has extra signals for walking up and down the sensitivity
-    range. *gain_level* is corresponds to the inverse of the
-    combination of *sensitivity_value* and *sensitivity_unit*. Setting
-    *gain_level* to 0 sets *sensitivity_value* and *sensitivity_unit*
-    to "1 mA/V".
+        Has extra signals for walking up and down the sensitivity
+        range. *gain_level* is corresponds to the inverse of the
+        combination of *sensitivity_value* and *sensitivity_unit*. Setting
+        *gain_level* to 0 sets *sensitivity_value* and *sensitivity_unit*
+        to "1 mA/V".
 
-By setting the *gain_level* signal, the offset is
-    also set to be 10% of the sensitivity.
+    By setting the *gain_level* signal, the offset is
+        also set to be 10% of the sensitivity.
 
     """
 
@@ -135,9 +135,7 @@ By setting the *gain_level* signal, the offset is
     def _level_to_unit(self, level):
         return int(level / len(self.values))
 
-    def _get_gain_level(
-        self, mds: MultiDerivedSignal, items: SignalToValue
-    ) -> int:
+    def _get_gain_level(self, mds: MultiDerivedSignal, items: SignalToValue) -> int:
         "Given a sensitivity value and unit, transform to the desired gain level."
         value = items[self.sensitivity_value]
         unit = items[self.sensitivity_unit]
@@ -415,10 +413,9 @@ class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
         self.ch_num = ch_num
         self.ch_char = self.num_to_char(ch_num)
         # Determine which prefix to use for the scaler
-        if scaler_prefix is not None:
-            self.scaler_prefix = scaler_prefix
-        else:
-            self.scaler_prefix = prefix
+        if scaler_prefix is None:
+            scaler_prefix = prefix
+        self.scaler_prefix = scaler_prefix
         # Save an epics path to the preamp
         if preamp_prefix is None:
             preamp_prefix = prefix
@@ -585,7 +582,7 @@ async def load_ion_chamber(
     # 5 pre-amps per labjack
     lj_num = int(ic_idx / 5)
     # Only use even labjack channels since it's a differential signal
-    lj_chan = (ic_idx % 5)
+    lj_chan = ic_idx % 5
     # Only use this ion chamber if it has a name
     try:
         name = await caget(desc_pv)
