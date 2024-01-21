@@ -29,9 +29,59 @@ prefix = "vme_crate_ioc:KB"
 device_class = "BladeSlits"
 
 [slits.whitebeam_slits]
-
+# A single rotating aperture slit, like the 25-ID white/pinkbeam slits
 prefix = "255ida:slits:US:"
 device_class = "ApertureSlits"
+pitch_motor = "m33"
+yaw_motor = "m34"
+horizontal_motor = "m35"
+diagonal_motor = "m36"
+
+# A bendable mirror, like the long KB at 25-ID-C
+[kb_mirrors.LongKB_Cdn]
+prefix = "255idcVME:LongKB_Cdn:"
+horiz_upstream_motor = "m33"
+horiz_downstream_motor = "m34"
+horiz_upstream_bender = "m21"
+horiz_downstream_bender = "m22"
+vert_upstream_motor = "m46"
+vert_downstream_motor = "m47"
+vert_upstream_bender = "m56"
+vert_downstream_bender = "m57"
+
+# A non-bendable mirror, like the KB at 25-ID-C
+[kb_mirrors.KB]
+prefix = "255idcVME:KB:"
+horiz_upstream_motor = "m35"
+horiz_downstream_motor = "m36"
+vert_upstream_motor = "m48"
+vert_downstream_motor = "m49"
+
+# A single bounch, high heat load mirror
+[mirrors.ORM1]
+prefix = "25ida:ORM1:"
+device_class = "HighHeatLoadMirror"
+bendable = false
+
+[mirrors.ORM2]
+
+prefix = "25ida:ORM2:"
+device_class = "HighHeatLoadMirror"
+bendable = true
+
+# An optical table with two vertical motors
+[table.downstream_table]
+prefix = "255idcVME:"
+transforms = "table_ds_trans:"
+pseudo_motors = "table_ds:"
+upstream_motor = "m21"
+downstream_motor = "m22"
+
+# An optical table with one vertical motor and one horizontal motor
+[table.upstream_table]
+prefix = "255idcVME:"
+vertical_motor = "m26"
+horizontal_motor = "m25"
 
 [area_detector.sim_det]
 

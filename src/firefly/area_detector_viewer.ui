@@ -130,7 +130,7 @@
                   <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                  </property>
                  <property name="channel" stdset="0">
-                  <string>sig://${AD}.cam.array_size.array_size_y</string>
+                  <string>haven://${AD}.cam.array_size.array_size_y</string>
                  </property>
                 </widget>
                </item>
@@ -153,7 +153,7 @@
                   <string>1224</string>
                  </property>
                  <property name="channel" stdset="0">
-                  <string>sig://${AD}.cam.array_size.array_size_x</string>
+                  <string>haven://${AD}.cam.array_size.array_size_x</string>
                  </property>
                 </widget>
                </item>
@@ -206,7 +206,7 @@
                   <string>[]</string>
                  </property>
                  <property name="channel" stdset="0">
-                  <string>sig://${AD}.cam.gain</string>
+                  <string>haven://${AD}.cam.gain</string>
                  </property>
                  <property name="tickPosition" stdset="0">
                   <enum>QSlider::TicksBelow</enum>
@@ -234,7 +234,7 @@
                   <string>Auto</string>
                  </property>
                  <property name="channel" stdset="0">
-                  <string>sig://${AD}.cam.gain_auto</string>
+                  <string>haven://${AD}.cam.gain_auto</string>
                  </property>
                  <property name="pressValue" stdset="0">
                   <string>1</string>
@@ -257,7 +257,7 @@
                   <string>[]</string>
                  </property>
                  <property name="channel" stdset="0">
-                  <string>sig://${AD}.cam.acquire_time</string>
+                  <string>haven://${AD}.cam.acquire_time</string>
                  </property>
                  <property name="tickPosition" stdset="0">
                   <enum>QSlider::TicksBelow</enum>
@@ -282,7 +282,7 @@
                   <string>Auto</string>
                  </property>
                  <property name="channel" stdset="0">
-                  <string>sig://${AD}.cam.acquire_time_auto</string>
+                  <string>haven://${AD}.cam.acquire_time_auto</string>
                  </property>
                  <property name="pressValue" stdset="0">
                   <string>1</string>
@@ -313,7 +313,7 @@
                 <bool>false</bool>
                </property>
                <property name="channel" stdset="0">
-                <string>sig://${AD}.cam.acquire</string>
+                <string>haven://${AD}.cam.acquire</string>
                </property>
                <property name="passwordProtected" stdset="0">
                 <bool>false</bool>
@@ -356,7 +356,7 @@
                 <string>[{&quot;name&quot;: &quot;enable_acquire_buttons&quot;, &quot;property&quot;: &quot;Enable&quot;, &quot;initial_value&quot;: &quot;&quot;, &quot;expression&quot;: &quot;ch[0] == 1&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;${PREFIX}cam1:Acquire&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}]}]</string>
                </property>
                <property name="channel" stdset="0">
-                <string>sig://${AD}.cam.acquire</string>
+                <string>haven://${AD}.cam.acquire</string>
                </property>
                <property name="pressValue" stdset="0">
                 <string>0</string>

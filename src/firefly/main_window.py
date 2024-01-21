@@ -4,9 +4,8 @@ from pathlib import Path
 
 from pydm import data_plugins
 from pydm.main_window import PyDMMainWindow
-
-# from qtpy.QtCore import Slot
 from qtpy import QtCore, QtGui, QtWidgets
+import qtawesome as qta
 
 from haven import load_config
 
@@ -40,6 +39,7 @@ class FireflyMainWindow(PyDMMainWindow):
         if len(caqtdm_actions) > 0:
             caqtdm_menu.addSeparator()
         for action in caqtdm_actions:
+            action.setIcon(qta.icon("fa5s.wrench"))
             caqtdm_menu.addAction(action)
 
     def closeEvent(self, event):
@@ -140,13 +140,21 @@ class FireflyMainWindow(PyDMMainWindow):
         # Motors sub-menu
         self.ui.menuMotors = QtWidgets.QMenu(self.ui.menubar)
         self.ui.menuMotors.setObjectName("menuMotors")
-        self.ui.menuMotors.setTitle("Motors")
+        self.ui.menuMotors.setTitle("Extra &Motors")
         self.ui.positioners_menu.addAction(self.ui.menuMotors.menuAction())
         # Menu to launch the Window to change energy
         self.ui.positioners_menu.addAction(app.show_energy_window_action)
         # Add optical components
-        self.ui.positioners_menu.addSeparator()
+        self.ui.positioners_menu.addSection("Slits")
         for action in app.slits_actions.values():
+            self.ui.positioners_menu.addAction(action)
+        self.ui.positioners_menu.addSection("Mirrors")
+        for action in app.kb_mirrors_actions.values():
+            self.ui.positioners_menu.addAction(action)
+        for action in app.mirror_actions.values():
+            self.ui.positioners_menu.addAction(action)
+        self.ui.positioners_menu.addSection("Tables")
+        for action in app.table_actions.values():
             self.ui.positioners_menu.addAction(action)
         # Scans menu
         self.ui.menuScans = QtWidgets.QMenu(self.ui.menubar)

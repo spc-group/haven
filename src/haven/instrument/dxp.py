@@ -421,7 +421,6 @@ def load_dxp_coros(config=None):
     if config is None:
         config = load_config()
     for name, cfg in config.get("dxp", {}).items():
-        print(name, cfg)
         yield make_dxp_device(
             device_name=name,
             prefix=cfg["prefix"],

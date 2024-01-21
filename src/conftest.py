@@ -191,9 +191,11 @@ def blade_slits(sim_registry):
 def aperture_slits(sim_registry):
     """A fake slit assembling using the rotary aperture design."""
     FakeSlits = make_fake_device(ApertureSlits)
-    slits = FakeSlits(
-        prefix="255ida:slits:US:", name="whitebeam_slits", labels={"slits"}
-    )
+    slits = FakeSlits( prefix="255ida:slits:US:",
+                       name="whitebeam_slits", pitch_motor="m3",
+                       yaw_motor="m4",
+                       horizontal_motor="m1",
+                       diagonal_motor="m2", labels={"slits"})
     sim_registry.register(slits)
     return slits
 
@@ -295,7 +297,7 @@ def shutters(sim_registry):
 
 @pytest.fixture(scope="session")
 def pydm_ophyd_plugin():
-    return pydm.data_plugins.plugin_for_address("sig://")
+    return pydm.data_plugins.plugin_for_address("haven://")
 
 
 qs_status = {

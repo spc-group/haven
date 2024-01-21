@@ -229,7 +229,7 @@ def test_mca_region_channels(xrf_display):
     mca_display = xrf_display.mca_displays[1]
     mca_display._embedded_widget = mca_display.open_file(force=True)
     xrf_display.mca_selected(is_selected=True, mca_num=2)
-    correct_address = "sig://vortex_me4.mcas.mca2.rois.roi0.hi_chan"
+    correct_address = "haven://vortex_me4.mcas.mca2.rois.roi0.hi_chan"
     region = plot_widget.region(mca_num=2, roi_num=0)
     assert region.hi_channel.address == correct_address
     region.hi_channel.value_slot(108)

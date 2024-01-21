@@ -109,18 +109,23 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
         """
         Called when sensitivity changes (EPICS CA monitor event).
         """
-        gain = self.computed_gain
+        gain = self.computed_gain()
         self.gain.put(gain)
         self.gain_db.put(10 * math.log10(gain), internal=True)
 
-    @property
     def computed_gain(self):
         """
         Amplifier gain (V/A), as floating-point number.
         """
         val = float(self.values[self.sensitivity_value.get()])
-        units = self.units[self.sensitivity_unit.get()]
-        inverse_gain = pint.Quantity(val, units).to("A/V").magnitude
+        amps = [
+            1e-12,  # pA
+            1e-9,  # nA
+            1e-6,  # µA
+            1e-3,  # mA
+        ]
+        multiplier = amps[self.sensitivity_unit.get()]
+        inverse_gain = val * multiplier
         return 1 / inverse_gain
 
     def update_sensitivity_text(self, *args, obj: OphydObject, **kwargs):

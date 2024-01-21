@@ -17,6 +17,7 @@ from qtpy.QtWidgets import QAction
 
 from haven import HavenMotor, load_config, registry
 from haven.exceptions import ComponentNotFound
+from haven.instrument.device import titelize
 
 from . import beamline_components_rc
 from .main_window import FireflyMainWindow, PlanMainWindow
@@ -149,7 +150,7 @@ class FireflyApplication(PyDMApplication):
         """
         # Setup actions for the various categories of devices
         self._prepare_device_windows(
-            device_label="motors",
+            device_label="extra_motors",
             attr_name="motor",
             ui_file="motor.py",
             device_key="MOTOR",
@@ -177,6 +178,28 @@ class FireflyApplication(PyDMApplication):
             attr_name="slits",
             ui_file="slits.py",
             device_key="DEVICE",
+            icon=qta.icon("mdi.crop"),
+        )
+        self._prepare_device_windows(
+            device_label="kb_mirrors",
+            attr_name="kb_mirrors",
+            ui_file="kb_mirrors.py",
+            device_key="DEVICE",
+            icon=qta.icon("msc.mirror"),
+        )
+        self._prepare_device_windows(
+            device_label="mirrors",
+            attr_name="mirror",
+            ui_file="mirror.py",
+            device_key="DEVICE",
+            icon=qta.icon("msc.mirror"),
+        )
+        self._prepare_device_windows(
+            device_label="tables",
+            attr_name="table",
+            ui_file="table.py",
+            device_key="DEVICE",
+            icon=qta.icon("mdi.table-furniture"),
         )
         self._prepare_device_windows(
             device_label="xrf_detectors",
@@ -301,6 +324,7 @@ class FireflyApplication(PyDMApplication):
         ui_file=None,
         window_slot=None,
         device_key="DEVICE",
+        icon=None,
     ):
         """Generic routine to be called for individual classes of devices.
 
@@ -333,10 +357,9 @@ class FireflyApplication(PyDMApplication):
           dictionary. If *device_key* is "DEVICE" (default), then the
           macros will be {"DEVICE": device.name}. Has no effect if
           *window_slot* is used.
-
+        icon
+          A QIcon that will be added to the action.
         """
-        # if device_label == "motors":
-        #     breakpoint()
         # We need a UI file, unless a custom window_slot is given
         if ui_file is None and window_slot is None:
             raise ValueError(
@@ -358,7 +381,10 @@ class FireflyApplication(PyDMApplication):
             # Create the window action
             action = QtWidgets.QAction(self)
             action.setObjectName(f"action_show_{attr_name}_{device.name}")
-            action.setText(device.name)
+            display_text = titelize(device.name)
+            action.setText(display_text)
+            if icon is not None:
+                action.setIcon(icon)
             actions[device.name] = action
             # Create a slot for opening the device window
             if window_slot is not None:
@@ -545,11 +571,13 @@ class FireflyApplication(PyDMApplication):
 
         """
         device_pyname = device.name.replace(" ", "_")
+        device_title = titelize(device.name)
         self.show_window(
             FireflyMainWindow,
             ui_dir / ui_file,
             name=f"FireflyMainWindow_{device_label}_{device_pyname}",
-            macros={device_key: device.name},
+            macros={device_key: device.name,
+                    f"{device_key}_TITLE": device_title},
         )
 
     def show_status_window(self, stylesheet_path=None):

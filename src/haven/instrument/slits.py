@@ -5,7 +5,7 @@ import asyncio
 import logging
 
 from apstools.devices import PVPositionerSoftDone
-from apstools.synApps.db_2slit import Optics2Slit2D_HV
+from apstools.synApps.db_2slit import Optics2Slit2D_HV, Optics2Slit1D
 from apstools.utils import SlitGeometry
 from ophyd import Component as Cpt
 from ophyd import DerivedSignal, Device, EpicsSignal
@@ -20,18 +20,15 @@ from .motor import HavenMotor
 log = logging.getLogger(__name__)
 
 
-class SlitMotor(HavenMotor):
-    readback = Cpt(DerivedSignal, derived_from="user_readback")
-    setpoint = Cpt(DerivedSignal, derived_from="user_setpoint")
-
-
 class PVPositionerWithTweaks(PVPositionerSoftDone):
+    user_readback = Cpt(DerivedSignal, derived_from="readback")
+    user_setpoint = Cpt(DerivedSignal, derived_from="setpoint")
     tweak_value = FCpt(EpicsSignal, "{prefix}{_setpoint_pv}_tweakVal.VAL")
     tweak_forward = FCpt(EpicsSignal, "{prefix}{_setpoint_pv}_tweak.B")
     tweak_reverse = FCpt(EpicsSignal, "{prefix}{_setpoint_pv}_tweak.A")
 
 
-class BladePair(Device):
+class BladePair(Optics2Slit1D):
     """
     EPICS synApps optics 2slit.db 1D support: xn, xp, size, center, sync
 
@@ -39,39 +36,32 @@ class BladePair(Device):
     virtual slit values with the actual motor positions.
     """
 
+    # Override these components to include the tweak signals
     xn = Cpt(PVPositionerWithTweaks, "", setpoint_pv="xn", readback_pv="t2.B")
     xp = Cpt(PVPositionerWithTweaks, "", setpoint_pv="xp", readback_pv="t2.A")
     size = Cpt(PVPositionerWithTweaks, "", setpoint_pv="size", readback_pv="t2.C")
     center = Cpt(PVPositionerWithTweaks, "", setpoint_pv="center", readback_pv="t2.D")
 
-    sync = Cpt(EpicsSignal, "sync", put_complete=True, kind="omitted")
 
-
-class BladeSlits(Device):
+class BladeSlits(Optics2Slit2D_HV):
     """Set of slits with blades that move in and out to control beam size."""
 
     h = Cpt(BladePair, "H")
     v = Cpt(BladePair, "V")
 
-    @property
-    def geometry(self):
-        """Return the slit 2D size and center as a namedtuple."""
-        pppp = [
-            round(obj.position, obj.precision)
-            for obj in (self.h.size, self.v.size, self.h.center, self.v.center)
-        ]
 
-        return SlitGeometry(*pppp)
+class SlitMotor(HavenMotor):
+    """An Ophyd device for a motor on a set of slits.
 
-    @geometry.setter
-    def geometry(self, value):
-        # first, test the input by assigning it to local vars
-        width, height, x, y = value
+    Similar to a regular motor with extra signals to give it the same
+    interface as a non-motor based slit parameter. Different
+    implementations of the slits support either provide pseudo motors,
+    or a different kind of record.
 
-        self.h.size.move(width)
-        self.v.size.move(height)
-        self.h.center.move(x)
-        self.v.center.move(y)
+    """
+
+    readback = Cpt(DerivedSignal, derived_from="user_readback")
+    setpoint = Cpt(DerivedSignal, derived_from="user_setpoint")
 
 
 class ApertureSlits(Device):
@@ -82,14 +72,62 @@ class ApertureSlits(Device):
 
     Based on the 25-ID-A whitebeam slits.
 
+    The motor parameters listed below specify which motor records
+    control which axis. The last piece of the PV prefix will be
+    removed, and the motor number added on. For example, if the prefix
+    is "255ida:slits:US:", and the pitch motor is "255ida:slits:m3",
+    then *pitch_motor* should be "m3".
+
+    Parameters
+    ==========
+    pitch_motor
+      The motor record suffix controlling the real pitch motor. Don't
+      include a field. E.g. "m3"
+    yaw_motor
+      The motor record suffix controlling the real yaw motor. Don't
+      include a field. E.g. "m3"
+    horizontal_motor
+      The motor record suffix controlling the real horizontal
+      motor. This is different from the horizontal slits
+      position. Don't include a field. E.g. "m3"
+    diagonal_motor
+      The motor record suffix controlling the real diagonal
+      motor. Don't include a field. E.g. "m3"
+
     """
 
-    class SlitAxis(Device):
-        size = Cpt(SlitMotor, "Size")
-        center = Cpt(SlitMotor, "Center")
+    def __init__(
+        self,
+        prefix: str,
+        *args,
+        pitch_motor: str,
+        yaw_motor: str,
+        horizontal_motor: str,
+        diagonal_motor: str,
+        **kwargs,
+    ):
+        # Determine the prefix for the motors
+        pieces = prefix.strip(":").split(":")
+        self.motor_prefix = ":".join(pieces[:-1])
+        self._pitch_motor = pitch_motor
+        self._yaw_motor = yaw_motor
+        self._horizontal_motor = horizontal_motor
+        self._diagonal_motor = diagonal_motor
+        super().__init__(prefix, *args, **kwargs)
 
+    class SlitAxis(Device):
+        size = Cpt(SlitMotor, "Size", labels={"motors"})
+        center = Cpt(SlitMotor, "Center", labels={"motors"})
+
+    # Individual slit directions
     h = Cpt(SlitAxis, "h")
     v = Cpt(SlitAxis, "v")
+
+    # Real motors that directly control the slits
+    pitch = FCpt(SlitMotor, "{self.motor_prefix}:{self._pitch_motor}", labels={"motors"})
+    yaw = FCpt(SlitMotor, "{self.motor_prefix}:{self._yaw_motor}", labels={"motors"})
+    horizontal = FCpt(SlitMotor, "{self.motor_prefix}:{self._horizontal_motor}", labels={"motors"})
+    diagonal = FCpt(SlitMotor, "{self.motor_prefix}:{self._diagonal_motor}", labels={"motors"})
 
 
 def load_slit_coros(config=None):
@@ -98,12 +136,28 @@ def load_slit_coros(config=None):
     # Create slits
     for name, slit_config in config.get("slits", {}).items():
         DeviceClass = globals().get(slit_config["device_class"])
+        prefix = slit_config["prefix"]
         # Check that it's a valid device class
         if DeviceClass is None:
             msg = f"slits.{name}.device_class={slit_config['device_class']}"
             raise exceptions.UnknownDeviceConfiguration(msg)
+        ioc_prefix = prefix.split(":")[0]
+        # Determine real motor PVs
+        motors = {}
+        if DeviceClass is ApertureSlits:
+            try:
+                motors.update(dict(
+                    horizontal_motor = slit_config["horizontal_motor"],
+                    diagonal_motor = slit_config["diagonal_motor"],
+                    pitch_motor = slit_config["pitch_motor"],
+                    yaw_motor = slit_config["yaw_motor"],
+                ))
+            except KeyError:
+                msg = f"Missing motors for slits.{name}.device_class={slit_config['device_class']}"
+                raise exceptions.UnknownDeviceConfiguration(msg)
+        # Create the device
         yield make_device(
-            DeviceClass, prefix=slit_config["prefix"], name=name, labels={"slits"}
+            DeviceClass, prefix=prefix, name=name, labels={"slits"}, **motors,
         )
 
 

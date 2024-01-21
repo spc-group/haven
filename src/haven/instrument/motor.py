@@ -8,6 +8,7 @@ from ophyd import EpicsMotor, EpicsSignal, EpicsSignalRO
 from .._iconfig import load_config
 from .device import aload_devices, make_device
 from .epics import caget
+from .instrument_registry import registry
 
 log = logging.getLogger(__name__)
 
@@ -83,6 +84,11 @@ def load_ioc_motor_coros(
 async def load_motor(prefix: str, motor_num: int, ioc_name: str = None):
     """Create the requested motor if it is reachable."""
     pv = f"{prefix}:m{motor_num+1}"
+    # Check that we're not duplicating a motor somewhere else (e.g. KB mirrors)
+    existing_pvs = [m.prefix for m in registry.findall(label="motors", allow_none=True)]
+    if pv in existing_pvs:
+        log.info(f"Motor for prefix {pv} already exists. Skipping.")
+        return
     # Get motor names
     config = load_config()
     # Get the motor name from the description PV
@@ -105,7 +111,7 @@ async def load_motor(prefix: str, motor_num: int, ioc_name: str = None):
         log.info(f"SKipping unnamed motor {motor_num}")
     else:
         # Create a new motor object
-        labels = {"motors", "baseline"}
+        labels = {"motors", "extra_motors", "baseline"}
         if ioc_name is not None:
             labels = set([ioc_name, *labels])
         return await make_device(HavenMotor, prefix=pv, name=name, labels=labels)
