@@ -24,16 +24,24 @@ $ python -m pip install 'haven-spc'
 ### Development (Conda)
 
 *haven* can also use *mamba* for dependency management, and
-*setuptools* for installation and development. First create the conda
-environment with mamba:
+*setuptools* for installation and development.
 
+First, download the package from github:
+
+```bash
+$ git clone https://github.com/spc-group/haven.git
+$ cd haven
 ```
+
+Then create the conda environment with mamba:
+
+```bash
 $ mamba env create -f environment.yml -n haven
 ```
 
-then install the package, in developer mode:
+lastly install the package, in developer mode:
 
-```
+```bash
 $ conda activate haven
 $ pip install -e .
 ```
