@@ -1,3 +1,5 @@
+from unittest.mock import MagicMock
+
 from queue import Queue
 
 import numpy as np
@@ -5,6 +7,7 @@ import pytest
 from bluesky_adaptive.recommendations import NoRecommendation
 
 from haven import auto_gain, GainRecommender
+from haven.plans import auto_gain as auto_gain_module
 
 
 def test_plan_recommendations(sim_ion_chamber):
@@ -24,6 +27,22 @@ def test_plan_recommendations(sim_ion_chamber):
     # Make sure the plan triggers the ion chamber
     trigger_msgs = [msg for msg in msgs if msg.command == "trigger"]
     assert len(trigger_msgs) == 2
+
+
+@pytest.mark.parametrize(
+    "prefer,target_volts",
+    [("middle", 2.5), ("lower", 0.5), ("upper", 4.5)],
+)
+def test_plan_prefer_arg(sim_ion_chamber, monkeypatch, prefer, target_volts):
+    """Check that the *prefer* argument works properly."""
+    sim_ion_chamber.preamp.gain_level.set(18).wait()
+    queue = Queue()
+    queue.put({sim_ion_chamber.preamp.gain_level.name: 17})
+    queue.put(None)
+    monkeypatch.setattr(auto_gain_module, "GainRecommender", MagicMock())
+    plan = auto_gain(dets=[sim_ion_chamber], queue=queue, prefer=prefer)
+    msgs = list(plan)
+    auto_gain_module.GainRecommender.assert_called_with(volts_min=0.5, volts_max=4.5, target_volts=target_volts)
 
 
 @pytest.fixture()
@@ -149,14 +168,16 @@ def test_recommender_no_solution(recommender):
     df = recommender.dfs[0]
     assert recommender.next_gain(df) == 9
 
-def test_recommender_correct_solution(recommender):
+@pytest.mark.parametrize("target_volts,gain", [(0.5, 10), (2.5, 9), (4.5, 8)])
+def test_recommender_correct_solution(target_volts, gain):
     """If the gain profile goes from too low to too high in one step, what should we report?"""
-    gains = [[8], [9], [10], [11]]
-    volts = [[5.2], [2.7], [1.25], [0.4]]
+    recommender = GainRecommender(target_volts=target_volts)
+    gains = [[7], [8], [9], [10], [11]]
+    volts = [[5.2], [4.1], [2.7], [1.25], [0.4]]
     recommender.tell_many(gains, volts)
     # Does it recommend the missing gain value?
     df = recommender.dfs[0]
-    assert recommender.next_gain(df) == 9
+    assert recommender.next_gain(df) == gain
 
 
 def test_recommender_gain_range_high(recommender):

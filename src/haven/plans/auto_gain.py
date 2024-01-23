@@ -31,15 +31,17 @@ class GainRecommender:
 
     volts_min: float
     volts_max: float
+    target_volts: float
     gain_min: int = 0
     gain_max: int = 27
     last_point: np.ndarray = None
     dfs: list = None
     big_step: int = 3
 
-    def __init__(self, volts_min: float = 0.5, volts_max: float = 4.5):
+    def __init__(self, volts_min: float = 0.5, volts_max: float = 4.5, target_volts: float = 2.5):
         self.volts_min = volts_min
         self.volts_max = volts_max
+        self.target_volts = target_volts
 
     def tell(self, gains, volts):
         self.last_point = gains
@@ -97,8 +99,11 @@ class GainRecommender:
         if len(missing_gains) > 0:
             return max(missing_gains)
         # We have all the data we need, now decide on the best gain to use
-        target = (self.volts_min + self.volts_max) / 2
-        best = df.iloc[(df.volts - target).abs().argmin()]
+        if len(values_in_range) > 0:
+            good_vals = values_in_range
+        else:
+            good_vals = df
+        best = good_vals.iloc[(good_vals.volts - self.target_volts).abs().argmin()]
         return best.gain
 
 
@@ -106,6 +111,7 @@ def auto_gain(
     dets="ion_chambers",
     volts_min: float = 0.5,
     volts_max: float = 4.5,
+    prefer: str = "middle",
     max_count: int = 28,
     queue: Queue = None,
 ):
@@ -125,6 +131,9 @@ def auto_gain(
       The minimum acceptable range for each ion chamber's voltage.
     volts_max
       The maximum acceptable range for each ion chamber's voltage.
+    prefer
+      Whether to shoot for the "lower", "middle" (default), or "upper"
+      portion of the voltage range.
     max_count
       The scan will end after *max_count* iterations even if an
       optimal gain has not been found for all pre-amps.
@@ -135,8 +144,17 @@ def auto_gain(
     """
     # Resolve the detector list into real devices
     dets = registry.findall(dets)
-    # Prepare the recommendation enginer
-    recommender = GainRecommender(volts_min=volts_min, volts_max=volts_max)
+    # Prepare the recommendation engine
+    targets = {
+        "lower": volts_min,
+        "middle": (volts_min + volts_max) / 2,
+        "upper": volts_max,
+    }
+    try:
+        target = targets[prefer]
+    except KeyError:
+        raise ValueError(f"Invalid value for *prefer* {prefer}. Choices are 'lower', 'middle', or 'upper'.")
+    recommender = GainRecommender(volts_min=volts_min, volts_max=volts_max, target_volts=target)
     ind_keys = [det.preamp.gain_level.name for det in dets]
     dep_keys = [det.volts.name for det in dets]
     rr, queue = recommender_factory(
