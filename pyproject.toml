@@ -38,6 +38,9 @@ haven_config = "haven._iconfig:print_config_value"
 firefly = "firefly.launcher:main"
 firefly_cameras = "firefly.launcher:cameras"
 
+[tool.setuptools.package-data]
+firefly = ["firefly.qss"]
+
 [build-system]
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"

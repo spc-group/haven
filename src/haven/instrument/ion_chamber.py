@@ -643,7 +643,8 @@ def load_ion_chamber_coros(config=None):
 
 
 def load_ion_chambers(config=None):
-    return asyncio.run(aload_devices(*load_ion_chamber_coros(config=config)))
+    loop = asyncio.get_event_loop()
+    return loop.run_until_complete(aload_devices(*load_ion_chamber_coros(config=config)))
 
 
 # -----------------------------------------------------------------------------
