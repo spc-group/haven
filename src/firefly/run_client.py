@@ -23,11 +23,24 @@ class DatabaseWorker(QObject):
     db_op_started = Signal()
     db_op_ended = Signal(list)  # (list of exceptions thrown)
 
-    def __init__(self, root_node, *args, **kwargs):
-        if root_node is None:
-            root_node = tiled_client()
-        self.root = root_node
+    def __init__(self, root_node=None, *args, **kwargs):
+        self._root = root_node
         super().__init__(*args, **kwargs)
+
+    def moveToThread(self, *args, **kwargs):
+        super().moveToThread(*args, **kwargs)
+
+    @property
+    def root(self):
+        # Make a new client if one has not been loaded yet
+        if self._root is None:
+            import threading
+            print("New client thread: ", threading.current_thread().ident)
+            self._root = tiled_client()
+            # print(id(self._root))
+            assert False
+        # Return the client
+        return self._root
 
     def set_filters(self, filters):
         log.debug(f"Setting new filters: {filters}")

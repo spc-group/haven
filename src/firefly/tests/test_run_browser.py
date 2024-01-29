@@ -4,21 +4,21 @@ from unittest.mock import MagicMock
 import numpy as np
 import pandas as pd
 import pytest
-from pyqtgraph import PlotItem, PlotWidget
+from pyqtgraph import PlotItem, PlotWidget, ImageView, ImageItem
 from qtpy.QtCore import Qt
 from tiled.adapters.mapping import MapAdapter
 from tiled.adapters.xarray import DatasetAdapter
 from tiled.client import Context, from_context
 from tiled.server.app import build_app
 
-from firefly.run_browser import RunBrowserDisplay
+from firefly.run_browser import RunBrowserDisplay, unsnake
 from firefly.run_client import DatabaseWorker
 
 log = logging.getLogger(__name__)
 
 
 def wait_for_runs_model(display, qtbot):
-    with qtbot.waitSignal(display.runs_model_changed):
+    with qtbot.waitSignal(display.runs_model_changed, timeout=1000):
         pass
 
 
@@ -29,6 +29,16 @@ run1 = pd.DataFrame(
         "It_net_counts": np.abs(np.sin(np.linspace(0, 4 * np.pi, num=100))),
         "I0_net_counts": np.linspace(1, 2, num=100),
     }
+)
+
+grid_scan = pd.DataFrame(
+    {
+        'CdnIPreKb': np.linspace(0, 104, num=105),
+        "It_net_counts": np.linspace(0, 104, num=105),
+        "aerotech_horiz": np.linspace(0, 104, num=105),
+        "aerotech_vert": np.linspace(0, 104, num=105),
+    }
+        
 )
 
 hints = {
@@ -69,6 +79,38 @@ bluesky_mapping = {
                 "uid": "9d33bf66-9701-4ee3-90f4-3be730bc226c",
                 "hints": {"dimensions": [[["pitch2"], "primary"]]},
             }
+        },
+    ),
+    # 2D grid scan map data
+    "85573831-f4b4-4f64-b613-a6007bf03a8d": MapAdapter(
+        {
+            "primary": MapAdapter(
+                {
+                    "data": DatasetAdapter.from_dataset(grid_scan.to_xarray()),
+                }, metadata={
+                    "descriptors": [{"hints": {'Ipreslit': {'fields': ['Ipreslit_net_counts']},
+                                               'CdnIPreKb': {'fields': ['CdnIPreKb_net_counts']},
+                                               'I0': {'fields': ['I0_net_counts']},
+                                               'CdnIt': {'fields': ['CdnIt_net_counts']},
+                                               'aerotech_vert': {'fields': ['aerotech_vert']},
+                                               'aerotech_horiz': {'fields': ['aerotech_horiz']},
+                                               'Ipre_KB': {'fields': ['Ipre_KB_net_counts']},
+                                               'CdnI0': {'fields': ['CdnI0_net_counts']},
+                                               'It': {'fields': ['It_net_counts']}}}]
+                }),
+        },
+        metadata={
+            "start": {
+                "plan_name": "grid_scan",
+                "uid": "85573831-f4b4-4f64-b613-a6007bf03a8d",
+                "hints": {
+                    'dimensions': [[['aerotech_vert'], 'primary'],
+                                   [['aerotech_horiz'], 'primary']],
+                    'gridding': 'rectilinear'
+                },
+                "shape": [5, 21],
+                "extents": [[-100, 100], [-100, 100]],
+            },
         },
     ),
 }
@@ -176,7 +218,7 @@ def test_1d_plot_signal_memory(client, display):
     assert isinstance(plot_widget, PlotWidget)
     assert isinstance(plot_item, PlotItem)
     # Update the list of runs and see if the controls get updated
-    display._db_worker.selected_runs = client.values()
+    display._db_worker.selected_runs = client.values()[:2]
     display.update_1d_signals()
     # Check signals in comboboxes
     cb = display.ui.signal_y_combobox
@@ -207,8 +249,8 @@ def test_1d_hinted_signals(client, display):
         combobox.findText("It_net_counts") == -1
     ), f"unhinted signal found in {combobox.objectName()}."
 
-
-@pytest.mark.skip(reason="Need to figure out why tiled fails with this test.")
+# Need to figure out why tiled fails with this test.
+@pytest.mark.xfail
 def test_update_1d_plot(client, display, qtbot):
     run = client.values()[0]
     run_data = run["primary"]["data"].read()
@@ -241,6 +283,67 @@ def test_update_1d_plot(client, display, qtbot):
     np.testing.assert_almost_equal(ydata, expected_ydata)
 
 
+def test_2d_plot_signals(client, display):
+    # Check that the 1D plot was created
+    plot_widget = display.ui.plot_2d_view
+    plot_item = display.plot_2d_item
+    assert isinstance(plot_widget, ImageView)
+    assert isinstance(plot_item, ImageItem)
+    # Update the list of runs and see if the controls get updated
+    display._db_worker.selected_runs = [client["85573831-f4b4-4f64-b613-a6007bf03a8d"]]
+    display._db_worker.selected_runs_changed.emit([])
+    # Check signals in checkboxes
+    combobox = display.ui.signal_value_combobox
+    assert combobox.findText("It_net_counts") > -1
+
+
+def test_update_2d_plot(client, display, qtbot):
+    # Load test data
+    run = client["85573831-f4b4-4f64-b613-a6007bf03a8d"]
+    run_data = run["primary"]["data"].read()
+    with qtbot.waitSignal(display.plot_1d_changed, timeout=500):
+        display._db_worker.selected_runs_changed.emit([])
+    # Set the controls to describe the data we want to test
+    val_combobox = display.ui.signal_value_combobox
+    val_combobox.addItem("It_net_counts")
+    val_combobox.setCurrentText("It_net_counts")
+    display.ui.logarithm_checkbox_2d.setChecked(True)
+    display.ui.invert_checkbox_2d.setChecked(True)
+    display.ui.gradient_checkbox_2d.setChecked(True)
+    # Update the plots
+    display._db_worker.selected_runs = [run]
+    display.update_2d_plot()
+    # Determine what the image data should look like
+    expected_data = run_data.It_net_counts
+    expected_data = expected_data.values.reshape((5, 21)).T
+    # Check that the data were added
+    image = display.plot_2d_item.image
+    np.testing.assert_almost_equal(image, expected_data)
+    # Check that the axes were formatted correctly
+    axes = display.plot_2d_view.view.axes
+    xaxis = axes['bottom']['item']
+    yaxis = axes['left']['item']
+    # from pprint import pprint
+    # pprint(dir(xaxis))
+    # pprint(dir(axes['bottom']['item']))
+    # print(axes['bottom']['item'].labelText())
+    assert xaxis.labelText == "aerotech_horiz"
+    assert yaxis.labelText == "aerotech_vert"
+    assert display.plot_2d_view.view.rect() == (-100, 100)
+
+
+def test_unsnake():
+    # Make a snaked array
+    arr = np.arange(27).reshape((3, 3, 3))
+    snaked = np.copy(arr)
+    snaked[::2] = snaked[::2, ::-1]
+    snaked[:, ::2] = snaked[:, ::2, ::-1]
+    # Do the unsnaking
+    unsnaked = unsnake(snaked, [False, True, True])
+    # Check the result
+    np.testing.assert_equal(arr, unsnaked)
+
+
 def test_update_multi_plot(client, display, qtbot):
     run = client.values()[0]
     run_data = run["primary"]["data"].read()
@@ -253,7 +356,7 @@ def test_update_multi_plot(client, display, qtbot):
     display.ui.multi_signal_x_combobox.addItem("energy_energy")
     display.ui.multi_signal_x_combobox.setCurrentText("energy_energy")
     display.multi_y_signals = ["energy_energy"]
-    display._db_worker.selected_runs = [run]
+    display._db_worker.selected_runsb = [run]
     # Update the plots
     display.update_multi_plot()
     # Check that the data were added

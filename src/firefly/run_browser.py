@@ -7,7 +7,7 @@ import qtawesome as qta
 import yaml
 from matplotlib.colors import TABLEAU_COLORS
 from pydantic.error_wrappers import ValidationError
-from pyqtgraph import PlotItem, PlotWidget
+from pyqtgraph import PlotItem, PlotWidget, ImageView
 from qtpy.QtCore import Qt, QThread, Signal
 from qtpy.QtGui import QStandardItem, QStandardItemModel
 from qtpy.QtWidgets import QWidget
@@ -21,6 +21,35 @@ log = logging.getLogger(__name__)
 
 colors = list(TABLEAU_COLORS.values())
 
+
+def unsnake(arr: np.ndarray, snaking: list) -> np.ndarray:
+    """Unsnake a nump array.
+
+    For each axis in *arr*, there should be a corresponding True/False
+    in *snaking* whether that axis should have alternating rows. The
+    first entry is ignored as it doesn't make sense to snake the first
+    axis.
+    
+    Returns
+    =======
+    unsnaked
+      A copy of *arr* with the odd-numbered axes flipped (if indicated
+      by *snaking*).
+
+    """
+    # arr = np.copy(arr)
+    # Create some slice object for easier manipulation
+    full_axis = slice(None)
+    alternating = slice(None, None, 2)
+    flipped = slice(None, None, -1)
+    # Flip each axis if necessary (skipping the first axis)
+    for axis, is_snaked in enumerate(snaking[1:]):
+        if not is_snaked:
+            continue
+        slices = (full_axis,) * axis
+        slices += (alternating,)
+        arr[slices] = arr[slices + (flipped,)]
+    return arr
 
 class FiltersWidget(QWidget):
     returnPressed = Signal()
@@ -53,6 +82,15 @@ class Browser1DPlotWidget(PlotWidget):
         super().__init__(parent=parent, background=background, plotItem=plot_item)
 
 
+class Browser2DPlotWidget(ImageView):
+
+    """A plot widget for 2D maps."""
+    def __init__(self, *args, view=None, **kwargs):
+        if view is None:
+            view = PlotItem()
+        super().__init__(*args, view=view, **kwargs)
+        
+
 class RunBrowserDisplay(display.FireflyDisplay):
     runs_model: QStandardItemModel
     _run_col_names: Sequence = [
@@ -74,6 +112,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
     runs_model_changed = Signal(QStandardItemModel)
     plot_1d_changed = Signal(object)
     filters_changed = Signal(dict)
+    load_distinct_fields = Signal()
 
     def __init__(self, root_node=None, args=None, macros=None, **kwargs):
         super().__init__(args=args, macros=macros, **kwargs)
@@ -87,26 +126,31 @@ class RunBrowserDisplay(display.FireflyDisplay):
         worker = DatabaseWorker(root_node=root_node)
         self._db_worker = worker
         worker.moveToThread(thread)
+        # Set up filters
+        worker.new_message.connect(self.show_message)
+        self.filters_changed.connect(worker.set_filters)
+        self.update_filters()
         # Connect signals/slots
         thread.started.connect(worker.load_all_runs)
         worker.all_runs_changed.connect(self.set_runs_model_items)
         worker.selected_runs_changed.connect(self.update_metadata)
         worker.selected_runs_changed.connect(self.update_1d_signals)
+        worker.selected_runs_changed.connect(self.update_2d_signals)
         worker.selected_runs_changed.connect(self.update_1d_plot)
+        worker.selected_runs_changed.connect(self.update_2d_plot)
         worker.selected_runs_changed.connect(self.update_multi_plot)
         worker.db_op_started.connect(self.disable_run_widgets)
         worker.db_op_ended.connect(self.enable_run_widgets)
         self.runs_selected.connect(worker.load_selected_runs)
         self.ui.refresh_runs_button.clicked.connect(worker.load_all_runs)
-        self.filters_changed.connect(worker.set_filters)
-        worker.new_message.connect(self.show_message)
         # Make sure filters are current
         self.update_filters()
         # Start the thread
         thread.start()
         # Get distinct fields so we can populate the comboboxes
+        self.load_distinct_fields.connect(worker.load_distinct_fields)
         worker.distinct_fields_changed.connect(self.update_combobox_items)
-        worker.load_distinct_fields()
+        self.load_distinct_fields.emit()
 
     def update_combobox_items(self, fields):
         for field_name, cb in [
@@ -118,8 +162,10 @@ class RunBrowserDisplay(display.FireflyDisplay):
             ("edge", self.ui.filter_edge_combobox),
         ]:
             if field_name in fields.keys():
+                old_text = cb.currentText()
                 cb.clear()
                 cb.addItems(fields[field_name])
+                cb.setCurrentText(old_text)
 
     def customize_ui(self):
         self.load_models()
@@ -127,6 +173,8 @@ class RunBrowserDisplay(display.FireflyDisplay):
         self.ui.run_tableview.selectionModel().selectionChanged.connect(
             self.update_selected_runs
         )
+        self.ui.refresh_runs_button.setIcon(qta.icon("fa5s.sync"))
+        # Respond to changes in displaying the 1d plot
         self.ui.signal_y_combobox.currentTextChanged.connect(self.update_1d_plot)
         self.ui.signal_x_combobox.currentTextChanged.connect(self.update_1d_plot)
         self.ui.signal_r_combobox.currentTextChanged.connect(self.update_1d_plot)
@@ -135,7 +183,12 @@ class RunBrowserDisplay(display.FireflyDisplay):
         self.ui.invert_checkbox.stateChanged.connect(self.update_1d_plot)
         self.ui.gradient_checkbox.stateChanged.connect(self.update_1d_plot)
         self.ui.plot_1d_hints_checkbox.stateChanged.connect(self.update_1d_signals)
-        self.ui.refresh_runs_button.setIcon(qta.icon("fa5s.sync"))
+        # Respond to changes in displaying the 2d plot
+        self.ui.signal_value_combobox.currentTextChanged.connect(self.update_2d_plot)
+        self.ui.logarithm_checkbox_2d.stateChanged.connect(self.update_2d_plot)
+        self.ui.invert_checkbox_2d.stateChanged.connect(self.update_2d_plot)
+        self.ui.gradient_checkbox_2d.stateChanged.connect(self.update_2d_plot)
+        self.ui.plot_2d_hints_checkbox.stateChanged.connect(self.update_2d_signals)
         # Respond to filter controls getting updated
         self.ui.filter_user_combobox.currentTextChanged.connect(self.update_filters)
         self.ui.filter_proposal_combobox.currentTextChanged.connect(self.update_filters)
@@ -154,6 +207,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
         self.ui.filters_widget.returnPressed.connect(self.refresh_runs_button.click)
         # Set up 1D plotting widgets
         self.plot_1d_item = self.ui.plot_1d_view.getPlotItem()
+        self.plot_2d_item = self.ui.plot_2d_view.getImageItem()
         self.plot_1d_item.addLegend()
         self.plot_1d_item.hover_coords_changed.connect(
             self.ui.hover_coords_label.setText
@@ -246,6 +300,29 @@ class RunBrowserDisplay(display.FireflyDisplay):
         for val, cb in zip(old_values, comboboxes):
             cb.setCurrentText(val)
 
+    def update_2d_signals(self, *args):
+        # Store current selection for restoring later
+        val_cb = self.ui.signal_value_combobox
+        old_value = val_cb.currentText()
+        # Determine valid list of dependent signals to choose from
+        vcols = set()
+        runs = self._db_worker.selected_runs
+        use_hints = self.ui.plot_2d_hints_checkbox.isChecked()
+        for run in runs:
+            try:
+                _xcols, _vcols = self.get_signals(run, hinted_only=use_hints)
+            except KeyError:
+                continue
+            else:
+                vcols.update(_vcols)
+        # Update the UI with the list of controls
+        vcols = sorted(list(set(vcols)))
+        val_cb.clear()
+        val_cb.addItems(vcols)
+        # Restore previous selection
+        val_cb.setCurrentText(old_value)
+            
+
     def calculate_ydata(
         self,
         x_data,
@@ -309,6 +386,36 @@ class RunBrowserDisplay(display.FireflyDisplay):
             print("Pydantic error:", run)
             raise
         return x_data, y_data, r_data
+
+    def load_run_data_nd(self, run, signal: str):
+        """Load N-dimensional data for a signal for a run.
+
+        Returns
+        =======
+        data
+          The signal data converted to the shape for the dataset."""
+        try:
+            data = run["primary"]["data"]
+            data = np.array(data[signal].read())
+        except KeyError as e:
+            # No data, so nothing to plot
+            msg = f"Cannot find key {e} in {run}."
+            log.warning(msg)
+            raise exceptions.SignalNotFound(msg)
+        except ValidationError:
+            print("Pydantic error:", run)
+            raise
+        # Reshape the data to match the scan
+        shape = run.metadata['start']['shape']
+        data = data.reshape(shape)
+        # Flip alternating rows if snaking is enabled
+        try:
+            snaking = run.metadata['start']['snaking']
+        except KeyError:
+            pass
+        else:
+            data = unsnake(data, snaking)
+        return data
 
     def multiplot_items(self, n_cols: int = 3):
         view = self.ui.plot_multi_view
@@ -432,6 +539,48 @@ class RunBrowserDisplay(display.FireflyDisplay):
                 x=np.median(x_data), movable=True, label="{value:.3f}"
             )
         self.plot_1d_changed.emit(self.plot_1d_item)
+
+    def update_2d_plot(self):
+        """Change the 2D map plot based on desired signals, etc."""
+        # Figure out which signals to plot
+        value_signal = self.ui.signal_value_combobox.currentText()
+        use_log = self.ui.logarithm_checkbox_2d.isChecked()
+        use_invert = self.ui.invert_checkbox_2d.isChecked()
+        use_grad = self.ui.gradient_checkbox_2d.isChecked()
+        # Load mapping data for each run
+        images = []
+        for idx, run in enumerate(self._db_worker.selected_runs):
+            # Load datasets from the database
+            try:
+                image = self.load_run_data_nd(run, value_signal)
+            except exceptions.SignalNotFound as e:
+                self.show_message(str(e), 0)
+                continue
+            except exceptions.EmptySignalName:
+                continue
+            images.append(image)
+        images = np.asarray(images)
+        # Make sure there's some data to plot
+        if images.ndim < 2:
+            self.plot_2d_item.clear()
+            return
+        # Combine the different runs into one image
+        # To-do, make this respond to the combobox selection        
+        image = np.mean(images, axis=0)
+        # Apply transformations
+        
+        # # Plot the image
+        self.plot_2d_view.setImage(image.T, autoRange=False)
+        # Determine the axes labels
+        dimensions = run.metadata['start']['hints']['dimensions']
+        xlabel = dimensions[-1][0][0]
+        self.plot_2d_view.view.setLabel(axis="bottom", text=xlabel)
+        ylabel = dimensions[-2][0][0]
+        self.plot_2d_view.view.setLabel(axis="left", text=ylabel)
+        # Set axes extent
+        
+        self.plot_2d_item.setRect(-100, -100, 200, 200)
+        
 
     def update_metadata(self, *args):
         """Render metadata for the runs into the metadata widget."""

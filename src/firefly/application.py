@@ -217,7 +217,7 @@ class FireflyApplication(PyDMApplication):
         self._setup_window_action(
             action_name="show_run_browser_action",
             text="Browse Runs",
-            slot=self.show_run_browser,
+            slot=self.show_run_browser_window,
         )
         # Action for launch queue-monitor
         self._setup_window_action(
@@ -587,7 +587,7 @@ class FireflyApplication(PyDMApplication):
         )
 
     @QtCore.Slot()
-    def show_run_browser(self):
+    def show_run_browser_window(self):
         return self.show_window(
             PlanMainWindow, ui_dir / "run_browser.py", name="run_browser"
         )
