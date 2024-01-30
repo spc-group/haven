@@ -1,7 +1,9 @@
 from qtpy import QtWidgets
 
 from firefly import display
+from qtpy.QtGui import QDoubleValidator
 
+import re
 
 class XafsScanRegion:
     def __init__(self):
@@ -12,14 +14,17 @@ class XafsScanRegion:
 
         # First energy box
         self.start_line_edit = QtWidgets.QLineEdit()
+        self.start_line_edit.setValidator(QDoubleValidator()) # only takes numbers
         self.start_line_edit.setPlaceholderText("Start…")
         self.layout.addWidget(self.start_line_edit)
         # Last energy box
         self.stop_line_edit = QtWidgets.QLineEdit()
+        self.start_line_edit.setValidator(QDoubleValidator()) # only takes numbers
         self.stop_line_edit.setPlaceholderText("Stop…")
         self.layout.addWidget(self.stop_line_edit)
         # Energy step box
         self.step_line_edit = QtWidgets.QLineEdit()
+        self.start_line_edit.setValidator(QDoubleValidator()) # only takes numbers
         self.step_line_edit.setPlaceholderText("Step…")
         self.layout.addWidget(self.step_line_edit)
         # K-space checkbox
@@ -50,15 +55,43 @@ class XafsScanDisplay(display.FireflyDisplay):
 
         self.reset_default_regions()
         # Connect the E0 checkbox to the E0 combobox
-        self.ui.use_edge_checkbox.stateChanged.connect(self.edge_combo_box.setEnabled)
-                
+        # self.ui.use_edge_checkbox.stateChanged.connect(self.edge_combo_box.setEnabled)
+        self.ui.use_edge_checkbox.stateChanged.connect(self.use_edge)
+
         # disable the line edits in spin box
         self.ui.regions_spin_box.lineEdit().setReadOnly(True)
         self.ui.regions_spin_box.valueChanged.connect(self.update_regions)
         self.ui.regions_spin_box.editingFinished.connect(self.update_regions)
-        # TODO
         self.ui.pushButton.clicked.connect(self.reset_default_regions)
-    
+
+    def use_edge(self):
+        self.edge_value = float(re.search(r'\d+\.?\d*', self.edge_combo_box.currentText()).group())
+
+        if self.ui.use_edge_checkbox.isChecked():
+            self.edge_combo_box.setEnabled(True)
+            for i, region_i in enumerate(self.regions):
+                start, stop = region_i.start_line_edit.text(), region_i.stop_line_edit.text()
+                print(start, stop)
+                if start is not '':
+                    relativeE_start = float(start) - self.edge_value
+                    region_i.start_line_edit.setText("{:.1f}".format(relativeE_start))
+                if stop is not '':
+                    relativeE_stop = float(stop) - self.edge_value
+                    region_i.stop_line_edit.setText("{:.1f}".format(relativeE_stop))
+            
+        if not self.ui.use_edge_checkbox.isChecked():
+            self.edge_combo_box.setEnabled(False)
+            self.edge_value = float(re.search(r'\d+\.?\d*', self.edge_combo_box.currentText()).group())
+            # change absolute E to relative E
+            for i, region_i in enumerate(self.regions):
+                start, stop = region_i.start_line_edit.text(), region_i.stop_line_edit.text()
+                if start is not '':
+                    relativeE_start = float(start) + self.edge_value
+                    region_i.start_line_edit.setText("{:.1f}".format(relativeE_start))
+                if stop is not '':
+                    relativeE_stop = float(stop) + self.edge_value
+                    region_i.stop_line_edit.setText("{:.1f}".format(relativeE_stop))
+        
     def clearLayout(self, layout):
         if layout is not None:
             while layout.count():
@@ -68,11 +101,19 @@ class XafsScanDisplay(display.FireflyDisplay):
 
     def reset_default_regions(self):
         default_num_regions = 3
+
+        if hasattr(self, "regions"):
+            self.remove_regions(len(self.regions))
+            self.regions = []
+            self.add_regions(default_num_regions)
+
         if not hasattr(self, "regions"):
             self.regions = []
             self.add_regions(default_num_regions)
         self.ui.regions_spin_box.setValue(default_num_regions)
-        self.update_regions()
+        
+        # self.update_regions()
+
 
     def add_regions(self, num=1):
         for i in range(num):
