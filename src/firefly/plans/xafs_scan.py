@@ -51,8 +51,10 @@ class XafsScanDisplay(display.FireflyDisplay):
         self.reset_default_regions()
         # Connect the E0 checkbox to the E0 combobox
         self.ui.use_edge_checkbox.stateChanged.connect(self.edge_combo_box.setEnabled)
-        # update only after enter is hit instead of immediately changing
-        # self.ui.regions_spin_box.valueChanged.connect(self.update_regions)
+                
+        # disable the line edits in spin box
+        self.ui.regions_spin_box.lineEdit().setReadOnly(True)
+        self.ui.regions_spin_box.valueChanged.connect(self.update_regions)
         self.ui.regions_spin_box.editingFinished.connect(self.update_regions)
         # TODO
         self.ui.pushButton.clicked.connect(self.reset_default_regions)

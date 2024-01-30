@@ -28,7 +28,7 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>311</width>
+            <width>372</width>
             <height>234</height>
            </rect>
           </property>
@@ -186,6 +186,18 @@
        </item>
        <item>
         <widget class="QSpinBox" name="num_motor_spin_box">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+         <property name="wrapping">
+          <bool>false</bool>
+         </property>
+         <property name="readOnly">
+          <bool>false</bool>
+         </property>
+         <property name="correctionMode">
+          <enum>QAbstractSpinBox::CorrectToNearestValue</enum>
+         </property>
          <property name="minimum">
           <number>1</number>
          </property>

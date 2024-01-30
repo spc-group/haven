@@ -43,7 +43,11 @@ class LineScanDisplay(display.FireflyDisplay):
         # Remove the defaufdsadfsfdsfagafdsgalt XAFS layout from .ui file
         self.clearLayout(self.ui.region_template_layout)
         self.reset_default_regions()
-        self.ui.num_motor_spin_box.editingFinished.connect(self.update_regions)
+
+         # disable the line edits in spin box
+        self.ui.num_motor_spin_box.lineEdit().setReadOnly(True)
+        self.ui.num_motor_spin_box.valueChanged.connect(self.update_regions)
+        # self.ui.num_motor_spin_box.editingFinished.connect(self.update_regions)
 
         # self.ui.run_button.setEnabled(True) #for testing
         self.ui.run_button.clicked.connect(self.queue_plan)
