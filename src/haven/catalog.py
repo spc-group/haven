@@ -1,4 +1,7 @@
+import threading
+
 import databroker
+import sqlite3
 from tiled.client import from_uri
 from tiled.client.cache import Cache
 
@@ -82,11 +85,53 @@ def load_data(uid, catalog_name="bluesky", stream="primary"):
     return data
 
 
-def tiled_client(entry_node=None, uri=None):
+def with_thread_lock(fn):
+    def wrapper(obj, *args, **kwargs):
+        print(obj)
+        obj._lock.acquire()
+        try:
+            fn(obj, *args, **kwargs)
+        finally:
+            obj._lock.release()
+    return wrapper
+
+
+class ThreadSafeCache(Cache):
+    """Equivalent to the regular cache, but thread-safe.
+
+    Ensures that sqlite3 is built with concurrency features, and
+    ensures that no two write operations happen concurrently.
+
+    """
+    def __init__(self, *args, **kwargs, ):
+        super().__init__(*args, **kwargs)
+        self._lock = threading.Lock()
+        
+    def write_safe(self):
+        """
+        Check that it is safe to write.
+
+        SQLite is not threadsafe for concurrent _writes_.
+        """
+        is_main_thread = threading.current_thread().ident == self._owner_thread
+        sqlite_is_safe = sqlite3.threadsafety == 1
+        return is_main_thread or sqlite_is_safe
+
+    # Wrap the accessor methods so they wait for the lock
+    clear = with_thread_lock(Cache.clear)
+    set = with_thread_lock(Cache.set)
+    get = with_thread_lock(Cache.get)
+    delete = with_thread_lock(Cache.delete)
+    
+
+    
+
+
+def tiled_client(entry_node=None, uri=None, cache_filepath="/local/tiled_cache/http_response_cache.db"):
     config = load_config()
     if uri is None:
         uri = config["database"]["tiled"]["uri"]
-    client_ = from_uri(uri, cache=Cache())
+    client_ = from_uri(uri, "dask", cache=ThreadSafeCache(filepath=cache_filepath))
     if entry_node is None:
         entry_node = config["database"]["tiled"]["entry_node"]
     client_ = client_[entry_node]
