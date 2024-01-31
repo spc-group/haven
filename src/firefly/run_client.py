@@ -34,11 +34,7 @@ class DatabaseWorker(QObject):
     def root(self):
         # Make a new client if one has not been loaded yet
         if self._root is None:
-            import threading
-            print("New client thread: ", threading.current_thread().ident)
             self._root = tiled_client()
-            # print(id(self._root))
-            assert False
         # Return the client
         return self._root
 

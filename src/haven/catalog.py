@@ -87,7 +87,6 @@ def load_data(uid, catalog_name="bluesky", stream="primary"):
 
 def with_thread_lock(fn):
     def wrapper(obj, *args, **kwargs):
-        print(obj)
         obj._lock.acquire()
         try:
             fn(obj, *args, **kwargs)
@@ -127,11 +126,11 @@ class ThreadSafeCache(Cache):
     
 
 
-def tiled_client(entry_node=None, uri=None, cache_filepath="/local/tiled_cache/http_response_cache.db"):
+def tiled_client(entry_node=None, uri=None):
     config = load_config()
     if uri is None:
         uri = config["database"]["tiled"]["uri"]
-    client_ = from_uri(uri, "dask", cache=ThreadSafeCache(filepath=cache_filepath))
+    client_ = from_uri(uri, "dask", cache=ThreadSafeCache())
     if entry_node is None:
         entry_node = config["database"]["tiled"]["entry_node"]
     client_ = client_[entry_node]

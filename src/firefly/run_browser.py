@@ -337,12 +337,15 @@ class RunBrowserDisplay(display.FireflyDisplay):
         use_grad=False,
     ):
         """Take raw y and reference data and calculate a new y_data signal."""
+        # Make sure we have numpy arrays
+        x = np.asarray(x_data)
+        y = np.asarray(y_data)
+        r = np.asarray(r_data)
         # Apply transformations
-        y = y_data
         y_string = f"[{y_signal}]"
         try:
             if use_reference:
-                y = y / r_data
+                y = y / r
                 y_string = f"{y_string}/[{r_signal}]"
             if use_log:
                 y = np.log(y)
@@ -351,11 +354,12 @@ class RunBrowserDisplay(display.FireflyDisplay):
                 y *= -1
                 y_string = f"-{y_string}"
             if use_grad:
-                y = np.gradient(y, x_data)
+                y = np.gradient(y, x)
                 y_string = f"d({y_string})/d[{r_signal}]"
         except TypeError as exc:
             msg = f"Could not calculate transformation: {exc}"
             log.warning(msg)
+            raise
             raise exceptions.InvalidTransformation(msg)
         return y, y_string
 
@@ -402,18 +406,13 @@ class RunBrowserDisplay(display.FireflyDisplay):
             msg = f"Cannot find key {e} in {run}."
             log.warning(msg)
             raise exceptions.SignalNotFound(msg)
-        except ValidationError:
-            print("Pydantic error:", run)
-            raise
         # Reshape the data to match the scan
-        shape = run.metadata['start']['shape']
-        data = data.reshape(shape)
+        if "shape" in run.metadata['start']:
+            shape = run.metadata['start']['shape']
+            data = data.reshape(shape)
         # Flip alternating rows if snaking is enabled
-        try:
+        if "snaking" in run.metadata['start']:
             snaking = run.metadata['start']['snaking']
-        except KeyError:
-            pass
-        else:
             data = unsnake(data, snaking)
         return data
 
@@ -522,6 +521,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
                 )
             except exceptions.InvalidTransformation as e:
                 self.show_message(str(e))
+                raise
                 continue
             # Plot this run's data
             color = colors[idx % len(colors)]
@@ -561,13 +561,13 @@ class RunBrowserDisplay(display.FireflyDisplay):
             images.append(image)
         images = np.asarray(images)
         # Make sure there's some data to plot
-        if images.ndim < 2:
+        if not (2 < images.ndim < 4):
             self.plot_2d_item.clear()
             return
         # Combine the different runs into one image
-        # To-do, make this respond to the combobox selection        
+        # To-do: make this respond to the combobox selection        
         image = np.mean(images, axis=0)
-        # Apply transformations
+        # To-do: Apply transformations
         
         # # Plot the image
         self.plot_2d_view.setImage(image.T, autoRange=False)
@@ -578,9 +578,12 @@ class RunBrowserDisplay(display.FireflyDisplay):
         ylabel = dimensions[-2][0][0]
         self.plot_2d_view.view.setLabel(axis="left", text=ylabel)
         # Set axes extent
-        
-        self.plot_2d_item.setRect(-100, -100, 200, 200)
-        
+        yextent, xextent = run.metadata['start']['extents']
+        x = xextent[0]
+        y = yextent[0]
+        w = xextent[1] - xextent[0]
+        h = yextent[1] - yextent[0]
+        self.plot_2d_item.setRect(x, y, w, h)
 
     def update_metadata(self, *args):
         """Render metadata for the runs into the metadata widget."""

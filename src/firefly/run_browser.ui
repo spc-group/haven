@@ -219,7 +219,7 @@
                <bool>true</bool>
               </property>
               <property name="currentText">
-               <string/>
+               <string>Mg.*V</string>
               </property>
              </widget>
             </item>
@@ -482,8 +482,8 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>788</width>
-             <height>460</height>
+             <width>84</width>
+             <height>28</height>
             </rect>
            </property>
            <property name="sizePolicy">

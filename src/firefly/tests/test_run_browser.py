@@ -17,11 +17,6 @@ from firefly.run_client import DatabaseWorker
 log = logging.getLogger(__name__)
 
 
-def wait_for_runs_model(display, qtbot):
-    with qtbot.waitSignal(display.runs_model_changed, timeout=1000):
-        pass
-
-
 # Some mocked test data
 run1 = pd.DataFrame(
     {
@@ -109,7 +104,7 @@ bluesky_mapping = {
                     'gridding': 'rectilinear'
                 },
                 "shape": [5, 21],
-                "extents": [[-100, 100], [-100, 100]],
+                "extents": [[-80, 80], [-100, 100]],
             },
         },
     ),
@@ -129,6 +124,11 @@ def client():
     with Context.from_app(app) as context:
         client = from_context(context)
         yield client["255id_testing"]
+
+
+def wait_for_runs_model(display, qtbot):
+    with qtbot.waitSignal(display.runs_model_changed, timeout=1000):
+        pass
 
 
 @pytest.fixture()
@@ -298,6 +298,7 @@ def test_2d_plot_signals(client, display):
 
 
 def test_update_2d_plot(client, display, qtbot):
+    display.plot_2d_item.setRect = MagicMock()
     # Load test data
     run = client["85573831-f4b4-4f64-b613-a6007bf03a8d"]
     run_data = run["primary"]["data"].read()
@@ -323,13 +324,24 @@ def test_update_2d_plot(client, display, qtbot):
     axes = display.plot_2d_view.view.axes
     xaxis = axes['bottom']['item']
     yaxis = axes['left']['item']
-    # from pprint import pprint
-    # pprint(dir(xaxis))
-    # pprint(dir(axes['bottom']['item']))
-    # print(axes['bottom']['item'].labelText())
     assert xaxis.labelText == "aerotech_horiz"
     assert yaxis.labelText == "aerotech_vert"
-    assert display.plot_2d_view.view.rect() == (-100, 100)
+    display.plot_2d_item.setRect.assert_called_with(-100, -80, 200, 160)
+    # from pprint import pprint
+    # # pprint(dir(display.plot_2d_item))
+    # [print(a) for a in dir(display.plot_2d_item) if "rect" in a.lower()]
+    # print(display.plot_2d_item.sceneBoundingRect())
+    # print(display.plot_2d_item.childrenBoundingRect())
+    # print(display.plot_2d_item.boundingRect())
+    # print(display.plot_2d_item.viewRect())
+    # display.plot_2d_item.setRect(-100, -100, 200, 200)
+    # pprint(dir(xaxis))
+    # print(xaxis._tickLevels)
+    # print(display.plot_2d_item.sceneBoundingRect())
+    # print(display.plot_2d_item.childrenBoundingRect())
+    # print(display.plot_2d_item.boundingRect())
+    # print(display.plot_2d_item.viewRect())
+    # assert display.plot_2d_item.rect() == (-100, 100)
 
 
 def test_unsnake():
