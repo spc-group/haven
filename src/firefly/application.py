@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import subprocess
 from collections import OrderedDict
@@ -524,6 +525,7 @@ class FireflyApplication(PyDMApplication):
         if (w := self.windows.get(name)) is None:
             # Window is not yet created, so create one
             w = self.create_window(WindowClass, ui_dir / ui_file, macros=macros)
+            # return
             self.windows[name] = w
             # Connect signals to remove the window when it closes
             w.destroyed.connect(partial(self.forget_window, name=name))

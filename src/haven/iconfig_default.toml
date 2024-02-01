@@ -39,6 +39,7 @@ catalog = "bluesky"
 
 uri = "http://localhost:8001/"
 entry_node = "25idc_microprobe"
+cache_filepath = ""  # Point to a file on a local filesystem for best performance
 
 [shutter]
 prefix = "PSS:99ID"

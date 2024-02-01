@@ -5,7 +5,8 @@ __version__ = "0.1.0"
 from ._iconfig import load_config  # noqa: F401
 
 #  Top-level imports
-from .catalog import load_catalog, load_data, load_result, tiled_client  # noqa: F401
+# from .catalog import load_catalog, load_data, load_result, tiled_client  # noqa: F401
+from .catalog import catalog
 from .constants import edge_energy  # noqa: F401
 from .energy_ranges import ERange, KRange, merge_ranges  # noqa: F401
 from .instrument import (  # noqa: F401

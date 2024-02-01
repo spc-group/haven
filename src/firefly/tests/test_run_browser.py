@@ -14,8 +14,6 @@ from tiled.server.app import build_app
 from firefly.run_browser import RunBrowserDisplay, unsnake
 from firefly.run_client import DatabaseWorker
 
-log = logging.getLogger(__name__)
-
 
 # Some mocked test data
 run1 = pd.DataFrame(

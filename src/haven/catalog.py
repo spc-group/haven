@@ -1,5 +1,8 @@
 import threading
+import asyncio
+from functools import partial
 
+import numpy as np
 import databroker
 import sqlite3
 from tiled.client import from_uri
@@ -86,6 +89,7 @@ def load_data(uid, catalog_name="bluesky", stream="primary"):
 
 
 def with_thread_lock(fn):
+    """Makes sure the function isn't accessed concurrently."""
     def wrapper(obj, *args, **kwargs):
         obj._lock.acquire()
         try:
@@ -121,21 +125,131 @@ class ThreadSafeCache(Cache):
     set = with_thread_lock(Cache.set)
     get = with_thread_lock(Cache.get)
     delete = with_thread_lock(Cache.delete)
-    
-
-    
 
 
-def tiled_client(entry_node=None, uri=None):
+def tiled_client(entry_node=None, uri=None, cache_filepath=None):
     config = load_config()
+    # Create a cache for saving local copies
+    if cache_filepath is None:
+        cache_filepath = config['database']['tiled'].get("cache_filepath", "")
+        cache_filepath = cache_filepath or None
+    cache = ThreadSafeCache(filepath=cache_filepath)
+    # Create the client
     if uri is None:
         uri = config["database"]["tiled"]["uri"]
-    client_ = from_uri(uri, "dask", cache=ThreadSafeCache())
+    client_ = from_uri(uri, "dask", cache=cache)
     if entry_node is None:
         entry_node = config["database"]["tiled"]["entry_node"]
     client_ = client_[entry_node]
     return client_
 
+
+
+class CatalogScan():
+    """A single scan from the tiled API with some convenience methods.
+
+    Parameters
+    ==========
+      A tiled container on which to operate."""
+    
+    def __init__(self, container):
+        self.container = container
+
+    def _read_data(self, signals):
+        return self.container['primary']['data'].read(variables=signals)
+
+    def _read_metadata(self):
+        return self.container.metadata
+
+    async def to_dataframe(self, signals=None):
+        """Convert the dataset into a pandas dataframe."""
+        loop = asyncio.get_running_loop()
+        xarray = await loop.run_in_executor(None, self._read_data, signals)
+        df = xarray.to_dataframe()
+        return df
+
+    @property
+    async def metadata(self):
+        loop = asyncio.get_running_loop()
+        metadata = await loop.run_in_executor(None, self._read_metadata)
+        return metadata
+
+    async def __getitem__(self, signal):
+        """Retrieve a signal from the dataset, with reshaping etc."""
+        loop = asyncio.get_running_loop()
+        arr = await loop.run_in_executor(None, self._read_data, [signal])
+        arr = np.asarray(arr[signal])
+        # Re-shape to match the scan dimensions
+        shape = (await self.metadata)['start']['shape']
+        arr = np.reshape(arr, shape)
+        return arr
+
+
+class Catalog():
+    """An asynchronous wrapper around the tiled client.
+
+    This class has a more intelligent understanding of how *our* data
+    are structured, so can make some assumptions and takes care of
+    boiler-plate code (e.g. reshaping maps, etc).
+
+    """
+    _client = None
+    
+    def __init__(self, client=None):
+        self._client = client
+
+    @property
+    async def client(self):
+        if self._client is None:
+            loop = asyncio.get_running_loop()
+            self._client = await loop.run_in_executor(None, tiled_client)
+        return self._client
+
+    async def __getitem__(self, uid) -> CatalogScan:
+        loop = asyncio.get_running_loop()
+        client = await self.client
+        container = await loop.run_in_executor(None, client.__getitem__, uid)
+        scan = CatalogScan(container=container)
+        return scan
+
+    async def search(self, query):
+        """
+        Make a Node with a subset of this Node's entries, filtered by query.
+
+        Examples
+        --------
+
+        >>> from tiled.queries import FullText
+        >>> await tree.search(FullText("hello"))
+        """
+        loop = asyncio.get_running_loop()
+        client = await self.client
+        return await loop.run_in_executor(None, client.search, query)
+
+    async def distinct(self, *metadata_keys, structure_families=False, specs=False, counts=False):
+        """Get the unique values and optionally counts of metadata_keys,
+        structure_families, and specs in this Node's entries
+
+        Examples
+        --------
+
+        Query all the distinct values of a key.
+
+        >>> await catalog.distinct("foo", counts=True)
+
+        Query for multiple keys at once.
+
+        >>> await catalog.distinct("foo", "bar", counts=True)
+
+        """
+        loop = asyncio.get_running_loop()
+        client = await self.client
+        query = partial(client.distinct, *metadata_keys, structure_families=structure_families, specs=specs, counts=counts)
+        return await loop.run_in_executor(None, query)
+
+# Create a default catalog for basic usage
+catalog = Catalog()
+    
 
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman

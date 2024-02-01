@@ -1,10 +1,13 @@
 import logging
 from itertools import count
 from typing import Sequence
+import time
+import asyncio
 
 import numpy as np
 import qtawesome as qta
 import yaml
+from qasync import asyncSlot
 from matplotlib.colors import TABLEAU_COLORS
 from pydantic.error_wrappers import ValidationError
 from pyqtgraph import PlotItem, PlotWidget, ImageView
@@ -113,10 +116,23 @@ class RunBrowserDisplay(display.FireflyDisplay):
     plot_1d_changed = Signal(object)
     filters_changed = Signal(dict)
     load_distinct_fields = Signal()
+    ui_loaded = Signal()
 
     def __init__(self, root_node=None, args=None, macros=None, **kwargs):
         super().__init__(args=args, macros=macros, **kwargs)
-        self.start_run_client(root_node=root_node)
+        self.ui_loaded.connect(self.async_slot)
+        # self.start_run_client(root_node=root_node)
+        loop = asyncio.get_event_loop()
+        print(loop)
+        loop.create_task(self.async_slot())
+        # self.ui_loaded.emit()
+
+    async def async_slot(self):
+        print("hello", end="", flush=True)
+        for i in range(10):
+            print(".", end="", flush=True)
+            await asyncio.sleep(1)
+        print("world", flush=True)
 
     def start_run_client(self, root_node):
         """Set up the database client in a separate thread."""
