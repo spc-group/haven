@@ -394,7 +394,7 @@
        </sizepolicy>
       </property>
       <property name="currentIndex">
-       <number>3</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="metadata_tab">
        <attribute name="title">
@@ -445,9 +445,12 @@
            </spacer>
           </item>
           <item>
-           <widget class="QCheckBox" name="checkBox">
+           <widget class="QCheckBox" name="plot_multi_hints_checkbox">
             <property name="text">
              <string>Use Hints</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
             </property>
            </widget>
           </item>
@@ -482,8 +485,8 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>84</width>
-             <height>28</height>
+             <width>788</width>
+             <height>460</height>
             </rect>
            </property>
            <property name="sizePolicy">
@@ -494,7 +497,7 @@
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_7">
             <item>
-             <widget class="GraphicsLayoutWidget" name="plot_multi_view" native="true">
+             <widget class="BrowserMultiPlotWidget" name="plot_multi_view" native="true">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
                 <horstretch>0</horstretch>
@@ -936,12 +939,6 @@
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>GraphicsLayoutWidget</class>
-   <extends>QWidget</extends>
-   <header>pyqtgraph</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
    <class>Browser1DPlotWidget</class>
    <extends>QWidget</extends>
    <header>firefly.run_browser</header>
@@ -949,6 +946,12 @@
   </customwidget>
   <customwidget>
    <class>Browser2DPlotWidget</class>
+   <extends>QWidget</extends>
+   <header>firefly.run_browser</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>BrowserMultiPlotWidget</class>
    <extends>QWidget</extends>
    <header>firefly.run_browser</header>
    <container>1</container>

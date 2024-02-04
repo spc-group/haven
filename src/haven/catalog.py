@@ -1,6 +1,7 @@
 import threading
 import asyncio
 from functools import partial
+import logging
 
 import numpy as np
 import databroker
@@ -9,6 +10,39 @@ from tiled.client import from_uri
 from tiled.client.cache import Cache
 
 from ._iconfig import load_config
+
+
+log = logging.getLogger(__name__)
+
+
+def unsnake(arr: np.ndarray, snaking: list) -> np.ndarray:
+    """Unsnake a nump array.
+
+    For each axis in *arr*, there should be a corresponding True/False
+    in *snaking* whether that axis should have alternating rows. The
+    first entry is ignored as it doesn't make sense to snake the first
+    axis.
+    
+    Returns
+    =======
+    unsnaked
+      A copy of *arr* with the odd-numbered axes flipped (if indicated
+      by *snaking*).
+
+    """
+    # arr = np.copy(arr)
+    # Create some slice object for easier manipulation
+    full_axis = slice(None)
+    alternating = slice(None, None, 2)
+    flipped = slice(None, None, -1)
+    # Flip each axis if necessary (skipping the first axis)
+    for axis, is_snaked in enumerate(snaking[1:]):
+        if not is_snaked:
+            continue
+        slices = (full_axis,) * axis
+        slices += (alternating,)
+        arr[slices] = arr[slices + (flipped,)]
+    return arr
 
 
 def load_catalog(name: str = "bluesky"):
@@ -158,20 +192,54 @@ class CatalogScan():
     def _read_data(self, signals):
         return self.container['primary']['data'].read(variables=signals)
 
-    def _read_metadata(self):
-        return self.container.metadata
+    def _read_metadata(self, keys=None):
+        container = self.container
+        if keys is not None:
+            container = container[keys]
+        return container.metadata
+
+    @property
+    async def uid(self):
+        md = await self.metadata
+        return md['start']['uid']
 
     async def to_dataframe(self, signals=None):
         """Convert the dataset into a pandas dataframe."""
-        loop = asyncio.get_running_loop()
-        xarray = await loop.run_in_executor(None, self._read_data, signals)
-        df = xarray.to_dataframe()
+        xarray = await self.loop.run_in_executor(None, self._read_data, signals)
+        try:
+            df = xarray.to_dataframe()
+        except:
+            breakpoint()
         return df
 
     @property
+    def loop(self):
+        return asyncio.get_running_loop()
+
+    async def hints(self):
+        """Retrieve the data hints for this scan.
+
+        Returns
+        =======
+        independent
+          The hints for the independent scanning axis.
+        dependent
+          The hints for the dependent scanning axis.
+        """
+        metadata = await self.metadata
+        # Get hints for the independent (X)
+        independent = metadata["start"]["hints"]["dimensions"][0][0]
+        # Get hints for the dependent (X)
+        dependent = []
+        primary_metadata = await self.loop.run_in_executor(None, self._read_metadata, "primary")
+        hints = primary_metadata["descriptors"][0]["hints"]
+        for device, dev_hints in hints.items():
+            dependent.extend(dev_hints["fields"])
+        return independent, dependent
+
+    @property
     async def metadata(self):
-        loop = asyncio.get_running_loop()
-        metadata = await loop.run_in_executor(None, self._read_metadata)
+        metadata = await self.loop.run_in_executor(None, self._read_metadata)
         return metadata
 
     async def __getitem__(self, signal):
@@ -180,8 +248,16 @@ class CatalogScan():
         arr = await loop.run_in_executor(None, self._read_data, [signal])
         arr = np.asarray(arr[signal])
         # Re-shape to match the scan dimensions
-        shape = (await self.metadata)['start']['shape']
-        arr = np.reshape(arr, shape)
+        metadata = await self.metadata
+        try:
+            shape = metadata['start']['shape']
+        except KeyError:
+            log.warning(f"No shape found for {repr(signal)}.")
+        else:
+            arr = np.reshape(arr, shape)
+        # Flip alternating rows if snaking is enabled
+        if "snaking" in metadata['start']:
+            data = unsnake(data, metadata['start']['snaking'])
         return arr
 
 
@@ -199,19 +275,38 @@ class Catalog():
         self._client = client
 
     @property
+    def loop(self):
+        return asyncio.get_running_loop()            
+        
+
+    @property
     async def client(self):
         if self._client is None:
-            loop = asyncio.get_running_loop()
-            self._client = await loop.run_in_executor(None, tiled_client)
+            self._client = await self.loop.run_in_executor(None, tiled_client)
         return self._client
 
     async def __getitem__(self, uid) -> CatalogScan:
-        loop = asyncio.get_running_loop()
         client = await self.client
-        container = await loop.run_in_executor(None, client.__getitem__, uid)
+        container = await self.loop.run_in_executor(None, client.__getitem__, uid)
         scan = CatalogScan(container=container)
         return scan
 
+    async def items(self):
+        client = await self.client
+        for item in await self.loop.run_in_executor(None, client.items):
+            yield item
+           
+    async def values(self):
+        client = await self.client
+        containers = await self.loop.run_in_executor(None, client.values)
+        for container in containers:
+            yield CatalogScan(container)
+
+    async def __len__(self):
+        client = await self.client
+        length = await self.loop.run_in_executor(None, client.__len__)
+        return length
+    
     async def search(self, query):
         """
         Make a Node with a subset of this Node's entries, filtered by query.
@@ -224,7 +319,7 @@ class Catalog():
         """
         loop = asyncio.get_running_loop()
         client = await self.client
-        return await loop.run_in_executor(None, client.search, query)
+        return Catalog(await loop.run_in_executor(None, client.search, query))
 
     async def distinct(self, *metadata_keys, structure_families=False, specs=False, counts=False):
         """Get the unique values and optionally counts of metadata_keys,

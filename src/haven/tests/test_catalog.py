@@ -14,138 +14,35 @@ from tiled.client import Context, from_context
 from tiled.server.app import build_app
 
 
-from haven.catalog import Catalog, CatalogScan
-
-
-# Some mocked test data
-run1 = pd.DataFrame(
-    {
-        "energy_energy": np.linspace(8300, 8400, num=100),
-        "It_net_counts": np.abs(np.sin(np.linspace(0, 4 * np.pi, num=100))),
-        "I0_net_counts": np.linspace(1, 2, num=100),
-    }
-)
-
-grid_scan = pd.DataFrame(
-    {
-        'CdnIPreKb': np.linspace(0, 104, num=105),
-        "It_net_counts": np.linspace(0, 104, num=105),
-        "aerotech_horiz": np.linspace(0, 104, num=105),
-        "aerotech_vert": np.linspace(0, 104, num=105),
-    }
-        
-)
-
-hints = {
-    "energy": {"fields": ["energy_energy", "energy_id_energy_readback"]},
-}
-
-bluesky_mapping = {
-    "7d1daf1d-60c7-4aa7-a668-d1cd97e5335f": MapAdapter(
-        {
-            "primary": MapAdapter(
-                {
-                    "data": DatasetAdapter.from_dataset(run1.to_xarray()),
-                },
-                metadata={"descriptors": [{"hints": hints}]},
-            ),
-        },
-        metadata={
-            "plan_name": "xafs_scan",
-            "start": {
-                "plan_name": "xafs_scan",
-                "uid": "7d1daf1d-60c7-4aa7-a668-d1cd97e5335f",
-                "hints": {"dimensions": [[["energy_energy"], "primary"]]},
-            },
-        },
-    ),
-    "9d33bf66-9701-4ee3-90f4-3be730bc226c": MapAdapter(
-        {
-            "primary": MapAdapter(
-                {
-                    "data": DatasetAdapter.from_dataset(run1.to_xarray()),
-                },
-                metadata={"descriptors": [{"hints": hints}]},
-            ),
-        },
-        metadata={
-            "start": {
-                "plan_name": "rel_scan",
-                "uid": "9d33bf66-9701-4ee3-90f4-3be730bc226c",
-                "hints": {"dimensions": [[["pitch2"], "primary"]]},
-            }
-        },
-    ),
-    # 2D grid scan map data
-    "85573831-f4b4-4f64-b613-a6007bf03a8d": MapAdapter(
-        {
-            "primary": MapAdapter(
-                {
-                    "data": DatasetAdapter.from_dataset(grid_scan.to_xarray()),
-                }, metadata={
-                    "descriptors": [{"hints": {'Ipreslit': {'fields': ['Ipreslit_net_counts']},
-                                               'CdnIPreKb': {'fields': ['CdnIPreKb_net_counts']},
-                                               'I0': {'fields': ['I0_net_counts']},
-                                               'CdnIt': {'fields': ['CdnIt_net_counts']},
-                                               'aerotech_vert': {'fields': ['aerotech_vert']},
-                                               'aerotech_horiz': {'fields': ['aerotech_horiz']},
-                                               'Ipre_KB': {'fields': ['Ipre_KB_net_counts']},
-                                               'CdnI0': {'fields': ['CdnI0_net_counts']},
-                                               'It': {'fields': ['It_net_counts']}}}]
-                }),
-        },
-        metadata={
-            "start": {
-                "plan_name": "grid_scan",
-                "uid": "85573831-f4b4-4f64-b613-a6007bf03a8d",
-                "hints": {
-                    'dimensions': [[['aerotech_vert'], 'primary'],
-                                   [['aerotech_horiz'], 'primary']],
-                    'gridding': 'rectilinear'
-                },
-                "shape": [5, 21],
-                "extents": [[-80, 80], [-100, 100]],
-            },
-        },
-    ),
-}
-
-
-mapping = {
-    "255id_testing": MapAdapter(bluesky_mapping),
-}
-
-tree = MapAdapter(mapping)
-
-
-@pytest.fixture(scope="module")
-def client():
-    app = build_app(tree)
-    with Context.from_app(app) as context:
-        client = from_context(context)
-        yield client["255id_testing"]
-
-
-@pytest.fixture(scope="module")
-def catalog(client):
-    return Catalog(client=client)
+from haven.catalog import Catalog, CatalogScan, unsnake
 
 
 @pytest.fixture()
-def scan(client):
+def scan(tiled_client):
     uid = "7d1daf1d-60c7-4aa7-a668-d1cd97e5335f"
-    return CatalogScan(client[uid])
+    return CatalogScan(tiled_client[uid])
 
 
 @pytest.fixture()
-def grid_scan(client):
+def grid_scan(tiled_client):
     uid = "85573831-f4b4-4f64-b613-a6007bf03a8d"
-    return CatalogScan(client[uid])
+    return CatalogScan(tiled_client[uid])
 
+
+def test_unsnake():
+    # Make a snaked array
+    arr = np.arange(27).reshape((3, 3, 3))
+    snaked = np.copy(arr)
+    snaked[::2] = snaked[::2, ::-1]
+    snaked[:, ::2] = snaked[:, ::2, ::-1]
+    # Do the unsnaking
+    unsnaked = unsnake(snaked, [False, True, True])
+    # Check the result
+    np.testing.assert_equal(arr, unsnaked)
 
 
 @pytest.mark.asyncio
-async def test_client_fixture(client):
+async def test_client_fixture(tiled_client):
     """Does the client fixture load without stalling the test runner?"""
 
 
@@ -172,18 +69,26 @@ async def test_load_nd_data(grid_scan):
 
 
 @pytest.mark.asyncio
-async def test_distinct(catalog, client):
-    distinct = client.distinct("plan_name")
+async def test_distinct(catalog, tiled_client):
+    distinct = tiled_client.distinct("plan_name")
     assert await catalog.distinct("plan_name") == distinct
 
 @pytest.mark.asyncio
-async def test_search(catalog, client):
+async def test_search(catalog, tiled_client):
     """Make sure we can query to database properly."""
     query = queries.Regex("plan_name", "xafs_scan")
-    expected = client.search(query)
+    expected = tiled_client.search(query)
     response = await catalog.search(query)
-    assert len(expected) == len(response)
+    assert len(expected) == await response.__len__()
 
+
+@pytest.mark.asyncio
+async def test_values(catalog, tiled_client):
+    """Get the individual scans in the catalog."""
+    expected = [uid for uid in tiled_client.keys()]
+    response = [await val.uid async for val in catalog.values()]
+    assert expected == response
+    
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov
