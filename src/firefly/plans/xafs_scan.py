@@ -2,6 +2,7 @@ from qtpy import QtWidgets
 
 from firefly import display
 from qtpy.QtGui import QDoubleValidator
+from xraydb.xraydb import XrayDB
 
 import re
 
@@ -49,6 +50,9 @@ class XafsScanRegion:
 
 
 class XafsScanDisplay(display.FireflyDisplay):
+    min_energy = 4000
+    max_energy = 33000
+
     def customize_ui(self):
         # Remove the defaufdsadfsfdsfagafdsgalt XAFS layout from .ui file
         self.clearLayout(self.ui.region_layout)
@@ -63,6 +67,23 @@ class XafsScanDisplay(display.FireflyDisplay):
         self.ui.regions_spin_box.valueChanged.connect(self.update_regions)
         self.ui.regions_spin_box.editingFinished.connect(self.update_regions)
         self.ui.pushButton.clicked.connect(self.reset_default_regions)
+        
+        # add absorption edges from XrayDB
+        self.xraydb = XrayDB()
+
+        combo_box = self.ui.edge_combo_box
+        ltab = self.xraydb.tables["xray_levels"]
+        edges = self.xraydb.query(ltab)
+        edges = edges.filter(
+            ltab.c.absorption_edge < self.max_energy,
+            ltab.c.absorption_edge > self.min_energy,
+        )
+        items = [
+            f"{r.element} {r.iupac_symbol} ({int(r.absorption_edge)} eV)"
+            for r in edges.all()
+        ]
+        combo_box.addItems(["Select edge…", *items])
+
 
     def use_edge(self):
         self.edge_value = float(re.search(r'\d+\.?\d*', self.edge_combo_box.currentText()).group())
@@ -71,7 +92,6 @@ class XafsScanDisplay(display.FireflyDisplay):
             self.edge_combo_box.setEnabled(True)
             for i, region_i in enumerate(self.regions):
                 start, stop = region_i.start_line_edit.text(), region_i.stop_line_edit.text()
-                print(start, stop)
                 if start is not '':
                     relativeE_start = float(start) - self.edge_value
                     region_i.start_line_edit.setText("{:.1f}".format(relativeE_start))

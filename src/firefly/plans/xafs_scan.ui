@@ -29,35 +29,31 @@
         </widget>
        </item>
        <item>
+        <widget class="Line" name="line_2">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QComboBox" name="edge_combo_box">
          <property name="enabled">
           <bool>true</bool>
          </property>
-         <property name="editable">
+         <property name="toolTip">
+          <string>Select an edge, or type one in the form &quot;Na L3&quot;, etc.</string>
+         </property>
+         <property name="autoFillBackground">
           <bool>false</bool>
          </property>
-         <property name="currentText">
-          <string>Cu K (8978.9 eV)</string>
+         <property name="styleSheet">
+          <string notr="true"/>
          </property>
-         <property name="frame">
+         <property name="editable">
           <bool>true</bool>
          </property>
-         <item>
-          <property name="text">
-           <string>Cu K (8978.9 eV)</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>Fe K (7112 eV)</string>
-          </property>
-         </item>
-        </widget>
-       </item>
-       <item>
-        <widget class="Line" name="line_2">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
+         <property name="currentText">
+          <string>Ni K (8333 eV)</string>
          </property>
         </widget>
        </item>
