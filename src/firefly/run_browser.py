@@ -3,6 +3,7 @@ from itertools import count
 from typing import Sequence, Mapping
 import time
 import asyncio
+from functools import partial, wraps
 
 import numpy as np
 import qtawesome as qta
@@ -24,35 +25,6 @@ log = logging.getLogger(__name__)
 
 colors = list(TABLEAU_COLORS.values())
 
-
-def unsnake(arr: np.ndarray, snaking: list) -> np.ndarray:
-    """Unsnake a nump array.
-
-    For each axis in *arr*, there should be a corresponding True/False
-    in *snaking* whether that axis should have alternating rows. The
-    first entry is ignored as it doesn't make sense to snake the first
-    axis.
-    
-    Returns
-    =======
-    unsnaked
-      A copy of *arr* with the odd-numbered axes flipped (if indicated
-      by *snaking*).
-
-    """
-    # arr = np.copy(arr)
-    # Create some slice object for easier manipulation
-    full_axis = slice(None)
-    alternating = slice(None, None, 2)
-    flipped = slice(None, None, -1)
-    # Flip each axis if necessary (skipping the first axis)
-    for axis, is_snaked in enumerate(snaking[1:]):
-        if not is_snaked:
-            continue
-        slices = (full_axis,) * axis
-        slices += (alternating,)
-        arr[slices] = arr[slices + (flipped,)]
-    return arr
 
 class FiltersWidget(QWidget):
     returnPressed = Signal()
@@ -246,22 +218,58 @@ class RunBrowserDisplay(display.FireflyDisplay):
     _multiplot_items = {}
 
     selected_runs: list
+    _running_db_tasks: Mapping
 
     def __init__(self, root_node=None, args=None, macros=None, **kwargs):
         super().__init__(args=args, macros=macros, **kwargs)
         self.selected_runs = []
+        self._running_db_tasks = {}
         self.db = DatabaseWorker(catalog=root_node)
         # Load the list of all runs for the selection widget
         loop = asyncio.get_event_loop()
         loop.create_task(self.load_runs())
 
+    def cancellable(fn):
+        @wraps(fn)
+        async def inner(*args, **kwargs):
+            try:
+                return await fn(*args, **kwargs)
+            except asyncio.exceptions.CancelledError:
+                print(f"Cancelled task {fn}")
+                log.warning(f"Cancelled task {fn}")
+        return inner
+        
+
+    async def db_task(self, coro, name="default task"):
+        """Executes a co-routine as a database task. Existing database
+        tasks get cancelled.
+
+        """
+        # Check for existing tasks
+        has_previous_task = name in self._running_db_tasks.keys()
+        task_is_running = has_previous_task and not self._running_db_tasks[name].done()
+        if task_is_running:
+            self._running_db_tasks[name].cancel("New database task started.")
+        # Wait on this task to be done
+        new_task = asyncio.ensure_future(coro)
+        self._running_db_tasks[name] = new_task
+        # Now wait for the new task to finish
+        await new_task
+        result = new_task.result()
+        return result
+
     @asyncSlot()
     async def reload_runs(self):
+        """A simple wrapper to make load_runs a slot."""
         await self.load_runs()
-    
+
+    @cancellable
     async def load_runs(self):
         """Get the list of available runs based on filters."""
-        runs = await self.db.load_all_runs(self.filters())
+        runs = await self.db_task(
+            self.db.load_all_runs(self.filters()),
+            name="load all runs",
+        )
         # Update the table view data model
         self.runs_model.clear()
         self.runs_model.setHorizontalHeaderLabels(self._run_col_names)
@@ -275,72 +283,94 @@ class RunBrowserDisplay(display.FireflyDisplay):
         # Let slots know that the model data have changed
         self.runs_total_label.setText(str(self.ui.runs_model.rowCount()))
 
-    # def start_run_client(self, root_node):
-    #     """Set up the database client in a separate thread."""
-    #     # Create the thread and worker
-    #     thread = QThread(parent=self)
-    #     self._thread = thread
-    #     worker = DatabaseWorker(root_node=root_node)
-    #     self._db_worker = worker
-    #     worker.moveToThread(thread)
-    #     # Set up filters
-    #     worker.new_message.connect(self.show_message)
-    #     self.filters_changed.connect(worker.set_filters)
-    #     # Connect signals/slots
-    #     thread.started.connect(worker.load_all_runs)
-    #     worker.all_runs_changed.connect(self.set_runs_model_items)
-    #     worker.selected_runs_changed.connect(self.update_metadata)
-    #     worker.selected_runs_changed.connect(self.update_1d_signals)
-    #     worker.selected_runs_changed.connect(self.update_2d_signals)
-    #     worker.selected_runs_changed.connect(self.update_1d_plot)
-    #     worker.selected_runs_changed.connect(self.update_2d_plot)
-    #     worker.selected_runs_changed.connect(self.update_multi_plot)
-    #     worker.db_op_started.connect(self.disable_run_widgets)
-    #     worker.db_op_ended.connect(self.enable_run_widgets)
-    #     # Make sure filters are current
-    #     self.update_filters()
-    #     # Start the thread
-    #     thread.start()
-    #     # Get distinct fields so we can populate the comboboxes
-    #     self.load_distinct_fields.connect(worker.load_distinct_fields)
-    #     worker.distinct_fields_changed.connect(self.update_combobox_items)
-    #     self.load_distinct_fields.emit()
+    # # def start_run_client(self, root_node):
+    # #     """Set up the database client in a separate thread."""
+    # #     # Create the thread and worker
+    # #     thread = QThread(parent=self)
+    # #     self._thread = thread
+    # #     worker = DatabaseWorker(root_node=root_node)
+    # #     self._db_worker = worker
+    # #     worker.moveToThread(thread)
+    # #     # Set up filters
+    # #     worker.new_message.connect(self.show_message)
+    # #     self.filters_changed.connect(worker.set_filters)
+    # #     # Connect signals/slots
+    # #     thread.started.connect(worker.load_all_runs)
+    # #     worker.all_runs_changed.connect(self.set_runs_model_items)
+    # #     worker.selected_runs_changed.connect(self.update_metadata)
+    # #     worker.selected_runs_changed.connect(self.update_1d_signals)
+    # #     worker.selected_runs_changed.connect(self.update_2d_signals)
+    # #     worker.selected_runs_changed.connect(self.update_1d_plot)
+    # #     worker.selected_runs_changed.connect(self.update_2d_plot)
+    # #     worker.selected_runs_changed.connect(self.update_multi_plot)
+    # #     worker.db_op_started.connect(self.disable_run_widgets)
+    # #     worker.db_op_ended.connect(self.enable_run_widgets)
+    # #     # Make sure filters are current
+    # #     self.update_filters()
+    # #     # Start the thread
+    # #     thread.start()
+    # #     # Get distinct fields so we can populate the comboboxes
+    # #     self.load_distinct_fields.connect(worker.load_distinct_fields)
+    # #     worker.distinct_fields_changed.connect(self.update_combobox_items)
+    # #     self.load_distinct_fields.emit()
 
-    def clear_filters(self):
-        self.ui.filter_proposal_combobox.setCurrentText("")
-        self.ui.filter_esaf_combobox.setCurrentText("")
-        self.ui.filter_sample_combobox.setCurrentText("")
-        self.ui.filter_exit_status_combobox.setCurrentText("")
-        self.ui.filter_current_proposal_checkbox.setChecked(False)
-        self.ui.filter_current_esaf_checkbox.setChecked(False)
-        self.ui.filter_plan_combobox.setCurrentText("")
-        self.ui.filter_full_text_lineedit.setText("")
-        self.ui.filter_edge_combobox.setCurrentText("")
-        self.ui.filter_user_combobox.setCurrentText("")
+    # def clear_filters(self):
+    #     self.ui.filter_proposal_combobox.setCurrentText("")
+    #     self.ui.filter_esaf_combobox.setCurrentText("")
+    #     self.ui.filter_sample_combobox.setCurrentText("")
+    #     self.ui.filter_exit_status_combobox.setCurrentText("")
+    #     self.ui.filter_current_proposal_checkbox.setChecked(False)
+    #     self.ui.filter_current_esaf_checkbox.setChecked(False)
+    #     self.ui.filter_plan_combobox.setCurrentText("")
+    #     self.ui.filter_full_text_lineedit.setText("")
+    #     self.ui.filter_edge_combobox.setCurrentText("")
+    #     self.ui.filter_user_combobox.setCurrentText("")
 
-    def update_combobox_items(self, fields):
-        for field_name, cb in [
-            ("proposal_users", self.ui.filter_proposal_combobox),
-            ("proposal_id", self.ui.filter_user_combobox),
-            ("esaf_id", self.ui.filter_esaf_combobox),
-            ("sample_name", self.ui.filter_sample_combobox),
-            ("plan_name", self.ui.filter_plan_combobox),
-            ("edge", self.ui.filter_edge_combobox),
-        ]:
-            if field_name in fields.keys():
-                old_text = cb.currentText()
-                cb.clear()
-                cb.addItems(fields[field_name])
-                cb.setCurrentText(old_text)
+    # def update_combobox_items(self, fields):
+    #     for field_name, cb in [
+    #         ("proposal_users", self.ui.filter_proposal_combobox),
+    #         ("proposal_id", self.ui.filter_user_combobox),
+    #         ("esaf_id", self.ui.filter_esaf_combobox),
+    #         ("sample_name", self.ui.filter_sample_combobox),
+    #         ("plan_name", self.ui.filter_plan_combobox),
+    #         ("edge", self.ui.filter_edge_combobox),
+    #     ]:
+    #         if field_name in fields.keys():
+    #             old_text = cb.currentText()
+    #             cb.clear()
+    #             cb.addItems(fields[field_name])
+    #             cb.setCurrentText(old_text)
+
+    @asyncSlot()
+    @cancellable
+    async def sleep_slot(self):
+        print("Sleeping")
+        await self.db_task(self.print_sleep())
+
+    async def print_sleep(self):
+        label = self.ui.sleep_label
+        label.setText(f"3...")
+        await asyncio.sleep(1)
+        old_text = label.text()
+        label.setText(f"{old_text}2...")
+        await asyncio.sleep(1)
+        old_text = label.text()
+        label.setText(f"{old_text}1...")
+        await asyncio.sleep(1)
+        old_text = label.text()
+        label.setText(f"{old_text}done!")
 
     def customize_ui(self):
         self.load_models()
         # Setup controls for select which run to show
+
         self.ui.run_tableview.selectionModel().selectionChanged.connect(
             self.update_selected_runs
         )
         self.ui.refresh_runs_button.setIcon(qta.icon("fa5s.sync"))
         self.ui.refresh_runs_button.clicked.connect(self.reload_runs)
+        # Sleep controls for testing async timing
+        self.ui.sleep_button.clicked.connect(self.sleep_slot)
         # Respond to changes in displaying the 1d plot
         self.ui.signal_y_combobox.currentTextChanged.connect(self.update_1d_plot)
         self.ui.signal_x_combobox.currentTextChanged.connect(self.update_1d_plot)
@@ -366,31 +396,32 @@ class RunBrowserDisplay(display.FireflyDisplay):
             self.ui.hover_coords_label.setText
         )
 
-    def disable_run_widgets(self):
-        self.show_message("Loading...")
-        widgets = [
-            self.ui.run_tableview,
-            self.ui.refresh_runs_button,
-            self.ui.detail_tabwidget,
-            self.ui.runs_total_layout,
-            self.ui.filters_widget,
-        ]
-        for widget in widgets:
-            widget.setEnabled(False)
-        self.disabled_widgets = widgets
-        self.setCursor(Qt.WaitCursor)
+    # def disable_run_widgets(self):
+    #     self.show_message("Loading...")
+    #     widgets = [
+    #         self.ui.run_tableview,
+    #         self.ui.refresh_runs_button,
+    #         self.ui.detail_tabwidget,
+    #         self.ui.runs_total_layout,
+    #         self.ui.filters_widget,
+    #     ]
+    #     for widget in widgets:
+    #         widget.setEnabled(False)
+    #     self.disabled_widgets = widgets
+    #     self.setCursor(Qt.WaitCursor)
 
-    def enable_run_widgets(self, exceptions=[]):
-        if any(exceptions):
-            self.show_message(exceptions[0])
-        else:
-            self.show_message("Done", 5000)
-        # Re-enable the widgets
-        for widget in self.disabled_widgets:
-            widget.setEnabled(True)
-        self.setCursor(Qt.ArrowCursor)
+    # def enable_run_widgets(self, exceptions=[]):
+    #     if any(exceptions):
+    #         self.show_message(exceptions[0])
+    #     else:
+    #         self.show_message("Done", 5000)
+    #     # Re-enable the widgets
+    #     for widget in self.disabled_widgets:
+    #         widget.setEnabled(True)
+    #     self.setCursor(Qt.ArrowCursor)
 
     @asyncSlot()
+    @cancellable
     async def update_1d_signals(self, *args):
         # Store old values for restoring later
         comboboxes = [
@@ -401,7 +432,8 @@ class RunBrowserDisplay(display.FireflyDisplay):
         old_values = [cb.currentText() for cb in comboboxes]
         # Determine valid list of columns to choose from
         use_hints = self.ui.plot_1d_hints_checkbox.isChecked()
-        xcols, ycols = await self.db.signal_names(hinted_only=use_hints)
+        signals_task = self.db_task(self.db.signal_names(hinted_only=use_hints), "1D signals")
+        xcols, ycols = await signals_task
         self.multi_y_signals = ycols
         # Update the comboboxes with new signals
         for cb in [self.ui.multi_signal_x_combobox, self.ui.signal_x_combobox]:
@@ -432,50 +464,51 @@ class RunBrowserDisplay(display.FireflyDisplay):
         val_cb.setCurrentText(old_value)
             
 
-    def calculate_ydata(
-        self,
-        x_data,
-        y_data,
-        r_data,
-        x_signal,
-        y_signal,
-        r_signal,
-        use_reference=False,
-        use_log=False,
-        use_invert=False,
-        use_grad=False,
-    ):
-        """Take raw y and reference data and calculate a new y_data signal."""
-        # Make sure we have numpy arrays
-        x = np.asarray(x_data)
-        y = np.asarray(y_data)
-        r = np.asarray(r_data)
-        # Apply transformations
-        y_string = f"[{y_signal}]"
-        try:
-            if use_reference:
-                y = y / r
-                y_string = f"{y_string}/[{r_signal}]"
-            if use_log:
-                y = np.log(y)
-                y_string = f"ln({y_string})"
-            if use_invert:
-                y *= -1
-                y_string = f"-{y_string}"
-            if use_grad:
-                y = np.gradient(y, x)
-                y_string = f"d({y_string})/d[{r_signal}]"
-        except TypeError as exc:
-            msg = f"Could not calculate transformation: {exc}"
-            log.warning(msg)
-            raise
-            raise exceptions.InvalidTransformation(msg)
-        return y, y_string
+    # def calculate_ydata(
+    #     self,
+    #     x_data,
+    #     y_data,
+    #     r_data,
+    #     x_signal,
+    #     y_signal,
+    #     r_signal,
+    #     use_reference=False,
+    #     use_log=False,
+    #     use_invert=False,
+    #     use_grad=False,
+    # ):
+    #     """Take raw y and reference data and calculate a new y_data signal."""
+    #     # Make sure we have numpy arrays
+    #     x = np.asarray(x_data)
+    #     y = np.asarray(y_data)
+    #     r = np.asarray(r_data)
+    #     # Apply transformations
+    #     y_string = f"[{y_signal}]"
+    #     try:
+    #         if use_reference:
+    #             y = y / r
+    #             y_string = f"{y_string}/[{r_signal}]"
+    #         if use_log:
+    #             y = np.log(y)
+    #             y_string = f"ln({y_string})"
+    #         if use_invert:
+    #             y *= -1
+    #             y_string = f"-{y_string}"
+    #         if use_grad:
+    #             y = np.gradient(y, x)
+    #             y_string = f"d({y_string})/d[{r_signal}]"
+    #     except TypeError as exc:
+    #         msg = f"Could not calculate transformation: {exc}"
+    #         log.warning(msg)
+    #         raise
+    #         raise exceptions.InvalidTransformation(msg)
+    #     return y, y_string
 
 
     @asyncSlot()
     async def update_multi_plot(self, *args):
         x_signal = self.ui.multi_signal_x_combobox.currentText()
+        print(x_signal)
         if x_signal == "":
             return
         use_hints = self.ui.plot_1d_hints_checkbox.isChecked()
@@ -496,49 +529,6 @@ class RunBrowserDisplay(display.FireflyDisplay):
         use_log = self.ui.logarithm_checkbox.isChecked()
         use_invert = self.ui.invert_checkbox.isChecked()
         use_grad = self.ui.gradient_checkbox.isChecked()
-        # Do the plotting for each run
-        # y_string = ""
-        # x_data = None
-        # for idx, run in enumerate(self._db_worker.selected_runs):
-        #     # Load datasets from the database
-        #     try:
-        #         x_data, y_data, r_data = self.load_run_data(
-        #             run, x_signal, y_signal, r_signal, use_reference=use_reference
-        #         )
-        #     except exceptions.SignalNotFound as e:
-        #         self.show_message(str(e), 0)
-        #         continue
-        #     except exceptions.EmptySignalName:
-        #         continue
-        #     # Screen out non-numeric data types
-        #     try:
-        #         np.isfinite(x_data)
-        #         np.isfinite(y_data)
-        #         np.isfinite(r_data)
-        #     except TypeError as e:
-        #         msg = str(e)
-        #         log.warning(msg)
-        #         self.show_message(msg)
-        #         continue
-        #     # Calculate plotting data
-        #     try:
-        #         y_data, y_string = self.calculate_ydata(
-        #             x_data,
-        #             y_data,
-        #             r_data,
-        #             x_signal,
-        #             y_signal,
-        #             r_signal,
-        #             use_reference=use_reference,
-        #             use_log=use_log,
-        #             use_invert=use_invert,
-        #             use_grad=use_grad,
-        #         )
-        #     except exceptions.InvalidTransformation as e:
-        #         self.show_message(str(e))
-        #         raise
-        #         continue
-        print(x_signal, y_signal, r_signal)
         runs = await self.db.signals(x_signal, y_signal, r_signal, use_log=use_log, use_invert=use_invert, use_grad=use_grad)
         self.ui.plot_1d_view.plot_runs(runs)
 
@@ -555,8 +545,12 @@ class RunBrowserDisplay(display.FireflyDisplay):
         # Eventually this will be replaced with robus choices for plotting multiple images
         metadata = list((await self.db.metadata()).values())[0]
         dimensions = metadata['start']['hints']['dimensions']
-        xlabel = dimensions[-1][0][0]        
-        ylabel = dimensions[-2][0][0]
+        try:
+            xlabel = dimensions[-1][0][0]        
+            ylabel = dimensions[-2][0][0]
+        except IndexError:
+            # Not a 2D scan
+            return
         # Get spatial extent
         extents = metadata['start']['extents']
         self.ui.plot_2d_view.plot_runs(images, xlabel=xlabel, ylabel=ylabel, extents=extents)
@@ -575,6 +569,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
         self.ui.metadata_textedit.document().setPlainText(text)
 
     @asyncSlot()
+    @cancellable
     async def update_selected_runs(self, *args):
         """Get the current runs from the database and stash them."""
         # Get UID's from the selection
@@ -582,10 +577,14 @@ class RunBrowserDisplay(display.FireflyDisplay):
         indexes = self.ui.run_tableview.selectedIndexes()
         uids = [i.siblingAtColumn(col_idx).data() for i in indexes]
         # Get selected runs from the database
-        self.selected_runs = await self.db.load_selected_runs(uids)
+        task = self.db_task(self.db.load_selected_runs(uids), "update selected runs")
+        self.selected_runs = await task
         # Update the necessary UI elements
         await self.update_metadata()
         await self.update_1d_signals()
+        await self.update_1d_plot()
+        await self.update_2d_plot()
+        await self.update_multi_plot()
 
     def filters(self, *args):
         new_filters = {

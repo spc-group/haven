@@ -206,10 +206,7 @@ class CatalogScan():
     async def to_dataframe(self, signals=None):
         """Convert the dataset into a pandas dataframe."""
         xarray = await self.loop.run_in_executor(None, self._read_data, signals)
-        try:
-            df = xarray.to_dataframe()
-        except:
-            breakpoint()
+        df = xarray.to_dataframe()
         return df
 
     @property
@@ -257,7 +254,7 @@ class CatalogScan():
             arr = np.reshape(arr, shape)
         # Flip alternating rows if snaking is enabled
         if "snaking" in metadata['start']:
-            data = unsnake(data, metadata['start']['snaking'])
+            arr = unsnake(arr, metadata['start']['snaking'])
         return arr
 
 
@@ -293,8 +290,8 @@ class Catalog():
 
     async def items(self):
         client = await self.client
-        for item in await self.loop.run_in_executor(None, client.items):
-            yield item
+        for key, value in await self.loop.run_in_executor(None, client.items):
+            yield key, CatalogScan(container=value)
            
     async def values(self):
         client = await self.client

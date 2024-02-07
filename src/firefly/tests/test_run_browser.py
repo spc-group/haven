@@ -9,7 +9,7 @@ from pyqtgraph import PlotItem, PlotWidget, ImageView, ImageItem
 from qtpy.QtCore import Qt
 
 from haven.catalog import Catalog
-from firefly.run_browser import RunBrowserDisplay, unsnake
+from firefly.run_browser import RunBrowserDisplay
 from firefly.run_client import DatabaseWorker
 
 
@@ -21,7 +21,11 @@ def display(ffapp, catalog, qtbot):
     loop = asyncio.get_event_loop()
     pending = asyncio.all_tasks(loop)
     loop.run_until_complete(asyncio.gather(*pending))
-    yield display
+    try:
+        yield display
+    finally:
+        for task in display._running_db_tasks.values():
+            task.cancel()
 
 
 def test_run_viewer_action(ffapp, monkeypatch):
@@ -238,6 +242,32 @@ async def test_distinct_fields(catalog, qtbot, display):
     for key in ["sample_name"]:
         assert key in distinct_fields.keys()
 
+
+@pytest.mark.asyncio
+async def test_db_task(display):
+    async def test_coro():
+        return 15
+
+    result = await display.db_task(test_coro())
+    assert result == 15
+
+
+@pytest.mark.asyncio
+async def test_db_task_interruption(display):
+    async def test_coro(sleep_time):
+        await asyncio.sleep(sleep_time)
+        return 15
+
+    # Create an existing task that will be cancelled
+    task_1 = asyncio.create_task(test_coro(1))
+    display._running_db_tasks["testing"] = task_1
+    # Now execute another task
+    result = await display.db_task(test_coro(0.01), name="testing")
+    assert result == 15
+    # Check that the first one was cancelled
+    assert task_1.done()
+    assert task_1.cancelled()
+    
 
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman

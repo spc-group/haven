@@ -91,12 +91,12 @@ class DatabaseWorker():
         nodes = await self.filtered_nodes(filters=filters)
         async for uid, node in nodes.items():
             # Get meta-data documents
-            metadata = node.metadata
+            metadata = await node.metadata
             start_doc = metadata.get("start")
             if start_doc is None:
                 log.debug(f"Skipping run with no start doc: {uid}")
                 continue
-            stop_doc = node.metadata.get("stop")
+            stop_doc = metadata.get("stop")
             if stop_doc is None:
                 stop_doc = {}
             # Get a human-readable timestamp for the run
