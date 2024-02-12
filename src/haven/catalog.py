@@ -1,8 +1,9 @@
 import threading
 import asyncio
-from functools import partial
+from functools import partial, lru_cache
 import logging
 
+import pandas as pd
 import numpy as np
 import databroker
 import sqlite3
@@ -190,7 +191,9 @@ class CatalogScan():
         self.container = container
 
     def _read_data(self, signals):
-        return self.container['primary']['data'].read(variables=signals)
+        # Fetch data if needed
+        data = self.container['primary']['data']
+        return data.read(signals)
 
     def _read_metadata(self, keys=None):
         container = self.container
@@ -199,14 +202,16 @@ class CatalogScan():
         return container.metadata
 
     @property
-    async def uid(self):
-        md = await self.metadata
-        return md['start']['uid']
+    def uid(self):
+        return self.container._item['id']
 
     async def to_dataframe(self, signals=None):
         """Convert the dataset into a pandas dataframe."""
         xarray = await self.loop.run_in_executor(None, self._read_data, signals)
-        df = xarray.to_dataframe()
+        if len(xarray) > 0:
+            df = xarray.to_dataframe()
+        else:
+            df = pd.DataFrame()
         return df
 
     @property
@@ -242,7 +247,7 @@ class CatalogScan():
     async def __getitem__(self, signal):
         """Retrieve a signal from the dataset, with reshaping etc."""
         loop = asyncio.get_running_loop()
-        arr = await loop.run_in_executor(None, self._read_data, [signal])
+        arr = await loop.run_in_executor(None, self._read_data, tuple([signal]))
         arr = np.asarray(arr[signal])
         # Re-shape to match the scan dimensions
         metadata = await self.metadata
@@ -274,7 +279,6 @@ class Catalog():
     @property
     def loop(self):
         return asyncio.get_running_loop()            
-        
 
     @property
     async def client(self):

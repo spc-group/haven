@@ -163,8 +163,7 @@ class DatabaseWorker():
         """Get all metadata for the selected runs in one big dictionary."""
         md = {}
         for run in self.selected_runs:
-            uid = await run.uid
-            md[uid] = await run.metadata
+            md[run.uid] = await run.metadata
         return md
 
     async def load_selected_runs(self, uids):
@@ -180,8 +179,12 @@ class DatabaseWorker():
         images = OrderedDict()
         for idx, run in enumerate(self.selected_runs):
             # Load datasets from the database
-            image = await run[signal]
-            images[await run.uid] = image
+            try:
+                image = await run[signal]
+            except KeyError:
+                log.warning(f"Signal {signal} not found in run {run}.")
+            else:
+                images[run.uid] = image
         return images
 
     async def all_signals(self, hinted_only=False):
@@ -197,7 +200,7 @@ class DatabaseWorker():
         for run in self.selected_runs:
             # Get data from the database
             df = await run.to_dataframe(signals=xsignals + ysignals)
-            dfs[await run.uid] = df
+            dfs[run.uid] = df
         return dfs
 
     async def signals(self, x_signal, y_signal, r_signal=None, use_log=False, use_invert=False, use_grad=False) -> Mapping:
@@ -217,7 +220,9 @@ class DatabaseWorker():
             raise exceptions.EmptySignalName(msg)
         signals = [x_signal, y_signal]
         if use_reference:
-            signals.append(r_signal)        
+            signals.append(r_signal)
+        # Remove duplicates
+        signals = list(dict.fromkeys(signals).keys())
         # Build the dataframes
         dfs = OrderedDict()
         for run in self.selected_runs:
@@ -240,7 +245,7 @@ class DatabaseWorker():
             if use_grad:
                 df[y_signal] = np.gradient(df[y_signal], df[x_signal])
             series = pd.Series(df[y_signal].values, index=df[x_signal].values)
-            dfs[await run.uid] = series
+            dfs[run.uid] = series
         return dfs
 
 # -----------------------------------------------------------------------------

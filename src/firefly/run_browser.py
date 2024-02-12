@@ -26,6 +26,17 @@ log = logging.getLogger(__name__)
 colors = list(TABLEAU_COLORS.values())
 
 
+def cancellable(fn):
+    @wraps(fn)
+    async def inner(*args, **kwargs):
+        try:
+            return await fn(*args, **kwargs)
+        except asyncio.exceptions.CancelledError:
+            log.warning(f"Cancelled task {fn}")
+    return inner
+
+
+
 class FiltersWidget(QWidget):
     returnPressed = Signal()
 
@@ -111,8 +122,12 @@ class BrowserMultiPlotWidget(GraphicsLayoutWidget):
                 continue
             # Plot each y signal on a separate plot
             for ysignal, plot_item in zip(ysignals, self.multiplot_items()):
-                plot_item.plot(xdata, data[ysignal])
-                log.debug(f"Plotted {ysignal} vs. {xsignal} for {data}")
+                try:
+                    plot_item.plot(xdata, data[ysignal])
+                except KeyError:
+                    log.warning(f"No signal {ysignal} in data.")
+                else:
+                    log.debug(f"Plotted {ysignal} vs. {xsignal} for {data}")
                 plot_item.setTitle(ysignal)
 
 
@@ -181,7 +196,6 @@ class Browser2DPlotWidget(ImageView):
 
         """
         images = np.asarray(list(runs.values()))
-        print(images)
         # Combine the different runs into one image
         # To-do: make this respond to the combobox selection
         image = np.mean(images, axis=0)
@@ -226,21 +240,11 @@ class RunBrowserDisplay(display.FireflyDisplay):
         self._running_db_tasks = {}
         self.db = DatabaseWorker(catalog=root_node)
         # Load the list of all runs for the selection widget
-        loop = asyncio.get_event_loop()
-        loop.create_task(self.load_runs())
+        self.db_task(self.load_runs())
 
-    def cancellable(fn):
-        @wraps(fn)
-        async def inner(*args, **kwargs):
-            try:
-                return await fn(*args, **kwargs)
-            except asyncio.exceptions.CancelledError:
-                print(f"Cancelled task {fn}")
-                log.warning(f"Cancelled task {fn}")
-        return inner
-        
+       
 
-    async def db_task(self, coro, name="default task"):
+    def db_task(self, coro, name="default task"):
         """Executes a co-routine as a database task. Existing database
         tasks get cancelled.
 
@@ -253,10 +257,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
         # Wait on this task to be done
         new_task = asyncio.ensure_future(coro)
         self._running_db_tasks[name] = new_task
-        # Now wait for the new task to finish
-        await new_task
-        result = new_task.result()
-        return result
+        return new_task
 
     @asyncSlot()
     async def reload_runs(self):
@@ -314,17 +315,17 @@ class RunBrowserDisplay(display.FireflyDisplay):
     # #     worker.distinct_fields_changed.connect(self.update_combobox_items)
     # #     self.load_distinct_fields.emit()
 
-    # def clear_filters(self):
-    #     self.ui.filter_proposal_combobox.setCurrentText("")
-    #     self.ui.filter_esaf_combobox.setCurrentText("")
-    #     self.ui.filter_sample_combobox.setCurrentText("")
-    #     self.ui.filter_exit_status_combobox.setCurrentText("")
-    #     self.ui.filter_current_proposal_checkbox.setChecked(False)
-    #     self.ui.filter_current_esaf_checkbox.setChecked(False)
-    #     self.ui.filter_plan_combobox.setCurrentText("")
-    #     self.ui.filter_full_text_lineedit.setText("")
-    #     self.ui.filter_edge_combobox.setCurrentText("")
-    #     self.ui.filter_user_combobox.setCurrentText("")
+    def clear_filters(self):
+        self.ui.filter_proposal_combobox.setCurrentText("")
+        self.ui.filter_esaf_combobox.setCurrentText("")
+        self.ui.filter_sample_combobox.setCurrentText("")
+        self.ui.filter_exit_status_combobox.setCurrentText("")
+        self.ui.filter_current_proposal_checkbox.setChecked(False)
+        self.ui.filter_current_esaf_checkbox.setChecked(False)
+        self.ui.filter_plan_combobox.setCurrentText("")
+        self.ui.filter_full_text_lineedit.setText("")
+        self.ui.filter_edge_combobox.setCurrentText("")
+        self.ui.filter_user_combobox.setCurrentText("")
 
     # def update_combobox_items(self, fields):
     #     for field_name, cb in [
@@ -450,13 +451,14 @@ class RunBrowserDisplay(display.FireflyDisplay):
             cb.setCurrentText(val)
 
     @asyncSlot()
+    @cancellable
     async def update_2d_signals(self, *args):
         # Store current selection for restoring later
         val_cb = self.ui.signal_value_combobox
         old_value = val_cb.currentText()
         # Determine valid list of dependent signals to choose from
         use_hints = self.ui.plot_2d_hints_checkbox.isChecked()
-        xcols, vcols = await self.db.signal_names(hinted_only=use_hints)
+        xcols, vcols = await self.db_task(self.db.signal_names(hinted_only=use_hints), "2D signals")
         # Update the UI with the list of controls
         val_cb.clear()
         val_cb.addItems(vcols)
@@ -506,16 +508,17 @@ class RunBrowserDisplay(display.FireflyDisplay):
 
 
     @asyncSlot()
+    @cancellable
     async def update_multi_plot(self, *args):
         x_signal = self.ui.multi_signal_x_combobox.currentText()
-        print(x_signal)
         if x_signal == "":
             return
         use_hints = self.ui.plot_1d_hints_checkbox.isChecked()
-        runs = await self.db.all_signals(hinted_only=use_hints)
+        runs = await self.db_task(self.db.all_signals(hinted_only=use_hints), "multi-plot")
         self.ui.plot_multi_view.plot_runs(runs, xsignal=x_signal)
 
     @asyncSlot()
+    @cancellable
     async def update_1d_plot(self, *args):
         self.plot_1d_item.clear()
         # Figure out which signals to plot
@@ -529,10 +532,12 @@ class RunBrowserDisplay(display.FireflyDisplay):
         use_log = self.ui.logarithm_checkbox.isChecked()
         use_invert = self.ui.invert_checkbox.isChecked()
         use_grad = self.ui.gradient_checkbox.isChecked()
-        runs = await self.db.signals(x_signal, y_signal, r_signal, use_log=use_log, use_invert=use_invert, use_grad=use_grad)
+        task = self.db_task(self.db.signals(x_signal, y_signal, r_signal, use_log=use_log, use_invert=use_invert, use_grad=use_grad), "1D plot")
+        runs = await task
         self.ui.plot_1d_view.plot_runs(runs)
 
     @asyncSlot()
+    @cancellable
     async def update_2d_plot(self):
         """Change the 2D map plot based on desired signals, etc."""
         # Figure out which signals to plot
@@ -540,10 +545,11 @@ class RunBrowserDisplay(display.FireflyDisplay):
         use_log = self.ui.logarithm_checkbox_2d.isChecked()
         use_invert = self.ui.invert_checkbox_2d.isChecked()
         use_grad = self.ui.gradient_checkbox_2d.isChecked()
-        images = await self.db.images(value_signal)
+        images = await self.db_task(self.db.images(value_signal), "2D plot")
         # Get axis labels
         # Eventually this will be replaced with robus choices for plotting multiple images
-        metadata = list((await self.db.metadata()).values())[0]
+        metadata = await self.db_task(self.db.metadata(), "2D plot")
+        metadata = list(metadata.values())[0]
         dimensions = metadata['start']['hints']['dimensions']
         try:
             xlabel = dimensions[-1][0][0]        
@@ -560,7 +566,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
         """Render metadata for the runs into the metadata widget."""
         # Combine the metadata in a human-readable output
         text = ""
-        all_md = await self.db.metadata()
+        all_md = await self.db_task(self.db.metadata(), "metadata")
         for uid, md in all_md.items():
             text += f"# {uid}"
             text += yaml.dump(md)
@@ -580,8 +586,9 @@ class RunBrowserDisplay(display.FireflyDisplay):
         task = self.db_task(self.db.load_selected_runs(uids), "update selected runs")
         self.selected_runs = await task
         # Update the necessary UI elements
-        await self.update_metadata()
         await self.update_1d_signals()
+        await self.update_2d_signals()
+        await self.update_metadata()
         await self.update_1d_plot()
         await self.update_2d_plot()
         await self.update_multi_plot()

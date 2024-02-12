@@ -179,7 +179,6 @@ def main(default_fullscreen=False, default_display="status"):
 
     # Make it asynchronous
     event_loop = QEventLoop(app)
-    print(event_loop.__class__)
     asyncio.set_event_loop(event_loop)
     app_close_event = asyncio.Event()
     app.aboutToQuit.connect(app_close_event.set)
@@ -190,7 +189,7 @@ def main(default_fullscreen=False, default_display="status"):
     app.load_instrument()
     # FireflyApplication.processEvents()
 
-    # Show the first window
+    # Show the first window (breaks asyncio)
     # first_window = list(app.windows.values())[0]
     # splash.finish(first_window)
     splash.close()

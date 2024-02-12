@@ -86,7 +86,7 @@ async def test_search(catalog, tiled_client):
 async def test_values(catalog, tiled_client):
     """Get the individual scans in the catalog."""
     expected = [uid for uid in tiled_client.keys()]
-    response = [await val.uid async for val in catalog.values()]
+    response = [val.uid async for val in catalog.values()]
     assert expected == response
     
 # -----------------------------------------------------------------------------
