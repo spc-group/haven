@@ -202,7 +202,11 @@ class Browser2DPlotWidget(ImageView):
         # To-do: Apply transformations
         
         # # Plot the image
-        self.setImage(image.T, autoRange=False)
+        if 2 <= image.ndim <= 3:
+            self.setImage(image.T, autoRange=False)
+        else:
+            log.info(f"Could not plot image of dataset with shape {image.shape}.")
+            return
         # Determine the axes labels
         self.view.setLabel(axis="bottom", text=xlabel)
         self.view.setLabel(axis="left", text=ylabel)

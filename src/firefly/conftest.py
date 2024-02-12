@@ -108,17 +108,17 @@ def ffapp(pydm_ophyd_plugin, qapp_cls, qapp_args, pytestconfig):
         app.setup_window_actions()
         app.setup_runengine_actions()
         app._dummy_main_window = FireflyMainWindow()
-    try:
-        yield app
-    finally:
-        del app
-        gc.collect()
+    yield app
+    # try:
+    #     yield app
+    # finally:
+    #     del app
+    #     gc.collect()
 
 
 @pytest.fixture()
 def affapp(event_loop, ffapp):
     # Prepare the event loop
-    print(event_loop)
     asyncio.set_event_loop(event_loop)
     # Sanity check to make sure a QApplication was not created by mistake
     assert isinstance(ffapp, FireflyApplication)

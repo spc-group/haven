@@ -13,7 +13,7 @@ from firefly.run_browser import RunBrowserDisplay
 from firefly.run_client import DatabaseWorker
 
 
-pytest.skip("Need to migrate the module to gemviz fork", allow_module_level=True)
+# pytest.skip("Need to migrate the module to gemviz fork", allow_module_level=True)
 
 
 @pytest.fixture()
@@ -26,18 +26,18 @@ def display(affapp, catalog):
     loop.run_until_complete(asyncio.gather(*pending))
     assert all(task.done() for task in pending), "Init tasks not complete."
     # Run the test
-    yield display
-    # try:
-    #     yield display
-    # finally:
+    # yield display
+    try:
+        yield display
+    finally:
         # Cancel remaining tasks
-        # loop = asyncio.get_event_loop()
-        # pending = asyncio.all_tasks(loop)
-        # loop.run_until_complete(asyncio.gather(*pending))
-        # assert all(task.done() for task in pending), "Shutdown tasks not complete."
+        loop = asyncio.get_event_loop()
+        pending = asyncio.all_tasks(loop)
+        loop.run_until_complete(asyncio.gather(*pending))
+        assert all(task.done() for task in pending), "Shutdown tasks not complete."
 
 
-def test_run_viewer_action(affapp, monkeypatch):
+def test_run_viewer_action(ffapp, monkeypatch):
     monkeypatch.setattr(ffapp, "create_window", MagicMock())
     assert hasattr(ffapp, "show_run_browser_action")
     ffapp.show_run_browser_action.trigger()
@@ -104,16 +104,15 @@ async def test_1d_plot_signal_memory(catalog, display):
     assert isinstance(plot_widget, PlotWidget)
     assert isinstance(plot_item, PlotItem)
     # Update the list of runs and see if the controls get updated
-    runs = [run async for run in catalog.values()][:2]
-    display.db.selected_runs = runs
-    await display.update_1d_signals()
+    display.ui.run_tableview.selectRow(1)
+    await display.update_selected_runs()
     # Check signals in comboboxes
     cb = display.ui.signal_y_combobox
     assert cb.currentText() == "energy_energy"
     cb.setCurrentIndex(1)
     assert cb.currentText() == "energy_id_energy_readback"
     # Update the combobox signals and make sure the text didn't change
-    display.update_1d_signals()
+    await display.update_1d_signals()
     assert cb.currentText() == "energy_id_energy_readback"
 
 
@@ -263,18 +262,19 @@ async def test_db_task(display):
 
 
 @pytest.mark.asyncio
-async def test_db_task_interruption(display):
+async def test_db_task_interruption(display, event_loop):
     async def test_coro(sleep_time):
         await asyncio.sleep(sleep_time)
-        return 15
+        return sleep_time
 
     # Create an existing task that will be cancelled
-    task_1 = asyncio.create_task(test_coro(1))
-    display._running_db_tasks["testing"] = task_1
+    task_1 = display.db_task(test_coro(1.0), name="testing")
     # Now execute another task
     result = await display.db_task(test_coro(0.01), name="testing")
-    assert result == 15
+    assert result == 0.01
     # Check that the first one was cancelled
+    with pytest.raises(asyncio.exceptions.CancelledError):
+        await task_1
     assert task_1.done()
     assert task_1.cancelled()
     
