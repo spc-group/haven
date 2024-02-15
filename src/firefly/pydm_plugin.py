@@ -14,7 +14,9 @@ from typhos.plugins.core import SignalConnection, SignalPlugin
 class HavenConnection(SignalConnection):
     def __init__(self, channel, address, protocol=None, parent=None):
         # Create base connection
-        super(SignalConnection, self).__init__(channel, address, protocol=protocol, parent=parent)
+        super(SignalConnection, self).__init__(
+            channel, address, protocol=protocol, parent=parent
+        )
         self._connection_open = True
         self.signal_type = None
         self.is_float = False

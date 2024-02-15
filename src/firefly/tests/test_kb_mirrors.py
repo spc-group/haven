@@ -61,7 +61,6 @@ def test_bender_widgets(ffapp, kb_bendable_mirrors):
     assert disp.ui.horizontal_downstream_display.isEnabled()
     assert disp.ui.vertical_upstream_display.isEnabled()
     assert disp.ui.vertical_downstream_display.isEnabled()
-    
 
 
 def test_kb_mirrors_caqtdm(display, kb_mirrors):
