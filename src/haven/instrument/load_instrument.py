@@ -25,6 +25,7 @@ from .stage import load_stage_coros
 from .table import load_table_coros
 from .xray_source import load_xray_source_coros
 from .xspress import load_xspress_coros
+from .robot import load_robot_coros
 
 __all__ = ["load_instrument"]
 
@@ -69,6 +70,7 @@ async def aload_instrument(
         *load_ion_chamber_coros(config=config),
         *load_area_detector_coros(config=config),
         *load_lerix_spectrometer_coros(config=config),
+        *load_robot_coros(config=config)
     )
     devices = await asyncio.gather(*coros)
     # Load the motor devices last so that we can check for existing

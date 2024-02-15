@@ -3,14 +3,14 @@ import logging
 
 from ophyd import Component as Cpt
 from ophyd import DynamicDeviceComponent as DCpt
-from ophyd import Device, EpicsMotor, EpicsSignal
+from ophyd import Device, EpicsMotor, EpicsSignal, EpicsSignalRO
 
 from .._iconfig import load_config
 from .device import aload_devices, make_device
 
 log = logging.getLogger(__name__)
 
-def transfer_sample(num_dios: int):
+def transfer_samples(num_samples: int):
     """Create a dictionary with robot sample device definitions.
     For use with an ophyd DynamicDeviceComponent.
     Parameters
@@ -18,34 +18,35 @@ def transfer_sample(num_dios: int):
     num_dios
       How many samples to create.
     """
-    sample = {}
-    sample_attrs = ['present', 'empty', 'load', 'unload','x', 'y', 'z', 'rx', 'ry', 'rz']
-    for n in range(num_dios):
-        for attr in sample_attrs:
-            sample[f"sample{n}_{attr}"] = Cpt(EpicsSignal, f":sample{n}:{attr}", labels={"transfer"})
-    return sample
+    samples = {}
+    samples_attrs = ['present', 'empty', 'load', 'unload','x', 'y', 'z', 'rx', 'ry', 'rz']
+    for n in range(num_samples):
+        for attr in samples_attrs:
+            samples[f"sample{n}_{attr}"] = Cpt(EpicsSignal, f":sample{n}:{attr}", labels={"transfer"})
+    return samples
 
 
 class Robot(Device):
     # joints and position
-    i = Cpt(EpicsMotor, ":i", labels={ "joint"})
-    j = Cpt(EpicsMotor, ":j", labels={ "joint"})
-    k = Cpt(EpicsMotor, ":k", labels={ "joint"})
-    l = Cpt(EpicsMotor, ":l", labels={ "joint"})
-    m = Cpt(EpicsMotor, ":m", labels={ "joint"})
-    n = Cpt(EpicsMotor, ":n", labels={ "joint"})
-    x = Cpt(EpicsMotor, ":x", labels={ "joint"})
-    y = Cpt(EpicsMotor, ":y", labels={ "joint"})
-    z = Cpt(EpicsMotor, ":z", labels={ "joint"})
-    rx = Cpt(EpicsMotor, ":rx", labels={ "joint"})
-    ry = Cpt(EpicsMotor, ":ry", labels={ "joint"})
-    rz = Cpt(EpicsMotor, ":rz", labels={ "joint"})
-    acc = Cpt(EpicsMotor, ":acceleration", labels={ "joint"})
-    vel = Cpt(EpicsMotor, ":velocity", labels={ "joint"})
+    i = Cpt(EpicsMotor, ":i", labels={ "joints"})
+    j = Cpt(EpicsMotor, ":j", labels={ "joints"})
+    k = Cpt(EpicsMotor, ":k", labels={ "joints"})
+    l = Cpt(EpicsMotor, ":l", labels={ "joints"})
+    m = Cpt(EpicsMotor, ":m", labels={ "joints"})
+    n = Cpt(EpicsMotor, ":n", labels={ "joints"})
+    x = Cpt(EpicsMotor, ":x", labels={ "joints"})
+    y = Cpt(EpicsMotor, ":y", labels={ "joints"})
+    z = Cpt(EpicsMotor, ":z", labels={ "joints"})
+    rx = Cpt(EpicsMotor, ":rx", labels={ "joints"})
+    ry = Cpt(EpicsMotor, ":ry", labels={ "joints"})
+    rz = Cpt(EpicsMotor, ":rz", labels={ "joints"})
+    acc = Cpt(EpicsSignal, ":acceleration", labels={ "joints"}, kind="config")
+    vel = Cpt(EpicsSignal, ":velocity", labels={ "joints"}, kind="config")
     
     # dashboard
-    remote_control = Cpt(EpicsSignal, ":dashboard:remote_control", labels={"dashboard"}, kind="config")
-    program_rbv = Cpt(EpicsSignal, ":dashboard:program_rbv", labels={"dashboard"}, kind="config")
+    remote_control = Cpt(EpicsSignalRO, ":dashboard:remote_control", labels={"dashboard"}, kind="config")
+    program = Cpt(EpicsSignal, ":dashboard:program_rbv", labels={"dashboard"}, kind="config")
+    program_rbv = Cpt(EpicsSignalRO, ":dashboard:program_rbv", labels={"dashboard"}, kind="config")
     installation = Cpt(EpicsSignal, ":dashboard:installation", labels={"dashboard"}, kind="config")
     play = Cpt(EpicsSignal, ":dashboard:play", labels={"dashboard"}, kind="config")
     stop = Cpt(EpicsSignal, ":dashboard:stop", labels={"dashboard"}, kind="config")
@@ -59,7 +60,7 @@ class Robot(Device):
     program_running = Cpt(EpicsSignal, ":dashboard:program_running", labels={"dashboard"}, kind="config")
     safety_status = Cpt(EpicsSignal, ":dashboard:safety_status", labels={"dashboard"}, kind="config")
     power = Cpt(EpicsSignal, ":dashboard:power", labels={"dashboard"}, kind="config")
-    power_rbv = Cpt(EpicsSignal, ":dashboard:power_rbv", labels={"dashboard"}, kind="config")
+    power_rbv = Cpt(EpicsSignalRO, ":dashboard:power_rbv", labels={"dashboard"}, kind="config")
     
     # gripper
     act = Cpt(EpicsSignal, ":gripper:ACT", labels={"gripper"}, kind="config")
@@ -70,16 +71,16 @@ class Robot(Device):
     val = Cpt(EpicsSignal, ":gripper:VAL", labels={"gripper"}, kind="config")
     
     # busy 
-    busy = Cpt(EpicsSignal, ":busy", labels={"busy"}, kind="config")
+    busy = Cpt(EpicsSignal, ":busy", labels={"busy"}, kind="omitted")
     
     # sample transfer
-    current_sample = Cpt(EpicsSignal, ":current_sample", labels={"transfer"}, kind="config")
+    current_sample = Cpt(EpicsSignalRO, ":current_sample", labels={"transfer"}, kind="config")
     unload_current_sample = Cpt(EpicsSignal, ":unload_current_sample", labels={"transfer"}, kind="config")
     current_sample_reset = Cpt(EpicsSignal, ":current_sample_reset", labels={"transfer"}, kind="config")
     home = Cpt(EpicsSignal, ":home", labels={"transfer"}, kind="config")
     cal_stage = Cpt(EpicsSignal, ":cal_stage", labels={"transfer"}, kind="config")
     
-    sample = DCpt(EpicsSignal,transfer_sample(24), labels={"transfer"}, kind="normal")
+    samples = DCpt(EpicsSignal,transfer_samples(24), labels={"transfer"}, kind="normal")
 
 
 
@@ -101,7 +102,7 @@ def load_robot(config=None):
 # -----------------------------------------------------------------------------
 # :author:    Yanna Chen
 # :email:     yannachen@anl.gov
-# :copyright: Copyright © 2023, UChicago Argonne, LLC
+# :copyright: Copyright © 2024, UChicago Argonne, LLC
 #
 # Distributed under the terms of the 3-Clause BSD License
 #
