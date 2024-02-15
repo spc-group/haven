@@ -54,11 +54,18 @@ def test_unused_motor_widgets(ffapp, empty_table):
     assert not display.ui.pitch_embedded_display.isEnabled()
     assert not display.ui.vertical_embedded_display.isEnabled()
     assert not display.ui.horizontal_embedded_display.isEnabled()
-    
+
 
 def test_tilting_table_caqtdm(ffapp, sim_registry):
-    table = FakeTable("255idcVME:", horizontal_motor="m4",
-                      upstream_motor="m42", downstream_motor="m43", transforms="table_ds_trans:", pseudo_motors="table_ds:", name="table")
+    table = FakeTable(
+        "255idcVME:",
+        horizontal_motor="m4",
+        upstream_motor="m42",
+        downstream_motor="m43",
+        transforms="table_ds_trans:",
+        pseudo_motors="table_ds:",
+        name="table",
+    )
     sim_registry.register(table)
     display = TableDisplay(macros={"DEVICE": table.name})
     display._open_caqtdm_subprocess = mock.MagicMock()
@@ -105,7 +112,9 @@ def test_single_motor_caqtdm(ffapp, sim_registry):
 
 
 def test_double_motor_caqtdm(ffapp, sim_registry):
-    table = FakeTable("255idcVME:", horizontal_motor="m3", vertical_motor="m4", name="table")
+    table = FakeTable(
+        "255idcVME:", horizontal_motor="m3", vertical_motor="m4", name="table"
+    )
     sim_registry.register(table)
     display = TableDisplay(macros={"DEVICE": table.name})
     display._open_caqtdm_subprocess = mock.MagicMock()
@@ -124,6 +133,7 @@ def test_double_motor_caqtdm(ffapp, sim_registry):
     assert "P=255idcVME:" in macros
     assert "M1=m3" in macros
     assert "M2=m4" in macros
+
 
 # def test_kb_bendable_mirrors_caqtdm(ffapp, kb_bendable_mirrors):
 #     mirrors = kb_bendable_mirrors

@@ -1,6 +1,5 @@
 """Tests for a generic X-Y stage."""
 
-
 import pytest
 
 from haven import exceptions, registry

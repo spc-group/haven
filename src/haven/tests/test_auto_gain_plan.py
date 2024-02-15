@@ -122,4 +122,3 @@ def test_recommender_hysteresis(recommender):
     # Check recommendations, second gain should still go up
     recommender.tell_many(gains, volts)
     np.testing.assert_equal(recommender.ask(1), (9, 12))
-    

@@ -46,9 +46,11 @@ jobs:
         isort --check src/
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    - name: Enforce formatting with black
+      run: |
+        black --check src/
     - name: Licensing
       run: |
-        # Check that the license snippet is in each python source
         find src/ -type f -name "*.py" -exec grep -H -c 'Copyright © 2023, UChicago Argonne, LLC' {} \; | grep 0$ | cut -d':' -f1
     - name: Test with pytest in Xvfb
       run: xvfb-run python -m pytest -vv --timeout=120
