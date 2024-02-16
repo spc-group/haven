@@ -10,6 +10,20 @@ from .device import aload_devices, make_device
 
 log = logging.getLogger(__name__)
 
+class Sample(Device):
+ 
+
+    present = Cpt(EpicsSignalRO, ":present")
+    empty = Cpt(EpicsSignalRO, ":empty")
+    load = Cpt(EpicsSignalRO, ":load")
+    unload = Cpt(EpicsSignalRO, ":unload")
+    x = Cpt(EpicsSignalRO, ":x")
+    y = Cpt(EpicsSignalRO, ":y")
+    z = Cpt(EpicsSignalRO, ":z")
+    rx = Cpt(EpicsSignalRO, ":rx")
+    ry = Cpt(EpicsSignalRO, ":ry")
+    rz = Cpt(EpicsSignalRO, ":rz")
+
 def transfer_samples(num_samples: int):
     """Create a dictionary with robot sample device definitions.
     For use with an ophyd DynamicDeviceComponent.
@@ -21,8 +35,9 @@ def transfer_samples(num_samples: int):
     samples = {}
     samples_attrs = ['present', 'empty', 'load', 'unload','x', 'y', 'z', 'rx', 'ry', 'rz']
     for n in range(num_samples):
-        for attr in samples_attrs:
-            samples[f"sample{n}_{attr}"] = Cpt(EpicsSignal, f":sample{n}:{attr}", labels={"transfer"})
+        samples[f"sample{n}"] = (Sample, f":sample{n}", {})
+        # samples[f"sample{n}_{attr}"] = (EpicsSignal, f":sample{n}:{attr}", dict(labels={"transfer"}))
+    #breakpoint()
     return samples
 
 
@@ -48,9 +63,9 @@ class Robot(Device):
     program = Cpt(EpicsSignal, ":dashboard:program_rbv", labels={"dashboard"}, kind="config")
     program_rbv = Cpt(EpicsSignalRO, ":dashboard:program_rbv", labels={"dashboard"}, kind="config")
     installation = Cpt(EpicsSignal, ":dashboard:installation", labels={"dashboard"}, kind="config")
-    play = Cpt(EpicsSignal, ":dashboard:play", labels={"dashboard"}, kind="config")
-    stop = Cpt(EpicsSignal, ":dashboard:stop", labels={"dashboard"}, kind="config")
-    pause = Cpt(EpicsSignal, ":dashboard:pause", labels={"dashboard"}, kind="config")
+    playRbt = Cpt(EpicsSignal, ":dashboard:play", labels={"dashboard"}, kind="config")
+    stopRbt = Cpt(EpicsSignal, ":dashboard:stop", labels={"dashboard"}, kind="config")
+    pauseRbt = Cpt(EpicsSignal, ":dashboard:pause", labels={"dashboard"}, kind="config")
     quit = Cpt(EpicsSignal, ":dashboard:quit", labels={"dashboard"}, kind="config")
     shutdown = Cpt(EpicsSignal, ":dashboard:shutdown", labels={"dashboard"}, kind="config")
     release_brake = Cpt(EpicsSignal, ":dashboard:release_brake", labels={"dashboard"}, kind="config")
@@ -80,7 +95,7 @@ class Robot(Device):
     home = Cpt(EpicsSignal, ":home", labels={"transfer"}, kind="config")
     cal_stage = Cpt(EpicsSignal, ":cal_stage", labels={"transfer"}, kind="config")
     
-    samples = DCpt(EpicsSignal,transfer_samples(24), labels={"transfer"}, kind="normal")
+    samples = DCpt(transfer_samples(24), kind="normal")
 
 
 

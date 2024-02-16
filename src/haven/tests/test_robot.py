@@ -4,19 +4,9 @@ from haven import Robot
 def test_robot():
     robot = Robot("25idAustin", name="robot")
     # Check PVs are correct
-    robot.i.user_readback.pvname == "25idAustin:i.RBV"
-    robot.samples(8).pvname == {"25idAustin:sample8:present",
-                               "25idAustin:sample8:empty",
-                               "25idAustin:sample8:load",
-                               "25idAustin:sample8:unload",
-                               "25idAustin:sample8:x",
-                               "25idAustin:sample8:y",
-                               "25idAustin:sample8:z",                               "25idAustin:sample8:empty",
-                               "25idAustin:sample8:rx",
-                               "25idAustin:sample8:ry",                               
-                               "25idAustin:sample8:rz"}
-
-
+    assert robot.i.user_readback.pvname == "25idAustin:i.RBV"
+    assert robot.samples.sample8.present.pvname == "25idAustin:sample8:present"
+    assert robot.samples.sample8.rz.pvname == "25idAustin:sample8:rz"
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov
