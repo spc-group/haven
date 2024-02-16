@@ -15,8 +15,8 @@ class Sample(Device):
 
     present = Cpt(EpicsSignalRO, ":present")
     empty = Cpt(EpicsSignalRO, ":empty")
-    load = Cpt(EpicsSignalRO, ":load")
-    unload = Cpt(EpicsSignalRO, ":unload")
+    load = Cpt(EpicsSignal, ":load")
+    unload = Cpt(EpicsSignal, ":unload")
     x = Cpt(EpicsSignalRO, ":x")
     y = Cpt(EpicsSignalRO, ":y")
     z = Cpt(EpicsSignalRO, ":z")
@@ -34,7 +34,7 @@ def transfer_samples(num_samples: int):
     """
     samples = {}
     samples_attrs = ['present', 'empty', 'load', 'unload','x', 'y', 'z', 'rx', 'ry', 'rz']
-    for n in range(num_samples):
+    for n in [8,9,10,14,15,16,20,21,22]:#range(num_samples):
         samples[f"sample{n}"] = (Sample, f":sample{n}", {})
         # samples[f"sample{n}_{attr}"] = (EpicsSignal, f":sample{n}:{attr}", dict(labels={"transfer"}))
     #breakpoint()
@@ -78,12 +78,13 @@ class Robot(Device):
     power_rbv = Cpt(EpicsSignalRO, ":dashboard:power_rbv", labels={"dashboard"}, kind="config")
     
     # gripper
-    act = Cpt(EpicsSignal, ":gripper:ACT", labels={"gripper"}, kind="config")
-    acr = Cpt(EpicsSignal, ":gripper:ACR", labels={"gripper"}, kind="config")
-    cls = Cpt(EpicsSignal, ":gripper:CLS", labels={"gripper"}, kind="config")
-    opn = Cpt(EpicsSignal, ":gripper:OPN", labels={"gripper"}, kind="config")
-    rbv = Cpt(EpicsSignal, ":gripper:RBV", labels={"gripper"}, kind="config")
-    val = Cpt(EpicsSignal, ":gripper:VAL", labels={"gripper"}, kind="config")
+    gripper_activate = Cpt(EpicsSignal, ":gripper.ACT", labels={"gripper"}, kind="config")
+    gripper_activated = Cpt(EpicsSignal, ":gripper.ACR", labels={"gripper"}, kind="config")
+    gripper_close = Cpt(EpicsSignal, ":gripper.CLS", labels={"gripper"}, kind="config")
+    gripper_open = Cpt(EpicsSignal, ":gripper.OPN", labels={"gripper"}, kind="config")
+    gripper_rbv = Cpt(EpicsSignal, ":gripper.RBV", labels={"gripper"}, kind="config")
+    gripper_val = Cpt(EpicsSignal, ":gripper.VAL", labels={"gripper"}, kind="config")
+    gripper_force = Cpt(EpicsSignal, ":gripper.FRC", labels={"gripper"}, kind="config")
     
     # busy 
     busy = Cpt(EpicsSignal, ":busy", labels={"busy"}, kind="omitted")

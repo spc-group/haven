@@ -7,6 +7,7 @@ def test_robot():
     assert robot.i.user_readback.pvname == "25idAustin:i.RBV"
     assert robot.samples.sample8.present.pvname == "25idAustin:sample8:present"
     assert robot.samples.sample8.rz.pvname == "25idAustin:sample8:rz"
+
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov
