@@ -1,5 +1,4 @@
-from haven import Robot
-
+from haven.instrument import Robot, load_robot
 
 def test_robot():
     robot = Robot("25idAustin", name="robot")
@@ -8,9 +7,14 @@ def test_robot():
     assert robot.samples.sample8.present.pvname == "25idAustin:sample8:present"
     assert robot.samples.sample8.rz.pvname == "25idAustin:sample8:rz"
 
+def test_load_robot(sim_registry):
+    new_rbt = load_robot()
+    # Test the robot info is extracted properly
+    rbt = sim_registry.find(label="robot")
+    assert rbt.prefix == "25idAustin"
 # -----------------------------------------------------------------------------
-# :author:    Mark Wolfman
-# :email:     wolfman@anl.gov
+# :author:    Yanna Chen
+# :email:     yannachen@anl.gov
 # :copyright: Copyright © 2023, UChicago Argonne, LLC
 #
 # Distributed under the terms of the 3-Clause BSD License
