@@ -60,14 +60,15 @@ properly setup, the tests can be run using:
 ``pytest`` should not report any errors or failures, though skipped,
 xfailed, and warnings are expected.
 
-Several simulated IOCs are started up in the process, and can be used
-in writing tests.
+While running the tests, devices created using
+:py:func:`~haven.instrument.device.make_device()` will be replaced
+with simulated devices using Ophyd's *sim* module. This means that
+:py:func:`~haven.instrument.load_instrument()` can be called without
+hardware being present, and the corresponding fake devices can be
+found in the :py:obj:`haven.registry`.
 
-.. code:: python
-
-   def test_mono(ioc_mono):
-       # Write tests here using the mono IOC
-       ...
+Additionally, some pytest fixtures are provided that create simulated
+devices, (e.g. ion chambers) and can be used directly in your tests.
 
 More details can be found in the file *haven/tests/conftest.py*.
        
