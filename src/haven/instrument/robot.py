@@ -11,12 +11,10 @@ from .device import aload_devices, make_device
 log = logging.getLogger(__name__)
 
 class Sample(Device):
- 
-
     present = Cpt(EpicsSignalRO, ":present")
     empty = Cpt(EpicsSignalRO, ":empty")
-    load = Cpt(EpicsSignal, ":load")
-    unload = Cpt(EpicsSignal, ":unload")
+    load = Cpt(EpicsSignal, ":load", kind="omitted")
+    unload = Cpt(EpicsSignal, ":unload",kind="omitted")
     x = Cpt(EpicsSignalRO, ":x")
     y = Cpt(EpicsSignalRO, ":y")
     z = Cpt(EpicsSignalRO, ":z")
@@ -33,70 +31,68 @@ def transfer_samples(num_samples: int):
       How many samples to create.
     """
     samples = {}
-    samples_attrs = ['present', 'empty', 'load', 'unload','x', 'y', 'z', 'rx', 'ry', 'rz']
+    # Now the sample holder bases are only located at sites [8,9,10,14,15,16,20,21,22] on the board.
     for n in [8,9,10,14,15,16,20,21,22]:#range(num_samples):
         samples[f"sample{n}"] = (Sample, f":sample{n}", {})
-        # samples[f"sample{n}_{attr}"] = (EpicsSignal, f":sample{n}:{attr}", dict(labels={"transfer"}))
-    #breakpoint()
     return samples
 
 
 class Robot(Device):
     # joints and position
-    i = Cpt(EpicsMotor, ":i", labels={ "joints"})
-    j = Cpt(EpicsMotor, ":j", labels={ "joints"})
-    k = Cpt(EpicsMotor, ":k", labels={ "joints"})
-    l = Cpt(EpicsMotor, ":l", labels={ "joints"})
-    m = Cpt(EpicsMotor, ":m", labels={ "joints"})
-    n = Cpt(EpicsMotor, ":n", labels={ "joints"})
-    x = Cpt(EpicsMotor, ":x", labels={ "joints"})
-    y = Cpt(EpicsMotor, ":y", labels={ "joints"})
-    z = Cpt(EpicsMotor, ":z", labels={ "joints"})
-    rx = Cpt(EpicsMotor, ":rx", labels={ "joints"})
-    ry = Cpt(EpicsMotor, ":ry", labels={ "joints"})
-    rz = Cpt(EpicsMotor, ":rz", labels={ "joints"})
-    acc = Cpt(EpicsSignal, ":acceleration", labels={ "joints"}, kind="config")
-    vel = Cpt(EpicsSignal, ":velocity", labels={ "joints"}, kind="config")
+    i = Cpt(EpicsMotor, ":i")
+    j = Cpt(EpicsMotor, ":j")
+    k = Cpt(EpicsMotor, ":k")
+    l = Cpt(EpicsMotor, ":l")
+    m = Cpt(EpicsMotor, ":m")
+    n = Cpt(EpicsMotor, ":n")
+    x = Cpt(EpicsMotor, ":x")
+    y = Cpt(EpicsMotor, ":y")
+    z = Cpt(EpicsMotor, ":z")
+    rx = Cpt(EpicsMotor, ":rx")
+    ry = Cpt(EpicsMotor, ":ry")
+    rz = Cpt(EpicsMotor, ":rz")
+    acc = Cpt(EpicsSignal, ":acceleration", kind="config")
+    vel = Cpt(EpicsSignal, ":velocity", kind="config")
     
     # dashboard
-    remote_control = Cpt(EpicsSignalRO, ":dashboard:remote_control", labels={"dashboard"}, kind="config")
-    program = Cpt(EpicsSignal, ":dashboard:program_rbv", labels={"dashboard"}, kind="config")
-    program_rbv = Cpt(EpicsSignalRO, ":dashboard:program_rbv", labels={"dashboard"}, kind="config")
-    installation = Cpt(EpicsSignal, ":dashboard:installation", labels={"dashboard"}, kind="config")
-    playRbt = Cpt(EpicsSignal, ":dashboard:play", labels={"dashboard"}, kind="config")
-    stopRbt = Cpt(EpicsSignal, ":dashboard:stop", labels={"dashboard"}, kind="config")
-    pauseRbt = Cpt(EpicsSignal, ":dashboard:pause", labels={"dashboard"}, kind="config")
-    quit = Cpt(EpicsSignal, ":dashboard:quit", labels={"dashboard"}, kind="config")
-    shutdown = Cpt(EpicsSignal, ":dashboard:shutdown", labels={"dashboard"}, kind="config")
-    release_brake = Cpt(EpicsSignal, ":dashboard:release_brake", labels={"dashboard"}, kind="config")
-    close_safety_popup = Cpt(EpicsSignal, ":dashboard:close_safety_popup", labels={"dashboard"}, kind="config")
-    unlock_protective_stop = Cpt(EpicsSignal, ":dashboard:unlock_protective_stop", labels={"dashboard"}, kind="config")
-    restart_safety = Cpt(EpicsSignal, ":dashboard:restart_safety", labels={"dashboard"}, kind="config")
-    program_running = Cpt(EpicsSignal, ":dashboard:program_running", labels={"dashboard"}, kind="config")
-    safety_status = Cpt(EpicsSignal, ":dashboard:safety_status", labels={"dashboard"}, kind="config")
-    power = Cpt(EpicsSignal, ":dashboard:power", labels={"dashboard"}, kind="config")
-    power_rbv = Cpt(EpicsSignalRO, ":dashboard:power_rbv", labels={"dashboard"}, kind="config")
+    remote_control = Cpt(EpicsSignalRO, ":dashboard:remote_control", kind="config")
+    program = Cpt(EpicsSignal, ":dashboard:program_rbv", kind="config")
+    program_rbv = Cpt(EpicsSignalRO, ":dashboard:program_rbv", kind="config")
+    installation = Cpt(EpicsSignal, ":dashboard:installation", kind="config")
+    playRbt = Cpt(EpicsSignal, ":dashboard:play", kind="config")
+    stopRbt = Cpt(EpicsSignal, ":dashboard:stop", kind="config")
+    pauseRbt = Cpt(EpicsSignal, ":dashboard:pause", kind="config")
+    quit = Cpt(EpicsSignal, ":dashboard:quit", kind="config")
+    shutdown = Cpt(EpicsSignal, ":dashboard:shutdown", kind="config")
+    release_brake = Cpt(EpicsSignal, ":dashboard:release_brake", kind="config")
+    close_safety_popup = Cpt(EpicsSignal, ":dashboard:close_safety_popup", kind="config")
+    unlock_protective_stop = Cpt(EpicsSignal, ":dashboard:unlock_protective_stop", kind="config")
+    restart_safety = Cpt(EpicsSignal, ":dashboard:restart_safety", kind="config")
+    program_running = Cpt(EpicsSignal, ":dashboard:program_running", kind="config")
+    safety_status = Cpt(EpicsSignal, ":dashboard:safety_status", kind="config")
+    power = Cpt(EpicsSignal, ":dashboard:power", kind="config")
+    power_rbv = Cpt(EpicsSignalRO, ":dashboard:power_rbv", kind="config")
     
     # gripper
-    gripper_activate = Cpt(EpicsSignal, ":gripper.ACT", labels={"gripper"}, kind="config")
-    gripper_activated = Cpt(EpicsSignal, ":gripper.ACR", labels={"gripper"}, kind="config")
-    gripper_close = Cpt(EpicsSignal, ":gripper.CLS", labels={"gripper"}, kind="config")
-    gripper_open = Cpt(EpicsSignal, ":gripper.OPN", labels={"gripper"}, kind="config")
-    gripper_rbv = Cpt(EpicsSignal, ":gripper.RBV", labels={"gripper"}, kind="config")
-    gripper_val = Cpt(EpicsSignal, ":gripper.VAL", labels={"gripper"}, kind="config")
-    gripper_force = Cpt(EpicsSignal, ":gripper.FRC", labels={"gripper"}, kind="config")
+    gripper_activate = Cpt(EpicsSignal, ":gripper.ACT", kind="config")
+    gripper_activated = Cpt(EpicsSignal, ":gripper.ACR", kind="config")
+    gripper_close = Cpt(EpicsSignal, ":gripper.CLS", kind="config")
+    gripper_open = Cpt(EpicsSignal, ":gripper.OPN", kind="config")
+    gripper_rbv = Cpt(EpicsSignal, ":gripper.RBV", kind="config")
+    gripper_val = Cpt(EpicsSignal, ":gripper.VAL", kind="config")
+    gripper_force = Cpt(EpicsSignal, ":gripper.FRC", kind="config")
     
     # busy 
-    busy = Cpt(EpicsSignal, ":busy", labels={"busy"}, kind="omitted")
+    busy = Cpt(EpicsSignal, ":busy", kind="omitted")
     
     # sample transfer
-    current_sample = Cpt(EpicsSignalRO, ":current_sample", labels={"transfer"}, kind="config")
-    unload_current_sample = Cpt(EpicsSignal, ":unload_current_sample", labels={"transfer"}, kind="config")
-    current_sample_reset = Cpt(EpicsSignal, ":current_sample_reset", labels={"transfer"}, kind="config")
-    home = Cpt(EpicsSignal, ":home", labels={"transfer"}, kind="config")
-    cal_stage = Cpt(EpicsSignal, ":cal_stage", labels={"transfer"}, kind="config")
+    current_sample = Cpt(EpicsSignalRO, ":current_sample", kind="config")
+    unload_current_sample = Cpt(EpicsSignal, ":unload_current_sample", kind="config")
+    current_sample_reset = Cpt(EpicsSignal, ":current_sample_reset", kind="config")
+    home = Cpt(EpicsSignal, ":home", kind="config")
+    cal_stage = Cpt(EpicsSignal, ":cal_stage", kind="config")
     
-    samples = DCpt(transfer_samples(24), kind="normal")
+    samples = DCpt(transfer_samples(24))
 
 
 

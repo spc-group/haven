@@ -34,6 +34,7 @@ from haven.instrument.shutter import Shutter
 from haven.instrument.slits import ApertureSlits, BladeSlits
 from haven.instrument.xspress import Xspress3Detector
 from haven.instrument.xspress import add_mcas as add_xspress_mcas
+from haven.instrument.robot import Robot
 
 top_dir = Path(__file__).parent.resolve()
 haven_dir = top_dir / "haven"
@@ -177,6 +178,14 @@ def It(sim_registry):
     sim_registry.register(ion_chamber)
     return ion_chamber
 
+@pytest.fixture()
+def sim_robot(sim_registry):
+    FakeRobot = make_fake_device(Robot)
+    robot = FakeRobot(
+        prefix="25idAustin", labels={"robots"}
+    )
+    sim_registry.register(robot)
+    return robot
 
 @pytest.fixture()
 def blade_slits(sim_registry):

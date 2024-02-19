@@ -8,14 +8,14 @@ def test_robot():
     assert robot.samples.sample8.rz.pvname == "25idAustin:sample8:rz"
 
 def test_load_robot(sim_registry):
-    new_rbt = load_robot()
+    load_robot()
     # Test the robot info is extracted properly
-    rbt = sim_registry.find(label="robot")
+    rbt = sim_registry.find(label="robots")
     assert rbt.prefix == "25idAustin"
 # -----------------------------------------------------------------------------
 # :author:    Yanna Chen
 # :email:     yannachen@anl.gov
-# :copyright: Copyright © 2023, UChicago Argonne, LLC
+# :copyright: Copyright © 2024, UChicago Argonne, LLC
 #
 # Distributed under the terms of the 3-Clause BSD License
 #
