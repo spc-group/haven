@@ -23,9 +23,9 @@ reused.
 2. Create a fork of the `main Haven repository`_
 3. Clone the forked repository to your local computer (e.g. ``git clone git@github.com:canismarko/haven.git``)
 4. Install an anaconda-like distribution environment (`mamba-forge`_ is recommended)
-5. Create a new conda environment from *environment.yml* (e.g. ``mamba env create -n haven -f environment.yml``)
+5. Create a new conda environment from *environment.yml* (e.g. ``mamba env create -n haven -f haven/environment.yml``)
 6. Activate the newly created conda environment (e.g. ``mamba activate haven``)
-7. Install haven in the environment (``pip install -e ".[dev]"``)
+7. Install haven in the environment (``pip install -e "haven[dev]"``)
 8. Verify that the :ref:`test-suite passes<Running Tests>`
 
 The following steps should then be performed every time a new feature

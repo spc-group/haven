@@ -43,7 +43,7 @@ lastly install the package, in developer mode:
 
 ```bash
 $ conda activate haven
-$ pip install -e .
+$ pip install -e ".[dev]"
 ```
 
 ## Running Tests
