@@ -10,17 +10,19 @@ from .device import aload_devices, make_device
 
 log = logging.getLogger(__name__)
 
+
 class Sample(Device):
     present = Cpt(EpicsSignalRO, ":present")
     empty = Cpt(EpicsSignalRO, ":empty")
     load = Cpt(EpicsSignal, ":load", kind="omitted")
-    unload = Cpt(EpicsSignal, ":unload",kind="omitted")
+    unload = Cpt(EpicsSignal, ":unload", kind="omitted")
     x = Cpt(EpicsSignalRO, ":x")
     y = Cpt(EpicsSignalRO, ":y")
     z = Cpt(EpicsSignalRO, ":z")
     rx = Cpt(EpicsSignalRO, ":rx")
     ry = Cpt(EpicsSignalRO, ":ry")
     rz = Cpt(EpicsSignalRO, ":rz")
+
 
 def transfer_samples(num_samples: int):
     """Create a dictionary with robot sample device definitions.
@@ -32,7 +34,7 @@ def transfer_samples(num_samples: int):
     """
     samples = {}
     # Now the sample holder bases are only located at sites [8,9,10,14,15,16,20,21,22] on the board.
-    for n in [8,9,10,14,15,16,20,21,22]:#range(num_samples):
+    for n in [8, 9, 10, 14, 15, 16, 20, 21, 22]:  # range(num_samples):
         samples[f"sample{n}"] = (Sample, f":sample{n}", {})
     return samples
 
@@ -53,7 +55,7 @@ class Robot(Device):
     rz = Cpt(EpicsMotor, ":rz")
     acc = Cpt(EpicsSignal, ":acceleration", kind="config")
     vel = Cpt(EpicsSignal, ":velocity", kind="config")
-    
+
     # dashboard
     remote_control = Cpt(EpicsSignalRO, ":dashboard:remote_control", kind="config")
     program = Cpt(EpicsSignal, ":dashboard:program_rbv", kind="omitted")
@@ -65,14 +67,18 @@ class Robot(Device):
     quitRbt = Cpt(EpicsSignal, ":dashboard:quit", kind="omitted")
     shutdown = Cpt(EpicsSignal, ":dashboard:shutdown", kind="omitted")
     release_brake = Cpt(EpicsSignal, ":dashboard:release_brake", kind="omitted")
-    close_safety_popup = Cpt(EpicsSignal, ":dashboard:close_safety_popup", kind="config")
-    unlock_protective_stop = Cpt(EpicsSignal, ":dashboard:unlock_protective_stop", kind="config")
+    close_safety_popup = Cpt(
+        EpicsSignal, ":dashboard:close_safety_popup", kind="config"
+    )
+    unlock_protective_stop = Cpt(
+        EpicsSignal, ":dashboard:unlock_protective_stop", kind="config"
+    )
     restart_safety = Cpt(EpicsSignal, ":dashboard:restart_safety", kind="config")
     program_running = Cpt(EpicsSignal, ":dashboard:program_running", kind="config")
     safety_status = Cpt(EpicsSignal, ":dashboard:safety_status", kind="config")
     power = Cpt(EpicsSignal, ":dashboard:power", kind="omitted")
     power_rbv = Cpt(EpicsSignalRO, ":dashboard:power_rbv", kind="config")
-    
+
     # gripper
     gripper_activate = Cpt(EpicsSignal, ":gripper.ACT", kind="omitted")
     gripper_activated = Cpt(EpicsSignal, ":gripper.ACR", kind="config")
@@ -81,19 +87,18 @@ class Robot(Device):
     gripper_rbv = Cpt(EpicsSignal, ":gripper.RBV")
     gripper_val = Cpt(EpicsSignal, ":gripper.VAL")
     gripper_force = Cpt(EpicsSignal, ":gripper.FRC", kind="config")
-    
-    # busy 
+
+    # busy
     busy = Cpt(EpicsSignal, ":busy", kind="omitted")
-    
+
     # sample transfer
     current_sample = Cpt(EpicsSignalRO, ":current_sample", kind="config")
     unload_current_sample = Cpt(EpicsSignal, ":unload_current_sample", kind="omitted")
     current_sample_reset = Cpt(EpicsSignal, ":current_sample_reset", kind="omitted")
     home = Cpt(EpicsSignal, ":home", kind="config")
     cal_stage = Cpt(EpicsSignal, ":cal_stage", kind="config")
-    
-    samples = DCpt(transfer_samples(24))
 
+    samples = DCpt(transfer_samples(24))
 
 
 def load_robot_coros(config=None):
@@ -102,9 +107,7 @@ def load_robot_coros(config=None):
         config = load_config()
     robots = config["robot"]
     for name, cfg in robots.items():
-        yield make_device(
-            Robot, name=name, labels={"robots"}, prefix=cfg['prefix']
-        )
+        yield make_device(Robot, name=name, labels={"robots"}, prefix=cfg["prefix"])
 
 
 def load_robot(config=None):
