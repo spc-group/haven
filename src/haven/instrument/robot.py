@@ -56,30 +56,30 @@ class Robot(Device):
     
     # dashboard
     remote_control = Cpt(EpicsSignalRO, ":dashboard:remote_control", kind="config")
-    program = Cpt(EpicsSignal, ":dashboard:program_rbv", kind="config")
+    program = Cpt(EpicsSignal, ":dashboard:program_rbv", kind="omitted")
     program_rbv = Cpt(EpicsSignalRO, ":dashboard:program_rbv", kind="config")
     installation = Cpt(EpicsSignal, ":dashboard:installation", kind="config")
-    playRbt = Cpt(EpicsSignal, ":dashboard:play", kind="config")
-    stopRbt = Cpt(EpicsSignal, ":dashboard:stop", kind="config")
-    pauseRbt = Cpt(EpicsSignal, ":dashboard:pause", kind="config")
-    quit = Cpt(EpicsSignal, ":dashboard:quit", kind="config")
-    shutdown = Cpt(EpicsSignal, ":dashboard:shutdown", kind="config")
-    release_brake = Cpt(EpicsSignal, ":dashboard:release_brake", kind="config")
+    playRbt = Cpt(EpicsSignal, ":dashboard:play", kind="omitted")
+    stopRbt = Cpt(EpicsSignal, ":dashboard:stop", kind="omitted")
+    pauseRbt = Cpt(EpicsSignal, ":dashboard:pause", kind="omitted")
+    quitRbt = Cpt(EpicsSignal, ":dashboard:quit", kind="omitted")
+    shutdown = Cpt(EpicsSignal, ":dashboard:shutdown", kind="omitted")
+    release_brake = Cpt(EpicsSignal, ":dashboard:release_brake", kind="omitted")
     close_safety_popup = Cpt(EpicsSignal, ":dashboard:close_safety_popup", kind="config")
     unlock_protective_stop = Cpt(EpicsSignal, ":dashboard:unlock_protective_stop", kind="config")
     restart_safety = Cpt(EpicsSignal, ":dashboard:restart_safety", kind="config")
     program_running = Cpt(EpicsSignal, ":dashboard:program_running", kind="config")
     safety_status = Cpt(EpicsSignal, ":dashboard:safety_status", kind="config")
-    power = Cpt(EpicsSignal, ":dashboard:power", kind="config")
+    power = Cpt(EpicsSignal, ":dashboard:power", kind="omitted")
     power_rbv = Cpt(EpicsSignalRO, ":dashboard:power_rbv", kind="config")
     
     # gripper
-    gripper_activate = Cpt(EpicsSignal, ":gripper.ACT", kind="config")
+    gripper_activate = Cpt(EpicsSignal, ":gripper.ACT", kind="omitted")
     gripper_activated = Cpt(EpicsSignal, ":gripper.ACR", kind="config")
-    gripper_close = Cpt(EpicsSignal, ":gripper.CLS", kind="config")
-    gripper_open = Cpt(EpicsSignal, ":gripper.OPN", kind="config")
-    gripper_rbv = Cpt(EpicsSignal, ":gripper.RBV", kind="config")
-    gripper_val = Cpt(EpicsSignal, ":gripper.VAL", kind="config")
+    gripper_close = Cpt(EpicsSignal, ":gripper.CLS", kind="omitted")
+    gripper_open = Cpt(EpicsSignal, ":gripper.OPN", kind="omitted")
+    gripper_rbv = Cpt(EpicsSignal, ":gripper.RBV")
+    gripper_val = Cpt(EpicsSignal, ":gripper.VAL")
     gripper_force = Cpt(EpicsSignal, ":gripper.FRC", kind="config")
     
     # busy 
@@ -87,8 +87,8 @@ class Robot(Device):
     
     # sample transfer
     current_sample = Cpt(EpicsSignalRO, ":current_sample", kind="config")
-    unload_current_sample = Cpt(EpicsSignal, ":unload_current_sample", kind="config")
-    current_sample_reset = Cpt(EpicsSignal, ":current_sample_reset", kind="config")
+    unload_current_sample = Cpt(EpicsSignal, ":unload_current_sample", kind="omitted")
+    current_sample_reset = Cpt(EpicsSignal, ":current_sample_reset", kind="omitted")
     home = Cpt(EpicsSignal, ":home", kind="config")
     cal_stage = Cpt(EpicsSignal, ":cal_stage", kind="config")
     
