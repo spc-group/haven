@@ -178,14 +178,6 @@ def It(sim_registry):
     sim_registry.register(ion_chamber)
     return ion_chamber
 
-@pytest.fixture()
-def sim_robot(sim_registry):
-    FakeRobot = make_fake_device(Robot)
-    robot = FakeRobot(
-        prefix="25idAustin", labels={"robots"}
-    )
-    sim_registry.register(robot)
-    return robot
 
 @pytest.fixture()
 def blade_slits(sim_registry):

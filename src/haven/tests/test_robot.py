@@ -11,7 +11,8 @@ def test_load_robot(sim_registry):
     load_robot()
     # Test the robot info is extracted properly
     rbt = sim_registry.find(label="robots")
-    assert rbt.prefix == "25idAustin"
+    assert rbt.name == "A"
+    assert rbt.prefix == "255idAustin"
 # -----------------------------------------------------------------------------
 # :author:    Yanna Chen
 # :email:     yannachen@anl.gov
