@@ -70,7 +70,7 @@ async def aload_instrument(
         *load_ion_chamber_coros(config=config),
         *load_area_detector_coros(config=config),
         *load_lerix_spectrometer_coros(config=config),
-        *load_robot_coros(config=config)
+        *load_robot_coros(config=config),
     )
     devices = await asyncio.gather(*coros)
     # Load the motor devices last so that we can check for existing
