@@ -1,17 +1,14 @@
 import asyncio
 
-from ophyd import (
-    Device,
-    Component as Cpt,
-    FormattedComponent as FCpt,
-    Kind,
-    OphydObject,
-)
 from apstools.synApps import TransformRecord
+from ophyd import Component as Cpt
+from ophyd import Device
+from ophyd import FormattedComponent as FCpt
+from ophyd import Kind, OphydObject
 
-from .device import aload_devices, make_device
-from .._iconfig import load_config
 from .. import exceptions
+from .._iconfig import load_config
+from .device import aload_devices, make_device
 from .motor import HavenMotor
 
 

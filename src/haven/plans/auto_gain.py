@@ -12,7 +12,6 @@ from ophyd.sim import motor
 
 from ..instrument.instrument_registry import registry
 
-
 __all__ = ["GainRecommender", "auto_gain"]
 
 

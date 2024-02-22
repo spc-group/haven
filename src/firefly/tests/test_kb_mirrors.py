@@ -3,8 +3,8 @@ from unittest import mock
 import pytest
 from ophyd.sim import make_fake_device
 
-from haven.instrument.mirrors import KBMirrors
 from firefly.kb_mirrors import KBMirrorsDisplay
+from haven.instrument.mirrors import KBMirrors
 
 
 @pytest.fixture()
