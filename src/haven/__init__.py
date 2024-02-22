@@ -17,7 +17,7 @@ from .instrument import (  # noqa: F401
     load_robot,
     registry,
 )
-from .instrument.device import RegexComponent
+from .instrument.device import RegexComponent  # noqa: F401
 from .instrument.dxp import load_dxp  # noqa: F401
 from .instrument.load_instrument import load_instrument  # noqa: F401
 from .instrument.motor import HavenMotor  # noqa: F401

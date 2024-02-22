@@ -3,7 +3,6 @@ from unittest import mock
 import pytest
 
 from firefly.ion_chamber import IonChamberDisplay
-from firefly.main_window import FireflyMainWindow
 
 
 @pytest.fixture()

@@ -30,7 +30,6 @@ from haven.instrument.delay import EpicsSignalWithIO
 from haven.instrument.dxp import DxpDetector
 from haven.instrument.dxp import add_mcas as add_dxp_mcas
 from haven.instrument.ion_chamber import IonChamber
-from haven.instrument.robot import Robot
 from haven.instrument.shutter import Shutter
 from haven.instrument.slits import ApertureSlits, BladeSlits
 from haven.instrument.xspress import Xspress3Detector

@@ -2,7 +2,6 @@ import asyncio
 import logging
 import re
 import time as ttime
-import warnings
 from typing import Callable, Union
 
 from ophyd import Component, Device, K
