@@ -1,14 +1,26 @@
-from .instrument_registry import InstrumentRegistry, registry  # noqa: F401
-from .ion_chamber import IonChamber  # noqa: F401
-from .monochromator import Monochromator  # noqa: F401
-from .motor import HavenMotor  # noqa: F401
-from .table import Table, load_tables  # noqa: F401
-from .robot import Robot, load_robot 
+from haven.instrument import Robot, load_robot
+
+
+def test_robot():
+    robot = Robot("25idAustin", name="robot")
+    # Check PVs are correct
+    assert robot.i.user_readback.pvname == "25idAustin:i.RBV"
+    assert robot.samples.sample8.present.pvname == "25idAustin:sample8:present"
+    assert robot.samples.sample8.rz.pvname == "25idAustin:sample8:rz"
+
+
+def test_load_robot(sim_registry):
+    load_robot()
+    # Test the robot info is extracted properly
+    rbt = sim_registry.find(label="robots")
+    assert rbt.name == "A"
+    assert rbt.prefix == "255idAustin"
+
 
 # -----------------------------------------------------------------------------
-# :author:    Mark Wolfman
-# :email:     wolfman@anl.gov
-# :copyright: Copyright © 2023, UChicago Argonne, LLC
+# :author:    Yanna Chen
+# :email:     yannachen@anl.gov
+# :copyright: Copyright © 2024, UChicago Argonne, LLC
 #
 # Distributed under the terms of the 3-Clause BSD License
 #
@@ -28,4 +40,4 @@ from .robot import Robot, load_robot
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
-# ----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
