@@ -14,6 +14,8 @@ from .instrument import (  # noqa: F401
     Monochromator,
     ion_chamber,
     registry,
+    Robot,
+    load_robot
 )
 from .instrument.device import RegexComponent
 from .instrument.dxp import load_dxp  # noqa: F401

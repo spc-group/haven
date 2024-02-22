@@ -99,3 +99,6 @@ z1_motor_pv = "255idVME:m4"
 
 prefix = "255idptc10"
 device_class = "CapillaryHeater"
+
+[robot.A]
+prefix = "255idAustin"
