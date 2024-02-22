@@ -1,4 +1,5 @@
 from ophyd import Signal
+import pydm
 from pydm.data_plugins import plugin_for_address
 from pydm.widgets import PyDMLineEdit
 
