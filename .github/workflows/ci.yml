@@ -49,6 +49,9 @@ jobs:
     - name: Enforce formatting with black
       run: |
         black --check src/
+    - name: Enforce import ordering with isort
+      run: |
+        isort --check src/
     - name: Licensing
       run: |
         find src/ -type f -name "*.py" -exec grep -H -c 'Copyright © 2023, UChicago Argonne, LLC' {} \; | grep 0$ | cut -d':' -f1
