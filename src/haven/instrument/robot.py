@@ -111,7 +111,7 @@ def load_robot_coros(config=None):
 
 
 def load_robot(config=None):
-    asyncio.run(aload_devices(*load_robot_coros(config=config)))
+    return asyncio.run(aload_devices(*load_robot_coros(config=config)))
 
 
 # -----------------------------------------------------------------------------

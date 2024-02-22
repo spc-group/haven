@@ -118,7 +118,7 @@ async def load_motor(prefix: str, motor_num: int, ioc_name: str = None):
 
 
 def load_all_motors(config=None):
-    asyncio.run(aload_devices(*load_all_motor_coros(config=config)))
+    return asyncio.run(aload_devices(*load_all_motor_coros(config=config)))
 
 
 # -----------------------------------------------------------------------------
