@@ -15,8 +15,8 @@ import os
 import pathlib
 from contextlib import contextmanager
 from copy import deepcopy
-from typing import Sequence
 from pprint import pprint
+from typing import Sequence
 
 import tomli
 from mergedeep import merge
