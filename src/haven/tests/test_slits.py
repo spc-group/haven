@@ -1,5 +1,3 @@
-from unittest import mock
-
 from haven.instrument import slits
 
 
@@ -18,7 +16,6 @@ def test_slits_tweak():
 
 
 def test_load_slits(sim_registry, monkeypatch):
-    monkeypatch.setattr(slits, "await_for_connection", mock.AsyncMock())
     slits.load_slits()
     # Check that the slits were loaded
     devices = sim_registry.findall(label="slits")
