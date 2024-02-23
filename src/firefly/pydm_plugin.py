@@ -6,9 +6,9 @@ Provides funcitonality so that PyDM channels can be addressed as e.g.
 
 """
 
-from haven import registry
-
 from typhos.plugins.core import SignalConnection, SignalPlugin
+
+from haven import registry
 
 
 class HavenConnection(SignalConnection):

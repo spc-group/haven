@@ -2,7 +2,6 @@ import json
 import logging
 from typing import Mapping, Optional, Sequence
 
-import qtawesome as qta
 from pydm.widgets import PyDMEmbeddedDisplay
 from qtpy import QtWidgets
 

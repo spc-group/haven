@@ -4,9 +4,9 @@ from typing import Mapping
 from ophyd import sim
 
 from .._iconfig import load_config
+from .aerotech import load_aerotech_stage_coros
 from .aps import load_aps_coros
 from .area_detector import load_area_detector_coros
-from .aerotech import load_aerotech_stage_coros
 from .camera import load_camera_coros
 from .dxp import load_dxp_coros
 from .energy_positioner import load_energy_positioner_coros
@@ -15,17 +15,17 @@ from .instrument_registry import InstrumentRegistry
 from .instrument_registry import registry as default_registry
 from .ion_chamber import load_ion_chamber_coros
 from .lerix import load_lerix_spectrometer_coros
+from .mirrors import load_mirror_coros
 from .monochromator import load_monochromator_coros
 from .motor import HavenMotor, load_all_motor_coros
-from .mirrors import load_mirror_coros
 from .power_supply import load_power_supply_coros
+from .robot import load_robot_coros
 from .shutter import load_shutter_coros
 from .slits import load_slit_coros
 from .stage import load_stage_coros
 from .table import load_table_coros
 from .xray_source import load_xray_source_coros
 from .xspress import load_xspress_coros
-from .robot import load_robot_coros
 
 __all__ = ["load_instrument"]
 
@@ -70,7 +70,7 @@ async def aload_instrument(
         *load_ion_chamber_coros(config=config),
         *load_area_detector_coros(config=config),
         *load_lerix_spectrometer_coros(config=config),
-        *load_robot_coros(config=config)
+        *load_robot_coros(config=config),
     )
     devices = await asyncio.gather(*coros)
     # Load the motor devices last so that we can check for existing

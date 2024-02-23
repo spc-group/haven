@@ -1,7 +1,6 @@
 from . import display  # noqa: F401
 from .application import FireflyApplication  # noqa: F401
 
-
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov

@@ -3,9 +3,8 @@ from unittest import mock
 import pytest
 from ophyd.sim import make_fake_device
 
-from haven.instrument import Table
 from firefly.table import TableDisplay
-
+from haven.instrument import Table
 
 FakeTable = make_fake_device(Table)
 

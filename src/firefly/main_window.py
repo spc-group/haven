@@ -2,10 +2,10 @@ import logging
 import warnings
 from pathlib import Path
 
+import qtawesome as qta
 from pydm import data_plugins
 from pydm.main_window import PyDMMainWindow
 from qtpy import QtCore, QtGui, QtWidgets
-import qtawesome as qta
 
 from haven import load_config
 
