@@ -95,8 +95,11 @@ def print_config_value(args: Sequence[str] = None):
     try:
         value = value.strip()
     except AttributeError:
-        pass
-    pprint(value)
+        # It's not a simple string, so pretty print it
+        pprint(value)
+    else:
+        # Simple string, so just print it
+        print(value)
 
 
 @contextmanager
