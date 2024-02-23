@@ -2,8 +2,9 @@ import asyncio
 import logging
 
 from ophyd import Component as Cpt
+from ophyd import Device
 from ophyd import DynamicDeviceComponent as DCpt
-from ophyd import Device, EpicsMotor, EpicsSignal, EpicsSignalRO
+from ophyd import EpicsMotor, EpicsSignal, EpicsSignalRO
 
 from .._iconfig import load_config
 from .device import aload_devices, make_device
@@ -111,7 +112,7 @@ def load_robot_coros(config=None):
 
 
 def load_robot(config=None):
-    asyncio.run(aload_devices(*load_robot_coros(config=config)))
+    return asyncio.run(aload_devices(*load_robot_coros(config=config)))
 
 
 # -----------------------------------------------------------------------------

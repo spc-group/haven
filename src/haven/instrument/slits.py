@@ -4,16 +4,14 @@ import asyncio
 import logging
 
 from apstools.devices import PVPositionerSoftDone
-from apstools.synApps.db_2slit import Optics2Slit2D_HV, Optics2Slit1D
-from apstools.utils import SlitGeometry
+from apstools.synApps.db_2slit import Optics2Slit1D, Optics2Slit2D_HV
 from ophyd import Component as Cpt
 from ophyd import DerivedSignal, Device, EpicsSignal
 from ophyd import FormattedComponent as FCpt
 
 from .. import exceptions
 from .._iconfig import load_config
-from .device import aload_devices, await_for_connection, make_device
-from .instrument_registry import registry
+from .device import aload_devices, make_device
 from .motor import HavenMotor
 
 log = logging.getLogger(__name__)

@@ -1,8 +1,8 @@
 import qtawesome as qta
 from qtpy import QtWidgets
 
-from haven import registry
 from firefly import display
+from haven import registry
 
 
 class IonChamberDisplay(display.FireflyDisplay):
