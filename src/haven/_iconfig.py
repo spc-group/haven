@@ -16,6 +16,7 @@ import pathlib
 from contextlib import contextmanager
 from copy import deepcopy
 from typing import Sequence
+from pprint import pprint
 
 import tomli
 from mergedeep import merge
@@ -91,7 +92,11 @@ def print_config_value(args: Sequence[str] = None):
     value = load_config()
     for part in args.key.split("."):
         value = value[part]
-    print(value.strip())
+    try:
+        value = value.strip()
+    except AttributeError:
+        pass
+    pprint(value)
 
 
 @contextmanager
