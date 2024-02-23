@@ -18,15 +18,19 @@ def test_load_robot(sim_registry):
     assert rbt.name == "A"
     assert rbt.prefix == "255idAustin"
 
+
 def test_load_no_robot(sim_registry):
     load_robot(config={})
     # Test the robot is not in config
-    
+
     # Test the robot is not in config
     result = pytest.raises(ComponentNotFound, sim_registry.findall, label="robots")
 
     # Assert that the expected exception is raised
-    assert 'Could not find components matching: label="robots", name="None"' in str(result.value)
+    assert 'Could not find components matching: label="robots", name="None"' in str(
+        result.value
+    )
+
 
 # -----------------------------------------------------------------------------
 # :author:    Yanna Chen
