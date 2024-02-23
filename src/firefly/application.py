@@ -15,11 +15,10 @@ from qtpy import QtCore, QtWidgets
 from qtpy.QtCore import Signal
 from qtpy.QtWidgets import QAction
 
-from haven import HavenMotor, load_config, registry
+from haven import load_config, registry
 from haven.exceptions import ComponentNotFound
 from haven.instrument.device import titelize
 
-from . import beamline_components_rc
 from .main_window import FireflyMainWindow, PlanMainWindow
 from .queue_client import QueueClient, QueueClientThread, queueserver_api
 

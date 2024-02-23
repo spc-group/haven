@@ -3,8 +3,8 @@ from unittest import mock
 import pytest
 from ophyd.sim import make_fake_device
 
-from haven.instrument.mirrors import BendableHighHeatLoadMirror, HighHeatLoadMirror
 from firefly.mirror import MirrorDisplay
+from haven.instrument.mirrors import BendableHighHeatLoadMirror, HighHeatLoadMirror
 
 
 @pytest.fixture()

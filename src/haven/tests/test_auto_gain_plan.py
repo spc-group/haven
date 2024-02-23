@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 from bluesky_adaptive.recommendations import NoRecommendation
 
-from haven import auto_gain, GainRecommender
+from haven import GainRecommender, auto_gain
 
 
 def test_plan_recommendations(sim_ion_chamber):

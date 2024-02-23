@@ -1,17 +1,10 @@
 from queue import Queue
 
 import numpy as np
-import pandas as pd
-from bluesky import plan_stubs as bps
-from bluesky import plans as bp
-from bluesky.callbacks.core import CollectThenCompute
-from bluesky.preprocessors import subs_decorator
 from bluesky_adaptive.per_event import adaptive_plan, recommender_factory
 from bluesky_adaptive.recommendations import NoRecommendation
-from ophyd.sim import motor
 
 from ..instrument.instrument_registry import registry
-
 
 __all__ = ["GainRecommender", "auto_gain"]
 
