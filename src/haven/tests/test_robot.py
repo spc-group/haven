@@ -1,5 +1,6 @@
 import pytest
 from ophydregistry.exceptions import ComponentNotFound
+
 from haven.instrument import Robot, load_robot
 
 
