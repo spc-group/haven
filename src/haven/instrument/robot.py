@@ -106,7 +106,9 @@ def load_robot_coros(config=None):
     # Load PV's from config
     if config is None:
         config = load_config()
-        robots = config.get("robot")
+    robots = config.get("robot")
+
+    if robots is not None:
         for name, cfg in robots.items():
             yield make_device(Robot, name=name, labels={"robots"}, prefix=cfg["prefix"])
 
