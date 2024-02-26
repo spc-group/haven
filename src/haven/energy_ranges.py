@@ -76,8 +76,8 @@ class KRange(EnergyRange):
     Parameters
     ==========
 
-    k_min
-      Ending energy of the range, in Å⁻.
+    E_min
+      Starting energy of the range, in eV.
     k_max
       Ending energy of the range, in Å⁻.
     k_step
@@ -89,7 +89,7 @@ class KRange(EnergyRange):
 
     """
 
-    k_min: float
+    E_min: float
     k_max: float
     k_step: float = 0.1
     k_weight: float = 0.0
