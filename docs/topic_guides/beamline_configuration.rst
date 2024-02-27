@@ -8,9 +8,9 @@ Configuration Files
 Motivation
 ----------
 
-Haven's goal is to provide **support for all of the spectroscopy
+Haven's goal is to **provide support for all of the spectroscopy
 beamlines**. However, each beamline is different, and these
-differences are managed by a **set of configuration** files, similar
+differences are **managed by a set of configuration files**, similar
 to the .ini files used in the old LabView solution. To keep the
 complexity of these configuration files manageable, Haven gets much of
 the needed information from the IOCs directly.
@@ -39,16 +39,33 @@ There are several sources of configuration files, described in detail
 below. They are loaded in the following order, with lower numbers
 taking precedence over higher numbers.
 
+1. Files listed in the ``$HAVEN_CONFIG_FILES``
+2. ``~/bluesky/instrument/iconfig.toml`` (for backwards compatibility)
+3. ``~/bluesky/iconfig.toml`` (best place)
+4. ``iconfig_default.toml`` packaged with Haven
+
 Unless there's a good reason to do otherwise, **most beamline
 configuration belongs in ~/bluesky/iconfig.toml**.
 
-1. Files listed in the ``$HAVEN_CONFIG_FILES``
-2. ``~/bluesky/instrument/iconfig.toml`` (for backwards compatibility)
-3. ``~/bluesky/iconfig.toml``
-4. ``iconfig_default.toml`` packaged with Haven
+For example, to enable support for our Universal Robotics robot
+*Austin* to 25-ID-C, open the file ``~/bluesky/iconfig.toml`` and add
+the following:
 
-HAVEN_CONFIG_FILES Environment
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. code:: toml
+   
+   [robot.Austin]
+   prefix = "25idAustin"
+
+.. note::
+
+   The prevent accidental changes, the bluesky configuration files may
+   not be writable by the user accounts at the beamline. For example,
+   at 25-ID, the user account does not have permission to write to
+   ``~/bluesky/iconfig.toml`` so **changes must be made as the staff
+   account**.
+   
+``HAVEN_CONFIG_FILES`` Environment
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 If the environmental variable ``HAVEN_CONFIG_FILES`` is set to a
 *comma-separated* list of file path, then these files will take
@@ -84,13 +101,13 @@ read a configuration file, for example when testing functions that
 load devices through
 :py:func:`~haven.instrument.load_instrument.load_instrument()`. However,
 the configuration that is loaded should not come from a real beamline
-configuration or else there is a risk of moving affecting real
-hardware while running tests.
+configuration or else there is a risk of controlling real hardware
+while running tests.
 
 To avoid this problem, **pytest modifies the configuration file
 loading** when running tests with pytest:
 
-1. Remove any config files besides ``iconfig_default.toml``.
+1. Ignore any config files besides ``iconfig_default.toml``.
 2. Add ``iconfig_testing.toml`` to the configuration
 
 Additionally, all ``load_motors()`` style functions should accept an
