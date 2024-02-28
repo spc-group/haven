@@ -6,7 +6,7 @@ from xraydb.xraydb import XrayDB
 import re
 
 # TODO: use relative import in the future, copied energy_ranges.py to the current folder
-from energy_ranges import ERange, KRange, merge_ranges, energy_to_wavenumber, wavenumber_to_energy, E_step_to_k_step, k_step_to_E_step
+from haven.energy_ranges import ERange, KRange, merge_ranges, energy_to_wavenumber, wavenumber_to_energy, E_step_to_k_step, k_step_to_E_step
 from haven.plans import energy_scan
 
 # TODO: remove exposure time

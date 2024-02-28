@@ -83,7 +83,7 @@ class ERange(EnergyRange):
 
     def exposures(self):
         """Convert the range to a sequence of exposure times, in seconds."""
-        return [self.exposure] * len(self.energies())  ** self.weight
+        return np.asarray([self.exposure] * len(self.energies()))  ** self.weight
 
 
 @dataclass
