@@ -21,6 +21,22 @@ m_e = (
 ALPHA = hbar**2 * c**2 / 2 / m_e
 ALPHA = ALPHA.to("electron_volt * angstrom * angstrom").magnitude
 
+def energy_to_wavenumber(energy):
+    return np.sqrt(energy / ALPHA)
+
+def wavenumber_to_energy(wavenumber):
+    return wavenumber**2 * ALPHA
+
+# converting between energy steps and k steps
+def E_step_to_k_step(E_start, E_step):
+    k0 = energy_to_wavenumber(E_start)
+    k1 = energy_to_wavenumber(E_start + E_step)
+    return k1 - k0
+
+def k_step_to_E_step(k_start, k_step):
+    E0 = wavenumber_to_energy(k_start)
+    E1 = wavenumber_to_energy(k_start + k_step)
+    return E1 - E0
 
 @dataclass
 class EnergyRange:
@@ -48,6 +64,8 @@ class ERange(EnergyRange):
       Ending energy of the range, in eV.
     E_step
       Step-size between energies, in eV.
+    weight
+      Weighting factor for longer exposures at higher energies.
     exposure
       How long to spend at each energy, in seconds.
 
@@ -56,6 +74,7 @@ class ERange(EnergyRange):
     E_min: float
     E_max: float
     E_step: float = 1.0
+    weight: float = 0.0
     exposure: float = DEFAULT_EXPOSURE
 
     def energies(self):
@@ -64,7 +83,7 @@ class ERange(EnergyRange):
 
     def exposures(self):
         """Convert the range to a sequence of exposure times, in seconds."""
-        return [self.exposure] * len(self.energies())
+        return [self.exposure] * len(self.energies())  ** self.weight
 
 
 @dataclass
@@ -76,7 +95,7 @@ class KRange(EnergyRange):
     Parameters
     ==========
 
-    E_min
+    k_min
       Starting energy of the range, in eV.
     k_max
       Ending energy of the range, in Å⁻.
@@ -89,7 +108,7 @@ class KRange(EnergyRange):
 
     """
 
-    E_min: float
+    k_min: float
     k_max: float
     k_step: float = 0.1
     k_weight: float = 0.0
@@ -97,18 +116,11 @@ class KRange(EnergyRange):
 
     def energies(self):
         """Calculates photon energies in units of eV."""
-        return self.wavenumber_to_energy(self.wavenumbers())
-
-    def energy_to_wavenumber(self, energy):
-        return np.sqrt(energy / ALPHA)
-
-    def wavenumber_to_energy(self, wavenumber):
-        return wavenumber**2 * ALPHA
+        return wavenumber_to_energy(self.wavenumbers())
 
     def wavenumbers(self):
         """Calculates wavenumbers (k) for the photo-electron in units Å⁻."""
-        k_min = self.energy_to_wavenumber(self.E_min)
-        ks = np.arange(k_min, self.k_max + self.k_step, self.k_step)
+        ks = np.arange(self.k_min, self.k_max + self.k_step, self.k_step)
         return ks
 
     def exposures(self):
