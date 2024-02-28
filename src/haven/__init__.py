@@ -29,7 +29,7 @@ from .motor_position import (  # noqa: F401
 )
 from .plans.align_motor import align_motor, align_pitch2  # noqa: F401
 from .plans.align_slits import align_slits  # noqa: F401
-from .plans.auto_gain import auto_gain, GainRecommender  # noqa:F401
+from .plans.auto_gain import GainRecommender, auto_gain  # noqa:F401
 from .plans.beam_properties import fit_step  # noqa: F401
 from .plans.beam_properties import knife_scan  # noqa: F401
 from .plans.energy_scan import energy_scan  # noqa: F401
@@ -49,7 +49,6 @@ from .preprocessors import (  # noqa: F401
 from .progress_bar import ProgressBar  # noqa: F401
 from .run_engine import run_engine  # noqa: F401
 from .xdi_writer import XDIWriter  # noqa: F401
-
 
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman

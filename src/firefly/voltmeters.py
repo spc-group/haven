@@ -2,13 +2,13 @@ import json
 import logging
 from typing import Mapping, Optional, Sequence
 
-from bluesky_queueserver_api import BPlan
 import qtawesome as qta
+from bluesky_queueserver_api import BPlan
 from pydm.widgets import PyDMEmbeddedDisplay
 from qtpy import QtWidgets
 
 import haven
-from firefly import display, FireflyApplication
+from firefly import FireflyApplication, display
 
 # from .voltmeter import VoltmeterDisplay
 

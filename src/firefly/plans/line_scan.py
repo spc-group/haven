@@ -1,11 +1,9 @@
 import logging
 
 from bluesky_queueserver_api import BPlan
-
-from firefly import display
-
 from qtpy import QtWidgets
 
+from firefly import display
 from firefly.component_selector import ComponentSelector
 
 log = logging.getLogger()
@@ -18,7 +16,7 @@ class LineScanRegion:
     def setup_ui(self):
         self.layout = QtWidgets.QHBoxLayout()
 
-        # First item, motor No. 
+        # First item, motor No.
         # self.motor_label = QtWidgets.QLabel()
         # self.motor_label.setText("1")
         # self.layout.addWidget(self.motor_label)
@@ -37,21 +35,22 @@ class LineScanRegion:
         self.stop_line_edit = QtWidgets.QLineEdit()
         self.stop_line_edit.setPlaceholderText("Stop…")
         self.layout.addWidget(self.stop_line_edit)
-        
+
+
 class LineScanDisplay(display.FireflyDisplay):
     def customize_ui(self):
         # Remove the defaufdsadfsfdsfagafdsgalt XAFS layout from .ui file
         self.clearLayout(self.ui.region_template_layout)
         self.reset_default_regions()
 
-         # disable the line edits in spin box
+        # disable the line edits in spin box
         self.ui.num_motor_spin_box.lineEdit().setReadOnly(True)
         self.ui.num_motor_spin_box.valueChanged.connect(self.update_regions)
         # self.ui.num_motor_spin_box.editingFinished.connect(self.update_regions)
 
         # self.ui.run_button.setEnabled(True) #for testing
         self.ui.run_button.clicked.connect(self.queue_plan)
-    
+
     def clearLayout(self, layout):
         if layout is not None:
             while layout.count():
@@ -60,13 +59,13 @@ class LineScanDisplay(display.FireflyDisplay):
                     item.widget().deleteLater()
 
     def reset_default_regions(self):
-            default_num_regions = 1
-            if not hasattr(self, "regions"):
-                self.regions = []
-                self.add_regions(default_num_regions)
-            self.ui.num_motor_spin_box.setValue(default_num_regions)
-            self.update_regions()
-    
+        default_num_regions = 1
+        if not hasattr(self, "regions"):
+            self.regions = []
+            self.add_regions(default_num_regions)
+        self.ui.num_motor_spin_box.setValue(default_num_regions)
+        self.update_regions()
+
     def add_regions(self, num=1):
         for i in range(num):
             region = LineScanRegion()
@@ -83,7 +82,7 @@ class LineScanDisplay(display.FireflyDisplay):
                 if item.widget():
                     item.widget().deleteLater()
             self.regions.pop()
-    
+
     def update_regions(self):
         new_region_num = self.ui.num_motor_spin_box.value()
         old_region_num = len(self.regions)
@@ -107,16 +106,22 @@ class LineScanDisplay(display.FireflyDisplay):
             start_lst.append(float(region_i.start_line_edit.text()))
             stop_lst.append(float(region_i.stop_line_edit.text()))
 
-        motor_args = [values for motor_i in zip(motor_lst, 
-                                                start_lst, 
-                                                stop_lst) for values in motor_i]
-        
+        motor_args = [
+            values
+            for motor_i in zip(motor_lst, start_lst, stop_lst)
+            for values in motor_i
+        ]
+
         print(motor_args)
         # # Build the queue item
-        item = BPlan("scan", detectors, *motor_args, num=num_points, 
-                     #per_step=None, 
-                     md=None
-                     )
+        item = BPlan(
+            "scan",
+            detectors,
+            *motor_args,
+            num=num_points,
+            # per_step=None,
+            md=None,
+        )
         print(item)
 
         # Submit the item to the queueserver

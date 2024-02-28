@@ -8,20 +8,17 @@ from typing import Mapping, Sequence
 import pydm
 import pyqtgraph as pg
 import qtawesome as qta
+from ophydregistry import Registry
 from pydm.application import PyDMApplication
 from pydm.utilities.stylesheet import apply_stylesheet
 from PyQt5.QtWidgets import QStyleFactory
 from qtpy import QtCore, QtWidgets
 from qtpy.QtCore import Signal
 from qtpy.QtWidgets import QAction
-from ophydregistry import Registry
 
-from haven import (
-    HavenMotor,
-    load_config,
-    registry,
-    load_instrument as load_haven_instrument,
-)
+from haven import HavenMotor, load_config
+from haven import load_instrument as load_haven_instrument
+from haven import registry
 from haven.exceptions import ComponentNotFound
 from haven.instrument.device import titelize
 

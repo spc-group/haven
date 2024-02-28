@@ -1,12 +1,16 @@
 import asyncio
 
-from ophyd import Device, Component as Cpt, Kind, FormattedComponent as FCpt
 from apstools.synApps import TransformRecord
+from ophyd import Component as Cpt
+from ophyd import Device
+from ophyd import FormattedComponent as FCpt
+from ophyd import Kind
 
-from .._iconfig import load_config
-from .motor import HavenMotor
 from .. import exceptions
-from .device import aload_devices, make_device, RegexComponent as RCpt
+from .._iconfig import load_config
+from .device import RegexComponent as RCpt
+from .device import aload_devices, make_device
+from .motor import HavenMotor
 
 
 class HighHeatLoadMirror(Device):

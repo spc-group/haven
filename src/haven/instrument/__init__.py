@@ -4,7 +4,6 @@ from .monochromator import Monochromator  # noqa: F401
 from .motor import HavenMotor  # noqa: F401
 from .table import Table, load_tables  # noqa: F401
 
-
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov

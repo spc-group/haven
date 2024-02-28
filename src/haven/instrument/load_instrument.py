@@ -14,9 +14,9 @@ from .instrument_registry import InstrumentRegistry
 from .instrument_registry import registry as default_registry
 from .ion_chamber import load_ion_chamber_coros
 from .lerix import load_lerix_spectrometer_coros
+from .mirrors import load_mirror_coros
 from .monochromator import load_monochromator_coros
 from .motor import HavenMotor, load_all_motor_coros
-from .mirrors import load_mirror_coros
 from .power_supply import load_power_supply_coros
 from .shutter import load_shutter_coros
 from .slits import load_slit_coros

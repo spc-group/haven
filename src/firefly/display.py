@@ -1,12 +1,13 @@
 import subprocess
 from pathlib import Path
-from typing import Sequence, Optional
+from typing import Optional, Sequence
 
-from haven import registry
 from ophyd import Device
 from pydm import Display
 from qtpy import QtWidgets
 from qtpy.QtCore import Signal, Slot
+
+from haven import registry
 
 
 class FireflyDisplay(Display):

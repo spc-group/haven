@@ -104,8 +104,10 @@ def test_auto_gain_plan(fake_ion_chambers, ffapp, qtbot):
         ic_disp.embedded_widget.ui.auto_gain_checkbox.setChecked(True)
     # Check that the correct plan was sent
     expected_item = BPlan("auto_gain", ["It"])
+
     def check_item(item):
         from pprint import pprint
+
         pprint(item.to_dict())
         pprint(expected_item.to_dict())
         return item.to_dict() == expected_item.to_dict()
@@ -116,6 +118,7 @@ def test_auto_gain_plan(fake_ion_chambers, ffapp, qtbot):
     ):
         # Simulate clicking on the auto_gain button
         display.ui.auto_gain_button.click()
+
 
 def test_auto_gain_plan_with_args(fake_ion_chambers, ffapp, qtbot):
     # Set up the application
@@ -132,11 +135,11 @@ def test_auto_gain_plan_with_args(fake_ion_chambers, ffapp, qtbot):
         ic_disp._embedded_widget = ic_disp.open_file(force=True)
         ic_disp.embedded_widget.ui.auto_gain_checkbox.setChecked(True)
     # Check that the correct plan was sent
-    expected_item = BPlan("auto_gain", ["It"],
-                          volts_min=1.0, volts_max=4.5)
+    expected_item = BPlan("auto_gain", ["It"], volts_min=1.0, volts_max=4.5)
 
     def check_item(item):
         from pprint import pprint
+
         pprint(item.to_dict())
         pprint(expected_item.to_dict())
         return item.to_dict() == expected_item.to_dict()

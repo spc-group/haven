@@ -1,12 +1,11 @@
 from unittest import mock
 
+import pytest
 from bluesky_queueserver_api import BPlan
+from ophyd.sim import make_fake_device
 from qtpy import QtCore
 
 from firefly.plans.line_scan import LineScanDisplay
-
-from ophyd.sim import make_fake_device
-import pytest
 from haven.instrument import motor
 
 
@@ -27,12 +26,12 @@ def test_line_scan_plan_queued(ffapp, qtbot, sim_registry):
     display.ui.run_button.setEnabled(True)
     display.ui.num_motor_spin_box.setValue(2)
     display.update_regions()
-    
+
     # set up a test motor 1
     display.regions[0].motor_box.combo_box.setCurrentText("test_motor1")
     display.regions[0].start_line_edit.setText("1")
     display.regions[0].stop_line_edit.setText("111")
-    
+
     # set up a test motor 2
     display.regions[1].motor_box.combo_box.setCurrentText("test_motor2")
     display.regions[1].start_line_edit.setText("2")
@@ -45,9 +44,19 @@ def test_line_scan_plan_queued(ffapp, qtbot, sim_registry):
     display.ui.detectors_list.selected_detectors = mock.MagicMock(
         return_value=["vortex_me4", "I0"]
     )
-    
 
-    expected_item = BPlan("scan", ["vortex_me4", "I0"], "test_motor1", 1, 111, "test_motor2" , 2, 222,  num=10, md=None)
+    expected_item = BPlan(
+        "scan",
+        ["vortex_me4", "I0"],
+        "test_motor1",
+        1,
+        111,
+        "test_motor2",
+        2,
+        222,
+        num=10,
+        md=None,
+    )
 
     def check_item(item):
         from pprint import pprint

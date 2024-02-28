@@ -1,13 +1,15 @@
-from unittest import mock
-import pytest
-from qtpy.QtCore import Qt
-from ophyd import sim, EpicsMotor, Device, Component as Cpt
 from pprint import pprint
+from unittest import mock
+
+import pytest
+from ophyd import Component as Cpt
+from ophyd import Device, EpicsMotor, sim
+from qtpy.QtCore import Qt
 
 from firefly.component_selector import (
+    ComponentComboBoxModel,
     ComponentSelector,
     ComponentTreeModel,
-    ComponentComboBoxModel,
 )
 
 

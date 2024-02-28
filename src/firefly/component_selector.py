@@ -1,21 +1,21 @@
 import logging
-from pprint import pprint
 from collections import OrderedDict
+from pprint import pprint
 
-from qtpy.QtWidgets import (
-    QWidget,
-    QComboBox,
-    QHBoxLayout,
-    QVBoxLayout,
-    QPushButton,
-    QDialog,
-    QTreeView,
-    QToolButton,
-)
-from qtpy.QtCore import Qt
-from qtpy.QtGui import QStandardItemModel, QStandardItem, QFont
 import qtawesome as qta
-from ophyd import sim, EpicsMotor, Signal, Device, PositionerBase
+from ophyd import Device, EpicsMotor, PositionerBase, Signal, sim
+from qtpy.QtCore import Qt
+from qtpy.QtGui import QFont, QStandardItem, QStandardItemModel
+from qtpy.QtWidgets import (
+    QComboBox,
+    QDialog,
+    QHBoxLayout,
+    QPushButton,
+    QToolButton,
+    QTreeView,
+    QVBoxLayout,
+    QWidget,
+)
 
 from .application import FireflyApplication
 

@@ -1,7 +1,6 @@
 import haven
-from firefly import display
+from firefly import display, slits
 from haven.instrument import mirrors
-from firefly import slits
 
 
 class MirrorDisplay(slits.SlitsDisplay):

@@ -21,11 +21,14 @@ m_e = (
 ALPHA = hbar**2 * c**2 / 2 / m_e
 ALPHA = ALPHA.to("electron_volt * angstrom * angstrom").magnitude
 
+
 def energy_to_wavenumber(energy):
     return np.sqrt(energy / ALPHA)
 
+
 def wavenumber_to_energy(wavenumber):
     return wavenumber**2 * ALPHA
+
 
 # converting between energy steps and k steps
 def E_step_to_k_step(E_start, E_step):
@@ -33,10 +36,12 @@ def E_step_to_k_step(E_start, E_step):
     k1 = energy_to_wavenumber(E_start + E_step)
     return k1 - k0
 
+
 def k_step_to_E_step(k_start, k_step):
     E0 = wavenumber_to_energy(k_start)
     E1 = wavenumber_to_energy(k_start + k_step)
     return E1 - E0
+
 
 @dataclass
 class EnergyRange:
@@ -84,7 +89,6 @@ class ERange(EnergyRange):
     def exposures(self):
         """Convert the range to a sequence of exposure times, in seconds."""
         return self.exposure * self.energies() ** self.weight
-        # return np.asarray([self.exposure] * len(self.energies()))  ** self.weight
 
 
 @dataclass

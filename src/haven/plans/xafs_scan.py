@@ -9,7 +9,7 @@ from collections import ChainMap
 from typing import Mapping, Optional, Sequence, Union
 
 from .. import exceptions
-from ..energy_ranges import ERange, KRange, merge_ranges, energy_to_wavenumber
+from ..energy_ranges import ERange, KRange, energy_to_wavenumber, merge_ranges
 from ..preprocessors import baseline_decorator
 from ..typing import DetectorList
 from .energy_scan import energy_scan

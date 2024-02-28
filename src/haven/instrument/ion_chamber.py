@@ -95,9 +95,9 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
     offset_difference = -3  # How many levels higher should the offset be
     current_multipliers = {
         0: 1e-12,  # pA
-        1:    1e-9,  # nA
-        2:    1e-6,  # µA
-        3:    1e-3,  # mA
+        1: 1e-9,  # nA
+        2: 1e-6,  # µA
+        3: 1e-3,  # mA
         "pA": 1e-12,
         "nA": 1e-9,
         "µA": 1e-6,

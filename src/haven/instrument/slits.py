@@ -5,7 +5,7 @@ import asyncio
 import logging
 
 from apstools.devices import PVPositionerSoftDone
-from apstools.synApps.db_2slit import Optics2Slit2D_HV, Optics2Slit1D
+from apstools.synApps.db_2slit import Optics2Slit1D, Optics2Slit2D_HV
 from apstools.utils import SlitGeometry
 from ophyd import Component as Cpt
 from ophyd import DerivedSignal, Device, EpicsSignal

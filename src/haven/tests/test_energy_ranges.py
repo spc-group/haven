@@ -27,9 +27,7 @@ def test_k_range():
     np.testing.assert_almost_equal(energies[0], E0 + E_min)
     np.testing.assert_almost_equal(energies[-1], 17785.40463351)
     np.testing.assert_equal(k_range.exposures()[0], 1.0)
-    np.testing.assert_almost_equal(
-        k_range.exposures()[16], 1.28529317348436, decimal=3
-    )
+    np.testing.assert_almost_equal(k_range.exposures()[16], 1.28529317348436, decimal=3)
 
 
 def test_merge_ranges():
@@ -38,9 +36,7 @@ def test_merge_ranges():
     merged, exposures = merge_ranges(e_range2, e_range1)
     # Test validity of the result
     np.testing.assert_equal(merged, [1, 2, 3, 4, 5, 5.5, 6, 6.5, 7])
-    np.testing.assert_equal(
-        exposures, [0.5, 0.5, 0.5, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0]
-    )
+    np.testing.assert_equal(exposures, [0.5, 0.5, 0.5, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0])
 
 
 # -----------------------------------------------------------------------------

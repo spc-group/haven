@@ -12,7 +12,6 @@ from ophyd.sim import motor
 
 from ..instrument.instrument_registry import registry
 
-
 __all__ = ["GainRecommender", "auto_gain"]
 
 
@@ -45,14 +44,14 @@ class GainRecommender:
             is_hysteretical = np.full_like(gains, True, dtype=bool)
         else:
             is_hysteretical = gains < self.last_point
-        self.last_point = gains        
+        self.last_point = gains
         is_low = volts < self.volts_min
         new_gains[np.logical_or(is_low, is_hysteretical)] -= 1
         is_high = volts > self.volts_max
         new_gains[is_high] += 1
         # Ensure we're within the bounds for gain values
-        new_gains[new_gains<0] = 0
-        new_gains[new_gains>self.gain_max] = self.gain_max
+        new_gains[new_gains < 0] = 0
+        new_gains[new_gains > self.gain_max] = self.gain_max
         # Check whether we need to move to a new point of not
         if np.logical_or(is_low, is_high).any():
             self.next_point = new_gains
@@ -131,7 +130,10 @@ def auto_gain(
     # Execute the adaptive plan
     try:
         yield from adaptive_plan(
-            dets=dets, first_point=first_point, to_recommender=rr, from_recommender=queue
+            dets=dets,
+            first_point=first_point,
+            to_recommender=rr,
+            from_recommender=queue,
         )
     finally:
         # Restore the detector signal kinds
