@@ -6,8 +6,10 @@ from xraydb.xraydb import XrayDB
 import re
 
 # TODO: use relative import in the future, copied energy_ranges.py to the current folder
-from energy_ranges import ERange, KRange, KRange_useE, merge_ranges, energy_to_wavenumber, wavenumber_to_energy
+from energy_ranges import ERange, KRange, merge_ranges, energy_to_wavenumber, wavenumber_to_energy, E_step_to_k_step, k_step_to_E_step
 from haven.plans import energy_scan
+
+# TODO: remove exposure time
 
 class XafsScanRegion:
     def __init__(self):
@@ -15,76 +17,68 @@ class XafsScanRegion:
 
     def setup_ui(self):
         self.layout = QtWidgets.QHBoxLayout()
+        # K-space checkbox
+        self.k_space_checkbox = QtWidgets.QCheckBox()
+        self.k_space_checkbox.setText("K-space")
+        self.k_space_checkbox.setEnabled(False)
+        self.layout.addWidget(self.k_space_checkbox)
 
         # First energy box
         self.start_line_edit = QtWidgets.QLineEdit()
         self.start_line_edit.setValidator(QDoubleValidator()) # only takes numbers
         self.start_line_edit.setPlaceholderText("Start…")
         self.layout.addWidget(self.start_line_edit)
+
         # Last energy box
         self.stop_line_edit = QtWidgets.QLineEdit()
         self.start_line_edit.setValidator(QDoubleValidator()) # only takes numbers
         self.stop_line_edit.setPlaceholderText("Stop…")
         self.layout.addWidget(self.stop_line_edit)
+
         # Energy step box
         self.step_line_edit = QtWidgets.QLineEdit()
         self.start_line_edit.setValidator(QDoubleValidator()) # only takes numbers
         self.step_line_edit.setPlaceholderText("Step…")
         self.layout.addWidget(self.step_line_edit)
-        # K-space checkbox
-        self.k_space_checkbox = QtWidgets.QCheckBox()
-        self.k_space_checkbox.setText("K-space")
-        self.k_space_checkbox.setEnabled(False)
-        self.layout.addWidget(self.k_space_checkbox)
+        
         # K-weight factor box, hidden at first
-        self.k_weight_line_edit = QtWidgets.QLineEdit()
-        self.k_weight_line_edit.setPlaceholderText("K-weight")
-        self.k_weight_line_edit.setEnabled(False)
-        self.layout.addWidget(self.k_weight_line_edit)
+        self.weight_line_edit = QtWidgets.QLineEdit()
+        self.weight_line_edit.setPlaceholderText("weight")
+        self.layout.addWidget(self.weight_line_edit)
 
         # Connect the k-space enabled checkbox to the relevant signals
         self.k_space_checkbox.stateChanged.connect(self.update_wavenumber_energy)
-        # # when value is negative, disable k checkbox
-        # self.start_line_edit.textChanged.connect(self.update_k_space_checkbox)
-        # self.stop_line_edit.textChanged.connect(self.update_k_space_checkbox)
 
-    # def update_k_space_checkbox(self):
-    #     start, stop = float(self.start_line_edit.text()), float(self.stop_line_edit.text())
-    #     if start > 0 and stop > 0:
-    #         self.k_space_checkbox.setEnabled(True)
-    #     else:
-    #         self.k_space_checkbox.setEnabled(False)
+    def update_line_edit_value(self, line_edit, conversion_func, precision):
+        text = line_edit.text()
+        if text:
+            converted_value = conversion_func(float(text))
+            line_edit.setText(f"{converted_value:{precision}}")
 
     def update_wavenumber_energy(self):
-        if self.k_space_checkbox.isChecked():
-            self.k_weight_line_edit.setEnabled(True)
-            # convert energy to wavenumber
-            if self.start_line_edit.text() != '':
-                k_min = energy_to_wavenumber(float(self.start_line_edit.text()))
-                self.start_line_edit.setText(f'{k_min:.5f}')
+        is_checked = self.k_space_checkbox.isChecked()
+        precision = ".5f" if is_checked else ".1f"
 
-            if self.stop_line_edit.text() != '':
-                k_max = energy_to_wavenumber(float(self.stop_line_edit.text()))
-                self.stop_line_edit.setText(f'{k_max:.5f}')
+        # Define conversion functions
+        conversion_funcs = {
+            self.step_line_edit: E_step_to_k_step if is_checked else lambda x, y: k_step_to_E_step(x, y),
+            self.start_line_edit: energy_to_wavenumber if is_checked else wavenumber_to_energy,
+            self.stop_line_edit: energy_to_wavenumber if is_checked else wavenumber_to_energy
+        }
 
-            if self.step_line_edit.text() != '':
-                k_step = energy_to_wavenumber(float(self.step_line_edit.text()))
-                self.step_line_edit.setText(f'{k_step:.5f}')
-        
-        if not self.k_space_checkbox.isChecked():
-            self.k_weight_line_edit.setEnabled(False)
-            # convert wavenumber to energy
-            if self.start_line_edit.text() != '':
-                E_min = wavenumber_to_energy(float(self.start_line_edit.text()))
-                self.start_line_edit.setText(f'{E_min:.1f}')
+        # Iterate over line edits and apply corresponding conversion
+        for line_edit, func in conversion_funcs.items():
+            if line_edit == self.step_line_edit:
+                # Special handling for step_line_edit due to different parameters needed
+                start_text = self.start_line_edit.text()
+                if start_text and line_edit.text():
+                    start = float(start_text)
+                    step = float(line_edit.text())
+                    new_values = func(start, step) if is_checked else func(start, step)
+                    line_edit.setText(f"{new_values:{precision}}")
+            else:
+                self.update_line_edit_value(line_edit, func, precision)
 
-            if self.stop_line_edit.text() != '':
-                E_max = wavenumber_to_energy(float(self.stop_line_edit.text()))
-                self.stop_line_edit.setText(f'{E_max:.1f}')
-
-            if self.step_line_edit.text() != '':
-                E_step = wavenumber_to_energy(float(self.step_line_edit.text()))
-                self.step_line_edit.setText(f'{E_step:.1f}')
 
 class XafsScanDisplay(display.FireflyDisplay):
     min_energy = 4000
@@ -124,38 +118,26 @@ class XafsScanDisplay(display.FireflyDisplay):
         ]
         combo_box.addItems(["Select edge…", *items])
 
-
     def use_edge(self):
+        self.edge_combo_box.setEnabled(self.ui.use_edge_checkbox.isChecked())
         self.edge_value = float(re.search(r'\d+\.?\d*', self.edge_combo_box.currentText()).group())
-        if self.ui.use_edge_checkbox.isChecked():
-            self.edge_combo_box.setEnabled(True)
-            for i, region_i in enumerate(self.regions):
-                start, stop = region_i.start_line_edit.text(), region_i.stop_line_edit.text()
-                if start != '':
-                    relativeE_start = float(start) - self.edge_value
-                    region_i.start_line_edit.setText("{:.1f}".format(relativeE_start))
-                if stop != '':
-                    relativeE_stop = float(stop) - self.edge_value
-                    region_i.stop_line_edit.setText("{:.1f}".format(relativeE_stop))
 
-        if not self.ui.use_edge_checkbox.isChecked():
-            self.edge_combo_box.setEnabled(False)
-            self.edge_value = float(re.search(r'\d+\.?\d*', self.edge_combo_box.currentText()).group())
-            
-            for i, region_i in enumerate(self.regions):
-                # uncheck k space
-                region_i.k_space_checkbox.setChecked(False)
-                region_i.k_space_checkbox.setEnabled(False)
+        for region_i in self.regions:
+            # Adjust checkbox based on use_edge_checkbox state
+            is_checked = self.ui.use_edge_checkbox.isChecked()
 
-                # change absolute E to relative E
-                start, stop = region_i.start_line_edit.text(), region_i.stop_line_edit.text()
-                if start != '':
-                    relativeE_start = float(start) + self.edge_value
-                    region_i.start_line_edit.setText("{:.1f}".format(relativeE_start))
-                if stop != '':
-                    relativeE_stop = float(stop) + self.edge_value
-                    region_i.stop_line_edit.setText("{:.1f}".format(relativeE_stop))
-                
+            # uncheck k space to convert back to energy values from k values
+            region_i.k_space_checkbox.setChecked(False)
+            # disable the k space
+            region_i.k_space_checkbox.setEnabled(False)
+
+            # Convert between absolute energies and relative energies
+            for line_edit in [region_i.start_line_edit, region_i.stop_line_edit]:
+                text = line_edit.text()
+                if text:
+                    value = float(text) - self.edge_value if is_checked else float(text) + self.edge_value
+                    line_edit.setText(f"{value:.1f}")
+
     def update_k_space_checkbox(self): 
         use_edge_checked = self.ui.use_edge_checkbox.isChecked() 
         for region_i in self.regions: 
@@ -181,7 +163,7 @@ class XafsScanDisplay(display.FireflyDisplay):
             self.remove_regions(len(self.regions))
         self.regions = []
         self.add_regions(default_num_regions)
-        self.ui.regions_spin_box.setValue(default_num_regions)
+        self.ui.regions_spin_box.setValue(default_num_regions)    
         
         # set default values for testing, to be deleted in the future
         pre_edge = [-50, -20, 1]
@@ -194,8 +176,6 @@ class XafsScanDisplay(display.FireflyDisplay):
             region_i.step_line_edit.setText(str(default_regions[i][2]))
             # region_i.update_k_space_checkbox()
         self.update_k_space_checkbox()
-
-        
 
     def add_regions(self, num=1):
         for i in range(num):
@@ -236,23 +216,25 @@ class XafsScanDisplay(display.FireflyDisplay):
         # get paramters from each rows of line regions:
         energy_ranges_all = []
         for region_i in self.regions:
-            E_min = float(region_i.start_line_edit.text())
-            E_max = float(region_i.stop_line_edit.text())
-            E_step = float(region_i.step_line_edit.text())
-
-            if self.region_i.k_space_checkbox.isUnchecked():
+            start = float(region_i.start_line_edit.text())
+            stop = float(region_i.stop_line_edit.text())
+            step = float(region_i.step_line_edit.text())
+            weight = float(region_i.weight_line_edit.text()) if region_i.weight_line_edit.text() else 0
+            
+            if region_i.k_space_checkbox.isUnchecked():
                 energy_ranges_all.append(
-                    ERange(E_min=E_min,
-                           E_max=E_max,
-                           E_step= E_step,
+                    ERange(E_min=start,
+                           E_max=stop,
+                           E_step=step,
+                           weight=weight,
                            exposure=exposure_time
                            ))            
             else:
                 energy_ranges_all.append(
-                    KRange(E_min=E_min,
-                           k_max=E_max,
-                           k_step= E_step,
-                           k_weight=float(region_i.k_weight_line_edit.text()),
+                    KRange(k_min=start,
+                           k_max=stop,
+                           k_step=step,
+                           weight=weight,
                            exposure=exposure_time
                            ))
                     
@@ -261,7 +243,7 @@ class XafsScanDisplay(display.FireflyDisplay):
         # # Build the queue item
         item = energy_scan(
             energies=energies,
-            exposure=exposures,
+            exposure=exposures, # change to weight
             E0=self.edge_value,
             detectors=detectors,
             # energy_positioners=energy_positioners,
