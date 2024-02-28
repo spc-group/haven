@@ -20,7 +20,7 @@ class XafsScanRegion:
         # K-space checkbox
         self.k_space_checkbox = QtWidgets.QCheckBox()
         self.k_space_checkbox.setText("K-space")
-        self.k_space_checkbox.setEnabled(False)
+        self.k_space_checkbox.setEnabled(True)
         self.layout.addWidget(self.k_space_checkbox)
 
         # First energy box
@@ -49,15 +49,14 @@ class XafsScanRegion:
         # Connect the k-space enabled checkbox to the relevant signals
         self.k_space_checkbox.stateChanged.connect(self.update_wavenumber_energy)
 
-    def update_line_edit_value(self, line_edit, conversion_func, precision):
+    def update_line_edit_value(self, line_edit, conversion_func):
         text = line_edit.text()
         if text:
             converted_value = conversion_func(float(text))
-            line_edit.setText(f"{converted_value:{precision}}")
+            line_edit.setText(f"{converted_value:.4g}")
 
     def update_wavenumber_energy(self):
         is_checked = self.k_space_checkbox.isChecked()
-        precision = ".5f" if is_checked else ".1f"
 
         # Define conversion functions
         conversion_funcs = {
@@ -75,9 +74,9 @@ class XafsScanRegion:
                     start = float(start_text)
                     step = float(line_edit.text())
                     new_values = func(start, step) if is_checked else func(start, step)
-                    line_edit.setText(f"{new_values:{precision}}")
+                    line_edit.setText(f"{new_values:.4g}")
             else:
-                self.update_line_edit_value(line_edit, func, precision)
+                self.update_line_edit_value(line_edit, func)
 
 
 class XafsScanDisplay(display.FireflyDisplay):
@@ -129,25 +128,26 @@ class XafsScanDisplay(display.FireflyDisplay):
             # uncheck k space to convert back to energy values from k values
             region_i.k_space_checkbox.setChecked(False)
             # disable the k space
-            region_i.k_space_checkbox.setEnabled(False)
+            # region_i.k_space_checkbox.setEnabled(False)
 
             # Convert between absolute energies and relative energies
             for line_edit in [region_i.start_line_edit, region_i.stop_line_edit]:
                 text = line_edit.text()
                 if text:
                     value = float(text) - self.edge_value if is_checked else float(text) + self.edge_value
-                    line_edit.setText(f"{value:.1f}")
+                    line_edit.setText(f"{value:.4g}")
 
-    def update_k_space_checkbox(self): 
-        use_edge_checked = self.ui.use_edge_checkbox.isChecked() 
-        for region_i in self.regions: 
-            start_text = region_i.start_line_edit.text() 
-            stop_text = region_i.stop_line_edit.text() 
-            # Determine if start and stop are both non-empty and convert to floats if they are 
-            start = float(start_text) if start_text else 0 
-            stop = float(stop_text) if stop_text else 0 
-            # Enable k_space_checkbox if use_edge_checked is True, and both start and stop are positive 
-            region_i.k_space_checkbox.setEnabled(use_edge_checked and start > 0 and stop > 0)
+    # this checks whether E is above 0, and disable/enable k space checkbox
+    # def update_k_space_checkbox(self): 
+    #     use_edge_checked = self.ui.use_edge_checkbox.isChecked() 
+    #     for region_i in self.regions: 
+    #         start_text = region_i.start_line_edit.text() 
+    #         stop_text = region_i.stop_line_edit.text() 
+    #         # Determine if start and stop are both non-empty and convert to floats if they are 
+    #         start = float(start_text) if start_text else 0 
+    #         stop = float(stop_text) if stop_text else 0 
+    #         # Enable k_space_checkbox if use_edge_checked is True, and both start and stop are positive 
+    #         region_i.k_space_checkbox.setEnabled(use_edge_checked and start > 0 and stop > 0)
         
     def clearLayout(self, layout):
         if layout is not None:
@@ -174,18 +174,17 @@ class XafsScanDisplay(display.FireflyDisplay):
             region_i.start_line_edit.setText(str(default_regions[i][0]))
             region_i.stop_line_edit.setText(str(default_regions[i][1]))
             region_i.step_line_edit.setText(str(default_regions[i][2]))
-            # region_i.update_k_space_checkbox()
-        self.update_k_space_checkbox()
+        # self.update_k_space_checkbox()
 
     def add_regions(self, num=1):
         for i in range(num):
             region = XafsScanRegion()
             self.ui.regions_layout.addLayout(region.layout)
             # Connect the E0 checkbox to each of the regions
-            # self.ui.use_edge_checkbox.stateChanged.connect(region.update_edge_enabled)         
+            self.ui.use_edge_checkbox.stateChanged.connect(region.k_space_checkbox.setEnabled)         
             # when value is negative, disable k checkbox
-            region.start_line_edit.textChanged.connect(self.update_k_space_checkbox)
-            region.stop_line_edit.textChanged.connect(self.update_k_space_checkbox)
+            # region.start_line_edit.textChanged.connect(self.update_k_space_checkbox)
+            # region.stop_line_edit.textChanged.connect(self.update_k_space_checkbox)
             self.regions.append(region)
 
     def remove_regions(self, num=1):
