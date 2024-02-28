@@ -9,7 +9,7 @@ from collections import ChainMap
 from typing import Mapping, Optional, Sequence, Union
 
 from .. import exceptions
-from ..energy_ranges import ERange, KRange, merge_ranges
+from ..energy_ranges import ERange, KRange, merge_ranges, energy_to_wavenumber
 from ..preprocessors import baseline_decorator
 from ..typing import DetectorList
 from .energy_scan import energy_scan
@@ -135,7 +135,7 @@ def xafs_scan(
     if has_krange:
         energy_ranges.append(
             KRange(
-                E_min=curr_E_min,
+                k_min=energy_to_wavenumber(curr_E_min),
                 k_max=k_max,
                 k_step=k_step,
                 k_weight=k_weight,

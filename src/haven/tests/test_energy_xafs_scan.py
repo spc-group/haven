@@ -159,7 +159,9 @@ def test_exafs_k_range(mono_motor, exposure_motor, I0):
 
     """
     E0 = 10000
-    krange = KRange(E_min=10, k_max=14, k_step=0.5, k_weight=0.5, exposure=0.75)
+    E_min = 10
+    k_min = 1.6200877248145786
+    krange = KRange(k_min=k_min, k_max=14, k_step=0.5, k_weight=0.5, exposure=0.75)
     expected_energies = krange.energies() + E0
     expected_exposures = krange.exposures()
     scan = xafs_scan(
