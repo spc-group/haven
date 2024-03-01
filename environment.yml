@@ -135,6 +135,7 @@ dependencies:
   # - pygithub
 
   - pip:
+    - aioca
     - apsbss
     - time-machine
     - autoapi
