@@ -483,7 +483,8 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         return status
 
     def disable_pso(self):
-        self.send_command(f"PSOCONTROL {self.axis} OFF")
+        for axis in range(2):
+            self.send_command(f"PSOCONTROL @{axis} OFF")
 
     def check_flyscan_bounds(self):
         """Check that the fly-scan params are sane at the scan start and end.
