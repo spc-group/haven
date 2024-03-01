@@ -49,7 +49,7 @@ jobs:
       run: |
         isort --check src/
     - name: Test with pytest in Xvfb
-      run: xvfb-run python -m pytest --capture=no -vv --timeout=120
+      run: xvfb-run python -m pytest -vv --timeout=30
     - name: Reporting linting
       run: |
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics	
