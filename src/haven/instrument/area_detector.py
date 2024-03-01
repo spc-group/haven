@@ -116,6 +116,10 @@ class DetectorBase(OphydDetectorBase):
             description = self.name
         self.description = description
 
+    @property
+    def default_time_signal(self):
+        return self.cam.acquire_time
+
 
 class StatsMixin:
     overlays = ADCpt(OverlayPlugin, "Over1:")

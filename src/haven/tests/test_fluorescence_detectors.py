@@ -595,6 +595,15 @@ def test_dead_time_calc(vortex):
     assert vortex.dead_time_average.get(use_monitor=False) == 4.5
 
 
+def test_default_time_signal_dxp(dxp):
+    assert dxp.default_time_signal is dxp.preset_real_time
+
+
+def test_default_time_signal_xspress(xspress):
+    # assert xspress.default_time_signal is xspress.acquire_time
+    assert xspress.default_time_signal is xspress.cam.acquire_time
+
+
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov

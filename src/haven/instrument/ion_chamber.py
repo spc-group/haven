@@ -100,6 +100,7 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
         3: 1e-3,  # mA
         "pA": 1e-12,
         "nA": 1e-9,
+        "uA": 1e-6,
         "µA": 1e-6,
         "mA": 1e-3,
     }
@@ -438,6 +439,14 @@ class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
         self.stage_sigs[self.auto_count] = 0
         # Sync the ion chamber description with the voltmeter description
         self.description.subscribe(self.update_voltmeter_description, run=True)
+
+    @property
+    def default_time_signal(self):
+        """The signal to use for setting exposure time when no other signal is
+        provided.
+
+        """
+        return self.exposure_time
 
     def update_voltmeter_description(self, *args, value, **kwargs):
         self.voltmeter.description.put(value)

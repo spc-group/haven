@@ -254,6 +254,10 @@ class DxpDetector(
         self.acquire.subscribe(self._acquire)
         self.acquiring.subscribe(self._acquire)
 
+    @property
+    def default_time_signal(self):
+        return self.preset_real_time
+
     def _acquire(self, *args, old_value, value, obj, **kwargs):
         """Mimic the Xspress3 AD interface for acquiring data."""
         if obj is self.acquire:

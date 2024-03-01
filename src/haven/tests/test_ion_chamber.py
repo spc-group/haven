@@ -220,6 +220,10 @@ def test_flyscan_collect(sim_ion_chamber):
         }
 
 
+def test_default_time_signal(sim_ion_chamber):
+    assert sim_ion_chamber.default_time_signal is sim_ion_chamber.exposure_time
+
+
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov
