@@ -2,12 +2,12 @@ import asyncio
 import logging
 from typing import Optional
 
+from aioca import caget
 from ophyd import Component as Cpt
 from ophyd import EpicsMotor, EpicsSignal, EpicsSignalRO
 
 from .._iconfig import load_config
 from .device import aload_devices, make_device
-from .epics import caget
 from .instrument_registry import registry
 
 log = logging.getLogger(__name__)

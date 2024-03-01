@@ -17,9 +17,7 @@ log = logging.getLogger(__name__)
 class VoltmetersDisplay(display.FireflyDisplay):
     _ion_chamber_displays = []
     caqtdm_scaler_ui_file: str = "/net/s25data/xorApps/ui/scaler32_full_offset.ui"
-    caqtdm_mcs_ui_file: str = (
-        "/APSshare/epics/synApps_6_2_1/support/mca-R7-9//mcaApp/op/ui/autoconvert/SIS38XX.ui"
-    )
+    caqtdm_mcs_ui_file: str = "/APSshare/epics/synApps_6_2_1/support/mca-R7-9//mcaApp/op/ui/autoconvert/SIS38XX.ui"
 
     def __init__(
         self,

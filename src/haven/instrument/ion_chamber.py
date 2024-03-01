@@ -10,6 +10,7 @@ from typing import Dict, Generator
 
 import numpy as np
 import pint
+from aioca import caget
 from apstools.devices import SRS570_PreAmplifier
 from ophyd import Component as Cpt
 from ophyd import Device, EpicsSignal, EpicsSignalRO
@@ -26,7 +27,6 @@ from pcdsdevices.type_hints import OphydDataType, SignalToValue
 from .. import exceptions
 from .._iconfig import load_config
 from .device import aload_devices, await_for_connection, make_device
-from .epics import caget
 from .instrument_registry import registry
 from .labjack import AnalogInput
 from .scaler_triggered import ScalerSignalRO, ScalerTriggered
