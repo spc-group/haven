@@ -5,8 +5,7 @@ from qtpy.QtGui import QDoubleValidator
 from xraydb.xraydb import XrayDB
 
 from firefly import display
-
-# TODO: use relative import in the future, copied energy_ranges.py to the current folder
+from firefly.application import FireflyApplication
 from haven.energy_ranges import (
     E_step_to_k_step,
     ERange,
@@ -16,7 +15,7 @@ from haven.energy_ranges import (
     merge_ranges,
     wavenumber_to_energy,
 )
-from haven.plans import energy_scan
+from haven.plans.energy_scan import energy_scan
 
 # TODO: remove exposure time
 
@@ -27,43 +26,63 @@ class XafsScanRegion:
 
     def setup_ui(self):
         self.layout = QtWidgets.QHBoxLayout()
-        # K-space checkbox
-        self.k_space_checkbox = QtWidgets.QCheckBox()
-        self.k_space_checkbox.setText("K-space")
-        self.k_space_checkbox.setEnabled(True)
-        self.layout.addWidget(self.k_space_checkbox)
+        
+        # Enable checkbox
+        self.region_checkbox = QtWidgets.QCheckBox()
+        self.region_checkbox.setChecked(True)
+        self.layout.addWidget(self.region_checkbox)
 
         # First energy box
         self.start_line_edit = QtWidgets.QLineEdit()
-        self.start_line_edit.setValidator(QDoubleValidator())  # only takes numbers
+        self.start_line_edit.setValidator(QDoubleValidator())  # only takes floats
         self.start_line_edit.setPlaceholderText("Start…")
         self.layout.addWidget(self.start_line_edit)
 
         # Last energy box
         self.stop_line_edit = QtWidgets.QLineEdit()
-        self.start_line_edit.setValidator(QDoubleValidator())  # only takes numbers
+        self.stop_line_edit.setValidator(QDoubleValidator())  # only takes floats
         self.stop_line_edit.setPlaceholderText("Stop…")
         self.layout.addWidget(self.stop_line_edit)
 
         # Energy step box
         self.step_line_edit = QtWidgets.QLineEdit()
-        self.start_line_edit.setValidator(QDoubleValidator())  # only takes numbers
+        self.step_line_edit.setValidator(QDoubleValidator(0.0, float('inf'), 2))  # only takes positive floats
         self.step_line_edit.setPlaceholderText("Step…")
         self.layout.addWidget(self.step_line_edit)
 
-        # K-weight factor box, hidden at first
-        self.weight_line_edit = QtWidgets.QLineEdit()
-        self.weight_line_edit.setPlaceholderText("weight")
-        self.layout.addWidget(self.weight_line_edit)
+        # Weight factor box
+        self.weight_spinbox = QtWidgets.QDoubleSpinBox()
+        self.layout.addWidget(self.weight_spinbox)
+        self.weight_spinbox.setDecimals(1)
+
+        # K-space checkbox
+        self.k_space_checkbox = QtWidgets.QCheckBox()
+        self.k_space_checkbox.setText("k-space")
+        self.k_space_checkbox.setEnabled(True)
+        self.layout.addWidget(self.k_space_checkbox)
+        
+        # Exposure time double spin box
+        self.exposure_time_spinbox = QtWidgets.QDoubleSpinBox()
+        self.exposure_time_spinbox.setValue(1)
+        self.layout.addWidget(self.exposure_time_spinbox)
 
         # Connect the k-space enabled checkbox to the relevant signals
         self.k_space_checkbox.stateChanged.connect(self.update_wavenumber_energy)
+        self.region_checkbox.stateChanged.connect(self.disable_region)
+    
+    def disable_region(self, is_region_checked):
+        self.start_line_edit.setEnabled(is_region_checked)
+        self.stop_line_edit.setEnabled(is_region_checked)
+        self.step_line_edit.setEnabled(is_region_checked)
+        self.exposure_time_spinbox.setEnabled(is_region_checked)
+        self.weight_spinbox.setEnabled(is_region_checked)
+        self.k_space_checkbox.setEnabled(is_region_checked)
 
     def update_line_edit_value(self, line_edit, conversion_func):
         text = line_edit.text()
         if text:
             converted_value = conversion_func(float(text))
-            line_edit.setText(f"{converted_value:.4g}")
+            line_edit.setText(f"{converted_value:.5g}")
 
     def update_wavenumber_energy(self):
         is_checked = self.k_space_checkbox.isChecked()
@@ -104,19 +123,6 @@ class XafsScanDisplay(display.FireflyDisplay):
         self.clearLayout(self.ui.region_layout)
 
         self.reset_default_regions()
-        # Connect the E0 checkbox to the E0 combobox
-        self.ui.use_edge_checkbox.stateChanged.connect(self.use_edge)
-
-        # disable the line edits in spin box
-        self.ui.regions_spin_box.lineEdit().setReadOnly(True)
-
-        # when regions number changed
-        self.ui.regions_spin_box.valueChanged.connect(self.update_regions)
-        self.ui.regions_spin_box.editingFinished.connect(self.update_regions)
-
-        # reset button
-        self.ui.pushButton.clicked.connect(self.reset_default_regions)
-
         # add absorption edges from XrayDB
         self.xraydb = XrayDB()
 
@@ -133,43 +139,48 @@ class XafsScanDisplay(display.FireflyDisplay):
         ]
         combo_box.addItems(["Select edge…", *items])
 
+        # Connect the E0 checkbox to the E0 combobox
+        self.ui.use_edge_checkbox.stateChanged.connect(self.use_edge)
+
+        # disable the line edits in spin box
+        self.ui.regions_spin_box.lineEdit().setReadOnly(True)
+
+        # when regions number changed
+        self.ui.regions_spin_box.valueChanged.connect(self.update_regions)
+        self.ui.regions_spin_box.editingFinished.connect(self.update_regions)
+
+        # reset button
+        self.ui.pushButton.clicked.connect(self.reset_default_regions)
+
+        self.ui.run_button.setEnabled(True) #for testing
+        self.ui.run_button.clicked.connect(self.queue_plan)        
+
     def use_edge(self):
         self.edge_combo_box.setEnabled(self.ui.use_edge_checkbox.isChecked())
-        self.edge_value = float(
-            re.search(r"\d+\.?\d*", self.edge_combo_box.currentText()).group()
-        )
+        
+        # extract edge values
+        match = re.findall(r"\d+\.?\d*", self.edge_combo_box.currentText())
+        edge_value = float(match[-1]) if match else 0
 
-        for region_i in self.regions:
+        is_checked = self.ui.use_edge_checkbox.isChecked()
+        # iterate through selected regions
+        checked_regions = [region_i for region_i in self.regions if region_i.region_checkbox.isChecked()]
+        for region_i in checked_regions:
             # Adjust checkbox based on use_edge_checkbox state
-            is_checked = self.ui.use_edge_checkbox.isChecked()
-
+            region_i.k_space_checkbox.setEnabled(is_checked)
             # uncheck k space to convert back to energy values from k values
             region_i.k_space_checkbox.setChecked(False)
-            # disable the k space
-            # region_i.k_space_checkbox.setEnabled(False)
 
             # Convert between absolute energies and relative energies
             for line_edit in [region_i.start_line_edit, region_i.stop_line_edit]:
                 text = line_edit.text()
                 if text:
                     value = (
-                        float(text) - self.edge_value
+                        float(text) - edge_value
                         if is_checked
-                        else float(text) + self.edge_value
+                        else float(text) + edge_value
                     )
                     line_edit.setText(f"{value:.4g}")
-
-    # this checks whether E is above 0, and disable/enable k space checkbox
-    # def update_k_space_checkbox(self):
-    #     use_edge_checked = self.ui.use_edge_checkbox.isChecked()
-    #     for region_i in self.regions:
-    #         start_text = region_i.start_line_edit.text()
-    #         stop_text = region_i.stop_line_edit.text()
-    #         # Determine if start and stop are both non-empty and convert to floats if they are
-    #         start = float(start_text) if start_text else 0
-    #         stop = float(stop_text) if stop_text else 0
-    #         # Enable k_space_checkbox if use_edge_checked is True, and both start and stop are positive
-    #         region_i.k_space_checkbox.setEnabled(use_edge_checked and start > 0 and stop > 0)
 
     def clearLayout(self, layout):
         if layout is not None:
@@ -196,19 +207,12 @@ class XafsScanDisplay(display.FireflyDisplay):
             region_i.start_line_edit.setText(str(default_regions[i][0]))
             region_i.stop_line_edit.setText(str(default_regions[i][1]))
             region_i.step_line_edit.setText(str(default_regions[i][2]))
-        # self.update_k_space_checkbox()
+
 
     def add_regions(self, num=1):
         for i in range(num):
             region = XafsScanRegion()
             self.ui.regions_layout.addLayout(region.layout)
-            # Connect the E0 checkbox to each of the regions
-            self.ui.use_edge_checkbox.stateChanged.connect(
-                region.k_space_checkbox.setEnabled
-            )
-            # when value is negative, disable k checkbox
-            # region.start_line_edit.textChanged.connect(self.update_k_space_checkbox)
-            # region.stop_line_edit.textChanged.connect(self.update_k_space_checkbox)
             self.regions.append(region)
 
     def remove_regions(self, num=1):
@@ -233,22 +237,30 @@ class XafsScanDisplay(display.FireflyDisplay):
 
     def queue_plan(self, *args, **kwargs):
         """Execute this plan on the queueserver."""
-        detectors = self.ui.detectors_list.selected_detectors()
-        exposure_time = self.ui.doubleSpinBox_exposure.value()
-
         # get paramters from each rows of line regions:
         energy_ranges_all = []
-        for region_i in self.regions:
+
+        # iterate through only selected regions
+        checked_regions = [region_i for region_i in self.regions if region_i.region_checkbox.isChecked()]
+        for region_i in checked_regions:
             start = float(region_i.start_line_edit.text())
             stop = float(region_i.stop_line_edit.text())
             step = float(region_i.step_line_edit.text())
-            weight = (
-                float(region_i.weight_line_edit.text())
-                if region_i.weight_line_edit.text()
-                else 0
-            )
+            weight = region_i.weight_spinbox.value()
+            exposure_time = region_i.exposure_time_spinbox.value()
+            # print(start, stop, step, weight, exposure_time)
+            if region_i.k_space_checkbox.isChecked():
+                energy_ranges_all.append(
+                    KRange(
+                        k_min=start,
+                        k_max=stop,
+                        k_step=step,
+                        k_weight=weight,
+                        exposure=exposure_time,
+                    )
+                )
 
-            if region_i.k_space_checkbox.isUnchecked():
+            else:
                 energy_ranges_all.append(
                     ERange(
                         E_min=start,
@@ -258,34 +270,33 @@ class XafsScanDisplay(display.FireflyDisplay):
                         exposure=exposure_time,
                     )
                 )
-            else:
-                energy_ranges_all.append(
-                    KRange(
-                        k_min=start,
-                        k_max=stop,
-                        k_step=step,
-                        weight=weight,
-                        exposure=exposure_time,
-                    )
-                )
 
-        energy_ranges = []
-        energies, exposures = merge_ranges(*energy_ranges)
-        # # Build the queue item
+        energies, exposures = merge_ranges(*energy_ranges_all)
+        detectors = self.ui.detectors_list.selected_detectors()
+        if self.use_edge_checkbox.isChecked():
+            try:
+                match = re.findall(r"\d+\.?\d*", self.edge_combo_box.currentText())
+                edge_value = float(match[-1])
+
+            except:
+                QtWidgets.QMessageBox.warning(self, "Error", "Please select an absorption edge.")
+        else:
+            edge_value = 0
+        # Build the queue item
         item = energy_scan(
             energies=energies,
-            exposure=exposures,  # change to weight
-            E0=self.edge_value,
+            exposure=exposures,
+            E0=edge_value,
             detectors=detectors,
             # energy_positioners=energy_positioners,
             # time_positioners=time_positioners,
-            md=ChainMap(md, {"plan_name": "xafs_scan"}),
-        )
+            ),
 
         print(item)
+        print(energies, exposures, edge_value, detectors)
+        
         """
         # Submit the item to the queueserver
-        from firefly.application import FireflyApplication
 
         app = FireflyApplication.instance()
         log.info("Add ``scan()`` plan to queue.")
