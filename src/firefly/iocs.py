@@ -30,7 +30,7 @@ class IocsDisplay(display.FireflyDisplay):
         # Add embedded displays for all the ion chambers
         self._ioc_displays = []
         config = haven.load_config()
-        for idx, (name, prefix) in enumerate(config['iocs'].items()):
+        for idx, (name, prefix) in enumerate(config.get('iocs', {}).items()):
             # Add a separator
             if idx > 0:
                 line = QtWidgets.QFrame(self.ui)
