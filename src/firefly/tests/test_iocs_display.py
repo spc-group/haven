@@ -1,7 +1,4 @@
-import pytest
-
 from firefly.iocs import IocsDisplay
-
 
 dummy_config = {"iocs"}
 

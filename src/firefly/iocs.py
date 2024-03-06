@@ -1,9 +1,11 @@
-from pydm.widgets import PyDMEmbeddedDisplay
-from qtpy import QtWidgets
 import json
 
-from firefly import display
+from pydm.widgets import PyDMEmbeddedDisplay
+from qtpy import QtWidgets
+
 import haven
+from firefly import display
+
 
 class IocsDisplay(display.FireflyDisplay):
     _ioc_displays = []
@@ -11,7 +13,7 @@ class IocsDisplay(display.FireflyDisplay):
     # def __init__(self, config=None):
     #     """Parameters:
     #     ===========
-        
+
     #     config:
     #       Configuration mapping like that created by
     #       ``haven.load_config()``, which is used by default. Useful
@@ -30,7 +32,7 @@ class IocsDisplay(display.FireflyDisplay):
         # Add embedded displays for all the ion chambers
         self._ioc_displays = []
         config = haven.load_config()
-        for idx, (name, prefix) in enumerate(config.get('iocs', {}).items()):
+        for idx, (name, prefix) in enumerate(config.get("iocs", {}).items()):
             # Add a separator
             if idx > 0:
                 line = QtWidgets.QFrame(self.ui)
