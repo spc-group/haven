@@ -1,10 +1,7 @@
 import logging
-import warnings
 
 from bluesky import plan_stubs as bps
-from ophyd import DeviceStatus
 
-from ..instrument.robot import Robot, load_robot
 from ..instrument.instrument_registry import registry
 from ..motor_position import rbv
 

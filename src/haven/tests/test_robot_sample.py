@@ -1,4 +1,3 @@
-import pytest
 from ophyd.sim import motor1, motor2, motor3
 from pprint import pprint
 
