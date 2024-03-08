@@ -39,7 +39,7 @@ from .plans.fly import fly_scan, grid_fly_scan  # noqa: F401
 from .plans.mono_gap_calibration import calibrate_mono_gap  # noqa: F401
 from .plans.mono_ID_calibration import mono_ID_calibration  # noqa: F401
 from .plans.record_dark_current import record_dark_current  # noqa: F401
-from .plans.robot_sample import robot_sample
+from .plans.robot_sample import robot_sample #noqa:F401
 from .plans.set_energy import set_energy  # noqa: F401
 from .plans.shutters import close_shutters, open_shutters  # noqa: F401
 from .plans.xafs_scan import xafs_scan  # noqa: F401
