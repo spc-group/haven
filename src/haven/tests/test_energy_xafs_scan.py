@@ -75,8 +75,8 @@ def test_energy_scan_basics(mono_motor, id_gap_motor, energies, RE):
         energies,
         detectors=[I0, It],
         exposure=exposure_time,
-        energy_positioners=[mono_motor, id_gap_motor],
-        time_positioners=[I0_exposure, It_exposure],
+        energy_signals=[mono_motor, id_gap_motor],
+        time_signals=[I0_exposure, It_exposure],
     )
     result = RE(scan)
     # Check that the mono and ID gap ended up in the right position
@@ -90,7 +90,7 @@ def test_energy_scan_basics(mono_motor, id_gap_motor, energies, RE):
 
 def test_raises_on_empty_positioners(RE, energies):
     with pytest.raises(ValueError):
-        RE(energy_scan(energies, energy_positioners=[]))
+        RE(energy_scan(energies, energy_signals=[]))
 
 
 def test_single_range(mono_motor, exposure_motor, I0):
@@ -103,8 +103,8 @@ def test_single_range(mono_motor, exposure_motor, I0):
         1,
         0,
         E0=E0,
-        energy_positioners=[mono_motor],
-        time_positioners=[exposure_motor],
+        energy_signals=[mono_motor],
+        time_signals=[exposure_motor],
     )
     # Check that the mono motor is moved to the correct positions
     scan_list = list(scan)
@@ -137,8 +137,8 @@ def test_multi_range(mono_motor, exposure_motor, I0):
         1.0,
         10,
         E0=E0,
-        energy_positioners=[mono_motor],
-        time_positioners=[exposure_motor],
+        energy_signals=[mono_motor],
+        time_signals=[exposure_motor],
     )
     # Check that the mono motor is moved to the correct positions
     scan_list = list(scan)
@@ -171,8 +171,8 @@ def test_exafs_k_range(mono_motor, exposure_motor, I0):
         k_exposure=0.75,
         k_weight=0.5,
         E0=E0,
-        energy_positioners=[mono_motor],
-        time_positioners=[exposure_motor],
+        energy_signals=[mono_motor],
+        time_signals=[exposure_motor],
     )
     # Check that the mono motor is moved to the correct positions
     scan_list = list(scan)
@@ -204,8 +204,8 @@ def test_named_E0(mono_motor, exposure_motor, I0):
         1.0,
         10,
         E0="Ni_K",
-        energy_positioners=[mono_motor],
-        time_positioners=[exposure_motor],
+        energy_signals=[mono_motor],
+        time_signals=[exposure_motor],
     )
     # Check that the mono motor is moved to the correct positions
     scan_list = list(scan)
@@ -220,9 +220,9 @@ def test_named_E0(mono_motor, exposure_motor, I0):
     np.testing.assert_equal(real_exposures, expected_exposures)
 
 
-def test_uses_default_time_positioners(dxp, mono_motor):
+def test_uses_default_time_signals(dxp, mono_motor):
     """Test that the default time positioners are used if no specific ones are given."""
-    scan = xafs_scan(-10, 2, 0.5, 0, detectors=[dxp], time_positioners=None, energy_positioners=[mono_motor])
+    scan = xafs_scan(-10, 2, 0.5, 0, detectors=[dxp], time_signals=None, energy_signals=[mono_motor])
     msgs = list(scan)
     set_msgs = [m for m in msgs if m.command == "set" and dxp.name in m.obj.name]
     from pprint import pprint
@@ -244,8 +244,8 @@ def test_remove_duplicate_energies(mono_motor, exposure_motor, I0):
         1.0,
         40,
         E0=8333,
-        energy_positioners=[mono_motor],
-        time_positioners=[exposure_motor],
+        energy_signals=[mono_motor],
+        time_signals=[exposure_motor],
     )
     msgs = list(plan)
     set_msgs = [m for m in msgs if m.command == "set" and m.obj.name == "mono_energy"]

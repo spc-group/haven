@@ -288,8 +288,8 @@ class XafsScanDisplay(display.FireflyDisplay):
             exposure=exposures,
             E0=edge_value,
             detectors=detectors,
-            # energy_positioners=energy_positioners,
-            # time_positioners=time_positioners,
+            # energy_signals=energy_signals,
+            # time_signals=time_signals,
             ),
 
         print(item)
