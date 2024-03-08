@@ -1,5 +1,6 @@
-from ophyd.sim import motor1, motor2, motor3
 from pprint import pprint
+
+from ophyd.sim import motor1, motor2, motor3
 
 from haven import robot_sample
 

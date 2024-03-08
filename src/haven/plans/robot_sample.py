@@ -5,7 +5,6 @@ from bluesky import plan_stubs as bps
 from ..instrument.instrument_registry import registry
 from ..motor_position import rbv
 
-
 log = logging.getLogger(__name__)
 
 
