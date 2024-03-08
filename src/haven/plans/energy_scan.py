@@ -4,7 +4,7 @@
 
 import logging
 from collections import ChainMap
-from typing import Mapping, Sequence, Union
+from typing import Mapping, Sequence, Union, Optional
 
 import numpy as np
 from bluesky import plans as bp
@@ -29,7 +29,7 @@ def energy_scan(
     E0: Union[float, str] = 0,
     detectors: DetectorList = "ion_chambers",
     energy_positioners: Sequence = ["energy"],
-    time_positioners: Sequence = ["I0_exposure_time"],
+    time_positioners: Optional[Sequence] = None,
     md: Mapping = {},
 ):
     """Collect a spectrum by scanning X-ray energy.
@@ -42,6 +42,13 @@ def energy_scan(
     sequence is provided, it should be the same length as *energies*
     and the each entry will be used for the corresponding entry in
     *energies*.
+
+    The calculated exposure times will be set for every signal in
+    *time_positioners*. If *time_positioners* is ``None``, then
+    *time_positioners* will be determined automatically from
+    *detectors*: for each detector, if it has an attribute/property
+    *default_time_signal*, then this signal will be included in
+    *time_positioners*.
 
     **Usage:**
 
@@ -108,7 +115,11 @@ def energy_scan(
         real_detectors.extend(registry.findall(det))
     log.debug(f"Found registered detectors: {real_detectors}")
     energy_positioners = [registry.find(ep) for ep in energy_positioners]
-    time_positioners = [registry.find(tp) for tp in time_positioners]
+    # Figure out which time positioners to use
+    if time_positioners is None:
+        time_positioners = [det.default_time_signal for det in detectors if hasattr(det, 'default_time_signal')]
+    else:
+        time_positioners = [registry.find(tp) for tp in time_positioners]
     # Convert an individual exposure time to an array of exposure times
     if not hasattr(exposure, "__iter__"):
         exposure = [exposure] * len(energies)

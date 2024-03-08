@@ -41,7 +41,7 @@ def xafs_scan(
     E0: Union[float, str] = 0,
     detectors: DetectorList = "ion_chambers",
     energy_positioners: Sequence = ["energy"],
-    time_positioners: Sequence = ["I0_exposure_time"],
+    time_positioners: Sequence = None,
     md: Mapping = {},
 ):
     """Collect a spectrum by scanning X-ray energies relative to an
@@ -85,8 +85,15 @@ def xafs_scan(
     energies. *k_weights* will apply longer exposure times to higher K
     values.
 
-    *detectors*, *energy_positioners*, and *time_positioners* are
-     mostly useful for debugging.
+    The calculated exposure times will be set for every signal in
+    *time_positioners*. If *time_positioners* is ``None``, then
+    *time_positioners* will be determined automatically from
+    *detectors*: for each detector, if it has an attribute/property
+    *default_time_signal*, then this signal will be included in
+    *time_positioners*.
+
+    *energy_positioners*, and *time_positioners* are mostly useful for
+    debugging.
 
     Parameters
     ==========

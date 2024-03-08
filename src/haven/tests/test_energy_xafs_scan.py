@@ -220,6 +220,20 @@ def test_named_E0(mono_motor, exposure_motor, I0):
     np.testing.assert_equal(real_exposures, expected_exposures)
 
 
+def test_uses_default_time_positioners(dxp, mono_motor):
+    """Test that the default time positioners are used if no specific ones are given."""
+    scan = xafs_scan(-10, 2, 0.5, 0, detectors=[dxp], time_positioners=None, energy_positioners=[mono_motor])
+    msgs = list(scan)
+    set_msgs = [m for m in msgs if m.command == "set" and dxp.name in m.obj.name]
+    from pprint import pprint
+    pprint(set_msgs)
+    assert len(set_msgs) == 1
+    time_msg = set_msgs[0]
+    assert time_msg.obj is dxp.preset_real_time
+    assert time_msg.args[0] == 0.5
+
+
+
 def test_remove_duplicate_energies(mono_motor, exposure_motor, I0):
     plan = xafs_scan(
         -4,
