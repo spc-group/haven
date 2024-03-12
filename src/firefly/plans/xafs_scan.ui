@@ -20,6 +20,9 @@
       <layout class="QHBoxLayout" name="horizontalLayout">
        <item>
         <widget class="QCheckBox" name="use_edge_checkbox">
+         <property name="toolTip">
+          <string>This switches between absolute energy and relative energy</string>
+         </property>
          <property name="text">
           <string>Use E0</string>
          </property>
@@ -72,6 +75,9 @@
        </item>
        <item>
         <widget class="QSpinBox" name="regions_spin_box">
+         <property name="toolTip">
+          <string>Scan regions for XAFS</string>
+         </property>
          <property name="minimum">
           <number>1</number>
          </property>
@@ -151,7 +157,7 @@
                <item>
                 <widget class="QLabel" name="exposure_label_3">
                  <property name="sizePolicy">
-                  <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+                  <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                    <horstretch>0</horstretch>
                    <verstretch>0</verstretch>
                   </sizepolicy>
@@ -276,6 +282,9 @@
                    <height>0</height>
                   </size>
                  </property>
+                 <property name="toolTip">
+                  <string/>
+                 </property>
                  <property name="placeholderText">
                   <string>Start...</string>
                  </property>
@@ -289,6 +298,9 @@
                    <verstretch>0</verstretch>
                   </sizepolicy>
                  </property>
+                 <property name="toolTip">
+                  <string/>
+                 </property>
                  <property name="placeholderText">
                   <string>Stop...</string>
                  </property>
@@ -301,6 +313,9 @@
                    <horstretch>0</horstretch>
                    <verstretch>0</verstretch>
                   </sizepolicy>
+                 </property>
+                 <property name="toolTip">
+                  <string/>
                  </property>
                  <property name="placeholderText">
                   <string>Step...</string>
@@ -345,6 +360,9 @@
          </item>
          <item>
           <widget class="DetectorListView" name="detectors_list">
+           <property name="toolTip">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Use &lt;span style=&quot; font-weight:600;&quot;&gt;ctrl&lt;/span&gt; to select multiple detectors&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
            <property name="selectionMode">
             <enum>QAbstractItemView::MultiSelection</enum>
            </property>
@@ -358,6 +376,9 @@
       <layout class="QHBoxLayout" name="buttons_layout">
        <item>
         <widget class="QPushButton" name="pushButton">
+         <property name="toolTip">
+          <string>Reset to default values</string>
+         </property>
          <property name="styleSheet">
           <string notr="true"/>
          </property>
@@ -381,6 +402,9 @@
        </item>
        <item>
         <widget class="QueueButton" name="run_button">
+         <property name="toolTip">
+          <string>Add to the queue</string>
+         </property>
          <property name="styleSheet">
           <string notr="true"># background-color: #28a745</string>
          </property>

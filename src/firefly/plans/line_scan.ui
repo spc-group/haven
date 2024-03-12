@@ -132,7 +132,11 @@
           </widget>
          </item>
          <item>
-          <widget class="DetectorListView" name="detectors_list"/>
+          <widget class="DetectorListView" name="detectors_list">
+           <property name="toolTip">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Use &lt;span style=&quot; font-weight:600;&quot;&gt;ctrl&lt;/span&gt; to select multiple detectors&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+          </widget>
          </item>
         </layout>
        </item>
