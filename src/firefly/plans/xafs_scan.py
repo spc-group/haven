@@ -1,8 +1,10 @@
 import re
+import logging
 
 from qtpy import QtWidgets
 from qtpy.QtGui import QDoubleValidator
 from xraydb.xraydb import XrayDB
+from bluesky_queueserver_api import BPlan
 
 from firefly import display
 from firefly.application import FireflyApplication
@@ -16,8 +18,10 @@ from haven.energy_ranges import (
     wavenumber_to_energy,
 )
 from haven.plans.energy_scan import energy_scan
+log = logging.getLogger(__name__)
 
 # TODO: remove exposure time
+# TODO: fix k checkbox 
 
 
 class XafsScanRegion:
@@ -160,7 +164,7 @@ class XafsScanDisplay(display.FireflyDisplay):
         
         # extract edge values
         match = re.findall(r"\d+\.?\d*", self.edge_combo_box.currentText())
-        edge_value = float(match[-1]) if match else 0
+        self.edge_value = float(match[-1]) if match else 0
 
         is_checked = self.ui.use_edge_checkbox.isChecked()
         # iterate through selected regions
@@ -176,9 +180,9 @@ class XafsScanDisplay(display.FireflyDisplay):
                 text = line_edit.text()
                 if text:
                     value = (
-                        float(text) - edge_value
+                        float(text) - self.edge_value
                         if is_checked
-                        else float(text) + edge_value
+                        else float(text) + self.edge_value
                     )
                     line_edit.setText(f"{value:.4g}")
 
@@ -276,32 +280,31 @@ class XafsScanDisplay(display.FireflyDisplay):
         if self.use_edge_checkbox.isChecked():
             try:
                 match = re.findall(r"\d+\.?\d*", self.edge_combo_box.currentText())
-                edge_value = float(match[-1])
+                self.edge_value = float(match[-1])
 
             except:
                 QtWidgets.QMessageBox.warning(self, "Error", "Please select an absorption edge.")
         else:
-            edge_value = 0
+            self.edge_value = 0
         # Build the queue item
-        item = energy_scan(
+        item = BPlan(
+            'energy_scan',
             energies=energies,
             exposure=exposures,
-            E0=edge_value,
+            E0=self.edge_value,
             detectors=detectors,
-            # energy_signals=energy_signals,
-            # time_signals=time_signals,
-            ),
+            )
 
         print(item)
-        print(energies, exposures, edge_value, detectors)
+        print(energies, exposures, self.edge_value, detectors)
         
-        """
+
         # Submit the item to the queueserver
 
         app = FireflyApplication.instance()
         log.info("Add ``scan()`` plan to queue.")
         app.add_queue_item(item)
-        """
+        
 
     def ui_filename(self):
         return "plans/xafs_scan.ui"
