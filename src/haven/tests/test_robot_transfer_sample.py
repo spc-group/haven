@@ -1,5 +1,3 @@
-from pprint import pprint
-
 from ophyd.sim import motor1, motor2, motor3
 
 from haven import robot_transfer_sample
@@ -10,14 +8,12 @@ def test_robot_sample(robot):
     plan = robot_transfer_sample(robot, 9, motor1, 100, motor2, 200, motor3, 50)
 
     msgs = list(plan)
-    #pprint(msgs)
 
     assert robot.name == "robotA"
     assert len(msgs) == 14
 
     unload = robot_transfer_sample(robot, None, motor1, 100)
     msgs = list(unload)
-    #pprint(msgs)
     assert len(msgs) == 6
 
 
