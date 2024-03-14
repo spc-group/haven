@@ -29,7 +29,7 @@ ureg = pint.UnitRegistry()
 class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
     """Allow an Aerotech stage to fly-scan via the Ophyd FlyerInterface.
 
-    Set *start_position*, *stop_position*, and *step_size* in units of
+    Set *start_position*, *end_position*, and *step_size* in units of
     the motor record (.EGU), and *dwell_time* in seconds. Then the
     remaining components will be calculated accordingly.
 
@@ -67,7 +67,7 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
     ==========
     start_position
       User-requested center of the first scan pixel.
-    stop_position
+    end_position
       User-requested center of the last scan pixel. This is not
       guaranteed and may be adjusted to match the encoder resolution
       of the stage.
