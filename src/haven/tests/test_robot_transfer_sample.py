@@ -10,14 +10,14 @@ def test_robot_sample(robot):
     plan = robot_transfer_sample(robot, 9, motor1, 100, motor2, 200, motor3, 50)
 
     msgs = list(plan)
-    pprint(msgs)
+    #pprint(msgs)
 
     assert robot.name == "robotA"
     assert len(msgs) == 14
 
     unload = robot_transfer_sample(robot, None, motor1, 100)
     msgs = list(unload)
-    pprint(msgs)
+    #pprint(msgs)
     assert len(msgs) == 6
 
 
