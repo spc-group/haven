@@ -8,7 +8,7 @@ from ..motor_position import rbv
 log = logging.getLogger(__name__)
 
 
-__all__ = ["robot_sample"]
+__all__ = ["robot_transfer_sample"]
 
 
 def robot_transfer_sample(robot, sampleN, *args):
