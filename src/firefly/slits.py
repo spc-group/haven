@@ -1,10 +1,9 @@
-import warnings
 import logging
+import warnings
 
 import haven
 from firefly import display
 from haven.instrument import slits
-
 
 log = logging.getLogger(__name__)
 

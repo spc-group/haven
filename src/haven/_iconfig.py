@@ -15,6 +15,7 @@ import os
 import pathlib
 from contextlib import contextmanager
 from copy import deepcopy
+from pprint import pprint
 from typing import Sequence
 
 import tomli
@@ -91,7 +92,14 @@ def print_config_value(args: Sequence[str] = None):
     value = load_config()
     for part in args.key.split("."):
         value = value[part]
-    print(value.strip())
+    try:
+        value = value.strip()
+    except AttributeError:
+        # It's not a simple string, so pretty print it
+        pprint(value)
+    else:
+        # Simple string, so just print it
+        print(value)
 
 
 @contextmanager

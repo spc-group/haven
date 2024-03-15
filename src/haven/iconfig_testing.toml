@@ -102,3 +102,8 @@ device_class = "CapillaryHeater"
 
 [robot.A]
 prefix = "255idAustin"
+
+# Managed IOC control PVs
+[iocs]
+255idb = "glados:ioc255idb"
+255idc = "glados:ioc255idc"

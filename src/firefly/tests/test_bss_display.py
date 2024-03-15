@@ -4,7 +4,7 @@ from qtpy.QtCore import Qt
 from qtpy.QtGui import QStandardItemModel
 
 from firefly.bss import BssDisplay
-from haven.instrument.aps import EpicsBssDevice, load_aps
+from haven.instrument.aps import EpicsBssDevice
 
 
 @pytest.fixture()

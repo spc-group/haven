@@ -1,10 +1,10 @@
 from haven.instrument.mirrors import (
-    KBMirrors,
-    KBMirror,
-    BendableKBMirror,
-    load_mirrors,
-    HighHeatLoadMirror,
     BendableHighHeatLoadMirror,
+    BendableKBMirror,
+    HighHeatLoadMirror,
+    KBMirror,
+    KBMirrors,
+    load_mirrors,
 )
 
 

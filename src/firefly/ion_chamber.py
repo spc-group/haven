@@ -1,8 +1,8 @@
 import qtawesome as qta
 from qtpy import QtWidgets
 
-from haven import registry
 from firefly import display
+from haven import registry
 
 
 class IonChamberDisplay(display.FireflyDisplay):
@@ -81,7 +81,6 @@ class IonChamberDisplay(display.FireflyDisplay):
         bits = device.preamp_prefix.strip(sep).split(sep)
         prefix = sep.join(bits[:-1])
         amp_suffix = bits[-1]
-        print(amp_suffix)
         caqtdm_macros = {
             "P": f"{prefix}:",
             "A": f"{amp_suffix}:",
