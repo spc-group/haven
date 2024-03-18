@@ -20,9 +20,31 @@ from haven.energy_ranges import (
 from haven.plans.energy_scan import energy_scan
 log = logging.getLogger(__name__)
 
-# TODO: remove exposure time
-# TODO: fix k checkbox 
+class TitleRegion:
+    def __init__(self):
+        self.setup_ui()
+    
+    def setup_ui(self):
+        self.layout = QtWidgets.QHBoxLayout()
+        
+        # Enable checkbox
+        self.regions_all_checkbox = QtWidgets.QCheckBox()
+        self.regions_all_checkbox.setChecked(True)
+        self.regions_all_checkbox.setFixedWidth(15)
 
+        self.layout.addWidget(self.regions_all_checkbox)
+
+        labels = ['Start', 'Stop', 'Step', 'Weight', '', 'Exposure [s]']
+        Qlabels_all = {}
+        for label_i in labels:
+            Qlabel_i = QtWidgets.QLabel(label_i)
+            self.layout.addWidget(Qlabel_i)
+            Qlabels_all[label_i] = Qlabel_i
+            
+        # fix widths so the labels are aligned with XafsRegions
+        Qlabels_all['Weight'].setFixedWidth(57)
+        Qlabels_all[''].setFixedWidth(57)
+        Qlabels_all['Exposure [s]'].setFixedWidth(68)
 
 class XafsScanRegion:
     def __init__(self):
@@ -72,15 +94,6 @@ class XafsScanRegion:
 
         # Connect the k-space enabled checkbox to the relevant signals
         self.k_space_checkbox.stateChanged.connect(self.update_wavenumber_energy)
-        self.region_checkbox.stateChanged.connect(self.disable_region)
-    
-    def disable_region(self, is_region_checked):
-        self.start_line_edit.setEnabled(is_region_checked)
-        self.stop_line_edit.setEnabled(is_region_checked)
-        self.step_line_edit.setEnabled(is_region_checked)
-        self.exposure_time_spinbox.setEnabled(is_region_checked)
-        self.weight_spinbox.setEnabled(is_region_checked)
-        self.k_space_checkbox.setEnabled(is_region_checked)
 
     def update_line_edit_value(self, line_edit, conversion_func):
         text = line_edit.text()
@@ -123,8 +136,12 @@ class XafsScanDisplay(display.FireflyDisplay):
     max_energy = 33000
 
     def customize_ui(self):
-        # Remove the defaufdsadfsfdsfagafdsgalt XAFS layout from .ui file
-        self.clearLayout(self.ui.region_layout)
+        # Remove the defaut XAFS layout from .ui file
+        self.ui.clearLayout(self.ui.region_layout)
+
+        # add title layout
+        self.title_region = TitleRegion()
+        self.ui.title_layout.addLayout(self.title_region.layout)
 
         self.reset_default_regions()
         # add absorption edges from XrayDB
@@ -144,7 +161,7 @@ class XafsScanDisplay(display.FireflyDisplay):
         combo_box.addItems(["Select edge…", *items])
 
         # Connect the E0 checkbox to the E0 combobox
-        self.ui.use_edge_checkbox.stateChanged.connect(self.use_edge)
+        self.ui.use_edge_checkbox.stateChanged.connect(self.use_edge)        
 
         # disable the line edits in spin box
         self.ui.regions_spin_box.lineEdit().setReadOnly(True)
@@ -156,17 +173,39 @@ class XafsScanDisplay(display.FireflyDisplay):
         # reset button
         self.ui.pushButton.clicked.connect(self.reset_default_regions)
 
-        self.ui.run_button.setEnabled(True) #for testing
+        # for testing
+        #TODO remove the following after testing
+        self.ui.run_button.setEnabled(True)
         self.ui.run_button.clicked.connect(self.queue_plan)        
+        
+        # connect checkboxes with all regions' check box
+        self.title_region.regions_all_checkbox.stateChanged.connect(self.on_regions_all_checkbox)
 
-    def use_edge(self):
-        self.edge_combo_box.setEnabled(self.ui.use_edge_checkbox.isChecked())
+    def on_region_checkbox(self):
+        for region_i in self.regions:
+            is_region_i_checked = region_i.region_checkbox.isChecked()
+            region_i.start_line_edit.setEnabled(is_region_i_checked)
+            region_i.stop_line_edit.setEnabled(is_region_i_checked)
+            region_i.step_line_edit.setEnabled(is_region_i_checked)
+            region_i.exposure_time_spinbox.setEnabled(is_region_i_checked)
+            region_i.weight_spinbox.setEnabled(is_region_i_checked)
+            if not self.use_edge_checkbox.isChecked():
+                region_i.k_space_checkbox.setEnabled(False)
+            else:
+                region_i.k_space_checkbox.setEnabled(is_region_i_checked)
+
+
+    def on_regions_all_checkbox(self, is_checked):
+        for region_i in self.regions:
+            region_i.region_checkbox.setChecked(is_checked)
+       
+    def use_edge(self, is_checked):
+        self.edge_combo_box.setEnabled(is_checked)
         
         # extract edge values
         match = re.findall(r"\d+\.?\d*", self.edge_combo_box.currentText())
         self.edge_value = float(match[-1]) if match else 0
 
-        is_checked = self.ui.use_edge_checkbox.isChecked()
         # iterate through selected regions
         checked_regions = [region_i for region_i in self.regions if region_i.region_checkbox.isChecked()]
         for region_i in checked_regions:
@@ -218,6 +257,8 @@ class XafsScanDisplay(display.FireflyDisplay):
             region = XafsScanRegion()
             self.ui.regions_layout.addLayout(region.layout)
             self.regions.append(region)
+            # disable/anbale regions when selected
+            region.region_checkbox.stateChanged.connect(self.on_region_checkbox)
 
     def remove_regions(self, num=1):
         for i in range(num):
@@ -301,9 +342,9 @@ class XafsScanDisplay(display.FireflyDisplay):
 
         # Submit the item to the queueserver
 
-        app = FireflyApplication.instance()
-        log.info("Add ``scan()`` plan to queue.")
-        app.add_queue_item(item)
+        # app = FireflyApplication.instance()
+        # log.info("Add ``scan()`` plan to queue.")
+        # app.add_queue_item(item)
         
 
     def ui_filename(self):
