@@ -132,6 +132,8 @@ def energy_scan(
         E0_str = None
     energies = np.asarray(energies)
     energies += E0
+    # Todo: sort the energies and exposure times by the energy
+    ...
     # Prepare the positioners list with associated energies and exposures
     scan_args = [(motor, energies) for motor in energy_signals]
     scan_args += [(motor, exposure) for motor in time_signals]

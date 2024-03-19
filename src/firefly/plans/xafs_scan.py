@@ -316,8 +316,12 @@ class XafsScanDisplay(display.FireflyDisplay):
                     )
                 )
 
+        # Turn ndarrays into lists so they can be JSON serialized
         energies, exposures = merge_ranges(*energy_ranges_all)
+        energies = list(energies)
+        exposures = list(exposures)
         detectors = self.ui.detectors_list.selected_detectors()
+        # Check that an absorption edge was selected
         if self.use_edge_checkbox.isChecked():
             try:
                 match = re.findall(r"\d+\.?\d*", self.edge_combo_box.currentText())
@@ -341,10 +345,9 @@ class XafsScanDisplay(display.FireflyDisplay):
         
 
         # Submit the item to the queueserver
-
-        # app = FireflyApplication.instance()
-        # log.info("Add ``scan()`` plan to queue.")
-        # app.add_queue_item(item)
+        app = FireflyApplication.instance()
+        log.info("Add ``scan()`` plan to queue.")
+        app.add_queue_item(item)
         
 
     def ui_filename(self):
@@ -352,9 +355,9 @@ class XafsScanDisplay(display.FireflyDisplay):
 
 
 # -----------------------------------------------------------------------------
-# :author:    Mark Wolfman
+# :author:    Juanjuan Huang
 # :email:     wolfman@anl.gov
-# :copyright: Copyright © 2023, UChicago Argonne, LLC
+# :copyright: Copyright © 2024, UChicago Argonne, LLC
 #
 # Distributed under the terms of the 3-Clause BSD License
 #
