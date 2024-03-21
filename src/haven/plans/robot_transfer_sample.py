@@ -22,7 +22,7 @@ def robot_transfer_sample(robot, sampleN, *args):
     e.g.
     Load sample:
     robot_sample(robot, 9, motor1, 100, motor2, 200, motor3, 50)
-    
+
     Unload sample:
     robot_sample(robot, None, motor1, 100, motor2, 200, motor3, 50)
 
