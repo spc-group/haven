@@ -33,10 +33,15 @@ class Sample(Device):
     x
       The x position of the robot in Cartesian coordinates.
     y
+      The y position of the robot in Cartesian coordinates.
     z
+      The z position of the robot in Cartesian coordinates.
     rx
+      The rx position of the robot in Cartesian coordinates.
     ry
+      The ry position of the robot in Cartesian coordinates.
     rz
+      The position of the robot in Cartesian coordinates.
 
     """
     present = Cpt(EpicsSignalRO, ":present")

@@ -11,13 +11,20 @@ log = logging.getLogger(__name__)
 __all__ = ["robot_transfer_sample"]
 
 
+ON = 1
+
+
 def robot_transfer_sample(robot, sampleN, *args):
     """
     Use robot to load sampleN at a fixed Aerotech stage position or any
     motors.
 
     e.g.
+    Load sample:
     robot_sample(robot, 9, motor1, 100, motor2, 200, motor3, 50)
+    
+    Unload sample:
+    robot_sample(robot, None, motor1, 100, motor2, 200, motor3, 50)
 
     Parameters:
     - robot: robot device
@@ -57,14 +64,15 @@ def robot_transfer_sample(robot, sampleN, *args):
 
     if sampleN == None:
         # Unload sample
-        yield from bps.mv(robot.unload_current_sample, 1)
+        yield from bps.mv(robot.unload_current_sample, ON)
 
     else:
         # Load sampleN after all the other motor arrive at (pos1, pos2, pos3...)
         sample = getattr(
             robot.samples, f"sample{sampleN}"
         )  # Access the Sample device corresponding to sampleN
-        yield from bps.mv(sample.load, 1)  # Assuming '1' initiates the loading action
+        print(sample.load)
+        yield from bps.mv(sample.load, ON)  # Assuming '1' initiates the loading action
 
     # Return to the initial position
     for motor, pos in zip(motor_list[-1::-1], initial_positions[-1::-1]):
