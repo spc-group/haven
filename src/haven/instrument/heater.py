@@ -4,7 +4,7 @@ import logging
 from apstools.devices import PTC10AioChannel as PTC10AioChannelBase
 from apstools.devices import PTC10PositionerMixin, PTC10TcChannel
 from ophyd import Component as Cpt
-from ophyd import EpicsSignalRO, EpicsSignalWithRBV, PVPositioner, EpicsSignal
+from ophyd import EpicsSignal, EpicsSignalRO, EpicsSignalWithRBV, PVPositioner
 
 from .._iconfig import load_config
 from .device import aload_devices, make_device
