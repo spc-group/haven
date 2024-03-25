@@ -27,7 +27,6 @@ from pcdsdevices.type_hints import OphydDataType, SignalToValue
 from .. import exceptions
 from .._iconfig import load_config
 from .device import aload_devices, await_for_connection, make_device
-from .instrument_registry import registry
 from .labjack import AnalogInput
 from .scaler_triggered import ScalerSignalRO, ScalerTriggered
 

@@ -6,7 +6,6 @@ from ophyd import FormattedComponent as FCpt
 
 from .._iconfig import load_config
 from .device import aload_devices, make_device
-from .instrument_registry import registry
 
 __all__ = ["XYStage", "load_stages"]
 
