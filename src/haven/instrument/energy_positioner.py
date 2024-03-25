@@ -10,7 +10,6 @@ from ophyd.pseudopos import pseudo_position_argument, real_position_argument
 
 from .._iconfig import load_config
 from .device import aload_devices, await_for_connection
-from .instrument_registry import registry
 from .monochromator import IDTracking, Monochromator
 
 log = logging.getLogger(__name__)
