@@ -14,6 +14,7 @@ import haven  # noqa: F401
 
 logging.basicConfig(level=logging.WARNING)
 
+
 # Allow best effort callback to update properly
 plt.ion()
 
@@ -24,6 +25,9 @@ print(f"Initializing {config['beamline']['name']}…")
 haven.load_instrument()
 print(f"Finished initalization in {time.monotonic() - t0:.2f} seconds.")
 RE = haven.run_engine()
+
+# Save references to some commonly used things in the global namespace
+registry = haven.registry
 ion_chambers = haven.registry.findall("ion_chambers")
 
 # Add metadata to the run engine

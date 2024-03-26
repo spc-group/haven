@@ -59,9 +59,6 @@ def load_power_supply_coros(config=None):
         config = load_config()
     # Determine if any power supplies are available
     ps_configs = config.get("power_supply", {})
-    from pprint import pprint
-
-    pprint(ps_configs)
     for name, ps_config in ps_configs.items():
         # Do it once for each channel
         for ch_num in range(1, ps_config["n_channels"] + 1):
