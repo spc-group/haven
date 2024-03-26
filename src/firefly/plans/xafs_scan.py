@@ -1,5 +1,6 @@
 import re
 import logging
+import numpy as np
 
 from qtpy import QtWidgets
 from qtpy.QtGui import QDoubleValidator
@@ -19,6 +20,17 @@ from haven.energy_ranges import (
 )
 from haven.plans.energy_scan import energy_scan
 log = logging.getLogger(__name__)
+
+#TODO solve Python decimal
+float_accuracy = 4
+
+
+# the energy resolution will not be better than 0.01 eV at S25, e.g., 0.01 eV /4000 eV -> 10-6 level, Si(311) is 10-5 level
+def wavenumber_to_energy_round(wavenumber):
+    return round(wavenumber_to_energy(wavenumber), 2)
+
+def k_step_to_E_step_round(k_start, k_step):
+    return round(k_step_to_E_step(k_start, k_step), 2)
 
 class TitleRegion:
     def __init__(self):
@@ -40,7 +52,7 @@ class TitleRegion:
             Qlabel_i = QtWidgets.QLabel(label_i)
             self.layout.addWidget(Qlabel_i)
             Qlabels_all[label_i] = Qlabel_i
-            
+
         # fix widths so the labels are aligned with XafsRegions
         Qlabels_all['Weight'].setFixedWidth(57)
         Qlabels_all[''].setFixedWidth(57)
@@ -98,34 +110,36 @@ class XafsScanRegion:
     def update_line_edit_value(self, line_edit, conversion_func):
         text = line_edit.text()
         if text:
-            converted_value = conversion_func(float(text))
-            line_edit.setText(f"{converted_value:.5g}")
+            converted_value = conversion_func(round(float(text), float_accuracy))
+            line_edit.setText(f"{converted_value:.6g}")
 
     def update_wavenumber_energy(self):
-        is_checked = self.k_space_checkbox.isChecked()
+        is_k_checked = self.k_space_checkbox.isChecked()
 
         # Define conversion functions
         conversion_funcs = {
             self.step_line_edit: E_step_to_k_step
-            if is_checked
-            else lambda x, y: k_step_to_E_step(x, y),
+            if is_k_checked
+            else lambda x, y: k_step_to_E_step_round(x, y),
+
             self.start_line_edit: energy_to_wavenumber
-            if is_checked
-            else wavenumber_to_energy,
+            if is_k_checked
+            else wavenumber_to_energy_round,
+            
             self.stop_line_edit: energy_to_wavenumber
-            if is_checked
-            else wavenumber_to_energy,
+            if is_k_checked
+            else wavenumber_to_energy_round,
         }
 
         # Iterate over line edits and apply corresponding conversion
         for line_edit, func in conversion_funcs.items():
+            # Special handling for step_line_edit due to different parameters needed
             if line_edit == self.step_line_edit:
-                # Special handling for step_line_edit due to different parameters needed
                 start_text = self.start_line_edit.text()
                 if start_text and line_edit.text():
                     start = float(start_text)
                     step = float(line_edit.text())
-                    new_values = func(start, step) if is_checked else func(start, step)
+                    new_values = func(start, step) if is_k_checked else func(start, step)
                     line_edit.setText(f"{new_values:.4g}")
             else:
                 self.update_line_edit_value(line_edit, func)
@@ -204,7 +218,7 @@ class XafsScanDisplay(display.FireflyDisplay):
         
         # extract edge values
         match = re.findall(r"\d+\.?\d*", self.edge_combo_box.currentText())
-        self.edge_value = float(match[-1]) if match else 0
+        self.edge_value = round(float(match[-1]), float_accuracy) if match else 0
 
         # iterate through selected regions
         checked_regions = [region_i for region_i in self.regions if region_i.region_checkbox.isChecked()]
@@ -219,9 +233,9 @@ class XafsScanDisplay(display.FireflyDisplay):
                 text = line_edit.text()
                 if text:
                     value = (
-                        float(text) - self.edge_value
+                        round(float(text), float_accuracy) - self.edge_value
                         if is_checked
-                        else float(text) + self.edge_value
+                        else round(float(text), float_accuracy) + self.edge_value
                     )
                     line_edit.setText(f"{value:.4g}")
 
@@ -257,7 +271,7 @@ class XafsScanDisplay(display.FireflyDisplay):
             region = XafsScanRegion()
             self.ui.regions_layout.addLayout(region.layout)
             self.regions.append(region)
-            # disable/anbale regions when selected
+            # disable/enabale regions when selected
             region.region_checkbox.stateChanged.connect(self.on_region_checkbox)
 
     def remove_regions(self, num=1):
@@ -280,6 +294,7 @@ class XafsScanDisplay(display.FireflyDisplay):
         elif diff_region_num > 0:
             self.add_regions(diff_region_num)
 
+
     def queue_plan(self, *args, **kwargs):
         """Execute this plan on the queueserver."""
         # get paramters from each rows of line regions:
@@ -288,12 +303,15 @@ class XafsScanDisplay(display.FireflyDisplay):
         # iterate through only selected regions
         checked_regions = [region_i for region_i in self.regions if region_i.region_checkbox.isChecked()]
         for region_i in checked_regions:
-            start = float(region_i.start_line_edit.text())
-            stop = float(region_i.stop_line_edit.text())
-            step = float(region_i.step_line_edit.text())
-            weight = region_i.weight_spinbox.value()
-            exposure_time = region_i.exposure_time_spinbox.value()
-            # print(start, stop, step, weight, exposure_time)
+            try:
+                start = round(float(region_i.start_line_edit.text()), float_accuracy)
+                stop = round(float(region_i.stop_line_edit.text()), float_accuracy)
+                step = round(float(region_i.step_line_edit.text()), float_accuracy)
+                weight = region_i.weight_spinbox.value()
+                exposure_time = region_i.exposure_time_spinbox.value()
+            except ValueError:
+                QtWidgets.QMessageBox.warning(self, "Value Error", "Invalid value detected!")
+                return None
             if region_i.k_space_checkbox.isChecked():
                 energy_ranges_all.append(
                     KRange(
@@ -317,18 +335,22 @@ class XafsScanDisplay(display.FireflyDisplay):
                 )
 
         # Turn ndarrays into lists so they can be JSON serialized
-        energies, exposures = merge_ranges(*energy_ranges_all)
-        energies = list(energies)
-        exposures = list(exposures)
+        energies, exposures = merge_ranges(*energy_ranges_all, sort=True)
+        energies = list(np.round(energies, float_accuracy))
+        exposures = list(np.round(exposures, float_accuracy))
         detectors = self.ui.detectors_list.selected_detectors()
+        md={'sample': self.ui.lineEdit_sample.text(),
+            'purpose':self.ui.lineEdit_purpose.text()}
+
         # Check that an absorption edge was selected
         if self.use_edge_checkbox.isChecked():
             try:
                 match = re.findall(r"\d+\.?\d*", self.edge_combo_box.currentText())
-                self.edge_value = float(match[-1])
+                self.edge_value = round(float(match[-1]), float_accuracy)
 
             except:
                 QtWidgets.QMessageBox.warning(self, "Error", "Please select an absorption edge.")
+                return None
         else:
             self.edge_value = 0
         # Build the queue item
@@ -338,10 +360,11 @@ class XafsScanDisplay(display.FireflyDisplay):
             exposure=exposures,
             E0=self.edge_value,
             detectors=detectors,
+            md=md,
             )
 
         print(item)
-        print(energies, exposures, self.edge_value, detectors)
+        print(energies, exposures, self.edge_value, detectors, md)
         
 
         # Submit the item to the queueserver
