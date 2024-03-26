@@ -2,6 +2,7 @@ from firefly.plans.xafs_scan import XafsScanDisplay
 import numpy as np
 from bluesky_queueserver_api import BPlan
 from unittest import mock
+from qtpy import QtCore
 
 # default values for EXAFS scan
 pre_edge = [-50, -20, 1]
@@ -58,6 +59,97 @@ def test_E0_checkbox(qtbot):
     np.testing.assert_almost_equal(float(disp.regions[i].step_line_edit.text()), 3.64069-3.6226, decimal=4)
 
 
+def test_xafs_scan_plan_queued_energies(ffapp, qtbot):
+    display = XafsScanDisplay()
+    
+    display.edge_combo_box.setCurrentText("Pt L3 (11500.8 eV)")
+    display.regions[-1].region_checkbox.setChecked(False)
+    # set up detector list
+    display.ui.detectors_list.selected_detectors = mock.MagicMock(
+        return_value=["vortex_me4", "I0"]
+    )
+    energies_region0 = np.arange(default_values[0][0], default_values[0][1] + default_values[0][2], default_values[0][2])
+    energies_region1 = np.arange(default_values[1][0]+default_values[1][2], default_values[1][1] + default_values[1][2], default_values[1][2])
+    energies_merge = np.hstack([energies_region0, energies_region1])
+    exposures = np.ones(energies_merge.shape)
+    expected_item = BPlan(
+        "energy_scan",
+        energies=energies_merge,
+        exposure=exposures,
+        E0=11500.8,
+        detectors=["vortex_me4", "I0"],
+        md=None,
+    )
+
+    def check_item(item):
+        from pprint import pprint
+
+        pprint(item.to_dict())
+        pprint(expected_item.to_dict())
+        return item.to_dict() == expected_item.to_dict()
+
+    # Click the run button and see if the plan is queued
+    with qtbot.waitSignal(
+        ffapp.queue_item_added, timeout=1000, check_params_cb=check_item
+    ):
+        qtbot.mouseClick(display.ui.run_button, QtCore.Qt.LeftButton)
+
+
+def test_xafs_scan_plan_queued_energies_k_mixed(ffapp, qtbot):
+    display = XafsScanDisplay()
+    display.ui.regions_spin_box.setValue(2)
+    display.edge_combo_box.setCurrentText("Pt L3 (11500.8 eV)")
+    
+    # set up the first region
+    display.regions[0].start_line_edit.setText('-20')
+    display.regions[0].stop_line_edit.setText('40')
+    display.regions[0].step_line_edit.setText('10')
+    
+    # set up the second region
+    display.regions[1].start_line_edit.setText('50')
+    display.regions[1].stop_line_edit.setText('800')
+
+    # convert to k space 
+    display.regions[1].k_space_checkbox.setChecked(True)
+    display.regions[1].step_line_edit.setText('5')
+    display.regions[1].weight_spinbox.setValue(2)
+    
+
+    # set up detector list
+    display.ui.detectors_list.selected_detectors = mock.MagicMock(
+        return_value=["vortex_me4", "I0"]
+    )
+    energies= np.array([-20, 10, 0, 10, 20, 30, 40,
+                        50, 283.27, 707.04] # k values obtained from Athena software to double confirm ours
+                        )     
+    exposures = np.array([1,1,1,1,1,1,1,1,
+                          1, 25, 100] # k exposures
+                          )
+
+    expected_item = BPlan(
+        "energy_scan",
+        energies=energies,
+        exposure=exposures,
+        E0=11500.8,
+        detectors=["vortex_me4", "I0"],
+        md=None,
+    )
+
+    def check_item(item):
+        from pprint import pprint
+
+        pprint(item.to_dict())
+        pprint(expected_item.to_dict())
+        return item.to_dict() == expected_item.to_dict()
+
+    # Click the run button and see if the plan is queued
+    with qtbot.waitSignal(
+        ffapp.queue_item_added, timeout=1000, check_params_cb=check_item
+    ):
+        qtbot.mouseClick(display.ui.run_button, QtCore.Qt.LeftButton)
+
+
+
 # def test_move_energy(qtbot, ffapp, sim_registry):
 #     mono = FakeMonochromator("mono_ioc", name="monochromator")
 #     sim_registry.register(
@@ -84,28 +176,6 @@ def test_E0_checkbox(qtbot):
 #     ):
 #         qtbot.mouseClick(btn, QtCore.Qt.LeftButton)
 
-
-def test_xafs_scan_plan_queued(ffapp, qtbot):
-    display = XafsScanDisplay()
-    
-    display.edge_combo_box.setCurrentText("Pt L3 (11500.8 eV)")
-    display.regions[-1].region_checkbox.setChecked(False)
-    # set up detector list
-    display.ui.detectors_list.selected_detectors = mock.MagicMock(
-        return_value=["vortex_me4", "I0"]
-    )
-    energies_region0 = np.arange(default_values[0][0], default_values[0][1] + default_values[0][2], default_values[0][2])
-    energies_region1 = np.arange(default_values[1][0]+default_values[1][2], default_values[1][1] + default_values[1][2], default_values[1][2])
-    energies_merge = np.hstack([energies_region0, energies_region1])
-    exposures = np.ones(energies_merge.shape)
-    expected_item = BPlan(
-        "energy_scan",
-        energies=energies_merge,
-        exposure=exposures,
-        E0=11500.8,
-        detectors=["vortex_me4", "I0"],
-        md=None,
-    )
 
 #     def check_item(item):
 #         from pprint import pprint
