@@ -237,7 +237,7 @@ class XafsScanDisplay(display.FireflyDisplay):
                         if is_checked
                         else round(float(text), float_accuracy) + self.edge_value
                     )
-                    line_edit.setText(f"{value:.4g}")
+                    line_edit.setText(f"{value:.6g}")
 
     def clearLayout(self, layout):
         if layout is not None:
