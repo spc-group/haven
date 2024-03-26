@@ -42,7 +42,6 @@ def k_step_to_E_step(k_start, k_step):
     E1 = wavenumber_to_energy(k_start + k_step)
     return E1 - E0
 
-
 @dataclass
 class EnergyRange:
     """A range of energies used for scanning."""
@@ -133,7 +132,7 @@ class KRange(EnergyRange):
         return self.exposure * (ks / np.min(ks)) ** self.k_weight
 
 
-def merge_ranges(*ranges, default_exposure=DEFAULT_EXPOSURE):
+def merge_ranges(*ranges, default_exposure=DEFAULT_EXPOSURE, sort=False):
     """Combine multiple energy ranges.
 
     If any of *ranges* is a instance of ``EnergyRange`` or one of its
@@ -170,6 +169,13 @@ def merge_ranges(*ranges, default_exposure=DEFAULT_EXPOSURE):
         np.asarray(energies, dtype=float), return_index=True
     )
     exposures = np.asarray(exposures, dtype=float)[unique_idx]
+    
+    if sort:
+      # sorting energies from small to big
+      sorted_indices = np.argsort(energies)
+      energies = energies[sorted_indices]
+      exposures = exposures[sorted_indices]
+    
     return energies, exposures
 
 

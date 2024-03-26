@@ -39,6 +39,15 @@ def test_merge_ranges():
     np.testing.assert_equal(exposures, [0.5, 0.5, 0.5, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0])
 
 
+def test_merge_ranges_sorting():
+    e_range1 = ERange(5, 7, 0.5, exposure=1)
+    e_range2 = ERange(1, 5, 1, exposure=0.5)
+    merged, exposures = merge_ranges(e_range2, e_range1, sort=True)
+    # Test validity of the result
+    np.testing.assert_equal(merged, [1, 2, 3, 4, 5, 5.5, 6, 6.5, 7])
+    np.testing.assert_equal(exposures, [0.5, 0.5, 0.5, 0.5, 0.5, 1.0, 1.0, 1.0, 1.0])
+
+
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov
