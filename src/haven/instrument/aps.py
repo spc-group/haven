@@ -35,7 +35,6 @@ def load_aps_coros(config=None):
         config = load_config()
     # Load storage ring device
     yield make_device(ApsMachine, name="APS", labels={"synchrotrons"})
-    yield make_device(EpicsBssDevice, name="bss", prefix=f"{config['bss']['prefix']}:")
 
 
 def load_aps(config=None):

@@ -104,6 +104,11 @@ device_class = "CapillaryHeater"
 prefix = "255idAustin"
 
 # Managed IOC control PVs
-[iocs]
+[beamline_manager]
+
+name = "GLaDOS"
+prefix = "255idc:glados:"
+
+[beamline_manager.iocs]
 255idb = "glados:ioc255idb"
 255idc = "glados:ioc255idc"
