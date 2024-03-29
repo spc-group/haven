@@ -9,20 +9,15 @@ is_connected = false
 name = "Advanced Photon Source"
 xray_source = "insertion device"
 
-####################################################################
-# Configuration for interacting with the beamline scheduling system
-# using apsbss package
-####################################################################
-
-[bss]
-
-prefix = "255idc:bss"
-beamline = "255-ID-C"
+# EPICS controls for the X-ray source, currently only "undulator" is
+# supported
 
 [xray_source]
 
 type = "undulator"
 prefix = "ID255:"
+
+# How to connect to the queue server for running unattended scans.
 
 [queueserver]
 kafka_topic = "s255idc_queueserver"
@@ -31,9 +26,13 @@ control_port = "60615"
 info_host = "localhost"
 info_port = "60625"
 
+# Database in which bluesky will save scans
+
 [database.databroker]
 
 catalog = "bluesky"
+
+# Tiled server for reading scan data in the run browser
 
 [database.tiled]
 

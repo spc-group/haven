@@ -1,7 +1,6 @@
 import asyncio
 import logging
 
-from apsbss.apsbss_ophyd import EpicsBssDevice
 from apstools.devices.aps_machine import ApsMachineParametersDevice
 
 from .._iconfig import load_config
