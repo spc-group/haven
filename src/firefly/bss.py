@@ -52,7 +52,8 @@ class BssDisplay(display.FireflyDisplay):
     def proposals(self):
         config = haven.load_config()
         proposals = []
-        for proposal in self.api.getCurrentProposals(config["bss"]["beamline"]):
+        beamline = config['beamline_manager']['beamline']
+        for proposal in self.api.getCurrentProposals(beamline):
             users = proposal["experimenters"]
             proposals.append(
                 {
@@ -71,7 +72,8 @@ class BssDisplay(display.FireflyDisplay):
     def esafs(self):
         config = haven.load_config()
         esafs_ = []
-        for esaf in self.api.getCurrentEsafs(config["bss"]["beamline"].split("-")[0]):
+        beamline = config['beamline_manager']['beamline']
+        for esaf in self.api.getCurrentEsafs(beamline.split("-")[0]):
             users = esaf["experimentUsers"]
             esafs_.append(
                 {

@@ -4,7 +4,7 @@ from qtpy.QtCore import Qt
 from qtpy.QtGui import QStandardItemModel
 
 from firefly.bss import BssDisplay
-from haven.instrument.aps import EpicsBssDevice
+from haven.instrument.beamline_manager import BSS
 
 
 @pytest.fixture()
@@ -137,7 +137,7 @@ def bss_api(mocker):
 
 @pytest.fixture()
 def bss(sim_registry):
-    bss = instantiate_fake_device(EpicsBssDevice, name="bss", prefix="255idc:bss:")
+    bss = instantiate_fake_device(BSS, name="bss", prefix="255idc:bss:")
     sim_registry.register(bss)
     # Make sure the fake signals have reasonable values
     bss.proposal.mail_in_flag.sim_put(1)

@@ -88,13 +88,10 @@ def load_beamline_manager_coros(config=None):
         BeamlineManager,
         prefix=cfg['prefix'],
         name=cfg['name'],
+        labels={"beamline_manager"},
     )
 
 
 def load_beamline_manager(config=None):
     loop = asyncio.get_event_loop()
-    devices = loop.run_until_complete(
-        aload_devices(
-            *load_beamline_manager_coros(config=config)
-        )
-    )
+    return asyncio.run(aload_devices(*load_beamline_manager_coros(config=config)))

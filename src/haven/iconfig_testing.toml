@@ -108,6 +108,7 @@ prefix = "255idAustin"
 
 name = "GLaDOS"
 prefix = "255idc:glados:"
+beamline = "25-ID-C"
 
 [beamline_manager.iocs]
 255idb = "glados:ioc255idb"

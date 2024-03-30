@@ -37,7 +37,7 @@ def load_aps_coros(config=None):
 
 
 def load_aps(config=None):
-    asyncio.run(aload_devices(*load_aps_coros(config=config)))
+    return asyncio.run(aload_devices(*load_aps_coros(config=config)))
 
 
 # -----------------------------------------------------------------------------
