@@ -9,10 +9,18 @@ from .._iconfig import load_config
 
 class BSSEsaf(EpicsEsafDevice):
     user_PIs = Cpt(EpicsSignal, "userPIs", string=True)
+    start_timestamp = Cpt(EpicsSignal, "startTimestamp")
+    end_timestamp = Cpt(EpicsSignal, "endTimestamp")
 
 
 class BSSProposal(EpicsProposalDevice):
     user_PIs = Cpt(EpicsSignal, "userPIs", string=True)
+    mail_in_flag = Cpt(EpicsSignal, "mailInFlag", string=False)
+    proprietary_flag = Cpt(
+        EpicsSignal, "proprietaryFlag", string=False
+    )
+    start_timestamp = Cpt(EpicsSignal, "startTimestamp")
+    end_timestamp = Cpt(EpicsSignal, "endTimestamp")
 
 
 class BSS(EpicsBssDevice):
@@ -52,8 +60,8 @@ class BeamlineManager(Device):
     *iocs* matching the IOC managers.
 
     """
-    bss = BSS("bss:", name="bss")
-    local_storage = LocalStorage("local_storage:", name="local_storage")
+    bss = Cpt(BSS, "bss:", name="bss")
+    local_storage = Cpt(LocalStorage, "local_storage:", name="local_storage")
 
     def __new__(
         cls,
@@ -81,8 +89,6 @@ def load_beamline_manager_coros(config=None):
         cfg = config["beamline_manager"]
     except KeyError:
         return
-    # Determine manager parameters from the configuration
-    prefix = ""
     # Set up the beamline manager
     yield make_device(
         BeamlineManager,

@@ -7,6 +7,7 @@ from .._iconfig import load_config
 from .aerotech import load_aerotech_stage_coros
 from .aps import load_aps_coros
 from .area_detector import load_area_detector_coros
+from .beamline_manager import load_beamline_manager_coros
 from .camera import load_camera_coros
 from .dxp import load_dxp_coros
 from .energy_positioner import load_energy_positioner_coros
@@ -53,6 +54,7 @@ async def aload_instrument(
     """
     coros = (
         *load_camera_coros(config=config),
+        *load_beamline_manager_coros(config=config),
         *load_shutter_coros(config=config),
         *load_aerotech_stage_coros(config=config),
         *load_aps_coros(config=config),
