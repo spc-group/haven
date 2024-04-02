@@ -16,6 +16,7 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from haven import registry
 
 from .application import FireflyApplication
 
@@ -228,7 +229,8 @@ class ComponentSelector(QWidget):
         self.combo_box.setCurrentText("")
 
     def current_component(self):
-        return self.combo_box.currentText()
+        cpt_name = self.combo_box.currentText()
+        return registry[cpt_name]
 
     def create_models(self):
         self.tree_model = ComponentTreeModel(0, 2)

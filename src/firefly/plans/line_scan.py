@@ -37,10 +37,9 @@ class LineScanRegion:
         self.layout.addWidget(self.stop_line_edit)
 
 
-#TODO when log is checked, uncheck relative scan
 class LineScanDisplay(display.FireflyDisplay):
     def customize_ui(self):
-        # Remove the defaufdsadfsfdsfagafdsgalt XAFS layout from .ui file
+        # Remove the default XAFS layout from .ui file
         self.clearLayout(self.ui.region_template_layout)
         self.reset_default_regions()
 
@@ -51,7 +50,7 @@ class LineScanDisplay(display.FireflyDisplay):
 
         # self.ui.run_button.setEnabled(True) #for testing
         self.ui.run_button.clicked.connect(self.queue_plan)
-        self.ui.check
+
     def clearLayout(self, layout):
         if layout is not None:
             while layout.count():
@@ -114,6 +113,7 @@ class LineScanDisplay(display.FireflyDisplay):
         ]
 
         print(motor_args)
+
         if self.ui.relative_scan_checkbox.isChecked():
             if self.ui.log_scan_checkbox.isChecked():
                 scan_type = 'rel_log_scan'
