@@ -1,5 +1,4 @@
-import haven
-from firefly import display, slits
+from firefly import slits
 from haven.instrument import mirrors
 
 

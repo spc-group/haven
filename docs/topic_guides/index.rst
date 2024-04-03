@@ -13,6 +13,7 @@ These guides do not cover the individual beamlines thoroughly.
 
    area_detectors.rst	     
    changing_haven.rst
+   beamline_configuration.rst
    define_new_motor.rst
    energy_scans.rst
    fluorescence_detectors.rst

@@ -4,6 +4,7 @@ from typing import Mapping
 from ophyd import sim
 
 from .._iconfig import load_config
+from .aerotech import load_aerotech_stage_coros
 from .aps import load_aps_coros
 from .area_detector import load_area_detector_coros
 from .camera import load_camera_coros
@@ -18,6 +19,7 @@ from .mirrors import load_mirror_coros
 from .monochromator import load_monochromator_coros
 from .motor import HavenMotor, load_all_motor_coros
 from .power_supply import load_power_supply_coros
+from .robot import load_robot_coros
 from .shutter import load_shutter_coros
 from .slits import load_slit_coros
 from .stage import load_stage_coros
@@ -29,59 +31,12 @@ __all__ = ["load_instrument"]
 
 
 async def aload_instrument(
-    registry: InstrumentRegistry = default_registry, config: Mapping = None
-):
-    """Asynchronously load the beamline instrumentation into an instrument
-    registry.
-
-    This function will reach out and query various IOCs for motor
-    information based on the information in *config* (see
-    ``iconfig_default.toml`` for examples). Based on the
-    configuration, it will create Ophyd devices and register them with
-    *registry*.
-
-    Parameters
-    ==========
-    registry:
-      The registry into which the ophyd devices will be placed.
-    config:
-      The beamline configuration read in from TOML files. Mostly
-    useful for testing.
-
-    """
-    coros = (
-        *load_camera_coros(config=config),
-        *load_shutter_coros(config=config),
-        *load_aps_coros(config=config),
-        *load_monochromator_coros(config=config),
-        *load_xray_source_coros(config=config),
-        *load_energy_positioner_coros(config=config),
-        *load_dxp_coros(config=config),
-        *load_xspress_coros(config=config),
-        *load_stage_coros(config=config),
-        *load_heater_coros(config=config),
-        *load_power_supply_coros(config=config),
-        *load_slit_coros(config=config),
-        *load_mirror_coros(config=config),
-        *load_table_coros(config=config),
-        *load_ion_chamber_coros(config=config),
-        *load_area_detector_coros(config=config),
-        *load_lerix_spectrometer_coros(config=config),
-    )
-    devices = await asyncio.gather(*coros)
-    # Load the motor devices last so that we can check for existing
-    # motors in the registry
-    extra_motors = await asyncio.gather(*load_all_motor_coros(config=config))
-    devices.extend(extra_motors)
-    return devices
-
-
-def load_instrument(
     registry: InstrumentRegistry = default_registry,
     config: Mapping = None,
     return_devices: bool = False,
 ):
-    """Load the beamline instrumentation into an instrument registry.
+    """Asynchronously load the beamline instrumentation into an instrument
+    registry.
 
     This function will reach out and query various IOCs for motor
     information based on the information in *config* (see
@@ -107,16 +62,74 @@ def load_instrument(
     # Load the configuration
     if config is None:
         config = load_config()
-    # Import devices concurrently
-    loop = asyncio.get_event_loop()
-    devices = loop.run_until_complete(
-        aload_instrument(registry=registry, config=config)
+    # Load devices concurrently
+    coros = (
+        *load_camera_coros(config=config),
+        *load_shutter_coros(config=config),
+        *load_aerotech_stage_coros(config=config),
+        *load_aps_coros(config=config),
+        *load_monochromator_coros(config=config),
+        *load_xray_source_coros(config=config),
+        *load_energy_positioner_coros(config=config),
+        *load_dxp_coros(config=config),
+        *load_xspress_coros(config=config),
+        *load_stage_coros(config=config),
+        *load_heater_coros(config=config),
+        *load_power_supply_coros(config=config),
+        *load_slit_coros(config=config),
+        *load_mirror_coros(config=config),
+        *load_table_coros(config=config),
+        *load_ion_chamber_coros(config=config),
+        *load_area_detector_coros(config=config),
+        *load_lerix_spectrometer_coros(config=config),
+        *load_robot_coros(config=config),
     )
+    devices = await asyncio.gather(*coros)
+    # Load the motor devices last so that we can check for existing
+    # motors in the registry
+    extra_motors = await asyncio.gather(*load_all_motor_coros(config=config))
+    devices.extend(extra_motors)
     # Also import some simulated devices for testing
     devices += load_simulated_devices(config=config)
     # Filter out devices that couldn't be reached
+    devices = [d for d in devices if d is not None]
     if return_devices:
-        devices = [d for d in devices if d is not None]
+        return devices
+
+
+def load_instrument(
+    registry: InstrumentRegistry = default_registry,
+    config: Mapping = None,
+    return_devices: bool = False,
+):
+    """Load the beamline instrumentation into an instrument registry.
+
+    This function will reach out and query various IOCs for motor
+    information based on the information in *config* (see
+    ``iconfig_default.toml`` for examples). Based on the
+    configuration, it will create Ophyd devices and register them with
+    *registry*.
+
+    This function starts the asyncio event loop. If one is already
+    running (e.g. jupyter notebook), then use ``await
+    aload_instrument()`` instead.
+
+    Parameters
+    ==========
+    registry:
+      The registry into which the ophyd devices will be placed.
+    config:
+      The beamline configuration read in from TOML files. Mostly
+      useful for testing.
+    return_devices
+      If true, return the newly loaded devices when complete.
+
+    """
+    # Import devices concurrently
+    loop = asyncio.get_event_loop()
+    coro = aload_instrument(registry=registry, config=config)
+    devices = loop.run_until_complete(coro)
+    if return_devices:
         return devices
 
 

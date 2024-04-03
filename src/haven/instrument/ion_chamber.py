@@ -6,11 +6,16 @@ import math
 import time
 import warnings
 from collections import OrderedDict
-from typing import Dict, Generator
+from typing import Dict, Generator, Optional
 
 import numpy as np
 import pint
+from aioca import caget
 from apstools.devices import SRS570_PreAmplifier
+from apstools.devices.srs570_preamplifier import (
+    SRS570_PreAmplifier,
+    calculate_settle_time,
+)
 from ophyd import Component as Cpt
 from ophyd import Device, EpicsSignal, EpicsSignalRO
 from ophyd import FormattedComponent as FCpt
@@ -26,8 +31,6 @@ from pcdsdevices.type_hints import OphydDataType, SignalToValue
 from .. import exceptions
 from .._iconfig import load_config
 from .device import aload_devices, await_for_connection, make_device
-from .epics import caget
-from .instrument_registry import registry
 from .labjack import AnalogInput
 from .scaler_triggered import ScalerSignalRO, ScalerTriggered
 
@@ -81,17 +84,49 @@ class Voltmeter(AnalogInput):
     volts = Cpt(EpicsSignal, ".VAL", kind="normal")
 
 
+class GainDerivedSignal(MultiDerivedSignal):
+    """A gain level signal that incorporates dynamic settling time."""
+
+    def set(
+        self,
+        value: OphydDataType,
+        *,
+        timeout: Optional[float] = None,
+        settle_time: Optional[float] = "auto",
+    ):
+        # Calculate an auto settling time
+        if settle_time == "auto":
+            # Determine the new values that will be set
+            to_write = self.calculate_on_put(mds=self, value=value) or {}
+            # Calculate the correct settling time
+            settle_time_ = calculate_settle_time(
+                gain_value=to_write[self.parent.sensitivity_value],
+                gain_unit=to_write[self.parent.sensitivity_unit],
+                gain_mode=self.parent.gain_mode.get(),
+            )
+        else:
+            settle_time_ = settle_time
+        # Call the actual set method to move the gain
+        return super().set(value, timeout=timeout, settle_time=settle_time_)
+
+
 class IonChamberPreAmplifier(SRS570_PreAmplifier):
     """An SRS-570 pre-amplifier driven by an ion chamber.
 
-    Has extra signals for walking up and down the sensitivity
-    range. By setting the *sensitivity_level* signal, the offset is
-    also set to be 10% of the sensitivity.
+        Has extra signals for walking up and down the sensitivity
+        range. *gain_level* is corresponds to the inverse of the
+        combination of *sensitivity_value* and *sensitivity_unit*. Setting
+        *gain_level* to 0 sets *sensitivity_value* and *sensitivity_unit*
+        to "1 mA/V".
+
+    By setting the *gain_level* signal, the offset is
+        also set to be 10% of the sensitivity.
 
     """
 
     values = ["1", "2", "5", "10", "20", "50", "100", "200", "500"]
     units = ["pA/V", "nA/V", "uA/V", "mA/V"]
+    offset_units = [s.split("/")[0] for s in units]
     offset_difference = -3  # How many levels higher should the offset be
     current_multipliers = {
         0: 1e-12,  # pA
@@ -107,6 +142,8 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # Reset the gain name, apstools converts "preamp_gain" to "preamp"
+        self.gain.name += "_gain"
         # Subscriptions for updating the sensitivity text
         self.sensitivity_value.subscribe(self.update_sensitivity_text, run=False)
         self.sensitivity_unit.subscribe(self.update_sensitivity_text, run=True)
@@ -116,21 +153,31 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
         Called when sensitivity changes (EPICS CA monitor event).
         """
         gain = self.computed_gain()
-        self.gain.put(gain)
+        self.gain.put(gain, internal=True)
         self.gain_db.put(10 * math.log10(gain), internal=True)
 
     def computed_gain(self):
         """
         Amplifier gain (V/A), as floating-point number.
         """
-        val = float(self.values[self.sensitivity_value.get()])
-        multiplier = self.current_multipliers[self.sensitivity_unit.get()]
+        # Convert the sensitivity to a proper number
+        val_idx = int(self.sensitivity_value.get(as_string=False))
+        val = float(self.values[val_idx])
+        # Determine multiplier based on the gain unit
+        amps = [
+            1e-12,  # pA
+            1e-9,  # nA
+            1e-6,  # μA
+            1e-3,  # mA
+        ]
+        unit_idx = int(self.sensitivity_unit.get(as_string=False))
+        multiplier = amps[unit_idx]
         inverse_gain = val * multiplier
         return 1 / inverse_gain
 
     def update_sensitivity_text(self, *args, obj: OphydObject, **kwargs):
-        val = self.values[self.sensitivity_value.get()]
-        unit = self.units[self.sensitivity_unit.get()]
+        val = self.values[int(self.sensitivity_value.get(as_string=False))]
+        unit = self.units[int(self.sensitivity_unit.get(as_string=False))]
         text = f"{val} {unit}"
         self.sensitivity_text.put(text, internal=True)
 
@@ -138,27 +185,27 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
         return level % len(self.values)
 
     def _level_to_unit(self, level):
-        return int(level / len(self.values))
+        return self.units[int(level / len(self.values))]
 
-    def _get_sensitivity_level(
-        self, mds: MultiDerivedSignal, items: SignalToValue
-    ) -> int:
+    def _get_gain_level(self, mds: MultiDerivedSignal, items: SignalToValue) -> int:
         "Given a sensitivity value and unit , transform to the desired level."
-        value = items[self.sensitivity_value]
-        unit = items[self.sensitivity_unit]
+        value = self.values.index(items[self.sensitivity_value])
+        unit = self.units.index(items[self.sensitivity_unit])
         # Determine sensitivity level
         new_level = value + unit * len(self.values)
+        # Convert to gain by inverting
+        new_level = 27 - new_level
         log.debug(
             f"Getting sensitivity level {self.name}: {value} {unit} -> {new_level}"
         )
         return new_level
 
-    def _put_sensitivity_level(
+    def _put_gain_level(
         self, mds: MultiDerivedSignal, value: OphydDataType
     ) -> SignalToValue:
-        "Given a sensitivity level, transform to the desired value and unit."
+        "Given a gain level, transform to the desired sensitivity value and unit."
         # Determine new values
-        new_level = value
+        new_level = 27 - value
         new_offset = max(new_level + self.offset_difference, 0)
         # Check for out of bounds
         lmin, lmax = (0, 27)
@@ -172,14 +219,13 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
             raise exceptions.GainOverflow(msg)
         # Return calculated gain and offset
         offset_value = self.values[self._level_to_value(new_offset)]
-        offset_unit = self.units[self._level_to_unit(new_offset)].split("/")[0]
+        offset_unit = self._level_to_unit(new_offset).split("/")[0]
         result = OrderedDict()
         result.update({self.sensitivity_unit: self._level_to_unit(new_level)})
         result.update({self.sensitivity_value: self._level_to_value(new_level)})
         result.update({self.offset_value: offset_value})
         result.update({self.offset_unit: offset_unit})
-        #     # set_all=1,
-        # }
+        # result[self.set_all] = 1
         return result
 
     def _get_offset_current(
@@ -200,15 +246,17 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
             return 0
         return current
 
-    # It's easier to calculate gains by enum index, so override the apstools signals
-    sensitivity_value = Cpt(EpicsSignal, "sens_num", kind="config", string=False)
-    sensitivity_unit = Cpt(EpicsSignal, "sens_unit", kind="config", string=False)
-
-    sensitivity_level = Cpt(
-        MultiDerivedSignal,
-        attrs=["sensitivity_value", "sensitivity_unit", "offset_value", "offset_unit"],
-        calculate_on_get=_get_sensitivity_level,
-        calculate_on_put=_put_sensitivity_level,
+    gain_level = Cpt(
+        GainDerivedSignal,
+        attrs=[
+            "sensitivity_value",
+            "sensitivity_unit",
+            "offset_value",
+            "offset_unit",
+            "set_all",
+        ],
+        calculate_on_get=_get_gain_level,
+        calculate_on_put=_put_gain_level,
         kind=Kind.omitted,
     )
     offset_current = Cpt(
@@ -223,11 +271,11 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
         InternalSignal,
         kind=Kind.config,
     )
-    # Gain, but measured in decibels
-    gain_db = Cpt(InternalSignal, kind=Kind.config)
+    # Gain, but measured in various forms
+    gain = Cpt(InternalSignal, name="gainerificf", kind="normal", value=1)
+    gain_db = Cpt(InternalSignal, kind=Kind.config, value=0)
 
 
-# @registry.register
 class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
     """An ion chamber at a spectroscopy beamline.
 
@@ -419,10 +467,9 @@ class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
         self.ch_num = ch_num
         self.ch_char = self.num_to_char(ch_num)
         # Determine which prefix to use for the scaler
-        if scaler_prefix is not None:
-            self.scaler_prefix = scaler_prefix
-        else:
-            self.scaler_prefix = prefix
+        if scaler_prefix is None:
+            scaler_prefix = prefix
+        self.scaler_prefix = scaler_prefix
         # Save an epics path to the preamp
         if preamp_prefix is None:
             preamp_prefix = prefix
@@ -575,7 +622,6 @@ async def make_ion_chamber_device(
         )
     else:
         log.info(f"Created ion chamber: {name} ({prefix}, {preamp_prefix})")
-        registry.register(ic)
         return ic
 
 
@@ -596,8 +642,7 @@ async def load_ion_chamber(
     ic_idx = ch_num - 2
     # 5 pre-amps per labjack
     lj_num = int(ic_idx / 5)
-    # Only use even labjack channels since it's a differential signal
-    lj_chan = (ic_idx % 5) * 2
+    lj_chan = ic_idx % 5
     # Only use this ion chamber if it has a name
     try:
         name = await caget(desc_pv)
@@ -618,13 +663,13 @@ async def load_ion_chamber(
         voltmeter_prefix=f"{voltmeter_prefix}{lj_num}:Ai{lj_chan}",
         labels={"ion_chambers"},
     )
-    # Ensure the voltmeter is in differential mode to measure pre-amp
+    # Ensure the voltmeter is in single-ended mode to measure pre-amp
     if hasattr(ion_chamber, "voltmeter"):
         try:
-            ion_chamber.voltmeter.differential.set(1).wait(timeout=1)
+            ion_chamber.voltmeter.differential.set(0).wait(timeout=1)
         except OpException as exc:
             msg = (
-                f"Could not set voltmeter {ion_chamber.name} channel differential state:"
+                f"Could not set voltmeter {ion_chamber.name} channel to single-ended mode:"
                 f" {exc}"
             )
             log.warning(msg)

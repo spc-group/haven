@@ -56,16 +56,13 @@ class AsyncCamMixin(OphydObject):
     acquire = ADCpt(SignalWithRBV, "Acquire")
 
 
-class SimDetectorCam_V34(CamMixin_V34, SimDetectorCam):
-    ...
+class SimDetectorCam_V34(CamMixin_V34, SimDetectorCam): ...
 
 
-class EigerCam(AsyncCamMixin, EigerDetectorCam):
-    ...
+class EigerCam(AsyncCamMixin, EigerDetectorCam): ...
 
 
-class LambdaCam(AsyncCamMixin, Lambda750kCam):
-    ...
+class LambdaCam(AsyncCamMixin, Lambda750kCam): ...
 
 
 class WriteModes(IntEnum):
@@ -137,12 +134,10 @@ class StatsMixin:
     ]
 
 
-class StatsPlugin_V31(StatsMixin, OphydStatsPlugin_V31):
-    ...
+class StatsPlugin_V31(StatsMixin, OphydStatsPlugin_V31): ...
 
 
-class StatsPlugin_V34(StatsMixin, OphydStatsPlugin_V34):
-    ...
+class StatsPlugin_V34(StatsMixin, OphydStatsPlugin_V34): ...
 
 
 class SimDetector(SingleTrigger_V34, DetectorBase):

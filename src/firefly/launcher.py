@@ -1,10 +1,13 @@
 import argparse
+import asyncio
 import cProfile
 import logging
 import pstats
 import sys
 import time
 from pathlib import Path
+
+from qasync import QEventLoop
 
 import haven
 
@@ -174,15 +177,26 @@ def main(default_fullscreen=False, default_display="status"):
         stylesheet_path=pydm_args.stylesheet,
     )
 
+    # Make it asynchronous
+    event_loop = QEventLoop(app)
+    asyncio.set_event_loop(event_loop)
+    app_close_event = asyncio.Event()
+    app.aboutToQuit.connect(app_close_event.set)
+
     # Define devices on the beamline (slow!)
-    app.setup_instrument(load_instrument=(not pydm_args.no_instrument))
-    FireflyApplication.processEvents()
+    if not pydm_args.no_instrument:
+        haven.load_instrument()
+    app.load_instrument()
 
-    # Show the first window
-    first_window = list(app.windows.values())[0]
-    splash.finish(first_window)
+    # Show the first window (breaks asyncio)
+    # first_window = list(app.windows.values())[0]
+    # splash.finish(first_window)
+    splash.close()
 
-    exit_code = app.exec_()
+    event_loop.run_until_complete(app_close_event.wait())
+    # event_loop.run_until_complete(app.exec_)
+    # exit_code = app.exec_()
+    event_loop.close()
 
     if pydm_args.profile:
         profile.disable()
@@ -192,7 +206,7 @@ def main(default_fullscreen=False, default_display="status"):
         ).sort_stats(pstats.SortKey.CUMULATIVE)
         stats.print_stats()
 
-    sys.exit(exit_code)
+    # sys.exit(exit_code)
 
 
 def cameras():

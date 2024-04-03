@@ -5,7 +5,6 @@ from haven.simulated_ioc import ResponsiveMotorFields  # , IOC as IOC_
 
 
 class UndulatorGroup(PVGroup):
-
     """
     An IOC that looks like an undulator.
 

@@ -4,7 +4,7 @@ import logging
 from apstools.devices import PTC10AioChannel as PTC10AioChannelBase
 from apstools.devices import PTC10PositionerMixin, PTC10TcChannel
 from ophyd import Component as Cpt
-from ophyd import EpicsSignalRO, EpicsSignalWithRBV, PVPositioner
+from ophyd import EpicsSignal, EpicsSignalRO, EpicsSignalWithRBV, PVPositioner
 
 from .._iconfig import load_config
 from .device import aload_devices, make_device
@@ -18,7 +18,7 @@ class PTC10AioChannel(PTC10AioChannelBase):
     SRS PTC10 AIO module
     """
 
-    voltage = Cpt(EpicsSignalRO, "output_RBV", kind="config")
+    voltage = Cpt(EpicsSignalRO, "output_RBV", kind="normal")
 
 
 class CapillaryHeater(PTC10PositionerMixin, PVPositioner):
@@ -28,6 +28,7 @@ class CapillaryHeater(PTC10PositionerMixin, PVPositioner):
     # Additional modules installed on the PTC10
     pid = Cpt(PTC10AioChannel, "5A:")
     tc = Cpt(PTC10TcChannel, "2A:")
+    output_enable = Cpt(EpicsSignal, "outputEnable", kind="omitted")
 
 
 def load_heater_coros(config=None):
