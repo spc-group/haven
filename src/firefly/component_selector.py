@@ -232,7 +232,7 @@ class ComponentSelector(QWidget):
 
     def current_component(self):
         cpt_name = self.combo_box.currentText()
-        return registry[cpt_name]
+        return self.app.registry[cpt_name]
 
     def create_models(self):
         self.tree_model = ComponentTreeModel(0, 2)
