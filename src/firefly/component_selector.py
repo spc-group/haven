@@ -1,6 +1,7 @@
 import logging
 from collections import OrderedDict
 from pprint import pprint
+from functools import lru_cache
 
 import qtawesome as qta
 from ophyd import Device, EpicsMotor, PositionerBase, Signal, sim
@@ -23,6 +24,7 @@ from .application import FireflyApplication
 log = logging.getLogger(__name__)
 
 
+
 class TreeComponent:
     """Representation of an ophyd Component/Device in a tree view."""
 
@@ -30,6 +32,7 @@ class TreeComponent:
     dotted_name: str
     component_item: QStandardItem
     type_item: QStandardItem
+
 
     def __init__(self, *args, device, text, parent, registry=None, **kwargs):
         self.device = device
@@ -41,6 +44,26 @@ class TreeComponent:
 
     def __str__(self):
         return self.dotted_name
+
+    @staticmethod
+    @lru_cache()
+    def icons():
+        """Produce a dictionary of icons for specific device classes.
+
+        Profiling shows that creating the qta.icon objects is
+        slow. Since there are a lot of potential signals, it makes
+        sense to cache the icons behind a static method to speed up
+        window loading.
+
+        """
+        return OrderedDict(
+            {
+                EpicsMotor: qta.icon("mdi.cog-clockwise"),
+                Device: qta.icon("mdi.router-network"),
+                Signal: qta.icon("mdi.connection"),
+            }
+        )
+
 
     def component_from_dotted_name(self, name):
         if name == self.dotted_name:
@@ -84,30 +107,9 @@ class TreeComponent:
             font.setBold(True)
             self.component_item.setFont(font)
         # Decide on an icon for this component
-        icons = {
-            "mdi.cog-clockwise": {"SynAxis"},
-            "mdi.connection": {
-                "_ReadbackSignal",
-                "_SetpointSignal",
-                "Signal",
-                "SynSignal",
-                "EnumSignal",
-            },
-            "mdi.tape-drive": {},
-            "mdi.router-network": {
-                "SynGauss",
-            },
-        }
-        icons = OrderedDict(
-            {
-                EpicsMotor: "mdi.cog-clockwise",
-                Device: "mdi.router-network",
-                Signal: "mdi.connection",
-            }
-        )
-        for cls, icon in icons.items():
+        for cls, icon in self.icons().items():
             if isinstance(self.device, cls):
-                self.type_item.setIcon(qta.icon(icon))
+                self.type_item.setIcon(icon)
                 break
         # Keep a reference to the component that created the items
         self.component_item.setData(self)
