@@ -616,7 +616,7 @@ class FireflyApplication(PyDMApplication):
     @QtCore.Slot()
     def show_voltmeters_window(self):
         return self.show_window(
-            FireflyMainWindow, ui_dir / "voltmeters.py", name="voltmeters"
+            PlanMainWindow, ui_dir / "voltmeters.py", name="voltmeters"
         )
 
     @QtCore.Slot()

@@ -82,7 +82,8 @@ dependencies:
 
   # --- Bluesky framework packages
   - adl2pydm
-  - apstools >=1.6.16
+  # apstools is installed from github by pip until DG645 and SRS570 settling are released
+  # - apstools >=1.6.16
   - area-detector-handlers
   - bluesky-queueserver
   - bluesky-queueserver-api
@@ -92,6 +93,7 @@ dependencies:
   # - happi
   # - hklpy >=1.0.3  # --- linux-64
   - ophyd >=1.6.3
+  # pcdsdevices is installed from github by pip until multiderived_settling fix hits pyPI
   - pcdsdevices  # For extra signal types
   - pydm >=1.18.0
   - typhos
@@ -145,6 +147,7 @@ dependencies:
     - ophyd-registry >= 0.7
     - xraydb >=4.5.0
     - pytest-timeout  # Get rid of this if tests are not hanging
+    - git+https://github.com/pcdshub/pcdsdevices
     # - https://github.com/BCDA-APS/adl2pydm/archive/main.zip
     # --- optional Bluesky framework packages for evaluation
     # - bluesky-webclient is NOT Python software, don't install it this way

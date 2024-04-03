@@ -7,6 +7,7 @@ import pandas as pd
 
 # from pydm.data_plugins import plugin_modules, add_plugin
 import pytest
+from apstools.devices.srs570_preamplifier import GainSignal
 from ophyd import DynamicDeviceComponent as DDC
 from ophyd import Kind
 from ophyd.sim import (
@@ -58,7 +59,10 @@ class FakeEpicsSignalWithIO(FakeEpicsSignal):
         super().__init__(f"{prefix}I", write_pv=f"{prefix}O", **kwargs)
 
 
+# Ophyd uses a cache of signals and their corresponding fakes
+# We need to add ours in so they get simulated properly.
 fake_device_cache[EpicsSignalWithIO] = FakeEpicsSignalWithIO
+fake_device_cache[GainSignal] = FakeEpicsSignal
 
 
 @pytest.fixture()
@@ -103,6 +107,14 @@ def sim_ion_chamber(sim_registry):
         prefix="scaler_ioc", name="I00", labels={"ion_chambers"}, ch_num=2
     )
     sim_registry.register(ion_chamber)
+    # Set metadata
+    preamp = ion_chamber.preamp
+    preamp.sensitivity_value._enum_strs = tuple(preamp.values)
+    preamp.sensitivity_unit._enum_strs = tuple(preamp.units)
+    preamp.offset_value._enum_strs = tuple(preamp.values)
+    preamp.offset_unit._enum_strs = tuple(preamp.offset_units)
+    preamp.gain_mode._enum_strs = ("LOW NOISE", "HIGH BW", "LOW DRIFT")
+    preamp.gain_mode.set("LOW NOISE").wait(timeout=3)
     return ion_chamber
 
 
