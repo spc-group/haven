@@ -1,18 +1,12 @@
-import gc
-import asyncio
 import os
-import subprocess
 from pathlib import Path
 from unittest import mock
 
-import psutil
-from qasync import QEventLoop, DefaultQEventLoopPolicy
-
-# from pydm.data_plugins import plugin_modules, add_plugin
-import pydm
-import pytest
 import numpy as np
 import pandas as pd
+
+# from pydm.data_plugins import plugin_modules, add_plugin
+import pytest
 from ophyd import DynamicDeviceComponent as DDC
 from ophyd import Kind
 from ophyd.sim import (
@@ -21,18 +15,14 @@ from ophyd.sim import (
     instantiate_fake_device,
     make_fake_device,
 )
-from pytestqt.qt_compat import qt_api
 from tiled.adapters.mapping import MapAdapter
 from tiled.adapters.xarray import DatasetAdapter
-from tiled.adapters.table import TableAdapter
 from tiled.client import Context, from_context
 from tiled.server.app import build_app
 
-
 import haven
-from firefly.application import FireflyApplication
-from firefly.main_window import FireflyMainWindow
 from haven._iconfig import beamline_connected as _beamline_connected
+from haven.catalog import Catalog
 from haven.instrument.aerotech import AerotechStage
 from haven.instrument.aps import ApsMachine
 from haven.instrument.camera import AravisDetector
@@ -45,7 +35,6 @@ from haven.instrument.shutter import Shutter
 from haven.instrument.slits import ApertureSlits, BladeSlits
 from haven.instrument.xspress import Xspress3Detector
 from haven.instrument.xspress import add_mcas as add_xspress_mcas
-from haven.catalog import Catalog
 
 top_dir = Path(__file__).parent.resolve()
 haven_dir = top_dir / "haven"
@@ -288,7 +277,7 @@ run1 = pd.DataFrame(
 
 grid_scan = pd.DataFrame(
     {
-        'CdnIPreKb': np.linspace(0, 104, num=105),
+        "CdnIPreKb": np.linspace(0, 104, num=105),
         "It_net_counts": np.linspace(0, 104, num=105),
         "aerotech_horiz": np.linspace(0, 104, num=105),
         "aerotech_vert": np.linspace(0, 104, num=105),
@@ -341,26 +330,36 @@ bluesky_mapping = {
             "primary": MapAdapter(
                 {
                     "data": DatasetAdapter.from_dataset(grid_scan),
-                }, metadata={
-                    "descriptors": [{"hints": {'Ipreslit': {'fields': ['Ipreslit_net_counts']},
-                                               'CdnIPreKb': {'fields': ['CdnIPreKb_net_counts']},
-                                               'I0': {'fields': ['I0_net_counts']},
-                                               'CdnIt': {'fields': ['CdnIt_net_counts']},
-                                               'aerotech_vert': {'fields': ['aerotech_vert']},
-                                               'aerotech_horiz': {'fields': ['aerotech_horiz']},
-                                               'Ipre_KB': {'fields': ['Ipre_KB_net_counts']},
-                                               'CdnI0': {'fields': ['CdnI0_net_counts']},
-                                               'It': {'fields': ['It_net_counts']}}}]
-                }),
+                },
+                metadata={
+                    "descriptors": [
+                        {
+                            "hints": {
+                                "Ipreslit": {"fields": ["Ipreslit_net_counts"]},
+                                "CdnIPreKb": {"fields": ["CdnIPreKb_net_counts"]},
+                                "I0": {"fields": ["I0_net_counts"]},
+                                "CdnIt": {"fields": ["CdnIt_net_counts"]},
+                                "aerotech_vert": {"fields": ["aerotech_vert"]},
+                                "aerotech_horiz": {"fields": ["aerotech_horiz"]},
+                                "Ipre_KB": {"fields": ["Ipre_KB_net_counts"]},
+                                "CdnI0": {"fields": ["CdnI0_net_counts"]},
+                                "It": {"fields": ["It_net_counts"]},
+                            }
+                        }
+                    ]
+                },
+            ),
         },
         metadata={
             "start": {
                 "plan_name": "grid_scan",
                 "uid": "85573831-f4b4-4f64-b613-a6007bf03a8d",
                 "hints": {
-                    'dimensions': [[['aerotech_vert'], 'primary'],
-                                   [['aerotech_horiz'], 'primary']],
-                    'gridding': 'rectilinear'
+                    "dimensions": [
+                        [["aerotech_vert"], "primary"],
+                        [["aerotech_horiz"], "primary"],
+                    ],
+                    "gridding": "rectilinear",
                 },
                 "shape": [5, 21],
                 "extents": [[-80, 80], [-100, 100]],
@@ -388,7 +387,6 @@ def tiled_client():
 @pytest.fixture(scope="session")
 def catalog(tiled_client):
     return Catalog(client=tiled_client)
-
 
 
 # -----------------------------------------------------------------------------

@@ -1,11 +1,10 @@
 import asyncio
-import pytest
 import subprocess
-import psutil
-import gc
 
+import psutil
 import pydm
-from qasync import QEventLoop, DefaultQEventLoopPolicy
+import pytest
+from qasync import DefaultQEventLoopPolicy, QEventLoop
 
 from firefly import FireflyApplication
 from firefly.main_window import FireflyMainWindow
