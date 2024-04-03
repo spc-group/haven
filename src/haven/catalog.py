@@ -1,17 +1,16 @@
-import threading
 import asyncio
-from functools import partial
 import logging
-
-import pandas as pd
-import numpy as np
-import databroker
 import sqlite3
+import threading
+from functools import partial
+
+import databroker
+import numpy as np
+import pandas as pd
 from tiled.client import from_uri
 from tiled.client.cache import Cache
 
 from ._iconfig import load_config
-
 
 log = logging.getLogger(__name__)
 
@@ -23,7 +22,7 @@ def unsnake(arr: np.ndarray, snaking: list) -> np.ndarray:
     in *snaking* whether that axis should have alternating rows. The
     first entry is ignored as it doesn't make sense to snake the first
     axis.
-    
+
     Returns
     =======
     unsnaked
@@ -125,12 +124,14 @@ def load_data(uid, catalog_name="bluesky", stream="primary"):
 
 def with_thread_lock(fn):
     """Makes sure the function isn't accessed concurrently."""
+
     def wrapper(obj, *args, **kwargs):
         obj._lock.acquire()
         try:
             fn(obj, *args, **kwargs)
         finally:
             obj._lock.release()
+
     return wrapper
 
 
@@ -141,10 +142,15 @@ class ThreadSafeCache(Cache):
     ensures that no two write operations happen concurrently.
 
     """
-    def __init__(self, *args, **kwargs, ):
+
+    def __init__(
+        self,
+        *args,
+        **kwargs,
+    ):
         super().__init__(*args, **kwargs)
         self._lock = threading.Lock()
-        
+
     def write_safe(self):
         """
         Check that it is safe to write.
@@ -166,7 +172,7 @@ def tiled_client(entry_node=None, uri=None, cache_filepath=None):
     config = load_config()
     # Create a cache for saving local copies
     if cache_filepath is None:
-        cache_filepath = config['database']['tiled'].get("cache_filepath", "")
+        cache_filepath = config["database"]["tiled"].get("cache_filepath", "")
         cache_filepath = cache_filepath or None
     cache = ThreadSafeCache(filepath=cache_filepath)
     # Create the client
@@ -179,20 +185,19 @@ def tiled_client(entry_node=None, uri=None, cache_filepath=None):
     return client_
 
 
-
-class CatalogScan():
+class CatalogScan:
     """A single scan from the tiled API with some convenience methods.
 
     Parameters
     ==========
       A tiled container on which to operate."""
-    
+
     def __init__(self, container):
         self.container = container
 
     def _read_data(self, signals):
         # Fetch data if needed
-        data = self.container['primary']['data']
+        data = self.container["primary"]["data"]
         return data.read(signals)
 
     def _read_metadata(self, keys=None):
@@ -203,7 +208,7 @@ class CatalogScan():
 
     @property
     def uid(self):
-        return self.container._item['id']
+        return self.container._item["id"]
 
     async def to_dataframe(self, signals=None):
         """Convert the dataset into a pandas dataframe."""
@@ -233,7 +238,9 @@ class CatalogScan():
         independent = metadata["start"]["hints"]["dimensions"][0][0]
         # Get hints for the dependent (X)
         dependent = []
-        primary_metadata = await self.loop.run_in_executor(None, self._read_metadata, "primary")
+        primary_metadata = await self.loop.run_in_executor(
+            None, self._read_metadata, "primary"
+        )
         hints = primary_metadata["descriptors"][0]["hints"]
         for device, dev_hints in hints.items():
             dependent.extend(dev_hints["fields"])
@@ -252,18 +259,18 @@ class CatalogScan():
         # Re-shape to match the scan dimensions
         metadata = await self.metadata
         try:
-            shape = metadata['start']['shape']
+            shape = metadata["start"]["shape"]
         except KeyError:
             log.warning(f"No shape found for {repr(signal)}.")
         else:
             arr = np.reshape(arr, shape)
         # Flip alternating rows if snaking is enabled
-        if "snaking" in metadata['start']:
-            arr = unsnake(arr, metadata['start']['snaking'])
+        if "snaking" in metadata["start"]:
+            arr = unsnake(arr, metadata["start"]["snaking"])
         return arr
 
 
-class Catalog():
+class Catalog:
     """An asynchronous wrapper around the tiled client.
 
     This class has a more intelligent understanding of how *our* data
@@ -271,14 +278,15 @@ class Catalog():
     boiler-plate code (e.g. reshaping maps, etc).
 
     """
+
     _client = None
-    
+
     def __init__(self, client=None):
         self._client = client
 
     @property
     def loop(self):
-        return asyncio.get_running_loop()            
+        return asyncio.get_running_loop()
 
     @property
     async def client(self):
@@ -296,7 +304,7 @@ class Catalog():
         client = await self.client
         for key, value in await self.loop.run_in_executor(None, client.items):
             yield key, CatalogScan(container=value)
-           
+
     async def values(self):
         client = await self.client
         containers = await self.loop.run_in_executor(None, client.values)
@@ -307,7 +315,7 @@ class Catalog():
         client = await self.client
         length = await self.loop.run_in_executor(None, client.__len__)
         return length
-    
+
     async def search(self, query):
         """
         Make a Node with a subset of this Node's entries, filtered by query.
@@ -322,7 +330,9 @@ class Catalog():
         client = await self.client
         return Catalog(await loop.run_in_executor(None, client.search, query))
 
-    async def distinct(self, *metadata_keys, structure_families=False, specs=False, counts=False):
+    async def distinct(
+        self, *metadata_keys, structure_families=False, specs=False, counts=False
+    ):
         """Get the unique values and optionally counts of metadata_keys,
         structure_families, and specs in this Node's entries
 
@@ -340,12 +350,19 @@ class Catalog():
         """
         loop = asyncio.get_running_loop()
         client = await self.client
-        query = partial(client.distinct, *metadata_keys, structure_families=structure_families, specs=specs, counts=counts)
+        query = partial(
+            client.distinct,
+            *metadata_keys,
+            structure_families=structure_families,
+            specs=specs,
+            counts=counts,
+        )
         return await loop.run_in_executor(None, query)
+
 
 # Create a default catalog for basic usage
 catalog = Catalog()
-    
+
 
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman

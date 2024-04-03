@@ -1,4 +1,3 @@
-import pandas as pd
 import numpy as np
 import pandas as pd
 import pytest
@@ -50,6 +49,7 @@ async def test_dataframe(scan):
     df = await scan.to_dataframe()
     assert isinstance(df, pd.DataFrame)
 
+
 @pytest.mark.asyncio
 async def test_load_nd_data(grid_scan):
     """Check that the catalog scan can convert e.g. grid_scan results."""
@@ -62,6 +62,7 @@ async def test_load_nd_data(grid_scan):
 async def test_distinct(catalog, tiled_client):
     distinct = tiled_client.distinct("plan_name")
     assert await catalog.distinct("plan_name") == distinct
+
 
 @pytest.mark.asyncio
 async def test_search(catalog, tiled_client):
@@ -78,7 +79,8 @@ async def test_values(catalog, tiled_client):
     expected = [uid for uid in tiled_client.keys()]
     response = [val.uid async for val in catalog.values()]
     assert expected == response
-    
+
+
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov

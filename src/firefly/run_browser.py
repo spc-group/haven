@@ -1,15 +1,15 @@
-import logging
-from itertools import count
-from typing import Sequence, Mapping
 import asyncio
+import logging
 from functools import wraps
+from itertools import count
+from typing import Mapping, Sequence
 
 import numpy as np
 import qtawesome as qta
 import yaml
-from qasync import asyncSlot
 from matplotlib.colors import TABLEAU_COLORS
-from pyqtgraph import PlotItem, PlotWidget, ImageView, GraphicsLayoutWidget
+from pyqtgraph import GraphicsLayoutWidget, ImageView, PlotItem, PlotWidget
+from qasync import asyncSlot
 from qtpy.QtCore import Qt, Signal
 from qtpy.QtGui import QStandardItem, QStandardItemModel
 from qtpy.QtWidgets import QWidget
@@ -30,8 +30,8 @@ def cancellable(fn):
             return await fn(*args, **kwargs)
         except asyncio.exceptions.CancelledError:
             log.warning(f"Cancelled task {fn}")
-    return inner
 
+    return inner
 
 
 class FiltersWidget(QWidget):
@@ -168,14 +168,16 @@ class Browser1DPlotWidget(PlotWidget):
 
 
 class Browser2DPlotWidget(ImageView):
-
     """A plot widget for 2D maps."""
+
     def __init__(self, *args, view=None, **kwargs):
         if view is None:
             view = PlotItem()
         super().__init__(*args, view=view, **kwargs)
 
-    def plot_runs(self, runs: Mapping, xlabel: str = "", ylabel: str = "", extents=None):
+    def plot_runs(
+        self, runs: Mapping, xlabel: str = "", ylabel: str = "", extents=None
+    ):
         """Take loaded 2D or 3D mapping data and plot it.
 
         Parameters
@@ -197,7 +199,7 @@ class Browser2DPlotWidget(ImageView):
         # To-do: make this respond to the combobox selection
         image = np.mean(images, axis=0)
         # To-do: Apply transformations
-        
+
         # # Plot the image
         if 2 <= image.ndim <= 3:
             self.setImage(image.T, autoRange=False)
@@ -242,8 +244,6 @@ class RunBrowserDisplay(display.FireflyDisplay):
         self.db = DatabaseWorker(catalog=root_node)
         # Load the list of all runs for the selection widget
         self.db_task(self.load_runs())
-
-       
 
     def db_task(self, coro, name="default task"):
         """Executes a co-routine as a database task. Existing database
@@ -434,7 +434,9 @@ class RunBrowserDisplay(display.FireflyDisplay):
         old_values = [cb.currentText() for cb in comboboxes]
         # Determine valid list of columns to choose from
         use_hints = self.ui.plot_1d_hints_checkbox.isChecked()
-        signals_task = self.db_task(self.db.signal_names(hinted_only=use_hints), "1D signals")
+        signals_task = self.db_task(
+            self.db.signal_names(hinted_only=use_hints), "1D signals"
+        )
         xcols, ycols = await signals_task
         self.multi_y_signals = ycols
         # Update the comboboxes with new signals
@@ -459,13 +461,14 @@ class RunBrowserDisplay(display.FireflyDisplay):
         old_value = val_cb.currentText()
         # Determine valid list of dependent signals to choose from
         use_hints = self.ui.plot_2d_hints_checkbox.isChecked()
-        xcols, vcols = await self.db_task(self.db.signal_names(hinted_only=use_hints), "2D signals")
+        xcols, vcols = await self.db_task(
+            self.db.signal_names(hinted_only=use_hints), "2D signals"
+        )
         # Update the UI with the list of controls
         val_cb.clear()
         val_cb.addItems(vcols)
         # Restore previous selection
         val_cb.setCurrentText(old_value)
-            
 
     # def calculate_ydata(
     #     self,
@@ -507,7 +510,6 @@ class RunBrowserDisplay(display.FireflyDisplay):
     #         raise exceptions.InvalidTransformation(msg)
     #     return y, y_string
 
-
     @asyncSlot()
     @cancellable
     async def update_multi_plot(self, *args):
@@ -515,7 +517,9 @@ class RunBrowserDisplay(display.FireflyDisplay):
         if x_signal == "":
             return
         use_hints = self.ui.plot_1d_hints_checkbox.isChecked()
-        runs = await self.db_task(self.db.all_signals(hinted_only=use_hints), "multi-plot")
+        runs = await self.db_task(
+            self.db.all_signals(hinted_only=use_hints), "multi-plot"
+        )
         self.ui.plot_multi_view.plot_runs(runs, xsignal=x_signal)
 
     @asyncSlot()
@@ -533,7 +537,17 @@ class RunBrowserDisplay(display.FireflyDisplay):
         use_log = self.ui.logarithm_checkbox.isChecked()
         use_invert = self.ui.invert_checkbox.isChecked()
         use_grad = self.ui.gradient_checkbox.isChecked()
-        task = self.db_task(self.db.signals(x_signal, y_signal, r_signal, use_log=use_log, use_invert=use_invert, use_grad=use_grad), "1D plot")
+        task = self.db_task(
+            self.db.signals(
+                x_signal,
+                y_signal,
+                r_signal,
+                use_log=use_log,
+                use_invert=use_invert,
+                use_grad=use_grad,
+            ),
+            "1D plot",
+        )
         runs = await task
         self.ui.plot_1d_view.plot_runs(runs)
 
@@ -551,16 +565,18 @@ class RunBrowserDisplay(display.FireflyDisplay):
         # Eventually this will be replaced with robus choices for plotting multiple images
         metadata = await self.db_task(self.db.metadata(), "2D plot")
         metadata = list(metadata.values())[0]
-        dimensions = metadata['start']['hints']['dimensions']
+        dimensions = metadata["start"]["hints"]["dimensions"]
         try:
-            xlabel = dimensions[-1][0][0]        
+            xlabel = dimensions[-1][0][0]
             ylabel = dimensions[-2][0][0]
         except IndexError:
             # Not a 2D scan
             return
         # Get spatial extent
-        extents = metadata['start']['extents']
-        self.ui.plot_2d_view.plot_runs(images, xlabel=xlabel, ylabel=ylabel, extents=extents)
+        extents = metadata["start"]["extents"]
+        self.ui.plot_2d_view.plot_runs(
+            images, xlabel=xlabel, ylabel=ylabel, extents=extents
+        )
 
     @asyncSlot()
     async def update_metadata(self, *args):

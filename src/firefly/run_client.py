@@ -1,20 +1,20 @@
 import datetime as dt
 import logging
 from collections import OrderedDict
-from typing import Sequence, Mapping
+from typing import Mapping, Sequence
 
+import numpy as np
+import pandas as pd
 from qtpy.QtCore import Signal
 from tiled import queries
-import pandas as pd
-import numpy as np
 
-from haven.catalog import Catalog
 from haven import exceptions
+from haven.catalog import Catalog
 
 log = logging.getLogger(__name__)
 
 
-class DatabaseWorker():
+class DatabaseWorker:
     selected_runs: Sequence = []
 
     # Signals
@@ -49,7 +49,9 @@ class DatabaseWorker():
         for filter_name, Query, md_name in filter_params:
             val = filters.get(filter_name, "")
             if val != "":
-                runs = await runs.search(Query(md_name, val, case_sensitive=case_sensitive))
+                runs = await runs.search(
+                    Query(md_name, val, case_sensitive=case_sensitive)
+                )
         full_text = filters.get("full_text", "")
         if full_text != "":
             runs = await runs.search(
@@ -202,7 +204,15 @@ class DatabaseWorker():
             dfs[run.uid] = df
         return dfs
 
-    async def signals(self, x_signal, y_signal, r_signal=None, use_log=False, use_invert=False, use_grad=False) -> Mapping:
+    async def signals(
+        self,
+        x_signal,
+        y_signal,
+        r_signal=None,
+        use_log=False,
+        use_invert=False,
+        use_grad=False,
+    ) -> Mapping:
         """Produce a dictionary with the 1D datasets for plotting.
 
         The keys of the dictionary are the labels for each curve, and
@@ -213,8 +223,10 @@ class DatabaseWorker():
         # Check for sensible inputs
         use_reference = r_signal is not None
         if "" in [x_signal, y_signal] or (use_reference and r_signal == ""):
-            msg = (f"Empty signal name requested: x={repr(x_signal)}, y={repr(y_signal)},"
-                   f" r={repr(r_signal)}")
+            msg = (
+                f"Empty signal name requested: x={repr(x_signal)}, y={repr(y_signal)},"
+                f" r={repr(r_signal)}"
+            )
             log.debug(msg)
             raise exceptions.EmptySignalName(msg)
         signals = [x_signal, y_signal]
@@ -232,7 +244,9 @@ class DatabaseWorker():
             missing_y = y_signal not in df.columns
             missing_r = r_signal not in df.columns
             if missing_x or missing_y or (use_reference and missing_r):
-                log.warning("Could not find signals {x_signal}, {y_signal} and {r_signal}")
+                log.warning(
+                    "Could not find signals {x_signal}, {y_signal} and {r_signal}"
+                )
                 continue
             # Apply transformations
             if use_reference:
@@ -246,6 +260,7 @@ class DatabaseWorker():
             series = pd.Series(df[y_signal].values, index=df[x_signal].values)
             dfs[run.uid] = series
         return dfs
+
 
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
