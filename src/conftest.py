@@ -1,15 +1,8 @@
-import gc
-import asyncio
 import os
-import subprocess
 from pathlib import Path
 from unittest import mock
 
-import psutil
-from qasync import QEventLoop, DefaultQEventLoopPolicy
-
 # from pydm.data_plugins import plugin_modules, add_plugin
-import pydm
 import pytest
 import numpy as np
 import pandas as pd
@@ -21,17 +14,13 @@ from ophyd.sim import (
     instantiate_fake_device,
     make_fake_device,
 )
-from pytestqt.qt_compat import qt_api
 from tiled.adapters.mapping import MapAdapter
 from tiled.adapters.xarray import DatasetAdapter
-from tiled.adapters.table import TableAdapter
 from tiled.client import Context, from_context
 from tiled.server.app import build_app
 
 
 import haven
-from firefly.application import FireflyApplication
-from firefly.main_window import FireflyMainWindow
 from haven._iconfig import beamline_connected as _beamline_connected
 from haven.instrument.aerotech import AerotechStage
 from haven.instrument.aps import ApsMachine

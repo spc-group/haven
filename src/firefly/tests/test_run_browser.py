@@ -1,14 +1,10 @@
-import logging
 from unittest.mock import MagicMock
 import asyncio
 
 import numpy as np
-import pandas as pd
 import pytest
 from pyqtgraph import PlotItem, PlotWidget, ImageView, ImageItem
-from qtpy.QtCore import Qt
 
-from haven.catalog import Catalog
 from firefly.run_browser import RunBrowserDisplay
 from firefly.run_client import DatabaseWorker
 

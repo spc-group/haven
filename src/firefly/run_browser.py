@@ -1,24 +1,21 @@
 import logging
 from itertools import count
 from typing import Sequence, Mapping
-import time
 import asyncio
-from functools import partial, wraps
+from functools import wraps
 
 import numpy as np
 import qtawesome as qta
 import yaml
 from qasync import asyncSlot
 from matplotlib.colors import TABLEAU_COLORS
-from pydantic.error_wrappers import ValidationError
 from pyqtgraph import PlotItem, PlotWidget, ImageView, GraphicsLayoutWidget
-from qtpy.QtCore import Qt, QThread, Signal
+from qtpy.QtCore import Qt, Signal
 from qtpy.QtGui import QStandardItem, QStandardItemModel
 from qtpy.QtWidgets import QWidget
 
 from firefly import display
 from firefly.run_client import DatabaseWorker
-from haven import exceptions
 
 log = logging.getLogger(__name__)
 

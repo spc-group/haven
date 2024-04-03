@@ -1,20 +1,10 @@
-import logging
-from unittest.mock import MagicMock
-
 import pandas as pd
 import numpy as np
 import pandas as pd
 import pytest
-from pyqtgraph import PlotItem, PlotWidget, ImageView, ImageItem
-from qtpy.QtCore import Qt
 from tiled import queries
-from tiled.adapters.mapping import MapAdapter
-from tiled.adapters.xarray import DatasetAdapter
-from tiled.client import Context, from_context
-from tiled.server.app import build_app
 
-
-from haven.catalog import Catalog, CatalogScan, unsnake
+from haven.catalog import CatalogScan, unsnake
 
 
 @pytest.fixture()

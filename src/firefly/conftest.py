@@ -2,7 +2,6 @@ import asyncio
 import pytest
 import subprocess
 import psutil
-import gc
 
 import pydm
 from qasync import QEventLoop, DefaultQEventLoopPolicy

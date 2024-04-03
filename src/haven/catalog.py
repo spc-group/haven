@@ -1,6 +1,6 @@
 import threading
 import asyncio
-from functools import partial, lru_cache
+from functools import partial
 import logging
 
 import pandas as pd

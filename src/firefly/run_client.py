@@ -1,10 +1,9 @@
-import asyncio
 import datetime as dt
 import logging
 from collections import OrderedDict
 from typing import Sequence, Mapping
 
-from qtpy.QtCore import QObject, Signal, Slot
+from qtpy.QtCore import Signal
 from tiled import queries
 import pandas as pd
 import numpy as np
