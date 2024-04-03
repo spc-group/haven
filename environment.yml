@@ -147,7 +147,6 @@ dependencies:
     - ophyd-registry >= 0.7
     - xraydb >=4.5.0
     - pytest-timeout  # Get rid of this if tests are not hanging
-    - git+https://github.com/spc-group/apstools@gain_settling
     - git+https://github.com/pcdshub/pcdsdevices
     # - https://github.com/BCDA-APS/adl2pydm/archive/main.zip
     # --- optional Bluesky framework packages for evaluation
