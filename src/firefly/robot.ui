@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>484</width>
-    <height>475</height>
+    <width>776</width>
+    <height>566</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -112,1341 +112,1454 @@ font-weight: bold;</string>
     </widget>
    </item>
    <item>
-    <layout class="QGridLayout" name="gridLayout_3">
-     <property name="topMargin">
-      <number>24</number>
-     </property>
-     <property name="bottomMargin">
-      <number>24</number>
-     </property>
-     <property name="horizontalSpacing">
-      <number>48</number>
-     </property>
-     <property name="verticalSpacing">
-      <number>24</number>
-     </property>
-     <item row="0" column="2">
-      <widget class="PyDMPushButton" name="PyDMPushButton_14">
-       <property name="toolTip">
-        <string/>
+    <layout class="QHBoxLayout" name="horizontalLayout_4">
+     <item>
+      <widget class="QLabel" name="num_motor_label">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
        </property>
        <property name="text">
-        <string>17</string>
-       </property>
-       <property name="alarmSensitiveContent" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="alarmSensitiveBorder" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="PyDMToolTip" stdset="0">
-        <string/>
-       </property>
-       <property name="monitorDisp" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="channel" stdset="0">
-        <string>haven://samples[17]</string>
-       </property>
-       <property name="PyDMIcon" stdset="0">
-        <string/>
-       </property>
-       <property name="passwordProtected" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="password" stdset="0">
-        <string/>
-       </property>
-       <property name="protectedPassword" stdset="0">
-        <string/>
-       </property>
-       <property name="showConfirmDialog" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="confirmMessage" stdset="0">
-        <string>Are you sure you want to proceed?</string>
-       </property>
-       <property name="pressValue" stdset="0">
-        <string>None</string>
-       </property>
-       <property name="releaseValue" stdset="0">
-        <string>None</string>
-       </property>
-       <property name="relativeChange" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="writeWhenRelease" stdset="0">
-        <bool>false</bool>
+        <string>Num. Motors</string>
        </property>
       </widget>
      </item>
-     <item row="3" column="3">
-      <widget class="PyDMPushButton" name="PyDMPushButton_23">
-       <property name="toolTip">
-        <string/>
-       </property>
-       <property name="text">
-        <string>20</string>
-       </property>
-       <property name="alarmSensitiveContent" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="alarmSensitiveBorder" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="PyDMToolTip" stdset="0">
-        <string/>
-       </property>
-       <property name="monitorDisp" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="channel" stdset="0">
-        <string>haven://samples[20]</string>
-       </property>
-       <property name="PyDMIcon" stdset="0">
-        <string/>
-       </property>
-       <property name="passwordProtected" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="password" stdset="0">
-        <string/>
-       </property>
-       <property name="protectedPassword" stdset="0">
-        <string/>
-       </property>
-       <property name="showConfirmDialog" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="confirmMessage" stdset="0">
-        <string>Are you sure you want to proceed?</string>
-       </property>
-       <property name="pressValue" stdset="0">
-        <string>None</string>
-       </property>
-       <property name="releaseValue" stdset="0">
-        <string>None</string>
-       </property>
-       <property name="relativeChange" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="writeWhenRelease" stdset="0">
-        <bool>false</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="5" column="0">
-      <widget class="PyDMPushButton" name="PyDMPushButton_7">
-       <property name="toolTip">
-        <string/>
-       </property>
-       <property name="text">
-        <string>0</string>
-       </property>
-       <property name="alarmSensitiveContent" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="alarmSensitiveBorder" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="PyDMToolTip" stdset="0">
-        <string/>
-       </property>
-       <property name="monitorDisp" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="channel" stdset="0">
-        <string>haven:\\samples[0]</string>
-       </property>
-       <property name="PyDMIcon" stdset="0">
-        <string/>
-       </property>
-       <property name="passwordProtected" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="password" stdset="0">
-        <string/>
-       </property>
-       <property name="protectedPassword" stdset="0">
-        <string/>
-       </property>
-       <property name="showConfirmDialog" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="confirmMessage" stdset="0">
-        <string>Are you sure you want to proceed?</string>
-       </property>
-       <property name="pressValue" stdset="0">
-        <string>None</string>
-       </property>
-       <property name="releaseValue" stdset="0">
-        <string>None</string>
-       </property>
-       <property name="relativeChange" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="writeWhenRelease" stdset="0">
-        <bool>false</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="4" column="3">
-      <widget class="PyDMPushButton" name="PyDMPushButton_24">
-       <property name="toolTip">
-        <string/>
-       </property>
-       <property name="text">
-        <string>19</string>
-       </property>
-       <property name="alarmSensitiveContent" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="alarmSensitiveBorder" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="PyDMToolTip" stdset="0">
-        <string/>
-       </property>
-       <property name="monitorDisp" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="channel" stdset="0">
-        <string>haven://samples[19]</string>
-       </property>
-       <property name="PyDMIcon" stdset="0">
-        <string/>
-       </property>
-       <property name="passwordProtected" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="password" stdset="0">
-        <string/>
-       </property>
-       <property name="protectedPassword" stdset="0">
-        <string/>
-       </property>
-       <property name="showConfirmDialog" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="confirmMessage" stdset="0">
-        <string>Are you sure you want to proceed?</string>
-       </property>
-       <property name="pressValue" stdset="0">
-        <string>None</string>
-       </property>
-       <property name="releaseValue" stdset="0">
-        <string>None</string>
-       </property>
-       <property name="relativeChange" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="writeWhenRelease" stdset="0">
-        <bool>false</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="1">
-      <widget class="PyDMPushButton" name="PyDMPushButton_8">
-       <property name="toolTip">
-        <string/>
-       </property>
-       <property name="text">
-        <string>11</string>
-       </property>
-       <property name="alarmSensitiveContent" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="alarmSensitiveBorder" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="PyDMToolTip" stdset="0">
-        <string/>
-       </property>
-       <property name="monitorDisp" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="channel" stdset="0">
-        <string>haven://samples[11]</string>
-       </property>
-       <property name="PyDMIcon" stdset="0">
-        <string/>
-       </property>
-       <property name="passwordProtected" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="password" stdset="0">
-        <string/>
-       </property>
-       <property name="protectedPassword" stdset="0">
-        <string/>
-       </property>
-       <property name="showConfirmDialog" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="confirmMessage" stdset="0">
-        <string>Are you sure you want to proceed?</string>
-       </property>
-       <property name="pressValue" stdset="0">
-        <string>None</string>
-       </property>
-       <property name="releaseValue" stdset="0">
-        <string>None</string>
-       </property>
-       <property name="relativeChange" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="writeWhenRelease" stdset="0">
-        <bool>false</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="0">
-      <widget class="PyDMPushButton" name="PyDMPushButton_3">
-       <property name="toolTip">
-        <string/>
-       </property>
-       <property name="text">
-        <string>4</string>
-       </property>
-       <property name="alarmSensitiveContent" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="alarmSensitiveBorder" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="PyDMToolTip" stdset="0">
-        <string/>
-       </property>
-       <property name="monitorDisp" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="channel" stdset="0">
-        <string>haven://samples[4]</string>
-       </property>
-       <property name="PyDMIcon" stdset="0">
-        <string/>
-       </property>
-       <property name="passwordProtected" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="password" stdset="0">
-        <string/>
-       </property>
-       <property name="protectedPassword" stdset="0">
-        <string/>
-       </property>
-       <property name="showConfirmDialog" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="confirmMessage" stdset="0">
-        <string>Are you sure you want to proceed?</string>
-       </property>
-       <property name="pressValue" stdset="0">
-        <string>None</string>
-       </property>
-       <property name="releaseValue" stdset="0">
-        <string>None</string>
-       </property>
-       <property name="relativeChange" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="writeWhenRelease" stdset="0">
-        <bool>false</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="5" column="1">
-      <widget class="PyDMPushButton" name="PyDMPushButton_13">
-       <property name="toolTip">
-        <string/>
-       </property>
-       <property name="text">
-        <string>6</string>
-       </property>
-       <property name="alarmSensitiveContent" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="alarmSensitiveBorder" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="PyDMToolTip" stdset="0">
-        <string/>
-       </property>
-       <property name="monitorDisp" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="channel" stdset="0">
-        <string>haven://samples[6]</string>
-       </property>
-       <property name="PyDMIcon" stdset="0">
-        <string/>
-       </property>
-       <property name="passwordProtected" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="password" stdset="0">
-        <string/>
-       </property>
-       <property name="protectedPassword" stdset="0">
-        <string/>
-       </property>
-       <property name="showConfirmDialog" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="confirmMessage" stdset="0">
-        <string>Are you sure you want to proceed?</string>
-       </property>
-       <property name="pressValue" stdset="0">
-        <string>None</string>
-       </property>
-       <property name="releaseValue" stdset="0">
-        <string>None</string>
-       </property>
-       <property name="relativeChange" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="writeWhenRelease" stdset="0">
-        <bool>false</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="3">
-      <widget class="PyDMPushButton" name="PyDMPushButton_22">
-       <property name="toolTip">
-        <string/>
-       </property>
-       <property name="text">
-        <string>21</string>
-       </property>
-       <property name="alarmSensitiveContent" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="alarmSensitiveBorder" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="PyDMToolTip" stdset="0">
-        <string/>
-       </property>
-       <property name="monitorDisp" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="channel" stdset="0">
-        <string>haven://samples[21]</string>
-       </property>
-       <property name="PyDMIcon" stdset="0">
-        <string/>
-       </property>
-       <property name="passwordProtected" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="password" stdset="0">
-        <string/>
-       </property>
-       <property name="protectedPassword" stdset="0">
-        <string/>
-       </property>
-       <property name="showConfirmDialog" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="confirmMessage" stdset="0">
-        <string>Are you sure you want to proceed?</string>
-       </property>
-       <property name="pressValue" stdset="0">
-        <string>None</string>
-       </property>
-       <property name="releaseValue" stdset="0">
-        <string>None</string>
-       </property>
-       <property name="relativeChange" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="writeWhenRelease" stdset="0">
-        <bool>false</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="3">
-      <widget class="PyDMPushButton" name="PyDMPushButton_20">
-       <property name="toolTip">
-        <string/>
-       </property>
-       <property name="text">
-        <string>23</string>
-       </property>
-       <property name="alarmSensitiveContent" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="alarmSensitiveBorder" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="PyDMToolTip" stdset="0">
-        <string/>
-       </property>
-       <property name="monitorDisp" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="channel" stdset="0">
-        <string>haven://samples[23]</string>
-       </property>
-       <property name="PyDMIcon" stdset="0">
-        <string/>
-       </property>
-       <property name="passwordProtected" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="password" stdset="0">
-        <string/>
-       </property>
-       <property name="protectedPassword" stdset="0">
-        <string/>
-       </property>
-       <property name="showConfirmDialog" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="confirmMessage" stdset="0">
-        <string>Are you sure you want to proceed?</string>
-       </property>
-       <property name="pressValue" stdset="0">
-        <string>None</string>
-       </property>
-       <property name="releaseValue" stdset="0">
-        <string>None</string>
-       </property>
-       <property name="relativeChange" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="writeWhenRelease" stdset="0">
-        <bool>false</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="1">
-      <widget class="PyDMPushButton" name="PyDMPushButton_10">
-       <property name="toolTip">
-        <string/>
-       </property>
-       <property name="text">
-        <string>9</string>
-       </property>
-       <property name="alarmSensitiveContent" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="alarmSensitiveBorder" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="PyDMToolTip" stdset="0">
-        <string/>
-       </property>
-       <property name="monitorDisp" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="channel" stdset="0">
-        <string>haven://samples[9]</string>
-       </property>
-       <property name="PyDMIcon" stdset="0">
-        <string/>
-       </property>
-       <property name="passwordProtected" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="password" stdset="0">
-        <string/>
-       </property>
-       <property name="protectedPassword" stdset="0">
-        <string/>
-       </property>
-       <property name="showConfirmDialog" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="confirmMessage" stdset="0">
-        <string>Are you sure you want to proceed?</string>
-       </property>
-       <property name="pressValue" stdset="0">
-        <string>None</string>
-       </property>
-       <property name="releaseValue" stdset="0">
-        <string>None</string>
-       </property>
-       <property name="relativeChange" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="writeWhenRelease" stdset="0">
-        <bool>false</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="1">
-      <widget class="PyDMPushButton" name="PyDMPushButton_11">
-       <property name="toolTip">
-        <string/>
-       </property>
-       <property name="text">
-        <string>8</string>
-       </property>
-       <property name="alarmSensitiveContent" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="alarmSensitiveBorder" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="PyDMToolTip" stdset="0">
-        <string/>
-       </property>
-       <property name="monitorDisp" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="channel" stdset="0">
-        <string>haven://samples[8]</string>
-       </property>
-       <property name="PyDMIcon" stdset="0">
-        <string/>
-       </property>
-       <property name="passwordProtected" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="password" stdset="0">
-        <string/>
-       </property>
-       <property name="protectedPassword" stdset="0">
-        <string/>
-       </property>
-       <property name="showConfirmDialog" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="confirmMessage" stdset="0">
-        <string>Are you sure you want to proceed?</string>
-       </property>
-       <property name="pressValue" stdset="0">
-        <string>None</string>
-       </property>
-       <property name="releaseValue" stdset="0">
-        <string>None</string>
-       </property>
-       <property name="relativeChange" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="writeWhenRelease" stdset="0">
-        <bool>false</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="4" column="2">
-      <widget class="PyDMPushButton" name="PyDMPushButton_18">
-       <property name="toolTip">
-        <string/>
-       </property>
-       <property name="text">
-        <string>13</string>
-       </property>
-       <property name="alarmSensitiveContent" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="alarmSensitiveBorder" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="PyDMToolTip" stdset="0">
-        <string/>
-       </property>
-       <property name="monitorDisp" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="channel" stdset="0">
-        <string>haven://samples[13]</string>
-       </property>
-       <property name="PyDMIcon" stdset="0">
-        <string/>
-       </property>
-       <property name="passwordProtected" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="password" stdset="0">
-        <string/>
-       </property>
-       <property name="protectedPassword" stdset="0">
-        <string/>
-       </property>
-       <property name="showConfirmDialog" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="confirmMessage" stdset="0">
-        <string>Are you sure you want to proceed?</string>
-       </property>
-       <property name="pressValue" stdset="0">
-        <string>None</string>
-       </property>
-       <property name="releaseValue" stdset="0">
-        <string>None</string>
-       </property>
-       <property name="relativeChange" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="writeWhenRelease" stdset="0">
-        <bool>false</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="0">
-      <widget class="PyDMPushButton" name="PyDMPushButton_4">
-       <property name="toolTip">
-        <string/>
-       </property>
-       <property name="text">
-        <string>3</string>
-       </property>
-       <property name="alarmSensitiveContent" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="alarmSensitiveBorder" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="PyDMToolTip" stdset="0">
-        <string/>
-       </property>
-       <property name="monitorDisp" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="channel" stdset="0">
-        <string>haven://samples[3]</string>
-       </property>
-       <property name="PyDMIcon" stdset="0">
-        <string/>
-       </property>
-       <property name="passwordProtected" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="password" stdset="0">
-        <string/>
-       </property>
-       <property name="protectedPassword" stdset="0">
-        <string/>
-       </property>
-       <property name="showConfirmDialog" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="confirmMessage" stdset="0">
-        <string>Are you sure you want to proceed?</string>
-       </property>
-       <property name="pressValue" stdset="0">
-        <string>None</string>
-       </property>
-       <property name="releaseValue" stdset="0">
-        <string>None</string>
-       </property>
-       <property name="relativeChange" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="writeWhenRelease" stdset="0">
-        <bool>false</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="5" column="3">
-      <widget class="PyDMPushButton" name="PyDMPushButton_25">
-       <property name="toolTip">
-        <string/>
-       </property>
-       <property name="text">
-        <string>18</string>
-       </property>
-       <property name="alarmSensitiveContent" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="alarmSensitiveBorder" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="PyDMToolTip" stdset="0">
-        <string/>
-       </property>
-       <property name="monitorDisp" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="channel" stdset="0">
-        <string>haven://samples[18]</string>
-       </property>
-       <property name="PyDMIcon" stdset="0">
-        <string/>
-       </property>
-       <property name="passwordProtected" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="password" stdset="0">
-        <string/>
-       </property>
-       <property name="protectedPassword" stdset="0">
-        <string/>
-       </property>
-       <property name="showConfirmDialog" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="confirmMessage" stdset="0">
-        <string>Are you sure you want to proceed?</string>
-       </property>
-       <property name="pressValue" stdset="0">
-        <string>None</string>
-       </property>
-       <property name="releaseValue" stdset="0">
-        <string>None</string>
-       </property>
-       <property name="relativeChange" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="writeWhenRelease" stdset="0">
-        <bool>false</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="0">
-      <widget class="PyDMPushButton" name="PyDMPushButton_2">
+     <item>
+      <widget class="QSpinBox" name="num_motor_spin_box">
        <property name="enabled">
         <bool>true</bool>
        </property>
-       <property name="toolTip">
-        <string/>
-       </property>
-       <property name="text">
-        <string>5</string>
-       </property>
-       <property name="alarmSensitiveContent" stdset="0">
+       <property name="wrapping">
         <bool>false</bool>
        </property>
-       <property name="alarmSensitiveBorder" stdset="0">
+       <property name="readOnly">
         <bool>false</bool>
        </property>
-       <property name="PyDMToolTip" stdset="0">
-        <string/>
+       <property name="correctionMode">
+        <enum>QAbstractSpinBox::CorrectToNearestValue</enum>
        </property>
-       <property name="monitorDisp" stdset="0">
-        <bool>false</bool>
+       <property name="minimum">
+        <number>1</number>
        </property>
-       <property name="channel" stdset="0">
-        <string>haven://samples[5]</string>
+       <property name="value">
+        <number>1</number>
        </property>
-       <property name="PyDMIcon" stdset="0">
-        <string/>
-       </property>
-       <property name="passwordProtected" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="password" stdset="0">
-        <string/>
-       </property>
-       <property name="protectedPassword" stdset="0">
-        <string/>
-       </property>
-       <property name="showConfirmDialog" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="confirmMessage" stdset="0">
-        <string>Are you sure you want to proceed?</string>
-       </property>
-       <property name="pressValue" stdset="0">
-        <string>None</string>
-       </property>
-       <property name="releaseValue" stdset="0">
-        <string>None</string>
-       </property>
-       <property name="relativeChange" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="writeWhenRelease" stdset="0">
-        <bool>false</bool>
+       <property name="displayIntegerBase">
+        <number>10</number>
        </property>
       </widget>
      </item>
-     <item row="5" column="2">
-      <widget class="PyDMPushButton" name="PyDMPushButton_19">
-       <property name="toolTip">
-        <string/>
+     <item>
+      <spacer name="horizontalSpacer_3">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>490</width>
+         <height>52</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QLabel" name="sample_holder_label">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
        </property>
        <property name="text">
-        <string>12</string>
-       </property>
-       <property name="alarmSensitiveContent" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="alarmSensitiveBorder" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="PyDMToolTip" stdset="0">
-        <string/>
-       </property>
-       <property name="monitorDisp" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="channel" stdset="0">
-        <string>haven://samples[12]</string>
-       </property>
-       <property name="PyDMIcon" stdset="0">
-        <string/>
-       </property>
-       <property name="passwordProtected" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="password" stdset="0">
-        <string/>
-       </property>
-       <property name="protectedPassword" stdset="0">
-        <string/>
-       </property>
-       <property name="showConfirmDialog" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="confirmMessage" stdset="0">
-        <string>Are you sure you want to proceed?</string>
-       </property>
-       <property name="pressValue" stdset="0">
-        <string>None</string>
-       </property>
-       <property name="releaseValue" stdset="0">
-        <string>None</string>
-       </property>
-       <property name="relativeChange" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="writeWhenRelease" stdset="0">
-        <bool>false</bool>
+        <string>Sample holder</string>
        </property>
       </widget>
      </item>
-     <item row="1" column="1">
-      <widget class="PyDMPushButton" name="PyDMPushButton_9">
-       <property name="toolTip">
-        <string/>
+     <item>
+      <widget class="QSpinBox" name="sample_holder_spin_box">
+       <property name="enabled">
+        <bool>true</bool>
        </property>
-       <property name="text">
-        <string>10</string>
-       </property>
-       <property name="alarmSensitiveContent" stdset="0">
+       <property name="wrapping">
         <bool>false</bool>
        </property>
-       <property name="alarmSensitiveBorder" stdset="0">
+       <property name="readOnly">
         <bool>false</bool>
        </property>
-       <property name="PyDMToolTip" stdset="0">
-        <string/>
+       <property name="correctionMode">
+        <enum>QAbstractSpinBox::CorrectToNearestValue</enum>
        </property>
-       <property name="monitorDisp" stdset="0">
-        <bool>false</bool>
+       <property name="minimum">
+        <number>1</number>
        </property>
-       <property name="channel" stdset="0">
-        <string>haven://samples[10]</string>
+       <property name="value">
+        <number>1</number>
        </property>
-       <property name="PyDMIcon" stdset="0">
-        <string/>
-       </property>
-       <property name="passwordProtected" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="password" stdset="0">
-        <string/>
-       </property>
-       <property name="protectedPassword" stdset="0">
-        <string/>
-       </property>
-       <property name="showConfirmDialog" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="confirmMessage" stdset="0">
-        <string>Are you sure you want to proceed?</string>
-       </property>
-       <property name="pressValue" stdset="0">
-        <string>None</string>
-       </property>
-       <property name="releaseValue" stdset="0">
-        <string>None</string>
-       </property>
-       <property name="relativeChange" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="writeWhenRelease" stdset="0">
-        <bool>false</bool>
+       <property name="displayIntegerBase">
+        <number>10</number>
        </property>
       </widget>
      </item>
-     <item row="3" column="0">
-      <widget class="PyDMPushButton" name="PyDMPushButton_5">
-       <property name="toolTip">
-        <string/>
+    </layout>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_3">
+     <item>
+      <spacer name="horizontalSpacer_2">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
        </property>
-       <property name="text">
-        <string>2</string>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
        </property>
-       <property name="alarmSensitiveContent" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="alarmSensitiveBorder" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="PyDMToolTip" stdset="0">
-        <string/>
-       </property>
-       <property name="monitorDisp" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="channel" stdset="0">
-        <string>haven://samples[2]</string>
-       </property>
-       <property name="PyDMIcon" stdset="0">
-        <string/>
-       </property>
-       <property name="passwordProtected" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="password" stdset="0">
-        <string/>
-       </property>
-       <property name="protectedPassword" stdset="0">
-        <string/>
-       </property>
-       <property name="showConfirmDialog" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="confirmMessage" stdset="0">
-        <string>Are you sure you want to proceed?</string>
-       </property>
-       <property name="pressValue" stdset="0">
-        <string>None</string>
-       </property>
-       <property name="releaseValue" stdset="0">
-        <string>None</string>
-       </property>
-       <property name="relativeChange" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="writeWhenRelease" stdset="0">
-        <bool>false</bool>
-       </property>
-      </widget>
+      </spacer>
      </item>
-     <item row="4" column="0">
-      <widget class="PyDMPushButton" name="PyDMPushButton_6">
-       <property name="toolTip">
-        <string/>
-       </property>
-       <property name="text">
-        <string>1</string>
-       </property>
-       <property name="alarmSensitiveContent" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="alarmSensitiveBorder" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="PyDMToolTip" stdset="0">
-        <string/>
-       </property>
-       <property name="monitorDisp" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="channel" stdset="0">
-        <string>haven://samples[1]</string>
-       </property>
-       <property name="PyDMIcon" stdset="0">
-        <string/>
-       </property>
-       <property name="passwordProtected" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="password" stdset="0">
-        <string/>
-       </property>
-       <property name="protectedPassword" stdset="0">
-        <string/>
-       </property>
-       <property name="showConfirmDialog" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="confirmMessage" stdset="0">
-        <string>Are you sure you want to proceed?</string>
-       </property>
-       <property name="pressValue" stdset="0">
-        <string>None</string>
-       </property>
-       <property name="releaseValue" stdset="0">
-        <string>None</string>
-       </property>
-       <property name="relativeChange" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="writeWhenRelease" stdset="0">
-        <bool>false</bool>
-       </property>
-      </widget>
+     <item>
+      <layout class="QVBoxLayout" name="regions_layout"/>
      </item>
-     <item row="1" column="2">
-      <widget class="PyDMPushButton" name="PyDMPushButton_15">
-       <property name="toolTip">
-        <string/>
-       </property>
-       <property name="text">
-        <string>16</string>
-       </property>
-       <property name="alarmSensitiveContent" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="alarmSensitiveBorder" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="PyDMToolTip" stdset="0">
-        <string/>
-       </property>
-       <property name="monitorDisp" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="channel" stdset="0">
-        <string>haven://samples[16]</string>
-       </property>
-       <property name="PyDMIcon" stdset="0">
-        <string/>
-       </property>
-       <property name="passwordProtected" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="password" stdset="0">
-        <string/>
-       </property>
-       <property name="protectedPassword" stdset="0">
-        <string/>
-       </property>
-       <property name="showConfirmDialog" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="confirmMessage" stdset="0">
-        <string>Are you sure you want to proceed?</string>
-       </property>
-       <property name="pressValue" stdset="0">
-        <string>None</string>
-       </property>
-       <property name="releaseValue" stdset="0">
-        <string>None</string>
-       </property>
-       <property name="relativeChange" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="writeWhenRelease" stdset="0">
-        <bool>false</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="3">
-      <widget class="PyDMPushButton" name="PyDMPushButton_21">
-       <property name="toolTip">
-        <string/>
-       </property>
-       <property name="text">
-        <string>22</string>
-       </property>
-       <property name="alarmSensitiveContent" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="alarmSensitiveBorder" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="PyDMToolTip" stdset="0">
-        <string/>
-       </property>
-       <property name="monitorDisp" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="channel" stdset="0">
-        <string>haven://samples[22]</string>
-       </property>
-       <property name="PyDMIcon" stdset="0">
-        <string/>
-       </property>
-       <property name="passwordProtected" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="password" stdset="0">
-        <string/>
-       </property>
-       <property name="protectedPassword" stdset="0">
-        <string/>
-       </property>
-       <property name="showConfirmDialog" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="confirmMessage" stdset="0">
-        <string>Are you sure you want to proceed?</string>
-       </property>
-       <property name="pressValue" stdset="0">
-        <string>None</string>
-       </property>
-       <property name="releaseValue" stdset="0">
-        <string>None</string>
-       </property>
-       <property name="relativeChange" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="writeWhenRelease" stdset="0">
-        <bool>false</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="2">
-      <widget class="PyDMPushButton" name="PyDMPushButton_16">
-       <property name="toolTip">
-        <string/>
-       </property>
-       <property name="text">
-        <string>15</string>
-       </property>
-       <property name="alarmSensitiveContent" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="alarmSensitiveBorder" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="PyDMToolTip" stdset="0">
-        <string/>
-       </property>
-       <property name="monitorDisp" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="channel" stdset="0">
-        <string>haven://samples[15]</string>
-       </property>
-       <property name="PyDMIcon" stdset="0">
-        <string/>
-       </property>
-       <property name="passwordProtected" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="password" stdset="0">
-        <string/>
-       </property>
-       <property name="protectedPassword" stdset="0">
-        <string/>
-       </property>
-       <property name="showConfirmDialog" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="confirmMessage" stdset="0">
-        <string>Are you sure you want to proceed?</string>
-       </property>
-       <property name="pressValue" stdset="0">
-        <string>None</string>
-       </property>
-       <property name="releaseValue" stdset="0">
-        <string>None</string>
-       </property>
-       <property name="relativeChange" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="writeWhenRelease" stdset="0">
-        <bool>false</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="2">
-      <widget class="PyDMPushButton" name="PyDMPushButton_17">
-       <property name="toolTip">
-        <string/>
-       </property>
-       <property name="text">
-        <string>14</string>
-       </property>
-       <property name="alarmSensitiveContent" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="alarmSensitiveBorder" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="PyDMToolTip" stdset="0">
-        <string/>
-       </property>
-       <property name="monitorDisp" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="channel" stdset="0">
-        <string>haven://samples[14]</string>
-       </property>
-       <property name="PyDMIcon" stdset="0">
-        <string/>
-       </property>
-       <property name="passwordProtected" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="password" stdset="0">
-        <string/>
-       </property>
-       <property name="protectedPassword" stdset="0">
-        <string/>
-       </property>
-       <property name="showConfirmDialog" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="confirmMessage" stdset="0">
-        <string>Are you sure you want to proceed?</string>
-       </property>
-       <property name="pressValue" stdset="0">
-        <string>None</string>
-       </property>
-       <property name="releaseValue" stdset="0">
-        <string>None</string>
-       </property>
-       <property name="relativeChange" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="writeWhenRelease" stdset="0">
-        <bool>false</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="4" column="1">
-      <widget class="PyDMPushButton" name="PyDMPushButton_12">
-       <property name="toolTip">
-        <string/>
-       </property>
-       <property name="text">
-        <string>7</string>
-       </property>
-       <property name="alarmSensitiveContent" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="alarmSensitiveBorder" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="PyDMToolTip" stdset="0">
-        <string/>
-       </property>
-       <property name="monitorDisp" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="channel" stdset="0">
-        <string>haven://samples[7]</string>
-       </property>
-       <property name="PyDMIcon" stdset="0">
-        <string/>
-       </property>
-       <property name="passwordProtected" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="password" stdset="0">
-        <string/>
-       </property>
-       <property name="protectedPassword" stdset="0">
-        <string/>
-       </property>
-       <property name="showConfirmDialog" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="confirmMessage" stdset="0">
-        <string>Are you sure you want to proceed?</string>
-       </property>
-       <property name="pressValue" stdset="0">
-        <string>None</string>
-       </property>
-       <property name="releaseValue" stdset="0">
-        <string>None</string>
-       </property>
-       <property name="relativeChange" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="writeWhenRelease" stdset="0">
-        <bool>false</bool>
-       </property>
-      </widget>
+     <item>
+      <layout class="QGridLayout" name="gridLayout_5">
+       <property name="topMargin">
+        <number>24</number>
+       </property>
+       <property name="bottomMargin">
+        <number>24</number>
+       </property>
+       <property name="horizontalSpacing">
+        <number>48</number>
+       </property>
+       <property name="verticalSpacing">
+        <number>24</number>
+       </property>
+       <item row="3" column="3">
+        <widget class="PyDMPushButton" name="PyDMPushButton_50">
+         <property name="toolTip">
+          <string/>
+         </property>
+         <property name="text">
+          <string>20</string>
+         </property>
+         <property name="alarmSensitiveContent" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="alarmSensitiveBorder" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="PyDMToolTip" stdset="0">
+          <string/>
+         </property>
+         <property name="monitorDisp" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="channel" stdset="0">
+          <string>haven://samples[20]</string>
+         </property>
+         <property name="PyDMIcon" stdset="0">
+          <string/>
+         </property>
+         <property name="passwordProtected" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="password" stdset="0">
+          <string/>
+         </property>
+         <property name="protectedPassword" stdset="0">
+          <string/>
+         </property>
+         <property name="showConfirmDialog" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="confirmMessage" stdset="0">
+          <string>Are you sure you want to proceed?</string>
+         </property>
+         <property name="pressValue" stdset="0">
+          <string>None</string>
+         </property>
+         <property name="releaseValue" stdset="0">
+          <string>None</string>
+         </property>
+         <property name="relativeChange" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="writeWhenRelease" stdset="0">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="PyDMPushButton" name="PyDMPushButton_51">
+         <property name="toolTip">
+          <string/>
+         </property>
+         <property name="text">
+          <string>4</string>
+         </property>
+         <property name="alarmSensitiveContent" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="alarmSensitiveBorder" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="PyDMToolTip" stdset="0">
+          <string/>
+         </property>
+         <property name="monitorDisp" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="channel" stdset="0">
+          <string>haven://samples[4]</string>
+         </property>
+         <property name="PyDMIcon" stdset="0">
+          <string/>
+         </property>
+         <property name="passwordProtected" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="password" stdset="0">
+          <string/>
+         </property>
+         <property name="protectedPassword" stdset="0">
+          <string/>
+         </property>
+         <property name="showConfirmDialog" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="confirmMessage" stdset="0">
+          <string>Are you sure you want to proceed?</string>
+         </property>
+         <property name="pressValue" stdset="0">
+          <string>None</string>
+         </property>
+         <property name="releaseValue" stdset="0">
+          <string>None</string>
+         </property>
+         <property name="relativeChange" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="writeWhenRelease" stdset="0">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="3">
+        <widget class="PyDMPushButton" name="PyDMPushButton_52">
+         <property name="toolTip">
+          <string/>
+         </property>
+         <property name="text">
+          <string>18</string>
+         </property>
+         <property name="alarmSensitiveContent" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="alarmSensitiveBorder" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="PyDMToolTip" stdset="0">
+          <string/>
+         </property>
+         <property name="monitorDisp" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="channel" stdset="0">
+          <string>haven://samples[18]</string>
+         </property>
+         <property name="PyDMIcon" stdset="0">
+          <string/>
+         </property>
+         <property name="passwordProtected" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="password" stdset="0">
+          <string/>
+         </property>
+         <property name="protectedPassword" stdset="0">
+          <string/>
+         </property>
+         <property name="showConfirmDialog" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="confirmMessage" stdset="0">
+          <string>Are you sure you want to proceed?</string>
+         </property>
+         <property name="pressValue" stdset="0">
+          <string>None</string>
+         </property>
+         <property name="releaseValue" stdset="0">
+          <string>None</string>
+         </property>
+         <property name="relativeChange" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="writeWhenRelease" stdset="0">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="1">
+        <widget class="PyDMPushButton" name="PyDMPushButton_53">
+         <property name="toolTip">
+          <string/>
+         </property>
+         <property name="text">
+          <string>7</string>
+         </property>
+         <property name="alarmSensitiveContent" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="alarmSensitiveBorder" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="PyDMToolTip" stdset="0">
+          <string/>
+         </property>
+         <property name="monitorDisp" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="channel" stdset="0">
+          <string>haven://samples[7]</string>
+         </property>
+         <property name="PyDMIcon" stdset="0">
+          <string/>
+         </property>
+         <property name="passwordProtected" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="password" stdset="0">
+          <string/>
+         </property>
+         <property name="protectedPassword" stdset="0">
+          <string/>
+         </property>
+         <property name="showConfirmDialog" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="confirmMessage" stdset="0">
+          <string>Are you sure you want to proceed?</string>
+         </property>
+         <property name="pressValue" stdset="0">
+          <string>None</string>
+         </property>
+         <property name="releaseValue" stdset="0">
+          <string>None</string>
+         </property>
+         <property name="relativeChange" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="writeWhenRelease" stdset="0">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="0">
+        <widget class="PyDMPushButton" name="PyDMPushButton_54">
+         <property name="toolTip">
+          <string/>
+         </property>
+         <property name="text">
+          <string>0</string>
+         </property>
+         <property name="alarmSensitiveContent" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="alarmSensitiveBorder" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="PyDMToolTip" stdset="0">
+          <string/>
+         </property>
+         <property name="monitorDisp" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="channel" stdset="0">
+          <string>haven:\\samples[0]</string>
+         </property>
+         <property name="PyDMIcon" stdset="0">
+          <string/>
+         </property>
+         <property name="passwordProtected" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="password" stdset="0">
+          <string/>
+         </property>
+         <property name="protectedPassword" stdset="0">
+          <string/>
+         </property>
+         <property name="showConfirmDialog" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="confirmMessage" stdset="0">
+          <string>Are you sure you want to proceed?</string>
+         </property>
+         <property name="pressValue" stdset="0">
+          <string>None</string>
+         </property>
+         <property name="releaseValue" stdset="0">
+          <string>None</string>
+         </property>
+         <property name="relativeChange" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="writeWhenRelease" stdset="0">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="1">
+        <widget class="PyDMPushButton" name="PyDMPushButton_55">
+         <property name="toolTip">
+          <string/>
+         </property>
+         <property name="text">
+          <string>8</string>
+         </property>
+         <property name="alarmSensitiveContent" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="alarmSensitiveBorder" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="PyDMToolTip" stdset="0">
+          <string/>
+         </property>
+         <property name="monitorDisp" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="channel" stdset="0">
+          <string>haven://samples[8]</string>
+         </property>
+         <property name="PyDMIcon" stdset="0">
+          <string/>
+         </property>
+         <property name="passwordProtected" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="password" stdset="0">
+          <string/>
+         </property>
+         <property name="protectedPassword" stdset="0">
+          <string/>
+         </property>
+         <property name="showConfirmDialog" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="confirmMessage" stdset="0">
+          <string>Are you sure you want to proceed?</string>
+         </property>
+         <property name="pressValue" stdset="0">
+          <string>None</string>
+         </property>
+         <property name="releaseValue" stdset="0">
+          <string>None</string>
+         </property>
+         <property name="relativeChange" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="writeWhenRelease" stdset="0">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="2">
+        <widget class="PyDMPushButton" name="PyDMPushButton_56">
+         <property name="toolTip">
+          <string/>
+         </property>
+         <property name="text">
+          <string>15</string>
+         </property>
+         <property name="alarmSensitiveContent" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="alarmSensitiveBorder" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="PyDMToolTip" stdset="0">
+          <string/>
+         </property>
+         <property name="monitorDisp" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="channel" stdset="0">
+          <string>haven://samples[15]</string>
+         </property>
+         <property name="PyDMIcon" stdset="0">
+          <string/>
+         </property>
+         <property name="passwordProtected" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="password" stdset="0">
+          <string/>
+         </property>
+         <property name="protectedPassword" stdset="0">
+          <string/>
+         </property>
+         <property name="showConfirmDialog" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="confirmMessage" stdset="0">
+          <string>Are you sure you want to proceed?</string>
+         </property>
+         <property name="pressValue" stdset="0">
+          <string>None</string>
+         </property>
+         <property name="releaseValue" stdset="0">
+          <string>None</string>
+         </property>
+         <property name="relativeChange" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="writeWhenRelease" stdset="0">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="2">
+        <widget class="PyDMPushButton" name="PyDMPushButton_57">
+         <property name="toolTip">
+          <string/>
+         </property>
+         <property name="text">
+          <string>13</string>
+         </property>
+         <property name="alarmSensitiveContent" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="alarmSensitiveBorder" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="PyDMToolTip" stdset="0">
+          <string/>
+         </property>
+         <property name="monitorDisp" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="channel" stdset="0">
+          <string>haven://samples[13]</string>
+         </property>
+         <property name="PyDMIcon" stdset="0">
+          <string/>
+         </property>
+         <property name="passwordProtected" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="password" stdset="0">
+          <string/>
+         </property>
+         <property name="protectedPassword" stdset="0">
+          <string/>
+         </property>
+         <property name="showConfirmDialog" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="confirmMessage" stdset="0">
+          <string>Are you sure you want to proceed?</string>
+         </property>
+         <property name="pressValue" stdset="0">
+          <string>None</string>
+         </property>
+         <property name="releaseValue" stdset="0">
+          <string>None</string>
+         </property>
+         <property name="relativeChange" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="writeWhenRelease" stdset="0">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="0">
+        <widget class="PyDMPushButton" name="PyDMPushButton_58">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+         <property name="toolTip">
+          <string/>
+         </property>
+         <property name="text">
+          <string>5</string>
+         </property>
+         <property name="alarmSensitiveContent" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="alarmSensitiveBorder" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="PyDMToolTip" stdset="0">
+          <string/>
+         </property>
+         <property name="monitorDisp" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="channel" stdset="0">
+          <string>haven://samples[5]</string>
+         </property>
+         <property name="PyDMIcon" stdset="0">
+          <string/>
+         </property>
+         <property name="passwordProtected" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="password" stdset="0">
+          <string/>
+         </property>
+         <property name="protectedPassword" stdset="0">
+          <string/>
+         </property>
+         <property name="showConfirmDialog" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="confirmMessage" stdset="0">
+          <string>Are you sure you want to proceed?</string>
+         </property>
+         <property name="pressValue" stdset="0">
+          <string>None</string>
+         </property>
+         <property name="releaseValue" stdset="0">
+          <string>None</string>
+         </property>
+         <property name="relativeChange" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="writeWhenRelease" stdset="0">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="3">
+        <widget class="PyDMPushButton" name="PyDMPushButton_59">
+         <property name="toolTip">
+          <string/>
+         </property>
+         <property name="text">
+          <string>22</string>
+         </property>
+         <property name="alarmSensitiveContent" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="alarmSensitiveBorder" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="PyDMToolTip" stdset="0">
+          <string/>
+         </property>
+         <property name="monitorDisp" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="channel" stdset="0">
+          <string>haven://samples[22]</string>
+         </property>
+         <property name="PyDMIcon" stdset="0">
+          <string/>
+         </property>
+         <property name="passwordProtected" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="password" stdset="0">
+          <string/>
+         </property>
+         <property name="protectedPassword" stdset="0">
+          <string/>
+         </property>
+         <property name="showConfirmDialog" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="confirmMessage" stdset="0">
+          <string>Are you sure you want to proceed?</string>
+         </property>
+         <property name="pressValue" stdset="0">
+          <string>None</string>
+         </property>
+         <property name="releaseValue" stdset="0">
+          <string>None</string>
+         </property>
+         <property name="relativeChange" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="writeWhenRelease" stdset="0">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0">
+        <widget class="PyDMPushButton" name="PyDMPushButton_60">
+         <property name="toolTip">
+          <string/>
+         </property>
+         <property name="text">
+          <string>3</string>
+         </property>
+         <property name="alarmSensitiveContent" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="alarmSensitiveBorder" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="PyDMToolTip" stdset="0">
+          <string/>
+         </property>
+         <property name="monitorDisp" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="channel" stdset="0">
+          <string>haven://samples[3]</string>
+         </property>
+         <property name="PyDMIcon" stdset="0">
+          <string/>
+         </property>
+         <property name="passwordProtected" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="password" stdset="0">
+          <string/>
+         </property>
+         <property name="protectedPassword" stdset="0">
+          <string/>
+         </property>
+         <property name="showConfirmDialog" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="confirmMessage" stdset="0">
+          <string>Are you sure you want to proceed?</string>
+         </property>
+         <property name="pressValue" stdset="0">
+          <string>None</string>
+         </property>
+         <property name="releaseValue" stdset="0">
+          <string>None</string>
+         </property>
+         <property name="relativeChange" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="writeWhenRelease" stdset="0">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="1">
+        <widget class="PyDMPushButton" name="PyDMPushButton_61">
+         <property name="toolTip">
+          <string/>
+         </property>
+         <property name="text">
+          <string>6</string>
+         </property>
+         <property name="alarmSensitiveContent" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="alarmSensitiveBorder" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="PyDMToolTip" stdset="0">
+          <string/>
+         </property>
+         <property name="monitorDisp" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="channel" stdset="0">
+          <string>haven://samples[6]</string>
+         </property>
+         <property name="PyDMIcon" stdset="0">
+          <string/>
+         </property>
+         <property name="passwordProtected" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="password" stdset="0">
+          <string/>
+         </property>
+         <property name="protectedPassword" stdset="0">
+          <string/>
+         </property>
+         <property name="showConfirmDialog" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="confirmMessage" stdset="0">
+          <string>Are you sure you want to proceed?</string>
+         </property>
+         <property name="pressValue" stdset="0">
+          <string>None</string>
+         </property>
+         <property name="releaseValue" stdset="0">
+          <string>None</string>
+         </property>
+         <property name="relativeChange" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="writeWhenRelease" stdset="0">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="3">
+        <widget class="PyDMPushButton" name="PyDMPushButton_62">
+         <property name="toolTip">
+          <string/>
+         </property>
+         <property name="text">
+          <string>23</string>
+         </property>
+         <property name="alarmSensitiveContent" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="alarmSensitiveBorder" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="PyDMToolTip" stdset="0">
+          <string/>
+         </property>
+         <property name="monitorDisp" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="channel" stdset="0">
+          <string>haven://samples[23]</string>
+         </property>
+         <property name="PyDMIcon" stdset="0">
+          <string/>
+         </property>
+         <property name="passwordProtected" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="password" stdset="0">
+          <string/>
+         </property>
+         <property name="protectedPassword" stdset="0">
+          <string/>
+         </property>
+         <property name="showConfirmDialog" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="confirmMessage" stdset="0">
+          <string>Are you sure you want to proceed?</string>
+         </property>
+         <property name="pressValue" stdset="0">
+          <string>None</string>
+         </property>
+         <property name="releaseValue" stdset="0">
+          <string>None</string>
+         </property>
+         <property name="relativeChange" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="writeWhenRelease" stdset="0">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="PyDMPushButton" name="PyDMPushButton_63">
+         <property name="toolTip">
+          <string/>
+         </property>
+         <property name="text">
+          <string>11</string>
+         </property>
+         <property name="alarmSensitiveContent" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="alarmSensitiveBorder" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="PyDMToolTip" stdset="0">
+          <string/>
+         </property>
+         <property name="monitorDisp" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="channel" stdset="0">
+          <string>haven://samples[11]</string>
+         </property>
+         <property name="PyDMIcon" stdset="0">
+          <string/>
+         </property>
+         <property name="passwordProtected" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="password" stdset="0">
+          <string/>
+         </property>
+         <property name="protectedPassword" stdset="0">
+          <string/>
+         </property>
+         <property name="showConfirmDialog" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="confirmMessage" stdset="0">
+          <string>Are you sure you want to proceed?</string>
+         </property>
+         <property name="pressValue" stdset="0">
+          <string>None</string>
+         </property>
+         <property name="releaseValue" stdset="0">
+          <string>None</string>
+         </property>
+         <property name="relativeChange" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="writeWhenRelease" stdset="0">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="0">
+        <widget class="PyDMPushButton" name="PyDMPushButton_64">
+         <property name="toolTip">
+          <string/>
+         </property>
+         <property name="text">
+          <string>2</string>
+         </property>
+         <property name="alarmSensitiveContent" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="alarmSensitiveBorder" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="PyDMToolTip" stdset="0">
+          <string/>
+         </property>
+         <property name="monitorDisp" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="channel" stdset="0">
+          <string>haven://samples[2]</string>
+         </property>
+         <property name="PyDMIcon" stdset="0">
+          <string/>
+         </property>
+         <property name="passwordProtected" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="password" stdset="0">
+          <string/>
+         </property>
+         <property name="protectedPassword" stdset="0">
+          <string/>
+         </property>
+         <property name="showConfirmDialog" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="confirmMessage" stdset="0">
+          <string>Are you sure you want to proceed?</string>
+         </property>
+         <property name="pressValue" stdset="0">
+          <string>None</string>
+         </property>
+         <property name="releaseValue" stdset="0">
+          <string>None</string>
+         </property>
+         <property name="relativeChange" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="writeWhenRelease" stdset="0">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="2">
+        <widget class="PyDMPushButton" name="PyDMPushButton_65">
+         <property name="toolTip">
+          <string/>
+         </property>
+         <property name="text">
+          <string>12</string>
+         </property>
+         <property name="alarmSensitiveContent" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="alarmSensitiveBorder" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="PyDMToolTip" stdset="0">
+          <string/>
+         </property>
+         <property name="monitorDisp" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="channel" stdset="0">
+          <string>haven://samples[12]</string>
+         </property>
+         <property name="PyDMIcon" stdset="0">
+          <string/>
+         </property>
+         <property name="passwordProtected" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="password" stdset="0">
+          <string/>
+         </property>
+         <property name="protectedPassword" stdset="0">
+          <string/>
+         </property>
+         <property name="showConfirmDialog" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="confirmMessage" stdset="0">
+          <string>Are you sure you want to proceed?</string>
+         </property>
+         <property name="pressValue" stdset="0">
+          <string>None</string>
+         </property>
+         <property name="releaseValue" stdset="0">
+          <string>None</string>
+         </property>
+         <property name="relativeChange" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="writeWhenRelease" stdset="0">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="2">
+        <widget class="PyDMPushButton" name="PyDMPushButton_66">
+         <property name="toolTip">
+          <string/>
+         </property>
+         <property name="text">
+          <string>17</string>
+         </property>
+         <property name="alarmSensitiveContent" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="alarmSensitiveBorder" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="PyDMToolTip" stdset="0">
+          <string/>
+         </property>
+         <property name="monitorDisp" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="channel" stdset="0">
+          <string>haven://samples[17]</string>
+         </property>
+         <property name="PyDMIcon" stdset="0">
+          <string/>
+         </property>
+         <property name="passwordProtected" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="password" stdset="0">
+          <string/>
+         </property>
+         <property name="protectedPassword" stdset="0">
+          <string/>
+         </property>
+         <property name="showConfirmDialog" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="confirmMessage" stdset="0">
+          <string>Are you sure you want to proceed?</string>
+         </property>
+         <property name="pressValue" stdset="0">
+          <string>None</string>
+         </property>
+         <property name="releaseValue" stdset="0">
+          <string>None</string>
+         </property>
+         <property name="relativeChange" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="writeWhenRelease" stdset="0">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="3">
+        <widget class="PyDMPushButton" name="PyDMPushButton_67">
+         <property name="toolTip">
+          <string/>
+         </property>
+         <property name="text">
+          <string>21</string>
+         </property>
+         <property name="alarmSensitiveContent" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="alarmSensitiveBorder" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="PyDMToolTip" stdset="0">
+          <string/>
+         </property>
+         <property name="monitorDisp" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="channel" stdset="0">
+          <string>haven://samples[21]</string>
+         </property>
+         <property name="PyDMIcon" stdset="0">
+          <string/>
+         </property>
+         <property name="passwordProtected" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="password" stdset="0">
+          <string/>
+         </property>
+         <property name="protectedPassword" stdset="0">
+          <string/>
+         </property>
+         <property name="showConfirmDialog" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="confirmMessage" stdset="0">
+          <string>Are you sure you want to proceed?</string>
+         </property>
+         <property name="pressValue" stdset="0">
+          <string>None</string>
+         </property>
+         <property name="releaseValue" stdset="0">
+          <string>None</string>
+         </property>
+         <property name="relativeChange" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="writeWhenRelease" stdset="0">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1">
+        <widget class="PyDMPushButton" name="PyDMPushButton_68">
+         <property name="toolTip">
+          <string/>
+         </property>
+         <property name="text">
+          <string>9</string>
+         </property>
+         <property name="alarmSensitiveContent" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="alarmSensitiveBorder" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="PyDMToolTip" stdset="0">
+          <string/>
+         </property>
+         <property name="monitorDisp" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="channel" stdset="0">
+          <string>haven://samples[9]</string>
+         </property>
+         <property name="PyDMIcon" stdset="0">
+          <string/>
+         </property>
+         <property name="passwordProtected" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="password" stdset="0">
+          <string/>
+         </property>
+         <property name="protectedPassword" stdset="0">
+          <string/>
+         </property>
+         <property name="showConfirmDialog" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="confirmMessage" stdset="0">
+          <string>Are you sure you want to proceed?</string>
+         </property>
+         <property name="pressValue" stdset="0">
+          <string>None</string>
+         </property>
+         <property name="releaseValue" stdset="0">
+          <string>None</string>
+         </property>
+         <property name="relativeChange" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="writeWhenRelease" stdset="0">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="PyDMPushButton" name="PyDMPushButton_69">
+         <property name="toolTip">
+          <string/>
+         </property>
+         <property name="text">
+          <string>10</string>
+         </property>
+         <property name="alarmSensitiveContent" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="alarmSensitiveBorder" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="PyDMToolTip" stdset="0">
+          <string/>
+         </property>
+         <property name="monitorDisp" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="channel" stdset="0">
+          <string>haven://samples[10]</string>
+         </property>
+         <property name="PyDMIcon" stdset="0">
+          <string/>
+         </property>
+         <property name="passwordProtected" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="password" stdset="0">
+          <string/>
+         </property>
+         <property name="protectedPassword" stdset="0">
+          <string/>
+         </property>
+         <property name="showConfirmDialog" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="confirmMessage" stdset="0">
+          <string>Are you sure you want to proceed?</string>
+         </property>
+         <property name="pressValue" stdset="0">
+          <string>None</string>
+         </property>
+         <property name="releaseValue" stdset="0">
+          <string>None</string>
+         </property>
+         <property name="relativeChange" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="writeWhenRelease" stdset="0">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="2">
+        <widget class="PyDMPushButton" name="PyDMPushButton_70">
+         <property name="toolTip">
+          <string/>
+         </property>
+         <property name="text">
+          <string>14</string>
+         </property>
+         <property name="alarmSensitiveContent" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="alarmSensitiveBorder" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="PyDMToolTip" stdset="0">
+          <string/>
+         </property>
+         <property name="monitorDisp" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="channel" stdset="0">
+          <string>haven://samples[14]</string>
+         </property>
+         <property name="PyDMIcon" stdset="0">
+          <string/>
+         </property>
+         <property name="passwordProtected" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="password" stdset="0">
+          <string/>
+         </property>
+         <property name="protectedPassword" stdset="0">
+          <string/>
+         </property>
+         <property name="showConfirmDialog" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="confirmMessage" stdset="0">
+          <string>Are you sure you want to proceed?</string>
+         </property>
+         <property name="pressValue" stdset="0">
+          <string>None</string>
+         </property>
+         <property name="releaseValue" stdset="0">
+          <string>None</string>
+         </property>
+         <property name="relativeChange" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="writeWhenRelease" stdset="0">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="2">
+        <widget class="PyDMPushButton" name="PyDMPushButton_71">
+         <property name="toolTip">
+          <string/>
+         </property>
+         <property name="text">
+          <string>16</string>
+         </property>
+         <property name="alarmSensitiveContent" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="alarmSensitiveBorder" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="PyDMToolTip" stdset="0">
+          <string/>
+         </property>
+         <property name="monitorDisp" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="channel" stdset="0">
+          <string>haven://samples[16]</string>
+         </property>
+         <property name="PyDMIcon" stdset="0">
+          <string/>
+         </property>
+         <property name="passwordProtected" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="password" stdset="0">
+          <string/>
+         </property>
+         <property name="protectedPassword" stdset="0">
+          <string/>
+         </property>
+         <property name="showConfirmDialog" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="confirmMessage" stdset="0">
+          <string>Are you sure you want to proceed?</string>
+         </property>
+         <property name="pressValue" stdset="0">
+          <string>None</string>
+         </property>
+         <property name="releaseValue" stdset="0">
+          <string>None</string>
+         </property>
+         <property name="relativeChange" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="writeWhenRelease" stdset="0">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="0">
+        <widget class="PyDMPushButton" name="PyDMPushButton_72">
+         <property name="toolTip">
+          <string/>
+         </property>
+         <property name="text">
+          <string>1</string>
+         </property>
+         <property name="alarmSensitiveContent" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="alarmSensitiveBorder" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="PyDMToolTip" stdset="0">
+          <string/>
+         </property>
+         <property name="monitorDisp" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="channel" stdset="0">
+          <string>haven://samples[1]</string>
+         </property>
+         <property name="PyDMIcon" stdset="0">
+          <string/>
+         </property>
+         <property name="passwordProtected" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="password" stdset="0">
+          <string/>
+         </property>
+         <property name="protectedPassword" stdset="0">
+          <string/>
+         </property>
+         <property name="showConfirmDialog" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="confirmMessage" stdset="0">
+          <string>Are you sure you want to proceed?</string>
+         </property>
+         <property name="pressValue" stdset="0">
+          <string>None</string>
+         </property>
+         <property name="releaseValue" stdset="0">
+          <string>None</string>
+         </property>
+         <property name="relativeChange" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="writeWhenRelease" stdset="0">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="3">
+        <widget class="PyDMPushButton" name="PyDMPushButton_73">
+         <property name="toolTip">
+          <string/>
+         </property>
+         <property name="text">
+          <string>19</string>
+         </property>
+         <property name="alarmSensitiveContent" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="alarmSensitiveBorder" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="PyDMToolTip" stdset="0">
+          <string/>
+         </property>
+         <property name="monitorDisp" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="channel" stdset="0">
+          <string>haven://samples[19]</string>
+         </property>
+         <property name="PyDMIcon" stdset="0">
+          <string/>
+         </property>
+         <property name="passwordProtected" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="password" stdset="0">
+          <string/>
+         </property>
+         <property name="protectedPassword" stdset="0">
+          <string/>
+         </property>
+         <property name="showConfirmDialog" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="confirmMessage" stdset="0">
+          <string>Are you sure you want to proceed?</string>
+         </property>
+         <property name="pressValue" stdset="0">
+          <string>None</string>
+         </property>
+         <property name="releaseValue" stdset="0">
+          <string>None</string>
+         </property>
+         <property name="relativeChange" stdset="0">
+          <bool>false</bool>
+         </property>
+         <property name="writeWhenRelease" stdset="0">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </item>
     </layout>
    </item>
@@ -1505,6 +1618,30 @@ font-weight: bold;</string>
      </property>
     </widget>
    </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_5">
+     <item>
+      <spacer name="buttons_spacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QueueButton" name="run_button">
+       <property name="text">
+        <string>Run</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
   </layout>
  </widget>
  <customwidgets>
@@ -1517,6 +1654,11 @@ font-weight: bold;</string>
    <class>PyDMPushButton</class>
    <extends>QPushButton</extends>
    <header>pydm.widgets.pushbutton</header>
+  </customwidget>
+  <customwidget>
+   <class>QueueButton</class>
+   <extends>QPushButton</extends>
+   <header>firefly.queue_button</header>
   </customwidget>
  </customwidgets>
  <resources/>
