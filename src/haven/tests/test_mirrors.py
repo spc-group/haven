@@ -1,10 +1,10 @@
 from haven.instrument.mirrors import (
-    KBMirrors,
-    KBMirror,
-    BendableKBMirror,
-    load_mirrors,
-    HighHeatLoadMirror,
     BendableHighHeatLoadMirror,
+    BendableKBMirror,
+    HighHeatLoadMirror,
+    KBMirror,
+    KBMirrors,
+    load_mirrors,
 )
 
 
@@ -67,7 +67,7 @@ def test_load_mirrors(sim_registry):
     kb_mirrors = sim_registry.find(name="KB")
     assert isinstance(kb_mirrors, KBMirrors)
     assert not isinstance(kb_mirrors.horiz, BendableKBMirror)
-    assert not isinstance(kb_mirrors.vert, BendableKBMirror) 
+    assert not isinstance(kb_mirrors.vert, BendableKBMirror)
     # Check that the KB mirrors selects the bendable version
     kb_mirrors = sim_registry.find(name="LongKB_Cdn")
     assert isinstance(kb_mirrors, KBMirrors)

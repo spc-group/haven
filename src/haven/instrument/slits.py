@@ -1,20 +1,17 @@
 """This is a copy of the apstools Slits support with signals for the tweak PV."""
 
-
 import asyncio
 import logging
 
 from apstools.devices import PVPositionerSoftDone
-from apstools.synApps.db_2slit import Optics2Slit2D_HV, Optics2Slit1D
-from apstools.utils import SlitGeometry
+from apstools.synApps.db_2slit import Optics2Slit1D, Optics2Slit2D_HV
 from ophyd import Component as Cpt
 from ophyd import DerivedSignal, Device, EpicsSignal
 from ophyd import FormattedComponent as FCpt
 
 from .. import exceptions
 from .._iconfig import load_config
-from .device import aload_devices, await_for_connection, make_device
-from .instrument_registry import registry
+from .device import aload_devices, make_device
 from .motor import HavenMotor
 
 log = logging.getLogger(__name__)
@@ -124,10 +121,16 @@ class ApertureSlits(Device):
     v = Cpt(SlitAxis, "v")
 
     # Real motors that directly control the slits
-    pitch = FCpt(SlitMotor, "{self.motor_prefix}:{self._pitch_motor}", labels={"motors"})
+    pitch = FCpt(
+        SlitMotor, "{self.motor_prefix}:{self._pitch_motor}", labels={"motors"}
+    )
     yaw = FCpt(SlitMotor, "{self.motor_prefix}:{self._yaw_motor}", labels={"motors"})
-    horizontal = FCpt(SlitMotor, "{self.motor_prefix}:{self._horizontal_motor}", labels={"motors"})
-    diagonal = FCpt(SlitMotor, "{self.motor_prefix}:{self._diagonal_motor}", labels={"motors"})
+    horizontal = FCpt(
+        SlitMotor, "{self.motor_prefix}:{self._horizontal_motor}", labels={"motors"}
+    )
+    diagonal = FCpt(
+        SlitMotor, "{self.motor_prefix}:{self._diagonal_motor}", labels={"motors"}
+    )
 
 
 def load_slit_coros(config=None):
@@ -146,18 +149,24 @@ def load_slit_coros(config=None):
         motors = {}
         if DeviceClass is ApertureSlits:
             try:
-                motors.update(dict(
-                    horizontal_motor = slit_config["horizontal_motor"],
-                    diagonal_motor = slit_config["diagonal_motor"],
-                    pitch_motor = slit_config["pitch_motor"],
-                    yaw_motor = slit_config["yaw_motor"],
-                ))
+                motors.update(
+                    dict(
+                        horizontal_motor=slit_config["horizontal_motor"],
+                        diagonal_motor=slit_config["diagonal_motor"],
+                        pitch_motor=slit_config["pitch_motor"],
+                        yaw_motor=slit_config["yaw_motor"],
+                    )
+                )
             except KeyError:
                 msg = f"Missing motors for slits.{name}.device_class={slit_config['device_class']}"
                 raise exceptions.UnknownDeviceConfiguration(msg)
         # Create the device
         yield make_device(
-            DeviceClass, prefix=prefix, name=name, labels={"slits"}, **motors,
+            DeviceClass,
+            prefix=prefix,
+            name=name,
+            labels={"slits"},
+            **motors,
         )
 
 

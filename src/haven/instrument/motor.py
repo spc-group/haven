@@ -2,12 +2,12 @@ import asyncio
 import logging
 from typing import Optional
 
+from aioca import caget
 from ophyd import Component as Cpt
 from ophyd import EpicsMotor, EpicsSignal, EpicsSignalRO
 
 from .._iconfig import load_config
 from .device import aload_devices, make_device
-from .epics import caget
 from .instrument_registry import registry
 
 log = logging.getLogger(__name__)
@@ -108,9 +108,10 @@ async def load_motor(prefix: str, motor_num: int, ioc_name: str = None):
     else:
         log.debug(f"Resolved motor {pv} to '{name}'")
     # Create the motor device
-    if name == f"motor {motor_num+1}":
+    unused_motor_names = [f"motor {motor_num+1}", ""]
+    if name in unused_motor_names:
         # It's an unnamed motor, so skip it
-        log.info(f"SKipping unnamed motor {motor_num}")
+        log.info(f"SKipping unnamed motor {pv}")
     else:
         # Create a new motor object
         labels = {"motors", "extra_motors", "baseline"}
@@ -120,7 +121,7 @@ async def load_motor(prefix: str, motor_num: int, ioc_name: str = None):
 
 
 def load_all_motors(config=None):
-    asyncio.run(aload_devices(*load_all_motor_coros(config=config)))
+    return asyncio.run(aload_devices(*load_all_motor_coros(config=config)))
 
 
 # -----------------------------------------------------------------------------

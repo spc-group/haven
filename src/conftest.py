@@ -40,6 +40,7 @@ from haven.instrument.delay import EpicsSignalWithIO
 from haven.instrument.dxp import DxpDetector
 from haven.instrument.dxp import add_mcas as add_dxp_mcas
 from haven.instrument.ion_chamber import IonChamber
+from haven.instrument.robot import Robot
 from haven.instrument.shutter import Shutter
 from haven.instrument.slits import ApertureSlits, BladeSlits
 from haven.instrument.xspress import Xspress3Detector
@@ -155,11 +156,15 @@ def blade_slits(sim_registry):
 def aperture_slits(sim_registry):
     """A fake slit assembling using the rotary aperture design."""
     FakeSlits = make_fake_device(ApertureSlits)
-    slits = FakeSlits(prefix="255ida:slits:US:",
-                      name="whitebeam_slits", pitch_motor="m3",
-                      yaw_motor="m4",
-                      horizontal_motor="m1",
-                      diagonal_motor="m2", labels={"slits"})
+    slits = FakeSlits(
+        prefix="255ida:slits:US:",
+        name="whitebeam_slits",
+        pitch_motor="m3",
+        yaw_motor="m4",
+        horizontal_motor="m1",
+        diagonal_motor="m2",
+        labels={"slits"},
+    )
     sim_registry.register(slits)
     return slits
 
@@ -222,6 +227,13 @@ def aerotech():
         name="aerotech",
     )
     return stage
+
+
+@pytest.fixture()
+def robot():
+    RobotClass = make_fake_device(Robot)
+    robot = RobotClass(name="robotA", prefix="255idA:")
+    return robot
 
 
 @pytest.fixture()

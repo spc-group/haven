@@ -5,8 +5,7 @@ from ophyd import Device, EpicsSignal, EpicsSignalRO
 from ophyd import FormattedComponent as FCpt
 
 from .._iconfig import load_config
-from .device import aload_devices, await_for_connection
-from .instrument_registry import registry
+from .device import aload_devices, await_for_connection, make_device
 
 log = logging.getLogger(__name__)
 
@@ -52,7 +51,6 @@ async def make_power_supply_device(prefix, name, ch_num):
         log.warning(msg)
     else:
         log.info(f"Created power supply: {name}")
-        registry.register(dev)
         return dev
 
 
@@ -64,10 +62,12 @@ def load_power_supply_coros(config=None):
     for name, ps_config in ps_configs.items():
         # Do it once for each channel
         for ch_num in range(1, ps_config["n_channels"] + 1):
-            yield make_power_supply_device(
+            yield make_device(
+                NHQ203MChannel,
                 name=f"{name}_ch{ch_num}",
                 prefix=ps_config["prefix"],
                 ch_num=ch_num,
+                labels={"power_supplies"},
             )
 
 

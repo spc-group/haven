@@ -1,6 +1,5 @@
 """Bluesky plans specific to spectroscopy."""
 
-
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov

@@ -1,19 +1,20 @@
-from typing import Mapping
-from pathlib import Path
 import warnings
+from pathlib import Path
+from typing import Mapping
 
 import haven
-from haven.instrument import Table
 from firefly import display
+from haven.instrument import Table
 
 
-class CaQtDMBase():
+class CaQtDMBase:
     """caQtDM parameters for the given table.
 
     Different table geometries require different caQtDM
     configurations.
 
     """
+
     ui_file: str = ""
     macros: Mapping = {}
     table: Table
@@ -33,6 +34,7 @@ class CaQtDMBase():
 
 class TwoLegCaQtDM(CaQtDMBase):
     """caQtDM parameters for a table with two ."""
+
     ui_file = "/net/s25data/xorApps/ui/table_2leg.ui"
 
     @property
@@ -53,6 +55,7 @@ class TwoLegCaQtDM(CaQtDMBase):
 
 class SingleMotorCaQtDM(CaQtDMBase):
     """caQtDM parameters for a table with only a single motor."""
+
     ui_file = "/APSshare/epics/synApps_6_2_1/support/motor-R7-2-2//motorApp/op/ui/autoconvert/motorx.ui"
 
     @property
@@ -69,11 +72,12 @@ class MultipleMotorCaQtDM(CaQtDMBase):
 
     @property
     def ui_file(self):
-        ui_dir = Path("/APSshare/epics/synApps_6_2_1/support/motor-R7-2-2//motorApp/op/ui/autoconvert/")
+        ui_dir = Path(
+            "/APSshare/epics/synApps_6_2_1/support/motor-R7-2-2//motorApp/op/ui/autoconvert/"
+        )
         num_motors = len(self.motor_attrs())
         ui_path = ui_dir / f"motor{num_motors}x.ui"
         return str(ui_path)
-
 
     @property
     def macros(self):
@@ -82,7 +86,7 @@ class MultipleMotorCaQtDM(CaQtDMBase):
         for idx, name in enumerate(self.motor_attrs()):
             component = getattr(self.table.__class__, name)
             key = f"M{idx+1}"
-            macros[key] = component.suffix 
+            macros[key] = component.suffix
         return macros
 
 
@@ -95,9 +99,11 @@ class TableDisplay(display.FireflyDisplay):
         elif self.num_motors == 1:
             self.caqtdm = SingleMotorCaQtDM(table=self.device)
         elif self.num_motors > 1:
-            self.caqtdm = MultipleMotorCaQtDM(table=self.device)            
+            self.caqtdm = MultipleMotorCaQtDM(table=self.device)
         else:
-            warnings.warn(f"Could not determine caQtDM parameters for device: {self.device}.")
+            warnings.warn(
+                f"Could not determine caQtDM parameters for device: {self.device}."
+            )
             self.caqtdm = CaQtDMBase(table=self.device)
 
     def ui_filename(self):
@@ -106,7 +112,7 @@ class TableDisplay(display.FireflyDisplay):
     @property
     def caqtdm_ui_file(self):
         return self.caqtdm.ui_file
-    
+
     @property
     def num_legs(self):
         """How motorized legs does this table have?
@@ -119,14 +125,14 @@ class TableDisplay(display.FireflyDisplay):
         leg_names = {"upstream", "downstream"}
         num_legs = len(list(set(self.device.component_names) & leg_names))
         return num_legs
-    
+
     @property
     def num_motors(self):
         """How many motors does this table have?
-        
+
         Does not include the pseudo motors produce through the
         sum2Diff EPICS record.
-        
+
         """
         motor_names = {"horizontal", "vertical", "upstream", "downstream"}
         num_motors = len(list(set(self.device.component_names) & motor_names))
@@ -136,8 +142,10 @@ class TableDisplay(display.FireflyDisplay):
         # Disable motor controls if the given axis is not available
         self.ui.pitch_embedded_display.setEnabled(hasattr(self.device, "pitch"))
         self.ui.vertical_embedded_display.setEnabled(hasattr(self.device, "vertical"))
-        self.ui.horizontal_embedded_display.setEnabled(hasattr(self.device, "horizontal"))
-    
+        self.ui.horizontal_embedded_display.setEnabled(
+            hasattr(self.device, "horizontal")
+        )
+
     def launch_caqtdm(self):
         # Sort out the prefix from the slit designator
         prefix = self.device.prefix.strip(":")

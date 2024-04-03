@@ -1,12 +1,13 @@
 import subprocess
 from pathlib import Path
-from typing import Sequence, Optional
+from typing import Optional, Sequence
 
-from haven import registry
 from ophyd import Device
 from pydm import Display
 from qtpy import QtWidgets
 from qtpy.QtCore import Signal, Slot
+
+from haven import registry
 
 
 class FireflyDisplay(Display):
@@ -19,8 +20,9 @@ class FireflyDisplay(Display):
     status_message_changed = Signal(str, int)
 
     def __init__(self, parent=None, args=None, macros=None, ui_filename=None, **kwargs):
-        super().__init__(parent=parent, args=args, macros=macros,
-                         ui_filename=ui_filename, **kwargs )
+        super().__init__(
+            parent=parent, args=args, macros=macros, ui_filename=ui_filename, **kwargs
+        )
         self.customize_device()
         self.customize_ui()
         self.prepare_caqtdm_actions()

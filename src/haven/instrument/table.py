@@ -1,11 +1,12 @@
 import asyncio
 
-from ophyd import Device, Component as Cpt, FormattedComponent as FCpt, Kind, OphydObject
 from apstools.synApps import TransformRecord
+from ophyd import Component as Cpt
+from ophyd import Device, Kind, OphydObject
 
-from .device import aload_devices, make_device
-from .._iconfig import load_config
 from .. import exceptions
+from .._iconfig import load_config
+from .device import aload_devices, make_device
 from .motor import HavenMotor
 
 
@@ -81,7 +82,7 @@ class Table(Device):
     pitch: OphydObject
     horizontal_drive_transform: OphydObject
     horizontal_readback_transform: OphydObject
-    
+
     def __new__(
         cls,
         prefix,
@@ -123,24 +124,14 @@ class Table(Device):
         # Check if we need to add the pseudo motors and tranforms
         if bool(upstream_motor) and bool(downstream_motor):
             comps["vertical"] = Cpt(
-                HavenMotor,
-                f"{pseudo_motors}height",
-                labels={"motors"}
+                HavenMotor, f"{pseudo_motors}height", labels={"motors"}
             )
-            comps["pitch"] = Cpt(
-                HavenMotor,
-                f"{pseudo_motors}pitch",
-                labels={"motors"}
-            )
+            comps["pitch"] = Cpt(HavenMotor, f"{pseudo_motors}pitch", labels={"motors"})
             comps["vertical_drive_transform"] = Cpt(
-                TransformRecord,
-                f"{transforms}Drive",
-                kind=Kind.config
+                TransformRecord, f"{transforms}Drive", kind=Kind.config
             )
             comps["vertical_readback_transform"] = Cpt(
-                TransformRecord,
-                f"{transforms}Readback",
-                kind=Kind.config
+                TransformRecord, f"{transforms}Readback", kind=Kind.config
             )
         # Now create a customized class for all the motors given
         new_cls = type("Table", (cls,), comps)
@@ -163,7 +154,6 @@ class Table(Device):
         super().__init__(*args, **kwargs)
 
 
-
 def load_table_coros(config=None):
     if config is None:
         config = load_config()
@@ -172,9 +162,14 @@ def load_table_coros(config=None):
         # Build the motor prefixes
         try:
             prefix = tbl_config["prefix"]
-            attr_names = ["upstream_motor", "downstream_motor",
-                          "horizontal_motor", "vertical_motor",
-                          "transforms", "pseudo_motors"]
+            attr_names = [
+                "upstream_motor",
+                "downstream_motor",
+                "horizontal_motor",
+                "vertical_motor",
+                "transforms",
+                "pseudo_motors",
+            ]
             attrs = {attr: tbl_config.get(attr, "") for attr in attr_names}
         except KeyError as ex:
             raise exceptions.UnknownDeviceConfiguration(
@@ -182,9 +177,12 @@ def load_table_coros(config=None):
             ) from ex
         # Make the device
         yield make_device(
-            Table, prefix=prefix, name=name, labels={"tables"}, **attrs,
+            Table,
+            prefix=prefix,
+            name=name,
+            labels={"tables"},
+            **attrs,
         )
-
 
 
 def load_tables(config=None):

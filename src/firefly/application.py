@@ -16,11 +16,10 @@ from qtpy import QtCore, QtWidgets
 from qtpy.QtCore import Signal
 from qtpy.QtWidgets import QAction
 
-from haven import HavenMotor, load_config, registry
+from haven import load_config, registry
 from haven.exceptions import ComponentNotFound
 from haven.instrument.device import titelize
 
-from . import beamline_components_rc
 from .main_window import FireflyMainWindow, PlanMainWindow
 from .queue_client import QueueClient, QueueClientThread, queueserver_api
 
@@ -226,11 +225,17 @@ class FireflyApplication(PyDMApplication):
             text="Queue Monitor",
             slot=self.launch_queuemonitor,
         )
-        # Action for showing the beamline status window
+        # Action for showing the beamline scheduling window
         self._setup_window_action(
             action_name="show_bss_window_action",
             text="Scheduling (&BSS)",
             slot=self.show_bss_window,
+        )
+        # Action for shoing the IOC start/restart/stop window
+        self._setup_window_action(
+            action_name="show_iocs_window_action",
+            text="&IOCs",
+            slot=self.show_iocs_window,
         )
         # Launch ion chamber voltmeters window
         self._setup_window_action(
@@ -578,8 +583,7 @@ class FireflyApplication(PyDMApplication):
             FireflyMainWindow,
             ui_dir / ui_file,
             name=f"FireflyMainWindow_{device_label}_{device_pyname}",
-            macros={device_key: device.name,
-                    f"{device_key}_TITLE": device_title},
+            macros={device_key: device.name, f"{device_key}_TITLE": device_title},
         )
 
     def show_status_window(self, stylesheet_path=None):
@@ -635,6 +639,10 @@ class FireflyApplication(PyDMApplication):
     @QtCore.Slot()
     def show_bss_window(self):
         return self.show_window(FireflyMainWindow, ui_dir / "bss.py", name="bss")
+
+    @QtCore.Slot()
+    def show_iocs_window(self):
+        return self.show_window(FireflyMainWindow, ui_dir / "iocs.py", name="iocs")
 
     @QtCore.Slot(bool)
     def set_open_environment_action_state(self, is_open: bool):

@@ -2,7 +2,6 @@ import asyncio
 import logging
 import re
 import time as ttime
-import warnings
 from typing import Callable, Union
 
 from ophyd import Component, Device, K
@@ -18,9 +17,7 @@ def titelize(name):
     """Convert a device name into a human-readable title."""
     title = name.replace("_", " ").title()
     # Replace select phrases that are known to be incorrect
-    replacements = {
-        "Kb ": "KB "
-    }
+    replacements = {"Kb ": "KB "}
     for orig, new in replacements.items():
         title = title.replace(orig, new)
     return title
@@ -86,7 +83,7 @@ async def make_device(DeviceClass, *args, FakeDeviceClass=None, **kwargs) -> Dev
         log.debug(f"Connected to {name} in {round(ttime.monotonic() - t0, 2)} sec.")
         return device
 
-      
+
 async def await_for_connection(dev, all_signals=False, timeout=3.0):
     """Wait for signals to connect
 

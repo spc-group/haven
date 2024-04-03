@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 from bluesky_adaptive.recommendations import NoRecommendation
 
-from haven import auto_gain, GainRecommender
+from haven import GainRecommender, auto_gain
 
 
 def test_plan_recommendations(sim_ion_chamber):
@@ -122,4 +122,3 @@ def test_recommender_hysteresis(recommender):
     # Check recommendations, second gain should still go up
     recommender.tell_many(gains, volts)
     np.testing.assert_equal(recommender.ask(1), (9, 12))
-    

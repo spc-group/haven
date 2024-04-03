@@ -1,5 +1,3 @@
-from unittest import mock
-
 from haven.instrument import slits
 
 
@@ -18,7 +16,6 @@ def test_slits_tweak():
 
 
 def test_load_slits(sim_registry, monkeypatch):
-    monkeypatch.setattr(slits, "await_for_connection", mock.AsyncMock())
     slits.load_slits()
     # Check that the slits were loaded
     devices = sim_registry.findall(label="slits")
@@ -33,11 +30,14 @@ def test_load_slits(sim_registry, monkeypatch):
 
 
 def test_aperture_PVs():
-    aperture = slits.ApertureSlits("255ida:slits:US:", pitch_motor="m1",
-                                   yaw_motor="m2",
-                                   horizontal_motor="m3",
-                                   diagonal_motor="m4",
-                                   name="whitebeam_slits")
+    aperture = slits.ApertureSlits(
+        "255ida:slits:US:",
+        pitch_motor="m1",
+        yaw_motor="m2",
+        horizontal_motor="m3",
+        diagonal_motor="m4",
+        name="whitebeam_slits",
+    )
     assert not aperture.connected
     assert hasattr(aperture, "h")
     assert hasattr(aperture.h, "center")
@@ -50,7 +50,7 @@ def test_aperture_PVs():
     assert aperture.pitch.user_readback.pvname == "255ida:slits:m1.RBV"
     assert aperture.yaw.user_readback.pvname == "255ida:slits:m2.RBV"
     assert aperture.horizontal.user_readback.pvname == "255ida:slits:m3.RBV"
-    assert aperture.diagonal.user_readback.pvname == "255ida:slits:m4.RBV"    
+    assert aperture.diagonal.user_readback.pvname == "255ida:slits:m4.RBV"
     # Check the derived signals are simple pass-throughs to the user readback/setpoint
     assert aperture.h.size.readback._derived_from.pvname == "255ida:slits:US:hSize.RBV"
     assert aperture.h.size.setpoint._derived_from.pvname == "255ida:slits:US:hSize.VAL"
