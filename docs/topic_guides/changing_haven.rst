@@ -23,9 +23,9 @@ reused.
 2. Create a fork of the `main Haven repository`_
 3. Clone the forked repository to your local computer (e.g. ``git clone git@github.com:canismarko/haven.git``)
 4. Install an anaconda-like distribution environment (`mamba-forge`_ is recommended)
-5. Create a new conda environment from *environment.yml* (e.g. ``mamba create -n haven -f environment.yml``)
+5. Create a new conda environment from *environment.yml* (e.g. ``mamba env create -n haven -f haven/environment.yml``)
 6. Activate the newly created conda environment (e.g. ``mamba activate haven``)
-7. Install haven in the environment (``poetry install``)
+7. Install haven in the environment (``pip install -e "haven[dev]"``)
 8. Verify that the :ref:`test-suite passes<Running Tests>`
 
 The following steps should then be performed every time a new feature
@@ -60,14 +60,15 @@ properly setup, the tests can be run using:
 ``pytest`` should not report any errors or failures, though skipped,
 xfailed, and warnings are expected.
 
-Several simulated IOCs are started up in the process, and can be used
-in writing tests.
+While running the tests, devices created using
+:py:func:`~haven.instrument.device.make_device()` will be replaced
+with simulated devices using Ophyd's *sim* module. This means that
+:py:func:`~haven.instrument.load_instrument()` can be called without
+hardware being present, and the corresponding fake devices can be
+found in the :py:obj:`haven.registry`.
 
-.. code:: python
-
-   def test_mono(ioc_mono):
-       # Write tests here using the mono IOC
-       ...
+Additionally, some pytest fixtures are provided that create simulated
+devices, (e.g. ion chambers) and can be used directly in your tests.
 
 More details can be found in the file *haven/tests/conftest.py*.
        

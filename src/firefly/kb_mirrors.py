@@ -1,6 +1,3 @@
-import haven
-from firefly import display
-from haven.instrument import mirrors
 from firefly.slits import SlitsDisplay
 
 

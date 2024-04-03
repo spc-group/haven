@@ -15,11 +15,10 @@ from qtpy import QtCore, QtWidgets
 from qtpy.QtCore import Signal
 from qtpy.QtWidgets import QAction
 
-from haven import HavenMotor, load_config, registry
+from haven import load_config, registry
 from haven.exceptions import ComponentNotFound
 from haven.instrument.device import titelize
 
-from . import beamline_components_rc
 from .main_window import FireflyMainWindow, PlanMainWindow
 from .queue_client import QueueClient, QueueClientThread, queueserver_api
 
@@ -134,7 +133,7 @@ class FireflyApplication(PyDMApplication):
         # Actions for controlling the bluesky run engine
         self.setup_runengine_actions()
         # Prepare the client for interacting with the queue server
-        self.prepare_queue_client()
+        # self.prepare_queue_client()
         # Launch the default display
         show_default_window = getattr(self, f"show_{self.default_display}_window")
         default_window = show_default_window()
@@ -217,7 +216,7 @@ class FireflyApplication(PyDMApplication):
         self._setup_window_action(
             action_name="show_run_browser_action",
             text="Browse Runs",
-            slot=self.show_run_browser,
+            slot=self.show_run_browser_window,
         )
         # Action for launch queue-monitor
         self._setup_window_action(
@@ -225,11 +224,17 @@ class FireflyApplication(PyDMApplication):
             text="Queue Monitor",
             slot=self.launch_queuemonitor,
         )
-        # Action for showing the beamline status window
+        # Action for showing the beamline scheduling window
         self._setup_window_action(
             action_name="show_bss_window_action",
             text="Scheduling (&BSS)",
             slot=self.show_bss_window,
+        )
+        # Action for shoing the IOC start/restart/stop window
+        self._setup_window_action(
+            action_name="show_iocs_window_action",
+            text="&IOCs",
+            slot=self.show_iocs_window,
         )
         # Launch ion chamber voltmeters window
         self._setup_window_action(
@@ -524,6 +529,7 @@ class FireflyApplication(PyDMApplication):
         if (w := self.windows.get(name)) is None:
             # Window is not yet created, so create one
             w = self.create_window(WindowClass, ui_dir / ui_file, macros=macros)
+            # return
             self.windows[name] = w
             # Connect signals to remove the window when it closes
             w.destroyed.connect(partial(self.forget_window, name=name))
@@ -586,7 +592,7 @@ class FireflyApplication(PyDMApplication):
         )
 
     @QtCore.Slot()
-    def show_run_browser(self):
+    def show_run_browser_window(self):
         return self.show_window(
             PlanMainWindow, ui_dir / "run_browser.py", name="run_browser"
         )
@@ -632,6 +638,10 @@ class FireflyApplication(PyDMApplication):
     @QtCore.Slot()
     def show_bss_window(self):
         return self.show_window(FireflyMainWindow, ui_dir / "bss.py", name="bss")
+
+    @QtCore.Slot()
+    def show_iocs_window(self):
+        return self.show_window(FireflyMainWindow, ui_dir / "iocs.py", name="iocs")
 
     @QtCore.Slot(bool)
     def set_open_environment_action_state(self, is_open: bool):

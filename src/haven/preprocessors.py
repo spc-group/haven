@@ -1,6 +1,5 @@
 """Tools for modifying plans and data streams as they are generated."""
 
-
 import getpass
 import logging
 import os

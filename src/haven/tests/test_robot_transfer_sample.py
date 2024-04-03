@@ -1,43 +1,26 @@
-import asyncio
+from ophyd.sim import motor1, motor2, motor3
 
-from epics import PV
+from haven import robot_transfer_sample
 
 
-async def caget(pvname: str, timeout: float = 2.0):
-    """Asynchronous wrapper around pyepics.caget.
+def test_robot_sample(robot):
 
-    Returns
-    =======
-    value
-      Current PV value retrieved from the IOC.
+    plan = robot_transfer_sample(robot, 9, motor1, 100, motor2, 200, motor3, 50)
 
-    """
-    loop = asyncio.get_running_loop()
-    future = loop.create_future()
+    msgs = list(plan)
 
-    # Callback for when the value changes
-    def check_value(pvname, value, status, **kwargs):
-        if status is None:
-            # Not a real update
-            return
-        elif status == 0:
-            future.set_result(value)
-        else:
-            exc = RuntimeError(f"Could not caget value for PV {pvname}")
-            future.set_exception(exc)
+    assert robot.name == "robotA"
+    assert len(msgs) == 14
 
-    # Wait for the real value to come in from the IOC
-    pv = PV(pvname, callback=check_value, auto_monitor=True)
-    await asyncio.wait_for(future, timeout=timeout)
-    # Clean up
-    del pv
-    return future.result()
+    unload = robot_transfer_sample(robot, None, motor1, 100)
+    msgs = list(unload)
+    assert len(msgs) == 6
 
 
 # -----------------------------------------------------------------------------
-# :author:    Mark Wolfman
-# :email:     wolfman@anl.gov
-# :copyright: Copyright © 2023, UChicago Argonne, LLC
+# :author:    Yanna Chen
+# :email:     yannachen@anl.gov
+# :copyright: Copyright © 2024, UChicago Argonne, LLC
 #
 # Distributed under the terms of the 3-Clause BSD License
 #

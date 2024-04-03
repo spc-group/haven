@@ -34,7 +34,7 @@ dependencies:
   - numba>=0.56  # Ensures 0.53 (broken) isn't installed
 
   # --- testing and quality assurance
-  - black >=22.1
+  - black >=24
   - flake8
   - pre-commit
   - pylint
@@ -59,6 +59,7 @@ dependencies:
   # - pyqt >=5.12, <5.13  
   - qt >=5.12
   - qtawesome
+  - qasync
 
   # --- general support packages
   - bitshuffle
@@ -137,6 +138,7 @@ dependencies:
   # - pygithub
 
   - pip:
+    - aioca
     - apsbss
     - time-machine
     - autoapi

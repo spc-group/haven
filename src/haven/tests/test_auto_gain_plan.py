@@ -223,3 +223,4 @@ def test_recommender_no_change(recommender):
     # Check recommendations
     with pytest.raises(NoRecommendation):
         recommender.ask(1)
+

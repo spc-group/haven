@@ -1,16 +1,20 @@
 import qtawesome as qta
 from qtpy import QtWidgets
 
-from haven import registry
 from firefly import display
+from haven import registry
 
 
 class IonChamberDisplay(display.FireflyDisplay):
     """A GUI window for changing settings in an ion chamber."""
 
     caqtdm_scaler_ui_file: str = "/net/s25data/xorApps/ui/scaler32_full_offset.ui"
-    caqtdm_mcs_ui_file: str = "/APSshare/epics/synApps_6_2_1/support/mca-R7-9//mcaApp/op/ui/autoconvert/SIS38XX.ui"
-    caqtdm_preamp_ui_file: str = "/net/s25data/xorApps/epics/synApps_6_2_1/support/ip-GIT/ipApp/op/ui/autoconvert/SR570.ui"
+    caqtdm_mcs_ui_file: str = (
+        "/APSshare/epics/synApps_6_2_1/support/mca-R7-9//mcaApp/op/ui/autoconvert/SIS38XX.ui"
+    )
+    caqtdm_preamp_ui_file: str = (
+        "/net/s25data/xorApps/epics/synApps_6_2_1/support/ip-GIT/ipApp/op/ui/autoconvert/SR570.ui"
+    )
 
     def customize_device(self):
         self._device = registry.find(self.macros()["IC"])
@@ -77,7 +81,6 @@ class IonChamberDisplay(display.FireflyDisplay):
         bits = device.preamp_prefix.strip(sep).split(sep)
         prefix = sep.join(bits[:-1])
         amp_suffix = bits[-1]
-        print(amp_suffix)
         caqtdm_macros = {
             "P": f"{prefix}:",
             "A": f"{amp_suffix}:",

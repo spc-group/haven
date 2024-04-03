@@ -1,17 +1,10 @@
 from queue import Queue
 
 import numpy as np
-import pandas as pd
-from bluesky import plan_stubs as bps
-from bluesky import plans as bp
-from bluesky.callbacks.core import CollectThenCompute
-from bluesky.preprocessors import subs_decorator
 from bluesky_adaptive.per_event import adaptive_plan, recommender_factory
 from bluesky_adaptive.recommendations import NoRecommendation
-from ophyd.sim import motor
 
 from ..instrument.instrument_registry import registry
-
 
 __all__ = ["GainRecommender", "auto_gain"]
 
@@ -165,9 +158,7 @@ def auto_gain(
         queue=queue,
     )
     # Start from the current gain settings
-    first_point = {
-        det.preamp.gain_level: det.preamp.gain_level.get() for det in dets
-    }
+    first_point = {det.preamp.gain_level: det.preamp.gain_level.get() for det in dets}
     # Make sure the detectors have the correct read attrs.
     old_kinds = {}
     signals = [(det.preamp, det.preamp.gain_level) for det in dets]

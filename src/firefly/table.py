@@ -1,10 +1,10 @@
-from typing import Mapping
-from pathlib import Path
 import warnings
+from pathlib import Path
+from typing import Mapping
 
 import haven
-from haven.instrument import Table
 from firefly import display
+from haven.instrument import Table
 
 
 class CaQtDMBase:

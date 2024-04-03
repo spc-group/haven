@@ -2,10 +2,10 @@ import logging
 import warnings
 from pathlib import Path
 
+import qtawesome as qta
 from pydm import data_plugins
 from pydm.main_window import PyDMMainWindow
 from qtpy import QtCore, QtGui, QtWidgets
-import qtawesome as qta
 
 from haven import load_config
 
@@ -215,6 +215,7 @@ class FireflyMainWindow(PyDMMainWindow):
         # Add other menu actions
         self.ui.menuView.addAction(app.show_status_window_action)
         self.ui.menuSetup.addAction(app.show_bss_window_action)
+        self.ui.menuSetup.addAction(app.show_iocs_window_action)
 
     def show_status(self, message, timeout=0):
         """Show a message in the status bar."""

@@ -1,32 +1,41 @@
-"""Tests for a generic X-Y stage."""
-
 import pytest
+from ophydregistry.exceptions import ComponentNotFound
 
-from haven import exceptions, registry
-from haven.instrument import stage
+from haven.instrument import Robot, load_robot
 
 
-def test_stage_init():
-    stage_ = stage.XYStage(
-        "motor_ioc", pv_vert=":m1", pv_horiz=":m2", labels={"stages"}, name="aerotech"
+def test_robot():
+    robot = Robot("25idAustin", name="robot")
+    # Check PVs are correct
+    assert robot.i.user_readback.pvname == "25idAustin:i.RBV"
+    assert robot.samples.sample8.present.pvname == "25idAustin:sample8:present"
+    assert robot.samples.sample8.rz.pvname == "25idAustin:sample8:rz"
+
+
+def test_load_robot(sim_registry):
+    load_robot()
+    # Test the robot info is extracted properly
+    rbt = sim_registry.find(label="robots")
+    assert rbt.name == "A"
+    assert rbt.prefix == "255idAustin"
+
+
+def test_load_no_robot(sim_registry):
+    load_robot(config={})
+
+    # Test the robot is not in config
+    result = pytest.raises(ComponentNotFound, sim_registry.findall, label="robots")
+
+    # Assert that the expected exception is raised
+    assert 'Could not find components matching: label="robots", name="None"' in str(
+        result.value
     )
-    assert stage_.name == "aerotech"
-    assert stage_.vert.name == "aerotech_vert"
-    # Check registry of the stage and the individiual motors
-    registry.clear()
-    with pytest.raises(exceptions.ComponentNotFound):
-        registry.findall(label="motors")
-    with pytest.raises(exceptions.ComponentNotFound):
-        registry.findall(label="stages")
-    registry.register(stage_)
-    assert len(list(registry.findall(label="motors"))) == 2
-    assert len(list(registry.findall(label="stages"))) == 1
 
 
 # -----------------------------------------------------------------------------
-# :author:    Mark Wolfman
-# :email:     wolfman@anl.gov
-# :copyright: Copyright © 2023, UChicago Argonne, LLC
+# :author:    Yanna Chen
+# :email:     yannachen@anl.gov
+# :copyright: Copyright © 2024, UChicago Argonne, LLC
 #
 # Distributed under the terms of the 3-Clause BSD License
 #

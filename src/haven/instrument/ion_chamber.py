@@ -12,6 +12,8 @@ from pprint import pprint
 import numpy as np
 import pint
 from apstools.devices.srs570_preamplifier import SRS570_PreAmplifier, calculate_settle_time
+from aioca import caget
+from apstools.devices import SRS570_PreAmplifier
 from ophyd import Component as Cpt
 from ophyd import Device, EpicsSignal, EpicsSignalRO
 from ophyd import FormattedComponent as FCpt
@@ -27,8 +29,6 @@ from pcdsdevices.type_hints import OphydDataType, SignalToValue
 from .. import exceptions
 from .._iconfig import load_config
 from .device import aload_devices, await_for_connection, make_device
-from .epics import caget
-from .instrument_registry import registry
 from .labjack import AnalogInput
 from .scaler_triggered import ScalerSignalRO, ScalerTriggered
 
@@ -122,6 +122,8 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # Reset the gain name, apstools converts "preamp_gain" to "preamp"
+        self.gain.name += "_gain"
         # Subscriptions for updating the sensitivity text
         self.sensitivity_value.subscribe(self.update_sensitivity_text, run=False)
         self.sensitivity_unit.subscribe(self.update_sensitivity_text, run=True)
@@ -131,7 +133,7 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
         Called when sensitivity changes (EPICS CA monitor event).
         """
         gain = self.computed_gain()
-        self.gain.put(gain)
+        self.gain.put(gain, internal=True)
         self.gain_db.put(10 * math.log10(gain), internal=True)
 
     def computed_gain(self):
@@ -244,11 +246,11 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
         InternalSignal,
         kind=Kind.config,
     )
-    # Gain, but measured in decibels
-    gain_db = Cpt(InternalSignal, kind=Kind.config)
+    # Gain, but measured in various forms
+    gain = Cpt(InternalSignal, name="gainerificf", kind="normal", value=1)
+    gain_db = Cpt(InternalSignal, kind=Kind.config, value=0)
 
 
-# @registry.register
 class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
     """An ion chamber at a spectroscopy beamline.
 
@@ -587,7 +589,6 @@ async def make_ion_chamber_device(
         )
     else:
         log.info(f"Created ion chamber: {name} ({prefix}, {preamp_prefix})")
-        registry.register(ic)
         return ic
 
 
