@@ -7,13 +7,15 @@ import time
 import warnings
 from collections import OrderedDict
 from typing import Dict, Generator, Optional
-from pprint import pprint
 
 import numpy as np
 import pint
-from apstools.devices.srs570_preamplifier import SRS570_PreAmplifier, calculate_settle_time
 from aioca import caget
 from apstools.devices import SRS570_PreAmplifier
+from apstools.devices.srs570_preamplifier import (
+    SRS570_PreAmplifier,
+    calculate_settle_time,
+)
 from ophyd import Component as Cpt
 from ophyd import Device, EpicsSignal, EpicsSignalRO
 from ophyd import FormattedComponent as FCpt
@@ -84,7 +86,14 @@ class Voltmeter(AnalogInput):
 
 class GainDerivedSignal(MultiDerivedSignal):
     """A gain level signal that incorporates dynamic settling time."""
-    def set(self, value: OphydDataType, *, timeout: Optional[float] = None, settle_time: Optional[float] = "auto"):
+
+    def set(
+        self,
+        value: OphydDataType,
+        *,
+        timeout: Optional[float] = None,
+        settle_time: Optional[float] = "auto",
+    ):
         # Calculate an auto settling time
         if settle_time == "auto":
             # Determine the new values that will be set
@@ -99,7 +108,7 @@ class GainDerivedSignal(MultiDerivedSignal):
             settle_time_ = settle_time
         # Call the actual set method to move the gain
         return super().set(value, timeout=timeout, settle_time=settle_time_)
-        
+
 
 class IonChamberPreAmplifier(SRS570_PreAmplifier):
     """An SRS-570 pre-amplifier driven by an ion chamber.
@@ -167,9 +176,7 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
     def _level_to_unit(self, level):
         return self.units[int(level / len(self.values))]
 
-    def _get_gain_level(
-        self, mds: MultiDerivedSignal, items: SignalToValue
-    ) -> int:
+    def _get_gain_level(self, mds: MultiDerivedSignal, items: SignalToValue) -> int:
         "Given a sensitivity value and unit , transform to the desired level."
         value = self.values.index(items[self.sensitivity_value])
         unit = self.units.index(items[self.sensitivity_unit])
@@ -229,7 +236,13 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
 
     gain_level = Cpt(
         GainDerivedSignal,
-        attrs=["sensitivity_value", "sensitivity_unit", "offset_value", "offset_unit", "set_all"],
+        attrs=[
+            "sensitivity_value",
+            "sensitivity_unit",
+            "offset_value",
+            "offset_unit",
+            "set_all",
+        ],
         calculate_on_get=_get_gain_level,
         calculate_on_put=_put_gain_level,
         kind=Kind.omitted,

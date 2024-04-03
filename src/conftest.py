@@ -58,6 +58,7 @@ class FakeEpicsSignalWithIO(FakeEpicsSignal):
     def __init__(self, prefix, **kwargs):
         super().__init__(f"{prefix}I", write_pv=f"{prefix}O", **kwargs)
 
+
 # Ophyd uses a cache of signals and their corresponding fakes
 # We need to add ours in so they get simulated properly.
 fake_device_cache[EpicsSignalWithIO] = FakeEpicsSignalWithIO

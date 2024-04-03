@@ -1,6 +1,7 @@
 from queue import Queue
 
 import numpy as np
+import pandas as pd
 from bluesky_adaptive.per_event import adaptive_plan, recommender_factory
 from bluesky_adaptive.recommendations import NoRecommendation
 
@@ -31,7 +32,9 @@ class GainRecommender:
     dfs: list = None
     big_step: int = 3
 
-    def __init__(self, volts_min: float = 0.5, volts_max: float = 4.5, target_volts: float = 2.5):
+    def __init__(
+        self, volts_min: float = 0.5, volts_max: float = 4.5, target_volts: float = 2.5
+    ):
         self.volts_min = volts_min
         self.volts_max = volts_max
         self.target_volts = target_volts
@@ -42,8 +45,13 @@ class GainRecommender:
         if self.dfs is None:
             self.dfs = [pd.DataFrame() for i in gains]
         # Add this measurement to the dataframes
-        self.dfs = [pd.concat([df, pd.DataFrame(data={"gain": [gain], "volts": [volt]})], ignore_index=True)
-                    for gain, volt, df in zip(gains, volts, self.dfs)]
+        self.dfs = [
+            pd.concat(
+                [df, pd.DataFrame(data={"gain": [gain], "volts": [volt]})],
+                ignore_index=True,
+            )
+            for gain, volt, df in zip(gains, volts, self.dfs)
+        ]
 
     def tell_many(self, xs, ys):
         for x, y in zip(xs, ys):
@@ -62,7 +70,7 @@ class GainRecommender:
 
     def next_gain(self, df: pd.DataFrame):
         """Determine the next gain for this preamp based on past measurements.
-        
+
         Parameters
         ==========
         df
@@ -86,9 +94,11 @@ class GainRecommender:
         values_in_range = df[(df.volts < self.volts_max) & (df.volts > self.volts_min)]
         needed_gains = np.arange(
             df[df.volts < self.volts_min].gain.max() + 1,
-            df[df.volts > self.volts_max].gain.max()
+            df[df.volts > self.volts_max].gain.max(),
         )
-        missing_gains = [gain for gain in needed_gains if gain not in values_in_range.gain]
+        missing_gains = [
+            gain for gain in needed_gains if gain not in values_in_range.gain
+        ]
         if len(missing_gains) > 0:
             return max(missing_gains)
         # We have all the data we need, now decide on the best gain to use
@@ -146,8 +156,12 @@ def auto_gain(
     try:
         target = targets[prefer]
     except KeyError:
-        raise ValueError(f"Invalid value for *prefer* {prefer}. Choices are 'lower', 'middle', or 'upper'.")
-    recommender = GainRecommender(volts_min=volts_min, volts_max=volts_max, target_volts=target)
+        raise ValueError(
+            f"Invalid value for *prefer* {prefer}. Choices are 'lower', 'middle', or 'upper'."
+        )
+    recommender = GainRecommender(
+        volts_min=volts_min, volts_max=volts_max, target_volts=target
+    )
     ind_keys = [det.preamp.gain_level.name for det in dets]
     dep_keys = [det.volts.name for det in dets]
     rr, queue = recommender_factory(

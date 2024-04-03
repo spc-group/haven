@@ -41,14 +41,14 @@ def test_gain_level_settling(preamp, monkeypatch):
     preamp.gain_level.set(0).wait(timeout=3)
     preamp.gain_mode.set("LOW NOISE").wait(timeout=3)
     # Set up patches to watch the real signals getting set
-    monkeypatch.setattr(preamp.sensitivity_value, 'set', mock.MagicMock())
-    monkeypatch.setattr(preamp.sensitivity_unit, 'set', mock.MagicMock()) 
+    monkeypatch.setattr(preamp.sensitivity_value, "set", mock.MagicMock())
+    monkeypatch.setattr(preamp.sensitivity_unit, "set", mock.MagicMock())
     # Now make the gain high so we can check the settle time
     preamp.gain_level.set(27)
     # Check that the right settle time was used
     preamp.sensitivity_value.set.assert_called_with(0, timeout=None, settle_time=3)
     preamp.sensitivity_unit.set.assert_called_with("pA/V", timeout=None, settle_time=3)
-    
+
 
 def test_gain_signals(preamp):
     # Change the preamp settings

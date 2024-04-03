@@ -31,7 +31,10 @@ __all__ = ["load_instrument"]
 
 
 async def aload_instrument(
-    registry: InstrumentRegistry = default_registry, config: Mapping = None, return_devices: bool=False):
+    registry: InstrumentRegistry = default_registry,
+    config: Mapping = None,
+    return_devices: bool = False,
+):
     """Asynchronously load the beamline instrumentation into an instrument
     registry.
 

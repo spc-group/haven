@@ -1,12 +1,5 @@
 import asyncio
 
-from ophyd import (
-    Device,
-    Component as Cpt,
-    FormattedComponent as FCpt,
-    Kind,
-    OphydObject,
-)
 from apstools.synApps import TransformRecord
 from ophyd import Component as Cpt
 from ophyd import Device, Kind, OphydObject

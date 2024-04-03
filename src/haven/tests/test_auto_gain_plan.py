@@ -1,12 +1,11 @@
-from unittest.mock import MagicMock
-
 from queue import Queue
+from unittest.mock import MagicMock
 
 import numpy as np
 import pytest
 from bluesky_adaptive.recommendations import NoRecommendation
 
-from haven import auto_gain, GainRecommender
+from haven import GainRecommender, auto_gain
 from haven.plans import auto_gain as auto_gain_module
 
 
@@ -42,7 +41,9 @@ def test_plan_prefer_arg(sim_ion_chamber, monkeypatch, prefer, target_volts):
     monkeypatch.setattr(auto_gain_module, "GainRecommender", MagicMock())
     plan = auto_gain(dets=[sim_ion_chamber], queue=queue, prefer=prefer)
     msgs = list(plan)
-    auto_gain_module.GainRecommender.assert_called_with(volts_min=0.5, volts_max=4.5, target_volts=target_volts)
+    auto_gain_module.GainRecommender.assert_called_with(
+        volts_min=0.5, volts_max=4.5, target_volts=target_volts
+    )
 
 
 @pytest.fixture()
@@ -127,8 +128,16 @@ def test_recommender_high_and_low(recommender):
 def test_recommender_fill_missing_gains(recommender):
     """If we have both high and low gains already done, will the
     recommender fill in the missing pieces."""
-    gains = [[9], [12], [10],]
-    volts = [[0.3], [5.2], [1.5],]
+    gains = [
+        [9],
+        [12],
+        [10],
+    ]
+    volts = [
+        [0.3],
+        [5.2],
+        [1.5],
+    ]
     recommender.tell_many(gains, volts)
     # Does it recommend the missing gain value?
     df = recommender.dfs[0]
@@ -138,7 +147,7 @@ def test_recommender_fill_missing_gains(recommender):
 def test_recommender_no_high(recommender):
     """If the gain happens to be in range first try, we need to get
     more data to be sure we have the best point.
-    
+
     """
     gains = [[8], [9], [10]]
     volts = [[0.3], [1.25], [2.7]]
@@ -150,7 +159,7 @@ def test_recommender_no_high(recommender):
 def test_recommender_no_low(recommender):
     """If the gain happens to be in range first try, we need to get
     more data to be sure we have the best point.
-    
+
     """
     gains = [[8], [9], [10]]
     volts = [[1.25], [2.75], [5.4]]
@@ -167,6 +176,7 @@ def test_recommender_no_solution(recommender):
     # Does it recommend the missing gain value?
     df = recommender.dfs[0]
     assert recommender.next_gain(df) == 9
+
 
 @pytest.mark.parametrize("target_volts,gain", [(0.5, 10), (2.5, 9), (4.5, 8)])
 def test_recommender_correct_solution(target_volts, gain):
@@ -203,18 +213,22 @@ def test_recommender_gain_range_low(recommender):
 def test_recommender_no_change(recommender):
     """If we've already found the best solution, we should stop the scan."""
     # Set a history of gain measurements
-    gains = np.asarray([
-        [10, 13],
-        [11, 11],
-        [12, 14],
-        [13, 12],
-    ])
-    volts = np.asarray([
-        [7.10, 2.23],
-        [4.30, 5.30],
-        [2.10, 0.10],
-        [0.20, 4.33],
-    ])
+    gains = np.asarray(
+        [
+            [10, 13],
+            [11, 11],
+            [12, 14],
+            [13, 12],
+        ]
+    )
+    volts = np.asarray(
+        [
+            [7.10, 2.23],
+            [4.30, 5.30],
+            [2.10, 0.10],
+            [0.20, 4.33],
+        ]
+    )
     recommender.tell_many(gains, volts)
     # Make sure the engine recommends the best solution
     assert recommender.ask(1) == [12, 13]
@@ -223,4 +237,3 @@ def test_recommender_no_change(recommender):
     # Check recommendations
     with pytest.raises(NoRecommendation):
         recommender.ask(1)
-
