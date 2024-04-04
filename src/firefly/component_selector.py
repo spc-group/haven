@@ -4,9 +4,9 @@ from collections import OrderedDict
 from pprint import pprint
 from functools import lru_cache
 
-from qasync import asyncSlot
+from qasync import asyncSlot, QThreadExecutor
 import qtawesome as qta
-from ophyd import Device, EpicsMotor, PositionerBase, Signal, sim
+from ophyd import Device, EpicsMotor, PositionerBase, Signal, sim, do_not_wait_for_lazy_connection
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QFont, QStandardItem, QStandardItemModel
 from qtpy.QtWidgets import (
@@ -115,19 +115,20 @@ class TreeComponent:
         self.component_item.setData(self)
         self.type_item.setData(self)
 
-    async def add_children(self):
+    def add_children(self):
         """Add components of the device as branches on the tree."""
         child_names = getattr(self.device, "component_names", [])
         self.child_components = []
         # Add the children
         for name in child_names:
-            child = self.__class__(
-                device=getattr(self.device, name), text=name, parent=self.component_item
-            )
-            self.child_components.append(child)
+            with do_not_wait_for_lazy_connection(self.device):
+                child = self.__class__(
+                    device=getattr(self.device, name), text=name, parent=self.component_item
+                )
+                self.child_components.append(child)
         # Add the devices children
         for cpt in self.child_components:
-            await cpt.add_children()
+            cpt.add_children()
 
 
 class ComponentTreeModel(QStandardItemModel):
@@ -155,13 +156,16 @@ class ComponentTreeModel(QStandardItemModel):
         self.root_components = []
         devices = sorted(registry.root_devices, key=lambda dev: dev.name.lower())
         for device in devices:
-            cpt = self.Component(
-                device=device, text=device.name, parent=parent_item, registry=registry
-            )
-            self.root_components.append(cpt)
-        # Add all the children for the root components
-        aws = (cpt.add_children() for cpt in self.root_components)
-        await asyncio.gather(*aws)
+            with do_not_wait_for_lazy_connection(device):
+                cpt = self.Component(
+                    device=device, text=device.name, parent=parent_item, registry=registry
+                )
+                self.root_components.append(cpt)
+        # Add all the children for the root components in separate threads
+        loop = asyncio.get_running_loop()
+        with QThreadExecutor(len(self.root_components)) as exec:
+            aws = (loop.run_in_executor(exec, cpt.add_children) for cpt in self.root_components)
+            await asyncio.gather(*aws)
 
 
 class ComboBoxComponent(TreeComponent):
@@ -172,20 +176,21 @@ class ComboBoxComponent(TreeComponent):
             # Only include motors, positioners, etc in the combobox
             self.parent.appendRow(self.component_item)
 
-    async def add_children(self):
+    def add_children(self):
         """Add components of the device as extra options."""
         child_names = getattr(self.device, "component_names", [])
         self.child_components = []
         # Add the children
         for name in child_names:
             dotted_name = ".".join([self.text, name])
-            child = self.__class__(
-                device=getattr(self.device, name), text=dotted_name, parent=self.parent
-            )
-            self.child_components.append(child)
+            with do_not_wait_for_lazy_connection(self.device):
+                child = self.__class__(
+                    device=getattr(self.device, name), text=dotted_name, parent=self.parent
+                )
+                self.child_components.append(child)
         # Add the devices children
         for cpt in self.child_components:
-            await cpt.add_children()
+            cpt.add_children()
 
 
 class ComponentComboBoxModel(ComponentTreeModel):
@@ -233,8 +238,7 @@ class ComponentSelector(QWidget):
         self.add_widgets()
         self.connect_signals()
         # Walk through the component tree and build the models
-        loop = asyncio.get_running_loop()
-        coro = loop.run_in_executor(None, self.update_devices, self.app.registry)
+        coro = self.update_devices(self.app.registry)
         self._devices_task = asyncio.ensure_future(coro)
 
     def current_component(self):
@@ -289,7 +293,6 @@ class ComponentSelector(QWidget):
 
     @asyncSlot(object)
     async def update_devices(self, registry):
-        print(self.combo_box_model.update_devices)
         await self.combo_box_model.update_devices(registry)
         await self.tree_model.update_devices(registry)
         # Clear the combobox text so it doesn't auto-select the first entry
@@ -320,8 +323,3 @@ class ComponentSelector(QWidget):
         tree_view.setModel(self.tree_model)
         layout.addWidget(tree_view)
         self.tree_view = tree_view
-        # Create a modal dialog (we won't show it until needed later)
-        # tree_dialog = TreeDialog(parent=self, model=self.tree_model)
-        # # tree_dialog.setWindowModality(Qt.ApplicationModal)
-        # tree_dialog.setWindowModality(Qt.WindowModal)
-        # self.tree_dialog = tree_dialog

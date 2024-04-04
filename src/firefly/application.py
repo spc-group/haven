@@ -16,7 +16,7 @@ from qtpy import QtCore, QtWidgets
 from qtpy.QtCore import Signal
 from qtpy.QtWidgets import QAction
 
-from haven import load_instrument as load_haven_instrument, load_config, registry
+from haven import aload_instrument, load_config, registry
 from haven.exceptions import ComponentNotFound
 from haven.instrument.device import titelize
 
@@ -136,7 +136,7 @@ class FireflyApplication(PyDMApplication):
         load_haven_instrument(registry=self.registry)
         self.registry_changed.emit(self.registry)
 
-    def setup_instrument(self, load_instrument=True):
+    async def setup_instrument(self, load_instrument=True):
         """Set up the application to use a previously loaded instrument.
 
         Expects devices, plans, etc to have been created already.
@@ -155,7 +155,8 @@ class FireflyApplication(PyDMApplication):
 
         """
         if load_instrument:
-            load_haven_instrument(registry=self.registry)
+            await aload_instrument(registry=self.registry)
+            self.registry_changed.emit(self.registry)
         # Make actions for launching other windows
         self.setup_window_actions()
         # Actions for controlling the bluesky run engine
@@ -167,7 +168,6 @@ class FireflyApplication(PyDMApplication):
         default_window = show_default_window()
         # Set up the window to show list of PV connections
         pydm.utilities.shortcuts.install_connection_inspector(parent=default_window)
-        self.registry_changed.emit(self.registry)
 
     def setup_window_actions(self):
         """Create QActions for clicking on menu items, shortcuts, etc.
@@ -575,7 +575,6 @@ class FireflyApplication(PyDMApplication):
         if (w := self.windows.get(name)) is None:
             # Window is not yet created, so create one
             w = self.create_window(WindowClass, ui_dir / ui_file, macros=macros)
-            # return
             self.windows[name] = w
             # Connect signals to remove the window when it closes
             w.destroyed.connect(partial(self.forget_window, name=name))
@@ -659,7 +658,9 @@ class FireflyApplication(PyDMApplication):
 
         Parameters
         ==========
-        ui_file
+        name
+          Human-readable name for the plan window
+        display_file
           Can be the name of .ui file or the .py file for the PyDM
           display.
 
