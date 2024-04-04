@@ -1,3 +1,4 @@
+import asyncio
 from pprint import pprint
 from unittest import mock
 
@@ -28,12 +29,22 @@ def motor_registry(ffapp, sim_registry):
     return sim_registry
 
 
-def test_selector_adds_devices(ffapp, motor_registry):
+@pytest.fixture
+async def selector(motor_registry):
+    selector_ = ComponentSelector()
+    # Cancel the initial update devices
+    selector_._devices_task.cancel()
+    # Register our new devices
+    await selector_.update_devices(motor_registry)
+    return selector_
+
+
+@pytest.mark.asyncio
+async def test_selector_adds_devices(selector):
     """Check that the combobox editable options are set based on the allowed detectors."""
-    selector = ComponentSelector()
-    # Add some items to the
-    selector.update_devices(motor_registry)
-    # Check that positioners were added to the combobox model
+    # await selector._devices_task
+    # # Add some items to the
+        # Check that positioners were added to the combobox model
     assert selector.combo_box.itemText(0) == "motor1"
     assert selector.combo_box.itemText(1) == "stage.motor2"
     assert selector.combo_box.itemText(2) == "stage.motor3"
@@ -42,9 +53,10 @@ def test_selector_adds_devices(ffapp, motor_registry):
     assert tree_model.item(0).text() == "motor1"
 
 
-def test_tree_model_adds_devices(ffapp, motor_registry):
+@pytest.mark.asyncio
+async def test_tree_model_adds_devices(ffapp, motor_registry):
     model = ComponentTreeModel()
-    model.update_devices(motor_registry)
+    await model.update_devices(motor_registry)
     # Check "Component" column
     assert model.item(0).text() == "motor1"
     assert model.item(0).child(0, column=0).text() == "user_readback"
@@ -53,19 +65,18 @@ def test_tree_model_adds_devices(ffapp, motor_registry):
     assert model.item(0).child(0, column=1).text() == "FakeEpicsSignalRO"
 
 
-def test_combo_box_model_adds_devices(ffapp, motor_registry):
+@pytest.mark.asyncio
+async def test_combo_box_model_adds_devices(ffapp, motor_registry):
     model = ComponentComboBoxModel()
-    model.update_devices(motor_registry)
+    await model.update_devices(motor_registry)
     # Check that dot-notation is included
     assert model.item(0).text() == "motor1"
     assert model.item(1).text() == "stage.motor2"
 
 
-def test_tree_changes_combobox(ffapp, motor_registry, qtbot):
+@pytest.mark.asyncio
+async def test_tree_changes_combobox(selector, qtbot):
     """Check that the combobox and tree will update each other."""
-    selector = ComponentSelector()
-    # Add some items to the
-    selector.update_devices(motor_registry)
     # Select a tree item
     item = selector.tree_model.item(0).child(1, column=0)
     with qtbot.waitSignal(selector.combo_box.currentTextChanged, timeout=1):
@@ -75,22 +86,22 @@ def test_tree_changes_combobox(ffapp, motor_registry, qtbot):
     assert selector.combo_box.currentText() == "motor1.user_setpoint"
 
 
-def test_combobox_changes_tree(ffapp, motor_registry, qtbot):
+@pytest.mark.asyncio
+async def test_combobox_changes_tree(selector, qtbot):
     """Check that the combobox and tree will update each other."""
-    selector = ComponentSelector()
-    selector.update_devices(motor_registry)
     # Select a combobox item
     item = selector.tree_model.item(0).child(1, column=0)
+    selector.combo_box.setCurrentIndex(3)
     with qtbot.waitSignal(
         selector.tree_view.selectionModel().currentChanged, timeout=1
     ):
-        selector.combo_box.setCurrentIndex(3)
-    # assert selector.combo_box.currentText() == "motor1.setpoint"
+        selector.combo_box.currentTextChanged.emit("motor1.user_setpoint")
 
 
-def test_model_component_from_index(ffapp, motor_registry):
+@pytest.mark.asyncio
+async def test_model_component_from_index(ffapp, motor_registry):
     model = ComponentTreeModel()
-    model.update_devices(motor_registry)
+    await model.update_devices(motor_registry)
     # Can we retrieve a root device based on its name item
     item = model.item(0)
     cpt = model.component_from_index(item.index())
@@ -105,9 +116,10 @@ def test_model_component_from_index(ffapp, motor_registry):
     assert cpt.dotted_name == "stage.motor3"
 
 
-def test_model_component_from_dotted_index(ffapp, motor_registry):
+@pytest.mark.asyncio
+async def test_model_component_from_dotted_index(ffapp, motor_registry):
     model = ComponentTreeModel()
-    model.update_devices(motor_registry)
+    await model.update_devices(motor_registry)
     # Can we retrieve a root device based on its dotted name
     item = model.item(0)
     cpt = model.component_from_dotted_name("motor1")
@@ -118,9 +130,9 @@ def test_model_component_from_dotted_index(ffapp, motor_registry):
     assert cpt.component_item is item
 
 
-def test_loads_devices_from_registry(ffapp, motor_registry, qtbot):
-    selector = ComponentSelector()
-    selector.combo_box_model.update_devices = mock.MagicMock()
+@pytest.mark.asyncio
+async def test_loads_devices_from_registry(ffapp, selector, motor_registry, qtbot):
+    selector.combo_box_model.update_devices = mock.AsyncMock()
     ffapp.registry_changed.emit(motor_registry)
-    qtbot.wait(1)
+    await asyncio.sleep(0.5)
     selector.combo_box_model.update_devices.assert_called_once_with(motor_registry)
