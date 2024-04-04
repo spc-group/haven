@@ -45,6 +45,7 @@ class IOCManager(Device):
 
     start_ioc = Cpt(EpicsSignal, "start", kind="omitted")
     stop_ioc = Cpt(EpicsSignal, "stop", kind="omitted")
+    restart_ioc = Cpt(EpicsSignal, "restart", kind="omitted")
 
 
 class BeamlineManager(Device):
@@ -95,6 +96,7 @@ def load_beamline_manager_coros(config=None):
         prefix=cfg['prefix'],
         name=cfg['name'],
         labels={"beamline_manager"},
+        iocs=cfg['iocs'],
     )
 
 
