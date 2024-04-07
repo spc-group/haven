@@ -6,7 +6,6 @@ from apsbss import apsbss
 from dm.common.exceptions.objectNotFound import ObjectNotFound
 from qtpy.QtCore import Signal
 from qtpy.QtGui import QStandardItem, QStandardItemModel
-import qtawesome as qta
 
 import haven
 from firefly import display

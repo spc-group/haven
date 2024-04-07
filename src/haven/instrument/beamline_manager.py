@@ -1,10 +1,13 @@
 import asyncio
 
-from ophyd import Device, DynamicDeviceComponent as DCpt, Component as Cpt, EpicsSignal, EpicsSignalRO
 from apsbss.apsbss_ophyd import EpicsBssDevice, EpicsEsafDevice, EpicsProposalDevice
+from ophyd import Component as Cpt
+from ophyd import Device
+from ophyd import DynamicDeviceComponent as DCpt
+from ophyd import EpicsSignal, EpicsSignalRO
 
-from .device import make_device, aload_devices
 from .._iconfig import load_config
+from .device import aload_devices, make_device
 
 
 class BSSEsaf(EpicsEsafDevice):
@@ -16,9 +19,7 @@ class BSSEsaf(EpicsEsafDevice):
 class BSSProposal(EpicsProposalDevice):
     user_PIs = Cpt(EpicsSignal, "userPIs", string=True)
     mail_in_flag = Cpt(EpicsSignal, "mailInFlag", string=False)
-    proprietary_flag = Cpt(
-        EpicsSignal, "proprietaryFlag", string=False
-    )
+    proprietary_flag = Cpt(EpicsSignal, "proprietaryFlag", string=False)
     start_timestamp = Cpt(EpicsSignal, "startTimestamp")
     end_timestamp = Cpt(EpicsSignal, "endTimestamp")
 
@@ -33,7 +34,7 @@ class LocalStorage(Device):
     sub_directory = Cpt(EpicsSignal, "sub_directory", kind="config")
     full_path = Cpt(EpicsSignalRO, "full_path", kind="config")
     exists = Cpt(EpicsSignalRO, "exists", kind="config")
-    
+
     create = Cpt(EpicsSignal, "create", kind="omitted")
 
 
@@ -61,6 +62,7 @@ class BeamlineManager(Device):
     *iocs* matching the IOC managers.
 
     """
+
     bss = Cpt(BSS, "bss:", name="bss")
     local_storage = Cpt(LocalStorage, "local_storage:", name="local_storage")
 
@@ -80,7 +82,7 @@ class BeamlineManager(Device):
 
     def __init__(self, *args, iocs={}, **kwargs):
         super().__init__(*args, **kwargs)
-            
+
 
 def load_beamline_manager_coros(config=None):
     # Load configuration for the beamline manager
@@ -93,10 +95,10 @@ def load_beamline_manager_coros(config=None):
     # Set up the beamline manager
     yield make_device(
         BeamlineManager,
-        prefix=cfg['prefix'],
-        name=cfg['name'],
+        prefix=cfg["prefix"],
+        name=cfg["name"],
         labels={"beamline_manager"},
-        iocs=cfg['iocs'],
+        iocs=cfg["iocs"],
     )
 
 

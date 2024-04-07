@@ -193,10 +193,14 @@ class SimpleBeamlineManager(BeamlineManager):
     itself.
 
     """
-    iocs = DDC({
-        "ioc255idb": (IOCManager, "ioc255idb:", {}),
-        "ioc255idc": (IOCManager, "ioc255idc:", {}),
-    })
+
+    iocs = DDC(
+        {
+            "ioc255idb": (IOCManager, "ioc255idb:", {}),
+            "ioc255idc": (IOCManager, "ioc255idc:", {}),
+        }
+    )
+
     def __new__(cls, *args, **kwargs):
         return object.__new__(cls)
 
@@ -205,7 +209,9 @@ class SimpleBeamlineManager(BeamlineManager):
 def beamline_manager(sim_registry):
     """A fake set of slits using the 4-blade setup."""
     FakeManager = make_fake_device(SimpleBeamlineManager)
-    manager = FakeManager(prefix="companionCube:", name="companion_cube", labels={"beamline_manager"})
+    manager = FakeManager(
+        prefix="companionCube:", name="companion_cube", labels={"beamline_manager"}
+    )
     sim_registry.register(manager)
     return manager
 

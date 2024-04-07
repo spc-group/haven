@@ -1,4 +1,4 @@
-from haven.instrument.beamline_manager import load_beamline_manager, BeamlineManager
+from haven.instrument.beamline_manager import BeamlineManager, load_beamline_manager
 
 """
     glados:alive.VAL
@@ -263,6 +263,7 @@ from haven.instrument.beamline_manager import load_beamline_manager, BeamlineMan
     glados:local_storage_startup
     glados:autosave_helper::__autosave_hook
 """
+
 
 def test_load_manager():
     """Check that the manager object is created from configuration file."""
