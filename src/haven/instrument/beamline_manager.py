@@ -101,5 +101,4 @@ def load_beamline_manager_coros(config=None):
 
 
 def load_beamline_manager(config=None):
-    loop = asyncio.get_event_loop()
     return asyncio.run(aload_devices(*load_beamline_manager_coros(config=config)))

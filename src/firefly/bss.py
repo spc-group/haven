@@ -151,7 +151,6 @@ class BssDisplay(display.FireflyDisplay):
         # Change the proposal in the EPICS record
         bss = haven.registry.find("beamline_manager.bss")
         bss.proposal.proposal_id.set(new_id).wait()
-        self.api.epicsUpdate(bss.prefix)
         # Notify any interested parties that the proposal has been changed
         self.proposal_changed.emit()
 
@@ -170,7 +169,6 @@ class BssDisplay(display.FireflyDisplay):
         bss = haven.registry.find("beamline_manager.bss")
         bss.wait_for_connection()
         bss.esaf.esaf_id.set(new_id).wait(timeout=5)
-        self.api.epicsUpdate(bss.prefix)
         # Notify any interested parties that the esaf has been changed
         self.esaf_changed.emit()
 

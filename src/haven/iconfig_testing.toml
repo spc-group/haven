@@ -111,5 +111,5 @@ prefix = "255idc:glados:"
 beamline = "25-ID-C"
 
 [beamline_manager.iocs]
-255idb = "glados:ioc255idb"
-255idc = "glados:ioc255idc"
+ioc255idb = "ioc255idb:"
+ioc255idc = "ioc255idc:"
