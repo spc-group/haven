@@ -32,6 +32,8 @@ dependencies:
   - pip
   - psutil
   - numba>=0.56  # Ensures 0.53 (broken) isn't installed
+  - # This version of networkx has an importlib bug in it
+  - networkx < 3.3
 
   # --- testing and quality assurance
   - black >=24
