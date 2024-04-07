@@ -32,7 +32,9 @@ __all__ = ["load_instrument"]
 
 
 async def aload_instrument(
-    registry: InstrumentRegistry = default_registry, config: Mapping = None
+    registry: InstrumentRegistry = default_registry,
+    config: Mapping = None,
+    return_devices: bool = False,
 ):
     """Asynchronously load the beamline instrumentation into an instrument
     registry.
@@ -49,9 +51,19 @@ async def aload_instrument(
       The registry into which the ophyd devices will be placed.
     config:
       The beamline configuration read in from TOML files. Mostly
-    useful for testing.
+      useful for testing.
+    return_devices
+      If true, return the newly loaded devices when complete.
 
     """
+    # Clear out any existing registry entries
+    registry.clear()
+    # Make sure we have the most up-to-date configuration
+    # load_config.cache_clear()
+    # Load the configuration
+    if config is None:
+        config = load_config()
+    # Load devices concurrently
     coros = (
         *load_camera_coros(config=config),
         *load_beamline_manager_coros(config=config),
@@ -79,7 +91,12 @@ async def aload_instrument(
     # motors in the registry
     extra_motors = await asyncio.gather(*load_all_motor_coros(config=config))
     devices.extend(extra_motors)
-    return devices
+    # Also import some simulated devices for testing
+    devices += load_simulated_devices(config=config)
+    # Filter out devices that couldn't be reached
+    devices = [d for d in devices if d is not None]
+    if return_devices:
+        return devices
 
 
 def load_instrument(
@@ -95,6 +112,10 @@ def load_instrument(
     configuration, it will create Ophyd devices and register them with
     *registry*.
 
+    This function starts the asyncio event loop. If one is already
+    running (e.g. jupyter notebook), then use ``await
+    aload_instrument()`` instead.
+
     Parameters
     ==========
     registry:
@@ -106,23 +127,11 @@ def load_instrument(
       If true, return the newly loaded devices when complete.
 
     """
-    # Clear out any existing registry entries
-    registry.clear()
-    # Make sure we have the most up-to-date configuration
-    # load_config.cache_clear()
-    # Load the configuration
-    if config is None:
-        config = load_config()
     # Import devices concurrently
     loop = asyncio.get_event_loop()
-    devices = loop.run_until_complete(
-        aload_instrument(registry=registry, config=config)
-    )
-    # Also import some simulated devices for testing
-    devices += load_simulated_devices(config=config)
-    # Filter out devices that couldn't be reached
+    coro = aload_instrument(registry=registry, config=config)
+    devices = loop.run_until_complete(coro)
     if return_devices:
-        devices = [d for d in devices if d is not None]
         return devices
 
 

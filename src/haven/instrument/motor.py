@@ -85,7 +85,10 @@ async def load_motor(prefix: str, motor_num: int, ioc_name: str = None):
     """Create the requested motor if it is reachable."""
     pv = f"{prefix}:m{motor_num+1}"
     # Check that we're not duplicating a motor somewhere else (e.g. KB mirrors)
-    existing_pvs = [m.prefix for m in registry.findall(label="motors", allow_none=True)]
+    existing_pvs = []
+    for m in registry.findall(label="motors", allow_none=True):
+        if hasattr(m, "prefix"):
+            existing_pvs.append(m.prefix)
     if pv in existing_pvs:
         log.info(f"Motor for prefix {pv} already exists. Skipping.")
         return
@@ -104,11 +107,11 @@ async def load_motor(prefix: str, motor_num: int, ioc_name: str = None):
             return
     else:
         log.debug(f"Resolved motor {pv} to '{name}'")
-
     # Create the motor device
-    if name == f"motor {motor_num+1}":
+    unused_motor_names = [f"motor {motor_num+1}", ""]
+    if name in unused_motor_names:
         # It's an unnamed motor, so skip it
-        log.info(f"SKipping unnamed motor {motor_num}")
+        log.info(f"SKipping unnamed motor {pv}")
     else:
         # Create a new motor object
         labels = {"motors", "extra_motors", "baseline"}

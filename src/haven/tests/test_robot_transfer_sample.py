@@ -1,19 +1,26 @@
-from haven.instrument import power_supply
+from ophyd.sim import motor1, motor2, motor3
+
+from haven import robot_transfer_sample
 
 
-def test_load_power_supplies(sim_registry):
-    power_supply.load_power_supplies()
-    # Test that the device has the right configuration
-    devices = list(sim_registry.findall(label="power_supplies"))
-    assert len(devices) == 2  # 2 channels on the device
-    device = devices[0]
-    assert "NHQ01_ch" in device.name
+def test_robot_sample(robot):
+
+    plan = robot_transfer_sample(robot, 9, motor1, 100, motor2, 200, motor3, 50)
+
+    msgs = list(plan)
+
+    assert robot.name == "robotA"
+    assert len(msgs) == 14
+
+    unload = robot_transfer_sample(robot, None, motor1, 100)
+    msgs = list(unload)
+    assert len(msgs) == 6
 
 
 # -----------------------------------------------------------------------------
-# :author:    Mark Wolfman
-# :email:     wolfman@anl.gov
-# :copyright: Copyright © 2023, UChicago Argonne, LLC
+# :author:    Yanna Chen
+# :email:     yannachen@anl.gov
+# :copyright: Copyright © 2024, UChicago Argonne, LLC
 #
 # Distributed under the terms of the 3-Clause BSD License
 #
