@@ -1,5 +1,4 @@
 import logging
-from functools import lru_cache
 
 import qtawesome as qta
 from apsbss import apsbss
@@ -54,8 +53,6 @@ class BssDisplay(display.FireflyDisplay):
     def customize_device(self):
         self._device = haven.registry.find("beamline_manager")
 
-    # @property
-    # @lru_cache()
     def proposals(self):
         config = haven.load_config()
         proposals = []
@@ -81,8 +78,6 @@ class BssDisplay(display.FireflyDisplay):
             )
         return proposals
 
-    # @property
-    # @lru_cache()
     def esafs(self):
         config = haven.load_config()
         esafs_ = []
