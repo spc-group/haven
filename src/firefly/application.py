@@ -133,7 +133,7 @@ class FireflyApplication(PyDMApplication):
         # Actions for controlling the bluesky run engine
         self.setup_runengine_actions()
         # Prepare the client for interacting with the queue server
-        self.prepare_queue_client()
+        # self.prepare_queue_client()
         # Launch the default display
         show_default_window = getattr(self, f"show_{self.default_display}_window")
         default_window = show_default_window()
@@ -216,7 +216,7 @@ class FireflyApplication(PyDMApplication):
         self._setup_window_action(
             action_name="show_run_browser_action",
             text="Browse Runs",
-            slot=self.show_run_browser,
+            slot=self.show_run_browser_window,
         )
         # Action for launch queue-monitor
         self._setup_window_action(
@@ -529,6 +529,7 @@ class FireflyApplication(PyDMApplication):
         if (w := self.windows.get(name)) is None:
             # Window is not yet created, so create one
             w = self.create_window(WindowClass, ui_dir / ui_file, macros=macros)
+            # return
             self.windows[name] = w
             # Connect signals to remove the window when it closes
             w.destroyed.connect(partial(self.forget_window, name=name))
@@ -591,7 +592,7 @@ class FireflyApplication(PyDMApplication):
         )
 
     @QtCore.Slot()
-    def show_run_browser(self):
+    def show_run_browser_window(self):
         return self.show_window(
             PlanMainWindow, ui_dir / "run_browser.py", name="run_browser"
         )
@@ -615,7 +616,7 @@ class FireflyApplication(PyDMApplication):
     @QtCore.Slot()
     def show_voltmeters_window(self):
         return self.show_window(
-            FireflyMainWindow, ui_dir / "voltmeters.py", name="voltmeters"
+            PlanMainWindow, ui_dir / "voltmeters.py", name="voltmeters"
         )
 
     @QtCore.Slot()

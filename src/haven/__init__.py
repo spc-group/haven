@@ -5,7 +5,8 @@ __version__ = "0.1.0"
 from ._iconfig import load_config  # noqa: F401
 
 #  Top-level imports
-from .catalog import load_catalog, load_data, load_result, tiled_client  # noqa: F401
+# from .catalog import load_catalog, load_data, load_result, tiled_client  # noqa: F401
+from .catalog import catalog  # noqa: F401
 from .constants import edge_energy  # noqa: F401
 from .energy_ranges import ERange, KRange, merge_ranges  # noqa: F401
 from .instrument import (  # noqa: F401
@@ -19,7 +20,7 @@ from .instrument import (  # noqa: F401
 )
 from .instrument.device import RegexComponent  # noqa: F401
 from .instrument.dxp import load_dxp  # noqa: F401
-from .instrument.load_instrument import load_instrument  # noqa: F401
+from .instrument.load_instrument import aload_instrument, load_instrument  # noqa: F401
 from .instrument.motor import HavenMotor  # noqa: F401
 from .instrument.xspress import load_xspress  # noqa: F401
 from .motor_position import (  # noqa: F401
