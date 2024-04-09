@@ -10,7 +10,9 @@ from have import exceptions, load_config, registry
 
 log = logging.getLogger(__name__)
 
-SAMPLE_NUMBERS = range(24)
+ROBOT_NAMES = ["Austin"]
+
+SAMPLE_NUMBERS = [8,9,10,14,15,16,20,21,22,None]#range(24)
 
 class LineScanRegion:
     def __init__(self):
@@ -31,23 +33,39 @@ class LineScanRegion:
 
         # Third item, start point
         self.start_line_edit = QtWidgets.QLineEdit()
-        self.start_line_edit.setPlaceholderText("Start…")
+        self.start_line_edit.setPlaceholderText("Position…")
         self.layout.addWidget(self.start_line_edit)
 
         # Forth item, stop point
-        self.stop_line_edit = QtWidgets.QLineEdit()
-        self.stop_line_edit.setPlaceholderText("Stop…")
-        self.layout.addWidget(self.stop_line_edit)
+        #self.stop_line_edit = QtWidgets.QLineEdit()
+        #self.stop_line_edit.setPlaceholderText("Stop…")
+        #self.layout.addWidget(self.stop_line_edit)
 
 
 
 
 class RobotDisplay(display.FireflyDisplay):
     """
-    A GUI for managing sample tranfer using a robot
+    A GUI for managing sample tranfer using a robot plan: robot_sample(robot, number/None, motor1, position1, motor2, position2, motor3, position...)
     """
 
     def customize_ui(self):
+        # disable the line edits in spin box
+        self.ui.robot_spin_box.lineEdit().setReadOnly(True)
+        # clear any exiting items in the spin box
+        self.ui.robot_spin_box.clear()
+        # set the list of values for the spin box
+        for rbt in ROBOT_NAMES:
+            self.ui.robot_spin_box.addItem(rbt)
+
+        # disable the line edits in spin box
+        self.ui.sample_spin_box.lineEdit().setReadOnly(True)
+        # clear any exiting items in the spin box
+        self.ui.sample_spin_box.clear()
+        # set the list of values for the spin box
+        for num in SAMPLE_NUMBERS:
+            self.ui.sample_spin_box.addItem(str(num))
+
         # disable the line edits in spin box
         self.ui.num_motor_spin_box.lineEdit().setReadOnly(True)
         self.ui.num_motor_spin_box.valueChanged.connect(self.update_regions)
@@ -86,17 +104,25 @@ class RobotDisplay(display.FireflyDisplay):
     def queue_plan(self, *args, **kwargs):
         """Execute this plan on the queueserver."""
         # Get scan parameters from widgets
-        num_readings = self.ui.num_spinbox.value()
-        delay = self.ui.delay_spinbox.value()
-        detectors = self.ui.detectors_list.selected_detectors()
-        # Build the queue item
+        robot = self.ui.robot_spin_box.value()
+        num_motor = self.ui.num_motor_spin_box.value()
+        sam_num = self.ui.sample_spin_box.value()
+       
+        # get parameters from motor regions
+        motor_lst, position_lst = []
+        for region_i in self.regions:
+            motor_lst.append(region_i.motor_box.current_component())
+            postion_lst.append(float(region_i.start_line_edit.text()))
+        
+        args = [values for motor_i in zip(motor_lst, position_lst for values in motor_i)
 
-        item = BPlan("count", delay=delay, num=num_readings, detectors=detectors)
+        # Build the queue item
+        item = BPlan("robot_transfer_sample", robot, sam_num, args)
+        
         # Submit the item to the queueserver
         from firefly.application import FireflyApplication
-
         app = FireflyApplication.instance()
-        log.info("Add ``count()`` plan to queue.")
+        log.info("Add ``robot_transfer_sample()`` plan to queue.")
         app.add_queue_item(item)
 
     def ui_filename(self):

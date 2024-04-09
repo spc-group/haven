@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>522</width>
-    <height>324</height>
+    <height>434</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -62,6 +62,73 @@ font-weight: bold;</string>
     </widget>
    </item>
    <item>
+    <widget class="QGroupBox" name="groupBox_4">
+     <property name="title">
+      <string>Robot Names</string>
+     </property>
+     <layout class="QFormLayout" name="formLayout_4">
+      <property name="labelAlignment">
+       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+      </property>
+      <item row="1" column="1">
+       <layout class="QHBoxLayout" name="horizontalLayout_7">
+        <item>
+         <widget class="QLabel" name="sample_label_2">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="text">
+           <string>Robot</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QSpinBox" name="robot_spin_box">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
+          <property name="wrapping">
+           <bool>false</bool>
+          </property>
+          <property name="readOnly">
+           <bool>false</bool>
+          </property>
+          <property name="correctionMode">
+           <enum>QAbstractSpinBox::CorrectToNearestValue</enum>
+          </property>
+          <property name="minimum">
+           <number>1</number>
+          </property>
+          <property name="value">
+           <number>1</number>
+          </property>
+          <property name="displayIntegerBase">
+           <number>10</number>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontalSpacer_6">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>490</width>
+            <height>52</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
     <widget class="QGroupBox" name="groupBox_2">
      <property name="title">
       <string>Sample Holder Numbers</string>
@@ -80,7 +147,7 @@ font-weight: bold;</string>
          </widget>
         </item>
         <item>
-         <widget class="PyDMLabel" name="current_sampleNum_label">
+         <widget class="PyDMLabel" name="current_sample_num_label">
           <property name="toolTip">
            <string/>
           </property>
@@ -269,61 +336,6 @@ font-weight: bold;</string>
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout_5">
      <item>
-      <widget class="PyDMPushButton" name="unload_button">
-       <property name="toolTip">
-        <string/>
-       </property>
-       <property name="text">
-        <string>Unload</string>
-       </property>
-       <property name="alarmSensitiveContent" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="alarmSensitiveBorder" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="PyDMToolTip" stdset="0">
-        <string/>
-       </property>
-       <property name="monitorDisp" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="channel" stdset="0">
-        <string>haven://austin.unload_current_sample</string>
-       </property>
-       <property name="PyDMIcon" stdset="0">
-        <string/>
-       </property>
-       <property name="passwordProtected" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="password" stdset="0">
-        <string/>
-       </property>
-       <property name="protectedPassword" stdset="0">
-        <string/>
-       </property>
-       <property name="showConfirmDialog" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="confirmMessage" stdset="0">
-        <string>Are you sure you want to proceed?</string>
-       </property>
-       <property name="pressValue" stdset="0">
-        <string>None</string>
-       </property>
-       <property name="releaseValue" stdset="0">
-        <string>None</string>
-       </property>
-       <property name="relativeChange" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="writeWhenRelease" stdset="0">
-        <bool>false</bool>
-       </property>
-      </widget>
-     </item>
-     <item>
       <spacer name="buttons_spacer">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
@@ -352,11 +364,6 @@ font-weight: bold;</string>
    <class>PyDMLabel</class>
    <extends>QLabel</extends>
    <header>pydm.widgets.label</header>
-  </customwidget>
-  <customwidget>
-   <class>PyDMPushButton</class>
-   <extends>QPushButton</extends>
-   <header>pydm.widgets.pushbutton</header>
   </customwidget>
   <customwidget>
    <class>QueueButton</class>
