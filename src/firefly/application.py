@@ -41,6 +41,7 @@ class FireflyApplication(PyDMApplication):
     default_display = None
     xafs_scan_window = None
     count_plan_window = None
+    robot_window = None
 
     # Actions for showing window
     show_status_window_action: QtWidgets.QAction
@@ -265,6 +266,12 @@ class FireflyApplication(PyDMApplication):
             action_name="show_count_plan_window_action",
             text="&Count",
             slot=self.show_count_plan_window,
+        )
+        # Launch windows for robot
+        self._setup_window_action(
+            action_name="show_robot_window_action",
+            text="Robot",
+            slot=self.show_robot_window,
         )
 
     def launch_queuemonitor(self):
@@ -623,6 +630,11 @@ class FireflyApplication(PyDMApplication):
     def show_sample_viewer_window(self):
         return self.show_window(
             FireflyMainWindow, ui_dir / "sample_viewer.ui", name="sample_viewer"
+        )
+    @QtCore.Slot()
+    def show_robot_window(self):
+        return self.show_window(
+            PlanMainWindow, ui_dir / "robot" / "robot.py", name="robot"
         )
 
     @QtCore.Slot()

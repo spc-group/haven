@@ -1,12 +1,12 @@
 import logging
 
-import bluesky_queueserver_api import BPlan
+from bluesky_queueserver_api import BPlan
 from qtpy import QtWidgets
 from firefly import display
 from firefly.application import FireflyApplication
-from firefly.component_selector import ComponentSelector
+#from firefly.component_selector import ComponentSelector
 
-from have import exceptions, load_config, registry
+from haven import exceptions, load_config, registry
 
 log = logging.getLogger(__name__)
 
@@ -109,12 +109,12 @@ class RobotDisplay(display.FireflyDisplay):
         sam_num = self.ui.sample_spin_box.value()
        
         # get parameters from motor regions
-        motor_lst, position_lst = []
+        motor_lst, position_lst = [], []
         for region_i in self.regions:
             motor_lst.append(region_i.motor_box.current_component())
             postion_lst.append(float(region_i.start_line_edit.text()))
         
-        args = [values for motor_i in zip(motor_lst, position_lst for values in motor_i)
+        args = [values for motor_i in zip(motor_lst, position_lst) for values in motor_i]
 
         # Build the queue item
         item = BPlan("robot_transfer_sample", robot, sam_num, args)

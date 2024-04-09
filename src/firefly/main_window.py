@@ -137,6 +137,13 @@ class FireflyMainWindow(PyDMMainWindow):
             text="Sample",
             menu=self.ui.positioners_menu,
         )
+        # Robot transfer sample
+        self.add_menu_action(
+            action_name="show_robot_window_action",
+            text="Robot",
+            menu=self.ui.positioners_menu,
+        )
+
         # Motors sub-menu
         self.ui.menuMotors = QtWidgets.QMenu(self.ui.menubar)
         self.ui.menuMotors.setObjectName("menuMotors")
