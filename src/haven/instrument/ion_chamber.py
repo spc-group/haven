@@ -10,7 +10,7 @@ from typing import Dict, Generator, Optional
 
 import numpy as np
 import pint
-from aioca import caget
+from aioca import caget, CANothing
 from apstools.devices import SRS570_PreAmplifier
 from apstools.devices.srs570_preamplifier import (
     SRS570_PreAmplifier,
@@ -626,7 +626,7 @@ async def load_ion_chamber(
     # Only use this ion chamber if it has a name
     try:
         name = await caget(desc_pv)
-    except asyncio.exceptions.TimeoutError:
+    except (asyncio.exceptions.TimeoutError, CANothing):
         # Scaler channel is unreachable, so skip it
         log.warning(f"Could not connect to ion_chamber: {desc_pv}")
         return

@@ -35,8 +35,13 @@ def load_aps_coros(config=None):
         config = load_config()
     # Load storage ring device
     yield make_device(ApsMachine, name="APS", labels={"synchrotrons"})
-    yield make_device(EpicsBssDevice, name="bss", prefix=f"{config['bss']['prefix']}:")
-
+    
+    try:
+        prefix = config['bss']['prefix']
+        yield make_device(EpicsBssDevice, name="bss", prefix=f"{config['bss']['prefix']}:")
+    except KeyError:
+        import warnings
+        warnings.warn("Configuration for 'bss' prefix not found.", UserWarning)
 
 def load_aps(config=None):
     asyncio.run(aload_devices(*load_aps_coros(config=config)))
