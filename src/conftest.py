@@ -26,6 +26,7 @@ from haven._iconfig import beamline_connected as _beamline_connected
 from haven.catalog import Catalog
 from haven.instrument.aerotech import AerotechStage
 from haven.instrument.aps import ApsMachine
+from haven.instrument.beamline_manager import BeamlineManager, IOCManager
 from haven.instrument.camera import AravisDetector
 from haven.instrument.delay import EpicsSignalWithIO
 from haven.instrument.dxp import DxpDetector
@@ -151,6 +152,34 @@ def blade_slits(sim_registry):
     slits = FakeSlits(prefix="255idc:KB_slits", name="kb_slits", labels={"slits"})
     sim_registry.register(slits)
     return slits
+
+
+class SimpleBeamlineManager(BeamlineManager):
+    """For a fake class, we need to un-override __new__ to just make
+    itself.
+
+    """
+
+    iocs = DDC(
+        {
+            "ioc255idb": (IOCManager, "ioc255idb:", {}),
+            "ioc255idc": (IOCManager, "ioc255idc:", {}),
+        }
+    )
+
+    def __new__(cls, *args, **kwargs):
+        return object.__new__(cls)
+
+
+@pytest.fixture()
+def beamline_manager(sim_registry):
+    """A fake set of slits using the 4-blade setup."""
+    FakeManager = make_fake_device(SimpleBeamlineManager)
+    manager = FakeManager(
+        prefix="companionCube:", name="companion_cube", labels={"beamline_manager"}
+    )
+    sim_registry.register(manager)
+    return manager
 
 
 @pytest.fixture()
