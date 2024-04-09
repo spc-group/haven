@@ -41,7 +41,6 @@ class FireflyApplication(PyDMApplication):
     default_display = None
     xafs_scan_window = None
     count_plan_window = None
-    robot_window = None
 
     # Actions for showing window
     show_status_window_action: QtWidgets.QAction
@@ -51,6 +50,7 @@ class FireflyApplication(PyDMApplication):
     show_voltmeters_window_action: QtWidgets.QAction
     show_logs_window_action: QtWidgets.QAction
     launch_queuemonitor_action: QtWidgets.QAction
+    show_robot_window_action: QtWidgets.QAction
 
     # Keep track of motors
     motor_actions: Sequence = []
@@ -267,7 +267,7 @@ class FireflyApplication(PyDMApplication):
             text="&Count",
             slot=self.show_count_plan_window,
         )
-        # Launch windows for robot
+        # Launch robot windows
         self._setup_window_action(
             action_name="show_robot_window_action",
             text="Robot",
@@ -634,7 +634,7 @@ class FireflyApplication(PyDMApplication):
     @QtCore.Slot()
     def show_robot_window(self):
         return self.show_window(
-            PlanMainWindow, ui_dir / "robot" / "robot.py", name="robot"
+            PlanMainWindow, ui_dir / "robot.py", name="robot"
         )
 
     @QtCore.Slot()

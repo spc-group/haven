@@ -2,6 +2,7 @@ import logging
 
 from bluesky_queueserver_api import BPlan
 from qtpy import QtWidgets
+from PyQt5.QtWidgets import QSpinBox
 from firefly import display
 from firefly.application import FireflyApplication
 #from firefly.component_selector import ComponentSelector
@@ -12,7 +13,7 @@ log = logging.getLogger(__name__)
 
 ROBOT_NAMES = ["Austin"]
 
-SAMPLE_NUMBERS = [8,9,10,14,15,16,20,21,22,None]#range(24)
+SAMPLE_NUMBERS = (8,9,10,14,15,16,20,21,22,None)# None,#range(24)
 
 class LineScanRegion:
     def __init__(self):
@@ -51,20 +52,19 @@ class RobotDisplay(display.FireflyDisplay):
 
     def customize_ui(self):
         # disable the line edits in spin box
-        self.ui.robot_spin_box.lineEdit().setReadOnly(True)
-        # clear any exiting items in the spin box
-        self.ui.robot_spin_box.clear()
-        # set the list of values for the spin box
+        #self.ui.robot_combo_box.lineEdit().setReadOnly(True)
+        # clear any exiting items in the combo box
+        self.ui.robot_combo_box.clear()
+        # set the list of values for the combo box
         for rbt in ROBOT_NAMES:
-            self.ui.robot_spin_box.addItem(rbt)
+            self.ui.robot_combo_box.addItem(rbt)
 
-        # disable the line edits in spin box
-        self.ui.sample_spin_box.lineEdit().setReadOnly(True)
-        # clear any exiting items in the spin box
-        self.ui.sample_spin_box.clear()
-        # set the list of values for the spin box
-        for num in SAMPLE_NUMBERS:
-            self.ui.sample_spin_box.addItem(str(num))
+        # clear any exiting items in the combo box
+        self.ui.sample_combo_box.clear()
+        # set the list of values for the combo box
+        for sam in SAMPLE_NUMBERS:
+            self.ui.sample_combo_box.addItem(str(sam))
+        #self.ui.sample_combo_box.setCurrentIndex(0)
 
         # disable the line edits in spin box
         self.ui.num_motor_spin_box.lineEdit().setReadOnly(True)
@@ -73,7 +73,15 @@ class RobotDisplay(display.FireflyDisplay):
 
         # self.ui.run_button.setEnabled(True) #for testing
         self.ui.run_button.clicked.connect(self.queue_plan)
-    
+
+    def reset_default_regions(self):
+        default_num_regions = 1
+        if not hasattr(self, "regions"):
+            self.regions = []
+            self.add_regions(default_num_regions)
+        self.ui.num_motor_spin_box.setValue(default_num_regions)
+        self.update_regions()
+
     def add_regions(self, num=1):
         for i in range(num):
             region = LineScanRegion()
@@ -104,7 +112,7 @@ class RobotDisplay(display.FireflyDisplay):
     def queue_plan(self, *args, **kwargs):
         """Execute this plan on the queueserver."""
         # Get scan parameters from widgets
-        robot = self.ui.robot_spin_box.value()
+        robot = self.ui.robot_combo_box.value()
         num_motor = self.ui.num_motor_spin_box.value()
         sam_num = self.ui.sample_spin_box.value()
        

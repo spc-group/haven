@@ -86,29 +86,7 @@ font-weight: bold;</string>
          </widget>
         </item>
         <item>
-         <widget class="QSpinBox" name="robot_spin_box">
-          <property name="enabled">
-           <bool>true</bool>
-          </property>
-          <property name="wrapping">
-           <bool>false</bool>
-          </property>
-          <property name="readOnly">
-           <bool>false</bool>
-          </property>
-          <property name="correctionMode">
-           <enum>QAbstractSpinBox::CorrectToNearestValue</enum>
-          </property>
-          <property name="minimum">
-           <number>1</number>
-          </property>
-          <property name="value">
-           <number>1</number>
-          </property>
-          <property name="displayIntegerBase">
-           <number>10</number>
-          </property>
-         </widget>
+         <widget class="QComboBox" name="robot_combo_box"/>
         </item>
         <item>
          <spacer name="horizontalSpacer_6">
@@ -204,29 +182,7 @@ font-weight: bold;</string>
          </widget>
         </item>
         <item>
-         <widget class="QSpinBox" name="sample_spin_box">
-          <property name="enabled">
-           <bool>true</bool>
-          </property>
-          <property name="wrapping">
-           <bool>false</bool>
-          </property>
-          <property name="readOnly">
-           <bool>false</bool>
-          </property>
-          <property name="correctionMode">
-           <enum>QAbstractSpinBox::CorrectToNearestValue</enum>
-          </property>
-          <property name="minimum">
-           <number>1</number>
-          </property>
-          <property name="value">
-           <number>1</number>
-          </property>
-          <property name="displayIntegerBase">
-           <number>10</number>
-          </property>
-         </widget>
+         <widget class="QComboBox" name="sample_combo_box"/>
         </item>
         <item>
          <spacer name="horizontalSpacer_5">
@@ -327,9 +283,6 @@ font-weight: bold;</string>
         </size>
        </property>
       </spacer>
-     </item>
-     <item>
-      <layout class="QVBoxLayout" name="regions_layout"/>
      </item>
     </layout>
    </item>
