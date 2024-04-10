@@ -8,7 +8,7 @@ from typing import Optional, Sequence, Union
 
 from bluesky.callbacks import CallbackBase
 
-from . import exceptions
+from . import exceptions, registry
 
 log = logging.getLogger(__name__)
 
@@ -61,11 +61,14 @@ class XDIWriter(CallbackBase):
 
     *{year}*, *{month}*, *{day}* describe the numerical, zero-padded
     year, month and day when the callback handles the start document
-    for the plan. The remaining fields in the start document are also
-    available, and will likely vary from plan to plan. Either consult
-    the documentation for the plan being executed, or inspect the logs
-    for the dictionary metadata at level logging.INFO when using an
-    invalid placeholder.
+    for the plan. *{short_uid}* is the portion of the scan UID up to
+    the first '-' character. *{manager_path}* will be the full path
+    specified by the device labeled "beamline_manager" that has a
+    ``local_storage.full_path`` signal. The remaining fields in the
+    start document are also available, and will likely vary from plan
+    to plan. Either consult the documentation for the plan being
+    executed, or inspect the logs for the dictionary metadata at level
+    ``logging.INFO`` when using an invalid placeholder.
 
     Parameters
     ==========
@@ -73,6 +76,12 @@ class XDIWriter(CallbackBase):
       Either an open file with write intent, or a Path or string with
       the file location. If *fd* is not already an open file, it will
       be created when the ``start()`` method is called.
+    auto_directory
+      If true, the current local storage directory will be prepended
+      to *fd* if *fd* is not an open file object. The directory is
+      determined from the
+      :py:class:`~haven.instrument.beamline_manager.BeamlineManager`
+      object.
 
     """
 
@@ -81,7 +90,7 @@ class XDIWriter(CallbackBase):
     column_names: Optional[Sequence[str]] = None
     start_time: dt.datetime = None
 
-    def __init__(self, fd, *args, **kwargs):
+    def __init__(self, fd: Union[Path, str], *args, **kwargs):
         is_file_obj = hasattr(fd, "writable")
         if is_file_obj:
             # *fd* is an open file object
@@ -113,6 +122,17 @@ class XDIWriter(CallbackBase):
             "month": self.start_time.strftime("%m"),
             "day": self.start_time.strftime("%d"),
         }
+        # Add a shortened version of the UID
+        try:
+            md['short_uid'] = doc['uid'].split('-')[0]
+        except KeyError:
+            pass
+        # Add local storage directory
+        try:
+            manager_name = "beamline_manager.local_storage.full_path"
+            md['manager_path'] = registry[manager_name].get(as_string=True)
+        except exceptions.ComponentNotFound:
+            log.debug(f"Could not find beamline manager {manager_name}")
         md.update(doc)
         return md
 
