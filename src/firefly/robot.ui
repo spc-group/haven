@@ -266,6 +266,9 @@ font-weight: bold;</string>
         </item>
        </layout>
       </item>
+      <item row="1" column="1">
+       <widget class="QLineEdit" name="lineEdit"/>
+      </item>
      </layout>
     </widget>
    </item>
