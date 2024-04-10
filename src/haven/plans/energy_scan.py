@@ -8,11 +8,13 @@ from typing import Mapping, Sequence, Union
 
 import numpy as np
 from bluesky import plans as bp
+from bluesky.preprocessors import subs_decorator
 
 from .._iconfig import load_config
 from ..constants import edge_energy
 from ..instrument import registry
 from ..preprocessors import baseline_decorator
+from ..xdi_writer import XDIWriter
 from ..typing import DetectorList
 
 __all__ = ["energy_scan"]
@@ -22,6 +24,7 @@ log = logging.getLogger(__name__)
 
 
 # @shutter_suspend_decorator()
+@subs_decorator(XDIWriter("{manager_path}/{year}{month}{day}-{short_uid}-{sample_name}.xdi"))
 @baseline_decorator()
 def energy_scan(
     energies: Sequence[float],

@@ -115,6 +115,7 @@ class XDIWriter(CallbackBase):
         """Retrieve the open writable file object for this writer."""
         if self._fd is None:
             log.debug(f"Opening file: {self.fp.resolve()}")
+            self.fp.parent.mkdir(exist_ok=True, parents=True)
             self._fd = open(self.fp, mode="x")
         return self._fd
 
@@ -141,6 +142,7 @@ class XDIWriter(CallbackBase):
 
     def start(self, doc):
         self.start_time = dt.datetime.now().astimezone()
+        self.column_names = None
         # Format the file name based on metadata
         if self._fp_template is not None:
             # Make sure any previous runs are closed
