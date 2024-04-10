@@ -8,6 +8,7 @@ from typing import Mapping, Sequence
 import pydm
 import pyqtgraph as pg
 import qtawesome as qta
+from ophydregistry import Registry
 from pydm.application import PyDMApplication
 from pydm.utilities.stylesheet import apply_stylesheet
 from PyQt5.QtWidgets import QStyleFactory
@@ -15,7 +16,7 @@ from qtpy import QtCore, QtWidgets
 from qtpy.QtCore import Signal
 from qtpy.QtWidgets import QAction
 
-from haven import load_config, registry
+from haven import aload_instrument, load_config, registry
 from haven.exceptions import ComponentNotFound
 from haven.instrument.device import titelize
 
@@ -41,6 +42,10 @@ class FireflyApplication(PyDMApplication):
     default_display = None
     xafs_scan_window = None
     count_plan_window = None
+
+    # For keeping track of ophyd devices used by the Firefly
+    registry: Registry = None
+    registry_changed = Signal(Registry)
 
     # Actions for showing window
     show_status_window_action: QtWidgets.QAction
@@ -109,6 +114,7 @@ class FireflyApplication(PyDMApplication):
         # qdarktheme.setup_theme(additional_qss=qss_file.read_text())
         self.windows = OrderedDict()
         self.queue_re_state_changed.connect(self.enable_queue_controls)
+        self.registry = registry
 
     def __del__(self):
         if hasattr(self, "_queue_thread"):
@@ -123,12 +129,50 @@ class FireflyApplication(PyDMApplication):
         action.triggered.connect(slot)
         setattr(self, action_name, action)
 
-    def load_instrument(self):
+    #def load_instrument(self):
+    #    """Set up the application to use a previously loaded instrument.
+
+    #    Expects devices, plans, etc to have been created already.
+
+    #    """
+        # Make actions for launching other windows
+    #    self.setup_window_actions()
+        # Actions for controlling the bluesky run engine
+    #    self.setup_runengine_actions()
+        # Prepare the client for interacting with the queue server
+        # self.prepare_queue_client()
+        # Launch the default display
+    #    show_default_window = getattr(self, f"show_{self.default_display}_window")
+    #    default_window = show_default_window()
+        # Set up the window to show list of PV connections
+    #    pydm.utilities.shortcuts.install_connection_inspector(parent=default_window)
+
+    def reload_instrument(self, load_instrument=True):
+        """(Re)load all the instrument devices."""
+        load_haven_instrument(registry=self.registry)
+        self.registry_changed.emit(self.registry)
+
+    async def setup_instrument(self, load_instrument=True):
         """Set up the application to use a previously loaded instrument.
 
         Expects devices, plans, etc to have been created already.
 
+        Parameters
+        ==========
+        load_instrument
+          If true, re-read configuration files and create ophyd
+          devices. This process is slow.
+
+        Emits
+        =====
+        registry_changed
+          Signal that allows windows to update their widgets for the
+          new list of instruments.
+
         """
+        if load_instrument:
+            await aload_instrument(registry=self.registry)
+            self.registry_changed.emit(self.registry)
         # Make actions for launching other windows
         self.setup_window_actions()
         # Actions for controlling the bluesky run engine

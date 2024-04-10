@@ -1,3 +1,10 @@
+import pytest
+from ophyd import Signal
+from ophyd.sim import make_fake_device, SynAxis, motor1
+from bluesky_queueserver_api import BPlan
+from qtpy import QtCore
+
+from haven import HavenMotor
 from firefly.robot import RobotDisplay
 
 def test_region_number(qtbot):
@@ -5,28 +12,43 @@ def test_region_number(qtbot):
     disp = RobotDisplay()
     qtbot.addWidget(disp)
     # Check that the display has the right number of rows to start with
-    assert disp.ui.robot_spin_box.value() == 1
-    assert disp.ui.sample_spin_box.value() == 10
+    assert disp.ui.robot_combo_box.count() == 1
+    assert disp.ui.sample_combo_box.count() == 10
     assert hasattr(disp, "regions")
-    assert len(disp.regions) == 10
+    assert len(disp.regions) == 1
 
+from ophyd import Component as Cpt
+class FakeHavenMotor(SynAxis):
+    user_offset = Cpt(Signal, value=0, kind="config")
 
-def test_robot_queued(ffapp, qtbot, sim_registry):
+@pytest.fixture
+def sim_motor_registry(sim_registry):
+    # Create the motors
+    motor1 = FakeHavenMotor(name="motor1")
+    sim_registry.register(motor1)
+    motor2 = FakeHavenMotor(name="motor2")
+    sim_registry.register(motor2)
+    yield sim_registry
+
+def test_robot_queued(ffapp, qtbot, sim_motor_registry):
     display = RobotDisplay()
     display.ui.run_button.setEnabled(True)
-    display.ui.num_motor_spin_box.setValue(3)
-    
-    expected_item = BPlan("robot_transfer_sample", "Austin", args)
+    display.ui.num_motor_spin_box.setValue(1)
+    display.update_regions()
+
+    # set up a test motor 
+    display.regions[0].motor_box.combo_box.setCurrentText("motor1")
+    display.regions[0].start_line_edit.setText("100")
+
+    expected_item = BPlan("robot_transfer_sample", "Austin", "motor1", 100)
 
     def check_item(item):
         from pprint import pprint
-
         pprint(item.to_dict())
         pprint(expected_item.to_dict())
         return item.to_dict() == expected_item.to_dict()
 
     # Click the run button and see if the plan is queued
     with qtbot.waitSignal(
-        ffapp.queue_item_added, timeout=1000, check_params_cb=check_item
-    ):
+        ffapp.queue_item_added, timeout=1000, check_params_cb=check_item):
         qtbot.mouseClick(display.ui.run_button, QtCore.Qt.LeftButton)

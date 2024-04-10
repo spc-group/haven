@@ -5,7 +5,7 @@ from qtpy import QtWidgets
 from PyQt5.QtWidgets import QSpinBox
 from firefly import display
 from firefly.application import FireflyApplication
-#from firefly.component_selector import ComponentSelector
+from firefly.component_selector import ComponentSelector
 
 from haven import exceptions, load_config, registry
 
@@ -13,8 +13,7 @@ log = logging.getLogger(__name__)
 
 ROBOT_NAMES = ["Austin"]
 
-SAMPLE_NUMBERS = (8,9,10,14,15,16,20,21,22,None)# None,#range(24)
-
+SAMPLE_NUMBERS = [8,9,10,14,15,16,20,21,22,None]#list(range(24))+[None] 
 class LineScanRegion:
     def __init__(self):
         self.setup_ui()
@@ -51,6 +50,9 @@ class RobotDisplay(display.FireflyDisplay):
     """
 
     def customize_ui(self):
+        
+        self.reset_default_regions()
+
         # disable the line edits in spin box
         #self.ui.robot_combo_box.lineEdit().setReadOnly(True)
         # clear any exiting items in the combo box
@@ -112,15 +114,19 @@ class RobotDisplay(display.FireflyDisplay):
     def queue_plan(self, *args, **kwargs):
         """Execute this plan on the queueserver."""
         # Get scan parameters from widgets
-        robot = self.ui.robot_combo_box.value()
+        robot = self.ui.robot_combo_box.currentText()
         num_motor = self.ui.num_motor_spin_box.value()
-        sam_num = self.ui.sample_spin_box.value()
-       
+        
+        # Get the sample number from the sample_spin_box
+        sam_num_str = self.ui.sample_combo_box.currentText()
+        # Convert sam_num_str to an integer if it's a string representation of a number
+        sam_num = int(sam_num_str) if sam_num_str.isdigit() else None
+
         # get parameters from motor regions
         motor_lst, position_lst = [], []
         for region_i in self.regions:
             motor_lst.append(region_i.motor_box.current_component())
-            postion_lst.append(float(region_i.start_line_edit.text()))
+            position_lst.append(float(region_i.start_line_edit.text()))
         
         args = [values for motor_i in zip(motor_lst, position_lst) for values in motor_i]
 
@@ -142,7 +148,7 @@ class RobotDisplay(display.FireflyDisplay):
 #
 # Distributed under the terms of the 3-Clause BSD License
 #
-# The full license is in the file LICENSE, distributed with this software.
+# The full licens is in the file LICENSE, distributed with this software.
 #
 # DISCLAIMER
 #
