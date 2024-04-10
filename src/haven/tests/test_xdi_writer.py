@@ -1,3 +1,4 @@
+from collections import ChainMap
 import datetime as dt
 import logging
 import os
@@ -12,7 +13,7 @@ import pytest
 # from freezegun import freeze_time
 import pytz
 import time_machine
-from bluesky import RunEngine
+from bluesky import RunEngine, plans as bp
 from numpy import asarray as array
 from ophyd.sim import SynAxis, SynGauss, motor
 
@@ -152,7 +153,9 @@ def test_opens_file(file_path):
     writer = XDIWriter(fp)
     assert writer.fp == fp
     assert not fp.exists()
+    print(writer._fd)
     # Run the writer
+    print(writer.fp)
     writer("start", {"edge": "Ni_K"})
     # Check that a file was created
     assert fp.exists()
@@ -181,7 +184,6 @@ def test_required_headers(writer):
     # Check that required headers were added to the XDI file
     writer.fd.seek(0)
     xdi_output = writer.fd.read()
-    print(xdi_output)
     assert "# XDI/1.0 bluesky/1.8.3 ophyd/1.6.4" in xdi_output
     assert "# Column.1: energy" in xdi_output
     assert "# Element.symbol: Ni" in xdi_output
@@ -219,6 +221,24 @@ def test_file_path_formatting(tmp_path):
     writer.start(start_doc)
     assert str(writer.fp) == str(tmp_path / "20220819_671c3c48_nickel-oxide.xdi")
 
+
+@time_machine.travel(fake_time)
+def test_file_path_reentry(tmp_path):
+    """Check that "{date}_{user}.xdi" formatting can be used multiple times."""
+    # Start the writer once with basic arguments
+    writer = XDIWriter(tmp_path / "{year}{month}{day}_{short_uid}_{sample_name}.xdi")
+    writer.start(start_doc)
+    target_path = str(tmp_path / "20220819_671c3c48_nickel-oxide.xdi")
+    assert str(writer.fp) == target_path
+    assert writer.fd.name == target_path
+    # Start the writer again with a second set of arguments
+    new_start_doc = ChainMap({"sample_name": "manganese oxide"}, start_doc)
+    writer.start(new_start_doc)
+    target_path = str(tmp_path / "20220819_671c3c48_manganese-oxide.xdi")
+    assert str(writer.fp) == target_path
+    assert writer.fd.name == target_path
+        
+    
 
 @time_machine.travel(fake_time)
 def test_manager_path(tmp_path, beamline_manager):

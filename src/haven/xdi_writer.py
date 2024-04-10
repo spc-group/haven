@@ -85,10 +85,12 @@ class XDIWriter(CallbackBase):
 
     """
 
-    _fd = None
     fp: Optional[Union[str, Path]] = None
     column_names: Optional[Sequence[str]] = None
     start_time: dt.datetime = None
+
+    _fd = None
+    _fp_template: Optional[Union[str, Path]] = None
 
     def __init__(self, fd: Union[Path, str], *args, **kwargs):
         is_file_obj = hasattr(fd, "writable")
@@ -104,7 +106,8 @@ class XDIWriter(CallbackBase):
                 raise exceptions.FileNotWritable(msg)
         else:
             # Assume *fd* is a path to a file
-            self.fp = Path(fd).expanduser()
+            self._fp_template = Path(fd).expanduser()
+            self.fp = self._fp_template
         return super().__init__(*args, **kwargs)
 
     @property
@@ -139,8 +142,11 @@ class XDIWriter(CallbackBase):
     def start(self, doc):
         self.start_time = dt.datetime.now().astimezone()
         # Format the file name based on metadata
-        if self.fp is not None:
-            fp = str(self.fp)
+        if self._fp_template is not None:
+            # Make sure any previous runs are closed
+            self.close()
+            self._fd = None
+            fp = str(self._fp_template)
             md = self._path_metadata(doc=doc)
             try:
                 fp = fp.format(**md)
@@ -151,6 +157,7 @@ class XDIWriter(CallbackBase):
                 raise exceptions.XDIFilenameKeyNotFound(msg) from None
             fp = slugify(fp)
             self.fp = Path(fp)
+            
         # Save the rest of the start doc so we can write the headers
         # when we get our first datum
         self.start_doc = doc
@@ -158,7 +165,16 @@ class XDIWriter(CallbackBase):
         self.fd
 
     def stop(self, doc):
-        self.fd.close()
+        self.close()
+
+    def close(self):
+        """Ensure any open files are closed."""
+        try:
+            self._fd.close()
+        except ValueError:
+            log.debug(f"Could not close file: {self.fd}")
+        except AttributeError:
+            log.debug(f"No file to close, skipping.")
 
     def write_header(self, doc):
         fd = self.fd
