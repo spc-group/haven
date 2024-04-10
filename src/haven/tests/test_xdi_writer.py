@@ -221,14 +221,14 @@ def test_file_path_formatting(tmp_path):
 
 
 @time_machine.travel(fake_time)
-def test_auto_directory(tmp_path, beamline_manager):
-    """Check that "{date}_{user}.xdi" formatting works in the filename."""
+def test_manager_path(tmp_path, beamline_manager):
+    """Check that "{manager_path}.xdi" formatting works in the filename."""
     # Set up a full path on the beamline manager
-    beamline_manager.local_storage.full_path._readback = str(tmp_path)
+    beamline_manager.local_storage.full_path._readback = str(tmp_path) + "/"
     # Create the XDI writer object
     writer = XDIWriter("{manager_path}/{year}{month}{day}_{short_uid}_{sample_name}.xdi")
     writer.start(start_doc)
-    assert str(writer.fp) == str(tmp_path / "20220819_671c3c48_nickel-oxide.xdi")
+    assert str(writer.fp) == f"{tmp_path}/20220819_671c3c48_nickel-oxide.xdi"
 
 
 def test_file_path_formatting_bad_key():
