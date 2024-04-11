@@ -148,6 +148,7 @@ class XDIWriter(CallbackBase):
         is_new_uid = doc.get('uid', "") != self._last_uid
         if self._fp_template is not None:
             # Make sure any previous runs are closed
+            print(doc['uid'], is_new_uid, self._last_uid)
             if is_new_uid:
                 self.close()
             fp = str(self._fp_template)
@@ -165,6 +166,7 @@ class XDIWriter(CallbackBase):
         # when we get our first datum
         self.start_doc = doc
         self._last_uid = doc.get('uid', "")
+        print(f"{self._last_uid=}", id(self))
         # Open the file, just to be sure we can
         self.fd
 
@@ -241,6 +243,7 @@ class XDIWriter(CallbackBase):
         # Read in and store the actual data
         fd = self.fd
         values = []
+        print(self.column_names)
         for col in self.column_names:
             if col == "time":
                 values.append(str(doc["time"]))
