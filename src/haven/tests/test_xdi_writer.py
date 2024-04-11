@@ -153,9 +153,7 @@ def test_opens_file(file_path):
     writer = XDIWriter(fp)
     assert writer.fp == fp
     assert not fp.exists()
-    print(writer._fd)
     # Run the writer
-    print(writer.fp)
     writer("start", {"edge": "Ni_K"})
     # Check that a file was created
     assert fp.exists()
@@ -231,10 +229,12 @@ def test_file_path_reentry(tmp_path):
     target_path = str(tmp_path / "20220819_671c3c48_nickel-oxide.xdi")
     assert str(writer.fp) == target_path
     assert writer.fd.name == target_path
+    # Check that additional start docs don't create new files
+    writer.start(start_doc)
     # Start the writer again with a second set of arguments
-    new_start_doc = ChainMap({"sample_name": "manganese oxide"}, start_doc)
+    new_start_doc = ChainMap({"sample_name": "manganese oxide", "uid": "a6842eaa-6dd3-4666-83a0-1829cd687556"}, start_doc)
     writer.start(new_start_doc)
-    target_path = str(tmp_path / "20220819_671c3c48_manganese-oxide.xdi")
+    target_path = str(tmp_path / "20220819_a6842eaa_manganese-oxide.xdi")
     assert str(writer.fp) == target_path
     assert writer.fd.name == target_path
         
@@ -269,7 +269,8 @@ def test_data(writer):
     assert "1660186828.0055554" in xdi_output
 
 
-def test_with_plan(stringio, sim_registry, event_loop):
+def test_with_plan(stringio, sim_registry, event_loop, beamline_manager, tmp_path):
+    beamline_manager.local_storage.full_path._readback = str(tmp_path) + "/"
     I0 = SynGauss(
         "I0",
         motor,

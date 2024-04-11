@@ -91,6 +91,7 @@ class XDIWriter(CallbackBase):
 
     _fd = None
     _fp_template: Optional[Union[str, Path]] = None
+    _last_uid: str = ""
 
     def __init__(self, fd: Union[Path, str], *args, **kwargs):
         is_file_obj = hasattr(fd, "writable")
@@ -136,7 +137,7 @@ class XDIWriter(CallbackBase):
             manager_name = "beamline_manager.local_storage.full_path"
             md['manager_path'] = registry[manager_name].get(as_string=True)
         except exceptions.ComponentNotFound:
-            log.debug(f"Could not find beamline manager {manager_name}")
+            log.warning(f"Could not find beamline manager {manager_name}")
         md.update(doc)
         return md
 
@@ -144,10 +145,11 @@ class XDIWriter(CallbackBase):
         self.start_time = dt.datetime.now().astimezone()
         self.column_names = None
         # Format the file name based on metadata
+        is_new_uid = doc.get('uid', "") != self._last_uid
         if self._fp_template is not None:
             # Make sure any previous runs are closed
-            self.close()
-            self._fd = None
+            if is_new_uid:
+                self.close()
             fp = str(self._fp_template)
             md = self._path_metadata(doc=doc)
             try:
@@ -159,10 +161,10 @@ class XDIWriter(CallbackBase):
                 raise exceptions.XDIFilenameKeyNotFound(msg) from None
             fp = slugify(fp)
             self.fp = Path(fp)
-            
         # Save the rest of the start doc so we can write the headers
         # when we get our first datum
         self.start_doc = doc
+        self._last_uid = doc.get('uid', "")
         # Open the file, just to be sure we can
         self.fd
 
@@ -177,6 +179,8 @@ class XDIWriter(CallbackBase):
             log.debug(f"Could not close file: {self.fd}")
         except AttributeError:
             log.debug(f"No file to close, skipping.")
+        else:
+            self._fd = None
 
     def write_header(self, doc):
         fd = self.fd
