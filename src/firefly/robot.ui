@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>522</width>
-    <height>414</height>
+    <width>408</width>
+    <height>308</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -59,51 +59,6 @@ font-weight: bold;</string>
      <property name="enableRichText" stdset="0">
       <bool>false</bool>
      </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QGroupBox" name="groupBox_4">
-     <property name="title">
-      <string>Robot Names</string>
-     </property>
-     <layout class="QFormLayout" name="formLayout_4">
-      <property name="labelAlignment">
-       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-      </property>
-      <item row="1" column="1">
-       <layout class="QHBoxLayout" name="horizontalLayout_7">
-        <item>
-         <widget class="QLabel" name="sample_label_2">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="text">
-           <string>Robot</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QComboBox" name="robot_combo_box"/>
-        </item>
-        <item>
-         <spacer name="horizontalSpacer_6">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>490</width>
-            <height>52</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-       </layout>
-      </item>
-     </layout>
     </widget>
    </item>
    <item>
