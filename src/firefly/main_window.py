@@ -138,7 +138,7 @@ class FireflyMainWindow(PyDMMainWindow):
             menu=self.ui.positioners_menu,
         )
         # Robot transfer sample
-        self.ui.positioners_menu.addAction(app.show_robot_window_action)
+        #self.ui.positioners_menu.addAction(app.show_robot_window_action)
 
         # Motors sub-menu
         self.ui.menuMotors = QtWidgets.QMenu(self.ui.menubar)
@@ -158,6 +158,9 @@ class FireflyMainWindow(PyDMMainWindow):
             self.ui.positioners_menu.addAction(action)
         self.ui.positioners_menu.addSection("Tables")
         for action in app.table_actions.values():
+            self.ui.positioners_menu.addAction(action)
+        self.ui.positioners_menu.addSection("Robots")
+        for action in app.robot_actions.values():
             self.ui.positioners_menu.addAction(action)
         # Scans menu
         self.ui.menuScans = QtWidgets.QMenu(self.ui.menubar)

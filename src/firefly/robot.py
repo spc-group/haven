@@ -6,12 +6,12 @@ from PyQt5.QtWidgets import QSpinBox
 from firefly import display
 from firefly.application import FireflyApplication
 from firefly.component_selector import ComponentSelector
-
+import haven
 from haven import exceptions, load_config, registry
 
 log = logging.getLogger(__name__)
 
-ROBOT_NAMES = ["Austin"]
+#ROBOT_NAMES = ["Austin"]
 
 SAMPLE_NUMBERS = [8,9,10,14,15,16,20,21,22,None]#list(range(24))+[None] 
 class LineScanRegion:
@@ -50,16 +50,14 @@ class RobotDisplay(display.FireflyDisplay):
     """
 
     def customize_ui(self):
-        
         self.reset_default_regions()
-
         # disable the line edits in spin box
         #self.ui.robot_combo_box.lineEdit().setReadOnly(True)
         # clear any exiting items in the combo box
-        self.ui.robot_combo_box.clear()
+        #self.ui.robot_combo_box.clear()
         # set the list of values for the combo box
-        for rbt in ROBOT_NAMES:
-            self.ui.robot_combo_box.addItem(rbt)
+        #for rbt in ROBOT_NAMES:
+        #    self.ui.robot_combo_box.addItem(rbt)
 
         # clear any exiting items in the combo box
         self.ui.sample_combo_box.clear()
@@ -114,7 +112,6 @@ class RobotDisplay(display.FireflyDisplay):
     def queue_plan(self, *args, **kwargs):
         """Execute this plan on the queueserver."""
         # Get scan parameters from widgets
-        robot = self.ui.robot_combo_box.currentText()
         num_motor = self.ui.num_motor_spin_box.value()
         
         # Get the sample number from the sample_spin_box
@@ -132,8 +129,9 @@ class RobotDisplay(display.FireflyDisplay):
 
         # Build the queue item
         print(args)
-        print(robot)
         print(sam_num)
+        robot = self.macros()["DEVICE"]
+        print(robot)
         item = BPlan("robot_transfer_sample", robot, sam_num, *args)
         
         # Submit the item to the queueserver

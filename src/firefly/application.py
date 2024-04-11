@@ -251,6 +251,13 @@ class FireflyApplication(PyDMApplication):
             ui_file="xrf_detector.py",
             device_key="DEV",
         )
+        self._prepare_device_windows(
+            device_label="robots",
+            attr_name="robot",
+            ui_file="robot.py",
+            device_key="DEVICE",
+            icon=qta.icon("mdi.robot-industrial"),
+        )
         # Action for showing the beamline status window
         self._setup_window_action(
             action_name="show_status_window_action",
@@ -312,11 +319,11 @@ class FireflyApplication(PyDMApplication):
             slot=self.show_count_plan_window,
         )
         # Launch robot windows
-        self._setup_window_action(
-            action_name="show_robot_window_action",
-            text="Robot",
-            slot=self.show_robot_window,
-        )
+        #self._setup_window_action(
+        #    action_name="show_robot_window_action",
+        #    text="Robot",
+        #    slot=self.show_robot_window,
+        #)
 
     def launch_queuemonitor(self):
         config = load_config()["queueserver"]
