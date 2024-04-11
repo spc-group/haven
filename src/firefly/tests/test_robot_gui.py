@@ -40,12 +40,12 @@ def test_robot_queued(ffapp, qtbot, sim_motor_registry):
     display.regions[0].motor_box.combo_box.setCurrentText("motor1")
     display.regions[0].start_line_edit.setText("100")
 
-    expected_item = BPlan("robot_transfer_sample", "Austin", "motor1", 100)
+    expected_item = BPlan("robot_transfer_sample", "Austin", 8, "motor1", 100)
 
     def check_item(item):
-        from pprint import pprint
-        pprint(item.to_dict())
-        pprint(expected_item.to_dict())
+       # from pprint import pprint
+       # pprint(item.to_dict())
+       # pprint(expected_item.to_dict())
         return item.to_dict() == expected_item.to_dict()
 
     # Click the run button and see if the plan is queued

@@ -125,13 +125,16 @@ class RobotDisplay(display.FireflyDisplay):
         # get parameters from motor regions
         motor_lst, position_lst = [], []
         for region_i in self.regions:
-            motor_lst.append(region_i.motor_box.current_component())
+            motor_lst.append(region_i.motor_box.current_component().name)
             position_lst.append(float(region_i.start_line_edit.text()))
         
         args = [values for motor_i in zip(motor_lst, position_lst) for values in motor_i]
 
         # Build the queue item
-        item = BPlan("robot_transfer_sample", robot, sam_num, args)
+        print(args)
+        print(robot)
+        print(sam_num)
+        item = BPlan("robot_transfer_sample", robot, sam_num, *args)
         
         # Submit the item to the queueserver
         from firefly.application import FireflyApplication
