@@ -41,7 +41,8 @@ def I0(sim_registry):
     return I0
 
 
-def test_energy_scan_basics(mono_motor, id_gap_motor, energies, RE):
+def test_energy_scan_basics(beamline_manager, mono_motor, id_gap_motor, energies, RE, tmp_path):
+    beamline_manager.local_storage.full_path._readback = str(tmp_path)
     exposure_time = 1e-3
     # Set up fake detectors and motors
     I0_exposure = sim.SynAxis(
@@ -78,7 +79,7 @@ def test_energy_scan_basics(mono_motor, id_gap_motor, energies, RE):
         energy_positioners=[mono_motor, id_gap_motor],
         time_positioners=[I0_exposure, It_exposure],
     )
-    result = RE(scan)
+    result = RE(scan, sample_name="xafs_sample")
     # Check that the mono and ID gap ended up in the right position
     # time.sleep(1.0)
     assert mono_motor.readback.get() == np.max(energies)

@@ -4,7 +4,7 @@ import re
 import unicodedata
 import warnings
 from pathlib import Path
-from typing import Optional, Sequence, Union
+from typing import Optional, Sequence, Union, Mapping
 
 from bluesky.callbacks import CallbackBase
 
@@ -88,6 +88,10 @@ class XDIWriter(CallbackBase):
     fp: Optional[Union[str, Path]] = None
     column_names: Optional[Sequence[str]] = None
     start_time: dt.datetime = None
+    stream_name: str = "primary"
+
+    start_doc: Mapping = None
+    descriptor_doc: Mapping = None
 
     _fd = None
     _fp_template: Optional[Union[str, Path]] = None
@@ -148,7 +152,6 @@ class XDIWriter(CallbackBase):
         is_new_uid = doc.get('uid', "") != self._last_uid
         if self._fp_template is not None:
             # Make sure any previous runs are closed
-            print(doc['uid'], is_new_uid, self._last_uid)
             if is_new_uid:
                 self.close()
             fp = str(self._fp_template)
@@ -166,12 +169,26 @@ class XDIWriter(CallbackBase):
         # when we get our first datum
         self.start_doc = doc
         self._last_uid = doc.get('uid', "")
-        print(f"{self._last_uid=}", id(self))
         # Open the file, just to be sure we can
         self.fd
 
     def stop(self, doc):
         self.close()
+
+    def descriptor(self, doc):
+        if doc['name'] != self.stream_name:
+            return
+        # Use metadata from the first event to finish writing the header
+        if self.column_names is None:
+            # Get column names from the scan hinted signals
+            names = [val['fields'] for val in doc['hints'].values()]
+            names = [n for sublist in names for n in sublist]
+            # Sort column names so that energy-related fields are first
+            names = sorted(names, key=lambda x: not x.startswith("energy"))
+            self.column_names = names + ["time"]
+            self.write_header(self.start_doc)
+        # Save the descriptor doc for later
+        self.descriptor_doc = doc
 
     def close(self):
         """Ensure any open files are closed."""
@@ -191,6 +208,7 @@ class XDIWriter(CallbackBase):
         versions += [f"{name}/{ver}" for name, ver in doc.get("versions", {}).items()]
         fd.write(f"# {' '.join(versions)}\n")
         # Column Names
+        print(self.column_names)
         columns = [
             f"# Column.{num+1}: {name}\n" for num, name in enumerate(self.column_names)
         ]
@@ -232,23 +250,28 @@ class XDIWriter(CallbackBase):
         ``self.column_names``.
 
         """
-        data = doc["data"]
-        # Use metadata from the first event to finish writing the header
+        # Check we have the information we need to process these data
         if self.column_names is None:
-            names = list(data.keys())
-            # Sort column names so that energy-related fields are first
-            names = sorted(names, key=lambda x: not x.startswith("energy"))
-            self.column_names = names + ["time"]
-            self.write_header(self.start_doc)
+            msg = (
+                "No descriptor document available. "
+                "The descriptor document should be passed to "
+                f"{self}.descriptor() before providing event documents."
+            )
+            raise exceptions.DocumentNotFound(msg)
         # Read in and store the actual data
+        data = doc["data"]
         fd = self.fd
         values = []
-        print(self.column_names)
         for col in self.column_names:
             if col == "time":
                 values.append(str(doc["time"]))
             else:
-                values.append(str(data[col]))
+                try:
+                    values.append(str(data[col]))
+                except KeyError:
+                    msg = f"Could not find signal {col} in datum."
+                    log.warning(msg)
+                    warnings.warn(msg)
         line = "\t".join(values)
         fd.write(line + "\n")
 
