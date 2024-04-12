@@ -42,14 +42,10 @@ def test_robot_queued(ffapp, qtbot, sim_motor_registry, sim_registry):
 
     # get macros
     macros = display.macros()
-
     print(macros)
-    #expected_item = BPlan("robot_transfer_sample", macros, 8, "motor1", 100)
-
-    #mock_macros = {"DEVICE": "A"}
-    # Instantiate RobotDisplay with mock macros
-    #display.macros = lambda: mock_macros  # Mocking the macros method
-
+    mock_macros = {"DEVICE": "A"}
+    # use RobotDisplay with mock macros
+    display.macros = lambda: mock_macros
 
     expected_item = BPlan("robot_transfer_sample", "A", 8, "motor1", 100)
 
