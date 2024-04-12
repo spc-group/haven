@@ -30,7 +30,7 @@ def sim_motor_registry(sim_registry):
     sim_registry.register(motor2)
     yield sim_registry
 
-def test_robot_queued(ffapp, qtbot, sim_motor_registry,sim_registry):
+def test_robot_queued(ffapp, qtbot, sim_motor_registry, sim_registry):
     display = RobotDisplay()
     display.ui.run_button.setEnabled(True)
     display.ui.num_motor_spin_box.setValue(1)
@@ -40,12 +40,20 @@ def test_robot_queued(ffapp, qtbot, sim_motor_registry,sim_registry):
     display.regions[0].motor_box.combo_box.setCurrentText("motor1")
     display.regions[0].start_line_edit.setText("100")
 
+    # get macros
+    macros = display.macros()
+
+    print(macros)
+    #expected_item = BPlan("robot_transfer_sample", macros, 8, "motor1", 100)
+
+    #mock_macros = {"DEVICE": "A"}
+    # Instantiate RobotDisplay with mock macros
+    #display.macros = lambda: mock_macros  # Mocking the macros method
+
+
     expected_item = BPlan("robot_transfer_sample", "A", 8, "motor1", 100)
 
     def check_item(item):
-       # from pprint import pprint
-       # pprint(item.to_dict())
-       # pprint(expected_item.to_dict())
         return item.to_dict() == expected_item.to_dict()
 
     # Click the run button and see if the plan is queued

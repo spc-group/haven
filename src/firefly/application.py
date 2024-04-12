@@ -55,7 +55,7 @@ class FireflyApplication(PyDMApplication):
     show_voltmeters_window_action: QtWidgets.QAction
     show_logs_window_action: QtWidgets.QAction
     launch_queuemonitor_action: QtWidgets.QAction
-    show_robot_window_action: QtWidgets.QAction
+    #show_robot_window_action: QtWidgets.QAction
 
     # Keep track of motors
     motor_actions: Sequence = []
@@ -682,11 +682,11 @@ class FireflyApplication(PyDMApplication):
         return self.show_window(
             FireflyMainWindow, ui_dir / "sample_viewer.ui", name="sample_viewer"
         )
-    @QtCore.Slot()
-    def show_robot_window(self):
-        return self.show_window(
-            PlanMainWindow, ui_dir / "robot.py", name="robot"
-        )
+    #@QtCore.Slot()
+    #def show_robot_window(self):
+    #    return self.show_window(
+    #        PlanMainWindow, ui_dir / "robot.py", name="robot"
+    #    )
 
     @QtCore.Slot()
     def show_cameras_window(self):
