@@ -226,7 +226,6 @@ def test_optional_headers(writer):
         "Column.8": "time",
         "uid": "671c3c48-f014-421d-b3e0-57991b6745f6",
     }
-    print(xdi_output)
     for key, val in expected_metadata.items():
         assert f"# {key.lower()}: {val.lower()}\n" in xdi_output.lower()
 
@@ -267,17 +266,23 @@ def test_file_path_reentry(tmp_path):
 @time_machine.travel(fake_time)
 def test_secondary_stream(tmp_path):
     """Check that secondary data streams get ignored."""
-    writer = XDIWriter(tmp_path / "{year}{month}{day}_{short_uid}_{sample_name}.xdi")
-    writer.start(start_doc)
-    # Check that we raise an exception of no descriptor was provided
-    with pytest.raises(exceptions.DocumentNotFound):
-        writer.event(event_doc)
-    # Send a correct primary data event
-    writer.descriptor(descriptor_doc)
-    writer.event(event_doc)
-    # Send an event from secondary data stream
     sec_event = ChainMap({"descriptor": "b1006389-fd92-4037-9eb3-02332703552b",
                           "data": {"Iref": 2},}, event_doc)
+    sec_descriptor = ChainMap({"uid": sec_event['descriptor'],
+                               "name": "secondary"}, descriptor_doc)
+    # Set up the writer
+    writer = XDIWriter(tmp_path / "{year}{month}{day}_{short_uid}_{sample_name}.xdi")
+    writer.start(start_doc)
+    # Events before the descriptor should raise exceptions
+    assert writer._primary_uid == None
+    with pytest.raises(exceptions.DocumentNotFound):
+        writer.event(event_doc)
+    # Prime the writer with descriptor documents
+    writer.descriptor(descriptor_doc)
+    writer.descriptor(sec_descriptor)
+    # Send a correct primary data event
+    writer.event(event_doc)
+    # Send an event from secondary data stream
     writer.event(sec_event)
     
 

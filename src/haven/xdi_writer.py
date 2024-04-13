@@ -96,6 +96,8 @@ class XDIWriter(CallbackBase):
     _fd = None
     _fp_template: Optional[Union[str, Path]] = None
     _last_uid: str = ""
+    _primary_uid: str
+    _secondary_uids: Sequence[str]
 
     def __init__(self, fd: Union[Path, str], *args, **kwargs):
         is_file_obj = hasattr(fd, "writable")
@@ -148,6 +150,8 @@ class XDIWriter(CallbackBase):
     def start(self, doc):
         self.start_time = dt.datetime.now().astimezone()
         self.column_names = None
+        self._primary_uid = None
+        self._secondary_uids = []
         # Format the file name based on metadata
         is_new_uid = doc.get('uid', "") != self._last_uid
         if self._fp_template is not None:
@@ -176,8 +180,10 @@ class XDIWriter(CallbackBase):
         self.close()
 
     def descriptor(self, doc):
-        if doc['name'] != self.stream_name:
-            return
+        if doc['name'] == self.stream_name:
+            self._primary_uid = doc['uid']
+        else:
+            self._secondary_uids.append(doc['uid'])
         # Use metadata from the first event to finish writing the header
         if self.column_names is None:
             # Get column names from the scan hinted signals
@@ -208,7 +214,6 @@ class XDIWriter(CallbackBase):
         versions += [f"{name}/{ver}" for name, ver in doc.get("versions", {}).items()]
         fd.write(f"# {' '.join(versions)}\n")
         # Column Names
-        print(self.column_names)
         columns = [
             f"# Column.{num+1}: {name}\n" for num, name in enumerate(self.column_names)
         ]
@@ -250,8 +255,11 @@ class XDIWriter(CallbackBase):
         ``self.column_names``.
 
         """
-        # Check we have the information we need to process these data
-        if self.column_names is None:
+        # Ignore non-primary data streams
+        if doc['descriptor'] in self._secondary_uids:
+            return
+        elif doc['descriptor'] != self._primary_uid:
+            # We're getting data out of order, so we can't save to the file
             msg = (
                 "No descriptor document available. "
                 "The descriptor document should be passed to "
