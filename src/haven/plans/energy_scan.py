@@ -24,7 +24,7 @@ log = logging.getLogger(__name__)
 
 
 # @shutter_suspend_decorator()
-@subs_decorator(XDIWriter("{manager_path}/{year}{month}{day}-{short_uid}-{sample_name}.xdi"))
+@subs_decorator(XDIWriter("{manager_path}/{year}{month}{day}-{sample_name}-{edge}-{short_uid}.xdi"))
 @baseline_decorator()
 def energy_scan(
     energies: Sequence[float],
