@@ -1,11 +1,10 @@
-from collections import ChainMap
 import datetime as dt
 import logging
 import os
 import time
+from collections import ChainMap
 from io import StringIO
 from pathlib import Path
-from unittest import TestCase, expectedFailure
 
 import numpy as np
 import pytest
@@ -13,7 +12,7 @@ import pytest
 # from freezegun import freeze_time
 import pytz
 import time_machine
-from bluesky import RunEngine, plans as bp
+from bluesky import RunEngine
 from numpy import asarray as array
 from ophyd.sim import SynAxis, SynGauss, motor
 
@@ -266,10 +265,16 @@ def test_file_path_reentry(tmp_path):
 @time_machine.travel(fake_time)
 def test_secondary_stream(tmp_path):
     """Check that secondary data streams get ignored."""
-    sec_event = ChainMap({"descriptor": "b1006389-fd92-4037-9eb3-02332703552b",
-                          "data": {"Iref": 2},}, event_doc)
-    sec_descriptor = ChainMap({"uid": sec_event['descriptor'],
-                               "name": "secondary"}, descriptor_doc)
+    sec_event = ChainMap(
+        {
+            "descriptor": "b1006389-fd92-4037-9eb3-02332703552b",
+            "data": {"Iref": 2},
+        },
+        event_doc,
+    )
+    sec_descriptor = ChainMap(
+        {"uid": sec_event["descriptor"], "name": "secondary"}, descriptor_doc
+    )
     # Set up the writer
     writer = XDIWriter(tmp_path / "{year}{month}{day}_{short_uid}_{sample_name}.xdi")
     writer.start(start_doc)
@@ -284,7 +289,7 @@ def test_secondary_stream(tmp_path):
     writer.event(event_doc)
     # Send an event from secondary data stream
     writer.event(sec_event)
-    
+
 
 @time_machine.travel(fake_time)
 def test_manager_path(tmp_path, beamline_manager):

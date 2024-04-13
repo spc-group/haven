@@ -14,8 +14,8 @@ from .._iconfig import load_config
 from ..constants import edge_energy
 from ..instrument import registry
 from ..preprocessors import baseline_decorator
-from ..xdi_writer import XDIWriter
 from ..typing import DetectorList
+from ..xdi_writer import XDIWriter
 
 __all__ = ["energy_scan"]
 
@@ -24,7 +24,9 @@ log = logging.getLogger(__name__)
 
 
 # @shutter_suspend_decorator()
-@subs_decorator(XDIWriter("{manager_path}/{year}{month}{day}-{sample_name}-{edge}-{short_uid}.xdi"))
+@subs_decorator(
+    XDIWriter("{manager_path}/{year}{month}{day}-{sample_name}-{edge}-{short_uid}.xdi")
+)
 @baseline_decorator()
 def energy_scan(
     energies: Sequence[float],

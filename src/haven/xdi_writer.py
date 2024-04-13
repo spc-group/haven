@@ -4,7 +4,7 @@ import re
 import unicodedata
 import warnings
 from pathlib import Path
-from typing import Optional, Sequence, Union, Mapping
+from typing import Mapping, Optional, Sequence, Union
 
 from bluesky.callbacks import CallbackBase
 
@@ -136,13 +136,13 @@ class XDIWriter(CallbackBase):
         }
         # Add a shortened version of the UID
         try:
-            md['short_uid'] = doc['uid'].split('-')[0]
+            md["short_uid"] = doc["uid"].split("-")[0]
         except KeyError:
             pass
         # Add local storage directory
         try:
             manager_name = "beamline_manager.local_storage.full_path"
-            md['manager_path'] = registry[manager_name].get(as_string=True)
+            md["manager_path"] = registry[manager_name].get(as_string=True)
         except exceptions.ComponentNotFound:
             log.warning(f"Could not find beamline manager {manager_name}")
         md.update(doc)
@@ -154,7 +154,7 @@ class XDIWriter(CallbackBase):
         self._primary_uid = None
         self._secondary_uids = []
         # Format the file name based on metadata
-        is_new_uid = doc.get('uid', "") != self._last_uid
+        is_new_uid = doc.get("uid", "") != self._last_uid
         if self._fp_template is not None:
             # Make sure any previous runs are closed
             if is_new_uid:
@@ -173,7 +173,7 @@ class XDIWriter(CallbackBase):
         # Save the rest of the start doc so we can write the headers
         # when we get our first datum
         self.start_doc = doc
-        self._last_uid = doc.get('uid', "")
+        self._last_uid = doc.get("uid", "")
         # Open the file, just to be sure we can
         self.fd
 
@@ -181,16 +181,16 @@ class XDIWriter(CallbackBase):
         self.close()
 
     def descriptor(self, doc):
-        if doc['name'] == self.stream_name:
-            self._primary_uid = doc['uid']
+        if doc["name"] == self.stream_name:
+            self._primary_uid = doc["uid"]
             self._primary_descriptor = doc
         else:
-            self._secondary_uids.append(doc['uid'])
+            self._secondary_uids.append(doc["uid"])
             return
         # Determine columns to use for storing events later
         if self.column_names is None:
             # Get column names from the scan hinted signals
-            names = [val['fields'] for val in doc['hints'].values()]
+            names = [val["fields"] for val in doc["hints"].values()]
             names = [n for sublist in names for n in sublist]
             # Sort column names so that energy-related fields are first
             names = sorted(names, key=lambda x: not x.startswith("energy"))
@@ -259,9 +259,9 @@ class XDIWriter(CallbackBase):
 
         """
         # Ignore non-primary data streams
-        if doc['descriptor'] in self._secondary_uids:
+        if doc["descriptor"] in self._secondary_uids:
             return
-        elif doc['descriptor'] != self._primary_uid:
+        elif doc["descriptor"] != self._primary_uid:
             # We're getting data out of order, so we can't save to the file
             msg = (
                 "No descriptor document available. "

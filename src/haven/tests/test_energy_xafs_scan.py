@@ -41,7 +41,9 @@ def I0(sim_registry):
     return I0
 
 
-def test_energy_scan_basics(beamline_manager, mono_motor, id_gap_motor, energies, RE, tmp_path):
+def test_energy_scan_basics(
+    beamline_manager, mono_motor, id_gap_motor, energies, RE, tmp_path
+):
     beamline_manager.local_storage.full_path._readback = str(tmp_path)
     exposure_time = 1e-3
     # Set up fake detectors and motors
