@@ -97,6 +97,7 @@ class XDIWriter(CallbackBase):
     _fp_template: Optional[Union[str, Path]] = None
     _last_uid: str = ""
     _primary_uid: str
+    _primary_descriptor: Mapping
     _secondary_uids: Sequence[str]
 
     def __init__(self, fd: Union[Path, str], *args, **kwargs):
@@ -182,9 +183,11 @@ class XDIWriter(CallbackBase):
     def descriptor(self, doc):
         if doc['name'] == self.stream_name:
             self._primary_uid = doc['uid']
+            self._primary_descriptor = doc
         else:
             self._secondary_uids.append(doc['uid'])
-        # Use metadata from the first event to finish writing the header
+            return
+        # Determine columns to use for storing events later
         if self.column_names is None:
             # Get column names from the scan hinted signals
             names = [val['fields'] for val in doc['hints'].values()]
