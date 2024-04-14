@@ -111,6 +111,7 @@ THIS_DIR = Path(__file__).parent
 start_doc = {
     "versions": {"bluesky": "1.8.3", "ophyd": "1.6.4"},
     "detectors": ["I0", "It"],
+    "d_spacing": 3.0,
     "motors": ["energy", "exposure"],
     "edge": "Ni_K",
     "facility": {
@@ -202,7 +203,7 @@ def test_required_headers(writer):
     assert "# Column.1: energy" in xdi_output
     assert "# Element.symbol: Ni" in xdi_output
     assert "# Element.edge: K" in xdi_output
-    # assert "# Mono.d_spacing: 3" in xdi_output  # Not implemented yet
+    assert "# Mono.d_spacing: 3" in xdi_output  # Not implemented yet
     assert "# -------------" in xdi_output
 
 

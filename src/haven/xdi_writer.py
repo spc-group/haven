@@ -232,6 +232,14 @@ class XDIWriter(CallbackBase):
         else:
             fd.write(f"# Element.symbol: {elem}\n")
             fd.write(f"# Element.edge: {edge}\n")
+        # Monochromator information
+        try:
+            d_spacing = doc["d_spacing"]
+        except KeyError:
+            pass
+        else:
+            fd.write(f"# Mono.d_spacing: {d_spacing}\n")
+        # Facility information
         now = self.start_time
         fd.write(f"# Scan.start_time: {now.strftime('%Y-%m-%d %H:%M:%S%z')}\n")
         md_paths = [

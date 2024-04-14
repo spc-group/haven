@@ -130,12 +130,21 @@ def energy_scan(
     scan_args = [(motor, energies) for motor in energy_positioners]
     scan_args += [(motor, exposure) for motor in time_positioners]
     scan_args = [item for items in scan_args for item in items]
-    # Do the actual scan
+    # Add some extra metadata
     config = load_config()
+    md_ = {"edge": E0_str, "E0": E0}
+    for positioner in energy_positioners:
+        try:
+            md_["d_spacing"] = positioner.d_spacing.get()
+        except AttributeError:
+            continue
+        else:
+            break
+    # Do the actual scan
     yield from bp.list_scan(
         real_detectors,
         *scan_args,
-        md=ChainMap(md, {"edge": E0_str, "E0": E0}, config),
+        md=ChainMap(md, md_, config),
     )
 
 
