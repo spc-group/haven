@@ -32,6 +32,7 @@ from haven.instrument.delay import EpicsSignalWithIO
 from haven.instrument.dxp import DxpDetector
 from haven.instrument.dxp import add_mcas as add_dxp_mcas
 from haven.instrument.ion_chamber import IonChamber
+from haven.instrument.monochromator import Monochromator
 from haven.instrument.robot import Robot
 from haven.instrument.shutter import Shutter
 from haven.instrument.slits import ApertureSlits, BladeSlits
@@ -272,6 +273,13 @@ def aerotech_flyer(aerotech):
     flyer.user_setpoint._limits = (0, 1000)
     flyer.send_command = mock.MagicMock()
     yield flyer
+
+
+@pytest.fixture()
+def mono(sim_registry):
+    mono = instantiate_fake_device(Monochromator, name="monochromator")
+    sim_registry.register(mono)
+    yield mono
 
 
 @pytest.fixture()

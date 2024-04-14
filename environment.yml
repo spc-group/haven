@@ -77,6 +77,7 @@ dependencies:
   - scikit-image
   - xlrd
   - peakutils
+  - pyarrow < 11.0.0  # Tempoary fix, remove once the libort missing symbol doesn't break CI
 
   # XES analysis packages
   - scikit-learn
