@@ -123,7 +123,16 @@ start_doc = {
     "uid": "671c3c48-f014-421d-b3e0-57991b6745f6",
 }
 event_doc = {
-    "data": {"I0": 2, "It": 1.5, "energy": 8330, "exposure": 0.1},
+    "data": {
+        "I0_net_counts": 2,
+        "It_net_counts": 1.5,
+        "IpreKB_net_counts": 2.5,
+        "Ipreslit_net_counts": 2.2,
+        "Iref_net_counts": 0.56,
+        "energy": 8330,
+        "exposure": 0.1,
+        "sim motor 1": 8330.0,
+    },
     "time": 1660186828.0055554,
     "descriptor": "7ed5b8c5-045c-41fa-b79c-50fbcbe777e5",
 }

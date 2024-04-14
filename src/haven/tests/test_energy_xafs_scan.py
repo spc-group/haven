@@ -80,6 +80,7 @@ def test_energy_scan_basics(
         exposure=exposure_time,
         energy_positioners=[mono_motor, id_gap_motor],
         time_positioners=[I0_exposure, It_exposure],
+        md={"edge": "Ni_K"},
     )
     result = RE(scan, sample_name="xafs_sample")
     # Check that the mono and ID gap ended up in the right position
