@@ -3,6 +3,7 @@ import numpy as np
 from bluesky_queueserver_api import BPlan
 from unittest import mock
 from qtpy import QtCore
+from pprint import pprint
 
 # default values for EXAFS scan
 pre_edge = [-50, -20, 1]
@@ -72,21 +73,47 @@ def test_xafs_scan_plan_queued_energies(ffapp, qtbot):
     energies_region1 = np.arange(default_values[1][0]+default_values[1][2], default_values[1][1] + default_values[1][2], default_values[1][2])
     energies_merge = np.hstack([energies_region0, energies_region1])
     exposures = np.ones(energies_merge.shape)
+    
+    # set up meta data
+    display.ui.lineEdit_sample.setText('sam')
+    display.ui.lineEdit_purpose.setText('test')
+
     expected_item = BPlan(
         "energy_scan",
         energies=energies_merge,
         exposure=exposures,
         E0=11500.8,
         detectors=["vortex_me4", "I0"],
-        md=None,
+        md={'sample': 'sam',
+            'purpose': 'test'}
     )
 
-    def check_item(item):
-        from pprint import pprint
 
-        pprint(item.to_dict())
-        pprint(expected_item.to_dict())
-        return item.to_dict() == expected_item.to_dict()
+    def check_item(item):
+        item_dict = item.to_dict()['kwargs']
+        expected_dict = expected_item.to_dict()['kwargs']
+
+        try:
+            # Check energies & exposures within 3 decimals
+            np.testing.assert_array_almost_equal(item_dict['energies'], expected_dict['energies'], decimal=3)
+            np.testing.assert_array_almost_equal(item_dict['exposure'], expected_dict['exposure'], decimal=3)
+            
+            # Now check the rest of the dictionary, excluding the numpy array keys
+            item_dict.pop('energies')
+            item_dict.pop('exposure')
+            expected_dict.pop('energies')
+            expected_dict.pop('exposure')
+
+            # Check if the remaining dictionary items are equal
+            assert item_dict == expected_dict, "Non-array items do not match."
+
+        except AssertionError as e:
+            # Print detailed debug info 
+            pprint(item_dict)
+            pprint(expected_dict)
+            print(str(e))
+            return False
+        return True
 
     # Click the run button and see if the plan is queued
     with qtbot.waitSignal(
@@ -94,7 +121,7 @@ def test_xafs_scan_plan_queued_energies(ffapp, qtbot):
     ):
         qtbot.mouseClick(display.ui.run_button, QtCore.Qt.LeftButton)
 
-
+# TODO K end point should not include step 
 def test_xafs_scan_plan_queued_energies_k_mixed(ffapp, qtbot):
     display = XafsScanDisplay()
     display.ui.regions_spin_box.setValue(2)
@@ -125,6 +152,9 @@ def test_xafs_scan_plan_queued_energies_k_mixed(ffapp, qtbot):
     exposures = np.array([1,1,1,1,1,1,1,1,
                           1, 25, 100] # k exposures
                           )
+    # set up meta data
+    display.ui.lineEdit_sample.setText('sam')
+    display.ui.lineEdit_purpose.setText('test')
 
     expected_item = BPlan(
         "energy_scan",
@@ -132,15 +162,36 @@ def test_xafs_scan_plan_queued_energies_k_mixed(ffapp, qtbot):
         exposure=exposures,
         E0=11500.8,
         detectors=["vortex_me4", "I0"],
-        md=None,
+        md={'sample': 'sam',
+            'purpose': 'test'}
     )
 
-    def check_item(item):
-        from pprint import pprint
 
-        pprint(item.to_dict())
-        pprint(expected_item.to_dict())
-        return item.to_dict() == expected_item.to_dict()
+    def check_item(item):
+        item_dict = item.to_dict()['kwargs']
+        expected_dict = expected_item.to_dict()['kwargs']
+
+        try:
+            # Check energies & exposures within 3 decimals
+            np.testing.assert_array_almost_equal(item_dict['energies'], expected_dict['energies'], decimal=3)
+            np.testing.assert_array_almost_equal(item_dict['exposure'], expected_dict['exposure'], decimal=3)
+            
+            # Now check the rest of the dictionary, excluding the numpy array keys
+            item_dict.pop('energies')
+            item_dict.pop('exposure')
+            expected_dict.pop('energies')
+            expected_dict.pop('exposure')
+
+            # Check if the remaining dictionary items are equal
+            assert item_dict == expected_dict, "Non-array items do not match."
+
+        except AssertionError as e:
+            # Print detailed debug info 
+            pprint(item_dict)
+            pprint(expected_dict)
+            print(str(e))
+            return False
+        return True
 
     # Click the run button and see if the plan is queued
     with qtbot.waitSignal(
@@ -148,47 +199,6 @@ def test_xafs_scan_plan_queued_energies_k_mixed(ffapp, qtbot):
     ):
         qtbot.mouseClick(display.ui.run_button, QtCore.Qt.LeftButton)
 
-
-
-# def test_move_energy(qtbot, ffapp, sim_registry):
-#     mono = FakeMonochromator("mono_ioc", name="monochromator")
-#     sim_registry.register(
-#         FakeEnergyPositioner(
-#             mono_pv="mono_ioc:Energy",
-#             id_offset_pv="mono_ioc:ID_offset",
-#             id_tracking_pv="mono_ioc:ID_tracking",
-#             id_prefix="id_ioc",
-#             name="energy",
-#         )
-#     )
-#     # Load display
-#     disp = EnergyDisplay()
-#     # Click the set energy button
-#     btn = disp.ui.set_energy_button
-#     expected_item = BPlan("set_energy", energy=8402.0)
-
-#     def check_item(item):
-#         return item.to_dict() == expected_item.to_dict()
-
-#     qtbot.keyClicks(disp.target_energy_lineedit, "8402")
-#     with qtbot.waitSignal(
-#         ffapp.queue_item_added, timeout=1000, check_params_cb=check_item
-#     ):
-#         qtbot.mouseClick(btn, QtCore.Qt.LeftButton)
-
-
-#     def check_item(item):
-#         from pprint import pprint
-
-#         pprint(item.to_dict())
-#         pprint(expected_item.to_dict())
-#         return item.to_dict() == expected_item.to_dict()
-
-#     # Click the run button and see if the plan is queued
-#     with qtbot.waitSignal(
-#         ffapp.queue_item_added, timeout=1000, check_params_cb=check_item
-#     ):
-#         qtbot.mouseClick(display.ui.run_button, QtCore.Qt.LeftButton)
 
 
 # -----------------------------------------------------------------------------
