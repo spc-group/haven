@@ -145,6 +145,40 @@
      <item row="4" column="0">
       <layout class="QHBoxLayout" name="horizontalLayout_2">
        <item>
+        <widget class="QLabel" name="label">
+         <property name="text">
+          <string>Sample name</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="lineEdit_sample">
+         <property name="toolTip">
+          <string>Type this sample's name</string>
+         </property>
+         <property name="placeholderText">
+          <string>Sample name</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_2">
+         <property name="text">
+          <string>Experiment purpose</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="lineEdit_purpose">
+         <property name="toolTip">
+          <string>Type the experimental purpose note for this scan</string>
+         </property>
+         <property name="placeholderText">
+          <string>Purpose</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <spacer name="buttons_spacer">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>

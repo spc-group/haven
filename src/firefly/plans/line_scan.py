@@ -46,9 +46,8 @@ class LineScanDisplay(display.FireflyDisplay):
         # disable the line edits in spin box
         self.ui.num_motor_spin_box.lineEdit().setReadOnly(True)
         self.ui.num_motor_spin_box.valueChanged.connect(self.update_regions)
-        # self.ui.num_motor_spin_box.editingFinished.connect(self.update_regions)
 
-        # self.ui.run_button.setEnabled(True) #for testing
+        self.ui.run_button.setEnabled(True) #for testing
         self.ui.run_button.clicked.connect(self.queue_plan)
 
     def clearLayout(self, layout):
@@ -102,7 +101,7 @@ class LineScanDisplay(display.FireflyDisplay):
         # get paramters from each rows of line regions:
         motor_lst, start_lst, stop_lst = [], [], []
         for region_i in self.regions:
-            motor_lst.append(region_i.motor_box.current_component())
+            motor_lst.append(region_i.motor_box.combo_box.currentText())
             start_lst.append(float(region_i.start_line_edit.text()))
             stop_lst.append(float(region_i.stop_line_edit.text()))
 
@@ -125,6 +124,8 @@ class LineScanDisplay(display.FireflyDisplay):
             else:
                 scan_type = 'scan'
           
+        md={'sample': self.ui.lineEdit_sample.text(),
+            'purpose':self.ui.lineEdit_purpose.text()}
 
         # # Build the queue item
         item = BPlan(
@@ -133,7 +134,7 @@ class LineScanDisplay(display.FireflyDisplay):
             *motor_args,
             num=num_points,
             # per_step=None,
-            md=None,
+            md=md,
         )
         print(item)
 
