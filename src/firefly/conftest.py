@@ -108,11 +108,9 @@ def ffapp(pydm_ophyd_plugin, qapp_cls, qapp_args, pytestconfig):
         app.setup_runengine_actions()
         app._dummy_main_window = FireflyMainWindow()
     yield app
-    # try:
-    #     yield app
-    # finally:
-    #     del app
-    #     gc.collect()
+    # Delete any windows that might have been created
+    for wndw in app.windows.values():
+        wndw.close()
 
 
 @pytest.fixture()

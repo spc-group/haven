@@ -41,7 +41,10 @@ def I0(sim_registry):
     return I0
 
 
-def test_energy_scan_basics(mono_motor, id_gap_motor, energies, RE):
+def test_energy_scan_basics(
+    beamline_manager, mono_motor, id_gap_motor, energies, RE, tmp_path
+):
+    beamline_manager.local_storage.full_path._readback = str(tmp_path)
     exposure_time = 1e-3
     # Set up fake detectors and motors
     I0_exposure = sim.SynAxis(
@@ -77,8 +80,9 @@ def test_energy_scan_basics(mono_motor, id_gap_motor, energies, RE):
         exposure=exposure_time,
         energy_signals=[mono_motor, id_gap_motor],
         time_signals=[I0_exposure, It_exposure],
+        md={"edge": "Ni_K"},
     )
-    result = RE(scan)
+    result = RE(scan, sample_name="xafs_sample")
     # Check that the mono and ID gap ended up in the right position
     # time.sleep(1.0)
     assert mono_motor.readback.get() == np.max(energies)
@@ -91,6 +95,29 @@ def test_energy_scan_basics(mono_motor, id_gap_motor, energies, RE):
 def test_raises_on_empty_positioners(RE, energies):
     with pytest.raises(ValueError):
         RE(energy_scan(energies, energy_signals=[]))
+
+
+def test_saves_dspacing(mono, energies, I0, It):
+    """Does the mono's d-spacing get added to metadata."""
+    # Prepare the messages from the plan
+    mono.d_spacing._readback = 1.5418
+    msgs = list(
+        energy_scan(
+            energies,
+            detectors=[It],
+            energy_positioners=[mono],
+            time_positioners=[It.exposure_time],
+        )
+    )
+    # Find the metadata written by the plan
+    for msg in msgs:
+        if msg.command == "open_run":
+            md = msg.kwargs
+            break
+    else:
+        raise RuntimeError("No open run message found")
+    # Check for the dspacing of the mono in the metadata
+    assert md["d_spacing"] == 1.5418
 
 
 def test_single_range(mono_motor, exposure_motor, I0):
