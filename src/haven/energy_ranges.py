@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import math
 
 import numpy as np
 import pint
@@ -53,8 +54,19 @@ class EnergyRange:
         raise NotImplementedError
 
 
+def full_range(start, end, step):
+    """Calculate a range, but inclusive of start and end (if a multiple of
+    the step).
+
+    """
+    num_steps = int((end - start) / step)
+    lin_max = start + num_steps * step
+    return np.linspace(start, lin_max, num=num_steps+1)
+
+
 @dataclass
 class ERange(EnergyRange):
+
     """A range of energies used for scanning.
 
     All values are assumed to be in electron-volts. If *E0* is a
@@ -83,7 +95,7 @@ class ERange(EnergyRange):
 
     def energies(self):
         """Convert the range to a sequence of actual energy values, in eV."""
-        return np.arange(self.E_min, self.E_max + self.E_step, self.E_step)
+        return full_range(self.E_min, self.E_max, self.E_step)
 
     def exposures(self):
         """Convert the range to a sequence of exposure times, in seconds."""
@@ -124,7 +136,8 @@ class KRange(EnergyRange):
 
     def wavenumbers(self):
         """Calculates wavenumbers (k) for the photo-electron in units Å⁻."""
-        ks = np.arange(self.k_min, self.k_max + self.k_step, self.k_step)
+        k_min = self.energy_to_wavenumber(self.E_min)
+        ks = full_range(k_min, self.k_max + self.k_step, self.k_step)
         return ks
 
     def exposures(self):
