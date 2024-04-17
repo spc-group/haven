@@ -4,16 +4,18 @@ A PFCUFilterBank controls a set of 4 filters. Optionally, 2 filters in
 a filter bank can be used as a shutter.
 
 """
+from enum import IntEnum
 
 from ophyd import Component as Cpt
 from ophyd import Device
-from ophyd import DynamicDeviceComponent as DCpt
+from ophyd import DynamicDeviceComponent as DCpt, FormattedComponent as FCpt
 from ophyd import EpicsSignal, EpicsSignalRO, PVPositionerPC
+from apstools.devices.shutters import ShutterBase
 
 
-class PFCUFilterShutter(Device):
-    def __init__(self, *args, top_shutter: str, bottom_shutter: str, **kwargs):
-        super().__init__(*args, **kwargs)
+class FilterPosition(IntEnum):
+    OUT = 0
+    IN = 1
 
 
 class PFCUFilter(PVPositionerPC):
@@ -27,6 +29,56 @@ class PFCUFilter(PVPositionerPC):
     notes = Cpt(EpicsSignal, "_other", kind="config")
     setpoint = Cpt(EpicsSignal, "", kind="normal")
     readback = Cpt(EpicsSignalRO, "_RBV", kind="normal")
+
+
+class PFCUShutter(ShutterBase):
+    """A shutter made of two PFCU4 filters.
+
+    Parameters
+    ==========
+    top_filter
+      The PV for the filter that is open when the filter is set to
+      "out".
+    bottom_filter
+      The PV for the filter that is open when the filter is set to
+      "in".
+
+    """
+    top_filter = FCpt(PFCUFilter, "{self.prefix}{self._top_filter}")
+    bottom_filter = FCpt(PFCUFilter, "{self.prefix}{self._bottom_filter}")
+
+    def __init__(self, *args, top_filter: str, bottom_filter: str, **kwargs):
+        self._top_filter = top_filter
+        self._bottom_filter = bottom_filter
+        super().__init__(*args, **kwargs)
+
+    @property
+    def state(self):
+        states = {
+            # (top filter, bottom filter): state
+            (FilterPosition.OUT, FilterPosition.IN): "open",
+            (FilterPosition.IN, FilterPosition.OUT): "close",
+            (FilterPosition.OUT, FilterPosition.OUT): "unknown",
+            (FilterPosition.IN, FilterPosition.IN): "unknown"
+        }
+        current = (self.top_filter.readback.get(), self.bottom_filter.readback.get())
+        return states[current]
+
+    def open(self):
+        statuses = [
+            self.top_filter.setpoint.set(FilterPosition.OUT),
+            self.bottom_filter.setpoint.set(FilterPosition.IN),
+        ]
+        for st in statuses:
+            st.wait()
+
+    def close(self):
+        statuses = [
+            self.top_filter.setpoint.set(FilterPosition.IN),
+            self.bottom_filter.setpoint.set(FilterPosition.OUT),
+        ]
+        for st in statuses:
+            st.wait()
 
 
 class PFCUFilterBank(PVPositionerPC):
@@ -55,9 +107,9 @@ class PFCUFilterBank(PVPositionerPC):
             "shutters": DCpt(
                 {
                     f"shutter{idx}": (
-                        PFCUFilterShutter,
+                        PFCUShutter,
                         "",
-                        {"top_shutter": top, "bottom_shutter": bottom},
+                        {"top_filter": top, "bottom_filter": bottom},
                     )
                     for idx, (top, bottom) in enumerate(shutters)
                 }
