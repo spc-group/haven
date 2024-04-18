@@ -44,8 +44,8 @@ class PFCUShutter(ShutterBase):
       "in".
 
     """
-    top_filter = FCpt(PFCUFilter, "{self.prefix}{self._top_filter}")
-    bottom_filter = FCpt(PFCUFilter, "{self.prefix}{self._bottom_filter}")
+    top_filter = FCpt(PFCUFilter, "{self.prefix}filter{self._top_filter}")
+    bottom_filter = FCpt(PFCUFilter, "{self.prefix}filter{self._bottom_filter}")
 
     def __init__(self, *args, top_filter: str, bottom_filter: str, **kwargs):
         self._top_filter = top_filter
