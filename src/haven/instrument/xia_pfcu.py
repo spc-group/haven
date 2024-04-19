@@ -4,13 +4,20 @@ A PFCUFilterBank controls a set of 4 filters. Optionally, 2 filters in
 a filter bank can be used as a shutter.
 
 """
+
+import asyncio
 from enum import IntEnum
 
 from ophyd import Component as Cpt
-from ophyd import Device
 from ophyd import DynamicDeviceComponent as DCpt, FormattedComponent as FCpt
-from ophyd import EpicsSignal, EpicsSignalRO, PVPositionerPC
+from ophyd import EpicsSignal, EpicsSignalRO, PVPositionerPC, Device
 from apstools.devices.shutters import ShutterBase
+
+
+from .. import exceptions
+from .._iconfig import load_config
+from .device import aload_devices, make_device
+from .motor import HavenMotor
 
 
 class FilterPosition(IntEnum):
@@ -44,6 +51,7 @@ class PFCUShutter(ShutterBase):
       "in".
 
     """
+
     top_filter = FCpt(PFCUFilter, "{self.prefix}filter{self._top_filter}")
     bottom_filter = FCpt(PFCUFilter, "{self.prefix}filter{self._bottom_filter}")
 
@@ -59,7 +67,7 @@ class PFCUShutter(ShutterBase):
             (FilterPosition.OUT, FilterPosition.IN): "open",
             (FilterPosition.IN, FilterPosition.OUT): "close",
             (FilterPosition.OUT, FilterPosition.OUT): "unknown",
-            (FilterPosition.IN, FilterPosition.IN): "unknown"
+            (FilterPosition.IN, FilterPosition.IN): "unknown",
         }
         current = (self.top_filter.readback.get(), self.bottom_filter.readback.get())
         return states[current]
@@ -109,13 +117,17 @@ class PFCUFilterBank(PVPositionerPC):
                     f"shutter{idx}": (
                         PFCUShutter,
                         "",
-                        {"top_filter": top, "bottom_filter": bottom},
+                        {"top_filter": top, "bottom_filter": bottom,
+                         "labels": {"shutters"}},
                     )
                     for idx, (top, bottom) in enumerate(shutters)
                 }
             ),
             "filters": DCpt(
-                {f"filter{idx}": (PFCUFilter, f"filter{idx}", {}) for idx in filters}
+                {
+                    f"filter{idx}": (PFCUFilter, f"filter{idx}", {"labels": {"filters"}})
+                    for idx in filters
+                }
             ),
         }
         # Create any new child class with shutters and filters
@@ -124,3 +136,29 @@ class PFCUFilterBank(PVPositionerPC):
 
     def __init__(cls, *args, shutters=[], **kwargs):
         super().__init__(*args, **kwargs)
+
+
+def load_xia_pfcu4_coros(config=None):
+    if config is None:
+        config = load_config()
+    # Read the filter bank configurations from the config file
+    for name, cfg in config.get("pfcu4", {}).items():
+        try:
+            prefix = cfg["prefix"]
+            shutters = cfg.get("shutters", [])
+        except KeyError as ex:
+            raise exceptions.UnknownDeviceConfiguration(
+                f"Device {name} missing '{ex.args[0]}': {cfg}"
+            ) from ex
+        # Make the device
+        yield make_device(
+            PFCUFilterBank,
+            prefix=prefix,
+            name=name,
+            shutters=shutters,
+            labels={"filter_banks"},
+        )
+
+
+def load_xia_pfcu4s(config=None):
+    asyncio.run(aload_devices(*load_xia_pfcu4_coros(config=config)))
