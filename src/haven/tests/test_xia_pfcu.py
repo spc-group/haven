@@ -1,3 +1,4 @@
+import time
 from unittest import mock
 from collections import ChainMap
 
@@ -51,7 +52,8 @@ def test_pfcu_shutter_signals(shutter):
 def test_pfcu_shutter_open(shutter):
     assert shutter.state == "unknown"
     # Open the shutter, and check the
-    shutter.set("open").wait(timeout=3)
+    st = shutter.set("open")
+    time.sleep(0.1)
     assert shutter.top_filter.setpoint.get() == 0
     assert shutter.bottom_filter.setpoint.get() == 1
 
@@ -59,7 +61,8 @@ def test_pfcu_shutter_open(shutter):
 def test_pfcu_shutter_close(shutter):
     assert shutter.state == "unknown"
     # Open the shutter, and check the
-    shutter.set("close").wait(timeout=3)
+    shutter.set("close")
+    time.sleep(0.1)
     assert shutter.top_filter.setpoint.get() == 1
     assert shutter.bottom_filter.setpoint.get() == 0
 
