@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="optics">
+    <file>filter-empty.png</file>
     <file>table.png</file>
     <file>monochromator.png</file>
     <file>mirror.png</file>

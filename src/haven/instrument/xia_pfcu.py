@@ -51,7 +51,7 @@ class PFCUFilter(EnumPositioner):
 
     material = Cpt(EpicsSignal, "_mat", kind="config")
     thickness = Cpt(EpicsSignal, "_thick", kind="config")
-    thickness_units = Cpt(EpicsSignal, "_thick.EGU", kind="config")
+    thickness_unit = Cpt(EpicsSignal, "_thick.EGU", kind="config")
     notes = Cpt(EpicsSignal, "_other", kind="config")
 
     def __init__(self, *args, readback_pv="_RBV", **kwargs):

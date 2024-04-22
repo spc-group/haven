@@ -17,7 +17,8 @@ class FiltersDisplay(display.FireflyDisplay):
         return "filters.ui"
 
     def customize_device(self):
-        self.filters = registry.findall(label="filters", allow_none=True)
+        filters = registry.findall(label="filters", allow_none=True)
+        self.filters = sorted(filters, key=lambda dev: (dev.material.get(), dev.thickness.get()))
 
     def customize_ui(self):
         # Delete existing filter widgets

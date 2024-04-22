@@ -6,14 +6,14 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>611</width>
-    <height>53</height>
+    <width>544</width>
+    <height>54</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QHBoxLayout" name="horizontalLayout">
+  <layout class="QHBoxLayout" name="horizontalLayout_2">
    <property name="topMargin">
     <number>0</number>
    </property>
@@ -26,93 +26,16 @@
       <string/>
      </property>
      <property name="text">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;img src=&quot;:/optics/filter.png&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;img height=&quot;50&quot; src=&quot;:/optics/filter.png&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="textFormat">
       <enum>Qt::AutoText</enum>
      </property>
+     <property name="scaledContents">
+      <bool>true</bool>
+     </property>
      <property name="rules" stdset="0">
-      <string>[]</string>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="PyDMLabel" name="PyDMLabel">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
-     <property name="toolTip">
-      <string/>
-     </property>
-     <property name="text">
-      <string>${DEV}</string>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="PyDMLabel" name="PyDMLabel_2">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
-     <property name="toolTip">
-      <string/>
-     </property>
-     <property name="channel" stdset="0">
-      <string>haven://${DEV}.thickness</string>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="PyDMLabel" name="PyDMLabel_3">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
-     <property name="toolTip">
-      <string/>
-     </property>
-     <property name="channel" stdset="0">
-      <string>haven://${DEV}.thickness_unit</string>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="PyDMPushButton" name="PyDMPushButton">
-     <property name="toolTip">
-      <string/>
-     </property>
-     <property name="text">
-      <string>In</string>
-     </property>
-     <property name="channel" stdset="0">
-      <string>haven://${DEV}.setpoint</string>
-     </property>
-     <property name="pressValue" stdset="0">
-      <string>IN</string>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="PyDMPushButton" name="PyDMPushButton_2">
-     <property name="toolTip">
-      <string/>
-     </property>
-     <property name="text">
-      <string>Out</string>
-     </property>
-     <property name="channel" stdset="0">
-      <string>haven://${DEV}.setpoint</string>
-     </property>
-     <property name="pressValue" stdset="0">
-      <string>OUT</string>
+      <string>[{&quot;name&quot;: &quot;Filter is In&quot;, &quot;property&quot;: &quot;Text&quot;, &quot;initial_value&quot;: &quot;&quot;, &quot;expression&quot;: &quot;\&quot;&lt;img height=\\\&quot;50\\\&quot; src=\\\&quot;:/optics/filter.png\\\&quot;/&gt;\&quot; if ch[0] == \&quot;In\&quot; else \&quot;&lt;img height=\\\&quot;50\\\&quot; src=\\\&quot;:/optics/filter-empty.png\\\&quot;/&gt;\&quot;&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;haven://${DEV}.readback&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: true}], &quot;notes&quot;: &quot;&quot;}]</string>
      </property>
     </widget>
    </item>
@@ -139,15 +62,117 @@
      </property>
      <property name="offColor" stdset="0">
       <color>
-       <red>212</red>
-       <green>237</green>
-       <blue>218</blue>
+       <red>207</red>
+       <green>244</green>
+       <blue>252</blue>
       </color>
      </property>
      <property name="showLabels" stdset="0">
       <bool>false</bool>
      </property>
     </widget>
+   </item>
+   <item>
+    <widget class="PyDMPushButton" name="PyDMPushButton">
+     <property name="toolTip">
+      <string/>
+     </property>
+     <property name="text">
+      <string>In</string>
+     </property>
+     <property name="rules" stdset="0">
+      <string>[{&quot;name&quot;: &quot;Filter is out&quot;, &quot;property&quot;: &quot;Enable&quot;, &quot;initial_value&quot;: &quot;True&quot;, &quot;expression&quot;: &quot;ch[0] != \&quot;IN\&quot;&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;haven://${DEV}.setpoint&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: true}], &quot;notes&quot;: &quot;&quot;}]</string>
+     </property>
+     <property name="channel" stdset="0">
+      <string>haven://${DEV}.setpoint</string>
+     </property>
+     <property name="PyDMIcon" stdset="0">
+      <string>arrow-left</string>
+     </property>
+     <property name="pressValue" stdset="0">
+      <string>1</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="PyDMPushButton" name="PyDMPushButton_2">
+     <property name="toolTip">
+      <string/>
+     </property>
+     <property name="text">
+      <string>Out</string>
+     </property>
+     <property name="rules" stdset="0">
+      <string>[{&quot;name&quot;: &quot;Filter is In&quot;, &quot;property&quot;: &quot;Enable&quot;, &quot;initial_value&quot;: &quot;True&quot;, &quot;expression&quot;: &quot;ch[0] != \&quot;OUT\&quot;&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;haven://${DEV}.setpoint&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: true}], &quot;notes&quot;: &quot;&quot;}]</string>
+     </property>
+     <property name="channel" stdset="0">
+      <string>haven://${DEV}.setpoint</string>
+     </property>
+     <property name="PyDMIcon" stdset="0">
+      <string>arrow-right</string>
+     </property>
+     <property name="pressValue" stdset="0">
+      <string>0</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <property name="spacing">
+      <number>0</number>
+     </property>
+     <item>
+      <widget class="PyDMLabel" name="material_label">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="toolTip">
+        <string/>
+       </property>
+       <property name="text">
+        <string>${DEV}</string>
+       </property>
+       <property name="channel" stdset="0">
+        <string>haven://${DEV}.material</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="PyDMLabel" name="thickness_label">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="toolTip">
+        <string/>
+       </property>
+       <property name="channel" stdset="0">
+        <string>haven://${DEV}.thickness</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="PyDMLabel" name="thickness_unit_label">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="toolTip">
+        <string/>
+       </property>
+       <property name="channel" stdset="0">
+        <string>haven://${DEV}.thickness_unit</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </item>
    <item>
     <spacer name="horizontalSpacer">

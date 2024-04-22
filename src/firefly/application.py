@@ -211,6 +211,7 @@ class FireflyApplication(PyDMApplication):
             text="Filters",
             slot=self.show_filters_window,
         )
+        self.show_filters_window_action.setIcon(qta.icon("mdi.air-filter"))
         # Action for showing the beamline status window
         self._setup_window_action(
             action_name="show_status_window_action",
@@ -259,6 +260,7 @@ class FireflyApplication(PyDMApplication):
             text="Energy",
             slot=self.show_energy_window,
         )
+        self.show_energy_window_action.setIcon(qta.icon("mdi.sine-wave"))
         # Launch camera overview
         self._setup_window_action(
             action_name="show_cameras_window_action",

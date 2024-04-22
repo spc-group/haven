@@ -141,10 +141,13 @@ class FireflyMainWindow(PyDMMainWindow):
         self.ui.menuMotors = QtWidgets.QMenu(self.ui.menubar)
         self.ui.menuMotors.setObjectName("menuMotors")
         self.ui.menuMotors.setTitle("Extra &Motors")
-        self.ui.positioners_menu.addAction(self.ui.menuMotors.menuAction())
+        motors_action = self.ui.menuMotors.menuAction()
+        self.ui.positioners_menu.addAction(motors_action)
+        motors_action.setIcon(qta.icon('mdi.cog-clockwise'))
         # Menu to launch the Window to change energy
         self.ui.positioners_menu.addAction(app.show_energy_window_action)
         # Add optical components
+        self.ui.positioners_menu.addAction(app.show_filters_window_action)
         self.ui.positioners_menu.addSection("Slits")
         for action in app.slits_actions.values():
             self.ui.positioners_menu.addAction(action)
@@ -156,7 +159,6 @@ class FireflyMainWindow(PyDMMainWindow):
         self.ui.positioners_menu.addSection("Tables")
         for action in app.table_actions.values():
             self.ui.positioners_menu.addAction(action)
-        self.ui.positioners_menu.addAction(app.show_filters_window_action)
         # Scans menu
         self.ui.menuScans = QtWidgets.QMenu(self.ui.menubar)
         self.ui.menuScans.setObjectName("menuScans")
