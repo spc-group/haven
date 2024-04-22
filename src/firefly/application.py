@@ -133,7 +133,7 @@ class FireflyApplication(PyDMApplication):
 
     def reload_instrument(self, load_instrument=True):
         """(Re)load all the instrument devices."""
-        load_haven_instrument(registry=self.registry)
+        # load_haven_instrument(registry=self.registry)
         self.registry_changed.emit(self.registry)
 
     async def setup_instrument(self, load_instrument=True):
