@@ -32,6 +32,8 @@ dependencies:
   - pip
   - psutil
   - numba>=0.56  # Ensures 0.53 (broken) isn't installed
+  - # This version of networkx has an importlib bug in it
+  - networkx < 3.3
 
   # --- testing and quality assurance
   - black >=24
@@ -75,6 +77,7 @@ dependencies:
   - scikit-image
   - xlrd
   - peakutils
+  - pyarrow < 11.0.0  # Tempoary fix, remove once the libort missing symbol doesn't break CI
 
   # XES analysis packages
   - scikit-learn
@@ -148,6 +151,8 @@ dependencies:
     - xraydb >=4.5.0
     - pytest-timeout  # Get rid of this if tests are not hanging
     - git+https://github.com/pcdshub/pcdsdevices
+    - git+https://github.com/BCDA-APS/apstools.git@a165d24b2ae272ba0db3fb73d9feba4416f40631
+    # - git+https://github.com/BCDA-APS/apstools.git@50a142f1cc761553f14570c6c5f7e799846a0ddf
     # - https://github.com/BCDA-APS/adl2pydm/archive/main.zip
     # --- optional Bluesky framework packages for evaluation
     # - bluesky-webclient is NOT Python software, don't install it this way

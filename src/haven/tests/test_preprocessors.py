@@ -5,7 +5,7 @@ from bluesky.callbacks import CallbackBase
 from ophyd.sim import SynAxis, det, instantiate_fake_device
 
 from haven import baseline_decorator, baseline_wrapper, run_engine
-from haven.instrument.aps import EpicsBssDevice
+from haven.instrument.beamline_manager import BSS
 from haven.preprocessors import shutter_suspend_decorator, shutter_suspend_wrapper
 
 
@@ -89,7 +89,7 @@ def test_baseline_decorator(sim_registry, aps):
 def test_metadata(sim_registry, aps, monkeypatch):
     """Similar to baseline wrapper test, but used as a decorator."""
     # Load devices
-    bss = instantiate_fake_device(EpicsBssDevice, name="bss", prefix="255id:bss:")
+    bss = instantiate_fake_device(BSS, name="bss", prefix="255id:bss:")
     bss.esaf.esaf_id._readback = "12345"
     bss.esaf.title._readback = "Testing the wetness of water."
     bss.esaf.user_last_names._readback = "Bose, Einstein"

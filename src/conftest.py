@@ -26,11 +26,13 @@ from haven._iconfig import beamline_connected as _beamline_connected
 from haven.catalog import Catalog
 from haven.instrument.aerotech import AerotechStage
 from haven.instrument.aps import ApsMachine
+from haven.instrument.beamline_manager import BeamlineManager, IOCManager
 from haven.instrument.camera import AravisDetector
 from haven.instrument.delay import EpicsSignalWithIO
 from haven.instrument.dxp import DxpDetector
 from haven.instrument.dxp import add_mcas as add_dxp_mcas
 from haven.instrument.ion_chamber import IonChamber
+from haven.instrument.monochromator import Monochromator
 from haven.instrument.robot import Robot
 from haven.instrument.shutter import Shutter
 from haven.instrument.slits import ApertureSlits, BladeSlits
@@ -151,6 +153,34 @@ def blade_slits(sim_registry):
     return slits
 
 
+class SimpleBeamlineManager(BeamlineManager):
+    """For a fake class, we need to un-override __new__ to just make
+    itself.
+
+    """
+
+    iocs = DDC(
+        {
+            "ioc255idb": (IOCManager, "ioc255idb:", {}),
+            "ioc255idc": (IOCManager, "ioc255idc:", {}),
+        }
+    )
+
+    def __new__(cls, *args, **kwargs):
+        return object.__new__(cls)
+
+
+@pytest.fixture()
+def beamline_manager(sim_registry):
+    """A fake set of slits using the 4-blade setup."""
+    FakeManager = make_fake_device(SimpleBeamlineManager)
+    manager = FakeManager(
+        prefix="companionCube:", name="companion_cube", labels={"beamline_manager"}
+    )
+    sim_registry.register(manager)
+    return manager
+
+
 @pytest.fixture()
 def aperture_slits(sim_registry):
     """A fake slit assembling using the rotary aperture design."""
@@ -241,6 +271,13 @@ def aerotech_flyer(aerotech):
     flyer.user_setpoint._limits = (0, 1000)
     flyer.send_command = mock.MagicMock()
     yield flyer
+
+
+@pytest.fixture()
+def mono(sim_registry):
+    mono = instantiate_fake_device(Monochromator, name="monochromator")
+    sim_registry.register(mono)
+    yield mono
 
 
 @pytest.fixture()
