@@ -5,6 +5,7 @@
     <file>mirror.png</file>
     <file>kb_mirrors.png</file>
     <file>slits_3d.png</file>
+    <file>filter.png</file>
   </qresource>
   <qresource prefix="xray_source">
     <file>insertion_device.png</file>

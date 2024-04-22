@@ -38,6 +38,7 @@ from haven.instrument.shutter import Shutter
 from haven.instrument.slits import ApertureSlits, BladeSlits
 from haven.instrument.xspress import Xspress3Detector
 from haven.instrument.xspress import add_mcas as add_xspress_mcas
+from haven.instrument.xia_pfcu import PFCUFilter
 
 top_dir = Path(__file__).parent.resolve()
 haven_dir = top_dir / "haven"
@@ -307,6 +308,20 @@ def shutters(sim_registry):
     for shutter in shutters:
         sim_registry.register(shutter)
     yield shutters
+
+
+@pytest.fixture()
+def filters(sim_registry):
+    FakeFilter = make_fake_device(PFCUFilter)
+    kw = {"labels": {"filters"},}
+    filters = [
+        FakeFilter(name="Filter A", **kw),
+        FakeFilter(name="Filter B", **kw),
+    ]
+    # Register the simulated filters
+    for fltr in filters:
+        sim_registry.register(fltr)
+    return filters
 
 
 # holds a global QApplication instance created in the qapp fixture; keeping

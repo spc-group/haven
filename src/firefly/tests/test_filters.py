@@ -1,41 +1,35 @@
-import warnings
-import asyncio
-import logging
+import pytest
 
-from apstools.devices.aps_undulator import ApsUndulator
-
-from .._iconfig import load_config
-from .device import aload_devices, make_device
-
-log = logging.getLogger(__name__)
+import haven
+from firefly.main_window import FireflyMainWindow
+from firefly.voltmeter import VoltmeterDisplay
+from firefly.filters import FiltersDisplay
 
 
-def load_xray_source_coros(config=None):
-    if config is None:
-        config = load_config()
-    # Determine the X-ray source type (undulator vs bending magnet)
-    try:
-        data = config["xray_source"]
-    except KeyError:
-        warnings.warn("No X-ray source configured")
-    else:
-        if data["type"] == "undulator":
-            yield make_device(
-                ApsUndulator,
-                prefix=data["prefix"],
-                name="undulator",
-                labels={"xray_sources"},
-            )
 
+def test_embedded_display_widgets(qtbot, filters, ffapp):
+    """Test the the voltmeters creates a new embedded display widget for
+    each ion chamber.
 
-def load_xray_sources(config=None):
-    asyncio.run(aload_devices(*load_xray_source_coros(config=config)))
+    """
+    window = FireflyMainWindow()
+    # Load the display
+    display = FiltersDisplay()
+    # Check that the embedded display widgets get added correctly
+    assert hasattr(display, "_filter_displays")
+    assert len(display._filter_displays) == 2
+    assert display.filters_layout.count() == 2
+    # Check that the embedded display widgets have the correct macros
+    emb_disp = display._filter_displays[0]
+    disp = emb_disp.open_file(force=True)
+    macros = disp.macros()
+    assert macros == {"DEV": "Filter B"}
 
 
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov
-# :copyright: Copyright © 2023, UChicago Argonne, LLC
+# :copyright: Copyright © 2024, UChicago Argonne, LLC
 #
 # Distributed under the terms of the 3-Clause BSD License
 #

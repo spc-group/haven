@@ -156,6 +156,7 @@ class FireflyMainWindow(PyDMMainWindow):
         self.ui.positioners_menu.addSection("Tables")
         for action in app.table_actions.values():
             self.ui.positioners_menu.addAction(action)
+        self.ui.positioners_menu.addAction(app.show_filters_window_action)
         # Scans menu
         self.ui.menuScans = QtWidgets.QMenu(self.ui.menubar)
         self.ui.menuScans.setObjectName("menuScans")
