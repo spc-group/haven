@@ -4,7 +4,6 @@ import math
 import numpy as np
 import pint
 from scipy import constants
-
 __all__ = ["ERange", "KRange"]
 
 
@@ -136,8 +135,7 @@ class KRange(EnergyRange):
 
     def wavenumbers(self):
         """Calculates wavenumbers (k) for the photo-electron in units Å⁻."""
-        k_min = self.energy_to_wavenumber(self.E_min)
-        ks = full_range(k_min, self.k_max + self.k_step, self.k_step)
+        ks = full_range(self.k_min, self.k_max, self.k_step)
         return ks
 
     def exposures(self):
