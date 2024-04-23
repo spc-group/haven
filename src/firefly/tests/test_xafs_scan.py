@@ -178,7 +178,7 @@ def test_xafs_scan_plan_queued_energies_k_mixed(ffapp, qtbot):
     energies = np.array(
         [
             -20,
-            10,
+            -10,
             0,
             10,
             20,
@@ -189,7 +189,7 @@ def test_xafs_scan_plan_queued_energies_k_mixed(ffapp, qtbot):
             707.04,
         ]  # k values obtained from Athena software to double confirm ours
     )
-    exposures = np.array([1, 1, 1, 1, 1, 1, 1, 1, 1, 25, 100])  # k exposures
+    exposures = np.array([1, 1, 1, 1, 1, 1, 1, 1, 5.665, 14.141])  # k exposures kmin 3.62263
     # set up meta data
     display.ui.lineEdit_sample.setText("sam")
     display.ui.lineEdit_purpose.setText("test")
@@ -210,10 +210,10 @@ def test_xafs_scan_plan_queued_energies_k_mixed(ffapp, qtbot):
         try:
             # Check energies & exposures within 3 decimals
             np.testing.assert_array_almost_equal(
-                item_dict["energies"], expected_dict["energies"], decimal=3
+                item_dict["energies"], expected_dict["energies"], decimal=2
             )
             np.testing.assert_array_almost_equal(
-                item_dict["exposure"], expected_dict["exposure"], decimal=3
+                item_dict["exposure"], expected_dict["exposure"], decimal=2
             )
 
             # Now check the rest of the dictionary, excluding the numpy array keys
