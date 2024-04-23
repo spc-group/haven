@@ -42,7 +42,7 @@ async def test_selector_adds_devices(selector):
     """Check that the combobox editable options are set based on the allowed detectors."""
     # await selector._devices_task
     # # Add some items to the
-        # Check that positioners were added to the combobox model
+    # Check that positioners were added to the combobox model
     assert selector.combo_box.itemText(0) == "motor1"
     assert selector.combo_box.itemText(1) == "stage.motor2"
     assert selector.combo_box.itemText(2) == "stage.motor3"

@@ -44,10 +44,12 @@ class ScalerTriggered:
         return new_status
 
 
-class ScalerSignal(ScalerTriggered, EpicsSignal): ...
+class ScalerSignal(ScalerTriggered, EpicsSignal):
+    ...
 
 
-class ScalerSignalRO(ScalerTriggered, EpicsSignalRO): ...
+class ScalerSignalRO(ScalerTriggered, EpicsSignalRO):
+    ...
 
 
 # -----------------------------------------------------------------------------

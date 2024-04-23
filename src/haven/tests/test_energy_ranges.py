@@ -1,5 +1,6 @@
 import pytest
 import logging
+
 # import unittest
 
 import numpy as np
@@ -10,11 +11,12 @@ logging.basicConfig(level=logging.INFO)
 
 energy_range_parameters = [
     # (start, end,  step, expected_energies)
-    (8300,    8400, 0.5,  np.linspace(8300, 8400, num=201)),  # Example values
-    (1,       1.3,  0.1,  [1, 1.1, 1.2, 1.3]),  # Known float rounding error
-    (0,       70,   50,   [0, 50]),  # End-point is not a step multiple
-    (1.3,       1.,  -0.1,  [1.3, 1.2, 1.1, 1.0]),  # Reverse direction
+    (8300, 8400, 0.5, np.linspace(8300, 8400, num=201)),  # Example values
+    (1, 1.3, 0.1, [1, 1.1, 1.2, 1.3]),  # Known float rounding error
+    (0, 70, 50, [0, 50]),  # End-point is not a step multiple
+    (1.3, 1.0, -0.1, [1.3, 1.2, 1.1, 1.0]),  # Reverse direction
 ]
+
 
 @pytest.mark.parametrize("start,stop,step,expected_energies", energy_range_parameters)
 def test_e_range(start, stop, step, expected_energies):
@@ -23,7 +25,8 @@ def test_e_range(start, stop, step, expected_energies):
     np.testing.assert_allclose(e_range.energies(), expected_energies)
     np.testing.assert_allclose(e_range.exposures(), [0.1] * len(expected_energies))
 
-#TODO fix the float issues
+
+# TODO fix the float issues
 def test_k_range():
     E0 = 17038
     k_range = KRange(k_min=2.8, k_max=14, k_step=0.05, k_weight=1, exposure=1.0)
@@ -37,11 +40,9 @@ def test_k_range():
     np.testing.assert_equal(energies[0], E0 + E_min)
     np.testing.assert_almost_equal(energies[-1], 17785.40463351)
     np.testing.assert_equal(k_range.exposures()[0], 1.0)
-    np.testing.assert_almost_equal(
-        k_range.exposures()[16], 1.28529317348436, decimal=3
-    )
+    np.testing.assert_almost_equal(k_range.exposures()[16], 1.28529317348436, decimal=3)
 
-    
+
 def test_merge_ranges():
     e_range1 = ERange(1, 5, 1, exposure=0.5)
     e_range2 = ERange(5, 7, 0.5, exposure=1)

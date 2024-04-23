@@ -3,6 +3,7 @@ from dataclasses import dataclass
 import numpy as np
 import pint
 from scipy import constants
+
 __all__ = ["ERange", "KRange"]
 
 
@@ -41,6 +42,7 @@ def k_step_to_E_step(k_start, k_step):
     E1 = wavenumber_to_energy(k_start + k_step)
     return E1 - E0
 
+
 @dataclass
 class EnergyRange:
     """A range of energies used for scanning."""
@@ -59,7 +61,7 @@ def full_range(start, end, step):
     """
     num_steps = int((end - start) / step)
     lin_max = start + num_steps * step
-    return np.linspace(start, lin_max, num=num_steps+1)
+    return np.linspace(start, lin_max, num=num_steps + 1)
 
 
 @dataclass
@@ -179,13 +181,13 @@ def merge_ranges(*ranges, default_exposure=DEFAULT_EXPOSURE, sort=False):
         np.asarray(energies, dtype=float), return_index=True
     )
     exposures = np.asarray(exposures, dtype=float)[unique_idx]
-    
+
     if sort:
-      # sorting energies from small to big
-      sorted_indices = np.argsort(energies)
-      energies = energies[sorted_indices]
-      exposures = exposures[sorted_indices]
-    
+        # sorting energies from small to big
+        sorted_indices = np.argsort(energies)
+        energies = energies[sorted_indices]
+        exposures = exposures[sorted_indices]
+
     return energies, exposures
 
 

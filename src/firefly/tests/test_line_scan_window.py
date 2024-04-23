@@ -47,8 +47,8 @@ def test_line_scan_plan_queued(ffapp, qtbot, sim_registry):
     )
 
     # set up meta data
-    display.ui.lineEdit_sample.setText('sam')
-    display.ui.lineEdit_purpose.setText('test')
+    display.ui.lineEdit_sample.setText("sam")
+    display.ui.lineEdit_purpose.setText("test")
 
     expected_item = BPlan(
         "scan",
@@ -60,8 +60,7 @@ def test_line_scan_plan_queued(ffapp, qtbot, sim_registry):
         2,
         222,
         num=10,
-        md={'sample': 'sam',
-            'purpose': 'test'}
+        md={"sample": "sam", "purpose": "test"},
     )
 
     def check_item(item):

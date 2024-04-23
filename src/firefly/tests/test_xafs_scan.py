@@ -11,6 +11,7 @@ XANES_region = [-20, 50, 0.2]
 EXAFS_region = [50, 500, 0.5]
 default_values = [pre_edge, XANES_region, EXAFS_region]
 
+
 def test_region_number(qtbot):
     """Does changing the region number affect the UI?"""
     disp = XafsScanDisplay()
@@ -19,7 +20,7 @@ def test_region_number(qtbot):
     assert disp.ui.regions_spin_box.value() == 3
     assert hasattr(disp, "regions")
     assert len(disp.regions) == 3
-    
+
     # Check that regions can be inserted
     disp.ui.regions_spin_box.setValue(5)
     assert len(disp.regions) == 5
@@ -41,42 +42,68 @@ def test_E0_checkbox(qtbot):
     disp.ui.use_edge_checkbox.setChecked(False)
     # check whether edge value is extracted correctly
     np.testing.assert_equal(disp.edge_value, 11500.8)
-    # K-space checkboxes should be disabled when E0 is unchecked    
+    # K-space checkboxes should be disabled when E0 is unchecked
     assert not disp.regions[0].k_space_checkbox.isEnabled()
 
-    # check whether energy values is added correctly 
+    # check whether energy values is added correctly
     for i in range(len(default_values)):
-        np.testing.assert_almost_equal(float(disp.regions[i].start_line_edit.text()), default_values[i][0] + disp.edge_value, decimal=3)
-        np.testing.assert_almost_equal(float(disp.regions[i].stop_line_edit.text()), default_values[i][1] + disp.edge_value, decimal=3)
-        np.testing.assert_almost_equal(float(disp.regions[i].step_line_edit.text()), default_values[i][2], decimal=3)
+        np.testing.assert_almost_equal(
+            float(disp.regions[i].start_line_edit.text()),
+            default_values[i][0] + disp.edge_value,
+            decimal=3,
+        )
+        np.testing.assert_almost_equal(
+            float(disp.regions[i].stop_line_edit.text()),
+            default_values[i][1] + disp.edge_value,
+            decimal=3,
+        )
+        np.testing.assert_almost_equal(
+            float(disp.regions[i].step_line_edit.text()),
+            default_values[i][2],
+            decimal=3,
+        )
 
-    # check whether k range is calculated right 
+    # check whether k range is calculated right
     disp.ui.use_edge_checkbox.setChecked(True)
     # K-space checkbox should become re-enabled after E0 is checked
     assert disp.regions[-1].k_space_checkbox.isEnabled()
     disp.regions[-1].k_space_checkbox.setChecked(True)
-    np.testing.assert_almost_equal(float(disp.regions[i].start_line_edit.text()), 3.6226, decimal=4)
-    np.testing.assert_almost_equal(float(disp.regions[i].stop_line_edit.text()), 11.4557, decimal=4)
-    np.testing.assert_almost_equal(float(disp.regions[i].step_line_edit.text()), 3.64069-3.6226, decimal=4)
+    np.testing.assert_almost_equal(
+        float(disp.regions[i].start_line_edit.text()), 3.6226, decimal=4
+    )
+    np.testing.assert_almost_equal(
+        float(disp.regions[i].stop_line_edit.text()), 11.4557, decimal=4
+    )
+    np.testing.assert_almost_equal(
+        float(disp.regions[i].step_line_edit.text()), 3.64069 - 3.6226, decimal=4
+    )
 
 
 def test_xafs_scan_plan_queued_energies(ffapp, qtbot):
     display = XafsScanDisplay()
-    
+
     display.edge_combo_box.setCurrentText("Pt L3 (11500.8 eV)")
     display.regions[-1].region_checkbox.setChecked(False)
     # set up detector list
     display.ui.detectors_list.selected_detectors = mock.MagicMock(
         return_value=["vortex_me4", "I0"]
     )
-    energies_region0 = np.arange(default_values[0][0], default_values[0][1] + default_values[0][2], default_values[0][2])
-    energies_region1 = np.arange(default_values[1][0]+default_values[1][2], default_values[1][1] + default_values[1][2], default_values[1][2])
+    energies_region0 = np.arange(
+        default_values[0][0],
+        default_values[0][1] + default_values[0][2],
+        default_values[0][2],
+    )
+    energies_region1 = np.arange(
+        default_values[1][0] + default_values[1][2],
+        default_values[1][1] + default_values[1][2],
+        default_values[1][2],
+    )
     energies_merge = np.hstack([energies_region0, energies_region1])
     exposures = np.ones(energies_merge.shape)
-    
+
     # set up meta data
-    display.ui.lineEdit_sample.setText('sam')
-    display.ui.lineEdit_purpose.setText('test')
+    display.ui.lineEdit_sample.setText("sam")
+    display.ui.lineEdit_purpose.setText("test")
 
     expected_item = BPlan(
         "energy_scan",
@@ -84,31 +111,33 @@ def test_xafs_scan_plan_queued_energies(ffapp, qtbot):
         exposure=exposures,
         E0=11500.8,
         detectors=["vortex_me4", "I0"],
-        md={'sample': 'sam',
-            'purpose': 'test'}
+        md={"sample": "sam", "purpose": "test"},
     )
 
-
     def check_item(item):
-        item_dict = item.to_dict()['kwargs']
-        expected_dict = expected_item.to_dict()['kwargs']
+        item_dict = item.to_dict()["kwargs"]
+        expected_dict = expected_item.to_dict()["kwargs"]
 
         try:
             # Check energies & exposures within 3 decimals
-            np.testing.assert_array_almost_equal(item_dict['energies'], expected_dict['energies'], decimal=3)
-            np.testing.assert_array_almost_equal(item_dict['exposure'], expected_dict['exposure'], decimal=3)
-            
+            np.testing.assert_array_almost_equal(
+                item_dict["energies"], expected_dict["energies"], decimal=3
+            )
+            np.testing.assert_array_almost_equal(
+                item_dict["exposure"], expected_dict["exposure"], decimal=3
+            )
+
             # Now check the rest of the dictionary, excluding the numpy array keys
-            item_dict.pop('energies')
-            item_dict.pop('exposure')
-            expected_dict.pop('energies')
-            expected_dict.pop('exposure')
+            item_dict.pop("energies")
+            item_dict.pop("exposure")
+            expected_dict.pop("energies")
+            expected_dict.pop("exposure")
 
             # Check if the remaining dictionary items are equal
             assert item_dict == expected_dict, "Non-array items do not match."
 
         except AssertionError as e:
-            # Print detailed debug info 
+            # Print detailed debug info
             pprint(item_dict)
             pprint(expected_dict)
             print(str(e))
@@ -121,40 +150,49 @@ def test_xafs_scan_plan_queued_energies(ffapp, qtbot):
     ):
         qtbot.mouseClick(display.ui.run_button, QtCore.Qt.LeftButton)
 
-# TODO K end point should not include step 
+
+# TODO K end point should not include step
 def test_xafs_scan_plan_queued_energies_k_mixed(ffapp, qtbot):
     display = XafsScanDisplay()
     display.ui.regions_spin_box.setValue(2)
     display.edge_combo_box.setCurrentText("Pt L3 (11500.8 eV)")
-    
-    # set up the first region
-    display.regions[0].start_line_edit.setText('-20')
-    display.regions[0].stop_line_edit.setText('40')
-    display.regions[0].step_line_edit.setText('10')
-    
-    # set up the second region
-    display.regions[1].start_line_edit.setText('50')
-    display.regions[1].stop_line_edit.setText('800')
 
-    # convert to k space 
+    # set up the first region
+    display.regions[0].start_line_edit.setText("-20")
+    display.regions[0].stop_line_edit.setText("40")
+    display.regions[0].step_line_edit.setText("10")
+
+    # set up the second region
+    display.regions[1].start_line_edit.setText("50")
+    display.regions[1].stop_line_edit.setText("800")
+
+    # convert to k space
     display.regions[1].k_space_checkbox.setChecked(True)
-    display.regions[1].step_line_edit.setText('5')
+    display.regions[1].step_line_edit.setText("5")
     display.regions[1].weight_spinbox.setValue(2)
-    
 
     # set up detector list
     display.ui.detectors_list.selected_detectors = mock.MagicMock(
         return_value=["vortex_me4", "I0"]
     )
-    energies= np.array([-20, 10, 0, 10, 20, 30, 40,
-                        50, 283.27, 707.04] # k values obtained from Athena software to double confirm ours
-                        )     
-    exposures = np.array([1,1,1,1,1,1,1,1,
-                          1, 25, 100] # k exposures
-                          )
+    energies = np.array(
+        [
+            -20,
+            10,
+            0,
+            10,
+            20,
+            30,
+            40,
+            50,
+            283.27,
+            707.04,
+        ]  # k values obtained from Athena software to double confirm ours
+    )
+    exposures = np.array([1, 1, 1, 1, 1, 1, 1, 1, 1, 25, 100])  # k exposures
     # set up meta data
-    display.ui.lineEdit_sample.setText('sam')
-    display.ui.lineEdit_purpose.setText('test')
+    display.ui.lineEdit_sample.setText("sam")
+    display.ui.lineEdit_purpose.setText("test")
 
     expected_item = BPlan(
         "energy_scan",
@@ -162,31 +200,33 @@ def test_xafs_scan_plan_queued_energies_k_mixed(ffapp, qtbot):
         exposure=exposures,
         E0=11500.8,
         detectors=["vortex_me4", "I0"],
-        md={'sample': 'sam',
-            'purpose': 'test'}
+        md={"sample": "sam", "purpose": "test"},
     )
 
-
     def check_item(item):
-        item_dict = item.to_dict()['kwargs']
-        expected_dict = expected_item.to_dict()['kwargs']
+        item_dict = item.to_dict()["kwargs"]
+        expected_dict = expected_item.to_dict()["kwargs"]
 
         try:
             # Check energies & exposures within 3 decimals
-            np.testing.assert_array_almost_equal(item_dict['energies'], expected_dict['energies'], decimal=3)
-            np.testing.assert_array_almost_equal(item_dict['exposure'], expected_dict['exposure'], decimal=3)
-            
+            np.testing.assert_array_almost_equal(
+                item_dict["energies"], expected_dict["energies"], decimal=3
+            )
+            np.testing.assert_array_almost_equal(
+                item_dict["exposure"], expected_dict["exposure"], decimal=3
+            )
+
             # Now check the rest of the dictionary, excluding the numpy array keys
-            item_dict.pop('energies')
-            item_dict.pop('exposure')
-            expected_dict.pop('energies')
-            expected_dict.pop('exposure')
+            item_dict.pop("energies")
+            item_dict.pop("exposure")
+            expected_dict.pop("energies")
+            expected_dict.pop("exposure")
 
             # Check if the remaining dictionary items are equal
             assert item_dict == expected_dict, "Non-array items do not match."
 
         except AssertionError as e:
-            # Print detailed debug info 
+            # Print detailed debug info
             pprint(item_dict)
             pprint(expected_dict)
             print(str(e))
@@ -198,7 +238,6 @@ def test_xafs_scan_plan_queued_energies_k_mixed(ffapp, qtbot):
         ffapp.queue_item_added, timeout=1000, check_params_cb=check_item
     ):
         qtbot.mouseClick(display.ui.run_button, QtCore.Qt.LeftButton)
-
 
 
 # -----------------------------------------------------------------------------

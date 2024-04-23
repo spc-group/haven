@@ -47,7 +47,7 @@ class LineScanDisplay(display.FireflyDisplay):
         self.ui.num_motor_spin_box.lineEdit().setReadOnly(True)
         self.ui.num_motor_spin_box.valueChanged.connect(self.update_regions)
 
-        self.ui.run_button.setEnabled(True) #for testing
+        self.ui.run_button.setEnabled(True)  # for testing
         self.ui.run_button.clicked.connect(self.queue_plan)
 
     def clearLayout(self, layout):
@@ -115,17 +115,19 @@ class LineScanDisplay(display.FireflyDisplay):
 
         if self.ui.relative_scan_checkbox.isChecked():
             if self.ui.log_scan_checkbox.isChecked():
-                scan_type = 'rel_log_scan'
+                scan_type = "rel_log_scan"
             else:
-                scan_type = 'rel_scan'
+                scan_type = "rel_scan"
         else:
             if self.ui.log_scan_checkbox.isChecked():
-                scan_type = 'log_scan'
+                scan_type = "log_scan"
             else:
-                scan_type = 'scan'
-          
-        md={'sample': self.ui.lineEdit_sample.text(),
-            'purpose':self.ui.lineEdit_purpose.text()}
+                scan_type = "scan"
+
+        md = {
+            "sample": self.ui.lineEdit_sample.text(),
+            "purpose": self.ui.lineEdit_purpose.text(),
+        }
 
         # # Build the queue item
         item = BPlan(

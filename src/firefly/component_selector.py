@@ -5,7 +5,13 @@ from functools import lru_cache
 
 from qasync import asyncSlot, QThreadExecutor
 import qtawesome as qta
-from ophyd import Device, EpicsMotor, PositionerBase, Signal, do_not_wait_for_lazy_connection
+from ophyd import (
+    Device,
+    EpicsMotor,
+    PositionerBase,
+    Signal,
+    do_not_wait_for_lazy_connection,
+)
 from qtpy.QtGui import QFont, QStandardItem, QStandardItemModel
 from qtpy.QtWidgets import (
     QComboBox,
@@ -21,7 +27,6 @@ from qtpy.QtWidgets import (
 from .application import FireflyApplication
 
 log = logging.getLogger(__name__)
-
 
 
 class TreeComponent:
@@ -60,7 +65,6 @@ class TreeComponent:
                 Signal: qta.icon("mdi.connection"),
             }
         )
-
 
     def component_from_dotted_name(self, name):
         if name == self.dotted_name:
@@ -120,7 +124,9 @@ class TreeComponent:
         for name in child_names:
             with do_not_wait_for_lazy_connection(self.device):
                 child = self.__class__(
-                    device=getattr(self.device, name), text=name, parent=self.component_item
+                    device=getattr(self.device, name),
+                    text=name,
+                    parent=self.component_item,
                 )
                 self.child_components.append(child)
         # Add the devices children
@@ -155,13 +161,19 @@ class ComponentTreeModel(QStandardItemModel):
         for device in devices:
             with do_not_wait_for_lazy_connection(device):
                 cpt = self.Component(
-                    device=device, text=device.name, parent=parent_item, registry=registry
+                    device=device,
+                    text=device.name,
+                    parent=parent_item,
+                    registry=registry,
                 )
                 self.root_components.append(cpt)
         # Add all the children for the root components in separate threads
         loop = asyncio.get_running_loop()
         with QThreadExecutor(len(self.root_components)) as exec:
-            aws = (loop.run_in_executor(exec, cpt.add_children) for cpt in self.root_components)
+            aws = (
+                loop.run_in_executor(exec, cpt.add_children)
+                for cpt in self.root_components
+            )
             await asyncio.gather(*aws)
 
 
@@ -182,7 +194,9 @@ class ComboBoxComponent(TreeComponent):
             dotted_name = ".".join([self.text, name])
             with do_not_wait_for_lazy_connection(self.device):
                 child = self.__class__(
-                    device=getattr(self.device, name), text=dotted_name, parent=self.parent
+                    device=getattr(self.device, name),
+                    text=dotted_name,
+                    parent=self.parent,
                 )
                 self.child_components.append(child)
         # Add the devices children
