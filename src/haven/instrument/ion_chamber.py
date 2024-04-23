@@ -9,7 +9,7 @@ from collections import OrderedDict
 from typing import Dict, Generator, Optional
 
 import numpy as np
-import pint
+# import pint
 from aioca import caget, CANothing
 from apstools.devices import SRS570_PreAmplifier
 from apstools.devices.srs570_preamplifier import (

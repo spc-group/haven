@@ -18,7 +18,6 @@ from haven.energy_ranges import (
     merge_ranges,
     wavenumber_to_energy,
 )
-from haven.plans.energy_scan import energy_scan
 log = logging.getLogger(__name__)
 
 #TODO solve Python decimal

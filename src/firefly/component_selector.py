@@ -1,13 +1,11 @@
 import asyncio
 import logging
 from collections import OrderedDict
-from pprint import pprint
 from functools import lru_cache
 
 from qasync import asyncSlot, QThreadExecutor
 import qtawesome as qta
-from ophyd import Device, EpicsMotor, PositionerBase, Signal, sim, do_not_wait_for_lazy_connection
-from qtpy.QtCore import Qt
+from ophyd import Device, EpicsMotor, PositionerBase, Signal, do_not_wait_for_lazy_connection
 from qtpy.QtGui import QFont, QStandardItem, QStandardItemModel
 from qtpy.QtWidgets import (
     QComboBox,
@@ -19,7 +17,6 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from haven import registry
 
 from .application import FireflyApplication
 
