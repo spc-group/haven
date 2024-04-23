@@ -101,7 +101,7 @@ class LineScanDisplay(display.FireflyDisplay):
         # get paramters from each rows of line regions:
         motor_lst, start_lst, stop_lst = [], [], []
         for region_i in self.regions:
-            motor_lst.append(region_i.motor_box.combo_box.currentText())
+            motor_lst.append(region_i.motor_box.current_component().name)
             start_lst.append(float(region_i.start_line_edit.text()))
             stop_lst.append(float(region_i.stop_line_edit.text()))
 

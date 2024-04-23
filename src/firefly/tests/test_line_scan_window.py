@@ -7,12 +7,13 @@ from qtpy import QtCore
 
 from firefly.plans.line_scan import LineScanDisplay
 from haven.instrument import motor
+from pprint import pprint
 
 
 # fake motor copied from test_motor_menu.py, not sure this is right
 @pytest.fixture
 def fake_motors(sim_registry):
-    motor_names = ["motorA_m2"]
+    motor_names = ["motorA_m1", "motorA_m2"]
     motors = []
     for name in motor_names:
         this_motor = make_fake_device(motor.HavenMotor)(name=name, labels={"motors"})
@@ -28,12 +29,12 @@ def test_line_scan_plan_queued(ffapp, qtbot, sim_registry):
     display.update_regions()
 
     # set up a test motor 1
-    display.regions[0].motor_box.combo_box.setCurrentText("test_motor1")
+    display.regions[0].motor_box.combo_box.setCurrentText("sim_motor.user_setpoint")
     display.regions[0].start_line_edit.setText("1")
     display.regions[0].stop_line_edit.setText("111")
 
     # set up a test motor 2
-    display.regions[1].motor_box.combo_box.setCurrentText("test_motor2")
+    display.regions[1].motor_box.combo_box.setCurrentText("sim_det.user_setpoint")
     display.regions[1].start_line_edit.setText("2")
     display.regions[1].stop_line_edit.setText("222")
 
@@ -52,10 +53,10 @@ def test_line_scan_plan_queued(ffapp, qtbot, sim_registry):
     expected_item = BPlan(
         "scan",
         ["vortex_me4", "I0"],
-        "test_motor1",
+        "sim_motor.user_setpoint",
         1,
         111,
-        "test_motor2",
+        "sim_det.user_setpoint",
         2,
         222,
         num=10,
@@ -64,8 +65,6 @@ def test_line_scan_plan_queued(ffapp, qtbot, sim_registry):
     )
 
     def check_item(item):
-        from pprint import pprint
-
         pprint(item.to_dict())
         pprint(expected_item.to_dict())
         return item.to_dict() == expected_item.to_dict()
