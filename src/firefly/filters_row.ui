@@ -13,6 +13,9 @@
   <property name="windowTitle">
    <string>Form</string>
   </property>
+  <property name="styleSheet">
+   <string notr="true"/>
+  </property>
   <layout class="QHBoxLayout" name="horizontalLayout_2">
    <property name="topMargin">
     <number>0</number>
@@ -25,8 +28,11 @@
      <property name="toolTip">
       <string/>
      </property>
+     <property name="styleSheet">
+      <string notr="true">padding: 0px</string>
+     </property>
      <property name="text">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;img height=&quot;50&quot; src=&quot;:/optics/filter.png&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;img height=&quot;50&quot; src=&quot;:/optics/filter.png&quot; /&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="textFormat">
       <enum>Qt::AutoText</enum>
@@ -35,7 +41,7 @@
       <bool>true</bool>
      </property>
      <property name="rules" stdset="0">
-      <string>[{&quot;name&quot;: &quot;Filter is In&quot;, &quot;property&quot;: &quot;Text&quot;, &quot;initial_value&quot;: &quot;&quot;, &quot;expression&quot;: &quot;\&quot;&lt;img height=\\\&quot;50\\\&quot; src=\\\&quot;:/optics/filter.png\\\&quot;/&gt;\&quot; if ch[0] == \&quot;In\&quot; else \&quot;&lt;img height=\\\&quot;50\\\&quot; src=\\\&quot;:/optics/filter-empty.png\\\&quot;/&gt;\&quot;&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;haven://${DEV}.readback&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: true}], &quot;notes&quot;: &quot;&quot;}]</string>
+      <string>[{&quot;name&quot;: &quot;Filter is In&quot;, &quot;property&quot;: &quot;Text&quot;, &quot;initial_value&quot;: &quot;&quot;, &quot;expression&quot;: &quot;'&lt;img height=\&quot;50\&quot; src=\&quot;:/optics/filter' + (\&quot;\&quot; if ch[0] == \&quot;In\&quot; else \&quot;-empty\&quot;) + '.png\\\&quot;/&gt;'&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;haven://${DEV}.readback&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: true}], &quot;notes&quot;: &quot;&quot;}]</string>
      </property>
     </widget>
    </item>
@@ -129,11 +135,20 @@
          <verstretch>0</verstretch>
         </sizepolicy>
        </property>
+       <property name="font">
+        <font>
+         <weight>75</weight>
+         <bold>true</bold>
+        </font>
+       </property>
        <property name="toolTip">
         <string/>
        </property>
+       <property name="styleSheet">
+        <string notr="true">font-weight: bold;</string>
+       </property>
        <property name="text">
-        <string>${DEV}</string>
+        <string>######</string>
        </property>
        <property name="channel" stdset="0">
         <string>haven://${DEV}.material</string>
