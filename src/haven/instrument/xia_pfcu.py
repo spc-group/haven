@@ -124,8 +124,8 @@ class PFCUShutter(ShutterBase):
         else:
             # We have a filter bank, so set both blades together
             old_bits = filter_bank.readback.get(as_string=False)
-            new_bits = (old_bits | self.top_mask()) & (0b1111 - self.bottom_mask())
-            filter_bank.setpoint.set(new_bits).wait()
+            new_bits = (old_bits | self.bottom_mask()) & (0b1111 - self.top_mask())
+            filter_bank.set(new_bits).wait()
 
     def close(self):
         # See if we have access to the whole filter bank, or just this filter
@@ -136,8 +136,8 @@ class PFCUShutter(ShutterBase):
         else:
             # We have a filter bank, so set both blades together
             old_bits = filter_bank.readback.get(as_string=False)
-            new_bits = (old_bits | self.bottom_mask()) & (0b1111 - self.top_mask())
-            filter_bank.setpoint.set(new_bits).wait()
+            new_bits = (old_bits | self.top_mask()) & (0b1111 - self.bottom_mask())
+            filter_bank.set(new_bits).wait()
 
 
 class PFCUFilterBank(EnumPositioner):
