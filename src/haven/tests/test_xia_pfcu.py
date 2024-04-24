@@ -34,7 +34,7 @@ def shutter_bank():
                 "shutter0": (
                     PFCUShutter,
                     "",
-                    {"top_filter": 3, "bottom_filter": 4, "labels": {"shutters"}},
+                    {"top_filter": 4, "bottom_filter": 3, "labels": {"shutters"}},
                 )
             }
         )
@@ -83,8 +83,8 @@ def test_pfcu_shutter_open(shutter):
 def test_pfcu_shutter_bank_mask(shutter_bank):
     """A bit-mask used for determining how to set the filter bank."""
     shutter = shutter_bank.shutters.shutter0
-    assert shutter.top_mask() == 0b0010
-    assert shutter.bottom_mask() == 0b0001
+    assert shutter.top_mask() == 0b0001
+    assert shutter.bottom_mask() == 0b0010
 
 
 def test_pfcu_shutter_fast_open(shutter_bank):
