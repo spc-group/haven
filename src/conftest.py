@@ -38,7 +38,7 @@ from haven.instrument.shutter import Shutter
 from haven.instrument.slits import ApertureSlits, BladeSlits
 from haven.instrument.xspress import Xspress3Detector
 from haven.instrument.xspress import add_mcas as add_xspress_mcas
-from haven.instrument.xia_pfcu import PFCUFilter
+from haven.instrument.xia_pfcu import PFCUFilter, PFCUShutter
 
 top_dir = Path(__file__).parent.resolve()
 haven_dir = top_dir / "haven"
@@ -288,6 +288,16 @@ def aps(sim_registry):
     aps = instantiate_fake_device(ApsMachine, name="APS")
     sim_registry.register(aps)
     yield aps
+
+
+@pytest.fixture()
+def xia_shutter(sim_registry):
+    FakeShutter = make_fake_device(PFCUShutter)
+    shtr = FakeShutter(
+        top_filter="255idc:pfcu0:", bottom_filter="255idc:pfcu1:", name="shutter", labels={"shutters"},
+    )
+    sim_registry.register(shtr)
+    return shtr
 
 
 @pytest.fixture()

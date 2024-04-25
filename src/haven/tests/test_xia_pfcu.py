@@ -18,12 +18,8 @@ from haven.instrument.xia_pfcu import (
 
 
 @pytest.fixture()
-def shutter():
-    FakeShutter = make_fake_device(PFCUShutter)
-    shtr = FakeShutter(
-        top_filter="255idc:pfcu0:", bottom_filter="255idc:pfcu1:", name="shutter"
-    )
-    return shtr
+def shutter(xia_shutter):
+    yield xia_shutter
 
 
 @pytest.fixture()
