@@ -86,6 +86,9 @@ class PFCUShutter(ShutterBase):
 
     @property
     def state(self):
+        return self._state()
+
+    def _state(self, **kwargs):
         states = {
             # (top filter, bottom filter): state
             (FilterPosition.OUT, FilterPosition.IN): "open",
@@ -93,7 +96,7 @@ class PFCUShutter(ShutterBase):
             (FilterPosition.OUT, FilterPosition.OUT): "unknown",
             (FilterPosition.IN, FilterPosition.IN): "unknown",
         }
-        current = (self.top_filter.readback.get(), self.bottom_filter.readback.get())
+        current = (self.top_filter.readback.get(**kwargs), self.bottom_filter.readback.get(**kwargs))
         return states[current]
 
     def filter_bank(self):
@@ -139,6 +142,9 @@ class PFCUShutter(ShutterBase):
             new_bits = (old_bits | self.top_mask()) & (0b1111 - self.bottom_mask())
             filter_bank.set(new_bits).wait()
 
+    def get(self, **kwargs):
+        return self._state(**kwargs)
+
 
 class PFCUFilterBank(EnumPositioner):
     """Parameters
@@ -162,7 +168,7 @@ class PFCUFilterBank(EnumPositioner):
         comps = {
             "shutters": DCpt(
                 {
-                    f"shutter{idx}": (
+                    f"shutter_{idx}": (
                         PFCUShutter,
                         "",
                         {

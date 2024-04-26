@@ -36,7 +36,7 @@ class StatusDisplay(display.FireflyDisplay):
             label = name_to_title(name)
             form.insertRow(row_idx, label, layout)
             # Indicator to show if the shutter is open
-            indicator = PyDMByteIndicator(parent=self, init_channel=f"haven://{shutter.name}.state")
+            indicator = PyDMByteIndicator(parent=self, init_channel=f"haven://{shutter.name}")
             layout.addWidget(indicator)
             # Button to open the shutter
             open_btn = QPushButton("Open")
