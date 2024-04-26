@@ -162,6 +162,20 @@
           <property name="channel" stdset="0">
            <string>ca://ACIS:ShutterPermit</string>
           </property>
+          <property name="onColor" stdset="0">
+           <color>
+            <red>212</red>
+            <green>237</green>
+            <blue>218</blue>
+           </color>
+          </property>
+          <property name="offColor" stdset="0">
+           <color>
+            <red>235</red>
+            <green>241</green>
+            <blue>181</blue>
+           </color>
+          </property>
           <property name="showLabels" stdset="0">
            <bool>true</bool>
           </property>

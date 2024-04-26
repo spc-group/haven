@@ -81,7 +81,7 @@ class PFCUShutter(ShutterBase):
     bottom_filter = FCpt(PFCUFilter, "{self.prefix}filter{self._bottom_filter}")
     readback = InternalSignal(name="", kind="hinted")
     is_open = InternalSignal(name="is_open", kind="omitted")
-    is_closed = InternalSignal(name="is_open", kind="omitted")
+    is_closed = InternalSignal(name="is_closed", kind="omitted")
     
 
     def __init__(self, *args, top_filter: str, bottom_filter: str, **kwargs):
@@ -101,7 +101,7 @@ class PFCUShutter(ShutterBase):
             self.is_closed.set(int(state == "closed"), internal=True),
         ]
         # Wait for the signals to be updated
-        for st in status:
+        for st in statuses:
             st.wait(timeout=5)
 
     @property

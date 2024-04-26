@@ -1,8 +1,9 @@
 import logging
 
 from haven import registry
-from qtpy.QtWidgets import QHBoxLayout, QPushButton
+from qtpy.QtWidgets import QHBoxLayout, QPushButton, QSizePolicy
 from pydm.widgets import PyDMByteIndicator, PyDMPushButton
+import qtawesome as qta
 
 from firefly import FireflyApplication, display
 
@@ -29,20 +30,26 @@ class StatusDisplay(display.FireflyDisplay):
         # Add widgets for shutters
         shutters = registry.findall('shutters', allow_none=True)
         row_idx = 4
+        on_color = self.ui.shutter_permit_indicator.onColor
+        off_color = self.ui.shutter_permit_indicator.offColor
         for shutter in shutters[::-1]:
             # Add a layout with the buttons
             layout = QHBoxLayout()
             name = shutter.attr_name if shutter.attr_name != "" else shutter.name
-            label = name_to_title(name)
+            label = name_to_title(name) + ":"
             form.insertRow(row_idx, label, layout)
             # Indicator to show if the shutter is open
-            indicator = PyDMByteIndicator(parent=self, init_channel=f"haven://{shutter.name}")
+            indicator = PyDMByteIndicator(parent=self, init_channel=f"haven://{shutter.name}.is_open")
+            indicator.showLabels = False
+            indicator.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+            indicator.onColor = on_color
+            indicator.offColor = off_color
             layout.addWidget(indicator)
             # Button to open the shutter
-            open_btn = QPushButton("Open")
+            open_btn = PyDMPushButton(parent=self, label="Open", icon=qta.icon("mdi.window-shutter-open"), pressValue="open", relative=False, init_channel=f"haven://{shutter.name}")
             layout.addWidget(open_btn)
             # Button to close the shutter
-            close_btn = QPushButton("Close")
+            close_btn = PyDMPushButton(parent=self, label="Close", icon=qta.icon("mdi.window-shutter"), pressValue="closed", relative=False, init_channel=f"haven://{shutter.name}")
             layout.addWidget(close_btn)
 
     def customize_ui(self):
