@@ -17,6 +17,7 @@ from ophyd import DynamicDeviceComponent as DCpt
 from ophyd import EpicsSignal, EpicsSignalRO
 from ophyd import FormattedComponent as FCpt
 from ophyd import PVPositioner, PVPositionerPC
+from ophyd.signal import InternalSignal
 
 from .. import exceptions
 from .._iconfig import load_config
@@ -78,11 +79,18 @@ class PFCUShutter(ShutterBase):
 
     top_filter = FCpt(PFCUFilter, "{self.prefix}filter{self._top_filter}")
     bottom_filter = FCpt(PFCUFilter, "{self.prefix}filter{self._bottom_filter}")
+    readback = InternalSignal(name="")
 
     def __init__(self, *args, top_filter: str, bottom_filter: str, **kwargs):
         self._top_filter = top_filter
         self._bottom_filter = bottom_filter
         super().__init__(*args, **kwargs)
+        # Subscriptions for updating the readback value
+        self.top_filter.readback.subscribe(self.update_readback_signal)
+        self.bottom_filter.readback.subscribe(self.update_readback_signal)
+
+    def update_readback_signal(self, *args, **kwargs):
+        self.readback.set(self.state, internal=True).wait()
 
     @property
     def state(self):
@@ -96,7 +104,10 @@ class PFCUShutter(ShutterBase):
             (FilterPosition.OUT, FilterPosition.OUT): "unknown",
             (FilterPosition.IN, FilterPosition.IN): "unknown",
         }
-        current = (self.top_filter.readback.get(**kwargs), self.bottom_filter.readback.get(**kwargs))
+        current = (
+            self.top_filter.readback.get(**kwargs),
+            self.bottom_filter.readback.get(**kwargs),
+        )
         return states[current]
 
     def filter_bank(self):

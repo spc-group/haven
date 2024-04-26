@@ -27,7 +27,7 @@ def shutter_bank():
     class ShutterBank(PFCUFilterBank):
         shutters = DCpt(
             {
-                "shutter0": (
+                "shutter_0": (
                     PFCUShutter,
                     "",
                     {"top_filter": 4, "bottom_filter": 3, "labels": {"shutters"}},
@@ -51,7 +51,7 @@ def test_shutter_factory():
     assert filterbank.prefix == "255id:pfcu0:"
     assert filterbank.name == "filter_bank_0"
     assert hasattr(filterbank, "shutters")
-    assert isinstance(filterbank.shutters.shutter0, PFCUShutter)
+    assert isinstance(filterbank.shutters.shutter_0, PFCUShutter)
     assert hasattr(filterbank, "shutters")
     assert isinstance(filterbank.filters.filter1, PFCUFilter)
     assert filterbank.filters.filter1.prefix == "255id:pfcu0:filter1"
@@ -76,16 +76,30 @@ def test_pfcu_shutter_open(shutter):
     assert shutter.bottom_filter.setpoint.get() == 1
 
 
+def test_pfcu_shutter_readback_signal(shutter):
+    # Set the shutter position
+    shutter.top_filter.readback._readback = 0
+    shutter.top_filter.readback._run_subs(
+        sub_type=shutter.top_filter.readback._default_sub
+    )
+    shutter.bottom_filter.readback._readback = 1
+    shutter.bottom_filter.readback._run_subs(
+        sub_type=shutter.bottom_filter.readback._default_sub
+    )
+    # Check that the readback signal gets updated
+    assert shutter.readback.get() == "open"
+
+
 def test_pfcu_shutter_bank_mask(shutter_bank):
     """A bit-mask used for determining how to set the filter bank."""
-    shutter = shutter_bank.shutters.shutter0
+    shutter = shutter_bank.shutters.shutter_0
     assert shutter.top_mask() == 0b0001
     assert shutter.bottom_mask() == 0b0010
 
 
 def test_pfcu_shutter_fast_open(shutter_bank):
     """If the PFCU filter bank is available, open both blades simultaneously."""
-    shutter = shutter_bank.shutters.shutter0
+    shutter = shutter_bank.shutters.shutter_0
     # Set the other filters on the filter bank
     shutter_bank.readback._readback = 0b0100
     # Open the shutter, and check that the filterbank was set
@@ -105,7 +119,7 @@ def test_pfcu_shutter_close(shutter):
 
 def test_pfcu_shutter_fast_close(shutter_bank):
     """If the PFCU filter bank is available, open both blades simultaneously."""
-    shutter = shutter_bank.shutters.shutter0
+    shutter = shutter_bank.shutters.shutter_0
     # Set the other filters on the filter bank
     shutter_bank.readback._readback = 0b0100
     # Open the shutter, and check that the filterbank was set
@@ -137,6 +151,6 @@ def test_load_filters(monkeypatch):
     filters = [device.filters.filter1, device.filters.filter2]
     assert isinstance(filters[0], PFCUFilter)
     # Check that the shutter object was created
-    shutter = device.shutters.shutter0
+    shutter = device.shutters.shutter_0
     assert isinstance(shutter, PFCUShutter)
     assert shutter.top_filter.material.pvname == "255idc:pfcu1:filter3_mat"
