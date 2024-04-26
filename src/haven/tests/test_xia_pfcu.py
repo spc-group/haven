@@ -76,7 +76,7 @@ def test_pfcu_shutter_open(shutter):
     assert shutter.bottom_filter.setpoint.get() == 1
 
 
-def test_pfcu_shutter_readback_signal(shutter):
+def test_pfcu_shutter_readback_signals(shutter):
     # Set the shutter position
     shutter.top_filter.readback._readback = 0
     shutter.top_filter.readback._run_subs(
@@ -88,6 +88,8 @@ def test_pfcu_shutter_readback_signal(shutter):
     )
     # Check that the readback signal gets updated
     assert shutter.readback.get() == "open"
+    assert shutter.is_closed.get() == 0
+    assert shutter.is_open.get() == 1
 
 
 def test_pfcu_shutter_bank_mask(shutter_bank):

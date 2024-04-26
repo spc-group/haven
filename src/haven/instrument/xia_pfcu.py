@@ -79,7 +79,10 @@ class PFCUShutter(ShutterBase):
 
     top_filter = FCpt(PFCUFilter, "{self.prefix}filter{self._top_filter}")
     bottom_filter = FCpt(PFCUFilter, "{self.prefix}filter{self._bottom_filter}")
-    readback = InternalSignal(name="")
+    readback = InternalSignal(name="", kind="hinted")
+    is_open = InternalSignal(name="is_open", kind="omitted")
+    is_closed = InternalSignal(name="is_open", kind="omitted")
+    
 
     def __init__(self, *args, top_filter: str, bottom_filter: str, **kwargs):
         self._top_filter = top_filter
@@ -90,7 +93,16 @@ class PFCUShutter(ShutterBase):
         self.bottom_filter.readback.subscribe(self.update_readback_signal)
 
     def update_readback_signal(self, *args, **kwargs):
-        self.readback.set(self.state, internal=True).wait()
+        state = self.state
+        # Set the derived signals
+        statuses = [
+            self.readback.set(state, internal=True),
+            self.is_open.set(int(state == "open"), internal=True),
+            self.is_closed.set(int(state == "closed"), internal=True),
+        ]
+        # Wait for the signals to be updated
+        for st in status:
+            st.wait(timeout=5)
 
     @property
     def state(self):
@@ -100,7 +112,7 @@ class PFCUShutter(ShutterBase):
         states = {
             # (top filter, bottom filter): state
             (FilterPosition.OUT, FilterPosition.IN): "open",
-            (FilterPosition.IN, FilterPosition.OUT): "close",
+            (FilterPosition.IN, FilterPosition.OUT): "closed",
             (FilterPosition.OUT, FilterPosition.OUT): "unknown",
             (FilterPosition.IN, FilterPosition.IN): "unknown",
         }
