@@ -6,25 +6,18 @@ a filter bank can be used as a shutter.
 """
 
 import asyncio
-import time
 from enum import IntEnum
-from typing import Mapping
 
-from apstools.devices.positioner_soft_done import PVPositionerSoftDone
-from apstools.devices.shutters import ShutterBase
 from ophyd import Component as Cpt
-from ophyd import Device
 from ophyd import DynamicDeviceComponent as DCpt
 from ophyd import EpicsSignal, EpicsSignalRO
 from ophyd import FormattedComponent as FCpt
-from ophyd import PVPositioner, PVPositionerPC, PseudoPositioner, PositionerBase, PVPositionerIsClose
-from ophyd.signal import InternalSignal, DerivedSignal
-from pcdsdevices.signal import MultiDerivedSignal
+from ophyd import PVPositionerIsClose
+from ophyd.signal import DerivedSignal
 
 from .. import exceptions
 from .._iconfig import load_config
 from .device import aload_devices, make_device
-from .motor import HavenMotor
 
 
 class FilterPosition(IntEnum):
@@ -32,25 +25,7 @@ class FilterPosition(IntEnum):
     IN = 1
 
 
-class EnumPositioner(PVPositionerSoftDone):
-
-    @property
-    def inposition(self):
-        """
-        Do readback and setpoint (both from cache) agree by index?
-
-        Returns::
-
-            inposition = readback == setpoint
-        """
-        # Since this method must execute quickly, do NOT force
-        # EPICS CA gets using `use_monitor=False`.
-        rb = self.readback.get(as_string=False)
-        sp = self.setpoint.get(as_string=False)
-        return rb == sp
-
-
-class PFCUFilter(EnumPositioner):
+class PFCUFilter(PVPositionerIsClose):
     """A single filter in a PFCU filter bank.
 
     E.g. 25idc:pfcu0:filter1_mat
@@ -61,8 +36,8 @@ class PFCUFilter(EnumPositioner):
     thickness_unit = Cpt(EpicsSignal, "_thick.EGU", kind="config")
     notes = Cpt(EpicsSignal, "_other", kind="config")
 
-    def __init__(self, *args, readback_pv="_RBV", **kwargs):
-        super().__init__(*args, readback_pv=readback_pv, **kwargs)
+    setpoint = Cpt(EpicsSignal, "", kind="normal")
+    readback = Cpt(EpicsSignalRO, "_RBV", kind="normal")
 
 
 class ShutterStates(IntEnum):
@@ -80,64 +55,6 @@ shutter_state_map = {
     (FilterPosition.OUT, FilterPosition.OUT): ShutterStates.BOTTOM_CLOSED,
     (FilterPosition.IN, FilterPosition.IN): ShutterStates.TOP_CLOSED,
 }
-
-
-def shutter_readback(mds: MultiDerivedSignal, items: Mapping) -> int:
-    """Calculate the readback back state based on filter PVs."""
-    top_signal, bottom_signal = mds.signals
-    current = (items[top_signal], items[bottom_signal])
-    return shutter_state_map[current]
-
-
-def shutter_setpoint(mds: MultiDerivedSignal, value: int) -> Mapping:
-    """Calculate the filter PVs setpoints."""
-    top_signal, bottom_signal = mds.signals
-    # Get the states based on the desired shutter position
-    try:
-        top_position, bottom_position = next(
-            key for key, val in shutter_state_map.items() if val == value
-        )
-    except KeyError:
-        raise ValueError(value)
-    items = {top_signal: top_position, bottom_signal: bottom_position}
-    return items
-
-
-class PFCUShutter(PVPositionerIsClose):
-    """A shutter made of two PFCU4 filters.
-
-    Parameters
-    ==========
-    top_filter
-      The PV for the filter that is open when the filter is set to
-      "out".
-    bottom_filter
-      The PV for the filter that is open when the filter is set to
-      "in".
-
-    """
-
-    readback = Cpt(
-        MultiDerivedSignal,
-        attrs=["top_filter.readback", "bottom_filter.readback"],
-        calculate_on_get=shutter_readback,
-    )
-    setpoint = Cpt(
-        MultiDerivedSignal,
-        attrs=["top_filter.setpoint", "bottom_filter.setpoint"],
-        calculate_on_put=shutter_setpoint,
-        calculate_on_get=shutter_readback,
-    )
-
-    top_filter = FCpt(PFCUFilter, "{self.prefix}filter{self._top_filter}")
-    bottom_filter = FCpt(PFCUFilter, "{self.prefix}filter{self._bottom_filter}")
-
-    def __init__(self, *args, top_filter: str, bottom_filter: str, **kwargs):
-        self._top_filter = top_filter
-        self._bottom_filter = bottom_filter
-        super().__init__(
-            *args, limits=(ShutterStates.OPEN, ShutterStates.CLOSED), **kwargs
-        )
 
 
 class PFCUShutterSignal(DerivedSignal):
@@ -175,7 +92,7 @@ class PFCUShutterSignal(DerivedSignal):
         return result
 
 
-class PFCUFastShutter(PVPositionerIsClose):
+class PFCUShutter(PVPositionerIsClose):
     """A shutter made of two PFCU4 filters.
 
     For faster operation, both filters will be moved at the same
@@ -206,91 +123,8 @@ class PFCUFastShutter(PVPositionerIsClose):
             *args, limits=(ShutterStates.OPEN, ShutterStates.CLOSED), **kwargs
         )
 
-    #     # Subscriptions for updating the readback value
-    #     self.top_filter.readback.subscribe(self.update_readback_signal)
-    #     self.bottom_filter.readback.subscribe(self.update_readback_signal)
 
-    # def move(self, position, moved_cb=None, timeout=None):
-    #     print(f"Moving to {position}")
-
-    # def update_readback_signal(self, *args, **kwargs):
-    #     state = self.state
-    #     # Set the derived signals
-    #     statuses = [
-    #         self.readback.set(state, internal=True),
-    #         self.is_open.set(int(state == "open"), internal=True),
-    #         self.is_closed.set(int(state == "closed"), internal=True),
-    #     ]
-    #     # Wait for the signals to be updated
-    #     for st in statuses:
-    #         st.wait(timeout=5)
-
-    # @property
-    # def state(self):
-    #     return self._state()
-
-    # def _state(self, **kwargs):
-    #     states = {
-    #         # (top filter, bottom filter): state
-    #         (FilterPosition.OUT, FilterPosition.IN): "open",
-    #         (FilterPosition.IN, FilterPosition.OUT): "closed",
-    #         (FilterPosition.OUT, FilterPosition.OUT): "unknown",
-    #         (FilterPosition.IN, FilterPosition.IN): "unknown",
-    #     }
-    #     current = (
-    #         self.top_filter.readback.get(**kwargs),
-    #         self.bottom_filter.readback.get(**kwargs),
-    #     )
-    #     return states[current]
-
-    # def filter_bank(self):
-    #     try:
-    #         parent = self.parent.parent
-    #         assert isinstance(parent, PFCUFilterBank)
-    #     except (AttributeError, AssertionError):
-    #         return None
-    #     return parent
-
-    # def _mask(self, pos):
-    #     num_filters = 4
-    #     return 1 << (num_filters - pos)
-
-    # def top_mask(self):
-    #     return self._mask(self._top_filter)
-
-    # def bottom_mask(self):
-    #     return self._mask(self._bottom_filter)
-
-    # def open(self):
-    #     # See if we have access to the whole filter bank, or just this filter
-    #     filter_bank = self.filter_bank()
-    #     if filter_bank is None:
-    #         # No filter bank, so just set the blades individually
-    #         self.top_filter.set(FilterPosition.OUT).wait()
-    #         self.bottom_filter.set(FilterPosition.IN).wait()
-    #     else:
-    #         # We have a filter bank, so set both blades together
-    #         old_bits = filter_bank.readback.get(as_string=False)
-    #         new_bits = (old_bits | self.bottom_mask()) & (0b1111 - self.top_mask())
-    #         filter_bank.set(new_bits).wait()
-
-    # def close(self):
-    #     # See if we have access to the whole filter bank, or just this filter
-    #     filter_bank = self.filter_bank()
-    #     if filter_bank is None:
-    #         self.top_filter.set(FilterPosition.IN).wait()
-    #         self.bottom_filter.set(FilterPosition.OUT).wait()
-    #     else:
-    #         # We have a filter bank, so set both blades together
-    #         old_bits = filter_bank.readback.get(as_string=False)
-    #         new_bits = (old_bits | self.top_mask()) & (0b1111 - self.bottom_mask())
-    #         filter_bank.set(new_bits).wait()
-
-    # def get(self, **kwargs):
-    #     return self._state(**kwargs)
-
-
-class PFCUFilterBank(EnumPositioner):
+class PFCUFilterBank(PVPositionerIsClose):
     """Parameters
     ==========
     shutters
@@ -301,6 +135,9 @@ class PFCUFilterBank(EnumPositioner):
     """
 
     num_slots: int = 4
+
+    readback = Cpt(EpicsSignalRO, "config_RBV", kind="normal")
+    setpoint = Cpt(EpicsSignal, "config", kind="normal")
 
     def __new__(cls, *args, shutters=[], **kwargs):
         # Determine which filters to use as filters vs shutters
@@ -313,7 +150,7 @@ class PFCUFilterBank(EnumPositioner):
             "shutters": DCpt(
                 {
                     f"shutter_{idx}": (
-                        PFCUFastShutter,
+                        PFCUShutter,
                         "",
                         {
                             "top_filter": top,
@@ -340,16 +177,12 @@ class PFCUFilterBank(EnumPositioner):
         return object.__new__(new_cls)
 
     def __init__(
-        cls,
+        self,
         *args,
         shutters=[],
-        readback_pv="config_RBV",
-        setpoint_pv="config",
         **kwargs,
     ):
-        super().__init__(
-            *args, readback_pv=readback_pv, setpoint_pv=setpoint_pv, **kwargs
-        )
+        super().__init__(*args, **kwargs)
 
 
 def load_xia_pfcu4_coros(config=None):

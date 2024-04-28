@@ -143,7 +143,7 @@ class FireflyMainWindow(PyDMMainWindow):
         self.ui.menuMotors.setTitle("Extra &Motors")
         motors_action = self.ui.menuMotors.menuAction()
         self.ui.positioners_menu.addAction(motors_action)
-        motors_action.setIcon(qta.icon('mdi.cog-clockwise'))
+        motors_action.setIcon(qta.icon("mdi.cog-clockwise"))
         # Menu to launch the Window to change energy
         self.ui.positioners_menu.addAction(app.show_energy_window_action)
         # Add optical components

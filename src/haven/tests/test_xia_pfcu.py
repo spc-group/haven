@@ -1,21 +1,14 @@
-import time
-from collections import ChainMap
 from unittest import mock
 
 import pytest
-from apstools.devices.shutters import ShutterBase
-from ophyd import DynamicDeviceComponent as DCpt
-from ophyd.sim import make_fake_device
 
-from haven import load_config
 from haven.instrument import xia_pfcu
 from haven.instrument.xia_pfcu import (
     PFCUFilter,
     PFCUFilterBank,
     PFCUShutter,
-    PFCUFastShutter,
-    load_xia_pfcu4s,
     ShutterStates,
+    load_xia_pfcu4s,
 )
 
 
@@ -25,24 +18,8 @@ def shutter(xia_shutter):
 
 
 @pytest.fixture()
-def shutter_bank():
-    class ShutterBank(PFCUFilterBank):
-        shutters = DCpt(
-            {
-                "shutter_0": (
-                    PFCUFastShutter,
-                    "",
-                    {"top_filter": 4, "bottom_filter": 3, "labels": {"shutters"}},
-                )
-            }
-        )
-
-        def __new__(cls, *args, **kwargs):
-            return object.__new__(cls)
-
-    FakeBank = make_fake_device(ShutterBank)
-    bank = FakeBank(shutters=[[3, 4]])
-    yield bank
+def shutter_bank(xia_shutter_bank):
+    yield xia_shutter_bank
 
 
 def test_shutter_factory():
@@ -68,24 +45,11 @@ def test_pfcu_shutter_signals(shutter):
     assert shutter.bottom_filter.setpoint.get() == 0
 
 
-def test_pfcu_shutter_open(shutter):
-    # Open the shutter, and check the
-    st = shutter.set(ShutterStates.OPEN)
-    st.wait()
-    assert shutter.top_filter.setpoint.get() == 0
-    assert shutter.bottom_filter.setpoint.get() == 1
-
-
-def test_pfcu_shutter_readback_signals(shutter):
+def test_pfcu_shutter_readback(shutter):
     # Set the shutter position
-    shutter.top_filter.readback._readback = 0
-    shutter.top_filter.readback._run_subs(
-        sub_type=shutter.top_filter.readback._default_sub
-    )
-    shutter.bottom_filter.readback._readback = 1
-    shutter.bottom_filter.readback._run_subs(
-        sub_type=shutter.bottom_filter.readback._default_sub
-    )
+    readback = shutter.parent.parent.readback
+    readback._readback = 0b0010
+    readback._run_subs(sub_type=readback._default_sub)
     # Check that the readback signal gets updated
     assert shutter.readback.get() == ShutterStates.OPEN
 
@@ -97,7 +61,7 @@ def test_pfcu_shutter_bank_mask(shutter_bank):
     assert shutter.setpoint.bottom_mask() == 0b0010
 
 
-def test_pfcu_shutter_fast_open(shutter_bank):
+def test_pfcu_shutter_open(shutter_bank):
     """If the PFCU filter bank is available, open both blades simultaneously."""
     shutter = shutter_bank.shutters.shutter_0
     # Set the other filters on the filter bank
@@ -107,14 +71,7 @@ def test_pfcu_shutter_fast_open(shutter_bank):
     assert shutter_bank.setpoint.get() == 0b0110
 
 
-def test_pfcu_shutter_close(shutter):
-    # Close the shutter, and check the individual shutter blades
-    shutter.set(ShutterStates.CLOSED).wait(timeout=5)
-    assert shutter.top_filter.setpoint.get() == 1
-    assert shutter.bottom_filter.setpoint.get() == 0
-
-
-def test_pfcu_shutter_fast_close(shutter_bank):
+def test_pfcu_shutter_close(shutter_bank):
     """If the PFCU filter bank is available, open both blades simultaneously."""
     shutter = shutter_bank.shutters.shutter_0
     # Set the other filters on the filter bank

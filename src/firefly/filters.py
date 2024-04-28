@@ -1,13 +1,10 @@
-import warnings
-from pathlib import Path
-from typing import Mapping, Sequence
 import json
+from typing import Sequence
 
 from pydm.widgets import PyDMEmbeddedDisplay
-import haven
-from haven import registry
 
-from firefly import display, FireflyApplication
+from firefly import display
+from haven import registry
 
 
 class FiltersDisplay(display.FireflyDisplay):
@@ -18,7 +15,9 @@ class FiltersDisplay(display.FireflyDisplay):
 
     def customize_device(self):
         filters = registry.findall(label="filters", allow_none=True)
-        self.filters = sorted(filters, key=lambda dev: (dev.material.get(), dev.thickness.get()))
+        self.filters = sorted(
+            filters, key=lambda dev: (dev.material.get(), dev.thickness.get())
+        )
 
     def customize_ui(self):
         # Delete existing filter widgets
@@ -34,4 +33,3 @@ class FiltersDisplay(display.FireflyDisplay):
             # Add the Embedded Display to the Results Layout
             self.filters_layout.addWidget(disp)
             self._filter_displays.append(disp)
-

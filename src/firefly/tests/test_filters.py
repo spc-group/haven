@@ -1,10 +1,5 @@
-import pytest
-
-import haven
-from firefly.main_window import FireflyMainWindow
-from firefly.voltmeter import VoltmeterDisplay
 from firefly.filters import FiltersDisplay
-
+from firefly.main_window import FireflyMainWindow
 
 
 def test_embedded_display_widgets(qtbot, filters, ffapp):
@@ -12,7 +7,7 @@ def test_embedded_display_widgets(qtbot, filters, ffapp):
     each ion chamber.
 
     """
-    window = FireflyMainWindow()
+    FireflyMainWindow()
     # Load the display
     display = FiltersDisplay()
     # Check that the embedded display widgets get added correctly

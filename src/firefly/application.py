@@ -652,9 +652,10 @@ class FireflyApplication(PyDMApplication):
 
     @QtCore.Slot()
     def show_filters_window(self):
-        return self.show_window(FireflyMainWindow, ui_dir / "filters.py", name="filters")
+        return self.show_window(
+            FireflyMainWindow, ui_dir / "filters.py", name="filters"
+        )
 
-    
     @QtCore.Slot(bool)
     def set_open_environment_action_state(self, is_open: bool):
         """Update the readback value for opening the queueserver environment."""

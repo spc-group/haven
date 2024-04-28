@@ -1,7 +1,8 @@
 from pydm.widgets import PyDMByteIndicator
-from qtpy.QtWidgets import QFormLayout 
+from qtpy.QtWidgets import QFormLayout
 
 from firefly.status import StatusDisplay
+
 
 def test_shutter_controls(shutters, xia_shutter, sim_registry):
     """Do shutter controls get added to the window?"""

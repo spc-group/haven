@@ -1,6 +1,6 @@
-import warnings
 import asyncio
 import logging
+import warnings
 
 from apstools.devices.aps_undulator import ApsUndulator
 
