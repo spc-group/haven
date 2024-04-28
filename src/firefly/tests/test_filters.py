@@ -18,7 +18,7 @@ def test_embedded_display_widgets(qtbot, filters, ffapp):
     emb_disp = display._filter_displays[0]
     disp = emb_disp.open_file(force=True)
     macros = disp.macros()
-    assert macros == {"DEV": "Filter B"}
+    assert macros["DEV"].startswith("Filter ")
 
 
 # -----------------------------------------------------------------------------

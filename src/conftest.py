@@ -344,8 +344,8 @@ def filters(sim_registry):
         "labels": {"filters"},
     }
     filters = [
-        FakeFilter(name="Filter A", **kw),
-        FakeFilter(name="Filter B", **kw),
+        FakeFilter(name="Filter A", prefix="filter1", **kw),
+        FakeFilter(name="Filter B", prefix="filter2", **kw),
     ]
     # Register the simulated filters
     for fltr in filters:
