@@ -41,19 +41,18 @@ class PFCUFilter(PVPositionerIsClose):
 
 
 class ShutterStates(IntEnum):
-    OPEN = 0
-    CLOSED = 1
-    TOP_CLOSED = 2
-    BOTTOM_CLOSED = 3
-    UNKNOWN = 4
+    OPEN = 0  # 0b000
+    CLOSED = 1  # 0b001
+    HALF_CLOSED = 3  # 0b011
+    UNKNOWN = 4  # 0b100
 
 
 shutter_state_map = {
     # (top filter, bottom filter): state
     (FilterPosition.OUT, FilterPosition.IN): ShutterStates.OPEN,
     (FilterPosition.IN, FilterPosition.OUT): ShutterStates.CLOSED,
-    (FilterPosition.OUT, FilterPosition.OUT): ShutterStates.BOTTOM_CLOSED,
-    (FilterPosition.IN, FilterPosition.IN): ShutterStates.TOP_CLOSED,
+    (FilterPosition.OUT, FilterPosition.OUT): ShutterStates.HALF_CLOSED,
+    (FilterPosition.IN, FilterPosition.IN): ShutterStates.HALF_CLOSED,
 }
 
 

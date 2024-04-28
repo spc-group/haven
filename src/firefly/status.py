@@ -6,6 +6,7 @@ from qtpy.QtWidgets import QHBoxLayout, QSizePolicy
 
 from firefly import FireflyApplication, display
 from haven import registry
+from haven.instrument.xia_pfcu import ShutterStates
 
 log = logging.getLogger(__name__)
 
@@ -40,21 +41,24 @@ class StatusDisplay(display.FireflyDisplay):
             form.insertRow(row_idx, label, layout)
             # Indicator to show if the shutter is open
             indicator = PyDMByteIndicator(
-                parent=self, init_channel=f"haven://{shutter.name}.is_open"
+                parent=self, init_channel=f"haven://{shutter.name}.readback"
             )
-            indicator.showLabels = False
+            # indicator.showLabels = False
+            indicator.labels = ["Closed", "Half Open"]
+            indicator.numBits = 2
             indicator.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-            indicator.onColor = on_color
-            indicator.offColor = off_color
+            # Switch colors because open is 0 which should means "good"
+            indicator.offColor = on_color
+            indicator.onColor = off_color
             layout.addWidget(indicator)
             # Button to open the shutter
             open_btn = PyDMPushButton(
                 parent=self,
                 label="Open",
                 icon=qta.icon("mdi.window-shutter-open"),
-                pressValue="open",
+                pressValue=ShutterStates.OPEN,
                 relative=False,
-                init_channel=f"haven://{shutter.name}",
+                init_channel=f"haven://{shutter.name}.setpoint",
             )
             layout.addWidget(open_btn)
             # Button to close the shutter
@@ -62,9 +66,9 @@ class StatusDisplay(display.FireflyDisplay):
                 parent=self,
                 label="Close",
                 icon=qta.icon("mdi.window-shutter"),
-                pressValue="closed",
+                pressValue=ShutterStates.CLOSED,
                 relative=False,
-                init_channel=f"haven://{shutter.name}",
+                init_channel=f"haven://{shutter.name}.setpoint",
             )
             layout.addWidget(close_btn)
 
