@@ -17,7 +17,7 @@ from ophyd import Device
 from ophyd import DynamicDeviceComponent as DCpt
 from ophyd import EpicsSignal, EpicsSignalRO
 from ophyd import FormattedComponent as FCpt
-from ophyd import PVPositioner, PVPositionerPC, PseudoPositioner, PositionerBase
+from ophyd import PVPositioner, PVPositionerPC, PseudoPositioner, PositionerBase, PVPositionerIsClose
 from ophyd.signal import InternalSignal, DerivedSignal
 from pcdsdevices.signal import MultiDerivedSignal
 
@@ -103,7 +103,7 @@ def shutter_setpoint(mds: MultiDerivedSignal, value: int) -> Mapping:
     return items
 
 
-class PFCUShutter(PVPositionerPC):
+class PFCUShutter(PVPositionerIsClose):
     """A shutter made of two PFCU4 filters.
 
     Parameters
@@ -175,7 +175,7 @@ class PFCUShutterSignal(DerivedSignal):
         return result
 
 
-class PFCUFastShutter(PVPositionerPC):
+class PFCUFastShutter(PVPositionerIsClose):
     """A shutter made of two PFCU4 filters.
 
     For faster operation, both filters will be moved at the same
@@ -313,7 +313,7 @@ class PFCUFilterBank(EnumPositioner):
             "shutters": DCpt(
                 {
                     f"shutter_{idx}": (
-                        PFCUShutter,
+                        PFCUFastShutter,
                         "",
                         {
                             "top_filter": top,
