@@ -13,7 +13,9 @@ from haven.instrument.xia_pfcu import (
     PFCUFilter,
     PFCUFilterBank,
     PFCUShutter,
+    PFCUFastShutter,
     load_xia_pfcu4s,
+    ShutterStates,
 )
 
 
@@ -28,7 +30,7 @@ def shutter_bank():
         shutters = DCpt(
             {
                 "shutter_0": (
-                    PFCUShutter,
+                    PFCUFastShutter,
                     "",
                     {"top_filter": 4, "bottom_filter": 3, "labels": {"shutters"}},
                 )
@@ -62,16 +64,14 @@ def test_shutter_factory():
 
 def test_pfcu_shutter_signals(shutter):
     # Check initial state
-    assert isinstance(shutter, ShutterBase)
     assert shutter.top_filter.setpoint.get() == 0
     assert shutter.bottom_filter.setpoint.get() == 0
 
 
 def test_pfcu_shutter_open(shutter):
-    assert shutter.state == "unknown"
     # Open the shutter, and check the
-    st = shutter.set("open")
-    time.sleep(0.1)
+    st = shutter.set(ShutterStates.OPEN)
+    st.wait()
     assert shutter.top_filter.setpoint.get() == 0
     assert shutter.bottom_filter.setpoint.get() == 1
 
@@ -87,16 +87,14 @@ def test_pfcu_shutter_readback_signals(shutter):
         sub_type=shutter.bottom_filter.readback._default_sub
     )
     # Check that the readback signal gets updated
-    assert shutter.readback.get() == "open"
-    assert shutter.is_closed.get() == 0
-    assert shutter.is_open.get() == 1
+    assert shutter.readback.get() == ShutterStates.OPEN
 
 
 def test_pfcu_shutter_bank_mask(shutter_bank):
     """A bit-mask used for determining how to set the filter bank."""
     shutter = shutter_bank.shutters.shutter_0
-    assert shutter.top_mask() == 0b0001
-    assert shutter.bottom_mask() == 0b0010
+    assert shutter.setpoint.top_mask() == 0b0001
+    assert shutter.setpoint.bottom_mask() == 0b0010
 
 
 def test_pfcu_shutter_fast_open(shutter_bank):
@@ -105,16 +103,13 @@ def test_pfcu_shutter_fast_open(shutter_bank):
     # Set the other filters on the filter bank
     shutter_bank.readback._readback = 0b0100
     # Open the shutter, and check that the filterbank was set
-    st = shutter.set("open")
-    time.sleep(0.1)
+    shutter.setpoint.set(ShutterStates.OPEN).wait(timeout=1)
     assert shutter_bank.setpoint.get() == 0b0110
 
 
 def test_pfcu_shutter_close(shutter):
-    assert shutter.state == "unknown"
-    # Open the shutter, and check the
-    shutter.set("close")
-    time.sleep(0.1)
+    # Close the shutter, and check the individual shutter blades
+    shutter.set(ShutterStates.CLOSED).wait(timeout=5)
     assert shutter.top_filter.setpoint.get() == 1
     assert shutter.bottom_filter.setpoint.get() == 0
 
@@ -125,8 +120,7 @@ def test_pfcu_shutter_fast_close(shutter_bank):
     # Set the other filters on the filter bank
     shutter_bank.readback._readback = 0b0100
     # Open the shutter, and check that the filterbank was set
-    st = shutter.set("close")
-    time.sleep(0.1)
+    shutter.setpoint.set(ShutterStates.CLOSED).wait(timeout=1)
     assert shutter_bank.setpoint.get() == 0b0101
 
 
