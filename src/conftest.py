@@ -8,7 +8,7 @@ import pandas as pd
 # from pydm.data_plugins import plugin_modules, add_plugin
 import pytest
 from apstools.devices.srs570_preamplifier import GainSignal
-from ophyd import DynamicDeviceComponent as DDC
+from ophyd import DynamicDeviceComponent as DCpt
 from ophyd import Kind
 from ophyd.sim import (
     FakeEpicsSignal,
@@ -36,6 +36,7 @@ from haven.instrument.monochromator import Monochromator
 from haven.instrument.robot import Robot
 from haven.instrument.shutter import Shutter
 from haven.instrument.slits import ApertureSlits, BladeSlits
+from haven.instrument.xia_pfcu import PFCUFilter, PFCUFilterBank, PFCUShutter
 from haven.instrument.xspress import Xspress3Detector
 from haven.instrument.xspress import add_mcas as add_xspress_mcas
 
@@ -161,7 +162,7 @@ class SimpleBeamlineManager(BeamlineManager):
 
     """
 
-    iocs = DDC(
+    iocs = DCpt(
         {
             "ioc255idb": (IOCManager, "ioc255idb:", {}),
             "ioc255idc": (IOCManager, "ioc255idc:", {}),
@@ -211,7 +212,7 @@ def sim_camera(sim_registry):
 
 
 class DxpVortex(DxpDetector):
-    mcas = DDC(
+    mcas = DCpt(
         add_dxp_mcas(range_=[0, 1, 2, 3]),
         kind=Kind.normal | Kind.hinted,
         default_read_attrs=[f"mca{i}" for i in [0, 1, 2, 3]],
@@ -229,7 +230,7 @@ def dxp(sim_registry):
 
 
 class Xspress3Vortex(Xspress3Detector):
-    mcas = DDC(
+    mcas = DCpt(
         add_xspress_mcas(range_=[0, 1, 2, 3]),
         kind=Kind.normal | Kind.hinted,
         default_read_attrs=[f"mca{i}" for i in [0, 1, 2, 3]],
@@ -290,6 +291,33 @@ def aps(sim_registry):
 
 
 @pytest.fixture()
+def xia_shutter_bank(sim_registry):
+    class ShutterBank(PFCUFilterBank):
+        shutters = DCpt(
+            {
+                "shutter_0": (
+                    PFCUShutter,
+                    "",
+                    {"top_filter": 4, "bottom_filter": 3, "labels": {"shutters"}},
+                )
+            }
+        )
+
+        def __new__(cls, *args, **kwargs):
+            return object.__new__(cls)
+
+    FakeBank = make_fake_device(ShutterBank)
+    bank = FakeBank(prefix="255id:pfcu4:", name="xia_filter_bank", shutters=[[3, 4]])
+    sim_registry.register(bank)
+    yield bank
+
+
+@pytest.fixture()
+def xia_shutter(xia_shutter_bank):
+    yield xia_shutter_bank.shutters.shutter_0
+
+
+@pytest.fixture()
 def shutters(sim_registry):
     FakeShutter = make_fake_device(Shutter)
     kw = dict(
@@ -307,6 +335,22 @@ def shutters(sim_registry):
     for shutter in shutters:
         sim_registry.register(shutter)
     yield shutters
+
+
+@pytest.fixture()
+def filters(sim_registry):
+    FakeFilter = make_fake_device(PFCUFilter)
+    kw = {
+        "labels": {"filters"},
+    }
+    filters = [
+        FakeFilter(name="Filter A", prefix="filter1", **kw),
+        FakeFilter(name="Filter B", prefix="filter2", **kw),
+    ]
+    # Register the simulated filters
+    for fltr in filters:
+        sim_registry.register(fltr)
+    return filters
 
 
 # holds a global QApplication instance created in the qapp fixture; keeping

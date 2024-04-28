@@ -206,6 +206,12 @@ class FireflyApplication(PyDMApplication):
             ui_file="xrf_detector.py",
             device_key="DEV",
         )
+        self._setup_window_action(
+            action_name="show_filters_window_action",
+            text="Filters",
+            slot=self.show_filters_window,
+        )
+        self.show_filters_window_action.setIcon(qta.icon("mdi.air-filter"))
         # Action for showing the beamline status window
         self._setup_window_action(
             action_name="show_status_window_action",
@@ -254,6 +260,7 @@ class FireflyApplication(PyDMApplication):
             text="Energy",
             slot=self.show_energy_window,
         )
+        self.show_energy_window_action.setIcon(qta.icon("mdi.sine-wave"))
         # Launch camera overview
         self._setup_window_action(
             action_name="show_cameras_window_action",
@@ -642,6 +649,12 @@ class FireflyApplication(PyDMApplication):
     @QtCore.Slot()
     def show_iocs_window(self):
         return self.show_window(FireflyMainWindow, ui_dir / "iocs.py", name="iocs")
+
+    @QtCore.Slot()
+    def show_filters_window(self):
+        return self.show_window(
+            FireflyMainWindow, ui_dir / "filters.py", name="filters"
+        )
 
     @QtCore.Slot(bool)
     def set_open_environment_action_state(self, is_open: bool):

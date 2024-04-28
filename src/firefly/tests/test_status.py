@@ -1,41 +1,30 @@
-import asyncio
-import logging
-import warnings
+from pydm.widgets import PyDMByteIndicator
+from qtpy.QtWidgets import QFormLayout
 
-from apstools.devices.aps_undulator import ApsUndulator
-
-from .._iconfig import load_config
-from .device import aload_devices, make_device
-
-log = logging.getLogger(__name__)
+from firefly.status import StatusDisplay
 
 
-def load_xray_source_coros(config=None):
-    if config is None:
-        config = load_config()
-    # Determine the X-ray source type (undulator vs bending magnet)
-    try:
-        data = config["xray_source"]
-    except KeyError:
-        warnings.warn("No X-ray source configured")
-    else:
-        if data["type"] == "undulator":
-            yield make_device(
-                ApsUndulator,
-                prefix=data["prefix"],
-                name="undulator",
-                labels={"xray_sources"},
-            )
-
-
-def load_xray_sources(config=None):
-    asyncio.run(aload_devices(*load_xray_source_coros(config=config)))
+def test_shutter_controls(shutters, xia_shutter, sim_registry):
+    """Do shutter controls get added to the window?"""
+    disp = StatusDisplay()
+    form = disp.ui.beamline_layout
+    # Check label text
+    label0 = form.itemAt(4, QFormLayout.LabelRole)
+    assert "shutter" in label0.widget().text().lower()
+    # Check the widgets for the shutter
+    layout0 = form.itemAt(4, QFormLayout.FieldRole)
+    indicator = layout0.itemAt(0).widget()
+    assert isinstance(indicator, PyDMByteIndicator)
+    open_btn = layout0.itemAt(1).widget()
+    assert open_btn.text() == "Open"
+    close_btn = layout0.itemAt(2).widget()
+    assert close_btn.text() == "Close"
 
 
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov
-# :copyright: Copyright © 2023, UChicago Argonne, LLC
+# :copyright: Copyright © 2024, UChicago Argonne, LLC
 #
 # Distributed under the terms of the 3-Clause BSD License
 #

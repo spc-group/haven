@@ -42,7 +42,7 @@ def load_all_motor_coros(config=None):
         config = load_config()
     # Figure out the prefix
     coros = []
-    for name, config in config["motor"].items():
+    for name, config in config.get("motor", {}).items():
         prefix = config["prefix"]
         num_motors = config["num_motors"]
         log.info(f"Loading {num_motors} motors from IOC: {name} ({prefix})")

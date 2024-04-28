@@ -201,3 +201,11 @@ num_elements = 4
 prefix = "vortex_me4_xsp"
 num_elements = 4
 
+[pfcu4.filter_bank0]
+
+prefix = "255idc:pfcu0:"
+
+[pfcu4.filter_bank1]
+
+prefix = "255idc:pfcu1:"
+shutters = [[3, 4]]

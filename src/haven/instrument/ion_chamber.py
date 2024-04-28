@@ -661,8 +661,9 @@ def load_ion_chamber_coros(config=None):
     # Load IOC prefixes from the config file
     if config is None:
         config = load_config()
-    # vme_ioc = config["ion_chamber"]["scaler"]["ioc"]
-    # scaler_record = config["ion_chamber"]["scaler"]["record"]
+    if "ion_chamber" not in config.keys():
+        warnings.warn("Ion chambers not configured.")
+        return
     scaler_prefix = config["ion_chamber"]["scaler"]["prefix"]
     preamp_prefix = config["ion_chamber"]["preamp"]["prefix"]
     voltmeter_prefix = config["ion_chamber"]["voltmeter"]["prefix"]
