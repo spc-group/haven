@@ -16,14 +16,9 @@ from qtpy import QtCore, QtWidgets
 from qtpy.QtCore import Signal
 from qtpy.QtWidgets import QAction
 
-from haven import aload_instrument, load_config, registry
-from haven import (
-    HavenMotor,
-    load_config,
-    registry,
-    load_instrument as load_haven_instrument,
-)
-
+from haven import HavenMotor, aload_instrument, load_config
+from haven import load_instrument as load_haven_instrument
+from haven import registry
 from haven.exceptions import ComponentNotFound
 from haven.instrument.device import titelize
 

@@ -8,7 +8,6 @@ from haven import ERange, KRange, merge_ranges
 # import unittest
 
 
-
 logging.basicConfig(level=logging.INFO)
 
 energy_range_parameters = [
@@ -39,7 +38,9 @@ def test_k_range():
     # Verify the results compared to Shelly's spreadsheet
     E_min = k_range.energies()[0]
     np.testing.assert_equal(energies[0], E0 + E_min)
-    np.testing.assert_almost_equal(energies[-1], 746.7568692 + 17038, decimal=3) # Athena value
+    np.testing.assert_almost_equal(
+        energies[-1], 746.7568692 + 17038, decimal=3
+    )  # Athena value
     np.testing.assert_equal(k_range.exposures()[0], 1.0)
     np.testing.assert_almost_equal(k_range.exposures()[16], 1.28529317348436, decimal=3)
 

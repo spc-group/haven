@@ -1,8 +1,8 @@
+import math
 from dataclasses import dataclass
 
 import numpy as np
 import pint
-import math
 from scipy import constants
 
 __all__ = ["ERange", "KRange"]
@@ -42,7 +42,8 @@ def k_step_to_E_step(k_start, k_step):
     E0 = wavenumber_to_energy(k_start)
     E1 = wavenumber_to_energy(k_start + k_step)
     return E1 - E0
-  
+
+
 def round_to_int(num):
     digits = -int(math.log10(math.ulp(num)))
     return int(round(num, digits))
@@ -64,7 +65,7 @@ def full_range(start, end, step):
     the step).
 
     """
-    
+
     num_steps = round_to_int((end - start) / step)
     lin_max = start + num_steps * step
     return np.linspace(start, lin_max, num=num_steps + 1)

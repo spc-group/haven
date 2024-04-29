@@ -358,7 +358,7 @@ class XafsScanDisplay(display.FireflyDisplay):
         md = {
             "sample": self.ui.lineEdit_sample.text(),
             "purpose": self.ui.lineEdit_purpose.text(),
-            "is_standard": self.ui.checkBox_is_standard.isChecked()
+            "is_standard": self.ui.checkBox_is_standard.isChecked(),
         }
 
         # Check that an absorption edge was selected
