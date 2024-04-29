@@ -89,8 +89,7 @@ class SignalNotFound(KeyError):
     ...
 
 
-class EmptySignalName(ValueError):
-    ...
+class EmptySignalName(ValueError): ...
 
 
 class InvalidTransformation(TypeError):

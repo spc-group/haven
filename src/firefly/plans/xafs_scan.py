@@ -123,15 +123,17 @@ class XafsScanRegion:
 
         # Define conversion functions
         conversion_funcs = {
-            self.step_line_edit: E_step_to_k_step
-            if is_k_checked
-            else lambda x, y: k_step_to_E_step_round(x, y),
-            self.start_line_edit: energy_to_wavenumber
-            if is_k_checked
-            else wavenumber_to_energy_round,
-            self.stop_line_edit: energy_to_wavenumber
-            if is_k_checked
-            else wavenumber_to_energy_round,
+            self.step_line_edit: (
+                E_step_to_k_step
+                if is_k_checked
+                else lambda x, y: k_step_to_E_step_round(x, y)
+            ),
+            self.start_line_edit: (
+                energy_to_wavenumber if is_k_checked else wavenumber_to_energy_round
+            ),
+            self.stop_line_edit: (
+                energy_to_wavenumber if is_k_checked else wavenumber_to_energy_round
+            ),
         }
 
         # Iterate over line edits and apply corresponding conversion

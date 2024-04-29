@@ -122,7 +122,11 @@ def energy_scan(
     energy_signals = [registry.find(ep) for ep in energy_signals]
     # Figure out which time positioners to use
     if time_signals is None:
-        time_signals = [det.default_time_signal for det in detectors if hasattr(det, 'default_time_signal')]
+        time_signals = [
+            det.default_time_signal
+            for det in detectors
+            if hasattr(det, "default_time_signal")
+        ]
     else:
         time_signals = [registry.find(tp) for tp in time_signals]
     # Convert an individual exposure time to an array of exposure times

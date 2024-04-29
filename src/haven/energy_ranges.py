@@ -66,7 +66,6 @@ def full_range(start, end, step):
 
 @dataclass
 class ERange(EnergyRange):
-
     """A range of energies used for scanning.
 
     All values are assumed to be in electron-volts. If *E0* is a
@@ -141,7 +140,7 @@ class KRange(EnergyRange):
 
     def exposures(self):
         ks = self.wavenumbers()
-        return self.exposure * (ks / np.min(ks)) ** self.k_weight
+        return self.exposure * ((ks / np.min(ks)) ** self.k_weight)
 
 
 def merge_ranges(*ranges, default_exposure=DEFAULT_EXPOSURE, sort=False):
