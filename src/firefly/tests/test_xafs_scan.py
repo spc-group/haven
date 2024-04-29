@@ -106,6 +106,7 @@ def test_xafs_scan_plan_queued_energies(ffapp, qtbot):
     # set up meta data
     display.ui.lineEdit_sample.setText("sam")
     display.ui.lineEdit_purpose.setText("test")
+    display.ui.checkBox_is_standard.setChecked(True)
 
     expected_item = BPlan(
         "energy_scan",
@@ -113,7 +114,7 @@ def test_xafs_scan_plan_queued_energies(ffapp, qtbot):
         exposure=exposures,
         E0=11500.8,
         detectors=["vortex_me4", "I0"],
-        md={"sample": "sam", "purpose": "test"},
+        md={"sample": "sam", "purpose": "test", "is_standard": True},
     )
 
     def check_item(item):
@@ -204,7 +205,7 @@ def test_xafs_scan_plan_queued_energies_k_mixed(ffapp, qtbot):
         exposure=exposures,
         E0=11500.8,
         detectors=["vortex_me4", "I0"],
-        md={"sample": "sam", "purpose": "test"},
+        md={"sample": "sam", "purpose": "test", "is_standard": False},
     )
 
     def check_item(item):
