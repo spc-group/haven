@@ -3,7 +3,6 @@ import logging
 from collections import OrderedDict
 from functools import lru_cache
 
-from qasync import asyncSlot, QThreadExecutor
 import qtawesome as qta
 from ophyd import (
     Device,
@@ -12,6 +11,7 @@ from ophyd import (
     Signal,
     do_not_wait_for_lazy_connection,
 )
+from qasync import QThreadExecutor, asyncSlot
 from qtpy.QtGui import QFont, QStandardItem, QStandardItemModel
 from qtpy.QtWidgets import (
     QComboBox,

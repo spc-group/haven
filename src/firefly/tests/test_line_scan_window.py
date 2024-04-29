@@ -1,3 +1,4 @@
+from pprint import pprint
 from unittest import mock
 
 import pytest
@@ -7,7 +8,6 @@ from qtpy import QtCore
 
 from firefly.plans.line_scan import LineScanDisplay
 from haven.instrument import motor
-from pprint import pprint
 
 
 # fake motor copied from test_motor_menu.py, not sure this is right

@@ -4,7 +4,7 @@
 
 import logging
 from collections import ChainMap
-from typing import Mapping, Sequence, Union, Optional
+from typing import Mapping, Optional, Sequence, Union
 
 import numpy as np
 from bluesky import plans as bp

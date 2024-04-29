@@ -1,11 +1,13 @@
-import pytest
 import logging
+
+import numpy as np
+import pytest
+
+from haven import ERange, KRange, merge_ranges
 
 # import unittest
 
-import numpy as np
 
-from haven import ERange, KRange, merge_ranges
 
 logging.basicConfig(level=logging.INFO)
 

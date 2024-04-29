@@ -1,11 +1,11 @@
-import re
 import logging
-import numpy as np
+import re
 
+import numpy as np
+from bluesky_queueserver_api import BPlan
 from qtpy import QtWidgets
 from qtpy.QtGui import QDoubleValidator
 from xraydb.xraydb import XrayDB
-from bluesky_queueserver_api import BPlan
 
 from firefly import display
 from firefly.application import FireflyApplication

@@ -1,9 +1,11 @@
-from firefly.plans.xafs_scan import XafsScanDisplay
+from pprint import pprint
+from unittest import mock
+
 import numpy as np
 from bluesky_queueserver_api import BPlan
-from unittest import mock
 from qtpy import QtCore
-from pprint import pprint
+
+from firefly.plans.xafs_scan import XafsScanDisplay
 
 # default values for EXAFS scan
 pre_edge = [-50, -20, 1]
