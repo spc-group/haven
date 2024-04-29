@@ -361,8 +361,8 @@ def test_with_plan(stringio, sim_registry, event_loop, beamline_manager, tmp_pat
         np.arange(8300.0, 8400.0, 10),
         detectors=[I0, It],
         E0="Ni_K",
-        energy_positioners=[energy_motor],
-        time_positioners=[exposure],
+        energy_signals=[energy_motor],
+        time_signals=[exposure],
         md=dict(sample_name="NiO_rock_salt"),
     )
     RE(energy_plan, writer)
