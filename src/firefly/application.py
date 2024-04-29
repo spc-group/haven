@@ -17,6 +17,13 @@ from qtpy.QtCore import Signal
 from qtpy.QtWidgets import QAction
 
 from haven import aload_instrument, load_config, registry
+from haven import (
+    HavenMotor,
+    load_config,
+    registry,
+    load_instrument as load_haven_instrument,
+)
+
 from haven.exceptions import ComponentNotFound
 from haven.instrument.device import titelize
 
@@ -133,7 +140,7 @@ class FireflyApplication(PyDMApplication):
 
     def reload_instrument(self, load_instrument=True):
         """(Re)load all the instrument devices."""
-        # load_haven_instrument(registry=self.registry)
+        load_haven_instrument(registry=self.registry)
         self.registry_changed.emit(self.registry)
 
     async def setup_instrument(self, load_instrument=True):
