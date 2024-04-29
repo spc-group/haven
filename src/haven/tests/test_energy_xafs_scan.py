@@ -105,8 +105,8 @@ def test_saves_dspacing(mono, energies, I0, It):
         energy_scan(
             energies,
             detectors=[It],
-            energy_positioners=[mono],
-            time_positioners=[It.exposure_time],
+            energy_signals=[mono],
+            time_signals=[It.exposure_time],
         )
     )
     # Find the metadata written by the plan
