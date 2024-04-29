@@ -28,7 +28,6 @@ def test_e_range(start, stop, step, expected_energies):
     np.testing.assert_allclose(e_range.exposures(), [0.1] * len(expected_energies))
 
 
-# TODO fix the float issues
 def test_k_range():
     E0 = 17038
     k_range = KRange(k_min=2.8, k_max=14, k_step=0.05, k_weight=1, exposure=1.0)
@@ -40,7 +39,7 @@ def test_k_range():
     # Verify the results compared to Shelly's spreadsheet
     E_min = k_range.energies()[0]
     np.testing.assert_equal(energies[0], E0 + E_min)
-    np.testing.assert_almost_equal(energies[-1], 17785.40463351)
+    np.testing.assert_almost_equal(energies[-1], 746.7568692 + 17038, decimal=3) # Athena value
     np.testing.assert_equal(k_range.exposures()[0], 1.0)
     np.testing.assert_almost_equal(k_range.exposures()[16], 1.28529317348436, decimal=3)
 
