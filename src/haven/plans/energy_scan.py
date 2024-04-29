@@ -138,7 +138,6 @@ def energy_scan(
     energies = np.asarray(energies)
     energies += E0
     # Todo: sort the energies and exposure times by the energy
-    ...
     # Prepare the positioners list with associated energies and exposures
     scan_args = [(motor, energies) for motor in energy_signals]
     scan_args += [(motor, exposure) for motor in time_signals]
@@ -146,9 +145,9 @@ def energy_scan(
     # Add some extra metadata
     config = load_config()
     md_ = {"edge": E0_str, "E0": E0}
-    for positioner in energy_positioners:
+    for signals in energy_signals:
         try:
-            md_["d_spacing"] = positioner.d_spacing.get()
+            md_["d_spacing"] = signals.d_spacing.get()
         except AttributeError:
             continue
         else:
