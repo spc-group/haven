@@ -254,9 +254,6 @@ def test_uses_default_time_signals(dxp, mono_motor):
     )
     msgs = list(scan)
     set_msgs = [m for m in msgs if m.command == "set" and dxp.name in m.obj.name]
-    from pprint import pprint
-
-    pprint(set_msgs)
     assert len(set_msgs) == 1
     time_msg = set_msgs[0]
     assert time_msg.obj is dxp.preset_real_time

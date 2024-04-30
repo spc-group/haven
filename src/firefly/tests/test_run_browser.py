@@ -8,12 +8,6 @@ from pyqtgraph import ImageItem, ImageView, PlotItem, PlotWidget
 from firefly.run_browser import RunBrowserDisplay
 from firefly.run_client import DatabaseWorker
 
-# pytest.skip("Need to migrate the module to gemviz fork", allow_module_level=True)
-# pytest.skip(
-#     "There's some segmentation fault here that needs to be fixed",
-#     allow_module_level=True,
-# )
-
 
 @pytest.fixture()
 def display(affapp, catalog):

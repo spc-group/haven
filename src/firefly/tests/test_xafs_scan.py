@@ -1,4 +1,3 @@
-from pprint import pprint
 from unittest import mock
 
 import numpy as np
@@ -141,9 +140,6 @@ def test_xafs_scan_plan_queued_energies(ffapp, qtbot):
 
         except AssertionError as e:
             # Print detailed debug info
-            pprint(item_dict)
-            pprint(expected_dict)
-            print(str(e))
             return False
         return True
 
@@ -231,10 +227,6 @@ def test_xafs_scan_plan_queued_energies_k_mixed(ffapp, qtbot):
             assert item_dict == expected_dict, "Non-array items do not match."
 
         except AssertionError as e:
-            # Print detailed debug info
-            pprint(item_dict)
-            pprint(expected_dict)
-            print(str(e))
             return False
         return True
 

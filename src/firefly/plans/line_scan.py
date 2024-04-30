@@ -111,8 +111,6 @@ class LineScanDisplay(display.FireflyDisplay):
             for values in motor_i
         ]
 
-        print(motor_args)
-
         if self.ui.relative_scan_checkbox.isChecked():
             if self.ui.log_scan_checkbox.isChecked():
                 scan_type = "rel_log_scan"
@@ -138,13 +136,12 @@ class LineScanDisplay(display.FireflyDisplay):
             # per_step=None,
             md=md,
         )
-        print(item)
 
         # Submit the item to the queueserver
         from firefly.application import FireflyApplication
 
         app = FireflyApplication.instance()
-        log.info("Add ``scan()`` plan to queue.")
+        log.info("Added line scan() plan to queue.")
         app.add_queue_item(item)
 
     def ui_filename(self):

@@ -1,4 +1,3 @@
-from pprint import pprint
 from unittest import mock
 
 import pytest
@@ -63,8 +62,6 @@ def test_line_scan_plan_queued(ffapp, qtbot, sim_registry, fake_motors):
     )
 
     def check_item(item):
-        pprint(item.to_dict())
-        pprint(expected_item.to_dict())
         return item.to_dict() == expected_item.to_dict()
 
     # Click the run button and see if the plan is queued
