@@ -21,7 +21,7 @@ from haven.energy_ranges import (
 
 log = logging.getLogger(__name__)
 
-# TODO solve Python decimal
+# How much rounding to do when convert energy to k-space
 float_accuracy = 4
 
 
@@ -194,9 +194,7 @@ class XafsScanDisplay(display.FireflyDisplay):
         # reset button
         self.ui.pushButton.clicked.connect(self.reset_default_regions)
 
-        # for testing
-        # TODO remove the following after testing
-        self.ui.run_button.setEnabled(True)
+        # Button to actually execute the plan
         self.ui.run_button.clicked.connect(self.queue_plan)
 
         # connect checkboxes with all regions' check box
@@ -383,13 +381,9 @@ class XafsScanDisplay(display.FireflyDisplay):
             detectors=detectors,
             md=md,
         )
-
-        print(item)
-        print(energies, exposures, self.edge_value, detectors, md)
-
         # Submit the item to the queueserver
         app = FireflyApplication.instance()
-        log.info("Add ``scan()`` plan to queue.")
+        log.info(f"Adding XAFS scan to queue.")
         app.add_queue_item(item)
 
     def ui_filename(self):

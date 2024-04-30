@@ -164,7 +164,7 @@ class FireflyApplication(PyDMApplication):
         # Actions for controlling the bluesky run engine
         self.setup_runengine_actions()
         # Prepare the client for interacting with the queue server
-        # self.prepare_queue_client()
+        self.prepare_queue_client()
 
     def show_default_window(self):
         """Show the first starting window for the application."""
