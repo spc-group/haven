@@ -188,6 +188,7 @@ def main(default_fullscreen=False, default_display="status"):
 
     # Show the first window (breaks asyncio)
     splash.close()
+    app.show_default_window()
 
     event_loop.run_until_complete(app_close_event.wait())
     event_loop.close()
