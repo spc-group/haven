@@ -1,9 +1,11 @@
 import asyncio
 import logging
 
+from scipy import constants
 import numpy as np
 from ophyd import Component as Cpt
 from ophyd import Device, EpicsMotor
+from ophyd import Signal
 from ophyd import FormattedComponent as FCpt
 from ophyd import PseudoPositioner, PseudoSingle
 from ophyd.pseudopos import pseudo_position_argument, real_position_argument
@@ -16,7 +18,94 @@ log = logging.getLogger(__name__)
 um_per_mm = 1000
 
 
-class RowlandPositioner(PseudoPositioner):
+h = constants.physical_constants['Planck constant in eV/Hz'][0]
+c = constants.c
+
+
+def energy_to_wavelength(energy):
+    """Energy in eV to wavelength in meters."""
+    return h * c / energy
+
+
+wavelength_to_energy = energy_to_wavelength
+
+
+def bragg_to_wavelength(bragg_angle: float, d: float, n: int = 1):
+    """Convert Bragg angle to wavelength.
+
+    Parameters
+    ==========
+    bragg_angle
+      The Bragg angle (θ) of the reflection.
+    d
+      Inter-planar spacing of the crystal.
+    n
+      The order of the reflection.
+    """
+    return 2 * d * np.sin(bragg_angle) / n
+
+
+def wavelength_to_bragg(wavelength: float, d: float, n: int = 1):
+    """Convert wavelength to Bragg angle.
+
+    Parameters
+    ==========
+    wavelength
+      The photon wavelength in meters.
+    d
+      Inter-planar spacing of the crystal.
+    n
+      The order of the reflection.
+
+    Returns
+    =======
+    bragg
+      The Bragg angle of the reflection, in Radians.
+    """
+    return np.arcsin(n*wavelength/2/d)
+
+
+def energy_to_bragg(energy: float, d: float) -> float:
+    """Convert photon energy to Bragg angle.
+
+    Parameters
+    ==========
+    energy
+      Photon energy, in eV.
+    d
+      d-spacing of the analyzer crystal, in meters.
+
+    Returns
+    =======
+    bragg
+      First order Bragg angle for this photon, in radians.
+
+    """
+    bragg = np.arcsin(h*c/2/d/energy)
+    return bragg
+
+
+def bragg_to_energy(bragg: float, d: float) -> float:
+    """Convert Bragg angle to photon energy.
+
+    Parameters
+    ==========
+    bragg
+      Bragg angle for the crystal, in radians.
+    d
+      d-spacing of the analyzer crystal, in meters.
+
+    Returns
+    =======
+    energy
+      Photon energy, in eV.
+
+    """
+    energy = h * c / 2 / d / np.sin(bragg)
+    return energy
+
+
+class Analyzer(PseudoPositioner):
     """A pseudo positioner describing a rowland circle.
 
     Real Axes
@@ -39,48 +128,47 @@ class RowlandPositioner(PseudoPositioner):
     def __init__(
         self,
         x_motor_pv: str,
-        y_motor_pv: str,
         z_motor_pv: str,
-        z1_motor_pv: str,
         *args,
         **kwargs,
     ):
         self.x_motor_pv = x_motor_pv
-        self.y_motor_pv = y_motor_pv
         self.z_motor_pv = z_motor_pv
-        self.z1_motor_pv = z1_motor_pv
         super().__init__(*args, **kwargs)
 
+    # Other signals
+    d_spacing: Signal = Cpt(Signal, name="d_spacing")  # In Å
+    rowland_diameter: Signal = Cpt(Signal, name="rowland_diameter")  # In mm
+    wedge_angle: Signal = Cpt(Signal, name="wedge_angle")  # In radians
+
     # Pseudo axes
-    D: PseudoSingle = Cpt(PseudoSingle, name="D", limits=(0, 1000))
-    theta: PseudoSingle = Cpt(PseudoSingle, name="theta", limits=(0, 180))
+    energy: PseudoSingle = Cpt(PseudoSingle, name="energy", limits=(0, 1000))
     alpha: PseudoSingle = Cpt(PseudoSingle, name="alpha", limits=(0, 180))
 
     # Real axes
     x: EpicsMotor = FCpt(EpicsMotor, "{x_motor_pv}", name="x")
-    y: EpicsMotor = FCpt(EpicsMotor, "{y_motor_pv}", name="y")
     z: EpicsMotor = FCpt(EpicsMotor, "{z_motor_pv}", name="z")
-    z1: EpicsMotor = FCpt(EpicsMotor, "{z1_motor_pv}", name="z1")
 
     @pseudo_position_argument
     def forward(self, pseudo_pos):
         """Run a forward (pseudo -> real) calculation"""
         # Convert distance to microns and degrees to radians
-        D = pseudo_pos.D * um_per_mm
-        theta = pseudo_pos.theta / 180.0 * np.pi
-        alpha = pseudo_pos.alpha / 180.0 * np.pi
-        # Convert virtual positions to real positions
-        x = D * (np.sin(theta + alpha)) ** 2
-        y = D * ((np.sin(theta + alpha)) ** 2 - (np.sin(theta - alpha)) ** 2)
-        z1 = D * np.sin(theta - alpha) * np.cos(theta + alpha)
-        z2 = D * np.sin(theta - alpha) * np.cos(theta - alpha)
-        z = z1 + z2
-        print(x, y, z1, z)
+        energy, alpha = pseudo_pos.energy, pseudo_pos.alpha
+        # Step 0: convert energy to bragg angle
+        bragg = energy_to_bragg(energy, d=self.d_spacing.get())
+        # Step 1: Convert energy params to geometry params
+        D = self.rowland_diameter.get()
+        rho = D * np.sin(bragg + alpha)
+        theta_M = bragg + alpha
+        # Step 2: Convert geometry params to motor positions
+        beta = self.wedge_angle.get()
+        z = rho * np.cos(theta_M) / np.cos(beta)
+        x = z * np.sin(beta) + rho * np.sin(theta_M)
+        print(x, z)
+        # Report the calculated result
         return self.RealPosition(
             x=x,
-            y=y,
             z=z,
-            z1=z1,
         )
 
     @real_position_argument
@@ -153,15 +241,15 @@ class RowlandPositioner(PseudoPositioner):
 # This equation can be solved numerically to obtain the value of D. Once D is known, we can use the equations for cos(theta + alpha) and sin(theta - alpha) to calculate theta and alpha.
 
 
-class LERIXSpectrometer(Device):
-    rowland = Cpt(
-        RowlandPositioner,
-        x_motor_pv="vme_crate_ioc:m1",
-        y_motor_pv="vme_crate_ioc:m2",
-        z_motor_pv="vme_crate_ioc:m3",
-        z1_motor_pv="vme_crate_ioc:m4",
-        name="rowland",
-    )
+# class LERIXSpectrometer(Device):
+#     rowland = Cpt(
+#         RowlandPositioner,
+#         x_motor_pv="vme_crate_ioc:m1",
+#         y_motor_pv="vme_crate_ioc:m2",
+#         z_motor_pv="vme_crate_ioc:m3",
+#         z1_motor_pv="vme_crate_ioc:m4",
+#         name="rowland",
+#     )
 
 
 # async def make_lerix_device(name: str, x_pv: str, y_pv: str, z_pv: str, z1_pv: str):
