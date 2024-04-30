@@ -195,6 +195,7 @@ class XafsScanDisplay(display.FireflyDisplay):
         self.ui.pushButton.clicked.connect(self.reset_default_regions)
 
         # Button to actually execute the plan
+        self.ui.run_button.setEnabled(True)
         self.ui.run_button.clicked.connect(self.queue_plan)
 
         # connect checkboxes with all regions' check box
@@ -305,7 +306,7 @@ class XafsScanDisplay(display.FireflyDisplay):
 
     def queue_plan(self, *args, **kwargs):
         """Execute this plan on the queueserver."""
-        # get paramters from each rows of line regions:
+        # Get parameters from each rows of line regions:
         energy_ranges_all = []
 
         # iterate through only selected regions

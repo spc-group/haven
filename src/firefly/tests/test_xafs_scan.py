@@ -1,3 +1,4 @@
+from pprint import pprint
 from unittest import mock
 
 import numpy as np
@@ -85,7 +86,7 @@ def test_xafs_scan_plan_queued_energies(ffapp, qtbot):
 
     display.edge_combo_box.setCurrentText("Pt L3 (11500.8 eV)")
     display.regions[-1].region_checkbox.setChecked(False)
-    # set up detector list
+    # Set up detector list
     display.ui.detectors_list.selected_detectors = mock.MagicMock(
         return_value=["vortex_me4", "I0"]
     )
@@ -140,6 +141,9 @@ def test_xafs_scan_plan_queued_energies(ffapp, qtbot):
 
         except AssertionError as e:
             # Print detailed debug info
+            pprint(item_dict)
+            pprint(expected_dict)
+            print(str(e))
             return False
         return True
 
