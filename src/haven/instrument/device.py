@@ -4,13 +4,29 @@ import re
 import time as ttime
 from typing import Callable, Union
 
+from aioca import CANothing, caget
+from apstools.utils.misc import safe_ophyd_name
 from ophyd import Component, Device, K
 from ophyd.sim import make_fake_device
 
 from .._iconfig import load_config
+from ..exceptions import InvalidPV
 from .instrument_registry import registry
 
 log = logging.getLogger(__name__)
+
+
+async def get_device_name(pv):
+    try:
+        name = await caget(pv)
+    except (asyncio.exceptions.TimeoutError, CANothing):
+        # Motor is unreachable
+        raise InvalidPV(pv)
+    else:
+        log.debug(f"Resolved motor {pv} to '{name}'")
+    # Make it a name safe to use as a variable in python
+    name = safe_ophyd_name(name)
+    return name
 
 
 def titelize(name):

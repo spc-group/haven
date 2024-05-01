@@ -84,7 +84,7 @@ def sim_registry(monkeypatch):
     for mod in modules:
         monkeypatch.setattr(mod, "await_for_connection", mock.AsyncMock())
     monkeypatch.setattr(
-        haven.instrument.ion_chamber, "caget", mock.AsyncMock(return_value="I0")
+        haven.instrument.device, "caget", mock.AsyncMock(return_value="I0")
     )
     # Save the registry so we can restore it later
     registry = haven.registry

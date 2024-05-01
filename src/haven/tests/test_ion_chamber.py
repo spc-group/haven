@@ -1,9 +1,10 @@
 import time
+from unittest import mock
 
 import numpy as np
 import pytest
 
-from haven.instrument import ion_chamber
+from haven.instrument import device, ion_chamber
 
 
 @pytest.fixture()
@@ -46,11 +47,13 @@ def test_gain_signals(preamp):
     assert preamp.gain_db.get(use_monitor=False) == pytest.approx(46.9897)
 
 
-def test_load_ion_chambers(sim_registry):
-    new_ics = ion_chamber.load_ion_chambers()
+def test_load_ion_chambers(sim_registry, monkeypatch):
+    monkeypatch.setattr(device, "caget", mock.AsyncMock(return_value="I preslit"))
+    ion_chamber.load_ion_chambers()
     # Test the channel info is extracted properly
     ic = sim_registry.find(label="ion_chambers")
     assert ic.ch_num == 2
+    assert ic.name == "I_preslit"
     assert ic.preamp.prefix.strip(":").split(":")[-1] == "SR02"
     assert ic.voltmeter.prefix == "255idc:LabjackT7_0:Ai0"
 
@@ -83,7 +86,7 @@ def test_volts_signal(sim_ion_chamber):
 
 
 def test_amps_signal(sim_ion_chamber):
-    """Test that the scaler tick counts get properly converted to ion chamber current."""
+    """Test that scaler tick counts get properly converted to ion chamber current."""
     chamber = sim_ion_chamber
     # Set the necessary dependent signals
     chamber.counts.sim_put(int(0.13e7))  # 1.3V

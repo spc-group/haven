@@ -253,7 +253,7 @@ def load_area_detector_coros(config=None) -> set:
             DeviceClass,
             prefix=f"{adconfig['prefix']}:",
             name=name,
-            labels={"area_detectors"},
+            labels={"area_detectors", "detectors"},
         )
 
 

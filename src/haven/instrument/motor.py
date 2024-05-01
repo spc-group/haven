@@ -2,12 +2,11 @@ import asyncio
 import logging
 from typing import Optional
 
-from aioca import CANothing, caget
 from ophyd import Component as Cpt
 from ophyd import EpicsMotor, EpicsSignal, EpicsSignalRO
 
 from .._iconfig import load_config
-from .device import aload_devices, make_device
+from .device import aload_devices, get_device_name, make_device
 from .instrument_registry import registry
 
 log = logging.getLogger(__name__)
@@ -95,9 +94,11 @@ async def load_motor(prefix: str, motor_num: int, ioc_name: str = None):
     # Get motor names
     config = load_config()
     # Get the motor name from the description PV
+    pv = f"{pv}.DESC"
+    print(pv)
     try:
-        name = await caget(f"{pv}.DESC")
-    except (asyncio.exceptions.TimeoutError, CANothing):
+        name = await get_device_name(pv)
+    except InvalidPV:
         if not config["beamline"]["is_connected"]:
             # Beamline is not connected, so just use a generic name
             name = f"{prefix}_m{motor_num+1}"

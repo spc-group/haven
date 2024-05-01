@@ -9,10 +9,6 @@ from collections import OrderedDict
 from typing import Dict, Generator, Optional
 
 import numpy as np
-
-# import pint
-from aioca import CANothing, caget
-from apstools.devices import SRS570_PreAmplifier
 from apstools.devices.srs570_preamplifier import (
     SRS570_PreAmplifier,
     calculate_settle_time,
@@ -31,7 +27,7 @@ from pcdsdevices.type_hints import OphydDataType, SignalToValue
 
 from .. import exceptions
 from .._iconfig import load_config
-from .device import aload_devices, await_for_connection, make_device
+from .device import aload_devices, await_for_connection, get_device_name, make_device
 from .labjack import AnalogInput
 from .scaler_triggered import ScalerSignalRO, ScalerTriggered
 
@@ -645,8 +641,8 @@ async def load_ion_chamber(
     lj_chan = ic_idx % 5
     # Only use this ion chamber if it has a name
     try:
-        name = await caget(desc_pv)
-    except (asyncio.exceptions.TimeoutError, CANothing):
+        name = await get_device_name(desc_pv)
+    except exceptions.InvalidPV:
         # Scaler channel is unreachable, so skip it
         log.warning(f"Could not connect to ion_chamber: {desc_pv}")
         return
@@ -661,7 +657,7 @@ async def load_ion_chamber(
         name=name,
         preamp_prefix=preamp_prefix,
         voltmeter_prefix=f"{voltmeter_prefix}{lj_num}:Ai{lj_chan}",
-        labels={"ion_chambers"},
+        labels={"ion_chambers", "detectors"},
     )
     # Ensure the voltmeter is in single-ended mode to measure pre-amp
     if hasattr(ion_chamber, "voltmeter"):
