@@ -4,7 +4,7 @@
 
 import logging
 from collections import ChainMap
-from typing import Mapping, Sequence, Union
+from typing import Mapping, Optional, Sequence, Union
 
 import numpy as np
 from bluesky import plans as bp
@@ -33,8 +33,8 @@ def energy_scan(
     exposure: Union[float, Sequence[float]] = 0.1,
     E0: Union[float, str] = 0,
     detectors: DetectorList = "ion_chambers",
-    energy_positioners: Sequence = ["energy"],
-    time_positioners: Sequence = ["I0_exposure_time"],
+    energy_signals: Sequence = ["energy"],
+    time_signals: Optional[Sequence] = None,
     md: Mapping = {},
 ):
     """Collect a spectrum by scanning X-ray energy.
@@ -47,6 +47,13 @@ def energy_scan(
     sequence is provided, it should be the same length as *energies*
     and the each entry will be used for the corresponding entry in
     *energies*.
+
+    The calculated exposure times will be set for every signal in
+    *time_signals*. If *time_signals* is ``None``, then
+    *time_signals* will be determined automatically from
+    *detectors*: for each detector, if it has an attribute/property
+    *default_time_signal*, then this signal will be included in
+    *time_signals*.
 
     **Usage:**
 
@@ -88,9 +95,9 @@ def energy_scan(
       ``"Ni_L3"``. All energies will be relative to this value.
     detectors
       The detectors to collect X-ray signal from at each energy.
-    energy_positioners
+    energy_signals
       Positioners that will receive the changing energies.
-    time_positioners
+    time_signals
       Positioners that will receive the exposure time for each scan.
     md
       Additional metadata to pass on the to run engine.
@@ -101,8 +108,8 @@ def energy_scan(
 
     """
     # Check that arguments are sensible
-    if len(energy_positioners) < 1:
-        msg = "Cannot run energy_scan with empty *energy_positioners*."
+    if len(energy_signals) < 1:
+        msg = "Cannot run energy_scan with empty *energy_signals*."
         log.error(msg)
         raise ValueError(msg)
     # Resolve the detector and positioner list if given by name
@@ -112,8 +119,16 @@ def energy_scan(
     for det in detectors:
         real_detectors.extend(registry.findall(det))
     log.debug(f"Found registered detectors: {real_detectors}")
-    energy_positioners = [registry.find(ep) for ep in energy_positioners]
-    time_positioners = [registry.find(tp) for tp in time_positioners]
+    energy_signals = [registry.find(ep) for ep in energy_signals]
+    # Figure out which time positioners to use
+    if time_signals is None:
+        time_signals = [
+            det.default_time_signal
+            for det in detectors
+            if hasattr(det, "default_time_signal")
+        ]
+    else:
+        time_signals = [registry.find(tp) for tp in time_signals]
     # Convert an individual exposure time to an array of exposure times
     if not hasattr(exposure, "__iter__"):
         exposure = [exposure] * len(energies)
@@ -126,16 +141,17 @@ def energy_scan(
         E0_str = None
     energies = np.asarray(energies)
     energies += E0
+    # Todo: sort the energies and exposure times by the energy
     # Prepare the positioners list with associated energies and exposures
-    scan_args = [(motor, energies) for motor in energy_positioners]
-    scan_args += [(motor, exposure) for motor in time_positioners]
+    scan_args = [(motor, energies) for motor in energy_signals]
+    scan_args += [(motor, exposure) for motor in time_signals]
     scan_args = [item for items in scan_args for item in items]
     # Add some extra metadata
     config = load_config()
     md_ = {"edge": E0_str, "E0": E0}
-    for positioner in energy_positioners:
+    for signals in energy_signals:
         try:
-            md_["d_spacing"] = positioner.d_spacing.get()
+            md_["d_spacing"] = signals.d_spacing.get()
         except AttributeError:
             continue
         else:

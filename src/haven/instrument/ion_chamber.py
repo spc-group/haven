@@ -9,8 +9,9 @@ from collections import OrderedDict
 from typing import Dict, Generator, Optional
 
 import numpy as np
-import pint
-from aioca import caget
+
+# import pint
+from aioca import CANothing, caget
 from apstools.devices import SRS570_PreAmplifier
 from apstools.devices.srs570_preamplifier import (
     SRS570_PreAmplifier,
@@ -128,6 +129,17 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
     units = ["pA/V", "nA/V", "uA/V", "mA/V"]
     offset_units = [s.split("/")[0] for s in units]
     offset_difference = -3  # How many levels higher should the offset be
+    current_multipliers = {
+        0: 1e-12,  # pA
+        1: 1e-9,  # nA
+        2: 1e-6,  # µA
+        3: 1e-3,  # mA
+        "pA": 1e-12,
+        "nA": 1e-9,
+        "uA": 1e-6,
+        "µA": 1e-6,
+        "mA": 1e-3,
+    }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -229,7 +241,8 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
         unit = items[self.offset_unit]
         try:
             val = float(f"{sign}{val}")
-            current = pint.Quantity(float(val), unit).to("A").magnitude
+            multiplier = self.current_multipliers[unit]
+            current = val * multiplier
         except ValueError:
             return 0
         return current
@@ -475,6 +488,14 @@ class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
         # Sync the ion chamber description with the voltmeter description
         self.description.subscribe(self.update_voltmeter_description, run=True)
 
+    @property
+    def default_time_signal(self):
+        """The signal to use for setting exposure time when no other signal is
+        provided.
+
+        """
+        return self.exposure_time
+
     def update_voltmeter_description(self, *args, value, **kwargs):
         self.voltmeter.description.put(value)
 
@@ -596,7 +617,6 @@ async def make_ion_chamber_device(
     try:
         await await_for_connection(ic)
     except TimeoutError as exc:
-        raise
         log.warning(
             f"Could not connect to ion chamber: {name} ({prefix}, {preamp_prefix})"
         )
@@ -626,7 +646,7 @@ async def load_ion_chamber(
     # Only use this ion chamber if it has a name
     try:
         name = await caget(desc_pv)
-    except asyncio.exceptions.TimeoutError:
+    except (asyncio.exceptions.TimeoutError, CANothing):
         # Scaler channel is unreachable, so skip it
         log.warning(f"Could not connect to ion_chamber: {desc_pv}")
         return

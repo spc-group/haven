@@ -97,7 +97,7 @@ def ffapp(pydm_ophyd_plugin, qapp_cls, qapp_args, pytestconfig):
     if app is None:
         # New Application
         global _ffapp_instance
-        app = qapp_cls(qapp_args)
+        app = qapp_cls(*qapp_args)
         # _ffapp_instance = app
         name = pytestconfig.getini("qt_qapp_name")
         app.setApplicationName(name)

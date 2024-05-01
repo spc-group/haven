@@ -336,6 +336,10 @@ class Xspress3Detector(SingleTrigger_V34, DetectorBase, XRFMixin):
         for mca in self.mca_records():
             mca.dead_time_percent.subscribe(self._update_dead_time_calcs)
 
+    @property
+    def default_time_signal(self):
+        return self.cam.acquire_time
+
     def _update_dead_time_calcs(self, *args, value, obj, **kwargs):
         self._dead_times[obj.name] = value
         # Calculate aggregate dead time stats

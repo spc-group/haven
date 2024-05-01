@@ -29,6 +29,10 @@ def test_camera_in_registry(sim_registry):
     gain = sim_registry.find(f"{camera.name}_cam.gain")
 
 
+def test_default_time_signal(sim_camera):
+    assert sim_camera.default_time_signal is sim_camera.cam.acquire_time
+
+
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov
