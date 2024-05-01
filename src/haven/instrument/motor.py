@@ -6,6 +6,7 @@ from ophyd import Component as Cpt
 from ophyd import EpicsMotor, EpicsSignal, EpicsSignalRO
 
 from .._iconfig import load_config
+from ..exceptions import InvalidPV
 from .device import aload_devices, get_device_name, make_device
 from .instrument_registry import registry
 
@@ -94,17 +95,16 @@ async def load_motor(prefix: str, motor_num: int, ioc_name: str = None):
     # Get motor names
     config = load_config()
     # Get the motor name from the description PV
-    pv = f"{pv}.DESC"
-    print(pv)
+    desc_pv = f"{pv}.DESC"
     try:
-        name = await get_device_name(pv)
+        name = await get_device_name(desc_pv)
     except InvalidPV:
         if not config["beamline"]["is_connected"]:
             # Beamline is not connected, so just use a generic name
             name = f"{prefix}_m{motor_num+1}"
         else:
             # Motor is unreachable, so skip it
-            log.warning(f"Could not connect to motor: {pv}")
+            log.warning(f"Could not connect to motor: {desc_pv}")
             return
     else:
         log.debug(f"Resolved motor {pv} to '{name}'")

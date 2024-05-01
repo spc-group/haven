@@ -4,8 +4,8 @@ import re
 import time as ttime
 from typing import Callable, Union
 
-from aioca import CANothing, caget
 from apstools.utils.misc import safe_ophyd_name
+from aioca import CANothing, caget
 from ophyd import Component, Device, K
 from ophyd.sim import make_fake_device
 
@@ -21,11 +21,12 @@ async def get_device_name(pv):
         name = await caget(pv)
     except (asyncio.exceptions.TimeoutError, CANothing):
         # Motor is unreachable
-        raise InvalidPV(pv)
-    else:
-        log.debug(f"Resolved motor {pv} to '{name}'")
+        msg = f"Could not connect to device: {pv}"
+        raise InvalidPV(msg)
     # Make it a name safe to use as a variable in python
-    name = safe_ophyd_name(name)
+    if len(name) > 0:
+        name = safe_ophyd_name(name)
+    log.debug(f"Resolved name for {pv} to '{name}'")
     return name
 
 
