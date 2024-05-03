@@ -4,6 +4,8 @@ import re
 import time as ttime
 from typing import Callable, Union
 
+from caproto import CaprotoTimeoutError
+from caproto.asyncio.client import Context
 from ophyd import Component, Device, K
 from ophyd.sim import make_fake_device
 
@@ -11,6 +13,32 @@ from .._iconfig import load_config
 from .instrument_registry import registry
 
 log = logging.getLogger(__name__)
+
+
+async def resolve_device_names(ic_defns):
+    """Update ion chamber definitions to include the EPICS name field.
+
+    Updates *ic_defns* in place to add the *name* key. Each entry in
+    *ic_defns* should have a *desc_pv* key with the PV to be checked
+    for the device name.
+
+    """
+
+    async def get_name(pv):
+        try:
+            response = await pv.read()
+        except CaprotoTimeoutError:
+            return None
+        else:
+            # Read PV values over the network
+            return response.data.tobytes().strip(b"\x00").decode("latin-1")
+
+    ctx = Context()
+    desc_pvs = await ctx.get_pvs(*[defn["desc_pv"] for defn in ic_defns])
+    names = await asyncio.gather(*(get_name(pv) for pv in desc_pvs))
+    # Add the results back into the defitions
+    for name, defn in zip(names, ic_defns):
+        defn["name"] = name
 
 
 def titelize(name):

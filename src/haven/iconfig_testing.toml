@@ -91,7 +91,7 @@ voltmeter_channels = [1]
 # "vme_crate_ioc:m3".
 
 [motor.VME_crate]
-prefix = "255idVME"
+prefix = "255idVME:"
 num_motors = 3
 
 # Keys for camera definitions must begin with "cam" (e.g. "camA", "camB")

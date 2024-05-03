@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import warnings
 from typing import Optional
 
 from aioca import CANothing, caget
@@ -7,7 +8,7 @@ from ophyd import Component as Cpt
 from ophyd import EpicsMotor, EpicsSignal, EpicsSignalRO
 
 from .._iconfig import load_config
-from .device import aload_devices, make_device
+from .device import aload_devices, make_device, resolve_device_names
 from .instrument_registry import registry
 
 log = logging.getLogger(__name__)
@@ -37,58 +38,73 @@ class HavenMotor(EpicsMotor):
         self.set(self._old_value, wait=True)
 
 
-def load_all_motor_coros(config=None):
+def load_motors(config=None):
     if config is None:
         config = load_config()
-    # Figure out the prefix
-    coros = []
-    for name, config in config.get("motor", {}).items():
+    # Check that we're not duplicating a motor somewhere else (e.g. KB mirrors)
+    existing_motors = registry.findall(label="motors", allow_none=True)
+    existing_motors = {
+        m.prefix: m.name for m in existing_motors if hasattr(m, "prefix")
+    }
+    # Build up definitions of motors to load
+    defns = []
+    for section_name, config in config.get("motor", {}).items():
         prefix = config["prefix"]
         num_motors = config["num_motors"]
-        log.info(f"Loading {num_motors} motors from IOC: {name} ({prefix})")
-        coros.extend(
-            load_ioc_motor_coros(prefix=prefix, num_motors=num_motors, ioc_name=name)
+        log.info(
+            f"Preparing {num_motors} motors from IOC: " "{section_name} ({prefix})"
         )
-    return coros
-
-
-def load_ioc_motor_coros(
-    prefix: str, num_motors: int, ioc_name: Optional[str] = None
-) -> list:
-    """Create co-routines for loading IOC motors.
-
-    These co-routines can then be run asynchronously by the caller
-    with e.g. asyncio.gather()
-
-    Parameters
-    ==========
-    prefix
-      The IOC prefix for these motors
-    num_motors
-      How many motor records are in the IOC.
-    ioc_name
-      An extra ophyd device label for all motors in this IOC.
-
-    Returns
-    =======
-    coros
-      A list of tasks that can be awaited.
-
-    """
-    # Co-routines for creating motor objects
-    for motor_num in range(num_motors):
-        log.debug(f"Making coro for {prefix}, {motor_num}")
-        yield load_motor(prefix, motor_num, ioc_name)
+        for idx in range(num_motors):
+            motor_prefix = f"{prefix}m{idx+1}"
+            if motor_prefix in existing_motors.keys():
+                log.info(
+                    f"Motor {motor_prefix} already exists "
+                    "as '{existing_motors[motor_prefix]}', skipping."
+                )
+            defns.append(
+                {
+                    "prefix": motor_prefix,
+                    "desc_pv": f"{motor_prefix}.DESC",
+                    "ioc_name": section_name,
+                }
+            )
+    # Resolve the scaler channels into ion chamber names
+    asyncio.run(resolve_device_names(defns))
+    # Create the devices
+    devices = []
+    missing_channels = []
+    unnamed_channels = []
+    for defn in defns:
+        # Check for motor without a name
+        if defn["name"] == "":
+            unnamed_channels.append(defn["prefix"])
+        elif defn["name"] is None:
+            missing_channels.append(defn["prefix"])
+        else:
+            # Create the device
+            labels = {"motors", "extra_motors", "baseline", defn["ioc_name"]}
+            devices.append(
+                make_device(
+                    HavenMotor, prefix=defn["prefix"], name=defn["name"], labels=labels
+                )
+            )
+    # Notify about motors that have no name
+    if len(missing_channels) > 0:
+        msg = "Skipping unavailable motors: "
+        msg += ", ".join([prefix for prefix in missing_channels])
+        warnings.warn(msg)
+        log.warning(msg)
+    if len(unnamed_channels) > 0:
+        msg = "Skipping unnamed motors: "
+        msg += ", ".join([prefix for prefix in unnamed_channels])
+        warnings.warn(msg)
+        log.warning(msg)
+    return devices
 
 
 async def load_motor(prefix: str, motor_num: int, ioc_name: str = None):
     """Create the requested motor if it is reachable."""
     pv = f"{prefix}:m{motor_num+1}"
-    # Check that we're not duplicating a motor somewhere else (e.g. KB mirrors)
-    existing_pvs = []
-    for m in registry.findall(label="motors", allow_none=True):
-        if hasattr(m, "prefix"):
-            existing_pvs.append(m.prefix)
     if pv in existing_pvs:
         log.info(f"Motor for prefix {pv} already exists. Skipping.")
         return
@@ -119,12 +135,6 @@ async def load_motor(prefix: str, motor_num: int, ioc_name: str = None):
             labels = set([ioc_name, *labels])
         return await make_device(HavenMotor, prefix=pv, name=name, labels=labels)
 
-
-def load_all_motors(config=None):
-    return asyncio.run(aload_devices(*load_all_motor_coros(config=config)))
-
-
-load_motors = load_all_motors
 
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman

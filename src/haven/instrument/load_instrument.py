@@ -90,7 +90,7 @@ def load_instrument(
         *load_xspress_detectors(config=config),
         # Load the motor devices last so that we can check for
         # existing motors in the registry
-        # *load_motors(config=config),
+        *load_motors(config=config),
     ]
     # Also import some simulated devices for testing
     devices += load_simulated_devices(config=config)

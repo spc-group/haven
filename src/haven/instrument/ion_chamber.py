@@ -29,7 +29,7 @@ from pcdsdevices.type_hints import OphydDataType, SignalToValue
 
 from .. import exceptions
 from .._iconfig import load_config
-from .device import await_for_connection, make_device
+from .device import await_for_connection, make_device, resolve_device_names
 from .labjack import AnalogInput
 from .scaler_triggered import ScalerSignalRO, ScalerTriggered
 
@@ -661,30 +661,6 @@ def load_ion_chamber(
     return ion_chamber
 
 
-async def resolve_ion_chamber_names(ic_defns):
-    """Update ion chamber definitions to include the EPICS name field.
-
-    Updates *ic_defns* in place to add the *name* key.
-
-    """
-
-    async def get_name(pv):
-        try:
-            response = await pv.read()
-        except CaprotoTimeoutError:
-            return ""
-        else:
-            # Read PV values over the network
-            return response.data.tobytes().strip(b"\x00").decode("latin-1")
-
-    ctx = Context()
-    desc_pvs = await ctx.get_pvs(*[defn["desc_pv"] for defn in ic_defns])
-    names = await asyncio.gather(*(get_name(pv) for pv in desc_pvs))
-    # Add the results back into the defitions
-    for name, defn in zip(names, ic_defns):
-        defn["name"] = name
-
-
 def load_ion_chambers(config=None):
     """Load ion chambers based on configuration files' ``[ion_chamber]``
     sections.
@@ -723,27 +699,40 @@ def load_ion_chambers(config=None):
                 }
             )
     # Resolve the scaler channels into ion chamber names
-    asyncio.run(resolve_ion_chamber_names(ic_defns))
-    # Loop through the configuration sections and create ion chambers co-routines
+    asyncio.run(resolve_device_names(ic_defns))
+    # Loop through the sections and create ion chambers
     devices = []
     missing_channels = []
+    unnamed_channels = []
     for defn in ic_defns:
-        if defn.get("name", "") == "":
+        if defn["name"] == "":
+            unnamed_channels.append(defn["desc_pv"])
+        elif defn["name"] is None:
             missing_channels.append(defn["desc_pv"])
-            continue
-        # Create the ion chamber device
-        devices.append(
-            make_device(
-                IonChamber,
-                prefix=defn["scaler_prefix"],
-                ch_num=defn["ch_num"],
-                name=defn["name"],
-                preamp_prefix=defn["preamp_prefix"],
-                voltmeter_prefix=defn["voltmeter_prefix"],
-                labels={"ion_chambers", defn["section"]},
+        else:
+            # Create the ion chamber device
+            devices.append(
+                make_device(
+                    IonChamber,
+                    prefix=defn["scaler_prefix"],
+                    ch_num=defn["ch_num"],
+                    name=defn["name"],
+                    preamp_prefix=defn["preamp_prefix"],
+                    voltmeter_prefix=defn["voltmeter_prefix"],
+                    labels={"ion_chambers", defn["section"]},
+                )
             )
-        )
     # Notify of any missing ion chambers
+    if len(missing_channels) > 0:
+        msg = "Skipping unavailable ion chambers: "
+        msg += ", ".join([prefix for prefix in missing_channels])
+        warnings.warn(msg)
+        log.warning(msg)
+    if len(unnamed_channels) > 0:
+        msg = "Skipping unnamed ion chambers: "
+        msg += ", ".join([prefix for prefix in unnamed_channels])
+        warnings.warn(msg)
+        log.warning(msg)
     return devices
 
 
