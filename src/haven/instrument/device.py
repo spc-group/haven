@@ -27,8 +27,8 @@ async def aload_devices(*coros):
     return await asyncio.gather(*coros)
 
 
-async def make_device(DeviceClass, *args, FakeDeviceClass=None, **kwargs) -> Device:
-    """Create camera device and add it to the registry.
+def make_device(DeviceClass, *args, FakeDeviceClass=None, **kwargs) -> Device:
+    """Create device and add it to the registry.
 
     If the beamline is not connected, i.e. the config file has:
 
@@ -63,25 +63,11 @@ async def make_device(DeviceClass, *args, FakeDeviceClass=None, **kwargs) -> Dev
     # Make sure we can connect
     name = kwargs.get("name", "unknown")
     t0 = ttime.monotonic()
-    try:
-        # Create the ophyd object
-        device = Cls(
-            *args,
-            **kwargs,
-        )
-        await await_for_connection(device)
-    except TimeoutError as e:
-        log.warning(
-            f"Could not connect to {DeviceClass.__name__} in"
-            f" {round(ttime.monotonic() - t0, 2)} sec: {name}."
-        )
-        log.info(f"Reason for {name} failure: {e}.")
-        return None
-    else:
-        # Register the device
-        registry.register(device)
-        log.debug(f"Connected to {name} in {round(ttime.monotonic() - t0, 2)} sec.")
-        return device
+    device = Cls(
+        *args,
+        **kwargs,
+    )
+    return device
 
 
 async def await_for_connection(dev, all_signals=False, timeout=3.0):

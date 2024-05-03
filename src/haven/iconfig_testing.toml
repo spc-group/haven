@@ -88,6 +88,12 @@ delay_prefix = "255idc:DG645"
 pv_vert = ":m1"
 pv_horiz = ":m2"
 
+[stage.sample_stage]
+
+prefix = "255idcVME:"
+pv_vert = "m13"
+pv_horiz = "m14"
+
 [power_supply.NHQ01]
 
 prefix = "ps_ioc:NHQ01"

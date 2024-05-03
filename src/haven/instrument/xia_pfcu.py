@@ -184,10 +184,11 @@ class PFCUFilterBank(PVPositionerIsClose):
         super().__init__(*args, **kwargs)
 
 
-def load_xia_pfcu4_coros(config=None):
+def load_xia_pfcu4s(config=None):
     if config is None:
         config = load_config()
     # Read the filter bank configurations from the config file
+    devices = []
     for name, cfg in config.get("pfcu4", {}).items():
         try:
             prefix = cfg["prefix"]
@@ -197,17 +198,20 @@ def load_xia_pfcu4_coros(config=None):
                 f"Device {name} missing '{ex.args[0]}': {cfg}"
             ) from ex
         # Make the device
-        yield make_device(
-            PFCUFilterBank,
-            prefix=prefix,
-            name=name,
-            shutters=shutters,
-            labels={"filter_banks"},
+        devices.append(
+            make_device(
+                PFCUFilterBank,
+                prefix=prefix,
+                name=name,
+                shutters=shutters,
+                labels={"filter_banks"},
+            )
         )
+    return devices
 
 
-def load_xia_pfcu4s(config=None):
-    asyncio.run(aload_devices(*load_xia_pfcu4_coros(config=config)))
+# def load_xia_pfcu4s(config=None):
+#     asyncio.run(aload_devices(*load_xia_pfcu4_coros(config=config)))
 
 
 # -----------------------------------------------------------------------------

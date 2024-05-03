@@ -28,16 +28,12 @@ class ApsMachine(ApsMachineParametersDevice):
     ]
 
 
-def load_aps_coros(config=None):
+def load_aps(config=None):
     """Load devices related to the synchrotron as a whole."""
     if config is None:
         config = load_config()
     # Load storage ring device
-    yield make_device(ApsMachine, name="APS", labels={"synchrotrons"})
-
-
-def load_aps(config=None):
-    return asyncio.run(aload_devices(*load_aps_coros(config=config)))
+    return make_device(ApsMachine, name="APS", labels={"synchrotrons"})
 
 
 # -----------------------------------------------------------------------------

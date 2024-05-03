@@ -238,10 +238,11 @@ class Eiger500K(SingleTrigger, DetectorBase):
     ]
 
 
-def load_area_detector_coros(config=None) -> set:
+def load_area_detectors(config=None) -> set:
     if config is None:
         config = load_config()
     # Create the area detectors defined in the configuration
+    devices = []
     for name, adconfig in config.get("area_detector", {}).items():
         DeviceClass = globals().get(adconfig["device_class"])
         # Check that it's a valid device class
@@ -249,16 +250,13 @@ def load_area_detector_coros(config=None) -> set:
             msg = f"area_detector.{name}.device_class={adconfig['device_class']}"
             raise exceptions.UnknownDeviceConfiguration(msg)
         # Create the device co-routine
-        yield make_device(
+        devices.append(make_device(
             DeviceClass,
             prefix=f"{adconfig['prefix']}:",
             name=name,
             labels={"area_detectors"},
-        )
-
-
-def load_area_detectors(config=None):
-    asyncio.run(aload_devices(*load_area_detector_coros(config=config)))
+        ))
+    return devices
 
 
 # -----------------------------------------------------------------------------

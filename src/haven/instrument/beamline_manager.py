@@ -84,7 +84,7 @@ class BeamlineManager(Device):
         super().__init__(*args, **kwargs)
 
 
-def load_beamline_manager_coros(config=None):
+def load_beamline_manager(config=None):
     # Load configuration for the beamline manager
     if config is None:
         config = load_config()
@@ -93,14 +93,10 @@ def load_beamline_manager_coros(config=None):
     except KeyError:
         return
     # Set up the beamline manager
-    yield make_device(
+    return make_device(
         BeamlineManager,
         prefix=cfg["prefix"],
         name=cfg["name"],
         labels={"beamline_manager"},
         iocs=cfg["iocs"],
     )
-
-
-def load_beamline_manager(config=None):
-    return asyncio.run(aload_devices(*load_beamline_manager_coros(config=config)))

@@ -15,14 +15,14 @@ from .instrument import (  # noqa: F401
     Monochromator,
     Robot,
     ion_chamber,
-    load_robot,
+    load_robots,
     registry,
 )
 from .instrument.device import RegexComponent  # noqa: F401
-from .instrument.dxp import load_dxp  # noqa: F401
-from .instrument.load_instrument import aload_instrument, load_instrument  # noqa: F401
+from .instrument.dxp import load_dxp_detectors  # noqa: F401
+from .instrument.load_instrument import load_instrument  # noqa: F401
 from .instrument.motor import HavenMotor  # noqa: F401
-from .instrument.xspress import load_xspress  # noqa: F401
+from .instrument.xspress import load_xspress_detectors  # noqa: F401
 from .motor_position import (  # noqa: F401
     get_motor_position,
     list_current_motor_positions,

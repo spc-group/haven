@@ -31,19 +31,17 @@ class CapillaryHeater(PTC10PositionerMixin, PVPositioner):
     output_enable = Cpt(EpicsSignal, "outputEnable", kind="omitted")
 
 
-def load_heater_coros(config=None):
+def load_heaters(config=None):
     if config is None:
         config = load_config()
     # Load the heaters
+    devices = []
     for name, cfg in config.get("heater", {}).items():
         Cls = globals().get(cfg["device_class"])
-        yield make_device(
+        devices.append(make_device(
             Cls, prefix=f"{cfg['prefix']}:", name=name, labels={"heaters"}
-        )
-
-
-def load_heaters(config=None):
-    return asyncio.run(aload_devices(*load_heater_coros(config=config)))
+        ))
+    return devices
 
 
 # -----------------------------------------------------------------------------

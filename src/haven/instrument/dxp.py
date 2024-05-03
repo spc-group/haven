@@ -391,7 +391,7 @@ def parse_xmap_buffer(buff):
     return data
 
 
-async def make_dxp_device(device_name, prefix, num_elements):
+def make_dxp_device(device_name, prefix, num_elements):
     # Build the mca components
     mca_range = range(0, num_elements)
     attrs = {
@@ -412,7 +412,7 @@ async def make_dxp_device(device_name, prefix, num_elements):
     class_name = device_name.title().replace("_", "")
     parent_classes = (DxpDetector,)
     Cls = type(class_name, parent_classes, attrs)
-    return await make_device(
+    return make_device(
         Cls,
         prefix=f"{prefix}:",
         name=device_name,
@@ -420,19 +420,7 @@ async def make_dxp_device(device_name, prefix, num_elements):
     )
 
 
-def load_dxp_coros(config=None):
-    # Get the detector definitions from config files
-    if config is None:
-        config = load_config()
-    for name, cfg in config.get("dxp", {}).items():
-        yield make_dxp_device(
-            device_name=name,
-            prefix=cfg["prefix"],
-            num_elements=cfg["num_elements"],
-        )
-
-
-def load_dxp(config=None):
+def load_dxp_detectors(config=None):
     """Load all the DXP-based detector devices.
 
     Configuration is determined from the iconfig.toml file.
@@ -442,7 +430,17 @@ def load_dxp(config=None):
     testing.
 
     """
-    asyncio.run(aload_devices(*load_dxp_coros(config=config)))
+    # Get the detector definitions from config files
+    if config is None:
+        config = load_config()
+    devices = []
+    for name, cfg in config.get("dxp", {}).items():
+        devices.append(make_dxp_device(
+            device_name=name,
+            prefix=cfg["prefix"],
+            num_elements=cfg["num_elements"],
+        ))
+    return devices
 
 
 # -----------------------------------------------------------------------------

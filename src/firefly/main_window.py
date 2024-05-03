@@ -123,7 +123,7 @@ class FireflyMainWindow(PyDMMainWindow):
         self.ui.queue_menu.addSeparator()
         # Queue settings for the queue client
         self.ui.queue_menu.addAction(app.launch_queuemonitor_action)
-        self.ui.queue_menu.addAction(app.queue_autoplay_action)
+        self.ui.queue_menu.addAction(app.queue_autostart_action)
         self.ui.queue_menu.addAction(app.queue_open_environment_action)
         # Positioners menu
         self.ui.positioners_menu = QtWidgets.QMenu(self.ui.menubar)

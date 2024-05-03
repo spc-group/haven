@@ -54,25 +54,23 @@ async def make_power_supply_device(prefix, name, ch_num):
         return dev
 
 
-def load_power_supply_coros(config=None):
+def load_power_supplies(config=None):
     if config is None:
         config = load_config()
     # Determine if any power supplies are available
     ps_configs = config.get("power_supply", {})
+    devices = []
     for name, ps_config in ps_configs.items():
         # Do it once for each channel
         for ch_num in range(1, ps_config["n_channels"] + 1):
-            yield make_device(
+            devices.append(make_device(
                 NHQ203MChannel,
                 name=f"{name}_ch{ch_num}",
                 prefix=ps_config["prefix"],
                 ch_num=ch_num,
                 labels={"power_supplies"},
-            )
-
-
-def load_power_supplies(config=None):
-    asyncio.run(aload_devices(*load_power_supply_coros(config=config)))
+            ))
+    return devices
 
 
 # -----------------------------------------------------------------------------

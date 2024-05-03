@@ -133,10 +133,11 @@ class ApertureSlits(Device):
     )
 
 
-def load_slit_coros(config=None):
+def load_slits(config=None):
     if config is None:
         config = load_config()
     # Create slits
+    devices = []
     for name, slit_config in config.get("slits", {}).items():
         DeviceClass = globals().get(slit_config["device_class"])
         prefix = slit_config["prefix"]
@@ -161,17 +162,14 @@ def load_slit_coros(config=None):
                 msg = f"Missing motors for slits.{name}.device_class={slit_config['device_class']}"
                 raise exceptions.UnknownDeviceConfiguration(msg)
         # Create the device
-        yield make_device(
+        devices.append(make_device(
             DeviceClass,
             prefix=prefix,
             name=name,
             labels={"slits"},
             **motors,
-        )
-
-
-def load_slits(config=None):
-    asyncio.run(aload_devices(*load_slit_coros(config=config)))
+        ))
+    return devices
 
 
 # -----------------------------------------------------------------------------
