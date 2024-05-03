@@ -35,6 +35,7 @@ __all__ = ["load_instrument"]
 def load_instrument(
     registry: InstrumentRegistry = default_registry,
     config: Mapping = None,
+    wait_for_connection: bool = True,
     return_devices: bool = False,
 ):
     """Load the beamline instrumentation.
@@ -52,6 +53,8 @@ def load_instrument(
     config:
       The beamline configuration read in from TOML files. Mostly
       useful for testing.
+    wait_for_connection
+      If true, only connected devices will be kept.
     return_devices
       If true, return the newly loaded devices when complete.
 
@@ -59,8 +62,6 @@ def load_instrument(
     # Clear out any existing registry entries
     if registry is not None:
         registry.clear()
-    # Make sure we have the most up-to-date configuration
-    # load_config.cache_clear()
     # Load the configuration
     if config is None:
         config = load_config()
@@ -74,7 +75,7 @@ def load_instrument(
         *load_dxp_detectors(config=config),
         load_energy_positioner(config=config),
         *load_heaters(config=config),
-        # *load_ion_chambers(config=config),
+        *load_ion_chambers(config=config),
         *load_lerix_spectrometers(config=config),
         *load_mirrors(config=config),
         *load_monochromators(config=config),
@@ -96,53 +97,22 @@ def load_instrument(
     # Filter out devices that couldn't be reached
     devices = [d for d in devices if d is not None]
     # Put the devices into the registry
-    if registry is not None:
+    if not getattr(registry, "auto_register", True):
         [registry.register(device) for device in devices]
+    # Only keep connected devices
+    disconnected = []
+    if wait_for_connection and registry is not None:
+        disconnected = registry.pop_disconnected(timeout=3)
+        devices = [dev for dev in devices if dev not in disconnected]
+    # Return the final list
     if return_devices:
         return devices
-
-
-# def load_instrument(
-#     registry: InstrumentRegistry = default_registry,
-#     config: Mapping = None,
-#     return_devices: bool = False,
-# ):
-#     """Load the beamline instrumentation into an instrument registry.
-
-#     This function will reach out and query various IOCs for motor
-#     information based on the information in *config* (see
-#     ``iconfig_default.toml`` for examples). Based on the
-#     configuration, it will create Ophyd devices and register them with
-#     *registry*.
-
-#     This function starts the asyncio event loop. If one is already
-#     running (e.g. jupyter notebook), then use ``await
-#     aload_instrument()`` instead.
-
-#     Parameters
-#     ==========
-#     registry:
-#       The registry into which the ophyd devices will be placed.
-#     config:
-#       The beamline configuration read in from TOML files. Mostly
-#       useful for testing.
-#     return_devices
-#       If true, return the newly loaded devices when complete.
-
-#     """
-#     # Import devices concurrently
-#     loop = asyncio.get_event_loop()
-#     coro = aload_instrument(registry=registry, config=config)
-#     devices = loop.run_until_complete(coro)
-#     if return_devices:
-#         return devices
 
 
 def load_simulated_devices(config={}):
     # Motors
     FakeMotor = sim.make_fake_device(HavenMotor)
     motor = FakeMotor(name="sim_motor", labels={"motors"})
-    default_registry.register(motor)
     # Detectors
     detector = sim.SynGauss(
         name="sim_detector",
@@ -152,7 +122,6 @@ def load_simulated_devices(config={}):
         center=0,
         Imax=1,
     )
-    default_registry.register(detector)
     return (motor, detector)
 
 

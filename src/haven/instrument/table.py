@@ -177,13 +177,15 @@ def load_tables(config=None):
                 f"Device {name} missing '{ex.args[0]}': {tbl_config}"
             ) from ex
         # Make the device
-        devices.append(make_device(
-            Table,
-            prefix=prefix,
-            name=name,
-            labels={"tables"},
-            **attrs,
-        ))
+        devices.append(
+            make_device(
+                Table,
+                prefix=prefix,
+                name=name,
+                labels={"tables"},
+                **attrs,
+            )
+        )
     return devices
 
 

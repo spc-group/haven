@@ -586,20 +586,22 @@ class AerotechStage(XYStage):
 def load_aerotech_stages(config=None):
     """Load Aerotech XY stages defined in the configuration files'
     ``[aerotech_stage]`` sections.
-    
+
     """
     if config is None:
         config = load_config()
     devices = []
     for name, stage_data in config.get("aerotech_stage", {}).items():
-        devices.append(make_device(
-            AerotechStage,
-            name=name,
-            prefix=stage_data["prefix"],
-            delay_prefix=stage_data["delay_prefix"],
-            pv_vert=stage_data["pv_vert"],
-            pv_horiz=stage_data["pv_horiz"],
-        ))
+        devices.append(
+            make_device(
+                AerotechStage,
+                name=name,
+                prefix=stage_data["prefix"],
+                delay_prefix=stage_data["delay_prefix"],
+                pv_vert=stage_data["pv_vert"],
+                pv_horiz=stage_data["pv_horiz"],
+            )
+        )
     return devices
 
 

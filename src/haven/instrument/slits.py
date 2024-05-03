@@ -162,13 +162,15 @@ def load_slits(config=None):
                 msg = f"Missing motors for slits.{name}.device_class={slit_config['device_class']}"
                 raise exceptions.UnknownDeviceConfiguration(msg)
         # Create the device
-        devices.append(make_device(
-            DeviceClass,
-            prefix=prefix,
-            name=name,
-            labels={"slits"},
-            **motors,
-        ))
+        devices.append(
+            make_device(
+                DeviceClass,
+                prefix=prefix,
+                name=name,
+                labels={"slits"},
+                **motors,
+            )
+        )
     return devices
 
 

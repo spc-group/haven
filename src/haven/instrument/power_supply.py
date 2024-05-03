@@ -63,13 +63,15 @@ def load_power_supplies(config=None):
     for name, ps_config in ps_configs.items():
         # Do it once for each channel
         for ch_num in range(1, ps_config["n_channels"] + 1):
-            devices.append(make_device(
-                NHQ203MChannel,
-                name=f"{name}_ch{ch_num}",
-                prefix=ps_config["prefix"],
-                ch_num=ch_num,
-                labels={"power_supplies"},
-            ))
+            devices.append(
+                make_device(
+                    NHQ203MChannel,
+                    name=f"{name}_ch{ch_num}",
+                    prefix=ps_config["prefix"],
+                    ch_num=ch_num,
+                    labels={"power_supplies"},
+                )
+            )
     return devices
 
 

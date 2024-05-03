@@ -54,13 +54,15 @@ def load_stages(config=None):
         config = load_config()
     devices = []
     for name, stage_data in config.get("stage", {}).items():
-        devices.append(make_device(
-            XYStage,
-            name=name,
-            prefix=stage_data["prefix"],
-            pv_vert=stage_data["pv_vert"],
-            pv_horiz=stage_data["pv_horiz"],
-        ))
+        devices.append(
+            make_device(
+                XYStage,
+                name=name,
+                prefix=stage_data["prefix"],
+                pv_vert=stage_data["pv_vert"],
+                pv_horiz=stage_data["pv_horiz"],
+            )
+        )
     return devices
 
 

@@ -81,13 +81,15 @@ def load_cameras(config=None) -> Sequence[DetectorBase]:
             msg = f"camera.{key}.device_class={cam_config['device_class']}"
             raise exceptions.UnknownDeviceConfiguration(msg)
         # Create the device object
-        devices.append(make_device(
-            DeviceClass=DeviceClass,
-            prefix=f"{cam_config['prefix']}:",
-            name=camera_name,
-            description=description,
-            labels={"cameras"},
-        ))
+        devices.append(
+            make_device(
+                DeviceClass=DeviceClass,
+                prefix=f"{cam_config['prefix']}:",
+                name=camera_name,
+                description=description,
+                labels={"cameras"},
+            )
+        )
     return devices
 
 

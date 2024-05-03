@@ -168,9 +168,11 @@ def load_mirrors(config=None):
                 f"Device {name} missing '{ex.args[0]}': {kb_config}"
             )
         # Make the device
-        devices.append(make_device(
-            KBMirrors, prefix=prefix, name=name, labels={"kb_mirrors"}, **motors
-        ))
+        devices.append(
+            make_device(
+                KBMirrors, prefix=prefix, name=name, labels={"kb_mirrors"}, **motors
+            )
+        )
     # Create single-bounce mirrors
     for name, mirror_config in config.get("mirrors", {}).items():
         # Decide which base class of mirror to use
@@ -182,9 +184,14 @@ def load_mirrors(config=None):
         if DeviceClass is None:
             msg = f"mirrors.{name}.device_class={mirror_config['device_class']}"
             raise exceptions.UnknownDeviceConfiguration(msg)
-        devices.append(make_device(
-            DeviceClass, prefix=mirror_config["prefix"], name=name, labels={"mirrors"}
-        ))
+        devices.append(
+            make_device(
+                DeviceClass,
+                prefix=mirror_config["prefix"],
+                name=name,
+                labels={"mirrors"},
+            )
+        )
     return devices
 
 

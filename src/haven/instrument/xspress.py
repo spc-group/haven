@@ -564,9 +564,11 @@ def load_xspress_detectors(config=None):
     # Create detector device
     devices = []
     for name, cfg in config.get("xspress", {}).items():
-        devices.append(make_xspress_device(
-            prefix=cfg["prefix"], num_elements=cfg["num_elements"], name=name
-        ))
+        devices.append(
+            make_xspress_device(
+                prefix=cfg["prefix"], num_elements=cfg["num_elements"], name=name
+            )
+        )
     return devices
 
 

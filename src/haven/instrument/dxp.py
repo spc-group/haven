@@ -435,11 +435,13 @@ def load_dxp_detectors(config=None):
         config = load_config()
     devices = []
     for name, cfg in config.get("dxp", {}).items():
-        devices.append(make_dxp_device(
-            device_name=name,
-            prefix=cfg["prefix"],
-            num_elements=cfg["num_elements"],
-        ))
+        devices.append(
+            make_dxp_device(
+                device_name=name,
+                prefix=cfg["prefix"],
+                num_elements=cfg["num_elements"],
+            )
+        )
     return devices
 
 

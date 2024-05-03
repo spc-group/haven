@@ -24,15 +24,17 @@ def load_shutters(config=None):
         # Calculate suitable PV values
         hutch = d["hutch"]
         acronym = "FES" if hutch == "A" else f"S{hutch}S"
-        devices.append(make_device(
-            Shutter,
-            prefix=f"{prefix}:{acronym}",
-            open_pv=f"{prefix}:{acronym}_OPEN_EPICS.VAL",
-            close_pv=f"{prefix}:{acronym}_CLOSE_EPICS.VAL",
-            state_pv=f"{prefix}:{hutch}_BEAM_PRESENT",
-            name=name,
-            labels={"shutters"},
-        ))
+        devices.append(
+            make_device(
+                Shutter,
+                prefix=f"{prefix}:{acronym}",
+                open_pv=f"{prefix}:{acronym}_OPEN_EPICS.VAL",
+                close_pv=f"{prefix}:{acronym}_CLOSE_EPICS.VAL",
+                state_pv=f"{prefix}:{hutch}_BEAM_PRESENT",
+                name=name,
+                labels={"shutters"},
+            )
+        )
     return devices
 
 

@@ -191,15 +191,17 @@ def load_lerix_spectrometers(config=None):
     devices = []
     for name, cfg in config.get("lerix", {}).items():
         rowland = cfg["rowland"]
-        devices.append(make_device(
-            RowlandPositioner,
-            name=name,
-            x_motor_pv=rowland["x_motor_pv"],
-            y_motor_pv=rowland["y_motor_pv"],
-            z_motor_pv=rowland["z_motor_pv"],
-            z1_motor_pv=rowland["z1_motor_pv"],
-            labels={"lerix_spectromoters"},
-        ))
+        devices.append(
+            make_device(
+                RowlandPositioner,
+                name=name,
+                x_motor_pv=rowland["x_motor_pv"],
+                y_motor_pv=rowland["y_motor_pv"],
+                z_motor_pv=rowland["z_motor_pv"],
+                z1_motor_pv=rowland["z1_motor_pv"],
+                labels={"lerix_spectromoters"},
+            )
+        )
     return devices
 
 

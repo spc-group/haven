@@ -14,7 +14,7 @@ def load_xray_source(config=None):
     if config is None:
         config = load_config()
     # Determine the X-ray source type (undulator vs bending magnet)
-    
+
     try:
         data = config["xray_source"]
     except KeyError:

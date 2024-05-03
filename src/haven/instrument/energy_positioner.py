@@ -121,11 +121,11 @@ def load_energy_positioner(config=None):
     if "monochromator" not in config.keys() or "undulator" not in config.keys():
         return
     # Extract PVs from config
-    mono_prefix=config["monochromator"]["ioc"]
-    id_prefix=config["undulator"]["ioc"]
-    mono_suffix=Monochromator.energy.suffix
-    id_offset_suffix=Monochromator.id_offset.suffix
-    id_tracking_suffix=Monochromator.id_tracking.suffix
+    mono_prefix = config["monochromator"]["ioc"]
+    id_prefix = config["undulator"]["ioc"]
+    mono_suffix = Monochromator.energy.suffix
+    id_offset_suffix = Monochromator.id_offset.suffix
+    id_tracking_suffix = Monochromator.id_tracking.suffix
     # Make the combined energy device
     return make_device(
         EnergyPositioner,

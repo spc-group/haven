@@ -38,9 +38,9 @@ def load_heaters(config=None):
     devices = []
     for name, cfg in config.get("heater", {}).items():
         Cls = globals().get(cfg["device_class"])
-        devices.append(make_device(
-            Cls, prefix=f"{cfg['prefix']}:", name=name, labels={"heaters"}
-        ))
+        devices.append(
+            make_device(Cls, prefix=f"{cfg['prefix']}:", name=name, labels={"heaters"})
+        )
     return devices
 
 

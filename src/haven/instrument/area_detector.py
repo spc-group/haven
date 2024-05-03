@@ -250,12 +250,14 @@ def load_area_detectors(config=None) -> set:
             msg = f"area_detector.{name}.device_class={adconfig['device_class']}"
             raise exceptions.UnknownDeviceConfiguration(msg)
         # Create the device co-routine
-        devices.append(make_device(
-            DeviceClass,
-            prefix=f"{adconfig['prefix']}:",
-            name=name,
-            labels={"area_detectors"},
-        ))
+        devices.append(
+            make_device(
+                DeviceClass,
+                prefix=f"{adconfig['prefix']}:",
+                name=name,
+                labels={"area_detectors"},
+            )
+        )
     return devices
 
 

@@ -76,16 +76,6 @@ def beamline_connected():
 
 @pytest.fixture()
 def sim_registry(monkeypatch):
-    # mock out Ophyd connections so devices can be created
-    modules = [
-        haven.instrument.ion_chamber,
-        haven.instrument.device,
-    ]
-    for mod in modules:
-        monkeypatch.setattr(mod, "await_for_connection", mock.AsyncMock())
-    monkeypatch.setattr(
-        haven.instrument.ion_chamber, "caget", mock.AsyncMock(return_value="I0")
-    )
     # Save the registry so we can restore it later
     registry = haven.registry
     objects_by_name = registry._objects_by_name

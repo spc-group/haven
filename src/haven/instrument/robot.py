@@ -160,7 +160,9 @@ def load_robots(config=None):
     robots = config.get("robot", {})
     devices = []
     for name, cfg in robots.items():
-        devices.append(make_device(Robot, name=name, labels={"robots"}, prefix=cfg["prefix"]))
+        devices.append(
+            make_device(Robot, name=name, labels={"robots"}, prefix=cfg["prefix"])
+        )
     return devices
 
 
