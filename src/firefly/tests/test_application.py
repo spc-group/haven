@@ -130,17 +130,16 @@ def test_prepare_device_specific_windows(ffapp, tardis):
     assert hasattr(ffapp, "tardis_windows")
 
 
-@pytest.mark.asyncio
-async def test_load_instrument_registry(ffapp, qtbot, monkeypatch):
+def test_load_instrument_registry(ffapp, qtbot, monkeypatch):
     """Check that the instrument registry gets created."""
     assert isinstance(ffapp.registry, Registry)
     # Mock the underlying haven instrument loader
-    loader = AsyncMock()
-    monkeypatch.setattr(firefly.application, "aload_instrument", loader)
+    loader = MagicMock()
+    monkeypatch.setattr(firefly.application, "load_haven_instrument", loader)
     monkeypatch.setattr(ffapp, "prepare_queue_client", MagicMock())
     # Reload the devices and see if the registry is changed
     with qtbot.waitSignal(ffapp.registry_changed):
-        await ffapp.setup_instrument(load_instrument=True)
+        ffapp.setup_instrument(load_instrument=True)
     # Make sure we loaded the instrument
     assert loader.called
 

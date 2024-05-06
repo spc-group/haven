@@ -128,7 +128,7 @@ dependencies:
     - autoapi
     - pytest-mongodb
     - StrEnum
-    - ophyd-registry >= 0.8
+    - ophyd-registry >= 1.2.1
     - xraydb >=4.5.0
     - pytest-timeout  # Get rid of this if tests are not hanging
     - git+https://github.com/pcdshub/pcdsdevices

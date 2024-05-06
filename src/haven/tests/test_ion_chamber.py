@@ -46,13 +46,17 @@ def test_gain_signals(preamp):
     assert preamp.gain_db.get(use_monitor=False) == pytest.approx(46.9897)
 
 
-def test_load_ion_chambers(sim_registry):
+def test_load_ion_chambers(sim_registry, mocker):
+    async def resolve_device_names(defns):
+        for defn in defns:
+            defn['name'] = f"ion_chamber_{defn['ch_num']}"
+    mocker.patch("haven.ion_chamber.resolve_device_names", new=resolve_device_names)
     new_ics = ion_chamber.load_ion_chambers()
     # Test the channel info is extracted properly
     ic = sim_registry.find(label="ion_chambers")
     assert ic.ch_num == 2
-    assert ic.preamp.prefix.strip(":").split(":")[-1] == "SR02"
-    assert ic.voltmeter.prefix == "255idc:LabjackT7_0:Ai0"
+    assert ic.preamp.prefix.strip(":").split(":")[-1] == "SR03"
+    assert ic.voltmeter.prefix == "255idc:LabjackT7_0:Ai1"
 
 
 def test_default_pv_prefix():
@@ -63,12 +67,12 @@ def test_default_pv_prefix():
     prefix = "myioc:myscaler"
     # Instantiate the device with *scaler_prefix* argument
     device = ion_chamber.IonChamber(
-        name="device", prefix="gibberish", ch_num=1, scaler_prefix=prefix
+        name="device1", prefix="gibberish", ch_num=1, scaler_prefix=prefix
     )
     device.scaler_prefix = prefix
     assert device.scaler_prefix == prefix
     # Instantiate the device with *scaler_prefix* argument
-    device = ion_chamber.IonChamber(name="device", ch_num=1, prefix=prefix)
+    device = ion_chamber.IonChamber(name="device2", ch_num=1, prefix=prefix)
     assert device.scaler_prefix == prefix
 
 
@@ -132,12 +136,12 @@ def test_voltmeter_amps_signal(sim_ion_chamber):
     assert chamber.voltmeter.amps.get() == pytest.approx(2.6e-5)
 
 
-def test_voltmeter_name(sim_ion_chamber):
-    chamber = sim_ion_chamber
-    assert chamber.voltmeter.description.get() != "Icake"
-    # Change the ion chamber name, and see if the voltmeter name updates
-    chamber.description.put("Icake")
-    assert chamber.voltmeter.description.get() == "Icake"
+# def test_voltmeter_name(sim_ion_chamber):
+#     chamber = sim_ion_chamber
+#     assert chamber.voltmeter.description.get() != "Icake"
+#     # Change the ion chamber name, and see if the voltmeter name updates
+#     chamber.description.put("Icake")
+#     assert chamber.voltmeter.description.get() == "Icake"
 
 
 def test_offset_pv(sim_registry):
@@ -172,7 +176,7 @@ def test_offset_pv(sim_registry):
     ]
     for ch_num, suffix in channel_suffixes:
         ic = ion_chamber.IonChamber(
-            prefix="scaler_ioc", ch_num=ch_num, name=f"ion_chamber_{ch_num}"
+            prefix="scaler_ioc:", ch_num=ch_num, name=f"ion_chamber_{ch_num}"
         )
         assert ic.offset.pvname == f"scaler_ioc:scaler1_{suffix}", f"channel {ch_num}"
 

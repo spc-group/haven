@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import warnings
-from typing import Optional
+from typing import Optional, Mapping, Sequence
 
 from aioca import CANothing, caget
 from ophyd import Component as Cpt
@@ -9,7 +9,7 @@ from ophyd import EpicsMotor, EpicsSignal, EpicsSignalRO
 
 from .._iconfig import load_config
 from .device import aload_devices, make_device, resolve_device_names
-from .instrument_registry import registry
+from .instrument_registry import InstrumentRegistry, registry as default_registry
 
 log = logging.getLogger(__name__)
 
@@ -38,14 +38,31 @@ class HavenMotor(EpicsMotor):
         self.set(self._old_value, wait=True)
 
 
-def load_motors(config=None):
+def load_motors(config: Mapping = None, registry: InstrumentRegistry = default_registry) -> Sequence:
+    """Load generic hardware motors from IOCs.
+
+    This loader will skip motor prefixes that already exist in the
+    registry *registry*, so it is a good idea to run this loader after
+    other devices have been created that might potentially use some of
+    these motors (e.g. mirrors, tables, etc.).
+
+    Parameters
+    ==========
+    config
+      The beamline configuration. If omitted, will use the config
+      provided by :py:func:`haven._iconfig.load_config()`.
+    registry
+      The instrument registry to check for existing motors. Existing
+      motors will not be duplicated.
+
+    Returns
+    =======
+    devices
+      The newly create EpicsMotor devices.
+
+    """
     if config is None:
         config = load_config()
-    # Check that we're not duplicating a motor somewhere else (e.g. KB mirrors)
-    existing_motors = registry.findall(label="motors", allow_none=True)
-    existing_motors = {
-        m.prefix: m.name for m in existing_motors if hasattr(m, "prefix")
-    }
     # Build up definitions of motors to load
     defns = []
     for section_name, config in config.get("motor", {}).items():
@@ -56,11 +73,6 @@ def load_motors(config=None):
         )
         for idx in range(num_motors):
             motor_prefix = f"{prefix}m{idx+1}"
-            if motor_prefix in existing_motors.keys():
-                log.info(
-                    f"Motor {motor_prefix} already exists "
-                    "as '{existing_motors[motor_prefix]}', skipping."
-                )
             defns.append(
                 {
                     "prefix": motor_prefix,
@@ -68,6 +80,18 @@ def load_motors(config=None):
                     "ioc_name": section_name,
                 }
             )
+    # Check that we're not duplicating a motor somewhere else (e.g. KB mirrors)
+    existing_pvs = []
+    for m in registry.findall(label="motors", allow_none=True):
+        if hasattr(m, "prefix"):
+            existing_pvs.append(m.prefix)
+    defns = [defn for defn in defns if defn['prefix'] not in existing_pvs]
+    duplicates = [defn for defn in defns if defn['prefix'] in existing_pvs]
+    if len(duplicates) > 0:
+        log.info("The following motors already exist and will not be duplicated: ",
+                 ", ".join([m['prefix'] for m in duplicates]))
+    else:
+        log.debug(f"No duplicated motors detected out of {len(defns)}")
     # Resolve the scaler channels into ion chamber names
     asyncio.run(resolve_device_names(defns))
     # Create the devices
