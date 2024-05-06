@@ -1,3 +1,6 @@
+import time
+import warnings
+import logging
 import asyncio
 from typing import Mapping
 
@@ -31,11 +34,14 @@ from .xspress import load_xspress_detectors
 
 __all__ = ["load_instrument"]
 
+log = logging.getLogger(__name__)
+
 
 def load_instrument(
     registry: InstrumentRegistry = default_registry,
     config: Mapping = None,
     wait_for_connection: bool = True,
+    timeout: int = 5,
     return_devices: bool = False,
 ):
     """Load the beamline instrumentation.
@@ -55,6 +61,8 @@ def load_instrument(
       useful for testing.
     wait_for_connection
       If true, only connected devices will be kept.
+    timeout
+      How long to wait for if *wait_for_connection* is true.
     return_devices
       If true, return the newly loaded devices when complete.
 
@@ -77,7 +85,6 @@ def load_instrument(
         *load_heaters(config=config),
         *load_ion_chambers(config=config),
         *load_lerix_spectrometers(config=config),
-        *load_mirrors(config=config),
         *load_monochromators(config=config),
         *load_power_supplies(config=config),
         *load_robots(config=config),
@@ -88,6 +95,7 @@ def load_instrument(
         *load_xia_pfcu4s(config=config),
         load_xray_source(config=config),
         *load_xspress_detectors(config=config),
+        *load_mirrors(config=config),
         # Load the motor devices last so that we can check for
         # existing motors in the registry
         *load_motors(config=config),
@@ -102,12 +110,16 @@ def load_instrument(
     # Only keep connected devices
     disconnected = []
     if wait_for_connection and registry is not None:
-        disconnected = registry.pop_disconnected(timeout=3)
+        disconnected = registry.pop_disconnected(timeout=timeout)
         devices = [dev for dev in devices if dev not in disconnected]
+        if len(disconnected) > 0:
+            msg = "Removed disconnected devices: "
+            msg += ", ".join(dev.name for dev in disconnected)
+            warnings.warn(msg)
+            log.warning(msg)
     # Return the final list
     if return_devices:
         return devices
-
 
 def load_simulated_devices(config={}):
     # Motors

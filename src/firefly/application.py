@@ -16,7 +16,7 @@ from qtpy import QtCore, QtWidgets
 from qtpy.QtCore import Signal
 from qtpy.QtWidgets import QAction
 
-from haven import aload_instrument, load_config
+from haven import load_config
 from haven import load_instrument as load_haven_instrument
 from haven import registry
 from haven.exceptions import ComponentNotFound
@@ -138,7 +138,7 @@ class FireflyApplication(PyDMApplication):
         load_haven_instrument(registry=self.registry)
         self.registry_changed.emit(self.registry)
 
-    async def setup_instrument(self, load_instrument=True):
+    def setup_instrument(self, load_instrument=True):
         """Set up the application to use a previously loaded instrument.
 
         Expects devices, plans, etc to have been created already.
@@ -157,7 +157,7 @@ class FireflyApplication(PyDMApplication):
 
         """
         if load_instrument:
-            await aload_instrument(registry=self.registry)
+            load_haven_instrument(registry=self.registry)
             self.registry_changed.emit(self.registry)
         # Make actions for launching other windows
         self.setup_window_actions()

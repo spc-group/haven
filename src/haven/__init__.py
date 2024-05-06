@@ -2,6 +2,10 @@ __all__ = ["energy_scan"]
 
 __version__ = "0.1.0"
 
+# Force ophyd to use caproto as its backend
+# import ophyd
+# ophyd.set_cl("caproto")
+
 from ._iconfig import load_config  # noqa: F401
 
 #  Top-level imports

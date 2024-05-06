@@ -184,7 +184,7 @@ def main(default_fullscreen=False, default_display="status"):
     # app.aboutToQuit.connect(app_close_event.set)
 
     # Define devices on the beamline (slow!)
-    event_loop.run_until_complete(app.setup_instrument())
+    app.setup_instrument()
 
     # Show the first window (breaks asyncio)
     splash.close()
