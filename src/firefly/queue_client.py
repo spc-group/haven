@@ -86,7 +86,6 @@ class QueueClient(QObject):
         else:
             api_call = self.api.environment_close
         result = api_call()
-        print(result, to_open)
         if result["success"]:
             self.environment_opened.emit(to_open)
         else:
