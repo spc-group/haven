@@ -115,7 +115,8 @@ class XafsScanRegion(QObject):
         self.step_line_edit = QtWidgets.QLineEdit()
         self.step_line_edit.setValidator(
             QDoubleValidator(0.0, float("inf"), 2)
-        )  # only takes positive floats
+        )  
+        # only takes positive floats
         self.step_line_edit.setPlaceholderText("Step…")
         self.layout.addWidget(self.step_line_edit)
 
@@ -123,6 +124,7 @@ class XafsScanRegion(QObject):
         self.weight_spinbox = QtWidgets.QDoubleSpinBox()
         self.layout.addWidget(self.weight_spinbox)
         self.weight_spinbox.setDecimals(1)
+        self.weight_spinbox.setEnabled(False)
 
         # K-space checkbox
         self.k_space_checkbox = QtWidgets.QCheckBox()
@@ -146,6 +148,9 @@ class XafsScanRegion(QObject):
 
     def update_wavenumber_energy(self):
         is_k_checked = self.k_space_checkbox.isChecked()
+
+        # disable weight box when k is not selected
+        self.weight_spinbox.setEnabled(is_k_checked)
 
         # Define conversion functions
         conversion_funcs = {
