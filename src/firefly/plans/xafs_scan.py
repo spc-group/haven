@@ -354,10 +354,12 @@ class XafsScanDisplay(display.FireflyDisplay):
         energies = list(np.round(energies, float_accuracy))
         exposures = list(np.round(exposures, float_accuracy))
         detectors = self.ui.detectors_list.selected_detectors()
+        repeat_scan_num = int(self.ui.spinBox_repeat_scan_num.value())
         md = {
             "sample": self.ui.lineEdit_sample.text(),
             "purpose": self.ui.lineEdit_purpose.text(),
             "is_standard": self.ui.checkBox_is_standard.isChecked(),
+            "notes": self.ui.textEdit_notes.toPlainText(),
         }
 
         # Check that an absorption edge was selected
@@ -385,7 +387,9 @@ class XafsScanDisplay(display.FireflyDisplay):
         # Submit the item to the queueserver
         app = FireflyApplication.instance()
         log.info(f"Adding XAFS scan to queue.")
-        app.add_queue_item(item)
+        # repeat scans
+        for i in range(repeat_scan_num):
+            app.add_queue_item(item)
 
     def ui_filename(self):
         return "plans/xafs_scan.ui"
