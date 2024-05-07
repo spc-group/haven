@@ -31,7 +31,6 @@ def test_scaler_prefix(qtbot, ffapp, sim_registry):
         name="my_ion_chamber",
         labels={"ion_chambers"},
     )
-    sim_registry.register(ic)
     # Check the macros
     display = VoltmetersDisplay()
     assert display.macros()["SCALER"] == "255idcVME:scaler1"

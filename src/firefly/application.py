@@ -16,7 +16,7 @@ from qtpy import QtCore, QtWidgets
 from qtpy.QtCore import Signal
 from qtpy.QtWidgets import QAction
 
-from haven import aload_instrument, load_config
+from haven import load_config
 from haven import load_instrument as load_haven_instrument
 from haven import registry
 from haven.exceptions import ComponentNotFound
@@ -101,7 +101,7 @@ class FireflyApplication(PyDMApplication):
     abort_runengine_action: QAction
     halt_runengine_action: QAction
     start_queue: QAction
-    queue_autoplay_action: QAction
+    queue_autostart_action: QAction
     queue_open_environment_action: QAction
     check_queue_status_action: QAction
 
@@ -138,7 +138,7 @@ class FireflyApplication(PyDMApplication):
         load_haven_instrument(registry=self.registry)
         self.registry_changed.emit(self.registry)
 
-    async def setup_instrument(self, load_instrument=True):
+    def setup_instrument(self, load_instrument=True):
         """Set up the application to use a previously loaded instrument.
 
         Expects devices, plans, etc to have been created already.
@@ -157,7 +157,7 @@ class FireflyApplication(PyDMApplication):
 
         """
         if load_instrument:
-            await aload_instrument(registry=self.registry)
+            load_haven_instrument(registry=self.registry)
             self.registry_changed.emit(self.registry)
         # Make actions for launching other windows
         self.setup_window_actions()
@@ -359,7 +359,7 @@ class FireflyApplication(PyDMApplication):
         # Actions that control how the queue operates
         actions = [
             # Attr, object name, text
-            ("queue_autoplay_action", "queue_autoplay_action", "&Autoplay"),
+            ("queue_autostart_action", "queue_autostart_action", "&Autoplay"),
             (
                 "queue_open_environment_action",
                 "queue_open_environment_action",
@@ -372,8 +372,8 @@ class FireflyApplication(PyDMApplication):
             action.setText(text)
             setattr(self, attr, action)
         # Customize some specific actions
-        self.queue_autoplay_action.setCheckable(True)
-        self.queue_autoplay_action.setChecked(True)
+        self.queue_autostart_action.setCheckable(True)
+        self.queue_autostart_action.setChecked(True)
         self.queue_open_environment_action.setCheckable(True)
 
     def _prepare_device_windows(
@@ -482,7 +482,7 @@ class FireflyApplication(PyDMApplication):
         # Create the client object
         client = QueueClient(
             api=api,
-            autoplay_action=self.queue_autoplay_action,
+            autoplay_action=self.queue_autostart_action,
             open_environment_action=self.queue_open_environment_action,
         )
         client.moveToThread(thread)
@@ -510,7 +510,7 @@ class FireflyApplication(PyDMApplication):
         client.manager_state_changed.connect(self.queue_manager_state_changed)
         client.re_state_changed.connect(self.queue_re_state_changed)
         client.devices_changed.connect(self.update_devices_allowed)
-        self.queue_autoplay_action.toggled.connect(
+        self.queue_autostart_action.toggled.connect(
             self.check_queue_status_action.trigger
         )
         # Start the thread

@@ -15,7 +15,6 @@ def fake_motors(sim_registry):
     motors = []
     for name in motor_names:
         this_motor = make_fake_device(motor.HavenMotor)(name=name, labels={"motors"})
-        sim_registry.register(this_motor)
         motors.append(this_motor)
     return motors
 

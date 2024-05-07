@@ -84,7 +84,7 @@ def test_pfcu_shutter_close(shutter_bank):
 def test_load_filters(monkeypatch):
     # Simulate the function for making the device
     # works around a bug due to the use of __new__ to make a factory
-    device_maker = mock.AsyncMock()
+    device_maker = mock.MagicMock()
     monkeypatch.setattr(xia_pfcu, "make_device", device_maker)
     # Call the code under test
     load_xia_pfcu4s()
