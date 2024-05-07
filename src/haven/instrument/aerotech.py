@@ -1,4 +1,3 @@
-import asyncio
 import logging
 import math
 import threading
@@ -18,7 +17,7 @@ from ophyd.status import SubscriptionStatus
 from .._iconfig import load_config
 from ..exceptions import InvalidScanParameters
 from .delay import DG645Delay
-from .device import aload_devices, make_device
+from .device import make_device
 from .stage import XYStage
 
 log = logging.getLogger(__name__)

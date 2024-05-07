@@ -1,4 +1,5 @@
 import pytest
+
 from haven.instrument import motor
 
 
@@ -7,9 +8,11 @@ def mocked_device_names(mocker):
     # Mock the caget calls used to get the motor name
     async def resolve_device_names(defns):
         for defn, name in zip(defns, ["SLT V Upper", "SLT V Lower", "SLT H Inbound"]):
-            defn['name'] = name
-    mocker.patch("haven.instrument.motor.resolve_device_names",
-                 new=resolve_device_names)
+            defn["name"] = name
+
+    mocker.patch(
+        "haven.instrument.motor.resolve_device_names", new=resolve_device_names
+    )
 
 
 def test_load_vme_motors(sim_registry, mocked_device_names):

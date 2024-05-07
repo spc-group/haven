@@ -1,4 +1,3 @@
-import asyncio
 import logging
 
 import numpy as np
@@ -9,7 +8,7 @@ from ophyd import PseudoPositioner, PseudoSingle
 from ophyd.pseudopos import pseudo_position_argument, real_position_argument
 
 from .._iconfig import load_config
-from .device import aload_devices, make_device
+from .device import make_device
 
 log = logging.getLogger(__name__)
 

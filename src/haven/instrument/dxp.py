@@ -1,4 +1,3 @@
-import asyncio
 import time
 import warnings
 from collections import OrderedDict
@@ -13,7 +12,7 @@ from ophyd.status import StatusBase, SubscriptionStatus
 
 from .. import exceptions
 from .._iconfig import load_config
-from .device import aload_devices, make_device
+from .device import make_device
 from .fluorescence_detector import (
     MCASumMixin,
     ROIMixin,
@@ -23,7 +22,7 @@ from .fluorescence_detector import (
     add_roi_sums,
 )
 
-__all__ = ["DxpDetector", "load_dxp"]
+__all__ = ["DxpDetector", "load_dxp_detectors"]
 
 
 NUM_ROIS = 32

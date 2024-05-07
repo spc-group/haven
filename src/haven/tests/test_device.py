@@ -1,4 +1,3 @@
-import pytest
 from ophyd import EpicsMotor, sim
 
 from haven.instrument.device import make_device
@@ -9,9 +8,9 @@ from haven.instrument.motor import HavenMotor
 def test_load_simulated_devices(sim_registry):
     load_simulated_devices()
     # Check motors
-    motor = sim_registry.find(name="sim_motor")
+    sim_registry.find(name="sim_motor")
     # Check detectors
-    detector = sim_registry.find(name="sim_detector")
+    sim_registry.find(name="sim_detector")
 
 
 def test_load_fake_device(sim_registry):

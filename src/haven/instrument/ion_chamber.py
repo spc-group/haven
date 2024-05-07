@@ -6,7 +6,6 @@ import math
 import time
 import warnings
 from collections import OrderedDict
-from functools import partial
 from typing import Dict, Generator, Optional
 
 import numpy as np
@@ -14,8 +13,6 @@ from apstools.devices.srs570_preamplifier import (
     SRS570_PreAmplifier,
     calculate_settle_time,
 )
-from caproto import CaprotoTimeoutError
-from caproto.asyncio.client import Context
 from ophyd import Component as Cpt
 from ophyd import Device, EpicsSignal, EpicsSignalRO
 from ophyd import FormattedComponent as FCpt
@@ -74,10 +71,10 @@ class CurrentSignal(DerivedSignal):
         try:
             gain = preamp.gain.get()
             offset_current = preamp.offset_current.get()
-        except ConnectionTimeoutError:
+        except TimeoutError:
             msg = (
                 "Could not read inverse signals: "
-                f"{preamp.gain}, {preampe.offset_current}"
+                f"{preamp.gain}, {preamp.offset_current}"
             )
             log.debug(msg)
         else:

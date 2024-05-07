@@ -1,4 +1,3 @@
-import asyncio
 import logging
 
 from ophyd import Component as Cpt
@@ -7,7 +6,7 @@ from ophyd import DynamicDeviceComponent as DCpt
 from ophyd import EpicsMotor, EpicsSignal, EpicsSignalRO
 
 from .._iconfig import load_config
-from .device import aload_devices, make_device
+from .device import make_device
 
 log = logging.getLogger(__name__)
 

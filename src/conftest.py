@@ -44,6 +44,10 @@ top_dir = Path(__file__).parent.resolve()
 haven_dir = top_dir / "haven"
 
 
+def pytest_configure():
+    haven.registry.auto_register = False
+
+
 # Specify the configuration files to use for testing
 os.environ["HAVEN_CONFIG_FILES"] = ",".join(
     [
@@ -81,11 +85,13 @@ def sim_registry(monkeypatch):
     objects_by_name = registry._objects_by_name
     objects_by_label = registry._objects_by_label
     registry.clear()
+    registry.auto_register = True
     # Run the test
     try:
         yield registry
     finally:
         # Restore the previous registry components
+        registry.auto_register = False
         registry.clear()
         registry._objects_by_name = objects_by_name
         registry._objects_by_label = objects_by_label

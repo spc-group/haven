@@ -1,15 +1,16 @@
 import asyncio
 import logging
 import warnings
-from typing import Optional, Mapping, Sequence
+from typing import Mapping, Sequence
 
 from aioca import CANothing, caget
 from ophyd import Component as Cpt
 from ophyd import EpicsMotor, EpicsSignal, EpicsSignalRO
 
 from .._iconfig import load_config
-from .device import aload_devices, make_device, resolve_device_names
-from .instrument_registry import InstrumentRegistry, registry as default_registry
+from .device import make_device, resolve_device_names
+from .instrument_registry import InstrumentRegistry
+from .instrument_registry import registry as default_registry
 
 log = logging.getLogger(__name__)
 
@@ -38,7 +39,9 @@ class HavenMotor(EpicsMotor):
         self.set(self._old_value, wait=True)
 
 
-def load_motors(config: Mapping = None, registry: InstrumentRegistry = default_registry) -> Sequence:
+def load_motors(
+    config: Mapping = None, registry: InstrumentRegistry = default_registry
+) -> Sequence:
     """Load generic hardware motors from IOCs.
 
     This loader will skip motor prefixes that already exist in the
@@ -85,11 +88,13 @@ def load_motors(config: Mapping = None, registry: InstrumentRegistry = default_r
     for m in registry.findall(label="motors", allow_none=True):
         if hasattr(m, "prefix"):
             existing_pvs.append(m.prefix)
-    defns = [defn for defn in defns if defn['prefix'] not in existing_pvs]
-    duplicates = [defn for defn in defns if defn['prefix'] in existing_pvs]
+    defns = [defn for defn in defns if defn["prefix"] not in existing_pvs]
+    duplicates = [defn for defn in defns if defn["prefix"] in existing_pvs]
     if len(duplicates) > 0:
-        log.info("The following motors already exist and will not be duplicated: ",
-                 ", ".join([m['prefix'] for m in duplicates]))
+        log.info(
+            "The following motors already exist and will not be duplicated: ",
+            ", ".join([m["prefix"] for m in duplicates]),
+        )
     else:
         log.debug(f"No duplicated motors detected out of {len(defns)}")
     # Resolve the scaler channels into ion chamber names
@@ -129,9 +134,6 @@ def load_motors(config: Mapping = None, registry: InstrumentRegistry = default_r
 async def load_motor(prefix: str, motor_num: int, ioc_name: str = None):
     """Create the requested motor if it is reachable."""
     pv = f"{prefix}:m{motor_num+1}"
-    if pv in existing_pvs:
-        log.info(f"Motor for prefix {pv} already exists. Skipping.")
-        return
     # Get motor names
     config = load_config()
     # Get the motor name from the description PV

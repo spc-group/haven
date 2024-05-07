@@ -1,11 +1,10 @@
-import asyncio
 import logging
 import warnings
 
 from apstools.devices.aps_undulator import ApsUndulator
 
 from .._iconfig import load_config
-from .device import aload_devices, make_device
+from .device import make_device
 
 log = logging.getLogger(__name__)
 

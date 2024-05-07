@@ -1,10 +1,9 @@
-import asyncio
 import logging
 
 from apstools.devices.shutters import ApsPssShutterWithStatus as Shutter
 
 from .._iconfig import load_config
-from .device import aload_devices, make_device
+from .device import make_device
 
 log = logging.getLogger(__name__)
 

@@ -10,7 +10,6 @@ from ophyd import Component, Device, K
 from ophyd.sim import make_fake_device
 
 from .._iconfig import load_config
-from .instrument_registry import registry
 
 log = logging.getLogger(__name__)
 

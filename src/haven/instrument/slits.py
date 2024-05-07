@@ -1,6 +1,5 @@
 """This is a copy of the apstools Slits support with signals for the tweak PV."""
 
-import asyncio
 import logging
 
 from apstools.devices import PVPositionerSoftDone
@@ -11,7 +10,7 @@ from ophyd import FormattedComponent as FCpt
 
 from .. import exceptions
 from .._iconfig import load_config
-from .device import aload_devices, make_device
+from .device import make_device
 from .motor import HavenMotor
 
 log = logging.getLogger(__name__)

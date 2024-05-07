@@ -1,4 +1,3 @@
-import asyncio
 import logging
 import time
 from collections import OrderedDict
@@ -22,7 +21,7 @@ from pcdsdevices.type_hints import OphydDataType, SignalToValue
 
 from .._iconfig import load_config
 from .device import RegexComponent as RECpt
-from .device import aload_devices, make_device
+from .device import make_device
 from .fluorescence_detector import (
     MCASumMixin,
     ROIMixin,
@@ -31,7 +30,7 @@ from .fluorescence_detector import (
     add_roi_sums,
 )
 
-__all__ = ["load_xspress", "Xspress3Detector", "ROI"]
+__all__ = ["load_xspress_detectors", "Xspress3Detector", "ROI"]
 
 
 log = logging.getLogger(__name__)

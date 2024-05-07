@@ -1,4 +1,3 @@
-import asyncio
 import logging
 from typing import Sequence
 
@@ -19,7 +18,7 @@ from .area_detector import (  # noqa: F401
     SimDetector,
     StatsPlugin_V34,
 )
-from .device import aload_devices, make_device
+from .device import make_device
 
 log = logging.getLogger(__name__)
 

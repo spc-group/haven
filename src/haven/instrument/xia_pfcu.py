@@ -5,7 +5,6 @@ a filter bank can be used as a shutter.
 
 """
 
-import asyncio
 from enum import IntEnum
 
 from ophyd import Component as Cpt
@@ -17,7 +16,7 @@ from ophyd.signal import DerivedSignal
 
 from .. import exceptions
 from .._iconfig import load_config
-from .device import aload_devices, make_device
+from .device import make_device
 
 
 class FilterPosition(IntEnum):

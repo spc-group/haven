@@ -1,7 +1,5 @@
-import time
-import warnings
 import logging
-import asyncio
+import warnings
 from typing import Mapping
 
 from ophyd import sim
@@ -120,6 +118,7 @@ def load_instrument(
     # Return the final list
     if return_devices:
         return devices
+
 
 def load_simulated_devices(config={}):
     # Motors

@@ -1,11 +1,10 @@
-import asyncio
 import logging
 
 from ophyd import Device, EpicsSignal, EpicsSignalRO
 from ophyd import FormattedComponent as FCpt
 
 from .._iconfig import load_config
-from .device import aload_devices, await_for_connection, make_device
+from .device import make_device
 
 log = logging.getLogger(__name__)
 
@@ -35,23 +34,6 @@ class NHQ203MChannel(Device):
     def __init__(self, prefix: str, ch_num: int, name: str, *args, **kwargs):
         self.ch_num = ch_num
         super().__init__(prefix=prefix, name=name, *args, **kwargs)
-
-
-async def make_power_supply_device(prefix, name, ch_num):
-    dev = NHQ203MChannel(
-        name=name,
-        prefix=prefix,
-        ch_num=ch_num,
-        labels={"power_supplies"},
-    )
-    try:
-        await await_for_connection(dev)
-    except TimeoutError as exc:
-        msg = f"Could not connect to power supply: {name} ({prefix})"
-        log.warning(msg)
-    else:
-        log.info(f"Created power supply: {name}")
-        return dev
 
 
 def load_power_supplies(config=None):

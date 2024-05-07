@@ -1,4 +1,4 @@
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import MagicMock
 
 import pytest
 from ophyd import Device
@@ -81,7 +81,6 @@ def test_prepare_queue_client(ffapp):
 def tardis(sim_registry):
     Tardis = make_fake_device(Device)
     tardis = Tardis(name="my_tardis", labels={"tardis"})
-    sim_registry.register(tardis)
     return tardis
 
 

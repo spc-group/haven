@@ -1,4 +1,3 @@
-import asyncio
 import logging
 from enum import IntEnum
 
@@ -32,7 +31,7 @@ from ophyd.areadetector.plugins import TIFFPlugin_V31
 
 from .. import exceptions
 from .._iconfig import load_config
-from .device import aload_devices, make_device
+from .device import make_device
 
 log = logging.getLogger(__name__)
 

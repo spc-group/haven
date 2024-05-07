@@ -1,4 +1,3 @@
-import asyncio
 import logging
 from enum import IntEnum
 
@@ -6,7 +5,7 @@ from ophyd import Component as Cpt
 from ophyd import Device, EpicsMotor, EpicsSignal, EpicsSignalRO
 
 from .._iconfig import load_config
-from .device import aload_devices, make_device
+from .device import make_device
 
 log = logging.getLogger(__name__)
 

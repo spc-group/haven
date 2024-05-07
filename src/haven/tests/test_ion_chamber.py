@@ -49,7 +49,8 @@ def test_gain_signals(preamp):
 def test_load_ion_chambers(sim_registry, mocker):
     async def resolve_device_names(defns):
         for defn in defns:
-            defn['name'] = f"ion_chamber_{defn['ch_num']}"
+            defn["name"] = f"ion_chamber_{defn['ch_num']}"
+
     mocker.patch("haven.ion_chamber.resolve_device_names", new=resolve_device_names)
     new_ics = ion_chamber.load_ion_chambers()
     # Test the channel info is extracted properly

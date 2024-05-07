@@ -1,5 +1,3 @@
-import asyncio
-
 from apstools.synApps import TransformRecord
 from ophyd import Component as Cpt
 from ophyd import Device
@@ -9,7 +7,7 @@ from ophyd import Kind
 from .. import exceptions
 from .._iconfig import load_config
 from .device import RegexComponent as RCpt
-from .device import aload_devices, make_device
+from .device import make_device
 from .motor import HavenMotor
 
 
