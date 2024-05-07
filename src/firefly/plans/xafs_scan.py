@@ -4,7 +4,9 @@ import re
 import numpy as np
 from bluesky_queueserver_api import BPlan
 from qtpy import QtWidgets
+from qtpy.QtCore import QObject, QTime, Signal
 from qtpy.QtGui import QDoubleValidator
+
 from xraydb.xraydb import XrayDB
 
 from firefly import display
@@ -33,6 +35,13 @@ def wavenumber_to_energy_round(wavenumber):
 def k_step_to_E_step_round(k_start, k_step):
     return round(k_step_to_E_step(k_start, k_step), 2)
 
+def time_converter(total_seconds):
+    hours = total_seconds // 3600
+    minutes = (total_seconds % 3600) // 60
+    seconds = total_seconds % 60
+    # create a QTime object
+    time_object = QTime(hours, minutes, seconds)
+    return time_object
 
 class TitleRegion:
     def __init__(self):
@@ -61,9 +70,26 @@ class TitleRegion:
         Qlabels_all["Exposure [s]"].setFixedWidth(68)
 
 
-class XafsScanRegion:
+class XafsScanRegion(QObject):
+    time_calculation_signal = Signal()
     def __init__(self):
+        super().__init__()
         self.setup_ui()
+        self.total_time = 0
+
+        # List of widgets and their signals to connect to update_total_time
+        widgets_signals = [
+            (self.start_line_edit, 'textChanged'),
+            (self.stop_line_edit, 'textChanged'),
+            (self.step_line_edit, 'textChanged'),
+            (self.weight_spinbox, 'valueChanged'),
+            (self.exposure_time_spinbox, 'valueChanged'),
+            (self.k_space_checkbox, 'stateChanged'),
+        ]
+
+        # Connect all signals to the update_total_time method
+        for widget, signal_name in widgets_signals:
+            getattr(widget, signal_name).connect(self.update_total_time)
 
     def setup_ui(self):
         self.layout = QtWidgets.QHBoxLayout()
@@ -150,7 +176,39 @@ class XafsScanRegion:
                     line_edit.setText(f"{new_values:.4g}")
             else:
                 self.update_line_edit_value(line_edit, func)
+        
+    def update_total_time(self):
+        try:
+            start = round(float(self.start_line_edit.text()), float_accuracy)
+            stop = round(float(self.stop_line_edit.text()), float_accuracy)
+            step = round(float(self.step_line_edit.text()), float_accuracy)
+            weight = self.weight_spinbox.value()
+            exposure_time = self.exposure_time_spinbox.value()
 
+            if self.k_space_checkbox.isChecked():
+                KErange = KRange(
+                        k_min=start,
+                        k_max=stop,
+                        k_step=step,
+                        k_weight=weight,
+                        exposure=exposure_time,
+                    )
+
+            else:
+                KErange = ERange(
+                        E_min=start,
+                        E_max=stop,
+                        E_step=step,
+                        weight=weight,
+                        exposure=exposure_time,
+                    )
+            self.total_time = KErange.exposures().sum()
+            self.time_calculation_signal.emit()
+
+        # when there's invalid number in the lineEdits, set total time to zero because it cannot be calculated
+        except:
+            self.total_time = 0
+            self.time_calculation_signal.emit()
 
 class XafsScanDisplay(display.FireflyDisplay):
     min_energy = 4000
@@ -283,6 +341,9 @@ class XafsScanDisplay(display.FireflyDisplay):
             self.regions.append(region)
             # disable/enabale regions when selected
             region.region_checkbox.stateChanged.connect(self.on_region_checkbox)
+            region.region_checkbox.stateChanged.connect(self.update_total_time)
+            # receive time signals from XafsRegion
+            region.time_calculation_signal.connect(self.update_total_time)
 
     def remove_regions(self, num=1):
         for i in range(num):
@@ -303,6 +364,15 @@ class XafsScanDisplay(display.FireflyDisplay):
             self.remove_regions(abs(diff_region_num))
         elif diff_region_num > 0:
             self.add_regions(diff_region_num)
+
+    def update_total_time(self):
+        # Summing total_time for all checked regions directly within the sum function using a generator expression
+        total_time = sum(region_i.total_time 
+                         for region_i in self.regions 
+                         if region_i.region_checkbox.isChecked()
+                         )
+
+        self.ui.timeEdit_total_exposure.setTime(time_converter(total_time))
 
     def queue_plan(self, *args, **kwargs):
         """Execute this plan on the queueserver."""
@@ -335,8 +405,8 @@ class XafsScanDisplay(display.FireflyDisplay):
                         k_step=step,
                         k_weight=weight,
                         exposure=exposure_time,
-                    )
                 )
+                    )
 
             else:
                 energy_ranges_all.append(
