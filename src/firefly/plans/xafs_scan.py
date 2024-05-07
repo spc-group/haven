@@ -260,6 +260,8 @@ class XafsScanDisplay(display.FireflyDisplay):
         self.title_region.regions_all_checkbox.stateChanged.connect(
             self.on_regions_all_checkbox
         )
+        # connect is_standard with a warning box
+        self.ui.checkBox_is_standard.stateChanged.connect(self.on_is_standard)
 
     def on_region_checkbox(self):
         for region_i in self.regions:
@@ -374,6 +376,13 @@ class XafsScanDisplay(display.FireflyDisplay):
 
         self.ui.timeEdit_total_exposure.setTime(time_converter(total_time))
 
+    def on_is_standard(self, is_checked):
+        # if is_standard checked, warn that the data will be used for public
+        if is_checked:
+            QtWidgets.QMessageBox.warning(
+                    self, "Notice", "When checking this option, this data will be used by public."
+                )
+            
     def queue_plan(self, *args, **kwargs):
         """Execute this plan on the queueserver."""
         # Get parameters from each rows of line regions:
@@ -445,6 +454,7 @@ class XafsScanDisplay(display.FireflyDisplay):
                 return None
         else:
             self.edge_value = 0
+
         # Build the queue item
         item = BPlan(
             "energy_scan",
