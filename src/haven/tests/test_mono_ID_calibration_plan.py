@@ -66,7 +66,7 @@ def test_aligns_pitch(mono_motor, id_motor, ion_chamber, pitch2_motor):
     plan = mono_ID_calibration(
         energies=[8000], energy_motor=mono_motor, fit_model=fit_model
     )
-    with pytest.warns(UserWarning), pytest.deprecated_call():
+    with pytest.warns(UserWarning):
         # Raises a warning because there's no data to fit
         messages = list(plan)
     device_names = [getattr(m.obj, "name", None) for m in messages]
@@ -78,7 +78,7 @@ def test_aligns_mono_energy(mono_motor, id_motor, ion_chamber, pitch2_motor):
     plan = mono_ID_calibration(
         energies=[8000], energy_motor=mono_motor, fit_model=fit_model
     )
-    with pytest.warns(UserWarning), pytest.deprecated_call():
+    with pytest.warns(UserWarning):
         # Raises a warning because there's no data to fit
         messages = list(plan)
     id_messages = [
