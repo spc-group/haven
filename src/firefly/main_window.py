@@ -94,12 +94,14 @@ class FireflyMainWindow(PyDMMainWindow):
         _label.setText("Queue:")
         bar.addPermanentWidget(_label)
         self.ui.environment_label = QtWidgets.QLabel()
+        self.ui.environment_label.setToolTip("The current state of the queue server environment.")
         self.ui.environment_label.setText("N/A")
         bar.addPermanentWidget(self.ui.environment_label)
         _label = QtWidgets.QLabel()
         _label.setText("/")
         bar.addPermanentWidget(_label)
         self.ui.re_label = QtWidgets.QLabel()
+        self.ui.re_label.setToolTip("The current state of the queue server run engine.")
         self.ui.re_label.setText("N/A")
         bar.addPermanentWidget(self.ui.re_label)
         # Connect signals to the status bar
@@ -123,7 +125,7 @@ class FireflyMainWindow(PyDMMainWindow):
         self.ui.queue_menu.addSeparator()
         # Queue settings for the queue client
         self.ui.queue_menu.addAction(app.launch_queuemonitor_action)
-        self.ui.queue_menu.addAction(app.queue_autoplay_action)
+        self.ui.queue_menu.addAction(app.queue_autostart_action)
         self.ui.queue_menu.addAction(app.queue_open_environment_action)
         # Positioners menu
         self.ui.positioners_menu = QtWidgets.QMenu(self.ui.menubar)

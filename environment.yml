@@ -47,7 +47,6 @@ dependencies:
   - pytest-mock
   - pytest-asyncio
   - caproto >=1.0.0
-  # - pytest-notebook
 
   # Database management
   - pymongo
@@ -58,14 +57,12 @@ dependencies:
   # Pin at 5.12.3 until pydm figures out how to designer widgets
   - pyqt ==5.12.3
   - pyqtgraph < 0.13.0  # Last version to support pyqt 5.12
-  # - pyqt >=5.12, <5.13  
   - qt >=5.12
   - qtawesome
   - qasync
 
   # --- general support packages
   - bitshuffle
-  - epics-base >=7.0.5
   - h5py
   - hdf5plugin
   - imagecodecs-lite
@@ -73,7 +70,6 @@ dependencies:
   - lxml
   - pandas
   - pint
-  - pyEpics >=3.5.0
   - scikit-image
   - xlrd
   - peakutils
@@ -93,10 +89,7 @@ dependencies:
   - bluesky-widgets
   - bluesky-adaptive
   - bluesky >=1.8.1
-  # - happi
-  # - hklpy >=1.0.3  # --- linux-64
   - ophyd >=1.6.3
-  # pcdsdevices is installed from github by pip until multiderived_settling fix hits pyPI
   - pcdsdevices  # For extra signal types
   - pydm >=1.18.0
   - typhos
@@ -104,20 +97,13 @@ dependencies:
   - tiled-server
   - tiled-client >= 0.1.0a106  # 2023-10-02 to get new Cache() behavior
   - pydantic >=1.8.2,<2  # tiled fails with pydantic 2
-  # https://github.com/pydata/xarray/issues/6818
   - xarray !=2022.6.0  # incompatible with numpy=1.20
 
   # --- user-requested packages
   - aps-dm-api >=5   # linux-64  osx-64
-  # - c2dataviewer  # --- linux-64
-  # - nexpy
-  # - punx
-  # - pvapy
   - mergedeep
   - pvview
-  # - pymca
   - pyRestTable
-  # - spec2nexus
   - stdlogpj
   - tqdm
   - xrayutilities
@@ -125,7 +111,6 @@ dependencies:
   - hvplot
   
   # --- packaging and publishing
-  # - conda-build
   - build
   - twine
   - coverage
@@ -135,10 +120,6 @@ dependencies:
   - nbsphinx
   - graphviz
   - sphinxcontrib-napoleon
-  # - versioneer
-  # - mamba
-  # - micromamba
-  # - pygithub
 
   - pip:
     - aioca
@@ -147,7 +128,7 @@ dependencies:
     - autoapi
     - pytest-mongodb
     - StrEnum
-    - ophyd-registry >= 0.8
+    - ophyd-registry >= 1.2.1
     - xraydb >=4.5.0
     - pytest-timeout  # Get rid of this if tests are not hanging
     - git+https://github.com/pcdshub/pcdsdevices

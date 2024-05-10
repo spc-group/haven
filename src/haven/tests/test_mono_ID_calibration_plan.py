@@ -8,40 +8,32 @@ from haven import mono_ID_calibration
 
 @pytest.fixture()
 def mono_motor(sim_registry):
-    motor = sim_registry.register(
-        sim.SynAxis(name="energy_mono_energy", labels={"motors", "energies"})
-    )
+    motor = sim.SynAxis(name="energy_mono_energy", labels={"motors", "energies"})
     yield motor
 
 
 @pytest.fixture()
 def pitch2_motor(sim_registry):
-    motor = sim_registry.register(
-        sim.SynAxis(name="monochromator_pitch2", labels={"motors"})
-    )
+    motor = sim.SynAxis(name="monochromator_pitch2", labels={"motors"})
     yield motor
 
 
 @pytest.fixture()
 def id_motor(sim_registry):
-    motor = sim_registry.register(
-        sim.SynAxis(name="energy_id_energy", labels={"motors", "energies"})
-    )
+    motor = sim.SynAxis(name="energy_id_energy", labels={"motors", "energies"})
     yield motor
 
 
 @pytest.fixture()
 def ion_chamber(sim_registry, id_motor):
-    I0 = sim_registry.register(
-        sim.SynGauss(
-            "I0",
-            id_motor,
-            "energy_id_energy",
-            center=8.0,
-            Imax=1,
-            sigma=1,
-            labels={"ion_chambers"},
-        )
+    I0 = sim.SynGauss(
+        "I0",
+        id_motor,
+        "energy_id_energy",
+        center=8.0,
+        Imax=1,
+        sigma=1,
+        labels={"ion_chambers"},
     )
     yield I0
 

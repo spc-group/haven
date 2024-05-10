@@ -44,6 +44,10 @@ top_dir = Path(__file__).parent.resolve()
 haven_dir = top_dir / "haven"
 
 
+def pytest_configure():
+    haven.registry.auto_register = False
+
+
 # Specify the configuration files to use for testing
 os.environ["HAVEN_CONFIG_FILES"] = ",".join(
     [
@@ -76,26 +80,18 @@ def beamline_connected():
 
 @pytest.fixture()
 def sim_registry(monkeypatch):
-    # mock out Ophyd connections so devices can be created
-    modules = [
-        haven.instrument.ion_chamber,
-        haven.instrument.device,
-    ]
-    for mod in modules:
-        monkeypatch.setattr(mod, "await_for_connection", mock.AsyncMock())
-    monkeypatch.setattr(
-        haven.instrument.device, "caget", mock.AsyncMock(return_value="I0")
-    )
     # Save the registry so we can restore it later
     registry = haven.registry
     objects_by_name = registry._objects_by_name
     objects_by_label = registry._objects_by_label
     registry.clear()
+    registry.auto_register = True
     # Run the test
     try:
         yield registry
     finally:
         # Restore the previous registry components
+        registry.auto_register = False
         registry.clear()
         registry._objects_by_name = objects_by_name
         registry._objects_by_label = objects_by_label
@@ -107,7 +103,6 @@ def sim_ion_chamber(sim_registry):
     ion_chamber = FakeIonChamber(
         prefix="scaler_ioc", name="I00", labels={"ion_chambers"}, ch_num=2
     )
-    sim_registry.register(ion_chamber)
     # Set metadata
     preamp = ion_chamber.preamp
     preamp.sensitivity_value._enum_strs = tuple(preamp.values)
@@ -130,7 +125,6 @@ def I0(sim_registry):
         labels={"ion_chambers"},
         ch_num=2,
     )
-    sim_registry.register(ion_chamber)
     return ion_chamber
 
 
@@ -141,7 +135,6 @@ def It(sim_registry):
     ion_chamber = FakeIonChamber(
         prefix="scaler_ioc", name="It", labels={"ion_chambers"}, ch_num=3
     )
-    sim_registry.register(ion_chamber)
     return ion_chamber
 
 
@@ -150,7 +143,6 @@ def blade_slits(sim_registry):
     """A fake set of slits using the 4-blade setup."""
     FakeSlits = make_fake_device(BladeSlits)
     slits = FakeSlits(prefix="255idc:KB_slits", name="kb_slits", labels={"slits"})
-    sim_registry.register(slits)
     return slits
 
 
@@ -178,7 +170,6 @@ def beamline_manager(sim_registry):
     manager = FakeManager(
         prefix="companionCube:", name="companion_cube", labels={"beamline_manager"}
     )
-    sim_registry.register(manager)
     return manager
 
 
@@ -195,7 +186,6 @@ def aperture_slits(sim_registry):
         diagonal_motor="m2",
         labels={"slits"},
     )
-    sim_registry.register(slits)
     return slits
 
 
@@ -205,7 +195,6 @@ def sim_camera(sim_registry):
     camera = FakeCamera(name="s255id-gige-A", labels={"cameras", "area_detectors"})
     camera.pva.pv_name._readback = "255idSimDet:Pva1:Image"
     # Registry with the simulated registry
-    sim_registry.register(camera)
     yield camera
 
 
@@ -222,7 +211,6 @@ class DxpVortex(DxpDetector):
 def dxp(sim_registry):
     FakeDXP = make_fake_device(DxpVortex)
     vortex = FakeDXP(name="vortex_me4", labels={"xrf_detectors", "detectors"})
-    sim_registry.register(vortex)
     # vortex.net_cdf.dimensions.set([1477326, 1, 1])
     yield vortex
 
@@ -240,7 +228,6 @@ class Xspress3Vortex(Xspress3Detector):
 def xspress(sim_registry):
     FakeXspress = make_fake_device(Xspress3Vortex)
     vortex = FakeXspress(name="vortex_me4", labels={"xrf_detectors"})
-    sim_registry.register(vortex)
     yield vortex
 
 
@@ -277,14 +264,12 @@ def aerotech_flyer(aerotech):
 @pytest.fixture()
 def mono(sim_registry):
     mono = instantiate_fake_device(Monochromator, name="monochromator")
-    sim_registry.register(mono)
     yield mono
 
 
 @pytest.fixture()
 def aps(sim_registry):
     aps = instantiate_fake_device(ApsMachine, name="APS")
-    sim_registry.register(aps)
     yield aps
 
 
@@ -306,7 +291,6 @@ def xia_shutter_bank(sim_registry):
 
     FakeBank = make_fake_device(ShutterBank)
     bank = FakeBank(prefix="255id:pfcu4:", name="xia_filter_bank", shutters=[[3, 4]])
-    sim_registry.register(bank)
     yield bank
 
 
@@ -329,9 +313,6 @@ def shutters(sim_registry):
         FakeShutter(name="Shutter A", **kw),
         FakeShutter(name="Shutter C", **kw),
     ]
-    # Registry with the simulated registry
-    for shutter in shutters:
-        sim_registry.register(shutter)
     yield shutters
 
 
@@ -345,9 +326,6 @@ def filters(sim_registry):
         FakeFilter(name="Filter A", prefix="filter1", **kw),
         FakeFilter(name="Filter B", prefix="filter2", **kw),
     ]
-    # Register the simulated filters
-    for fltr in filters:
-        sim_registry.register(fltr)
     return filters
 
 
