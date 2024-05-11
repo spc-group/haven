@@ -475,8 +475,7 @@ class FireflyApplication(PyDMApplication):
         if api is None:
             api = queueserver_api()
         # Create the client object
-        client = QueueClient(
-            api=api,
+        client = QueueClient(api=api)
         self.queue_open_environment_action.triggered.connect(client.open_environment)
         self._queue_client = client
         # Connect actions to slots for controlling the queueserver
@@ -504,7 +503,7 @@ class FireflyApplication(PyDMApplication):
         self.queue_autostart_action.toggled.connect(
             self.check_queue_status_action.trigger
         )
-        self.queue_autoplay_action.toggled.connect(client.toggle_autostart)
+        self.queue_autostart_action.toggled.connect(client.toggle_autostart)
 
     def start(self):
         """Start the background timers, and show the first window."""

@@ -94,7 +94,9 @@ class FireflyMainWindow(PyDMMainWindow):
         _label.setText("Queue:")
         bar.addPermanentWidget(_label)
         self.ui.environment_label = QtWidgets.QLabel()
-        self.ui.environment_label.setToolTip("The current state of the queue server environment.")
+        self.ui.environment_label.setToolTip(
+            "The current state of the queue server environment."
+        )
         self.ui.environment_label.setText("N/A")
         bar.addPermanentWidget(self.ui.environment_label)
         _label = QtWidgets.QLabel()

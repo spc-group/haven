@@ -1,10 +1,9 @@
 import time
-from unittest import mock
 
 import numpy as np
 import pytest
 
-from haven.instrument import device, ion_chamber
+from haven.instrument import ion_chamber
 
 
 @pytest.fixture()
