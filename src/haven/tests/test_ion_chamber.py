@@ -88,7 +88,7 @@ def test_volts_signal(sim_ion_chamber):
 
 
 def test_amps_signal(sim_ion_chamber):
-    """Test that the scaler tick counts get properly converted to ion chamber current."""
+    """Test that scaler tick counts get properly converted to ion chamber current."""
     chamber = sim_ion_chamber
     # Set the necessary dependent signals
     chamber.counts.sim_put(int(0.13e7))  # 1.3V

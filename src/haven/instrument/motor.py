@@ -3,7 +3,7 @@ import logging
 import warnings
 from typing import Mapping, Sequence
 
-from aioca import CANothing, caget
+from apstools.utils.misc import safe_ophyd_name
 from ophyd import Component as Cpt
 from ophyd import EpicsMotor, EpicsSignal, EpicsSignalRO
 
@@ -112,10 +112,9 @@ def load_motors(
         else:
             # Create the device
             labels = {"motors", "extra_motors", "baseline", defn["ioc_name"]}
+            name = safe_ophyd_name(defn["name"])
             devices.append(
-                make_device(
-                    HavenMotor, prefix=defn["prefix"], name=defn["name"], labels=labels
-                )
+                make_device(HavenMotor, prefix=defn["prefix"], name=name, labels=labels)
             )
     # Notify about motors that have no name
     if len(missing_channels) > 0:
@@ -129,37 +128,6 @@ def load_motors(
         warnings.warn(msg)
         log.warning(msg)
     return devices
-
-
-async def load_motor(prefix: str, motor_num: int, ioc_name: str = None):
-    """Create the requested motor if it is reachable."""
-    pv = f"{prefix}:m{motor_num+1}"
-    # Get motor names
-    config = load_config()
-    # Get the motor name from the description PV
-    try:
-        name = await caget(f"{pv}.DESC")
-    except (asyncio.exceptions.TimeoutError, CANothing):
-        if not config["beamline"]["is_connected"]:
-            # Beamline is not connected, so just use a generic name
-            name = f"{prefix}_m{motor_num+1}"
-        else:
-            # Motor is unreachable, so skip it
-            log.warning(f"Could not connect to motor: {pv}")
-            return
-    else:
-        log.debug(f"Resolved motor {pv} to '{name}'")
-    # Create the motor device
-    unused_motor_names = [f"motor {motor_num+1}", ""]
-    if name in unused_motor_names:
-        # It's an unnamed motor, so skip it
-        log.info(f"SKipping unnamed motor {pv}")
-    else:
-        # Create a new motor object
-        labels = {"motors", "extra_motors", "baseline"}
-        if ioc_name is not None:
-            labels = set([ioc_name, *labels])
-        return await make_device(HavenMotor, prefix=pv, name=name, labels=labels)
 
 
 # -----------------------------------------------------------------------------

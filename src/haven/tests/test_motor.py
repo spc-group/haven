@@ -23,11 +23,11 @@ def test_load_vme_motors(sim_registry, mocked_device_names):
     assert len(motors) == 3
     # assert type(motors[0]) is motor.HavenMotor
     motor_names = [m.name for m in motors]
-    assert "SLT V Upper" in motor_names
-    assert "SLT V Lower" in motor_names
-    assert "SLT H Inbound" in motor_names
+    assert "SLT_V_Upper" in motor_names
+    assert "SLT_V_Lower" in motor_names
+    assert "SLT_H_Inbound" in motor_names
     # Check that the IOC name is set in labels
-    motor1 = sim_registry.find(name="SLT V Upper")
+    motor1 = sim_registry.find(name="SLT_V_Upper")
     assert "VME_crate" in motor1._ophyd_labels_
 
 
@@ -46,13 +46,12 @@ def test_skip_existing_motors(sim_registry, mocked_device_names):
     motors = list(sim_registry.findall(label="motors"))
     print([m.prefix for m in motors])
     assert len(motors) == 3
-    # assert type(motors[0]) is motor.HavenMotor
     motor_names = [m.name for m in motors]
     assert "kb_mirrors_horiz_upstream" in motor_names
-    assert "SLT V Upper" in motor_names
-    assert "SLT V Lower" in motor_names
+    assert "SLT_V_Upper" in motor_names
+    assert "SLT_V_Lower" in motor_names
     # Check that the IOC name is set in labels
-    motor1 = sim_registry.find(name="SLT V Upper")
+    motor1 = sim_registry.find(name="SLT_V_Upper")
     assert "VME_crate" in motor1._ophyd_labels_
 
 

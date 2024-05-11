@@ -254,7 +254,7 @@ def load_area_detectors(config=None) -> set:
                 DeviceClass,
                 prefix=f"{adconfig['prefix']}:",
                 name=name,
-                labels={"area_detectors"},
+                labels={"area_detectors", "detectors"},
             )
         )
     return devices

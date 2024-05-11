@@ -21,6 +21,8 @@ async def resolve_device_names(ic_defns):
     *ic_defns* should have a *desc_pv* key with the PV to be checked
     for the device name.
 
+    Ensures names are safe as Ophyd device names.
+
     """
 
     async def get_name(pv):

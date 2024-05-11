@@ -653,7 +653,7 @@ def load_ion_chamber(
         name=name,
         preamp_prefix=preamp_prefix,
         voltmeter_prefix=f"{voltmeter_prefix}{lj_num}:Ai{lj_chan}",
-        labels={"ion_chambers"},
+        labels={"ion_chambers", "detectors"},
     )
     return ion_chamber
 

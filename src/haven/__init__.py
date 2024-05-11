@@ -6,6 +6,7 @@ __version__ = "0.1.0"
 # import ophyd
 # ophyd.set_cl("caproto")
 
+from . import plans  # noqa: F401
 from ._iconfig import load_config  # noqa: F401
 
 #  Top-level imports
