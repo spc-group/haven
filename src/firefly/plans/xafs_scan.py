@@ -264,7 +264,7 @@ class XafsScanDisplay(display.FireflyDisplay):
             self.on_regions_all_checkbox
         )
         # connect is_standard with a warning box
-        self.ui.checkBox_is_standard.stateChanged.connect(self.on_is_standard)
+        self.ui.checkBox_is_standard.clicked.connect(self.on_is_standard)
 
         # connect num. of scans with total_time
         self.ui.spinBox_repeat_scan_num.valueChanged.connect(self.update_total_time)
@@ -397,10 +397,13 @@ class XafsScanDisplay(display.FireflyDisplay):
     def on_is_standard(self, is_checked):
         # if is_standard checked, warn that the data will be used for public
         if is_checked:
-            QtWidgets.QMessageBox.warning(
-                    self, "Notice", "When checking this option, this data will be used by public."
+            response = QtWidgets.QMessageBox.warning(
+                self, "Notice", "When checking this option, this data will be used by public.",
+                QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No, QtWidgets.QMessageBox.No
                 )
-            
+            if response != QtWidgets.QMessageBox.Yes:
+                self.ui.checkBox_is_standard.setChecked(False)
+
     def queue_plan(self, *args, **kwargs):
         """Execute this plan on the queueserver."""
         # Get parameters from each rows of line regions:
