@@ -36,12 +36,10 @@ def k_step_to_E_step_round(k_start, k_step):
     return round(k_step_to_E_step(k_start, k_step), 2)
 
 def time_converter(total_seconds):
-    hours = total_seconds // 3600
-    minutes = (total_seconds % 3600) // 60
-    seconds = total_seconds % 60
-    # create a QTime object
-    time_object = QTime(hours, minutes, seconds)
-    return time_object
+    hours = round(total_seconds // 3600)
+    minutes = round((total_seconds % 3600) // 60)
+    seconds = round(total_seconds % 60)
+    return hours, minutes, seconds
 
 class TitleRegion:
     def __init__(self):
@@ -268,6 +266,9 @@ class XafsScanDisplay(display.FireflyDisplay):
         # connect is_standard with a warning box
         self.ui.checkBox_is_standard.stateChanged.connect(self.on_is_standard)
 
+        # connect num. of scans with total_time
+        self.ui.spinBox_repeat_scan_num.valueChanged.connect(self.update_total_time)
+
     def on_region_checkbox(self):
         for region_i in self.regions:
             is_region_i_checked = region_i.region_checkbox.isChecked()
@@ -374,13 +375,25 @@ class XafsScanDisplay(display.FireflyDisplay):
 
     def update_total_time(self):
         # Summing total_time for all checked regions directly within the sum function using a generator expression
-        total_time = sum(region_i.total_time 
+        total_time_per_scan = sum(region_i.total_time 
                          for region_i in self.regions 
                          if region_i.region_checkbox.isChecked()
                          )
+        # calculate time for each scan
+        hr, min, sec = time_converter(total_time_per_scan)
+        self.ui.label_hour_scan.setText(str(hr))
+        self.ui.label_min_scan.setText(str(min))
+        self.ui.label_sec_scan.setText(str(sec))
+        
+        # calculate time for entire plan
+        num_scan_repeat = self.ui.spinBox_repeat_scan_num.value()
+        total_time = num_scan_repeat * total_time_per_scan
+        hr_total, min_total, sec_total = time_converter(total_time)
 
-        self.ui.timeEdit_total_exposure.setTime(time_converter(total_time))
-
+        self.ui.label_hour_total.setText(str(hr_total))
+        self.ui.label_min_total.setText(str(min_total))
+        self.ui.label_sec_total.setText(str(sec_total))
+    
     def on_is_standard(self, is_checked):
         # if is_standard checked, warn that the data will be used for public
         if is_checked:

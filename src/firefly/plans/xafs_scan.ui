@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>802</width>
-    <height>362</height>
+    <width>901</width>
+    <height>365</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -144,7 +144,7 @@
             <x>0</x>
             <y>0</y>
             <width>700</width>
-            <height>163</height>
+            <height>156</height>
            </rect>
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_8">
@@ -326,10 +326,10 @@
          </property>
         </widget>
        </item>
-       <item row="0" column="2">
-        <widget class="QCheckBox" name="checkBox_is_standard">
+       <item row="1" column="0">
+        <widget class="QLabel" name="label_9">
          <property name="text">
-          <string>Is standard</string>
+          <string>Notes</string>
          </property>
         </widget>
        </item>
@@ -360,50 +360,29 @@
          </property>
         </widget>
        </item>
-       <item row="1" column="0">
-        <widget class="QLabel" name="label_9">
-         <property name="text">
-          <string>Notes</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="1">
-        <widget class="QTextEdit" name="textEdit_notes">
-         <property name="enabled">
-          <bool>true</bool>
-         </property>
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Expanding" vsizetype="MinimumExpanding">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="maximumSize">
-          <size>
-           <width>16777215</width>
-           <height>50</height>
-          </size>
-         </property>
-         <property name="lineWidth">
-          <number>1</number>
-         </property>
-         <property name="midLineWidth">
-          <number>14</number>
-         </property>
-         <property name="tabStopWidth">
-          <number>80</number>
-         </property>
-         <property name="placeholderText">
-          <string>Additional notes about the sample</string>
-         </property>
-        </widget>
-       </item>
        <item row="1" column="3">
-        <widget class="QLabel" name="label_10">
-         <property name="text">
-          <string>Total exposure time</string>
-         </property>
-        </widget>
+        <layout class="QVBoxLayout" name="verticalLayout_4">
+         <item>
+          <widget class="QLabel" name="label_10">
+           <property name="toolTip">
+            <string>total exposure time for a single scan</string>
+           </property>
+           <property name="text">
+            <string>Exposure time each scan</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="label_12">
+           <property name="toolTip">
+            <string>total exposure time for a single scan</string>
+           </property>
+           <property name="text">
+            <string>Total exposure time</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
        <item row="1" column="5">
         <spacer name="buttons_spacer">
@@ -417,44 +396,6 @@
           </size>
          </property>
         </spacer>
-       </item>
-       <item row="1" column="6">
-        <widget class="QueueButton" name="run_button">
-         <property name="toolTip">
-          <string>Add to the queue</string>
-         </property>
-         <property name="styleSheet">
-          <string notr="true"># background-color: #28a745</string>
-         </property>
-         <property name="text">
-          <string>Run Scan</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="4">
-        <widget class="QTimeEdit" name="timeEdit_total_exposure">
-         <property name="enabled">
-          <bool>true</bool>
-         </property>
-         <property name="wrapping">
-          <bool>false</bool>
-         </property>
-         <property name="frame">
-          <bool>true</bool>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-         </property>
-         <property name="readOnly">
-          <bool>false</bool>
-         </property>
-         <property name="buttonSymbols">
-          <enum>QAbstractSpinBox::NoButtons</enum>
-         </property>
-         <property name="showGroupSeparator" stdset="0">
-          <bool>false</bool>
-         </property>
-        </widget>
        </item>
        <item row="0" column="6">
         <widget class="QSpinBox" name="spinBox_repeat_scan_num">
@@ -475,7 +416,190 @@
           <string>Do this scan by multiple times</string>
          </property>
          <property name="text">
-          <string>Scan num.</string>
+          <string>Num. of scans</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="4">
+        <layout class="QVBoxLayout" name="verticalLayout_3">
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_5">
+           <item>
+            <widget class="QLabel" name="label_hour_scan">
+             <property name="text">
+              <string>0</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignCenter</set>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_16">
+             <property name="text">
+              <string>h</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignCenter</set>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_min_scan">
+             <property name="text">
+              <string>0</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignCenter</set>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_17">
+             <property name="text">
+              <string>min</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignCenter</set>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_sec_scan">
+             <property name="text">
+              <string>0</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignCenter</set>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_18">
+             <property name="text">
+              <string>s</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignCenter</set>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_4">
+           <item>
+            <widget class="QLabel" name="label_hour_total">
+             <property name="text">
+              <string>0</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignCenter</set>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_13">
+             <property name="text">
+              <string>h</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignCenter</set>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_min_total">
+             <property name="text">
+              <string>0</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignCenter</set>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_14">
+             <property name="text">
+              <string>min</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignCenter</set>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_sec_total">
+             <property name="text">
+              <string>0</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignCenter</set>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_15">
+             <property name="text">
+              <string>s</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignCenter</set>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </item>
+       <item row="0" column="2">
+        <widget class="QCheckBox" name="checkBox_is_standard">
+         <property name="text">
+          <string>Is standard</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QTextEdit" name="textEdit_notes">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="MinimumExpanding">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>60</height>
+          </size>
+         </property>
+         <property name="lineWidth">
+          <number>1</number>
+         </property>
+         <property name="midLineWidth">
+          <number>14</number>
+         </property>
+         <property name="tabStopWidth">
+          <number>80</number>
+         </property>
+         <property name="placeholderText">
+          <string>Additional notes about the sample</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="6">
+        <widget class="QueueButton" name="run_button">
+         <property name="toolTip">
+          <string>Run/Add to the queue</string>
+         </property>
+         <property name="styleSheet">
+          <string notr="true"># background-color: #28a745</string>
+         </property>
+         <property name="text">
+          <string>Run Scan</string>
          </property>
         </widget>
        </item>
