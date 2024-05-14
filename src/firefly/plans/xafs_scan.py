@@ -342,6 +342,9 @@ class XafsScanDisplay(display.FireflyDisplay):
             region_i.stop_line_edit.setText(str(default_regions[i][1]))
             region_i.step_line_edit.setText(str(default_regions[i][2]))
 
+        # reset scan repeat num to 1
+        self.ui.spinBox_repeat_scan_num.setValue(1)
+
     def add_regions(self, num=1):
         for i in range(num):
             region = XafsScanRegion()
