@@ -18,12 +18,11 @@ class LineScanRegion:
 
         # First item, motor No.
         # self.motor_label = QtWidgets.QLabel()
-        # self.motor_label.setText("1")
+        # self.motor_label.setText("0")
         # self.layout.addWidget(self.motor_label)
 
         # Second item, ComponentSelector
         self.motor_box = ComponentSelector()
-        # self.stop_line_edit.setPlaceholderText("Stop…")
         self.layout.addWidget(self.motor_box)
 
         # Third item, start point
@@ -38,6 +37,8 @@ class LineScanRegion:
 
 
 class LineScanDisplay(display.FireflyDisplay):
+    default_num_regions = 1
+
     def customize_ui(self):
         # Remove the default XAFS layout from .ui file
         self.clearLayout(self.ui.region_template_layout)
@@ -58,11 +59,10 @@ class LineScanDisplay(display.FireflyDisplay):
                     item.widget().deleteLater()
 
     def reset_default_regions(self):
-        default_num_regions = 1
         if not hasattr(self, "regions"):
             self.regions = []
-            self.add_regions(default_num_regions)
-        self.ui.num_motor_spin_box.setValue(default_num_regions)
+            self.add_regions(self.default_num_regions)
+        self.ui.num_motor_spin_box.setValue(self.default_num_regions)
         self.update_regions()
 
     def add_regions(self, num=1):
@@ -92,8 +92,7 @@ class LineScanDisplay(display.FireflyDisplay):
         elif diff_region_num > 0:
             self.add_regions(diff_region_num)
 
-    def queue_plan(self, *args, **kwargs):
-        """Execute this plan on the queueserver."""
+    def get_scan_parameters(self):
         # Get scan parameters from widgets
         detectors = self.ui.detectors_list.selected_detectors()
         num_points = self.ui.scan_pts_spin_box.value()
@@ -111,6 +110,18 @@ class LineScanDisplay(display.FireflyDisplay):
             for values in motor_i
         ]
 
+        # get meta data info
+        md = {
+            "sample": self.ui.lineEdit_sample.text(),
+            "purpose": self.ui.lineEdit_purpose.text(),
+        }
+
+        return detectors, num_points, motor_args, md
+    
+    def queue_plan(self, *args, **kwargs):
+        """Execute this plan on the queueserver."""
+        detectors, num_points, motor_args, md = self.get_scan_parameters()
+
         if self.ui.relative_scan_checkbox.isChecked():
             if self.ui.log_scan_checkbox.isChecked():
                 scan_type = "rel_log_scan"
@@ -121,11 +132,6 @@ class LineScanDisplay(display.FireflyDisplay):
                 scan_type = "log_scan"
             else:
                 scan_type = "scan"
-
-        md = {
-            "sample": self.ui.lineEdit_sample.text(),
-            "purpose": self.ui.lineEdit_purpose.text(),
-        }
 
         # # Build the queue item
         item = BPlan(
