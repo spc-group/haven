@@ -2,8 +2,9 @@ import time
 
 import pytest
 from ophyd.sim import instantiate_fake_device
+from ophyd import PVPositioner
 
-from haven.instrument.energy_positioner import EnergyPositioner
+from haven.instrument.energy_positioner import EnergyPositioner, load_energy_positioner
 
 
 @pytest.fixture()
@@ -11,7 +12,7 @@ def positioner():
     positioner = instantiate_fake_device(
         EnergyPositioner,
         name="energy",
-        mono_pv="255idMono",
+        mono_prefix="255idMono:",
         id_prefix="255idID",
         id_tracking_pv="255idMono:Tracking",
         id_offset_pv="255idMono:Offset",
@@ -20,18 +21,31 @@ def positioner():
     return positioner
 
 
-def test_pseudo_to_real_positioner(positioner):
-    positioner.energy.set(10000, timeout=5.0)
-    assert positioner.get(use_monitor=False).mono_energy.user_setpoint == 10000
-    positioner.id_offset.set(230)
-    time.sleep(0.1)
-    # Move the energy positioner
-    positioner.energy.set(5000)
-    time.sleep(0.1)  # Caproto breaks pseudopositioner status
-    # Check that the mono and ID are both moved
-    assert positioner.get(use_monitor=False).mono_energy.user_setpoint == 5000
-    expected_id_energy = 5.0 + positioner.id_offset.get(use_monitor=False) / 1000
-    assert positioner.get(use_monitor=False).id_energy.setpoint == expected_id_energy
+def test_set_energy(positioner):
+    positioner.set(10000, timeout=3)
+    assert positioner.monochromator.setpoint.get() == 10000
+
+
+def test_load_energy_positioner(sim_registry):
+    load_energy_positioner()
+    energy = sim_registry['energy']
+    assert isinstance(energy, PVPositioner)
+    assert hasattr(energy, "monochromator")
+    assert hasattr(energy, "undulator")
+
+
+# def test_pseudo_to_real_positioner(positioner):
+#     positioner.energy.set(10000, timeout=5.0)
+#     assert positioner.get(use_monitor=False).mono_energy.user_setpoint == 10000
+#     positioner.id_offset.set(230)
+#     time.sleep(0.1)
+#     # Move the energy positioner
+#     positioner.energy.set(5000)
+#     time.sleep(0.1)  # Caproto breaks pseudopositioner status
+#     # Check that the mono and ID are both moved
+#     assert positioner.get(use_monitor=False).mono_energy.user_setpoint == 5000
+#     expected_id_energy = 5.0 + positioner.id_offset.get(use_monitor=False) / 1000
+#     assert positioner.get(use_monitor=False).id_energy.setpoint == expected_id_energy
 
 
 def test_real_to_pseudo_positioner(positioner):

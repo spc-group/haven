@@ -45,6 +45,10 @@ class Monochromator(Device):
     # Physical constants
     d_spacing = Cpt(EpicsSignalRO, ":dspacing", labels={"baseline"}, kind="config")
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.stage_sigs[self.id_tracking] = IDTracking.OFF
+
 
 def load_monochromators(config=None):
     # Load PV's from config

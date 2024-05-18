@@ -51,7 +51,7 @@ ioc = "id_ioc"
 
 [monochromator]
 
-ioc = "mono_ioc"
+prefix = "mono_ioc:"
 ioc_branch = "UP"  # For caQtDM macros
 
 ######################
