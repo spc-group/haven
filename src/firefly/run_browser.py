@@ -255,7 +255,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
         task_is_running = has_previous_task and not self._running_db_tasks[name].done()
         if task_is_running:
             self._running_db_tasks[name].cancel("New database task started.")
-        # Wait on this task to be done
+        # Make a new task to run in the background
         new_task = asyncio.ensure_future(coro)
         self._running_db_tasks[name] = new_task
         return new_task
