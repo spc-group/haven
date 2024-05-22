@@ -39,6 +39,8 @@ def time_converter(total_seconds):
     hours = round(total_seconds // 3600)
     minutes = round((total_seconds % 3600) // 60)
     seconds = round(total_seconds % 60)
+    if total_seconds == -1:
+        hours, minutes, seconds = 'N/A', 'N/A', 'N/A'
     return hours, minutes, seconds
 
 class TitleRegion:
@@ -73,7 +75,8 @@ class XafsScanRegion(QObject):
     def __init__(self):
         super().__init__()
         self.setup_ui()
-        self.total_time = 0
+        self.kErange = None
+        self.xafs_region_time = 0 # flag for whether time is calculated correctly, if not, will set to -1
 
         # List of widgets and their signals to connect to update_total_time
         widgets_signals = [
@@ -112,7 +115,7 @@ class XafsScanRegion(QObject):
         # Energy step box
         self.step_line_edit = QtWidgets.QLineEdit()
         self.step_line_edit.setValidator(
-            QDoubleValidator(0.0, float("inf"), 2)
+            QDoubleValidator(0.0, float("inf"), 2) # the step is always bigger than 0
         )  
         # only takes positive floats
         self.step_line_edit.setPlaceholderText("Step…")
@@ -187,9 +190,8 @@ class XafsScanRegion(QObject):
             step = round(float(self.step_line_edit.text()), float_accuracy)
             weight = self.weight_spinbox.value()
             exposure_time = self.exposure_time_spinbox.value()
-
             if self.k_space_checkbox.isChecked():
-                KErange = KRange(
+                self.kErange = KRange(
                         k_min=start,
                         k_max=stop,
                         k_step=step,
@@ -198,21 +200,21 @@ class XafsScanRegion(QObject):
                     )
 
             else:
-                KErange = ERange(
+                self.kErange = ERange(
                         E_min=start,
                         E_max=stop,
                         E_step=step,
                         weight=weight,
                         exposure=exposure_time,
                     )
-            self.total_time = KErange.exposures().sum()
-            self.time_calculation_signal.emit()
 
-        # when there's invalid number in the lineEdits, set total time to zero because it cannot be calculated
+        # when there's invalid number in the lineEdits, set an empty kErange
         except:
-            self.total_time = 0
-            self.time_calculation_signal.emit()
+            self.kErange = []
 
+        finally:
+            # Emit the signal regardless of success or failure
+            self.time_calculation_signal.emit()
 class XafsScanDisplay(display.FireflyDisplay):
     min_energy = 4000
     max_energy = 33000
@@ -378,17 +380,24 @@ class XafsScanDisplay(display.FireflyDisplay):
 
     def update_total_time(self):
         # Summing total_time for all checked regions directly within the sum function using a generator expression
-        total_time_per_scan = sum(region_i.total_time 
-                         for region_i in self.regions 
-                         if region_i.region_checkbox.isChecked()
-                         )
+        kEranges_all= [region_i.kErange
+                       for region_i in self.regions 
+                       if region_i.region_checkbox.isChecked()]
+        
+        # prevent end points are smaller than start points
+        try:
+            _, exposures = merge_ranges(*kEranges_all, sort=True)
+            total_time_per_scan = exposures.sum()
+        except:
+            total_time_per_scan = -1
+        
         # calculate time for each scan
         hr, min, sec = time_converter(total_time_per_scan)
         self.ui.label_hour_scan.setText(str(hr))
         self.ui.label_min_scan.setText(str(min))
         self.ui.label_sec_scan.setText(str(sec))
         
-        # calculate time for entire plan
+        # calculate time for entire planf
         num_scan_repeat = self.ui.spinBox_repeat_scan_num.value()
         total_time = num_scan_repeat * total_time_per_scan
         hr_total, min_total, sec_total = time_converter(total_time)
