@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import subprocess
 from collections import OrderedDict
@@ -164,7 +165,7 @@ class FireflyApplication(PyDMApplication):
         # Actions for controlling the bluesky run engine
         self.setup_runengine_actions()
         # Prepare the client for interacting with the queue server
-        self.prepare_queue_client()
+        # self.prepare_queue_client()
 
     def show_default_window(self):
         """Show the first starting window for the application."""
@@ -505,10 +506,17 @@ class FireflyApplication(PyDMApplication):
         )
         self.queue_autostart_action.toggled.connect(client.toggle_autostart)
 
-    def start(self):
-        """Start the background timers, and show the first window."""
-        self._queue_client.start()
+    async def start(self):
+        """Start the background timers, show the first window, and wait."""
+        # Keep an event to know when the app has closed
+        self.app_close_event = asyncio.Event()
+        self.aboutToQuit.connect(self.app_close_event.set)
+        # Show the UI stuffs
         self.show_default_window()
+        self.prepare_queue_client()
+        self._queue_client.start()
+        # Start the actual asyncio event loop
+        await self.app_close_event.wait()
 
     def update_devices_allowed(self, devices):
         pass

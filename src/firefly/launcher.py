@@ -180,17 +180,14 @@ def main(default_fullscreen=False, default_display="status"):
     # Make it asynchronous
     event_loop = QEventLoop(app)
     asyncio.set_event_loop(event_loop)
-    app_close_event = asyncio.Event()
-    # app.aboutToQuit.connect(app_close_event.set)
 
     # Define devices on the beamline (slow!)
     app.setup_instrument()
 
-    # Show the first window
+    # Get rid of the splash screen now that we're ready to go
     splash.close()
-    app.start()
 
-    event_loop.run_until_complete(app_close_event.wait())
+    event_loop.run_until_complete(app.start())
     event_loop.close()
 
     if pydm_args.profile:
