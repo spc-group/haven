@@ -86,7 +86,7 @@ class BssDisplay(display.FireflyDisplay):
         # Retrieve current ESAFS from data management API
         try:
             api_result = self.api.listESAFs(cycle, beamline.split("-")[0])
-        except ObjectNotFound:
+        except (ObjectNotFound, KeyError):
             api_result = []
         # Parse the API data into a format usable by the BSS IOC
         for esaf in api_result:

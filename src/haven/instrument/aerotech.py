@@ -128,6 +128,7 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
     encoder_step_size = Cpt(Signal, kind=Kind.config)
     encoder_window_start = Cpt(Signal, kind=Kind.config)
     encoder_window_end = Cpt(Signal, kind=Kind.config)
+    disable_window = Cpt(Signal, value=False, kind=Kind.config)
     encoder_use_window = Cpt(Signal, value=False, kind=Kind.config)
 
     # Status signals
@@ -146,6 +147,7 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         self.dwell_time.subscribe(self._update_fly_params)
         self.encoder_resolution.subscribe(self._update_fly_params)
         self.acceleration.subscribe(self._update_fly_params)
+        self.disable_window.subscribe(self._update_fly_params)
 
     def kickoff(self):
         """Start a flyer
@@ -437,10 +439,12 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
 
         # Check for values outside of the window range for this controller
         def is_valid_window(value):
-            return self.encoder_window_min < value < self.encoder_window_max
+            window_in_range = self.encoder_window_min < value < self.encoder_window_max
+            return window_in_range
 
         window_range = [encoder_window_start, encoder_window_end]
         encoder_use_window = all([is_valid_window(v) for v in window_range])
+        encoder_use_window = encoder_use_window and not self.disable_window.get()
         # Create np array of PSO positions in encoder counts
         _pso_step = encoder_step_size * overall_sense
         _pso_end = encoder_distance + 0.5 * _pso_step
