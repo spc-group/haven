@@ -13,17 +13,21 @@ def positioner():
         EnergyPositioner,
         name="energy",
         mono_prefix="255idMono:",
-        id_prefix="255idID",
-        id_tracking_pv="255idMono:Tracking",
-        id_offset_pv="255idMono:Offset",
+        undulator_prefix="S255ID:",
     )
-    positioner.mono_energy.user_setpoint._use_limits = False
+    positioner.monochromator.energy._use_limits = False
+    positioner.monochromator.energy.user_setpoint._use_limits = False
     return positioner
 
 
 def test_set_energy(positioner):
+    # Set up dependent values
+    positioner.monochromator.id_offset.set(150).wait(timeout=3)
+    # Change the energy
     positioner.set(10000, timeout=3)
-    assert positioner.monochromator.setpoint.get() == 10000
+    # Check that all the sub-components were set properly
+    assert positioner.monochromator.energy.get().user_setpoint == 10000
+    assert positioner.undulator.energy.get().setpoint == 10150
 
 
 def test_load_energy_positioner(sim_registry):
@@ -49,14 +53,9 @@ def test_load_energy_positioner(sim_registry):
 
 
 def test_real_to_pseudo_positioner(positioner):
-    positioner.mono_energy.user_readback.sim_put(5000.0)
-    # Move the mono energy positioner
-    # epics.caput(ioc_mono.pvs["energy"], 5000.0)
-    # time.sleep(0.1)  # Caproto breaks pseudopositioner status
-    # assert epics.caget(ioc_mono.pvs["energy"], use_monitor=False) == 5000.0
-    # assert epics.caget("mono_ioc:Energy.RBV") == 5000.0
+    positioner.monochromator.energy.user_readback._readback = 5000.0
     # Check that the pseudo single is updated
-    assert positioner.energy.get(use_monitor=False).readback == 5000.0
+    assert positioner.get(use_monitor=False).readback == 5000.0
 
 
 # -----------------------------------------------------------------------------

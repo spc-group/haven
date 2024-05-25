@@ -3,7 +3,7 @@ import warnings
 from enum import IntEnum
 
 from apstools.devices.aps_undulator import ApsUndulator
-from ophyd import EpicsSignal, EpicsSignalRO, DerivedSignal, Component as Cpt, PVPositioner, Device
+from ophyd import EpicsSignal, EpicsSignalRO, DerivedSignal, Component as Cpt, PVPositionerPC, Device
 
 from .._iconfig import load_config
 from .device import make_device
@@ -26,15 +26,15 @@ class MotorDriveStatus(IntEnum):
     READY_TO_MOVE = 1
 
 
-class UndulatorPositioner(PVPositioner):
+class UndulatorPositioner(PVPositionerPC):
     setpoint = Cpt(EpicsSignal, "SetC.VAL")
     readback = Cpt(EpicsSignalRO, "M.VAL")
 
-    actuate = Cpt(DerivedSignal, "parent.start_button", kind="omitted")
-    stop_signal = Cpt(DerivedSignal, "parent.stop_button", kind="omitted")
-    put_complete = 1
-    done = Cpt(DerivedSignal, "parent.done", kind="omitted")
-    done_value = DoneStatus.DONE
+    # actuate = Cpt(DerivedSignal, "parent.start_button", kind="omitted")
+    # stop_signal = Cpt(DerivedSignal, "parent.stop_button", kind="omitted")
+    # put_complete = 1
+    # done = Cpt(DerivedSignal, "parent.done", kind="omitted")
+    # done_value = DoneStatus.DONE
 
 
 class PlanarUndulator(Device):
@@ -53,7 +53,7 @@ class PlanarUndulator(Device):
     """
     energy = Cpt(UndulatorPositioner, "Energy")
     energy_taper = Cpt(UndulatorPositioner, "TaperEnergy")
-    gap = Cpt(PVPositioner, "Gap")
+    gap = Cpt(UndulatorPositioner, "Gap")
     gap_taper = Cpt(UndulatorPositioner, "TaperGap")
 
     start_button = Cpt(EpicsSignal, "StartC.VAL", put_complete=True, kind="omitted")
