@@ -9,14 +9,18 @@ from qasync import asyncSlot
 from qtpy.QtCore import QObject, QTimer, Signal
 
 from haven import load_config
+from haven.exceptions import UnknownDeviceConfiguration
 
 log = logging.getLogger()
 
 
 def queueserver_api():
-    config = load_config()["queueserver"]
-    ctrl_addr = f"tcp://{config['control_host']}:{config['control_port']}"
-    info_addr = f"tcp://{config['info_host']}:{config['info_port']}"
+    try:
+        config = load_config()["queueserver"]
+        ctrl_addr = f"tcp://{config['control_host']}:{config['control_port']}"
+        info_addr = f"tcp://{config['info_host']}:{config['info_port']}"
+    except KeyError as e:
+        raise UnknownDeviceConfiguration(str(e))
     api = REManagerAPI(zmq_control_addr=ctrl_addr, zmq_info_addr=info_addr)
     return api
 

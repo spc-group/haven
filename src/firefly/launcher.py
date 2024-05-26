@@ -184,7 +184,7 @@ def main(default_fullscreen=False, default_display="status"):
     # app.aboutToQuit.connect(app_close_event.set)
 
     # Define devices on the beamline (slow!)
-    app.setup_instrument()
+    app.setup_instrument(load_instrument=not pydm_args.no_instrument)
 
     # Show the first window
     splash.close()

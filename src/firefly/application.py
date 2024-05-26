@@ -1,3 +1,4 @@
+import warnings
 import logging
 import subprocess
 from collections import OrderedDict
@@ -19,7 +20,7 @@ from qtpy.QtWidgets import QAction
 from haven import load_config
 from haven import load_instrument as load_haven_instrument
 from haven import registry
-from haven.exceptions import ComponentNotFound
+from haven.exceptions import ComponentNotFound, UnknownDeviceConfiguration
 from haven.instrument.device import titelize
 
 from .main_window import FireflyMainWindow, PlanMainWindow
@@ -473,7 +474,12 @@ class FireflyApplication(PyDMApplication):
 
         """
         if api is None:
-            api = queueserver_api()
+            try:
+                api = queueserver_api()
+            except UnknownDeviceConfiguration as exc:
+                msg = f"Could not create queue client. Missing key {exc}"
+                log.warning(msg)
+                warnings.warn(msg)
         # Create the client object
         client = QueueClient(api=api)
         self.queue_open_environment_action.triggered.connect(client.open_environment)
