@@ -28,6 +28,9 @@ class EnergyDisplay(display.FireflyDisplay):
         self.xraydb = XrayDB()
         super().__init__(args=args, macros=macros, **kwargs)
 
+    def customize_device(self):
+        self.energy_positioner = registry.find("energy")
+
     def prepare_caqtdm_actions(self):
         """Create QActions for opening mono/ID caQtDM panels.
 
@@ -43,10 +46,10 @@ class EnergyDisplay(display.FireflyDisplay):
         action.triggered.connect(self.launch_mono_caqtdm)
         action.setIcon(qta.icon("fa5s.wrench"))
         action.setToolTip("Launch the caQtDM panel for the monochromator.")
-        try:
-            registry.find(name="monochromator")
-        except exceptions.ComponentNotFound:
-            action.setDisabled(True)
+        # try:
+        #     registry.find(name="monochromator")
+        # except exceptions.ComponentNotFound:
+        #     action.setDisabled(True)
         self.caqtdm_actions.append(action)
         # Create an action for launching the ID caQtDM file
         action = QtWidgets.QAction(self)
@@ -59,9 +62,9 @@ class EnergyDisplay(display.FireflyDisplay):
 
     def launch_mono_caqtdm(self):
         config = load_config()
-        prefix = config["monochromator"]["ioc"] + ":"
-        mono = registry.find(name="monochromator")
-        ID = registry.find(name="undulator")
+        mono = self.energy_positioner.monochromator
+        ID = self.energy_positioner.undulator
+        prefix = mono.prefix
         caqtdm_macros = {
             "P": prefix,
             "MONO": config["monochromator"]["ioc_branch"],
@@ -69,15 +72,16 @@ class EnergyDisplay(display.FireflyDisplay):
             "GAP": mono.gap.prefix.replace(prefix, ""),
             "ENERGY": mono.energy.prefix.replace(prefix, ""),
             "OFFSET": mono.offset.prefix.replace(prefix, ""),
-            "IDENERGY": ID.energy.pvname,
+            "IDENERGY": ID.energy.prefix,
         }
         self.launch_caqtdm(macros=caqtdm_macros, ui_file=self.caqtdm_mono_ui_file)
 
     def launch_id_caqtdm(self):
         """Launch the pre-built caQtDM UI file for the ID."""
-        config = load_config()
-        prefix = config["undulator"]["ioc"]
-        # Strip leading "ID" from the mono IOC since caQtDM adds it
+        prefix = self.energy_positioner.undulator.prefix
+        # caQtDM doesn't expect the trailing ";"
+        prefix = prefix.rstrip(":")
+        # Strip leading "ID" from the ID IOC since caQtDM adds it
         prefix = prefix.strip("ID")
         caqtdm_macros = {
             # No idea what "M", and "D" do, they're not in the UI
