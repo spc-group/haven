@@ -5,9 +5,8 @@ from qtpy import QtWidgets
 
 from firefly import display
 from firefly.component_selector import ComponentSelector
-
-from line_scan import LineScanDisplay
-
+from firefly.application import FireflyApplication
+from firefly.plans.line_scan import LineScanDisplay
 
 log = logging.getLogger()
 
@@ -17,12 +16,14 @@ class TitleRegion:
         self.setup_ui()
 
     def setup_ui(self):
-        self.layout = QtWidgets.QHBoxLayout()
+        self.layout = QtWidgets.QGridLayout() 
         labels = ["Priority axis", "Motor", "Start", "Stop", "Snake", "Fly"]
         Qlabels_all = {}
-        for label_i in labels:
+        
+        # add labels in the first row
+        for i, label_i in enumerate(labels):
             Qlabel_i = QtWidgets.QLabel(label_i)
-            self.layout.addWidget(Qlabel_i)
+            self.layout.addWidget(Qlabel_i, 0, i)
             Qlabels_all[label_i] = Qlabel_i
 
         # fix widths so the labels are aligned with GridScanRegions
@@ -30,6 +31,11 @@ class TitleRegion:
         Qlabels_all["Motor"].setFixedWidth(100)
         Qlabels_all["Snake"].setFixedWidth(53)
         Qlabels_all["Fly"].setFixedWidth(43)
+        
+        # add labels in the second row
+        label = QtWidgets.QLabel("fast -> slow")
+        self.layout.addWidget(label, 1, 0)
+
 
 class GridScanRegion:
     def __init__(self):
@@ -84,7 +90,6 @@ class GridScanDisplay(LineScanDisplay):
         # add title layout
         self.title_region = TitleRegion()
         self.ui.title_layout.addLayout(self.title_region.layout)
-        
         # reset button
         self.ui.reset_pushButton.clicked.connect(self.reset_default_regions)
 
@@ -110,7 +115,7 @@ class GridScanDisplay(LineScanDisplay):
 
     def queue_plan(self, *args, **kwargs):
         """Execute this plan on the queueserver."""
-        detectors, num_points, motor_args, md = self.get_scan_parameters()
+        detectors, num_points, motor_args, repeat_scan_num, md = self.get_scan_parameters()
 
         # get snake axes, if all unchecked, set it None
         snake_axes = [i for i, region_i in enumerate(self.regions) if region_i.snake_checkbox.isChecked()]
@@ -121,11 +126,6 @@ class GridScanDisplay(LineScanDisplay):
             scan_type = "rel_grid_scan"
         else:
             scan_type = "grid_scan"
-
-        md = {
-            "sample": self.ui.lineEdit_sample.text(),
-            "purpose": self.ui.lineEdit_purpose.text(),
-        }
 
         # # Build the queue item
         item = BPlan(
@@ -138,11 +138,11 @@ class GridScanDisplay(LineScanDisplay):
         )
 
         # Submit the item to the queueserver
-        from firefly.application import FireflyApplication
-
         app = FireflyApplication.instance()
         log.info("Added line scan() plan to queue.")
-        app.add_queue_item(item)
-
+        # repeat scans
+        for i in range(repeat_scan_num):
+            app.add_queue_item(item)
+            
     def ui_filename(self):
         return "plans/grid_scan.ui"
