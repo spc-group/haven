@@ -177,9 +177,15 @@ prefix = "255idAustin"
 prefix = "255idAustin"
 
 # Managed IOC control PVs
-[iocs]
-255idb = "glados:ioc255idb"
-255idc = "glados:ioc255idc"
+[beamline_manager]
+
+name = "GLaDOS"
+prefix = "255idc:glados:"
+beamline = "25-ID-C"
+
+[beamline_manager.iocs]
+ioc255idb = "ioc255idb:"
+ioc255idc = "ioc255idc:"
 
 [fluorescence_detector]
 
@@ -197,3 +203,4 @@ num_elements = 4
 
 prefix = "vortex_me4_xsp"
 num_elements = 4
+
