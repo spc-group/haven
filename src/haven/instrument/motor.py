@@ -3,6 +3,7 @@ import logging
 import warnings
 from typing import Mapping, Sequence
 
+from apstools.utils.misc import safe_ophyd_name
 from ophyd import Component as Cpt
 from ophyd import EpicsMotor, EpicsSignal, EpicsSignalRO
 
