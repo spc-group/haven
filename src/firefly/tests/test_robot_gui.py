@@ -1,11 +1,10 @@
 import pytest
 from bluesky_queueserver_api import BPlan
 from ophyd import Signal
-from ophyd.sim import SynAxis, make_fake_device, motor1
+from ophyd.sim import SynAxis
 from qtpy import QtCore
 
 from firefly.robot import RobotDisplay
-from haven import HavenMotor
 
 
 def test_region_number(qtbot):

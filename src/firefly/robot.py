@@ -1,15 +1,10 @@
 import logging
-from typing import Mapping, Optional, Sequence
 
 from bluesky_queueserver_api import BPlan
-from PyQt5.QtWidgets import QSpinBox
 from qtpy import QtWidgets
 
-import haven
 from firefly import display
-from firefly.application import FireflyApplication
 from firefly.component_selector import ComponentSelector
-from haven import exceptions, load_config, registry
 
 log = logging.getLogger(__name__)
 
