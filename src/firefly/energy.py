@@ -1,14 +1,51 @@
 import logging
+import warnings
 
 import qtawesome as qta
 from bluesky_queueserver_api import BPlan
 from qtpy import QtCore, QtWidgets
+from qtpy.QtWidgets import QDialogButtonBox, QVBoxLayout, QFormLayout, QLineEdit
 from xraydb.xraydb import XrayDB
+from ophydregistry import ComponentNotFound
+from pydm.widgets.label import PyDMLabel
+from pydm.widgets.line_edit import PyDMLineEdit
 
 from firefly import display
-from haven import exceptions, load_config, registry
+from haven import load_config, registry
 
 log = logging.getLogger(__name__)
+
+
+class EnergyCalibrationDialog(QtWidgets.QDialog):
+    """A dialog box for calibrating the energy."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.setWindowTitle("Energy calibration")
+
+        self.layout = QVBoxLayout()
+        self.setLayout(self.layout)
+        # Widgets for inputting calibration parameters
+        self.form_layout = QFormLayout()
+        self.layout.addLayout(self.form_layout)
+        self.form_layout.addRow(
+            "Energy readback:",
+            PyDMLabel(self, init_channel="haven://energy.readback")
+        )
+        self.form_layout.addRow(
+            "Energy setpoint:",
+            PyDMLineEdit(self, init_channel="haven://energy.setpoint")
+        )
+        self.form_layout.addRow(
+            "Calibrated energy:",
+            QLineEdit(),
+        )
+        # Button for accept/close
+        buttons = QDialogButtonBox.Apply | QDialogButtonBox.Close
+        self.buttonBox = QDialogButtonBox(buttons)
+        self.buttonBox.accepted.connect(self.accept)
+        self.buttonBox.rejected.connect(self.reject)
+        self.layout.addWidget(self.buttonBox)
 
 
 class EnergyDisplay(display.FireflyDisplay):
@@ -22,6 +59,7 @@ class EnergyDisplay(display.FireflyDisplay):
         "background: rgb(220, 53, 69); color: white; border-color: rgb(220, 53, 69)"
     )
     stylesheet_normal = ""
+    energy_positioner = None
 
     def __init__(self, args=None, macros={}, **kwargs):
         # Load X-ray database for calculating edge energies
@@ -29,7 +67,11 @@ class EnergyDisplay(display.FireflyDisplay):
         super().__init__(args=args, macros=macros, **kwargs)
 
     def customize_device(self):
-        self.energy_positioner = registry.find("energy")
+        try:
+            self.energy_positioner = registry.find("energy")
+        except ComponentNotFound:
+            warnings.warn("Could not find energy positioner.")
+            log.warning("Could not find energy positioner.")
 
     def prepare_caqtdm_actions(self):
         """Create QActions for opening mono/ID caQtDM panels.
@@ -46,10 +88,6 @@ class EnergyDisplay(display.FireflyDisplay):
         action.triggered.connect(self.launch_mono_caqtdm)
         action.setIcon(qta.icon("fa5s.wrench"))
         action.setToolTip("Launch the caQtDM panel for the monochromator.")
-        # try:
-        #     registry.find(name="monochromator")
-        # except exceptions.ComponentNotFound:
-        #     action.setDisabled(True)
         self.caqtdm_actions.append(action)
         # Create an action for launching the ID caQtDM file
         action = QtWidgets.QAction(self)
@@ -119,6 +157,12 @@ class EnergyDisplay(display.FireflyDisplay):
         ]
         combo_box.addItems(["Select edge…", *items])
         combo_box.activated.connect(self.select_edge)
+        # Respond to the "calibrate" button
+        self.ui.calibrate_button.clicked.connect(self.show_calibrate_dialog)
+
+    def show_calibrate_dialog(self):
+        dialog = EnergyCalibrationDialog(self)
+        dialog.exec()
 
     @QtCore.Slot(int)
     def select_edge(self, index):

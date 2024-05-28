@@ -2,10 +2,11 @@ import logging
 from enum import IntEnum
 
 from ophyd import Component as Cpt
-from ophyd import Device, EpicsMotor, EpicsSignal, EpicsSignalRO
+from ophyd import Device, EpicsSignal, EpicsSignalRO
 
 from .._iconfig import load_config
 from .device import make_device
+from .motor import HavenMotor
 
 log = logging.getLogger(__name__)
 
@@ -22,7 +23,7 @@ class Monochromator(Device):
     d_spacing = Cpt(EpicsSignal, "dspacing", kind="config")
     # Virtual positioners
     mode = Cpt(EpicsSignal, "mode", labels={"motors", "baseline"}, kind="config")
-    energy = Cpt(EpicsMotor, "Energy", labels={"motors"}, kind="hinted")
+    energy = Cpt(HavenMotor, "Energy", labels={"motors"}, kind="hinted")
     energy_constant1 = Cpt(
         EpicsSignal, "EnergyC1.VAL", labels={"baseline"}, kind="config"
     )
@@ -32,16 +33,16 @@ class Monochromator(Device):
     energy_constant3 = Cpt(
         EpicsSignal, "EnergyC3.VAL", labels={"baseline"}, kind="config"
     )
-    offset = Cpt(EpicsMotor, "Offset", labels={"motors", "baseline"}, kind="config")
+    offset = Cpt(HavenMotor, "Offset", labels={"motors", "baseline"}, kind="config")
     # ACS Motors
-    horiz = Cpt(EpicsMotor, "ACS:m1", labels={"motors", "baseline"}, kind="config")
-    vert = Cpt(EpicsMotor, "ACS:m2", labels={"motors", "baseline"}, kind="config")
-    bragg = Cpt(EpicsMotor, "ACS:m3", labels={"motors"})
-    gap = Cpt(EpicsMotor, "ACS:m4", labels={"motors"})
-    roll2 = Cpt(EpicsMotor, "ACS:m5", labels={"motors", "baseline"}, kind="config")
-    pitch2 = Cpt(EpicsMotor, "ACS:m6", labels={"motors", "baseline"}, kind="config")
-    roll_int = Cpt(EpicsMotor, "ACS:m7", labels={"motors", "baseline"}, kind="config")
-    pi_int = Cpt(EpicsMotor, "ACS:m8", labels={"motors", "baseline"}, kind="config")
+    horiz = Cpt(HavenMotor, "ACS:m1", labels={"motors", "baseline"}, kind="config")
+    vert = Cpt(HavenMotor, "ACS:m2", labels={"motors", "baseline"}, kind="config")
+    bragg = Cpt(HavenMotor, "ACS:m3", labels={"motors"})
+    gap = Cpt(HavenMotor, "ACS:m4", labels={"motors"})
+    roll2 = Cpt(HavenMotor, "ACS:m5", labels={"motors", "baseline"}, kind="config")
+    pitch2 = Cpt(HavenMotor, "ACS:m6", labels={"motors", "baseline"}, kind="config")
+    roll_int = Cpt(HavenMotor, "ACS:m7", labels={"motors", "baseline"}, kind="config")
+    pi_int = Cpt(HavenMotor, "ACS:m8", labels={"motors", "baseline"}, kind="config")
     # Physical constants
     d_spacing = Cpt(EpicsSignalRO, "dspacing", labels={"baseline"}, kind="config")
 

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>465</width>
-    <height>730</height>
+    <width>497</width>
+    <height>768</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -15,7 +15,7 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QGroupBox" name="groupBox_4">
+    <widget class="QGroupBox" name="edge_group_box">
      <property name="toolTip">
       <string>Change the edge of the beamline by sending a plan to the queue server. This mechanism is meant for large moves to different X-ray absorption edges.
 
@@ -51,6 +51,11 @@ This will move the X-ray source (if applicable), change the harmonic, and move a
          <widget class="QComboBox" name="edge_combo_box">
           <property name="enabled">
            <bool>true</bool>
+          </property>
+          <property name="font">
+           <font>
+            <family>Sans Serif</family>
+           </font>
           </property>
           <property name="toolTip">
            <string>Select an edge, or type one in the form &quot;Na L3&quot;, etc.</string>
@@ -130,7 +135,7 @@ This will move the X-ray source (if applicable), change the harmonic, and move a
     </widget>
    </item>
    <item>
-    <widget class="QGroupBox" name="groupBox_3">
+    <widget class="QGroupBox" name="energy_group_box">
      <property name="toolTip">
       <string>Changes the energy of the beamline over a narrow range. Best when staying within a single X-ray absorption edge.
 
@@ -156,6 +161,7 @@ It will change the monochromator and undulator (if applicable), but makes no att
          <widget class="PyDMLabel" name="PyDMLabel_4">
           <property name="font">
            <font>
+            <family>Monospace</family>
             <weight>75</weight>
             <bold>true</bold>
            </font>
@@ -166,6 +172,9 @@ It will change the monochromator and undulator (if applicable), but makes no att
           <property name="text">
            <string>###### eV</string>
           </property>
+          <property name="channel" stdset="0">
+           <string>haven://energy.readback</string>
+          </property>
          </widget>
         </item>
         <item row="1" column="0">
@@ -175,31 +184,53 @@ It will change the monochromator and undulator (if applicable), but makes no att
           </property>
          </widget>
         </item>
+        <item row="1" column="1">
+         <layout class="QHBoxLayout" name="horizontalLayout_8">
+          <item>
+           <widget class="PyDMLineEdit" name="PyDMLineEdit">
+            <property name="toolTip">
+             <string/>
+            </property>
+            <property name="channel" stdset="0">
+             <string>haven://energy.setpoint</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="calibrate_button">
+            <property name="toolTip">
+             <string>Open a dialog to adjust the energy calibration of the monochromator.</string>
+            </property>
+            <property name="text">
+             <string>Calibrate</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
         <item row="2" column="1">
-         <layout class="QHBoxLayout" name="horizontalLayout_7">
+         <layout class="QHBoxLayout" name="horizontalLayout_14">
           <item>
-           <widget class="PyDMPushButton" name="PyDMPushButton_3">
+           <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay">
             <property name="toolTip">
              <string/>
+            </property>
+            <property name="autoFillBackground">
+             <bool>false</bool>
+            </property>
+            <property name="frameShape">
+             <enum>QFrame::NoFrame</enum>
+            </property>
+            <property name="macros" stdset="0">
+             <string>SIG=energy.setpoint</string>
+            </property>
+            <property name="filename" stdset="0">
+             <string>tweak.py</string>
             </property>
            </widget>
           </item>
           <item>
-           <widget class="PyDMLineEdit" name="PyDMLineEdit_2">
-            <property name="toolTip">
-             <string/>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="PyDMPushButton" name="PyDMPushButton_4">
-            <property name="toolTip">
-             <string/>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <spacer name="horizontalSpacer_4">
+           <spacer name="horizontalSpacer_9">
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
             </property>
@@ -210,30 +241,6 @@ It will change the monochromator and undulator (if applicable), but makes no att
              </size>
             </property>
            </spacer>
-          </item>
-         </layout>
-        </item>
-        <item row="1" column="1">
-         <layout class="QHBoxLayout" name="horizontalLayout_8">
-          <item>
-           <widget class="PyDMLineEdit" name="PyDMLineEdit">
-            <property name="toolTip">
-             <string/>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="PyDMCheckbox" name="PyDMCheckbox">
-            <property name="toolTip">
-             <string/>
-            </property>
-            <property name="text">
-             <string>Calibrate</string>
-            </property>
-            <property name="PyDMToolTip" stdset="0">
-             <string>If checked, values entered into the setpoint box will be considered the new calibrated energy.</string>
-            </property>
-           </widget>
           </item>
          </layout>
         </item>
@@ -256,7 +263,7 @@ It will change the monochromator and undulator (if applicable), but makes no att
     </widget>
    </item>
    <item>
-    <widget class="QGroupBox" name="groupBox">
+    <widget class="QGroupBox" name="monochromator_group_box">
      <property name="enabled">
       <bool>true</bool>
      </property>
@@ -302,6 +309,7 @@ It will change the monochromator and undulator (if applicable), but makes no att
          <widget class="PyDMLabel" name="PyDMLabel_3">
           <property name="font">
            <font>
+            <family>Monospace</family>
             <weight>50</weight>
             <bold>false</bold>
            </font>
@@ -310,7 +318,7 @@ It will change the monochromator and undulator (if applicable), but makes no att
            <string/>
           </property>
           <property name="text">
-           <string>##### eV</string>
+           <string>#####.###### arcsec</string>
           </property>
           <property name="precision" stdset="0">
            <number>2</number>
@@ -322,7 +330,7 @@ It will change the monochromator and undulator (if applicable), but makes no att
            <bool>false</bool>
           </property>
           <property name="channel" stdset="0">
-           <string>haven://monochromator_energy_user_readback</string>
+           <string>haven://energy.monochromator.bragg.user_readback</string>
           </property>
          </widget>
         </item>
@@ -335,8 +343,19 @@ It will change the monochromator and undulator (if applicable), but makes no att
         </item>
         <item row="1" column="1">
          <widget class="PyDMLabel" name="PyDMLabel_8">
+          <property name="font">
+           <font>
+            <family>Monospace</family>
+           </font>
+          </property>
           <property name="toolTip">
            <string/>
+          </property>
+          <property name="text">
+           <string>####.###### um</string>
+          </property>
+          <property name="channel" stdset="0">
+           <string>haven://energy.monochromator.gap.user_readback</string>
           </property>
          </widget>
         </item>
@@ -349,8 +368,19 @@ It will change the monochromator and undulator (if applicable), but makes no att
         </item>
         <item row="2" column="1">
          <widget class="PyDMLabel" name="PyDMLabel_6">
+          <property name="font">
+           <font>
+            <family>Monospace</family>
+           </font>
+          </property>
           <property name="toolTip">
            <string/>
+          </property>
+          <property name="text">
+           <string>#####.###### urad</string>
+          </property>
+          <property name="channel" stdset="0">
+           <string>haven://energy.monochromator.pitch2.user_readback</string>
           </property>
          </widget>
         </item>
@@ -397,6 +427,49 @@ It will change the monochromator and undulator (if applicable), but makes no att
             </property>
            </widget>
           </item>
+          <item>
+           <widget class="PyDMRelatedDisplayButton" name="PyDMRelatedDisplayButton_2">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="toolTip">
+             <string/>
+            </property>
+            <property name="PyDMIcon" stdset="0">
+             <string>wrench</string>
+            </property>
+            <property name="filenames" stdset="0">
+             <stringlist>
+              <string>motor.py</string>
+             </stringlist>
+            </property>
+            <property name="titles" stdset="0">
+             <stringlist>
+              <string>More</string>
+             </stringlist>
+            </property>
+            <property name="showIcon" stdset="0">
+             <bool>true</bool>
+            </property>
+            <property name="macros" stdset="0">
+             <stringlist>
+              <string>MOTOR=energy.monochromator.pitch2</string>
+             </stringlist>
+            </property>
+            <property name="openInNewWindow" stdset="0">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
          </layout>
         </item>
         <item row="4" column="0">
@@ -416,8 +489,89 @@ It will change the monochromator and undulator (if applicable), but makes no att
               <verstretch>0</verstretch>
              </sizepolicy>
             </property>
+            <property name="font">
+             <font>
+              <family>Monospace</family>
+             </font>
+            </property>
             <property name="toolTip">
              <string/>
+            </property>
+            <property name="text">
+             <string>#####.###### urad</string>
+            </property>
+            <property name="channel" stdset="0">
+             <string>haven://energy.monochromator.roll.user_readback</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item row="5" column="1">
+         <layout class="QHBoxLayout" name="horizontalLayout_11">
+          <item>
+           <spacer name="horizontalSpacer_6">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QueueButton" name="pushButton_2">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>Tune</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="PyDMRelatedDisplayButton" name="PyDMRelatedDisplayButton">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="toolTip">
+             <string/>
+            </property>
+            <property name="PyDMIcon" stdset="0">
+             <string>wrench</string>
+            </property>
+            <property name="filenames" stdset="0">
+             <stringlist>
+              <string>motor.py</string>
+             </stringlist>
+            </property>
+            <property name="titles" stdset="0">
+             <stringlist>
+              <string>More</string>
+             </stringlist>
+            </property>
+            <property name="showIcon" stdset="0">
+             <bool>true</bool>
+            </property>
+            <property name="macros" stdset="0">
+             <stringlist>
+              <string>MOTOR=energy.monochromator.roll</string>
+             </stringlist>
+            </property>
+            <property name="openInNewWindow" stdset="0">
+             <bool>true</bool>
             </property>
            </widget>
           </item>
@@ -439,7 +593,7 @@ It will change the monochromator and undulator (if applicable), but makes no att
            <string/>
           </property>
           <property name="channel" stdset="0">
-           <string>haven://monochromator_mode</string>
+           <string>haven://monochromator.mode</string>
           </property>
          </widget>
         </item>
@@ -546,33 +700,6 @@ It will change the monochromator and undulator (if applicable), but makes no att
           </item>
          </layout>
         </item>
-        <item row="5" column="1">
-         <layout class="QHBoxLayout" name="horizontalLayout_11">
-          <item>
-           <spacer name="horizontalSpacer_6">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-          <item>
-           <widget class="QueueButton" name="pushButton_2">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
-            <property name="text">
-             <string>Tune</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </item>
        </layout>
       </item>
       <item>
@@ -599,7 +726,7 @@ It will change the monochromator and undulator (if applicable), but makes no att
     </widget>
    </item>
    <item>
-    <widget class="QGroupBox" name="groupBox_2">
+    <widget class="QGroupBox" name="undulator_group_box">
      <property name="font">
       <font>
        <weight>50</weight>
@@ -607,7 +734,7 @@ It will change the monochromator and undulator (if applicable), but makes no att
       </font>
      </property>
      <property name="title">
-      <string>Insertion Device</string>
+      <string>Undulator</string>
      </property>
      <layout class="QHBoxLayout" name="horizontalLayout_3">
       <item>
@@ -638,6 +765,7 @@ It will change the monochromator and undulator (if applicable), but makes no att
          <widget class="PyDMLabel" name="PyDMLabel">
           <property name="font">
            <font>
+            <family>Monospace</family>
             <weight>50</weight>
             <bold>false</bold>
            </font>
@@ -658,11 +786,36 @@ It will change the monochromator and undulator (if applicable), but makes no att
            <bool>true</bool>
           </property>
           <property name="channel" stdset="0">
-           <string>haven://undulator_energy</string>
+           <string>haven://energy.undulator.energy.readback</string>
           </property>
          </widget>
         </item>
         <item row="1" column="0">
+         <widget class="QLabel" name="label_14">
+          <property name="text">
+           <string>Taper:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="PyDMLabel" name="PyDMLabel_5">
+          <property name="font">
+           <font>
+            <family>Monospace</family>
+           </font>
+          </property>
+          <property name="toolTip">
+           <string/>
+          </property>
+          <property name="text">
+           <string>##.### mrad</string>
+          </property>
+          <property name="channel" stdset="0">
+           <string>haven://energy.undulator.energy_taper.readback</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="0">
          <widget class="QLabel" name="label_4">
           <property name="font">
            <font>
@@ -678,10 +831,11 @@ It will change the monochromator and undulator (if applicable), but makes no att
           </property>
          </widget>
         </item>
-        <item row="1" column="1">
+        <item row="2" column="1">
          <widget class="PyDMLabel" name="PyDMLabel_2">
           <property name="font">
            <font>
+            <family>Monospace</family>
             <weight>50</weight>
             <bold>false</bold>
            </font>
@@ -696,24 +850,7 @@ It will change the monochromator and undulator (if applicable), but makes no att
            <bool>true</bool>
           </property>
           <property name="channel" stdset="0">
-           <string>haven://undulator_gap</string>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="0">
-         <widget class="QLabel" name="label_14">
-          <property name="text">
-           <string>Taper:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="1">
-         <widget class="PyDMLabel" name="PyDMLabel_5">
-          <property name="toolTip">
-           <string/>
-          </property>
-          <property name="text">
-           <string>##.### mrad</string>
+           <string>haven://energy.undulator.gap.readback</string>
           </property>
          </widget>
         </item>
@@ -781,9 +918,9 @@ It will change the monochromator and undulator (if applicable), but makes no att
    <header>pydm.widgets.byte</header>
   </customwidget>
   <customwidget>
-   <class>PyDMCheckbox</class>
-   <extends>QCheckBox</extends>
-   <header>pydm.widgets.checkbox</header>
+   <class>PyDMEmbeddedDisplay</class>
+   <extends>QFrame</extends>
+   <header>pydm.widgets.embedded_display</header>
   </customwidget>
   <customwidget>
    <class>PyDMEnumComboBox</class>
@@ -799,6 +936,11 @@ It will change the monochromator and undulator (if applicable), but makes no att
    <class>PyDMPushButton</class>
    <extends>QPushButton</extends>
    <header>pydm.widgets.pushbutton</header>
+  </customwidget>
+  <customwidget>
+   <class>PyDMRelatedDisplayButton</class>
+   <extends>QPushButton</extends>
+   <header>pydm.widgets.related_display_button</header>
   </customwidget>
   <customwidget>
    <class>QueueButton</class>
