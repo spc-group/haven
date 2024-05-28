@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>497</width>
-    <height>768</height>
+    <height>745</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -359,14 +359,14 @@ It will change the monochromator and undulator (if applicable), but makes no att
           </property>
          </widget>
         </item>
-        <item row="2" column="0">
+        <item row="3" column="0">
          <widget class="QLabel" name="label_16">
           <property name="text">
            <string>Pitch:</string>
           </property>
          </widget>
         </item>
-        <item row="2" column="1">
+        <item row="3" column="1">
          <widget class="PyDMLabel" name="PyDMLabel_6">
           <property name="font">
            <font>
@@ -384,7 +384,7 @@ It will change the monochromator and undulator (if applicable), but makes no att
           </property>
          </widget>
         </item>
-        <item row="3" column="1">
+        <item row="4" column="1">
          <layout class="QHBoxLayout" name="horizontalLayout_9">
           <item>
            <widget class="QDoubleSpinBox" name="doubleSpinBox">
@@ -472,14 +472,14 @@ It will change the monochromator and undulator (if applicable), but makes no att
           </item>
          </layout>
         </item>
-        <item row="4" column="0">
+        <item row="5" column="0">
          <widget class="QLabel" name="label_17">
           <property name="text">
            <string>Roll:</string>
           </property>
          </widget>
         </item>
-        <item row="4" column="1">
+        <item row="5" column="1">
          <layout class="QHBoxLayout" name="horizontalLayout_10">
           <item>
            <widget class="PyDMLabel" name="PyDMLabel_7">
@@ -507,7 +507,7 @@ It will change the monochromator and undulator (if applicable), but makes no att
           </item>
          </layout>
         </item>
-        <item row="5" column="1">
+        <item row="6" column="1">
          <layout class="QHBoxLayout" name="horizontalLayout_11">
           <item>
            <spacer name="horizontalSpacer_6">
@@ -577,7 +577,7 @@ It will change the monochromator and undulator (if applicable), but makes no att
           </item>
          </layout>
         </item>
-        <item row="6" column="0">
+        <item row="7" column="0">
          <widget class="QLabel" name="label">
           <property name="text">
            <string>Mode:</string>
@@ -587,7 +587,7 @@ It will change the monochromator and undulator (if applicable), but makes no att
           </property>
          </widget>
         </item>
-        <item row="6" column="1">
+        <item row="7" column="1">
          <widget class="PyDMEnumComboBox" name="PyDMEnumComboBox">
           <property name="toolTip">
            <string/>
@@ -597,7 +597,7 @@ It will change the monochromator and undulator (if applicable), but makes no att
           </property>
          </widget>
         </item>
-        <item row="7" column="0">
+        <item row="8" column="0">
          <widget class="QLabel" name="label_8">
           <property name="text">
            <string>Feedback θ:</string>
@@ -607,7 +607,7 @@ It will change the monochromator and undulator (if applicable), but makes no att
           </property>
          </widget>
         </item>
-        <item row="7" column="1">
+        <item row="8" column="1">
          <layout class="QHBoxLayout" name="horizontalLayout">
           <item>
            <widget class="PyDMByteIndicator" name="PyDMByteIndicator">
@@ -650,14 +650,14 @@ It will change the monochromator and undulator (if applicable), but makes no att
           </item>
          </layout>
         </item>
-        <item row="8" column="0">
+        <item row="9" column="0">
          <widget class="QLabel" name="label_9">
           <property name="text">
            <string>Feedback χ:</string>
           </property>
          </widget>
         </item>
-        <item row="8" column="1">
+        <item row="9" column="1">
          <layout class="QHBoxLayout" name="horizontalLayout_2">
           <item>
            <widget class="PyDMByteIndicator" name="PyDMByteIndicator_2">
@@ -699,6 +699,31 @@ It will change the monochromator and undulator (if applicable), but makes no att
            </widget>
           </item>
          </layout>
+        </item>
+        <item row="2" column="1">
+         <widget class="PyDMLabel" name="PyDMLabel_9">
+          <property name="font">
+           <font>
+            <family>Monospace</family>
+           </font>
+          </property>
+          <property name="toolTip">
+           <string/>
+          </property>
+          <property name="text">
+           <string>####.###### um</string>
+          </property>
+          <property name="channel" stdset="0">
+           <string>haven://energy.monochromator.offset.user_readback</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="0">
+         <widget class="QLabel" name="label_18">
+          <property name="text">
+           <string>Offset:</string>
+          </property>
+         </widget>
         </item>
        </layout>
       </item>
