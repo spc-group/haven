@@ -2,7 +2,7 @@ import asyncio
 import logging
 from typing import Optional
 
-from aioca import caget, CANothing
+from aioca import CANothing, caget
 from ophyd import Component as Cpt
 from ophyd import EpicsMotor, EpicsSignal, EpicsSignalRO
 

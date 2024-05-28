@@ -10,7 +10,7 @@ from typing import Dict, Generator, Optional
 
 import numpy as np
 import pint
-from aioca import caget, CANothing
+from aioca import CANothing, caget
 from apstools.devices import SRS570_PreAmplifier
 from apstools.devices.srs570_preamplifier import (
     SRS570_PreAmplifier,

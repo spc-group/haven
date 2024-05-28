@@ -55,7 +55,7 @@ class FireflyApplication(PyDMApplication):
     show_voltmeters_window_action: QtWidgets.QAction
     show_logs_window_action: QtWidgets.QAction
     launch_queuemonitor_action: QtWidgets.QAction
-    #show_robot_window_action: QtWidgets.QAction
+    # show_robot_window_action: QtWidgets.QAction
 
     # Keep track of motors
     motor_actions: Sequence = []
@@ -129,22 +129,22 @@ class FireflyApplication(PyDMApplication):
         action.triggered.connect(slot)
         setattr(self, action_name, action)
 
-    #def load_instrument(self):
+    # def load_instrument(self):
     #    """Set up the application to use a previously loaded instrument.
 
     #    Expects devices, plans, etc to have been created already.
 
     #    """
-        # Make actions for launching other windows
+    # Make actions for launching other windows
     #    self.setup_window_actions()
-        # Actions for controlling the bluesky run engine
+    # Actions for controlling the bluesky run engine
     #    self.setup_runengine_actions()
-        # Prepare the client for interacting with the queue server
-        # self.prepare_queue_client()
-        # Launch the default display
+    # Prepare the client for interacting with the queue server
+    # self.prepare_queue_client()
+    # Launch the default display
     #    show_default_window = getattr(self, f"show_{self.default_display}_window")
     #    default_window = show_default_window()
-        # Set up the window to show list of PV connections
+    # Set up the window to show list of PV connections
     #    pydm.utilities.shortcuts.install_connection_inspector(parent=default_window)
 
     def reload_instrument(self, load_instrument=True):
@@ -319,11 +319,11 @@ class FireflyApplication(PyDMApplication):
             slot=self.show_count_plan_window,
         )
         # Launch robot windows
-        #self._setup_window_action(
+        # self._setup_window_action(
         #    action_name="show_robot_window_action",
         #    text="Robot",
         #    slot=self.show_robot_window,
-        #)
+        # )
 
     def launch_queuemonitor(self):
         config = load_config()["queueserver"]
@@ -682,8 +682,9 @@ class FireflyApplication(PyDMApplication):
         return self.show_window(
             FireflyMainWindow, ui_dir / "sample_viewer.ui", name="sample_viewer"
         )
-    #@QtCore.Slot()
-    #def show_robot_window(self):
+
+    # @QtCore.Slot()
+    # def show_robot_window(self):
     #    return self.show_window(
     #        PlanMainWindow, ui_dir / "robot.py", name="robot"
     #    )

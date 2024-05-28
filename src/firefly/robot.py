@@ -2,19 +2,22 @@ import logging
 from typing import Mapping, Optional, Sequence
 
 from bluesky_queueserver_api import BPlan
-from qtpy import QtWidgets
 from PyQt5.QtWidgets import QSpinBox
+from qtpy import QtWidgets
+
+import haven
 from firefly import display
 from firefly.application import FireflyApplication
 from firefly.component_selector import ComponentSelector
-import haven
 from haven import exceptions, load_config, registry
 
 log = logging.getLogger(__name__)
 
-#ROBOT_NAMES = ["Austin"]
+# ROBOT_NAMES = ["Austin"]
 
-SAMPLE_NUMBERS = [8,9,10,14,15,16,20,21,22,None]#list(range(24))+[None] 
+SAMPLE_NUMBERS = [8, 9, 10, 14, 15, 16, 20, 21, 22, None]  # list(range(24))+[None]
+
+
 class LineScanRegion:
     def __init__(self):
         self.setup_ui()
@@ -38,11 +41,9 @@ class LineScanRegion:
         self.layout.addWidget(self.start_line_edit)
 
         # Forth item, stop point
-        #self.stop_line_edit = QtWidgets.QLineEdit()
-        #self.stop_line_edit.setPlaceholderText("Stop…")
-        #self.layout.addWidget(self.stop_line_edit)
-
-
+        # self.stop_line_edit = QtWidgets.QLineEdit()
+        # self.stop_line_edit.setPlaceholderText("Stop…")
+        # self.layout.addWidget(self.stop_line_edit)
 
 
 class RobotDisplay(display.FireflyDisplay):
@@ -53,11 +54,11 @@ class RobotDisplay(display.FireflyDisplay):
     def customize_ui(self):
         self.reset_default_regions()
         # disable the line edits in spin box
-        #self.ui.robot_combo_box.lineEdit().setReadOnly(True)
+        # self.ui.robot_combo_box.lineEdit().setReadOnly(True)
         # clear any exiting items in the combo box
-        #self.ui.robot_combo_box.clear()
+        # self.ui.robot_combo_box.clear()
         # set the list of values for the combo box
-        #for rbt in ROBOT_NAMES:
+        # for rbt in ROBOT_NAMES:
         #    self.ui.robot_combo_box.addItem(rbt)
 
         # clear any exiting items in the combo box
@@ -65,7 +66,7 @@ class RobotDisplay(display.FireflyDisplay):
         # set the list of values for the combo box
         for sam in SAMPLE_NUMBERS:
             self.ui.sample_combo_box.addItem(str(sam))
-        #self.ui.sample_combo_box.setCurrentIndex(0)
+        # self.ui.sample_combo_box.setCurrentIndex(0)
 
         # disable the line edits in spin box
         self.ui.num_motor_spin_box.lineEdit().setReadOnly(True)
@@ -99,7 +100,7 @@ class RobotDisplay(display.FireflyDisplay):
                 if item.widget():
                     item.widget().deleteLater()
             self.regions.pop()
-    
+
     def update_regions(self):
         new_region_num = self.ui.num_motor_spin_box.value()
         old_region_num = len(self.regions)
@@ -109,12 +110,12 @@ class RobotDisplay(display.FireflyDisplay):
             self.remove_regions(abs(diff_region_num))
         elif diff_region_num > 0:
             self.add_regions(diff_region_num)
-    
+
     def queue_plan(self, *args, **kwargs):
         """Execute this plan on the queueserver."""
         # Get scan parameters from widgets
         num_motor = self.ui.num_motor_spin_box.value()
-        
+
         # Get the sample number from the sample_spin_box
         sam_num_str = self.ui.sample_combo_box.currentText()
         # Convert sam_num_str to an integer if it's a string representation of a number
@@ -125,8 +126,10 @@ class RobotDisplay(display.FireflyDisplay):
         for region_i in self.regions:
             motor_lst.append(region_i.motor_box.current_component().name)
             position_lst.append(float(region_i.start_line_edit.text()))
-        
-        args = [values for motor_i in zip(motor_lst, position_lst) for values in motor_i]
+
+        args = [
+            values for motor_i in zip(motor_lst, position_lst) for values in motor_i
+        ]
 
         # Build the queue item
         print(args)
@@ -134,15 +137,18 @@ class RobotDisplay(display.FireflyDisplay):
         robot = self.macros()["DEVICE"]
         print(robot)
         item = BPlan("robot_transfer_sample", robot, sam_num, *args)
-        
+
         # Submit the item to the queueserver
         from firefly.application import FireflyApplication
+
         app = FireflyApplication.instance()
         log.info("Add ``robot_transfer_sample()`` plan to queue.")
         app.add_queue_item(item)
 
     def ui_filename(self):
         return "robot.ui"
+
+
 # -----------------------------------------------------------------------------
 # :author:    Yanna Chen
 # :email:     yannachen@anl.gov

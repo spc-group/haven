@@ -181,12 +181,12 @@ def main(default_fullscreen=False, default_display="status"):
     event_loop = QEventLoop(app)
     asyncio.set_event_loop(event_loop)
     app_close_event = asyncio.Event()
-    #app.aboutToQuit.connect(app_close_event.set)
+    # app.aboutToQuit.connect(app_close_event.set)
 
     # Define devices on the beamline (slow!)
-   # if not pydm_args.no_instrument:
-   #     haven.load_instrument()
-   # app.load_instrument()
+    # if not pydm_args.no_instrument:
+    #     haven.load_instrument()
+    # app.load_instrument()
     # FireflyApplication.processEvents()
 
     # Define devices on the beamline (slow!)
