@@ -107,7 +107,7 @@ class ERange(EnergyRange):
         """Convert the range to a sequence of exposure times, in seconds."""
         # disable weight for now
         # return self.exposure  * self.energies() ** self.weight
-        return self.exposure  * self.energies() ** 0 # do not consider weights for now
+        return self.exposure * self.energies() ** 0  # do not consider weights for now
 
 
 @dataclass

@@ -116,7 +116,12 @@ def test_xafs_scan_plan_queued_energies(ffapp, qtbot):
         exposure=exposures,
         E0=11500.8,
         detectors=["vortex_me4", "I0"],
-        md={"sample": "sam", "purpose": "test", "is_standard": True, "notes": "sam_notes"},
+        md={
+            "sample": "sam",
+            "purpose": "test",
+            "is_standard": True,
+            "notes": "sam_notes",
+        },
     )
 
     def check_item(item):
@@ -182,7 +187,7 @@ def test_xafs_scan_plan_queued_energies_k_mixed(ffapp, qtbot):
 
     # set repeat scan num to 2
     display.ui.spinBox_repeat_scan_num.setValue(3)
-    
+
     energies = np.array(
         [
             -20,
@@ -211,7 +216,12 @@ def test_xafs_scan_plan_queued_energies_k_mixed(ffapp, qtbot):
         exposure=exposures,
         E0=11500.8,
         detectors=["vortex_me4", "I0"],
-        md={"sample": "sam", "purpose": "test", "is_standard": False, "notes": "sam_notes"},
+        md={
+            "sample": "sam",
+            "purpose": "test",
+            "is_standard": False,
+            "notes": "sam_notes",
+        },
     )
 
     def check_item(item):
@@ -227,7 +237,7 @@ def test_xafs_scan_plan_queued_energies_k_mixed(ffapp, qtbot):
             # Check whether time is calculated correctly including the repeated scan
             assert int(display.ui.label_hour_total.text()) == 0
             assert int(display.ui.label_min_total.text()) == 1
-            assert int(display.ui.label_sec_total.text()) == 23            
+            assert int(display.ui.label_sec_total.text()) == 23
 
             # Check energies & exposures within 3 decimals
             np.testing.assert_array_almost_equal(

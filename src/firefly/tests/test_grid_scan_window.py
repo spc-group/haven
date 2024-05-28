@@ -62,11 +62,7 @@ def test_grid_scan_plan_queued(ffapp, qtbot, sim_registry, fake_motors):
         222,
         num=10,
         snake_axes=[0],
-        md={
-            "sample": "sam", 
-            "purpose": "test", 
-            "notes" : "notes"
-            },
+        md={"sample": "sam", "purpose": "test", "notes": "notes"},
     )
 
     def check_item(item):

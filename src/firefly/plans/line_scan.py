@@ -4,8 +4,8 @@ from bluesky_queueserver_api import BPlan
 from qtpy import QtWidgets
 
 from firefly import display
-from firefly.component_selector import ComponentSelector
 from firefly.application import FireflyApplication
+from firefly.component_selector import ComponentSelector
 
 log = logging.getLogger()
 
@@ -53,7 +53,9 @@ class LineScanDisplay(display.FireflyDisplay):
         self.ui.run_button.clicked.connect(self.queue_plan)
 
         # when selections of detectors changed update_total_time
-        self.ui.detectors_list.selectionModel().selectionChanged.connect(self.update_total_time)
+        self.ui.detectors_list.selectionModel().selectionChanged.connect(
+            self.update_total_time
+        )
         self.ui.spinBox_repeat_scan_num.valueChanged.connect(self.update_total_time)
         self.ui.scan_pts_spin_box.valueChanged.connect(self.update_total_time)
 
@@ -62,7 +64,7 @@ class LineScanDisplay(display.FireflyDisplay):
         minutes = round((total_seconds % 3600) // 60)
         seconds = round(total_seconds % 60)
         if total_seconds == -1:
-            hours, minutes, seconds = 'N/A', 'N/A', 'N/A'
+            hours, minutes, seconds = "N/A", "N/A", "N/A"
         return hours, minutes, seconds
 
     def clearLayout(self, layout):
@@ -112,7 +114,7 @@ class LineScanDisplay(display.FireflyDisplay):
         detectors = self.ui.detectors_list.selected_detectors()
         detectors = [app.registry[name] for name in detectors]
         detectors = [det for det in detectors if hasattr(det, "default_time_signal")]
-        
+
         try:
             detector_time = max([det.default_time_signal.get() for det in detectors])
         except:
@@ -127,7 +129,7 @@ class LineScanDisplay(display.FireflyDisplay):
         self.ui.label_hour_scan.setText(str(hr))
         self.ui.label_min_scan.setText(str(min))
         self.ui.label_sec_scan.setText(str(sec))
-        
+
         # calculate time for entire planf
         num_scan_repeat = self.ui.spinBox_repeat_scan_num.value()
         total_time = num_scan_repeat * total_time_per_scan
@@ -136,7 +138,6 @@ class LineScanDisplay(display.FireflyDisplay):
         self.ui.label_hour_total.setText(str(hr_total))
         self.ui.label_min_total.setText(str(min_total))
         self.ui.label_sec_total.setText(str(sec_total))
-
 
     def get_scan_parameters(self):
         # Get scan parameters from widgets
@@ -165,10 +166,12 @@ class LineScanDisplay(display.FireflyDisplay):
         }
 
         return detectors, num_points, motor_args, repeat_scan_num, md
-    
+
     def queue_plan(self, *args, **kwargs):
         """Execute this plan on the queueserver."""
-        detectors, num_points, motor_args, repeat_scan_num, md = self.get_scan_parameters()
+        detectors, num_points, motor_args, repeat_scan_num, md = (
+            self.get_scan_parameters()
+        )
 
         if self.ui.relative_scan_checkbox.isChecked():
             if self.ui.log_scan_checkbox.isChecked():
@@ -197,7 +200,6 @@ class LineScanDisplay(display.FireflyDisplay):
         # repeat scans
         for i in range(repeat_scan_num):
             app.add_queue_item(item)
-            
 
     def ui_filename(self):
         return "plans/line_scan.ui"

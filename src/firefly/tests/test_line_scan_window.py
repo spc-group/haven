@@ -59,7 +59,7 @@ def test_line_scan_plan_queued(ffapp, qtbot, sim_registry, fake_motors):
         2,
         222,
         num=10,
-        md={"sample": "sam", "purpose": "test", "notes" : "notes"},
+        md={"sample": "sam", "purpose": "test", "notes": "notes"},
     )
 
     def check_item(item):

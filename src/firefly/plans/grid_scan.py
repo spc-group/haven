@@ -4,8 +4,8 @@ from bluesky_queueserver_api import BPlan
 from qtpy import QtWidgets
 
 from firefly import display
-from firefly.component_selector import ComponentSelector
 from firefly.application import FireflyApplication
+from firefly.component_selector import ComponentSelector
 from firefly.plans.line_scan import LineScanDisplay
 
 log = logging.getLogger()
@@ -16,10 +16,10 @@ class TitleRegion:
         self.setup_ui()
 
     def setup_ui(self):
-        self.layout = QtWidgets.QGridLayout() 
+        self.layout = QtWidgets.QGridLayout()
         labels = ["Priority axis", "Motor", "Start", "Stop", "Snake", "Fly"]
         Qlabels_all = {}
-        
+
         # add labels in the first row
         for i, label_i in enumerate(labels):
             Qlabel_i = QtWidgets.QLabel(label_i)
@@ -31,7 +31,7 @@ class TitleRegion:
         Qlabels_all["Motor"].setFixedWidth(100)
         Qlabels_all["Snake"].setFixedWidth(53)
         Qlabels_all["Fly"].setFixedWidth(43)
-        
+
         # add labels in the second row
         label = QtWidgets.QLabel("fast -> slow")
         self.layout.addWidget(label, 1, 0)
@@ -40,7 +40,7 @@ class TitleRegion:
 class GridScanRegion:
     def __init__(self):
         self.setup_ui()
-    
+
     def setup_ui(self):
         self.layout = QtWidgets.QHBoxLayout()
 
@@ -50,7 +50,9 @@ class GridScanRegion:
 
         # First item, motor No.
         self.motor_label = QtWidgets.QLCDNumber()
-        self.motor_label.setStyleSheet("QLCDNumber { background-color: white; color: red; }")
+        self.motor_label.setStyleSheet(
+            "QLCDNumber { background-color: white; color: red; }"
+        )
         self.layout.addWidget(self.motor_label)
 
         # Second item, ComponentSelector
@@ -79,12 +81,13 @@ class GridScanRegion:
         self.fly_checkbox.setEnabled(False)
         self.layout.addWidget(self.fly_checkbox)
 
+
 class GridScanDisplay(LineScanDisplay):
     default_num_regions = 2
 
     def __init__(self, parent=None, args=None, macros=None, ui_filename=None, **kwargs):
         super().__init__(parent, args, macros, ui_filename, **kwargs)
-    
+
     def customize_ui(self):
         super().customize_ui()
         # add title layout
@@ -103,11 +106,11 @@ class GridScanDisplay(LineScanDisplay):
             # the num of motor
             num_motor_i = len(self.regions)
             # region.motor_label.setText(str(num_motor_i)) # when using label
-            region.motor_label.display(num_motor_i) 
-        
+            region.motor_label.display(num_motor_i)
+
     def update_regions(self):
         super().update_regions()
-        
+
         # disable snake for the last region and enable the previous regions
         self.regions[-1].snake_checkbox.setEnabled(False)
         for region_i in self.regions[:-1]:
@@ -115,10 +118,16 @@ class GridScanDisplay(LineScanDisplay):
 
     def queue_plan(self, *args, **kwargs):
         """Execute this plan on the queueserver."""
-        detectors, num_points, motor_args, repeat_scan_num, md = self.get_scan_parameters()
+        detectors, num_points, motor_args, repeat_scan_num, md = (
+            self.get_scan_parameters()
+        )
 
         # get snake axes, if all unchecked, set it None
-        snake_axes = [i for i, region_i in enumerate(self.regions) if region_i.snake_checkbox.isChecked()]
+        snake_axes = [
+            i
+            for i, region_i in enumerate(self.regions)
+            if region_i.snake_checkbox.isChecked()
+        ]
         if snake_axes == []:
             snake_axes = False
 
@@ -143,6 +152,6 @@ class GridScanDisplay(LineScanDisplay):
         # repeat scans
         for i in range(repeat_scan_num):
             app.add_queue_item(item)
-            
+
     def ui_filename(self):
         return "plans/grid_scan.ui"
