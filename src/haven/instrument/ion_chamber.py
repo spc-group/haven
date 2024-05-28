@@ -6,6 +6,7 @@ import math
 import time
 import warnings
 from collections import OrderedDict
+from numbers import Number
 from typing import Dict, Generator, Optional
 
 import numpy as np
@@ -39,14 +40,21 @@ __all__ = ["IonChamber", "load_ion_chambers"]
 class VoltageSignal(DerivedSignal):
     """Calculate the voltage at the output of the pre-amp."""
 
-    max_volts: float = 10.0
-
     def inverse(self, value):
         """Calculate the voltage given a scaler count."""
         clock_ticks = self.parent.clock_ticks.get()
         if clock_ticks == 0:
             return 0
-        return self.max_volts * value / clock_ticks
+        clock_frequency = self.parent.frequency.get()
+        if clock_frequency == 0:
+            return 0
+        # Convert counts to volt-seconds
+        volt_seconds = value / self.parent.counts_per_volt_second
+        # Convert volt-seconds to average voltage
+        clock_frequency = self.parent.frequency.get()
+        seconds = clock_ticks / clock_frequency
+        volts = volt_seconds / seconds
+        return volts
 
 
 class CurrentSignal(DerivedSignal):
@@ -462,9 +470,11 @@ class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
         preamp_prefix: str = None,
         scaler_prefix: str = None,
         voltmeter_prefix: str = None,
+        counts_per_volt_second: Number = 1,
         *args,
         **kwargs,
     ):
+        self.counts_per_volt_second = counts_per_volt_second
         # Set up the channel number for this scaler channel
         if ch_num < 1:
             raise ValueError(f"Scaler channels must be greater than 0: {ch_num}")
@@ -693,6 +703,7 @@ def load_ion_chambers(config=None):
                     "voltmeter_prefix": voltmeter_prefix,
                     "preamp_prefix": preamp_prefix,
                     "desc_pv": desc_pv,
+                    "counts_per_volt_second": section["counts_per_volt_second"],
                 }
             )
     # Resolve the scaler channels into ion chamber names
@@ -723,6 +734,7 @@ def load_ion_chambers(config=None):
                     preamp_prefix=defn["preamp_prefix"],
                     voltmeter_prefix=defn["voltmeter_prefix"],
                     labels={"ion_chambers", defn["section"]},
+                    counts_per_volt_second=defn["counts_per_volt_second"],
                 )
             )
     # Notify of any missing ion chambers

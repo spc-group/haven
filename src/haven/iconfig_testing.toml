@@ -78,6 +78,8 @@ preamp_channels = [3]
 # Produces PVs e.g. 25idc:LJT7Voltmeter_0:Ai1
 voltmeter_prefix = "255idc:LabjackT7_0:"
 voltmeter_channels = [1]
+# From V2F100: Fmax / Vmax
+counts_per_volt_second = 10e6
 
 # Motors
 # ======
