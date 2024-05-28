@@ -5,6 +5,7 @@ from qtpy import QtWidgets
 
 from firefly import display
 from firefly.component_selector import ComponentSelector
+from firefly.application import FireflyApplication
 
 log = logging.getLogger()
 
@@ -51,6 +52,19 @@ class LineScanDisplay(display.FireflyDisplay):
         self.ui.run_button.setEnabled(True)  # for testing
         self.ui.run_button.clicked.connect(self.queue_plan)
 
+        # when selections of detectors changed update_total_time
+        self.ui.detectors_list.selectionModel().selectionChanged.connect(self.update_total_time)
+        self.ui.spinBox_repeat_scan_num.valueChanged.connect(self.update_total_time)
+        self.ui.scan_pts_spin_box.valueChanged.connect(self.update_total_time)
+
+    def time_converter(self, total_seconds):
+        hours = round(total_seconds // 3600)
+        minutes = round((total_seconds % 3600) // 60)
+        seconds = round(total_seconds % 60)
+        if total_seconds == -1:
+            hours, minutes, seconds = 'N/A', 'N/A', 'N/A'
+        return hours, minutes, seconds
+
     def clearLayout(self, layout):
         if layout is not None:
             while layout.count():
@@ -92,10 +106,43 @@ class LineScanDisplay(display.FireflyDisplay):
         elif diff_region_num > 0:
             self.add_regions(diff_region_num)
 
+    def update_total_time(self):
+        # get default detector time
+        app = FireflyApplication.instance()
+        detectors = self.ui.detectors_list.selected_detectors()
+        detectors = [app.registry[name] for name in detectors]
+        detectors = [det for det in detectors if hasattr(det, "default_time_signal")]
+        
+        try:
+            detector_time = max([det.default_time_signal.get() for det in detectors])
+        except:
+            detector_time = 0
+
+        # get scan num points to calculate total time
+        num_points = self.ui.scan_pts_spin_box.value()
+        total_time_per_scan = detector_time * num_points
+
+        # calculate time for each scan
+        hr, min, sec = self.time_converter(total_time_per_scan)
+        self.ui.label_hour_scan.setText(str(hr))
+        self.ui.label_min_scan.setText(str(min))
+        self.ui.label_sec_scan.setText(str(sec))
+        
+        # calculate time for entire planf
+        num_scan_repeat = self.ui.spinBox_repeat_scan_num.value()
+        total_time = num_scan_repeat * total_time_per_scan
+        hr_total, min_total, sec_total = self.time_converter(total_time)
+
+        self.ui.label_hour_total.setText(str(hr_total))
+        self.ui.label_min_total.setText(str(min_total))
+        self.ui.label_sec_total.setText(str(sec_total))
+
+
     def get_scan_parameters(self):
         # Get scan parameters from widgets
         detectors = self.ui.detectors_list.selected_detectors()
         num_points = self.ui.scan_pts_spin_box.value()
+        repeat_scan_num = int(self.ui.spinBox_repeat_scan_num.value())
 
         # get paramters from each rows of line regions:
         motor_lst, start_lst, stop_lst = [], [], []
@@ -114,13 +161,14 @@ class LineScanDisplay(display.FireflyDisplay):
         md = {
             "sample": self.ui.lineEdit_sample.text(),
             "purpose": self.ui.lineEdit_purpose.text(),
+            "notes": self.ui.textEdit_notes.toPlainText(),
         }
 
-        return detectors, num_points, motor_args, md
+        return detectors, num_points, motor_args, repeat_scan_num, md
     
     def queue_plan(self, *args, **kwargs):
         """Execute this plan on the queueserver."""
-        detectors, num_points, motor_args, md = self.get_scan_parameters()
+        detectors, num_points, motor_args, repeat_scan_num, md = self.get_scan_parameters()
 
         if self.ui.relative_scan_checkbox.isChecked():
             if self.ui.log_scan_checkbox.isChecked():
@@ -144,11 +192,12 @@ class LineScanDisplay(display.FireflyDisplay):
         )
 
         # Submit the item to the queueserver
-        from firefly.application import FireflyApplication
-
         app = FireflyApplication.instance()
         log.info("Added line scan() plan to queue.")
-        app.add_queue_item(item)
+        # repeat scans
+        for i in range(repeat_scan_num):
+            app.add_queue_item(item)
+            
 
     def ui_filename(self):
         return "plans/line_scan.ui"
