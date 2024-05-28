@@ -3,7 +3,6 @@ import logging
 from bluesky_queueserver_api import BPlan
 from qtpy import QtWidgets
 
-from firefly import display
 from firefly.application import FireflyApplication
 from firefly.component_selector import ComponentSelector
 from firefly.plans.line_scan import LineScanDisplay

@@ -4,7 +4,7 @@ import re
 import numpy as np
 from bluesky_queueserver_api import BPlan
 from qtpy import QtWidgets
-from qtpy.QtCore import QObject, QTime, Signal
+from qtpy.QtCore import QObject, Signal
 from qtpy.QtGui import QDoubleValidator
 from xraydb.xraydb import XrayDB
 
