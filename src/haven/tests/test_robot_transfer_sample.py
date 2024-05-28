@@ -4,7 +4,6 @@ from haven import robot_transfer_sample
 
 
 def test_robot_sample(robot):
-
     plan = robot_transfer_sample(robot, 9, motor1, 100, motor2, 200, motor3, 50)
 
     msgs = list(plan)

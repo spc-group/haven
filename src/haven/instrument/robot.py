@@ -1,4 +1,3 @@
-import asyncio
 import logging
 
 from ophyd import Component as Cpt
@@ -7,7 +6,7 @@ from ophyd import DynamicDeviceComponent as DCpt
 from ophyd import EpicsMotor, EpicsSignal, EpicsSignalRO
 
 from .._iconfig import load_config
-from .device import aload_devices, make_device
+from .device import make_device
 
 log = logging.getLogger(__name__)
 
@@ -152,19 +151,18 @@ class Robot(Device):
     samples = DCpt(transfer_samples(24))
 
 
-def load_robot_coros(config=None):
+def load_robots(config=None):
     # Load PV's from config
     if config is None:
         config = load_config()
-    robots = config.get("robot")
-
-    if robots is not None:
-        for name, cfg in robots.items():
-            yield make_device(Robot, name=name, labels={"robots"}, prefix=cfg["prefix"])
-
-
-def load_robot(config=None):
-    return asyncio.run(aload_devices(*load_robot_coros(config=config)))
+    # Build robot devices
+    robots = config.get("robot", {})
+    devices = []
+    for name, cfg in robots.items():
+        devices.append(
+            make_device(Robot, name=name, labels={"robots"}, prefix=cfg["prefix"])
+        )
+    return devices
 
 
 # -----------------------------------------------------------------------------

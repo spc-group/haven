@@ -180,26 +180,15 @@ def main(default_fullscreen=False, default_display="status"):
     # Make it asynchronous
     event_loop = QEventLoop(app)
     asyncio.set_event_loop(event_loop)
-    app_close_event = asyncio.Event()
-    # app.aboutToQuit.connect(app_close_event.set)
 
     # Define devices on the beamline (slow!)
-    # if not pydm_args.no_instrument:
-    #     haven.load_instrument()
-    # app.load_instrument()
-    # FireflyApplication.processEvents()
+    app.setup_instrument()
 
-    # Define devices on the beamline (slow!)
-    event_loop.run_until_complete(app.setup_instrument())
+    # Get rid of the splash screen now that we're ready to go
 
-    # Show the first window (breaks asyncio)
-    # first_window = list(app.windows.values())[0]
-    # splash.finish(first_window)
     splash.close()
 
-    event_loop.run_until_complete(app_close_event.wait())
-    # event_loop.run_until_complete(app.exec_)
-    # exit_code = app.exec_()
+    event_loop.run_until_complete(app.start())
     event_loop.close()
 
     if pydm_args.profile:
@@ -209,8 +198,6 @@ def main(default_fullscreen=False, default_display="status"):
             stream=sys.stdout,
         ).sort_stats(pstats.SortKey.CUMULATIVE)
         stats.print_stats()
-
-    # sys.exit(exit_code)
 
 
 def cameras():

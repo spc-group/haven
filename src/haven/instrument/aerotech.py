@@ -1,4 +1,3 @@
-import asyncio
 import logging
 import math
 import threading
@@ -18,7 +17,7 @@ from ophyd.status import SubscriptionStatus
 from .._iconfig import load_config
 from ..exceptions import InvalidScanParameters
 from .delay import DG645Delay
-from .device import aload_devices, make_device
+from .device import make_device
 from .stage import XYStage
 
 log = logging.getLogger(__name__)
@@ -129,6 +128,7 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
     encoder_step_size = Cpt(Signal, kind=Kind.config)
     encoder_window_start = Cpt(Signal, kind=Kind.config)
     encoder_window_end = Cpt(Signal, kind=Kind.config)
+    disable_window = Cpt(Signal, value=False, kind=Kind.config)
     encoder_use_window = Cpt(Signal, value=False, kind=Kind.config)
 
     # Status signals
@@ -147,6 +147,7 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         self.dwell_time.subscribe(self._update_fly_params)
         self.encoder_resolution.subscribe(self._update_fly_params)
         self.acceleration.subscribe(self._update_fly_params)
+        self.disable_window.subscribe(self._update_fly_params)
 
     def kickoff(self):
         """Start a flyer
@@ -438,10 +439,12 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
 
         # Check for values outside of the window range for this controller
         def is_valid_window(value):
-            return self.encoder_window_min < value < self.encoder_window_max
+            window_in_range = self.encoder_window_min < value < self.encoder_window_max
+            return window_in_range
 
         window_range = [encoder_window_start, encoder_window_end]
         encoder_use_window = all([is_valid_window(v) for v in window_range])
+        encoder_use_window = encoder_use_window and not self.disable_window.get()
         # Create np array of PSO positions in encoder counts
         _pso_step = encoder_step_size * overall_sense
         _pso_end = encoder_distance + 0.5 * _pso_step
@@ -583,27 +586,26 @@ class AerotechStage(XYStage):
         super().__init__(*args, **kwargs)
 
 
-def load_aerotech_stage_coros(config=None):
-    """Provide co-routines for loading Aerotech stages defined in the
-    configuration files.
+def load_aerotech_stages(config=None):
+    """Load Aerotech XY stages defined in the configuration files'
+    ``[aerotech_stage]`` sections.
 
     """
     if config is None:
         config = load_config()
+    devices = []
     for name, stage_data in config.get("aerotech_stage", {}).items():
-        yield make_device(
-            AerotechStage,
-            name=name,
-            prefix=stage_data["prefix"],
-            delay_prefix=stage_data["delay_prefix"],
-            pv_vert=stage_data["pv_vert"],
-            pv_horiz=stage_data["pv_horiz"],
+        devices.append(
+            make_device(
+                AerotechStage,
+                name=name,
+                prefix=stage_data["prefix"],
+                delay_prefix=stage_data["delay_prefix"],
+                pv_vert=stage_data["pv_vert"],
+                pv_horiz=stage_data["pv_horiz"],
+            )
         )
-
-
-def load_aerotech_stages(config=None):
-    """Load the XY stages defined in the config ``[stage]`` section."""
-    asyncio.run(aload_devices(*load_aerotech_stage_coros(config=config)))
+    return devices
 
 
 # -----------------------------------------------------------------------------
