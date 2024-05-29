@@ -58,6 +58,7 @@ def test_load_ion_chambers(sim_registry, mocker):
     assert ic.ch_num == 2
     assert ic.preamp.prefix.strip(":").split(":")[-1] == "SR03"
     assert ic.voltmeter.prefix == "255idc:LabjackT7_0:Ai1"
+    assert ic.counts_per_volt_second == 1e7
 
 
 def test_default_pv_prefix():
@@ -78,11 +79,17 @@ def test_default_pv_prefix():
 
 
 def test_volts_signal(sim_ion_chamber):
-    """Test that the scaler tick counts get properly converted to pre-amp voltage."""
+    """Test that the scaler tick counts get properly converted to pre-amp voltage.
+
+    Assumes 10V max, 100 MHz max settings on the V2F100
+
+    """
     chamber = sim_ion_chamber
     # Set the necessary dependent signals
-    chamber.counts.sim_put(int(0.13e7))  # 1.3 V
-    chamber.clock_ticks.sim_put(1e7)  # 10 MHz clock
+    chamber.counts_per_volt_second = 10e6  # 100 Mhz / 10 V
+    chamber.counts.sim_put(int(1.3e7))  # 1.3 V
+    chamber.frequency.sim_put(int(10e6))  # 10 MHz clock
+    chamber.clock_ticks.sim_put(1e7)  # 1 second @ 10 MHz
     # Check the volts answer
     assert chamber.volts.get() == 1.30
 
@@ -91,7 +98,9 @@ def test_amps_signal(sim_ion_chamber):
     """Test that scaler tick counts get properly converted to ion chamber current."""
     chamber = sim_ion_chamber
     # Set the necessary dependent signals
-    chamber.counts.sim_put(int(0.13e7))  # 1.3V
+    chamber.counts_per_volt_second = 10e6  # 100 Mhz / 10 V
+    chamber.counts.sim_put(int(13e6))  # 1.3V
+    chamber.frequency.sim_put(int(10e6))  # 10 MHz clock
     chamber.clock_ticks.sim_put(1e7)  # 10 MHz clock
     chamber.preamp.sensitivity_value.put(4)  # "20"
     chamber.preamp.sensitivity_unit.put(2)  # "µA/V"
@@ -107,8 +116,10 @@ def test_amps_signal_with_offset(sim_ion_chamber):
     """Test that the scaler tick counts get properly converted to pre-amp voltage."""
     chamber = sim_ion_chamber
     # Set the necessary dependent signals
-    chamber.counts.sim_put(int(0.13e7))  # 1.3V
+    chamber.counts.sim_put(int(1.3e7))  # 1.3V
+    chamber.counts_per_volt_second = 10e6  # 100 Mhz / 10 V
     chamber.clock_ticks.sim_put(1e7)  # 10 MHz clock
+    chamber.frequency.sim_put(int(10e6))  # 10 MHz clock
     chamber.preamp.sensitivity_value.put(4)  # "20"
     chamber.preamp.sensitivity_unit.put(2)  # "µA/V"
     chamber.preamp.offset_on.put("ON")

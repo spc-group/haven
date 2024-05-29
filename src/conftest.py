@@ -101,7 +101,10 @@ def sim_registry(monkeypatch):
 def sim_ion_chamber(sim_registry):
     FakeIonChamber = make_fake_device(IonChamber)
     ion_chamber = FakeIonChamber(
-        prefix="scaler_ioc", name="I00", labels={"ion_chambers"}, ch_num=2
+        prefix="scaler_ioc",
+        name="I00",
+        labels={"ion_chambers"},
+        ch_num=2,
     )
     # Set metadata
     preamp = ion_chamber.preamp
