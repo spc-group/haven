@@ -199,9 +199,6 @@ device_class = "CapillaryHeater"
 [robot.A]
 prefix = "255idAustin"
 
-[robot.B]
-prefix = "255idAustin"
-
 # Managed IOC control PVs
 [beamline_manager]
 
