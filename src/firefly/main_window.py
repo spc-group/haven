@@ -173,6 +173,7 @@ class FireflyMainWindow(PyDMMainWindow):
         # Add entries for general scan management
         self.ui.menuScans.addSeparator()
         self.ui.menuScans.addAction(app.show_run_browser_action)
+        self.ui.menuScans.addAction(app.show_live_viewer_action)
         # Detectors menu
         self.ui.detectors_menu = QtWidgets.QMenu(self.ui.menubar)
         self.ui.detectors_menu.setObjectName("detectors_menu")

@@ -278,6 +278,11 @@ class FireflyApplication(PyDMApplication):
             text="Browse Runs",
             slot=self.show_run_browser_window,
         )
+        self._setup_window_action(
+            action_name="show_live_viewer_action",
+            text="Live Scan View",
+            slot=self.show_live_viewer_window,
+        )        
         # Action for launch queue-monitor
         self._setup_window_action(
             action_name="launch_queuemonitor_action",
@@ -652,9 +657,15 @@ class FireflyApplication(PyDMApplication):
     @QtCore.Slot()
     def show_run_browser_window(self):
         return self.show_window(
-            PlanMainWindow, ui_dir / "run_browser.py", name="run_browser"
+            FireflyMainWindow, ui_dir / "run_browser.py", name="run_browser"
         )
 
+    @QtCore.Slot()
+    def show_live_viewer_window(self):
+        return self.show_window(
+            FireflyMainWindow, ui_dir / "live_viewer.py", name="live_viewer"
+        )
+    
     @QtCore.Slot()
     def show_logs_window(self):
         self.show_window(FireflyMainWindow, ui_dir / "log_viewer.ui", name="log_viewer")

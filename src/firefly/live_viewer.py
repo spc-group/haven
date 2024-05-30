@@ -2,8 +2,8 @@ from aiokafka import AIOKafkaConsumer
 import asyncio
 
 from haven import load_config
-from .application import FireflyApplication
-from .run_browser import RunBrowserDisplay
+from firefly.application import FireflyApplication
+from firefly.run_browser import RunBrowserDisplay
 
 
 class LiveViewerDisplay(RunBrowserDisplay):
@@ -16,16 +16,18 @@ class LiveViewerDisplay(RunBrowserDisplay):
         config = load_config()
         consumer = AIOKafkaConsumer(
             config['queueserver']['kafka_topic'],
-            bootstrap_servers='localhost:9092',
+            bootstrap_servers='fedorov.xray.aps.anl.gov:9092',
             group_id="my-group"
         )
         # Get cluster layout and join group `my-group`
         await consumer.start()
         try:
             # Consume messages
+            from pprint import pprint
             async for msg in consumer:
-                print("consumed: ", msg.topic, msg.partition, msg.offset,
-                      msg.key, msg.value, msg.timestamp)
+                print("consumed: ", type(msg), msg.topic, msg.partition, msg.offset,
+                      msg.key, msg.timestamp)
+                pprint(msg.value.decode("utf-8"))
         finally:
             # Will leave consumer group; perform autocommit if enabled.
             await consumer.stop()
