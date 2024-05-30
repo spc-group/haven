@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import subprocess
 from collections import OrderedDict
@@ -16,14 +17,14 @@ from qtpy import QtCore, QtWidgets
 from qtpy.QtCore import Signal
 from qtpy.QtWidgets import QAction
 
-from haven import aload_instrument, load_config
+from haven import load_config
 from haven import load_instrument as load_haven_instrument
 from haven import registry
 from haven.exceptions import ComponentNotFound
 from haven.instrument.device import titelize
 
 from .main_window import FireflyMainWindow, PlanMainWindow
-from .queue_client import QueueClient, QueueClientThread, queueserver_api
+from .queue_client import QueueClient, queueserver_api
 
 generator = type((x for x in []))
 
@@ -101,7 +102,7 @@ class FireflyApplication(PyDMApplication):
     abort_runengine_action: QAction
     halt_runengine_action: QAction
     start_queue: QAction
-    queue_autoplay_action: QAction
+    queue_autostart_action: QAction
     queue_open_environment_action: QAction
     check_queue_status_action: QAction
 
@@ -138,7 +139,7 @@ class FireflyApplication(PyDMApplication):
         load_haven_instrument(registry=self.registry)
         self.registry_changed.emit(self.registry)
 
-    async def setup_instrument(self, load_instrument=True):
+    def setup_instrument(self, load_instrument=True):
         """Set up the application to use a previously loaded instrument.
 
         Expects devices, plans, etc to have been created already.
@@ -157,14 +158,14 @@ class FireflyApplication(PyDMApplication):
 
         """
         if load_instrument:
-            await aload_instrument(registry=self.registry)
+            load_haven_instrument(registry=self.registry)
             self.registry_changed.emit(self.registry)
         # Make actions for launching other windows
         self.setup_window_actions()
         # Actions for controlling the bluesky run engine
         self.setup_runengine_actions()
         # Prepare the client for interacting with the queue server
-        self.prepare_queue_client()
+        # self.prepare_queue_client()
 
     def show_default_window(self):
         """Show the first starting window for the application."""
@@ -360,7 +361,7 @@ class FireflyApplication(PyDMApplication):
         # Actions that control how the queue operates
         actions = [
             # Attr, object name, text
-            ("queue_autoplay_action", "queue_autoplay_action", "&Autoplay"),
+            ("queue_autostart_action", "queue_autostart_action", "&Autoplay"),
             (
                 "queue_open_environment_action",
                 "queue_open_environment_action",
@@ -373,8 +374,8 @@ class FireflyApplication(PyDMApplication):
             action.setText(text)
             setattr(self, attr, action)
         # Customize some specific actions
-        self.queue_autoplay_action.setCheckable(True)
-        self.queue_autoplay_action.setChecked(True)
+        self.queue_autostart_action.setCheckable(True)
+        self.queue_autostart_action.setChecked(True)
         self.queue_open_environment_action.setCheckable(True)
 
     def _prepare_device_windows(
@@ -475,19 +476,9 @@ class FireflyApplication(PyDMApplication):
         """
         if api is None:
             api = queueserver_api()
-        # Create a thread in which the api can run
-        thread = getattr(self, "_queue_thread", None)
-        if thread is None:
-            thread = QueueClientThread()
-            self._queue_thread = thread
         # Create the client object
-        client = QueueClient(
-            api=api,
-            autoplay_action=self.queue_autoplay_action,
-            open_environment_action=self.queue_open_environment_action,
-        )
-        client.moveToThread(thread)
-        thread.timer.timeout.connect(client.update)
+        client = QueueClient(api=api)
+        self.queue_open_environment_action.triggered.connect(client.open_environment)
         self._queue_client = client
         # Connect actions to slots for controlling the queueserver
         self.pause_runengine_action.triggered.connect(
@@ -511,12 +502,22 @@ class FireflyApplication(PyDMApplication):
         client.manager_state_changed.connect(self.queue_manager_state_changed)
         client.re_state_changed.connect(self.queue_re_state_changed)
         client.devices_changed.connect(self.update_devices_allowed)
-        self.queue_autoplay_action.toggled.connect(
+        self.queue_autostart_action.toggled.connect(
             self.check_queue_status_action.trigger
         )
-        # Start the thread
-        if not thread.isRunning():
-            thread.start()
+        self.queue_autostart_action.toggled.connect(client.toggle_autostart)
+
+    async def start(self):
+        """Start the background timers, show the first window, and wait."""
+        # Keep an event to know when the app has closed
+        self.app_close_event = asyncio.Event()
+        self.aboutToQuit.connect(self.app_close_event.set)
+        # Show the UI stuffs
+        self.show_default_window()
+        self.prepare_queue_client()
+        self._queue_client.start()
+        # Start the actual asyncio event loop
+        await self.app_close_event.wait()
 
     def update_devices_allowed(self, devices):
         pass

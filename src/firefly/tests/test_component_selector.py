@@ -21,9 +21,9 @@ class Stage(Device):
 def motor_registry(ffapp, sim_registry):
     """A simulated motor registry. Like the ophyd-registry but connected to the queueserver."""
     FakeMotor = sim.make_fake_device(EpicsMotor)
-    sim_registry.register(FakeMotor(name="motor1"))
+    FakeMotor(name="motor1")
     FakeStage = sim.make_fake_device(Stage)
-    sim_registry.register(FakeStage(name="stage"))
+    FakeStage(name="stage")
     return sim_registry
 
 

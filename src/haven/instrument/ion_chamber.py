@@ -6,13 +6,10 @@ import math
 import time
 import warnings
 from collections import OrderedDict
+from numbers import Number
 from typing import Dict, Generator, Optional
 
 import numpy as np
-
-# import pint
-from aioca import CANothing, caget
-from apstools.devices import SRS570_PreAmplifier
 from apstools.devices.srs570_preamplifier import (
     SRS570_PreAmplifier,
     calculate_settle_time,
@@ -25,13 +22,12 @@ from ophyd.mca import EpicsMCARecord
 from ophyd.ophydobj import OphydObject
 from ophyd.signal import DerivedSignal, InternalSignal
 from ophyd.status import SubscriptionStatus
-from ophyd.utils.errors import OpException
 from pcdsdevices.signal import MultiDerivedSignal, MultiDerivedSignalRO
 from pcdsdevices.type_hints import OphydDataType, SignalToValue
 
 from .. import exceptions
 from .._iconfig import load_config
-from .device import aload_devices, await_for_connection, make_device
+from .device import await_for_connection, make_device, resolve_device_names
 from .labjack import AnalogInput
 from .scaler_triggered import ScalerSignalRO, ScalerTriggered
 
@@ -44,14 +40,21 @@ __all__ = ["IonChamber", "load_ion_chambers"]
 class VoltageSignal(DerivedSignal):
     """Calculate the voltage at the output of the pre-amp."""
 
-    max_volts: float = 10.0
-
     def inverse(self, value):
         """Calculate the voltage given a scaler count."""
         clock_ticks = self.parent.clock_ticks.get()
         if clock_ticks == 0:
             return 0
-        return self.max_volts * value / clock_ticks
+        clock_frequency = self.parent.frequency.get()
+        if clock_frequency == 0:
+            return 0
+        # Convert counts to volt-seconds
+        volt_seconds = value / self.parent.counts_per_volt_second
+        # Convert volt-seconds to average voltage
+        clock_frequency = self.parent.frequency.get()
+        seconds = clock_ticks / clock_frequency
+        volts = volt_seconds / seconds
+        return volts
 
 
 class CurrentSignal(DerivedSignal):
@@ -73,9 +76,17 @@ class CurrentSignal(DerivedSignal):
         """Calculate the current given a output voltage."""
         volts = value
         preamp = self.preamp()
-        gain = preamp.gain.get()
-        offset_current = preamp.offset_current.get()
-        return volts / gain - offset_current
+        try:
+            gain = preamp.gain.get()
+            offset_current = preamp.offset_current.get()
+        except TimeoutError:
+            msg = (
+                "Could not read inverse signals: "
+                f"{preamp.gain}, {preamp.offset_current}"
+            )
+            log.debug(msg)
+        else:
+            return volts / gain - offset_current
 
 
 class Voltmeter(AnalogInput):
@@ -336,10 +347,10 @@ class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
     ch_char: str
     start_timestamp: float = None
     count: OphydObject = FCpt(
-        EpicsSignal, "{scaler_prefix}:scaler1.CNT", trigger_value=1, kind=Kind.omitted
+        EpicsSignal, "{scaler_prefix}scaler1.CNT", trigger_value=1, kind=Kind.omitted
     )
     description: OphydObject = FCpt(
-        EpicsSignal, "{scaler_prefix}:scaler1.NM{ch_num}", kind=Kind.config
+        EpicsSignal, "{scaler_prefix}scaler1.NM{ch_num}", kind=Kind.config
     )
     # Signal chain devices
     preamp = FCpt(IonChamberPreAmplifier, "{preamp_prefix}")
@@ -349,94 +360,94 @@ class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
     amps: OphydObject = Cpt(CurrentSignal, derived_from="volts", kind=Kind.hinted)
     counts: OphydObject = FCpt(
         EpicsSignalRO,
-        "{scaler_prefix}:scaler1.S{ch_num}",
+        "{scaler_prefix}scaler1.S{ch_num}",
         kind=Kind.normal,
         auto_monitor=False,
     )
     gate: OphydObject = FCpt(
         EpicsSignal,
-        "{scaler_prefix}:scaler1.G{ch_num}",
+        "{scaler_prefix}scaler1.G{ch_num}",
         kind=Kind.config,
     )
     preset_count: OphydObject = FCpt(
-        EpicsSignal, "{scaler_prefix}:scaler1.PR{ch_num}", kind=Kind.config
+        EpicsSignal, "{scaler_prefix}scaler1.PR{ch_num}", kind=Kind.config
     )
     frequency: OphydObject = FCpt(
         EpicsSignal,
-        "{scaler_prefix}:scaler1.FREQ",
+        "{scaler_prefix}scaler1.FREQ",
         kind=Kind.config,
     )
     clock_ticks: OphydObject = FCpt(
         EpicsSignalRO,
-        "{scaler_prefix}:scaler1.S1",
+        "{scaler_prefix}scaler1.S1",
         kind=Kind.normal,
     )
     # Old Scaler mode support
     offset: OphydObject = FCpt(
-        ScalerSignalRO, "{scaler_prefix}:scaler1_{offset_suffix}", kind=Kind.config
+        ScalerSignalRO, "{scaler_prefix}scaler1_{offset_suffix}", kind=Kind.config
     )
     net_counts: OphydObject = FCpt(
-        ScalerSignalRO, "{scaler_prefix}:scaler1_netA.{ch_char}", kind=Kind.hinted
+        ScalerSignalRO, "{scaler_prefix}scaler1_netA.{ch_char}", kind=Kind.hinted
     )
     exposure_time: OphydObject = FCpt(
-        EpicsSignal, "{scaler_prefix}:scaler1.TP", kind=Kind.normal
+        EpicsSignal, "{scaler_prefix}scaler1.TP", kind=Kind.normal
     )
     auto_count: OphydObject = FCpt(
-        EpicsSignal, "{scaler_prefix}:scaler1.CONT", kind=Kind.omitted
+        EpicsSignal, "{scaler_prefix}scaler1.CONT", kind=Kind.omitted
     )
     record_dark_current: OphydObject = FCpt(
-        EpicsSignal, "{scaler_prefix}:scaler1_offset_start.PROC", kind=Kind.omitted
+        EpicsSignal, "{scaler_prefix}scaler1_offset_start.PROC", kind=Kind.omitted
     )
     record_dark_time: OphydObject = FCpt(
-        EpicsSignal, "{scaler_prefix}:scaler1_offset_time.VAL", kind=Kind.config
+        EpicsSignal, "{scaler_prefix}scaler1_offset_time.VAL", kind=Kind.config
     )
     # Multi-channel scaler support
     start_all: OphydObject = FCpt(
-        EpicsSignal, "{scaler_prefix}:StartAll", kind=Kind.omitted
+        EpicsSignal, "{scaler_prefix}StartAll", kind=Kind.omitted
     )
     stop_all: OphydObject = FCpt(
-        EpicsSignal, "{scaler_prefix}:StopAll", kind=Kind.omitted
+        EpicsSignal, "{scaler_prefix}StopAll", kind=Kind.omitted
     )
     erase_all: OphydObject = FCpt(
-        EpicsSignal, "{scaler_prefix}:EraseAll", kind=Kind.omitted
+        EpicsSignal, "{scaler_prefix}EraseAll", kind=Kind.omitted
     )
     erase_start: OphydObject = FCpt(
         EpicsSignal,
-        "{scaler_prefix}:EraseStart",
+        "{scaler_prefix}EraseStart",
         kind=Kind.omitted,
     )
     acquiring: OphydObject = FCpt(
-        EpicsSignal, "{scaler_prefix}:Acquiring", kind=Kind.omitted
+        EpicsSignal, "{scaler_prefix}Acquiring", kind=Kind.omitted
     )
     channel_advance_source: OphydObject = FCpt(
         EpicsSignal,
-        "{scaler_prefix}:ChannelAdvance",
+        "{scaler_prefix}ChannelAdvance",
         kind=Kind.config,
     )
     num_channels_to_use: OphydObject = FCpt(
         EpicsSignal,
-        "{scaler_prefix}:NuseAll",
+        "{scaler_prefix}NuseAll",
         kind=Kind.config,
     )
     max_channels: OphydObject = FCpt(
-        EpicsSignal, "{scaler_prefix}:MaxChannels", kind=Kind.config
+        EpicsSignal, "{scaler_prefix}MaxChannels", kind=Kind.config
     )
     current_channel: OphydObject = FCpt(
         EpicsSignal,
-        "{scaler_prefix}:CurrentChannel",
+        "{scaler_prefix}CurrentChannel",
         kind=Kind.normal,
     )
     channel_one_source: OphydObject = FCpt(
-        EpicsSignal, "{scaler_prefix}:Channel1Source", kind=Kind.config
+        EpicsSignal, "{scaler_prefix}Channel1Source", kind=Kind.config
     )
     count_on_start: OphydObject = FCpt(
-        EpicsSignal, "{scaler_prefix}:CountOnStart", kind=Kind.config
+        EpicsSignal, "{scaler_prefix}CountOnStart", kind=Kind.config
     )
     mca: OphydObject = FCpt(
-        EpicsMCARecord, "{scaler_prefix}:mca{ch_num}", kind=Kind.omitted
+        EpicsMCARecord, "{scaler_prefix}mca{ch_num}", kind=Kind.omitted
     )
     mca_times: OphydObject = FCpt(
-        EpicsMCARecord, "{scaler_prefix}:mca1", kind=Kind.omitted
+        EpicsMCARecord, "{scaler_prefix}mca1", kind=Kind.omitted
     )
 
     # Virtual signals to handle fly-scanning
@@ -459,9 +470,11 @@ class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
         preamp_prefix: str = None,
         scaler_prefix: str = None,
         voltmeter_prefix: str = None,
+        counts_per_volt_second: Number = 1,
         *args,
         **kwargs,
     ):
+        self.counts_per_volt_second = counts_per_volt_second
         # Set up the channel number for this scaler channel
         if ch_num < 1:
             raise ValueError(f"Scaler channels must be greater than 0: {ch_num}")
@@ -485,8 +498,6 @@ class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
         super().__init__(prefix=prefix, name=name, *args, **kwargs)
         # Set signal values to stage
         self.stage_sigs[self.auto_count] = 0
-        # Sync the ion chamber description with the voltmeter description
-        self.description.subscribe(self.update_voltmeter_description, run=True)
 
     @property
     def default_time_signal(self):
@@ -495,9 +506,6 @@ class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
 
         """
         return self.exposure_time
-
-    def update_voltmeter_description(self, *args, value, **kwargs):
-        self.voltmeter.description.put(value)
 
     def num_to_char(self, num):
         char = chr(64 + num)
@@ -625,8 +633,12 @@ async def make_ion_chamber_device(
         return ic
 
 
-async def load_ion_chamber(
-    preamp_prefix: str, scaler_prefix: str, voltmeter_prefix: str, ch_num: int
+def load_ion_chamber(
+    preamp_prefix: str,
+    scaler_prefix: str,
+    voltmeter_prefix: str,
+    ch_num: int,
+    name: str,
 ):
     """Create an IonChamber ophyd device.
 
@@ -643,63 +655,100 @@ async def load_ion_chamber(
     # 5 pre-amps per labjack
     lj_num = int(ic_idx / 5)
     lj_chan = ic_idx % 5
-    # Only use this ion chamber if it has a name
-    try:
-        name = await caget(desc_pv)
-    except (asyncio.exceptions.TimeoutError, CANothing):
-        # Scaler channel is unreachable, so skip it
-        log.warning(f"Could not connect to ion_chamber: {desc_pv}")
-        return
-    if name == "":
-        log.info(f"Skipping unnamed ion chamber: {desc_pv}")
-        return
     # Create the ion chamber device
-    ion_chamber = await make_device(
+    ion_chamber = make_device(
         IonChamber,
         prefix=scaler_prefix,
         ch_num=ch_num,
         name=name,
         preamp_prefix=preamp_prefix,
         voltmeter_prefix=f"{voltmeter_prefix}{lj_num}:Ai{lj_chan}",
-        labels={"ion_chambers"},
+        labels={"ion_chambers", "detectors"},
     )
-    # Ensure the voltmeter is in single-ended mode to measure pre-amp
-    if hasattr(ion_chamber, "voltmeter"):
-        try:
-            ion_chamber.voltmeter.differential.set(0).wait(timeout=1)
-        except OpException as exc:
-            msg = (
-                f"Could not set voltmeter {ion_chamber.name} channel to single-ended mode:"
-                f" {exc}"
-            )
-            log.warning(msg)
-            warnings.warn(msg)
     return ion_chamber
 
 
-def load_ion_chamber_coros(config=None):
+def load_ion_chambers(config=None):
+    """Load ion chambers based on configuration files' ``[ion_chamber]``
+    sections.
+
+    The name for each ion chamber is retrieved from the scaler
+    channel's .DESC field.
+
+    """
     # Load IOC prefixes from the config file
     if config is None:
         config = load_config()
     if "ion_chamber" not in config.keys():
         warnings.warn("Ion chambers not configured.")
         return
-    scaler_prefix = config["ion_chamber"]["scaler"]["prefix"]
-    preamp_prefix = config["ion_chamber"]["preamp"]["prefix"]
-    voltmeter_prefix = config["ion_chamber"]["voltmeter"]["prefix"]
-    ion_chambers = []
-    # Loop through the configuration sections and create ion chambers co-routines
-    for ch_num in config["ion_chamber"]["scaler"]["channels"]:
-        yield load_ion_chamber(
-            preamp_prefix=preamp_prefix,
-            scaler_prefix=scaler_prefix,
-            ch_num=ch_num,
-            voltmeter_prefix=voltmeter_prefix,
+    # Generate the configuration dictionary for all the ion chambers
+    ic_defns = []
+    for section_name, section in config["ion_chamber"].items():
+        channels = zip(
+            section["scaler_channels"],
+            section["preamp_channels"],
+            section["voltmeter_channels"],
         )
-
-
-def load_ion_chambers(config=None):
-    return asyncio.run(aload_devices(*load_ion_chamber_coros(config=config)))
+        for scaler_ch, preamp_ch, voltmeter_ch in channels:
+            voltmeter_prefix = f"{section['voltmeter_prefix']}Ai{voltmeter_ch}"
+            preamp_prefix = f"{section['preamp_prefix']}{preamp_ch:02}:"
+            scaler_prefix = section["scaler_prefix"]
+            desc_pv = f"{scaler_prefix}scaler1.NM{scaler_ch}"
+            ic_defns.append(
+                {
+                    "section": section_name,
+                    "scaler_prefix": section["scaler_prefix"],
+                    "ch_num": scaler_ch,
+                    "voltmeter_prefix": voltmeter_prefix,
+                    "preamp_prefix": preamp_prefix,
+                    "desc_pv": desc_pv,
+                    "counts_per_volt_second": section["counts_per_volt_second"],
+                }
+            )
+    # Resolve the scaler channels into ion chamber names
+    try:
+        loop = asyncio.get_event_loop()
+    except RuntimeError:
+        # No loop, so make a new one
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+    loop.run_until_complete(resolve_device_names(ic_defns))
+    # Loop through the sections and create ion chambers
+    devices = []
+    missing_channels = []
+    unnamed_channels = []
+    for defn in ic_defns:
+        if defn["name"] == "":
+            unnamed_channels.append(defn["desc_pv"])
+        elif defn["name"] is None:
+            missing_channels.append(defn["desc_pv"])
+        else:
+            # Create the ion chamber device
+            devices.append(
+                make_device(
+                    IonChamber,
+                    prefix=defn["scaler_prefix"],
+                    ch_num=defn["ch_num"],
+                    name=defn["name"],
+                    preamp_prefix=defn["preamp_prefix"],
+                    voltmeter_prefix=defn["voltmeter_prefix"],
+                    labels={"ion_chambers", defn["section"]},
+                    counts_per_volt_second=defn["counts_per_volt_second"],
+                )
+            )
+    # Notify of any missing ion chambers
+    if len(missing_channels) > 0:
+        msg = "Skipping unavailable ion chambers: "
+        msg += ", ".join([prefix for prefix in missing_channels])
+        warnings.warn(msg)
+        log.warning(msg)
+    if len(unnamed_channels) > 0:
+        msg = "Skipping unnamed ion chambers: "
+        msg += ", ".join([prefix for prefix in unnamed_channels])
+        warnings.warn(msg)
+        log.warning(msg)
+    return devices
 
 
 # -----------------------------------------------------------------------------

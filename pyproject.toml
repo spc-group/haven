@@ -16,7 +16,7 @@ classifiers = [
     "Topic :: System :: Hardware",
 ]
 keywords = ["synchrotron", "xray", "bluesky"]
-dependencies = ["bluesky", "ophyd", "databroker", "apsbss", "xraydb", "mergedeep", "xrayutilities", "bluesky-queueserver-api", "apstools", "databroker", "ophyd-registry"]
+dependencies = ["bluesky", "ophyd", "databroker", "apsbss", "xraydb", "mergedeep", "xrayutilities", "bluesky-queueserver-api", "apstools", "databroker", "ophyd-registry", "caproto"]
 
 [project.optional-dependencies]
 
