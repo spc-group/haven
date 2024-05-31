@@ -13,6 +13,7 @@ import numpy as np
 from apstools.devices.srs570_preamplifier import (
     SRS570_PreAmplifier,
     calculate_settle_time,
+    GainSignal,
 )
 from ophyd import Component as Cpt
 from ophyd import Device, EpicsSignal, EpicsSignalRO
@@ -135,7 +136,6 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
         also set to be 10% of the sensitivity.
 
     """
-
     values = ["1", "2", "5", "10", "20", "50", "100", "200", "500"]
     units = ["pA/V", "nA/V", "uA/V", "mA/V"]
     offset_units = [s.split("/")[0] for s in units]
@@ -203,6 +203,7 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
         "Given a sensitivity value and unit , transform to the desired level."
         value = items[self.sensitivity_value]
         unit = items[self.sensitivity_unit]
+        print(value, type(value), unit, type(unit))
         # Resolve the sensitivity and value from string to index
         # (if they are not already the index)
         if not isinstance(value, int):
