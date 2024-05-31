@@ -6,13 +6,13 @@ import os
 import socket
 import warnings
 from collections import ChainMap
-from typing import Iterable, Sequence, Union
+from typing import Sequence, Union #, Iterable
 
 import epics
 import pkg_resources
 from bluesky.preprocessors import baseline_wrapper as bluesky_baseline_wrapper
 from bluesky.preprocessors import finalize_wrapper, msg_mutator
-from bluesky.suspenders import SuspendBoolLow
+# from bluesky.suspenders import SuspendBoolLow
 from bluesky.utils import Msg, make_decorator
 
 from ._iconfig import load_config
