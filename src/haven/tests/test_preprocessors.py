@@ -1,6 +1,6 @@
-import pytest
 from unittest.mock import MagicMock
 
+import pytest
 from bluesky import plans as bp
 from bluesky.callbacks import CallbackBase
 from ophyd.sim import SynAxis, det, instantiate_fake_device
