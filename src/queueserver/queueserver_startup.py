@@ -1,19 +1,49 @@
-import re
+import re  # noqa: F401
 
-from haven.instrument.load_instrument import load_instrument, load_simulated_devices
-from haven import registry
-from haven.run_engine import run_engine
-import databroker
+import databroker  # noqa: F401
+from bluesky.plan_stubs import (  # noqa: F401
+    abs_set,
+    mv,
+    mvr,
+    null,
+    pause,
+    rel_set,
+    sleep,
+    stop,
+)
+from bluesky.plans import (  # noqa: F401
+    count,
+    grid_scan,
+    list_scan,
+    rel_grid_scan,
+    rel_list_scan,
+    rel_scan,
+    scan,
+    scan_nd,
+)
 
 # Import plans
-from haven import energy_scan, xafs_scan, align_slits, knife_scan, set_energy, auto_gain, calibrate_mono_gap, align_pitch2, recall_motor_position
-from bluesky.plans import count, scan, rel_scan, list_scan, rel_list_scan, grid_scan, rel_grid_scan, scan_nd
-from bluesky.plan_stubs import abs_set, rel_set, mv, mvr, sleep, pause, stop, null
+from haven import registry  # noqa: F401
+from haven import (  # noqa: F401
+    align_pitch2,
+    align_slits,
+    auto_gain,
+    calibrate_mono_gap,
+    energy_scan,
+    knife_scan,
+    recall_motor_position,
+    set_energy,
+    xafs_scan,
+)
+from haven.instrument.load_instrument import (  # noqa: F401
+    load_instrument,
+    load_simulated_devices,
+)
+from haven.run_engine import run_engine  # noqa: F401
 
 # Import devices
 load_instrument()
 load_simulated_devices()
-print(registry.device_names)
 for cpt in registry._objects_by_name.values():
     # Replace spaces and other illegal characters in variable name
     # name = re.sub('\W|^(?=\d)','_', cpt.name)
