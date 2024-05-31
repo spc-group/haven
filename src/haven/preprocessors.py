@@ -153,11 +153,15 @@ def shutter_suspend_wrapper(plan, shutter_signals=None):
         shutter_signals = [s.pss_state for s in shutters]
     # Create a suspender for each shutter
     suspenders = []
-    for sig in shutter_signals:
-        suspender = SuspendBoolLow(sig, sleep=3.0)
-        suspenders.append(suspender)
-    if not isinstance(suspenders, Iterable):
-        suspenders = [suspenders]
+    
+    ###################################################
+    # Temporarily disabled for technical commissioning
+    ###################################################
+    # for sig in shutter_signals:
+    #     suspender = SuspendBoolLow(sig, sleep=3.0)
+    #     suspenders.append(suspender)
+    # if not isinstance(suspenders, Iterable):
+    #     suspenders = [suspenders]
 
     def _install():
         for susp in suspenders:
