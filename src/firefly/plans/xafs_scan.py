@@ -151,9 +151,7 @@ class XafsScanRegion(QObject):
             converted_value = conversion_func(round(float(text), float_accuracy))
             line_edit.setText(f"{converted_value:.6g}")
 
-    def update_wavenumber_energy(self):
-        is_k_checked = self.k_space_checkbox.isChecked()
-
+    def update_wavenumber_energy(self, is_k_checked):
         # disable weight box when k is not selected
         self.weight_spinbox.setEnabled(is_k_checked)
 
@@ -213,7 +211,7 @@ class XafsScanRegion(QObject):
                 )
 
         # when there's invalid number in the lineEdits, set an empty kErange
-        except:
+        except ValueError:
             self.kErange = []
 
         finally:
@@ -396,7 +394,7 @@ class XafsScanDisplay(display.FireflyDisplay):
         try:
             _, exposures = merge_ranges(*kEranges_all, sort=True)
             total_time_per_scan = exposures.sum()
-        except:
+        except ValueError:
             total_time_per_scan = -1
 
         # calculate time for each scan
@@ -491,7 +489,7 @@ class XafsScanDisplay(display.FireflyDisplay):
                 match = re.findall(r"\d+\.?\d*", self.edge_combo_box.currentText())
                 self.edge_value = round(float(match[-1]), float_accuracy)
 
-            except:
+            except IndexError:
                 QtWidgets.QMessageBox.warning(
                     self, "Error", "Please select an absorption edge."
                 )
