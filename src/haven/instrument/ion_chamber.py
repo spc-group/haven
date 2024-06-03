@@ -620,7 +620,7 @@ async def make_ion_chamber_device(
         ch_num=ch_num,
         name=name,
         preamp_prefix=preamp_prefix,
-        labels={"ion_chambers"},
+        labels={"ion_chambers", "detectors"},
     )
     try:
         await await_for_connection(ic)
@@ -733,7 +733,7 @@ def load_ion_chambers(config=None):
                     name=defn["name"],
                     preamp_prefix=defn["preamp_prefix"],
                     voltmeter_prefix=defn["voltmeter_prefix"],
-                    labels={"ion_chambers", defn["section"]},
+                    labels={"ion_chambers", defn["section"], "detectors"},
                     counts_per_volt_second=defn["counts_per_volt_second"],
                 )
             )

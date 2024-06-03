@@ -1,7 +1,7 @@
 import logging
 import time
 import warnings
-from typing import Optional
+from typing import Optional, Mapping
 
 from bluesky_queueserver_api import comm_base
 from bluesky_queueserver_api.zmq.aio import REManagerAPI
@@ -31,6 +31,9 @@ class QueueClient(QObject):
     # Signals responding to queue changes
     status_changed = Signal(dict)
     length_changed = Signal(int)
+    in_use_changed = Signal(bool)  # If length > 0, or queue is running
+    autostart_changed = Signal(bool)
+    queue_stop_changed = Signal(bool)  # If a queue stop has been requested
     environment_opened = Signal(bool)  # Opened (True) or closed (False)
     environment_state_changed = Signal(str)  # New state
     manager_state_changed = Signal(str)  # New state
@@ -100,29 +103,84 @@ class QueueClient(QObject):
     @asyncSlot(object)
     async def add_queue_item(self, item):
         log.info(f"Client adding item to queue: {item}")
-        result = await self.api.item_add(item=item)
-        if result["success"]:
-            log.info(f"Item added. New queue length: {result['qsize']}")
-            new_length = result["qsize"]
-            self.length_changed.emit(result["qsize"])
+        try:
+            result = await self.api.item_add(item=item)
+            self.check_result(result)
+        except (RuntimeError, comm_base.RequestFailedError):
+            # Request failed, so force a UI update
+            await self.check_queue_status(force=True)
         else:
-            log.error(f"Did not add queue item to queue: {result}")
-            raise RuntimeError(result)
-
+            await self.check_queue_status(force=False)
+    
     @asyncSlot(bool)
     async def toggle_autostart(self, enable: bool):
-        print(f"Toggling auto-start: {enable}")
-        await self.api.queue_autostart(enable)
+        log.debug(f"Toggling auto-start: {enable}")
+        try:
+            result = await self.api.queue_autostart(enable)
+            self.check_result(result, task="toggle auto-start")
+        except (RuntimeError, comm_base.RequestFailedError):
+            # Request failed, so force a UI update
+            await self.check_queue_status(force=True)
+        else:
+            await self.check_queue_status(force=False)
+
+    @asyncSlot(bool)
+    async def stop_queue(self, stop: bool):
+        """Turn on/off whether the queue will stop after the current plan."""
+        # Determine which call to usee
+        if stop:
+            api_call = self.api.queue_stop()
+        else:
+            api_call = self.api.queue_stop_cancel()
+        # Execute the call
+        try:
+            result = await api_call
+            self.check_result(result, task="toggle stop queue")
+        except (RuntimeError, comm_base.RequestFailedError):
+            # Request failed, so force a UI update
+            await self.check_queue_status(force=True)
+        else:
+            await self.check_queue_status(force=False)
 
     @asyncSlot()
     async def start_queue(self):
         result = await self.api.queue_start()
+        self.check_result(result, task="start queue")
+
+    @asyncSlot()
+    async def resume_runengine(self):
+        result = await self.api.re_resume()
+        self.check_result(result, task="resume run engine")
+
+    @asyncSlot()
+    async def stop_runengine(self):
+        result = await self.api.re_stop()
+        self.check_result(result, task="stop run engine")
+
+    @asyncSlot()
+    async def abort_runengine(self):
+        result = await self.api.re_abort()
+        self.check_result(result, task="abort run engine")
+
+    @asyncSlot()
+    async def halt_runengine(self):
+        result = await self.api.re_halt()
+        self.check_result(result, task="halt run engine")
+
+    def check_result(self, result: Mapping, task: str = "control queue server"):
+        """Send the result of an API call to the correct logger.
+
+        Expects *result* to have at least the "success" key.
+
+        """
         # Report results
         if result["success"] is True:
-            log.debug(f"Started queue server: {result}")
+            log.debug(f"{task}: {result}")
         else:
-            log.error(f"Failed to start queue server: {result}")
-            raise RuntimeError(result)
+            msg = f"Failed to {task}: {result}"
+            log.error(msg)
+            raise RuntimeError(msg)
+
 
     @asyncSlot()
     async def check_queue_status(self, force=False, *args, **kwargs):
@@ -169,6 +227,10 @@ class QueueClient(QObject):
 
         """
         new_status = await self.api.status()
+        # Add a new key for whether the queue is busy (length > 0 or running)
+        has_queue = new_status['items_in_queue'] > 0
+        is_running = new_status['manager_state'] in ["paused", "starting_queue", "executing_queue", "executing_task"]
+        new_status.setdefault("in_use", has_queue or is_running)
         # Check individual components of the status if they've changed
         signals_to_check = [
             # (status key, signal to emit)
@@ -176,6 +238,10 @@ class QueueClient(QObject):
             ("worker_environment_state", self.environment_state_changed),
             ("manager_state", self.manager_state_changed),
             ("re_state", self.re_state_changed),
+            ("items_in_queue", self.length_changed),
+            ("in_use", self.in_use_changed),
+            ("queue_stop_pending", self.queue_stop_changed),
+            ("queue_autostart_enabled", self.autostart_changed),
         ]
         if force:
             log.debug(f"Forcing queue server status update: {new_status}")
