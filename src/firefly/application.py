@@ -15,8 +15,8 @@ from pydm.utilities.stylesheet import apply_stylesheet
 from PyQt5.QtWidgets import QStyleFactory
 from qtpy import QtCore, QtWidgets
 from qtpy.QtCore import Signal
-from qtpy.QtWidgets import QAction
 from qtpy.QtGui import QKeySequence
+from qtpy.QtWidgets import QAction
 
 from haven import load_config
 from haven import load_instrument as load_haven_instrument
@@ -130,7 +130,9 @@ class FireflyApplication(PyDMApplication):
             self._queue_thread.wait(msecs=5000)
             assert not self._queue_thread.isRunning()
 
-    def _setup_window_action(self, action_name: str, text: str, slot: QtCore.Slot, shortcut=None, icon=None):
+    def _setup_window_action(
+        self, action_name: str, text: str, slot: QtCore.Slot, shortcut=None, icon=None
+    ):
         action = QtWidgets.QAction(self)
         action.setObjectName(action_name)
         action.setText(text)
@@ -355,20 +357,49 @@ class FireflyApplication(PyDMApplication):
         # Navbar actions for controlling the run engine
         actions = [
             # (action_name, text, icon, shortcut, tooltip)
-            ("pause_runengine_action", "Pause", "fa5s.stopwatch", None,
-             "Pause the current plan at the next checkpoint."),
-            ("pause_runengine_now_action", "Pause Now", "fa5s.pause", "Ctrl+C",
-             "Pause the run engine now."),
-            ("resume_runengine_action", "Resume", "fa5s.play", None,
-             "Resume the previously-paused run engine at the last checkpoint."),
-            ("stop_runengine_action", "Stop", "fa5s.stop", None,
-             "End the current plan, marking as success."),
-            ("abort_runengine_action", "Abort", "fa5s.eject", None,
-             "End the current plan, marking as failure."),
-            ("halt_runengine_action", "Halt", "fa5s.ban", None,
-             "End the current plan immediately, do not clean up."),
-            ("start_queue_action", "Start", "fa5s.play", None,
-             "Start the queue."),
+            (
+                "pause_runengine_action",
+                "Pause",
+                "fa5s.stopwatch",
+                None,
+                "Pause the current plan at the next checkpoint.",
+            ),
+            (
+                "pause_runengine_now_action",
+                "Pause Now",
+                "fa5s.pause",
+                "Ctrl+C",
+                "Pause the run engine now.",
+            ),
+            (
+                "resume_runengine_action",
+                "Resume",
+                "fa5s.play",
+                None,
+                "Resume the previously-paused run engine at the last checkpoint.",
+            ),
+            (
+                "stop_runengine_action",
+                "Stop",
+                "fa5s.stop",
+                None,
+                "End the current plan, marking as success.",
+            ),
+            (
+                "abort_runengine_action",
+                "Abort",
+                "fa5s.eject",
+                None,
+                "End the current plan, marking as failure.",
+            ),
+            (
+                "halt_runengine_action",
+                "Halt",
+                "fa5s.ban",
+                None,
+                "End the current plan immediately, do not clean up.",
+            ),
+            ("start_queue_action", "Start", "fa5s.play", None, "Start the queue."),
         ]
         self.queue_action_group = QtWidgets.QActionGroup(self)
         for name, text, icon_name, shortcut, tooltip in actions:
@@ -683,9 +714,7 @@ class FireflyApplication(PyDMApplication):
 
     def show_status_window(self, stylesheet_path=None):
         """Instantiate a new main window for this application."""
-        self.show_window(
-            PlanMainWindow, ui_dir / "status.py", name="beamline_status"
-        )
+        self.show_window(PlanMainWindow, ui_dir / "status.py", name="beamline_status")
 
     @QtCore.Slot()
     def show_run_browser_window(self):

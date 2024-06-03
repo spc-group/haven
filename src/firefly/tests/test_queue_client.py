@@ -334,6 +334,7 @@ def test_autostart_changed(client, ffapp):
 #     qtbot.wait(1000)
 #     client.api.queue_start.assert_called_once()
 
+
 @pytest.mark.asyncio
 async def test_stop_queue(client, qtbot):
     """Test how queuing a plan starts the runengine."""
@@ -350,15 +351,12 @@ async def test_stop_queue(client, qtbot):
 
 
 def test_queue_stopped(client, ffapp):
-    """Does the action respond to changes in the queue stopped pending?
-
-    """
+    """Does the action respond to changes in the queue stopped pending?"""
     assert not ffapp.queue_stop_action.isChecked()
     client.queue_stop_changed.emit(True)
     assert ffapp.queue_stop_action.isChecked()
     client.queue_stop_changed.emit(False)
     assert not ffapp.queue_stop_action.isChecked()
-
 
 
 @pytest.mark.asyncio

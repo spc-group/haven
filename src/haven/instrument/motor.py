@@ -72,8 +72,7 @@ def load_motors(
         prefix = config["prefix"]
         num_motors = config["num_motors"]
         log.info(
-            f"Preparing {num_motors} motors from IOC: "
-            f"{section_name} ({prefix})"
+            f"Preparing {num_motors} motors from IOC: " f"{section_name} ({prefix})"
         )
         for idx in range(num_motors):
             motor_prefix = f"{prefix}m{idx+1}"

@@ -1,7 +1,7 @@
 import logging
 import time
 import warnings
-from typing import Optional, Mapping
+from typing import Mapping, Optional
 
 from bluesky_queueserver_api import comm_base
 from bluesky_queueserver_api.zmq.aio import REManagerAPI
@@ -111,7 +111,7 @@ class QueueClient(QObject):
             await self.check_queue_status(force=True)
         else:
             await self.check_queue_status(force=False)
-    
+
     @asyncSlot(bool)
     async def toggle_autostart(self, enable: bool):
         log.debug(f"Toggling auto-start: {enable}")
@@ -181,7 +181,6 @@ class QueueClient(QObject):
             log.error(msg)
             raise RuntimeError(msg)
 
-
     @asyncSlot()
     async def check_queue_status(self, force=False, *args, **kwargs):
         """Get an update queue status from queue server and notify slots.
@@ -228,8 +227,13 @@ class QueueClient(QObject):
         """
         new_status = await self.api.status()
         # Add a new key for whether the queue is busy (length > 0 or running)
-        has_queue = new_status['items_in_queue'] > 0
-        is_running = new_status['manager_state'] in ["paused", "starting_queue", "executing_queue", "executing_task"]
+        has_queue = new_status["items_in_queue"] > 0
+        is_running = new_status["manager_state"] in [
+            "paused",
+            "starting_queue",
+            "executing_queue",
+            "executing_task",
+        ]
         new_status.setdefault("in_use", has_queue or is_running)
         # Check individual components of the status if they've changed
         signals_to_check = [

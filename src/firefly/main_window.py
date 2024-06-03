@@ -5,7 +5,7 @@ from pathlib import Path
 import qtawesome as qta
 from pydm import data_plugins
 from pydm.main_window import PyDMMainWindow
-from qtpy import QtCore, QtGui, QtWidgets
+from qtpy import QtGui, QtWidgets
 
 from haven import load_config
 
