@@ -3,18 +3,12 @@ from unittest import mock
 import pytest
 from bluesky_queueserver_api import BPlan
 from ophyd.sim import make_fake_device
-from ophyd import DynamicDeviceComponent as DCpt
-from ophyd import Kind
-
 from qtpy import QtCore
 
 from firefly.plans.line_scan import LineScanDisplay
 from firefly.application import FireflyApplication
 
 from haven.instrument import motor
-from haven.instrument.ion_chamber import IonChamber
-from haven.instrument.dxp import DxpDetector
-from haven.instrument.dxp import add_mcas as add_dxp_mcas
 
 @pytest.fixture
 def fake_motors(sim_registry):
@@ -24,33 +18,6 @@ def fake_motors(sim_registry):
         this_motor = make_fake_device(motor.HavenMotor)(name=name, labels={"motors"})
         motors.append(this_motor)
     return motors
-
-# class DxpVortex(DxpDetector):
-#     mcas = DCpt(
-#         add_dxp_mcas(range_=[0, 1, 2, 3]),
-#         kind=Kind.normal | Kind.hinted,
-#         default_read_attrs=[f"mca{i}" for i in [0, 1, 2, 3]],
-#         default_configuration_attrs=[f"mca{i}" for i in [0, 1, 2, 3]],
-#     )
-
-# @pytest.fixture()
-# def dxp(sim_registry):
-#     FakeDXP = make_fake_device(DxpVortex)
-#     vortex = FakeDXP(name="vortex_me4", labels={"vortex_me4"})
-#     yield vortex
-
-# @pytest.fixture()
-# def I0(sim_registry):
-#     """A fake ion chamber named 'I0' on scaler channel 2."""
-#     FakeIonChamber = make_fake_device(IonChamber)
-#     ion_chamber = FakeIonChamber(
-#         prefix="scaler_ioc",
-#         preamp_prefix="preamp_ioc:SR04:",
-#         name="I0",
-#         labels={"I0"},
-#         ch_num=2,
-#     )
-#     return ion_chamber
 
 def test_line_scan_plan_queued(ffapp, qtbot, sim_registry, fake_motors, dxp, I0):
     app = FireflyApplication.instance()
