@@ -2,6 +2,7 @@ import logging
 
 from bluesky_queueserver_api import BPlan
 from qtpy import QtWidgets
+from qtpy.QtGui import QDoubleValidator
 
 from firefly import display
 from firefly.application import FireflyApplication
@@ -23,11 +24,13 @@ class LineScanRegion:
 
         # Second item, start point
         self.start_line_edit = QtWidgets.QLineEdit()
+        self.start_line_edit.setValidator(QDoubleValidator())  # only takes floats
         self.start_line_edit.setPlaceholderText("Start…")
         self.layout.addWidget(self.start_line_edit)
 
         # Third item, stop point
         self.stop_line_edit = QtWidgets.QLineEdit()
+        self.stop_line_edit.setValidator(QDoubleValidator())  # only takes floats
         self.stop_line_edit.setPlaceholderText("Stop…")
         self.layout.addWidget(self.stop_line_edit)
 

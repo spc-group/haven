@@ -2,6 +2,7 @@ import logging
 
 from bluesky_queueserver_api import BPlan
 from qtpy import QtWidgets
+from qtpy.QtGui import QDoubleValidator
 
 from firefly.application import FireflyApplication
 from firefly.component_selector import ComponentSelector
@@ -44,10 +45,6 @@ class GridScanRegion:
         self.layout = QtWidgets.QHBoxLayout()
 
         # First item, motor No.
-        # self.motor_label = QtWidgets.QLabel()
-        # self.layout.addWidget(self.motor_label)
-
-        # First item, motor No.
         self.motor_label = QtWidgets.QLCDNumber()
         self.motor_label.setStyleSheet(
             "QLCDNumber { background-color: white; color: red; }"
@@ -60,11 +57,13 @@ class GridScanRegion:
 
         # Third item, start point
         self.start_line_edit = QtWidgets.QLineEdit()
+        self.start_line_edit.setValidator(QDoubleValidator())  # only takes floats
         self.start_line_edit.setPlaceholderText("Start…")
         self.layout.addWidget(self.start_line_edit)
 
         # Forth item, stop point
         self.stop_line_edit = QtWidgets.QLineEdit()
+        self.stop_line_edit.setValidator(QDoubleValidator())  # only takes floats
         self.stop_line_edit.setPlaceholderText("Stop…")
         self.layout.addWidget(self.stop_line_edit)
 
