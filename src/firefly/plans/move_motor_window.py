@@ -47,7 +47,6 @@ class MoveMotorDisplay(display.FireflyDisplay):
         self.ui.run_button.setEnabled(True)  # for testing
         self.ui.run_button.clicked.connect(self.queue_plan)
 
-
     def time_converter(self, total_seconds):
         hours = round(total_seconds // 3600)
         minutes = round((total_seconds % 3600) // 60)
@@ -121,9 +120,7 @@ class MoveMotorDisplay(display.FireflyDisplay):
 
     def queue_plan(self, *args, **kwargs):
         """Execute this plan on the queueserver."""
-        motor_args, md = (
-            self.get_scan_parameters()
-        )
+        motor_args, md = self.get_scan_parameters()
 
         if self.ui.relative_scan_checkbox.isChecked():
             scan_type = "mvr"
