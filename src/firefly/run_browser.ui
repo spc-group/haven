@@ -969,25 +969,25 @@
   <customwidget>
    <class>FiltersWidget</class>
    <extends>QWidget</extends>
-   <header>firefly.run_browser</header>
+   <header>firefly.run_viewer</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>Browser1DPlotWidget</class>
    <extends>QWidget</extends>
-   <header>firefly.run_browser</header>
+   <header>firefly.run_viewer</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>Browser2DPlotWidget</class>
    <extends>QWidget</extends>
-   <header>firefly.run_browser</header>
+   <header>firefly.run_viewer</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>BrowserMultiPlotWidget</class>
    <extends>QWidget</extends>
-   <header>firefly.run_browser</header>
+   <header>firefly.run_viewer</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

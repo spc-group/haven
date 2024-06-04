@@ -2,6 +2,7 @@ import datetime as dt
 import logging
 from collections import OrderedDict
 from typing import Mapping, Sequence
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -16,14 +17,6 @@ log = logging.getLogger(__name__)
 
 class DatabaseWorker:
     selected_runs: Sequence = []
-
-    # Signals
-    all_runs_changed = Signal(list)
-    selected_runs_changed = Signal(list)
-    distinct_fields_changed = Signal(dict)
-    new_message = Signal(str, int)
-    db_op_started = Signal()
-    db_op_ended = Signal(list)  # (list of exceptions thrown)
 
     def __init__(self, catalog=None, *args, **kwargs):
         if catalog is None:
@@ -61,12 +54,6 @@ class DatabaseWorker:
 
     async def load_distinct_fields(self):
         """Get distinct metadata fields for filterable metadata.
-
-        Emits
-        =====
-        distinct_fields_changed
-          Emitted with the new dictionary of distinct metadata choices
-          for each metadata key.
 
         """
         new_fields = {}
@@ -163,6 +150,8 @@ class DatabaseWorker:
     async def metadata(self):
         """Get all metadata for the selected runs in one big dictionary."""
         md = {}
+        if len(self.selected_runs) == 0:
+            warnings.warn("No runs selected, metadata will be empty.")
         for run in self.selected_runs:
             md[run.uid] = await run.metadata
         return md
@@ -170,6 +159,7 @@ class DatabaseWorker:
     async def load_selected_runs(self, uids):
         # Prepare the query for finding the runs
         uids = list(dict.fromkeys(uids))
+        print(f"Loading runs: {uids}")
         # Retrieve runs from the database
         runs = [await self.catalog[uid] for uid in uids]
         # runs = await asyncio.gather(*run_coros)

@@ -1,3 +1,5 @@
+import os
+import warnings
 import asyncio
 import logging
 import sqlite3
@@ -175,10 +177,15 @@ def tiled_client(entry_node=None, uri=None, cache_filepath=None):
     if cache_filepath is None:
         cache_filepath = config["database"]["tiled"].get("cache_filepath", "")
         cache_filepath = cache_filepath or None
-    cache = ThreadSafeCache(filepath=cache_filepath)
+    if os.access(cache_filepath, os.W_OK):
+        cache = ThreadSafeCache(filepath=cache_filepath)
+    else:
+        warnings.warn(f"Cache file is not writable: {cache_filepath}")
+        cache = None
     # Create the client
     if uri is None:
         uri = config["database"]["tiled"]["uri"]
+    print(uri)
     client_ = from_uri(uri, "dask", cache=cache)
     if entry_node is None:
         entry_node = config["database"]["tiled"]["entry_node"]
