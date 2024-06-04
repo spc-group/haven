@@ -17,21 +17,16 @@ class LineScanRegion:
     def setup_ui(self):
         self.layout = QtWidgets.QHBoxLayout()
 
-        # First item, motor No.
-        # self.motor_label = QtWidgets.QLabel()
-        # self.motor_label.setText("0")
-        # self.layout.addWidget(self.motor_label)
-
-        # Second item, ComponentSelector
+        # First item, ComponentSelector
         self.motor_box = ComponentSelector()
         self.layout.addWidget(self.motor_box)
 
-        # Third item, start point
+        # Second item, start point
         self.start_line_edit = QtWidgets.QLineEdit()
         self.start_line_edit.setPlaceholderText("Start…")
         self.layout.addWidget(self.start_line_edit)
 
-        # Forth item, stop point
+        # Third item, stop point
         self.stop_line_edit = QtWidgets.QLineEdit()
         self.stop_line_edit.setPlaceholderText("Stop…")
         self.layout.addWidget(self.stop_line_edit)
@@ -41,7 +36,7 @@ class LineScanDisplay(display.FireflyDisplay):
     default_num_regions = 1
 
     def customize_ui(self):
-        # Remove the default XAFS layout from .ui file
+        # Remove the default layout from .ui file
         self.clearLayout(self.ui.region_template_layout)
         self.reset_default_regions()
 
@@ -115,29 +110,30 @@ class LineScanDisplay(display.FireflyDisplay):
         detectors = [app.registry[name] for name in detectors]
         detectors = [det for det in detectors if hasattr(det, "default_time_signal")]
 
+        # to prevent detector list is empty
         try:
             detector_time = max([det.default_time_signal.get() for det in detectors])
-        except:
-            detector_time = 0
+        except ValueError:
+            detector_time = -1
 
         # get scan num points to calculate total time
         num_points = self.ui.scan_pts_spin_box.value()
         total_time_per_scan = detector_time * num_points
 
         # calculate time for each scan
-        hr, min, sec = self.time_converter(total_time_per_scan)
-        self.ui.label_hour_scan.setText(str(hr))
-        self.ui.label_min_scan.setText(str(min))
-        self.ui.label_sec_scan.setText(str(sec))
+        hrs, mins, secs = self.time_converter(total_time_per_scan)
+        self.ui.label_hour_scan.setText(str(hrs))
+        self.ui.label_min_scan.setText(str(mins))
+        self.ui.label_sec_scan.setText(str(secs))
 
         # calculate time for entire planf
         num_scan_repeat = self.ui.spinBox_repeat_scan_num.value()
         total_time = num_scan_repeat * total_time_per_scan
-        hr_total, min_total, sec_total = self.time_converter(total_time)
+        hrs_total, mins_total, secs_total = self.time_converter(total_time)
 
-        self.ui.label_hour_total.setText(str(hr_total))
-        self.ui.label_min_total.setText(str(min_total))
-        self.ui.label_sec_total.setText(str(sec_total))
+        self.ui.label_hour_total.setText(str(hrs_total))
+        self.ui.label_min_total.setText(str(mins_total))
+        self.ui.label_sec_total.setText(str(secs_total))
 
     def get_scan_parameters(self):
         # Get scan parameters from widgets
@@ -145,7 +141,7 @@ class LineScanDisplay(display.FireflyDisplay):
         num_points = self.ui.scan_pts_spin_box.value()
         repeat_scan_num = int(self.ui.spinBox_repeat_scan_num.value())
 
-        # get paramters from each rows of line regions:
+        # Get paramters from each rows of line regions:
         motor_lst, start_lst, stop_lst = [], [], []
         for region_i in self.regions:
             motor_lst.append(region_i.motor_box.current_component().name)
@@ -158,12 +154,14 @@ class LineScanDisplay(display.FireflyDisplay):
             for values in motor_i
         ]
 
-        # get meta data info
+        # Get meta data info
         md = {
             "sample": self.ui.lineEdit_sample.text(),
             "purpose": self.ui.lineEdit_purpose.text(),
             "notes": self.ui.textEdit_notes.toPlainText(),
         }
+        # Only include metadata that isn't an empty string
+        md = {key: val for key, val in md.items() if len(val) > 0}
 
         return detectors, num_points, motor_args, repeat_scan_num, md
 
