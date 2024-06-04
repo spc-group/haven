@@ -5,10 +5,10 @@ from bluesky_queueserver_api import BPlan
 from ophyd.sim import make_fake_device
 from qtpy import QtCore
 
-from firefly.plans.line_scan import LineScanDisplay
 from firefly.application import FireflyApplication
-
+from firefly.plans.line_scan import LineScanDisplay
 from haven.instrument import motor
+
 
 @pytest.fixture
 def fake_motors(sim_registry):
@@ -19,6 +19,7 @@ def fake_motors(sim_registry):
         motors.append(this_motor)
     return motors
 
+
 def test_line_scan_plan_queued(ffapp, qtbot, sim_registry, fake_motors, dxp, I0):
     app = FireflyApplication.instance()
     display = LineScanDisplay()
@@ -26,7 +27,7 @@ def test_line_scan_plan_queued(ffapp, qtbot, sim_registry, fake_motors, dxp, I0)
 
     # set up motor num
     display.ui.num_motor_spin_box.setValue(2)
-    
+
     # set up num of repeat scans
     display.ui.spinBox_repeat_scan_num.setValue(6)
     display.update_regions()
@@ -48,10 +49,10 @@ def test_line_scan_plan_queued(ffapp, qtbot, sim_registry, fake_motors, dxp, I0)
     display.ui.detectors_list.selected_detectors = mock.MagicMock(
         return_value=["vortex_me4", "I0"]
     )
-    
+
     # # set up default timing for the detector
     detectors = display.ui.detectors_list.selected_detectors()
-    detectors = {name : app.registry[name] for name in detectors}
+    detectors = {name: app.registry[name] for name in detectors}
     detectors["I0"].default_time_signal.set(1).wait(2)
     detectors["vortex_me4"].default_time_signal.set(0.5).wait(2)
 
@@ -73,10 +74,7 @@ def test_line_scan_plan_queued(ffapp, qtbot, sim_registry, fake_motors, dxp, I0)
         2.0,
         222.0,
         num=10,
-        md={'sample': 'sam', 
-            'purpose': 'test', 
-            'notes': 'notes'
-            },
+        md={"sample": "sam", "purpose": "test", "notes": "notes"},
     )
 
     def check_item(item):
@@ -94,7 +92,6 @@ def test_line_scan_plan_queued(ffapp, qtbot, sim_registry, fake_motors, dxp, I0)
 
             # # Check if the remaining dictionary items are equal
             assert item.to_dict() == expected_item.to_dict()
-            
 
         except AssertionError as e:
             print(e)

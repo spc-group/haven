@@ -28,6 +28,7 @@ class MotorRegion:
         self.position_line_edit.setPlaceholderText("Position…")
         self.layout.addWidget(self.position_line_edit)
 
+
 class MoveMotorDisplay(display.FireflyDisplay):
     default_num_regions = 1
 
@@ -100,9 +101,7 @@ class MoveMotorDisplay(display.FireflyDisplay):
             position_lst.append(float(region_i.position_line_edit.text()))
 
         motor_args = [
-            values
-            for motor_i in zip(motor_lst, position_lst)
-            for values in motor_i
+            values for motor_i in zip(motor_lst, position_lst) for values in motor_i
         ]
 
         # get meta data info
