@@ -297,6 +297,9 @@ async def test_run_plan(client, qtbot):
     """Test if a plan can be queued in the queueserver."""
     api = client.api
     api.item_add.return_value = {"success": True, "qsize": 2}
+    new_status = qs_status.copy()
+    new_status["items_in_queue"] = 2
+    api.status.return_value = new_status
     # Send a plan
     with qtbot.waitSignal(
         client.length_changed, timeout=1000, check_params_cb=lambda l: l == 2
@@ -317,15 +320,18 @@ async def test_toggle_autostart(client, qtbot):
     api.queue_autostart.assert_called_once_with(True)
 
 
-def test_autostart_changed(client, ffapp):
+def test_autostart_changed(client, ffapp, qtbot):
     """Does the action respond to changes in the queue autostart
     status?
 
     """
+    ffapp.queue_autostart_action.setChecked(True)
     assert ffapp.queue_autostart_action.isChecked()
-    client.autostart_changed.emit(False)
+    with qtbot.waitSignal(client.autostart_changed, timeout=3):
+        client.autostart_changed.emit(False)
     assert not ffapp.queue_autostart_action.isChecked()
-    client.autostart_changed.emit(True)
+    with qtbot.waitSignal(client.autostart_changed, timeout=3):
+        client.autostart_changed.emit(True)
     assert ffapp.queue_autostart_action.isChecked()
 
 
