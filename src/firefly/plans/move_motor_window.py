@@ -2,6 +2,7 @@ import logging
 
 from bluesky_queueserver_api import BPlan
 from qtpy import QtWidgets
+from qtpy.QtGui import QDoubleValidator
 
 from firefly import display
 from firefly.application import FireflyApplication
@@ -21,16 +22,11 @@ class MotorRegion:
         self.motor_box = ComponentSelector()
         self.layout.addWidget(self.motor_box)
 
-        # Second item, start point
-        self.start_line_edit = QtWidgets.QLineEdit()
-        self.start_line_edit.setPlaceholderText("Start…")
-        self.layout.addWidget(self.start_line_edit)
-
-        # Third item, stop point
-        self.stop_line_edit = QtWidgets.QLineEdit()
-        self.stop_line_edit.setPlaceholderText("Stop…")
-        self.layout.addWidget(self.stop_line_edit)
-
+        # Second item, position point
+        self.position_line_edit = QtWidgets.QLineEdit()
+        self.position_line_edit.setValidator(QDoubleValidator())  # only takes floats
+        self.position_line_edit.setPlaceholderText("Position…")
+        self.layout.addWidget(self.position_line_edit)
 
 class MoveMotorDisplay(display.FireflyDisplay):
     default_num_regions = 1
@@ -98,15 +94,14 @@ class MoveMotorDisplay(display.FireflyDisplay):
 
     def get_scan_parameters(self):
         # get paramters from each rows of line regions:
-        motor_lst, start_lst, stop_lst = [], [], []
+        motor_lst, position_lst = [], []
         for region_i in self.regions:
             motor_lst.append(region_i.motor_box.current_component().name)
-            start_lst.append(float(region_i.start_line_edit.text()))
-            stop_lst.append(float(region_i.stop_line_edit.text()))
+            position_lst.append(float(region_i.position_line_edit.text()))
 
         motor_args = [
             values
-            for motor_i in zip(motor_lst, start_lst, stop_lst)
+            for motor_i in zip(motor_lst, position_lst)
             for values in motor_i
         ]
 
