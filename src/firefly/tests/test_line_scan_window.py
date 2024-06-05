@@ -19,17 +19,57 @@ def fake_motors(sim_registry):
         motors.append(this_motor)
     return motors
 
+def test_time_calculator(qtbot, sim_registry, fake_motors, dxp, I0):
+    app = FireflyApplication.instance()
+    display = LineScanDisplay()
+    qtbot.addWidget(display)
+    
+    # set up motor num
+    display.ui.num_motor_spin_box.setValue(2)
+
+    # set up num of repeat scans
+    display.ui.spinBox_repeat_scan_num.setValue(6)
+
+    # set up scan num of points
+    display.ui.scan_pts_spin_box.setValue(10)
+
+    # set up detectors
+    display.ui.detectors_list.selected_detectors = mock.MagicMock(
+        return_value=["vortex_me4", "I0"]
+    )
+
+    # set up default timing for the detector
+    detectors = display.ui.detectors_list.selected_detectors()
+    detectors = {name: app.registry[name] for name in detectors}
+    detectors["I0"].default_time_signal.set(1).wait(2)
+    detectors["vortex_me4"].default_time_signal.set(0.5).wait(2)
+
+    # Create empty QItemSelection objects
+    selected = QtCore.QItemSelection()
+    deselected = QtCore.QItemSelection()
+
+    # emit the signal so that the time calculator is triggered
+    display.ui.detectors_list.selectionModel().selectionChanged.emit(selected, deselected)
+
+
+    # Check whether time is calculated correctly for a single scan
+    assert int(display.ui.label_hour_scan.text()) == 0
+    assert int(display.ui.label_min_scan.text()) == 0
+    assert int(display.ui.label_sec_scan.text()) == 10
+
+    # Check whether time is calculated correctly including the repeated scan
+    assert int(display.ui.label_hour_total.text()) == 0
+    assert int(display.ui.label_min_total.text()) == 1
+    assert int(display.ui.label_sec_total.text()) == 0
+
 
 def test_line_scan_plan_queued(ffapp, qtbot, sim_registry, fake_motors, dxp, I0):
-    app = FireflyApplication.instance()
     display = LineScanDisplay()
     display.ui.run_button.setEnabled(True)
 
     # set up motor num
     display.ui.num_motor_spin_box.setValue(2)
 
-    # set up num of repeat scans
-    display.ui.spinBox_repeat_scan_num.setValue(6)
     display.update_regions()
 
     # set up a test motor 1
@@ -43,21 +83,12 @@ def test_line_scan_plan_queued(ffapp, qtbot, sim_registry, fake_motors, dxp, I0)
     display.regions[1].stop_line_edit.setText("222")
 
     # set up scan num of points
-    display.ui.scan_pts_spin_box.setValue(2)
+    display.ui.scan_pts_spin_box.setValue(10)
 
     # time is calculated when the selection is changed
     display.ui.detectors_list.selected_detectors = mock.MagicMock(
         return_value=["vortex_me4", "I0"]
     )
-
-    # # set up default timing for the detector
-    detectors = display.ui.detectors_list.selected_detectors()
-    detectors = {name: app.registry[name] for name in detectors}
-    detectors["I0"].default_time_signal.set(1).wait(2)
-    detectors["vortex_me4"].default_time_signal.set(0.5).wait(2)
-
-    # trigger update_total_time by changing scan num
-    display.ui.scan_pts_spin_box.setValue(10)
 
     # set up meta data
     display.ui.lineEdit_sample.setText("sam")
@@ -78,26 +109,7 @@ def test_line_scan_plan_queued(ffapp, qtbot, sim_registry, fake_motors, dxp, I0)
     )
 
     def check_item(item):
-        # check whether time is calculated correctly
-        try:
-            # Check whether time is calculated correctly for a single scan
-            assert int(display.ui.label_hour_scan.text()) == 0
-            assert int(display.ui.label_min_scan.text()) == 0
-            assert int(display.ui.label_sec_scan.text()) == 10
-
-            # # Check whether time is calculated correctly including the repeated scan
-            assert int(display.ui.label_hour_total.text()) == 0
-            assert int(display.ui.label_min_total.text()) == 1
-            assert int(display.ui.label_sec_total.text()) == 0
-
-            # # Check if the remaining dictionary items are equal
-            assert item.to_dict() == expected_item.to_dict()
-
-        except AssertionError as e:
-            print(e)
-            return False
-
-        return True
+        return item.to_dict() == expected_item.to_dict()
 
     # Click the run button and see if the plan is queued
     with qtbot.waitSignal(
