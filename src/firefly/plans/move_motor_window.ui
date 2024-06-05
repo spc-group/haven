@@ -71,13 +71,6 @@
         </widget>
        </item>
        <item>
-        <widget class="Line" name="line_3">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-        </widget>
-       </item>
-       <item>
         <spacer name="horizontalSpacer">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
@@ -176,7 +169,7 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>631</width>
+            <width>640</width>
             <height>234</height>
            </rect>
           </property>
@@ -267,13 +260,6 @@
            </item>
           </layout>
          </widget>
-        </widget>
-       </item>
-       <item>
-        <widget class="Line" name="line_5">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
         </widget>
        </item>
       </layout>
