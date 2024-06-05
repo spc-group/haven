@@ -5,6 +5,7 @@ from bluesky_queueserver_api import BPlan
 from ophyd.sim import make_fake_device
 from qtpy import QtCore
 
+from firefly.application import FireflyApplication
 from firefly.plans.grid_scan import GridScanDisplay
 from haven.instrument import motor
 
@@ -18,6 +19,51 @@ def fake_motors(sim_registry):
         sim_registry.register(this_motor)
         motors.append(this_motor)
     return motors
+
+
+def test_time_calculator(qtbot, sim_registry, fake_motors, dxp, I0):
+    app = FireflyApplication.instance()
+    display = GridScanDisplay()
+    qtbot.addWidget(display)
+
+    # set up motor num
+    display.ui.num_motor_spin_box.setValue(2)
+
+    # set up num of repeat scans
+    display.ui.spinBox_repeat_scan_num.setValue(6)
+
+    # set up scan num of points
+    display.ui.scan_pts_spin_box.setValue(10)
+
+    # set up detectors
+    display.ui.detectors_list.selected_detectors = mock.MagicMock(
+        return_value=["vortex_me4", "I0"]
+    )
+
+    # set up default timing for the detector
+    detectors = display.ui.detectors_list.selected_detectors()
+    detectors = {name: app.registry[name] for name in detectors}
+    detectors["I0"].default_time_signal.set(1).wait(2)
+    detectors["vortex_me4"].default_time_signal.set(0.5).wait(2)
+
+    # Create empty QItemSelection objects
+    selected = QtCore.QItemSelection()
+    deselected = QtCore.QItemSelection()
+
+    # emit the signal so that the time calculator is triggered
+    display.ui.detectors_list.selectionModel().selectionChanged.emit(
+        selected, deselected
+    )
+
+    # Check whether time is calculated correctly for a single scan
+    assert int(display.ui.label_hour_scan.text()) == 0
+    assert int(display.ui.label_min_scan.text()) == 0
+    assert int(display.ui.label_sec_scan.text()) == 20
+
+    # Check whether time is calculated correctly including the repeated scan
+    assert int(display.ui.label_hour_total.text()) == 0
+    assert int(display.ui.label_min_total.text()) == 2
+    assert int(display.ui.label_sec_total.text()) == 0
 
 
 def test_grid_scan_plan_queued(ffapp, qtbot, sim_registry, fake_motors):
@@ -61,7 +107,7 @@ def test_grid_scan_plan_queued(ffapp, qtbot, sim_registry, fake_motors):
         2,
         222,
         num=10,
-        snake_axes=[0],
+        snake_axes=["motorA_m1"],
         md={"sample": "sam", "purpose": "test", "notes": "notes"},
     )
 
