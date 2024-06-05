@@ -6,6 +6,7 @@ from bluesky_queueserver_api import BPlan
 from qtpy import QtWidgets
 from qtpy.QtCore import QObject, Signal
 from qtpy.QtGui import QDoubleValidator
+from util import is_valid_value, time_converter
 from xraydb.xraydb import XrayDB
 
 from firefly import display
@@ -19,8 +20,6 @@ from haven.energy_ranges import (
     merge_ranges,
     wavenumber_to_energy,
 )
-from util import time_converter
-from util import is_valid_value
 
 log = logging.getLogger(__name__)
 
@@ -181,17 +180,17 @@ class XafsScanRegion(QObject):
     def update_total_time(self):
         weight = self.weight_spinbox.value()
         exposure_time = self.exposure_time_spinbox.value()
-        
+
         # prevent invalid inputs such as nan
         try:
             start = round(float(self.start_line_edit.text()), float_accuracy)
             stop = round(float(self.stop_line_edit.text()), float_accuracy)
             step = round(float(self.step_line_edit.text()), float_accuracy)
-            
+
         # when the round doesn't work for nan values
         except ValueError:
             self.kErange = []
-            start, stop, step = float("nan"), float('nan'), float('nan')
+            start, stop, step = float("nan"), float("nan"), float("nan")
 
         finally:
             if self.k_space_checkbox.isChecked():
@@ -211,7 +210,7 @@ class XafsScanRegion(QObject):
                     weight=weight,
                     exposure=exposure_time,
                 )
-        
+
             # Emit the signal regardless of success or failure
             self.time_calculation_signal.emit()
 

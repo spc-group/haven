@@ -1,13 +1,14 @@
 __all__ = ["time_converter"]
 
+
 def time_converter(total_seconds):
     """
     Convert time (in seconds) to a tuple of hours, minutes, seconds
-    
+
     Parameters
     ==========
     total_seconds (float/int)
-    
+
     Returns
     ==========
     tuple: hours, minutes, seconds
@@ -20,11 +21,12 @@ def time_converter(total_seconds):
         hours, minutes, seconds = "N/A", "N/A", "N/A"
     return hours, minutes, seconds
 
+
 def is_valid_value(value):
     """
     Check if the value is considered valid for inclusion in metadata.
     Valid values are non-None, non-false, and if they are collections, they should have a positive length.
-    
+
     Parameters
     ==========
         value (any): The value to check.

@@ -19,11 +19,12 @@ def fake_motors(sim_registry):
         motors.append(this_motor)
     return motors
 
+
 def test_time_calculator(qtbot, sim_registry, fake_motors, dxp, I0):
     app = FireflyApplication.instance()
     display = LineScanDisplay()
     qtbot.addWidget(display)
-    
+
     # set up motor num
     display.ui.num_motor_spin_box.setValue(2)
 
@@ -49,8 +50,9 @@ def test_time_calculator(qtbot, sim_registry, fake_motors, dxp, I0):
     deselected = QtCore.QItemSelection()
 
     # emit the signal so that the time calculator is triggered
-    display.ui.detectors_list.selectionModel().selectionChanged.emit(selected, deselected)
-
+    display.ui.detectors_list.selectionModel().selectionChanged.emit(
+        selected, deselected
+    )
 
     # Check whether time is calculated correctly for a single scan
     assert int(display.ui.label_hour_scan.text()) == 0

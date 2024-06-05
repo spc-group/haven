@@ -8,8 +8,7 @@ from firefly import display
 from firefly.application import FireflyApplication
 from firefly.component_selector import ComponentSelector
 
-from .util import time_converter
-from .util import is_valid_value
+from .util import is_valid_value, time_converter
 
 log = logging.getLogger()
 
