@@ -205,11 +205,12 @@ def test_xafs_scan_plan_queued_energies_k_mixed(ffapp, qtbot):
     exposures = np.array(
         [1, 1, 1, 1, 1, 1, 1, 1, 5.665, 14.141]
     )  # k exposures kmin 3.62263
+    
     # set up meta data
     display.ui.lineEdit_sample.setText("sam")
-    display.ui.lineEdit_purpose.setText("test")
+    display.ui.lineEdit_purpose.setText("") # invalid input should be removed from md
     display.ui.textEdit_notes.setText("sam_notes")
-
+    
     expected_item = BPlan(
         "energy_scan",
         energies=energies,
@@ -218,7 +219,6 @@ def test_xafs_scan_plan_queued_energies_k_mixed(ffapp, qtbot):
         detectors=["vortex_me4", "I0"],
         md={
             "sample": "sam",
-            "purpose": "test",
             "is_standard": False,
             "notes": "sam_notes",
         },
