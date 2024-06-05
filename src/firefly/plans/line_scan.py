@@ -8,6 +8,9 @@ from firefly import display
 from firefly.application import FireflyApplication
 from firefly.component_selector import ComponentSelector
 
+from .util import time_converter
+from .util import is_valid_value
+
 log = logging.getLogger()
 
 
@@ -56,14 +59,6 @@ class LineScanDisplay(display.FireflyDisplay):
         )
         self.ui.spinBox_repeat_scan_num.valueChanged.connect(self.update_total_time)
         self.ui.scan_pts_spin_box.valueChanged.connect(self.update_total_time)
-
-    def time_converter(self, total_seconds):
-        hours = round(total_seconds // 3600)
-        minutes = round((total_seconds % 3600) // 60)
-        seconds = round(total_seconds % 60)
-        if total_seconds == -1:
-            hours, minutes, seconds = "N/A", "N/A", "N/A"
-        return hours, minutes, seconds
 
     def clearLayout(self, layout):
         if layout is not None:
@@ -124,7 +119,7 @@ class LineScanDisplay(display.FireflyDisplay):
         total_time_per_scan = detector_time * num_points
 
         # calculate time for each scan
-        hrs, mins, secs = self.time_converter(total_time_per_scan)
+        hrs, mins, secs = time_converter(total_time_per_scan)
         self.ui.label_hour_scan.setText(str(hrs))
         self.ui.label_min_scan.setText(str(mins))
         self.ui.label_sec_scan.setText(str(secs))
@@ -132,7 +127,7 @@ class LineScanDisplay(display.FireflyDisplay):
         # calculate time for entire planf
         num_scan_repeat = self.ui.spinBox_repeat_scan_num.value()
         total_time = num_scan_repeat * total_time_per_scan
-        hrs_total, mins_total, secs_total = self.time_converter(total_time)
+        hrs_total, mins_total, secs_total = time_converter(total_time)
 
         self.ui.label_hour_total.setText(str(hrs_total))
         self.ui.label_min_total.setText(str(mins_total))
@@ -164,7 +159,7 @@ class LineScanDisplay(display.FireflyDisplay):
             "notes": self.ui.textEdit_notes.toPlainText(),
         }
         # Only include metadata that isn't an empty string
-        md = {key: val for key, val in md.items() if len(val) > 0}
+        md = {key: val for key, val in md.items() if is_valid_value(val)}
 
         return detectors, num_points, motor_args, repeat_scan_num, md
 
