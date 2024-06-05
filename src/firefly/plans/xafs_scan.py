@@ -19,8 +19,8 @@ from haven.energy_ranges import (
     merge_ranges,
     wavenumber_to_energy,
 )
-from .util import time_converter
-from .util import is_valid_value
+from util import time_converter
+from util import is_valid_value
 
 log = logging.getLogger(__name__)
 
@@ -179,12 +179,21 @@ class XafsScanRegion(QObject):
                 self.update_line_edit_value(line_edit, func)
 
     def update_total_time(self):
+        weight = self.weight_spinbox.value()
+        exposure_time = self.exposure_time_spinbox.value()
+        
+        # prevent invalid inputs such as nan
         try:
             start = round(float(self.start_line_edit.text()), float_accuracy)
             stop = round(float(self.stop_line_edit.text()), float_accuracy)
             step = round(float(self.step_line_edit.text()), float_accuracy)
-            weight = self.weight_spinbox.value()
-            exposure_time = self.exposure_time_spinbox.value()
+            
+        # when the round doesn't work for nan values
+        except ValueError:
+            self.kErange = []
+            start, stop, step = float("nan"), float('nan'), float('nan')
+
+        finally:
             if self.k_space_checkbox.isChecked():
                 self.kErange = KRange(
                     k_min=start,
@@ -202,12 +211,7 @@ class XafsScanRegion(QObject):
                     weight=weight,
                     exposure=exposure_time,
                 )
-
-        # when there's invalid number in the lineEdits, set an empty kErange
-        except ValueError:
-            self.kErange = []
-
-        finally:
+        
             # Emit the signal regardless of success or failure
             self.time_calculation_signal.emit()
 
