@@ -7,8 +7,7 @@ from qtpy.QtGui import QDoubleValidator
 from firefly import display
 from firefly.application import FireflyApplication
 from firefly.component_selector import ComponentSelector
-
-from .util import is_valid_value, time_converter
+from firefly.plans.util import is_valid_value, time_converter
 
 log = logging.getLogger()
 
@@ -114,8 +113,7 @@ class LineScanDisplay(display.FireflyDisplay):
             detector_time = -1
 
         # get scan num points to calculate total time
-        num_points = self.ui.scan_pts_spin_box.value()
-        total_time_per_scan = detector_time * num_points
+        total_time_per_scan = self.time_calculate_method(detector_time)
 
         # calculate time for each scan
         hrs, mins, secs = time_converter(total_time_per_scan)
@@ -123,7 +121,7 @@ class LineScanDisplay(display.FireflyDisplay):
         self.ui.label_min_scan.setText(str(mins))
         self.ui.label_sec_scan.setText(str(secs))
 
-        # calculate time for entire planf
+        # calculate time for entire plan
         num_scan_repeat = self.ui.spinBox_repeat_scan_num.value()
         total_time = num_scan_repeat * total_time_per_scan
         hrs_total, mins_total, secs_total = time_converter(total_time)
@@ -131,6 +129,11 @@ class LineScanDisplay(display.FireflyDisplay):
         self.ui.label_hour_total.setText(str(hrs_total))
         self.ui.label_min_total.setText(str(mins_total))
         self.ui.label_sec_total.setText(str(secs_total))
+
+    def time_calculate_method(self, detector_time):
+        num_points = self.ui.scan_pts_spin_box.value()
+        total_time_per_scan = detector_time * num_points
+        return total_time_per_scan
 
     def get_scan_parameters(self):
         # Get scan parameters from widgets

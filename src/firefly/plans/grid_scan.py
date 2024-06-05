@@ -106,6 +106,12 @@ class GridScanDisplay(LineScanDisplay):
             # region.motor_label.setText(str(num_motor_i)) # when using label
             region.motor_label.display(num_motor_i)
 
+    def time_calculate_method(self, detector_time):
+        num_points = self.ui.scan_pts_spin_box.value()
+        num_regions = len(self.regions)
+        total_time_per_scan = num_regions * detector_time * num_points
+        return total_time_per_scan
+
     def update_regions(self):
         super().update_regions()
 
@@ -122,10 +128,11 @@ class GridScanDisplay(LineScanDisplay):
 
         # get snake axes, if all unchecked, set it None
         snake_axes = [
-            i
+            region_i.motor_box.current_component().name
             for i, region_i in enumerate(self.regions)
             if region_i.snake_checkbox.isChecked()
         ]
+
         if snake_axes == []:
             snake_axes = False
 
