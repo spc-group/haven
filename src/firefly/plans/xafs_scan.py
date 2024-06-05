@@ -6,7 +6,7 @@ from bluesky_queueserver_api import BPlan
 from qtpy import QtWidgets
 from qtpy.QtCore import QObject, Signal
 from qtpy.QtGui import QDoubleValidator
-from util import is_valid_value, time_converter
+from firefly.plans.util import is_valid_value, time_converter
 from xraydb.xraydb import XrayDB
 
 from firefly import display
