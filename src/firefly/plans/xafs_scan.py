@@ -19,6 +19,8 @@ from haven.energy_ranges import (
     merge_ranges,
     wavenumber_to_energy,
 )
+from .util import time_converter
+from .util import is_valid_value
 
 log = logging.getLogger(__name__)
 
@@ -33,15 +35,6 @@ def wavenumber_to_energy_round(wavenumber):
 
 def k_step_to_E_step_round(k_start, k_step):
     return round(k_step_to_E_step(k_start, k_step), 2)
-
-
-def time_converter(total_seconds):
-    hours = round(total_seconds // 3600)
-    minutes = round((total_seconds % 3600) // 60)
-    seconds = round(total_seconds % 60)
-    if total_seconds == -1:
-        hours, minutes, seconds = "N/A", "N/A", "N/A"
-    return hours, minutes, seconds
 
 
 class TitleRegion:
@@ -482,6 +475,8 @@ class XafsScanDisplay(display.FireflyDisplay):
             "is_standard": self.ui.checkBox_is_standard.isChecked(),
             "notes": self.ui.textEdit_notes.toPlainText(),
         }
+        # Only include metadata that isn't an empty string
+        md = {key: val for key, val in md.items() if is_valid_value(val)}
 
         # Check that an absorption edge was selected
         if self.use_edge_checkbox.isChecked():
