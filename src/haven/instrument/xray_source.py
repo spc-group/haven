@@ -3,7 +3,7 @@ import warnings
 from enum import IntEnum
 
 from apstools.devices.aps_undulator import ApsUndulator
-from ophyd import EpicsSignal, EpicsSignalRO, DerivedSignal, Component as Cpt, PVPositionerPC, Device
+from ophyd import EpicsSignal, EpicsSignalRO, DerivedSignal, Component as Cpt, PVPositioner, Device
 
 from .._iconfig import load_config
 from .device import make_device
@@ -26,15 +26,15 @@ class MotorDriveStatus(IntEnum):
     READY_TO_MOVE = 1
 
 
-class UndulatorPositioner(PVPositionerPC):
+class UndulatorPositioner(PVPositioner):
     setpoint = Cpt(EpicsSignal, "SetC.VAL")
     readback = Cpt(EpicsSignalRO, "M.VAL")
 
-    # actuate = Cpt(DerivedSignal, "parent.start_button", kind="omitted")
-    # stop_signal = Cpt(DerivedSignal, "parent.stop_button", kind="omitted")
-    # put_complete = 1
-    # done = Cpt(DerivedSignal, "parent.done", kind="omitted")
-    # done_value = DoneStatus.DONE
+    actuate = Cpt(DerivedSignal, derived_from="parent.start_button", kind="omitted")
+    stop_signal = Cpt(DerivedSignal, derived_from="parent.stop_button", kind="omitted")
+    put_complete = 1
+    done = Cpt(DerivedSignal, derived_from="parent.done", kind="omitted")
+    done_value = DoneStatus.DONE
 
 
 class PlanarUndulator(Device):
@@ -51,28 +51,25 @@ class PlanarUndulator(Device):
         undulator = PlanarUndulator("S25ID:USID:", name="undulator")
 
     """
+    # X-ray spectrum parameters
     energy = Cpt(UndulatorPositioner, "Energy")
     energy_taper = Cpt(UndulatorPositioner, "TaperEnergy")
     gap = Cpt(UndulatorPositioner, "Gap")
     gap_taper = Cpt(UndulatorPositioner, "TaperGap")
-
+    harmonic_value = Cpt(EpicsSignal, "HarmonicValueC", kind="config")
+    total_power = Cpt(EpicsSignalRO, "TotalPowerM.VAL", kind="config")
+    # Signals for moving the undulator
     start_button = Cpt(EpicsSignal, "StartC.VAL", put_complete=True, kind="omitted")
     stop_button = Cpt(EpicsSignal, "StopC.VAL", kind="omitted")
     busy = Cpt(EpicsSignalRO, "BusyM.VAL", kind="omitted")
     done = Cpt(EpicsSignalRO, "BusyDeviceM.VAL", kind="omitted")
     motor_drive_status = Cpt(EpicsSignalRO, "MotorDriveStatusM.VAL", kind="omitted")
-
-    harmonic_value = Cpt(EpicsSignal, "HarmonicValueC", kind="config")
+    # Miscellaneous control signals
     gap_deadband = Cpt(EpicsSignal, "DeadbandGapC", kind="config")
     device_limit = Cpt(EpicsSignal, "DeviceLimitM.VAL", kind="config")
-
     access_mode = Cpt(EpicsSignalRO, "AccessSecurityC", kind="omitted")
-    total_power = Cpt(EpicsSignalRO, "TotalPowerM.VAL", kind="config")
     message1 = Cpt(EpicsSignalRO, "Message1M.VAL", kind="omitted")
     message2 = Cpt(EpicsSignalRO, "Message2M.VAL", kind="omitted")
-    message3 = Cpt(EpicsSignalRO, "Message3M.VAL", kind="omitted")
-    # time_left = Cpt(EpicsSignalRO, "ShClosedTime", kind="omitted")
-
     device = Cpt(EpicsSignalRO, "DeviceM", kind="config")
     magnet = Cpt(EpicsSignalRO, "DeviceMagnetM", kind="config")
     location = Cpt(EpicsSignalRO, "LocationM", kind="config")
