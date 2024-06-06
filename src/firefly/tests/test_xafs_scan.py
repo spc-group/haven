@@ -230,14 +230,14 @@ def test_xafs_scan_plan_queued_energies_k_mixed(ffapp, qtbot):
 
         try:
             # Check whether time is calculated correctly for a single scan
-            assert int(display.ui.label_hour_scan.text()) == 0
-            assert int(display.ui.label_min_scan.text()) == 0
-            assert int(display.ui.label_sec_scan.text()) == 28
+            assert int(float(display.ui.label_hour_scan.text())) == 0
+            assert int(float(display.ui.label_min_scan.text())) == 0
+            assert int(float(display.ui.label_sec_scan.text())) == 28
 
             # Check whether time is calculated correctly including the repeated scan
-            assert int(display.ui.label_hour_total.text()) == 0
-            assert int(display.ui.label_min_total.text()) == 1
-            assert int(display.ui.label_sec_total.text()) == 23
+            assert int(float(display.ui.label_hour_total.text())) == 0
+            assert int(float(display.ui.label_min_total.text())) == 1
+            assert int(float(display.ui.label_sec_total.text())) == 23
 
             # Check energies & exposures within 3 decimals
             np.testing.assert_array_almost_equal(
@@ -257,6 +257,7 @@ def test_xafs_scan_plan_queued_energies_k_mixed(ffapp, qtbot):
             assert item_dict == expected_dict, "Non-array items do not match."
 
         except AssertionError as e:
+            print(e)
             return False
         return True
 
