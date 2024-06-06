@@ -1,3 +1,5 @@
+import numpy as np
+
 __all__ = ["time_converter"]
 
 
@@ -14,11 +16,10 @@ def time_converter(total_seconds):
     tuple: hours, minutes, seconds
     """
 
-    hours = round(total_seconds // 3600)
-    minutes = round((total_seconds % 3600) // 60)
-    seconds = round(total_seconds % 60)
-    if total_seconds == -1:
-        hours, minutes, seconds = "N/A", "N/A", "N/A"
+    # use np.round instead round to prevent errors in round(float("nan"))
+    hours = np.round(total_seconds // 3600)
+    minutes = np.round((total_seconds % 3600) // 60)
+    seconds = np.round(total_seconds % 60)
     return hours, minutes, seconds
 
 

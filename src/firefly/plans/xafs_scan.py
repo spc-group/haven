@@ -391,7 +391,7 @@ class XafsScanDisplay(display.FireflyDisplay):
             _, exposures = merge_ranges(*kEranges_all, sort=True)
             total_time_per_scan = exposures.sum()
         except ValueError:
-            total_time_per_scan = -1
+            total_time_per_scan = float("nan")
 
         # calculate time for each scan
         hr, min, sec = time_converter(total_time_per_scan)

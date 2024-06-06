@@ -110,7 +110,7 @@ class LineScanDisplay(display.FireflyDisplay):
         try:
             detector_time = max([det.default_time_signal.get() for det in detectors])
         except ValueError:
-            detector_time = -1
+            detector_time = float("nan")
 
         # get scan num points to calculate total time
         total_time_per_scan = self.time_calculate_method(detector_time)
