@@ -6,7 +6,7 @@ from ophyd.sim import make_fake_device
 from qtpy import QtCore
 
 from firefly.application import FireflyApplication
-from firefly.plans.line_scan import LineScanDisplay
+from firefly.plans.grid_scan import GridScanDisplay
 from haven.instrument import motor
 
 
@@ -16,13 +16,14 @@ def fake_motors(sim_registry):
     motors = []
     for name in motor_names:
         this_motor = make_fake_device(motor.HavenMotor)(name=name, labels={"motors"})
+        sim_registry.register(this_motor)
         motors.append(this_motor)
     return motors
 
 
 def test_time_calculator(qtbot, sim_registry, fake_motors, dxp, I0):
     app = FireflyApplication.instance()
-    display = LineScanDisplay()
+    display = GridScanDisplay()
     qtbot.addWidget(display)
 
     # set up motor num
@@ -57,27 +58,26 @@ def test_time_calculator(qtbot, sim_registry, fake_motors, dxp, I0):
     # Check whether time is calculated correctly for a single scan
     assert int(display.ui.label_hour_scan.text()) == 0
     assert int(display.ui.label_min_scan.text()) == 0
-    assert int(display.ui.label_sec_scan.text()) == 10
+    assert int(display.ui.label_sec_scan.text()) == 20
 
     # Check whether time is calculated correctly including the repeated scan
     assert int(display.ui.label_hour_total.text()) == 0
-    assert int(display.ui.label_min_total.text()) == 1
+    assert int(display.ui.label_min_total.text()) == 2
     assert int(display.ui.label_sec_total.text()) == 0
 
 
-def test_line_scan_plan_queued(ffapp, qtbot, sim_registry, fake_motors, dxp, I0):
-    display = LineScanDisplay()
+def test_grid_scan_plan_queued(ffapp, qtbot, sim_registry, fake_motors):
+    display = GridScanDisplay()
     display.ui.run_button.setEnabled(True)
-
-    # set up motor num
     display.ui.num_motor_spin_box.setValue(2)
-
     display.update_regions()
 
     # set up a test motor 1
     display.regions[0].motor_box.combo_box.setCurrentText("motorA_m1")
     display.regions[0].start_line_edit.setText("1")
     display.regions[0].stop_line_edit.setText("111")
+    # select snake for the first motor
+    display.regions[0].snake_checkbox.setChecked(True)
 
     # set up a test motor 2
     display.regions[1].motor_box.combo_box.setCurrentText("motorA_m2")
@@ -87,7 +87,7 @@ def test_line_scan_plan_queued(ffapp, qtbot, sim_registry, fake_motors, dxp, I0)
     # set up scan num of points
     display.ui.scan_pts_spin_box.setValue(10)
 
-    # time is calculated when the selection is changed
+    # set up detector list
     display.ui.detectors_list.selected_detectors = mock.MagicMock(
         return_value=["vortex_me4", "I0"]
     )
@@ -98,15 +98,16 @@ def test_line_scan_plan_queued(ffapp, qtbot, sim_registry, fake_motors, dxp, I0)
     display.ui.textEdit_notes.setText("notes")
 
     expected_item = BPlan(
-        "scan",
+        "grid_scan",
         ["vortex_me4", "I0"],
         "motorA_m1",
-        1.0,
-        111.0,
+        1,
+        111,
         "motorA_m2",
-        2.0,
-        222.0,
+        2,
+        222,
         num=10,
+        snake_axes=["motorA_m1"],
         md={"sample": "sam", "purpose": "test", "notes": "notes"},
     )
 
