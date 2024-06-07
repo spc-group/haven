@@ -77,26 +77,6 @@ class PlanarUndulator(Device):
     version_hpmu = Cpt(EpicsSignalRO, "HPMUVersionM.VAL", kind="config")
 
 
-def load_xray_source(config=None):
-    if config is None:
-        config = load_config()
-    # Determine the X-ray source type (undulator vs bending magnet)
-
-    try:
-        data = config["xray_source"]
-    except KeyError:
-        warnings.warn("No X-ray source configured")
-    else:
-        if data["type"] == "undulator":
-            device = make_device(
-                ApsUndulator,
-                prefix=data["prefix"],
-                name="undulator",
-                labels={"xray_sources"},
-            )
-            return device
-
-
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov

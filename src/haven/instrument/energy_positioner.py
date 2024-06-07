@@ -62,13 +62,6 @@ class EnergyPositioner(PVPositionerPC):
     monochromator = FCpt(Monochromator, "{mono_prefix}")
     undulator = FCpt(PlanarUndulator, "{undulator_prefix}")
 
-    # Equivalent real axes
-    # mono_energy: OphydObject = FCpt(EpicsMotor, "{mono_pv}", kind="normal")
-    # id_offset: float = 300.  # In eV
-    # id_tracking: OphydObject = FCpt(EpicsSignal, "{id_tracking_pv}", kind="config")
-    # id_offset: OphydObject = FCpt(EpicsSignal, "{id_offset_pv}", kind="config")
-    # id_energy: OphydObject = FCpt(Undulator, "{id_prefix}", kind="normal")
-
     def __init__(
         self,
         mono_prefix: str,
@@ -109,23 +102,6 @@ class EnergyPositioner(PVPositionerPC):
         calculate_on_put=set_energy,
         name="readback",
     )
-    # readback = Cpt(MultiDerivedSignal, name="readback")
-
-    # @pseudo_position_argument
-    # def forward(self, target_energy):
-    #     "Given a target energy, transform to the mono and ID energies."
-    #     id_offset_ev = self.id_offset.get(use_monitor=True)
-    #     return self.RealPosition(
-    #         mono_energy=target_energy.energy,
-    #         id_energy=(target_energy.energy + id_offset_ev) / 1000.0,
-    #     )
-
-    # @real_position_argument
-    # def inverse(self, device_energy):
-    #     "Given a position in mono and ID energy, transform to the target energy."
-    #     return self.PseudoPosition(
-    #         energy=device_energy.mono_energy,
-    #     )
 
 
 def load_energy_positioner(config=None):
@@ -135,19 +111,14 @@ def load_energy_positioner(config=None):
     # Guard to make sure we have a mono and ID configuration
     if "monochromator" not in config.keys() or "undulator" not in config.keys():
         return
-    # Extract PVs from config
-    undulator_prefix = config["undulator"]["ioc"]
-    # id_offset_suffix = Monochromator.id_offset.suffix
-    # id_tracking_suffix = Monochromator.id_tracking.suffix
     # Make the combined energy device
-    return make_device(
+    device = make_device(
         EnergyPositioner,
         name="energy",
         mono_prefix=config["monochromator"]["prefix"],
-        # id_offset_pv=f"{mono_prefix}{id_offset_suffix}",
-        # id_tracking_pv=f"{mono_prefix}{id_tracking_suffix}",
-        undulator_prefix=undulator_prefix,
+        undulator_prefix=config["undulator"]["prefix"],
     )
+    return device
 
 
 # -----------------------------------------------------------------------------

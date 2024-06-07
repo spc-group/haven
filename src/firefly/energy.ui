@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>497</width>
-    <height>745</height>
+    <height>793</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -171,6 +171,9 @@ It will change the monochromator and undulator (if applicable), but makes no att
           </property>
           <property name="text">
            <string>###### eV</string>
+          </property>
+          <property name="showUnits" stdset="0">
+           <bool>true</bool>
           </property>
           <property name="channel" stdset="0">
            <string>haven://energy.readback</string>
@@ -354,6 +357,9 @@ It will change the monochromator and undulator (if applicable), but makes no att
           <property name="text">
            <string>####.###### um</string>
           </property>
+          <property name="showUnits" stdset="0">
+           <bool>true</bool>
+          </property>
           <property name="channel" stdset="0">
            <string>haven://energy.monochromator.gap.user_readback</string>
           </property>
@@ -378,6 +384,9 @@ It will change the monochromator and undulator (if applicable), but makes no att
           </property>
           <property name="text">
            <string>#####.###### urad</string>
+          </property>
+          <property name="showUnits" stdset="0">
+           <bool>true</bool>
           </property>
           <property name="channel" stdset="0">
            <string>haven://energy.monochromator.pitch2.user_readback</string>
@@ -500,8 +509,11 @@ It will change the monochromator and undulator (if applicable), but makes no att
             <property name="text">
              <string>#####.###### urad</string>
             </property>
+            <property name="showUnits" stdset="0">
+             <bool>true</bool>
+            </property>
             <property name="channel" stdset="0">
-             <string>haven://energy.monochromator.roll.user_readback</string>
+             <string>haven://energy.monochromator.roll2.user_readback</string>
             </property>
            </widget>
           </item>
@@ -713,6 +725,9 @@ It will change the monochromator and undulator (if applicable), but makes no att
           <property name="text">
            <string>####.###### um</string>
           </property>
+          <property name="showUnits" stdset="0">
+           <bool>true</bool>
+          </property>
           <property name="channel" stdset="0">
            <string>haven://energy.monochromator.offset.user_readback</string>
           </property>
@@ -834,6 +849,9 @@ It will change the monochromator and undulator (if applicable), but makes no att
           </property>
           <property name="text">
            <string>##.### mrad</string>
+          </property>
+          <property name="showUnits" stdset="0">
+           <bool>true</bool>
           </property>
           <property name="channel" stdset="0">
            <string>haven://energy.undulator.energy_taper.readback</string>

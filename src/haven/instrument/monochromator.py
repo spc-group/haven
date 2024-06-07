@@ -51,21 +51,6 @@ class Monochromator(Device):
         self.stage_sigs[self.id_tracking] = IDTracking.OFF
 
 
-def load_monochromators(config=None):
-    # Load PV's from config
-    if config is None:
-        config = load_config()
-    # Guard to make sure there's at least one mono configuration
-    if "monochromator" not in config.keys():
-        return []
-    # Load mono device from configuration
-    prefix = config["monochromator"]["ioc"]
-    mono = make_device(
-        Monochromator, name="monochromator", labels={"monochromators"}, prefix=prefix
-    )
-    return [mono]
-
-
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov

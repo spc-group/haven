@@ -3,10 +3,6 @@
 prefix = "255idc:bss"
 beamline = "255-ID-C"
 
-[xray_source]
-
-type = "undulator"
-prefix = "ID255:"
 
 #####################
 # Queueserver
