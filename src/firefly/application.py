@@ -21,7 +21,7 @@ from qtpy.QtWidgets import QAction
 from haven import load_config
 from haven import load_instrument as load_haven_instrument
 from haven import registry
-from haven.exceptions import ComponentNotFound
+from haven.exceptions import ComponentNotFound, InvalidConfiguration
 from haven.instrument.device import titelize
 
 from .main_window import FireflyMainWindow, PlanMainWindow
@@ -540,8 +540,10 @@ class FireflyApplication(PyDMApplication):
             try:
                 api = queueserver_api()
             except InvalidConfiguration:
-                log.error("Could not load queueserver API "
-                          "configuration from iconfig.toml file.")
+                log.error(
+                    "Could not load queueserver API "
+                    "configuration from iconfig.toml file."
+                )
                 return
         # Create the client object
         if client is None:

@@ -16,7 +16,7 @@ class GainOverflow(RuntimeError):
 
     ...
 
-    
+
 class FileNotWritable(IOError):
     """Output file is available but does not have write intent."""
 
@@ -55,7 +55,9 @@ class IOCTimeout(RuntimeError):
 
 class InvalidConfiguration(ValueError):
     """The configuration files for Haven are missing keys."""
+
     ...
+
 
 class UnknownDeviceConfiguration(InvalidConfiguration):
     """The configuration for a device does not match the known options."""
