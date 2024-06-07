@@ -59,8 +59,8 @@ class EnergyPositioner(PVPositionerPC):
     """
 
     # Individual energy components
-    monochromator = FCpt(Monochromator, "{mono_prefix}")
-    undulator = FCpt(PlanarUndulator, "{undulator_prefix}")
+    monochromator = FCpt(Monochromator, "{mono_prefix}", labels={"monochromators"})
+    undulator = FCpt(PlanarUndulator, "{undulator_prefix}", labels={"undulator", "xray_source"})
 
     def __init__(
         self,
