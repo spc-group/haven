@@ -265,13 +265,13 @@ class FireflyApplication(PyDMApplication):
         )
         # Actions for executing plans
         plans = [
-            # (plan_name, text, display file, shortcut)
-            ("count", "&Count", "count.py", "Ctrl+Shift+C"),
-            ("line_scan", "&Line scan", "line_scan.py", "Ctrl+Shift+L"),
-            ("xafs_scan", "&XAFS Scan", "xafs_scan.py", "Ctrl+Shift+X"),
+            # (plan_name, text, display file, shortcut, icon)
+            ("count", "&Count", "count.py", "Ctrl+Shift+C", "mdi.counter"),
+            ("line_scan", "&Line scan", "line_scan.py", "Ctrl+Shift+L", None),
+            ("xafs_scan", "&XAFS Scan", "xafs_scan.py", "Ctrl+Shift+X", None),
         ]
         self.plan_actions = []
-        for plan_name, text, display_file, shortcut in plans:
+        for plan_name, text, display_file, shortcut, icon in plans:
             slot = partial(
                 self.show_plan_window, name=plan_name, display_file=display_file
             )
@@ -283,6 +283,8 @@ class FireflyApplication(PyDMApplication):
             action.triggered.connect(slot)
             if shortcut is not None:
                 action.setShortcut(QKeySequence(shortcut))
+            if icon is not None:
+                action.setIcon(qta.icon(icon))
             self.plan_actions.append(action)
         # Action for showing the run browser window
         self._setup_window_action(
@@ -533,8 +535,14 @@ class FireflyApplication(PyDMApplication):
           queueserver API. Used for testing.
 
         """
+        # Load the API for controlling the queueserver.
         if api is None:
-            api = queueserver_api()
+            try:
+                api = queueserver_api()
+            except InvalidConfiguration:
+                log.error("Could not load queueserver API "
+                          "configuration from iconfig.toml file.")
+                return
         # Create the client object
         if client is None:
             client = QueueClient(api=api)

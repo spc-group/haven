@@ -120,7 +120,6 @@ class FireflyMainWindow(PyDMMainWindow):
         if hasattr(app, "show_logs_window_action"):
             self.ui.menuView.addAction(app.show_logs_window_action)
         # Setup menu
-        print(type(self.ui.menubar))
         self.ui.menuSetup = QtWidgets.QMenu(self.ui.menubar)
         self.ui.menuSetup.setObjectName("menuSetup")
         self.ui.menuSetup.setTitle("Set&up")
