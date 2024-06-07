@@ -48,7 +48,7 @@ def is_valid_value(value):
 
 # -----------------------------------------------------------------------------
 # :author:    Juanjuan Huang
-# :email:     wolfman@anl.gov
+# :email:     juanjuan.huang@anl.gov
 # :copyright: Copyright © 2024, UChicago Argonne, LLC
 #
 # Distributed under the terms of the 3-Clause BSD License
