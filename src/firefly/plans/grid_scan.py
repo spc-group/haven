@@ -161,6 +161,7 @@ class GridScanDisplay(LineScanDisplay):
     def ui_filename(self):
         return "plans/grid_scan.ui"
 
+
 # -----------------------------------------------------------------------------
 # :author:    Juanjuan Huang
 # :email:     juanjuan.huang@anl.gov
