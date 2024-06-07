@@ -26,7 +26,7 @@ def time_converter(total_seconds):
 def is_valid_value(value):
     """
     Check if the value is considered valid for inclusion in metadata.
-    Valid values are non-None, non-false, and if they are collections, they should have a positive length.
+    Valid values are non-None, and if they are str/list/tuple/dict, they should have a positive length.
 
     Parameters
     ==========
