@@ -192,27 +192,26 @@ class XafsScanRegion(QObject):
             self.kErange = []
             start, stop, step = float("nan"), float("nan"), float("nan")
 
-        finally:
-            if self.k_space_checkbox.isChecked():
-                self.kErange = KRange(
-                    k_min=start,
-                    k_max=stop,
-                    k_step=step,
-                    k_weight=weight,
-                    exposure=exposure_time,
-                )
+        if self.k_space_checkbox.isChecked():
+            self.kErange = KRange(
+                k_min=start,
+                k_max=stop,
+                k_step=step,
+                k_weight=weight,
+                exposure=exposure_time,
+            )
 
-            else:
-                self.kErange = ERange(
-                    E_min=start,
-                    E_max=stop,
-                    E_step=step,
-                    weight=weight,
-                    exposure=exposure_time,
-                )
+        else:
+            self.kErange = ERange(
+                E_min=start,
+                E_max=stop,
+                E_step=step,
+                weight=weight,
+                exposure=exposure_time,
+            )
 
-            # Emit the signal regardless of success or failure
-            self.time_calculation_signal.emit()
+        # Emit the signal regardless of success or failure
+        self.time_calculation_signal.emit()
 
 
 class XafsScanDisplay(display.FireflyDisplay):
