@@ -41,7 +41,6 @@ class MoveMotorDisplay(display.FireflyDisplay):
         self.ui.num_motor_spin_box.lineEdit().setReadOnly(True)
         self.ui.num_motor_spin_box.valueChanged.connect(self.update_regions)
 
-        self.ui.run_button.setEnabled(True)  # for testing
         self.ui.run_button.clicked.connect(self.queue_plan)
 
     def time_converter(self, total_seconds):
