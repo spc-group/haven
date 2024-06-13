@@ -17,10 +17,10 @@ def test_count_plan_queued(ffapp, qtbot, sim_registry):
     expected_item = BPlan("count", num=5, detectors=["vortex_me4", "I0"], delay=0.5)
 
     def check_item(item):
-        from pprint import pprint
+        # from pprint import pprint
 
-        pprint(item.to_dict())
-        pprint(expected_item.to_dict())
+        # pprint(item.to_dict())
+        # pprint(expected_item.to_dict())
         return item.to_dict() == expected_item.to_dict()
 
     # Click the run button and see if the plan is queued

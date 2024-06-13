@@ -111,7 +111,6 @@ class QueueClient(QObject):
 
     @asyncSlot(bool)
     async def toggle_autostart(self, enable: bool):
-        print(f"Toggling auto-start: {enable}")
         await self.api.queue_autostart(enable)
 
     @asyncSlot()

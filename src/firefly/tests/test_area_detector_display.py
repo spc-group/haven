@@ -1,3 +1,4 @@
+# import pytest
 from unittest import mock
 
 import numpy as np
@@ -5,6 +6,9 @@ import pydm
 import pyqtgraph
 
 from firefly.area_detector_viewer import AreaDetectorViewerDisplay
+
+
+# pytest.skip("tests cause test runner to lock up", allow_module_level=True)
 
 
 def test_open_camera_viewer_actions(ffapp, qtbot, sim_camera):

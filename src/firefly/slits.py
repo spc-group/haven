@@ -63,7 +63,6 @@ class SlitsDisplay(display.FireflyDisplay):
             "PITCH": "pitch",
         }
         for key, attr in motors.items():
-            print(key, attr)
             if not hasattr(self.device, attr):
                 continue
             # Get the motor number from the device
