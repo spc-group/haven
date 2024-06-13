@@ -44,7 +44,6 @@ pg.setConfigOption("foreground", (0, 0, 0))
 
 class FireflyApplication(PyDMApplication):
     default_display = None
-    xafs_scan_window = None
 
     # For keeping track of ophyd devices used by the Firefly
     registry: Registry = None
