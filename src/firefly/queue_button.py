@@ -1,7 +1,8 @@
 """A QPushButton that responds to the state of the queue server."""
-from strenum import StrEnum
+
 import qtawesome as qta
 from qtpy import QtGui, QtWidgets
+from strenum import StrEnum
 
 from firefly import FireflyApplication
 

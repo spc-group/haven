@@ -1,4 +1,4 @@
-from firefly.queue_button import QueueButton, Colors
+from firefly.queue_button import Colors, QueueButton
 
 
 def test_queue_button_style(ffapp):
