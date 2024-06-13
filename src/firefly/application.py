@@ -266,7 +266,9 @@ class FireflyApplication(PyDMApplication):
         plans = [
             # (plan_name, text, display file, shortcut, icon)
             ("count", "&Count", "count.py", "Ctrl+Shift+C", "mdi.counter"),
+            ("move_motor", "&Move motor", "move_motor_window.py", None, None),
             ("line_scan", "&Line scan", "line_scan.py", "Ctrl+Shift+L", None),
+            ("grid_scan", "&Grid scan", "grid_scan.py", None, None),
             ("xafs_scan", "&XAFS Scan", "xafs_scan.py", "Ctrl+Shift+X", None),
         ]
         self.plan_actions = []
