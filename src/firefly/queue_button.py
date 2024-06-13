@@ -1,9 +1,14 @@
 """A QPushButton that responds to the state of the queue server."""
-
+from strenum import StrEnum
 import qtawesome as qta
 from qtpy import QtGui, QtWidgets
 
 from firefly import FireflyApplication
+
+
+class Colors(StrEnum):
+    ADD_TO_QUEUE = "rgb(0, 123, 255)"
+    RUN_QUEUE = "rgb(25, 135, 84)"
 
 
 class QueueButton(QtWidgets.QPushButton):
@@ -22,11 +27,10 @@ class QueueButton(QtWidgets.QPushButton):
             # Should be disabled because the queue is closed
             self.setDisabled(True)
         # Coloration for the whether the item would get run immediately
-        app = FireflyApplication.instance()
-        if status["re_state"] == "idle" and app.queue_autostart_action.isChecked():
+        if status["re_state"] == "idle" and status["queue_autostart_enabled"]:
             # Will play immediately
             self.setStyleSheet(
-                "background-color: rgb(25, 135, 84);\nborder-color: rgb(25, 135, 84);"
+                f"background-color: {Colors.RUN_QUEUE};\nborder-color: {Colors.RUN_QUEUE};"
             )
             self.setIcon(qta.icon("fa5s.play"))
             self.setText("Run")
@@ -34,7 +38,7 @@ class QueueButton(QtWidgets.QPushButton):
         elif status["worker_environment_exists"]:
             # Will be added to the queue
             self.setStyleSheet(
-                "background-color: rgb(0, 123, 255);\nborder-color: rgb(0, 123, 255);"
+                f"background-color: {Colors.ADD_TO_QUEUE};\nborder-color: {Colors.ADD_TO_QUEUE};"
             )
             self.setIcon(qta.icon("fa5s.list"))
             self.setText("Add to Queue")

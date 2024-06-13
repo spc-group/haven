@@ -1,31 +1,44 @@
-from firefly.queue_button import QueueButton
+from firefly.queue_button import QueueButton, Colors
 
 
 def test_queue_button_style(ffapp):
-    """Does the queue button change color/icon based."""
+    """Does the queue button change color/icon based on the queue state."""
     btn = QueueButton()
     # Initial style should be disabled and plain
     assert not btn.isEnabled()
     assert btn.styleSheet() == ""
-    # State when queue server is open and idle
+    # State when queue server is open and idle (no autostart)
     queue_state = {
         "worker_environment_exists": True,
         "items_in_queue": 0,
         "re_state": "idle",
+        "queue_autostart_enabled": False,
     }
     ffapp.queue_status_changed.emit(queue_state)
     assert btn.isEnabled()
-    assert "rgb(25, 135, 84)" in btn.styleSheet()
+    assert Colors.ADD_TO_QUEUE in btn.styleSheet()
+    assert btn.text() == "Add to Queue"
+    # State when queue server is open and idle (w/ autostart)
+    queue_state = {
+        "worker_environment_exists": True,
+        "items_in_queue": 0,
+        "re_state": "idle",
+        "queue_autostart_enabled": True,
+    }
+    ffapp.queue_status_changed.emit(queue_state)
+    assert btn.isEnabled()
+    assert Colors.RUN_QUEUE in btn.styleSheet()
     assert btn.text() == "Run"
     # State when queue server is open and idle
     queue_state = {
         "worker_environment_exists": True,
         "items_in_queue": 0,
         "re_state": "running",
+        "queue_autostart_enabled": True,
     }
     ffapp.queue_status_changed.emit(queue_state)
     assert btn.isEnabled()
-    assert "rgb(0, 123, 255)" in btn.styleSheet()
+    assert Colors.ADD_TO_QUEUE in btn.styleSheet()
     assert btn.text() == "Add to Queue"
 
 
