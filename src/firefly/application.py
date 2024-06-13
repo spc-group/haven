@@ -297,7 +297,7 @@ class FireflyApplication(PyDMApplication):
             action_name="launch_queuemonitor_action",
             text="Queue Monitor",
             slot=self.launch_queuemonitor,
-            shortcut="Ctrl+q",
+            shortcut="Ctrl+Q",
         )
         # Action for showing the beamline scheduling window
         self._setup_window_action(
@@ -363,7 +363,7 @@ class FireflyApplication(PyDMApplication):
                 "pause_runengine_action",
                 "Pause",
                 "fa5s.stopwatch",
-                None,
+                "Ctrl+D",
                 "Pause the current plan at the next checkpoint.",
             ),
             (
@@ -416,23 +416,34 @@ class FireflyApplication(PyDMApplication):
             setattr(self, name, action)
         # Actions that control how the queue operates
         actions = [
-            # Attr, object name, text
-            ("queue_autostart_action", "queue_autostart_action", "&Autoplay"),
-            ("queue_stop_action", "queue_stop_action", "Stop Queue"),
+            # Attr, object name, text, tooltip
+            (
+                "queue_autostart_action",
+                "queue_autostart_action",
+                "&Autoplay",
+                "If enabled, the queue will start when items are added.",
+            ),
+            (
+                "queue_stop_action",
+                "queue_stop_action",
+                "Stop Queue",
+                "Instruct the queue to stop after the current item is done.",
+            ),
             (
                 "queue_open_environment_action",
                 "queue_open_environment_action",
                 "&Open Environment",
+                "If open (checked), the queue server is able to run plans.",
             ),
         ]
-        for attr, obj_name, text in actions:
+        for attr, obj_name, text, tooltip in actions:
             action = QAction()
             action.setObjectName(obj_name)
             action.setText(text)
+            action.setToolTip(tooltip)
             setattr(self, attr, action)
         # Customize some specific actions
         self.queue_autostart_action.setCheckable(True)
-        self.queue_autostart_action.setChecked(True)
         self.queue_stop_action.setCheckable(True)
         self.queue_stop_action.setToolTip(
             "Tell the queueserver to stop after this current plan is done."
