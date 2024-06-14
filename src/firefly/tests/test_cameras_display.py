@@ -10,10 +10,23 @@ from firefly.cameras import CamerasDisplay
 macros = {"PREFIX": "camera_ioc:", "DESC": "Camera A"}
 
 
-def test_embedded_displays(qtbot, ffapp, sim_registry, sim_camera):
-    """Test that the embedded displays get loaded."""
-    # Load the display
+@pytest.fixture()
+def cameras_display(qtbot, sim_camera):
     display = CamerasDisplay()
+    qtbot.addWidget(display)
+    return display
+
+
+@pytest.fixture()
+def camera_display(qtbot, sim_camera):
+    display = CamerasDisplay()
+    qtbot.addWidget(display)
+    return display
+
+
+def test_embedded_displays(cameras_display, sim_camera):
+    """Test that the embedded displays get loaded."""
+    display = cameras_display
     # Check that the embedded display widgets get added correctly
     assert hasattr(display, "_camera_displays")
     assert len(display._camera_displays) == 1
@@ -23,22 +36,21 @@ def test_embedded_displays(qtbot, ffapp, sim_registry, sim_camera):
     assert json.loads(display._camera_displays[0].macros) == expected_macros
 
 
-def test_camera_channel_status(qtbot, ffapp):
+def test_camera_channel_status(camera_display):
     """Test that the camera status indicator responds to camera connection
     status PV.
 
     """
-    display = CameraDisplay(macros=macros)
+    display = camera_display
     # Check that the pydm connections have been made to EPICS
     assert isinstance(display.detector_state, PyDMChannel)
     assert display.detector_state.address == "camera_ioc:cam1:DetectorState_RBV"
 
 
-def test_set_status_byte(qtbot, ffapp):
-    display = CameraDisplay(macros=macros)
+def test_set_status_byte(camera_display):
+    display = camera_display
     display.show()
     # All devices are disconnected
-    state = display.detector_state
     byte = display.camera_status_indicator
     bit = byte._indicators[0]
     label = display.camera_status_label

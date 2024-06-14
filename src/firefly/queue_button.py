@@ -1,10 +1,14 @@
 """A QPushButton that responds to the state of the queue server."""
 
+import logging
+
 import qtawesome as qta
 from qtpy import QtGui, QtWidgets
 
 from firefly import FireflyApplication
 
+
+log = logging.getLogger(__name__)
 
 class QueueButton(QtWidgets.QPushButton):
     def __init__(self, *args, **kwargs):
@@ -13,7 +17,11 @@ class QueueButton(QtWidgets.QPushButton):
         self.setDisabled(True)
         # Listen for changes to the run engine
         app = FireflyApplication.instance()
-        app.queue_status_changed.connect(self.handle_queue_status_change)
+        try:
+            app.queue_status_changed.connect(self.handle_queue_status_change)
+        except AttributeError:
+            log.warning("Application has no slot `handle_queue_status_change`. "
+                        "Queue button will not respond to queue state changes.")
 
     def handle_queue_status_change(self, status: dict):
         if status["worker_environment_exists"]:

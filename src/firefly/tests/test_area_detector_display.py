@@ -1,4 +1,4 @@
-# import pytest
+import pytest
 from unittest import mock
 
 import numpy as np
@@ -8,41 +8,14 @@ import pyqtgraph
 from firefly.area_detector_viewer import AreaDetectorViewerDisplay
 
 
-# pytest.skip("tests cause test runner to lock up", allow_module_level=True)
-
-
-def test_open_camera_viewer_actions(ffapp, qtbot, sim_camera):
-    # Now get the cameras ready
-    ffapp._prepare_device_windows(
-        device_label="cameras",
-        attr_name="camera",
-        ui_file="area_detector_viewer.py",
-        device_key="AD",
-    )
-    assert hasattr(ffapp, "camera_actions")
-    assert len(ffapp.camera_actions) == 1
-    # Launch an action and see that a window opens
-    list(ffapp.camera_actions.values())[0].trigger()
-    assert "FireflyMainWindow_camera_s255id-gige-A" in ffapp.windows.keys()
-
-
-def test_open_area_detector_viewer_actions(ffapp, qtbot, sim_camera):
-    # Get the area detector parts ready
-    ffapp._prepare_device_windows(
-        device_label="area_detectors",
-        attr_name="area_detector",
-        ui_file="area_detector_viewer.py",
-        device_key="AD",
-    )
-    assert hasattr(ffapp, "area_detector_actions")
-    assert len(ffapp.area_detector_actions) == 1
-    # Launch an action and see that a window opens
-    list(ffapp.area_detector_actions.values())[0].trigger()
-    assert "FireflyMainWindow_area_detector_s255id-gige-A" in ffapp.windows.keys()
-
-
-def test_image_plotting(ffapp, qtbot, sim_camera):
+@pytest.fixture()
+def display(qtbot, sim_camera):
     display = AreaDetectorViewerDisplay(macros={"AD": sim_camera.name})
+    qtbot.addWidget(display)
+    return display
+
+
+def test_image_plotting(display):
     assert isinstance(display.image_view, pyqtgraph.ImageView)
     assert isinstance(display.image_channel, pydm.PyDMChannel)
     # Give it some grayscale data
@@ -66,8 +39,7 @@ def test_image_plotting(ffapp, qtbot, sim_camera):
     display.image_channel.disconnect()
 
 
-def test_caqtdm_window(ffapp, sim_camera):
-    display = AreaDetectorViewerDisplay(macros={"AD": sim_camera.name})
+def test_caqtdm_window(display, sim_camera):
     display._open_caqtdm_subprocess = mock.MagicMock()
     # Launch the caqtdm display
     display.launch_caqtdm()

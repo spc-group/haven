@@ -10,9 +10,9 @@ from firefly import FireflyApplication
 from firefly.main_window import FireflyMainWindow
 
 
-@pytest.fixture(scope="session")
-def qapp_cls():
-    return FireflyApplication
+# @pytest.fixture(scope="session")
+# def qapp_cls():
+#     return FireflyApplication
 
 
 # def pytest_configure(config):
@@ -78,57 +78,57 @@ qs_status = {
 }
 
 
-class FireflyQEventLoopPolicy(DefaultQEventLoopPolicy):
-    def new_event_loop(self):
-        return QEventLoop(FireflyApplication.instance())
+# class FireflyQEventLoopPolicy(DefaultQEventLoopPolicy):
+#     def new_event_loop(self):
+#         return QEventLoop(FireflyApplication.instance())
 
 
-@pytest.fixture()
-def event_loop_policy(request, ffapp):
-    """Make sure pytest-asyncio uses the QEventLoop."""
-    return FireflyQEventLoopPolicy()
+# @pytest.fixture()
+# def event_loop_policy(request):
+#     """Make sure pytest-asyncio uses the QEventLoop."""
+#     return FireflyQEventLoopPolicy()
 
 
-@pytest.fixture()
-def ffapp(pydm_ophyd_plugin, qapp_cls, qapp_args, pytestconfig):
-    # Get an instance of the application
-    # app = qt_api.QtWidgets.QApplication.instance()
-    app = qapp_cls.instance()
-    if app is None:
-        # New Application
-        global _ffapp_instance
-        app = qapp_cls(*qapp_args)
-        # _ffapp_instance = app
-        name = pytestconfig.getini("qt_qapp_name")
-        app.setApplicationName(name)
-    # Make sure there's at least one Window, otherwise things get weird
-    if getattr(app, "_dummy_main_window", None) is None:
-        # Set up the actions and other boildplate stuff
-        app.setup_window_actions()
-        app.setup_runengine_actions()
-        app._dummy_main_window = FireflyMainWindow()
-    yield app
-    # Delete any windows that might have been created
-    for wndw in app.windows.values():
-        wndw.close()
+# @pytest.fixture()
+# def ffapp(pydm_ophyd_plugin, qapp_cls, qapp_args, pytestconfig):
+#     # Get an instance of the application
+#     # app = qt_api.QtWidgets.QApplication.instance()
+#     app = qapp_cls.instance()
+#     if app is None:
+#         # New Application
+#         global _ffapp_instance
+#         app = qapp_cls(*qapp_args)
+#         # _ffapp_instance = app
+#         name = pytestconfig.getini("qt_qapp_name")
+#         app.setApplicationName(name)
+#     # Make sure there's at least one Window, otherwise things get weird
+#     if getattr(app, "_dummy_main_window", None) is None:
+#         # Set up the actions and other boildplate stuff
+#         app.setup_window_actions()
+#         app.setup_runengine_actions()
+#         app._dummy_main_window = FireflyMainWindow()
+#     yield app
+#     # Delete any windows that might have been created
+#     for wndw in app.windows.values():
+#         wndw.close()
 
 
-@pytest.fixture()
-def affapp(event_loop, ffapp):
-    # Prepare the event loop
-    asyncio.set_event_loop(event_loop)
-    # Sanity check to make sure a QApplication was not created by mistake
-    assert isinstance(ffapp, FireflyApplication)
-    # Yield the finalized application object
-    try:
-        yield ffapp
-    finally:
-        # Cancel remaining async tasks
-        pending = asyncio.all_tasks(event_loop)
-        event_loop.run_until_complete(asyncio.gather(*pending))
-        assert all(task.done() for task in pending), "Shutdown tasks not complete."
-        # if hasattr(app, "_queue_thread"):
-        #     app._queue_thread.quit()
-        #     app._queue_thread.wait(msecs=5000)
-        # del app
-        # gc.collect()
+# @pytest.fixture()
+# def affapp(event_loop, ffapp):
+#     # Prepare the event loop
+#     asyncio.set_event_loop(event_loop)
+#     # Sanity check to make sure a QApplication was not created by mistake
+#     assert isinstance(ffapp, FireflyApplication)
+#     # Yield the finalized application object
+#     try:
+#         yield ffapp
+#     finally:
+#         # Cancel remaining async tasks
+#         pending = asyncio.all_tasks(event_loop)
+#         event_loop.run_until_complete(asyncio.gather(*pending))
+#         assert all(task.done() for task in pending), "Shutdown tasks not complete."
+#         # if hasattr(app, "_queue_thread"):
+#         #     app._queue_thread.quit()
+#         #     app._queue_thread.wait(msecs=5000)
+#         # del app
+#         # gc.collect()

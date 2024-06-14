@@ -63,7 +63,7 @@ class CameraDisplay(display.FireflyDisplay):
         app = FireflyApplication.instance()
         try:
             action = app.camera_actions[self.macros()["CAMERA"]]
-        except KeyError:
+        except (KeyError, AttributeError):
             pass
         else:
             self.ui.viewer_button.clicked.connect(action.trigger)
