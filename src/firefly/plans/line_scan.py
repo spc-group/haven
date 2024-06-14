@@ -48,7 +48,7 @@ class LineScanDisplay(display.FireflyDisplay):
         self.ui.num_motor_spin_box.lineEdit().setReadOnly(True)
         self.ui.num_motor_spin_box.valueChanged.connect(self.update_regions)
 
-        self.ui.run_button.setEnabled(True)  # for testing
+        # Connect signals for executing the plan
         self.ui.run_button.clicked.connect(self.queue_plan)
 
         # when selections of detectors changed update_total_time
