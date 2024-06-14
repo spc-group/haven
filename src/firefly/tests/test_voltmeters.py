@@ -12,9 +12,16 @@ def fake_ion_chambers(I0, It):
     return [I0, It]
 
 
-def test_device(qtbot, ffapp, I0):
-    ffapp.setup_window_actions()
-    window = FireflyMainWindow()
+@pytest.fixture()
+def voltmeters_display(qtbot, fake_ion_chambers):
+    vms_display = VoltmetersDisplay()
+    qtbot.addWidget(vms_display)
+    return vms_display
+
+
+def test_device(qtbot, I0):
+    # ffapp.setup_window_actions()
+    # window = FireflyMainWindow()
     display = VoltmeterDisplay(macros={"IC": "I0"})
     assert hasattr(display, "_device")
     assert isinstance(display._device, haven.IonChamber)
@@ -36,14 +43,12 @@ def test_scaler_prefix(qtbot, ffapp, sim_registry):
     assert display.macros()["SCALER"] == "255idcVME:scaler1"
 
 
-def test_embedded_display_widgets(qtbot, fake_ion_chambers, ffapp):
+def test_embedded_display_widgets(voltmeters_display):
     """Test the the voltmeters creates a new embedded display widget for
     each ion chamber.
 
     """
-    window = FireflyMainWindow()
-    # Load the display
-    vms_display = VoltmetersDisplay()
+    vms_display = voltmeters_display
     # Check that the embedded display widgets get added correctly
     assert hasattr(vms_display, "_ion_chamber_displays")
     assert len(vms_display._ion_chamber_displays) == 2
@@ -56,6 +61,17 @@ def test_embedded_display_widgets(qtbot, fake_ion_chambers, ffapp):
     assert macros == {"IC": "I0", "SCALER": "scaler_ioc"}
     # Check that a device has been created properly
     assert isinstance(disp._device, haven.IonChamber)
+
+
+@pytest.mark.xfail
+def test_details_button(qtbot, voltmeters_display):
+    """Check that the details button for each ion chamber triggers the global signal."""
+    # Get an embedded display widget
+    emb_disp = voltmeters_display._ion_chamber_displays[0]
+    disp = emb_disp.open_file(force=True)
+    # Check that the signals are properly connected
+    with qtbot.waitSignal(voltmeters_display.ui.details_window_requested, timeout=500):
+        disp.ui.details_button.click()
 
 
 def test_ion_chamber_menu(fake_ion_chambers, qtbot, ffapp):
@@ -86,12 +102,9 @@ def test_open_ion_chamber_window(fake_ion_chambers, ffapp):
     window.close()
 
 
-def test_auto_gain_plan(fake_ion_chambers, ffapp, qtbot):
-    # Set up the application
-    ffapp.setup_window_actions()
-    ffapp.setup_runengine_actions()
-    window = FireflyMainWindow()
-    display = VoltmetersDisplay()
+def test_auto_gain_plan(qtbot, voltmeters_display):
+    display = voltmeters_display
+    qtbot.addWidget(display)
     # Put input values into the widgets
     display.ui.volts_min_line_edit.setText("")
     display.ui.volts_max_line_edit.setText("")
@@ -109,18 +122,15 @@ def test_auto_gain_plan(fake_ion_chambers, ffapp, qtbot):
 
     # Click the run button and see if the plan is queued
     with qtbot.waitSignal(
-        ffapp.queue_item_added, timeout=1000, check_params_cb=check_item
+        display.queue_item_submitted, timeout=1000, check_params_cb=check_item
     ):
         # Simulate clicking on the auto_gain button
         display.ui.auto_gain_button.click()
 
 
-def test_auto_gain_plan_with_args(fake_ion_chambers, ffapp, qtbot):
-    # Set up the application
-    ffapp.setup_window_actions()
-    ffapp.setup_runengine_actions()
-    window = FireflyMainWindow()
-    display = VoltmetersDisplay()
+def test_auto_gain_plan_with_args(qtbot, voltmeters_display):
+    display = voltmeters_display
+    qtbot.addWidget(display)
     # Put input values into the widgets
     display.ui.volts_min_line_edit.setText("1.0")
     display.ui.volts_max_line_edit.setText("4.5")
@@ -137,7 +147,7 @@ def test_auto_gain_plan_with_args(fake_ion_chambers, ffapp, qtbot):
 
     # Click the run button and see if the plan is queued
     with qtbot.waitSignal(
-        ffapp.queue_item_added, timeout=1000, check_params_cb=check_item
+        display.queue_item_submitted, timeout=1000, check_params_cb=check_item
     ):
         # Simulate clicking on the auto_gain button
         display.ui.auto_gain_button.click()

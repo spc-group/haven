@@ -226,11 +226,11 @@ font-weight: bold;</string>
          <property name="channel" stdset="0">
           <string>haven://${IC}.voltmeter.volts</string>
          </property>
-         <property name="displayFormat" stdset="0">
-          <enum>PyDMLabel::Decimal</enum>
-         </property>
          <property name="enableRichText" stdset="0">
           <bool>false</bool>
+         </property>
+         <property name="displayFormat" stdset="0">
+          <enum>PyDMLabel::Decimal</enum>
          </property>
         </widget>
        </item>
@@ -496,6 +496,9 @@ font-weight: bold;</string>
          <property name="PyDMToolTip" stdset="0">
           <string>Increase the pre-amp gain (lower sensitivity values)</string>
          </property>
+         <property name="monitorDisp" stdset="0">
+          <bool>false</bool>
+         </property>
          <property name="channel" stdset="0">
           <string>haven://${IC}.preamp.gain_level</string>
          </property>
@@ -524,9 +527,6 @@ font-weight: bold;</string>
           <bool>true</bool>
          </property>
          <property name="writeWhenRelease" stdset="0">
-          <bool>false</bool>
-         </property>
-         <property name="monitorDisp" stdset="0">
           <bool>false</bool>
          </property>
         </widget>
@@ -651,7 +651,7 @@ font-weight: bold;</string>
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="settings_button">
+      <widget class="QPushButton" name="details_button">
        <property name="enabled">
         <bool>true</bool>
        </property>

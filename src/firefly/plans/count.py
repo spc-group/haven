@@ -21,11 +21,8 @@ class CountDisplay(display.FireflyDisplay):
 
         item = BPlan("count", delay=delay, num=num_readings, detectors=detectors)
         # Submit the item to the queueserver
-        from firefly.application import FireflyApplication
-
-        app = FireflyApplication.instance()
         log.info("Add ``count()`` plan to queue.")
-        app.add_queue_item(item)
+        self.queue_item_added.emit(item)
 
     def ui_filename(self):
         return "plans/count.ui"

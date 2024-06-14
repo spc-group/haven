@@ -141,7 +141,7 @@ def bss(beamline_manager):
     return bss
 
 
-def test_bss_proposal_model(qtbot, ffapp, bss_api, bss):
+def test_bss_proposal_model(qtbot, bss_api, bss):
     display = BssDisplay(api=bss_api)
     assert display.ui_filename() == "bss.ui"
     # Check model construction

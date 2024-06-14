@@ -688,6 +688,7 @@ class FireflyApplication(PyDMApplication):
 
     @QtCore.Slot()
     def show_voltmeters_window(self):
+        assert False, "Connect queue_item_submitted."
         return self.show_window(
             PlanMainWindow, ui_dir / "voltmeters.py", name="voltmeters"
         )

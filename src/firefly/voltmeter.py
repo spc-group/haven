@@ -2,6 +2,8 @@ import logging
 from typing import Mapping, Optional, Sequence
 
 import qtawesome as qta
+from qtpy.QtWidgets import QAction
+from qtpy.QtCore import Signal
 
 from firefly import FireflyApplication, display
 from haven import exceptions, registry
@@ -35,6 +37,7 @@ class VoltmeterDisplay(display.FireflyDisplay):
     """
 
     _device: IonChamber = None
+    details_window_requested: Signal = Signal()
 
     def __init__(
         self,
@@ -47,11 +50,8 @@ class VoltmeterDisplay(display.FireflyDisplay):
         super().__init__(macros=macros, args=args, **kwargs)
 
     def customize_ui(self):
-        # Wire up the "settings" button the ion chamber's config window
-        app = FireflyApplication.instance()
-        ic_action = app.ion_chamber_actions[self._device.name]
-        self.ui.settings_button.clicked.connect(ic_action.trigger)
-        self.ui.settings_button.setIcon(qta.icon("fa5s.cog"))
+        # Wire up the "details" button the ion chamber's config window
+        self.ui.details_button.setIcon(qta.icon("fa5s.cog"))
         # Use qtawesome icons instead of unicode arrows
         self.ui.gain_down_button.setText("")
         self.ui.gain_down_button.setIcon(qta.icon("fa5s.arrow-left"))

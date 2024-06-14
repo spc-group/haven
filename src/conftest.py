@@ -128,6 +128,9 @@ def I0(sim_registry):
         labels={"ion_chambers"},
         ch_num=2,
     )
+    # Set ion chamber signal values to sensible defaults
+    ion_chamber.preamp.sensitivity_value.sim_put("1")
+    ion_chamber.preamp.sensitivity_unit.sim_put("pA/V")
     return ion_chamber
 
 

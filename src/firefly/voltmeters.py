@@ -1,13 +1,15 @@
 import json
 import logging
 from typing import Mapping, Optional, Sequence
+from functools import partial
 
 from bluesky_queueserver_api import BPlan
 from pydm.widgets import PyDMEmbeddedDisplay
 from qtpy import QtWidgets
+from qtpy.QtCore import Signal
 
 import haven
-from firefly import FireflyApplication, display
+from firefly import display
 
 # from .voltmeter import VoltmeterDisplay
 
@@ -21,6 +23,9 @@ class VoltmetersDisplay(display.FireflyDisplay):
     caqtdm_mcs_ui_file: str = (
         "/APSshare/epics/synApps_6_2_1/support/mca-R7-9//mcaApp/op/ui/autoconvert/SIS38XX.ui"
     )
+
+    # Signals
+    details_window_requested = Signal(str)  # ion-chamber device name
 
     def __init__(
         self,
@@ -81,8 +86,7 @@ class VoltmetersDisplay(display.FireflyDisplay):
         # Construct the plan
         item = BPlan("auto_gain", ic_names, **kw)
         # Send it to the queue server
-        app = FireflyApplication.instance()
-        app.add_queue_item(item)
+        self.queue_item_submitted.emit(item)
 
     def ui_filename(self):
         return "voltmeters.ui"
