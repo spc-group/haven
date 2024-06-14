@@ -107,6 +107,8 @@ def test_xafs_scan_plan_queued_energies(ffapp, qtbot):
     display.ui.lineEdit_sample.setText("sam")
     display.ui.lineEdit_purpose.setText("test")
     display.ui.checkBox_is_standard.setChecked(True)
+    display.ui.lineEdit_purpose.setText("test")
+    display.ui.textEdit_notes.setText("sam_notes")
 
     expected_item = BPlan(
         "energy_scan",
@@ -114,7 +116,12 @@ def test_xafs_scan_plan_queued_energies(ffapp, qtbot):
         exposure=exposures,
         E0=11500.8,
         detectors=["vortex_me4", "I0"],
-        md={"sample": "sam", "purpose": "test", "is_standard": True},
+        md={
+            "sample": "sam",
+            "purpose": "test",
+            "is_standard": True,
+            "notes": "sam_notes",
+        },
     )
 
     def check_item(item):
@@ -154,7 +161,6 @@ def test_xafs_scan_plan_queued_energies(ffapp, qtbot):
         qtbot.mouseClick(display.ui.run_button, QtCore.Qt.LeftButton)
 
 
-# TODO K end point should not include step
 def test_xafs_scan_plan_queued_energies_k_mixed(ffapp, qtbot):
     display = XafsScanDisplay()
     display.ui.regions_spin_box.setValue(2)
@@ -178,6 +184,10 @@ def test_xafs_scan_plan_queued_energies_k_mixed(ffapp, qtbot):
     display.ui.detectors_list.selected_detectors = mock.MagicMock(
         return_value=["vortex_me4", "I0"]
     )
+
+    # set repeat scan num to 2
+    display.ui.spinBox_repeat_scan_num.setValue(3)
+
     energies = np.array(
         [
             -20,
@@ -195,9 +205,11 @@ def test_xafs_scan_plan_queued_energies_k_mixed(ffapp, qtbot):
     exposures = np.array(
         [1, 1, 1, 1, 1, 1, 1, 1, 5.665, 14.141]
     )  # k exposures kmin 3.62263
+
     # set up meta data
     display.ui.lineEdit_sample.setText("sam")
-    display.ui.lineEdit_purpose.setText("test")
+    display.ui.lineEdit_purpose.setText("")  # invalid input should be removed from md
+    display.ui.textEdit_notes.setText("sam_notes")
 
     expected_item = BPlan(
         "energy_scan",
@@ -205,7 +217,11 @@ def test_xafs_scan_plan_queued_energies_k_mixed(ffapp, qtbot):
         exposure=exposures,
         E0=11500.8,
         detectors=["vortex_me4", "I0"],
-        md={"sample": "sam", "purpose": "test", "is_standard": False},
+        md={
+            "sample": "sam",
+            "is_standard": False,
+            "notes": "sam_notes",
+        },
     )
 
     def check_item(item):
@@ -213,6 +229,16 @@ def test_xafs_scan_plan_queued_energies_k_mixed(ffapp, qtbot):
         expected_dict = expected_item.to_dict()["kwargs"]
 
         try:
+            # Check whether time is calculated correctly for a single scan
+            assert int(float(display.ui.label_hour_scan.text())) == 0
+            assert int(float(display.ui.label_min_scan.text())) == 0
+            assert int(float(display.ui.label_sec_scan.text())) == 28
+
+            # Check whether time is calculated correctly including the repeated scan
+            assert int(float(display.ui.label_hour_total.text())) == 0
+            assert int(float(display.ui.label_min_total.text())) == 1
+            assert int(float(display.ui.label_sec_total.text())) == 23
+
             # Check energies & exposures within 3 decimals
             np.testing.assert_array_almost_equal(
                 item_dict["energies"], expected_dict["energies"], decimal=2
@@ -231,6 +257,7 @@ def test_xafs_scan_plan_queued_energies_k_mixed(ffapp, qtbot):
             assert item_dict == expected_dict, "Non-array items do not match."
 
         except AssertionError as e:
+            print(e)
             return False
         return True
 
