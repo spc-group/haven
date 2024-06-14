@@ -18,9 +18,14 @@ def fake_motors(sim_registry):
     return motors
 
 
-def test_move_motor_plan_queued(ffapp, qtbot, sim_registry, fake_motors):
-    app = FireflyApplication.instance()
+@pytest.fixture()
+def display(qtbot):
     display = MoveMotorDisplay()
+    qtbot.addWidget(display)
+    return display
+
+
+def test_move_motor_plan_queued(display, qtbot, sim_registry, fake_motors):
     display.ui.run_button.setEnabled(True)
 
     # set up motor num
@@ -62,6 +67,6 @@ def test_move_motor_plan_queued(ffapp, qtbot, sim_registry, fake_motors):
 
     # Click the run button and see if the plan is queued
     with qtbot.waitSignal(
-        ffapp.queue_item_added, timeout=1000, check_params_cb=check_item
+        display.queue_item_submitted, timeout=1000, check_params_cb=check_item
     ):
         qtbot.mouseClick(display.ui.run_button, QtCore.Qt.LeftButton)

@@ -193,11 +193,10 @@ class LineScanDisplay(display.FireflyDisplay):
         )
 
         # Submit the item to the queueserver
-        app = FireflyApplication.instance()
         log.info("Added line scan() plan to queue.")
         # repeat scans
         for i in range(repeat_scan_num):
-            app.add_queue_item(item)
+            self.queue_item_submitted.emit(item)
 
     def ui_filename(self):
         return "plans/line_scan.ui"

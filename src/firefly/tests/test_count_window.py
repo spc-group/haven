@@ -25,7 +25,7 @@ def test_count_plan_queued(qtbot, sim_registry):
 
     # Click the run button and see if the plan is queued
     with qtbot.waitSignal(
-        display.queue_item_added, timeout=1000, check_params_cb=check_item
+        display.queue_item_submitted, timeout=1000, check_params_cb=check_item
     ):
         qtbot.mouseClick(display.ui.run_button, QtCore.Qt.LeftButton)
 

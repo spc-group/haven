@@ -22,7 +22,7 @@ class CountDisplay(display.FireflyDisplay):
         item = BPlan("count", delay=delay, num=num_readings, detectors=detectors)
         # Submit the item to the queueserver
         log.info("Add ``count()`` plan to queue.")
-        self.queue_item_added.emit(item)
+        self.queue_item_submitted.emit(item)
 
     def ui_filename(self):
         return "plans/count.ui"

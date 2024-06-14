@@ -5,7 +5,6 @@ from qtpy import QtWidgets
 from qtpy.QtGui import QDoubleValidator
 
 from firefly import display
-from firefly.application import FireflyApplication
 from firefly.component_selector import ComponentSelector
 
 log = logging.getLogger()
@@ -129,9 +128,8 @@ class MoveMotorDisplay(display.FireflyDisplay):
         )
 
         # Submit the item to the queueserver
-        app = FireflyApplication.instance()
         log.info("Added line scan() plan to queue.")
-        app.add_queue_item(item)
+        self.queue_item_submitted.emit(item)
 
     def ui_filename(self):
         return "plans/move_motor_window.ui"

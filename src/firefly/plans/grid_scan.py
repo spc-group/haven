@@ -4,7 +4,6 @@ from bluesky_queueserver_api import BPlan
 from qtpy import QtWidgets
 from qtpy.QtGui import QDoubleValidator
 
-from firefly.application import FireflyApplication
 from firefly.component_selector import ComponentSelector
 from firefly.plans.line_scan import LineScanDisplay
 
@@ -152,11 +151,10 @@ class GridScanDisplay(LineScanDisplay):
         )
 
         # Submit the item to the queueserver
-        app = FireflyApplication.instance()
         log.info("Added line scan() plan to queue.")
         # repeat scans
         for i in range(repeat_scan_num):
-            app.add_queue_item(item)
+            self.queue_item_submitted.emit(item)
 
     def ui_filename(self):
         return "plans/grid_scan.ui"
