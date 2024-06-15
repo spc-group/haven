@@ -15,7 +15,7 @@ FakeEnergyPositioner = make_fake_device(
 FakeUndulator = make_fake_device(ApsUndulator)
 
 
-def test_mono_caqtdm_macros(qtbot, ffapp, sim_registry):
+def test_mono_caqtdm_macros(qtbot, sim_registry):
     # Create fake device
     FakeMonochromator("mono_ioc", name="monochromator")
     FakeEnergyPositioner(
@@ -44,7 +44,7 @@ def test_mono_caqtdm_macros(qtbot, ffapp, sim_registry):
     }
 
 
-def test_id_caqtdm_macros(qtbot, ffapp, sim_registry):
+def test_id_caqtdm_macros(qtbot, sim_registry):
     # Create fake device
     mono = FakeMonochromator("mono_ioc", name="monochromator")
     FakeEnergyPositioner(
@@ -68,7 +68,7 @@ def test_id_caqtdm_macros(qtbot, ffapp, sim_registry):
     }
 
 
-def test_move_energy(qtbot, ffapp, sim_registry):
+def test_move_energy(qtbot, sim_registry):
     mono = FakeMonochromator("mono_ioc", name="monochromator")
     FakeEnergyPositioner(
         mono_pv="mono_ioc:Energy",
@@ -89,12 +89,12 @@ def test_move_energy(qtbot, ffapp, sim_registry):
 
     qtbot.keyClicks(disp.target_energy_lineedit, "8402")
     with qtbot.waitSignal(
-        ffapp.queue_item_added, timeout=1000, check_params_cb=check_item
+        disp.queue_item_submitted, timeout=1000, check_params_cb=check_item
     ):
         qtbot.mouseClick(btn, QtCore.Qt.LeftButton)
 
 
-def test_predefined_energies(qtbot, ffapp, sim_registry):
+def test_predefined_energies(qtbot, sim_registry):
     # Create fake device
     mono = FakeMonochromator("mono_ioc", name="monochromator")
     FakeEnergyPositioner(

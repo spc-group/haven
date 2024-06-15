@@ -18,7 +18,7 @@ class Stage(Device):
 
 
 @pytest.fixture()
-def motor_registry(ffapp, sim_registry):
+def motor_registry(sim_registry):
     """A simulated motor registry. Like the ophyd-registry but connected to the queueserver."""
     FakeMotor = sim.make_fake_device(EpicsMotor)
     FakeMotor(name="motor1")
@@ -28,10 +28,9 @@ def motor_registry(ffapp, sim_registry):
 
 
 @pytest.fixture
-async def selector(motor_registry):
+async def selector(motor_registry, qtbot):
     selector_ = ComponentSelector()
-    # Cancel the initial update devices
-    selector_._devices_task.cancel()
+    qtbot.addWidget(selector_)
     # Register our new devices
     await selector_.update_devices(motor_registry)
     return selector_
@@ -52,7 +51,7 @@ async def test_selector_adds_devices(selector):
 
 
 @pytest.mark.asyncio
-async def test_tree_model_adds_devices(ffapp, motor_registry):
+async def test_tree_model_adds_devices(motor_registry):
     model = ComponentTreeModel()
     await model.update_devices(motor_registry)
     # Check "Component" column
@@ -64,7 +63,7 @@ async def test_tree_model_adds_devices(ffapp, motor_registry):
 
 
 @pytest.mark.asyncio
-async def test_combo_box_model_adds_devices(ffapp, motor_registry):
+async def test_combo_box_model_adds_devices(motor_registry):
     model = ComponentComboBoxModel()
     await model.update_devices(motor_registry)
     # Check that dot-notation is included
@@ -97,7 +96,7 @@ async def test_combobox_changes_tree(selector, qtbot):
 
 
 @pytest.mark.asyncio
-async def test_model_component_from_index(ffapp, motor_registry):
+async def test_model_component_from_index(motor_registry):
     model = ComponentTreeModel()
     await model.update_devices(motor_registry)
     # Can we retrieve a root device based on its name item
@@ -115,7 +114,7 @@ async def test_model_component_from_index(ffapp, motor_registry):
 
 
 @pytest.mark.asyncio
-async def test_model_component_from_dotted_index(ffapp, motor_registry):
+async def test_model_component_from_dotted_index(motor_registry):
     model = ComponentTreeModel()
     await model.update_devices(motor_registry)
     # Can we retrieve a root device based on its dotted name
@@ -129,8 +128,7 @@ async def test_model_component_from_dotted_index(ffapp, motor_registry):
 
 
 @pytest.mark.asyncio
-async def test_loads_devices_from_registry(ffapp, selector, motor_registry, qtbot):
+async def test_loads_devices_from_registry(selector, motor_registry, qtbot):
     selector.combo_box_model.update_devices = mock.AsyncMock()
-    ffapp.registry_changed.emit(motor_registry)
-    await asyncio.sleep(0.5)
+    await selector.update_devices(motor_registry)
     selector.combo_box_model.update_devices.assert_called_once_with(motor_registry)

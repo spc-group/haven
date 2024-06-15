@@ -244,17 +244,13 @@ class TreeDialog(QDialog):
 class ComponentSelector(QWidget):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.app = FireflyApplication.instance()
         self.create_models()
         self.add_widgets()
         self.connect_signals()
-        # Walk through the component tree and build the models
-        coro = self.update_devices(self.app.registry)
-        self._devices_task = asyncio.ensure_future(coro)
 
     def current_component(self):
         cpt_name = self.combo_box.currentText()
-        return self.app.registry[cpt_name]
+        return self.registry[cpt_name]
 
     def create_models(self):
         self.tree_model = ComponentTreeModel(0, 2)
@@ -267,7 +263,6 @@ class ComponentSelector(QWidget):
         self.tree_view.selectionModel().currentChanged.connect(
             self.update_combo_box_model
         )
-        self.app.registry_changed.connect(self.update_devices)
 
     def update_tree_model(self, new_name):
         log.debug(f"Updating tree: {new_name=}")

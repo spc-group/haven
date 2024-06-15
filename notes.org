@@ -1,0 +1,13 @@
+* De-coupling FireflyApplication and FireflyDisplay
+
+  Right now the display classes make assumptions about the structure
+  of the application. We want to remove this and let the displays work
+  independently of the QApplication.
+
+** TODO [0/1] Ion chambers
+   - [ ] Respond to clicks of the details button
+** TODO [0/2] Component selector
+   - [ ] Pass the app's instrument registry down to the component selector
+   - [ ] Send the registry initially when the component selector is created
+** TODO [0/1] Detector list
+   - [ ] Have the detector list respond to registry changed signals (like component_selector)
