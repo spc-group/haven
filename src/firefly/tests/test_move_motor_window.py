@@ -19,13 +19,14 @@ def fake_motors(sim_registry):
 
 
 @pytest.fixture()
-def display(qtbot):
+async def display(qtbot, sim_registry, fake_motors):
     display = MoveMotorDisplay()
     qtbot.addWidget(display)
+    await display.update_devices(sim_registry)
     return display
 
 
-def test_move_motor_plan_queued(display, qtbot, sim_registry, fake_motors):
+def test_move_motor_plan_queued(display, qtbot):
     display.ui.run_button.setEnabled(True)
 
     # set up motor num
@@ -60,9 +61,8 @@ def test_move_motor_plan_queued(display, qtbot, sim_registry, fake_motors):
         },
     )
 
-    # print(item.to_dict())
-
     def check_item(item):
+        print(item.to_dict())
         return item.to_dict() == expected_item.to_dict()
 
     # Click the run button and see if the plan is queued

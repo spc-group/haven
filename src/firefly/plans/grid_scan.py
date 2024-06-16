@@ -1,5 +1,6 @@
 import logging
 
+from qasync import asyncSlot
 from bluesky_queueserver_api import BPlan
 from qtpy import QtWidgets
 from qtpy.QtGui import QDoubleValidator
@@ -94,16 +95,18 @@ class GridScanDisplay(LineScanDisplay):
         self.ui.reset_pushButton.clicked.connect(self.reset_default_regions)
 
     def add_regions(self, num=1):
+        new_regions = []
         for i in range(num):
             region = GridScanRegion()
             self.ui.regions_layout.addLayout(region.layout)
             # Save it to the list
             self.regions.append(region)
-
+            new_regions.append(region)
             # the num of motor
             num_motor_i = len(self.regions)
             # region.motor_label.setText(str(num_motor_i)) # when using label
             region.motor_label.display(num_motor_i)
+        return new_regions
 
     def time_calculate_method(self, detector_time):
         num_points = self.ui.scan_pts_spin_box.value()
@@ -111,13 +114,15 @@ class GridScanDisplay(LineScanDisplay):
         total_time_per_scan = num_regions * detector_time * num_points
         return total_time_per_scan
 
-    def update_regions(self):
-        super().update_regions()
+    @asyncSlot(int)
+    async def update_regions_slot(self, new_region_num: int):
+        await super().update_regions(new_region_num)
 
         # disable snake for the last region and enable the previous regions
-        self.regions[-1].snake_checkbox.setEnabled(False)
-        for region_i in self.regions[:-1]:
-            region_i.snake_checkbox.setEnabled(True)
+        if len(self.regions) > 0:
+            self.regions[-1].snake_checkbox.setEnabled(False)
+            for region_i in self.regions[:-1]:
+                region_i.snake_checkbox.setEnabled(True)
 
     def queue_plan(self, *args, **kwargs):
         """Execute this plan on the queueserver."""

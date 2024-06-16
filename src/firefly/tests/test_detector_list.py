@@ -5,15 +5,15 @@ from firefly.detector_list import DetectorListView
 
 
 @pytest.fixture()
-def view(qtbot, dxp):
+async def view(qtbot, sim_registry, dxp):
     view = DetectorListView()
     qtbot.addWidget(view)
+    await view.update_devices(sim_registry)
     return view
 
 
 def test_detector_model(view):
     assert hasattr(view, "detector_model")
-    print(view.detector_model)
     assert view.detector_model.item(0).text() == "vortex_me4"
 
 

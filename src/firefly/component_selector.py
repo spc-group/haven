@@ -155,6 +155,9 @@ class ComponentTreeModel(QStandardItemModel):
         return item.data()
 
     async def update_devices(self, registry):
+        if registry is None:
+            return
+        # Set up the root devices
         parent_item = self.invisibleRootItem()
         self.root_components = []
         devices = sorted(registry.root_devices, key=lambda dev: dev.name.lower())
@@ -242,6 +245,8 @@ class TreeDialog(QDialog):
 
 
 class ComponentSelector(QWidget):
+    registry = None
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.create_models()
@@ -299,6 +304,7 @@ class ComponentSelector(QWidget):
 
     @asyncSlot(object)
     async def update_devices(self, registry):
+        self.registry = registry
         await self.combo_box_model.update_devices(registry)
         await self.tree_model.update_devices(registry)
         # Clear the combobox text so it doesn't auto-select the first entry

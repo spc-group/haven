@@ -19,12 +19,19 @@ def fake_motors(sim_registry):
     return motors
 
 
-def test_time_calculator(qtbot, sim_registry, fake_motors, dxp, I0):
+@pytest.fixture()
+async def display(qtbot, sim_registry, fake_motors, dxp, I0):
     display = LineScanDisplay()
     qtbot.addWidget(display)
+    await display.update_devices(sim_registry)
+    display.ui.run_button.setEnabled(True)
+    return display
 
+
+@pytest.mark.asyncio
+async def test_time_calculator(display, sim_registry):
     # set up motor num
-    display.ui.num_motor_spin_box.setValue(2)
+    await display.update_regions(2)
 
     # set up num of repeat scans
     display.ui.spinBox_repeat_scan_num.setValue(6)
@@ -63,15 +70,10 @@ def test_time_calculator(qtbot, sim_registry, fake_motors, dxp, I0):
     assert int(display.ui.label_sec_total.text()) == 0
 
 
-def test_line_scan_plan_queued(qtbot, sim_registry, fake_motors, dxp, I0):
-    display = LineScanDisplay()
-    qtbot.addWidget(display)
-    display.ui.run_button.setEnabled(True)
-
+@pytest.mark.asyncio
+async def test_line_scan_plan_queued(qtbot, display):
     # set up motor num
-    display.ui.num_motor_spin_box.setValue(2)
-
-    display.update_regions()
+    await display.update_regions(2)
 
     # set up a test motor 1
     display.regions[0].motor_box.combo_box.setCurrentText("motorA_m1")

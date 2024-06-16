@@ -1,3 +1,4 @@
+import asyncio
 import subprocess
 from pathlib import Path
 from typing import Optional, Sequence
@@ -15,6 +16,7 @@ class FireflyDisplay(Display):
     caqtdm_command: str = "/APSshare/bin/caQtDM -style plastique -noMsg -attach"
     caqtdm_actions: Sequence
     device: Optional[Device]
+    registry = None
 
     # Signals
     status_message_changed = Signal(str, int)
@@ -90,6 +92,10 @@ class FireflyDisplay(Display):
         # Add the path to caQtDM .ui file
         cmds.append(ui_file)
         self._open_caqtdm_subprocess(cmds)
+
+    async def update_devices(self, registry):
+        """The list of accessible devices has changed."""
+        self.registry = registry
 
     def customize_device(self):
         # Retrieve the device

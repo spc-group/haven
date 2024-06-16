@@ -11,3 +11,7 @@
    - [ ] Send the registry initially when the component selector is created
 ** TODO [0/1] Detector list
    - [ ] Have the detector list respond to registry changed signals (like component_selector)
+** TODO [0/3] Line scan plan window
+   - [ ] Do the number of regions change properly
+   - [ ] Can the number of regions be reset
+   - [ ] Do the component selector options update properly (update_devices called from QApplication)

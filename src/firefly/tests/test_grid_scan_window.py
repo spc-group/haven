@@ -21,15 +21,18 @@ def fake_motors(sim_registry):
 
 
 @pytest.fixture()
-def display(qtbot):
+async def display(qtbot, sim_registry, fake_motors, dxp, I0):
     display = GridScanDisplay()
     qtbot.addWidget(display)
+    await display.update_devices(sim_registry)
+    display.ui.run_button.setEnabled(True)
     return display
 
 
-def test_time_calculator(display, sim_registry, fake_motors, dxp, I0):
+@pytest.mark.asyncio
+async def test_time_calculator(display, sim_registry):
     # set up motor num
-    display.ui.num_motor_spin_box.setValue(2)
+    await display.update_regions(2)
 
     # set up num of repeat scans
     display.ui.spinBox_repeat_scan_num.setValue(6)
@@ -68,10 +71,9 @@ def test_time_calculator(display, sim_registry, fake_motors, dxp, I0):
     assert int(display.ui.label_sec_total.text()) == 0
 
 
-def test_grid_scan_plan_queued(display, qtbot, sim_registry, fake_motors):
-    display.ui.run_button.setEnabled(True)
-    display.ui.num_motor_spin_box.setValue(2)
-    display.update_regions()
+@pytest.mark.asyncio
+async def test_grid_scan_plan_queued(display, qtbot, sim_registry, fake_motors):
+    await display.update_regions(2)
 
     # set up a test motor 1
     display.regions[0].motor_box.combo_box.setCurrentText("motorA_m1")

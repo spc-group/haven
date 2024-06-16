@@ -1,6 +1,8 @@
+import asyncio
 import logging
 
 from bluesky_queueserver_api import BPlan
+from qasync import asyncSlot
 from qtpy import QtWidgets
 from qtpy.QtGui import QDoubleValidator
 
@@ -42,11 +44,14 @@ class LineScanDisplay(display.FireflyDisplay):
     def customize_ui(self):
         # Remove the default layout from .ui file
         self.clearLayout(self.ui.region_template_layout)
-        self.reset_default_regions()
 
-        # disable the line edits in spin box
+        # Disable the line edits in spin box (use up/down buttons instead)
         self.ui.num_motor_spin_box.lineEdit().setReadOnly(True)
-        self.ui.num_motor_spin_box.valueChanged.connect(self.update_regions)
+
+        # Set up the mechanism for changing region number
+        self.regions = []
+        self.ui.num_motor_spin_box.valueChanged.connect(self.update_regions_slot)
+        self.reset_default_regions()
 
         self.ui.run_button.setEnabled(True)  # for testing
         self.ui.run_button.clicked.connect(self.queue_plan)
@@ -58,6 +63,19 @@ class LineScanDisplay(display.FireflyDisplay):
         self.ui.spinBox_repeat_scan_num.valueChanged.connect(self.update_total_time)
         self.ui.scan_pts_spin_box.valueChanged.connect(self.update_total_time)
 
+    @asyncSlot(object)
+    async def update_devices(self, registry):
+        """Set available components in the motor boxes."""
+        await super().update_devices(registry)
+        await self.update_component_selector_devices(registry)
+        await self.detectors_list.update_devices(registry)
+
+    async def update_component_selector_devices(self, registry):
+        """Update the devices for all the component selectors"""
+        selectors = [region.motor_box for region in self.regions]
+        aws = [box.update_devices(registry) for box in selectors]
+        await asyncio.gather(*aws)
+
     def clearLayout(self, layout):
         if layout is not None:
             while layout.count():
@@ -66,18 +84,26 @@ class LineScanDisplay(display.FireflyDisplay):
                     item.widget().deleteLater()
 
     def reset_default_regions(self):
-        if not hasattr(self, "regions"):
-            self.regions = []
-            self.add_regions(self.default_num_regions)
         self.ui.num_motor_spin_box.setValue(self.default_num_regions)
-        self.update_regions()
 
-    def add_regions(self, num=1):
+    def add_regions(self, num: int = 1):
+        """Add *num* regions to the list of scan parameters.
+
+        Returns
+        =======
+        new_regions
+          The newly created region objects.
+
+        """
+        new_regions = []
         for i in range(num):
             region = LineScanRegion()
             self.ui.regions_layout.addLayout(region.layout)
             # Save it to the list
             self.regions.append(region)
+            new_regions.append(region)
+        # Finish setting up the new regions
+        return new_regions
 
     def remove_regions(self, num=1):
         for i in range(num):
@@ -89,21 +115,33 @@ class LineScanDisplay(display.FireflyDisplay):
                     item.widget().deleteLater()
             self.regions.pop()
 
-    def update_regions(self):
-        new_region_num = self.ui.num_motor_spin_box.value()
+    @asyncSlot(int)
+    async def update_regions_slot(self, new_region_num):
+        return await self.update_regions(new_region_num)
+    
+    async def update_regions(self, new_region_num: int):
+        """Adjust regions from the scan params layout to reach
+        *new_region_num*.
+
+        """
         old_region_num = len(self.regions)
         diff_region_num = new_region_num - old_region_num
-
+        new_regions = []
         if diff_region_num < 0:
             self.remove_regions(abs(diff_region_num))
         elif diff_region_num > 0:
-            self.add_regions(diff_region_num)
+            new_regions = self.add_regions(diff_region_num)
+        # Setup the component selector devices with existing device definitions
+        if len(new_regions) > 0:
+            aws = [
+                region.motor_box.update_devices(self.registry) for region in new_regions
+            ]
+            await asyncio.gather(*aws)
 
     def update_total_time(self):
         # get default detector time
-        app = FireflyApplication.instance()
         detectors = self.ui.detectors_list.selected_detectors()
-        detectors = [app.registry[name] for name in detectors]
+        detectors = [self.registry[name] for name in detectors]
         detectors = [det for det in detectors if hasattr(det, "default_time_signal")]
 
         # to prevent detector list is empty
@@ -167,6 +205,7 @@ class LineScanDisplay(display.FireflyDisplay):
 
     def queue_plan(self, *args, **kwargs):
         """Execute this plan on the queueserver."""
+        print("QUEUEING PLAN")
         detectors, num_points, motor_args, repeat_scan_num, md = (
             self.get_scan_parameters()
         )
