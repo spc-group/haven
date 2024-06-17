@@ -5,12 +5,9 @@ from qtpy import QtWidgets
 
 from firefly import display
 from firefly.component_selector import ComponentSelector
+from firefly.application import FireflyApplication
 
 log = logging.getLogger(__name__)
-
-# ROBOT_NAMES = ["Austin"]
-
-SAMPLE_NUMBERS = [8, 9, 10, 14, 15, 16, 20, 21, 22, None]  # list(range(24))+[None]
 
 
 class LineScanRegion:
@@ -20,25 +17,14 @@ class LineScanRegion:
     def setup_ui(self):
         self.layout = QtWidgets.QHBoxLayout()
 
-        # First item, motor No.
-        # self.motor_label = QtWidgets.QLabel()
-        # self.motor_label.setText("1")
-        # self.layout.addWidget(self.motor_label)
-
-        # Second item, ComponentSelector
+        # ComponentSelector
         self.motor_box = ComponentSelector()
-        # self.stop_line_edit.setPlaceholderText("Stop…")
         self.layout.addWidget(self.motor_box)
 
-        # Third item, start point
+        # Motor position for robot transferring samples
         self.start_line_edit = QtWidgets.QLineEdit()
         self.start_line_edit.setPlaceholderText("Position…")
         self.layout.addWidget(self.start_line_edit)
-
-        # Forth item, stop point
-        # self.stop_line_edit = QtWidgets.QLineEdit()
-        # self.stop_line_edit.setPlaceholderText("Stop…")
-        # self.layout.addWidget(self.stop_line_edit)
 
 
 class RobotDisplay(display.FireflyDisplay):
@@ -46,29 +32,25 @@ class RobotDisplay(display.FireflyDisplay):
     A GUI for managing sample tranfer using a robot plan: robot_sample(robot, number/None, motor1, position1, motor2, position2, motor3, position...)
     """
 
+    def sample_numbers(self):
+        sample_names = [name for name, device in self.device.samples.walk_subdevices()]
+        sample_numbers = [int(name.replace("sample", "")) for name in sample_names]
+        sample_numbers.append(None)
+        return sample_numbers
+
     def customize_ui(self):
         self.reset_default_regions()
-        # disable the line edits in spin box
-        # self.ui.robot_combo_box.lineEdit().setReadOnly(True)
-        # clear any exiting items in the combo box
-        # self.ui.robot_combo_box.clear()
-        # set the list of values for the combo box
-        # for rbt in ROBOT_NAMES:
-        #    self.ui.robot_combo_box.addItem(rbt)
-
         # clear any exiting items in the combo box
         self.ui.sample_combo_box.clear()
+        # Get the list of sample numbers
+        sample_numbers = self.sample_numbers()
         # set the list of values for the combo box
-        for sam in SAMPLE_NUMBERS:
+        for sam in sample_numbers:
             self.ui.sample_combo_box.addItem(str(sam))
-        # self.ui.sample_combo_box.setCurrentIndex(0)
 
         # disable the line edits in spin box
         self.ui.num_motor_spin_box.lineEdit().setReadOnly(True)
         self.ui.num_motor_spin_box.valueChanged.connect(self.update_regions)
-        # self.ui.num_motor_spin_box.editingFinished.connect(self.update_regions)
-
-        # self.ui.run_button.setEnabled(True) #for testing
         self.ui.run_button.clicked.connect(self.queue_plan)
 
     def reset_default_regions(self):
@@ -90,10 +72,10 @@ class RobotDisplay(display.FireflyDisplay):
         for i in range(num):
             layout = self.regions[-1].layout
             # iterate/wait, and delete all widgets in the layout in the end
-            while layout.count():
+            while layout.count() > 0:
                 item = layout.takeAt(0)
-                if item.widget():
-                    item.widget().deleteLater()
+            if item.widget():
+                item.widget().deleteLater()
             self.regions.pop()
 
     def update_regions(self):
@@ -127,15 +109,10 @@ class RobotDisplay(display.FireflyDisplay):
         ]
 
         # Build the queue item
-        print(args)
-        print(sam_num)
         robot = self.macros()["DEVICE"]
-        print(robot)
         item = BPlan("robot_transfer_sample", robot, sam_num, *args)
 
         # Submit the item to the queueserver
-        from firefly.application import FireflyApplication
-
         app = FireflyApplication.instance()
         log.info("Add ``robot_transfer_sample()`` plan to queue.")
         app.add_queue_item(item)
