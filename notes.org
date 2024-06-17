@@ -20,8 +20,8 @@
 ** TODO [0/1] Main window
    - [0/2] Main window needs to respond to the queueserver state
      - [ ] Replace ``app.queue_environment_state_changed.connect(self.ui.environment_label.setText)``
+     - [ ] Replace ``app.queue_length_changed.connect(self.update_queue_length)``
      - [ ] Replace ``app.queue_re_state_changed.connect(self.ui.re_label.setText)``
-     - [ ] Replace ``PlanWindow: app.queue_length_changed.connect(self.set_navbar_visibility)``
    - [23/23] Need to add actions to menus
      - [X] replace ``self.ui.menuView.addAction(app.show_logs_window_action)``
      - [X] replace ``for action in app.queue_action_group.actions():
@@ -49,3 +49,4 @@
      - [X] iocs_window_action
    - [ ] App needs to pass actions to the window
    - [ ] Apps needs to connect queue_status_changed to main_window.update_queue_controls
+     

@@ -6,7 +6,7 @@ from typing import Optional, Sequence
 import qtawesome as qta
 from pydm import data_plugins
 from pydm.main_window import PyDMMainWindow
-from qtpy import QtCore, QtGui, QtWidgets
+from qtpy import QtGui, QtWidgets
 from qtpy.QtWidgets import QAction
 
 from haven import load_config
@@ -211,6 +211,12 @@ class FireflyMainWindow(PyDMMainWindow):
         _label = QtWidgets.QLabel()
         _label.setText("Queue:")
         bar.addPermanentWidget(_label)
+        self.ui.queue_length_label = QtWidgets.QLabel()
+        self.ui.queue_length_label.setToolTip(
+            "The length of the queue, not including the running plan."
+        )
+        self.ui.queue_length_label.setText("(??)")
+        bar.addPermanentWidget(self.ui.queue_length_label)
         self.ui.environment_label = QtWidgets.QLabel()
         self.ui.environment_label.setToolTip(
             "The current state of the queue server environment."
@@ -340,6 +346,9 @@ class FireflyMainWindow(PyDMMainWindow):
             self.ui.menuSetup.addAction(bss_window_action)
         if iocs_window_action is not None:
             self.ui.menuSetup.addAction(iocs_window_action)
+        # Make tooltips show up for menu actions
+        for menu in [self.ui.menuSetup, self.ui.detectors_menu, self.ui.queue_menu]:
+            menu.setToolTipsVisible(True)
 
     def show_status(self, message, timeout=0):
         """Show a message in the status bar."""
@@ -359,6 +368,9 @@ class FireflyMainWindow(PyDMMainWindow):
             title += " [Read Only Mode]"
         self.setWindowTitle(title)
 
+    def update_queue_length(self, new_length: int):
+        self.ui.queue_length_label.setText(f"({new_length})")
+
 
 class PlanMainWindow(FireflyMainWindow):
     """A Qt window that has extra controls for a bluesky runengine."""
@@ -377,22 +389,11 @@ class PlanMainWindow(FireflyMainWindow):
     def customize_ui(self, *args, queue_control_actions, **kwargs):
         super().customize_ui(*args, queue_control_actions=queue_control_actions, **kwargs)
         self.setup_navbar(queue_control_actions=queue_control_actions)
-        # Connect signals/slots
-        # app.queue_length_changed.connect(self.set_navbar_visibility)
 
     def update_queue_controls(self, new_status):
         """Update the queue controls to match the state of the queueserver."""
         super().update_queue_controls(new_status)
-        qsize = new_status['items_in_queue']
-        self.ui.navbar.setVisible(qsize > 0)
-
-    # @QtCore.Slot(int)
-    # def set_navbar_visibility(self, queue_length: int):
-    #     """Determine whether to make the navbar be visible."""
-    #     log.debug(f"Setting navbar visibility. Queue length: {queue_length}")
-    #     navbar = self.ui.navbar
-    #     navbar.setVisible(queue_length > 0)
-
+        self.ui.navbar.setVisible(bool(new_status['in_use']))
 
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
