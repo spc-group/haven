@@ -162,6 +162,92 @@ def test_open_area_detector_viewer_actions(ffapp, qtbot, sim_camera):
     list(ffapp.area_detector_actions.values())[0].trigger()
     assert "FireflyMainWindow_area_detector_s255id-gige-A" in ffapp.windows.keys()
 
+
+############
+# From old src/firefly/tests/test_motor_menu.py
+    
+
+@pytest.fixture
+def fake_motors(sim_registry):
+    motor_names = ["motorA", "motorB", "motorC"]
+    motors = []
+    for name in motor_names:
+        this_motor = make_fake_device(motor.HavenMotor)(
+            name=name, labels={"extra_motors"}
+        )
+        motors.append(this_motor)
+    return motors
+
+
+def test_open_motor_window(fake_motors, qapp, qtbot):
+    # Simulate clicking on the menu action (they're in alpha order)
+    action = ffapp.motor_actions["motorC"]
+    action.trigger()
+    # See if the window was created
+    motor_3_name = "FireflyMainWindow_motor_motorC"
+    assert motor_3_name in ffapp.windows.keys()
+    macros = ffapp.windows[motor_3_name].display_widget().macros()
+    assert macros["MOTOR"] == "motorC"
+
+
+def test_motor_menu(fake_motors, qapp, qtbot):
+    # Create the window
+    window = FireflyMainWindow()
+    qtbot.addWidget(window)
+    # Check that the menu items have been created
+    assert hasattr(window.ui, "positioners_menu")
+    assert len(ffapp.motor_actions) == 3
+    window.destroy()
+
+
+##########################################
+# From src/firefly/tests/test_queue_client.py
+
+
+def test_queue_stopped(client):
+    """Does the action respond to changes in the queue stopped pending?"""
+    assert not ffapp.queue_stop_action.isChecked()
+    client.queue_stop_changed.emit(True)
+    assert ffapp.queue_stop_action.isChecked()
+    client.queue_stop_changed.emit(False)
+    assert not ffapp.queue_stop_action.isChecked()
+
+
+def test_autostart_changed(client, qtbot):
+    """Does the action respond to changes in the queue autostart
+    status?
+
+    """
+    ffapp.queue_autostart_action.setChecked(True)
+    assert ffapp.queue_autostart_action.isChecked()
+    with qtbot.waitSignal(client.autostart_changed, timeout=3):
+        client.autostart_changed.emit(False)
+    assert not ffapp.queue_autostart_action.isChecked()
+    with qtbot.waitSignal(client.autostart_changed, timeout=3):
+        client.autostart_changed.emit(True)
+    assert ffapp.queue_autostart_action.isChecked()
+
+
+
+###############################################################
+# From: src/firefly/tests/test_xrf_detector_display.py
+
+def test_open_xrf_detector_viewer_actions(ffapp, qtbot, det_fixture, request):
+    sim_det = request.getfixturevalue(det_fixture)
+    # Get the area detector parts ready
+    ffapp._prepare_device_windows(
+        device_label="xrf_detectors",
+        attr_name="xrf_detector",
+        ui_file="xrf_detector.py",
+        device_key="DEV",
+    )
+    assert hasattr(ffapp, "xrf_detector_actions")
+    assert len(ffapp.xrf_detector_actions) == 1
+    # Launch an action and see that a window opens
+    list(ffapp.xrf_detector_actions.values())[0].trigger()
+    assert "FireflyMainWindow_xrf_detector_vortex_me4" in ffapp.windows.keys()
+
+
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov

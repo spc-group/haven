@@ -6,9 +6,6 @@ import qtawesome as qta
 from qtpy import QtGui, QtWidgets
 from strenum import StrEnum
 
-from firefly import FireflyApplication
-
-
 log = logging.getLogger(__name__)
 
 
@@ -22,15 +19,8 @@ class QueueButton(QtWidgets.QPushButton):
         super().__init__(*args, **kwargs)
         # Initially disable the button until the status of the queue can be determined
         self.setDisabled(True)
-        # Listen for changes to the run engine
-        app = FireflyApplication.instance()
-        try:
-            app.queue_status_changed.connect(self.handle_queue_status_change)
-        except AttributeError:
-            log.warning("Application has no slot `handle_queue_status_change`. "
-                        "Queue button will not respond to queue state changes.")
 
-    def handle_queue_status_change(self, status: dict):
+    def update_queue_style(self, status: dict):
         if status["worker_environment_exists"]:
             self.setEnabled(True)
         else:

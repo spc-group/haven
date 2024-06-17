@@ -27,7 +27,8 @@ log = logging.getLogger(__name__)
 float_accuracy = 4
 
 
-# the energy resolution will not be better than 0.01 eV at S25, e.g., 0.01 eV /4000 eV -> 10-6 level, Si(311) is 10-5 level
+# The energy resolution will not be better than 0.01 eV at S25
+# e.g. 0.01 eV / 4000 eV -> 10^-6 level, Si(311) is 10-5 level
 def wavenumber_to_energy_round(wavenumber):
     return round(wavenumber_to_energy(wavenumber), 2)
 
@@ -503,11 +504,10 @@ class XafsScanDisplay(display.FireflyDisplay):
             md=md,
         )
         # Submit the item to the queueserver
-        app = FireflyApplication.instance()
         log.info(f"Adding XAFS scan to queue.")
         # repeat scans
         for i in range(repeat_scan_num):
-            app.add_queue_item(item)
+            self.queue_item_submitted.emit(item)
 
     def ui_filename(self):
         return "plans/xafs_scan.ui"

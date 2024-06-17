@@ -395,6 +395,7 @@ class PlanMainWindow(FireflyMainWindow):
         super().update_queue_controls(new_status)
         self.ui.navbar.setVisible(bool(new_status['in_use']))
 
+
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov

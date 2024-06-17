@@ -1,6 +1,7 @@
 from pprint import pprint
 from unittest import mock
 
+import pytest
 import numpy as np
 from bluesky_queueserver_api import BPlan
 from qtpy import QtCore
@@ -14,76 +15,77 @@ EXAFS_region = [50, 500, 0.5]
 default_values = [pre_edge, XANES_region, EXAFS_region]
 
 
-def test_region_number(qtbot):
+@pytest.fixture()
+def display(qtbot):
+    display = XafsScanDisplay()
+    qtbot.addWidget(display)
+    return display
+
+
+def test_region_number(display):
     """Does changing the region number affect the UI?"""
-    disp = XafsScanDisplay()
-    qtbot.addWidget(disp)
     # Check that the display has the right number of rows to start with
-    assert disp.ui.regions_spin_box.value() == 3
-    assert hasattr(disp, "regions")
-    assert len(disp.regions) == 3
+    assert display.ui.regions_spin_box.value() == 3
+    assert hasattr(display, "regions")
+    assert len(display.regions) == 3
 
     # Check that regions can be inserted
-    disp.ui.regions_spin_box.setValue(5)
-    assert len(disp.regions) == 5
+    display.ui.regions_spin_box.setValue(5)
+    assert len(display.regions) == 5
 
     # Check that regions can be removed
-    disp.ui.regions_spin_box.setValue(1)
-    assert len(disp.regions) == 1
+    display.ui.regions_spin_box.setValue(1)
+    assert len(display.regions) == 1
 
 
-def test_E0_checkbox(qtbot):
+def test_E0_checkbox(display):
     """Does selecting the E0 checkbox adjust the UI properly?"""
-    disp = XafsScanDisplay()
-    qtbot.addWidget(disp)
     # check whether extracted edge value is correct
-    disp.edge_combo_box.setCurrentText("Pt L3 (11500.8 eV)")
-    disp.ui.use_edge_checkbox.setChecked(True)
+    display.edge_combo_box.setCurrentText("Pt L3 (11500.8 eV)")
+    display.ui.use_edge_checkbox.setChecked(True)
 
     # check whether the math is done correctly when switching off E0
-    disp.ui.use_edge_checkbox.setChecked(False)
+    display.ui.use_edge_checkbox.setChecked(False)
     # check whether edge value is extracted correctly
-    np.testing.assert_equal(disp.edge_value, 11500.8)
+    np.testing.assert_equal(display.edge_value, 11500.8)
     # K-space checkboxes should be disabled when E0 is unchecked
-    assert not disp.regions[0].k_space_checkbox.isEnabled()
+    assert not display.regions[0].k_space_checkbox.isEnabled()
 
     # check whether energy values is added correctly
     for i in range(len(default_values)):
         np.testing.assert_almost_equal(
-            float(disp.regions[i].start_line_edit.text()),
-            default_values[i][0] + disp.edge_value,
+            float(display.regions[i].start_line_edit.text()),
+            default_values[i][0] + display.edge_value,
             decimal=3,
         )
         np.testing.assert_almost_equal(
-            float(disp.regions[i].stop_line_edit.text()),
-            default_values[i][1] + disp.edge_value,
+            float(display.regions[i].stop_line_edit.text()),
+            default_values[i][1] + display.edge_value,
             decimal=3,
         )
         np.testing.assert_almost_equal(
-            float(disp.regions[i].step_line_edit.text()),
+            float(display.regions[i].step_line_edit.text()),
             default_values[i][2],
             decimal=3,
         )
 
     # check whether k range is calculated right
-    disp.ui.use_edge_checkbox.setChecked(True)
+    display.ui.use_edge_checkbox.setChecked(True)
     # K-space checkbox should become re-enabled after E0 is checked
-    assert disp.regions[-1].k_space_checkbox.isEnabled()
-    disp.regions[-1].k_space_checkbox.setChecked(True)
+    assert display.regions[-1].k_space_checkbox.isEnabled()
+    display.regions[-1].k_space_checkbox.setChecked(True)
     np.testing.assert_almost_equal(
-        float(disp.regions[i].start_line_edit.text()), 3.6226, decimal=4
+        float(display.regions[i].start_line_edit.text()), 3.6226, decimal=4
     )
     np.testing.assert_almost_equal(
-        float(disp.regions[i].stop_line_edit.text()), 11.4557, decimal=4
+        float(display.regions[i].stop_line_edit.text()), 11.4557, decimal=4
     )
     np.testing.assert_almost_equal(
-        float(disp.regions[i].step_line_edit.text()), 3.64069 - 3.6226, decimal=4
+        float(display.regions[i].step_line_edit.text()), 3.64069 - 3.6226, decimal=4
     )
 
 
-def test_xafs_scan_plan_queued_energies(ffapp, qtbot):
-    display = XafsScanDisplay()
-
+def test_xafs_scan_plan_queued_energies(display, qtbot):
     display.edge_combo_box.setCurrentText("Pt L3 (11500.8 eV)")
     display.regions[-1].region_checkbox.setChecked(False)
     # Set up detector list
@@ -157,13 +159,12 @@ def test_xafs_scan_plan_queued_energies(ffapp, qtbot):
     # Click the run button and see if the plan is queued
     display.ui.run_button.setEnabled(True)
     with qtbot.waitSignal(
-        ffapp.queue_item_added, timeout=1000, check_params_cb=check_item
+        display.queue_item_submitted, timeout=1000, check_params_cb=check_item
     ):
         qtbot.mouseClick(display.ui.run_button, QtCore.Qt.LeftButton)
 
 
-def test_xafs_scan_plan_queued_energies_k_mixed(ffapp, qtbot):
-    display = XafsScanDisplay()
+def test_xafs_scan_plan_queued_energies_k_mixed(display, qtbot):
     display.ui.regions_spin_box.setValue(2)
     display.edge_combo_box.setCurrentText("Pt L3 (11500.8 eV)")
 
@@ -265,7 +266,7 @@ def test_xafs_scan_plan_queued_energies_k_mixed(ffapp, qtbot):
     # Click the run button and see if the plan is queued
     display.ui.run_button.setEnabled(True)
     with qtbot.waitSignal(
-        ffapp.queue_item_added, timeout=1000, check_params_cb=check_item
+        display.queue_item_submitted, timeout=1000, check_params_cb=check_item
     ):
         qtbot.mouseClick(display.ui.run_button, QtCore.Qt.LeftButton)
 

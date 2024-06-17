@@ -15,7 +15,7 @@ def test_queue_button_style(qtbot):
         "re_state": "idle",
         "queue_autostart_enabled": False,
     }
-    ffapp.queue_status_changed.emit(queue_state)
+    btn.update_queue_style(queue_state)
     assert btn.isEnabled()
     assert Colors.ADD_TO_QUEUE in btn.styleSheet()
     assert btn.text() == "Add to Queue"
@@ -26,7 +26,7 @@ def test_queue_button_style(qtbot):
         "re_state": "idle",
         "queue_autostart_enabled": True,
     }
-    btn.handle_queue_status_change(queue_state)
+    btn.update_queue_style(queue_state)
     assert btn.isEnabled()
     assert Colors.RUN_QUEUE in btn.styleSheet()
     assert btn.text() == "Run"
@@ -37,7 +37,7 @@ def test_queue_button_style(qtbot):
         "re_state": "running",
         "queue_autostart_enabled": True,
     }
-    btn.handle_queue_status_change(queue_state)
+    btn.update_queue_style(queue_state)
     assert btn.isEnabled()
     assert Colors.ADD_TO_QUEUE in btn.styleSheet()
     assert btn.text() == "Add to Queue"
