@@ -6,8 +6,9 @@ from firefly.slits import SlitsDisplay
 
 
 @pytest.fixture()
-def display(ffapp, blade_slits):
+def display(qtbot, blade_slits):
     disp = SlitsDisplay(macros={"DEVICE": blade_slits.name})
+    qtbot.addWidget(disp)
     return disp
 
 

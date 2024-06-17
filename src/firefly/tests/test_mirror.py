@@ -24,12 +24,13 @@ def hhl_bendable_mirror(sim_registry):
 
 
 @pytest.fixture()
-def display(ffapp, hhl_mirror):
+def display(qtbot, hhl_mirror):
     disp = MirrorDisplay(macros={"DEVICE": hhl_mirror.name})
+    qtbot.addWidget(disp)
     return disp
 
 
-def test_mirror_caqtdm(display, hhl_mirror):
+def test_mirror_caqtdm(display):
     display._open_caqtdm_subprocess = mock.MagicMock()
     # Launch the caqtdm display
     display.launch_caqtdm()
