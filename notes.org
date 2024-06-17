@@ -15,3 +15,5 @@
    - [ ] Do the number of regions change properly
    - [ ] Can the number of regions be reset
    - [ ] Do the component selector options update properly (update_devices called from QApplication)
+** TODO [/] Status window
+   - [ ] Application connects StatusDisplay.bss_window_requested -> app.show_bss_window_action.trigger

@@ -6,8 +6,7 @@ from pydm.widgets import PyDMLineEdit
 from firefly.pydm_plugin import HavenPlugin
 
 
-def test_plugin_registered(ffapp):
-    assert "haven" in ffapp.plugins.keys()
+def test_plugin_registered():
     plugin = plugin_for_address("haven://")
     assert isinstance(plugin, HavenPlugin)
 

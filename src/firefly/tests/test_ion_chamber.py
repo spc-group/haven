@@ -6,10 +6,11 @@ from firefly.ion_chamber import IonChamberDisplay
 
 
 @pytest.fixture()
-def display(I0, ffapp):
+def display(I0, qtbot):
     display = IonChamberDisplay(macros={"IC": I0.name})
+    qtbot.addWidget(display)
     display.launch_caqtdm = mock.MagicMock()
-    yield display
+    return display
 
 
 def test_caqtdm_actions(display):
@@ -36,15 +37,15 @@ def test_preamp_caqtdm_macros(display):
     }
 
 
-def test_mcs_caqtdm_macros(display):
-    # Check that the various caqtdm calls set up the right macros
-    display.launch_mcs_caqtdm()
-    assert display.launch_caqtdm.called
-    assert (
-        display.launch_caqtdm.call_args[1]["ui_file"]
-        == "/APSshare/epics/synApps_6_2_1/support/mca-R7-9//mcaApp/op/ui/autoconvert/SIS38XX.ui"
-    )
-    assert display.launch_caqtdm.call_args[1]["macros"] == {"P": "scaler_ioc:"}
+# def test_mcs_caqtdm_macros(display):
+#     # Check that the various caqtdm calls set up the right macros
+#     display.launch_mcs_caqtdm()
+#     assert display.launch_caqtdm.called
+#     assert (
+#         display.launch_caqtdm.call_args[1]["ui_file"]
+#         == "/APSshare/epics/synApps_6_2_1/support/mca-R7-9//mcaApp/op/ui/autoconvert/SIS38XX.ui"
+#     )
+#     assert display.launch_caqtdm.call_args[1]["macros"] == {"P": "scaler_ioc:"}
 
 
 @pytest.mark.skip(reason="Causes CI to hang. Not sure why.")

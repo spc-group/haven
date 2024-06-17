@@ -3,6 +3,7 @@ import logging
 import qtawesome as qta
 from pydm.widgets import PyDMByteIndicator, PyDMPushButton
 from qtpy.QtWidgets import QHBoxLayout, QSizePolicy
+from qtpy.QtCore import Signal
 
 from firefly import FireflyApplication, display
 from haven import registry
@@ -22,6 +23,7 @@ def name_to_title(name: str):
 
 class StatusDisplay(display.FireflyDisplay):
     caqtdm_ui_file: str = "/net/s25data/xorApps/ui/25id_main.ui"
+    bss_window_requested = Signal()
 
     def add_shutter_widgets(self):
         form = self.ui.beamline_layout
@@ -73,8 +75,7 @@ class StatusDisplay(display.FireflyDisplay):
             layout.addWidget(close_btn)
 
     def customize_ui(self):
-        app = FireflyApplication.instance()
-        self.ui.bss_modify_button.clicked.connect(app.show_bss_window_action.trigger)
+        self.ui.bss_modify_button.clicked.connect(self.bss_window_requested.emit)
         self.add_shutter_widgets()
 
     def ui_filename(self):

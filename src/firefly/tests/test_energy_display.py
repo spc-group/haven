@@ -1,3 +1,4 @@
+import pytest
 from unittest import mock
 
 from apstools.devices.aps_undulator import ApsUndulator
@@ -15,7 +16,8 @@ FakeEnergyPositioner = make_fake_device(
 FakeUndulator = make_fake_device(ApsUndulator)
 
 
-def test_mono_caqtdm_macros(qtbot, sim_registry):
+@pytest.fixture()
+def display(qtbot, sim_registry):
     # Create fake device
     FakeMonochromator("mono_ioc", name="monochromator")
     FakeEnergyPositioner(
@@ -29,6 +31,11 @@ def test_mono_caqtdm_macros(qtbot, sim_registry):
     undulator.energy.pvname = "id_ioc:Energy"
     # Load display
     display = EnergyDisplay()
+    qtbot.addWidget(display)
+    return display
+
+
+def test_mono_caqtdm_macros(display):
     display.launch_caqtdm = mock.MagicMock()
     # Check that the various caqtdm calls set up the right macros
     display.launch_mono_caqtdm()
@@ -44,19 +51,7 @@ def test_mono_caqtdm_macros(qtbot, sim_registry):
     }
 
 
-def test_id_caqtdm_macros(qtbot, sim_registry):
-    # Create fake device
-    mono = FakeMonochromator("mono_ioc", name="monochromator")
-    FakeEnergyPositioner(
-        mono_pv="mono_ioc:Energy",
-        id_offset_pv="mono_ioc:ID_offset",
-        id_tracking_pv="mono_ioc:ID_tracking",
-        id_prefix="id_ioc",
-        name="energy",
-    )
-    FakeUndulator("id_ioc:", name="undulator", labels={"xray_sources"})
-    # Load display
-    display = EnergyDisplay()
+def test_id_caqtdm_macros(display):
     display.launch_caqtdm = mock.MagicMock()
     # Check that the various caqtdm calls set up the right macros
     display.launch_id_caqtdm()
@@ -68,48 +63,24 @@ def test_id_caqtdm_macros(qtbot, sim_registry):
     }
 
 
-def test_move_energy(qtbot, sim_registry):
-    mono = FakeMonochromator("mono_ioc", name="monochromator")
-    FakeEnergyPositioner(
-        mono_pv="mono_ioc:Energy",
-        id_offset_pv="mono_ioc:ID_offset",
-        id_tracking_pv="mono_ioc:ID_tracking",
-        id_prefix="id_ioc",
-        name="energy",
-    )
-
-    # Load display
-    disp = EnergyDisplay()
+def test_move_energy(qtbot, display):
     # Click the set energy button
-    btn = disp.ui.set_energy_button
+    btn = display.ui.set_energy_button
     expected_item = BPlan("set_energy", energy=8402.0)
 
     def check_item(item):
         return item.to_dict() == expected_item.to_dict()
 
-    qtbot.keyClicks(disp.target_energy_lineedit, "8402")
+    qtbot.keyClicks(display.target_energy_lineedit, "8402")
     with qtbot.waitSignal(
-        disp.queue_item_submitted, timeout=1000, check_params_cb=check_item
+        display.queue_item_submitted, timeout=1000, check_params_cb=check_item
     ):
         qtbot.mouseClick(btn, QtCore.Qt.LeftButton)
 
 
-def test_predefined_energies(qtbot, sim_registry):
-    # Create fake device
-    mono = FakeMonochromator("mono_ioc", name="monochromator")
-    FakeEnergyPositioner(
-        mono_pv="mono_ioc:Energy",
-        id_offset_pv="mono_ioc:ID_offset",
-        id_tracking_pv="mono_ioc:ID_tracking",
-        id_prefix="id_ioc",
-        name="energy",
-    )
-
-    # Set up the required Application state
-    # Load display
-    disp = EnergyDisplay()
+def test_predefined_energies(qtbot, display):
     # Check that the combo box was populated
-    combo_box = disp.ui.edge_combo_box
+    combo_box = display.ui.edge_combo_box
     assert combo_box.count() > 0
     assert combo_box.itemText(0) == "Select edge…"
     assert combo_box.itemText(1) == "Ca K (4038 eV)"
@@ -119,7 +90,7 @@ def test_predefined_energies(qtbot, sim_registry):
     with qtbot.waitSignal(combo_box.activated, timeout=1000):
         qtbot.keyClicks(combo_box, "Ni K (8333 eV)\t")
         combo_box.activated.emit(9)  # <- this shouldn't be necessary
-    line_edit = disp.ui.target_energy_lineedit
+    line_edit = display.ui.target_energy_lineedit
     assert line_edit.text() == "8333.000"
 
 
