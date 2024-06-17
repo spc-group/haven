@@ -155,6 +155,7 @@ def test_xafs_scan_plan_queued_energies(ffapp, qtbot):
         return True
 
     # Click the run button and see if the plan is queued
+    display.ui.run_button.setEnabled(True)
     with qtbot.waitSignal(
         ffapp.queue_item_added, timeout=1000, check_params_cb=check_item
     ):
@@ -262,6 +263,7 @@ def test_xafs_scan_plan_queued_energies_k_mixed(ffapp, qtbot):
         return True
 
     # Click the run button and see if the plan is queued
+    display.ui.run_button.setEnabled(True)
     with qtbot.waitSignal(
         ffapp.queue_item_added, timeout=1000, check_params_cb=check_item
     ):

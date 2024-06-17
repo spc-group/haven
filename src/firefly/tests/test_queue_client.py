@@ -16,6 +16,7 @@ qs_status = {
     "running_item_uid": None,
     "manager_state": "idle",
     "queue_stop_pending": False,
+    "queue_autostart_enabled": False,
     "worker_environment_exists": False,
     "worker_environment_state": "closed",
     "worker_background_tasks": 0,
@@ -218,9 +219,24 @@ def client():
     api.queue_start.return_value = {
         "success": True,
     }
+    api.re_resume.return_value = {
+        "success": True,
+    }
+    api.re_stop.return_value = {
+        "success": True,
+    }
+    api.re_abort.return_value = {
+        "success": True,
+    }
+    api.re_halt.return_value = {
+        "success": True,
+    }
     api.devices_allowed.return_value = {"success": True, "devices_allowed": {}}
     api.environment_open.return_value = {"success": True}
     api.environment_close.return_value = {"success": True}
+    api.queue_autostart.return_value = {"success": True}
+    api.queue_stop.return_value = {"success": True}
+    api.queue_stop_cancel.return_value = {"success": True}
     # Create the client using the fake API
     autoplay_action = QAction()
     autoplay_action.setCheckable(True)
@@ -228,6 +244,12 @@ def client():
     open_environment_action.setCheckable(True)
     client = queue_client.QueueClient(api=api)
     yield client
+
+
+@pytest.fixture()
+def ffapp(ffapp, client):
+    ffapp.prepare_queue_client(api=client.api, client=client)
+    return ffapp
 
 
 def test_client_timer(client):
@@ -252,6 +274,22 @@ async def test_queue_re_control(client):
     await client.start_queue()
     # Check if the queue started
     api.queue_start.assert_called_once()
+    # Resume a paused queue
+    api.reset_mock()
+    await client.resume_runengine()
+    api.re_resume.assert_called_once()
+    # Stop a paused queue
+    api.reset_mock()
+    await client.stop_runengine()
+    api.re_stop.assert_called_once()
+    # Abort a paused queue
+    api.reset_mock()
+    await client.abort_runengine()
+    api.re_abort.assert_called_once()
+    # Halt a paused queue
+    api.reset_mock()
+    await client.halt_runengine()
+    api.re_halt.assert_called_once()
 
 
 @pytest.mark.asyncio
@@ -259,6 +297,9 @@ async def test_run_plan(client, qtbot):
     """Test if a plan can be queued in the queueserver."""
     api = client.api
     api.item_add.return_value = {"success": True, "qsize": 2}
+    new_status = qs_status.copy()
+    new_status["items_in_queue"] = 2
+    api.status.return_value = new_status
     # Send a plan
     with qtbot.waitSignal(
         client.length_changed, timeout=1000, check_params_cb=lambda l: l == 2
@@ -269,7 +310,7 @@ async def test_run_plan(client, qtbot):
 
 
 @pytest.mark.asyncio
-async def test_autoplay(client, qtbot):
+async def test_toggle_autostart(client, qtbot):
     """Test how queuing a plan starts the runengine."""
     api = client.api
     # Check that it doesn't start the queue if the autoplay action is off
@@ -277,6 +318,51 @@ async def test_autoplay(client, qtbot):
     # Check the queue was started now that autoplay is on
     await client.toggle_autostart(True)
     api.queue_autostart.assert_called_once_with(True)
+
+
+def test_autostart_changed(client, ffapp, qtbot):
+    """Does the action respond to changes in the queue autostart
+    status?
+
+    """
+    ffapp.queue_autostart_action.setChecked(True)
+    assert ffapp.queue_autostart_action.isChecked()
+    with qtbot.waitSignal(client.autostart_changed, timeout=3):
+        client.autostart_changed.emit(False)
+    assert not ffapp.queue_autostart_action.isChecked()
+    with qtbot.waitSignal(client.autostart_changed, timeout=3):
+        client.autostart_changed.emit(True)
+    assert ffapp.queue_autostart_action.isChecked()
+
+
+# def test_start_queue(ffapp, client, qtbot):
+#     ffapp.start_queue_action.trigger()
+#     qtbot.wait(1000)
+#     client.api.queue_start.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_stop_queue(client, qtbot):
+    """Test how queuing a plan starts the runengine."""
+    api = client.api
+    # Check that it doesn't start the queue if the autoplay action is off
+    assert not api.queue_autostart.called
+    # Check the queue stop was requested
+    await client.stop_queue(True)
+    api.queue_stop.assert_called_once()
+    # Check the queue stop can be cancelled
+    api.clear_mock()
+    await client.stop_queue(False)
+    api.queue_stop_cancel.assert_called_once()
+
+
+def test_queue_stopped(client, ffapp):
+    """Does the action respond to changes in the queue stopped pending?"""
+    assert not ffapp.queue_stop_action.isChecked()
+    client.queue_stop_changed.emit(True)
+    assert ffapp.queue_stop_action.isChecked()
+    client.queue_stop_changed.emit(False)
+    assert not ffapp.queue_stop_action.isChecked()
 
 
 @pytest.mark.asyncio
@@ -287,7 +373,9 @@ async def test_check_queue_status(client, qtbot):
         client.environment_opened,
         client.environment_state_changed,
         client.re_state_changed,
+        client.autostart_changed,
         client.manager_state_changed,
+        client.in_use_changed,
     ]
     with qtbot.waitSignals(signals):
         await client.check_queue_status()

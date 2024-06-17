@@ -21,12 +21,12 @@ def test_navbar_autohide(ffapp, qtbot):
     window.show()
     navbar = window.ui.navbar
     # Pretend the queue has some things in it
-    with qtbot.waitSignal(ffapp.queue_length_changed):
-        ffapp.queue_length_changed.emit(3)
+    with qtbot.waitSignal(ffapp.queue_in_use_changed):
+        ffapp.queue_in_use_changed.emit(True)
     assert navbar.isVisible()
     # Make the queue be empty
-    with qtbot.waitSignal(ffapp.queue_length_changed):
-        ffapp.queue_length_changed.emit(0)
+    with qtbot.waitSignal(ffapp.queue_in_use_changed):
+        ffapp.queue_in_use_changed.emit(False)
     assert not navbar.isVisible()
 
 

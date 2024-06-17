@@ -182,7 +182,7 @@ def main(default_fullscreen=False, default_display="status"):
     asyncio.set_event_loop(event_loop)
 
     # Define devices on the beamline (slow!)
-    app.setup_instrument()
+    app.setup_instrument(load_instrument=not pydm_args.no_instrument)
 
     # Get rid of the splash screen now that we're ready to go
 
