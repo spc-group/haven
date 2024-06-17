@@ -6,7 +6,7 @@ from qtpy import QtWidgets
 from qtpy.QtGui import QDoubleValidator
 
 from firefly.component_selector import ComponentSelector
-from firefly.plans.line_scan import LineScanDisplay
+from firefly.plans.regions_display import RegionsDisplay, RegionBase
 
 log = logging.getLogger()
 
@@ -37,9 +37,7 @@ class TitleRegion:
         self.layout.addWidget(label, 1, 0)
 
 
-class GridScanRegion:
-    def __init__(self):
-        self.setup_ui()
+class GridScanRegion(RegionBase):
 
     def setup_ui(self):
         self.layout = QtWidgets.QHBoxLayout()
@@ -49,6 +47,7 @@ class GridScanRegion:
         self.motor_label.setStyleSheet(
             "QLCDNumber { background-color: white; color: red; }"
         )
+        self.motor_label.display(self.line_label)
         self.layout.addWidget(self.motor_label)
 
         # Second item, ComponentSelector
@@ -80,7 +79,8 @@ class GridScanRegion:
         self.layout.addWidget(self.fly_checkbox)
 
 
-class GridScanDisplay(LineScanDisplay):
+class GridScanDisplay(RegionsDisplay):
+    Region = GridScanRegion
     default_num_regions = 2
 
     def __init__(self, parent=None, args=None, macros=None, ui_filename=None, **kwargs):
@@ -93,26 +93,23 @@ class GridScanDisplay(LineScanDisplay):
         self.ui.title_layout.addLayout(self.title_region.layout)
         # reset button
         self.ui.reset_pushButton.clicked.connect(self.reset_default_regions)
-
-    def add_regions(self, num=1):
-        new_regions = []
-        for i in range(num):
-            region = GridScanRegion()
-            self.ui.regions_layout.addLayout(region.layout)
-            # Save it to the list
-            self.regions.append(region)
-            new_regions.append(region)
-            # the num of motor
-            num_motor_i = len(self.regions)
-            # region.motor_label.setText(str(num_motor_i)) # when using label
-            region.motor_label.display(num_motor_i)
-        return new_regions
+        # When selections of detectors changed update_total_time
+        self.ui.detectors_list.selectionModel().selectionChanged.connect(
+            self.update_total_time
+        )
+        self.ui.spinBox_repeat_scan_num.valueChanged.connect(self.update_total_time)
+        self.ui.scan_pts_spin_box.valueChanged.connect(self.update_total_time)
 
     def time_calculate_method(self, detector_time):
         num_points = self.ui.scan_pts_spin_box.value()
         num_regions = len(self.regions)
         total_time_per_scan = num_regions * detector_time * num_points
         return total_time_per_scan
+
+    @asyncSlot(object)
+    async def update_devices_slot(self, registry):
+        await super().update_devices(registry)
+        await self.detectors_list.update_devices(registry)
 
     @asyncSlot(int)
     async def update_regions_slot(self, new_region_num: int):

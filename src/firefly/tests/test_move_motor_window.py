@@ -26,16 +26,14 @@ async def display(qtbot, sim_registry, fake_motors):
     return display
 
 
-def test_move_motor_plan_queued(display, qtbot):
+@pytest.mark.asyncio
+async def test_move_motor_plan_queued(display, qtbot):
     display.ui.run_button.setEnabled(True)
-
-    # set up motor num
-    display.ui.num_motor_spin_box.setValue(2)
 
     # uncheck relative
     display.ui.relative_scan_checkbox.setChecked(False)
 
-    display.update_regions()
+    await display.update_regions(2)
 
     # set up a test motor 1
     display.regions[0].motor_box.combo_box.setCurrentText("motorA_m1")
