@@ -15,5 +15,37 @@
    - [ ] Do the number of regions change properly
    - [ ] Can the number of regions be reset
    - [ ] Do the component selector options update properly (update_devices called from QApplication)
-** TODO [/] Status window
+** TODO [0/1] Status window
    - [ ] Application connects StatusDisplay.bss_window_requested -> app.show_bss_window_action.trigger
+** TODO [0/1] Main window
+   - [0/2] Main window needs to respond to the queueserver state
+     - [ ] Replace ``app.queue_environment_state_changed.connect(self.ui.environment_label.setText)``
+     - [ ] Replace ``app.queue_re_state_changed.connect(self.ui.re_label.setText)``
+     - [ ] Replace ``PlanWindow: app.queue_length_changed.connect(self.set_navbar_visibility)``
+   - [23/23] Need to add actions to menus
+     - [X] replace ``self.ui.menuView.addAction(app.show_logs_window_action)``
+     - [X] replace ``for action in app.queue_action_group.actions():
+            self.ui.queue_menu.addAction(action)``
+     - [X] self.ui.queue_menu.addAction(app.launch_queuemonitor_action)
+     - [X] self.ui.queue_menu.addAction(app.queue_autostart_action)
+     - [X] self.ui.queue_menu.addAction(app.queue_open_environment_action)
+     - [X] self.ui.positioners_menu.addAction(app.show_energy_window_action)
+     - [X] filters_window_action
+     - [X] slits_actions
+     - [X] kb_mirrors_actions -> combine with ``mirror_actions``
+     - [X] mirror_actions
+     - [X] table_actions
+     - [X] plan_actions
+     - [X] run_browser_action
+     - [X] voltmeters_action
+     - [X] motor_actions
+     - [X] ion_chamber_actions
+     - [X] cameras_window_action
+     - [X] camera_actions
+     - [X] area_detector_actions
+     - [X] xrf_detector_actions
+     - [X] status_window_action
+     - [X] bss_window_action
+     - [X] iocs_window_action
+   - [ ] App needs to pass actions to the window
+   - [ ] Apps needs to connect queue_status_changed to main_window.update_queue_controls

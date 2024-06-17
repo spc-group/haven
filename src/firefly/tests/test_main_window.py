@@ -1,37 +1,40 @@
+from qtpy.QtWidgets import QAction
+
 from firefly.main_window import FireflyMainWindow, PlanMainWindow
 
 
-def test_navbar(ffapp):
-    window = PlanMainWindow()
-    # Check navbar actions on the app
-    assert hasattr(ffapp, "pause_runengine_action")
+def test_navbar(qapp, qtbot):
+    pause_runengine_action = QAction()
+    start_queue_action = QAction()
+    window = PlanMainWindow(queue_control_actions=[pause_runengine_action, start_queue_action])
+    qtbot.addWidget(window)
     # Check that the navbar actions are set up properly
     assert hasattr(window.ui, "navbar")
     navbar = window.ui.navbar
     # Navigation actions are removed
     assert window.ui.actionHome not in navbar.actions()
     # Run engine actions have been added to the navbar
-    assert ffapp.pause_runengine_action in navbar.actions()
-    assert ffapp.start_queue_action in navbar.actions()
+    assert pause_runengine_action in navbar.actions()
+    assert start_queue_action in navbar.actions()
 
 
-def test_navbar_autohide(ffapp, qtbot):
+def test_navbar_autohide(qtbot):
     """Test that the queue navbar is only visible when plans are queued."""
     window = PlanMainWindow()
+    qtbot.addWidget(window)
     window.show()
     navbar = window.ui.navbar
     # Pretend the queue has some things in it
-    with qtbot.waitSignal(ffapp.queue_length_changed):
-        ffapp.queue_length_changed.emit(3)
+    window.update_queue_controls({"items_in_queue": 3})
     assert navbar.isVisible()
     # Make the queue be empty
-    with qtbot.waitSignal(ffapp.queue_length_changed):
-        ffapp.queue_length_changed.emit(0)
+    window.update_queue_controls({"items_in_queue": 0})
     assert not navbar.isVisible()
 
 
-def test_add_menu_action(ffapp):
+def test_add_menu_action(qapp, qtbot):
     window = FireflyMainWindow()
+    qtbot.addWidget(window)
     # Check that it's not set up with the right menu yet
     assert not hasattr(window, "actionMake_Salad")
     # Add a menu item
@@ -44,14 +47,16 @@ def test_add_menu_action(ffapp):
     assert action.objectName() == "actionMake_Salad"
 
 
-def test_customize_ui(ffapp):
+def test_customize_ui(qapp, qtbot):
     window = FireflyMainWindow()
+    qtbot.addWidget(window)
     assert hasattr(window.ui, "menuScans")
 
 
-def test_show_message(ffapp):
+def test_show_message(qapp, qtbot):
     window = FireflyMainWindow()
-    status_bar = window.statusBar()
+    qtbot.addWidget(window)
+    window.statusBar()
     # Send a message
     window.show_status("Hello, APS.")
 
