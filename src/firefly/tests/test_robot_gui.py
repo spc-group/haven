@@ -1,8 +1,7 @@
 import pytest
-
 from bluesky_queueserver_api import BPlan
-from ophyd import Signal
 from ophyd import Component as Cpt
+from ophyd import Signal
 from ophyd.sim import SynAxis
 from qtpy import QtCore
 
