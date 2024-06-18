@@ -463,7 +463,7 @@ class FireflyApplication(PyDMApplication):
         """Generic routine to be called for individual classes of devices.
 
         Sets up window actions, windows and window slots for each
-        instance of the this device class (specified by *device_label*).
+        instance of this device class (specified by *device_label*).
 
         For example, to set up device windows for all a Tardis (Ophyd
         devices with the "tardis_ship" label), call:
@@ -472,9 +472,11 @@ class FireflyApplication(PyDMApplication):
 
             app._prepare_device_windows(device_label="tardis_ship", attr_name="tardis")
 
-        This will create ``app.tardis_actions``,
-        ``app.tardis_window_slots`` and
-        ``app.tardis_windows``.
+        This will create:
+
+        - ``app.tardis_actions``,
+        - ``app.tardis_window_slots``
+        - ``app.tardis_windows``
 
         Parameters
         ==========

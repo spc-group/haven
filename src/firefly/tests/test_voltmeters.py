@@ -1,9 +1,10 @@
 import pytest
 from bluesky_queueserver_api import BPlan
+from qtpy import QtWidgets
+from pydm import widgets as PyDMWidgets
+from pydm.widgets.analog_indicator import PyDMAnalogIndicator
 
 import haven
-from firefly.main_window import FireflyMainWindow
-from firefly.voltmeter import VoltmeterDisplay
 from firefly.voltmeters import VoltmetersDisplay
 
 
@@ -13,107 +14,72 @@ def fake_ion_chambers(I0, It):
 
 
 @pytest.fixture()
-def voltmeters_display(qtbot, fake_ion_chambers):
+async def voltmeters_display(qtbot, fake_ion_chambers, sim_registry):
     vms_display = VoltmetersDisplay()
     qtbot.addWidget(vms_display)
+    await vms_display.update_devices(sim_registry)
     return vms_display
 
 
-def test_device(qtbot, I0):
-    # ffapp.setup_window_actions()
-    # window = FireflyMainWindow()
-    display = VoltmeterDisplay(macros={"IC": "I0"})
-    assert hasattr(display, "_device")
-    assert isinstance(display._device, haven.IonChamber)
-
-
-def test_scaler_prefix(qtbot, ffapp, sim_registry):
-    """Make sure the scaler prefix gets passed in as a macro."""
-    # Set up fake ion chamber
-    window = FireflyMainWindow()
-    ic = haven.IonChamber(
-        "",
-        scaler_prefix="255idcVME:scaler1",
-        ch_num=1,
-        name="my_ion_chamber",
-        labels={"ion_chambers"},
-    )
-    # Check the macros
-    display = VoltmetersDisplay()
-    assert display.macros()["SCALER"] == "255idcVME:scaler1"
-
-
-def test_embedded_display_widgets(voltmeters_display):
-    """Test the the voltmeters creates a new embedded display widget for
-    each ion chamber.
-
-    """
+@pytest.mark.asyncio
+async def test_rows(voltmeters_display, sim_registry):
+    """Test that the voltmeters creates a new for each ion chamber."""
     vms_display = voltmeters_display
     # Check that the embedded display widgets get added correctly
-    assert hasattr(vms_display, "_ion_chamber_displays")
-    assert len(vms_display._ion_chamber_displays) == 2
+    assert hasattr(vms_display, "_ion_chamber_rows")
+    num_rows = len(vms_display._ion_chamber_rows)
+    assert num_rows == 2
     # two displays and a separator
-    assert vms_display.voltmeters_layout.count() == 3
-    # Check that the embedded display widgets have the correct macros
-    emb_disp = vms_display._ion_chamber_displays[0]
-    disp = emb_disp.open_file(force=True)
-    macros = disp.macros()
-    assert macros == {"IC": "I0", "SCALER": "scaler_ioc"}
+    expected_count = num_rows * 5
+    assert vms_display.voltmeters_layout.count() == expected_count
+    # Check that the rows have the correct widgets
+    row = vms_display._ion_chamber_rows[0]
+    assert isinstance(row.name_label, PyDMWidgets.PyDMLabel)
+    assert isinstance(row.voltage_indicator, PyDMAnalogIndicator)
+    assert isinstance(row.voltage_label, PyDMWidgets.PyDMLabel)
+    assert isinstance(row.voltage_unit_label, QtWidgets.QLabel)
+    assert isinstance(row.current_label, PyDMWidgets.PyDMLabel)
+    assert isinstance(row.current_unit_label, QtWidgets.QLabel)
+    assert isinstance(row.gain_down_button, PyDMWidgets.PyDMPushButton)
+    assert isinstance(row.gain_up_button, PyDMWidgets.PyDMPushButton)
+    assert isinstance(row.gain_label, PyDMWidgets.PyDMLabel)
+    assert isinstance(row.auto_gain_checkbox, QtWidgets.QCheckBox)
+    assert isinstance(row.details_button, QtWidgets.QPushButton)
+    # Check that the widgets are added to the layouts
+    assert row.name_label is row.column_layouts[0].itemAt(0).widget()
+    assert row.voltage_indicator is row.column_layouts[1].itemAt(0).widget()
+    assert row.voltage_label is row.column_layouts[2].itemAt(1).itemAt(1).widget()
+    assert row.voltage_unit_label is row.column_layouts[2].itemAt(1).itemAt(2).widget()
+    assert row.current_label is row.column_layouts[2].itemAt(2).itemAt(1).widget()
+    assert row.current_unit_label is row.column_layouts[2].itemAt(2).itemAt(2).widget()
+    assert row.column_layouts[3].itemAt(1).widget().text() == "Gain/Offset"
+    assert row.gain_down_button is row.column_layouts[3].itemAt(2).itemAt(1).widget()
+    assert row.gain_up_button is row.column_layouts[3].itemAt(2).itemAt(2).widget()
+    assert row.gain_label is row.column_layouts[3].itemAt(3).itemAt(1).widget()
+    assert row.auto_gain_checkbox is row.column_layouts[4].itemAt(1).widget()
     # Check that a device has been created properly
-    assert isinstance(disp._device, haven.IonChamber)
+    assert isinstance(row.device, haven.IonChamber)
 
 
-@pytest.mark.xfail
 def test_details_button(qtbot, voltmeters_display):
     """Check that the details button for each ion chamber triggers the global signal."""
     # Get an embedded display widget
-    emb_disp = voltmeters_display._ion_chamber_displays[0]
-    disp = emb_disp.open_file(force=True)
+    row = voltmeters_display._ion_chamber_rows[0]
     # Check that the signals are properly connected
     with qtbot.waitSignal(voltmeters_display.ui.details_window_requested, timeout=500):
-        disp.ui.details_button.click()
+        row.details_button.click()
 
 
-def test_ion_chamber_menu(fake_ion_chambers, qtbot, ffapp):
-    ffapp.setup_window_actions()
-    ffapp.setup_runengine_actions()
-    # Create the window
-    window = FireflyMainWindow()
-    # Check that the menu items have been created
-    assert hasattr(window.ui, "detectors_menu")
-    assert hasattr(window.ui, "ion_chambers_menu")
-    assert len(ffapp.ion_chamber_actions) == 2
-
-
-def test_open_ion_chamber_window(fake_ion_chambers, ffapp):
-    # Set up the application
-    ffapp.setup_window_actions()
-    ffapp.setup_runengine_actions()
-    # Simulate clicking on the menu action (they're in alpha order)
-    window = FireflyMainWindow()
-    action = ffapp.ion_chamber_actions["It"]
-    action.trigger()
-    # See if the window was created
-    ion_chamber_name = "FireflyMainWindow_ion_chamber_It"
-    assert ion_chamber_name in ffapp.windows.keys()
-    macros = ffapp.windows[ion_chamber_name].display_widget().macros()
-    assert macros["IC"] == "It"
-    # Clean up
-    window.close()
-
-
-def test_auto_gain_plan(qtbot, voltmeters_display):
+@pytest.mark.asyncio
+async def test_auto_gain_plan(voltmeters_display, qtbot):
     display = voltmeters_display
-    qtbot.addWidget(display)
     # Put input values into the widgets
     display.ui.volts_min_line_edit.setText("")
     display.ui.volts_max_line_edit.setText("")
-    disp = display._ion_chamber_displays[0]
     # Check some boxes for which ion chambers get auto-gained
     for idx in [1]:
-        ic_disp = display._ion_chamber_displays[idx]
-        ic_disp._embedded_widget = ic_disp.open_file(force=True)
-        ic_disp.embedded_widget.ui.auto_gain_checkbox.setChecked(True)
+        row = display._ion_chamber_rows[idx]
+        row.auto_gain_checkbox.setChecked(True)
     # Check that the correct plan was sent
     expected_item = BPlan("auto_gain", ["It"])
 
@@ -130,15 +96,13 @@ def test_auto_gain_plan(qtbot, voltmeters_display):
 
 def test_auto_gain_plan_with_args(qtbot, voltmeters_display):
     display = voltmeters_display
-    qtbot.addWidget(display)
     # Put input values into the widgets
     display.ui.volts_min_line_edit.setText("1.0")
     display.ui.volts_max_line_edit.setText("4.5")
     # Check some boxes for which ion chambers get auto-gained
     for idx in [1]:
-        ic_disp = display._ion_chamber_displays[idx]
-        ic_disp._embedded_widget = ic_disp.open_file(force=True)
-        ic_disp.embedded_widget.ui.auto_gain_checkbox.setChecked(True)
+        ic_row = display._ion_chamber_rows[idx]
+        ic_row.auto_gain_checkbox.setChecked(True)
     # Check that the correct plan was sent
     expected_item = BPlan("auto_gain", ["It"], volts_min=1.0, volts_max=4.5)
 

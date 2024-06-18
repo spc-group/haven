@@ -248,6 +248,26 @@ def test_open_xrf_detector_viewer_actions(ffapp, qtbot, det_fixture, request):
     assert "FireflyMainWindow_xrf_detector_vortex_me4" in ffapp.windows.keys()
 
 
+###################################################################
+# From: src/firefly/tests/test_voltmeters.py
+
+def test_open_ion_chamber_window(fake_ion_chambers, ffapp):
+    # Set up the application
+    ffapp.setup_window_actions()
+    ffapp.setup_runengine_actions()
+    # Simulate clicking on the menu action (they're in alpha order)
+    window = FireflyMainWindow()
+    action = ffapp.ion_chamber_actions["It"]
+    action.trigger()
+    # See if the window was created
+    ion_chamber_name = "FireflyMainWindow_ion_chamber_It"
+    assert ion_chamber_name in ffapp.windows.keys()
+    macros = ffapp.windows[ion_chamber_name].display_widget().macros()
+    assert macros["IC"] == "It"
+    # Clean up
+    window.close()
+
+
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov

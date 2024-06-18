@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>608</width>
+    <width>808</width>
     <height>449</height>
    </rect>
   </property>
@@ -30,224 +30,157 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
    <item>
-    <layout class="QVBoxLayout" name="verticalLayout1">
-     <property name="spacing">
+    <widget class="QGroupBox" name="voltmeters_group_box">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="title">
+      <string>Ion Chambers</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout">
+      <item>
+       <layout class="QGridLayout" name="voltmeters_layout">
+        <item row="0" column="0">
+         <widget class="QLabel" name="label_3">
+          <property name="text">
+           <string>If you can read this, something went wrong.</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <property name="bottomMargin">
       <number>0</number>
      </property>
      <item>
-      <layout class="QVBoxLayout" name="voltmeters_layout">
-       <property name="spacing">
-        <number>0</number>
+      <widget class="PyDMPushButton" name="dark_current_button">
+       <property name="toolTip">
+        <string/>
        </property>
-       <property name="rightMargin">
-        <number>0</number>
+       <property name="text">
+        <string>Record Dark Current</string>
        </property>
-       <property name="bottomMargin">
-        <number>0</number>
+       <property name="alarmSensitiveContent" stdset="0">
+        <bool>false</bool>
        </property>
-       <item>
-        <widget class="PyDMEmbeddedDisplay" name="voltmeter_0">
-         <property name="toolTip">
-          <string/>
-         </property>
-         <property name="styleSheet">
-          <string notr="true"/>
-         </property>
-         <property name="frameShape">
-          <enum>QFrame::NoFrame</enum>
-         </property>
-         <property name="macros" stdset="0">
-          <string>{&quot;IC&quot;: &quot;fakeIpreKB&quot;}</string>
-         </property>
-         <property name="filename" stdset="0">
-          <string>voltmeter.py</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="PyDMEmbeddedDisplay" name="voltmeter_2">
-         <property name="toolTip">
-          <string/>
-         </property>
-         <property name="frameShape">
-          <enum>QFrame::NoFrame</enum>
-         </property>
-         <property name="macros" stdset="0">
-          <string>{&quot;IC&quot;: &quot;fakeI0&quot;}</string>
-         </property>
-         <property name="filename" stdset="0">
-          <string>voltmeter.py</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="PyDMEmbeddedDisplay" name="voltmeter_1">
-         <property name="toolTip">
-          <string/>
-         </property>
-         <property name="frameShape">
-          <enum>QFrame::NoFrame</enum>
-         </property>
-         <property name="macros" stdset="0">
-          <string>{&quot;IC&quot;: &quot;fakeIt&quot;}</string>
-         </property>
-         <property name="filename" stdset="0">
-          <string>voltmeter.py</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="PyDMEmbeddedDisplay" name="voltmeter_3">
-         <property name="toolTip">
-          <string/>
-         </property>
-         <property name="frameShape">
-          <enum>QFrame::NoFrame</enum>
-         </property>
-         <property name="macros" stdset="0">
-          <string>{&quot;IC&quot;: &quot;fakeIref&quot;}</string>
-         </property>
-         <property name="filename" stdset="0">
-          <string>voltmeter.py</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
+       <property name="alarmSensitiveBorder" stdset="0">
+        <bool>false</bool>
+       </property>
+       <property name="PyDMToolTip" stdset="0">
+        <string>${SCALER}_offset_start.PROC</string>
+       </property>
+       <property name="channel" stdset="0">
+        <string>${SCALER}_offset_start.PROC</string>
+       </property>
+       <property name="passwordProtected" stdset="0">
+        <bool>false</bool>
+       </property>
+       <property name="password" stdset="0">
+        <string/>
+       </property>
+       <property name="protectedPassword" stdset="0">
+        <string/>
+       </property>
+       <property name="showConfirmDialog" stdset="0">
+        <bool>true</bool>
+       </property>
+       <property name="confirmMessage" stdset="0">
+        <string>Is the shutter closed?</string>
+       </property>
+       <property name="pressValue" stdset="0">
+        <string>1</string>
+       </property>
+       <property name="releaseValue" stdset="0">
+        <string>None</string>
+       </property>
+       <property name="relativeChange" stdset="0">
+        <bool>false</bool>
+       </property>
+       <property name="writeWhenRelease" stdset="0">
+        <bool>false</bool>
+       </property>
+      </widget>
      </item>
      <item>
-      <layout class="QHBoxLayout" name="horizontalLayout">
-       <property name="bottomMargin">
-        <number>0</number>
+      <widget class="Line" name="line">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
        </property>
-       <item>
-        <widget class="PyDMPushButton" name="PyDMPushButton">
-         <property name="toolTip">
-          <string/>
-         </property>
-         <property name="text">
-          <string>Record Dark Current</string>
-         </property>
-         <property name="alarmSensitiveContent" stdset="0">
-          <bool>false</bool>
-         </property>
-         <property name="alarmSensitiveBorder" stdset="0">
-          <bool>false</bool>
-         </property>
-         <property name="PyDMToolTip" stdset="0">
-          <string>${SCALER}_offset_start.PROC</string>
-         </property>
-         <property name="channel" stdset="0">
-          <string>${SCALER}_offset_start.PROC</string>
-         </property>
-         <property name="passwordProtected" stdset="0">
-          <bool>false</bool>
-         </property>
-         <property name="password" stdset="0">
-          <string/>
-         </property>
-         <property name="protectedPassword" stdset="0">
-          <string/>
-         </property>
-         <property name="showConfirmDialog" stdset="0">
-          <bool>true</bool>
-         </property>
-         <property name="confirmMessage" stdset="0">
-          <string>Is the shutter closed?</string>
-         </property>
-         <property name="pressValue" stdset="0">
-          <string>1</string>
-         </property>
-         <property name="releaseValue" stdset="0">
-          <string>None</string>
-         </property>
-         <property name="relativeChange" stdset="0">
-          <bool>false</bool>
-         </property>
-         <property name="writeWhenRelease" stdset="0">
-          <bool>false</bool>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="Line" name="line">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <spacer name="horizontalSpacer_2">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>40</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item>
-        <widget class="QLabel" name="label">
-         <property name="text">
-          <string>Min (V):</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLineEdit" name="volts_min_line_edit">
-         <property name="toolTip">
-          <string>The lower threshold (in volts) that the auto-gain plan will use for deciding when the ion chambers' pre-amp gain settings are correct.</string>
-         </property>
-         <property name="placeholderText">
-          <string>E.g. 1.0</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLabel" name="label_2">
-         <property name="text">
-          <string>Max (V):</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLineEdit" name="volts_max_line_edit">
-         <property name="toolTip">
-          <string>The upper threshold (in volts) that the auto-gain plan will use for deciding when the ion chambers' pre-amp gain settings are correct.</string>
-         </property>
-         <property name="placeholderText">
-          <string>E.g. 4.5</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QueueButton" name="auto_gain_button">
-         <property name="enabled">
-          <bool>true</bool>
-         </property>
-         <property name="toolTip">
-          <string>Queue a plan to automatically set the selected ion chamber gains to within the range 0.5V to 4.5V.</string>
-         </property>
-         <property name="text">
-          <string>Auto-gain</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_2">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QLabel" name="label">
+       <property name="text">
+        <string>Min (V):</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="volts_min_line_edit">
+       <property name="toolTip">
+        <string>The lower threshold (in volts) that the auto-gain plan will use for deciding when the ion chambers' pre-amp gain settings are correct.</string>
+       </property>
+       <property name="placeholderText">
+        <string>E.g. 1.0</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="label_2">
+       <property name="text">
+        <string>Max (V):</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="volts_max_line_edit">
+       <property name="toolTip">
+        <string>The upper threshold (in volts) that the auto-gain plan will use for deciding when the ion chambers' pre-amp gain settings are correct.</string>
+       </property>
+       <property name="placeholderText">
+        <string>E.g. 4.5</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QueueButton" name="auto_gain_button">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
+       <property name="toolTip">
+        <string>Queue a plan to automatically set the selected ion chamber gains to within the range 0.5V to 4.5V.</string>
+       </property>
+       <property name="text">
+        <string>Auto-gain</string>
+       </property>
+      </widget>
      </item>
     </layout>
    </item>
   </layout>
  </widget>
  <customwidgets>
-  <customwidget>
-   <class>PyDMEmbeddedDisplay</class>
-   <extends>QFrame</extends>
-   <header>pydm.widgets.embedded_display</header>
-   <container>1</container>
-  </customwidget>
   <customwidget>
    <class>PyDMPushButton</class>
    <extends>QPushButton</extends>
