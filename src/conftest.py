@@ -335,11 +335,6 @@ def filters(sim_registry):
     return filters
 
 
-# holds a global QApplication instance created in the qapp fixture; keeping
-# this reference alive avoids it being garbage collected too early
-_ffapp_instance = None
-
-
 # Tiled data to use for testing
 # Some mocked test data
 run1 = pd.DataFrame(

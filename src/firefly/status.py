@@ -5,7 +5,7 @@ from pydm.widgets import PyDMByteIndicator, PyDMPushButton
 from qtpy.QtWidgets import QHBoxLayout, QSizePolicy
 from qtpy.QtCore import Signal
 
-from firefly import FireflyApplication, display
+from firefly import display
 from haven import registry
 from haven.instrument.xia_pfcu import ShutterStates
 

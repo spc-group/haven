@@ -53,3 +53,5 @@
    - [ ] App needs to pass queue_status_updated signal down to update_queue_style slot
 ** TODO [0/1] Voltmeters
    - [ ] App needs to respond to the voltmeters ``details_window_requested`` signal
+** TODO Cameras
+   - [ ] There's still a FireflyApplication.instance() call in cameras

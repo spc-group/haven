@@ -3,7 +3,6 @@ from bluesky_queueserver_api import BPlan
 from ophyd.sim import make_fake_device
 from qtpy import QtCore
 
-from firefly.application import FireflyApplication
 from firefly.plans.move_motor_window import MoveMotorDisplay
 from haven.instrument import motor
 

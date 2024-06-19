@@ -6,10 +6,7 @@ from qasync import asyncSlot
 from qtpy import QtWidgets
 from qtpy.QtGui import QDoubleValidator
 
-from firefly import display
-from firefly.application import FireflyApplication
 from firefly.component_selector import ComponentSelector
-from firefly.plans.util import is_valid_value, time_converter
 from firefly.plans.regions_display import RegionsDisplay, RegionBase
 
 log = logging.getLogger()

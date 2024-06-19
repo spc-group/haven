@@ -263,15 +263,15 @@ class FireflyMainWindow(PyDMMainWindow):
             menu=self.ui.positioners_menu,
         )
         # Motors sub-menu
-        self.ui.menuMotors = QtWidgets.QMenu(self.ui.menubar)
-        self.ui.menuMotors.setObjectName("menuMotors")
-        self.ui.menuMotors.setTitle("Extra &Motors")
-        motors_action = self.ui.menuMotors.menuAction()
+        self.ui.motors_menu = QtWidgets.QMenu(self.ui.menubar)
+        self.ui.motors_menu.setObjectName("motors_menu")
+        self.ui.motors_menu.setTitle("Extra &Motors")
+        motors_action = self.ui.motors_menu.menuAction()
         self.ui.positioners_menu.addAction(motors_action)
         motors_action.setIcon(qta.icon("mdi.cog-clockwise"))
         # Add actions to the motors sub-menus
         for action in motor_actions:
-            self.ui.menuMotors.addAction(action)
+            self.ui.motors_menu.addAction(action)
         # Menu to launch the Window to change energy
         self.ui.positioners_menu.addAction(energy_window_action)
         # Add optical components
@@ -290,17 +290,17 @@ class FireflyMainWindow(PyDMMainWindow):
         for action in table_actions:
             self.ui.positioners_menu.addAction(action)
         # Scans menu
-        self.ui.menuScans = QtWidgets.QMenu(self.ui.menubar)
-        self.ui.menuScans.setObjectName("menuScans")
-        self.ui.menuScans.setTitle("&Scans")
-        self.ui.menubar.addAction(self.ui.menuScans.menuAction())
+        self.ui.scans_menu = QtWidgets.QMenu(self.ui.menubar)
+        self.ui.scans_menu.setObjectName("scans_menu")
+        self.ui.scans_menu.setTitle("&Scans")
+        self.ui.menubar.addAction(self.ui.scans_menu.menuAction())
         # Add actions to the individual plans
         for action in plan_actions:
-            self.ui.menuScans.addAction(action)
+            self.ui.scans_menu.addAction(action)
         # Add entries for general scan management
-        self.ui.menuScans.addSeparator()
+        self.ui.scans_menu.addSeparator()
         if run_browser_action is not None:
-            self.ui.menuScans.addAction(run_browser_action)
+            self.ui.scans_menu.addAction(run_browser_action)
         # Detectors menu
         self.ui.detectors_menu = QtWidgets.QMenu(self.ui.menubar)
         self.ui.detectors_menu.setObjectName("detectors_menu")

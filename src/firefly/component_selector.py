@@ -24,7 +24,6 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from .application import FireflyApplication
 
 log = logging.getLogger(__name__)
 

@@ -7,6 +7,7 @@ from enum import IntEnum
 from functools import partial
 from pathlib import Path
 from typing import Sequence
+import warnings
 
 import numpy as np
 import pydm
@@ -16,10 +17,10 @@ from matplotlib.colors import TABLEAU_COLORS
 from pydm.widgets import PyDMChannel, PyDMEmbeddedDisplay
 from qtpy import uic
 from qtpy.QtCore import Qt, Signal
-from qtpy.QtWidgets import QWidget
-
+from qtpy.QtWidgets import QWidget, QApplication
 import haven
-from firefly import FireflyApplication, display
+
+from firefly import display
 
 np.set_printoptions(threshold=sys.maxsize)
 
@@ -591,7 +592,7 @@ class XRFDetectorDisplay(display.FireflyDisplay):
         old_cursor = self.cursor()
         self.setCursor(Qt.WaitCursor)
         # Update the UI
-        FireflyApplication.instance().processEvents()
+        QApplication.instance().processEvents()
         yield
         # Re-enabled everything
         widget.setEnabled(True)

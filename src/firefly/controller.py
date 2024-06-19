@@ -10,7 +10,6 @@ import pydm
 import pyqtgraph as pg
 import qtawesome as qta
 from ophydregistry import Registry
-from pydm.application import PyDMApplication
 from pydm.utilities.stylesheet import apply_stylesheet
 from PyQt5.QtWidgets import QStyleFactory
 from qtpy import QtCore, QtWidgets
@@ -29,7 +28,7 @@ from .queue_client import QueueClient, queueserver_api
 
 generator = type((x for x in []))
 
-__all__ = ["ui_dir", "FireflyApplication"]
+__all__ = ["ui_dir", "FireflyController"]
 
 
 log = logging.getLogger(__name__)
@@ -42,7 +41,7 @@ pg.setConfigOption("background", (252, 252, 252))
 pg.setConfigOption("foreground", (0, 0, 0))
 
 
-class FireflyApplication(PyDMApplication):
+class FireflyController(QtCore.QObject):
     default_display = None
 
     # For keeping track of ophyd devices used by the Firefly
@@ -109,14 +108,11 @@ class FireflyApplication(PyDMApplication):
     queue_open_environment_action: QAction
     check_queue_status_action: QAction
 
-    def __init__(self, display="status", use_main_window=False, *args, **kwargs):
+    def __init__(self, parent=None, display="status", use_main_window=False):
         # Instantiate the parent class
         # (*ui_file* and *use_main_window* let us render the window here instead)
         self.default_display = display
-        super().__init__(ui_file=None, use_main_window=use_main_window, *args, **kwargs)
-        qss_file = Path(__file__).parent / "firefly.qss"
-        self.setStyleSheet(qss_file.read_text())
-        log.info(f"Available styles: {QStyleFactory.keys()}")
+        super().__init__(parent=parent)
         # self.setStyle("Adwaita-dark")
         # qdarktheme.setup_theme(additional_qss=qss_file.read_text())
         self.windows = OrderedDict()
@@ -598,6 +594,7 @@ class FireflyApplication(PyDMApplication):
             self.check_queue_status_action.trigger
         )
         self.queue_autostart_action.toggled.connect(client.toggle_autostart)
+        return client
 
     async def start(self):
         """Start the background timers, show the first window, and wait."""
@@ -697,20 +694,13 @@ class FireflyApplication(PyDMApplication):
 
     def create_window(self, WindowClass, ui_file, macros={}):
         # Create and save this window
-        main_window = WindowClass(
-            hide_menu_bar=self.hide_menu_bar, hide_status_bar=self.hide_status_bar
-        )
+        main_window = WindowClass()
         # Make it look pretty
-        apply_stylesheet(self.stylesheet_path, widget=main_window)
         main_window.update_tools_menu()
         # Load the UI file for this window
-        display = main_window.open(str(ui_file.resolve()), macros=macros)
+        main_window.open(str(ui_file.resolve()), macros=macros)
         self.connect_menu_signals(window=main_window)
         # Show the display
-        if self.fullscreen:
-            main_window.enter_fullscreen()
-        else:
-            main_window.show()
         self.check_queue_status_action.trigger()
         return main_window
 

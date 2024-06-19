@@ -6,7 +6,7 @@ import pydm
 import pytest
 from qasync import DefaultQEventLoopPolicy, QEventLoop
 
-from firefly import FireflyApplication
+from firefly.controller import FireflyController
 from firefly.main_window import FireflyMainWindow
 
 

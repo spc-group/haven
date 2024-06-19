@@ -1,14 +1,9 @@
 import asyncio
 import logging
 
-from bluesky_queueserver_api import BPlan
 from qasync import asyncSlot
-from qtpy import QtWidgets
-from qtpy.QtGui import QDoubleValidator
 
 from firefly import display
-from firefly.application import FireflyApplication
-from firefly.component_selector import ComponentSelector
 from firefly.plans.util import is_valid_value, time_converter
 
 log = logging.getLogger()

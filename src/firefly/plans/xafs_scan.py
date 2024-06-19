@@ -9,7 +9,6 @@ from qtpy.QtGui import QDoubleValidator
 from xraydb.xraydb import XrayDB
 
 from firefly import display
-from firefly.application import FireflyApplication
 from firefly.plans.util import is_valid_value, time_converter
 from haven.energy_ranges import (
     E_step_to_k_step,

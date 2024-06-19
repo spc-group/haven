@@ -1,6 +1,17 @@
+import pytest
+
 from qtpy.QtWidgets import QAction
+from ophyd.sim import make_fake_device
+from haven.instrument import motor
 
 from firefly.main_window import FireflyMainWindow, PlanMainWindow
+
+
+@pytest.fixture()
+def window(qapp, qtbot):
+    window = FireflyMainWindow()
+    qtbot.addWidget(window)
+    return window
 
 
 def test_navbar(qapp, qtbot):
@@ -32,9 +43,7 @@ def test_navbar_autohide(qtbot):
     assert not navbar.isVisible()
 
 
-def test_add_menu_action(qapp, qtbot):
-    window = FireflyMainWindow()
-    qtbot.addWidget(window)
+def test_add_menu_action(window):
     # Check that it's not set up with the right menu yet
     assert not hasattr(window, "actionMake_Salad")
     # Add a menu item
@@ -47,15 +56,25 @@ def test_add_menu_action(qapp, qtbot):
     assert action.objectName() == "actionMake_Salad"
 
 
-def test_customize_ui(qapp, qtbot):
-    window = FireflyMainWindow()
+def test_motor_menu(qapp, qtbot):
+    actions = [QAction(), QAction(), QAction()]
+    window = FireflyMainWindow(motor_actions=actions)
     qtbot.addWidget(window)
-    assert hasattr(window.ui, "menuScans")
+    # Check that the menu items have been created
+    assert hasattr(window.ui, "positioners_menu")
+    assert hasattr(window.ui, "motors_menu")
+    assert window.ui.motors_menu.actions() == actions
 
 
-def test_show_message(qapp, qtbot):
-    window = FireflyMainWindow()
+def test_plans_menu(qapp, qtbot):
+    actions = [QAction(), QAction(), QAction()]
+    window = FireflyMainWindow(plan_actions=actions)
     qtbot.addWidget(window)
+    assert hasattr(window.ui, "scans_menu")
+    window.ui.scans_menu.actions() == actions
+
+
+def test_show_message(window):
     window.statusBar()
     # Send a message
     window.show_status("Hello, APS.")

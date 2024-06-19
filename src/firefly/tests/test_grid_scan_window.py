@@ -5,7 +5,6 @@ from bluesky_queueserver_api import BPlan
 from ophyd.sim import make_fake_device
 from qtpy import QtCore
 
-from firefly.application import FireflyApplication
 from firefly.plans.grid_scan import GridScanDisplay
 from haven.instrument import motor
 

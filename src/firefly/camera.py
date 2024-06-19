@@ -7,7 +7,7 @@ from pydm.widgets.channel import PyDMChannel
 from qtpy.QtCore import Slot
 from qtpy.QtGui import QColor
 
-from firefly import FireflyApplication, display
+from firefly import display
 
 log = logging.getLogger(__name__)
 

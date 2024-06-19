@@ -174,8 +174,11 @@ def main(default_fullscreen=False, default_display="status"):
         fullscreen=pydm_args.fullscreen,
         read_only=pydm_args.read_only,
         macros=macros,
-        stylesheet_path=pydm_args.stylesheet,
     )
+    qss_file = Path(__file__).parent / "firefly.qss"
+    app.setStyleSheet(qss_file.read_text())
+    apply_stylesheet(self.stylesheet_path, widget=main_window)
+    log.info(f"Available styles: {QStyleFactory.keys()}")
 
     # Make it asynchronous
     event_loop = QEventLoop(app)
