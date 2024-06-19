@@ -8,17 +8,25 @@ import time
 from pathlib import Path
 
 from qasync import QEventLoop
+from qtpy import QtCore
+from qtpy.QtGui import QPixmap
+from qtpy.QtWidgets import QSplashScreen, QApplication, QStyleFactory
+
+
+from pydm import config
+from pydm.utilities import setup_renderer
 
 import haven
+from firefly.controller import FireflyController
 
 
 def main(default_fullscreen=False, default_display="status"):
-    logger = logging.getLogger("")
+    log = logging.getLogger("")
     handler = logging.StreamHandler()
     formatter = logging.Formatter("[%(asctime)s] [%(levelname)-8s] - %(message)s")
     handler.setFormatter(formatter)
-    logger.addHandler(handler)
-    logger.setLevel("INFO")
+    log.addHandler(handler)
+    log.setLevel("INFO")
     handler.setLevel("INFO")
 
     try:
@@ -28,38 +36,26 @@ def main(default_fullscreen=False, default_display="status"):
         ImportError: QtWebEngineWidgets must be imported before a QCoreApplication instance is created
         """
     except ImportError:
-        logger.debug("QtWebEngine is not supported.")
-
-    from qtpy import QtCore
-    from qtpy.QtGui import QPixmap
-    from qtpy.QtWidgets import QSplashScreen
-
-    from .application import FireflyApplication
+        log.debug("QtWebEngine is not supported.")
 
     # Set up splash screen
-    fake_app = FireflyApplication(sys.argv)
+    app = QApplication(sys.argv)
     im_dir = Path(__file__).parent.resolve()
     im_fp = str(im_dir / "splash.png")
     pixmap = QPixmap(im_fp)
     splash = QSplashScreen(pixmap, QtCore.Qt.WindowStaysOnTopHint)
     splash.show()
-    FireflyApplication.processEvents()
+    app.processEvents()
     for i in range(10):
         time.sleep(0.01)
-    FireflyApplication.processEvents()
-
-    from pydm import config
+    app.processEvents()
 
     # Set EPICS as the default protocol
     config.DEFAULT_PROTOCOL = "ca"
 
     ui_folder = Path(__file__).parent.resolve()
 
-    from pydm.utilities import setup_renderer
-
     setup_renderer()
-
-    from pydm.utilities.macro import parse_macro_string
 
     parser = argparse.ArgumentParser(description="Python Display Manager")
     parser.add_argument(
@@ -157,27 +153,16 @@ def main(default_fullscreen=False, default_display="status"):
         profile = cProfile.Profile()
         profile.enable()
 
-    macros = None
-    if pydm_args.macro is not None:
-        macros = parse_macro_string(pydm_args.macro)
-
     if pydm_args.log_level:
-        logger.setLevel(pydm_args.log_level)
+        log.setLevel(pydm_args.log_level)
         handler.setLevel(pydm_args.log_level)
 
-    app = FireflyApplication(
+    controller = FireflyController(
         display=pydm_args.display,
-        command_line_args=pydm_args.display_args,
-        perfmon=pydm_args.perfmon,
-        hide_menu_bar=pydm_args.hide_menu_bar,
-        hide_status_bar=pydm_args.hide_status_bar,
-        fullscreen=pydm_args.fullscreen,
-        read_only=pydm_args.read_only,
-        macros=macros,
     )
     qss_file = Path(__file__).parent / "firefly.qss"
     app.setStyleSheet(qss_file.read_text())
-    apply_stylesheet(self.stylesheet_path, widget=main_window)
+    # apply_stylesheet(app.stylesheet_path, widget=main_window)
     log.info(f"Available styles: {QStyleFactory.keys()}")
 
     # Make it asynchronous
@@ -185,12 +170,19 @@ def main(default_fullscreen=False, default_display="status"):
     asyncio.set_event_loop(event_loop)
 
     # Define devices on the beamline (slow!)
-    app.setup_instrument(load_instrument=not pydm_args.no_instrument)
+    controller.setup_instrument(load_instrument=not pydm_args.no_instrument)
+    controller.start()
 
-    # Get rid of the splash screen now that we're ready to go
+    # Get rid of the splash screen and show the first window
     splash.close()
+    controller.show_default_window()
 
-    event_loop.run_until_complete(app.start())
+    # Keep an event to know when the app has closed
+    app_close_event = asyncio.Event()
+    app.aboutToQuit.connect(app_close_event.set)
+
+    # Start the actual asyncio event loop
+    event_loop.run_until_complete(app_close_event.wait())
     event_loop.close()
 
     if pydm_args.profile:
