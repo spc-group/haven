@@ -270,8 +270,10 @@ class FireflyController(QtCore.QObject):
             text="&Voltmeters",
             display_file=ui_dir / "voltmeters.py",
             WindowClass=FireflyMainWindow,
+            shortcut="Ctrl+V",
             icon=qta.icon("ph.faders-horizontal"),
         )
+        self.actions.voltmeter.window_created.connect(self.finalize_voltmeter_window)
         # Launch log window
         self.actions.log = WindowAction(
             name="show_logs_window_action",
@@ -306,6 +308,15 @@ class FireflyController(QtCore.QObject):
         self.queue_status_changed.connect(action.window.update_queue_status)
         self.queue_status_changed.connect(action.window.update_queue_controls)
         self._queue_client.check_queue_status(force=True)
+
+    def finalize_voltmeter_window(self, action):
+        """Connect up signals that are specific to the voltmeters window."""
+        def launch_ion_chamber_window(ic_name):
+            action = self.actions.ion_chambers[ic_name]
+            action.trigger()
+
+        display = action.window.display_widget()
+        display.details_window_requested.connect(launch_ion_chamber_window)
 
     def launch_queuemonitor(self):
         config = load_config()["queueserver"]

@@ -4,11 +4,14 @@ from typing import Mapping, Optional, Sequence
 from functools import partial
 
 from qasync import asyncSlot
+import qtawesome as qta
 from bluesky_queueserver_api import BPlan
 from pydm.widgets import PyDMLabel, PyDMPushButton
 from pydm.widgets.analog_indicator import PyDMAnalogIndicator
+from pydm.widgets.display_format import DisplayFormat
 from qtpy.QtWidgets import QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QCheckBox, QSpacerItem, QSizePolicy
-from qtpy.QtCore import Signal
+from qtpy.QtCore import Signal, Qt
+from qtpy.QtGui import QFont
 
 import haven
 from firefly import display
@@ -26,6 +29,9 @@ class VoltmetersDisplay(display.FireflyDisplay):
         # Connect support for running the auto_gain plan
         self.ui.auto_gain_button.setToolTip(haven.auto_gain.__doc__)
         self.ui.auto_gain_button.clicked.connect(self.run_auto_gain)
+        # Adjust layouts
+        self.ui.voltmeters_layout.setHorizontalSpacing(0)
+        self.ui.voltmeters_layout.setVerticalSpacing(0)
 
     def clear_layout(self, layout):
         if layout is None:
@@ -40,7 +46,6 @@ class VoltmetersDisplay(display.FireflyDisplay):
 
     @asyncSlot(object)
     async def update_devices(self, registry):
-        print("Updating voltmeters devices")
         ion_chambers = registry.findall(label="ion_chambers")
         self.ion_chambers = sorted(ion_chambers, key=lambda c: c.ch_num)
         # Clear the voltmeters grid layout
@@ -106,35 +111,51 @@ class Row:
             parent=self.parent,
             init_channel=f"haven://{device_name}.description"
         )
+        self.name_label.setStyleSheet("font: 12pt \"Sans Serif\";\nfont-weight: bold;")
         self.column_layouts[0].addWidget(self.name_label)
         # Analog indicator
         self.voltage_indicator = PyDMAnalogIndicator(
             parent=self.parent,
             init_channel=f"haven://{device_name}.voltmeter.volts"
         )
+        self.voltage_indicator.showValue = False
+        self.voltage_indicator.limitsFromChannel = False
+        self.voltage_indicator.minorAlarmFromChannel = False
+        self.voltage_indicator.majorAlarmFromChannel = False
+        self.voltage_indicator.userLowerLimit = 0.0
+        self.voltage_indicator.userUpperLimit = 5.0
+        self.voltage_indicator.userUpperMinorAlarm = 4.5
+        self.voltage_indicator.userLowerMinorAlarm = 0.5
+        self.voltage_indicator.userUpperMajorAlarm = 5.0
+        self.voltage_indicator.userLowerMajorAlarm = 0.15
         self.column_layouts[1].addWidget(self.voltage_indicator)
         # Voltage labels
         self.column_layouts[2].addItem(VSpacer())
         self.voltage_label_layout = QHBoxLayout()
+        self.voltage_label_layout.setSpacing(3)
         self.column_layouts[2].addLayout(self.voltage_label_layout)
         self.voltage_label_layout.addItem(HSpacer())
         self.voltage_label = PyDMLabel(
             parent=self.parent,
             init_channel=f"haven://{device_name}.voltmeter.volts",
         )
+        self.voltage_label.setStyleSheet("font: 12pt \"Sans Serif\";\nfont-weight: bold;")
         self.voltage_label_layout.addWidget(self.voltage_label)
         self.voltage_unit_label = QLabel(parent=self.parent)
+        self.voltage_unit_label.setStyleSheet("font: 12pt \"Sans Serif\";\nfont-weight: bold;")
         self.voltage_unit_label.setText("V")
         self.voltage_label_layout.addWidget(self.voltage_unit_label)
         self.voltage_label_layout.addItem(HSpacer())
         # Current labels
         self.current_label_layout = QHBoxLayout()
+        self.current_label_layout.setSpacing(3)
         self.column_layouts[2].addLayout(self.current_label_layout)
         self.current_label_layout.addItem(HSpacer())
         self.current_label = PyDMLabel(
             parent=self.parent,
             init_channel=f"haven://{device_name}.voltmeter.amps",
         )
+        self.current_label.displayFormat = DisplayFormat.Exponential
         self.current_label_layout.addWidget(self.current_label)
         self.current_unit_label = QLabel(parent=self.parent)
         self.current_unit_label.setText("A")
@@ -145,23 +166,24 @@ class Row:
         self.column_layouts[3].addItem(VSpacer())
         self.gain_header_label = QLabel()
         self.gain_header_label.setText("Gain/Offset")
+        self.gain_header_label.setAlignment(Qt.AlignCenter)
         self.column_layouts[3].addWidget(self.gain_header_label)
         # Gain up/down buttons
         self.gain_buttons_layout = QHBoxLayout()
         self.column_layouts[3].addLayout(self.gain_buttons_layout)
         self.gain_buttons_layout.addItem(HSpacer())
         self.gain_down_button = PyDMPushButton(
-            parent=self.parent,
             init_channel=f"haven://{device_name}.preamp.gain_level",
             relative=True,
             pressValue=-1,
+            icon=qta.icon("fa5s.arrow-left"),
         )
         self.gain_buttons_layout.addWidget(self.gain_down_button)
         self.gain_up_button = PyDMPushButton(
-            parent=self.parent,
             init_channel=f"haven://{device_name}.preamp.gain_level",
             relative=True,
             pressValue=1,
+            icon=qta.icon("fa5s.arrow-right"),
         )
         self.gain_buttons_layout.addWidget(self.gain_up_button)
         self.gain_buttons_layout.addItem(HSpacer())
@@ -178,8 +200,12 @@ class Row:
         # Auto-gain and detail window controls
         self.column_layouts[4].addItem(VSpacer())
         self.auto_gain_checkbox = QCheckBox(parent=self.parent)
+        self.auto_gain_checkbox.setText("Auto-gain")
         self.column_layouts[4].addWidget(self.auto_gain_checkbox)
         self.details_button = QPushButton(parent=self.parent)
+        self.details_button.setText("More")
+        self.details_button.setIcon(qta.icon("fa5s.cog"))
+        self.details_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Minimum)
         self.column_layouts[4].addWidget(self.details_button)
         self.column_layouts[4].addItem(VSpacer())
 

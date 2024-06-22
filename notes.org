@@ -4,8 +4,6 @@
   of the application. We want to remove this and let the displays work
   independently of the QApplication.
 
-** TODO [0/1] Ion chambers
-   - [ ] Respond to clicks of the details button
 ** TODO [0/2] Component selector
    - [ ] Pass the app's instrument registry down to the component selector
    - [ ] Send the registry initially when the component selector is created
@@ -51,8 +49,8 @@
    - [X] Apps needs to connect queue_status_changed to main_window.update_queue_controls
 ** TODO [0/1] Queue button
    - [ ] App needs to pass queue_status_updated signal down to update_queue_style slot
-** TODO [1/2] Voltmeters
-   - [ ] App needs to respond to the voltmeters ``details_window_requested`` signal
+** TODO [2/2] Voltmeters
+   - [X] App needs to respond to the voltmeters ``details_window_requested`` signal
    - [X] Move functionality from voltmeter.py into voltmeters.py
 ** TODO [0/2] Camera
    - [ ] There's still a FireflyApplication.instance() call in camera

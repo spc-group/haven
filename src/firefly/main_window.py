@@ -364,7 +364,6 @@ class PlanMainWindow(FireflyMainWindow):
 
     def update_queue_controls(self, new_status):
         """Update the queue controls to match the state of the queueserver."""
-        print(new_status)
         super().update_queue_controls(new_status)
         self.ui.navbar.setVisible(bool(new_status['in_use']))
 

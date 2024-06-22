@@ -142,6 +142,26 @@ def test_autostart_changed(controller, qtbot):
     assert autostart_action.isChecked()
 
 
+@pytest.mark.asyncio
+async def test_ion_chamber_details_window(qtbot, sim_registry, I0, controller):
+    """Check that the controller opens ion chamber windows from voltmeters
+    display.
+
+    """
+    vm_action = controller.actions.voltmeter
+    ic_action = controller.actions.ion_chambers['I0']
+    # Create the ion chamber display
+    vm_action = controller.actions.voltmeter
+    with qtbot.waitSignal(vm_action.window_shown, timeout=1):
+        vm_action.trigger()
+    vm_display = vm_action.window.display_widget()
+    qtbot.addWidget(vm_display)
+    await vm_display.update_devices(sim_registry)
+    # Click the ion chamber button
+    details_button = vm_display._ion_chamber_rows[0].details_button
+    with qtbot.waitSignal(ic_action.window_shown, timeout=1000):
+        details_button.click()
+
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov
