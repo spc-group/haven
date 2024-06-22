@@ -9,13 +9,13 @@ from typing import Mapping, Sequence
 import pydm
 import pyqtgraph as pg
 import qtawesome as qta
+from qasync import asyncSlot
 from ophydregistry import Registry
 from pydm.utilities.stylesheet import apply_stylesheet
-from PyQt5.QtWidgets import QStyleFactory
 from qtpy import QtCore, QtWidgets
 from qtpy.QtCore import Signal
-from qtpy.QtGui import QKeySequence
-from qtpy.QtWidgets import QAction
+from qtpy.QtGui import QKeySequence, QIcon
+from qtpy.QtWidgets import QAction, QMainWindow
 
 from haven import load_config
 from haven import load_instrument as load_haven_instrument
@@ -25,6 +25,7 @@ from haven.instrument.device import titelize
 
 from .main_window import FireflyMainWindow, PlanMainWindow
 from .queue_client import QueueClient, queueserver_api
+from .action import WindowAction, ActionsRegistry, Action
 
 generator = type((x for x in []))
 
@@ -35,6 +36,7 @@ log = logging.getLogger(__name__)
 
 
 ui_dir = Path(__file__).parent
+plans_dir = ui_dir / "plans"
 
 
 pg.setConfigOption("background", (252, 252, 252))
@@ -44,47 +46,17 @@ pg.setConfigOption("foreground", (0, 0, 0))
 class FireflyController(QtCore.QObject):
     default_display = None
 
-    # For keeping track of ophyd devices used by the Firefly
+    # For keeping track of ophyd devices
     registry: Registry = None
     registry_changed = Signal(Registry)
 
-    # Actions for showing window
-    show_status_window_action: QtWidgets.QAction
-    show_runs_window_action: QtWidgets.QAction
-    show_energy_window_action: QtWidgets.QAction
-    show_bss_window_action: QtWidgets.QAction
-    show_voltmeters_window_action: QtWidgets.QAction
-    show_logs_window_action: QtWidgets.QAction
-    launch_queuemonitor_action: QtWidgets.QAction
-
-    # Keep track of motors
-    motor_actions: Sequence = []
-    motor_window_slots: Sequence = []
-
-    # Keep track of plans
-    plan_actions: Sequence = []
-
-    # Keep track of cameras
-    camera_actions: Mapping = {}
-    camera_window_slots: Sequence
-
-    # Keep track of area detectors
-    area_detector_actions: Mapping = {}
-    area_detector_window_slots: Sequence
-
-    # Keep track of slits
-    slits_actions: Mapping = {}
-    slits_window_slots: Sequence
-
-    # Keep track of XRF detectors
-    xrf_detector_actions: Mapping = {}
-    xrf_detector_window_slots: Sequence
+    # For keeping track of the various device and window actions
+    actions: ActionsRegistry
 
     # Signals for running plans on the queueserver
     queue_item_added = Signal(object)
 
     # Signals responding to queueserver changes
-    queue_length_changed = Signal(int)
     queue_status_changed = Signal(dict)
     queue_in_use_changed = Signal(bool)  # length > 0, or running
     queue_environment_opened = Signal(bool)  # Opened or closed
@@ -94,36 +66,16 @@ class FireflyController(QtCore.QObject):
     queue_empty_changed = Signal(bool)  # Whether queue is empty
     # queue_devices_changed = Signal(dict)  # New list of devices
 
-    # Actions for controlling the queueserver
-    start_queue_action: QAction
-    pause_runengine_action: QAction
-    pause_runengine_now_action: QAction
-    resume_runengine_action: QAction
-    stop_runengine_action: QAction
-    abort_runengine_action: QAction
-    halt_runengine_action: QAction
-    start_queue: QAction
-    queue_autostart_action: QAction
-    queue_stop_action: QAction
-    queue_open_environment_action: QAction
-    check_queue_status_action: QAction
-
     def __init__(self, parent=None, display="status", use_main_window=False):
         # Instantiate the parent class
         # (*ui_file* and *use_main_window* let us render the window here instead)
         self.default_display = display
         super().__init__(parent=parent)
-        # self.setStyle("Adwaita-dark")
-        # qdarktheme.setup_theme(additional_qss=qss_file.read_text())
+        # Initialize needed attributes
+        self.actions = ActionsRegistry()
         self.windows = OrderedDict()
         self.queue_re_state_changed.connect(self.enable_queue_controls)
         self.registry = registry
-
-    def __del__(self):
-        if hasattr(self, "_queue_thread"):
-            self._queue_thread.quit()
-            self._queue_thread.wait(msecs=5000)
-            assert not self._queue_thread.isRunning()
 
     def _setup_window_action(
         self, action_name: str, text: str, slot: QtCore.Slot, shortcut=None, icon=None
@@ -168,15 +120,17 @@ class FireflyController(QtCore.QObject):
         # Make actions for launching other windows
         self.setup_window_actions()
         # Actions for controlling the bluesky run engine
-        self.setup_runengine_actions()
-        # Prepare the client for interacting with the queue server
-        # self.prepare_queue_client()
+        self.setup_queue_actions()
+        # Inject menu actions into the various windows
+        for action in self.actions.all_actions:
+            if hasattr(action, "window_created"):
+                action.window_created.connect(self.finalize_new_window)
 
     def show_default_window(self):
         """Show the first starting window for the application."""
         # Launch the default display
-        show_default_window = getattr(self, f"show_{self.default_display}_window")
-        default_window = show_default_window()
+        default_window_action = getattr(self.actions, self.default_display)
+        default_window = default_window_action.show_window()
         # Set up the window to show list of PV connections
         pydm.utilities.shortcuts.install_connection_inspector(parent=default_window)
 
@@ -188,153 +142,170 @@ class FireflyController(QtCore.QObject):
 
         """
         # Setup actions for the various categories of devices
-        self._prepare_device_windows(
+        self.actions.motors = self.device_actions(
             device_label="extra_motors",
-            attr_name="motor",
-            ui_file="motor.py",
+            display_file=ui_dir / "motor.py",
             device_key="MOTOR",
         )
-        self._prepare_device_windows(
+        self.actions.ion_chambers = self.device_actions(
             device_label="ion_chambers",
-            attr_name="ion_chamber",
-            ui_file="ion_chamber.py",
+            display_file=ui_dir / "ion_chamber.py",
             device_key="IC",
         )
-        self._prepare_device_windows(
+        self.actions.cameras = self.device_actions(
             device_label="cameras",
-            attr_name="camera",
-            ui_file="area_detector_viewer.py",
+            display_file=ui_dir / "area_detector_viewer.py",
             device_key="AD",
         )
-        self._prepare_device_windows(
+        self.actions.area_detectors = self.device_actions(
             device_label="area_detectors",
-            attr_name="area_detector",
-            ui_file="area_detector_viewer.py",
+            display_file=ui_dir / "area_detector_viewer.py",
             device_key="AD",
         )
-        self._prepare_device_windows(
+        self.actions.slits = self.device_actions(
             device_label="slits",
-            attr_name="slits",
-            ui_file="slits.py",
+            display_file=ui_dir / "slits.py",
             device_key="DEVICE",
             icon=qta.icon("mdi.crop"),
         )
-        self._prepare_device_windows(
+        self.actions.kb_mirrors = self.device_actions(
             device_label="kb_mirrors",
-            attr_name="kb_mirrors",
-            ui_file="kb_mirrors.py",
+            display_file=ui_dir / "kb_mirrors.py",
             device_key="DEVICE",
             icon=qta.icon("msc.mirror"),
         )
-        self._prepare_device_windows(
+        self.actions.mirrors = self.device_actions(
             device_label="mirrors",
-            attr_name="mirror",
-            ui_file="mirror.py",
+            display_file=ui_dir / "mirror.py",
             device_key="DEVICE",
             icon=qta.icon("msc.mirror"),
         )
-        self._prepare_device_windows(
+        self.actions.tables = self.device_actions(
             device_label="tables",
-            attr_name="table",
-            ui_file="table.py",
+            display_file=ui_dir / "table.py",
             device_key="DEVICE",
             icon=qta.icon("mdi.table-furniture"),
         )
-        self._prepare_device_windows(
+        self.actions.xrf_detectors = self.device_actions(
             device_label="xrf_detectors",
-            attr_name="xrf_detector",
-            ui_file="xrf_detector.py",
+            display_file=ui_dir / "xrf_detector.py",
             device_key="DEV",
         )
-        self._setup_window_action(
-            action_name="show_filters_window_action",
+        self.actions.xray_filter = WindowAction(
+            name="show_filters_window_action",
             text="Filters",
-            slot=self.show_filters_window,
+            display_file=ui_dir / "filters.py",
+            WindowClass=FireflyMainWindow,
+            icon=qta.icon("mdi.air-filter")
         )
-        self.show_filters_window_action.setIcon(qta.icon("mdi.air-filter"))
         # Action for showing the beamline status window
-        self._setup_window_action(
-            action_name="show_status_window_action",
+        self.actions.status = WindowAction(
+            name="show_status_window_action",
             text="Beamline Status",
-            slot=self.show_status_window,
+            display_file=ui_dir / "status.py",
+            WindowClass=PlanMainWindow,
         )
         # Actions for executing plans
-        plans = [
-            # (plan_name, text, display file, shortcut, icon)
-            ("count", "&Count", "count.py", "Ctrl+Shift+C", "mdi.counter"),
-            ("move_motor", "&Move motor", "move_motor_window.py", None, None),
-            ("line_scan", "&Line scan", "line_scan.py", "Ctrl+Shift+L", None),
-            ("grid_scan", "&Grid scan", "grid_scan.py", None, None),
-            ("xafs_scan", "&XAFS Scan", "xafs_scan.py", "Ctrl+Shift+X", None),
-        ]
-        self.plan_actions = []
-        for plan_name, text, display_file, shortcut, icon in plans:
-            slot = partial(
-                self.show_plan_window, name=plan_name, display_file=display_file
-            )
-            action_name = f"show_{plan_name}_plan_window_action"
-            # Launch windows for plans
-            action = QtWidgets.QAction(self)
-            action.setObjectName(action_name)
-            action.setText(text)
-            action.triggered.connect(slot)
-            if shortcut is not None:
-                action.setShortcut(QKeySequence(shortcut))
-            if icon is not None:
-                action.setIcon(qta.icon(icon))
-            self.plan_actions.append(action)
+        self.actions.plans = {
+            "count": WindowAction(
+                name="count",
+                text="&Count",
+                display_file=plans_dir / "count.py",
+                shortcut="Ctrl+Shift+C",
+                icon=qta.icon("mdi.counter"),
+                WindowClass=PlanMainWindow,
+            ),
+            "move_motor": WindowAction(
+                name="move_motor",
+                text="&Move motor",
+                display_file=plans_dir / "move_motor_window.py",
+                WindowClass=PlanMainWindow,
+            ),
+            "line_scan": WindowAction(
+                name="line_scan",
+                text="&Line scan",
+                display_file=plans_dir / "line_scan.py",
+                shortcut="Ctrl+Shift+L",
+                WindowClass=PlanMainWindow,
+            ),
+            "grid_scan": WindowAction(
+                name="grid_scan",
+                text="&Grid scan",
+                display_file=plans_dir / "grid_scan.py",
+                WindowClass=PlanMainWindow,
+            ),
+            "xafs_scan": WindowAction(
+                name="xafs_scan",
+                text="&XAFS scan",
+                display_file=plans_dir / "xafs_scan.py",
+                shortcut="Ctrl+Shift+X",
+                WindowClass=PlanMainWindow,
+            ),
+        }
         # Action for showing the run browser window
-        self._setup_window_action(
-            action_name="show_run_browser_action",
+        self.actions.run_browser = WindowAction(
+            name="show_run_browser_action",
             text="Browse Runs",
-            slot=self.show_run_browser_window,
-        )
-        # Action for launch queue-monitor
-        self._setup_window_action(
-            action_name="launch_queuemonitor_action",
-            text="Queue Monitor",
-            slot=self.launch_queuemonitor,
-            shortcut="Ctrl+Q",
+            display_file=ui_dir / "run_browser.py",
+            WindowClass=FireflyMainWindow,
         )
         # Action for showing the beamline scheduling window
-        self._setup_window_action(
-            action_name="show_bss_window_action",
+        self.actions.bss = WindowAction(
+            name="show_bss_window_action",
             text="Scheduling (&BSS)",
-            slot=self.show_bss_window,
+            display_file=ui_dir / "bss.py",
+            WindowClass=FireflyMainWindow,
+            icon=qta.icon("mdi.calendar-account"),
         )
         # Action for shoing the IOC start/restart/stop window
-        self._setup_window_action(
-            action_name="show_iocs_window_action",
+        self.actions.iocs = WindowAction(
+            name="show_iocs_window_action",
             text="&IOCs",
-            slot=self.show_iocs_window,
+            display_file=ui_dir / "iocs.py",
+            WindowClass=FireflyMainWindow,
         )
         # Launch ion chamber voltmeters window
-        self._setup_window_action(
-            action_name="show_voltmeters_window_action",
+        self.actions.voltmeter = WindowAction(
+            name="show_voltmeters_window_action",
             text="&Voltmeters",
-            slot=self.show_voltmeters_window,
-            icon="ph.faders-horizontal",
+            display_file=ui_dir / "voltmeters.py",
+            WindowClass=FireflyMainWindow,
+            icon=qta.icon("ph.faders-horizontal"),
         )
         # Launch log window
-        self._setup_window_action(
-            action_name="show_logs_window_action",
+        self.actions.log = WindowAction(
+            name="show_logs_window_action",
             text="Logs",
-            slot=self.show_logs_window,
+            display_file=ui_dir / "log_viewer.ui",
+            WindowClass=FireflyMainWindow,
+            icon=qta.icon("mdi.view-list-outline"),
         )
         # Launch energy window
-        self._setup_window_action(
-            action_name="show_energy_window_action",
+        self.actions.energy = WindowAction(
+            name="show_energy_window_action",
             text="Energy",
-            slot=self.show_energy_window,
+            display_file=ui_dir / "energy.py",
+            WindowClass=PlanMainWindow,
             shortcut="Ctrl+E",
+            icon=qta.icon("mdi.sine-wave"),
         )
-        self.show_energy_window_action.setIcon(qta.icon("mdi.sine-wave"))
         # Launch camera overview
-        self._setup_window_action(
-            action_name="show_cameras_window_action",
+        self.actions.camera_overview = WindowAction(
+            name="show_cameras_window_action",
             text="All Cameras",
-            slot=self.show_cameras_window,
+            display_file=ui_dir / "cameras.py",
+            WindowClass=FireflyMainWindow,
+            icon=qta.icon("mdi.camera"),
         )
+
+    @asyncSlot(QAction)
+    async def finalize_new_window(self, action):
+        """Slot for providing new windows for after a new window is created."""
+        action.window.setup_menu_actions(actions=self.actions)        
+        await action.window.update_devices(self.registry)
+        self.queue_status_changed.connect(action.window.update_queue_status)
+        self.queue_status_changed.connect(action.window.update_queue_controls)
+        self._queue_client.check_queue_status(force=True)
 
     def launch_queuemonitor(self):
         config = load_config()["queueserver"]
@@ -349,141 +320,113 @@ class FireflyController(QtCore.QObject):
         ]
         subprocess.Popen(cmds)
 
-    def setup_runengine_actions(self):
-        """Create QActions for controlling the bluesky runengine."""
+    def setup_queue_actions(self):
+        """Create QAction objects for controlling the bluesky queueserver."""
         # Internal actions for interacting with the run engine
         self.check_queue_status_action = QtWidgets.QAction(self)
-        # Navbar actions for controlling the run engine
-        actions = [
-            # (action_name, text, icon, shortcut, tooltip)
-            (
-                "pause_runengine_action",
-                "Pause",
-                "fa5s.stopwatch",
-                "Ctrl+D",
-                "Pause the current plan at the next checkpoint.",
-            ),
-            (
-                "pause_runengine_now_action",
-                "Pause Now",
-                "fa5s.pause",
-                "Ctrl+C",
-                "Pause the run engine now.",
-            ),
-            (
-                "resume_runengine_action",
-                "Resume",
-                "fa5s.play",
-                None,
-                "Resume the previously-paused run engine at the last checkpoint.",
-            ),
-            (
-                "stop_runengine_action",
-                "Stop",
-                "fa5s.stop",
-                None,
-                "End the current plan, marking as success.",
-            ),
-            (
-                "abort_runengine_action",
-                "Abort",
-                "fa5s.eject",
-                None,
-                "End the current plan, marking as failure.",
-            ),
-            (
-                "halt_runengine_action",
-                "Halt",
-                "fa5s.ban",
-                None,
-                "End the current plan immediately, do not clean up.",
-            ),
-            ("start_queue_action", "Start", "fa5s.play", None, "Start the queue."),
-        ]
-        self.queue_action_group = QtWidgets.QActionGroup(self)
-        for name, text, icon_name, shortcut, tooltip in actions:
-            action = QtWidgets.QAction(self.queue_action_group)
-            icon = qta.icon(icon_name)
-            action.setText(text)
-            action.setCheckable(False)
-            action.setIcon(icon)
-            action.setToolTip(tooltip)
-            if shortcut is not None:
-                action.setShortcut(QKeySequence(shortcut))
-            setattr(self, name, action)
-        # Actions that control how the queue operates
-        actions = [
-            # Attr, object name, text, tooltip
-            (
-                "queue_autostart_action",
-                "queue_autostart_action",
-                "&Autoplay",
-                "If enabled, the queue will start when items are added.",
-            ),
-            (
-                "queue_stop_action",
-                "queue_stop_action",
-                "Stop Queue",
-                "Instruct the queue to stop after the current item is done.",
-            ),
-            (
-                "queue_open_environment_action",
-                "queue_open_environment_action",
-                "&Open Environment",
-                "If open (checked), the queue server is able to run plans.",
-            ),
-        ]
-        for attr, obj_name, text, tooltip in actions:
-            action = QAction()
-            action.setObjectName(obj_name)
-            action.setText(text)
-            action.setToolTip(tooltip)
-            setattr(self, attr, action)
-        # Customize some specific actions
-        self.queue_autostart_action.setCheckable(True)
-        self.queue_stop_action.setCheckable(True)
-        self.queue_stop_action.setToolTip(
-            "Tell the queueserver to stop after this current plan is done."
+        # Action for launch queue-monitor
+        self.actions.queue_monitor = Action(
+            name="launch_queuemonitor_action",
+            text="Queue Monitor",
+            shortcut="Ctrl+Q",
         )
-        self.queue_open_environment_action.setCheckable(True)
+        self.actions.queue_monitor.triggered.connect(self.launch_queuemonitor)
+        # Navbar actions for controlling the run engine
+        self.actions.queue_controls = {
+            "pause": Action(
+                name="pause_runengine_action",
+                text="Pause",
+                shortcut="Ctrl+D",
+                icon=qta.icon("fa5s.stopwatch"),
+                tooltip="Pause the current plan at the next checkpoint.",
+            ),
+            "pause_now": Action(
+                name="pause_runengine_now_action",
+                text="Pause now",
+                shortcut="Ctrl+C",
+                icon=qta.icon("fa5s.pause"),
+                tooltip="Pause the run engine now.",
+            ),
+            "resume": Action(
+                name="resume_runengine_action",
+                text="Resume",
+                icon=qta.icon("fa5s.play"),
+                tooltip="Resume a paused run engine at the last checkpoint.",
+            ),
+            "stop_runengine": Action(
+                name="stop_runengine_action",
+                text="Success",
+                icon=qta.icon("fa5s.check"),
+                tooltip="End the current plan, marking as successful.",
+            ),
+            "abort": Action(
+                name="abort_runengine_action",
+                text="Abort",
+                icon=qta.icon("fa5s.times"),
+                tooltip="End the current plan, marking as failure.",
+            ),
+            "start": Action(
+                name="start_queue_action",
+                text="Start",
+                icon=qta.icon("fa5s.play"),
+                tooltip="Start the queue",
+            ),
+            "halt": Action(
+                name="halt_runengine_action",
+                text="Halt",
+                icon=qta.icon("fa5s.ban"),
+                tooltip="End the current plan immediately, do not clean up.",
+            ),
+            "stop_queue": Action(
+                name="stop_queue_action",
+                text="Stop Queue",
+                icon=qta.icon("fa5s.stop"),
+                tooltip="Instruct the queue to stop after the current item is done.",
+                checkable=True,
+            ),
+        }
+        # Actions that control how the queue operates
+        self.actions.queue_settings = {
+            "autostart": Action(
+                name="queue_autostart_action",
+                text="&Autoplay",
+                tooltip="If enabled, the queue will start when items are added.",
+                checkable=True,
+            ),
+            "open_environment": Action(
+                name="queue_open_environment_action",
+                text="&Open Environment",
+                tooltip="If open (checked), the queue server is able to run plans.",
+                checkable=True,
+            ),
+        }
 
-    def _prepare_device_windows(
+    def device_actions(
         self,
         device_label: str,
-        attr_name: str,
-        ui_file=None,
-        window_slot=None,
+        display_file=None,
         device_key="DEVICE",
         icon=None,
     ):
         """Generic routine to be called for individual classes of devices.
 
-        Sets up window actions, windows and window slots for each
-        instance of this device class (specified by *device_label*).
+        Sets up a window action for each instance of this device class
+        (specified by *device_label*).
 
-        For example, to set up device windows for all a Tardis (Ophyd
-        devices with the "tardis_ship" label), call:
+        For example, to set up device window actions for all a Tardis
+        (Ophyd devices with the "tardis_ship" label), call:
 
         .. code:: python
 
-            app._prepare_device_windows(device_label="tardis_ship", attr_name="tardis")
-
-        This will create:
-
-        - ``app.tardis_actions``,
-        - ``app.tardis_window_slots``
-        - ``app.tardis_windows``
+            app.device_actions(device_label="tardis_ship")
 
         Parameters
         ==========
         device_label
           The Ophyd label by which to find the devices.
-        attr_name
-          An arbitrary name to use for keeping track of windows, actions, etc.
-        window_slot
-          A Qt slot that gets called when an action is triggered. This
-          slot receive a *device* positional argument for which it is expected
-          to show a new FireflyWindow.
+        display_file
+          A path object pointing to the .ui or .py file to use for
+          this device.
         device_key
           A key to use for the device name in the macros
           dictionary. If *device_key* is "DEVICE" (default), then the
@@ -491,12 +434,9 @@ class FireflyController(QtCore.QObject):
           *window_slot* is used.
         icon
           A QIcon that will be added to the action.
+
         """
         # We need a UI file, unless a custom window_slot is given
-        if ui_file is None and window_slot is None:
-            raise ValueError(
-                "Parameters *ui_file* and *window_slot* cannot both be None."
-            )
         # Get needed devices from the device registry
         try:
             devices = sorted(
@@ -506,35 +446,24 @@ class FireflyController(QtCore.QObject):
             log.warning(f"No {device_label} found, menu will be empty.")
             devices = []
         # Create menu actions for each device
-        actions = {}
-        setattr(self, f"{attr_name}_actions", actions)
-        window_slots = []
-        setattr(self, f"{attr_name}_window_slots", window_slots)
-        setattr(self, f"{attr_name}_windows", {})
-        for device in devices:
-            # Create the window action
-            action = QtWidgets.QAction(self)
-            action.setObjectName(f"action_show_{attr_name}_{device.name}")
-            display_text = titelize(device.name)
-            action.setText(display_text)
-            if icon is not None:
-                action.setIcon(icon)
-            actions[device.name] = action
-            # Create a slot for opening the device window
-            if window_slot is not None:
-                # A device specific window loader was provided
-                slot = partial(window_slot, device=device)
-            else:
-                # No device specific loader, use the generic loader
-                slot = partial(
-                    self.show_device_window,
-                    device=device,
-                    device_label=attr_name,
-                    ui_file=ui_file,
-                    device_key=device_key,
-                )
-            action.triggered.connect(slot)
-            window_slots.append(slot)
+        actions = {
+            device.name: WindowAction(
+                name=f"show_{device.name}_action",
+                text=titelize(device.name),
+                display_file=display_file,
+                icon=icon,
+                WindowClass=FireflyMainWindow,
+                macros={device_key: device.name},
+            )
+            for device in devices
+        }
+        return actions
+    
+    def start_queue_client(self):
+        try:
+            self._queue_client.start()
+        except Exception as exc:
+            log.error(f"Could not start queue client: {exc}")
 
     def prepare_queue_client(self, client=None, api=None):
         """Set up the QueueClient object that talks to the queue server.
@@ -558,21 +487,22 @@ class FireflyController(QtCore.QObject):
         # Create the client object
         if client is None:
             client = QueueClient(api=api)
-        self.queue_open_environment_action.triggered.connect(client.open_environment)
+        # self.queue_open_environment_action.triggered.connect(client.open_environment)
+        self.actions.queue_settings['open_environment'].triggered.connect(client.open_environment)
         self._queue_client = client
         # Connect actions to slots for controlling the queueserver
-        self.pause_runengine_action.triggered.connect(
+        self.actions.queue_controls["pause"].triggered.connect(
             partial(client.request_pause, defer=True)
         )
-        self.pause_runengine_now_action.triggered.connect(
-            partial(client.request_pause, defer=False)
+        self.actions.queue_controls["pause_now"].triggered.connect(
+            partial(client.request_pause, defer=True)
         )
-        self.start_queue_action.triggered.connect(client.start_queue)
-        self.resume_runengine_action.triggered.connect(client.resume_runengine)
-        self.stop_runengine_action.triggered.connect(client.stop_runengine)
-        self.halt_runengine_action.triggered.connect(client.halt_runengine)
-        self.abort_runengine_action.triggered.connect(client.abort_runengine)
-        self.queue_stop_action.triggered.connect(client.stop_queue)
+        self.actions.queue_controls["start"].triggered.connect(client.start_queue)
+        self.actions.queue_controls["resume"].triggered.connect(client.resume_runengine)
+        self.actions.queue_controls["stop_runengine"].triggered.connect(client.stop_runengine)
+        self.actions.queue_controls["halt"].triggered.connect(client.halt_runengine)
+        self.actions.queue_controls["abort"].triggered.connect(client.abort_runengine)
+        self.actions.queue_controls["stop_queue"].triggered.connect(client.stop_queue)
         self.check_queue_status_action.triggered.connect(
             partial(client.check_queue_status, True)
         )
@@ -580,33 +510,27 @@ class FireflyController(QtCore.QObject):
         self.queue_item_added.connect(client.add_queue_item)
         # Connect signals/slots for queueserver state changes
         client.status_changed.connect(self.queue_status_changed)
-        client.length_changed.connect(self.queue_length_changed)
         client.in_use_changed.connect(self.queue_in_use_changed)
-        client.autostart_changed.connect(self.queue_autostart_action.setChecked)
+        client.autostart_changed.connect(self.actions.queue_settings['autostart'].setChecked)
+        client.environment_opened.connect(self.queue_environment_opened)
         client.environment_opened.connect(self.queue_environment_opened)
         self.queue_environment_opened.connect(self.set_open_environment_action_state)
         client.environment_state_changed.connect(self.queue_environment_state_changed)
         client.manager_state_changed.connect(self.queue_manager_state_changed)
         client.re_state_changed.connect(self.queue_re_state_changed)
-        client.queue_stop_changed.connect(self.queue_stop_action.setChecked)
+        client.queue_stop_changed.connect(self.actions.queue_controls['stop_queue'].setChecked)
         client.devices_changed.connect(self.update_devices_allowed)
-        self.queue_autostart_action.toggled.connect(
+        self.actions.queue_settings['autostart'].toggled.connect(
             self.check_queue_status_action.trigger
         )
-        self.queue_autostart_action.toggled.connect(client.toggle_autostart)
+        self.actions.queue_settings['autostart'].toggled.connect(client.toggle_autostart)
         return client
 
-    async def start(self):
+    def start(self):
         """Start the background timers, show the first window, and wait."""
-        # Keep an event to know when the app has closed
-        self.app_close_event = asyncio.Event()
-        self.aboutToQuit.connect(self.app_close_event.set)
         # Show the UI stuffs
-        self.show_default_window()
         self.prepare_queue_client()
-        self._queue_client.start()
-        # Start the actual asyncio event loop
-        await self.app_close_event.wait()
+        self.start_queue_client()
 
     def update_devices_allowed(self, devices):
         pass
@@ -619,158 +543,37 @@ class FireflyController(QtCore.QObject):
         engine is already running.
 
         """
-        all_actions = [
-            self.start_queue_action,
-            self.stop_runengine_action,
-            self.pause_runengine_action,
-            self.pause_runengine_now_action,
-            self.resume_runengine_action,
-            self.abort_runengine_action,
-            self.halt_runengine_action,
-        ]
+        queue_actions = self.actions.queue_controls
         # Decide which signals to enable
         unknown_re_state = re_state is None or re_state.strip() == ""
         if unknown_re_state:
             # Unknown state, no button should work
             enabled_signals = []
         elif re_state == "idle":
-            enabled_signals = [self.start_queue_action]
+            enabled_signals = [queue_actions['start']]
         elif re_state == "paused":
             enabled_signals = [
-                self.stop_runengine_action,
-                self.resume_runengine_action,
-                self.halt_runengine_action,
-                self.abort_runengine_action,
+                queue_actions['stop_runengine'],
+                queue_actions['resume'],
+                queue_actions['halt'],
+                queue_actions['abort'],
+                queue_actions["stop_queue"],
             ]
         elif re_state == "running":
             enabled_signals = [
-                self.pause_runengine_action,
-                self.pause_runengine_now_action,
+                queue_actions['pause'],
+                queue_actions['pause_now'],
+                queue_actions["stop_queue"],
             ]
         else:
             raise ValueError(f"Unknown run engine state: {re_state}")
         # Enable/disable the relevant signals
-        for action in all_actions:
+        for action in queue_actions.values():
             action.setEnabled(action in enabled_signals)
 
     def add_queue_item(self, item):
         log.debug(f"Application received item to add to queue: {item}")
         self.queue_item_added.emit(item)
-
-    def connect_menu_signals(self, window):
-        """Connects application-level signals to the associated slots.
-
-        These signals should generally be applicable to multiple
-        windows. If the signal and/or slot is specific to a given
-        window, then it should be in that widnow's class definition
-        and setup code.
-
-        """
-        window.actionShow_Sample_Viewer.triggered.connect(
-            self.show_sample_viewer_window
-        )
-
-    def show_window(self, WindowClass, ui_file, name=None, macros={}):
-        # Come up with the default key for saving in the windows dictionary
-        if name is None:
-            name = f"{WindowClass.__name__}_{ui_file.name}"
-        # Check if the window has already been created
-        if (w := self.windows.get(name)) is None:
-            # Window is not yet created, so create one
-            w = self.create_window(WindowClass, ui_dir / ui_file, macros=macros)
-            self.windows[name] = w
-            # Connect signals to remove the window when it closes
-            w.destroyed.connect(partial(self.forget_window, name=name))
-        else:
-            # Window already exists so just bring it to the front
-            w.show()
-            w.activateWindow()
-        return w
-
-    def forget_window(self, obj, name):
-        """Forget this window exists."""
-        if hasattr(self, "windows"):
-            del self.windows[name]
-
-    def create_window(self, WindowClass, ui_file, macros={}):
-        # Create and save this window
-        main_window = WindowClass()
-        # Make it look pretty
-        main_window.update_tools_menu()
-        # Load the UI file for this window
-        main_window.open(str(ui_file.resolve()), macros=macros)
-        self.connect_menu_signals(window=main_window)
-        # Show the display
-        self.check_queue_status_action.trigger()
-        return main_window
-
-    def show_device_window(
-        self, *args, device, device_label: str, ui_file: str, device_key: str
-    ):
-        """Instantiate a new main window for the given device.
-
-        This is a generalized version of the more specific slots, such
-        as ``self.show_area_detector_window()``.
-
-        It loads a window with the given UI file *ui_file* (relative
-        to the ui directory). The macros will be ``{"DEV":
-        device.name}``.
-
-        """
-        device_pyname = device.name.replace(" ", "_")
-        device_title = titelize(device.name)
-        self.show_window(
-            FireflyMainWindow,
-            ui_dir / ui_file,
-            name=f"FireflyMainWindow_{device_label}_{device_pyname}",
-            macros={device_key: device.name, f"{device_key}_TITLE": device_title},
-        )
-
-    def show_status_window(self, stylesheet_path=None):
-        """Instantiate a new main window for this application."""
-        self.show_window(PlanMainWindow, ui_dir / "status.py", name="beamline_status")
-
-    @QtCore.Slot()
-    def show_run_browser_window(self):
-        return self.show_window(
-            PlanMainWindow, ui_dir / "run_browser.py", name="run_browser"
-        )
-
-    @QtCore.Slot()
-    def show_logs_window(self):
-        self.show_window(FireflyMainWindow, ui_dir / "log_viewer.ui", name="log_viewer")
-
-    @QtCore.Slot()
-    def show_xafs_scan_window(self):
-        return self.show_window(
-            PlanMainWindow, ui_dir / "xafs_scan.py", name="xafs_scan"
-        )
-
-    @QtCore.Slot()
-    def show_plan_window(self, name: str, display_file: str):
-        """Launch a window for a given plan.
-
-        Parameters
-        ==========
-        name
-          Human-readable name for the plan window
-        display_file
-          Can be the name of .ui file or the .py file for the PyDM
-          display.
-
-        """
-        return self.show_window(
-            PlanMainWindow,
-            ui_dir / "plans" / display_file,
-            name=f"{name}_plan",
-        )
-
-    @QtCore.Slot()
-    def show_voltmeters_window(self):
-        assert False, "Connect queue_item_submitted."
-        return self.show_window(
-            PlanMainWindow, ui_dir / "voltmeters.py", name="voltmeters"
-        )
 
     @QtCore.Slot()
     def show_sample_viewer_window(self):
@@ -778,34 +581,10 @@ class FireflyController(QtCore.QObject):
             FireflyMainWindow, ui_dir / "sample_viewer.ui", name="sample_viewer"
         )
 
-    @QtCore.Slot()
-    def show_cameras_window(self):
-        return self.show_window(
-            FireflyMainWindow, ui_dir / "cameras.py", name="cameras"
-        )
-
-    @QtCore.Slot()
-    def show_energy_window(self):
-        return self.show_window(PlanMainWindow, ui_dir / "energy.py", name="energy")
-
-    @QtCore.Slot()
-    def show_bss_window(self):
-        return self.show_window(FireflyMainWindow, ui_dir / "bss.py", name="bss")
-
-    @QtCore.Slot()
-    def show_iocs_window(self):
-        return self.show_window(FireflyMainWindow, ui_dir / "iocs.py", name="iocs")
-
-    @QtCore.Slot()
-    def show_filters_window(self):
-        return self.show_window(
-            FireflyMainWindow, ui_dir / "filters.py", name="filters"
-        )
-
     @QtCore.Slot(bool)
     def set_open_environment_action_state(self, is_open: bool):
         """Update the readback value for opening the queueserver environment."""
-        action = self.queue_open_environment_action
+        action = self.actions.queue_settings['open_environment']
         if action is not None:
             action.blockSignals(True)
             action.setChecked(is_open)

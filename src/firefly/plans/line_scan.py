@@ -7,12 +7,12 @@ from qtpy import QtWidgets
 from qtpy.QtGui import QDoubleValidator
 
 from firefly.component_selector import ComponentSelector
-from firefly.plans.regions_display import RegionsDisplay, RegionBase
+from firefly.plans import regions_display
 
 log = logging.getLogger()
 
 
-class LineScanRegion(RegionBase):
+class LineScanRegion(regions_display.RegionBase):
 
     def setup_ui(self):
         self.layout = QtWidgets.QHBoxLayout()
@@ -34,7 +34,7 @@ class LineScanRegion(RegionBase):
         self.layout.addWidget(self.stop_line_edit)
 
 
-class LineScanDisplay(RegionsDisplay):
+class LineScanDisplay(regions_display.RegionsDisplay):
     Region = LineScanRegion
 
     @asyncSlot(object)

@@ -40,6 +40,7 @@ class VoltmetersDisplay(display.FireflyDisplay):
 
     @asyncSlot(object)
     async def update_devices(self, registry):
+        print("Updating voltmeters devices")
         ion_chambers = registry.findall(label="ion_chambers")
         self.ion_chambers = sorted(ion_chambers, key=lambda c: c.ch_num)
         # Clear the voltmeters grid layout

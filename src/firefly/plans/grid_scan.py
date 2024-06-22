@@ -6,7 +6,7 @@ from qtpy import QtWidgets
 from qtpy.QtGui import QDoubleValidator
 
 from firefly.component_selector import ComponentSelector
-from firefly.plans.regions_display import RegionsDisplay, RegionBase
+from firefly.plans import regions_display
 
 log = logging.getLogger()
 
@@ -37,7 +37,7 @@ class TitleRegion:
         self.layout.addWidget(label, 1, 0)
 
 
-class GridScanRegion(RegionBase):
+class GridScanRegion(regions_display.RegionBase):
 
     def setup_ui(self):
         self.layout = QtWidgets.QHBoxLayout()
@@ -79,7 +79,7 @@ class GridScanRegion(RegionBase):
         self.layout.addWidget(self.fly_checkbox)
 
 
-class GridScanDisplay(RegionsDisplay):
+class GridScanDisplay(regions_display.RegionsDisplay):
     Region = GridScanRegion
     default_num_regions = 2
 

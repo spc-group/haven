@@ -4,6 +4,7 @@ from qtpy.QtWidgets import QAction
 from ophyd.sim import make_fake_device
 from haven.instrument import motor
 
+from firefly.controller import ActionsRegistry
 from firefly.main_window import FireflyMainWindow, PlanMainWindow
 
 
@@ -14,10 +15,18 @@ def window(qapp, qtbot):
     return window
 
 
-def test_navbar(qapp, qtbot):
-    pause_runengine_action = QAction()
-    start_queue_action = QAction()
-    window = PlanMainWindow(queue_control_actions=[pause_runengine_action, start_queue_action])
+@pytest.fixture()
+def actions():
+    registry = ActionsRegistry()
+    return registry
+
+
+def test_navbar(qapp, qtbot, actions):
+    actions.queue_controls = {
+        "pause": QAction(),
+        "start": QAction(),
+    }
+    window = PlanMainWindow(actions=actions)
     qtbot.addWidget(window)
     # Check that the navbar actions are set up properly
     assert hasattr(window.ui, "navbar")
@@ -25,13 +34,13 @@ def test_navbar(qapp, qtbot):
     # Navigation actions are removed
     assert window.ui.actionHome not in navbar.actions()
     # Run engine actions have been added to the navbar
-    assert pause_runengine_action in navbar.actions()
-    assert start_queue_action in navbar.actions()
+    assert actions.queue_controls["pause"] in navbar.actions()
+    assert actions.queue_controls["start"] in navbar.actions()
 
 
-def test_navbar_autohide(qtbot):
+def test_navbar_autohide(qtbot, actions):
     """Test that the queue navbar is only visible when plans are queued."""
-    window = PlanMainWindow()
+    window = PlanMainWindow(actions=actions)
     qtbot.addWidget(window)
     window.show()
     navbar = window.ui.navbar
@@ -56,22 +65,30 @@ def test_add_menu_action(window):
     assert action.objectName() == "actionMake_Salad"
 
 
-def test_motor_menu(qapp, qtbot):
-    actions = [QAction(), QAction(), QAction()]
-    window = FireflyMainWindow(motor_actions=actions)
+def test_motor_menu(qapp, qtbot, actions):
+    actions.motors = {
+        "A": QAction(),
+        "B": QAction(),
+        "C": QAction(),
+    }
+    window = FireflyMainWindow(actions=actions)
     qtbot.addWidget(window)
     # Check that the menu items have been created
     assert hasattr(window.ui, "positioners_menu")
     assert hasattr(window.ui, "motors_menu")
-    assert window.ui.motors_menu.actions() == actions
+    assert window.ui.motors_menu.actions() == list(actions.motors.values())
 
 
-def test_plans_menu(qapp, qtbot):
-    actions = [QAction(), QAction(), QAction()]
-    window = FireflyMainWindow(plan_actions=actions)
+def test_plans_menu(qapp, qtbot, actions):
+    actions.plans = {
+        "start": QAction(),
+        "pause": QAction(),
+        "abort": QAction(),
+    }
+    window = FireflyMainWindow(actions=actions)
     qtbot.addWidget(window)
-    assert hasattr(window.ui, "scans_menu")
-    window.ui.scans_menu.actions() == actions
+    assert hasattr(window.ui, "plans_menu")
+    window.ui.plans_menu.actions() == actions.plans
 
 
 def test_show_message(window):

@@ -171,18 +171,22 @@ def main(default_fullscreen=False, default_display="status"):
 
     # Define devices on the beamline (slow!)
     controller.setup_instrument(load_instrument=not pydm_args.no_instrument)
-    controller.start()
-
-    # Get rid of the splash screen and show the first window
-    splash.close()
-    controller.show_default_window()
-
-    # Keep an event to know when the app has closed
-    app_close_event = asyncio.Event()
-    app.aboutToQuit.connect(app_close_event.set)
+    
+    
+    async def run_app():
+        # Keep an event to know when the app has closed
+        app_close_event = asyncio.Event()
+        app.aboutToQuit.connect(app_close_event.set)
+        # Start any async clients that the controller needs 
+        controller.start()
+        # Get rid of the splash screen and show the first window
+        splash.close()
+        controller.show_default_window()
+        # Wait on the application to finish
+        await app_close_event.wait()
 
     # Start the actual asyncio event loop
-    event_loop.run_until_complete(app_close_event.wait())
+    event_loop.run_until_complete(run_app())
     event_loop.close()
 
     if pydm_args.profile:

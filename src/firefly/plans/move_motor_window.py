@@ -6,12 +6,12 @@ from qtpy.QtGui import QDoubleValidator
 
 from firefly import display
 from firefly.component_selector import ComponentSelector
-from firefly.plans.regions_display import RegionsDisplay, RegionBase
+from firefly.plans import regions_display
 
 log = logging.getLogger()
 
 
-class MotorRegion(RegionBase):
+class MotorRegion(regions_display.RegionBase):
 
     def setup_ui(self):
         self.layout = QtWidgets.QHBoxLayout()
@@ -27,7 +27,7 @@ class MotorRegion(RegionBase):
         self.layout.addWidget(self.position_line_edit)
 
 
-class MoveMotorDisplay(RegionsDisplay):
+class MoveMotorDisplay(regions_display.RegionsDisplay):
     Region = MotorRegion
     default_num_regions = 1
 

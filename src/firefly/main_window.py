@@ -8,8 +8,9 @@ from pydm import data_plugins
 from pydm.main_window import PyDMMainWindow
 from qtpy import QtGui, QtWidgets
 from qtpy.QtWidgets import QAction
-
 from haven import load_config
+
+from .action import ActionsRegistry
 
 log = logging.getLogger(__name__)
 
@@ -19,104 +20,102 @@ class FireflyMainWindow(PyDMMainWindow):
 
     Parameters
     ==========
-    logs_window_action
-      Action for showing the log viewer.
-    queue_control_actions
-      Actions for controlling the queue (e.g. start/pause). Will be
-      added to navbar and queue mneu only.
-    queue_settings_actions
-      Actions for changing settings for the queue
-      (e.g. autoplay). Will be added to queue mneu only.
-    energy_window_action
-      Action for showing the energy positioner window.
-    filters_action
-      Action for showing the display to control the filter devices.
-    slits_actions
-      Actions for showing the displays to control the slits.
-    mirror_actions
-      Actions for showing the displays to control the mirrors.
-    table_actions
-      Actions for showing the displays to control the tables.
-    plan_actions
-      Actions for showing the displays to execute plans.
-    run_browser_action
-      Action for showing the display to browse past Bluesky runs.
-    voltmeters_action
-      Action for showing the display for the ion chamber voltmeters.
-    motor_actions
-      Actions for showing the displays to control assorted motors.
-    ion_chamber_actions
-      Actions for showing the displays to control the ion chambers.
-    cameras_window_action
-      Actions for showing the display for an overview of the cameras.
-    camera_actions
-      Actions for showing the diplays to control the cameras.
-    area_detector_actions
-      Actions for showing the displays to control the area detectors.
-    xrf_detector_actions
-      Actions for showing the displays to control the fluorescence detectors.
-    status_window_action
-      Action for showing the display for the overall beamline status.
-    bss_window_action
-      Action for showing the display for the beamline scheduling system metadata.
-    iocs_window_action
-      Action for showing the display to start/stop the IOCs.
-    """
+    actions
+      A ActionsRegistry object. Will be used to run
+      ``self.setup_menu_actions``.
 
-    hide_nav_bar: bool = True
+    """
+    hide_nav_bar: bool = False
 
     def __init__(
         self,
+        actions=None,
         *args,
-        logs_window_action: Optional[QAction] = None,
-        queue_control_actions: Sequence[QAction] = [],
-        queue_settings_actions: Sequence[QAction] = [],
-        energy_window_action: Optional[QAction] = None,
-        filters_action: Optional[QAction] = None,
-        slits_actions: Sequence[QAction] = [],
-        mirror_actions: Sequence[QAction] = [],
-        table_actions: Sequence[QAction] = [],
-        plan_actions: Sequence[QAction] = [],
-        run_browser_action: Optional[QAction] = None,
-        voltmeters_action: Optional[QAction] = None,
-        motor_actions: Sequence[QAction] = [],
-        ion_chamber_actions: Sequence[QAction] = [],
-        cameras_window_action: Optional[QAction] = None,
-        camera_actions: Sequence[QAction] = [],
-        area_detector_actions: Sequence[QAction] = [],
-        xrf_detector_actions: Sequence[QAction] = [],
-        status_window_action: Optional[QAction] = None,
-        bss_window_action: Optional[QAction] = None,
-        iocs_window_action: Optional[QAction] = None,
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
-        self.customize_ui(
-            logs_window_action=logs_window_action,
-            queue_control_actions=queue_control_actions,
-            queue_settings_actions=queue_settings_actions,
-            energy_window_action=energy_window_action,
-            filters_action=filters_action,
-            slits_actions=slits_actions,
-            mirror_actions=mirror_actions,
-            table_actions=table_actions,
-            plan_actions=plan_actions,
-            run_browser_action=run_browser_action,
-            voltmeters_action=voltmeters_action,
-            motor_actions=motor_actions,
-            ion_chamber_actions=ion_chamber_actions,
-            cameras_window_action=cameras_window_action,
-            camera_actions=camera_actions,
-            area_detector_actions=area_detector_actions,
-            xrf_detector_actions=xrf_detector_actions,
-            status_window_action=status_window_action,
-            bss_window_action=bss_window_action,
-            iocs_window_action=iocs_window_action,
+        self.setup_ui()
+        if actions is not None:
+            self.setup_menu_actions(actions)
+
+    def setup_ui(self):
+        # Hide the navbar initially
+        self.ui.navbar.setVisible(False)
+        # Add window icon
+        root_dir = Path(__file__).parent.absolute()
+        icon_path = root_dir / "splash.png"
+        self.setWindowIcon(QtGui.QIcon(str(icon_path)))
+        # Hide the nav bar
+        if self.hide_nav_bar:
+            self.toggle_nav_bar(False)
+            self.ui.actionShow_Navigation_Bar.setChecked(False)
+        # Prepare the status bar
+        bar = self.statusBar()
+        _label = QtWidgets.QLabel()
+        _label.setText("Queue:")
+        bar.addPermanentWidget(_label)
+        self.ui.queue_length_label = QtWidgets.QLabel()
+        self.ui.queue_length_label.setToolTip(
+            "The length of the queue, not including the running plan."
         )
+        self.ui.queue_length_label.setText("(??)")
+        bar.addPermanentWidget(self.ui.queue_length_label)
+        self.ui.environment_label = QtWidgets.QLabel()
+        self.ui.environment_label.setToolTip(
+            "The current state of the queue server environment."
+        )
+        self.ui.environment_label.setText("N/A")
+        bar.addPermanentWidget(self.ui.environment_label)
+        _label = QtWidgets.QLabel()
+        _label.setText("/")
+        bar.addPermanentWidget(_label)
+        self.ui.re_label = QtWidgets.QLabel()
+        self.ui.re_label.setToolTip("The current state of the queue server run engine.")
+        self.ui.re_label.setText("N/A")
+        bar.addPermanentWidget(self.ui.re_label)
+        # Create menu bars (actual menu entries are set later)
+        ## Setup menu
+        self.ui.setup_menu = QtWidgets.QMenu(self.ui.menubar)
+        self.ui.setup_menu.setObjectName("setup_menu")
+        self.ui.setup_menu.setTitle("Set&up")
+        self.ui.menubar.addAction(self.ui.setup_menu.menuAction())
+        # Menu for managing the Queue server
+        self.ui.queue_menu = QtWidgets.QMenu(self.ui.menubar)
+        self.ui.queue_menu.setObjectName("menuQueue")
+        self.ui.queue_menu.setTitle("&Queue")
+        self.ui.menubar.addAction(self.ui.queue_menu.menuAction())
+        ## Positioners menu
+        self.ui.positioners_menu = QtWidgets.QMenu(self.ui.menubar)
+        self.ui.positioners_menu.setObjectName("menuPositioners")
+        self.ui.positioners_menu.setTitle("&Positioners")
+        self.ui.menubar.addAction(self.ui.positioners_menu.menuAction())
+        ## Scans menu
+        self.ui.plans_menu = QtWidgets.QMenu(self.ui.menubar)
+        self.ui.plans_menu.setObjectName("plans_menu")
+        self.ui.plans_menu.setTitle("&Plans")
+        self.ui.menubar.addAction(self.ui.plans_menu.menuAction())
+        ## Detectors menu
+        self.ui.detectors_menu = QtWidgets.QMenu(self.ui.menubar)
+        self.ui.detectors_menu.setObjectName("detectors_menu")
+        self.ui.detectors_menu.setTitle("&Detectors")
+        self.ui.menubar.addAction(self.ui.detectors_menu.menuAction())
+        # Connect signals to the status bar
+        ...
+
+    async def update_devices(self, registry):
+        self.registry = registry
+        await self.display_widget().update_devices(registry)
 
     def update_queue_controls(self, new_status):
         """Update the queue controls to match the state of the queueserver."""
         pass
+
+    def update_queue_status(self, status):
+        """Update the queue status labels."""
+        self.ui.environment_label.setText(status['worker_environment_state'])
+        new_length = status['items_in_queue']
+        self.ui.queue_length_label.setText(f"({new_length})")
+        self.ui.re_label.setText(status['manager_state'])
 
     def open(self, *args, **kwargs):
         widget = super().open(*args, **kwargs)
@@ -132,7 +131,7 @@ class FireflyMainWindow(PyDMMainWindow):
             log.warning(msg)
             warnings.warn(msg)
         # Add the caQtDM action to the menubar
-        caqtdm_menu = self.ui.menuSetup
+        caqtdm_menu = self.ui.setup_menu
         caqtdm_actions = getattr(widget, "caqtdm_actions", [])
         if len(caqtdm_actions) > 0:
             caqtdm_menu.addSeparator()
@@ -175,9 +174,35 @@ class FireflyMainWindow(PyDMMainWindow):
         setattr(self, action_name, action)
         return action
 
-    def customize_ui(
+    def setup_menu_actions(self, actions):
+        self._setup_menu_actions(
+            logs_window_action=actions.log,
+            queue_monitor=actions.queue_monitor,
+            queue_control_actions=actions.queue_controls,
+            queue_settings_actions=actions.queue_settings,
+            energy_window_action=actions.energy,
+            filters_action=actions.xray_filter,
+            slits_actions=actions.slits,
+            mirror_actions=actions.mirrors,
+            table_actions=actions.tables,
+            plan_actions=actions.plans,
+            run_browser_action=actions.run_browser,
+            voltmeters_action=actions.voltmeter,
+            motor_actions=actions.motors,
+            ion_chamber_actions=actions.ion_chambers,
+            cameras_window_action=actions.camera_overview,
+            camera_actions=actions.cameras,
+            area_detector_actions=actions.area_detectors,
+            xrf_detector_actions=actions.xrf_detectors,
+            status_window_action=actions.status,
+            bss_window_action=actions.bss,
+            iocs_window_action=actions.iocs,
+        )
+
+    def _setup_menu_actions(
         self,
         logs_window_action,
+        queue_monitor,
         queue_control_actions,
         queue_settings_actions,
         energy_window_action,
@@ -198,64 +223,17 @@ class FireflyMainWindow(PyDMMainWindow):
         bss_window_action,
         iocs_window_action,
     ):
-        # Add window icon
-        root_dir = Path(__file__).parent.absolute()
-        icon_path = root_dir / "splash.png"
-        self.setWindowIcon(QtGui.QIcon(str(icon_path)))
-        # Hide the nav bar
-        if self.hide_nav_bar:
-            self.toggle_nav_bar(False)
-            self.ui.actionShow_Navigation_Bar.setChecked(False)
-        # Prepare the status bar
-        bar = self.statusBar()
-        _label = QtWidgets.QLabel()
-        _label.setText("Queue:")
-        bar.addPermanentWidget(_label)
-        self.ui.queue_length_label = QtWidgets.QLabel()
-        self.ui.queue_length_label.setToolTip(
-            "The length of the queue, not including the running plan."
-        )
-        self.ui.queue_length_label.setText("(??)")
-        bar.addPermanentWidget(self.ui.queue_length_label)
-        self.ui.environment_label = QtWidgets.QLabel()
-        self.ui.environment_label.setToolTip(
-            "The current state of the queue server environment."
-        )
-        self.ui.environment_label.setText("N/A")
-        bar.addPermanentWidget(self.ui.environment_label)
-        _label = QtWidgets.QLabel()
-        _label.setText("/")
-        bar.addPermanentWidget(_label)
-        self.ui.re_label = QtWidgets.QLabel()
-        self.ui.re_label.setToolTip("The current state of the queue server run engine.")
-        self.ui.re_label.setText("N/A")
-        bar.addPermanentWidget(self.ui.re_label)
-        # Connect signals to the status bar
-        ...
         # Log viewer window
         if logs_window_action is not None:
             self.ui.menuView.addAction(logs_window_action)
-        # Setup menu
-        self.ui.menuSetup = QtWidgets.QMenu(self.ui.menubar)
-        self.ui.menuSetup.setObjectName("menuSetup")
-        self.ui.menuSetup.setTitle("Set&up")
-        self.ui.menubar.addAction(self.ui.menuSetup.menuAction())
         # Menu for managing the Queue server
-        self.ui.queue_menu = QtWidgets.QMenu(self.ui.menubar)
-        self.ui.queue_menu.setObjectName("menuQueue")
-        self.ui.queue_menu.setTitle("&Queue")
-        self.ui.menubar.addAction(self.ui.queue_menu.menuAction())
-        for action in queue_control_actions:
+        for action in queue_control_actions.values():
             self.ui.queue_menu.addAction(action)
         self.ui.queue_menu.addSeparator()
         # Queue settings for the queue client
-        for action in queue_settings_actions:
+        for action in queue_settings_actions.values():
             self.ui.queue_menu.addAction(action)
-        # Positioners menu
-        self.ui.positioners_menu = QtWidgets.QMenu(self.ui.menubar)
-        self.ui.positioners_menu.setObjectName("menuPositioners")
-        self.ui.positioners_menu.setTitle("&Positioners")
-        self.ui.menubar.addAction(self.ui.positioners_menu.menuAction())
+        self.ui.queue_menu.addAction(queue_monitor)
         # Sample viewer
         self.add_menu_action(
             action_name="actionShow_Sample_Viewer",
@@ -270,7 +248,7 @@ class FireflyMainWindow(PyDMMainWindow):
         self.ui.positioners_menu.addAction(motors_action)
         motors_action.setIcon(qta.icon("mdi.cog-clockwise"))
         # Add actions to the motors sub-menus
-        for action in motor_actions:
+        for action in motor_actions.values():
             self.ui.motors_menu.addAction(action)
         # Menu to launch the Window to change energy
         self.ui.positioners_menu.addAction(energy_window_action)
@@ -279,33 +257,23 @@ class FireflyMainWindow(PyDMMainWindow):
             self.ui.positioners_menu.addAction(filters_action)
         if len(slits_actions) > 0:
             self.ui.positioners_menu.addSection("Slits")
-        for action in slits_actions:
+        for action in slits_actions.values():
             self.ui.positioners_menu.addAction(action)
         if len(mirror_actions) > 0:
             self.ui.positioners_menu.addSection("Mirrors")
-        for action in mirror_actions:
+        for action in mirror_actions.values():
             self.ui.positioners_menu.addAction(action)
         if len(table_actions) > 0:
             self.ui.positioners_menu.addSection("Tables")
-        for action in table_actions:
+        for action in table_actions.values():
             self.ui.positioners_menu.addAction(action)
-        # Scans menu
-        self.ui.scans_menu = QtWidgets.QMenu(self.ui.menubar)
-        self.ui.scans_menu.setObjectName("scans_menu")
-        self.ui.scans_menu.setTitle("&Scans")
-        self.ui.menubar.addAction(self.ui.scans_menu.menuAction())
         # Add actions to the individual plans
-        for action in plan_actions:
-            self.ui.scans_menu.addAction(action)
+        for action in plan_actions.values():
+            self.ui.plans_menu.addAction(action)
         # Add entries for general scan management
-        self.ui.scans_menu.addSeparator()
+        self.ui.plans_menu.addSeparator()
         if run_browser_action is not None:
-            self.ui.scans_menu.addAction(run_browser_action)
-        # Detectors menu
-        self.ui.detectors_menu = QtWidgets.QMenu(self.ui.menubar)
-        self.ui.detectors_menu.setObjectName("detectors_menu")
-        self.ui.detectors_menu.setTitle("&Detectors")
-        self.ui.menubar.addAction(self.ui.detectors_menu.menuAction())
+            self.ui.plans_menu.addAction(run_browser_action)
         # Voltmeters window
         if voltmeters_action is not None:
             self.ui.detectors_menu.addAction(voltmeters_action)
@@ -316,7 +284,7 @@ class FireflyMainWindow(PyDMMainWindow):
             self.ui.ion_chambers_menu.setTitle("&Ion Chambers")
             self.ui.detectors_menu.addAction(self.ui.ion_chambers_menu.menuAction())
             # Add actions for the individual ion chambers
-            for action in ion_chamber_actions.values:
+            for action in ion_chamber_actions.values():
                 self.ui.ion_chambers_menu.addAction(action)
         # Cameras sub-menu
         self.ui.menuCameras = QtWidgets.QMenu(self.ui.menubar)
@@ -327,27 +295,27 @@ class FireflyMainWindow(PyDMMainWindow):
         if cameras_window_action is not None:
             self.ui.menuCameras.addAction(cameras_window_action)
             self.ui.menuCameras.addSeparator()
-        for action in camera_actions:
+        for action in camera_actions.values():
             self.ui.menuCameras.addAction(action)
         # Add area detectors to detectors menu
         if len(area_detector_actions) > 0:
             self.ui.detectors_menu.addSeparator()
-        for action in area_detector_actions:
+        for action in area_detector_actions.values():
             self.ui.detectors_menu.addAction(action)
         # Add XRF detectors to detectors menu
         if len(xrf_detector_actions) > 0:
             self.ui.detectors_menu.addSeparator()
-        for action in xrf_detector_actions:
+        for action in xrf_detector_actions.values():
             self.ui.detectors_menu.addAction(action)
         # Add other menu actions
         if status_window_action is not None:
             self.ui.menuView.addAction(status_window_action)
         if bss_window_action is not None:
-            self.ui.menuSetup.addAction(bss_window_action)
+            self.ui.setup_menu.addAction(bss_window_action)
         if iocs_window_action is not None:
-            self.ui.menuSetup.addAction(iocs_window_action)
+            self.ui.setup_menu.addAction(iocs_window_action)
         # Make tooltips show up for menu actions
-        for menu in [self.ui.menuSetup, self.ui.detectors_menu, self.ui.queue_menu]:
+        for menu in [self.ui.setup_menu, self.ui.detectors_menu, self.ui.queue_menu]:
             menu.setToolTipsVisible(True)
 
     def show_status(self, message, timeout=0):
@@ -368,12 +336,13 @@ class FireflyMainWindow(PyDMMainWindow):
             title += " [Read Only Mode]"
         self.setWindowTitle(title)
 
-    def update_queue_length(self, new_length: int):
-        self.ui.queue_length_label.setText(f"({new_length})")
-
 
 class PlanMainWindow(FireflyMainWindow):
     """A Qt window that has extra controls for a bluesky runengine."""
+    navbar_actions: Sequence[str] = ["start", "|", "pause",
+                                     "pause_now", "stop_queue", "|",
+                                     "resume", "stop_runengine",
+                                     "abort"]
 
     hide_nav_bar: bool = True
 
@@ -383,15 +352,19 @@ class PlanMainWindow(FireflyMainWindow):
         for action in navbar.actions():
             navbar.removeAction(action)
         # Add runengine actions
-        for action in queue_control_actions:
-            navbar.addAction(action)
+        for key in self.navbar_actions:
+            if key == "|":
+                navbar.addSeparator()
+            elif key in queue_control_actions:
+                navbar.addAction(queue_control_actions[key])
 
-    def customize_ui(self, *args, queue_control_actions, **kwargs):
-        super().customize_ui(*args, queue_control_actions=queue_control_actions, **kwargs)
-        self.setup_navbar(queue_control_actions=queue_control_actions)
+    def setup_menu_actions(self, actions):
+        super().setup_menu_actions(actions=actions)
+        self.setup_navbar(queue_control_actions=actions.queue_controls)
 
     def update_queue_controls(self, new_status):
         """Update the queue controls to match the state of the queueserver."""
+        print(new_status)
         super().update_queue_controls(new_status)
         self.ui.navbar.setVisible(bool(new_status['in_use']))
 
