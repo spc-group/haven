@@ -205,6 +205,7 @@ class FireflyController(QtCore.QObject):
             display_file=ui_dir / "status.py",
             WindowClass=PlanMainWindow,
         )
+        self.actions.status.window_created.connect(self.finalize_status_window)
         # Actions for executing plans
         self.actions.plans = {
             "count": WindowAction(
@@ -255,7 +256,7 @@ class FireflyController(QtCore.QObject):
             text="Scheduling (&BSS)",
             display_file=ui_dir / "bss.py",
             WindowClass=FireflyMainWindow,
-            icon=qta.icon("mdi.calendar-account"),
+            icon=qta.icon("fa5s.calendar"),
         )
         # Action for shoing the IOC start/restart/stop window
         self.actions.iocs = WindowAction(
@@ -310,6 +311,12 @@ class FireflyController(QtCore.QObject):
             self._queue_client.check_queue_status(force=True)
         # Send the current devices to the window
         await action.window.update_devices(self.registry)
+
+    def finalize_status_window(self, action):
+        """Connect up signals that are specific to the voltmeters window."""
+        display = action.window.display_widget()
+        display.ui.bss_modify_button.clicked.connect(self.actions.bss.trigger)
+        # display.details_window_requested.connect
 
     def finalize_voltmeter_window(self, action):
         """Connect up signals that are specific to the voltmeters window."""
