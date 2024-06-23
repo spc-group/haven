@@ -32,7 +32,6 @@ class UndulatorPositioner(PVPositioner):
 
     actuate = Cpt(DerivedSignal, derived_from="parent.start_button", kind="omitted")
     stop_signal = Cpt(DerivedSignal, derived_from="parent.stop_button", kind="omitted")
-    put_complete = 1
     done = Cpt(DerivedSignal, derived_from="parent.done", kind="omitted")
     done_value = DoneStatus.DONE
 
