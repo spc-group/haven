@@ -47,9 +47,9 @@
      - [X] iocs_window_action
    - [X] App needs to pass actions to the window
    - [X] Apps needs to connect queue_status_changed to main_window.update_queue_controls
-** TODO [0/1] Queue button
-   - [ ] App needs to pass queue_status_updated signal down to update_queue_style slot
-** TODO [2/2] Voltmeters
+** DONE [1/1] Queue button
+   - [X] App needs to pass queue_status_updated signal down to update_queue_style slot
+** DONE [2/2] Voltmeters
    - [X] App needs to respond to the voltmeters ``details_window_requested`` signal
    - [X] Move functionality from voltmeter.py into voltmeters.py
 ** TODO [0/2] Camera

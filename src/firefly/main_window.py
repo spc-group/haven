@@ -116,6 +116,9 @@ class FireflyMainWindow(PyDMMainWindow):
         new_length = status['items_in_queue']
         self.ui.queue_length_label.setText(f"({new_length})")
         self.ui.re_label.setText(status['manager_state'])
+        # Notify the display of the new status
+        display = self.display_widget()
+        display.update_queue_status(status)
 
     def open(self, *args, **kwargs):
         widget = super().open(*args, **kwargs)
@@ -357,6 +360,15 @@ class PlanMainWindow(FireflyMainWindow):
                 navbar.addSeparator()
             elif key in queue_control_actions:
                 navbar.addAction(queue_control_actions[key])
+
+    def update_queue_status(self, status):
+        super().update_queue_status(status)
+        # Apply style to the queue button (assuming it's called ``run_button``).
+        display = self.display_widget()
+        try:
+            display.ui.run_button.update_queue_style(status)
+        except AttributeError:
+            pass
 
     def setup_menu_actions(self, actions):
         super().setup_menu_actions(actions=actions)

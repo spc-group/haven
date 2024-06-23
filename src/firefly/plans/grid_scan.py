@@ -114,7 +114,6 @@ class GridScanDisplay(regions_display.RegionsDisplay):
     @asyncSlot(int)
     async def update_regions_slot(self, new_region_num: int):
         await super().update_regions(new_region_num)
-
         # disable snake for the last region and enable the previous regions
         if len(self.regions) > 0:
             self.regions[-1].snake_checkbox.setEnabled(False)

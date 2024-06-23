@@ -108,6 +108,9 @@ class FireflyDisplay(Display):
     def customize_ui(self):
         pass
 
+    def update_queue_status(self, status):
+        pass
+
     def show_message(self, message, timeout=0):
         """Display a message in the status bar."""
         self.status_message_changed.emit(str(message), timeout)

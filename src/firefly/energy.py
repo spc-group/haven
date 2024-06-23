@@ -96,6 +96,9 @@ class EnergyDisplay(display.FireflyDisplay):
         # Submit the item to the queueserver
         self.queue_item_submitted.emit(item)
 
+    def update_queue_status(self, status):
+        self.set_energy_button.update_queue_style(status)
+
     def customize_ui(self):
         self.ui.set_energy_button.clicked.connect(self.set_energy)
         # Set up the combo box with X-ray energies

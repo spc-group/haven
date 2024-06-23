@@ -304,10 +304,12 @@ class FireflyController(QtCore.QObject):
     async def finalize_new_window(self, action):
         """Slot for providing new windows for after a new window is created."""
         action.window.setup_menu_actions(actions=self.actions)        
-        await action.window.update_devices(self.registry)
         self.queue_status_changed.connect(action.window.update_queue_status)
         self.queue_status_changed.connect(action.window.update_queue_controls)
-        self._queue_client.check_queue_status(force=True)
+        if getattr(self, "_queue_client", None) is not None:
+            self._queue_client.check_queue_status(force=True)
+        # Send the current devices to the window
+        await action.window.update_devices(self.registry)
 
     def finalize_voltmeter_window(self, action):
         """Connect up signals that are specific to the voltmeters window."""
