@@ -40,7 +40,7 @@ class QueueButton(QtWidgets.QPushButton):
         elif status["worker_environment_exists"]:
             # Will be added to the queue
             self.setStyleSheet(
-                f"background-color: ({Colors.ADD_TO_QUEUE};\n"
+                f"background-color: {Colors.ADD_TO_QUEUE};\n"
                 f"border-color: {Colors.ADD_TO_QUEUE};\n"
             )
             self.setIcon(qta.icon("fa5s.list"))

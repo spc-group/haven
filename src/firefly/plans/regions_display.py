@@ -61,6 +61,8 @@ class RegionsDisplay(display.FireflyDisplay):
         """Set available components in the motor boxes."""
         await super().update_devices(registry)
         await self.update_component_selector_devices(registry)
+        if hasattr(self.ui, "detectors_list"):
+            await self.ui.detectors_list.update_devices(registry)
 
     async def update_component_selector_devices(self, registry):
         """Update the devices for all the component selectors"""

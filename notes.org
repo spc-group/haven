@@ -13,8 +13,8 @@
    - [ ] Do the number of regions change properly
    - [ ] Can the number of regions be reset
    - [ ] Do the component selector options update properly (update_devices called from QApplication)
-** TODO [0/1] Status window
-   - [ ] Application connects StatusDisplay.bss_window_requested -> app.show_bss_window_action.trigger
+** DONE [1/1] Status window
+   - [X] Application connects StatusDisplay.bss_window_requested -> app.show_bss_window_action.trigger
 ** DONE [2/2] Main window
    - [3/3] Main window needs to respond to the queueserver state
      - [X] Replace ``app.queue_environment_state_changed.connect(self.ui.environment_label.setText)``

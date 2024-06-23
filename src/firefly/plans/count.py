@@ -11,6 +11,11 @@ class CountDisplay(display.FireflyDisplay):
     def customize_ui(self):
         self.ui.run_button.clicked.connect(self.queue_plan)
 
+    async def update_devices(self, registry):
+        """Set available components in the device list."""
+        await super().update_devices(registry)
+        await self.ui.detectors_list.update_devices(registry)
+
     def queue_plan(self, *args, **kwargs):
         """Execute this plan on the queueserver."""
         # Get scan parameters from widgets

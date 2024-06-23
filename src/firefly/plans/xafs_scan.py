@@ -269,6 +269,11 @@ class XafsScanDisplay(display.FireflyDisplay):
         # connect num. of scans with total_time
         self.ui.spinBox_repeat_scan_num.valueChanged.connect(self.update_total_time)
 
+    async def update_devices(self, registry):
+        """Set available components in the device list."""
+        await super().update_devices(registry)
+        await self.ui.detectors_list.update_devices(registry)
+
     def on_region_checkbox(self):
         for region_i in self.regions:
             is_region_i_checked = region_i.region_checkbox.isChecked()
