@@ -49,10 +49,10 @@ def test_merging_dicts():
 
 def test_haven_config_cli(capsys):
     """Test the function used as a CLI way to get config values."""
-    print_config_value(["monochromator.ioc"])
+    print_config_value(["monochromator.prefix"])
     # Check stdout for config value
     captured = capsys.readouterr()
-    assert captured.out == "mono_ioc\n"
+    assert captured.out == "mono_ioc:\n"
 
 
 def test_beamline_connected():

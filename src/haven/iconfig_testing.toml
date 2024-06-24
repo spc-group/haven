@@ -43,7 +43,7 @@ hutch = "C"
 
 [undulator]
 
-ioc = "id_ioc"
+prefix = "id_ioc:"
 
 [monochromator]
 
