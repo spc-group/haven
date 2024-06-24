@@ -2,11 +2,8 @@ import logging
 from typing import Mapping
 
 from ophyd import Component as Cpt
-from ophyd import EpicsMotor, EpicsSignal, EpicsSignalRO
 from ophyd import FormattedComponent as FCpt
-from ophyd import PseudoPositioner, PseudoSingle, PVPositionerPC, PVPositioner, Signal
-from ophyd.ophydobj import OphydObject
-from ophyd.pseudopos import pseudo_position_argument, real_position_argument
+from ophyd import PVPositionerPC
 from pcdsdevices.signal import MultiDerivedSignal
 
 from .._iconfig import load_config
@@ -60,7 +57,9 @@ class EnergyPositioner(PVPositionerPC):
 
     # Individual energy components
     monochromator = FCpt(Monochromator, "{mono_prefix}", labels={"monochromators"})
-    undulator = FCpt(PlanarUndulator, "{undulator_prefix}", labels={"undulator", "xray_source"})
+    undulator = FCpt(
+        PlanarUndulator, "{undulator_prefix}", labels={"undulator", "xray_source"}
+    )
 
     def __init__(
         self,

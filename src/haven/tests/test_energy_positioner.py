@@ -1,8 +1,6 @@
-import time
-
 import pytest
-from ophyd.sim import instantiate_fake_device
 from ophyd import PVPositioner
+from ophyd.sim import instantiate_fake_device
 
 from haven.instrument.energy_positioner import EnergyPositioner, load_energy_positioner
 
@@ -32,7 +30,7 @@ def test_set_energy(positioner):
 
 def test_load_energy_positioner(sim_registry):
     load_energy_positioner()
-    energy = sim_registry['energy']
+    energy = sim_registry["energy"]
     assert isinstance(energy, PVPositioner)
     assert hasattr(energy, "monochromator")
     assert hasattr(energy, "undulator")

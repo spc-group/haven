@@ -4,8 +4,6 @@ from enum import IntEnum
 from ophyd import Component as Cpt
 from ophyd import Device, EpicsSignal, EpicsSignalRO
 
-from .._iconfig import load_config
-from .device import make_device
 from .motor import HavenMotor
 
 log = logging.getLogger(__name__)

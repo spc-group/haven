@@ -3,12 +3,12 @@ import warnings
 
 import qtawesome as qta
 from bluesky_queueserver_api import BPlan
-from qtpy import QtCore, QtWidgets
-from qtpy.QtWidgets import QDialogButtonBox, QVBoxLayout, QFormLayout, QLineEdit
-from xraydb.xraydb import XrayDB
 from ophydregistry import ComponentNotFound
 from pydm.widgets.label import PyDMLabel
 from pydm.widgets.line_edit import PyDMLineEdit
+from qtpy import QtCore, QtWidgets
+from qtpy.QtWidgets import QDialogButtonBox, QFormLayout, QLineEdit, QVBoxLayout
+from xraydb.xraydb import XrayDB
 
 from firefly import display
 from haven import load_config, registry
@@ -18,6 +18,7 @@ log = logging.getLogger(__name__)
 
 class EnergyCalibrationDialog(QtWidgets.QDialog):
     """A dialog box for calibrating the energy."""
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -29,12 +30,11 @@ class EnergyCalibrationDialog(QtWidgets.QDialog):
         self.form_layout = QFormLayout()
         self.layout.addLayout(self.form_layout)
         self.form_layout.addRow(
-            "Energy readback:",
-            PyDMLabel(self, init_channel="haven://energy.readback")
+            "Energy readback:", PyDMLabel(self, init_channel="haven://energy.readback")
         )
         self.form_layout.addRow(
             "Energy setpoint:",
-            PyDMLineEdit(self, init_channel="haven://energy.setpoint")
+            PyDMLineEdit(self, init_channel="haven://energy.setpoint"),
         )
         self.form_layout.addRow(
             "Calibrated energy:",

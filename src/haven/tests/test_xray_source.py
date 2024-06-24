@@ -6,7 +6,9 @@ from haven.instrument.xray_source import PlanarUndulator
 
 @pytest.fixture()
 def undulator():
-    undulator = instantiate_fake_device(PlanarUndulator, prefix="PSS:255ID:", name="undulator")
+    undulator = instantiate_fake_device(
+        PlanarUndulator, prefix="PSS:255ID:", name="undulator"
+    )
     return undulator
 
 
@@ -21,6 +23,7 @@ def test_stop_energy(undulator):
     assert undulator.stop_button.get() == 0
     undulator.stop()
     assert undulator.stop_button.get() == 1
+
 
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman

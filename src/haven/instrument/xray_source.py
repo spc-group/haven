@@ -1,12 +1,8 @@
 import logging
-import warnings
 from enum import IntEnum
 
-from apstools.devices.aps_undulator import ApsUndulator
-from ophyd import EpicsSignal, EpicsSignalRO, DerivedSignal, Component as Cpt, PVPositioner, Device
-
-from .._iconfig import load_config
-from .device import make_device
+from ophyd import Component as Cpt
+from ophyd import DerivedSignal, Device, EpicsSignal, EpicsSignalRO, PVPositioner
 
 log = logging.getLogger(__name__)
 
@@ -50,6 +46,7 @@ class PlanarUndulator(Device):
         undulator = PlanarUndulator("S25ID:USID:", name="undulator")
 
     """
+
     # X-ray spectrum parameters
     energy = Cpt(UndulatorPositioner, "Energy")
     energy_taper = Cpt(UndulatorPositioner, "TaperEnergy")

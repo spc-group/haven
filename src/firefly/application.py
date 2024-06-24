@@ -1,7 +1,7 @@
-import warnings
 import asyncio
 import logging
 import subprocess
+import warnings
 from collections import OrderedDict
 from functools import partial
 from pathlib import Path
@@ -22,7 +22,6 @@ from qtpy.QtWidgets import QAction
 from haven import load_config
 from haven import load_instrument as load_haven_instrument
 from haven import registry
-
 from haven.exceptions import ComponentNotFound, InvalidConfiguration
 from haven.instrument.device import titelize
 

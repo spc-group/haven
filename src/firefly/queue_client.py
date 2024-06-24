@@ -9,7 +9,6 @@ from qasync import asyncSlot
 from qtpy.QtCore import QObject, QTimer, Signal
 
 from haven import load_config
-
 from haven.exceptions import InvalidConfiguration
 
 log = logging.getLogger()
