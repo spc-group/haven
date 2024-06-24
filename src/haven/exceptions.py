@@ -17,24 +17,6 @@ class GainOverflow(RuntimeError):
     ...
 
 
-# class ComponentNotFound(IndexError):
-#     """Registry looked for a component, but it wasn't registered."""
-
-#     ...
-
-
-# class MultipleComponentsFound(IndexError):
-#     """Registry looked for a single component, but found more than one."""
-
-#     ...
-
-
-# class InvalidComponentLabel(TypeError):
-#     """Registry looked for a component, but the label provided is not vlaid."""
-
-#     ...
-
-
 class FileNotWritable(IOError):
     """Output file is available but does not have write intent."""
 
@@ -71,7 +53,13 @@ class IOCTimeout(RuntimeError):
     ...
 
 
-class UnknownDeviceConfiguration(ValueError):
+class InvalidConfiguration(ValueError):
+    """The configuration files for Haven are missing keys."""
+
+    ...
+
+
+class UnknownDeviceConfiguration(InvalidConfiguration):
     """The configuration for a device does not match the known options."""
 
     ...

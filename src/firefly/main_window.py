@@ -5,7 +5,7 @@ from pathlib import Path
 import qtawesome as qta
 from pydm import data_plugins
 from pydm.main_window import PyDMMainWindow
-from qtpy import QtCore, QtGui, QtWidgets
+from qtpy import QtGui, QtWidgets
 
 from haven import load_config
 
@@ -93,6 +93,12 @@ class FireflyMainWindow(PyDMMainWindow):
         _label = QtWidgets.QLabel()
         _label.setText("Queue:")
         bar.addPermanentWidget(_label)
+        self.ui.queue_length_label = QtWidgets.QLabel()
+        self.ui.queue_length_label.setToolTip(
+            "The length of the queue, not including the running plan."
+        )
+        self.ui.queue_length_label.setText("(??)")
+        bar.addPermanentWidget(self.ui.queue_length_label)
         self.ui.environment_label = QtWidgets.QLabel()
         self.ui.environment_label.setToolTip(
             "The current state of the queue server environment."
@@ -108,6 +114,7 @@ class FireflyMainWindow(PyDMMainWindow):
         bar.addPermanentWidget(self.ui.re_label)
         # Connect signals to the status bar
         app.queue_environment_state_changed.connect(self.ui.environment_label.setText)
+        app.queue_length_changed.connect(self.update_queue_length)
         app.queue_re_state_changed.connect(self.ui.re_label.setText)
         # Log viewer window
         if hasattr(app, "show_logs_window_action"):
@@ -124,6 +131,7 @@ class FireflyMainWindow(PyDMMainWindow):
         self.ui.menubar.addAction(self.ui.queue_menu.menuAction())
         for action in app.queue_action_group.actions():
             self.ui.queue_menu.addAction(action)
+        self.ui.queue_menu.addAction(app.queue_stop_action)
         self.ui.queue_menu.addSeparator()
         # Queue settings for the queue client
         self.ui.queue_menu.addAction(app.launch_queuemonitor_action)
@@ -218,6 +226,9 @@ class FireflyMainWindow(PyDMMainWindow):
         self.ui.menuView.addAction(app.show_status_window_action)
         self.ui.menuSetup.addAction(app.show_bss_window_action)
         self.ui.menuSetup.addAction(app.show_iocs_window_action)
+        # Make tooltips show up for menu actions
+        for menu in [self.ui.menuSetup, self.ui.detectors_menu, self.ui.queue_menu]:
+            menu.setToolTipsVisible(True)
 
     def show_status(self, message, timeout=0):
         """Show a message in the status bar."""
@@ -236,6 +247,9 @@ class FireflyMainWindow(PyDMMainWindow):
         if data_plugins.is_read_only():
             title += " [Read Only Mode]"
         self.setWindowTitle(title)
+
+    def update_queue_length(self, new_length: int):
+        self.ui.queue_length_label.setText(f"({new_length})")
 
 
 class PlanMainWindow(FireflyMainWindow):
@@ -260,7 +274,7 @@ class PlanMainWindow(FireflyMainWindow):
         navbar.addAction(app.resume_runengine_action)
         navbar.addAction(app.stop_runengine_action)
         navbar.addAction(app.abort_runengine_action)
-        navbar.addAction(app.halt_runengine_action)
+        # navbar.addAction(app.halt_runengine_action)
 
     def customize_ui(self):
         super().customize_ui()
@@ -269,14 +283,7 @@ class PlanMainWindow(FireflyMainWindow):
         from .application import FireflyApplication
 
         app = FireflyApplication.instance()
-        app.queue_length_changed.connect(self.set_navbar_visibility)
-
-    @QtCore.Slot(int)
-    def set_navbar_visibility(self, queue_length: int):
-        """Determine whether to make the navbar be visible."""
-        log.debug(f"Setting navbar visibility. Queue length: {queue_length}")
-        navbar = self.ui.navbar
-        navbar.setVisible(queue_length > 0)
+        app.queue_in_use_changed.connect(self.ui.navbar.setVisible)
 
 
 # -----------------------------------------------------------------------------

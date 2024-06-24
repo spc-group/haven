@@ -7,12 +7,11 @@ from qtpy.QtGui import QDoubleValidator
 from firefly import display
 from firefly.application import FireflyApplication
 from firefly.component_selector import ComponentSelector
-from firefly.plans.util import is_valid_value, time_converter
 
 log = logging.getLogger()
 
 
-class LineScanRegion:
+class MotorRegion:
     def __init__(self):
         self.setup_ui()
 
@@ -23,20 +22,14 @@ class LineScanRegion:
         self.motor_box = ComponentSelector()
         self.layout.addWidget(self.motor_box)
 
-        # Second item, start point
-        self.start_line_edit = QtWidgets.QLineEdit()
-        self.start_line_edit.setValidator(QDoubleValidator())  # only takes floats
-        self.start_line_edit.setPlaceholderText("Start…")
-        self.layout.addWidget(self.start_line_edit)
-
-        # Third item, stop point
-        self.stop_line_edit = QtWidgets.QLineEdit()
-        self.stop_line_edit.setValidator(QDoubleValidator())  # only takes floats
-        self.stop_line_edit.setPlaceholderText("Stop…")
-        self.layout.addWidget(self.stop_line_edit)
+        # Second item, position point
+        self.position_line_edit = QtWidgets.QLineEdit()
+        self.position_line_edit.setValidator(QDoubleValidator())  # only takes floats
+        self.position_line_edit.setPlaceholderText("Position…")
+        self.layout.addWidget(self.position_line_edit)
 
 
-class LineScanDisplay(display.FireflyDisplay):
+class MoveMotorDisplay(display.FireflyDisplay):
     default_num_regions = 1
 
     def customize_ui(self):
@@ -48,15 +41,15 @@ class LineScanDisplay(display.FireflyDisplay):
         self.ui.num_motor_spin_box.lineEdit().setReadOnly(True)
         self.ui.num_motor_spin_box.valueChanged.connect(self.update_regions)
 
-        # Connect signals for executing the plan
         self.ui.run_button.clicked.connect(self.queue_plan)
 
-        # when selections of detectors changed update_total_time
-        self.ui.detectors_list.selectionModel().selectionChanged.connect(
-            self.update_total_time
-        )
-        self.ui.spinBox_repeat_scan_num.valueChanged.connect(self.update_total_time)
-        self.ui.scan_pts_spin_box.valueChanged.connect(self.update_total_time)
+    def time_converter(self, total_seconds):
+        hours = round(total_seconds // 3600)
+        minutes = round((total_seconds % 3600) // 60)
+        seconds = round(total_seconds % 60)
+        if total_seconds == -1:
+            hours, minutes, seconds = "N/A", "N/A", "N/A"
+        return hours, minutes, seconds
 
     def clearLayout(self, layout):
         if layout is not None:
@@ -74,7 +67,7 @@ class LineScanDisplay(display.FireflyDisplay):
 
     def add_regions(self, num=1):
         for i in range(num):
-            region = LineScanRegion()
+            region = MotorRegion()
             self.ui.regions_layout.addLayout(region.layout)
             # Save it to the list
             self.regions.append(region)
@@ -99,108 +92,48 @@ class LineScanDisplay(display.FireflyDisplay):
         elif diff_region_num > 0:
             self.add_regions(diff_region_num)
 
-    def update_total_time(self):
-        # get default detector time
-        app = FireflyApplication.instance()
-        detectors = self.ui.detectors_list.selected_detectors()
-        detectors = [app.registry[name] for name in detectors]
-        detectors = [det for det in detectors if hasattr(det, "default_time_signal")]
-
-        # to prevent detector list is empty
-        try:
-            detector_time = max([det.default_time_signal.get() for det in detectors])
-        except ValueError:
-            detector_time = float("nan")
-
-        # get scan num points to calculate total time
-        total_time_per_scan = self.time_calculate_method(detector_time)
-
-        # calculate time for each scan
-        hrs, mins, secs = time_converter(total_time_per_scan)
-        self.ui.label_hour_scan.setText(str(hrs))
-        self.ui.label_min_scan.setText(str(mins))
-        self.ui.label_sec_scan.setText(str(secs))
-
-        # calculate time for entire plan
-        num_scan_repeat = self.ui.spinBox_repeat_scan_num.value()
-        total_time = num_scan_repeat * total_time_per_scan
-        hrs_total, mins_total, secs_total = time_converter(total_time)
-
-        self.ui.label_hour_total.setText(str(hrs_total))
-        self.ui.label_min_total.setText(str(mins_total))
-        self.ui.label_sec_total.setText(str(secs_total))
-
-    def time_calculate_method(self, detector_time):
-        num_points = self.ui.scan_pts_spin_box.value()
-        total_time_per_scan = detector_time * num_points
-        return total_time_per_scan
-
     def get_scan_parameters(self):
-        # Get scan parameters from widgets
-        detectors = self.ui.detectors_list.selected_detectors()
-        num_points = self.ui.scan_pts_spin_box.value()
-        repeat_scan_num = int(self.ui.spinBox_repeat_scan_num.value())
-
-        # Get paramters from each rows of line regions:
-        motor_lst, start_lst, stop_lst = [], [], []
+        # get paramters from each rows of line regions:
+        motor_lst, position_lst = [], []
         for region_i in self.regions:
             motor_lst.append(region_i.motor_box.current_component().name)
-            start_lst.append(float(region_i.start_line_edit.text()))
-            stop_lst.append(float(region_i.stop_line_edit.text()))
+            position_lst.append(float(region_i.position_line_edit.text()))
 
         motor_args = [
-            values
-            for motor_i in zip(motor_lst, start_lst, stop_lst)
-            for values in motor_i
+            values for motor_i in zip(motor_lst, position_lst) for values in motor_i
         ]
 
-        # Get meta data info
+        # get meta data info
         md = {
             "sample": self.ui.lineEdit_sample.text(),
             "purpose": self.ui.lineEdit_purpose.text(),
-            "notes": self.ui.textEdit_notes.toPlainText(),
         }
-        # Only include metadata that isn't an empty string
-        md = {key: val for key, val in md.items() if is_valid_value(val)}
 
-        return detectors, num_points, motor_args, repeat_scan_num, md
+        return motor_args, md
 
     def queue_plan(self, *args, **kwargs):
         """Execute this plan on the queueserver."""
-        detectors, num_points, motor_args, repeat_scan_num, md = (
-            self.get_scan_parameters()
-        )
+        motor_args, md = self.get_scan_parameters()
 
         if self.ui.relative_scan_checkbox.isChecked():
-            if self.ui.log_scan_checkbox.isChecked():
-                scan_type = "rel_log_scan"
-            else:
-                scan_type = "rel_scan"
+            scan_type = "mvr"
         else:
-            if self.ui.log_scan_checkbox.isChecked():
-                scan_type = "log_scan"
-            else:
-                scan_type = "scan"
+            scan_type = "mv"
 
         # # Build the queue item
         item = BPlan(
             scan_type,
-            detectors,
             *motor_args,
-            num=num_points,
-            # per_step=None,
             md=md,
         )
 
         # Submit the item to the queueserver
         app = FireflyApplication.instance()
         log.info("Added line scan() plan to queue.")
-        # repeat scans
-        for i in range(repeat_scan_num):
-            app.add_queue_item(item)
+        app.add_queue_item(item)
 
     def ui_filename(self):
-        return "plans/line_scan.ui"
+        return "plans/move_motor_window.ui"
 
 
 # -----------------------------------------------------------------------------
