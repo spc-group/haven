@@ -4,7 +4,6 @@ from bluesky_queueserver_api import BPlan
 from qtpy import QtWidgets
 from qtpy.QtGui import QDoubleValidator
 
-from firefly import display
 from firefly.component_selector import ComponentSelector
 from firefly.plans import regions_display
 

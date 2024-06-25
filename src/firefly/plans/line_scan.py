@@ -1,4 +1,3 @@
-import asyncio
 import logging
 
 from bluesky_queueserver_api import BPlan
@@ -50,7 +49,6 @@ class LineScanDisplay(regions_display.RegionsDisplay):
         )
         self.ui.spinBox_repeat_scan_num.valueChanged.connect(self.update_total_time)
         self.ui.scan_pts_spin_box.valueChanged.connect(self.update_total_time)
-    
 
     def queue_plan(self, *args, **kwargs):
         """Execute this plan on the queueserver."""

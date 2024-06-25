@@ -7,7 +7,6 @@ from enum import IntEnum
 from functools import partial
 from pathlib import Path
 from typing import Sequence
-import warnings
 
 import numpy as np
 import pydm
@@ -17,9 +16,9 @@ from matplotlib.colors import TABLEAU_COLORS
 from pydm.widgets import PyDMChannel, PyDMEmbeddedDisplay
 from qtpy import uic
 from qtpy.QtCore import Qt, Signal
-from qtpy.QtWidgets import QWidget, QApplication
-import haven
+from qtpy.QtWidgets import QApplication, QWidget
 
+import haven
 from firefly import display
 
 np.set_printoptions(threshold=sys.maxsize)
@@ -343,66 +342,6 @@ class ROIEmbeddedDisplay(PyDMEmbeddedDisplay):
 
     def leaveEvent(self, event=None):
         self.hovered.emit(False)
-
-
-# class XrfTriggers(QObject):
-#     accumulate: bool = False
-
-#     # Signals
-#     start_all = Signal(int)  # is_started
-#     start_erase = Signal(int)  # (is_started)
-
-#     def __init__(self, device, *args, **kwargs):
-#         self.device = device
-#         super().__init__(*args, **kwargs)
-#         # self.setup_trigger_channels()
-
-#     def set_accumulate(self, accumulate):
-#         self.accumulate = accumulate
-
-# def setup_trigger_channels(self):
-#     # Set up a channel for starting detector acquisition
-#     device = self.device
-#     self.start_channel = PyDMChannel(
-#         address=f"haven://{device.name}.acquire",
-#         value_signal=self.start_all,
-#     )
-#     self.start_channel.connect()
-#     self.start_erase_channel = PyDMChannel(
-#         address=f"haven://{device.name}.acquire",
-#         value_signal=self.start_erase,
-#     )
-#     self.start_erase_channel.connect()
-#     # This one gets (dis)connected in response to the continuous button
-#     self.acquiring_channel = PyDMChannel(
-#         address=f"haven://{device.name}.acquiring",
-#         value_slot=self.trigger_next,
-#     )
-
-# def trigger_continuously(self, is_started):
-#     if is_started:
-#         self.acquiring_channel.connect()
-#         # Trigger once to start the process
-#         self.trigger_once(is_started=is_started)
-#     else:
-#         self.acquiring_channel.disconnect()
-
-# def trigger_next(self, acquire_state):
-#     """Check if acquiring is done and start the next frame.
-
-#     Mostly used for continuous acquisition.
-
-#     """
-#     is_started = acquire_state == AcquireStates.DONE
-#     self.trigger_once(is_started=is_started)
-
-# def trigger_once(self, is_started):
-#     log.debug("Triggering once")
-#     if self.accumulate:
-#         start_signal = self.start_all
-#     else:
-#         start_signal = self.start_erase
-#     start_signal.emit(1)
 
 
 class XRFDetectorDisplay(display.FireflyDisplay):

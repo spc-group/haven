@@ -24,7 +24,6 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-
 log = logging.getLogger(__name__)
 
 

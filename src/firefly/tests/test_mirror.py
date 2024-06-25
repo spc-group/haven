@@ -53,20 +53,6 @@ def test_mirror_caqtdm(display):
     assert ui_file.split("/")[-1] == "HHLM_4.ui"
 
 
-if __name__ == "__main__":
-    display = MirrorDisplay()
-    qtbot.addWidget(display)
-    del display
-
-    test_mirror_caqtdm(display)
-
-    display = MirrorDisplay()
-    qtbot.addWidget(display)
-
-    test_mirror_init(display)
-
-
-
 def test_bendable_mirror_caqtdm(hhl_bendable_mirror):
     mirror = hhl_bendable_mirror
     display = MirrorDisplay(macros={"DEVICE": mirror.name})

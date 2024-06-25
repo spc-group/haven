@@ -1,6 +1,6 @@
-import pytest
 from unittest import mock
 
+import pytest
 from apstools.devices.aps_undulator import ApsUndulator
 from bluesky_queueserver_api import BPlan
 from ophyd.sim import make_fake_device

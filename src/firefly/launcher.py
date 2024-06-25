@@ -7,14 +7,12 @@ import sys
 import time
 from pathlib import Path
 
+from pydm import config
+from pydm.utilities import setup_renderer
 from qasync import QEventLoop
 from qtpy import QtCore
 from qtpy.QtGui import QPixmap
-from qtpy.QtWidgets import QSplashScreen, QApplication, QStyleFactory
-
-
-from pydm import config
-from pydm.utilities import setup_renderer
+from qtpy.QtWidgets import QApplication, QSplashScreen, QStyleFactory
 
 import haven
 from firefly.controller import FireflyController
@@ -171,13 +169,12 @@ def main(default_fullscreen=False, default_display="status"):
 
     # Define devices on the beamline (slow!)
     controller.setup_instrument(load_instrument=not pydm_args.no_instrument)
-    
-    
+
     async def run_app():
         # Keep an event to know when the app has closed
         app_close_event = asyncio.Event()
         app.aboutToQuit.connect(app_close_event.set)
-        # Start any async clients that the controller needs 
+        # Start any async clients that the controller needs
         controller.start()
         # Get rid of the splash screen and show the first window
         splash.close()

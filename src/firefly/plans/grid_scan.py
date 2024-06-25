@@ -1,7 +1,7 @@
 import logging
 
-from qasync import asyncSlot
 from bluesky_queueserver_api import BPlan
+from qasync import asyncSlot
 from qtpy import QtWidgets
 from qtpy.QtGui import QDoubleValidator
 

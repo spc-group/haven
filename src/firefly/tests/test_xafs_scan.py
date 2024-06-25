@@ -1,8 +1,8 @@
 from pprint import pprint
 from unittest import mock
 
-import pytest
 import numpy as np
+import pytest
 from bluesky_queueserver_api import BPlan
 from qtpy import QtCore
 

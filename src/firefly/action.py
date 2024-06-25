@@ -1,17 +1,16 @@
 import logging
 from typing import Mapping
-from pathlib import Path
 
 from qtpy.QtCore import Signal
-from qtpy.QtGui import QKeySequence, QIcon
+from qtpy.QtGui import QIcon, QKeySequence
 from qtpy.QtWidgets import QAction, QMainWindow
-
 
 log = logging.getLogger(__name__)
 
 
 class Action(QAction):
     """An action with a few useful setup shortcuts."""
+
     window: QMainWindow = None
 
     def __init__(
@@ -35,9 +34,9 @@ class Action(QAction):
             self.setIcon(icon)
 
 
-
 class WindowAction(Action):
     """An action that opens a desired window when triggered."""
+
     window_created = Signal(QAction)
     window_shown = Signal(QAction)
 
@@ -53,7 +52,9 @@ class WindowAction(Action):
         *args,
         **kwargs,
     ):
-        super().__init__(name=name, text=text, shortcut=shortcut, icon=icon, *args, **kwargs)
+        super().__init__(
+            name=name, text=text, shortcut=shortcut, icon=icon, *args, **kwargs
+        )
         self.macros = macros
         self.display_file = display_file
         self.WindowClass = WindowClass
@@ -78,11 +79,11 @@ class WindowAction(Action):
         # window.update_tools_menu()
         kwargs = {}
         if self.macros is not None:
-            kwargs['macros'] = self.macros
+            kwargs["macros"] = self.macros
         window.open(str(self.display_file.resolve()), **kwargs)
         self.window_created.emit(self)
         # Properly remove the window if it's closed
-        window.destroyed.connect(self.forget_window)     
+        window.destroyed.connect(self.forget_window)
 
 
 class ActionsRegistry:

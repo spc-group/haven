@@ -1,15 +1,13 @@
 from unittest.mock import MagicMock
-from pathlib import Path
 
 import pytest
 from ophyd import Device
 from ophyd.sim import make_fake_device
 from ophydregistry import Registry
-from haven.instrument import motor
+
 import firefly
 from firefly.action import WindowAction
 from firefly.controller import FireflyController
-from firefly.main_window import FireflyMainWindow
 from firefly.queue_client import QueueClient
 
 
@@ -90,12 +88,10 @@ def tardis(sim_registry):
 def test_prepare_generic_device_windows(controller, tardis, mocker):
     """Check for preparing devices with the ``show_device_window`` slot."""
     # mocker.patch.object(controller, "show_device_window", autospec=True)
-    actions = controller.device_actions(
-        device_label="tardis", display_file="tardis.ui"
-    )
+    actions = controller.device_actions(device_label="tardis", display_file="tardis.ui")
     # Check that actions were created
     assert "my_tardis" in actions.keys()
-    assert isinstance(actions['my_tardis'], WindowAction)
+    assert isinstance(actions["my_tardis"], WindowAction)
 
 
 def test_load_instrument_registry(controller, qtbot, monkeypatch):
@@ -111,9 +107,11 @@ def test_load_instrument_registry(controller, qtbot, monkeypatch):
     # Make sure we loaded the instrument
     assert loader.called
 
+
 ###########################################################
 # Tests for connecting the queue client and the controller
 ###########################################################
+
 
 def test_queue_stopped(controller):
     """Does the action respond to changes in the queue stopped pending?"""
@@ -149,7 +147,7 @@ async def test_ion_chamber_details_window(qtbot, sim_registry, I0, controller):
 
     """
     vm_action = controller.actions.voltmeter
-    ic_action = controller.actions.ion_chambers['I0']
+    ic_action = controller.actions.ion_chambers["I0"]
     # Create the ion chamber display
     vm_action = controller.actions.voltmeter
     with qtbot.waitSignal(vm_action.window_shown, timeout=1):
@@ -161,6 +159,7 @@ async def test_ion_chamber_details_window(qtbot, sim_registry, I0, controller):
     details_button = vm_display._ion_chamber_rows[0].details_button
     with qtbot.waitSignal(ic_action.window_shown, timeout=1000):
         details_button.click()
+
 
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman

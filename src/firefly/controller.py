@@ -1,21 +1,18 @@
-import asyncio
 import logging
 import subprocess
 from collections import OrderedDict
 from functools import partial
 from pathlib import Path
-from typing import Mapping, Sequence
 
 import pydm
 import pyqtgraph as pg
 import qtawesome as qta
-from qasync import asyncSlot
 from ophydregistry import Registry
-from pydm.utilities.stylesheet import apply_stylesheet
+from qasync import asyncSlot
 from qtpy import QtCore, QtWidgets
 from qtpy.QtCore import Signal
-from qtpy.QtGui import QKeySequence, QIcon
-from qtpy.QtWidgets import QAction, QMainWindow
+from qtpy.QtGui import QKeySequence
+from qtpy.QtWidgets import QAction
 
 from haven import load_config
 from haven import load_instrument as load_haven_instrument
@@ -23,9 +20,9 @@ from haven import registry
 from haven.exceptions import ComponentNotFound, InvalidConfiguration
 from haven.instrument.device import titelize
 
+from .action import Action, ActionsRegistry, WindowAction
 from .main_window import FireflyMainWindow, PlanMainWindow
 from .queue_client import QueueClient, queueserver_api
-from .action import WindowAction, ActionsRegistry, Action
 
 generator = type((x for x in []))
 
@@ -196,7 +193,7 @@ class FireflyController(QtCore.QObject):
             text="Filters",
             display_file=ui_dir / "filters.py",
             WindowClass=FireflyMainWindow,
-            icon=qta.icon("mdi.air-filter")
+            icon=qta.icon("mdi.air-filter"),
         )
         # Action for showing the beamline status window
         self.actions.status = WindowAction(
@@ -296,7 +293,7 @@ class FireflyController(QtCore.QObject):
     @asyncSlot(QAction)
     async def finalize_new_window(self, action):
         """Slot for providing new windows for after a new window is created."""
-        action.window.setup_menu_actions(actions=self.actions)        
+        action.window.setup_menu_actions(actions=self.actions)
         self.queue_status_changed.connect(action.window.update_queue_status)
         self.queue_status_changed.connect(action.window.update_queue_controls)
         if getattr(self, "_queue_client", None) is not None:
@@ -312,6 +309,7 @@ class FireflyController(QtCore.QObject):
 
     def finalize_voltmeter_window(self, action):
         """Connect up signals that are specific to the voltmeters window."""
+
         def launch_ion_chamber_window(ic_name):
             action = self.actions.ion_chambers[ic_name]
             action.trigger()
@@ -470,7 +468,7 @@ class FireflyController(QtCore.QObject):
             for device in devices
         }
         return actions
-    
+
     def start_queue_client(self):
         try:
             self._queue_client.start()
@@ -500,7 +498,9 @@ class FireflyController(QtCore.QObject):
         if client is None:
             client = QueueClient(api=api)
         # self.queue_open_environment_action.triggered.connect(client.open_environment)
-        self.actions.queue_settings['open_environment'].triggered.connect(client.open_environment)
+        self.actions.queue_settings["open_environment"].triggered.connect(
+            client.open_environment
+        )
         self._queue_client = client
         # Connect actions to slots for controlling the queueserver
         self.actions.queue_controls["pause"].triggered.connect(
@@ -511,7 +511,9 @@ class FireflyController(QtCore.QObject):
         )
         self.actions.queue_controls["start"].triggered.connect(client.start_queue)
         self.actions.queue_controls["resume"].triggered.connect(client.resume_runengine)
-        self.actions.queue_controls["stop_runengine"].triggered.connect(client.stop_runengine)
+        self.actions.queue_controls["stop_runengine"].triggered.connect(
+            client.stop_runengine
+        )
         self.actions.queue_controls["halt"].triggered.connect(client.halt_runengine)
         self.actions.queue_controls["abort"].triggered.connect(client.abort_runengine)
         self.actions.queue_controls["stop_queue"].triggered.connect(client.stop_queue)
@@ -523,19 +525,25 @@ class FireflyController(QtCore.QObject):
         # Connect signals/slots for queueserver state changes
         client.status_changed.connect(self.queue_status_changed)
         client.in_use_changed.connect(self.queue_in_use_changed)
-        client.autostart_changed.connect(self.actions.queue_settings['autostart'].setChecked)
+        client.autostart_changed.connect(
+            self.actions.queue_settings["autostart"].setChecked
+        )
         client.environment_opened.connect(self.queue_environment_opened)
         client.environment_opened.connect(self.queue_environment_opened)
         self.queue_environment_opened.connect(self.set_open_environment_action_state)
         client.environment_state_changed.connect(self.queue_environment_state_changed)
         client.manager_state_changed.connect(self.queue_manager_state_changed)
         client.re_state_changed.connect(self.queue_re_state_changed)
-        client.queue_stop_changed.connect(self.actions.queue_controls['stop_queue'].setChecked)
+        client.queue_stop_changed.connect(
+            self.actions.queue_controls["stop_queue"].setChecked
+        )
         client.devices_changed.connect(self.update_devices_allowed)
-        self.actions.queue_settings['autostart'].toggled.connect(
+        self.actions.queue_settings["autostart"].toggled.connect(
             self.check_queue_status_action.trigger
         )
-        self.actions.queue_settings['autostart'].toggled.connect(client.toggle_autostart)
+        self.actions.queue_settings["autostart"].toggled.connect(
+            client.toggle_autostart
+        )
         return client
 
     def start(self):
@@ -562,19 +570,19 @@ class FireflyController(QtCore.QObject):
             # Unknown state, no button should work
             enabled_signals = []
         elif re_state == "idle":
-            enabled_signals = [queue_actions['start']]
+            enabled_signals = [queue_actions["start"]]
         elif re_state == "paused":
             enabled_signals = [
-                queue_actions['stop_runengine'],
-                queue_actions['resume'],
-                queue_actions['halt'],
-                queue_actions['abort'],
+                queue_actions["stop_runengine"],
+                queue_actions["resume"],
+                queue_actions["halt"],
+                queue_actions["abort"],
                 queue_actions["stop_queue"],
             ]
         elif re_state == "running":
             enabled_signals = [
-                queue_actions['pause'],
-                queue_actions['pause_now'],
+                queue_actions["pause"],
+                queue_actions["pause_now"],
                 queue_actions["stop_queue"],
             ]
         else:
@@ -596,7 +604,7 @@ class FireflyController(QtCore.QObject):
     @QtCore.Slot(bool)
     def set_open_environment_action_state(self, is_open: bool):
         """Update the readback value for opening the queueserver environment."""
-        action = self.actions.queue_settings['open_environment']
+        action = self.actions.queue_settings["open_environment"]
         if action is not None:
             action.blockSignals(True)
             action.setChecked(is_open)

@@ -2,8 +2,8 @@ import logging
 
 import qtawesome as qta
 from pydm.widgets import PyDMByteIndicator, PyDMPushButton
-from qtpy.QtWidgets import QHBoxLayout, QSizePolicy
 from qtpy.QtCore import Signal
+from qtpy.QtWidgets import QHBoxLayout, QSizePolicy
 
 from firefly import display
 from haven import registry

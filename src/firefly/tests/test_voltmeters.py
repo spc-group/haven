@@ -1,8 +1,8 @@
 import pytest
 from bluesky_queueserver_api import BPlan
-from qtpy import QtWidgets
 from pydm import widgets as PyDMWidgets
 from pydm.widgets.analog_indicator import PyDMAnalogIndicator
+from qtpy import QtWidgets
 
 import haven
 from firefly.voltmeters import VoltmetersDisplay

@@ -1,9 +1,9 @@
-import pytest
 from unittest import mock
 
 import numpy as np
 import pydm
 import pyqtgraph
+import pytest
 
 from firefly.area_detector_viewer import AreaDetectorViewerDisplay
 

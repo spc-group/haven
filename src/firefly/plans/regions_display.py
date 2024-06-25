@@ -9,7 +9,7 @@ from firefly.plans.util import is_valid_value, time_converter
 log = logging.getLogger()
 
 
-class RegionBase():
+class RegionBase:
     def __init__(self, line_label: str = ""):
         self.line_label = line_label
         self.setup_ui()
@@ -38,6 +38,7 @@ class RegionsDisplay(display.FireflyDisplay):
       item.
 
     """
+
     default_num_regions = 1
     Region = RegionBase
 
@@ -112,7 +113,7 @@ class RegionsDisplay(display.FireflyDisplay):
     @asyncSlot(int)
     async def update_regions_slot(self, new_region_num):
         return await self.update_regions(new_region_num)
-    
+
     async def update_regions(self, new_region_num: int):
         """Adjust regions from the scan params layout to reach
         *new_region_num*.

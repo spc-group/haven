@@ -1,17 +1,23 @@
-import json
 import logging
-from typing import Mapping, Optional, Sequence
 from functools import partial
+from typing import Sequence
 
-from qasync import asyncSlot
 import qtawesome as qta
 from bluesky_queueserver_api import BPlan
 from pydm.widgets import PyDMLabel, PyDMPushButton
 from pydm.widgets.analog_indicator import PyDMAnalogIndicator
 from pydm.widgets.display_format import DisplayFormat
-from qtpy.QtWidgets import QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QCheckBox, QSpacerItem, QSizePolicy
-from qtpy.QtCore import Signal, Qt
-from qtpy.QtGui import QFont
+from qasync import asyncSlot
+from qtpy.QtCore import Qt, Signal
+from qtpy.QtWidgets import (
+    QCheckBox,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QSizePolicy,
+    QSpacerItem,
+    QVBoxLayout,
+)
 
 import haven
 from firefly import display
@@ -95,6 +101,7 @@ class VoltmetersDisplay(display.FireflyDisplay):
 
 class Row:
     """An row in the voltmeters display for a single ion chamber's signal."""
+
     def __init__(self, parent=None, *args, number: int, ion_chamber):
         self.parent = parent
         self.number = number
@@ -114,15 +121,13 @@ class Row:
         device_name = self.device.name
         # Description label
         self.name_label = PyDMLabel(
-            parent=self.parent,
-            init_channel=f"haven://{device_name}.description"
+            parent=self.parent, init_channel=f"haven://{device_name}.description"
         )
-        self.name_label.setStyleSheet("font: 12pt \"Sans Serif\";\nfont-weight: bold;")
+        self.name_label.setStyleSheet('font: 12pt "Sans Serif";\nfont-weight: bold;')
         self.column_layouts[0].addWidget(self.name_label)
         # Analog indicator
         self.voltage_indicator = PyDMAnalogIndicator(
-            parent=self.parent,
-            init_channel=f"haven://{device_name}.voltmeter.volts"
+            parent=self.parent, init_channel=f"haven://{device_name}.voltmeter.volts"
         )
         self.voltage_indicator.showValue = False
         self.voltage_indicator.limitsFromChannel = False
@@ -145,10 +150,12 @@ class Row:
             parent=self.parent,
             init_channel=f"haven://{device_name}.voltmeter.volts",
         )
-        self.voltage_label.setStyleSheet("font: 12pt \"Sans Serif\";\nfont-weight: bold;")
+        self.voltage_label.setStyleSheet('font: 12pt "Sans Serif";\nfont-weight: bold;')
         self.voltage_label_layout.addWidget(self.voltage_label)
         self.voltage_unit_label = QLabel(parent=self.parent)
-        self.voltage_unit_label.setStyleSheet("font: 12pt \"Sans Serif\";\nfont-weight: bold;")
+        self.voltage_unit_label.setStyleSheet(
+            'font: 12pt "Sans Serif";\nfont-weight: bold;'
+        )
         self.voltage_unit_label.setText("V")
         self.voltage_label_layout.addWidget(self.voltage_unit_label)
         self.voltage_label_layout.addItem(HSpacer())
@@ -217,13 +224,19 @@ class Row:
 
 
 class VSpacer(QSpacerItem):
-    def __init__(self, w=40, h=20, hData=QSizePolicy.Expanding, vData=QSizePolicy.Minimum):
+    def __init__(
+        self, w=40, h=20, hData=QSizePolicy.Expanding, vData=QSizePolicy.Minimum
+    ):
         super().__init__(w, h, hData, vData)
 
+
 class HSpacer(QSpacerItem):
-    def __init__(self, w=40, h=20, hData=QSizePolicy.Expanding, vData=QSizePolicy.Minimum):
+    def __init__(
+        self, w=40, h=20, hData=QSizePolicy.Expanding, vData=QSizePolicy.Minimum
+    ):
         super().__init__(w, h, hData, vData)
-    
+
+
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov

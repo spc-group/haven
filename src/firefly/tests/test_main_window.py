@@ -1,8 +1,5 @@
 import pytest
-
 from qtpy.QtWidgets import QAction
-from ophyd.sim import make_fake_device
-from haven.instrument import motor
 
 from firefly.controller import ActionsRegistry
 from firefly.main_window import FireflyMainWindow, PlanMainWindow
