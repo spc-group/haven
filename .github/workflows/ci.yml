@@ -52,7 +52,7 @@ jobs:
     - name: Haven tests with pytest in Xvfb
       run: xvfb-run python -m pytest src/haven -vv --timeout=30
     - name: Firefly tests with pytest in Xvfb
-      run: xvfb-run python -m pytest --ignore src/firefly/tests/test_area_detector_display.py --ignore src/firefly/tests/test_xrf_detector_display.py src/firefly -vv --timeout=30      
+      run: xvfb-run python -m pytest src/firefly -vv --timeout=30
     - name: Reporting linting
       run: |
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics	
