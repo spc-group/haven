@@ -292,14 +292,6 @@ class FireflyController(QtCore.QObject):
             shortcut="Ctrl+E",
             icon=qta.icon("mdi.sine-wave"),
         )
-        # Launch camera overview
-        self.actions.camera_overview = WindowAction(
-            name="show_cameras_window_action",
-            text="All Cameras",
-            display_file=ui_dir / "cameras.py",
-            WindowClass=FireflyMainWindow,
-            icon=qta.icon("mdi.camera"),
-        )
 
     @asyncSlot(QAction)
     async def finalize_new_window(self, action):
