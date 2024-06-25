@@ -4,15 +4,15 @@
   of the application. We want to remove this and let the displays work
   independently of the QApplication.
 
-** TODO [0/2] Component selector
-   - [ ] Pass the app's instrument registry down to the component selector
-   - [ ] Send the registry initially when the component selector is created
-** TODO [0/1] Detector list
-   - [ ] Have the detector list respond to registry changed signals (like component_selector)
-** TODO [0/3] Line scan plan window
-   - [ ] Do the number of regions change properly
-   - [ ] Can the number of regions be reset
-   - [ ] Do the component selector options update properly (update_devices called from QApplication)
+** DONE [2/2] Component selector
+   - [X] Pass the app's instrument registry down to the component selector
+   - [X] Send the registry initially when the component selector is created
+** DONE [1/1] Detector list
+   - [X] Have the detector list respond to registry changed signals (like component_selector)
+** DONE [3/3] Line scan plan window
+   - [X] Do the number of regions change properly
+   - [X] Can the number of regions be reset
+   - [X] Do the component selector options update properly (update_devices called from QApplication)
 ** DONE [1/1] Status window
    - [X] Application connects StatusDisplay.bss_window_requested -> app.show_bss_window_action.trigger
 ** DONE [2/2] Main window

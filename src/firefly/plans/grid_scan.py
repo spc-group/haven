@@ -91,8 +91,6 @@ class GridScanDisplay(regions_display.RegionsDisplay):
         # add title layout
         self.title_region = TitleRegion()
         self.ui.title_layout.addLayout(self.title_region.layout)
-        # reset button
-        self.ui.reset_pushButton.clicked.connect(self.reset_default_regions)
         # When selections of detectors changed update_total_time
         self.ui.detectors_list.selectionModel().selectionChanged.connect(
             self.update_total_time

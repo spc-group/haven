@@ -28,8 +28,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>377</width>
-            <height>162</height>
+            <width>373</width>
+            <height>190</height>
            </rect>
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_4">
@@ -536,19 +536,6 @@
          </property>
          <property name="displayIntegerBase">
           <number>10</number>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QPushButton" name="reset_pushButton">
-         <property name="toolTip">
-          <string>Reset to default values</string>
-         </property>
-         <property name="styleSheet">
-          <string notr="true"/>
-         </property>
-         <property name="text">
-          <string>Reset Defaults</string>
          </property>
         </widget>
        </item>
