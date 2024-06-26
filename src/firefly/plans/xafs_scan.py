@@ -256,9 +256,6 @@ class XafsScanDisplay(display.FireflyDisplay):
         # reset button
         self.ui.pushButton.clicked.connect(self.reset_default_regions)
 
-        # Button to actually execute the plan
-        self.ui.run_button.clicked.connect(self.queue_plan)
-
         # connect checkboxes with all regions' check box
         self.title_region.regions_all_checkbox.stateChanged.connect(
             self.on_regions_all_checkbox

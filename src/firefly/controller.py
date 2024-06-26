@@ -298,12 +298,15 @@ class FireflyController(QtCore.QObject):
         self.queue_status_changed.connect(action.window.update_queue_controls)
         if getattr(self, "_queue_client", None) is not None:
             self._queue_client.check_queue_status(force=True)
+        action.display.queue_item_submitted.connect(
+            self.add_queue_item
+        )
         # Send the current devices to the window
         await action.window.update_devices(self.registry)
 
     def finalize_status_window(self, action):
         """Connect up signals that are specific to the voltmeters window."""
-        display = action.window.display_widget()
+        display = action.display
         display.ui.bss_modify_button.clicked.connect(self.actions.bss.trigger)
         # display.details_window_requested.connect
 
@@ -520,8 +523,6 @@ class FireflyController(QtCore.QObject):
         self.check_queue_status_action.triggered.connect(
             partial(client.check_queue_status, True)
         )
-        # Connect signals to slots for executing plans on queueserver
-        self.queue_item_added.connect(client.add_queue_item)
         # Connect signals/slots for queueserver state changes
         client.status_changed.connect(self.queue_status_changed)
         client.in_use_changed.connect(self.queue_in_use_changed)
@@ -591,9 +592,11 @@ class FireflyController(QtCore.QObject):
         for action in queue_actions.values():
             action.setEnabled(action in enabled_signals)
 
-    def add_queue_item(self, item):
+    @asyncSlot(object)
+    async def add_queue_item(self, item):
         log.debug(f"Application received item to add to queue: {item}")
-        self.queue_item_added.emit(item)
+        if getattr(self, "_queue_client", None) is not None:
+            await self._queue_client.add_queue_item(item)
 
     @QtCore.Slot()
     def show_sample_viewer_window(self):

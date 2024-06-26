@@ -49,12 +49,12 @@ class RegionsDisplay(display.FireflyDisplay):
         # Disable the line edits in spin box (use up/down buttons instead)
         self.ui.num_motor_spin_box.lineEdit().setReadOnly(True)
 
-        # Set up the mechanism for changing region number
+        # Create the initial (blank) regions
         self.regions = []
+        self.add_regions(self.default_num_regions)
+        # Set up the mechanism for changing region number
         self.ui.num_motor_spin_box.valueChanged.connect(self.update_regions_slot)
-        self.reset_default_regions()
-
-        self.ui.run_button.setEnabled(True)  # for testing
+        print(self.ui.run_button, self.queue_plan)
         self.ui.run_button.clicked.connect(self.queue_plan)
 
     @asyncSlot(object)
@@ -104,7 +104,7 @@ class RegionsDisplay(display.FireflyDisplay):
         for i in range(num):
             layout = self.regions[-1].layout
             # iterate/wait, and delete all widgets in the layout in the end
-            while len(layout.count()) > 0:
+            while layout.count() > 0:
                 item = layout.takeAt(0)
                 if item.widget():
                     item.widget().deleteLater()
@@ -119,6 +119,7 @@ class RegionsDisplay(display.FireflyDisplay):
         *new_region_num*.
 
         """
+        print("UPDATING REGIONS")
         old_region_num = len(self.regions)
         diff_region_num = new_region_num - old_region_num
         new_regions = []

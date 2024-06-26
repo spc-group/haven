@@ -5,7 +5,7 @@ from ophyd import ADComponent as ADCpt
 from ophyd import CamBase, EpicsSignal, Kind, SingleTrigger
 from ophyd.areadetector.plugins import (
     ImagePlugin_V34,
-    OverlayPlugin,
+    OverlayPlugin_V34,
     PvaPlugin_V34,
     ROIPlugin_V34,
 )
@@ -39,7 +39,7 @@ class AravisDetector(SingleTrigger, DetectorBase):
     cam = ADCpt(AravisCam, "cam1:")
     image = ADCpt(ImagePlugin_V34, "image1:")
     pva = ADCpt(PvaPlugin_V34, "Pva1:")
-    overlays = ADCpt(OverlayPlugin, "Over1:")
+    overlays = ADCpt(OverlayPlugin_V34, "Over1:")
     roi1 = ADCpt(ROIPlugin_V34, "ROI1:", kind=Kind.config)
     roi2 = ADCpt(ROIPlugin_V34, "ROI2:", kind=Kind.config)
     roi3 = ADCpt(ROIPlugin_V34, "ROI3:", kind=Kind.config)

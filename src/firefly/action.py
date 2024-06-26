@@ -33,6 +33,11 @@ class Action(QAction):
         if icon is not None:
             self.setIcon(icon)
 
+    @property
+    def display(self):
+        if self.window is not None:
+            return self.window.display_widget()
+
 
 class WindowAction(Action):
     """An action that opens a desired window when triggered."""
