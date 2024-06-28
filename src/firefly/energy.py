@@ -53,8 +53,6 @@ class EnergyDisplay(display.FireflyDisplay):
     caqtdm_id_ui_file = (
         "/net/s25data/xorApps/epics/synApps_6_2/ioc/25ida/25idaApp/op/ui/IDControl.ui"
     )
-    min_energy = 4000
-    max_energy = 33000
     stylesheet_danger = (
         "background: rgb(220, 53, 69); color: white; border-color: rgb(220, 53, 69)"
     )
@@ -147,9 +145,10 @@ class EnergyDisplay(display.FireflyDisplay):
         combo_box = self.ui.edge_combo_box
         ltab = self.xraydb.tables["xray_levels"]
         edges = self.xraydb.query(ltab)
+        min_energy, max_energy = self.energy_positioner.limits
         edges = edges.filter(
-            ltab.c.absorption_edge < self.max_energy,
-            ltab.c.absorption_edge > self.min_energy,
+            ltab.c.absorption_edge < max_energy,
+            ltab.c.absorption_edge > min_energy,
         )
         items = [
             f"{r.element} {r.iupac_symbol} ({int(r.absorption_edge)} eV)"
