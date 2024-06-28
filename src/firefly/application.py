@@ -250,6 +250,15 @@ class FireflyApplication(PyDMApplication):
             ui_file="xrf_detector.py",
             device_key="DEV",
         )
+
+        self._prepare_device_windows(
+            device_label="robots",
+            attr_name="robot",
+            ui_file="robot.py",
+            device_key="DEVICE",
+            icon=qta.icon("mdi.robot-industrial"),
+        )
+
         self._setup_window_action(
             action_name="show_filters_window_action",
             text="Filters",

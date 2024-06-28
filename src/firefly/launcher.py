@@ -185,6 +185,7 @@ def main(default_fullscreen=False, default_display="status"):
     app.setup_instrument(load_instrument=not pydm_args.no_instrument)
 
     # Get rid of the splash screen now that we're ready to go
+
     splash.close()
 
     event_loop.run_until_complete(app.start())
