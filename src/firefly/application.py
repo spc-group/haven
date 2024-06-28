@@ -49,10 +49,6 @@ class FireflyApplication(PyDMApplication):
     registry: Registry = None
     registry_changed = Signal(Registry)
 
-    # For keeping track of ophyd devices used by the Firefly
-    registry: Registry = None
-    registry_changed = Signal(Registry)
-
     # Actions for showing window
     show_status_window_action: QtWidgets.QAction
     show_runs_window_action: QtWidgets.QAction
