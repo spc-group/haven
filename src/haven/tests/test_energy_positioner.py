@@ -25,7 +25,7 @@ def test_set_energy(positioner):
     positioner.set(10000, timeout=3)
     # Check that all the sub-components were set properly
     assert positioner.monochromator.energy.get().user_setpoint == 10000
-    assert positioner.undulator.energy.get().setpoint == 10150
+    assert positioner.undulator.energy.get().setpoint == 10.150
 
 
 def test_load_energy_positioner(sim_registry):
@@ -34,12 +34,6 @@ def test_load_energy_positioner(sim_registry):
     assert isinstance(energy, PVPositioner)
     assert hasattr(energy, "monochromator")
     assert hasattr(energy, "undulator")
-
-
-# def test_pseudo_to_real_positioner(positioner):
-#     positioner.monochromator.energy.user_readback._readback = 5000.0
-#     # Check that the pseudo single is updated
-#     assert positioner.get(use_monitor=False).readback == 5000.0
 
 
 def test_real_to_pseudo_positioner(positioner):

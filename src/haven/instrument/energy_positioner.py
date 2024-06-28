@@ -73,10 +73,11 @@ class EnergyPositioner(PVPositionerPC):
         super().__init__(*args, **kwargs)
 
     def set_energy(self, *, mds: MultiDerivedSignal, value: float):
+        ev_per_kev = 1000
         offset = self.monochromator.id_offset.get()
         vals = {
             self.monochromator.energy: value,
-            self.undulator.energy: value + offset,
+            self.undulator.energy: (value + offset) / ev_per_kev,
         }
         return vals
 
