@@ -37,23 +37,25 @@ def test_load_energy_positioner(sim_registry):
 
 
 # def test_pseudo_to_real_positioner(positioner):
-#     positioner.energy.set(10000, timeout=5.0)
-#     assert positioner.get(use_monitor=False).mono_energy.user_setpoint == 10000
-#     positioner.id_offset.set(230)
-#     time.sleep(0.1)
-#     # Move the energy positioner
-#     positioner.energy.set(5000)
-#     time.sleep(0.1)  # Caproto breaks pseudopositioner status
-#     # Check that the mono and ID are both moved
-#     assert positioner.get(use_monitor=False).mono_energy.user_setpoint == 5000
-#     expected_id_energy = 5.0 + positioner.id_offset.get(use_monitor=False) / 1000
-#     assert positioner.get(use_monitor=False).id_energy.setpoint == expected_id_energy
+#     positioner.monochromator.energy.user_readback._readback = 5000.0
+#     # Check that the pseudo single is updated
+#     assert positioner.get(use_monitor=False).readback == 5000.0
 
 
 def test_real_to_pseudo_positioner(positioner):
     positioner.monochromator.energy.user_readback._readback = 5000.0
     # Check that the pseudo single is updated
     assert positioner.get(use_monitor=False).readback == 5000.0
+
+
+def test_energy_limits(positioner):
+    """Check that the energy range is determined by the limits of the
+    dependent signals.
+
+    """
+    positioner.monochromator.energy.user_setpoint.sim_set_limits((0, 35000))
+    positioner.undulator.energy.setpoint.sim_set_limits((0.01, 1000))  # (10, 1000000)
+    assert positioner.limits == (10, 35000)
 
 
 # -----------------------------------------------------------------------------

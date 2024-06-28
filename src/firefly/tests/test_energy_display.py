@@ -100,6 +100,10 @@ def test_predefined_energies(qtbot, display):
     assert line_edit.text() == "8333.000"
 
 
+def test_valid_edges(display):
+    """Check that only edges within the mono energy range are valid."""
+    combo
+
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov

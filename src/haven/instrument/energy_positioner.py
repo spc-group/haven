@@ -87,6 +87,23 @@ class EnergyPositioner(PVPositionerPC):
             energy = items[self.monochromator.energy.user_setpoint]
         return energy
 
+    @property
+    def limits(self):
+        hi, low = (None, None)
+        for signal in self.setpoint.signals:
+            # Update the limits based on this signal
+            try:
+                new_low, new_hi = signal.limits
+            except TypeError:
+                continue
+            # Account for the keV -> eV conversion for the undulator
+            if signal is self.undulator.energy.setpoint:
+                new_low *= 1000
+                new_hi *= 1000
+            hi = min([val for val in (hi, new_hi) if val is not None])
+            low = max([val for val in (low, new_low) if val is not None])
+        return (low, hi)
+
     setpoint = Cpt(
         MultiDerivedSignal,
         attrs={"monochromator.energy.user_setpoint", "undulator.energy.setpoint"},
