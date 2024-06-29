@@ -14,6 +14,7 @@ from firefly.component_selector import (
 class Stage(Device):
     motor2 = Cpt(EpicsMotor, "m2", name="motor2")
     motor3 = Cpt(EpicsMotor, "m3", name="motor3")
+    lazy_motor = Cpt(EpicsMotor, "m4", name="motor4", lazy=True)
 
 
 @pytest.fixture()
@@ -47,6 +48,19 @@ async def test_selector_adds_devices(selector):
     # Check that devices were added to the tree model
     tree_model = selector.tree_model
     assert tree_model.item(0).text() == "motor1"
+
+
+# @pytest.mark.asyncio
+# async def test_lazy_signals_omitted(motor_registry, selector):
+#     model = ComponentTreeModel()
+#     await model.update_devices(motor_registry)
+#     stage_idx = 1
+#     stage_node = model.item(stage_idx)
+#     assert stage_node.text() == "stage"
+#     # Make sure the lazy motor isn't included
+#     column = 0
+#     cpt_names = [stage_node.child(row, column).text() for row in range(stage_node.rowCount())]
+#     assert "lazy_motor" not in cpt_names
 
 
 @pytest.mark.asyncio

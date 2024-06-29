@@ -2,6 +2,7 @@ import asyncio
 import logging
 from collections import OrderedDict
 from functools import lru_cache
+from typing import Mapping
 
 import qtawesome as qta
 from ophyd import (
@@ -27,42 +28,75 @@ from qtpy.QtWidgets import (
 log = logging.getLogger(__name__)
 
 
-class TreeComponent:
+@lru_cache()
+def icons():
+    """Produce a dictionary of icons for specific device classes.
+
+    Profiling shows that creating the qta.icon objects is
+    slow. Since there are a lot of potential signals, it makes
+    sense to cache the icons behind a static method to speed up
+    window loading.
+
+    """
+    return OrderedDict(
+        {
+            EpicsMotor: qta.icon("mdi.cog-clockwise"),
+            Device: qta.icon("mdi.router-network"),
+            Signal: qta.icon("mdi.connection"),
+        }
+    )
+
+
+class TreeNode:
+    def __init__(self, device_class: type, text: str, parent, registry=None):
+        self.device_class = device_class
+        self.text = text
+        self.parent = parent
+        self.registry = registry
+        # Set the associated
+        self.set_items()
+
+    def set_items(self):
+        """Add model items to the parent item."""
+        self.component_item = QStandardItem(self.text)
+        parent = self.parent
+        parent.appendRow(self.component_item)
+        row = self.component_item.row()
+        # Create an item for the type of component
+        type_name = self.device_class.__name__
+        self.type_item = QStandardItem(type_name)
+        column = 1
+        parent.setChild(row, column, self.type_item)
+        # Make the component item bold if it's a positioner
+        if issubclass(self.device_class, PositionerBase):
+            font = QFont()
+            font.setBold(True)
+            self.component_item.setFont(font)
+        # Decide on an icon for this component
+        for cls, icon in icons().items():
+            if issubclass(self.device_class, cls):
+                self.type_item.setIcon(icon)
+                break
+        # Keep a reference to the component that created the items
+        self.component_item.setData(self)
+        self.type_item.setData(self)
+
+
+class DeviceTree(TreeNode):
     """Representation of an ophyd Component/Device in a tree view."""
 
     child_components: list
     dotted_name: str
     component_item: QStandardItem
     type_item: QStandardItem
+    nodes: Mapping
 
-    def __init__(self, *args, device, text, parent, registry=None, **kwargs):
+    def __init__(self, device, *args, **kwargs):
         self.device = device
-        self.text = text
-        self.parent = parent
-        # Set the associated
-        self.set_items()
+        super().__init__(device_class=type(device), **kwargs)
 
     def __str__(self):
         return self.dotted_name
-
-    @staticmethod
-    @lru_cache()
-    def icons():
-        """Produce a dictionary of icons for specific device classes.
-
-        Profiling shows that creating the qta.icon objects is
-        slow. Since there are a lot of potential signals, it makes
-        sense to cache the icons behind a static method to speed up
-        window loading.
-
-        """
-        return OrderedDict(
-            {
-                EpicsMotor: qta.icon("mdi.cog-clockwise"),
-                Device: qta.icon("mdi.router-network"),
-                Signal: qta.icon("mdi.connection"),
-            }
-        )
 
     def component_from_dotted_name(self, name):
         if name == self.dotted_name:
@@ -90,50 +124,27 @@ class TreeComponent:
         names.append(obj.name)
         return ".".join(reversed(names))
 
-    def set_items(self):
-        """Add model items to the parent item."""
-        self.component_item = QStandardItem(self.text)
-        self.parent.appendRow(self.component_item)
-        row = self.component_item.row()
-        # Create an item for the type of component
-        type_name = type(self.device).__name__
-        self.type_item = QStandardItem(type_name)
-        column = 1
-        self.parent.setChild(row, column, self.type_item)
-        # Make the component item bold if it's a positioner
-        if isinstance(self.device, PositionerBase):
-            font = QFont()
-            font.setBold(True)
-            self.component_item.setFont(font)
-        # Decide on an icon for this component
-        for cls, icon in self.icons().items():
-            if isinstance(self.device, cls):
-                self.type_item.setIcon(icon)
-                break
-        # Keep a reference to the component that created the items
-        self.component_item.setData(self)
-        self.type_item.setData(self)
-
     def add_children(self):
         """Add components of the device as branches on the tree."""
-        child_names = getattr(self.device, "component_names", [])
-        self.child_components = []
-        # Add the children
-        for name in child_names:
-            with do_not_wait_for_lazy_connection(self.device):
-                child = self.__class__(
-                    device=getattr(self.device, name),
-                    text=name,
-                    parent=self.component_item,
-                )
-                self.child_components.append(child)
-        # Add the devices children
-        for cpt in self.child_components:
-            cpt.add_children()
+        # print(self.device.name, type(self.device), child_names)
+        self.nodes = {}
+        # Create a root tree node for the device itself
+        self.nodes[self.device.name] = self
+        # Get the subcomponents of the device
+        components = []
+        if hasattr(self.device, "walk_components"):
+            components = list(self.device.walk_components())
+        # Build the tree from the child components of the device
+        for ancestors, dotted_name, cpt in components:
+            dotted_name = ".".join([self.device.name, dotted_name])
+            parent = dotted_name.rsplit(".", maxsplit=1)[0]
+            parent = self.nodes[parent]
+            node = TreeNode(parent=parent.component_item, text=cpt.attr, device_class=cpt.cls)
+            self.nodes[dotted_name] = node
 
 
 class ComponentTreeModel(QStandardItemModel):
-    Component: type = TreeComponent
+    Component: type = DeviceTree
     root_components: list
 
     def __init__(self, *args, **kwargs):
@@ -178,7 +189,7 @@ class ComponentTreeModel(QStandardItemModel):
             await asyncio.gather(*aws)
 
 
-class ComboBoxComponent(TreeComponent):
+class ComboBoxComponent(DeviceTree):
     def set_items(self):
         """Add model items to the parent item."""
         self.component_item = QStandardItem(self.text)
