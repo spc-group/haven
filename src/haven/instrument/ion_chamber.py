@@ -681,7 +681,7 @@ def load_ion_chambers(config=None):
         config = load_config()
     if "ion_chamber" not in config.keys():
         warnings.warn("Ion chambers not configured.")
-        return
+        return []
     # Generate the configuration dictionary for all the ion chambers
     ic_defns = []
     for section_name, section in config["ion_chamber"].items():

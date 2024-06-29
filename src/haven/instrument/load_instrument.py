@@ -18,7 +18,6 @@ from .instrument_registry import registry as default_registry
 from .ion_chamber import load_ion_chambers
 from .lerix import load_lerix_spectrometers
 from .mirrors import load_mirrors
-from .monochromator import load_monochromators
 from .motor import HavenMotor, load_motors
 from .power_supply import load_power_supplies
 from .robot import load_robots
@@ -27,7 +26,6 @@ from .slits import load_slits
 from .stage import load_stages
 from .table import load_tables
 from .xia_pfcu import load_xia_pfcu4s
-from .xray_source import load_xray_source
 from .xspress import load_xspress_detectors
 
 __all__ = ["load_instrument"]
@@ -83,7 +81,6 @@ def load_instrument(
         *load_heaters(config=config),
         *load_ion_chambers(config=config),
         *load_lerix_spectrometers(config=config),
-        *load_monochromators(config=config),
         *load_power_supplies(config=config),
         *load_robots(config=config),
         *load_shutters(config=config),
@@ -91,7 +88,6 @@ def load_instrument(
         *load_stages(config=config),
         *load_tables(config=config),
         *load_xia_pfcu4s(config=config),
-        load_xray_source(config=config),
         *load_xspress_detectors(config=config),
         *load_mirrors(config=config),
         # Load the motor devices last so that we can check for

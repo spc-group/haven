@@ -1,15 +1,15 @@
 import logging
+from typing import Mapping
 
 from ophyd import Component as Cpt
-from ophyd import EpicsMotor, EpicsSignal, EpicsSignalRO
 from ophyd import FormattedComponent as FCpt
-from ophyd import PseudoPositioner, PseudoSingle, PVPositioner
-from ophyd.ophydobj import OphydObject
-from ophyd.pseudopos import pseudo_position_argument, real_position_argument
+from ophyd import PVPositionerPC
+from pcdsdevices.signal import MultiDerivedSignal
 
 from .._iconfig import load_config
 from .device import make_device
-from .monochromator import IDTracking, Monochromator
+from .monochromator import Monochromator
+from .xray_source import PlanarUndulator
 
 log = logging.getLogger(__name__)
 
@@ -17,14 +17,7 @@ log = logging.getLogger(__name__)
 __all__ = ["EnergyPositioner", "load_energy_positioner"]
 
 
-class Undulator(PVPositioner):
-    setpoint = Cpt(EpicsSignal, ":ScanEnergy.VAL")
-    readback = Cpt(EpicsSignalRO, ":Energy.VAL")
-    done = Cpt(EpicsSignalRO, ":Busy.VAL", kind="omitted")
-    stop_signal = Cpt(EpicsSignal, ":Stop.VAL", kind="omitted")
-
-
-class EnergyPositioner(PseudoPositioner):
+class EnergyPositioner(PVPositionerPC):
     """The operational energy of the beamline.
 
     Responsible for setting both mono and ID energy with an optional
@@ -54,62 +47,78 @@ class EnergyPositioner(PseudoPositioner):
 
     Parameters
     ==========
-    mono_pv
-      The process variable for the monochromator energy PV.
-    id_prefix
+    mono_prefix
+      The CA prefix for the monochromator IOC.
+    undulator_prefix
       The prefix for the insertion device energy, such that
       f"{id_prefix}:Energy.VAL" reaches the energy readback value.
-    id_offset_pv
-      The PV address for the offset between monochromator and
-      insertion device.
-    id_tracking_pv
-      The PV address for whether the ID gets tracked automatically in
-      EPICS.
 
     """
 
-    # Pseudo axes
-    energy: OphydObject = Cpt(PseudoSingle, kind="hinted")
-
-    # Equivalent real axes
-    mono_energy: OphydObject = FCpt(EpicsMotor, "{mono_pv}", kind="normal")
-    # id_offset: float = 300.  # In eV
-    id_tracking: OphydObject = FCpt(EpicsSignal, "{id_tracking_pv}", kind="config")
-    id_offset: OphydObject = FCpt(EpicsSignal, "{id_offset_pv}", kind="config")
-    id_energy: OphydObject = FCpt(Undulator, "{id_prefix}", kind="normal")
+    # Individual energy components
+    monochromator = FCpt(Monochromator, "{mono_prefix}", labels={"monochromators"})
+    undulator = FCpt(
+        PlanarUndulator, "{undulator_prefix}", labels={"undulator", "xray_source"}
+    )
 
     def __init__(
         self,
-        mono_pv: str,
-        id_prefix: str,
-        id_offset_pv: str,
-        id_tracking_pv: str,
+        mono_prefix: str,
+        undulator_prefix: str,
         *args,
         **kwargs,
     ):
-        """INIT DOCSTRING"""
-        self.mono_pv = mono_pv
-        self.id_offset_pv = id_offset_pv
-        self.id_prefix = id_prefix
-        self.id_tracking_pv = id_tracking_pv
+        self.mono_prefix = mono_prefix
+        self.undulator_prefix = undulator_prefix
         super().__init__(*args, **kwargs)
-        self.stage_sigs[self.id_tracking] = IDTracking.OFF
 
-    @pseudo_position_argument
-    def forward(self, target_energy):
-        "Given a target energy, transform to the mono and ID energies."
-        id_offset_ev = self.id_offset.get(use_monitor=True)
-        return self.RealPosition(
-            mono_energy=target_energy.energy,
-            id_energy=(target_energy.energy + id_offset_ev) / 1000.0,
-        )
+    def set_energy(self, *, mds: MultiDerivedSignal, value: float):
+        ev_per_kev = 1000
+        offset = self.monochromator.id_offset.get()
+        vals = {
+            self.monochromator.energy: value,
+            self.undulator.energy: (value + offset) / ev_per_kev,
+        }
+        return vals
 
-    @real_position_argument
-    def inverse(self, device_energy):
-        "Given a position in mono and ID energy, transform to the target energy."
-        return self.PseudoPosition(
-            energy=device_energy.mono_energy,
-        )
+    def get_energy(self, mds: MultiDerivedSignal, items: Mapping):
+        if self.monochromator.energy.user_readback in items:
+            energy = items[self.monochromator.energy.user_readback]
+        else:
+            energy = items[self.monochromator.energy.user_setpoint]
+        return energy
+
+    @property
+    def limits(self):
+        hi, low = (None, None)
+        for signal in self.setpoint.signals:
+            # Update the limits based on this signal
+            try:
+                new_low, new_hi = signal.limits
+            except TypeError:
+                continue
+            # Account for the keV -> eV conversion for the undulator
+            if signal is self.undulator.energy.setpoint:
+                new_low *= 1000
+                new_hi *= 1000
+            hi = min([val for val in (hi, new_hi) if val is not None])
+            low = max([val for val in (low, new_low) if val is not None])
+        return (low, hi)
+
+    setpoint = Cpt(
+        MultiDerivedSignal,
+        attrs={"monochromator.energy.user_setpoint", "undulator.energy.setpoint"},
+        calculate_on_get=get_energy,
+        calculate_on_put=set_energy,
+        name="setpoint",
+    )
+    readback = Cpt(
+        MultiDerivedSignal,
+        attrs={"monochromator.energy.user_readback"},
+        calculate_on_get=get_energy,
+        calculate_on_put=set_energy,
+        name="readback",
+    )
 
 
 def load_energy_positioner(config=None):
@@ -119,21 +128,14 @@ def load_energy_positioner(config=None):
     # Guard to make sure we have a mono and ID configuration
     if "monochromator" not in config.keys() or "undulator" not in config.keys():
         return
-    # Extract PVs from config
-    mono_prefix = config["monochromator"]["ioc"]
-    id_prefix = config["undulator"]["ioc"]
-    mono_suffix = Monochromator.energy.suffix
-    id_offset_suffix = Monochromator.id_offset.suffix
-    id_tracking_suffix = Monochromator.id_tracking.suffix
     # Make the combined energy device
-    return make_device(
+    device = make_device(
         EnergyPositioner,
         name="energy",
-        mono_pv=f"{mono_prefix}{mono_suffix}",
-        id_offset_pv=f"{mono_prefix}{id_offset_suffix}",
-        id_tracking_pv=f"{mono_prefix}{id_tracking_suffix}",
-        id_prefix=id_prefix,
+        mono_prefix=config["monochromator"]["prefix"],
+        undulator_prefix=config["undulator"]["prefix"],
     )
+    return device
 
 
 # -----------------------------------------------------------------------------

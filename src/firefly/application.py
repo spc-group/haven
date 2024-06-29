@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import subprocess
+import warnings
 from collections import OrderedDict
 from functools import partial
 from pathlib import Path
@@ -560,11 +561,10 @@ class FireflyApplication(PyDMApplication):
         if api is None:
             try:
                 api = queueserver_api()
-            except InvalidConfiguration:
-                log.error(
-                    "Could not load queueserver API "
-                    "configuration from iconfig.toml file."
-                )
+            except InvalidConfiguration as exc:
+                msg = f"Could not create queue client. Missing key {exc}"
+                log.warning(msg)
+                warnings.warn(msg)
                 return
         # Create the client object
         if client is None:
