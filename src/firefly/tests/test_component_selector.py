@@ -5,9 +5,9 @@ from ophyd import Component as Cpt
 from ophyd import Device, EpicsMotor, sim
 
 from firefly.component_selector import (
-    ComponentComboBoxModel,
+    DeviceComboBoxModel,
     ComponentSelector,
-    ComponentTreeModel,
+    DeviceTreeModel,
 )
 
 
@@ -43,8 +43,9 @@ async def test_selector_adds_devices(selector):
     # # Add some items to the
     # Check that positioners were added to the combobox model
     assert selector.combo_box.itemText(0) == "motor1"
-    assert selector.combo_box.itemText(1) == "stage.motor2"
-    assert selector.combo_box.itemText(2) == "stage.motor3"
+    assert selector.combo_box.itemText(1) == "stage"
+    assert selector.combo_box.itemText(2) == "stage.motor2"
+    assert selector.combo_box.itemText(3) == "stage.motor3"
     # Check that devices were added to the tree model
     tree_model = selector.tree_model
     assert tree_model.item(0).text() == "motor1"
@@ -52,7 +53,7 @@ async def test_selector_adds_devices(selector):
 
 # @pytest.mark.asyncio
 # async def test_lazy_signals_omitted(motor_registry, selector):
-#     model = ComponentTreeModel()
+#     model = DeviceTreeModel()
 #     await model.update_devices(motor_registry)
 #     stage_idx = 1
 #     stage_node = model.item(stage_idx)
@@ -64,9 +65,9 @@ async def test_selector_adds_devices(selector):
 
 
 @pytest.mark.asyncio
-async def test_tree_model_adds_devices(motor_registry):
-    model = ComponentTreeModel()
-    await model.update_devices(motor_registry)
+async def test_tree_model_adds_device(motor_registry):
+    model = DeviceTreeModel()
+    await model.add_device(motor_registry['motor1'])
     # Check "Component" column
     assert model.item(0).text() == "motor1"
     assert model.item(0).child(0, column=0).text() == "user_readback"
@@ -76,12 +77,14 @@ async def test_tree_model_adds_devices(motor_registry):
 
 
 @pytest.mark.asyncio
-async def test_combo_box_model_adds_devices(motor_registry):
-    model = ComponentComboBoxModel()
-    await model.update_devices(motor_registry)
+async def test_combo_box_model_adds_device(motor_registry):
+    model = DeviceComboBoxModel()
+    await model.add_device(motor_registry['motor1'])
+    await model.add_device(motor_registry['stage'])
     # Check that dot-notation is included
     assert model.item(0).text() == "motor1"
-    assert model.item(1).text() == "stage.motor2"
+    assert model.item(1).text() == "stage"
+    assert model.item(2).text() == "stage.motor2"
 
 
 @pytest.mark.asyncio
@@ -110,8 +113,9 @@ async def test_combobox_changes_tree(selector, qtbot):
 
 @pytest.mark.asyncio
 async def test_model_component_from_index(motor_registry):
-    model = ComponentTreeModel()
-    await model.update_devices(motor_registry)
+    model = DeviceTreeModel()
+    await model.add_device(motor_registry['motor1'])
+    await model.add_device(motor_registry['stage'])
     # Can we retrieve a root device based on its name item
     item = model.item(0)
     cpt = model.component_from_index(item.index())
@@ -128,20 +132,21 @@ async def test_model_component_from_index(motor_registry):
 
 @pytest.mark.asyncio
 async def test_model_component_from_dotted_index(motor_registry):
-    model = ComponentTreeModel()
-    await model.update_devices(motor_registry)
+    model = DeviceTreeModel()
+    await model.add_device(motor_registry['motor1'])
+    await model.add_device(motor_registry['stage'])
     # Can we retrieve a root device based on its dotted name
     item = model.item(0)
     cpt = model.component_from_dotted_name("motor1")
-    assert cpt.component_item is item
+    assert cpt.name_item is item
     # Can we retrieve a component based on its dotted name
     item = model.item(1).child(1, column=0).child(1, column=0)
     cpt = model.component_from_dotted_name("stage.motor3.user_setpoint")
-    assert cpt.component_item is item
+    assert cpt.name_item is item
 
 
 @pytest.mark.asyncio
 async def test_loads_devices_from_registry(selector, motor_registry, qtbot):
-    selector.combo_box_model.update_devices = mock.AsyncMock()
+    selector.combo_box_model.add_device = mock.AsyncMock()
     await selector.update_devices(motor_registry)
-    selector.combo_box_model.update_devices.assert_called_once_with(motor_registry)
+    selector.combo_box_model.add_device.assert_called_with(motor_registry['stage'])

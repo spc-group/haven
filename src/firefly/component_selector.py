@@ -2,7 +2,7 @@ import asyncio
 import logging
 from collections import OrderedDict
 from functools import lru_cache
-from typing import Mapping
+from typing import Mapping, Sequence
 
 import qtawesome as qta
 from ophyd import (
@@ -47,21 +47,39 @@ def icons():
     )
 
 
-class TreeNode:
-    def __init__(self, device_class: type, text: str, parent, registry=None):
+class OphydNode:
+    """A node in the Ophyd device hierarchy."""
+    device_class: type
+    text: str
+    dotted_name: str
+
+    def __init__(self, device_class: type, text: str, dotted_name: str):
         self.device_class = device_class
         self.text = text
-        self.parent = parent
-        self.registry = registry
+        self.dotted_name = dotted_name
         # Set the associated
         self.set_items()
 
+    def __str__(self):
+        return f"{text} ({self.device_class})"
+
+    def set_items(self):
+        raise NotImplementedError
+
+
+class TreeNode(OphydNode):
+    parent_item: QStandardItem
+
+    def __init__(self, *args, parent_item, **kwargs):
+        self.parent_item = parent_item
+        super().__init__(*args, **kwargs)
+    
     def set_items(self):
         """Add model items to the parent item."""
-        self.component_item = QStandardItem(self.text)
-        parent = self.parent
-        parent.appendRow(self.component_item)
-        row = self.component_item.row()
+        self.name_item = QStandardItem(self.text)
+        parent = self.parent_item
+        parent.appendRow(self.name_item)
+        row = self.name_item.row()
         # Create an item for the type of component
         type_name = self.device_class.__name__
         self.type_item = QStandardItem(type_name)
@@ -71,90 +89,62 @@ class TreeNode:
         if issubclass(self.device_class, PositionerBase):
             font = QFont()
             font.setBold(True)
-            self.component_item.setFont(font)
+            self.name_item.setFont(font)
         # Decide on an icon for this component
         for cls, icon in icons().items():
             if issubclass(self.device_class, cls):
                 self.type_item.setIcon(icon)
                 break
         # Keep a reference to the component that created the items
-        self.component_item.setData(self)
+        self.name_item.setData(self)
         self.type_item.setData(self)
 
 
 class DeviceTree(TreeNode):
     """Representation of an ophyd Component/Device in a tree view."""
 
-    child_components: list
-    dotted_name: str
-    component_item: QStandardItem
-    type_item: QStandardItem
     nodes: Mapping
 
     def __init__(self, device, *args, **kwargs):
         self.device = device
-        super().__init__(device_class=type(device), **kwargs)
-
-    def __str__(self):
-        return self.dotted_name
+        dotted_name = self.device.name
+        dotted_name = kwargs.pop("dotted_name", dotted_name)
+        super().__init__(*args, device_class=type(device), dotted_name=dotted_name, **kwargs)
 
     def component_from_dotted_name(self, name):
-        if name == self.dotted_name:
-            # It's this component, so just return
-            return self
-        if self.dotted_name not in name:
-            # It's not in this branch of the tree, so raise an exception
-            raise KeyError(name)
-        # See if we can find the dotted name farther down the tree
-        for cpt in self.child_components:
-            try:
-                return cpt.component_from_dotted_name(name)
-            except KeyError:
-                continue
-        raise KeyError(name)
-
-    @property
-    def dotted_name(self):
-        names = []
-        obj = self.device
-        while obj.parent is not None:
-            names.append(obj.attr_name)
-            obj = obj.parent
-        # Add the root devices name
-        names.append(obj.name)
-        return ".".join(reversed(names))
+        return self.nodes[name]
 
     def add_children(self):
         """Add components of the device as branches on the tree."""
-        # print(self.device.name, type(self.device), child_names)
-        self.nodes = {}
-        # Create a root tree node for the device itself
-        self.nodes[self.device.name] = self
+        # Create a place to store the nodes of the tree
+        self.nodes = {self.device.name: self}
         # Get the subcomponents of the device
-        components = []
-        if hasattr(self.device, "walk_components"):
-            components = list(self.device.walk_components())
+        components = getattr(self.device, "walk_components", lambda: [])()
         # Build the tree from the child components of the device
         for ancestors, dotted_name, cpt in components:
             dotted_name = ".".join([self.device.name, dotted_name])
             parent = dotted_name.rsplit(".", maxsplit=1)[0]
             parent = self.nodes[parent]
-            node = TreeNode(parent=parent.component_item, text=cpt.attr, device_class=cpt.cls)
+            node = TreeNode(parent_item=parent.name_item,
+                            text=cpt.attr, device_class=cpt.cls,
+                            dotted_name=dotted_name)
             self.nodes[dotted_name] = node
 
 
-class ComponentTreeModel(QStandardItemModel):
-    Component: type = DeviceTree
-    root_components: list
+class DeviceTreeModel(QStandardItemModel):
+    trees: Sequence
+    root_item: QStandardItem
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.root_components = []
+        # Set up the root devices
+        self.trees = []
+        self.root_item = self.invisibleRootItem()
 
     def component_from_dotted_name(self, name):
-        for cpt in self.root_components:
+        for tree in self.trees:
             try:
-                return cpt.component_from_dotted_name(name)
+                return tree.component_from_dotted_name(name)
             except KeyError:
                 pass
         raise KeyError(name)
@@ -163,94 +153,52 @@ class ComponentTreeModel(QStandardItemModel):
         item = self.itemFromIndex(index)
         return item.data()
 
-    async def update_devices(self, registry):
-        if registry is None:
-            return
-        # Set up the root devices
-        parent_item = self.invisibleRootItem()
-        self.root_components = []
-        devices = sorted(registry.root_devices, key=lambda dev: dev.name.lower())
-        for device in devices:
-            with do_not_wait_for_lazy_connection(device):
-                cpt = self.Component(
-                    device=device,
-                    text=device.name,
-                    parent=parent_item,
-                    registry=registry,
-                )
-                self.root_components.append(cpt)
-        # Add all the children for the root components in separate threads
-        loop = asyncio.get_running_loop()
-        with QThreadExecutor(len(self.root_components)) as exec:
-            aws = (
-                loop.run_in_executor(exec, cpt.add_children)
-                for cpt in self.root_components
-            )
-            await asyncio.gather(*aws)
+    async def add_device(self, device):
+        """Add a new root device to the tree."""
+        tree = DeviceTree(
+            device=device,
+            text=device.name,
+            parent_item=self.root_item,
+        )
+        tree.add_children()
+        self.trees.append(tree)
 
 
-class ComboBoxComponent(DeviceTree):
+class ComboBoxNode(OphydNode):
     def set_items(self):
         """Add model items to the parent item."""
-        self.component_item = QStandardItem(self.text)
-        if isinstance(self.device, PositionerBase):
-            # Only include motors, positioners, etc in the combobox
-            self.parent.appendRow(self.component_item)
-
-    def add_children(self):
-        """Add components of the device as extra options."""
-        child_names = getattr(self.device, "component_names", [])
-        self.child_components = []
-        # Add the children
-        for name in child_names:
-            dotted_name = ".".join([self.text, name])
-            with do_not_wait_for_lazy_connection(self.device):
-                child = self.__class__(
-                    device=getattr(self.device, name),
-                    text=dotted_name,
-                    parent=self.parent,
-                )
-                self.child_components.append(child)
-        # Add the devices children
-        for cpt in self.child_components:
-            cpt.add_children()
+        self.text_item = QStandardItem(self.text)
 
 
-class ComponentComboBoxModel(ComponentTreeModel):
-    Component: type = ComboBoxComponent
+class DeviceComboBoxModel(QStandardItemModel):
 
-
-class TreeDialog(QDialog):
-    def __init__(self, *args, model, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.model = model
-        self.add_widgets()
-        self.connect_signals()
+        self.nodes = {}
 
-    def connect_signals(self):
-        self.ok_button.clicked.connect(self.accept)
-        self.cancel_button.clicked.connect(self.reject)
-
-    def add_widgets(self):
-        main_layout = QVBoxLayout()
-        self.setLayout(main_layout)
-        # Add the tree view
-        tree_view = QTreeView(parent=self)
-        tree_view.setModel(self.model)
-        main_layout.addWidget(tree_view)
-        # Add accept/reject buttons
-        buttons_layout = QHBoxLayout()
-        main_layout.addLayout(buttons_layout)
-        ok_button = QPushButton(parent=self)
-        ok_button.setText("OK")
-        ok_button.setIcon(qta.icon("fa5s.check"))
-        self.ok_button = ok_button
-        buttons_layout.addWidget(ok_button)
-        cancel_button = QPushButton(parent=self)
-        cancel_button.setText("Cancel")
-        cancel_button.setIcon(qta.icon("fa5s.times"))
-        self.cancel_button = cancel_button
-        buttons_layout.addWidget(cancel_button)
+    async def add_device(self, device):
+        """Add components of the device as extra options."""
+        # Add a node for the root device itself
+        root_node = ComboBoxNode(text=device.name, device_class=type(device), dotted_name=device.name)
+        self.nodes[device.name] = root_node
+        self.appendRow(root_node.text_item)
+        # Get the subcomponents of the device
+        components = getattr(device, "walk_components", lambda: [])()
+        # Build the tree from the child components of the device
+        for ancestors, dotted_name, cpt in components:
+            # Only add a device if it's high-level (e.g. motor)
+            device_class = cpt.cls
+            if not issubclass(device_class, PositionerBase):
+                continue
+            # Prepare some device info
+            dotted_name = ".".join([device.name, dotted_name])
+            parent = dotted_name.rsplit(".", maxsplit=1)[0]
+            parent = self.nodes[parent]
+            # Create the node
+            node = ComboBoxNode(text=dotted_name, device_class=device_class, dotted_name=dotted_name)
+            self.nodes[dotted_name] = node
+            # Add the node's model items to the model
+            self.appendRow(node.text_item)
 
 
 class ComponentSelector(QWidget):
@@ -267,9 +215,9 @@ class ComponentSelector(QWidget):
         return self.registry[cpt_name]
 
     def create_models(self):
-        self.tree_model = ComponentTreeModel(0, 2)
+        self.tree_model = DeviceTreeModel(0, 2)
         self.tree_model.setHorizontalHeaderLabels(["Component", "Type"])
-        self.combo_box_model = ComponentComboBoxModel(0, 1)
+        self.combo_box_model = DeviceComboBoxModel(0, 1)
 
     def connect_signals(self):
         self.tree_button.toggled.connect(self.tree_view.setVisible)
@@ -287,9 +235,9 @@ class ComponentSelector(QWidget):
             # It's not a real component, so give up
             log.debug(f"Could not find component for {new_name}, skipping.")
             return
-        log.debug(f"Selecting combobox entry: {component.component_item.text()}")
+        log.debug(f"Selecting combobox entry: {component.name_item.text()}")
         selection.setCurrentIndex(
-            component.component_item.index(), selection.ClearAndSelect | selection.Rows
+            component.name_item.index(), selection.ClearAndSelect | selection.Rows
         )
 
     def update_combo_box_model(self, index, previous):
@@ -314,10 +262,14 @@ class ComponentSelector(QWidget):
     @asyncSlot(object)
     async def update_devices(self, registry):
         self.registry = registry
-        await self.combo_box_model.update_devices(registry)
-        await self.tree_model.update_devices(registry)
-        # Clear the combobox text so it doesn't auto-select the first entry
+        # Get the devices to add
+        devices = sorted(registry.root_devices, key=lambda dev: dev.name.lower())
+        for device in devices:
+            await self.combo_box_model.add_device(device)
+            await self.tree_model.add_device(device)
+        # Clear the combobox text so it doesn't auto-select the first entry            
         self.combo_box.setCurrentText("")
+
 
     def add_widgets(self):
         # Create a layout
