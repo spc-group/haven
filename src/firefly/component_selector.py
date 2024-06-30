@@ -23,6 +23,7 @@ from qtpy.QtWidgets import (
     QTreeView,
     QVBoxLayout,
     QWidget,
+    QSizePolicy
 )
 
 log = logging.getLogger(__name__)
@@ -171,6 +172,7 @@ class ComboBoxNode(OphydNode):
 
 
 class DeviceComboBoxModel(QStandardItemModel):
+    valid_classes = [PositionerBase, Device]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -188,7 +190,8 @@ class DeviceComboBoxModel(QStandardItemModel):
         for ancestors, dotted_name, cpt in components:
             # Only add a device if it's high-level (e.g. motor)
             device_class = cpt.cls
-            if not issubclass(device_class, PositionerBase):
+            is_valid = (issubclass(device_class, cls) for cls in self.valid_classes)
+            if not any(is_valid):
                 continue
             # Prepare some device info
             dotted_name = ".".join([device.name, dotted_name])
@@ -281,6 +284,10 @@ class ComponentSelector(QWidget):
         # Add a combobox
         combo_box = QComboBox(parent=self)
         combo_box.setModel(self.combo_box_model)
+        combo_box.setSizePolicy(
+            QSizePolicy.MinimumExpanding,
+            QSizePolicy.Fixed,
+        )
         row_layout.addWidget(combo_box)
         combo_box.setEditable(True)
         self.combo_box = combo_box
