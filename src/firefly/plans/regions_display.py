@@ -44,7 +44,10 @@ class RegionsDisplay(display.FireflyDisplay):
 
     def customize_ui(self):
         # Remove the default layout from .ui file
-        self.clearLayout(self.ui.region_template_layout)
+        try:
+            self.clearLayout(self.ui.region_template_layout)
+        except AttributeError:
+            pass
 
         # Disable the line edits in spin box (use up/down buttons instead)
         self.ui.num_motor_spin_box.lineEdit().setReadOnly(True)
@@ -54,7 +57,6 @@ class RegionsDisplay(display.FireflyDisplay):
         self.add_regions(self.default_num_regions)
         # Set up the mechanism for changing region number
         self.ui.num_motor_spin_box.valueChanged.connect(self.update_regions_slot)
-        print(self.ui.run_button, self.queue_plan)
         self.ui.run_button.clicked.connect(self.queue_plan)
 
     @asyncSlot(object)
@@ -119,7 +121,6 @@ class RegionsDisplay(display.FireflyDisplay):
         *new_region_num*.
 
         """
-        print("UPDATING REGIONS")
         old_region_num = len(self.regions)
         diff_region_num = new_region_num - old_region_num
         new_regions = []
