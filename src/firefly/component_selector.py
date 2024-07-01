@@ -62,7 +62,7 @@ class OphydNode:
         self.set_items()
 
     def __str__(self):
-        return f"{text} ({self.device_class})"
+        return f"{self.text} ({self.device_class})"
 
     def set_items(self):
         raise NotImplementedError
@@ -74,7 +74,7 @@ class TreeNode(OphydNode):
     def __init__(self, *args, parent_item, **kwargs):
         self.parent_item = parent_item
         super().__init__(*args, **kwargs)
-    
+
     def set_items(self):
         """Add model items to the parent item."""
         self.name_item = QStandardItem(self.text)
@@ -271,9 +271,8 @@ class ComponentSelector(QWidget):
         for device in devices:
             await self.combo_box_model.add_device(device)
             await self.tree_model.add_device(device)
-        # Clear the combobox text so it doesn't auto-select the first entry            
+        # Clear the combobox text so it doesn't auto-select the first entry
         self.combo_box.setCurrentText("")
-
 
     def add_widgets(self):
         # Create a layout

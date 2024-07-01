@@ -5,14 +5,12 @@ from qtpy import QtWidgets
 
 from firefly import display
 from firefly.component_selector import ComponentSelector
+from firefly.plans.regions_display import RegionsDisplay, RegionBase
 
 log = logging.getLogger(__name__)
 
 
-class LineScanRegion:
-    def __init__(self):
-        self.setup_ui()
-
+class RobotMotorRegion(RegionBase):
     def setup_ui(self):
         self.layout = QtWidgets.QHBoxLayout()
 
@@ -26,10 +24,17 @@ class LineScanRegion:
         self.layout.addWidget(self.start_line_edit)
 
 
-class RobotDisplay():
+class RobotDisplay(RegionsDisplay):
+    """Manage sample transfer using a robot plan.
+
+    .. code-block:: python
+
+      robot_sample(robot, number/None, motor1, position1, motor2,
+                   position2, motor3, position3, …)
+
     """
-    A GUI for managing sample tranfer using a robot plan: robot_sample(robot, number/None, motor1, position1, motor2, position2, motor3, position...)
-    """
+
+    Region = RobotMotorRegion
 
     def sample_numbers(self):
         sample_names = [name for name, device in self.device.samples.walk_subdevices()]
@@ -38,54 +43,51 @@ class RobotDisplay():
         return sample_numbers
 
     def customize_ui(self):
-        self.reset_default_regions()
-        # clear any exiting items in the combo box
-        self.ui.sample_combo_box.clear()
-        # Get the list of sample numbers
-        sample_numbers = self.sample_numbers()
+        super().customize_ui()
         # set the list of values for the combo box
-        for sam in sample_numbers:
+        self.ui.sample_combo_box.clear()
+        for sam in self.sample_numbers():
             self.ui.sample_combo_box.addItem(str(sam))
 
         # disable the line edits in spin box
-        self.ui.num_motor_spin_box.lineEdit().setReadOnly(True)
-        self.ui.num_motor_spin_box.valueChanged.connect(self.update_regions)
-        self.ui.run_button.clicked.connect(self.queue_plan)
+        # self.ui.num_motor_spin_box.lineEdit().setReadOnly(True)
+        # self.ui.num_motor_spin_box.valueChanged.connect(self.update_regions)
+        # self.ui.run_button.clicked.connect(self.queue_plan)
 
-    def reset_default_regions(self):
-        default_num_regions = 1
-        if not hasattr(self, "regions"):
-            self.regions = []
-            self.add_regions(default_num_regions)
-        self.ui.num_motor_spin_box.setValue(default_num_regions)
-        self.update_regions()
+    # def reset_default_regions(self):
+    #     default_num_regions = 1
+    #     if not hasattr(self, "regions"):
+    #         self.regions = []
+    #         self.add_regions(default_num_regions)
+    #     self.ui.num_motor_spin_box.setValue(default_num_regions)
+    #     self.update_regions()
 
-    def add_regions(self, num=1):
-        for i in range(num):
-            region = LineScanRegion()
-            self.ui.regions_layout.addLayout(region.layout)
-            # Save it to the list
-            self.regions.append(region)
+    # def add_regions(self, num=1):
+    #     for i in range(num):
+    #         region = LineScanRegion()
+    #         self.ui.regions_layout.addLayout(region.layout)
+    #         # Save it to the list
+    #         self.regions.append(region)
 
-    def remove_regions(self, num=1):
-        for i in range(num):
-            layout = self.regions[-1].layout
-            # iterate/wait, and delete all widgets in the layout in the end
-            while layout.count() > 0:
-                item = layout.takeAt(0)
-            if item.widget():
-                item.widget().deleteLater()
-            self.regions.pop()
+    # def remove_regions(self, num=1):
+    #     for i in range(num):
+    #         layout = self.regions[-1].layout
+    #         # iterate/wait, and delete all widgets in the layout in the end
+    #         while layout.count() > 0:
+    #             item = layout.takeAt(0)
+    #         if item.widget():
+    #             item.widget().deleteLater()
+    #         self.regions.pop()
 
-    def update_regions(self):
-        new_region_num = self.ui.num_motor_spin_box.value()
-        old_region_num = len(self.regions)
-        diff_region_num = new_region_num - old_region_num
+    # def update_regions(self):
+    #     new_region_num = self.ui.num_motor_spin_box.value()
+    #     old_region_num = len(self.regions)
+    #     diff_region_num = new_region_num - old_region_num
 
-        if diff_region_num < 0:
-            self.remove_regions(abs(diff_region_num))
-        elif diff_region_num > 0:
-            self.add_regions(diff_region_num)
+    #     if diff_region_num < 0:
+    #         self.remove_regions(abs(diff_region_num))
+    #     elif diff_region_num > 0:
+    #         self.add_regions(diff_region_num)
 
     def queue_plan(self, *args, **kwargs):
         """Execute this plan on the queueserver."""
@@ -112,9 +114,8 @@ class RobotDisplay():
         item = BPlan("robot_transfer_sample", robot, sam_num, *args)
 
         # Submit the item to the queueserver
-        app = FireflyApplication.instance()
         log.info("Add ``robot_transfer_sample()`` plan to queue.")
-        app.add_queue_item(item)
+        self.queue_item_submitted.emit(item)
 
     def ui_filename(self):
         return "robot.ui"
