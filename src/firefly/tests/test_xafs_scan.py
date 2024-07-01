@@ -164,7 +164,7 @@ def test_xafs_scan_plan_queued_energies(display, qtbot):
         qtbot.mouseClick(display.ui.run_button, QtCore.Qt.LeftButton)
 
 
-def test_xafs_scan_plan_queued_energies_k_mixed(display, qtbot):
+def test_xafs_scan_plan_queued_energies_k_mixed(qtbot, display):
     display.ui.regions_spin_box.setValue(2)
     display.edge_combo_box.setCurrentText("Pt L3 (11500.8 eV)")
 
