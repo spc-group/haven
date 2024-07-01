@@ -1,29 +1,20 @@
-import asyncio
 import logging
 from collections import OrderedDict
 from functools import lru_cache
 from typing import Mapping, Sequence
 
 import qtawesome as qta
-from ophyd import (
-    Device,
-    EpicsMotor,
-    PositionerBase,
-    Signal,
-    do_not_wait_for_lazy_connection,
-)
-from qasync import QThreadExecutor, asyncSlot
+from ophyd import Device, EpicsMotor, PositionerBase, Signal
+from qasync import asyncSlot
 from qtpy.QtGui import QFont, QStandardItem, QStandardItemModel
 from qtpy.QtWidgets import (
     QComboBox,
-    QDialog,
     QHBoxLayout,
-    QPushButton,
+    QSizePolicy,
     QToolButton,
     QTreeView,
     QVBoxLayout,
     QWidget,
-    QSizePolicy
 )
 
 log = logging.getLogger(__name__)
@@ -50,6 +41,7 @@ def icons():
 
 class OphydNode:
     """A node in the Ophyd device hierarchy."""
+
     device_class: type
     text: str
     dotted_name: str
@@ -110,7 +102,9 @@ class DeviceTree(TreeNode):
         self.device = device
         dotted_name = self.device.name
         dotted_name = kwargs.pop("dotted_name", dotted_name)
-        super().__init__(*args, device_class=type(device), dotted_name=dotted_name, **kwargs)
+        super().__init__(
+            *args, device_class=type(device), dotted_name=dotted_name, **kwargs
+        )
 
     def component_from_dotted_name(self, name):
         return self.nodes[name]
@@ -126,9 +120,12 @@ class DeviceTree(TreeNode):
             dotted_name = ".".join([self.device.name, dotted_name])
             parent = dotted_name.rsplit(".", maxsplit=1)[0]
             parent = self.nodes[parent]
-            node = TreeNode(parent_item=parent.name_item,
-                            text=cpt.attr, device_class=cpt.cls,
-                            dotted_name=dotted_name)
+            node = TreeNode(
+                parent_item=parent.name_item,
+                text=cpt.attr,
+                device_class=cpt.cls,
+                dotted_name=dotted_name,
+            )
             self.nodes[dotted_name] = node
 
 
@@ -181,7 +178,9 @@ class DeviceComboBoxModel(QStandardItemModel):
     async def add_device(self, device):
         """Add components of the device as extra options."""
         # Add a node for the root device itself
-        root_node = ComboBoxNode(text=device.name, device_class=type(device), dotted_name=device.name)
+        root_node = ComboBoxNode(
+            text=device.name, device_class=type(device), dotted_name=device.name
+        )
         self.nodes[device.name] = root_node
         self.appendRow(root_node.text_item)
         # Get the subcomponents of the device
@@ -198,7 +197,9 @@ class DeviceComboBoxModel(QStandardItemModel):
             parent = dotted_name.rsplit(".", maxsplit=1)[0]
             parent = self.nodes[parent]
             # Create the node
-            node = ComboBoxNode(text=dotted_name, device_class=device_class, dotted_name=dotted_name)
+            node = ComboBoxNode(
+                text=dotted_name, device_class=device_class, dotted_name=dotted_name
+            )
             self.nodes[dotted_name] = node
             # Add the node's model items to the model
             self.appendRow(node.text_item)

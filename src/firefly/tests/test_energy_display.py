@@ -24,7 +24,7 @@ def energy_positioner(sim_registry):
         name="energy",
     )
     energy.monochromator.energy.user_setpoint.sim_set_limits((4000, 33000))
-    energy.undulator.energy.setpoint.sim_set_limits((-float('inf'), float('inf')))
+    energy.undulator.energy.setpoint.sim_set_limits((-float("inf"), float("inf")))
     return energy
 
 

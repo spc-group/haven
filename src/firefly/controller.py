@@ -304,9 +304,7 @@ class FireflyController(QtCore.QObject):
         self.queue_status_changed.connect(action.window.update_queue_controls)
         if getattr(self, "_queue_client", None) is not None:
             self._queue_client.check_queue_status(force=True)
-        action.display.queue_item_submitted.connect(
-            self.add_queue_item
-        )
+        action.display.queue_item_submitted.connect(self.add_queue_item)
         # Send the current devices to the window
         await action.window.update_devices(self.registry)
 

@@ -5,8 +5,8 @@ from ophyd import Component as Cpt
 from ophyd import Device, EpicsMotor, sim
 
 from firefly.component_selector import (
-    DeviceComboBoxModel,
     ComponentSelector,
+    DeviceComboBoxModel,
     DeviceTreeModel,
 )
 
@@ -67,7 +67,7 @@ async def test_selector_adds_devices(selector):
 @pytest.mark.asyncio
 async def test_tree_model_adds_device(motor_registry):
     model = DeviceTreeModel()
-    await model.add_device(motor_registry['motor1'])
+    await model.add_device(motor_registry["motor1"])
     # Check "Component" column
     assert model.item(0).text() == "motor1"
     assert model.item(0).child(0, column=0).text() == "user_readback"
@@ -79,8 +79,8 @@ async def test_tree_model_adds_device(motor_registry):
 @pytest.mark.asyncio
 async def test_combo_box_model_adds_device(motor_registry):
     model = DeviceComboBoxModel()
-    await model.add_device(motor_registry['motor1'])
-    await model.add_device(motor_registry['stage'])
+    await model.add_device(motor_registry["motor1"])
+    await model.add_device(motor_registry["stage"])
     # Check that dot-notation is included
     assert model.item(0).text() == "motor1"
     assert model.item(1).text() == "stage"
@@ -114,8 +114,8 @@ async def test_combobox_changes_tree(selector, qtbot):
 @pytest.mark.asyncio
 async def test_model_component_from_index(motor_registry):
     model = DeviceTreeModel()
-    await model.add_device(motor_registry['motor1'])
-    await model.add_device(motor_registry['stage'])
+    await model.add_device(motor_registry["motor1"])
+    await model.add_device(motor_registry["stage"])
     # Can we retrieve a root device based on its name item
     item = model.item(0)
     cpt = model.component_from_index(item.index())
@@ -133,8 +133,8 @@ async def test_model_component_from_index(motor_registry):
 @pytest.mark.asyncio
 async def test_model_component_from_dotted_index(motor_registry):
     model = DeviceTreeModel()
-    await model.add_device(motor_registry['motor1'])
-    await model.add_device(motor_registry['stage'])
+    await model.add_device(motor_registry["motor1"])
+    await model.add_device(motor_registry["stage"])
     # Can we retrieve a root device based on its dotted name
     item = model.item(0)
     cpt = model.component_from_dotted_name("motor1")
@@ -149,4 +149,4 @@ async def test_model_component_from_dotted_index(motor_registry):
 async def test_loads_devices_from_registry(selector, motor_registry, qtbot):
     selector.combo_box_model.add_device = mock.AsyncMock()
     await selector.update_devices(motor_registry)
-    selector.combo_box_model.add_device.assert_called_with(motor_registry['stage'])
+    selector.combo_box_model.add_device.assert_called_with(motor_registry["stage"])
