@@ -39,21 +39,23 @@ def empty_table(sim_registry):
 
 
 @pytest.fixture()
-def display(ffapp, table):
+def display(qtbot, table):
     disp = TableDisplay(macros={"DEVICE": table.name})
+    qtbot.addWidget(disp)
     return disp
 
 
-def test_unused_motor_widgets(ffapp, empty_table):
+def test_unused_motor_widgets(qtbot, empty_table):
     """Do control widgets get disable for motors that aren't on the device?"""
     display = TableDisplay(macros={"DEVICE": empty_table.name})
+    qtbot.addWidget(display)
     # Check that the bender control widgets were enabled
     assert not display.ui.pitch_embedded_display.isEnabled()
     assert not display.ui.vertical_embedded_display.isEnabled()
     assert not display.ui.horizontal_embedded_display.isEnabled()
 
 
-def test_tilting_table_caqtdm(ffapp, sim_registry):
+def test_tilting_table_caqtdm(qtbot, sim_registry):
     table = FakeTable(
         "255idcVME:",
         horizontal_motor="m4",
@@ -64,6 +66,7 @@ def test_tilting_table_caqtdm(ffapp, sim_registry):
         name="table",
     )
     display = TableDisplay(macros={"DEVICE": table.name})
+    qtbot.addWidget(display)
     display._open_caqtdm_subprocess = mock.MagicMock()
     # Launch the caqtdm display
     display.launch_caqtdm()
@@ -86,9 +89,10 @@ def test_tilting_table_caqtdm(ffapp, sim_registry):
     assert "TBH=m4" in macros
 
 
-def test_single_motor_caqtdm(ffapp, sim_registry):
+def test_single_motor_caqtdm(qtbot, sim_registry):
     table = FakeTable("255idcVME:", horizontal_motor="m3", name="table")
     display = TableDisplay(macros={"DEVICE": table.name})
+    qtbot.addWidget(display)
     display._open_caqtdm_subprocess = mock.MagicMock()
     # Launch the caqtdm display
     display.launch_caqtdm()
@@ -106,11 +110,12 @@ def test_single_motor_caqtdm(ffapp, sim_registry):
     assert "M=m3" in macros
 
 
-def test_double_motor_caqtdm(ffapp, sim_registry):
+def test_double_motor_caqtdm(qtbot, sim_registry):
     table = FakeTable(
         "255idcVME:", horizontal_motor="m3", vertical_motor="m4", name="table"
     )
     display = TableDisplay(macros={"DEVICE": table.name})
+    qtbot.addWidget(display)
     display._open_caqtdm_subprocess = mock.MagicMock()
     # Launch the caqtdm display
     display.launch_caqtdm()

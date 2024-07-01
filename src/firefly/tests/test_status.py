@@ -4,9 +4,10 @@ from qtpy.QtWidgets import QFormLayout
 from firefly.status import StatusDisplay
 
 
-def test_shutter_controls(shutters, xia_shutter, sim_registry):
+def test_shutter_controls(qtbot, shutters, xia_shutter, sim_registry):
     """Do shutter controls get added to the window?"""
     disp = StatusDisplay()
+    qtbot.addWidget(disp)
     form = disp.ui.beamline_layout
     # Check label text
     label0 = form.itemAt(4, QFormLayout.LabelRole)

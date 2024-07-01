@@ -9,7 +9,6 @@ from qtpy.QtGui import QDoubleValidator
 from xraydb.xraydb import XrayDB
 
 from firefly import display
-from firefly.application import FireflyApplication
 from firefly.plans.util import is_valid_value, time_converter
 from haven.energy_ranges import (
     E_step_to_k_step,
@@ -27,7 +26,8 @@ log = logging.getLogger(__name__)
 float_accuracy = 4
 
 
-# the energy resolution will not be better than 0.01 eV at S25, e.g., 0.01 eV /4000 eV -> 10-6 level, Si(311) is 10-5 level
+# The energy resolution will not be better than 0.01 eV at S25
+# e.g. 0.01 eV / 4000 eV -> 10^-6 level, Si(311) is 10-5 level
 def wavenumber_to_energy_round(wavenumber):
     return round(wavenumber_to_energy(wavenumber), 2)
 
@@ -254,9 +254,9 @@ class XafsScanDisplay(display.FireflyDisplay):
         self.ui.regions_spin_box.editingFinished.connect(self.update_regions)
 
         # reset button
-        self.ui.pushButton.clicked.connect(self.reset_default_regions)
+        self.ui.reset_button.clicked.connect(self.reset_default_regions)
 
-        # Button to actually execute the plan
+        # Run scan button
         self.ui.run_button.clicked.connect(self.queue_plan)
 
         # connect checkboxes with all regions' check box
@@ -268,6 +268,11 @@ class XafsScanDisplay(display.FireflyDisplay):
 
         # connect num. of scans with total_time
         self.ui.spinBox_repeat_scan_num.valueChanged.connect(self.update_total_time)
+
+    async def update_devices(self, registry):
+        """Set available components in the device list."""
+        await super().update_devices(registry)
+        await self.ui.detectors_list.update_devices(registry)
 
     def on_region_checkbox(self):
         for region_i in self.regions:
@@ -503,11 +508,10 @@ class XafsScanDisplay(display.FireflyDisplay):
             md=md,
         )
         # Submit the item to the queueserver
-        app = FireflyApplication.instance()
         log.info(f"Adding XAFS scan to queue.")
         # repeat scans
         for i in range(repeat_scan_num):
-            app.add_queue_item(item)
+            self.queue_item_submitted.emit(item)
 
     def ui_filename(self):
         return "plans/xafs_scan.ui"

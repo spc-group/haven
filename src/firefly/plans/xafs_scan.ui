@@ -110,7 +110,7 @@
         </spacer>
        </item>
        <item>
-        <widget class="QPushButton" name="pushButton">
+        <widget class="QPushButton" name="reset_button">
          <property name="toolTip">
           <string>Reset to default values</string>
          </property>
@@ -143,8 +143,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>700</width>
-            <height>156</height>
+            <width>581</width>
+            <height>198</height>
            </rect>
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_8">

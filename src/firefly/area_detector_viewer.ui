@@ -208,9 +208,6 @@
                  <property name="channel" stdset="0">
                   <string>haven://${AD}.cam.gain</string>
                  </property>
-                 <property name="tickPosition" stdset="0">
-                  <enum>QSlider::TicksBelow</enum>
-                 </property>
                  <property name="userDefinedLimits" stdset="0">
                   <bool>true</bool>
                  </property>
@@ -258,9 +255,6 @@
                  </property>
                  <property name="channel" stdset="0">
                   <string>haven://${AD}.cam.acquire_time</string>
-                 </property>
-                 <property name="tickPosition" stdset="0">
-                  <enum>QSlider::TicksBelow</enum>
                  </property>
                  <property name="userDefinedLimits" stdset="0">
                   <bool>true</bool>
@@ -398,7 +392,7 @@
              <property name="currentIndex">
               <number>0</number>
              </property>
-             <property name="alarmChannels">
+             <property name="alarmChannels" stdset="0">
               <stringlist>
                <string></string>
                <string></string>
@@ -500,7 +494,7 @@
               <enum>QTabWidget::Rounded</enum>
              </property>
              <property name="currentIndex">
-              <number>0</number>
+              <number>3</number>
              </property>
              <property name="tabBarAutoHide">
               <bool>false</bool>
@@ -508,7 +502,7 @@
              <property name="currentTabAlarmChannel" stdset="0">
               <cstring></cstring>
              </property>
-             <property name="alarmChannels">
+             <property name="alarmChannels" stdset="0">
               <stringlist>
                <string></string>
                <string></string>
@@ -531,7 +525,7 @@
                   <enum>QFrame::NoFrame</enum>
                  </property>
                  <property name="macros" stdset="0">
-                  <string>AD=${AD},R=5</string>
+                  <string>AD=${AD},R=4</string>
                  </property>
                  <property name="filename" stdset="0">
                   <string>area_detector_roi.ui</string>
@@ -609,29 +603,6 @@
                </item>
               </layout>
              </widget>
-             <widget class="QWidget" name="tab_3">
-              <attribute name="title">
-               <string>4</string>
-              </attribute>
-              <layout class="QVBoxLayout" name="verticalLayout_11">
-               <item>
-                <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_4">
-                 <property name="toolTip">
-                  <string/>
-                 </property>
-                 <property name="frameShape">
-                  <enum>QFrame::NoFrame</enum>
-                 </property>
-                 <property name="macros" stdset="0">
-                  <string>AD=${AD},R=4</string>
-                 </property>
-                 <property name="filename" stdset="0">
-                  <string>area_detector_roi.ui</string>
-                 </property>
-                </widget>
-               </item>
-              </layout>
-             </widget>
             </widget>
            </item>
           </layout>
@@ -662,6 +633,7 @@
    <class>PyDMTabWidget</class>
    <extends>QTabWidget</extends>
    <header>pydm.widgets.tab_bar</header>
+   <container>1</container>
   </customwidget>
   <customwidget>
    <class>PyDMLabel</class>
@@ -672,6 +644,7 @@
    <class>PyDMEmbeddedDisplay</class>
    <extends>QFrame</extends>
    <header>pydm.widgets.embedded_display</header>
+   <container>1</container>
   </customwidget>
   <customwidget>
    <class>PyDMPushButton</class>
@@ -682,6 +655,7 @@
    <class>PyDMSlider</class>
    <extends>QFrame</extends>
    <header>pydm.widgets.slider</header>
+   <container>1</container>
   </customwidget>
   <customwidget>
    <class>ImageView</class>

@@ -141,8 +141,14 @@ def bss(beamline_manager):
     return bss
 
 
-def test_bss_proposal_model(qtbot, ffapp, bss_api, bss):
+@pytest.fixture()
+def display(qtbot, bss_api, bss):
     display = BssDisplay(api=bss_api)
+    qtbot.addWidget(display)
+    return display
+
+
+def test_bss_proposal_model(display):
     assert display.ui_filename() == "bss.ui"
     # Check model construction
     assert isinstance(display.proposal_model, QStandardItemModel)
@@ -151,12 +157,10 @@ def test_bss_proposal_model(qtbot, ffapp, bss_api, bss):
     assert display.ui.proposal_view.model() is display.proposal_model
 
 
-def test_bss_proposal_updating(qtbot, ffapp, bss_api, bss):
-    display = BssDisplay(api=bss_api)
+def test_bss_proposal_updating(display, qtbot, bss):
     # Set some base-line values on the IOC
     bss.proposal.proposal_id.set("").wait()
     # Change the proposal item
-    selection_model = display.ui.proposal_view.selectionModel()
     item = display.proposal_model.item(0, 1)
     assert item is not None
     rect = display.proposal_view.visualRect(item.index())
@@ -176,8 +180,7 @@ def test_bss_proposal_updating(qtbot, ffapp, bss_api, bss):
     assert pv_id == "74163"
 
 
-def test_bss_proposals(ffapp, bss_api, bss):
-    display = BssDisplay(api=bss_api)
+def test_bss_proposals(display, bss_api):
     # Check values
     api_proposal = bss_api.listProposals()[0]
     proposals = display.proposals()
@@ -190,10 +193,11 @@ def test_bss_proposals(ffapp, bss_api, bss):
     assert proposal["End"] == "2023-03-31 08:00:00-05:00"
 
 
-def test_bss_esaf_model(qtbot, ffapp, bss_api, bss):
+def test_bss_esaf_model(bss_api, bss, qtbot):
     bss.proposal.beamline_name.set("255-ID-Z").wait()
     bss.esaf.aps_cycle.set("3024-1").wait()
     display = BssDisplay(api=bss_api)
+    qtbot.addWidget(display)
     assert display.ui_filename() == "bss.ui"
     # Check model construction
     assert isinstance(display.esaf_model, QStandardItemModel)
@@ -203,12 +207,10 @@ def test_bss_esaf_model(qtbot, ffapp, bss_api, bss):
     assert display.ui.esaf_view.model() is display.esaf_model
 
 
-def test_bss_esaf_updating(qtbot, ffapp, bss_api, bss):
-    display = BssDisplay(api=bss_api)
+def test_bss_esaf_updating(display, qtbot, bss):
     # Set some base-line values on the IOC
     bss.esaf.esaf_id.set("").wait()
     # Change the ESAF item
-    selection_model = display.ui.esaf_view.selectionModel()
     item = display.esaf_model.item(0, 1)
     assert item is not None
     rect = display.esaf_view.visualRect(item.index())
@@ -226,8 +228,7 @@ def test_bss_esaf_updating(qtbot, ffapp, bss_api, bss):
     assert pv_id == "269238"
 
 
-def test_bss_esafs(ffapp, bss_api, bss):
-    display = BssDisplay(api=bss_api)
+def test_bss_esafs(display, bss_api):
     # Check values
     api_esaf = bss_api.listESAFs()[0]
     esafs = display.esafs

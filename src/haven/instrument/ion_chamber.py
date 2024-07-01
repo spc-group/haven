@@ -200,7 +200,7 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
         return self.units[int(level / len(self.values))]
 
     def _get_gain_level(self, mds: MultiDerivedSignal, items: SignalToValue) -> int:
-        "Given a sensitivity value and unit , transform to the desired level."
+        """Given a sensitivity value and unit, transform to the desired level."""
         value = self.values.index(items[self.sensitivity_value])
         unit = self.units.index(items[self.sensitivity_unit])
         # Determine sensitivity level

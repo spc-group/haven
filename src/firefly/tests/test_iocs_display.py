@@ -3,13 +3,14 @@ from firefly.iocs import IocsDisplay
 dummy_config = {"iocs"}
 
 
-def test_embedded_display_widgets(qtbot, ffapp, beamline_manager, sim_registry):
+def test_embedded_display_widgets(qtbot, beamline_manager, sim_registry):
     """Test the the voltmeters creates a new embedded display widget for
     each ion chamber.
 
     """
     # Load the display
     display = IocsDisplay()
+    qtbot.addWidget(display)
     # Check that the embedded display widgets get added correctly
     assert hasattr(display, "_ioc_displays")
     assert len(display._ioc_displays) == 2

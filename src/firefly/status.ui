@@ -608,15 +608,12 @@
          </spacer>
         </item>
         <item>
-         <widget class="PyDMPushButton" name="bss_modify_button">
-          <property name="enabled">
-           <bool>true</bool>
-          </property>
+         <widget class="QPushButton" name="bss_modify_button">
           <property name="toolTip">
-           <string/>
+           <string>Load the window for changing beamline scheduling system (BSS) details.</string>
           </property>
           <property name="text">
-           <string>Modify</string>
+           <string>BSS</string>
           </property>
          </widget>
         </item>

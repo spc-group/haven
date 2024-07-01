@@ -4,8 +4,9 @@ from firefly.tweak import TweakDisplay
 
 
 @pytest.fixture()
-def display(ffapp):
+def display(qtbot):
     disp = TweakDisplay()
+    qtbot.addWidget(disp)
     return disp
 
 

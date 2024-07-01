@@ -23,13 +23,16 @@ def energy_positioner(sim_registry):
         undulator_prefix="id_ioc:",
         name="energy",
     )
+    energy.monochromator.energy.user_setpoint.sim_set_limits((4000, 33000))
+    energy.undulator.energy.setpoint.sim_set_limits((-float("inf"), float("inf")))
     return energy
 
 
 @pytest.fixture()
-def display(ffapp, energy_positioner):
+def display(qtbot, energy_positioner):
     # Load display
     display = EnergyDisplay()
+    qtbot.addWidget(display)
     return display
 
 
@@ -69,7 +72,7 @@ def test_id_caqtdm_macros(display):
     }
 
 
-def test_move_energy(display, qtbot, ffapp):
+def test_move_energy(qtbot, display):
     # Click the set energy button
     btn = display.ui.set_energy_button
     expected_item = BPlan("set_energy", energy=8402.0)
@@ -79,7 +82,7 @@ def test_move_energy(display, qtbot, ffapp):
 
     qtbot.keyClicks(display.target_energy_lineedit, "8402")
     with qtbot.waitSignal(
-        ffapp.queue_item_added, timeout=1000, check_params_cb=check_item
+        display.queue_item_submitted, timeout=1000, check_params_cb=check_item
     ):
         qtbot.mouseClick(btn, QtCore.Qt.LeftButton)
 

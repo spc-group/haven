@@ -15,9 +15,11 @@ class FireflyDisplay(Display):
     caqtdm_command: str = "/APSshare/bin/caQtDM -style plastique -noMsg -attach"
     caqtdm_actions: Sequence
     device: Optional[Device]
+    registry = None
 
     # Signals
     status_message_changed = Signal(str, int)
+    queue_item_submitted = Signal(object)
 
     def __init__(self, parent=None, args=None, macros=None, ui_filename=None, **kwargs):
         super().__init__(
@@ -90,6 +92,10 @@ class FireflyDisplay(Display):
         cmds.append(ui_file)
         self._open_caqtdm_subprocess(cmds)
 
+    async def update_devices(self, registry):
+        """The list of accessible devices has changed."""
+        self.registry = registry
+
     def customize_device(self):
         # Retrieve the device
         device = self.macros().get("DEVICE")
@@ -99,6 +105,9 @@ class FireflyDisplay(Display):
         return device
 
     def customize_ui(self):
+        pass
+
+    def update_queue_status(self, status):
         pass
 
     def show_message(self, message, timeout=0):

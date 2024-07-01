@@ -246,12 +246,6 @@ def client():
     yield client
 
 
-@pytest.fixture()
-def ffapp(ffapp, client):
-    ffapp.prepare_queue_client(api=client.api, client=client)
-    return ffapp
-
-
 def test_client_timer(client):
     assert isinstance(client.timer, QTimer)
 
@@ -320,21 +314,6 @@ async def test_toggle_autostart(client, qtbot):
     api.queue_autostart.assert_called_once_with(True)
 
 
-def test_autostart_changed(client, ffapp, qtbot):
-    """Does the action respond to changes in the queue autostart
-    status?
-
-    """
-    ffapp.queue_autostart_action.setChecked(True)
-    assert ffapp.queue_autostart_action.isChecked()
-    with qtbot.waitSignal(client.autostart_changed, timeout=3):
-        client.autostart_changed.emit(False)
-    assert not ffapp.queue_autostart_action.isChecked()
-    with qtbot.waitSignal(client.autostart_changed, timeout=3):
-        client.autostart_changed.emit(True)
-    assert ffapp.queue_autostart_action.isChecked()
-
-
 # def test_start_queue(ffapp, client, qtbot):
 #     ffapp.start_queue_action.trigger()
 #     qtbot.wait(1000)
@@ -354,15 +333,6 @@ async def test_stop_queue(client, qtbot):
     api.clear_mock()
     await client.stop_queue(False)
     api.queue_stop_cancel.assert_called_once()
-
-
-def test_queue_stopped(client, ffapp):
-    """Does the action respond to changes in the queue stopped pending?"""
-    assert not ffapp.queue_stop_action.isChecked()
-    client.queue_stop_changed.emit(True)
-    assert ffapp.queue_stop_action.isChecked()
-    client.queue_stop_changed.emit(False)
-    assert not ffapp.queue_stop_action.isChecked()
 
 
 @pytest.mark.asyncio

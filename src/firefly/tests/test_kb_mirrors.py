@@ -44,20 +44,20 @@ def kb_bendable_mirrors(sim_registry):
 
 
 @pytest.fixture()
-def display(ffapp, kb_mirrors):
+def display(kb_mirrors, qtbot):
     disp = KBMirrorsDisplay(macros={"DEVICE": kb_mirrors.name})
+    qtbot.addWidget(disp)
     return disp
 
 
-def test_bender_widgets(ffapp, kb_bendable_mirrors):
-    # Make the display object
-    mirrors = kb_bendable_mirrors
-    disp = KBMirrorsDisplay(macros={"DEVICE": mirrors.name})
+def test_bender_widgets(qtbot, kb_bendable_mirrors):
+    display = KBMirrorsDisplay(macros={"DEVICE": kb_bendable_mirrors.name})
+    qtbot.addWidget(display)
     # Check that the bender control widgets were enabled
-    assert disp.ui.horizontal_upstream_display.isEnabled()
-    assert disp.ui.horizontal_downstream_display.isEnabled()
-    assert disp.ui.vertical_upstream_display.isEnabled()
-    assert disp.ui.vertical_downstream_display.isEnabled()
+    assert display.ui.horizontal_upstream_display.isEnabled()
+    assert display.ui.horizontal_downstream_display.isEnabled()
+    assert display.ui.vertical_upstream_display.isEnabled()
+    assert display.ui.vertical_downstream_display.isEnabled()
 
 
 def test_kb_mirrors_caqtdm(display, kb_mirrors):
@@ -85,7 +85,7 @@ def test_kb_mirrors_caqtdm(display, kb_mirrors):
     assert ui_file.split("/")[-1] == "KB_mirrors.ui"
 
 
-def test_kb_bendable_mirrors_caqtdm(ffapp, kb_bendable_mirrors):
+def test_kb_bendable_mirrors_caqtdm(kb_bendable_mirrors):
     mirrors = kb_bendable_mirrors
     disp = KBMirrorsDisplay(macros={"DEVICE": mirrors.name})
     disp._open_caqtdm_subprocess = mock.MagicMock()

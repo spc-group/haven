@@ -1,24 +1,27 @@
 from PyQt5.QtGui import QStandardItem, QStandardItemModel
 from qtpy.QtWidgets import QAbstractItemView, QListView
 
-from haven import registry
-
 
 class DetectorListView(QListView):
     detector_model: QStandardItemModel
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.load_detector_items()
+        # Create the data model
+        self.detector_model = QStandardItemModel()
+        self.setModel(self.detector_model)
         # Make it possible to select multiple detectors
         self.setSelectionMode(QAbstractItemView.ExtendedSelection)
 
-    def load_detector_items(self):
+    async def update_devices(self, registry):
+        # Get devices
         detectors = registry.findall(label="detectors", allow_none=True)
-        self.detector_model = QStandardItemModel()
-        self.setModel(self.detector_model)
+        # Remove old detectors list from model
+        model = self.detector_model
+        model.removeRows(0, model.rowCount())
+        # Add new detectors to model
         for det in detectors:
-            self.detector_model.appendRow(QStandardItem(det.name))
+            model.appendRow(QStandardItem(det.name))
 
     def selected_detectors(self):
         indexes = self.selectedIndexes()

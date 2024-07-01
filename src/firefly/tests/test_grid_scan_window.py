@@ -5,7 +5,6 @@ from bluesky_queueserver_api import BPlan
 from ophyd.sim import make_fake_device
 from qtpy import QtCore
 
-from firefly.application import FireflyApplication
 from firefly.plans.grid_scan import GridScanDisplay
 from haven.instrument import motor
 
@@ -16,18 +15,23 @@ def fake_motors(sim_registry):
     motors = []
     for name in motor_names:
         this_motor = make_fake_device(motor.HavenMotor)(name=name, labels={"motors"})
-        sim_registry.register(this_motor)
         motors.append(this_motor)
     return motors
 
 
-def test_time_calculator(qtbot, sim_registry, fake_motors, dxp, I0):
-    app = FireflyApplication.instance()
+@pytest.fixture()
+async def display(qtbot, sim_registry, fake_motors, dxp, I0):
     display = GridScanDisplay()
     qtbot.addWidget(display)
+    await display.update_devices(sim_registry)
+    display.ui.run_button.setEnabled(True)
+    return display
 
+
+@pytest.mark.asyncio
+async def test_time_calculator(display, sim_registry):
     # set up motor num
-    display.ui.num_motor_spin_box.setValue(2)
+    await display.update_regions(2)
 
     # set up num of repeat scans
     display.ui.spinBox_repeat_scan_num.setValue(6)
@@ -42,7 +46,7 @@ def test_time_calculator(qtbot, sim_registry, fake_motors, dxp, I0):
 
     # set up default timing for the detector
     detectors = display.ui.detectors_list.selected_detectors()
-    detectors = {name: app.registry[name] for name in detectors}
+    detectors = {name: sim_registry[name] for name in detectors}
     detectors["I0"].default_time_signal.set(1).wait(2)
     detectors["vortex_me4"].default_time_signal.set(0.5).wait(2)
 
@@ -66,11 +70,9 @@ def test_time_calculator(qtbot, sim_registry, fake_motors, dxp, I0):
     assert int(display.ui.label_sec_total.text()) == 0
 
 
-def test_grid_scan_plan_queued(ffapp, qtbot, sim_registry, fake_motors):
-    display = GridScanDisplay()
-    display.ui.run_button.setEnabled(True)
-    display.ui.num_motor_spin_box.setValue(2)
-    display.update_regions()
+@pytest.mark.asyncio
+async def test_grid_scan_plan_queued(display, qtbot, sim_registry, fake_motors):
+    await display.update_regions(2)
 
     # set up a test motor 1
     display.regions[0].motor_box.combo_box.setCurrentText("motorA_m1")
@@ -116,6 +118,6 @@ def test_grid_scan_plan_queued(ffapp, qtbot, sim_registry, fake_motors):
 
     # Click the run button and see if the plan is queued
     with qtbot.waitSignal(
-        ffapp.queue_item_added, timeout=1000, check_params_cb=check_item
+        display.queue_item_submitted, timeout=1000, check_params_cb=check_item
     ):
         qtbot.mouseClick(display.ui.run_button, QtCore.Qt.LeftButton)

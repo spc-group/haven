@@ -10,7 +10,7 @@ detectors = ["dxp", "xspress"]
 
 
 @pytest.fixture()
-def xrf_display(ffapp, request):
+def xrf_display(request, qtbot):
     """Parameterized fixture for creating a display based on a specific
     detector class.
 
@@ -19,6 +19,7 @@ def xrf_display(ffapp, request):
     det = request.getfixturevalue(request.param)
     # Create the display
     display = XRFDetectorDisplay(macros={"DEV": det.name})
+    qtbot.addWidget(display)
     # Set sensible starting values
     spectra = np.random.default_rng(seed=0).integers(
         0, 65536, dtype=np.int_, size=(4, 1024)
@@ -31,23 +32,6 @@ def xrf_display(ffapp, request):
     yield display
 
 
-@pytest.mark.parametrize("det_fixture", detectors)
-def test_open_xrf_detector_viewer_actions(ffapp, qtbot, det_fixture, request):
-    sim_det = request.getfixturevalue(det_fixture)
-    # Get the area detector parts ready
-    ffapp._prepare_device_windows(
-        device_label="xrf_detectors",
-        attr_name="xrf_detector",
-        ui_file="xrf_detector.py",
-        device_key="DEV",
-    )
-    assert hasattr(ffapp, "xrf_detector_actions")
-    assert len(ffapp.xrf_detector_actions) == 1
-    # Launch an action and see that a window opens
-    list(ffapp.xrf_detector_actions.values())[0].trigger()
-    assert "FireflyMainWindow_xrf_detector_vortex_me4" in ffapp.windows.keys()
-
-
 @pytest.mark.parametrize("xrf_display", detectors, indirect=True)
 def test_roi_widgets(xrf_display):
     xrf_display.draw_roi_widgets(2)
@@ -57,7 +41,7 @@ def test_roi_widgets(xrf_display):
 
 
 @pytest.mark.parametrize("xrf_display", detectors, indirect=True)
-def test_roi_element_comboboxes(ffapp, qtbot, xrf_display):
+def test_roi_element_comboboxes(xrf_display):
     # Check that the comboboxes have the right number of entries
     element_cb = xrf_display.ui.mca_combobox
     assert element_cb.count() == xrf_display.device.num_elements
@@ -66,7 +50,7 @@ def test_roi_element_comboboxes(ffapp, qtbot, xrf_display):
 
 
 @pytest.mark.parametrize("det_fixture", detectors)
-def test_roi_selection(ffapp, qtbot, det_fixture, request):
+def test_roi_selection(qtbot, det_fixture, request):
     det = request.getfixturevalue(det_fixture)
     display = XRFROIDisplay(macros={"DEV": det.name, "NUM": 2, "MCA": 2, "ROI": 2})
     # Unchecked box should be bland
