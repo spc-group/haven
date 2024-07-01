@@ -187,6 +187,7 @@ class FireflyMainWindow(PyDMMainWindow):
             slits_actions=actions.slits,
             mirror_actions=actions.mirrors,
             table_actions=actions.tables,
+            robot_actions=actions.robots,
             plan_actions=actions.plans,
             run_browser_action=actions.run_browser,
             voltmeters_action=actions.voltmeter,
@@ -211,6 +212,7 @@ class FireflyMainWindow(PyDMMainWindow):
         slits_actions,
         mirror_actions,
         table_actions,
+        robot_actions,
         plan_actions,
         run_browser_action,
         voltmeters_action,
@@ -266,6 +268,10 @@ class FireflyMainWindow(PyDMMainWindow):
         if len(table_actions) > 0:
             self.ui.positioners_menu.addSection("Tables")
         for action in table_actions.values():
+            self.ui.positioners_menu.addAction(action)
+        if len(robot_actions) > 0:
+            self.ui.positioners_menu.addSection("Robots")
+        for action in robot_actions.values():
             self.ui.positioners_menu.addAction(action)
         # Add actions to the individual plans
         for action in plan_actions.values():

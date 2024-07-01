@@ -1,9 +1,8 @@
-import time
-
 import pytest
+from ophyd import PVPositioner
 from ophyd.sim import instantiate_fake_device
 
-from haven.instrument.energy_positioner import EnergyPositioner
+from haven.instrument.energy_positioner import EnergyPositioner, load_energy_positioner
 
 
 @pytest.fixture()
@@ -11,38 +10,46 @@ def positioner():
     positioner = instantiate_fake_device(
         EnergyPositioner,
         name="energy",
-        mono_pv="255idMono",
-        id_prefix="255idID",
-        id_tracking_pv="255idMono:Tracking",
-        id_offset_pv="255idMono:Offset",
+        mono_prefix="255idMono:",
+        undulator_prefix="S255ID:",
     )
-    positioner.mono_energy.user_setpoint._use_limits = False
+    positioner.monochromator.energy._use_limits = False
+    positioner.monochromator.energy.user_setpoint._use_limits = False
     return positioner
 
 
-def test_pseudo_to_real_positioner(positioner):
-    positioner.energy.set(10000, timeout=5.0)
-    assert positioner.get(use_monitor=False).mono_energy.user_setpoint == 10000
-    positioner.id_offset.set(230)
-    time.sleep(0.1)
-    # Move the energy positioner
-    positioner.energy.set(5000)
-    time.sleep(0.1)  # Caproto breaks pseudopositioner status
-    # Check that the mono and ID are both moved
-    assert positioner.get(use_monitor=False).mono_energy.user_setpoint == 5000
-    expected_id_energy = 5.0 + positioner.id_offset.get(use_monitor=False) / 1000
-    assert positioner.get(use_monitor=False).id_energy.setpoint == expected_id_energy
+def test_set_energy(positioner):
+    # Set up dependent values
+    positioner.monochromator.id_offset.set(150).wait(timeout=3)
+    # Change the energy
+    positioner.set(10000, timeout=3)
+    # Check that all the sub-components were set properly
+    assert positioner.monochromator.energy.get().user_setpoint == 10000
+    assert positioner.undulator.energy.get().setpoint == 10.150
+
+
+def test_load_energy_positioner(sim_registry):
+    load_energy_positioner()
+    energy = sim_registry["energy"]
+    assert isinstance(energy, PVPositioner)
+    assert hasattr(energy, "monochromator")
+    assert hasattr(energy, "undulator")
 
 
 def test_real_to_pseudo_positioner(positioner):
-    positioner.mono_energy.user_readback.sim_put(5000.0)
-    # Move the mono energy positioner
-    # epics.caput(ioc_mono.pvs["energy"], 5000.0)
-    # time.sleep(0.1)  # Caproto breaks pseudopositioner status
-    # assert epics.caget(ioc_mono.pvs["energy"], use_monitor=False) == 5000.0
-    # assert epics.caget("mono_ioc:Energy.RBV") == 5000.0
+    positioner.monochromator.energy.user_readback._readback = 5000.0
     # Check that the pseudo single is updated
-    assert positioner.energy.get(use_monitor=False).readback == 5000.0
+    assert positioner.get(use_monitor=False).readback == 5000.0
+
+
+def test_energy_limits(positioner):
+    """Check that the energy range is determined by the limits of the
+    dependent signals.
+
+    """
+    positioner.monochromator.energy.user_setpoint.sim_set_limits((0, 35000))
+    positioner.undulator.energy.setpoint.sim_set_limits((0.01, 1000))  # (10, 1000000)
+    assert positioner.limits == (10, 35000)
 
 
 # -----------------------------------------------------------------------------

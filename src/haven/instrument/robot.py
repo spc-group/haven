@@ -11,7 +11,7 @@ from .device import make_device
 log = logging.getLogger(__name__)
 
 
-LOAD_TIMEOUT = 40
+LOAD_TIMEOUT = 80
 
 
 class Sample(Device):

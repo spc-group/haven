@@ -183,6 +183,12 @@ class FireflyController(QtCore.QObject):
             device_key="DEVICE",
             icon=qta.icon("mdi.table-furniture"),
         )
+        self.actions.robots = self.device_actions(
+            device_label="robots",
+            display_file=ui_dir / "robot.py",
+            device_key="DEVICE",
+            icon=qta.icon("mdi.robot-industrial"),
+        )
         self.actions.xrf_detectors = self.device_actions(
             device_label="xrf_detectors",
             display_file=ui_dir / "xrf_detector.py",

@@ -3,10 +3,6 @@
 prefix = "255idc:bss"
 beamline = "255-ID-C"
 
-[xray_source]
-
-type = "undulator"
-prefix = "ID255:"
 
 #####################
 # Queueserver
@@ -47,11 +43,11 @@ hutch = "C"
 
 [undulator]
 
-ioc = "id_ioc"
+prefix = "id_ioc:"
 
 [monochromator]
 
-ioc = "mono_ioc"
+prefix = "mono_ioc:"
 ioc_branch = "UP"  # For caQtDM macros
 
 ######################

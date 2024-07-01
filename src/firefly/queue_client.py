@@ -17,12 +17,10 @@ log = logging.getLogger()
 def queueserver_api():
     try:
         config = load_config()["queueserver"]
-    except KeyError:
-        raise InvalidConfiguration(
-            "Could not load queueserver info from iconfig.toml file."
-        )
-    ctrl_addr = f"tcp://{config['control_host']}:{config['control_port']}"
-    info_addr = f"tcp://{config['info_host']}:{config['info_port']}"
+        ctrl_addr = f"tcp://{config['control_host']}:{config['control_port']}"
+        info_addr = f"tcp://{config['info_host']}:{config['info_port']}"
+    except KeyError as e:
+        raise InvalidConfiguration(str(e))
     api = REManagerAPI(zmq_control_addr=ctrl_addr, zmq_info_addr=info_addr)
     return api
 

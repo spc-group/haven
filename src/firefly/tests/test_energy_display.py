@@ -17,18 +17,19 @@ FakeUndulator = make_fake_device(ApsUndulator)
 
 
 @pytest.fixture()
-def display(qtbot, sim_registry):
-    # Create fake device
-    FakeMonochromator("mono_ioc", name="monochromator")
-    FakeEnergyPositioner(
-        mono_pv="mono_ioc:Energy",
-        id_offset_pv="mono_ioc:ID_offset",
-        id_tracking_pv="mono_ioc:ID_tracking",
-        id_prefix="id_ioc",
+def energy_positioner(sim_registry):
+    energy = FakeEnergyPositioner(
+        mono_prefix="mono_ioc:",
+        undulator_prefix="id_ioc:",
         name="energy",
     )
-    undulator = FakeUndulator("id_ioc:", name="undulator", labels={"xray_sources"})
-    undulator.energy.pvname = "id_ioc:Energy"
+    energy.monochromator.energy.user_setpoint.sim_set_limits((4000, 33000))
+    energy.undulator.energy.setpoint.sim_set_limits((-float('inf'), float('inf')))
+    return energy
+
+
+@pytest.fixture()
+def display(qtbot, energy_positioner):
     # Load display
     display = EnergyDisplay()
     qtbot.addWidget(display)
@@ -36,6 +37,14 @@ def display(qtbot, sim_registry):
 
 
 def test_mono_caqtdm_macros(display):
+    """Example of mono caQtDM macros from microprobe mono:
+
+    last file: /net/s25data/xorApps/ui/DCMControlCenter.ui
+
+    macro: P=25idbUP:, MONO=UP, BRAGG=ACS:m3, GAP=ACS:m4,
+    ENERGY=Energy, OFFSET=Offset, IDENERGY=ID25ds:Energy.VAL
+
+    """
     display.launch_caqtdm = mock.MagicMock()
     # Check that the various caqtdm calls set up the right macros
     display.launch_mono_caqtdm()

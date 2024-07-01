@@ -120,6 +120,7 @@ class ActionsRegistry:
     kb_mirrors: Mapping[str, WindowAction]
     mirrors: Mapping[str, WindowAction]
     motors: Mapping[str, WindowAction]
+    robots: Mapping[str, WindowAction]
     slits: Mapping[str, WindowAction]
     tables: Mapping[str, WindowAction]
     xrf_detectors: Mapping[str, WindowAction]
@@ -135,6 +136,7 @@ class ActionsRegistry:
         self.mirrors = {}
         self.ion_chambers = {}
         self.kb_mirrors = {}
+        self.robots = {}
         self.tables = {}
         self.xrf_detectors = {}
 
