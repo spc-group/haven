@@ -1,20 +1,17 @@
 import logging
 
 from bluesky_queueserver_api import BPlan
+from qasync import asyncSlot
 from qtpy import QtWidgets
 from qtpy.QtGui import QDoubleValidator
 
-from firefly import display
-from firefly.application import FireflyApplication
 from firefly.component_selector import ComponentSelector
-from firefly.plans.util import is_valid_value, time_converter
+from firefly.plans import regions_display
 
 log = logging.getLogger()
 
 
-class LineScanRegion:
-    def __init__(self):
-        self.setup_ui()
+class LineScanRegion(regions_display.RegionBase):
 
     def setup_ui(self):
         self.layout = QtWidgets.QHBoxLayout()
@@ -36,134 +33,22 @@ class LineScanRegion:
         self.layout.addWidget(self.stop_line_edit)
 
 
-class LineScanDisplay(display.FireflyDisplay):
-    default_num_regions = 1
+class LineScanDisplay(regions_display.RegionsDisplay):
+    Region = LineScanRegion
+
+    @asyncSlot(object)
+    async def update_devices_slot(self, registry):
+        await self.update_devices(registry)
+        await self.detectors_list.update_devices(registry)
 
     def customize_ui(self):
-        # Remove the default layout from .ui file
-        self.clearLayout(self.ui.region_template_layout)
-        self.reset_default_regions()
-
-        # disable the line edits in spin box
-        self.ui.num_motor_spin_box.lineEdit().setReadOnly(True)
-        self.ui.num_motor_spin_box.valueChanged.connect(self.update_regions)
-
-        # Connect signals for executing the plan
-        self.ui.run_button.clicked.connect(self.queue_plan)
-
-        # when selections of detectors changed update_total_time
+        super().customize_ui()
+        # When selections of detectors changed update_total_time
         self.ui.detectors_list.selectionModel().selectionChanged.connect(
             self.update_total_time
         )
         self.ui.spinBox_repeat_scan_num.valueChanged.connect(self.update_total_time)
         self.ui.scan_pts_spin_box.valueChanged.connect(self.update_total_time)
-
-    def clearLayout(self, layout):
-        if layout is not None:
-            while layout.count():
-                item = layout.takeAt(0)
-                if item.widget():
-                    item.widget().deleteLater()
-
-    def reset_default_regions(self):
-        if not hasattr(self, "regions"):
-            self.regions = []
-            self.add_regions(self.default_num_regions)
-        self.ui.num_motor_spin_box.setValue(self.default_num_regions)
-        self.update_regions()
-
-    def add_regions(self, num=1):
-        for i in range(num):
-            region = LineScanRegion()
-            self.ui.regions_layout.addLayout(region.layout)
-            # Save it to the list
-            self.regions.append(region)
-
-    def remove_regions(self, num=1):
-        for i in range(num):
-            layout = self.regions[-1].layout
-            # iterate/wait, and delete all widgets in the layout in the end
-            while layout.count():
-                item = layout.takeAt(0)
-                if item.widget():
-                    item.widget().deleteLater()
-            self.regions.pop()
-
-    def update_regions(self):
-        new_region_num = self.ui.num_motor_spin_box.value()
-        old_region_num = len(self.regions)
-        diff_region_num = new_region_num - old_region_num
-
-        if diff_region_num < 0:
-            self.remove_regions(abs(diff_region_num))
-        elif diff_region_num > 0:
-            self.add_regions(diff_region_num)
-
-    def update_total_time(self):
-        # get default detector time
-        app = FireflyApplication.instance()
-        detectors = self.ui.detectors_list.selected_detectors()
-        detectors = [app.registry[name] for name in detectors]
-        detectors = [det for det in detectors if hasattr(det, "default_time_signal")]
-
-        # to prevent detector list is empty
-        try:
-            detector_time = max([det.default_time_signal.get() for det in detectors])
-        except ValueError:
-            detector_time = float("nan")
-
-        # get scan num points to calculate total time
-        total_time_per_scan = self.time_calculate_method(detector_time)
-
-        # calculate time for each scan
-        hrs, mins, secs = time_converter(total_time_per_scan)
-        self.ui.label_hour_scan.setText(str(hrs))
-        self.ui.label_min_scan.setText(str(mins))
-        self.ui.label_sec_scan.setText(str(secs))
-
-        # calculate time for entire plan
-        num_scan_repeat = self.ui.spinBox_repeat_scan_num.value()
-        total_time = num_scan_repeat * total_time_per_scan
-        hrs_total, mins_total, secs_total = time_converter(total_time)
-
-        self.ui.label_hour_total.setText(str(hrs_total))
-        self.ui.label_min_total.setText(str(mins_total))
-        self.ui.label_sec_total.setText(str(secs_total))
-
-    def time_calculate_method(self, detector_time):
-        num_points = self.ui.scan_pts_spin_box.value()
-        total_time_per_scan = detector_time * num_points
-        return total_time_per_scan
-
-    def get_scan_parameters(self):
-        # Get scan parameters from widgets
-        detectors = self.ui.detectors_list.selected_detectors()
-        num_points = self.ui.scan_pts_spin_box.value()
-        repeat_scan_num = int(self.ui.spinBox_repeat_scan_num.value())
-
-        # Get paramters from each rows of line regions:
-        motor_lst, start_lst, stop_lst = [], [], []
-        for region_i in self.regions:
-            motor_lst.append(region_i.motor_box.current_component().name)
-            start_lst.append(float(region_i.start_line_edit.text()))
-            stop_lst.append(float(region_i.stop_line_edit.text()))
-
-        motor_args = [
-            values
-            for motor_i in zip(motor_lst, start_lst, stop_lst)
-            for values in motor_i
-        ]
-
-        # Get meta data info
-        md = {
-            "sample": self.ui.lineEdit_sample.text(),
-            "purpose": self.ui.lineEdit_purpose.text(),
-            "notes": self.ui.textEdit_notes.toPlainText(),
-        }
-        # Only include metadata that isn't an empty string
-        md = {key: val for key, val in md.items() if is_valid_value(val)}
-
-        return detectors, num_points, motor_args, repeat_scan_num, md
 
     def queue_plan(self, *args, **kwargs):
         """Execute this plan on the queueserver."""
@@ -193,11 +78,10 @@ class LineScanDisplay(display.FireflyDisplay):
         )
 
         # Submit the item to the queueserver
-        app = FireflyApplication.instance()
         log.info("Added line scan() plan to queue.")
         # repeat scans
         for i in range(repeat_scan_num):
-            app.add_queue_item(item)
+            self.queue_item_submitted.emit(item)
 
     def ui_filename(self):
         return "plans/line_scan.ui"

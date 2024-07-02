@@ -134,10 +134,10 @@ class EnergyDisplay(display.FireflyDisplay):
         # Build the queue item
         item = BPlan("set_energy", energy=energy)
         # Submit the item to the queueserver
-        from firefly.application import FireflyApplication
+        self.queue_item_submitted.emit(item)
 
-        app = FireflyApplication.instance()
-        app.add_queue_item(item)
+    def update_queue_status(self, status):
+        self.set_energy_button.update_queue_style(status)
 
     def customize_ui(self):
         self.ui.set_energy_button.clicked.connect(self.set_energy)
@@ -146,6 +146,8 @@ class EnergyDisplay(display.FireflyDisplay):
         ltab = self.xraydb.tables["xray_levels"]
         edges = self.xraydb.query(ltab)
         min_energy, max_energy = self.energy_positioner.limits
+        print(self.energy_positioner)
+        print(min_energy, max_energy)
         edges = edges.filter(
             ltab.c.absorption_edge < max_energy,
             ltab.c.absorption_edge > min_energy,

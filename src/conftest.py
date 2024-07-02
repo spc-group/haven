@@ -128,6 +128,9 @@ def I0(sim_registry):
         labels={"ion_chambers"},
         ch_num=2,
     )
+    # Set ion chamber signal values to sensible defaults
+    ion_chamber.preamp.sensitivity_value.sim_put("1")
+    ion_chamber.preamp.sensitivity_unit.sim_put("pA/V")
     return ion_chamber
 
 
@@ -330,11 +333,6 @@ def filters(sim_registry):
         FakeFilter(name="Filter B", prefix="filter2", **kw),
     ]
     return filters
-
-
-# holds a global QApplication instance created in the qapp fixture; keeping
-# this reference alive avoids it being garbage collected too early
-_ffapp_instance = None
 
 
 # Tiled data to use for testing

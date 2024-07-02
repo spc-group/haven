@@ -8,15 +8,6 @@ from qtpy import QtCore
 from firefly.robot import RobotDisplay
 
 
-def test_region_number(qtbot, robot):
-    disp = RobotDisplay(macros={"DEVICE": robot.name})
-    qtbot.addWidget(disp)
-    # Check that the display has the right number of rows to start with
-    assert disp.ui.sample_combo_box.count() == 10
-    assert hasattr(disp, "regions")
-    assert len(disp.regions) == 1
-
-
 class FakeHavenMotor(SynAxis):
     user_offset = Cpt(Signal, value=0, kind="config")
 
@@ -24,16 +15,32 @@ class FakeHavenMotor(SynAxis):
 @pytest.fixture
 def sim_motor_registry(sim_registry):
     # Create the motors
-    motor1 = FakeHavenMotor(name="motor1")
-    motor2 = FakeHavenMotor(name="motor2")
+    FakeHavenMotor(name="motor1")
+    FakeHavenMotor(name="motor2")
     yield sim_registry
 
 
-def test_robot_queued(ffapp, qtbot, sim_registry, robot, sim_motor_registry):
+@pytest.fixture
+async def display(qtbot, sim_motor_registry, robot):
     display = RobotDisplay(macros={"DEVICE": robot.name})
+    qtbot.addWidget(display)
+    await display.update_devices(sim_motor_registry)
+    return display
+
+
+def test_region_number(display):
+    # Check that the display has the right number of rows to start with
+    assert display.ui.sample_combo_box.count() == 10
+    assert hasattr(display, "regions")
+    assert len(display.regions) == 0
+
+
+@pytest.mark.asyncio
+async def test_robot_queued(qtbot, sim_motor_registry, display):
+    await display.update_devices(sim_motor_registry)
     display.ui.run_button.setEnabled(True)
     display.ui.num_motor_spin_box.setValue(1)
-    display.update_regions()
+    await display.update_regions(1)
 
     # set up a test motor
     display.regions[0].motor_box.combo_box.setCurrentText("motor1")
@@ -46,6 +53,6 @@ def test_robot_queued(ffapp, qtbot, sim_registry, robot, sim_motor_registry):
 
     # Click the run button and see if the plan is queued
     with qtbot.waitSignal(
-        ffapp.queue_item_added, timeout=1000, check_params_cb=check_item
+        display.queue_item_submitted, timeout=1000, check_params_cb=check_item
     ):
         qtbot.mouseClick(display.ui.run_button, QtCore.Qt.LeftButton)

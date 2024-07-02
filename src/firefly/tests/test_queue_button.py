@@ -1,9 +1,10 @@
 from firefly.queue_button import Colors, QueueButton
 
 
-def test_queue_button_style(ffapp):
+def test_queue_button_style(qtbot):
     """Does the queue button change color/icon based on the queue state."""
     btn = QueueButton()
+    qtbot.addWidget(btn)
     # Initial style should be disabled and plain
     assert not btn.isEnabled()
     assert btn.styleSheet() == ""
@@ -14,7 +15,7 @@ def test_queue_button_style(ffapp):
         "re_state": "idle",
         "queue_autostart_enabled": False,
     }
-    ffapp.queue_status_changed.emit(queue_state)
+    btn.update_queue_style(queue_state)
     assert btn.isEnabled()
     assert Colors.ADD_TO_QUEUE in btn.styleSheet()
     assert btn.text() == "Add to Queue"
@@ -25,7 +26,7 @@ def test_queue_button_style(ffapp):
         "re_state": "idle",
         "queue_autostart_enabled": True,
     }
-    ffapp.queue_status_changed.emit(queue_state)
+    btn.update_queue_style(queue_state)
     assert btn.isEnabled()
     assert Colors.RUN_QUEUE in btn.styleSheet()
     assert btn.text() == "Run"
@@ -36,7 +37,7 @@ def test_queue_button_style(ffapp):
         "re_state": "running",
         "queue_autostart_enabled": True,
     }
-    ffapp.queue_status_changed.emit(queue_state)
+    btn.update_queue_style(queue_state)
     assert btn.isEnabled()
     assert Colors.ADD_TO_QUEUE in btn.styleSheet()
     assert btn.text() == "Add to Queue"

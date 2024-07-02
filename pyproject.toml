@@ -6,7 +6,7 @@ authors = [
 ]
 description = "Tools and GUI for running the spectroscopy group beamlines at the Advanced Photon Source."
 readme = "README.md"
-requires-python = ">=3.7,<3.10"
+requires-python = ">=3.7"
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
@@ -16,13 +16,16 @@ classifiers = [
     "Topic :: System :: Hardware",
 ]
 keywords = ["synchrotron", "xray", "bluesky"]
-dependencies = ["bluesky", "ophyd", "databroker", "apsbss", "xraydb", "mergedeep", "xrayutilities", "bluesky-queueserver-api", "apstools", "databroker", "ophyd-registry", "caproto"]
+dependencies = ["bluesky", "ophyd", "databroker", "apsbss", "xraydb",
+	        "mergedeep", "xrayutilities", "bluesky-queueserver-api",
+		"apstools", "databroker", "ophyd-registry", "caproto", "pcdsdevices",
+		"strenum", "bluesky-adaptive"]
 
 [project.optional-dependencies]
 
 dev = ["black", "pytest", "pytest-mongodb", "build", "twine",
-       "time-machine", "pytest-mock", "pytest-qt", "flake8"]
-gui = ["pyqt>=5.12", "tiled-client", "qtawesome", "pydm", "pyqtgraph"]
+       "time-machine", "pytest-mock", "pytest-qt", "flake8", "pytest-asyncio"]
+gui = ["tiled[all]", "qtawesome", "pydm", "pyqtgraph", "qasync"]
 
 [project.urls]
 "Homepage" = "https://haven-spc.readthedocs.io/en/latest/"

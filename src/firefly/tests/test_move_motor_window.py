@@ -3,7 +3,6 @@ from bluesky_queueserver_api import BPlan
 from ophyd.sim import make_fake_device
 from qtpy import QtCore
 
-from firefly.application import FireflyApplication
 from firefly.plans.move_motor_window import MoveMotorDisplay
 from haven.instrument import motor
 
@@ -18,18 +17,22 @@ def fake_motors(sim_registry):
     return motors
 
 
-def test_move_motor_plan_queued(ffapp, qtbot, sim_registry, fake_motors):
-    app = FireflyApplication.instance()
+@pytest.fixture()
+async def display(qtbot, sim_registry, fake_motors):
     display = MoveMotorDisplay()
-    display.ui.run_button.setEnabled(True)
+    qtbot.addWidget(display)
+    await display.update_devices(sim_registry)
+    return display
 
-    # set up motor num
-    display.ui.num_motor_spin_box.setValue(2)
+
+@pytest.mark.asyncio
+async def test_move_motor_plan_queued(display, qtbot):
+    display.ui.run_button.setEnabled(True)
 
     # uncheck relative
     display.ui.relative_scan_checkbox.setChecked(False)
 
-    display.update_regions()
+    await display.update_regions(2)
 
     # set up a test motor 1
     display.regions[0].motor_box.combo_box.setCurrentText("motorA_m1")
@@ -55,13 +58,12 @@ def test_move_motor_plan_queued(ffapp, qtbot, sim_registry, fake_motors):
         },
     )
 
-    # print(item.to_dict())
-
     def check_item(item):
+        print(item.to_dict())
         return item.to_dict() == expected_item.to_dict()
 
     # Click the run button and see if the plan is queued
     with qtbot.waitSignal(
-        ffapp.queue_item_added, timeout=1000, check_params_cb=check_item
+        display.queue_item_submitted, timeout=1000, check_params_cb=check_item
     ):
         qtbot.mouseClick(display.ui.run_button, QtCore.Qt.LeftButton)

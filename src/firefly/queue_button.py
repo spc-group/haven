@@ -1,10 +1,12 @@
 """A QPushButton that responds to the state of the queue server."""
 
+import logging
+
 import qtawesome as qta
 from qtpy import QtGui, QtWidgets
 from strenum import StrEnum
 
-from firefly import FireflyApplication
+log = logging.getLogger(__name__)
 
 
 class Colors(StrEnum):
@@ -17,11 +19,8 @@ class QueueButton(QtWidgets.QPushButton):
         super().__init__(*args, **kwargs)
         # Initially disable the button until the status of the queue can be determined
         self.setDisabled(True)
-        # Listen for changes to the run engine
-        app = FireflyApplication.instance()
-        app.queue_status_changed.connect(self.handle_queue_status_change)
 
-    def handle_queue_status_change(self, status: dict):
+    def update_queue_style(self, status: dict):
         if status["worker_environment_exists"]:
             self.setEnabled(True)
         else:
@@ -31,18 +30,22 @@ class QueueButton(QtWidgets.QPushButton):
         if status["re_state"] == "idle" and status["queue_autostart_enabled"]:
             # Will play immediately
             self.setStyleSheet(
-                f"background-color: {Colors.RUN_QUEUE};\nborder-color: {Colors.RUN_QUEUE};"
+                f"background-color: {Colors.RUN_QUEUE};\n"
+                f"border-color: {Colors.RUN_QUEUE};"
             )
             self.setIcon(qta.icon("fa5s.play"))
-            self.setText("Run")
+            if self.text() in ["Run", "Add to Queue", ""]:
+                self.setText("Run")
             self.setToolTip("Add this plan to the queue and start it immediately.")
         elif status["worker_environment_exists"]:
             # Will be added to the queue
             self.setStyleSheet(
-                f"background-color: {Colors.ADD_TO_QUEUE};\nborder-color: {Colors.ADD_TO_QUEUE};"
+                f"background-color: {Colors.ADD_TO_QUEUE};\n"
+                f"border-color: {Colors.ADD_TO_QUEUE};\n"
             )
             self.setIcon(qta.icon("fa5s.list"))
-            self.setText("Add to Queue")
+            if self.text() in ["Run", "Add to Queue", ""]:
+                self.setText("Add to Queue")
             self.setToolTip("Add this plan to the queue to run later.")
         else:
             # Regular old (probably disabled) button
