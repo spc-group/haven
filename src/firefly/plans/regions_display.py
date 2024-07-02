@@ -54,6 +54,7 @@ class RegionsDisplay(display.FireflyDisplay):
 
         # Create the initial (blank) regions
         self.regions = []
+        self.ui.num_motor_spin_box.setValue(self.default_num_regions)
         self.add_regions(self.default_num_regions)
         # Set up the mechanism for changing region number
         self.ui.num_motor_spin_box.valueChanged.connect(self.update_regions_slot)
@@ -79,9 +80,6 @@ class RegionsDisplay(display.FireflyDisplay):
                 item = layout.takeAt(0)
                 if item.widget():
                     item.widget().deleteLater()
-
-    def reset_default_regions(self):
-        self.ui.num_motor_spin_box.setValue(self.default_num_regions)
 
     def add_regions(self, num: int = 1):
         """Add *num* regions to the list of scan parameters.

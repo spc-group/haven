@@ -11,7 +11,7 @@ from ophydregistry import Registry
 from qasync import asyncSlot
 from qtpy import QtCore, QtWidgets
 from qtpy.QtCore import Signal
-from qtpy.QtGui import QKeySequence
+from qtpy.QtGui import QKeySequence, QIcon
 from qtpy.QtWidgets import QAction
 
 from haven import load_config
@@ -187,6 +187,7 @@ class FireflyController(QtCore.QObject):
             device_label="robots",
             display_file=ui_dir / "robot.py",
             device_key="DEVICE",
+            WindowClass=PlanMainWindow,
             icon=qta.icon("mdi.robot-industrial"),
         )
         self.actions.xrf_detectors = self.device_actions(
@@ -421,9 +422,10 @@ class FireflyController(QtCore.QObject):
     def device_actions(
         self,
         device_label: str,
-        display_file=None,
-        device_key="DEVICE",
-        icon=None,
+        display_file: str = None,
+        device_key: str = "DEVICE",
+        WindowClass: type = FireflyMainWindow,
+        icon: QIcon = None,
     ):
         """Generic routine to be called for individual classes of devices.
 
@@ -449,6 +451,8 @@ class FireflyController(QtCore.QObject):
           dictionary. If *device_key* is "DEVICE" (default), then the
           macros will be {"DEVICE": device.name}. Has no effect if
           *window_slot* is used.
+        WindowClass
+          The type of window to create around this device display.
         icon
           A QIcon that will be added to the action.
 
@@ -469,7 +473,7 @@ class FireflyController(QtCore.QObject):
                 text=titelize(device.name),
                 display_file=display_file,
                 icon=icon,
-                WindowClass=FireflyMainWindow,
+                WindowClass=WindowClass,
                 macros={device_key: device.name},
             )
             for device in devices

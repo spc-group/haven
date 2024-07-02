@@ -162,6 +162,7 @@ class ActionsRegistry:
             *self.kb_mirrors.values(),
             *self.mirrors.values(),
             *self.motors.values(),
+            *self.robots.values(),
             *self.slits.values(),
             *self.tables.values(),
             *self.xrf_detectors.values(),
