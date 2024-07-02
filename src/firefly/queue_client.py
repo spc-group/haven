@@ -110,9 +110,10 @@ class QueueClient(QObject):
         try:
             result = await self.api.item_add(item=item)
             self.check_result(result)
-        except (RuntimeError, comm_base.RequestFailedError):
+        except (RuntimeError, comm_base.RequestFailedError) as ex:
             # Request failed, so force a UI update
             await self.check_queue_status(force=True)
+            raise
         else:
             await self.check_queue_status(force=False)
 

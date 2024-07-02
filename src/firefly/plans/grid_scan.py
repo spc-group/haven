@@ -88,6 +88,7 @@ class GridScanDisplay(regions_display.RegionsDisplay):
 
     def customize_ui(self):
         super().customize_ui()
+        self.update_snakes()
         # add title layout
         self.title_region = TitleRegion()
         self.ui.title_layout.addLayout(self.title_region.layout)
@@ -112,7 +113,15 @@ class GridScanDisplay(regions_display.RegionsDisplay):
     @asyncSlot(int)
     async def update_regions_slot(self, new_region_num: int):
         await super().update_regions(new_region_num)
-        # disable snake for the last region and enable the previous regions
+        self.update_snakes()
+
+    def update_snakes(self):
+        """Update the snake checkboxes.
+
+        The last region is not snakable, so that checkbox gets
+        disabled. The rest get enabled.
+
+        """
         if len(self.regions) > 0:
             self.regions[-1].snake_checkbox.setEnabled(False)
             for region_i in self.regions[:-1]:
@@ -150,9 +159,10 @@ class GridScanDisplay(regions_display.RegionsDisplay):
         )
 
         # Submit the item to the queueserver
-        log.info("Added line scan() plan to queue.")
+        log.info(f"Added grid_scan() plan to queue ({repeat_scan_num} scans).")
         # repeat scans
         for i in range(repeat_scan_num):
+            print("EMITTING")
             self.queue_item_submitted.emit(item)
 
     def ui_filename(self):

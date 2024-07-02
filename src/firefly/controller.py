@@ -247,6 +247,9 @@ class FireflyController(QtCore.QObject):
                 WindowClass=PlanMainWindow,
             ),
         }
+        # Disabled the grid scan window until this issue is fixed
+        # https://github.com/spc-group/haven/issues/231
+        self.actions.plans['grid_scan'].setEnabled(False)
         # Action for showing the run browser window
         self.actions.run_browser = WindowAction(
             name="show_run_browser_action",
