@@ -32,14 +32,15 @@ def test_region_number(display):
     # Check that the display has the right number of rows to start with
     assert display.ui.sample_combo_box.count() == 10
     assert hasattr(display, "regions")
-    assert len(display.regions) == 1
+    assert len(display.regions) == 0
 
 
-def test_robot_queued(qtbot, display):
-    display.update_devices(sim_motor_registry)
+@pytest.mark.asyncio
+async def test_robot_queued(qtbot, sim_motor_registry, display):
+    await display.update_devices(sim_motor_registry)
     display.ui.run_button.setEnabled(True)
     display.ui.num_motor_spin_box.setValue(1)
-    display.update_regions(display.default_num_regions)
+    await display.update_regions(1)
 
     # set up a test motor
     display.regions[0].motor_box.combo_box.setCurrentText("motor1")
