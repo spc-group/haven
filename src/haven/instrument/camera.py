@@ -86,7 +86,7 @@ def load_cameras(config=None) -> Sequence[DetectorBase]:
                 prefix=f"{cam_config['prefix']}:",
                 name=camera_name,
                 description=description,
-                labels={"cameras"},
+                labels={"cameras", "detectors"},
             )
         )
     return devices
