@@ -11,7 +11,7 @@ from ophydregistry import Registry
 from qasync import asyncSlot
 from qtpy import QtCore, QtWidgets
 from qtpy.QtCore import Signal
-from qtpy.QtGui import QKeySequence, QIcon
+from qtpy.QtGui import QIcon, QKeySequence
 from qtpy.QtWidgets import QAction
 
 from haven import load_config
@@ -249,7 +249,7 @@ class FireflyController(QtCore.QObject):
         }
         # Disabled the grid scan window until this issue is fixed
         # https://github.com/spc-group/haven/issues/231
-        self.actions.plans['grid_scan'].setEnabled(False)
+        self.actions.plans["grid_scan"].setEnabled(False)
         # Action for showing the run browser window
         self.actions.run_browser = WindowAction(
             name="show_run_browser_action",

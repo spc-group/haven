@@ -4,7 +4,7 @@ from bluesky_queueserver_api import BPlan
 from qtpy import QtWidgets
 
 from firefly.component_selector import ComponentSelector
-from firefly.plans import regions_display  #  import RegionBase, RegionsDisplay
+from firefly.plans import regions_display  # import RegionBase, RegionsDisplay
 
 log = logging.getLogger(__name__)
 
