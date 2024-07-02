@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Form</class>
+ <widget class="QWidget" name="Form">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>760</width>
+    <height>752</height>
+   </rect>
+  </property>
+  <property name="font">
+   <font>
+    <family>Sans Serif</family>
+   </font>
+  </property>
+  <property name="windowTitle">
+   <string>${DEVICE_TITLE}</string>
+  </property>
+  <widget class="QLabel" name="label">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>761</width>
+     <height>751</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;img src=&quot;:/Asymmotron/asymmotron.png&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
+  </widget>
+  <widget class="PyDMLabel" name="PyDMLabel">
+   <property name="geometry">
+    <rect>
+     <x>180</x>
+     <y>0</y>
+     <width>241</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>16</pointsize>
+    </font>
+   </property>
+   <property name="toolTip">
+    <string/>
+   </property>
+   <property name="text">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;${DEVICE_TITLE}&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
+   <property name="textFormat">
+    <enum>Qt::RichText</enum>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignRight|Qt::AlignTop|Qt::AlignTrailing</set>
+   </property>
+  </widget>
+  <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_6">
+   <property name="geometry">
+    <rect>
+     <x>580</x>
+     <y>10</y>
+     <width>119</width>
+     <height>111</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string/>
+   </property>
+   <property name="frameShape">
+    <enum>QFrame::NoFrame</enum>
+   </property>
+   <property name="macros" stdset="0">
+    <string>TITLE=Detector Z,AXIS=${DEVICE}.h.center</string>
+   </property>
+   <property name="filename" stdset="0">
+    <string>slits_motor.py</string>
+   </property>
+  </widget>
+  <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_7">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>160</y>
+     <width>119</width>
+     <height>111</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string/>
+   </property>
+   <property name="frameShape">
+    <enum>QFrame::NoFrame</enum>
+   </property>
+   <property name="macros" stdset="0">
+    <string>TITLE=Crystal Z,AXIS=${DEVICE}.v.size</string>
+   </property>
+   <property name="filename" stdset="0">
+    <string>slits_motor.py</string>
+   </property>
+  </widget>
+  <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_4">
+   <property name="geometry">
+    <rect>
+     <x>110</x>
+     <y>470</y>
+     <width>119</width>
+     <height>111</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string/>
+   </property>
+   <property name="frameShape">
+    <enum>QFrame::NoFrame</enum>
+   </property>
+   <property name="macros" stdset="0">
+    <string>TITLE=Asymmetry angle, AXIS=${DEVICE}.h.size</string>
+   </property>
+   <property name="filename" stdset="0">
+    <string>slits_motor.py</string>
+   </property>
+   <property name="loadWhenShown" stdset="0">
+    <bool>false</bool>
+   </property>
+  </widget>
+  <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_8">
+   <property name="geometry">
+    <rect>
+     <x>250</x>
+     <y>330</y>
+     <width>119</width>
+     <height>111</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string/>
+   </property>
+   <property name="frameShape">
+    <enum>QFrame::NoFrame</enum>
+   </property>
+   <property name="macros" stdset="0">
+    <string>TITLE=Crystal X,AXIS=${DEVICE}.v.size</string>
+   </property>
+   <property name="filename" stdset="0">
+    <string>slits_motor.py</string>
+   </property>
+  </widget>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>PyDMLabel</class>
+   <extends>QLabel</extends>
+   <header>pydm.widgets.label</header>
+  </customwidget>
+  <customwidget>
+   <class>PyDMEmbeddedDisplay</class>
+   <extends>QFrame</extends>
+   <header>pydm.widgets.embedded_display</header>
+  </customwidget>
+ </customwidgets>
+ <resources>
+  <include location="resources/beamline_components.qrc"/>
+ </resources>
+ <connections/>
+</ui>
