@@ -173,27 +173,7 @@ class Analyzer(PseudoPositioner):
     @real_position_argument
     def inverse(self, real_pos):
         """Run an inverse (real -> pseudo) calculation"""
-        return self.PseudoPosition(D=0, theta=0, alpha=0)
-        # Expand the variables
-        x = real_pos.x
-        y = real_pos.y
-        z = real_pos.z
-        z1 = real_pos.z1
-        # Invert the calculation, first for 'd'
-        a = y
-        b = -x
-        c = z1**2
-        d = -(z1**2 * y)  # Maybe needs parens?
-        p = (3 * a * c - b**2) / (3 * a**2)
-        q = (2 * b**3 - 9 * a * b * c + 27 * a**2 * d) / (27 * a**3)
-        D = (-(q / 2) + (q**2 / 4 + p**3 / 27) ** 0.5) ** (1 / 3) + (
-            -(q / 2) - (q**2 / 4 + p**3 / 27) ** 0.5
-        ) ** (1 / 3)
-        # D = x / ((1 - (z1 ** 2 / (D ** 2 * y + z1 ** 2))) ** 2)
-        # cos(theta + alpha) = (z1 ** 2 / (D ** 2 * y + z1 ** 2)) ** 0.5
-        print(a, b, c, d)
-        print(p, q, D)
-        return self.PseudoPosition(D=D, theta=0, alpha=0)
+        return self.PseudoPosition(energy=0, alpha=0)
 
 
 # Rewrite the following four equations so that they calculate D, theta and alpha based on inputting x, y, z1 and z.

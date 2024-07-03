@@ -57,10 +57,10 @@ def test_wavelength_to_bragg(theta, d_spacing, wavelength):
 analyzer_values = [
     # (bragg, alpha, beta, z,      x)
     (70,      15,    25,   4.79,  47.60),
-    (80,      7,     87,   2.65,   49.40),
-    (60,      20,    80,   9.87,   43.56),
-    (65,      0,     65,   19.15,  41.07),
-    (80,      30,    110,  -16.32, 46.98),
+    (80,      7,     10,   2.65,   49.40),
+    (60,      20,    30,   9.87,   43.56),
+    (65,      0,     0,   19.15,  41.07),
+    (80,      30,    10,  -16.32, 46.98),
 ]
 
 
@@ -81,96 +81,22 @@ def test_rowland_circle_forward(xtal, bragg, alpha, beta, x, z):
     d = xtal.d_spacing.get()
     bragg = np.radians(bragg)
     energy = analyzer.bragg_to_energy(bragg, d=d)
-    wavelength = analyzer.bragg_to_wavelength(bragg, d=d)
     # Check the result is correct (convert cm -> m)
     expected = (x / 100, z / 100)
     actual = xtal.forward(energy, np.radians(alpha))
     assert actual == pytest.approx(expected, rel=0.01)
 
-# @pytest.mark.xfail
-# def test_rowland_circle_inverse():
-#     rowland = instantiate_fake_device(
-#         lerix.RowlandPositioner,
-#         name="rowland",
-#         x_motor_pv="",
-#         y_motor_pv="",
-#         z_motor_pv="",
-#         z1_motor_pv="",
-#     )
-#     # Check one set of values
-#     result = rowland.inverse(
-#         x=500.0,  # x
-#         y=375.0,  # y
-#         z=216.50635094610968,  # z
-#         z1=1.5308084989341912e-14,  # z1
-#     )
-#     assert result == pytest.approx((500, 60, 30))
-#     # # Check one set of values
-#     # result = rowland.forward(500, 80.0, 0.0)
-#     # assert result == pytest.approx((
-#     #     484.92315519647707 * um_per_mm,  # x
-#     #     0.0 * um_per_mm,  # y
-#     #     171.0100716628344 * um_per_mm,  # z
-#     #     85.5050358314172 * um_per_mm,  # z1
-#     # ))
-#     # # Check one set of values
-#     # result = rowland.forward(500, 70.0, 10.0)
-#     # assert result == pytest.approx((
-#     #     484.92315519647707 * um_per_mm,  # x
-#     #     109.92315519647711 * um_per_mm,  # y
-#     #     291.6982175363274 * um_per_mm,  # z
-#     #     75.19186659021767 * um_per_mm,  # z1
-#     # ))
-#     # # Check one set of values
-#     # result = rowland.forward(500, 75.0, 15.0)
-#     # assert result == pytest.approx((
-#     #     500.0 * um_per_mm,  # x
-#     #     124.99999999999994 * um_per_mm,  # y
-#     #     216.50635094610965 * um_per_mm,  # z
-#     #     2.6514380968122676e-14 * um_per_mm,  # z1
-#     # ))
-#     # # Check one set of values
-#     # result = rowland.forward(500, 71.0, 10.0)
-#     # assert result == pytest.approx((
-#     #     487.7641290737884 * um_per_mm,  # x
-#     #     105.28431301548724 * um_per_mm,  # y
-#     #     280.42235703910393 * um_per_mm,  # z
-#     #     68.41033299999741 * um_per_mm,  # z1
-#     # ))
-
-
-# def test_rowland_circle_component():
-#     device = instantiate_fake_device(
-#         lerix.LERIXSpectrometer, prefix="255idVME", name="lerix"
-#     )
-#     device.rowland.x.user_setpoint._use_limits = False
-#     device.rowland.y.user_setpoint._use_limits = False
-#     device.rowland.z.user_setpoint._use_limits = False
-#     device.rowland.z1.user_setpoint._use_limits = False
-#     # Set pseudo axes
-#     statuses = [
-#         device.rowland.D.set(500.0),
-#         device.rowland.theta.set(60.0),
-#         device.rowland.alpha.set(30.0),
-#     ]
-#     # [s.wait() for s in statuses]  # <- this should work, need to come back to it
-#     time.sleep(0.1)
-#     # Check that the virtual axes were set
-#     result = device.rowland.get(use_monitor=False)
-#     assert result.x.user_setpoint == pytest.approx(500.0 * um_per_mm)
-#     assert result.y.user_setpoint == pytest.approx(375.0 * um_per_mm)
-#     assert result.z.user_setpoint == pytest.approx(216.50635094610968 * um_per_mm)
-#     assert result.z1.user_setpoint == pytest.approx(1.5308084989341912e-14 * um_per_mm)
-
-
-# def test_load_lerix_spectrometers(sim_registry):
-#     lerix.load_lerix_spectrometers()
-#     device = sim_registry.find(name="lerix")
-#     assert device.name == "lerix"
-#     assert device.x.prefix == "255idVME:m1"
-#     assert device.y.prefix == "255idVME:m2"
-#     assert device.z.prefix == "255idVME:m3"
-#     assert device.z1.prefix == "255idVME:m4"
+# @pytest.mark.parametrize("bragg,alpha,beta,z,x", analyzer_values)    
+# def test_rowland_circle_inverse(xtal, bragg, alpha, beta, x, z):
+#     xtal.wedge_angle.set(np.radians(beta)).wait()
+#     # Calculate the expected answer (convert cm -> m)
+#     bragg = np.radians(bragg)
+#     d = xtal.d_spacing.get()
+#     energy = analyzer.bragg_to_energy(bragg, d=d)
+#     expected = (energy, alpha)
+#     # Compare to the calculated inverse
+#     actual = xtal.inverse(x, z)
+#     assert actual == pytest.approx(expected)
 
 
 # -----------------------------------------------------------------------------
