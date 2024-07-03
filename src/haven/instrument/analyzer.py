@@ -157,14 +157,13 @@ class Analyzer(PseudoPositioner):
         # Step 0: convert energy to bragg angle
         bragg = energy_to_bragg(energy, d=self.d_spacing.get())
         # Step 1: Convert energy params to geometry params
-        D = self.rowland_diameter.get()
-        rho = D * np.sin(bragg + alpha)
+        D = self.rowland_diameter.get(use_monitor=True)
         theta_M = bragg + alpha
+        rho = D * np.sin(theta_M)
         # Step 2: Convert geometry params to motor positions
-        beta = self.wedge_angle.get()
+        beta = self.wedge_angle.get(use_monitor=True)
         z = rho * np.cos(theta_M) / np.cos(beta)
-        x = z * np.sin(beta) + rho * np.sin(theta_M)
-        print(x, z)
+        x = -z * np.sin(beta) + rho * np.sin(theta_M)
         # Report the calculated result
         return self.RealPosition(
             x=x,

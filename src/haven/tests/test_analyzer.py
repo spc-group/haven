@@ -55,8 +55,8 @@ def test_wavelength_to_bragg(theta, d_spacing, wavelength):
 
 
 analyzer_values = [
-    # (bragg, alpha, beta, x,      z)
-    (70,      15,    25,   47.79,  47.60),
+    # (bragg, alpha, beta, z,      x)
+    (70,      15,    25,   4.79,  47.60),
     (80,      7,     87,   2.65,   49.40),
     (60,      20,    80,   9.87,   43.56),
     (65,      0,     65,   19.15,  41.07),
@@ -75,7 +75,7 @@ def xtal(sim_registry):
     return xtal
 
 
-@pytest.mark.parametrize("bragg,alpha,beta,x,z", analyzer_values)
+@pytest.mark.parametrize("bragg,alpha,beta,z,x", analyzer_values)
 def test_rowland_circle_forward(xtal, bragg, alpha, beta, x, z):
     xtal.wedge_angle.set(np.radians(beta)).wait()
     d = xtal.d_spacing.get()
@@ -83,7 +83,9 @@ def test_rowland_circle_forward(xtal, bragg, alpha, beta, x, z):
     energy = analyzer.bragg_to_energy(bragg, d=d)
     wavelength = analyzer.bragg_to_wavelength(bragg, d=d)
     # Check the result is correct (convert cm -> m)
-    assert xtal.forward(energy, np.radians(alpha)) == (x / 100, z / 100)
+    expected = (x / 100, z / 100)
+    actual = xtal.forward(energy, np.radians(alpha))
+    assert actual == pytest.approx(expected, rel=0.01)
 
 # @pytest.mark.xfail
 # def test_rowland_circle_inverse():
