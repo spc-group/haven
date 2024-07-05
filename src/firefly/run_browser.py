@@ -243,7 +243,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
         self._running_db_tasks = {}
         self.db = DatabaseWorker(catalog=root_node)
         # Load the list of all runs for the selection widget
-        self.db_task(self.load_runs())
+        self.db_task(self.load_runs(), name="init_load_runs")
 
     def db_task(self, coro, name="default task"):
         """Executes a co-routine as a database task. Existing database
