@@ -256,6 +256,52 @@ async def test_distinct_fields(catalog, display):
         assert key in distinct_fields.keys()
 
 
+def test_busy_hints_run_widgets(display):
+    """Check that the display widgets get disabled during DB hits."""
+    with display.busy_hints(run_widgets=True, run_table=False):
+        # Are widgets disabled in the context block?
+        assert not display.ui.detail_tabwidget.isEnabled()
+    # Are widgets re-enabled outside the context block?
+    assert display.ui.detail_tabwidget.isEnabled()
+
+
+def test_busy_hints_run_table(display):
+    """Check that the all_runs table view gets disabled during DB hits."""
+    with display.busy_hints(run_table=True, run_widgets=False):
+        # Are widgets disabled in the context block?
+        assert not display.ui.run_tableview.isEnabled()
+    # Are widgets re-enabled outside the context block?
+    assert display.ui.run_tableview.isEnabled()
+
+
+def test_busy_hints_status(display, mocker):
+    """Check that any busy_hints displays the message "Loading…"."""
+    spy = mocker.spy(display, "show_message")
+    print(spy)
+    with display.busy_hints(run_table=True, run_widgets=False):
+        # Are widgets disabled in the context block?
+        assert not display.ui.run_tableview.isEnabled()
+        assert spy.call_count == 1
+    # Are widgets re-enabled outside the context block?
+    assert spy.call_count == 2
+    assert display.ui.run_tableview.isEnabled()
+
+
+def test_busy_hints_multiple(display):
+    """Check that multiple busy hints can co-exist."""
+    # Next the busy_hints context to mimic multiple async calls
+    with display.busy_hints(run_widgets=True):
+        # Are widgets disabled in the outer block?
+        assert not display.ui.detail_tabwidget.isEnabled()
+        with display.busy_hints(run_widgets=True):
+            # Are widgets disabled in the inner block?
+            assert not display.ui.detail_tabwidget.isEnabled()
+        # Are widgets still disabled in the outer block?
+        assert not display.ui.detail_tabwidget.isEnabled()
+    # Are widgets re-enabled outside the context block?
+    assert display.ui.detail_tabwidget.isEnabled()
+
+
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov

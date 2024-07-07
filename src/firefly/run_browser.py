@@ -1,4 +1,6 @@
 import asyncio
+from contextlib import contextmanager
+from collections import Counter
 import logging
 from functools import wraps
 from itertools import count
@@ -237,10 +239,14 @@ class RunBrowserDisplay(display.FireflyDisplay):
     selected_runs: list
     _running_db_tasks: Mapping
 
+    # Counter for keeping track of UI hints for long DB hits
+    _busy_hinters: Counter
+
     def __init__(self, root_node=None, args=None, macros=None, **kwargs):
         super().__init__(args=args, macros=macros, **kwargs)
         self.selected_runs = []
         self._running_db_tasks = {}
+        self._busy_hinters = Counter()
         self.db = DatabaseWorker(catalog=root_node)
         # Load the list of all runs for the selection widget
         self.db_task(self.load_runs(), name="init_load_runs")
@@ -397,6 +403,45 @@ class RunBrowserDisplay(display.FireflyDisplay):
         self.plot_1d_item.hover_coords_changed.connect(
             self.ui.hover_coords_label.setText
         )
+
+    def update_busy_hints(self):
+        """Enable/disable UI elements based on the active hinters."""
+        # Widgets for showing plots for runs
+        if self._busy_hinters['run_widgets'] > 0:
+            self.ui.detail_tabwidget.setEnabled(False)
+        else:
+            # Re-enable the run widgets
+            self.ui.detail_tabwidget.setEnabled(True)
+        # Widgets for selecting which runs to show
+        if self._busy_hinters['run_table'] > 0:
+            self.ui.run_tableview.setEnabled(False)
+        else:
+            # Re-enable the run widgets
+            self.ui.run_tableview.setEnabled(True)
+        # Update status message in message bars
+        if len(list(self._busy_hinters.elements())) > 0:
+            self.show_message("Loading…")
+        else:
+            self.show_message("Done.", 5000)
+    
+    @contextmanager
+    def busy_hints(self, run_widgets=True, run_table=True):
+        # Update the counters for keeping track of concurrent contexts
+        hinters = {
+            "run_widgets": run_widgets,
+            "run_table": run_table,
+        }
+        hinters = [name for name, include in hinters.items() if include]
+        self._busy_hinters.update(hinters)
+        # Update the UI (e.g. disable widgets)
+        self.update_busy_hints()
+        # Run the innner context code
+        try:
+            yield
+        finally:
+            # Re-enable widgets if appropriate
+            self._busy_hinters.subtract(hinters)
+            self.update_busy_hints()
 
     # def disable_run_widgets(self):
     #     self.show_message("Loading...")
