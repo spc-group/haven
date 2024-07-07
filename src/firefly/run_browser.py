@@ -274,22 +274,23 @@ class RunBrowserDisplay(display.FireflyDisplay):
     @cancellable
     async def load_runs(self):
         """Get the list of available runs based on filters."""
-        runs = await self.db_task(
-            self.db.load_all_runs(self.filters()),
-            name="load all runs",
-        )
-        # Update the table view data model
-        self.runs_model.clear()
-        self.runs_model.setHorizontalHeaderLabels(self._run_col_names)
-        for run in runs:
-            items = [QStandardItem(val) for val in run.values()]
-            self.ui.runs_model.appendRow(items)
-        # Adjust the layout of the data table
-        sort_col = self._run_col_names.index("Datetime")
-        self.ui.run_tableview.sortByColumn(sort_col, Qt.DescendingOrder)
-        self.ui.run_tableview.resizeColumnsToContents()
-        # Let slots know that the model data have changed
-        self.runs_total_label.setText(str(self.ui.runs_model.rowCount()))
+        with self.busy_hints(run_widgets=True, run_table=True):
+            runs = await self.db_task(
+                self.db.load_all_runs(self.filters()),
+                name="load all runs",
+            )
+            # Update the table view data model
+            self.runs_model.clear()
+            self.runs_model.setHorizontalHeaderLabels(self._run_col_names)
+            for run in runs:
+                items = [QStandardItem(val) for val in run.values()]
+                self.ui.runs_model.appendRow(items)
+            # Adjust the layout of the data table
+            sort_col = self._run_col_names.index("Datetime")
+            self.ui.run_tableview.sortByColumn(sort_col, Qt.DescendingOrder)
+            self.ui.run_tableview.resizeColumnsToContents()
+            # Let slots know that the model data have changed
+            self.runs_total_label.setText(str(self.ui.runs_model.rowCount()))
 
     # # def start_run_client(self, root_node):
     # #     """Set up the database client in a separate thread."""
@@ -352,21 +353,21 @@ class RunBrowserDisplay(display.FireflyDisplay):
     @asyncSlot()
     @cancellable
     async def sleep_slot(self):
-        print("Sleeping")
         await self.db_task(self.print_sleep())
 
     async def print_sleep(self):
-        label = self.ui.sleep_label
-        label.setText(f"3...")
-        await asyncio.sleep(1)
-        old_text = label.text()
-        label.setText(f"{old_text}2...")
-        await asyncio.sleep(1)
-        old_text = label.text()
-        label.setText(f"{old_text}1...")
-        await asyncio.sleep(1)
-        old_text = label.text()
-        label.setText(f"{old_text}done!")
+        with self.busy_hints(run_widgets=True, run_table=True):
+            label = self.ui.sleep_label
+            label.setText(f"3...")
+            await asyncio.sleep(1)
+            old_text = label.text()
+            label.setText(f"{old_text}2...")
+            await asyncio.sleep(1)
+            old_text = label.text()
+            label.setText(f"{old_text}1...")
+            await asyncio.sleep(1)
+            old_text = label.text()
+            label.setText(f"{old_text}done!")
 
     def customize_ui(self):
         self.load_models()
@@ -645,15 +646,16 @@ class RunBrowserDisplay(display.FireflyDisplay):
         indexes = self.ui.run_tableview.selectedIndexes()
         uids = [i.siblingAtColumn(col_idx).data() for i in indexes]
         # Get selected runs from the database
-        task = self.db_task(self.db.load_selected_runs(uids), "update selected runs")
-        self.selected_runs = await task
-        # Update the necessary UI elements
-        await self.update_1d_signals()
-        await self.update_2d_signals()
-        await self.update_metadata()
-        await self.update_1d_plot()
-        await self.update_2d_plot()
-        await self.update_multi_plot()
+        with self.busy_hints(run_widgets=True, run_table=False):
+            task = self.db_task(self.db.load_selected_runs(uids), "update selected runs")
+            self.selected_runs = await task
+            # Update the necessary UI elements
+            await self.update_1d_signals()
+            await self.update_2d_signals()
+            await self.update_metadata()
+            await self.update_1d_plot()
+            await self.update_2d_plot()
+            await self.update_multi_plot()
 
     def filters(self, *args):
         new_filters = {
