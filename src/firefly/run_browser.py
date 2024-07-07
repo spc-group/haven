@@ -1,7 +1,7 @@
 import asyncio
-from contextlib import contextmanager
-from collections import Counter
 import logging
+from collections import Counter
+from contextlib import contextmanager
 from functools import wraps
 from itertools import count
 from typing import Mapping, Sequence
@@ -362,13 +362,13 @@ class RunBrowserDisplay(display.FireflyDisplay):
     def update_busy_hints(self):
         """Enable/disable UI elements based on the active hinters."""
         # Widgets for showing plots for runs
-        if self._busy_hinters['run_widgets'] > 0:
+        if self._busy_hinters["run_widgets"] > 0:
             self.ui.detail_tabwidget.setEnabled(False)
         else:
             # Re-enable the run widgets
             self.ui.detail_tabwidget.setEnabled(True)
         # Widgets for selecting which runs to show
-        if self._busy_hinters['run_table'] > 0:
+        if self._busy_hinters["run_table"] > 0:
             self.ui.run_tableview.setEnabled(False)
         else:
             # Re-enable the run widgets
@@ -556,7 +556,9 @@ class RunBrowserDisplay(display.FireflyDisplay):
         uids = [i.siblingAtColumn(col_idx).data() for i in indexes]
         # Get selected runs from the database
         with self.busy_hints(run_widgets=True, run_table=False):
-            task = self.db_task(self.db.load_selected_runs(uids), "update selected runs")
+            task = self.db_task(
+                self.db.load_selected_runs(uids), "update selected runs"
+            )
             self.selected_runs = await task
             # Update the necessary UI elements
             await self.update_1d_signals()

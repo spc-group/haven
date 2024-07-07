@@ -15,7 +15,7 @@ async def display(qtbot, catalog):
     qtbot.addWidget(display)
     display.clear_filters()
     # Wait for the initial database load to process
-    await display._running_db_tasks['init_load_runs']
+    await display._running_db_tasks["init_load_runs"]
     return display
 
 
@@ -93,6 +93,7 @@ async def test_1d_plot_signals(catalog, display):
         assert (
             combobox.findText("energy_energy") > -1
         ), f"energy_energy signal not in {combobox.objectName()}."
+
 
 # Warns: Task was destroyed but it is pending!
 @pytest.mark.asyncio
