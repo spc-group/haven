@@ -292,37 +292,6 @@ class RunBrowserDisplay(display.FireflyDisplay):
             # Let slots know that the model data have changed
             self.runs_total_label.setText(str(self.ui.runs_model.rowCount()))
 
-    # # def start_run_client(self, root_node):
-    # #     """Set up the database client in a separate thread."""
-    # #     # Create the thread and worker
-    # #     thread = QThread(parent=self)
-    # #     self._thread = thread
-    # #     worker = DatabaseWorker(root_node=root_node)
-    # #     self._db_worker = worker
-    # #     worker.moveToThread(thread)
-    # #     # Set up filters
-    # #     worker.new_message.connect(self.show_message)
-    # #     self.filters_changed.connect(worker.set_filters)
-    # #     # Connect signals/slots
-    # #     thread.started.connect(worker.load_all_runs)
-    # #     worker.all_runs_changed.connect(self.set_runs_model_items)
-    # #     worker.selected_runs_changed.connect(self.update_metadata)
-    # #     worker.selected_runs_changed.connect(self.update_1d_signals)
-    # #     worker.selected_runs_changed.connect(self.update_2d_signals)
-    # #     worker.selected_runs_changed.connect(self.update_1d_plot)
-    # #     worker.selected_runs_changed.connect(self.update_2d_plot)
-    # #     worker.selected_runs_changed.connect(self.update_multi_plot)
-    # #     worker.db_op_started.connect(self.disable_run_widgets)
-    # #     worker.db_op_ended.connect(self.enable_run_widgets)
-    # #     # Make sure filters are current
-    # #     self.update_filters()
-    # #     # Start the thread
-    # #     thread.start()
-    # #     # Get distinct fields so we can populate the comboboxes
-    # #     self.load_distinct_fields.connect(worker.load_distinct_fields)
-    # #     worker.distinct_fields_changed.connect(self.update_combobox_items)
-    # #     self.load_distinct_fields.emit()
-
     def clear_filters(self):
         self.ui.filter_proposal_combobox.setCurrentText("")
         self.ui.filter_esaf_combobox.setCurrentText("")
@@ -334,21 +303,6 @@ class RunBrowserDisplay(display.FireflyDisplay):
         self.ui.filter_full_text_lineedit.setText("")
         self.ui.filter_edge_combobox.setCurrentText("")
         self.ui.filter_user_combobox.setCurrentText("")
-
-    # def update_combobox_items(self, fields):
-    #     for field_name, cb in [
-    #         ("proposal_users", self.ui.filter_proposal_combobox),
-    #         ("proposal_id", self.ui.filter_user_combobox),
-    #         ("esaf_id", self.ui.filter_esaf_combobox),
-    #         ("sample_name", self.ui.filter_sample_combobox),
-    #         ("plan_name", self.ui.filter_plan_combobox),
-    #         ("edge", self.ui.filter_edge_combobox),
-    #     ]:
-    #         if field_name in fields.keys():
-    #             old_text = cb.currentText()
-    #             cb.clear()
-    #             cb.addItems(fields[field_name])
-    #             cb.setCurrentText(old_text)
 
     @asyncSlot()
     @cancellable
@@ -424,9 +378,28 @@ class RunBrowserDisplay(display.FireflyDisplay):
             self.show_message("Loading…")
         else:
             self.show_message("Done.", 5000)
-    
+
     @contextmanager
     def busy_hints(self, run_widgets=True, run_table=True):
+        """A context manager that displays UI hints when slow operations happen.
+
+        Arguments can be used to control which widgets are modified.
+
+        Usage:
+
+        .. code-block:: python
+
+            with self.busy_hints():
+                self.db_task(self.slow_operation)
+
+        Parameters
+        ==========
+        run_widgets
+          Disable the widgets for viewing individual runs.
+        run_table
+          Disable the table for selecting runs to view.
+
+        """
         # Update the counters for keeping track of concurrent contexts
         hinters = {
             "run_widgets": run_widgets,
@@ -443,30 +416,6 @@ class RunBrowserDisplay(display.FireflyDisplay):
             # Re-enable widgets if appropriate
             self._busy_hinters.subtract(hinters)
             self.update_busy_hints()
-
-    # def disable_run_widgets(self):
-    #     self.show_message("Loading...")
-    #     widgets = [
-    #         self.ui.run_tableview,
-    #         self.ui.refresh_runs_button,
-    #         self.ui.detail_tabwidget,
-    #         self.ui.runs_total_layout,
-    #         self.ui.filters_widget,
-    #     ]
-    #     for widget in widgets:
-    #         widget.setEnabled(False)
-    #     self.disabled_widgets = widgets
-    #     self.setCursor(Qt.WaitCursor)
-
-    # def enable_run_widgets(self, exceptions=[]):
-    #     if any(exceptions):
-    #         self.show_message(exceptions[0])
-    #     else:
-    #         self.show_message("Done", 5000)
-    #     # Re-enable the widgets
-    #     for widget in self.disabled_widgets:
-    #         widget.setEnabled(True)
-    #     self.setCursor(Qt.ArrowCursor)
 
     @asyncSlot()
     @cancellable
@@ -515,46 +464,6 @@ class RunBrowserDisplay(display.FireflyDisplay):
         val_cb.addItems(vcols)
         # Restore previous selection
         val_cb.setCurrentText(old_value)
-
-    # def calculate_ydata(
-    #     self,
-    #     x_data,
-    #     y_data,
-    #     r_data,
-    #     x_signal,
-    #     y_signal,
-    #     r_signal,
-    #     use_reference=False,
-    #     use_log=False,
-    #     use_invert=False,
-    #     use_grad=False,
-    # ):
-    #     """Take raw y and reference data and calculate a new y_data signal."""
-    #     # Make sure we have numpy arrays
-    #     x = np.asarray(x_data)
-    #     y = np.asarray(y_data)
-    #     r = np.asarray(r_data)
-    #     # Apply transformations
-    #     y_string = f"[{y_signal}]"
-    #     try:
-    #         if use_reference:
-    #             y = y / r
-    #             y_string = f"{y_string}/[{r_signal}]"
-    #         if use_log:
-    #             y = np.log(y)
-    #             y_string = f"ln({y_string})"
-    #         if use_invert:
-    #             y *= -1
-    #             y_string = f"-{y_string}"
-    #         if use_grad:
-    #             y = np.gradient(y, x)
-    #             y_string = f"d({y_string})/d[{r_signal}]"
-    #     except TypeError as exc:
-    #         msg = f"Could not calculate transformation: {exc}"
-    #         log.warning(msg)
-    #         raise
-    #         raise exceptions.InvalidTransformation(msg)
-    #     return y, y_string
 
     @asyncSlot()
     @cancellable
