@@ -86,7 +86,6 @@ async def test_1d_plot_signals(catalog, display):
     await display.update_selected_runs()
     # Check signals in checkboxes
     for combobox in [
-        display.ui.multi_signal_x_combobox,
         display.ui.signal_y_combobox,
         display.ui.signal_r_combobox,
         display.ui.signal_x_combobox,

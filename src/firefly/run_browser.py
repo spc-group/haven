@@ -123,13 +123,13 @@ class BrowserMultiPlotWidget(GraphicsLayoutWidget):
                 continue
             # Plot each y signal on a separate plot
             for ysignal, plot_item in zip(ysignals, self.multiplot_items()):
-                if is_numeric_dtype(data[ysignal]):
-                    try:
+                try:
+                    if is_numeric_dtype(data[ysignal]):
                         plot_item.plot(xdata, data[ysignal])
-                    except KeyError:
-                        log.warning(f"No signal {ysignal} in data.")
-                    else:
-                        log.debug(f"Plotted {ysignal} vs. {xsignal} for {data}")
+                except KeyError:
+                    log.warning(f"No signal {ysignal} in data.")
+                else:
+                    log.debug(f"Plotted {ysignal} vs. {xsignal} for {data}")
                 plot_item.setTitle(ysignal)
 
 
