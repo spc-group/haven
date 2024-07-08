@@ -16,6 +16,7 @@ async def display(qtbot, catalog):
     display.clear_filters()
     # Wait for the initial database load to process
     await display._running_db_tasks["init_load_runs"]
+    await display._running_db_tasks["update_combobox_items"]
     return display
 
 
@@ -275,6 +276,15 @@ def test_busy_hints_run_table(display):
     assert display.ui.run_tableview.isEnabled()
 
 
+def test_busy_hints_filters(display):
+    """Check that the all_runs table view gets disabled during DB hits."""
+    with display.busy_hints(run_table=False, run_widgets=False, filter_widgets=True):
+        # Are widgets disabled in the context block?
+        assert not display.ui.filters_widget.isEnabled()
+    # Are widgets re-enabled outside the context block?
+    assert display.ui.filters_widget.isEnabled()
+
+
 def test_busy_hints_status(display, mocker):
     """Check that any busy_hints displays the message "Loading…"."""
     spy = mocker.spy(display, "show_message")
@@ -301,6 +311,12 @@ def test_busy_hints_multiple(display):
         assert not display.ui.detail_tabwidget.isEnabled()
     # Are widgets re-enabled outside the context block?
     assert display.ui.detail_tabwidget.isEnabled()
+
+
+@pytest.mark.asyncio
+async def test_update_combobox_items(display):
+    """Check that the comboboxes get the distinct filter fields."""
+    assert display.ui.filter_plan_combobox.count() > 0
 
 
 # -----------------------------------------------------------------------------

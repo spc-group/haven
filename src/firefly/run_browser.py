@@ -250,6 +250,8 @@ class RunBrowserDisplay(display.FireflyDisplay):
         self.db = DatabaseWorker(catalog=root_node)
         # Load the list of all runs for the selection widget
         self.db_task(self.load_runs(), name="init_load_runs")
+        # Load the list of filters' field values into the comboboxes
+        self.db_task(self.update_combobox_items(), name="update_combobox_items")
 
     def db_task(self, coro, name="default task"):
         """Executes a co-routine as a database task. Existing database
@@ -274,7 +276,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
     @cancellable
     async def load_runs(self):
         """Get the list of available runs based on filters."""
-        with self.busy_hints(run_widgets=True, run_table=True):
+        with self.busy_hints(run_widgets=True, run_table=True, filter_widgets=False):
             runs = await self.db_task(
                 self.db.load_all_runs(self.filters()),
                 name="load all runs",
@@ -304,13 +306,31 @@ class RunBrowserDisplay(display.FireflyDisplay):
         self.ui.filter_edge_combobox.setCurrentText("")
         self.ui.filter_user_combobox.setCurrentText("")
 
+    async def update_combobox_items(self):
+        """"""
+        with self.busy_hints(run_table=False, run_widgets=False, filter_widgets=True):
+            fields = await self.db.load_distinct_fields()
+            for field_name, cb in [
+                ("proposal_users", self.ui.filter_proposal_combobox),
+                ("proposal_id", self.ui.filter_user_combobox),
+                ("esaf_id", self.ui.filter_esaf_combobox),
+                ("sample_name", self.ui.filter_sample_combobox),
+                ("plan_name", self.ui.filter_plan_combobox),
+                ("edge", self.ui.filter_edge_combobox),
+            ]:
+                if field_name in fields.keys():
+                    old_text = cb.currentText()
+                    cb.clear()
+                    cb.addItems(fields[field_name])
+                    cb.setCurrentText(old_text)
+
     @asyncSlot()
     @cancellable
     async def sleep_slot(self):
         await self.db_task(self.print_sleep())
 
     async def print_sleep(self):
-        with self.busy_hints(run_widgets=True, run_table=True):
+        with self.busy_hints(run_widgets=True, run_table=True, filter_widgets=True):
             label = self.ui.sleep_label
             label.setText(f"3...")
             await asyncio.sleep(1)
@@ -373,6 +393,11 @@ class RunBrowserDisplay(display.FireflyDisplay):
         else:
             # Re-enable the run widgets
             self.ui.run_tableview.setEnabled(True)
+        # Widgets for filtering runs
+        if self._busy_hinters["filters_widget"] > 0:
+            self.ui.filters_widget.setEnabled(False)
+        else:
+            self.ui.filters_widget.setEnabled(True)
         # Update status message in message bars
         if len(list(self._busy_hinters.elements())) > 0:
             self.show_message("Loading…")
@@ -380,7 +405,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
             self.show_message("Done.", 5000)
 
     @contextmanager
-    def busy_hints(self, run_widgets=True, run_table=True):
+    def busy_hints(self, run_widgets=True, run_table=True, filter_widgets=True):
         """A context manager that displays UI hints when slow operations happen.
 
         Arguments can be used to control which widgets are modified.
@@ -398,12 +423,15 @@ class RunBrowserDisplay(display.FireflyDisplay):
           Disable the widgets for viewing individual runs.
         run_table
           Disable the table for selecting runs to view.
+        filter_widgets
+          Disable the filter comboboxes, etc.
 
         """
         # Update the counters for keeping track of concurrent contexts
         hinters = {
             "run_widgets": run_widgets,
             "run_table": run_table,
+            "filters_widget": filter_widgets,
         }
         hinters = [name for name, include in hinters.items() if include]
         self._busy_hinters.update(hinters)
@@ -555,7 +583,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
         indexes = self.ui.run_tableview.selectedIndexes()
         uids = [i.siblingAtColumn(col_idx).data() for i in indexes]
         # Get selected runs from the database
-        with self.busy_hints(run_widgets=True, run_table=False):
+        with self.busy_hints(run_widgets=True, run_table=False, filter_widgets=False):
             task = self.db_task(
                 self.db.load_selected_runs(uids), "update selected runs"
             )
