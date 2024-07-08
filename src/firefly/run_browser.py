@@ -10,6 +10,7 @@ import numpy as np
 import qtawesome as qta
 import yaml
 from matplotlib.colors import TABLEAU_COLORS
+from pandas.api.types import is_numeric_dtype
 from pyqtgraph import GraphicsLayoutWidget, ImageView, PlotItem, PlotWidget
 from qasync import asyncSlot
 from qtpy.QtCore import Qt, Signal
@@ -112,6 +113,7 @@ class BrowserMultiPlotWidget(GraphicsLayoutWidget):
         ysignals = sorted(list(dict.fromkeys(ysignals)))
         # Plot the runs
         self.clear()
+        self._multiplot_items = {}
         for label, data in runs.items():
             # Figure out which signals to plot
             try:
@@ -121,12 +123,13 @@ class BrowserMultiPlotWidget(GraphicsLayoutWidget):
                 continue
             # Plot each y signal on a separate plot
             for ysignal, plot_item in zip(ysignals, self.multiplot_items()):
-                try:
-                    plot_item.plot(xdata, data[ysignal])
-                except KeyError:
-                    log.warning(f"No signal {ysignal} in data.")
-                else:
-                    log.debug(f"Plotted {ysignal} vs. {xsignal} for {data}")
+                if is_numeric_dtype(data[ysignal]):
+                    try:
+                        plot_item.plot(xdata, data[ysignal])
+                    except KeyError:
+                        log.warning(f"No signal {ysignal} in data.")
+                    else:
+                        log.debug(f"Plotted {ysignal} vs. {xsignal} for {data}")
                 plot_item.setTitle(ysignal)
 
 
@@ -363,6 +366,10 @@ class RunBrowserDisplay(display.FireflyDisplay):
         self.ui.invert_checkbox.stateChanged.connect(self.update_1d_plot)
         self.ui.gradient_checkbox.stateChanged.connect(self.update_1d_plot)
         self.ui.plot_1d_hints_checkbox.stateChanged.connect(self.update_1d_signals)
+        self.ui.plot_multi_hints_checkbox.stateChanged.connect(
+            self.update_multi_signals
+        )
+        self.ui.plot_multi_hints_checkbox.stateChanged.connect(self.update_multi_plot)
         # Respond to changes in displaying the 2d plot
         self.ui.signal_value_combobox.currentTextChanged.connect(self.update_2d_plot)
         self.ui.logarithm_checkbox_2d.stateChanged.connect(self.update_2d_plot)
@@ -447,6 +454,25 @@ class RunBrowserDisplay(display.FireflyDisplay):
 
     @asyncSlot()
     @cancellable
+    async def update_multi_signals(self, *args):
+        """Retrieve a new list of signals for multi plot and update UI."""
+        combobox = self.ui.multi_signal_x_combobox
+        # Store old value for restoring later
+        old_value = combobox.currentText()
+        # Determine valid list of columns to choose from
+        use_hints = self.ui.plot_multi_hints_checkbox.isChecked()
+        signals_task = self.db_task(
+            self.db.signal_names(hinted_only=use_hints), "multi signals"
+        )
+        xcols, ycols = await signals_task
+        # Update the comboboxes with new signals
+        combobox.clear()
+        combobox.addItems(xcols)
+        # Restore previous value
+        combobox.setCurrentText(old_value)
+
+    @asyncSlot()
+    @cancellable
     async def update_1d_signals(self, *args):
         # Store old values for restoring later
         comboboxes = [
@@ -463,9 +489,8 @@ class RunBrowserDisplay(display.FireflyDisplay):
         xcols, ycols = await signals_task
         self.multi_y_signals = ycols
         # Update the comboboxes with new signals
-        for cb in [self.ui.multi_signal_x_combobox, self.ui.signal_x_combobox]:
-            cb.clear()
-            cb.addItems(xcols)
+        self.ui.signal_x_combobox.clear()
+        self.ui.signal_x_combobox.addItems(xcols)
         for cb in [
             self.ui.signal_y_combobox,
             self.ui.signal_r_combobox,
@@ -499,7 +524,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
         x_signal = self.ui.multi_signal_x_combobox.currentText()
         if x_signal == "":
             return
-        use_hints = self.ui.plot_1d_hints_checkbox.isChecked()
+        use_hints = self.ui.plot_multi_hints_checkbox.isChecked()
         runs = await self.db_task(
             self.db.all_signals(hinted_only=use_hints), "multi-plot"
         )
@@ -589,6 +614,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
             )
             self.selected_runs = await task
             # Update the necessary UI elements
+            await self.update_multi_signals()
             await self.update_1d_signals()
             await self.update_2d_signals()
             await self.update_metadata()

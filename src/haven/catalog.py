@@ -2,6 +2,7 @@ import asyncio
 import logging
 import sqlite3
 import threading
+import warnings
 from functools import partial
 
 import databroker
@@ -235,7 +236,10 @@ class CatalogScan:
         """
         metadata = await self.metadata
         # Get hints for the independent (X)
-        independent = metadata["start"]["hints"]["dimensions"][0][0]
+        try:
+            independent = metadata["start"]["hints"]["dimensions"][0][0]
+        except (KeyError, IndexError):
+            warnings.warn("Could not get independent hints")
         # Get hints for the dependent (X)
         dependent = []
         primary_metadata = await self.loop.run_in_executor(
