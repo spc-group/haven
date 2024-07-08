@@ -17,6 +17,7 @@ from .area_detector import (  # noqa: F401
     DetectorBase,
     SimDetector,
     StatsPlugin_V34,
+    SingleImageModeTrigger,
 )
 from .device import make_device
 
@@ -31,7 +32,7 @@ class AravisCam(AsyncCamMixin, CamBase):
     acquire_time_auto = ADCpt(EpicsSignal, "ExposureAuto")
 
 
-class AravisDetector(SingleTrigger, DetectorBase):
+class AravisDetector(SingleImageModeTrigger, DetectorBase):
     """
     A gige-vision camera described by EPICS.
     """

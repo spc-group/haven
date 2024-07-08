@@ -39,6 +39,23 @@ log = logging.getLogger(__name__)
 __all__ = ["Eiger500K", "Lambda250K", "SimDetector", "AsyncCamMixin"]
 
 
+class WriteModes(IntEnum):
+    SINGLE = 0
+    CAPTURE = 1
+    STREAM = 2
+
+
+class Capture(IntEnum):
+    STOP = 0
+    START = 1
+
+
+class ImageMode(IntEnum):
+    SINGLE = 0
+    MULTIPLE = 1
+    CONTINUOUS = 2
+
+
 class AsyncCamMixin(OphydObject):
     """A mixin that allows for delayed evaluation of the connection status.
 
@@ -55,6 +72,14 @@ class AsyncCamMixin(OphydObject):
     acquire = ADCpt(SignalWithRBV, "Acquire")
 
 
+class SingleImageModeTrigger(SingleTrigger_V34):
+    """A trigger mixin for cameras that don't support "Multiple" image mode."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if "cam.image_mode" in self.stage_sigs:
+            self.stage_sigs['cam.image_mode'] = ImageMode.SINGLE
+
+
 class SimDetectorCam_V34(CamMixin_V34, SimDetectorCam): ...
 
 
@@ -62,17 +87,6 @@ class EigerCam(AsyncCamMixin, EigerDetectorCam): ...
 
 
 class LambdaCam(AsyncCamMixin, Lambda750kCam): ...
-
-
-class WriteModes(IntEnum):
-    SINGLE = 0
-    CAPTURE = 1
-    STREAM = 2
-
-
-class Capture(IntEnum):
-    STOP = 0
-    START = 1
 
 
 class StageCapture:
