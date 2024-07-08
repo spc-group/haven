@@ -8,6 +8,8 @@ from ophyd.areadetector.plugins import (
     OverlayPlugin_V34,
     PvaPlugin_V34,
     ROIPlugin_V34,
+    HDF5Plugin_V34,
+    TIFFPlugin_V34,
 )
 
 from .. import exceptions
@@ -36,6 +38,7 @@ class AravisDetector(SingleImageModeTrigger, DetectorBase):
     """
     A gige-vision camera described by EPICS.
     """
+    _default_configuration_attrs = ("cam", "hdf", "tiff")
 
     cam = ADCpt(AravisCam, "cam1:")
     image = ADCpt(ImagePlugin_V34, "image1:")
@@ -50,6 +53,8 @@ class AravisDetector(SingleImageModeTrigger, DetectorBase):
     stats3 = ADCpt(StatsPlugin_V34, "Stats3:", kind=Kind.normal)
     stats4 = ADCpt(StatsPlugin_V34, "Stats4:", kind=Kind.normal)
     stats5 = ADCpt(StatsPlugin_V34, "Stats5:", kind=Kind.normal)
+    hdf = ADCpt(HDF5Plugin_V34, "HDF1:", kind=Kind.normal)
+    tiff = ADCpt(TIFFPlugin_V34, "TIFF1:", kind=Kind.normal)
 
 
 def load_cameras(config=None) -> Sequence[DetectorBase]:
