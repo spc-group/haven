@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import warnings
+from collections import OrderedDict
 from typing import Mapping, Sequence, Generator, Dict
 
 from scipy.interpolate import CubicSpline
@@ -37,10 +38,10 @@ class HavenMotor(FlyerInterface, EpicsMotor):
     soft_limit_violation = Cpt(EpicsSignalRO, ".LVIO", kind="omitted")
 
     # Desired fly parameters
-    start_position = Cpt(Signal, name="start_position", kind=Kind.config)
-    end_position = Cpt(Signal, name="end_position", kind=Kind.config)
+    start_position = Cpt(Signal, name="start_position", value=0, kind=Kind.config)
+    end_position = Cpt(Signal, name="end_position", value=1, kind=Kind.config)
     # step_size = Cpt(Signal, name="step_size", value=1, kind=Kind.config)
-    num_points = Cpt(Signal, name="num_points", value=1, kind=Kind.config)
+    num_points = Cpt(Signal, name="num_points", value=2, kind=Kind.config)
     dwell_time = Cpt(Signal, name="dwell_time", value=1, kind=Kind.config)
 
     # Calculated fly parameters
@@ -56,17 +57,12 @@ class HavenMotor(FlyerInterface, EpicsMotor):
         self.end_position.subscribe(self._update_fly_params)
         self.num_points.subscribe(self._update_fly_params)
         self.dwell_time.subscribe(self._update_fly_params)
-        self.acceleration.subscribe(self._update_fly_params)        
+        self.acceleration.subscribe(self._update_fly_params)
 
     def stage(self):
-        super().stage()
-        # Save starting position to restore later
-        self._old_value = self.user_readback.value
-
-    def unstage(self):
-        super().unstage()
-        # Restore the previously saved position after the scan ends
-        self.set(self._old_value, wait=True)
+        # Override some additional staged signals
+        self._original_vals.setdefault(self.user_setpoint, self.user_readback.get())
+        self._original_vals.setdefault(self.velocity, self.velocity.get())
 
     def kickoff(self):
         """Start the motor as a flyer.
@@ -80,7 +76,9 @@ class HavenMotor(FlyerInterface, EpicsMotor):
             Indicate when flying is ready.
 
         """
-        return self.move(self.taxi_start, wait=False)
+        self.move(self.taxi_start.get(), wait=True)
+        st = self.velocity.set(self.slew_speed.get())
+        return st
 
     def complete(self):
         """Start the motor flying and wait for it to complete.
@@ -93,8 +91,10 @@ class HavenMotor(FlyerInterface, EpicsMotor):
         """
         # Record real motor positions for later evaluation
         self._fly_data = []
-        self.user_readback.subscribe(self.record_datum)
-        return self.move(self.taxi_end.get(), wait=False)
+        cid = self.user_readback.subscribe(self.record_datum, run=False)
+        st = self.move(self.taxi_end.get(), wait=True)
+        self.user_readback.unsubscribe(cid)
+        return st
 
     def record_datum(self, *, old_value, value, timestamp, **kwargs):
         """Record a fly-scan data point so we can report it later."""
@@ -113,14 +113,16 @@ class HavenMotor(FlyerInterface, EpicsMotor):
         model = CubicSpline(positions, times, bc_type="clamped")
         # Create the data objects
         for position in self.pixel_positions:
-            timestamp = model(position)
+            timestamp = float(model(position))
             yield {
                 "time": timestamp,
                 "timestamps": {
                     self.user_readback.name: timestamp,
+                    self.user_setpoint.name: timestamp,
                 },
                 "data": {
                     self.user_readback.name: position,
+                    self.user_setpoint.name: position,
                 },
             }
 
@@ -128,7 +130,7 @@ class HavenMotor(FlyerInterface, EpicsMotor):
         """Describe details for the collect() method"""
         desc = OrderedDict()
         desc.update(self.describe())
-        return {"positions": desc}
+        return {self.user_readback.name: desc}
 
     def _update_fly_params(self, *args, **kwargs):
         """Calculate new fly-scan parameters based on signal values.
