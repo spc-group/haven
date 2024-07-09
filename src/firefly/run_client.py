@@ -5,7 +5,6 @@ from typing import Mapping, Sequence
 
 import numpy as np
 import pandas as pd
-from qtpy.QtCore import Signal
 from tiled import queries
 
 from haven import exceptions
@@ -16,14 +15,6 @@ log = logging.getLogger(__name__)
 
 class DatabaseWorker:
     selected_runs: Sequence = []
-
-    # Signals
-    all_runs_changed = Signal(list)
-    selected_runs_changed = Signal(list)
-    distinct_fields_changed = Signal(dict)
-    new_message = Signal(str, int)
-    db_op_started = Signal()
-    db_op_ended = Signal(list)  # (list of exceptions thrown)
 
     def __init__(self, catalog=None, *args, **kwargs):
         if catalog is None:
