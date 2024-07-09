@@ -10,46 +10,51 @@ from firefly.run_client import DatabaseWorker
 
 
 @pytest.fixture()
-def display(affapp, catalog):
+async def display(qtbot, catalog):
     display = RunBrowserDisplay(root_node=catalog)
+    qtbot.addWidget(display)
     display.clear_filters()
-    # Flush pending async coroutines
-    loop = asyncio.get_event_loop()
-    pending = asyncio.all_tasks(loop)
-    loop.run_until_complete(asyncio.gather(*pending))
-    assert all(task.done() for task in pending), "Init tasks not complete."
-    # Run the test
-    # yield display
-    try:
-        yield display
-    finally:
-        # Cancel remaining tasks
-        loop = asyncio.get_event_loop()
-        pending = asyncio.all_tasks(loop)
-        loop.run_until_complete(asyncio.gather(*pending))
-        assert all(task.done() for task in pending), "Shutdown tasks not complete."
+    # Wait for the initial database load to process
+    await display._running_db_tasks["init_load_runs"]
+    await display._running_db_tasks["update_combobox_items"]
+    return display
 
 
-@pytest.mark.skip(reason="There's some segmentation fault here that needs to be fixed")
-def test_run_viewer_action(ffapp, monkeypatch):
-    monkeypatch.setattr(ffapp, "create_window", MagicMock())
-    assert hasattr(ffapp, "show_run_browser_action")
-    ffapp.show_run_browser_action.trigger()
-    assert isinstance(ffapp.windows["run_browser"], MagicMock)
-
-
-@pytest.mark.skip(reason="There's some segmentation fault here that needs to be fixed")
 @pytest.mark.asyncio
-async def test_load_runs(display):
+async def test_db_task(display):
+    async def test_coro():
+        return 15
+
+    result = await display.db_task(test_coro())
+    assert result == 15
+
+
+@pytest.mark.asyncio
+async def test_db_task_interruption(display, event_loop):
+    async def test_coro(sleep_time):
+        await asyncio.sleep(sleep_time)
+        return sleep_time
+
+    # Create an existing task that will be cancelled
+    task_1 = display.db_task(test_coro(1.0), name="testing")
+    # Now execute another task
+    result = await display.db_task(test_coro(0.01), name="testing")
+    assert result == 0.01
+    # Check that the first one was cancelled
+    with pytest.raises(asyncio.exceptions.CancelledError):
+        await task_1
+    assert task_1.done()
+    assert task_1.cancelled()
+
+
+def test_load_runs(display):
     assert display.runs_model.rowCount() > 0
     assert display.ui.runs_total_label.text() == str(display.runs_model.rowCount())
 
 
-@pytest.mark.skip(reason="There's some segmentation fault here that needs to be fixed")
 @pytest.mark.asyncio
 async def test_update_selected_runs(display):
     # Change the proposal item
-    selection_model = display.ui.run_tableview.selectionModel()
     item = display.runs_model.item(0, 1)
     assert item is not None
     display.ui.run_tableview.selectRow(0)
@@ -59,19 +64,16 @@ async def test_update_selected_runs(display):
     assert len(display.db.selected_runs) > 0
 
 
-@pytest.mark.skip(reason="There's some segmentation fault here that needs to be fixed")
 @pytest.mark.asyncio
 async def test_metadata(display):
     # Change the proposal item
     display.ui.run_tableview.selectRow(0)
     await display.update_selected_runs()
     # Check that the metadata was set properly in the Metadata tab
-    metadata_doc = display.ui.metadata_textedit.document()
     text = display.ui.metadata_textedit.document().toPlainText()
     assert "xafs_scan" in text
 
 
-@pytest.mark.skip(reason="There's some segmentation fault here that needs to be fixed")
 @pytest.mark.asyncio
 async def test_1d_plot_signals(catalog, display):
     # Check that the 1D plot was created
@@ -84,7 +86,6 @@ async def test_1d_plot_signals(catalog, display):
     await display.update_selected_runs()
     # Check signals in checkboxes
     for combobox in [
-        display.ui.multi_signal_x_combobox,
         display.ui.signal_y_combobox,
         display.ui.signal_r_combobox,
         display.ui.signal_x_combobox,
@@ -94,7 +95,7 @@ async def test_1d_plot_signals(catalog, display):
         ), f"energy_energy signal not in {combobox.objectName()}."
 
 
-@pytest.mark.skip(reason="There's some segmentation fault here that needs to be fixed")
+# Warns: Task was destroyed but it is pending!
 @pytest.mark.asyncio
 async def test_1d_plot_signal_memory(catalog, display):
     """Do we remember the signals that were previously selected."""
@@ -116,9 +117,9 @@ async def test_1d_plot_signal_memory(catalog, display):
     assert cb.currentText() == "energy_id_energy_readback"
 
 
-@pytest.mark.skip(reason="There's some segmentation fault here that needs to be fixed")
+# Warns: Task was destroyed but it is pending!
 @pytest.mark.asyncio
-async def test_1d_hinted_signals(catalog, display, ffapp):
+async def test_1d_hinted_signals(catalog, display):
     display.ui.plot_1d_hints_checkbox.setChecked(True)
     # Check that the 1D plot was created
     plot_widget = display.ui.plot_1d_view
@@ -139,9 +140,8 @@ async def test_1d_hinted_signals(catalog, display, ffapp):
     ), f"unhinted signal found in {combobox.objectName()}."
 
 
-@pytest.mark.skip(reason="There's some segmentation fault here that needs to be fixed")
 @pytest.mark.asyncio
-async def test_update_1d_plot(catalog, display, ffapp):
+async def test_update_1d_plot(catalog, display):
     # Set up some fake data
     run = [run async for run in catalog.values()][0]
     display.db.selected_runs = [run]
@@ -173,7 +173,7 @@ async def test_update_1d_plot(catalog, display, ffapp):
     np.testing.assert_almost_equal(ydata, expected_ydata)
 
 
-@pytest.mark.skip(reason="There's some segmentation fault here that needs to be fixed")
+# Warns: Task was destroyed but it is pending!
 @pytest.mark.asyncio
 async def test_2d_plot_signals(catalog, display):
     # Check that the 1D plot was created
@@ -189,7 +189,6 @@ async def test_2d_plot_signals(catalog, display):
     assert combobox.findText("It_net_counts") > -1
 
 
-@pytest.mark.skip(reason="There's some segmentation fault here that needs to be fixed")
 @pytest.mark.asyncio
 async def test_update_2d_plot(catalog, display):
     display.plot_2d_item.setRect = MagicMock()
@@ -221,7 +220,6 @@ async def test_update_2d_plot(catalog, display):
     display.plot_2d_item.setRect.assert_called_with(-100, -80, 200, 160)
 
 
-@pytest.mark.skip(reason="There's some segmentation fault here that needs to be fixed")
 @pytest.mark.asyncio
 async def test_update_multi_plot(catalog, display):
     run = await catalog["7d1daf1d-60c7-4aa7-a668-d1cd97e5335f"]
@@ -242,7 +240,6 @@ async def test_update_multi_plot(catalog, display):
     # np.testing.assert_almost_equal(ydata, expected_ydata)
 
 
-@pytest.mark.skip(reason="There's some segmentation fault here that needs to be fixed")
 @pytest.mark.asyncio
 async def test_filter_runs(catalog):
     worker = DatabaseWorker(catalog=catalog)
@@ -251,7 +248,6 @@ async def test_filter_runs(catalog):
     assert len(runs) == 1
 
 
-@pytest.mark.skip(reason="There's some segmentation fault here that needs to be fixed")
 @pytest.mark.asyncio
 async def test_distinct_fields(catalog, display):
     worker = DatabaseWorker(catalog=catalog)
@@ -261,33 +257,65 @@ async def test_distinct_fields(catalog, display):
         assert key in distinct_fields.keys()
 
 
-@pytest.mark.skip(reason="There's some segmentation fault here that needs to be fixed")
+def test_busy_hints_run_widgets(display):
+    """Check that the display widgets get disabled during DB hits."""
+    with display.busy_hints(run_widgets=True, run_table=False):
+        # Are widgets disabled in the context block?
+        assert not display.ui.detail_tabwidget.isEnabled()
+    # Are widgets re-enabled outside the context block?
+    assert display.ui.detail_tabwidget.isEnabled()
+
+
+def test_busy_hints_run_table(display):
+    """Check that the all_runs table view gets disabled during DB hits."""
+    with display.busy_hints(run_table=True, run_widgets=False):
+        # Are widgets disabled in the context block?
+        assert not display.ui.run_tableview.isEnabled()
+    # Are widgets re-enabled outside the context block?
+    assert display.ui.run_tableview.isEnabled()
+
+
+def test_busy_hints_filters(display):
+    """Check that the all_runs table view gets disabled during DB hits."""
+    with display.busy_hints(run_table=False, run_widgets=False, filter_widgets=True):
+        # Are widgets disabled in the context block?
+        assert not display.ui.filters_widget.isEnabled()
+    # Are widgets re-enabled outside the context block?
+    assert display.ui.filters_widget.isEnabled()
+
+
+def test_busy_hints_status(display, mocker):
+    """Check that any busy_hints displays the message "Loading…"."""
+    spy = mocker.spy(display, "show_message")
+    print(spy)
+    with display.busy_hints(run_table=True, run_widgets=False):
+        # Are widgets disabled in the context block?
+        assert not display.ui.run_tableview.isEnabled()
+        assert spy.call_count == 1
+    # Are widgets re-enabled outside the context block?
+    assert spy.call_count == 2
+    assert display.ui.run_tableview.isEnabled()
+
+
+def test_busy_hints_multiple(display):
+    """Check that multiple busy hints can co-exist."""
+    # Next the busy_hints context to mimic multiple async calls
+    with display.busy_hints(run_widgets=True):
+        # Are widgets disabled in the outer block?
+        assert not display.ui.detail_tabwidget.isEnabled()
+        with display.busy_hints(run_widgets=True):
+            # Are widgets disabled in the inner block?
+            assert not display.ui.detail_tabwidget.isEnabled()
+        # Are widgets still disabled in the outer block?
+        assert not display.ui.detail_tabwidget.isEnabled()
+    # Are widgets re-enabled outside the context block?
+    assert display.ui.detail_tabwidget.isEnabled()
+
+
 @pytest.mark.asyncio
-async def test_db_task(display):
-    async def test_coro():
-        return 15
-
-    result = await display.db_task(test_coro())
-    assert result == 15
-
-
-@pytest.mark.skip(reason="There's some segmentation fault here that needs to be fixed")
-@pytest.mark.asyncio
-async def test_db_task_interruption(display, event_loop):
-    async def test_coro(sleep_time):
-        await asyncio.sleep(sleep_time)
-        return sleep_time
-
-    # Create an existing task that will be cancelled
-    task_1 = display.db_task(test_coro(1.0), name="testing")
-    # Now execute another task
-    result = await display.db_task(test_coro(0.01), name="testing")
-    assert result == 0.01
-    # Check that the first one was cancelled
-    with pytest.raises(asyncio.exceptions.CancelledError):
-        await task_1
-    assert task_1.done()
-    assert task_1.cancelled()
+async def test_update_combobox_items(display):
+    """Check that the comboboxes get the distinct filter fields."""
+    assert display.ui.filter_plan_combobox.count() > 0
 
 
 # -----------------------------------------------------------------------------
