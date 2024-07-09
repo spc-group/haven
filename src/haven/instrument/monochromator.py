@@ -39,8 +39,8 @@ class Monochromator(Device):
     gap = Cpt(HavenMotor, "ACS:m4", labels={"motors"})
     roll2 = Cpt(HavenMotor, "ACS:m5", labels={"motors", "baseline"}, kind="config")
     pitch2 = Cpt(HavenMotor, "ACS:m6", labels={"motors", "baseline"}, kind="config")
-    roll_int = Cpt(HavenMotor, "ACS:m7", labels={"motors", "baseline"}, kind="config")
-    pi_int = Cpt(HavenMotor, "ACS:m8", labels={"motors", "baseline"}, kind="config")
+    # roll_int = Cpt(HavenMotor, "ACS:m7", labels={"motors", "baseline"}, kind="config")
+    # pi_int = Cpt(HavenMotor, "ACS:m8", labels={"motors", "baseline"}, kind="config")
     # Physical constants
     d_spacing = Cpt(EpicsSignalRO, "dspacing", labels={"baseline"}, kind="config")
 
