@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>760</width>
-    <height>752</height>
+    <width>951</width>
+    <height>885</height>
    </rect>
   </property>
   <property name="font">
@@ -23,8 +23,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>761</width>
-     <height>751</height>
+     <width>951</width>
+     <height>891</height>
     </rect>
    </property>
    <property name="text">
@@ -34,7 +34,7 @@
   <widget class="PyDMLabel" name="PyDMLabel">
    <property name="geometry">
     <rect>
-     <x>180</x>
+     <x>-40</x>
      <y>0</y>
      <width>241</width>
      <height>41</height>
@@ -61,8 +61,8 @@
   <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_6">
    <property name="geometry">
     <rect>
-     <x>580</x>
-     <y>10</y>
+     <x>820</x>
+     <y>20</y>
      <width>119</width>
      <height>111</height>
     </rect>
@@ -74,16 +74,25 @@
     <enum>QFrame::NoFrame</enum>
    </property>
    <property name="macros" stdset="0">
-    <string>TITLE=Detector Z,AXIS=${DEVICE}.h.center</string>
+    <string>{&quot;TITLE&quot;: &quot;Detector Vert&quot;, &quot;AXIS&quot;: &quot;${DEVICE}.h.center&quot;}</string>
    </property>
    <property name="filename" stdset="0">
     <string>slits_motor.py</string>
+   </property>
+   <property name="loadWhenShown" stdset="0">
+    <bool>true</bool>
+   </property>
+   <property name="disconnectWhenHidden" stdset="0">
+    <bool>true</bool>
+   </property>
+   <property name="followSymlinks" stdset="0">
+    <bool>false</bool>
    </property>
   </widget>
   <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_7">
    <property name="geometry">
     <rect>
-     <x>10</x>
+     <x>20</x>
      <y>160</y>
      <width>119</width>
      <height>111</height>
@@ -96,42 +105,26 @@
     <enum>QFrame::NoFrame</enum>
    </property>
    <property name="macros" stdset="0">
-    <string>TITLE=Crystal Z,AXIS=${DEVICE}.v.size</string>
-   </property>
-   <property name="filename" stdset="0">
-    <string>slits_motor.py</string>
-   </property>
-  </widget>
-  <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_4">
-   <property name="geometry">
-    <rect>
-     <x>110</x>
-     <y>470</y>
-     <width>119</width>
-     <height>111</height>
-    </rect>
-   </property>
-   <property name="toolTip">
-    <string/>
-   </property>
-   <property name="frameShape">
-    <enum>QFrame::NoFrame</enum>
-   </property>
-   <property name="macros" stdset="0">
-    <string>TITLE=Asymmetry angle, AXIS=${DEVICE}.h.size</string>
+    <string>{&quot;TITLE&quot;: &quot;Crystal Vert&quot;, &quot;AXIS&quot;: &quot;${DEVICE}.vert&quot;}</string>
    </property>
    <property name="filename" stdset="0">
     <string>slits_motor.py</string>
    </property>
    <property name="loadWhenShown" stdset="0">
+    <bool>true</bool>
+   </property>
+   <property name="disconnectWhenHidden" stdset="0">
+    <bool>true</bool>
+   </property>
+   <property name="followSymlinks" stdset="0">
     <bool>false</bool>
    </property>
   </widget>
-  <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_8">
+  <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_9">
    <property name="geometry">
     <rect>
-     <x>250</x>
-     <y>330</y>
+     <x>820</x>
+     <y>260</y>
      <width>119</width>
      <height>111</height>
     </rect>
@@ -143,11 +136,659 @@
     <enum>QFrame::NoFrame</enum>
    </property>
    <property name="macros" stdset="0">
-    <string>TITLE=Crystal X,AXIS=${DEVICE}.v.size</string>
+    <string>{&quot;TITLE&quot;: &quot;Detector X&quot;, &quot;AXIS&quot;: &quot;${DEVICE}.h.center&quot;}</string>
    </property>
    <property name="filename" stdset="0">
     <string>slits_motor.py</string>
    </property>
+   <property name="loadWhenShown" stdset="0">
+    <bool>true</bool>
+   </property>
+   <property name="disconnectWhenHidden" stdset="0">
+    <bool>true</bool>
+   </property>
+   <property name="followSymlinks" stdset="0">
+    <bool>false</bool>
+   </property>
+  </widget>
+  <widget class="QToolBox" name="toolBox">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>390</y>
+     <width>131</width>
+     <height>291</height>
+    </rect>
+   </property>
+   <property name="currentIndex">
+    <number>0</number>
+   </property>
+   <widget class="QWidget" name="crystal_1">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>131</width>
+      <height>136</height>
+     </rect>
+    </property>
+    <attribute name="label">
+     <string>Crystal 1</string>
+    </attribute>
+    <layout class="QVBoxLayout" name="verticalLayout_2">
+     <item>
+      <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_4">
+       <property name="toolTip">
+        <string/>
+       </property>
+       <property name="frameShape">
+        <enum>QFrame::NoFrame</enum>
+       </property>
+       <property name="macros" stdset="0">
+        <string>{&quot;TITLE&quot;: &quot;Asymmetry angle&quot;, &quot;AXIS&quot;: &quot;${DEVICE}.analyzers.analyzer1.alpha&quot;, &quot;&quot;: &quot;&quot;}</string>
+       </property>
+       <property name="filename" stdset="0">
+        <string>slits_motor.py</string>
+       </property>
+       <property name="loadWhenShown" stdset="0">
+        <bool>false</bool>
+       </property>
+       <property name="disconnectWhenHidden" stdset="0">
+        <bool>true</bool>
+       </property>
+       <property name="followSymlinks" stdset="0">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QWidget" name="crystal_2">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>131</width>
+      <height>136</height>
+     </rect>
+    </property>
+    <attribute name="label">
+     <string>Crystal 2</string>
+    </attribute>
+    <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <item>
+      <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_5">
+       <property name="toolTip">
+        <string/>
+       </property>
+       <property name="frameShape">
+        <enum>QFrame::NoFrame</enum>
+       </property>
+       <property name="macros" stdset="0">
+        <string>{&quot;TITLE&quot;: &quot;Asymmetry angle&quot;, &quot;AXIS&quot;: &quot;${DEVICE}.h.size&quot;, &quot;&quot;: &quot;&quot;}</string>
+       </property>
+       <property name="filename" stdset="0">
+        <string>slits_motor.py</string>
+       </property>
+       <property name="loadWhenShown" stdset="0">
+        <bool>false</bool>
+       </property>
+       <property name="disconnectWhenHidden" stdset="0">
+        <bool>true</bool>
+       </property>
+       <property name="followSymlinks" stdset="0">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QWidget" name="crystal_3">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>131</width>
+      <height>136</height>
+     </rect>
+    </property>
+    <attribute name="label">
+     <string>Crystal 3</string>
+    </attribute>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_10">
+       <property name="toolTip">
+        <string/>
+       </property>
+       <property name="frameShape">
+        <enum>QFrame::NoFrame</enum>
+       </property>
+       <property name="macros" stdset="0">
+        <string>{&quot;TITLE&quot;: &quot;Asymmetry angle&quot;, &quot;AXIS&quot;: &quot;${DEVICE}.h.size&quot;, &quot;&quot;: &quot;&quot;}</string>
+       </property>
+       <property name="filename" stdset="0">
+        <string>slits_motor.py</string>
+       </property>
+       <property name="loadWhenShown" stdset="0">
+        <bool>false</bool>
+       </property>
+       <property name="disconnectWhenHidden" stdset="0">
+        <bool>true</bool>
+       </property>
+       <property name="followSymlinks" stdset="0">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QWidget" name="crystal_4">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>131</width>
+      <height>136</height>
+     </rect>
+    </property>
+    <attribute name="label">
+     <string>Crystal 4</string>
+    </attribute>
+    <layout class="QHBoxLayout" name="horizontalLayout_3">
+     <item>
+      <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_11">
+       <property name="toolTip">
+        <string/>
+       </property>
+       <property name="frameShape">
+        <enum>QFrame::NoFrame</enum>
+       </property>
+       <property name="macros" stdset="0">
+        <string>{&quot;TITLE&quot;: &quot;Asymmetry angle&quot;, &quot;AXIS&quot;: &quot;${DEVICE}.h.size&quot;, &quot;&quot;: &quot;&quot;}</string>
+       </property>
+       <property name="filename" stdset="0">
+        <string>slits_motor.py</string>
+       </property>
+       <property name="loadWhenShown" stdset="0">
+        <bool>false</bool>
+       </property>
+       <property name="disconnectWhenHidden" stdset="0">
+        <bool>true</bool>
+       </property>
+       <property name="followSymlinks" stdset="0">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QWidget" name="crystal_5">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>131</width>
+      <height>136</height>
+     </rect>
+    </property>
+    <attribute name="label">
+     <string>Crystal 5</string>
+    </attribute>
+    <layout class="QHBoxLayout" name="horizontalLayout_4">
+     <item>
+      <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_12">
+       <property name="toolTip">
+        <string/>
+       </property>
+       <property name="frameShape">
+        <enum>QFrame::NoFrame</enum>
+       </property>
+       <property name="macros" stdset="0">
+        <string>{&quot;TITLE&quot;: &quot;Asymmetry angle&quot;, &quot;AXIS&quot;: &quot;${DEVICE}.h.size&quot;, &quot;&quot;: &quot;&quot;}</string>
+       </property>
+       <property name="filename" stdset="0">
+        <string>slits_motor.py</string>
+       </property>
+       <property name="loadWhenShown" stdset="0">
+        <bool>false</bool>
+       </property>
+       <property name="disconnectWhenHidden" stdset="0">
+        <bool>true</bool>
+       </property>
+       <property name="followSymlinks" stdset="0">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <widget class="QToolBox" name="toolBox_2">
+   <property name="geometry">
+    <rect>
+     <x>350</x>
+     <y>380</y>
+     <width>131</width>
+     <height>291</height>
+    </rect>
+   </property>
+   <property name="currentIndex">
+    <number>4</number>
+   </property>
+   <widget class="QWidget" name="crystal_6">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>131</width>
+      <height>136</height>
+     </rect>
+    </property>
+    <attribute name="label">
+     <string>Crystal 1</string>
+    </attribute>
+    <layout class="QVBoxLayout" name="verticalLayout_3">
+     <item>
+      <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_8">
+       <property name="toolTip">
+        <string/>
+       </property>
+       <property name="frameShape">
+        <enum>QFrame::NoFrame</enum>
+       </property>
+       <property name="macros" stdset="0">
+        <string>{&quot;TITLE&quot;: &quot;Crystal X&quot;, &quot;AXIS&quot;: &quot;${DEVICE}.analyzers.analyzer1.x&quot;}</string>
+       </property>
+       <property name="filename" stdset="0">
+        <string>asymmotron_table_motor.py</string>
+       </property>
+       <property name="loadWhenShown" stdset="0">
+        <bool>true</bool>
+       </property>
+       <property name="disconnectWhenHidden" stdset="0">
+        <bool>true</bool>
+       </property>
+       <property name="followSymlinks" stdset="0">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QWidget" name="crystal_7">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>131</width>
+      <height>136</height>
+     </rect>
+    </property>
+    <attribute name="label">
+     <string>Crystal 2</string>
+    </attribute>
+    <layout class="QHBoxLayout" name="horizontalLayout_5">
+     <item>
+      <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_13">
+       <property name="toolTip">
+        <string/>
+       </property>
+       <property name="frameShape">
+        <enum>QFrame::NoFrame</enum>
+       </property>
+       <property name="macros" stdset="0">
+        <string>{&quot;TITLE&quot;: &quot;Crystal X&quot;, &quot;AXIS&quot;: &quot;${DEVICE}.analyzers.analyzer2.x&quot;}</string>
+       </property>
+       <property name="filename" stdset="0">
+        <string>asymmotron_table_motor.py</string>
+       </property>
+       <property name="loadWhenShown" stdset="0">
+        <bool>true</bool>
+       </property>
+       <property name="disconnectWhenHidden" stdset="0">
+        <bool>true</bool>
+       </property>
+       <property name="followSymlinks" stdset="0">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QWidget" name="crystal_8">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>131</width>
+      <height>136</height>
+     </rect>
+    </property>
+    <attribute name="label">
+     <string>Crystal 3</string>
+    </attribute>
+    <layout class="QHBoxLayout" name="horizontalLayout_6">
+     <item>
+      <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_14">
+       <property name="toolTip">
+        <string/>
+       </property>
+       <property name="frameShape">
+        <enum>QFrame::NoFrame</enum>
+       </property>
+       <property name="macros" stdset="0">
+        <string>{&quot;TITLE&quot;: &quot;Crystal X&quot;, &quot;AXIS&quot;: &quot;${DEVICE}.analyzers.analyzer3.x&quot;}</string>
+       </property>
+       <property name="filename" stdset="0">
+        <string>asymmotron_table_motor.py</string>
+       </property>
+       <property name="loadWhenShown" stdset="0">
+        <bool>true</bool>
+       </property>
+       <property name="disconnectWhenHidden" stdset="0">
+        <bool>true</bool>
+       </property>
+       <property name="followSymlinks" stdset="0">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QWidget" name="crystal_9">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>131</width>
+      <height>136</height>
+     </rect>
+    </property>
+    <attribute name="label">
+     <string>Crystal 4</string>
+    </attribute>
+    <layout class="QHBoxLayout" name="horizontalLayout_7">
+     <item>
+      <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_15">
+       <property name="toolTip">
+        <string/>
+       </property>
+       <property name="frameShape">
+        <enum>QFrame::NoFrame</enum>
+       </property>
+       <property name="macros" stdset="0">
+        <string>{&quot;TITLE&quot;: &quot;Crystal X&quot;, &quot;AXIS&quot;: &quot;${DEVICE}.analyzers.analyzer4.x&quot;}</string>
+       </property>
+       <property name="filename" stdset="0">
+        <string>asymmotron_table_motor.py</string>
+       </property>
+       <property name="loadWhenShown" stdset="0">
+        <bool>true</bool>
+       </property>
+       <property name="disconnectWhenHidden" stdset="0">
+        <bool>true</bool>
+       </property>
+       <property name="followSymlinks" stdset="0">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QWidget" name="crystal_10">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>131</width>
+      <height>136</height>
+     </rect>
+    </property>
+    <attribute name="label">
+     <string>Crystal 5</string>
+    </attribute>
+    <layout class="QHBoxLayout" name="horizontalLayout_8">
+     <item>
+      <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_16">
+       <property name="toolTip">
+        <string/>
+       </property>
+       <property name="frameShape">
+        <enum>QFrame::NoFrame</enum>
+       </property>
+       <property name="macros" stdset="0">
+        <string>{&quot;TITLE&quot;: &quot;Crystal X&quot;, &quot;AXIS&quot;: &quot;${DEVICE}.analyzers.analyzer5.x&quot;}</string>
+       </property>
+       <property name="filename" stdset="0">
+        <string>asymmotron_table_motor.py</string>
+       </property>
+       <property name="loadWhenShown" stdset="0">
+        <bool>true</bool>
+       </property>
+       <property name="disconnectWhenHidden" stdset="0">
+        <bool>true</bool>
+       </property>
+       <property name="followSymlinks" stdset="0">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <widget class="QToolBox" name="toolBox_3">
+   <property name="geometry">
+    <rect>
+     <x>790</x>
+     <y>570</y>
+     <width>131</width>
+     <height>291</height>
+    </rect>
+   </property>
+   <property name="currentIndex">
+    <number>0</number>
+   </property>
+   <widget class="QWidget" name="crystal_16">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>131</width>
+      <height>136</height>
+     </rect>
+    </property>
+    <attribute name="label">
+     <string>Crystal 1</string>
+    </attribute>
+    <layout class="QVBoxLayout" name="verticalLayout_5">
+     <item>
+      <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_22">
+       <property name="toolTip">
+        <string/>
+       </property>
+       <property name="frameShape">
+        <enum>QFrame::NoFrame</enum>
+       </property>
+       <property name="macros" stdset="0">
+        <string>{&quot;TITLE&quot;: &quot;Energy&quot;, &quot;AXIS&quot;: &quot;${DEVICE}.v.size&quot;}</string>
+       </property>
+       <property name="filename" stdset="0">
+        <string>asymmotron_table_motor.py</string>
+       </property>
+       <property name="loadWhenShown" stdset="0">
+        <bool>true</bool>
+       </property>
+       <property name="disconnectWhenHidden" stdset="0">
+        <bool>true</bool>
+       </property>
+       <property name="followSymlinks" stdset="0">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QWidget" name="crystal_17">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>131</width>
+      <height>136</height>
+     </rect>
+    </property>
+    <attribute name="label">
+     <string>Crystal 2</string>
+    </attribute>
+    <layout class="QHBoxLayout" name="horizontalLayout_13">
+     <item>
+      <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_23">
+       <property name="toolTip">
+        <string/>
+       </property>
+       <property name="frameShape">
+        <enum>QFrame::NoFrame</enum>
+       </property>
+       <property name="macros" stdset="0">
+        <string>{&quot;TITLE&quot;: &quot;Energy&quot;, &quot;AXIS&quot;: &quot;${DEVICE}.analyzers.analyzer2.energy&quot;}</string>
+       </property>
+       <property name="filename" stdset="0">
+        <string>asymmotron_table_motor.py</string>
+       </property>
+       <property name="loadWhenShown" stdset="0">
+        <bool>true</bool>
+       </property>
+       <property name="disconnectWhenHidden" stdset="0">
+        <bool>true</bool>
+       </property>
+       <property name="followSymlinks" stdset="0">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QWidget" name="crystal_18">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>131</width>
+      <height>136</height>
+     </rect>
+    </property>
+    <attribute name="label">
+     <string>Crystal 3</string>
+    </attribute>
+    <layout class="QHBoxLayout" name="horizontalLayout_14">
+     <item>
+      <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_24">
+       <property name="toolTip">
+        <string/>
+       </property>
+       <property name="frameShape">
+        <enum>QFrame::NoFrame</enum>
+       </property>
+       <property name="macros" stdset="0">
+        <string>{&quot;TITLE&quot;: &quot;Energy&quot;, &quot;AXIS&quot;: &quot;${DEVICE}.analyzers.analyzer3.energy&quot;}</string>
+       </property>
+       <property name="filename" stdset="0">
+        <string>asymmotron_table_motor.py</string>
+       </property>
+       <property name="loadWhenShown" stdset="0">
+        <bool>true</bool>
+       </property>
+       <property name="disconnectWhenHidden" stdset="0">
+        <bool>true</bool>
+       </property>
+       <property name="followSymlinks" stdset="0">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QWidget" name="crystal_19">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>131</width>
+      <height>136</height>
+     </rect>
+    </property>
+    <attribute name="label">
+     <string>Crystal 4</string>
+    </attribute>
+    <layout class="QHBoxLayout" name="horizontalLayout_15">
+     <item>
+      <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_25">
+       <property name="toolTip">
+        <string/>
+       </property>
+       <property name="frameShape">
+        <enum>QFrame::NoFrame</enum>
+       </property>
+       <property name="macros" stdset="0">
+        <string>{&quot;TITLE&quot;: &quot;Energy&quot;, &quot;AXIS&quot;: &quot;${DEVICE}.analyzers.analyzer4.energy&quot;}</string>
+       </property>
+       <property name="filename" stdset="0">
+        <string>asymmotron_table_motor.py</string>
+       </property>
+       <property name="loadWhenShown" stdset="0">
+        <bool>true</bool>
+       </property>
+       <property name="disconnectWhenHidden" stdset="0">
+        <bool>true</bool>
+       </property>
+       <property name="followSymlinks" stdset="0">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QWidget" name="crystal_20">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>131</width>
+      <height>136</height>
+     </rect>
+    </property>
+    <attribute name="label">
+     <string>Crystal 5</string>
+    </attribute>
+    <layout class="QHBoxLayout" name="horizontalLayout_16">
+     <item>
+      <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_26">
+       <property name="toolTip">
+        <string/>
+       </property>
+       <property name="frameShape">
+        <enum>QFrame::NoFrame</enum>
+       </property>
+       <property name="macros" stdset="0">
+        <string>{&quot;TITLE&quot;: &quot;Energy&quot;, &quot;AXIS&quot;: &quot;${DEVICE}.analyzers.analyzer5.energy&quot;}</string>
+       </property>
+       <property name="filename" stdset="0">
+        <string>asymmotron_table_motor.py</string>
+       </property>
+       <property name="loadWhenShown" stdset="0">
+        <bool>true</bool>
+       </property>
+       <property name="disconnectWhenHidden" stdset="0">
+        <bool>true</bool>
+       </property>
+       <property name="followSymlinks" stdset="0">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
   </widget>
  </widget>
  <customwidgets>
