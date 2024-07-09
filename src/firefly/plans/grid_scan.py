@@ -1,4 +1,5 @@
 import logging
+import numpy as np
 
 from bluesky_queueserver_api import BPlan
 from qasync import asyncSlot
@@ -17,7 +18,7 @@ class TitleRegion:
 
     def setup_ui(self):
         self.layout = QtWidgets.QGridLayout()
-        labels = ["Priority axis", "Motor", "Start", "Stop", "Snake", "Fly"]
+        labels = ["Priority axis", "Motor", "Start", "Stop", "Scan points", "Snake", "Fly"]
         Qlabels_all = {}
 
         # add labels in the first row
@@ -29,6 +30,7 @@ class TitleRegion:
         # fix widths so the labels are aligned with GridScanRegions
         Qlabels_all["Priority axis"].setFixedWidth(70)
         Qlabels_all["Motor"].setFixedWidth(100)
+        Qlabels_all["Scan points"].setFixedWidth(68)
         Qlabels_all["Snake"].setFixedWidth(53)
         Qlabels_all["Fly"].setFixedWidth(43)
 
@@ -65,19 +67,30 @@ class GridScanRegion(regions_display.RegionBase):
         self.stop_line_edit.setValidator(QDoubleValidator())  # only takes floats
         self.stop_line_edit.setPlaceholderText("Stop…")
         self.layout.addWidget(self.stop_line_edit)
-
-        # Fifth item, snake checkbox
+        
+        # Fifth item, number of scan point
+        self.scan_pts_spin_box= QtWidgets.QSpinBox()
+        self.scan_pts_spin_box.setMinimum(1)
+        self.scan_pts_spin_box.setMaximum(99999)
+        self.layout.addWidget(self.scan_pts_spin_box)
+        
+        # Sixth item, snake checkbox
         self.snake_checkbox = QtWidgets.QCheckBox()
         self.snake_checkbox.setText("Snake")
         self.snake_checkbox.setEnabled(True)
         self.layout.addWidget(self.snake_checkbox)
 
-        # Sixth item, fly checkbox # not available right now
+        # Seventh item, fly checkbox # not available right now
         self.fly_checkbox = QtWidgets.QCheckBox()
         self.fly_checkbox.setText("Fly")
         self.fly_checkbox.setEnabled(False)
         self.layout.addWidget(self.fly_checkbox)
+        
+    #     # Emit the valueChanged signal when the scan pnts value changes
+    #     self.scan_pts_spin_box.valueChanged.connect(self.emit_scan_points_changed)
 
+    # def emit_scan_points_changed(self):
+    #     pass
 
 class GridScanDisplay(regions_display.RegionsDisplay):
     Region = GridScanRegion
@@ -97,12 +110,13 @@ class GridScanDisplay(regions_display.RegionsDisplay):
             self.update_total_time
         )
         self.ui.spinBox_repeat_scan_num.valueChanged.connect(self.update_total_time)
-        self.ui.scan_pts_spin_box.valueChanged.connect(self.update_total_time)
+        # Connect scan points change to update total time
+        for region in self.regions:
+            region.scan_pts_spin_box.valueChanged.connect(self.update_total_time)
 
     def time_calculate_method(self, detector_time):
-        num_points = self.ui.scan_pts_spin_box.value()
-        num_regions = len(self.regions)
-        total_time_per_scan = num_regions * detector_time * num_points
+        total_num_pnts = np.prod([region_i.scan_pts_spin_box.value() for region_i in self.regions])
+        total_time_per_scan = total_num_pnts * detector_time
         return total_time_per_scan
 
     @asyncSlot(object)
@@ -119,19 +133,42 @@ class GridScanDisplay(regions_display.RegionsDisplay):
         """Update the snake checkboxes.
 
         The last region is not snakable, so that checkbox gets
-        disabled. The rest get enabled.
+        disabled and unchecked. The rest get enabled.
 
         """
         if len(self.regions) > 0:
             self.regions[-1].snake_checkbox.setEnabled(False)
+            self.regions[-1].snake_checkbox.setChecked(False)
             for region_i in self.regions[:-1]:
                 region_i.snake_checkbox.setEnabled(True)
 
+    def get_scan_parameters(self):
+        # Get scan parameters from widgets
+        detectors = self.ui.detectors_list.selected_detectors()
+        repeat_scan_num = int(self.ui.spinBox_repeat_scan_num.value())
+
+        # Get paramters from each rows of line regions:
+        motor_lst, start_lst, stop_lst, num_points_lst = [], [], [], []
+        for region_i in self.regions:
+            motor_lst.append(region_i.motor_box.current_component().name)
+            start_lst.append(float(region_i.start_line_edit.text()))
+            stop_lst.append(float(region_i.stop_line_edit.text()))
+            num_points_lst.append(float(region_i.scan_pts_spin_box.value()))
+
+        motor_args = [
+            values
+            for motor_i in zip(motor_lst, start_lst, stop_lst, num_points_lst)
+            for values in motor_i
+        ]
+
+        return detectors, motor_args, repeat_scan_num
+
     def queue_plan(self, *args, **kwargs):
         """Execute this plan on the queueserver."""
-        detectors, num_points, motor_args, repeat_scan_num, md = (
+        detectors, motor_args, repeat_scan_num = (
             self.get_scan_parameters()
         )
+        md = self.get_meta_data()
 
         # get snake axes, if all unchecked, set it None
         snake_axes = [
@@ -153,7 +190,6 @@ class GridScanDisplay(regions_display.RegionsDisplay):
             scan_type,
             detectors,
             *motor_args,
-            num=num_points,
             snake_axes=snake_axes,
             md=md,
         )

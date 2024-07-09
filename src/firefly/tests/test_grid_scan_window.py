@@ -37,7 +37,8 @@ async def test_time_calculator(display, sim_registry):
     display.ui.spinBox_repeat_scan_num.setValue(6)
 
     # set up scan num of points
-    display.ui.scan_pts_spin_box.setValue(10)
+    display.regions[0].scan_pts_spin_box.setValue(4)
+    display.regions[1].scan_pts_spin_box.setValue(5)
 
     # set up detectors
     display.ui.detectors_list.selected_detectors = mock.MagicMock(
@@ -78,6 +79,8 @@ async def test_grid_scan_plan_queued(display, qtbot, sim_registry, fake_motors):
     display.regions[0].motor_box.combo_box.setCurrentText("motorA_m1")
     display.regions[0].start_line_edit.setText("1")
     display.regions[0].stop_line_edit.setText("111")
+    display.regions[0].scan_pts_spin_box.setValue(5)
+
     # select snake for the first motor
     display.regions[0].snake_checkbox.setChecked(True)
 
@@ -85,9 +88,8 @@ async def test_grid_scan_plan_queued(display, qtbot, sim_registry, fake_motors):
     display.regions[1].motor_box.combo_box.setCurrentText("motorA_m2")
     display.regions[1].start_line_edit.setText("2")
     display.regions[1].stop_line_edit.setText("222")
+    display.regions[1].scan_pts_spin_box.setValue(10)
 
-    # set up scan num of points
-    display.ui.scan_pts_spin_box.setValue(10)
 
     # set up detector list
     display.ui.detectors_list.selected_detectors = mock.MagicMock(
@@ -105,10 +107,11 @@ async def test_grid_scan_plan_queued(display, qtbot, sim_registry, fake_motors):
         "motorA_m1",
         1,
         111,
+        5,
         "motorA_m2",
         2,
         222,
-        num=10,
+        10,
         snake_axes=["motorA_m1"],
         md={"sample": "sam", "purpose": "test", "notes": "notes"},
     )
