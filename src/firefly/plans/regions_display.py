@@ -163,15 +163,12 @@ class RegionsDisplay(display.FireflyDisplay):
         self.ui.label_min_total.setText(str(mins_total))
         self.ui.label_sec_total.setText(str(secs_total))
 
-    def time_calculate_method(self, detector_time):
-        num_points = self.ui.scan_pts_spin_box.value()
-        total_time_per_scan = detector_time * num_points
-        return total_time_per_scan
+    def time_calculate_method(self, detector_time):        
+        pass
 
     def get_scan_parameters(self):
         # Get scan parameters from widgets
         detectors = self.ui.detectors_list.selected_detectors()
-        num_points = self.ui.scan_pts_spin_box.value()
         repeat_scan_num = int(self.ui.spinBox_repeat_scan_num.value())
 
         # Get paramters from each rows of line regions:
@@ -187,6 +184,9 @@ class RegionsDisplay(display.FireflyDisplay):
             for values in motor_i
         ]
 
+        return detectors, motor_args, repeat_scan_num
+    
+    def get_meta_data(self):
         # Get meta data info
         md = {
             "sample": self.ui.lineEdit_sample.text(),
@@ -195,5 +195,4 @@ class RegionsDisplay(display.FireflyDisplay):
         }
         # Only include metadata that isn't an empty string
         md = {key: val for key, val in md.items() if is_valid_value(val)}
-
-        return detectors, num_points, motor_args, repeat_scan_num, md
+        return md
