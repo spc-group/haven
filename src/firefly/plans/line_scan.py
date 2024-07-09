@@ -35,26 +35,33 @@ class LineScanRegion(regions_display.RegionBase):
 
 class LineScanDisplay(regions_display.RegionsDisplay):
     Region = LineScanRegion
-
+    
     @asyncSlot(object)
     async def update_devices_slot(self, registry):
         await self.update_devices(registry)
         await self.detectors_list.update_devices(registry)
-
+    
+    def time_calculate_method(self, detector_time):    
+        num_points = self.ui.scan_pts_spin_box.value()  
+        total_time_per_scan = detector_time * num_points
+        return total_time_per_scan
+    
     def customize_ui(self):
         super().customize_ui()
         # When selections of detectors changed update_total_time
+        self.ui.scan_pts_spin_box.valueChanged.connect(self.update_total_time)
         self.ui.detectors_list.selectionModel().selectionChanged.connect(
             self.update_total_time
         )
         self.ui.spinBox_repeat_scan_num.valueChanged.connect(self.update_total_time)
-        self.ui.scan_pts_spin_box.valueChanged.connect(self.update_total_time)
 
     def queue_plan(self, *args, **kwargs):
         """Execute this plan on the queueserver."""
-        detectors, num_points, motor_args, repeat_scan_num, md = (
+        detectors, motor_args, repeat_scan_num = (
             self.get_scan_parameters()
         )
+        md = self.get_meta_data()
+        num_points = self.ui.scan_pts_spin_box.value()
 
         if self.ui.relative_scan_checkbox.isChecked():
             if self.ui.log_scan_checkbox.isChecked():
