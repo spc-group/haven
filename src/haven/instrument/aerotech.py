@@ -19,13 +19,14 @@ from ..exceptions import InvalidScanParameters
 from .delay import DG645Delay
 from .device import make_device
 from .stage import XYStage
+from .motor import HavenMotor
 
 log = logging.getLogger(__name__)
 
 ureg = pint.UnitRegistry()
 
 
-class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
+class AerotechFlyer(HavenMotor):
     """Allow an Aerotech stage to fly-scan via the Ophyd FlyerInterface.
 
     Set *start_position*, *end_position*, and *step_size* in units of
@@ -110,19 +111,7 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
     encoder_window_min: int = -8388607
     encoder_window_max: int = 8388607
 
-    # Extra motor record components
-    encoder_resolution = Cpt(EpicsSignal, ".ERES", kind=Kind.config)
-
-    # Desired fly parameters
-    start_position = Cpt(Signal, name="start_position", kind=Kind.config)
-    end_position = Cpt(Signal, name="end_position", kind=Kind.config)
-    step_size = Cpt(Signal, name="step_size", value=1, kind=Kind.config)
-    dwell_time = Cpt(Signal, name="dwell_time", value=1, kind=Kind.config)
-
-    # Calculated signals
-    slew_speed = Cpt(Signal, value=1, kind=Kind.config)
-    taxi_start = Cpt(Signal, kind=Kind.config)
-    taxi_end = Cpt(Signal, kind=Kind.config)
+    # Calculated fly-scan signals
     pso_start = Cpt(Signal, kind=Kind.config)
     pso_end = Cpt(Signal, kind=Kind.config)
     encoder_step_size = Cpt(Signal, kind=Kind.config)
@@ -137,17 +126,12 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
 
     def __init__(self, *args, axis: str, encoder: int, **kwargs):
         super().__init__(*args, **kwargs)
+        # Set up extra calculations for the flyer
+        self.encoder_resolution.subscribe(self._update_fly_params)
+        self.disable_window.subscribe(self._update_fly_params)
+        # Save needed axis/encoder values
         self.axis = axis
         self.encoder = encoder
-        # Set up auto-calculations for the flyer
-        self.motor_egu.subscribe(self._update_fly_params)
-        self.start_position.subscribe(self._update_fly_params)
-        self.end_position.subscribe(self._update_fly_params)
-        self.step_size.subscribe(self._update_fly_params)
-        self.dwell_time.subscribe(self._update_fly_params)
-        self.encoder_resolution.subscribe(self._update_fly_params)
-        self.acceleration.subscribe(self._update_fly_params)
-        self.disable_window.subscribe(self._update_fly_params)
 
     def kickoff(self):
         """Start a flyer
@@ -401,7 +385,7 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
                 " parameters."
             )
             return
-        # Determine the desired direction of travel and overal sense
+        # Determine the desired direction of travel and overall sense
         # +1 when moving in + encoder direction, -1 if else
         direction = 1 if start_position < end_position else -1
         overall_sense = direction * self.encoder_direction
