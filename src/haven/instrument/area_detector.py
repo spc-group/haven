@@ -74,10 +74,11 @@ class AsyncCamMixin(OphydObject):
 
 class SingleImageModeTrigger(SingleTrigger_V34):
     """A trigger mixin for cameras that don't support "Multiple" image mode."""
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if "cam.image_mode" in self.stage_sigs:
-            self.stage_sigs['cam.image_mode'] = ImageMode.SINGLE
+            self.stage_sigs["cam.image_mode"] = ImageMode.SINGLE
 
 
 class SimDetectorCam_V34(CamMixin_V34, SimDetectorCam): ...

@@ -2,13 +2,13 @@ import logging
 from typing import Sequence
 
 from ophyd import ADComponent as ADCpt
-from ophyd import CamBase, EpicsSignal, Kind, SingleTrigger
+from ophyd import CamBase, EpicsSignal, Kind
 from ophyd.areadetector.plugins import (
+    HDF5Plugin_V34,
     ImagePlugin_V34,
     OverlayPlugin_V34,
     PvaPlugin_V34,
     ROIPlugin_V34,
-    HDF5Plugin_V34,
     TIFFPlugin_V34,
 )
 
@@ -18,8 +18,8 @@ from .area_detector import (  # noqa: F401
     AsyncCamMixin,
     DetectorBase,
     SimDetector,
-    StatsPlugin_V34,
     SingleImageModeTrigger,
+    StatsPlugin_V34,
 )
 from .device import make_device
 
@@ -38,6 +38,7 @@ class AravisDetector(SingleImageModeTrigger, DetectorBase):
     """
     A gige-vision camera described by EPICS.
     """
+
     _default_configuration_attrs = ("cam", "hdf", "tiff")
 
     cam = ADCpt(AravisCam, "cam1:")
