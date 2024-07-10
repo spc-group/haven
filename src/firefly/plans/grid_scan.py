@@ -94,13 +94,6 @@ class GridScanRegion(regions_display.RegionBase):
         self.fly_checkbox.setEnabled(False)
         self.layout.addWidget(self.fly_checkbox)
 
-    #     # Emit the valueChanged signal when the scan pnts value changes
-    #     self.scan_pts_spin_box.valueChanged.connect(self.emit_scan_points_changed)
-
-    # def emit_scan_points_changed(self):
-    #     pass
-
-
 class GridScanDisplay(regions_display.RegionsDisplay):
     Region = GridScanRegion
     default_num_regions = 2
