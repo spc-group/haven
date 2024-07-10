@@ -41,8 +41,8 @@ class HavenMotor(FlyerInterface, EpicsMotor):
     start_position = Cpt(Signal, name="start_position", value=0, kind=Kind.config)
     end_position = Cpt(Signal, name="end_position", value=1, kind=Kind.config)
     # step_size = Cpt(Signal, name="step_size", value=1, kind=Kind.config)
-    num_points = Cpt(Signal, name="num_points", value=2, kind=Kind.config)
-    dwell_time = Cpt(Signal, name="dwell_time", value=1, kind=Kind.config)
+    flyer_num_points = Cpt(Signal, value=2, kind=Kind.config)
+    flyer_dwell_time = Cpt(Signal, value=1, kind=Kind.config)
 
     # Calculated fly parameters
     slew_speed = Cpt(Signal, value=1, kind=Kind.config)
@@ -55,8 +55,8 @@ class HavenMotor(FlyerInterface, EpicsMotor):
         self.motor_egu.subscribe(self._update_fly_params)
         self.start_position.subscribe(self._update_fly_params)
         self.end_position.subscribe(self._update_fly_params)
-        self.num_points.subscribe(self._update_fly_params)
-        self.dwell_time.subscribe(self._update_fly_params)
+        self.flyer_num_points.subscribe(self._update_fly_params)
+        self.flyer_dwell_time.subscribe(self._update_fly_params)
         self.acceleration.subscribe(self._update_fly_params)
 
     def stage(self):
@@ -160,8 +160,8 @@ class HavenMotor(FlyerInterface, EpicsMotor):
         egu = self.motor_egu.get()
         start_position = self.start_position.get()
         end_position = self.end_position.get()
-        dwell_time = self.dwell_time.get()
-        num_points = self.num_points.get()
+        dwell_time = self.flyer_dwell_time.get()
+        num_points = self.flyer_num_points.get()
         accel_time = self.acceleration.get()
         # Check for sane values
         if dwell_time == 0:

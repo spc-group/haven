@@ -102,7 +102,7 @@ class DetectorState(IntEnum):
 
 
 class FlyingDetector(FlyerInterface, Device):
-    flyer_num_frames = Cpt(Signal)
+    flyer_num_points = Cpt(Signal)
     flyscan_trigger_mode = TriggerMode.SOFTWARE
 
     def save_fly_datum(self, *, value, timestamp, obj, **kwargs):

@@ -13,13 +13,34 @@ from ophyd.status import StatusBase
 __all__ = ["fly_scan", "grid_fly_scan"]
 
 
-def fly_line_scan(detectors: list, flyer, start, stop, num, extra_signals=()):
-    """A plan stub for fly-scanning a single trajectory."""
+def fly_line_scan(detectors: list, flyer, start, stop, num, extra_signals=(), combine_streams=True):
+    """A plan stub for fly-scanning a single trajectory.
+
+    Parameters
+    ==========
+    detectors
+      List of 'readable' objects that support the flyer interface
+    flyer
+      The thing going to get moved.
+    start
+      The center of the first pixel in *flyer*.
+    stop
+      The center of the last measurement in *flyer*.
+    num
+      Number of measurements to take.
+    combine_streams
+      If true, the separate data streams will be combined into one
+      "primary" data stream (experimental).
+    extra_signals
+      If combining data streams, these signals will also get included
+      separately.
+
+    """
     # Calculate parameters for the fly-scan
-    step_size = abs(start - stop) / (num - 1)
+    # step_size = abs(start - stop) / (num - 1)
     yield from bps.mv(flyer.start_position, start)
     yield from bps.mv(flyer.end_position, stop)
-    yield from bps.mv(flyer.step_size, step_size)
+    yield from bps.mv(flyer.flyer_num_points, num)
     # Perform the fly scan
     flyers = [flyer, *detectors]
     for flyer_ in flyers:
@@ -27,10 +48,16 @@ def fly_line_scan(detectors: list, flyer, start, stop, num, extra_signals=()):
     for flyer_ in flyers:
         yield from bps.complete(flyer_, wait=True)
     # Collect the data after flying
-    collector = FlyerCollector(
-        flyers=flyers, name="flyer_collector", extra_signals=extra_signals
-    )
-    yield from bps.collect(collector)
+    if combine_streams:
+        # Collect data together as a single "primary" data stream
+        collector = FlyerCollector(
+            flyers=flyers, name="flyer_collector", extra_signals=extra_signals
+        )
+        yield from bps.collect(collector)
+    else:
+        # Collect data into separate data streams
+        for flyer_ in flyers:
+            yield from bps.collect(flyer_)
 
 
 # @baseline_decorator()
@@ -82,7 +109,7 @@ def fly_scan(
     }
     md_.update(md)
     # Execute the plan
-    line_scan = fly_line_scan(detectors, flyer, start, stop, num)
+    line_scan = fly_line_scan(detectors, flyer, start, stop, num, combine_streams=False)
     line_scan = bpp.run_wrapper(line_scan, md=md_)
     line_scan = bpp.stage_wrapper(line_scan, devices)
     yield from line_scan
