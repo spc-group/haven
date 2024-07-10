@@ -4,6 +4,7 @@ from enum import IntEnum
 from collections import OrderedDict
 from typing import Dict
 
+import pandas as pd
 import numpy as np
 from apstools.devices import CamMixin_V34, SingleTrigger_V34
 from ophyd import ADComponent as ADCpt
@@ -82,11 +83,27 @@ class TriggerMode(IntEnum):
     TTL_BOTH = 4
     LVDS_VETO_ONLY = 5
     LVDS_BOTH = 6
+
+
+class DetectorState(IntEnum):
+    IDLE = 0
+    ACQUIRE = 1
+    READOUT = 2
+    CORRECT = 3
+    SAVING = 4
+    ABORTING = 5
+    ERROR = 6
+    WAITING = 7
+    INITIALIZING = 8
+    DISCONNECTED = 9
+    ABORTED = 10
+    
     
 
 
 class FlyingDetector(FlyerInterface, Device):
     flyer_num_frames = Cpt(Signal)
+    flyscan_trigger_mode = TriggerMode.SOFTWARE
 
     def save_fly_datum(self, *, value, timestamp, obj, **kwargs):
         """Callback to save data from a signal during fly-scanning."""
@@ -102,14 +119,16 @@ class FlyingDetector(FlyerInterface, Device):
 
         # Set up the status for when the detector is ready to fly
         def check_acquiring(*, old_value, value, **kwargs):
-            is_acquiring = value == self.detector_states.ACQUIRE
+            is_acquiring = value == DetectorState.ACQUIRE
             if is_acquiring:
                 self.start_fly_timestamp = time.time()
             return is_acquiring
 
         status = SubscriptionStatus(self.cam.detector_state, check_acquiring)
         # Set the right parameters
-        status &= self.cam.trigger_mode.set(TriggerMode.TTL_VETO_ONLY)
+        self._original_vals.setdefault(self.cam.image_mode, self.cam.image_mode.get())
+        status &= self.cam.image_mode.set(ImageMode.CONTINUOUS)
+        status &= self.cam.trigger_mode.set(self.flyscan_trigger_mode)
         status &= self.cam.num_images.set(2**14)
         status &= self.cam.acquire.set(AcquireState.ACQUIRE)
         return status
@@ -128,7 +147,7 @@ class FlyingDetector(FlyerInterface, Device):
         for walk in self.walk_fly_signals():
             sig = walk.item
             sig.clear_sub(self.save_fly_datum)
-        return self.acquire.set(0)
+        return self.cam.acquire.set(AcquireState.DONE)
 
     def collect(self) -> dict:
         """Generate the data events that were collected during the fly scan."""
@@ -151,6 +170,50 @@ class FlyingDetector(FlyerInterface, Device):
         for walk in self.walk_fly_signals():
             desc.update(walk.item.describe())
         return {self.name: desc}
+
+    def fly_data(self):
+        """Compile the fly-scan data into a pandas dataframe."""
+        # Get the data for frame number as a reference
+        image_counter = pd.DataFrame(
+            self._fly_data[self.cam.array_counter],
+            columns=["timestamps", "image_counter"],
+        )
+        image_counter["image_counter"] -= 2  # Correct for stray frames
+        # Build all the individual signals' dataframes
+        dfs = []
+        for sig, data in self._fly_data.items():
+            df = pd.DataFrame(data, columns=["timestamps", sig])
+            old_shape = df.shape
+            nums = (df.timestamps - image_counter.timestamps).abs()
+
+            # Assign each datum an image number based on timestamp
+            def get_image_num(ts):
+                """Get the image number taken closest to a given timestamp."""
+                num = image_counter.iloc[
+                    (image_counter["timestamps"] - ts).abs().argsort()[:1]
+                ]
+                num = num["image_counter"].iloc[0]
+                return num
+
+            im_nums = [get_image_num(ts) for ts in df.timestamps.values]
+            df.index = im_nums
+            # Remove duplicates and intermediate ROI sums
+            df.sort_values("timestamps")
+            df = df.groupby(df.index).last()
+            dfs.append(df)
+        # Combine frames into monolithic dataframes
+        data = image_counter.copy()
+        data = data.set_index("image_counter", drop=True)
+        timestamps = data.copy()
+        for df in dfs:
+            sig = df.columns[1]
+            data[sig] = df[sig]
+            timestamps[sig] = df["timestamps"]
+        # Fill in missing values, most likely because the value didn't
+        # change so no new camonitor reply was received
+        data = data.ffill(axis=0)
+        timestamps = timestamps.ffill(axis=1)
+        return data, timestamps
 
     def walk_fly_signals(self, *, include_lazy=False):
         """Walk all signals in the Device hierarchy that are to be read during
