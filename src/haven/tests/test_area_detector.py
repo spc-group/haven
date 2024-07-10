@@ -1,4 +1,72 @@
-from haven.instrument.area_detector import load_area_detectors
+import time
+
+import pytest
+import numpy as np
+from ophyd.sim import instantiate_fake_device
+from ophyd import ADComponent as ADCpt
+from ophyd.areadetector.cam import AreaDetectorCam
+
+from haven.instrument.area_detector import load_area_detectors, DetectorBase
+
+
+class Detector(DetectorBase):
+    cam = ADCpt(AreaDetectorCam, "cam1:")
+
+
+@pytest.fixture()
+def detector(sim_registry):
+    det = instantiate_fake_device(Detector)
+    return det
+
+
+def test_flyscan_kickoff(detector):
+    detector.flyer_num_frames.set(10)
+    status = detector.kickoff()
+    # detector.acquiring.set(1)
+    status.wait()
+    assert status.success
+    assert status.done
+    # Check that the device was properly configured for fly-scanning
+    assert detector.cam.acquire.get() == 1
+    assert detector._fly_data == []
+    # Check that timestamps get recorded when new data are available
+    detector.cam.num_images_counter.sim_put(1)
+    assert detector._fly_data[0] == pytest.approx(time.time())
+
+
+def test_flyscan_complete(sim_ion_chamber):
+    flyer = sim_ion_chamber
+    # Run the complete method
+    status = flyer.complete()
+    status.wait()
+    # Check that the detector is stopped
+    assert flyer.stop_all._readback == 1
+
+
+def test_flyscan_collect(sim_ion_chamber):
+    flyer = sim_ion_chamber
+    name = flyer.net_counts.name
+    flyer.start_timestamp = 988.0
+    # Make fake fly-scan data
+    sim_data = np.zeros(shape=(8000,))
+    sim_data[:6] = [3, 5, 8, 13, 2, 33]
+    flyer.mca.spectrum._readback = sim_data
+    sim_times = np.asarray([12.0e7, 4.0e7, 4.0e7, 4.0e7, 4.0e7, 4.0e7])
+    flyer.mca_times.spectrum._readback = sim_times
+    flyer.frequency.set(1e7).wait()
+    # Ignore the first collected data point because it's during taxiing
+    expected_data = sim_data[1:]
+    # The real timestamps should be midway between PSO pulses
+    flyer.timestamps = [1000, 1004, 1008, 1012, 1016, 1020]
+    expected_timestamps = [1002.0, 1006.0, 1010.0, 1014.0, 1018.0]
+    payload = list(flyer.collect())
+    # Confirm data have the right structure
+    for datum, value, timestamp in zip(payload, expected_data, expected_timestamps):
+        assert datum == {
+            "data": {name: [value]},
+            "timestamps": {name: [timestamp]},
+            "time": timestamp,
+        }
 
 
 def test_load_area_detectors(sim_registry):

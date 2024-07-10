@@ -1,8 +1,13 @@
 import logging
+import time
 from enum import IntEnum
+from collections import OrderedDict
+from typing import Dict
 
+import numpy as np
 from apstools.devices import CamMixin_V34, SingleTrigger_V34
 from ophyd import ADComponent as ADCpt
+from ophyd import Component as Cpt
 from ophyd import DetectorBase as OphydDetectorBase
 from ophyd import (
     EigerDetectorCam,
@@ -11,7 +16,10 @@ from ophyd import (
     OphydObject,
     SimDetectorCam,
     SingleTrigger,
+    Signal,
+    Device,
 )
+from ophyd.status import StatusBase, SubscriptionStatus
 from ophyd.areadetector.base import EpicsSignalWithRBV as SignalWithRBV
 from ophyd.areadetector.filestore_mixins import FileStoreHDF5IterativeWrite
 from ophyd.areadetector.plugins import (
@@ -28,6 +36,7 @@ from ophyd.areadetector.plugins import (
 from ophyd.areadetector.plugins import StatsPlugin_V31 as OphydStatsPlugin_V31
 from ophyd.areadetector.plugins import StatsPlugin_V34 as OphydStatsPlugin_V34
 from ophyd.areadetector.plugins import TIFFPlugin_V31
+from ophyd.flyers import FlyerInterface
 
 from .. import exceptions
 from .._iconfig import load_config
@@ -54,6 +63,124 @@ class ImageMode(IntEnum):
     SINGLE = 0
     MULTIPLE = 1
     CONTINUOUS = 2
+
+
+class EraseState(IntEnum):
+    DONE = 0
+    ERASE = 1
+
+class AcquireState(IntEnum):
+    DONE = 0
+    ACQUIRE = 1
+
+
+class TriggerMode(IntEnum):
+    SOFTWARE = 0
+    INTERNAL = 1
+    IDC = 2
+    TTL_VETO_ONLY = 3
+    TTL_BOTH = 4
+    LVDS_VETO_ONLY = 5
+    LVDS_BOTH = 6
+    
+
+
+class FlyingDetector(FlyerInterface, Device):
+    flyer_num_frames = Cpt(Signal)
+
+    def save_fly_datum(self, *, value, timestamp, obj, **kwargs):
+        """Callback to save data from a signal during fly-scanning."""
+        datum = (timestamp, value)
+        self._fly_data.setdefault(obj, []).append(datum)        
+
+    def kickoff(self) -> StatusBase:
+        # Set up subscriptions for capturing data
+        self._fly_data = {}
+        for walk in self.walk_fly_signals():
+            sig = walk.item
+            sig.subscribe(self.save_fly_datum, run=True)
+
+        # Set up the status for when the detector is ready to fly
+        def check_acquiring(*, old_value, value, **kwargs):
+            is_acquiring = value == self.detector_states.ACQUIRE
+            if is_acquiring:
+                self.start_fly_timestamp = time.time()
+            return is_acquiring
+
+        status = SubscriptionStatus(self.cam.detector_state, check_acquiring)
+        # Set the right parameters
+        status &= self.cam.trigger_mode.set(TriggerMode.TTL_VETO_ONLY)
+        status &= self.cam.num_images.set(2**14)
+        status &= self.cam.acquire.set(AcquireState.ACQUIRE)
+        return status
+
+    def complete(self) -> StatusBase:
+        """Wait for flying to be complete.
+
+        This commands the Xspress to stop acquiring fly-scan data.
+
+        Returns
+        -------
+        complete_status : StatusBase
+          Indicate when flying has completed
+        """
+        # Remove subscriptions for capturing fly-scan data
+        for walk in self.walk_fly_signals():
+            sig = walk.item
+            sig.clear_sub(self.save_fly_datum)
+        return self.acquire.set(0)
+
+    def collect(self) -> dict:
+        """Generate the data events that were collected during the fly scan."""
+        # Load the collected data, and get rid of extras
+        fly_data, fly_ts = self.fly_data()
+        fly_data.drop("timestamps", inplace=True, axis="columns")
+        fly_ts.drop("timestamps", inplace=True, axis="columns")
+        # Yield each row one at a time
+        for data_row, ts_row in zip(fly_data.iterrows(), fly_ts.iterrows()):
+            payload = {
+                "data": {sig.name: val for (sig, val) in data_row[1].items()},
+                "timestamps": {sig.name: val for (sig, val) in ts_row[1].items()},
+                "time": float(np.median(np.unique(ts_row[1].values))),
+            }
+            yield payload
+
+    def describe_collect(self) -> Dict[str, Dict]:
+        """Describe details for the flyer collect() method"""
+        desc = OrderedDict()
+        for walk in self.walk_fly_signals():
+            desc.update(walk.item.describe())
+        return {self.name: desc}
+
+    def walk_fly_signals(self, *, include_lazy=False):
+        """Walk all signals in the Device hierarchy that are to be read during
+        fly-scanning.
+
+        Parameters
+        ----------
+        include_lazy : bool, optional
+            Include not-yet-instantiated lazy signals
+
+        Yields
+        ------
+        ComponentWalk
+            Where ancestors is all ancestors of the signal, including the
+            top-level device `walk_signals` was called on.
+
+        """
+        for walk in self.walk_signals():
+            # Image counter has to be included for data alignment
+            if walk.item is self.cam.array_counter:
+                yield walk
+                continue
+            # Only include readable signals
+            if not bool(walk.item.kind & Kind.normal):
+                continue
+            # ROI sums do not get captured properly during flying
+            # Instead, they should be calculated at the end
+            # if self.roi_sums in walk.ancestors:
+            #     continue
+            yield walk
 
 
 class AsyncCamMixin(OphydObject):
@@ -120,7 +247,7 @@ class MyHDF5Plugin(FileStoreHDF5IterativeWrite, HDF5Plugin_V34):
         super().stage()
 
 
-class DetectorBase(OphydDetectorBase):
+class DetectorBase(FlyingDetector, OphydDetectorBase):
     def __init__(self, *args, description=None, **kwargs):
         super().__init__(*args, **kwargs)
         if description is None:
@@ -129,7 +256,7 @@ class DetectorBase(OphydDetectorBase):
 
     @property
     def default_time_signal(self):
-        return self.cam.acquire_time
+        return self.cam.acquire_time    
 
 
 class StatsMixin:
