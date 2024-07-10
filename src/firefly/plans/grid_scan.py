@@ -94,6 +94,7 @@ class GridScanRegion(regions_display.RegionBase):
         self.fly_checkbox.setEnabled(False)
         self.layout.addWidget(self.fly_checkbox)
 
+
 class GridScanDisplay(regions_display.RegionsDisplay):
     Region = GridScanRegion
     default_num_regions = 2
