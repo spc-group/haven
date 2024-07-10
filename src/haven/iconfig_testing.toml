@@ -177,6 +177,9 @@ prefix = "255idcVME:"
 vertical_motor = "m26"
 horizontal_motor = "m25"
 
+[area_detector]
+root_path = "tmp"  # Omit leading slash, will get added by ophyd
+
 [area_detector.sim_det]
 
 prefix = "255idSimDet"

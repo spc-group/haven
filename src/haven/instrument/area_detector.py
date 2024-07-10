@@ -22,7 +22,7 @@ from ophyd import (
 )
 from ophyd.status import StatusBase, SubscriptionStatus
 from ophyd.areadetector.base import EpicsSignalWithRBV as SignalWithRBV
-from ophyd.areadetector.filestore_mixins import FileStoreHDF5IterativeWrite
+from ophyd.areadetector.filestore_mixins import FileStoreHDF5IterativeWrite, FileStoreTIFFIterativeWrite
 from ophyd.areadetector.plugins import (
     HDF5Plugin_V31,
     HDF5Plugin_V34,
@@ -101,7 +101,7 @@ class DetectorState(IntEnum):
     
 
 
-class FlyingDetector(FlyerInterface, Device):
+class FlyerMixin(FlyerInterface, Device):
     flyer_num_points = Cpt(Signal)
     flyscan_trigger_mode = TriggerMode.SOFTWARE
 
@@ -297,7 +297,25 @@ class StageCapture:
         self.stage_sigs[self.num_capture] = 0
 
 
-class MyHDF5Plugin(FileStoreHDF5IterativeWrite, HDF5Plugin_V34):
+class DynamicFileStore(Device):
+    """File store mixin that alters the write_path_template based on
+    iconfig values.
+
+    """
+    def __init__(self, *args, write_path_template="/{root_path}/%Y/%m/{name}/", **kwargs):
+        super().__init__(*args, write_path_template=write_path_template, **kwargs)
+        # Format the file_write_template with per-device values
+        config = load_config()
+        try:
+            self.write_path_template = self.write_path_template.format(
+                name=self.parent.name,
+                root_path=config["area_detector"].get("root_path", "/tmp"),
+            )
+        except KeyError:
+            warnings.warn(f"Could not format write_path_template {write_path_template}")
+
+
+class HDF5FilePlugin(DynamicFileStore, FileStoreHDF5IterativeWrite, HDF5Plugin_V34):
     """
     Add data acquisition methods to HDF5Plugin.
     * ``stage()`` - prepare device PVs befor data acquisition
@@ -310,7 +328,11 @@ class MyHDF5Plugin(FileStoreHDF5IterativeWrite, HDF5Plugin_V34):
         super().stage()
 
 
-class DetectorBase(FlyingDetector, OphydDetectorBase):
+class TIFFFilePlugin(DynamicFileStore, FileStoreTIFFIterativeWrite, HDF5Plugin_V34):
+    ...
+
+
+class DetectorBase(FlyerMixin, OphydDetectorBase):
     def __init__(self, *args, description=None, **kwargs):
         super().__init__(*args, **kwargs)
         if description is None:
@@ -356,10 +378,9 @@ class SimDetector(SingleTrigger_V34, DetectorBase):
     image = ADCpt(ImagePlugin_V34, "image1:")
     pva = ADCpt(PvaPlugin_V34, "Pva1:")
     hdf1 = ADCpt(
-        type("HDF5Plugin", (StageCapture, HDF5Plugin_V34), {}),
+        HDF5FilePlugin,
         "HDF1:",
-        # write_path_template="/tmp/",
-        # read_path_template=READ_PATH_TEMPLATE,
+        write_path_template="/tmp/",
     )
     roi1 = ADCpt(ROIPlugin_V34, "ROI1:", kind=Kind.config)
     roi2 = ADCpt(ROIPlugin_V34, "ROI2:", kind=Kind.config)

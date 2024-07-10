@@ -1,4 +1,6 @@
+import pytest
 from ophyd import DetectorBase
+from ophyd.sim import instantiate_fake_device
 
 from haven import load_config, registry
 from haven.instrument.camera import AravisDetector, load_cameras
@@ -14,22 +16,31 @@ def test_load_cameras(sim_registry):
     assert isinstance(cameras[0], DetectorBase)
 
 
-def test_camera_device():
-    camera = AravisDetector(PREFIX, name="camera")
+@pytest.fixture()
+def camera(sim_registry):
+    camera = instantiate_fake_device(AravisDetector, prefix="255idgigeA:", name="camera")
+    return camera
+
+
+def test_camera_device(camera):
     assert isinstance(camera, DetectorBase)
     assert hasattr(camera, "cam")
 
 
-def test_camera_in_registry(sim_registry):
-    camera = AravisDetector(PREFIX, name="camera")
+def test_camera_in_registry(sim_registry, camera):
     # Check that all sub-components are accessible
-    camera = sim_registry.find(camera.name)
     sim_registry.find(f"{camera.name}_cam")
     sim_registry.find(f"{camera.name}_cam.gain")
 
 
-def test_default_time_signal(sim_camera):
-    assert sim_camera.default_time_signal is sim_camera.cam.acquire_time
+def test_default_time_signal(camera):
+    assert camera.default_time_signal is camera.cam.acquire_time
+
+
+def test_hdf5_write_path(camera):
+    # The HDF5 file should get dynamically re-written based on config file
+    assert camera.hdf.write_path_template == "/tmp/%Y/%m/camera"
+    assert camera.tiff.write_path_template == "/tmp/%Y/%m/camera"
 
 
 # -----------------------------------------------------------------------------
