@@ -1,6 +1,6 @@
 import logging
-import numpy as np
 
+import numpy as np
 from bluesky_queueserver_api import BPlan
 from qasync import asyncSlot
 from qtpy import QtWidgets
@@ -18,7 +18,15 @@ class TitleRegion:
 
     def setup_ui(self):
         self.layout = QtWidgets.QGridLayout()
-        labels = ["Priority axis", "Motor", "Start", "Stop", "Scan points", "Snake", "Fly"]
+        labels = [
+            "Priority axis",
+            "Motor",
+            "Start",
+            "Stop",
+            "Scan points",
+            "Snake",
+            "Fly",
+        ]
         Qlabels_all = {}
 
         # add labels in the first row
@@ -67,13 +75,13 @@ class GridScanRegion(regions_display.RegionBase):
         self.stop_line_edit.setValidator(QDoubleValidator())  # only takes floats
         self.stop_line_edit.setPlaceholderText("Stop…")
         self.layout.addWidget(self.stop_line_edit)
-        
+
         # Fifth item, number of scan point
-        self.scan_pts_spin_box= QtWidgets.QSpinBox()
+        self.scan_pts_spin_box = QtWidgets.QSpinBox()
         self.scan_pts_spin_box.setMinimum(1)
         self.scan_pts_spin_box.setMaximum(99999)
         self.layout.addWidget(self.scan_pts_spin_box)
-        
+
         # Sixth item, snake checkbox
         self.snake_checkbox = QtWidgets.QCheckBox()
         self.snake_checkbox.setText("Snake")
@@ -85,12 +93,13 @@ class GridScanRegion(regions_display.RegionBase):
         self.fly_checkbox.setText("Fly")
         self.fly_checkbox.setEnabled(False)
         self.layout.addWidget(self.fly_checkbox)
-        
+
     #     # Emit the valueChanged signal when the scan pnts value changes
     #     self.scan_pts_spin_box.valueChanged.connect(self.emit_scan_points_changed)
 
     # def emit_scan_points_changed(self):
     #     pass
+
 
 class GridScanDisplay(regions_display.RegionsDisplay):
     Region = GridScanRegion
@@ -115,7 +124,9 @@ class GridScanDisplay(regions_display.RegionsDisplay):
             region.scan_pts_spin_box.valueChanged.connect(self.update_total_time)
 
     def time_calculate_method(self, detector_time):
-        total_num_pnts = np.prod([region_i.scan_pts_spin_box.value() for region_i in self.regions])
+        total_num_pnts = np.prod(
+            [region_i.scan_pts_spin_box.value() for region_i in self.regions]
+        )
         total_time_per_scan = total_num_pnts * detector_time
         return total_time_per_scan
 
@@ -165,9 +176,7 @@ class GridScanDisplay(regions_display.RegionsDisplay):
 
     def queue_plan(self, *args, **kwargs):
         """Execute this plan on the queueserver."""
-        detectors, motor_args, repeat_scan_num = (
-            self.get_scan_parameters()
-        )
+        detectors, motor_args, repeat_scan_num = self.get_scan_parameters()
         md = self.get_meta_data()
 
         # get snake axes, if all unchecked, set it None

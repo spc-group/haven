@@ -247,7 +247,7 @@ class FireflyController(QtCore.QObject):
                 WindowClass=PlanMainWindow,
             ),
         }
-        
+
         # Action for showing the run browser window
         self.actions.run_browser = WindowAction(
             name="show_run_browser_action",

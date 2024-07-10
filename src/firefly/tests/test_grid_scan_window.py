@@ -90,7 +90,6 @@ async def test_grid_scan_plan_queued(display, qtbot, sim_registry, fake_motors):
     display.regions[1].stop_line_edit.setText("222")
     display.regions[1].scan_pts_spin_box.setValue(10)
 
-
     # set up detector list
     display.ui.detectors_list.selected_detectors = mock.MagicMock(
         return_value=["vortex_me4", "I0"]

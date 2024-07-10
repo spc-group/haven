@@ -163,7 +163,7 @@ class RegionsDisplay(display.FireflyDisplay):
         self.ui.label_min_total.setText(str(mins_total))
         self.ui.label_sec_total.setText(str(secs_total))
 
-    def time_calculate_method(self, detector_time):        
+    def time_calculate_method(self, detector_time):
         pass
 
     def get_scan_parameters(self):
@@ -185,7 +185,7 @@ class RegionsDisplay(display.FireflyDisplay):
         ]
 
         return detectors, motor_args, repeat_scan_num
-    
+
     def get_meta_data(self):
         # Get meta data info
         md = {
