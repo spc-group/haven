@@ -3,6 +3,7 @@ import warnings
 
 import haven
 from firefly import display
+
 # from haven.instrument import analyzer
 
 log = logging.getLogger(__name__)
@@ -15,7 +16,6 @@ class SlitsDisplay(display.FireflyDisplay):
 
     def ui_filename(self):
         return "asymmotron.ui"
-    
 
 
 # -----------------------------------------------------------------------------

@@ -11,13 +11,14 @@ um_per_mm = 1000
 
 energy_to_wavelength_values = [
     # (eV,      meters)
-    (61992.35 , 0.2e-10),
-    (24796.94 , 0.5e-10),
-    (12398.47 , 1.0e-10),
-    ( 8041.555, 1.5418e-10),
-    ( 6199.235, 2.00e-10),
-    ( 2000.,    6.19924e-10),
+    (61992.35, 0.2e-10),
+    (24796.94, 0.5e-10),
+    (12398.47, 1.0e-10),
+    (8041.555, 1.5418e-10),
+    (6199.235, 2.00e-10),
+    (2000.0, 6.19924e-10),
 ]
+
 
 @pytest.mark.parametrize("energy, wavelength", energy_to_wavelength_values)
 def test_energy_to_wavelength(energy, wavelength):
@@ -38,6 +39,7 @@ braggs_law_values = [
     (22.67,  2.0,  1.5418),
 ]
 
+
 @pytest.mark.parametrize("theta, d_spacing, wavelength", braggs_law_values)
 def test_bragg_to_wavelength(theta, d_spacing, wavelength):
     theta = np.radians(theta)
@@ -51,7 +53,14 @@ def test_wavelength_to_bragg(theta, d_spacing, wavelength):
     theta = np.radians(theta)
     d_spacing *= 1e-10
     wavelength *= 1e-10
+<<<<<<< Updated upstream
     assert pytest.approx(analyzer.wavelength_to_bragg(wavelength, d=d_spacing), rel=0.001) == theta
+=======
+    assert (
+        pytest.approx(analyzer.wavelength_to_bragg(wavelength, d=d_spacing), rel=0.001)
+        == theta
+    )
+>>>>>>> Stashed changes
 
 
 analyzer_values = [
@@ -86,17 +95,18 @@ def test_rowland_circle_forward(xtal, bragg, alpha, beta, x, z):
     actual = xtal.forward(energy, np.radians(alpha))
     assert actual == pytest.approx(expected, rel=0.01)
 
-# @pytest.mark.parametrize("bragg,alpha,beta,z,x", analyzer_values)    
-# def test_rowland_circle_inverse(xtal, bragg, alpha, beta, x, z):
-#     xtal.wedge_angle.set(np.radians(beta)).wait()
-#     # Calculate the expected answer (convert cm -> m)
-#     bragg = np.radians(bragg)
-#     d = xtal.d_spacing.get()
-#     energy = analyzer.bragg_to_energy(bragg, d=d)
-#     expected = (energy, alpha)
-#     # Compare to the calculated inverse
-#     actual = xtal.inverse(x, z)
-#     assert actual == pytest.approx(expected)
+
+@pytest.mark.parametrize("bragg,alpha,beta,z,x", analyzer_values)
+def test_rowland_circle_inverse(xtal, bragg, alpha, beta, x, z):
+    xtal.wedge_angle.set(np.radians(beta)).wait()
+    # Calculate the expected answer (convert cm -> m)
+    bragg = np.radians(bragg)
+    d = xtal.d_spacing.get()
+    energy = analyzer.bragg_to_energy(bragg, d=d)
+    expected = (energy, alpha)
+    # Compare to the calculated inverse
+    actual = xtal.inverse(x, z)
+    assert actual == pytest.approx(expected)
 
 
 # -----------------------------------------------------------------------------

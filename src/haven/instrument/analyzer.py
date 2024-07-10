@@ -5,10 +5,10 @@ from scipy import constants
 import numpy as np
 from ophyd import Component as Cpt
 from ophyd import Device, EpicsMotor
-from ophyd import Signal
 from ophyd import FormattedComponent as FCpt
-from ophyd import PseudoPositioner, PseudoSingle
+from ophyd import PseudoPositioner, PseudoSingle, Signal
 from ophyd.pseudopos import pseudo_position_argument, real_position_argument
+from scipy import constants
 
 from .._iconfig import load_config
 from .device import aload_devices, make_device
@@ -62,7 +62,7 @@ def wavelength_to_bragg(wavelength: float, d: float, n: int = 1):
     bragg
       The Bragg angle of the reflection, in Radians.
     """
-    return np.arcsin(n*wavelength/2/d)
+    return np.arcsin(n * wavelength / 2 / d)
 
 
 def energy_to_bragg(energy: float, d: float) -> float:
@@ -81,7 +81,7 @@ def energy_to_bragg(energy: float, d: float) -> float:
       First order Bragg angle for this photon, in radians.
 
     """
-    bragg = np.arcsin(h*c/2/d/energy)
+    bragg = np.arcsin(h * c / 2 / d / energy)
     return bragg
 
 
@@ -173,6 +173,13 @@ class Analyzer(PseudoPositioner):
     @real_position_argument
     def inverse(self, real_pos):
         """Run an inverse (real -> pseudo) calculation"""
+        beta = self.wedge_angle.get(use_monitor=True)
+        x = real_pos.x
+        z = real_pos.z
+        # Step 1: Convert motor positions to geometry parameters
+        theta_M = np.arctan((x + z * np.sin(beta)) / (z * np.cos(beta)))
+        rho = z * np.cos(beta) / np.cos(theta_M)
+        print(f"{x=}, {z=}, {beta=}, {theta_M=}, {rho}")
         return self.PseudoPosition(energy=0, alpha=0)
 
 
