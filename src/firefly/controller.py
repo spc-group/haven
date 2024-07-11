@@ -217,13 +217,15 @@ class FireflyController(QtCore.QObject):
                 text="&Count",
                 display_file=plans_dir / "count.py",
                 shortcut="Ctrl+Shift+C",
-                icon=qta.icon("mdi.counter"),
+                icon=qta.icon("mdi.numeric"),
                 WindowClass=PlanMainWindow,
             ),
             "move_motor": WindowAction(
                 name="move_motor",
                 text="&Move motor",
                 display_file=plans_dir / "move_motor_window.py",
+                shortcut="Ctrl+Shift+M",
+                icon=qta.icon("mdi.rotate-right-variant"),
                 WindowClass=PlanMainWindow,
             ),
             "line_scan": WindowAction(
@@ -231,12 +233,15 @@ class FireflyController(QtCore.QObject):
                 text="&Line scan",
                 display_file=plans_dir / "line_scan.py",
                 shortcut="Ctrl+Shift+L",
+                icon=qta.icon("mdi.chart-bell-curve"),
                 WindowClass=PlanMainWindow,
             ),
             "grid_scan": WindowAction(
                 name="grid_scan",
                 text="&Grid scan",
+                shortcut="Ctrl+Shift+G",
                 display_file=plans_dir / "grid_scan.py",
+                icon=qta.icon("mdi.grid"),
                 WindowClass=PlanMainWindow,
             ),
             "xafs_scan": WindowAction(
@@ -244,6 +249,7 @@ class FireflyController(QtCore.QObject):
                 text="&XAFS scan",
                 display_file=plans_dir / "xafs_scan.py",
                 shortcut="Ctrl+Shift+X",
+                icon=qta.icon("mdi.chart-bell-curve-cumulative"),
                 WindowClass=PlanMainWindow,
             ),
         }
@@ -253,6 +259,7 @@ class FireflyController(QtCore.QObject):
             name="show_run_browser_action",
             text="Browse Runs",
             display_file=ui_dir / "run_browser.py",
+            icon=qta.icon("mdi.book-open-variant"),
             WindowClass=FireflyMainWindow,
         )
         # Action for showing the beamline scheduling window
@@ -297,6 +304,9 @@ class FireflyController(QtCore.QObject):
             shortcut="Ctrl+E",
             icon=qta.icon("mdi.sine-wave"),
         )
+
+    def update_queue_controls(self, status):
+        print(status)
 
     @asyncSlot(QAction)
     async def finalize_new_window(self, action):
@@ -377,6 +387,7 @@ class FireflyController(QtCore.QObject):
                 text="Success",
                 icon=qta.icon("fa5s.check"),
                 tooltip="End the current plan, marking as successful.",
+                checkable=True,
             ),
             "abort": Action(
                 name="abort_runengine_action",
@@ -519,7 +530,7 @@ class FireflyController(QtCore.QObject):
             partial(client.request_pause, defer=True)
         )
         self.actions.queue_controls["pause_now"].triggered.connect(
-            partial(client.request_pause, defer=True)
+            partial(client.request_pause, defer=False)
         )
         self.actions.queue_controls["start"].triggered.connect(client.start_queue)
         self.actions.queue_controls["resume"].triggered.connect(client.resume_runengine)
@@ -587,7 +598,6 @@ class FireflyController(QtCore.QObject):
                 queue_actions["resume"],
                 queue_actions["halt"],
                 queue_actions["abort"],
-                queue_actions["stop_queue"],
             ]
         elif re_state == "running":
             enabled_signals = [
@@ -595,6 +605,8 @@ class FireflyController(QtCore.QObject):
                 queue_actions["pause_now"],
                 queue_actions["stop_queue"],
             ]
+        elif re_state == "stopping":
+            enabled_signals = []
         else:
             raise ValueError(f"Unknown run engine state: {re_state}")
         # Enable/disable the relevant signals

@@ -146,7 +146,7 @@ class RegionsDisplay(display.FireflyDisplay):
             detector_time = float("nan")
 
         # get scan num points to calculate total time
-        total_time_per_scan = self.time_calculate_method(detector_time)
+        total_time_per_scan = self.time_per_scan(detector_time)
 
         # calculate time for each scan
         hrs, mins, secs = time_converter(total_time_per_scan)
@@ -163,8 +163,8 @@ class RegionsDisplay(display.FireflyDisplay):
         self.ui.label_min_total.setText(str(mins_total))
         self.ui.label_sec_total.setText(str(secs_total))
 
-    def time_calculate_method(self, detector_time):
-        pass
+    def time_per_scan(self, detector_time):
+        raise NotImplementedError
 
     def get_scan_parameters(self):
         # Get scan parameters from widgets

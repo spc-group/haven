@@ -46,7 +46,6 @@ class MoveMotorDisplay(regions_display.RegionsDisplay):
     def queue_plan(self, *args, **kwargs):
         """Execute this plan on the queueserver."""
         motor_args = self.get_scan_parameters()
-        md = self.get_meta_data()
 
         if self.ui.relative_scan_checkbox.isChecked():
             scan_type = "mvr"
@@ -57,7 +56,6 @@ class MoveMotorDisplay(regions_display.RegionsDisplay):
         item = BPlan(
             scan_type,
             *motor_args,
-            md=md,
         )
 
         # Submit the item to the queueserver

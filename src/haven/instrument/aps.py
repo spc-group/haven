@@ -9,22 +9,23 @@ log = logging.getLogger(__name__)
 
 
 class ApsMachine(ApsMachineParametersDevice):
-    _default_read_attrs = [
-        "current",
-        "lifetime",
-    ]
-    _default_configuration_attrs = [
-        "aps_cycle",
-        "machine_status",
-        "operating_mode",
-        "shutter_permit",
-        "fill_number",
-        "orbit_correction",
-        "global_feedback",
-        "global_feedback_h",
-        "global_feedback_v",
-        "operator_messages",
-    ]
+    # _default_read_attrs = [
+    #     "current",
+    #     "lifetime",
+    # ]
+    # _default_configuration_attrs = [
+    #     "aps_cycle",
+    #     "machine_status",
+    #     "operating_mode",
+    #     "shutter_permit",
+    #     "fill_number",
+    #     "orbit_correction",
+    #     "global_feedback",
+    #     "global_feedback_h",
+    #     "global_feedback_v",
+    #     "operator_messages",
+    # ]
+    pass
 
 
 def load_aps(config=None):

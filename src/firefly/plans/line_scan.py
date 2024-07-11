@@ -41,7 +41,7 @@ class LineScanDisplay(regions_display.RegionsDisplay):
         await self.update_devices(registry)
         await self.detectors_list.update_devices(registry)
 
-    def time_calculate_method(self, detector_time):
+    def time_per_scan(self, detector_time):
         num_points = self.ui.scan_pts_spin_box.value()
         total_time_per_scan = detector_time * num_points
         return total_time_per_scan

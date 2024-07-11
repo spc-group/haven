@@ -117,7 +117,7 @@ class GridScanDisplay(regions_display.RegionsDisplay):
         for region in self.regions:
             region.scan_pts_spin_box.valueChanged.connect(self.update_total_time)
 
-    def time_calculate_method(self, detector_time):
+    def time_per_scan(self, detector_time):
         total_num_pnts = np.prod(
             [region_i.scan_pts_spin_box.value() for region_i in self.regions]
         )
@@ -154,11 +154,11 @@ class GridScanDisplay(regions_display.RegionsDisplay):
 
         # Get paramters from each rows of line regions:
         motor_lst, start_lst, stop_lst, num_points_lst = [], [], [], []
-        for region_i in self.regions:
+        for region_i in reversed(self.regions):
             motor_lst.append(region_i.motor_box.current_component().name)
             start_lst.append(float(region_i.start_line_edit.text()))
             stop_lst.append(float(region_i.stop_line_edit.text()))
-            num_points_lst.append(float(region_i.scan_pts_spin_box.value()))
+            num_points_lst.append(int(region_i.scan_pts_spin_box.value()))
 
         motor_args = [
             values

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>655</width>
-    <height>251</height>
+    <width>534</width>
+    <height>173</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -18,13 +18,6 @@
     <layout class="QGridLayout" name="gridLayout_2">
      <item row="1" column="0">
       <widget class="Line" name="line_6">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="0">
-      <widget class="Line" name="line">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
        </property>
@@ -42,8 +35,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>631</width>
-            <height>76</height>
+            <width>510</width>
+            <height>74</height>
            </rect>
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_4">
@@ -72,6 +65,30 @@
            </item>
           </layout>
          </widget>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item row="3" column="0">
+      <layout class="QHBoxLayout" name="horizontalLayout_2">
+       <item>
+        <spacer name="buttons_spacer">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QueueButton" name="run_button">
+         <property name="text">
+          <string>Run</string>
+         </property>
         </widget>
        </item>
       </layout>
@@ -142,102 +159,6 @@
           </size>
          </property>
         </spacer>
-       </item>
-      </layout>
-     </item>
-     <item row="4" column="0">
-      <layout class="QGridLayout" name="gridLayout">
-       <item row="1" column="0">
-        <widget class="QLabel" name="label_9">
-         <property name="text">
-          <string>Notes</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="3">
-        <widget class="QLineEdit" name="lineEdit_purpose">
-         <property name="toolTip">
-          <string>Type the experimental purpose note for this scan</string>
-         </property>
-         <property name="placeholderText">
-          <string>Purpose</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="2">
-        <widget class="QLabel" name="label_2">
-         <property name="text">
-          <string>Experiment purpose</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="0">
-        <widget class="QLabel" name="label">
-         <property name="text">
-          <string>Sample name</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="1">
-        <widget class="QLineEdit" name="lineEdit_sample">
-         <property name="toolTip">
-          <string>Type this sample's name</string>
-         </property>
-         <property name="placeholderText">
-          <string>Sample name</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="1">
-        <widget class="QTextEdit" name="textEdit_notes">
-         <property name="enabled">
-          <bool>true</bool>
-         </property>
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Expanding" vsizetype="MinimumExpanding">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="maximumSize">
-          <size>
-           <width>16777215</width>
-           <height>60</height>
-          </size>
-         </property>
-         <property name="lineWidth">
-          <number>1</number>
-         </property>
-         <property name="midLineWidth">
-          <number>14</number>
-         </property>
-         <property name="tabStopWidth">
-          <number>80</number>
-         </property>
-         <property name="placeholderText">
-          <string>Additional notes about the sample</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="2">
-        <spacer name="buttons_spacer">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>40</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item row="1" column="3">
-        <widget class="QueueButton" name="run_button">
-         <property name="text">
-          <string>Run</string>
-         </property>
-        </widget>
        </item>
       </layout>
      </item>
