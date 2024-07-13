@@ -41,8 +41,8 @@ class AravisDetector(SingleImageModeTrigger, DetectorBase):
     A gige-vision camera described by EPICS.
     """
 
-    _default_configuration_attrs = ("cam", "hdf", "tiff", "stats1", "stats2", "stats3", "stats4")
-    _default_read_attrs = ("cam", "hdf", "tiff")
+    _default_configuration_attrs = ("cam", "hdf", "stats1", "stats2", "stats3", "stats4")
+    _default_read_attrs = ("cam", "hdf", "stats1", "stats2", "stats3", "stats4")
 
     cam = ADCpt(AravisCam, "cam1:")
     image = ADCpt(ImagePlugin_V34, "image1:")
@@ -58,7 +58,7 @@ class AravisDetector(SingleImageModeTrigger, DetectorBase):
     stats4 = ADCpt(StatsPlugin_V34, "Stats4:", kind=Kind.normal)
     stats5 = ADCpt(StatsPlugin_V34, "Stats5:", kind=Kind.normal)
     hdf = ADCpt(HDF5FilePlugin, "HDF1:", kind=Kind.normal)
-    tiff = ADCpt(TIFFFilePlugin, "TIFF1:", kind=Kind.normal)
+    # tiff = ADCpt(TIFFFilePlugin, "TIFF1:", kind=Kind.normal)
 
 
 def load_cameras(config=None) -> Sequence[DetectorBase]:

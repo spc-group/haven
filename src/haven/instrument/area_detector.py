@@ -33,10 +33,11 @@ from ophyd.areadetector.plugins import (
     PvaPlugin_V34,
     ROIPlugin_V31,
     ROIPlugin_V34,
+    TIFFPlugin_V31,
+    TIFFPlugin_V34,
 )
 from ophyd.areadetector.plugins import StatsPlugin_V31 as OphydStatsPlugin_V31
 from ophyd.areadetector.plugins import StatsPlugin_V34 as OphydStatsPlugin_V34
-from ophyd.areadetector.plugins import TIFFPlugin_V31
 from ophyd.flyers import FlyerInterface
 
 from .. import exceptions
@@ -328,7 +329,7 @@ class HDF5FilePlugin(DynamicFileStore, FileStoreHDF5IterativeWrite, HDF5Plugin_V
         super().stage()
 
 
-class TIFFFilePlugin(DynamicFileStore, FileStoreTIFFIterativeWrite, HDF5Plugin_V34):
+class TIFFFilePlugin(DynamicFileStore, FileStoreTIFFIterativeWrite, TIFFPlugin_V34):
     ...
 
 
@@ -469,7 +470,11 @@ def load_area_detectors(config=None) -> set:
     # Create the area detectors defined in the configuration
     devices = []
     for name, adconfig in config.get("area_detector", {}).items():
-        DeviceClass = globals().get(adconfig["device_class"])
+        try:
+            DeviceClass = globals().get(adconfig["device_class"])
+        except TypeError:
+            # Not a sub-dictionary, so move on
+            continue
         # Check that it's a valid device class
         if DeviceClass is None:
             msg = f"area_detector.{name}.device_class={adconfig['device_class']}"
