@@ -1,6 +1,7 @@
 import logging
 
 from apstools.devices.aps_machine import ApsMachineParametersDevice
+from ophyd import Component as Cpt, EpicsSignalRO
 
 from .._iconfig import load_config
 from .device import make_device
@@ -17,14 +18,17 @@ class ApsMachine(ApsMachineParametersDevice):
         "aps_cycle",
         "machine_status",
         "operating_mode",
-        "shutter_permit",
+        "shutter_status",
         "fill_number",
         "orbit_correction",
-        "global_feedback",
-        "global_feedback_h",
-        "global_feedback_v",
+        # Removed in apstools 1.6.20
+        # "global_feedback",
+        # "global_feedback_h",
+        # "global_feedback_v",
         "operator_messages",
     ]
+
+    shutter_status = Cpt(EpicsSignalRO, "RF-ACIS:FePermit:Sect1To35IdM.RVAL")
 
 
 def load_aps(config=None):
