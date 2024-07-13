@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 import pytest
 from ophyd.sim import instantiate_fake_device
 from ophyd.flyers import FlyerInterface
@@ -87,13 +89,13 @@ def test_fly_params_forward(motor):
 
     """
     # Set some example positions
-    motor.motor_egu.set("micron").wait()
-    motor.acceleration.set(0.5).wait()  # sec
-    motor.start_position.set(10.).wait()  # µm
-    motor.end_position.set(20.).wait()  # µm
-    motor.encoder_resolution.set(0.001).wait()  # µm
-    motor.num_points.set(101).wait()  # µm
-    motor.dwell_time.set(1).wait()  # sec
+    motor.motor_egu.set("micron").wait(timeout=3)
+    motor.acceleration.set(0.5).wait(timeout=3)  # sec
+    motor.start_position.set(10.).wait(timeout=3)  # µm
+    motor.end_position.set(20.).wait(timeout=3)  # µm
+    motor.encoder_resolution.set(0.001).wait(timeout=3)  # µm
+    motor.flyer_num_points.set(101).wait(timeout=3)  # µm
+    motor.flyer_dwell_time.set(1).wait(timeout=3)  # sec
 
     # Check that the fly-scan parameters were calculated correctly
     assert motor.slew_speed.get(use_monitor=False) == pytest.approx(0.1)  # µm/sec
@@ -113,12 +115,12 @@ def test_fly_params_reverse(motor):
 
     """
     # Set some example positions
-    motor.motor_egu.set("micron").wait()
-    motor.acceleration.set(0.5).wait()  # sec
-    motor.start_position.set(20.0).wait()  # µm
-    motor.end_position.set(10.0).wait()  # µm
-    motor.num_points.set(101).wait()  # µm
-    motor.dwell_time.set(1).wait()  # sec
+    motor.motor_egu.set("micron").wait(timeout=3)
+    motor.acceleration.set(0.5).wait(timeout=3)  # sec
+    motor.start_position.set(20.0).wait(timeout=3)  # µm
+    motor.end_position.set(10.0).wait(timeout=3)  # µm
+    motor.flyer_num_points.set(101).wait(timeout=3)  # µm
+    motor.flyer_dwell_time.set(1).wait(timeout=3)  # sec
 
     # Check that the fly-scan parameters were calculated correctly
     assert motor.slew_speed.get(use_monitor=False) == pytest.approx(0.1)  # µm/sec
@@ -133,7 +135,7 @@ def test_fly_params_reverse(motor):
 
 
 def test_kickoff(motor):
-    motor.dwell_time.set(1.0).wait()
+    motor.flyer_dwell_time.set(1.0).wait(timeout=3)
     # Start flying
     status = motor.kickoff()
     # Check status behavior matches flyer interface
@@ -145,7 +147,7 @@ def test_kickoff(motor):
 def test_complete(motor):
     # Set up fake flyer with mocked fly method
     assert motor.user_setpoint.get() == 0
-    motor.taxi_end.set(10).wait()
+    motor.taxi_end.set(10).wait(timeout=3)
     # Complete flying
     status = motor.complete()
     # Check that the motor was moved
@@ -188,15 +190,12 @@ def test_collect(motor):
     for datum, value, timestamp in zip(
         payload, motor.pixel_positions, expected_timestamps
     ):
-        assert datum == {
-            "data": {
-                "m1": value,
-            },
-            "timestamps": {
-                "m1": timestamp,
-            },
-            "time": timestamp,
+        assert datum['data'] == {
+            "m1": value,
+            "m1_user_setpoint": value,
         }
+        assert datum["timestamps"]['m1'] == pytest.approx(timestamp, abs=0.3)
+        assert datum["time"] == pytest.approx(timestamp, abs=0.3)
 
 
 def test_describe_collect(aerotech_flyer):

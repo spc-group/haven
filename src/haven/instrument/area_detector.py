@@ -1,7 +1,7 @@
 import logging
 import time
 from enum import IntEnum
-from collections import OrderedDict
+from collections import OrderedDict, namedtuple
 from typing import Dict
 
 import pandas as pd
@@ -98,8 +98,9 @@ class DetectorState(IntEnum):
     INITIALIZING = 8
     DISCONNECTED = 9
     ABORTED = 10
-    
-    
+
+
+fly_event = namedtuple("fly_event", ('timestamp', 'value'))
 
 
 class FlyerMixin(FlyerInterface, Device):
@@ -108,8 +109,8 @@ class FlyerMixin(FlyerInterface, Device):
 
     def save_fly_datum(self, *, value, timestamp, obj, **kwargs):
         """Callback to save data from a signal during fly-scanning."""
-        datum = (timestamp, value)
-        self._fly_data.setdefault(obj, []).append(datum)        
+        datum = fly_event(timestamp=timestamp, value=value)
+        self._fly_data.setdefault(obj, []).append(datum)
 
     def kickoff(self) -> StatusBase:
         # Set up subscriptions for capturing data

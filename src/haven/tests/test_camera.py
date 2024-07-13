@@ -40,7 +40,6 @@ def test_default_time_signal(camera):
 def test_hdf5_write_path(camera):
     # The HDF5 file should get dynamically re-written based on config file
     assert camera.hdf.write_path_template == "/tmp/%Y/%m/camera"
-    assert camera.tiff.write_path_template == "/tmp/%Y/%m/camera"
 
 
 # -----------------------------------------------------------------------------

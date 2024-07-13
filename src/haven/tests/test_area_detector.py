@@ -6,7 +6,7 @@ from ophyd.sim import instantiate_fake_device
 from ophyd import ADComponent as ADCpt
 from ophyd.areadetector.cam import AreaDetectorCam
 
-from haven.instrument.area_detector import load_area_detectors, DetectorBase
+from haven.instrument.area_detector import load_area_detectors, DetectorBase, DetectorState
 
 
 class Detector(DetectorBase):
@@ -20,25 +20,26 @@ def detector(sim_registry):
 
 
 def test_flyscan_kickoff(detector):
-    detector.flyer_num_frames.set(10)
+    detector.flyer_num_points.set(10)
     status = detector.kickoff()
-    # detector.acquiring.set(1)
-    status.wait()
+    detector.cam.detector_state.sim_put(DetectorState.ACQUIRE)
+    status.wait(timeout=3)
     assert status.success
     assert status.done
     # Check that the device was properly configured for fly-scanning
     assert detector.cam.acquire.get() == 1
-    assert detector._fly_data == []
+    assert detector._fly_data == {}
     # Check that timestamps get recorded when new data are available
-    detector.cam.num_images_counter.sim_put(1)
-    assert detector._fly_data[0] == pytest.approx(time.time())
+    detector.cam.array_counter.sim_put(1)
+    event = detector._fly_data[detector.cam.array_counter]
+    assert event[0].timestamp == pytest.approx(time.time())
 
 
 def test_flyscan_complete(sim_ion_chamber):
     flyer = sim_ion_chamber
     # Run the complete method
     status = flyer.complete()
-    status.wait()
+    status.wait(timeout=3)
     # Check that the detector is stopped
     assert flyer.stop_all._readback == 1
 
@@ -53,7 +54,7 @@ def test_flyscan_collect(sim_ion_chamber):
     flyer.mca.spectrum._readback = sim_data
     sim_times = np.asarray([12.0e7, 4.0e7, 4.0e7, 4.0e7, 4.0e7, 4.0e7])
     flyer.mca_times.spectrum._readback = sim_times
-    flyer.frequency.set(1e7).wait()
+    flyer.frequency.set(1e7).wait(timeout=3)
     # Ignore the first collected data point because it's during taxiing
     expected_data = sim_data[1:]
     # The real timestamps should be midway between PSO pulses
