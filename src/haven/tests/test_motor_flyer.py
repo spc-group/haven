@@ -33,15 +33,15 @@ def test_fly_params_forward(motor):
     # Set some example positions
     motor.motor_egu.set("micron").wait(timeout=3)
     motor.acceleration.set(0.5).wait(timeout=3)  # sec
-    motor.start_position.set(10.).wait(timeout=3)  # µm
-    motor.end_position.set(20.).wait(timeout=3)  # µm
+    motor.flyer_start_position.set(10.).wait(timeout=3)  # µm
+    motor.flyer_end_position.set(20.).wait(timeout=3)  # µm
     motor.flyer_num_points.set(101).wait(timeout=3)  # µm
     motor.flyer_dwell_time.set(1).wait(timeout=3)  # sec
 
     # Check that the fly-scan parameters were calculated correctly
-    assert motor.slew_speed.get(use_monitor=False) == pytest.approx(0.1)  # µm/sec
-    assert motor.taxi_start.get(use_monitor=False) == pytest.approx(9.9125)  # µm
-    assert motor.taxi_end.get(use_monitor=False) == pytest.approx(20.0875)  # µm
+    assert motor.flyer_slew_speed.get(use_monitor=False) == pytest.approx(0.1)  # µm/sec
+    assert motor.flyer_taxi_start.get(use_monitor=False) == pytest.approx(9.9125)  # µm
+    assert motor.flyer_taxi_end.get(use_monitor=False) == pytest.approx(20.0875)  # µm
     i = 10.
     pixel = []
     while i <= 20.005:
@@ -58,15 +58,15 @@ def test_fly_params_reverse(motor):
     # Set some example positions
     motor.motor_egu.set("micron").wait(timeout=3)
     motor.acceleration.set(0.5).wait(timeout=3)  # sec
-    motor.start_position.set(20.0).wait(timeout=3)  # µm
-    motor.end_position.set(10.0).wait(timeout=3)  # µm
+    motor.flyer_start_position.set(20.0).wait(timeout=3)  # µm
+    motor.flyer_end_position.set(10.0).wait(timeout=3)  # µm
     motor.flyer_num_points.set(101).wait(timeout=3)  # µm
     motor.flyer_dwell_time.set(1).wait(timeout=3)  # sec
 
     # Check that the fly-scan parameters were calculated correctly
-    assert motor.slew_speed.get(use_monitor=False) == pytest.approx(0.1)  # µm/sec
-    assert motor.taxi_start.get(use_monitor=False) == pytest.approx(20.0875)  # µm
-    assert motor.taxi_end.get(use_monitor=False) == pytest.approx(9.9125)  # µm
+    assert motor.flyer_slew_speed.get(use_monitor=False) == pytest.approx(0.1)  # µm/sec
+    assert motor.flyer_taxi_start.get(use_monitor=False) == pytest.approx(20.0875)  # µm
+    assert motor.flyer_taxi_end.get(use_monitor=False) == pytest.approx(9.9125)  # µm
     i = 20.0
     pixel = []
     while i >= 9.995:
@@ -77,7 +77,7 @@ def test_fly_params_reverse(motor):
 
 def test_kickoff(motor):
     motor.flyer_dwell_time.put(1.0)
-    motor.taxi_start.put(1.5)
+    motor.flyer_taxi_start.put(1.5)
     # Start flying
     status = motor.kickoff()
     # Check status behavior matches flyer interface
@@ -90,7 +90,7 @@ def test_kickoff(motor):
 def test_complete(motor):
     # Set up fake flyer with mocked fly method
     assert motor.user_setpoint.get() == 0
-    motor.taxi_end.put(10)
+    motor.flyer_taxi_end.put(10)
     # Complete flying
     status = motor.complete()
     # Check that the motor was moved

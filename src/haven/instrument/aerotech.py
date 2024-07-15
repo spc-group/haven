@@ -208,8 +208,8 @@ class AerotechFlyer(HavenMotor):
         endtime = self.endtime
         # grab necessary for calculation
         accel_time = self.acceleration.get()
-        dwell_time = self.dwell_time.get()
-        step_size = self.step_size.get()
+        dwell_time = self.flyer_dwell_time.get()
+        step_size = self.flyer_step_size()
         slew_speed = step_size / dwell_time
         motor_accel = slew_speed / accel_time
         # Calculate the time it takes for taxi to reach first pixel
@@ -240,9 +240,9 @@ class AerotechFlyer(HavenMotor):
 
     def fly(self):
         # Start the trajectory
-        destination = self.taxi_end.get()
+        destination = self.flyer_taxi_end.get()
         log.debug(f"Flying to {destination}.")
-        flight_status = self.move(destination, wait=True)
+        self.move(destination, wait=True)
         # Wait for the landing
         self.disable_pso()
         self.flying_complete.set(True).wait()
@@ -259,11 +259,11 @@ class AerotechFlyer(HavenMotor):
         self.enable_pso()
         self.arm_pso()
         # Move the motor to the taxi position
-        taxi_start = self.taxi_start.get()
+        taxi_start = self.flyer_taxi_start.get()
         log.debug(f"Taxiing to {taxi_start}.")
         self.move(taxi_start, wait=True)
         # Set the speed on the motor
-        self.velocity.set(self.slew_speed.get()).wait()
+        self.velocity.set(self.flyer_slew_speed.get()).wait()
         # Set timing on the delay for triggering detectors, etc
         self.parent.delay.channel_C.delay.put(0)
         self.parent.delay.output_CD.polarity.put(self.parent.delay.polarities.NEGATIVE)
@@ -310,6 +310,14 @@ class AerotechFlyer(HavenMotor):
     def motor_egu_pint(self):
         egu = ureg(self.motor_egu.get())
         return egu
+
+    def flyer_step_size(self):
+        """Calculate the size of each step in a fly scan."""
+        start_position = self.flyer_start_position.get()
+        end_position = self.flyer_end_position.get()
+        num_points = self.flyer_num_points.get()
+        step_size = abs(start_position - end_position) / (num_points - 1)
+        return step_size
 
     def _update_fly_params(self, *args, **kwargs):
         """Calculate new fly-scan parameters based on signal values.
@@ -361,11 +369,10 @@ class AerotechFlyer(HavenMotor):
         """
         window_buffer = 5
         # Grab any neccessary signals for calculation
-        egu = self.motor_egu.get()
-        start_position = self.start_position.get()
-        end_position = self.end_position.get()
-        dwell_time = self.dwell_time.get()
-        step_size = self.step_size.get()
+        start_position = self.flyer_start_position.get()
+        end_position = self.flyer_end_position.get()
+        dwell_time = self.flyer_dwell_time.get()
+        step_size = self.flyer_step_size()
         encoder_resolution = self.encoder_resolution.get()
         accel_time = self.acceleration.get()
         # Check for sane values
@@ -391,7 +398,7 @@ class AerotechFlyer(HavenMotor):
         direction = 1 if start_position < end_position else -1
         overall_sense = direction * self.encoder_direction
         # Calculate the step size in encoder steps
-        encoder_step_size = int(step_size / encoder_resolution)
+        encoder_step_size = round(step_size / encoder_resolution)
         # PSO start/end should be located to where req. start/end are
         # in between steps. Also doubles as the location where slew
         # speed must be met.
@@ -445,9 +452,9 @@ class AerotechFlyer(HavenMotor):
                 self.encoder_step_size.set(encoder_step_size),
                 self.pso_start.set(pso_start),
                 self.pso_end.set(pso_end),
-                self.slew_speed.set(slew_speed),
-                self.taxi_start.set(taxi_start),
-                self.taxi_end.set(taxi_end),
+                self.flyer_slew_speed.set(slew_speed),
+                self.flyer_taxi_start.set(taxi_start),
+                self.flyer_taxi_end.set(taxi_end),
                 self.encoder_window_start.set(encoder_window_start),
                 self.encoder_window_end.set(encoder_window_end),
                 self.encoder_use_window.set(encoder_use_window),
@@ -480,14 +487,14 @@ class AerotechFlyer(HavenMotor):
         This checks to make sure no spurious pulses are expected from taxiing.
 
         """
-        end_points = [(self.taxi_start, self.pso_start), (self.taxi_end, self.pso_end)]
-        step_size = self.step_size.get()
+        end_points = [(self.flyer_taxi_start, self.pso_start), (self.flyer_taxi_end, self.pso_end)]
+        step_size = self.flyer_step_size()
         for taxi, pso in end_points:
             # Make sure we're not going to have extra pulses
             taxi_distance = abs(taxi.get() - pso.get())
             if taxi_distance > (1.1 * step_size):
                 raise InvalidScanParameters(
-                    f"Scan parameters for {taxi}, {pso}, {self.step_size} would produce"
+                    f"Scan parameters for {taxi}, {pso}, {self.flyer_step_size} would produce"
                     " extra pulses without a window."
                 )
 

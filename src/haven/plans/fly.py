@@ -38,8 +38,8 @@ def fly_line_scan(detectors: list, flyer, start, stop, num, extra_signals=(), co
     """
     # Calculate parameters for the fly-scan
     # step_size = abs(start - stop) / (num - 1)
-    yield from bps.mv(flyer.start_position, start)
-    yield from bps.mv(flyer.end_position, stop)
+    yield from bps.mv(flyer.flyer_start_position, start)
+    yield from bps.mv(flyer.flyer_end_position, stop)
     yield from bps.mv(flyer.flyer_num_points, num)
     # Perform the fly scan
     flyers = [flyer, *detectors]

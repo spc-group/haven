@@ -275,12 +275,12 @@ def test_fly_grid_scan(aerotech_flyer):
     flyer_start_positions = [
         msg.args[0]
         for msg in messages
-        if (msg.command == "set" and msg.obj.name == f"{flyer.name}_start_position")
+        if (msg.command == "set" and msg.obj.name == f"{flyer.name}_flyer_start_position")
     ]
     flyer_end_positions = [
         msg.args[0]
         for msg in messages
-        if (msg.command == "set" and msg.obj.name == f"{flyer.name}_end_position")
+        if (msg.command == "set" and msg.obj.name == f"{flyer.name}_flyer_end_position")
     ]
     assert stepper_positions == list(np.linspace(-100, 100, num=11))
     assert flyer_start_positions == [-20, 30, -20, 30, -20, 30, -20, 30, -20, 30, -20]

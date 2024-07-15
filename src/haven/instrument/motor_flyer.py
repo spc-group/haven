@@ -15,16 +15,16 @@ log = logging.getLogger()
 
 class MotorFlyer(FlyerInterface, Device):
     # Desired fly parameters
-    start_position = Cpt(Signal, name="start_position", value=0, kind=Kind.config)
-    end_position = Cpt(Signal, name="end_position", value=1, kind=Kind.config)
+    flyer_start_position = Cpt(Signal, name="start_position", value=0, kind=Kind.config)
+    flyer_end_position = Cpt(Signal, name="end_position", value=1, kind=Kind.config)
     # step_size = Cpt(Signal, name="step_size", value=1, kind=Kind.config)
     flyer_num_points = Cpt(Signal, value=2, kind=Kind.config)
     flyer_dwell_time = Cpt(Signal, value=1, kind=Kind.config)
 
     # Calculated fly parameters
-    slew_speed = Cpt(Signal, value=1, kind=Kind.config)
-    taxi_start = Cpt(Signal, kind=Kind.config)
-    taxi_end = Cpt(Signal, kind=Kind.config)
+    flyer_slew_speed = Cpt(Signal, value=1, kind=Kind.config)
+    flyer_taxi_start = Cpt(Signal, kind=Kind.config)
+    flyer_taxi_end = Cpt(Signal, kind=Kind.config)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -33,11 +33,11 @@ class MotorFlyer(FlyerInterface, Device):
         self.cl = get_cl()
         # Set up auto-calculations for the flyer
         self.motor_egu.subscribe(self._update_fly_params)
-        self.start_position.subscribe(self._update_fly_params)
-        self.end_position.subscribe(self._update_fly_params)
+        self.acceleration.subscribe(self._update_fly_params)
+        self.flyer_start_position.subscribe(self._update_fly_params)
+        self.flyer_end_position.subscribe(self._update_fly_params)
         self.flyer_num_points.subscribe(self._update_fly_params)
         self.flyer_dwell_time.subscribe(self._update_fly_params)
-        self.acceleration.subscribe(self._update_fly_params)
 
     def kickoff(self):
         """Start the motor as a flyer.
@@ -55,8 +55,8 @@ class MotorFlyer(FlyerInterface, Device):
 
         def kickoff_thread():
             try:
-                self.move(self.taxi_start.get(), wait=True)
-                self.velocity.put(self.slew_speed.get())
+                self.move(self.flyer_taxi_start.get(), wait=True)
+                self.velocity.put(self.flyer_slew_speed.get())
             except Exception as exc:
                 st.set_exception(exc)
             else:
@@ -64,7 +64,7 @@ class MotorFlyer(FlyerInterface, Device):
                 st.set_finished()
             finally:
                 # keep a local reference to avoid any GC shenanigans
-                th = self._set_thread
+                th = self._kickoff_thread
                 # these two must be in this order to avoid a race condition
                 self._kickoff_thread = None
                 del th
@@ -97,7 +97,7 @@ class MotorFlyer(FlyerInterface, Device):
                 # Record real motor positions for later evaluation
                 self._fly_data = []
                 cid = self.user_readback.subscribe(self.record_datum, run=False)
-                self.move(self.taxi_end.get(), wait=True)
+                self.move(self.flyer_taxi_end.get(), wait=True)
                 self.user_readback.unsubscribe(cid)
             except Exception as exc:
                 st.set_exception(exc)
@@ -184,8 +184,8 @@ class MotorFlyer(FlyerInterface, Device):
 
         """
         # Grab any neccessary signals for calculation
-        start_position = self.start_position.get()
-        end_position = self.end_position.get()
+        start_position = self.flyer_start_position.get()
+        end_position = self.flyer_end_position.get()
         dwell_time = self.flyer_dwell_time.get()
         num_points = self.flyer_num_points.get()
         accel_time = self.acceleration.get()
@@ -224,9 +224,9 @@ class MotorFlyer(FlyerInterface, Device):
         [
             status.wait()
             for status in [
-                self.slew_speed.set(slew_speed),
-                self.taxi_start.set(taxi_start),
-                self.taxi_end.set(taxi_end),
+                self.flyer_slew_speed.set(slew_speed),
+                self.flyer_taxi_start.set(taxi_start),
+                self.flyer_taxi_end.set(taxi_end),
             ]
         ]
         self.pixel_positions = pixel_positions
