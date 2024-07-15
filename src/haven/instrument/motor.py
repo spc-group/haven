@@ -1,16 +1,11 @@
 import asyncio
 import logging
 import warnings
-from collections import OrderedDict
-from typing import Mapping, Sequence, Generator, Dict
+from typing import Mapping, Sequence
 
-from scipy.interpolate import CubicSpline
-import numpy as np
 from apstools.utils.misc import safe_ophyd_name
 from ophyd import Component as Cpt
-from ophyd import EpicsMotor, EpicsSignal, EpicsSignalRO, Signal, Kind, get_cl
-from ophyd.flyers import FlyerInterface
-from ophyd.status import Status
+from ophyd import EpicsMotor, EpicsSignal, EpicsSignalRO, Kind
 
 from .._iconfig import load_config
 from .device import make_device, resolve_device_names
@@ -30,6 +25,7 @@ class HavenMotor(MotorFlyer, EpicsMotor):
     Returns to the previous value when being unstaged.
 
     """
+
     # Extra motor record components
     encoder_resolution = Cpt(EpicsSignal, ".ERES", kind=Kind.config)
     description = Cpt(EpicsSignal, ".DESC", kind="omitted")

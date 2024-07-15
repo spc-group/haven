@@ -1,10 +1,10 @@
-import pytest
 from collections import OrderedDict
 
 import numpy as np
+import pytest
 from ophyd import EpicsMotor
-from ophyd.sim import instantiate_fake_device
 from ophyd.flyers import FlyerInterface
+from ophyd.sim import instantiate_fake_device
 from ophyd.status import StatusBase
 
 from haven.instrument.motor_flyer import MotorFlyer
@@ -33,8 +33,8 @@ def test_fly_params_forward(motor):
     # Set some example positions
     motor.motor_egu.set("micron").wait(timeout=3)
     motor.acceleration.set(0.5).wait(timeout=3)  # sec
-    motor.flyer_start_position.set(10.).wait(timeout=3)  # µm
-    motor.flyer_end_position.set(20.).wait(timeout=3)  # µm
+    motor.flyer_start_position.set(10.0).wait(timeout=3)  # µm
+    motor.flyer_end_position.set(20.0).wait(timeout=3)  # µm
     motor.flyer_num_points.set(101).wait(timeout=3)  # µm
     motor.flyer_dwell_time.set(1).wait(timeout=3)  # sec
 
@@ -42,7 +42,7 @@ def test_fly_params_forward(motor):
     assert motor.flyer_slew_speed.get(use_monitor=False) == pytest.approx(0.1)  # µm/sec
     assert motor.flyer_taxi_start.get(use_monitor=False) == pytest.approx(9.9125)  # µm
     assert motor.flyer_taxi_end.get(use_monitor=False) == pytest.approx(20.0875)  # µm
-    i = 10.
+    i = 10.0
     pixel = []
     while i <= 20.005:
         pixel.append(i)
@@ -134,11 +134,11 @@ def test_collect(motor):
     for datum, value, timestamp in zip(
         payload, motor.pixel_positions, expected_timestamps
     ):
-        assert datum['data'] == {
+        assert datum["data"] == {
             "m1": value,
             "m1_user_setpoint": value,
         }
-        assert datum["timestamps"]['m1'] == pytest.approx(timestamp, abs=0.3)
+        assert datum["timestamps"]["m1"] == pytest.approx(timestamp, abs=0.3)
         assert datum["time"] == pytest.approx(timestamp, abs=0.3)
 
 

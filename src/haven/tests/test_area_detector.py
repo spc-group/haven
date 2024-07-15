@@ -1,12 +1,16 @@
 import time
 
-import pytest
 import numpy as np
-from ophyd.sim import instantiate_fake_device
+import pytest
 from ophyd import ADComponent as ADCpt
 from ophyd.areadetector.cam import AreaDetectorCam
+from ophyd.sim import instantiate_fake_device
 
-from haven.instrument.area_detector import load_area_detectors, DetectorBase, DetectorState
+from haven.instrument.area_detector import (
+    DetectorBase,
+    DetectorState,
+    load_area_detectors,
+)
 
 
 class Detector(DetectorBase):

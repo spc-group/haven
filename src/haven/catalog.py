@@ -169,7 +169,9 @@ class ThreadSafeCache(Cache):
     delete = with_thread_lock(Cache.delete)
 
 
-def tiled_client(entry_node=None, uri=None, cache_filepath=None, structure_clients="dask"):
+def tiled_client(
+    entry_node=None, uri=None, cache_filepath=None, structure_clients="dask"
+):
     config = load_config()
     # Create a cache for saving local copies
     if cache_filepath is None:

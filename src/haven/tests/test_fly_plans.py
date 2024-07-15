@@ -1,12 +1,12 @@
-import pytest
 from collections import OrderedDict
 from unittest.mock import MagicMock
 
 import numpy as np
-from ophyd import sim, EpicsMotor
+import pytest
+from ophyd import EpicsMotor, sim
 
-from haven.plans.fly import FlyerCollector, fly_scan, grid_fly_scan
 from haven.instrument.motor_flyer import MotorFlyer
+from haven.plans.fly import FlyerCollector, fly_scan, grid_fly_scan
 
 
 @pytest.fixture()
@@ -275,7 +275,10 @@ def test_fly_grid_scan(aerotech_flyer):
     flyer_start_positions = [
         msg.args[0]
         for msg in messages
-        if (msg.command == "set" and msg.obj.name == f"{flyer.name}_flyer_start_position")
+        if (
+            msg.command == "set"
+            and msg.obj.name == f"{flyer.name}_flyer_start_position"
+        )
     ]
     flyer_end_positions = [
         msg.args[0]

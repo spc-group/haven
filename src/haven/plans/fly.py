@@ -13,7 +13,9 @@ from ophyd.status import StatusBase
 __all__ = ["fly_scan", "grid_fly_scan"]
 
 
-def fly_line_scan(detectors: list, flyer, start, stop, num, extra_signals=(), combine_streams=True):
+def fly_line_scan(
+    detectors: list, flyer, start, stop, num, extra_signals=(), combine_streams=True
+):
     """A plan stub for fly-scanning a single trajectory.
 
     Parameters

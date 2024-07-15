@@ -1,28 +1,31 @@
 import logging
 import time
-from enum import IntEnum
 from collections import OrderedDict, namedtuple
+from enum import IntEnum
 from typing import Dict
+import warnings
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 from apstools.devices import CamMixin_V34, SingleTrigger_V34
 from ophyd import ADComponent as ADCpt
 from ophyd import Component as Cpt
 from ophyd import DetectorBase as OphydDetectorBase
 from ophyd import (
+    Device,
     EigerDetectorCam,
     Kind,
     Lambda750kCam,
     OphydObject,
+    Signal,
     SimDetectorCam,
     SingleTrigger,
-    Signal,
-    Device,
 )
-from ophyd.status import StatusBase, SubscriptionStatus
 from ophyd.areadetector.base import EpicsSignalWithRBV as SignalWithRBV
-from ophyd.areadetector.filestore_mixins import FileStoreHDF5IterativeWrite, FileStoreTIFFIterativeWrite
+from ophyd.areadetector.filestore_mixins import (
+    FileStoreHDF5IterativeWrite,
+    FileStoreTIFFIterativeWrite,
+)
 from ophyd.areadetector.plugins import (
     HDF5Plugin_V31,
     HDF5Plugin_V34,
@@ -33,12 +36,12 @@ from ophyd.areadetector.plugins import (
     PvaPlugin_V34,
     ROIPlugin_V31,
     ROIPlugin_V34,
-    TIFFPlugin_V31,
-    TIFFPlugin_V34,
 )
 from ophyd.areadetector.plugins import StatsPlugin_V31 as OphydStatsPlugin_V31
 from ophyd.areadetector.plugins import StatsPlugin_V34 as OphydStatsPlugin_V34
+from ophyd.areadetector.plugins import TIFFPlugin_V31, TIFFPlugin_V34
 from ophyd.flyers import FlyerInterface
+from ophyd.status import StatusBase, SubscriptionStatus
 
 from .. import exceptions
 from .._iconfig import load_config
@@ -71,6 +74,7 @@ class EraseState(IntEnum):
     DONE = 0
     ERASE = 1
 
+
 class AcquireState(IntEnum):
     DONE = 0
     ACQUIRE = 1
@@ -100,7 +104,7 @@ class DetectorState(IntEnum):
     ABORTED = 10
 
 
-fly_event = namedtuple("fly_event", ('timestamp', 'value'))
+fly_event = namedtuple("fly_event", ("timestamp", "value"))
 
 
 class FlyerMixin(FlyerInterface, Device):
@@ -304,7 +308,10 @@ class DynamicFileStore(Device):
     iconfig values.
 
     """
-    def __init__(self, *args, write_path_template="/{root_path}/%Y/%m/{name}/", **kwargs):
+
+    def __init__(
+        self, *args, write_path_template="/{root_path}/%Y/%m/{name}/", **kwargs
+    ):
         super().__init__(*args, write_path_template=write_path_template, **kwargs)
         # Format the file_write_template with per-device values
         config = load_config()
@@ -330,8 +337,7 @@ class HDF5FilePlugin(DynamicFileStore, FileStoreHDF5IterativeWrite, HDF5Plugin_V
         super().stage()
 
 
-class TIFFFilePlugin(DynamicFileStore, FileStoreTIFFIterativeWrite, TIFFPlugin_V34):
-    ...
+class TIFFFilePlugin(DynamicFileStore, FileStoreTIFFIterativeWrite, TIFFPlugin_V34): ...
 
 
 class DetectorBase(FlyerMixin, OphydDetectorBase):
@@ -343,7 +349,7 @@ class DetectorBase(FlyerMixin, OphydDetectorBase):
 
     @property
     def default_time_signal(self):
-        return self.cam.acquire_time    
+        return self.cam.acquire_time
 
 
 class StatsMixin:

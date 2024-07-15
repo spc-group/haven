@@ -192,9 +192,7 @@ def test_pso_bad_window_forward(aerotech_flyer):
     flyer = aerotech_flyer
     # Set up scan parameters
     flyer.encoder_resolution.put(1)
-    flyer.encoder_step_size.put(
-        5 / flyer.encoder_resolution.get()
-    )  # In encoder counts
+    flyer.encoder_step_size.put(5 / flyer.encoder_resolution.get())  # In encoder counts
     flyer.encoder_window_start.put(-5)  # In encoder counts
     flyer.encoder_window_end.put(None)  # High end is outside the window range
     flyer.pso_end.put(100)

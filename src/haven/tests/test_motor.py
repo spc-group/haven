@@ -1,10 +1,5 @@
-from collections import OrderedDict
-
 import pytest
 from ophyd.sim import instantiate_fake_device
-from ophyd.flyers import FlyerInterface
-from ophyd import StatusBase
-import numpy as np
 
 from haven.instrument.motor import HavenMotor, load_motors
 from haven.instrument.motor_flyer import MotorFlyer
@@ -51,9 +46,7 @@ def test_skip_existing_motors(sim_registry, mocked_device_names):
 
     """
     # Create an existing fake motor
-    m1 = HavenMotor(
-        "255idVME:m1", name="kb_mirrors_horiz_upstream", labels={"motors"}
-    )
+    m1 = HavenMotor("255idVME:m1", name="kb_mirrors_horiz_upstream", labels={"motors"})
     # Load the Ophyd motor definitions
     load_motors()
     # Were the motors imported correctly

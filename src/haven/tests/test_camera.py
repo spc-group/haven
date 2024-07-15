@@ -18,7 +18,9 @@ def test_load_cameras(sim_registry):
 
 @pytest.fixture()
 def camera(sim_registry):
-    camera = instantiate_fake_device(AravisDetector, prefix="255idgigeA:", name="camera")
+    camera = instantiate_fake_device(
+        AravisDetector, prefix="255idgigeA:", name="camera"
+    )
     return camera
 
 

@@ -1,14 +1,13 @@
-from collections import OrderedDict
 import logging
-from typing import Generator, Dict
+from collections import OrderedDict
+from typing import Dict, Generator
 
-from scipy.interpolate import CubicSpline
 import numpy as np
-
-from ophyd import Component as Cpt, Kind, Signal, get_cl, Device
+from ophyd import Component as Cpt
+from ophyd import Device, Kind, Signal, get_cl
 from ophyd.flyers import FlyerInterface
 from ophyd.status import Status
-
+from scipy.interpolate import CubicSpline
 
 log = logging.getLogger()
 
@@ -206,7 +205,7 @@ class MotorFlyer(FlyerInterface, Device):
         direction = 1 if start_position < end_position else -1
         # Determine taxi distance to accelerate to req speed, v^2/(2*a) = d
         # x1.5 for safety margin
-        step_size = abs((start_position - end_position) / (num_points-1))
+        step_size = abs((start_position - end_position) / (num_points - 1))
         if step_size <= 0:
             log.warning(
                 f"{self} step_size is non-positive. Could not update fly scan"

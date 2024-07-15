@@ -2,7 +2,6 @@ import logging
 
 import databroker
 from bluesky import RunEngine as BlueskyRunEngine
-from bluesky import suspenders
 from bluesky.callbacks.best_effort import BestEffortCallback
 
 from .exceptions import ComponentNotFound

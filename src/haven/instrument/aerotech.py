@@ -9,17 +9,16 @@ import numpy as np
 import pint
 from apstools.synApps.asyn import AsynRecord
 from ophyd import Component as Cpt
-from ophyd import EpicsMotor, EpicsSignal
 from ophyd import FormattedComponent as FCpt
-from ophyd import Kind, Signal, flyers
+from ophyd import Kind, Signal
 from ophyd.status import SubscriptionStatus
 
 from .._iconfig import load_config
 from ..exceptions import InvalidScanParameters
 from .delay import DG645Delay
 from .device import make_device
-from .stage import XYStage
 from .motor import HavenMotor
+from .stage import XYStage
 
 log = logging.getLogger(__name__)
 
@@ -487,7 +486,10 @@ class AerotechFlyer(HavenMotor):
         This checks to make sure no spurious pulses are expected from taxiing.
 
         """
-        end_points = [(self.flyer_taxi_start, self.pso_start), (self.flyer_taxi_end, self.pso_end)]
+        end_points = [
+            (self.flyer_taxi_start, self.pso_start),
+            (self.flyer_taxi_end, self.pso_end),
+        ]
         step_size = self.flyer_step_size()
         for taxi, pso in end_points:
             # Make sure we're not going to have extra pulses
