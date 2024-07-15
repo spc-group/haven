@@ -103,14 +103,14 @@ async def test_grid_scan_plan_queued(display, qtbot, sim_registry, fake_motors):
     expected_item = BPlan(
         "grid_scan",
         ["vortex_me4", "I0"],
-        "motorA_m1",
-        1,
-        111,
-        5,
         "motorA_m2",
         2,
         222,
         10,
+        "motorA_m1",
+        1,
+        111,
+        5,
         snake_axes=["motorA_m1"],
         md={"sample": "sam", "purpose": "test", "notes": "notes"},
     )

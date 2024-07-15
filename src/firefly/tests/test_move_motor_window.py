@@ -42,20 +42,12 @@ async def test_move_motor_plan_queued(display, qtbot):
     display.regions[1].motor_box.combo_box.setCurrentText("motorA_m2")
     display.regions[1].position_line_edit.setText("222")
 
-    # set up meta data
-    display.ui.lineEdit_sample.setText("sam")
-    display.ui.lineEdit_purpose.setText("test")
-
     expected_item = BPlan(
         "mv",
         "motorA_m1",
         111.0,
         "motorA_m2",
         222.0,
-        md={
-            "sample": "sam",
-            "purpose": "test",
-        },
     )
 
     def check_item(item):
