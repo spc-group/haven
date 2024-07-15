@@ -1,20 +1,28 @@
+import pytest
 from collections import OrderedDict
 from unittest.mock import MagicMock
 
 import numpy as np
-from ophyd import sim
+from ophyd import sim, EpicsMotor
 
 from haven.plans.fly import FlyerCollector, fly_scan, grid_fly_scan
+from haven.instrument.motor_flyer import MotorFlyer
 
 
-def test_set_fly_params(aerotech_flyer):
+@pytest.fixture()
+def flyer(sim_registry, mocker):
+    Motor = type("Motor", (MotorFlyer, EpicsMotor), {})
+    m = sim.instantiate_fake_device(Motor, name="m1")
+    mocker.patch.object(m, "move")
+    m.user_setpoint._use_limits = False
+    return m
+
+
+def test_set_fly_params(flyer):
     """Does the plan set the parameters of the flyer motor."""
-    flyer = aerotech_flyer
     # step size == 10
     plan = fly_scan(detectors=[], flyer=flyer, start=-20, stop=30, num=6)
     messages = list(plan)
-    for msg in messages:
-        print(msg.command)
     open_msg = messages[1]
     param_msgs = messages[2:8]
     fly_msgs = messages[9:-1]
@@ -25,8 +33,10 @@ def test_set_fly_params(aerotech_flyer):
     assert param_msgs[3].command == "wait"
     assert param_msgs[4].command == "set"
     # Make sure the step size is calculated properly
-    new_step_size = param_msgs[4].args[0]
-    assert new_step_size == 10
+    msg = param_msgs[4]
+    assert msg.obj is flyer.flyer_num_points
+    new_step_size = msg.args[0]
+    assert new_step_size == 6
 
 
 def test_fly_scan_metadata(aerotech_flyer, sim_ion_chamber):

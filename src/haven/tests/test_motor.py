@@ -7,6 +7,7 @@ from ophyd import StatusBase
 import numpy as np
 
 from haven.instrument.motor import HavenMotor, load_motors
+from haven.instrument.motor_flyer import MotorFlyer
 
 
 @pytest.fixture()
@@ -80,153 +81,8 @@ def test_motor_signals():
 def test_motor_flyer(motor):
     """Check that the haven motor implements the flyer interface."""
     assert motor is not None
-    assert isinstance(motor, FlyerInterface)
+    assert isinstance(motor, MotorFlyer)
 
-
-def test_fly_params_forward(motor):
-    """Test that the fly-scan parameters are correct when going from
-    lower to higher positions.
-
-    """
-    # Set some example positions
-    motor.motor_egu.set("micron").wait(timeout=3)
-    motor.acceleration.set(0.5).wait(timeout=3)  # sec
-    motor.start_position.set(10.).wait(timeout=3)  # µm
-    motor.end_position.set(20.).wait(timeout=3)  # µm
-    motor.encoder_resolution.set(0.001).wait(timeout=3)  # µm
-    motor.flyer_num_points.set(101).wait(timeout=3)  # µm
-    motor.flyer_dwell_time.set(1).wait(timeout=3)  # sec
-
-    # Check that the fly-scan parameters were calculated correctly
-    assert motor.slew_speed.get(use_monitor=False) == pytest.approx(0.1)  # µm/sec
-    assert motor.taxi_start.get(use_monitor=False) == pytest.approx(9.9125)  # µm
-    assert motor.taxi_end.get(use_monitor=False) == pytest.approx(20.0875)  # µm
-    i = 10.
-    pixel = []
-    while i <= 20.005:
-        pixel.append(i)
-        i = i + 0.1
-    np.testing.assert_allclose(motor.pixel_positions, pixel)
-
-
-def test_fly_params_reverse(motor):
-    """Test that the fly-scan parameters are correct when going from
-    higher to lower positions.
-
-    """
-    # Set some example positions
-    motor.motor_egu.set("micron").wait(timeout=3)
-    motor.acceleration.set(0.5).wait(timeout=3)  # sec
-    motor.start_position.set(20.0).wait(timeout=3)  # µm
-    motor.end_position.set(10.0).wait(timeout=3)  # µm
-    motor.flyer_num_points.set(101).wait(timeout=3)  # µm
-    motor.flyer_dwell_time.set(1).wait(timeout=3)  # sec
-
-    # Check that the fly-scan parameters were calculated correctly
-    assert motor.slew_speed.get(use_monitor=False) == pytest.approx(0.1)  # µm/sec
-    assert motor.taxi_start.get(use_monitor=False) == pytest.approx(20.0875)  # µm
-    assert motor.taxi_end.get(use_monitor=False) == pytest.approx(9.9125)  # µm
-    i = 20.0
-    pixel = []
-    while i >= 9.995:
-        pixel.append(i)
-        i = i - 0.1
-    np.testing.assert_allclose(motor.pixel_positions, pixel)
-
-
-def test_kickoff(motor):
-    motor.flyer_dwell_time.put(1.0)
-    motor.taxi_start.put(1.5)
-    # Start flying
-    status = motor.kickoff()
-    # Check status behavior matches flyer interface
-    assert isinstance(status, StatusBase)
-    # Make sure the motor moved to its taxi position
-    assert motor.user_setpoint.get() == motor.taxi_start.get()
-
-
-def test_complete(motor):
-    # Set up fake flyer with mocked fly method
-    assert motor.user_setpoint.get() == 0
-    motor.taxi_end.set(10).wait(timeout=3)
-    # Complete flying
-    status = motor.complete()
-    # Check that the motor was moved
-    assert isinstance(status, StatusBase)
-    assert motor.user_setpoint.get() == 10
-
-
-def test_collect(motor):
-    # Set up needed parameters
-    motor.pixel_positions = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-    # Set up some fake positions from camonitors
-    motor._fly_data = [
-        # timestamp, position
-        (1.125, 0.5),
-        (2.125, 1.5),
-        (3.125, 2.5),
-        (4.125, 3.5),
-        (5.125, 4.5),
-        (6.125, 5.5),
-        (7.125, 6.5),
-        (8.125, 7.5),
-        (9.125, 8.5),
-        (10.125, 9.5),
-        (11.125, 10.5),
-    ]
-    expected_timestamps = [
-        1.625,
-        2.625,
-        3.625,
-        4.625,
-        5.625,
-        6.625,
-        7.625,
-        8.625,
-        9.625,
-        10.625,
-    ]
-    payload = list(motor.collect())
-    # Confirm data have the right structure
-    for datum, value, timestamp in zip(
-        payload, motor.pixel_positions, expected_timestamps
-    ):
-        assert datum['data'] == {
-            "m1": value,
-            "m1_user_setpoint": value,
-        }
-        assert datum["timestamps"]['m1'] == pytest.approx(timestamp, abs=0.3)
-        assert datum["time"] == pytest.approx(timestamp, abs=0.3)
-
-
-def test_describe_collect(aerotech_flyer):
-    expected = {
-        "positions": OrderedDict(
-            [
-                (
-                    "aerotech_horiz",
-                    {
-                        "source": "SIM:aerotech_horiz",
-                        "dtype": "integer",
-                        "shape": [],
-                        "precision": 3,
-                    },
-                ),
-                (
-                    "aerotech_horiz_user_setpoint",
-                    {
-                        "source": "SIM:aerotech_horiz_user_setpoint",
-                        "dtype": "integer",
-                        "shape": [],
-                        "precision": 3,
-                    },
-                ),
-            ]
-        )
-    }
-
-    assert aerotech_flyer.describe_collect() == expected
-    
 
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
