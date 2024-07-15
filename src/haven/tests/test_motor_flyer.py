@@ -1,80 +1,22 @@
+import pytest
 from collections import OrderedDict
 
-import pytest
+import numpy as np
+from ophyd import EpicsMotor
 from ophyd.sim import instantiate_fake_device
 from ophyd.flyers import FlyerInterface
-from ophyd import StatusBase
-import numpy as np
+from ophyd.status import StatusBase
 
-from haven.instrument.motor import HavenMotor, load_motors
-
-
-@pytest.fixture()
-def mocked_device_names(mocker):
-    # Mock the caget calls used to get the motor name
-    async def resolve_device_names(defns):
-        for defn, name in zip(defns, ["SLT V Upper", "SLT V Lower", "SLT H Inbound"]):
-            defn["name"] = name
-
-    mocker.patch(
-        "haven.instrument.motor.resolve_device_names", new=resolve_device_names
-    )
+from haven.instrument.motor_flyer import MotorFlyer
 
 
 @pytest.fixture()
-def motor(sim_registry):
-    m1 = instantiate_fake_device(HavenMotor, name="m1")
-    m1.user_setpoint._use_limits = False
-    return m1
-
-
-def test_load_vme_motors(sim_registry, mocked_device_names):
-    # Load the Ophyd motor definitions
-    load_motors()
-    # Were the motors imported correctly
-    motors = list(sim_registry.findall(label="motors"))
-    assert len(motors) == 3
-    # assert type(motors[0]) is HavenMotor
-    motor_names = [m.name for m in motors]
-    assert "SLT_V_Upper" in motor_names
-    assert "SLT_V_Lower" in motor_names
-    assert "SLT_H_Inbound" in motor_names
-    # Check that the IOC name is set in labels
-    motor1 = sim_registry.find(name="SLT_V_Upper")
-    assert "VME_crate" in motor1._ophyd_labels_
-
-
-def test_skip_existing_motors(sim_registry, mocked_device_names):
-    """If a motor already exists from another device, don't add it to the
-    motors group.
-
-    """
-    # Create an existing fake motor
-    m1 = HavenMotor(
-        "255idVME:m1", name="kb_mirrors_horiz_upstream", labels={"motors"}
-    )
-    # Load the Ophyd motor definitions
-    load_motors()
-    # Were the motors imported correctly
-    motors = list(sim_registry.findall(label="motors"))
-    print([m.prefix for m in motors])
-    assert len(motors) == 3
-    motor_names = [m.name for m in motors]
-    assert "kb_mirrors_horiz_upstream" in motor_names
-    assert "SLT_V_Upper" in motor_names
-    assert "SLT_V_Lower" in motor_names
-    # Check that the IOC name is set in labels
-    motor1 = sim_registry.find(name="SLT_V_Upper")
-    assert "VME_crate" in motor1._ophyd_labels_
-
-
-def test_motor_signals():
-    m = HavenMotor("motor_ioc", name="test_motor")
-    assert m.description.pvname == "motor_ioc.DESC"
-    assert m.tweak_value.pvname == "motor_ioc.TWV"
-    assert m.tweak_forward.pvname == "motor_ioc.TWF"
-    assert m.tweak_reverse.pvname == "motor_ioc.TWR"
-    assert m.soft_limit_violation.pvname == "motor_ioc.LVIO"
+def motor(sim_registry, mocker):
+    Motor = type("Motor", (MotorFlyer, EpicsMotor), {})
+    m = instantiate_fake_device(Motor, name="m1")
+    mocker.patch.object(m, "move")
+    m.user_setpoint._use_limits = False
+    return m
 
 
 def test_motor_flyer(motor):
@@ -93,7 +35,6 @@ def test_fly_params_forward(motor):
     motor.acceleration.set(0.5).wait(timeout=3)  # sec
     motor.start_position.set(10.).wait(timeout=3)  # µm
     motor.end_position.set(20.).wait(timeout=3)  # µm
-    motor.encoder_resolution.set(0.001).wait(timeout=3)  # µm
     motor.flyer_num_points.set(101).wait(timeout=3)  # µm
     motor.flyer_dwell_time.set(1).wait(timeout=3)  # sec
 
@@ -141,19 +82,21 @@ def test_kickoff(motor):
     status = motor.kickoff()
     # Check status behavior matches flyer interface
     assert isinstance(status, StatusBase)
+    status.wait(timeout=1)
     # Make sure the motor moved to its taxi position
-    assert motor.user_setpoint.get() == motor.taxi_start.get()
+    motor.move.assert_called_once_with(1.5, wait=True)
 
 
 def test_complete(motor):
     # Set up fake flyer with mocked fly method
     assert motor.user_setpoint.get() == 0
-    motor.taxi_end.set(10).wait(timeout=3)
+    motor.taxi_end.put(10)
     # Complete flying
     status = motor.complete()
     # Check that the motor was moved
     assert isinstance(status, StatusBase)
-    assert motor.user_setpoint.get() == 10
+    status.wait()
+    motor.move.assert_called_once_with(10, wait=True)
 
 
 def test_collect(motor):
@@ -226,29 +169,3 @@ def test_describe_collect(aerotech_flyer):
     }
 
     assert aerotech_flyer.describe_collect() == expected
-    
-
-# -----------------------------------------------------------------------------
-# :author:    Mark Wolfman
-# :email:     wolfman@anl.gov
-# :copyright: Copyright © 2023, UChicago Argonne, LLC
-#
-# Distributed under the terms of the 3-Clause BSD License
-#
-# The full license is in the file LICENSE, distributed with this software.
-#
-# DISCLAIMER
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# -----------------------------------------------------------------------------

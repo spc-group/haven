@@ -1,44 +1,19 @@
-import asyncio
-import logging
-import warnings
 from collections import OrderedDict
-from typing import Mapping, Sequence, Generator, Dict
+import logging
+from typing import Generator, Dict
 
 from scipy.interpolate import CubicSpline
 import numpy as np
-from apstools.utils.misc import safe_ophyd_name
-from ophyd import Component as Cpt
-from ophyd import EpicsMotor, EpicsSignal, EpicsSignalRO, Signal, Kind, get_cl
+
+from ophyd import Component as Cpt, Kind, Signal, get_cl, Device
 from ophyd.flyers import FlyerInterface
 from ophyd.status import Status
 
-from .._iconfig import load_config
-from .device import make_device, resolve_device_names
-from .instrument_registry import InstrumentRegistry
-from .instrument_registry import registry as default_registry
-from .motor_flyer import MotorFlyer
 
-log = logging.getLogger(__name__)
+log = logging.getLogger()
 
 
-class HavenMotor(MotorFlyer, EpicsMotor):
-    """The default motor for haven movement.
-
-    This motor also implements the flyer interface and so can be used
-    in a fly scan, though no hardware triggering is supported.
-
-    Returns to the previous value when being unstaged.
-
-    """
-    # Extra motor record components
-    encoder_resolution = Cpt(EpicsSignal, ".ERES", kind=Kind.config)
-    description = Cpt(EpicsSignal, ".DESC", kind="omitted")
-    tweak_value = Cpt(EpicsSignal, ".TWV", kind="omitted")
-    tweak_forward = Cpt(EpicsSignal, ".TWF", kind="omitted", tolerance=2)
-    tweak_reverse = Cpt(EpicsSignal, ".TWR", kind="omitted", tolerance=2)
-    motor_stop = Cpt(EpicsSignal, ".STOP", kind="omitted", tolerance=2)
-    soft_limit_violation = Cpt(EpicsSignalRO, ".LVIO", kind="omitted")
-
+class MotorFlyer(FlyerInterface, Device):
     # Desired fly parameters
     start_position = Cpt(Signal, name="start_position", value=0, kind=Kind.config)
     end_position = Cpt(Signal, name="end_position", value=1, kind=Kind.config)
@@ -54,6 +29,7 @@ class HavenMotor(MotorFlyer, EpicsMotor):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._kickoff_thread = None
+        self._complete_thread = None
         self.cl = get_cl()
         # Set up auto-calculations for the flyer
         self.motor_egu.subscribe(self._update_fly_params)
@@ -62,12 +38,6 @@ class HavenMotor(MotorFlyer, EpicsMotor):
         self.flyer_num_points.subscribe(self._update_fly_params)
         self.flyer_dwell_time.subscribe(self._update_fly_params)
         self.acceleration.subscribe(self._update_fly_params)
-
-    def stage(self):
-        super().stage()
-        # Override some additional staged signals
-        self._original_vals.setdefault(self.user_setpoint, self.user_readback.get())
-        self._original_vals.setdefault(self.velocity, self.velocity.get())
 
     def kickoff(self):
         """Start the motor as a flyer.
@@ -85,9 +55,8 @@ class HavenMotor(MotorFlyer, EpicsMotor):
 
         def kickoff_thread():
             try:
-                print(self.taxi_start.get())
                 self.move(self.taxi_start.get(), wait=True)
-                self.velocity.set(self.slew_speed.get()).wait()
+                self.velocity.put(self.slew_speed.get())
             except Exception as exc:
                 st.set_exception(exc)
             else:
@@ -97,12 +66,12 @@ class HavenMotor(MotorFlyer, EpicsMotor):
                 # keep a local reference to avoid any GC shenanigans
                 th = self._set_thread
                 # these two must be in this order to avoid a race condition
-                self._set_thread = None
+                self._kickoff_thread = None
                 del th
 
         if self._kickoff_thread is not None:
             raise RuntimeError(
-                "Another set() call is still in progress " f"for {self.name}"
+                "Another kickoff() call is still in progress " f"for {self.name}"
             )
 
         st = Status(self)
@@ -121,12 +90,38 @@ class HavenMotor(MotorFlyer, EpicsMotor):
             Indicate when flying has completed
 
         """
-        # Record real motor positions for later evaluation
-        self._fly_data = []
-        cid = self.user_readback.subscribe(self.record_datum, run=False)
-        st = self.move(self.taxi_end.get(), wait=True)
-        self.user_readback.unsubscribe(cid)
-        return st
+        self.log.debug(f"Comleting {self}")
+
+        def complete_thread():
+            try:
+                # Record real motor positions for later evaluation
+                self._fly_data = []
+                cid = self.user_readback.subscribe(self.record_datum, run=False)
+                self.move(self.taxi_end.get(), wait=True)
+                self.user_readback.unsubscribe(cid)
+            except Exception as exc:
+                st.set_exception(exc)
+            else:
+                self.log.debug(f"{self} complete succeeded")
+                st.set_finished()
+            finally:
+                # keep a local reference to avoid any GC shenanigans
+                th = self._complete_thread
+                # these two must be in this order to avoid a race condition
+                self._complete_thread = None
+                del th
+
+        if self._complete_thread is not None:
+            raise RuntimeError(
+                f"Another complete() call is still in progress for {self.name}"
+            )
+
+        st = Status(self)
+        self._status = st
+        self._complete_thread = self.cl.thread_class(target=complete_thread)
+        self._complete_thread.daemon = True
+        self._complete_thread.start()
+        return self._status
 
     def record_datum(self, *, old_value, value, timestamp, **kwargs):
         """Record a fly-scan data point so we can report it later."""
@@ -171,9 +166,9 @@ class HavenMotor(MotorFlyer, EpicsMotor):
         These include the actual start position of the motor, the
         actual distance between points, and the end position of the
         motor.
-        
+
         Several fields are set in the class:
-        
+
         direction
           1 if we are moving positive in user coordinates, −1 if
           negative
@@ -189,7 +184,6 @@ class HavenMotor(MotorFlyer, EpicsMotor):
 
         """
         # Grab any neccessary signals for calculation
-        egu = self.motor_egu.get()
         start_position = self.start_position.get()
         end_position = self.end_position.get()
         dwell_time = self.flyer_dwell_time.get()
@@ -236,127 +230,3 @@ class HavenMotor(MotorFlyer, EpicsMotor):
             ]
         ]
         self.pixel_positions = pixel_positions
-
-
-
-def load_motors(
-    config: Mapping = None, registry: InstrumentRegistry = default_registry
-) -> Sequence:
-    """Load generic hardware motors from IOCs.
-
-    This loader will skip motor prefixes that already exist in the
-    registry *registry*, so it is a good idea to run this loader after
-    other devices have been created that might potentially use some of
-    these motors (e.g. mirrors, tables, etc.).
-
-    Parameters
-    ==========
-    config
-      The beamline configuration. If omitted, will use the config
-      provided by :py:func:`haven._iconfig.load_config()`.
-    registry
-      The instrument registry to check for existing motors. Existing
-      motors will not be duplicated.
-
-    Returns
-    =======
-    devices
-      The newly create EpicsMotor devices.
-
-    """
-    if config is None:
-        config = load_config()
-    # Build up definitions of motors to load
-    defns = []
-    for section_name, config in config.get("motor", {}).items():
-        prefix = config["prefix"]
-        num_motors = config["num_motors"]
-        log.info(
-            f"Preparing {num_motors} motors from IOC: " f"{section_name} ({prefix})"
-        )
-        for idx in range(num_motors):
-            motor_prefix = f"{prefix}m{idx+1}"
-            defns.append(
-                {
-                    "prefix": motor_prefix,
-                    "desc_pv": f"{motor_prefix}.DESC",
-                    "ioc_name": section_name,
-                }
-            )
-    # Check that we're not duplicating a motor somewhere else (e.g. KB mirrors)
-    existing_pvs = []
-    for m in registry.findall(label="motors", allow_none=True):
-        if hasattr(m, "prefix"):
-            existing_pvs.append(m.prefix)
-    defns = [defn for defn in defns if defn["prefix"] not in existing_pvs]
-    duplicates = [defn for defn in defns if defn["prefix"] in existing_pvs]
-    if len(duplicates) > 0:
-        log.info(
-            "The following motors already exist and will not be duplicated: ",
-            ", ".join([m["prefix"] for m in duplicates]),
-        )
-    else:
-        log.debug(f"No duplicated motors detected out of {len(defns)}")
-    # Resolve the scaler channels into ion chamber names
-    try:
-        loop = asyncio.get_running_loop()
-    except RuntimeError:
-        # No loop, so make a new one
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-    loop.run_until_complete(resolve_device_names(defns))
-    # Create the devices
-    devices = []
-    missing_channels = []
-    unnamed_channels = []
-    for defn in defns:
-        # Check for motor without a name
-        if defn["name"] == "":
-            unnamed_channels.append(defn["prefix"])
-        elif defn["name"] is None:
-            missing_channels.append(defn["prefix"])
-        else:
-            # Create the device
-            labels = {"motors", "extra_motors", "baseline", defn["ioc_name"]}
-            name = safe_ophyd_name(defn["name"])
-            devices.append(
-                make_device(HavenMotor, prefix=defn["prefix"], name=name, labels=labels)
-            )
-    # Notify about motors that have no name
-    if len(missing_channels) > 0:
-        msg = "Skipping unavailable motors: "
-        msg += ", ".join([prefix for prefix in missing_channels])
-        warnings.warn(msg)
-        log.warning(msg)
-    if len(unnamed_channels) > 0:
-        msg = "Skipping unnamed motors: "
-        msg += ", ".join([prefix for prefix in unnamed_channels])
-        warnings.warn(msg)
-        log.warning(msg)
-    return devices
-
-
-# -----------------------------------------------------------------------------
-# :author:    Mark Wolfman
-# :email:     wolfman@anl.gov
-# :copyright: Copyright © 2023, UChicago Argonne, LLC
-#
-# Distributed under the terms of the 3-Clause BSD License
-#
-# The full license is in the file LICENSE, distributed with this software.
-#
-# DISCLAIMER
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# -----------------------------------------------------------------------------

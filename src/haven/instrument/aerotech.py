@@ -154,6 +154,7 @@ class AerotechFlyer(HavenMotor):
         status = SubscriptionStatus(self.ready_to_fly, flight_check)
         # Taxi the motor
         th = threading.Thread(target=self.taxi)
+        th.daemon = True
         th.start()
         # Record time of fly start of scan
         self.starttime = time.time()
