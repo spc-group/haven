@@ -16,7 +16,7 @@ def time_converter(total_seconds):
     tuple: hours, minutes, seconds
     """
     if np.isnan(total_seconds):
-        return float('nan'), float('nan'), float('nan')
+        return float("nan"), float("nan"), float("nan")
     # Use np.round instead round to prevent errors in
     # round(float("nan"))
     hours = np.round(total_seconds / 3600).astype(int)
