@@ -37,7 +37,7 @@ async def test_time_calculator(display, sim_registry):
     display.ui.spinBox_repeat_scan_num.setValue(6)
 
     # set up scan num of points
-    display.ui.scan_pts_spin_box.setValue(10)
+    display.ui.scan_pts_spin_box.setValue(1000)
 
     # set up detectors
     display.ui.detectors_list.selected_detectors = mock.MagicMock(
@@ -47,7 +47,7 @@ async def test_time_calculator(display, sim_registry):
     # set up default timing for the detector
     detectors = display.ui.detectors_list.selected_detectors()
     detectors = {name: sim_registry[name] for name in detectors}
-    detectors["I0"].default_time_signal.set(1).wait(2)
+    detectors["I0"].default_time_signal.set(0.6255).wait(2)
     detectors["vortex_me4"].default_time_signal.set(0.5).wait(2)
 
     # Create empty QItemSelection objects
@@ -60,14 +60,14 @@ async def test_time_calculator(display, sim_registry):
     )
 
     # Check whether time is calculated correctly for a single scan
-    assert int(display.ui.label_hour_scan.text()) == 0
-    assert int(display.ui.label_min_scan.text()) == 0
-    assert int(display.ui.label_sec_scan.text()) == 10
+    assert display.ui.label_hour_scan.text() == "0"
+    assert display.ui.label_min_scan.text() == "10"
+    assert display.ui.label_sec_scan.text() == "25.5"
 
     # Check whether time is calculated correctly including the repeated scan
-    assert int(display.ui.label_hour_total.text()) == 0
-    assert int(display.ui.label_min_total.text()) == 1
-    assert int(display.ui.label_sec_total.text()) == 0
+    assert display.ui.label_hour_total.text() == "1"
+    assert display.ui.label_min_total.text() == "2"
+    assert display.ui.label_sec_total.text() == "33.0"
 
 
 @pytest.mark.asyncio

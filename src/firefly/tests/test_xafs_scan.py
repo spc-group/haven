@@ -232,14 +232,14 @@ def test_xafs_scan_plan_queued_energies_k_mixed(qtbot, display):
 
         try:
             # Check whether time is calculated correctly for a single scan
-            assert int(float(display.ui.label_hour_scan.text())) == 0
-            assert int(float(display.ui.label_min_scan.text())) == 0
-            assert int(float(display.ui.label_sec_scan.text())) == 28
+            assert display.ui.label_hour_scan.text() == "0"
+            assert display.ui.label_min_scan.text() == "0"
+            assert display.ui.label_sec_scan.text() == "27.8"
 
             # Check whether time is calculated correctly including the repeated scan
-            assert int(float(display.ui.label_hour_total.text())) == 0
-            assert int(float(display.ui.label_min_total.text())) == 1
-            assert int(float(display.ui.label_sec_total.text())) == 23
+            assert display.ui.label_hour_total.text() == "0"
+            assert display.ui.label_min_total.text() == "1"
+            assert display.ui.label_sec_total.text() == "23.4"
 
             # Check energies & exposures within 3 decimals
             np.testing.assert_array_almost_equal(

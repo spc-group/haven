@@ -114,7 +114,7 @@ class FireflyMainWindow(PyDMMainWindow):
         self.ui.environment_label.setText(status["worker_environment_state"])
         new_length = status["items_in_queue"]
         self.ui.queue_length_label.setText(f"({new_length})")
-        self.ui.re_label.setText(status["manager_state"])
+        self.ui.re_label.setText(status["re_state"])
         # Notify the display of the new status
         display = self.display_widget()
         display.update_queue_status(status)
