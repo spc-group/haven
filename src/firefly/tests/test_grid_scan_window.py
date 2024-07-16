@@ -48,7 +48,7 @@ async def test_time_calculator(display, sim_registry):
     # set up default timing for the detector
     detectors = display.ui.detectors_list.selected_detectors()
     detectors = {name: sim_registry[name] for name in detectors}
-    detectors["I0"].default_time_signal.set(1).wait(2)
+    detectors["I0"].default_time_signal.set(0.82).wait(2)
     detectors["vortex_me4"].default_time_signal.set(0.5).wait(2)
 
     # Create empty QItemSelection objects
@@ -61,14 +61,14 @@ async def test_time_calculator(display, sim_registry):
     )
 
     # Check whether time is calculated correctly for a single scan
-    assert int(display.ui.label_hour_scan.text()) == 0
-    assert int(display.ui.label_min_scan.text()) == 0
-    assert int(display.ui.label_sec_scan.text()) == 20
+    assert display.ui.label_hour_scan.text() == "0"
+    assert display.ui.label_min_scan.text() == "0"
+    assert display.ui.label_sec_scan.text() == "16.4"
 
     # Check whether time is calculated correctly including the repeated scan
-    assert int(display.ui.label_hour_total.text()) == 0
-    assert int(display.ui.label_min_total.text()) == 2
-    assert int(display.ui.label_sec_total.text()) == 0
+    assert display.ui.label_hour_total.text() == "0"
+    assert display.ui.label_min_total.text() == "1"
+    assert display.ui.label_sec_total.text() == "38.4"
 
 
 @pytest.mark.asyncio

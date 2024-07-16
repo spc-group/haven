@@ -17,11 +17,11 @@ def time_converter(total_seconds):
     """
     if np.isnan(total_seconds):
         return float("nan"), float("nan"), float("nan")
-    # Use np.round instead round to prevent errors in
-    # round(float("nan"))
-    hours = np.round(total_seconds / 3600).astype(int)
-    minutes = np.round((total_seconds % 3600) / 60).astype(int)
+    # Use np.floor to round to the smaller integer
+    hours = np.floor(total_seconds / 3600).astype(int)
+    minutes = np.floor((total_seconds % 3600) / 60).astype(int)
     seconds = np.round(total_seconds % 60, decimals=1)
+
     # Convert float values to integers
     return hours, minutes, seconds
 
