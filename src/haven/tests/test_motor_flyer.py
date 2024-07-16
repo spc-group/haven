@@ -131,8 +131,8 @@ def test_collect(motor):
     ]
     payload = list(motor.collect())
     # Confirm data have the right structure
-    for datum, value, timestamp in zip(
-        payload, motor.pixel_positions, expected_timestamps
+    for datum, (timestamp, value) in zip(
+        payload, motor._fly_data
     ):
         assert datum["data"] == {
             "m1": value,

@@ -135,16 +135,13 @@ class MotorFlyer(FlyerInterface, Device):
             Must have the keys {'time', 'timestamps', 'data'}.
 
         """
-        times, positions = np.asarray(self._fly_data).transpose()
-        model = CubicSpline(positions, times, bc_type="clamped")
         # Create the data objects
-        for position in self.pixel_positions:
-            timestamp = float(model(position))
+        for time, position in self._fly_data:
             yield {
-                "time": timestamp,
+                "time": time,
                 "timestamps": {
-                    self.user_readback.name: timestamp,
-                    self.user_setpoint.name: timestamp,
+                    self.user_readback.name: time,
+                    self.user_setpoint.name: time,
                 },
                 "data": {
                     self.user_readback.name: position,
