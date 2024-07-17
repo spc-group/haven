@@ -13,21 +13,24 @@ from ophyd.status import StatusBase
 __all__ = ["fly_scan", "grid_fly_scan"]
 
 
-def fly_line_scan(
-    detectors: list, flyer, start, stop, num, extra_signals=(), combine_streams=True
-):
+def fly_line_scan(detectors: list, *args, num, extra_signals=(), combine_streams=True):
     """A plan stub for fly-scanning a single trajectory.
 
     Parameters
     ==========
     detectors
       List of 'readable' objects that support the flyer interface
-    flyer
-      The thing going to get moved.
-    start
-      The center of the first pixel in *flyer*.
-    stop
-      The center of the last measurement in *flyer*.
+    *args
+      For one dimension, motor, start, stop. In general:
+
+      .. code-block:: python
+
+         motor1, start1, stop1,
+         motor2, start2, stop2,
+         ...,
+         motorN, startN, stopN
+
+      Motors can be any ‘flyable’ object.
     num
       Number of measurements to take.
     combine_streams
@@ -40,11 +43,24 @@ def fly_line_scan(
     """
     # Calculate parameters for the fly-scan
     # step_size = abs(start - stop) / (num - 1)
-    yield from bps.mv(flyer.flyer_start_position, start)
-    yield from bps.mv(flyer.flyer_end_position, stop)
-    yield from bps.mv(flyer.flyer_num_points, num)
+    motors = args[0::3]
+    starts = args[1::3]
+    stops = args[2::3]
+    mv_args = []
+    for motor, start, stop in zip(motors, starts, stops):
+        mv_args.extend(
+            [
+                motor.flyer_start_position,
+                start,
+                motor.flyer_end_position,
+                stop,
+                motor.flyer_num_points,
+                num,
+            ]
+        )
+    yield from bps.mv(*mv_args)
     # Perform the fly scan
-    flyers = [flyer, *detectors]
+    flyers = [*motors, *detectors]
     for flyer_ in flyers:
         yield from bps.kickoff(flyer_, wait=True)
     for flyer_ in flyers:
@@ -53,21 +69,21 @@ def fly_line_scan(
     if combine_streams:
         # Collect data together as a single "primary" data stream
         collector = FlyerCollector(
-            flyers=flyers, name="flyer_collector", extra_signals=extra_signals
+            positioners=motors,
+            detectors=detectors,
+            name="flyer_collector",
+            extra_signals=extra_signals,
         )
         yield from bps.collect(collector)
-    else:
-        # Collect data into separate data streams
-        for flyer_ in flyers:
-            yield from bps.collect(flyer_)
+    # Collect data into separate data streams
+    for flyer_ in flyers:
+        yield from bps.collect(flyer_)
 
 
 # @baseline_decorator()
 def fly_scan(
     detectors: Sequence[FlyerInterface],
-    flyer: FlyerInterface,
-    start: float,
-    stop: float,
+    *args,
     num: int,
     md: Mapping = {},
 ):
@@ -77,12 +93,17 @@ def fly_scan(
     ----------
     detectors
       List of 'readable' objects that support the flyer interface
-    flyer
-      The thing going to get moved.
-    start
-      The center of the first pixel in *flyer*.
-    stop
-      The center of the last measurement in *flyer*.
+    *args
+      For one dimension, motor, start, stop. In general:
+
+      .. code-block:: python
+
+         motor1, start1, stop1,
+         motor2, start2, stop2,
+         ...,
+         motorN, startN, stopN
+
+      Motors can be any ‘flyable’ object.
     num
       Number of measurements to take.
     md
@@ -95,23 +116,27 @@ def fly_scan(
 
     """
     # Stage the devices
-    devices = [flyer, *detectors]
+    motors = args[0::3]
+    starts = args[1::3]
+    stops = args[2::3]
+    devices = [*motors, *detectors]
+    # Prepare metadata representation of the motor arguments
+    md_args = zip([repr(m) for m in motors], starts, stops)
+    md_args = tuple(obj for m, start, stop in md_args for obj in [m, start, stop])
     # Prepare metadata
     md_ = {
         "plan_name": "fly_scan",
-        "motors": [flyer.name],
+        "motors": [motor.name for motor in motors],
         "detectors": [det.name for det in detectors],
         "plan_args": {
             "detectors": list(map(repr, detectors)),
-            "flyer": repr(flyer),
-            "start": start,
-            "stop": stop,
+            "*args": md_args,
             "num": num,
         },
     }
     md_.update(md)
     # Execute the plan
-    line_scan = fly_line_scan(detectors, flyer, start, stop, num, combine_streams=False)
+    line_scan = fly_line_scan(detectors, *args, num=num, combine_streams=False)
     line_scan = bpp.run_wrapper(line_scan, md=md_)
     line_scan = bpp.stage_wrapper(line_scan, devices)
     yield from line_scan
@@ -266,9 +291,9 @@ class Snaker:
         # Launch the fly scan
         yield from fly_line_scan(
             detectors,
-            flyer=self.flyer,
-            start=start,
-            stop=stop,
+            self.flyer,
+            start,
+            stop,
             num=self.num,
             extra_signals=step.keys(),
         )
@@ -276,12 +301,21 @@ class Snaker:
 
 class FlyerCollector(FlyerInterface, Device):
     stream_name: str
-    flyers: list
+    detectors: Sequence
+    positioners: Sequence
 
     def __init__(
-        self, flyers, stream_name: str = "primary", extra_signals=(), *args, **kwargs
+        self,
+        detectors,
+        positioners,
+        stream_name: str = "primary",
+        extra_signals=(),
+        *args,
+        **kwargs,
     ):
-        self.flyers = flyers
+        # self.flyers = flyers
+        self.detectors = detectors
+        self.positioners = positioners
         self.stream_name = stream_name
         self.extra_signals = extra_signals
         super().__init__(*args, **kwargs)
@@ -293,7 +327,7 @@ class FlyerCollector(FlyerInterface, Device):
         return StatusBase(success=True)
 
     def collect(self):
-        collections = [iter(flyer.collect()) for flyer in self.flyers]
+        collections = [iter(flyer.collect()) for flyer in self.detectors]
         while True:
             event = {
                 "data": {},
@@ -311,6 +345,11 @@ class FlyerCollector(FlyerInterface, Device):
             for ts in event["timestamps"].values():
                 timestamps.extend(np.asarray(ts).flatten())
             event["time"] = np.median(timestamps)
+            # Add interpolated motor positions
+            for motor in self.positioners:
+                datum = motor.predict(event["time"])
+                event["data"].update(datum["data"])
+                event["timestamps"].update(datum["timestamps"])
             # Add extra non-flying signals (not inc. in event time)
             for signal in self.extra_signals:
                 for signal_name, reading in signal.read().items():
@@ -320,7 +359,7 @@ class FlyerCollector(FlyerInterface, Device):
 
     def describe_collect(self):
         desc = OrderedDict()
-        for flyer in self.flyers:
+        for flyer in [*self.positioners, *self.detectors]:
             for stream, this_desc in flyer.describe_collect().items():
                 desc.update(this_desc)
         # Add extra signals, e.g. slow motor during a grid fly scan
