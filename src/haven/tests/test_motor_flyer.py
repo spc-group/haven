@@ -100,8 +100,6 @@ def test_complete(motor):
 
 
 def test_collect(motor):
-    # Set up needed parameters
-    motor.pixel_positions = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     # Set up some fake positions from camonitors
     motor._fly_data = [
         # timestamp, position
@@ -117,6 +115,36 @@ def test_collect(motor):
         (10.125, 9.5),
         (11.125, 10.5),
     ]
+    payload = list(motor.collect())
+    # Confirm data have the right structure
+    for datum, (timestamp, value) in zip(payload, motor._fly_data):
+        assert datum["data"] == {
+            "m1": value,
+            "m1_user_setpoint": value,
+        }
+        assert datum["timestamps"]["m1"] == pytest.approx(timestamp, abs=0.3)
+        assert datum["time"] == pytest.approx(timestamp, abs=0.3)
+
+
+def test_predict(motor):
+    # Set up some fake positions from camonitors
+    motor._fly_data = [
+        # timestamp, position
+        (1.125, 0.5),
+        (2.125, 1.5),
+        (3.125, 2.5),
+        (4.125, 3.5),
+        (5.125, 4.5),
+        (6.125, 5.5),
+        (7.125, 6.5),
+        (8.125, 7.5),
+        (9.125, 8.5),
+        (10.125, 9.5),
+        (11.125, 10.5),
+    ]
+    # Prepare expected timestamp and position data
+    expected_positions = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    motor.pixel_positions = np.asarray(expected_positions)
     expected_timestamps = [
         1.625,
         2.625,
@@ -129,17 +157,15 @@ def test_collect(motor):
         9.625,
         10.625,
     ]
-    payload = list(motor.collect())
+    ts = [d[0] for d in motor._fly_data]
+    vs = [d[1] for d in motor._fly_data]
     # Confirm data have the right structure
-    for datum, (timestamp, value) in zip(
-        payload, motor._fly_data
-    ):
-        assert datum["data"] == {
-            "m1": value,
-            "m1_user_setpoint": value,
-        }
-        assert datum["timestamps"]["m1"] == pytest.approx(timestamp, abs=0.3)
-        assert datum["time"] == pytest.approx(timestamp, abs=0.3)
+    for timestamp, expected_value in zip(expected_timestamps, expected_positions):
+        datum = motor.predict(timestamp)
+        assert datum["data"]["m1"] == pytest.approx(expected_value, abs=0.2)
+        assert datum["data"]["m1_user_setpoint"] == expected_value
+        assert datum["timestamps"]["m1"] == timestamp
+        assert datum["time"] == timestamp
 
 
 def test_describe_collect(aerotech_flyer):

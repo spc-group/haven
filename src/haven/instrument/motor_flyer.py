@@ -29,6 +29,7 @@ class MotorFlyer(FlyerInterface, Device):
         super().__init__(*args, **kwargs)
         self._kickoff_thread = None
         self._complete_thread = None
+        self._fly_model = None
         self.cl = get_cl()
         # Set up auto-calculations for the flyer
         self.motor_egu.subscribe(self._update_fly_params)
@@ -95,6 +96,7 @@ class MotorFlyer(FlyerInterface, Device):
             try:
                 # Record real motor positions for later evaluation
                 self._fly_data = []
+                self._fly_model = None
                 cid = self.user_readback.subscribe(self.record_datum, run=False)
                 self.move(self.flyer_taxi_end.get(), wait=True)
                 self.user_readback.unsubscribe(cid)
@@ -148,6 +150,45 @@ class MotorFlyer(FlyerInterface, Device):
                     self.user_setpoint.name: position,
                 },
             }
+
+    def predict(self, timestamp: float) -> Dict:
+        """Predict where the motor was at *timestamp* during most recent fly
+        scan.
+
+        Parameters
+        ==========
+        timestamp
+          The unix timestamp to use for interpolating the measured data.
+
+        Returns
+        =======
+        datum
+          A data event for this timestamp similar to those provided by
+          the ``collect()`` method.
+
+        """
+        # Prepare an interpolation model for fly scan data
+        if self._fly_model is None:
+            times, positions = np.asarray(self._fly_data).transpose()
+            self._fly_model = CubicSpline(times, positions, bc_type="clamped")
+        model = self._fly_model
+        # Interpolate the data value based on timestamp
+        position = float(model(timestamp))
+        setpoint = self.pixel_positions[
+            np.argmin(np.abs(self.pixel_positions - position))
+        ]
+        datum = {
+            "time": timestamp,
+            "timestamps": {
+                self.user_readback.name: timestamp,
+                self.user_setpoint.name: timestamp,
+            },
+            "data": {
+                self.user_readback.name: position,
+                self.user_setpoint.name: setpoint,
+            },
+        }
+        return datum
 
     def describe_collect(self):
         """Describe details for the collect() method"""
