@@ -98,6 +98,7 @@ class MotorFlyer(FlyerInterface, Device):
                 self._fly_data = []
                 self._fly_model = None
                 cid = self.user_readback.subscribe(self.record_datum, run=False)
+                print(f"Moving to {self.flyer_taxi_end.get()}")
                 self.move(self.flyer_taxi_end.get(), wait=True)
                 self.user_readback.unsubscribe(cid)
             except Exception as exc:
@@ -258,12 +259,7 @@ class MotorFlyer(FlyerInterface, Device):
         # Tranforms from pulse positions to pixel centers
         pixel_positions = np.linspace(start_position, end_position, num=num_points)
         # Set all the calculated variables
-        [
-            status.wait()
-            for status in [
-                self.flyer_slew_speed.set(slew_speed),
-                self.flyer_taxi_start.set(taxi_start),
-                self.flyer_taxi_end.set(taxi_end),
-            ]
-        ]
+        self.flyer_slew_speed.put(slew_speed)
+        self.flyer_taxi_start.put(taxi_start)
+        self.flyer_taxi_end.put(taxi_end)
         self.pixel_positions = pixel_positions

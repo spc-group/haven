@@ -41,7 +41,7 @@ from ophyd.areadetector.plugins import StatsPlugin_V31 as OphydStatsPlugin_V31
 from ophyd.areadetector.plugins import StatsPlugin_V34 as OphydStatsPlugin_V34
 from ophyd.areadetector.plugins import TIFFPlugin_V31, TIFFPlugin_V34
 from ophyd.flyers import FlyerInterface
-from ophyd.status import StatusBase, SubscriptionStatus
+from ophyd.status import StatusBase, SubscriptionStatus, Status
 
 from .. import exceptions
 from .._iconfig import load_config
@@ -121,15 +121,14 @@ class FlyerMixin(FlyerInterface, Device):
         self._fly_data = {}
         for walk in self.walk_fly_signals():
             sig = walk.item
+            # Run subs the first time to make sure all signals are present
             sig.subscribe(self.save_fly_datum, run=True)
-
         # Set up the status for when the detector is ready to fly
         def check_acquiring(*, old_value, value, **kwargs):
             is_acquiring = value == DetectorState.ACQUIRE
             if is_acquiring:
                 self.start_fly_timestamp = time.time()
             return is_acquiring
-
         status = SubscriptionStatus(self.cam.detector_state, check_acquiring)
         # Set the right parameters
         self._original_vals.setdefault(self.cam.image_mode, self.cam.image_mode.get())
@@ -153,7 +152,8 @@ class FlyerMixin(FlyerInterface, Device):
         for walk in self.walk_fly_signals():
             sig = walk.item
             sig.clear_sub(self.save_fly_datum)
-        return self.cam.acquire.set(AcquireState.DONE)
+        self.cam.acquire.set(AcquireState.DONE)
+        return Status(done=True, success=True, settle_time=0.5)
 
     def collect(self) -> dict:
         """Generate the data events that were collected during the fly scan."""
@@ -219,6 +219,9 @@ class FlyerMixin(FlyerInterface, Device):
         # change so no new camonitor reply was received
         data = data.ffill(axis=0)
         timestamps = timestamps.ffill(axis=1)
+        # Drop the first frame since it was just the result of all the subs
+        data.drop(data.index[0], inplace=True)
+        timestamps.drop(timestamps.index[0], inplace=True)
         return data, timestamps
 
     def walk_fly_signals(self, *, include_lazy=False):
