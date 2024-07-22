@@ -1,6 +1,6 @@
 import logging
 import time
-from collections import OrderedDict, namedtuple
+from collections import OrderedDict, namedtuple, Mapping
 from enum import IntEnum
 from typing import Dict
 import warnings
@@ -311,7 +311,6 @@ class DynamicFileStore(Device):
     iconfig values.
 
     """
-
     def __init__(
         self, *args, write_path_template="/{root_path}/%Y/%m/{name}/", **kwargs
     ):
@@ -325,6 +324,32 @@ class DynamicFileStore(Device):
             )
         except KeyError:
             warnings.warn(f"Could not format write_path_template {write_path_template}")
+
+    def _add_dtype_str(self, desc: Mapping) -> Mapping:
+        """Add the specific image data type into the metadata.
+
+        This method modifies the dictionary in place.
+
+        Parameters
+        ==========
+        desc:
+          The input description, most likely coming from self.describe().
+
+        Returns
+        =======
+        desc
+          The same dictionary, with an added ``dtype_str`` key.
+
+        """
+        key = f"{self.parent.name}_image"
+        if key in desc:
+            dtype = self.data_type.get(as_string=True)
+            dtype_str = np.dtype(dtype.lower()).str
+            desc[key].setdefault("dtype_str", dtype_str)
+        return desc
+
+    def describe(self):
+        return self._add_dtype_str(super().describe())
 
 
 class HDF5FilePlugin(DynamicFileStore, FileStoreHDF5IterativeWrite, HDF5Plugin_V34):

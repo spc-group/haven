@@ -1,4 +1,5 @@
 import time
+from collections import OrderedDict
 
 import numpy as np
 import pytest
@@ -9,12 +10,14 @@ from ophyd.sim import instantiate_fake_device
 from haven.instrument.area_detector import (
     DetectorBase,
     DetectorState,
+    HDF5FilePlugin,
     load_area_detectors,
 )
 
 
 class Detector(DetectorBase):
     cam = ADCpt(AreaDetectorCam, "cam1:")
+    hdf = ADCpt(HDF5FilePlugin, "HDF1:", write_path_template="/tmp/")
 
 
 @pytest.fixture()
@@ -78,6 +81,22 @@ def test_load_area_detectors(sim_registry):
     load_area_detectors()
     # Check that some area detectors were loaded
     dets = sim_registry.findall(label="area_detectors")
+
+
+def test_hdf_dtype(detector):
+    """Check that the right ``dtype_str`` is added to the image data to
+    make tiled happy.
+    """
+    # Set up fake image metadata
+    detector.hdf.data_type.sim_put("UInt8")
+    original_desc = OrderedDict([('FakeDetector_image',
+                                  {'shape': (1, 1024, 1280),
+                                   'source': 'PV:25idcARV4:',
+                                   'dtype': 'array',
+                                   'external': 'FILESTORE:'})])
+    # Update and check the description
+    new_desc = detector.hdf._add_dtype_str(original_desc)
+    assert new_desc["FakeDetector_image"]['dtype_str'] == "|u1"
 
 
 # -----------------------------------------------------------------------------
