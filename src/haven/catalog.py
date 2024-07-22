@@ -175,7 +175,7 @@ def tiled_client(
     config = load_config()
     # Create a cache for saving local copies
     if cache_filepath is None:
-        cache_filepath = config["database"]["tiled"].get("cache_filepath", "")
+        cache_filepath = config["database"].get("tiled", {}).get("cache_filepath", "")
         cache_filepath = cache_filepath or None
     cache = ThreadSafeCache(filepath=cache_filepath)
     # Create the client

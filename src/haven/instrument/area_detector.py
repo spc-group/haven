@@ -321,7 +321,7 @@ class DynamicFileStore(Device):
         try:
             self.write_path_template = self.write_path_template.format(
                 name=self.parent.name,
-                root_path=config["area_detector"].get("root_path", "/tmp"),
+                root_path=config.get("area_detector", {}).get("root_path", "tmp"),
             )
         except KeyError:
             warnings.warn(f"Could not format write_path_template {write_path_template}")

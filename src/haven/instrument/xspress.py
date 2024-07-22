@@ -10,7 +10,7 @@ import pandas as pd
 from apstools.devices import CamMixin_V34, SingleTrigger_V34
 from ophyd import ADComponent as ADCpt
 from ophyd import Component as Cpt
-from ophyd import DetectorBase, Device
+from ophyd import Device
 from ophyd import DynamicDeviceComponent as DDC
 from ophyd import EpicsSignal, EpicsSignalRO, Kind
 from ophyd.areadetector.base import EpicsSignalWithRBV as SignalWithRBV
@@ -22,6 +22,7 @@ from pcdsdevices.type_hints import OphydDataType, SignalToValue
 from .._iconfig import load_config
 from .device import RegexComponent as RECpt
 from .device import make_device
+from .area_detector import HDF5FilePlugin, DetectorBase
 from .fluorescence_detector import (
     MCASumMixin,
     ROIMixin,
@@ -243,6 +244,7 @@ class Xspress3Detector(SingleTrigger_V34, DetectorBase, XRFMixin):
         }
 
     cam = ADCpt(CamMixin_V34, "det1:")
+    hdf = ADCpt(HDF5FilePlugin, "HDF1:", kind=Kind.normal)
     # Core control interface signals
     detector_state = ADCpt(EpicsSignalRO, "det1:DetectorState_RBV", kind="omitted")
     acquire = ADCpt(SignalWithRBV, "det1:Acquire", kind="omitted")
