@@ -173,9 +173,9 @@ class FlyerMixin(FlyerInterface, Device):
     def describe_collect(self) -> Dict[str, Dict]:
         """Describe details for the flyer collect() method"""
         desc = OrderedDict()
-        for walk in self.walk_fly_signals():
-            desc.update(walk.item.describe())
-        return {self.name: desc}
+        # for walk in self.walk_fly_signals():
+        #     desc.update(walk.item.describe())
+        return {self.name: self.describe()}
 
     def fly_data(self):
         """Compile the fly-scan data into a pandas dataframe."""
