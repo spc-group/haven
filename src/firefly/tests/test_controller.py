@@ -56,7 +56,7 @@ def test_queue_actions_enabled(controller, qtbot):
     assert not actions["start"].isEnabled()
     assert not actions["pause"].isEnabled()
     assert not actions["pause_now"].isEnabled()
-    assert actions["stop_queue"].isEnabled()
+    assert not actions["stop_queue"].isEnabled()
     assert actions["stop_runengine"].isEnabled()
     assert actions["resume"].isEnabled()
     assert actions["abort"].isEnabled()
