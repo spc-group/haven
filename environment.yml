@@ -60,7 +60,7 @@ dependencies:
     - apstools >= 1.6.20
     - pcdsdevices  # For extra signal types
     - pydm >=1.18.0
-    - typhos
+    - typhos >= 3.1.0  # need the find_signal method on the SignalConnection()
     - p4p
     - tiled[all] >= 0.1.0b6  # Make sure we have pydantic2 support
     - xarray !=2022.6.0  # incompatible with numpy=1.20

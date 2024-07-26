@@ -12,27 +12,22 @@ from haven import registry
 
 
 class HavenConnection(SignalConnection):
-    def __init__(self, channel, address, protocol=None, parent=None):
-        # Create base connection
-        super(SignalConnection, self).__init__(
-            channel, address, protocol=protocol, parent=parent
-        )
-        self._connection_open = True
-        self.signal_type = None
-        self.is_float = False
-        # Collect our signal
-        self.signal = registry.find(address)
-        # Subscribe to updates from Ophyd
-        self.value_cid = self.signal.subscribe(
-            self.send_new_value,
-            event_type=self.signal.SUB_VALUE,
-        )
-        self.meta_cid = self.signal.subscribe(
-            self.send_new_meta,
-            event_type=self.signal.SUB_META,
-        )
-        # Add listener
-        self.add_listener(channel)
+    def find_signal(self, address: str) -> Signal:
+        """Find a signal in the registry given its address.
+        This method is intended to be overridden by subclasses that
+        may use a different mechanism to keep track of signals.
+        Parameters
+        ----------
+        address
+          The connection address for the signal. E.g. in
+          "sig://sim_motor.user_readback" this would be the
+          "sim_motor.user_readback" portion.
+        Returns
+        -------
+        Signal
+          The Ophyd signal corresponding to the address.
+        """
+        return registry[address]
 
 
 class HavenPlugin(SignalPlugin):
