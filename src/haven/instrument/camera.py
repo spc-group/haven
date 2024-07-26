@@ -4,12 +4,10 @@ from typing import Sequence
 from ophyd import ADComponent as ADCpt
 from ophyd import CamBase, EpicsSignal, Kind
 from ophyd.areadetector.plugins import (
-    HDF5Plugin_V34,
     ImagePlugin_V34,
     OverlayPlugin_V34,
     PvaPlugin_V34,
     ROIPlugin_V34,
-    TIFFPlugin_V34,
 )
 
 from .. import exceptions
@@ -17,9 +15,11 @@ from .._iconfig import load_config
 from .area_detector import (  # noqa: F401
     AsyncCamMixin,
     DetectorBase,
+    HDF5FilePlugin,
     SimDetector,
     SingleImageModeTrigger,
     StatsPlugin_V34,
+    TIFFFilePlugin,
 )
 from .device import make_device
 
@@ -39,7 +39,15 @@ class AravisDetector(SingleImageModeTrigger, DetectorBase):
     A gige-vision camera described by EPICS.
     """
 
-    _default_configuration_attrs = ("cam", "hdf", "tiff")
+    _default_configuration_attrs = (
+        "cam",
+        "hdf",
+        "stats1",
+        "stats2",
+        "stats3",
+        "stats4",
+    )
+    _default_read_attrs = ("cam", "hdf", "stats1", "stats2", "stats3", "stats4")
 
     cam = ADCpt(AravisCam, "cam1:")
     image = ADCpt(ImagePlugin_V34, "image1:")
@@ -54,8 +62,8 @@ class AravisDetector(SingleImageModeTrigger, DetectorBase):
     stats3 = ADCpt(StatsPlugin_V34, "Stats3:", kind=Kind.normal)
     stats4 = ADCpt(StatsPlugin_V34, "Stats4:", kind=Kind.normal)
     stats5 = ADCpt(StatsPlugin_V34, "Stats5:", kind=Kind.normal)
-    hdf = ADCpt(HDF5Plugin_V34, "HDF1:", kind=Kind.normal)
-    tiff = ADCpt(TIFFPlugin_V34, "TIFF1:", kind=Kind.normal)
+    hdf = ADCpt(HDF5FilePlugin, "HDF1:", kind=Kind.normal)
+    # tiff = ADCpt(TIFFFilePlugin, "TIFF1:", kind=Kind.normal)
 
 
 def load_cameras(config=None) -> Sequence[DetectorBase]:

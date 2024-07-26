@@ -84,8 +84,7 @@ dependencies:
 
   # --- Bluesky framework packages
   - adl2pydm
-  # apstools is installed from github by pip until DG645 and SRS570 settling are released
-  # - apstools >=1.6.16
+  - apstools >=1.6.20
   - area-detector-handlers
   - bluesky-queueserver
   - bluesky-queueserver-api
@@ -135,7 +134,7 @@ dependencies:
     - xraydb >=4.5.0
     - pytest-timeout  # Get rid of this if tests are not hanging
     - git+https://github.com/pcdshub/pcdsdevices
-    - git+https://github.com/BCDA-APS/apstools.git@a165d24b2ae272ba0db3fb73d9feba4416f40631
+    # - git+https://github.com/BCDA-APS/apstools.git@a165d24b2ae272ba0db3fb73d9feba4416f40631
     # - git+https://github.com/BCDA-APS/apstools.git@50a142f1cc761553f14570c6c5f7e799846a0ddf
     # - https://github.com/BCDA-APS/adl2pydm/archive/main.zip
     # --- optional Bluesky framework packages for evaluation

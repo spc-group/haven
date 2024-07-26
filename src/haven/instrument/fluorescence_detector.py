@@ -148,13 +148,16 @@ class ROIMixin(Device):
         }
         for fld in self._dynamic_hint_fields:
             getattr(self, fld).kind = new_kind
-        super().stage()
+        return super().stage()
 
     def unstage(self):
         # Restore the original (pre-staged) name
         if self.name != self._original_name:
             for walk in self.walk_signals():
-                walk.item.name = walk.item.name.replace(self.name, self._original_name)
+                if self._original_name is not None:
+                    walk.item.name = walk.item.name.replace(
+                        self.name, self._original_name
+                    )
             self.name = self._original_name
         # Restore original signal kinds
         for fld, kind in self._original_kinds.items():

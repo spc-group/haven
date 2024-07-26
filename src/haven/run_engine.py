@@ -2,7 +2,6 @@ import logging
 
 import databroker
 from bluesky import RunEngine as BlueskyRunEngine
-from bluesky import suspenders
 from bluesky.callbacks.best_effort import BestEffortCallback
 
 from .exceptions import ComponentNotFound
@@ -38,15 +37,17 @@ def run_engine(connect_databroker=True, use_bec=True) -> BlueskyRunEngine:
         log.warning("APS device not found, suspenders not installed.")
     else:
         # Suspend when shutter permit is disabled
-        RE.install_suspender(
-            suspenders.SuspendWhenChanged(
-                signal=aps.shutter_permit,
-                expected_value="PERMIT",
-                allow_resume=True,
-                sleep=3,
-                tripped_message="Shutter permit revoked.",
-            )
-        )
+        # Re-enable when the APS shutter permit signal is better understood
+        pass
+        # RE.install_suspender(
+        #     suspenders.SuspendWhenChanged(
+        #         signal=aps.shutter_permit,
+        #         expected_value="PERMIT",
+        #         allow_resume=True,
+        #         sleep=3,
+        #         tripped_message="Shutter permit revoked.",
+        #     )
+        # )
     # Install databroker connection
     if connect_databroker:
         RE.subscribe(save_data)

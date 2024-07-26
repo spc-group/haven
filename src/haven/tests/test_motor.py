@@ -1,6 +1,8 @@
 import pytest
+from ophyd.sim import instantiate_fake_device
 
-from haven.instrument import motor
+from haven.instrument.motor import HavenMotor, load_motors
+from haven.instrument.motor_flyer import MotorFlyer
 
 
 @pytest.fixture()
@@ -15,13 +17,20 @@ def mocked_device_names(mocker):
     )
 
 
+@pytest.fixture()
+def motor(sim_registry):
+    m1 = instantiate_fake_device(HavenMotor, name="m1")
+    m1.user_setpoint._use_limits = False
+    return m1
+
+
 def test_load_vme_motors(sim_registry, mocked_device_names):
     # Load the Ophyd motor definitions
-    motor.load_motors()
+    load_motors()
     # Were the motors imported correctly
     motors = list(sim_registry.findall(label="motors"))
     assert len(motors) == 3
-    # assert type(motors[0]) is motor.HavenMotor
+    # assert type(motors[0]) is HavenMotor
     motor_names = [m.name for m in motors]
     assert "SLT_V_Upper" in motor_names
     assert "SLT_V_Lower" in motor_names
@@ -37,11 +46,9 @@ def test_skip_existing_motors(sim_registry, mocked_device_names):
 
     """
     # Create an existing fake motor
-    m1 = motor.HavenMotor(
-        "255idVME:m1", name="kb_mirrors_horiz_upstream", labels={"motors"}
-    )
+    m1 = HavenMotor("255idVME:m1", name="kb_mirrors_horiz_upstream", labels={"motors"})
     # Load the Ophyd motor definitions
-    motor.load_motors()
+    load_motors()
     # Were the motors imported correctly
     motors = list(sim_registry.findall(label="motors"))
     print([m.prefix for m in motors])
@@ -56,12 +63,18 @@ def test_skip_existing_motors(sim_registry, mocked_device_names):
 
 
 def test_motor_signals():
-    m = motor.HavenMotor("motor_ioc", name="test_motor")
+    m = HavenMotor("motor_ioc", name="test_motor")
     assert m.description.pvname == "motor_ioc.DESC"
     assert m.tweak_value.pvname == "motor_ioc.TWV"
     assert m.tweak_forward.pvname == "motor_ioc.TWF"
     assert m.tweak_reverse.pvname == "motor_ioc.TWR"
     assert m.soft_limit_violation.pvname == "motor_ioc.LVIO"
+
+
+def test_motor_flyer(motor):
+    """Check that the haven motor implements the flyer interface."""
+    assert motor is not None
+    assert isinstance(motor, MotorFlyer)
 
 
 # -----------------------------------------------------------------------------

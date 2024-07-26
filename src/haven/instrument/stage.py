@@ -1,10 +1,11 @@
 import logging
 
-from ophyd import Device, EpicsMotor
+from ophyd import Device
 from ophyd import FormattedComponent as FCpt
 
 from .._iconfig import load_config
 from .device import make_device
+from .motor import HavenMotor
 
 __all__ = ["XYStage", "load_stages"]
 
@@ -27,8 +28,8 @@ class XYStage(Device):
       The suffix to the PV for the horizontal motor.
     """
 
-    vert = FCpt(EpicsMotor, "{prefix}{pv_vert}", labels={"motors"})
-    horiz = FCpt(EpicsMotor, "{prefix}{pv_horiz}", labels={"motors"})
+    vert = FCpt(HavenMotor, "{prefix}{pv_vert}", labels={"motors"})
+    horiz = FCpt(HavenMotor, "{prefix}{pv_horiz}", labels={"motors"})
 
     def __init__(
         self,

@@ -5,22 +5,29 @@ from typing import Mapping, Sequence
 
 from apstools.utils.misc import safe_ophyd_name
 from ophyd import Component as Cpt
-from ophyd import EpicsMotor, EpicsSignal, EpicsSignalRO
+from ophyd import EpicsMotor, EpicsSignal, EpicsSignalRO, Kind
 
 from .._iconfig import load_config
 from .device import make_device, resolve_device_names
 from .instrument_registry import InstrumentRegistry
 from .instrument_registry import registry as default_registry
+from .motor_flyer import MotorFlyer
 
 log = logging.getLogger(__name__)
 
 
-class HavenMotor(EpicsMotor):
+class HavenMotor(MotorFlyer, EpicsMotor):
     """The default motor for haven movement.
 
+    This motor also implements the flyer interface and so can be used
+    in a fly scan, though no hardware triggering is supported.
+
     Returns to the previous value when being unstaged.
+
     """
 
+    # Extra motor record components
+    encoder_resolution = Cpt(EpicsSignal, ".ERES", kind=Kind.config)
     description = Cpt(EpicsSignal, ".DESC", kind="omitted")
     tweak_value = Cpt(EpicsSignal, ".TWV", kind="omitted")
     tweak_forward = Cpt(EpicsSignal, ".TWF", kind="omitted", tolerance=2)
@@ -28,15 +35,14 @@ class HavenMotor(EpicsMotor):
     motor_stop = Cpt(EpicsSignal, ".STOP", kind="omitted", tolerance=2)
     soft_limit_violation = Cpt(EpicsSignalRO, ".LVIO", kind="omitted")
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
     def stage(self):
         super().stage()
-        # Save starting position to restore later
-        self._old_value = self.user_readback.value
-
-    def unstage(self):
-        super().unstage()
-        # Restore the previously saved position after the scan ends
-        self.set(self._old_value, wait=True)
+        # Override some additional staged signals
+        self._original_vals.setdefault(self.user_setpoint, self.user_readback.get())
+        self._original_vals.setdefault(self.velocity, self.velocity.get())
 
 
 def load_motors(

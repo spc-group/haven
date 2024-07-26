@@ -296,9 +296,10 @@ def test_stage_hints(vortex):
     # Ensure the hints aren't applied yet
     assert roi0.count.name not in vortex.hints["fields"]
     assert roi1.count.name not in vortex.hints["fields"]
-    # Stage the detector
+    # Stage the detector ROIs
     try:
-        vortex.stage()
+        roi0.stage()
+        roi1.stage()
     except Exception:
         raise
     else:
@@ -306,7 +307,8 @@ def test_stage_hints(vortex):
         assert roi0.count.name in vortex.hints["fields"]
         assert roi1.count.name not in vortex.hints["fields"]
     finally:
-        vortex.unstage()
+        roi0.unstage()
+        roi1.unstage()
     # Name gets reset when unstaged
     assert roi0.count.name not in vortex.hints["fields"]
     assert roi1.count.name not in vortex.hints["fields"]
