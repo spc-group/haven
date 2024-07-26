@@ -1,9 +1,9 @@
 import logging
 import time
+import warnings
 from collections import OrderedDict, namedtuple
 from enum import IntEnum
 from typing import Dict, Mapping
-import warnings
 
 import numpy as np
 import pandas as pd
@@ -41,7 +41,7 @@ from ophyd.areadetector.plugins import StatsPlugin_V31 as OphydStatsPlugin_V31
 from ophyd.areadetector.plugins import StatsPlugin_V34 as OphydStatsPlugin_V34
 from ophyd.areadetector.plugins import TIFFPlugin_V31, TIFFPlugin_V34
 from ophyd.flyers import FlyerInterface
-from ophyd.status import StatusBase, SubscriptionStatus, Status
+from ophyd.status import Status, StatusBase, SubscriptionStatus
 
 from .. import exceptions
 from .._iconfig import load_config
@@ -123,12 +123,14 @@ class FlyerMixin(FlyerInterface, Device):
             sig = walk.item
             # Run subs the first time to make sure all signals are present
             sig.subscribe(self.save_fly_datum, run=True)
+
         # Set up the status for when the detector is ready to fly
         def check_acquiring(*, old_value, value, **kwargs):
             is_acquiring = value == DetectorState.ACQUIRE
             if is_acquiring:
                 self.start_fly_timestamp = time.time()
             return is_acquiring
+
         status = SubscriptionStatus(self.cam.detector_state, check_acquiring)
         # Set the right parameters
         self._original_vals.setdefault(self.cam.image_mode, self.cam.image_mode.get())
@@ -311,6 +313,7 @@ class DynamicFileStore(Device):
     iconfig values.
 
     """
+
     def __init__(
         self, *args, write_path_template="/{root_path}/%Y/%m/{name}/", **kwargs
     ):

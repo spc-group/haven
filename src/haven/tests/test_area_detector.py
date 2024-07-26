@@ -89,14 +89,22 @@ def test_hdf_dtype(detector):
     """
     # Set up fake image metadata
     detector.hdf.data_type.sim_put("UInt8")
-    original_desc = OrderedDict([('FakeDetector_image',
-                                  {'shape': (1, 1024, 1280),
-                                   'source': 'PV:25idcARV4:',
-                                   'dtype': 'array',
-                                   'external': 'FILESTORE:'})])
+    original_desc = OrderedDict(
+        [
+            (
+                "FakeDetector_image",
+                {
+                    "shape": (1, 1024, 1280),
+                    "source": "PV:25idcARV4:",
+                    "dtype": "array",
+                    "external": "FILESTORE:",
+                },
+            )
+        ]
+    )
     # Update and check the description
     new_desc = detector.hdf._add_dtype_str(original_desc)
-    assert new_desc["FakeDetector_image"]['dtype_str'] == "|u1"
+    assert new_desc["FakeDetector_image"]["dtype_str"] == "|u1"
 
 
 # -----------------------------------------------------------------------------

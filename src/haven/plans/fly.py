@@ -85,7 +85,7 @@ def fly_scan(
     detectors: Sequence[FlyerInterface],
     *args,
     num: int,
-    combine_streams = False,
+    combine_streams=False,
     md: Mapping = {},
 ):
     """Do a fly scan with a 'flyer' motor and some 'flyer' detectors.
@@ -140,7 +140,9 @@ def fly_scan(
     }
     md_.update(md)
     # Execute the plan
-    line_scan = fly_line_scan(detectors, *args, num=num, combine_streams=combine_streams)
+    line_scan = fly_line_scan(
+        detectors, *args, num=num, combine_streams=combine_streams
+    )
     line_scan = bpp.run_wrapper(line_scan, md=md_)
     line_scan = bpp.stage_wrapper(line_scan, devices)
     yield from line_scan

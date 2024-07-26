@@ -1,6 +1,6 @@
 import logging
 
-from ophyd import Device, EpicsMotor
+from ophyd import Device
 from ophyd import FormattedComponent as FCpt
 
 from .._iconfig import load_config
