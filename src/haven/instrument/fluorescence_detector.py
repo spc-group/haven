@@ -148,7 +148,7 @@ class ROIMixin(Device):
         }
         for fld in self._dynamic_hint_fields:
             getattr(self, fld).kind = new_kind
-        super().stage()
+        return super().stage()
 
     def unstage(self):
         # Restore the original (pre-staged) name

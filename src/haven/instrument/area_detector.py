@@ -1,8 +1,8 @@
 import logging
 import time
-from collections import OrderedDict, namedtuple, Mapping
+from collections import OrderedDict, namedtuple
 from enum import IntEnum
-from typing import Dict
+from typing import Dict, Mapping
 import warnings
 
 import numpy as np
