@@ -45,7 +45,7 @@ class QueueClient(QObject):
     devices_changed = Signal(dict)
 
     def start(self):
-        self.timer.start(1000)
+        self.timer.start(500)
 
     def __init__(self, *args, api, **kwargs):
         self.api = api
@@ -91,7 +91,7 @@ class QueueClient(QObject):
                 self.last_update = now
 
     @asyncSlot(bool)
-    async def request_pause(self, defer: bool = True):
+    async def request_pause(self, *args, defer: bool = True, **kwargs):
         """Ask the queueserver run engine to pause.
 
         Parameters

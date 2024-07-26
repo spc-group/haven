@@ -41,17 +41,11 @@ class MoveMotorDisplay(regions_display.RegionsDisplay):
             values for motor_i in zip(motor_lst, position_lst) for values in motor_i
         ]
 
-        # get meta data info
-        md = {
-            "sample": self.ui.lineEdit_sample.text(),
-            "purpose": self.ui.lineEdit_purpose.text(),
-        }
-
-        return motor_args, md
+        return motor_args
 
     def queue_plan(self, *args, **kwargs):
         """Execute this plan on the queueserver."""
-        motor_args, md = self.get_scan_parameters()
+        motor_args = self.get_scan_parameters()
 
         if self.ui.relative_scan_checkbox.isChecked():
             scan_type = "mvr"
@@ -62,7 +56,6 @@ class MoveMotorDisplay(regions_display.RegionsDisplay):
         item = BPlan(
             scan_type,
             *motor_args,
-            md=md,
         )
 
         # Submit the item to the queueserver
