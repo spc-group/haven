@@ -33,9 +33,10 @@ haven.load_instrument()
 print(f"Finished initalization in {time.monotonic() - t0:.2f} seconds.")
 
 # Make sure asyncio and the bluesky run engine share an event loop
-loop = asyncio.new_event_loop()
-asyncio.set_event_loop(loop)
-RE = haven.run_engine(loop=loop)
+# loop = asyncio.new_event_loop()
+# asyncio.set_event_loop(loop)
+# RE = haven.run_engine(loop=loop)
+RE = haven.run_engine()
 
 # Save references to some commonly used things in the global namespace
 registry = haven.registry

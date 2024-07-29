@@ -448,8 +448,8 @@ class Lambda250K(SingleTrigger, DetectorBase):
     cam = ADCpt(LambdaCam, "cam1:")
     image = ADCpt(ImagePlugin_V31, "image1:")
     pva = ADCpt(PvaPlugin_V31, "Pva1:")
-    tiff = ADCpt(TIFFPlugin, "TIFF1:", kind=Kind.normal)
-    hdf1 = ADCpt(HDF5Plugin, "HDF1:", kind=Kind.normal)
+    # tiff = ADCpt(TIFFPlugin, "TIFF1:", kind=Kind.normal)
+    hdf1 = ADCpt(HDF5FilePlugin, "HDF1:", kind=Kind.normal)
     roi1 = ADCpt(ROIPlugin_V31, "ROI1:", kind=Kind.config)
     roi2 = ADCpt(ROIPlugin_V31, "ROI2:", kind=Kind.config)
     roi3 = ADCpt(ROIPlugin_V31, "ROI3:", kind=Kind.config)
@@ -459,6 +459,7 @@ class Lambda250K(SingleTrigger, DetectorBase):
     stats3 = ADCpt(StatsPlugin_V31, "Stats3:", kind=Kind.normal)
     stats4 = ADCpt(StatsPlugin_V31, "Stats4:", kind=Kind.normal)
     stats5 = ADCpt(StatsPlugin_V31, "Stats5:", kind=Kind.normal)
+    overlays = ADCpt(OverlayPlugin, "Over1:", kind=Kind.config)
 
     _default_read_attrs = [
         "stats1",
@@ -467,7 +468,6 @@ class Lambda250K(SingleTrigger, DetectorBase):
         "stats4",
         "stats5",
         "hdf1",
-        "tiff",
     ]
 
 

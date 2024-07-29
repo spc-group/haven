@@ -290,10 +290,12 @@ class Xspress3Detector(SingleTrigger_V34, DetectorBase, XRFMixin):
         "dead_time_average",
         "dead_time_min",
         "dead_time_max",
+        "hdf",
     ]
     _default_configuration_attrs = [
         "cam",
         "mcas",
+        "hdf",
     ]
 
     class erase_states(IntEnum):
