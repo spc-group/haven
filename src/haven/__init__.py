@@ -1,6 +1,8 @@
-__all__ = ["energy_scan"]
+"""The Haven beamline control system.
 
-__version__ = "0.1.0"
+See https://haven-spc.readthedocs.io for full documentation."""
+
+__all__ = ["energy_scan", "xafs_scan"]
 
 # Force ophyd to use caproto as its backend
 # import ophyd
