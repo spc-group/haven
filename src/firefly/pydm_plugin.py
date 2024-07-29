@@ -12,7 +12,7 @@ from haven import registry
 
 
 class HavenConnection(SignalConnection):
-    def find_signal(self, address: str) -> Signal:
+    def find_signal(self, address: str):
         """Find a signal in the registry given its address.
         This method is intended to be overridden by subclasses that
         may use a different mechanism to keep track of signals.
