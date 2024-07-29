@@ -1,6 +1,7 @@
 import logging
 
 import databroker
+import IPython
 from bluesky import RunEngine as BlueskyRunEngine
 from bluesky.callbacks.best_effort import BestEffortCallback
 from bluesky.utils import ProgressBarManager, register_transform
@@ -51,7 +52,8 @@ def run_engine(connect_databroker=True, use_bec=True, **kwargs) -> BlueskyRunEng
         # )
     # Add a shortcut for using the run engine more efficiently
     RE.waiting_hook = ProgressBarManager()
-    register_transform("RE", prefix="<")
+    if (ip := IPython.get_ipython()) is not None:
+        register_transform("RE", prefix="<", ip=ip)
     # Install databroker connection
     if connect_databroker:
         RE.subscribe(save_data)
