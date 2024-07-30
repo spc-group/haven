@@ -16,6 +16,7 @@ from bluesky.preprocessors import finalize_wrapper, msg_mutator
 # from bluesky.suspenders import SuspendBoolLow
 from bluesky.utils import Msg, make_decorator
 
+from . import __version__ as haven_version
 from ._iconfig import load_config
 from .exceptions import ComponentNotFound
 from .instrument.instrument_registry import registry
@@ -50,7 +51,7 @@ VERSIONS = dict(
     databroker=get_version("databroker"),
     epics_ca=epics.__version__,
     epics=epics.__version__,
-    haven=get_version("haven-spc"),
+    haven=haven_version,
     h5py=get_version("h5py"),
     matplotlib=get_version("matplotlib"),
     numpy=get_version("numpy"),
