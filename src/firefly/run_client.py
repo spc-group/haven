@@ -252,6 +252,10 @@ class DatabaseWorker:
             dfs[run.uid] = series
         return dfs
 
+    async def export_runs(self, filenames: Sequence[str], formats: Sequence[str]):
+        for filename, run, format in zip(filenames, self.selected_runs, formats):
+            await run.export(filename, format=format)
+
 
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman

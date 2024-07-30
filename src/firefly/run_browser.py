@@ -1,10 +1,11 @@
+import time
 import asyncio
 import logging
 from collections import Counter
 from contextlib import contextmanager
 from functools import wraps
 from itertools import count
-from typing import Mapping, Sequence
+from typing import Mapping, Sequence, Optional
 
 import numpy as np
 import qtawesome as qta
@@ -15,7 +16,7 @@ from pyqtgraph import GraphicsLayoutWidget, ImageView, PlotItem, PlotWidget
 from qasync import asyncSlot
 from qtpy.QtCore import Qt, Signal
 from qtpy.QtGui import QStandardItem, QStandardItemModel
-from qtpy.QtWidgets import QWidget
+from qtpy.QtWidgets import QWidget, QFileDialog
 
 from firefly import display
 from firefly.run_client import DatabaseWorker
@@ -35,6 +36,22 @@ def cancellable(fn):
             log.warning(f"Cancelled task {fn}")
 
     return inner
+
+
+class ExportDialog(QFileDialog):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.setFileMode(QFileDialog.FileMode.AnyFile)
+        
+
+    def ask(self, mimetypes: Optional[Sequence[str]] = None):
+        """Get the name of the file to save for exporting."""
+        self.setMimeTypeFilters(mimetypes)
+        # Show the file dialog
+        if self.exec_() == QFileDialog.ACCEPTED:
+            return dialog.selectedFiles()[0]
+        else:
+            return None
 
 
 class FiltersWidget(QWidget):
@@ -242,6 +259,8 @@ class RunBrowserDisplay(display.FireflyDisplay):
     selected_runs: list
     _running_db_tasks: Mapping
 
+    export_dialog: Optional[ExportDialog] = None
+
     # Counter for keeping track of UI hints for long DB hits
     _busy_hinters: Counter
 
@@ -378,6 +397,8 @@ class RunBrowserDisplay(display.FireflyDisplay):
         self.ui.plot_2d_hints_checkbox.stateChanged.connect(self.update_2d_signals)
         # Respond to filter controls getting updated
         self.ui.filters_widget.returnPressed.connect(self.refresh_runs_button.click)
+        # Respond to controls for the current run
+        self.ui.export_button.clicked.connect(self.export_runs)
         # Set up 1D plotting widgets
         self.plot_1d_item = self.ui.plot_1d_view.getPlotItem()
         self.plot_2d_item = self.ui.plot_2d_view.getImageItem()
@@ -385,6 +406,8 @@ class RunBrowserDisplay(display.FireflyDisplay):
         self.plot_1d_item.hover_coords_changed.connect(
             self.ui.hover_coords_label.setText
         )
+        # Create a new export dialog for saving files
+        self.export_dialog = ExportDialog(parent=self)
 
     def update_busy_hints(self):
         """Enable/disable UI elements based on the active hinters."""
@@ -530,6 +553,24 @@ class RunBrowserDisplay(display.FireflyDisplay):
         )
         self.ui.plot_multi_view.plot_runs(runs, xsignal=x_signal)
 
+    def update_export_button(self):
+        # We can only export one scan at a time from here
+        should_enable = (self.selected_runs is not None
+                         and len(self.selected_runs) == 1)
+        self.ui.export_button.setEnabled(should_enable)
+
+    @asyncSlot()
+    async def export_runs(self):
+        """Export the selected runs to user-specified filenames.
+
+        Shows the user a file dialog with accepted types based on the
+        accepted tiled export formats.
+
+        """
+        dialog = self.export_dialog
+        filenames = dialog.ask(mimetypes=self.selected_runs[0].formats())
+        await self.db_task(self.db.export_runs(filenames), "export")
+
     @asyncSlot()
     @cancellable
     async def update_1d_plot(self, *args):
@@ -621,6 +662,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
             await self.update_1d_plot()
             await self.update_2d_plot()
             await self.update_multi_plot()
+            self.update_export_button()
 
     def filters(self, *args):
         new_filters = {

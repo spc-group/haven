@@ -213,6 +213,13 @@ class CatalogScan:
     def uid(self):
         return self.container._item["id"]
 
+    async def export(self, filename: str, format: str):
+        target = partial(self.container.export, filename, format=format)
+        await self.loop.run_in_executor(None, target)
+
+    async def formats(self):
+        return self.container.formats
+
     async def to_dataframe(self, signals=None):
         """Convert the dataset into a pandas dataframe."""
         xarray = await self.loop.run_in_executor(None, self._read_data, signals)

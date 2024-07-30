@@ -1,5 +1,6 @@
+import time
 import asyncio
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pytest
@@ -10,7 +11,10 @@ from firefly.run_client import DatabaseWorker
 
 
 @pytest.fixture()
-async def display(qtbot, catalog):
+async def display(qtbot, catalog, mocker):
+    mocker.patch('firefly.run_browser.ExportDialog.ask',
+                 return_value=["/net/s255data/export/test_file.nx"])
+    mocker.patch('firefly.run_client.DatabaseWorker.export_runs')
     display = RunBrowserDisplay(root_node=catalog)
     qtbot.addWidget(display)
     display.clear_filters()
@@ -30,7 +34,7 @@ async def test_db_task(display):
 
 
 @pytest.mark.asyncio
-async def test_db_task_interruption(display, event_loop):
+async def test_db_task_interruption(display):
     async def test_coro(sleep_time):
         await asyncio.sleep(sleep_time)
         return sleep_time
@@ -126,7 +130,7 @@ async def test_1d_hinted_signals(catalog, display):
     plot_item = display.plot_1d_item
     assert isinstance(plot_widget, PlotWidget)
     assert isinstance(plot_item, PlotItem)
-    # Update the list of runs and see if the controsl get updated
+    # Update the list of runs and see if the controls get updated
     display.db.selected_runs = [run async for run in catalog.values()]
     await display.update_1d_signals()
     return
@@ -317,6 +321,32 @@ async def test_update_combobox_items(display):
     """Check that the comboboxes get the distinct filter fields."""
     assert display.ui.filter_plan_combobox.count() > 0
 
+
+@pytest.mark.asyncio
+async def test_export_button_enabled(catalog, display):
+    assert not display.export_button.isEnabled()
+    # Update the list with 1 run and see if the control gets enabled
+    display.selected_runs = [run async for run in catalog.values()]
+    display.selected_runs = display.selected_runs[:1]
+    display.update_export_button()
+    assert display.export_button.isEnabled()
+    # Update the list with multiple runs and see if the control gets disabled
+    display.selected_runs = [run async for run in catalog.values()]
+    display.update_export_button()
+    assert not display.export_button.isEnabled()
+
+
+@pytest.mark.asyncio
+async def test_export_button_loading(catalog, display, mocker, qtbot):
+    # Set up a run to be tested against
+    run = MagicMock()
+    display.selected_runs = [run]
+    display.update_export_button()
+    # Clicking the button should open a file dialog
+    await display.export_runs()
+    assert display.export_dialog.ask.called
+    # Check that the file was saved
+    assert display.db.export_runs.called
 
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
