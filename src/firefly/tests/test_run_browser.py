@@ -1,6 +1,5 @@
-import time
 import asyncio
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import numpy as np
 import pytest
@@ -13,11 +12,14 @@ from firefly.run_client import DatabaseWorker
 
 @pytest.fixture()
 async def display(qtbot, catalog, mocker):
-    mocker.patch('firefly.run_browser.ExportDialog.exec_',
-                 return_value=QFileDialog.Accepted)
-    mocker.patch('firefly.run_browser.ExportDialog.selectedFiles',
-                 return_value=["/net/s255data/export/test_file.nx"])
-    mocker.patch('firefly.run_client.DatabaseWorker.export_runs')
+    mocker.patch(
+        "firefly.run_browser.ExportDialog.exec_", return_value=QFileDialog.Accepted
+    )
+    mocker.patch(
+        "firefly.run_browser.ExportDialog.selectedFiles",
+        return_value=["/net/s255data/export/test_file.nx"],
+    )
+    mocker.patch("firefly.run_client.DatabaseWorker.export_runs")
     display = RunBrowserDisplay(root_node=catalog)
     qtbot.addWidget(display)
     display.clear_filters()
@@ -342,7 +344,11 @@ async def test_export_button_enabled(catalog, display):
 async def test_export_button_clicked(catalog, display, mocker, qtbot):
     # Set up a run to be tested against
     run = MagicMock()
-    run.formats.return_value = ['application/json', 'application/x-hdf5', 'application/x-nexus']
+    run.formats.return_value = [
+        "application/json",
+        "application/x-hdf5",
+        "application/x-nexus",
+    ]
     display.selected_runs = [run]
     display.update_export_button()
     # Clicking the button should open a file dialog
@@ -351,7 +357,7 @@ async def test_export_button_clicked(catalog, display, mocker, qtbot):
     assert display.export_dialog.selectedFiles.called
     # Check that file filter names are set correctly
     # (assumes application/json is available on every machine)
-    assert 'JSON document (*.json)' in display.export_dialog.nameFilters()
+    assert "JSON document (*.json)" in display.export_dialog.nameFilters()
     # Check that the file was saved
     assert display.db.export_runs.called
     files = display.export_dialog.selectedFiles.return_value

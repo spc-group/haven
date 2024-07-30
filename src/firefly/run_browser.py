@@ -1,11 +1,10 @@
-import time
 import asyncio
 import logging
 from collections import Counter
 from contextlib import contextmanager
 from functools import wraps
 from itertools import count
-from typing import Mapping, Sequence, Optional
+from typing import Mapping, Optional, Sequence
 
 import numpy as np
 import qtawesome as qta
@@ -16,7 +15,7 @@ from pyqtgraph import GraphicsLayoutWidget, ImageView, PlotItem, PlotWidget
 from qasync import asyncSlot
 from qtpy.QtCore import Qt, Signal
 from qtpy.QtGui import QStandardItem, QStandardItemModel
-from qtpy.QtWidgets import QWidget, QFileDialog
+from qtpy.QtWidgets import QFileDialog, QWidget
 
 from firefly import display
 from firefly.run_client import DatabaseWorker
@@ -43,7 +42,6 @@ class ExportDialog(QFileDialog):
         super().__init__(*args, **kwargs)
         self.setFileMode(QFileDialog.FileMode.AnyFile)
         self.setAcceptMode(QFileDialog.AcceptSave)
-        
 
     def ask(self, mimetypes: Optional[Sequence[str]] = None):
         """Get the name of the file to save for exporting."""
@@ -556,8 +554,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
 
     def update_export_button(self):
         # We can only export one scan at a time from here
-        should_enable = (self.selected_runs is not None
-                         and len(self.selected_runs) == 1)
+        should_enable = self.selected_runs is not None and len(self.selected_runs) == 1
         self.ui.export_button.setEnabled(should_enable)
 
     @asyncSlot()
@@ -573,7 +570,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
         mimetypes = self.selected_runs[0].formats()
         filenames = dialog.ask(mimetypes=mimetypes)
         mimetype = dialog.selectedMimeTypeFilter()
-        formats = [mimetype]*len(filenames)
+        formats = [mimetype] * len(filenames)
         await self.db_task(self.db.export_runs(filenames, formats=formats), "export")
 
     @asyncSlot()

@@ -14,7 +14,6 @@ from qtpy import QtCore
 from qtpy.QtGui import QPixmap
 from qtpy.QtWidgets import QApplication, QSplashScreen, QStyleFactory
 
-import haven
 from firefly.controller import FireflyController
 
 
