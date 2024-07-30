@@ -557,7 +557,6 @@ class RunBrowserDisplay(display.FireflyDisplay):
         # We can only export one scan at a time from here
         should_enable = (self.selected_runs is not None
                          and len(self.selected_runs) == 1)
-        print(self.selected_runs)
         self.ui.export_button.setEnabled(should_enable)
 
     @asyncSlot()
@@ -572,7 +571,8 @@ class RunBrowserDisplay(display.FireflyDisplay):
         # Determine default mimetypes
         mimetypes = self.selected_runs[0].formats()
         filenames = dialog.ask(mimetypes=mimetypes)
-        await self.db_task(self.db.export_runs(filenames), "export")
+        mimetype = dialog.selectedMimeTypeFilter()
+        await self.db_task(self.db.export_runs(filenames, format=mimetype), "export")
 
     @asyncSlot()
     @cancellable
@@ -657,7 +657,6 @@ class RunBrowserDisplay(display.FireflyDisplay):
                 self.db.load_selected_runs(uids), "update selected runs"
             )
             self.selected_runs = await task
-            print(self.selected_runs)
             # Update the necessary UI elements
             await self.update_multi_signals()
             await self.update_1d_signals()

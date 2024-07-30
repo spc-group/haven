@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 import pytest
 from pyqtgraph import ImageItem, ImageView, PlotItem, PlotWidget
+from qtpy.QtWidgets import QFileDialog
 
 from firefly.run_browser import RunBrowserDisplay
 from firefly.run_client import DatabaseWorker
@@ -12,7 +13,9 @@ from firefly.run_client import DatabaseWorker
 
 @pytest.fixture()
 async def display(qtbot, catalog, mocker):
-    mocker.patch('firefly.run_browser.ExportDialog.ask',
+    mocker.patch('firefly.run_browser.ExportDialog.exec_',
+                 return_value=QFileDialog.Accepted)
+    mocker.patch('firefly.run_browser.ExportDialog.selectedFiles',
                  return_value=["/net/s255data/export/test_file.nx"])
     mocker.patch('firefly.run_client.DatabaseWorker.export_runs')
     display = RunBrowserDisplay(root_node=catalog)
@@ -337,16 +340,24 @@ async def test_export_button_enabled(catalog, display):
 
 
 @pytest.mark.asyncio
-async def test_export_button_loading(catalog, display, mocker, qtbot):
+async def test_export_button_clicked(catalog, display, mocker, qtbot):
     # Set up a run to be tested against
     run = MagicMock()
+    run.formats.return_value = ['application/json', 'application/x-hdf5', 'application/x-nexus']
     display.selected_runs = [run]
     display.update_export_button()
     # Clicking the button should open a file dialog
     await display.export_runs()
-    assert display.export_dialog.ask.called
+    assert display.export_dialog.exec_.called
+    assert display.export_dialog.selectedFiles.called
+    # Check that file filter names are set correctly
+    # (assumes application/json is available on every machine)
+    assert 'JSON document (*.json)' in display.export_dialog.nameFilters()
+    assert 'JSON document (*.nx)' in display.export_dialog.nameFilters()
     # Check that the file was saved
     assert display.db.export_runs.called
+    assert display.db.export_runs.call_args.kwargs["format"] == "application/json"
+
 
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
