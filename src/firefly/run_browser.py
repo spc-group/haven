@@ -42,6 +42,7 @@ class ExportDialog(QFileDialog):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setFileMode(QFileDialog.FileMode.AnyFile)
+        self.setAcceptMode(QFileDialog.AcceptSave)
         
 
     def ask(self, mimetypes: Optional[Sequence[str]] = None):
@@ -49,7 +50,7 @@ class ExportDialog(QFileDialog):
         self.setMimeTypeFilters(mimetypes)
         # Show the file dialog
         if self.exec_() == QFileDialog.Accepted:
-            return self.selectedFiles()[0]
+            return self.selectedFiles()
         else:
             return None
 
@@ -572,7 +573,8 @@ class RunBrowserDisplay(display.FireflyDisplay):
         mimetypes = self.selected_runs[0].formats()
         filenames = dialog.ask(mimetypes=mimetypes)
         mimetype = dialog.selectedMimeTypeFilter()
-        await self.db_task(self.db.export_runs(filenames, format=mimetype), "export")
+        formats = [mimetype]*len(filenames)
+        await self.db_task(self.db.export_runs(filenames, formats=formats), "export")
 
     @asyncSlot()
     @cancellable
