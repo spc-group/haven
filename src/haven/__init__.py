@@ -2,7 +2,23 @@
 
 See https://haven-spc.readthedocs.io for full documentation."""
 
-__all__ = ["energy_scan", "xafs_scan", "__version__"]
+__all__ = [
+    "energy_scan",
+    "xafs_scan",
+]
+
+# Get installed version number
+import importlib.metadata
+
+try:
+    __version__ = importlib.metadata.version("haven-spc")
+except importlib.metadata.PackageNotFoundError:
+    import pkg_resources
+
+    __version__ = pkg_resources.get_distribution("haven-spc").version
+    del pkg_resources
+finally:
+    del importlib
 
 
 # Force ophyd to use caproto as its backend
