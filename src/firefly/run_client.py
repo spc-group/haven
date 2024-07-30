@@ -165,6 +165,7 @@ class DatabaseWorker:
         runs = [await self.catalog[uid] for uid in uids]
         # runs = await asyncio.gather(*run_coros)
         self.selected_runs = runs
+        return runs
 
     async def images(self, signal):
         """Load the selected runs as 2D or 3D images suitable for plotting."""

@@ -217,7 +217,7 @@ class CatalogScan:
         target = partial(self.container.export, filename, format=format)
         await self.loop.run_in_executor(None, target)
 
-    async def formats(self):
+    def formats(self):
         return self.container.formats
 
     async def to_dataframe(self, signals=None):

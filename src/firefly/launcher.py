@@ -112,12 +112,12 @@ def main(default_fullscreen=False, default_display="status"):
         choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
         default="INFO",
     )
-    parser.add_argument(
-        "--version",
-        action="version",
-        version="Firefly {version}".format(version=haven.__version__),
-        help="Show Firefly's version number and exit.",
-    )
+    # parser.add_argument(
+    #     "--version",
+    #     action="version",
+    #     version="Firefly {version}".format(version=haven.__version__),
+    #     help="Show Firefly's version number and exit.",
+    # )
     parser.add_argument(
         "-m",
         "--macro",
