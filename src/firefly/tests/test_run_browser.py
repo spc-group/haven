@@ -294,7 +294,6 @@ def test_busy_hints_filters(display):
 def test_busy_hints_status(display, mocker):
     """Check that any busy_hints displays the message "Loading…"."""
     spy = mocker.spy(display, "show_message")
-    print(spy)
     with display.busy_hints(run_table=True, run_widgets=False):
         # Are widgets disabled in the context block?
         assert not display.ui.run_tableview.isEnabled()
@@ -353,10 +352,11 @@ async def test_export_button_clicked(catalog, display, mocker, qtbot):
     # Check that file filter names are set correctly
     # (assumes application/json is available on every machine)
     assert 'JSON document (*.json)' in display.export_dialog.nameFilters()
-    assert 'JSON document (*.nx)' in display.export_dialog.nameFilters()
     # Check that the file was saved
     assert display.db.export_runs.called
-    assert display.db.export_runs.call_args.kwargs["format"] == "application/json"
+    files = display.export_dialog.selectedFiles.return_value
+    assert display.db.export_runs.call_args.args == (files,)
+    assert display.db.export_runs.call_args.kwargs["formats"] == ["application/json"]
 
 
 # -----------------------------------------------------------------------------
