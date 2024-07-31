@@ -117,6 +117,29 @@ def test_auto_gain_plan_with_args(qtbot, voltmeters_display):
         display.ui.auto_gain_button.click()
 
 
+@pytest.mark.asyncio
+async def test_read_dark_current_plan(voltmeters_display, qtbot):
+    display = voltmeters_display
+    display.ui.shutter_checkbox.setChecked(True)
+    # Check that the correct plan was sent
+    expected_item = BPlan(
+        "record_dark_current",
+        ["I0", "It"],
+        shutters=["experiment_shutter"]
+    )
+
+    def check_item(item):
+        return item.to_dict() == expected_item.to_dict()
+
+    # Click the run button and see if the plan is queued
+    with qtbot.waitSignal(
+        display.queue_item_submitted, timeout=1000, check_params_cb=check_item
+    ):
+        # Simulate clicking on the dark_current button
+        # display.ui.dark_current_button.click()
+        display.ui.record_dark_current()
+
+
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov

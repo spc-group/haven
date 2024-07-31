@@ -32,9 +32,10 @@ class VoltmetersDisplay(display.FireflyDisplay):
     details_window_requested = Signal(str)  # ion-chamber device name
 
     def customize_ui(self):
-        # Connect support for running the auto_gain plan
+        # Connect support for running the auto_gain and dark current plans
         self.ui.auto_gain_button.setToolTip(haven.auto_gain.__doc__)
         self.ui.auto_gain_button.clicked.connect(self.run_auto_gain)
+        self.ui.dark_current_button.clicked.connect(self.record_dark_current)
         # Adjust layouts
         self.ui.voltmeters_layout.setHorizontalSpacing(0)
         self.ui.voltmeters_layout.setVerticalSpacing(0)
@@ -95,6 +96,21 @@ class VoltmetersDisplay(display.FireflyDisplay):
         # Send it to the queue server
         self.queue_item_submitted.emit(item)
 
+    def record_dark_current(self):
+        """Add an item to queueserver to record the dark current of the ion
+        chambers.
+
+        """
+        # Determine which shutters to close
+        shutters = []
+        if self.ui.shutter_checkbox.isChecked():
+            shutters.append("experiment_shutter")
+        # Construct the plan
+        ic_names = [ic.name for ic in self.ion_chambers]
+        item = BPlan("record_dark_current", ic_names, shutters=shutters)
+        # Send it to the queue server
+        self.queue_item_submitted.emit(item)
+
     def ui_filename(self):
         return "voltmeters.ui"
 
@@ -115,9 +131,9 @@ class Row:
         for idx in range(num_columns):
             layout = QVBoxLayout()
             self.column_layouts.append(layout)
-        #################
-        # Create widgets
-        #################
+        ##################
+        # Create widgets #
+        ##################
         device_name = self.device.name
         # Description label
         self.name_label = PyDMLabel(
