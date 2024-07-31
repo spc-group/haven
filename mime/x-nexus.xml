@@ -60,6 +60,9 @@
     <generic-icon name="x-office-document"/>
     <sub-class-of type="application/x-hdf"/>
     <glob pattern="*.nx"/>
+    <glob pattern="*.nxs"/>
+    <glob pattern="*.nx5"/>
+    <glob pattern="*.nexus.hdf5"/>
     <glob pattern="*.hdf"/>
     <glob pattern="*.hdf5"/>
     <glob pattern="*.h5"/>
