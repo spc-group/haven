@@ -34,7 +34,7 @@ from haven.instrument.dxp import add_mcas as add_dxp_mcas
 from haven.instrument.ion_chamber import IonChamber
 from haven.instrument.monochromator import Monochromator
 from haven.instrument.robot import Robot
-from haven.instrument.shutter import Shutter
+from haven.instrument.shutter import PssShutter
 from haven.instrument.slits import ApertureSlits, BladeSlits
 from haven.instrument.xia_pfcu import PFCUFilter, PFCUFilterBank, PFCUShutter
 from haven.instrument.xspress import Xspress3Detector
@@ -307,12 +307,12 @@ def xia_shutter(xia_shutter_bank):
 
 @pytest.fixture()
 def shutters(sim_registry):
-    FakeShutter = make_fake_device(Shutter)
+    FakeShutter = make_fake_device(PssShutter)
     kw = dict(
         prefix="_prefix",
-        open_pv="_prefix",
-        close_pv="_prefix2",
-        state_pv="_prefix2",
+        # open_pv="_prefix",
+        # close_pv="_prefix2",
+        # state_pv="_prefix2",
         labels={"shutters"},
     )
     shutters = [

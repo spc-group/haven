@@ -7,7 +7,7 @@ from qtpy.QtWidgets import QHBoxLayout, QSizePolicy
 
 from firefly import display
 from haven import registry
-from haven.instrument.xia_pfcu import ShutterStates
+from haven.instrument.shutter import ShutterState
 
 log = logging.getLogger(__name__)
 
@@ -46,7 +46,7 @@ class StatusDisplay(display.FireflyDisplay):
                 parent=self, init_channel=f"haven://{shutter.name}.readback"
             )
             # indicator.showLabels = False
-            indicator.labels = ["Closed", "Half Open"]
+            indicator.labels = ["Closed", "Fault"]
             indicator.numBits = 2
             indicator.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
             # Switch colors because open is 0 which should means "good"
@@ -58,20 +58,22 @@ class StatusDisplay(display.FireflyDisplay):
                 parent=self,
                 label="Open",
                 icon=qta.icon("mdi.window-shutter-open"),
-                pressValue=ShutterStates.OPEN,
+                pressValue=ShutterState.OPEN,
                 relative=False,
                 init_channel=f"haven://{shutter.name}.setpoint",
             )
+            open_btn.setEnabled(getattr(shutter, "allow_open", True))
             layout.addWidget(open_btn)
             # Button to close the shutter
             close_btn = PyDMPushButton(
                 parent=self,
                 label="Close",
                 icon=qta.icon("mdi.window-shutter"),
-                pressValue=ShutterStates.CLOSED,
+                pressValue=ShutterState.CLOSED,
                 relative=False,
                 init_channel=f"haven://{shutter.name}.setpoint",
             )
+            close_btn.setEnabled(getattr(shutter, "allow_close", True))
             layout.addWidget(close_btn)
 
     def customize_ui(self):
