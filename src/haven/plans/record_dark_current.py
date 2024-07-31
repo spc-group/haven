@@ -1,15 +1,16 @@
 from bluesky import plan_stubs as bps
+from ophyd import Device
 
 from ..instrument.instrument_registry import registry
 from .shutters import close_shutters, open_shutters
 
 
-def record_dark_current(ion_chambers, shutters, time):
+def record_dark_current(ion_chambers: Sequence[Device], shutters: Sequence[Device] = [], time: float):
     """Record the dark current on the ion chambers.
 
     - Close shutters
     - Record ion chamber dark current
-    - Open shutters
+    - Restore shutters to their previous positions
 
     Parameters
     ==========
@@ -17,6 +18,8 @@ def record_dark_current(ion_chambers, shutters, time):
       Ion chamber devices or names.
     shutters
       Shutter devices or names.
+    time
+      How long to record to the dark current.
 
     """
     yield from close_shutters(shutters)
