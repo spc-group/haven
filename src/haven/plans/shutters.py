@@ -1,14 +1,14 @@
 from typing import Literal, Sequence, Union
 
 from bluesky import plan_stubs as bps
+from ophyd import Device
 
 from ..instrument.instrument_registry import registry
-from ..typing import Motor
+from ..instrument.shutter import ShutterState
 
 
 def _set_shutters(
-    shutters: Union[str, Sequence[Motor]], direction: Literal["open", "closed"]
-):
+        shutters: Union[str, Sequence[Device]], direction: int):
     shutters = registry.findall(shutters)
     # Prepare the plan
     plan_args = [obj for shutter in shutters for obj in (shutter, direction)]
@@ -17,7 +17,7 @@ def _set_shutters(
     yield from plan
 
 
-def open_shutters(shutters: Union[str, Sequence[Motor]] = "shutters"):
+def open_shutters(shutters: Union[str, Sequence[Device]] = "shutters"):
     """A plan to open the shutters.
 
     By default, this plan is greedy and will open all shutters defined
@@ -36,10 +36,10 @@ def open_shutters(shutters: Union[str, Sequence[Motor]] = "shutters"):
     suspenders from the haven run engine.
 
     """
-    yield from _set_shutters(shutters, "open")
+    yield from _set_shutters(shutters, ShutterState.OPEN)
 
 
-def close_shutters(shutters: Union[str, Sequence[Motor]] = "shutters"):
+def close_shutters(shutters: Union[str, Sequence[Device]] = "shutters"):
     """A plan to close some shutters.
 
     By default, this plan is lazy and requires any shutters to be
@@ -57,7 +57,7 @@ def close_shutters(shutters: Union[str, Sequence[Motor]] = "shutters"):
     suspenders from the haven run engine.
 
     """
-    yield from _set_shutters(shutters, "closed")
+    yield from _set_shutters(shutters, ShutterState.CLOSED)
 
 
 # -----------------------------------------------------------------------------

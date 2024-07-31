@@ -310,9 +310,6 @@ def shutters(sim_registry):
     FakeShutter = make_fake_device(PssShutter)
     kw = dict(
         prefix="_prefix",
-        # open_pv="_prefix",
-        # close_pv="_prefix2",
-        # state_pv="_prefix2",
         labels={"shutters"},
     )
     shutters = [
