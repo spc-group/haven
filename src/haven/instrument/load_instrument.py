@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import warnings
 from typing import Mapping
@@ -33,7 +34,7 @@ __all__ = ["load_instrument"]
 log = logging.getLogger(__name__)
 
 
-def load_instrument(
+async def load_instrument(
     registry: InstrumentRegistry = default_registry,
     config: Mapping = None,
     wait_for_connection: bool = True,
@@ -69,8 +70,17 @@ def load_instrument(
     # Load the configuration
     if config is None:
         config = load_config()
+    # Asynchronous loading of devices
+    results = await asyncio.gather(
+        load_ion_chambers(config=config),
+        # Load the motor devices last so that we can check for
+        # existing motors in the registry
+        load_motors(config=config),
+    )
+    # Flatten async devices
+    devices = [d for devs in results for d in devs]
     # Synchronous loading of devices
-    devices = [
+    devices.extend([
         *load_aerotech_stages(config=config),
         load_aps(config=config),
         *load_area_detectors(config=config),
@@ -79,7 +89,6 @@ def load_instrument(
         *load_dxp_detectors(config=config),
         load_energy_positioner(config=config),
         *load_heaters(config=config),
-        *load_ion_chambers(config=config),
         *load_lerix_spectrometers(config=config),
         *load_power_supplies(config=config),
         *load_robots(config=config),
@@ -90,12 +99,9 @@ def load_instrument(
         *load_xia_pfcu4s(config=config),
         *load_xspress_detectors(config=config),
         *load_mirrors(config=config),
-        # Load the motor devices last so that we can check for
-        # existing motors in the registry
-        *load_motors(config=config),
-    ]
+    ])
     # Also import some simulated devices for testing
-    devices += load_simulated_devices(config=config)
+    # devices.extend(load_simulated_devices(config=config))
     # Filter out devices that couldn't be reached
     devices = [d for d in devices if d is not None]
     # Put the devices into the registry

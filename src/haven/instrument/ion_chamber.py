@@ -668,7 +668,7 @@ def load_ion_chamber(
     return ion_chamber
 
 
-def load_ion_chambers(config=None):
+async def load_ion_chambers(config=None):
     """Load ion chambers based on configuration files' ``[ion_chamber]``
     sections.
 
@@ -707,13 +707,7 @@ def load_ion_chambers(config=None):
                 }
             )
     # Resolve the scaler channels into ion chamber names
-    try:
-        loop = asyncio.get_event_loop()
-    except RuntimeError:
-        # No loop, so make a new one
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-    loop.run_until_complete(resolve_device_names(ic_defns))
+    await resolve_device_names(ic_defns)
     # Loop through the sections and create ion chambers
     devices = []
     missing_channels = []

@@ -216,7 +216,6 @@ class ComponentSelector(QWidget):
 
     def current_component(self):
         cpt_name = self.combo_box.currentText()
-        print(cpt_name)
         return self.registry[cpt_name]
 
     def create_models(self):

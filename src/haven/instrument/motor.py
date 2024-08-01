@@ -45,7 +45,7 @@ class HavenMotor(MotorFlyer, EpicsMotor):
         self._original_vals.setdefault(self.velocity, self.velocity.get())
 
 
-def load_motors(
+async def load_motors(
     config: Mapping = None, registry: InstrumentRegistry = default_registry
 ) -> Sequence:
     """Load generic hardware motors from IOCs.
@@ -104,13 +104,7 @@ def load_motors(
     else:
         log.debug(f"No duplicated motors detected out of {len(defns)}")
     # Resolve the scaler channels into ion chamber names
-    try:
-        loop = asyncio.get_running_loop()
-    except RuntimeError:
-        # No loop, so make a new one
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-    loop.run_until_complete(resolve_device_names(defns))
+    await resolve_device_names(defns)
     # Create the devices
     devices = []
     missing_channels = []
