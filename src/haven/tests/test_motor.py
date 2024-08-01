@@ -24,9 +24,10 @@ def motor(sim_registry):
     return m1
 
 
-def test_load_vme_motors(sim_registry, mocked_device_names):
+@pytest.mark.asyncio
+async def test_load_vme_motors(sim_registry, mocked_device_names):
     # Load the Ophyd motor definitions
-    load_motors()
+    await load_motors()
     # Were the motors imported correctly
     motors = list(sim_registry.findall(label="motors"))
     assert len(motors) == 3
@@ -40,7 +41,8 @@ def test_load_vme_motors(sim_registry, mocked_device_names):
     assert "VME_crate" in motor1._ophyd_labels_
 
 
-def test_skip_existing_motors(sim_registry, mocked_device_names):
+@pytest.mark.asyncio
+async def test_skip_existing_motors(sim_registry, mocked_device_names):
     """If a motor already exists from another device, don't add it to the
     motors group.
 
@@ -48,7 +50,7 @@ def test_skip_existing_motors(sim_registry, mocked_device_names):
     # Create an existing fake motor
     m1 = HavenMotor("255idVME:m1", name="kb_mirrors_horiz_upstream", labels={"motors"})
     # Load the Ophyd motor definitions
-    load_motors()
+    await load_motors()
     # Were the motors imported correctly
     motors = list(sim_registry.findall(label="motors"))
     print([m.prefix for m in motors])

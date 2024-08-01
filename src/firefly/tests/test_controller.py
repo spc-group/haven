@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, AsyncMock
 
 import pytest
 from ophyd import Device
@@ -12,9 +12,9 @@ from firefly.queue_client import QueueClient
 
 
 @pytest.fixture()
-def controller(qapp):
+async def controller(qapp):
     controller = FireflyController()
-    controller.setup_instrument(load_instrument=False)
+    await controller.setup_instrument(load_instrument=False)
     return controller
 
 
@@ -94,16 +94,17 @@ def test_prepare_generic_device_windows(controller, tardis, mocker):
     assert isinstance(actions["my_tardis"], WindowAction)
 
 
-def test_load_instrument_registry(controller, qtbot, monkeypatch):
+@pytest.mark.asyncio
+async def test_load_instrument_registry(controller, qtbot, monkeypatch):
     """Check that the instrument registry gets created."""
     assert isinstance(controller.registry, Registry)
     # Mock the underlying haven instrument loader
-    loader = MagicMock()
+    loader = AsyncMock()
     monkeypatch.setattr(firefly.controller, "load_haven_instrument", loader)
     monkeypatch.setattr(controller, "prepare_queue_client", MagicMock())
     # Reload the devices and see if the registry is changed
     with qtbot.waitSignal(controller.registry_changed):
-        controller.setup_instrument(load_instrument=True)
+        await controller.setup_instrument(load_instrument=True)
     # Make sure we loaded the instrument
     assert loader.called
 
