@@ -69,7 +69,7 @@ $ firefly
 
 Haven/Firefly uses calendar versioning, with short year and short
 month for the MAJOR and MINOR versions, then a incremental MICRO
-version. For example, version *23.7.2* is the 2nd (*2*) release in
+version. For example, version *2024.7.2* is the 3rd (*2*) release in
 July (*7*) 2023 (*23*).
 
 # Packaging
