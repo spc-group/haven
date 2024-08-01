@@ -1,15 +1,15 @@
+import asyncio
 import logging
 import time
-import asyncio
 
 import databroker  # noqa: F401
 import matplotlib.pyplot as plt  # noqa: F401
-from bluesky.run_engine import RunEngine, call_in_bluesky_event_loop  # noqa: F401
-from bluesky import suspenders  # noqa: F401
 from bluesky import plan_stubs as bps  # noqa: F401
-from bluesky.plan_stubs import mv, mvr, rd  # noqa: F401
 from bluesky import plans as bp  # noqa: F401
+from bluesky import suspenders  # noqa: F401
 from bluesky.callbacks.best_effort import BestEffortCallback  # noqa: F401
+from bluesky.plan_stubs import mv, mvr, rd  # noqa: F401
+from bluesky.run_engine import RunEngine, call_in_bluesky_event_loop  # noqa: F401
 from bluesky.simulators import summarize_plan  # noqa: F401
 from rich import print
 from rich.console import Console
@@ -48,9 +48,11 @@ registry = haven.registry
 ion_chambers = haven.registry.findall("ion_chambers", allow_none=True)
 
 # Print helpful information to the console
-custom_theme = Theme({
-    "code": "white on grey27",
-})
+custom_theme = Theme(
+    {
+        "code": "white on grey27",
+    }
+)
 console = Console(theme=custom_theme)
 motd = (
     "[bold]Devices[/bold] are available by name through the [italic]registry[/italic].\n"
