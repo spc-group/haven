@@ -46,13 +46,14 @@ def test_gain_signals(preamp):
     assert preamp.gain_db.get(use_monitor=False) == pytest.approx(46.9897)
 
 
-def test_load_ion_chambers(sim_registry, mocker):
+@pytest.mark.asyncio
+async def test_load_ion_chambers(sim_registry, mocker):
     async def resolve_device_names(defns):
         for defn in defns:
             defn["name"] = f"ion_chamber_{defn['ch_num']}"
 
     mocker.patch("haven.ion_chamber.resolve_device_names", new=resolve_device_names)
-    new_ics = ion_chamber.load_ion_chambers()
+    await ion_chamber.load_ion_chambers()
     # Test the channel info is extracted properly
     ic = sim_registry.find(label="ion_chambers")
     assert ic.ch_num == 2
