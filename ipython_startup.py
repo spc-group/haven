@@ -29,20 +29,20 @@ plt.ion()
 config = haven.load_config()
 t0 = time.monotonic()
 print(f"Initializing {config['beamline']['name']}…")
-haven.load_instrument()
+# haven.load_instrument()
 print(f"Finished initalization in {time.monotonic() - t0:.2f} seconds.")
 
 # Make sure asyncio and the bluesky run engine share an event loop
-loop = asyncio.new_event_loop()
-asyncio.set_event_loop(loop)
-RE = haven.run_engine(loop=loop)
+# loop = asyncio.new_event_loop()
+# asyncio.set_event_loop(loop)
+# RE = haven.run_engine(loop=loop)
+# RE = haven.run_engine()
+# Add metadata to the run engine
+# RE.preprocessors.append(haven.preprocessors.inject_haven_md_wrapper)
 
 # Save references to some commonly used things in the global namespace
 registry = haven.registry
 ion_chambers = haven.registry.findall("ion_chambers", allow_none=True)
-
-# Add metadata to the run engine
-RE.preprocessors.append(haven.preprocessors.inject_haven_md_wrapper)
 
 # Print helpful information to the console
 custom_theme = Theme({

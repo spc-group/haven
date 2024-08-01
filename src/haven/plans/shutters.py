@@ -9,15 +9,16 @@ from ..instrument.shutter import ShutterState
 
 def _set_shutters(
         shutters: Union[str, Sequence[Device]], direction: int):
-    shutters = registry.findall(shutters)
+    if shutters != []:
+        shutters = registry.findall(shutters)
     # Prepare the plan
     plan_args = [obj for shutter in shutters for obj in (shutter, direction)]
-    plan = bps.mv(*plan_args)
-    # Emit the messages
-    yield from plan
+    if len(plan_args) > 0:
+        # Emit the messages
+        yield from bps.mv(*plan_args)
 
 
-def open_shutters(shutters: Union[str, Sequence[Device]] = "shutters"):
+def open_shutters(shutters: Union[str, Sequence[Device]]):
     """A plan to open the shutters.
 
     By default, this plan is greedy and will open all shutters defined
@@ -26,7 +27,7 @@ def open_shutters(shutters: Union[str, Sequence[Device]] = "shutters"):
     *shutters* argument.
 
     E.g.
-      RE(open_shutters(["Shutter C"]))
+      RE(open_shutters(["endstation_shutter"]))
 
     E.g.
       shutter = haven.instrument.shutter.Shutter(..., name="Shutter C")
