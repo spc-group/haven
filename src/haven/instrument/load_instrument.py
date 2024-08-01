@@ -80,26 +80,28 @@ async def load_instrument(
     # Flatten async devices
     devices = [d for devs in results for d in devs]
     # Synchronous loading of devices
-    devices.extend([
-        *load_aerotech_stages(config=config),
-        load_aps(config=config),
-        *load_area_detectors(config=config),
-        load_beamline_manager(config=config),
-        *load_cameras(config=config),
-        *load_dxp_detectors(config=config),
-        load_energy_positioner(config=config),
-        *load_heaters(config=config),
-        *load_lerix_spectrometers(config=config),
-        *load_power_supplies(config=config),
-        *load_robots(config=config),
-        *load_shutters(config=config),
-        *load_slits(config=config),
-        *load_stages(config=config),
-        *load_tables(config=config),
-        *load_xia_pfcu4s(config=config),
-        *load_xspress_detectors(config=config),
-        *load_mirrors(config=config),
-    ])
+    devices.extend(
+        [
+            *load_aerotech_stages(config=config),
+            load_aps(config=config),
+            *load_area_detectors(config=config),
+            load_beamline_manager(config=config),
+            *load_cameras(config=config),
+            *load_dxp_detectors(config=config),
+            load_energy_positioner(config=config),
+            *load_heaters(config=config),
+            *load_lerix_spectrometers(config=config),
+            *load_power_supplies(config=config),
+            *load_robots(config=config),
+            *load_shutters(config=config),
+            *load_slits(config=config),
+            *load_stages(config=config),
+            *load_tables(config=config),
+            *load_xia_pfcu4s(config=config),
+            *load_xspress_detectors(config=config),
+            *load_mirrors(config=config),
+        ]
+    )
     # Also import some simulated devices for testing
     # devices.extend(load_simulated_devices(config=config))
     # Filter out devices that couldn't be reached

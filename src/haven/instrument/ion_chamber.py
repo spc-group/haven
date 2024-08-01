@@ -1,6 +1,5 @@
 """Holds ion chamber detector descriptions and assignments to EPICS PVs."""
 
-import asyncio
 import logging
 import math
 import time
