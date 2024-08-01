@@ -46,6 +46,18 @@ $ conda activate haven
 $ pip install -e ".[dev]"
 ```
 
+## Usage
+
+The easiest way to start **haven** is to use IPython's magic run command.
+
+```
+$ ipython
+In [1]: %run -m haven.ipython_startup
+```
+
+This will load some common tools, and print some useful information
+about how to use Haven.
+
 ## Running Tests
 
 To run tests, run
