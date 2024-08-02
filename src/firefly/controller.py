@@ -93,10 +93,8 @@ class FireflyController(QtCore.QObject):
         load_haven_instrument(registry=self.registry)
         self.registry_changed.emit(self.registry)
 
-    def setup_instrument(self, load_instrument=True):
+    async def setup_instrument(self, load_instrument=True):
         """Set up the application to use a previously loaded instrument.
-
-        Expects devices, plans, etc to have been created already.
 
         Parameters
         ==========
@@ -112,7 +110,7 @@ class FireflyController(QtCore.QObject):
 
         """
         if load_instrument:
-            load_haven_instrument(registry=self.registry)
+            await load_haven_instrument(registry=self.registry)
             self.registry_changed.emit(self.registry)
         # Make actions for launching other windows
         self.setup_window_actions()
@@ -259,6 +257,7 @@ class FireflyController(QtCore.QObject):
             name="show_run_browser_action",
             text="Browse Runs",
             display_file=ui_dir / "run_browser.py",
+            shortcut="Ctrl+Shift+B",
             icon=qta.icon("mdi.book-open-variant"),
             WindowClass=FireflyMainWindow,
         )
@@ -605,9 +604,10 @@ class FireflyController(QtCore.QObject):
                 queue_actions["pause_now"],
                 queue_actions["stop_queue"],
             ]
-        elif re_state == "stopping":
+        elif re_state in ["stopping", "aborting"]:
             enabled_signals = []
         else:
+            enabled_signals = []
             raise ValueError(f"Unknown run engine state: {re_state}")
         # Enable/disable the relevant signals
         for action in queue_actions.values():

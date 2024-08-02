@@ -167,13 +167,12 @@ def main(default_fullscreen=False, default_display="status"):
     event_loop = QEventLoop(app)
     asyncio.set_event_loop(event_loop)
 
-    # Define devices on the beamline (slow!)
-    controller.setup_instrument(load_instrument=not pydm_args.no_instrument)
-
     async def run_app():
         # Keep an event to know when the app has closed
         app_close_event = asyncio.Event()
         app.aboutToQuit.connect(app_close_event.set)
+        # Define devices on the beamline (slow!)
+        await controller.setup_instrument(load_instrument=not pydm_args.no_instrument)
         # Start any async clients that the controller needs
         controller.start()
         # Get rid of the splash screen and show the first window
