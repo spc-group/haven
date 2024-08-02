@@ -37,6 +37,7 @@ _local_overrides = {}
 def load_files(file_paths: Sequence[pathlib.Path]):
     """Generate the configs for files as dictionaries."""
     for fp in file_paths:
+        fp = pathlib.Path(fp)
         if fp.exists():
             with open(fp, mode="rb") as fp:
                 log.debug(f"Loading config file: {fp}")

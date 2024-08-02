@@ -8,8 +8,10 @@ def launch_queueserver():
     # Derive environmental variables
     this_dir = Path(__file__).parent
     bluesky_dir = Path(os.environ['BLUESKY_DIR'])
+    default_config_file = str(bluesky_dir / "iconfig.toml")
+    config_files = os.environ.setdefault("HAVEN_CONFIG_FILES", default_config_file).split(",")
     # Derive internal haven variables
-    config_files = [bluesky_dir / "iconfig.toml"]
+    
     config = load_config(file_paths=config_files)
     control_port = config['queueserver']['control_port']
     info_port = config['queueserver']['info_port']
@@ -35,6 +37,7 @@ def launch_queueserver():
         kafka_topic,
         "--update-existing-plans-devices",
         "ENVIRONMENT_OPEN",
+        "--use-ipython-kernel=ON",
     ]
     print("Starting queueserver with command:")
     print("  ", " ".join(args))
