@@ -36,6 +36,30 @@ log = logging.getLogger(__name__)
 __all__ = ["IonChamber", "load_ion_chambers"]
 
 
+def count_is_complete(*, old_value, value, **kwargs):
+    """Check if the value is done."""
+    was_running = old_value == 1
+    is_running_now = value == 1
+    is_done = was_running and not is_running_now
+    return is_done
+
+
+class DarkCurrentTrigger(EpicsSignal):
+    def trigger(self):
+        """Instruct the ion chamber to measure dark current.
+
+        Returns
+        =======
+        status
+          A status object that completes when the ion chamber is done
+          measuring its dark current.
+
+        """
+        status = SubscriptionStatus(self.parent.count, callback=count_is_complete, run=False)
+        self.set(1)
+        return status
+
+
 class VoltageSignal(DerivedSignal):
     """Calculate the voltage at the output of the pre-amp."""
 
@@ -395,7 +419,7 @@ class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
         EpicsSignal, "{scaler_prefix}scaler1.CONT", kind=Kind.omitted
     )
     record_dark_current: OphydObject = FCpt(
-        EpicsSignal, "{scaler_prefix}scaler1_offset_start.PROC", kind=Kind.omitted
+        DarkCurrentTrigger, "{scaler_prefix}scaler1_offset_start.PROC", kind=Kind.omitted
     )
     record_dark_time: OphydObject = FCpt(
         EpicsSignal, "{scaler_prefix}scaler1_offset_time.VAL", kind=Kind.config

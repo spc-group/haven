@@ -74,7 +74,7 @@ class VoltmetersDisplay(display.FireflyDisplay):
         super().update_queue_status(status)
         # Update widgets when the queue status changes
         self.ui.auto_gain_button.update_queue_style(status)
-        # self.ui.dark_current_button.update_queue_style(status)
+        self.ui.dark_current_button.update_queue_style(status)
 
     def run_auto_gain(self):
         """Send a plan to the queueserver to auto-gain the pre-amps."""

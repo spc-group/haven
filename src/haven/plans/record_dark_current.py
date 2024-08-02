@@ -1,4 +1,6 @@
 from typing import Sequence
+from asyncio.futures import Future
+import uuid
 
 from bluesky import plan_stubs as bps
 from ophyd import Device
@@ -13,7 +15,9 @@ def count_is_complete(*, old_value, value, **kwargs):
     """Check if the value is done."""
     was_running = old_value == 1
     is_running_now = value == 1
-    return was_running and not is_running_now
+    is_done = was_running and not is_running_now
+    print(is_done)
+    return is_done
 
 
 def record_dark_current(ion_chambers: Sequence[Device], shutters: Sequence[Device] = []):
@@ -34,20 +38,18 @@ def record_dark_current(ion_chambers: Sequence[Device], shutters: Sequence[Devic
     # Get previous shutter states
     old_shutters = {}
     for shutter in shutters:
-        old_shutters[shutter] = yield from bps.rd(shutter)
+        old_shutters[shutter] = yield from bps.rd(shutter.readback)
     # Close shutters
     yield from close_shutters(shutters)
     # Measure the dark current
     ion_chambers = registry.findall(ion_chambers)
     # Record dark currents
-    mv_args = [obj for ic in ion_chambers for obj in (ic.record_dark_current, 1)]
-    yield from bps.mv(*mv_args)
-    # Wait for the scaler to be done again
-    status = Status(done=True, success=True)
+    group = uuid.uuid4()
     for ic in ion_chambers:
-        status &= SubscriptionStatus(ic.count, callback=count_is_complete)
-    yield from bps.wait(status)
-    # Reset shutters again
+        yield from bps.trigger(ic.record_dark_current, group=group, wait=False)
+    # Wait for the devices to be done recording dark current
+    yield from bps.wait(group=group)
+    # Reset shutters to their original states
     to_open = [sht for sht, old_state in old_shutters.items() if old_state == ShutterState.OPEN]
     yield from open_shutters(to_open)
 
