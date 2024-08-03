@@ -1,3 +1,4 @@
+import sys
 import os
 from functools import partial
 
@@ -26,11 +27,11 @@ def main():
 
     kafka_deserializer = partial(msgpack.loads, object_hook=mpn.decode)
     auto_offset_reset = "latest"
-    topics = ["25idc_queueserver", "25idd_queueserver"]
+    topics = ["s25idc_queueserver", "s25idd_queueserver"]
 
     topic_database_map = {
-        "25idc_queueserver": "25idc-bluesky",
-        "25idd_queueserver": "25idd-bluesky",
+        "s25idc_queueserver": "25idc-bluesky",
+        "s25idd_queueserver": "25idd-bluesky",
     }
 
     # Create a MongoConsumer that will automatically listen to new beamline topics.
@@ -50,3 +51,6 @@ def main():
 
 
     mongo_consumer.start()
+
+if __name__ == "__main__":
+    sys.exit(main())
