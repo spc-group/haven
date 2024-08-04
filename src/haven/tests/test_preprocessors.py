@@ -5,6 +5,7 @@ from bluesky import plans as bp
 from bluesky.callbacks import CallbackBase
 from ophyd.sim import SynAxis, det, instantiate_fake_device
 
+import haven
 from haven import baseline_decorator, baseline_wrapper, run_engine
 from haven.instrument.beamline_manager import BSS
 from haven.preprocessors import shutter_suspend_decorator, shutter_suspend_wrapper
@@ -123,7 +124,7 @@ def test_metadata(sim_registry, aps, monkeypatch):
     assert "versions" in start_doc.keys()
     versions = start_doc["versions"]
     assert "haven" in versions.keys()
-    assert versions["haven"] == "23.10.0"
+    assert versions["haven"] == haven.__version__
     assert "bluesky" in versions.keys()
     # Check metadata keys
     expected_keys = [
