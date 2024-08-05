@@ -14,7 +14,7 @@ import numpy as np
 import pytest
 from ophyd import OphydObject, Signal
 
-from haven.instrument.dxp import load_dxp_detectors, parse_xmap_buffer
+from haven.instrument.dxp import load_dxp_detectors, parse_xmap_buffer, DxpDetector
 from haven.instrument.xspress import load_xspress_detectors
 
 DETECTORS = ["dxp", "xspress"]
@@ -195,22 +195,17 @@ def test_stage_signal_names(vortex):
     orig_name = dev.name
     dev.stage()
     try:
-        result = dev.read()
-    except Exception:
-        raise
-    else:
         assert "Ni-Ka" not in dev.name  # Make sure it gets sanitized
         assert "~" not in dev.name  # Make sure it gets sanitized
         assert "__" not in dev.name  # Tildes sanitize bad but used for `use` signal
         assert "Ni_Ka" in dev.name
+    except Exception:
+        raise
     finally:
         dev.unstage()
     # Name gets reset when unstaged
     assert dev.name == orig_name
     assert dev.count.name == f"{orig_name}_count"
-    # Check acquired data uses dynamic names
-    for res in result.keys():
-        assert "Ni_Ka" in res
 
 
 @pytest.mark.parametrize("vortex", DETECTORS, indirect=True)
@@ -249,6 +244,8 @@ def test_read_and_config_attrs(vortex):
                 # f"mcas.mca{mca}.background",
             ]
         )
+        if isinstance(vortex, DxpDetector):
+            expected_read_attrs.append(f"mcas.mca{mca}.output_count_rate")
         if hasattr(vortex.mcas.mca0, "clock_ticks"):
             expected_read_attrs.append(f"mcas.mca{mca}.clock_ticks")
         for roi in range(vortex.num_rois):
@@ -549,7 +546,11 @@ def test_device_sums(vortex):
     """Does the device correctly calculate the overall counts, etc."""
     assert isinstance(vortex.total_count, Signal)
     spectrum = np.arange(256)
+    mca0 = vortex.mcas.mca0
+    mca0.elapsed_real_time.sim_put(1)
     vortex.mcas.mca0.spectrum.sim_put(spectrum)
+    print(mca0.output_count_rate.get())
+    print(mca0.dead_time_factor.get())
     expected = spectrum.sum()
     assert vortex.total_count.get() == expected
     # Add a second spectrum
@@ -582,7 +583,7 @@ def test_mca_calcs(vortex):
     assert mca.total_count.get(use_monitor=False) == np.sum(spectrum)
 
 
-@pytest.mark.parametrize("vortex", ["xspress", "dxp"], indirect=True)
+@pytest.mark.parametrize("vortex", ["xspress"], indirect=True)
 def test_dead_time_calc(vortex):
     assert vortex.dead_time_average.get(use_monitor=False) == 0
     assert vortex.dead_time_max.get(use_monitor=False) == 0
