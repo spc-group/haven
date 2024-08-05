@@ -611,7 +611,11 @@ def test_mca_dead_time_correction(vortex):
     real_factor = 1.0874725
     assert dead_time_factor == pytest.approx(1.0874725)
     total_count = mca.total_count.get()
-    assert total_count == 1e5 * real_factor
+    real_total_count = 1e5 * real_factor
+    assert total_count == real_total_count
+    dead_time_percent = mca.dead_time_percent.get()
+    real_percent = 100 * (1 - (1e5 / real_total_count))
+    assert dead_time_percent == pytest.approx(real_percent)
 
 
 # Applies only to DXP, xspress does this internally

@@ -2,7 +2,7 @@ import time
 import warnings
 from collections import OrderedDict
 from enum import IntEnum
-from typing import Optional, Sequence
+from typing import Optional, Sequence, Mapping
 
 import numpy as np
 from ophyd import Component as Cpt
@@ -126,14 +126,19 @@ class MCARecord(mca.EpicsMCARecord):
             ocr = 0
         return ocr
 
-    def _calculate_total(self, mds: MultiDerivedSignal, items):
+    def _calculate_total(self, mds: MultiDerivedSignal, items: Mapping):
         counts = self._integrate_spectrum(items[self.spectrum])
         return counts * items[self.dead_time_factor]
+
+    def _calculate_dt_percent(self, mds: MultiDerivedSignal, items: Mapping):
+        ratio = 1 - (1 / items[self.dead_time_factor])
+        return 100 * ratio
 
     rois = DDC(add_rois(), kind=active_kind)
     total_count = Cpt(MultiDerivedSignalRO, kind=Kind.normal, attrs=["spectrum", "dead_time_factor"],
                       calculate_on_get=_calculate_total)
-    dead_time_percent = Cpt(Signal, kind=Kind.normal)
+    dead_time_percent = Cpt(MultiDerivedSignalRO, kind=Kind.normal, attrs=["dead_time_factor"],
+                            calculate_on_get=_calculate_dt_percent)
     dead_time_factor = Cpt(DeadTimeCorrectionFactor, kind=Kind.normal, derived_from="output_count_rate", write_access=False)
     output_count_rate = Cpt(MultiDerivedSignalRO, kind=Kind.normal, attrs=["spectrum", "elapsed_real_time"], calculate_on_get=_calculate_ocr)
     _default_read_attrs = [
