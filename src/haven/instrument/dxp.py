@@ -7,7 +7,7 @@ from typing import Optional, Sequence
 import numpy as np
 from ophyd import Component as Cpt
 from ophyd import DynamicDeviceComponent as DDC
-from ophyd import Kind, Signal, flyers, mca
+from ophyd import Kind, Signal, flyers, mca, EpicsSignalRO
 from ophyd.signal import DerivedSignal, InternalSignal
 from ophyd.status import StatusBase, SubscriptionStatus
 from pcdsdevices.signal import MultiDerivedSignalRO, MultiDerivedSignal
@@ -54,9 +54,18 @@ class ROI(ROIMixin, mca.ROI):
         "lo_chan",
     ]
     kind = active_kind
+
+    def _apply_dt_corr(self, mds: MultiDerivedSignal, items):
+        dt_factor = items[self.parent.parent.dead_time_factor]
+        value = items[self.output_count]
+        return dt_factor * value
+    
     # Signals
     use = Cpt(UseROISignal, derived_from="label", kind="config")
     size = Cpt(SizeSignal, derived_from="hi_chan", kind="config")
+    # Over-ride some default signals so we can apply dead-time correction
+    output_count = Cpt(EpicsSignalRO, "N", lazy=False, kind=Kind.normal)
+    net_count = Cpt(MultiDerivedSignalRO, kind=Kind.hinted, attrs=["parent.parent.dead_time_factor", "output_count"], calculate_on_get=_apply_dt_corr)
 
     def unstage(self):
         # Restore original signal kinds

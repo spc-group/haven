@@ -603,7 +603,6 @@ def test_mca_dead_time_correction(vortex):
     mca = vortex.mcas.mca0
     # Set up fake values
     mca.elapsed_real_time.sim_put(2.0)
-    # mca.total_count.put(1e5, internal=True)
     mca.spectrum.sim_put(np.full((4096,), fill_value=(1e5 / 4096), dtype=float))
     # Check the per-element dead time correction
     output_count_rate = mca.output_count_rate.get()
@@ -615,23 +614,18 @@ def test_mca_dead_time_correction(vortex):
     assert total_count == 1e5 * real_factor
 
 
-# # Applies only to DXP, xspress does this internally
-# @pytest.mark.parametrize("vortex", ["dxp"], indirect=True)
-# def test_mca_dead_time_correction(vortex):
-#     """Check that the dead-time approximation is calculated properly."""
-#     mca = vortex.mcas.mca0
-#     # Set up fake values
-#     mca.elapsed_real_time.sim_put(2.0)
-#     # mca.total_count.put(1e5, internal=True)
-#     mca.spectrum.sim_put(np.full((4096,), fill_value=(1e5 / 4096), dtype=float))
-#     # Check the per-element dead time correction
-#     output_count_rate = mca.output_count_rate.get()
-#     assert output_count_rate == 5e4
-#     dead_time_factor = mca.dead_time_factor.get()
-#     real_factor = 1.0874725
-#     assert dead_time_factor == pytest.approx(1.0874725)
-#     total_count = mca.total_count.get()
-#     assert total_count == 1e5 * real_factor
+# Applies only to DXP, xspress does this internally
+@pytest.mark.parametrize("vortex", ["dxp"], indirect=True)
+def test_roi_dead_time_correction(vortex):
+    """Check that the dead-time approximation is calculated properly."""
+    mca = vortex.mcas.mca0
+    roi = mca.rois.roi0
+    # Set up fake values
+    mca.elapsed_real_time.sim_put(2.0)
+    mca.spectrum.sim_put(np.full((4096,), fill_value=(1e5 / 4096), dtype=float))
+    roi.output_count.sim_put(10)
+    # Check the ROI dead time correction
+    assert roi.net_count.get() == pytest.approx(10.874725)
 
 
 def test_default_time_signal_dxp(dxp):
