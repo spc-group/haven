@@ -582,7 +582,7 @@ def test_mca_calcs(vortex):
     assert mca.total_count.get(use_monitor=False) == np.sum(spectrum)
 
 
-@pytest.mark.parametrize("vortex", ["xspress"], indirect=True)
+@pytest.mark.parametrize("vortex", ["xspress", "dxp"], indirect=True)
 def test_dead_time_calc(vortex):
     assert vortex.dead_time_average.get(use_monitor=False) == 0
     assert vortex.dead_time_max.get(use_monitor=False) == 0
@@ -595,6 +595,43 @@ def test_dead_time_calc(vortex):
     assert vortex.dead_time_min.get(use_monitor=False) == 3
     assert vortex.dead_time_max.get(use_monitor=False) == 6
     assert vortex.dead_time_average.get(use_monitor=False) == 4.5
+
+# Applies only to DXP, xspress does this internally
+@pytest.mark.parametrize("vortex", ["dxp"], indirect=True)
+def test_mca_dead_time_correction(vortex):
+    """Check that the dead-time approximation is calculated properly."""
+    mca = vortex.mcas.mca0
+    # Set up fake values
+    mca.elapsed_real_time.sim_put(2.0)
+    # mca.total_count.put(1e5, internal=True)
+    mca.spectrum.sim_put(np.full((4096,), fill_value=(1e5 / 4096), dtype=float))
+    # Check the per-element dead time correction
+    output_count_rate = mca.output_count_rate.get()
+    assert output_count_rate == 5e4
+    dead_time_factor = mca.dead_time_factor.get()
+    real_factor = 1.0874725
+    assert dead_time_factor == pytest.approx(1.0874725)
+    total_count = mca.total_count.get()
+    assert total_count == 1e5 * real_factor
+
+
+# # Applies only to DXP, xspress does this internally
+# @pytest.mark.parametrize("vortex", ["dxp"], indirect=True)
+# def test_mca_dead_time_correction(vortex):
+#     """Check that the dead-time approximation is calculated properly."""
+#     mca = vortex.mcas.mca0
+#     # Set up fake values
+#     mca.elapsed_real_time.sim_put(2.0)
+#     # mca.total_count.put(1e5, internal=True)
+#     mca.spectrum.sim_put(np.full((4096,), fill_value=(1e5 / 4096), dtype=float))
+#     # Check the per-element dead time correction
+#     output_count_rate = mca.output_count_rate.get()
+#     assert output_count_rate == 5e4
+#     dead_time_factor = mca.dead_time_factor.get()
+#     real_factor = 1.0874725
+#     assert dead_time_factor == pytest.approx(1.0874725)
+#     total_count = mca.total_count.get()
+#     assert total_count == 1e5 * real_factor
 
 
 def test_default_time_signal_dxp(dxp):

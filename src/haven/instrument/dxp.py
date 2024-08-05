@@ -4,11 +4,13 @@ from collections import OrderedDict
 from enum import IntEnum
 from typing import Optional, Sequence
 
+import numpy as np
 from ophyd import Component as Cpt
 from ophyd import DynamicDeviceComponent as DDC
 from ophyd import Kind, Signal, flyers, mca
 from ophyd.signal import DerivedSignal, InternalSignal
 from ophyd.status import StatusBase, SubscriptionStatus
+from pcdsdevices.signal import MultiDerivedSignalRO, MultiDerivedSignal
 
 from .. import exceptions
 from .._iconfig import load_config
@@ -91,16 +93,48 @@ def add_rois(range_: Sequence[int] = range(NUM_ROIS), kind=Kind.normal, **kwargs
     return defn
 
 
-class MCARecord(MCASumMixin, mca.EpicsMCARecord):
+class DeadTimeCorrectionFactor(DerivedSignal):
+    """Calculate a correction factor based on a count rate."""
+    def inverse(self, output_count_rate):
+        R0 = 1.5e-6 * output_count_rate
+        B = 1 + 1.25*R0 - 2.421*R0**2 + 17.4*R0**3
+        return B
+
+
+class MCARecord(mca.EpicsMCARecord):
+
+    def _integrate_spectrum(self, arr):
+        return int(np.sum(arr))
+
+    def _calculate_ocr(self, mds: MultiDerivedSignal, items):
+        """Calculate the number of counts divided by elapsed real time.
+
+        OCR = output count rate"""
+        counts = self._integrate_spectrum(items[self.spectrum])
+        try:
+            ocr = counts / items[self.elapsed_real_time]
+        except ZeroDivisionError:
+            ocr = 0
+        return ocr
+
+    def _calculate_total(self, mds: MultiDerivedSignal, items):
+        counts = self._integrate_spectrum(items[self.spectrum])
+        return counts * items[self.dead_time_factor]
+
     rois = DDC(add_rois(), kind=active_kind)
-    dead_time_factor = Cpt(Signal, kind=Kind.normal)
+    total_count = Cpt(MultiDerivedSignalRO, kind=Kind.normal, attrs=["spectrum", "dead_time_factor"],
+                      calculate_on_get=_calculate_total)
     dead_time_percent = Cpt(Signal, kind=Kind.normal)
+    dead_time_factor = Cpt(DeadTimeCorrectionFactor, kind=Kind.normal, derived_from="output_count_rate", write_access=False)
+    output_count_rate = Cpt(MultiDerivedSignalRO, kind=Kind.normal, attrs=["spectrum", "elapsed_real_time"], calculate_on_get=_calculate_ocr)
     _default_read_attrs = [
         "rois",
         "total_count",
         "spectrum",
         "dead_time_factor",
         "dead_time_percent",
+        "output_count_rate",
+        "dead_time_factor",
         # "preset_real_time",
         # "preset_live_time",
         # "elapsed_real_time",
