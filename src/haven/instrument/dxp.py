@@ -56,16 +56,21 @@ class ROI(ROIMixin, mca.ROI):
     kind = active_kind
 
     def _apply_dt_corr(self, mds: MultiDerivedSignal, items):
-        dt_factor = items[self.parent.parent.dead_time_factor]
+        dt_factor = items[self.parent.parent.dead_time_factor_fit]
         value = items[self.output_count]
         return dt_factor * value
-    
+
     # Signals
     use = Cpt(UseROISignal, derived_from="label", kind="config")
     size = Cpt(SizeSignal, derived_from="hi_chan", kind="config")
     # Over-ride some default signals so we can apply dead-time correction
     output_count = Cpt(EpicsSignalRO, "N", lazy=False, kind=Kind.normal)
-    net_count = Cpt(MultiDerivedSignalRO, kind=Kind.hinted, attrs=["parent.parent.dead_time_factor", "output_count"], calculate_on_get=_apply_dt_corr)
+    count_fit = Cpt(
+        MultiDerivedSignalRO,
+        kind=Kind.hinted,
+        attrs=["parent.parent.dead_time_factor_fit", "output_count"],
+        calculate_on_get=_apply_dt_corr,
+    )
 
     def unstage(self):
         # Restore original signal kinds
@@ -104,9 +109,10 @@ def add_rois(range_: Sequence[int] = range(NUM_ROIS), kind=Kind.normal, **kwargs
 
 class DeadTimeCorrectionFactor(DerivedSignal):
     """Calculate a correction factor based on a count rate."""
+
     def inverse(self, output_count_rate):
         R0 = 1.5e-6 * output_count_rate
-        B = 1 + 1.25*R0 - 2.421*R0**2 + 17.4*R0**3
+        B = 1 + 1.25 * R0 - 2.421 * R0**2 + 17.4 * R0**3
         return B
 
 
@@ -128,31 +134,57 @@ class MCARecord(mca.EpicsMCARecord):
 
     def _calculate_total(self, mds: MultiDerivedSignal, items: Mapping):
         counts = self._integrate_spectrum(items[self.spectrum])
-        return counts * items[self.dead_time_factor]
+        return counts * items[self.dead_time_factor_fit]
 
     def _calculate_dt_percent(self, mds: MultiDerivedSignal, items: Mapping):
-        ratio = 1 - (1 / items[self.dead_time_factor])
+        ratio = 1 - (1 / items[self.dead_time_factor_fit])
         return 100 * ratio
 
     rois = DDC(add_rois(), kind=active_kind)
-    total_count = Cpt(MultiDerivedSignalRO, kind=Kind.normal, attrs=["spectrum", "dead_time_factor"],
-                      calculate_on_get=_calculate_total)
-    dead_time_percent = Cpt(MultiDerivedSignalRO, kind=Kind.normal, attrs=["dead_time_factor"],
-                            calculate_on_get=_calculate_dt_percent)
-    dead_time_factor = Cpt(DeadTimeCorrectionFactor, kind=Kind.normal, derived_from="output_count_rate", write_access=False)
-    output_count_rate = Cpt(MultiDerivedSignalRO, kind=Kind.normal, attrs=["spectrum", "elapsed_real_time"], calculate_on_get=_calculate_ocr)
+
+    # Extra signals for built-in dead-time correction
+    total_count = Cpt(Signal, kind=Kind.normal)
+    input_count_rate = Cpt(EpicsSignalRO, "20xmap4b:dxp1:InputCountRate")
+    output_count_rate = Cpt(EpicsSignalRO, "20xmap4b:dxp1:OutputCountRate")
+    dead_time_percent = Cpt(EpicsSignalRO, ".DTIM", kind="normal")
+
+    # Extra signals for polynomial fitting of dead-time
+    total_count_fit = Cpt(
+        MultiDerivedSignalRO,
+        kind=Kind.normal,
+        attrs=["spectrum", "dead_time_factor_fit"],
+        calculate_on_get=_calculate_total,
+    )
+    dead_time_percent_fit = Cpt(
+        MultiDerivedSignalRO,
+        kind=Kind.normal,
+        attrs=["dead_time_factor_fit"],
+        calculate_on_get=_calculate_dt_percent,
+    )
+    dead_time_factor_fit = Cpt(
+        DeadTimeCorrectionFactor,
+        kind=Kind.normal,
+        derived_from="output_count_rate_fit",
+        write_access=False,
+    )
+    output_count_rate_fit = Cpt(
+        MultiDerivedSignalRO,
+        kind=Kind.normal,
+        attrs=["spectrum", "elapsed_real_time"],
+        calculate_on_get=_calculate_ocr,
+    )
+    # Declare signal kinds
     _default_read_attrs = [
         "rois",
-        "total_count",
+        "total_count_fit",
         "spectrum",
-        "dead_time_factor",
-        "dead_time_percent",
-        "output_count_rate",
-        "dead_time_factor",
+        "dead_time_factor_fit",
+        "dead_time_percent_fit",
+        "output_count_rate_fit",
         # "preset_real_time",
         # "preset_live_time",
-        # "elapsed_real_time",
-        # "elapsed_live_time",
+        "elapsed_real_time",
+        "elapsed_live_time",
         # "background",
     ]
     _default_configuration_attrs = ["rois", "mode"]

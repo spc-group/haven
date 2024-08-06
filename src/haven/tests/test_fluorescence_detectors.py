@@ -597,40 +597,49 @@ def test_dead_time_calc(vortex):
     assert vortex.dead_time_max.get(use_monitor=False) == 6
     assert vortex.dead_time_average.get(use_monitor=False) == 4.5
 
-# Applies only to DXP, xspress does this internally
-@pytest.mark.parametrize("vortex", ["dxp"], indirect=True)
-def test_mca_dead_time_correction(vortex):
-    """Check that the dead-time approximation is calculated properly."""
-    mca = vortex.mcas.mca0
+
+def test_mca_fit_dead_time_correction(dxp):
+    """Check that the dead-time approximation is calculated properly.
+
+    Uses polynomial fit method.
+
+    Applies only to DXP, xspress does this internally.
+
+    """
+    mca = dxp.mcas.mca0
     # Set up fake values
     mca.elapsed_real_time.sim_put(2.0)
     mca.spectrum.sim_put(np.full((4096,), fill_value=(1e5 / 4096), dtype=float))
     # Check the per-element dead time correction
-    output_count_rate = mca.output_count_rate.get()
+    output_count_rate = mca.output_count_rate_fit.get()
     assert output_count_rate == 5e4
-    dead_time_factor = mca.dead_time_factor.get()
+    dead_time_factor = mca.dead_time_factor_fit.get()
     real_factor = 1.0874725
     assert dead_time_factor == pytest.approx(1.0874725)
-    total_count = mca.total_count.get()
+    total_count = mca.total_count_fit.get()
     real_total_count = 1e5 * real_factor
     assert total_count == real_total_count
-    dead_time_percent = mca.dead_time_percent.get()
+    dead_time_percent = mca.dead_time_percent_fit.get()
     real_percent = 100 * (1 - (1e5 / real_total_count))
     assert dead_time_percent == pytest.approx(real_percent)
 
 
-# Applies only to DXP, xspress does this internally
-@pytest.mark.parametrize("vortex", ["dxp"], indirect=True)
-def test_roi_dead_time_correction(vortex):
-    """Check that the dead-time approximation is calculated properly."""
-    mca = vortex.mcas.mca0
+def test_roi_fit_dead_time_correction(dxp):
+    """Check that the dead-time approximation is calculated properly.
+
+    Uses polynomial fit method.
+
+    Applies only to DXP, xspress does this internally.
+
+    """
+    mca = dxp.mcas.mca0
     roi = mca.rois.roi0
     # Set up fake values
     mca.elapsed_real_time.sim_put(2.0)
     mca.spectrum.sim_put(np.full((4096,), fill_value=(1e5 / 4096), dtype=float))
     roi.output_count.sim_put(10)
     # Check the ROI dead time correction
-    assert roi.net_count.get() == pytest.approx(10.874725)
+    assert roi.count_fit.get() == pytest.approx(10.874725)
 
 
 def test_default_time_signal_dxp(dxp):

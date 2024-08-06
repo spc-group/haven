@@ -51,7 +51,18 @@ Fluorescence detectors are implemented as
 :py:class:`~haven.instrument.xspress.Xspress3Detector` and
 :py:class:`~haven.instrument.dxp.DxpDetector` Ophyd device
 classes. They are written to have a common Ophyd interface so that
-clients (e.g. Firefly) can use fluorescence detectors interchangeably.
+clients (e.g. Firefly) can use fluorescence detectors
+interchangeably.
+
+Xspress3Detector:
+
+========== ============ =======
+Signal     BG Subracted DT Corr
+========== ============ =======
+net_count  ✓            ✓
+count                   ✓
+spectrum                ✓
+========== ============ =======
 
 Creating Devices
 ----------------
@@ -183,6 +194,41 @@ XIA DXP (XMAP)
 DXP (XMAP, Mercury, Saturn) electronics use the bluesky multi-channel
 analyzer (MCA) device, packaged in Haven as the
 :py:class:`~haven.instrument.dxp.DxpDetector` class.
+
+The following tables **summarizes the meanings of the
+various signals** found on DXP-based Ophyd devices.
+
+**Each ROI:**
+
+=================== ============ ======= =============================================================
+Signal              BG Subracted DT Corr Description
+=================== ============ ======= =============================================================
+net_count           ✓                    Uncorrected counts with background subtraction.
+output_count                             Uncorrected (raw) counts.
+count_fit\ :sup:`†`              ✓       Detector counts corrected by polynomial fitting.
+count                            ✓       Detector counts corrected by fast channel correction.
+=================== ============ ======= =============================================================
+
+**Each element (MCA):**
+
+=============================== ============ ======= ==============================================================
+Signal                          BG Subracted DT Corr Description
+=============================== ============ ======= ==============================================================
+total_count                                  ✓       Sum of all channels with deadtime correction.
+total_count_fit\ :sup:`†`                    ✓       Sum of all channels with deadtime correction, polynomial fitting.
+output_count                                         Sum of all channels.
+output_count_rate                                    Output count rate measured by slow channel
+input_count_rate                             ✓       Count rate measured by fast channel
+output_count_rate_fit\ :sup:`†`                      Output counts divided by elapsed real time
+spectrum                                             Array of detector counts for each channel.
+dead_time_factor                             ✓       Number by which to multiply *output_count* to get *count*.
+dead_time_factor_fit\ :sup:`†`               ✓       Number by which to multiply *output_count* to get *count_fit*.
+dead_time_percent                            ✓       How much of the real time the detector was dead.
+dead_time_percent_fit\ :sup:`†`              ✓       How much of the real time the detector was dead by polynomial fitting.
+=============================== ============ ======= ==============================================================
+
+:sup:`†` These values are only for testing and will be removed in future
+ releases.
 
 The DXP electronics are **not yet compatible** with :doc:`fly-scanning
 <fly_scanning>`. The :py:class:`~haven.instrument.dxp.DxpDetector`
