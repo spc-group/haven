@@ -1,13 +1,14 @@
 import time
 import warnings
-from collections import OrderedDict
+from collections import OrderedDict, ChainMap
 from enum import IntEnum
 from typing import Optional, Sequence, Mapping
 
 import numpy as np
 from ophyd import Component as Cpt
 from ophyd import DynamicDeviceComponent as DDC
-from ophyd import Kind, Signal, flyers, mca, EpicsSignalRO
+from ophyd import FormattedComponent as FCpt
+from ophyd import Kind, Signal, flyers, mca, EpicsSignalRO, Device
 from ophyd.signal import DerivedSignal, InternalSignal
 from ophyd.status import StatusBase, SubscriptionStatus
 from pcdsdevices.signal import MultiDerivedSignalRO, MultiDerivedSignal
@@ -144,8 +145,8 @@ class MCARecord(mca.EpicsMCARecord):
 
     # Extra signals for built-in dead-time correction
     total_count = Cpt(Signal, kind=Kind.normal)
-    input_count_rate = Cpt(EpicsSignalRO, "20xmap4b:dxp1:InputCountRate")
-    output_count_rate = Cpt(EpicsSignalRO, "20xmap4b:dxp1:OutputCountRate")
+    # input_count_rate = Cpt(EpicsSignalRO, "20xmap4b:dxp1:InputCountRate")
+    # output_count_rate = Cpt(EpicsSignalRO, "20xmap4b:dxp1:OutputCountRate")
     dead_time_percent = Cpt(EpicsSignalRO, ".DTIM", kind="normal")
 
     # Extra signals for polynomial fitting of dead-time
@@ -191,6 +192,16 @@ class MCARecord(mca.EpicsMCARecord):
     kind = active_kind
 
 
+class Element(Device):
+    mca = FCpt(MCARecord, "{prefix}mca{idx}")
+    input_count_rate = FCpt(EpicsSignalRO, "{prefix}dxp{idx}:InputCountRate")
+    output_count_rate = FCpt(EpicsSignalRO, "{prefix}dxp{idx}:OutputCountRate")
+
+    def __init__(self, *args, element_num, **kwargs):
+        self.idx = element_num
+        super().__init__(*args, **kwargs)
+
+
 def add_mcas(range_, kind=active_kind, **kwargs):
     """Add one or more MCARecords to a device
 
@@ -208,6 +219,30 @@ def add_mcas(range_, kind=active_kind, **kwargs):
             MCARecord,
             f"mca{idx+1}",  # (Epics uses 1-index instead of 0-index)
             kwargs,
+        )
+    return defn
+
+
+def add_elements(indices, kind=active_kind, **kwargs):
+    """Add one or more MCARecords to a device
+
+    Parameters
+    ----------
+    range_
+      Indices for which to create MCA records.
+
+    """
+    defn = OrderedDict()
+    for idx in indices:
+        kw = ChainMap(kwargs, {
+            "kind": kind,
+            "element_num": idx,
+        })
+        attr = f"element{idx}"
+        defn[attr] = (
+            Element,
+            "",
+            kw,
         )
     return defn
 
@@ -240,6 +275,9 @@ class DxpDetector(
     dead_time_max = Cpt(InternalSignal, kind="normal")
 
     # By default, a 4-element detector, subclass for more elements
+    elements = DDC(
+        add_elements(range(4)),
+    )
     mcas = DDC(
         add_mcas(range_=range(4)),
         default_read_attrs=["mca0", "mca1", "mca2", "mca3"],

@@ -55,7 +55,6 @@ def test_load_dxp_detectors(sim_registry):
     # assert vortex.mcas.mca1.rois.roi1.is_hinted.pvname == "vortex_me4:mca1_R1BH"
 
 
-# @pytest.mark.parametrize("vortex", ["xspress"], indirect=True)
 def test_acquire_frames_xspress(xspress):
     """Can we acquire a single frame using the dedicated signal."""
     vortex = xspress
@@ -75,6 +74,18 @@ def test_acquire_frames_xspress(xspress):
     assert vortex.acquire.get() == 1
     assert vortex.cam.num_images.get() == 2000
     assert vortex.acquire_single.get() == 1
+
+
+@pytest.mark.parametrize("vortex", ["dxp"], indirect=True)
+def test_element_pvs(vortex):
+    """Does the detector has the correct structure for detector elements?"""
+    assert hasattr(vortex, "elements")
+    # Check element's MCA record
+    elem = vortex.elements.element0
+    assert hasattr(elem, "mca")
+    # Check non-MCA signals
+    assert hasattr(elem, "output_count_rate")
+    assert hasattr(elem, "input_count_rate")
 
 
 @pytest.mark.parametrize("vortex", DETECTORS, indirect=True)
