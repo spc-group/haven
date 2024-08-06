@@ -165,6 +165,7 @@ class DatabaseWorker:
         runs = [await self.catalog[uid] for uid in uids]
         # runs = await asyncio.gather(*run_coros)
         self.selected_runs = runs
+        return runs
 
     async def images(self, signal):
         """Load the selected runs as 2D or 3D images suitable for plotting."""
@@ -251,6 +252,10 @@ class DatabaseWorker:
             series = pd.Series(df[y_signal].values, index=df[x_signal].values)
             dfs[run.uid] = series
         return dfs
+
+    async def export_runs(self, filenames: Sequence[str], formats: Sequence[str]):
+        for filename, run, format in zip(filenames, self.selected_runs, formats):
+            await run.export(filename, format=format)
 
 
 # -----------------------------------------------------------------------------
