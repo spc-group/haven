@@ -33,6 +33,7 @@ gui = ["qtawesome", "pydm", "pyqtgraph", "qasync", "tiled[all]"]
 
 [project.entry-points."pydm.data_plugin"]
 HavenPlugin = "firefly.pydm_plugin:HavenPlugin"
+HavenAsyncPlugin = "firefly.pydm_plugin:HavenAsyncPlugin"
 
 [project.scripts]
 haven_config = "haven._iconfig:print_config_value"
