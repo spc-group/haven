@@ -45,6 +45,7 @@ async def async_signal(sim_registry):
     # Create the signal
     sig = soft_signal_rw(float, initial_value=1.0, name=signal_name)
     await sig.connect(mock=False)
+    sim_registry.use_typhos = False  # Typhos doesn't work with async anyway?
     sim_registry.register(sig)
     return sig
 
@@ -74,7 +75,7 @@ async def async_channel(qapp, qtbot, async_signal):
 
     sigs = SigHolder()
     channel = PyDMChannel(
-        address=f"ahaven://{async_signal.name}",
+        address=f"haven://{async_signal.name}",
         value_signal=sigs.send_value,
         write_access_slot=MagicMock(),
         connection_slot=MagicMock(),

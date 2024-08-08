@@ -7,17 +7,20 @@ Provides funcitonality so that PyDM channels can be addressed as e.g.
 """
 
 import asyncio
+import inspect
 import logging
 from typing import Mapping
 
-from bluesky.protocols import Movable
+from bluesky.protocols import Movable, HasName
 from pydm.data_plugins.plugin import PyDMConnection
 from ophyd.utils.epics_pvs import AlarmSeverity
+from ophyd import OphydObject
 import numpy as np
 from qasync import asyncSlot
 from typhos.plugins.core import SignalConnection, SignalPlugin
 
 from haven import registry
+from .exceptions import UnknownOphydSignal
 
 log = logging.getLogger(__name__)
 
@@ -47,7 +50,6 @@ class HavenConnection(RegistryConnection, SignalConnection):
 
 class HavenAsyncConnection(RegistryConnection, PyDMConnection):
     def __init__(self, channel, address, protocol=None, parent=None):
-        print(f"Creating connection {self}")
         # Create base connection
         super().__init__(channel, address, protocol=protocol, parent=parent)
         self._connection_open = True
@@ -62,7 +64,6 @@ class HavenAsyncConnection(RegistryConnection, PyDMConnection):
 
     def add_listener(self, channel):
         super().add_listener(channel)
-        print("ADDING LISTENER")
         # If the channel is used for writing to PVs, hook it up to the 'put' methods.
         if channel.value_signal is not None:
             for type_ in [str, int, float, np.ndarray]:
@@ -120,16 +121,28 @@ class HavenAsyncConnection(RegistryConnection, PyDMConnection):
     @asyncSlot(np.ndarray)
     async def put_value(self, new_value):
         old_value = await self.signal.get_value()
-        print(f"PUTTING NEW VALUE: {old_value} -> {new_value}")
-        await self.signal.set(new_value)
-        print(f"Value for {self.signal} is now {await self.signal.get_value()}")
+        log.info(f"Moving signal '{self.signal.name}' from {old_value} to {new_value}")
+        await self.signal.set(new_value, timeout=None)
+        log.debug(
+            f"Signal '{self.signal.name}' arrived at {await self.signal.get_value()}."
+        )
 
 
 class HavenPlugin(SignalPlugin):
     protocol = "haven"
-    connection_class = HavenConnection
 
-
-class HavenAsyncPlugin(SignalPlugin):
-    protocol = "ahaven"
-    connection_class = HavenAsyncConnection
+    @staticmethod
+    def connection_class(channel, address, protocol):
+        # Check if we need the synchronous or asynchronous version
+        sig = registry[address]
+        is_ophyd_async = isinstance(sig, HasName)
+        is_ophyd_async = hasattr(sig, "connect") and inspect.iscoroutinefunction(sig.connect)
+        is_vanilla_ophyd = isinstance(sig, OphydObject)
+        # Get the right Connection class and build it
+        if is_ophyd_async:
+            return HavenAsyncConnection(channel, address, protocol)
+        elif is_vanilla_ophyd:
+            return HavenConnection(channel, address, protocol)
+        else:
+            msg = f"Signal must be ophyd or ophyd_async signal. Got {type(sig)}."
+            raise UnknownOphydSignal(msg)
