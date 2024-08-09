@@ -567,7 +567,7 @@ class FireflyController(QtCore.QObject):
         return client
 
     def start(self):
-        """Start the background timers, show the first window, and wait."""
+        """Start the background clients."""
         # Show the UI stuffs
         self.prepare_queue_client()
         self.start_queue_client()

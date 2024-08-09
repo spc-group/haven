@@ -70,6 +70,14 @@ def main(default_fullscreen=False, default_display="status"):
         ),
     )
     parser.add_argument(
+        "--no-queue",
+        action="store_true",
+        help=(
+            "Do not try to connect to the queueserver. Useful for development if queueserver"
+            " hardware is offline."
+        ),
+    )
+    parser.add_argument(
         "--perfmon",
         action="store_true",
         help="Enable performance monitoring," + " and print CPU usage to the terminal.",
@@ -173,7 +181,8 @@ def main(default_fullscreen=False, default_display="status"):
         # Define devices on the beamline (slow!)
         await controller.setup_instrument(load_instrument=not pydm_args.no_instrument)
         # Start any async clients that the controller needs
-        controller.start()
+        if not pydm_args.no_queue:
+            controller.start()
         # Get rid of the splash screen and show the first window
         splash.close()
         controller.show_default_window()

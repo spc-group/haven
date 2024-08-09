@@ -12,7 +12,7 @@ import logging
 from typing import Mapping
 
 import numpy as np
-from bluesky.protocols import HasName, Movable
+from bluesky.protocols import HasName, Movable, Subscribable
 from ophyd import OphydObject
 from ophyd.utils.epics_pvs import AlarmSeverity
 from pydm.data_plugins.plugin import PyDMConnection
@@ -58,8 +58,13 @@ class HavenAsyncConnection(RegistryConnection, PyDMConnection):
         self.is_float = False
         # Collect our signal
         self.signal = self.find_signal(address)
+        self.is_triggerable = hasattr(self.signal, "trigger")
+        self.is_movable = isinstance(self.signal, Movable)
+        self.is_writable = self.is_movable or self.is_triggerable
+        self.is_subscribable = isinstance(self.signal, Subscribable)
         # Subscribe to updates from Ophyd
-        self.signal.subscribe(self.send_new_value)
+        if self.is_subscribable:
+            self.signal.subscribe(self.send_new_value)
         # Add listener
         self.add_listener(channel)
 
@@ -76,22 +81,29 @@ class HavenAsyncConnection(RegistryConnection, PyDMConnection):
         self._meta_task = asyncio.create_task(
             self.send_new_meta(), name=f"meta_{self.signal.name}"
         )
-        self.signal._get_cache()._notify(self.send_new_value, want_value=False)
+        if self.is_subscribable:
+            self.signal._get_cache()._notify(self.send_new_value, want_value=False)
+        elif self.is_triggerable:
+            # Any value will do, we won't use it anyway
+            self.new_value_signal.emit(0)
 
     async def send_new_meta(self):
-        description = await self.signal.describe()
-        description = description[self.signal.name]
         # Assume the signal is connected
         self.connection_state_signal.emit(True)
         # Check the bluesky interface for writability
-        is_writable = isinstance(self.signal, Movable)
-        self.write_access_signal.emit(is_writable)
+        self.write_access_signal.emit(self.is_writable)
+        # Get some more metadata
+        if hasattr(self.signal, "describe"):
+            description = await self.signal.describe()
+            description = description[self.signal.name]
+        else:
+            description = {}
         # What is the precision of this signal
         if (precision := description.get("precision")) is not None:
             self.prec_signal.emit(precision)
         # What are the units?
         if (units := description.get("units")) is not None:
-            self.units_signal.emit(units)
+            self.unit_signal.emit(units)
         # Update choices for enumerated types
         if (enum_strs := description.get("choices")) is not None:
             self.enum_strings_signal.emit(enum_strs)
@@ -102,6 +114,8 @@ class HavenAsyncConnection(RegistryConnection, PyDMConnection):
         """
         reading = reading[self.signal.name]
         # Update value
+        if reading is None:
+            return
         value = reading["value"]
         try:
             self.new_value_signal.emit(value)
@@ -113,20 +127,25 @@ class HavenAsyncConnection(RegistryConnection, PyDMConnection):
 
     def close(self):
         """Unsubscribe from the Ophyd signal."""
-        self.signal.clear_sub(self.send_new_value)
-        self.signal.clear_sub(self.send_new_meta)
+        if self.is_subscribable:
+            self.signal.clear_sub(self.send_new_value)
 
     @asyncSlot(int)
     @asyncSlot(float)
     @asyncSlot(str)
     @asyncSlot(np.ndarray)
     async def put_value(self, new_value):
-        old_value = await self.signal.get_value()
-        log.info(f"Moving signal '{self.signal.name}' from {old_value} to {new_value}")
-        await self.signal.set(new_value, timeout=None)
-        log.debug(
-            f"Signal '{self.signal.name}' arrived at {await self.signal.get_value()}."
-        )
+        if self.is_triggerable:
+            # Just trigger the signal and be done
+            await self.signal.trigger()
+        else:
+            # Put the proper value to the signal
+            old_value = await self.signal.get_value()
+            log.info(f"Moving signal '{self.signal.name}' from {old_value} to {new_value}")
+            await self.signal.set(new_value, timeout=None)
+            log.debug(
+                f"Signal '{self.signal.name}' arrived at {await self.signal.get_value()}."
+            )
 
 
 class HavenPlugin(SignalPlugin):
