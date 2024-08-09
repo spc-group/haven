@@ -11,15 +11,16 @@ import inspect
 import logging
 from typing import Mapping
 
-from bluesky.protocols import Movable, HasName
-from pydm.data_plugins.plugin import PyDMConnection
-from ophyd.utils.epics_pvs import AlarmSeverity
-from ophyd import OphydObject
 import numpy as np
+from bluesky.protocols import HasName, Movable
+from ophyd import OphydObject
+from ophyd.utils.epics_pvs import AlarmSeverity
+from pydm.data_plugins.plugin import PyDMConnection
 from qasync import asyncSlot
 from typhos.plugins.core import SignalConnection, SignalPlugin
 
 from haven import registry
+
 from .exceptions import UnknownOphydSignal
 
 log = logging.getLogger(__name__)
@@ -136,7 +137,9 @@ class HavenPlugin(SignalPlugin):
         # Check if we need the synchronous or asynchronous version
         sig = registry[address]
         is_ophyd_async = isinstance(sig, HasName)
-        is_ophyd_async = hasattr(sig, "connect") and inspect.iscoroutinefunction(sig.connect)
+        is_ophyd_async = hasattr(sig, "connect") and inspect.iscoroutinefunction(
+            sig.connect
+        )
         is_vanilla_ophyd = isinstance(sig, OphydObject)
         # Get the right Connection class and build it
         if is_ophyd_async:

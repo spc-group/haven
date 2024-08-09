@@ -1,14 +1,15 @@
-import uuid
 import asyncio
+import uuid
 from unittest.mock import MagicMock
 
-import pytest
 import pydm
+import pytest
 from ophyd import Signal
-from ophyd_async.core import SignalRW, soft_signal_rw
+from ophyd_async.core import soft_signal_rw
 from pydm.data_plugins import plugin_for_address
-from pydm.widgets import PyDMLineEdit, PyDMChannel
-from qtpy.QtCore import Signal as QSignal, QObject
+from pydm.widgets import PyDMChannel, PyDMLineEdit
+from qtpy.QtCore import QObject
+from qtpy.QtCore import Signal as QSignal
 
 from firefly.pydm_plugin import HavenPlugin
 
@@ -84,7 +85,11 @@ async def async_channel(qapp, qtbot, async_signal):
     channel.connect()
     # Wait for metadata task to complete
     try:
-        task = [t for t in asyncio.all_tasks() if t.get_name() == f"meta_{async_signal.name}"][0]
+        task = [
+            t
+            for t in asyncio.all_tasks()
+            if t.get_name() == f"meta_{async_signal.name}"
+        ][0]
     except IndexError:
         # Connection already established
         pass
