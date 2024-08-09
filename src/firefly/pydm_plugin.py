@@ -141,7 +141,9 @@ class HavenAsyncConnection(RegistryConnection, PyDMConnection):
         else:
             # Put the proper value to the signal
             old_value = await self.signal.get_value()
-            log.info(f"Moving signal '{self.signal.name}' from {old_value} to {new_value}")
+            log.info(
+                f"Moving signal '{self.signal.name}' from {old_value} to {new_value}"
+            )
             await self.signal.set(new_value, timeout=None)
             log.debug(
                 f"Signal '{self.signal.name}' arrived at {await self.signal.get_value()}."
