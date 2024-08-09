@@ -33,7 +33,6 @@ def test_signal_connection(qapp, qtbot, sim_registry):
         pydm.utilities.establish_widget_connections(widget)
     # Check that our widget receives the initial value
     qapp.processEvents()
-    # breakpoint()
     assert widget._write_access
     assert widget._connected
     assert widget.value == 1
@@ -49,23 +48,6 @@ async def async_signal(sim_registry):
     sim_registry.use_typhos = False  # Typhos doesn't work with async anyway?
     sim_registry.register(sig)
     return sig
-
-
-# @pytest.fixture()
-# async def async_widget(qapp, qtbot, async_signal):
-#     widget = PyDMLineEdit()
-#     qtbot.addWidget(widget)
-#     widget.channel = "ahaven://my_editable_signal"
-#     # Wait for metadata task to complete
-#     try:
-#         task = [t for t in asyncio.all_tasks() if t.get_name() == f"meta_my_signal"][0]
-#     except IndexError:
-#         # Connection already established
-#         pass
-#     else:
-#         await task
-#     qapp.processEvents()
-#     return widget
 
 
 @pytest.fixture()
@@ -109,19 +91,6 @@ async def test_async_signal_connection(async_channel, async_signal):
     assert channel.write_access_slot.called
     assert channel.connection_slot.called
     channel.value_slot.assert_called_once_with(1)
-    # Check that a second widget gets initial values
-    # channel2 = PyDMChannel(
-    #     address=f"ahaven://{async_signal.name}",
-    #     write_access_slot=MagicMock(),
-    #     connection_slot=MagicMock(),
-    #     value_slot=MagicMock(),
-    # )
-    # channel2.connect()
-    # task = [t for t in asyncio.all_tasks() if t.get_name() == f"meta_{async_signal.name}"][0]
-    # await task
-    # assert channel2.write_access_slot.called
-    # assert channel2.connection_slot.called
-    # channel2.value_slot.assert_called_once_with(1)
 
 
 @pytest.mark.asyncio
@@ -133,11 +102,6 @@ async def test_async_send_value(qtbot, qapp, async_channel, async_signal):
     assert (await signal.get_value()) == 1.0
     # Update the widget
     channel.value_signal.emit(2.0)
-    # qapp.processEvents()
-    # Fake test to see what's broken
-    # ch = widget.channels()[0]
-    # ch.value_signal[str].emit("2.0")
-    # await asyncio.gather(*asyncio.all_tasks())
     for task in asyncio.all_tasks():
         try:
             await task
