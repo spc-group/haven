@@ -1,10 +1,8 @@
-import time
-
 import pytest
 from ophyd import sim
 from ophyd.utils.errors import ReadOnlyError
 
-from haven.instrument.shutter import load_shutters, PssShutter, ShutterState
+from haven.instrument.shutter import PssShutter, ShutterState, load_shutters
 
 
 @pytest.fixture()
@@ -70,6 +68,7 @@ def test_shutter_check_value(shutter):
     shutter.allow_open = False
     with pytest.raises(ReadOnlyError):
         shutter.set(ShutterState.OPEN)
+
 
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman

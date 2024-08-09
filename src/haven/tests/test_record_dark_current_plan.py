@@ -1,7 +1,7 @@
 from pprint import pprint
 
-from haven.plans.record_dark_current import record_dark_current
 from haven.instrument.shutter import ShutterState
+from haven.plans.record_dark_current import record_dark_current
 
 
 def test_shutters_get_reset(shutters, I0):

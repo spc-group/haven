@@ -1,14 +1,12 @@
-from typing import Sequence
-from asyncio.futures import Future
 import uuid
+from typing import Sequence
 
 from bluesky import plan_stubs as bps
 from ophyd import Device
-from ophyd.status import Status, SubscriptionStatus
 
 from ..instrument.instrument_registry import registry
-from .shutters import close_shutters, open_shutters
 from ..instrument.shutter import ShutterState
+from .shutters import close_shutters, open_shutters
 
 
 def count_is_complete(*, old_value, value, **kwargs):
@@ -20,7 +18,9 @@ def count_is_complete(*, old_value, value, **kwargs):
     return is_done
 
 
-def record_dark_current(ion_chambers: Sequence[Device], shutters: Sequence[Device] = []):
+def record_dark_current(
+    ion_chambers: Sequence[Device], shutters: Sequence[Device] = []
+):
     """Record the dark current on the ion chambers.
 
     - Close shutters
@@ -50,7 +50,9 @@ def record_dark_current(ion_chambers: Sequence[Device], shutters: Sequence[Devic
     # Wait for the devices to be done recording dark current
     yield from bps.wait(group=group)
     # Reset shutters to their original states
-    to_open = [sht for sht, old_state in old_shutters.items() if old_state == ShutterState.OPEN]
+    to_open = [
+        sht for sht, old_state in old_shutters.items() if old_state == ShutterState.OPEN
+    ]
     yield from open_shutters(to_open)
 
 

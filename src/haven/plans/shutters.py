@@ -1,4 +1,4 @@
-from typing import Literal, Sequence, Union
+from typing import Sequence, Union
 
 from bluesky import plan_stubs as bps
 from ophyd import Device
@@ -7,8 +7,7 @@ from ..instrument.instrument_registry import registry
 from ..instrument.shutter import ShutterState
 
 
-def _set_shutters(
-        shutters: Union[str, Sequence[Device]], direction: int):
+def _set_shutters(shutters: Union[str, Sequence[Device]], direction: int):
     if shutters != []:
         shutters = registry.findall(shutters)
     # Prepare the plan

@@ -55,7 +55,9 @@ class DarkCurrentTrigger(EpicsSignal):
           measuring its dark current.
 
         """
-        status = SubscriptionStatus(self.parent.count, callback=count_is_complete, run=False)
+        status = SubscriptionStatus(
+            self.parent.count, callback=count_is_complete, run=False
+        )
         self.set(1)
         return status
 
@@ -419,7 +421,9 @@ class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
         EpicsSignal, "{scaler_prefix}scaler1.CONT", kind=Kind.omitted
     )
     record_dark_current: OphydObject = FCpt(
-        DarkCurrentTrigger, "{scaler_prefix}scaler1_offset_start.PROC", kind=Kind.omitted
+        DarkCurrentTrigger,
+        "{scaler_prefix}scaler1_offset_start.PROC",
+        kind=Kind.omitted,
     )
     record_dark_time: OphydObject = FCpt(
         EpicsSignal, "{scaler_prefix}scaler1_offset_time.VAL", kind=Kind.config

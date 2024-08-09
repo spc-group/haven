@@ -123,9 +123,7 @@ async def test_read_dark_current_plan(voltmeters_display, qtbot):
     display.ui.shutter_checkbox.setChecked(True)
     # Check that the correct plan was sent
     expected_item = BPlan(
-        "record_dark_current",
-        ["I0", "It"],
-        shutters=["experiment_shutter"]
+        "record_dark_current", ["I0", "It"], shutters=["experiment_shutter"]
     )
 
     def check_item(item):
