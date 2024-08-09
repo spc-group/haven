@@ -17,6 +17,7 @@ from ophyd.signal import DerivedSignal
 from .. import exceptions
 from .._iconfig import load_config
 from .device import make_device
+from .shutter import ShutterState
 
 
 class FilterPosition(IntEnum):
@@ -39,19 +40,12 @@ class PFCUFilter(PVPositionerIsClose):
     readback = Cpt(EpicsSignalRO, "_RBV", kind="normal")
 
 
-class ShutterStates(IntEnum):
-    OPEN = 0  # 0b000
-    CLOSED = 1  # 0b001
-    HALF_CLOSED = 3  # 0b011
-    UNKNOWN = 4  # 0b100
-
-
 shutter_state_map = {
     # (top filter, bottom filter): state
-    (FilterPosition.OUT, FilterPosition.IN): ShutterStates.OPEN,
-    (FilterPosition.IN, FilterPosition.OUT): ShutterStates.CLOSED,
-    (FilterPosition.OUT, FilterPosition.OUT): ShutterStates.HALF_CLOSED,
-    (FilterPosition.IN, FilterPosition.IN): ShutterStates.HALF_CLOSED,
+    (FilterPosition.OUT, FilterPosition.IN): ShutterState.OPEN,
+    (FilterPosition.IN, FilterPosition.OUT): ShutterState.CLOSED,
+    (FilterPosition.OUT, FilterPosition.OUT): ShutterState.FAULT,
+    (FilterPosition.IN, FilterPosition.IN): ShutterState.FAULT,
 }
 
 
@@ -70,10 +64,10 @@ class PFCUShutterSignal(DerivedSignal):
         """Convert shutter state to filter bank state."""
         # Bit masking to set both blades together
         old_bits = self.derived_from.parent.readback.get(as_string=False)
-        if value == ShutterStates.OPEN:
+        if value == ShutterState.OPEN:
             open_bits = self.bottom_mask()
             close_bits = self.top_mask()
-        elif value == ShutterStates.CLOSED:
+        elif value == ShutterState.CLOSED:
             close_bits = self.bottom_mask()
             open_bits = self.top_mask()
         else:
@@ -118,7 +112,7 @@ class PFCUShutter(PVPositionerIsClose):
         self._top_filter = top_filter
         self._bottom_filter = bottom_filter
         super().__init__(
-            *args, limits=(ShutterStates.OPEN, ShutterStates.CLOSED), **kwargs
+            *args, limits=(ShutterState.OPEN, ShutterState.CLOSED), **kwargs
         )
 
 

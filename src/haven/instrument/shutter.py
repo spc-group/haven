@@ -1,11 +1,87 @@
 import logging
+import warnings
+from enum import IntEnum, unique
 
-from apstools.devices.shutters import ApsPssShutterWithStatus as Shutter
+from ophyd import Component as Cpt
+from ophyd import EpicsSignal, EpicsSignalRO
+from ophyd.pv_positioner import PVPositionerIsClose
+from ophyd.utils.errors import ReadOnlyError
+from pcdsdevices.signal import MultiDerivedSignal
+from pcdsdevices.type_hints import SignalToValue
 
 from .._iconfig import load_config
 from .device import make_device
 
+# from apstools.devices.shutters import ApsPssShutterWithStatus as Shutter
+
+
 log = logging.getLogger(__name__)
+
+
+@unique
+class ShutterState(IntEnum):
+    OPEN = 0  # 0b000
+    CLOSED = 1  # 0b001
+    FAULT = 3  # 0b011
+    UNKNOWN = 4  # 0b100
+
+
+class PssShutter(PVPositionerIsClose):
+    _last_setpoint: int = ShutterState.UNKNOWN
+    allow_open: bool
+    allow_close: bool
+
+    def __init__(
+        self, *args, allow_open: bool = True, allow_close: bool = True, **kwargs
+    ):
+        self.allow_open = allow_open
+        self.allow_close = allow_close
+        super().__init__(*args, **kwargs)
+
+    def check_value(self, pos):
+        """Check that the shutter has the right permissions."""
+        if pos == ShutterState.CLOSED and not self.allow_close:
+            raise ReadOnlyError(
+                f"Shutter {self.name} is not permitted to be closed. Set `allow_close` for this shutter."
+            )
+        if pos == ShutterState.OPEN and not self.allow_open:
+            raise ReadOnlyError(
+                f"Shutter {self.name} is not permitted to be opened per iconfig.toml. Set `allow_open` for this shutter."
+            )
+
+    def _actuate_shutter(self, mds: MultiDerivedSignal, value: int) -> SignalToValue:
+        """Open/close the shutter using derived-from signals."""
+        if value == ShutterState.OPEN:
+            items = {self.open_signal: 1}
+        elif value == ShutterState.CLOSED:
+            items = {self.close_signal: 1}
+        else:
+            raise ValueError(f"Invalid shutter state for {self}")
+        return items
+
+    def _shutter_setpoint(self, mds: MultiDerivedSignal, items: SignalToValue) -> int:
+        """Determine whether the shutter was last opened or closed."""
+        do_open = items[self.open_signal]
+        do_close = items[self.close_signal]
+        if do_open and do_close:
+            # Shutter is both opening and closing??
+            warnings.warn("Unknown shutter setpoint")
+            self._last_setpoint = ShutterState.UNKNOWN
+        elif do_open:
+            self._last_setpoint = ShutterState.OPEN
+        elif do_close:
+            self._last_setpoint = ShutterState.CLOSED
+        return self._last_setpoint
+
+    readback = Cpt(EpicsSignalRO, "BeamBlockingM.VAL")
+    setpoint = Cpt(
+        MultiDerivedSignal,
+        attrs=["open_signal", "close_signal"],
+        calculate_on_put=_actuate_shutter,
+        calculate_on_get=_shutter_setpoint,
+    )
+    open_signal = Cpt(EpicsSignal, "OpenEPICSC", kind="omitted")
+    close_signal = Cpt(EpicsSignal, "CloseEPICSC", kind="omitted")
 
 
 def load_shutters(config=None):
@@ -15,21 +91,15 @@ def load_shutters(config=None):
     if "shutter" not in config.keys():
         return []
     # Load the shutter configurations into devices
-    prefix = config["shutter"]["prefix"]
     devices = []
     for name, d in config["shutter"].items():
-        if name == "prefix":
-            continue
         # Calculate suitable PV values
-        hutch = d["hutch"]
-        acronym = "FES" if hutch == "A" else f"S{hutch}S"
         devices.append(
             make_device(
-                Shutter,
-                prefix=f"{prefix}:{acronym}",
-                open_pv=f"{prefix}:{acronym}_OPEN_EPICS.VAL",
-                close_pv=f"{prefix}:{acronym}_CLOSE_EPICS.VAL",
-                state_pv=f"{prefix}:{hutch}_BEAM_PRESENT",
+                PssShutter,
+                prefix=d["prefix"],
+                allow_open=d.get("allow_open", True),
+                allow_close=d.get("allow_close", True),
                 name=name,
                 labels={"shutters"},
             )

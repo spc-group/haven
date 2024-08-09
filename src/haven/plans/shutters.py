@@ -1,23 +1,23 @@
-from typing import Literal, Sequence, Union
+from typing import Sequence, Union
 
 from bluesky import plan_stubs as bps
+from ophyd import Device
 
 from ..instrument.instrument_registry import registry
-from ..typing import Motor
+from ..instrument.shutter import ShutterState
 
 
-def _set_shutters(
-    shutters: Union[str, Sequence[Motor]], direction: Literal["open", "closed"]
-):
-    shutters = registry.findall(shutters)
+def _set_shutters(shutters: Union[str, Sequence[Device]], direction: int):
+    if shutters != []:
+        shutters = registry.findall(shutters)
     # Prepare the plan
     plan_args = [obj for shutter in shutters for obj in (shutter, direction)]
-    plan = bps.mv(*plan_args)
-    # Emit the messages
-    yield from plan
+    if len(plan_args) > 0:
+        # Emit the messages
+        yield from bps.mv(*plan_args)
 
 
-def open_shutters(shutters: Union[str, Sequence[Motor]] = "shutters"):
+def open_shutters(shutters: Union[str, Sequence[Device]]):
     """A plan to open the shutters.
 
     By default, this plan is greedy and will open all shutters defined
@@ -26,7 +26,7 @@ def open_shutters(shutters: Union[str, Sequence[Motor]] = "shutters"):
     *shutters* argument.
 
     E.g.
-      RE(open_shutters(["Shutter C"]))
+      RE(open_shutters(["endstation_shutter"]))
 
     E.g.
       shutter = haven.instrument.shutter.Shutter(..., name="Shutter C")
@@ -36,10 +36,10 @@ def open_shutters(shutters: Union[str, Sequence[Motor]] = "shutters"):
     suspenders from the haven run engine.
 
     """
-    yield from _set_shutters(shutters, "open")
+    yield from _set_shutters(shutters, ShutterState.OPEN)
 
 
-def close_shutters(shutters: Union[str, Sequence[Motor]] = "shutters"):
+def close_shutters(shutters: Union[str, Sequence[Device]] = "shutters"):
     """A plan to close some shutters.
 
     By default, this plan is lazy and requires any shutters to be
@@ -57,7 +57,7 @@ def close_shutters(shutters: Union[str, Sequence[Motor]] = "shutters"):
     suspenders from the haven run engine.
 
     """
-    yield from _set_shutters(shutters, "closed")
+    yield from _set_shutters(shutters, ShutterState.CLOSED)
 
 
 # -----------------------------------------------------------------------------

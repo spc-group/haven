@@ -7,7 +7,7 @@ from haven.instrument.xia_pfcu import (
     PFCUFilter,
     PFCUFilterBank,
     PFCUShutter,
-    ShutterStates,
+    ShutterState,
     load_xia_pfcu4s,
 )
 
@@ -51,7 +51,7 @@ def test_pfcu_shutter_readback(shutter):
     readback._readback = 0b0010
     readback._run_subs(sub_type=readback._default_sub)
     # Check that the readback signal gets updated
-    assert shutter.readback.get() == ShutterStates.OPEN
+    assert shutter.readback.get() == ShutterState.OPEN
 
 
 def test_pfcu_shutter_bank_mask(shutter_bank):
@@ -67,7 +67,7 @@ def test_pfcu_shutter_open(shutter_bank):
     # Set the other filters on the filter bank
     shutter_bank.readback._readback = 0b0100
     # Open the shutter, and check that the filterbank was set
-    shutter.setpoint.set(ShutterStates.OPEN).wait(timeout=1)
+    shutter.setpoint.set(ShutterState.OPEN).wait(timeout=1)
     assert shutter_bank.setpoint.get() == 0b0110
 
 
@@ -77,7 +77,7 @@ def test_pfcu_shutter_close(shutter_bank):
     # Set the other filters on the filter bank
     shutter_bank.readback._readback = 0b0100
     # Open the shutter, and check that the filterbank was set
-    shutter.setpoint.set(ShutterStates.CLOSED).wait(timeout=1)
+    shutter.setpoint.set(ShutterState.CLOSED).wait(timeout=1)
     assert shutter_bank.setpoint.get() == 0b0101
 
 

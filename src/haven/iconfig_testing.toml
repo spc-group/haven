@@ -24,22 +24,19 @@ info_port = "60625"
 uri = "http://localhost:8337/"
 entry_node = "255id_testing"
 
-[shutter]
-prefix = "PSS:99ID"
-
 [shutter.front_end_shutter]
 
 hutch = "A"
-# open_pv = "PSS:99ID:FES_OPEN_EPICS.VAL"
-# close_pv = "PSS:99ID:FES_CLOSE_EPICS.VAL"
-# status_pv = "PSS:99ID:A_BEAM_PRESENT"
+prefix = "S255ID-PSS:FES:"
+allow_open = true  # Default
+allow_close = false
 
 [shutter.hutch_shutter]
 
 hutch = "C"
-# open_pv = "PSS:99ID:SCS_OPEN_EPICS.VAL"
-# close_pv = "PSS:99ID:SCS_CLOSE_EPICS.VAL"
-# status_pv = "PSS:25ID:C_BEAM_PRESENT"
+prefix = "S255ID-PSS:SCS:"
+allow_open = true  # Default
+allow_close = true  # Default
 
 [undulator]
 

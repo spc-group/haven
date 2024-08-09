@@ -32,9 +32,10 @@ class VoltmetersDisplay(display.FireflyDisplay):
     details_window_requested = Signal(str)  # ion-chamber device name
 
     def customize_ui(self):
-        # Connect support for running the auto_gain plan
+        # Connect support for running the auto_gain and dark current plans
         self.ui.auto_gain_button.setToolTip(haven.auto_gain.__doc__)
         self.ui.auto_gain_button.clicked.connect(self.run_auto_gain)
+        self.ui.dark_current_button.clicked.connect(self.record_dark_current)
         # Adjust layouts
         self.ui.voltmeters_layout.setHorizontalSpacing(0)
         self.ui.voltmeters_layout.setVerticalSpacing(0)
@@ -73,7 +74,7 @@ class VoltmetersDisplay(display.FireflyDisplay):
         super().update_queue_status(status)
         # Update widgets when the queue status changes
         self.ui.auto_gain_button.update_queue_style(status)
-        # self.ui.dark_current_button.update_queue_style(status)
+        self.ui.dark_current_button.update_queue_style(status)
 
     def run_auto_gain(self):
         """Send a plan to the queueserver to auto-gain the pre-amps."""
@@ -92,6 +93,21 @@ class VoltmetersDisplay(display.FireflyDisplay):
                 ic_names.append(row.device.name)
         # Construct the plan
         item = BPlan("auto_gain", ic_names, **kw)
+        # Send it to the queue server
+        self.queue_item_submitted.emit(item)
+
+    def record_dark_current(self):
+        """Add an item to queueserver to record the dark current of the ion
+        chambers.
+
+        """
+        # Determine which shutters to close
+        shutters = []
+        if self.ui.shutter_checkbox.isChecked():
+            shutters.append("experiment_shutter")
+        # Construct the plan
+        ic_names = [ic.name for ic in self.ion_chambers]
+        item = BPlan("record_dark_current", ic_names, shutters=shutters)
         # Send it to the queue server
         self.queue_item_submitted.emit(item)
 
@@ -115,9 +131,9 @@ class Row:
         for idx in range(num_columns):
             layout = QVBoxLayout()
             self.column_layouts.append(layout)
-        #################
-        # Create widgets
-        #################
+        ##################
+        # Create widgets #
+        ##################
         device_name = self.device.name
         # Description label
         self.name_label = PyDMLabel(
