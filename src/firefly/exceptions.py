@@ -1,0 +1,2 @@
+class UnknownOphydSignal(TypeError):
+    pass
