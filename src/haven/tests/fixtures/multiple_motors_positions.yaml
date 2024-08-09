@@ -1,0 +1,54 @@
+-
+  name: "Good position A"
+  motors:
+    -
+      name: "SLT V Upper"
+      readback: 510.5
+      offset: 0.
+    -
+      name: "SLT V Lower"
+      readback: -211.93
+  savetime: 1660907451.0
+-
+  name: "Good Sample position"
+  motors:
+    -
+      name: "sam_H"
+      readback: 10.1
+      offset: 0.1
+    -
+      name: "Sam_V"
+      readback: -20.95
+      offset: -0.05
+  savetime: 1723236837.230731
+-
+  name: "Vortex_pos1"
+  motors:
+    -
+      name: "vortex_in"
+      readback: 6.1
+  savetime: 1723236915.988184
+-
+  name: "Fake_mono_position"
+  motors:
+    -
+      name: "fakePitch"
+      readback: 832678.1
+      offset: 3525.1
+    -
+      name: "fakeBragg"
+      readback: 789231.97321
+      offset: 45612.543
+    -
+      name: "fakeHoriz"
+      readback: 78239087149.231
+      offset: 5280.3452
+    -
+      name: "fakeVert"
+      readback: 65843296.4321
+      offset: 5143.314
+    -
+      name: "fakeGap"
+      readback: 80214.25
+      offset: 5890.213  
+  savetime: 1660907851.5
