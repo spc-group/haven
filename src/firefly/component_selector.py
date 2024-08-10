@@ -5,13 +5,13 @@ from functools import lru_cache
 from typing import Mapping, Sequence
 
 import qtawesome as qta
-from bluesky.protocols import HasName
+from bluesky.protocols import HasName, Movable
 from ophyd import Device, EpicsMotor, PositionerBase, Signal
 from ophyd_async.core import Device as AsyncDevice
 from ophyd_async.core import Signal as AsyncSignal
 from ophyd_async.epics.motor import Motor as EpicsAsyncMotor
 from qasync import asyncSlot
-from qtpy.QtGui import QFont, QStandardItem, QStandardItemModel
+from qtpy.QtGui import QColor, QFont, QStandardItem, QStandardItemModel
 from qtpy.QtWidgets import (
     QComboBox,
     QHBoxLayout,
@@ -111,15 +111,36 @@ class TreeNode(OphydNode):
         column = 1
         parent.setChild(row, column, self.type_item)
         # Make the component item bold if it's a positioner
-        if issubclass(self.device_class, PositionerBase):
+        is_positioner = issubclass(self.device_class, PositionerBase) or issubclass(
+            self.device_class, EpicsAsyncMotor
+        )
+        if is_positioner:
             font = QFont()
             font.setBold(True)
             self.name_item.setFont(font)
+        # Decide on the row's color
+        is_async_device = issubclass(self.device_class, AsyncDevice) and not issubclass(
+            self.device_class, AsyncSignal
+        )
+        is_device = issubclass(self.device_class, Device) or is_async_device
+        is_movable = issubclass(self.device_class, Movable)
+        if not (is_movable or is_device):
+            line_color = QColor("darkgrey")
+        else:
+            line_color = QColor("black")
+        self.name_item.setForeground(line_color)
+        self.type_item.setForeground(line_color)
         # Decide on an icon for this component
         for cls, icon in icons().items():
             if issubclass(self.device_class, cls):
                 self.type_item.setIcon(icon)
                 break
+        # Hint non-movable entries
+        is_movable = issubclass(self.device_class, Movable)
+        if not is_movable:
+            font = QFont()
+            font.setItalic(True)
+            self.name_item.setFont(font)
         # Keep a reference to the component that created the items
         self.name_item.setData(self)
         self.type_item.setData(self)

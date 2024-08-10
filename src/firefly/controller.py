@@ -113,11 +113,11 @@ class FireflyController(QtCore.QObject):
             await load_haven_instrument(registry=self.registry)
             self.registry_changed.emit(self.registry)
         # Fake device for testing
-        # from ophyd_async.epics.motor import Motor
+        from ophyd_async.epics.motor import Motor
 
-        # sim_async_motor = Motor("255idcVME", name="sim_async_motor")
-        # await sim_async_motor.connect(mock=True)
-        # registry.register(sim_async_motor, labels={"motors", "extra_motors"})
+        sim_async_motor = Motor("255idcVME", name="sim_async_motor")
+        await sim_async_motor.connect(mock=True)
+        registry.register(sim_async_motor, labels={"motors", "extra_motors"})
         # Make actions for launching other windows
         self.setup_window_actions()
         # Actions for controlling the bluesky run engine

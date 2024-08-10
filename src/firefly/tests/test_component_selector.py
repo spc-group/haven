@@ -54,7 +54,6 @@ async def test_selector_adds_devices(selector):
     # Check that positioners were added to the combobox model
     num_items = selector.combo_box.count()
     combobox_names = [selector.combo_box.itemText(i) for i in range(num_items)]
-    print(combobox_names)
     assert "async_stage" in combobox_names
     assert "async_stage.motor4" in combobox_names
     assert "async_stage.motor5" in combobox_names
