@@ -1,13 +1,14 @@
 import logging
-from enum import IntEnum
 from collections import OrderedDict
+from enum import IntEnum
 from functools import lru_cache
 from typing import Mapping, Sequence
 
 import qtawesome as qta
 from bluesky.protocols import HasName
 from ophyd import Device, EpicsMotor, PositionerBase, Signal
-from ophyd_async.core import Signal as AsyncSignal, Device as AsyncDevice
+from ophyd_async.core import Device as AsyncDevice
+from ophyd_async.core import Signal as AsyncSignal
 from ophyd_async.epics.motor import Motor as EpicsAsyncMotor
 from qasync import asyncSlot
 from qtpy.QtGui import QFont, QStandardItem, QStandardItemModel
@@ -53,7 +54,7 @@ def icons():
     )
 
 
-class DeviceContainer():
+class DeviceContainer:
     device_flavor: Flavors = Flavors.UNKNOWN
 
     def _asynchronous_children(self, device):
@@ -136,7 +137,7 @@ def dotted_name(obj: HasName) -> str:
             attr_name = attr
             break
     else:
-        raise RuntimeError("Could not find attribute name.")    
+        raise RuntimeError("Could not find attribute name.")
     # siblings = list(attrs.values())
     # attr_names = list(attrs.keys())
     # idx = siblings.index(obj)

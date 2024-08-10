@@ -3,8 +3,8 @@ from unittest import mock
 import pytest
 from ophyd import Component as Cpt
 from ophyd import Device, EpicsMotor, sim
-from ophyd_async.epics.motor import Motor as AsyncMotor
 from ophyd_async.core import Device as AsyncDevice
+from ophyd_async.epics.motor import Motor as AsyncMotor
 
 from firefly.component_selector import (
     ComponentSelector,
