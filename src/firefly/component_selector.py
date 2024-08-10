@@ -1,10 +1,14 @@
 import logging
+from enum import IntEnum
 from collections import OrderedDict
 from functools import lru_cache
 from typing import Mapping, Sequence
 
 import qtawesome as qta
+from bluesky.protocols import HasName
 from ophyd import Device, EpicsMotor, PositionerBase, Signal
+from ophyd_async.core import Signal as AsyncSignal, Device as AsyncDevice
+from ophyd_async.epics.motor import Motor as EpicsAsyncMotor
 from qasync import asyncSlot
 from qtpy.QtGui import QFont, QStandardItem, QStandardItemModel
 from qtpy.QtWidgets import (
@@ -20,6 +24,14 @@ from qtpy.QtWidgets import (
 log = logging.getLogger(__name__)
 
 
+class Flavors(IntEnum):
+    UNKNOWN = 0
+    VANILLA_DEVICE = 1
+    VANILLA_SIGNAL = 2
+    ASYNC_DEVICE = 3
+    ASYNC_SIGNAL = 4
+
+
 @lru_cache()
 def icons():
     """Produce a dictionary of icons for specific device classes.
@@ -33,10 +45,29 @@ def icons():
     return OrderedDict(
         {
             EpicsMotor: qta.icon("mdi.cog-clockwise"),
+            EpicsAsyncMotor: qta.icon("mdi.cog-clockwise"),
             Device: qta.icon("mdi.router-network"),
             Signal: qta.icon("mdi.connection"),
+            AsyncSignal: qta.icon("mdi.connection"),
         }
     )
+
+
+class DeviceContainer():
+    device_flavor: Flavors = Flavors.UNKNOWN
+
+    def _asynchronous_children(self, device):
+        for attr_name, child in device.children():
+            dot_name = dotted_name(child)
+            yield (dot_name, type(child), attr_name)
+
+    def _synchronous_children(self, device):
+        # Get the subcomponents of the device
+        components = getattr(device, "walk_components", lambda: [])()
+        # Build the tree from the child components of the device
+        for ancestors, dotted_name, cpt in components:
+            dotted_name = ".".join([device.name, dotted_name])
+            yield (dotted_name, cpt.cls, cpt.attr)
 
 
 class OphydNode:
@@ -93,17 +124,57 @@ class TreeNode(OphydNode):
         self.type_item.setData(self)
 
 
-class DeviceTree(TreeNode):
+def dotted_name(obj: HasName) -> str:
+    """Get the dotted attribute name of an ophyd_async object."""
+    if obj.parent is None:
+        # It's a root device, so just the device name
+        return obj.name
+    # Figure out the attr_name
+    attrs = obj.parent.__dict__
+    for attr, other_obj in attrs.items():
+        if other_obj is obj:
+            attr_name = attr
+            break
+    else:
+        raise RuntimeError("Could not find attribute name.")    
+    # siblings = list(attrs.values())
+    # attr_names = list(attrs.keys())
+    # idx = siblings.index(obj)
+    # attr_name = attr_names[siblings.index(obj)]
+    # attr_name = list(attrs.keys())[list(attrs.values()).index(obj)]
+    # Attach our attr_name to the dotted name of the parent
+    parent_name = dotted_name(obj.parent)
+    return f"{parent_name}.{attr_name}"
+
+
+def device_flavor(device):
+    # Determine what flavor of device this is
+    if isinstance(device, Device):
+        return Flavors.VANILLA_DEVICE
+    elif isinstance(device, Signal):
+        return Flavors.VANILLA_SIGNAL
+    elif isinstance(device, AsyncDevice):
+        return Flavors.ASYNC_DEVICE
+    elif isinstance(device, AsyncSignal):
+        return Flavors.ASYNC_SIGNAL
+    # Something else, *shrug*
+    return Flavors.UNKNOWN
+
+
+class DeviceTree(DeviceContainer, TreeNode):
     """Representation of an ophyd Component/Device in a tree view."""
 
     nodes: Mapping
+    device_flavor: int = Flavors.UNKNOWN
 
     def __init__(self, device, *args, **kwargs):
         self.device = device
-        dotted_name = self.device.name
-        dotted_name = kwargs.pop("dotted_name", dotted_name)
+        self.device_flavor = device_flavor(device)
+        # Determine the fully dotted attribute name
+        dot_name = dotted_name(device)
+        dot_name = kwargs.pop("dotted_name", dot_name)
         super().__init__(
-            *args, device_class=type(device), dotted_name=dotted_name, **kwargs
+            *args, device_class=type(device), dotted_name=dot_name, **kwargs
         )
 
     def component_from_dotted_name(self, name):
@@ -113,17 +184,21 @@ class DeviceTree(TreeNode):
         """Add components of the device as branches on the tree."""
         # Create a place to store the nodes of the tree
         self.nodes = {self.device.name: self}
-        # Get the subcomponents of the device
-        components = getattr(self.device, "walk_components", lambda: [])()
-        # Build the tree from the child components of the device
-        for ancestors, dotted_name, cpt in components:
-            dotted_name = ".".join([self.device.name, dotted_name])
+        # Get the device's children
+        if self.device_flavor == Flavors.VANILLA_DEVICE:
+            children = self._synchronous_children(self.device)
+        elif self.device_flavor == Flavors.ASYNC_DEVICE:
+            children = self._asynchronous_children(self.device)
+        else:
+            children = []
+        # Build nodes for the children
+        for dotted_name, child_cls, text in children:
             parent = dotted_name.rsplit(".", maxsplit=1)[0]
             parent = self.nodes[parent]
             node = TreeNode(
                 parent_item=parent.name_item,
-                text=cpt.attr,
-                device_class=cpt.cls,
+                text=text,
+                device_class=child_cls,
                 dotted_name=dotted_name,
             )
             self.nodes[dotted_name] = node
@@ -168,8 +243,8 @@ class ComboBoxNode(OphydNode):
         self.text_item = QStandardItem(self.text)
 
 
-class DeviceComboBoxModel(QStandardItemModel):
-    valid_classes = [PositionerBase, Device]
+class DeviceComboBoxModel(DeviceContainer, QStandardItemModel):
+    valid_classes = [PositionerBase, Device, AsyncDevice]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -178,27 +253,31 @@ class DeviceComboBoxModel(QStandardItemModel):
     async def add_device(self, device):
         """Add components of the device as extra options."""
         # Add a node for the root device itself
+        flavor = device_flavor(device)
         root_node = ComboBoxNode(
             text=device.name, device_class=type(device), dotted_name=device.name
         )
         self.nodes[device.name] = root_node
         self.appendRow(root_node.text_item)
-        # Get the subcomponents of the device
-        components = getattr(device, "walk_components", lambda: [])()
+        # Get the device's children
+        if flavor == Flavors.VANILLA_DEVICE:
+            children = self._synchronous_children(device)
+        elif flavor == Flavors.ASYNC_DEVICE:
+            children = self._asynchronous_children(device)
+        else:
+            children = []
         # Build the tree from the child components of the device
-        for ancestors, dotted_name, cpt in components:
+        # components = getattr(device, "walk_components", lambda: [])()
+        # for ancestors, dotted_name, cpt in components:
+        # Build nodes for the children
+        for dotted_name, child_cls, text in children:
             # Only add a device if it's high-level (e.g. motor)
-            device_class = cpt.cls
-            is_valid = (issubclass(device_class, cls) for cls in self.valid_classes)
+            is_valid = (issubclass(child_cls, cls) for cls in self.valid_classes)
             if not any(is_valid):
                 continue
-            # Prepare some device info
-            dotted_name = ".".join([device.name, dotted_name])
-            parent = dotted_name.rsplit(".", maxsplit=1)[0]
-            parent = self.nodes[parent]
             # Create the node
             node = ComboBoxNode(
-                text=dotted_name, device_class=device_class, dotted_name=dotted_name
+                text=dotted_name, device_class=child_cls, dotted_name=dotted_name
             )
             self.nodes[dotted_name] = node
             # Add the node's model items to the model
