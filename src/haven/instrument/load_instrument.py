@@ -70,40 +70,38 @@ async def load_instrument(
     # Load the configuration
     if config is None:
         config = load_config()
+    # Load the devices from the configuration files
+    devices = []
     # Asynchronous loading of devices
     results = await asyncio.gather(
         load_ion_chambers(config=config),
-        # Load the motor devices last so that we can check for
-        # existing motors in the registry
-        load_motors(config=config),
     )
-    # Flatten async devices
-    devices = [d for devs in results for d in devs]
-    # Synchronous loading of devices
-    devices.extend(
-        [
-            *load_aerotech_stages(config=config),
-            load_aps(config=config),
-            *load_area_detectors(config=config),
-            load_beamline_manager(config=config),
-            *load_cameras(config=config),
-            *load_dxp_detectors(config=config),
-            load_energy_positioner(config=config),
-            *load_heaters(config=config),
-            *load_lerix_spectrometers(config=config),
-            *load_power_supplies(config=config),
-            *load_robots(config=config),
-            *load_shutters(config=config),
-            *load_slits(config=config),
-            *load_stages(config=config),
-            *load_tables(config=config),
-            *load_xia_pfcu4s(config=config),
-            *load_xspress_detectors(config=config),
-            *load_mirrors(config=config),
-        ]
-    )
-    # Also import some simulated devices for testing
-    # devices.extend(load_simulated_devices(config=config))
+    # Load the motor devices last so that we can check for
+    # existing motors in the registry
+    results.append(await load_motors(config=config))
+    # Flatten async devices and add to the rest
+    devices.extend([d for devices in results for d in devices])
+    # Synchronous (threaded) devices
+    devices.extend([
+        *load_aerotech_stages(config=config),
+        load_aps(config=config),
+        *load_area_detectors(config=config),
+        load_beamline_manager(config=config),
+        *load_cameras(config=config),
+        *load_dxp_detectors(config=config),
+        load_energy_positioner(config=config),
+        *load_heaters(config=config),
+        *load_lerix_spectrometers(config=config),
+        *load_power_supplies(config=config),
+        *load_robots(config=config),
+        *load_shutters(config=config),
+        *load_slits(config=config),
+        *load_stages(config=config),
+        *load_tables(config=config),
+        *load_xia_pfcu4s(config=config),
+        *load_xspress_detectors(config=config),
+        *load_mirrors(config=config),
+    ])
     # Filter out devices that couldn't be reached
     devices = [d for d in devices if d is not None]
     # Put the devices into the registry

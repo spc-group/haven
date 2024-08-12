@@ -39,14 +39,14 @@ class Motor(MotorBase):
         with self.add_children_as_readables(ConfigSignal):
             self.description = epics_signal_rw(str, f"{prefix}.DESC")
         # Motor status signals
-        self.motor_is_moving = epics_signal_r(str, f"{prefix}.MOVN")
-        self.motor_done_move = epics_signal_r(str, f"{prefix}.DMOV")
-        self.high_limit_switch = epics_signal_r(str, f"{prefix}.HLS")
-        self.low_limit_switch = epics_signal_r(str, f"{prefix}.LLS")
-        self.high_limit_travel = epics_signal_rw(str, f"{prefix}.HLM")
-        self.low_limit_travel = epics_signal_rw(str, f"{prefix}.LLM")
-        self.direction_of_travel = epics_signal_r(str, f"{prefix}.TDIR")
-        self.soft_limit_violation = epics_signal_r(str, f"{prefix}.LVIO")
+        self.motor_is_moving = epics_signal_r(int, f"{prefix}.MOVN")
+        self.motor_done_move = epics_signal_r(int, f"{prefix}.DMOV")
+        self.high_limit_switch = epics_signal_r(int, f"{prefix}.HLS")
+        self.low_limit_switch = epics_signal_r(int, f"{prefix}.LLS")
+        self.high_limit_travel = epics_signal_rw(float, f"{prefix}.HLM")
+        self.low_limit_travel = epics_signal_rw(float, f"{prefix}.LLM")
+        self.direction_of_travel = epics_signal_r(int, f"{prefix}.TDIR")
+        self.soft_limit_violation = epics_signal_r(int, f"{prefix}.LVIO")
         # Load all the parent signals
         super().__init__(prefix=prefix, name=name)
 

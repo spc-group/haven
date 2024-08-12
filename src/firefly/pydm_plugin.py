@@ -118,7 +118,7 @@ class HavenAsyncConnection(RegistryConnection, PyDMConnection):
             return
         value = reading["value"]
         try:
-            self.new_value_signal.emit(value)
+            self.new_value_signal[type(value)].emit(value)
         except Exception:
             log.exception("Unable to update %r with value %r.", self.signal.name, value)
         # Update alarm severity

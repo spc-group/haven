@@ -35,7 +35,7 @@
         <set>Qt::AlignCenter</set>
        </property>
        <property name="channel" stdset="0">
-        <string>haven://${MOTOR}_description</string>
+        <string>haven://${MOTOR}.description</string>
        </property>
       </widget>
      </item>
@@ -87,7 +87,7 @@
           <number>0</number>
          </property>
          <item>
-          <widget class="PyDMByteIndicator" name="limit_hard_low_indicator">
+          <widget class="PyDMByteIndicator" name="limit_hard_low_indicator" native="true">
            <property name="toolTip">
             <string/>
            </property>
@@ -101,7 +101,7 @@
             <bool>true</bool>
            </property>
            <property name="channel" stdset="0">
-            <string>haven://${MOTOR}_low_limit_switch</string>
+            <string>haven://${MOTOR}.low_limit_switch</string>
            </property>
            <property name="onColor" stdset="0">
             <color>
@@ -140,7 +140,7 @@
           </widget>
          </item>
          <item>
-          <widget class="PyDMByteIndicator" name="limit_soft_low_indicator">
+          <widget class="PyDMByteIndicator" name="limit_soft_low_indicator" native="true">
            <property name="toolTip">
             <string/>
            </property>
@@ -148,7 +148,7 @@
             <string>[{&quot;name&quot;: &quot;limit_autohide&quot;, &quot;property&quot;: &quot;Visible&quot;, &quot;initial_value&quot;: &quot;False&quot;, &quot;expression&quot;: &quot;ch[0] &gt; 0&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;haven://${MOTOR}_soft_limit_violation&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}]}]</string>
            </property>
            <property name="channel" stdset="0">
-            <string>haven://${MOTOR}_soft_limit_violation</string>
+            <string>haven://${MOTOR}.soft_limit_violation</string>
            </property>
            <property name="onColor" stdset="0">
             <color>
@@ -190,7 +190,7 @@
           <number>0</number>
          </property>
          <item>
-          <widget class="PyDMByteIndicator" name="limit_hard_high_indicator">
+          <widget class="PyDMByteIndicator" name="limit_hard_high_indicator" native="true">
            <property name="toolTip">
             <string/>
            </property>
@@ -204,7 +204,7 @@
             <bool>true</bool>
            </property>
            <property name="channel" stdset="0">
-            <string>haven://${MOTOR}_high_limit_switch</string>
+            <string>haven://${MOTOR}.high_limit_switch</string>
            </property>
            <property name="onColor" stdset="0">
             <color>
@@ -243,7 +243,7 @@
           </widget>
          </item>
          <item>
-          <widget class="PyDMByteIndicator" name="limit_soft_high_indicator">
+          <widget class="PyDMByteIndicator" name="limit_soft_high_indicator" native="true">
            <property name="toolTip">
             <string/>
            </property>
@@ -251,7 +251,7 @@
             <string>[{&quot;name&quot;: &quot;limit_autohide&quot;, &quot;property&quot;: &quot;Visible&quot;, &quot;initial_value&quot;: &quot;False&quot;, &quot;expression&quot;: &quot;ch[0] &gt; 0&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;haven://${MOTOR}_soft_limit_violation&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}]}]</string>
            </property>
            <property name="channel" stdset="0">
-            <string>haven://${MOTOR}_soft_limit_violation</string>
+            <string>haven://${MOTOR}.soft_limit_violation</string>
            </property>
            <property name="onColor" stdset="0">
             <color>
@@ -387,19 +387,20 @@
    <header>pydm.widgets.byte</header>
   </customwidget>
   <customwidget>
+   <class>PyDMPushButton</class>
+   <extends>QPushButton</extends>
+   <header>pydm.widgets.pushbutton</header>
+  </customwidget>
+  <customwidget>
    <class>PyDMEmbeddedDisplay</class>
    <extends>QFrame</extends>
    <header>pydm.widgets.embedded_display</header>
+   <container>1</container>
   </customwidget>
   <customwidget>
    <class>PyDMLineEdit</class>
    <extends>QLineEdit</extends>
    <header>pydm.widgets.line_edit</header>
-  </customwidget>
-  <customwidget>
-   <class>PyDMPushButton</class>
-   <extends>QPushButton</extends>
-   <header>pydm.widgets.pushbutton</header>
   </customwidget>
  </customwidgets>
  <resources/>
