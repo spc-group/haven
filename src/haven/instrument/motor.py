@@ -85,6 +85,35 @@ class Motor(MotorBase):
                 self.set_name(safe_ophyd_name(desc))
 
 
+class HavenMotor(MotorFlyer, EpicsMotor):
+    """The default motor for haven movement.
+
+    This motor also implements the flyer interface and so can be used
+    in a fly scan, though no hardware triggering is supported.
+
+    Returns to the previous value when being unstaged.
+
+    """
+
+    # Extra motor record components
+    encoder_resolution = Cpt(EpicsSignal, ".ERES", kind=Kind.config)
+    description = Cpt(EpicsSignal, ".DESC", kind="omitted")
+    tweak_value = Cpt(EpicsSignal, ".TWV", kind="omitted")
+    tweak_forward = Cpt(EpicsSignal, ".TWF", kind="omitted", tolerance=2)
+    tweak_reverse = Cpt(EpicsSignal, ".TWR", kind="omitted", tolerance=2)
+    motor_stop = Cpt(EpicsSignal, ".STOP", kind="omitted", tolerance=2)
+    soft_limit_violation = Cpt(EpicsSignalRO, ".LVIO", kind="omitted")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def stage(self):
+        super().stage()
+        # Override some additional staged signals
+        self._original_vals.setdefault(self.user_setpoint, self.user_readback.get())
+        self._original_vals.setdefault(self.velocity, self.velocity.get())
+
+
 async def load_motors(
     config: Mapping = None,
     registry: InstrumentRegistry = default_registry,
