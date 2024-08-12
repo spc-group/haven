@@ -5,9 +5,13 @@ from typing import Mapping, Sequence
 from apstools.utils.misc import safe_ophyd_name
 from ophyd import Component as Cpt
 from ophyd import EpicsMotor, EpicsSignal, EpicsSignalRO, Kind
+from ophyd_async.core import ConfigSignal
+from ophyd_async.core._utils import DEFAULT_TIMEOUT
+from ophyd_async.epics.motor import Motor as MotorBase
+from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw
 
 from .._iconfig import load_config
-from .device import make_device, resolve_device_names
+from .device import connect_devices, make_device, resolve_device_names
 from .instrument_registry import InstrumentRegistry
 from .instrument_registry import registry as default_registry
 from .motor_flyer import MotorFlyer
@@ -15,37 +19,76 @@ from .motor_flyer import MotorFlyer
 log = logging.getLogger(__name__)
 
 
-class HavenMotor(MotorFlyer, EpicsMotor):
-    """The default motor for haven movement.
+class Motor(MotorBase):
+    """The default motor for asynchrnous movement."""
 
-    This motor also implements the flyer interface and so can be used
-    in a fly scan, though no hardware triggering is supported.
+    def __init__(
+        self, prefix: str, name="", labels={"motors"}, auto_name: bool = None
+    ) -> None:
+        """Parameters
+        ==========
+        auto_name
+          If true, or None when no name was provided, the name for
+          this motor will be set based on the motor's *description*
+          field.
 
-    Returns to the previous value when being unstaged.
+        """
+        self._ophyd_labels_ = labels
+        self.auto_name = bool(auto_name) or (auto_name is None and name == "")
+        # Configuration signals
+        with self.add_children_as_readables(ConfigSignal):
+            self.description = epics_signal_rw(str, f"{prefix}.DESC")
+        # Motor status signals
+        self.motor_is_moving = epics_signal_r(str, f"{prefix}.MOVN")
+        self.motor_done_move = epics_signal_r(str, f"{prefix}.DMOV")
+        self.high_limit_switch = epics_signal_r(str, f"{prefix}.HLS")
+        self.low_limit_switch = epics_signal_r(str, f"{prefix}.LLS")
+        self.high_limit_travel = epics_signal_rw(str, f"{prefix}.HLM")
+        self.low_limit_travel = epics_signal_rw(str, f"{prefix}.LLM")
+        self.direction_of_travel = epics_signal_r(str, f"{prefix}.TDIR")
+        self.soft_limit_violation = epics_signal_r(str, f"{prefix}.LVIO")
+        # Load all the parent signals
+        super().__init__(prefix=prefix, name=name)
 
-    """
+    async def connect(
+        self,
+        mock: bool = False,
+        timeout: float = DEFAULT_TIMEOUT,
+        force_reconnect: bool = False,
+    ):
+        """Connect self and all child Devices.
 
-    # Extra motor record components
-    encoder_resolution = Cpt(EpicsSignal, ".ERES", kind=Kind.config)
-    description = Cpt(EpicsSignal, ".DESC", kind="omitted")
-    tweak_value = Cpt(EpicsSignal, ".TWV", kind="omitted")
-    tweak_forward = Cpt(EpicsSignal, ".TWF", kind="omitted", tolerance=2)
-    tweak_reverse = Cpt(EpicsSignal, ".TWR", kind="omitted", tolerance=2)
-    motor_stop = Cpt(EpicsSignal, ".STOP", kind="omitted", tolerance=2)
-    soft_limit_violation = Cpt(EpicsSignalRO, ".LVIO", kind="omitted")
+        Contains a timeout that gets propagated to child.connect methods.
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        Parameters
+        ----------
+        mock:
+            If True then use ``MockSignalBackend`` for all Signals
+        timeout:
+            Time to wait before failing with a TimeoutError.
 
-    def stage(self):
-        super().stage()
-        # Override some additional staged signals
-        self._original_vals.setdefault(self.user_setpoint, self.user_readback.get())
-        self._original_vals.setdefault(self.velocity, self.velocity.get())
+        """
+        await super().connect(
+            mock=mock, timeout=timeout, force_reconnect=force_reconnect
+        )
+        # Update the device's name
+        if bool(self.auto_name):
+            try:
+                desc = await self.description.get_value()
+            except Exception as exc:
+                warnings.warn(
+                    f"Could not read description for {self}. " "Name not updated. {exc}"
+                )
+                return
+            # Only update the name if the description has been set
+            if desc != "":
+                self.set_name(safe_ophyd_name(desc))
 
 
 async def load_motors(
-    config: Mapping = None, registry: InstrumentRegistry = default_registry
+    config: Mapping = None,
+    registry: InstrumentRegistry = default_registry,
+    auto_name=True,
 ) -> Sequence:
     """Load generic hardware motors from IOCs.
 
@@ -62,76 +105,49 @@ async def load_motors(
     registry
       The instrument registry to check for existing motors. Existing
       motors will not be duplicated.
+    auto_name
+      If true, motors will be named based on its description signal
+      when connecting.
 
     Returns
     =======
     devices
-      The newly create EpicsMotor devices.
+      The newly created motor devices.
 
     """
     if config is None:
         config = load_config()
-    # Build up definitions of motors to load
-    defns = []
-    for section_name, config in config.get("motor", {}).items():
-        prefix = config["prefix"]
-        num_motors = config["num_motors"]
+    # Create the motor devices
+    devices = []
+    for section_name, cfg in config.get("motor", {}).items():
+        prefix = cfg["prefix"]
+        num_motors = cfg["num_motors"]
         log.info(
             f"Preparing {num_motors} motors from IOC: " f"{section_name} ({prefix})"
         )
         for idx in range(num_motors):
-            motor_prefix = f"{prefix}m{idx+1}"
-            defns.append(
-                {
-                    "prefix": motor_prefix,
-                    "desc_pv": f"{motor_prefix}.DESC",
-                    "ioc_name": section_name,
-                }
+            labels = {"motors", "extra_motors", "baseline", section_name}
+            default_name = f"{prefix.strip(':')}_m{idx+1}"
+            new_motor = Motor(
+                prefix=f"{prefix}m{idx+1}",
+                name=default_name,
+                labels=labels,
+                auto_name=auto_name,
             )
-    # Check that we're not duplicating a motor somewhere else (e.g. KB mirrors)
-    existing_pvs = []
-    for m in registry.findall(label="motors", allow_none=True):
-        if hasattr(m, "prefix"):
-            existing_pvs.append(m.prefix)
-    defns = [defn for defn in defns if defn["prefix"] not in existing_pvs]
-    duplicates = [defn for defn in defns if defn["prefix"] in existing_pvs]
-    if len(duplicates) > 0:
-        log.info(
-            "The following motors already exist and will not be duplicated: ",
-            ", ".join([m["prefix"] for m in duplicates]),
-        )
-    else:
-        log.debug(f"No duplicated motors detected out of {len(defns)}")
-    # Resolve the scaler channels into ion chamber names
-    await resolve_device_names(defns)
-    # Create the devices
-    devices = []
-    missing_channels = []
-    unnamed_channels = []
-    for defn in defns:
-        # Check for motor without a name
-        if defn["name"] == "":
-            unnamed_channels.append(defn["prefix"])
-        elif defn["name"] is None:
-            missing_channels.append(defn["prefix"])
-        else:
-            # Create the device
-            labels = {"motors", "extra_motors", "baseline", defn["ioc_name"]}
-            name = safe_ophyd_name(defn["name"])
-            devices.append(
-                make_device(HavenMotor, prefix=defn["prefix"], name=name, labels=labels)
-            )
-    # Notify about motors that have no name
-    if len(missing_channels) > 0:
-        msg = "Skipping unavailable motors: "
-        msg += ", ".join([prefix for prefix in missing_channels])
-        warnings.warn(msg)
-        log.warning(msg)
-    if len(unnamed_channels) > 0:
-        msg = "Skipping unnamed motors: "
-        msg += ", ".join([prefix for prefix in unnamed_channels])
-        warnings.warn(msg)
-        log.warning(msg)
+            devices.append(new_motor)
+    # Removed motors that are already available somewhere else (e.g. KB Mirrors)
+    existing_motors = registry.findall(label="motors", allow_none=True)
+    existing_sources = [getattr(m.user_readback, "source", "") for m in existing_motors]
+    existing_sources = [s for s in existing_sources if s != ""]
+    devices = [
+        m
+        for m in devices
+        if getattr(m.user_readback, "source", "") not in existing_sources
+    ]
+    # Connect to devices
+    devices = await connect_devices(
+        devices, mock=not config["beamline"]["is_connected"], registry=registry
+    )
     return devices
 
 
