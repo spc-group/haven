@@ -1,11 +1,13 @@
 from apstools.synApps import TransformRecord
 from ophyd import Component as Cpt
-from ophyd import Device, Kind, OphydObject
+from ophyd import Kind, OphydObject
+from ophyd_async.core import Device
 
 from .. import exceptions
 from .._iconfig import load_config
-from .device import make_device
-from .motor import HavenMotor
+from .instrument_registry import InstrumentRegistry, registry as default_registry
+from .device import make_device, connect_devices
+from .motor import Motor
 
 
 class Table(Device):
@@ -27,11 +29,10 @@ class Table(Device):
     .. code:: python
 
         tbl = Table(
-            "255idcVME:",
-            pseudo_motors="table_us:",
-            transforms="table_us_trans:",
-            upstream_motor="m3",
-            downstream_motor="m4",
+            pseudo_motors="255idcVME:table_us:",
+            transforms="255idcVME:table_us_trans:",
+            upstream_motor="255idcVME:m3",
+            downstream_motor="255idcVME:m4",
             name="my_table",
         )
 
@@ -46,113 +47,69 @@ class Table(Device):
 
     Parameters
     ==========
-    prefix
-      The PV prefix common to all components. E.g. "25idcVME:".
     vertical_motor
       The suffix for the real motor controlling the height of the
-      table (e.g. "m1"). Ignored if *upstream_motor* and
+      table (e.g. "255idVME:m1"). Ignored if *upstream_motor* and
       *downstream_motor* are provided.
     horizontal_motor
       The suffix for the real motor controlling the lateral movement
-      of the table (e.g. "m1").
+      of the table (e.g. "255idVME:m2").
     upstream_motor
       The suffix for the real motor controlling the height of the
-      upstream leg of the table (e.g. "m1").
+      upstream leg of the table (e.g. "255idVME:m3").
     downstream_motor
       The suffix for the real motor controlling the height of the
-      downstream leg of the table (e.g. "m1").
+      downstream leg of the table (e.g. "255idVME:m4").
     pseudo_motors
-      The suffix for the pseudo motors controlling the orientation of
-      the table. E.g. "table_ds:". Creates the components: *height*
+      The prefix for the pseudo motors controlling the orientation of
+      the table. E.g. "255id:table_ds:". Creates the components: *height*
       and *pitch*.
     transforms
-      The suffix for the pseudo motor transform records
-      (e.g. "table_ds_trans:"). Creates the components:
+      The prefix for the pseudo motor transform records
+      (e.g. "255idVME:table_ds_trans:"). Creates the components:
       *vertical_drive_transform" and "vertical_readback_transform".
 
     """
-
+    _ophyd_labels_ = {"tables"}
     # These are the possible components that could be present
-    vertical: OphydObject
-    horizontal: OphydObject
-    upstream: OphydObject
-    downstream: OphydObject
-    pitch: OphydObject
-    horizontal_drive_transform: OphydObject
-    horizontal_readback_transform: OphydObject
-
-    def __new__(
-        cls,
-        prefix,
-        *args,
-        vertical_motor: str = "",
-        horizontal_motor: str = "",
-        upstream_motor: str = "",
-        downstream_motor: str = "",
-        pseudo_motors: str = "",
-        transforms: str = "",
-        **kwargs,
-    ):
-        # See if we have direct control over the vertical/horizontal positions
-        comps = {}
-        if bool(vertical_motor):
-            comps["vertical"] = Cpt(
-                HavenMotor,
-                vertical_motor,
-                labels={"motors"},
-            )
-        if bool(horizontal_motor):
-            comps["horizontal"] = Cpt(
-                HavenMotor,
-                horizontal_motor,
-                labels={"motors"},
-            )
-        if bool(upstream_motor):
-            comps["upstream"] = Cpt(
-                HavenMotor,
-                upstream_motor,
-                labels={"motors"},
-            )
-        if bool(downstream_motor):
-            comps["downstream"] = Cpt(
-                HavenMotor,
-                downstream_motor,
-                labels={"motors"},
-            )
-        # Check if we need to add the pseudo motors and tranforms
-        if bool(upstream_motor) and bool(downstream_motor):
-            comps["vertical"] = Cpt(
-                HavenMotor, f"{pseudo_motors}height", labels={"motors"}
-            )
-            comps["pitch"] = Cpt(HavenMotor, f"{pseudo_motors}pitch", labels={"motors"})
-            comps["vertical_drive_transform"] = Cpt(
-                TransformRecord, f"{transforms}Drive", kind=Kind.config
-            )
-            comps["vertical_readback_transform"] = Cpt(
-                TransformRecord, f"{transforms}Readback", kind=Kind.config
-            )
-        # Now create a customized class for all the motors given
-        new_cls = type("Table", (cls,), comps)
-        return object.__new__(new_cls)
+    vertical: Device
+    horizontal: Device
+    upstream: Device
+    downstream: Device
+    pitch: Device
+    horizontal_drive_transform: Device
+    horizontal_readback_transform: Device
 
     def __init__(
-        self,
-        *args,
-        pseudo_motors: str = "",
-        transforms: str = "",
-        vertical_motor: str = "",
-        horizontal_motor: str = "",
-        upstream_motor: str = "",
-        downstream_motor: str = "",
-        **kwargs,
+            self,
+            *args,
+            vertical_prefix: str = "",
+            horizontal_prefix: str = "",
+            upstream_prefix: str = "",
+            downstream_prefix: str = "",
+            pseudo_motor_prefix: str = "",
+            transform_prefix: str = "",
+            name="",
     ):
-        # __init__ needs to accept the arguments accepted by __new__.
-        self.pseudo_motors = pseudo_motors
-        self.transforms = transforms
-        super().__init__(*args, **kwargs)
+        # See if we have direct control over the vertical/horizontal positions
+        if vertical_prefix != "":
+            self.vertical = Motor(vertical_prefix, name="vertical")
+        if horizontal_prefix != "":
+            self.horizontal = Motor(horizontal_prefix, name="horizontal")
+        if bool(upstream_prefix):
+            self.upstream = Motor(upstream_prefix, name="upstream")
+        if bool(downstream_prefix):
+            self.downstream = Motor(downstream_prefix, name="downstream")
+        # Check if we need to add the pseudo motors and tranforms
+        if bool(upstream_prefix) and bool(downstream_prefix):
+            self.vertical = Motor(f"{pseudo_motor_prefix}height", name="vertical")
+            self.pitch = Motor(f"{pseudo_motor_prefix}pitch", name="pitch")
+            self.vertical_drive_transform = TransformRecord(f"{transform_prefix}Drive", name="vertical_drive_transform")
+            self.vertical_readback_transform = TransformRecord(f"{transform_prefix}Readback", name="vertical_readback_transform")
+        super().__init__(name=name)
 
 
-def load_tables(config=None):
+async def load_tables(config=None, registry: InstrumentRegistry = default_registry):
     if config is None:
         config = load_config()
     # Create two-bounce KB mirror sets
@@ -161,29 +118,42 @@ def load_tables(config=None):
         # Build the motor prefixes
         try:
             prefix = tbl_config["prefix"]
-            attr_names = [
-                "upstream_motor",
-                "downstream_motor",
-                "horizontal_motor",
-                "vertical_motor",
-                "transforms",
-                "pseudo_motors",
-            ]
-            attrs = {attr: tbl_config.get(attr, "") for attr in attr_names}
         except KeyError as ex:
             raise exceptions.UnknownDeviceConfiguration(
                 f"Device {name} missing '{ex.args[0]}': {tbl_config}"
             ) from ex
+        # Get other (optional) configuration
+        attr_names = [
+            "upstream_motor",
+            "downstream_motor",
+            "horizontal_motor",
+            "vertical_motor",
+            "transforms",
+            "pseudo_motors",
+        ]
+        attrs = {}
+        for attr in attr_names:
+            suffix = tbl_config.get(attr)
+            if suffix is not None:
+                attrs[attr] = f"{prefix}{suffix}"
+            else:
+                attrs[attr] = ""
         # Make the device
         devices.append(
-            make_device(
-                Table,
-                prefix=prefix,
+            Table(
                 name=name,
-                labels={"tables"},
-                **attrs,
+                vertical_prefix=attrs["vertical_motor"],
+                horizontal_prefix=attrs["horizontal_motor"],
+                upstream_prefix=attrs["upstream_motor"],
+                downstream_prefix=attrs["downstream_motor"],
+                pseudo_motor_prefix=attrs["pseudo_motors"],
+                transform_prefix=attrs["transforms"],
             )
         )
+    # Connect to devices
+    devices = await connect_devices(
+        devices, mock=not config["beamline"]["is_connected"], registry=registry
+    )
     return devices
 
 

@@ -75,6 +75,7 @@ async def load_instrument(
     # Asynchronous loading of devices
     results = await asyncio.gather(
         load_ion_chambers(config=config),
+        load_tables(config=config),
     )
     # Load the motor devices last so that we can check for
     # existing motors in the registry
@@ -97,7 +98,6 @@ async def load_instrument(
         *load_shutters(config=config),
         *load_slits(config=config),
         *load_stages(config=config),
-        *load_tables(config=config),
         *load_xia_pfcu4s(config=config),
         *load_xspress_detectors(config=config),
         *load_mirrors(config=config),
