@@ -17,7 +17,7 @@
       readback: 10.1
       offset: 0.1
     -
-      name: "Sam_V"
+      name: "sam_V"
       readback: -20.95
       offset: -0.05
   savetime: 1723236837.230731
