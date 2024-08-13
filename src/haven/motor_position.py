@@ -158,7 +158,7 @@ def print_motor_position(position):
     print(output, end="")
 
 
-def list_motor_positions(collection=None):
+def list_motor_positions(collection=None, printit=True):
     """Print a list of saved motor positions.
 
     The name and UID will be printed, along with each motor and it's
@@ -168,7 +168,12 @@ def list_motor_positions(collection=None):
     ==========
     collection
       The mongodb collection from which to print motor positions.
-
+    printit
+        Whether to print the motor positions to the console.
+    
+    Returns
+    =======
+    position_all
     """
     # Get default collection if none was given
     if collection is None:
@@ -177,13 +182,19 @@ def list_motor_positions(collection=None):
     results = collection.find()
     # Go through the results and display them
     were_found = False
+    # put all positons into a list
+    position_all = []
     for doc in results:
         were_found = True
         position = MotorPosition.load(doc)
-        print_motor_position(position)
+        position_all.append(position)
+        if printit:
+            print_motor_position(position)
     # Some feedback in the case of empty motor positions
     if not were_found:
         print(f"No motor positions found: {collection}")
+        return None
+    return position_all
 
 
 def get_motor_position(
@@ -263,7 +274,7 @@ def recall_motor_position(
     yield from bps.mv(*plan_args)
 
 
-def list_current_motor_positions(*motors, name="current motor"):
+def list_current_motor_positions(*motors, name="current motor", printit=True):
     """list and print the current positions of a number of motors
 
     Parameters
@@ -271,6 +282,8 @@ def list_current_motor_positions(*motors, name="current motor"):
     *motors
       The list of motors (or motor names/labels) whose position to
       save.
+    printit
+        Whether to print the motor positions to the console.
     name
       A human-readable name for this position (e.g. "sample center")
 
@@ -289,8 +302,9 @@ def list_current_motor_positions(*motors, name="current motor"):
     position = MotorPosition(
         name=name, motors=motor_axes, uid=None, savetime=time.time()
     )
-    # Display the current motor positions
-    print_motor_position(position)
+    if printit:
+        # Display the current motor positions
+        print_motor_position(position)
 
 
 # -----------------------------------------------------------------------------
