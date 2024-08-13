@@ -228,6 +228,14 @@ class FireflyController(QtCore.QObject):
                 icon=qta.icon("mdi.rotate-right-variant"),
                 WindowClass=PlanMainWindow,
             ),
+            "save_motor": WindowAction(
+                name="save_motor",
+                text="&Save motor",
+                display_file=plans_dir / "save_motor_window.py",
+                shortcut="Ctrl+Shift+S",
+                icon=qta.icon("mdi.content-save-all-outline"),
+                WindowClass=PlanMainWindow,
+            ),
             "line_scan": WindowAction(
                 name="line_scan",
                 text="&Line scan",
