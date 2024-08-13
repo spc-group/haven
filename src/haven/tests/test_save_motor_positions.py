@@ -110,6 +110,17 @@ def test_get_motor_position_by_uid(mongodb):
     assert result.motors[0].name == "SLT V Upper"
     assert result.motors[0].readback == 510.5
 
+def test_get_motor_position_by_uid_multiple_motors(mongodb):
+    uid = str(mongodb.multiple_motors_positions.find_one({"name": "Good Sample position"})["_id"])
+    print(uid)
+    result = get_motor_position(uid=uid, collection=mongodb.multiple_motors_positions)
+    assert result.name == "Good Sample position"
+    assert result.motors[0].name == "sam_H"
+    assert result.motors[0].readback == 10.1
+    assert result.motors[0].offset == 0.1
+    assert result.motors[1].name == "sam_V"
+    assert result.motors[1].readback == -20.95
+    assert result.motors[1].offset == -0.05
 
 def test_get_motor_position_by_name(mongodb):
     result = get_motor_position(
