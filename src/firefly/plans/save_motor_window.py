@@ -16,7 +16,7 @@ from haven import (
     save_motor_position,
     recall_motor_position,
 )
-
+import qtawesome as qta
 
 log = logging.getLogger()
 
@@ -89,15 +89,13 @@ class MotorRegion(regions_display.RegionBase):
         try:
             motor = self.motor_box.current_component()
             if motor:
-                self.RBV_label = PyDMLabel(self, init_channel=f"haven://{motor.name}.readback")
+                self.RBV_label = PyDMLabel(self, init_channel=f"haven://{motor.name}.user_readback")
             else:
                 raise Exception("No motor selected")
 
         except Exception as e:
             print(e)
-            if test:
-                # self.RBV_label.setText("Nan")
-                self.RBV_label = PyDMLabel("nan")
+            self.RBV_label = PyDMLabel("nan")
 
 class SaveMotorDisplay(regions_display.RegionsDisplay):
     Region = MotorRegion
@@ -113,24 +111,34 @@ class SaveMotorDisplay(regions_display.RegionsDisplay):
         # connect buttons
         self.ui.save_button.clicked.connect(self.save_motors)
         
-        # refresh saved list
-        self.ui.refresh_button.clicked.connect(self.refresh_saved_position_list)
-        self.refresh_saved_position_list()
+        # init saved positions table
+        self.init_saved_positions_table()
         
+        # connect checkboxes with all regions' check box
+        self.title_region.regions_all_checkbox.stateChanged.connect(
+            self.on_regions_all_checkbox
+        )
+        self.ui.refresh_button.setIcon(qta.icon("fa5s.sync-alt"))
+        
+
+    def init_saved_positions_table(self):
+        # Set the headers for the table
+        self.ui.saved_positions_tableWidget.setHorizontalHeaderLabels(["Name", "Savetime", "UID"])
+
         # connect double click to show saved position info
         self.ui.saved_positions_tableWidget.itemDoubleClicked.connect(self.show_saved_position_info)
+        
         # set selection behavior to select rows rather than individual cells
         self.ui.saved_positions_tableWidget.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
 
         # Add context menu to the saved positions table
         self.ui.saved_positions_tableWidget.setContextMenuPolicy(Qt.CustomContextMenu)
         self.ui.saved_positions_tableWidget.customContextMenuRequested.connect(self.show_context_menu)
-
-        # connect checkboxes with all regions' check box
-        self.title_region.regions_all_checkbox.stateChanged.connect(
-            self.on_regions_all_checkbox
-        )
-
+                
+        # refresh saved list
+        self.ui.refresh_button.clicked.connect(self.refresh_saved_position_list)
+        self.refresh_saved_position_list()
+        
     def refresh_saved_position_list(self):
         # Retrieve the saved positions
         saved_positions_all = list_motor_positions(collection=collection, printit=False)
@@ -138,9 +146,7 @@ class SaveMotorDisplay(regions_display.RegionsDisplay):
         # Create a set to store the UIDs that have already been added
         added_uids = set()
         
-        # Set the headers for the table
-        self.ui.saved_positions_tableWidget.setHorizontalHeaderLabels(["Name", "Savetime", "UID"])
-
+        
         # Loop through the current items in the table and add their UIDs to the set
         for row in range(self.ui.saved_positions_tableWidget.rowCount()):
             uid_item = self.ui.saved_positions_tableWidget.item(row, 2)
@@ -155,9 +161,7 @@ class SaveMotorDisplay(regions_display.RegionsDisplay):
             self.ui.saved_positions_tableWidget.insertRow(current_row_position)
 
             # Format the savetime
-            savetime_str = ""
-            if saved_position_i.savetime:
-                savetime_str = datetime.fromtimestamp(saved_position_i.savetime).strftime('%Y-%m-%d %H:%M:%S')
+            savetime_str = datetime.fromtimestamp(saved_position_i.savetime).strftime('%Y-%m-%d %H:%M:%S')
 
             # Add names, UIDs, and Savetime to the table widget
             name_item = QTableWidgetItem(saved_position_i.name)
@@ -183,8 +187,7 @@ class SaveMotorDisplay(regions_display.RegionsDisplay):
         # resize columns to fit contents
         self.ui.saved_positions_tableWidget.resizeColumnsToContents()          
         
-        
-        # Print a message to the text browser
+        # Send a message to the text browser
         self.ui.textBrowser.append("-" * 20)
         self.ui.textBrowser.append("Refreshed saved motor positions list.")
     
@@ -208,11 +211,8 @@ class SaveMotorDisplay(regions_display.RegionsDisplay):
         # Create the root item (the position name and uid)
         root = QtWidgets.QTreeWidgetItem(tree)
         root.setText(0, f'{name} (uid="{uid}", timestamp={self.ui.saved_positions_tableWidget.item(row, 2).text()})')
-        
-        print("ready to print motor details")
-        print("UID:", uid)
+
         motor_result = get_motor_position(uid=uid, collection=collection)
-        print("Motor Result:", motor_result)
         
         # Add the motors as children
         for motor in motor_result.motors:
@@ -253,7 +253,7 @@ class SaveMotorDisplay(regions_display.RegionsDisplay):
         collection.delete_one({"_id": uid})
         # Remove the row from the table
         self.ui.saved_positions_tableWidget.removeRow(row)
-        # Print a message to the text browser
+        # Send a message to the text browser
         self.ui.textBrowser.append("-" * 20)
         self.ui.textBrowser.append(f"Deleted saved motor position with UID: {uid}")
         self.ui.textBrowser.append("-" * 20)
@@ -298,18 +298,30 @@ class SaveMotorDisplay(regions_display.RegionsDisplay):
         return pos_id
 
 
+    def get_current_selected_row(self):
+        """Get the current selected row in the saved positions table."""
+
+        # get the current selected row
+        row = self.ui.saved_positions_tableWidget.currentRow()
+        # Get the name, uid, and other details for this row
+        name = self.ui.saved_positions_tableWidget.item(row, 0).text()
+        uid = self.ui.saved_positions_tableWidget.item(row, 2).text()    
+        return name, uid
+    
     def queue_plan(self, *args, **kwargs):
         """Execute this plan on the queueserver."""
         if test:
             self.ui.run_button.setEnabled(True)
-        # Get the row of the clicked item
-        row = self.ui.saved_positions_tableWidget.currentRow()
+
+        name, uid = self.get_current_selected_row()
         
-        # Get the name, uid, and other details for this row
-        name = self.ui.saved_positions_tableWidget.item(row, 0).text()
-        uid = self.ui.saved_positions_tableWidget.item(row, 2).text()
+        if not uid:
+            self.ui.textBrowser.append("No saved motor positions selected.")
+            return
+        
         plan = recall_motor_position(uid=uid, collection=collection)
         # send a message to the text browser
+        self.show_message(f"Recalling motor configurations: {name}: {uid}")
         self.ui.textBrowser.append("-" * 20)
         self.ui.textBrowser.append(f"Queuing selected motor configurations {name}: {uid}")
         
@@ -319,7 +331,12 @@ class SaveMotorDisplay(regions_display.RegionsDisplay):
 
     def ui_filename(self):
         return "plans/save_motor_window.ui"
-
+    
+    #TODO: make readback values and offset values in different columns
+    #future: add save plan
+    # refresh after save
+    # add a filter field for dates
+    
 
 # -----------------------------------------------------------------------------
 # :author:    Juanjuan Huang & Mark Wolfman
