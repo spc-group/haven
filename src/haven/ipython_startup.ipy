@@ -20,10 +20,8 @@ import haven  # noqa: F401
 
 logging.basicConfig(level=logging.WARNING)
 
-# Make sure asyncio and the bluesky run engine share an event loop
-loop = asyncio.new_event_loop()
-asyncio.set_event_loop(loop)
-RE = haven.run_engine(loop=loop)
+# Create a run engine
+RE = haven.run_engine(call_returns_result=True)
 
 # Add metadata to the run engine
 RE.preprocessors.append(haven.preprocessors.inject_haven_md_wrapper)
@@ -41,7 +39,7 @@ plt.ion()
 config = haven.load_config()
 t0 = time.monotonic()
 print(f"Initializing [repr.number]{config['beamline']['name']}[/]…", flush=True)
-await haven.load_instrument()
+call_in_bluesky_event_loop(haven.load_instrument())
 print(f"Finished initalization in {time.monotonic() - t0:.2f} seconds.", flush=True)
 
 # Save references to some commonly used things in the global namespace
@@ -69,7 +67,7 @@ motd = (
     "The run engine is also registered as the transform [italic]<[/].\n"
     " ┣━ [code]<mv(m, 2)[/code] (absolute move)\n"
     " ┣━ [code]<mvr(m, 2)[/code] (relative move)\n"
-    " ┗━ [code]<rd(m, 2)[/code] (read)\n"
+    " ┗━ [code]<rd(m)[/code] (read)\n"
     "\n"
     "Run [code]help(haven)[/code] for more information."
 )
