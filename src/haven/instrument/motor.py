@@ -9,6 +9,8 @@ from ophyd_async.core import ConfigSignal
 from ophyd_async.core._utils import DEFAULT_TIMEOUT
 from ophyd_async.epics.motor import Motor as MotorBase
 from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw
+from ophyd_async.epics.signal._signal import _epics_signal_backend
+from ophyd_async.core import SignalX, SignalBackend, DEFAULT_TIMEOUT, CalculatableTimeout, CalculateTimeout, AsyncStatus
 
 from .._iconfig import load_config
 from .device import connect_devices, make_device, resolve_device_names
@@ -17,6 +19,37 @@ from .instrument_registry import registry as default_registry
 from .motor_flyer import MotorFlyer
 
 log = logging.getLogger(__name__)
+
+
+class SignalX(SignalX):
+    trigger_value = 1
+
+    def __init__(self, *args, trigger_value=1, **kwargs):
+        self.trigger_value = trigger_value
+        super().__init__(*args, **kwargs)
+    
+    def trigger(
+        self, wait=True, timeout: CalculatableTimeout = CalculateTimeout
+    ) -> AsyncStatus:
+        """Trigger the action and return a status saying when it's done"""
+        if timeout is CalculateTimeout:
+            timeout = self._timeout
+        coro = self._backend.put(self.trigger_value, wait=wait, timeout=timeout)
+        return AsyncStatus(coro)
+
+
+def epics_signal_x(write_pv: str, name: str = "", trigger_value=1) -> SignalX:
+    """Create a `SignalX` backed by 1 EPICS PVs
+
+    Parameters
+    ----------
+    write_pv:
+      The PV to write its initial value to on trigger
+    trigger_value:
+      The value to send to the write PV.
+    """
+    backend: SignalBackend = _epics_signal_backend(None, write_pv, write_pv)
+    return SignalX(backend, name=name, trigger_value=trigger_value)
 
 
 class Motor(MotorBase):
@@ -49,6 +82,7 @@ class Motor(MotorBase):
         self.soft_limit_violation = epics_signal_r(int, f"{prefix}.LVIO")
         # Load all the parent signals
         super().__init__(prefix=prefix, name=name)
+        self.motor_stop = epics_signal_x(f"{prefix}.STOP", name=self.motor_stop.name)
 
     async def connect(
         self,

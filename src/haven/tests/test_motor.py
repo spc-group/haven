@@ -1,35 +1,23 @@
 from unittest.mock import AsyncMock
 
 import pytest
-from ophyd.sim import instantiate_fake_device
+from bluesky.protocols import Flyable
+from ophyd_async.core import get_mock_put
 
 from haven.instrument.motor import HavenMotor
 from haven.instrument.motor import Motor as AsyncMotor
 from haven.instrument.motor import load_motors
-from haven.instrument.motor_flyer import MotorFlyer
 
 
 @pytest.fixture()
-def mocked_device_names(mocker):
-    # Mock the caget calls used to get the motor name
-    async def resolve_device_names(defns):
-        for defn, name in zip(defns, ["SLT V Upper", "SLT V Lower", "SLT H Inbound"]):
-            defn["name"] = name
-
-    mocker.patch(
-        "haven.instrument.motor.resolve_device_names", new=resolve_device_names
-    )
-
-
-@pytest.fixture()
-def motor(sim_registry):
-    m1 = instantiate_fake_device(HavenMotor, name="m1")
-    m1.user_setpoint._use_limits = False
-    return m1
+async def motor(sim_registry):
+    motor = AsyncMotor("255idVME:m1", name="motor_1")
+    await motor.connect(mock=True)
+    return motor
 
 
 @pytest.mark.asyncio
-async def test_load_vme_motors(sim_registry, mocked_device_names, monkeypatch):
+async def test_load_vme_motors(sim_registry, monkeypatch):
     # Load the Ophyd motor definitions
     await load_motors(registry=sim_registry, auto_name=False)
     # Were the motors imported correctly
@@ -46,7 +34,7 @@ async def test_load_vme_motors(sim_registry, mocked_device_names, monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_skip_existing_motors(sim_registry, mocked_device_names):
+async def test_skip_existing_motors(sim_registry):
     """If a motor already exists from another device, don't add it to the
     motors group.
 
@@ -90,7 +78,14 @@ def test_async_motor_signals():
 def test_motor_flyer(motor):
     """Check that the haven motor implements the flyer interface."""
     assert motor is not None
-    assert isinstance(motor, MotorFlyer)
+    print(type(motor).__mro__)
+    assert isinstance(motor, Flyable)
+
+
+async def test_stop_button(motor):
+    await motor.motor_stop.trigger()
+    mock = get_mock_put(motor.motor_stop)
+    mock.assert_called_once_with(1, wait=True, timeout=10.0)
 
 
 @pytest.mark.asyncio
