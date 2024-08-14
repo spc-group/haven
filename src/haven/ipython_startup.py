@@ -24,6 +24,7 @@ logging.basicConfig(level=logging.WARNING)
 loop = asyncio.new_event_loop()
 asyncio.set_event_loop(loop)
 RE = haven.run_engine(loop=loop)
+
 # Add metadata to the run engine
 RE.preprocessors.append(haven.preprocessors.inject_haven_md_wrapper)
 

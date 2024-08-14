@@ -1,7 +1,7 @@
 from apstools.synApps import TransformRecord
 from ophyd import Component as Cpt
 from ophyd import Kind, OphydObject
-from ophyd_async.core import Device
+from ophyd_async.core import Device, StandardReadable
 
 from .. import exceptions
 from .._iconfig import load_config
@@ -10,7 +10,7 @@ from .device import make_device, connect_devices
 from .motor import Motor
 
 
-class Table(Device):
+class Table(StandardReadable, Device):
     """A dynamic Ophyd device for an optical table.
 
     This device will have the components needed for the configuration
@@ -91,21 +91,22 @@ class Table(Device):
             transform_prefix: str = "",
             name="",
     ):
-        # See if we have direct control over the vertical/horizontal positions
-        if vertical_prefix != "":
-            self.vertical = Motor(vertical_prefix, name="vertical")
-        if horizontal_prefix != "":
-            self.horizontal = Motor(horizontal_prefix, name="horizontal")
-        if bool(upstream_prefix):
-            self.upstream = Motor(upstream_prefix, name="upstream")
-        if bool(downstream_prefix):
-            self.downstream = Motor(downstream_prefix, name="downstream")
-        # Check if we need to add the pseudo motors and tranforms
-        if bool(upstream_prefix) and bool(downstream_prefix):
-            self.vertical = Motor(f"{pseudo_motor_prefix}height", name="vertical")
-            self.pitch = Motor(f"{pseudo_motor_prefix}pitch", name="pitch")
-            self.vertical_drive_transform = TransformRecord(f"{transform_prefix}Drive", name="vertical_drive_transform")
-            self.vertical_readback_transform = TransformRecord(f"{transform_prefix}Readback", name="vertical_readback_transform")
+        with self.add_children_as_readables():
+            # See if we have direct control over the vertical/horizontal positions
+            if vertical_prefix != "":
+                self.vertical = Motor(vertical_prefix, name="vertical")
+            if horizontal_prefix != "":
+                self.horizontal = Motor(horizontal_prefix, name="horizontal")
+            if bool(upstream_prefix):
+                self.upstream = Motor(upstream_prefix, name="upstream")
+            if bool(downstream_prefix):
+                self.downstream = Motor(downstream_prefix, name="downstream")
+            # Check if we need to add the pseudo motors and tranforms
+            if bool(upstream_prefix) and bool(downstream_prefix):
+                self.vertical = Motor(f"{pseudo_motor_prefix}height", name="vertical")
+                self.pitch = Motor(f"{pseudo_motor_prefix}pitch", name="pitch")
+                self.vertical_drive_transform = TransformRecord(f"{transform_prefix}Drive", name="vertical_drive_transform")
+                self.vertical_readback_transform = TransformRecord(f"{transform_prefix}Readback", name="vertical_readback_transform")
         super().__init__(name=name)
 
 
