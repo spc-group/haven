@@ -1,10 +1,14 @@
+import logging
 import warnings
 from pathlib import Path
 from typing import Mapping
 
-import haven
+from haven import load_config, registry
 from firefly import display
 from haven.instrument import Table
+
+
+log = logging.getLogger(__name__)
 
 
 class CaQtDMBase:
@@ -16,7 +20,6 @@ class CaQtDMBase:
     """
 
     ui_file: str = ""
-    macros: Mapping = {}
     table: Table
 
     def __init__(self, table: Table):
@@ -31,40 +34,42 @@ class CaQtDMBase:
                 attrs.append(attr)
         return attrs
 
+    @property
+    def macros(self):
+        # See if the Haven config file has the caQtDM macro string
+        config = load_config()
+        try:
+            macro_str = config['table'][self.table.name]['caqtdm_macros']
+        except KeyError:
+            log.warning(f"No caQtDM macro string for table: {self.table.name}")
+            return {}
+        # Parse out the caQtDM string
+        macros = {
+            k: v for k, v in (
+                piece.split("=", 1) for piece in macro_str.split(",")
+            )
+        }
+        print(macros)
+        return macros
+
 
 class TwoLegCaQtDM(CaQtDMBase):
     """caQtDM parameters for a table with two ."""
 
     ui_file = "/net/s25data/xorApps/ui/table_2leg.ui"
 
-    @property
-    def macros(self):
-        macros = {
-            "PM": self.table.prefix,
-            "TB": self.table.pseudo_motors.strip(":"),
-            "TR": self.table.transforms.strip(":"),
-            "TBUS": self.table.__class__.upstream.suffix,
-            "TBDS": self.table.__class__.downstream.suffix,
-        }
-        # See if there's a horizontal motor
-        horizontal = getattr(self.table.__class__, "horizontal", None)
-        if horizontal is not None:
-            macros["TBH"] = horizontal.suffix
-        return macros
+
+def parse_motor_source(motor):
+    source = motor.user_readback.source
+    transport, pv = source.split("://", maxsplit=1)
+    prefix, suffix = pv.removesuffix(".RBV").rsplit(":", maxsplit=1)
+    return transport, prefix, suffix
 
 
 class SingleMotorCaQtDM(CaQtDMBase):
     """caQtDM parameters for a table with only a single motor."""
 
     ui_file = "/APSshare/epics/synApps_6_2_1/support/motor-R7-2-2//motorApp/op/ui/autoconvert/motorx.ui"
-
-    @property
-    def macros(self):
-        # Look for which motor is present on this table device
-        for attr in self.motor_attrs():
-            component = getattr(self.table.__class__, attr)
-            return {"M": component.suffix}
-        raise RuntimeError(f"Could not find single motor for {self.device}.")
 
 
 class MultipleMotorCaQtDM(CaQtDMBase):
@@ -79,20 +84,10 @@ class MultipleMotorCaQtDM(CaQtDMBase):
         ui_path = ui_dir / f"motor{num_motors}x.ui"
         return str(ui_path)
 
-    @property
-    def macros(self):
-        # Look for which motor is present on this table device
-        macros = {}
-        for idx, name in enumerate(self.motor_attrs()):
-            component = getattr(self.table.__class__, name)
-            key = f"M{idx+1}"
-            macros[key] = component.suffix
-        return macros
-
 
 class TableDisplay(display.FireflyDisplay):
     def customize_device(self):
-        self.device = haven.registry.find(self.macros()["DEVICE"])
+        self.device = registry.find(self.macros()["DEVICE"])
         # Determine which flavor of caQtDM parameters we need
         if self.num_legs == 2:
             self.caqtdm = TwoLegCaQtDM(table=self.device)
@@ -123,7 +118,7 @@ class TableDisplay(display.FireflyDisplay):
 
         """
         leg_names = {"upstream", "downstream"}
-        num_legs = len(list(set(self.device.component_names) & leg_names))
+        num_legs = len([name for name in leg_names if hasattr(self.device, name)])
         return num_legs
 
     @property
@@ -135,7 +130,7 @@ class TableDisplay(display.FireflyDisplay):
 
         """
         motor_names = {"horizontal", "vertical", "upstream", "downstream"}
-        num_motors = len(list(set(self.device.component_names) & motor_names))
+        num_motors = len([name for name in motor_names if hasattr(self.device, name)])
         return num_motors
 
     def customize_ui(self):
@@ -147,13 +142,8 @@ class TableDisplay(display.FireflyDisplay):
         )
 
     def launch_caqtdm(self):
-        # Sort out the prefix from the slit designator
-        prefix = self.device.prefix.strip(":")
-        pieces = prefix.split(":")
         # Build the macros for the caQtDM panels
-        P = ":".join(pieces[:-1])
         caqtdm_macros = dict(
-            P=self.device.prefix,
             **self.caqtdm.macros,
         )
         # Launch the caQtDM panel
