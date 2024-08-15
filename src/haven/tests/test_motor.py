@@ -83,9 +83,12 @@ def test_motor_flyer(motor):
 
 
 async def test_stop_button(motor):
+    # Check that it got set up properly during __init__
+    assert motor.motor_stop.name == "motor_1-motor_stop"
+    assert motor.motor_stop.parent is motor
     await motor.motor_stop.trigger()
     mock = get_mock_put(motor.motor_stop)
-    mock.assert_called_once_with(1, wait=True, timeout=10.0)
+    mock.assert_called_once_with(1, wait=False, timeout=10.0)
 
 
 @pytest.mark.asyncio

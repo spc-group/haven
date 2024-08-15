@@ -82,7 +82,9 @@ class Motor(MotorBase):
         self.soft_limit_violation = epics_signal_r(int, f"{prefix}.LVIO")
         # Load all the parent signals
         super().__init__(prefix=prefix, name=name)
-        self.motor_stop = epics_signal_x(f"{prefix}.STOP", name=self.motor_stop.name)
+        # Override the motor stop signal to use the right trigger value
+        self.motor_stop = epics_signal_x(f"{prefix}.STOP")
+        self.set_name(self.name)
 
     async def connect(
         self,
