@@ -29,7 +29,7 @@ class SignalX(SignalX):
         super().__init__(*args, **kwargs)
     
     def trigger(
-        self, wait=True, timeout: CalculatableTimeout = CalculateTimeout
+        self, wait=False, timeout: CalculatableTimeout = CalculateTimeout
     ) -> AsyncStatus:
         """Trigger the action and return a status saying when it's done"""
         if timeout is CalculateTimeout:
