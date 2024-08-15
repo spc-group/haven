@@ -12,15 +12,17 @@ Public Structures
 """
 
 import asyncio
-from collections import OrderedDict
+from enum import Enum, IntEnum
 
 # from ophyd import Device
-from ophyd import Component as Cpt
-from ophyd import DynamicDeviceComponent as DDC
-from ophyd import EpicsSignal, EpicsSignalRO
-from ophyd import FormattedComponent as FC
-from ophyd_async.core import Device
-from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw
+from ophyd_async.core import (
+    ConfigSignal,
+    Device,
+    DeviceVector,
+    HintedSignal,
+    StandardReadable,
+)
+from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw, epics_signal_x
 
 CHANNEL_LETTERS_LIST = "A B C D E F G H I J K L M N O P".split()
 
@@ -75,7 +77,7 @@ class InvalidLinkAction(IntEnum):
     DO_NOTHING = 1
 
 
-class EpicsRecordDeviceCommonAll(Device):
+class EpicsRecordDeviceCommonAll(StandardReadable):
     """
     Many of the fields common to all EPICS records.
 
@@ -85,7 +87,7 @@ class EpicsRecordDeviceCommonAll(Device):
 
     # Config signals
     def __init__(self, prefix, name=""):
-        with self.add_children_as_readables(Config):
+        with self.add_children_as_readables(ConfigSignal):
             self.description = epics_signal_rw(
                 str, f"{prefix}.DESC", name="description"
             )
@@ -124,9 +126,7 @@ class EpicsRecordDeviceCommonAll(Device):
         self.processing_active = epics_signal_r(
             int, f"{prefix}.PACT", name="processing_active"
         )
-        self.process_record = epics_signal_x(
-            int, f"{prefix}.PROC", name="process_record"
-        )
+        self.process_record = epics_signal_x(f"{prefix}.PROC", name="process_record")
         self.trace_processing = epics_signal_rw(
             int, f"{prefix}.TPRO", name="trace_processing"
         )
@@ -154,7 +154,7 @@ class EpicsSynAppsRecordEnableMixin(Device):
 #############################
 
 
-class TransformRecordChannel(Device):
+class TransformRecordChannel(StandardReadable):
     """
     channel of a synApps transform record: A-P
 
@@ -201,13 +201,6 @@ class TransformRecordChannel(Device):
         )
 
 
-def _channels(channel_list):
-    defn = OrderedDict()
-    for chan in channel_list:
-        defn[chan] = (transformRecordChannel, "", {"letter": chan})
-    return defn
-
-
 class TransformRecord(EpicsRecordDeviceCommonAll):
     """
     EPICS transform record support in ophyd
@@ -222,7 +215,7 @@ class TransformRecord(EpicsRecordDeviceCommonAll):
     """
 
     def __init__(self, prefix, name=""):
-        with self.add_children_as_readables(CONFIG):
+        with self.add_children_as_readables(ConfigSignal):
             self.units = epics_signal_rw(str, f"{prefix}.EGU", name="units")
             self.precision = epics_signal_rw(int, f"{prefix}.PREC", name="precision")
             self.version = epics_signal_r(float, f"{prefix}.VERS", name="version")
@@ -236,7 +229,7 @@ class TransformRecord(EpicsRecordDeviceCommonAll):
             self.input_bitmap = epics_signal_r(
                 int, f"{prefix}.MAP", name="input_bitmap"
             )
-        with self.add_children_as_readables(HintedSignal):
+        with self.add_children_as_readables():
             self.sensors = DeviceVector(
                 {
                     char: TransformRecordChannel(prefix=prefix, letter=char)
@@ -290,7 +283,7 @@ class UserTransformsDevice(Device):
             self.transform1 = UserTransformN("userTran9", name="transform9")
             self.transform1 = UserTransformN("userTran10", name="transform10")
 
-    def reset(self):  # lgtm [py/similar-function]
+    async def reset(self):  # lgtm [py/similar-function]
         """set all fields to default values"""
         await asyncio.gather(
             self.transform1.reset(),

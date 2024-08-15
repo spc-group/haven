@@ -1,4 +1,3 @@
-from apstools.synApps import TransformRecord
 from ophyd_async.core import Device, StandardReadable
 
 from .. import exceptions
@@ -7,6 +6,7 @@ from .device import connect_devices
 from .instrument_registry import InstrumentRegistry
 from .instrument_registry import registry as default_registry
 from .motor import Motor
+from .transform import TransformRecord
 
 
 class Table(StandardReadable, Device):

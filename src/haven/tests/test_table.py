@@ -52,9 +52,15 @@ def test_pitch_table():
     assert tbl.pitch.user_readback.source == "ca://255idcVME:table_us:pitch.RBV"
     # Check the transforms
     assert hasattr(tbl, "vertical_drive_transform")
-    assert tbl.vertical_drive_transform.prefix == "255idcVME:table_us_trans:Drive"
+    assert (
+        tbl.vertical_drive_transform.units.source
+        == "ca://255idcVME:table_us_trans:Drive.EGU"
+    )
     assert hasattr(tbl, "vertical_readback_transform")
-    assert tbl.vertical_readback_transform.prefix == "255idcVME:table_us_trans:Readback"
+    assert (
+        tbl.vertical_readback_transform.units.source
+        == "ca://255idcVME:table_us_trans:Readback.EGU"
+    )
 
 
 @pytest.mark.asyncio
