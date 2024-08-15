@@ -83,25 +83,27 @@ async def load_instrument(
     # Flatten async devices and add to the rest
     devices.extend([d for devices in results for d in devices])
     # Synchronous (threaded) devices
-    devices.extend([
-        *load_aerotech_stages(config=config),
-        load_aps(config=config),
-        *load_area_detectors(config=config),
-        load_beamline_manager(config=config),
-        *load_cameras(config=config),
-        *load_dxp_detectors(config=config),
-        load_energy_positioner(config=config),
-        *load_heaters(config=config),
-        *load_lerix_spectrometers(config=config),
-        *load_power_supplies(config=config),
-        *load_robots(config=config),
-        *load_shutters(config=config),
-        *load_slits(config=config),
-        *load_stages(config=config),
-        *load_xia_pfcu4s(config=config),
-        *load_xspress_detectors(config=config),
-        *load_mirrors(config=config),
-    ])
+    devices.extend(
+        [
+            *load_aerotech_stages(config=config),
+            load_aps(config=config),
+            *load_area_detectors(config=config),
+            load_beamline_manager(config=config),
+            *load_cameras(config=config),
+            *load_dxp_detectors(config=config),
+            load_energy_positioner(config=config),
+            *load_heaters(config=config),
+            *load_lerix_spectrometers(config=config),
+            *load_power_supplies(config=config),
+            *load_robots(config=config),
+            *load_shutters(config=config),
+            *load_slits(config=config),
+            *load_stages(config=config),
+            *load_xia_pfcu4s(config=config),
+            *load_xspress_detectors(config=config),
+            *load_mirrors(config=config),
+        ]
+    )
     # Filter out devices that couldn't be reached
     devices = [d for d in devices if d is not None]
     # Put the devices into the registry

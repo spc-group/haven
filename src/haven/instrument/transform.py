@@ -11,14 +11,13 @@ Public Structures
     ~TransformRecord
 """
 
+import asyncio
 from collections import OrderedDict
 
-from ophyd import Component as Cpt
-
 # from ophyd import Device
+from ophyd import Component as Cpt
 from ophyd import DynamicDeviceComponent as DDC
-from ophyd import EpicsSignal
-from ophyd import EpicsSignalRO
+from ophyd import EpicsSignal, EpicsSignalRO
 from ophyd import FormattedComponent as FC
 from ophyd_async.core import Device
 from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw
@@ -146,14 +145,14 @@ class EpicsSynAppsRecordEnableMixin(Device):
     async def reset(self):
         """set all fields to default values"""
         await asyncio.gather(
-            self.enable.set(self.enable.enum_strs[1]),  # Enable
-            super().reset()
+            self.enable.set(self.enable.enum_strs[1]), super().reset()  # Enable
         )
 
 
 #############################
 # End common synApps support
 #############################
+
 
 class TransformRecordChannel(Device):
     """
@@ -194,12 +193,13 @@ class TransformRecordChannel(Device):
     async def reset(self):
         """set all fields to default values"""
         await asyncio.gather(
-            self.comment.set(self._ch_letter.lower())
-            self.input_pv.set("")
-            self.expression.set("")
-            self.current_value.set(0)
-            self.output_pv.set("")
+            self.comment.set(self._ch_letter.lower()),
+            self.input_pv.set(""),
+            self.expression.set(""),
+            self.current_value.set(0),
+            self.output_pv.set(""),
         )
+
 
 def _channels(channel_list):
     defn = OrderedDict()
@@ -238,7 +238,10 @@ class TransformRecord(EpicsRecordDeviceCommonAll):
             )
         with self.add_children_as_readables(HintedSignal):
             self.sensors = DeviceVector(
-                {char: TransformRecordChannel(prefix=prefix, letter=char) for char in CHANNEL_LETTERS_LIST}
+                {
+                    char: TransformRecordChannel(prefix=prefix, letter=char)
+                    for char in CHANNEL_LETTERS_LIST
+                }
             )
 
         super().__init__(prefix=prefix, name=name)
@@ -258,7 +261,7 @@ class TransformRecord(EpicsRecordDeviceCommonAll):
         # Restore the hinted channels
         self.add_readables(channels, HintedSignal)
 
-  
+
 class UserTransformN(EpicsSynAppsRecordEnableMixin, TransformRecord):
     """Single instance of the userTranN database."""
 
@@ -269,6 +272,7 @@ class UserTransformsDevice(Device):
 
     .. index:: Ophyd Device; synApps UserTransformsDevice
     """
+
     def __init__(self, prefix, name=""):
         # Config attrs
         with self.add_children_as_readables(ConfigSignal):
@@ -300,18 +304,20 @@ class UserTransformsDevice(Device):
             self.transform9.reset(),
             self.transform10.reset(),
         )
-        self.add_readables([
-            self.transform1,
-            self.transform2,
-            self.transform3,
-            self.transform4,
-            self.transform5,
-            self.transform6,
-            self.transform7,
-            self.transform8,
-            self.transform9,
-            self.transform10,
-        ])
+        self.add_readables(
+            [
+                self.transform1,
+                self.transform2,
+                self.transform3,
+                self.transform4,
+                self.transform5,
+                self.transform6,
+                self.transform7,
+                self.transform8,
+                self.transform9,
+                self.transform10,
+            ]
+        )
 
 
 # -----------------------------------------------------------------------------

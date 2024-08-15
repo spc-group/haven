@@ -5,15 +5,21 @@ from typing import Mapping, Sequence
 from apstools.utils.misc import safe_ophyd_name
 from ophyd import Component as Cpt
 from ophyd import EpicsMotor, EpicsSignal, EpicsSignalRO, Kind
-from ophyd_async.core import ConfigSignal
-from ophyd_async.core._utils import DEFAULT_TIMEOUT
+from ophyd_async.core import (
+    DEFAULT_TIMEOUT,
+    AsyncStatus,
+    CalculatableTimeout,
+    CalculateTimeout,
+    ConfigSignal,
+    SignalBackend,
+    SignalX,
+)
 from ophyd_async.epics.motor import Motor as MotorBase
 from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw
 from ophyd_async.epics.signal._signal import _epics_signal_backend
-from ophyd_async.core import SignalX, SignalBackend, DEFAULT_TIMEOUT, CalculatableTimeout, CalculateTimeout, AsyncStatus
 
 from .._iconfig import load_config
-from .device import connect_devices, make_device, resolve_device_names
+from .device import connect_devices
 from .instrument_registry import InstrumentRegistry
 from .instrument_registry import registry as default_registry
 from .motor_flyer import MotorFlyer
@@ -27,7 +33,7 @@ class SignalX(SignalX):
     def __init__(self, *args, trigger_value=1, **kwargs):
         self.trigger_value = trigger_value
         super().__init__(*args, **kwargs)
-    
+
     def trigger(
         self, wait=False, timeout: CalculatableTimeout = CalculateTimeout
     ) -> AsyncStatus:

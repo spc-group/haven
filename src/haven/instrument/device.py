@@ -15,7 +15,9 @@ from .._iconfig import load_config
 log = logging.getLogger(__name__)
 
 
-async def connect_devices(devices, mock=False, timeout=10.0, labels=None, registry=None):
+async def connect_devices(
+    devices, mock=False, timeout=10.0, labels=None, registry=None
+):
     """Ensure that a bunch of ophyd_async devices are connected.
     Returns
     =======
@@ -52,6 +54,7 @@ async def resolve_device_names(ic_defns):
     Ensures names are safe as Ophyd device names.
 
     """
+
     async def get_name(pv):
         try:
             response = await pv.read()

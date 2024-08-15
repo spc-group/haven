@@ -1,12 +1,10 @@
 import logging
 import warnings
 from pathlib import Path
-from typing import Mapping
 
-from haven import load_config, registry
 from firefly import display
+from haven import load_config, registry
 from haven.instrument import Table
-
 
 log = logging.getLogger(__name__)
 
@@ -39,15 +37,13 @@ class CaQtDMBase:
         # See if the Haven config file has the caQtDM macro string
         config = load_config()
         try:
-            macro_str = config['table'][self.table.name]['caqtdm_macros']
+            macro_str = config["table"][self.table.name]["caqtdm_macros"]
         except KeyError:
             log.warning(f"No caQtDM macro string for table: {self.table.name}")
             return {}
         # Parse out the caQtDM string
         macros = {
-            k: v for k, v in (
-                piece.split("=", 1) for piece in macro_str.split(",")
-            )
+            k: v for k, v in (piece.split("=", 1) for piece in macro_str.split(","))
         }
         print(macros)
         return macros

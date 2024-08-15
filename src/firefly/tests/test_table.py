@@ -1,7 +1,6 @@
 from unittest import mock
 
 import pytest
-from ophyd.sim import make_fake_device
 
 from firefly.table import TableDisplay
 from haven.instrument import Table
@@ -52,13 +51,18 @@ def test_unused_motor_widgets(qtbot, empty_table):
 
 def test_tilting_table_caqtdm(qtbot, sim_registry, mocker):
     # Create a simulated table configuration
-    mocker.patch("firefly.table.load_config", mock.MagicMock(return_value={
-        "table": {
-            "test_table": {
-                "caqtdm_macros": "P=255idcVME:,PM=255idcVME:,TB=table_ds,TR=table_ds_trans,TBUS=m42,TBDS=m43,TBH=m4"
+    mocker.patch(
+        "firefly.table.load_config",
+        mock.MagicMock(
+            return_value={
+                "table": {
+                    "test_table": {
+                        "caqtdm_macros": "P=255idcVME:,PM=255idcVME:,TB=table_ds,TR=table_ds_trans,TBUS=m42,TBDS=m43,TBH=m4"
+                    }
+                }
             }
-        }
-    }))
+        ),
+    )
     # Create an ophyd table object
     table = Table(
         horizontal_prefix="255idcVME:m4",
@@ -95,13 +99,14 @@ def test_tilting_table_caqtdm(qtbot, sim_registry, mocker):
 
 def test_single_motor_caqtdm(qtbot, sim_registry, mocker):
     # Create a simulated table configuration
-    mocker.patch("firefly.table.load_config", mock.MagicMock(return_value={
-        "table": {
-            "test_table": {
-                "caqtdm_macros": "P=255idcVME:,M=m3"
+    mocker.patch(
+        "firefly.table.load_config",
+        mock.MagicMock(
+            return_value={
+                "table": {"test_table": {"caqtdm_macros": "P=255idcVME:,M=m3"}}
             }
-        }
-    }))
+        ),
+    )
     # Create an ophyd table object
     table = Table(horizontal_prefix="255idcVME:m3", name="test_table")
     sim_registry.register(table)
@@ -126,16 +131,19 @@ def test_single_motor_caqtdm(qtbot, sim_registry, mocker):
 
 def test_double_motor_caqtdm(qtbot, sim_registry, mocker):
     # Create a simulated table configuration
-    mocker.patch("firefly.table.load_config", mock.MagicMock(return_value={
-        "table": {
-            "test_table": {
-                "caqtdm_macros": "P=255idcVME:,M1=m3,M2=m4"
+    mocker.patch(
+        "firefly.table.load_config",
+        mock.MagicMock(
+            return_value={
+                "table": {"test_table": {"caqtdm_macros": "P=255idcVME:,M1=m3,M2=m4"}}
             }
-        }
-    }))
+        ),
+    )
     # Create an ophyd table object
     table = Table(
-        horizontal_prefix="255idcVME:m3", vertical_prefix="255idcVME:m4", name="test_table"
+        horizontal_prefix="255idcVME:m3",
+        vertical_prefix="255idcVME:m4",
+        name="test_table",
     )
     sim_registry.register(table)
     display = TableDisplay(macros={"DEVICE": table.name})

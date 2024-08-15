@@ -1,4 +1,5 @@
 import pytest
+
 from haven.instrument import Table, load_tables
 
 
@@ -44,7 +45,7 @@ def test_pitch_table():
     assert hasattr(tbl, "upstream")
     assert tbl.upstream.user_readback.source == "ca://255idcVME:m3.RBV"
     assert hasattr(tbl, "downstream")
-    assert tbl.downstream.user_readback.source== "ca://255idcVME:m4.RBV"
+    assert tbl.downstream.user_readback.source == "ca://255idcVME:m4.RBV"
     assert hasattr(tbl, "vertical")
     assert tbl.vertical.user_readback.source == "ca://255idcVME:table_us:height.RBV"
     assert hasattr(tbl, "pitch")
@@ -71,5 +72,7 @@ async def test_load_tables(sim_registry):
     assert isinstance(table, Table)
     assert table.upstream.user_setpoint.source == "mock+ca://255idcVME:m21.VAL"
     assert table.downstream.user_setpoint.source == "mock+ca://255idcVME:m22.VAL"
-    assert table.vertical.user_setpoint.source == "mock+ca://255idcVME:table_ds:height.VAL"
+    assert (
+        table.vertical.user_setpoint.source == "mock+ca://255idcVME:table_ds:height.VAL"
+    )
     assert not hasattr(table, "horizontal")

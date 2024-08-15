@@ -1,6 +1,6 @@
-from uuid import uuid4
 from collections import OrderedDict, abc
 from typing import Mapping, Sequence, Union
+from uuid import uuid4
 
 import numpy as np
 from bluesky import plan_patterns
@@ -151,7 +151,10 @@ def fly_scan(
     md_.update(md)
     # Execute the plan
     line_scan = fly_line_scan(
-        detectors, *args, num=num, dwell_time=dwell_time,
+        detectors,
+        *args,
+        num=num,
+        dwell_time=dwell_time,
     )
     line_scan = bpp.run_wrapper(line_scan, md=md_)
     line_scan = bpp.stage_wrapper(line_scan, devices)

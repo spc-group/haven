@@ -1,12 +1,11 @@
 from apstools.synApps import TransformRecord
-from ophyd import Component as Cpt
-from ophyd import Kind, OphydObject
 from ophyd_async.core import Device, StandardReadable
 
 from .. import exceptions
 from .._iconfig import load_config
-from .instrument_registry import InstrumentRegistry, registry as default_registry
-from .device import make_device, connect_devices
+from .device import connect_devices
+from .instrument_registry import InstrumentRegistry
+from .instrument_registry import registry as default_registry
 from .motor import Motor
 
 
@@ -70,6 +69,7 @@ class Table(StandardReadable, Device):
       *vertical_drive_transform" and "vertical_readback_transform".
 
     """
+
     _ophyd_labels_ = {"tables"}
     # These are the possible components that could be present
     vertical: Device
@@ -81,15 +81,15 @@ class Table(StandardReadable, Device):
     horizontal_readback_transform: Device
 
     def __init__(
-            self,
-            *args,
-            vertical_prefix: str = "",
-            horizontal_prefix: str = "",
-            upstream_prefix: str = "",
-            downstream_prefix: str = "",
-            pseudo_motor_prefix: str = "",
-            transform_prefix: str = "",
-            name="",
+        self,
+        *args,
+        vertical_prefix: str = "",
+        horizontal_prefix: str = "",
+        upstream_prefix: str = "",
+        downstream_prefix: str = "",
+        pseudo_motor_prefix: str = "",
+        transform_prefix: str = "",
+        name="",
     ):
         with self.add_children_as_readables():
             # See if we have direct control over the vertical/horizontal positions
@@ -105,8 +105,12 @@ class Table(StandardReadable, Device):
             if bool(upstream_prefix) and bool(downstream_prefix):
                 self.vertical = Motor(f"{pseudo_motor_prefix}height", name="vertical")
                 self.pitch = Motor(f"{pseudo_motor_prefix}pitch", name="pitch")
-                self.vertical_drive_transform = TransformRecord(f"{transform_prefix}Drive", name="vertical_drive_transform")
-                self.vertical_readback_transform = TransformRecord(f"{transform_prefix}Readback", name="vertical_readback_transform")
+                self.vertical_drive_transform = TransformRecord(
+                    f"{transform_prefix}Drive", name="vertical_drive_transform"
+                )
+                self.vertical_readback_transform = TransformRecord(
+                    f"{transform_prefix}Readback", name="vertical_readback_transform"
+                )
         super().__init__(name=name)
 
 

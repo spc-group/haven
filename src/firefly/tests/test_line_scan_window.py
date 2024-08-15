@@ -2,11 +2,9 @@ from unittest import mock
 
 import pytest
 from bluesky_queueserver_api import BPlan
-from ophyd.sim import make_fake_device
 from qtpy import QtCore
 
 from firefly.plans.line_scan import LineScanDisplay
-from haven.instrument import motor
 
 
 @pytest.fixture()
@@ -103,6 +101,7 @@ async def test_line_scan_plan_queued(qtbot, display):
 
     def check_item(item):
         from pprint import pprint
+
         pprint(item.to_dict())
         pprint(expected_item.to_dict())
         return item.to_dict() == expected_item.to_dict()
