@@ -1,3 +1,4 @@
+from uuid import uuid4
 from collections import OrderedDict, abc
 from typing import Mapping, Sequence, Union
 
@@ -6,20 +7,24 @@ from bluesky import plan_patterns
 from bluesky import plan_stubs as bps
 from bluesky import plans as bp
 from bluesky import preprocessors as bpp
+from bluesky.protocols import Collectable
 from ophyd import Device
 from ophyd.flyers import FlyerInterface
 from ophyd.status import StatusBase
+from ophyd_async.epics.motor import FlyMotorInfo
+
+from ..preprocessors import baseline_decorator
 
 __all__ = ["fly_scan", "grid_fly_scan"]
 
 
-def fly_line_scan(detectors: list, *args, num, extra_signals=(), combine_streams=True):
+def fly_line_scan(detectors: list, *args, num, dwell_time):
     """A plan stub for fly-scanning a single trajectory.
 
     Parameters
     ==========
     detectors
-      List of 'readable' objects that support the flyer interface
+      Flyables that will be trigger before the movers move.
     *args
       For one dimension, motor, start, stop. In general:
 
@@ -33,59 +38,64 @@ def fly_line_scan(detectors: list, *args, num, extra_signals=(), combine_streams
       Motors can be any ‘flyable’ object.
     num
       Number of measurements to take.
-    combine_streams
-      If true, the separate data streams will be combined into one
-      "primary" data stream (experimental).
-    extra_signals
-      If combining data streams, these signals will also get included
-      separately.
-
+    dwell_time
+      How long, in seconds, for each measurement point.
     """
     # Calculate parameters for the fly-scan
     # step_size = abs(start - stop) / (num - 1)
     motors = args[0::3]
     starts = args[1::3]
-    stops = args[2::3]
-    mv_args = []
-    for motor, start, stop in zip(motors, starts, stops):
-        mv_args.extend(
-            [
-                motor.flyer_start_position,
-                start,
-                motor.flyer_end_position,
-                stop,
-                motor.flyer_num_points,
-                num,
-            ]
+    ends = args[2::3]
+    # Set up motors in their taxi position
+    prepare_group = uuid4()
+    for obj, start, end in zip(motors, starts, ends):
+        position_info = FlyMotorInfo(
+            start_position=start,
+            end_position=end,
+            time_for_move=dwell_time * num,
         )
-    yield from bps.mv(*mv_args)
+        yield from bps.prepare(obj, position_info, wait=False, group=prepare_group)
+    yield from bps.wait(group=prepare_group)
+    # Monitor the motors during their move
+    for motor in motors:
+        sig = motor.user_readback
+        yield from bps.monitor(sig, name=sig.name)
     # Perform the fly scan
     flyers = [*motors, *detectors]
-    for flyer_ in flyers:
-        yield from bps.kickoff(flyer_, wait=True)
-    for flyer_ in flyers:
-        yield from bps.complete(flyer_, wait=True)
+    kickoff_group = uuid4()
+    for m in motors:
+        yield from bps.kickoff(m, wait=False, group=kickoff_group)
+    yield from bps.wait(group=kickoff_group)
+    # Start the detectors
+    for det in detectors:
+        yield from bps.kickoff(m, wait=False)
+    # Wait for all the flyers to be done
+    motor_complete_group = uuid4()
+    for m in motors:
+        yield from bps.complete(m, wait=False, group=motor_complete_group)
+    yield from bps.wait(group=(motor_complete_group))
+    # Stop detectors
+    det_complete_group = uuid4()
+    for det in detectors:
+        yield from bps.complete(det, wait=False, group=det_complete_group)
+    yield from bps.wait(group=(det_complete_group))
+    # Stop monitoring motors
+    for motor in motors:
+        sig = motor.user_readback
+        yield from bps.unmonitor(sig)
     # Collect the data after flying
-    if combine_streams:
-        # Collect data together as a single "primary" data stream
-        collector = FlyerCollector(
-            positioners=motors,
-            detectors=detectors,
-            name="flyer_collector",
-            extra_signals=extra_signals,
-        )
-        yield from bps.collect(collector)
-    # Collect data into separate data streams
+    flyers = [*motors, *detectors]
+    flyers = [flyer for flyer in flyers if isinstance(flyer, Collectable)]
     for flyer_ in flyers:
         yield from bps.collect(flyer_)
 
 
-# @baseline_decorator()
+@baseline_decorator()
 def fly_scan(
     detectors: Sequence[FlyerInterface],
     *args,
     num: int,
-    combine_streams=False,
+    dwell_time: float,
     md: Mapping = {},
 ):
     """Do a fly scan with a 'flyer' motor and some 'flyer' detectors.
@@ -107,16 +117,15 @@ def fly_scan(
       Motors can be any ‘flyable’ object.
     num
       Number of measurements to take.
-    combine_streams
-      If true, the separate data streams will be combined into one
-      "primary" data stream (experimental).
+    dwell_time
+      How long, in seconds, for each measurement point.
     md
       metadata
 
     Yields
     ------
     msg
-      'kickoff', 'wait', 'complete, 'wait', 'collect' messages
+      'prepare', 'kickoff', 'complete, and 'collect' messages
 
     """
     # Stage the devices
@@ -136,12 +145,13 @@ def fly_scan(
             "detectors": list(map(repr, detectors)),
             "*args": md_args,
             "num": num,
+            "dwell_time": dwell_time,
         },
     }
     md_.update(md)
     # Execute the plan
     line_scan = fly_line_scan(
-        detectors, *args, num=num, combine_streams=combine_streams
+        detectors, *args, num=num, dwell_time=dwell_time,
     )
     line_scan = bpp.run_wrapper(line_scan, md=md_)
     line_scan = bpp.stage_wrapper(line_scan, devices)

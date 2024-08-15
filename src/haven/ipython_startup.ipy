@@ -11,6 +11,7 @@ from bluesky.callbacks.best_effort import BestEffortCallback  # noqa: F401
 from bluesky.plan_stubs import mv, mvr, rd  # noqa: F401
 from bluesky.run_engine import RunEngine, call_in_bluesky_event_loop  # noqa: F401
 from bluesky.simulators import summarize_plan  # noqa: F401
+import matplotlib.pyplot as plt
 from rich import print
 from rich.console import Console
 from rich.panel import Panel
@@ -21,7 +22,7 @@ import haven  # noqa: F401
 logging.basicConfig(level=logging.WARNING)
 
 # Create a run engine
-RE = haven.run_engine(call_returns_result=True)
+RE = haven.run_engine(call_returns_result=True, connect_databroker=True)
 
 # Add metadata to the run engine
 RE.preprocessors.append(haven.preprocessors.inject_haven_md_wrapper)
