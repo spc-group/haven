@@ -41,6 +41,9 @@ haven_config = "haven._iconfig:print_config_value"
 firefly = "firefly.launcher:main"
 firefly_cameras = "firefly.launcher:cameras"
 
+[project.optional-dependencies]
+steering = ["generic_trainer@git+https://github.com/mdw771/auto_beamline_ops[steering]"]
+
 [tool.setuptools.package-data]
 firefly = ["firefly.qss"]
 
