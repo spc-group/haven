@@ -39,9 +39,10 @@ plt.ion()
 # Prepare the haven instrument
 config = haven.load_config()
 t0 = time.monotonic()
-print(f"Initializing [repr.number]{config['beamline']['name']}[/]…", flush=True)
+print(f"Initializing [bold cyan]{config['beamline']['name']}[/]…", flush=True)
 call_in_bluesky_event_loop(haven.load_instrument())
-print(f"Finished initalization in {time.monotonic() - t0:.2f} seconds.", flush=True)
+num_devices = len(haven.registry.root_devices)
+print(f"Initialized {num_devices} devices in {time.monotonic() - t0:.2f} seconds.", flush=True)
 
 # Save references to some commonly used things in the global namespace
 registry = haven.registry

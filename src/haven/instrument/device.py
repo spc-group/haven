@@ -19,6 +19,7 @@ async def connect_devices(
     devices, mock=False, timeout=10.0, labels=None, registry=None
 ):
     """Ensure that a bunch of ophyd_async devices are connected.
+
     Returns
     =======
     connected_devices
@@ -28,19 +29,22 @@ async def connect_devices(
     results = await asyncio.gather(*aws, return_exceptions=True)
     # Filter out the disconnected devices
     new_devices = []
+    # connection_errors = {}
+    exceptions = {}
     for device, result in zip(devices, results):
         if result is None:
             log.debug(f"Successfully connected device {device.name}")
             new_devices.append(device)
-        elif isinstance(result, NotConnected):
-            log.info(f"Could not connect device {device.name}: {result}")
         else:
             # Unexpected exception, raise it so it can be handled
-            raise result
+            exceptions[device.name] = result
     # Register connected devices with the registry
     if registry is not None:
         for device in new_devices:
             registry.register(device, labels=labels)
+    # Raise exceptions if any were present
+    if len(exceptions) > 0:
+        raise NotConnected(exceptions)
     return new_devices
 
 

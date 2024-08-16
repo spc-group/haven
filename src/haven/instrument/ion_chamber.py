@@ -667,7 +667,7 @@ def load_ion_chamber(
     return ion_chamber
 
 
-async def load_ion_chambers(config=None):
+async def load_ion_chambers(config=None, connect=True):
     """Load ion chambers based on configuration files' ``[ion_chamber]``
     sections.
 

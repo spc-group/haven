@@ -12,7 +12,7 @@ Public Structures
 """
 
 import asyncio
-from enum import Enum, IntEnum
+from enum import Enum
 
 # from ophyd import Device
 from ophyd_async.core import (
@@ -27,7 +27,16 @@ from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw, epics_sign
 CHANNEL_LETTERS_LIST = "A B C D E F G H I J K L M N O P".split()
 
 
-class ScanInterval(str, Enum):
+class StrEnum(str, Enum):
+    pass
+
+
+class CalcOption(StrEnum):
+    CONDITIONAL = "Conditional"
+    ALWAYS = "Always"
+
+
+class ScanInterval(StrEnum):
     PASSIVE = "Passive"
     EVENT = "Event"
     IO_INTR = "I/O Intr"
@@ -40,8 +49,8 @@ class ScanInterval(str, Enum):
     SCAN_0_1 = ".1 second"
 
 
-class AlarmStatus(str, Enum):
-    NONE = ""
+class AlarmStatus(StrEnum):
+    NO_ALARM = "NO_ALARM"
     READ = "READ"
     WRITE = "WRITE"
     HIHI = "HIHI"
@@ -57,24 +66,31 @@ class AlarmStatus(str, Enum):
     SCAN = "SCAN"
     LINK = "LINK"
     SOFT = "SOFT"
-    BAD_SUB = "BAD_SUB"
-    UDF = "UDF"
-    DISABLE = "DISABLE"
-    SIMM = "SIMM"
-    READ_ACCESS = "READ_ACCESS"
-    WRITE_ACCESS = "WRITE_ACCESS"
+    # BAD_SUB = "BAD_SUB"
+    # UDF = "UDF"
+    # DISABLE = "DISABLE"
+    # SIMM = "SIMM"
+    # READ_ACCESS = "READ_ACCESS"
+    # WRITE_ACCESS = "WRITE_ACCESS"
 
 
-class AlarmSeverity(str, Enum):
+class AlarmSeverity(StrEnum):
     NO_ALARM = "NO_ALARM"
     MINOR = "MINOR"
     MAJOR = "MAJOR"
     INVALID = "INVALID"
 
 
-class InvalidLinkAction(IntEnum):
-    IGNORE_ERROR = 0
-    DO_NOTHING = 1
+class InvalidLinkAction(StrEnum):
+    IGNORE_ERROR = "Ignore error"
+    DO_NOTHING = "Do Nothing"
+
+
+class PVValidity(StrEnum):
+    EXT_PV_NC = "Ext PV NC"
+    EXT_PV_OK = "Ext PV OK"
+    LOCAL_PV = "Local PV"
+    CONSTANT = "Constant"
 
 
 class EpicsRecordDeviceCommonAll(StandardReadable):
@@ -88,48 +104,22 @@ class EpicsRecordDeviceCommonAll(StandardReadable):
     # Config signals
     def __init__(self, prefix, name=""):
         with self.add_children_as_readables(ConfigSignal):
-            self.description = epics_signal_rw(
-                str, f"{prefix}.DESC", name="description"
-            )
-            self.scanning_rate = epics_signal_rw(
-                ScanInterval, f"{prefix}.SCAN", name="scanning_rate"
-            )
-            self.disable_value = epics_signal_rw(
-                int, f"{prefix}.DISV", name="disable_value"
-            )
-            self.scan_disable_input_link_value = epics_signal_rw(
-                int, f"{prefix}.DISA", name="scan_disable_input_link_value"
-            )
-            self.scan_disable_value_input_link = epics_signal_rw(
-                str, f"{prefix}.SDIS", name="scan_disable_value_input_link"
-            )
-            self.forward_link = epics_signal_rw(
-                str, f"{prefix}.FLNK", name="forward_link"
-            )
-            self.device_type = epics_signal_r(str, f"{prefix}.DTYP", name="device_type")
-            self.alarm_status = epics_signal_r(
-                AlarmStatus, f"{prefix}.STAT", name="alarm_status"
-            )
-            self.alarm_severity = epics_signal_r(
-                AlarmSeverity, f"{prefix}.SEVR", name="alarm_severity"
-            )
-            self.new_alarm_status = epics_signal_r(
-                AlarmStatus, f"{prefix}.NSTA", name="new_alarm_status"
-            )
-            self.new_alarm_severity = epics_signal_r(
-                AlarmSeverity, f"{prefix}.NSEV", name="new_alarm_severity"
-            )
-            self.disable_alarm_severity = epics_signal_rw(
-                AlarmSeverity, f"{prefix}.DISS", name="disable_alarm_severity"
-            )
+            self.description = epics_signal_rw(str, f"{prefix}.DESC")
+            self.scanning_rate = epics_signal_rw(ScanInterval, f"{prefix}.SCAN")
         # Other signals, not included in read
-        self.processing_active = epics_signal_r(
-            int, f"{prefix}.PACT", name="processing_active"
-        )
-        self.process_record = epics_signal_x(f"{prefix}.PROC", name="process_record")
-        self.trace_processing = epics_signal_rw(
-            int, f"{prefix}.TPRO", name="trace_processing"
-        )
+        self.disable_value = epics_signal_rw(int, f"{prefix}.DISV")
+        self.scan_disable_input_link_value = epics_signal_rw(int, f"{prefix}.DISA")
+        self.scan_disable_value_input_link = epics_signal_rw(str, f"{prefix}.SDIS")
+        self.forward_link = epics_signal_rw(str, f"{prefix}.FLNK")
+        self.device_type = epics_signal_r(StrEnum, f"{prefix}.DTYP")
+        self.alarm_status = epics_signal_r(AlarmStatus, f"{prefix}.STAT")
+        self.alarm_severity = epics_signal_r(AlarmSeverity, f"{prefix}.SEVR")
+        self.new_alarm_status = epics_signal_r(AlarmStatus, f"{prefix}.NSTA")
+        self.new_alarm_severity = epics_signal_r(AlarmSeverity, f"{prefix}.NSEV")
+        self.disable_alarm_severity = epics_signal_rw(AlarmSeverity, f"{prefix}.DISS")
+        self.processing_active = epics_signal_r(int, f"{prefix}.PACT")
+        self.process_record = epics_signal_x(f"{prefix}.PROC")
+        self.trace_processing = epics_signal_rw(int, f"{prefix}.TPRO")
 
         super().__init__(name=name)
 
@@ -139,7 +129,7 @@ class EpicsSynAppsRecordEnableMixin(Device):
 
     def __init__(self, prefix, name=""):
         with self.add_children_as_readables(ConfigSignal):
-            enable = epics_signal_rw(int, "Enable", name="enable")
+            enable = epics_signal_rw(int, "Enable")
         super().__init__(name=name)
 
     async def reset(self):
@@ -168,24 +158,21 @@ class TransformRecordChannel(StandardReadable):
     def __init__(self, prefix, letter, name=""):
         self._ch_letter = letter
         with self.add_children_as_readables():
-            self.current_value = epics_signal_rw(
-                float, "{prefix}.{letter}", name="current_value"
+            self.current_value = epics_signal_rw(float, f"{prefix}.{letter}")
+        with self.add_children_as_readables(ConfigSignal):
+            self.input_pv = epics_signal_rw(str, f"{prefix}.INP{letter}")
+            self.comment = epics_signal_rw(str, f"{prefix}.CMT{letter}")
+            self.expression = epics_signal_rw(
+                str,
+                f"{prefix}.CLC{letter}",
             )
-        self.last_value = epics_signal_r(float, "{prefix}.L{letter}", name="last_value")
-        self.input_pv = epics_signal_rw(str, "{prefix}.INP{letter}", name="input_pv")
-        self.input_pv_valid = epics_signal_r(
-            str, "{prefix}.I{letter}V", name="input_pv_valid"
-        )
-        self.expression_invalid = epics_signal_r(
-            str, "{prefix}.C{letter}V", name="expression_invalid"
-        )
-        self.comment = epics_signal_rw(str, "{prefix}.CMT{letter}", name="comment")
-        self.expression = epics_signal_rw(
-            str, "{prefix}.CLC{letter}", name="expression"
-        )
-        self.output_pv = epics_signal_rw(str, "{prefix}.OUT{letter}", name="output_pv")
+        self.output_pv = epics_signal_rw(str, f"{prefix}.OUT{letter}")
+        self.last_value = epics_signal_r(float, f"{prefix}.L{letter}")
+        self.input_pv_valid = epics_signal_r(PVValidity, f"{prefix}.I{letter}V")
+        self.expression_invalid = epics_signal_r(int, f"{prefix}.C{letter}V")
         self.output_pv_valid = epics_signal_r(
-            str, "{prefix}.O{letter}V", name="output_pv_valid"
+            PVValidity,
+            f"{prefix}.O{letter}V",
         )
 
         super().__init__(name=name)
@@ -216,15 +203,23 @@ class TransformRecord(EpicsRecordDeviceCommonAll):
 
     def __init__(self, prefix, name=""):
         with self.add_children_as_readables(ConfigSignal):
-            self.units = epics_signal_rw(str, f"{prefix}.EGU", name="units")
-            self.precision = epics_signal_rw(int, f"{prefix}.PREC", name="precision")
-            self.version = epics_signal_r(float, f"{prefix}.VERS", name="version")
+            self.units = epics_signal_rw(
+                str,
+                f"{prefix}.EGU",
+            )
+            self.precision = epics_signal_rw(int, f"{prefix}.PREC")
+            self.version = epics_signal_r(
+                float,
+                f"{prefix}.VERS",
+            )
 
             self.calc_option = epics_signal_rw(
-                int, f"{prefix}.COPT", name="calc_option"
+                CalcOption,
+                f"{prefix}.COPT",
             )
             self.invalid_link_action = epics_signal_r(
-                InvalidLinkAction, f"{prefix}.IVLA", name="invalid_link_action"
+                InvalidLinkAction,
+                f"{prefix}.IVLA",
             )
             self.input_bitmap = epics_signal_r(
                 int, f"{prefix}.MAP", name="input_bitmap"
@@ -238,6 +233,8 @@ class TransformRecord(EpicsRecordDeviceCommonAll):
             )
 
         super().__init__(prefix=prefix, name=name)
+        # Remove dtype, it's broken for some reason
+        del self.device_type
 
     async def reset(self):
         """set all fields to default values"""
@@ -272,16 +269,16 @@ class UserTransformsDevice(Device):
             self.enable = epics_signal_rw(int, f"{prefix}userTranEnable", name="enable")
         # Read attrs
         with self.add_children_as_readables():
-            self.transform1 = UserTransformN("userTran1", name="transform1")
-            self.transform1 = UserTransformN("userTran2", name="transform2")
-            self.transform1 = UserTransformN("userTran3", name="transform3")
-            self.transform1 = UserTransformN("userTran4", name="transform4")
-            self.transform1 = UserTransformN("userTran5", name="transform5")
-            self.transform1 = UserTransformN("userTran6", name="transform6")
-            self.transform1 = UserTransformN("userTran7", name="transform7")
-            self.transform1 = UserTransformN("userTran8", name="transform8")
-            self.transform1 = UserTransformN("userTran9", name="transform9")
-            self.transform1 = UserTransformN("userTran10", name="transform10")
+            self.transform1 = UserTransformN("userTran1")
+            self.transform1 = UserTransformN("userTran2")
+            self.transform1 = UserTransformN("userTran3")
+            self.transform1 = UserTransformN("userTran4")
+            self.transform1 = UserTransformN("userTran5")
+            self.transform1 = UserTransformN("userTran6")
+            self.transform1 = UserTransformN("userTran7")
+            self.transform1 = UserTransformN("userTran8")
+            self.transform1 = UserTransformN("userTran9")
+            self.transform1 = UserTransformN("userTran10")
 
     async def reset(self):  # lgtm [py/similar-function]
         """set all fields to default values"""

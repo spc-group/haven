@@ -4,6 +4,8 @@ import warnings
 from typing import Mapping
 
 from ophyd import sim
+from ophyd_async.core import NotConnected
+from rich import print
 
 from .._iconfig import load_config
 from .aerotech import load_aerotech_stages
@@ -11,6 +13,7 @@ from .aps import load_aps
 from .area_detector import load_area_detectors
 from .beamline_manager import load_beamline_manager
 from .camera import load_cameras
+from .device import connect_devices
 from .dxp import load_dxp_detectors
 from .energy_positioner import load_energy_positioner
 from .heater import load_heaters
@@ -73,18 +76,28 @@ async def load_instrument(
     # Load the devices from the configuration files
     devices = []
     # Asynchronous loading of devices
+    mock = not config["beamline"]["is_connected"]
     results = await asyncio.gather(
-        load_ion_chambers(config=config),
-        load_tables(config=config),
+        load_tables(config=config, connect=False),
     )
-    # Load the motor devices last so that we can check for
-    # existing motors in the registry
-    results.append(await load_motors(config=config))
-    # Flatten async devices and add to the rest
     devices.extend([d for devices in results for d in devices])
+    print(f"Loading [repr.number]{len(devices)}[/] devices…", flush=True)
+    try:
+        await connect_devices(devices, mock=mock, registry=registry)
+    except NotConnected as exc:
+        log.exception(exc)
+    # Load the motor devices last so that we can check for existing
+    # motors in the registry
+    motors = await load_motors(config=config, connect=False)
+    print(f"Loading [repr.number]{len(motors)}[/] extra motors…", flush=True)
+    try:
+        await connect_devices(motors, mock=mock, registry=registry)
+    except NotConnected as exc:
+        log.exception(exc)
     # Synchronous (threaded) devices
     devices.extend(
         [
+            *(await load_ion_chambers(config=config)),
             *load_aerotech_stages(config=config),
             load_aps(config=config),
             *load_area_detectors(config=config),

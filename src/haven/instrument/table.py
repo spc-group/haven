@@ -91,6 +91,7 @@ class Table(StandardReadable, Device):
         transform_prefix: str = "",
         name="",
     ):
+        has_pseudo_motors = bool(upstream_prefix) and bool(downstream_prefix)
         with self.add_children_as_readables():
             # See if we have direct control over the vertical/horizontal positions
             if vertical_prefix != "":
@@ -101,8 +102,9 @@ class Table(StandardReadable, Device):
                 self.upstream = Motor(upstream_prefix, name="upstream")
             if bool(downstream_prefix):
                 self.downstream = Motor(downstream_prefix, name="downstream")
+
             # Check if we need to add the pseudo motors and tranforms
-            if bool(upstream_prefix) and bool(downstream_prefix):
+            if has_pseudo_motors:
                 self.vertical = Motor(f"{pseudo_motor_prefix}height", name="vertical")
                 self.pitch = Motor(f"{pseudo_motor_prefix}pitch", name="pitch")
                 self.vertical_drive_transform = TransformRecord(
@@ -114,7 +116,9 @@ class Table(StandardReadable, Device):
         super().__init__(name=name)
 
 
-async def load_tables(config=None, registry: InstrumentRegistry = default_registry):
+async def load_tables(
+    config=None, registry: InstrumentRegistry = default_registry, connect: bool = True
+):
     if config is None:
         config = load_config()
     # Create two-bounce KB mirror sets
@@ -156,9 +160,10 @@ async def load_tables(config=None, registry: InstrumentRegistry = default_regist
             )
         )
     # Connect to devices
-    devices = await connect_devices(
-        devices, mock=not config["beamline"]["is_connected"], registry=registry
-    )
+    if connect:
+        devices = await connect_devices(
+            devices, mock=not config["beamline"]["is_connected"], registry=registry
+        )
     return devices
 
 

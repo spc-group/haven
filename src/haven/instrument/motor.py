@@ -160,6 +160,7 @@ async def load_motors(
     config: Mapping = None,
     registry: InstrumentRegistry = default_registry,
     auto_name=True,
+    connect: bool = True,
 ) -> Sequence:
     """Load generic hardware motors from IOCs.
 
@@ -175,10 +176,14 @@ async def load_motors(
       provided by :py:func:`haven._iconfig.load_config()`.
     registry
       The instrument registry to check for existing motors. Existing
-      motors will not be duplicated.
+      motors will not be duplicated. Motors will be added to this
+      registry if *connect* is true.
     auto_name
       If true, motors will be named based on its description signal
       when connecting.
+    connect
+      If true (default), device connections will be established and
+      successfully connected devices get added to the registry.
 
     Returns
     =======
@@ -216,9 +221,10 @@ async def load_motors(
         if getattr(m.user_readback, "source", "") not in existing_sources
     ]
     # Connect to devices
-    devices = await connect_devices(
-        devices, mock=not config["beamline"]["is_connected"], registry=registry
-    )
+    if connect:
+        devices = await connect_devices(
+            devices, mock=not config["beamline"]["is_connected"], registry=registry
+        )
     return devices
 
 
