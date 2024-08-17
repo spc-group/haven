@@ -21,6 +21,13 @@ finally:
     del importlib
 
 
+# Determine the file path of the ipython startup file
+from pathlib import Path
+
+ipython_startup_file = Path(__file__).parent / "ipython_startup.ipy"
+del Path
+
+
 # Force ophyd to use caproto as its backend
 # import ophyd
 # ophyd.set_cl("caproto")

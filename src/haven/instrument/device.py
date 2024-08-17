@@ -2,16 +2,51 @@ import asyncio
 import logging
 import re
 import time as ttime
+import warnings
 from typing import Callable, Union
 
 from caproto import CaprotoTimeoutError
 from caproto.asyncio.client import Context
 from ophyd import Component, Device, K
 from ophyd.sim import make_fake_device
+from ophyd_async.core import NotConnected
 
 from .._iconfig import load_config
 
 log = logging.getLogger(__name__)
+
+
+async def connect_devices(
+    devices, mock=False, timeout=10.0, labels=None, registry=None
+):
+    """Ensure that a bunch of ophyd_async devices are connected.
+
+    Returns
+    =======
+    connected_devices
+      Those entries in *devices* that were properly connected.
+    """
+    aws = (device.connect(mock=mock, timeout=timeout) for device in devices)
+    results = await asyncio.gather(*aws, return_exceptions=True)
+    # Filter out the disconnected devices
+    new_devices = []
+    # connection_errors = {}
+    exceptions = {}
+    for device, result in zip(devices, results):
+        if result is None:
+            log.debug(f"Successfully connected device {device.name}")
+            new_devices.append(device)
+        else:
+            # Unexpected exception, raise it so it can be handled
+            exceptions[device.name] = result
+    # Register connected devices with the registry
+    if registry is not None:
+        for device in new_devices:
+            registry.register(device, labels=labels)
+    # Raise exceptions if any were present
+    if len(exceptions) > 0:
+        raise NotConnected(exceptions)
+    return new_devices
 
 
 async def resolve_device_names(ic_defns):
@@ -24,6 +59,11 @@ async def resolve_device_names(ic_defns):
     Ensures names are safe as Ophyd device names.
 
     """
+    warnings.warn(
+        DeprecationWarning(
+            "``resolve_device_names`` is deprecated. Perform device name resolution in the device's ``connect()`` method instead."
+        )
+    )
 
     async def get_name(pv):
         try:
