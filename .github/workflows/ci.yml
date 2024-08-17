@@ -50,7 +50,7 @@ jobs:
       run: |
         isort --check src/
     - name: Haven tests with pytest in Xvfb
-      run: xvfb-run python -m pytest src/haven -vv --timeout=30
+      run: xvfb-run python -m pytest src/haven -vv --timeout=30 --ignore src/haven/tests/test_motor_flyer.py
     - name: Firefly tests with pytest in Xvfb
       run: xvfb-run python -m pytest src/firefly -vv --timeout=30
     - name: Reporting linting

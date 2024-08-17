@@ -23,7 +23,7 @@ def test_set_fly_params(flyer):
     # step size == 10
     plan = fly_scan([], flyer, -20, 30, num=6, dwell_time=1.5)
     messages = list(plan)
-    prep_msg = messages[2]
+    prep_msg = messages[3]
     assert prep_msg.command == "prepare"
     prep_info = prep_msg.args[0]
     assert prep_info.start_position == -20
@@ -37,7 +37,7 @@ def test_fly_scan_metadata(aerotech_flyer, sim_ion_chamber):
     md = {"spam": "eggs"}
     plan = fly_scan([sim_ion_chamber], flyer, -20, 30, num=6, dwell_time=1, md=md)
     messages = list(plan)
-    open_msg = messages[2]
+    open_msg = messages[1]
     assert open_msg.command == "open_run"
     real_md = open_msg.kwargs
     expected_md = {
