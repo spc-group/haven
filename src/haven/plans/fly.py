@@ -1,13 +1,23 @@
+import uuid
 from collections import OrderedDict, abc
 from typing import Mapping, Sequence, Union
-from uuid import uuid4
 
 import numpy as np
 from bluesky import plan_patterns
 from bluesky import plan_stubs as bps
 from bluesky import plans as bp
-from bluesky import preprocessors as bpp
+from bluesky.preprocessors import (
+    __read_and_stash_a_motor,
+    _normalize_devices,
+    finalize_wrapper,
+    pchain,
+    plan_mutator,
+    reset_positions_wrapper,
+    run_wrapper,
+    stage_wrapper,
+)
 from bluesky.protocols import Collectable
+from bluesky.utils import Msg, single_gen
 from ophyd import Device
 from ophyd.flyers import FlyerInterface
 from ophyd.status import StatusBase
@@ -16,6 +26,59 @@ from ophyd_async.epics.motor import FlyMotorInfo
 from ..preprocessors import baseline_decorator
 
 __all__ = ["fly_scan", "grid_fly_scan"]
+
+
+def reset_flyers_wrapper(plan, devices=None):
+    """Return flyer devices to their initial positions and velocities
+    prior to being prepared for flying.
+
+    Parameters
+    ----------
+    plan : iterable or iterator
+        a generator, list, or similar containing `Msg` objects
+    devices : collection or None, optional
+        If default (None), apply to all devices that are prepared by the plan.
+
+    Yields
+    ------
+    msg : Msg
+        messages from plan with 'read' and finally 'set' messages inserted
+
+    """
+    initial_positions = OrderedDict()
+    if devices is not None:
+        devices, coupled_parents = _normalize_devices(devices)
+    else:
+        coupled_parents = set()
+
+    def insert_reads(msg):
+        eligible = devices is None or msg.obj in devices
+        seen = msg.obj in initial_positions
+        if (msg.command == "prepare") and eligible and not seen:
+            # Stash flyer position
+            plan_bits = [
+                __read_and_stash_a_motor(msg.obj, initial_positions, coupled_parents)
+            ]
+            # Stash flyer velocity
+            if hasattr(msg.obj, "velocity"):
+                plan_bits.append(
+                    __read_and_stash_a_motor(
+                        msg.obj.velocity, initial_positions, coupled_parents
+                    )
+                )
+            return (pchain(*plan_bits, single_gen(msg)), None)
+        else:
+            return None, None
+
+    def reset():
+        blk_grp = f"reset-{str(uuid.uuid4())[:6]}"
+        for k, v in initial_positions.items():
+            if k.parent in coupled_parents:
+                continue
+            yield Msg("set", k, v, group=blk_grp)
+        yield Msg("wait", None, group=blk_grp)
+
+    return (yield from finalize_wrapper(plan_mutator(plan, insert_reads), reset()))
 
 
 def fly_line_scan(detectors: list, *args, num, dwell_time):
@@ -47,7 +110,7 @@ def fly_line_scan(detectors: list, *args, num, dwell_time):
     starts = args[1::3]
     ends = args[2::3]
     # Set up motors in their taxi position
-    prepare_group = uuid4()
+    prepare_group = uuid.uuid4()
     for obj, start, end in zip(motors, starts, ends):
         position_info = FlyMotorInfo(
             start_position=start,
@@ -62,7 +125,7 @@ def fly_line_scan(detectors: list, *args, num, dwell_time):
         yield from bps.monitor(sig, name=sig.name)
     # Perform the fly scan
     flyers = [*motors, *detectors]
-    kickoff_group = uuid4()
+    kickoff_group = uuid.uuid4()
     for m in motors:
         yield from bps.kickoff(m, wait=False, group=kickoff_group)
     yield from bps.wait(group=kickoff_group)
@@ -70,12 +133,12 @@ def fly_line_scan(detectors: list, *args, num, dwell_time):
     for det in detectors:
         yield from bps.kickoff(m, wait=False)
     # Wait for all the flyers to be done
-    motor_complete_group = uuid4()
+    motor_complete_group = uuid.uuid4()
     for m in motors:
         yield from bps.complete(m, wait=False, group=motor_complete_group)
     yield from bps.wait(group=(motor_complete_group))
     # Stop detectors
-    det_complete_group = uuid4()
+    det_complete_group = uuid.uuid4()
     for det in detectors:
         yield from bps.complete(det, wait=False, group=det_complete_group)
     yield from bps.wait(group=(det_complete_group))
@@ -156,8 +219,11 @@ def fly_scan(
         num=num,
         dwell_time=dwell_time,
     )
-    line_scan = bpp.run_wrapper(line_scan, md=md_)
-    line_scan = bpp.stage_wrapper(line_scan, devices)
+    # Wrapper for reseting the initial motor position/velocity
+    line_scan = reset_flyers_wrapper(line_scan, motors)
+    # Wrapper for making it a proper run
+    line_scan = run_wrapper(line_scan, md=md_)
+    line_scan = stage_wrapper(line_scan, motors)
     yield from line_scan
 
 
@@ -267,13 +333,16 @@ def grid_fly_scan(
         num=fly_num,
         extra_signals=motors,
     )
-    uid = yield from bp.grid_scan(
+    grid_scan = yield from bp.grid_scan(
         detectors,
         *step_args,
         snake_axes=snake_steppers,
         per_step=per_step,
         md=md_,
     )
+    grid_scan = reset_flyers_wrapper(grid_scan)
+    grid_scan = reset_positions_wrapper(grid_scan)
+    uid = yield from grid_scan
     return uid
 
 

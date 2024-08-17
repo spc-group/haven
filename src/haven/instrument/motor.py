@@ -73,6 +73,7 @@ class Motor(MotorBase):
 
         """
         self._ophyd_labels_ = labels
+        self._old_flyer_velocity = None
         self.auto_name = bool(auto_name) or (auto_name is None and name == "")
         # Configuration signals
         with self.add_children_as_readables(ConfigSignal):

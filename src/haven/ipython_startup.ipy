@@ -6,6 +6,7 @@ import databroker  # noqa: F401
 import matplotlib.pyplot as plt  # noqa: F401
 from bluesky import plan_stubs as bps  # noqa: F401
 from bluesky import plans as bp  # noqa: F401
+from bluesky import preprocessors as bpp  # noqa: F401
 from bluesky import suspenders  # noqa: F401
 from bluesky.callbacks.best_effort import BestEffortCallback  # noqa: F401
 from bluesky.plan_stubs import mv, mvr, rd  # noqa: F401
@@ -22,7 +23,10 @@ import haven  # noqa: F401
 logging.basicConfig(level=logging.WARNING)
 
 # Create a run engine
-RE = haven.run_engine(call_returns_result=True, connect_databroker=True)
+RE = haven.run_engine(
+    connect_databroker=False,
+    call_returns_result=True,
+)
 
 # Add metadata to the run engine
 RE.preprocessors.append(haven.preprocessors.inject_haven_md_wrapper)
