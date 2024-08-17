@@ -45,7 +45,6 @@ class CaQtDMBase:
         macros = {
             k: v for k, v in (piece.split("=", 1) for piece in macro_str.split(","))
         }
-        print(macros)
         return macros
 
 

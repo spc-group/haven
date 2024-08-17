@@ -78,7 +78,6 @@ def test_async_motor_signals():
 def test_motor_flyer(motor):
     """Check that the haven motor implements the flyer interface."""
     assert motor is not None
-    print(type(motor).__mro__)
     assert isinstance(motor, Flyable)
 
 

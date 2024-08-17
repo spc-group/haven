@@ -2,6 +2,7 @@ import asyncio
 import logging
 import re
 import time as ttime
+import warnings
 from typing import Callable, Union
 
 from caproto import CaprotoTimeoutError
@@ -58,6 +59,11 @@ async def resolve_device_names(ic_defns):
     Ensures names are safe as Ophyd device names.
 
     """
+    warnings.warn(
+        DeprecationWarning(
+            "``resolve_device_names`` is deprecated. Perform device name resolution in the device's ``connect()`` method instead."
+        )
+    )
 
     async def get_name(pv):
         try:
