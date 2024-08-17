@@ -1,4 +1,5 @@
 import logging
+import warnings
 from collections import OrderedDict
 from typing import Dict, Generator
 
@@ -10,6 +11,13 @@ from ophyd.status import Status
 from scipy.interpolate import CubicSpline
 
 log = logging.getLogger()
+
+
+warnings.warn(
+    DeprecationWarning(
+        "Motor flyer will be removed in a future release. Please replace with the ophyd-async Motor for fly-scan support"
+    )
+)
 
 
 class MotorFlyer(FlyerInterface, Device):
@@ -98,7 +106,6 @@ class MotorFlyer(FlyerInterface, Device):
                 self._fly_data = []
                 self._fly_model = None
                 cid = self.user_readback.subscribe(self.record_datum, run=False)
-                print(f"Moving to {self.flyer_taxi_end.get()}")
                 self.move(self.flyer_taxi_end.get(), wait=True)
                 self.user_readback.unsubscribe(cid)
             except Exception as exc:
