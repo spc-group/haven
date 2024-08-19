@@ -1,5 +1,6 @@
 from queue import Queue
-from typing import Optional, Sequence, List, Literal
+from typing import Optional, Tuple, List, Literal
+import logging
 
 import numpy as np
 from numpy import ndarray
@@ -11,7 +12,6 @@ from autobl.steering.configs import XANESExperimentGuideConfig, StoppingCriterio
 from autobl.steering.guide import XANESExperimentGuide
 from autobl.steering.acquisition import ComprehensiveAugmentedAcquisitionFunction
 from autobl.steering.optimization import DiscreteOptimizer
-from autobl.steering import DiscreteOptimizer
 from autobl.util import to_numpy, to_tensor
 import torch
 import botorch
@@ -36,7 +36,7 @@ class XANESSamplingRecommender:
 
     def __init__(
         self,
-        energy_range: Sequence[float, float],
+        energy_range: Tuple[float, float],
         override_kernel_lengthscale: Optional[float] = None,
         reference_spectra_x: Optional[ndarray] = None,
         reference_spectra_y: Optional[ndarray] = None,
@@ -70,6 +70,13 @@ class XANESSamplingRecommender:
         self.build_device()
         
     def build_configs(self):
+        ref_spectra_x = None
+        if self.input_args['reference_spectra_x'] is not None:
+            ref_spectra_x = to_tensor(self.input_args['reference_spectra_x'])
+        ref_spectra_y = None
+        if self.input_args['reference_spectra_y'] is not None:
+            ref_spectra_y = to_tensor(self.input_args['reference_spectra_y'])
+        
         self.configs = XANESExperimentGuideConfig(
             dim_measurement_space=1,
             num_candidates=1,
@@ -82,16 +89,17 @@ class XANESSamplingRecommender:
             acquisition_function_class=ComprehensiveAugmentedAcquisitionFunction,
             acquisition_function_params={'gradient_order': 2,
                                         'differentiation_method': 'numerical',
-                                        'reference_spectra_x': self.input_args['reference_spectra_x'],
-                                        'reference_spectra_y': self.input_args['reference_spectra_y'],
+                                        'reference_spectra_x': ref_spectra_x,
+                                        'reference_spectra_y': ref_spectra_y,
                                         'phi_r': self.input_args['phi_r'],
                                         'phi_g': self.input_args['phi_g'],
                                         'phi_g2': self.input_args['phi_g2'],
                                         'beta': self.input_args['beta'],
                                         'gamma': self.input_args['gamma'],
                                         'addon_term_lower_bound': 3e-2,
-                                        'estimate_posterior_mean_by_interpolation': False,
-                                        'debug': False
+                                        'estimate_posterior_mean_by_interpolation': True,
+                                        'subtract_background_gradient': True,
+                                        'debug': False,
                                         },
 
             optimizer_class=DiscreteOptimizer,
@@ -127,14 +135,15 @@ class XANESSamplingRecommender:
         if self.guide is None:
             raise ValueError("Guide is not initialized yet.")
                 
-    def initialize_guide(self, energies: list[float, ...], values: list[float, ...]) -> None:
+    def initialize_guide(self, energies: list[float], values: list[float]) -> None:
         energies = to_tensor(energies).reshape(-1, 1)
         values = to_tensor(values).reshape(-1, 1)
+        self.guide = XANESExperimentGuide(self.configs)
         self.guide.build(energies, values)
         
     def get_initial_measurement_locations(
             self, n: int, 
-            method: Literal['uniform', 'random', 'supplied'] = 'uniform', 
+            method: Literal['uniform', 'random', 'quasirandom', 'supplied'] = 'uniform', 
             supplied_initial_points: Optional[ndarray] = None):
         lb, ub = self.energy_range
         if method == 'uniform':
@@ -142,7 +151,13 @@ class XANESSamplingRecommender:
         elif method == 'random':
             assert n > 2
             x_init = np.random.rand(n - 2) * (ub - lb) + lb
-            x_init = np.concat([x_init, np.array([lb, ub])])
+            x_init = np.concatenate([x_init, np.array([lb, ub])])
+            x_init = np.sort(x_init)
+        elif method == 'quasirandom':
+            assert n > 2
+            x_init = np.linspace(lb, ub, n)
+            dx = (np.random.rand(n - 2) - 0.5) * (ub - lb) / (n - 1)
+            x_init[1:-1] = x_init[1:-1] + dx
             x_init = np.sort(x_init)
         elif method == 'supplied':
             x_init = supplied_initial_points
@@ -161,11 +176,11 @@ class XANESSamplingRecommender:
           Measured x-ray absorption coefficient at the energy.
         """
         self.check_guide()
-        energy = to_tensor([[energy]])
-        value = to_tensor([[value]])
+        energy = to_tensor([[float(energy)]])
+        value = to_tensor([[float(value)]])
         self.guide.update(energy, value)
 
-    def tell_many(self, energies: List[float, ...], values: List[float, ...]) -> None:
+    def tell_many(self, energies: list[float], values: list[float]) -> None:
         """Update model with multiple data points.
 
         :param xs: _description_
@@ -176,7 +191,7 @@ class XANESSamplingRecommender:
         values = to_tensor(values).reshape(-1, 1)
         self.guide.update(energies, values)
 
-    def ask(self, n=1, *args, ***args, **kwargs) -> list[float]:
+    def ask(self, n=1, *args, **kwargs) -> list[float]:
         """Figure out the next point based on the past ones we've measured.
         
         Returns
@@ -187,9 +202,11 @@ class XANESSamplingRecommender:
         if n != 1:
             raise NotImplementedError('Only one point at a time is supported.')
         candidates = self.guide.suggest().double()
-        candidates = [to_numpy(candidates).squeeze()]
+        candidates = list(np.atleast_1d(np.squeeze(to_numpy(candidates))))
         
-        if self.guide.stopping_ceiterion.check():
+        if self.guide.stopping_criterion.check():
+            logging.info("Stopping criterion reached. Reason: {} ({} measured)".format(
+                self.guide.stopping_criterion.reason, len(self.guide.data_x)))
             raise NoRecommendation
         
         return candidates
@@ -201,7 +218,7 @@ def dummy_measure(*args, **kwargs):
 
 def adaptive_xanes(
     n_initial_measurements: int,
-    energy_range: Sequence[float, float],
+    energy_range: Tuple[float, float],
     override_kernel_lengthscale: Optional[float] = None,
     reference_spectra_x: Optional[ndarray] = None,
     reference_spectra_y: Optional[ndarray] = None,
@@ -228,8 +245,10 @@ def adaptive_xanes(
     
     recommender = XANESSamplingRecommender(**input_args)
     
-    # Get initial points to measure
-    x_init = recommender.get_initial_measurement_locations(n=n_initial_measurements, method='random')
+    # Get initial points to measure. In a dynamic experiment, one may save this initial
+    # point set and reuse it for subsequent spectra by setting "method" to "supplied"
+    # and "supplied_initial_points" to the saved point set.
+    x_init = recommender.get_initial_measurement_locations(n=n_initial_measurements, method='quasirandom')
     y_init = dummy_measure(x_init)
     
     recommender.initialize_guide(x_init, y_init)
