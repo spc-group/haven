@@ -317,7 +317,12 @@ class ComponentSelector(QWidget):
 
     def current_component(self):
         cpt_name = self.combo_box.currentText()
-        return self.registry[cpt_name]
+        if cpt_name == "":
+            # Nothing selected
+            return None
+        else:
+            # A device was selected
+            return self.registry.find(name=cpt_name)
 
     def create_models(self):
         self.tree_model = DeviceTreeModel(0, 2)
