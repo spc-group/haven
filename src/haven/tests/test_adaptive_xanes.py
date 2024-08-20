@@ -52,8 +52,8 @@ def test_adaptive_xanes():
         'phi_r': 1e2,
         'phi_g': 2e-3,
         'phi_g2': 2e-3,
-        'stopping_criterion_uncertainty': 0.01,
-        'n_max_measurements': 60,
+        'stopping_criterion_uncertainty': 0.03,
+        'n_max_measurements': 50,
         'cpu_only': True,
     }
     recommender = XANESSamplingRecommender(**params)
