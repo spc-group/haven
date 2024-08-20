@@ -32,6 +32,49 @@ class XANESSamplingRecommender:
     suggests the next energy to measure based on the posterior uncertainty
     that the GP gives and features extracted from the current estimate
     of the spectrum.
+    
+    Parameters
+    ----------
+    energy_range
+        The range of energies to be measured in eV.
+    override_kernel_lengthscale
+        If specified, override the kernel lengthscale with this value instead
+        of fitting it from the initial data. 
+    reference_spectra_x
+        The reference spectrum energy values. The shape should be (n,).
+    reference_spectra_y
+        A stack of reference spectrum y values. The shape shuold be (n_spectra, n).
+    phi_r
+        Weight of the fitting residue term in the acquisition function.
+    phi_g
+        Weight of the first-order gradient term in the acquisition function.
+    phi_g2
+        Weight of the second-order gradient term in the acquisition function.
+    beta
+        Decay rate of the weights of add-on terms in the acquisition function.
+    gamma
+        Decay rate of the mixing coefficient between the acquisition reweighting 
+        function and the original value.
+    use_spline_interpolation_for_posterior_mean
+        If true, use spline interpolation to estimate the spectrum instead of
+        Gaussian process posterior mean.
+    n_discrete_optimizer_points
+        The number of discrete points to use in the acquisition function
+        optimization.
+    acqf_weight_func_post_edge_gain
+        The gain for the reweighting function in the post-edge region.
+    acqf_weight_func_post_edge_offset
+        The offset for the reweighting function in the post-edge region.
+        Specified in multiples of the edge width. 
+    acqf_weight_func_post_edge_width
+        The width for the post-edge gain of the reweighting function.
+    stopping_criterion_uncertainty
+        The max posterior uncertainty threshold for the stopping criterion.
+    n_max_measurements
+        The max number of measurements that can be made. Acquisition stops
+        when this number is reached or the stopping criterion is triggered.
+    cpu_only
+        If true, use CPU only.
     """
 
     def __init__(
@@ -55,7 +98,9 @@ class XANESSamplingRecommender:
         cpu_only: bool = True,
         *args, **kwargs
     ):
-        # Collect all input arguments through locals()
+        # Collect all input arguments through locals(). A better way
+        # is to create a dataclass with all the arguments if the interface
+        # allows. 
         self.input_args = locals()
         self.energy_range = energy_range
         
@@ -239,7 +284,49 @@ def adaptive_xanes(
     """An adaptive Bluesky plan for adaptive XANES sampling.
 
     Parameters
-    ==========
+    ----------
+    n_initial_measurements
+        The number of initial measurements.
+    energy_range
+        The range of energies to be measured in eV.
+    override_kernel_lengthscale
+        If specified, override the kernel lengthscale with this value instead
+        of fitting it from the initial data. 
+    reference_spectra_x
+        The reference spectrum energy values. The shape should be (n,).
+    reference_spectra_y
+        A stack of reference spectrum y values. The shape shuold be (n_spectra, n).
+    phi_r
+        Weight of the fitting residue term in the acquisition function.
+    phi_g
+        Weight of the first-order gradient term in the acquisition function.
+    phi_g2
+        Weight of the second-order gradient term in the acquisition function.
+    beta
+        Decay rate of the weights of add-on terms in the acquisition function.
+    gamma
+        Decay rate of the mixing coefficient between the acquisition reweighting 
+        function and the original value.
+    use_spline_interpolation_for_posterior_mean
+        If true, use spline interpolation to estimate the spectrum instead of
+        Gaussian process posterior mean.
+    n_discrete_optimizer_points
+        The number of discrete points to use in the acquisition function
+        optimization.
+    acqf_weight_func_post_edge_gain
+        The gain for the reweighting function in the post-edge region.
+    acqf_weight_func_post_edge_offset
+        The offset for the reweighting function in the post-edge region.
+        Specified in multiples of the edge width. 
+    acqf_weight_func_post_edge_width
+        The width for the post-edge gain of the reweighting function.
+    stopping_criterion_uncertainty
+        The max posterior uncertainty threshold for the stopping criterion.
+    n_max_measurements
+        The max number of measurements that can be made. Acquisition stops
+        when this number is reached or the stopping criterion is triggered.
+    cpu_only
+        If true, use CPU only.
     """
     input_args = locals()
     
