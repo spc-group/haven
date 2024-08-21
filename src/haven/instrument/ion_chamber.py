@@ -14,19 +14,28 @@ from apstools.devices.srs570_preamplifier import (
     calculate_settle_time,
 )
 from ophyd import Component as Cpt
-from ophyd import Device, EpicsSignal, EpicsSignalRO
+from ophyd import EpicsSignal, EpicsSignalRO
 from ophyd import FormattedComponent as FCpt
 from ophyd import Kind, Signal, flyers, status
 from ophyd.mca import EpicsMCARecord
 from ophyd.ophydobj import OphydObject
 from ophyd.signal import DerivedSignal, InternalSignal
 from ophyd.status import SubscriptionStatus
+from ophyd_async.core import Device, StandardReadable, DeviceVector, ConfigSignal, HintedSignal
+from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw
 from pcdsdevices.signal import MultiDerivedSignal, MultiDerivedSignalRO
 from pcdsdevices.type_hints import OphydDataType, SignalToValue
 
 from .. import exceptions
 from .._iconfig import load_config
-from .device import await_for_connection, make_device, resolve_device_names
+from .device import (
+    await_for_connection,
+    make_device,
+    resolve_device_names,
+    connect_devices,
+)
+from .instrument_registry import InstrumentRegistry
+from .instrument_registry import registry as default_registry
 from .labjack import AnalogInput
 from .scaler_triggered import ScalerSignalRO, ScalerTriggered
 
@@ -34,6 +43,22 @@ log = logging.getLogger(__name__)
 
 
 __all__ = ["IonChamber", "load_ion_chambers"]
+
+
+class IonChamber(Device):
+    def init(
+        self,
+        scaler_channel: Device,
+        preamp: Device,
+        voltmeter: Device,
+        counts_per_volt_second: float,
+        name="",
+    ):
+        self.counts_per_volt_second = counts_per_volt_second
+        self.preamp = preamp
+        self.voltmeter = voltmeter
+        self.scaler_channel = scaler_channel
+        super().__init__(name=name)
 
 
 class VoltageSignal(DerivedSignal):
@@ -287,7 +312,7 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
     gain_db = Cpt(InternalSignal, kind=Kind.config, value=0)
 
 
-class IonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
+class OldIonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
     """An ion chamber at a spectroscopy beamline.
 
     Also includes the pre-amplifier as ``.pre_amp``.
@@ -675,96 +700,91 @@ async def load_ion_chambers(config=None, connect=True):
     channel's .DESC field.
 
     """
-    # Load IOC prefixes from the config file
+    # Load IOC configuration from the config file
     if config is None:
         config = load_config()
     if "ion_chamber" not in config.keys():
         warnings.warn("Ion chambers not configured.")
         return []
-    # Generate the configuration dictionary for all the ion chambers
-    ic_defns = []
-    for section_name, section in config["ion_chamber"].items():
-        channels = zip(
-            section["scaler_channels"],
-            section["preamp_channels"],
-            section["voltmeter_channels"],
-        )
-        for scaler_ch, preamp_ch, voltmeter_ch in channels:
-            voltmeter_prefix = f"{section['voltmeter_prefix']}Ai{voltmeter_ch}"
-            preamp_prefix = f"{section['preamp_prefix']}{preamp_ch:02}:"
-            scaler_prefix = section["scaler_prefix"]
-            desc_pv = f"{scaler_prefix}scaler1.NM{scaler_ch}"
-            ic_defns.append(
-                {
-                    "section": section_name,
-                    "scaler_prefix": section["scaler_prefix"],
-                    "ch_num": scaler_ch,
-                    "voltmeter_prefix": voltmeter_prefix,
-                    "preamp_prefix": preamp_prefix,
-                    "desc_pv": desc_pv,
-                    "counts_per_volt_second": section["counts_per_volt_second"],
-                }
-            )
-    # Resolve the scaler channels into ion chamber names
-    await resolve_device_names(ic_defns)
-    # Loop through the sections and create ion chambers
-    devices = []
-    missing_channels = []
-    unnamed_channels = []
-    for defn in ic_defns:
-        if defn["name"] == "":
-            unnamed_channels.append(defn["desc_pv"])
-        elif defn["name"] is None:
-            missing_channels.append(defn["desc_pv"])
+    # Load the scalers that we need for ion chambers
+    devices = await load_scalers(config=config, connect=False)
+    scalers = {scaler.name: scaler for scaler in devices}
+    # Create the ion chambers
+    for grp, cfg in config["ion_chamber"].items():
+        # Get the corresponding scaler channel
+        if "scaler" in cfg.keys() and "scaler_channel" in cfg.keys():
+            scaler = scalers[cfg["scaler"]]
+            scaler_channel = scaler.channels[cfg["scaler_channel"]]
         else:
-            # Create the ion chamber device
-            devices.append(
-                make_device(
-                    IonChamber,
-                    prefix=defn["scaler_prefix"],
-                    ch_num=defn["ch_num"],
-                    name=defn["name"],
-                    preamp_prefix=defn["preamp_prefix"],
-                    voltmeter_prefix=defn["voltmeter_prefix"],
-                    labels={"ion_chambers", defn["section"], "detectors"},
-                    counts_per_volt_second=defn["counts_per_volt_second"],
-                )
+            scaler_channel = None
+        # Create the ion chamber
+        devices.append(
+            IonChamber(
+                scaler_channel=scaler_channel,
+                preamp_prefix=cfg.get("preamp_prefix", None),
+                voltmeter_prefix=cfg.get("voltmeter_prefix", None),
+                counts_per_volt_second=cfg.get("counts_per_volt_second", None),
             )
-    # Notify of any missing ion chambers
-    if len(missing_channels) > 0:
-        msg = "Skipping unavailable ion chambers: "
-        msg += ", ".join([prefix for prefix in missing_channels])
-        warnings.warn(msg)
-        log.warning(msg)
-    if len(unnamed_channels) > 0:
-        msg = "Skipping unnamed ion chambers: "
-        msg += ", ".join([prefix for prefix in unnamed_channels])
-        warnings.warn(msg)
-        log.warning(msg)
+        )
     return devices
-
-
-# -----------------------------------------------------------------------------
-# :author:    Mark Wolfman
-# :email:     wolfman@anl.gov
-# :copyright: Copyright © 2023, UChicago Argonne, LLC
-#
-# Distributed under the terms of the 3-Clause BSD License
-#
-# The full license is in the file LICENSE, distributed with this software.
-#
-# DISCLAIMER
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# -----------------------------------------------------------------------------
+    # Generate the configuration dictionary for all the ion chambers
+    # ic_defns = []
+    # for section_name, section in config["ion_chamber"].items():
+    #     channels = zip(
+    #         section["scaler_channels"],
+    #         section["preamp_channels"],
+    #         section["voltmeter_channels"],
+    #     )
+    #     for scaler_ch, preamp_ch, voltmeter_ch in channels:
+    #         voltmeter_prefix = f"{section['voltmeter_prefix']}Ai{voltmeter_ch}"
+    #         preamp_prefix = f"{section['preamp_prefix']}{preamp_ch:02}:"
+    #         scaler_prefix = section["scaler_prefix"]
+    #         desc_pv = f"{scaler_prefix}scaler1.NM{scaler_ch}"
+    #         ic_defns.append(
+    #             {
+    #                 "section": section_name,
+    #                 "scaler_prefix": section["scaler_prefix"],
+    #                 "ch_num": scaler_ch,
+    #                 "voltmeter_prefix": voltmeter_prefix,
+    #                 "preamp_prefix": preamp_prefix,
+    #                 "desc_pv": desc_pv,
+    #                 "counts_per_volt_second": section["counts_per_volt_second"],
+    #             }
+    #         )
+    # # Resolve the scaler channels into ion chamber names
+    # await resolve_device_names(ic_defns)
+    # # Loop through the sections and create ion chambers
+    # devices = []
+    # missing_channels = []
+    # unnamed_channels = []
+    # for defn in ic_defns:
+    #     if defn["name"] == "":
+    #         unnamed_channels.append(defn["desc_pv"])
+    #     elif defn["name"] is None:
+    #         missing_channels.append(defn["desc_pv"])
+    #     else:
+    #         # Create the ion chamber device
+    #         devices.append(
+    #             make_device(
+    #                 IonChamber,
+    #                 prefix=defn["scaler_prefix"],
+    #                 ch_num=defn["ch_num"],
+    #                 name=defn["name"],
+    #                 preamp_prefix=defn["preamp_prefix"],
+    #                 voltmeter_prefix=defn["voltmeter_prefix"],
+    #                 labels={"ion_chambers", defn["section"], "detectors"},
+    #                 counts_per_volt_second=defn["counts_per_volt_second"],
+    #             )
+    #         )
+    # # Notify of any missing ion chambers
+    # if len(missing_channels) > 0:
+    #     msg = "Skipping unavailable ion chambers: "
+    #     msg += ", ".join([prefix for prefix in missing_channels])
+    #     warnings.warn(msg)
+    #     log.warning(msg)
+    # if len(unnamed_channels) > 0:
+    #     msg = "Skipping unnamed ion chambers: "
+    #     msg += ", ".join([prefix for prefix in unnamed_channels])
+    #     warnings.warn(msg)
+    #     log.warning(msg)
+    return devices
