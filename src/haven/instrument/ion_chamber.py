@@ -6,7 +6,7 @@ import time
 import warnings
 from collections import OrderedDict
 from numbers import Number
-from typing import Dict, Generator, Optional
+from typing import Dict, Generator, Optional, Mapping
 
 import numpy as np
 from apstools.devices.srs570_preamplifier import (
@@ -37,6 +37,7 @@ from .device import (
 from .instrument_registry import InstrumentRegistry
 from .instrument_registry import registry as default_registry
 from .labjack import AnalogInput
+from .scaler import MultiChannelScaler
 from .scaler_triggered import ScalerSignalRO, ScalerTriggered
 
 log = logging.getLogger(__name__)
@@ -45,19 +46,30 @@ log = logging.getLogger(__name__)
 __all__ = ["IonChamber", "load_ion_chambers"]
 
 
-class IonChamber(Device):
-    def init(
+class IonChamber(StandardReadable):
+    """A high-level abstraction of an ion chamber.
+
+    Sub-Devices
+    ===========
+    mcs
+      A multi-channel scaler pointed to be *scaler_prefix*. This
+      device will have two channels, the clock channel (#0) and the
+      data channel, determined by *scaler_channel*.
+
+    """
+    def __init__(
         self,
-        scaler_channel: Device,
-        preamp: Device,
-        voltmeter: Device,
+        scaler_prefix: str,
+        scaler_channel: int,
+        preamp_prefix: str,
+        voltmeter_prefix: str,
         counts_per_volt_second: float,
         name="",
     ):
         self.counts_per_volt_second = counts_per_volt_second
-        self.preamp = preamp
-        self.voltmeter = voltmeter
         self.scaler_channel = scaler_channel
+        with self.add_children_as_readables():
+            self.mcs = MultiChannelScaler(prefix=scaler_prefix, channels=[0, scaler_channel])
         super().__init__(name=name)
 
 
@@ -692,7 +704,7 @@ def load_ion_chamber(
     return ion_chamber
 
 
-async def load_ion_chambers(config=None, connect=True):
+async def load_ion_chambers(config: Mapping = None, registry: InstrumentRegistry = default_registry, connect: bool = True):
     """Load ion chambers based on configuration files' ``[ion_chamber]``
     sections.
 
@@ -706,21 +718,16 @@ async def load_ion_chambers(config=None, connect=True):
     if "ion_chamber" not in config.keys():
         warnings.warn("Ion chambers not configured.")
         return []
-    # Load the scalers that we need for ion chambers
-    devices = await load_scalers(config=config, connect=False)
-    scalers = {scaler.name: scaler for scaler in devices}
     # Create the ion chambers
+    devices = []
     for grp, cfg in config["ion_chamber"].items():
-        # Get the corresponding scaler channel
-        if "scaler" in cfg.keys() and "scaler_channel" in cfg.keys():
-            scaler = scalers[cfg["scaler"]]
-            scaler_channel = scaler.channels[cfg["scaler_channel"]]
-        else:
-            scaler_channel = None
+        # Get the corresponding scaler info
+        scaler_prefix = config['scaler'][cfg['scaler']]
         # Create the ion chamber
         devices.append(
             IonChamber(
-                scaler_channel=scaler_channel,
+                scaler_prefix=scaler_prefix,
+                scaler_channel=cfg['scaler_channel'],
                 preamp_prefix=cfg.get("preamp_prefix", None),
                 voltmeter_prefix=cfg.get("voltmeter_prefix", None),
                 counts_per_volt_second=cfg.get("counts_per_volt_second", None),

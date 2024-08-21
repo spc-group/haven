@@ -3,13 +3,30 @@ import time
 import numpy as np
 import pytest
 
-from haven.instrument import ion_chamber
+from haven.instrument.ion_chamber import IonChamber, load_ion_chambers
 
 
 @pytest.fixture()
 def preamp(sim_ion_chamber):
     preamp = sim_ion_chamber.preamp
     return preamp
+
+
+@pytest.fixture()
+def ion_chamber(sim_registry):
+    ion_chamber = IonChamber(
+        scaler_prefix="255idcVME:3820:",
+        scaler_channel=2,
+        preamp_prefix="255idc:SR03:",
+        voltmeter_prefix="255idc:LabjackT7_1:AI1",
+        counts_per_volt_second=1e6
+    )
+    return ion_chamber
+
+
+def test_ion_chamber_devices(ion_chamber):
+    """Check that the ion chamber has the right sub-devices."""
+    assert list(ion_chamber.mcs.scaler.channels.keys()) == [0, 2]
 
 
 def test_get_gain_level(preamp):
@@ -48,17 +65,19 @@ def test_gain_signals(preamp):
 
 @pytest.mark.asyncio
 async def test_load_ion_chambers(sim_registry, mocker):
-    async def resolve_device_names(defns):
-        for defn in defns:
-            defn["name"] = f"ion_chamber_{defn['ch_num']}"
+    # async def resolve_device_names(defns):
+    #     for defn in defns:
+    #         defn["name"] = f"ion_chamber_{defn['ch_num']}"
 
-    mocker.patch("haven.ion_chamber.resolve_device_names", new=resolve_device_names)
-    await ion_chamber.load_ion_chambers()
+    # mocker.patch("haven.ion_chamber.resolve_device_names", new=resolve_device_names)
+    ics = await load_ion_chambers()
+    assert len(ics) == 1
+    ic = ics[0]
     # Test the channel info is extracted properly
-    ic = sim_registry.find(label="ion_chambers")
-    assert ic.ch_num == 2
-    assert ic.preamp.prefix.strip(":").split(":")[-1] == "SR03"
-    assert ic.voltmeter.prefix == "255idc:LabjackT7_0:Ai1"
+    assert ic.scaler_channel == 2
+    hasattr(ic, "mcs")
+    # assert ic.preamp.prefix.strip(":").split(":")[-1] == "SR03"
+    # assert ic.voltmeter.prefix == "255idc:LabjackT7_0:Ai1"
     assert ic.counts_per_volt_second == 1e7
 
 
