@@ -1,5 +1,8 @@
 from enum import Enum, IntEnum
+from typing import List
 
+import numpy as np
+from numpy.typing import NDArray
 from ophyd_async.core import ConfigSignal, DeviceVector, HintedSignal, StandardReadable
 from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw, epics_signal_x
 
@@ -14,9 +17,20 @@ def num_to_char(num):
     return char
 
 
+class Acquiring(str, Enum):
+    DONE = "Done"
+    ACQUIRING = "Acquiring"
+
+
 class CountMode(str, Enum):
     ONE_SHOT = "OneShot"
-    AUTO_COUNT = "N"
+    AUTO_COUNT = "AutoCount"
+
+
+class MCAMode(str, Enum):
+    PHA = "PHA"
+    MCS = "MCS"
+    LIST = "List"
 
 
 class ScalerModel(str, Enum):
@@ -34,13 +48,18 @@ class ChannelAdvanceSource(str, Enum):
     EXTERNAL = "External"
 
 
-class NoYes(str, Enum):
+class NOrY(str, Enum):
+    NO = "N"
+    YES = "Y"
+    
+
+class NoOrYes(str, Enum):
     NO = "No"
     YES = "Yes"
 
 
 class Channel1Source(str, Enum):
-    INTERNAL_CLOCK = "Int. Clock"
+    INTERNAL_CLOCK = "Int. clock"
     EXTERNAL = "External"
 
 
@@ -90,17 +109,17 @@ class ScalerChannel(StandardReadable):
                 f"_net{num_to_char((channel_num // 12))}"
                 f".{num_to_char(channel_num % 12)}"
             )
-            self.net_count = epics_signal_r(int, f"{prefix}{net_suffix}")
+            self.net_count = epics_signal_r(float, f"{prefix}{net_suffix}")
         # Regular readable signals
         with self.add_children_as_readables():
-            self.raw_count = epics_signal_r(int, f"{prefix}.S{epics_ch_num}")
+            self.raw_count = epics_signal_r(float, f"{prefix}.S{epics_ch_num}")
         # Configuration signals
         with self.add_children_as_readables(ConfigSignal):
             self.description = epics_signal_rw(str, f"{prefix}.NM{epics_ch_num}")
-            self.is_gate = epics_signal_rw(str, f"{prefix}.G{epics_ch_num}")
-            self.preset_count = epics_signal_rw(str, f"{prefix}.PR{epics_ch_num}")
+            self.is_gate = epics_signal_rw(NOrY, f"{prefix}.G{epics_ch_num}")
+            self.preset_count = epics_signal_rw(float, f"{prefix}.PR{epics_ch_num}")
             offset_suffix = f"_offset{channel_num // 4}.{num_to_char(channel_num % 4)}"
-            self.offset_rate = epics_signal_rw(int, f"{prefix}{offset_suffix}")
+            self.offset_rate = epics_signal_rw(float, f"{prefix}{offset_suffix}")
         super().__init__(name=name)
 
 
@@ -108,10 +127,10 @@ class MCA(StandardReadable):
     def __init__(self, prefix, name=""):
         # Signals
         with self.add_children_as_readables(HintedSignal):
-            self.spectrum = epics_signal_r(int, f"{prefix}.VAL")
-        self.background = epics_signal_r(int, f"{prefix}.BG")
+            self.spectrum = epics_signal_r(NDArray[np.int32], f"{prefix}.VAL")
+        self.background = epics_signal_r(NDArray[np.int32], f"{prefix}.BG")
         with self.add_children_as_readables(ConfigSignal):
-            self.mode = epics_signal_rw(str, f"{prefix}.MODE")
+            self.mode = epics_signal_rw(MCAMode, f"{prefix}.MODE")
         super().__init__(name=name)
 
 
@@ -138,7 +157,7 @@ class MultiChannelScaler(StandardReadable):
         self.erase_start = epics_signal_x(f"{prefix}EraseStart")
         self.software_channel_advance = epics_signal_x(f"{prefix}SoftwareChannelAdvance")
         # Transient states
-        self.acquiring = epics_signal_r(int, f"{prefix}Acquiring")
+        self.acquiring = epics_signal_r(Acquiring, f"{prefix}Acquiring")
         self.user_led = epics_signal_rw(OutputLED, f"{prefix}UserLED")
         # Config signals
         with self.add_children_as_readables(ConfigSignal):
@@ -149,15 +168,15 @@ class MultiChannelScaler(StandardReadable):
                 ChannelAdvanceSource,
                 f"{prefix}ChannelAdvance"
             )
-            self.count_on_start = epics_signal_rw(NoYes, f"{prefix}CountOnStart")
+            self.count_on_start = epics_signal_rw(NoOrYes, f"{prefix}CountOnStart")
             self.channel_1_source = epics_signal_rw(Channel1Source, f"{prefix}Channel1Source")
-            self.mux_output = epics_signal_rw(int, f"{prefix}MuxOutput")
+            self.mux_output = epics_signal_rw(float, f"{prefix}MUXOutput")
             self.acquire_mode = epics_signal_rw(AcquireMode, f"{prefix}AcquireMode")
             self.input_mode = epics_signal_rw(InputMode, f"{prefix}InputMode")
             self.input_polarity = epics_signal_rw(Polarity, f"{prefix}InputPolarity")
             self.output_mode = epics_signal_rw(OutputMode, f"{prefix}OutputMode")
             self.output_polarity = epics_signal_rw(Polarity, f"{prefix}OutputPolarity")
-            self.lne_output_stretcher = epics_signal_rw(LNEStretcher, f"{prefix}LNEStretcherEnabled")
+            self.lne_output_stretcher = epics_signal_rw(LNEStretcher, f"{prefix}LNEStretcherEnable")
             self.lne_output_polarity = epics_signal_rw(Polarity, f"{prefix}LNEOutputPolarity")
             self.lne_output_delay = epics_signal_rw(float, f"{prefix}LNEOutputDelay")
             self.lne_output_width = epics_signal_rw(float, f"{prefix}LNEOutputWidth")

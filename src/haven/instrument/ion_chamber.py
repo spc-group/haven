@@ -57,6 +57,7 @@ class IonChamber(StandardReadable):
       data channel, determined by *scaler_channel*.
 
     """
+    __ophyd_labels = {"ion_chambers", "detectors"}
     def __init__(
         self,
         scaler_prefix: str,
@@ -67,10 +68,14 @@ class IonChamber(StandardReadable):
         name="",
     ):
         self.counts_per_volt_second = counts_per_volt_second
+        self.scaler_prefix = scaler_prefix
         self.scaler_channel = scaler_channel
         with self.add_children_as_readables():
             self.mcs = MultiChannelScaler(prefix=scaler_prefix, channels=[0, scaler_channel])
         super().__init__(name=name)
+
+    def __repr__(self):
+        return f"<{type(self).__name__}: {self.name} ({self.scaler_prefix}, ch {self.scaler_channel+1})>"
 
 
 class VoltageSignal(DerivedSignal):
@@ -722,7 +727,7 @@ async def load_ion_chambers(config: Mapping = None, registry: InstrumentRegistry
     devices = []
     for grp, cfg in config["ion_chamber"].items():
         # Get the corresponding scaler info
-        scaler_prefix = config['scaler'][cfg['scaler']]
+        scaler_prefix = config['scaler'][cfg['scaler']]['prefix']
         # Create the ion chamber
         devices.append(
             IonChamber(
@@ -731,7 +736,13 @@ async def load_ion_chambers(config: Mapping = None, registry: InstrumentRegistry
                 preamp_prefix=cfg.get("preamp_prefix", None),
                 voltmeter_prefix=cfg.get("voltmeter_prefix", None),
                 counts_per_volt_second=cfg.get("counts_per_volt_second", None),
+                name=grp,
             )
+        )
+        # Connect to devices
+    if connect:
+        devices = await connect_devices(
+            devices, mock=not config["beamline"]["is_connected"], registry=registry
         )
     return devices
     # Generate the configuration dictionary for all the ion chambers

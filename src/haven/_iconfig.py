@@ -57,12 +57,10 @@ def load_config(file_paths: Sequence[pathlib.Path] = CONFIG_FILES):
     file_paths = list(file_paths).copy()
     # Add config file from environmental variable
     try:
-        file_paths.extend(
-            [
-                pathlib.Path(fp.strip())
-                for fp in os.environ["HAVEN_CONFIG_FILES"].split(",")
-            ]
-        )
+        file_paths = [   
+            pathlib.Path(fp.strip())
+            for fp in os.environ["HAVEN_CONFIG_FILES"].split(",")
+        ]
     except KeyError:
         pass
     # Load configuration from TOML files
