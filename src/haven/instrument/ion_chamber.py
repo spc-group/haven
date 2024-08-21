@@ -9,6 +9,7 @@ from numbers import Number
 from typing import Dict, Generator, Optional, Mapping
 
 import numpy as np
+from apstools.utils.misc import safe_ophyd_name
 from apstools.devices.srs570_preamplifier import (
     SRS570_PreAmplifier,
     calculate_settle_time,
@@ -21,7 +22,7 @@ from ophyd.mca import EpicsMCARecord
 from ophyd.ophydobj import OphydObject
 from ophyd.signal import DerivedSignal, InternalSignal
 from ophyd.status import SubscriptionStatus
-from ophyd_async.core import Device, StandardReadable, DeviceVector, ConfigSignal, HintedSignal
+from ophyd_async.core import DEFAULT_TIMEOUT, Device, StandardReadable, DeviceVector, ConfigSignal, HintedSignal
 from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw
 from pcdsdevices.signal import MultiDerivedSignal, MultiDerivedSignalRO
 from pcdsdevices.type_hints import OphydDataType, SignalToValue
@@ -49,6 +50,14 @@ __all__ = ["IonChamber", "load_ion_chambers"]
 class IonChamber(StandardReadable):
     """A high-level abstraction of an ion chamber.
 
+    Parameters
+    ==========
+    auto_name
+      If true, or None when no name was provided, the name for
+      this motor will be set based on the motor's *description*
+      field.
+
+
     Sub-Devices
     ===========
     mcs
@@ -58,6 +67,7 @@ class IonChamber(StandardReadable):
 
     """
     __ophyd_labels = {"ion_chambers", "detectors"}
+
     def __init__(
         self,
         scaler_prefix: str,
@@ -66,16 +76,59 @@ class IonChamber(StandardReadable):
         voltmeter_prefix: str,
         counts_per_volt_second: float,
         name="",
+        auto_name: bool = None
     ):
         self.counts_per_volt_second = counts_per_volt_second
         self.scaler_prefix = scaler_prefix
-        self.scaler_channel = scaler_channel
+        self._scaler_channel = scaler_channel
+        self.auto_name = auto_name
         with self.add_children_as_readables():
             self.mcs = MultiChannelScaler(prefix=scaler_prefix, channels=[0, scaler_channel])
         super().__init__(name=name)
 
     def __repr__(self):
-        return f"<{type(self).__name__}: {self.name} ({self.scaler_prefix}, ch {self.scaler_channel+1})>"
+        return f"<{type(self).__name__}: '{self.name}' ({self.scaler_channel.net_count.source})>"
+
+    @property
+    def scaler_channel(self):
+        return self.mcs.scaler.channels[self._scaler_channel]
+
+    async def connect(
+        self,
+        mock: bool = False,
+        timeout: float = DEFAULT_TIMEOUT,
+        force_reconnect: bool = False,
+    ):
+        """Connect self and all child Devices.
+
+        Contains a timeout that gets propagated to child.connect methods.
+
+        Parameters
+        ----------
+        mock:
+            If True then use ``MockSignalBackend`` for all Signals
+        timeout:
+            Time to wait before failing with a TimeoutError.
+
+        """
+        await super().connect(
+            mock=mock, timeout=timeout, force_reconnect=force_reconnect
+        )
+        # Update the device's name
+        auto_name = bool(self.auto_name) or (self.auto_name is None and self.name == "")
+        if bool(auto_name):
+            try:
+                desc = await self.scaler_channel.description.get_value()
+            except Exception as exc:
+                warnings.warn(
+                    f"Could not read description for {self}. Name not updated. {exc}"
+                )
+                return
+            # Only update the name if the description has been set
+            print(f"{desc=}")
+            if desc != "":
+                self.set_name(safe_ophyd_name(desc))
+
 
 
 class VoltageSignal(DerivedSignal):
