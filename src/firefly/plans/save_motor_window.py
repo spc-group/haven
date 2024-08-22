@@ -5,6 +5,7 @@ from pydm.widgets.label import PyDMLabel
 from pymongo import MongoClient
 from PyQt5.QtWidgets import QTableWidgetItem
 from PyQt5.QtCore import Qt
+from PyQt5.QtCore import QDateTime
 from datetime import datetime
 
 from qtpy import QtWidgets
@@ -55,7 +56,6 @@ class TitleRegion:
 
         # fix widths so the labels are aligned with MotorRegions
         Qlabels_all["RBV"].setFixedWidth(60)
-
 
 class MotorRegion(regions_display.RegionBase):
     def setup_ui(self):
@@ -131,34 +131,24 @@ class SaveMotorDisplay(regions_display.RegionsDisplay):
         # set selection behavior to select rows rather than individual cells
         self.ui.saved_positions_tableWidget.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
 
-        # Add context menu to the saved positions table
-        self.ui.saved_positions_tableWidget.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.ui.saved_positions_tableWidget.customContextMenuRequested.connect(self.show_context_menu)
-                
         # refresh saved list
         self.ui.refresh_button.clicked.connect(self.refresh_saved_position_list)
         self.refresh_saved_position_list()
+        
+        # connect filter button to filter dates and names
+        self.ui.pushButton_filter.clicked.connect(self.filter_dates_and_names)
         
     def refresh_saved_position_list(self):
         # Disable sorting temporarily to prevent UID missing bug
         self.ui.saved_positions_tableWidget.setSortingEnabled(False)
 
+        # Clear the existing rows in the table
+        self.ui.saved_positions_tableWidget.setRowCount(0)
+
         # Retrieve the saved positions
         saved_positions_all = list_motor_positions(collection=collection, printit=False)
-        print(saved_positions_all)
-        # Create a set to store the UIDs that have already been added
-        added_uids = set()
         
-        # Loop through the current items in the table and add their UIDs to the set
-        for row in range(self.ui.saved_positions_tableWidget.rowCount()):
-            uid_item = self.ui.saved_positions_tableWidget.item(row, 2)
-            if uid_item:
-                added_uids.add(uid_item.text())
-
         for saved_position_i in saved_positions_all:
-            if saved_position_i.uid in added_uids:
-                continue  # Skip this UID as it has already been added
-
             current_row_position = self.ui.saved_positions_tableWidget.rowCount()
             self.ui.saved_positions_tableWidget.insertRow(current_row_position)
 
@@ -180,21 +170,50 @@ class SaveMotorDisplay(regions_display.RegionsDisplay):
                 current_row_position, 2, uid_item
             )
 
-            # Add the UID to the set after adding it to the table
-            added_uids.add(saved_position_i.uid)
-            
         # Re-enable sorting after the rows have been added
         self.ui.saved_positions_tableWidget.setSortingEnabled(True)
         # Sort the table by the savetime column, the latest saved position will be on top
-        self.ui.saved_positions_tableWidget.sortItems(1, Qt.DescendingOrder )
-        
-        # resize columns to fit contents
+        self.ui.saved_positions_tableWidget.sortItems(1, Qt.DescendingOrder)
+        # Resize columns to fit contents
         self.ui.saved_positions_tableWidget.resizeColumnsToContents()          
         
-        # Send a message to the text browser
-        self.ui.textBrowser.append("-" * 20)
-        self.ui.textBrowser.append("Refreshed saved motor positions list.")
+        # Set filter name to empty
+        self.ui.lineEdit_filter_names.setText("")
+        
+        # Set default filter dates if there are items in the table
+        if saved_positions_all:
+            last_savetime = saved_positions_all[-1].savetime
+            first_savetime = saved_positions_all[0].savetime
+            
+            # Convert to QDateTime and set to dateEdits
+            self.ui.dateEdit_start.setDateTime(datetime.fromtimestamp(first_savetime))
+            self.ui.dateEdit_stop.setDateTime(datetime.fromtimestamp(last_savetime))
 
+    def filter_dates_and_names(self):
+        # Get the start and stop dates from the date edits
+        start_date = self.ui.dateEdit_start.date().toPyDate()
+        stop_date = self.ui.dateEdit_stop.date().toPyDate()
+        
+        # Get the filter text from the line edit, remove spaces, and convert to lowercase
+        filter_text = self.ui.lineEdit_filter_names.text().replace(" ", "").strip().lower()
+
+        # Loop through each row in the table and filter out rows outside the date range
+        for row in range(self.ui.saved_positions_tableWidget.rowCount()):
+            # Get the savetime from the table
+            savetime_item = self.ui.saved_positions_tableWidget.item(row, 1)
+            savetime_str = savetime_item.text()
+            savetime_date = datetime.strptime(savetime_str, '%Y-%m-%d %H:%M:%S').date()
+            
+            # Get the name from the table and convert to lowercase
+            name_item = self.ui.saved_positions_tableWidget.item(row, 0)
+            name_text = name_item.text().strip().lower()
+
+            # Check if the savetime date is within the specified range and the name contains the filter text
+            if start_date <= savetime_date <= stop_date and filter_text in name_text:
+                self.ui.saved_positions_tableWidget.setRowHidden(row, False)
+            else:
+                self.ui.saved_positions_tableWidget.setRowHidden(row, True)
+                
     def show_saved_position_info(self, item):
         # Get the row of the clicked item
         row = self.ui.saved_positions_tableWidget.row(item)
@@ -237,34 +256,6 @@ class SaveMotorDisplay(regions_display.RegionsDisplay):
         layout.addWidget(tree)
         dialog.setLayout(layout)
         dialog.exec_()
-        
-    def show_context_menu(self, pos):
-        # Get the position of the cursor
-        index = self.ui.saved_positions_tableWidget.indexAt(pos)
-        
-        if index.isValid():
-            menu = QtWidgets.QMenu(self)
-            
-            # Add "Delete" option to the context menu
-            delete_action = menu.addAction("Delete")
-            
-            # Connect the action to the delete function
-            delete_action.triggered.connect(lambda: self.delete_item(index))
-            
-            # Show the context menu at the cursor position
-            menu.exec_(self.ui.saved_positions_tableWidget.viewport().mapToGlobal(pos))
-
-    def delete_item(self, index):
-        row = index.row()
-        # Remove the item from the database first
-        uid = self.ui.saved_positions_tableWidget.item(row, 2).text()
-        collection.delete_one({"_id": uid})
-        # Remove the row from the table
-        self.ui.saved_positions_tableWidget.removeRow(row)
-        # Send a message to the text browser
-        self.ui.textBrowser.append("-" * 20)
-        self.ui.textBrowser.append(f"Deleted saved motor position with UID: {uid}")
-        self.ui.textBrowser.append("-" * 20)
 
     def on_regions_all_checkbox(self, is_checked):
         for region_i in self.regions:
@@ -281,6 +272,7 @@ class SaveMotorDisplay(regions_display.RegionsDisplay):
     def save_motors(self, *args, **kwargs):
         """Save motor positions to the database."""
         motor_args = self.get_scan_parameters()
+        
         if not motor_args:
             self.ui.textBrowser.append("No motors selected. Please select motors to save.")
             return  
@@ -295,6 +287,13 @@ class SaveMotorDisplay(regions_display.RegionsDisplay):
             name=save_name,
             collection=collection, 
         )
+        
+        # refresh after saving a new position
+        self.refresh_saved_position_list()
+        
+        # set the filter stop time to current
+        self.ui.dateEdit_stop.setDateTime(QDateTime.currentDateTime())
+
         self.ui.textBrowser.append("-" * 20)
         self.ui.textBrowser.append("Saving motor configurations: ")
         self.ui.textBrowser.append(
@@ -340,9 +339,6 @@ class SaveMotorDisplay(regions_display.RegionsDisplay):
     def ui_filename(self):
         return "plans/save_motor_window.ui"
     
-    #TODO: make readback values and offset values in different columns
-    #future: add save plan
-    # refresh after save
     # add a filter field for dates
     
 
