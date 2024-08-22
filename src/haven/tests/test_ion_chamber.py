@@ -80,6 +80,21 @@ async def test_load_ion_chambers(sim_registry, mocker):
     assert ic.counts_per_volt_second == 1e7
 
 
+@pytest.mark.asyncio
+async def test_trigger(ion_chamber):
+    await ion_chamber.connect(mock=True)
+    assert ion_chamber._trigger_statuses == {}
+    # Does the same trigger twice return the same 
+    status1 = ion_chamber.trigger()
+    status2 = ion_chamber.trigger()
+    assert not status1.done
+    assert not status2.done
+    await status1
+    assert status1.done
+    await status2
+    assert status2.done
+
+
 @pytest.mark.skip(reason="Needs updating to ophyd-async ion chamber")
 def test_default_pv_prefix():
     """Check that it uses the *prefix* argument if no *scaler_prefix* is

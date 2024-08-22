@@ -1,5 +1,5 @@
 """Holds ion chamber detector descriptions and assignments to EPICS PVs."""
-
+import asyncio
 import logging
 import math
 import time
@@ -14,6 +14,7 @@ from apstools.devices.srs570_preamplifier import (
     SRS570_PreAmplifier,
     calculate_settle_time,
 )
+from bluesky.protocols import Triggerable
 from ophyd import Component as Cpt
 from ophyd import EpicsSignal, EpicsSignalRO
 from ophyd import FormattedComponent as FCpt
@@ -22,7 +23,7 @@ from ophyd.mca import EpicsMCARecord
 from ophyd.ophydobj import OphydObject
 from ophyd.signal import DerivedSignal, InternalSignal
 from ophyd.status import SubscriptionStatus
-from ophyd_async.core import DEFAULT_TIMEOUT, Device, StandardReadable, DeviceVector, ConfigSignal, HintedSignal
+from ophyd_async.core import DEFAULT_TIMEOUT, Device, StandardReadable, DeviceVector, ConfigSignal, HintedSignal, AsyncStatus
 from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw
 from pcdsdevices.signal import MultiDerivedSignal, MultiDerivedSignalRO
 from pcdsdevices.type_hints import OphydDataType, SignalToValue
@@ -47,7 +48,7 @@ log = logging.getLogger(__name__)
 __all__ = ["IonChamber", "load_ion_chambers"]
 
 
-class IonChamber(StandardReadable):
+class IonChamber(StandardReadable, Triggerable):
     """A high-level abstraction of an ion chamber.
 
     Parameters
@@ -67,6 +68,7 @@ class IonChamber(StandardReadable):
 
     """
     _ophyd_labels_ = {"ion_chambers", "detectors"}
+    _trigger_statuses = {}
 
     def __init__(
         self,
@@ -129,6 +131,19 @@ class IonChamber(StandardReadable):
             if desc != "":
                 self.set_name(safe_ophyd_name(desc))
 
+    @AsyncStatus.wrap
+    async def trigger(self):
+        signal = self.mcs.scaler.count
+        last_status = self._trigger_statuses.get(signal.source)
+        # Previous trigger is still going, so wait for that instead
+        if last_status is not None and not last_status.done:
+            await last_status
+            return
+        # Trigger the scaler and stash the result
+        status = signal.set(1)
+        print(signal.source)
+        self._trigger_statuses[signal.source] = status
+        await status
 
 
 class VoltageSignal(DerivedSignal):
