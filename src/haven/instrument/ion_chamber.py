@@ -66,7 +66,7 @@ class IonChamber(StandardReadable):
       data channel, determined by *scaler_channel*.
 
     """
-    __ophyd_labels = {"ion_chambers", "detectors"}
+    _ophyd_labels_ = {"ion_chambers", "detectors"}
 
     def __init__(
         self,
@@ -87,7 +87,7 @@ class IonChamber(StandardReadable):
         super().__init__(name=name)
 
     def __repr__(self):
-        return f"<{type(self).__name__}: '{self.name}' ({self.scaler_channel.net_count.source})>"
+        return f"<{type(self).__name__}: '{self.name}' ({self.scaler_channel.raw_count.source})>"
 
     @property
     def scaler_channel(self):
@@ -762,7 +762,7 @@ def load_ion_chamber(
     return ion_chamber
 
 
-async def load_ion_chambers(config: Mapping = None, registry: InstrumentRegistry = default_registry, connect: bool = True):
+async def load_ion_chambers(config: Mapping = None, registry: InstrumentRegistry = default_registry, connect: bool = True, auto_name=True,):
     """Load ion chambers based on configuration files' ``[ion_chamber]``
     sections.
 
@@ -790,6 +790,7 @@ async def load_ion_chambers(config: Mapping = None, registry: InstrumentRegistry
                 voltmeter_prefix=cfg.get("voltmeter_prefix", None),
                 counts_per_volt_second=cfg.get("counts_per_volt_second", None),
                 name=grp,
+                auto_name=auto_name,
             )
         )
         # Connect to devices

@@ -27,6 +27,11 @@ class CountMode(str, Enum):
     AUTO_COUNT = "AutoCount"
 
 
+class CountState(str, Enum):
+    DONE = "Done"
+    COUNT = "Count"
+
+
 class MCAMode(str, Enum):
     PHA = "PHA"
     MCS = "MCS"
@@ -199,12 +204,7 @@ class MultiChannelScaler(StandardReadable):
 
 
 class Scaler(StandardReadable):
-    """A scaler device that has one or more ion chambers.
-
-    The individual channels are each an ion chamber. Only those ion
-    chambers that have
-
-    """
+    """A scaler device that has one or more channels."""
     def __init__(self, prefix, channels: list[int], name=""):
         # Add invidiaul scaler channels
         with self.add_children_as_readables():
@@ -223,7 +223,7 @@ class Scaler(StandardReadable):
             self.clock_frequency = epics_signal_rw(float, f"{prefix}.FREQ")
             self.count_mode = epics_signal_rw(CountMode, f"{prefix}.CONT")
             self.preset_time = epics_signal_rw(float, f"{prefix}.TP")
-        self.count = epics_signal_x(f"{prefix}.CNT")
+        self.count = epics_signal_rw(CountState, f"{prefix}.CNT")
         self.record_dark_current = epics_signal_x(f"{prefix}_offset_start.PROC")
         self.auto_count_delay = epics_signal_rw(float, f"{prefix}.DLY1")
         self.auto_count_time = epics_signal_rw(float, f"{prefix}.TP1")
