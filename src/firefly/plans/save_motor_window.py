@@ -209,21 +209,26 @@ class SaveMotorDisplay(regions_display.RegionsDisplay):
 
         # Create a QTreeWidget to display the details
         tree = QtWidgets.QTreeWidget(dialog)
-        tree.setColumnCount(2)
-        tree.setHeaderLabels(["Motor", "Details"])
+        tree.setColumnCount(3)  # Set columns for Motor, Readback, and Offset
+        tree.setHeaderLabels(["Motor", "Readback", "Offset"])
+        
+        # Allow selection of individual cells
+        tree.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
+        tree.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectItems)
         
         # Create the root item (the position name and uid)
         root = QtWidgets.QTreeWidgetItem(tree)
-        root.setText(0, f'{name} (uid="{uid}", timestamp={self.ui.saved_positions_tableWidget.item(row, 2).text()})')
-
+        root.setText(0, f'{name} (uid="{uid}", timestamp={self.ui.saved_positions_tableWidget.item(row, 1).text()})')
+        
         motor_result = get_motor_position(uid=uid, collection=collection)
         
         # Add the motors as children
         for motor in motor_result.motors:
             motor_item = QtWidgets.QTreeWidgetItem(root)
             motor_item.setText(0, motor.name)
-            motor_item.setText(1, f'Readback: {motor.readback}, Offset: {motor.offset}')
-        
+            motor_item.setText(1, f'{motor.readback}')
+            motor_item.setText(2, f'{motor.offset}')
+
         # Expand all nodes
         tree.expandAll()
         

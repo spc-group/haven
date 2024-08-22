@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>644</width>
-    <height>372</height>
+    <width>759</width>
+    <height>616</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -27,7 +27,7 @@
           </sizepolicy>
          </property>
          <property name="text">
-          <string>Saved positions</string>
+          <string>Saved positions (double click to view the details)</string>
          </property>
         </widget>
        </item>
@@ -171,8 +171,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>348</width>
-              <height>134</height>
+              <width>362</width>
+              <height>293</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_5">
