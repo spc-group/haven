@@ -140,12 +140,14 @@ class SaveMotorDisplay(regions_display.RegionsDisplay):
         self.refresh_saved_position_list()
         
     def refresh_saved_position_list(self):
+        # Disable sorting temporarily to prevent UID missing bug
+        self.ui.saved_positions_tableWidget.setSortingEnabled(False)
+
         # Retrieve the saved positions
         saved_positions_all = list_motor_positions(collection=collection, printit=False)
-
+        print(saved_positions_all)
         # Create a set to store the UIDs that have already been added
         added_uids = set()
-        
         
         # Loop through the current items in the table and add their UIDs to the set
         for row in range(self.ui.saved_positions_tableWidget.rowCount()):
@@ -180,7 +182,9 @@ class SaveMotorDisplay(regions_display.RegionsDisplay):
 
             # Add the UID to the set after adding it to the table
             added_uids.add(saved_position_i.uid)
-
+            
+        # Re-enable sorting after the rows have been added
+        self.ui.saved_positions_tableWidget.setSortingEnabled(True)
         # Sort the table by the savetime column, the latest saved position will be on top
         self.ui.saved_positions_tableWidget.sortItems(1, Qt.DescendingOrder )
         
@@ -190,7 +194,7 @@ class SaveMotorDisplay(regions_display.RegionsDisplay):
         # Send a message to the text browser
         self.ui.textBrowser.append("-" * 20)
         self.ui.textBrowser.append("Refreshed saved motor positions list.")
-    
+
     def show_saved_position_info(self, item):
         # Get the row of the clicked item
         row = self.ui.saved_positions_tableWidget.row(item)
@@ -249,7 +253,6 @@ class SaveMotorDisplay(regions_display.RegionsDisplay):
         row = index.row()
         # Remove the item from the database first
         uid = self.ui.saved_positions_tableWidget.item(row, 2).text()
-        #TODO: detele the saved position from the database
         collection.delete_one({"_id": uid})
         # Remove the row from the table
         self.ui.saved_positions_tableWidget.removeRow(row)
