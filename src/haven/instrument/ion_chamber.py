@@ -127,7 +127,6 @@ class IonChamber(StandardReadable, Triggerable):
                 )
                 return
             # Only update the name if the description has been set
-            print(f"{desc=}")
             if desc != "":
                 self.set_name(safe_ophyd_name(desc))
 
@@ -160,11 +159,16 @@ class IonChamber(StandardReadable, Triggerable):
 
     async def record_dark_current(self):
         signal = self.mcs.scaler.record_dark_current
-        await signal.trigger()
+        await signal.trigger(wait=False)
         # Now wait for the count state to return to done
+        integration_time = await self.mcs.scaler.dark_current_time.get_value()
+        timeout = integration_time + DEFAULT_TIMEOUT
         count_signal = self.mcs.scaler.count
-        async for state in observe_value(count_signal):
+        done = asyncio.Event()
+        done_status = AsyncStatus(asyncio.wait_for(done.wait(), timeout=timeout))
+        async for state in observe_value(count_signal, done_status=done_status):
             if state == CountState.DONE:
+                done.set()
                 break
 
 
