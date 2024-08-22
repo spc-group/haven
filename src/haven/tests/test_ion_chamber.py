@@ -95,6 +95,15 @@ async def test_trigger(ion_chamber):
     assert status2.done
 
 
+@pytest.mark.asyncio
+async def test_trigger_dark_current(ion_chamber, monkeypatch):
+    await ion_chamber.connect(mock=True)
+    monkeypatch.setattr(ion_chamber.mcs.scaler.record_dark_current, "trigger", AsyncMock())
+    status = ion_chamber.trigger(record_dark_current=True)
+    await status
+    assert ion_chamber.mcs.scaler.record_dark_current.trigger.called
+
+
 @pytest.mark.skip(reason="Needs updating to ophyd-async ion chamber")
 def test_default_pv_prefix():
     """Check that it uses the *prefix* argument if no *scaler_prefix* is

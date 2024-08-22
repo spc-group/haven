@@ -23,7 +23,7 @@ from ophyd.mca import EpicsMCARecord
 from ophyd.ophydobj import OphydObject
 from ophyd.signal import DerivedSignal, InternalSignal
 from ophyd.status import SubscriptionStatus
-from ophyd_async.core import DEFAULT_TIMEOUT, Device, StandardReadable, DeviceVector, ConfigSignal, HintedSignal, AsyncStatus
+from ophyd_async.core import DEFAULT_TIMEOUT, Device, StandardReadable, DeviceVector, ConfigSignal, HintedSignal, AsyncStatus, observe_value
 from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw
 from pcdsdevices.signal import MultiDerivedSignal, MultiDerivedSignalRO
 from pcdsdevices.type_hints import OphydDataType, SignalToValue
@@ -39,7 +39,7 @@ from .device import (
 from .instrument_registry import InstrumentRegistry
 from .instrument_registry import registry as default_registry
 from .labjack import AnalogInput
-from .scaler import MultiChannelScaler
+from .scaler import MultiChannelScaler, CountState
 from .scaler_triggered import ScalerSignalRO, ScalerTriggered
 
 log = logging.getLogger(__name__)
@@ -132,18 +132,40 @@ class IonChamber(StandardReadable, Triggerable):
                 self.set_name(safe_ophyd_name(desc))
 
     @AsyncStatus.wrap
-    async def trigger(self):
+    async def trigger(self, record_dark_current=False):
+        """Instruct the ion chamber's scaler to capture one data point.
+
+        Parameters
+        ==========
+        record_dark_current
+          If true, this measurement will be saved as the dark current
+          reading.
+        
+        """
+        # Recording the dark current is done differently
+        if record_dark_current:
+            await self.record_dark_current()
+            return
+        # Check if we've seen this signal before
         signal = self.mcs.scaler.count
         last_status = self._trigger_statuses.get(signal.source)
         # Previous trigger is still going, so wait for that instead
         if last_status is not None and not last_status.done:
             await last_status
             return
-        # Trigger the scaler and stash the result
-        status = signal.set(1)
-        print(signal.source)
+        # Nothing to wait on yet, so trigger the scaler and stash the result
+        status = signal.set(CountState.COUNT)
         self._trigger_statuses[signal.source] = status
         await status
+
+    async def record_dark_current(self):
+        signal = self.mcs.scaler.record_dark_current
+        await signal.trigger()
+        # Now wait for the count state to return to done
+        count_signal = self.mcs.scaler.count
+        async for state in observe_value(count_signal):
+            if state == CountState.DONE:
+                break
 
 
 class VoltageSignal(DerivedSignal):
