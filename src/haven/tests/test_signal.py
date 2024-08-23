@@ -8,46 +8,55 @@ from ophyd_async.core._signal import soft_signal_rw
 from haven.instrument.signal import derived_signal_rw
 
 
+def radius(x, y):
+    return (x**2 + y**2) ** 0.5
+
+
+def angle(x, y):
+    return math.atan2(y, x)
+
+
 # Forward transforms
 async def angle_to_position(value, *, x, y):
+    x_, y_ = await asyncio.gather(x.get_value(), y.get_value())
+    r = radius(x_, y_)
     return {
-        x: math.cos(value),
-        y: math.sin(value),
+        x: r * math.cos(value),
+        y: r * math.sin(value),
     }
 
 
-async def radius_to_position(radius, *, x, y, angle):
-    theta = await angle.get_value()
+async def radius_to_position(r, *, x, y):
+    x_, y_ = await asyncio.gather(x.get_value(), y.get_value())
+    theta = angle(x_, y_)
     return {
-        x: radius * math.cos(theta),
-        y: radius * math.sin(theta),
+        x: r * math.cos(theta),
+        y: r * math.sin(theta),
     }
 
 
 # Inverse transforms
 def position_to_angle(values, *, x, y):
-    theta = math.atan2(values[y], values[x])
-    return theta
+    return angle(values[x], values[y])
 
 
-def position_to_radius(values, *, x, y, angle):
-    radius = math.sqrt(values[y] ** 2 + values[x] ** 2)
-    return radius
+def position_to_radius(values, *, x, y):
+    return radius(values[x], values[y])
 
 
 class Goniometer(Device):
     def __init__(self, prefix, name=""):
         self.x = soft_signal_rw(float, initial_value=0)
         self.y = soft_signal_rw(float, initial_value=0)
-
+        real_signals = {"x": self.x, "y": self.y}
         self.angle = derived_signal_rw(
-            derived_from={"x": self.x, "y": self.y},
+            derived_from=real_signals,
             forward=angle_to_position,
             inverse=position_to_angle,
             initial_value=0,
         )
         self.radius = derived_signal_rw(
-            derived_from={"x": self.x, "y": self.y, "angle": self.angle},
+            derived_from=real_signals,
             forward=radius_to_position,
             inverse=position_to_radius,
             initial_value=0,
@@ -64,8 +73,8 @@ async def device():
 
 @pytest.mark.asyncio
 async def test_derived_forward(device):
-    await device.angle.set(math.pi / 4)
     await device.radius.set(2)
+    await device.angle.set(math.pi / 4)
     assert await device.x.get_value() == pytest.approx(2 / math.sqrt(2))
     assert await device.y.get_value() == pytest.approx(2 / math.sqrt(2))
 
