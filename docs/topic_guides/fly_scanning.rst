@@ -6,10 +6,10 @@ Fly Scanning
     :depth: 3
 
 
-Fly scanning is when detectors take measuments from a sample while in
-motion. Creating a range of measurements based on user specified
-points. This method is generally faster than traditional step
-scanning.
+Fly scanning is when detectors **take measuments while one or more
+positioners are in motion**, creating a range of measurements based on
+user specified points. This method is generally faster than
+traditional step scanning.
 
 Flyscanning with Bluesky follows a general three method process
 
@@ -23,6 +23,86 @@ Ophyd. Bluesky's way of fly scanning requires the Ophyd flyer device
 to have the ``kickoff()``, ``complete()``, ``collect()``, and
 ``collect_describe()`` methods. Any calculation or configuration for
 fly scanning is done inside the Ophyd device.
+
+Modes of Fly Scanning
+=====================
+
+Fly scanning can be done in two modes:
+
+1. Free-running -- devices operate independently
+2. Triggered -- devices are synchronized at the hardware level
+
+In **free-running** mode, the positioners and detectors operate
+independently from one another. Typically the positioners are set to
+cover a range at a given speed, while detectors repeatedly acquire
+data. This approach can be applied to many types of devices, but the
+points at which the detector is triggered are not predictable. While
+the position at each detector reading will be known, the positions
+will not be exactly those specified in the plan. This fly-scan mode is
+**best suited for scans where measuring specific points is not
+critical**, such as for alignment of optical components,
+e.g. slits. Grid scans are not supported for *free-running* mode.
+
+In **triggered** mode, a positioner's hardware will produce a signal
+that is used to directly trigger one or more detectors. Both the
+positioner and detectors must have compatible triggering mechanisms,
+and the physical connections must be made before-hand. *Triggered*
+mode is **best suited for scans where the precise position of each
+detector reading is critical**, such as for data
+acquisition. N-dimensional grid scans can also be performed in
+*triggered* mode.
+
+For devices that support both modes, a *flyer_mode* signal shall be
+provided that directs the device to operate in one mode or
+another. The *flyer_mode* argument to
+:py:func:`haven.plans.fly.fly_scan` will set all flyers to the given
+mode if not ``None``.
+
+Data Streams
+============
+
+In all cases, each flyable device used in a fly scan will produce its
+own data stream with the name of the device. By using the
+*combine_streams* parameter to the :py:func:`haven.plans.fly.fly_scan`
+or :py:func:`haven.plans.fly.grid_fly_scan` plans, it may be possible
+to align the streams into a single "primary" stream based on
+time-stamps of the collected data. Positions for positioners will be
+interpolated based on timestamps of the detector frames. Not every
+combination of flyers is compatible with this strategy: consult the
+following table to see if data streams can be combined (✓) or will
+cause ambiguous associations (✘).
+
+.. list-table:: Streams that can be combined in *free-running* mode
+   :header-rows: 1		
+
+   * -
+     - 1 detector
+     - 2+ detectors
+   * - **1 positioner**
+     - ✓
+     - ✘
+   * - **2+ positioners**
+     - ✓
+     - ✘
+
+.. list-table:: Streams that can be combined in *triggered* mode
+   :header-rows: 1		
+
+   * -
+     - 1 detector
+     - 2+ detectors
+   * - **1 positioner**
+     - ✓
+     - ✓
+   * - **2+ positioners**
+     - ✘
+     - ✘
+
+.. note::
+
+   The fly-scanning machinery will still produce a "primary" data
+   stream of those situations marked above as ambiguous (✘), however
+   there is no guarantee that data are aligned properly.
 
 Plans for Fly-Scanning
 ======================

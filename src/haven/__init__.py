@@ -1,6 +1,32 @@
-__all__ = ["energy_scan"]
+"""The Haven beamline control system.
 
-__version__ = "0.1.0"
+See https://haven-spc.readthedocs.io for full documentation."""
+
+__all__ = [
+    "energy_scan",
+    "xafs_scan",
+]
+
+# Get installed version number
+import importlib.metadata
+
+try:
+    __version__ = importlib.metadata.version("haven-spc")
+except importlib.metadata.PackageNotFoundError:
+    import pkg_resources
+
+    __version__ = pkg_resources.get_distribution("haven-spc").version
+    del pkg_resources
+finally:
+    del importlib
+
+
+# Determine the file path of the ipython startup file
+from pathlib import Path
+
+ipython_startup_file = Path(__file__).parent / "ipython_startup.ipy"
+del Path
+
 
 # Force ophyd to use caproto as its backend
 # import ophyd
@@ -11,7 +37,7 @@ from ._iconfig import load_config  # noqa: F401
 
 #  Top-level imports
 # from .catalog import load_catalog, load_data, load_result, tiled_client  # noqa: F401
-from .catalog import catalog  # noqa: F401
+from .catalog import load_catalog, tiled_client  # noqa: F401
 from .constants import edge_energy  # noqa: F401
 from .energy_ranges import ERange, KRange, merge_ranges  # noqa: F401
 from .instrument import (  # noqa: F401

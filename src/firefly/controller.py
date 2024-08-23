@@ -93,10 +93,8 @@ class FireflyController(QtCore.QObject):
         load_haven_instrument(registry=self.registry)
         self.registry_changed.emit(self.registry)
 
-    def setup_instrument(self, load_instrument=True):
+    async def setup_instrument(self, load_instrument=True):
         """Set up the application to use a previously loaded instrument.
-
-        Expects devices, plans, etc to have been created already.
 
         Parameters
         ==========
@@ -112,8 +110,14 @@ class FireflyController(QtCore.QObject):
 
         """
         if load_instrument:
-            load_haven_instrument(registry=self.registry)
+            await load_haven_instrument(registry=self.registry)
             self.registry_changed.emit(self.registry)
+        # Fake device for testing
+        from ophyd_async.epics.motor import Motor
+
+        sim_async_motor = Motor("255idcVME", name="sim_async_motor")
+        await sim_async_motor.connect(mock=True)
+        registry.register(sim_async_motor, labels={"motors", "extra_motors"})
         # Make actions for launching other windows
         self.setup_window_actions()
         # Actions for controlling the bluesky run engine
@@ -267,6 +271,7 @@ class FireflyController(QtCore.QObject):
             name="show_run_browser_action",
             text="Browse Runs",
             display_file=ui_dir / "run_browser.py",
+            shortcut="Ctrl+Shift+B",
             icon=qta.icon("mdi.book-open-variant"),
             WindowClass=FireflyMainWindow,
         )
@@ -576,7 +581,7 @@ class FireflyController(QtCore.QObject):
         return client
 
     def start(self):
-        """Start the background timers, show the first window, and wait."""
+        """Start the background clients."""
         # Show the UI stuffs
         self.prepare_queue_client()
         self.start_queue_client()
@@ -613,9 +618,10 @@ class FireflyController(QtCore.QObject):
                 queue_actions["pause_now"],
                 queue_actions["stop_queue"],
             ]
-        elif re_state == "stopping":
+        elif re_state in ["stopping", "aborting"]:
             enabled_signals = []
         else:
+            enabled_signals = []
             raise ValueError(f"Unknown run engine state: {re_state}")
         # Enable/disable the relevant signals
         for action in queue_actions.values():

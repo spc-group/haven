@@ -1,7 +1,7 @@
 from unittest import mock
 
 import pytest
-from apstools.devices.aps_undulator import ApsUndulator
+from apstools.devices.aps_undulator import PlanarUndulator
 from bluesky_queueserver_api import BPlan
 from ophyd.sim import make_fake_device
 from qtpy import QtCore
@@ -13,7 +13,7 @@ FakeMonochromator = make_fake_device(haven.instrument.monochromator.Monochromato
 FakeEnergyPositioner = make_fake_device(
     haven.instrument.energy_positioner.EnergyPositioner
 )
-FakeUndulator = make_fake_device(ApsUndulator)
+FakeUndulator = make_fake_device(PlanarUndulator)
 
 
 @pytest.fixture()

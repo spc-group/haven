@@ -1,3 +1,7 @@
+# This file is a version of the proper environment.yml file but with
+# pyqt and Qt pinned at the latest version that is compatible with Qt
+# designer widgets.
+
 name: haven
 
 # use:
@@ -31,15 +35,14 @@ dependencies:
   
   # --- Qt (tends to cause problems when installed through pip
   # Optional: Pin at 5.12.3 until pydm figures out how to designer widgets
-  # - pyqt ==5.12.3
-  # - pyqtgraph < 0.13.0  # Last version to support pyqt 5.12
-  # - qt >=5.12
-  - qt >= 5.15
-  - pyqt >= 5.15  
+  - pyqt == 5.12.3
+  - pyqtgraph < 0.13.0  # Last version to support pyqt 5.12
+  - qt ~= 5.12
+  - pydm
+  # - qt >= 5.15
+  # - pyqt >= 5.15  
 
   - pip:
-    - aioca
-    - apsbss
     - time-machine
     - rich
     - autoapi
@@ -50,16 +53,10 @@ dependencies:
     - pytest-timeout  # Get rid of this if tests are not hanging
     - git+https://github.com/pcdshub/pcdsdevices
     - area-detector-handlers
-    - bluesky-queueserver
-    - bluesky-queueserver-api
-    - bluesky-widgets
-    - bluesky-adaptive
-    - bluesky >=1.8.1
     - ophyd >=1.6.3
     - ophyd-async >= 0.5
     - apstools >= 1.6.20
     - pcdsdevices  # For extra signal types
-    - pydm >=1.18.0
     - typhos >= 3.1.0  # need the find_signal method on the SignalConnection()
     - p4p
     - tiled[all] >= 0.1.0b6  # Make sure we have pydantic2 support
@@ -74,51 +71,13 @@ dependencies:
     - numba>=0.56  # Ensures 0.53 (broken) isn't installed
     # This version of networkx has an importlib bug in it
     - networkx < 3.3
-    # --- testing and quality assurance
-    - black >=24
-    - flake8
-    - pre-commit
-    - pylint
-    - pytest
-    - pytest-cov
-    - pytest-qt >=4.2.0
-    - pytest-xvfb
-    - pytest-mock
-    - pytest-asyncio
-    - caproto >=1.0.0
-    # Database management
-    - pymongo
-    - databroker-pack
-    - databroker==1.2.5    
-    # --- packaging and publishing
-    - build
-    - twine
-    - coverage
-    - poetry
-    - sphinx
-    - pandoc
-    - nbsphinx
-    - graphviz
-    - sphinxcontrib-napoleon
     # --- general support packages
     - bitshuffle
-    - h5py
-    - hdf5plugin
     - imagecodecs-lite
     - ipympl
     - lxml
-    - pandas
     - pint
-    - scikit-image
-    - xlrd
-    - tqdm
-    - peakutils
-    - xrayutilities
     - pyarrow < 11.0.0  # Tempoary fix, remove once the libort missing symbol doesn't break CI  
-    # XES analysis packages
-    - scikit-learn
-    - kneed
     # --- Extra Qt UI packages
-    - pyqtgraph
     - qtawesome
     - qasync

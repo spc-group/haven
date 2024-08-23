@@ -169,17 +169,19 @@ class ThreadSafeCache(Cache):
     delete = with_thread_lock(Cache.delete)
 
 
-def tiled_client(entry_node=None, uri=None, cache_filepath=None):
+def tiled_client(
+    entry_node=None, uri=None, cache_filepath=None, structure_clients="dask"
+):
     config = load_config()
     # Create a cache for saving local copies
     if cache_filepath is None:
-        cache_filepath = config["database"]["tiled"].get("cache_filepath", "")
+        cache_filepath = config["database"].get("tiled", {}).get("cache_filepath", "")
         cache_filepath = cache_filepath or None
     cache = ThreadSafeCache(filepath=cache_filepath)
     # Create the client
     if uri is None:
         uri = config["database"]["tiled"]["uri"]
-    client_ = from_uri(uri, "dask", cache=cache)
+    client_ = from_uri(uri, structure_clients)
     if entry_node is None:
         entry_node = config["database"]["tiled"]["entry_node"]
     client_ = client_[entry_node]
@@ -210,6 +212,13 @@ class CatalogScan:
     @property
     def uid(self):
         return self.container._item["id"]
+
+    async def export(self, filename: str, format: str):
+        target = partial(self.container.export, filename, format=format)
+        await self.loop.run_in_executor(None, target)
+
+    def formats(self):
+        return self.container.formats
 
     async def to_dataframe(self, signals=None):
         """Convert the dataset into a pandas dataframe."""

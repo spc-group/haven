@@ -9,15 +9,15 @@ import numpy as np
 import pint
 from apstools.synApps.asyn import AsynRecord
 from ophyd import Component as Cpt
-from ophyd import EpicsMotor, EpicsSignal
 from ophyd import FormattedComponent as FCpt
-from ophyd import Kind, Signal, flyers
+from ophyd import Kind, Signal
 from ophyd.status import SubscriptionStatus
 
 from .._iconfig import load_config
 from ..exceptions import InvalidScanParameters
 from .delay import DG645Delay
 from .device import make_device
+from .motor import HavenMotor
 from .stage import XYStage
 
 log = logging.getLogger(__name__)
@@ -25,7 +25,7 @@ log = logging.getLogger(__name__)
 ureg = pint.UnitRegistry()
 
 
-class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
+class AerotechFlyer(HavenMotor):
     """Allow an Aerotech stage to fly-scan via the Ophyd FlyerInterface.
 
     Set *start_position*, *end_position*, and *step_size* in units of
@@ -110,19 +110,7 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
     encoder_window_min: int = -8388607
     encoder_window_max: int = 8388607
 
-    # Extra motor record components
-    encoder_resolution = Cpt(EpicsSignal, ".ERES", kind=Kind.config)
-
-    # Desired fly parameters
-    start_position = Cpt(Signal, name="start_position", kind=Kind.config)
-    end_position = Cpt(Signal, name="end_position", kind=Kind.config)
-    step_size = Cpt(Signal, name="step_size", value=1, kind=Kind.config)
-    dwell_time = Cpt(Signal, name="dwell_time", value=1, kind=Kind.config)
-
-    # Calculated signals
-    slew_speed = Cpt(Signal, value=1, kind=Kind.config)
-    taxi_start = Cpt(Signal, kind=Kind.config)
-    taxi_end = Cpt(Signal, kind=Kind.config)
+    # Calculated fly-scan signals
     pso_start = Cpt(Signal, kind=Kind.config)
     pso_end = Cpt(Signal, kind=Kind.config)
     encoder_step_size = Cpt(Signal, kind=Kind.config)
@@ -137,17 +125,12 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
 
     def __init__(self, *args, axis: str, encoder: int, **kwargs):
         super().__init__(*args, **kwargs)
+        # Set up extra calculations for the flyer
+        self.encoder_resolution.subscribe(self._update_fly_params)
+        self.disable_window.subscribe(self._update_fly_params)
+        # Save needed axis/encoder values
         self.axis = axis
         self.encoder = encoder
-        # Set up auto-calculations for the flyer
-        self.motor_egu.subscribe(self._update_fly_params)
-        self.start_position.subscribe(self._update_fly_params)
-        self.end_position.subscribe(self._update_fly_params)
-        self.step_size.subscribe(self._update_fly_params)
-        self.dwell_time.subscribe(self._update_fly_params)
-        self.encoder_resolution.subscribe(self._update_fly_params)
-        self.acceleration.subscribe(self._update_fly_params)
-        self.disable_window.subscribe(self._update_fly_params)
 
     def kickoff(self):
         """Start a flyer
@@ -170,6 +153,7 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         status = SubscriptionStatus(self.ready_to_fly, flight_check)
         # Taxi the motor
         th = threading.Thread(target=self.taxi)
+        th.daemon = True
         th.start()
         # Record time of fly start of scan
         self.starttime = time.time()
@@ -223,8 +207,8 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         endtime = self.endtime
         # grab necessary for calculation
         accel_time = self.acceleration.get()
-        dwell_time = self.dwell_time.get()
-        step_size = self.step_size.get()
+        dwell_time = self.flyer_dwell_time.get()
+        step_size = self.flyer_step_size()
         slew_speed = step_size / dwell_time
         motor_accel = slew_speed / accel_time
         # Calculate the time it takes for taxi to reach first pixel
@@ -255,9 +239,9 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
 
     def fly(self):
         # Start the trajectory
-        destination = self.taxi_end.get()
+        destination = self.flyer_taxi_end.get()
         log.debug(f"Flying to {destination}.")
-        flight_status = self.move(destination, wait=True)
+        self.move(destination, wait=True)
         # Wait for the landing
         self.disable_pso()
         self.flying_complete.set(True).wait()
@@ -274,11 +258,11 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         self.enable_pso()
         self.arm_pso()
         # Move the motor to the taxi position
-        taxi_start = self.taxi_start.get()
+        taxi_start = self.flyer_taxi_start.get()
         log.debug(f"Taxiing to {taxi_start}.")
         self.move(taxi_start, wait=True)
         # Set the speed on the motor
-        self.velocity.set(self.slew_speed.get()).wait()
+        self.velocity.set(self.flyer_slew_speed.get()).wait()
         # Set timing on the delay for triggering detectors, etc
         self.parent.delay.channel_C.delay.put(0)
         self.parent.delay.output_CD.polarity.put(self.parent.delay.polarities.NEGATIVE)
@@ -325,6 +309,14 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
     def motor_egu_pint(self):
         egu = ureg(self.motor_egu.get())
         return egu
+
+    def flyer_step_size(self):
+        """Calculate the size of each step in a fly scan."""
+        start_position = self.flyer_start_position.get()
+        end_position = self.flyer_end_position.get()
+        num_points = self.flyer_num_points.get()
+        step_size = abs(start_position - end_position) / (num_points - 1)
+        return step_size
 
     def _update_fly_params(self, *args, **kwargs):
         """Calculate new fly-scan parameters based on signal values.
@@ -376,11 +368,10 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         """
         window_buffer = 5
         # Grab any neccessary signals for calculation
-        egu = self.motor_egu.get()
-        start_position = self.start_position.get()
-        end_position = self.end_position.get()
-        dwell_time = self.dwell_time.get()
-        step_size = self.step_size.get()
+        start_position = self.flyer_start_position.get()
+        end_position = self.flyer_end_position.get()
+        dwell_time = self.flyer_dwell_time.get()
+        step_size = self.flyer_step_size()
         encoder_resolution = self.encoder_resolution.get()
         accel_time = self.acceleration.get()
         # Check for sane values
@@ -401,12 +392,12 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
                 " parameters."
             )
             return
-        # Determine the desired direction of travel and overal sense
+        # Determine the desired direction of travel and overall sense
         # +1 when moving in + encoder direction, -1 if else
         direction = 1 if start_position < end_position else -1
         overall_sense = direction * self.encoder_direction
         # Calculate the step size in encoder steps
-        encoder_step_size = int(step_size / encoder_resolution)
+        encoder_step_size = round(step_size / encoder_resolution)
         # PSO start/end should be located to where req. start/end are
         # in between steps. Also doubles as the location where slew
         # speed must be met.
@@ -460,9 +451,9 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
                 self.encoder_step_size.set(encoder_step_size),
                 self.pso_start.set(pso_start),
                 self.pso_end.set(pso_end),
-                self.slew_speed.set(slew_speed),
-                self.taxi_start.set(taxi_start),
-                self.taxi_end.set(taxi_end),
+                self.flyer_slew_speed.set(slew_speed),
+                self.flyer_taxi_start.set(taxi_start),
+                self.flyer_taxi_end.set(taxi_end),
                 self.encoder_window_start.set(encoder_window_start),
                 self.encoder_window_end.set(encoder_window_end),
                 self.encoder_use_window.set(encoder_use_window),
@@ -495,14 +486,17 @@ class AerotechFlyer(EpicsMotor, flyers.FlyerInterface):
         This checks to make sure no spurious pulses are expected from taxiing.
 
         """
-        end_points = [(self.taxi_start, self.pso_start), (self.taxi_end, self.pso_end)]
-        step_size = self.step_size.get()
+        end_points = [
+            (self.flyer_taxi_start, self.pso_start),
+            (self.flyer_taxi_end, self.pso_end),
+        ]
+        step_size = self.flyer_step_size()
         for taxi, pso in end_points:
             # Make sure we're not going to have extra pulses
             taxi_distance = abs(taxi.get() - pso.get())
             if taxi_distance > (1.1 * step_size):
                 raise InvalidScanParameters(
-                    f"Scan parameters for {taxi}, {pso}, {self.step_size} would produce"
+                    f"Scan parameters for {taxi}, {pso}, {self.flyer_step_size} would produce"
                     " extra pulses without a window."
                 )
 

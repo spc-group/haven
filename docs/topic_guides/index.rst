@@ -16,6 +16,7 @@ These guides do not cover the individual beamlines thoroughly.
    beamline_configuration.rst
    define_new_motor.rst
    energy_scans.rst
+   exporting.rst
    fluorescence_detectors.rst
    fly_scanning.rst
    hardware_triggering.rst

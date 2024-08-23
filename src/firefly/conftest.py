@@ -3,6 +3,10 @@ import subprocess
 import psutil
 import pydm
 import pytest
+from ophyd.sim import make_fake_device
+from ophyd_async.core import wait_for_connection
+
+from haven.instrument.motor import HavenMotor, Motor
 
 
 def tiled_is_running(port, match_command=True):
@@ -55,3 +59,25 @@ qs_status = {
     "lock_info_uid": "c7fe6f73-91fc-457d-8db0-dfcecb2f2aba",
     "lock": {"environment": False, "queue": False},
 }
+
+
+@pytest.fixture
+def sync_motors(sim_registry):
+    motor_names = ["sync_motor_1", "sync_motor_2"]
+    motors = []
+    for name in motor_names:
+        this_motor = make_fake_device(HavenMotor)(name=name, labels={"motors"})
+        motors.append(this_motor)
+    return motors
+
+
+@pytest.fixture
+async def async_motors(sim_registry):
+    motors = [
+        Motor(prefix="255idc:m1", name="async_motor_1"),
+        Motor(prefix="255idc:m2", name="async_motor_2"),
+    ]
+    await wait_for_connection(**{m.name: m.connect(mock=True) for m in motors})
+    for motor in motors:
+        sim_registry.register(motor)
+    return motors

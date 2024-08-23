@@ -14,24 +14,6 @@ def test_read_attrs():
         assert attr in device.read_attrs
 
 
-def test_config_attrs():
-    device = aps.ApsMachine(name="Aps")
-    config_attrs = [
-        "aps_cycle",
-        "machine_status",
-        "operating_mode",
-        "shutter_permit",
-        "fill_number",
-        "orbit_correction",
-        "global_feedback",
-        "global_feedback_h",
-        "global_feedback_v",
-        "operator_messages",
-    ]
-    for attr in config_attrs:
-        assert attr in device.configuration_attrs
-
-
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov

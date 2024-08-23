@@ -1,6 +1,6 @@
 [project]
 name = "haven-spc"
-version = "23.10.0"
+version = "2024.8.2"
 authors = [
   { name="Mark Wolfman", email="wolfman@anl.gov" },
 ]
@@ -16,16 +16,16 @@ classifiers = [
     "Topic :: System :: Hardware",
 ]
 keywords = ["synchrotron", "xray", "bluesky"]
-dependencies = ["bluesky", "ophyd", "databroker", "apsbss", "xraydb",
+dependencies = ["aioca", "bluesky", "ophyd", "databroker", "apsbss", "xraydb",
 	        "mergedeep", "xrayutilities", "bluesky-queueserver-api",
 		"apstools", "databroker", "ophyd-registry", "caproto", "pcdsdevices",
-		"strenum", "bluesky-adaptive"]
+		"strenum", "bluesky-adaptive", "tiled[client]"]
 
 [project.optional-dependencies]
 
 dev = ["black", "pytest", "pytest-mongodb", "build", "twine",
-       "time-machine", "pytest-mock", "pytest-qt", "flake8", "pytest-asyncio"]
-gui = ["tiled[all]", "qtawesome", "pydm", "pyqtgraph", "qasync"]
+       "time-machine", "pytest-mock", "pytest-qt", "flake8", "pytest-asyncio", "tiled[all]"]
+gui = ["qtawesome", "pydm", "pyqtgraph", "qasync", "tiled[all]"]
 
 [project.urls]
 "Homepage" = "https://haven-spc.readthedocs.io/en/latest/"
@@ -45,8 +45,16 @@ firefly_cameras = "firefly.launcher:cameras"
 firefly = ["firefly.qss"]
 
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=61.0", "setuptools-scm>=8.0"]
 build-backend = "setuptools.build_meta"
 
 [tool.isort]
 profile = "black"
+
+[tool.versioneer]
+VCS = "git"
+style = "pep440"
+versionfile_source = "src/haven/_version.py"
+versionfile_build = "haven/_version.py"
+tag_prefix = "haven-"
+parentdir_prefix = "haven-"
