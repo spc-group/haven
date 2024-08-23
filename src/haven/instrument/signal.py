@@ -58,8 +58,8 @@ class DerivedSignalBackend(SoftSignalBackend):
         self,
         *args,
         derived_from: Mapping,
-        forward: Callable,
-        inverse: Callable,
+        forward: Callable = None,
+        inverse: Callable = None,
         **kwargs,
     ):
         self._derived_from = derived_from

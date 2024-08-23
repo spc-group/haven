@@ -20,7 +20,7 @@ def ion_chamber(sim_registry):
         scaler_channel=2,
         preamp_prefix="255idc:SR03:",
         voltmeter_prefix="255idc:LabjackT7_1:AI1",
-        counts_per_volt_second=1e6
+        counts_per_volt_second=1e6,
     )
     return ion_chamber
 
@@ -28,43 +28,6 @@ def ion_chamber(sim_registry):
 def test_ion_chamber_devices(ion_chamber):
     """Check that the ion chamber has the right sub-devices."""
     assert list(ion_chamber.mcs.scaler.channels.keys()) == [0, 2]
-
-
-@pytest.mark.skip(reason="Needs updating to ophyd-async ion chamber")
-def test_get_gain_level(preamp):
-    # Change the preamp settings
-    preamp.sensitivity_value.put("20")
-    assert preamp.sensitivity_value.get(as_string=True) == "20"
-    assert preamp.sensitivity_value.get(as_string=False) == 4
-    preamp.sensitivity_unit.put("uA/V"),
-    preamp.offset_value.put(1),  # 2 uA/V
-    preamp.offset_unit.put(2),
-    # Check that the gain level moved
-    assert preamp.gain_level.get(use_monitor=False) == 5
-
-
-@pytest.mark.skip(reason="Needs updating to ophyd-async ion chamber")
-def test_put_gain_level(preamp):
-    # Move the gain level
-    preamp.gain_level.set(15).wait(timeout=3)
-    # Check that the preamp sensitivities are moved
-    assert preamp.sensitivity_value.get(use_monitor=False) == "10"
-    assert preamp.sensitivity_unit.get(use_monitor=False) == "nA/V"
-    # Check that the preamp sensitivity offsets are moved
-    assert preamp.offset_value.get(use_monitor=False) == "1"
-    assert preamp.offset_unit.get(use_monitor=False) == "nA"
-
-
-@pytest.mark.skip(reason="Needs updating to ophyd-async ion chamber")
-def test_gain_signals(preamp):
-    # Change the preamp settings
-    preamp.sensitivity_value.put("20")
-    preamp.sensitivity_unit.put("uA/V")
-    preamp.offset_value.put("2")
-    preamp.offset_unit.put("uA")
-    # Check the gain and gain_db signals
-    assert preamp.gain.get(use_monitor=False) == pytest.approx(1 / 20e-6)
-    assert preamp.gain_db.get(use_monitor=False) == pytest.approx(46.9897)
 
 
 @pytest.mark.asyncio
