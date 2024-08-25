@@ -10,10 +10,6 @@ from typing import Dict, Generator, Optional, Mapping
 
 import numpy as np
 from apstools.utils.misc import safe_ophyd_name
-from apstools.devices.srs570_preamplifier import (
-    SRS570_PreAmplifier,
-    calculate_settle_time,
-)
 from bluesky.protocols import Triggerable
 from ophyd import Component as Cpt
 from ophyd import EpicsSignal, EpicsSignalRO
@@ -39,6 +35,8 @@ from .device import (
 from .instrument_registry import InstrumentRegistry
 from .instrument_registry import registry as default_registry
 from .labjack import AnalogInput
+from .signal import derived_signal_r
+from .srs570 import SRS570PreAmplifier
 from .scaler import MultiChannelScaler, CountState
 from .scaler_triggered import ScalerSignalRO, ScalerTriggered
 
@@ -86,7 +84,30 @@ class IonChamber(StandardReadable, Triggerable):
         self.auto_name = auto_name
         with self.add_children_as_readables():
             self.mcs = MultiChannelScaler(prefix=scaler_prefix, channels=[0, scaler_channel])
+            self.preamp = SRS570PreAmplifier(preamp_prefix)
+            self.voltage = derived_signal_r(
+                float,
+                name="voltage",
+                units="V",
+                derived_from={"count": self.scaler_channel.net_count, "time": self.mcs.scaler.elapsed_time},
+                inverse=self._counts_to_volts,
+            )
+            self.current = derived_signal_r(
+                float,
+                name="current",
+                units="A",
+                derived_from={"voltage": self.voltage, "gain": self.preamp.gain},
+                inverse=self._volts_to_amps,
+            )
         super().__init__(name=name)
+
+    def _counts_to_volts(self, values, *, count, time):
+        """Pre-amp output voltage calculated from scaler counts."""
+        return values[count] / self.counts_per_volt_second / values[time]
+
+    def _volts_to_amps(self, values, *, voltage, gain):
+        """Pre-amp current calculated from output voltage."""
+        return values[voltage] / values[gain]
 
     def __repr__(self):
         return f"<{type(self).__name__}: '{self.name}' ({self.scaler_channel.raw_count.source})>"
@@ -172,24 +193,24 @@ class IonChamber(StandardReadable, Triggerable):
                 break
 
 
-class VoltageSignal(DerivedSignal):
-    """Calculate the voltage at the output of the pre-amp."""
+# class VoltageSignal(DerivedSignal):
+#     """Calculate the voltage at the output of the pre-amp."""
 
-    def inverse(self, value):
-        """Calculate the voltage given a scaler count."""
-        clock_ticks = self.parent.clock_ticks.get()
-        if clock_ticks == 0:
-            return 0
-        clock_frequency = self.parent.frequency.get()
-        if clock_frequency == 0:
-            return 0
-        # Convert counts to volt-seconds
-        volt_seconds = value / self.parent.counts_per_volt_second
-        # Convert volt-seconds to average voltage
-        clock_frequency = self.parent.frequency.get()
-        seconds = clock_ticks / clock_frequency
-        volts = volt_seconds / seconds
-        return volts
+#     def inverse(self, value):
+#         """Calculate the voltage given a scaler count."""
+#         clock_ticks = self.parent.clock_ticks.get()
+#         if clock_ticks == 0:
+#             return 0
+#         clock_frequency = self.parent.frequency.get()
+#         if clock_frequency == 0:
+#             return 0
+#         # Convert counts to volt-seconds
+#         volt_seconds = value / self.parent.counts_per_volt_second
+#         # Convert volt-seconds to average voltage
+#         clock_frequency = self.parent.frequency.get()
+#         seconds = clock_ticks / clock_frequency
+#         volts = volt_seconds / seconds
+#         return volts
 
 
 class CurrentSignal(DerivedSignal):
@@ -257,123 +278,123 @@ class GainDerivedSignal(MultiDerivedSignal):
         return super().set(value, timeout=timeout, settle_time=settle_time_)
 
 
-class IonChamberPreAmplifier(SRS570_PreAmplifier):
-    """An SRS-570 pre-amplifier driven by an ion chamber.
+# class IonChamberPreAmplifier(SRS570_PreAmplifier):
+#     """An SRS-570 pre-amplifier driven by an ion chamber.
 
-        Has extra signals for walking up and down the sensitivity
-        range. *gain_level* is corresponds to the inverse of the
-        combination of *sensitivity_value* and *sensitivity_unit*. Setting
-        *gain_level* to 0 sets *sensitivity_value* and *sensitivity_unit*
-        to "1 mA/V".
+#         Has extra signals for walking up and down the sensitivity
+#         range. *gain_level* is corresponds to the inverse of the
+#         combination of *sensitivity_value* and *sensitivity_unit*. Setting
+#         *gain_level* to 0 sets *sensitivity_value* and *sensitivity_unit*
+#         to "1 mA/V".
 
-    By setting the *gain_level* signal, the offset is
-        also set to be 10% of the sensitivity.
+#     By setting the *gain_level* signal, the offset is
+#         also set to be 10% of the sensitivity.
 
-    """
+#     """
 
-    values = ["1", "2", "5", "10", "20", "50", "100", "200", "500"]
-    units = ["pA/V", "nA/V", "uA/V", "mA/V"]
-    offset_units = [s.split("/")[0] for s in units]
-    offset_difference = -3  # How many levels higher should the offset be
-    current_multipliers = {
-        0: 1e-12,  # pA
-        1: 1e-9,  # nA
-        2: 1e-6,  # µA
-        3: 1e-3,  # mA
-        "pA": 1e-12,
-        "nA": 1e-9,
-        "uA": 1e-6,
-        "µA": 1e-6,
-        "mA": 1e-3,
-    }
+#     values = ["1", "2", "5", "10", "20", "50", "100", "200", "500"]
+#     units = ["pA/V", "nA/V", "uA/V", "mA/V"]
+#     offset_units = [s.split("/")[0] for s in units]
+#     offset_difference = -3  # How many levels higher should the offset be
+#     current_multipliers = {
+#         0: 1e-12,  # pA
+#         1: 1e-9,  # nA
+#         2: 1e-6,  # µA
+#         3: 1e-3,  # mA
+#         "pA": 1e-12,
+#         "nA": 1e-9,
+#         "uA": 1e-6,
+#         "µA": 1e-6,
+#         "mA": 1e-3,
+#     }
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Reset the gain name, apstools converts "preamp_gain" to "preamp"
-        self.gain.name += "_gain"
-        # Subscriptions for updating the sensitivity text
-        self.sensitivity_value.subscribe(self.update_sensitivity_text, run=False)
-        self.sensitivity_unit.subscribe(self.update_sensitivity_text, run=True)
+#     def __init__(self, *args, **kwargs):
+#         super().__init__(*args, **kwargs)
+#         # Reset the gain name, apstools converts "preamp_gain" to "preamp"
+#         self.gain.name += "_gain"
+#         # Subscriptions for updating the sensitivity text
+#         self.sensitivity_value.subscribe(self.update_sensitivity_text, run=False)
+#         self.sensitivity_unit.subscribe(self.update_sensitivity_text, run=True)
 
-    def cb_gain(self, *args, **kwargs):
-        """
-        Called when sensitivity changes (EPICS CA monitor event).
-        """
-        gain = self.computed_gain()
-        self.gain.put(gain, internal=True)
-        self.gain_db.put(10 * math.log10(gain), internal=True)
+#     def cb_gain(self, *args, **kwargs):
+#         """
+#         Called when sensitivity changes (EPICS CA monitor event).
+#         """
+#         gain = self.computed_gain()
+#         self.gain.put(gain, internal=True)
+#         self.gain_db.put(10 * math.log10(gain), internal=True)
 
-    def computed_gain(self):
-        """
-        Amplifier gain (V/A), as floating-point number.
-        """
-        # Convert the sensitivity to a proper number
-        val_idx = int(self.sensitivity_value.get(as_string=False))
-        val = float(self.values[val_idx])
-        # Determine multiplier based on the gain unit
-        amps = [
-            1e-12,  # pA
-            1e-9,  # nA
-            1e-6,  # μA
-            1e-3,  # mA
-        ]
-        unit_idx = int(self.sensitivity_unit.get(as_string=False))
-        multiplier = amps[unit_idx]
-        inverse_gain = val * multiplier
-        return 1 / inverse_gain
+#     def computed_gain(self):
+#         """
+#         Amplifier gain (V/A), as floating-point number.
+#         """
+#         # Convert the sensitivity to a proper number
+#         val_idx = int(self.sensitivity_value.get(as_string=False))
+#         val = float(self.values[val_idx])
+#         # Determine multiplier based on the gain unit
+#         amps = [
+#             1e-12,  # pA
+#             1e-9,  # nA
+#             1e-6,  # μA
+#             1e-3,  # mA
+#         ]
+#         unit_idx = int(self.sensitivity_unit.get(as_string=False))
+#         multiplier = amps[unit_idx]
+#         inverse_gain = val * multiplier
+#         return 1 / inverse_gain
 
-    def update_sensitivity_text(self, *args, obj: OphydObject, **kwargs):
-        val = self.values[int(self.sensitivity_value.get(as_string=False))]
-        unit = self.units[int(self.sensitivity_unit.get(as_string=False))]
-        text = f"{val} {unit}"
-        self.sensitivity_text.put(text, internal=True)
+#     def update_sensitivity_text(self, *args, obj: OphydObject, **kwargs):
+#         val = self.values[int(self.sensitivity_value.get(as_string=False))]
+#         unit = self.units[int(self.sensitivity_unit.get(as_string=False))]
+#         text = f"{val} {unit}"
+#         self.sensitivity_text.put(text, internal=True)
 
-    def _level_to_value(self, level):
-        return level % len(self.values)
+#     def _level_to_value(self, level):
+#         return level % len(self.values)
 
-    def _level_to_unit(self, level):
-        return self.units[int(level / len(self.values))]
+#     def _level_to_unit(self, level):
+#         return self.units[int(level / len(self.values))]
 
-    def _get_gain_level(self, mds: MultiDerivedSignal, items: SignalToValue) -> int:
-        """Given a sensitivity value and unit, transform to the desired level."""
-        value = self.values.index(items[self.sensitivity_value])
-        unit = self.units.index(items[self.sensitivity_unit])
-        # Determine sensitivity level
-        new_level = value + unit * len(self.values)
-        # Convert to gain by inverting
-        new_level = 27 - new_level
-        log.debug(
-            f"Getting sensitivity level {self.name}: {value} {unit} -> {new_level}"
-        )
-        return new_level
+#     def _get_gain_level(self, mds: MultiDerivedSignal, items: SignalToValue) -> int:
+#         """Given a sensitivity value and unit, transform to the desired level."""
+#         value = self.values.index(items[self.sensitivity_value])
+#         unit = self.units.index(items[self.sensitivity_unit])
+#         # Determine sensitivity level
+#         new_level = value + unit * len(self.values)
+#         # Convert to gain by inverting
+#         new_level = 27 - new_level
+#         log.debug(
+#             f"Getting sensitivity level {self.name}: {value} {unit} -> {new_level}"
+#         )
+#         return new_level
 
-    def _put_gain_level(
-        self, mds: MultiDerivedSignal, value: OphydDataType
-    ) -> SignalToValue:
-        "Given a gain level, transform to the desired sensitivity value and unit."
-        # Determine new values
-        new_level = 27 - value
-        new_offset = max(new_level + self.offset_difference, 0)
-        # Check for out of bounds
-        lmin, lmax = (0, 27)
-        msg = (
-            f"Cannot set {self.name} outside range ({lmin}, {lmax}), received"
-            f" {new_level}."
-        )
-        if new_level < lmin:
-            raise exceptions.GainOverflow(msg)
-        elif new_level > lmax:
-            raise exceptions.GainOverflow(msg)
-        # Return calculated gain and offset
-        offset_value = self.values[self._level_to_value(new_offset)]
-        offset_unit = self._level_to_unit(new_offset).split("/")[0]
-        result = OrderedDict()
-        result.update({self.sensitivity_unit: self._level_to_unit(new_level)})
-        result.update({self.sensitivity_value: self._level_to_value(new_level)})
-        result.update({self.offset_value: offset_value})
-        result.update({self.offset_unit: offset_unit})
-        # result[self.set_all] = 1
-        return result
+#     def _put_gain_level(
+#         self, mds: MultiDerivedSignal, value: OphydDataType
+#     ) -> SignalToValue:
+#         "Given a gain level, transform to the desired sensitivity value and unit."
+#         # Determine new values
+#         new_level = 27 - value
+#         new_offset = max(new_level + self.offset_difference, 0)
+#         # Check for out of bounds
+#         lmin, lmax = (0, 27)
+#         msg = (
+#             f"Cannot set {self.name} outside range ({lmin}, {lmax}), received"
+#             f" {new_level}."
+#         )
+#         if new_level < lmin:
+#             raise exceptions.GainOverflow(msg)
+#         elif new_level > lmax:
+#             raise exceptions.GainOverflow(msg)
+#         # Return calculated gain and offset
+#         offset_value = self.values[self._level_to_value(new_offset)]
+#         offset_unit = self._level_to_unit(new_offset).split("/")[0]
+#         result = OrderedDict()
+#         result.update({self.sensitivity_unit: self._level_to_unit(new_level)})
+#         result.update({self.sensitivity_value: self._level_to_value(new_level)})
+#         result.update({self.offset_value: offset_value})
+#         result.update({self.offset_unit: offset_unit})
+#         # result[self.set_all] = 1
+#         return result
 
     def _get_offset_current(
         self, *, mds: MultiDerivedSignal, items: SignalToValue
@@ -393,34 +414,34 @@ class IonChamberPreAmplifier(SRS570_PreAmplifier):
             return 0
         return current
 
-    gain_level = Cpt(
-        GainDerivedSignal,
-        attrs=[
-            "sensitivity_value",
-            "sensitivity_unit",
-            "offset_value",
-            "offset_unit",
-            "set_all",
-        ],
-        calculate_on_get=_get_gain_level,
-        calculate_on_put=_put_gain_level,
-        kind=Kind.omitted,
-    )
-    offset_current = Cpt(
-        MultiDerivedSignalRO,
-        attrs=["offset_value", "offset_unit", "offset_on", "offset_sign"],
-        calculate_on_get=_get_offset_current,
-        kind=Kind.config,
-    )
+    # gain_level = Cpt(
+    #     GainDerivedSignal,
+    #     attrs=[
+    #         "sensitivity_value",
+    #         "sensitivity_unit",
+    #         "offset_value",
+    #         "offset_unit",
+    #         "set_all",
+    #     ],
+    #     calculate_on_get=_get_gain_level,
+    #     calculate_on_put=_put_gain_level,
+    #     kind=Kind.omitted,
+    # )
+    # offset_current = Cpt(
+    #     MultiDerivedSignalRO,
+    #     attrs=["offset_value", "offset_unit", "offset_on", "offset_sign"],
+    #     calculate_on_get=_get_offset_current,
+    #     kind=Kind.config,
+    # )
 
-    # A text description of the what the current sensitivity settings are
-    sensitivity_text = Cpt(
-        InternalSignal,
-        kind=Kind.config,
-    )
-    # Gain, but measured in various forms
-    gain = Cpt(InternalSignal, name="gainerificf", kind="normal", value=1)
-    gain_db = Cpt(InternalSignal, kind=Kind.config, value=0)
+    # # A text description of the what the current sensitivity settings are
+    # sensitivity_text = Cpt(
+    #     InternalSignal,
+    #     kind=Kind.config,
+    # )
+    # # Gain, but measured in various forms
+    # gain = Cpt(InternalSignal, name="gainerificf", kind="normal", value=1)
+    # gain_db = Cpt(InternalSignal, kind=Kind.config, value=0)
 
 
 class OldIonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
@@ -488,10 +509,10 @@ class OldIonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
         EpicsSignal, "{scaler_prefix}scaler1.NM{ch_num}", kind=Kind.config
     )
     # Signal chain devices
-    preamp = FCpt(IonChamberPreAmplifier, "{preamp_prefix}")
+    # preamp = FCpt(IonChamberPreAmplifier, "{preamp_prefix}")
     voltmeter = FCpt(Voltmeter, "{voltmeter_prefix}", kind=Kind.hinted)
     # Measurement signals
-    volts: OphydObject = Cpt(VoltageSignal, derived_from="counts", kind=Kind.normal)
+    # volts: OphydObject = Cpt(VoltageSignal, derived_from="counts", kind=Kind.normal)
     amps: OphydObject = Cpt(CurrentSignal, derived_from="volts", kind=Kind.hinted)
     counts: OphydObject = FCpt(
         EpicsSignalRO,

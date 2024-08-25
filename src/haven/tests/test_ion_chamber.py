@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock
 
 import numpy as np
 import pytest
+from ophyd_async.core import set_mock_value
 
 from haven.instrument.ion_chamber import IonChamber, load_ion_chambers
 
@@ -37,8 +38,9 @@ async def test_load_ion_chambers(sim_registry, mocker):
     ic = ics[0]
     # Test the channel info is extracted properly
     assert ic._scaler_channel == 2
-    hasattr(ic, "mcs")
-    # assert ic.preamp.prefix.strip(":").split(":")[-1] == "SR03"
+    assert hasattr(ic, "mcs")
+    assert hasattr(ic, "preamp")
+    assert ic.preamp.sensitivity_value.source.split("://")[1] == "255idc:SR03:sens_num"
     # assert ic.voltmeter.prefix == "255idc:LabjackT7_0:Ai1"
     assert ic.counts_per_volt_second == 1e7
 
@@ -67,77 +69,38 @@ async def test_trigger_dark_current(ion_chamber, monkeypatch):
     assert ion_chamber.mcs.scaler.record_dark_current.trigger.called
 
 
-@pytest.mark.skip(reason="Needs updating to ophyd-async ion chamber")
-def test_default_pv_prefix():
-    """Check that it uses the *prefix* argument if no *scaler_prefix* is
-    given.
-
-    """
-    prefix = "myioc:myscaler"
-    # Instantiate the device with *scaler_prefix* argument
-    device = ion_chamber.IonChamber(
-        name="device1", prefix="gibberish", ch_num=1, scaler_prefix=prefix
-    )
-    device.scaler_prefix = prefix
-    assert device.scaler_prefix == prefix
-    # Instantiate the device with *scaler_prefix* argument
-    device = ion_chamber.IonChamber(name="device2", ch_num=1, prefix=prefix)
-    assert device.scaler_prefix == prefix
-
-
-@pytest.mark.skip(reason="Needs updating to ophyd-async ion chamber")
-def test_volts_signal(sim_ion_chamber):
+@pytest.mark.asyncio
+async def test_volts_signal(ion_chamber):
     """Test that the scaler tick counts get properly converted to pre-amp voltage.
 
     Assumes 10V max, 100 MHz max settings on the V2F100
 
     """
-    chamber = sim_ion_chamber
+    await ion_chamber.connect(mock=True)
     # Set the necessary dependent signals
-    chamber.counts_per_volt_second = 10e6  # 100 Mhz / 10 V
-    chamber.counts.sim_put(int(1.3e7))  # 1.3 V
-    chamber.frequency.sim_put(int(10e6))  # 10 MHz clock
-    chamber.clock_ticks.sim_put(1e7)  # 1 second @ 10 MHz
+    ion_chamber.counts_per_volt_second = 10e6  # 100 Mhz / 10 V
+    set_mock_value(ion_chamber.scaler_channel.net_count, int(1.3e7*2))  # 1.3 V
+    set_mock_value(ion_chamber.mcs.scaler.elapsed_time, 2.0)
     # Check the volts answer
-    assert chamber.volts.get() == 1.30
+    assert await ion_chamber.voltage.get_value() == 1.3
 
 
-@pytest.mark.skip(reason="Needs updating to ophyd-async ion chamber")
-def test_amps_signal(sim_ion_chamber):
+@pytest.mark.asyncio
+async def test_amps_signal(ion_chamber):
     """Test that scaler tick counts get properly converted to ion chamber current."""
-    chamber = sim_ion_chamber
+    await ion_chamber.connect(mock=True)
     # Set the necessary dependent signals
-    chamber.counts_per_volt_second = 10e6  # 100 Mhz / 10 V
-    chamber.counts.sim_put(int(13e6))  # 1.3V
-    chamber.frequency.sim_put(int(10e6))  # 10 MHz clock
-    chamber.clock_ticks.sim_put(1e7)  # 10 MHz clock
-    chamber.preamp.sensitivity_value.put(4)  # "20"
-    chamber.preamp.sensitivity_unit.put(2)  # "µA/V"
+    ion_chamber.counts_per_volt_second = 10e6  # 100 Mhz / 10 V
+    set_mock_value(ion_chamber.scaler_channel.net_count, int(13e6))  # 1.3V
+    set_mock_value(ion_chamber.mcs.scaler.elapsed_time, 1.0)
+    set_mock_value(ion_chamber.preamp.sensitivity_value, "20")
+    set_mock_value(ion_chamber.preamp.sensitivity_unit, "uA/V")
     # Make sure it ignores the offset if it's off
-    chamber.preamp.offset_on.put("OFF")
-    chamber.preamp.offset_value.put("2")  # 2
-    chamber.preamp.offset_unit.put("uA")  # µA
+    set_mock_value(ion_chamber.preamp.offset_on, "OFF")
+    set_mock_value(ion_chamber.preamp.offset_value, "2")
+    set_mock_value(ion_chamber.preamp.offset_unit, "uA")
     # Check the current answer
-    assert chamber.amps.get() == pytest.approx(2.6e-5)
-
-
-@pytest.mark.skip(reason="Needs updating to ophyd-async ion chamber")
-def test_amps_signal_with_offset(sim_ion_chamber):
-    """Test that the scaler tick counts get properly converted to pre-amp voltage."""
-    chamber = sim_ion_chamber
-    # Set the necessary dependent signals
-    chamber.counts.sim_put(int(1.3e7))  # 1.3V
-    chamber.counts_per_volt_second = 10e6  # 100 Mhz / 10 V
-    chamber.clock_ticks.sim_put(1e7)  # 10 MHz clock
-    chamber.frequency.sim_put(int(10e6))  # 10 MHz clock
-    chamber.preamp.sensitivity_value.put(4)  # "20"
-    chamber.preamp.sensitivity_unit.put(2)  # "µA/V"
-    chamber.preamp.offset_on.put("ON")
-    chamber.preamp.offset_sign.put("-")
-    chamber.preamp.offset_value.put("2")  # 2
-    chamber.preamp.offset_unit.put("uA")  # µA
-    # Check the current answer
-    assert chamber.amps.get() == pytest.approx(2.8e-5)
+    assert (await ion_chamber.current.get_value()) == pytest.approx(2.6e-5)
 
 
 @pytest.mark.skip(reason="Needs updating to ophyd-async ion chamber")
