@@ -20,7 +20,8 @@ def ion_chamber(sim_registry):
         scaler_prefix="255idcVME:3820:",
         scaler_channel=2,
         preamp_prefix="255idc:SR03:",
-        voltmeter_prefix="255idc:LabjackT7_1:AI1",
+        voltmeter_prefix="255idc:LabjackT7_1:",
+        voltmeter_channel=1,
         counts_per_volt_second=1e6,
     )
     return ion_chamber
@@ -41,6 +42,8 @@ async def test_load_ion_chambers(sim_registry, mocker):
     assert hasattr(ic, "mcs")
     assert hasattr(ic, "preamp")
     assert ic.preamp.sensitivity_value.source.split("://")[1] == "255idc:SR03:sens_num"
+    assert hasattr(ic, "voltmeter")
+    assert ic.voltmeter.model_name.source.split("://")[1] == "255idc:LabJackT7_1:ModelName"
     # assert ic.voltmeter.prefix == "255idc:LabjackT7_0:Ai1"
     assert ic.counts_per_volt_second == 1e7
 
@@ -122,12 +125,13 @@ def test_voltmeter_amps_signal(sim_ion_chamber):
     assert chamber.voltmeter.amps.get() == pytest.approx(2.6e-5)
 
 
-# def test_voltmeter_name(sim_ion_chamber):
-#     chamber = sim_ion_chamber
-#     assert chamber.voltmeter.description.get() != "Icake"
-#     # Change the ion chamber name, and see if the voltmeter name updates
-#     chamber.description.put("Icake")
-#     assert chamber.voltmeter.description.get() == "Icake"
+@pytest.mark.skip(reason="Needs updating to ophyd-async ion chamber")
+def test_voltmeter_name(sim_ion_chamber):
+    chamber = sim_ion_chamber
+    assert chamber.voltmeter.description.get() != "Icake"
+    # Change the ion chamber name, and see if the voltmeter name updates
+    chamber.description.put("Icake")
+    assert chamber.voltmeter.description.get() == "Icake"
 
 
 @pytest.mark.skip(reason="Needs updating to ophyd-async ion chamber")

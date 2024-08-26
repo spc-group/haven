@@ -42,6 +42,7 @@ from ophyd_async.epics.signal._signal import _epics_signal_backend
 
 from .signal import derived_signal_r, derived_signal_rw
 from .. import exceptions
+from ..typing import BoolEnum
 
 logger = logging.getLogger(__name__)
 
@@ -54,11 +55,6 @@ gain_modes = ["LOW NOISE", "HIGH BW"]
 class Sign(str, Enum):
     PLUS = "+"
     MINUS = "-"
-
-
-class Bool(IntEnum):
-    FALSE = 0
-    TRUE = 1
 
 
 class Cal(str, Enum):
@@ -346,7 +342,7 @@ class SRS570PreAmplifier(Device):
         self.sensitivity_value = gain_signal(self.SensValue, f"{prefix}sens_num")
         self.sensitivity_unit = gain_signal(self.SensUnit, f"{prefix}sens_num")
 
-        self.offset_on = epics_signal_rw(Bool, "offset_on")
+        self.offset_on = epics_signal_rw(BoolEnum, "offset_on")
         self.offset_sign = epics_signal_rw(Sign, "offset_sign")
         self.offset_value = epics_signal_rw(self.SensValue, "offset_num")
         self.offset_unit = epics_signal_rw(self.OffsetUnit, "offset_unit")
@@ -356,7 +352,7 @@ class SRS570PreAmplifier(Device):
         self.set_all = epics_signal_x("init.PROC")
 
         self.bias_value = epics_signal_rw(int, "bias_put")
-        self.bias_on = epics_signal_rw(Bool, "bias_on")
+        self.bias_on = epics_signal_rw(BoolEnum, "bias_on")
 
         self.filter_type = epics_signal_rw(self.FilterType, "filter_type")
         self.filter_reset = epics_signal_x("filter_reset.PROC")
@@ -364,8 +360,8 @@ class SRS570PreAmplifier(Device):
         self.filter_highpass = epics_signal_rw(self.HighFrequency, "high_freq")
 
         self.gain_mode = gain_signal(self.GainMode, "gain_mode")
-        self.invert = epics_signal_rw(Bool, "invert_on")
-        self.blank = epics_signal_rw(Bool, "blank_on")
+        self.invert = epics_signal_rw(BoolEnum, "invert_on")
+        self.blank = epics_signal_rw(BoolEnum, "blank_on")
 
         # Gain signals derived from the sensitivity signals
         sens_signals = {

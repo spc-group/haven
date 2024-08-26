@@ -34,7 +34,7 @@ from .device import (
 )
 from .instrument_registry import InstrumentRegistry
 from .instrument_registry import registry as default_registry
-from .labjack import AnalogInput
+from .labjack import LabJackT7, AnalogInput
 from .signal import derived_signal_r
 from .srs570 import SRS570PreAmplifier
 from .scaler import MultiChannelScaler, CountState
@@ -74,6 +74,7 @@ class IonChamber(StandardReadable, Triggerable):
         scaler_channel: int,
         preamp_prefix: str,
         voltmeter_prefix: str,
+        voltmeter_channel: int,
         counts_per_volt_second: float,
         name="",
         auto_name: bool = None
@@ -85,6 +86,7 @@ class IonChamber(StandardReadable, Triggerable):
         with self.add_children_as_readables():
             self.mcs = MultiChannelScaler(prefix=scaler_prefix, channels=[0, scaler_channel])
             self.preamp = SRS570PreAmplifier(preamp_prefix)
+            self.voltmeter = LabJackT7(prefix=voltmeter_prefix, analog_inputs=[voltmeter_channel])
             self.voltage = derived_signal_r(
                 float,
                 name="voltage",
@@ -213,69 +215,69 @@ class IonChamber(StandardReadable, Triggerable):
 #         return volts
 
 
-class CurrentSignal(DerivedSignal):
-    """Calculate the current in amps at the input of the pre-amp."""
+# class CurrentSignal(DerivedSignal):
+#     """Calculate the current in amps at the input of the pre-amp."""
 
-    def preamp(self):
-        """Find which parent in the device hierarchy has the preamp."""
-        device = self
-        while device is not None:
-            if isinstance(getattr(device, "preamp", None), IonChamberPreAmplifier):
-                return device.preamp
-            else:
-                # Move up a step in the hierarchy
-                device = device.parent
-        # If we get here, there's no pre-amp
-        raise AttributeError(f"No ancestor of {self} has a pre-amp.")
+#     def preamp(self):
+#         """Find which parent in the device hierarchy has the preamp."""
+#         device = self
+#         while device is not None:
+#             if isinstance(getattr(device, "preamp", None), IonChamberPreAmplifier):
+#                 return device.preamp
+#             else:
+#                 # Move up a step in the hierarchy
+#                 device = device.parent
+#         # If we get here, there's no pre-amp
+#         raise AttributeError(f"No ancestor of {self} has a pre-amp.")
 
-    def inverse(self, value):
-        """Calculate the current given a output voltage."""
-        volts = value
-        preamp = self.preamp()
-        try:
-            gain = preamp.gain.get()
-            offset_current = preamp.offset_current.get()
-        except TimeoutError:
-            msg = (
-                "Could not read inverse signals: "
-                f"{preamp.gain}, {preamp.offset_current}"
-            )
-            log.debug(msg)
-        else:
-            return volts / gain - offset_current
-
-
-class Voltmeter(AnalogInput):
-    amps: OphydObject = Cpt(CurrentSignal, derived_from="volts", kind="normal")
-    # Rename ``final_value`` to ``volts``
-    final_value = None
-    volts = Cpt(EpicsSignal, ".VAL", kind="normal")
+#     def inverse(self, value):
+#         """Calculate the current given a output voltage."""
+#         volts = value
+#         preamp = self.preamp()
+#         try:
+#             gain = preamp.gain.get()
+#             offset_current = preamp.offset_current.get()
+#         except TimeoutError:
+#             msg = (
+#                 "Could not read inverse signals: "
+#                 f"{preamp.gain}, {preamp.offset_current}"
+#             )
+#             log.debug(msg)
+#         else:
+#             return volts / gain - offset_current
 
 
-class GainDerivedSignal(MultiDerivedSignal):
-    """A gain level signal that incorporates dynamic settling time."""
+# class Voltmeter(AnalogInput):
+#     amps: OphydObject = Cpt(CurrentSignal, derived_from="volts", kind="normal")
+#     # Rename ``final_value`` to ``volts``
+#     final_value = None
+#     volts = Cpt(EpicsSignal, ".VAL", kind="normal")
 
-    def set(
-        self,
-        value: OphydDataType,
-        *,
-        timeout: Optional[float] = None,
-        settle_time: Optional[float] = "auto",
-    ):
-        # Calculate an auto settling time
-        if settle_time == "auto":
-            # Determine the new values that will be set
-            to_write = self.calculate_on_put(mds=self, value=value) or {}
-            # Calculate the correct settling time
-            settle_time_ = calculate_settle_time(
-                gain_value=to_write[self.parent.sensitivity_value],
-                gain_unit=to_write[self.parent.sensitivity_unit],
-                gain_mode=self.parent.gain_mode.get(),
-            )
-        else:
-            settle_time_ = settle_time
-        # Call the actual set method to move the gain
-        return super().set(value, timeout=timeout, settle_time=settle_time_)
+
+# class GainDerivedSignal(MultiDerivedSignal):
+#     """A gain level signal that incorporates dynamic settling time."""
+
+#     def set(
+#         self,
+#         value: OphydDataType,
+#         *,
+#         timeout: Optional[float] = None,
+#         settle_time: Optional[float] = "auto",
+#     ):
+#         # Calculate an auto settling time
+#         if settle_time == "auto":
+#             # Determine the new values that will be set
+#             to_write = self.calculate_on_put(mds=self, value=value) or {}
+#             # Calculate the correct settling time
+#             settle_time_ = calculate_settle_time(
+#                 gain_value=to_write[self.parent.sensitivity_value],
+#                 gain_unit=to_write[self.parent.sensitivity_unit],
+#                 gain_mode=self.parent.gain_mode.get(),
+#             )
+#         else:
+#             settle_time_ = settle_time
+#         # Call the actual set method to move the gain
+#         return super().set(value, timeout=timeout, settle_time=settle_time_)
 
 
 # class IonChamberPreAmplifier(SRS570_PreAmplifier):
@@ -396,23 +398,23 @@ class GainDerivedSignal(MultiDerivedSignal):
 #         # result[self.set_all] = 1
 #         return result
 
-    def _get_offset_current(
-        self, *, mds: MultiDerivedSignal, items: SignalToValue
-    ) -> float:
-        """Calculate the current in amps added to the signal before amplification."""
-        if items[self.offset_on] in ["OFF", "0", 0]:
-            return 0
-        # Calculate offset current
-        val = items[self.offset_value]
-        sign = items[self.offset_sign]
-        unit = items[self.offset_unit]
-        try:
-            val = float(f"{sign}{val}")
-            multiplier = self.current_multipliers[unit]
-            current = val * multiplier
-        except ValueError:
-            return 0
-        return current
+    # def _get_offset_current(
+    #     self, *, mds: MultiDerivedSignal, items: SignalToValue
+    # ) -> float:
+    #     """Calculate the current in amps added to the signal before amplification."""
+    #     if items[self.offset_on] in ["OFF", "0", 0]:
+    #         return 0
+    #     # Calculate offset current
+    #     val = items[self.offset_value]
+    #     sign = items[self.offset_sign]
+    #     unit = items[self.offset_unit]
+    #     try:
+    #         val = float(f"{sign}{val}")
+    #         multiplier = self.current_multipliers[unit]
+    #         current = val * multiplier
+    #     except ValueError:
+    #         return 0
+    #     return current
 
     # gain_level = Cpt(
     #     GainDerivedSignal,
@@ -444,384 +446,384 @@ class GainDerivedSignal(MultiDerivedSignal):
     # gain_db = Cpt(InternalSignal, kind=Kind.config, value=0)
 
 
-class OldIonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
-    """An ion chamber at a spectroscopy beamline.
+# class OldIonChamber(ScalerTriggered, Device, flyers.FlyerInterface):
+#     """An ion chamber at a spectroscopy beamline.
 
-    Also includes the pre-amplifier as ``.pre_amp``.
+#     Also includes the pre-amplifier as ``.pre_amp``.
 
-    This class also implements the bluesky/ophyd flyer
-    interface. During *kickoff()*, previous data are erased and
-    acquisition is started as a multi-channel scaler. It also watches
-    for changes in the number of data collected and collects
-    timestamps each time a new datum is captured. *complete()* stops
-    acquisition. These timestamps, along with the measured data, are
-    generated during *collect()*.
+#     This class also implements the bluesky/ophyd flyer
+#     interface. During *kickoff()*, previous data are erased and
+#     acquisition is started as a multi-channel scaler. It also watches
+#     for changes in the number of data collected and collects
+#     timestamps each time a new datum is captured. *complete()* stops
+#     acquisition. These timestamps, along with the measured data, are
+#     generated during *collect()*.
 
-    Parameters
-    ==========
-    prefix
-      The PV prefix of the overall scaler.
-    ch_num
-      The number (1-index) of the channel on the scaler. 1 is the
-      timer, so your channel number should start at 2.
-    name
-      The bluesky-compatible name for this device.
-    preamp_prefix
-      The process variable prefix to the pre-amp that controls this
-      ion chamber (e.g. "25idc:SR01").
-    scaler_prefix
-      The process variable prefix for the scaler that measures this
-      ion chamber.
-    voltmeter_prefix
-      The process variable prefix for the voltmeter. This might be an
-      analog input for a labjack, in which case try something like
-      "LabJackT7_1:Ai0".
+#     Parameters
+#     ==========
+#     prefix
+#       The PV prefix of the overall scaler.
+#     ch_num
+#       The number (1-index) of the channel on the scaler. 1 is the
+#       timer, so your channel number should start at 2.
+#     name
+#       The bluesky-compatible name for this device.
+#     preamp_prefix
+#       The process variable prefix to the pre-amp that controls this
+#       ion chamber (e.g. "25idc:SR01").
+#     scaler_prefix
+#       The process variable prefix for the scaler that measures this
+#       ion chamber.
+#     voltmeter_prefix
+#       The process variable prefix for the voltmeter. This might be an
+#       analog input for a labjack, in which case try something like
+#       "LabJackT7_1:Ai0".
 
-    Attributes
-    ==========
-    ch_num
-      The channel number on the scaler, starting at 2 (1 is the timer).
-    count
-      The trigger to count scaler pulses.
-    counts
-      The counts coming from the scaler without any correction.
-    volts
-      The volts produced by the pre-amp, calculated from scaler
-      counts.
-    amps
-      The current produced by the ion chamber, calculated from scaler
-      counts and preamp settings.
-    exposure_time
-      Positioner for setting the count time on the scaler.
-    preamp
-      The SR570 pre-amplifier driving the signal.
+#     Attributes
+#     ==========
+#     ch_num
+#       The channel number on the scaler, starting at 2 (1 is the timer).
+#     count
+#       The trigger to count scaler pulses.
+#     counts
+#       The counts coming from the scaler without any correction.
+#     volts
+#       The volts produced by the pre-amp, calculated from scaler
+#       counts.
+#     amps
+#       The current produced by the ion chamber, calculated from scaler
+#       counts and preamp settings.
+#     exposure_time
+#       Positioner for setting the count time on the scaler.
+#     preamp
+#       The SR570 pre-amplifier driving the signal.
 
-    """
+#     """
 
-    stream_name: str = "primary"
-    ch_num: int = 0
-    ch_char: str
-    start_timestamp: float = None
-    count: OphydObject = FCpt(
-        EpicsSignal, "{scaler_prefix}scaler1.CNT", trigger_value=1, kind=Kind.omitted
-    )
-    description: OphydObject = FCpt(
-        EpicsSignal, "{scaler_prefix}scaler1.NM{ch_num}", kind=Kind.config
-    )
-    # Signal chain devices
-    # preamp = FCpt(IonChamberPreAmplifier, "{preamp_prefix}")
-    voltmeter = FCpt(Voltmeter, "{voltmeter_prefix}", kind=Kind.hinted)
-    # Measurement signals
-    # volts: OphydObject = Cpt(VoltageSignal, derived_from="counts", kind=Kind.normal)
-    amps: OphydObject = Cpt(CurrentSignal, derived_from="volts", kind=Kind.hinted)
-    counts: OphydObject = FCpt(
-        EpicsSignalRO,
-        "{scaler_prefix}scaler1.S{ch_num}",
-        kind=Kind.normal,
-        auto_monitor=False,
-    )
-    gate: OphydObject = FCpt(
-        EpicsSignal,
-        "{scaler_prefix}scaler1.G{ch_num}",
-        kind=Kind.config,
-    )
-    preset_count: OphydObject = FCpt(
-        EpicsSignal, "{scaler_prefix}scaler1.PR{ch_num}", kind=Kind.config
-    )
-    frequency: OphydObject = FCpt(
-        EpicsSignal,
-        "{scaler_prefix}scaler1.FREQ",
-        kind=Kind.config,
-    )
-    clock_ticks: OphydObject = FCpt(
-        EpicsSignalRO,
-        "{scaler_prefix}scaler1.S1",
-        kind=Kind.normal,
-    )
-    # Old Scaler mode support
-    offset: OphydObject = FCpt(
-        ScalerSignalRO, "{scaler_prefix}scaler1_{offset_suffix}", kind=Kind.config
-    )
-    net_counts: OphydObject = FCpt(
-        ScalerSignalRO, "{scaler_prefix}scaler1_netA.{ch_char}", kind=Kind.hinted
-    )
-    exposure_time: OphydObject = FCpt(
-        EpicsSignal, "{scaler_prefix}scaler1.TP", kind=Kind.normal
-    )
-    auto_count: OphydObject = FCpt(
-        EpicsSignal, "{scaler_prefix}scaler1.CONT", kind=Kind.omitted
-    )
-    record_dark_current: OphydObject = FCpt(
-        EpicsSignal, "{scaler_prefix}scaler1_offset_start.PROC", kind=Kind.omitted
-    )
-    record_dark_time: OphydObject = FCpt(
-        EpicsSignal, "{scaler_prefix}scaler1_offset_time.VAL", kind=Kind.config
-    )
-    # Multi-channel scaler support
-    start_all: OphydObject = FCpt(
-        EpicsSignal, "{scaler_prefix}StartAll", kind=Kind.omitted
-    )
-    stop_all: OphydObject = FCpt(
-        EpicsSignal, "{scaler_prefix}StopAll", kind=Kind.omitted
-    )
-    erase_all: OphydObject = FCpt(
-        EpicsSignal, "{scaler_prefix}EraseAll", kind=Kind.omitted
-    )
-    erase_start: OphydObject = FCpt(
-        EpicsSignal,
-        "{scaler_prefix}EraseStart",
-        kind=Kind.omitted,
-    )
-    acquiring: OphydObject = FCpt(
-        EpicsSignal, "{scaler_prefix}Acquiring", kind=Kind.omitted
-    )
-    channel_advance_source: OphydObject = FCpt(
-        EpicsSignal,
-        "{scaler_prefix}ChannelAdvance",
-        kind=Kind.config,
-    )
-    num_channels_to_use: OphydObject = FCpt(
-        EpicsSignal,
-        "{scaler_prefix}NuseAll",
-        kind=Kind.config,
-    )
-    max_channels: OphydObject = FCpt(
-        EpicsSignal, "{scaler_prefix}MaxChannels", kind=Kind.config
-    )
-    current_channel: OphydObject = FCpt(
-        EpicsSignal,
-        "{scaler_prefix}CurrentChannel",
-        kind=Kind.normal,
-    )
-    channel_one_source: OphydObject = FCpt(
-        EpicsSignal, "{scaler_prefix}Channel1Source", kind=Kind.config
-    )
-    count_on_start: OphydObject = FCpt(
-        EpicsSignal, "{scaler_prefix}CountOnStart", kind=Kind.config
-    )
-    mca: OphydObject = FCpt(
-        EpicsMCARecord, "{scaler_prefix}mca{ch_num}", kind=Kind.omitted
-    )
-    mca_times: OphydObject = FCpt(
-        EpicsMCARecord, "{scaler_prefix}mca1", kind=Kind.omitted
-    )
+#     stream_name: str = "primary"
+#     ch_num: int = 0
+#     ch_char: str
+#     start_timestamp: float = None
+#     count: OphydObject = FCpt(
+#         EpicsSignal, "{scaler_prefix}scaler1.CNT", trigger_value=1, kind=Kind.omitted
+#     )
+#     description: OphydObject = FCpt(
+#         EpicsSignal, "{scaler_prefix}scaler1.NM{ch_num}", kind=Kind.config
+#     )
+#     # Signal chain devices
+#     # preamp = FCpt(IonChamberPreAmplifier, "{preamp_prefix}")
+#     voltmeter = FCpt(Voltmeter, "{voltmeter_prefix}", kind=Kind.hinted)
+#     # Measurement signals
+#     # volts: OphydObject = Cpt(VoltageSignal, derived_from="counts", kind=Kind.normal)
+#     amps: OphydObject = Cpt(CurrentSignal, derived_from="volts", kind=Kind.hinted)
+#     counts: OphydObject = FCpt(
+#         EpicsSignalRO,
+#         "{scaler_prefix}scaler1.S{ch_num}",
+#         kind=Kind.normal,
+#         auto_monitor=False,
+#     )
+#     gate: OphydObject = FCpt(
+#         EpicsSignal,
+#         "{scaler_prefix}scaler1.G{ch_num}",
+#         kind=Kind.config,
+#     )
+#     preset_count: OphydObject = FCpt(
+#         EpicsSignal, "{scaler_prefix}scaler1.PR{ch_num}", kind=Kind.config
+#     )
+#     frequency: OphydObject = FCpt(
+#         EpicsSignal,
+#         "{scaler_prefix}scaler1.FREQ",
+#         kind=Kind.config,
+#     )
+#     clock_ticks: OphydObject = FCpt(
+#         EpicsSignalRO,
+#         "{scaler_prefix}scaler1.S1",
+#         kind=Kind.normal,
+#     )
+#     # Old Scaler mode support
+#     offset: OphydObject = FCpt(
+#         ScalerSignalRO, "{scaler_prefix}scaler1_{offset_suffix}", kind=Kind.config
+#     )
+#     net_counts: OphydObject = FCpt(
+#         ScalerSignalRO, "{scaler_prefix}scaler1_netA.{ch_char}", kind=Kind.hinted
+#     )
+#     exposure_time: OphydObject = FCpt(
+#         EpicsSignal, "{scaler_prefix}scaler1.TP", kind=Kind.normal
+#     )
+#     auto_count: OphydObject = FCpt(
+#         EpicsSignal, "{scaler_prefix}scaler1.CONT", kind=Kind.omitted
+#     )
+#     record_dark_current: OphydObject = FCpt(
+#         EpicsSignal, "{scaler_prefix}scaler1_offset_start.PROC", kind=Kind.omitted
+#     )
+#     record_dark_time: OphydObject = FCpt(
+#         EpicsSignal, "{scaler_prefix}scaler1_offset_time.VAL", kind=Kind.config
+#     )
+#     # Multi-channel scaler support
+#     start_all: OphydObject = FCpt(
+#         EpicsSignal, "{scaler_prefix}StartAll", kind=Kind.omitted
+#     )
+#     stop_all: OphydObject = FCpt(
+#         EpicsSignal, "{scaler_prefix}StopAll", kind=Kind.omitted
+#     )
+#     erase_all: OphydObject = FCpt(
+#         EpicsSignal, "{scaler_prefix}EraseAll", kind=Kind.omitted
+#     )
+#     erase_start: OphydObject = FCpt(
+#         EpicsSignal,
+#         "{scaler_prefix}EraseStart",
+#         kind=Kind.omitted,
+#     )
+#     acquiring: OphydObject = FCpt(
+#         EpicsSignal, "{scaler_prefix}Acquiring", kind=Kind.omitted
+#     )
+#     channel_advance_source: OphydObject = FCpt(
+#         EpicsSignal,
+#         "{scaler_prefix}ChannelAdvance",
+#         kind=Kind.config,
+#     )
+#     num_channels_to_use: OphydObject = FCpt(
+#         EpicsSignal,
+#         "{scaler_prefix}NuseAll",
+#         kind=Kind.config,
+#     )
+#     max_channels: OphydObject = FCpt(
+#         EpicsSignal, "{scaler_prefix}MaxChannels", kind=Kind.config
+#     )
+#     current_channel: OphydObject = FCpt(
+#         EpicsSignal,
+#         "{scaler_prefix}CurrentChannel",
+#         kind=Kind.normal,
+#     )
+#     channel_one_source: OphydObject = FCpt(
+#         EpicsSignal, "{scaler_prefix}Channel1Source", kind=Kind.config
+#     )
+#     count_on_start: OphydObject = FCpt(
+#         EpicsSignal, "{scaler_prefix}CountOnStart", kind=Kind.config
+#     )
+#     mca: OphydObject = FCpt(
+#         EpicsMCARecord, "{scaler_prefix}mca{ch_num}", kind=Kind.omitted
+#     )
+#     mca_times: OphydObject = FCpt(
+#         EpicsMCARecord, "{scaler_prefix}mca1", kind=Kind.omitted
+#     )
 
-    # Virtual signals to handle fly-scanning
-    timestamps: list = []
-    num_bins = Cpt(Signal)
+#     # Virtual signals to handle fly-scanning
+#     timestamps: list = []
+#     num_bins = Cpt(Signal)
 
-    _default_read_attrs = [
-        "counts",
-        "volts",
-        "exposure_time",
-        "net_counts",
-        "voltmeter",
-    ]
+#     _default_read_attrs = [
+#         "counts",
+#         "volts",
+#         "exposure_time",
+#         "net_counts",
+#         "voltmeter",
+#     ]
 
-    def __init__(
-        self,
-        prefix: str,
-        ch_num: int,
-        name: str,
-        preamp_prefix: str = None,
-        scaler_prefix: str = None,
-        voltmeter_prefix: str = None,
-        counts_per_volt_second: Number = 1,
-        *args,
-        **kwargs,
-    ):
-        self.counts_per_volt_second = counts_per_volt_second
-        # Set up the channel number for this scaler channel
-        if ch_num < 1:
-            raise ValueError(f"Scaler channels must be greater than 0: {ch_num}")
-        self.ch_num = ch_num
-        self.ch_char = self.num_to_char(ch_num)
-        # Determine which prefix to use for the scaler
-        if scaler_prefix is None:
-            scaler_prefix = prefix
-        self.scaler_prefix = scaler_prefix
-        # Save an epics path to the preamp
-        if preamp_prefix is None:
-            preamp_prefix = prefix
-        self.preamp_prefix = preamp_prefix
-        # Save an epics path for the voltmeter (nominally a labjack)
-        self.voltmeter_prefix = voltmeter_prefix
-        # Determine the offset PV since it follows weird numbering conventions
-        calc_num = int((self.ch_num - 1) / 4)
-        calc_char = self.num_to_char(((self.ch_num - 1) % 4) + 1)
-        self.offset_suffix = f"offset{calc_num}.{calc_char}"
-        # Initialize all the other Device stuff
-        super().__init__(prefix=prefix, name=name, *args, **kwargs)
-        # Set signal values to stage
-        self.stage_sigs[self.auto_count] = 0
+#     def __init__(
+#         self,
+#         prefix: str,
+#         ch_num: int,
+#         name: str,
+#         preamp_prefix: str = None,
+#         scaler_prefix: str = None,
+#         voltmeter_prefix: str = None,
+#         counts_per_volt_second: Number = 1,
+#         *args,
+#         **kwargs,
+#     ):
+#         self.counts_per_volt_second = counts_per_volt_second
+#         # Set up the channel number for this scaler channel
+#         if ch_num < 1:
+#             raise ValueError(f"Scaler channels must be greater than 0: {ch_num}")
+#         self.ch_num = ch_num
+#         self.ch_char = self.num_to_char(ch_num)
+#         # Determine which prefix to use for the scaler
+#         if scaler_prefix is None:
+#             scaler_prefix = prefix
+#         self.scaler_prefix = scaler_prefix
+#         # Save an epics path to the preamp
+#         if preamp_prefix is None:
+#             preamp_prefix = prefix
+#         self.preamp_prefix = preamp_prefix
+#         # Save an epics path for the voltmeter (nominally a labjack)
+#         self.voltmeter_prefix = voltmeter_prefix
+#         # Determine the offset PV since it follows weird numbering conventions
+#         calc_num = int((self.ch_num - 1) / 4)
+#         calc_char = self.num_to_char(((self.ch_num - 1) % 4) + 1)
+#         self.offset_suffix = f"offset{calc_num}.{calc_char}"
+#         # Initialize all the other Device stuff
+#         super().__init__(prefix=prefix, name=name, *args, **kwargs)
+#         # Set signal values to stage
+#         self.stage_sigs[self.auto_count] = 0
 
-    @property
-    def default_time_signal(self):
-        """The signal to use for setting exposure time when no other signal is
-        provided.
+#     @property
+#     def default_time_signal(self):
+#         """The signal to use for setting exposure time when no other signal is
+#         provided.
 
-        """
-        return self.exposure_time
+#         """
+#         return self.exposure_time
 
-    def num_to_char(self, num):
-        char = chr(64 + num)
-        return char
+#     def num_to_char(self, num):
+#         char = chr(64 + num)
+#         return char
 
-    def change_sensitivity(self, step: int) -> status.StatusBase:
-        """Change the gain on the pre-amp by the given number of steps.
+#     def change_sensitivity(self, step: int) -> status.StatusBase:
+#         """Change the gain on the pre-amp by the given number of steps.
 
-        Parameters
-        ==========
-        step
-          How many levels to change the sensitivity. Positive numbers
-          increase the gain, negative numbers decrease the gain.
+#         Parameters
+#         ==========
+#         step
+#           How many levels to change the sensitivity. Positive numbers
+#           increase the gain, negative numbers decrease the gain.
 
-        Returns
-        =======
-        status.StatusBase
-          The status that will be marked complete once the sensitivity
-          is changed.
+#         Returns
+#         =======
+#         status.StatusBase
+#           The status that will be marked complete once the sensitivity
+#           is changed.
 
-        """
-        new_sens_level = self.sensitivity.sens_level.readback.get() + step
-        try:
-            status = self.sensitivity.sens_level.set(new_sens_level)
-        except ValueError as e:
-            raise exceptions.GainOverflow(f"{self.name} -> {e}")
-        return status
+#         """
+#         new_sens_level = self.sensitivity.sens_level.readback.get() + step
+#         try:
+#             status = self.sensitivity.sens_level.set(new_sens_level)
+#         except ValueError as e:
+#             raise exceptions.GainOverflow(f"{self.name} -> {e}")
+#         return status
 
-    def increase_gain(self) -> status.StatusBase:
-        """Increase the gain (descrease the sensitivity) of the ion chamber's
-        pre-amp.
+#     def increase_gain(self) -> status.StatusBase:
+#         """Increase the gain (descrease the sensitivity) of the ion chamber's
+#         pre-amp.
 
-        Returns
-        =======
-        status.StatusBase
-          Ophyd status object for the value and gain of the
-          sensitivity in the pre-amp.
+#         Returns
+#         =======
+#         status.StatusBase
+#           Ophyd status object for the value and gain of the
+#           sensitivity in the pre-amp.
 
-        """
-        return self.change_sensitivity(-1)
+#         """
+#         return self.change_sensitivity(-1)
 
-    def decrease_gain(self) -> status.StatusBase:
-        """Decrease the gain (increase the sensitivity) of the ion chamber's
-        pre-amp.
+#     def decrease_gain(self) -> status.StatusBase:
+#         """Decrease the gain (increase the sensitivity) of the ion chamber's
+#         pre-amp.
 
-        Returns
-        =======
-        status.StatusBase
-          Ophyd status object for the value and gain of the
-          sensitivity in the pre-amp.
+#         Returns
+#         =======
+#         status.StatusBase
+#           Ophyd status object for the value and gain of the
+#           sensitivity in the pre-amp.
 
-        """
-        return self.change_sensitivity(1)
+#         """
+#         return self.change_sensitivity(1)
 
-    def record_timestamp(self, *, old_value, value, timestamp, **kwargs):
-        self.timestamps.append(timestamp)
+#     def record_timestamp(self, *, old_value, value, timestamp, **kwargs):
+#         self.timestamps.append(timestamp)
 
-    def kickoff(self) -> status.StatusBase:
-        def check_acquiring(*, old_value, value, **kwargs):
-            is_acquiring = bool(value)
-            if is_acquiring:
-                self.start_timestamp = time.time()
-            return is_acquiring
+#     def kickoff(self) -> status.StatusBase:
+#         def check_acquiring(*, old_value, value, **kwargs):
+#             is_acquiring = bool(value)
+#             if is_acquiring:
+#                 self.start_timestamp = time.time()
+#             return is_acquiring
 
-        self.start_timestamp = None
-        # Set some configuration PVs on the MCS
-        self.count_on_start.set(1).wait()
-        # Start acquiring data
-        self.erase_start.set(1).wait()
-        # Wait for the "Acquiring" to start
-        status = SubscriptionStatus(self.acquiring, check_acquiring)
-        # Watch for new data being collected so we can save timestamps
-        self.timestamps = []
-        self.current_channel.subscribe(self.record_timestamp)
-        return status
+#         self.start_timestamp = None
+#         # Set some configuration PVs on the MCS
+#         self.count_on_start.set(1).wait()
+#         # Start acquiring data
+#         self.erase_start.set(1).wait()
+#         # Wait for the "Acquiring" to start
+#         status = SubscriptionStatus(self.acquiring, check_acquiring)
+#         # Watch for new data being collected so we can save timestamps
+#         self.timestamps = []
+#         self.current_channel.subscribe(self.record_timestamp)
+#         return status
 
-    def complete(self) -> status.StatusBase:
-        status = self.stop_all.set(1, settle_time=0.05)
-        return status
+#     def complete(self) -> status.StatusBase:
+#         status = self.stop_all.set(1, settle_time=0.05)
+#         return status
 
-    def collect(self) -> Generator[Dict, None, None]:
-        net_counts_name = self.net_counts.name
-        # Use the scaler's clock counter to calculate timestamps
-        times = self.mca_times.spectrum.get()
-        times = np.divide(times, self.frequency.get(), casting="safe")
-        times = np.cumsum(times)
-        pso_timestamps = times + self.start_timestamp
-        # Retrieve data, except for first point (during taxiing)
-        data = self.mca.spectrum.get()[1:]
-        # Convert timestamps from PSO pulses to pixels
-        pixel_timestamps = (pso_timestamps[1:] + pso_timestamps[:-1]) / 2
-        # Create data events
-        for ts, value in zip(pixel_timestamps, data):
-            yield {
-                "data": {net_counts_name: value},
-                "timestamps": {net_counts_name: ts},
-                "time": ts,
-            }
+#     def collect(self) -> Generator[Dict, None, None]:
+#         net_counts_name = self.net_counts.name
+#         # Use the scaler's clock counter to calculate timestamps
+#         times = self.mca_times.spectrum.get()
+#         times = np.divide(times, self.frequency.get(), casting="safe")
+#         times = np.cumsum(times)
+#         pso_timestamps = times + self.start_timestamp
+#         # Retrieve data, except for first point (during taxiing)
+#         data = self.mca.spectrum.get()[1:]
+#         # Convert timestamps from PSO pulses to pixels
+#         pixel_timestamps = (pso_timestamps[1:] + pso_timestamps[:-1]) / 2
+#         # Create data events
+#         for ts, value in zip(pixel_timestamps, data):
+#             yield {
+#                 "data": {net_counts_name: value},
+#                 "timestamps": {net_counts_name: ts},
+#                 "time": ts,
+#             }
 
-    def describe_collect(self) -> Dict[str, Dict]:
-        """Describe details for the flyer collect() method"""
-        desc = OrderedDict()
-        desc.update(self.net_counts.describe())
-        return {self.name: desc}
-
-
-async def make_ion_chamber_device(
-    prefix: str, ch_num: int, name: str, preamp_prefix: str
-):
-    ic = IonChamber(
-        prefix=prefix,
-        ch_num=ch_num,
-        name=name,
-        preamp_prefix=preamp_prefix,
-        labels={"ion_chambers", "detectors"},
-    )
-    try:
-        await await_for_connection(ic)
-    except TimeoutError as exc:
-        log.warning(
-            f"Could not connect to ion chamber: {name} ({prefix}, {preamp_prefix})"
-        )
-    else:
-        log.info(f"Created ion chamber: {name} ({prefix}, {preamp_prefix})")
-        return ic
+#     def describe_collect(self) -> Dict[str, Dict]:
+#         """Describe details for the flyer collect() method"""
+#         desc = OrderedDict()
+#         desc.update(self.net_counts.describe())
+#         return {self.name: desc}
 
 
-def load_ion_chamber(
-    preamp_prefix: str,
-    scaler_prefix: str,
-    voltmeter_prefix: str,
-    ch_num: int,
-    name: str,
-):
-    """Create an IonChamber ophyd device.
+# async def make_ion_chamber_device(
+#     prefix: str, ch_num: int, name: str, preamp_prefix: str
+# ):
+#     ic = IonChamber(
+#         prefix=prefix,
+#         ch_num=ch_num,
+#         name=name,
+#         preamp_prefix=preamp_prefix,
+#         labels={"ion_chambers", "detectors"},
+#     )
+#     try:
+#         await await_for_connection(ic)
+#     except TimeoutError as exc:
+#         log.warning(
+#             f"Could not connect to ion chamber: {name} ({prefix}, {preamp_prefix})"
+#         )
+#     else:
+#         log.info(f"Created ion chamber: {name} ({prefix}, {preamp_prefix})")
+#         return ic
 
-    When autoloading the ion chambers from the config file, this
-    function will parse the config file arguments and convert them
-    into the forms needed for the IonChamber device itself.
 
-    """
-    # Determine ion_chamber configuration
-    preamp_prefix = f"{preamp_prefix}:SR{ch_num:02}:"
-    desc_pv = f"{scaler_prefix}:scaler1.NM{ch_num}"
-    # Determine which labjack channel is measuring the voltmeter
-    ic_idx = ch_num - 2
-    # 5 pre-amps per labjack
-    lj_num = int(ic_idx / 5)
-    lj_chan = ic_idx % 5
-    # Create the ion chamber device
-    ion_chamber = make_device(
-        IonChamber,
-        prefix=scaler_prefix,
-        ch_num=ch_num,
-        name=name,
-        preamp_prefix=preamp_prefix,
-        voltmeter_prefix=f"{voltmeter_prefix}{lj_num}:Ai{lj_chan}",
-        labels={"ion_chambers", "detectors"},
-    )
-    return ion_chamber
+# def load_ion_chamber(
+#     preamp_prefix: str,
+#     scaler_prefix: str,
+#     voltmeter_prefix: str,
+#     ch_num: int,
+#     name: str,
+# ):
+#     """Create an IonChamber ophyd device.
+
+#     When autoloading the ion chambers from the config file, this
+#     function will parse the config file arguments and convert them
+#     into the forms needed for the IonChamber device itself.
+
+#     """
+#     # Determine ion_chamber configuration
+#     preamp_prefix = f"{preamp_prefix}:SR{ch_num:02}:"
+#     desc_pv = f"{scaler_prefix}:scaler1.NM{ch_num}"
+#     # Determine which labjack channel is measuring the voltmeter
+#     ic_idx = ch_num - 2
+#     # 5 pre-amps per labjack
+#     lj_num = int(ic_idx / 5)
+#     lj_chan = ic_idx % 5
+#     # Create the ion chamber device
+#     ion_chamber = make_device(
+#         IonChamber,
+#         prefix=scaler_prefix,
+#         ch_num=ch_num,
+#         name=name,
+#         preamp_prefix=preamp_prefix,
+#         voltmeter_prefix=f"{voltmeter_prefix}{lj_num}:Ai{lj_chan}",
+#         labels={"ion_chambers", "detectors"},
+#     )
+#     return ion_chamber
 
 
 async def load_ion_chambers(config: Mapping = None, registry: InstrumentRegistry = default_registry, connect: bool = True, auto_name=True,):
@@ -850,6 +852,7 @@ async def load_ion_chambers(config: Mapping = None, registry: InstrumentRegistry
                 scaler_channel=cfg['scaler_channel'],
                 preamp_prefix=cfg.get("preamp_prefix", None),
                 voltmeter_prefix=cfg.get("voltmeter_prefix", None),
+                voltmeter_channel=cfg.get("voltmeter_channel", None),
                 counts_per_volt_second=cfg.get("counts_per_volt_second", None),
                 name=grp,
                 auto_name=auto_name,
