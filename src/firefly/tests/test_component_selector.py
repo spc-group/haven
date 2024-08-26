@@ -79,6 +79,18 @@ async def test_selector_adds_devices(selector):
 #     assert "lazy_motor" not in cpt_names
 
 
+async def test_selected_component(selector):
+    """Does the selector properly report the selected device?"""
+    # If no component is selected
+    selected = selector.current_component()
+    assert selected is None
+    # If a component is selected
+    selector.combo_box.setCurrentText("async_stage.motor4")
+    selected = selector.current_component()
+    assert selected is not None
+    assert selected.name == "async_stage-motor4"
+
+
 @pytest.mark.asyncio
 async def test_tree_model_adds_device(motor_registry):
     model = DeviceTreeModel()
