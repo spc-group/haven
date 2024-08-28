@@ -3,7 +3,8 @@ from unittest.mock import AsyncMock
 
 import numpy as np
 import pytest
-from ophyd_async.core import set_mock_value
+from numpy.testing import assert_allclose
+from ophyd_async.core import TriggerInfo, assert_value, get_mock_put, set_mock_value
 
 from haven.instrument.ion_chamber import IonChamber, load_ion_chambers
 
@@ -23,6 +24,7 @@ def ion_chamber(sim_registry):
         voltmeter_prefix="255idc:LabjackT7_1:",
         voltmeter_channel=1,
         counts_per_volt_second=1e6,
+        name="I0",
     )
     return ion_chamber
 
@@ -43,7 +45,9 @@ async def test_load_ion_chambers(sim_registry, mocker):
     assert hasattr(ic, "preamp")
     assert ic.preamp.sensitivity_value.source.split("://")[1] == "255idc:SR03:sens_num"
     assert hasattr(ic, "voltmeter")
-    assert ic.voltmeter.model_name.source.split("://")[1] == "255idc:LabJackT7_1:ModelName"
+    assert (
+        ic.voltmeter.model_name.source.split("://")[1] == "255idc:LabJackT7_1:ModelName"
+    )
     # assert ic.voltmeter.prefix == "255idc:LabjackT7_0:Ai1"
     assert ic.counts_per_volt_second == 1e7
 
@@ -52,7 +56,7 @@ async def test_load_ion_chambers(sim_registry, mocker):
 async def test_trigger(ion_chamber):
     await ion_chamber.connect(mock=True)
     assert ion_chamber._trigger_statuses == {}
-    # Does the same trigger twice return the same 
+    # Does the same trigger twice return the same
     status1 = ion_chamber.trigger()
     status2 = ion_chamber.trigger()
     assert not status1.done
@@ -66,7 +70,9 @@ async def test_trigger(ion_chamber):
 @pytest.mark.asyncio
 async def test_trigger_dark_current(ion_chamber, monkeypatch):
     await ion_chamber.connect(mock=True)
-    monkeypatch.setattr(ion_chamber.mcs.scaler.record_dark_current, "trigger", AsyncMock())
+    monkeypatch.setattr(
+        ion_chamber.mcs.scaler.record_dark_current, "trigger", AsyncMock()
+    )
     status = ion_chamber.trigger(record_dark_current=True)
     await status
     assert ion_chamber.mcs.scaler.record_dark_current.trigger.called
@@ -82,7 +88,7 @@ async def test_volts_signal(ion_chamber):
     await ion_chamber.connect(mock=True)
     # Set the necessary dependent signals
     ion_chamber.counts_per_volt_second = 10e6  # 100 Mhz / 10 V
-    set_mock_value(ion_chamber.scaler_channel.net_count, int(1.3e7*2))  # 1.3 V
+    set_mock_value(ion_chamber.scaler_channel.net_count, int(1.3e7 * 2))  # 1.3 V
     set_mock_value(ion_chamber.mcs.scaler.elapsed_time, 2.0)
     # Check the volts answer
     assert await ion_chamber.voltage.get_value() == 1.3
@@ -106,7 +112,9 @@ async def test_amps_signal(ion_chamber):
     assert (await ion_chamber.current.get_value()) == pytest.approx(2.6e-5)
 
 
-@pytest.mark.skip(reason="Needs updating to ophyd-async ion chamber")
+@pytest.mark.skip(
+    reason="Needs updating to ophyd-async ion chamber if we want to keep it"
+)
 def test_voltmeter_amps_signal(sim_ion_chamber):
     """Test that the voltmeter voltage gets properly converted to ion
     chamber current.
@@ -125,16 +133,16 @@ def test_voltmeter_amps_signal(sim_ion_chamber):
     assert chamber.voltmeter.amps.get() == pytest.approx(2.6e-5)
 
 
-@pytest.mark.skip(reason="Needs updating to ophyd-async ion chamber")
-def test_voltmeter_name(sim_ion_chamber):
-    chamber = sim_ion_chamber
-    assert chamber.voltmeter.description.get() != "Icake"
+async def test_voltmeter_name(ion_chamber):
+    ion_chamber.auto_name = True
+    await ion_chamber.connect(mock=True)
+    assert (await ion_chamber.voltmeter_channel.description.get_value()) != "Icake"
     # Change the ion chamber name, and see if the voltmeter name updates
-    chamber.description.put("Icake")
-    assert chamber.voltmeter.description.get() == "Icake"
+    set_mock_value(ion_chamber.scaler_channel.description, "Icake")
+    await ion_chamber.connect(mock=True)
+    assert (await ion_chamber.voltmeter_channel.description.get_value()) == "Icake"
 
 
-@pytest.mark.skip(reason="Needs updating to ophyd-async ion chamber")
 def test_offset_pv(sim_registry):
     """Check that the device handles the weird offset numbering scheme.
 
@@ -153,87 +161,142 @@ def test_offset_pv(sim_registry):
 
     """
     channel_suffixes = [
-        (2, "offset0.B"),
-        (3, "offset0.C"),
-        (4, "offset0.D"),
-        (5, "offset1.A"),
-        (6, "offset1.B"),
-        (7, "offset1.C"),
-        (8, "offset1.D"),
-        (9, "offset2.A"),
-        (10, "offset2.B"),
-        (11, "offset2.C"),
-        (12, "offset2.D"),
+        (1, "offset0.B"),
+        (2, "offset0.C"),
+        (3, "offset0.D"),
+        (4, "offset1.A"),
+        (5, "offset1.B"),
+        (6, "offset1.C"),
+        (7, "offset1.D"),
+        (8, "offset2.A"),
+        (9, "offset2.B"),
+        (10, "offset2.C"),
+        (11, "offset2.D"),
     ]
     for ch_num, suffix in channel_suffixes:
-        ic = ion_chamber.IonChamber(
-            prefix="scaler_ioc:", ch_num=ch_num, name=f"ion_chamber_{ch_num}"
+        ic = IonChamber(
+            scaler_prefix="scaler_ioc:",
+            scaler_channel=ch_num,
+            preamp_prefix="",
+            voltmeter_prefix="",
+            voltmeter_channel=2,
+            counts_per_volt_second=1,
+            name=f"ion_chamber_{ch_num}",
         )
-        assert ic.offset.pvname == f"scaler_ioc:scaler1_{suffix}", f"channel {ch_num}"
+        assert (
+            ic.scaler_channel.offset_rate.source == f"ca://scaler_ioc:scaler1_{suffix}"
+        ), f"channel {ch_num}"
 
 
-@pytest.mark.skip(reason="Needs updating to ophyd-async ion chamber")
-def test_flyscan_kickoff(sim_ion_chamber):
-    flyer = sim_ion_chamber
-    flyer.num_bins.set(10)
-    status = flyer.kickoff()
-    flyer.acquiring.set(1)
-    status.wait()
-    assert status.success
-    assert status.done
+@pytest.fixture()
+def trigger_info():
+    return TriggerInfo(number=5, trigger="internal", deadtime=0, livetime=1.3)
+
+
+async def test_flyscan_prepare(ion_chamber, trigger_info):
+    # Prepare the ion chamber with mocked put commands
+    await ion_chamber.connect(mock=True)
+    set_mock_value(ion_chamber.mcs.num_channels_max, 8000)
+    erase_mock_put = get_mock_put(ion_chamber.mcs.erase_all)
+    assert not erase_mock_put.called
+    # Prepare the ion chamber
+    await ion_chamber.prepare(trigger_info)
     # Check that the device was properly configured for fly-scanning
-    assert flyer.erase_start._readback == 1
-    assert flyer.timestamps == []
+    assert erase_mock_put.called
+    await assert_value(ion_chamber.mcs.channel_advance_source, "Internal")
+    await assert_value(ion_chamber.mcs.num_channels, 8000)
+    await assert_value(ion_chamber.mcs.dwell_time, 1.3)
+    assert ion_chamber._fly_readings == []
+
+
+async def test_flyscan_kickoff(ion_chamber, trigger_info):
+    await ion_chamber.connect(mock=True)
+    await ion_chamber.prepare(trigger_info)
+    # Prepare the mocked put commands
+    start_mock_put = get_mock_put(ion_chamber.mcs.start_all)
+    # Kickoff the fly scan
+    await ion_chamber.kickoff()
+    # Check that the scan was started
+    assert start_mock_put.called
     # Check that timestamps get recorded when new data are available
-    flyer.current_channel.set(1).wait()
-    assert flyer.timestamps[0] == pytest.approx(time.time())
+    set_mock_value(ion_chamber.mcs.current_channel, 0)
+    assert len(ion_chamber._fly_readings) == 1
 
 
-@pytest.mark.skip(reason="Needs updating to ophyd-async ion chamber")    
-def test_flyscan_complete(sim_ion_chamber):
-    flyer = sim_ion_chamber
+async def test_flyscan_complete(ion_chamber):
+    await ion_chamber.connect(mock=True)
     # Run the complete method
-    status = flyer.complete()
-    status.wait()
+    await ion_chamber.complete()
     # Check that the detector is stopped
-    assert flyer.stop_all._readback == 1
+    assert get_mock_put(ion_chamber.mcs.stop_all).called
 
-@pytest.mark.skip(reason="Needs updating to ophyd-async ion chamber")
-def test_flyscan_collect(sim_ion_chamber):
-    flyer = sim_ion_chamber
-    name = flyer.net_counts.name
-    flyer.start_timestamp = 988.0
+
+async def test_flyscan_collect(ion_chamber, trigger_info):
+    await ion_chamber.connect(mock=True)
     # Make fake fly-scan data
     sim_data = np.zeros(shape=(8000,))
     sim_data[:6] = [3, 5, 8, 13, 2, 33]
-    flyer.mca.spectrum._readback = sim_data
-    sim_times = np.asarray([12.0e7, 4.0e7, 4.0e7, 4.0e7, 4.0e7, 4.0e7])
-    flyer.mca_times.spectrum._readback = sim_times
-    flyer.frequency.set(1e7).wait()
+    sim_raw_data = np.zeros_like(sim_data)
+    sim_raw_data[:6] = sim_data[:6] + 12
+    set_mock_value(ion_chamber.mcs.mcas[2].spectrum, sim_raw_data)
+    set_mock_value(ion_chamber.scaler_channel.offset_rate, 3)
+    sim_times = np.asarray([4.0e7, 4.0e7, 4.0e7, 4.0e7, 4.0e7, 4.0e7])
+    set_mock_value(ion_chamber.mcs.mcas[0].spectrum, sim_times)
+    set_mock_value(ion_chamber.mcs.scaler.clock_frequency, 1e7)
+    channel_numbers = range(len(sim_times) + 1)
+    expected_timestamps = [1004, 1008, 1012, 1016, 1020, 1024]
+    ion_chamber._fly_readings = [
+        {
+            ion_chamber.mcs.current_channel.name: {
+                "value": datum,
+                "timestamp": timestamp,
+                "alarm_severity": 0,
+            }
+        }
+        for (datum, timestamp) in zip(channel_numbers, expected_timestamps)
+    ]
     # Ignore the first collected data point because it's during taxiing
     expected_data = sim_data[1:]
     # The real timestamps should be midway between PSO pulses
-    flyer.timestamps = [1000, 1004, 1008, 1012, 1016, 1020]
-    expected_timestamps = [1002.0, 1006.0, 1010.0, 1014.0, 1018.0]
-    payload = list(flyer.collect())
+    collected = [c async for c in ion_chamber.collect()]
+    assert len(collected) == 1
+    collected = collected[0]
     # Confirm data have the right structure
-    for datum, value, timestamp in zip(payload, expected_data, expected_timestamps):
-        assert datum == {
-            "data": {name: [value]},
-            "timestamps": {name: [timestamp]},
-            "time": timestamp,
-        }
+    raw_name = ion_chamber.scaler_channel.net_count.name
+    assert collected["time"] == 1024
+    assert_allclose(
+        collected["data"][ion_chamber.scaler_channel.raw_count.name], sim_raw_data[:6]
+    )
+    assert_allclose(
+        collected["data"][ion_chamber.scaler_channel.net_count.name], sim_data[:6]
+    )
+    assert_allclose(
+        collected["data"][ion_chamber.mcs.scaler.elapsed_time.name], [4] * 6
+    )
+    assert_allclose(
+        collected["timestamps"][ion_chamber.scaler_channel.raw_count.name],
+        expected_timestamps,
+    )
+    assert_allclose(
+        collected["timestamps"][ion_chamber.scaler_channel.net_count.name],
+        expected_timestamps,
+    )
+    assert_allclose(
+        collected["timestamps"][ion_chamber.mcs.scaler.elapsed_time.name],
+        expected_timestamps,
+    )
 
 
-@pytest.mark.skip(reason="Needs updating to ophyd-async ion chamber")
-def test_default_time_signal(sim_ion_chamber):
-    assert sim_ion_chamber.default_time_signal is sim_ion_chamber.exposure_time
+def test_default_time_signal(ion_chamber):
+    assert ion_chamber.default_time_signal.source == "ca://255idcVME:3820:scaler1.TP"
 
 
 @pytest.mark.asyncio
 async def test_auto_naming_default(ion_chamber, monkeypatch):
     monkeypatch.setattr(
-        ion_chamber.mcs.scaler.channels[2].description, "get_value", AsyncMock(return_value="I0")
+        ion_chamber.mcs.scaler.channels[2].description,
+        "get_value",
+        AsyncMock(return_value="I0"),
     )
     ion_chamber.auto_name = None
     ion_chamber.set_name("")
@@ -245,7 +308,9 @@ async def test_auto_naming_default(ion_chamber, monkeypatch):
 @pytest.mark.asyncio
 async def test_auto_naming(ion_chamber, monkeypatch):
     monkeypatch.setattr(
-        ion_chamber.mcs.scaler.channels[2].description, "get_value", AsyncMock(return_value="I0")
+        ion_chamber.mcs.scaler.channels[2].description,
+        "get_value",
+        AsyncMock(return_value="I0"),
     )
     ion_chamber.auto_name = True
     ion_chamber.set_name("")
@@ -256,11 +321,11 @@ async def test_auto_naming(ion_chamber, monkeypatch):
 
 @pytest.mark.asyncio
 async def test_manual_naming(ion_chamber, monkeypatch):
+    ion_chamber.set_name("")
     ion_chamber.auto_name = False
     await ion_chamber.connect(mock=True)
     assert ion_chamber.name == ""
     assert ion_chamber.mcs.name == ""
-    
 
 
 # -----------------------------------------------------------------------------

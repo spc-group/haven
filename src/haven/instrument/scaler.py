@@ -7,6 +7,7 @@ from ophyd_async.core import ConfigSignal, DeviceVector, HintedSignal, StandardR
 from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw, epics_signal_x
 
 from .._iconfig import load_config
+from ..typing import BoolEnum
 from .device import connect_devices
 from .instrument_registry import InstrumentRegistry
 from .instrument_registry import registry as default_registry
@@ -46,21 +47,6 @@ class ScalerModel(str, Enum):
 class OutputLED(str, Enum):
     LOW = "Low/Off"
     HIGH = "High/On"
-
-
-class ChannelAdvanceSource(str, Enum):
-    INTERNAL = "Internal"
-    EXTERNAL = "External"
-
-
-class NOrY(str, Enum):
-    NO = "N"
-    YES = "Y"
-    
-
-class NoOrYes(str, Enum):
-    NO = "No"
-    YES = "Yes"
 
 
 class Channel1Source(str, Enum):
@@ -121,7 +107,7 @@ class ScalerChannel(StandardReadable):
         # Configuration signals
         with self.add_children_as_readables(ConfigSignal):
             self.description = epics_signal_rw(str, f"{prefix}.NM{epics_ch_num}")
-            self.is_gate = epics_signal_rw(NOrY, f"{prefix}.G{epics_ch_num}")
+            self.is_gate = epics_signal_rw(BoolEnum, f"{prefix}.G{epics_ch_num}")
             self.preset_count = epics_signal_rw(float, f"{prefix}.PR{epics_ch_num}")
             offset_suffix = f"_offset{channel_num // 4}.{num_to_char(channel_num % 4)}"
             self.offset_rate = epics_signal_rw(float, f"{prefix}{offset_suffix}")
@@ -154,13 +140,19 @@ class MultiChannelScaler(StandardReadable):
 
     _ophyd_labels_ = {"scalers"}
 
+    class ChannelAdvanceSource(str, Enum):
+        INTERNAL = "Internal"
+        EXTERNAL = "External"
+
     def __init__(self, prefix, channels: list[int], name=""):
         # Controls
         self.start_all = epics_signal_x(f"{prefix}StartAll")
         self.stop_all = epics_signal_x(f"{prefix}StopAll")
         self.erase_all = epics_signal_x(f"{prefix}EraseAll")
         self.erase_start = epics_signal_x(f"{prefix}EraseStart")
-        self.software_channel_advance = epics_signal_x(f"{prefix}SoftwareChannelAdvance")
+        self.software_channel_advance = epics_signal_x(
+            f"{prefix}SoftwareChannelAdvance"
+        )
         # Transient states
         self.acquiring = epics_signal_r(Acquiring, f"{prefix}Acquiring")
         self.user_led = epics_signal_rw(OutputLED, f"{prefix}UserLED")
@@ -170,19 +162,24 @@ class MultiChannelScaler(StandardReadable):
             self.dwell_time = epics_signal_rw(float, f"{prefix}Dwell")
             self.prescale = epics_signal_rw(int, f"{prefix}Prescale")
             self.channel_advance_source = epics_signal_rw(
-                ChannelAdvanceSource,
-                f"{prefix}ChannelAdvance"
+                self.ChannelAdvanceSource, f"{prefix}ChannelAdvance"
             )
-            self.count_on_start = epics_signal_rw(NoOrYes, f"{prefix}CountOnStart")
-            self.channel_1_source = epics_signal_rw(Channel1Source, f"{prefix}Channel1Source")
+            self.count_on_start = epics_signal_rw(BoolEnum, f"{prefix}CountOnStart")
+            self.channel_1_source = epics_signal_rw(
+                Channel1Source, f"{prefix}Channel1Source"
+            )
             self.mux_output = epics_signal_rw(float, f"{prefix}MUXOutput")
             self.acquire_mode = epics_signal_rw(AcquireMode, f"{prefix}AcquireMode")
             self.input_mode = epics_signal_rw(InputMode, f"{prefix}InputMode")
             self.input_polarity = epics_signal_rw(Polarity, f"{prefix}InputPolarity")
             self.output_mode = epics_signal_rw(OutputMode, f"{prefix}OutputMode")
             self.output_polarity = epics_signal_rw(Polarity, f"{prefix}OutputPolarity")
-            self.lne_output_stretcher = epics_signal_rw(LNEStretcher, f"{prefix}LNEStretcherEnable")
-            self.lne_output_polarity = epics_signal_rw(Polarity, f"{prefix}LNEOutputPolarity")
+            self.lne_output_stretcher = epics_signal_rw(
+                LNEStretcher, f"{prefix}LNEStretcherEnable"
+            )
+            self.lne_output_polarity = epics_signal_rw(
+                Polarity, f"{prefix}LNEOutputPolarity"
+            )
             self.lne_output_delay = epics_signal_rw(float, f"{prefix}LNEOutputDelay")
             self.lne_output_width = epics_signal_rw(float, f"{prefix}LNEOutputWidth")
             self.num_channels_max = epics_signal_r(int, f"{prefix}MaxChannels")
@@ -197,14 +194,13 @@ class MultiChannelScaler(StandardReadable):
         # Child-devices
         self.scaler = Scaler(f"{prefix}scaler1", channels=channels)
         with self.add_children_as_readables():
-            self.mcas = DeviceVector(
-                {i: MCA(f"{prefix}mca{i+1}") for i in channels}
-            )
+            self.mcas = DeviceVector({i: MCA(f"{prefix}mca{i+1}") for i in channels})
         super().__init__(name=name)
 
 
 class Scaler(StandardReadable):
     """A scaler device that has one or more channels."""
+
     def __init__(self, prefix, channels: list[int], name=""):
         # Add invidiaul scaler channels
         with self.add_children_as_readables():
@@ -227,9 +223,7 @@ class Scaler(StandardReadable):
         self.record_dark_current = epics_signal_x(f"{prefix}_offset_start.PROC")
         self.auto_count_delay = epics_signal_rw(float, f"{prefix}.DLY1")
         self.auto_count_time = epics_signal_rw(float, f"{prefix}.TP1")
-        self.dark_current_time = epics_signal_rw(
-            float, f"{prefix}_offset_time.VAL"
-        )
+        self.dark_current_time = epics_signal_rw(float, f"{prefix}_offset_time.VAL")
         super().__init__(name=name)
 
 
@@ -242,8 +236,10 @@ async def load_scalers(
     # Create the scaler devices
     devices = []
     for name, cfg in config.get("scaler", {}).items():
-        channels = range(cfg['num_channels'])
-        devices.append(MultiChannelScaler(prefix=cfg["prefix"], channels=channels, name=name))
+        channels = range(cfg["num_channels"])
+        devices.append(
+            MultiChannelScaler(prefix=cfg["prefix"], channels=channels, name=name)
+        )
     # Connect to devices
     if connect:
         devices = await connect_devices(
