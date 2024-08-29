@@ -25,6 +25,7 @@ from ophyd_async.core import (
 from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw, epics_signal_x
 
 from .synApps import EpicsSynAppsRecordEnableMixin, EpicsRecordDeviceCommonAll
+from ..typing import StrEnum
 
 CHANNEL_LETTERS_LIST = "A B C D E F G H I J K L M N O P".split()
 
@@ -45,6 +46,12 @@ class TransformRecordChannel(StandardReadable):
         ~reset
     """
 
+    class PVValidity(StrEnum):
+        EXT_PV_NC = "Ext PV NC"
+        EXT_PV_OK = "Ext PV OK"
+        LOCAL_PV = "Local PV"
+        CONSTANT = "Constant"
+
     def __init__(self, prefix, letter, name=""):
         self._ch_letter = letter
         with self.add_children_as_readables():
@@ -58,10 +65,10 @@ class TransformRecordChannel(StandardReadable):
             )
         self.output_pv = epics_signal_rw(str, f"{prefix}.OUT{letter}")
         self.last_value = epics_signal_r(float, f"{prefix}.L{letter}")
-        self.input_pv_valid = epics_signal_r(PVValidity, f"{prefix}.I{letter}V")
+        self.input_pv_valid = epics_signal_r(self.PVValidity, f"{prefix}.I{letter}V")
         self.expression_invalid = epics_signal_r(int, f"{prefix}.C{letter}V")
         self.output_pv_valid = epics_signal_r(
-            PVValidity,
+            self.PVValidity,
             f"{prefix}.O{letter}V",
         )
 
@@ -91,6 +98,14 @@ class TransformRecord(EpicsRecordDeviceCommonAll):
     :see: https://htmlpreview.github.io/?https://raw.githubusercontent.com/epics-modules/calc/R3-6-1/documentation/TransformRecord.html#Fields
     """
 
+    class CalcOption(StrEnum):
+        CONDITIONAL = "Conditional"
+        ALWAYS = "Always"
+
+    class InvalidLinkAction(StrEnum):
+        IGNORE_ERROR = "Ignore error"
+        DO_NOTHING = "Do Nothing"
+
     def __init__(self, prefix, name=""):
         with self.add_children_as_readables(ConfigSignal):
             self.units = epics_signal_rw(
@@ -104,11 +119,11 @@ class TransformRecord(EpicsRecordDeviceCommonAll):
             )
 
             self.calc_option = epics_signal_rw(
-                CalcOption,
+                self.CalcOption,
                 f"{prefix}.COPT",
             )
             self.invalid_link_action = epics_signal_r(
-                InvalidLinkAction,
+                self.InvalidLinkAction,
                 f"{prefix}.IVLA",
             )
             self.input_bitmap = epics_signal_r(

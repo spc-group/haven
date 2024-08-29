@@ -101,7 +101,7 @@ class IonChamber(StandardReadable, Triggerable):
             )
             self.preamp = SRS570PreAmplifier(preamp_prefix)
             self.voltmeter = LabJackT7(
-                prefix=voltmeter_prefix, analog_inputs=[voltmeter_channel]
+                prefix=voltmeter_prefix, analog_inputs=[voltmeter_channel], digital_ios=[], analog_outputs=[], digital_words=[],
             )
             self.voltage = derived_signal_r(
                 float,
@@ -322,10 +322,10 @@ async def load_ion_chambers(
             IonChamber(
                 scaler_prefix=scaler_prefix,
                 scaler_channel=cfg["scaler_channel"],
-                preamp_prefix=cfg.get("preamp_prefix", None),
-                voltmeter_prefix=cfg.get("voltmeter_prefix", None),
-                voltmeter_channel=cfg.get("voltmeter_channel", None),
-                counts_per_volt_second=cfg.get("counts_per_volt_second", None),
+                preamp_prefix=cfg["preamp_prefix"],
+                voltmeter_prefix=cfg["voltmeter_prefix"],
+                voltmeter_channel=cfg["voltmeter_channel"],
+                counts_per_volt_second=cfg["counts_per_volt_second"],
                 name=grp,
                 auto_name=auto_name,
             )

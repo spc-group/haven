@@ -3,7 +3,7 @@ from typing import List
 
 import numpy as np
 from numpy.typing import NDArray
-from ophyd_async.core import ConfigSignal, DeviceVector, HintedSignal, StandardReadable
+from ophyd_async.core import ConfigSignal, DeviceVector, HintedSignal, StandardReadable, SubsetEnum
 from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw, epics_signal_x
 
 from .._iconfig import load_config
@@ -107,7 +107,7 @@ class ScalerChannel(StandardReadable):
         # Configuration signals
         with self.add_children_as_readables(ConfigSignal):
             self.description = epics_signal_rw(str, f"{prefix}.NM{epics_ch_num}")
-            self.is_gate = epics_signal_rw(BoolEnum, f"{prefix}.G{epics_ch_num}")
+            self.is_gate = epics_signal_rw(SubsetEnum["N", "Y"], f"{prefix}.G{epics_ch_num}")
             self.preset_count = epics_signal_rw(float, f"{prefix}.PR{epics_ch_num}")
             offset_suffix = f"_offset{channel_num // 4}.{num_to_char(channel_num % 4)}"
             self.offset_rate = epics_signal_rw(float, f"{prefix}{offset_suffix}")
@@ -156,6 +156,8 @@ class MultiChannelScaler(StandardReadable):
         # Transient states
         self.acquiring = epics_signal_r(Acquiring, f"{prefix}Acquiring")
         self.user_led = epics_signal_rw(OutputLED, f"{prefix}UserLED")
+        self.elapsed_time = epics_signal_r(float, f"{prefix}ElapsedReal")
+        self.current_channel = epics_signal_r(int, f"{prefix}CurrentChannel")
         # Config signals
         with self.add_children_as_readables(ConfigSignal):
             self.preset_time = epics_signal_rw(float, f"{prefix}PresetReal")
@@ -164,7 +166,7 @@ class MultiChannelScaler(StandardReadable):
             self.channel_advance_source = epics_signal_rw(
                 self.ChannelAdvanceSource, f"{prefix}ChannelAdvance"
             )
-            self.count_on_start = epics_signal_rw(BoolEnum, f"{prefix}CountOnStart")
+            self.count_on_start = epics_signal_rw(SubsetEnum["No", "Yes"], f"{prefix}CountOnStart")
             self.channel_1_source = epics_signal_rw(
                 Channel1Source, f"{prefix}Channel1Source"
             )
@@ -187,14 +189,10 @@ class MultiChannelScaler(StandardReadable):
             self.snl_connected = epics_signal_r(SNLConnected, f"{prefix}SNL_Connected")
             self.model = epics_signal_r(ScalerModel, f"{prefix}Model")
             self.firmware = epics_signal_r(int, f"{prefix}Firmware")
-        # Read signals
-        with self.add_children_as_readables():
-            self.elapsed_time = epics_signal_r(float, f"{prefix}ElapsedReal")
-            self.current_channel = epics_signal_r(int, f"{prefix}CurrentChannel")
         # Child-devices
-        self.scaler = Scaler(f"{prefix}scaler1", channels=channels)
+        self.mcas = DeviceVector({i: MCA(f"{prefix}mca{i+1}") for i in channels})
         with self.add_children_as_readables():
-            self.mcas = DeviceVector({i: MCA(f"{prefix}mca{i+1}") for i in channels})
+            self.scaler = Scaler(f"{prefix}scaler1", channels=channels)
         super().__init__(name=name)
 
 

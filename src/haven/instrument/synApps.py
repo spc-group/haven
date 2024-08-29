@@ -2,16 +2,10 @@ import asyncio
 from enum import Enum
 
 from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw, epics_signal_x
-from ophyd_async.core import StandardReadable, ConfigSignal, HintedSignal, Device
+from ophyd_async.core import StandardReadable, ConfigSignal, HintedSignal, Device, SubsetEnum
 
+from ..typing import StrEnum
 
-class StrEnum(str, Enum):
-    pass
-
-
-class CalcOption(StrEnum):
-    CONDITIONAL = "Conditional"
-    ALWAYS = "Always"
 
 
 class ScanInterval(StrEnum):
@@ -59,16 +53,6 @@ class AlarmSeverity(StrEnum):
     INVALID = "INVALID"
 
 
-class InvalidLinkAction(StrEnum):
-    IGNORE_ERROR = "Ignore error"
-    DO_NOTHING = "Do Nothing"
-
-
-class PVValidity(StrEnum):
-    EXT_PV_NC = "Ext PV NC"
-    EXT_PV_OK = "Ext PV OK"
-    LOCAL_PV = "Local PV"
-    CONSTANT = "Constant"
 
 
 class EpicsRecordDeviceCommonAll(StandardReadable):
@@ -78,13 +62,15 @@ class EpicsRecordDeviceCommonAll(StandardReadable):
     Some fields are not included because they are not interesting to
     an EPICS client or are already provided in other support.
     """
-
+    # The valid options are specific to the record type
+    # Subclasses should set this properly
+    DeviceType = SubsetEnum["None"]  
     # Config signals
     def __init__(self, prefix: str, name: str = ""):
         with self.add_children_as_readables(ConfigSignal):
             self.description = epics_signal_rw(str, f"{prefix}.DESC")
             self.scanning_rate = epics_signal_rw(ScanInterval, f"{prefix}.SCAN")
-            self.device_type = epics_signal_r(str, f"{prefix}.DTYP")
+            self.device_type = epics_signal_r(self.DeviceType, f"{prefix}.DTYP")
         # Other signals, not included in read
         self.disable_value = epics_signal_rw(int, f"{prefix}.DISV")
         self.scan_disable_input_link_value = epics_signal_rw(int, f"{prefix}.DISA")
@@ -125,9 +111,6 @@ class EpicsRecordInputFields(EpicsRecordDeviceCommonAll):
     def __init__(self, prefix: str, name: str = ""):
         with self.add_children_as_readables(ConfigSignal):
             self.input_link = epics_signal_rw(str, f"{prefix}.INP")
-        with self.add_children_as_readables():
-            self.final_value = epics_signal_r(float, f"{prefix}.VAL")
-        self.raw_value = epics_signal_rw(float, f"{prefix}.RVAL")            
         super().__init__(prefix=prefix, name=name)
 
 
@@ -144,9 +127,4 @@ class EpicsRecordOutputFields(EpicsRecordDeviceCommonAll):
             self.output_link = epics_signal_rw(str, f"{prefix}.OUT")
             self.desired_output_location = epics_signal_rw(str, f"{prefix}.DOL")
             self.output_mode_select = epics_signal_rw(self.ModeSelect, f"{prefix}.OMSL")
-        with self.add_children_as_readables():
-            self.raw_value = epics_signal_rw(int, f"{prefix}.RVAL")
-            self.desired_value = epics_signal_rw(float, f"{prefix}.VAL")
-        with self.add_children_as_readables(HintedSignal):
-            self.readback_value = epics_signal_r(float, f"{prefix}.RBV")
         super().__init__(prefix=prefix, name=name)
