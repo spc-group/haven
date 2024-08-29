@@ -128,7 +128,10 @@ class IonChamber(StandardReadable, Triggerable):
 
     def _volts_to_amps(self, values, *, voltage, gain):
         """Pre-amp current calculated from output voltage."""
-        return values[voltage] / values[gain]
+        try:
+            return values[voltage] / values[gain]
+        except ZeroDivisionError:
+            return float('nan')
 
     def __repr__(self):
         return f"<{type(self).__name__}: '{self.name}' ({self.scaler_channel.raw_count.source})>"
@@ -180,7 +183,6 @@ class IonChamber(StandardReadable, Triggerable):
             if desc != "":
                 self.set_name(safe_ophyd_name(desc))
                 # Update the labjack's input's .DESC field to match the scaler channel
-                print(desc)
                 await self.voltmeter_channel.description.set(desc)
 
     @AsyncStatus.wrap
@@ -244,13 +246,28 @@ class IonChamber(StandardReadable, Triggerable):
         self._fly_readings = []
         self._is_flying = False  # Gets set during kickoff
 
-    def kickoff(self) -> AsyncStatus:
+    @staticmethod
+    async def wait_for_value(signal, value):
+        event = asyncio.Event()
+
+        def set_event(val):
+            if val == value:
+                event.set()
+
+        signal.subscribe_value(set_event)
+        await event.wait()
+
+    @AsyncStatus.wrap
+    async def kickoff(self):
         """Start recording data for the fly scan."""
         # Watch for new data being collected so we can save timestamps
         self.mcs.current_channel.subscribe(self.record_fly_reading)
         # Start acquiring
+        self.mcs.start_all.trigger(wait=False)
+        # Wait for acquisition to start
+        await self.wait_for_value(self.mcs.acquiring, self.mcs.Acquiring.ACQUIRING)
         self._is_flying = True
-        return self.mcs.start_all.trigger()
+        return 
 
     @AsyncStatus.wrap
     async def complete(self):
@@ -258,7 +275,7 @@ class IonChamber(StandardReadable, Triggerable):
         await self.mcs.stop_all.trigger()
         self._is_flying = False
 
-    async def collect(self):
+    async def collect_pages(self):
         # Prepare the individual signal data-sets
         timestamps = [
             d[self.mcs.current_channel.name]["timestamp"] for d in self._fly_readings
@@ -283,6 +300,16 @@ class IonChamber(StandardReadable, Triggerable):
             "timestamps": {key: timestamps for key in data.keys()},
         }
         yield results
+
+    async def describe_collect(self) -> Dict[str, Dict]:
+        signals = [
+            self.scaler_channel.raw_count,
+            self.scaler_channel.net_count,
+            self.mcs.scaler.elapsed_time,
+        ]
+        descriptions = await asyncio.gather(*(sig.describe() for sig in signals))
+        desc = {k: v for desc in descriptions for k, v in desc.items()}
+        return {self.name: desc}
 
     @property
     def default_time_signal(self):

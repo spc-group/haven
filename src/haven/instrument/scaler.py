@@ -18,11 +18,6 @@ def num_to_char(num):
     return char
 
 
-class Acquiring(str, Enum):
-    DONE = "Done"
-    ACQUIRING = "Acquiring"
-
-
 class CountMode(str, Enum):
     ONE_SHOT = "OneShot"
     AUTO_COUNT = "AutoCount"
@@ -144,6 +139,10 @@ class MultiChannelScaler(StandardReadable):
         INTERNAL = "Internal"
         EXTERNAL = "External"
 
+    class Acquiring(str, Enum):
+        DONE = "Done"
+        ACQUIRING = "Acquiring"
+
     def __init__(self, prefix, channels: list[int], name=""):
         # Controls
         self.start_all = epics_signal_x(f"{prefix}StartAll")
@@ -154,7 +153,7 @@ class MultiChannelScaler(StandardReadable):
             f"{prefix}SoftwareChannelAdvance"
         )
         # Transient states
-        self.acquiring = epics_signal_r(Acquiring, f"{prefix}Acquiring")
+        self.acquiring = epics_signal_r(self.Acquiring, f"{prefix}Acquiring")
         self.user_led = epics_signal_rw(OutputLED, f"{prefix}UserLED")
         self.elapsed_time = epics_signal_r(float, f"{prefix}ElapsedReal")
         self.current_channel = epics_signal_r(int, f"{prefix}CurrentChannel")

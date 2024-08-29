@@ -24,8 +24,9 @@ logging.basicConfig(level=logging.WARNING)
 
 # Create a run engine
 RE = haven.run_engine(
-    connect_databroker=False,
+    connect_databroker=True,
     call_returns_result=True,
+    use_bec=True,
 )
 
 # Add metadata to the run engine
