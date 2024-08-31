@@ -12,7 +12,6 @@ Public Structures
 """
 
 import asyncio
-from enum import Enum
 
 # from ophyd import Device
 from ophyd_async.core import (
@@ -22,10 +21,10 @@ from ophyd_async.core import (
     HintedSignal,
     StandardReadable,
 )
-from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw, epics_signal_x
+from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw
 
-from .synApps import EpicsSynAppsRecordEnableMixin, EpicsRecordDeviceCommonAll
 from ..typing import StrEnum
+from .synApps import EpicsRecordDeviceCommonAll, EpicsSynAppsRecordEnableMixin
 
 CHANNEL_LETTERS_LIST = "A B C D E F G H I J K L M N O P".split()
 
@@ -145,7 +144,7 @@ class TransformRecord(EpicsRecordDeviceCommonAll):
         """set all fields to default values"""
         channels = self.channels.values()
         await asyncio.gather(
-            self.scanning_rate.set(ScanInterval.PASSIVE),
+            self.scanning_rate.set(self.ScanInterval.PASSIVE),
             self.description.set(self.name),
             self.units.set(""),
             self.calc_option.set(0),

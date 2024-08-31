@@ -4,7 +4,6 @@ from unittest.mock import MagicMock
 import numpy as np
 import pytest
 from bluesky_adaptive.recommendations import NoRecommendation
-from ophyd_async.core import set_mock_value
 
 from haven import GainRecommender, auto_gain
 from haven.plans import auto_gain as auto_gain_module

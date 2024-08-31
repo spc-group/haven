@@ -1,4 +1,4 @@
-from enum import IntEnum, Enum
+from enum import Enum
 from typing import Sequence, Union
 
 from ophyd import Component, Device, Signal
@@ -12,14 +12,7 @@ DetectorList = Union[str, Sequence[Detector]]
 Motor = Union[Device, Component, Signal, str]
 
 
-class StrEnum(str, Enum):
-    ...
-
-
-class BoolEnum(IntEnum):
-    FALSE = 0
-    TRUE = 1
-
+class StrEnum(str, Enum): ...
 
 
 # -----------------------------------------------------------------------------

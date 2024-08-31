@@ -80,8 +80,7 @@ def inject_haven_md_wrapper(plan):
         # Prepare the metadata dictionary
         config = load_config()
         xray_source = (
-            f"{config['xray_source']['type']}"
-            f": {config['xray_source']['prefix']}"
+            f"{config['xray_source']['type']}" f": {config['xray_source']['prefix']}"
         )
         md = {
             # Software versions

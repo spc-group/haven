@@ -3,11 +3,7 @@ from unittest import mock
 import pytest
 from ophyd_async.core import DEFAULT_TIMEOUT
 
-from haven.instrument.srs570 import (
-    DEFAULT_WRITE_TIMEOUT,
-    GainSignal,
-    SRS570PreAmplifier,
-)
+from haven.instrument.srs570 import GainSignal, SRS570PreAmplifier
 
 
 @pytest.fixture()

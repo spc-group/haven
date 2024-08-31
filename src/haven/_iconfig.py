@@ -12,11 +12,11 @@ __all__ = [
 import argparse
 import logging
 import os
-from pathlib import Path
 from contextlib import contextmanager
 from copy import deepcopy
+from pathlib import Path
 from pprint import pprint
-from typing import Sequence, Optional
+from typing import Optional, Sequence
 
 import tomli
 from mergedeep import merge
@@ -41,7 +41,7 @@ def load_files(file_paths: Sequence[Path]):
 
 def lookup_file_paths():
     if os.environ.get("HAVEN_CONFIG_FILES", "") != "":
-        return [Path(fp) for fp in os.environ["HAVEN_CONFIG_FILES"].split(',')]
+        return [Path(fp) for fp in os.environ["HAVEN_CONFIG_FILES"].split(",")]
     else:
         return [Path(__file__).parent / "iconfig_default.toml"]
 

@@ -2,50 +2,25 @@
 
 import asyncio
 import logging
-import math
-import time
 import warnings
-from collections import OrderedDict
-from numbers import Number
-from typing import Dict, Generator, Mapping, Optional
+from typing import Dict, Mapping
 
-import numpy as np
 from apstools.utils.misc import safe_ophyd_name
 from bluesky.protocols import Triggerable
-from ophyd import Component as Cpt
-from ophyd import EpicsSignal, EpicsSignalRO
-from ophyd import FormattedComponent as FCpt
-from ophyd import Kind, Signal, flyers, status
-from ophyd.mca import EpicsMCARecord
-from ophyd.ophydobj import OphydObject
-from ophyd.signal import DerivedSignal, InternalSignal
-from ophyd.status import SubscriptionStatus
 from ophyd_async.core import (
     DEFAULT_TIMEOUT,
     AsyncStatus,
     ConfigSignal,
-    Device,
-    DeviceVector,
-    HintedSignal,
     StandardReadable,
     TriggerInfo,
     observe_value,
 )
-from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw
-from pcdsdevices.signal import MultiDerivedSignal, MultiDerivedSignalRO
-from pcdsdevices.type_hints import OphydDataType, SignalToValue
 
-from .. import exceptions
 from .._iconfig import load_config
-from .device import (
-    await_for_connection,
-    connect_devices,
-    make_device,
-    resolve_device_names,
-)
+from .device import connect_devices
 from .instrument_registry import InstrumentRegistry
 from .instrument_registry import registry as default_registry
-from .labjack import AnalogInput, LabJackT7
+from .labjack import LabJackT7
 from .scaler import CountState, MultiChannelScaler
 from .signal import derived_signal_r
 from .srs570 import SRS570PreAmplifier
@@ -98,37 +73,42 @@ class IonChamber(StandardReadable, Triggerable):
         with self.add_children_as_readables():
             self.preamp = SRS570PreAmplifier(preamp_prefix)
             self.voltmeter = LabJackT7(
-                prefix=voltmeter_prefix, analog_inputs=[voltmeter_channel], digital_ios=[], analog_outputs=[], digital_words=[],
+                prefix=voltmeter_prefix,
+                analog_inputs=[voltmeter_channel],
+                digital_ios=[],
+                analog_outputs=[],
+                digital_words=[],
             )
         # Add subordinate devices
         self.mcs = MultiChannelScaler(
             prefix=scaler_prefix, channels=[0, scaler_channel]
         )
         self.add_readables([self.mcs.scaler])
-        self.add_readables([
-            self.mcs.acquire_mode,
-            self.mcs.channel_1_source,
-            self.mcs.channel_advance_source,
-            self.mcs.count_on_start,
-            self.mcs.dwell_time,
-            self.mcs.firmware,
-            self.mcs.input_mode,
-            self.mcs.input_polarity,
-            self.mcs.lne_output_delay,
-            self.mcs.lne_output_polarity,
-            self.mcs.lne_output_stretcher,
-            self.mcs.lne_output_width,
-            self.mcs.model,
-            self.mcs.mux_output,
-            self.mcs.num_channels,
-            self.mcs.num_channels_max,
-            self.mcs.output_mode,
-            self.mcs.output_polarity,
-            self.mcs.prescale,
-            self.mcs.preset_time,
-            self.mcs.snl_connected,
+        self.add_readables(
+            [
+                self.mcs.acquire_mode,
+                self.mcs.channel_1_source,
+                self.mcs.channel_advance_source,
+                self.mcs.count_on_start,
+                self.mcs.dwell_time,
+                self.mcs.firmware,
+                self.mcs.input_mode,
+                self.mcs.input_polarity,
+                self.mcs.lne_output_delay,
+                self.mcs.lne_output_polarity,
+                self.mcs.lne_output_stretcher,
+                self.mcs.lne_output_width,
+                self.mcs.model,
+                self.mcs.mux_output,
+                self.mcs.num_channels,
+                self.mcs.num_channels_max,
+                self.mcs.output_mode,
+                self.mcs.output_polarity,
+                self.mcs.prescale,
+                self.mcs.preset_time,
+                self.mcs.snl_connected,
             ],
-            ConfigSignal
+            ConfigSignal,
         )
         # Add calculated signals
         with self.add_children_as_readables():
@@ -161,7 +141,7 @@ class IonChamber(StandardReadable, Triggerable):
         try:
             return values[voltage] / values[gain]
         except ZeroDivisionError:
-            return float('nan')
+            return float("nan")
 
     def __repr__(self):
         return f"<{type(self).__name__}: '{self.name}' ({self.scaler_channel.raw_count.source})>"
@@ -297,7 +277,7 @@ class IonChamber(StandardReadable, Triggerable):
         # Wait for acquisition to start
         await self.wait_for_value(self.mcs.acquiring, self.mcs.Acquiring.ACQUIRING)
         self._is_flying = True
-        return 
+        return
 
     @AsyncStatus.wrap
     async def complete(self):

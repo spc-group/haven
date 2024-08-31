@@ -43,33 +43,22 @@ from enum import Enum
 
 import numpy as np
 from numpy.typing import NDArray
-from ophyd import Component as Cpt
-from ophyd import DynamicDeviceComponent as DCpt
-from ophyd import EpicsSignal
-from ophyd import EpicsSignalRO
-from ophyd import FormattedComponent as FCpt
-from ophyd import Kind
 from ophyd_async.core import (
-    Device,
-    StandardReadable,
     ConfigSignal,
-    HintedSignal,
     DeviceVector,
-    SubsetEnum
+    HintedSignal,
+    StandardReadable,
+    SubsetEnum,
 )
 from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw, epics_signal_x
 
-from .synApps import EpicsRecordDeviceCommonAll
-from .synApps import EpicsRecordInputFields
-from .synApps import EpicsRecordOutputFields
-from ..typing import BoolEnum
+from .synApps import EpicsRecordInputFields, EpicsRecordOutputFields
 
 __all__ = [
     "AnalogOutput",
     "AnalogInput",
     "DigitalIO",
     "WaveformDigitizer",
-    "make_digitizer_waveforms",
     "WaveformGenerator",
     "LabJackBase",
     "LabJackT4",
@@ -101,11 +90,30 @@ class Input(EpicsRecordInputFields):
 
 class BinaryInput(Input):
 
-    DeviceType = SubsetEnum['Soft Channel', 'Raw Soft Channel', 'Async Soft Channel', 'Db State', 'asynInt32', 'asynUInt32Digital', 'asyn bi stringParm', 'asyn MPC', 'Vg307 GPIB Instrument', 'asyn Televac', 'asyn TPG261', 'lua', 'stream', 'EtherIP', 'dg535', 'Zed']
+    DeviceType = SubsetEnum[
+        "Soft Channel",
+        "Raw Soft Channel",
+        "Async Soft Channel",
+        "Db State",
+        "asynInt32",
+        "asynUInt32Digital",
+        "asyn bi stringParm",
+        "asyn MPC",
+        "Vg307 GPIB Instrument",
+        "asyn Televac",
+        "asyn TPG261",
+        "lua",
+        "stream",
+        "EtherIP",
+        "dg535",
+        "Zed",
+    ]
 
     def __init__(self, prefix: str, name: str = ""):
         with self.add_children_as_readables():
-            self.final_value = epics_signal_r(SubsetEnum["Low", "High"], f"{prefix}.VAL")
+            self.final_value = epics_signal_r(
+                SubsetEnum["Low", "High"], f"{prefix}.VAL"
+            )
         self.raw_value = epics_signal_rw(float, f"{prefix}.RVAL")
         super().__init__(prefix=prefix, name=name)
 
@@ -119,23 +127,57 @@ class Output(EpicsRecordOutputFields):
 
 
 class BinaryOutput(Output):
-    """A binary input on the labjack.
+    """A binary input on the labjack."""
 
-    """
-
-    DeviceType = SubsetEnum['Soft Channel', 'Raw Soft Channel', 'Async Soft Channel', 'General Time', 'Db State', 'asynInt32', 'asynUInt32Digital', 'asyn bo stringParm', 'asyn MPC', 'Vg307 GPIB Instrument', 'PZT Bug', 'asyn TPG261', 'lua', 'stream', 'EtherIP', 'dg535']
+    DeviceType = SubsetEnum[
+        "Soft Channel",
+        "Raw Soft Channel",
+        "Async Soft Channel",
+        "General Time",
+        "Db State",
+        "asynInt32",
+        "asynUInt32Digital",
+        "asyn bo stringParm",
+        "asyn MPC",
+        "Vg307 GPIB Instrument",
+        "PZT Bug",
+        "asyn TPG261",
+        "lua",
+        "stream",
+        "EtherIP",
+        "dg535",
+    ]
 
     def __init__(self, prefix: str, name: str = ""):
         with self.add_children_as_readables():
-            self.desired_value = epics_signal_rw(SubsetEnum["Low", "High"], f"{prefix}.VAL")
-        self.raw_value = epics_signal_rw(float, f"{prefix}.RVAL")            
+            self.desired_value = epics_signal_rw(
+                SubsetEnum["Low", "High"], f"{prefix}.VAL"
+            )
+        self.raw_value = epics_signal_rw(float, f"{prefix}.RVAL")
         self.readback_value = epics_signal_r(float, f"{prefix}.RBV")
 
 
 class AnalogOutput(Output):
     """An analog output on a labjack device."""
 
-    DeviceType = SubsetEnum['Soft Channel', 'Raw Soft Channel', 'Async Soft Channel', 'asynInt32', 'asynFloat64', 'asynInt64', 'IOC stats', 'asyn ao stringParm', 'asyn ao Eurotherm', 'asyn MPC', 'PZT Bug', 'asyn TPG261', 'lua', 'stream', 'EtherIP', 'dg535']
+    DeviceType = SubsetEnum[
+        "Soft Channel",
+        "Raw Soft Channel",
+        "Async Soft Channel",
+        "asynInt32",
+        "asynFloat64",
+        "asynInt64",
+        "IOC stats",
+        "asyn ao stringParm",
+        "asyn ao Eurotherm",
+        "asyn MPC",
+        "PZT Bug",
+        "asyn TPG261",
+        "lua",
+        "stream",
+        "EtherIP",
+        "dg535",
+    ]
 
     def __init__(self, prefix: str, name: str = ""):
         with self.add_children_as_readables():
@@ -192,7 +234,24 @@ class AnalogInput(Input):
         SEVEN = "7"
         EIGHT = "8"
 
-    DeviceType = SubsetEnum['Soft Channel', 'Raw Soft Channel', 'Async Soft Channel', 'Soft Timestamp', 'General Time', 'asynInt32', 'asynInt32Average', 'asynFloat64', 'asynFloat64Average', 'asynInt64', 'IOC stats', 'IOC stats clusts', 'GPIB init/report', 'Sec Past Epoch', 'asyn ai stringParm', 'asyn ai HeidND261']
+    DeviceType = SubsetEnum[
+        "Soft Channel",
+        "Raw Soft Channel",
+        "Async Soft Channel",
+        "Soft Timestamp",
+        "General Time",
+        "asynInt32",
+        "asynInt32Average",
+        "asynFloat64",
+        "asynFloat64Average",
+        "asynInt64",
+        "IOC stats",
+        "IOC stats clusts",
+        "GPIB init/report",
+        "Sec Past Epoch",
+        "asyn ai stringParm",
+        "asyn ai HeidND261",
+    ]
 
     def __init__(self, prefix: str, ch_num: int, name: str = ""):
         with self.add_children_as_readables(ConfigSignal):
@@ -210,10 +269,12 @@ class AnalogInput(Input):
             )
             self.range = epics_signal_rw(self.Range, f"{prefix}AiRange{ch_num}")
             self.mode = epics_signal_rw(self.Mode, f"{prefix}AiMode{ch_num}")
-            self.enable = epics_signal_rw(SubsetEnum["Enable", "Disable"], f"{prefix}AiEnable{ch_num}")
+            self.enable = epics_signal_rw(
+                SubsetEnum["Enable", "Disable"], f"{prefix}AiEnable{ch_num}"
+            )
         with self.add_children_as_readables(HintedSignal):
             self.final_value = epics_signal_r(float, f"{prefix}.VAL")
-        self.raw_value = epics_signal_rw(int, f"{prefix}Ai{ch_num}.RVAL")            
+        self.raw_value = epics_signal_rw(int, f"{prefix}Ai{ch_num}.RVAL")
         super().__init__(prefix=f"{prefix}Ai{ch_num}", name=name)
 
 
@@ -250,9 +311,7 @@ class DigitalIO(StandardReadable):
 
 
 class WaveformDigitizer(StandardReadable):
-    """A feature of the Labjack devices that allows waveform capture.
-
-    """
+    """A feature of the Labjack devices that allows waveform capture."""
 
     class TriggerSource(StrEnum):
         INTERNAL = "Internal"
@@ -260,36 +319,77 @@ class WaveformDigitizer(StandardReadable):
 
     def __init__(self, prefix: str, name: str = "", waveforms=[]):
         with self.add_children_as_readables():
-            self.timebase_waveform = epics_signal_rw(NDArray[np.float64], f"{prefix}WaveDigTimeWF")
+            self.timebase_waveform = epics_signal_rw(
+                NDArray[np.float64], f"{prefix}WaveDigTimeWF"
+            )
             self.dwell_actual = epics_signal_rw(float, f"{prefix}WaveDigDwellActual")
             self.total_time = epics_signal_rw(float, f"{prefix}WaveDigTotalTime")
         with self.add_children_as_readables(ConfigSignal):
             self.num_points = epics_signal_rw(int, f"{prefix}WaveDigNumPoints")
             self.dwell = epics_signal_rw(float, f"{prefix}WaveDigDwell")
             self.first_chan = epics_signal_rw(
-                SubsetEnum['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13'],
+                SubsetEnum[
+                    "0",
+                    "1",
+                    "2",
+                    "3",
+                    "4",
+                    "5",
+                    "6",
+                    "7",
+                    "8",
+                    "9",
+                    "10",
+                    "11",
+                    "12",
+                    "13",
+                ],
                 f"{prefix}WaveDigFirstChan",
             )
             self.num_chans = epics_signal_rw(
-                SubsetEnum['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', "14"],
-                f"{prefix}WaveDigNumChans"
+                SubsetEnum[
+                    "1",
+                    "2",
+                    "3",
+                    "4",
+                    "5",
+                    "6",
+                    "7",
+                    "8",
+                    "9",
+                    "10",
+                    "11",
+                    "12",
+                    "13",
+                    "14",
+                ],
+                f"{prefix}WaveDigNumChans",
             )
             self.resolution = epics_signal_rw(
-                SubsetEnum["Default", '1', '2', '3', '4', '5', '6', '7', '8']
-                , f"{prefix}WaveDigResolution"
+                SubsetEnum["Default", "1", "2", "3", "4", "5", "6", "7", "8"],
+                f"{prefix}WaveDigResolution",
             )
             self.settling_time = epics_signal_rw(float, f"{prefix}WaveDigSettlingTime")
         self.current_point = epics_signal_rw(int, f"{prefix}WaveDigCurrentPoint")
-        self.ext_trigger = epics_signal_rw(self.TriggerSource, f"{prefix}WaveDigExtTrigger")
+        self.ext_trigger = epics_signal_rw(
+            self.TriggerSource, f"{prefix}WaveDigExtTrigger"
+        )
         self.ext_clock = epics_signal_rw(self.TriggerSource, f"{prefix}WaveDigExtClock")
         self.auto_restart = epics_signal_x(f"{prefix}WaveDigAutoRestart")
         self.run = epics_signal_rw(SubsetEnum["Stop", "Run"], f"{prefix}WaveDigRun")
-        self.read_waveform = epics_signal_rw(SubsetEnum["Done", "Read"], f"{prefix}WaveDigReadWF")
+        self.read_waveform = epics_signal_rw(
+            SubsetEnum["Done", "Read"], f"{prefix}WaveDigReadWF"
+        )
         # Add waveforms
         with self.add_children_as_readables():
-            self.waveforms = DeviceVector({
-                idx: epics_signal_r(NDArray[np.float64], f"{prefix}WaveDigVoltWF{idx}") for idx in waveforms
-            })
+            self.waveforms = DeviceVector(
+                {
+                    idx: epics_signal_r(
+                        NDArray[np.float64], f"{prefix}WaveDigVoltWF{idx}"
+                    )
+                    for idx in waveforms
+                }
+            )
         super().__init__(name=name)
 
 
@@ -313,12 +413,18 @@ class WaveformGenerator(StandardReadable):
     class Enabled(StrEnum):
         DISABLE = "Disable"
         ENABLE = "Enable"
-    
+
     def __init__(self, prefix: str, name: str = ""):
         with self.add_children_as_readables(ConfigSignal):
-            self.external_trigger = epics_signal_rw(self.TriggerSource, f"{prefix}WaveGenExtTrigger")
-            self.external_clock = epics_signal_rw(self.TriggerSource, f"{prefix}WaveGenExtClock")
-            self.continuous = epics_signal_rw(self.TriggerMode, f"{prefix}WaveGenContinuous")
+            self.external_trigger = epics_signal_rw(
+                self.TriggerSource, f"{prefix}WaveGenExtTrigger"
+            )
+            self.external_clock = epics_signal_rw(
+                self.TriggerSource, f"{prefix}WaveGenExtClock"
+            )
+            self.continuous = epics_signal_rw(
+                self.TriggerMode, f"{prefix}WaveGenContinuous"
+            )
         self.run = epics_signal_x(f"{prefix}WaveGenRun")
 
         # These signals give a readback based on whether user-defined or
@@ -334,34 +440,46 @@ class WaveformGenerator(StandardReadable):
 
         # Settings for user-defined waveforms
         with self.add_children_as_readables():
-            self.user_time_waveform = epics_signal_rw(NDArray[np.float64], f"{prefix}WaveGenUserTimeWF")
+            self.user_time_waveform = epics_signal_rw(
+                NDArray[np.float64], f"{prefix}WaveGenUserTimeWF"
+            )
         self.user_num_points = epics_signal_rw(int, f"{prefix}WaveGenUserNumPoints")
         self.user_dwell = epics_signal_rw(float, f"{prefix}WaveGenUserDwell")
         self.user_frequency = epics_signal_rw(float, f"{prefix}WaveGenUserFrequency")
 
         # Settings for internal waveforms
         with self.add_children_as_readables():
-            self.internal_time_waveform = epics_signal_rw(NDArray[np.float64], f"{prefix}WaveGenIntTimeWF")
+            self.internal_time_waveform = epics_signal_rw(
+                NDArray[np.float64], f"{prefix}WaveGenIntTimeWF"
+            )
         self.internal_num_points = epics_signal_rw(int, f"{prefix}WaveGenIntNumPoints")
         self.internal_dwell = epics_signal_rw(float, f"{prefix}WaveGenIntDwell")
         self.internal_frequency = epics_signal_rw(float, f"{prefix}WaveGenIntFrequency")
 
         # Waveform specific settings
         with self.add_children_as_readables(ConfigSignal):
-            self.user_waveform_0 = epics_signal_rw(NDArray[np.float64], f"{prefix}WaveGenUserWF0")
+            self.user_waveform_0 = epics_signal_rw(
+                NDArray[np.float64], f"{prefix}WaveGenUserWF0"
+            )
             self.enable_0 = epics_signal_rw(self.Enabled, f"{prefix}WaveGenEnable0")
             self.type_0 = epics_signal_rw(self.WaveType, f"{prefix}WaveGenType0")
             self.pulse_width_0 = epics_signal_rw(float, f"{prefix}WaveGenPulseWidth0")
             self.amplitude_0 = epics_signal_rw(float, f"{prefix}WaveGenAmplitude0")
             self.offset_0 = epics_signal_rw(float, f"{prefix}WaveGenOffset0")
-            self.user_waveform_1 = epics_signal_rw(NDArray[np.float64], f"{prefix}WaveGenUserWF1")
+            self.user_waveform_1 = epics_signal_rw(
+                NDArray[np.float64], f"{prefix}WaveGenUserWF1"
+            )
             self.enable_1 = epics_signal_rw(self.Enabled, f"{prefix}WaveGenEnable1")
             self.type_1 = epics_signal_rw(self.WaveType, f"{prefix}WaveGenType1")
             self.pulse_width_1 = epics_signal_rw(float, f"{prefix}WaveGenPulseWidth1")
             self.amplitude_1 = epics_signal_rw(float, f"{prefix}WaveGenAmplitude1")
             self.offset_1 = epics_signal_rw(float, f"{prefix}WaveGenOffset1")
-        self.internal_waveform_0 = epics_signal_rw(NDArray[np.float64], f"{prefix}WaveGenInternalWF0")
-        self.internal_waveform_1 = epics_signal_r(NDArray[np.float64], f"{prefix}WaveGenInternalWF1")
+        self.internal_waveform_0 = epics_signal_rw(
+            NDArray[np.float64], f"{prefix}WaveGenInternalWF0"
+        )
+        self.internal_waveform_1 = epics_signal_r(
+            NDArray[np.float64], f"{prefix}WaveGenInternalWF1"
+        )
 
         super().__init__(name=name)
 
@@ -407,8 +525,26 @@ class LabJackBase(StandardReadable):
         await lj.waveform_generator.trigger()
 
     """
+
     Resolution = AnalogInput.Resolution
-    DeviceType = SubsetEnum['Soft Channel', 'Raw Soft Channel', 'Async Soft Channel', 'Soft Timestamp', 'General Time', 'asynInt32', 'asynInt32Average', 'asynFloat64', 'asynFloat64Average', 'asynInt64', 'IOC stats', 'IOC stats clusts', 'GPIB init/report', 'Sec Past Epoch', 'asyn ai stringParm', 'asyn ai HeidND261']
+    DeviceType = SubsetEnum[
+        "Soft Channel",
+        "Raw Soft Channel",
+        "Async Soft Channel",
+        "Soft Timestamp",
+        "General Time",
+        "asynInt32",
+        "asynInt32Average",
+        "asynFloat64",
+        "asynFloat64Average",
+        "asynInt64",
+        "IOC stats",
+        "IOC stats clusts",
+        "GPIB init/report",
+        "Sec Past Epoch",
+        "asyn ai stringParm",
+        "asyn ai HeidND261",
+    ]
 
     class Model(StrEnum):
         T4 = "T4"
@@ -416,7 +552,15 @@ class LabJackBase(StandardReadable):
         T7_PRO = "T7-Pro"
         T8 = "T8"
 
-    def __init__(self, prefix: str, name: str = "", analog_inputs=[], digital_ios=[], analog_outputs=range(2), digital_words = ["dio", "eio", "fio", "mio", "cio"]):
+    def __init__(
+        self,
+        prefix: str,
+        name: str = "",
+        analog_inputs=[],
+        digital_ios=[],
+        analog_outputs=range(2),
+        digital_words=["dio", "eio", "fio", "mio", "cio"],
+    ):
         with self.add_children_as_readables(ConfigSignal):
             self.model_name = epics_signal_r(self.Model, f"{prefix}ModelName")
             self.firmware_version = epics_signal_r(str, f"{prefix}FirmwareVersion")
@@ -426,7 +570,9 @@ class LabJackBase(StandardReadable):
             )
             self.ljm_version = epics_signal_r(str, f"{prefix}LJMVersion")
             self.driver_version = epics_signal_r(str, f"{prefix}DriverVersion")
-            self.last_error_message = epics_signal_r(NDArray[np.uint8], f"{prefix}LastErrorMessage")
+            self.last_error_message = epics_signal_r(
+                NDArray[np.uint8], f"{prefix}LastErrorMessage"
+            )
             self.poll_sleep_ms = epics_signal_rw(float, f"{prefix}PollSleepMS")
             self.analog_in_settling_time_all = epics_signal_rw(
                 float, f"{prefix}AiAllSettlingUS"
@@ -462,7 +608,9 @@ class LabJackBase(StandardReadable):
                 }
             )
         # Waveform devices (not read by default, should be made readable as needed)
-        self.waveform_digitizer = WaveformDigitizer(f"{prefix}", waveforms=analog_inputs)
+        self.waveform_digitizer = WaveformDigitizer(
+            f"{prefix}", waveforms=analog_inputs
+        )
         self.waveform_generator = WaveformGenerator(f"{prefix}")
 
         super().__init__(name=name)
@@ -504,7 +652,7 @@ class LabJackT7(LabJackBase):
         analog_inputs=range(14),
         digital_ios=range(23),
         analog_outputs=range(2),
-            **kwargs,
+        **kwargs,
     ):
         super().__init__(
             prefix=prefix,
@@ -528,7 +676,7 @@ class LabJackT7Pro(LabJackBase):
         analog_inputs=range(14),
         digital_ios=range(23),
         analog_outputs=range(2),
-            **kwargs,
+        **kwargs,
     ):
         super().__init__(
             prefix=prefix,
@@ -552,7 +700,7 @@ class LabJackT8(LabJackBase):
         analog_inputs=range(8),
         digital_ios=range(20),
         analog_outputs=range(2),
-            **kwargs,
+        **kwargs,
     ):
         super().__init__(
             prefix=prefix,

@@ -175,7 +175,9 @@ def auto_gain(
     # Start from the current gain settings
     first_point = {}
     for det in dets:
-        first_point[det.preamp.gain_level] = yield from bps.rd(det.preamp.gain_level, default_value=13)
+        first_point[det.preamp.gain_level] = yield from bps.rd(
+            det.preamp.gain_level, default_value=13
+        )
     # Execute the plan
     yield from adaptive_plan(
         dets=dets,

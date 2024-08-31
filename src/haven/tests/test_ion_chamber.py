@@ -1,4 +1,3 @@
-import time
 from unittest.mock import AsyncMock
 
 import numpy as np

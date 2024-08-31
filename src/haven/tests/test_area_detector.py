@@ -1,7 +1,6 @@
 import time
 from collections import OrderedDict
 
-import numpy as np
 import pytest
 from ophyd import ADComponent as ADCpt
 from ophyd.areadetector.cam import AreaDetectorCam

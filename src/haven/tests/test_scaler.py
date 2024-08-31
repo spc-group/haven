@@ -1,6 +1,6 @@
 import pytest
 
-from haven.instrument.scaler import load_scalers, MultiChannelScaler
+from haven.instrument.scaler import MultiChannelScaler, load_scalers
 
 
 @pytest.fixture()
@@ -23,7 +23,10 @@ def test_mcs_signals(mcs):
     assert mcs.prescale.source == "ca://255idcVME:3820:Prescale"
     assert mcs.channel_advance_source.source == "ca://255idcVME:3820:ChannelAdvance"
     assert mcs.count_on_start.source == "ca://255idcVME:3820:CountOnStart"
-    assert mcs.software_channel_advance.source == "ca://255idcVME:3820:SoftwareChannelAdvance"
+    assert (
+        mcs.software_channel_advance.source
+        == "ca://255idcVME:3820:SoftwareChannelAdvance"
+    )
     assert mcs.channel_1_source.source == "ca://255idcVME:3820:Channel1Source"
     assert mcs.user_led.source == "ca://255idcVME:3820:UserLED"
     assert mcs.mux_output.source == "ca://255idcVME:3820:MUXOutput"
@@ -49,10 +52,11 @@ async def test_mcs_reading(mcs):
     await mcs.connect(mock=True)
     reading = await mcs.read()
     from pprint import pprint
+
     pprint(list(reading.keys()))
     # Check that the correct readings are included
     assert mcs.elapsed_time.name in reading
-    assert mcs.current_channel.name in reading    
+    assert mcs.current_channel.name in reading
     assert mcs.mcas[0].spectrum.name in reading
     # The scaler is also read by the MCS by default
     assert mcs.scaler.elapsed_time.name in reading

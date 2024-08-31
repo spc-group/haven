@@ -1,24 +1,9 @@
 import asyncio
-from enum import Enum
 
+from ophyd_async.core import ConfigSignal, Device, StandardReadable, SubsetEnum
 from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw, epics_signal_x
-from ophyd_async.core import StandardReadable, ConfigSignal, HintedSignal, Device, SubsetEnum
 
 from ..typing import StrEnum
-
-
-
-class ScanInterval(StrEnum):
-    PASSIVE = "Passive"
-    EVENT = "Event"
-    IO_INTR = "I/O Intr"
-    SCAN_10 = "10 second"
-    SCAN_5 = "5 second"
-    SCAN_2 = "2 second"
-    SCAN_1 = "1 second"
-    SCAN_0_5 = ".5 second"
-    SCAN_0_2 = ".2 second"
-    SCAN_0_1 = ".1 second"
 
 
 class AlarmStatus(StrEnum):
@@ -53,8 +38,6 @@ class AlarmSeverity(StrEnum):
     INVALID = "INVALID"
 
 
-
-
 class EpicsRecordDeviceCommonAll(StandardReadable):
     """
     Many of the fields common to all EPICS records.
@@ -62,21 +45,35 @@ class EpicsRecordDeviceCommonAll(StandardReadable):
     Some fields are not included because they are not interesting to
     an EPICS client or are already provided in other support.
     """
+
     # The valid options are specific to the record type
     # Subclasses should set this properly
-    DeviceType = SubsetEnum["None"]  
+    DeviceType = SubsetEnum["None"]
+
+    class ScanInterval(StrEnum):
+        PASSIVE = "Passive"
+        EVENT = "Event"
+        IO_INTR = "I/O Intr"
+        SCAN_10 = "10 second"
+        SCAN_5 = "5 second"
+        SCAN_2 = "2 second"
+        SCAN_1 = "1 second"
+        SCAN_0_5 = ".5 second"
+        SCAN_0_2 = ".2 second"
+        SCAN_0_1 = ".1 second"
+
     # Config signals
     def __init__(self, prefix: str, name: str = ""):
         with self.add_children_as_readables(ConfigSignal):
             self.description = epics_signal_rw(str, f"{prefix}.DESC")
-            self.scanning_rate = epics_signal_rw(ScanInterval, f"{prefix}.SCAN")
+            self.scanning_rate = epics_signal_rw(self.ScanInterval, f"{prefix}.SCAN")
             self.device_type = epics_signal_r(self.DeviceType, f"{prefix}.DTYP")
         # Other signals, not included in read
         self.disable_value = epics_signal_rw(int, f"{prefix}.DISV")
         self.scan_disable_input_link_value = epics_signal_rw(int, f"{prefix}.DISA")
         self.scan_disable_value_input_link = epics_signal_rw(str, f"{prefix}.SDIS")
         self.forward_link = epics_signal_rw(str, f"{prefix}.FLNK")
-        
+
         self.alarm_status = epics_signal_r(AlarmStatus, f"{prefix}.STAT")
         self.alarm_severity = epics_signal_r(AlarmSeverity, f"{prefix}.SEVR")
         self.new_alarm_status = epics_signal_r(AlarmStatus, f"{prefix}.NSTA")
@@ -108,6 +105,7 @@ class EpicsRecordInputFields(EpicsRecordDeviceCommonAll):
     """
     Some fields common to EPICS input records.
     """
+
     def __init__(self, prefix: str, name: str = ""):
         with self.add_children_as_readables(ConfigSignal):
             self.input_link = epics_signal_rw(str, f"{prefix}.INP")
@@ -118,6 +116,7 @@ class EpicsRecordOutputFields(EpicsRecordDeviceCommonAll):
     """
     Some fields common to EPICS output records.
     """
+
     class ModeSelect(StrEnum):
         SUPERVISORY = "supervisory"
         CLOSED_LOOP = "closed_loop"

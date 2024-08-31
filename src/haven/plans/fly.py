@@ -16,7 +16,7 @@ from bluesky.preprocessors import (
     run_wrapper,
     stage_wrapper,
 )
-from bluesky.protocols import Collectable, EventCollectable
+from bluesky.protocols import EventPageCollectable
 from bluesky.utils import Msg, single_gen
 from ophyd import Device
 from ophyd.flyers import FlyerInterface
@@ -120,7 +120,9 @@ def fly_line_scan(detectors: list, *args, num, dwell_time):
         )
         yield from bps.prepare(obj, position_info, wait=False, group=prepare_group)
     # Set up detectors
-    trigger_info = TriggerInfo(number=num, livetime=dwell_time, deadtime=0, trigger="internal")
+    trigger_info = TriggerInfo(
+        number=num, livetime=dwell_time, deadtime=0, trigger="internal"
+    )
     for obj in detectors:
         yield from bps.prepare(obj, trigger_info, wait=False, group=prepare_group)
     yield from bps.wait(group=prepare_group)
@@ -150,7 +152,7 @@ def fly_line_scan(detectors: list, *args, num, dwell_time):
         yield from bps.unmonitor(sig)
     # Collect the data after flying
     flyers = [*motors, *detectors]
-    flyers = [flyer for flyer in flyers if isinstance(flyer, Collectable)]
+    flyers = [flyer for flyer in flyers if isinstance(flyer, EventPageCollectable)]
     for flyer_ in flyers:
         print(f"Collecting from {flyer_}")
         yield from bps.collect(flyer_)

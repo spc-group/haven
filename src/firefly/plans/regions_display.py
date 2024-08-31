@@ -150,7 +150,7 @@ class RegionsDisplay(display.FireflyDisplay):
         detectors = self.ui.detectors_list.selected_detectors()
         detectors = [self.registry[name] for name in detectors]
         detectors = [det for det in detectors if hasattr(det, "default_time_signal")]
-        
+
         # to prevent detector list is empty
         if len(detectors) == 0:
             detector_time = float("nan")

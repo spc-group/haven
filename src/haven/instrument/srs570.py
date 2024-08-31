@@ -17,33 +17,26 @@ https://htmlpreview.github.io/?https://raw.githubusercontent.com/epics-modules/i
 """
 
 import asyncio
-from collections import OrderedDict
 import logging
 import math
-from enum import Enum, IntEnum
-from typing import Callable, Optional, Sequence, Type
+from collections import OrderedDict
+from enum import Enum
+from typing import Optional, Type
 
-import pint
-from ophyd import Component, EpicsSignal
-from ophyd.signal import DEFAULT_WRITE_TIMEOUT
 from ophyd_async.core import (
-    DEFAULT_TIMEOUT,
     AsyncStatus,
     CalculatableTimeout,
     CalculateTimeout,
     Device,
-    SignalR,
     SignalRW,
-    SoftSignalBackend,
-    T,
     SubsetEnum,
+    T,
 )
-from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw, epics_signal_x
+from ophyd_async.epics.signal import epics_signal_rw, epics_signal_x
 from ophyd_async.epics.signal._signal import _epics_signal_backend
 
-from .signal import derived_signal_r, derived_signal_rw
 from .. import exceptions
-from ..typing import BoolEnum
+from .signal import derived_signal_r, derived_signal_rw
 
 logger = logging.getLogger(__name__)
 
@@ -324,12 +317,55 @@ class SRS570PreAmplifier(Device):
         self.bias_on = epics_signal_rw(SubsetEnum["OFF", "ON"], f"{prefix}bias_on")
 
         self.filter_type = epics_signal_rw(
-            SubsetEnum['  No filter', ' 6 dB highpass', '12 dB highpass', ' 6 dB bandpass', ' 6 dB lowpass', '12 dB lowpass'],
-            f"{prefix}filter_type"
+            SubsetEnum[
+                "  No filter",
+                " 6 dB highpass",
+                "12 dB highpass",
+                " 6 dB bandpass",
+                " 6 dB lowpass",
+                "12 dB lowpass",
+            ],
+            f"{prefix}filter_type",
         )
         self.filter_reset = epics_signal_x(f"{prefix}filter_reset.PROC")
-        self.filter_lowpass = epics_signal_rw(SubsetEnum['  0.03 Hz', '  0.1 Hz', '  0.3 Hz', '  1   Hz', '  3   Hz', ' 10   Hz', ' 30   Hz', '100   Hz', '300   Hz', '  1   kHz', '  3   kHz', ' 10   kHz', ' 30   kHz', '100   kHz', '300   kHz', '  1   MHz'], f"{prefix}low_freq")
-        self.filter_highpass = epics_signal_rw(SubsetEnum['  0.03 Hz', '  0.1 Hz', '  0.3 Hz', '  1   Hz', '  3   Hz', ' 10   Hz', ' 30   Hz', '100   Hz', '300   Hz', '  1   kHz', '  3   kHz', ' 10   kHz'], f"{prefix}high_freq")
+        self.filter_lowpass = epics_signal_rw(
+            SubsetEnum[
+                "  0.03 Hz",
+                "  0.1 Hz",
+                "  0.3 Hz",
+                "  1   Hz",
+                "  3   Hz",
+                " 10   Hz",
+                " 30   Hz",
+                "100   Hz",
+                "300   Hz",
+                "  1   kHz",
+                "  3   kHz",
+                " 10   kHz",
+                " 30   kHz",
+                "100   kHz",
+                "300   kHz",
+                "  1   MHz",
+            ],
+            f"{prefix}low_freq",
+        )
+        self.filter_highpass = epics_signal_rw(
+            SubsetEnum[
+                "  0.03 Hz",
+                "  0.1 Hz",
+                "  0.3 Hz",
+                "  1   Hz",
+                "  3   Hz",
+                " 10   Hz",
+                " 30   Hz",
+                "100   Hz",
+                "300   Hz",
+                "  1   kHz",
+                "  3   kHz",
+                " 10   kHz",
+            ],
+            f"{prefix}high_freq",
+        )
 
         self.gain_mode = gain_signal(self.GainMode, f"{prefix}gain_mode")
         self.invert = epics_signal_rw(SubsetEnum["OFF", "ON"], f"{prefix}invert_on")
@@ -382,7 +418,7 @@ class SRS570PreAmplifier(Device):
         try:
             return 10 * math.log10(values[gain])
         except ValueError:
-            return float('nan')
+            return float("nan")
 
     async def _from_gain_level(
         self, value, *, sens_value, sens_unit, offset_value, offset_unit
@@ -432,7 +468,9 @@ class SRS570PreAmplifier(Device):
         new_level = 27 - new_level
         return new_level
 
-    def _to_gain_level(self, values, *, sens_value, sens_unit, offset_value, offset_unit):
+    def _to_gain_level(
+        self, values, *, sens_value, sens_unit, offset_value, offset_unit
+    ):
         """Compute the level of gain for given sensitivity settings."""
         return self._sensitivity_to_level(values[sens_value], values[sens_unit])
 

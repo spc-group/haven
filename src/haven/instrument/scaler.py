@@ -1,13 +1,17 @@
-from enum import Enum, IntEnum
-from typing import List
+from enum import Enum
 
 import numpy as np
 from numpy.typing import NDArray
-from ophyd_async.core import ConfigSignal, DeviceVector, HintedSignal, StandardReadable, SubsetEnum
+from ophyd_async.core import (
+    ConfigSignal,
+    DeviceVector,
+    HintedSignal,
+    StandardReadable,
+    SubsetEnum,
+)
 from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw, epics_signal_x
 
 from .._iconfig import load_config
-from ..typing import BoolEnum
 from .device import connect_devices
 from .instrument_registry import InstrumentRegistry
 from .instrument_registry import registry as default_registry
@@ -102,7 +106,9 @@ class ScalerChannel(StandardReadable):
         # Configuration signals
         with self.add_children_as_readables(ConfigSignal):
             self.description = epics_signal_rw(str, f"{prefix}.NM{epics_ch_num}")
-            self.is_gate = epics_signal_rw(SubsetEnum["N", "Y"], f"{prefix}.G{epics_ch_num}")
+            self.is_gate = epics_signal_rw(
+                SubsetEnum["N", "Y"], f"{prefix}.G{epics_ch_num}"
+            )
             self.preset_count = epics_signal_rw(float, f"{prefix}.PR{epics_ch_num}")
             offset_suffix = f"_offset{channel_num // 4}.{num_to_char(channel_num % 4)}"
             self.offset_rate = epics_signal_rw(float, f"{prefix}{offset_suffix}")
@@ -163,7 +169,9 @@ class MultiChannelScaler(StandardReadable):
             self.channel_advance_source = epics_signal_rw(
                 self.ChannelAdvanceSource, f"{prefix}ChannelAdvance"
             )
-            self.count_on_start = epics_signal_rw(SubsetEnum["No", "Yes"], f"{prefix}CountOnStart")
+            self.count_on_start = epics_signal_rw(
+                SubsetEnum["No", "Yes"], f"{prefix}CountOnStart"
+            )
             self.channel_1_source = epics_signal_rw(
                 Channel1Source, f"{prefix}Channel1Source"
             )

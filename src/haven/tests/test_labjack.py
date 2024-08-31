@@ -7,18 +7,17 @@ Hardware is not available so test with best efforts
 import pytest
 
 from haven.instrument.labjack import (
+    AnalogInput,
+    AnalogOutput,
+    DigitalIO,
     LabJackBase,
     LabJackT4,
     LabJackT7,
     LabJackT7Pro,
     LabJackT8,
-    AnalogInput,
-    AnalogOutput,
-    DigitalIO,
     WaveformDigitizer,
     WaveformGenerator,
 )
-
 
 PV_PREFIX = "255idc:LJ_T7:"
 
@@ -60,6 +59,7 @@ async def test_base_signals_device(labjack):
     }
     desc = await labjack.describe_configuration()
     from pprint import pprint
+
     pprint(await labjack.analog_outputs[0].describe_configuration())
     # pprint(desc)
     assert set(desc.keys()) == cfg_names
