@@ -1,0 +1,83 @@
+# This file is a version of the proper environment.yml file but with
+# pyqt and Qt pinned at the latest version that is compatible with Qt
+# designer widgets.
+
+name: haven
+
+# use:
+# prefer micromamba (conda takes much longer, if ever, to solve)
+# micromamba installed in ~30s
+#   date; micromamba create -y -n haven -f ./environment.yml; date
+#   # then activate with:
+#   eval "$(micromamba shell hook --shell=bash)"
+#   micromamba activate haven
+# conda installed in ~250s
+#   date; conda env create --force -f ./environment.yml; date
+#   # then activate with:
+#   conda activate haven
+
+variables:
+  PYDM_DEFAULT_PROTOCOL: ca
+
+channels:
+  - conda-forge
+  - defaults
+  - aps-anl-tag
+  - nsls2forge
+
+dependencies:
+  # --- Python core packages
+  - python=3.10  # Until this is fixed in pydm: https://github.com/slaclab/pydm/issues/951
+  - pip
+
+  # This package is not available on pip as of 2024-07-25
+  - aps-dm-api >=5
+  
+  # --- Qt (tends to cause problems when installed through pip
+  # Optional: Pin at 5.12.3 until pydm figures out how to designer widgets
+  - pyqt == 5.12.3
+  - pyqtgraph < 0.13.0  # Last version to support pyqt 5.12
+  - qt ~= 5.12
+  - pydm
+  # - qt >= 5.15
+  # - pyqt >= 5.15  
+
+  - pip:
+    - time-machine
+    - rich
+    - autoapi
+    - pytest-mongodb
+    - StrEnum
+    - ophyd-registry >= 1.2.1
+    - xraydb >=4.5.0
+    - pytest-timeout  # Get rid of this if tests are not hanging
+    - git+https://github.com/pcdshub/pcdsdevices
+    - area-detector-handlers
+    - ophyd >=1.6.3
+    - ophyd-async >= 0.5
+    - apstools >= 1.6.20
+    - pcdsdevices  # For extra signal types
+    - typhos >= 3.1.0  # need the find_signal method on the SignalConnection()
+    - p4p
+    - tiled[all] >= 0.1.0b6  # Make sure we have pydantic2 support
+    - xarray !=2022.6.0  # incompatible with numpy=1.20
+    - ipython
+    - ipykernel
+    - jupyter
+    - jupyterlab
+    - notebook
+    - pip
+    - psutil
+    - numba>=0.56  # Ensures 0.53 (broken) isn't installed
+    # This version of networkx has an importlib bug in it
+    - networkx < 3.3
+    # --- general support packages
+    - bitshuffle
+    - imagecodecs-lite
+    - ipympl
+    - lxml
+    - pint
+    - pyarrow < 11.0.0  # Tempoary fix, remove once the libort missing symbol doesn't break CI  
+    # --- Extra Qt UI packages
+    - qtawesome
+    - qasync

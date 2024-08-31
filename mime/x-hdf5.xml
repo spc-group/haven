@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type xmlns="http://www.freedesktop.org/standards/shared-mime-info" type="application/x-hdf5">
+    <comment>HDF55 document</comment>
+    <comment xml:lang="zh_TW">HDF5 文件</comment>
+    <comment xml:lang="zh_CN">HDF5 文档</comment>
+    <comment xml:lang="vi">Tài liệu HDF5</comment>
+    <comment xml:lang="uk">документ HDF5</comment>
+    <comment xml:lang="tr">HDF5 belgesi</comment>
+    <comment xml:lang="sv">HDF5-dokument</comment>
+    <comment xml:lang="sr">ХДФ документ</comment>
+    <comment xml:lang="sq">Dokument HDF5</comment>
+    <comment xml:lang="sl">Dokument HDF5</comment>
+    <comment xml:lang="sk">Dokument HDF5</comment>
+    <comment xml:lang="ru">Документ HDF5</comment>
+    <comment xml:lang="ro">Document HDF5</comment>
+    <comment xml:lang="pt_BR">Documento HDF5</comment>
+    <comment xml:lang="pt">documento HDF5</comment>
+    <comment xml:lang="pl">Dokument HDF5</comment>
+    <comment xml:lang="oc">document HDF5</comment>
+    <comment xml:lang="nn">HDF5-dokument</comment>
+    <comment xml:lang="nl">HDF5-document</comment>
+    <comment xml:lang="nb">HDF5-dokument</comment>
+    <comment xml:lang="ms">Dokumen HDF5</comment>
+    <comment xml:lang="lv">HDF5 dokuments</comment>
+    <comment xml:lang="lt">HDF5 dokumentas</comment>
+    <comment xml:lang="ko">HDF5 문서</comment>
+    <comment xml:lang="kk">HDF5 құжаты</comment>
+    <comment xml:lang="ja">HDF5 ドキュメント</comment>
+    <comment xml:lang="it">Documento HDF5</comment>
+    <comment xml:lang="id">Dokumen HDF5</comment>
+    <comment xml:lang="ia">Documento HDF5</comment>
+    <comment xml:lang="hu">HDF5-dokumentum</comment>
+    <comment xml:lang="hr">HDF5 dokument</comment>
+    <comment xml:lang="he">מסמך HDF5</comment>
+    <comment xml:lang="gl">documento HDF5</comment>
+    <comment xml:lang="ga">cáipéis HDF5</comment>
+    <comment xml:lang="fur">document HDF5</comment>
+    <comment xml:lang="fr">document HDF5</comment>
+    <comment xml:lang="fo">HDF5 skjal</comment>
+    <comment xml:lang="fi">HDF5-asiakirja</comment>
+    <comment xml:lang="eu">HDF5 dokumentua</comment>
+    <comment xml:lang="es">documento HDF5</comment>
+    <comment xml:lang="eo">HDF5-dokumento</comment>
+    <comment xml:lang="en_GB">HDF5 document</comment>
+    <comment xml:lang="el">Έγγραφο HDF5</comment>
+    <comment xml:lang="de">HDF5-Dokument</comment>
+    <comment xml:lang="da">HDF5-dokument</comment>
+    <comment xml:lang="cy">Dogfen HDF5</comment>
+    <comment xml:lang="cs">dokument HDF5</comment>
+    <comment xml:lang="ca">document HDF5</comment>
+    <comment xml:lang="bg">Документ — HDF5</comment>
+    <comment xml:lang="be@latin">Dakument HDF5</comment>
+    <comment xml:lang="az">HDF5 sənədi</comment>
+    <comment xml:lang="ast">Documentu HDF5</comment>
+    <comment xml:lang="ar">مستند HDF5</comment>
+    <comment xml:lang="af">HDF5-dokument</comment>
+    <acronym>HDF5</acronym>
+    <expanded-acronym>Neutron/X-ray Unified Structure Data Format version 5</expanded-acronym>
+    <generic-icon name="x-office-document"/>
+    <glob pattern="*.hdf"/>
+    <glob pattern="*.hdf5"/>
+    <glob pattern="*.h5"/>
+  </mime-type>
+</mime-info>

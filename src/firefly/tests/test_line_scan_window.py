@@ -2,25 +2,14 @@ from unittest import mock
 
 import pytest
 from bluesky_queueserver_api import BPlan
-from ophyd.sim import make_fake_device
+from ophyd_async.core import set_mock_value
 from qtpy import QtCore
 
 from firefly.plans.line_scan import LineScanDisplay
-from haven.instrument import motor
-
-
-@pytest.fixture
-def fake_motors(sim_registry):
-    motor_names = ["motorA_m1", "motorA_m2"]
-    motors = []
-    for name in motor_names:
-        this_motor = make_fake_device(motor.HavenMotor)(name=name, labels={"motors"})
-        motors.append(this_motor)
-    return motors
 
 
 @pytest.fixture()
-async def display(qtbot, sim_registry, fake_motors, dxp, I0):
+async def display(qtbot, sim_registry, sync_motors, async_motors, dxp, ion_chamber):
     display = LineScanDisplay()
     qtbot.addWidget(display)
     await display.update_devices(sim_registry)
@@ -29,7 +18,7 @@ async def display(qtbot, sim_registry, fake_motors, dxp, I0):
 
 
 @pytest.mark.asyncio
-async def test_time_calculator(display, sim_registry):
+async def test_time_calculator(display, sim_registry, ion_chamber, qtbot, qapp):
     # set up motor num
     await display.update_regions(2)
 
@@ -41,23 +30,17 @@ async def test_time_calculator(display, sim_registry):
 
     # set up detectors
     display.ui.detectors_list.selected_detectors = mock.MagicMock(
-        return_value=["vortex_me4", "I0"]
+        return_value=["vortex_me4", ion_chamber.name]
     )
 
     # set up default timing for the detector
     detectors = display.ui.detectors_list.selected_detectors()
     detectors = {name: sim_registry[name] for name in detectors}
-    detectors["I0"].default_time_signal.set(0.6255).wait(2)
+    set_mock_value(ion_chamber.default_time_signal, 0.6255)
     detectors["vortex_me4"].default_time_signal.set(0.5).wait(2)
 
-    # Create empty QItemSelection objects
-    selected = QtCore.QItemSelection()
-    deselected = QtCore.QItemSelection()
-
-    # emit the signal so that the time calculator is triggered
-    display.ui.detectors_list.selectionModel().selectionChanged.emit(
-        selected, deselected
-    )
+    # Trigger an update of the time calculator
+    await display.update_total_time()
 
     # Check whether time is calculated correctly for a single scan
     assert display.ui.label_hour_scan.text() == "0"
@@ -76,12 +59,12 @@ async def test_line_scan_plan_queued(qtbot, display):
     await display.update_regions(2)
 
     # set up a test motor 1
-    display.regions[0].motor_box.combo_box.setCurrentText("motorA_m1")
+    display.regions[0].motor_box.combo_box.setCurrentText("async_motor_1")
     display.regions[0].start_line_edit.setText("1")
     display.regions[0].stop_line_edit.setText("111")
 
     # set up a test motor 2
-    display.regions[1].motor_box.combo_box.setCurrentText("motorA_m2")
+    display.regions[1].motor_box.combo_box.setCurrentText("sync_motor_2")
     display.regions[1].start_line_edit.setText("2")
     display.regions[1].stop_line_edit.setText("222")
 
@@ -101,10 +84,10 @@ async def test_line_scan_plan_queued(qtbot, display):
     expected_item = BPlan(
         "scan",
         ["vortex_me4", "I0"],
-        "motorA_m1",
+        "async_motor_1",
         1.0,
         111.0,
-        "motorA_m2",
+        "sync_motor_2",
         2.0,
         222.0,
         num=10,
@@ -112,6 +95,10 @@ async def test_line_scan_plan_queued(qtbot, display):
     )
 
     def check_item(item):
+        from pprint import pprint
+
+        pprint(item.to_dict())
+        pprint(expected_item.to_dict())
         return item.to_dict() == expected_item.to_dict()
 
     # Click the run button and see if the plan is queued

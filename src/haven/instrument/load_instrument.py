@@ -4,6 +4,8 @@ import warnings
 from typing import Mapping
 
 from ophyd import sim
+from ophyd_async.core import NotConnected
+from rich import print
 
 from .._iconfig import load_config
 from .aerotech import load_aerotech_stages
@@ -11,6 +13,7 @@ from .aps import load_aps
 from .area_detector import load_area_detectors
 from .beamline_manager import load_beamline_manager
 from .camera import load_cameras
+from .device import connect_devices
 from .dxp import load_dxp_detectors
 from .energy_positioner import load_energy_positioner
 from .heater import load_heaters
@@ -70,18 +73,32 @@ async def load_instrument(
     # Load the configuration
     if config is None:
         config = load_config()
+    # Load the devices from the configuration files
+    devices = []
     # Asynchronous loading of devices
+    mock = not config["beamline"]["is_connected"]
     results = await asyncio.gather(
-        load_ion_chambers(config=config),
-        # Load the motor devices last so that we can check for
-        # existing motors in the registry
-        load_motors(config=config),
+        load_tables(config=config, connect=False),
+        load_ion_chambers(config=config, connect=False),
     )
-    # Flatten async devices
-    devices = [d for devs in results for d in devs]
-    # Synchronous loading of devices
+    devices.extend([d for devices in results for d in devices])
+    print(f"Loading [repr.number]{len(devices)}[/] devices…", flush=True)
+    try:
+        await connect_devices(devices, mock=mock, registry=registry)
+    except NotConnected as exc:
+        log.exception(exc)
+    # Load the motor devices last so that we can check for existing
+    # motors in the registry
+    motors = await load_motors(config=config, connect=False)
+    print(f"Loading [repr.number]{len(motors)}[/] extra motors…", flush=True)
+    try:
+        await connect_devices(motors, mock=mock, registry=registry)
+    except NotConnected as exc:
+        log.exception(exc)
+    # Synchronous (threaded) devices
     devices.extend(
         [
+            # *(await load_ion_chambers(config=config)),
             *load_aerotech_stages(config=config),
             load_aps(config=config),
             *load_area_detectors(config=config),
@@ -96,14 +113,11 @@ async def load_instrument(
             *load_shutters(config=config),
             *load_slits(config=config),
             *load_stages(config=config),
-            *load_tables(config=config),
             *load_xia_pfcu4s(config=config),
             *load_xspress_detectors(config=config),
             *load_mirrors(config=config),
         ]
     )
-    # Also import some simulated devices for testing
-    # devices.extend(load_simulated_devices(config=config))
     # Filter out devices that couldn't be reached
     devices = [d for d in devices if d is not None]
     # Put the devices into the registry
