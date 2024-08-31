@@ -6,8 +6,8 @@ from firefly.ion_chamber import IonChamberDisplay
 
 
 @pytest.fixture()
-def display(I0, qtbot):
-    display = IonChamberDisplay(macros={"IC": I0.name})
+def display(ion_chamber, qtbot):
+    display = IonChamberDisplay(macros={"IC": ion_chamber.name})
     qtbot.addWidget(display)
     display.launch_caqtdm = mock.MagicMock()
     return display

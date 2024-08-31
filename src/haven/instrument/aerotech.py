@@ -588,6 +588,7 @@ def load_aerotech_stages(config=None):
     if config is None:
         config = load_config()
     devices = []
+    print(config)
     for name, stage_data in config.get("aerotech_stage", {}).items():
         devices.append(
             make_device(

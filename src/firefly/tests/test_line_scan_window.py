@@ -1,14 +1,17 @@
+import asyncio
 from unittest import mock
+from functools import partial
 
 import pytest
 from bluesky_queueserver_api import BPlan
 from qtpy import QtCore
+from ophyd_async.core import set_mock_value
 
 from firefly.plans.line_scan import LineScanDisplay
 
 
 @pytest.fixture()
-async def display(qtbot, sim_registry, sync_motors, async_motors, dxp, I0):
+async def display(qtbot, sim_registry, sync_motors, async_motors, dxp, ion_chamber):
     display = LineScanDisplay()
     qtbot.addWidget(display)
     await display.update_devices(sim_registry)
@@ -17,7 +20,7 @@ async def display(qtbot, sim_registry, sync_motors, async_motors, dxp, I0):
 
 
 @pytest.mark.asyncio
-async def test_time_calculator(display, sim_registry):
+async def test_time_calculator(display, sim_registry, ion_chamber, qtbot, qapp):
     # set up motor num
     await display.update_regions(2)
 
@@ -29,23 +32,17 @@ async def test_time_calculator(display, sim_registry):
 
     # set up detectors
     display.ui.detectors_list.selected_detectors = mock.MagicMock(
-        return_value=["vortex_me4", "I0"]
+        return_value=["vortex_me4", ion_chamber.name]
     )
 
     # set up default timing for the detector
     detectors = display.ui.detectors_list.selected_detectors()
     detectors = {name: sim_registry[name] for name in detectors}
-    detectors["I0"].default_time_signal.set(0.6255).wait(2)
+    set_mock_value(ion_chamber.default_time_signal, 0.6255)
     detectors["vortex_me4"].default_time_signal.set(0.5).wait(2)
 
-    # Create empty QItemSelection objects
-    selected = QtCore.QItemSelection()
-    deselected = QtCore.QItemSelection()
-
-    # emit the signal so that the time calculator is triggered
-    display.ui.detectors_list.selectionModel().selectionChanged.emit(
-        selected, deselected
-    )
+    # Trigger an update of the time calculator
+    await display.update_total_time()
 
     # Check whether time is calculated correctly for a single scan
     assert display.ui.label_hour_scan.text() == "0"

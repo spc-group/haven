@@ -53,7 +53,7 @@ class VoltmetersDisplay(display.FireflyDisplay):
     @asyncSlot(object)
     async def update_devices(self, registry):
         ion_chambers = registry.findall(label="ion_chambers")
-        self.ion_chambers = sorted(ion_chambers, key=lambda c: c.ch_num)
+        self.ion_chambers = sorted(ion_chambers, key=lambda c: c.scaler_channel.raw_count.source)
         # Clear the voltmeters grid layout
         self.clear_layout(self.voltmeters_layout)
         # Add embedded displays for all the ion chambers

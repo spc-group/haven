@@ -96,13 +96,42 @@ class IonChamber(StandardReadable, Triggerable):
         self._voltmeter_channel = voltmeter_channel
         self.auto_name = auto_name
         with self.add_children_as_readables():
-            self.mcs = MultiChannelScaler(
-                prefix=scaler_prefix, channels=[0, scaler_channel]
-            )
             self.preamp = SRS570PreAmplifier(preamp_prefix)
             self.voltmeter = LabJackT7(
                 prefix=voltmeter_prefix, analog_inputs=[voltmeter_channel], digital_ios=[], analog_outputs=[], digital_words=[],
             )
+        # Add subordinate devices
+        self.mcs = MultiChannelScaler(
+            prefix=scaler_prefix, channels=[0, scaler_channel]
+        )
+        self.add_readables([self.mcs.scaler])
+        self.add_readables([
+            self.mcs.acquire_mode,
+            self.mcs.channel_1_source,
+            self.mcs.channel_advance_source,
+            self.mcs.count_on_start,
+            self.mcs.dwell_time,
+            self.mcs.firmware,
+            self.mcs.input_mode,
+            self.mcs.input_polarity,
+            self.mcs.lne_output_delay,
+            self.mcs.lne_output_polarity,
+            self.mcs.lne_output_stretcher,
+            self.mcs.lne_output_width,
+            self.mcs.model,
+            self.mcs.mux_output,
+            self.mcs.num_channels,
+            self.mcs.num_channels_max,
+            self.mcs.output_mode,
+            self.mcs.output_polarity,
+            self.mcs.prescale,
+            self.mcs.preset_time,
+            self.mcs.snl_connected,
+            ],
+            ConfigSignal
+        )
+        # Add calculated signals
+        with self.add_children_as_readables():
             self.voltage = derived_signal_r(
                 float,
                 name="voltage",
@@ -120,6 +149,7 @@ class IonChamber(StandardReadable, Triggerable):
                 derived_from={"voltage": self.voltage, "gain": self.preamp.gain},
                 inverse=self._volts_to_amps,
             )
+
         super().__init__(name=name)
 
     def _counts_to_volts(self, values, *, count, time):
@@ -208,9 +238,9 @@ class IonChamber(StandardReadable, Triggerable):
             await last_status
             return
         # Nothing to wait on yet, so trigger the scaler and stash the result
-        status = signal.set(CountState.COUNT)
-        self._trigger_statuses[signal.source] = status
-        await status
+        st = signal.set(CountState.COUNT)
+        self._trigger_statuses[signal.source] = st
+        await st
 
     async def record_dark_current(self):
         signal = self.mcs.scaler.record_dark_current

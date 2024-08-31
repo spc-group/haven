@@ -106,7 +106,7 @@ class BinaryInput(Input):
     def __init__(self, prefix: str, name: str = ""):
         with self.add_children_as_readables():
             self.final_value = epics_signal_r(SubsetEnum["Low", "High"], f"{prefix}.VAL")
-            self.raw_value = epics_signal_rw(float, f"{prefix}.RVAL")
+        self.raw_value = epics_signal_rw(float, f"{prefix}.RVAL")
         super().__init__(prefix=prefix, name=name)
 
 
@@ -141,7 +141,10 @@ class AnalogOutput(Output):
         with self.add_children_as_readables():
             self.desired_value = epics_signal_rw(float, f"{prefix}.VAL")
         self.raw_value = epics_signal_rw(int, f"{prefix}.RVAL")
-        self.readback_value = epics_signal_r(int, f"{prefix}.RBV")
+        with self.add_children_as_readables(HintedSignal):
+            self.readback_value = epics_signal_r(int, f"{prefix}.RBV")
+        super().__init__(prefix=prefix, name=name)
+
 
 class AnalogInput(Input):
     """An analog input on a labjack device.
@@ -208,9 +211,9 @@ class AnalogInput(Input):
             self.range = epics_signal_rw(self.Range, f"{prefix}AiRange{ch_num}")
             self.mode = epics_signal_rw(self.Mode, f"{prefix}AiMode{ch_num}")
             self.enable = epics_signal_rw(SubsetEnum["Enable", "Disable"], f"{prefix}AiEnable{ch_num}")
-        with self.add_children_as_readables():
-            self.raw_value = epics_signal_rw(int, f"{prefix}Ai{ch_num}.RVAL")
-
+        with self.add_children_as_readables(HintedSignal):
+            self.final_value = epics_signal_r(float, f"{prefix}.VAL")
+        self.raw_value = epics_signal_rw(int, f"{prefix}Ai{ch_num}.RVAL")            
         super().__init__(prefix=f"{prefix}Ai{ch_num}", name=name)
 
 

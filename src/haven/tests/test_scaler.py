@@ -26,13 +26,13 @@ def test_mcs_signals(mcs):
     assert mcs.software_channel_advance.source == "ca://255idcVME:3820:SoftwareChannelAdvance"
     assert mcs.channel_1_source.source == "ca://255idcVME:3820:Channel1Source"
     assert mcs.user_led.source == "ca://255idcVME:3820:UserLED"
-    assert mcs.mux_output.source == "ca://255idcVME:3820:MuxOutput"
+    assert mcs.mux_output.source == "ca://255idcVME:3820:MUXOutput"
     assert mcs.acquire_mode.source == "ca://255idcVME:3820:AcquireMode"
     assert mcs.input_mode.source == "ca://255idcVME:3820:InputMode"
     assert mcs.input_polarity.source == "ca://255idcVME:3820:InputPolarity"
     assert mcs.output_mode.source == "ca://255idcVME:3820:OutputMode"
     assert mcs.output_polarity.source == "ca://255idcVME:3820:OutputPolarity"
-    assert mcs.lne_output_stretcher.source == "ca://255idcVME:3820:LNEStretcherEnabled"
+    assert mcs.lne_output_stretcher.source == "ca://255idcVME:3820:LNEStretcherEnable"
     assert mcs.lne_output_polarity.source == "ca://255idcVME:3820:LNEOutputPolarity"
     assert mcs.lne_output_delay.source == "ca://255idcVME:3820:LNEOutputDelay"
     assert mcs.lne_output_width.source == "ca://255idcVME:3820:LNEOutputWidth"
@@ -48,12 +48,14 @@ def test_mcs_signals(mcs):
 async def test_mcs_reading(mcs):
     await mcs.connect(mock=True)
     reading = await mcs.read()
+    from pprint import pprint
+    pprint(list(reading.keys()))
     # Check that the correct readings are included
     assert mcs.elapsed_time.name in reading
     assert mcs.current_channel.name in reading    
     assert mcs.mcas[0].spectrum.name in reading
-    # The scaler isn't read by the MCS by default
-    assert mcs.scaler.elapsed_time.name not in reading
+    # The scaler is also read by the MCS by default
+    assert mcs.scaler.elapsed_time.name in reading
 
 
 @pytest.mark.asyncio
@@ -82,7 +84,7 @@ async def test_scaler_configuration(mcs):
     config = await scaler.read_configuration()
     # Check that the correct readings are included
     assert scaler.preset_time.name in config
-    assert mcs.preset_time.name in config
+    assert mcs.preset_time.name not in config
 
 
 def test_scaler_signals(mcs):

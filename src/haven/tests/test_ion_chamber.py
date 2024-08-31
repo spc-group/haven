@@ -32,6 +32,8 @@ def ion_chamber(sim_registry):
 def test_ion_chamber_devices(ion_chamber):
     """Check that the ion chamber has the right sub-devices."""
     assert list(ion_chamber.mcs.scaler.channels.keys()) == [0, 2]
+    assert hasattr(ion_chamber, "preamp")
+    assert list(ion_chamber.voltmeter.analog_inputs.keys()) == [1]
 
 
 @pytest.mark.asyncio
@@ -50,6 +52,83 @@ async def test_load_ion_chambers(sim_registry, mocker):
     )
     # assert ic.voltmeter.prefix == "255idc:LabjackT7_0:Ai1"
     assert ic.counts_per_volt_second == 1e7
+
+
+async def test_readables(ion_chamber):
+    await ion_chamber.connect(mock=True)
+    expected_readables = [
+        "I0-current",
+        "I0-voltage",
+        "I0-voltmeter-analog_inputs-1-final_value",
+        "I0-mcs-scaler-channels-0-net_count",
+        "I0-mcs-scaler-channels-0-raw_count",
+        "I0-mcs-scaler-channels-2-net_count",
+        "I0-mcs-scaler-channels-2-raw_count",
+        "I0-mcs-scaler-elapsed_time",
+    ]
+    actual_readables = (await ion_chamber.describe()).keys()
+    assert sorted(actual_readables) == sorted(expected_readables)
+    # Check confirables
+    expected_configables = [
+        "I0-voltmeter-model_name",
+        "I0-voltmeter-poll_sleep_ms",
+        "I0-voltmeter-analog_in_sampling_rate",
+        "I0-voltmeter-last_error_message",
+        "I0-voltmeter-analog_in_resolution_all",
+        "I0-voltmeter-firmware_version",
+        "I0-voltmeter-device_temperature",
+        "I0-voltmeter-serial_number",
+        "I0-voltmeter-analog_in_settling_time_all",
+        "I0-voltmeter-driver_version",
+        "I0-voltmeter-ljm_version",
+        "I0-voltmeter-analog_inputs-1-mode",
+        "I0-voltmeter-analog_inputs-1-temperature_units",
+        "I0-voltmeter-analog_inputs-1-low",
+        "I0-voltmeter-analog_inputs-1-high",
+        "I0-voltmeter-analog_inputs-1-resolution",
+        "I0-voltmeter-analog_inputs-1-range",
+        "I0-voltmeter-analog_inputs-1-differential",
+        "I0-voltmeter-analog_inputs-1-enable",
+        "I0-voltmeter-analog_inputs-1-input_link",
+        "I0-voltmeter-analog_inputs-1-description",
+        "I0-voltmeter-analog_inputs-1-scanning_rate",
+        "I0-voltmeter-analog_inputs-1-device_type",
+        "I0-mcs-model",
+        "I0-mcs-lne_output_delay",
+        "I0-mcs-count_on_start",
+        "I0-mcs-lne_output_polarity",
+        "I0-mcs-lne_output_stretcher",
+        "I0-mcs-preset_time",
+        "I0-mcs-channel_1_source",
+        "I0-mcs-firmware",
+        "I0-mcs-input_mode",
+        "I0-mcs-output_mode",
+        "I0-mcs-channel_advance_source",
+        "I0-mcs-snl_connected",
+        "I0-mcs-prescale",
+        "I0-mcs-output_polarity",
+        "I0-mcs-num_channels",
+        "I0-mcs-input_polarity",
+        "I0-mcs-lne_output_width",
+        "I0-mcs-mux_output",
+        "I0-mcs-acquire_mode",
+        "I0-mcs-num_channels_max",
+        "I0-mcs-dwell_time",
+        "I0-mcs-scaler-channels-0-preset_count",
+        "I0-mcs-scaler-channels-0-description",
+        "I0-mcs-scaler-channels-0-is_gate",
+        "I0-mcs-scaler-channels-0-offset_rate",
+        "I0-mcs-scaler-channels-2-preset_count",
+        "I0-mcs-scaler-channels-2-description",
+        "I0-mcs-scaler-channels-2-is_gate",
+        "I0-mcs-scaler-channels-2-offset_rate",
+        "I0-mcs-scaler-delay",
+        "I0-mcs-scaler-clock_frequency",
+        "I0-mcs-scaler-preset_time",
+        "I0-mcs-scaler-count_mode",
+    ]
+    actual_configables = (await ion_chamber.describe_configuration()).keys()
+    assert sorted(actual_configables) == sorted(expected_configables)
 
 
 @pytest.mark.asyncio
@@ -215,7 +294,9 @@ async def test_flyscan_kickoff(ion_chamber, trigger_info):
     # Prepare the mocked put commands
     start_mock_put = get_mock_put(ion_chamber.mcs.start_all)
     # Kickoff the fly scan
-    await ion_chamber.kickoff()
+    status = ion_chamber.kickoff()
+    set_mock_value(ion_chamber.mcs.acquiring, ion_chamber.mcs.Acquiring.ACQUIRING)
+    await status
     # Check that the scan was started
     assert start_mock_put.called
     # Check that timestamps get recorded when new data are available
@@ -258,7 +339,7 @@ async def test_flyscan_collect(ion_chamber, trigger_info):
     # Ignore the first collected data point because it's during taxiing
     expected_data = sim_data[1:]
     # The real timestamps should be midway between PSO pulses
-    collected = [c async for c in ion_chamber.collect()]
+    collected = [c async for c in ion_chamber.collect_pages()]
     assert len(collected) == 1
     collected = collected[0]
     # Confirm data have the right structure

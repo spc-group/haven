@@ -155,8 +155,6 @@ class MultiChannelScaler(StandardReadable):
         # Transient states
         self.acquiring = epics_signal_r(self.Acquiring, f"{prefix}Acquiring")
         self.user_led = epics_signal_rw(OutputLED, f"{prefix}UserLED")
-        self.elapsed_time = epics_signal_r(float, f"{prefix}ElapsedReal")
-        self.current_channel = epics_signal_r(int, f"{prefix}CurrentChannel")
         # Config signals
         with self.add_children_as_readables(ConfigSignal):
             self.preset_time = epics_signal_rw(float, f"{prefix}PresetReal")
@@ -189,9 +187,12 @@ class MultiChannelScaler(StandardReadable):
             self.model = epics_signal_r(ScalerModel, f"{prefix}Model")
             self.firmware = epics_signal_r(int, f"{prefix}Firmware")
         # Child-devices
-        self.mcas = DeviceVector({i: MCA(f"{prefix}mca{i+1}") for i in channels})
         with self.add_children_as_readables():
+            self.mcas = DeviceVector({i: MCA(f"{prefix}mca{i+1}") for i in channels})
             self.scaler = Scaler(f"{prefix}scaler1", channels=channels)
+            self.elapsed_time = epics_signal_r(float, f"{prefix}ElapsedReal")
+            self.current_channel = epics_signal_r(int, f"{prefix}CurrentChannel")
+        print(self.elapsed_time.name)
         super().__init__(name=name)
 
 

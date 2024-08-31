@@ -2,6 +2,7 @@ from queue import Queue
 
 import numpy as np
 import pandas as pd
+from bluesky import plan_stubs as bps
 from bluesky_adaptive.per_event import adaptive_plan, recommender_factory
 from bluesky_adaptive.recommendations import NoRecommendation
 
@@ -163,7 +164,7 @@ def auto_gain(
         volts_min=volts_min, volts_max=volts_max, target_volts=target
     )
     ind_keys = [det.preamp.gain_level.name for det in dets]
-    dep_keys = [det.volts.name for det in dets]
+    dep_keys = [det.voltage.name for det in dets]
     rr, queue = recommender_factory(
         recommender,
         independent_keys=ind_keys,
@@ -172,26 +173,16 @@ def auto_gain(
         queue=queue,
     )
     # Start from the current gain settings
-    first_point = {det.preamp.gain_level: det.preamp.gain_level.get() for det in dets}
-    # Make sure the detectors have the correct read attrs.
-    old_kinds = {}
-    signals = [(det.preamp, det.preamp.gain_level) for det in dets]
-    signals = [sig for tpl in signals for sig in tpl]
-    for sig in signals:
-        old_kinds[sig] = sig.kind
-        sig.kind = "normal"
-    # Execute the adaptive plan
-    try:
-        yield from adaptive_plan(
-            dets=dets,
-            first_point=first_point,
-            to_recommender=rr,
-            from_recommender=queue,
-        )
-    finally:
-        # Restore the detector signal kinds
-        for sig in signals:
-            sig.kind = old_kinds[sig]
+    first_point = {}
+    for det in dets:
+        first_point[det.preamp.gain_level] = yield from bps.rd(det.preamp.gain_level, default_value=13)
+    # Execute the plan
+    yield from adaptive_plan(
+        dets=dets,
+        first_point=first_point,
+        to_recommender=rr,
+        from_recommender=queue,
+    )
 
 
 # -----------------------------------------------------------------------------
