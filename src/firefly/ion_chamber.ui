@@ -54,7 +54,7 @@ font-weight: bold;</string>
       <string>The name of this ion chamber.</string>
      </property>
      <property name="channel" stdset="0">
-      <string>haven://${IC}.description</string>
+      <string>haven://${IC}.scaler_channel.description</string>
      </property>
      <property name="enableRichText" stdset="0">
       <bool>false</bool>
@@ -172,6 +172,9 @@ font-weight: bold;</string>
             </property>
             <property name="toolTip">
              <string/>
+            </property>
+            <property name="text">
+             <string>##</string>
             </property>
             <property name="PyDMToolTip" stdset="0">
              <string>The current gain level of the pre-amp.</string>
@@ -576,6 +579,26 @@ font-weight: bold;</string>
         <property name="labelAlignment">
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
+        <item row="0" column="0">
+         <widget class="QLabel" name="label_18">
+          <property name="text">
+           <string>Net Counts:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="PyDMLabel" name="PyDMLabel_7">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The number of counts measured by the scaler.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;This is the counts produced by the voltage-to-frequency convertor, and &lt;span style=&quot; font-weight:600;&quot;&gt;not&lt;/span&gt; the photon count.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+          <property name="text">
+           <string>######</string>
+          </property>
+          <property name="channel" stdset="0">
+           <string>haven://${IC}.scaler_channel.net_count</string>
+          </property>
+         </widget>
+        </item>
         <item row="1" column="0">
          <widget class="QLabel" name="label_6">
           <property name="text">
@@ -617,13 +640,10 @@ font-weight: bold;</string>
              <string>The calculate voltage based on scaler counts and clock speed.</string>
             </property>
             <property name="channel" stdset="0">
-             <string>haven://${IC}.volts</string>
+             <string>haven://${IC}.voltage</string>
             </property>
             <property name="enableRichText" stdset="0">
              <bool>false</bool>
-            </property>
-            <property name="displayFormat" stdset="0">
-             <enum>PyDMLabel::Decimal</enum>
             </property>
            </widget>
           </item>
@@ -686,10 +706,7 @@ font-weight: bold;</string>
              <string>The calculated current based on the voltage and pre-amp settings.</string>
             </property>
             <property name="channel" stdset="0">
-             <string>haven://${IC}.amps</string>
-            </property>
-            <property name="displayFormat" stdset="0">
-             <enum>PyDMLabel::Exponential</enum>
+             <string>haven://${IC}.current</string>
             </property>
            </widget>
           </item>
@@ -756,7 +773,7 @@ font-weight: bold;</string>
              <bool>false</bool>
             </property>
             <property name="channel" stdset="0">
-             <string>haven://${IC}.exposure_time</string>
+             <string>haven://${IC}.default_time_signal</string>
             </property>
            </widget>
           </item>
@@ -787,12 +804,59 @@ font-weight: bold;</string>
           </item>
          </layout>
         </item>
-        <item row="4" column="0">
-         <widget class="QLabel" name="label_15">
-          <property name="text">
-           <string>Preset Counts:</string>
-          </property>
-         </widget>
+        <item row="4" column="1">
+         <layout class="QHBoxLayout" name="horizontalLayout_13">
+          <item>
+           <widget class="PyDMCheckbox" name="gate_checkbox">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="toolTip">
+             <string/>
+            </property>
+            <property name="channel" stdset="0">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="PyDMLineEdit" name="preset_count_line_edit">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Stop collecting data when the tick counts for this scaler channel reaches a certain preset value.&lt;/p&gt;&lt;p&gt;To help decide this value, consider that the clock gives the number of counts that a 10V signal produces in 1 sec. So if the clock is 1e7 Hz, then a &lt;span style=&quot; font-style:italic;&quot;&gt;preset count&lt;/span&gt; of 2.5e6 would be the equivalent of counting a 2.5V signal for 1 sec.&lt;/p&gt;&lt;p&gt;The scaler will stop when either &lt;span style=&quot; font-style:italic;&quot;&gt;acquire time&lt;/span&gt; is reached, or &lt;span style=&quot; font-style:italic;&quot;&gt;preset count&lt;/span&gt; is reached for any channel on that scaler.&lt;/p&gt;&lt;p&gt;A &lt;span style=&quot; font-style:italic;&quot;&gt;preset count&lt;/span&gt; of 0 will disable this behavior.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="rules" stdset="0">
+             <string>[{&quot;name&quot;: &quot;Disable Present Counts&quot;, &quot;property&quot;: &quot;Enable&quot;, &quot;initial_value&quot;: &quot;True&quot;, &quot;expression&quot;: &quot;ch[0]&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;haven://${IC}.gate&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}], &quot;notes&quot;: &quot;The preset-counts should only be editable when the channel is set to respond to the gate. If users really want to set it but disable the gate, then they'll need to just check the box first.&quot;}]</string>
+            </property>
+            <property name="precision" stdset="0">
+             <number>0</number>
+            </property>
+            <property name="showUnits" stdset="0">
+             <bool>false</bool>
+            </property>
+            <property name="precisionFromPV" stdset="0">
+             <bool>true</bool>
+            </property>
+            <property name="alarmSensitiveContent" stdset="0">
+             <bool>false</bool>
+            </property>
+            <property name="alarmSensitiveBorder" stdset="0">
+             <bool>true</bool>
+            </property>
+            <property name="PyDMToolTip" stdset="0">
+             <string/>
+            </property>
+            <property name="monitorDisp" stdset="0">
+             <bool>false</bool>
+            </property>
+            <property name="channel" stdset="0">
+             <string>haven://${IC}.scaler_channel.preset_count</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
         </item>
         <item row="5" column="0">
          <widget class="QLabel" name="label_16">
@@ -800,6 +864,55 @@ font-weight: bold;</string>
            <string>Clock:</string>
           </property>
          </widget>
+        </item>
+        <item row="6" column="1">
+         <layout class="QHBoxLayout" name="horizontalLayout_12">
+          <item>
+           <widget class="PyDMPushButton" name="PyDMPushButton_2">
+            <property name="toolTip">
+             <string>Count once with the scaler.</string>
+            </property>
+            <property name="text">
+             <string>Count</string>
+            </property>
+            <property name="channel" stdset="0">
+             <string>haven://${IC}.mcs.scaler.count</string>
+            </property>
+            <property name="pressValue" stdset="0">
+             <string>1</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="PyDMCheckbox" name="PyDMCheckbox">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="toolTip">
+             <string>Count repeatedly with the scaler.</string>
+            </property>
+            <property name="text">
+             <string>Autocount</string>
+            </property>
+            <property name="channel" stdset="0">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer_10">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
         </item>
         <item row="5" column="1">
          <layout class="QHBoxLayout" name="horizontalLayout_11">
@@ -817,10 +930,7 @@ font-weight: bold;</string>
              <string>#e##</string>
             </property>
             <property name="channel" stdset="0">
-             <string>haven://${IC}.frequency</string>
-            </property>
-            <property name="displayFormat" stdset="0">
-             <enum>PyDMLabel::Exponential</enum>
+             <string>haven://${IC}.mcs.scaler.clock_frequency</string>
             </property>
            </widget>
           </item>
@@ -851,116 +961,12 @@ font-weight: bold;</string>
           </item>
          </layout>
         </item>
-        <item row="0" column="0">
-         <widget class="QLabel" name="label_18">
+        <item row="4" column="0">
+         <widget class="QLabel" name="label_15">
           <property name="text">
-           <string>Counts:</string>
+           <string>Preset Counts:</string>
           </property>
          </widget>
-        </item>
-        <item row="0" column="1">
-         <widget class="PyDMLabel" name="PyDMLabel_7">
-          <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The number of counts measured by the scaler.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;This is the counts produced by the voltage-to-frequency convertor, and &lt;span style=&quot; font-weight:600;&quot;&gt;not&lt;/span&gt; the photon count.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-          </property>
-          <property name="channel" stdset="0">
-           <string>haven://${IC}.counts</string>
-          </property>
-         </widget>
-        </item>
-        <item row="6" column="1">
-         <layout class="QHBoxLayout" name="horizontalLayout_12">
-          <item>
-           <widget class="PyDMPushButton" name="PyDMPushButton_2">
-            <property name="toolTip">
-             <string>Count once with the scaler.</string>
-            </property>
-            <property name="text">
-             <string>Count</string>
-            </property>
-            <property name="channel" stdset="0">
-             <string>haven://${IC}.count</string>
-            </property>
-            <property name="pressValue" stdset="0">
-             <string>1</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="PyDMCheckbox" name="PyDMCheckbox">
-            <property name="toolTip">
-             <string>Count repeatedly with the scaler.</string>
-            </property>
-            <property name="text">
-             <string>Autocount</string>
-            </property>
-            <property name="channel" stdset="0">
-             <string>haven://${IC}.auto_count</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <spacer name="horizontalSpacer_10">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-         </layout>
-        </item>
-        <item row="4" column="1">
-         <layout class="QHBoxLayout" name="horizontalLayout_13">
-          <item>
-           <widget class="PyDMCheckbox" name="gate_checkbox">
-            <property name="toolTip">
-             <string/>
-            </property>
-            <property name="channel" stdset="0">
-             <string>haven://${IC}.gate</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="PyDMLineEdit" name="preset_count_line_edit">
-            <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Stop collecting data when the tick counts for this scaler channel reaches a certain preset value.&lt;/p&gt;&lt;p&gt;To help decide this value, consider that the clock gives the number of counts that a 10V signal produces in 1 sec. So if the clock is 1e7 Hz, then a &lt;span style=&quot; font-style:italic;&quot;&gt;preset count&lt;/span&gt; of 2.5e6 would be the equivalent of counting a 2.5V signal for 1 sec.&lt;/p&gt;&lt;p&gt;The scaler will stop when either &lt;span style=&quot; font-style:italic;&quot;&gt;acquire time&lt;/span&gt; is reached, or &lt;span style=&quot; font-style:italic;&quot;&gt;preset count&lt;/span&gt; is reached for any channel on that scaler.&lt;/p&gt;&lt;p&gt;A &lt;span style=&quot; font-style:italic;&quot;&gt;preset count&lt;/span&gt; of 0 will disable this behavior.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-            </property>
-            <property name="rules" stdset="0">
-             <string>[{&quot;name&quot;: &quot;Disable Present Counts&quot;, &quot;property&quot;: &quot;Enable&quot;, &quot;initial_value&quot;: &quot;True&quot;, &quot;expression&quot;: &quot;ch[0]&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;haven://${IC}.gate&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}], &quot;notes&quot;: &quot;The preset-counts should only be editable when the channel is set to respond to the gate. If users really want to set it but disable the gate, then they'll need to just check the box first.&quot;}]</string>
-            </property>
-            <property name="precision" stdset="0">
-             <number>0</number>
-            </property>
-            <property name="showUnits" stdset="0">
-             <bool>false</bool>
-            </property>
-            <property name="precisionFromPV" stdset="0">
-             <bool>true</bool>
-            </property>
-            <property name="alarmSensitiveContent" stdset="0">
-             <bool>false</bool>
-            </property>
-            <property name="alarmSensitiveBorder" stdset="0">
-             <bool>true</bool>
-            </property>
-            <property name="PyDMToolTip" stdset="0">
-             <string/>
-            </property>
-            <property name="monitorDisp" stdset="0">
-             <bool>false</bool>
-            </property>
-            <property name="channel" stdset="0">
-             <string>haven://${IC}.preset_count</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
         </item>
        </layout>
       </widget>
@@ -1053,10 +1059,7 @@ font-weight: bold;</string>
              <string>The measured voltage output from the pre-amp.</string>
             </property>
             <property name="channel" stdset="0">
-             <string>haven://${IC}.voltmeter.volts</string>
-            </property>
-            <property name="displayFormat" stdset="0">
-             <enum>PyDMLabel::Decimal</enum>
+             <string>haven://${IC}.voltmeter_channel.final_value</string>
             </property>
            </widget>
           </item>
@@ -1091,6 +1094,9 @@ font-weight: bold;</string>
          <layout class="QHBoxLayout" name="horizontalLayout_10">
           <item>
            <widget class="PyDMLabel" name="voltmeter_current_label">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="minimumSize">
              <size>
               <width>0</width>
@@ -1124,15 +1130,15 @@ font-weight: bold;</string>
              <string>The calculated current based on the voltage and pre-amp settings.</string>
             </property>
             <property name="channel" stdset="0">
-             <string>haven://${IC}.voltmeter.amps</string>
-            </property>
-            <property name="displayFormat" stdset="0">
-             <enum>PyDMLabel::Exponential</enum>
+             <string/>
             </property>
            </widget>
           </item>
           <item>
            <widget class="QLabel" name="label_14">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="font">
              <font>
               <family>Monospace</family>
@@ -1167,7 +1173,7 @@ font-weight: bold;</string>
            <string>How often to report new signals for this voltmeter.</string>
           </property>
           <property name="channel" stdset="0">
-           <string>haven://${IC}.voltmeter.scanning_rate</string>
+           <string>haven://${IC}.voltmeter_channel.scanning_rate</string>
           </property>
          </widget>
         </item>

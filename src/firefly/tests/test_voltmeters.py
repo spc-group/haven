@@ -5,16 +5,31 @@ from pydm.widgets.analog_indicator import PyDMAnalogIndicator
 from qtpy import QtWidgets
 
 import haven
+from haven.instrument.ion_chamber import IonChamber
 from firefly.voltmeters import VoltmetersDisplay
 
 
 @pytest.fixture()
-def fake_ion_chambers(I0, It):
-    return [I0, It]
+def ion_chambers(sim_registry):
+    devices = []
+    for idx, name in enumerate(["I0", "It"]):
+        ion_chamber = IonChamber(
+            scaler_prefix="255idcVME:3820:",
+            scaler_channel=idx,
+            preamp_prefix=f"255idc:SR0{idx}",
+            voltmeter_prefix="255idc:LJT7_Voltmeter0:",
+            voltmeter_channel=idx,
+            counts_per_volt_second=10e6,
+            name=name
+        )
+        ion_chamber.connect(mock=True)
+        sim_registry.register(ion_chamber)
+        devices.append(ion_chamber)
+    return devices
 
 
 @pytest.fixture()
-async def voltmeters_display(qtbot, fake_ion_chambers, sim_registry):
+async def voltmeters_display(qtbot, ion_chambers, sim_registry):
     vms_display = VoltmetersDisplay()
     qtbot.addWidget(vms_display)
     await vms_display.update_devices(sim_registry)
@@ -22,7 +37,7 @@ async def voltmeters_display(qtbot, fake_ion_chambers, sim_registry):
 
 
 @pytest.mark.asyncio
-async def test_rows(voltmeters_display, sim_registry):
+async def test_rows(voltmeters_display):
     """Test that the voltmeters creates a new for each ion chamber."""
     vms_display = voltmeters_display
     # Check that the embedded display widgets get added correctly

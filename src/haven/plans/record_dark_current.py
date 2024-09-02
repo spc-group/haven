@@ -1,7 +1,7 @@
 import uuid
 from typing import Sequence
 
-from bluesky import plan_stubs as bps
+from bluesky import plan_stubs as bps, Msg
 from ophyd import Device
 
 from ..instrument.instrument_registry import registry
@@ -46,7 +46,8 @@ def record_dark_current(
     # Record dark currents
     group = uuid.uuid4()
     for ic in ion_chambers:
-        yield from bps.trigger(ic.record_dark_current, group=group, wait=False)
+        yield Msg("trigger", ic, group=group, record_dark_current=True)
+        # yield from bps.trigger(ic.record_dark_current, group=group, wait=False)
     # Wait for the devices to be done recording dark current
     yield from bps.wait(group=group)
     # Reset shutters to their original states

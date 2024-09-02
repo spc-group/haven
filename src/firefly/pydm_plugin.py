@@ -154,7 +154,6 @@ class HavenPlugin(SignalPlugin):
     def connection_class(channel, address, protocol):
         # Check if we need the synchronous or asynchronous version
         sig = registry[address]
-        is_ophyd_async = isinstance(sig, HasName)
         is_ophyd_async = hasattr(sig, "connect") and inspect.iscoroutinefunction(
             sig.connect
         )
