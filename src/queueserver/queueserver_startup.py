@@ -1,8 +1,7 @@
 import re  # noqa: F401
 
+import bluesky.preprocessors as bpp  # noqa: F401
 import databroker  # noqa: F401
-from bluesky.run_engine import call_in_bluesky_event_loop
-import bluesky.preprocessors as bpp
 from bluesky.plan_stubs import (  # noqa: F401
     abs_set,
     mv,
@@ -23,6 +22,7 @@ from bluesky.plans import (  # noqa: F401
     scan,
     scan_nd,
 )
+from bluesky.run_engine import call_in_bluesky_event_loop
 
 # Import plans
 from haven import registry  # noqa: F401

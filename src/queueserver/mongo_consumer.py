@@ -1,5 +1,5 @@
-import sys
 import os
+import sys
 from functools import partial
 
 # This environmental variable needs to be set before importing haven
@@ -49,8 +49,8 @@ def main():
         deserializer=kafka_deserializer,
     )
 
-
     mongo_consumer.start()
+
 
 if __name__ == "__main__":
     sys.exit(main())

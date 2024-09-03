@@ -1,22 +1,25 @@
-from pathlib import Path
 import os
 import subprocess
+from pathlib import Path
 
 from haven import load_config
+
 
 def launch_queueserver():
     # Derive environmental variables
     this_dir = Path(__file__).parent
-    bluesky_dir = Path(os.environ['BLUESKY_DIR'])
+    bluesky_dir = Path(os.environ["BLUESKY_DIR"])
     default_config_file = str(bluesky_dir / "iconfig.toml")
-    config_files = os.environ.setdefault("HAVEN_CONFIG_FILES", default_config_file).split(",")
+    config_files = os.environ.setdefault(
+        "HAVEN_CONFIG_FILES", default_config_file
+    ).split(",")
     # Derive internal haven variables
-    
+
     config = load_config(file_paths=config_files)
-    control_port = config['queueserver']['control_port']
-    info_port = config['queueserver']['info_port']
-    kafka_topic = config['queueserver']['kafka_topic']
-    redis_addr = config['queueserver']['redis_addr']
+    control_port = config["queueserver"]["control_port"]
+    info_port = config["queueserver"]["info_port"]
+    kafka_topic = config["queueserver"]["kafka_topic"]
+    redis_addr = config["queueserver"]["redis_addr"]
     # Launch the queueserver
     args = [
         "start-re-manager",
