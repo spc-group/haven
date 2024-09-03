@@ -21,7 +21,7 @@ from .device import connect_devices
 from .instrument_registry import InstrumentRegistry
 from .instrument_registry import registry as default_registry
 from .labjack import LabJackT7
-from .scaler import CountState, MultiChannelScaler
+from .scaler import MultiChannelScaler
 from .signal import derived_signal_r
 from .srs570 import SRS570PreAmplifier
 
@@ -218,7 +218,7 @@ class IonChamber(StandardReadable, Triggerable):
             await last_status
             return
         # Nothing to wait on yet, so trigger the scaler and stash the result
-        st = signal.set(CountState.COUNT)
+        st = signal.set(self.mcs.scaler.CountState.COUNT)
         self._trigger_statuses[signal.source] = st
         await st
 
@@ -232,7 +232,7 @@ class IonChamber(StandardReadable, Triggerable):
         done = asyncio.Event()
         done_status = AsyncStatus(asyncio.wait_for(done.wait(), timeout=timeout))
         async for state in observe_value(count_signal, done_status=done_status):
-            if state == CountState.DONE:
+            if state == self.mcs.scaler.CountState.DONE:
                 done.set()
                 break
 

@@ -12,6 +12,7 @@ from ophyd_async.core import (
 from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw, epics_signal_x
 
 from .._iconfig import load_config
+from ..typing import StrEnum
 from .device import connect_devices
 from .instrument_registry import InstrumentRegistry
 from .instrument_registry import registry as default_registry
@@ -20,74 +21,6 @@ from .instrument_registry import registry as default_registry
 def num_to_char(num):
     char = chr(65 + num)
     return char
-
-
-class CountMode(str, Enum):
-    ONE_SHOT = "OneShot"
-    AUTO_COUNT = "AutoCount"
-
-
-class CountState(str, Enum):
-    DONE = "Done"
-    COUNT = "Count"
-
-
-class MCAMode(str, Enum):
-    PHA = "PHA"
-    MCS = "MCS"
-    LIST = "List"
-
-
-class ScalerModel(str, Enum):
-    SIS_3801 = "SIS3801"
-    SIS_3820 = "SIS3820"
-
-
-class OutputLED(str, Enum):
-    LOW = "Low/Off"
-    HIGH = "High/On"
-
-
-class Channel1Source(str, Enum):
-    INTERNAL_CLOCK = "Int. clock"
-    EXTERNAL = "External"
-
-
-class AcquireMode(str, Enum):
-    MCS = "MCS"
-    SCALER = "Scaler"
-
-
-class SNLConnected(str, Enum):
-    NOT_CONNECTED = "Not connected"
-    CONNECTED = "Connected"
-
-
-class Polarity(str, Enum):
-    NORMAL = "Normal"
-    INVERTED = "Inverted"
-
-
-class OutputMode(str, Enum):
-    MODE_0 = "Mode 0"
-    MODE_1 = "Mode 1"
-    MODE_2 = "Mode 2"
-    MODE_3 = "Mode 3"
-
-
-class InputMode(str, Enum):
-    MODE_0 = "Mode 0"
-    MODE_1 = "Mode 1"
-    MODE_2 = "Mode 2"
-    MODE_3 = "Mode 3"
-    MODE_4 = "Mode 4"
-    MODE_5 = "Mode 5"
-    MODE_6 = "Mode 6"
-
-
-class LNEStretcher(str, Enum):
-    DISABLE = "Disable"
-    ENABLE = "Enable"
 
 
 class ScalerChannel(StandardReadable):
@@ -106,9 +39,7 @@ class ScalerChannel(StandardReadable):
         # Configuration signals
         with self.add_children_as_readables(ConfigSignal):
             self.description = epics_signal_rw(str, f"{prefix}.NM{epics_ch_num}")
-            self.is_gate = epics_signal_rw(
-                SubsetEnum["N", "Y"], f"{prefix}.G{epics_ch_num}"
-            )
+            self.is_gate = epics_signal_rw(bool, f"{prefix}.G{epics_ch_num}")
             self.preset_count = epics_signal_rw(float, f"{prefix}.PR{epics_ch_num}")
             offset_suffix = f"_offset{channel_num // 4}.{num_to_char(channel_num % 4)}"
             self.offset_rate = epics_signal_rw(float, f"{prefix}{offset_suffix}")
@@ -116,13 +47,19 @@ class ScalerChannel(StandardReadable):
 
 
 class MCA(StandardReadable):
+
+    class MCAMode(str, Enum):
+        PHA = "PHA"
+        MCS = "MCS"
+        LIST = "List"
+
     def __init__(self, prefix, name=""):
         # Signals
         with self.add_children_as_readables(HintedSignal):
             self.spectrum = epics_signal_r(NDArray[np.int32], f"{prefix}.VAL")
         self.background = epics_signal_r(NDArray[np.int32], f"{prefix}.BG")
         with self.add_children_as_readables(ConfigSignal):
-            self.mode = epics_signal_rw(MCAMode, f"{prefix}.MODE")
+            self.mode = epics_signal_rw(self.MCAMode, f"{prefix}.MODE")
         super().__init__(name=name)
 
 
@@ -149,6 +86,37 @@ class MultiChannelScaler(StandardReadable):
         DONE = "Done"
         ACQUIRING = "Acquiring"
 
+    class ScalerModel(str, Enum):
+        SIS_3801 = "SIS3801"
+        SIS_3820 = "SIS3820"
+
+    class Channel1Source(str, Enum):
+        INTERNAL_CLOCK = "Int. clock"
+        EXTERNAL = "External"
+
+    class AcquireMode(str, Enum):
+        MCS = "MCS"
+        SCALER = "Scaler"
+
+    class Polarity(str, Enum):
+        NORMAL = "Normal"
+        INVERTED = "Inverted"
+
+    class OutputMode(str, Enum):
+        MODE_0 = "Mode 0"
+        MODE_1 = "Mode 1"
+        MODE_2 = "Mode 2"
+        MODE_3 = "Mode 3"
+
+    class InputMode(str, Enum):
+        MODE_0 = "Mode 0"
+        MODE_1 = "Mode 1"
+        MODE_2 = "Mode 2"
+        MODE_3 = "Mode 3"
+        MODE_4 = "Mode 4"
+        MODE_5 = "Mode 5"
+        MODE_6 = "Mode 6"
+
     def __init__(self, prefix, channels: list[int], name=""):
         # Controls
         self.start_all = epics_signal_x(f"{prefix}StartAll")
@@ -160,7 +128,7 @@ class MultiChannelScaler(StandardReadable):
         )
         # Transient states
         self.acquiring = epics_signal_r(self.Acquiring, f"{prefix}Acquiring")
-        self.user_led = epics_signal_rw(OutputLED, f"{prefix}UserLED")
+        self.user_led = epics_signal_rw(bool, f"{prefix}UserLED")
         # Config signals
         with self.add_children_as_readables(ConfigSignal):
             self.preset_time = epics_signal_rw(float, f"{prefix}PresetReal")
@@ -169,30 +137,34 @@ class MultiChannelScaler(StandardReadable):
             self.channel_advance_source = epics_signal_rw(
                 self.ChannelAdvanceSource, f"{prefix}ChannelAdvance"
             )
-            self.count_on_start = epics_signal_rw(
-                SubsetEnum["No", "Yes"], f"{prefix}CountOnStart"
-            )
+            self.count_on_start = epics_signal_rw(bool, f"{prefix}CountOnStart")
             self.channel_1_source = epics_signal_rw(
-                Channel1Source, f"{prefix}Channel1Source"
+                self.Channel1Source, f"{prefix}Channel1Source"
             )
             self.mux_output = epics_signal_rw(float, f"{prefix}MUXOutput")
-            self.acquire_mode = epics_signal_rw(AcquireMode, f"{prefix}AcquireMode")
-            self.input_mode = epics_signal_rw(InputMode, f"{prefix}InputMode")
-            self.input_polarity = epics_signal_rw(Polarity, f"{prefix}InputPolarity")
-            self.output_mode = epics_signal_rw(OutputMode, f"{prefix}OutputMode")
-            self.output_polarity = epics_signal_rw(Polarity, f"{prefix}OutputPolarity")
+            self.acquire_mode = epics_signal_rw(
+                self.AcquireMode, f"{prefix}AcquireMode"
+            )
+            self.input_mode = epics_signal_rw(self.InputMode, f"{prefix}InputMode")
+            self.input_polarity = epics_signal_rw(
+                self.Polarity, f"{prefix}InputPolarity"
+            )
+            self.output_mode = epics_signal_rw(self.OutputMode, f"{prefix}OutputMode")
+            self.output_polarity = epics_signal_rw(
+                self.Polarity, f"{prefix}OutputPolarity"
+            )
             self.lne_output_stretcher = epics_signal_rw(
-                LNEStretcher, f"{prefix}LNEStretcherEnable"
+                bool, f"{prefix}LNEStretcherEnable"
             )
             self.lne_output_polarity = epics_signal_rw(
-                Polarity, f"{prefix}LNEOutputPolarity"
+                self.Polarity, f"{prefix}LNEOutputPolarity"
             )
             self.lne_output_delay = epics_signal_rw(float, f"{prefix}LNEOutputDelay")
             self.lne_output_width = epics_signal_rw(float, f"{prefix}LNEOutputWidth")
             self.num_channels_max = epics_signal_r(int, f"{prefix}MaxChannels")
             self.num_channels = epics_signal_rw(int, f"{prefix}NuseAll")
-            self.snl_connected = epics_signal_r(SNLConnected, f"{prefix}SNL_Connected")
-            self.model = epics_signal_r(ScalerModel, f"{prefix}Model")
+            self.snl_connected = epics_signal_r(bool, f"{prefix}SNL_Connected")
+            self.model = epics_signal_r(self.ScalerModel, f"{prefix}Model")
             self.firmware = epics_signal_r(int, f"{prefix}Firmware")
         # Child-devices
         with self.add_children_as_readables():
@@ -206,6 +178,14 @@ class MultiChannelScaler(StandardReadable):
 
 class Scaler(StandardReadable):
     """A scaler device that has one or more channels."""
+
+    class CountMode(StrEnum):
+        ONE_SHOT = "OneShot"
+        AUTO_COUNT = "AutoCount"
+
+    class CountState(StrEnum):
+        DONE = "Done"
+        COUNT = "Count"
 
     def __init__(self, prefix, channels: list[int], name=""):
         # Add invidiaul scaler channels
@@ -223,9 +203,9 @@ class Scaler(StandardReadable):
         with self.add_children_as_readables(ConfigSignal):
             self.delay = epics_signal_rw(float, f"{prefix}.DLY")
             self.clock_frequency = epics_signal_rw(float, f"{prefix}.FREQ")
-            self.count_mode = epics_signal_rw(CountMode, f"{prefix}.CONT")
+            self.count_mode = epics_signal_rw(self.CountMode, f"{prefix}.CONT")
             self.preset_time = epics_signal_rw(float, f"{prefix}.TP")
-        self.count = epics_signal_rw(CountState, f"{prefix}.CNT")
+        self.count = epics_signal_rw(self.CountState, f"{prefix}.CNT")
         self.record_dark_current = epics_signal_x(f"{prefix}_offset_start.PROC")
         self.auto_count_delay = epics_signal_rw(float, f"{prefix}.DLY1")
         self.auto_count_time = epics_signal_rw(float, f"{prefix}.TP1")

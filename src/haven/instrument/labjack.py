@@ -52,6 +52,7 @@ from ophyd_async.core import (
 )
 from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw, epics_signal_x
 
+from ..typing import StrEnum
 from .synApps import EpicsRecordInputFields, EpicsRecordOutputFields
 
 __all__ = [
@@ -69,10 +70,6 @@ __all__ = [
 
 KIND_CONFIG_OR_NORMAL = 3
 """Alternative for ``Kind.config | Kind.normal``."""
-
-
-class StrEnum(str, Enum):
-    pass
 
 
 class Input(EpicsRecordInputFields):
@@ -111,9 +108,7 @@ class BinaryInput(Input):
 
     def __init__(self, prefix: str, name: str = ""):
         with self.add_children_as_readables():
-            self.final_value = epics_signal_r(
-                SubsetEnum["Low", "High"], f"{prefix}.VAL"
-            )
+            self.final_value = epics_signal_r(bool, f"{prefix}.VAL")
         self.raw_value = epics_signal_rw(float, f"{prefix}.RVAL")
         super().__init__(prefix=prefix, name=name)
 
@@ -150,9 +145,7 @@ class BinaryOutput(Output):
 
     def __init__(self, prefix: str, name: str = ""):
         with self.add_children_as_readables():
-            self.desired_value = epics_signal_rw(
-                SubsetEnum["Low", "High"], f"{prefix}.VAL"
-            )
+            self.desired_value = epics_signal_rw(bool, f"{prefix}.VAL")
         self.raw_value = epics_signal_rw(float, f"{prefix}.RVAL")
         self.readback_value = epics_signal_r(float, f"{prefix}.RBV")
 
@@ -269,9 +262,7 @@ class AnalogInput(Input):
             )
             self.range = epics_signal_rw(self.Range, f"{prefix}AiRange{ch_num}")
             self.mode = epics_signal_rw(self.Mode, f"{prefix}AiMode{ch_num}")
-            self.enable = epics_signal_rw(
-                SubsetEnum["Enable", "Disable"], f"{prefix}AiEnable{ch_num}"
-            )
+            self.enable = epics_signal_rw(bool, f"{prefix}AiEnable{ch_num}")
         with self.add_children_as_readables(HintedSignal):
             self.final_value = epics_signal_r(float, f"{prefix}.VAL")
         self.raw_value = epics_signal_rw(int, f"{prefix}Ai{ch_num}.RVAL")
@@ -376,7 +367,7 @@ class WaveformDigitizer(StandardReadable):
         )
         self.ext_clock = epics_signal_rw(self.TriggerSource, f"{prefix}WaveDigExtClock")
         self.auto_restart = epics_signal_x(f"{prefix}WaveDigAutoRestart")
-        self.run = epics_signal_rw(SubsetEnum["Stop", "Run"], f"{prefix}WaveDigRun")
+        self.run = epics_signal_rw(bool, f"{prefix}WaveDigRun")
         self.read_waveform = epics_signal_rw(
             SubsetEnum["Done", "Read"], f"{prefix}WaveDigReadWF"
         )
@@ -409,10 +400,6 @@ class WaveformGenerator(StandardReadable):
     class TriggerMode(StrEnum):
         ONE_SHOT = "One-shot"
         CONTINUOS = "Continuous"
-
-    class Enabled(StrEnum):
-        DISABLE = "Disable"
-        ENABLE = "Enable"
 
     def __init__(self, prefix: str, name: str = ""):
         with self.add_children_as_readables(ConfigSignal):
@@ -461,7 +448,7 @@ class WaveformGenerator(StandardReadable):
             self.user_waveform_0 = epics_signal_rw(
                 NDArray[np.float64], f"{prefix}WaveGenUserWF0"
             )
-            self.enable_0 = epics_signal_rw(self.Enabled, f"{prefix}WaveGenEnable0")
+            self.enable_0 = epics_signal_rw(bool, f"{prefix}WaveGenEnable0")
             self.type_0 = epics_signal_rw(self.WaveType, f"{prefix}WaveGenType0")
             self.pulse_width_0 = epics_signal_rw(float, f"{prefix}WaveGenPulseWidth0")
             self.amplitude_0 = epics_signal_rw(float, f"{prefix}WaveGenAmplitude0")
@@ -469,7 +456,7 @@ class WaveformGenerator(StandardReadable):
             self.user_waveform_1 = epics_signal_rw(
                 NDArray[np.float64], f"{prefix}WaveGenUserWF1"
             )
-            self.enable_1 = epics_signal_rw(self.Enabled, f"{prefix}WaveGenEnable1")
+            self.enable_1 = epics_signal_rw(bool, f"{prefix}WaveGenEnable1")
             self.type_1 = epics_signal_rw(self.WaveType, f"{prefix}WaveGenType1")
             self.pulse_width_1 = epics_signal_rw(float, f"{prefix}WaveGenPulseWidth1")
             self.amplitude_1 = epics_signal_rw(float, f"{prefix}WaveGenAmplitude1")
