@@ -2,25 +2,13 @@ from unittest import mock
 
 import pytest
 from bluesky_queueserver_api import BPlan
-from ophyd.sim import make_fake_device
 from qtpy import QtCore
 
 from firefly.plans.line_scan import LineScanDisplay
-from haven.instrument import motor
-
-
-@pytest.fixture
-def fake_motors(sim_registry):
-    motor_names = ["motorA_m1", "motorA_m2"]
-    motors = []
-    for name in motor_names:
-        this_motor = make_fake_device(motor.HavenMotor)(name=name, labels={"motors"})
-        motors.append(this_motor)
-    return motors
 
 
 @pytest.fixture()
-async def display(qtbot, sim_registry, fake_motors, dxp, I0):
+async def display(qtbot, sim_registry, sync_motors, async_motors, dxp, I0):
     display = LineScanDisplay()
     qtbot.addWidget(display)
     await display.update_devices(sim_registry)
@@ -76,12 +64,12 @@ async def test_line_scan_plan_queued(qtbot, display):
     await display.update_regions(2)
 
     # set up a test motor 1
-    display.regions[0].motor_box.combo_box.setCurrentText("motorA_m1")
+    display.regions[0].motor_box.combo_box.setCurrentText("async_motor_1")
     display.regions[0].start_line_edit.setText("1")
     display.regions[0].stop_line_edit.setText("111")
 
     # set up a test motor 2
-    display.regions[1].motor_box.combo_box.setCurrentText("motorA_m2")
+    display.regions[1].motor_box.combo_box.setCurrentText("sync_motor_2")
     display.regions[1].start_line_edit.setText("2")
     display.regions[1].stop_line_edit.setText("222")
 
@@ -101,10 +89,10 @@ async def test_line_scan_plan_queued(qtbot, display):
     expected_item = BPlan(
         "scan",
         ["vortex_me4", "I0"],
-        "motorA_m1",
+        "async_motor_1",
         1.0,
         111.0,
-        "motorA_m2",
+        "sync_motor_2",
         2.0,
         222.0,
         num=10,
@@ -112,6 +100,10 @@ async def test_line_scan_plan_queued(qtbot, display):
     )
 
     def check_item(item):
+        from pprint import pprint
+
+        pprint(item.to_dict())
+        pprint(expected_item.to_dict())
         return item.to_dict() == expected_item.to_dict()
 
     # Click the run button and see if the plan is queued

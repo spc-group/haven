@@ -6,11 +6,13 @@ import databroker  # noqa: F401
 import matplotlib.pyplot as plt  # noqa: F401
 from bluesky import plan_stubs as bps  # noqa: F401
 from bluesky import plans as bp  # noqa: F401
+from bluesky import preprocessors as bpp  # noqa: F401
 from bluesky import suspenders  # noqa: F401
 from bluesky.callbacks.best_effort import BestEffortCallback  # noqa: F401
 from bluesky.plan_stubs import mv, mvr, rd  # noqa: F401
 from bluesky.run_engine import RunEngine, call_in_bluesky_event_loop  # noqa: F401
 from bluesky.simulators import summarize_plan  # noqa: F401
+import matplotlib.pyplot as plt
 from rich import print
 from rich.console import Console
 from rich.panel import Panel
@@ -20,10 +22,12 @@ import haven  # noqa: F401
 
 logging.basicConfig(level=logging.WARNING)
 
-# Make sure asyncio and the bluesky run engine share an event loop
-loop = asyncio.new_event_loop()
-asyncio.set_event_loop(loop)
-RE = haven.run_engine(loop=loop)
+# Create a run engine
+RE = haven.run_engine(
+    connect_databroker=False,
+    call_returns_result=True,
+)
+
 # Add metadata to the run engine
 RE.preprocessors.append(haven.preprocessors.inject_haven_md_wrapper)
 
@@ -39,9 +43,10 @@ plt.ion()
 # Prepare the haven instrument
 config = haven.load_config()
 t0 = time.monotonic()
-print(f"Initializing [repr.number]{config['beamline']['name']}[/]…", flush=True)
+print(f"Initializing [bold cyan]{config['beamline']['name']}[/]…", flush=True)
 call_in_bluesky_event_loop(haven.load_instrument())
-print(f"Finished initalization in {time.monotonic() - t0:.2f} seconds.", flush=True)
+num_devices = len(haven.registry.root_devices)
+print(f"Initialized {num_devices} devices in {time.monotonic() - t0:.2f} seconds.", flush=True)
 
 # Save references to some commonly used things in the global namespace
 registry = haven.registry
@@ -68,7 +73,7 @@ motd = (
     "The run engine is also registered as the transform [italic]<[/].\n"
     " ┣━ [code]<mv(m, 2)[/code] (absolute move)\n"
     " ┣━ [code]<mvr(m, 2)[/code] (relative move)\n"
-    " ┗━ [code]<rd(m, 2)[/code] (read)\n"
+    " ┗━ [code]<rd(m)[/code] (read)\n"
     "\n"
     "Run [code]help(haven)[/code] for more information."
 )

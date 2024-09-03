@@ -1,27 +1,22 @@
 from unittest import mock
 
 import pytest
-from ophyd.sim import make_fake_device
 
 from firefly.table import TableDisplay
 from haven.instrument import Table
-
-FakeTable = make_fake_device(Table)
 
 
 @pytest.fixture()
 def table(sim_registry):
     """A fake set of slits using the 4-blade setup."""
-    FakeTable = make_fake_device(Table)
-    tbl = FakeTable(
-        prefix="255idc:",
+    tbl = Table(
         name="table",
-        upstream_motor="m1",
-        downstream_motor="m2",
-        horizontal_motor="m3",
-        vertical_motor="m2",
-        pseudo_motors="table_ds:",
-        transforms="table_ds_trans:",
+        upstream_prefix="255idc:m1",
+        downstream_prefix="255idc:m2",
+        horizontal_prefix="255idc:m3",
+        vertical_prefix="255idc:m2",
+        pseudo_motor_prefix="255idc:table_ds:",
+        transform_prefix="255idc:table_ds_trans:",
         labels={"tables"},
     )
     return tbl
@@ -30,11 +25,10 @@ def table(sim_registry):
 @pytest.fixture()
 def empty_table(sim_registry):
     """A fake set of slits using the 4-blade setup."""
-    tbl = FakeTable(
-        prefix="255idc:",
+    tbl = Table(
         name="table",
-        labels={"tables"},
     )
+    sim_registry.register(tbl)
     return tbl
 
 
@@ -55,16 +49,30 @@ def test_unused_motor_widgets(qtbot, empty_table):
     assert not display.ui.horizontal_embedded_display.isEnabled()
 
 
-def test_tilting_table_caqtdm(qtbot, sim_registry):
-    table = FakeTable(
-        "255idcVME:",
-        horizontal_motor="m4",
-        upstream_motor="m42",
-        downstream_motor="m43",
-        transforms="table_ds_trans:",
-        pseudo_motors="table_ds:",
-        name="table",
+def test_tilting_table_caqtdm(qtbot, sim_registry, mocker):
+    # Create a simulated table configuration
+    mocker.patch(
+        "firefly.table.load_config",
+        mock.MagicMock(
+            return_value={
+                "table": {
+                    "test_table": {
+                        "caqtdm_macros": "P=255idcVME:,PM=255idcVME:,TB=table_ds,TR=table_ds_trans,TBUS=m42,TBDS=m43,TBH=m4"
+                    }
+                }
+            }
+        ),
     )
+    # Create an ophyd table object
+    table = Table(
+        horizontal_prefix="255idcVME:m4",
+        upstream_prefix="255idcVME:m42",
+        downstream_prefix="255idcVME:m43",
+        transform_prefix="255idcVME:table_ds_trans:",
+        pseudo_motor_prefix="255idcVME:table_ds:",
+        name="test_table",
+    )
+    sim_registry.register(table)
     display = TableDisplay(macros={"DEVICE": table.name})
     qtbot.addWidget(display)
     display._open_caqtdm_subprocess = mock.MagicMock()
@@ -89,8 +97,19 @@ def test_tilting_table_caqtdm(qtbot, sim_registry):
     assert "TBH=m4" in macros
 
 
-def test_single_motor_caqtdm(qtbot, sim_registry):
-    table = FakeTable("255idcVME:", horizontal_motor="m3", name="table")
+def test_single_motor_caqtdm(qtbot, sim_registry, mocker):
+    # Create a simulated table configuration
+    mocker.patch(
+        "firefly.table.load_config",
+        mock.MagicMock(
+            return_value={
+                "table": {"test_table": {"caqtdm_macros": "P=255idcVME:,M=m3"}}
+            }
+        ),
+    )
+    # Create an ophyd table object
+    table = Table(horizontal_prefix="255idcVME:m3", name="test_table")
+    sim_registry.register(table)
     display = TableDisplay(macros={"DEVICE": table.name})
     qtbot.addWidget(display)
     display._open_caqtdm_subprocess = mock.MagicMock()
@@ -110,10 +129,23 @@ def test_single_motor_caqtdm(qtbot, sim_registry):
     assert "M=m3" in macros
 
 
-def test_double_motor_caqtdm(qtbot, sim_registry):
-    table = FakeTable(
-        "255idcVME:", horizontal_motor="m3", vertical_motor="m4", name="table"
+def test_double_motor_caqtdm(qtbot, sim_registry, mocker):
+    # Create a simulated table configuration
+    mocker.patch(
+        "firefly.table.load_config",
+        mock.MagicMock(
+            return_value={
+                "table": {"test_table": {"caqtdm_macros": "P=255idcVME:,M1=m3,M2=m4"}}
+            }
+        ),
     )
+    # Create an ophyd table object
+    table = Table(
+        horizontal_prefix="255idcVME:m3",
+        vertical_prefix="255idcVME:m4",
+        name="test_table",
+    )
+    sim_registry.register(table)
     display = TableDisplay(macros={"DEVICE": table.name})
     qtbot.addWidget(display)
     display._open_caqtdm_subprocess = mock.MagicMock()
