@@ -1,4 +1,5 @@
 import asyncio
+from functools import partial
 from typing import Callable, Mapping, Optional, Sequence, Type
 
 import numpy as np
@@ -9,6 +10,7 @@ from ophyd_async.core import (
     SignalR,
     SignalRW,
     SoftSignalBackend,
+    ReadingValueCallback,
     T,
 )
 
@@ -110,16 +112,8 @@ class DerivedSignalBackend(SoftSignalBackend):
         await asyncio.gather(*connectors)
         # Listen for changes in the derived_from signals
         for sig in self._derived_from.values():
-            sig.subscribe(self.update_readings)
-
-    @property
-    def cached_readings(self):
-        # Like _cached_readings but with signals as keys instead of names
-        readings = self._cached_readings
-        seen_sigs = [
-            sig for sig in self._derived_from.values() if sig.name in readings.keys()
-        ]
-        return {sig: readings[sig.name] for sig in seen_sigs}
+            # Subscribe with a partial in case the signal's name changes
+            sig.subscribe(partial(self.update_readings, signal=sig))
 
     def combine_readings(self, readings):
         timestamp = max([rd["timestamp"] for rd in readings.values()])
@@ -128,11 +122,21 @@ class DerivedSignalBackend(SoftSignalBackend):
         new_value = self.inverse(values, **self._derived_from)
         return self.converter.reading(new_value, timestamp, severity)
 
-    def update_readings(self, reading):
+    def update_readings(self, reading, signal):
+        """Callback receives readings from derived_from signals.
+
+        Stashes them for later recall.
+
+        """
         # Stash this reading
-        self._cached_readings.update(reading)
+        self._cached_readings.update({signal: reading[signal.name]})
         # Update interested parties if we have a full set of readings
-        readings = self.cached_readings
+        self.send_latest_reading()
+
+    def send_latest_reading(self):
+        """Force this backend to send the latest readings to the callback."""
+        # Update interested parties if we have a full set of readings
+        readings = self._cached_readings
         missing_signals = [
             sig for sig in self._derived_from.values() if sig not in readings.keys()
         ]
@@ -141,6 +145,10 @@ class DerivedSignalBackend(SoftSignalBackend):
             new_reading = self.combine_readings(readings)
             if self.callback is not None:
                 self.callback(new_reading, new_reading["value"])
+
+    def set_callback(self, callback: Optional[ReadingValueCallback[T]]) -> None:
+        super().set_callback(callback)
+        self.send_latest_reading()
 
     async def put(self, value: Optional[T], wait=True, timeout=None):
         write_value = (

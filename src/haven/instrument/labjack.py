@@ -264,7 +264,7 @@ class AnalogInput(Input):
             self.mode = epics_signal_rw(self.Mode, f"{prefix}AiMode{ch_num}")
             self.enable = epics_signal_rw(bool, f"{prefix}AiEnable{ch_num}")
         with self.add_children_as_readables(HintedSignal):
-            self.final_value = epics_signal_r(float, f"{prefix}.VAL")
+            self.final_value = epics_signal_r(float, f"{prefix}Ai{ch_num}.VAL")
         self.raw_value = epics_signal_rw(int, f"{prefix}Ai{ch_num}.RVAL")
         super().__init__(prefix=f"{prefix}Ai{ch_num}", name=name)
 

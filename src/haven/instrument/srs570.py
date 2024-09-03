@@ -304,7 +304,7 @@ class SRS570PreAmplifier(Device):
         self.sensitivity_value = gain_signal(self.SensValue, f"{prefix}sens_num")
         self.sensitivity_unit = gain_signal(self.SensUnit, f"{prefix}sens_unit")
 
-        self.offset_on = epics_signal_rw(SubsetEnum["OFF", "ON"], f"{prefix}offset_on")
+        self.offset_on = epics_signal_rw(bool, f"{prefix}offset_on")
         self.offset_sign = epics_signal_rw(Sign, f"{prefix}offset_sign")
         self.offset_value = epics_signal_rw(self.SensValue, f"{prefix}offset_num")
         self.offset_unit = epics_signal_rw(self.OffsetUnit, f"{prefix}offset_unit")
@@ -314,7 +314,7 @@ class SRS570PreAmplifier(Device):
         self.set_all = epics_signal_x(f"{prefix}init.PROC")
 
         self.bias_value = epics_signal_rw(int, f"{prefix}bias_put")
-        self.bias_on = epics_signal_rw(SubsetEnum["OFF", "ON"], f"{prefix}bias_on")
+        self.bias_on = epics_signal_rw(bool, f"{prefix}bias_on")
 
         self.filter_type = epics_signal_rw(
             SubsetEnum[
@@ -368,8 +368,8 @@ class SRS570PreAmplifier(Device):
         )
 
         self.gain_mode = gain_signal(self.GainMode, f"{prefix}gain_mode")
-        self.invert = epics_signal_rw(SubsetEnum["OFF", "ON"], f"{prefix}invert_on")
-        self.blank = epics_signal_rw(SubsetEnum["OFF", "ON"], f"{prefix}blank_on")
+        self.invert = epics_signal_rw(bool, f"{prefix}invert_on")
+        self.blank = epics_signal_rw(bool, f"{prefix}blank_on")
 
         # Gain signals derived from the sensitivity signals
         sens_signals = {
@@ -383,7 +383,7 @@ class SRS570PreAmplifier(Device):
             units="V A⁻",
         )
         self.gain_db = derived_signal_r(
-            float, derived_from={"gain": self.gain}, inverse=self._dB
+            float, derived_from={"gain": self.gain}, inverse=self._dB, units="dB"
         )
         level_signals = dict(
             offset_value=self.offset_value, offset_unit=self.offset_unit, **sens_signals
@@ -448,7 +448,7 @@ class SRS570PreAmplifier(Device):
     def _level_to_value(self, level):
         """Convert a gain index level to its string value."""
         values = [v.value for v in self.SensValue]
-        return values[level % len(values)]
+        return values[int(level) % len(values)]
 
     def _level_to_unit(self, level):
         """Convert a gain index level to its string unit."""
@@ -469,9 +469,11 @@ class SRS570PreAmplifier(Device):
         return new_level
 
     def _to_gain_level(
-        self, values, *, sens_value, sens_unit, offset_value, offset_unit
+        self, values, *, sens_value, sens_unit, offset_value=None, offset_unit=None
     ):
         """Compute the level of gain for given sensitivity settings."""
+        # from pprint import pprint
+        # pprint(values)
         return self._sensitivity_to_level(values[sens_value], values[sens_unit])
 
 

@@ -112,10 +112,11 @@ class IonChamber(StandardReadable, Triggerable):
         )
         # Add calculated signals
         with self.add_children_as_readables():
+            pass
             self.voltage = derived_signal_r(
                 float,
                 name="voltage",
-                units="volt",
+                units="V",
                 derived_from={
                     "count": self.scaler_channel.net_count,
                     "time": self.mcs.scaler.elapsed_time,
@@ -125,7 +126,7 @@ class IonChamber(StandardReadable, Triggerable):
             self.current = derived_signal_r(
                 float,
                 name="current",
-                units="ampere",
+                units="A",
                 derived_from={"voltage": self.voltage, "gain": self.preamp.gain},
                 inverse=self._volts_to_amps,
             )

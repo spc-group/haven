@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>587</width>
-    <height>463</height>
+    <width>584</width>
+    <height>486</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -209,11 +209,14 @@ font-weight: bold;</string>
             <property name="text">
              <string>#.##</string>
             </property>
+            <property name="textInteractionFlags">
+             <set>Qt::TextSelectableByMouse</set>
+            </property>
             <property name="precision" stdset="0">
              <number>1</number>
             </property>
             <property name="showUnits" stdset="0">
-             <bool>false</bool>
+             <bool>true</bool>
             </property>
             <property name="precisionFromPV" stdset="0">
              <bool>false</bool>
@@ -243,7 +246,7 @@ font-weight: bold;</string>
              </font>
             </property>
             <property name="text">
-             <string>dB (V/I)</string>
+             <string>(V/I)</string>
             </property>
            </widget>
           </item>
@@ -374,13 +377,6 @@ font-weight: bold;</string>
         </item>
        </layout>
       </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="label_2">
-        <property name="text">
-         <string>Offset:</string>
-        </property>
-       </widget>
-      </item>
       <item row="1" column="1">
        <layout class="QHBoxLayout" name="horizontalLayout_2">
         <item>
@@ -405,7 +401,7 @@ font-weight: bold;</string>
           </property>
           <layout class="QHBoxLayout" name="horizontalLayout_3">
            <property name="spacing">
-            <number>0</number>
+            <number>5</number>
            </property>
            <property name="leftMargin">
             <number>0</number>
@@ -420,9 +416,15 @@ font-weight: bold;</string>
             <number>0</number>
            </property>
            <item>
-            <widget class="PyDMEnumComboBox" name="PyDMEnumComboBox_7">
+            <widget class="PyDMCheckbox" name="PyDMCheckbox_2">
              <property name="toolTip">
               <string/>
+             </property>
+             <property name="text">
+              <string>Offset</string>
+             </property>
+             <property name="PyDMToolTip" stdset="0">
+              <string>If checked, applies an offset to the input current before aplification.</string>
              </property>
              <property name="channel" stdset="0">
               <string>haven://${IC}.preamp.offset_on</string>
@@ -430,24 +432,18 @@ font-weight: bold;</string>
             </widget>
            </item>
            <item>
-            <widget class="PyDMEnumComboBox" name="PyDMEnumComboBox_5">
+            <widget class="PyDMLabel" name="offset_sign_label">
              <property name="toolTip">
               <string/>
              </property>
+             <property name="styleSheet">
+              <string notr="true">color: red; font-weight: bold; background: yellow;</string>
+             </property>
              <property name="rules" stdset="0">
-              <string>[{&quot;name&quot;: &quot;Offset disabled&quot;, &quot;property&quot;: &quot;Enable&quot;, &quot;initial_value&quot;: &quot;False&quot;, &quot;expression&quot;: &quot;bool(ch[0])&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;haven://${IC}.preamp.offset_on&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: true}], &quot;notes&quot;: &quot;&quot;}]</string>
-             </property>
-             <property name="alarmSensitiveContent" stdset="0">
-              <bool>false</bool>
-             </property>
-             <property name="alarmSensitiveBorder" stdset="0">
-              <bool>true</bool>
+              <string>[{&quot;name&quot;: &quot;Disable offset&quot;, &quot;property&quot;: &quot;Enable&quot;, &quot;initial_value&quot;: &quot;False&quot;, &quot;expression&quot;: &quot;ch[0]&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;haven://${IC}.preamp.offset_on&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}], &quot;notes&quot;: &quot;&quot;}, {&quot;name&quot;: &quot;Negative sign to unicode&quot;, &quot;property&quot;: &quot;Text&quot;, &quot;initial_value&quot;: &quot;&quot;, &quot;expression&quot;: &quot;\&quot;\u2212\&quot; if ch[0] == \&quot;-\&quot; else ch[0]&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;haven://${IC}.preamp.offset_sign&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: true}], &quot;notes&quot;: &quot;If the offset is positive (default), then we don't need to show it, but if it's negative, we should make that obvious.\n&quot;}, {&quot;name&quot;: &quot;Hide positive sign&quot;, &quot;property&quot;: &quot;Visible&quot;, &quot;initial_value&quot;: &quot;True&quot;, &quot;expression&quot;: &quot;ch[0] == \&quot;-\&quot;&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;haven://${IC}.preamp.offset_sign&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: true}], &quot;notes&quot;: &quot;&quot;}]</string>
              </property>
              <property name="PyDMToolTip" stdset="0">
-              <string>Whether the offset current is positive (+) or negative (-).</string>
-             </property>
-             <property name="monitorDisp" stdset="0">
-              <bool>false</bool>
+              <string>Whether the offset applied is positive (+) or negative (−).</string>
              </property>
              <property name="channel" stdset="0">
               <string>haven://${IC}.preamp.offset_sign</string>
@@ -458,6 +454,9 @@ font-weight: bold;</string>
             <widget class="PyDMEnumComboBox" name="PyDMEnumComboBox_3">
              <property name="toolTip">
               <string/>
+             </property>
+             <property name="rules" stdset="0">
+              <string>[{&quot;name&quot;: &quot;Disable offset&quot;, &quot;property&quot;: &quot;Enable&quot;, &quot;initial_value&quot;: &quot;False&quot;, &quot;expression&quot;: &quot;ch[0]&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;haven://${IC}.preamp.offset_on&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: true}], &quot;notes&quot;: &quot;&quot;}]</string>
              </property>
              <property name="alarmSensitiveContent" stdset="0">
               <bool>false</bool>
@@ -480,6 +479,9 @@ font-weight: bold;</string>
             <widget class="PyDMEnumComboBox" name="PyDMEnumComboBox_4">
              <property name="toolTip">
               <string/>
+             </property>
+             <property name="rules" stdset="0">
+              <string>[{&quot;name&quot;: &quot;Disable offset&quot;, &quot;property&quot;: &quot;Enable&quot;, &quot;initial_value&quot;: &quot;False&quot;, &quot;expression&quot;: &quot;ch[0]&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;haven://${IC}.preamp.offset_on&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: true}], &quot;notes&quot;: &quot;&quot;}]</string>
              </property>
              <property name="alarmSensitiveContent" stdset="0">
               <bool>false</bool>
@@ -594,6 +596,9 @@ font-weight: bold;</string>
           <property name="text">
            <string>######</string>
           </property>
+          <property name="textInteractionFlags">
+           <set>Qt::TextSelectableByMouse</set>
+          </property>
           <property name="channel" stdset="0">
            <string>haven://${IC}.scaler_channel.net_count</string>
           </property>
@@ -606,74 +611,6 @@ font-weight: bold;</string>
           </property>
          </widget>
         </item>
-        <item row="1" column="1">
-         <layout class="QHBoxLayout" name="horizontalLayout_6">
-          <item>
-           <widget class="PyDMLabel" name="PyDMLabel_5">
-            <property name="font">
-             <font>
-              <family>Monospace</family>
-             </font>
-            </property>
-            <property name="toolTip">
-             <string/>
-            </property>
-            <property name="text">
-             <string>#.##</string>
-            </property>
-            <property name="precision" stdset="0">
-             <number>2</number>
-            </property>
-            <property name="showUnits" stdset="0">
-             <bool>false</bool>
-            </property>
-            <property name="precisionFromPV" stdset="0">
-             <bool>false</bool>
-            </property>
-            <property name="alarmSensitiveContent" stdset="0">
-             <bool>false</bool>
-            </property>
-            <property name="alarmSensitiveBorder" stdset="0">
-             <bool>true</bool>
-            </property>
-            <property name="PyDMToolTip" stdset="0">
-             <string>The calculate voltage based on scaler counts and clock speed.</string>
-            </property>
-            <property name="channel" stdset="0">
-             <string>haven://${IC}.voltage</string>
-            </property>
-            <property name="enableRichText" stdset="0">
-             <bool>false</bool>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QLabel" name="label_10">
-            <property name="font">
-             <font>
-              <family>Monospace</family>
-             </font>
-            </property>
-            <property name="text">
-             <string>V</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <spacer name="horizontalSpacer_4">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-         </layout>
-        </item>
         <item row="2" column="0">
          <widget class="QLabel" name="label_7">
           <property name="text">
@@ -681,66 +618,10 @@ font-weight: bold;</string>
           </property>
          </widget>
         </item>
-        <item row="2" column="1">
-         <layout class="QHBoxLayout" name="horizontalLayout_7">
-          <item>
-           <widget class="PyDMLabel" name="PyDMLabel_6">
-            <property name="font">
-             <font>
-              <family>Monospace</family>
-             </font>
-            </property>
-            <property name="toolTip">
-             <string/>
-            </property>
-            <property name="text">
-             <string>#.##e##</string>
-            </property>
-            <property name="precision" stdset="0">
-             <number>2</number>
-            </property>
-            <property name="precisionFromPV" stdset="0">
-             <bool>false</bool>
-            </property>
-            <property name="PyDMToolTip" stdset="0">
-             <string>The calculated current based on the voltage and pre-amp settings.</string>
-            </property>
-            <property name="channel" stdset="0">
-             <string>haven://${IC}.current</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QLabel" name="label_11">
-            <property name="font">
-             <font>
-              <family>Monospace</family>
-             </font>
-            </property>
-            <property name="text">
-             <string>A</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <spacer name="horizontalSpacer_5">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-         </layout>
-        </item>
         <item row="3" column="0">
          <widget class="QLabel" name="label_4">
           <property name="text">
-           <string>Acquire time:</string>
+           <string>Preset Time:</string>
           </property>
          </widget>
         </item>
@@ -755,7 +636,7 @@ font-weight: bold;</string>
              <number>0</number>
             </property>
             <property name="showUnits" stdset="0">
-             <bool>false</bool>
+             <bool>true</bool>
             </property>
             <property name="precisionFromPV" stdset="0">
              <bool>true</bool>
@@ -807,28 +688,15 @@ font-weight: bold;</string>
         <item row="4" column="1">
          <layout class="QHBoxLayout" name="horizontalLayout_13">
           <item>
-           <widget class="PyDMCheckbox" name="gate_checkbox">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
-            <property name="toolTip">
-             <string/>
-            </property>
-            <property name="channel" stdset="0">
-             <string/>
-            </property>
-           </widget>
-          </item>
-          <item>
            <widget class="PyDMLineEdit" name="preset_count_line_edit">
             <property name="enabled">
-             <bool>false</bool>
+             <bool>true</bool>
             </property>
             <property name="toolTip">
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Stop collecting data when the tick counts for this scaler channel reaches a certain preset value.&lt;/p&gt;&lt;p&gt;To help decide this value, consider that the clock gives the number of counts that a 10V signal produces in 1 sec. So if the clock is 1e7 Hz, then a &lt;span style=&quot; font-style:italic;&quot;&gt;preset count&lt;/span&gt; of 2.5e6 would be the equivalent of counting a 2.5V signal for 1 sec.&lt;/p&gt;&lt;p&gt;The scaler will stop when either &lt;span style=&quot; font-style:italic;&quot;&gt;acquire time&lt;/span&gt; is reached, or &lt;span style=&quot; font-style:italic;&quot;&gt;preset count&lt;/span&gt; is reached for any channel on that scaler.&lt;/p&gt;&lt;p&gt;A &lt;span style=&quot; font-style:italic;&quot;&gt;preset count&lt;/span&gt; of 0 will disable this behavior.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="rules" stdset="0">
-             <string>[{&quot;name&quot;: &quot;Disable Present Counts&quot;, &quot;property&quot;: &quot;Enable&quot;, &quot;initial_value&quot;: &quot;True&quot;, &quot;expression&quot;: &quot;ch[0]&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;haven://${IC}.gate&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}], &quot;notes&quot;: &quot;The preset-counts should only be editable when the channel is set to respond to the gate. If users really want to set it but disable the gate, then they'll need to just check the box first.&quot;}]</string>
+             <string>[{&quot;name&quot;: &quot;Disable Present Counts&quot;, &quot;property&quot;: &quot;Enable&quot;, &quot;initial_value&quot;: &quot;True&quot;, &quot;expression&quot;: &quot;ch[0]&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;haven://${IC}.scaler_channel.is_gate&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}], &quot;notes&quot;: &quot;The preset-counts should only be editable when the channel is set to respond to the gate. If users really want to set it but disable the gate, then they'll need to just check the box first.&quot;}]</string>
             </property>
             <property name="precision" stdset="0">
              <number>0</number>
@@ -856,6 +724,19 @@ font-weight: bold;</string>
             </property>
            </widget>
           </item>
+          <item>
+           <spacer name="horizontalSpacer_4">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
          </layout>
         </item>
         <item row="5" column="0">
@@ -875,27 +756,30 @@ font-weight: bold;</string>
             <property name="text">
              <string>Count</string>
             </property>
+            <property name="rules" stdset="0">
+             <string>[{&quot;name&quot;: &quot;Disabled on autocount&quot;, &quot;property&quot;: &quot;Enable&quot;, &quot;initial_value&quot;: &quot;True&quot;, &quot;expression&quot;: &quot;not ch[0]&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;haven://${IC}.mcs.scaler.auto_count&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}], &quot;notes&quot;: &quot;&quot;}]</string>
+            </property>
             <property name="channel" stdset="0">
              <string>haven://${IC}.mcs.scaler.count</string>
             </property>
             <property name="pressValue" stdset="0">
-             <string>1</string>
+             <string>Count</string>
             </property>
            </widget>
           </item>
           <item>
-           <widget class="PyDMCheckbox" name="PyDMCheckbox">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
+           <widget class="PyDMLabel" name="count_label">
             <property name="toolTip">
-             <string>Count repeatedly with the scaler.</string>
+             <string/>
             </property>
-            <property name="text">
-             <string>Autocount</string>
+            <property name="rules" stdset="0">
+             <string>[{&quot;name&quot;: &quot;Disabled on autocount&quot;, &quot;property&quot;: &quot;Enable&quot;, &quot;initial_value&quot;: &quot;True&quot;, &quot;expression&quot;: &quot;not ch[0]&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;haven://${IC}.mcs.scaler.auto_count&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: true}], &quot;notes&quot;: &quot;&quot;}]</string>
+            </property>
+            <property name="PyDMToolTip" stdset="0">
+             <string>The current state of the scaler.</string>
             </property>
             <property name="channel" stdset="0">
-             <string/>
+             <string>haven://${IC}.mcs.scaler.count</string>
             </property>
            </widget>
           </item>
@@ -929,8 +813,14 @@ font-weight: bold;</string>
             <property name="text">
              <string>#e##</string>
             </property>
+            <property name="textInteractionFlags">
+             <set>Qt::TextSelectableByMouse</set>
+            </property>
             <property name="channel" stdset="0">
              <string>haven://${IC}.mcs.scaler.clock_frequency</string>
+            </property>
+            <property name="displayFormat" stdset="0">
+             <enum>PyDMLabel::Exponential</enum>
             </property>
            </widget>
           </item>
@@ -961,10 +851,164 @@ font-weight: bold;</string>
           </item>
          </layout>
         </item>
+        <item row="7" column="1">
+         <layout class="QHBoxLayout" name="horizontalLayout_4">
+          <item>
+           <widget class="PyDMLabel" name="elapsed_time_label">
+            <property name="toolTip">
+             <string/>
+            </property>
+            <property name="showUnits" stdset="0">
+             <bool>true</bool>
+            </property>
+            <property name="PyDMToolTip" stdset="0">
+             <string>The amount of time that has passed in the most recent acquisition.</string>
+            </property>
+            <property name="channel" stdset="0">
+             <string>haven://${IC}.mcs.scaler.elapsed_time</string>
+            </property>
+            <property name="buddy">
+             <cstring></cstring>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="label_2">
+            <property name="text">
+             <string>sec</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer_3">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </item>
+        <item row="1" column="1">
+         <widget class="PyDMLabel" name="PyDMLabel_5">
+          <property name="font">
+           <font>
+            <family>Monospace</family>
+           </font>
+          </property>
+          <property name="toolTip">
+           <string/>
+          </property>
+          <property name="text">
+           <string>#.##</string>
+          </property>
+          <property name="textInteractionFlags">
+           <set>Qt::TextSelectableByMouse</set>
+          </property>
+          <property name="precision" stdset="0">
+           <number>2</number>
+          </property>
+          <property name="showUnits" stdset="0">
+           <bool>true</bool>
+          </property>
+          <property name="precisionFromPV" stdset="0">
+           <bool>false</bool>
+          </property>
+          <property name="alarmSensitiveContent" stdset="0">
+           <bool>false</bool>
+          </property>
+          <property name="alarmSensitiveBorder" stdset="0">
+           <bool>true</bool>
+          </property>
+          <property name="PyDMToolTip" stdset="0">
+           <string>The calculate voltage based on scaler counts and clock speed.</string>
+          </property>
+          <property name="channel" stdset="0">
+           <string>haven://${IC}.voltage</string>
+          </property>
+          <property name="enableRichText" stdset="0">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="1">
+         <widget class="PyDMLabel" name="PyDMLabel_6">
+          <property name="font">
+           <font>
+            <family>Monospace</family>
+            <weight>75</weight>
+            <bold>true</bold>
+           </font>
+          </property>
+          <property name="toolTip">
+           <string/>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">font-weight: bold;</string>
+          </property>
+          <property name="text">
+           <string>#.##e##</string>
+          </property>
+          <property name="textInteractionFlags">
+           <set>Qt::TextSelectableByMouse</set>
+          </property>
+          <property name="precision" stdset="0">
+           <number>2</number>
+          </property>
+          <property name="showUnits" stdset="0">
+           <bool>true</bool>
+          </property>
+          <property name="precisionFromPV" stdset="0">
+           <bool>false</bool>
+          </property>
+          <property name="PyDMToolTip" stdset="0">
+           <string>The calculated current based on the voltage and pre-amp settings.</string>
+          </property>
+          <property name="channel" stdset="0">
+           <string>haven://${IC}.current</string>
+          </property>
+          <property name="displayFormat" stdset="0">
+           <enum>PyDMLabel::Exponential</enum>
+          </property>
+         </widget>
+        </item>
         <item row="4" column="0">
-         <widget class="QLabel" name="label_15">
+         <widget class="PyDMCheckbox" name="gate_checkbox">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
+          <property name="toolTip">
+           <string/>
+          </property>
           <property name="text">
            <string>Preset Counts:</string>
+          </property>
+          <property name="channel" stdset="0">
+           <string>haven://${IC}.scaler_channel.is_gate</string>
+          </property>
+         </widget>
+        </item>
+        <item row="6" column="0">
+         <widget class="PyDMCheckbox" name="PyDMCheckbox">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
+          <property name="toolTip">
+           <string>Count repeatedly with the scaler.</string>
+          </property>
+          <property name="text">
+           <string>Autocount:</string>
+          </property>
+          <property name="PyDMToolTip" stdset="0">
+           <string>If checked, put the scaler into auto-count mode.</string>
+          </property>
+          <property name="channel" stdset="0">
+           <string>haven://${IC}.mcs.scaler.auto_count</string>
           </property>
          </widget>
         </item>
@@ -1046,11 +1090,14 @@ font-weight: bold;</string>
             <property name="alignment">
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
             </property>
+            <property name="textInteractionFlags">
+             <set>Qt::TextSelectableByKeyboard</set>
+            </property>
             <property name="precision" stdset="0">
              <number>2</number>
             </property>
             <property name="showUnits" stdset="0">
-             <bool>true</bool>
+             <bool>false</bool>
             </property>
             <property name="precisionFromPV" stdset="0">
              <bool>false</bool>

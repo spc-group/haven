@@ -96,28 +96,28 @@ async def load_instrument(
     except NotConnected as exc:
         log.exception(exc)
     # Synchronous (threaded) devices
-    devices.extend(
-        [
-            # *(await load_ion_chambers(config=config)),
-            *load_aerotech_stages(config=config),
-            load_aps(config=config),
-            *load_area_detectors(config=config),
-            load_beamline_manager(config=config),
-            *load_cameras(config=config),
-            *load_dxp_detectors(config=config),
-            load_energy_positioner(config=config),
-            *load_heaters(config=config),
-            *load_lerix_spectrometers(config=config),
-            *load_power_supplies(config=config),
-            *load_robots(config=config),
-            *load_shutters(config=config),
-            *load_slits(config=config),
-            *load_stages(config=config),
-            *load_xia_pfcu4s(config=config),
-            *load_xspress_detectors(config=config),
-            *load_mirrors(config=config),
-        ]
-    )
+    # devices.extend(
+    #     [
+    #         # *(await load_ion_chambers(config=config)),
+    #         *load_aerotech_stages(config=config),
+    #         load_aps(config=config),
+    #         *load_area_detectors(config=config),
+    #         load_beamline_manager(config=config),
+    #         *load_cameras(config=config),
+    #         *load_dxp_detectors(config=config),
+    #         load_energy_positioner(config=config),
+    #         *load_heaters(config=config),
+    #         *load_lerix_spectrometers(config=config),
+    #         *load_power_supplies(config=config),
+    #         *load_robots(config=config),
+    #         *load_shutters(config=config),
+    #         *load_slits(config=config),
+    #         *load_stages(config=config),
+    #         *load_xia_pfcu4s(config=config),
+    #         *load_xspress_detectors(config=config),
+    #         *load_mirrors(config=config),
+    #     ]
+    # )
     # Filter out devices that couldn't be reached
     devices = [d for d in devices if d is not None]
     # Put the devices into the registry

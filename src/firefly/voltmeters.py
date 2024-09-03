@@ -139,13 +139,13 @@ class Row:
         device_name = self.device.name
         # Description label
         self.name_label = PyDMLabel(
-            parent=self.parent, init_channel=f"haven://{device_name}.description"
+            parent=self.parent, init_channel=f"haven://{device_name}.scaler_channel.description"
         )
         self.name_label.setStyleSheet('font: 12pt "Sans Serif";\nfont-weight: bold;')
         self.column_layouts[0].addWidget(self.name_label)
         # Analog indicator
         self.voltage_indicator = PyDMAnalogIndicator(
-            parent=self.parent, init_channel=f"haven://{device_name}.voltmeter.volts"
+            parent=self.parent, init_channel=f"haven://{device_name}.voltmeter_channel.final_value"
         )
         self.voltage_indicator.showValue = False
         self.voltage_indicator.limitsFromChannel = False
@@ -166,7 +166,7 @@ class Row:
         self.voltage_label_layout.addItem(HSpacer())
         self.voltage_label = PyDMLabel(
             parent=self.parent,
-            init_channel=f"haven://{device_name}.voltmeter.volts",
+            init_channel=f"haven://{device_name}.voltmeter_channel.final_value",
         )
         self.voltage_label.setStyleSheet('font: 12pt "Sans Serif";\nfont-weight: bold;')
         self.voltage_label_layout.addWidget(self.voltage_label)
@@ -184,7 +184,7 @@ class Row:
         self.current_label_layout.addItem(HSpacer())
         self.current_label = PyDMLabel(
             parent=self.parent,
-            init_channel=f"haven://{device_name}.voltmeter.amps",
+            init_channel=f"haven://{device_name}.current",
         )
         self.current_label.displayFormat = DisplayFormat.Exponential
         self.current_label_layout.addWidget(self.current_label)
@@ -222,11 +222,16 @@ class Row:
         self.gain_label_layout = QHBoxLayout()
         self.column_layouts[3].addLayout(self.gain_label_layout)
         self.gain_label_layout.addItem(HSpacer())
-        self.gain_label = PyDMLabel(
+        self.gain_value_label = PyDMLabel(
             parent=self.parent,
-            init_channel=f"haven://{device_name}.preamp.sensitivity_text",
+            init_channel=f"haven://{device_name}.preamp.sensitivity_value",
         )
-        self.gain_label_layout.addWidget(self.gain_label)
+        self.gain_label_layout.addWidget(self.gain_value_label)
+        self.gain_unit_label = PyDMLabel(
+            parent=self.parent,
+            init_channel=f"haven://{device_name}.preamp.sensitivity_unit",
+        )
+        self.gain_label_layout.addWidget(self.gain_unit_label)
         self.gain_label_layout.addItem(HSpacer())
         # Auto-gain and detail window controls
         self.column_layouts[4].addItem(VSpacer())

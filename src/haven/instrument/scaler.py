@@ -172,7 +172,6 @@ class MultiChannelScaler(StandardReadable):
             self.scaler = Scaler(f"{prefix}scaler1", channels=channels)
             self.elapsed_time = epics_signal_r(float, f"{prefix}ElapsedReal")
             self.current_channel = epics_signal_r(int, f"{prefix}CurrentChannel")
-        print(self.elapsed_time.name)
         super().__init__(name=name)
 
 
@@ -205,6 +204,7 @@ class Scaler(StandardReadable):
             self.clock_frequency = epics_signal_rw(float, f"{prefix}.FREQ")
             self.count_mode = epics_signal_rw(self.CountMode, f"{prefix}.CONT")
             self.preset_time = epics_signal_rw(float, f"{prefix}.TP")
+        self.auto_count = epics_signal_rw(bool, f"{prefix}.CONT")
         self.count = epics_signal_rw(self.CountState, f"{prefix}.CNT")
         self.record_dark_current = epics_signal_x(f"{prefix}_offset_start.PROC")
         self.auto_count_delay = epics_signal_rw(float, f"{prefix}.DLY1")
