@@ -39,16 +39,21 @@ analog input 5 is connected to a gas flow meter:
 
 """
 
+import asyncio
 from enum import Enum
 
 import numpy as np
 from numpy.typing import NDArray
+from bluesky.protocols import Triggerable
 from ophyd_async.core import (
     ConfigSignal,
     DeviceVector,
     HintedSignal,
     StandardReadable,
     SubsetEnum,
+    AsyncStatus,
+    observe_value,
+    DEFAULT_TIMEOUT,
 )
 from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw, epics_signal_x
 
@@ -301,7 +306,7 @@ class DigitalIO(StandardReadable):
         super().__init__(name=name)
 
 
-class WaveformDigitizer(StandardReadable):
+class WaveformDigitizer(StandardReadable, Triggerable):
     """A feature of the Labjack devices that allows waveform capture."""
 
     class TriggerSource(StrEnum):
@@ -317,7 +322,7 @@ class WaveformDigitizer(StandardReadable):
             self.total_time = epics_signal_rw(float, f"{prefix}WaveDigTotalTime")
         with self.add_children_as_readables(ConfigSignal):
             self.num_points = epics_signal_rw(int, f"{prefix}WaveDigNumPoints")
-            self.dwell = epics_signal_rw(float, f"{prefix}WaveDigDwell")
+            self.dwell_time = epics_signal_rw(float, f"{prefix}WaveDigDwell")
             self.first_chan = epics_signal_rw(
                 SubsetEnum[
                     "0",
@@ -382,6 +387,21 @@ class WaveformDigitizer(StandardReadable):
                 }
             )
         super().__init__(name=name)
+
+    @AsyncStatus.wrap
+    async def trigger(self):
+        # Determine how long the trigger will take
+        dwell_time, num_points = await asyncio.gather(
+            self.dwell_time.get_value(),
+            self.num_points.get_value(),
+        )
+        timeout = dwell_time * num_points + DEFAULT_TIMEOUT
+        # Start the triggering
+        await self.run.set(True, wait=False)
+        # Wait for the read to complete
+        async for value in observe_value(self.run, timeout=timeout):
+            if not value:
+                break
 
 
 class WaveformGenerator(StandardReadable):
