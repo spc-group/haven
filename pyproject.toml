@@ -36,6 +36,8 @@ HavenPlugin = "firefly.pydm_plugin:HavenPlugin"
 
 [project.scripts]
 haven_config = "haven._iconfig:print_config_value"
+haven_queueserver = "queueserver.launch_queueserver:launch_queueserver"
+mongo_consumer = "queueserver.mongo_consumer:main"
 
 [project.gui-scripts]
 firefly = "firefly.launcher:main"

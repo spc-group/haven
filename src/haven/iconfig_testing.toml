@@ -23,6 +23,7 @@ control_host = "localhost"
 control_port = "60615"
 info_host = "localhost"
 info_port = "60625"
+redis_addr = "localhost:6379"
 
 [database.tiled]
 
