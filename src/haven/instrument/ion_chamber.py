@@ -121,7 +121,8 @@ class IonChamber(StandardReadable, Triggerable):
                 derived_from={
                 "gain": self.preamp.gain,
                 "count": self.scaler_channel.net_count,
-                "time": self.mcs.scaler.elapsed_time,
+                "clock_count": self.mcs.scaler.channels[0].raw_count,
+                "clock_frequency": self.mcs.scaler.clock_frequency,
                 "counts_per_volt_second": self.counts_per_volt_second,
                 },
                 inverse=self._counts_to_amps,
@@ -134,20 +135,21 @@ class IonChamber(StandardReadable, Triggerable):
             derived_from={
             "gain": self.preamp.gain,
             "count": self.scaler_channel.raw_count,
-            "time": self.mcs.scaler.elapsed_time,
+            "clock_count": self.mcs.scaler.channels[0].raw_count,
+            "clock_frequency": self.mcs.scaler.clock_frequency,
             "counts_per_volt_second": self.counts_per_volt_second,
             },
             inverse=self._counts_to_amps,
             )
-
         super().__init__(name=name)
 
-    def _counts_to_amps(self, values, *, count, gain, time, counts_per_volt_second):
+    def _counts_to_amps(self, values, *, count, gain, clock_count, clock_frequency, counts_per_volt_second):
         """Pre-amp output current calculated from scaler counts."""
-        # Calculate the output voltage from the pre-amp
-        voltage = values[count] / values[counts_per_volt_second] / values[time]
-        # Calculate the input current from pre-amp gain
         try:
+            # Calculate the output voltage from the pre-amp
+            time = values[clock_count] / values[clock_frequency]
+            voltage = values[count] / values[counts_per_volt_second] / time
+            # Calculate the input current from pre-amp gain
             return voltage / values[gain]
         except ZeroDivisionError:
             return float("nan")

@@ -163,7 +163,8 @@ async def test_net_current_signal(ion_chamber):
     # Set the necessary dependent signals
     set_mock_value(ion_chamber.counts_per_volt_second, 10e6)  # 100 Mhz / 10 V
     set_mock_value(ion_chamber.scaler_channel.net_count, int(13e6))  # 1.3V
-    set_mock_value(ion_chamber.mcs.scaler.elapsed_time, 1.0)
+    set_mock_value(ion_chamber.mcs.scaler.clock_frequency, 9.6e6)
+    set_mock_value(ion_chamber.mcs.scaler.channels[0].raw_count, 4.8e6)
     set_mock_value(ion_chamber.preamp.sensitivity_value, "20")
     set_mock_value(ion_chamber.preamp.sensitivity_unit, "uA/V")
     # Make sure it ignores the offset if it's off
@@ -171,7 +172,7 @@ async def test_net_current_signal(ion_chamber):
     set_mock_value(ion_chamber.preamp.offset_value, "2")
     set_mock_value(ion_chamber.preamp.offset_unit, "uA")
     # Check the current answer
-    assert (await ion_chamber.net_current.get_value()) == pytest.approx(2.6e-5)
+    assert (await ion_chamber.net_current.get_value()) == pytest.approx(5.2e-5)
 
 @pytest.mark.asyncio
 async def test_raw_current_signal(ion_chamber):
@@ -180,7 +181,8 @@ async def test_raw_current_signal(ion_chamber):
     # Set the necessary dependent signals
     set_mock_value(ion_chamber.counts_per_volt_second, 10e6)  # 100 Mhz / 10 V
     set_mock_value(ion_chamber.scaler_channel.raw_count, int(13e6))  # 1.3V
-    set_mock_value(ion_chamber.mcs.scaler.elapsed_time, 1.0)
+    set_mock_value(ion_chamber.mcs.scaler.clock_frequency, 9.6e6)
+    set_mock_value(ion_chamber.mcs.scaler.channels[0].raw_count, 4.8e6)
     set_mock_value(ion_chamber.preamp.sensitivity_value, "20")
     set_mock_value(ion_chamber.preamp.sensitivity_unit, "uA/V")
     # Make sure it ignores the offset if it's off
@@ -188,7 +190,7 @@ async def test_raw_current_signal(ion_chamber):
     set_mock_value(ion_chamber.preamp.offset_value, "2")
     set_mock_value(ion_chamber.preamp.offset_unit, "uA")
     # Check the current answer
-    assert (await ion_chamber.raw_current.get_value()) == pytest.approx(2.6e-5)
+    assert (await ion_chamber.raw_current.get_value()) == pytest.approx(5.2e-5)
 
 async def test_voltmeter_name(ion_chamber):
     ion_chamber.auto_name = True
