@@ -215,6 +215,8 @@ class IonChamber(StandardReadable, Triggerable):
           reading.
 
         """
+        # Make sure we have a fresh voltmeter reading
+        await self.voltmeter_channel.trigger()
         # Recording the dark current is done differently
         if record_dark_current:
             await self.record_dark_current()

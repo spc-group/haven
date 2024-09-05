@@ -273,6 +273,7 @@ class AnalogInput(Input, Triggerable):
         self.raw_value = epics_signal_rw(int, f"{prefix}Ai{ch_num}.RVAL")
         super().__init__(prefix=f"{prefix}Ai{ch_num}", name=name)
 
+    @AsyncStatus.wrap
     async def trigger(self):
         await self.process_record.trigger()
         

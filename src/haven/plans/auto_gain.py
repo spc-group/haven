@@ -119,16 +119,17 @@ def auto_gain(
     max_count: int = 28,
     queue: Queue = None,
 ):
-    """An adaptive Bluesky plan for optimizing pre-amp gains.
+    """An adaptive Bluesky plan for optimizing ion chamber 
+    pre-amp gains.
 
-    For each detector, the plan will search for the range of gains
+    For each ion chambe, the plan will search for the range of gains
     within which the pre-amp output is between *volts_min* and
     *volts_max*, and select the gain that produces a voltage closest
     to the mid-point between *volts_min* and *volts_max*.
 
     Parameters
     ==========
-    dets
+    ion_chambers 
       A sequence of detectors to scan. Can be devices, names, or Ophyd
       labels.
     volts_min
@@ -163,8 +164,10 @@ def auto_gain(
     recommender = GainRecommender(
         volts_min=volts_min, volts_max=volts_max, target_volts=target
     )
-    ind_keys = [det.preamp.gain_level.name for det in ion_chambers]
-    dep_keys = [det.voltmeter_channel.final_value.name for det in ion_chambers]
+    preamp_gains = [det.preamp.gain_level for det in ion_chambers]
+    ind_keys = [sig.name for sig in preamp_gains]
+    voltmeters = [det.voltmeter_channel for det in ion_chambers]
+    dep_keys = [voltmeter.final_value.name for voltmeter in voltmeters]
     rr, queue = recommender_factory(
         recommender,
         independent_keys=ind_keys,
@@ -179,9 +182,8 @@ def auto_gain(
             det.preamp.gain_level, default_value=13
         )
     # Execute the plan
-    all_dets = [obj for det in ion_chambers for obj in (det, det.voltmeter_channel)]
     yield from adaptive_plan(
-        dets=all_dets,
+        dets=voltmeters + preamp_gains,
         first_point=first_point,
         to_recommender=rr,
         from_recommender=queue,
