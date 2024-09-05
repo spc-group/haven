@@ -112,7 +112,7 @@ class GainRecommender:
 
 
 def auto_gain(
-    dets="ion_chambers",
+    ion_chambers="ion_chambers",
     volts_min: float = 0.5,
     volts_max: float = 4.5,
     prefer: str = "middle",
@@ -146,8 +146,8 @@ def auto_gain(
       plan and the recommendation engine.
 
     """
-    # Resolve the detector list into real devices
-    dets = registry.findall(dets)
+    # Resolve the detector list into voltmeter AI's
+    ion_chambers = registry.findall(ion_chambers)
     # Prepare the recommendation engine
     targets = {
         "lower": volts_min,
@@ -163,8 +163,8 @@ def auto_gain(
     recommender = GainRecommender(
         volts_min=volts_min, volts_max=volts_max, target_volts=target
     )
-    ind_keys = [det.preamp.gain_level.name for det in dets]
-    dep_keys = [det.voltage.name for det in dets]
+    ind_keys = [det.preamp.gain_level.name for det in ion_chambers]
+    dep_keys = [det.voltmeter_channel.final_value.name for det in ion_chambers]
     rr, queue = recommender_factory(
         recommender,
         independent_keys=ind_keys,
@@ -174,13 +174,14 @@ def auto_gain(
     )
     # Start from the current gain settings
     first_point = {}
-    for det in dets:
+    for det in ion_chambers:
         first_point[det.preamp.gain_level] = yield from bps.rd(
             det.preamp.gain_level, default_value=13
         )
     # Execute the plan
+    all_dets = [obj for det in ion_chambers for obj in (det, det.voltmeter_channel)]
     yield from adaptive_plan(
-        dets=dets,
+        dets=all_dets,
         first_point=first_point,
         to_recommender=rr,
         from_recommender=queue,

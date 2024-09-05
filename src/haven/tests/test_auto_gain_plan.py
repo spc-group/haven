@@ -15,7 +15,7 @@ def test_plan_recommendations(ion_chamber):
     queue.put({ion_chamber.preamp.gain_level.name: 12})
     queue.put(None)
     # Prepare the plan and make sure it generates messages
-    plan = auto_gain(dets=[ion_chamber], queue=queue)
+    plan = auto_gain(ion_chambers=[ion_chamber], queue=queue)
     msgs = list(plan)
     # Make sure the plan sets the gain values properly
     set_msgs = [msg for msg in msgs if msg.command == "set"]
@@ -37,7 +37,7 @@ async def test_plan_prefer_arg(ion_chamber, monkeypatch, prefer, target_volts):
     queue.put({ion_chamber.preamp.gain_level.name: 12})
     queue.put(None)
     monkeypatch.setattr(auto_gain_module, "GainRecommender", MagicMock())
-    plan = auto_gain(dets=[ion_chamber], queue=queue, prefer=prefer)
+    plan = auto_gain(ion_chambers=[ion_chamber], queue=queue, prefer=prefer)
     msgs = list(plan)
     auto_gain_module.GainRecommender.assert_called_with(
         volts_min=0.5, volts_max=4.5, target_volts=target_volts

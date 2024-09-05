@@ -186,7 +186,7 @@ class AnalogOutput(Output):
         super().__init__(prefix=prefix, name=name)
 
 
-class AnalogInput(Input):
+class AnalogInput(Input, Triggerable):
     """An analog input on a labjack device.
 
     It is based on the synApps input record, but with LabJack specific
@@ -273,7 +273,9 @@ class AnalogInput(Input):
         self.raw_value = epics_signal_rw(int, f"{prefix}Ai{ch_num}.RVAL")
         super().__init__(prefix=f"{prefix}Ai{ch_num}", name=name)
 
-
+    async def trigger(self):
+        await self.process_record.trigger()
+        
 class DigitalIO(StandardReadable):
     """A digital input/output channel on the labjack.
 
