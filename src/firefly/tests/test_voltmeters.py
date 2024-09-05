@@ -1,7 +1,9 @@
+import asyncio
 import pytest
 from bluesky_queueserver_api import BPlan
 from pydm import widgets as PyDMWidgets
 from pydm.widgets.analog_indicator import PyDMAnalogIndicator
+from ophyd_async.core import set_mock_value
 from qtpy import QtWidgets
 
 import haven
@@ -10,7 +12,7 @@ from firefly.voltmeters import VoltmetersDisplay
 
 
 @pytest.fixture()
-def ion_chambers(sim_registry):
+async def ion_chambers(sim_registry):
     devices = []
     for idx, name in enumerate(["I0", "It"]):
         ion_chamber = IonChamber(
@@ -22,7 +24,7 @@ def ion_chambers(sim_registry):
             counts_per_volt_second=10e6,
             name=name
         )
-        ion_chamber.connect(mock=True)
+        await ion_chamber.connect(mock=True)
         sim_registry.register(ion_chamber)
         devices.append(ion_chamber)
     return devices
@@ -57,7 +59,8 @@ async def test_rows(voltmeters_display):
     assert isinstance(row.current_unit_label, QtWidgets.QLabel)
     assert isinstance(row.gain_down_button, PyDMWidgets.PyDMPushButton)
     assert isinstance(row.gain_up_button, PyDMWidgets.PyDMPushButton)
-    assert isinstance(row.gain_label, PyDMWidgets.PyDMLabel)
+    assert isinstance(row.gain_value_label, PyDMWidgets.PyDMLabel)
+    assert isinstance(row.gain_unit_label, PyDMWidgets.PyDMLabel)
     assert isinstance(row.auto_gain_checkbox, QtWidgets.QCheckBox)
     assert isinstance(row.details_button, QtWidgets.QPushButton)
     # Check that the widgets are added to the layouts
@@ -70,11 +73,27 @@ async def test_rows(voltmeters_display):
     assert row.column_layouts[3].itemAt(1).widget().text() == "Gain/Offset"
     assert row.gain_down_button is row.column_layouts[3].itemAt(2).itemAt(1).widget()
     assert row.gain_up_button is row.column_layouts[3].itemAt(2).itemAt(2).widget()
-    assert row.gain_label is row.column_layouts[3].itemAt(3).itemAt(1).widget()
+    assert row.gain_value_label is row.column_layouts[3].itemAt(3).itemAt(1).widget()
+    assert row.gain_unit_label is row.column_layouts[3].itemAt(3).itemAt(2).widget()
     assert row.auto_gain_checkbox is row.column_layouts[4].itemAt(1).widget()
     # Check that a device has been created properly
     assert isinstance(row.device, haven.IonChamber)
 
+@pytest.mark.asyncio
+async def test_gain_button_hints(voltmeters_display, ion_chambers):
+    """Test that the gain buttons get disabled when not usable."""
+    row = voltmeters_display._ion_chamber_rows[0]
+    ic = ion_chambers[0]
+    assert row.gain_up_button.isEnabled()
+    assert row.gain_down_button.isEnabled()
+    # Now set the gain all the way to one limit
+    row.update_gain_level_widgets(0)
+    assert not row.gain_down_button.isEnabled()
+    assert row.gain_up_button.isEnabled()
+    # Now set the gain all the way to the other limit
+    row.update_gain_level_widgets(27)
+    assert row.gain_down_button.isEnabled()
+    assert not row.gain_up_button.isEnabled()
 
 def test_details_button(qtbot, voltmeters_display):
     """Check that the details button for each ion chamber triggers the global signal."""

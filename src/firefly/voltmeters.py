@@ -4,11 +4,11 @@ from typing import Sequence
 
 import qtawesome as qta
 from bluesky_queueserver_api import BPlan
-from pydm.widgets import PyDMLabel, PyDMPushButton
+from pydm.widgets import PyDMLabel, PyDMPushButton, PyDMChannel
 from pydm.widgets.analog_indicator import PyDMAnalogIndicator
 from pydm.widgets.display_format import DisplayFormat
 from qasync import asyncSlot
-from qtpy.QtCore import Qt, Signal
+from qtpy.QtCore import Qt, Signal, Slot
 from qtpy.QtWidgets import (
     QCheckBox,
     QHBoxLayout,
@@ -184,7 +184,7 @@ class Row:
         self.current_label_layout.addItem(HSpacer())
         self.current_label = PyDMLabel(
             parent=self.parent,
-            init_channel=f"haven://{device_name}.current",
+            init_channel=f"haven://{device_name}.net_current",
         )
         self.current_label.displayFormat = DisplayFormat.Exponential
         self.current_label_layout.addWidget(self.current_label)
@@ -218,6 +218,11 @@ class Row:
         )
         self.gain_buttons_layout.addWidget(self.gain_up_button)
         self.gain_buttons_layout.addItem(HSpacer())
+        self.gain_monitor = PyDMChannel(
+            address=f"haven://{device_name}.preamp.gain_level",
+            value_slot=self.update_gain_level_widgets
+            )
+        self.gain_monitor.connect()
         # Reporting the current gain as text
         self.gain_label_layout = QHBoxLayout()
         self.column_layouts[3].addLayout(self.gain_label_layout)
@@ -245,6 +250,15 @@ class Row:
         self.column_layouts[4].addWidget(self.details_button)
         self.column_layouts[4].addItem(VSpacer())
 
+    def update_gain_level_widgets(self, new_level):
+        if new_level == 0:
+            can_go_down, can_go_up = (False, True)
+        elif new_level == 27:
+            can_go_down, can_go_up = (True, False)
+        else:
+            can_go_down, can_go_up = (True, True)
+        self.gain_down_button.setEnabled(can_go_down)
+        self.gain_up_button.setEnabled(can_go_up)
 
 class VSpacer(QSpacerItem):
     def __init__(
