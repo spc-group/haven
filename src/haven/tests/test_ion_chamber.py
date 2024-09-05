@@ -50,14 +50,13 @@ async def test_load_ion_chambers(sim_registry, mocker):
         ic.voltmeter.model_name.source.split("://")[1] == "255idc:LabJackT7_1:ModelName"
     )
     # assert ic.voltmeter.prefix == "255idc:LabjackT7_0:Ai1"
-    assert ic.counts_per_volt_second == 1e7
+    assert await ic.counts_per_volt_second.get_value() == 1e7
 
 
 async def test_readables(ion_chamber):
     await ion_chamber.connect(mock=True)
     expected_readables = [
-        "I0-current",
-        "I0-voltage",
+        "I0-net_current",
         "I0-voltmeter-analog_inputs-1-final_value",
         "I0-mcs-scaler-channels-0-net_count",
         "I0-mcs-scaler-channels-0-raw_count",
@@ -69,6 +68,7 @@ async def test_readables(ion_chamber):
     assert sorted(actual_readables) == sorted(expected_readables)
     # Check confirables
     expected_configables = [
+        "I0-counts_per_volt_second",
         "I0-voltmeter-model_name",
         "I0-voltmeter-poll_sleep_ms",
         "I0-voltmeter-analog_in_sampling_rate",
@@ -157,27 +157,11 @@ async def test_trigger_dark_current(ion_chamber, monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_volts_signal(ion_chamber):
-    """Test that the scaler tick counts get properly converted to pre-amp voltage.
-
-    Assumes 10V max, 100 MHz max settings on the V2F100
-
-    """
-    await ion_chamber.connect(mock=True)
-    # Set the necessary dependent signals
-    ion_chamber.counts_per_volt_second = 10e6  # 100 Mhz / 10 V
-    set_mock_value(ion_chamber.scaler_channel.net_count, int(1.3e7 * 2))  # 1.3 V
-    set_mock_value(ion_chamber.mcs.scaler.elapsed_time, 2.0)
-    # Check the volts answer
-    assert await ion_chamber.voltage.get_value() == 1.3
-
-
-@pytest.mark.asyncio
-async def test_amps_signal(ion_chamber):
+async def test_net_current_signal(ion_chamber):
     """Test that scaler tick counts get properly converted to ion chamber current."""
     await ion_chamber.connect(mock=True)
     # Set the necessary dependent signals
-    ion_chamber.counts_per_volt_second = 10e6  # 100 Mhz / 10 V
+    set_mock_value(ion_chamber.counts_per_volt_second, 10e6)  # 100 Mhz / 10 V
     set_mock_value(ion_chamber.scaler_channel.net_count, int(13e6))  # 1.3V
     set_mock_value(ion_chamber.mcs.scaler.elapsed_time, 1.0)
     set_mock_value(ion_chamber.preamp.sensitivity_value, "20")
@@ -187,29 +171,24 @@ async def test_amps_signal(ion_chamber):
     set_mock_value(ion_chamber.preamp.offset_value, "2")
     set_mock_value(ion_chamber.preamp.offset_unit, "uA")
     # Check the current answer
-    assert (await ion_chamber.current.get_value()) == pytest.approx(2.6e-5)
+    assert (await ion_chamber.net_current.get_value()) == pytest.approx(2.6e-5)
 
-
-@pytest.mark.skip(
-    reason="Needs updating to ophyd-async ion chamber if we want to keep it"
-)
-def test_voltmeter_amps_signal(sim_ion_chamber):
-    """Test that the voltmeter voltage gets properly converted to ion
-    chamber current.
-
-    """
-    chamber = sim_ion_chamber
+@pytest.mark.asyncio
+async def test_raw_current_signal(ion_chamber):
+    """Test that scaler tick counts get properly converted to ion chamber current."""
+    await ion_chamber.connect(mock=True)
     # Set the necessary dependent signals
-    chamber.voltmeter.volts.sim_put(1.3)  # 1.3V
-    chamber.preamp.sensitivity_value.put(4)  # "20"
-    chamber.preamp.sensitivity_unit.put(2)  # "µA/V"
+    set_mock_value(ion_chamber.counts_per_volt_second, 10e6)  # 100 Mhz / 10 V
+    set_mock_value(ion_chamber.scaler_channel.raw_count, int(13e6))  # 1.3V
+    set_mock_value(ion_chamber.mcs.scaler.elapsed_time, 1.0)
+    set_mock_value(ion_chamber.preamp.sensitivity_value, "20")
+    set_mock_value(ion_chamber.preamp.sensitivity_unit, "uA/V")
     # Make sure it ignores the offset if it's off
-    chamber.preamp.offset_on.put("OFF")
-    chamber.preamp.offset_value.put("2")  # 2
-    chamber.preamp.offset_unit.put("uA")  # µA
+    set_mock_value(ion_chamber.preamp.offset_on, "OFF")
+    set_mock_value(ion_chamber.preamp.offset_value, "2")
+    set_mock_value(ion_chamber.preamp.offset_unit, "uA")
     # Check the current answer
-    assert chamber.voltmeter.amps.get() == pytest.approx(2.6e-5)
-
+    assert (await ion_chamber.raw_current.get_value()) == pytest.approx(2.6e-5)
 
 async def test_voltmeter_name(ion_chamber):
     ion_chamber.auto_name = True

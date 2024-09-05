@@ -13,7 +13,8 @@ from ophyd_async.core import (
     ConfigSignal,
     StandardReadable,
     TriggerInfo,
-    observe_value,
+    soft_signal_rw,
+    wait_for_value,
 )
 
 from .._iconfig import load_config
@@ -65,7 +66,6 @@ class IonChamber(StandardReadable, Triggerable):
         name="",
         auto_name: bool = None,
     ):
-        self.counts_per_volt_second = counts_per_volt_second
         self.scaler_prefix = scaler_prefix
         self._scaler_channel = scaler_channel
         self._voltmeter_channel = voltmeter_channel
@@ -79,6 +79,8 @@ class IonChamber(StandardReadable, Triggerable):
                 analog_outputs=[],
                 digital_words=[],
             )
+        with self.add_children_as_readables(ConfigSignal):
+            self.counts_per_volt_second = soft_signal_rw(float, initial_value=counts_per_volt_second)
         # Add subordinate devices
         self.mcs = MultiChannelScaler(
             prefix=scaler_prefix, channels=[0, scaler_channel]
@@ -112,35 +114,41 @@ class IonChamber(StandardReadable, Triggerable):
         )
         # Add calculated signals
         with self.add_children_as_readables():
-            pass
-            self.voltage = derived_signal_r(
-                float,
-                name="voltage",
-                units="V",
-                derived_from={
-                    "count": self.scaler_channel.net_count,
-                    "time": self.mcs.scaler.elapsed_time,
-                },
-                inverse=self._counts_to_volts,
-            )
-            self.current = derived_signal_r(
+            self.net_current = derived_signal_r(
                 float,
                 name="current",
                 units="A",
-                derived_from={"voltage": self.voltage, "gain": self.preamp.gain},
-                inverse=self._volts_to_amps,
+                derived_from={
+                "gain": self.preamp.gain,
+                "count": self.scaler_channel.net_count,
+                "time": self.mcs.scaler.elapsed_time,
+                "counts_per_volt_second": self.counts_per_volt_second,
+                },
+                inverse=self._counts_to_amps,
+                )
+        # Measured current without dark current correction 
+        self.raw_current = derived_signal_r(
+                float,
+            name="current",
+            units="A",
+            derived_from={
+            "gain": self.preamp.gain,
+            "count": self.scaler_channel.raw_count,
+            "time": self.mcs.scaler.elapsed_time,
+            "counts_per_volt_second": self.counts_per_volt_second,
+            },
+            inverse=self._counts_to_amps,
             )
 
         super().__init__(name=name)
 
-    def _counts_to_volts(self, values, *, count, time):
-        """Pre-amp output voltage calculated from scaler counts."""
-        return values[count] / self.counts_per_volt_second / values[time]
-
-    def _volts_to_amps(self, values, *, voltage, gain):
-        """Pre-amp current calculated from output voltage."""
+    def _counts_to_amps(self, values, *, count, gain, time, counts_per_volt_second):
+        """Pre-amp output current calculated from scaler counts."""
+        # Calculate the output voltage from the pre-amp
+        voltage = values[count] / values[counts_per_volt_second] / values[time]
+        # Calculate the input current from pre-amp gain
         try:
-            return values[voltage] / values[gain]
+            return voltage / values[gain]
         except ZeroDivisionError:
             return float("nan")
 
@@ -230,12 +238,7 @@ class IonChamber(StandardReadable, Triggerable):
         integration_time = await self.mcs.scaler.dark_current_time.get_value()
         timeout = integration_time + DEFAULT_TIMEOUT
         count_signal = self.mcs.scaler.count
-        done = asyncio.Event()
-        done_status = AsyncStatus(asyncio.wait_for(done.wait(), timeout=timeout))
-        async for state in observe_value(count_signal, done_status=done_status):
-            if state == self.mcs.scaler.CountState.DONE:
-                done.set()
-                break
+        await wait_for_value(count_signal, self.mcs.scaler.CountState.DONE, timeout=timeout)
 
     def record_fly_reading(self, reading, **kwargs):
         if self._is_flying:
@@ -257,16 +260,6 @@ class IonChamber(StandardReadable, Triggerable):
         self._fly_readings = []
         self._is_flying = False  # Gets set during kickoff
 
-    @staticmethod
-    async def wait_for_value(signal, value):
-        event = asyncio.Event()
-
-        def set_event(val):
-            if val == value:
-                event.set()
-
-        signal.subscribe_value(set_event)
-        await event.wait()
 
     @AsyncStatus.wrap
     async def kickoff(self):
@@ -276,7 +269,7 @@ class IonChamber(StandardReadable, Triggerable):
         # Start acquiring
         self.mcs.start_all.trigger(wait=False)
         # Wait for acquisition to start
-        await self.wait_for_value(self.mcs.acquiring, self.mcs.Acquiring.ACQUIRING)
+        await wait_for_value(self.mcs.acquiring, self.mcs.Acquiring.ACQUIRING, timeout=DEFAULT_TIMEOUT)
         self._is_flying = True
         return
 
