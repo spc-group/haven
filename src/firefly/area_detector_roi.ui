@@ -147,13 +147,13 @@
         <string>haven://${AD}.roi${R}.min_xyz.min_y</string>
        </property>
        <property name="orientation" stdset="0">
-        <enum>Qt::Vertical</enum>
+        <number>2</number>
        </property>
        <property name="userMaximum" stdset="0">
-        <double>1.000000000000000</double>
+        <double>3000.000000000000000</double>
        </property>
        <property name="userMinimum" stdset="0">
-        <double>-1.000000000000000</double>
+        <double>0.000000000000000</double>
        </property>
        <property name="userDefinedLimits" stdset="0">
         <bool>true</bool>
@@ -184,10 +184,10 @@
           <number>0</number>
          </property>
          <property name="userMaximum" stdset="0">
-          <double>1.000000000000000</double>
+          <double>3000.000000000000000</double>
          </property>
          <property name="userMinimum" stdset="0">
-          <double>-1.000000000000000</double>
+          <double>0.000000000000000</double>
          </property>
          <property name="userDefinedLimits" stdset="0">
           <bool>true</bool>
@@ -222,13 +222,13 @@
         <string>haven://${AD}.roi${R}.size.y</string>
        </property>
        <property name="orientation" stdset="0">
-        <enum>Qt::Vertical</enum>
+        <number>2</number>
        </property>
        <property name="userMaximum" stdset="0">
-        <double>1.000000000000000</double>
+        <double>3000.000000000000000</double>
        </property>
        <property name="userMinimum" stdset="0">
-        <double>-1.000000000000000</double>
+        <double>0.000000000000000</double>
        </property>
        <property name="userDefinedLimits" stdset="0">
         <bool>true</bool>
@@ -256,10 +256,10 @@
           <string>haven://${AD}.roi${R}.size.x</string>
          </property>
          <property name="userMaximum" stdset="0">
-          <double>1.000000000000000</double>
+          <double>3000.000000000000000</double>
          </property>
          <property name="userMinimum" stdset="0">
-          <double>-1.000000000000000</double>
+          <double>0.000000000000000</double>
          </property>
          <property name="userDefinedLimits" stdset="0">
           <bool>true</bool>
