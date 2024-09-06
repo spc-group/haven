@@ -1,5 +1,4 @@
 import qtawesome as qta
-from qtpy import QtWidgets
 
 from firefly import display
 from haven import registry

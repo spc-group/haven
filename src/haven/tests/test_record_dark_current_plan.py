@@ -21,8 +21,9 @@ def test_messages(shutters, ion_chamber):
     shutter = shutters[0]
     msgs = list(record_dark_current(ion_chambers=[ion_chamber], shutters=[shutter]))
     from pprint import pprint
+
     pprint(msgs)
     # Check the shutters get closed
     trigger_msg = msgs[3]
     assert trigger_msg.obj is ion_chamber
-    assert trigger_msg.kwargs['record_dark_current'] is True
+    assert trigger_msg.kwargs["record_dark_current"] is True

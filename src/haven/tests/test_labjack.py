@@ -229,7 +229,7 @@ async def test_waveform_digitizer():
         "num_points",
         "first_chan",
         "num_chans",
-        "dwell",
+        "dwell_time",
         "resolution",
         "settling_time",
     ]

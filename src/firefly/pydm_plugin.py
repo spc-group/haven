@@ -12,7 +12,7 @@ import logging
 from typing import Mapping
 
 import numpy as np
-from bluesky.protocols import HasName, Movable, Subscribable
+from bluesky.protocols import Movable, Subscribable
 from ophyd import OphydObject
 from ophyd.utils.epics_pvs import AlarmSeverity
 from pydm.data_plugins.plugin import PyDMConnection
@@ -51,7 +51,7 @@ class HavenConnection(RegistryConnection, SignalConnection):
 
 class HavenAsyncConnection(RegistryConnection, PyDMConnection):
     _is_ready = False
-    
+
     def __init__(self, channel, address, protocol=None, parent=None):
         # Create base connection
         super().__init__(channel, address, protocol=protocol, parent=parent)

@@ -80,7 +80,9 @@ class IonChamber(StandardReadable, Triggerable):
                 digital_words=[],
             )
         with self.add_children_as_readables(ConfigSignal):
-            self.counts_per_volt_second = soft_signal_rw(float, initial_value=counts_per_volt_second)
+            self.counts_per_volt_second = soft_signal_rw(
+                float, initial_value=counts_per_volt_second
+            )
         # Add subordinate devices
         self.mcs = MultiChannelScaler(
             prefix=scaler_prefix, channels=[0, scaler_channel]
@@ -119,31 +121,40 @@ class IonChamber(StandardReadable, Triggerable):
                 name="current",
                 units="A",
                 derived_from={
-                "gain": self.preamp.gain,
-                "count": self.scaler_channel.net_count,
-                "clock_count": self.mcs.scaler.channels[0].raw_count,
-                "clock_frequency": self.mcs.scaler.clock_frequency,
-                "counts_per_volt_second": self.counts_per_volt_second,
+                    "gain": self.preamp.gain,
+                    "count": self.scaler_channel.net_count,
+                    "clock_count": self.mcs.scaler.channels[0].raw_count,
+                    "clock_frequency": self.mcs.scaler.clock_frequency,
+                    "counts_per_volt_second": self.counts_per_volt_second,
                 },
                 inverse=self._counts_to_amps,
-                )
-        # Measured current without dark current correction 
+            )
+        # Measured current without dark current correction
         self.raw_current = derived_signal_r(
-                float,
+            float,
             name="current",
             units="A",
             derived_from={
-            "gain": self.preamp.gain,
-            "count": self.scaler_channel.raw_count,
-            "clock_count": self.mcs.scaler.channels[0].raw_count,
-            "clock_frequency": self.mcs.scaler.clock_frequency,
-            "counts_per_volt_second": self.counts_per_volt_second,
+                "gain": self.preamp.gain,
+                "count": self.scaler_channel.raw_count,
+                "clock_count": self.mcs.scaler.channels[0].raw_count,
+                "clock_frequency": self.mcs.scaler.clock_frequency,
+                "counts_per_volt_second": self.counts_per_volt_second,
             },
             inverse=self._counts_to_amps,
-            )
+        )
         super().__init__(name=name)
 
-    def _counts_to_amps(self, values, *, count, gain, clock_count, clock_frequency, counts_per_volt_second):
+    def _counts_to_amps(
+        self,
+        values,
+        *,
+        count,
+        gain,
+        clock_count,
+        clock_frequency,
+        counts_per_volt_second,
+    ):
         """Pre-amp output current calculated from scaler counts."""
         try:
             # Calculate the output voltage from the pre-amp
@@ -242,7 +253,9 @@ class IonChamber(StandardReadable, Triggerable):
         integration_time = await self.mcs.scaler.dark_current_time.get_value()
         timeout = integration_time + DEFAULT_TIMEOUT
         count_signal = self.mcs.scaler.count
-        await wait_for_value(count_signal, self.mcs.scaler.CountState.DONE, timeout=timeout)
+        await wait_for_value(
+            count_signal, self.mcs.scaler.CountState.DONE, timeout=timeout
+        )
 
     def record_fly_reading(self, reading, **kwargs):
         if self._is_flying:
@@ -264,7 +277,6 @@ class IonChamber(StandardReadable, Triggerable):
         self._fly_readings = []
         self._is_flying = False  # Gets set during kickoff
 
-
     @AsyncStatus.wrap
     async def kickoff(self):
         """Start recording data for the fly scan."""
@@ -273,7 +285,9 @@ class IonChamber(StandardReadable, Triggerable):
         # Start acquiring
         self.mcs.start_all.trigger(wait=False)
         # Wait for acquisition to start
-        await wait_for_value(self.mcs.acquiring, self.mcs.Acquiring.ACQUIRING, timeout=DEFAULT_TIMEOUT)
+        await wait_for_value(
+            self.mcs.acquiring, self.mcs.Acquiring.ACQUIRING, timeout=DEFAULT_TIMEOUT
+        )
         self._is_flying = True
         return
 

@@ -1,14 +1,12 @@
-import asyncio
 import pytest
 from bluesky_queueserver_api import BPlan
 from pydm import widgets as PyDMWidgets
 from pydm.widgets.analog_indicator import PyDMAnalogIndicator
-from ophyd_async.core import set_mock_value
 from qtpy import QtWidgets
 
 import haven
-from haven.instrument.ion_chamber import IonChamber
 from firefly.voltmeters import VoltmetersDisplay
+from haven.instrument.ion_chamber import IonChamber
 
 
 @pytest.fixture()
@@ -22,7 +20,7 @@ async def ion_chambers(sim_registry):
             voltmeter_prefix="255idc:LJT7_Voltmeter0:",
             voltmeter_channel=idx,
             counts_per_volt_second=10e6,
-            name=name
+            name=name,
         )
         await ion_chamber.connect(mock=True)
         sim_registry.register(ion_chamber)
@@ -79,6 +77,7 @@ async def test_rows(voltmeters_display):
     # Check that a device has been created properly
     assert isinstance(row.device, haven.IonChamber)
 
+
 @pytest.mark.asyncio
 async def test_gain_button_hints(voltmeters_display, ion_chambers):
     """Test that the gain buttons get disabled when not usable."""
@@ -94,6 +93,7 @@ async def test_gain_button_hints(voltmeters_display, ion_chambers):
     row.update_gain_level_widgets(27)
     assert row.gain_down_button.isEnabled()
     assert not row.gain_up_button.isEnabled()
+
 
 def test_details_button(qtbot, voltmeters_display):
     """Check that the details button for each ion chamber triggers the global signal."""

@@ -6,11 +6,11 @@ import numpy as np
 from bluesky.protocols import Reading
 from ophyd_async.core import (
     DEFAULT_TIMEOUT,
+    ReadingValueCallback,
     SignalMetadata,
     SignalR,
     SignalRW,
     SoftSignalBackend,
-    ReadingValueCallback,
     T,
 )
 

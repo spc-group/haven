@@ -1,7 +1,8 @@
 import uuid
 from typing import Sequence
 
-from bluesky import plan_stubs as bps, Msg
+from bluesky import Msg
+from bluesky import plan_stubs as bps
 from ophyd import Device
 
 from ..instrument.instrument_registry import registry

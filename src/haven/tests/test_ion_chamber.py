@@ -174,6 +174,7 @@ async def test_net_current_signal(ion_chamber):
     # Check the current answer
     assert (await ion_chamber.net_current.get_value()) == pytest.approx(5.2e-5)
 
+
 @pytest.mark.asyncio
 async def test_raw_current_signal(ion_chamber):
     """Test that scaler tick counts get properly converted to ion chamber current."""
@@ -191,6 +192,7 @@ async def test_raw_current_signal(ion_chamber):
     set_mock_value(ion_chamber.preamp.offset_unit, "uA")
     # Check the current answer
     assert (await ion_chamber.raw_current.get_value()) == pytest.approx(5.2e-5)
+
 
 async def test_voltmeter_name(ion_chamber):
     ion_chamber.auto_name = True

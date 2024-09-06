@@ -4,11 +4,11 @@ from typing import Sequence
 
 import qtawesome as qta
 from bluesky_queueserver_api import BPlan
-from pydm.widgets import PyDMLabel, PyDMPushButton, PyDMChannel
+from pydm.widgets import PyDMChannel, PyDMLabel, PyDMPushButton
 from pydm.widgets.analog_indicator import PyDMAnalogIndicator
 from pydm.widgets.display_format import DisplayFormat
 from qasync import asyncSlot
-from qtpy.QtCore import Qt, Signal, Slot
+from qtpy.QtCore import Qt, Signal
 from qtpy.QtWidgets import (
     QCheckBox,
     QHBoxLayout,
@@ -139,13 +139,15 @@ class Row:
         device_name = self.device.name
         # Description label
         self.name_label = PyDMLabel(
-            parent=self.parent, init_channel=f"haven://{device_name}.scaler_channel.description"
+            parent=self.parent,
+            init_channel=f"haven://{device_name}.scaler_channel.description",
         )
         self.name_label.setStyleSheet('font: 12pt "Sans Serif";\nfont-weight: bold;')
         self.column_layouts[0].addWidget(self.name_label)
         # Analog indicator
         self.voltage_indicator = PyDMAnalogIndicator(
-            parent=self.parent, init_channel=f"haven://{device_name}.voltmeter_channel.final_value"
+            parent=self.parent,
+            init_channel=f"haven://{device_name}.voltmeter_channel.final_value",
         )
         self.voltage_indicator.showValue = False
         self.voltage_indicator.limitsFromChannel = False
@@ -220,8 +222,8 @@ class Row:
         self.gain_buttons_layout.addItem(HSpacer())
         self.gain_monitor = PyDMChannel(
             address=f"haven://{device_name}.preamp.gain_level",
-            value_slot=self.update_gain_level_widgets
-            )
+            value_slot=self.update_gain_level_widgets,
+        )
         self.gain_monitor.connect()
         # Reporting the current gain as text
         self.gain_label_layout = QHBoxLayout()
@@ -259,6 +261,7 @@ class Row:
             can_go_down, can_go_up = (True, True)
         self.gain_down_button.setEnabled(can_go_down)
         self.gain_up_button.setEnabled(can_go_up)
+
 
 class VSpacer(QSpacerItem):
     def __init__(

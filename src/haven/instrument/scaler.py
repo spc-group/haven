@@ -2,13 +2,7 @@ from enum import Enum
 
 import numpy as np
 from numpy.typing import NDArray
-from ophyd_async.core import (
-    ConfigSignal,
-    DeviceVector,
-    HintedSignal,
-    StandardReadable,
-    SubsetEnum,
-)
+from ophyd_async.core import ConfigSignal, DeviceVector, HintedSignal, StandardReadable
 from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw, epics_signal_x
 
 from .._iconfig import load_config

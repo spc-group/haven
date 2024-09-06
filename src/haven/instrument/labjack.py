@@ -40,20 +40,19 @@ analog input 5 is connected to a gas flow meter:
 """
 
 import asyncio
-from enum import Enum
 
 import numpy as np
-from numpy.typing import NDArray
 from bluesky.protocols import Triggerable
+from numpy.typing import NDArray
 from ophyd_async.core import (
+    DEFAULT_TIMEOUT,
+    AsyncStatus,
     ConfigSignal,
     DeviceVector,
     HintedSignal,
     StandardReadable,
     SubsetEnum,
-    AsyncStatus,
     observe_value,
-    DEFAULT_TIMEOUT,
 )
 from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw, epics_signal_x
 
@@ -276,7 +275,8 @@ class AnalogInput(Input, Triggerable):
     @AsyncStatus.wrap
     async def trigger(self):
         await self.process_record.trigger()
-        
+
+
 class DigitalIO(StandardReadable):
     """A digital input/output channel on the labjack.
 

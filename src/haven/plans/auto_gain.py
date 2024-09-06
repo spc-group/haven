@@ -119,7 +119,7 @@ def auto_gain(
     max_count: int = 28,
     queue: Queue = None,
 ):
-    """An adaptive Bluesky plan for optimizing ion chamber 
+    """An adaptive Bluesky plan for optimizing ion chamber
     pre-amp gains.
 
     For each ion chambe, the plan will search for the range of gains
@@ -129,7 +129,7 @@ def auto_gain(
 
     Parameters
     ==========
-    ion_chambers 
+    ion_chambers
       A sequence of detectors to scan. Can be devices, names, or Ophyd
       labels.
     volts_min
