@@ -79,6 +79,7 @@ async def load_instrument(
     mock = not config["beamline"]["is_connected"]
     results = await asyncio.gather(
         load_tables(config=config, connect=False),
+        load_mirrors(config=config),
     )
     devices.extend([d for devices in results for d in devices])
     print(f"Loading [repr.number]{len(devices)}[/] devices…", flush=True)
@@ -114,7 +115,6 @@ async def load_instrument(
             *load_stages(config=config),
             *load_xia_pfcu4s(config=config),
             *load_xspress_detectors(config=config),
-            *load_mirrors(config=config),
         ]
     )
     # Filter out devices that couldn't be reached

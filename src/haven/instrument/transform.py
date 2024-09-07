@@ -225,7 +225,7 @@ class TransformRecord(EpicsRecordDeviceCommonAll):
                 int, f"{prefix}.MAP", name="input_bitmap"
             )
         with self.add_children_as_readables():
-            self.sensors = DeviceVector(
+            self.channels = DeviceVector(
                 {
                     char: TransformRecordChannel(prefix=prefix, letter=char)
                     for char in CHANNEL_LETTERS_LIST
