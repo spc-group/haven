@@ -238,33 +238,10 @@ def xspress(sim_registry):
 
 
 @pytest.fixture()
-def aerotech():
-    Stage = make_fake_device(
-        AerotechStage,
-    )
-    stage = Stage(
-        "255id",
-        delay_prefix="255id:DG645",
-        pv_horiz=":m1",
-        pv_vert=":m2",
-        name="aerotech",
-    )
-    return stage
-
-
-@pytest.fixture()
 def robot():
     RobotClass = make_fake_device(Robot)
     robot = RobotClass(name="robotA", prefix="255idA:")
     return robot
-
-
-@pytest.fixture()
-def aerotech_flyer(aerotech):
-    flyer = aerotech.horiz
-    flyer.user_setpoint._limits = (0, 1000)
-    flyer.send_command = mock.MagicMock()
-    yield flyer
 
 
 @pytest.fixture()

@@ -1,11 +1,13 @@
 import logging
+from typing import Mapping
 
-from ophyd import Device
-from ophyd import FormattedComponent as FCpt
+from ophyd_async.core import Device
 
 from .._iconfig import load_config
-from .device import make_device
-from .motor import HavenMotor
+from .device import connect_devices
+from .instrument_registry import InstrumentRegistry
+from .instrument_registry import registry as default_registry
+from .motor import Motor
 
 __all__ = ["XYStage", "load_stages"]
 
@@ -22,30 +24,30 @@ class XYStage(Device):
     Parameters
     ==========
 
-    pv_vert
-      The suffix to the PV for the vertical motor.
-    pv_horiz
-      The suffix to the PV for the horizontal motor.
+    vertical_prefix
+      The prefix for the PV of the vertical motor.
+    horizontal_prefix
+      The prefix to the PV of the horizontal motor.
     """
 
-    vert = FCpt(HavenMotor, "{prefix}{pv_vert}", labels={"motors"})
-    horiz = FCpt(HavenMotor, "{prefix}{pv_horiz}", labels={"motors"})
+    _ophyd_labels_ = {"stages"}
 
     def __init__(
         self,
-        prefix: str,
-        pv_vert: str,
-        pv_horiz: str,
-        labels={"stages"},
-        *args,
-        **kwargs,
+        vertical_prefix: str,
+        horizontal_prefix: str,
+        name: str = "",
     ):
-        self.pv_vert = pv_vert
-        self.pv_horiz = pv_horiz
-        super().__init__(prefix, labels=labels, *args, **kwargs)
+        self.vert = Motor(vertical_prefix)
+        self.horiz = Motor(horizontal_prefix)
+        super().__init__(name=name)
 
 
-def load_stages(config=None):
+async def load_stages(
+    config: Mapping = None,
+    registry: InstrumentRegistry = default_registry,
+    connect: bool = True,
+):
     """Load the stages defined in the configuration files' ``[stage]``
     sections.
 
@@ -54,14 +56,17 @@ def load_stages(config=None):
         config = load_config()
     devices = []
     for name, stage_data in config.get("stage", {}).items():
+        prefix = stage_data["prefix"]
         devices.append(
-            make_device(
-                XYStage,
+            XYStage(
                 name=name,
-                prefix=stage_data["prefix"],
-                pv_vert=stage_data["pv_vert"],
-                pv_horiz=stage_data["pv_horiz"],
+                vertical_prefix=f"{prefix}{stage_data['pv_vert']}",
+                horizontal_prefix=f"{prefix}{stage_data['pv_horiz']}",
             )
+        )
+    if connect:
+        devices = await connect_devices(
+            devices, mock=not config["beamline"]["is_connected"], registry=registry
         )
     return devices
 

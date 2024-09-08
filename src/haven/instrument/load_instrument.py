@@ -80,6 +80,8 @@ async def load_instrument(
     results = await asyncio.gather(
         load_tables(config=config, connect=False),
         load_mirrors(config=config),
+        load_aerotech_stages(config=config),
+        load_stages(config=config),
     )
     devices.extend([d for devices in results for d in devices])
     print(f"Loading [repr.number]{len(devices)}[/] devices…", flush=True)
@@ -99,7 +101,6 @@ async def load_instrument(
     devices.extend(
         [
             *(await load_ion_chambers(config=config)),
-            *load_aerotech_stages(config=config),
             load_aps(config=config),
             *load_area_detectors(config=config),
             load_beamline_manager(config=config),
@@ -112,7 +113,6 @@ async def load_instrument(
             *load_robots(config=config),
             *load_shutters(config=config),
             *load_slits(config=config),
-            *load_stages(config=config),
             *load_xia_pfcu4s(config=config),
             *load_xspress_detectors(config=config),
         ]
