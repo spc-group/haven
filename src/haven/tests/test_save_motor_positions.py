@@ -33,74 +33,39 @@ class FakeHavenMotor(SynAxis):
 
 
 @pytest.fixture
-def sim_motor_registry(sim_registry):
+def motors(sim_registry):
     # Create the motors
-    FakeHavenMotor(name="SLT V Upper")
-    FakeHavenMotor(name="SLT V Lower")
-    yield sim_registry
+    return [
+        FakeHavenMotor(name="motor_B"),
+        FakeHavenMotor(name="motor_A"),
+    ]
 
 
-@time_machine.travel(fake_time, tick=True)
-def test_save_motor_position_by_device(mongodb):
-    # Check that no entry exists before saving it
-    result = mongodb.motor_positions.find_one({"name": motor1.name})
-    assert result is None
-    # Create motor devices
-    motorA = SynAxis(name="Motor A")
-    motorB = SynAxis(name="Motor B")
-    motorA.wait_for_connection()
-    motorB.wait_for_connection()
+def test_save_motor_position_by_device(motors):
     # Move to some other motor position so we can tell it saved the right one
-    motorA.set(11.0).wait(timeout=10)
-    motorB.set(23.0).wait(timeout=10)
+    motorA, motorB = motors
     # Save the current motor position
-    save_motor_position(
-        motorA, motorB, name="Sample center", collection=mongodb.motor_positions
-    )
+    plan = save_motor_position(motorA, motorB, name="Sample center")
+    # Check that the right read messages get emitted
+    messages = list(plan)
     # Check that the motors got saved
-    result = mongodb.motor_positions.find_one({"name": "Sample center"})
-    assert result is not None
-    assert len(result["motors"]) == 2
-    result_A = [r for r in result["motors"] if r["name"] == motorA.name][0]
-    result_B = [r for r in result["motors"] if r["name"] == motorB.name][0]
-    assert result_A["name"] == motorA.name
-    assert result_A["readback"] == 11.0
-    assert result_B["readback"] == 23.0
-    # Check that the timestamp was saved (accurate to within a second)
-    assert result["savetime"] == pytest.approx(time.time(), abs=1)
+    readA, readB = messages[1:3]
+    assert readA.obj is motorA
+    assert readB.obj is motorB
 
 
-@time_machine.travel(fake_time, tick=True)
-def test_save_motor_position_by_name(mongodb, sim_registry):
+def test_save_motor_position_by_name(motors):
     # Check that no entry exists before saving it
-    result = mongodb.motor_positions.find_one({"name": motor1.name})
-    assert result is None
-    # Get our simulated motors into the device registry
-    motorA = FakeHavenMotor(name="Motor A")
-    motorB = FakeHavenMotor(name="Motor B")
-    motorA.wait_for_connection(timeout=20)
-    motorB.wait_for_connection(timeout=20)
-    # Move to some other motor position so we can tell it saved the right one
-    motorA.set(11.0).wait()
-    motorA.user_offset.set(1.5).wait()
-    motorB.set(23.0).wait()
-    time.sleep(0.1)
+    motorA, motorB = motors
     # Save the current motor position
-    save_motor_position(
-        "Motor A", "Motor B", name="Sample center", collection=mongodb.motor_positions
-    )
+    plan = save_motor_position(motorA.name, motorB.name, name="Sample center")
     # Check that the motors got saved
-    result = mongodb.motor_positions.find_one({"name": "Sample center"})
-    assert result is not None
-    assert len(result["motors"]) == 2
-    result_A = [r for r in result["motors"] if r["name"] == motorA.name][0]
-    result_B = [r for r in result["motors"] if r["name"] == motorB.name][0]
-    assert result_A["name"] == motorA.name
-    assert result_A["readback"] == 11.0
-    assert result_B["readback"] == 23.0
-    assert result_A["offset"] == 1.5
-    # Check that the metadata saved
-    assert result["savetime"] == pytest.approx(time.time(), abs=1)
+    # Check that the right read messages get emitted
+    messages = list(plan)
+    # Check that the motors got saved
+    readA, readB = messages[1:3]
+    assert readA.obj is motorA
+    assert readB.obj is motorB
 
 
 def test_get_motor_position_by_uid(mongodb):

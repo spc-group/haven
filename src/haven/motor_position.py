@@ -1,7 +1,8 @@
 import logging
 import time
 from datetime import datetime
-from typing import Optional, Sequence
+from typing import Sequence, Mapping
+from collections import ChainMap
 
 import intake
 import pymongo
@@ -26,7 +27,7 @@ __all__ = [
 class MotorAxis(BaseModel):
     name: str
     readback: float
-    offset: Optional[float] = None
+    offset: float | None = None
 
     def as_dict(self):
         return {"name": self.name, "readback": self.readback, "offset": self.offset}
@@ -35,8 +36,8 @@ class MotorAxis(BaseModel):
 class MotorPosition(BaseModel):
     name: str
     motors: Sequence[MotorAxis]
-    uid: Optional[str] = None
-    savetime: Optional[float] = None
+    uid: str | None = None
+    savetime: float | None = None
 
     def save(self, collection):
         payload = {
@@ -89,8 +90,8 @@ def rbv(motor):
         return motor_data
 
 
-def save_motor_position(*motors, name: str, collection=None):
-    """Save the current positions of a number of motors to a database.
+def save_motor_position(*motors, name: str, md: Mapping = {}):
+    """A Bluesky plan to Save the current positions of a number of motors.
 
     Parameters
     ==========
@@ -99,35 +100,18 @@ def save_motor_position(*motors, name: str, collection=None):
       save.
     name
       A human-readable name for this position (e.g. "sample center")
-    collection
-      A pymongo collection object to receive the data. Meant for
-      testing.
 
-    Returns
-    =======
-    item_id
-      The ID of the item in the database.
     """
-    # Get default collection if none was given
-    if collection is None:
-        collection = default_collection()
     # Resolve device names or labels
     motors = registry.findall(motors)
-    # Prepare the motor positions
-    motor_axes = []
+    # Create the new run object
+    md = ChainMap(md)
+    md['position_name'] = name
+    md['plan_name'] = "save_motor_position"
+    yield from bps.open_run(md=md)
+    # Read the current motor positions
     for m in motors:
-        payload = dict(name=m.name, readback=rbv(m))
-        # Save the calibration offset for motors
-        if hasattr(m, "user_offset"):
-            payload["offset"] = m.user_offset.get()
-        axis = MotorAxis(**payload)
-        motor_axes.append(axis)
-    savetime = time.time()
-    position = MotorPosition(name=name, motors=motor_axes, savetime=savetime)
-    # Write to the database
-    pos_id = position.save(collection=collection)
-    log.info(f"Saved motor position {name} (uid={pos_id})")
-    return pos_id
+        yield from bps.read(m)
 
 
 def print_motor_position(position):
@@ -187,7 +171,7 @@ def list_motor_positions(collection=None):
 
 
 def get_motor_position(
-    uid: Optional[str] = None, name: Optional[str] = None, collection=None
+    uid: str | None = None, name: str | None = None, collection=None
 ) -> MotorPosition:
     """Retrieve a previously saved motor position from the database.
 
@@ -234,7 +218,7 @@ def get_motor_position(
 
 
 def recall_motor_position(
-    uid: Optional[str] = None, name: Optional[str] = None, collection=None
+    uid: str | None = None, name: str | None = None, collection=None
 ):
     """Set motors to their previously saved positions.
 
