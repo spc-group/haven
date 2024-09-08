@@ -3,10 +3,9 @@ from unittest.mock import MagicMock
 
 import numpy as np
 import pytest
-from ophyd import EpicsMotor, sim
+from ophyd import sim
 from ophyd_async.epics.motor import Motor
 
-from haven.instrument.motor_flyer import MotorFlyer
 from haven.plans.fly import FlyerCollector, fly_scan, grid_fly_scan
 
 

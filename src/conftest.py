@@ -1,6 +1,5 @@
 import os
 from pathlib import Path
-from unittest import mock
 
 import numpy as np
 import pandas as pd
@@ -24,7 +23,6 @@ from tiled.server.app import build_app
 import haven
 from haven._iconfig import beamline_connected as _beamline_connected
 from haven.catalog import Catalog
-from haven.instrument.aerotech import AerotechStage
 from haven.instrument.aps import ApsMachine
 from haven.instrument.beamline_manager import BeamlineManager, IOCManager
 from haven.instrument.camera import AravisDetector
