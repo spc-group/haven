@@ -13,6 +13,7 @@ from ophyd_async.core import (
     ConfigSignal,
     SignalBackend,
     SignalX,
+    SubsetEnum,
 )
 from ophyd_async.epics.motor import Motor as MotorBase
 from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw
@@ -78,6 +79,9 @@ class Motor(MotorBase):
         # Configuration signals
         with self.add_children_as_readables(ConfigSignal):
             self.description = epics_signal_rw(str, f"{prefix}.DESC")
+            self.calibration_offset = epics_signal_rw(float, f"{prefix}.OFF")
+            self.calibration_direction = epics_signal_rw(SubsetEnum["Pos", "Neg"], f"{prefix}.DIR")
+            self.calibration_mode = epics_signal_rw(SubsetEnum["Variable", "Frozen"], f"{prefix}.FOFF")
         # Motor status signals
         self.motor_is_moving = epics_signal_r(int, f"{prefix}.MOVN")
         self.motor_done_move = epics_signal_r(int, f"{prefix}.DMOV")

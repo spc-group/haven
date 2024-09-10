@@ -6,12 +6,13 @@ from collections import ChainMap
 
 import intake
 import pymongo
-from bluesky import plan_stubs as bps
+from bluesky import plan_stubs as bps, plans as bp
 from bson.objectid import ObjectId
 from pydantic import BaseModel
 
 from . import exceptions
 from .instrument.instrument_registry import registry
+from .catalog import tiled_client
 
 log = logging.getLogger(__name__)
 
@@ -39,29 +40,27 @@ class MotorPosition(BaseModel):
     uid: str | None = None
     savetime: float | None = None
 
-    def save(self, collection):
-        payload = {
-            "name": self.name,
-            "motors": [m.as_dict() for m in self.motors],
-            "savetime": self.savetime,
-        }
-        item_id = collection.insert_one(payload).inserted_id
-        return item_id
-
     @classmethod
-    def load(Cls, document):
-        # Create a MotorPosition object
-        motor_axes = [
-            MotorAxis(
-                name=m["name"], readback=m["readback"], offset=m.get("offset", None)
+    def load(Cls, run):
+        if run.metadata['start']['plan_name'] != "save_motor_position":
+            raise ValueError(f"Run {run} is not a motor position.")
+        # Extract motor positions from the run
+        stream = run['primary']
+        data_keys = stream.metadata['descriptors']['data_keys'].values()
+        motor_axes = []
+        for data_key in data_keys:
+            mname = data_key['object_name']
+            axis = MotorAxis(
+                name=mname,
+                readback=stream['data'][mname].read()[0],
             )
-            for m in document["motors"]
-        ]
+            motor_axes.append(axis)
+        # Create a MotorPosition object
         position = Cls(
-            name=document["name"],
+            name=run.metadata['start']['position_name'],
             motors=motor_axes,
-            uid=str(document["_id"]),
-            savetime=document.get("savetime"),
+            uid=run.metadata['start']['uid'],
+            savetime=run.metadata['start']['time'],
         )
         return position
 
@@ -100,18 +99,19 @@ def save_motor_position(*motors, name: str, md: Mapping = {}):
       save.
     name
       A human-readable name for this position (e.g. "sample center")
+    md
+      Additional metadata to store with the motor position.
 
     """
     # Resolve device names or labels
     motors = registry.findall(motors)
     # Create the new run object
-    md = ChainMap(md)
-    md['position_name'] = name
-    md['plan_name'] = "save_motor_position"
-    yield from bps.open_run(md=md)
-    # Read the current motor positions
-    for m in motors:
-        yield from bps.read(m)
+    _md = {
+        'position_name': name,
+        'plan_name': "save_motor_position",
+    }
+    _md.update(md)
+    yield from bp.count(motors, md=_md)
 
 
 def print_motor_position(position):
@@ -171,19 +171,15 @@ def list_motor_positions(collection=None):
 
 
 def get_motor_position(
-    uid: str | None = None, name: str | None = None, collection=None
+    uid: str
 ) -> MotorPosition:
     """Retrieve a previously saved motor position from the database.
 
     Parameters
     ==========
     uid
-      The universal identifier for the the document in the collection.
-    name
-      The name of the saved motor position, as given with the *name*
-      parameter to the ``save_motor_position`` function.
-    collection
-      The mongodb collection from which to print motor positions.
+      The universal identifier for the Bluesky run with motor position
+      info.
 
     Returns
     =======
@@ -192,28 +188,11 @@ def get_motor_position(
       database.
 
     """
-    # Check that at least one of the parameters is given
-    has_query_param = any([val is not None for val in [uid, name]])
-    if not has_query_param:
-        raise TypeError("At least one query parameter (*uid*, *name*) is required")
-    # Get default collection if none was given
-    if collection is None:
-        collection = default_collection()
-    # Build query for finding motor positions
-    if uid is not None:
-        _id = ObjectId(uid)
-    else:
-        _id = None
-    query_params = {"_id": _id, "name": name}
     # Filter out query parameters that are ``None``
-    query_params = {k: v for k, v in query_params.items() if v is not None}
-    result = collection.find_one(query_params, sort=[("savetime", pymongo.DESCENDING)])
+    client = tiled_client()
+    run = client[uid]
     # Feedback for if no matching motor positions are in the database
-    if result is None:
-        raise exceptions.DocumentNotFound(
-            f'Could not find document matching: {query_params}"'
-        )
-    position = MotorPosition.load(result)
+    position = MotorPosition.load(run)
     return position
 
 
