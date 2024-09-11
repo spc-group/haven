@@ -89,20 +89,14 @@ def default_collection():
 
 
 # Prepare the motor positions
-def rbv(motor):
+async def rbv(motor):
     """Helper function to get readback value (rbv)."""
-    try:
-        # Wrap this in a try block because not every signal has this argument
-        motor_data = motor.get(use_monitor=False)
-    except TypeError:
-        log.debug("Failed to do get() with ``use_monitor=False``")
-        motor_data = motor.get()
-    if hasattr(motor_data, "readback"):
-        return motor_data.readback
-    elif hasattr(motor_data, "user_readback"):
-        return motor_data.user_readback
+    if hasattr(motor, "readback"):
+        return await motor_data.readback.get_value()
+    elif hasattr(motor, "user_readback"):
+        return await motor.user_readback.get_value()
     else:
-        return motor_data
+        return await motor.get_value()
 
 
 def save_motor_position(*motors, name: str, md: Mapping = {}):
@@ -131,8 +125,6 @@ def save_motor_position(*motors, name: str, md: Mapping = {}):
 
 
 def print_motor_position(position):
-    BOLD = "\033[1m"
-    END = "\033[0m"
     # Prepare metadata strings for the header
     metadata = []
     if position.uid is not None:
@@ -141,7 +133,7 @@ def print_motor_position(position):
         timestamp = datetime.fromtimestamp(position.savetime).strftime(
             "%Y-%m-%d %H:%M:%S"
         )
-        ts_str = f"timestamp={timestamp}"
+        ts_str = f"{timestamp}"
         metadata.append(ts_str)
     if len(metadata) > 0:
         metadata_str = f"{', '.join(metadata)}"
@@ -149,8 +141,8 @@ def print_motor_position(position):
         metadata_str = ""
     # Write the output header
     outputs = [
-        f"[green,bold]{position.name}[/]",
-        f"┣ [italic]{metadata_str}[/]",
+        f"[bold]{position.name}[/]",
+        f"┃ [italic dim]{metadata_str}[/]",
     ]
     # Write the motor positions
     for idx, motor in enumerate(position.motors):
@@ -266,7 +258,7 @@ def recall_motor_position(uid: str):
     yield from bps.mv(*plan_args)
 
 
-def list_current_motor_positions(*motors, name="current motor"):
+async def list_current_motor_positions(*motors, name="Current motor positions"):
     """list and print the current positions of a number of motors
 
     Parameters
@@ -283,10 +275,10 @@ def list_current_motor_positions(*motors, name="current motor"):
     # Build the list of motor positions
     motor_axes = []
     for m in motors:
-        payload = dict(name=m.name, readback=rbv(m))
+        payload = dict(name=m.name, readback=await rbv(m))
         # Save the calibration offset for motors
         if hasattr(m, "user_offset"):
-            payload["offset"] = m.user_offset.get()
+            payload["offset"] = await m.user_offset.get_value()
         axis = MotorAxis(**payload)
         motor_axes.append(axis)
     position = MotorPosition(

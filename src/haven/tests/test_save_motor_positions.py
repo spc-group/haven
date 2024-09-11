@@ -331,8 +331,8 @@ def client(mocker):
 async def motors(sim_registry):
     # Create the motors
     motors = [
-        Motor("", name="motor_B"),
         Motor("", name="motor_A"),
+        Motor("", name="motor_B"),
     ]
     for motor in motors:
         await motor.connect(mock=True)
@@ -409,37 +409,38 @@ async def test_list_motor_positions(client, capsys):
     timestamp = "2024-09-09 10:52:13"
     expected = "\n".join([
         f'Good position A',
-        f'┣ uid="{uid}", timestamp={timestamp}',
+        f'┃ uid="{uid}", {timestamp}',
         f"┣━motor_A: 12.0, offset: None",
         f"┗━motor_B: -113.25, offset: None",
     ])
     assert first_motor == expected
 
 
-def test_list_current_motor_positions(mongodb, capsys):
+# Use a timezone we're not likely to be in for testing tz-aware behavior
+fake_time = dt.datetime(2022, 8, 19, 19, 10, 51, tzinfo=ZoneInfo("Asia/Taipei"))
+
+@time_machine.travel(fake_time, tick=True)
+async def test_list_current_motor_positions(motors, capsys):
     # Get our simulated motors into the device registry
+    motorA, motorB = motors
     with capsys.disabled():
-        motorA = FakeHavenMotor(name="Motor A")
-        motorB = FakeHavenMotor(name="Motor B")
-        motorA.wait_for_connection()
-        motorB.wait_for_connection()
         # Move to some other motor position so we can tell it saved the right one
-        motorA.set(11.0).wait()
-        motorA.user_offset.set(1.5).wait()
-        motorB.set(23.0).wait()
+        set_mock_value(motorA.user_readback, 11.0)
+        set_mock_value(motorA.user_offset, 1.5)
+        set_mock_value(motorB.user_readback, 23.0)
     # List the current motor position
-    list_current_motor_positions(motorA, motorB, name="Current motor positions")
+    await list_current_motor_positions(motorA, motorB, name="Current motor positions")
     # Check stdout for printed motor positions
     captured = capsys.readouterr()
     assert len(captured.out) > 0
-    timestamp = fake_time.strftime("%Y-%m-%d %H:%M:%S")
     timestamp = "2022-08-19 19:10:51"
-    expected = (
-        f"\n\033[1mCurrent motor positions\033[0m (timestamp={timestamp})\n"
-        "┣━Motor A: 11.0, offset: 1.5\n"
-        "┗━Motor B: 23.0, offset: 0.0\n"
-    )
-    assert captured.out == expected
+    expected = "\n".join([
+        f"Current motor positions",
+        f"┃ {timestamp}",
+        f"┣━motor_A: 11.0, offset: 1.5",
+        f"┗━motor_B: 23.0, offset: 0.0",
+    ])
+    assert captured.out.strip("\n") == expected.strip("\n")
 
 
 # -----------------------------------------------------------------------------
