@@ -9,10 +9,11 @@ import pymongo
 from bluesky import plan_stubs as bps, plans as bp
 from bson.objectid import ObjectId
 from pydantic import BaseModel
+from tiled.queries import Key
 
 from . import exceptions
 from .instrument.instrument_registry import registry
-from .catalog import tiled_client
+from .catalog import tiled_client, Catalog
 
 log = logging.getLogger(__name__)
 
@@ -41,28 +42,42 @@ class MotorPosition(BaseModel):
     savetime: float | None = None
 
     @classmethod
-    def load(Cls, run):
-        if run.metadata['start']['plan_name'] != "save_motor_position":
-            raise ValueError(f"Run {run} is not a motor position.")
+    def _load(Cls, run_md, data_keys, data):
+        """Common routines for synch and async loading."""
+        if run_md["start"]["plan_name"] != "save_motor_position":
+            raise ValueError(f"Run {run_md['start']['uid']} is not a motor position.")
         # Extract motor positions from the run
-        stream = run['primary']
-        data_keys = stream.metadata['descriptors']['data_keys'].values()
         motor_axes = []
-        for data_key in data_keys:
-            mname = data_key['object_name']
+        for data_key in data_keys.values():
+            mname = data_key["object_name"]
             axis = MotorAxis(
                 name=mname,
-                readback=stream['data'][mname].read()[0],
+                readback=data[mname][0],
             )
             motor_axes.append(axis)
-        # Create a MotorPosition object
-        position = Cls(
-            name=run.metadata['start']['position_name'],
+        # Create the motor position object
+        return Cls(
+            name=run_md['start']['position_name'],
             motors=motor_axes,
-            uid=run.metadata['start']['uid'],
-            savetime=run.metadata['start']['time'],
+            uid=run_md['start']['uid'],
+            savetime=run_md['start']['time'],
         )
-        return position
+
+    @classmethod
+    def load(Cls, run):
+        """Create a new MotorPosition object from a Tiled Bluesky run."""
+        return Cls._load(run_md=run.metadata,
+                         data_keys=run["primary"].metadata['descriptors']['data_keys'],
+                         data=run['primary']['data'].read())
+
+    @classmethod
+    async def aload(Cls, scan):
+        """Create a new MotorPosition object from a Tiled Bluesky run.
+        Similar to ``MotorPosition.load()``, but asynchronous."""
+        return Cls._load(run_md=await scan.metadata,
+                         data_keys=await scan.data_keys(),
+                         data=await scan.data())
+
 
 
 def default_collection():
@@ -107,8 +122,8 @@ def save_motor_position(*motors, name: str, md: Mapping = {}):
     motors = registry.findall(motors)
     # Create the new run object
     _md = {
-        'position_name': name,
-        'plan_name': "save_motor_position",
+        "position_name": name,
+        "plan_name": "save_motor_position",
     }
     _md.update(md)
     yield from bp.count(motors, md=_md)
@@ -143,7 +158,7 @@ def print_motor_position(position):
 
 
 def list_motor_positions(collection=None):
-    """Print a list of saved motor positions.
+    """Print a list of previously saved motor positions.
 
     The name and UID will be printed, along with each motor and it's
     position.
@@ -170,9 +185,7 @@ def list_motor_positions(collection=None):
         print(f"No motor positions found: {collection}")
 
 
-def get_motor_position(
-    uid: str
-) -> MotorPosition:
+def get_motor_position(uid: str) -> MotorPosition:
     """Retrieve a previously saved motor position from the database.
 
     Parameters
@@ -194,6 +207,37 @@ def get_motor_position(
     # Feedback for if no matching motor positions are in the database
     position = MotorPosition.load(run)
     return position
+
+
+async def get_motor_positions(
+    before: float | None = None, after: float | None = None
+) -> list[MotorPosition]:
+    """Get all motor position objects from the catalog.
+
+    Parameters
+    ==========
+    before
+      Only include motor positions recorded before this unix
+      timestamp if provided.
+    after
+      Only include motor positions recorded after this unix
+      timestamp if provided.
+
+    Returns
+    =======
+    positions
+      The motor positions matching the requested parameters.
+
+    """
+    runs = Catalog(client=tiled_client())
+    # Prepare the database for all plans 
+    runs = await runs.search(Key("plan_name") == "save_motor_position")
+    if before is not None:
+        runs = await runs.search(Key("time") < before)
+    if after is not None:
+        runs = await runs.search(Key("time") > after)
+    async for uid, run in runs.items():
+        yield await MotorPosition.aload(run)
 
 
 def recall_motor_position(
