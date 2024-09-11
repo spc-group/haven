@@ -25,137 +25,8 @@ from haven.motor_position import (
 
 log = logging.getLogger(__name__)
 
-# Metadata from real scan
-# {'start': {'EPICS_CA_MAX_ARRAY_BYTES': '16777216',
-#            'EPICS_HOST_ARCH': 'rhel8-x86_64',
-#            'beamline_id': '25-ID-C (Dev)',
-#            'detectors': ['sim_motor_2'],
-#            'epics_libca': '/home/beams0/S25IDCUSER/micromamba/envs/haven-dev/lib/python3.10/site-packages/epicscorelibs/lib/libca.so.7.0.7.99.0',
-#            'facility_id': 'Advanced Photon Source',
-#            'hints': {'dimensions': [[['time'], 'primary']]},
-#            'login_id': 's25idcuser@microprobe.xray.aps.anl.gov',
-#            'num_intervals': 0,
-#            'num_points': 1,
-#            'parameters': '',
-#            'pid': 2700346,
-#            'plan_args': {'delay': None,
-#                          'detectors': ['<haven.instrument.motor.Motor object '
-#                                        'at 0x7f9c831ca650>'],
-#                          'num': 1},
-#            'plan_name': 'save_motor_position',
-#            'plan_type': 'generator',
-#            'position_name': 'test',
-#            'purpose': 'testing save motor positions',
-#            'sample_name': '',
-#            'scan_id': 2,
-#            'time': 1725897133.9880543,
-#            'uid': 'e4a6d3d1-6543-4a42-98a7-a311af23f4cd',
-#            'versions': {'apstools': '1.6.20',
-#                         'bluesky': '1.13.0a4',
-#                         'databroker': '1.2.5',
-#                         'epics': '3.5.6',
-#                         'epics_ca': '3.5.6',
-#                         'h5py': '3.11.0',
-#                         'haven': '2024.8.2',
-#                         'matplotlib': '3.9.1.post1',
-#                         'numpy': '1.26.4',
-#                         'ophyd': '1.9.0',
-#                         'pymongo': '4.8.0'},
-#            'xray_source': 'undulator: ID25ds:'},
-#  'stop': {'exit_status': 'success',
-#           'num_events': {'primary': 1},
-#           'reason': '',
-#           'run_start': 'e4a6d3d1-6543-4a42-98a7-a311af23f4cd',
-#           'time': 1725897134.0116587,
-#           'uid': 'b6a2cf81-0328-489f-bfcc-967af6207e1b'},
-#  'summary': {'datetime': datetime.datetime(2024, 9, 9, 15, 52, 13, 988054, tzinfo=datetime.timezone.utc),
-#              'duration': 0.023604393005371094,
-#              'plan_name': 'save_motor_position',
-#              'scan_id': 2,
-#              'stream_names': ['primary'],
-#              'timestamp': 1725897133.9880543,
-#              'uid': 'e4a6d3d1-6543-4a42-98a7-a311af23f4cd'}}
-
-## Primary stream metadata
-
-# {'descriptors': [{'configuration': {'sim_motor_2': {'data': {'sim_motor_2-description': 'sim_motor_2',
-#                                                              'sim_motor_2-motor_egu': 'degrees',
-#                                                              'sim_motor_2-velocity': 1.0},
-#                                                     'data_keys': {'sim_motor_2-description': {'dtype': 'string',
-#                                                                                               'dtype_numpy': '|S40',
-#                                                                                               'limits': {'alarm': {'high': None,
-#                                                                                                                    'low': None},
-#                                                                                                          'control': {'high': None,
-#                                                                                                                      'low': None},
-#                                                                                                          'display': {'high': None,
-#                                                                                                                      'low': None},
-#                                                                                                          'warning': {'high': None,
-#                                                                                                                      'low': None}},
-#                                                                                               'shape': [],
-#                                                                                               'source': 'ca://25idc:simMotor:m2.DESC'},
-#                                                                   'sim_motor_2-motor_egu': {'dtype': 'string',
-#                                                                                             'dtype_numpy': '|S40',
-#                                                                                             'limits': {'alarm': {'high': None,
-#                                                                                                                  'low': None},
-#                                                                                                        'control': {'high': None,
-#                                                                                                                    'low': None},
-#                                                                                                        'display': {'high': None,
-#                                                                                                                    'low': None},
-#                                                                                                        'warning': {'high': None,
-#                                                                                                                    'low': None}},
-#                                                                                             'shape': [],
-#                                                                                             'source': 'ca://25idc:simMotor:m2.EGU'},
-#                                                                   'sim_motor_2-velocity': {'dtype': 'number',
-#                                                                                            'dtype_numpy': '<f8',
-#                                                                                            'limits': {'alarm': {'high': None,
-#                                                                                                                 'low': None},
-#                                                                                                       'control': {'high': 200.0,
-#                                                                                                                   'low': 0.1},
-#                                                                                                       'display': {'high': 200.0,
-#                                                                                                                   'low': 0.1},
-#                                                                                                       'warning': {'high': None,
-#                                                                                                                   'low': None}},
-#                                                                                            'precision': 5,
-#                                                                                            'shape': [],
-#                                                                                            'source': 'ca://25idc:simMotor:m2.VELO',
-#                                                                                            'units': 'degrees'}},
-#                                                     'timestamps': {'sim_motor_2-description': 1725483808.090941,
-#                                                                    'sim_motor_2-motor_egu': 1725483808.090941,
-#                                                                    'sim_motor_2-velocity': 1725483808.090941}}},
-#                   'data_keys': {'sim_motor_2': {'dtype': 'number',
-#                                                 'dtype_numpy': '<f8',
-#                                                 'limits': {'alarm': {'high': None,
-#                                                                      'low': None},
-#                                                            'control': {'high': 32000.0,
-#                                                                        'low': -32000.0},
-#                                                            'display': {'high': 32000.0,
-#                                                                        'low': -32000.0},
-#                                                            'warning': {'high': None,
-#                                                                        'low': None}},
-#                                                 'object_name': 'sim_motor_2',
-#                                                 'precision': 5,
-#                                                 'shape': [],
-#                                                 'source': 'ca://25idc:simMotor:m2.RBV',
-#                                                 'units': 'degrees'}},
-#                   'hints': {'sim_motor_2': {'fields': ['sim_motor_2']}},
-#                   'name': 'primary',
-#                   'object_keys': {'sim_motor_2': ['sim_motor_2']},
-#                   'run_start': 'e4a6d3d1-6543-4a42-98a7-a311af23f4cd',
-#                   'time': 1725897133.99685,
-#                   'uid': 'fcb35152-cb8c-46e8-b923-d07eec666070'}],
-#  'stream_name': 'primary'}
-
-
-# Config data from above run
-# In [48]: run['primary/config/sim_motor_2'].read().compute()
-# Out[48]:
-# <xarray.Dataset> Size: 24B
-# Dimensions:                  (time: 1)
-# Dimensions without coordinates: time
-# Data variables:
-#     sim_motor_2-description  (time) object 8B 'sim_motor_2'
-#     sim_motor_2-motor_egu    (time) object 8B 'degrees'
-#     sim_motor_2-velocity     (time) float64 8B 1.0
+# Use a timezone we're not likely to be in for testing tz-aware behavior
+fake_time = dt.datetime(2022, 8, 19, 19, 10, 51, tzinfo=ZoneInfo("Asia/Taipei"))
 
 
 position_runs = {
@@ -394,6 +265,7 @@ def test_recall_motor_position(client, motors):
     assert msg1.args[0] == -113.25
 
 
+@time_machine.travel(fake_time, tick=True)
 async def test_list_motor_positions(client, capsys):
     # Do the listing
     await list_motor_positions()
@@ -402,7 +274,7 @@ async def test_list_motor_positions(client, capsys):
     assert len(captured.out) > 0
     first_motor = captured.out.split("\n\n")[0]
     uid = "a9b3e0fa-eba1-43e0-a38c-c7ac76278000"
-    timestamp = "2024-09-09 10:52:13"
+    timestamp = "2024-09-09 23:52:13"
     expected = "\n".join(
         [
             f"Good position A",
@@ -412,10 +284,6 @@ async def test_list_motor_positions(client, capsys):
         ]
     )
     assert first_motor == expected
-
-
-# Use a timezone we're not likely to be in for testing tz-aware behavior
-fake_time = dt.datetime(2022, 8, 19, 19, 10, 51, tzinfo=ZoneInfo("Asia/Taipei"))
 
 
 @time_machine.travel(fake_time, tick=True)
