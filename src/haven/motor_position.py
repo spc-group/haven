@@ -1,20 +1,17 @@
 import logging
 import time
 from datetime import datetime
-from typing import Sequence, Mapping
-from collections import ChainMap
+from typing import Mapping, Sequence
 
 import intake
-import pymongo
-from bluesky import plan_stubs as bps, plans as bp
-from bson.objectid import ObjectId
+from bluesky import plan_stubs as bps
+from bluesky import plans as bp
 from pydantic import BaseModel
 from rich import print as rprint
 from tiled.queries import Key
 
-from . import exceptions
+from .catalog import Catalog, tiled_client
 from .instrument.instrument_registry import registry
-from .catalog import tiled_client, Catalog
 
 log = logging.getLogger(__name__)
 
@@ -58,27 +55,30 @@ class MotorPosition(BaseModel):
             motor_axes.append(axis)
         # Create the motor position object
         return Cls(
-            name=run_md['start']['position_name'],
+            name=run_md["start"]["position_name"],
             motors=motor_axes,
-            uid=run_md['start']['uid'],
-            savetime=run_md['start']['time'],
+            uid=run_md["start"]["uid"],
+            savetime=run_md["start"]["time"],
         )
 
     @classmethod
     def load(Cls, run):
         """Create a new MotorPosition object from a Tiled Bluesky run."""
-        return Cls._load(run_md=run.metadata,
-                         data_keys=run["primary"].metadata['descriptors']['data_keys'],
-                         data=run['primary']['data'].read())
+        return Cls._load(
+            run_md=run.metadata,
+            data_keys=run["primary"].metadata["descriptors"]["data_keys"],
+            data=run["primary"]["data"].read(),
+        )
 
     @classmethod
     async def aload(Cls, scan):
         """Create a new MotorPosition object from a Tiled Bluesky run.
         Similar to ``MotorPosition.load()``, but asynchronous."""
-        return Cls._load(run_md=await scan.metadata,
-                         data_keys=await scan.data_keys(),
-                         data=await scan.data())
-
+        return Cls._load(
+            run_md=await scan.metadata,
+            data_keys=await scan.data_keys(),
+            data=await scan.data(),
+        )
 
 
 def default_collection():
@@ -92,7 +92,7 @@ def default_collection():
 async def rbv(motor):
     """Helper function to get readback value (rbv)."""
     if hasattr(motor, "readback"):
-        return await motor_data.readback.get_value()
+        return await motor.readback.get_value()
     elif hasattr(motor, "user_readback"):
         return await motor.user_readback.get_value()
     else:
@@ -149,8 +149,10 @@ def print_motor_position(position):
         # Figure out some nice tree aesthetics
         is_last_motor = idx == (len(position.motors) - 1)
         box_char = "┗" if is_last_motor else "┣"
-        outputs.append(f"{box_char}━[purple]{motor.name}[/]: "
-                       f"{motor.readback}, offset: {motor.offset}")
+        outputs.append(
+            f"{box_char}━[purple]{motor.name}[/]: "
+            f"{motor.readback}, offset: {motor.offset}"
+        )
     rprint("\n".join(outputs))
 
 
@@ -179,7 +181,7 @@ async def list_motor_positions(after: float | None = None, before: float | None 
         print_motor_position(position)
     # Some feedback in the case of empty motor positions
     if not were_found:
-        rprint(f"[yellow]No motor positions found: {collection}[/]")
+        rprint(f"[yellow]No motor positions found: {before=}, {after=}[/]")
 
 
 def get_motor_position(uid: str) -> MotorPosition:
@@ -227,7 +229,7 @@ async def get_motor_positions(
 
     """
     runs = Catalog(client=tiled_client())
-    # Prepare the database for all plans 
+    # Prepare the database for all plans
     runs = await runs.search(Key("plan_name") == "save_motor_position")
     if before is not None:
         runs = await runs.search(Key("time") < before)

@@ -1,8 +1,7 @@
-from unittest.mock import MagicMock
 import datetime as dt
 import logging
-import time
 from datetime import datetime
+from unittest.mock import MagicMock
 from zoneinfo import ZoneInfo
 
 import pandas as pd
@@ -15,7 +14,6 @@ from tiled.client import Context, from_context
 from tiled.server.app import build_app
 
 from haven.instrument import Motor
-from haven.catalog import Catalog
 from haven.motor_position import (
     get_motor_position,
     get_motor_positions,
@@ -23,8 +21,6 @@ from haven.motor_position import (
     list_motor_positions,
     recall_motor_position,
     save_motor_position,
-    MotorPosition,
-    MotorAxis,
 )
 
 log = logging.getLogger(__name__)
@@ -267,11 +263,11 @@ position_runs = {
                 "time": 1725897033,
                 "uid": "5dd9a185-d5c4-4c8b-a719-9d7beb9007dc",
             },
-        },        
+        },
     ),
     # A saved motor position, but older
     "42b8c45d-e98d-4f59-9ce8-8f14134c90bd": MapAdapter(
-                {
+        {
             "primary": MapAdapter(
                 {
                     "data": DatasetAdapter.from_dataset(
@@ -303,7 +299,7 @@ position_runs = {
                 "uid": "42b8c45d-e98d-4f59-9ce8-8f14134c90bd",
             },
         },
-    ),    
+    ),
     # A scan that's not a saved motor position
     "9bcd07e9-3188-49d3-a1ce-e3b51ebe48b5": MapAdapter(
         {},
@@ -407,17 +403,20 @@ async def test_list_motor_positions(client, capsys):
     first_motor = captured.out.split("\n\n")[0]
     uid = "a9b3e0fa-eba1-43e0-a38c-c7ac76278000"
     timestamp = "2024-09-09 10:52:13"
-    expected = "\n".join([
-        f'Good position A',
-        f'┃ uid="{uid}", {timestamp}',
-        f"┣━motor_A: 12.0, offset: None",
-        f"┗━motor_B: -113.25, offset: None",
-    ])
+    expected = "\n".join(
+        [
+            f"Good position A",
+            f'┃ uid="{uid}", {timestamp}',
+            f"┣━motor_A: 12.0, offset: None",
+            f"┗━motor_B: -113.25, offset: None",
+        ]
+    )
     assert first_motor == expected
 
 
 # Use a timezone we're not likely to be in for testing tz-aware behavior
 fake_time = dt.datetime(2022, 8, 19, 19, 10, 51, tzinfo=ZoneInfo("Asia/Taipei"))
+
 
 @time_machine.travel(fake_time, tick=True)
 async def test_list_current_motor_positions(motors, capsys):
@@ -434,12 +433,14 @@ async def test_list_current_motor_positions(motors, capsys):
     captured = capsys.readouterr()
     assert len(captured.out) > 0
     timestamp = "2022-08-19 19:10:51"
-    expected = "\n".join([
-        f"Current motor positions",
-        f"┃ {timestamp}",
-        f"┣━motor_A: 11.0, offset: 1.5",
-        f"┗━motor_B: 23.0, offset: 0.0",
-    ])
+    expected = "\n".join(
+        [
+            f"Current motor positions",
+            f"┃ {timestamp}",
+            f"┣━motor_A: 11.0, offset: 1.5",
+            f"┗━motor_B: 23.0, offset: 0.0",
+        ]
+    )
     assert captured.out.strip("\n") == expected.strip("\n")
 
 

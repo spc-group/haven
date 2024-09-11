@@ -221,7 +221,9 @@ class CatalogScan:
         return self.container.formats
 
     async def data(self, stream="primary"):
-        return await self.loop.run_in_executor(None, self._read_data, None, f"{stream}/data")
+        return await self.loop.run_in_executor(
+            None, self._read_data, None, f"{stream}/data"
+        )
 
     async def to_dataframe(self, signals=None):
         """Convert the dataset into a pandas dataframe."""
@@ -238,7 +240,7 @@ class CatalogScan:
 
     async def data_keys(self, stream="primary"):
         stream_md = await self.loop.run_in_executor(None, self._read_metadata, stream)
-        return stream_md['descriptors']['data_keys']
+        return stream_md["descriptors"]["data_keys"]
 
     async def hints(self):
         """Retrieve the data hints for this scan.
