@@ -9,6 +9,7 @@ import pymongo
 from bluesky import plan_stubs as bps, plans as bp
 from bson.objectid import ObjectId
 from pydantic import BaseModel
+from rich import print as rprint
 from tiled.queries import Key
 
 from . import exceptions
@@ -143,46 +144,50 @@ def print_motor_position(position):
         ts_str = f"timestamp={timestamp}"
         metadata.append(ts_str)
     if len(metadata) > 0:
-        metadata_str = f" ({', '.join(metadata)})"
+        metadata_str = f"{', '.join(metadata)}"
     else:
         metadata_str = ""
     # Write the output header
-    output = f"\n{BOLD}{position.name}{END}{metadata_str}\n"
+    outputs = [
+        f"[green,bold]{position.name}[/]",
+        f"┣ [italic]{metadata_str}[/]",
+    ]
     # Write the motor positions
     for idx, motor in enumerate(position.motors):
         # Figure out some nice tree aesthetics
         is_last_motor = idx == (len(position.motors) - 1)
         box_char = "┗" if is_last_motor else "┣"
-        output += f"{box_char}━{motor.name}: {motor.readback}, offset: {motor.offset}\n"
-    print(output, end="")
+        outputs.append(f"{box_char}━[purple]{motor.name}[/]: "
+                       f"{motor.readback}, offset: {motor.offset}")
+    rprint("\n".join(outputs))
 
 
-def list_motor_positions(collection=None):
+async def list_motor_positions(after: float | None = None, before: float | None = None):
     """Print a list of previously saved motor positions.
 
     The name and UID will be printed, along with each motor and it's
     position.
 
-    Parameters
-    ==========
-    collection
-      The mongodb collection from which to print motor positions.
+    before
+      Only include motor positions recorded before this unix
+      timestamp if provided.
+    after
+      Only include motor positions recorded after this unix
+      timestamp if provided.
 
     """
-    # Get default collection if none was given
-    if collection is None:
-        collection = default_collection()
-    # Get the motor positions from disk
-    results = collection.find()
     # Go through the results and display them
     were_found = False
-    for doc in results:
-        were_found = True
-        position = MotorPosition.load(doc)
+    async for position in get_motor_positions(before=before, after=after):
+        if were_found:
+            # Add a blank line
+            print("\n")
+        else:
+            were_found = True
         print_motor_position(position)
     # Some feedback in the case of empty motor positions
     if not were_found:
-        print(f"No motor positions found: {collection}")
+        rprint(f"[yellow]No motor positions found: {collection}[/]")
 
 
 def get_motor_position(uid: str) -> MotorPosition:

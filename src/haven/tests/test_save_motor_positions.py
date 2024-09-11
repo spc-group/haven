@@ -235,18 +235,72 @@ position_runs = {
     ),
     # A saved motor position, but older
     "5dd9a185-d5c4-4c8b-a719-9d7beb9007dc": MapAdapter(
-        {},
+        {
+            "primary": MapAdapter(
+                {
+                    "data": DatasetAdapter.from_dataset(
+                        pd.DataFrame(
+                            {
+                                "motorC": [11250.0],
+                            }
+                        ).to_xarray()
+                    ),
+                },
+                metadata={
+                    "descriptors": {
+                        "data_keys": {
+                            "motorC": {"object_name": "motorC"},
+                        },
+                    },
+                },
+            ),
+        },
         metadata={
             "plan_name": "save_motor_position",
+            "position_name": "Another good position",
             "time": 1725897033,
-        },
+            "uid": "5dd9a185-d5c4-4c8b-a719-9d7beb9007dc",
+            "start": {
+                "plan_name": "save_motor_position",
+                "position_name": "Another good position",
+                "time": 1725897033,
+                "uid": "5dd9a185-d5c4-4c8b-a719-9d7beb9007dc",
+            },
+        },        
     ),
     # A saved motor position, but older
     "42b8c45d-e98d-4f59-9ce8-8f14134c90bd": MapAdapter(
-        {},
+                {
+            "primary": MapAdapter(
+                {
+                    "data": DatasetAdapter.from_dataset(
+                        pd.DataFrame(
+                            {
+                                "motorC": [11250.0],
+                            }
+                        ).to_xarray()
+                    ),
+                },
+                metadata={
+                    "descriptors": {
+                        "data_keys": {
+                            "motorC": {"object_name": "motorC"},
+                        },
+                    },
+                },
+            ),
+        },
         metadata={
             "plan_name": "save_motor_position",
+            "position_name": "Another good position",
             "time": 1725897233,
+            "uid": "42b8c45d-e98d-4f59-9ce8-8f14134c90bd",
+            "start": {
+                "plan_name": "save_motor_position",
+                "position_name": "Another good position",
+                "time": 17258972333,
+                "uid": "42b8c45d-e98d-4f59-9ce8-8f14134c90bd",
+            },
         },
     ),    
     # A scan that's not a saved motor position
@@ -342,20 +396,22 @@ def test_recall_motor_position(mongodb, sim_motor_registry):
     assert msg1.args[0] == -211.93
 
 
-def test_list_motor_positions(mongodb, capsys):
+async def test_list_motor_positions(client, capsys):
     # Do the listing
-    list_motor_positions(collection=mongodb.motor_positions)
+    await list_motor_positions()
     # Check stdout for printed motor positions
     captured = capsys.readouterr()
     assert len(captured.out) > 0
-    uid = str(mongodb.motor_positions.find_one({"name": "Good position A"})["_id"])
-    timestamp = "2022-08-19 19:10:51"
-    expected = (
-        f'\n\033[1mGood position A\033[0m (uid="{uid}", timestamp={timestamp})\n'
-        "┣━SLT V Upper: 510.5, offset: 0.0\n"
-        "┗━SLT V Lower: -211.93, offset: None\n"
-    )
-    assert captured.out == expected
+    first_motor = captured.out.split("\n\n")[0]
+    uid = "a9b3e0fa-eba1-43e0-a38c-c7ac76278000"
+    timestamp = "2024-09-09 10:52:13"
+    expected = "\n".join([
+        f'Good position A',
+        f'┣ uid="{uid}", timestamp={timestamp}',
+        f"┣━motorA: 12.0, offset: None",
+        f"┗━motorB: -113.25, offset: None",
+    ])
+    assert first_motor == expected
 
 
 def test_motor_position_e2e(mongodb, sim_motor_registry):
