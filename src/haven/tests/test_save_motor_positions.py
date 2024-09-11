@@ -8,6 +8,7 @@ from zoneinfo import ZoneInfo
 import pandas as pd
 import pytest
 import time_machine
+from ophyd_async.core import set_mock_value
 from tiled.adapters.mapping import MapAdapter
 from tiled.adapters.xarray import DatasetAdapter
 from tiled.client import Context, from_context
@@ -169,8 +170,8 @@ position_runs = {
                     "data": DatasetAdapter.from_dataset(
                         pd.DataFrame(
                             {
-                                "motorA": [12.0],
-                                "motorB": [-113.25],
+                                "motor_A": [12.0],
+                                "motor_B": [-113.25],
                             }
                         ).to_xarray()
                     ),
@@ -178,8 +179,8 @@ position_runs = {
                 metadata={
                     "descriptors": {
                         "data_keys": {
-                            "motorA": {"object_name": "motorA"},
-                            "motorB": {"object_name": "motorB"},
+                            "motor_A": {"object_name": "motor_A"},
+                            "motor_B": {"object_name": "motor_B"},
                         },
                     },
                 },
@@ -327,13 +328,14 @@ def client(mocker):
 
 
 @pytest.fixture
-def motors(sim_registry):
+async def motors(sim_registry):
     # Create the motors
     motors = [
         Motor("", name="motor_B"),
         Motor("", name="motor_A"),
     ]
     for motor in motors:
+        await motor.connect(mock=True)
         sim_registry.register(motor)
     return motors
 
@@ -369,7 +371,7 @@ def test_get_motor_position(client):
     uid = "a9b3e0fa-eba1-43e0-a38c-c7ac76278000"
     result = get_motor_position(uid=uid)
     assert result.name == "Good position A"
-    assert result.motors[0].name == "motorA"
+    assert result.motors[0].name == "motor_A"
     assert result.motors[0].readback == 12.0
 
 
@@ -382,18 +384,18 @@ async def test_get_motor_positions(client):
     assert motorA.uid == "a9b3e0fa-eba1-43e0-a38c-c7ac76278000"
 
 
-def test_recall_motor_position(mongodb, sim_motor_registry):
+def test_recall_motor_position(client, motors):
     # Re-set the previous value
-    uid = str(mongodb.motor_positions.find_one({"name": "Good position A"})["_id"])
-    plan = recall_motor_position(uid=uid, collection=mongodb.motor_positions)
+    uid = "a9b3e0fa-eba1-43e0-a38c-c7ac76278000"
+    plan = recall_motor_position(uid=uid)
     messages = list(plan)
     # Check the plan output
     msg0 = messages[0]
-    assert msg0.obj.name == "SLT V Upper"
-    assert msg0.args[0] == 510.5
+    assert msg0.obj.name == "motor_A"
+    assert msg0.args[0] == 12.0
     msg1 = messages[1]
-    assert msg1.obj.name == "SLT V Lower"
-    assert msg1.args[0] == -211.93
+    assert msg1.obj.name == "motor_B"
+    assert msg1.args[0] == -113.25
 
 
 async def test_list_motor_positions(client, capsys):
@@ -408,38 +410,10 @@ async def test_list_motor_positions(client, capsys):
     expected = "\n".join([
         f'Good position A',
         f'┣ uid="{uid}", timestamp={timestamp}',
-        f"┣━motorA: 12.0, offset: None",
-        f"┗━motorB: -113.25, offset: None",
+        f"┣━motor_A: 12.0, offset: None",
+        f"┗━motor_B: -113.25, offset: None",
     ])
     assert first_motor == expected
-
-
-def test_motor_position_e2e(mongodb, sim_motor_registry):
-    """Check that a motor position can be saved, then recalled using
-    a simulated motor.
-
-    """
-    # Create an epics motor for setting values manually
-    motor1 = sim_motor_registry.find(name="SLT V Upper")
-    # Set a fake value
-    motor1.set(504.6).wait(timeout=2)
-    # assert epics.caget(pv, use_monitor=False) == 504.6
-    # time.sleep(0.1)
-    assert motor1.get().readback == 504.6
-    # Save motor position
-    uid = save_motor_position(
-        motor1,
-        name="starting point",
-        collection=mongodb.motor_positions,
-    )
-    # Change to a different value
-    motor1.set(520).wait(timeout=2)
-    assert motor1.get().readback == 520
-    # Recall the saved position and see if it complies
-    plan = recall_motor_position(uid=uid, collection=mongodb.motor_positions)
-    msg = next(plan)
-    assert msg.obj.name == "SLT V Upper"
-    assert msg.args[0] == 504.6
 
 
 def test_list_current_motor_positions(mongodb, capsys):

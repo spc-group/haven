@@ -245,30 +245,21 @@ async def get_motor_positions(
         yield await MotorPosition.aload(run)
 
 
-def recall_motor_position(
-    uid: str | None = None, name: str | None = None, collection=None
-):
+def recall_motor_position(uid: str):
     """Set motors to their previously saved positions.
 
     Parameters
     ==========
     uid
       The universal identifier for the the document in the collection.
-    name
-      The name of the saved motor position, as given with the *name*
-      parameter to the ``save_motor_position`` function.
-    collection
-      The mongodb collection from which to print motor positions.
 
     """
-    # Get default collection if none was given
-    if collection is None:
-        collection = default_collection()
     # Get the saved position from the database
-    position = get_motor_position(uid=uid, name=name, collection=collection)
+    position = get_motor_position(uid=uid)
     # Create a move plan to recall the position
     plan_args = []
     for axis in position.motors:
+        print(axis.name)
         motor = registry.find(name=axis.name)
         plan_args.append(motor)
         plan_args.append(axis.readback)
