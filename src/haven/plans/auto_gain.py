@@ -122,7 +122,7 @@ def auto_gain(
     """An adaptive Bluesky plan for optimizing ion chamber
     pre-amp gains.
 
-    For each ion chambe, the plan will search for the range of gains
+    For each ion chamber, the plan will search for the range of gains
     within which the pre-amp output is between *volts_min* and
     *volts_max*, and select the gain that produces a voltage closest
     to the mid-point between *volts_min* and *volts_max*.
