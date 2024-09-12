@@ -116,7 +116,8 @@ dependencies:
     - tqdm
     - peakutils
     - xrayutilities
-    - pyarrow < 11.0.0  # Tempoary fix, remove once the libort missing symbol doesn't break CI  
+    - pyarrow < 11.0.0  # Tempoary fix, remove once the libort missing symbol doesn't break CI
+    - pyarrow-hotfix
     # XES analysis packages
     - scikit-learn
     - kneed
