@@ -1,3 +1,4 @@
+import asyncio
 from unittest import mock
 
 import pytest
@@ -14,7 +15,10 @@ async def display(qtbot, sim_registry, sync_motors, async_motors, dxp, ion_chamb
     qtbot.addWidget(display)
     await display.update_devices(sim_registry)
     display.ui.run_button.setEnabled(True)
-    return display
+    try:
+        yield display
+    finally:
+        await asyncio.sleep(0.1)
 
 
 @pytest.mark.asyncio
@@ -40,7 +44,7 @@ async def test_time_calculator(display, sim_registry, ion_chamber):
     set_mock_value(detectors[ion_chamber.name].default_time_signal, 0.82)
     detectors["vortex_me4"].default_time_signal.set(0.5).wait()
 
-    # emit the signal so that the time calculator is triggered
+    # Run the time calculator
     await display.update_total_time()
 
     # Check whether time is calculated correctly for a single scan
@@ -56,6 +60,7 @@ async def test_time_calculator(display, sim_registry, ion_chamber):
 
 @pytest.mark.asyncio
 async def test_grid_scan_plan_queued(display, qtbot, sim_registry, ion_chamber):
+    pass
     await display.update_regions(2)
 
     # set up a test motor 1
@@ -77,7 +82,6 @@ async def test_grid_scan_plan_queued(display, qtbot, sim_registry, ion_chamber):
     display.ui.detectors_list.selected_detectors = mock.MagicMock(
         return_value=["vortex_me4", ion_chamber.name]
     )
-
     # set up meta data
     display.ui.lineEdit_sample.setText("sam")
     display.ui.lineEdit_purpose.setText("test")
