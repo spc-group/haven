@@ -26,7 +26,6 @@ from haven.catalog import Catalog
 from haven.instrument.aps import ApsMachine
 from haven.instrument.beamline_manager import BeamlineManager, IOCManager
 from haven.instrument.camera import AravisDetector
-from haven.instrument.delay import EpicsSignalWithIO
 from haven.instrument.dxp import DxpDetector
 from haven.instrument.dxp import add_mcas as add_dxp_mcas
 from haven.instrument.ion_chamber import IonChamber
@@ -53,21 +52,6 @@ os.environ["HAVEN_CONFIG_FILES"] = ",".join(
         f"{haven_dir/'iconfig_default.toml'}",
     ]
 )
-
-
-class FakeEpicsSignalWithIO(FakeEpicsSignal):
-    # An EPICS signal that simply uses the DG-645 convention of
-    # 'AO' being the setpoint and 'AI' being the read-back
-    _metadata_keys = EpicsSignalWithIO._metadata_keys
-
-    def __init__(self, prefix, **kwargs):
-        super().__init__(f"{prefix}I", write_pv=f"{prefix}O", **kwargs)
-
-
-# Ophyd uses a cache of signals and their corresponding fakes
-# We need to add ours in so they get simulated properly.
-fake_device_cache[EpicsSignalWithIO] = FakeEpicsSignalWithIO
-fake_device_cache[GainSignal] = FakeEpicsSignal
 
 
 @pytest.fixture()
