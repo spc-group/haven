@@ -1,21 +1,14 @@
 import os
 from pathlib import Path
-from unittest import mock
 
 import numpy as np
 import pandas as pd
 
 # from pydm.data_plugins import plugin_modules, add_plugin
 import pytest
-from apstools.devices.srs570_preamplifier import GainSignal
 from ophyd import DynamicDeviceComponent as DCpt
 from ophyd import Kind
-from ophyd.sim import (
-    FakeEpicsSignal,
-    fake_device_cache,
-    instantiate_fake_device,
-    make_fake_device,
-)
+from ophyd.sim import instantiate_fake_device, make_fake_device
 from tiled.adapters.mapping import MapAdapter
 from tiled.adapters.xarray import DatasetAdapter
 from tiled.client import Context, from_context
@@ -24,17 +17,15 @@ from tiled.server.app import build_app
 import haven
 from haven._iconfig import beamline_connected as _beamline_connected
 from haven.catalog import Catalog
-from haven.instrument.aerotech import AerotechStage
 from haven.instrument.aps import ApsMachine
 from haven.instrument.beamline_manager import BeamlineManager, IOCManager
 from haven.instrument.camera import AravisDetector
-from haven.instrument.delay import EpicsSignalWithIO
 from haven.instrument.dxp import DxpDetector
 from haven.instrument.dxp import add_mcas as add_dxp_mcas
 from haven.instrument.ion_chamber import IonChamber
 from haven.instrument.monochromator import Monochromator
 from haven.instrument.robot import Robot
-from haven.instrument.shutter import PssShutter
+from haven.instrument.shutter import Shutter
 from haven.instrument.slits import ApertureSlits, BladeSlits
 from haven.instrument.xia_pfcu import PFCUFilter, PFCUFilterBank, PFCUShutter
 from haven.instrument.xspress import Xspress3Detector
@@ -55,21 +46,6 @@ os.environ["HAVEN_CONFIG_FILES"] = ",".join(
         f"{haven_dir/'iconfig_default.toml'}",
     ]
 )
-
-
-class FakeEpicsSignalWithIO(FakeEpicsSignal):
-    # An EPICS signal that simply uses the DG-645 convention of
-    # 'AO' being the setpoint and 'AI' being the read-back
-    _metadata_keys = EpicsSignalWithIO._metadata_keys
-
-    def __init__(self, prefix, **kwargs):
-        super().__init__(f"{prefix}I", write_pv=f"{prefix}O", **kwargs)
-
-
-# Ophyd uses a cache of signals and their corresponding fakes
-# We need to add ours in so they get simulated properly.
-fake_device_cache[EpicsSignalWithIO] = FakeEpicsSignalWithIO
-fake_device_cache[GainSignal] = FakeEpicsSignal
 
 
 @pytest.fixture()
@@ -98,19 +74,49 @@ def sim_registry(monkeypatch):
 
 
 @pytest.fixture()
-async def ion_chamber(sim_registry):
-    ion_chamber = IonChamber(
-        scaler_prefix="255idcVME:3820:",
-        scaler_channel=2,
-        preamp_prefix="255idc:SR03",
-        voltmeter_prefix="255idc:LJT7_Voltmeter0:",
-        voltmeter_channel=1,
-        counts_per_volt_second=10e6,
+def sim_ion_chamber(sim_registry):
+    FakeIonChamber = make_fake_device(IonChamber)
+    ion_chamber = FakeIonChamber(
+        prefix="scaler_ioc",
         name="I00",
+        labels={"ion_chambers"},
+        ch_num=2,
     )
-    # Connect to the ion chamber
-    await ion_chamber.connect(mock=True)
-    sim_registry.register(ion_chamber)
+    # Set metadata
+    preamp = ion_chamber.preamp
+    preamp.sensitivity_value._enum_strs = tuple(preamp.values)
+    preamp.sensitivity_unit._enum_strs = tuple(preamp.units)
+    preamp.offset_value._enum_strs = tuple(preamp.values)
+    preamp.offset_unit._enum_strs = tuple(preamp.offset_units)
+    preamp.gain_mode._enum_strs = ("LOW NOISE", "HIGH BW", "LOW DRIFT")
+    preamp.gain_mode.set("LOW NOISE").wait(timeout=3)
+    return ion_chamber
+
+
+@pytest.fixture()
+def I0(sim_registry):
+    """A fake ion chamber named 'I0' on scaler channel 2."""
+    FakeIonChamber = make_fake_device(IonChamber)
+    ion_chamber = FakeIonChamber(
+        prefix="scaler_ioc",
+        preamp_prefix="preamp_ioc:SR04:",
+        name="I0",
+        labels={"ion_chambers"},
+        ch_num=2,
+    )
+    # Set ion chamber signal values to sensible defaults
+    ion_chamber.preamp.sensitivity_value.sim_put("1")
+    ion_chamber.preamp.sensitivity_unit.sim_put("pA/V")
+    return ion_chamber
+
+
+@pytest.fixture()
+def It(sim_registry):
+    """A fake ion chamber named 'It' on scaler channel 3."""
+    FakeIonChamber = make_fake_device(IonChamber)
+    ion_chamber = FakeIonChamber(
+        prefix="scaler_ioc", name="It", labels={"ion_chambers"}, ch_num=3
+    )
     return ion_chamber
 
 
@@ -208,33 +214,10 @@ def xspress(sim_registry):
 
 
 @pytest.fixture()
-def aerotech():
-    Stage = make_fake_device(
-        AerotechStage,
-    )
-    stage = Stage(
-        "255id",
-        delay_prefix="255id:DG645",
-        pv_horiz=":m1",
-        pv_vert=":m2",
-        name="aerotech",
-    )
-    return stage
-
-
-@pytest.fixture()
 def robot():
     RobotClass = make_fake_device(Robot)
     robot = RobotClass(name="robotA", prefix="255idA:")
     return robot
-
-
-@pytest.fixture()
-def aerotech_flyer(aerotech):
-    flyer = aerotech.horiz
-    flyer.user_setpoint._limits = (0, 1000)
-    flyer.send_command = mock.MagicMock()
-    yield flyer
 
 
 @pytest.fixture()
@@ -277,9 +260,12 @@ def xia_shutter(xia_shutter_bank):
 
 @pytest.fixture()
 def shutters(sim_registry):
-    FakeShutter = make_fake_device(PssShutter)
+    FakeShutter = make_fake_device(Shutter)
     kw = dict(
         prefix="_prefix",
+        open_pv="_prefix",
+        close_pv="_prefix2",
+        state_pv="_prefix2",
         labels={"shutters"},
     )
     shutters = [
