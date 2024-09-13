@@ -1,15 +1,16 @@
 import logging
 import time
 from datetime import datetime
-from typing import Optional, Sequence
+from typing import Mapping, Sequence
 
 import intake
-import pymongo
 from bluesky import plan_stubs as bps
-from bson.objectid import ObjectId
+from bluesky import plans as bp
 from pydantic import BaseModel
+from rich import print as rprint
+from tiled.queries import Key
 
-from . import exceptions
+from .catalog import Catalog, tiled_client
 from .instrument.instrument_registry import registry
 
 log = logging.getLogger(__name__)
@@ -26,7 +27,7 @@ __all__ = [
 class MotorAxis(BaseModel):
     name: str
     readback: float
-    offset: Optional[float] = None
+    offset: float | None = None
 
     def as_dict(self):
         return {"name": self.name, "readback": self.readback, "offset": self.offset}
@@ -35,34 +36,49 @@ class MotorAxis(BaseModel):
 class MotorPosition(BaseModel):
     name: str
     motors: Sequence[MotorAxis]
-    uid: Optional[str] = None
-    savetime: Optional[float] = None
-
-    def save(self, collection):
-        payload = {
-            "name": self.name,
-            "motors": [m.as_dict() for m in self.motors],
-            "savetime": self.savetime,
-        }
-        item_id = collection.insert_one(payload).inserted_id
-        return item_id
+    uid: str | None = None
+    savetime: float | None = None
 
     @classmethod
-    def load(Cls, document):
-        # Create a MotorPosition object
-        motor_axes = [
-            MotorAxis(
-                name=m["name"], readback=m["readback"], offset=m.get("offset", None)
+    def _load(Cls, run_md, data_keys, data):
+        """Common routines for synch and async loading."""
+        if run_md["start"]["plan_name"] != "save_motor_position":
+            raise ValueError(f"Run {run_md['start']['uid']} is not a motor position.")
+        # Extract motor positions from the run
+        motor_axes = []
+        for data_key in data_keys.values():
+            mname = data_key["object_name"]
+            axis = MotorAxis(
+                name=mname,
+                readback=data[mname][0],
             )
-            for m in document["motors"]
-        ]
-        position = Cls(
-            name=document["name"],
+            motor_axes.append(axis)
+        # Create the motor position object
+        return Cls(
+            name=run_md["start"]["position_name"],
             motors=motor_axes,
-            uid=str(document["_id"]),
-            savetime=document.get("savetime"),
+            uid=run_md["start"]["uid"],
+            savetime=run_md["start"]["time"],
         )
-        return position
+
+    @classmethod
+    def load(Cls, run):
+        """Create a new MotorPosition object from a Tiled Bluesky run."""
+        return Cls._load(
+            run_md=run.metadata,
+            data_keys=run["primary"].metadata["descriptors"]["data_keys"],
+            data=run["primary"]["data"].read(),
+        )
+
+    @classmethod
+    async def aload(Cls, scan):
+        """Create a new MotorPosition object from a Tiled Bluesky run.
+        Similar to ``MotorPosition.load()``, but asynchronous."""
+        return Cls._load(
+            run_md=await scan.metadata,
+            data_keys=await scan.data_keys(),
+            data=await scan.data(),
+        )
 
 
 def default_collection():
@@ -73,24 +89,18 @@ def default_collection():
 
 
 # Prepare the motor positions
-def rbv(motor):
+async def rbv(motor):
     """Helper function to get readback value (rbv)."""
-    try:
-        # Wrap this in a try block because not every signal has this argument
-        motor_data = motor.get(use_monitor=False)
-    except TypeError:
-        log.debug("Failed to do get() with ``use_monitor=False``")
-        motor_data = motor.get()
-    if hasattr(motor_data, "readback"):
-        return motor_data.readback
-    elif hasattr(motor_data, "user_readback"):
-        return motor_data.user_readback
+    if hasattr(motor, "readback"):
+        return await motor.readback.get_value()
+    elif hasattr(motor, "user_readback"):
+        return await motor.user_readback.get_value()
     else:
-        return motor_data
+        return await motor.get_value()
 
 
-def save_motor_position(*motors, name: str, collection=None):
-    """Save the current positions of a number of motors to a database.
+def save_motor_position(*motors, name: str, md: Mapping = {}):
+    """A Bluesky plan to Save the current positions of a number of motors.
 
     Parameters
     ==========
@@ -99,40 +109,22 @@ def save_motor_position(*motors, name: str, collection=None):
       save.
     name
       A human-readable name for this position (e.g. "sample center")
-    collection
-      A pymongo collection object to receive the data. Meant for
-      testing.
+    md
+      Additional metadata to store with the motor position.
 
-    Returns
-    =======
-    item_id
-      The ID of the item in the database.
     """
-    # Get default collection if none was given
-    if collection is None:
-        collection = default_collection()
     # Resolve device names or labels
     motors = registry.findall(motors)
-    # Prepare the motor positions
-    motor_axes = []
-    for m in motors:
-        payload = dict(name=m.name, readback=rbv(m))
-        # Save the calibration offset for motors
-        if hasattr(m, "user_offset"):
-            payload["offset"] = m.user_offset.get()
-        axis = MotorAxis(**payload)
-        motor_axes.append(axis)
-    savetime = time.time()
-    position = MotorPosition(name=name, motors=motor_axes, savetime=savetime)
-    # Write to the database
-    pos_id = position.save(collection=collection)
-    log.info(f"Saved motor position {name} (uid={pos_id})")
-    return pos_id
+    # Create the new run object
+    _md = {
+        "position_name": name,
+        "plan_name": "save_motor_position",
+    }
+    _md.update(md)
+    yield from bp.count(motors, md=_md)
 
 
 def print_motor_position(position):
-    BOLD = "\033[1m"
-    END = "\033[0m"
     # Prepare metadata strings for the header
     metadata = []
     if position.uid is not None:
@@ -141,65 +133,65 @@ def print_motor_position(position):
         timestamp = datetime.fromtimestamp(position.savetime).strftime(
             "%Y-%m-%d %H:%M:%S"
         )
-        ts_str = f"timestamp={timestamp}"
+        ts_str = f"{timestamp}"
         metadata.append(ts_str)
     if len(metadata) > 0:
-        metadata_str = f" ({', '.join(metadata)})"
+        metadata_str = f"{', '.join(metadata)}"
     else:
         metadata_str = ""
     # Write the output header
-    output = f"\n{BOLD}{position.name}{END}{metadata_str}\n"
+    outputs = [
+        f"[bold]{position.name}[/]",
+        f"┃ [italic dim]{metadata_str}[/]",
+    ]
     # Write the motor positions
     for idx, motor in enumerate(position.motors):
         # Figure out some nice tree aesthetics
         is_last_motor = idx == (len(position.motors) - 1)
         box_char = "┗" if is_last_motor else "┣"
-        output += f"{box_char}━{motor.name}: {motor.readback}, offset: {motor.offset}\n"
-    print(output, end="")
+        outputs.append(
+            f"{box_char}━[purple]{motor.name}[/]: "
+            f"{motor.readback}, offset: {motor.offset}"
+        )
+    rprint("\n".join(outputs))
 
 
-def list_motor_positions(collection=None):
-    """Print a list of saved motor positions.
+async def list_motor_positions(after: float | None = None, before: float | None = None):
+    """Print a list of previously saved motor positions.
 
     The name and UID will be printed, along with each motor and it's
     position.
 
-    Parameters
-    ==========
-    collection
-      The mongodb collection from which to print motor positions.
+    before
+      Only include motor positions recorded before this unix
+      timestamp if provided.
+    after
+      Only include motor positions recorded after this unix
+      timestamp if provided.
 
     """
-    # Get default collection if none was given
-    if collection is None:
-        collection = default_collection()
-    # Get the motor positions from disk
-    results = collection.find()
     # Go through the results and display them
     were_found = False
-    for doc in results:
-        were_found = True
-        position = MotorPosition.load(doc)
+    async for position in get_motor_positions(before=before, after=after):
+        if were_found:
+            # Add a blank line
+            print("\n")
+        else:
+            were_found = True
         print_motor_position(position)
     # Some feedback in the case of empty motor positions
     if not were_found:
-        print(f"No motor positions found: {collection}")
+        rprint(f"[yellow]No motor positions found: {before=}, {after=}[/]")
 
 
-def get_motor_position(
-    uid: Optional[str] = None, name: Optional[str] = None, collection=None
-) -> MotorPosition:
+def get_motor_position(uid: str) -> MotorPosition:
     """Retrieve a previously saved motor position from the database.
 
     Parameters
     ==========
     uid
-      The universal identifier for the the document in the collection.
-    name
-      The name of the saved motor position, as given with the *name*
-      parameter to the ``save_motor_position`` function.
-    collection
-      The mongodb collection from which to print motor positions.
+      The universal identifier for the Bluesky run with motor position
+      info.
 
     Returns
     =======
@@ -208,62 +200,67 @@ def get_motor_position(
       database.
 
     """
-    # Check that at least one of the parameters is given
-    has_query_param = any([val is not None for val in [uid, name]])
-    if not has_query_param:
-        raise TypeError("At least one query parameter (*uid*, *name*) is required")
-    # Get default collection if none was given
-    if collection is None:
-        collection = default_collection()
-    # Build query for finding motor positions
-    if uid is not None:
-        _id = ObjectId(uid)
-    else:
-        _id = None
-    query_params = {"_id": _id, "name": name}
     # Filter out query parameters that are ``None``
-    query_params = {k: v for k, v in query_params.items() if v is not None}
-    result = collection.find_one(query_params, sort=[("savetime", pymongo.DESCENDING)])
+    client = tiled_client()
+    run = client[uid]
     # Feedback for if no matching motor positions are in the database
-    if result is None:
-        raise exceptions.DocumentNotFound(
-            f'Could not find document matching: {query_params}"'
-        )
-    position = MotorPosition.load(result)
+    position = MotorPosition.load(run)
     return position
 
 
-def recall_motor_position(
-    uid: Optional[str] = None, name: Optional[str] = None, collection=None
-):
+async def get_motor_positions(
+    before: float | None = None, after: float | None = None
+) -> list[MotorPosition]:
+    """Get all motor position objects from the catalog.
+
+    Parameters
+    ==========
+    before
+      Only include motor positions recorded before this unix
+      timestamp if provided.
+    after
+      Only include motor positions recorded after this unix
+      timestamp if provided.
+
+    Returns
+    =======
+    positions
+      The motor positions matching the requested parameters.
+
+    """
+    runs = Catalog(client=tiled_client())
+    # Prepare the database for all plans
+    runs = await runs.search(Key("plan_name") == "save_motor_position")
+    if before is not None:
+        runs = await runs.search(Key("time") < before)
+    if after is not None:
+        runs = await runs.search(Key("time") > after)
+    async for uid, run in runs.items():
+        yield await MotorPosition.aload(run)
+
+
+def recall_motor_position(uid: str):
     """Set motors to their previously saved positions.
 
     Parameters
     ==========
     uid
       The universal identifier for the the document in the collection.
-    name
-      The name of the saved motor position, as given with the *name*
-      parameter to the ``save_motor_position`` function.
-    collection
-      The mongodb collection from which to print motor positions.
 
     """
-    # Get default collection if none was given
-    if collection is None:
-        collection = default_collection()
     # Get the saved position from the database
-    position = get_motor_position(uid=uid, name=name, collection=collection)
+    position = get_motor_position(uid=uid)
     # Create a move plan to recall the position
     plan_args = []
     for axis in position.motors:
+        print(axis.name)
         motor = registry.find(name=axis.name)
         plan_args.append(motor)
         plan_args.append(axis.readback)
     yield from bps.mv(*plan_args)
 
 
-def list_current_motor_positions(*motors, name="current motor"):
+async def list_current_motor_positions(*motors, name="Current motor positions"):
     """list and print the current positions of a number of motors
 
     Parameters
@@ -280,10 +277,10 @@ def list_current_motor_positions(*motors, name="current motor"):
     # Build the list of motor positions
     motor_axes = []
     for m in motors:
-        payload = dict(name=m.name, readback=rbv(m))
+        payload = dict(name=m.name, readback=await rbv(m))
         # Save the calibration offset for motors
         if hasattr(m, "user_offset"):
-            payload["offset"] = m.user_offset.get()
+            payload["offset"] = await m.user_offset.get_value()
         axis = MotorAxis(**payload)
         motor_axes.append(axis)
     position = MotorPosition(
