@@ -4,14 +4,6 @@ from firefly.slits import SlitsDisplay
 
 
 class KBMirrorsDisplay(SlitsDisplay):
-    @property
-    def caqtdm_ui_file(self):
-        # Go up the class list until we find a class that is recognized
-        if self.device.horiz.bendable or self.device.vert.bendable:
-            ui_file = "/net/s25data/xorApps/ui/KB_mirrors_and_benders.ui"
-        else:
-            ui_file = "/net/s25data/xorApps/ui/KB_mirrors.ui"
-        return ui_file
 
     def ui_filename(self):
         return "kb_mirrors.ui"
@@ -19,60 +11,17 @@ class KBMirrorsDisplay(SlitsDisplay):
     def customize_ui(self):
         # Enable/disable bender controls
         horiz = self.device.horiz
-        self.ui.horizontal_upstream_display.setEnabled(horiz.bendable)
-        self.ui.horizontal_downstream_display.setEnabled(horiz.bendable)
+        self.ui.horizontal_upstream_display.setEnabled(
+            hasattr(horiz, "bender_upstream")
+        )
+        self.ui.horizontal_downstream_display.setEnabled(
+            hasattr(horiz, "bender_downstream")
+        )
         vert = self.device.vert
-        self.ui.vertical_upstream_display.setEnabled(vert.bendable)
-        self.ui.vertical_downstream_display.setEnabled(vert.bendable)
-
-    def launch_caqtdm(self):
-        # Sort out the prefix from the slit designator
-        prefix = self.device.prefix.strip(":")
-        pieces = prefix.split(":")
-        # Build the macros for the caQtDM panels
-        P = ":".join(pieces[:-1])
-        P = f"{P}:"
-        KB = pieces[-1]
-        KBH = self.device.horiz.prefix.replace(P, "").strip(":")
-        KBV = self.device.vert.prefix.replace(P, "").strip(":")
-
-        def suffix(signal):
-            return signal.prefix.split(":")[-1]
-
-        caqtdm_macros = {
-            "P": f"{P}",
-            "PM": P,
-            "KB": KB,
-            "KBH": KBH,
-            "KBV": KBV,
-            # Macros for the real motors
-            "KBHUS": suffix(self.device.horiz.upstream),
-            "KBHDS": suffix(self.device.horiz.downstream),
-            "KBVUS": suffix(self.device.vert.upstream),
-            "KBVDS": suffix(self.device.vert.downstream),
-            # Macros for the transform records
-            "KB1": KBH.replace(":", ""),
-            "KB2": KBV.replace(":", ""),
-        }
-        # Macros for each mirror's bender motors
-        horiz = self.device.horiz
-        if horiz.bendable:
-            caqtdm_macros.update(
-                {
-                    "HBUS": suffix(horiz.bender_upstream),
-                    "HBDS": suffix(horiz.bender_downstream),
-                }
-            )
-        vert = self.device.vert
-        if vert.bendable:
-            caqtdm_macros.update(
-                {
-                    "VBUS": suffix(vert.bender_upstream),
-                    "VBDS": suffix(vert.bender_downstream),
-                }
-            )
-        # Launch the caQtDM panel
-        super(SlitsDisplay, self).launch_caqtdm(macros=caqtdm_macros)
+        self.ui.vertical_upstream_display.setEnabled(hasattr(vert, "bender_upstream"))
+        self.ui.vertical_downstream_display.setEnabled(
+            hasattr(vert, "bender_downstream")
+        )
 
 
 # -----------------------------------------------------------------------------

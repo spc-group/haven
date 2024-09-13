@@ -1,21 +1,14 @@
 import os
 from pathlib import Path
-from unittest import mock
 
 import numpy as np
 import pandas as pd
 
 # from pydm.data_plugins import plugin_modules, add_plugin
 import pytest
-from apstools.devices.srs570_preamplifier import GainSignal
 from ophyd import DynamicDeviceComponent as DCpt
 from ophyd import Kind
-from ophyd.sim import (
-    FakeEpicsSignal,
-    fake_device_cache,
-    instantiate_fake_device,
-    make_fake_device,
-)
+from ophyd.sim import instantiate_fake_device, make_fake_device
 from tiled.adapters.mapping import MapAdapter
 from tiled.adapters.xarray import DatasetAdapter
 from tiled.client import Context, from_context
@@ -24,11 +17,9 @@ from tiled.server.app import build_app
 import haven
 from haven._iconfig import beamline_connected as _beamline_connected
 from haven.catalog import Catalog
-from haven.instrument.aerotech import AerotechStage
 from haven.instrument.aps import ApsMachine
 from haven.instrument.beamline_manager import BeamlineManager, IOCManager
 from haven.instrument.camera import AravisDetector
-from haven.instrument.delay import EpicsSignalWithIO
 from haven.instrument.dxp import DxpDetector
 from haven.instrument.dxp import add_mcas as add_dxp_mcas
 from haven.instrument.ion_chamber import IonChamber
@@ -55,21 +46,6 @@ os.environ["HAVEN_CONFIG_FILES"] = ",".join(
         f"{haven_dir/'iconfig_default.toml'}",
     ]
 )
-
-
-class FakeEpicsSignalWithIO(FakeEpicsSignal):
-    # An EPICS signal that simply uses the DG-645 convention of
-    # 'AO' being the setpoint and 'AI' being the read-back
-    _metadata_keys = EpicsSignalWithIO._metadata_keys
-
-    def __init__(self, prefix, **kwargs):
-        super().__init__(f"{prefix}I", write_pv=f"{prefix}O", **kwargs)
-
-
-# Ophyd uses a cache of signals and their corresponding fakes
-# We need to add ours in so they get simulated properly.
-fake_device_cache[EpicsSignalWithIO] = FakeEpicsSignalWithIO
-fake_device_cache[GainSignal] = FakeEpicsSignal
 
 
 @pytest.fixture()
@@ -208,33 +184,10 @@ def xspress(sim_registry):
 
 
 @pytest.fixture()
-def aerotech():
-    Stage = make_fake_device(
-        AerotechStage,
-    )
-    stage = Stage(
-        "255id",
-        delay_prefix="255id:DG645",
-        pv_horiz=":m1",
-        pv_vert=":m2",
-        name="aerotech",
-    )
-    return stage
-
-
-@pytest.fixture()
 def robot():
     RobotClass = make_fake_device(Robot)
     robot = RobotClass(name="robotA", prefix="255idA:")
     return robot
-
-
-@pytest.fixture()
-def aerotech_flyer(aerotech):
-    flyer = aerotech.horiz
-    flyer.user_setpoint._limits = (0, 1000)
-    flyer.send_command = mock.MagicMock()
-    yield flyer
 
 
 @pytest.fixture()
