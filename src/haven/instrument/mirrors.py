@@ -151,7 +151,7 @@ async def load_mirrors(
         devices.append(
             DeviceClass(
                 prefix=mirror_config["prefix"],
-                bendable=mirror_config["bendable"],
+                bendable=mirror_config.get("bendable", False),
                 name=name,
             )
         )

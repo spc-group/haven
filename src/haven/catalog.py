@@ -240,7 +240,8 @@ class CatalogScan:
 
     async def data_keys(self, stream="primary"):
         stream_md = await self.loop.run_in_executor(None, self._read_metadata, stream)
-        return stream_md["descriptors"]["data_keys"]
+        # Assumes the 0-th descriptor is for the primary stream
+        return stream_md["descriptors"][0]["data_keys"]
 
     async def hints(self):
         """Retrieve the data hints for this scan.

@@ -66,7 +66,8 @@ class MotorPosition(BaseModel):
         """Create a new MotorPosition object from a Tiled Bluesky run."""
         return Cls._load(
             run_md=run.metadata,
-            data_keys=run["primary"].metadata["descriptors"]["data_keys"],
+            # Assumes the 0-th descriptor is for the primary stream
+            data_keys=run["primary"].metadata["descriptors"][0]["data_keys"],
             data=run["primary"]["data"].read(),
         )
 
@@ -236,7 +237,10 @@ async def get_motor_positions(
     if after is not None:
         runs = await runs.search(Key("time") > after)
     async for uid, run in runs.items():
-        yield await MotorPosition.aload(run)
+        try:
+            yield await MotorPosition.aload(run)
+        except KeyError:
+            continue
 
 
 def recall_motor_position(uid: str):
