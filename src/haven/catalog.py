@@ -198,9 +198,9 @@ class CatalogScan:
     def __init__(self, container):
         self.container = container
 
-    def _read_data(self, signals):
+    def _read_data(self, signals, dataset="primary/data"):
         # Fetch data if needed
-        data = self.container["primary"]["data"]
+        data = self.container[dataset]
         return data.read(signals)
 
     def _read_metadata(self, keys=None):
@@ -220,6 +220,11 @@ class CatalogScan:
     def formats(self):
         return self.container.formats
 
+    async def data(self, stream="primary"):
+        return await self.loop.run_in_executor(
+            None, self._read_data, None, f"{stream}/data"
+        )
+
     async def to_dataframe(self, signals=None):
         """Convert the dataset into a pandas dataframe."""
         xarray = await self.loop.run_in_executor(None, self._read_data, signals)
@@ -232,6 +237,10 @@ class CatalogScan:
     @property
     def loop(self):
         return asyncio.get_running_loop()
+
+    async def data_keys(self, stream="primary"):
+        stream_md = await self.loop.run_in_executor(None, self._read_metadata, stream)
+        return stream_md["descriptors"]["data_keys"]
 
     async def hints(self):
         """Retrieve the data hints for this scan.

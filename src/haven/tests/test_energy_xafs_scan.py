@@ -96,16 +96,16 @@ def test_raises_on_empty_positioners(RE, energies):
         RE(energy_scan(energies, energy_signals=[]))
 
 
-def test_saves_dspacing(mono, energies, I0, It):
+def test_saves_dspacing(mono, energies, ion_chamber):
     """Does the mono's d-spacing get added to metadata."""
     # Prepare the messages from the plan
     mono.d_spacing._readback = 1.5418
     msgs = list(
         energy_scan(
             energies,
-            detectors=[It],
+            detectors=[ion_chamber],
             energy_signals=[mono],
-            time_signals=[It.exposure_time],
+            time_signals=[ion_chamber.default_time_signal],
         )
     )
     # Find the metadata written by the plan

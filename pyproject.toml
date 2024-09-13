@@ -16,7 +16,7 @@ classifiers = [
     "Topic :: System :: Hardware",
 ]
 keywords = ["synchrotron", "xray", "bluesky"]
-dependencies = ["aioca", "bluesky", "ophyd", "databroker", "apsbss", "xraydb",
+dependencies = ["aioca", "bluesky", "ophyd", "ophyd-async>=0.5.1", "databroker", "apsbss", "xraydb",
 	        "mergedeep", "xrayutilities", "bluesky-queueserver-api",
 		"apstools", "databroker", "ophyd-registry", "caproto", "pcdsdevices",
 		"strenum", "bluesky-adaptive", "tiled[client]"]
@@ -25,7 +25,7 @@ dependencies = ["aioca", "bluesky", "ophyd", "databroker", "apsbss", "xraydb",
 
 dev = ["black", "pytest", "pytest-mongodb", "build", "twine",
        "time-machine", "pytest-mock", "pytest-qt", "flake8", "pytest-asyncio", "tiled[all]"]
-gui = ["qtawesome", "pydm", "pyqtgraph", "qasync", "tiled[all]"]
+gui = ["qtawesome", "pydm<=1.24.1", "pyqtgraph", "qasync", "tiled[all]"]
 
 [project.urls]
 "Homepage" = "https://haven-spc.readthedocs.io/en/latest/"

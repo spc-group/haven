@@ -31,7 +31,7 @@ from haven.instrument.dxp import add_mcas as add_dxp_mcas
 from haven.instrument.ion_chamber import IonChamber
 from haven.instrument.monochromator import Monochromator
 from haven.instrument.robot import Robot
-from haven.instrument.shutter import Shutter
+from haven.instrument.shutter import PssShutter
 from haven.instrument.slits import ApertureSlits, BladeSlits
 from haven.instrument.xia_pfcu import PFCUFilter, PFCUFilterBank, PFCUShutter
 from haven.instrument.xspress import Xspress3Detector
@@ -80,49 +80,19 @@ def sim_registry(monkeypatch):
 
 
 @pytest.fixture()
-def sim_ion_chamber(sim_registry):
-    FakeIonChamber = make_fake_device(IonChamber)
-    ion_chamber = FakeIonChamber(
-        prefix="scaler_ioc",
+async def ion_chamber(sim_registry):
+    ion_chamber = IonChamber(
+        scaler_prefix="255idcVME:3820:",
+        scaler_channel=2,
+        preamp_prefix="255idc:SR03",
+        voltmeter_prefix="255idc:LJT7_Voltmeter0:",
+        voltmeter_channel=1,
+        counts_per_volt_second=10e6,
         name="I00",
-        labels={"ion_chambers"},
-        ch_num=2,
     )
-    # Set metadata
-    preamp = ion_chamber.preamp
-    preamp.sensitivity_value._enum_strs = tuple(preamp.values)
-    preamp.sensitivity_unit._enum_strs = tuple(preamp.units)
-    preamp.offset_value._enum_strs = tuple(preamp.values)
-    preamp.offset_unit._enum_strs = tuple(preamp.offset_units)
-    preamp.gain_mode._enum_strs = ("LOW NOISE", "HIGH BW", "LOW DRIFT")
-    preamp.gain_mode.set("LOW NOISE").wait(timeout=3)
-    return ion_chamber
-
-
-@pytest.fixture()
-def I0(sim_registry):
-    """A fake ion chamber named 'I0' on scaler channel 2."""
-    FakeIonChamber = make_fake_device(IonChamber)
-    ion_chamber = FakeIonChamber(
-        prefix="scaler_ioc",
-        preamp_prefix="preamp_ioc:SR04:",
-        name="I0",
-        labels={"ion_chambers"},
-        ch_num=2,
-    )
-    # Set ion chamber signal values to sensible defaults
-    ion_chamber.preamp.sensitivity_value.sim_put("1")
-    ion_chamber.preamp.sensitivity_unit.sim_put("pA/V")
-    return ion_chamber
-
-
-@pytest.fixture()
-def It(sim_registry):
-    """A fake ion chamber named 'It' on scaler channel 3."""
-    FakeIonChamber = make_fake_device(IonChamber)
-    ion_chamber = FakeIonChamber(
-        prefix="scaler_ioc", name="It", labels={"ion_chambers"}, ch_num=3
-    )
+    # Connect to the ion chamber
+    await ion_chamber.connect(mock=True)
+    sim_registry.register(ion_chamber)
     return ion_chamber
 
 
@@ -266,12 +236,9 @@ def xia_shutter(xia_shutter_bank):
 
 @pytest.fixture()
 def shutters(sim_registry):
-    FakeShutter = make_fake_device(Shutter)
+    FakeShutter = make_fake_device(PssShutter)
     kw = dict(
         prefix="_prefix",
-        open_pv="_prefix",
-        close_pv="_prefix2",
-        state_pv="_prefix2",
         labels={"shutters"},
     )
     shutters = [

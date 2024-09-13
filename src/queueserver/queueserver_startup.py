@@ -34,6 +34,7 @@ from haven import (  # noqa: F401
     energy_scan,
     knife_scan,
     recall_motor_position,
+    record_dark_current,
     set_energy,
     xafs_scan,
 )

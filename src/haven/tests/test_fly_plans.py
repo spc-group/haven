@@ -28,17 +28,17 @@ def test_set_fly_params(flyer):
     assert prep_info.time_for_move == 9.0
 
 
-def test_fly_scan_metadata(flyer, sim_ion_chamber):
+def test_fly_scan_metadata(flyer, ion_chamber):
     """Does the plan set the parameters of the flyer motor."""
     md = {"spam": "eggs"}
-    plan = fly_scan([sim_ion_chamber], flyer, -20, 30, num=6, dwell_time=1, md=md)
+    plan = fly_scan([ion_chamber], flyer, -20, 30, num=6, dwell_time=1, md=md)
     messages = list(plan)
     open_msg = messages[1]
     assert open_msg.command == "open_run"
     real_md = open_msg.kwargs
     expected_md = {
         "plan_args": {
-            "detectors": list([repr(sim_ion_chamber)]),
+            "detectors": list([repr(ion_chamber)]),
             "num": 6,
             "dwell_time": 1,
             "*args": (repr(flyer), -20, 30),

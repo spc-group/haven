@@ -13,6 +13,7 @@ from ophyd_async.core import (
     ConfigSignal,
     SignalBackend,
     SignalX,
+    SubsetEnum,
 )
 from ophyd_async.epics.motor import Motor as MotorBase
 from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw
@@ -74,10 +75,17 @@ class Motor(MotorBase):
         """
         self._ophyd_labels_ = labels
         self._old_flyer_velocity = None
-        self.auto_name = bool(auto_name) or (auto_name is None and name == "")
+        self.auto_name = auto_name
         # Configuration signals
         with self.add_children_as_readables(ConfigSignal):
             self.description = epics_signal_rw(str, f"{prefix}.DESC")
+            self.user_offset = epics_signal_rw(float, f"{prefix}.OFF")
+            self.user_offset_dir = epics_signal_rw(
+                SubsetEnum["Pos", "Neg"], f"{prefix}.DIR"
+            )
+            self.offset_freeze_switch = epics_signal_rw(
+                SubsetEnum["Variable", "Frozen"], f"{prefix}.FOFF"
+            )
         # Motor status signals
         self.motor_is_moving = epics_signal_r(int, f"{prefix}.MOVN")
         self.motor_done_move = epics_signal_r(int, f"{prefix}.DMOV")
@@ -115,7 +123,8 @@ class Motor(MotorBase):
             mock=mock, timeout=timeout, force_reconnect=force_reconnect
         )
         # Update the device's name
-        if bool(self.auto_name):
+        auto_name = bool(self.auto_name) or (self.auto_name is None and self.name == "")
+        if bool(auto_name):
             try:
                 desc = await self.description.get_value()
             except Exception as exc:

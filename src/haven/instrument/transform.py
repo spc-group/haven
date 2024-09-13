@@ -12,7 +12,6 @@ Public Structures
 """
 
 import asyncio
-from enum import Enum
 
 # from ophyd import Device
 from ophyd_async.core import (
@@ -22,121 +21,12 @@ from ophyd_async.core import (
     HintedSignal,
     StandardReadable,
 )
-from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw, epics_signal_x
+from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw
+
+from ..typing import StrEnum
+from .synApps import EpicsRecordDeviceCommonAll, EpicsSynAppsRecordEnableMixin
 
 CHANNEL_LETTERS_LIST = "A B C D E F G H I J K L M N O P".split()
-
-
-class StrEnum(str, Enum):
-    pass
-
-
-class CalcOption(StrEnum):
-    CONDITIONAL = "Conditional"
-    ALWAYS = "Always"
-
-
-class ScanInterval(StrEnum):
-    PASSIVE = "Passive"
-    EVENT = "Event"
-    IO_INTR = "I/O Intr"
-    SCAN_10 = "10 second"
-    SCAN_5 = "5 second"
-    SCAN_2 = "2 second"
-    SCAN_1 = "1 second"
-    SCAN_0_5 = ".5 second"
-    SCAN_0_2 = ".2 second"
-    SCAN_0_1 = ".1 second"
-
-
-class AlarmStatus(StrEnum):
-    NO_ALARM = "NO_ALARM"
-    READ = "READ"
-    WRITE = "WRITE"
-    HIHI = "HIHI"
-    HIGH = "HIGH"
-    LOLO = "LOLO"
-    LOW = "LOW"
-    STATE = "STATE"
-    COS = "COS"
-    COMM = "COMM"
-    TIMEOUT = "TIMEOUT"
-    HWLIMIT = "HWLIMIT"
-    CALC = "CALC"
-    SCAN = "SCAN"
-    LINK = "LINK"
-    SOFT = "SOFT"
-    # BAD_SUB = "BAD_SUB"
-    # UDF = "UDF"
-    # DISABLE = "DISABLE"
-    # SIMM = "SIMM"
-    # READ_ACCESS = "READ_ACCESS"
-    # WRITE_ACCESS = "WRITE_ACCESS"
-
-
-class AlarmSeverity(StrEnum):
-    NO_ALARM = "NO_ALARM"
-    MINOR = "MINOR"
-    MAJOR = "MAJOR"
-    INVALID = "INVALID"
-
-
-class InvalidLinkAction(StrEnum):
-    IGNORE_ERROR = "Ignore error"
-    DO_NOTHING = "Do Nothing"
-
-
-class PVValidity(StrEnum):
-    EXT_PV_NC = "Ext PV NC"
-    EXT_PV_OK = "Ext PV OK"
-    LOCAL_PV = "Local PV"
-    CONSTANT = "Constant"
-
-
-class EpicsRecordDeviceCommonAll(StandardReadable):
-    """
-    Many of the fields common to all EPICS records.
-
-    Some fields are not included because they are not interesting to
-    an EPICS client or are already provided in other support.
-    """
-
-    # Config signals
-    def __init__(self, prefix, name=""):
-        with self.add_children_as_readables(ConfigSignal):
-            self.description = epics_signal_rw(str, f"{prefix}.DESC")
-            self.scanning_rate = epics_signal_rw(ScanInterval, f"{prefix}.SCAN")
-        # Other signals, not included in read
-        self.disable_value = epics_signal_rw(int, f"{prefix}.DISV")
-        self.scan_disable_input_link_value = epics_signal_rw(int, f"{prefix}.DISA")
-        self.scan_disable_value_input_link = epics_signal_rw(str, f"{prefix}.SDIS")
-        self.forward_link = epics_signal_rw(str, f"{prefix}.FLNK")
-        self.device_type = epics_signal_r(StrEnum, f"{prefix}.DTYP")
-        self.alarm_status = epics_signal_r(AlarmStatus, f"{prefix}.STAT")
-        self.alarm_severity = epics_signal_r(AlarmSeverity, f"{prefix}.SEVR")
-        self.new_alarm_status = epics_signal_r(AlarmStatus, f"{prefix}.NSTA")
-        self.new_alarm_severity = epics_signal_r(AlarmSeverity, f"{prefix}.NSEV")
-        self.disable_alarm_severity = epics_signal_rw(AlarmSeverity, f"{prefix}.DISS")
-        self.processing_active = epics_signal_r(int, f"{prefix}.PACT")
-        self.process_record = epics_signal_x(f"{prefix}.PROC")
-        self.trace_processing = epics_signal_rw(int, f"{prefix}.TPRO")
-
-        super().__init__(name=name)
-
-
-class EpicsSynAppsRecordEnableMixin(Device):
-    """Supports ``{PV}Enable`` feature from user databases."""
-
-    def __init__(self, prefix, name=""):
-        with self.add_children_as_readables(ConfigSignal):
-            enable = epics_signal_rw(int, "Enable")
-        super().__init__(name=name)
-
-    async def reset(self):
-        """set all fields to default values"""
-        await asyncio.gather(
-            self.enable.set(self.enable.enum_strs[1]), super().reset()  # Enable
-        )
 
 
 #############################
@@ -155,6 +45,12 @@ class TransformRecordChannel(StandardReadable):
         ~reset
     """
 
+    class PVValidity(StrEnum):
+        EXT_PV_NC = "Ext PV NC"
+        EXT_PV_OK = "Ext PV OK"
+        LOCAL_PV = "Local PV"
+        CONSTANT = "Constant"
+
     def __init__(self, prefix, letter, name=""):
         self._ch_letter = letter
         with self.add_children_as_readables():
@@ -168,10 +64,10 @@ class TransformRecordChannel(StandardReadable):
             )
         self.output_pv = epics_signal_rw(str, f"{prefix}.OUT{letter}")
         self.last_value = epics_signal_r(float, f"{prefix}.L{letter}")
-        self.input_pv_valid = epics_signal_r(PVValidity, f"{prefix}.I{letter}V")
+        self.input_pv_valid = epics_signal_r(self.PVValidity, f"{prefix}.I{letter}V")
         self.expression_invalid = epics_signal_r(int, f"{prefix}.C{letter}V")
         self.output_pv_valid = epics_signal_r(
-            PVValidity,
+            self.PVValidity,
             f"{prefix}.O{letter}V",
         )
 
@@ -201,6 +97,14 @@ class TransformRecord(EpicsRecordDeviceCommonAll):
     :see: https://htmlpreview.github.io/?https://raw.githubusercontent.com/epics-modules/calc/R3-6-1/documentation/TransformRecord.html#Fields
     """
 
+    class CalcOption(StrEnum):
+        CONDITIONAL = "Conditional"
+        ALWAYS = "Always"
+
+    class InvalidLinkAction(StrEnum):
+        IGNORE_ERROR = "Ignore error"
+        DO_NOTHING = "Do Nothing"
+
     def __init__(self, prefix, name=""):
         with self.add_children_as_readables(ConfigSignal):
             self.units = epics_signal_rw(
@@ -214,11 +118,11 @@ class TransformRecord(EpicsRecordDeviceCommonAll):
             )
 
             self.calc_option = epics_signal_rw(
-                CalcOption,
+                self.CalcOption,
                 f"{prefix}.COPT",
             )
             self.invalid_link_action = epics_signal_r(
-                InvalidLinkAction,
+                self.InvalidLinkAction,
                 f"{prefix}.IVLA",
             )
             self.input_bitmap = epics_signal_r(
@@ -240,7 +144,7 @@ class TransformRecord(EpicsRecordDeviceCommonAll):
         """set all fields to default values"""
         channels = self.channels.values()
         await asyncio.gather(
-            self.scanning_rate.set(ScanInterval.PASSIVE),
+            self.scanning_rate.set(self.ScanInterval.PASSIVE),
             self.description.set(self.name),
             self.units.set(""),
             self.calc_option.set(0),
