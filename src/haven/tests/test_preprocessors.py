@@ -166,7 +166,7 @@ def test_metadata(sim_registry, aps, monkeypatch):
         "EPICS_HOST_ARCH": "PDP11",
         "beamline_id": "SPC Beamline (sector unknown)",
         "facility_id": "Advanced Photon Source",
-        "xray_source": "insertion device",
+        "xray_source": "undulator: ID255ds:",
         "epics_libca": "/dev/null",
         "EPICS_CA_MAX_ARRAY_BYTES": "16",
         "scan_id": 1,
