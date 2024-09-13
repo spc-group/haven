@@ -15,6 +15,7 @@ async def test_dg645_device():
     assert sorted(read_attrs) == read_names
 
     cfg_names = [
+        "delay-burst_config",
         "delay-burst_count",
         "delay-burst_delay",
         "delay-burst_mode",
@@ -75,6 +76,7 @@ async def test_dg645_device():
     cpt_names = [
         "delay-autoip_state",
         "delay-bare_socket_state",
+        "delay-burst_config",
         "delay-burst_count",
         "delay-burst_delay",
         "delay-burst_mode",

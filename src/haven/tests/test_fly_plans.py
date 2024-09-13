@@ -45,7 +45,7 @@ def test_fly_scan_metadata(flyer, ion_chamber):
         },
         "plan_name": "fly_scan",
         "motors": [flyer.name],
-        "detectors": [sim_ion_chamber.name],
+        "detectors": [ion_chamber.name],
         "spam": "eggs",
     }
     assert real_md == expected_md

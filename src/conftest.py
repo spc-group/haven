@@ -6,15 +6,9 @@ import pandas as pd
 
 # from pydm.data_plugins import plugin_modules, add_plugin
 import pytest
-from apstools.devices.srs570_preamplifier import GainSignal
 from ophyd import DynamicDeviceComponent as DCpt
 from ophyd import Kind
-from ophyd.sim import (
-    FakeEpicsSignal,
-    fake_device_cache,
-    instantiate_fake_device,
-    make_fake_device,
-)
+from ophyd.sim import instantiate_fake_device, make_fake_device
 from tiled.adapters.mapping import MapAdapter
 from tiled.adapters.xarray import DatasetAdapter
 from tiled.client import Context, from_context

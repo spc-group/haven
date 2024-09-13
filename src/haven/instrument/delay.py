@@ -2,15 +2,14 @@ import enum
 from typing import Type
 
 from ophyd_async.core import (
-    Device,
-    T,
-    SignalRW,
-    StandardReadable,
     ConfigSignal,
     DeviceVector,
+    SignalRW,
+    StandardReadable,
     SubsetEnum,
+    T,
 )
-from ophyd_async.epics.signal import epics_signal_rw, epics_signal_r, epics_signal_x
+from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw, epics_signal_x
 
 
 class StrEnum(str, enum.Enum):
