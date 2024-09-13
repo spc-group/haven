@@ -29,7 +29,8 @@ class QueueClient(QObject):
     api: REManagerAPI
     _last_queue_status: Optional[dict] = None
     last_update: float = -1
-    timeout: float = 1
+    timeout: float = 0.2
+    min_timeout: float = 0.2
     timer: QTimer
 
     # Signals responding to queue changes
@@ -45,7 +46,7 @@ class QueueClient(QObject):
     devices_changed = Signal(dict)
 
     def start(self):
-        self.timer.start(500)
+        self.timer.start(int(self.timeout * 1000))
 
     def __init__(self, *args, api, **kwargs):
         self.api = api
@@ -85,8 +86,8 @@ class QueueClient(QObject):
                 warnings.warn(str(e))
                 log.info(f"Retrying in {self.timeout} seconds.")
             else:
-                # Update succeeded, so wait for a second
-                self.timeout = 1
+                # Update succeeded, so wait for a bit
+                self.timeout = self.min_timeout
             finally:
                 self.last_update = now
 
