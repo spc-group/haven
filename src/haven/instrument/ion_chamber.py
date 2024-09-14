@@ -379,7 +379,7 @@ async def load_ion_chambers(
                 auto_name=auto_name,
             )
         )
-        # Connect to devices
+    # Connect to devices
     if connect:
         devices = await connect_devices(
             devices, mock=not config["beamline"]["is_connected"], registry=registry

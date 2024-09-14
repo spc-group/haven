@@ -10,8 +10,9 @@ from haven.instrument.area_detector import (
     DetectorBase,
     DetectorState,
     HDF5FilePlugin,
-    load_area_detectors,
 )
+
+from haven.instrument.detectors.area_detectors import load_area_detectors
 
 
 class Detector(DetectorBase):
@@ -41,8 +42,8 @@ def test_flyscan_kickoff(detector):
     assert event[0].timestamp == pytest.approx(time.time())
 
 
-def test_load_area_detectors(sim_registry):
-    load_area_detectors()
+async def test_load_area_detectors(sim_registry):
+    await load_area_detectors()
     # Check that some area detectors were loaded
     dets = sim_registry.findall(label="area_detectors")
 
