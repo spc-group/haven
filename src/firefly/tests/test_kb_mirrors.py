@@ -1,5 +1,3 @@
-from unittest import mock
-
 import pytest
 from ophyd.sim import make_fake_device
 
@@ -8,17 +6,15 @@ from haven.instrument.mirrors import KBMirrors
 
 
 @pytest.fixture()
-def kb_mirrors(sim_registry):
+async def kb_mirrors(sim_registry):
     """A fake set of slits using the 4-blade setup."""
-    FakeMirrors = make_fake_device(KBMirrors)
-    kb = FakeMirrors(
+    kb = KBMirrors(
         prefix="255idc:KB:",
         name="kb_mirrors",
         horiz_upstream_motor="255idc:m1",
         vert_upstream_motor="255idc:m2",
         horiz_downstream_motor="255idc:m3",
         vert_downstream_motor="255idc:m4",
-        labels={"kb_mirrors"},
     )
     return kb
 
@@ -38,8 +34,8 @@ def kb_bendable_mirrors(sim_registry):
         vert_upstream_bender="255idc:m22",
         horiz_downstream_bender="255idc:m23",
         vert_downstream_bender="255idc:m24",
-        labels={"kb_mirrors"},
     )
+    sim_registry.register(kb)
     return kb
 
 
@@ -60,57 +56,27 @@ def test_bender_widgets(qtbot, kb_bendable_mirrors):
     assert display.ui.vertical_downstream_display.isEnabled()
 
 
-def test_kb_mirrors_caqtdm(display, kb_mirrors):
-    display._open_caqtdm_subprocess = mock.MagicMock()
-    # Launch the caqtdm display
-    display.launch_caqtdm()
-    assert display._open_caqtdm_subprocess.called
-    cmds = display._open_caqtdm_subprocess.call_args[0][0]
-    # Check that the right macros are sent
-    # /net/s25data/xorApps/ui/KB_mirrors.ui, macro:
-    # P=25idcVME:,PM=25idcVME:,KB=KB,KBH=KB:H,KBV=KB:V,KBHUS=m6,KBHDS=m5,KBVUS=m8,KBVDS=m7,KB1=KBH, KB2=KBV
-    macros = [cmds[i + 1] for i in range(len(cmds)) if cmds[i] == "-macro"][0]
-    assert "P=255idc:" in macros
-    assert "KB=KB" in macros
-    assert "KBH=KB:H" in macros
-    assert "KBV=KB:V" in macros
-    assert "KBHUS=m1" in macros
-    assert "KBHDS=m3" in macros
-    assert "KBVUS=m2" in macros
-    assert "KBVDS=m4" in macros
-    assert "KB1=KBH" in macros
-    assert "KB2=KBV" in macros
-    # Check that the right UI file is being used
-    ui_file = cmds[-1]
-    assert ui_file.split("/")[-1] == "KB_mirrors.ui"
-
-
-def test_kb_bendable_mirrors_caqtdm(kb_bendable_mirrors):
-    mirrors = kb_bendable_mirrors
-    disp = KBMirrorsDisplay(macros={"DEVICE": mirrors.name})
-    disp._open_caqtdm_subprocess = mock.MagicMock()
-    # Launch the caqtdm display
-    disp.launch_caqtdm()
-    assert disp._open_caqtdm_subprocess.called
-    cmds = disp._open_caqtdm_subprocess.call_args[0][0]
-    # Check that the right macros are sent
-    # /net/s25data/xorApps/ui/KB_mirrors_and_benders.ui, macro: P=25idcVME:,PM=25idcVME:,KB=LongKB_Cdn,KBH=LongKB_Cdn:H,KBV=LongKB_Cdn:V,KBHUS=m50,KBHDS=m49,KBVUS=m56,KBVDS=m55,KB1=LongKB_CdnH, KB2=LongKB_CdnV,HBUS=m52,HBDS=m51,VBUS=m54,VBDS=m53
-    macros = [cmds[i + 1] for i in range(len(cmds)) if cmds[i] == "-macro"][0]
-    assert "P=255idc:" in macros
-    assert "PM=255idc:" in macros
-    assert "KB=Long_KB" in macros
-    assert "KBH=Long_KB:H" in macros
-    assert "KBV=Long_KB:V" in macros
-    assert "KBHUS=m5" in macros
-    assert "KBHDS=m7" in macros
-    assert "KBVUS=m6" in macros
-    assert "KBVDS=m8" in macros
-    assert "KB1=Long_KBH" in macros
-    assert "KB2=Long_KBV" in macros
-    assert "HBUS=m21" in macros
-    assert "HBDS=m23" in macros
-    assert "VBUS=m22" in macros
-    assert "VBDS=m24" in macros
-    # Check that the right UI file is being used
-    ui_file = cmds[-1]
-    assert ui_file.split("/")[-1] == "KB_mirrors_and_benders.ui"
+# -----------------------------------------------------------------------------
+# :author:    Mark Wolfman
+# :email:     wolfman@anl.gov
+# :copyright: Copyright © 2023, UChicago Argonne, LLC
+#
+# Distributed under the terms of the 3-Clause BSD License
+#
+# The full license is in the file LICENSE, distributed with this software.
+#
+# DISCLAIMER
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+# HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# -----------------------------------------------------------------------------

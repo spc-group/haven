@@ -16,11 +16,12 @@ from bluesky.preprocessors import (
     run_wrapper,
     stage_wrapper,
 )
-from bluesky.protocols import Collectable
+from bluesky.protocols import EventPageCollectable
 from bluesky.utils import Msg, single_gen
 from ophyd import Device
 from ophyd.flyers import FlyerInterface
 from ophyd.status import StatusBase
+from ophyd_async.core import TriggerInfo
 from ophyd_async.epics.motor import FlyMotorInfo
 
 from ..preprocessors import baseline_decorator
@@ -118,6 +119,12 @@ def fly_line_scan(detectors: list, *args, num, dwell_time):
             time_for_move=dwell_time * num,
         )
         yield from bps.prepare(obj, position_info, wait=False, group=prepare_group)
+    # Set up detectors
+    trigger_info = TriggerInfo(
+        number=num, livetime=dwell_time, deadtime=0, trigger="internal"
+    )
+    for obj in detectors:
+        yield from bps.prepare(obj, trigger_info, wait=False, group=prepare_group)
     yield from bps.wait(group=prepare_group)
     # Monitor the motors during their move
     for motor in motors:
@@ -126,12 +133,9 @@ def fly_line_scan(detectors: list, *args, num, dwell_time):
     # Perform the fly scan
     flyers = [*motors, *detectors]
     kickoff_group = uuid.uuid4()
-    for m in motors:
-        yield from bps.kickoff(m, wait=False, group=kickoff_group)
+    for flyer in flyers:
+        yield from bps.kickoff(flyer, wait=False, group=kickoff_group)
     yield from bps.wait(group=kickoff_group)
-    # Start the detectors
-    for det in detectors:
-        yield from bps.kickoff(m, wait=False)
     # Wait for all the flyers to be done
     motor_complete_group = uuid.uuid4()
     for m in motors:
@@ -148,8 +152,9 @@ def fly_line_scan(detectors: list, *args, num, dwell_time):
         yield from bps.unmonitor(sig)
     # Collect the data after flying
     flyers = [*motors, *detectors]
-    flyers = [flyer for flyer in flyers if isinstance(flyer, Collectable)]
+    flyers = [flyer for flyer in flyers if isinstance(flyer, EventPageCollectable)]
     for flyer_ in flyers:
+        print(f"Collecting from {flyer_}")
         yield from bps.collect(flyer_)
 
 

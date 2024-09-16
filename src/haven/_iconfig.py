@@ -12,11 +12,11 @@ __all__ = [
 import argparse
 import logging
 import os
-import pathlib
 from contextlib import contextmanager
 from copy import deepcopy
+from pathlib import Path
 from pprint import pprint
-from typing import Sequence
+from typing import Optional, Sequence
 
 import tomli
 from mergedeep import merge
@@ -24,47 +24,44 @@ from mergedeep import merge
 log = logging.getLogger(__name__)
 
 
-CONFIG_FILES = [
-    pathlib.Path(__file__).parent / "iconfig_default.toml",
-    pathlib.Path("~/bluesky/").expanduser() / "iconfig.toml",
-    pathlib.Path("~/bluesky/instrument").expanduser() / "iconfig.toml",
-]
-
-
 _local_overrides = {}
 
 
-def load_files(file_paths: Sequence[pathlib.Path]):
+def load_files(file_paths: Sequence[Path]):
     """Generate the configs for files as dictionaries."""
     for fp in file_paths:
+        fp = Path(fp)
         if fp.exists():
             with open(fp, mode="rb") as fp:
                 log.debug(f"Loading config file: {fp}")
                 config = tomli.load(fp)
                 yield config
-
         else:
             log.debug(f"Could not find config file, skipping: {fp}")
 
 
-def load_config(file_paths: Sequence[pathlib.Path] = CONFIG_FILES):
+def lookup_file_paths():
+    if os.environ.get("HAVEN_CONFIG_FILES", "") != "":
+        return [Path(fp) for fp in os.environ["HAVEN_CONFIG_FILES"].split(",")]
+    else:
+        return [Path(__file__).parent / "iconfig_default.toml"]
+
+
+def load_config(file_paths: Optional[Sequence[Path]] = None):
     """Load TOML config files.
 
-    Will load files specified in *file_paths* and $HAVEN_CONFIG_FILES
-    environmental variable.
+    Will load files specified in the following locations:
+
+    1. *file_paths* argument
+    2. The $HAVEN_CONFIG_FILES environmental variable.
+    3. iconfig_default.toml file included with Haven.
 
     """
-    file_paths = list(file_paths).copy()
+    if file_paths is None:
+        file_paths = lookup_file_paths()
+    else:
+        file_paths = list(file_paths).copy()
     # Add config file from environmental variable
-    try:
-        file_paths.extend(
-            [
-                pathlib.Path(fp.strip())
-                for fp in os.environ["HAVEN_CONFIG_FILES"].split(",")
-            ]
-        )
-    except KeyError:
-        pass
     # Load configuration from TOML files
     config = {}
     merge(config, *load_files(file_paths), _local_overrides)

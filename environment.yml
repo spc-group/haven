@@ -45,7 +45,7 @@ dependencies:
     - autoapi
     - pytest-mongodb
     - StrEnum
-    - ophyd-registry >= 1.2.1
+    - ophyd-registry >= 1.3.3
     - xraydb >=4.5.0
     - pytest-timeout  # Get rid of this if tests are not hanging
     - git+https://github.com/pcdshub/pcdsdevices
@@ -56,7 +56,7 @@ dependencies:
     - bluesky-adaptive
     - bluesky >=1.8.1
     - ophyd >=1.6.3
-    - ophyd-async >= 0.5
+    - ophyd-async >= 0.5.1
     - apstools >= 1.6.20
     - pcdsdevices  # For extra signal types
     - pydm >=1.18.0
@@ -74,6 +74,8 @@ dependencies:
     - numba>=0.56  # Ensures 0.53 (broken) isn't installed
     # This version of networkx has an importlib bug in it
     - networkx < 3.3
+    # Version 0.38.3 doesn't work properly with tiled
+    - starlette <= 0.38.2
     # --- testing and quality assurance
     - black >=24
     - flake8
@@ -114,7 +116,8 @@ dependencies:
     - tqdm
     - peakutils
     - xrayutilities
-    - pyarrow < 11.0.0  # Tempoary fix, remove once the libort missing symbol doesn't break CI  
+    - pyarrow < 11.0.0  # Tempoary fix, remove once the libort missing symbol doesn't break CI
+    - pyarrow-hotfix
     # XES analysis packages
     - scikit-learn
     - kneed

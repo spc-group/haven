@@ -1,127 +1,81 @@
+from typing import Mapping
+
 from apstools.synApps import TransformRecord
-from ophyd import Component as Cpt
-from ophyd import Device
-from ophyd import FormattedComponent as FCpt
-from ophyd import Kind
+from ophyd_async.core import Device
 
 from .. import exceptions
 from .._iconfig import load_config
-from .device import RegexComponent as RCpt
-from .device import make_device
-from .motor import HavenMotor
+from .device import connect_devices
+from .instrument_registry import InstrumentRegistry
+from .instrument_registry import registry as default_registry
+from .motor import Motor
+from .transform import TransformRecord
 
 
 class HighHeatLoadMirror(Device):
-    bendable = False
-    # Physical motors
-    transverse = Cpt(HavenMotor, "m1", labels={"motors"})
-    roll = Cpt(HavenMotor, "m2", labels={"motors"})
-    upstream = Cpt(HavenMotor, "m3", labels={"motors"})
-    downstream = Cpt(HavenMotor, "m4", labels={"motors"})
+    """A single mirror, controlled by several motors.
 
-    # Pseudo motors
-    pitch = Cpt(HavenMotor, "coarsePitch", kind=Kind.hinted, labels={"motors"})
-    normal = Cpt(HavenMotor, "lateral", kind=Kind.hinted, labels={"motors"})
+    Possibly also bendable.
+    """
 
-    # Standard transform records for the pseudo motors
-    drive_transform = Cpt(TransformRecord, "lats:Drive", kind=Kind.config)
-    readback_transform = Cpt(TransformRecord, "lats:Readback", kind=Kind.config)
+    ophyd_labels_ = {"mirrors"}
 
+    def __init__(self, prefix: str, name: str = "", bendable=False):
+        # Physical motors
+        self.transverse = Motor(f"{prefix}m1")
+        self.roll = Motor(f"{prefix}m2")
+        self.upstream = Motor(f"{prefix}m3")
+        self.downstream = Motor(f"{prefix}m4")
 
-class BendableHighHeatLoadMirror(HighHeatLoadMirror):
-    bendable = True
-    bender = Cpt(HavenMotor, "m5", labels={"motors"})
+        # Pseudo motors
+        self.pitch = Motor(f"{prefix}coarsePitch")
+        self.normal = Motor(f"{prefix}lateral")
+
+        # Standard transform records for the pseudo motors
+        self.drive_transform = TransformRecord(f"{prefix}lats:Drive")
+        self.readback_transform = TransformRecord(f"{prefix}lats:Readback")
+
+        if bendable:
+            self.bender = Motor(f"{prefix}m5")
+
+        super().__init__(name=name)
 
 
 class KBMirror(Device):
     """A single mirror in a KB mirror set."""
 
-    bendable = False
-
-    pitch = Cpt(HavenMotor, "pitch", labels={"motors"})
-    normal = Cpt(HavenMotor, "height", labels={"motors"})
-    upstream = FCpt(HavenMotor, "{upstream_motor}", labels={"motors"})
-    downstream = FCpt(HavenMotor, "{downstream_motor}", labels={"motors"})
-
-    # The pseudo motor transform records have
-    # a missing ':', so we need to remove it.
-    drive_transform = RCpt(
-        TransformRecord, "Drive", pattern=":([HV]):", repl=r"\1:", kind=Kind.config
-    )
-    readback_transform = RCpt(
-        TransformRecord, "Readback", pattern=":([HV]):", repl=r"\1:", kind=Kind.config
-    )
+    ophyd_labels_ = {"mirrors"}
 
     def __init__(
         self,
-        *args,
+        prefix: str,
         upstream_motor: str,
         downstream_motor: str,
         upstream_bender: str = "",
         downstream_bender: str = "",
-        **kwargs,
+        name: str = "",
     ):
-        self.upstream_motor = upstream_motor
-        self.downstream_motor = downstream_motor
-        self._upstream_bender = upstream_bender
-        self._downstream_bender = downstream_bender
-        super().__init__(*args, **kwargs)
-
-
-class BendableKBMirror(KBMirror):
-    """A single bendable mirror in a KB mirror set."""
-
-    bendable = True
-
-    bender_upstream = FCpt(HavenMotor, "{_upstream_bender}", labels={"motors"})
-    bender_downstream = FCpt(HavenMotor, "{_downstream_bender}", labels={"motors"})
+        self.pitch = Motor(f"{prefix}pitch")
+        self.normal = Motor(f"{prefix}height")
+        self.upstream = Motor(upstream_motor)
+        self.downstream = Motor(downstream_motor)
+        if upstream_bender != "":
+            self.bender_upstream = Motor(upstream_bender)
+        if downstream_bender != "":
+            self.bender_downstream = Motor(downstream_bender)
+        # The pseudo motor transform records have
+        # a missing ':', so we need to remove it.
+        transform_prefix = "".join(prefix.rsplit(":", 2))
+        self.drive_transform = TransformRecord(f"{transform_prefix}:Drive")
+        self.readback_transform = TransformRecord(f"{transform_prefix}:Readback")
 
 
 class KBMirrors(Device):
-    def __new__(
-        cls,
-        *args,
-        horiz_upstream_motor: str,
-        horiz_downstream_motor: str,
-        vert_upstream_motor: str,
-        vert_downstream_motor: str,
-        horiz_upstream_bender: str = "",
-        horiz_downstream_bender: str = "",
-        vert_upstream_bender: str = "",
-        vert_downstream_bender: str = "",
-        **kwargs,
-    ):
-        # Decide if the mirrors are bendable or not
-        HorizClass = VertClass = KBMirror
-        if bool(horiz_upstream_bender) and bool(horiz_downstream_bender):
-            HorizClass = BendableKBMirror
-        if bool(vert_upstream_bender) and bool(vert_downstream_bender):
-            VertClass = BendableKBMirror
-        # Create a customized subclass based on the configuration attrs
-        attrs = dict(
-            horiz=Cpt(
-                HorizClass,
-                "H:",
-                upstream_motor=horiz_upstream_motor,
-                downstream_motor=horiz_downstream_motor,
-                upstream_bender=horiz_upstream_bender,
-                downstream_bender=horiz_downstream_bender,
-            ),
-            vert=Cpt(
-                VertClass,
-                "V:",
-                upstream_motor=vert_upstream_motor,
-                downstream_motor=vert_downstream_motor,
-                upstream_bender=vert_upstream_bender,
-                downstream_bender=vert_downstream_bender,
-            ),
-        )
-        NewMirrors = type("KBMirrors", (cls,), attrs)
-        return super().__new__(NewMirrors)
+    _ophyd_labels_ = {"kb_mirrors"}
 
     def __init__(
         self,
-        *args,
+        prefix: str,
         horiz_upstream_motor: str,
         horiz_downstream_motor: str,
         vert_upstream_motor: str,
@@ -130,12 +84,31 @@ class KBMirrors(Device):
         horiz_downstream_bender: str = "",
         vert_upstream_bender: str = "",
         vert_downstream_bender: str = "",
-        **kwargs,
+        name: str = "",
     ):
-        super().__init__(*args, **kwargs)
+        # Create the two sub-mirrors
+        self.horiz = KBMirror(
+            prefix=f"{prefix}H:",
+            upstream_motor=horiz_upstream_motor,
+            downstream_motor=horiz_downstream_motor,
+            upstream_bender=horiz_upstream_bender,
+            downstream_bender=horiz_downstream_bender,
+        )
+        self.vert = KBMirror(
+            prefix=f"{prefix}V:",
+            upstream_motor=vert_upstream_motor,
+            downstream_motor=vert_downstream_motor,
+            upstream_bender=vert_upstream_bender,
+            downstream_bender=vert_downstream_bender,
+        )
+        super().__init__(name=name)
 
 
-def load_mirrors(config=None):
+async def load_mirrors(
+    config: Mapping = None,
+    registry: InstrumentRegistry = default_registry,
+    connect: bool = True,
+):
     if config is None:
         config = load_config()
     # Create two-bounce KB mirror sets
@@ -166,29 +139,25 @@ def load_mirrors(config=None):
                 f"Device {name} missing '{ex.args[0]}': {kb_config}"
             )
         # Make the device
-        devices.append(
-            make_device(
-                KBMirrors, prefix=prefix, name=name, labels={"kb_mirrors"}, **motors
-            )
-        )
+        devices.append(KBMirrors(prefix=prefix, name=name, **motors))
     # Create single-bounce mirrors
     for name, mirror_config in config.get("mirrors", {}).items():
         # Decide which base class of mirror to use
-        class_name = mirror_config["device_class"]
-        if mirror_config.get("bendable", False):
-            class_name = f"Bendable{class_name}"
-        DeviceClass = globals().get(class_name)
+        DeviceClass = globals().get(mirror_config["device_class"])
         # Check that it's a valid device class
         if DeviceClass is None:
             msg = f"mirrors.{name}.device_class={mirror_config['device_class']}"
             raise exceptions.UnknownDeviceConfiguration(msg)
         devices.append(
-            make_device(
-                DeviceClass,
+            DeviceClass(
                 prefix=mirror_config["prefix"],
+                bendable=mirror_config.get("bendable", False),
                 name=name,
-                labels={"mirrors"},
             )
+        )
+    if connect:
+        devices = await connect_devices(
+            devices, mock=not config["beamline"]["is_connected"], registry=registry
         )
     return devices
 

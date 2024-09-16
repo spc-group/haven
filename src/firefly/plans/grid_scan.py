@@ -109,9 +109,9 @@ class GridScanDisplay(regions_display.RegionsDisplay):
         self.title_region = TitleRegion()
         self.ui.title_layout.addLayout(self.title_region.layout)
         # When selections of detectors changed update_total_time
-        self.ui.detectors_list.selectionModel().selectionChanged.connect(
-            self.update_total_time
-        )
+        # self.ui.detectors_list.selectionModel().selectionChanged.connect(
+        #     self.update_total_time
+        # )
         self.ui.spinBox_repeat_scan_num.valueChanged.connect(self.update_total_time)
         # Connect scan points change to update total time
         for region in self.regions:
@@ -188,7 +188,7 @@ class GridScanDisplay(regions_display.RegionsDisplay):
         else:
             scan_type = "grid_scan"
 
-        # # Build the queue item
+        # Build the queue item
         item = BPlan(
             scan_type,
             detectors,
@@ -201,7 +201,6 @@ class GridScanDisplay(regions_display.RegionsDisplay):
         log.info(f"Added grid_scan() plan to queue ({repeat_scan_num} scans).")
         # repeat scans
         for i in range(repeat_scan_num):
-            print("EMITTING")
             self.queue_item_submitted.emit(item)
 
     def ui_filename(self):
