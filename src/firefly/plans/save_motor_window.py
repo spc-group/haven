@@ -1,8 +1,6 @@
 import logging
 import haven
-from bluesky_queueserver_api import BPlan
 from pydm.widgets.label import PyDMLabel
-from pymongo import MongoClient
 from PyQt5.QtWidgets import QTableWidgetItem
 from PyQt5.QtCore import Qt
 from PyQt5.QtCore import QDateTime
@@ -15,11 +13,8 @@ from firefly.plans import regions_display
 from haven.motor_position import (
     get_motor_position,
     get_motor_positions,
-    list_current_motor_positions,
-    list_motor_positions,
     recall_motor_position,
-    save_motor_position,
-)
+    save_motor_position)
 
 from firefly.fake_position_runs import position_runs
 import qtawesome as qta
@@ -33,6 +28,7 @@ import asyncio
 log = logging.getLogger()
 
 
+# Fake client for testing purpose
 def create_fake_client():
     tree = MapAdapter(position_runs)
     app = build_app(tree)
@@ -40,10 +36,7 @@ def create_fake_client():
         client = from_context(context)
         return client
 
-# Then, use this in your main program when needed
 fake_client = create_fake_client()
-
-# You can also mock the tiled_client if necessary
 haven.motor_position.tiled_client = lambda: fake_client  # Replace with the fake client
 
     
@@ -126,7 +119,7 @@ class SaveMotorDisplay(regions_display.RegionsDisplay):
         # Initialize saved positions table
         self.init_saved_positions_table()
         
-        self.ui.save_button.clicked.connect(self.save_motors)
+        self.ui.run_button.clicked.connect(self.save_motors)
         self.title_region.regions_all_checkbox.stateChanged.connect(
             self.on_regions_all_checkbox
         )
@@ -147,8 +140,10 @@ class SaveMotorDisplay(regions_display.RegionsDisplay):
         self.ui.refresh_button.clicked.connect(self.refresh_saved_position_list_slot)
         asyncio.create_task(self.refresh_saved_position_list())
 
-        # Connect filter button to filter dates and names
-        self.ui.pushButton_filter.clicked.connect(self.filter_dates_and_names)
+        # Connect signals & slots for checkboxes to enable/disable date edits
+        self.ui.checkBox_start.toggled.connect(self.ui.dateEdit_start.setEnabled)
+        self.ui.checkBox_stop.toggled.connect(self.ui.dateEdit_stop.setEnabled)
+        self.ui.recall_button.clicked.connect(self.recall_motor_queue_plan)
 
     async def refresh_saved_position_list(self):    
         # Disable sorting temporarily to prevent UID missing bug
@@ -157,9 +152,19 @@ class SaveMotorDisplay(regions_display.RegionsDisplay):
         # Clear the existing rows in the table
         self.ui.saved_positions_tableWidget.setRowCount(0)
 
-        # Retrieve the saved positions
-        saved_positions_all = get_motor_positions(after=None, before=None)
-        print(saved_positions_all)
+        # Determine dates 'after' and 'before' based on checkboxes
+        after = None
+        before = None
+        
+        if self.ui.checkBox_start.isChecked():
+            start_datetime = self.ui.dateEdit_start.dateTime().toPyDateTime()
+            after = start_datetime.timestamp()
+        if self.ui.checkBox_stop.isChecked():
+            stop_datetime = self.ui.dateEdit_stop.dateTime().toPyDateTime()
+            before = stop_datetime.timestamp()
+
+        # Retrieve the saved positions with filtering
+        saved_positions_all = get_motor_positions(after=after, before=before)
         
         positions_list = []
         
@@ -192,49 +197,47 @@ class SaveMotorDisplay(regions_display.RegionsDisplay):
         self.ui.saved_positions_tableWidget.sortItems(1, Qt.DescendingOrder)
         # Resize columns to fit contents
         self.ui.saved_positions_tableWidget.resizeColumnsToContents()          
-        
-        # Set filter name to empty
-        self.ui.lineEdit_filter_names.setText("")
-        
-        # Set default filter dates if there are items in the table
+
+        # Get the filter text from the line edit, remove spaces, and convert to lowercase
+        filter_text = self.ui.lineEdit_filter_names.text().replace(" ", "").strip().lower()
+
+        # Filter rows by name
+        for row in range(self.ui.saved_positions_tableWidget.rowCount()):
+            # Get the name from the table and convert to lowercase
+            name_item = self.ui.saved_positions_tableWidget.item(row, 0)
+            name_text = name_item.text().strip().lower()
+
+            # Check if the name contains the filter text
+            if filter_text in name_text:
+                self.ui.saved_positions_tableWidget.setRowHidden(row, False)
+            else:
+                self.ui.saved_positions_tableWidget.setRowHidden(row, True)
+
+        # Set default filter dates if there are items in the table and if the checkboxese are unchecked
         if positions_list:
             # Sort positions_list by savetime
             positions_list.sort(key=lambda x: x.savetime)
             first_savetime = positions_list[0].savetime
             last_savetime = positions_list[-1].savetime
-            
-            # Convert to QDateTime and set to dateEdits
-            self.ui.dateEdit_start.setDateTime(datetime.fromtimestamp(first_savetime))
-            self.ui.dateEdit_stop.setDateTime(datetime.fromtimestamp(last_savetime))
+
+            if not self.ui.checkBox_start.isChecked():
+                self.ui.dateEdit_start.setDateTime(datetime.fromtimestamp(first_savetime))
+
+            if not self.ui.checkBox_stop.isChecked():
+                self.ui.dateEdit_stop.setDateTime(datetime.fromtimestamp(last_savetime))
+
+        print(f"Checkbox Start isChecked: {self.ui.checkBox_start.isChecked()}")
+        print(f"Checkbox Stop isChecked: {self.ui.checkBox_stop.isChecked()}")
+        print(f"DateEdit Start: {self.ui.dateEdit_start.dateTime().toPyDateTime()}")
+        print(f"DateEdit Stop: {self.ui.dateEdit_stop.dateTime().toPyDateTime()}")
+        print(f"after timestamp: {after}")
+        print(f"before timestamp: {before}")
+
 
     @asyncSlot()
     async def refresh_saved_position_list_slot(self):
         await self.refresh_saved_position_list()
         
-    def filter_dates_and_names(self):
-        # Get the start and stop dates from the date edits
-        start_date = self.ui.dateEdit_start.date().toPyDate()
-        stop_date = self.ui.dateEdit_stop.date().toPyDate()
-        
-        # Get the filter text from the line edit, remove spaces, and convert to lowercase
-        filter_text = self.ui.lineEdit_filter_names.text().replace(" ", "").strip().lower()
-
-        # Loop through each row in the table and filter out rows outside the date range
-        for row in range(self.ui.saved_positions_tableWidget.rowCount()):
-            # Get the savetime from the table
-            savetime_item = self.ui.saved_positions_tableWidget.item(row, 1)
-            savetime_str = savetime_item.text()
-            savetime_date = datetime.strptime(savetime_str, '%Y-%m-%d %H:%M:%S').date()
-            
-            # Get the name from the table and convert to lowercase
-            name_item = self.ui.saved_positions_tableWidget.item(row, 0)
-            name_text = name_item.text().strip().lower()
-
-            # Check if the savetime date is within the specified range and the name contains the filter text
-            if start_date <= savetime_date <= stop_date and filter_text in name_text:
-                self.ui.saved_positions_tableWidget.setRowHidden(row, False)
-            else:
-                self.ui.saved_positions_tableWidget.setRowHidden(row, True)
                 
     def show_saved_position_info(self, item):
         # Get the row of the clicked item
@@ -308,13 +311,13 @@ class SaveMotorDisplay(regions_display.RegionsDisplay):
             *motor_args,
             name=save_name,
         )
-        
+        print(pos_id) # How to get the UID of the saved one?
         # refresh after saving a new position
-        self.refresh_saved_position_list()
+        asyncio.create_task(self.refresh_saved_position_list())
+    
+        # disable the filter stop time to current
+        self.ui.checkBox_stop.setChecked(False)
         
-        # set the filter stop time to current
-        self.ui.dateEdit_stop.setDateTime(QDateTime.currentDateTime())
-
         self.ui.textBrowser.append("-" * 20)
         self.ui.textBrowser.append("Saving motor configurations: ")
         self.ui.textBrowser.append(
@@ -336,8 +339,8 @@ class SaveMotorDisplay(regions_display.RegionsDisplay):
         uid = self.ui.saved_positions_tableWidget.item(row, 2).text()    
         return name, uid
     
-    def queue_plan(self, *args, **kwargs):
-        """Execute this plan on the queueserver."""
+    def recall_motor_queue_plan(self, *args, **kwargs):
+        """Execute recall_motor_positions plan on the queueserver."""
 
         name, uid = self.get_current_selected_row()
         
@@ -352,14 +355,36 @@ class SaveMotorDisplay(regions_display.RegionsDisplay):
         self.ui.textBrowser.append(f"Queuing selected motor configurations {name}: {uid}")
         
         # Submit the item to the queueserver
-        log.info("Added line scan() plan to queue.")
+        log.info("Added save_motor_positions plan to queue.")
+        self.queue_item_submitted.emit(plan)
+
+    def queue_plan(self, *args, **kwargs):
+        """Execute this save motor position plan on the queueserver."""
+
+        name, uid = self.get_current_selected_row()
+        
+        if not uid:
+            self.ui.textBrowser.append("No saved motor positions selected.")
+            return
+        
+        plan = recall_motor_position(uid=uid)
+        # send a message to the text browser
+        self.show_message(f"Recalling motor configurations: {name}: {uid}")
+        self.ui.textBrowser.append("-" * 20)
+        self.ui.textBrowser.append(f"Queuing selected motor configurations {name}: {uid}")
+        
+        # Submit the item to the queueserver
+        log.info("Added save_motor_positions plan to queue.")
         self.queue_item_submitted.emit(plan)
 
     def ui_filename(self):
         return "plans/save_motor_window.ui"
-    
-    # add a filter field for dates
-    
+
+    def update_queue_status(self):
+        super()
+        self.refresh_saved_position_list()        
+
+# when the status of the queue server changes, refresh the saved motor position lists
 
 # -----------------------------------------------------------------------------
 # :author:    Juanjuan Huang & Mark Wolfman
