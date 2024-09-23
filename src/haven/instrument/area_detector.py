@@ -42,6 +42,7 @@ from ophyd.areadetector.plugins import StatsPlugin_V34 as OphydStatsPlugin_V34
 from ophyd.areadetector.plugins import TIFFPlugin_V31, TIFFPlugin_V34
 from ophyd.flyers import FlyerInterface
 from ophyd.status import Status, StatusBase, SubscriptionStatus
+from ophyd_async.core import DetectorTrigger, TriggerInfo
 
 from .. import exceptions
 from .._iconfig import load_config
@@ -116,13 +117,22 @@ class FlyerMixin(FlyerInterface, Device):
         datum = fly_event(timestamp=timestamp, value=value)
         self._fly_data.setdefault(obj, []).append(datum)
 
-    def kickoff(self) -> StatusBase:
+    def prepare(self, value: TriggerInfo) -> StatusBase:
+        assert (
+            value.trigger == DetectorTrigger.internal
+        ), f"Trigger mode {value.trigger} not supported."
+        status = self.cam.image_mode.set(ImageMode.CONTINUOUS)
+        status &= self.cam.num_images.set(value.number)
+        status &= self.cam.trigger_mode.set(self.flyscan_trigger_mode)
         # Set up subscriptions for capturing data
         self._fly_data = {}
         for walk in self.walk_fly_signals():
             sig = walk.item
             # Run subs the first time to make sure all signals are present
             sig.subscribe(self.save_fly_datum, run=True)
+        return status
+
+    def kickoff(self) -> StatusBase:
 
         # Set up the status for when the detector is ready to fly
         def check_acquiring(*, old_value, value, **kwargs):
@@ -134,9 +144,6 @@ class FlyerMixin(FlyerInterface, Device):
         status = SubscriptionStatus(self.cam.detector_state, check_acquiring)
         # Set the right parameters
         self._original_vals.setdefault(self.cam.image_mode, self.cam.image_mode.get())
-        status &= self.cam.image_mode.set(ImageMode.CONTINUOUS)
-        status &= self.cam.trigger_mode.set(self.flyscan_trigger_mode)
-        status &= self.cam.num_images.set(2**14)
         status &= self.cam.acquire.set(AcquireState.ACQUIRE)
         return status
 

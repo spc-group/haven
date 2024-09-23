@@ -5,6 +5,7 @@ import pytest
 from ophyd import ADComponent as ADCpt
 from ophyd.areadetector.cam import AreaDetectorCam
 from ophyd.sim import instantiate_fake_device
+from ophyd_async.core import DetectorTrigger, TriggerInfo
 
 from haven.instrument.area_detector import (
     DetectorBase,
@@ -25,8 +26,25 @@ def detector(sim_registry):
     return det
 
 
-def test_flyscan_kickoff(detector):
-    detector.flyer_num_points.set(10)
+@pytest.fixture()
+def trigger_info():
+    return TriggerInfo(
+        number=5, trigger=DetectorTrigger.internal, deadtime=0.2, livetime=1.3
+    )
+
+
+def test_flyscan_prepare(detector, trigger_info):
+    status = detector.prepare(trigger_info).wait(timeout=3)
+    # Check that the device was properly configured for fly-scanning
+    assert detector._fly_data == {}
+    # Check that signals were set up properly
+    assert detector.cam.image_mode.get() == 2
+    assert detector.cam.num_images.get() == 5
+    assert detector.cam.trigger_mode.get() == 0
+
+
+def test_flyscan_kickoff(detector, trigger_info):
+    detector.prepare(trigger_info).wait(timeout=1)
     status = detector.kickoff()
     detector.cam.detector_state.sim_put(DetectorState.ACQUIRE)
     status.wait(timeout=3)
@@ -34,7 +52,6 @@ def test_flyscan_kickoff(detector):
     assert status.done
     # Check that the device was properly configured for fly-scanning
     assert detector.cam.acquire.get() == 1
-    assert detector._fly_data == {}
     # Check that timestamps get recorded when new data are available
     detector.cam.array_counter.sim_put(1)
     event = detector._fly_data[detector.cam.array_counter]
