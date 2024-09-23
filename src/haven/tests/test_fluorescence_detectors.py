@@ -13,6 +13,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 from ophyd import OphydObject, Signal
+from ophyd_async.core import DetectorTrigger, TriggerInfo
 
 from haven.instrument.dxp import load_dxp_detectors, parse_xmap_buffer
 from haven.instrument.xspress import load_xspress_detectors
@@ -384,8 +385,27 @@ def test_complete_dxp(dxp):
     assert status.done
 
 
+@pytest.fixture()
+def trigger_info():
+    return TriggerInfo(
+        number=5, trigger=DetectorTrigger.internal, deadtime=0.2, livetime=1.3
+    )
+
+
+def test_prepare_xspress(xspress, trigger_info):
+    """Check the behavior of the Xspress3 electornic's fly-scan prepare call."""
+    vortex = xspress
+    status = vortex.prepare(trigger_info)
+    status.wait(timeout=3)
+    assert status.done
+    assert vortex.cam.trigger_mode.get() == vortex.trigger_modes.INTERNAL
+    assert vortex.cam.num_images.get() == 5
+    assert vortex.cam.acquire_time.get() == 1.3
+    assert vortex.cam.acquire_period.get() == 1.5
+
+
 def test_kickoff_xspress(xspress):
-    """Check the behavior of the Xspress3 electornic's fly-scan complete call."""
+    """Check the behavior of the Xspress3 electronics' fly-scan kickoff call."""
     vortex = xspress
     # Make sure the num_images is included
     fly_sigs = [walk.item for walk in vortex.walk_fly_signals()]
@@ -398,7 +418,6 @@ def test_kickoff_xspress(xspress):
     vortex.detector_state.sim_put(vortex.detector_states.ACQUIRE)
     status.wait(timeout=3)
     assert status.done
-    assert vortex.cam.trigger_mode.get() == vortex.trigger_modes.TTL_VETO_ONLY
     assert vortex.acquire.get() == vortex.acquire_states.ACQUIRE
 
 
@@ -412,9 +431,10 @@ def test_complete_xspress(xspress):
     assert status.done
 
 
-def test_collect_xspress(xspress):
+def test_collect_xspress(xspress, trigger_info):
     """Check the Xspress3 collects data during fly-scanning."""
     vortex = xspress
+    vortex.prepare(trigger_info)
     # Kick off the detector
     status = vortex.kickoff()
     vortex.detector_state.sim_put(vortex.detector_states.ACQUIRE)

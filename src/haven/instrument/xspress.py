@@ -16,6 +16,7 @@ from ophyd import EpicsSignal, EpicsSignalRO, Kind
 from ophyd.areadetector.base import EpicsSignalWithRBV as SignalWithRBV
 from ophyd.signal import InternalSignal
 from ophyd.status import StatusBase, SubscriptionStatus
+from ophyd_async.core import DetectorTrigger, TriggerInfo
 from pcdsdevices.signal import MultiDerivedSignal
 from pcdsdevices.type_hints import OphydDataType, SignalToValue
 
@@ -460,13 +461,27 @@ class Xspress3Detector(SingleTrigger_V34, DetectorBase, XRFMixin):
             #     continue
             yield walk
 
-    def kickoff(self) -> StatusBase:
+    def prepare(self, value: TriggerInfo) -> StatusBase:
+        info = value
+        # Set the right parameters
+        trigger_mode = {
+            DetectorTrigger.internal: self.trigger_modes.INTERNAL,
+            # DetectorTrigger.edge_trigger: None,
+            # DetectorTrigger.constant_gate: None,
+            DetectorTrigger.variable_gate: self.trigger_modes.TTL_VETO_ONLY,
+        }[value.trigger]
+        status = self.cam.trigger_mode.set(trigger_mode)
+        status &= self.cam.num_images.set(info.number)
+        status &= self.cam.acquire_time.set(info.livetime)
+        status &= self.cam.acquire_period.set(info.livetime + info.deadtime)
         # Set up subscriptions for capturing data
         self._fly_data = {}
         for walk in self.walk_fly_signals():
             sig = walk.item
             sig.subscribe(self.save_fly_datum, run=True)
+        return status
 
+    def kickoff(self) -> StatusBase:
         # Set up the status for when the detector is ready to fly
         def check_acquiring(*, old_value, value, **kwargs):
             is_acquiring = value == self.detector_states.ACQUIRE
@@ -475,9 +490,6 @@ class Xspress3Detector(SingleTrigger_V34, DetectorBase, XRFMixin):
             return is_acquiring
 
         status = SubscriptionStatus(self.detector_state, check_acquiring)
-        # Set the right parameters
-        status &= self.cam.trigger_mode.set(self.trigger_modes.TTL_VETO_ONLY)
-        status &= self.cam.num_images.set(2**14)
         status &= self.acquire.set(self.acquire_states.ACQUIRE)
         return status
 
