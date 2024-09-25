@@ -18,7 +18,7 @@ from ophyd_async.core import (
 )
 
 from .._iconfig import load_config
-from .device import connect_devices
+from ..device import connect_devices
 from .instrument_registry import InstrumentRegistry
 from .instrument_registry import registry as default_registry
 from .labjack import LabJackT7

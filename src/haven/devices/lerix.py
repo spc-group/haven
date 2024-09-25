@@ -8,7 +8,7 @@ from ophyd import PseudoPositioner, PseudoSingle
 from ophyd.pseudopos import pseudo_position_argument, real_position_argument
 
 from .._iconfig import load_config
-from .device import make_device
+from ..device import make_device
 
 log = logging.getLogger(__name__)
 

@@ -7,7 +7,7 @@ from ophyd.sim import SynAxis, det, instantiate_fake_device
 
 import haven
 from haven import baseline_decorator, baseline_wrapper, run_engine
-from haven.instrument.beamline_manager import BSS
+from haven.devices.beamline_manager import BSS
 from haven.preprocessors import shutter_suspend_decorator, shutter_suspend_wrapper
 
 

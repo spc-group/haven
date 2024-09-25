@@ -7,7 +7,7 @@ from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw, epics_sign
 
 from .._iconfig import load_config
 from ..typing import StrEnum
-from .device import connect_devices
+from ..device import connect_devices
 from .instrument_registry import InstrumentRegistry
 from .instrument_registry import registry as default_registry
 

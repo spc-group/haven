@@ -9,9 +9,9 @@ from qtpy import QtCore
 import haven
 from firefly.energy import EnergyDisplay
 
-FakeMonochromator = make_fake_device(haven.instrument.monochromator.Monochromator)
+FakeMonochromator = make_fake_device(haven.devices.monochromator.Monochromator)
 FakeEnergyPositioner = make_fake_device(
-    haven.instrument.energy_positioner.EnergyPositioner
+    haven.devices.energy_positioner.EnergyPositioner
 )
 FakeUndulator = make_fake_device(PlanarUndulator)
 

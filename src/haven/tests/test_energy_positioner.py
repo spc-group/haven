@@ -2,7 +2,7 @@ import pytest
 from ophyd import PVPositioner
 from ophyd.sim import instantiate_fake_device
 
-from haven.instrument.energy_positioner import EnergyPositioner, load_energy_positioner
+from haven.devices.energy_positioner import EnergyPositioner, load_energy_positioner
 
 
 @pytest.fixture()

@@ -7,7 +7,7 @@ from bluesky import plan_stubs as bps
 from bluesky.callbacks import best_effort
 from bluesky.preprocessors import subs_wrapper
 
-from ..instrument.instrument_registry import registry
+from ..devices.instrument_registry import registry
 from ..preprocessors import shutter_suspend_decorator
 
 log = logging.getLogger(__name__)

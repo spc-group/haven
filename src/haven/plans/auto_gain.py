@@ -6,7 +6,7 @@ from bluesky import plan_stubs as bps
 from bluesky_adaptive.per_event import adaptive_plan, recommender_factory
 from bluesky_adaptive.recommendations import NoRecommendation
 
-from ..instrument.instrument_registry import registry
+from ..devices.instrument_registry import registry
 
 __all__ = ["GainRecommender", "auto_gain"]
 

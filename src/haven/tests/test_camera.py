@@ -3,7 +3,7 @@ from ophyd import DetectorBase
 from ophyd.sim import instantiate_fake_device
 
 from haven import load_config, registry
-from haven.instrument.camera import AravisDetector, load_cameras
+from haven.devices.camera import AravisDetector, load_cameras
 
 PREFIX = "255idgigeA:"
 

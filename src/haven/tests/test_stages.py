@@ -1,6 +1,6 @@
 """Tests for a generic X-Y stage."""
 
-from haven.instrument import stage
+from haven.devices import stage
 
 
 def test_stage_init(sim_registry):

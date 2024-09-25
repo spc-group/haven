@@ -6,7 +6,7 @@ import numpy as np
 from bluesky import plans as bp
 from lmfit.models import GaussianModel, StepModel
 
-from ..instrument.instrument_registry import registry
+from ..devices.instrument_registry import registry
 
 
 def knife_scan(

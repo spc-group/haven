@@ -7,7 +7,7 @@ from ophyd import PVPositionerPC
 from pcdsdevices.signal import MultiDerivedSignal
 
 from .._iconfig import load_config
-from .device import make_device
+from ..device import make_device
 from .monochromator import Monochromator
 from .xray_source import PlanarUndulator
 

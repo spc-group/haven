@@ -12,7 +12,7 @@ from ophyd.status import StatusBase, SubscriptionStatus
 
 from .. import exceptions
 from .._iconfig import load_config
-from .device import make_device
+from ..device import make_device
 from .fluorescence_detector import (
     MCASumMixin,
     ROIMixin,

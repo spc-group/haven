@@ -10,7 +10,7 @@ from pcdsdevices.signal import MultiDerivedSignal
 from pcdsdevices.type_hints import SignalToValue
 
 from .._iconfig import load_config
-from .device import make_device
+from ..device import make_device
 
 # from apstools.devices.shutters import ApsPssShutterWithStatus as Shutter
 

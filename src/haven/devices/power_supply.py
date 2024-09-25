@@ -4,7 +4,7 @@ from ophyd import Device, EpicsSignal, EpicsSignalRO
 from ophyd import FormattedComponent as FCpt
 
 from .._iconfig import load_config
-from .device import make_device
+from ..device import make_device
 
 log = logging.getLogger(__name__)
 

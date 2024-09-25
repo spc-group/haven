@@ -12,7 +12,7 @@ from bluesky.preprocessors import subs_decorator
 
 from .._iconfig import load_config
 from ..constants import edge_energy
-from ..instrument import registry
+from ..devices import registry
 from ..preprocessors import baseline_decorator
 from ..typing import DetectorList
 from ..xdi_writer import XDIWriter

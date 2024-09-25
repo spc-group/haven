@@ -9,7 +9,7 @@ from lmfit.models import QuadraticModel
 
 from haven.typing import Motor
 
-from ..instrument.instrument_registry import registry
+from ..devices.instrument_registry import registry
 from .align_motor import align_motor, align_pitch2
 from .set_energy import set_energy
 

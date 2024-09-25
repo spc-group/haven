@@ -7,7 +7,7 @@ from bluesky.callbacks.best_effort import BestEffortCallback
 from bluesky.utils import ProgressBarManager, register_transform
 
 from .exceptions import ComponentNotFound
-from .instrument.instrument_registry import registry
+from .devices.instrument_registry import registry
 from .preprocessors import inject_haven_md_wrapper
 
 log = logging.getLogger(__name__)

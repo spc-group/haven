@@ -1,4 +1,4 @@
-from haven.instrument.beamline_manager import BeamlineManager, load_beamline_manager
+from haven.devices.beamline_manager import BeamlineManager, load_beamline_manager
 
 """
     glados:alive.VAL

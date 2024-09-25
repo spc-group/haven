@@ -1,4 +1,4 @@
-from haven.instrument import power_supply
+from haven.devices import power_supply
 
 
 def test_load_power_supplies(sim_registry):

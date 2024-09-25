@@ -10,7 +10,7 @@ from ophyd import FormattedComponent as FCpt
 
 from .. import exceptions
 from .._iconfig import load_config
-from .device import make_device
+from ..device import make_device
 from .motor import HavenMotor
 
 log = logging.getLogger(__name__)

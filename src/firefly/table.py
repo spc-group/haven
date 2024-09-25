@@ -4,7 +4,7 @@ from pathlib import Path
 
 from firefly import display
 from haven import load_config, registry
-from haven.instrument import Table
+from haven.devices import Table
 
 log = logging.getLogger(__name__)
 

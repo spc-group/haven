@@ -17,19 +17,19 @@ from tiled.server.app import build_app
 import haven
 from haven._iconfig import beamline_connected as _beamline_connected
 from haven.catalog import Catalog
-from haven.instrument.aps import ApsMachine
-from haven.instrument.beamline_manager import BeamlineManager, IOCManager
-from haven.instrument.camera import AravisDetector
-from haven.instrument.dxp import DxpDetector
-from haven.instrument.dxp import add_mcas as add_dxp_mcas
-from haven.instrument.ion_chamber import IonChamber
-from haven.instrument.monochromator import Monochromator
-from haven.instrument.robot import Robot
-from haven.instrument.shutter import PssShutter
-from haven.instrument.slits import ApertureSlits, BladeSlits
-from haven.instrument.xia_pfcu import PFCUFilter, PFCUFilterBank, PFCUShutter
-from haven.instrument.xspress import Xspress3Detector
-from haven.instrument.xspress import add_mcas as add_xspress_mcas
+from haven.devices.aps import ApsMachine
+from haven.devices.beamline_manager import BeamlineManager, IOCManager
+from haven.devices.camera import AravisDetector
+from haven.devices.dxp import DxpDetector
+from haven.devices.dxp import add_mcas as add_dxp_mcas
+from haven.devices.ion_chamber import IonChamber
+from haven.devices.monochromator import Monochromator
+from haven.devices.robot import Robot
+from haven.devices.shutter import PssShutter
+from haven.devices.slits import ApertureSlits, BladeSlits
+from haven.devices.xia_pfcu import PFCUFilter, PFCUFilterBank, PFCUShutter
+from haven.devices.xspress import Xspress3Detector
+from haven.devices.xspress import add_mcas as add_xspress_mcas
 
 top_dir = Path(__file__).parent.resolve()
 haven_dir = top_dir / "haven"

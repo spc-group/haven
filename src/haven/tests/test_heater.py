@@ -1,4 +1,4 @@
-from haven.instrument.heater import load_heaters
+from haven.devices.heater import load_heaters
 
 PREFIX = "255idptc10:"
 

@@ -1,4 +1,4 @@
-from haven.instrument import aps
+from haven.devices import aps
 
 
 def test_load_aps(sim_registry):

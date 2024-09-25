@@ -7,30 +7,30 @@ from ophyd import sim
 from ophyd_async.core import NotConnected
 from rich import print
 
-from .._iconfig import load_config
-from .aerotech import load_aerotech_stages
-from .aps import load_aps
-from .area_detector import load_area_detectors
-from .beamline_manager import load_beamline_manager
-from .camera import load_cameras
+from ._iconfig import load_config
+from .devices.aerotech import load_aerotech_stages
+from .devices.aps import load_aps
+from .devices.area_detector import load_area_detectors
+from .devices.beamline_manager import load_beamline_manager
+from .devices.camera import load_cameras
 from .device import connect_devices
-from .dxp import load_dxp_detectors
-from .energy_positioner import load_energy_positioner
-from .heater import load_heaters
-from .instrument_registry import InstrumentRegistry
-from .instrument_registry import registry as default_registry
-from .ion_chamber import load_ion_chambers
-from .lerix import load_lerix_spectrometers
-from .mirrors import load_mirrors
-from .motor import HavenMotor, load_motors
-from .power_supply import load_power_supplies
-from .robot import load_robots
-from .shutter import load_shutters
-from .slits import load_slits
-from .stage import load_stages
-from .table import load_tables
-from .xia_pfcu import load_xia_pfcu4s
-from .xspress import load_xspress_detectors
+from .devices.dxp import load_dxp_detectors
+from .devices.energy_positioner import load_energy_positioner
+from .devices.heater import load_heaters
+from .devices.instrument_registry import InstrumentRegistry
+from .devices.instrument_registry import registry as default_registry
+from .devices.ion_chamber import load_ion_chambers
+from .devices.lerix import load_lerix_spectrometers
+from .devices.mirrors import load_mirrors
+from .devices.motor import HavenMotor, load_motors
+from .devices.power_supply import load_power_supplies
+from .devices.robot import load_robots
+from .devices.shutter import load_shutters
+from .devices.slits import load_slits
+from .devices.stage import load_stages
+from .devices.table import load_tables
+from .devices.xia_pfcu import load_xia_pfcu4s
+from .devices.xspress import load_xspress_detectors
 
 __all__ = ["load_instrument"]
 

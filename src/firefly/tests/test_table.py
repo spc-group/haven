@@ -3,7 +3,7 @@ from unittest import mock
 import pytest
 
 from firefly.table import TableDisplay
-from haven.instrument import Table
+from haven.devices import Table
 
 
 @pytest.fixture()

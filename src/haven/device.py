@@ -1,3 +1,10 @@
+"""Spare definitions for ophyd devices.
+
+This module is deprecated and will eventually be rolled into the
+instrument module.
+
+"""
+
 import asyncio
 import logging
 import re
@@ -11,9 +18,11 @@ from ophyd import Component, Device, K
 from ophyd.sim import make_fake_device
 from ophyd_async.core import NotConnected
 
-from .._iconfig import load_config
+from ._iconfig import load_config
 
 log = logging.getLogger(__name__)
+
+warnings.warn(f"Module {__name__} is deprecated and will be removed in a future release.", DeprecationWarning)
 
 
 async def connect_devices(

@@ -40,7 +40,7 @@ from ._iconfig import load_config  # noqa: F401
 from .catalog import load_catalog, tiled_client  # noqa: F401
 from .constants import edge_energy  # noqa: F401
 from .energy_ranges import ERange, KRange, merge_ranges  # noqa: F401
-from .instrument import (  # noqa: F401
+from .devices import (  # noqa: F401
     InstrumentRegistry,
     IonChamber,
     Monochromator,
@@ -49,11 +49,10 @@ from .instrument import (  # noqa: F401
     load_robots,
     registry,
 )
-from .instrument.device import RegexComponent  # noqa: F401
-from .instrument.dxp import load_dxp_detectors  # noqa: F401
-from .instrument.load_instrument import load_instrument  # noqa: F401
-from .instrument.motor import HavenMotor  # noqa: F401
-from .instrument.xspress import load_xspress_detectors  # noqa: F401
+from .devices.dxp import load_dxp_detectors  # noqa: F401
+from .load_instrument import load_instrument  # noqa: F401
+from .devices.motor import HavenMotor  # noqa: F401
+from .devices.xspress import load_xspress_detectors  # noqa: F401
 from .motor_position import (  # noqa: F401
     get_motor_position,
     list_current_motor_positions,

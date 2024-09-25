@@ -1,4 +1,4 @@
-from haven.instrument import slits
+from haven.devices import slits
 
 
 def test_slits_tweak():

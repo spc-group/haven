@@ -3,7 +3,7 @@ import warnings
 
 import haven
 from firefly import display
-from haven.instrument import slits
+from haven.devices import slits
 
 log = logging.getLogger(__name__)
 

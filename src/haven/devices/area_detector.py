@@ -45,7 +45,7 @@ from ophyd.status import Status, StatusBase, SubscriptionStatus
 
 from .. import exceptions
 from .._iconfig import load_config
-from .device import make_device
+from ..device import make_device
 
 log = logging.getLogger(__name__)
 

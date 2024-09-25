@@ -5,7 +5,7 @@ from ophyd import DynamicDeviceComponent as DCpt
 from ophyd import EpicsSignal, EpicsSignalRO
 
 from .._iconfig import load_config
-from .device import make_device
+from ..device import make_device
 
 
 class BSSEsaf(EpicsEsafDevice):

@@ -9,7 +9,7 @@ from lmfit.models import StepModel
 from matplotlib import pyplot as plt
 
 from .._iconfig import load_config
-from ..instrument.instrument_registry import registry
+from ..devices.instrument_registry import registry
 from .align_motor import align_pitch2
 from .auto_gain import auto_gain
 from .beam_properties import knife_scan

@@ -1,7 +1,7 @@
 import pytest
 from ophydregistry.exceptions import ComponentNotFound
 
-from haven.instrument import Robot, load_robots
+from haven.devices import Robot, load_robots
 
 
 def test_robot():

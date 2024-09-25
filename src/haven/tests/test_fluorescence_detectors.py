@@ -14,8 +14,8 @@ import numpy as np
 import pytest
 from ophyd import OphydObject, Signal
 
-from haven.instrument.dxp import load_dxp_detectors, parse_xmap_buffer
-from haven.instrument.xspress import load_xspress_detectors
+from haven.devices.dxp import load_dxp_detectors, parse_xmap_buffer
+from haven.devices.xspress import load_xspress_detectors
 
 DETECTORS = ["dxp", "xspress"]
 # DETECTORS = ['dxp']

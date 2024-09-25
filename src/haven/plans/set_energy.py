@@ -3,7 +3,7 @@ from typing import Union
 from bluesky import plan_stubs as bps
 
 from .. import exceptions
-from ..instrument.instrument_registry import registry
+from ..devices.instrument_registry import registry
 from ..typing import DetectorList
 
 __all__ = ["set_energy"]

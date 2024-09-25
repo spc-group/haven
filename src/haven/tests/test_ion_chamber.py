@@ -5,7 +5,7 @@ import pytest
 from numpy.testing import assert_allclose
 from ophyd_async.core import TriggerInfo, assert_value, get_mock_put, set_mock_value
 
-from haven.instrument.ion_chamber import IonChamber, load_ion_chambers
+from haven.devices.ion_chamber import IonChamber, load_ion_chambers
 
 
 @pytest.fixture()

@@ -9,7 +9,7 @@ from ophyd_async.core import (
     DEFAULT_TIMEOUT,
     AsyncStatus,
     CalculatableTimeout,
-    CalculateTimeout,
+    CALCULATE_TIMEOUT,
     ConfigSignal,
     SignalBackend,
     SignalX,
@@ -20,7 +20,7 @@ from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw
 from ophyd_async.epics.signal._signal import _epics_signal_backend
 
 from .._iconfig import load_config
-from .device import connect_devices
+from ..device import connect_devices
 from .instrument_registry import InstrumentRegistry
 from .instrument_registry import registry as default_registry
 from .motor_flyer import MotorFlyer
@@ -36,10 +36,10 @@ class SignalX(SignalX):
         super().__init__(*args, **kwargs)
 
     def trigger(
-        self, wait=False, timeout: CalculatableTimeout = CalculateTimeout
+        self, wait=False, timeout: CalculatableTimeout = CALCULATE_TIMEOUT
     ) -> AsyncStatus:
         """Trigger the action and return a status saying when it's done"""
-        if timeout is CalculateTimeout:
+        if timeout is CALCULATE_TIMEOUT:
             timeout = self._timeout
         coro = self._backend.put(self.trigger_value, wait=wait, timeout=timeout)
         return AsyncStatus(coro)

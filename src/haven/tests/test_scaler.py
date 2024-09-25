@@ -1,6 +1,6 @@
 import pytest
 
-from haven.instrument.scaler import MultiChannelScaler, load_scalers
+from haven.devices.scaler import MultiChannelScaler, load_scalers
 
 
 @pytest.fixture()

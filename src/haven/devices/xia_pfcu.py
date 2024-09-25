@@ -16,7 +16,7 @@ from ophyd.signal import DerivedSignal
 
 from .. import exceptions
 from .._iconfig import load_config
-from .device import make_device
+from ..device import make_device
 from .shutter import ShutterState
 
 

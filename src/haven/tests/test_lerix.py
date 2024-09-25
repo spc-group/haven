@@ -3,7 +3,7 @@ import time
 import pytest
 from ophyd.sim import instantiate_fake_device
 
-from haven.instrument import lerix
+from haven.devices import lerix
 
 um_per_mm = 1000
 

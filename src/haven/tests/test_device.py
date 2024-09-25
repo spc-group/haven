@@ -2,9 +2,9 @@ import pytest
 from ophyd import EpicsMotor, sim
 from ophyd_async.epics.motor import Motor
 
-from haven.instrument.device import connect_devices, make_device
-from haven.instrument.load_instrument import load_simulated_devices
-from haven.instrument.motor import HavenMotor
+from haven.device import connect_devices, make_device
+from haven.load_instrument import load_simulated_devices
+from haven.devices.motor import HavenMotor
 
 
 @pytest.mark.asyncio

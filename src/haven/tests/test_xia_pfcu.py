@@ -2,8 +2,8 @@ from unittest import mock
 
 import pytest
 
-from haven.instrument import xia_pfcu
-from haven.instrument.xia_pfcu import (
+from haven.devices import xia_pfcu
+from haven.devices.xia_pfcu import (
     PFCUFilter,
     PFCUFilterBank,
     PFCUShutter,

@@ -6,7 +6,7 @@ import pytest
 from ophyd import StatusBase
 
 from haven import exceptions
-from haven.instrument.aerotech import (
+from haven.devices.aerotech import (
     AerotechMotor,
     AerotechStage,
     load_aerotech_stages,

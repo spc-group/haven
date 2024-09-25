@@ -5,8 +5,8 @@ from bluesky import Msg
 from bluesky import plan_stubs as bps
 from ophyd import Device
 
-from ..instrument.instrument_registry import registry
-from ..instrument.shutter import ShutterState
+from ..devices.instrument_registry import registry
+from ..devices.shutter import ShutterState
 from .shutters import close_shutters, open_shutters
 
 

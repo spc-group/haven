@@ -18,7 +18,7 @@ from haven import load_config
 from haven import load_instrument as load_haven_instrument
 from haven import registry
 from haven.exceptions import ComponentNotFound, InvalidConfiguration
-from haven.instrument.device import titelize
+from haven.device import titelize
 
 from .action import Action, ActionsRegistry, WindowAction
 from .main_window import FireflyMainWindow, PlanMainWindow

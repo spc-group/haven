@@ -7,7 +7,7 @@ from qtpy.QtWidgets import QHBoxLayout, QSizePolicy
 
 from firefly import display
 from haven import registry
-from haven.instrument.shutter import ShutterState
+from haven.devices.shutter import ShutterState
 
 log = logging.getLogger(__name__)
 

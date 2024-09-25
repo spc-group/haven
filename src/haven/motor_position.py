@@ -11,7 +11,7 @@ from rich import print as rprint
 from tiled.queries import Key
 
 from .catalog import Catalog, tiled_client
-from .instrument.instrument_registry import registry
+from .devices.instrument_registry import registry
 
 log = logging.getLogger(__name__)
 

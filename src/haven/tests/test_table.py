@@ -1,6 +1,6 @@
 import pytest
 
-from haven.instrument import Table, load_tables
+from haven.devices import Table, load_tables
 
 
 def test_vertical_table():

@@ -1,4 +1,4 @@
-from haven.instrument.mirrors import (
+from haven.devices.mirrors import (
     HighHeatLoadMirror,
     KBMirror,
     KBMirrors,

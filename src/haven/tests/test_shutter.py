@@ -2,7 +2,7 @@ import pytest
 from ophyd import sim
 from ophyd.utils.errors import ReadOnlyError
 
-from haven.instrument.shutter import PssShutter, ShutterState, load_shutters
+from haven.devices.shutter import PssShutter, ShutterState, load_shutters
 
 
 @pytest.fixture()

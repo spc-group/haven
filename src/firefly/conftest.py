@@ -6,7 +6,7 @@ import pytest
 from ophyd.sim import make_fake_device
 from ophyd_async.core import wait_for_connection
 
-from haven.instrument.motor import HavenMotor, Motor
+from haven.devices.motor import HavenMotor, Motor
 
 
 def tiled_is_running(port, match_command=True):
