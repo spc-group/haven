@@ -24,9 +24,9 @@ from enum import Enum
 from typing import Optional, Type
 
 from ophyd_async.core import (
+    CALCULATE_TIMEOUT,
     AsyncStatus,
     CalculatableTimeout,
-    CalculateTimeout,
     Device,
     SignalRW,
     SubsetEnum,
@@ -162,7 +162,7 @@ class GainSignal(SignalRW):
 
     @AsyncStatus.wrap
     async def set(
-        self, value: T, wait=True, timeout: CalculatableTimeout = CalculateTimeout
+        self, value: T, wait=True, timeout: CalculatableTimeout = CALCULATE_TIMEOUT
     ) -> AsyncStatus:
         aw = super().set(value=value, wait=wait, timeout=timeout)
         if wait:
