@@ -53,32 +53,18 @@ prefix = "id_ioc:"
 prefix = "mono_ioc:"
 ioc_branch = "UP"  # For caQtDM macros
 
-######################
 # Ion chambers
-######################
-
-# Each scaler will have a section similar to
-#   [scaler.vme_scaler_1]
+# ============
 # 
-# where the second segment is the name for the scaler.
+# Each ion chamber is listed in a section starting with
+#   [[ ion_chamber ]]
+# 
+# The *name* parameter can be omitted, in which case the name will be
+# updated based on the .DESC PV for the scaler channel.
 
-# Each ion chamber is listed in a section like
-#   [ion_chamber.ch2]
+[[ ion_chamber ]]
 
-# though "ch2" is not significant, purely for bookeeping.
-
-# The name will be updated based on the .DESC PV for the scaler
-# channel. The key "scaler" then points to the name of the scaler
-# object described above.
-
-[scaler.vme_scaler_1]
-
-prefix = "255idcVME:3820:"
-num_channels = 32
-
-[ion_chamber.ch2]
-
-scaler = "vme_scaler_1"
+scaler_prefix = "255idcVME:3820:"
 scaler_channel = 2
 preamp_prefix = "255idc:SR03:"
 voltmeter_prefix = "255idc:LabJackT7_1:"
@@ -87,18 +73,19 @@ voltmeter_channel = 1
 counts_per_volt_second = 10e6
 
 
-# [ion_chamber.vme_scaler]
-# # Produces PVs e.g. 255idcVME:3820:scaler1.S2
-# scaler_prefix = "255idcVME:3820:"
-# scaler_channels = [2]
-# # Produces PVs e.g. 255idc:SR03:sens_num.VAL
-# preamp_prefix = "255idc:SR"
-# preamp_channels = [3]
-# # Produces PVs e.g. 25idc:LJT7Voltmeter_0:Ai1
-# voltmeter_prefix = "255idc:LabjackT7_0:"
-# voltmeter_channels = [1]
-# # From V2F100: Fmax / Vmax
-# counts_per_volt_second = 10e6
+# Scalers
+# =======
+# 
+# Each scaler will have a section similar to
+#   [scaler.vme_scaler_1]
+# 
+# where the second segment is the name for the scaler.
+
+[scaler.vme_scaler_1]
+
+prefix = "255idcVME:3820:"
+num_channels = 32
+
 
 # Motors
 # ======
