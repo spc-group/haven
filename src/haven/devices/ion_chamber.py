@@ -3,7 +3,7 @@
 import asyncio
 import logging
 import warnings
-from typing import Dict, Mapping
+from typing import Dict
 
 from apstools.utils.misc import safe_ophyd_name
 from bluesky.protocols import Triggerable
@@ -17,10 +17,6 @@ from ophyd_async.core import (
     wait_for_value,
 )
 
-from .._iconfig import load_config
-from ..device import connect_devices
-from .instrument_registry import InstrumentRegistry
-from .instrument_registry import registry as default_registry
 from .labjack import LabJackT7
 from .scaler import MultiChannelScaler
 from .signal import derived_signal_r
@@ -29,7 +25,7 @@ from .srs570 import SRS570PreAmplifier
 log = logging.getLogger(__name__)
 
 
-__all__ = ["IonChamber", "load_ion_chambers"]
+__all__ = ["IonChamber"]
 
 
 class IonChamber(StandardReadable, Triggerable):
@@ -340,48 +336,3 @@ class IonChamber(StandardReadable, Triggerable):
 
         """
         return self.mcs.scaler.preset_time
-
-
-async def load_ion_chambers(
-    config: Mapping = None,
-    registry: InstrumentRegistry = default_registry,
-    connect: bool = True,
-    auto_name=True,
-):
-    """Load ion chambers based on configuration files' ``[ion_chamber]``
-    sections.
-
-    The name for each ion chamber is retrieved from the scaler
-    channel's .DESC field.
-
-    """
-    # Load IOC configuration from the config file
-    if config is None:
-        config = load_config()
-    if "ion_chamber" not in config.keys():
-        warnings.warn("Ion chambers not configured.")
-        return []
-    # Create the ion chambers
-    devices = []
-    for grp, cfg in config["ion_chamber"].items():
-        # Get the corresponding scaler info
-        scaler_prefix = config["scaler"][cfg["scaler"]]["prefix"]
-        # Create the ion chamber
-        devices.append(
-            IonChamber(
-                scaler_prefix=scaler_prefix,
-                scaler_channel=cfg["scaler_channel"],
-                preamp_prefix=cfg["preamp_prefix"],
-                voltmeter_prefix=cfg["voltmeter_prefix"],
-                voltmeter_channel=cfg["voltmeter_channel"],
-                counts_per_volt_second=cfg["counts_per_volt_second"],
-                name=grp,
-                auto_name=auto_name,
-            )
-        )
-        # Connect to devices
-    if connect:
-        devices = await connect_devices(
-            devices, mock=not config["beamline"]["is_connected"], registry=registry
-        )
-    return devices

@@ -1,3 +1,20 @@
+[beamline]
+
+# General name for the beamline, used for metadata.
+name = "SPC Beamline (sector unknown)"
+# Should we expect the hardware devices to be available.
+#   If not, we will provide mocked devices.
+hardware_is_present = false
+
+[facility]
+
+name = "Advanced Photon Source"
+xray_source = "insertion device"
+
+[database.databroker]
+
+catalog = "bluesky"
+
 [xray_source]
 
 type = "undulator"
@@ -71,7 +88,7 @@ voltmeter_prefix = "255idc:LabJackT7_1:"
 voltmeter_channel = 1
 # From V2F100: Fmax / Vmax
 counts_per_volt_second = 10e6
-
+name = "I0"
 
 # Scalers
 # =======

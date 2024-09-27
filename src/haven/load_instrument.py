@@ -19,7 +19,6 @@ from .devices.energy_positioner import load_energy_positioner
 from .devices.heater import load_heaters
 from .devices.instrument_registry import InstrumentRegistry
 from .devices.instrument_registry import registry as default_registry
-from .devices.ion_chamber import load_ion_chambers
 from .devices.lerix import load_lerix_spectrometers
 from .devices.mirrors import load_mirrors
 from .devices.motor import HavenMotor, load_motors
@@ -79,7 +78,6 @@ async def load_instrument(
     mock = not config["beamline"]["is_connected"]
     results = await asyncio.gather(
         load_aerotech_stages(config=config, connect=False),
-        load_ion_chambers(config=config, connect=False),
         load_mirrors(config=config, connect=False),
         load_stages(config=config, connect=False),
         load_tables(config=config, connect=False),

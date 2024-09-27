@@ -1,4 +1,5 @@
 from pathlib import Path
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -12,15 +13,15 @@ toml_file = haven_dir / "iconfig_testing.toml"
 @pytest.fixture()
 def instrument():
     inst = Instrument({"ion_chamber": IonChamber})
+    with open(toml_file, mode="tr", encoding="utf-8") as fd:
+        inst.parse_toml_file(fd)
     return inst
 
 
-def test_parse_toml_file(instrument):
-    with open(toml_file, mode="tr", encoding="utf-8") as fd:
-        devices = instrument.parse_toml_file(fd)
-        assert len(devices) > 0
-        I0 = devices[0]
-        assert isinstance(I0, IonChamber)
+def test_global_parameters(instrument):
+    """Check that we loaded keys that apply to the whole beamline."""
+    assert instrument.beamline_name == "SPC Beamline (sector unknown)"
+    assert instrument.hardware_is_present == False
 
 
 def test_validate_missing_params(instrument):
@@ -65,3 +66,22 @@ def test_validate_wrong_types(instrument):
     }
     with pytest.raises(Exception):
         instrument.validate_params(defn, IonChamber)
+
+
+async def test_connect(instrument):
+    await instrument.connect(mock=True)
+    # Check devices are in the registry
+    assert instrument.registry["I0"] is not None
+
+
+async def test_load(monkeypatch):
+    instrument = Instrument({})
+    # Mock out the relevant methods to test
+    monkeypatch.setattr(instrument, "parse_toml_file", MagicMock())
+    monkeypatch.setattr(instrument, "connect", AsyncMock())
+    monkeypatch.setenv("HAVEN_CONFIG_FILES", toml_file, prepend=False)
+    # Execute the loading step
+    await instrument.load()
+    # Check that the right methods were called
+    instrument.parse_toml_file.assert_called_once()
+    instrument.connect.assert_called_once_with(mock=True)
