@@ -201,7 +201,7 @@ class GridScanDisplay(regions_display.RegionsDisplay):
         log.info(f"Added grid_scan() plan to queue ({repeat_scan_num} scans).")
         # repeat scans
         for i in range(repeat_scan_num):
-            self.queue_item_submitted.emit(item)
+            self.submit_queue_item(item)
 
     def ui_filename(self):
         return "plans/grid_scan.ui"

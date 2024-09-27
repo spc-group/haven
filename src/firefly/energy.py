@@ -134,7 +134,7 @@ class EnergyDisplay(display.FireflyDisplay):
         # Build the queue item
         item = BPlan("set_energy", energy=energy)
         # Submit the item to the queueserver
-        self.queue_item_submitted.emit(item)
+        self.submit_queue_item(item)
 
     def update_queue_status(self, status):
         self.set_energy_button.update_queue_style(status)

@@ -72,19 +72,16 @@ def test_id_caqtdm_macros(display):
     }
 
 
-def test_move_energy(qtbot, display):
-    # Click the set energy button
-    btn = display.ui.set_energy_button
+def test_move_energy(qtbot, display, monkeypatch):
+    monkeypatch.setattr(display, "submit_queue_item", mock.MagicMock())
+    # Prepare the display for sending a plan
     expected_item = BPlan("set_energy", energy=8402.0)
-
-    def check_item(item):
-        return item.to_dict() == expected_item.to_dict()
-
-    qtbot.keyClicks(display.target_energy_lineedit, "8402")
-    with qtbot.waitSignal(
-        display.queue_item_submitted, timeout=1000, check_params_cb=check_item
-    ):
-        qtbot.mouseClick(btn, QtCore.Qt.LeftButton)
+    display.target_energy_lineedit.setText("8402")
+    # Check that the right plan is emitted
+    display.set_energy()
+    assert display.submit_queue_item.called
+    submitted_item = display.submit_queue_item.call_args[0][0]
+    assert submitted_item.to_dict() == expected_item.to_dict()
 
 
 def test_predefined_energies(qtbot, display):

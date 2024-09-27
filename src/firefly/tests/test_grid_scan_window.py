@@ -59,9 +59,9 @@ async def test_time_calculator(display, sim_registry, ion_chamber):
 
 
 @pytest.mark.asyncio
-async def test_grid_scan_plan_queued(display, qtbot, sim_registry, ion_chamber):
-    pass
+async def test_grid_scan_plan_queued(display, sim_registry, ion_chamber, monkeypatch):
     await display.update_regions(2)
+    monkeypatch.setattr(display, "submit_queue_item", mock.MagicMock())
 
     # set up a test motor 1
     display.regions[0].motor_box.combo_box.setCurrentText("sync_motor_2")
@@ -102,13 +102,8 @@ async def test_grid_scan_plan_queued(display, qtbot, sim_registry, ion_chamber):
         md={"sample": "sam", "purpose": "test", "notes": "notes"},
     )
 
-    def check_item(item):
-        print(item.to_dict())
-        print(expected_item.to_dict())
-        return item.to_dict() == expected_item.to_dict()
-
     # Click the run button and see if the plan is queued
-    with qtbot.waitSignal(
-        display.queue_item_submitted, timeout=1000, check_params_cb=check_item
-    ):
-        qtbot.mouseClick(display.ui.run_button, QtCore.Qt.LeftButton)
+    display.queue_plan()
+    assert display.submit_queue_item.called
+    submitted_item = display.submit_queue_item.call_args[0][0]
+    assert submitted_item.to_dict() == expected_item.to_dict()

@@ -96,7 +96,7 @@ class VoltmetersDisplay(display.FireflyDisplay):
         # Construct the plan
         item = BPlan("auto_gain", ic_names, **kw)
         # Send it to the queue server
-        self.queue_item_submitted.emit(item)
+        self.submit_queue_item(item)
 
     def record_dark_current(self):
         """Add an item to queueserver to record the dark current of the ion
@@ -111,7 +111,7 @@ class VoltmetersDisplay(display.FireflyDisplay):
         ic_names = [ic.name for ic in self.ion_chambers]
         item = BPlan("record_dark_current", ic_names, shutters=shutters)
         # Send it to the queue server
-        self.queue_item_submitted.emit(item)
+        self.submit_queue_item(item)
 
     def ui_filename(self):
         return "voltmeters.ui"

@@ -60,7 +60,7 @@ class MoveMotorDisplay(regions_display.RegionsDisplay):
 
         # Submit the item to the queueserver
         log.info("Added line scan() plan to queue.")
-        self.queue_item_submitted.emit(item)
+        self.submit_queue_item(item)
 
     def ui_filename(self):
         return "plans/move_motor_window.ui"

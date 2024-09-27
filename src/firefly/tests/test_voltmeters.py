@@ -1,3 +1,5 @@
+from unittest import mock
+
 import pytest
 from bluesky_queueserver_api import BPlan
 from pydm import widgets as PyDMWidgets
@@ -105,8 +107,9 @@ def test_details_button(qtbot, voltmeters_display):
 
 
 @pytest.mark.asyncio
-async def test_auto_gain_plan(voltmeters_display, qtbot):
+async def test_auto_gain_plan(voltmeters_display, qtbot, monkeypatch):
     display = voltmeters_display
+    monkeypatch.setattr(display, "submit_queue_item", mock.MagicMock())
     # Put input values into the widgets
     display.ui.volts_min_line_edit.setText("")
     display.ui.volts_max_line_edit.setText("")
@@ -116,20 +119,16 @@ async def test_auto_gain_plan(voltmeters_display, qtbot):
         row.auto_gain_checkbox.setChecked(True)
     # Check that the correct plan was sent
     expected_item = BPlan("auto_gain", ["It"])
-
-    def check_item(item):
-        return item.to_dict() == expected_item.to_dict()
-
     # Click the run button and see if the plan is queued
-    with qtbot.waitSignal(
-        display.queue_item_submitted, timeout=1000, check_params_cb=check_item
-    ):
-        # Simulate clicking on the auto_gain button
-        display.ui.auto_gain_button.click()
+    display.run_auto_gain()
+    assert display.submit_queue_item.called
+    submitted_item = display.submit_queue_item.call_args[0][0]
+    assert submitted_item.to_dict() == expected_item.to_dict()
 
 
-def test_auto_gain_plan_with_args(qtbot, voltmeters_display):
+def test_auto_gain_plan_with_args(qtbot, voltmeters_display, monkeypatch):
     display = voltmeters_display
+    monkeypatch.setattr(display, "submit_queue_item", mock.MagicMock())
     # Put input values into the widgets
     display.ui.volts_min_line_edit.setText("1.0")
     display.ui.volts_max_line_edit.setText("4.5")
@@ -139,37 +138,26 @@ def test_auto_gain_plan_with_args(qtbot, voltmeters_display):
         ic_row.auto_gain_checkbox.setChecked(True)
     # Check that the correct plan was sent
     expected_item = BPlan("auto_gain", ["It"], volts_min=1.0, volts_max=4.5)
-
-    def check_item(item):
-        return item.to_dict() == expected_item.to_dict()
-
     # Click the run button and see if the plan is queued
-    with qtbot.waitSignal(
-        display.queue_item_submitted, timeout=1000, check_params_cb=check_item
-    ):
-        # Simulate clicking on the auto_gain button
-        display.ui.auto_gain_button.click()
+    display.run_auto_gain()
+    assert display.submit_queue_item.called
+    submitted_item = display.submit_queue_item.call_args[0][0]
+    assert submitted_item.to_dict() == expected_item.to_dict()
 
 
 @pytest.mark.asyncio
-async def test_read_dark_current_plan(voltmeters_display, qtbot):
+async def test_record_dark_current_plan(voltmeters_display, qtbot, monkeypatch):
     display = voltmeters_display
+    monkeypatch.setattr(display, "submit_queue_item", mock.MagicMock())
     display.ui.shutter_checkbox.setChecked(True)
     # Check that the correct plan was sent
     expected_item = BPlan(
         "record_dark_current", ["I0", "It"], shutters=["experiment_shutter"]
     )
-
-    def check_item(item):
-        return item.to_dict() == expected_item.to_dict()
-
-    # Click the run button and see if the plan is queued
-    with qtbot.waitSignal(
-        display.queue_item_submitted, timeout=1000, check_params_cb=check_item
-    ):
-        # Simulate clicking on the dark_current button
-        # display.ui.dark_current_button.click()
-        display.ui.record_dark_current()
+    display.record_dark_current()
+    assert display.submit_queue_item.called
+    submitted_item = display.submit_queue_item.call_args[0][0]
+    assert submitted_item.to_dict() == expected_item.to_dict()
 
 
 # -----------------------------------------------------------------------------

@@ -86,7 +86,7 @@ class LineScanDisplay(regions_display.RegionsDisplay):
         log.info("Added line scan() plan to queue.")
         # repeat scans
         for i in range(repeat_scan_num):
-            self.queue_item_submitted.emit(item)
+            self.submit_queue_item(item)
 
     def ui_filename(self):
         return "plans/line_scan.ui"

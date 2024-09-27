@@ -511,7 +511,7 @@ class XafsScanDisplay(display.FireflyDisplay):
         log.info(f"Adding XAFS scan to queue.")
         # repeat scans
         for i in range(repeat_scan_num):
-            self.queue_item_submitted.emit(item)
+            self.submit_queue_item(item)
 
     def ui_filename(self):
         return "plans/xafs_scan.ui"

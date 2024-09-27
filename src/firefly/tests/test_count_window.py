@@ -6,29 +6,22 @@ from qtpy import QtCore
 from firefly.plans.count import CountDisplay
 
 
-def test_count_plan_queued(qtbot, sim_registry):
+def test_count_plan_queued(qtbot, sim_registry, monkeypatch):
     display = CountDisplay()
-    display.ui.run_button.setEnabled(True)
+    qtbot.addWidget(display)
+    monkeypatch.setattr(display, "submit_queue_item", mock.MagicMock())
     display.ui.num_spinbox.setValue(5)
     display.ui.delay_spinbox.setValue(0.5)
     display.ui.detectors_list.selected_detectors = mock.MagicMock(
         return_value=["vortex_me4", "I0"]
     )
     expected_item = BPlan("count", num=5, detectors=["vortex_me4", "I0"], delay=0.5)
-
-    def check_item(item):
-        # from pprint import pprint
-
-        # pprint(item.to_dict())
-        # pprint(expected_item.to_dict())
-        return item.to_dict() == expected_item.to_dict()
-
-    # Click the run button and see if the plan is queued
-    with qtbot.waitSignal(
-        display.queue_item_submitted, timeout=1000, check_params_cb=check_item
-    ):
-        qtbot.mouseClick(display.ui.run_button, QtCore.Qt.LeftButton)
-
+    # Run the code under test
+    display.queue_plan()
+    # Test submitted item is correct
+    assert display.submit_queue_item.called
+    submitted_item = display.submit_queue_item.call_args[0][0]
+    assert submitted_item.to_dict() == expected_item.to_dict()
 
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman

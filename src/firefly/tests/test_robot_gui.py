@@ -1,3 +1,5 @@
+from unittest import mock
+
 import pytest
 from bluesky_queueserver_api import BPlan
 from ophyd import Component as Cpt
@@ -36,7 +38,8 @@ def test_region_number(display):
 
 
 @pytest.mark.asyncio
-async def test_robot_queued(qtbot, sim_motor_registry, display):
+async def test_robot_queued(qtbot, sim_motor_registry, display, monkeypatch):
+    monkeypatch.setattr(display, "submit_queue_item", mock.MagicMock())
     await display.update_devices(sim_motor_registry)
     display.ui.run_button.setEnabled(True)
     display.ui.num_motor_spin_box.setValue(1)
@@ -52,7 +55,8 @@ async def test_robot_queued(qtbot, sim_motor_registry, display):
         return item.to_dict() == expected_item.to_dict()
 
     # Click the run button and see if the plan is queued
-    with qtbot.waitSignal(
-        display.queue_item_submitted, timeout=1000, check_params_cb=check_item
-    ):
-        qtbot.mouseClick(display.ui.run_button, QtCore.Qt.LeftButton)
+    display.queue_plan()
+    assert display.submit_queue_item.called
+    submitted_item = display.submit_queue_item.call_args[0][0]
+    assert submitted_item.to_dict() == expected_item.to_dict()
+

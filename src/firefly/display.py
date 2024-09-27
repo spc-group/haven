@@ -2,6 +2,7 @@ import subprocess
 from pathlib import Path
 from typing import Optional, Sequence
 
+from bluesky_queueserver_api import BItem
 from ophyd import Device
 from pydm import Display
 from qtpy import QtWidgets
@@ -19,7 +20,7 @@ class FireflyDisplay(Display):
 
     # Signals
     status_message_changed = Signal(str, int)
-    queue_item_submitted = Signal(object)
+    queue_item_submitted = Signal(object, bool)
 
     def __init__(self, parent=None, args=None, macros=None, ui_filename=None, **kwargs):
         super().__init__(
@@ -28,6 +29,18 @@ class FireflyDisplay(Display):
         self.customize_device()
         self.customize_ui()
         self.prepare_caqtdm_actions()
+
+    def submit_queue_item(self, item: BItem, run_now: bool = False):
+        """Submit an item to the queueserver to run.
+
+        Parameters
+        ==========
+        run_now
+          If true, the item will bypass the queue and be executed by
+          the queueserver immediately.
+
+        """
+        self.queue_item_submitted[object, bool].emit(item, run_now)
 
     def prepare_caqtdm_actions(self):
         """Create QActions for opening caQtDM panels.
@@ -114,8 +127,8 @@ class FireflyDisplay(Display):
         """Display a message in the status bar."""
         self.status_message_changed.emit(str(message), timeout)
 
-    def ui_filename(self):
-        raise NotImplementedError
+    # def ui_filename(self):
+    #     raise NotImplementedError
 
     def ui_filepath(self):
         path_base = Path(__file__).parent

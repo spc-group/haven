@@ -85,7 +85,8 @@ def test_E0_checkbox(display):
     )
 
 
-def test_xafs_scan_plan_queued_energies(display, qtbot):
+def test_xafs_scan_plan_queued_energies(display, qtbot, monkeypatch):
+    monkeypatch.setattr(display, "submit_queue_item", mock.MagicMock())
     display.edge_combo_box.setCurrentText("Pt L3 (11500.8 eV)")
     display.regions[-1].region_checkbox.setChecked(False)
     # Set up detector list
@@ -125,46 +126,32 @@ def test_xafs_scan_plan_queued_energies(display, qtbot):
             "notes": "sam_notes",
         },
     )
-
-    def check_item(item):
-        item_dict = item.to_dict()["kwargs"]
-        expected_dict = expected_item.to_dict()["kwargs"]
-
-        try:
-            # Check energies & exposures within 3 decimals
-            np.testing.assert_array_almost_equal(
-                item_dict["energies"], expected_dict["energies"], decimal=3
-            )
-            np.testing.assert_array_almost_equal(
-                item_dict["exposure"], expected_dict["exposure"], decimal=3
-            )
-
-            # Now check the rest of the dictionary, excluding the numpy array keys
-            item_dict.pop("energies")
-            item_dict.pop("exposure")
-            expected_dict.pop("energies")
-            expected_dict.pop("exposure")
-
-            # Check if the remaining dictionary items are equal
-            assert item_dict == expected_dict, "Non-array items do not match."
-
-        except AssertionError as e:
-            # Print detailed debug info
-            pprint(item_dict)
-            pprint(expected_dict)
-            print(str(e))
-            return False
-        return True
-
     # Click the run button and see if the plan is queued
-    display.ui.run_button.setEnabled(True)
-    with qtbot.waitSignal(
-        display.queue_item_submitted, timeout=1000, check_params_cb=check_item
-    ):
-        qtbot.mouseClick(display.ui.run_button, QtCore.Qt.LeftButton)
+    display.queue_plan()
+    assert display.submit_queue_item.called
+    submitted_item = display.submit_queue_item.call_args[0][0]
+    item_dict = submitted_item.to_dict()["kwargs"]
+    expected_dict = expected_item.to_dict()["kwargs"]
+    # Check energies & exposures within 3 decimals
+    np.testing.assert_array_almost_equal(
+        item_dict["energies"], expected_dict["energies"], decimal=3
+    )
+    np.testing.assert_array_almost_equal(
+        item_dict["exposure"], expected_dict["exposure"], decimal=3
+    )
+
+    # Now check the rest of the dictionary, excluding the numpy array keys
+    item_dict.pop("energies")
+    item_dict.pop("exposure")
+    expected_dict.pop("energies")
+    expected_dict.pop("exposure")
+
+    # Check if the remaining dictionary items are equal
+    assert item_dict == expected_dict, "Non-array items do not match."
 
 
-def test_xafs_scan_plan_queued_energies_k_mixed(qtbot, display):
+def test_xafs_scan_plan_queued_energies_k_mixed(qtbot, display, monkeypatch):
+    monkeypatch.setattr(display, "submit_queue_item", mock.MagicMock())
     display.ui.regions_spin_box.setValue(2)
     display.edge_combo_box.setCurrentText("Pt L3 (11500.8 eV)")
 
@@ -225,50 +212,38 @@ def test_xafs_scan_plan_queued_energies_k_mixed(qtbot, display):
             "notes": "sam_notes",
         },
     )
-
-    def check_item(item):
-        item_dict = item.to_dict()["kwargs"]
-        expected_dict = expected_item.to_dict()["kwargs"]
-
-        try:
-            # Check whether time is calculated correctly for a single scan
-            assert display.ui.label_hour_scan.text() == "0"
-            assert display.ui.label_min_scan.text() == "0"
-            assert display.ui.label_sec_scan.text() == "27.8"
-
-            # Check whether time is calculated correctly including the repeated scan
-            assert display.ui.label_hour_total.text() == "0"
-            assert display.ui.label_min_total.text() == "1"
-            assert display.ui.label_sec_total.text() == "23.4"
-
-            # Check energies & exposures within 3 decimals
-            np.testing.assert_array_almost_equal(
-                item_dict["energies"], expected_dict["energies"], decimal=2
-            )
-            np.testing.assert_array_almost_equal(
-                item_dict["exposure"], expected_dict["exposure"], decimal=2
-            )
-
-            # Now check the rest of the dictionary, excluding the numpy array keys
-            item_dict.pop("energies")
-            item_dict.pop("exposure")
-            expected_dict.pop("energies")
-            expected_dict.pop("exposure")
-
-            # Check if the remaining dictionary items are equal
-            assert item_dict == expected_dict, "Non-array items do not match."
-
-        except AssertionError as e:
-            print(e)
-            return False
-        return True
-
     # Click the run button and see if the plan is queued
-    display.ui.run_button.setEnabled(True)
-    with qtbot.waitSignal(
-        display.queue_item_submitted, timeout=1000, check_params_cb=check_item
-    ):
-        qtbot.mouseClick(display.ui.run_button, QtCore.Qt.LeftButton)
+    display.queue_plan()
+    assert display.submit_queue_item.called
+    submitted_item = display.submit_queue_item.call_args[0][0]
+    item_dict = submitted_item.to_dict()["kwargs"]
+    expected_dict = expected_item.to_dict()["kwargs"]
+    # Check whether time is calculated correctly for a single scan
+    assert display.ui.label_hour_scan.text() == "0"
+    assert display.ui.label_min_scan.text() == "0"
+    assert display.ui.label_sec_scan.text() == "27.8"
+
+    # Check whether time is calculated correctly including the repeated scan
+    assert display.ui.label_hour_total.text() == "0"
+    assert display.ui.label_min_total.text() == "1"
+    assert display.ui.label_sec_total.text() == "23.4"
+
+    # Check energies & exposures within 3 decimals
+    np.testing.assert_array_almost_equal(
+        item_dict["energies"], expected_dict["energies"], decimal=2
+    )
+    np.testing.assert_array_almost_equal(
+        item_dict["exposure"], expected_dict["exposure"], decimal=2
+    )
+
+    # Now check the rest of the dictionary, excluding the numpy array keys
+    item_dict.pop("energies")
+    item_dict.pop("exposure")
+    expected_dict.pop("energies")
+    expected_dict.pop("exposure")
+
+    # Check if the remaining dictionary items are equal
+    assert item_dict == expected_dict, "Non-array items do not match."
 
 
 # -----------------------------------------------------------------------------

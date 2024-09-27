@@ -75,7 +75,7 @@ class RobotDisplay(regions_display.RegionsDisplay):
 
         # Submit the item to the queueserver
         log.info("Add ``robot_transfer_sample()`` plan to queue.")
-        self.queue_item_submitted.emit(item)
+        self.submit_queue_item(item)
 
     def ui_filename(self):
         return "robot.ui"
