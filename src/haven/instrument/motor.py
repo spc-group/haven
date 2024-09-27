@@ -6,10 +6,10 @@ from apstools.utils.misc import safe_ophyd_name
 from ophyd import Component as Cpt
 from ophyd import EpicsMotor, EpicsSignal, EpicsSignalRO, Kind
 from ophyd_async.core import (
+    CALCULATE_TIMEOUT,
     DEFAULT_TIMEOUT,
     AsyncStatus,
     CalculatableTimeout,
-    CalculateTimeout,
     ConfigSignal,
     SignalBackend,
     SignalX,
@@ -36,10 +36,10 @@ class SignalX(SignalX):
         super().__init__(*args, **kwargs)
 
     def trigger(
-        self, wait=False, timeout: CalculatableTimeout = CalculateTimeout
+        self, wait=False, timeout: CalculatableTimeout = CALCULATE_TIMEOUT
     ) -> AsyncStatus:
         """Trigger the action and return a status saying when it's done"""
-        if timeout is CalculateTimeout:
+        if timeout is CALCULATE_TIMEOUT:
             timeout = self._timeout
         coro = self._backend.put(self.trigger_value, wait=wait, timeout=timeout)
         return AsyncStatus(coro)
