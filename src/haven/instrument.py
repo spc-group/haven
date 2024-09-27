@@ -141,8 +141,14 @@ class Instrument:
         HAVEN_CONFIG_FILES.
 
         """
-        file_paths = os.environ.get("HAVEN_CONFIG_FILES", "").split(":")
-        file_paths = [Path(fp) for fp in file_paths]
+        # Decide which config files to use
+        env_key = "HAVEN_CONFIG_FILES"
+        if env_key in os.environ.keys():
+            file_paths = os.environ.get("HAVEN_CONFIG_FILES", "")
+            file_paths = [Path(fp) for fp in file_paths.split(":")]
+        else:
+            file_paths = [Path(__file__).parent.resolve() / "iconfig_testing.toml"]
+        # Load the instrument from config files
         for fp in file_paths:
             with open(fp, mode="tr", encoding="utf-8") as fd:
                 self.parse_toml_file(fd)
