@@ -166,34 +166,27 @@ class HavenMotor(MotorFlyer, EpicsMotor):
         self._original_vals.setdefault(self.velocity, self.velocity.get())
 
 
-async def load_motors(
-    config: Mapping = None,
-    registry: InstrumentRegistry = default_registry,
-    auto_name=True,
-    connect: bool = True,
+def load_motors(
+        prefix: str,
+        num_motors: int,
+        auto_name: bool = True,
+        registry: InstrumentRegistry | None = None
 ) -> Sequence:
     """Load generic hardware motors from IOCs.
 
-    This loader will skip motor prefixes that already exist in the
-    registry *registry*, so it is a good idea to run this loader after
-    other devices have been created that might potentially use some of
-    these motors (e.g. mirrors, tables, etc.).
+    For example, if *prefix* is "255idcVME:" and *num_motors* is 12,
+    then motors with PVs from "255idcVME:m1" to "255idcVME:m12" will
+    be returned.
 
     Parameters
     ==========
-    config
-      The beamline configuration. If omitted, will use the config
-      provided by :py:func:`haven._iconfig.load_config()`.
-    registry
-      The instrument registry to check for existing motors. Existing
-      motors will not be duplicated. Motors will be added to this
-      registry if *connect* is true.
+    prefix
+      The PV prefix for all motors on this IOC
+    num_motors
+      How many motors to create for this IOC.
     auto_name
-      If true, motors will be named based on its description signal
-      when connecting.
-    connect
-      If true (default), device connections will be established and
-      successfully connected devices get added to the registry.
+      If true, the name of the device will be updated to match the
+      motor's ``.DESC`` field.
 
     Returns
     =======
@@ -201,40 +194,28 @@ async def load_motors(
       The newly created motor devices.
 
     """
-    if config is None:
-        config = load_config()
     # Create the motor devices
     devices = []
-    for section_name, cfg in config.get("motor", {}).items():
-        prefix = cfg["prefix"]
-        num_motors = cfg["num_motors"]
-        log.info(
-            f"Preparing {num_motors} motors from IOC: " f"{section_name} ({prefix})"
+    for idx in range(num_motors):
+        labels = {"motors", "extra_motors", "baseline"}
+        default_name = f"{prefix.strip(':')}_m{idx+1}"
+        new_motor = Motor(
+            prefix=f"{prefix}m{idx+1}",
+            name=default_name,
+            labels=labels,
+            auto_name=auto_name,
         )
-        for idx in range(num_motors):
-            labels = {"motors", "extra_motors", "baseline", section_name}
-            default_name = f"{prefix.strip(':')}_m{idx+1}"
-            new_motor = Motor(
-                prefix=f"{prefix}m{idx+1}",
-                name=default_name,
-                labels=labels,
-                auto_name=auto_name,
-            )
-            devices.append(new_motor)
+        devices.append(new_motor)
     # Removed motors that are already available somewhere else (e.g. KB Mirrors)
-    existing_motors = registry.findall(label="motors", allow_none=True)
-    existing_sources = [getattr(m.user_readback, "source", "") for m in existing_motors]
-    existing_sources = [s for s in existing_sources if s != ""]
-    devices = [
-        m
-        for m in devices
-        if getattr(m.user_readback, "source", "") not in existing_sources
-    ]
-    # Connect to devices
-    if connect:
-        devices = await connect_devices(
-            devices, mock=not config["beamline"]["is_connected"], registry=registry
-        )
+    if registry is not None:
+        existing_motors = registry.findall(label="motors", allow_none=True)
+        existing_sources = [getattr(m.user_readback, "source", "") for m in existing_motors]
+        existing_sources = [s for s in existing_sources if s != ""]
+        devices = [
+            m
+            for m in devices
+            if getattr(m.user_readback, "source", "") not in existing_sources
+        ]
     return devices
 
 

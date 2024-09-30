@@ -4,7 +4,9 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from haven.devices.ion_chamber import IonChamber
+from haven.devices.motor import load_motors
 from haven.instrument import Instrument
+from ophyd_async.core import Device
 
 haven_dir = Path(__file__).parent.parent.resolve()
 toml_file = haven_dir / "iconfig_testing.toml"
@@ -12,7 +14,10 @@ toml_file = haven_dir / "iconfig_testing.toml"
 
 @pytest.fixture()
 def instrument():
-    inst = Instrument({"ion_chamber": IonChamber})
+    inst = Instrument({
+        "ion_chamber": IonChamber,
+        "motors": load_motors,
+    })
     with open(toml_file, mode="tr", encoding="utf-8") as fd:
         inst.parse_toml_file(fd)
     return inst
@@ -85,3 +90,4 @@ async def test_load(monkeypatch):
     # Check that the right methods were called
     instrument.parse_toml_file.assert_called_once()
     instrument.connect.assert_called_once_with(mock=True)
+    # assert False

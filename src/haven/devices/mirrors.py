@@ -104,64 +104,6 @@ class KBMirrors(Device):
         super().__init__(name=name)
 
 
-async def load_mirrors(
-    config: Mapping = None,
-    registry: InstrumentRegistry = default_registry,
-    connect: bool = True,
-):
-    if config is None:
-        config = load_config()
-    # Create two-bounce KB mirror sets
-    devices = []
-    for name, kb_config in config.get("kb_mirrors", {}).items():
-        # Build the motor prefixes
-        try:
-            prefix = kb_config["prefix"]
-            ioc_prefix = prefix.split(":")[0]
-            motors = dict(
-                # Normal motors
-                horiz_upstream_motor=kb_config["horiz_upstream_motor"],
-                horiz_downstream_motor=kb_config["horiz_downstream_motor"],
-                vert_upstream_motor=kb_config["vert_upstream_motor"],
-                vert_downstream_motor=kb_config["vert_downstream_motor"],
-                # Bender motors
-                horiz_upstream_bender=kb_config.get("horiz_upstream_bender", ""),
-                horiz_downstream_bender=kb_config.get("horiz_downstream_bender", ""),
-                vert_upstream_bender=kb_config.get("vert_upstream_bender", ""),
-                vert_downstream_bender=kb_config.get("vert_downstream_bender", ""),
-            )
-            # Convert motors to fully qualified PV names (if not empty)
-            motors = {
-                key: f"{ioc_prefix}:{val}" for key, val in motors.items() if bool(val)
-            }
-        except KeyError as ex:
-            raise exceptions.UnknownDeviceConfiguration(
-                f"Device {name} missing '{ex.args[0]}': {kb_config}"
-            )
-        # Make the device
-        devices.append(KBMirrors(prefix=prefix, name=name, **motors))
-    # Create single-bounce mirrors
-    for name, mirror_config in config.get("mirrors", {}).items():
-        # Decide which base class of mirror to use
-        DeviceClass = globals().get(mirror_config["device_class"])
-        # Check that it's a valid device class
-        if DeviceClass is None:
-            msg = f"mirrors.{name}.device_class={mirror_config['device_class']}"
-            raise exceptions.UnknownDeviceConfiguration(msg)
-        devices.append(
-            DeviceClass(
-                prefix=mirror_config["prefix"],
-                bendable=mirror_config.get("bendable", False),
-                name=name,
-            )
-        )
-    if connect:
-        devices = await connect_devices(
-            devices, mock=not config["beamline"]["is_connected"], registry=registry
-        )
-    return devices
-
-
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov

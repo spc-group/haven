@@ -20,6 +20,24 @@ log = logging.getLogger(__name__)
 class Instrument:
     """A beamline instrument built from config files of Ophyd devices.
 
+    *device_classes* should be dictionary that maps configuration
+     section names to device classes (or similar items).
+
+    Example:
+
+    ```python
+    instrument = Instrument({
+      "ion_chamber": IonChamber
+      "motors": load_motors,
+    })
+    ```
+
+    The values in *device_classes* should be one of the following:
+
+    1. A device class
+    2. A callable that returns an instantiated device object
+    3. A callable that returns a sequence of device objects
+
     Parameters
     ==========
     device_classes
@@ -59,9 +77,18 @@ class Instrument:
             for params in cfg[key]:
                 self.validate_params(params, Klass)
                 device = self.make_device(params, Klass)
-                devices.append(device)
+                try:
+                    # Maybe its a list of devices?
+                    devices.extend(device)
+                except TypeError:
+                    # No, assume it's just a single device then
+                    devices.append(device)
         # Save devices for connecting to later
         self.devices.extend(devices)
+        # Register connected devices with the registry
+        if self.registry is not None:
+            for device in self.devices:
+                self.registry.register(device)
         return devices
 
     def validate_params(self, params, Klass):
@@ -88,8 +115,15 @@ class Instrument:
                     )
 
     def make_device(self, params, Klass):
-        """Create the device from its parameters."""
-        return Klass(**params)
+        """Create the devices from their parameters."""
+        # Check if we need to inject the registry
+        extra_params = {}
+        sig = inspect.signature(Klass)
+        if "registry" in sig.parameters.keys():
+            extra_params = {"registry": self.registry}
+        # Create the device
+        result = Klass(**params, **extra_params)
+        return result
 
     async def connect(
         self,
@@ -125,20 +159,20 @@ class Instrument:
             else:
                 # Unexpected exception, raise it so it can be handled
                 exceptions[device.name] = result
-        # Register connected devices with the registry
-        if self.registry is not None:
-            for device in new_devices:
-                self.registry.register(device)
         # Raise exceptions if any were present
         if len(exceptions) > 0:
             raise NotConnected(exceptions)
         return new_devices
 
-    async def load(self):
+    async def load(self, connect: bool = True):
         """Load instrument specified in config files.
 
         Config files are read from the environmental variable
         HAVEN_CONFIG_FILES.
+
+        Parameters
+        ==========
+        If true, establish connections for the devices now.
 
         """
         # Decide which config files to use
@@ -153,9 +187,7 @@ class Instrument:
             with open(fp, mode="tr", encoding="utf-8") as fd:
                 self.parse_toml_file(fd)
         # Connect the devices
-        await self.connect(mock=not self.hardware_is_present)
+        if connect:
+            await self.connect(mock=not self.hardware_is_present)
 
 
-instrument = Instrument({
-    "ion_chamber": IonChamber
-})

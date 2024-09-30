@@ -116,57 +116,6 @@ class Table(StandardReadable, Device):
         super().__init__(name=name)
 
 
-async def load_tables(
-    config=None, registry: InstrumentRegistry = default_registry, connect: bool = True
-):
-    if config is None:
-        config = load_config()
-    # Create two-bounce KB mirror sets
-    devices = []
-    for name, tbl_config in config.get("table", {}).items():
-        # Build the motor prefixes
-        try:
-            prefix = tbl_config["prefix"]
-        except KeyError as ex:
-            raise exceptions.UnknownDeviceConfiguration(
-                f"Device {name} missing '{ex.args[0]}': {tbl_config}"
-            ) from ex
-        # Get other (optional) configuration
-        attr_names = [
-            "upstream_motor",
-            "downstream_motor",
-            "horizontal_motor",
-            "vertical_motor",
-            "transforms",
-            "pseudo_motors",
-        ]
-        attrs = {}
-        for attr in attr_names:
-            suffix = tbl_config.get(attr)
-            if suffix is not None:
-                attrs[attr] = f"{prefix}{suffix}"
-            else:
-                attrs[attr] = ""
-        # Make the device
-        devices.append(
-            Table(
-                name=name,
-                vertical_prefix=attrs["vertical_motor"],
-                horizontal_prefix=attrs["horizontal_motor"],
-                upstream_prefix=attrs["upstream_motor"],
-                downstream_prefix=attrs["downstream_motor"],
-                pseudo_motor_prefix=attrs["pseudo_motors"],
-                transform_prefix=attrs["transforms"],
-            )
-        )
-    # Connect to devices
-    if connect:
-        devices = await connect_devices(
-            devices, mock=not config["beamline"]["is_connected"], registry=registry
-        )
-    return devices
-
-
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov

@@ -108,16 +108,25 @@ num_channels = 32
 # ======
 # 
 # Add a new section for each IOC (or IOC prefix) that has motors
-# matching the format {prefix}:m1. The heading of the subsection
-# ("VME_crate" in the example below) is a human-readable name that
-# will become a label on the Ophyd Device. *num_motors* determines how
-# many motors will be read. The example below will load three motors
-# with PVs: "vme_crate_ioc:m1", "vme_crate_ioc:m2", and
-# "vme_crate_ioc:m3".
+# matching the format {prefix}:m1. *num_motors* determines how many
+# motors will be read. The example below will load three motors with
+# PVs: "vme_crate_ioc:m1", "vme_crate_ioc:m2", and "vme_crate_ioc:m3".
+#
+# By default, the names of the motors are taken from the motor's .DESC
+# field. This can be disabled by setting ``auto_name = false``.
 
-[motor.VME_crate]
+[[ motors ]]
 prefix = "255idVME:"
 num_motors = 3
+# auto_name = True
+
+[[ motor ]]
+# Individual motors can be created as well.
+prefix = "255idcVME:m1"
+# name = ""
+# labels=["motors"]
+# auto_name = None
+
 
 # Keys for camera definitions must begin with "cam" (e.g. "camA", "camB")
 [camera.camA]
@@ -158,49 +167,58 @@ yaw_motor = "m34"
 horizontal_motor = "m35"
 diagonal_motor = "m36"
 
-# A bendable mirror, like the long KB at 25-ID-C
-[kb_mirrors.LongKB_Cdn]
-prefix = "255idcVME:LongKB_Cdn:"
-horiz_upstream_motor = "m33"
-horiz_downstream_motor = "m34"
-horiz_upstream_bender = "m21"
-horiz_downstream_bender = "m22"
-vert_upstream_motor = "m46"
-vert_downstream_motor = "m47"
-vert_upstream_bender = "m56"
-vert_downstream_bender = "m57"
 
-# A non-bendable mirror, like the KB at 25-ID-C
-[kb_mirrors.KB]
+# KB Mirrors
+# ==========
+#
+# A combined set of vertical and horizontal KB mirrors. Optionally,
+# bender motors can also be given.
+
+[[ kb_mirrors ]]
 prefix = "255idcVME:KB:"
-horiz_upstream_motor = "m35"
-horiz_downstream_motor = "m36"
-vert_upstream_motor = "m48"
-vert_downstream_motor = "m49"
+horiz_upstream_motor = "255idcVME:KB:m35"
+horiz_downstream_motor = "255idcVME:KB:m36"
+vert_upstream_motor = "255idcVME:KB:m48"
+vert_downstream_motor = "255idcVME:KB:m49"
+# # Optional bender motors
+# horiz_upstream_bender: str = "255idcVME:KB:m52",
+# horiz_downstream_bender: str = "255idcVME:KB:m53",
+# vert_upstream_bender: str = "255idcVME:KB:m61",
+# vert_downstream_bender: str = "255idcVME:KB:m62",
 
-# A single bounch, high heat load mirror
-[mirrors.ORM1]
+
+# High-heat-load mirrors
+# ======================
+#
+# A single-bounce mirror designed for white-beam. Optionally, also
+# bendable with a single motor.
+
+[[ high_heat_load_mirror ]]
+name = "ORM1"
 prefix = "25ida:ORM1:"
-device_class = "HighHeatLoadMirror"
 bendable = false
 
-[mirrors.ORM2]
-
+[[ high_heat_load_mirror ]]
+name = "ORM2"
 prefix = "25ida:ORM2:"
-device_class = "HighHeatLoadMirror"
 bendable = true
 
-# An optical table with two vertical motors
-[table.downstream_table]
-prefix = "255idcVME:"
-transforms = "table_ds_trans:"
-pseudo_motors = "table_ds:"
-upstream_motor = "m21"
-downstream_motor = "m22"
-caqtdm_macros = "P=255idcVME:,PM=255idcVME:,TB=table_ds,TR=table_ds_trans,TBUS=m21,TBDS=m22"
+# Table
+# =====
+# An optical table with a specific configuration of motors
 
+[[ table ]]
+name = "downstream_table"
+# # Optional, either will use vertical motor, or separate upstream/downstream
+# vertical_prefix = "255idcVME:m24"
+# horizontal_prefix = "255idcVME:m23"
+# upstream_motor_prefix = "255idcVME:m21"
+# downstream_motor_prefix = "255idcVME:m22"
+# pseudo_motor_prefix = "255idcVME:table_ds:"
+# transformprefix = "255idcVME:table_ds_trans:"
+
+[[ table ]]
 # An optical table with one vertical motor and one horizontal motor
-[table.upstream_table]
 prefix = "255idcVME:"
 vertical_motor = "m26"
 horizontal_motor = "m25"

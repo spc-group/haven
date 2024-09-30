@@ -20,16 +20,14 @@ from .devices.heater import load_heaters
 from .devices.instrument_registry import InstrumentRegistry
 from .devices.instrument_registry import registry as default_registry
 from .devices.lerix import load_lerix_spectrometers
-from .devices.mirrors import load_mirrors
 from .devices.motor import HavenMotor, load_motors
 from .devices.power_supply import load_power_supplies
 from .devices.robot import load_robots
 from .devices.shutter import load_shutters
 from .devices.slits import load_slits
-from .devices.stage import load_stages
-from .devices.table import load_tables
 from .devices.xia_pfcu import load_xia_pfcu4s
 from .devices.xspress import load_xspress_detectors
+from .instrument import Instrument
 
 __all__ = ["load_instrument"]
 
@@ -66,37 +64,30 @@ async def load_instrument(
       If true, return the newly loaded devices when complete.
 
     """
+    instrument = Instrument(
+        {
+            "ion_chamber": IonChamber,
+            "high_heat_load_mirror": HighHeatLoadMirror,
+            "kb_mirrors": KBMirrors,
+            "xy_stage": XYStage,
+            "table": Table,
+            "aerotech_stage": AerotechStage,
+            "motor": Motor,
+            # Motors happen later so duplicate motors can be removed
+            "motors": load_motors,
+        },
+    )
+    await instrument.load()
+    # Connect the instrument
+    print(f"Loaded [repr.number]{len(instrument.devices)}[/] devices.", flush=True)
     # Clear out any existing registry entries
-    if registry is not None:
-        registry.clear()
+    registry = instrument.registry
     # Load the configuration
     if config is None:
         config = load_config()
     # Load the devices from the configuration files
-    devices = []
-    # Asynchronous loading of devices
-    mock = not config["beamline"]["is_connected"]
-    results = await asyncio.gather(
-        load_aerotech_stages(config=config, connect=False),
-        load_mirrors(config=config, connect=False),
-        load_stages(config=config, connect=False),
-        load_tables(config=config, connect=False),
-    )
-    devices.extend([d for devices in results for d in devices])
-    print(f"Loading [repr.number]{len(devices)}[/] devices…", flush=True)
-    try:
-        await connect_devices(devices, mock=mock, registry=registry)
-    except NotConnected as exc:
-        log.exception(exc)
-    # Load the motor devices last so that we can check for existing
-    # motors in the registry
-    motors = await load_motors(config=config, connect=False)
-    print(f"Loading [repr.number]{len(motors)}[/] extra motors…", flush=True)
-    try:
-        await connect_devices(motors, mock=mock, registry=registry)
-    except NotConnected as exc:
-        log.exception(exc)
     # Synchronous (threaded) devices
+    devices = []
     devices.extend(
         [
             load_aps(config=config),
@@ -133,22 +124,6 @@ async def load_instrument(
     # Return the final list
     if return_devices:
         return devices
-
-
-def load_simulated_devices(config={}):
-    # Motors
-    FakeMotor = sim.make_fake_device(HavenMotor)
-    motor = FakeMotor(name="sim_motor", labels={"motors"})
-    # Detectors
-    detector = sim.SynGauss(
-        name="sim_detector",
-        motor=motor,
-        motor_field="sim_motor",
-        labels={"detectors"},
-        center=0,
-        Imax=1,
-    )
-    return (motor, detector)
 
 
 # -----------------------------------------------------------------------------

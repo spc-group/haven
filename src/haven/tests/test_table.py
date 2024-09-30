@@ -1,6 +1,6 @@
 import pytest
 
-from haven.devices import Table, load_tables
+from haven.devices import Table
 
 
 def test_vertical_table():
@@ -61,24 +61,3 @@ def test_pitch_table():
         tbl.vertical_readback_transform.units.source
         == "ca://255idcVME:table_us_trans:Readback.EGU"
     )
-
-
-@pytest.mark.asyncio
-async def test_load_tables(sim_registry):
-    await load_tables(registry=sim_registry)
-    # Check that the vertical/horizontal table has the right motors
-    table = sim_registry.find(name="upstream_table")
-    assert isinstance(table, Table)
-    assert not hasattr(table, "upstream")
-    assert not hasattr(table, "downstream")
-    assert table.vertical.user_setpoint.source == "mock+ca://255idcVME:m26.VAL"
-    assert table.horizontal.user_setpoint.source == "mock+ca://255idcVME:m25.VAL"
-    # Check that the 2-leg table has the right motors
-    table = sim_registry.find(name="downstream_table")
-    assert isinstance(table, Table)
-    assert table.upstream.user_setpoint.source == "mock+ca://255idcVME:m21.VAL"
-    assert table.downstream.user_setpoint.source == "mock+ca://255idcVME:m22.VAL"
-    assert (
-        table.vertical.user_setpoint.source == "mock+ca://255idcVME:table_ds:height.VAL"
-    )
-    assert not hasattr(table, "horizontal")

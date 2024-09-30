@@ -60,7 +60,7 @@ from .motor_position import (  # noqa: F401
     recall_motor_position,
     save_motor_position,
 )
-from .instrument import instrument  # noqa: F401
+from .instrument import Instrument  # noqa: F401
 from .plans.align_motor import align_motor, align_pitch2  # noqa: F401
 from .plans.align_slits import align_slits  # noqa: F401
 from .plans.auto_gain import GainRecommender, auto_gain  # noqa:F401
