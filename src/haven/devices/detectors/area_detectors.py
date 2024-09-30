@@ -1,5 +1,6 @@
 from typing import Mapping
 from pathlib import Path
+import warnings
 
 from ophyd_async.core import Device, YMDPathProvider, UUIDFilenameProvider
 
@@ -18,7 +19,9 @@ def default_path_provider(config=None):
     path_provider = YMDPathProvider(
         filename_provider=UUIDFilenameProvider(),
         base_directory_path=root_dir,
+        create_dir_depth=-4,
     )
+    return path_provider
 
 
 async def load_area_detectors(
@@ -42,13 +45,15 @@ async def load_area_detectors(
         # Check that it's a valid device class
         if DeviceClass is None:
             msg = f"area_detector.{name}.device_class={adconfig['device_class']}"
-            raise exceptions.UnknownDeviceConfiguration(msg)
+            warnings.warn(msg)
+            continue
+            # raise exceptions.UnknownDeviceConfiguration(msg)
         # Create the device co-routine
         devices.append(
             DeviceClass(
                 prefix=f"{adconfig['prefix']}:",
                 path_provider=path_provider,
-                name=name,
+                name=f"{name}_async",
             )
         )
     # Connect to devices
