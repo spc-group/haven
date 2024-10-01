@@ -10,7 +10,7 @@ from tiled.adapters.mapping import MapAdapter
 from tiled.adapters.xarray import DatasetAdapter
 from tiled.client import Context, from_context
 from tiled.server.app import build_app
-from firefly.fake_position_runs import position_runs
+from firefly.tests.fake_position_runs import position_runs
 
 from haven.instrument import Motor
 from haven.motor_position import (
