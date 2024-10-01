@@ -342,9 +342,9 @@ class SaveMotorDisplay(regions_display.RegionsDisplay):
 
         try:
             motor_args = self.get_scan_parameters()
-        except AttributeError as e:                
-            self.ui.textBrowser.append(str(e))
-            return  
+        if not motor_args:
+            self.ui.textBrowser.append("No motors selected. Please select motors to save.")
+            return
         
         save_name = self.ui.lineEdit_name.text()
         if not save_name:
