@@ -184,7 +184,7 @@
            <item>
             <widget class="QueueButton" name="run_now_button">
              <property name="enabled">
-              <bool>false</bool>
+              <bool>true</bool>
              </property>
              <property name="text">
               <string>Save now</string>
@@ -373,7 +373,7 @@
            <item>
             <widget class="QueueButton" name="recall_now_button">
              <property name="enabled">
-              <bool>false</bool>
+              <bool>true</bool>
              </property>
              <property name="text">
               <string>Recall now</string>

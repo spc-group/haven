@@ -3,6 +3,7 @@ import logging
 
 from qasync import asyncSlot
 from qtpy.QtCore import Signal
+from qtpy import QtWidgets
 
 from firefly import display
 from firefly.plans.util import is_valid_value, time_converter
@@ -10,8 +11,9 @@ from firefly.plans.util import is_valid_value, time_converter
 log = logging.getLogger()
 
 
-class RegionBase:
+class RegionBase(QtWidgets.QWidget):
     def __init__(self, line_label: str = ""):
+        super().__init__()
         self.line_label = line_label
         self.setup_ui()
 
