@@ -1,11 +1,6 @@
 """LabJack Data Acquisition (DAQ)
 +++++++++++++++++++++++++++++++++++++++
 
-.. autosummary::
-
-   ~LabJackBase
-
-
 Ophyd-async definitions for Labjack T-series data acquisition devices.
 
 Supported devices, all inherit from ``LabJackBase``:

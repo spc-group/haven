@@ -1,15 +1,4 @@
-"""
-Ophyd support for the EPICS transform record
-
-
-Public Structures
-
-.. autosummary::
-
-    ~UserTransformN
-    ~UserTransformsDevice
-    ~TransformRecord
-"""
+"""Ophyd support for the EPICS transform record."""
 
 import asyncio
 

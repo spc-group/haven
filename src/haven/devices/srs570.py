@@ -3,10 +3,6 @@ Ophyd support for Stanford Research Systems 570 preamplifier from synApps
 
 Public Structures
 
-.. autosummary::
-
-    ~SRS570PreAmplifier
-
 This device connects with the SRS570 support from synApps.
 (https://github.com/epics-modules/ip/blob/master/ipApp/Db/SR570.db)
 

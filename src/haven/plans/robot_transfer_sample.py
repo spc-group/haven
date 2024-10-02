@@ -26,10 +26,14 @@ def robot_transfer_sample(robot, sampleN, *args):
     Unload sample:
     robot_sample(robot, None, motor1, 100, motor2, 200, motor3, 50)
 
-    Parameters:
-    - robot: robot device
-    - sampleN: Sample number
-    - *args: multiple pairs of motor and pos
+    Parameters
+    ==========
+    robot
+      robot device
+    sampleN
+      Sample number
+    args
+      multiple pairs of motor and pos
     """
 
     robot = registry.find(robot)

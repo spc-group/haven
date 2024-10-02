@@ -1,6 +1,6 @@
-###################
-Configuration Files
-###################
+#########################
+Instrument Configuration
+#########################
 
 .. contents:: Table of Contents
     :depth: 3
@@ -14,6 +14,9 @@ differences are **managed by a set of configuration files**, similar
 to the .ini files used in the old LabView solution. To keep the
 complexity of these configuration files manageable, Haven gets much of
 the needed information from the IOCs directly.
+
+The job of processing the configuration files is handled by the
+:py:class:`~haven.instrument.Instrument` class. 
 
 Haven/Firefly should always load without a specific configuration
 file, but will probably not do anything useful.
@@ -99,7 +102,7 @@ Development and Testing
 While adding features and tests to Haven, it is often necessary to
 read a configuration file, for example when testing functions that
 load devices through
-:py:func:`~haven.instrument.load_instrument.load_instrument()`. However,
+:py:func:`~haven.load_instrument.load_instrument()`. However,
 the configuration that is loaded should not come from a real beamline
 configuration or else there is a risk of controlling real hardware
 while running tests.
