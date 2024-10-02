@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import time
 import warnings
 from typing import Mapping
 
@@ -19,8 +20,13 @@ from .devices.energy_positioner import load_energy_positioner
 from .devices.heater import load_heaters
 from .devices.instrument_registry import InstrumentRegistry
 from .devices.instrument_registry import registry as default_registry
+from .devices.ion_chamber import IonChamber
 from .devices.lerix import load_lerix_spectrometers
-from .devices.motor import HavenMotor, load_motors
+from .devices.motor import HavenMotor, load_motors, Motor
+from .devices.mirrors import HighHeatLoadMirror, KBMirrors
+from .devices.stage import XYStage
+from .devices.table import Table
+from .devices.aerotech import AerotechStage
 from .devices.power_supply import load_power_supplies
 from .devices.robot import load_robots
 from .devices.shutter import load_shutters
@@ -66,20 +72,23 @@ async def load_instrument(
     """
     instrument = Instrument(
         {
-            "ion_chamber": IonChamber,
+            # "ion_chamber": IonChamber,
             "high_heat_load_mirror": HighHeatLoadMirror,
             "kb_mirrors": KBMirrors,
             "xy_stage": XYStage,
             "table": Table,
             "aerotech_stage": AerotechStage,
             "motor": Motor,
-            # Motors happen later so duplicate motors can be removed
-            "motors": load_motors,
         },
     )
+    t0 = time.monotonic()
     await instrument.load()
-    # Connect the instrument
-    print(f"Loaded [repr.number]{len(instrument.devices)}[/] devices.", flush=True)
+    # VME-style Motors happen later so duplicate motors can be
+    # removed
+    await instrument.load(device_classes={"motors": load_motors})
+    # Notify with the new device count
+    load_time = time.monotonic() - t0
+    print(f"Loaded [repr.number]{len(instrument.devices)}[/] devices in {load_time:.1f} sec.", flush=True)
     # Clear out any existing registry entries
     registry = instrument.registry
     # Load the configuration
@@ -124,6 +133,8 @@ async def load_instrument(
     # Return the final list
     if return_devices:
         return devices
+    else:
+        return instrument
 
 
 # -----------------------------------------------------------------------------

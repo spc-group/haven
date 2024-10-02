@@ -18,7 +18,7 @@ class HighHeatLoadMirror(Device):
     Possibly also bendable.
     """
 
-    ophyd_labels_ = {"mirrors"}
+    _ophyd_labels_ = {"mirrors"}
 
     def __init__(self, prefix: str, name: str = "", bendable=False):
         # Physical motors

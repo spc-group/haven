@@ -74,7 +74,7 @@ class Instrument:
         devices = []
         for key, Klass in self.device_classes.items():
             # Create the devices
-            for params in cfg[key]:
+            for params in cfg.get(key, []):
                 self.validate_params(params, Klass)
                 device = self.make_device(params, Klass)
                 try:
@@ -85,10 +85,6 @@ class Instrument:
                     devices.append(device)
         # Save devices for connecting to later
         self.devices.extend(devices)
-        # Register connected devices with the registry
-        if self.registry is not None:
-            for device in self.devices:
-                self.registry.register(device)
         return devices
 
     def validate_params(self, params, Klass):
@@ -164,7 +160,7 @@ class Instrument:
             raise NotConnected(exceptions)
         return new_devices
 
-    async def load(self, connect: bool = True):
+    async def load(self, connect: bool = True, device_classes: Mapping | None = None):
         """Load instrument specified in config files.
 
         Config files are read from the environmental variable
@@ -172,9 +168,15 @@ class Instrument:
 
         Parameters
         ==========
-        If true, establish connections for the devices now.
+        connect
+          If true, establish connections for the devices now.
+        device_classes
+          A temporary set of device classes to use for this call
+          only. Overrides any device classes given during
+          initalization.
 
         """
+        self.devices = []
         # Decide which config files to use
         env_key = "HAVEN_CONFIG_FILES"
         if env_key in os.environ.keys():
@@ -183,11 +185,22 @@ class Instrument:
         else:
             file_paths = [Path(__file__).parent.resolve() / "iconfig_testing.toml"]
         # Load the instrument from config files
-        for fp in file_paths:
-            with open(fp, mode="tr", encoding="utf-8") as fd:
-                self.parse_toml_file(fd)
+        old_classes = self.device_classes
+        try:
+            # Temprary override of device classes
+            if device_classes is not None:
+                self.device_classes = device_classes
+            # Parse TOML files
+            for fp in file_paths:
+                with open(fp, mode="tr", encoding="utf-8") as fd:
+                    self.parse_toml_file(fd)
+        finally:
+            self.device_classes = old_classes
         # Connect the devices
         if connect:
-            await self.connect(mock=not self.hardware_is_present)
-
-
+            new_devices = await self.connect(mock=not self.hardware_is_present)
+        else:
+            new_devices = self.devices
+        # Registry devices
+        for device in new_devices:
+            self.registry.register(device)

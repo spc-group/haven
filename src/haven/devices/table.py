@@ -82,7 +82,7 @@ class Table(StandardReadable, Device):
 
     def __init__(
         self,
-        *args,
+        *,
         vertical_prefix: str = "",
         horizontal_prefix: str = "",
         upstream_prefix: str = "",
