@@ -11,7 +11,6 @@ import tomlkit
 from ophyd_async.core import DEFAULT_TIMEOUT, NotConnected
 from ophydregistry import Registry
 
-from .devices.ion_chamber import IonChamber
 from .exceptions import InvalidConfiguration
 
 log = logging.getLogger(__name__)
@@ -154,6 +153,7 @@ class Instrument:
                 new_devices.append(device)
             else:
                 # Unexpected exception, raise it so it can be handled
+                log.debug(f"Failed connection for device {device.name}")
                 exceptions[device.name] = result
         # Raise exceptions if any were present
         if len(exceptions) > 0:

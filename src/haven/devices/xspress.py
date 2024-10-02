@@ -20,9 +20,9 @@ from pcdsdevices.signal import MultiDerivedSignal
 from pcdsdevices.type_hints import OphydDataType, SignalToValue
 
 from .._iconfig import load_config
-from .area_detector import DetectorBase, HDF5FilePlugin
 from ..device import RegexComponent as RECpt
 from ..device import make_device
+from .area_detector import DetectorBase, HDF5FilePlugin
 from .fluorescence_detector import (
     MCASumMixin,
     ROIMixin,

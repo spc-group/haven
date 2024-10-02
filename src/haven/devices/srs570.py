@@ -20,9 +20,9 @@ from enum import Enum
 from typing import Optional, Type
 
 from ophyd_async.core import (
+    CALCULATE_TIMEOUT,
     AsyncStatus,
     CalculatableTimeout,
-    CALCULATE_TIMEOUT,
     Device,
     SignalRW,
     SubsetEnum,

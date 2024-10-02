@@ -1,5 +1,3 @@
-import pytest
-
 from haven.devices import Table
 
 

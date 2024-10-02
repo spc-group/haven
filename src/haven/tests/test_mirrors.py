@@ -1,8 +1,4 @@
-from haven.devices.mirrors import (
-    HighHeatLoadMirror,
-    KBMirror,
-    KBMirrors,
-)
+from haven.devices.mirrors import HighHeatLoadMirror, KBMirror, KBMirrors
 
 
 async def test_high_heat_load_mirror_PVs():

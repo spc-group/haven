@@ -12,6 +12,7 @@ from ophyd.areadetector.plugins import (
 
 from .. import exceptions
 from .._iconfig import load_config
+from ..device import make_device
 from .area_detector import (  # noqa: F401
     AsyncCamMixin,
     DetectorBase,
@@ -21,7 +22,6 @@ from .area_detector import (  # noqa: F401
     StatsPlugin_V34,
     TIFFFilePlugin,
 )
-from ..device import make_device
 
 log = logging.getLogger(__name__)
 

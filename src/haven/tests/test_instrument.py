@@ -6,7 +6,6 @@ import pytest
 from haven.devices.ion_chamber import IonChamber
 from haven.devices.motor import load_motors
 from haven.instrument import Instrument
-from ophyd_async.core import Device
 
 haven_dir = Path(__file__).parent.parent.resolve()
 toml_file = haven_dir / "iconfig_testing.toml"
@@ -14,10 +13,12 @@ toml_file = haven_dir / "iconfig_testing.toml"
 
 @pytest.fixture()
 def instrument():
-    inst = Instrument({
-        "ion_chamber": IonChamber,
-        "motors": load_motors,
-    })
+    inst = Instrument(
+        {
+            "ion_chamber": IonChamber,
+            "motors": load_motors,
+        }
+    )
     with open(toml_file, mode="tr", encoding="utf-8") as fd:
         inst.parse_toml_file(fd)
     return inst
@@ -74,9 +75,13 @@ def test_validate_wrong_types(instrument):
 
 
 async def test_connect(instrument):
+    # Are devices disconnected to start with?
+    assert len(instrument.devices) > 0
+    assert all([d._connect_task is None for d in instrument.devices])
+    # Connect the device
     await instrument.connect(mock=True)
-    # Check devices are in the registry
-    assert instrument.registry["I0"] is not None
+    # Are devices connected afterwards?
+    assert all([d._connect_task.done for d in instrument.devices])
 
 
 async def test_load(monkeypatch):
@@ -90,4 +95,3 @@ async def test_load(monkeypatch):
     # Check that the right methods were called
     instrument.parse_toml_file.assert_called_once()
     instrument.connect.assert_called_once_with(mock=True)
-    # assert False

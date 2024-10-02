@@ -1,20 +1,16 @@
-import asyncio
 import logging
 import time
 import warnings
 from typing import Mapping
 
-from ophyd import sim
-from ophyd_async.core import NotConnected
 from rich import print
 
 from ._iconfig import load_config
-from .devices.aerotech import load_aerotech_stages
+from .devices.aerotech import AerotechStage
 from .devices.aps import load_aps
 from .devices.area_detector import load_area_detectors
 from .devices.beamline_manager import load_beamline_manager
 from .devices.camera import load_cameras
-from .device import connect_devices
 from .devices.dxp import load_dxp_detectors
 from .devices.energy_positioner import load_energy_positioner
 from .devices.heater import load_heaters
@@ -22,15 +18,14 @@ from .devices.instrument_registry import InstrumentRegistry
 from .devices.instrument_registry import registry as default_registry
 from .devices.ion_chamber import IonChamber
 from .devices.lerix import load_lerix_spectrometers
-from .devices.motor import HavenMotor, load_motors, Motor
 from .devices.mirrors import HighHeatLoadMirror, KBMirrors
-from .devices.stage import XYStage
-from .devices.table import Table
-from .devices.aerotech import AerotechStage
+from .devices.motor import Motor, load_motors
 from .devices.power_supply import load_power_supplies
 from .devices.robot import load_robots
 from .devices.shutter import load_shutters
 from .devices.slits import load_slits
+from .devices.stage import XYStage
+from .devices.table import Table
 from .devices.xia_pfcu import load_xia_pfcu4s
 from .devices.xspress import load_xspress_detectors
 from .instrument import Instrument
@@ -72,7 +67,7 @@ async def load_instrument(
     """
     instrument = Instrument(
         {
-            # "ion_chamber": IonChamber,
+            "ion_chamber": IonChamber,
             "high_heat_load_mirror": HighHeatLoadMirror,
             "kb_mirrors": KBMirrors,
             "xy_stage": XYStage,
@@ -88,7 +83,10 @@ async def load_instrument(
     await instrument.load(device_classes={"motors": load_motors})
     # Notify with the new device count
     load_time = time.monotonic() - t0
-    print(f"Loaded [repr.number]{len(instrument.devices)}[/] devices in {load_time:.1f} sec.", flush=True)
+    print(
+        f"Loaded [repr.number]{len(instrument.devices)}[/] devices in {load_time:.1f} sec.",
+        flush=True,
+    )
     # Clear out any existing registry entries
     registry = instrument.registry
     # Load the configuration

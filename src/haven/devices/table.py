@@ -1,10 +1,5 @@
 from ophyd_async.core import Device, StandardReadable
 
-from .. import exceptions
-from .._iconfig import load_config
-from ..device import connect_devices
-from .instrument_registry import InstrumentRegistry
-from .instrument_registry import registry as default_registry
 from .motor import Motor
 from .transform import TransformRecord
 

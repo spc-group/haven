@@ -1,15 +1,14 @@
 import logging
 import warnings
-from typing import Mapping, Sequence
 
 from apstools.utils.misc import safe_ophyd_name
 from ophyd import Component as Cpt
 from ophyd import EpicsMotor, EpicsSignal, EpicsSignalRO, Kind
 from ophyd_async.core import (
+    CALCULATE_TIMEOUT,
     DEFAULT_TIMEOUT,
     AsyncStatus,
     CalculatableTimeout,
-    CALCULATE_TIMEOUT,
     ConfigSignal,
     SignalBackend,
     SignalX,
@@ -19,10 +18,7 @@ from ophyd_async.epics.motor import Motor as MotorBase
 from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw
 from ophyd_async.epics.signal._signal import _epics_signal_backend
 
-from .._iconfig import load_config
-from ..device import connect_devices
 from .instrument_registry import InstrumentRegistry
-from .instrument_registry import registry as default_registry
 from .motor_flyer import MotorFlyer
 
 log = logging.getLogger(__name__)
@@ -167,11 +163,11 @@ class HavenMotor(MotorFlyer, EpicsMotor):
 
 
 def load_motors(
-        prefix: str,
-        num_motors: int,
-        auto_name: bool = True,
-        registry: InstrumentRegistry | None = None
-) -> Sequence:
+    prefix: str,
+    num_motors: int,
+    auto_name: bool = True,
+    registry: InstrumentRegistry | None = None,
+) -> list:
     """Load generic hardware motors from IOCs.
 
     For example, if *prefix* is "255idcVME:" and *num_motors* is 12,
@@ -209,7 +205,9 @@ def load_motors(
     # Removed motors that are already available somewhere else (e.g. KB Mirrors)
     if registry is not None:
         existing_motors = registry.findall(label="motors", allow_none=True)
-        existing_sources = [getattr(m.user_readback, "source", "") for m in existing_motors]
+        existing_sources = [
+            getattr(m.user_readback, "source", "") for m in existing_motors
+        ]
         existing_sources = [s for s in existing_sources if s != ""]
         devices = [
             m

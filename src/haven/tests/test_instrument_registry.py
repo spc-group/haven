@@ -1,8 +1,8 @@
 import pytest
 from ophyd import Device, EpicsMotor, sim
 
-from haven.exceptions import ComponentNotFound, MultipleComponentsFound
 from haven.devices import InstrumentRegistry
+from haven.exceptions import ComponentNotFound, MultipleComponentsFound
 
 
 @pytest.fixture()

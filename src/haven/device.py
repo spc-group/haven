@@ -22,7 +22,10 @@ from ._iconfig import load_config
 
 log = logging.getLogger(__name__)
 
-warnings.warn(f"Module {__name__} is deprecated and will be removed in a future release.", DeprecationWarning)
+warnings.warn(
+    f"Module {__name__} is deprecated and will be removed in a future release.",
+    DeprecationWarning,
+)
 
 
 async def connect_devices(

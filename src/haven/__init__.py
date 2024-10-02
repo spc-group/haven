@@ -39,7 +39,6 @@ from ._iconfig import load_config  # noqa: F401
 # from .catalog import load_catalog, load_data, load_result, tiled_client  # noqa: F401
 from .catalog import load_catalog, tiled_client  # noqa: F401
 from .constants import edge_energy  # noqa: F401
-from .energy_ranges import ERange, KRange, merge_ranges  # noqa: F401
 from .devices import (  # noqa: F401
     InstrumentRegistry,
     IonChamber,
@@ -50,9 +49,11 @@ from .devices import (  # noqa: F401
     registry,
 )
 from .devices.dxp import load_dxp_detectors  # noqa: F401
-from .load_instrument import load_instrument  # noqa: F401
 from .devices.motor import HavenMotor  # noqa: F401
 from .devices.xspress import load_xspress_detectors  # noqa: F401
+from .energy_ranges import ERange, KRange, merge_ranges  # noqa: F401
+from .instrument import Instrument  # noqa: F401
+from .load_instrument import load_instrument  # noqa: F401
 from .motor_position import (  # noqa: F401
     get_motor_position,
     list_current_motor_positions,
@@ -60,7 +61,6 @@ from .motor_position import (  # noqa: F401
     recall_motor_position,
     save_motor_position,
 )
-from .instrument import Instrument  # noqa: F401
 from .plans.align_motor import align_motor, align_pitch2  # noqa: F401
 from .plans.align_slits import align_slits  # noqa: F401
 from .plans.auto_gain import GainRecommender, auto_gain  # noqa:F401

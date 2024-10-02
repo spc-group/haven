@@ -18,8 +18,8 @@ from bluesky.utils import Msg, make_decorator
 
 from . import __version__ as haven_version
 from ._iconfig import load_config
-from .exceptions import ComponentNotFound
 from .devices.instrument_registry import registry
+from .exceptions import ComponentNotFound
 
 log = logging.getLogger()
 
