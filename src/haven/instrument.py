@@ -1,5 +1,6 @@
 """Loader for creating instances of the devices from a config file."""
 
+import time
 import asyncio
 import inspect
 import logging
@@ -9,6 +10,8 @@ from typing import Mapping
 
 import tomlkit
 from ophyd_async.core import DEFAULT_TIMEOUT, NotConnected
+from ophyd import Device as ThreadedDevice
+from ophyd.sim import make_fake_device
 from ophydregistry import Registry
 
 from .exceptions import InvalidConfiguration
@@ -89,11 +92,12 @@ class Instrument:
     def validate_params(self, params, Klass):
         """Check that parameters match a Device class's initializer."""
         sig = inspect.signature(Klass)
+        has_kwargs = any([param.kind == param.VAR_KEYWORD for param in sig.parameters.values()])
         # Make sure we're not missing any required parameters
         for key, sig_param in sig.parameters.items():
             # Check for missing parameters
             param_missing = key not in params
-            param_required = sig_param.default is sig_param.empty
+            param_required = (sig_param.default is sig_param.empty and sig_param.kind != sig_param.VAR_KEYWORD)
             if param_missing and param_required:
                 raise InvalidConfiguration(
                     f"Missing required key '{key}' for {Klass}: {params}"
@@ -111,6 +115,12 @@ class Instrument:
 
     def make_device(self, params, Klass):
         """Create the devices from their parameters."""
+        # Mock threaded ophyd devices if necessary
+        try:
+            if issubclass(Klass, ThreadedDevice):
+                Klass = make_fake_device(Klass)
+        except TypeError:
+            pass
         # Check if we need to inject the registry
         extra_params = {}
         sig = inspect.signature(Klass)
@@ -139,9 +149,19 @@ class Instrument:
         force_reconnect
           Force the signals to establish a new connection.
         """
+        t0 = time.monotonic()
+        # Sort out which devices are which
+        threaded_devices = []
+        async_devices = []
+        for device in self.devices:
+            if hasattr(device, "connect"):
+                async_devices.append(device)
+            else:
+                threaded_devices.append(device)
+        # Connect to async devices
         aws = (
             dev.connect(mock=mock, timeout=timeout, force_reconnect=force_reconnect)
-            for dev in self.devices
+            for dev in async_devices
         )
         results = await asyncio.gather(*aws, return_exceptions=True)
         # Filter out the disconnected devices
@@ -155,6 +175,22 @@ class Instrument:
                 # Unexpected exception, raise it so it can be handled
                 log.debug(f"Failed connection for device {device.name}")
                 exceptions[device.name] = result
+        # Connect to threaded devices
+        timeout_reached = False
+        while not timeout_reached and len(threaded_devices) > 0:
+            # Remove any connected devices for the running list
+            connected_devices = [dev for dev in threaded_devices if dev.connected]
+            new_devices.extend(connected_devices)
+            threaded_devices = [dev for dev in threaded_devices if dev not in connected_devices]
+            # Tick the clock for the next round through the while loop
+            await asyncio.sleep(min((0.05, timeout / 10.0)))
+            timeout_reached = (time.monotonic() - t0) > timeout
+        # Add disconnected devices to the exception list
+        for device in threaded_devices:
+            try:
+                device.wait_for_connection(timeout=0)
+            except TimeoutError as exc:
+                exceptions[device.name] = NotConnected(str(exc))
         # Raise exceptions if any were present
         if len(exceptions) > 0:
             raise NotConnected(exceptions)

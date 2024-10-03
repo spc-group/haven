@@ -153,10 +153,10 @@ pv_horiz = "m14"
 prefix = "ps_ioc:NHQ01"
 n_channels = 2
 
-[slits.KB_slits]
-
+[[ blade_slits ]]
+name = "KB_slits"
 prefix = "vme_crate_ioc:KB"
-device_class = "BladeSlits"
+
 
 [slits.whitebeam_slits]
 # A single rotating aperture slit, like the 25-ID white/pinkbeam slits
