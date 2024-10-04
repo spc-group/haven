@@ -17,8 +17,8 @@ from ophyd_async.core import (
 from ophyd_async.epics.motor import Motor as MotorBase
 from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw
 from ophyd_async.epics.signal._signal import _epics_signal_backend
+from ophydregistry import Registry
 
-from .instrument_registry import InstrumentRegistry
 from .motor_flyer import MotorFlyer
 
 log = logging.getLogger(__name__)
@@ -166,7 +166,7 @@ def load_motors(
     prefix: str,
     num_motors: int,
     auto_name: bool = True,
-    registry: InstrumentRegistry | None = None,
+    registry: Registry | None = None,
 ) -> list:
     """Load generic hardware motors from IOCs.
 

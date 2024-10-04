@@ -6,8 +6,8 @@ from bluesky import RunEngine as BlueskyRunEngine
 from bluesky.callbacks.best_effort import BestEffortCallback
 from bluesky.utils import ProgressBarManager, register_transform
 
-from .devices.instrument_registry import registry
 from .exceptions import ComponentNotFound
+from .instrument import beamline
 from .preprocessors import inject_haven_md_wrapper
 
 log = logging.getLogger(__name__)
@@ -34,7 +34,7 @@ def run_engine(connect_databroker=True, use_bec=True, **kwargs) -> BlueskyRunEng
         RE.subscribe(BestEffortCallback())
     # Install suspenders
     try:
-        aps = registry.find("APS")
+        aps = beamline.registry.find("APS")
     except ComponentNotFound:
         log.warning("APS device not found, suspenders not installed.")
     else:

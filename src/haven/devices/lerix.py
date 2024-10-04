@@ -7,9 +7,6 @@ from ophyd import FormattedComponent as FCpt
 from ophyd import PseudoPositioner, PseudoSingle
 from ophyd.pseudopos import pseudo_position_argument, real_position_argument
 
-from .._iconfig import load_config
-from ..device import make_device
-
 log = logging.getLogger(__name__)
 
 um_per_mm = 1000

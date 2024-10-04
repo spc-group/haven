@@ -18,8 +18,8 @@ import haven
 from haven._iconfig import beamline_connected as _beamline_connected
 from haven.catalog import Catalog
 from haven.devices.aps import ApsMachine
-from haven.devices.beamline_manager import BeamlineManager, IOCManager
 from haven.devices.area_detector import AravisDetector
+from haven.devices.beamline_manager import BeamlineManager, IOCManager
 from haven.devices.dxp import DxpDetector
 from haven.devices.dxp import add_mcas as add_dxp_mcas
 from haven.devices.ion_chamber import IonChamber
@@ -33,10 +33,6 @@ from haven.devices.xspress import add_mcas as add_xspress_mcas
 
 top_dir = Path(__file__).parent.resolve()
 haven_dir = top_dir / "haven"
-
-
-def pytest_configure():
-    haven.registry.auto_register = False
 
 
 # Specify the configuration files to use for testing
@@ -57,17 +53,15 @@ def beamline_connected():
 @pytest.fixture()
 def sim_registry(monkeypatch):
     # Save the registry so we can restore it later
-    registry = haven.registry
+    registry = haven.beamline.registry
     objects_by_name = registry._objects_by_name
     objects_by_label = registry._objects_by_label
     registry.clear()
-    registry.auto_register = True
     # Run the test
     try:
         yield registry
     finally:
         # Restore the previous registry components
-        registry.auto_register = False
         registry.clear()
         registry._objects_by_name = objects_by_name
         registry._objects_by_label = objects_by_label

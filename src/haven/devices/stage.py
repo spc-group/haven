@@ -1,15 +1,10 @@
 import logging
-from typing import Mapping
 
 from ophyd_async.core import Device
 
-from .._iconfig import load_config
-from ..device import connect_devices
-from .instrument_registry import InstrumentRegistry
-from .instrument_registry import registry as default_registry
 from .motor import Motor
 
-__all__ = ["XYStage", "load_stages"]
+__all__ = ["XYStage"]
 
 
 log = logging.getLogger(__name__)

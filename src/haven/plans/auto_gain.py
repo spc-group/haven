@@ -6,7 +6,7 @@ from bluesky import plan_stubs as bps
 from bluesky_adaptive.per_event import adaptive_plan, recommender_factory
 from bluesky_adaptive.recommendations import NoRecommendation
 
-from ..devices.instrument_registry import registry
+from ..instrument import beamline
 
 __all__ = ["GainRecommender", "auto_gain"]
 
@@ -148,7 +148,7 @@ def auto_gain(
 
     """
     # Resolve the detector list into voltmeter AI's
-    ion_chambers = registry.findall(ion_chambers)
+    ion_chambers = beamline.registry.findall(ion_chambers)
     # Prepare the recommendation engine
     targets = {
         "lower": volts_min,

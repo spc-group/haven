@@ -1,5 +1,4 @@
 import pytest
-from ophyd import PVPositioner
 from ophyd.sim import instantiate_fake_device
 
 from haven.devices.energy_positioner import EnergyPositioner

@@ -2,7 +2,7 @@ import logging
 
 from bluesky import plan_stubs as bps
 
-from ..devices.instrument_registry import registry
+from ..instrument import beamline
 from ..motor_position import rbv
 
 log = logging.getLogger(__name__)
@@ -36,7 +36,7 @@ def robot_transfer_sample(robot, sampleN, *args):
       multiple pairs of motor and pos
     """
 
-    robot = registry.find(robot)
+    robot = beamline.registry.find(robot)
 
     # Check if power is on
     # if robot.power_rbv.get() == Off:
@@ -57,7 +57,7 @@ def robot_transfer_sample(robot, sampleN, *args):
     #   raise ValueError("Robot is running now.")
 
     # Find motors
-    motor_list = [registry.find(motor) for motor in args[::2]]
+    motor_list = [beamline.registry.find(motor) for motor in args[::2]]
     new_positions = [pos for pos in args[1::2]]
     # Record the motor positions before load sampls
     initial_positions = [rbv(motor) for motor in motor_list]

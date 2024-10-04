@@ -4,9 +4,6 @@ from ophyd import Device
 from ophyd import DynamicDeviceComponent as DCpt
 from ophyd import EpicsSignal, EpicsSignalRO
 
-from .._iconfig import load_config
-from ..device import make_device
-
 
 class BSSEsaf(EpicsEsafDevice):
     user_PIs = Cpt(EpicsSignal, "userPIs", string=True)
@@ -78,5 +75,7 @@ class BeamlineManager(Device):
         new_cls = type("BeamlineManager", (cls,), comps)
         return object.__new__(new_cls)
 
-    def __init__(self, prefix: str, *, name: str, iocs={}, labels={"beamline_manager"}, **kwargs):
+    def __init__(
+        self, prefix: str, *, name: str, iocs={}, labels={"beamline_manager"}, **kwargs
+    ):
         super().__init__(name=name, prefix=prefix, labels=labels, **kwargs)

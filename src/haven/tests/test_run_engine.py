@@ -1,7 +1,7 @@
 import gc
 
-import pytest
 import databroker
+import pytest
 from bluesky import RunEngine
 from ophyd.sim import instantiate_fake_device
 

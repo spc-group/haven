@@ -6,15 +6,13 @@ from ophyd import FormattedComponent as FCpt
 from ophyd import PVPositionerPC
 from pcdsdevices.signal import MultiDerivedSignal
 
-from .._iconfig import load_config
-from ..device import make_device
 from .monochromator import Monochromator
 from .xray_source import PlanarUndulator
 
 log = logging.getLogger(__name__)
 
 
-__all__ = ["EnergyPositioner", "load_energy_positioner"]
+__all__ = ["EnergyPositioner"]
 
 
 class EnergyPositioner(PVPositionerPC):

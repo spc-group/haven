@@ -6,7 +6,7 @@ import numpy as np
 from bluesky import plans as bp
 from lmfit.models import GaussianModel, StepModel
 
-from ..devices.instrument_registry import registry
+from ..instrument import beamline
 
 
 def knife_scan(
@@ -46,9 +46,9 @@ def knife_scan(
 
     """
     md_ = dict(plan_name="knife_scan", **md)
-    I0 = registry.find(name=I0)
-    It = registry.find(name=It)
-    knife_motor = registry.find(name=knife_motor)
+    I0 = beamline.registry.find(name=I0)
+    It = beamline.registry.find(name=It)
+    knife_motor = beamline.registry.find(name=knife_motor)
     # Check for relative or absolute scan
     if relative:
         plan_func = bp.rel_scan

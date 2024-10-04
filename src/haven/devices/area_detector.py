@@ -9,10 +9,10 @@ import numpy as np
 import pandas as pd
 from apstools.devices import CamMixin_V34, SingleTrigger_V34
 from ophyd import ADComponent as ADCpt
+from ophyd import CamBase
 from ophyd import Component as Cpt
 from ophyd import DetectorBase as OphydDetectorBase
 from ophyd import (
-    CamBase,
     Device,
     EigerDetectorCam,
     EpicsSignal,
@@ -44,12 +44,11 @@ from ophyd.areadetector.plugins import StatsPlugin_V31 as OphydStatsPlugin_V31
 from ophyd.areadetector.plugins import StatsPlugin_V34 as OphydStatsPlugin_V34
 from ophyd.areadetector.plugins import TIFFPlugin_V31, TIFFPlugin_V34
 from ophyd.flyers import FlyerInterface
-from ophyd.status import Status, StatusBase, SubscriptionStatus
 from ophyd.sim import make_fake_device
+from ophyd.status import Status, StatusBase, SubscriptionStatus
 
 from .. import exceptions
 from .._iconfig import load_config
-from ..device import make_device
 
 log = logging.getLogger(__name__)
 
@@ -543,7 +542,7 @@ class AravisDetector(SingleImageModeTrigger, DetectorBase):
     # tiff = ADCpt(TIFFFilePlugin, "TIFF1:", kind=Kind.normal)
 
 
-def make_area_detector(prefix:str, name: str, device_class: str, mock=True) -> Device:
+def make_area_detector(prefix: str, name: str, device_class: str, mock=True) -> Device:
     # Create the area detectors defined in the configuration
     try:
         DeviceClass = globals().get(device_class)

@@ -3,7 +3,6 @@ import logging
 from ophyd import Device, EpicsSignal, EpicsSignalRO
 from ophyd import FormattedComponent as FCpt
 
-
 log = logging.getLogger(__name__)
 
 
@@ -29,7 +28,15 @@ class NHQ203MChannel(Device):
     )
     status = FCpt(EpicsSignalRO, name="status", suffix="{prefix}:ModStatus{ch_num}_rbv")
 
-    def __init__(self, prefix: str, ch_num: int, name: str, labels={"power_supplies"}, *args, **kwargs):
+    def __init__(
+        self,
+        prefix: str,
+        ch_num: int,
+        name: str,
+        labels={"power_supplies"},
+        *args,
+        **kwargs,
+    ):
         self.ch_num = ch_num
         super().__init__(prefix=prefix, name=name, labels=labels, *args, **kwargs)
 

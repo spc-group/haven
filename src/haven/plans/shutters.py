@@ -3,13 +3,13 @@ from typing import Sequence, Union
 from bluesky import plan_stubs as bps
 from ophyd import Device
 
-from ..devices.instrument_registry import registry
 from ..devices.shutter import ShutterState
+from ..instrument import beamline
 
 
 def _set_shutters(shutters: Union[str, Sequence[Device]], direction: int):
     if shutters != []:
-        shutters = registry.findall(shutters)
+        shutters = beamline.registry.findall(shutters)
     # Prepare the plan
     plan_args = [obj for shutter in shutters for obj in (shutter, direction)]
     if len(plan_args) > 0:

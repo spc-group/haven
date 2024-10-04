@@ -15,9 +15,6 @@ from ophyd import FormattedComponent as FCpt
 from ophyd import PVPositionerIsClose
 from ophyd.signal import DerivedSignal
 
-from .. import exceptions
-from .._iconfig import load_config
-from ..device import make_device
 from .shutter import ShutterState
 
 
@@ -174,7 +171,7 @@ class PFCUFilterBank(PVPositionerIsClose):
         prefix: str,
         name: str,
         shutters: Sequence = [],
-        labels: str={"filter_banks"},
+        labels: str = {"filter_banks"},
         **kwargs,
     ):
         super().__init__(prefix=prefix, name=name, labels=labels, **kwargs)

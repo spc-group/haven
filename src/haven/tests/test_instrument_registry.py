@@ -1,13 +1,13 @@
 import pytest
 from ophyd import Device, EpicsMotor, sim
+from ophydregistry import Registry
 
-from haven.devices import InstrumentRegistry
 from haven.exceptions import ComponentNotFound, MultipleComponentsFound
 
 
 @pytest.fixture()
 def reg():
-    yield InstrumentRegistry(auto_register=False)
+    yield Registry(auto_register=False)
 
 
 def test_register_component(reg):

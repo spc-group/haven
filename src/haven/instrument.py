@@ -1,22 +1,44 @@
 """Loader for creating instances of the devices from a config file."""
 
-import time
 import asyncio
 import inspect
 import logging
 import os
+import time
 from pathlib import Path
 from typing import Mapping
 
 import tomlkit
-from ophyd_async.core import DEFAULT_TIMEOUT, NotConnected
 from ophyd import Device as ThreadedDevice
 from ophyd.sim import make_fake_device
+from ophyd_async.core import DEFAULT_TIMEOUT, NotConnected
 from ophydregistry import Registry
 
+from .devices.aerotech import AerotechStage
+from .devices.aps import ApsMachine
+from .devices.area_detector import make_area_detector
+from .devices.beamline_manager import BeamlineManager
+from .devices.dxp import make_dxp_device
+from .devices.energy_positioner import EnergyPositioner
+from .devices.heater import CapillaryHeater
+from .devices.ion_chamber import IonChamber
+from .devices.mirrors import HighHeatLoadMirror, KBMirrors
+from .devices.motor import Motor, load_motors
+from .devices.power_supply import NHQ203MChannel
+from .devices.robot import Robot
+from .devices.scaler import Scaler
+from .devices.shutter import PssShutter
+from .devices.slits import ApertureSlits, BladeSlits
+from .devices.stage import XYStage
+from .devices.table import Table
+from .devices.xia_pfcu import PFCUFilterBank
+from .devices.xspress import make_xspress_device
 from .exceptions import InvalidConfiguration
 
 log = logging.getLogger(__name__)
+
+
+instrument = None
 
 
 class Instrument:
@@ -52,9 +74,11 @@ class Instrument:
     beamline_name: str = ""
     hardware_is_present: bool | None = None
 
-    def __init__(self, device_classes: Mapping):
+    def __init__(self, device_classes: Mapping, registry: Registry | None = None):
         self.devices = []
-        self.registry = Registry(auto_register=False, use_typhos=False)
+        if registry is None:
+            registry = Registry(auto_register=False, use_typhos=False)
+        self.registry = registry
         self.device_classes = device_classes
 
     def parse_toml_file(self, fd):
@@ -92,12 +116,17 @@ class Instrument:
     def validate_params(self, params, Klass):
         """Check that parameters match a Device class's initializer."""
         sig = inspect.signature(Klass)
-        has_kwargs = any([param.kind == param.VAR_KEYWORD for param in sig.parameters.values()])
+        has_kwargs = any(
+            [param.kind == param.VAR_KEYWORD for param in sig.parameters.values()]
+        )
         # Make sure we're not missing any required parameters
         for key, sig_param in sig.parameters.items():
             # Check for missing parameters
             param_missing = key not in params
-            param_required = (sig_param.default is sig_param.empty and sig_param.kind != sig_param.VAR_KEYWORD)
+            param_required = (
+                sig_param.default is sig_param.empty
+                and sig_param.kind != sig_param.VAR_KEYWORD
+            )
             if param_missing and param_required:
                 raise InvalidConfiguration(
                     f"Missing required key '{key}' for {Klass}: {params}"
@@ -181,7 +210,9 @@ class Instrument:
             # Remove any connected devices for the running list
             connected_devices = [dev for dev in threaded_devices if dev.connected]
             new_devices.extend(connected_devices)
-            threaded_devices = [dev for dev in threaded_devices if dev not in connected_devices]
+            threaded_devices = [
+                dev for dev in threaded_devices if dev not in connected_devices
+            ]
             # Tick the clock for the next round through the while loop
             await asyncio.sleep(min((0.05, timeout / 10.0)))
             timeout_reached = (time.monotonic() - t0) > timeout
@@ -240,3 +271,84 @@ class Instrument:
         # Registry devices
         for device in new_devices:
             self.registry.register(device)
+
+
+class HavenInstrument(Instrument):
+    async def load(
+        self,
+        config: Mapping = None,
+        wait_for_connection: bool = True,
+        timeout: int = 5,
+        return_devices: bool = False,
+        reset_devices: bool = True,
+    ):
+        """Load the beamline instrumentation.
+
+        This function will reach out and query various IOCs for motor
+        information based on the information in *config* (see
+        ``iconfig_default.toml`` for examples). Based on the
+        configuration, it will create Ophyd devices and register them with
+        *registry*.
+
+        Parameters
+        ==========
+        registry:
+          The registry into which the ophyd devices will be placed.
+        config:
+          The beamline configuration read in from TOML files. Mostly
+          useful for testing.
+        wait_for_connection
+          If true, only connected devices will be kept.
+        timeout
+          How long to wait for if *wait_for_connection* is true.
+        return_devices
+          If true, return the newly loaded devices when complete.
+        reset_registry
+          If true, existing devices will be removed before loading.
+
+        """
+        if reset_devices:
+            self.registry.clear()
+        t0 = time.monotonic()
+        await super().load()
+        # VME-style Motors happen later so duplicate motors can be
+        # removed
+        await super().load(device_classes={"motors": load_motors})
+        # Notify with the new device count
+        load_time = time.monotonic() - t0
+        print(
+            f"Loaded [repr.number]{len(instrument.devices)}[/] devices in {load_time:.1f} sec.",
+            flush=True,
+        )
+        # Return the final list
+        if return_devices:
+            return instrument.devices
+        else:
+            return instrument
+
+
+beamline = HavenInstrument(
+    {
+        "ion_chamber": IonChamber,
+        "high_heat_load_mirror": HighHeatLoadMirror,
+        "kb_mirrors": KBMirrors,
+        "xy_stage": XYStage,
+        "table": Table,
+        "aerotech_stage": AerotechStage,
+        "motor": Motor,
+        "blade_slits": BladeSlits,
+        "aperture_slits": ApertureSlits,
+        "capillary_heater": CapillaryHeater,
+        "power_supply": NHQ203MChannel,
+        "synchrotron": ApsMachine,
+        "robot": Robot,
+        "pfcu4": PFCUFilterBank,
+        "pss_shutter": PssShutter,
+        "energy": EnergyPositioner,
+        "xspress": make_xspress_device,
+        "dxp": make_dxp_device,
+        "beamline_manager": BeamlineManager,
+        "area_detector": make_area_detector,
+        "scaler": Scaler,
+    },
+)

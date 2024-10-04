@@ -19,7 +19,6 @@ from ophyd.status import StatusBase, SubscriptionStatus
 from pcdsdevices.signal import MultiDerivedSignal
 from pcdsdevices.type_hints import OphydDataType, SignalToValue
 
-from .._iconfig import load_config
 from ..device import RegexComponent as RECpt
 from ..device import make_device
 from .area_detector import DetectorBase, HDF5FilePlugin
@@ -31,7 +30,7 @@ from .fluorescence_detector import (
     add_roi_sums,
 )
 
-__all__ = ["load_xspress_detectors", "Xspress3Detector", "ROI"]
+__all__ = ["Xspress3Detector", "ROI"]
 
 
 log = logging.getLogger(__name__)

@@ -1,14 +1,6 @@
-from unittest import mock
-
 import pytest
 
-from haven.devices import xia_pfcu
-from haven.devices.xia_pfcu import (
-    PFCUFilter,
-    PFCUFilterBank,
-    PFCUShutter,
-    ShutterState,
-)
+from haven.devices.xia_pfcu import PFCUFilter, PFCUFilterBank, PFCUShutter, ShutterState
 
 
 @pytest.fixture()

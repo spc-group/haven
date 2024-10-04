@@ -6,11 +6,7 @@ import pytest
 from ophyd import StatusBase
 
 from haven import exceptions
-from haven.devices.aerotech import (
-    AerotechMotor,
-    AerotechStage,
-    ureg,
-)
+from haven.devices.aerotech import AerotechMotor, AerotechStage, ureg
 
 
 @pytest.fixture()

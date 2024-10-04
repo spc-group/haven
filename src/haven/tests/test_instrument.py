@@ -5,8 +5,8 @@ import pytest
 
 from haven.devices.ion_chamber import IonChamber
 from haven.devices.motor import load_motors
-from haven.instrument import Instrument
 from haven.devices.slits import BladeSlits
+from haven.instrument import Instrument
 
 haven_dir = Path(__file__).parent.parent.resolve()
 toml_file = haven_dir / "iconfig_testing.toml"
@@ -81,7 +81,7 @@ async def test_connect(instrument):
     sync_devices = [d for d in instrument.devices if hasattr(d, "connected")]
     assert len(async_devices) > 0
     assert len(sync_devices) > 0
-    # Are devices disconnected to start with?    
+    # Are devices disconnected to start with?
     assert all([d._connect_task is None for d in async_devices])
     assert all([not d.connected is None for d in sync_devices])
     # Connect the device

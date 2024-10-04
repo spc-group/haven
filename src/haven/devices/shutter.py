@@ -9,9 +9,6 @@ from ophyd.utils.errors import ReadOnlyError
 from pcdsdevices.signal import MultiDerivedSignal
 from pcdsdevices.type_hints import SignalToValue
 
-from .._iconfig import load_config
-from ..device import make_device
-
 # from apstools.devices.shutters import ApsPssShutterWithStatus as Shutter
 
 
@@ -32,7 +29,13 @@ class PssShutter(PVPositionerIsClose):
     allow_close: bool
 
     def __init__(
-            self, prefix: str, name: str, allow_open: bool = True, allow_close: bool = True, labels={"shutters"}, **kwargs
+        self,
+        prefix: str,
+        name: str,
+        allow_open: bool = True,
+        allow_close: bool = True,
+        labels={"shutters"},
+        **kwargs,
     ):
         self.allow_open = allow_open
         self.allow_close = allow_close

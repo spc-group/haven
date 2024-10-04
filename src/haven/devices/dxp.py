@@ -11,8 +11,6 @@ from ophyd.signal import DerivedSignal, InternalSignal
 from ophyd.status import StatusBase, SubscriptionStatus
 
 from .. import exceptions
-from .._iconfig import load_config
-from ..device import make_device
 from .fluorescence_detector import (
     MCASumMixin,
     ROIMixin,
@@ -22,7 +20,7 @@ from .fluorescence_detector import (
     add_roi_sums,
 )
 
-__all__ = ["DxpDetector", "load_dxp_detectors"]
+__all__ = ["DxpDetector"]
 
 
 NUM_ROIS = 32
@@ -408,13 +406,12 @@ def make_dxp_device(name, prefix, num_elements):
         ),
     }
     # Create a dynamic subclass with the MCAs
-    class_name = device_name.title().replace("_", "")
+    class_name = name.title().replace("_", "")
     parent_classes = (DxpDetector,)
-    Cls = type(class_name, parent_classes, attrs)
-    return make_device(
-        Cls,
-        prefix=f"{prefix}:",
-        name=device_name,
+    Cls = type(name, parent_classes, attrs)
+    return Cls(
+        prefix=prefix,
+        name=name,
         labels={"xrf_detectors", "fluorescence_detectors", "detectors"},
     )
 

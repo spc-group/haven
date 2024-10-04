@@ -1,10 +1,7 @@
-import pytest
-from ophydregistry.exceptions import ComponentNotFound
-
 from haven.devices import Robot
 
 
-def test_robot():
+def test_robot_components():
     robot = Robot("25idAustin", name="robot")
     # Check PVs are correct
     assert robot.i.user_readback.pvname == "25idAustin:i.RBV"

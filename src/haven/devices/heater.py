@@ -5,7 +5,6 @@ from apstools.devices import PTC10PositionerMixin, PTC10TcChannel
 from ophyd import Component as Cpt
 from ophyd import EpicsSignal, EpicsSignalRO, EpicsSignalWithRBV, PVPositioner
 
-
 log = logging.getLogger(__name__)
 
 

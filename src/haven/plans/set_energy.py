@@ -3,7 +3,7 @@ from typing import Union
 from bluesky import plan_stubs as bps
 
 from .. import exceptions
-from ..devices.instrument_registry import registry
+from ..instrument import beamline
 from ..typing import DetectorList
 
 __all__ = ["set_energy"]
@@ -64,13 +64,13 @@ def set_energy(
     # Prepare arguments for undulator harmonic
     harmonic = auto_harmonic(energy, harmonic)
     if harmonic is not None:
-        harmonic_positioners = registry.findall(name=harmonic_positioners)
+        harmonic_positioners = beamline.registry.findall(name=harmonic_positioners)
         hargs = []
         for positioner in harmonic_positioners:
             hargs.extend([positioner, harmonic])
         yield from bps.mv(*hargs)
     # Prepare arguments for energy
-    positioners = registry.findall(name=positioners)
+    positioners = beamline.registry.findall(name=positioners)
     args = []
     for positioner in positioners:
         args.extend([positioner, energy])
