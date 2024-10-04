@@ -550,29 +550,6 @@ def make_xspress_device(name, prefix, num_elements):
     )
 
 
-def load_xspress_detectors(config=None):
-    """Load all the xspress-based detector devices.
-
-    Configuration is determined from the iconfig.toml file.
-
-    Optionally, *config* can be given a dictionary with configuration
-    matching the iconfig.toml file to use instead. Mostly useful for
-    testing.
-
-    """
-    if config is None:
-        config = load_config()
-    # Create detector device
-    devices = []
-    for name, cfg in config.get("xspress", {}).items():
-        devices.append(
-            make_xspress_device(
-                prefix=cfg["prefix"], num_elements=cfg["num_elements"], name=name
-            )
-        )
-    return devices
-
-
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov

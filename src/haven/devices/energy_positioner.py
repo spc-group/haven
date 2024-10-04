@@ -65,12 +65,12 @@ class EnergyPositioner(PVPositionerPC):
         self,
         mono_prefix: str,
         undulator_prefix: str,
-        *args,
+        name: str,
         **kwargs,
     ):
         self.mono_prefix = mono_prefix
         self.undulator_prefix = undulator_prefix
-        super().__init__(*args, **kwargs)
+        super().__init__(name=name, **kwargs)
 
     def set_energy(self, *, mds: MultiDerivedSignal, value: float):
         ev_per_kev = 1000
@@ -119,23 +119,6 @@ class EnergyPositioner(PVPositionerPC):
         calculate_on_put=set_energy,
         name="readback",
     )
-
-
-def load_energy_positioner(config=None):
-    # Load PV's from config
-    if config is None:
-        config = load_config()
-    # Guard to make sure we have a mono and ID configuration
-    if "monochromator" not in config.keys() or "undulator" not in config.keys():
-        return
-    # Make the combined energy device
-    device = make_device(
-        EnergyPositioner,
-        name="energy",
-        mono_prefix=config["monochromator"]["prefix"],
-        undulator_prefix=config["undulator"]["prefix"],
-    )
-    return device
 
 
 # -----------------------------------------------------------------------------

@@ -6,6 +6,7 @@ a filter bank can be used as a shutter.
 """
 
 from enum import IntEnum
+from typing import Sequence
 
 from ophyd import Component as Cpt
 from ophyd import DynamicDeviceComponent as DCpt
@@ -170,41 +171,13 @@ class PFCUFilterBank(PVPositionerIsClose):
 
     def __init__(
         self,
-        *args,
-        shutters=[],
+        prefix: str,
+        name: str,
+        shutters: Sequence = [],
+        labels: str={"filter_banks"},
         **kwargs,
     ):
-        super().__init__(*args, **kwargs)
-
-
-def load_xia_pfcu4s(config=None):
-    if config is None:
-        config = load_config()
-    # Read the filter bank configurations from the config file
-    devices = []
-    for name, cfg in config.get("pfcu4", {}).items():
-        try:
-            prefix = cfg["prefix"]
-            shutters = cfg.get("shutters", [])
-        except KeyError as ex:
-            raise exceptions.UnknownDeviceConfiguration(
-                f"Device {name} missing '{ex.args[0]}': {cfg}"
-            ) from ex
-        # Make the device
-        devices.append(
-            make_device(
-                PFCUFilterBank,
-                prefix=prefix,
-                name=name,
-                shutters=shutters,
-                labels={"filter_banks"},
-            )
-        )
-    return devices
-
-
-# def load_xia_pfcu4s(config=None):
-#     asyncio.run(aload_devices(*load_xia_pfcu4_coros(config=config)))
+        super().__init__(prefix=prefix, name=name, labels=labels, **kwargs)
 
 
 # -----------------------------------------------------------------------------

@@ -5,8 +5,6 @@ from apstools.devices import PTC10PositionerMixin, PTC10TcChannel
 from ophyd import Component as Cpt
 from ophyd import EpicsSignal, EpicsSignalRO, EpicsSignalWithRBV, PVPositioner
 
-from .._iconfig import load_config
-from ..device import make_device
 
 log = logging.getLogger(__name__)
 
@@ -28,19 +26,6 @@ class CapillaryHeater(PTC10PositionerMixin, PVPositioner):
     pid = Cpt(PTC10AioChannel, "5A:")
     tc = Cpt(PTC10TcChannel, "2A:")
     output_enable = Cpt(EpicsSignal, "outputEnable", kind="omitted")
-
-
-def load_heaters(config=None):
-    if config is None:
-        config = load_config()
-    # Load the heaters
-    devices = []
-    for name, cfg in config.get("heater", {}).items():
-        Cls = globals().get(cfg["device_class"])
-        devices.append(
-            make_device(Cls, prefix=f"{cfg['prefix']}:", name=name, labels={"heaters"})
-        )
-    return devices
 
 
 # -----------------------------------------------------------------------------

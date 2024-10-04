@@ -12,8 +12,10 @@ from ophyd import ADComponent as ADCpt
 from ophyd import Component as Cpt
 from ophyd import DetectorBase as OphydDetectorBase
 from ophyd import (
+    CamBase,
     Device,
     EigerDetectorCam,
+    EpicsSignal,
     Kind,
     Lambda750kCam,
     OphydObject,
@@ -32,6 +34,7 @@ from ophyd.areadetector.plugins import (
     ImagePlugin_V31,
     ImagePlugin_V34,
     OverlayPlugin,
+    OverlayPlugin_V34,
     PvaPlugin_V31,
     PvaPlugin_V34,
     ROIPlugin_V31,
@@ -42,6 +45,7 @@ from ophyd.areadetector.plugins import StatsPlugin_V34 as OphydStatsPlugin_V34
 from ophyd.areadetector.plugins import TIFFPlugin_V31, TIFFPlugin_V34
 from ophyd.flyers import FlyerInterface
 from ophyd.status import Status, StatusBase, SubscriptionStatus
+from ophyd.sim import make_fake_device
 
 from .. import exceptions
 from .._iconfig import load_config
@@ -323,7 +327,7 @@ class DynamicFileStore(Device):
         try:
             self.write_path_template = self.write_path_template.format(
                 name=self.parent.name,
-                root_path=config.get("area_detector", {}).get("root_path", "tmp"),
+                root_path=config.get("area_detector_root_path", "tmp"),
             )
         except KeyError:
             warnings.warn(f"Could not format write_path_template {write_path_template}")
@@ -502,31 +506,60 @@ class Eiger500K(SingleTrigger, DetectorBase):
     ]
 
 
-def load_area_detectors(config=None) -> set:
-    if config is None:
-        config = load_config()
+class AravisCam(AsyncCamMixin, CamBase):
+    gain_auto = ADCpt(EpicsSignal, "GainAuto")
+    acquire_time_auto = ADCpt(EpicsSignal, "ExposureAuto")
+
+
+class AravisDetector(SingleImageModeTrigger, DetectorBase):
+    """
+    A gige-vision camera described by EPICS.
+    """
+
+    _default_configuration_attrs = (
+        "cam",
+        "hdf",
+        "stats1",
+        "stats2",
+        "stats3",
+        "stats4",
+    )
+    _default_read_attrs = ("cam", "hdf", "stats1", "stats2", "stats3", "stats4")
+
+    cam = ADCpt(AravisCam, "cam1:")
+    image = ADCpt(ImagePlugin_V34, "image1:")
+    pva = ADCpt(PvaPlugin_V34, "Pva1:")
+    overlays = ADCpt(OverlayPlugin_V34, "Over1:")
+    roi1 = ADCpt(ROIPlugin_V34, "ROI1:", kind=Kind.config)
+    roi2 = ADCpt(ROIPlugin_V34, "ROI2:", kind=Kind.config)
+    roi3 = ADCpt(ROIPlugin_V34, "ROI3:", kind=Kind.config)
+    roi4 = ADCpt(ROIPlugin_V34, "ROI4:", kind=Kind.config)
+    stats1 = ADCpt(StatsPlugin_V34, "Stats1:", kind=Kind.normal)
+    stats2 = ADCpt(StatsPlugin_V34, "Stats2:", kind=Kind.normal)
+    stats3 = ADCpt(StatsPlugin_V34, "Stats3:", kind=Kind.normal)
+    stats4 = ADCpt(StatsPlugin_V34, "Stats4:", kind=Kind.normal)
+    stats5 = ADCpt(StatsPlugin_V34, "Stats5:", kind=Kind.normal)
+    hdf = ADCpt(HDF5FilePlugin, "HDF1:", kind=Kind.normal)
+    # tiff = ADCpt(TIFFFilePlugin, "TIFF1:", kind=Kind.normal)
+
+
+def make_area_detector(prefix:str, name: str, device_class: str, mock=True) -> Device:
     # Create the area detectors defined in the configuration
-    devices = []
-    for name, adconfig in config.get("area_detector", {}).items():
-        try:
-            DeviceClass = globals().get(adconfig["device_class"])
-        except TypeError:
-            # Not a sub-dictionary, so move on
-            continue
-        # Check that it's a valid device class
-        if DeviceClass is None:
-            msg = f"area_detector.{name}.device_class={adconfig['device_class']}"
-            raise exceptions.UnknownDeviceConfiguration(msg)
-        # Create the device co-routine
-        devices.append(
-            make_device(
-                DeviceClass,
-                prefix=f"{adconfig['prefix']}:",
-                name=name,
-                labels={"area_detectors", "detectors"},
-            )
-        )
-    return devices
+    try:
+        DeviceClass = globals().get(device_class)
+    except TypeError:
+        msg = f"area_detector.{name}.device_class={device_class}"
+        raise exceptions.UnknownDeviceConfiguration(msg)
+    # Create a simulated version if needed
+    if mock:
+        DeviceClass = make_fake_device(DeviceClass)
+    # Create the device co-routine
+    device = DeviceClass(
+        prefix=prefix,
+        name=name,
+        labels={"area_detectors", "detectors"},
+    )
+    return device
 
 
 # -----------------------------------------------------------------------------

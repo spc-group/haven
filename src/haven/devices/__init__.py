@@ -2,7 +2,7 @@ from .instrument_registry import InstrumentRegistry, registry  # noqa: F401
 from .ion_chamber import IonChamber  # noqa: F401
 from .monochromator import Monochromator  # noqa: F401
 from .motor import HavenMotor, Motor  # noqa: F401
-from .robot import Robot, load_robots  # noqa: F401
+from .robot import Robot  # noqa: F401
 from .table import Table  # noqa: F401
 
 # -----------------------------------------------------------------------------

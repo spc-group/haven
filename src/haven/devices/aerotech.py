@@ -572,35 +572,6 @@ class AerotechStage(Device):
         super().__init__(name=name)
 
 
-async def load_aerotech_stages(
-    config: Mapping = None,
-    registry: InstrumentRegistry = default_registry,
-    connect: bool = True,
-) -> List[AerotechStage]:
-    """Load Aerotech XY stages defined in the configuration files'
-    ``[aerotech_stage]`` sections.
-
-    """
-    if config is None:
-        config = load_config()
-    devices = []
-    for name, stage_data in config.get("aerotech_stage", {}).items():
-        mprefix = stage_data["prefix"]
-        devices.append(
-            AerotechStage(
-                name=name,
-                vertical_prefix=f"{mprefix}{stage_data['pv_vert']}",
-                horizontal_prefix=f"{mprefix}{stage_data['pv_horiz']}",
-                delay_prefix=stage_data["delay_prefix"],
-            )
-        )
-    if connect:
-        devices = await connect_devices(
-            devices, mock=not config["beamline"]["is_connected"], registry=registry
-        )
-    return devices
-
-
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov

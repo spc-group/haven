@@ -19,7 +19,7 @@ from haven._iconfig import beamline_connected as _beamline_connected
 from haven.catalog import Catalog
 from haven.devices.aps import ApsMachine
 from haven.devices.beamline_manager import BeamlineManager, IOCManager
-from haven.devices.camera import AravisDetector
+from haven.devices.area_detector import AravisDetector
 from haven.devices.dxp import DxpDetector
 from haven.devices.dxp import add_mcas as add_dxp_mcas
 from haven.devices.ion_chamber import IonChamber

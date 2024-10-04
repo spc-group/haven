@@ -45,12 +45,9 @@ from .devices import (  # noqa: F401
     Monochromator,
     Robot,
     ion_chamber,
-    load_robots,
     registry,
 )
-from .devices.dxp import load_dxp_detectors  # noqa: F401
 from .devices.motor import HavenMotor  # noqa: F401
-from .devices.xspress import load_xspress_detectors  # noqa: F401
 from .energy_ranges import ERange, KRange, merge_ranges  # noqa: F401
 from .instrument import Instrument  # noqa: F401
 from .load_instrument import load_instrument  # noqa: F401

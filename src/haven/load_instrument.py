@@ -7,27 +7,26 @@ from rich import print
 
 from ._iconfig import load_config
 from .devices.aerotech import AerotechStage
-from .devices.aps import load_aps
-from .devices.area_detector import load_area_detectors
-from .devices.beamline_manager import load_beamline_manager
-from .devices.camera import load_cameras
-from .devices.dxp import load_dxp_detectors
-from .devices.energy_positioner import load_energy_positioner
-from .devices.heater import load_heaters
+from .devices.aps import ApsMachine
+from .devices.area_detector import make_area_detector
+from .devices.beamline_manager import BeamlineManager
+from .devices.dxp import make_dxp_device
+from .devices.energy_positioner import EnergyPositioner
+from .devices.heater import CapillaryHeater
 from .devices.instrument_registry import InstrumentRegistry
 from .devices.instrument_registry import registry as default_registry
 from .devices.ion_chamber import IonChamber
-from .devices.lerix import load_lerix_spectrometers
 from .devices.mirrors import HighHeatLoadMirror, KBMirrors
 from .devices.motor import Motor, load_motors
-from .devices.power_supply import load_power_supplies
-from .devices.robot import load_robots
-from .devices.shutter import load_shutters
-from .devices.slits import load_slits
+from .devices.power_supply import NHQ203MChannel
+from .devices.robot import Robot
+from .devices.scaler import Scaler
+from .devices.shutter import PssShutter
+from .devices.slits import BladeSlits, ApertureSlits
 from .devices.stage import XYStage
 from .devices.table import Table
-from .devices.xia_pfcu import load_xia_pfcu4s
-from .devices.xspress import load_xspress_detectors
+from .devices.xia_pfcu import PFCUFilterBank
+from .devices.xspress import make_xspress_device
 from .instrument import Instrument
 
 __all__ = ["load_instrument"]
@@ -74,6 +73,20 @@ async def load_instrument(
             "table": Table,
             "aerotech_stage": AerotechStage,
             "motor": Motor,
+            "blade_slits": BladeSlits,
+            "aperture_slits": ApertureSlits,
+            "capillary_heater": CapillaryHeater,
+            "power_supply": NHQ203MChannel,
+            "synchrotron": ApsMachine,
+            "robot": Robot,
+            "pfcu4": PFCUFilterBank,
+            "pss_shutter": PssShutter,
+            "energy": EnergyPositioner,
+            "xspress": make_xspress_device,
+            "dxp": make_dxp_device,
+            "beamline_manager": BeamlineManager,
+            "area_detector": make_area_detector,
+            "scaler": Scaler,
         },
     )
     t0 = time.monotonic()
@@ -87,47 +100,6 @@ async def load_instrument(
         f"Loaded [repr.number]{len(instrument.devices)}[/] devices in {load_time:.1f} sec.",
         flush=True,
     )
-    # Clear out any existing registry entries
-    registry = instrument.registry
-    # Load the configuration
-    if config is None:
-        config = load_config()
-    # Load the devices from the configuration files
-    # Synchronous (threaded) devices
-    devices = []
-    devices.extend(
-        [
-            load_aps(config=config),
-            *load_area_detectors(config=config),
-            load_beamline_manager(config=config),
-            *load_cameras(config=config),
-            *load_dxp_detectors(config=config),
-            load_energy_positioner(config=config),
-            *load_heaters(config=config),
-            *load_lerix_spectrometers(config=config),
-            *load_power_supplies(config=config),
-            *load_robots(config=config),
-            *load_shutters(config=config),
-            *load_slits(config=config),
-            *load_xia_pfcu4s(config=config),
-            *load_xspress_detectors(config=config),
-        ]
-    )
-    # Filter out devices that couldn't be reached
-    devices = [d for d in devices if d is not None]
-    # Put the devices into the registry
-    if not getattr(registry, "auto_register", True):
-        [registry.register(device) for device in devices]
-    # Only keep connected devices
-    disconnected = []
-    if wait_for_connection and registry is not None:
-        disconnected = registry.pop_disconnected(timeout=timeout)
-        devices = [dev for dev in devices if dev not in disconnected]
-        if len(disconnected) > 0:
-            msg = "Removed disconnected devices: "
-            msg += ", ".join(dev.name for dev in disconnected)
-            warnings.warn(msg)
-            log.warning(msg)
     # Return the final list
     if return_devices:
         return devices

@@ -78,23 +78,5 @@ class BeamlineManager(Device):
         new_cls = type("BeamlineManager", (cls,), comps)
         return object.__new__(new_cls)
 
-    def __init__(self, *args, iocs={}, **kwargs):
-        super().__init__(*args, **kwargs)
-
-
-def load_beamline_manager(config=None):
-    # Load configuration for the beamline manager
-    if config is None:
-        config = load_config()
-    try:
-        cfg = config["beamline_manager"]
-    except KeyError:
-        return
-    # Set up the beamline manager
-    return make_device(
-        BeamlineManager,
-        prefix=cfg["prefix"],
-        name=cfg["name"],
-        labels={"beamline_manager"},
-        iocs=cfg["iocs"],
-    )
+    def __init__(self, prefix: str, *, name: str, iocs={}, labels={"beamline_manager"}, **kwargs):
+        super().__init__(name=name, prefix=prefix, labels=labels, **kwargs)

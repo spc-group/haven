@@ -43,34 +43,6 @@ class XYStage(Device):
         super().__init__(name=name)
 
 
-async def load_stages(
-    config: Mapping = None,
-    registry: InstrumentRegistry = default_registry,
-    connect: bool = True,
-):
-    """Load the stages defined in the configuration files' ``[stage]``
-    sections.
-
-    """
-    if config is None:
-        config = load_config()
-    devices = []
-    for name, stage_data in config.get("stage", {}).items():
-        prefix = stage_data["prefix"]
-        devices.append(
-            XYStage(
-                name=name,
-                vertical_prefix=f"{prefix}{stage_data['pv_vert']}",
-                horizontal_prefix=f"{prefix}{stage_data['pv_horiz']}",
-            )
-        )
-    if connect:
-        devices = await connect_devices(
-            devices, mock=not config["beamline"]["is_connected"], registry=registry
-        )
-    return devices
-
-
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov

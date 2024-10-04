@@ -2,33 +2,13 @@ import pytest
 from ophyd import sim
 from ophyd.utils.errors import ReadOnlyError
 
-from haven.devices.shutter import PssShutter, ShutterState, load_shutters
+from haven.devices.shutter import PssShutter, ShutterState
 
 
 @pytest.fixture()
 def shutter(sim_registry):
     shutter = sim.instantiate_fake_device(PssShutter, name="shutter")
     return shutter
-
-
-def test_load_shutters(sim_registry, beamline_connected):
-    load_shutters()
-    shutters = list(sim_registry.findall(label="shutters"))
-    assert len(shutters) == 2
-    # Check Shutter A PVs
-    shutterA = sim_registry.find(name="front_end_shutter")
-    assert shutterA.name == "front_end_shutter"
-    assert shutterA.open_signal.pvname == "S255ID-PSS:FES:OpenEPICSC"
-    assert shutterA.close_signal.pvname == "S255ID-PSS:FES:CloseEPICSC"
-    assert shutterA.readback.pvname == "S255ID-PSS:FES:BeamBlockingM.VAL"
-    # Check that Shutter A is read-only
-    assert not shutterA.allow_close
-    # Check Shutter C PVs
-    shutterC = sim_registry.find(name="hutch_shutter")
-    assert shutterC.name == "hutch_shutter"
-    assert shutterC.open_signal.pvname == "S255ID-PSS:SCS:OpenEPICSC"
-    assert shutterC.close_signal.pvname == "S255ID-PSS:SCS:CloseEPICSC"
-    assert shutterC.readback.pvname == "S255ID-PSS:SCS:BeamBlockingM.VAL"
 
 
 def test_shutter_setpoint(shutter):

@@ -67,6 +67,9 @@ class Sample(Device):
     ry = Cpt(EpicsSignalRO, ":ry")
     rz = Cpt(EpicsSignalRO, ":rz")
 
+    def __init__(self, *args, labels={"robots"}, **kwargs):
+        super().__init__(*args, labels=labels, **kwargs)
+
 
 def transfer_samples(num_samples: int):
     """Create a dictionary with robot sample device definitions.
@@ -149,20 +152,6 @@ class Robot(Device):
     cal_stage = Cpt(EpicsSignal, ":cal_stage", kind="config")
 
     samples = DCpt(transfer_samples(24))
-
-
-def load_robots(config=None):
-    # Load PV's from config
-    if config is None:
-        config = load_config()
-    # Build robot devices
-    robots = config.get("robot", {})
-    devices = []
-    for name, cfg in robots.items():
-        devices.append(
-            make_device(Robot, name=name, labels={"robots"}, prefix=cfg["prefix"])
-        )
-    return devices
 
 
 # -----------------------------------------------------------------------------

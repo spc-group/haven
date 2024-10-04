@@ -207,27 +207,6 @@ class Scaler(StandardReadable):
         super().__init__(name=name)
 
 
-async def load_scalers(
-    config=None, connect=True, registry: InstrumentRegistry = default_registry
-):
-    """Load counting scaler devices."""
-    if config is None:
-        config = load_config()
-    # Create the scaler devices
-    devices = []
-    for name, cfg in config.get("scaler", {}).items():
-        channels = range(cfg["num_channels"])
-        devices.append(
-            MultiChannelScaler(prefix=cfg["prefix"], channels=channels, name=name)
-        )
-    # Connect to devices
-    if connect:
-        devices = await connect_devices(
-            devices, mock=not config["beamline"]["is_connected"], registry=registry
-        )
-    return
-
-
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov

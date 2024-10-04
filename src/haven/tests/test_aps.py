@@ -1,14 +1,8 @@
-from haven.devices import aps
-
-
-def test_load_aps(sim_registry):
-    aps.load_aps()
-    aps_ = sim_registry.find(name="APS")
-    assert hasattr(aps_, "current")
+from haven.devices.aps import ApsMachine
 
 
 def test_read_attrs():
-    device = aps.ApsMachine(name="Aps")
+    device = ApsMachine(name="Aps")
     read_attrs = ["current", "lifetime"]
     for attr in read_attrs:
         assert attr in device.read_attrs

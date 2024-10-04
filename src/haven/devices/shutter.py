@@ -32,11 +32,11 @@ class PssShutter(PVPositionerIsClose):
     allow_close: bool
 
     def __init__(
-        self, *args, allow_open: bool = True, allow_close: bool = True, **kwargs
+            self, prefix: str, name: str, allow_open: bool = True, allow_close: bool = True, labels={"shutters"}, **kwargs
     ):
         self.allow_open = allow_open
         self.allow_close = allow_close
-        super().__init__(*args, **kwargs)
+        super().__init__(prefix=prefix, name=name, labels=labels, **kwargs)
 
     def check_value(self, pos):
         """Check that the shutter has the right permissions."""
@@ -82,29 +82,6 @@ class PssShutter(PVPositionerIsClose):
     )
     open_signal = Cpt(EpicsSignal, "OpenEPICSC", kind="omitted")
     close_signal = Cpt(EpicsSignal, "CloseEPICSC", kind="omitted")
-
-
-def load_shutters(config=None):
-    if config is None:
-        config = load_config()
-    # Guard to make sure there's at least one shutter configuration
-    if "shutter" not in config.keys():
-        return []
-    # Load the shutter configurations into devices
-    devices = []
-    for name, d in config["shutter"].items():
-        # Calculate suitable PV values
-        devices.append(
-            make_device(
-                PssShutter,
-                prefix=d["prefix"],
-                allow_open=d.get("allow_open", True),
-                allow_close=d.get("allow_close", True),
-                name=name,
-                labels={"shutters"},
-            )
-        )
-    return devices
 
 
 # -----------------------------------------------------------------------------

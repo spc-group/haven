@@ -16,12 +16,6 @@ def test_stage_init(sim_registry):
     assert len(list(sim_registry.findall(label="stages"))) == 1
 
 
-async def test_load_stages(sim_registry):
-    stages = await stage.load_stages()
-    assert len(stages) == 1
-    assert isinstance(stages[0], stage.XYStage)
-
-
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov

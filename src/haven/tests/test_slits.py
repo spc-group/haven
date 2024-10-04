@@ -15,20 +15,6 @@ def test_slits_tweak():
     assert slits_obj.v.center.tweak_forward.pvname == "255idc:KB_slitsVcenter_tweak.B"
 
 
-def test_load_slits(sim_registry, monkeypatch):
-    slits.load_slits()
-    # Check that the slits were loaded
-    devices = sim_registry.findall(label="slits")
-    assert len(devices) == 2
-    KB_slits = sim_registry.find(name="KB_slits")
-    assert KB_slits.prefix == "vme_crate_ioc:KB"
-    whitebeam_slits = sim_registry.find(name="whitebeam_slits")
-    assert whitebeam_slits.prefix == "255ida:slits:US:"
-    # Check that the right slits subclasses were used
-    assert isinstance(KB_slits, slits.BladeSlits)
-    assert isinstance(whitebeam_slits, slits.ApertureSlits)
-
-
 def test_aperture_PVs():
     aperture = slits.ApertureSlits(
         "255ida:slits:US:",

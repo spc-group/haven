@@ -2,7 +2,7 @@ import pytest
 from ophyd import PVPositioner
 from ophyd.sim import instantiate_fake_device
 
-from haven.devices.energy_positioner import EnergyPositioner, load_energy_positioner
+from haven.devices.energy_positioner import EnergyPositioner
 
 
 @pytest.fixture()
@@ -26,14 +26,6 @@ def test_set_energy(positioner):
     # Check that all the sub-components were set properly
     assert positioner.monochromator.energy.get().user_setpoint == 10000
     assert positioner.undulator.energy.get().setpoint == 10.150
-
-
-def test_load_energy_positioner(sim_registry):
-    load_energy_positioner()
-    energy = sim_registry["energy"]
-    assert isinstance(energy, PVPositioner)
-    assert hasattr(energy, "monochromator")
-    assert hasattr(energy, "undulator")
 
 
 def test_real_to_pseudo_positioner(positioner):

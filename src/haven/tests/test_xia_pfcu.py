@@ -8,7 +8,6 @@ from haven.devices.xia_pfcu import (
     PFCUFilterBank,
     PFCUShutter,
     ShutterState,
-    load_xia_pfcu4s,
 )
 
 
@@ -79,34 +78,6 @@ def test_pfcu_shutter_close(shutter_bank):
     # Open the shutter, and check that the filterbank was set
     shutter.setpoint.set(ShutterState.CLOSED).wait(timeout=1)
     assert shutter_bank.setpoint.get() == 0b0101
-
-
-def test_load_filters(monkeypatch):
-    # Simulate the function for making the device
-    # works around a bug due to the use of __new__ to make a factory
-    device_maker = mock.MagicMock()
-    monkeypatch.setattr(xia_pfcu, "make_device", device_maker)
-    # Call the code under test
-    load_xia_pfcu4s()
-    # Check that the fake ``make_device`` function was called properly
-    assert device_maker.call_count == 2
-    device_maker.assert_called_with(
-        PFCUFilterBank,
-        labels={"filter_banks"},
-        name="filter_bank1",
-        prefix="255idc:pfcu1:",
-        shutters=[[3, 4]],
-    )
-    # Make a device with these arguments
-    call_args = device_maker.call_args
-    device = call_args.args[0](**call_args.kwargs)
-    # Check that the filters have the right PVs
-    filters = [device.filters.filter1, device.filters.filter2]
-    assert isinstance(filters[0], PFCUFilter)
-    # Check that the shutter object was created
-    shutter = device.shutters.shutter_0
-    assert isinstance(shutter, PFCUShutter)
-    assert shutter.top_filter.material.pvname == "255idc:pfcu1:filter3_mat"
 
 
 # -----------------------------------------------------------------------------

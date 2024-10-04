@@ -11,6 +11,7 @@ log = logging.getLogger(__name__)
 
 
 class ApsMachine(ApsMachineParametersDevice):
+    _ophyd_labels_ = {"synchrotrons"}
     _default_read_attrs = [
         "current",
         "lifetime",
@@ -29,14 +30,6 @@ class ApsMachine(ApsMachineParametersDevice):
         "operator_messages",
     ]
     shutter_status = Cpt(EpicsSignalRO, "RF-ACIS:FePermit:Sect1To35IdM.RVAL")
-
-
-def load_aps(config=None):
-    """Load devices related to the synchrotron as a whole."""
-    if config is None:
-        config = load_config()
-    # Load storage ring device
-    return make_device(ApsMachine, name="APS", labels={"synchrotrons"})
 
 
 # -----------------------------------------------------------------------------

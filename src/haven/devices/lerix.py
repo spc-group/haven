@@ -182,26 +182,26 @@ class LERIXSpectrometer(Device):
 #         return dev
 
 
-def load_lerix_spectrometers(config=None):
-    """Create devices for the LERIX spectrometer."""
-    if config is None:
-        config = load_config()
-    # Create spectrometers
-    devices = []
-    for name, cfg in config.get("lerix", {}).items():
-        rowland = cfg["rowland"]
-        devices.append(
-            make_device(
-                RowlandPositioner,
-                name=name,
-                x_motor_pv=rowland["x_motor_pv"],
-                y_motor_pv=rowland["y_motor_pv"],
-                z_motor_pv=rowland["z_motor_pv"],
-                z1_motor_pv=rowland["z1_motor_pv"],
-                labels={"lerix_spectromoters"},
-            )
-        )
-    return devices
+# def load_lerix_spectrometers(config=None):
+#     """Create devices for the LERIX spectrometer."""
+#     if config is None:
+#         config = load_config()
+#     # Create spectrometers
+#     devices = []
+#     for name, cfg in config.get("lerix", {}).items():
+#         rowland = cfg["rowland"]
+#         devices.append(
+#             make_device(
+#                 RowlandPositioner,
+#                 name=name,
+#                 x_motor_pv=rowland["x_motor_pv"],
+#                 y_motor_pv=rowland["y_motor_pv"],
+#                 z_motor_pv=rowland["z_motor_pv"],
+#                 z1_motor_pv=rowland["z1_motor_pv"],
+#                 labels={"lerix_spectromoters"},
+#             )
+#         )
+#     return devices
 
 
 # -----------------------------------------------------------------------------

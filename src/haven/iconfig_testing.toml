@@ -6,10 +6,8 @@ name = "SPC Beamline (sector unknown)"
 #   If not, we will provide mocked devices.
 hardware_is_present = false
 
-[facility]
-
-name = "Advanced Photon Source"
-xray_source = "insertion device"
+[[ synchrotron ]]
+name = "advanced_photon_source"
 
 [database.databroker]
 
@@ -47,28 +45,35 @@ redis_addr = "localhost:6379"
 uri = "http://localhost:8337/"
 entry_node = "255id_testing"
 
-[shutter.front_end_shutter]
+################
+# PSS Shutters #
+################
+#
+# Each PSS shutter has optional arguments *allow_open* and
+# *allow_close*. These determine whether Ophyd will allow the shutter
+# to open and close, but has no relationship to EPICS permissions.
 
-hutch = "A"
+[[ pss_shutter ]]
+name = "front_end_shutter"
 prefix = "S255ID-PSS:FES:"
-allow_open = true  # Default
 allow_close = false
+# allow_open = true  # Default
 
-[shutter.hutch_shutter]
 
-hutch = "C"
+[[ pss_shutter ]]
+name = "hutch_shutter"
 prefix = "S255ID-PSS:SCS:"
-allow_open = true  # Default
-allow_close = true  # Default
+# allow_open = true  # Default
+# allow_close = true  # Default
 
-[undulator]
 
-prefix = "id_ioc:"
+# Energy Positioner
+# =================
 
-[monochromator]
+[[ energy ]]
+monochromator_prefix = "mono_ioc:"
+undulator_prefix = "id_ioc:"
 
-prefix = "mono_ioc:"
-ioc_branch = "UP"  # For caQtDM macros
 
 # Ion chambers
 # ============
@@ -80,7 +85,6 @@ ioc_branch = "UP"  # For caQtDM macros
 # updated based on the .DESC PV for the scaler channel.
 
 [[ ion_chamber ]]
-
 scaler_prefix = "255idcVME:3820:"
 scaler_channel = 2
 preamp_prefix = "255idc:SR03:"
@@ -90,16 +94,16 @@ voltmeter_channel = 1
 counts_per_volt_second = 10e6
 name = "I0"
 
+
 # Scalers
 # =======
 # 
-# Each scaler will have a section similar to
-#   [scaler.vme_scaler_1]
-# 
-# where the second segment is the name for the scaler.
+# These definitions are not for using ion chambers, but for if the
+# scaler is needed as an independent device. The ion chamber
+# defintions include a scaler channel.
 
-[scaler.vme_scaler_1]
-
+[[ scaler ]]
+name = "scaler_1"
 prefix = "255idcVME:3820:"
 num_channels = 32
 
@@ -128,40 +132,45 @@ prefix = "255idcVME:m1"
 # auto_name = None
 
 
-# Keys for camera definitions must begin with "cam" (e.g. "camA", "camB")
-[camera.camA]
+# Sample stages
+# =============
 
-name = "s25id-gige-A"
-description = "GigE Vision A"
-prefix = "255idgigeA"
-
-[aerotech_stage.aerotech]
-
-prefix = "255idc"
-delay_prefix = "255idc:DG645"
-pv_vert = ":m1"
-pv_horiz = ":m2"
-
-[stage.sample_stage]
-
+[[ xy_stage ]]
 prefix = "255idcVME:"
 pv_vert = "m13"
 pv_horiz = "m14"
 
-[power_supply.NHQ01]
+# Aerotech controller support disabled until new controllers are ready
+# [aerotech_stage.aerotech]
+# prefix = "255idc"
+# delay_prefix = "255idc:DG645"
+# pv_vert = ":m1"
+# pv_horiz = ":m2"
 
+
+# External high-voltage power supplies
+# ====================================
+
+[[ power_supply ]]
+# An NHQ203M power supply
+name = "NHQ01"
 prefix = "ps_ioc:NHQ01"
-n_channels = 2
+ch_num = 1
+
+
+# Slits
+# =====
 
 [[ blade_slits ]]
+# A set of 4 slits, two for each direction
 name = "KB_slits"
 prefix = "vme_crate_ioc:KB"
 
 
-[slits.whitebeam_slits]
-# A single rotating aperture slit, like the 25-ID white/pinkbeam slits
+[[ aperture_slits ]]
+# A single rotating aperture slit, like the 25-ID whitebeam slits
+name = "whitebeam_slits"
 prefix = "255ida:slits:US:"
-device_class = "ApertureSlits"
 pitch_motor = "m33"
 yaw_motor = "m34"
 horizontal_motor = "m35"
@@ -203,6 +212,7 @@ name = "ORM2"
 prefix = "25ida:ORM2:"
 bendable = true
 
+
 # Table
 # =====
 # An optical table with a specific configuration of motors
@@ -223,62 +233,80 @@ prefix = "255idcVME:"
 vertical_motor = "m26"
 horizontal_motor = "m25"
 
-[area_detector]
-root_path = "tmp"  # Omit leading slash, will get added by ophyd
 
-[area_detector.sim_det]
+# Area detectors
+# ==============
+#
+# Area detectors includes gigE vision cameras.
 
-prefix = "255idSimDet"
+area_detector_root_path = "tmp"
+
+[[ area_detector ]]
+name = "sim_det"
+prefix = "255idSimDet:"
 device_class = "SimDetector"
 
-[lerix.lerix.rowland]
+# [lerix.lerix.rowland]
 
-x_motor_pv = "255idVME:m1"
-y_motor_pv = "255idVME:m2"
-z_motor_pv = "255idVME:m3"
-z1_motor_pv = "255idVME:m4"
+# x_motor_pv = "255idVME:m1"
+# y_motor_pv = "255idVME:m2"
+# z_motor_pv = "255idVME:m3"
+# z1_motor_pv = "255idVME:m4"
 
-[heater.capillary_heater]
 
-prefix = "255idptc10"
-device_class = "CapillaryHeater"
+# Heaters and Furnaces
+# ====================
 
-[robot.A]
+[[ capillary_heater ]]
+name = "capillary_heater"
+prefix = "255idptc10:"
+
+
+# Robots
+# ======
+
+[[ robot ]]
+name="austin"
 prefix = "255idAustin"
 
-# Managed IOC control PVs
-[beamline_manager]
 
+# Managed IOC control PVs
+# =======================
+
+[[ beamline_manager ]]
 name = "GLaDOS"
 prefix = "255idc:glados:"
 beamline = "25-ID-C"
+iocs = {ioc255idb = "ioc255idb:", ioc255idc = "ioc255idc:"}
 
-[beamline_manager.iocs]
-ioc255idb = "ioc255idb:"
-ioc255idc = "ioc255idc:"
 
-[fluorescence_detector]
+# Fluorescence Detectors
+# ======================
 
-[dxp.vortex_me4]
-
-prefix = "vortex_me4"
+[[ dxp ]]
+name = "vortex_me4"
+prefix = "vortex_me4:"
 num_elements = 4
 
-[dxp.canberra_Ge7]
-
-prefix = "20xmap8"
+[[ dxp ]]
+name = "canberra_Ge7"
+prefix = "20xmap8:"
 num_elements = 4
 
-[xspress.vortex_me4_xsp]
-
-prefix = "vortex_me4_xsp"
+[[ xspress ]]
+name = "vortex_me4_xsp"
+prefix = "vortex_me4_xsp:"
 num_elements = 4
 
-[pfcu4.filter_bank0]
 
+# Filter boxes
+# ============
+
+[[ pfcu4 ]]
+name = "filter_bank0"
 prefix = "255idc:pfcu0:"
 
-[pfcu4.filter_bank1]
-
+[[ pfcu4 ]]
+name = "filter_bank1"
 prefix = "255idc:pfcu1:"
 shutters = [[3, 4]]

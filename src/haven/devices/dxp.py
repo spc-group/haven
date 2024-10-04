@@ -390,7 +390,7 @@ def parse_xmap_buffer(buff):
     return data
 
 
-def make_dxp_device(device_name, prefix, num_elements):
+def make_dxp_device(name, prefix, num_elements):
     # Build the mca components
     mca_range = range(0, num_elements)
     attrs = {
@@ -417,31 +417,6 @@ def make_dxp_device(device_name, prefix, num_elements):
         name=device_name,
         labels={"xrf_detectors", "fluorescence_detectors", "detectors"},
     )
-
-
-def load_dxp_detectors(config=None):
-    """Load all the DXP-based detector devices.
-
-    Configuration is determined from the iconfig.toml file.
-
-    Optionally, *config* can be given a dictionary with configuration
-    matching the iconfig.toml file to use instead. Mostly useful for
-    testing.
-
-    """
-    # Get the detector definitions from config files
-    if config is None:
-        config = load_config()
-    devices = []
-    for name, cfg in config.get("dxp", {}).items():
-        devices.append(
-            make_dxp_device(
-                device_name=name,
-                prefix=cfg["prefix"],
-                num_elements=cfg["num_elements"],
-            )
-        )
-    return devices
 
 
 # -----------------------------------------------------------------------------

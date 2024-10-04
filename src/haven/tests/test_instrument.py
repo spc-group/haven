@@ -96,7 +96,7 @@ async def test_load(monkeypatch):
     # Mock out the relevant methods to test
     monkeypatch.setattr(instrument, "parse_toml_file", MagicMock())
     monkeypatch.setattr(instrument, "connect", AsyncMock())
-    monkeypatch.setenv("HAVEN_CONFIG_FILES", toml_file, prepend=False)
+    monkeypatch.setenv("HAVEN_CONFIG_FILES", str(toml_file), prepend=False)
     # Execute the loading step
     await instrument.load()
     # Check that the right methods were called

@@ -100,6 +100,7 @@ class ApertureSlits(Device):
         yaw_motor: str,
         horizontal_motor: str,
         diagonal_motor: str,
+        labels={"slits"},
         **kwargs,
     ):
         # Determine the prefix for the motors
@@ -130,47 +131,6 @@ class ApertureSlits(Device):
     diagonal = FCpt(
         SlitMotor, "{self.motor_prefix}:{self._diagonal_motor}", labels={"motors"}
     )
-
-
-def load_slits(config=None):
-    if config is None:
-        config = load_config()
-    # Create slits
-    devices = []
-    for name, slit_config in config.get("slits", {}).items():
-        DeviceClass = globals().get(slit_config["device_class"])
-        prefix = slit_config["prefix"]
-        # Check that it's a valid device class
-        if DeviceClass is None:
-            msg = f"slits.{name}.device_class={slit_config['device_class']}"
-            raise exceptions.UnknownDeviceConfiguration(msg)
-        ioc_prefix = prefix.split(":")[0]
-        # Determine real motor PVs
-        motors = {}
-        if DeviceClass is ApertureSlits:
-            try:
-                motors.update(
-                    dict(
-                        horizontal_motor=slit_config["horizontal_motor"],
-                        diagonal_motor=slit_config["diagonal_motor"],
-                        pitch_motor=slit_config["pitch_motor"],
-                        yaw_motor=slit_config["yaw_motor"],
-                    )
-                )
-            except KeyError:
-                msg = f"Missing motors for slits.{name}.device_class={slit_config['device_class']}"
-                raise exceptions.UnknownDeviceConfiguration(msg)
-        # Create the device
-        devices.append(
-            make_device(
-                DeviceClass,
-                prefix=prefix,
-                name=name,
-                labels={"slits"},
-                **motors,
-            )
-        )
-    return devices
 
 
 # -----------------------------------------------------------------------------
