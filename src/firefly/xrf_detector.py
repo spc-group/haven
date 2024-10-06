@@ -18,7 +18,7 @@ from qtpy import uic
 from qtpy.QtCore import Qt, Signal
 from qtpy.QtWidgets import QApplication, QWidget
 
-import haven
+from haven import beamline
 from firefly import display
 
 np.set_printoptions(threshold=sys.maxsize)
@@ -505,7 +505,7 @@ class XRFDetectorDisplay(display.FireflyDisplay):
     def customize_device(self):
         # Load the device from the registry
         device_name = self.macros()["DEV"]
-        self.device = device = haven.registry.find(device_name)
+        self.device = device = beamline.registry.find(device_name)
         # Set up data channels
         self._spectrum_channels = []
         for mca_num in range(self.device.num_elements):

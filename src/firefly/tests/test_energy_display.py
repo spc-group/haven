@@ -25,6 +25,7 @@ def energy_positioner(sim_registry):
     )
     energy.monochromator.energy.user_setpoint.sim_set_limits((4000, 33000))
     energy.undulator.energy.setpoint.sim_set_limits((-float("inf"), float("inf")))
+    sim_registry.register(energy)
     return energy
 
 
@@ -34,42 +35,6 @@ def display(qtbot, energy_positioner):
     display = EnergyDisplay()
     qtbot.addWidget(display)
     return display
-
-
-def test_mono_caqtdm_macros(display):
-    """Example of mono caQtDM macros from microprobe mono:
-
-    last file: /net/s25data/xorApps/ui/DCMControlCenter.ui
-
-    macro: P=25idbUP:, MONO=UP, BRAGG=ACS:m3, GAP=ACS:m4,
-    ENERGY=Energy, OFFSET=Offset, IDENERGY=ID25ds:Energy.VAL
-
-    """
-    display.launch_caqtdm = mock.MagicMock()
-    # Check that the various caqtdm calls set up the right macros
-    display.launch_mono_caqtdm()
-    assert display.launch_caqtdm.called
-    assert display.launch_caqtdm.call_args[1]["macros"] == {
-        "P": "mono_ioc:",
-        "MONO": "UP",
-        "BRAGG": "ACS:m3",
-        "GAP": "ACS:m4",
-        "ENERGY": "Energy",
-        "OFFSET": "Offset",
-        "IDENERGY": "id_ioc:Energy",
-    }
-
-
-def test_id_caqtdm_macros(display):
-    display.launch_caqtdm = mock.MagicMock()
-    # Check that the various caqtdm calls set up the right macros
-    display.launch_id_caqtdm()
-    assert display.launch_caqtdm.called
-    assert display.launch_caqtdm.call_args[1]["macros"] == {
-        "ID": "id_ioc",
-        "M": 2,
-        "D": 2,
-    }
 
 
 def test_move_energy(qtbot, display):

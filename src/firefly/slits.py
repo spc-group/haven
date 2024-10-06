@@ -1,7 +1,7 @@
 import logging
 import warnings
 
-import haven
+from haven import beamline
 from firefly import display
 from haven.devices import slits
 
@@ -15,7 +15,7 @@ class SlitsDisplay(display.FireflyDisplay):
     }
 
     def customize_device(self):
-        self.device = haven.registry.find(self.macros()["DEVICE"])
+        self.device = beamline.registry.find(self.macros()["DEVICE"])
 
     def ui_filename(self):
         return "slits.ui"

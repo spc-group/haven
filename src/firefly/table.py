@@ -3,7 +3,7 @@ import warnings
 from pathlib import Path
 
 from firefly import display
-from haven import load_config, registry
+from haven import load_config, beamline
 from haven.devices import Table
 
 log = logging.getLogger(__name__)
@@ -82,7 +82,7 @@ class MultipleMotorCaQtDM(CaQtDMBase):
 
 class TableDisplay(display.FireflyDisplay):
     def customize_device(self):
-        self.device = registry.find(self.macros()["DEVICE"])
+        self.device = beamline.registry.find(self.macros()["DEVICE"])
         # Determine which flavor of caQtDM parameters we need
         if self.num_legs == 2:
             self.caqtdm = TwoLegCaQtDM(table=self.device)

@@ -11,7 +11,7 @@ from qtpy.QtWidgets import QDialogButtonBox, QFormLayout, QLineEdit, QVBoxLayout
 from xraydb.xraydb import XrayDB
 
 from firefly import display
-from haven import load_config, registry
+from haven import load_config, beamline
 
 log = logging.getLogger(__name__)
 
@@ -49,10 +49,6 @@ class EnergyCalibrationDialog(QtWidgets.QDialog):
 
 
 class EnergyDisplay(display.FireflyDisplay):
-    caqtdm_mono_ui_file = "/net/s25data/xorApps/ui/DCMControlCenter.ui"
-    caqtdm_id_ui_file = (
-        "/net/s25data/xorApps/epics/synApps_6_2/ioc/25ida/25idaApp/op/ui/IDControl.ui"
-    )
     stylesheet_danger = (
         "background: rgb(220, 53, 69); color: white; border-color: rgb(220, 53, 69)"
     )
@@ -66,67 +62,10 @@ class EnergyDisplay(display.FireflyDisplay):
 
     def customize_device(self):
         try:
-            self.energy_positioner = registry.find("energy")
+            self.energy_positioner = beamline.registry.find("energy")
         except ComponentNotFound:
             warnings.warn("Could not find energy positioner.")
             log.warning("Could not find energy positioner.")
-
-    def prepare_caqtdm_actions(self):
-        """Create QActions for opening mono/ID caQtDM panels.
-
-        Creates two actions, one for the mono and one for the
-        insertion device.
-
-        """
-        self.caqtdm_actions = []
-        # Create an action for launching the mono caQtDM file
-        action = QtWidgets.QAction(self)
-        action.setObjectName("launch_mono_caqtdm_action")
-        action.setText("Mono caQtDM")
-        action.triggered.connect(self.launch_mono_caqtdm)
-        action.setIcon(qta.icon("fa5s.wrench"))
-        action.setToolTip("Launch the caQtDM panel for the monochromator.")
-        self.caqtdm_actions.append(action)
-        # Create an action for launching the ID caQtDM file
-        action = QtWidgets.QAction(self)
-        action.setObjectName("launch_id_caqtdm_action")
-        action.setText("ID caQtDM")
-        action.triggered.connect(self.launch_id_caqtdm)
-        action.setIcon(qta.icon("fa5s.wrench"))
-        action.setToolTip("Launch the caQtDM panel for the insertion device.")
-        self.caqtdm_actions.append(action)
-
-    def launch_mono_caqtdm(self):
-        config = load_config()
-        mono = self.energy_positioner.monochromator
-        ID = self.energy_positioner.undulator
-        prefix = mono.prefix
-        caqtdm_macros = {
-            "P": prefix,
-            "MONO": config["monochromator"]["ioc_branch"],
-            "BRAGG": mono.bragg.prefix.replace(prefix, ""),
-            "GAP": mono.gap.prefix.replace(prefix, ""),
-            "ENERGY": mono.energy.prefix.replace(prefix, ""),
-            "OFFSET": mono.offset.prefix.replace(prefix, ""),
-            "IDENERGY": ID.energy.prefix,
-        }
-        self.launch_caqtdm(macros=caqtdm_macros, ui_file=self.caqtdm_mono_ui_file)
-
-    def launch_id_caqtdm(self):
-        """Launch the pre-built caQtDM UI file for the ID."""
-        prefix = self.energy_positioner.undulator.prefix
-        # caQtDM doesn't expect the trailing ";"
-        prefix = prefix.rstrip(":")
-        # Strip leading "ID" from the ID IOC since caQtDM adds it
-        prefix = prefix.strip("ID")
-        caqtdm_macros = {
-            # No idea what "M", and "D" do, they're not in the UI
-            # file.
-            "ID": prefix,
-            "M": 2,
-            "D": 2,
-        }
-        self.launch_caqtdm(macros=caqtdm_macros, ui_file=self.caqtdm_id_ui_file)
 
     def set_energy(self, *args, **kwargs):
         energy = float(self.ui.target_energy_lineedit.text())

@@ -7,16 +7,15 @@ from pathlib import Path
 import pydm
 import pyqtgraph as pg
 import qtawesome as qta
-from ophydregistry import Registry
 from qasync import asyncSlot
 from qtpy import QtCore, QtWidgets
 from qtpy.QtCore import Signal
 from qtpy.QtGui import QIcon, QKeySequence
 from qtpy.QtWidgets import QAction
+from ophydregistry import Registry
 
 from haven import load_config
-from haven import load_instrument as load_haven_instrument
-from haven import registry
+from haven import beamline
 from haven.device import titelize
 from haven.exceptions import ComponentNotFound, InvalidConfiguration
 
@@ -72,7 +71,7 @@ class FireflyController(QtCore.QObject):
         self.actions = ActionsRegistry()
         self.windows = OrderedDict()
         self.queue_re_state_changed.connect(self.enable_queue_controls)
-        self.registry = registry
+        self.registry = beamline.registry
 
     def _setup_window_action(
         self, action_name: str, text: str, slot: QtCore.Slot, shortcut=None, icon=None
@@ -90,7 +89,7 @@ class FireflyController(QtCore.QObject):
 
     def reload_instrument(self, load_instrument=True):
         """(Re)load all the instrument devices."""
-        load_haven_instrument(registry=self.registry)
+        await beamline.load()
         self.registry_changed.emit(self.registry)
 
     async def setup_instrument(self, load_instrument=True):
@@ -110,14 +109,8 @@ class FireflyController(QtCore.QObject):
 
         """
         if load_instrument:
-            await load_haven_instrument(registry=self.registry)
-            self.registry_changed.emit(self.registry)
-        # Fake device for testing
-        from ophyd_async.epics.motor import Motor
-
-        sim_async_motor = Motor("255idcVME", name="sim_async_motor")
-        await sim_async_motor.connect(mock=True)
-        registry.register(sim_async_motor, labels={"motors", "extra_motors"})
+            await beamline.load()
+            self.registry_changed.emit(beamline.registry)
         # Make actions for launching other windows
         self.setup_window_actions()
         # Actions for controlling the bluesky run engine

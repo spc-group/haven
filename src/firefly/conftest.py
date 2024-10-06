@@ -68,6 +68,7 @@ def sync_motors(sim_registry):
     for name in motor_names:
         this_motor = make_fake_device(HavenMotor)(name=name, labels={"motors"})
         motors.append(this_motor)
+        sim_registry.register(this_motor)
     return motors
 
 

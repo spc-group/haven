@@ -3,27 +3,12 @@ import json
 from pydm.widgets import PyDMEmbeddedDisplay
 from qtpy import QtWidgets
 
-import haven
+from haven import beamline
 from firefly import display
 
 
 class IocsDisplay(display.FireflyDisplay):
     _ioc_displays = []
-
-    # def __init__(self, config=None):
-    #     """Parameters:
-    #     ===========
-
-    #     config:
-    #       Configuration mapping like that created by
-    #       ``haven.load_config()``, which is used by default. Useful
-    #       for testing.
-    #     """
-    #     # Load default haven configuration
-    #     if config is None:
-    #         self.config = haven.load_config()
-    #     else:
-    #         self.config = config
 
     def customize_ui(self):
         # Delete existing IOC widgets
@@ -31,7 +16,7 @@ class IocsDisplay(display.FireflyDisplay):
             self.iocs_layout.takeAt(idx).widget().deleteLater()
         # Add embedded displays for all the ion chambers
         self._ioc_displays = []
-        manager = haven.registry["beamline_manager"]
+        manager = beamline.registry["beamline_manager"]
 
         for idx, cpt_name in enumerate(manager.iocs.component_names):
             cpt = getattr(manager.iocs, cpt_name)

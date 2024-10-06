@@ -5,7 +5,7 @@ import numpy as np
 import pydm
 import pyqtgraph
 
-import haven
+from haven import beamline
 from firefly import display
 
 np.set_printoptions(threshold=sys.maxsize)
@@ -25,7 +25,7 @@ class AreaDetectorViewerDisplay(display.FireflyDisplay):
 
     def customize_device(self):
         device_name = name = self.macros()["AD"]
-        device = haven.registry.find(device_name)
+        device = beamline.registry.find(device_name)
         self.device = device
         img_pv = device.pva.pv_name.get(as_string=True)
         addr = f"pva://{img_pv}"

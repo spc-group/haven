@@ -6,7 +6,7 @@ from qtpy.QtCore import Signal
 from qtpy.QtWidgets import QHBoxLayout, QSizePolicy
 
 from firefly import display
-from haven import registry
+from haven import beamline
 from haven.devices.shutter import ShutterState
 
 log = logging.getLogger(__name__)
@@ -31,7 +31,7 @@ class StatusDisplay(display.FireflyDisplay):
         form.removeRow(self.ui.shutter_A_layout)
         form.removeRow(self.ui.shutter_CD_layout)
         # Add widgets for shutters
-        shutters = registry.findall("shutters", allow_none=True)
+        shutters = beamline.registry.findall("shutters", allow_none=True)
         row_idx = 4
         on_color = self.ui.shutter_permit_indicator.onColor
         off_color = self.ui.shutter_permit_indicator.offColor
