@@ -1,11 +1,12 @@
 import logging
+from datetime import datetime, time
+from typing import Mapping
+
 import haven
+from bluesky_queueserver_api import BPlan
 from pydm.widgets.label import PyDMLabel
 from PyQt5.QtWidgets import QTableWidgetItem
 from PyQt5.QtCore import Qt
-from datetime import datetime, time
-from bluesky_queueserver_api import BPlan
-
 from qtpy import QtWidgets, QtCore
 from firefly.component_selector import ComponentSelector
 from firefly.plans import regions_display
@@ -27,7 +28,7 @@ import asyncio
 
 log = logging.getLogger()
 
-test = True
+test = False
 if test:
     # Fake client for testing purpose
     def create_fake_client():
@@ -95,15 +96,12 @@ class MotorRegion(regions_display.RegionBase):
         self.RBV_label.setEnabled(is_checked)
     
     def update_RBV(self):
-        try:
-            motor = self.motor_box.current_component()
-            if motor:
-                self.RBV_label = PyDMLabel(self, init_channel=f"haven://{motor.name}.user_readback")
-            else:
-                raise Exception("No motor selected")
-        except Exception as e:
-            print(e)
-            self.RBV_label = PyDMLabel("nan")
+        motor = self.motor_box.current_component()
+        if motor:
+            self.RBV_label.channel = f"haven://{motor.name}.user_readback"
+            # self.RBV_label = PyDMLabel(self, init_channel=f"haven://{motor.name}.user_readback")
+        else:
+            self.RBV_label.channel = ""
 class SaveMotorDisplay(regions_display.RegionsDisplay):
     
     Region = MotorRegion
@@ -144,7 +142,7 @@ class SaveMotorDisplay(regions_display.RegionsDisplay):
         self.ui.checkBox_stop.toggled.connect(self.ui.dateEdit_stop.setEnabled)
         
         # For saving motor positions
-        self.ui.run_button.clicked.connect(self.queue_plan)
+        # self.ui.run_button.clicked.connect(self.queue_plan)
         self.ui.run_now_button.clicked.connect(self.queue_plan_now)
 
         # For recalling motor positions
@@ -380,8 +378,8 @@ class SaveMotorDisplay(regions_display.RegionsDisplay):
     def ui_filename(self):
         return "plans/save_motor_window.ui"
 
-    def update_queue_status(self):
-        super().update_queue_status()
+    def update_queue_status(self, status: Mapping):
+        super().update_queue_status(status=status)
         # Schedule the refresh after the event loop starts
         QtCore.QTimer.singleShot(0, self.refresh_saved_position_list_slot)
 

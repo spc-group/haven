@@ -627,17 +627,11 @@ class FireflyController(QtCore.QObject):
         for action in queue_actions.values():
             action.setEnabled(action in enabled_signals)
 
-    @asyncSlot(object)
-    async def add_queue_item(self, item, run_now=False):
+    @asyncSlot(object, bool)
+    async def add_queue_item(self, item, run_now):
         log.debug(f"Application received item to add to queue: {item}")
         if getattr(self, "_queue_client", None) is not None:
-            await self._queue_client.add_queue_item(item, run_now=False)
-
-    @asyncSlot(object)
-    async def run_queue_item(self, item):
-        log.debug(f"Application received item to run on queue: {item}")
-        if getattr(self, "_queue_client", None) is not None:
-            await self._queue_client.run_queue_item(item, run_now=True)
+            await self._queue_client.add_queue_item(item, run_now=run_now)
             
     @QtCore.Slot()
     def show_sample_viewer_window(self):
