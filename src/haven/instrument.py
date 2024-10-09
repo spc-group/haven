@@ -233,11 +233,12 @@ class Instrument:
             raise NotConnected(exceptions)
         return new_devices
 
-    async def load(self, connect: bool = True, device_classes: Mapping | None = None):
+    async def load(self, connect: bool = True, device_classes: Mapping | None = None, config_files: Sequence[Path] | None = None):
         """Load instrument specified in config files.
 
-        Config files are read from the environmental variable
-        HAVEN_CONFIG_FILES.
+        Unless, explicitly overridden by the *config_files* argument,
+        configuration files are read from the environmental variable
+        HAVEN_CONFIG_FILES (separated by ':').
 
         Parameters
         ==========
@@ -247,16 +248,20 @@ class Instrument:
           A temporary set of device classes to use for this call
           only. Overrides any device classes given during
           initalization.
+        config_files
+          I list of file paths that will be loaded. If omitted, those
+          files listed in HAVEN_CONFIG_FILES will be used.
 
         """
         self.devices = []
         # Decide which config files to use
-        env_key = "HAVEN_CONFIG_FILES"
-        if env_key in os.environ.keys():
-            file_paths = os.environ.get("HAVEN_CONFIG_FILES", "")
-            file_paths = [Path(fp) for fp in file_paths.split(":")]
-        else:
-            file_paths = [Path(__file__).parent.resolve() / "iconfig_testing.toml"]
+        if config_files is None:
+            env_key = "HAVEN_CONFIG_FILES"
+            if env_key in os.environ.keys():
+                config_files = os.environ.get("HAVEN_CONFIG_FILES", "")
+                config_files = [Path(fp) for fp in config_files.split(":")]
+            else:
+                config_files = [Path(__file__).parent.resolve() / "iconfig_testing.toml"]
         # Load the instrument from config files
         old_classes = self.device_classes
         try:
@@ -264,7 +269,7 @@ class Instrument:
             if device_classes is not None:
                 self.device_classes = device_classes
             # Parse TOML files
-            for fp in file_paths:
+            for fp in config_files:
                 with open(fp, mode="tr", encoding="utf-8") as fd:
                     self.parse_toml_file(fd)
         finally:
