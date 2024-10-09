@@ -106,11 +106,11 @@ class PFCUShutter(PVPositionerIsClose):
     top_filter = FCpt(PFCUFilter, "{self.prefix}filter{self._top_filter}")
     bottom_filter = FCpt(PFCUFilter, "{self.prefix}filter{self._bottom_filter}")
 
-    def __init__(self, *args, top_filter: str, bottom_filter: str, **kwargs):
+    def __init__(self, prefix: str="", *, name: str, top_filter: str, bottom_filter: str, labels={"shutters"}, **kwargs):
         self._top_filter = top_filter
         self._bottom_filter = bottom_filter
         super().__init__(
-            *args, limits=(ShutterState.OPEN, ShutterState.CLOSED), **kwargs
+            prefix=prefix, name=name, limits=(ShutterState.OPEN, ShutterState.CLOSED), labels=labels, **kwargs
         )
 
 
@@ -129,7 +129,7 @@ class PFCUFilterBank(PVPositionerIsClose):
     readback = Cpt(EpicsSignalRO, "config_RBV", kind="normal")
     setpoint = Cpt(EpicsSignal, "config", kind="normal")
 
-    def __new__(cls, *args, shutters=[], **kwargs):
+    def __new__(cls, prefix: str, name: str, shutters=[], **kwargs):
         # Determine which filters to use as filters vs shutters
         all_shutters = [v for shutter in shutters for v in shutter]
         filters = [
@@ -164,11 +164,12 @@ class PFCUFilterBank(PVPositionerIsClose):
         }
         # Create any new child class with shutters and filters
         new_cls = type(cls.__name__, (PFCUFilterBank,), comps)
-        return object.__new__(new_cls)
+        return super().__new__(new_cls)
 
     def __init__(
         self,
-        prefix: str,
+        prefix: str = "",
+        *,
         name: str,
         shutters: Sequence = [],
         labels: str = {"filter_banks"},

@@ -8,7 +8,6 @@ log = logging.getLogger(__name__)
 
 
 class ApsMachine(ApsMachineParametersDevice):
-    _ophyd_labels_ = {"synchrotrons"}
     _default_read_attrs = [
         "current",
         "lifetime",
@@ -27,6 +26,9 @@ class ApsMachine(ApsMachineParametersDevice):
         "operator_messages",
     ]
     shutter_status = Cpt(EpicsSignalRO, "RF-ACIS:FePermit:Sect1To35IdM.RVAL")
+
+    def __init__(self, prefix: str = "", *, name: str, labels: set[str] = {"synchrotrons"}, **kwargs):
+        super().__init__(prefix=prefix, name=name, labels=labels, **kwargs)
 
 
 # -----------------------------------------------------------------------------

@@ -13,6 +13,7 @@ from ophyd import Device as ThreadedDevice
 from ophyd.sim import make_fake_device
 from ophyd_async.core import DEFAULT_TIMEOUT, NotConnected
 from ophydregistry import Registry
+from rich import print as rprint
 
 from .devices.aerotech import AerotechStage
 from .devices.aps import ApsMachine
@@ -26,7 +27,7 @@ from .devices.mirrors import HighHeatLoadMirror, KBMirrors
 from .devices.motor import Motor, load_motors
 from .devices.power_supply import NHQ203MChannel
 from .devices.robot import Robot
-from .devices.scaler import Scaler
+from .devices.scaler import MultiChannelScaler
 from .devices.shutter import PssShutter
 from .devices.slits import ApertureSlits, BladeSlits
 from .devices.stage import XYStage
@@ -133,8 +134,12 @@ class Instrument:
                 )
             # Check types
             if not param_missing:
-                correct_type = isinstance(params[key], sig_param.annotation)
-                has_type = not issubclass(sig_param.annotation, inspect._empty)
+                try:
+                    correct_type = isinstance(params[key], sig_param.annotation)
+                    has_type = not issubclass(sig_param.annotation, inspect._empty)
+                except TypeError:
+                    correct_type = False
+                    has_type = False
                 if has_type and not correct_type:
                     raise InvalidConfiguration(
                         f"Incorrect type for {Klass} key '{key}': "
@@ -146,11 +151,12 @@ class Instrument:
         """Create the devices from their parameters."""
         # Mock threaded ophyd devices if necessary
         try:
-            if issubclass(Klass, ThreadedDevice):
-                Klass = make_fake_device(Klass)
+            is_threaded_device = issubclass(Klass, ThreadedDevice)
         except TypeError:
-            pass
-        # Check if we need to inject the registry
+            is_threaded_device = False
+        if is_threaded_device and not self.hardware_is_present:
+            Klass = make_fake_device(Klass)
+        # Check if we need to injec the registry
         extra_params = {}
         sig = inspect.signature(Klass)
         if "registry" in sig.parameters.keys():
@@ -208,7 +214,7 @@ class Instrument:
         timeout_reached = False
         while not timeout_reached and len(threaded_devices) > 0:
             # Remove any connected devices for the running list
-            connected_devices = [dev for dev in threaded_devices if dev.connected]
+            connected_devices = [dev for dev in threaded_devices if getattr(dev, "connected", True)]
             new_devices.extend(connected_devices)
             threaded_devices = [
                 dev for dev in threaded_devices if dev not in connected_devices
@@ -309,17 +315,10 @@ class HavenInstrument(Instrument):
         """
         if reset_devices:
             self.registry.clear()
-        t0 = time.monotonic()
         await super().load()
         # VME-style Motors happen later so duplicate motors can be
         # removed
         await super().load(device_classes={"motors": load_motors})
-        # Notify with the new device count
-        load_time = time.monotonic() - t0
-        print(
-            f"Loaded [repr.number]{len(instrument.devices)}[/] devices in {load_time:.1f} sec.",
-            flush=True,
-        )
         # Return the final list
         if return_devices:
             return instrument.devices
@@ -329,6 +328,7 @@ class HavenInstrument(Instrument):
 
 beamline = HavenInstrument(
     {
+        # Ophyd-async devices
         "ion_chamber": IonChamber,
         "high_heat_load_mirror": HighHeatLoadMirror,
         "kb_mirrors": KBMirrors,
@@ -336,19 +336,20 @@ beamline = HavenInstrument(
         "table": Table,
         "aerotech_stage": AerotechStage,
         "motor": Motor,
+        # Threaded ophyd devices
         "blade_slits": BladeSlits,
         "aperture_slits": ApertureSlits,
         "capillary_heater": CapillaryHeater,
         "power_supply": NHQ203MChannel,
         "synchrotron": ApsMachine,
         "robot": Robot,
-        "pfcu4": PFCUFilterBank,
+        "pfcu4": PFCUFilterBank,  # <-- fails if mocked
         "pss_shutter": PssShutter,
         "energy": EnergyPositioner,
         "xspress": make_xspress_device,
         "dxp": make_dxp_device,
         "beamline_manager": BeamlineManager,
         "area_detector": make_area_detector,
-        "scaler": Scaler,
+        "scaler": MultiChannelScaler,
     },
 )

@@ -42,6 +42,9 @@ class BladeSlits(Optics2Slit2D_HV):
     h = Cpt(BladePair, "H")
     v = Cpt(BladePair, "V")
 
+    def __init__(self, prefix: str, name: str, labels={"slits"}, **kwargs):
+        super().__init__(prefix=prefix, name=name, labels=labels, **kwargs)
+
 
 class SlitMotor(HavenMotor):
     """An Ophyd device for a motor on a set of slits.
@@ -92,7 +95,7 @@ class ApertureSlits(Device):
     def __init__(
         self,
         prefix: str,
-        *args,
+        name: str,
         pitch_motor: str,
         yaw_motor: str,
         horizontal_motor: str,
@@ -107,7 +110,7 @@ class ApertureSlits(Device):
         self._yaw_motor = yaw_motor
         self._horizontal_motor = horizontal_motor
         self._diagonal_motor = diagonal_motor
-        super().__init__(prefix, *args, **kwargs)
+        super().__init__(prefix=prefix, name=name, labels=labels, **kwargs)
 
     class SlitAxis(Device):
         size = Cpt(SlitMotor, "Size", labels={"motors"})

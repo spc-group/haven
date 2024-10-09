@@ -45,7 +45,7 @@ class EnergyPositioner(PVPositionerPC):
 
     Parameters
     ==========
-    mono_prefix
+    monochromator_prefix
       The CA prefix for the monochromator IOC.
     undulator_prefix
       The prefix for the insertion device energy, such that
@@ -54,19 +54,19 @@ class EnergyPositioner(PVPositionerPC):
     """
 
     # Individual energy components
-    monochromator = FCpt(Monochromator, "{mono_prefix}", labels={"monochromators"})
+    monochromator = FCpt(Monochromator, "{monochromator_prefix}", labels={"monochromators"})
     undulator = FCpt(
         PlanarUndulator, "{undulator_prefix}", labels={"undulator", "xray_source"}
     )
 
     def __init__(
         self,
-        mono_prefix: str,
+        monochromator_prefix: str,
         undulator_prefix: str,
-        name: str,
+        name: str = "energy",
         **kwargs,
     ):
-        self.mono_prefix = mono_prefix
+        self.monochromator_prefix = monochromator_prefix
         self.undulator_prefix = undulator_prefix
         super().__init__(name=name, **kwargs)
 

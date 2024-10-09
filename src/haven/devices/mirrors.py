@@ -37,7 +37,7 @@ class HighHeatLoadMirror(Device):
 class KBMirror(Device):
     """A single mirror in a KB mirror set."""
 
-    ophyd_labels_ = {"mirrors"}
+    _ophyd_labels_ = {"mirrors"}
 
     def __init__(
         self,

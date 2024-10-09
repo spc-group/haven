@@ -1,3 +1,5 @@
+from typing import Mapping
+
 from apsbss.apsbss_ophyd import EpicsBssDevice, EpicsEsafDevice, EpicsProposalDevice
 from ophyd import Component as Cpt
 from ophyd import Device
@@ -62,10 +64,10 @@ class BeamlineManager(Device):
     local_storage = Cpt(LocalStorage, "local_storage:", name="local_storage")
 
     def __new__(
-        cls,
-        prefix,
-        *args,
-        iocs={},
+        cls: type,
+        prefix: str,
+        name: str,
+        iocs: Mapping = {},
         **kwargs,
     ):
         defn = {key: (IOCManager, val, {}) for key, val in iocs.items()}
@@ -76,6 +78,6 @@ class BeamlineManager(Device):
         return object.__new__(new_cls)
 
     def __init__(
-        self, prefix: str, *, name: str, iocs={}, labels={"beamline_manager"}, **kwargs
+            self, prefix: str, name: str, iocs: Mapping = {}, labels: set = {"beamline_manager"}, **kwargs
     ):
-        super().__init__(name=name, prefix=prefix, labels=labels, **kwargs)
+        super().__init__(prefix=prefix,name=name, labels=labels, **kwargs)

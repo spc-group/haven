@@ -19,8 +19,8 @@ class Monochromator(Device):
     id_tracking = Cpt(EpicsSignal, "ID_tracking", kind="config")
     id_offset = Cpt(EpicsSignal, "ID_offset", kind="config")
     d_spacing = Cpt(EpicsSignal, "dspacing", kind="config")
+    mode = Cpt(EpicsSignal, "mode", kind="config")
     # Virtual positioners
-    mode = Cpt(EpicsSignal, "mode", labels={"motors", "baseline"}, kind="config")
     energy = Cpt(HavenMotor, "Energy", labels={"motors"}, kind="hinted")
     energy_constant1 = Cpt(
         EpicsSignal, "EnergyC1.VAL", labels={"baseline"}, kind="config"
