@@ -5,8 +5,8 @@ import numpy as np
 import pydm
 import pyqtgraph
 
-from haven import beamline
 from firefly import display
+from haven import beamline
 
 np.set_printoptions(threshold=sys.maxsize)
 

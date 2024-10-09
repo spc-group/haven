@@ -1,7 +1,6 @@
 import logging
 import warnings
 
-import qtawesome as qta
 from bluesky_queueserver_api import BPlan
 from ophydregistry import ComponentNotFound
 from pydm.widgets.label import PyDMLabel
@@ -11,7 +10,7 @@ from qtpy.QtWidgets import QDialogButtonBox, QFormLayout, QLineEdit, QVBoxLayout
 from xraydb.xraydb import XrayDB
 
 from firefly import display
-from haven import load_config, beamline
+from haven import beamline
 
 log = logging.getLogger(__name__)
 

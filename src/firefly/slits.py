@@ -1,8 +1,8 @@
 import logging
 import warnings
 
-from haven import beamline
 from firefly import display
+from haven import beamline
 from haven.devices import slits
 
 log = logging.getLogger(__name__)

@@ -3,8 +3,8 @@ import json
 from pydm.widgets import PyDMEmbeddedDisplay
 from qtpy import QtWidgets
 
-from haven import beamline
 from firefly import display
+from haven import beamline
 
 
 class IocsDisplay(display.FireflyDisplay):

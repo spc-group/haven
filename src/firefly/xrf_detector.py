@@ -18,8 +18,8 @@ from qtpy import uic
 from qtpy.QtCore import Qt, Signal
 from qtpy.QtWidgets import QApplication, QWidget
 
-from haven import beamline
 from firefly import display
+from haven import beamline
 
 np.set_printoptions(threshold=sys.maxsize)
 

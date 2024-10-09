@@ -27,7 +27,14 @@ class ApsMachine(ApsMachineParametersDevice):
     ]
     shutter_status = Cpt(EpicsSignalRO, "RF-ACIS:FePermit:Sect1To35IdM.RVAL")
 
-    def __init__(self, prefix: str = "", *, name: str, labels: set[str] = {"synchrotrons"}, **kwargs):
+    def __init__(
+        self,
+        prefix: str = "",
+        *,
+        name: str,
+        labels: set[str] = {"synchrotrons"},
+        **kwargs,
+    ):
         super().__init__(prefix=prefix, name=name, labels=labels, **kwargs)
 
 

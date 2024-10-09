@@ -1,5 +1,3 @@
-from unittest import mock
-
 import pytest
 from apstools.devices.aps_undulator import PlanarUndulator
 from bluesky_queueserver_api import BPlan

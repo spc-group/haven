@@ -78,6 +78,11 @@ class BeamlineManager(Device):
         return object.__new__(new_cls)
 
     def __init__(
-            self, prefix: str, name: str, iocs: Mapping = {}, labels: set = {"beamline_manager"}, **kwargs
+        self,
+        prefix: str,
+        name: str,
+        iocs: Mapping = {},
+        labels: set = {"beamline_manager"},
+        **kwargs,
     ):
-        super().__init__(prefix=prefix,name=name, labels=labels, **kwargs)
+        super().__init__(prefix=prefix, name=name, labels=labels, **kwargs)

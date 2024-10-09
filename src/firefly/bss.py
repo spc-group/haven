@@ -6,8 +6,8 @@ from dm.common.exceptions.objectNotFound import ObjectNotFound
 from qtpy.QtCore import Signal
 from qtpy.QtGui import QStandardItem, QStandardItemModel
 
-from haven import beamline, load_config
 from firefly import display
+from haven import beamline, load_config
 
 log = logging.getLogger(__name__)
 

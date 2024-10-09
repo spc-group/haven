@@ -7,15 +7,14 @@ from pathlib import Path
 import pydm
 import pyqtgraph as pg
 import qtawesome as qta
+from ophydregistry import Registry
 from qasync import asyncSlot
 from qtpy import QtCore, QtWidgets
 from qtpy.QtCore import Signal
 from qtpy.QtGui import QIcon, QKeySequence
 from qtpy.QtWidgets import QAction
-from ophydregistry import Registry
 
-from haven import load_config
-from haven import beamline
+from haven import beamline, load_config
 from haven.device import titelize
 from haven.exceptions import ComponentNotFound, InvalidConfiguration
 

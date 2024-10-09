@@ -13,7 +13,6 @@ from ophyd import Device as ThreadedDevice
 from ophyd.sim import make_fake_device
 from ophyd_async.core import DEFAULT_TIMEOUT, NotConnected
 from ophydregistry import Registry
-from rich import print as rprint
 
 from .devices.aerotech import AerotechStage
 from .devices.aps import ApsMachine
@@ -214,7 +213,9 @@ class Instrument:
         timeout_reached = False
         while not timeout_reached and len(threaded_devices) > 0:
             # Remove any connected devices for the running list
-            connected_devices = [dev for dev in threaded_devices if getattr(dev, "connected", True)]
+            connected_devices = [
+                dev for dev in threaded_devices if getattr(dev, "connected", True)
+            ]
             new_devices.extend(connected_devices)
             threaded_devices = [
                 dev for dev in threaded_devices if dev not in connected_devices
@@ -233,7 +234,12 @@ class Instrument:
             raise NotConnected(exceptions)
         return new_devices
 
-    async def load(self, connect: bool = True, device_classes: Mapping | None = None, config_files: Sequence[Path] | None = None):
+    async def load(
+        self,
+        connect: bool = True,
+        device_classes: Mapping | None = None,
+        config_files: Sequence[Path] | None = None,
+    ):
         """Load instrument specified in config files.
 
         Unless, explicitly overridden by the *config_files* argument,
@@ -261,7 +267,9 @@ class Instrument:
                 config_files = os.environ.get("HAVEN_CONFIG_FILES", "")
                 config_files = [Path(fp) for fp in config_files.split(":")]
             else:
-                config_files = [Path(__file__).parent.resolve() / "iconfig_testing.toml"]
+                config_files = [
+                    Path(__file__).parent.resolve() / "iconfig_testing.toml"
+                ]
         # Load the instrument from config files
         old_classes = self.device_classes
         try:

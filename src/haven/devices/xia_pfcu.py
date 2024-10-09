@@ -106,11 +106,24 @@ class PFCUShutter(PVPositionerIsClose):
     top_filter = FCpt(PFCUFilter, "{self.prefix}filter{self._top_filter}")
     bottom_filter = FCpt(PFCUFilter, "{self.prefix}filter{self._bottom_filter}")
 
-    def __init__(self, prefix: str="", *, name: str, top_filter: str, bottom_filter: str, labels={"shutters"}, **kwargs):
+    def __init__(
+        self,
+        prefix: str = "",
+        *,
+        name: str,
+        top_filter: str,
+        bottom_filter: str,
+        labels={"shutters"},
+        **kwargs,
+    ):
         self._top_filter = top_filter
         self._bottom_filter = bottom_filter
         super().__init__(
-            prefix=prefix, name=name, limits=(ShutterState.OPEN, ShutterState.CLOSED), labels=labels, **kwargs
+            prefix=prefix,
+            name=name,
+            limits=(ShutterState.OPEN, ShutterState.CLOSED),
+            labels=labels,
+            **kwargs,
         )
 
 

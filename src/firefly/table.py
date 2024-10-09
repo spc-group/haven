@@ -3,7 +3,7 @@ import warnings
 from pathlib import Path
 
 from firefly import display
-from haven import load_config, beamline
+from haven import beamline, load_config
 from haven.devices import Table
 
 log = logging.getLogger(__name__)
