@@ -133,7 +133,7 @@ def make_device(DeviceClass, *args, FakeDeviceClass=None, **kwargs) -> Device:
     """
     # Make a fake device if the beamline is not connected
     config = load_config()
-    if config["beamline"]["is_connected"]:
+    if config["beamline"]["hardware_is_present"]:
         Cls = DeviceClass
     else:
         # Make fake device

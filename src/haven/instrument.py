@@ -6,7 +6,7 @@ import logging
 import os
 import time
 from pathlib import Path
-from typing import Mapping
+from typing import Mapping, Sequence
 
 import tomlkit
 from ophyd import Device as ThreadedDevice

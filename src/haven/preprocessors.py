@@ -91,7 +91,7 @@ def inject_haven_md_wrapper(plan):
             "EPICS_CA_MAX_ARRAY_BYTES": os.environ.get("EPICS_CA_MAX_ARRAY_BYTES"),
             # Facility
             "beamline_id": config["beamline"]["name"],
-            "facility_id": config["facility"]["name"],
+            "facility_id": ", ".join(cfg['name'] for cfg in config["synchrotron"]),
             "xray_source": xray_source,
             # Computer
             "login_id": f"{getpass.getuser()}@{socket.gethostname()}",
@@ -106,7 +106,7 @@ def inject_haven_md_wrapper(plan):
         try:
             bss = beamline.registry.find(name="bss")
         except ComponentNotFound:
-            if config["beamline"]["is_connected"]:
+            if config["beamline"]["hardware_is_present"]:
                 wmsg = "Could not find bss device, metadata may be missing."
                 warnings.warn(wmsg)
                 log.warning(wmsg)

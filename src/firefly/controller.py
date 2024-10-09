@@ -87,11 +87,6 @@ class FireflyController(QtCore.QObject):
         setattr(self, action_name, action)
         return action
 
-    def reload_instrument(self, load_instrument=True):
-        """(Re)load all the instrument devices."""
-        await beamline.load()
-        self.registry_changed.emit(self.registry)
-
     async def setup_instrument(self, load_instrument=True):
         """Set up the application to use a previously loaded instrument.
 

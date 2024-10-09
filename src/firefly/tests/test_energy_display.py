@@ -19,7 +19,7 @@ FakeUndulator = make_fake_device(PlanarUndulator)
 @pytest.fixture()
 def energy_positioner(sim_registry):
     energy = FakeEnergyPositioner(
-        mono_prefix="mono_ioc:",
+        monochromator_prefix="mono_ioc:",
         undulator_prefix="id_ioc:",
         name="energy",
     )
