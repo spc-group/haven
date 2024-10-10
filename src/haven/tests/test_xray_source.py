@@ -1,7 +1,7 @@
 import pytest
 from ophyd.sim import instantiate_fake_device
 
-from haven.instrument.xray_source import PlanarUndulator
+from haven.devices.xray_source import PlanarUndulator
 
 
 @pytest.fixture()

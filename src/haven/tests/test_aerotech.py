@@ -6,12 +6,7 @@ import pytest
 from ophyd import StatusBase
 
 from haven import exceptions
-from haven.instrument.aerotech import (
-    AerotechMotor,
-    AerotechStage,
-    load_aerotech_stages,
-    ureg,
-)
+from haven.devices.aerotech import AerotechMotor, AerotechStage, ureg
 
 
 @pytest.fixture()
@@ -29,15 +24,6 @@ async def aerotech():
 def aerotech_axis(aerotech):
     m = aerotech.horiz
     yield m
-
-
-async def test_load_aerotech_stage(sim_registry):
-    await load_aerotech_stages()
-    # Make sure these are findable
-    stage_ = sim_registry.find(name="aerotech")
-    assert stage_ is not None
-    vert_ = sim_registry.find(name="aerotech-vert")
-    assert vert_ is not None
 
 
 def test_aerotech_flyer(sim_registry):

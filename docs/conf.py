@@ -37,7 +37,7 @@ extensions = [
     "autoapi.sphinx",
     "sphinx.ext.napoleon",
     "sphinx.ext.todo",
-    "nbsphinx",
+    # "nbsphinx",
 ]
 
 autoapi_modules = {"haven": None}
@@ -48,17 +48,17 @@ autodoc_mock_imports = [
 napoleon_numpy_docstring = True
 
 # Add custom pre-amble to the rendered jupyter notebooks
-nbsphinx_prolog = r"""
+# nbsphinx_prolog = r"""
 
-This file is also available as an interactive jupyter notebook.
+# This file is also available as an interactive jupyter notebook.
 
-`Download this file as a notebook`_ (hint: right-click -> "save as").
+# `Download this file as a notebook`_ (hint: right-click -> "save as").
 
-.. _Download this file as a notebook: {{ env.doc2path(env.docname) }}
+# .. _Download this file as a notebook: {{ env.doc2path(env.docname, base=None)|string }}
 
-"""
+# """
 
-nbsphinx_epilog = nbsphinx_prolog
+# nbsphinx_epilog = nbsphinx_prolog
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]

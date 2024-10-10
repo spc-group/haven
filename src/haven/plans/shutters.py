@@ -3,13 +3,13 @@ from typing import Sequence, Union
 from bluesky import plan_stubs as bps
 from ophyd import Device
 
-from ..instrument.instrument_registry import registry
-from ..instrument.shutter import ShutterState
+from ..devices.shutter import ShutterState
+from ..instrument import beamline
 
 
 def _set_shutters(shutters: Union[str, Sequence[Device]], direction: int):
     if shutters != []:
-        shutters = registry.findall(shutters)
+        shutters = beamline.registry.findall(shutters)
     # Prepare the plan
     plan_args = [obj for shutter in shutters for obj in (shutter, direction)]
     if len(plan_args) > 0:
@@ -29,7 +29,7 @@ def open_shutters(shutters: Union[str, Sequence[Device]]):
       RE(open_shutters(["endstation_shutter"]))
 
     E.g.
-      shutter = haven.instrument.shutter.Shutter(..., name="Shutter C")
+      shutter = haven.devices.shutter.Shutter(..., name="Shutter C")
       RE(open_shutters([shutter]))
 
     This plan will temporarily remove the default shutter-related
@@ -50,7 +50,7 @@ def close_shutters(shutters: Union[str, Sequence[Device]] = "shutters"):
       RE(close_shutters(["Shutter C"]))
 
     E.g.
-      shutter = haven.instrument.shutter.Shutter(..., name="Shutter C")
+      shutter = haven.devices.shutter.Shutter(..., name="Shutter C")
       RE(close_shutters([shutter]))
 
     This plan will temporarily remove the default shutter-related

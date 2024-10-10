@@ -37,6 +37,7 @@ def I0(sim_registry):
         sigma=1,
         labels={"ion_chambers"},
     )
+    sim_registry.register(I0)
     return I0
 
 

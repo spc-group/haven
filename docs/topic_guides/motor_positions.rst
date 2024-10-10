@@ -50,7 +50,7 @@ It may be convenient to save all motor positions to the database as a
 sort of checkpoint before performing some non-routine operation. This
 can be done with the following line. Future work will provide a
 shorted version. **Remember to call**
-:py:func:`~haven.instrument.load_instrument.load_instrument()`
+:py:func:`~haven.devices.load_instrument.load_instrument()`
 **first**.
 
 .. code:: python

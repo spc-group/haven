@@ -1,9 +1,4 @@
-from haven.instrument.mirrors import (
-    HighHeatLoadMirror,
-    KBMirror,
-    KBMirrors,
-    load_mirrors,
-)
+from haven.devices.mirrors import HighHeatLoadMirror, KBMirror, KBMirrors
 
 
 async def test_high_heat_load_mirror_PVs():
@@ -63,23 +58,3 @@ async def test_kb_mirrors_PVs():
         kb.horiz.readback_transform.channels["B"].input_pv.source
         == "mock+ca://255idcVME:LongKB_CdnH:Readback.INPB"
     )
-
-
-async def test_load_mirrors(sim_registry):
-    await load_mirrors()
-    # Check that the KB mirrors were created
-    kb_mirrors = sim_registry.find(name="KB")
-    assert isinstance(kb_mirrors, KBMirrors)
-    assert isinstance(kb_mirrors.horiz, KBMirror)
-    assert isinstance(kb_mirrors.vert, KBMirror)
-    # Check that the KB mirrors selects the bendable version
-    kb_mirrors = sim_registry.find(name="LongKB_Cdn")
-    assert isinstance(kb_mirrors, KBMirrors)
-    assert hasattr(kb_mirrors.horiz, "bender_upstream")
-    assert hasattr(kb_mirrors.horiz, "bender_downstream")
-    # Check that the HHL mirrors were created
-    hhl_mirrors = sim_registry.find(name="ORM1")
-    assert isinstance(hhl_mirrors, HighHeatLoadMirror)
-    # Check that the HHL mirror selects the bendable version
-    hhl_mirrors = sim_registry.find(name="ORM2")
-    assert hasattr(hhl_mirrors, "bender")

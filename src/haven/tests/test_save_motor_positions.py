@@ -13,7 +13,7 @@ from tiled.adapters.xarray import DatasetAdapter
 from tiled.client import Context, from_context
 from tiled.server.app import build_app
 
-from haven.instrument import Motor
+from haven.devices import Motor
 from haven.motor_position import (
     get_motor_position,
     get_motor_positions,

@@ -1,6 +1,6 @@
 import pytest
 
-from haven.instrument.xspress import Xspress3Detector
+from haven.devices.xspress import Xspress3Detector
 
 
 def test_num_elements(xspress):

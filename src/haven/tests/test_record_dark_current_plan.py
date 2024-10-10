@@ -1,4 +1,4 @@
-from haven.instrument.shutter import ShutterState
+from haven.devices.shutter import ShutterState
 from haven.plans.record_dark_current import record_dark_current
 
 

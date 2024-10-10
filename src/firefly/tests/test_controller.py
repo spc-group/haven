@@ -82,6 +82,7 @@ def test_queue_actions_enabled(controller, qtbot):
 def tardis(sim_registry):
     Tardis = make_fake_device(Device)
     tardis = Tardis(name="my_tardis", labels={"tardis"})
+    sim_registry.register(tardis)
     return tardis
 
 
@@ -100,7 +101,7 @@ async def test_load_instrument_registry(controller, qtbot, monkeypatch):
     assert isinstance(controller.registry, Registry)
     # Mock the underlying haven instrument loader
     loader = AsyncMock()
-    monkeypatch.setattr(firefly.controller, "load_haven_instrument", loader)
+    monkeypatch.setattr(firefly.controller.beamline, "load", loader)
     monkeypatch.setattr(controller, "prepare_queue_client", MagicMock())
     # Reload the devices and see if the registry is changed
     with qtbot.waitSignal(controller.registry_changed):

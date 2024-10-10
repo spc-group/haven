@@ -125,7 +125,7 @@ Haven's :py:func:`~haven.plans.fly.fly_scan` mimics the Bluesky
 :py:func:`~bluesky.plans.scan` plan, except that it only accepts one
 motor and accompanying arguments. Both *detectors* and *motor* must
 implement Ophyd's :py:class:`~ophyd.flyers.FlyerInterface`. Notice
-that :py:attr:`~haven.instrument.stage.AerotechFlyer.dwell_time` is
+that :py:attr:`~haven.devices.stage.AerotechFlyer.dwell_time` is
 set separately.
 
 .. code:: python
@@ -188,7 +188,7 @@ and *num* arguments:
 .. note::
 
    The flyer's
-   :py:attr:`~haven.instrument.stage.AerotechFlyer.dwell_time`
+   :py:attr:`~haven.devices.stage.AerotechFlyer.dwell_time`
    component is set outside of
    :py:func:`~haven.plans.fly.grid_fly_scan`. This is in keeping with
    Bluesky's approach on setting acquisition times, where each device
@@ -213,7 +213,7 @@ measurements. The Ophyd flyer device sends comands to the ensemble
 controller to configure its settings. PSO pulses are sent in the form
 of a 10us on pulse. These pulses are then set to only happen every
 multiple integer of encoder step counts, corresponding to the Flyer
-device's :py:attr:`~haven.instrument.stage.AerotechFlyer.step_size`
+device's :py:attr:`~haven.devices.stage.AerotechFlyer.step_size`
 signal. When possible, the pulses are set to only ocur within the
 range of scanning.
 

@@ -19,7 +19,7 @@ from pydm.data_plugins.plugin import PyDMConnection
 from qasync import asyncSlot
 from typhos.plugins.core import SignalConnection, SignalPlugin
 
-from haven import registry
+from haven import beamline
 
 from .exceptions import UnknownOphydSignal
 
@@ -42,7 +42,7 @@ class RegistryConnection:
         Signal
           The Ophyd signal corresponding to the address.
         """
-        return registry[address]
+        return beamline.registry[address]
 
 
 class HavenConnection(RegistryConnection, SignalConnection):
@@ -160,7 +160,7 @@ class HavenPlugin(SignalPlugin):
     @staticmethod
     def connection_class(channel, address, protocol):
         # Check if we need the synchronous or asynchronous version
-        sig = registry[address]
+        sig = beamline.registry[address]
         is_ophyd_async = hasattr(sig, "connect") and inspect.iscoroutinefunction(
             sig.connect
         )

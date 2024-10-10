@@ -22,6 +22,7 @@ def test_plugin_registered():
 def test_signal_connection(qapp, qtbot, sim_registry):
     # Create a signal and attach our listener
     sig = Signal(name="my_signal", value=1)
+    sim_registry.register(sig)
     widget = PyDMLineEdit()
     qtbot.addWidget(widget)
     widget.channel = "haven://my_signal"

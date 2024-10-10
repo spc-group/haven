@@ -19,7 +19,7 @@ from bluesky.utils import Msg, make_decorator
 from . import __version__ as haven_version
 from ._iconfig import load_config
 from .exceptions import ComponentNotFound
-from .instrument.instrument_registry import registry
+from .instrument import beamline
 
 log = logging.getLogger()
 
@@ -37,7 +37,7 @@ def baseline_wrapper(
 ):
     bluesky_baseline_wrapper.__doc__
     # Resolve devices
-    devices = registry.findall(devices, allow_none=True)
+    devices = beamline.registry.findall(devices, allow_none=True)
     yield from bluesky_baseline_wrapper(plan=plan, devices=devices, name=name)
 
 
@@ -91,7 +91,7 @@ def inject_haven_md_wrapper(plan):
             "EPICS_CA_MAX_ARRAY_BYTES": os.environ.get("EPICS_CA_MAX_ARRAY_BYTES"),
             # Facility
             "beamline_id": config["beamline"]["name"],
-            "facility_id": config["facility"]["name"],
+            "facility_id": ", ".join(cfg["name"] for cfg in config["synchrotron"]),
             "xray_source": xray_source,
             # Computer
             "login_id": f"{getpass.getuser()}@{socket.gethostname()}",
@@ -104,9 +104,9 @@ def inject_haven_md_wrapper(plan):
         }
         # Get metadata from the beamline scheduling system (bss)
         try:
-            bss = registry.find(name="bss")
+            bss = beamline.registry.find(name="bss")
         except ComponentNotFound:
-            if config["beamline"]["is_connected"]:
+            if config["beamline"]["hardware_is_present"]:
                 wmsg = "Could not find bss device, metadata may be missing."
                 warnings.warn(wmsg)
                 log.warning(wmsg)
@@ -154,7 +154,7 @@ def shutter_suspend_wrapper(plan, shutter_signals=None):
         messages inserted and appended
     """
     if shutter_signals is None:
-        shutters = registry.findall("shutters", allow_none=True)
+        shutters = beamline.registry.findall("shutters", allow_none=True)
         shutter_signals = [s.pss_state for s in shutters]
     # Create a suspender for each shutter
     suspenders = []

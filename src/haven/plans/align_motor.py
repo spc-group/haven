@@ -7,7 +7,6 @@ from bluesky import plan_stubs as bps
 from bluesky.callbacks import best_effort
 from bluesky.preprocessors import subs_wrapper
 
-from ..instrument.instrument_registry import registry
 from ..preprocessors import shutter_suspend_decorator
 
 log = logging.getLogger(__name__)
@@ -18,7 +17,7 @@ __all__ = ["align_motor", "align_pitch2"]
 
 # @shutter_suspend_decorator()
 def align_pitch2(
-    distance=200, reverse=False, detector="I0", bec=None, feature="cen", md={}
+    pitch2, distance=200, reverse=False, detector="I0", bec=None, feature="cen", md={}
 ):
     """Tune the monochromator 2nd crystal pitch motor.
 
@@ -30,6 +29,8 @@ def align_pitch2(
 
     Parameters
     ==========
+    pitch2
+      The pitch2 motor to use
     bec
       A bluesky best effort callback for finding the peak position.
     distance
@@ -46,8 +47,6 @@ def align_pitch2(
     """
     md_ = dict(plan_name="align_pitch2")
     md_.update(md)
-    # Get motors
-    pitch2 = registry.find(name="monochromator_pitch2")
     # Prepare and run the plan
     yield from align_motor(
         detector=detector,
@@ -74,6 +73,10 @@ def align_motor(
 
     Parameters
     ==========
+    detector
+      The detector device to use for measuring signals.
+    motor
+      The motor to use for alignment.
     bec
       A bluesky best effort callback for finding the peak position.
     distance
@@ -101,18 +104,9 @@ def align_motor(
     # Determine plan parameters
     start, end = (distance, -distance) if reverse else (-distance, distance)
     # Resolve motors and detectors
-    motor = registry.find(motor)
-    det = registry.find(detector)
-    detectors = [det]
-    if hasattr(det, "raw_counts"):
-        detectors.insert(0, det.raw_counts)
-    # from pprint import pprint
-    # pprint(detectors)
-    # print(motor)
-    # print(start, end)
-    # print(feature)
-    # print(bec, md_)
-    # assert False
+    detectors = [detector]
+    if hasattr(detector, "raw_counts"):
+        detectors.insert(0, detector.raw_counts)
     plan = lineup(
         detectors, motor, start, end, npts=40, feature=feature, bec=bec, md=md_
     )

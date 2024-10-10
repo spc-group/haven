@@ -1,6 +1,6 @@
 """Tests for a generic X-Y stage."""
 
-from haven.instrument import stage
+from haven.devices import stage
 
 
 def test_stage_init(sim_registry):
@@ -14,12 +14,6 @@ def test_stage_init(sim_registry):
     sim_registry.register(stage_)
     # Check registry of the stage and the individiual motors
     assert len(list(sim_registry.findall(label="stages"))) == 1
-
-
-async def test_load_stages(sim_registry):
-    stages = await stage.load_stages()
-    assert len(stages) == 1
-    assert isinstance(stages[0], stage.XYStage)
 
 
 # -----------------------------------------------------------------------------

@@ -6,7 +6,7 @@ Hardware is not available so test with best efforts
 
 import pytest
 
-from haven.instrument.labjack import (
+from haven.devices.labjack import (
     AnalogInput,
     AnalogOutput,
     DigitalIO,

@@ -15,8 +15,8 @@ class FakeHavenMotor(SynAxis):
 @pytest.fixture
 def sim_motor_registry(sim_registry):
     # Create the motors
-    FakeHavenMotor(name="motor1")
-    FakeHavenMotor(name="motor2")
+    sim_registry.register(FakeHavenMotor(name="motor1"))
+    sim_registry.register(FakeHavenMotor(name="motor2"))
     yield sim_registry
 
 

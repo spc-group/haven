@@ -5,7 +5,7 @@ import pytest
 from ophyd_async.core import Device
 from ophyd_async.core._signal import soft_signal_rw
 
-from haven.instrument.signal import derived_signal_rw
+from haven.devices.signal import derived_signal_rw
 
 
 def radius(x, y):
