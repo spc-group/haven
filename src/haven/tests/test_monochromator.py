@@ -1,4 +1,4 @@
-from haven.instrument.monochromator import Monochromator
+from haven.devices.monochromator import Monochromator
 
 
 def test_mono_energy_signal():

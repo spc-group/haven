@@ -53,7 +53,7 @@ class IOCTimeout(RuntimeError):
     ...
 
 
-class InvalidConfiguration(ValueError):
+class InvalidConfiguration(TypeError):
     """The configuration files for Haven are missing keys."""
 
     ...

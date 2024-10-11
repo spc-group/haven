@@ -48,8 +48,8 @@ Common Behavior
 ===============
 
 Fluorescence detectors are implemented as
-:py:class:`~haven.instrument.xspress.Xspress3Detector` and
-:py:class:`~haven.instrument.dxp.DxpDetector` Ophyd device
+:py:class:`~haven.devices.xspress.Xspress3Detector` and
+:py:class:`~haven.devices.dxp.DxpDetector` Ophyd device
 classes. They are written to have a common Ophyd interface so that
 clients (e.g. Firefly) can use fluorescence detectors interchangeably.
 
@@ -59,8 +59,8 @@ Creating Devices
 By default, devices created from these device classes include one MCA
 element, available on the ``mcas`` attribute. The **recommended way to
 create a fluorescence detector** device directly is with the
-:py:func:`~haven.instrument.dxp.load_xspress()` and
-:py:func:`~haven.instrument.dxp.load_dxp()` factory functions:
+:py:func:`~haven.devices.dxp.load_xspress()` and
+:py:func:`~haven.devices.dxp.load_dxp()` factory functions:
 
 .. code-block:: python
    
@@ -76,7 +76,7 @@ elements, override the ``mcas`` attributes:
 
 .. code-block:: python
 
-    from haven.instrument import xspress
+    from haven.devices import xspress
 
     class Xspress4Element(xspress.Xspress3Detector):
         mcas = xspress.DDC(
@@ -116,7 +116,7 @@ method), each ROI will check this signal and if it is true, then it
 reset to its original value.
 
 Individual **ROIs can be marked for hinting** by setting the
-:py:attr:`~haven.instrument.xspress.ROI.use` signal:
+:py:attr:`~haven.devices.xspress.ROI.use` signal:
 
 .. code-block:: python
    
@@ -131,7 +131,7 @@ Individual **ROIs can be marked for hinting** by setting the
     det.mcas.mca2.rois.roi1.use.set(1)
 
 Behind the scenes, to track the state of
-:py:attr:`~haven.instrument.xspress.ROI.use` we add a "~" to the start
+:py:attr:`~haven.devices.xspress.ROI.use` we add a "~" to the start
 of the value in the
 :py:meth:`~have.instrument.fluorescence_detector.label` signal if
 :py:meth:`~have.instrument.fluorescence_detector.use` is false.
@@ -139,10 +139,10 @@ of the value in the
 
 Marking multiple ROIs on multiple elements is possible using the
 following methods on the
-:py:class:`~haven.instrument.fluorescence_detector.XRFMixin` object:
+:py:class:`~haven.devices.fluorescence_detector.XRFMixin` object:
 
-- :py:meth:`~haven.instrument.fluorescence_detector.XRFMixin.enable_rois`
-- :py:meth:`~haven.instrument.fluorescence_detector.XRFMixin.disable_rois`
+- :py:meth:`~haven.devices.fluorescence_detector.XRFMixin.enable_rois`
+- :py:meth:`~haven.devices.fluorescence_detector.XRFMixin.disable_rois`
 
 These methods accepts an optional sequence of integers for the indices
 of the elements or ROIs to enable/disable. If not ROIs or elements are
@@ -171,10 +171,10 @@ Xspress 3
 =========
 
 Support for Quantum Detectors' Xspress3 Family of detectors is
-provided by the :py:class:`~haven.instrument.xspress.Xspress3Detector`
+provided by the :py:class:`~haven.devices.xspress.Xspress3Detector`
 base class. The EPICS support for Xspress3 detectors is based on the
 EPICS area detector module, and so the
-:py:class:`~haven.instrument.xspress.Xspress3Detector` is a customized
+:py:class:`~haven.devices.xspress.Xspress3Detector` is a customized
 :py:class:`ophyd.DetectorBase`.
 
 XIA DXP (XMAP)
@@ -182,16 +182,16 @@ XIA DXP (XMAP)
 
 DXP (XMAP, Mercury, Saturn) electronics use the bluesky multi-channel
 analyzer (MCA) device, packaged in Haven as the
-:py:class:`~haven.instrument.dxp.DxpDetector` class.
+:py:class:`~haven.devices.dxp.DxpDetector` class.
 
 The DXP electronics are **not yet compatible** with :doc:`fly-scanning
-<fly_scanning>`. The :py:class:`~haven.instrument.dxp.DxpDetector`
+<fly_scanning>`. The :py:class:`~haven.devices.dxp.DxpDetector`
 does implement the
-:py:meth:`~haven.instrument.dxp.DxpDetector.kickoff()` and
-:py:meth:`~haven.instrument.dxp.DxpDetector.complete()` methods, but
+:py:meth:`~haven.devices.dxp.DxpDetector.kickoff()` and
+:py:meth:`~haven.devices.dxp.DxpDetector.complete()` methods, but
 does not yet handle data collection. This is because the data are
 reported as a byte stream that must first be decoded. The DXP manual
 describes the structure of this byte-stream, so in principle it is
 possible to parse this in the
-:py:meth:`~haven.instrument.dxp.DxpDetector.collect()` method.
+:py:meth:`~haven.devices.dxp.DxpDetector.collect()` method.
 

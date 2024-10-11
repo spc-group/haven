@@ -5,7 +5,7 @@ import pytest
 from numpy.testing import assert_allclose
 from ophyd_async.core import TriggerInfo, assert_value, get_mock_put, set_mock_value
 
-from haven.instrument.ion_chamber import IonChamber, load_ion_chambers
+from haven.devices.ion_chamber import IonChamber
 
 
 @pytest.fixture()
@@ -33,24 +33,6 @@ def test_ion_chamber_devices(ion_chamber):
     assert list(ion_chamber.mcs.scaler.channels.keys()) == [0, 2]
     assert hasattr(ion_chamber, "preamp")
     assert list(ion_chamber.voltmeter.analog_inputs.keys()) == [1]
-
-
-@pytest.mark.asyncio
-async def test_load_ion_chambers(sim_registry, mocker):
-    ics = await load_ion_chambers()
-    assert len(ics) == 1
-    ic = ics[0]
-    # Test the channel info is extracted properly
-    assert ic._scaler_channel == 2
-    assert hasattr(ic, "mcs")
-    assert hasattr(ic, "preamp")
-    assert ic.preamp.sensitivity_value.source.split("://")[1] == "255idc:SR03:sens_num"
-    assert hasattr(ic, "voltmeter")
-    assert (
-        ic.voltmeter.model_name.source.split("://")[1] == "255idc:LabJackT7_1:ModelName"
-    )
-    # assert ic.voltmeter.prefix == "255idc:LabjackT7_0:Ai1"
-    assert await ic.counts_per_volt_second.get_value() == 1e7
 
 
 async def test_readables(ion_chamber):
