@@ -156,17 +156,19 @@ class FireflyController(QtCore.QObject):
             device_key="DEVICE",
             icon=qta.icon("mdi.crop"),
         )
-        self.actions.kb_mirrors = self.device_actions(
-            device_label="kb_mirrors",
-            display_file=ui_dir / "kb_mirrors.py",
-            device_key="DEVICE",
-            icon=qta.icon("msc.mirror"),
-        )
         self.actions.mirrors = self.device_actions(
             device_label="mirrors",
             display_file=ui_dir / "mirror.py",
             device_key="DEVICE",
             icon=qta.icon("msc.mirror"),
+        )
+        self.actions.mirrors.update(
+            self.device_actions(
+                device_label="kb_mirrors",
+                display_file=ui_dir / "kb_mirrors.py",
+                device_key="DEVICE",
+                icon=qta.icon("msc.mirror"),
+            )
         )
         self.actions.tables = self.device_actions(
             device_label="tables",

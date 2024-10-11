@@ -433,6 +433,7 @@ class SimDetector(SingleTrigger_V34, DetectorBase):
     stats3 = ADCpt(StatsPlugin_V34, "Stats3:", kind=Kind.normal)
     stats4 = ADCpt(StatsPlugin_V34, "Stats4:", kind=Kind.normal)
     stats5 = ADCpt(StatsPlugin_V34, "Stats5:", kind=Kind.normal)
+    overlays = ADCpt(OverlayPlugin_V34, "Over1:")
 
 
 class TIFFPlugin(StageCapture, TIFFPlugin_V31):

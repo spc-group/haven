@@ -84,8 +84,6 @@ class EnergyDisplay(display.FireflyDisplay):
         ltab = self.xraydb.tables["xray_levels"]
         edges = self.xraydb.query(ltab)
         min_energy, max_energy = self.energy_positioner.limits
-        print(self.energy_positioner)
-        print(min_energy, max_energy)
         edges = edges.filter(
             ltab.c.absorption_edge < max_energy,
             ltab.c.absorption_edge > min_energy,

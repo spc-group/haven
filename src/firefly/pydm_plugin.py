@@ -160,10 +160,11 @@ class HavenPlugin(SignalPlugin):
     @staticmethod
     def connection_class(channel, address, protocol):
         # Check if we need the synchronous or asynchronous version
-        sig = beamline.registry[address]
-        is_ophyd_async = hasattr(sig, "connect") and inspect.iscoroutinefunction(
-            sig.connect
-        )
+        try:
+            sig = beamline.registry[address]
+        except KeyError:
+            sig = None
+        is_ophyd_async = inspect.iscoroutinefunction(getattr(sig, "connect", None))
         is_vanilla_ophyd = isinstance(sig, OphydObject)
         # Get the right Connection class and build it
         if is_ophyd_async:
