@@ -122,7 +122,7 @@ num_channels = 32
 [[ motors ]]
 prefix = "255idVME:"
 num_motors = 3
-# auto_name = True
+# auto_name = true
 
 [[ motor ]]
 # Individual motors can be created as well.
@@ -184,6 +184,7 @@ diagonal_motor = "m36"
 # bender motors can also be given.
 
 [[ kb_mirrors ]]
+name = "kb_upstream"
 prefix = "255idcVME:KB:"
 horiz_upstream_motor = "255idcVME:KB:m35"
 horiz_downstream_motor = "255idcVME:KB:m36"
@@ -229,17 +230,14 @@ name = "downstream_table"
 
 [[ table ]]
 # An optical table with one vertical motor and one horizontal motor
-prefix = "255idcVME:"
-vertical_motor = "m26"
-horizontal_motor = "m25"
+vertical_prefix = "255idcVME:m26"
+horizontal_prefix = "255idcVME:m25"
 
 
 # Area detectors
 # ==============
 #
 # Area detectors includes gigE vision cameras.
-
-area_detector_root_path = "tmp"
 
 [[ area_detector ]]
 name = "sim_det"
@@ -276,7 +274,6 @@ prefix = "255idAustin"
 [[ beamline_manager ]]
 name = "GLaDOS"
 prefix = "255idc:glados:"
-beamline = "25-ID-C"
 iocs = {ioc255idb = "ioc255idb:", ioc255idc = "ioc255idc:"}
 
 
