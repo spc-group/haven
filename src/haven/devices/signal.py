@@ -10,6 +10,7 @@ from ophyd_async.core import (
     SignalMetadata,
     SignalR,
     SignalRW,
+    SignalX,
     SoftSignalBackend,
     T,
 )
@@ -159,7 +160,14 @@ class DerivedSignalBackend(SoftSignalBackend):
         # Calculate the derived set points
         new_values = await self.forward(write_value, **self._derived_from)
         # Set the new values
-        await asyncio.gather(*(sig.set(val) for sig, val in new_values.items()))
+        aws = []
+        for sig, val in new_values.items():
+            if isinstance(sig, SignalX):
+                # SignalX objects can't be set, so it must have been triggered
+                aws.append(sig.trigger(wait=wait, timeout=timeout))
+            else:
+                aws.append(sig.set(val, wait=wait, timeout=timeout))
+        await asyncio.gather(*aws)
 
     async def get_reading(self) -> Reading:
         signals = self._derived_from.values()
@@ -324,4 +332,67 @@ def derived_signal_r(
         metadata=metadata,
     )
     signal = SignalR(backend, name=name)
+    return signal
+
+
+def derived_signal_x(
+    name: str = "",
+    derived_from: Sequence = {},
+    forward: Callable = None,
+) -> SignalRW[T]:
+    """Creates a signal linked to one or more other signals.
+
+    The argument *derived_from* gives the existing signals that will
+    be used for deriving this signal. It should be a mapping of
+    argument names to ophyd-async signals, and will be given as
+    keyword arguments to the *inverse* transform describe below.
+
+    The default behavior will read the real signal's value back (or
+    average of the signals if multiple are given).
+
+    To customize this behavior, provide the *inverse*
+    arguments when creating this backend, or subclass this backend and
+    override the ``inverse()`` methods.
+
+    *inverse()* should accept a positional argument that is a mapping
+    of real signals to their read value, along with keyword-only
+    arguments corresponding to the signals indicated in
+    *derived_from*. It should return a new value to will be sent to
+    the derived signal.
+
+    Example:
+
+    .. code-block:: python
+
+        def square(values, *, voltage):
+            return values[voltage]**2
+
+        class MyDevice(Device):
+            def __init__(self, prefix, name="", **kwargs):
+                self.voltage = soft_signal_rw(int)
+                self.voltage_squared = derived_signal_r(
+                    int,
+                    derive_from={"voltage": self.voltage},
+                    inverse=square
+                )
+                super().__init__(name=name, **kwargs)
+
+    Parameters
+    ==========
+    derived_from
+      From which other signals does this signal derive. Maps
+      transformer arguments names to signals.
+    inverse
+      Transforms the real signal values to the derived signals'
+      values.
+
+    """
+    metadata = SignalMetadata()
+    backend = DerivedSignalBackend(
+        int,
+        derived_from=derived_from,
+        forward=forward,
+        metadata=metadata,
+    )
+    signal = SignalX(backend, name=name)
     return signal
