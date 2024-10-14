@@ -48,18 +48,22 @@ class Positioner(StandardReadable, Movable, Stoppable):
             timeout = abs(new_position - old_position) / velocity + DEFAULT_TIMEOUT
         # Make an Event that will be set on completion, and a Status that will
         # error if not done in time
-        reached_target = asyncio.Event()
+        reached_setpoint = asyncio.Event()
         done_event = asyncio.Event()
+
         def watch_done(value):
             if value == self.done_value:
                 done_event.set
+
         if hasattr(self, "done"):
             # Monitor the `done` signal
             self.done.subscribe_value(watch_done)
             done_status = AsyncStatus(asyncio.wait_for(done_event.wait(), timeout))
         else:
             # Monitor based on readback position
-            done_status = AsyncStatus(asyncio.wait_for(reached_target.wait(), timeout))
+            done_status = AsyncStatus(
+                asyncio.wait_for(reached_setpoint.wait(), timeout)
+            )
         # Start the move
         if hasattr(self, "actuate"):
             # Set the setpoint, then click "go"
@@ -81,8 +85,6 @@ class Positioner(StandardReadable, Movable, Stoppable):
                 precision=precision,
             )
             # Check if the move has finished
-            if done_event.is_set():
-                break
             if np.isclose(current_position, new_position):
                 reached_setpoint.set()
                 break

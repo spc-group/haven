@@ -9,7 +9,7 @@ from haven.positioner import Positioner
 
 class TestPositioner(Positioner):
     done_value = 1
-    
+
     def __init__(self, name: str = ""):
         self.setpoint = epics_signal_rw(float, ".VAL")
         self.readback = epics_signal_r(float, ".RBV")
@@ -30,16 +30,17 @@ async def positioner():
     return positioner
 
 
-
-
-
 def test_has_signals(positioner):
     assert hasattr(positioner, "setpoint")
     assert hasattr(positioner, "readback")
 
 
 async def test_set_with_done_actuate(positioner):
+    pause = 2
     status = positioner.set(5.3)
-    await asyncio.sleep(0.05)  # Let the subscription get set up
+    await asyncio.sleep(pause)  # Let the subscription get set up
     set_mock_value(positioner.done, 1)
+    await asyncio.sleep(pause)  # Let the subscription get set up
+    set_mock_value(positioner.readback, 5.0)  # Not close enough to the setpoint
+    await asyncio.sleep(pause)  # Let the subscription get set up
     await status

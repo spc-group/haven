@@ -1,13 +1,11 @@
 import logging
 from typing import Mapping
 
-from ophyd import Component as Cpt
-from ophyd import FormattedComponent as FCpt
-from ophyd import PVPositionerPC
 from pcdsdevices.signal import MultiDerivedSignal
 
 from .monochromator import Monochromator
 from .xray_source import PlanarUndulator
+from ..positioner import Positioner
 
 log = logging.getLogger(__name__)
 
@@ -15,7 +13,7 @@ log = logging.getLogger(__name__)
 __all__ = ["EnergyPositioner"]
 
 
-class EnergyPositioner(PVPositionerPC):
+class EnergyPositioner(Positioner):
     """The operational energy of the beamline.
 
     Responsible for setting both mono and ID energy with an optional
@@ -54,12 +52,12 @@ class EnergyPositioner(PVPositionerPC):
     """
 
     # Individual energy components
-    monochromator = FCpt(
-        Monochromator, "{monochromator_prefix}", labels={"monochromators"}
-    )
-    undulator = FCpt(
-        PlanarUndulator, "{undulator_prefix}", labels={"undulator", "xray_source"}
-    )
+    # monochromator = FCpt(
+    #     Monochromator, "{monochromator_prefix}", labels={"monochromators"}
+    # )
+    # undulator = FCpt(
+    #     PlanarUndulator, "{undulator_prefix}", labels={"undulator", "xray_source"}
+    # )
 
     def __init__(
         self,
@@ -105,20 +103,20 @@ class EnergyPositioner(PVPositionerPC):
             low = max([val for val in (low, new_low) if val is not None])
         return (low, hi)
 
-    setpoint = Cpt(
-        MultiDerivedSignal,
-        attrs={"monochromator.energy.user_setpoint", "undulator.energy.setpoint"},
-        calculate_on_get=get_energy,
-        calculate_on_put=set_energy,
-        name="setpoint",
-    )
-    readback = Cpt(
-        MultiDerivedSignal,
-        attrs={"monochromator.energy.user_readback"},
-        calculate_on_get=get_energy,
-        calculate_on_put=set_energy,
-        name="readback",
-    )
+    # setpoint = Cpt(
+    #     MultiDerivedSignal,
+    #     attrs={"monochromator.energy.user_setpoint", "undulator.energy.setpoint"},
+    #     calculate_on_get=get_energy,
+    #     calculate_on_put=set_energy,
+    #     name="setpoint",
+    # )
+    # readback = Cpt(
+    #     MultiDerivedSignal,
+    #     attrs={"monochromator.energy.user_readback"},
+    #     calculate_on_get=get_energy,
+    #     calculate_on_put=set_energy,
+    #     name="readback",
+    # )
 
 
 # -----------------------------------------------------------------------------
