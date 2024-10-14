@@ -55,15 +55,6 @@ class Positioner(StandardReadable, Movable, Stoppable):
             if value == self.done_value:
                 done_event.set
 
-        if hasattr(self, "done"):
-            # Monitor the `done` signal
-            self.done.subscribe_value(watch_done)
-            done_status = AsyncStatus(asyncio.wait_for(done_event.wait(), timeout))
-        else:
-            # Monitor based on readback position
-            done_status = AsyncStatus(
-                asyncio.wait_for(reached_setpoint.wait(), timeout)
-            )
         # Start the move
         if hasattr(self, "actuate"):
             # Set the setpoint, then click "go"
@@ -72,6 +63,16 @@ class Positioner(StandardReadable, Movable, Stoppable):
         else:
             # Wait for the value to set, but don't wait for put completion callback
             await self.setpoint.set(new_position, wait=False)
+        # Set up status to keep track of when the move is done
+        if hasattr(self, "done") and False:  # Disabled insce the timing is wrong
+            # Monitor the `done` signal
+            self.done.subscribe_value(watch_done)
+            done_status = AsyncStatus(asyncio.wait_for(done_event.wait(), timeout))
+        else:
+            # Monitor based on readback position
+            done_status = AsyncStatus(
+                asyncio.wait_for(reached_setpoint.wait(), timeout)
+            )            
         # Monitor the position of the readback value
         async for current_position in observe_value(
             self.readback, done_status=done_status
