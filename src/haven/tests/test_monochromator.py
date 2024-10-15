@@ -1,5 +1,6 @@
-from haven.devices.monochromator import Monochromator
 from bluesky import protocols
+
+from haven.devices.monochromator import Monochromator
 
 
 async def mono():
@@ -15,6 +16,7 @@ def test_mono_energy_signal(mono):
 
 def test_interfaces(mono):
     assert isinstance(mono, protocols.Readable)
+
 
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman

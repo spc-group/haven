@@ -1,7 +1,4 @@
-import asyncio
-
 import pytest
-from ophyd.sim import instantiate_fake_device
 from ophyd_async.core import get_mock_put, set_mock_value
 
 from haven.devices.xray_source import PlanarUndulator
@@ -9,26 +6,19 @@ from haven.devices.xray_source import PlanarUndulator
 
 @pytest.fixture()
 async def undulator():
-    undulator = instantiate_fake_device(
-        PlanarUndulator, prefix="PSS:255ID:", name="undulator"
-    )
+    undulator = PlanarUndulator(prefix="PSS:255ID:", name="undulator")
     await undulator.connect(mock=True)
     return undulator
 
 
 async def test_set_energy(undulator):
-    start_mock = get_mock_put(undulator.start_button)
-    setpoint_mock = get_mock_put(undulator.energy.setpoint)
     # Set the energy
     status = undulator.energy.set(5)
-    # Give the set coro time to setup up subscriptions
-    await asyncio.sleep(0.05)  
     # Fake the done PV getting updated
-    set_mock_value(undulator.done, 1)
+    set_mock_value(undulator.energy.done, 1)
     # Check that the signals got set properly
     await status
-    assert undulator.energy.setpoint.get() == 5
-    assert undulator.start_button.get() == 1
+    assert await undulator.energy.setpoint.get_value() == 5
 
 
 async def test_stop_energy(undulator):
@@ -36,6 +26,7 @@ async def test_stop_energy(undulator):
     assert not stop_mock.called
     await undulator.energy.stop()
     assert stop_mock.called
+
 
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman

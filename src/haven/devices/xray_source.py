@@ -1,11 +1,17 @@
 import logging
-from enum import IntEnum, Enum
+from enum import Enum, IntEnum
 
-from ophyd_async.core import Signal, StandardReadable, ConfigSignal, HintedSignal, soft_signal_rw
+from ophyd_async.core import (
+    ConfigSignal,
+    HintedSignal,
+    Signal,
+    StandardReadable,
+    soft_signal_rw,
+)
 from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw, epics_signal_x
 
-from .signal import derived_signal_x, derived_signal_r
 from ..positioner import Positioner
+from .signal import derived_signal_r, derived_signal_x
 
 log = logging.getLogger(__name__)
 
@@ -43,7 +49,9 @@ class UndulatorPositioner(Positioner):
         with self.add_children_as_readables(ConfigSignal):
             self.units = epics_signal_r(str, f"{prefix}SetC.EGU")
             self.precision = epics_signal_r(int, f"{prefix}SetC.PREC")
-        self.velocity = soft_signal_rw(float, initial_value=1)  # Need to figure out what this value is
+        self.velocity = soft_signal_rw(
+            float, initial_value=1
+        )  # Need to figure out what this value is
         # Add control signals that depend on the parent
         self.actuate = derived_signal_x(derived_from={"parent_signal": actuate_signal})
         self.stop_signal = derived_signal_x(derived_from={"parent_signal": stop_signal})
@@ -65,6 +73,7 @@ class PlanarUndulator(StandardReadable):
         undulator = PlanarUndulator("S25ID:USID:", name="undulator")
 
     """
+
     _ophyd_labels_ = {"xray_sources", "undulators"}
 
     class AccessMode(str, Enum):

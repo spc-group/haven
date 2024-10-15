@@ -291,7 +291,9 @@ class Instrument:
             self.device_classes = old_classes
         # Connect the devices
         if connect:
-            new_devices, exceptions = await self.connect(mock=not self.hardware_is_present, return_exceptions=True)
+            new_devices, exceptions = await self.connect(
+                mock=not self.hardware_is_present, return_exceptions=True
+            )
         else:
             new_devices = self.devices
             exceptions = []
@@ -341,11 +343,13 @@ class HavenInstrument(Instrument):
         """
         if reset_devices:
             self.registry.clear()
-        exceptions = await super().load(return_exceptions = True)
+        exceptions = await super().load(return_exceptions=True)
         # VME-style Motors happen later so duplicate motors can be
         # removed
         exceptions.update(
-            await super().load(device_classes={"motors": load_motors}, return_exceptions=True)
+            await super().load(
+                device_classes={"motors": load_motors}, return_exceptions=True
+            )
         )
         # Handle connection exceptions
         if len(exceptions) > 0:

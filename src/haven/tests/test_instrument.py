@@ -95,10 +95,10 @@ async def test_load(monkeypatch):
     instrument = Instrument({})
     # Mock out the relevant methods to test
     monkeypatch.setattr(instrument, "parse_toml_file", MagicMock())
-    monkeypatch.setattr(instrument, "connect", AsyncMock())
+    monkeypatch.setattr(instrument, "connect", AsyncMock(return_value=([], [])))
     monkeypatch.setenv("HAVEN_CONFIG_FILES", str(toml_file), prepend=False)
     # Execute the loading step
     await instrument.load()
     # Check that the right methods were called
     instrument.parse_toml_file.assert_called_once()
-    instrument.connect.assert_called_once_with(mock=True)
+    instrument.connect.assert_called_once_with(mock=True, return_exceptions=True)

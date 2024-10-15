@@ -1,5 +1,4 @@
 [beamline]
-
 # General name for the beamline, used for metadata.
 name = "SPC Beamline (sector unknown)"
 # Should we expect the hardware devices to be available.

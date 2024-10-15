@@ -1,23 +1,18 @@
 import asyncio
+from functools import partial
 
 import numpy as np
 from bluesky.protocols import Movable, Stoppable
-from functools import partial
-
 from ophyd_async.core import (
     CALCULATE_TIMEOUT,
     DEFAULT_TIMEOUT,
     AsyncStatus,
     CalculatableTimeout,
-    ConfigSignal,
-    Device,
-    HintedSignal,
     StandardReadable,
     WatchableAsyncStatus,
     WatcherUpdate,
     observe_value,
 )
-from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw, epics_signal_x
 
 
 class Positioner(StandardReadable, Movable, Stoppable):
@@ -42,6 +37,7 @@ class Positioner(StandardReadable, Movable, Stoppable):
       If true, wait on the setpoint to report being done.
 
     """
+
     done_value = 1
 
     def __init__(self, name: str = "", put_complete: bool = False):
@@ -82,7 +78,9 @@ class Positioner(StandardReadable, Movable, Stoppable):
             set_status = self.actuate.trigger(wait=self.put_complete, timeout=timeout)
         else:
             # Wait for the value to set, but don't wait for put completion callback
-            set_status = self.setpoint.set(new_position, wait=self.put_complete, timeout=timeout)
+            set_status = self.setpoint.set(
+                new_position, wait=self.put_complete, timeout=timeout
+            )
         # Decide on how we will wait for completion
         if self.put_complete:
             # await the set call directly
@@ -109,7 +107,10 @@ class Positioner(StandardReadable, Movable, Stoppable):
                 precision=precision,
             )
             # Check if the move has finished
-            if np.isclose(current_position, new_position):
+            target_reached = current_position is not None and np.isclose(
+                current_position, new_position
+            )
+            if target_reached:
                 reached_setpoint.set()
                 break
         # Make sure the done point was actually reached

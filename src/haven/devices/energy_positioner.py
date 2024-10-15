@@ -1,13 +1,11 @@
 import logging
-from typing import Mapping
 
-from pcdsdevices.signal import MultiDerivedSignal
-from ophyd_async.core import Signal
+from ophyd_async.core import HintedSignal, Signal
 
-from .monochromator import Monochromator
-from .xray_source import PlanarUndulator
-from .signal import derived_signal_rw, derived_signal_r
 from ..positioner import Positioner
+from .monochromator import Monochromator
+from .signal import derived_signal_r, derived_signal_rw
+from .xray_source import PlanarUndulator
 
 log = logging.getLogger(__name__)
 
@@ -52,6 +50,7 @@ class EnergyPositioner(Positioner):
       f"{id_prefix}:Energy.VAL" reaches the energy readback value.
 
     """
+
     _ophyd_labels_ = {"energy"}
 
     def __init__(
@@ -60,26 +59,34 @@ class EnergyPositioner(Positioner):
         undulator_prefix: str,
         name: str = "energy",
     ):
-        self.monochromator = Monochromator(monochromator_prefix)
-        self.undulator = PlanarUndulator(undulator_prefix)
-        # Derived positioner signals
-        self.setpoint = derived_signal_rw(
-            derived_from={
-                "mono": self.monochromator.energy.user_setpoint,
-                "undulator": self.undulator.energy.setpoint,
-            },
-            forward=self.set_energy,
-            inverse=self.get_energy,
-        )
-        self.readback = derived_signal_r(
-            derived_from={"mono": self.monochromator.energy.user_readback},
-            inverse=self.get_energy,
-        )
+        with self.add_children_as_readables():
+            self.monochromator = Monochromator(monochromator_prefix)
+            self.undulator = PlanarUndulator(undulator_prefix)
+            # Derived positioner signals
+            self.setpoint = derived_signal_rw(
+                derived_from={
+                    "mono": self.monochromator.energy.user_setpoint,
+                    "undulator": self.undulator.energy.setpoint,
+                },
+                forward=self.set_energy,
+                inverse=self.get_energy,
+            )
+        with self.add_children_as_readables(HintedSignal):
+            self.readback = derived_signal_r(
+                derived_from={"mono": self.monochromator.energy.user_readback},
+                inverse=self.get_energy,
+            )
         # Additional derived signals
-        self.precision = derived_signal_rw(derived_from={"precision": self.monochromator.energy.precision})
-        self.units = derived_signal_rw(derived_from={"units": self.monochromator.energy.motor_egu})
-        self.velocity = derived_signal_rw(derived_from={"velocity": self.monochromator.energy.velocity})
-        
+        self.precision = derived_signal_rw(
+            derived_from={"precision": self.monochromator.energy.precision}
+        )
+        self.units = derived_signal_rw(
+            derived_from={"units": self.monochromator.energy.motor_egu}
+        )
+        self.velocity = derived_signal_rw(
+            derived_from={"velocity": self.monochromator.energy.velocity}
+        )
+
         super().__init__(name=name)
 
     async def set_energy(self, value, mono: Signal, undulator: Signal):
@@ -94,23 +101,6 @@ class EnergyPositioner(Positioner):
     def get_energy(self, values, mono: float, undulator: Signal | None = None):
         # Use just the mono value as a readback
         return values[mono]
-
-    @property
-    def limits(self):
-        hi, low = (None, None)
-        for signal in self.setpoint.signals:
-            # Update the limits based on this signal
-            try:
-                new_low, new_hi = signal.limits
-            except TypeError:
-                continue
-            # Account for the keV -> eV conversion for the undulator
-            if signal is self.undulator.energy.setpoint:
-                new_low *= 1000
-                new_hi *= 1000
-            hi = min([val for val in (hi, new_hi) if val is not None])
-            low = max([val for val in (low, new_low) if val is not None])
-        return (low, hi)
 
 
 # -----------------------------------------------------------------------------

@@ -1,6 +1,6 @@
+import asyncio
 import inspect
 import numbers
-import asyncio
 from functools import partial
 from typing import Callable, Mapping, Optional, Sequence, Type
 
@@ -182,7 +182,7 @@ class DerivedSignalBackend(SoftSignalBackend):
                 # Check that the independent signal accepts "wait" args
                 params = inspect.signature(sig.set).parameters
                 kw = {}
-                if 'wait' in params:
+                if "wait" in params:
                     kw["wait"] = wait
                 aws.append(sig.set(val, timeout=timeout, **kw))
         await asyncio.gather(*aws)

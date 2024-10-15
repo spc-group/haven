@@ -144,13 +144,6 @@ def energy_scan(
     # Add some extra metadata
     config = load_config()
     md_ = {"edge": E0_str, "E0": E0}
-    for signals in energy_signals:
-        try:
-            md_["d_spacing"] = signals.d_spacing.get()
-        except AttributeError:
-            continue
-        else:
-            break
     # Do the actual scan
     yield from bp.list_scan(
         real_detectors,
