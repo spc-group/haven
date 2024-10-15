@@ -1,28 +1,19 @@
 import pytest
-from apstools.devices.aps_undulator import PlanarUndulator
 from bluesky_queueserver_api import BPlan
-from ophyd.sim import make_fake_device
 from qtpy import QtCore
 
-import haven
 from firefly.energy import EnergyDisplay
-
-FakeMonochromator = make_fake_device(haven.devices.monochromator.Monochromator)
-FakeEnergyPositioner = make_fake_device(
-    haven.devices.energy_positioner.EnergyPositioner
-)
-FakeUndulator = make_fake_device(PlanarUndulator)
+from haven.devices.energy_positioner import EnergyPositioner
 
 
 @pytest.fixture()
-def energy_positioner(sim_registry):
-    energy = FakeEnergyPositioner(
+async def energy_positioner(sim_registry):
+    energy = EnergyPositioner(
         monochromator_prefix="mono_ioc:",
         undulator_prefix="id_ioc:",
         name="energy",
     )
-    energy.monochromator.energy.user_setpoint.sim_set_limits((4000, 33000))
-    energy.undulator.energy.setpoint.sim_set_limits((-float("inf"), float("inf")))
+    await energy.connect(mock=True)
     sim_registry.register(energy)
     return energy
 
@@ -35,7 +26,7 @@ def display(qtbot, energy_positioner):
     return display
 
 
-def test_move_energy(qtbot, display):
+async def test_move_energy(qtbot, display):
     # Click the set energy button
     btn = display.ui.set_energy_button
     expected_item = BPlan("set_energy", energy=8402.0)

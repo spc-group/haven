@@ -1,8 +1,17 @@
 import logging
-from enum import IntEnum
+from enum import Enum, IntEnum
 
-from ophyd import Component as Cpt
-from ophyd import DerivedSignal, Device, EpicsSignal, EpicsSignalRO, PVPositioner
+from ophyd_async.core import (
+    ConfigSignal,
+    HintedSignal,
+    Signal,
+    StandardReadable,
+    soft_signal_rw,
+)
+from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw, epics_signal_x
+
+from ..positioner import Positioner
+from .signal import derived_signal_r, derived_signal_x
 
 log = logging.getLogger(__name__)
 
@@ -22,17 +31,35 @@ class MotorDriveStatus(IntEnum):
     READY_TO_MOVE = 1
 
 
-class UndulatorPositioner(PVPositioner):
-    setpoint = Cpt(EpicsSignal, "SetC.VAL")
-    readback = Cpt(EpicsSignalRO, "M.VAL")
+class UndulatorPositioner(Positioner):
+    done_value: int = DoneStatus.DONE
 
-    actuate = Cpt(DerivedSignal, derived_from="parent.start_button", kind="omitted")
-    stop_signal = Cpt(DerivedSignal, derived_from="parent.stop_button", kind="omitted")
-    done = Cpt(DerivedSignal, derived_from="parent.done", kind="omitted")
-    done_value = DoneStatus.DONE
+    def __init__(
+        self,
+        prefix: str,
+        actuate_signal: Signal,
+        stop_signal: Signal,
+        done_signal: Signal,
+        name: str = "",
+    ):
+        with self.add_children_as_readables(HintedSignal):
+            self.readback = epics_signal_rw(float, f"{prefix}M.VAL")
+        with self.add_children_as_readables():
+            self.setpoint = epics_signal_rw(float, f"{prefix}SetC.VAL")
+        with self.add_children_as_readables(ConfigSignal):
+            self.units = epics_signal_r(str, f"{prefix}SetC.EGU")
+            self.precision = epics_signal_r(int, f"{prefix}SetC.PREC")
+        self.velocity = soft_signal_rw(
+            float, initial_value=1
+        )  # Need to figure out what this value is
+        # Add control signals that depend on the parent
+        self.actuate = derived_signal_x(derived_from={"parent_signal": actuate_signal})
+        self.stop_signal = derived_signal_x(derived_from={"parent_signal": stop_signal})
+        self.done = derived_signal_r(derived_from={"parent_signal": done_signal})
+        super().__init__(name=name)
 
 
-class PlanarUndulator(Device):
+class PlanarUndulator(StandardReadable):
     """APS Planar Undulator
 
     .. index:: Ophyd Device; PlanarUndulator
@@ -47,30 +74,64 @@ class PlanarUndulator(Device):
 
     """
 
-    # X-ray spectrum parameters
-    energy = Cpt(UndulatorPositioner, "Energy")
-    energy_taper = Cpt(UndulatorPositioner, "TaperEnergy")
-    gap = Cpt(UndulatorPositioner, "Gap")
-    gap_taper = Cpt(UndulatorPositioner, "TaperGap")
-    harmonic_value = Cpt(EpicsSignal, "HarmonicValueC", kind="config")
-    total_power = Cpt(EpicsSignalRO, "TotalPowerM.VAL", kind="config")
-    # Signals for moving the undulator
-    start_button = Cpt(EpicsSignal, "StartC.VAL", put_complete=True, kind="omitted")
-    stop_button = Cpt(EpicsSignal, "StopC.VAL", kind="omitted")
-    busy = Cpt(EpicsSignalRO, "BusyM.VAL", kind="omitted")
-    done = Cpt(EpicsSignalRO, "BusyDeviceM.VAL", kind="omitted")
-    motor_drive_status = Cpt(EpicsSignalRO, "MotorDriveStatusM.VAL", kind="omitted")
-    # Miscellaneous control signals
-    gap_deadband = Cpt(EpicsSignal, "DeadbandGapC", kind="config")
-    device_limit = Cpt(EpicsSignal, "DeviceLimitM.VAL", kind="config")
-    access_mode = Cpt(EpicsSignalRO, "AccessSecurityC", kind="omitted")
-    message1 = Cpt(EpicsSignalRO, "Message1M.VAL", kind="omitted")
-    message2 = Cpt(EpicsSignalRO, "Message2M.VAL", kind="omitted")
-    device = Cpt(EpicsSignalRO, "DeviceM", kind="config")
-    magnet = Cpt(EpicsSignalRO, "DeviceMagnetM", kind="config")
-    location = Cpt(EpicsSignalRO, "LocationM", kind="config")
-    version_plc = Cpt(EpicsSignalRO, "PLCVersionM.VAL", kind="config")
-    version_hpmu = Cpt(EpicsSignalRO, "HPMUVersionM.VAL", kind="config")
+    _ophyd_labels_ = {"xray_sources", "undulators"}
+
+    class AccessMode(str, Enum):
+        USER = "User"
+        OPERATOR = "Operator"
+        MACHINE_PHYSICS = "Machine Physics"
+        SYSTEM_MANAGER = "System Manager"
+
+    def __init__(self, prefix: str, name: str = ""):
+        # Signals for moving the undulator
+        self.start_button = epics_signal_x(f"{prefix}StartC.VAL")
+        self.stop_button = epics_signal_x(f"{prefix}StopC.VAL")
+        self.busy = epics_signal_r(bool, f"{prefix}BusyM.VAL")
+        self.done = epics_signal_r(bool, f"{prefix}BusyDeviceM.VAL")
+        self.motor_drive_status = epics_signal_r(int, f"{prefix}MotorDriveStatusM.VAL")
+        # Configuration state for the undulator
+        with self.add_children_as_readables(ConfigSignal):
+            self.harmonic_value = epics_signal_rw(int, f"{prefix}HarmonicValueC")
+            self.total_power = epics_signal_r(float, f"{prefix}TotalPowerM.VAL")
+            self.gap_deadband = epics_signal_rw(int, f"{prefix}DeadbandGapC")
+            self.device_limit = epics_signal_rw(float, f"{prefix}DeviceLimitM.VAL")
+            self.device = epics_signal_r(str, f"{prefix}DeviceM")
+            self.magnet = epics_signal_r(str, f"{prefix}DeviceMagnetM")
+            self.location = epics_signal_r(str, f"{prefix}LocationM")
+            self.version_plc = epics_signal_r(float, f"{prefix}PLCVersionM.VAL")
+            self.version_hpmu = epics_signal_r(str, f"{prefix}HPMUVersionM.VAL")
+        # X-ray spectrum positioners
+        with self.add_children_as_readables():
+            self.energy = UndulatorPositioner(
+                f"{prefix}Energy",
+                actuate_signal=self.start_button,
+                stop_signal=self.stop_button,
+                done_signal=self.done,
+            )
+            self.energy_taper = UndulatorPositioner(
+                f"{prefix}TaperEnergy",
+                actuate_signal=self.start_button,
+                stop_signal=self.stop_button,
+                done_signal=self.done,
+            )
+            self.gap = UndulatorPositioner(
+                f"{prefix}Gap",
+                actuate_signal=self.start_button,
+                stop_signal=self.stop_button,
+                done_signal=self.done,
+            )
+            self.gap_taper = UndulatorPositioner(
+                f"{prefix}TaperGap",
+                actuate_signal=self.start_button,
+                stop_signal=self.stop_button,
+                done_signal=self.done,
+            )
+        # Miscellaneous control signals
+        self.access_mode = epics_signal_r(self.AccessMode, f"{prefix}AccessSecurityC")
+        self.message1 = epics_signal_r(str, f"{prefix}Message1M.VAL")
+        self.message2 = epics_signal_r(str, f"{prefix}Message2M.VAL")
+
+        super().__init__(name=name)
 
 
 # -----------------------------------------------------------------------------

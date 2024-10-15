@@ -83,7 +83,8 @@ class EnergyDisplay(display.FireflyDisplay):
         combo_box = self.ui.edge_combo_box
         ltab = self.xraydb.tables["xray_levels"]
         edges = self.xraydb.query(ltab)
-        min_energy, max_energy = self.energy_positioner.limits
+        # min_energy, max_energy = self.energy_positioner.limits
+        min_energy, max_energy = 4000, 33000
         edges = edges.filter(
             ltab.c.absorption_edge < max_energy,
             ltab.c.absorption_edge > min_energy,

@@ -1,52 +1,49 @@
 import logging
-from enum import IntEnum
+from enum import Enum
 
-from ophyd import Component as Cpt
-from ophyd import Device, EpicsSignal, EpicsSignalRO
+from ophyd_async.core import ConfigSignal, StandardReadable
+from ophyd_async.epics.signal import epics_signal_rw
 
-from .motor import HavenMotor
+from .motor import Motor
 
 log = logging.getLogger(__name__)
 
 
-class IDTracking(IntEnum):
-    OFF = 0
-    ON = 1
+class Monochromator(StandardReadable):
+    _ophyd_labels_ = {"monochromators"}
 
+    class Mode(str, Enum):
+        FIXED_OFFSET = "Si(111) Fixed Offset"
+        CHANNEL_CUT = "Si(111) Channel-cut"
+        ML48 = "Multi-layer 4.8nm"
+        ML24 = "Multi-layer 2.4nm"
 
-class Monochromator(Device):
-    # ID tracking PVs
-    id_tracking = Cpt(EpicsSignal, "ID_tracking", kind="config")
-    id_offset = Cpt(EpicsSignal, "ID_offset", kind="config")
-    d_spacing = Cpt(EpicsSignal, "dspacing", kind="config")
-    mode = Cpt(EpicsSignal, "mode", kind="config")
-    # Virtual positioners
-    energy = Cpt(HavenMotor, "Energy", labels={"motors"}, kind="hinted")
-    energy_constant1 = Cpt(
-        EpicsSignal, "EnergyC1.VAL", labels={"baseline"}, kind="config"
-    )
-    energy_constant2 = Cpt(
-        EpicsSignal, "EnergyC2.VAL", labels={"baseline"}, kind="config"
-    )
-    energy_constant3 = Cpt(
-        EpicsSignal, "EnergyC3.VAL", labels={"baseline"}, kind="config"
-    )
-    offset = Cpt(HavenMotor, "Offset", labels={"motors", "baseline"}, kind="config")
-    # ACS Motors
-    horiz = Cpt(HavenMotor, "ACS:m1", labels={"motors", "baseline"}, kind="config")
-    vert = Cpt(HavenMotor, "ACS:m2", labels={"motors", "baseline"}, kind="config")
-    bragg = Cpt(HavenMotor, "ACS:m3", labels={"motors"})
-    gap = Cpt(HavenMotor, "ACS:m4", labels={"motors"})
-    roll2 = Cpt(HavenMotor, "ACS:m5", labels={"motors", "baseline"}, kind="config")
-    pitch2 = Cpt(HavenMotor, "ACS:m6", labels={"motors", "baseline"}, kind="config")
-    # roll_int = Cpt(HavenMotor, "ACS:m7", labels={"motors", "baseline"}, kind="config")
-    # pi_int = Cpt(HavenMotor, "ACS:m8", labels={"motors", "baseline"}, kind="config")
-    # Physical constants
-    d_spacing = Cpt(EpicsSignalRO, "dspacing", labels={"baseline"}, kind="config")
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.stage_sigs[self.id_tracking] = IDTracking.OFF
+    def __init__(self, prefix: str, name: str = ""):
+        with self.add_children_as_readables():
+            # Virtual motors
+            self.energy = Motor(f"{prefix}Energy")
+            self.offset = Motor(f"{prefix}Offset")
+            # ACS Motors
+            self.bragg = Motor(f"{prefix}ACS:m3")
+            self.gap = Motor(f"{prefix}ACS:m4")
+            self.horiz = Motor(f"{prefix}ACS:m1")
+            self.vert = Motor(f"{prefix}ACS:m2")
+            self.roll2 = Motor(f"{prefix}ACS:m5")
+            self.pitch2 = Motor(f"{prefix}ACS:m6")
+        with self.add_children_as_readables(ConfigSignal):
+            # Transform constants, etc.
+            self.id_tracking = epics_signal_rw(bool, f"{prefix}ID_tracking")
+            self.id_offset = epics_signal_rw(float, f"{prefix}ID_offset")
+            self.d_spacing = epics_signal_rw(float, f"{prefix}dspacing")
+            self.d_spacing_unit = epics_signal_rw(str, f"{prefix}dspacing.EGU")
+            self.mode = epics_signal_rw(self.Mode, f"{prefix}mode")
+            self.energy_constant1 = epics_signal_rw(float, f"{prefix}EnergyC1.VAL")
+            self.energy_constant2 = epics_signal_rw(float, f"{prefix}EnergyC2.VAL")
+            self.energy_constant3 = epics_signal_rw(float, f"{prefix}EnergyC3.VAL")
+            # Interferomters
+            # self.roll_int = Motor(f"{prefix}ACS:m7")
+            # self.pi_int = Motor(f"{prefix}ACS:m8")
+        super().__init__(name=name)
 
 
 # -----------------------------------------------------------------------------

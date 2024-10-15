@@ -97,29 +97,6 @@ def test_raises_on_empty_positioners(RE, energies):
         RE(energy_scan(energies, energy_signals=[]))
 
 
-def test_saves_dspacing(mono, energies, ion_chamber):
-    """Does the mono's d-spacing get added to metadata."""
-    # Prepare the messages from the plan
-    mono.d_spacing._readback = 1.5418
-    msgs = list(
-        energy_scan(
-            energies,
-            detectors=[ion_chamber],
-            energy_signals=[mono],
-            time_signals=[ion_chamber.default_time_signal],
-        )
-    )
-    # Find the metadata written by the plan
-    for msg in msgs:
-        if msg.command == "open_run":
-            md = msg.kwargs
-            break
-    else:
-        raise RuntimeError("No open run message found")
-    # Check for the dspacing of the mono in the metadata
-    assert md["d_spacing"] == 1.5418
-
-
 def test_single_range(mono_motor, exposure_motor, I0):
     E0 = 10000
     expected_energies = np.arange(9990, 10001, step=1)

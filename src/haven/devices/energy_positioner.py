@@ -1,12 +1,10 @@
 import logging
-from typing import Mapping
 
-from ophyd import Component as Cpt
-from ophyd import FormattedComponent as FCpt
-from ophyd import PVPositionerPC
-from pcdsdevices.signal import MultiDerivedSignal
+from ophyd_async.core import HintedSignal, Signal
 
+from ..positioner import Positioner
 from .monochromator import Monochromator
+from .signal import derived_signal_r, derived_signal_rw
 from .xray_source import PlanarUndulator
 
 log = logging.getLogger(__name__)
@@ -15,7 +13,7 @@ log = logging.getLogger(__name__)
 __all__ = ["EnergyPositioner"]
 
 
-class EnergyPositioner(PVPositionerPC):
+class EnergyPositioner(Positioner):
     """The operational energy of the beamline.
 
     Responsible for setting both mono and ID energy with an optional
@@ -53,72 +51,56 @@ class EnergyPositioner(PVPositionerPC):
 
     """
 
-    # Individual energy components
-    monochromator = FCpt(
-        Monochromator, "{monochromator_prefix}", labels={"monochromators"}
-    )
-    undulator = FCpt(
-        PlanarUndulator, "{undulator_prefix}", labels={"undulator", "xray_source"}
-    )
+    _ophyd_labels_ = {"energy"}
 
     def __init__(
         self,
         monochromator_prefix: str,
         undulator_prefix: str,
         name: str = "energy",
-        **kwargs,
     ):
-        self.monochromator_prefix = monochromator_prefix
-        self.undulator_prefix = undulator_prefix
-        super().__init__(name=name, **kwargs)
+        with self.add_children_as_readables():
+            self.monochromator = Monochromator(monochromator_prefix)
+            self.undulator = PlanarUndulator(undulator_prefix)
+            # Derived positioner signals
+            self.setpoint = derived_signal_rw(
+                derived_from={
+                    "mono": self.monochromator.energy.user_setpoint,
+                    "undulator": self.undulator.energy.setpoint,
+                },
+                forward=self.set_energy,
+                inverse=self.get_energy,
+            )
+        with self.add_children_as_readables(HintedSignal):
+            self.readback = derived_signal_r(
+                derived_from={"mono": self.monochromator.energy.user_readback},
+                inverse=self.get_energy,
+            )
+        # Additional derived signals
+        self.precision = derived_signal_rw(
+            derived_from={"precision": self.monochromator.energy.precision}
+        )
+        self.units = derived_signal_rw(
+            derived_from={"units": self.monochromator.energy.motor_egu}
+        )
+        self.velocity = derived_signal_rw(
+            derived_from={"velocity": self.monochromator.energy.velocity}
+        )
 
-    def set_energy(self, *, mds: MultiDerivedSignal, value: float):
+        super().__init__(name=name)
+
+    async def set_energy(self, value, mono: Signal, undulator: Signal):
         ev_per_kev = 1000
-        offset = self.monochromator.id_offset.get()
+        offset = await self.monochromator.id_offset.get_value()
         vals = {
             self.monochromator.energy: value,
             self.undulator.energy: (value + offset) / ev_per_kev,
         }
         return vals
 
-    def get_energy(self, mds: MultiDerivedSignal, items: Mapping):
-        if self.monochromator.energy.user_readback in items:
-            energy = items[self.monochromator.energy.user_readback]
-        else:
-            energy = items[self.monochromator.energy.user_setpoint]
-        return energy
-
-    @property
-    def limits(self):
-        hi, low = (None, None)
-        for signal in self.setpoint.signals:
-            # Update the limits based on this signal
-            try:
-                new_low, new_hi = signal.limits
-            except TypeError:
-                continue
-            # Account for the keV -> eV conversion for the undulator
-            if signal is self.undulator.energy.setpoint:
-                new_low *= 1000
-                new_hi *= 1000
-            hi = min([val for val in (hi, new_hi) if val is not None])
-            low = max([val for val in (low, new_low) if val is not None])
-        return (low, hi)
-
-    setpoint = Cpt(
-        MultiDerivedSignal,
-        attrs={"monochromator.energy.user_setpoint", "undulator.energy.setpoint"},
-        calculate_on_get=get_energy,
-        calculate_on_put=set_energy,
-        name="setpoint",
-    )
-    readback = Cpt(
-        MultiDerivedSignal,
-        attrs={"monochromator.energy.user_readback"},
-        calculate_on_get=get_energy,
-        calculate_on_put=set_energy,
-        name="readback",
-    )
+    def get_energy(self, values, mono: float, undulator: Signal | None = None):
+        # Use just the mono value as a readback
+        return values[mono]
 
 
 # -----------------------------------------------------------------------------
