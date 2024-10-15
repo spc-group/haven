@@ -2,8 +2,8 @@ import asyncio
 import logging
 
 from qasync import asyncSlot
-from qtpy.QtCore import Signal
 from qtpy import QtWidgets
+from qtpy.QtCore import Signal
 
 from firefly import display
 from firefly.plans.util import is_valid_value, time_converter

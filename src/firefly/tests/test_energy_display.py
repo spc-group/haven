@@ -4,7 +4,6 @@ import pytest
 from apstools.devices.aps_undulator import PlanarUndulator
 from bluesky_queueserver_api import BPlan
 from ophyd.sim import make_fake_device
-from qtpy import QtCore
 
 import haven
 from firefly.energy import EnergyDisplay

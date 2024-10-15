@@ -1,7 +1,6 @@
 from unittest import mock
 
 from bluesky_queueserver_api import BPlan
-from qtpy import QtCore
 
 from firefly.plans.count import CountDisplay
 
@@ -22,6 +21,7 @@ def test_count_plan_queued(qtbot, sim_registry, monkeypatch):
     assert display.submit_queue_item.called
     submitted_item = display.submit_queue_item.call_args[0][0]
     assert submitted_item.to_dict() == expected_item.to_dict()
+
 
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman

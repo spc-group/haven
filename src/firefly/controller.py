@@ -632,7 +632,7 @@ class FireflyController(QtCore.QObject):
         log.debug(f"Application received item to add to queue: {item}")
         if getattr(self, "_queue_client", None) is not None:
             await self._queue_client.add_queue_item(item, run_now=run_now)
-            
+
     @QtCore.Slot()
     def show_sample_viewer_window(self):
         return self.show_window(

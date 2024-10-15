@@ -5,7 +5,6 @@ from bluesky_queueserver_api import BPlan
 from ophyd import Component as Cpt
 from ophyd import Signal
 from ophyd.sim import SynAxis
-from qtpy import QtCore
 
 from firefly.robot import RobotDisplay
 
@@ -59,4 +58,3 @@ async def test_robot_queued(qtbot, sim_motor_registry, display, monkeypatch):
     assert display.submit_queue_item.called
     submitted_item = display.submit_queue_item.call_args[0][0]
     assert submitted_item.to_dict() == expected_item.to_dict()
-

@@ -2,26 +2,22 @@ import logging
 from datetime import datetime, time
 from typing import Mapping
 
-import haven
+import qtawesome as qta
 from bluesky_queueserver_api import BPlan
 from pydm.widgets.label import PyDMLabel
-from PyQt5.QtWidgets import QTableWidgetItem
 from PyQt5.QtCore import Qt
-from qtpy import QtWidgets, QtCore
+from PyQt5.QtWidgets import QTableWidgetItem
+from qasync import asyncSlot
+from qtpy import QtCore, QtWidgets
+from tiled.adapters.mapping import MapAdapter
+from tiled.client import Context, from_context
+from tiled.server.app import build_app
+
+import haven
 from firefly.component_selector import ComponentSelector
 from firefly.plans import regions_display
-from haven.motor_position import (
-    get_motor_position,
-    get_motor_positions,
-)
-
 from firefly.tests.fake_position_runs import position_runs
-import qtawesome as qta
-
-from tiled.adapters.mapping import MapAdapter
-from tiled.server.app import build_app
-from tiled.client import Context, from_context
-from qasync import asyncSlot
+from haven.motor_position import get_motor_position, get_motor_positions
 
 log = logging.getLogger()
 
@@ -36,7 +32,10 @@ if test:
             return client
 
     fake_client = create_fake_client()
-    haven.motor_position.tiled_client = lambda: fake_client  # Replace with the fake client
+    haven.motor_position.tiled_client = (
+        lambda: fake_client
+    )  # Replace with the fake client
+
 
 class TitleRegion:
     def __init__(self):
@@ -63,6 +62,7 @@ class TitleRegion:
         # Fix widths so the labels are aligned with MotorRegions
         Qlabels_all["RBV"].setFixedWidth(60)
 
+
 class MotorRegion(regions_display.RegionBase):
     def setup_ui(self):
         self.layout = QtWidgets.QHBoxLayout()
@@ -76,11 +76,11 @@ class MotorRegion(regions_display.RegionBase):
         self.motor_box = ComponentSelector()
         self.layout.addWidget(self.motor_box)
 
-        # Third item, motor readback values        
+        # Third item, motor readback values
         self.RBV_label = PyDMLabel(self)
         self.update_RBV()
         self.layout.addWidget(self.RBV_label)
-        
+
         # Update RBV when motor is changed and edit is finished
         self.motor_box.combo_box.lineEdit().editingFinished.connect(self.update_RBV)
 
@@ -91,28 +91,30 @@ class MotorRegion(regions_display.RegionBase):
         # disable/enable motor box and RBV label
         self.motor_box.setEnabled(is_checked)
         self.RBV_label.setEnabled(is_checked)
-    
+
     def update_RBV(self):
         motor = self.motor_box.current_component()
         if motor:
             self.RBV_label.channel = f"haven://{motor.name}.user_readback"
         else:
             self.RBV_label.channel = ""
+
+
 class SaveMotorDisplay(regions_display.RegionsDisplay):
-    
+
     Region = MotorRegion
     default_num_regions = 1
 
     def customize_ui(self):
         super().customize_ui()
-        
+
         # Add title layout
         self.title_region = TitleRegion()
         self.ui.title_layout.addLayout(self.title_region.layout)
-                
+
         # Initialize saved positions table
         self.init_saved_positions_table()
-        
+
         self.title_region.regions_all_checkbox.stateChanged.connect(
             self.on_regions_all_checkbox
         )
@@ -120,13 +122,19 @@ class SaveMotorDisplay(regions_display.RegionsDisplay):
 
     def init_saved_positions_table(self):
         # Set the headers for the table
-        self.ui.saved_positions_tableWidget.setHorizontalHeaderLabels(["Name", "Savetime", "UID"])
+        self.ui.saved_positions_tableWidget.setHorizontalHeaderLabels(
+            ["Name", "Savetime", "UID"]
+        )
 
         # Connect double click to show saved position info
-        self.ui.saved_positions_tableWidget.itemDoubleClicked.connect(self.show_saved_position_info)
-        
+        self.ui.saved_positions_tableWidget.itemDoubleClicked.connect(
+            self.show_saved_position_info
+        )
+
         # Set selection behavior to select rows rather than individual cells
-        self.ui.saved_positions_tableWidget.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+        self.ui.saved_positions_tableWidget.setSelectionBehavior(
+            QtWidgets.QAbstractItemView.SelectRows
+        )
 
         # Connect the refresh button to the slot
         self.ui.refresh_button.clicked.connect(self.refresh_saved_position_list_slot)
@@ -136,20 +144,24 @@ class SaveMotorDisplay(regions_display.RegionsDisplay):
         # Connect signals & slots for checkboxes to enable/disable date edits
         self.ui.checkBox_start.toggled.connect(self.ui.dateEdit_start.setEnabled)
         self.ui.checkBox_stop.toggled.connect(self.ui.dateEdit_stop.setEnabled)
-        
+
         # For saving motor positions
         self.ui.run_now_button.clicked.connect(self.queue_plan_now)
 
         # For recalling motor positions
         self.ui.recall_button.clicked.connect(self.recall_motor_queue_plan)
         self.ui.recall_now_button.clicked.connect(self.recall_motor_queue_plan_now)
-        
+
         # Enable/disable recall buttons based on selection
-        self.ui.saved_positions_tableWidget.itemSelectionChanged.connect(self.update_recall_buttons)
-        
+        self.ui.saved_positions_tableWidget.itemSelectionChanged.connect(
+            self.update_recall_buttons
+        )
+
         # Connect Enter key to refresh table
-        self.ui.lineEdit_filter_names.returnPressed.connect(self.refresh_saved_position_list_slot)
-        
+        self.ui.lineEdit_filter_names.returnPressed.connect(
+            self.refresh_saved_position_list_slot
+        )
+
     def update_recall_buttons(self):
         if self.ui.saved_positions_tableWidget.selectedItems():
             self.ui.recall_button.setEnabled(True)
@@ -157,9 +169,9 @@ class SaveMotorDisplay(regions_display.RegionsDisplay):
         else:
             self.ui.recall_button.setEnabled(False)
             self.ui.recall_now_button.setEnabled(False)
-        
+
     @asyncSlot()
-    async def refresh_saved_position_list(self):    
+    async def refresh_saved_position_list(self):
         # Disable sorting temporarily to prevent UID missing bug
         self.ui.saved_positions_tableWidget.setSortingEnabled(False)
 
@@ -169,12 +181,12 @@ class SaveMotorDisplay(regions_display.RegionsDisplay):
         # Determine dates 'after' and 'before' based on checkboxes
         after = None
         before = None
-        
+
         # Get the filter text from the line edit
         filter_text = self.ui.lineEdit_filter_names.text()
         if not filter_text:
             filter_text = None
-            
+
         if self.ui.checkBox_start.isChecked():
             start_date = self.ui.dateEdit_start.date().toPyDate()
             # Set the time to the earliest time of the day (00:00:00)
@@ -189,17 +201,21 @@ class SaveMotorDisplay(regions_display.RegionsDisplay):
             before = stop_datetime.timestamp()
 
         # Retrieve the saved positions with filtering
-        saved_positions_all = get_motor_positions(after=after, before=before, name=filter_text, case_sensitive=False)
-        
+        saved_positions_all = get_motor_positions(
+            after=after, before=before, name=filter_text, case_sensitive=False
+        )
+
         positions_list = []
-        
+
         async for saved_position_i in saved_positions_all:
             positions_list.append(saved_position_i)
             current_row_position = self.ui.saved_positions_tableWidget.rowCount()
             self.ui.saved_positions_tableWidget.insertRow(current_row_position)
 
             # Format the savetime
-            savetime_str = datetime.fromtimestamp(saved_position_i.savetime).strftime('%Y-%m-%d %H:%M:%S')
+            savetime_str = datetime.fromtimestamp(saved_position_i.savetime).strftime(
+                "%Y-%m-%d %H:%M:%S"
+            )
 
             # Add names, UIDs, and Savetime to the table widget
             name_item = QTableWidgetItem(saved_position_i.name)
@@ -221,7 +237,7 @@ class SaveMotorDisplay(regions_display.RegionsDisplay):
         # Sort the table by the savetime column, the latest saved position will be on top
         self.ui.saved_positions_tableWidget.sortItems(1, Qt.DescendingOrder)
         # Resize columns to fit contents
-        self.ui.saved_positions_tableWidget.resizeColumnsToContents()          
+        self.ui.saved_positions_tableWidget.resizeColumnsToContents()
 
         # Set default filter dates if there are items in the table and if the checkboxes are unchecked
         if positions_list:
@@ -231,7 +247,9 @@ class SaveMotorDisplay(regions_display.RegionsDisplay):
             last_savetime = positions_list[-1].savetime
 
             if not self.ui.checkBox_start.isChecked():
-                self.ui.dateEdit_start.setDateTime(datetime.fromtimestamp(first_savetime))
+                self.ui.dateEdit_start.setDateTime(
+                    datetime.fromtimestamp(first_savetime)
+                )
 
             if not self.ui.checkBox_stop.isChecked():
                 self.ui.dateEdit_stop.setDateTime(datetime.fromtimestamp(last_savetime))
@@ -239,11 +257,11 @@ class SaveMotorDisplay(regions_display.RegionsDisplay):
     @asyncSlot()
     async def refresh_saved_position_list_slot(self):
         await self.refresh_saved_position_list()
-        
+
     def show_saved_position_info(self, item):
         # Get the row of the clicked item
         row = self.ui.saved_positions_tableWidget.row(item)
-        
+
         # Get the name, uid, and other details for this row
         name_item = self.ui.saved_positions_tableWidget.item(row, 0)
         uid_item = self.ui.saved_positions_tableWidget.item(row, 2)
@@ -253,7 +271,7 @@ class SaveMotorDisplay(regions_display.RegionsDisplay):
 
         name = name_item.text()
         uid = uid_item.text()
-        
+
         # Create a dialog window
         dialog = QtWidgets.QDialog(self)
         dialog.setWindowTitle("Position Details")
@@ -262,28 +280,28 @@ class SaveMotorDisplay(regions_display.RegionsDisplay):
         tree = QtWidgets.QTreeWidget(dialog)
         tree.setColumnCount(3)  # Set columns for Motor, Readback, and Offset
         tree.setHeaderLabels(["Motor", "Readback", "Offset"])
-        
+
         # Allow selection of individual cells
         tree.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
         tree.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectItems)
-        
+
         # Create the root item (the position name and uid)
         root = QtWidgets.QTreeWidgetItem(tree)
         timestamp = self.ui.saved_positions_tableWidget.item(row, 1).text()
         root.setText(0, f'{name} (uid="{uid}", timestamp={timestamp})')
-        
+
         motor_result = get_motor_position(uid=uid)
-        
+
         # Add the motors as children
         for motor in motor_result.motors:
             motor_item = QtWidgets.QTreeWidgetItem(root)
             motor_item.setText(0, motor.name)
-            motor_item.setText(1, f'{motor.readback}')
-            motor_item.setText(2, f'{motor.offset}')
+            motor_item.setText(1, f"{motor.readback}")
+            motor_item.setText(2, f"{motor.offset}")
 
         # Expand all nodes
         tree.expandAll()
-        
+
         # Set the layout and display the dialog
         layout = QtWidgets.QVBoxLayout(dialog)
         layout.addWidget(tree)
@@ -308,27 +326,24 @@ class SaveMotorDisplay(regions_display.RegionsDisplay):
         if row < 0:
             self.ui.textBrowser.append("No saved motor positions selected.")
             return None, None
-        
+
         # Get the name, uid, and other details for this row
         name = self.ui.saved_positions_tableWidget.item(row, 0).text()
-        uid = self.ui.saved_positions_tableWidget.item(row, 2).text()    
+        uid = self.ui.saved_positions_tableWidget.item(row, 2).text()
         return name, uid
-    
+
     def recall_motor_queue_plan(self, run_now=False):
-        """Recall motor positions plan and submit the plan to the queue server. 
-        
+        """Recall motor positions plan and submit the plan to the queue server.
+
         Parameters:
             run_now (bool): If True, the plan will be executed immediately."""
 
-        name, uid = self.get_current_selected_row()        
+        name, uid = self.get_current_selected_row()
         if not uid:
             return
-        
-        item = BPlan(
-        "recall_motor_position",
-        uid=uid
-        )
-        
+
+        item = BPlan("recall_motor_position", uid=uid)
+
         # Provide feedback
         if run_now:
             self.ui.textBrowser.append("Executing recall of motor positions now.")
@@ -338,10 +353,10 @@ class SaveMotorDisplay(regions_display.RegionsDisplay):
             f'<span style="color: blue;">Name: <strong>{name}</strong></span>'
         )
         self.ui.textBrowser.append("-" * 20)
-            
+
         # Submit the item to the queueserver
         self.submit_queue_item(item, run_now=run_now)
-        
+
     def recall_motor_queue_plan_now(self):
         """Recall motor positions plan. Execute now."""
         self.recall_motor_queue_plan(run_now=True)
@@ -356,22 +371,26 @@ class SaveMotorDisplay(regions_display.RegionsDisplay):
 
         motor_args = self.get_scan_parameters()
         if not motor_args:
-            self.ui.textBrowser.append("No motors selected. Please select motors to save.")
+            self.ui.textBrowser.append(
+                "No motors selected. Please select motors to save."
+            )
             return
         save_name = self.ui.lineEdit_name.text()
         if not save_name:
-            self.ui.textBrowser.append("Please enter a name for the saved motor positions.")
+            self.ui.textBrowser.append(
+                "Please enter a name for the saved motor positions."
+            )
             return
         item = BPlan(
-        "save_motor_position",
-        *motor_args,
-        name=save_name,
+            "save_motor_position",
+            *motor_args,
+            name=save_name,
         )
         # Submit the plan to the queue server
         self.submit_queue_item(item, run_now=run_now)
         if run_now:
             # Refresh the saved position list
-           QtCore.QTimer.singleShot(0, self.refresh_saved_position_list_slot)
+            QtCore.QTimer.singleShot(0, self.refresh_saved_position_list_slot)
         # Disable the filter stop time to current
         self.ui.checkBox_stop.setChecked(False)
         self.ui.textBrowser.append("-" * 20)
@@ -383,7 +402,7 @@ class SaveMotorDisplay(regions_display.RegionsDisplay):
     def queue_plan_now(self):
         """Save motor positions to the database. Execute now."""
         self.queue_plan(run_now=True)
-        
+
     def ui_filename(self):
         return "plans/save_motor_window.ui"
 
@@ -391,6 +410,7 @@ class SaveMotorDisplay(regions_display.RegionsDisplay):
         super().update_queue_status(status=status)
         # Schedule the refresh after the event loop starts
         QtCore.QTimer.singleShot(0, self.refresh_saved_position_list_slot)
+
 
 # -----------------------------------------------------------------------------
 # :author:    Juanjuan Huang & Mark Wolfman

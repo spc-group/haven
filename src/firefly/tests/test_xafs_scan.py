@@ -1,10 +1,8 @@
-from pprint import pprint
 from unittest import mock
 
 import numpy as np
 import pytest
 from bluesky_queueserver_api import BPlan
-from qtpy import QtCore
 
 from firefly.plans.xafs_scan import XafsScanDisplay
 
