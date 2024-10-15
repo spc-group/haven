@@ -96,7 +96,6 @@ class MotorRegion(regions_display.RegionBase):
         motor = self.motor_box.current_component()
         if motor:
             self.RBV_label.channel = f"haven://{motor.name}.user_readback"
-            # self.RBV_label = PyDMLabel(self, init_channel=f"haven://{motor.name}.user_readback")
         else:
             self.RBV_label.channel = ""
 class SaveMotorDisplay(regions_display.RegionsDisplay):
@@ -139,12 +138,25 @@ class SaveMotorDisplay(regions_display.RegionsDisplay):
         self.ui.checkBox_stop.toggled.connect(self.ui.dateEdit_stop.setEnabled)
         
         # For saving motor positions
-        # self.ui.run_button.clicked.connect(self.queue_plan)
         self.ui.run_now_button.clicked.connect(self.queue_plan_now)
 
         # For recalling motor positions
         self.ui.recall_button.clicked.connect(self.recall_motor_queue_plan)
         self.ui.recall_now_button.clicked.connect(self.recall_motor_queue_plan_now)
+        
+        # Enable/disable recall buttons based on selection
+        self.ui.saved_positions_tableWidget.itemSelectionChanged.connect(self.update_recall_buttons)
+        
+        # Connect Enter key to refresh table
+        self.ui.lineEdit_filter_names.returnPressed.connect(self.refresh_saved_position_list_slot)
+        
+    def update_recall_buttons(self):
+        if self.ui.saved_positions_tableWidget.selectedItems():
+            self.ui.recall_button.setEnabled(True)
+            self.ui.recall_now_button.setEnabled(True)
+        else:
+            self.ui.recall_button.setEnabled(False)
+            self.ui.recall_now_button.setEnabled(False)
         
     @asyncSlot()
     async def refresh_saved_position_list(self):    
