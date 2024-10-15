@@ -2,6 +2,7 @@ import asyncio
 
 import numpy as np
 from bluesky.protocols import Movable, Stoppable
+from functools import partial
 
 from ophyd_async.core import (
     CALCULATE_TIMEOUT,
@@ -22,16 +23,40 @@ from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw, epics_sign
 class Positioner(StandardReadable, Movable, Stoppable):
     """A positioner that has separate setpoint and readback signals.
 
+    When set, the Positioner **monitors the state of the move** using
+    a strategy selected based on the Positioner's configuration
+    (chosen in order):
+
+    1. If *put_complete* is true, await the setpoint's ``set()``
+       status to report being done.
+    2. If the positioner has a *done* signal attribute, wait for this
+       signal to reach the value of ``Positioner.done_value``.
+    3. Wait for the readback to be close to the setpoint (following
+       :py:func:`numpy.isclose`).
+
     Parameters
     ==========
-    name:
+    name
       The device name for this positioner.
+    put_complete
+      If true, wait on the setpoint to report being done.
+
     """
+    done_value = 1
+
+    def __init__(self, name: str = "", put_complete: bool = False):
+        self.put_complete = put_complete
+        super().__init__(name=name)
 
     def set_name(self, name: str):
         super().set_name(name)
         # Readback should be named the same as its parent in read()
         self.readback.set_name(name)
+
+    def watch_done(self, value, event):
+        """Update the event when the done value is actually done."""
+        if value == self.done_value:
+            event.set()
 
     @WatchableAsyncStatus.wrap
     async def set(self, value: float, timeout: CalculatableTimeout = CALCULATE_TIMEOUT):
@@ -50,29 +75,27 @@ class Positioner(StandardReadable, Movable, Stoppable):
         # error if not done in time
         reached_setpoint = asyncio.Event()
         done_event = asyncio.Event()
-
-        def watch_done(value):
-            if value == self.done_value:
-                done_event.set
-
         # Start the move
         if hasattr(self, "actuate"):
             # Set the setpoint, then click "go"
             await self.setpoint.set(new_position, wait=True)
-            await self.actuate.trigger(wait=False)
+            set_status = self.actuate.trigger(wait=self.put_complete, timeout=timeout)
         else:
             # Wait for the value to set, but don't wait for put completion callback
-            await self.setpoint.set(new_position, wait=False)
-        # Set up status to keep track of when the move is done
-        if hasattr(self, "done") and False:  # Disabled insce the timing is wrong
+            set_status = self.setpoint.set(new_position, wait=self.put_complete, timeout=timeout)
+        # Decide on how we will wait for completion
+        if self.put_complete:
+            # await the set call directly
+            done_status = set_status
+        elif hasattr(self, "done"):
             # Monitor the `done` signal
-            self.done.subscribe_value(watch_done)
+            self.done.subscribe_value(partial(self.watch_done, event=done_event))
             done_status = AsyncStatus(asyncio.wait_for(done_event.wait(), timeout))
         else:
             # Monitor based on readback position
             done_status = AsyncStatus(
                 asyncio.wait_for(reached_setpoint.wait(), timeout)
-            )            
+            )
         # Monitor the position of the readback value
         async for current_position in observe_value(
             self.readback, done_status=done_status
@@ -89,6 +112,9 @@ class Positioner(StandardReadable, Movable, Stoppable):
             if np.isclose(current_position, new_position):
                 reached_setpoint.set()
                 break
+        # Make sure the done point was actually reached
+        await done_status
+        # Handle failed moves
         if not self._set_success:
             raise RuntimeError("Motor was stopped")
 

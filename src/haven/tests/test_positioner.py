@@ -10,7 +10,7 @@ from haven.positioner import Positioner
 class TestPositioner(Positioner):
     done_value = 1
 
-    def __init__(self, name: str = ""):
+    def __init__(self, name: str = "", put_complete=False):
         self.setpoint = epics_signal_rw(float, ".VAL")
         self.readback = epics_signal_r(float, ".RBV")
         self.actuate = epics_signal_x("StartC.VAL")
@@ -19,7 +19,7 @@ class TestPositioner(Positioner):
         self.precision = epics_signal_rw(int, ".PREC")
         self.velocity = epics_signal_rw(float, ".VELO")
         self.units = epics_signal_rw(str, ".EGU")
-        super().__init__(name=name)
+        super().__init__(name=name, put_complete=put_complete)
 
 
 @pytest.fixture()
@@ -36,11 +36,24 @@ def test_has_signals(positioner):
 
 
 async def test_set_with_done_actuate(positioner):
-    pause = 2
     status = positioner.set(5.3)
-    await asyncio.sleep(pause)  # Let the subscription get set up
     set_mock_value(positioner.done, 1)
-    await asyncio.sleep(pause)  # Let the subscription get set up
-    set_mock_value(positioner.readback, 5.0)  # Not close enough to the setpoint
-    await asyncio.sleep(pause)  # Let the subscription get set up
     await status
+
+
+async def test_set_with_readback(positioner):
+    """Use the readback value to determine when the move is complete."""
+    # Remove the done signal to force monitoring readback
+    del positioner.done
+    # Do the move
+    status = positioner.set(5.3)
+    set_mock_value(positioner.readback, 5.3)
+    await status
+
+
+async def test_set_with_put_complete():
+    positioner = TestPositioner(put_complete=True)
+    await positioner.connect(mock=True)
+    await positioner.velocity.set(5)
+    # Just make sure it doesn't time-out
+    await positioner.set(13)
