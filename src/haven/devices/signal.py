@@ -5,7 +5,7 @@ from functools import partial
 from typing import Callable, Mapping, Optional, Sequence, Type
 
 import numpy as np
-from bluesky.protocols import Reading
+from bluesky.protocols import Reading, Subscribable
 from ophyd_async.core import (
     DEFAULT_TIMEOUT,
     ReadingValueCallback,
@@ -126,7 +126,8 @@ class DerivedSignalBackend(SoftSignalBackend):
         # Listen for changes in the derived_from signals
         for sig in self._derived_from.values():
             # Subscribe with a partial in case the signal's name changes
-            sig.subscribe(partial(self.update_readings, signal=sig))
+            if isinstance(sig, Subscribable):
+                sig.subscribe(partial(self.update_readings, signal=sig))
 
     def combine_readings(self, readings):
         timestamp = max([rd["timestamp"] for rd in readings.values()])

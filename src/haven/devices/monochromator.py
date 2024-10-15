@@ -12,6 +12,7 @@ log = logging.getLogger(__name__)
 
 
 class Monochromator(StandardReadable):
+    _ophyd_labels_ = {"monochromators"}
     class Mode(str, Enum):
         FIXED_OFFSET = "Si(111) Fixed Offset"
         CHANNEL_CUT = "Si(111) Channel-cut"
@@ -35,7 +36,7 @@ class Monochromator(StandardReadable):
             self.id_tracking = epics_signal_rw(bool, f"{prefix}ID_tracking")
             self.id_offset = epics_signal_rw(float, f"{prefix}ID_offset")
             self.d_spacing = epics_signal_rw(float, f"{prefix}dspacing")
-            self.d_spacing_unit = epics_signal_rw(float, f"{prefix}dspacing.EGU")
+            self.d_spacing_unit = epics_signal_rw(str, f"{prefix}dspacing.EGU")
             self.mode = epics_signal_rw(self.Mode, f"{prefix}mode")
             self.energy_constant1 = epics_signal_rw(float, f"{prefix}EnergyC1.VAL")
             self.energy_constant2 = epics_signal_rw(float, f"{prefix}EnergyC2.VAL")

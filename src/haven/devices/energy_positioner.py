@@ -52,14 +52,7 @@ class EnergyPositioner(Positioner):
       f"{id_prefix}:Energy.VAL" reaches the energy readback value.
 
     """
-
-    # Individual energy components
-    # monochromator = FCpt(
-    #     Monochromator, "{monochromator_prefix}", labels={"monochromators"}
-    # )
-    # undulator = FCpt(
-    #     PlanarUndulator, "{undulator_prefix}", labels={"undulator", "xray_source"}
-    # )
+    _ophyd_labels_ = {"energy"}
 
     def __init__(
         self,

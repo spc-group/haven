@@ -1,5 +1,5 @@
 import logging
-from enum import IntEnum
+from enum import IntEnum, Enum
 
 from ophyd_async.core import Signal, StandardReadable, ConfigSignal, HintedSignal, soft_signal_rw
 from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw, epics_signal_x
@@ -42,7 +42,7 @@ class UndulatorPositioner(Positioner):
             self.setpoint = epics_signal_rw(float, f"{prefix}SetC.VAL")
         with self.add_children_as_readables(ConfigSignal):
             self.units = epics_signal_r(str, f"{prefix}SetC.EGU")
-            self.precision = epics_signal_r(str, f"{prefix}SetC.PREC")
+            self.precision = epics_signal_r(int, f"{prefix}SetC.PREC")
         self.velocity = soft_signal_rw(float, initial_value=1)  # Need to figure out what this value is
         # Add control signals that depend on the parent
         self.actuate = derived_signal_x(derived_from={"parent_signal": actuate_signal})
@@ -65,25 +65,32 @@ class PlanarUndulator(StandardReadable):
         undulator = PlanarUndulator("S25ID:USID:", name="undulator")
 
     """
+    _ophyd_labels_ = {"xray_sources", "undulators"}
+
+    class AccessMode(str, Enum):
+        USER = "User"
+        OPERATOR = "Operator"
+        MACHINE_PHYSICS = "Machine Physics"
+        SYSTEM_MANAGER = "System Manager"
 
     def __init__(self, prefix: str, name: str = ""):
         # Signals for moving the undulator
         self.start_button = epics_signal_x(f"{prefix}StartC.VAL")
         self.stop_button = epics_signal_x(f"{prefix}StopC.VAL")
-        self.busy = epics_signal_r(int, f"{prefix}BusyM.VAL")
-        self.done = epics_signal_r(int, f"{prefix}BusyDeviceM.VAL")
+        self.busy = epics_signal_r(bool, f"{prefix}BusyM.VAL")
+        self.done = epics_signal_r(bool, f"{prefix}BusyDeviceM.VAL")
         self.motor_drive_status = epics_signal_r(int, f"{prefix}MotorDriveStatusM.VAL")
         # Configuration state for the undulator
         with self.add_children_as_readables(ConfigSignal):
             self.harmonic_value = epics_signal_rw(int, f"{prefix}HarmonicValueC")
-            self.total_power = epics_signal_r(int, f"{prefix}TotalPowerM.VAL")
+            self.total_power = epics_signal_r(float, f"{prefix}TotalPowerM.VAL")
             self.gap_deadband = epics_signal_rw(int, f"{prefix}DeadbandGapC")
-            self.device_limit = epics_signal_rw(int, f"{prefix}DeviceLimitM.VAL")
-            self.device = epics_signal_r(int, f"{prefix}DeviceM")
-            self.magnet = epics_signal_r(int, f"{prefix}DeviceMagnetM")
-            self.location = epics_signal_r(int, f"{prefix}LocationM")
-            self.version_plc = epics_signal_r(int, f"{prefix}PLCVersionM.VAL")
-            self.version_hpmu = epics_signal_r(int, f"{prefix}HPMUVersionM.VAL")
+            self.device_limit = epics_signal_rw(float, f"{prefix}DeviceLimitM.VAL")
+            self.device = epics_signal_r(str, f"{prefix}DeviceM")
+            self.magnet = epics_signal_r(str, f"{prefix}DeviceMagnetM")
+            self.location = epics_signal_r(str, f"{prefix}LocationM")
+            self.version_plc = epics_signal_r(float, f"{prefix}PLCVersionM.VAL")
+            self.version_hpmu = epics_signal_r(str, f"{prefix}HPMUVersionM.VAL")
         # X-ray spectrum positioners
         with self.add_children_as_readables():
             self.energy = UndulatorPositioner(
@@ -111,9 +118,9 @@ class PlanarUndulator(StandardReadable):
                 done_signal=self.done,
             )
         # Miscellaneous control signals
-        self.access_mode = epics_signal_r(int, f"{prefix}AccessSecurityC")
-        self.message1 = epics_signal_r(int, f"{prefix}Message1M.VAL")
-        self.message2 = epics_signal_r(int, f"{prefix}Message2M.VAL")
+        self.access_mode = epics_signal_r(self.AccessMode, f"{prefix}AccessSecurityC")
+        self.message1 = epics_signal_r(str, f"{prefix}Message1M.VAL")
+        self.message2 = epics_signal_r(str, f"{prefix}Message2M.VAL")
 
         super().__init__(name=name)
 

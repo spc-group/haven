@@ -169,6 +169,7 @@ class Instrument:
         mock: bool = False,
         timeout: float = DEFAULT_TIMEOUT,
         force_reconnect: bool = False,
+        return_exceptions: bool = False,
     ):
         """Connect all Devices.
 
@@ -201,7 +202,7 @@ class Instrument:
         # Filter out the disconnected devices
         new_devices = []
         exceptions = {}
-        for device, result in zip(self.devices, results):
+        for device, result in zip(async_devices, results):
             if result is None:
                 log.debug(f"Successfully connected device {device.name}")
                 new_devices.append(device)
@@ -230,6 +231,8 @@ class Instrument:
             except TimeoutError as exc:
                 exceptions[device.name] = NotConnected(str(exc))
         # Raise exceptions if any were present
+        if return_exceptions:
+            return new_devices, exceptions
         if len(exceptions) > 0:
             raise NotConnected(exceptions)
         return new_devices
@@ -239,6 +242,7 @@ class Instrument:
         connect: bool = True,
         device_classes: Mapping | None = None,
         config_files: Sequence[Path] | None = None,
+        return_exceptions: bool = False,
     ):
         """Load instrument specified in config files.
 
@@ -257,6 +261,9 @@ class Instrument:
         config_files
           I list of file paths that will be loaded. If omitted, those
           files listed in HAVEN_CONFIG_FILES will be used.
+        return_exceptions
+          If true, exceptions will be returned for further processing,
+          otherwise, exceptions will be raised (default).
 
         """
         self.devices = []
@@ -284,12 +291,18 @@ class Instrument:
             self.device_classes = old_classes
         # Connect the devices
         if connect:
-            new_devices = await self.connect(mock=not self.hardware_is_present)
+            new_devices, exceptions = await self.connect(mock=not self.hardware_is_present, return_exceptions=True)
         else:
             new_devices = self.devices
+            exceptions = []
         # Registry devices
         for device in new_devices:
             self.registry.register(device)
+        # Raise exceptions
+        if return_exceptions:
+            return exceptions
+        elif len(exceptions) > 0:
+            raise NotConnected(exceptions)
 
 
 class HavenInstrument(Instrument):
@@ -328,10 +341,15 @@ class HavenInstrument(Instrument):
         """
         if reset_devices:
             self.registry.clear()
-        await super().load()
+        exceptions = await super().load(return_exceptions = True)
         # VME-style Motors happen later so duplicate motors can be
         # removed
-        await super().load(device_classes={"motors": load_motors})
+        exceptions.update(
+            await super().load(device_classes={"motors": load_motors}, return_exceptions=True)
+        )
+        # Handle connection exceptions
+        if len(exceptions) > 0:
+            raise NotConnected(exceptions)
         # Return the final list
         if return_devices:
             return instrument.devices
@@ -349,6 +367,7 @@ beamline = HavenInstrument(
         "table": Table,
         "aerotech_stage": AerotechStage,
         "motor": Motor,
+        "energy": EnergyPositioner,
         # Threaded ophyd devices
         "blade_slits": BladeSlits,
         "aperture_slits": ApertureSlits,
@@ -358,7 +377,6 @@ beamline = HavenInstrument(
         "robot": Robot,
         "pfcu4": PFCUFilterBank,  # <-- fails if mocked
         "pss_shutter": PssShutter,
-        "energy": EnergyPositioner,
         "xspress": make_xspress_device,
         "dxp": make_dxp_device,
         "beamline_manager": BeamlineManager,
