@@ -13,8 +13,6 @@ from firefly.plans import regions_display
 from haven.motor_position import (
     get_motor_position,
     get_motor_positions,
-    recall_motor_position,
-    save_motor_position,
 )
 
 from firefly.tests.fake_position_runs import position_runs
@@ -24,11 +22,10 @@ from tiled.adapters.mapping import MapAdapter
 from tiled.server.app import build_app
 from tiled.client import Context, from_context
 from qasync import asyncSlot
-import asyncio
 
 log = logging.getLogger()
 
-test = False
+test = True
 if test:
     # Fake client for testing purpose
     def create_fake_client():
@@ -84,8 +81,8 @@ class MotorRegion(regions_display.RegionBase):
         self.update_RBV()
         self.layout.addWidget(self.RBV_label)
         
-        # Update RBV when motor is changed
-        self.motor_box.combo_box.currentTextChanged.connect(self.update_RBV)
+        # Update RBV when motor is changed and edit is finished
+        self.motor_box.combo_box.lineEdit().editingFinished.connect(self.update_RBV)
 
         # Disable/enable regions when uncheck/check region checkbox
         self.region_checkbox.stateChanged.connect(self.on_region_checkbox)
@@ -326,7 +323,7 @@ class SaveMotorDisplay(regions_display.RegionsDisplay):
         else:
             self.ui.textBrowser.append("Added recall of motor positions to queue.")
         self.ui.textBrowser.append(
-            f'<span style="color: red;">Name: <strong>{name}</strong></span>'
+            f'<span style="color: blue;">Name: <strong>{name}</strong></span>'
         )
         self.ui.textBrowser.append("-" * 20)
             
@@ -368,7 +365,7 @@ class SaveMotorDisplay(regions_display.RegionsDisplay):
         self.ui.textBrowser.append("-" * 20)
         self.ui.textBrowser.append("Saving motor configurations: ")
         self.ui.textBrowser.append(
-            f'<span style="color: red;">Name: <strong>{save_name}</strong></span>'
+            f'<span style="color: blue;">Name: <strong>{save_name}</strong></span>'
         )
 
     def queue_plan_now(self):
