@@ -1,3 +1,5 @@
+import inspect
+import numbers
 import asyncio
 from functools import partial
 from typing import Callable, Mapping, Optional, Sequence, Type
@@ -96,8 +98,18 @@ class DerivedSignalBackend(SoftSignalBackend):
         creating the backend object.
 
         """
-        # Return the same value for the real signal as the derived signal.
-        return np.median(tuple(values.values()))
+        # Determine a sensible inverse transform value if possible
+        is_numeric = all(isinstance(val, numbers.Number) for val in values.values())
+        if is_numeric:
+            return np.median(tuple(values.values()))
+        elif len(values) == 1:
+            # Only one value, so return it as-is
+            return list(values.values())[0]
+        else:
+            # No sensible value is possible
+            msg = "Cannot determine inverse value for {self} from {values}. "
+            msg += "Provide an explicit inverse transform."
+            raise ValueError(msg)
 
     def source(self, name: str = ""):
         src = super().source(name)
@@ -166,7 +178,12 @@ class DerivedSignalBackend(SoftSignalBackend):
                 # SignalX objects can't be set, so it must have been triggered
                 aws.append(sig.trigger(wait=wait, timeout=timeout))
             else:
-                aws.append(sig.set(val, wait=wait, timeout=timeout))
+                # Check that the independent signal accepts "wait" args
+                params = inspect.signature(sig.set).parameters
+                kw = {}
+                if 'wait' in params:
+                    kw["wait"] = wait
+                aws.append(sig.set(val, timeout=timeout, **kw))
         await asyncio.gather(*aws)
 
     async def get_reading(self) -> Reading:
@@ -339,7 +356,7 @@ def derived_signal_x(
     name: str = "",
     derived_from: Sequence = {},
     forward: Callable = None,
-) -> SignalRW[T]:
+) -> SignalX:
     """Creates a signal linked to one or more other signals.
 
     The argument *derived_from* gives the existing signals that will

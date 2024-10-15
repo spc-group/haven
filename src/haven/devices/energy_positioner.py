@@ -2,9 +2,11 @@ import logging
 from typing import Mapping
 
 from pcdsdevices.signal import MultiDerivedSignal
+from ophyd_async.core import Signal
 
 from .monochromator import Monochromator
 from .xray_source import PlanarUndulator
+from .signal import derived_signal_rw, derived_signal_r
 from ..positioner import Positioner
 
 log = logging.getLogger(__name__)
@@ -64,27 +66,41 @@ class EnergyPositioner(Positioner):
         monochromator_prefix: str,
         undulator_prefix: str,
         name: str = "energy",
-        **kwargs,
     ):
-        self.monochromator_prefix = monochromator_prefix
-        self.undulator_prefix = undulator_prefix
-        super().__init__(name=name, **kwargs)
+        self.monochromator = Monochromator(monochromator_prefix)
+        self.undulator = PlanarUndulator(undulator_prefix)
+        # Derived positioner signals
+        self.setpoint = derived_signal_rw(
+            derived_from={
+                "mono": self.monochromator.energy.user_setpoint,
+                "undulator": self.undulator.energy.setpoint,
+            },
+            forward=self.set_energy,
+            inverse=self.get_energy,
+        )
+        self.readback = derived_signal_r(
+            derived_from={"mono": self.monochromator.energy.user_readback},
+            inverse=self.get_energy,
+        )
+        # Additional derived signals
+        self.precision = derived_signal_rw(derived_from={"precision": self.monochromator.energy.precision})
+        self.units = derived_signal_rw(derived_from={"units": self.monochromator.energy.motor_egu})
+        self.velocity = derived_signal_rw(derived_from={"velocity": self.monochromator.energy.velocity})
+        
+        super().__init__(name=name)
 
-    def set_energy(self, *, mds: MultiDerivedSignal, value: float):
+    async def set_energy(self, value, mono: Signal, undulator: Signal):
         ev_per_kev = 1000
-        offset = self.monochromator.id_offset.get()
+        offset = await self.monochromator.id_offset.get_value()
         vals = {
             self.monochromator.energy: value,
             self.undulator.energy: (value + offset) / ev_per_kev,
         }
         return vals
 
-    def get_energy(self, mds: MultiDerivedSignal, items: Mapping):
-        if self.monochromator.energy.user_readback in items:
-            energy = items[self.monochromator.energy.user_readback]
-        else:
-            energy = items[self.monochromator.energy.user_setpoint]
-        return energy
+    def get_energy(self, values, mono: float, undulator: Signal | None = None):
+        # Use just the mono value as a readback
+        return values[mono]
 
     @property
     def limits(self):
@@ -102,21 +118,6 @@ class EnergyPositioner(Positioner):
             hi = min([val for val in (hi, new_hi) if val is not None])
             low = max([val for val in (low, new_low) if val is not None])
         return (low, hi)
-
-    # setpoint = Cpt(
-    #     MultiDerivedSignal,
-    #     attrs={"monochromator.energy.user_setpoint", "undulator.energy.setpoint"},
-    #     calculate_on_get=get_energy,
-    #     calculate_on_put=set_energy,
-    #     name="setpoint",
-    # )
-    # readback = Cpt(
-    #     MultiDerivedSignal,
-    #     attrs={"monochromator.energy.user_readback"},
-    #     calculate_on_get=get_energy,
-    #     calculate_on_put=set_energy,
-    #     name="readback",
-    # )
 
 
 # -----------------------------------------------------------------------------

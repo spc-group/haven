@@ -5,25 +5,23 @@ from haven.devices.energy_positioner import EnergyPositioner
 
 
 @pytest.fixture()
-def positioner():
-    positioner = instantiate_fake_device(
-        EnergyPositioner,
+async def positioner():
+    positioner = EnergyPositioner(
         name="energy",
-        mono_prefix="255idMono:",
+        monochromator_prefix="255idMono:",
         undulator_prefix="S255ID:",
     )
-    positioner.monochromator.energy._use_limits = False
-    positioner.monochromator.energy.user_setpoint._use_limits = False
+    await positioner.connect(mock=True)
     return positioner
 
 
-def test_set_energy(positioner):
+async def test_set_energy(positioner):
     # Set up dependent values
-    positioner.monochromator.id_offset.set(150).wait(timeout=3)
+    await positioner.monochromator.id_offset.set(150)
     # Change the energy
-    positioner.set(10000, timeout=3)
+    await positioner.set(10000, timeout=3)
     # Check that all the sub-components were set properly
-    assert positioner.monochromator.energy.get().user_setpoint == 10000
+    assert await positioner.monochromator.energy.user_setpoint.get_value() == 10000
     assert positioner.undulator.energy.get().setpoint == 10.150
 
 
