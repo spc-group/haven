@@ -79,9 +79,6 @@ def inject_haven_md_wrapper(plan):
             return msg
         # Prepare the metadata dictionary
         config = load_config()
-        xray_source = (
-            f"{config['xray_source']['type']}" f": {config['xray_source']['prefix']}"
-        )
         md = {
             # Software versions
             "versions": VERSIONS,
@@ -92,7 +89,7 @@ def inject_haven_md_wrapper(plan):
             # Facility
             "beamline_id": config["beamline"]["name"],
             "facility_id": ", ".join(cfg["name"] for cfg in config["synchrotron"]),
-            "xray_source": xray_source,
+            "xray_source": config["xray_source"]["type"],
             # Computer
             "login_id": f"{getpass.getuser()}@{socket.gethostname()}",
             "pid": os.getpid(),

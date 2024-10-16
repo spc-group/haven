@@ -202,10 +202,11 @@ class DerivedSignalBackend(SoftSignalBackend):
 
 
 def derived_signal_rw(
-    datatype: Optional[Type[T]] = None,
+    datatype: Optional[Type[T]],
+    *,
     initial_value: Optional[T] = None,
     name: str = "",
-    derived_from: Sequence = {},
+    derived_from: Sequence,
     forward: Callable = None,
     inverse: Callable = None,
     units: str | None = None,
@@ -286,10 +287,11 @@ def derived_signal_rw(
 
 
 def derived_signal_r(
-    datatype: Optional[Type[T]] = None,
+    datatype: Optional[Type[T]],
+    *,
     initial_value: Optional[T] = None,
     name: str = "",
-    derived_from: Sequence = {},
+    derived_from: Sequence,
     inverse: Callable = None,
     units: str | None = None,
     precision: int | None = None,
@@ -354,8 +356,9 @@ def derived_signal_r(
 
 
 def derived_signal_x(
+    *,
     name: str = "",
-    derived_from: Sequence = {},
+    derived_from: Sequence,
     forward: Callable = None,
 ) -> SignalX:
     """Creates a signal linked to one or more other signals.

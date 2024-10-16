@@ -25,12 +25,11 @@ from bluesky.plans import (  # noqa: F401
 from bluesky.run_engine import call_in_bluesky_event_loop
 
 # Import plans
-from haven import registry  # noqa: F401
+from haven import beamline  # noqa: F401
 from haven import (  # noqa: F401
     align_pitch2,
     align_slits,
     auto_gain,
-    calibrate_mono_gap,
     energy_scan,
     knife_scan,
     recall_motor_position,
@@ -38,19 +37,15 @@ from haven import (  # noqa: F401
     set_energy,
     xafs_scan,
 )
-from haven.instrument.load_instrument import (  # noqa: F401
-    load_instrument,
-    load_simulated_devices,
-)
 from haven.run_engine import run_engine  # noqa: F401
 
 # Create a run engine without all the bells and whistles
 RE = run_engine(connect_databroker=False, use_bec=False)
 
 # Import devices
-call_in_bluesky_event_loop(load_instrument())
-for cpt in registry._objects_by_name.values():
+call_in_bluesky_event_loop(beamline.load())
+for cpt in beamline.registry._objects_by_name.values():
     # Replace spaces and other illegal characters in variable name
     # name = re.sub('\W|^(?=\d)','_', cpt.name)
     # Add the device as a variable in module's globals
-    globals()[cpt.name] = cpt
+    globals().setdefault(cpt.name, cpt)

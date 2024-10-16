@@ -155,13 +155,20 @@ class Instrument:
             is_threaded_device = False
         if is_threaded_device and not self.hardware_is_present:
             Klass = make_fake_device(Klass)
+        # Turn the parameters into pure python objects
+        kwargs = {}
+        for key, param in params.items():
+            if isinstance(param, tomlkit.items.Item):
+                kwargs[key] = param.unwrap()
+            else:
+                kwargs[key] = param
         # Check if we need to injec the registry
         extra_params = {}
         sig = inspect.signature(Klass)
         if "registry" in sig.parameters.keys():
-            extra_params = {"registry": self.registry}
+            kwargs["registry"] = self.registry
         # Create the device
-        result = Klass(**params, **extra_params)
+        result = Klass(**kwargs)
         return result
 
     async def connect(

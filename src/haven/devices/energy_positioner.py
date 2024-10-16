@@ -64,6 +64,7 @@ class EnergyPositioner(Positioner):
             self.undulator = PlanarUndulator(undulator_prefix)
             # Derived positioner signals
             self.setpoint = derived_signal_rw(
+                float,
                 derived_from={
                     "mono": self.monochromator.energy.user_setpoint,
                     "undulator": self.undulator.energy.setpoint,
@@ -73,18 +74,19 @@ class EnergyPositioner(Positioner):
             )
         with self.add_children_as_readables(HintedSignal):
             self.readback = derived_signal_r(
+                float,
                 derived_from={"mono": self.monochromator.energy.user_readback},
                 inverse=self.get_energy,
             )
         # Additional derived signals
         self.precision = derived_signal_rw(
-            derived_from={"precision": self.monochromator.energy.precision}
+            int, derived_from={"precision": self.monochromator.energy.precision}
         )
         self.units = derived_signal_rw(
-            derived_from={"units": self.monochromator.energy.motor_egu}
+            str, derived_from={"units": self.monochromator.energy.motor_egu}
         )
         self.velocity = derived_signal_rw(
-            derived_from={"velocity": self.monochromator.energy.velocity}
+            float, derived_from={"velocity": self.monochromator.energy.velocity}
         )
 
         super().__init__(name=name)
