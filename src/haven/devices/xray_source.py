@@ -55,7 +55,7 @@ class UndulatorPositioner(Positioner):
         # Add control signals that depend on the parent
         self.actuate = derived_signal_x(derived_from={"parent_signal": actuate_signal})
         self.stop_signal = derived_signal_x(derived_from={"parent_signal": stop_signal})
-        self.done = derived_signal_r(derived_from={"parent_signal": done_signal})
+        self.done = derived_signal_r(int, derived_from={"parent_signal": done_signal})
         super().__init__(name=name)
 
 

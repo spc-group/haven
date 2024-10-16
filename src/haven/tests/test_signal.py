@@ -51,12 +51,14 @@ class Goniometer(Device):
         self.y = soft_signal_rw(float, initial_value=0)
         real_signals = {"x": self.x, "y": self.y}
         self.angle = derived_signal_rw(
+            float,
             derived_from=real_signals,
             forward=angle_to_position,
             inverse=position_to_angle,
             initial_value=0,
         )
         self.radius = derived_signal_rw(
+            float,
             derived_from=real_signals,
             forward=radius_to_position,
             inverse=position_to_radius,
