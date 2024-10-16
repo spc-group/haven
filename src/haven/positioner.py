@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from functools import partial
 
 import numpy as np
@@ -13,6 +14,8 @@ from ophyd_async.core import (
     WatcherUpdate,
     observe_value,
 )
+
+log = logging.getLogger(__name__)
 
 
 class Positioner(StandardReadable, Movable, Stoppable):
@@ -53,14 +56,14 @@ class Positioner(StandardReadable, Movable, Stoppable):
         self, value, done_event: asyncio.Event, started_event: asyncio.Event
     ):
         """Update the event when the done value is actually done."""
-        print(f"Received new done value: {value}.")
+        log.debug(f"Received new done value: {value}.")
         if value != self.done_value:
             # The movement has started
-            print("Setting started_event")
+            log.debug("Setting started_event")
             started_event.set()
         elif started_event.is_set():
             # Move has finished
-            print("Setting done_event")
+            log.debug("Setting done_event")
             done_event.set()
 
     @WatchableAsyncStatus.wrap
@@ -97,7 +100,7 @@ class Positioner(StandardReadable, Movable, Stoppable):
             done_status = set_status
         elif hasattr(self, "done"):
             # Monitor the `done` signal
-            print(f"Monitoring progress via ``done`` signal: {self.done.name}.")
+            log.debug(f"Monitoring progress via ``done`` signal: {self.done.name}.")
             self.done.subscribe_value(
                 partial(
                     self.watch_done, done_event=done_event, started_event=started_event
