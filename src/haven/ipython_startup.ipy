@@ -62,6 +62,7 @@ print(f"Connected to {num_devices} devices in {time.monotonic() - t0:.2f} second
 # Save references to some commonly used things in the global namespace
 registry = haven.beamline.registry
 ion_chambers = registry.findall("ion_chambers", allow_none=True)
+energy = registry['energy']
 
 # Print helpful information to the console
 custom_theme = Theme(

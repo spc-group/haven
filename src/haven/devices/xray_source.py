@@ -32,7 +32,7 @@ class MotorDriveStatus(IntEnum):
 
 
 class UndulatorPositioner(Positioner):
-    done_value: int = DoneStatus.DONE
+    done_value: int = BusyStatus.DONE
 
     def __init__(
         self,
@@ -106,7 +106,7 @@ class PlanarUndulator(StandardReadable):
                 f"{prefix}Energy",
                 actuate_signal=self.start_button,
                 stop_signal=self.stop_button,
-                done_signal=self.done,
+                done_signal=self.busy,
             )
             self.energy_taper = UndulatorPositioner(
                 f"{prefix}TaperEnergy",

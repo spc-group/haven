@@ -1,7 +1,9 @@
+import asyncio
+
 import pytest
 from ophyd_async.core import get_mock_put, set_mock_value
 
-from haven.devices.xray_source import PlanarUndulator
+from haven.devices.xray_source import BusyStatus, PlanarUndulator
 
 
 @pytest.fixture()
@@ -15,7 +17,9 @@ async def test_set_energy(undulator):
     # Set the energy
     status = undulator.energy.set(5)
     # Fake the done PV getting updated
-    set_mock_value(undulator.energy.done, 1)
+    set_mock_value(undulator.energy.done, BusyStatus.BUSY)
+    await asyncio.sleep(0.01)  # Let the event loop run
+    set_mock_value(undulator.energy.done, BusyStatus.DONE)
     # Check that the signals got set properly
     await status
     assert await undulator.energy.setpoint.get_value() == 5

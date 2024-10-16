@@ -49,10 +49,19 @@ class Positioner(StandardReadable, Movable, Stoppable):
         # Readback should be named the same as its parent in read()
         self.readback.set_name(name)
 
-    def watch_done(self, value, event):
+    def watch_done(
+        self, value, done_event: asyncio.Event, started_event: asyncio.Event
+    ):
         """Update the event when the done value is actually done."""
-        if value == self.done_value:
-            event.set()
+        print(f"Received new done value: {value}.")
+        if value != self.done_value:
+            # The movement has started
+            print("Setting started_event")
+            started_event.set()
+        elif started_event.is_set():
+            # Move has finished
+            print("Setting done_event")
+            done_event.set()
 
     @WatchableAsyncStatus.wrap
     async def set(self, value: float, timeout: CalculatableTimeout = CALCULATE_TIMEOUT):
@@ -71,6 +80,7 @@ class Positioner(StandardReadable, Movable, Stoppable):
         # error if not done in time
         reached_setpoint = asyncio.Event()
         done_event = asyncio.Event()
+        started_event = asyncio.Event()
         # Start the move
         if hasattr(self, "actuate"):
             # Set the setpoint, then click "go"
@@ -87,7 +97,12 @@ class Positioner(StandardReadable, Movable, Stoppable):
             done_status = set_status
         elif hasattr(self, "done"):
             # Monitor the `done` signal
-            self.done.subscribe_value(partial(self.watch_done, event=done_event))
+            print(f"Monitoring progress via ``done`` signal: {self.done.name}.")
+            self.done.subscribe_value(
+                partial(
+                    self.watch_done, done_event=done_event, started_event=started_event
+                )
+            )
             done_status = AsyncStatus(asyncio.wait_for(done_event.wait(), timeout))
         else:
             # Monitor based on readback position
