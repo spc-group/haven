@@ -49,7 +49,9 @@ class Positioner(StandardReadable, Movable, Stoppable):
         # Readback should be named the same as its parent in read()
         self.readback.set_name(name)
 
-    def watch_done(self, value, done_event: asyncio.Event, started_event: asyncio.Event):
+    def watch_done(
+        self, value, done_event: asyncio.Event, started_event: asyncio.Event
+    ):
         """Update the event when the done value is actually done."""
         print(f"Received new done value: {value}.")
         if value != self.done_value:
@@ -96,7 +98,11 @@ class Positioner(StandardReadable, Movable, Stoppable):
         elif hasattr(self, "done"):
             # Monitor the `done` signal
             print(f"Monitoring progress via ``done`` signal: {self.done.name}.")
-            self.done.subscribe_value(partial(self.watch_done, done_event=done_event, started_event=started_event))
+            self.done.subscribe_value(
+                partial(
+                    self.watch_done, done_event=done_event, started_event=started_event
+                )
+            )
             done_status = AsyncStatus(asyncio.wait_for(done_event.wait(), timeout))
         else:
             # Monitor based on readback position

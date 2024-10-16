@@ -26,7 +26,7 @@ async def test_set_energy(positioner):
     # Trick the Undulator into being done
     set_mock_value(positioner.undulator.energy.done, BusyStatus.BUSY)
     await asyncio.sleep(0.01)  # Let the event loop run
-    set_mock_value(positioner.undulator.energy.done, BusyStatus.DONE)    
+    set_mock_value(positioner.undulator.energy.done, BusyStatus.DONE)
     await status
     # Check that all the sub-components were set properly
     assert await positioner.monochromator.energy.user_setpoint.get_value() == 10000

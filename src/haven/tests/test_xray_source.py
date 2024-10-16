@@ -3,7 +3,7 @@ import asyncio
 import pytest
 from ophyd_async.core import get_mock_put, set_mock_value
 
-from haven.devices.xray_source import PlanarUndulator, BusyStatus
+from haven.devices.xray_source import BusyStatus, PlanarUndulator
 
 
 @pytest.fixture()

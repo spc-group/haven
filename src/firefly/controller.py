@@ -7,8 +7,8 @@ from pathlib import Path
 import pydm
 import pyqtgraph as pg
 import qtawesome as qta
-from ophydregistry import Registry
 from ophyd_async.core import NotConnected
+from ophydregistry import Registry
 from qasync import asyncSlot
 from qtpy import QtCore, QtWidgets
 from qtpy.QtCore import Signal
@@ -110,7 +110,9 @@ class FireflyController(QtCore.QObject):
                 await beamline.load()
             except NotConnected as exc:
                 log.exception(exc)
-                msg = "One or more devices failed to load. See console logs for details."
+                msg = (
+                    "One or more devices failed to load. See console logs for details."
+                )
                 self.error_message.showMessage(msg)
             self.registry_changed.emit(beamline.registry)
         # Make actions for launching other windows
