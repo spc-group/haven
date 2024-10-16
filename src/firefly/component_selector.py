@@ -9,6 +9,7 @@ from bluesky.protocols import HasName, Movable
 from ophyd import Device, EpicsMotor, PositionerBase, Signal
 from ophyd_async.core import Device as AsyncDevice
 from ophyd_async.core import Signal as AsyncSignal
+from ophyd_async.core import DeviceVector
 from ophyd_async.epics.motor import Motor as EpicsAsyncMotor
 from qasync import asyncSlot
 from qtpy.QtGui import QColor, QFont, QStandardItem, QStandardItemModel
@@ -21,6 +22,8 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
+from haven.positioner import Positioner
 
 log = logging.getLogger(__name__)
 
@@ -48,6 +51,7 @@ def icons():
             EpicsMotor: qta.icon("mdi.cog-clockwise"),
             EpicsAsyncMotor: qta.icon("mdi.cog-clockwise"),
             Device: qta.icon("mdi.router-network"),
+            AsyncDevice: qta.icon("mdi.router-network"),
             Signal: qta.icon("mdi.connection"),
             AsyncSignal: qta.icon("mdi.connection"),
         }
@@ -61,6 +65,7 @@ class DeviceContainer:
         for attr_name, child in device.children():
             dot_name = dotted_name(child)
             yield (dot_name, type(child), attr_name)
+            yield from self._asynchronous_children(child)
 
     def _synchronous_children(self, device):
         # Get the subcomponents of the device
@@ -111,9 +116,8 @@ class TreeNode(OphydNode):
         column = 1
         parent.setChild(row, column, self.type_item)
         # Make the component item bold if it's a positioner
-        is_positioner = issubclass(self.device_class, PositionerBase) or issubclass(
-            self.device_class, EpicsAsyncMotor
-        )
+        positioner_classes = (PositionerBase, EpicsAsyncMotor, Positioner)
+        is_positioner = any(issubclass(self.device_class, Klass) for Klass in positioner_classes)
         if is_positioner:
             font = QFont()
             font.setBold(True)
@@ -152,13 +156,17 @@ def dotted_name(obj: HasName) -> str:
         # It's a root device, so just the device name
         return obj.name
     # Figure out the attr_name
-    attrs = obj.parent.__dict__
+    if isinstance(obj.parent, DeviceVector):
+        attrs = obj.parent
+    else:
+        attrs = obj.parent.__dict__
     for attr, other_obj in attrs.items():
         if other_obj is obj:
             attr_name = attr
             break
     else:
-        raise RuntimeError("Could not find attribute name.")
+        print(obj.parent.__class__)
+        raise RuntimeError(f"Could not find attribute name for {obj.name}.")
     # siblings = list(attrs.values())
     # attr_names = list(attrs.keys())
     # idx = siblings.index(obj)
