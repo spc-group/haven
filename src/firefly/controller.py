@@ -8,11 +8,12 @@ import pydm
 import pyqtgraph as pg
 import qtawesome as qta
 from ophydregistry import Registry
+from ophyd_async.core import NotConnected
 from qasync import asyncSlot
 from qtpy import QtCore, QtWidgets
 from qtpy.QtCore import Signal
 from qtpy.QtGui import QIcon, QKeySequence
-from qtpy.QtWidgets import QAction
+from qtpy.QtWidgets import QAction, QErrorMessage
 
 from haven import beamline, load_config
 from haven.device import titelize
@@ -71,6 +72,8 @@ class FireflyController(QtCore.QObject):
         self.windows = OrderedDict()
         self.queue_re_state_changed.connect(self.enable_queue_controls)
         self.registry = beamline.registry
+        # An error message dialog for later use
+        self.error_message = QErrorMessage()
 
     def _setup_window_action(
         self, action_name: str, text: str, slot: QtCore.Slot, shortcut=None, icon=None
@@ -103,7 +106,12 @@ class FireflyController(QtCore.QObject):
 
         """
         if load_instrument:
-            await beamline.load()
+            try:
+                await beamline.load()
+            except NotConnected as exc:
+                log.exception(exc)
+                msg = "One or more devices failed to load. See console logs for details."
+                self.error_message.showMessage(msg)
             self.registry_changed.emit(beamline.registry)
         # Make actions for launching other windows
         self.setup_window_actions()
