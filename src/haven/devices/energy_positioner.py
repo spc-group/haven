@@ -89,7 +89,7 @@ class EnergyPositioner(Positioner):
             float, derived_from={"velocity": self.monochromator.energy.velocity}
         )
 
-        super().__init__(name=name)
+        super().__init__(name=name, put_complete=True)
 
     async def set_energy(self, value, mono: Signal, undulator: Signal):
         ev_per_kev = 1000
