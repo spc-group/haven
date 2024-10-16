@@ -51,11 +51,14 @@ class Positioner(StandardReadable, Movable, Stoppable):
 
     def watch_done(self, value, done_event: asyncio.Event, started_event: asyncio.Event):
         """Update the event when the done value is actually done."""
+        print(f"Received new done value: {value}.")
         if value != self.done_value:
             # The movement has started
+            print("Setting started_event")
             started_event.set()
         elif started_event.is_set():
             # Move has finished
+            print("Setting done_event")
             done_event.set()
 
     @WatchableAsyncStatus.wrap
@@ -92,6 +95,7 @@ class Positioner(StandardReadable, Movable, Stoppable):
             done_status = set_status
         elif hasattr(self, "done"):
             # Monitor the `done` signal
+            print(f"Monitoring progress via ``done`` signal: {self.done.name}.")
             self.done.subscribe_value(partial(self.watch_done, done_event=done_event, started_event=started_event))
             done_status = AsyncStatus(asyncio.wait_for(done_event.wait(), timeout))
         else:

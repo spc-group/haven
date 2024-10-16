@@ -1,3 +1,5 @@
+import asyncio
+
 import pytest
 from ophyd_async.core import set_mock_value
 from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw, epics_signal_x
@@ -35,6 +37,8 @@ def test_has_signals(positioner):
 
 async def test_set_with_done_actuate(positioner):
     status = positioner.set(5.3)
+    set_mock_value(positioner.done, 0)
+    await asyncio.sleep(0.01)  # Let event loop run
     set_mock_value(positioner.done, 1)
     await status
 

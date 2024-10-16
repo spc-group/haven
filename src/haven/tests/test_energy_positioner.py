@@ -1,7 +1,10 @@
+import asyncio
+
 import pytest
 from ophyd_async.core import set_mock_value
 
 from haven.devices.energy_positioner import EnergyPositioner
+from haven.devices.xray_source import BusyStatus
 
 
 @pytest.fixture()
@@ -17,15 +20,17 @@ async def positioner():
 
 async def test_set_energy(positioner):
     # Set up dependent values
-    await positioner.monochromator.id_offset.set(150)
+    set_mock_value(positioner.monochromator.id_offset, 150)
     # Change the energy
     status = positioner.set(10000, timeout=3)
-    # Trick the positioner into being done
-    set_mock_value(positioner.undulator.energy.done, 1)
+    # Trick the Undulator into being done
+    set_mock_value(positioner.undulator.energy.done, BusyStatus.BUSY)
+    await asyncio.sleep(0.01)  # Let the event loop run
+    set_mock_value(positioner.undulator.energy.done, BusyStatus.DONE)    
     await status
     # Check that all the sub-components were set properly
     assert await positioner.monochromator.energy.user_setpoint.get_value() == 10000
-    assert positioner.undulator.energy.get().setpoint == 10.150
+    assert await positioner.undulator.energy.setpoint.get_value() == 10.150
 
 
 async def test_real_to_pseudo_positioner(positioner):
