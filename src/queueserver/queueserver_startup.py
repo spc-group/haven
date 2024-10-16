@@ -1,5 +1,5 @@
-import re  # noqa: F401
 import logging
+import re  # noqa: F401
 
 import bluesky.preprocessors as bpp  # noqa: F401
 import databroker  # noqa: F401
