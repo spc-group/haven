@@ -39,7 +39,6 @@ from haven import (  # noqa: F401
 )
 from haven.run_engine import run_engine  # noqa: F401
 
-
 # Create a run engine without all the bells and whistles
 RE = run_engine(connect_databroker=False, use_bec=False)
 

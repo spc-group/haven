@@ -203,7 +203,7 @@ class DerivedSignalBackend(SoftSignalBackend):
 
 def derived_signal_rw(
     datatype: Optional[Type[T]],
-        *,
+    *,
     initial_value: Optional[T] = None,
     name: str = "",
     derived_from: Sequence,
@@ -288,7 +288,7 @@ def derived_signal_rw(
 
 def derived_signal_r(
     datatype: Optional[Type[T]],
-        *,
+    *,
     initial_value: Optional[T] = None,
     name: str = "",
     derived_from: Sequence,
@@ -356,7 +356,7 @@ def derived_signal_r(
 
 
 def derived_signal_x(
-        *,
+    *,
     name: str = "",
     derived_from: Sequence,
     forward: Callable = None,

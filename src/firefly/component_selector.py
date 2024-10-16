@@ -8,8 +8,8 @@ import qtawesome as qta
 from bluesky.protocols import HasName, Movable
 from ophyd import Device, EpicsMotor, PositionerBase, Signal
 from ophyd_async.core import Device as AsyncDevice
-from ophyd_async.core import Signal as AsyncSignal
 from ophyd_async.core import DeviceVector
+from ophyd_async.core import Signal as AsyncSignal
 from ophyd_async.epics.motor import Motor as EpicsAsyncMotor
 from qasync import asyncSlot
 from qtpy.QtGui import QColor, QFont, QStandardItem, QStandardItemModel
@@ -117,7 +117,9 @@ class TreeNode(OphydNode):
         parent.setChild(row, column, self.type_item)
         # Make the component item bold if it's a positioner
         positioner_classes = (PositionerBase, EpicsAsyncMotor, Positioner)
-        is_positioner = any(issubclass(self.device_class, Klass) for Klass in positioner_classes)
+        is_positioner = any(
+            issubclass(self.device_class, Klass) for Klass in positioner_classes
+        )
         if is_positioner:
             font = QFont()
             font.setBold(True)

@@ -80,16 +80,13 @@ class EnergyPositioner(Positioner):
             )
         # Additional derived signals
         self.precision = derived_signal_rw(
-            int,
-            derived_from={"precision": self.monochromator.energy.precision}
+            int, derived_from={"precision": self.monochromator.energy.precision}
         )
         self.units = derived_signal_rw(
-            str,
-            derived_from={"units": self.monochromator.energy.motor_egu}
+            str, derived_from={"units": self.monochromator.energy.motor_egu}
         )
         self.velocity = derived_signal_rw(
-            float,
-            derived_from={"velocity": self.monochromator.energy.velocity}
+            float, derived_from={"velocity": self.monochromator.energy.velocity}
         )
 
         super().__init__(name=name)
