@@ -8,14 +8,12 @@ from typing import Mapping, Optional, Sequence, Union
 
 import numpy as np
 from bluesky import plans as bp
-from bluesky.preprocessors import subs_decorator
 
 from .._iconfig import load_config
 from ..constants import edge_energy
-from ..instrument import registry
+from ..instrument import beamline
 from ..preprocessors import baseline_decorator
 from ..typing import DetectorList
-from ..xdi_writer import XDIWriter
 
 __all__ = ["energy_scan"]
 
@@ -24,9 +22,6 @@ log = logging.getLogger(__name__)
 
 
 # @shutter_suspend_decorator()
-@subs_decorator(
-    XDIWriter("{manager_path}/{year}{month}{day}-{sample_name}-{edge}-{short_uid}.xdi")
-)
 @baseline_decorator()
 def energy_scan(
     energies: Sequence[float],
@@ -114,12 +109,12 @@ def energy_scan(
         raise ValueError(msg)
     # Resolve the detector and positioner list if given by name
     if isinstance(detectors, str):
-        detectors = registry.findall(detectors)
+        detectors = beamline.registry.findall(detectors)
     real_detectors = []
     for det in detectors:
-        real_detectors.extend(registry.findall(det))
+        real_detectors.extend(beamline.registry.findall(det))
     log.debug(f"Found registered detectors: {real_detectors}")
-    energy_signals = [registry.find(ep) for ep in energy_signals]
+    energy_signals = [beamline.registry.find(ep) for ep in energy_signals]
     # Figure out which time positioners to use
     if time_signals is None:
         time_signals = [
@@ -128,7 +123,7 @@ def energy_scan(
             if hasattr(det, "default_time_signal")
         ]
     else:
-        time_signals = [registry.find(tp) for tp in time_signals]
+        time_signals = [beamline.registry.find(tp) for tp in time_signals]
     # Convert an individual exposure time to an array of exposure times
     if not hasattr(exposure, "__iter__"):
         exposure = [exposure] * len(energies)
@@ -149,13 +144,6 @@ def energy_scan(
     # Add some extra metadata
     config = load_config()
     md_ = {"edge": E0_str, "E0": E0}
-    for signals in energy_signals:
-        try:
-            md_["d_spacing"] = signals.d_spacing.get()
-        except AttributeError:
-            continue
-        else:
-            break
     # Do the actual scan
     yield from bp.list_scan(
         real_detectors,

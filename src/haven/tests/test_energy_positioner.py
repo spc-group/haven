@@ -1,55 +1,43 @@
-import pytest
-from ophyd import PVPositioner
-from ophyd.sim import instantiate_fake_device
+import asyncio
 
-from haven.instrument.energy_positioner import EnergyPositioner, load_energy_positioner
+import pytest
+from ophyd_async.core import set_mock_value
+
+from haven.devices.energy_positioner import EnergyPositioner
+from haven.devices.xray_source import BusyStatus
 
 
 @pytest.fixture()
-def positioner():
-    positioner = instantiate_fake_device(
-        EnergyPositioner,
+async def positioner():
+    positioner = EnergyPositioner(
         name="energy",
-        mono_prefix="255idMono:",
+        monochromator_prefix="255idMono:",
         undulator_prefix="S255ID:",
     )
-    positioner.monochromator.energy._use_limits = False
-    positioner.monochromator.energy.user_setpoint._use_limits = False
+    await positioner.connect(mock=True)
     return positioner
 
 
-def test_set_energy(positioner):
+async def test_set_energy(positioner):
     # Set up dependent values
-    positioner.monochromator.id_offset.set(150).wait(timeout=3)
+    set_mock_value(positioner.monochromator.id_offset, 150)
     # Change the energy
-    positioner.set(10000, timeout=3)
+    status = positioner.set(10000, timeout=3)
+    # Trick the Undulator into being done
+    set_mock_value(positioner.undulator.energy.done, BusyStatus.BUSY)
+    await asyncio.sleep(0.01)  # Let the event loop run
+    set_mock_value(positioner.undulator.energy.done, BusyStatus.DONE)
+    await status
     # Check that all the sub-components were set properly
-    assert positioner.monochromator.energy.get().user_setpoint == 10000
-    assert positioner.undulator.energy.get().setpoint == 10.150
+    assert await positioner.monochromator.energy.user_setpoint.get_value() == 10000
+    assert await positioner.undulator.energy.setpoint.get_value() == 10.150
 
 
-def test_load_energy_positioner(sim_registry):
-    load_energy_positioner()
-    energy = sim_registry["energy"]
-    assert isinstance(energy, PVPositioner)
-    assert hasattr(energy, "monochromator")
-    assert hasattr(energy, "undulator")
-
-
-def test_real_to_pseudo_positioner(positioner):
-    positioner.monochromator.energy.user_readback._readback = 5000.0
+async def test_real_to_pseudo_positioner(positioner):
+    set_mock_value(positioner.monochromator.energy.user_readback, 5000.0)
     # Check that the pseudo single is updated
-    assert positioner.get(use_monitor=False).readback == 5000.0
-
-
-def test_energy_limits(positioner):
-    """Check that the energy range is determined by the limits of the
-    dependent signals.
-
-    """
-    positioner.monochromator.energy.user_setpoint.sim_set_limits((0, 35000))
-    positioner.undulator.energy.setpoint.sim_set_limits((0.01, 1000))  # (10, 1000000)
-    assert positioner.limits == (10, 35000)
+    reading = await positioner.read()
+    assert reading["energy"]["value"] == 5000.0
 
 
 # -----------------------------------------------------------------------------

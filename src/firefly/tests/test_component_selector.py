@@ -29,9 +29,9 @@ class StageAsync(AsyncDevice):
 @pytest.fixture()
 async def motor_registry(sim_registry):
     FakeMotor = sim.make_fake_device(EpicsMotor)
-    FakeMotor(name="motor1")
+    sim_registry.register(FakeMotor(name="motor1"))
     FakeStage = sim.make_fake_device(Stage)
-    FakeStage(name="stage")
+    sim_registry.register(FakeStage(name="stage"))
     # Add async devices
     async_stage = StageAsync(name="async_stage")
     await async_stage.connect(mock=True)

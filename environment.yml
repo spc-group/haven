@@ -57,7 +57,7 @@ dependencies:
     - bluesky >=1.8.1
     - ophyd >=1.6.3
     - ophyd-async >= 0.6.0
-    - apstools >= 1.6.20
+    - apstools == 1.6.20  # Leave at 1.6.20 until this is fixed: https://github.com/BCDA-APS/apstools/issues/1022
     - pcdsdevices  # For extra signal types
     - pydm >=1.18.0
     - typhos >= 3.1.0  # need the find_signal method on the SignalConnection()

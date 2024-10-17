@@ -4,7 +4,7 @@ test the SRS DG-645 digital delay device support
 Hardware is not available so test with best efforts
 """
 
-from ..instrument import delay
+from haven.devices import delay
 
 
 async def test_dg645_device():

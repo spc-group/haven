@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>431</width>
-    <height>383</height>
+    <width>480</width>
+    <height>370</height>
    </rect>
   </property>
   <property name="font">
@@ -16,12 +16,12 @@
    </font>
   </property>
   <property name="windowTitle">
-   <string>${DEVICE_TITLE}</string>
+   <string>${DEVICE}</string>
   </property>
   <widget class="QLabel" name="label">
    <property name="geometry">
     <rect>
-     <x>-50</x>
+     <x>-18</x>
      <y>-98</y>
      <width>500</width>
      <height>500</height>
@@ -34,7 +34,7 @@
   <widget class="PyDMDrawingLine" name="PyDMDrawingLine">
    <property name="geometry">
     <rect>
-     <x>210</x>
+     <x>242</x>
      <y>170</y>
      <width>16</width>
      <height>121</height>
@@ -66,7 +66,7 @@
   <widget class="PyDMDrawingLine" name="PyDMDrawingLine_2">
    <property name="geometry">
     <rect>
-     <x>215</x>
+     <x>247</x>
      <y>51</y>
      <width>81</width>
      <height>181</height>
@@ -98,7 +98,7 @@
   <widget class="PyDMDrawingLine" name="PyDMDrawingLine_3">
    <property name="geometry">
     <rect>
-     <x>120</x>
+     <x>152</x>
      <y>118</y>
      <width>131</width>
      <height>21</height>
@@ -130,7 +130,7 @@
   <widget class="PyDMDrawingLine" name="PyDMDrawingLine_4">
    <property name="geometry">
     <rect>
-     <x>180</x>
+     <x>212</x>
      <y>160</y>
      <width>20</width>
      <height>21</height>
@@ -153,7 +153,7 @@
   <widget class="PyDMDrawingLine" name="PyDMDrawingLine_5">
    <property name="geometry">
     <rect>
-     <x>180</x>
+     <x>212</x>
      <y>200</y>
      <width>20</width>
      <height>16</height>
@@ -176,7 +176,7 @@
   <widget class="PyDMDrawingLine" name="PyDMDrawingLine_6">
    <property name="geometry">
     <rect>
-     <x>172</x>
+     <x>204</x>
      <y>170</y>
      <width>16</width>
      <height>41</height>
@@ -202,7 +202,7 @@
   <widget class="PyDMDrawingLine" name="PyDMDrawingLine_7">
    <property name="geometry">
     <rect>
-     <x>192</x>
+     <x>224</x>
      <y>147</y>
      <width>20</width>
      <height>16</height>
@@ -228,7 +228,7 @@
   <widget class="PyDMDrawingLine" name="PyDMDrawingLine_9">
    <property name="geometry">
     <rect>
-     <x>200</x>
+     <x>232</x>
      <y>110</y>
      <width>31</width>
      <height>51</height>
@@ -257,7 +257,7 @@
   <widget class="PyDMDrawingLine" name="PyDMDrawingLine_10">
    <property name="geometry">
     <rect>
-     <x>130</x>
+     <x>162</x>
      <y>174</y>
      <width>51</width>
      <height>31</height>
@@ -289,7 +289,7 @@
   <widget class="PyDMDrawingLine" name="PyDMDrawingLine_11">
    <property name="geometry">
     <rect>
-     <x>220</x>
+     <x>252</x>
      <y>120</y>
      <width>20</width>
      <height>16</height>
@@ -315,7 +315,7 @@
   <widget class="PyDMLabel" name="PyDMLabel">
    <property name="geometry">
     <rect>
-     <x>180</x>
+     <x>212</x>
      <y>0</y>
      <width>241</width>
      <height>41</height>
@@ -330,7 +330,7 @@
     <string/>
    </property>
    <property name="text">
-    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;${DEVICE_TITLE}&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;${DEVICE}&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
    <property name="textFormat">
     <enum>Qt::RichText</enum>
@@ -339,12 +339,12 @@
     <set>Qt::AlignRight|Qt::AlignTop|Qt::AlignTrailing</set>
    </property>
   </widget>
-  <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_6">
+  <widget class="PyDMEmbeddedDisplay" name="horizontal_center_display">
    <property name="geometry">
     <rect>
-     <x>300</x>
+     <x>322</x>
      <y>40</y>
-     <width>119</width>
+     <width>161</width>
      <height>111</height>
     </rect>
    </property>
@@ -355,18 +355,18 @@
     <enum>QFrame::NoFrame</enum>
    </property>
    <property name="macros" stdset="0">
-    <string>TITLE=Horizontal Center,AXIS=${DEVICE}.h.center</string>
+    <string>TITLE=Horizontal Center,AXIS=${DEVICE}.h.center,DIRECTION=horizontal</string>
    </property>
    <property name="filename" stdset="0">
     <string>slits_motor.py</string>
    </property>
   </widget>
-  <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_7">
+  <widget class="PyDMEmbeddedDisplay" name="vertical_size_display">
    <property name="geometry">
     <rect>
-     <x>10</x>
+     <x>0</x>
      <y>150</y>
-     <width>119</width>
+     <width>161</width>
      <height>111</height>
     </rect>
    </property>
@@ -383,12 +383,12 @@
     <string>slits_motor.py</string>
    </property>
   </widget>
-  <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_4">
+  <widget class="PyDMEmbeddedDisplay" name="horizontal_size_display">
    <property name="geometry">
     <rect>
-     <x>60</x>
-     <y>4</y>
-     <width>119</width>
+     <x>62</x>
+     <y>10</y>
+     <width>161</width>
      <height>111</height>
     </rect>
    </property>
@@ -405,12 +405,12 @@
     <string>slits_motor.py</string>
    </property>
   </widget>
-  <widget class="PyDMEmbeddedDisplay" name="PyDMEmbeddedDisplay_5">
+  <widget class="PyDMEmbeddedDisplay" name="vertical_center_display">
    <property name="geometry">
     <rect>
-     <x>220</x>
+     <x>252</x>
      <y>260</y>
-     <width>119</width>
+     <width>161</width>
      <height>111</height>
     </rect>
    </property>
@@ -421,16 +421,19 @@
     <enum>QFrame::NoFrame</enum>
    </property>
    <property name="macros" stdset="0">
-    <string>TITLE=Vertical Center,AXIS=${DEVICE}.v.center</string>
+    <string>TITLE=Vertical Center,AXIS=${DEVICE}.v.center,DIRECTION=vertical</string>
    </property>
    <property name="filename" stdset="0">
     <string>slits_motor.py</string>
+   </property>
+   <property name="motor_direction" stdset="0">
+    <string/>
    </property>
   </widget>
   <widget class="PyDMDrawingArc" name="PyDMDrawingArc">
    <property name="geometry">
     <rect>
-     <x>208</x>
+     <x>240</x>
      <y>158</y>
      <width>21</width>
      <height>31</height>
@@ -465,10 +468,10 @@
   <zorder>PyDMDrawingLine_11</zorder>
   <zorder>PyDMDrawingLine_2</zorder>
   <zorder>PyDMLabel</zorder>
-  <zorder>PyDMEmbeddedDisplay_6</zorder>
-  <zorder>PyDMEmbeddedDisplay_7</zorder>
-  <zorder>PyDMEmbeddedDisplay_4</zorder>
-  <zorder>PyDMEmbeddedDisplay_5</zorder>
+  <zorder>horizontal_center_display</zorder>
+  <zorder>vertical_size_display</zorder>
+  <zorder>horizontal_size_display</zorder>
+  <zorder>vertical_center_display</zorder>
   <zorder>PyDMDrawingArc</zorder>
  </widget>
  <customwidgets>
@@ -491,6 +494,7 @@
    <class>PyDMEmbeddedDisplay</class>
    <extends>QFrame</extends>
    <header>pydm.widgets.embedded_display</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources>
