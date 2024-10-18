@@ -3,7 +3,7 @@ from unittest import mock
 import pytest
 from ophyd_async.core import DEFAULT_TIMEOUT
 
-from haven.instrument.srs570 import GainSignal, SRS570PreAmplifier
+from haven.devices.srs570 import GainSignal, SRS570PreAmplifier
 
 
 @pytest.fixture()
@@ -131,7 +131,7 @@ async def test_preamp_gain_settling(gain_value, gain_unit, gain_mode, mocker, pr
     assert isinstance(preamp.sensitivity_value, GainSignal)
     # Set up a mocked sleep function
     sleep_mock = mock.AsyncMock()
-    mocker.patch("haven.instrument.ion_chamber.asyncio.sleep", sleep_mock)
+    mocker.patch("haven.devices.ion_chamber.asyncio.sleep", sleep_mock)
     # Set the sensitivity based on value
     await preamp.sensitivity_unit.set(gain_unit)
     await preamp.gain_mode.set(gain_mode)
@@ -155,7 +155,7 @@ async def test_preamp_gain_mode_settling(mocker, preamp):
     settle_time = 0.5
     # Set up a mocked sleep function
     sleep_mock = mock.AsyncMock()
-    mocker.patch("haven.instrument.ion_chamber.asyncio.sleep", sleep_mock)
+    mocker.patch("haven.devices.ion_chamber.asyncio.sleep", sleep_mock)
     # Set the preamp gains
     await preamp.sensitivity_unit.set(gain_unit)
     await preamp.sensitivity_value.set(gain_value)

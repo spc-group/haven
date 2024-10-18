@@ -1,14 +1,14 @@
 import qtawesome as qta
 
 from firefly import display
-from haven import registry
+from haven import beamline
 
 
 class IonChamberDisplay(display.FireflyDisplay):
     """A GUI window for changing settings in an ion chamber."""
 
     def customize_device(self):
-        self._device = registry.find(self.macros()["IC"])
+        self._device = beamline.registry.find(self.macros()["IC"])
 
     def customize_ui(self):
         # Use qtawesome icons instead of unicode arrows

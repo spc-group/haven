@@ -1,9 +1,32 @@
-###################
-Configuration Files
-###################
+#########################
+Instrument Configuration
+#########################
 
 .. contents:: Table of Contents
     :depth: 3
+
+This page describes the procedure for defining the beamline
+configuration. Haven contains definitions for many Ophyd and
+Ophyd-async devices, however **Haven needs a beamline configuration
+file** to know which specific devices are needed for each beamline.
+
+These files should be **listed in the environmental variable**
+``HAVEN_CONFIG_FILES`` as a semi-colon separated list (e.g. ``export
+HAVEN_CONFIG_FILES=$HOME/bluesky/iconfig.toml:/local/bluesky/iconfig_extra.toml``).
+
+Then the devices defined in these files can be loaded in python:
+
+.. code-block:: python
+
+    from haven import beamline
+    await beamline.load()
+
+Once the beamline has been loaded, the devices are available using an
+Ophyd registry attached to the beamline object. For example,
+``beamline.registry["austin"]`` would return an Ophyd device instance
+named *"austin"*, and ``beamline.registry.findall("ion_chambers")``
+would return all devices with the "ion_chambers" Ophyd label.
+
 
 Motivation
 ----------
@@ -11,87 +34,100 @@ Motivation
 Haven's goal is to **provide support for all of the spectroscopy
 beamlines**. However, each beamline is different, and these
 differences are **managed by a set of configuration files**, similar
-to the .ini files used in the old LabView solution. To keep the
+to the .ini files used in the old LabView applications. To keep the
 complexity of these configuration files manageable, Haven gets much of
 the needed information from the IOCs directly.
+
+The job of processing the configuration files is handled by the
+:py:class:`~haven.instrument.Instrument` class. This class keeps track
+of the configuration file schema, as well as the resulting devices.
 
 Haven/Firefly should always load without a specific configuration
 file, but will probably not do anything useful.
 
-Checking Configuration
-----------------------
 
-If Haven is installed with pip, the command ``haven_config`` can be
-used to read configuration variables as they will be seen by Haven:
+Device Definitions
+------------------
 
-.. code:: bash
-
-	  $ haven_config beamline
-	  {'is_connected': False, 'name': 'SPC Beamline (sector unknown)'}
-	  $ haven_config beamline.is_connected
-	  False
+The beamline instrument loader can either instantiate ophyd devices
+directly, or using factory functions.
 
 
-Configuration File Priority
----------------------------
+Simple Devices
+^^^^^^^^^^^^^^
 
-There are several sources of configuration files, described in detail
-below. They are loaded in the following order, with lower numbers
-taking precedence over higher numbers.
+Each device class has an entry in the
+:py:object:`~haven.instrument.beamline` loader. To create a new
+device, add a table to the configuration file for each device instance
+to create. The keys in the table should correspond to arguments passed
+to the device's ``__init__()`` method.
 
-1. Files listed in the ``$HAVEN_CONFIG_FILES``
-2. ``~/bluesky/instrument/iconfig.toml`` (for backwards compatibility)
-3. ``~/bluesky/iconfig.toml`` (best place)
-4. ``iconfig_default.toml`` packaged with Haven
+Typically, the key for the table is the joined-lower version of the
+class name. For example, an instance of the
+:py:class:`~haven.devices.mirrors.HighHeatLoadMirror` device class
+would be added to the configuration file as:
 
-Unless there's a good reason to do otherwise, **most beamline
-configuration belongs in ~/bluesky/iconfig.toml**.
+.. code-block:: toml
 
-For example, to enable support for our Universal Robotics robot
-*Austin* to 25-ID-C, open the file ``~/bluesky/iconfig.toml`` and add
-the following:
+   [[ high_heat_load_mirror ]]
+   name = "ORM1"
+   prefix = "255ida:ORM1:"
+   bendable = false
 
-.. code:: toml
-   
-   [robot.Austin]
-   prefix = "25idAustin"
+The instrument loader will then create a new device as
+``HighHeatLoadMirror(name="ORM1", prefix="255ida:", bendable=False)``.
+
+The resulting device can then be retrieved from the beamline
+instrument registry: ``beamline.registry["ORM1"]``.
 
 .. note::
 
-   The prevent accidental changes, the bluesky configuration files may
-   not be writable by the user accounts at the beamline. For example,
-   at 25-ID, the user account does not have permission to write to
-   ``~/bluesky/iconfig.toml`` so **changes must be made as the staff
-   account**.
-   
-``HAVEN_CONFIG_FILES`` Environment
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    The Ophyd registry allows looking up devices by Ophyd
+    label. E.g. ``beamline.registry.findall("ion_chambers")`` will
+    retrieve all devices with *"ion_chambers"* in its labels.
 
-If the environmental variable ``HAVEN_CONFIG_FILES`` is set to a
-*comma-separated* list of file path, then these files will take
-priority, with later entries superseding earlier entries.
+    The instrument loader itself does not handle labels. In most
+    cases, reasonable defaults should be set by the device's
+    ``__init__()`` methods, however for more control the device table
+    could also contain the *labels* key, with the beamline then being
+    responsible for ensuring these labels are correct.
+
+    For example, the following device would be accesible by
+    ``registry['I0']`` and ``registry.findall("detectors")``, but not
+    by ``registry.findall(["ion_chambers"])``
+
+    .. code-block:: toml
+
+        [[ ion_chamber ]]
+	name = "I0"
+	...
+	labels = ["detectors"]
 
 
-``~/bluesky/iconfig.toml``
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+Factory Functions
+^^^^^^^^^^^^^^^^^
 
-The file ``~/bluesky/iconfig.toml`` will be read if it is
-present. **This is the best place to put beamline-specific
-configuration.**
+Devices can be created using functions instead of
+:py:class:`~ophyd.Device` classes. The general idea is the same. For
+each factory function, the instrument loader will look for tables with
+arguments to this function, typically derived from the joined-lower
+name for the factory. For example, the function:
 
-The file ``~/bluesky/instrument/iconfig.toml`` is also read for
-backwards compatibility. It should not be used for new deployments,
-and support for it may be removed without warning.
+.. code-block:: python
 
-``iconfig_default.toml``
-^^^^^^^^^^^^^^^^^^^^^^^^
+    def make_area_detector(name: str, prefix: str, ad_version: str = "4.3") -> Device:
+         ...
 
-Haven includes an set of default configuration values in
-``src/haven/iconfig_default.toml``. This is mainly so that Haven and
-Firefly can still run during development without a dedicated
-configuration file. It also serves as a starting point for deploying
-Haven to a new beamline. See the section on testing below for
-suggestions on how to add default configuration.
+could have an entry in the configuration file:
+
+.. code-block:: toml
+
+    [[ area_detector ]]
+    name = "sim_det"
+
+These factory functions should return either a **new Device**, or a
+**iterable of new devices**.
+    
 
 Development and Testing
 -----------------------
@@ -99,7 +135,7 @@ Development and Testing
 While adding features and tests to Haven, it is often necessary to
 read a configuration file, for example when testing functions that
 load devices through
-:py:func:`~haven.instrument.load_instrument.load_instrument()`. However,
+:py:func:`~haven.load_instrument.load_instrument()`. However,
 the configuration that is loaded should not come from a real beamline
 configuration or else there is a risk of controlling real hardware
 while running tests.
@@ -129,15 +165,27 @@ beamline-specific configuration, it can be added in one of two places.
   fluorescence detectors. This configuration should not point to real
   hardware.
 
+
+Checking Configuration
+----------------------
+
+If Haven is installed with pip, the command ``haven_config`` can be
+used to read configuration variables as they will be seen by Haven:
+
+.. code:: bash
+
+	  $ haven_config beamline
+	  {'hardware_is_present': False, 'name': 'SPC Beamline (sector unknown)'}
+	  $ haven_config beamline.hardware_is_present
+	  False
+  
+
 Example Configuration
 ---------------------
 
-Below are some examples of configuration that can be re-used for new
-devices support or beamline setup.
+Below is an example of a configuration that can be re-used for new
+device support or beamline setup.
 
-.. literalinclude:: ../../src/haven/iconfig_default.toml
-   :caption: iconfig_default.toml
-   :language: toml
 
 .. literalinclude:: ../../src/haven/iconfig_testing.toml
    :caption: iconfig_testing.toml

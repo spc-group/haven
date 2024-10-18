@@ -2,10 +2,11 @@ import asyncio
 import math
 
 import pytest
-from ophyd_async.core import Device
+from ophyd_async.core import Device, get_mock_put
 from ophyd_async.core._signal import soft_signal_rw
+from ophyd_async.epics.signal import epics_signal_x
 
-from haven.instrument.signal import derived_signal_rw
+from haven.devices.signal import derived_signal_rw, derived_signal_x
 
 
 def radius(x, y):
@@ -50,12 +51,14 @@ class Goniometer(Device):
         self.y = soft_signal_rw(float, initial_value=0)
         real_signals = {"x": self.x, "y": self.y}
         self.angle = derived_signal_rw(
+            float,
             derived_from=real_signals,
             forward=angle_to_position,
             inverse=position_to_angle,
             initial_value=0,
         )
         self.radius = derived_signal_rw(
+            float,
             derived_from=real_signals,
             forward=radius_to_position,
             inverse=position_to_radius,
@@ -141,3 +144,15 @@ async def test_derived_subscribe(device):
 async def test_derived_source(device):
     desc = await device.angle.describe()
     assert desc[device.angle.name]["source"] == "soft://goniometer-angle(x,y)"
+
+
+@pytest.mark.asyncio
+async def test_signal_x_trigger(device):
+    signal = epics_signal_x("255idcVME:start")
+    derived = derived_signal_x(derived_from={"signal": signal})
+    await signal.connect(mock=True)
+    await derived.connect(mock=True)
+    # Now trigger the parent
+    mocked_put = get_mock_put(signal)
+    await derived.trigger()
+    mocked_put.assert_called_once_with(None, wait=True, timeout=10.0)

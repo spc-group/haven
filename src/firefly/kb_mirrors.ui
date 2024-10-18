@@ -16,7 +16,7 @@
    </font>
   </property>
   <property name="windowTitle">
-   <string>${DEVICE_TITLE}</string>
+   <string>${DEVICE}</string>
   </property>
   <widget class="PyDMLabel" name="device_name_label">
    <property name="geometry">
@@ -36,7 +36,7 @@
     <string/>
    </property>
    <property name="text">
-    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;${DEVICE_TITLE}&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;${DEVICE}&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
    <property name="textFormat">
     <enum>Qt::RichText</enum>
@@ -655,7 +655,7 @@
       <rect>
        <x>430</x>
        <y>79</y>
-       <width>101</width>
+       <width>151</width>
        <height>111</height>
       </rect>
      </property>
@@ -692,9 +692,9 @@
      </property>
      <property name="geometry">
       <rect>
-       <x>18</x>
-       <y>150</y>
-       <width>101</width>
+       <x>0</x>
+       <y>140</y>
+       <width>151</width>
        <height>111</height>
       </rect>
      </property>
@@ -736,9 +736,9 @@ color: white;
      </property>
      <property name="geometry">
       <rect>
-       <x>230</x>
+       <x>220</x>
        <y>0</y>
-       <width>101</width>
+       <width>151</width>
        <height>111</height>
       </rect>
      </property>
@@ -775,9 +775,9 @@ color: white;
      </property>
      <property name="geometry">
       <rect>
-       <x>157</x>
+       <x>130</x>
        <y>260</y>
-       <width>101</width>
+       <width>151</width>
        <height>111</height>
       </rect>
      </property>
@@ -1087,6 +1087,7 @@ color: white;
    <class>PyDMEmbeddedDisplay</class>
    <extends>QFrame</extends>
    <header>pydm.widgets.embedded_display</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources>

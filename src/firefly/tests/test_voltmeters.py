@@ -8,7 +8,7 @@ from qtpy import QtWidgets
 
 import haven
 from firefly.voltmeters import VoltmetersDisplay
-from haven.instrument.ion_chamber import IonChamber
+from haven.devices.ion_chamber import IonChamber
 
 
 @pytest.fixture()

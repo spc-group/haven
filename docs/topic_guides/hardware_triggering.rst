@@ -21,11 +21,11 @@ Vortex detector could trigger the scaler itself, but this creates yet
 another trigger signal to the scaler, as described above.
 
 The **solution** is to use the
-:py:class:`~haven.instrument.scaler_triggered.ScalerTriggered` mixin
+:py:class:`~haven.devices.scaler_triggered.ScalerTriggered` mixin
 class. This adds a *scaler_prefix* argument to ``__init__`` that
 expects a channel access PV path and points to the scaler that should
 be used to trigger this device. If multiple instances of
-:py:class:`~haven.instrument.scaler_triggered.ScalerTriggered` with
+:py:class:`~haven.devices.scaler_triggered.ScalerTriggered` with
 the same *scaler_prefix* are present in a bluesky plan, then the
 scaler is only triggered once for all the devices.
 
@@ -34,7 +34,7 @@ will be used for the scaler prefix.
 
 .. code-block:: python
 
-    from haven.instrument.scaler_triggered import ScalerTriggered
+    from haven.devices.scaler_triggered import ScalerTriggered
     from ophyd import Device
 
     class VortexDetector(ScalerTriggered, Device):
