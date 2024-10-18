@@ -195,8 +195,15 @@ class DerivedSignalBackend(SoftSignalBackend):
         return self.combine_readings(readings)
 
     async def get_value(self) -> T:
+        # Sort out which types of signals we have
+        gettable_signals = [sig for sig in self._derived_from.values() if hasattr(sig, "get_value")]
         # Retrieve current values from signals
-        values = {sig: (await sig.get_value()) for sig in self._derived_from.values()}
+        values = await asyncio.gather(*(sig.get_value() for sig in gettable_signals))
+        values = {sig: val for sig, val in zip(gettable_signals, values)}
+        # Set default value of None for missing signals
+        for sig in self._derived_from.values():
+            values.setdefault(sig, None)
+        # Compute the new value
         new_value = self.inverse(values, **self._derived_from)
         return self.converter.value(new_value)
 
