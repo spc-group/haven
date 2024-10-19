@@ -1,6 +1,6 @@
 import pytest
 
-from haven.instrument.scaler import MultiChannelScaler, load_scalers
+from haven.devices.scaler import MultiChannelScaler
 
 
 @pytest.fixture()
@@ -132,13 +132,3 @@ def test_scaler_channel_signals(mcs):
     assert channel.raw_count.source == "ca://255idcVME:3820:scaler1.S16"
     assert channel.net_count.source == "ca://255idcVME:3820:scaler1_netB.D"
     assert channel.offset_rate.source == "ca://255idcVME:3820:scaler1_offset3.D"
-
-
-@pytest.mark.asyncio
-async def test_load_scalers(sim_registry, mocker):
-    await load_scalers(registry=sim_registry)
-    mcs = sim_registry.find(label="scalers")
-    assert mcs.name == "vme_scaler_1"
-    # Check that the channels are set properly
-    assert hasattr(mcs.scaler, "channels")
-    assert len(mcs.scaler.channels) == 32

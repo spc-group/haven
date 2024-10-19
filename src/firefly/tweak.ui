@@ -59,6 +59,12 @@
        <verstretch>0</verstretch>
       </sizepolicy>
      </property>
+     <property name="minimumSize">
+      <size>
+       <width>0</width>
+       <height>0</height>
+      </size>
+     </property>
      <property name="toolTip">
       <string>How much to tweak the signal with each tweak.</string>
      </property>

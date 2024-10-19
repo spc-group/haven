@@ -1,7 +1,7 @@
 import pytest
 
 from firefly.mirror import MirrorDisplay
-from haven.instrument.mirrors import HighHeatLoadMirror
+from haven.devices.mirrors import HighHeatLoadMirror
 
 
 @pytest.fixture()

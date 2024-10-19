@@ -2,11 +2,12 @@ import time
 from collections import OrderedDict
 
 import pytest
+from ophyd import ADBase
 from ophyd import ADComponent as ADCpt
 from ophyd.areadetector.cam import AreaDetectorCam
 from ophyd.sim import instantiate_fake_device
 
-from haven.instrument.area_detector import (
+from haven.devices.area_detector import (
     DetectorBase,
     DetectorState,
     HDF5FilePlugin,
@@ -40,12 +41,6 @@ def test_flyscan_kickoff(detector):
     detector.cam.array_counter.sim_put(1)
     event = detector._fly_data[detector.cam.array_counter]
     assert event[0].timestamp == pytest.approx(time.time())
-
-
-async def test_load_area_detectors(sim_registry):
-    await load_area_detectors()
-    # Check that some area detectors were loaded
-    dets = sim_registry.findall(label="area_detectors")
 
 
 def test_hdf_dtype(detector):
