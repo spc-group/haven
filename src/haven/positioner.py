@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from functools import partial
+import warnings
 
 import numpy as np
 from bluesky.protocols import Movable, Stoppable
@@ -122,7 +123,7 @@ class Positioner(StandardReadable, Movable, Stoppable):
                 target=new_position,
                 name=self.name,
                 unit=units,
-                precision=precision,
+                precision=int(precision),
             )
             # Check if the move has finished
             target_reached = current_position is not None and np.isclose(
@@ -139,5 +140,7 @@ class Positioner(StandardReadable, Movable, Stoppable):
 
     async def stop(self, success=True):
         self._set_success = success
-        status = self.stop_signal.trigger()
-        await status
+        if hasattr(self, "stop_signal"):
+            await self.stop_signal.trigger()
+        else:
+            warnings.warn(f"Positioner {self.name} has no stop signal.")
