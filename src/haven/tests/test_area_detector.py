@@ -13,8 +13,6 @@ from haven.devices.area_detector import (
     HDF5FilePlugin,
 )
 
-from haven.instrument.detectors.area_detectors import load_area_detectors
-
 
 class Detector(DetectorBase):
     cam = ADCpt(AreaDetectorCam, "cam1:")
