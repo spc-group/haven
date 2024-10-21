@@ -34,6 +34,7 @@ from .devices.table import Table
 from .devices.xia_pfcu import PFCUFilterBank
 from .devices.xspress import make_xspress_device
 from .devices.detectors.sim_detector import SimDetector
+from .devices.detectors.aravis import AravisDetector
 from .exceptions import InvalidConfiguration
 
 log = logging.getLogger(__name__)
@@ -381,6 +382,7 @@ beamline = HavenInstrument(
         "motor": Motor,
         "energy": EnergyPositioner,
         "sim_detector": SimDetector,
+        "camera": AravisDetector,
         # Threaded ophyd devices
         "blade_slits": BladeSlits,
         "aperture_slits": ApertureSlits,
