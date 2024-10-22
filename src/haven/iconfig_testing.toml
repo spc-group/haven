@@ -1,3 +1,5 @@
+area_detector_root_path = "/tmp"
+
 [beamline]
 # General name for the beamline, used for metadata.
 name = "SPC Beamline (sector unknown)"

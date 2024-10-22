@@ -16,6 +16,7 @@ Welcome to haven's documentation!
    :caption: Contents:
 
    tutorials/index.rst
+   how_to_guides/index.rst
    topic_guides/index.rst
    haven/haven.rst
 

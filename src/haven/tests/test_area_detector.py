@@ -2,17 +2,11 @@ import time
 from collections import OrderedDict
 
 import pytest
-from ophyd import ADBase
 from ophyd import ADComponent as ADCpt
 from ophyd.areadetector.cam import AreaDetectorCam
 from ophyd.sim import instantiate_fake_device
 
-from haven.devices.area_detector import (
-    DetectorBase,
-    DetectorState,
-    HDF5FilePlugin,
-    make_area_detector,
-)
+from haven.devices.area_detector import DetectorBase, DetectorState, HDF5FilePlugin
 
 
 class Detector(DetectorBase):
@@ -21,12 +15,13 @@ class Detector(DetectorBase):
 
 
 @pytest.fixture()
-def detector(sim_registry):
+def threaded_detector(sim_registry):
     det = instantiate_fake_device(Detector)
     return det
 
 
-def test_flyscan_kickoff(detector):
+def test_flyscan_kickoff(threaded_detector):
+    detector = threaded_detector
     detector.flyer_num_points.set(10)
     status = detector.kickoff()
     detector.cam.detector_state.sim_put(DetectorState.ACQUIRE)
@@ -42,19 +37,11 @@ def test_flyscan_kickoff(detector):
     assert event[0].timestamp == pytest.approx(time.time())
 
 
-def test_make_area_detector(sim_registry):
-    ad = make_area_detector(
-        name="ad_sim", prefix="255idADSimDet:", device_class="SimDetector", mock=True
-    )
-    # Check that some area detectors were loaded
-    assert isinstance(ad, ADBase)
-    # dets = sim_registry.findall(label="area_detectors")
-
-
-def test_hdf_dtype(detector):
+def test_hdf_dtype(threaded_detector):
     """Check that the right ``dtype_str`` is added to the image data to
     make tiled happy.
     """
+    detector = threaded_detector
     # Set up fake image metadata
     detector.hdf.data_type.sim_put("UInt8")
     original_desc = OrderedDict(
