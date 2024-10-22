@@ -7,8 +7,12 @@ from typing import Callable, Mapping, Optional, Sequence, Type
 import numpy as np
 from bluesky.protocols import Reading, Subscribable
 from ophyd_async.core import (
+    CALCULATE_TIMEOUT,
     DEFAULT_TIMEOUT,
+    AsyncStatus,
+    CalculatableTimeout,
     ReadingValueCallback,
+    SignalBackend,
     SignalMetadata,
     SignalR,
     SignalRW,
@@ -16,6 +20,7 @@ from ophyd_async.core import (
     SoftSignalBackend,
     T,
 )
+from ophyd_async.epics.signal._signal import _epics_signal_backend
 
 
 class DerivedSignalBackend(SoftSignalBackend):
@@ -195,8 +200,17 @@ class DerivedSignalBackend(SoftSignalBackend):
         return self.combine_readings(readings)
 
     async def get_value(self) -> T:
+        # Sort out which types of signals we have
+        gettable_signals = [
+            sig for sig in self._derived_from.values() if hasattr(sig, "get_value")
+        ]
         # Retrieve current values from signals
-        values = {sig: (await sig.get_value()) for sig in self._derived_from.values()}
+        values = await asyncio.gather(*(sig.get_value() for sig in gettable_signals))
+        values = {sig: val for sig, val in zip(gettable_signals, values)}
+        # Set default value of None for missing signals
+        for sig in self._derived_from.values():
+            values.setdefault(sig, None)
+        # Compute the new value
         new_value = self.inverse(values, **self._derived_from)
         return self.converter.value(new_value)
 
@@ -417,3 +431,37 @@ def derived_signal_x(
     )
     signal = SignalX(backend, name=name)
     return signal
+
+
+class SignalXVal(SignalX):
+    trigger_value = 1
+
+    def __init__(self, *args, trigger_value=1, **kwargs):
+        self.trigger_value = trigger_value
+        super().__init__(*args, **kwargs)
+
+    def trigger(
+        self, wait=False, timeout: CalculatableTimeout = CALCULATE_TIMEOUT
+    ) -> AsyncStatus:
+        """Trigger the action and return a status saying when it's done"""
+        if timeout is CALCULATE_TIMEOUT:
+            timeout = self._timeout
+        coro = self._backend.put(self.trigger_value, wait=wait, timeout=timeout)
+        return AsyncStatus(coro)
+
+
+def epics_signal_xval(write_pv: str, name: str = "", trigger_value=1) -> SignalXVal:
+    """Create a `SignalX` backed by 1 EPICS PVs. This differs from the
+    standard ophyd-async trigger in that it accepts a prescribed
+    *trigger_value* that will be sent to the PV when triggered.
+
+        Parameters
+        ----------
+        write_pv:
+          The PV to write its initial value to on trigger
+        trigger_value:
+          The value to send to the write PV.
+
+    """
+    backend: SignalBackend = _epics_signal_backend(None, write_pv, write_pv)
+    return SignalXVal(backend, name=name, trigger_value=trigger_value)

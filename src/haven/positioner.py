@@ -1,7 +1,7 @@
 import asyncio
 import logging
-from functools import partial
 import warnings
+from functools import partial
 
 import numpy as np
 from bluesky.protocols import Movable, Stoppable
@@ -107,12 +107,12 @@ class Positioner(StandardReadable, Movable, Stoppable):
                     self.watch_done, done_event=done_event, started_event=started_event
                 )
             )
-            done_status = AsyncStatus(asyncio.wait_for(done_event.wait(), timeout))
+            aws = asyncio.gather(done_event.wait(), set_status)
+            done_status = AsyncStatus(asyncio.wait_for(aws, timeout))
         else:
             # Monitor based on readback position
-            done_status = AsyncStatus(
-                asyncio.wait_for(reached_setpoint.wait(), timeout)
-            )
+            aws = asyncio.gather(reached_setpoint.wait(), set_status)
+            done_status = AsyncStatus(asyncio.wait_for(aws, timeout))
         # Monitor the position of the readback value
         async for current_position in observe_value(
             self.readback, done_status=done_status

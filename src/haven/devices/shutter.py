@@ -1,13 +1,14 @@
 import logging
 import warnings
 from enum import IntEnum, unique
+from typing import Mapping
 
-from ophyd import Component as Cpt
-from ophyd import EpicsSignal, EpicsSignalRO
-from ophyd.pv_positioner import PVPositionerIsClose
 from ophyd.utils.errors import ReadOnlyError
-from pcdsdevices.signal import MultiDerivedSignal
-from pcdsdevices.type_hints import SignalToValue
+from ophyd_async.core import soft_signal_rw
+from ophyd_async.epics.signal import epics_signal_r
+
+from ..positioner import Positioner
+from .signal import derived_signal_rw, epics_signal_xval
 
 # from apstools.devices.shutters import ApsPssShutterWithStatus as Shutter
 
@@ -23,7 +24,8 @@ class ShutterState(IntEnum):
     UNKNOWN = 4  # 0b100
 
 
-class PssShutter(PVPositionerIsClose):
+class PssShutter(Positioner):
+    _ophyd_labels_ = {"shutters"}
     _last_setpoint: int = ShutterState.UNKNOWN
     allow_open: bool
     allow_close: bool
@@ -39,7 +41,25 @@ class PssShutter(PVPositionerIsClose):
     ):
         self.allow_open = allow_open
         self.allow_close = allow_close
-        super().__init__(prefix=prefix, name=name, labels=labels, **kwargs)
+        # Actuators for opening/closing the shutter
+        self.open_signal = epics_signal_xval(f"{prefix}OpenEPICSC")
+        self.close_signal = epics_signal_xval(f"{prefix}CloseEPICSC")
+        # Just use convenient values for these since there's no real position
+        self.velocity = soft_signal_rw(float, initial_value=0.5)
+        self.units = soft_signal_rw(str, initial_value="")
+        self.precision = soft_signal_rw(int, initial_value=0)
+        # Positioner signals for moving the shutter
+        self.readback = epics_signal_r(bool, f"{prefix}BeamBlockingM.VAL")
+        self.setpoint = derived_signal_rw(
+            int,
+            derived_from={
+                "open_signal": self.open_signal,
+                "close_signal": self.close_signal,
+            },
+            forward=self._actuate_shutter,
+            inverse=self._shutter_setpoint,
+        )
+        super().__init__(name=name, **kwargs)
 
     def check_value(self, pos):
         """Check that the shutter has the right permissions."""
@@ -52,20 +72,21 @@ class PssShutter(PVPositionerIsClose):
                 f"Shutter {self.name} is not permitted to be opened per iconfig.toml. Set `allow_open` for this shutter."
             )
 
-    def _actuate_shutter(self, mds: MultiDerivedSignal, value: int) -> SignalToValue:
+    async def _actuate_shutter(self, value: int, open_signal, close_signal) -> Mapping:
         """Open/close the shutter using derived-from signals."""
+        self.check_value(value)
         if value == ShutterState.OPEN:
-            items = {self.open_signal: 1}
+            items = {open_signal: 1}
         elif value == ShutterState.CLOSED:
-            items = {self.close_signal: 1}
+            items = {close_signal: 1}
         else:
             raise ValueError(f"Invalid shutter state for {self}")
         return items
 
-    def _shutter_setpoint(self, mds: MultiDerivedSignal, items: SignalToValue) -> int:
+    def _shutter_setpoint(self, values: Mapping, open_signal, close_signal) -> int:
         """Determine whether the shutter was last opened or closed."""
-        do_open = items[self.open_signal]
-        do_close = items[self.close_signal]
+        do_open = values[open_signal]
+        do_close = values[close_signal]
         if do_open and do_close:
             # Shutter is both opening and closing??
             warnings.warn("Unknown shutter setpoint")
@@ -75,16 +96,6 @@ class PssShutter(PVPositionerIsClose):
         elif do_close:
             self._last_setpoint = ShutterState.CLOSED
         return self._last_setpoint
-
-    readback = Cpt(EpicsSignalRO, "BeamBlockingM.VAL")
-    setpoint = Cpt(
-        MultiDerivedSignal,
-        attrs=["open_signal", "close_signal"],
-        calculate_on_put=_actuate_shutter,
-        calculate_on_get=_shutter_setpoint,
-    )
-    open_signal = Cpt(EpicsSignal, "OpenEPICSC", kind="omitted")
-    close_signal = Cpt(EpicsSignal, "CloseEPICSC", kind="omitted")
 
 
 # -----------------------------------------------------------------------------
