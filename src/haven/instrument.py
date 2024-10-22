@@ -115,8 +115,33 @@ class Instrument:
         self.devices.extend(devices)
         return devices
 
-    def validate_params(self, params, Klass):
-        """Check that parameters match a Device class's initializer."""
+    def validate_params(self, params: Mapping, Klass) -> bool:
+        """Check that parameters match a Device class's initializer.
+
+        If the function returns successfully, it returns True. Invalid
+        parameters will cause and exception.
+
+        *args and **kwargs are ignored.
+
+        Parameters
+        ==========
+        params
+          The loaded keys and value to be validated.
+        Klass
+          The class (or loading function) to check arguments for.
+
+        Returns
+        =======
+        True
+
+        Raises
+        ======
+        InvalidConfiguration
+          A key for a required argument was not present in *params*,
+          or the value for a type-annotated arguments was of a
+          different type.
+
+        """
         sig = inspect.signature(Klass)
         has_kwargs = any(
             [param.kind == param.VAR_KEYWORD for param in sig.parameters.values()]
@@ -125,9 +150,10 @@ class Instrument:
         for key, sig_param in sig.parameters.items():
             # Check for missing parameters
             param_missing = key not in params
+            var_kinds = [sig_param.VAR_KEYWORD, sig_param.VAR_POSITIONAL]
             param_required = (
                 sig_param.default is sig_param.empty
-                and sig_param.kind != sig_param.VAR_KEYWORD
+                and sig_param.kind not in var_kinds
             )
             if param_missing and param_required:
                 raise InvalidConfiguration(
@@ -147,6 +173,7 @@ class Instrument:
                         f"expected `{sig_param.annotation}` but got "
                         f"`{type(params[key])}`."
                     )
+        return True
 
     def make_device(self, params, Klass):
         """Create the devices from their parameters."""
