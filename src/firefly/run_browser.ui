@@ -178,7 +178,7 @@
          <item>
           <widget class="QLabel" name="sleep_label">
            <property name="text">
-            <string>&lt;- Press the button</string>
+            <string>⬅ Press the button</string>
            </property>
           </widget>
          </item>

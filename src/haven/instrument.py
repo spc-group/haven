@@ -409,6 +409,7 @@ beamline = HavenInstrument(
         "energy": EnergyPositioner,
         "sim_detector": SimDetector,
         "camera": AravisDetector,
+        "pss_shutter": PssShutter,
         # Threaded ophyd devices
         "blade_slits": BladeSlits,
         "aperture_slits": ApertureSlits,
@@ -417,7 +418,6 @@ beamline = HavenInstrument(
         "synchrotron": ApsMachine,
         "robot": Robot,
         "pfcu4": PFCUFilterBank,  # <-- fails if mocked
-        "pss_shutter": PssShutter,
         "xspress": make_xspress_device,
         "dxp": make_dxp_device,
         "beamline_manager": BeamlineManager,

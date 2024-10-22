@@ -60,7 +60,6 @@ prefix = "S255ID-PSS:FES:"
 allow_close = false
 # allow_open = true  # Default
 
-
 [[ pss_shutter ]]
 name = "hutch_shutter"
 prefix = "S255ID-PSS:SCS:"
