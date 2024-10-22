@@ -1,5 +1,4 @@
 import pytest
-from ophyd import sim
 from ophyd.utils.errors import ReadOnlyError
 from ophyd_async.core import get_mock_put, set_mock_value
 
@@ -37,7 +36,7 @@ async def test_shutter_setpoint(shutter):
     set_mock_value(shutter.readback, ShutterState.CLOSED)
     await status
     assert not open_put.called
-    close_put.assert_called_once_with(None, timeout=16, wait=False)
+    close_put.assert_called_once_with(1, timeout=16, wait=False)
     # Open the shutter
     open_put.reset_mock()
     close_put.reset_mock()
@@ -47,7 +46,7 @@ async def test_shutter_setpoint(shutter):
     set_mock_value(shutter.readback, ShutterState.OPEN)
     await status
     assert not close_put.called
-    open_put.assert_called_once_with(None, timeout=18, wait=False)
+    open_put.assert_called_once_with(1, timeout=18, wait=False)
 
 
 async def test_shutter_check_value(shutter):

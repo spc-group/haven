@@ -5,18 +5,12 @@ from apstools.utils.misc import safe_ophyd_name
 from ophyd import Component as Cpt
 from ophyd import EpicsMotor, EpicsSignal, EpicsSignalRO, Kind
 from ophyd_async.core import (
-    CALCULATE_TIMEOUT,
     DEFAULT_TIMEOUT,
-    AsyncStatus,
-    CalculatableTimeout,
     ConfigSignal,
-    SignalBackend,
-    SignalX,
     SubsetEnum,
 )
 from ophyd_async.epics.motor import Motor as MotorBase
 from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw
-from ophyd_async.epics.signal._signal import _epics_signal_backend
 from ophydregistry import Registry
 
 from .motor_flyer import MotorFlyer

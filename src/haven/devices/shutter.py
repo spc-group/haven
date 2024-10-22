@@ -5,9 +5,7 @@ from typing import Mapping
 
 from ophyd.utils.errors import ReadOnlyError
 from ophyd_async.core import soft_signal_rw
-from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw
-from pcdsdevices.signal import MultiDerivedSignal
-from pcdsdevices.type_hints import SignalToValue
+from ophyd_async.epics.signal import epics_signal_r
 
 from ..positioner import Positioner
 from .signal import derived_signal_rw, epics_signal_xval
@@ -76,7 +74,7 @@ class PssShutter(Positioner):
 
     async def _actuate_shutter(
         self, value: int, open_signal, close_signal
-    ) -> SignalToValue:
+    ) -> Mapping:
         """Open/close the shutter using derived-from signals."""
         self.check_value(value)
         if value == ShutterState.OPEN:
