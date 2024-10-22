@@ -1,7 +1,7 @@
 import pytest
 from ophyd import sim
 from ophyd.utils.errors import ReadOnlyError
-from ophyd_async.core import set_mock_value, get_mock_put
+from ophyd_async.core import get_mock_put, set_mock_value
 
 from haven.devices.shutter import PssShutter, ShutterState
 
@@ -10,7 +10,7 @@ from haven.devices.shutter import PssShutter, ShutterState
 async def shutter(sim_registry):
     """
     Example PVs:
-    
+
     S25ID-PSS:SCS:OpenEPICSC
     S25ID-PSS:SCS:CloseEPICSC
     S25ID-PSS:SCS:BeamBlockingM.VAL

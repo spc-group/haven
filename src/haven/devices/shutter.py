@@ -3,14 +3,14 @@ import warnings
 from enum import IntEnum, unique
 from typing import Mapping
 
-from ophyd_async.epics.signal import epics_signal_rw, epics_signal_x, epics_signal_r
-from ophyd_async.core import soft_signal_rw
 from ophyd.utils.errors import ReadOnlyError
+from ophyd_async.core import soft_signal_rw
+from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw
 from pcdsdevices.signal import MultiDerivedSignal
 from pcdsdevices.type_hints import SignalToValue
 
-from .signal import derived_signal_rw
 from ..positioner import Positioner
+from .signal import derived_signal_rw, epics_signal_xval
 
 # from apstools.devices.shutters import ApsPssShutterWithStatus as Shutter
 
@@ -44,8 +44,8 @@ class PssShutter(Positioner):
         self.allow_open = allow_open
         self.allow_close = allow_close
         # Actuators for opening/closing the shutter
-        self.open_signal = epics_signal_x(f"{prefix}OpenEPICSC")
-        self.close_signal = epics_signal_x(f"{prefix}CloseEPICSC")
+        self.open_signal = epics_signal_xval(f"{prefix}OpenEPICSC")
+        self.close_signal = epics_signal_xval(f"{prefix}CloseEPICSC")
         # Just use convenient values for these since there's no real position
         self.velocity = soft_signal_rw(float, initial_value=0.5)
         self.units = soft_signal_rw(str, initial_value="")
@@ -54,7 +54,10 @@ class PssShutter(Positioner):
         self.readback = epics_signal_r(bool, f"{prefix}BeamBlockingM.VAL")
         self.setpoint = derived_signal_rw(
             int,
-            derived_from={"open_signal": self.open_signal, "close_signal": self.close_signal},
+            derived_from={
+                "open_signal": self.open_signal,
+                "close_signal": self.close_signal,
+            },
             forward=self._actuate_shutter,
             inverse=self._shutter_setpoint,
         )
@@ -71,7 +74,9 @@ class PssShutter(Positioner):
                 f"Shutter {self.name} is not permitted to be opened per iconfig.toml. Set `allow_open` for this shutter."
             )
 
-    async def _actuate_shutter(self, value: int, open_signal, close_signal) -> SignalToValue:
+    async def _actuate_shutter(
+        self, value: int, open_signal, close_signal
+    ) -> SignalToValue:
         """Open/close the shutter using derived-from signals."""
         self.check_value(value)
         if value == ShutterState.OPEN:

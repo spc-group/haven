@@ -106,17 +106,11 @@ class Positioner(StandardReadable, Movable, Stoppable):
                     self.watch_done, done_event=done_event, started_event=started_event
                 )
             )
-            aws = asyncio.gather(
-                done_event.wait(),
-                set_status
-            )
+            aws = asyncio.gather(done_event.wait(), set_status)
             done_status = AsyncStatus(asyncio.wait_for(aws, timeout))
         else:
             # Monitor based on readback position
-            aws = asyncio.gather(
-                reached_setpoint.wait(),
-                set_status
-            )
+            aws = asyncio.gather(reached_setpoint.wait(), set_status)
             done_status = AsyncStatus(asyncio.wait_for(aws, timeout))
         # Monitor the position of the readback value
         async for current_position in observe_value(
