@@ -1,7 +1,7 @@
 import asyncio
 import logging
-from functools import partial
 import warnings
+from functools import partial
 
 import numpy as np
 from bluesky.protocols import Movable, Stoppable

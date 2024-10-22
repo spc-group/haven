@@ -4,11 +4,7 @@ import warnings
 from apstools.utils.misc import safe_ophyd_name
 from ophyd import Component as Cpt
 from ophyd import EpicsMotor, EpicsSignal, EpicsSignalRO, Kind
-from ophyd_async.core import (
-    DEFAULT_TIMEOUT,
-    ConfigSignal,
-    SubsetEnum,
-)
+from ophyd_async.core import DEFAULT_TIMEOUT, ConfigSignal, SubsetEnum
 from ophyd_async.epics.motor import Motor as MotorBase
 from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw
 from ophydregistry import Registry

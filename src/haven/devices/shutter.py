@@ -72,9 +72,7 @@ class PssShutter(Positioner):
                 f"Shutter {self.name} is not permitted to be opened per iconfig.toml. Set `allow_open` for this shutter."
             )
 
-    async def _actuate_shutter(
-        self, value: int, open_signal, close_signal
-    ) -> Mapping:
+    async def _actuate_shutter(self, value: int, open_signal, close_signal) -> Mapping:
         """Open/close the shutter using derived-from signals."""
         self.check_value(value)
         if value == ShutterState.OPEN:
