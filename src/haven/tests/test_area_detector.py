@@ -2,16 +2,11 @@ import time
 from collections import OrderedDict
 
 import pytest
-from ophyd import ADBase
 from ophyd import ADComponent as ADCpt
 from ophyd.areadetector.cam import AreaDetectorCam
 from ophyd.sim import instantiate_fake_device
 
-from haven.devices.area_detector import (
-    DetectorBase,
-    DetectorState,
-    HDF5FilePlugin,
-)
+from haven.devices.area_detector import DetectorBase, DetectorState, HDF5FilePlugin
 
 
 class Detector(DetectorBase):

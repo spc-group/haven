@@ -1,9 +1,5 @@
 import pytest
-from ophyd import DetectorBase
-from ophyd_async.core import StandardDetector, StandardReadable
-from bluesky.protocols import Readable
 
-from haven import load_config
 from haven.devices.detectors.aravis import AravisDetector
 
 PREFIX = "255idgigeA:"
@@ -29,10 +25,10 @@ async def test_camera_trigger_source_choices(camera):
     >     data_type: NotConnected: ca://25idcARV4:cam1:NDDataType_RBV
     > hdf: NotConnected:
     >     data_type: NotConnected: ca://25idcARV4:HDF1:NDDataType_RBV
-    
+
     """
     desc = await camera.drv.trigger_source.describe()
-    choices = desc['s255id-gige-A-drv-trigger_source']['choices']
+    choices = desc["s255id-gige-A-drv-trigger_source"]["choices"]
     assert "Software" in choices
     assert "Line1" in choices
 
@@ -48,14 +44,14 @@ async def test_camera_signals(camera):
     >     data_type: NotConnected: ca://25idcARV4:cam1:NDDataType_RBV
     > hdf: NotConnected:
     >     data_type: NotConnected: ca://25idcARV4:HDF1:NDDataType_RBV
-    
+
     """
     desc = await camera.drv.data_type.describe()
-    cam_source = desc['s255id-gige-A-drv-data_type']['source']
+    cam_source = desc["s255id-gige-A-drv-data_type"]["source"]
     assert cam_source == "mock+ca://255idgigeA:cam1:DataType_RBV"
     # Check HDF signal source
     desc = await camera.hdf.data_type.describe()
-    hdf_source = desc['s255id-gige-A-hdf-data_type']['source']
+    hdf_source = desc["s255id-gige-A-hdf-data_type"]["source"]
     assert hdf_source == "mock+ca://255idgigeA:HDF1:DataType_RBV"
 
 

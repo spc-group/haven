@@ -1,3 +1,5 @@
+from .detectors.aravis import AravisDetector  # noqa: F401
+from .detectors.sim_detector import SimDetector  # noqa: F401
 from .ion_chamber import IonChamber  # noqa: F401
 from .monochromator import Monochromator  # noqa: F401
 from .motor import HavenMotor, Motor  # noqa: F401

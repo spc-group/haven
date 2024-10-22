@@ -1,11 +1,8 @@
-from typing import Mapping
 from pathlib import Path
-import warnings
 
-from ophyd_async.core import Device, YMDPathProvider, UUIDFilenameProvider
+from ophyd_async.core import UUIDFilenameProvider, YMDPathProvider
 
 from ..._iconfig import load_config
-from ... import exceptions
 
 
 class HavenDetector:

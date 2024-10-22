@@ -11,6 +11,7 @@ from collections import OrderedDict
 from typing import Optional, Sequence
 
 import numpy as np
+
 # from apstools.utils import cleanupText
 from ophyd import Component as Cpt
 from ophyd import Device, Kind
@@ -125,7 +126,7 @@ class ROIMixin(Device):
         self._original_name = self.name
         # Append the ROI label to the signal name
         label = str(self.label.get()).strip("~")
-        label = label.encode('ascii', 'replace').decode('ascii')
+        label = label.encode("ascii", "replace").decode("ascii")
         old_name_base = self.name
         new_name_base = f"{self.name}_{label}"
 

@@ -18,6 +18,8 @@ from .devices.aerotech import AerotechStage
 from .devices.aps import ApsMachine
 from .devices.area_detector import make_area_detector
 from .devices.beamline_manager import BeamlineManager
+from .devices.detectors.aravis import AravisDetector
+from .devices.detectors.sim_detector import SimDetector
 from .devices.dxp import make_dxp_device
 from .devices.energy_positioner import EnergyPositioner
 from .devices.heater import CapillaryHeater
@@ -33,8 +35,6 @@ from .devices.stage import XYStage
 from .devices.table import Table
 from .devices.xia_pfcu import PFCUFilterBank
 from .devices.xspress import make_xspress_device
-from .devices.detectors.sim_detector import SimDetector
-from .devices.detectors.aravis import AravisDetector
 from .exceptions import InvalidConfiguration
 
 log = logging.getLogger(__name__)
@@ -152,8 +152,7 @@ class Instrument:
             param_missing = key not in params
             var_kinds = [sig_param.VAR_KEYWORD, sig_param.VAR_POSITIONAL]
             param_required = (
-                sig_param.default is sig_param.empty
-                and sig_param.kind not in var_kinds
+                sig_param.default is sig_param.empty and sig_param.kind not in var_kinds
             )
             if param_missing and param_required:
                 raise InvalidConfiguration(
