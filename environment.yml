@@ -17,9 +17,9 @@ variables:
 
 channels:
   - conda-forge
-  - defaults
   - aps-anl-tag
   - nsls2forge
+  - nodefaults
 
 dependencies:
   # --- Python core packages
