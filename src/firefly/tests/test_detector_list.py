@@ -1,21 +1,27 @@
+import pytest
 from qtpy.QtCore import Qt
 
 from firefly.detector_list import DetectorListView
 
 
-def test_detector_model(ffapp, dxp):
+@pytest.fixture()
+async def view(qtbot, sim_registry, dxp):
     view = DetectorListView()
+    qtbot.addWidget(view)
+    await view.update_devices(sim_registry)
+    return view
+
+
+def test_detector_model(view):
     assert hasattr(view, "detector_model")
     assert view.detector_model.item(0).text() == "vortex_me4"
 
 
-def test_selected_detectors(ffapp, dxp, qtbot):
+def test_selected_detectors(qtbot, view):
     """Do we get the list of detectors after they have been selected?"""
     # No detectors selected, so empty list
-    view = DetectorListView()
     assert view.selected_detectors() == []
     # Select a detector and see if the selection updates
-    selection_model = view.selectionModel()
     item = view.detector_model.item(0)
     assert item is not None
     rect = view.visualRect(item.index())

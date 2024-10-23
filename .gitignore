@@ -1,8 +1,10 @@
 # Automatic MacOS file
 .DS_Store
 
-# Emacs autosaves
+# Emacs and vim autosaves
 *~
+*.swp
+*.swo
 
 prof/
 

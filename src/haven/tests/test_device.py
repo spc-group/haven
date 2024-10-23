@@ -1,31 +1,38 @@
 import pytest
 from ophyd import EpicsMotor, sim
+from ophyd_async.epics.motor import Motor
 
-from haven.instrument.device import make_device
-from haven.instrument.load_instrument import load_simulated_devices
-from haven.instrument.motor import HavenMotor
-
-
-def test_load_simulated_devices(sim_registry):
-    load_simulated_devices()
-    # Check motors
-    motor = sim_registry.find(name="sim_motor")
-    # Check detectors
-    detector = sim_registry.find(name="sim_detector")
+from haven.device import connect_devices, make_device
+from haven.devices.motor import HavenMotor
 
 
 @pytest.mark.asyncio
-async def test_load_fake_device(sim_registry):
+async def test_connect_devices():
+    motor = Motor("255idc:m1", name="motor")
+    new_motors = await connect_devices([motor], mock=True)
+    assert len(new_motors) == 1
+    assert new_motors[0] is motor
+
+
+@pytest.mark.asyncio
+async def test_connect_devices_with_registry(sim_registry):
+    motor = Motor("255idc:m1", name="motor")
+    await connect_devices([motor], mock=True, labels={"motors"}, registry=sim_registry)
+    # Check that we can find our devices in the registry
+    sim_registry.find(name="motor")
+    sim_registry.find(label="motors")
+
+
+def test_load_fake_device(sim_registry):
     """Does ``make_device`` create a fake device if beamline is disconnected?"""
-    motor = await make_device(HavenMotor, name="real_motor")
+    motor = make_device(HavenMotor, name="real_motor")
     assert isinstance(motor.user_readback, sim.SynSignal)
 
 
-@pytest.mark.asyncio
-async def test_accept_fake_device(sim_registry):
+def test_accept_fake_device(sim_registry):
     """Does ``make_device`` use a specific fake device if beamline is disconnected?"""
     FakeMotor = sim.make_fake_device(EpicsMotor)
-    motor = await make_device(HavenMotor, name="real_motor", FakeDeviceClass=FakeMotor)
+    motor = make_device(HavenMotor, name="real_motor", FakeDeviceClass=FakeMotor)
     assert isinstance(motor, FakeMotor)
 
 

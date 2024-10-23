@@ -2,11 +2,12 @@ import logging
 
 import qtawesome as qta
 from pydm.widgets import PyDMByteIndicator, PyDMPushButton
+from qtpy.QtCore import Signal
 from qtpy.QtWidgets import QHBoxLayout, QSizePolicy
 
-from firefly import FireflyApplication, display
-from haven import registry
-from haven.instrument.xia_pfcu import ShutterStates
+from firefly import display
+from haven import beamline
+from haven.devices.shutter import ShutterState
 
 log = logging.getLogger(__name__)
 
@@ -22,6 +23,7 @@ def name_to_title(name: str):
 
 class StatusDisplay(display.FireflyDisplay):
     caqtdm_ui_file: str = "/net/s25data/xorApps/ui/25id_main.ui"
+    bss_window_requested = Signal()
 
     def add_shutter_widgets(self):
         form = self.ui.beamline_layout
@@ -29,22 +31,21 @@ class StatusDisplay(display.FireflyDisplay):
         form.removeRow(self.ui.shutter_A_layout)
         form.removeRow(self.ui.shutter_CD_layout)
         # Add widgets for shutters
-        shutters = registry.findall("shutters", allow_none=True)
+        shutters = beamline.registry.findall("shutters", allow_none=True)
         row_idx = 4
         on_color = self.ui.shutter_permit_indicator.onColor
         off_color = self.ui.shutter_permit_indicator.offColor
         for shutter in shutters[::-1]:
             # Add a layout with the buttons
             layout = QHBoxLayout()
-            name = shutter.attr_name if shutter.attr_name != "" else shutter.name
-            label = name_to_title(name) + ":"
+            label = name_to_title(shutter.name) + ":"
             form.insertRow(row_idx, label, layout)
             # Indicator to show if the shutter is open
             indicator = PyDMByteIndicator(
                 parent=self, init_channel=f"haven://{shutter.name}.readback"
             )
             # indicator.showLabels = False
-            indicator.labels = ["Closed", "Half Open"]
+            indicator.labels = ["Closed", "Fault"]
             indicator.numBits = 2
             indicator.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
             # Switch colors because open is 0 which should means "good"
@@ -56,25 +57,28 @@ class StatusDisplay(display.FireflyDisplay):
                 parent=self,
                 label="Open",
                 icon=qta.icon("mdi.window-shutter-open"),
-                pressValue=ShutterStates.OPEN,
+                pressValue=ShutterState.OPEN,
                 relative=False,
                 init_channel=f"haven://{shutter.name}.setpoint",
             )
+            print(f"{shutter.name} - {getattr(shutter, 'allow_open', True)=}")
+            open_btn.setEnabled(getattr(shutter, "allow_open", True))
             layout.addWidget(open_btn)
             # Button to close the shutter
             close_btn = PyDMPushButton(
                 parent=self,
                 label="Close",
                 icon=qta.icon("mdi.window-shutter"),
-                pressValue=ShutterStates.CLOSED,
+                pressValue=ShutterState.CLOSED,
                 relative=False,
                 init_channel=f"haven://{shutter.name}.setpoint",
             )
+            close_btn.setEnabled(getattr(shutter, "allow_close", True))
             layout.addWidget(close_btn)
 
     def customize_ui(self):
-        app = FireflyApplication.instance()
-        self.ui.bss_modify_button.clicked.connect(app.show_bss_window_action.trigger)
+        self.ui.bss_modify_button.clicked.connect(self.bss_window_requested.emit)
+        self.ui.bss_modify_button.setIcon(qta.icon("fa5s.calendar"))
         self.add_shutter_widgets()
 
     def ui_filename(self):

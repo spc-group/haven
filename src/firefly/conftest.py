@@ -1,29 +1,12 @@
-import asyncio
 import subprocess
 
 import psutil
 import pydm
 import pytest
-from qasync import DefaultQEventLoopPolicy, QEventLoop
+from ophyd.sim import make_fake_device
+from ophyd_async.core import wait_for_connection
 
-from firefly import FireflyApplication
-from firefly.main_window import FireflyMainWindow
-
-
-@pytest.fixture(scope="session")
-def qapp_cls():
-    return FireflyApplication
-
-
-# def pytest_configure(config):
-#     app = qt_api.QtWidgets.QApplication.instance()
-#     assert app is None
-#     app = FireflyApplication()
-#     app = qt_api.QtWidgets.QApplication.instance()
-#     assert isinstance(app, FireflyApplication)
-#     # # Create event loop for asyncio stuff
-#     # loop = asyncio.new_event_loop()
-#     # asyncio.set_event_loop(loop)
+from haven.devices.motor import HavenMotor, Motor
 
 
 def tiled_is_running(port, match_command=True):
@@ -78,57 +61,24 @@ qs_status = {
 }
 
 
-class FireflyQEventLoopPolicy(DefaultQEventLoopPolicy):
-    def new_event_loop(self):
-        return QEventLoop(FireflyApplication.instance())
+@pytest.fixture
+def sync_motors(sim_registry):
+    motor_names = ["sync_motor_1", "sync_motor_2"]
+    motors = []
+    for name in motor_names:
+        this_motor = make_fake_device(HavenMotor)(name=name, labels={"motors"})
+        motors.append(this_motor)
+        sim_registry.register(this_motor)
+    return motors
 
 
-@pytest.fixture()
-def event_loop_policy(request, ffapp):
-    """Make sure pytest-asyncio uses the QEventLoop."""
-    return FireflyQEventLoopPolicy()
-
-
-@pytest.fixture()
-def ffapp(pydm_ophyd_plugin, qapp_cls, qapp_args, pytestconfig):
-    # Get an instance of the application
-    # app = qt_api.QtWidgets.QApplication.instance()
-    app = qapp_cls.instance()
-    if app is None:
-        # New Application
-        global _ffapp_instance
-        app = qapp_cls(qapp_args)
-        # _ffapp_instance = app
-        name = pytestconfig.getini("qt_qapp_name")
-        app.setApplicationName(name)
-    # Make sure there's at least one Window, otherwise things get weird
-    if getattr(app, "_dummy_main_window", None) is None:
-        # Set up the actions and other boildplate stuff
-        app.setup_window_actions()
-        app.setup_runengine_actions()
-        app._dummy_main_window = FireflyMainWindow()
-    yield app
-    # Delete any windows that might have been created
-    for wndw in app.windows.values():
-        wndw.close()
-
-
-@pytest.fixture()
-def affapp(event_loop, ffapp):
-    # Prepare the event loop
-    asyncio.set_event_loop(event_loop)
-    # Sanity check to make sure a QApplication was not created by mistake
-    assert isinstance(ffapp, FireflyApplication)
-    # Yield the finalized application object
-    try:
-        yield ffapp
-    finally:
-        # Cancel remaining async tasks
-        pending = asyncio.all_tasks(event_loop)
-        event_loop.run_until_complete(asyncio.gather(*pending))
-        assert all(task.done() for task in pending), "Shutdown tasks not complete."
-        # if hasattr(app, "_queue_thread"):
-        #     app._queue_thread.quit()
-        #     app._queue_thread.wait(msecs=5000)
-        # del app
-        # gc.collect()
+@pytest.fixture
+async def async_motors(sim_registry):
+    motors = [
+        Motor(prefix="255idc:m1", name="async_motor_1"),
+        Motor(prefix="255idc:m2", name="async_motor_2"),
+    ]
+    await wait_for_connection(**{m.name: m.connect(mock=True) for m in motors})
+    for motor in motors:
+        sim_registry.register(motor)
+    return motors

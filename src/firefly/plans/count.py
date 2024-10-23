@@ -8,6 +8,12 @@ log = logging.getLogger()
 
 
 class CountDisplay(display.FireflyDisplay):
+
+    async def update_devices(self, registry):
+        """Set available components in the device list."""
+        await super().update_devices(registry)
+        await self.ui.detectors_list.update_devices(registry)
+
     def customize_ui(self):
         self.ui.run_button.clicked.connect(self.queue_plan)
 
@@ -21,11 +27,8 @@ class CountDisplay(display.FireflyDisplay):
 
         item = BPlan("count", delay=delay, num=num_readings, detectors=detectors)
         # Submit the item to the queueserver
-        from firefly.application import FireflyApplication
-
-        app = FireflyApplication.instance()
         log.info("Add ``count()`` plan to queue.")
-        app.add_queue_item(item)
+        self.queue_item_submitted.emit(item)
 
     def ui_filename(self):
         return "plans/count.ui"

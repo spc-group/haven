@@ -1,12 +1,35 @@
-from haven.instrument.xray_source import load_xray_sources
+import asyncio
+
+import pytest
+from ophyd_async.core import get_mock_put, set_mock_value
+
+from haven.devices.xray_source import BusyStatus, PlanarUndulator
 
 
-def test_load_xray_sources(sim_registry, beamline_connected):
-    load_xray_sources()
-    # Check that the undulator was added to the registry
-    dev = sim_registry.find(label="xray_sources")
-    assert dev.prefix == "ID255:"
-    assert dev.gap.pvname == "ID255:Gap"
+@pytest.fixture()
+async def undulator():
+    undulator = PlanarUndulator(prefix="PSS:255ID:", name="undulator")
+    await undulator.connect(mock=True)
+    return undulator
+
+
+async def test_set_energy(undulator):
+    # Set the energy
+    status = undulator.energy.set(5)
+    # Fake the done PV getting updated
+    set_mock_value(undulator.energy.done, BusyStatus.BUSY)
+    await asyncio.sleep(0.01)  # Let the event loop run
+    set_mock_value(undulator.energy.done, BusyStatus.DONE)
+    # Check that the signals got set properly
+    await status
+    assert await undulator.energy.setpoint.get_value() == 5
+
+
+async def test_stop_energy(undulator):
+    stop_mock = get_mock_put(undulator.stop_button)
+    assert not stop_mock.called
+    await undulator.energy.stop()
+    assert stop_mock.called
 
 
 # -----------------------------------------------------------------------------

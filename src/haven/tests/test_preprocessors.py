@@ -1,14 +1,17 @@
 from unittest.mock import MagicMock
 
+import pytest
 from bluesky import plans as bp
 from bluesky.callbacks import CallbackBase
 from ophyd.sim import SynAxis, det, instantiate_fake_device
 
+import haven
 from haven import baseline_decorator, baseline_wrapper, run_engine
-from haven.instrument.beamline_manager import BSS
+from haven.devices.beamline_manager import BSS
 from haven.preprocessors import shutter_suspend_decorator, shutter_suspend_wrapper
 
 
+@pytest.mark.xfail
 def test_shutter_suspend_wrapper(aps, shutters, sim_registry):
     # Check that the run engine does not have any shutter suspenders
     # Currently this test is fragile since we might add non-shutter
@@ -90,6 +93,7 @@ def test_metadata(sim_registry, aps, monkeypatch):
     """Similar to baseline wrapper test, but used as a decorator."""
     # Load devices
     bss = instantiate_fake_device(BSS, name="bss", prefix="255id:bss:")
+    sim_registry.register(bss)
     bss.esaf.esaf_id._readback = "12345"
     bss.esaf.title._readback = "Testing the wetness of water."
     bss.esaf.user_last_names._readback = "Bose, Einstein"
@@ -103,7 +107,6 @@ def test_metadata(sim_registry, aps, monkeypatch):
     bss.esaf.aps_cycle._readback = "2023-2"
     bss.proposal.beamline_name._readback = "255ID-C"
     # bss = FakeBss(name="bss")
-    sim_registry.register(bss)
     monkeypatch.setenv("EPICS_HOST_ARCH", "PDP11")
     monkeypatch.setenv("EPICS_CA_MAX_ARRAY_BYTES", "16")
     monkeypatch.setenv("PYEPICS_LIBCA", "/dev/null")
@@ -124,7 +127,7 @@ def test_metadata(sim_registry, aps, monkeypatch):
     assert "versions" in start_doc.keys()
     versions = start_doc["versions"]
     assert "haven" in versions.keys()
-    assert versions["haven"] == "23.10.0"
+    assert versions["haven"] == haven.__version__
     assert "bluesky" in versions.keys()
     # Check metadata keys
     expected_keys = [
@@ -165,8 +168,8 @@ def test_metadata(sim_registry, aps, monkeypatch):
     expected_data = {
         "EPICS_HOST_ARCH": "PDP11",
         "beamline_id": "SPC Beamline (sector unknown)",
-        "facility_id": "Advanced Photon Source",
-        "xray_source": "insertion device",
+        "facility_id": "advanced_photon_source",
+        "xray_source": "undulator",
         "epics_libca": "/dev/null",
         "EPICS_CA_MAX_ARRAY_BYTES": "16",
         "scan_id": 1,

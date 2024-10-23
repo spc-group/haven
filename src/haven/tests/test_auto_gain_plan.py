@@ -9,20 +9,19 @@ from haven import GainRecommender, auto_gain
 from haven.plans import auto_gain as auto_gain_module
 
 
-def test_plan_recommendations(sim_ion_chamber):
-    sim_ion_chamber.preamp.gain_level.set(18).wait()
+def test_plan_recommendations(ion_chamber):
     # Make a fake queue that accepts the second step
     queue = Queue()
-    queue.put({sim_ion_chamber.preamp.gain_level.name: 17})
+    queue.put({ion_chamber.preamp.gain_level.name: 12})
     queue.put(None)
     # Prepare the plan and make sure it generates messages
-    plan = auto_gain(dets=[sim_ion_chamber], queue=queue)
+    plan = auto_gain(ion_chambers=[ion_chamber], queue=queue)
     msgs = list(plan)
     # Make sure the plan sets the gain values properly
     set_msgs = [msg for msg in msgs if msg.command == "set"]
     assert len(set_msgs) == 2
-    assert set_msgs[0].args[0] == 18  # Starting point
-    assert set_msgs[1].args[0] == 17  # First adaptive point
+    assert set_msgs[0].args[0] == 13  # Starting point
+    assert set_msgs[1].args[0] == 12  # First adaptive point
     # Make sure the plan triggers the ion chamber
     trigger_msgs = [msg for msg in msgs if msg.command == "trigger"]
     assert len(trigger_msgs) == 2
@@ -32,14 +31,13 @@ def test_plan_recommendations(sim_ion_chamber):
     "prefer,target_volts",
     [("middle", 2.5), ("lower", 0.5), ("upper", 4.5)],
 )
-def test_plan_prefer_arg(sim_ion_chamber, monkeypatch, prefer, target_volts):
+async def test_plan_prefer_arg(ion_chamber, monkeypatch, prefer, target_volts):
     """Check that the *prefer* argument works properly."""
-    sim_ion_chamber.preamp.gain_level.set(18).wait()
     queue = Queue()
-    queue.put({sim_ion_chamber.preamp.gain_level.name: 17})
+    queue.put({ion_chamber.preamp.gain_level.name: 12})
     queue.put(None)
     monkeypatch.setattr(auto_gain_module, "GainRecommender", MagicMock())
-    plan = auto_gain(dets=[sim_ion_chamber], queue=queue, prefer=prefer)
+    plan = auto_gain(ion_chambers=[ion_chamber], queue=queue, prefer=prefer)
     msgs = list(plan)
     auto_gain_module.GainRecommender.assert_called_with(
         volts_min=0.5, volts_max=4.5, target_volts=target_volts

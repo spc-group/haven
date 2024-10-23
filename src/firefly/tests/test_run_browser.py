@@ -4,47 +4,59 @@ from unittest.mock import MagicMock
 import numpy as np
 import pytest
 from pyqtgraph import ImageItem, ImageView, PlotItem, PlotWidget
+from qtpy.QtWidgets import QFileDialog
 
 from firefly.run_browser import RunBrowserDisplay
 from firefly.run_client import DatabaseWorker
 
-# pytest.skip("Need to migrate the module to gemviz fork", allow_module_level=True)
-pytest.skip(
-    "There's some segmentation fault here that needs to be fixed",
-    allow_module_level=True,
-)
-
 
 @pytest.fixture()
-def display(affapp, catalog):
+async def display(qtbot, catalog, mocker):
+    mocker.patch(
+        "firefly.run_browser.ExportDialog.exec_", return_value=QFileDialog.Accepted
+    )
+    mocker.patch(
+        "firefly.run_browser.ExportDialog.selectedFiles",
+        return_value=["/net/s255data/export/test_file.nx"],
+    )
+    mocker.patch("firefly.run_client.DatabaseWorker.export_runs")
     display = RunBrowserDisplay(root_node=catalog)
+    qtbot.addWidget(display)
     display.clear_filters()
-    # Flush pending async coroutines
-    loop = asyncio.get_event_loop()
-    pending = asyncio.all_tasks(loop)
-    loop.run_until_complete(asyncio.gather(*pending))
-    assert all(task.done() for task in pending), "Init tasks not complete."
-    # Run the test
-    # yield display
-    try:
-        yield display
-    finally:
-        # Cancel remaining tasks
-        loop = asyncio.get_event_loop()
-        pending = asyncio.all_tasks(loop)
-        loop.run_until_complete(asyncio.gather(*pending))
-        assert all(task.done() for task in pending), "Shutdown tasks not complete."
-
-
-def test_run_viewer_action(ffapp, monkeypatch):
-    monkeypatch.setattr(ffapp, "create_window", MagicMock())
-    assert hasattr(ffapp, "show_run_browser_action")
-    ffapp.show_run_browser_action.trigger()
-    assert isinstance(ffapp.windows["run_browser"], MagicMock)
+    # Wait for the initial database load to process
+    await display._running_db_tasks["init_load_runs"]
+    await display._running_db_tasks["update_combobox_items"]
+    return display
 
 
 @pytest.mark.asyncio
-async def test_load_runs(display):
+async def test_db_task(display):
+    async def test_coro():
+        return 15
+
+    result = await display.db_task(test_coro())
+    assert result == 15
+
+
+@pytest.mark.asyncio
+async def test_db_task_interruption(display):
+    async def test_coro(sleep_time):
+        await asyncio.sleep(sleep_time)
+        return sleep_time
+
+    # Create an existing task that will be cancelled
+    task_1 = display.db_task(test_coro(1.0), name="testing")
+    # Now execute another task
+    result = await display.db_task(test_coro(0.01), name="testing")
+    assert result == 0.01
+    # Check that the first one was cancelled
+    with pytest.raises(asyncio.exceptions.CancelledError):
+        await task_1
+    assert task_1.done()
+    assert task_1.cancelled()
+
+
+def test_load_runs(display):
     assert display.runs_model.rowCount() > 0
     assert display.ui.runs_total_label.text() == str(display.runs_model.rowCount())
 
@@ -52,7 +64,6 @@ async def test_load_runs(display):
 @pytest.mark.asyncio
 async def test_update_selected_runs(display):
     # Change the proposal item
-    selection_model = display.ui.run_tableview.selectionModel()
     item = display.runs_model.item(0, 1)
     assert item is not None
     display.ui.run_tableview.selectRow(0)
@@ -68,7 +79,6 @@ async def test_metadata(display):
     display.ui.run_tableview.selectRow(0)
     await display.update_selected_runs()
     # Check that the metadata was set properly in the Metadata tab
-    metadata_doc = display.ui.metadata_textedit.document()
     text = display.ui.metadata_textedit.document().toPlainText()
     assert "xafs_scan" in text
 
@@ -85,7 +95,6 @@ async def test_1d_plot_signals(catalog, display):
     await display.update_selected_runs()
     # Check signals in checkboxes
     for combobox in [
-        display.ui.multi_signal_x_combobox,
         display.ui.signal_y_combobox,
         display.ui.signal_r_combobox,
         display.ui.signal_x_combobox,
@@ -95,6 +104,7 @@ async def test_1d_plot_signals(catalog, display):
         ), f"energy_energy signal not in {combobox.objectName()}."
 
 
+# Warns: Task was destroyed but it is pending!
 @pytest.mark.asyncio
 async def test_1d_plot_signal_memory(catalog, display):
     """Do we remember the signals that were previously selected."""
@@ -116,15 +126,16 @@ async def test_1d_plot_signal_memory(catalog, display):
     assert cb.currentText() == "energy_id_energy_readback"
 
 
+# Warns: Task was destroyed but it is pending!
 @pytest.mark.asyncio
-async def test_1d_hinted_signals(catalog, display, ffapp):
+async def test_1d_hinted_signals(catalog, display):
     display.ui.plot_1d_hints_checkbox.setChecked(True)
     # Check that the 1D plot was created
     plot_widget = display.ui.plot_1d_view
     plot_item = display.plot_1d_item
     assert isinstance(plot_widget, PlotWidget)
     assert isinstance(plot_item, PlotItem)
-    # Update the list of runs and see if the controsl get updated
+    # Update the list of runs and see if the controls get updated
     display.db.selected_runs = [run async for run in catalog.values()]
     await display.update_1d_signals()
     return
@@ -139,7 +150,7 @@ async def test_1d_hinted_signals(catalog, display, ffapp):
 
 
 @pytest.mark.asyncio
-async def test_update_1d_plot(catalog, display, ffapp):
+async def test_update_1d_plot(catalog, display):
     # Set up some fake data
     run = [run async for run in catalog.values()][0]
     display.db.selected_runs = [run]
@@ -171,6 +182,7 @@ async def test_update_1d_plot(catalog, display, ffapp):
     np.testing.assert_almost_equal(ydata, expected_ydata)
 
 
+# Warns: Task was destroyed but it is pending!
 @pytest.mark.asyncio
 async def test_2d_plot_signals(catalog, display):
     # Check that the 1D plot was created
@@ -254,31 +266,103 @@ async def test_distinct_fields(catalog, display):
         assert key in distinct_fields.keys()
 
 
+def test_busy_hints_run_widgets(display):
+    """Check that the display widgets get disabled during DB hits."""
+    with display.busy_hints(run_widgets=True, run_table=False):
+        # Are widgets disabled in the context block?
+        assert not display.ui.detail_tabwidget.isEnabled()
+    # Are widgets re-enabled outside the context block?
+    assert display.ui.detail_tabwidget.isEnabled()
+
+
+def test_busy_hints_run_table(display):
+    """Check that the all_runs table view gets disabled during DB hits."""
+    with display.busy_hints(run_table=True, run_widgets=False):
+        # Are widgets disabled in the context block?
+        assert not display.ui.run_tableview.isEnabled()
+    # Are widgets re-enabled outside the context block?
+    assert display.ui.run_tableview.isEnabled()
+
+
+def test_busy_hints_filters(display):
+    """Check that the all_runs table view gets disabled during DB hits."""
+    with display.busy_hints(run_table=False, run_widgets=False, filter_widgets=True):
+        # Are widgets disabled in the context block?
+        assert not display.ui.filters_widget.isEnabled()
+    # Are widgets re-enabled outside the context block?
+    assert display.ui.filters_widget.isEnabled()
+
+
+def test_busy_hints_status(display, mocker):
+    """Check that any busy_hints displays the message "Loading…"."""
+    spy = mocker.spy(display, "show_message")
+    with display.busy_hints(run_table=True, run_widgets=False):
+        # Are widgets disabled in the context block?
+        assert not display.ui.run_tableview.isEnabled()
+        assert spy.call_count == 1
+    # Are widgets re-enabled outside the context block?
+    assert spy.call_count == 2
+    assert display.ui.run_tableview.isEnabled()
+
+
+def test_busy_hints_multiple(display):
+    """Check that multiple busy hints can co-exist."""
+    # Next the busy_hints context to mimic multiple async calls
+    with display.busy_hints(run_widgets=True):
+        # Are widgets disabled in the outer block?
+        assert not display.ui.detail_tabwidget.isEnabled()
+        with display.busy_hints(run_widgets=True):
+            # Are widgets disabled in the inner block?
+            assert not display.ui.detail_tabwidget.isEnabled()
+        # Are widgets still disabled in the outer block?
+        assert not display.ui.detail_tabwidget.isEnabled()
+    # Are widgets re-enabled outside the context block?
+    assert display.ui.detail_tabwidget.isEnabled()
+
+
 @pytest.mark.asyncio
-async def test_db_task(display):
-    async def test_coro():
-        return 15
-
-    result = await display.db_task(test_coro())
-    assert result == 15
+async def test_update_combobox_items(display):
+    """Check that the comboboxes get the distinct filter fields."""
+    assert display.ui.filter_plan_combobox.count() > 0
 
 
 @pytest.mark.asyncio
-async def test_db_task_interruption(display, event_loop):
-    async def test_coro(sleep_time):
-        await asyncio.sleep(sleep_time)
-        return sleep_time
+async def test_export_button_enabled(catalog, display):
+    assert not display.export_button.isEnabled()
+    # Update the list with 1 run and see if the control gets enabled
+    display.selected_runs = [run async for run in catalog.values()]
+    display.selected_runs = display.selected_runs[:1]
+    display.update_export_button()
+    assert display.export_button.isEnabled()
+    # Update the list with multiple runs and see if the control gets disabled
+    display.selected_runs = [run async for run in catalog.values()]
+    display.update_export_button()
+    assert not display.export_button.isEnabled()
 
-    # Create an existing task that will be cancelled
-    task_1 = display.db_task(test_coro(1.0), name="testing")
-    # Now execute another task
-    result = await display.db_task(test_coro(0.01), name="testing")
-    assert result == 0.01
-    # Check that the first one was cancelled
-    with pytest.raises(asyncio.exceptions.CancelledError):
-        await task_1
-    assert task_1.done()
-    assert task_1.cancelled()
+
+@pytest.mark.asyncio
+async def test_export_button_clicked(catalog, display, mocker, qtbot):
+    # Set up a run to be tested against
+    run = MagicMock()
+    run.formats.return_value = [
+        "application/json",
+        "application/x-hdf5",
+        "application/x-nexus",
+    ]
+    display.selected_runs = [run]
+    display.update_export_button()
+    # Clicking the button should open a file dialog
+    await display.export_runs()
+    assert display.export_dialog.exec_.called
+    assert display.export_dialog.selectedFiles.called
+    # Check that file filter names are set correctly
+    # (assumes application/json is available on every machine)
+    assert "JSON document (*.json)" in display.export_dialog.nameFilters()
+    # Check that the file was saved
+    assert display.db.export_runs.called
+    files = display.export_dialog.selectedFiles.return_value
+    assert display.db.export_runs.call_args.args == (files,)
+    assert display.db.export_runs.call_args.kwargs["formats"] == ["application/json"]
 
 
 # -----------------------------------------------------------------------------

@@ -24,7 +24,6 @@ def sim_motor(sim_registry):
     motor = FakeMotor("255idVME:m1", name="motor")
     motor.user_setpoint.sim_set_limits((0, 1000))
     sim_registry.register(motor)
-
     return motor
 
 
@@ -60,7 +59,7 @@ def test_new_value(sim_motor, ophyd_connection, qtbot):
 #     assert sim_motor.user_setpoint.get(use_monitor=False) == 87.0
 
 
-def test_missing_device(sim_motor, pydm_ophyd_plugin, qtbot, ffapp):
+def test_missing_device(sim_motor, pydm_ophyd_plugin):
     """See if the connection responds properly if the device is not there."""
     connection_slot = MagicMock()
     channel = PyDMChannel(
@@ -141,18 +140,18 @@ def test_missing_device(sim_motor, pydm_ophyd_plugin, qtbot, ffapp):
 #     }
 
 
-def test_widget_signals(sim_motor, ffapp, qtbot):
+def test_widget_signals(sim_motor, qapp, qtbot):
     """Does this work with a real widget in a real window."""
     sim_motor.user_setpoint.set(5.15)
     sim_motor.user_setpoint._metadata["precision"] = 3
     window = PyDMMainWindow()
     widget = PyDMLineEdit(parent=window, init_channel="haven://motor.user_setpoint")
-    ffapp.processEvents()
+    qapp.processEvents()
     time.sleep(0.05)
     assert widget.text() == "5.150"
     # Now check that we can set the widget text and have it update the ophyd device
     widget.send_value_signal[float].emit(4.9)
-    ffapp.processEvents()
+    qapp.processEvents()
     time.sleep(0.05)
     assert sim_motor.user_setpoint.get(use_monitor=False) == 4.9
 

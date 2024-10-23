@@ -1,12 +1,37 @@
+area_detector_root_path = "/tmp"
+
+[beamline]
+# General name for the beamline, used for metadata.
+name = "SPC Beamline (sector unknown)"
+# Should we expect the hardware devices to be available.
+#   If not, we will provide mocked devices.
+hardware_is_present = false
+
+[[ synchrotron ]]
+name = "advanced_photon_source"
+
+[database.databroker]
+
+catalog = "bluesky"
+
+[xray_source]
+
+type = "undulator"
+prefix = "ID255ds:"
+
 [bss]
 
 prefix = "255idc:bss"
 beamline = "255-ID-C"
 
-[xray_source]
 
-type = "undulator"
-prefix = "ID255:"
+#####################
+# Queueserver
+#####################
+
+# This section describes how to connect to the queueserver. It does
+# not generate any devices, but is intended to be read by the Firefly
+# GUI application to determine how to interact with the queue.
 
 [queueserver]
 kafka_topic = "s255idc_queueserver"
@@ -14,198 +39,271 @@ control_host = "localhost"
 control_port = "60615"
 info_host = "localhost"
 info_port = "60625"
+redis_addr = "localhost:6379"
 
 [database.tiled]
 
 uri = "http://localhost:8337/"
 entry_node = "255id_testing"
 
-[shutter]
-prefix = "PSS:99ID"
+################
+# PSS Shutters #
+################
+#
+# Each PSS shutter has optional arguments *allow_open* and
+# *allow_close*. These determine whether Ophyd will allow the shutter
+# to open and close, but has no relationship to EPICS permissions.
 
-[shutter.front_end_shutter]
+[[ pss_shutter ]]
+name = "front_end_shutter"
+prefix = "S255ID-PSS:FES:"
+allow_close = false
+# allow_open = true  # Default
 
-hutch = "A"
-# open_pv = "PSS:99ID:FES_OPEN_EPICS.VAL"
-# close_pv = "PSS:99ID:FES_CLOSE_EPICS.VAL"
-# status_pv = "PSS:99ID:A_BEAM_PRESENT"
-
-[shutter.hutch_shutter]
-
-hutch = "C"
-# open_pv = "PSS:99ID:SCS_OPEN_EPICS.VAL"
-# close_pv = "PSS:99ID:SCS_CLOSE_EPICS.VAL"
-# status_pv = "PSS:25ID:C_BEAM_PRESENT"
-
-[undulator]
-
-ioc = "id_ioc"
-
-[monochromator]
-
-ioc = "mono_ioc"
-ioc_branch = "UP"  # For caQtDM macros
+[[ pss_shutter ]]
+name = "hutch_shutter"
+prefix = "S255ID-PSS:SCS:"
+# allow_open = true  # Default
+# allow_close = true  # Default
 
 
-[ion_chamber]
+# Energy Positioner
+# =================
 
-[ion_chamber.scaler]
-prefix = "scaler_ioc"
-channels = [2]
+[[ energy ]]
+monochromator_prefix = "mono_ioc:"
+undulator_prefix = "id_ioc:"
 
-[ion_chamber.preamp]
-prefix = "preamp_ioc"
 
-[ion_chamber.voltmeter]
-prefix = "255idc:LabjackT7_"  # Don't include the labjack number
+# Ion chambers
+# ============
+# 
+# Each ion chamber is listed in a section starting with
+#   [[ ion_chamber ]]
+# 
+# The *name* parameter can be omitted, in which case the name will be
+# updated based on the .DESC PV for the scaler channel.
+
+[[ ion_chamber ]]
+scaler_prefix = "255idcVME:3820:"
+scaler_channel = 2
+preamp_prefix = "255idc:SR03:"
+voltmeter_prefix = "255idc:LabJackT7_1:"
+voltmeter_channel = 1
+# From V2F100: Fmax / Vmax
+counts_per_volt_second = 10e6
+name = "I0"
+
+
+# Scalers
+# =======
+# 
+# These definitions are not for using ion chambers, but for if the
+# scaler is needed as an independent device. The ion chamber
+# defintions include a scaler channel.
+
+[[ scaler ]]
+name = "scaler_1"
+prefix = "255idcVME:3820:"
+num_channels = 32
+
 
 # Motors
 # ======
 # 
 # Add a new section for each IOC (or IOC prefix) that has motors
-# matching the format {prefix}:m1. The heading of the subsection
-# ("VME_crate" in the example below) is a human-readable name that
-# will become a label on the Ophyd Device. *num_motors* determines how
-# many motors will be read. The example below will load three motors
-# with PVs: "vme_crate_ioc:m1", "vme_crate_ioc:m2", and
-# "vme_crate_ioc:m3".
+# matching the format {prefix}:m1. *num_motors* determines how many
+# motors will be read. The example below will load three motors with
+# PVs: "vme_crate_ioc:m1", "vme_crate_ioc:m2", and "vme_crate_ioc:m3".
+#
+# By default, the names of the motors are taken from the motor's .DESC
+# field. This can be disabled by setting ``auto_name = false``.
 
-[motor.VME_crate]
-prefix = "255idVME"
+[[ motors ]]
+prefix = "255idVME:"
 num_motors = 3
+# auto_name = true
 
-# Keys for camera definitions must begin with "cam" (e.g. "camA", "camB")
-[camera.camA]
+[[ motor ]]
+# Individual motors can be created as well.
+prefix = "255idcVME:m1"
+# name = ""
+# labels=["motors"]
+# auto_name = None
 
-name = "s25id-gige-A"
-description = "GigE Vision A"
-prefix = "255idgigeA"
 
-[aerotech_stage.aerotech]
+# Sample stages
+# =============
 
-prefix = "255idc"
-delay_prefix = "255idc:DG645"
-pv_vert = ":m1"
-pv_horiz = ":m2"
+[[ xy_stage ]]
+prefix = "255idcVME:"
+pv_vert = "m13"
+pv_horiz = "m14"
 
-[power_supply.NHQ01]
+# Aerotech controller support disabled until new controllers are ready
+# [aerotech_stage.aerotech]
+# prefix = "255idc"
+# delay_prefix = "255idc:DG645"
+# pv_vert = ":m1"
+# pv_horiz = ":m2"
 
+
+# External high-voltage power supplies
+# ====================================
+
+[[ power_supply ]]
+# An NHQ203M power supply
+name = "NHQ01"
 prefix = "ps_ioc:NHQ01"
-n_channels = 2
+ch_num = 1
 
-[slits.KB_slits]
 
+# Slits
+# =====
+
+[[ blade_slits ]]
+# A set of 4 slits, two for each direction
+name = "KB_slits"
 prefix = "vme_crate_ioc:KB"
-device_class = "BladeSlits"
 
-[slits.whitebeam_slits]
-# A single rotating aperture slit, like the 25-ID white/pinkbeam slits
+
+[[ aperture_slits ]]
+# A single rotating aperture slit, like the 25-ID whitebeam slits
+name = "whitebeam_slits"
 prefix = "255ida:slits:US:"
-device_class = "ApertureSlits"
 pitch_motor = "m33"
 yaw_motor = "m34"
 horizontal_motor = "m35"
 diagonal_motor = "m36"
 
-# A bendable mirror, like the long KB at 25-ID-C
-[kb_mirrors.LongKB_Cdn]
-prefix = "255idcVME:LongKB_Cdn:"
-horiz_upstream_motor = "m33"
-horiz_downstream_motor = "m34"
-horiz_upstream_bender = "m21"
-horiz_downstream_bender = "m22"
-vert_upstream_motor = "m46"
-vert_downstream_motor = "m47"
-vert_upstream_bender = "m56"
-vert_downstream_bender = "m57"
 
-# A non-bendable mirror, like the KB at 25-ID-C
-[kb_mirrors.KB]
+# KB Mirrors
+# ==========
+#
+# A combined set of vertical and horizontal KB mirrors. Optionally,
+# bender motors can also be given.
+
+[[ kb_mirrors ]]
+name = "kb_upstream"
 prefix = "255idcVME:KB:"
-horiz_upstream_motor = "m35"
-horiz_downstream_motor = "m36"
-vert_upstream_motor = "m48"
-vert_downstream_motor = "m49"
+horiz_upstream_motor = "255idcVME:KB:m35"
+horiz_downstream_motor = "255idcVME:KB:m36"
+vert_upstream_motor = "255idcVME:KB:m48"
+vert_downstream_motor = "255idcVME:KB:m49"
+# # Optional bender motors
+# horiz_upstream_bender: str = "255idcVME:KB:m52",
+# horiz_downstream_bender: str = "255idcVME:KB:m53",
+# vert_upstream_bender: str = "255idcVME:KB:m61",
+# vert_downstream_bender: str = "255idcVME:KB:m62",
 
-# A single bounch, high heat load mirror
-[mirrors.ORM1]
+
+# High-heat-load mirrors
+# ======================
+#
+# A single-bounce mirror designed for white-beam. Optionally, also
+# bendable with a single motor.
+
+[[ high_heat_load_mirror ]]
+name = "ORM1"
 prefix = "25ida:ORM1:"
-device_class = "HighHeatLoadMirror"
 bendable = false
 
-[mirrors.ORM2]
-
+[[ high_heat_load_mirror ]]
+name = "ORM2"
 prefix = "25ida:ORM2:"
-device_class = "HighHeatLoadMirror"
 bendable = true
 
-# An optical table with two vertical motors
-[table.downstream_table]
-prefix = "255idcVME:"
-transforms = "table_ds_trans:"
-pseudo_motors = "table_ds:"
-upstream_motor = "m21"
-downstream_motor = "m22"
 
+# Table
+# =====
+# An optical table with a specific configuration of motors
+
+[[ table ]]
+name = "downstream_table"
+# # Optional, either will use vertical motor, or separate upstream/downstream
+# vertical_prefix = "255idcVME:m24"
+# horizontal_prefix = "255idcVME:m23"
+# upstream_motor_prefix = "255idcVME:m21"
+# downstream_motor_prefix = "255idcVME:m22"
+# pseudo_motor_prefix = "255idcVME:table_ds:"
+# transformprefix = "255idcVME:table_ds_trans:"
+
+[[ table ]]
 # An optical table with one vertical motor and one horizontal motor
-[table.upstream_table]
-prefix = "255idcVME:"
-vertical_motor = "m26"
-horizontal_motor = "m25"
+vertical_prefix = "255idcVME:m26"
+horizontal_prefix = "255idcVME:m25"
 
-[area_detector.sim_det]
 
-prefix = "255idSimDet"
+# Area detectors
+# ==============
+#
+# Area detectors includes gigE vision cameras.
+
+[[ area_detector ]]
+name = "sim_det"
+prefix = "255idSimDet:"
 device_class = "SimDetector"
 
-[lerix.lerix.rowland]
+# [lerix.lerix.rowland]
 
-x_motor_pv = "255idVME:m1"
-y_motor_pv = "255idVME:m2"
-z_motor_pv = "255idVME:m3"
-z1_motor_pv = "255idVME:m4"
+# x_motor_pv = "255idVME:m1"
+# y_motor_pv = "255idVME:m2"
+# z_motor_pv = "255idVME:m3"
+# z1_motor_pv = "255idVME:m4"
 
-[heater.capillary_heater]
 
-prefix = "255idptc10"
-device_class = "CapillaryHeater"
+# Heaters and Furnaces
+# ====================
 
-[robot.A]
+[[ capillary_heater ]]
+name = "capillary_heater"
+prefix = "255idptc10:"
+
+
+# Robots
+# ======
+
+[[ robot ]]
+name="austin"
 prefix = "255idAustin"
 
-# Managed IOC control PVs
-[beamline_manager]
 
+# Managed IOC control PVs
+# =======================
+
+[[ beamline_manager ]]
 name = "GLaDOS"
 prefix = "255idc:glados:"
-beamline = "25-ID-C"
+iocs = {ioc255idb = "ioc255idb:", ioc255idc = "ioc255idc:"}
 
-[beamline_manager.iocs]
-ioc255idb = "ioc255idb:"
-ioc255idc = "ioc255idc:"
 
-[fluorescence_detector]
+# Fluorescence Detectors
+# ======================
 
-[dxp.vortex_me4]
-
-prefix = "vortex_me4"
+[[ dxp ]]
+name = "vortex_me4"
+prefix = "vortex_me4:"
 num_elements = 4
 
-[dxp.canberra_Ge7]
-
-prefix = "20xmap8"
+[[ dxp ]]
+name = "canberra_Ge7"
+prefix = "20xmap8:"
 num_elements = 4
 
-[xspress.vortex_me4_xsp]
-
-prefix = "vortex_me4_xsp"
+[[ xspress ]]
+name = "vortex_me4_xsp"
+prefix = "vortex_me4_xsp:"
 num_elements = 4
 
-[pfcu4.filter_bank0]
 
+# Filter boxes
+# ============
+
+[[ pfcu4 ]]
+name = "filter_bank0"
 prefix = "255idc:pfcu0:"
 
-[pfcu4.filter_bank1]
-
+[[ pfcu4 ]]
+name = "filter_bank1"
 prefix = "255idc:pfcu1:"
 shutters = [[3, 4]]

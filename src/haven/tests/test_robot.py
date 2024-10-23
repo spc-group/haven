@@ -1,35 +1,12 @@
-import pytest
-from ophydregistry.exceptions import ComponentNotFound
-
-from haven.instrument import Robot, load_robot
+from haven.devices import Robot
 
 
-def test_robot():
+def test_robot_components():
     robot = Robot("25idAustin", name="robot")
     # Check PVs are correct
     assert robot.i.user_readback.pvname == "25idAustin:i.RBV"
     assert robot.samples.sample8.present.pvname == "25idAustin:sample8:present"
     assert robot.samples.sample8.rz.pvname == "25idAustin:sample8:rz"
-
-
-def test_load_robot(sim_registry):
-    load_robot()
-    # Test the robot info is extracted properly
-    rbt = sim_registry.find(label="robots")
-    assert rbt.name == "A"
-    assert rbt.prefix == "255idAustin"
-
-
-def test_load_no_robot(sim_registry):
-    load_robot(config={})
-
-    # Test the robot is not in config
-    result = pytest.raises(ComponentNotFound, sim_registry.findall, label="robots")
-
-    # Assert that the expected exception is raised
-    assert 'Could not find components matching: label="robots", name="None"' in str(
-        result.value
-    )
 
 
 # -----------------------------------------------------------------------------

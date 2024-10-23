@@ -2,10 +2,11 @@ from queue import Queue
 
 import numpy as np
 import pandas as pd
+from bluesky import plan_stubs as bps
 from bluesky_adaptive.per_event import adaptive_plan, recommender_factory
 from bluesky_adaptive.recommendations import NoRecommendation
 
-from ..instrument.instrument_registry import registry
+from ..instrument import beamline
 
 __all__ = ["GainRecommender", "auto_gain"]
 
@@ -111,23 +112,24 @@ class GainRecommender:
 
 
 def auto_gain(
-    dets="ion_chambers",
+    ion_chambers="ion_chambers",
     volts_min: float = 0.5,
     volts_max: float = 4.5,
     prefer: str = "middle",
     max_count: int = 28,
     queue: Queue = None,
 ):
-    """An adaptive Bluesky plan for optimizing pre-amp gains.
+    """An adaptive Bluesky plan for optimizing ion chamber
+    pre-amp gains.
 
-    For each detector, the plan will search for the range of gains
+    For each ion chamber, the plan will search for the range of gains
     within which the pre-amp output is between *volts_min* and
     *volts_max*, and select the gain that produces a voltage closest
     to the mid-point between *volts_min* and *volts_max*.
 
     Parameters
     ==========
-    dets
+    ion_chambers
       A sequence of detectors to scan. Can be devices, names, or Ophyd
       labels.
     volts_min
@@ -145,8 +147,8 @@ def auto_gain(
       plan and the recommendation engine.
 
     """
-    # Resolve the detector list into real devices
-    dets = registry.findall(dets)
+    # Resolve the detector list into voltmeter AI's
+    ion_chambers = beamline.registry.findall(ion_chambers)
     # Prepare the recommendation engine
     targets = {
         "lower": volts_min,
@@ -162,8 +164,10 @@ def auto_gain(
     recommender = GainRecommender(
         volts_min=volts_min, volts_max=volts_max, target_volts=target
     )
-    ind_keys = [det.preamp.gain_level.name for det in dets]
-    dep_keys = [det.volts.name for det in dets]
+    preamp_gains = [det.preamp.gain_level for det in ion_chambers]
+    ind_keys = [sig.name for sig in preamp_gains]
+    voltmeters = [det.voltmeter_channel for det in ion_chambers]
+    dep_keys = [voltmeter.final_value.name for voltmeter in voltmeters]
     rr, queue = recommender_factory(
         recommender,
         independent_keys=ind_keys,
@@ -172,26 +176,18 @@ def auto_gain(
         queue=queue,
     )
     # Start from the current gain settings
-    first_point = {det.preamp.gain_level: det.preamp.gain_level.get() for det in dets}
-    # Make sure the detectors have the correct read attrs.
-    old_kinds = {}
-    signals = [(det.preamp, det.preamp.gain_level) for det in dets]
-    signals = [sig for tpl in signals for sig in tpl]
-    for sig in signals:
-        old_kinds[sig] = sig.kind
-        sig.kind = "normal"
-    # Execute the adaptive plan
-    try:
-        yield from adaptive_plan(
-            dets=dets,
-            first_point=first_point,
-            to_recommender=rr,
-            from_recommender=queue,
+    first_point = {}
+    for det in ion_chambers:
+        first_point[det.preamp.gain_level] = yield from bps.rd(
+            det.preamp.gain_level, default_value=13
         )
-    finally:
-        # Restore the detector signal kinds
-        for sig in signals:
-            sig.kind = old_kinds[sig]
+    # Execute the plan
+    yield from adaptive_plan(
+        dets=voltmeters + preamp_gains,
+        first_point=first_point,
+        to_recommender=rr,
+        from_recommender=queue,
+    )
 
 
 # -----------------------------------------------------------------------------

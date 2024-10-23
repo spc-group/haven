@@ -5,7 +5,6 @@ from typing import Mapping, Sequence
 
 import numpy as np
 import pandas as pd
-from qtpy.QtCore import Signal
 from tiled import queries
 
 from haven import exceptions
@@ -16,14 +15,6 @@ log = logging.getLogger(__name__)
 
 class DatabaseWorker:
     selected_runs: Sequence = []
-
-    # Signals
-    all_runs_changed = Signal(list)
-    selected_runs_changed = Signal(list)
-    distinct_fields_changed = Signal(dict)
-    new_message = Signal(str, int)
-    db_op_started = Signal()
-    db_op_ended = Signal(list)  # (list of exceptions thrown)
 
     def __init__(self, catalog=None, *args, **kwargs):
         if catalog is None:
@@ -174,6 +165,7 @@ class DatabaseWorker:
         runs = [await self.catalog[uid] for uid in uids]
         # runs = await asyncio.gather(*run_coros)
         self.selected_runs = runs
+        return runs
 
     async def images(self, signal):
         """Load the selected runs as 2D or 3D images suitable for plotting."""
@@ -260,6 +252,10 @@ class DatabaseWorker:
             series = pd.Series(df[y_signal].values, index=df[x_signal].values)
             dfs[run.uid] = series
         return dfs
+
+    async def export_runs(self, filenames: Sequence[str], formats: Sequence[str]):
+        for filename, run, format in zip(filenames, self.selected_runs, formats):
+            await run.export(filename, format=format)
 
 
 # -----------------------------------------------------------------------------

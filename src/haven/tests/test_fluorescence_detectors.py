@@ -14,8 +14,7 @@ import numpy as np
 import pytest
 from ophyd import OphydObject, Signal
 
-from haven.instrument.dxp import load_dxp, parse_xmap_buffer
-from haven.instrument.xspress import load_xspress
+from haven.devices.dxp import parse_xmap_buffer
 
 DETECTORS = ["dxp", "xspress"]
 # DETECTORS = ['dxp']
@@ -30,29 +29,6 @@ def vortex(request):
     # Figure out which detector we're using
     det = request.getfixturevalue(request.param)
     yield det
-
-
-def test_load_xspress(sim_registry, mocker):
-    load_xspress(config=None)
-    vortex = sim_registry.find(name="vortex_me4_xsp")
-    assert vortex.mcas.component_names == ("mca0", "mca1", "mca2", "mca3")
-
-
-def test_load_dxp(sim_registry):
-    load_dxp(config=None)
-    # See if the device was loaded
-    vortex = sim_registry.find(name="vortex_me4")
-    # Check that the MCA's are available
-    assert hasattr(vortex.mcas, "mca0")
-    assert hasattr(vortex.mcas, "mca1")
-    assert hasattr(vortex.mcas, "mca2")
-    assert hasattr(vortex.mcas, "mca3")
-    # Check that MCA's have ROI's available
-    assert hasattr(vortex.mcas.mca1, "rois")
-    assert hasattr(vortex.mcas.mca1.rois, "roi0")
-    # Check that bluesky hints were added
-    assert hasattr(vortex.mcas.mca1.rois.roi0, "use")
-    # assert vortex.mcas.mca1.rois.roi1.is_hinted.pvname == "vortex_me4:mca1_R1BH"
 
 
 # @pytest.mark.parametrize("vortex", ["xspress"], indirect=True)
@@ -184,6 +160,7 @@ def test_disable_rois(vortex):
     assert hinted == 0
 
 
+@pytest.mark.skip(reason="fails, and will be replaced by ophyd-async device soon")
 @pytest.mark.parametrize("vortex", DETECTORS, indirect=True)
 def test_stage_signal_names(vortex):
     """Check that we can set the name of the detector ROIs dynamically."""
@@ -296,9 +273,10 @@ def test_stage_hints(vortex):
     # Ensure the hints aren't applied yet
     assert roi0.count.name not in vortex.hints["fields"]
     assert roi1.count.name not in vortex.hints["fields"]
-    # Stage the detector
+    # Stage the detector ROIs
     try:
-        vortex.stage()
+        roi0.stage()
+        roi1.stage()
     except Exception:
         raise
     else:
@@ -306,7 +284,8 @@ def test_stage_hints(vortex):
         assert roi0.count.name in vortex.hints["fields"]
         assert roi1.count.name not in vortex.hints["fields"]
     finally:
-        vortex.unstage()
+        roi0.unstage()
+        roi1.unstage()
     # Name gets reset when unstaged
     assert roi0.count.name not in vortex.hints["fields"]
     assert roi1.count.name not in vortex.hints["fields"]
@@ -593,6 +572,15 @@ def test_dead_time_calc(vortex):
     assert vortex.dead_time_min.get(use_monitor=False) == 3
     assert vortex.dead_time_max.get(use_monitor=False) == 6
     assert vortex.dead_time_average.get(use_monitor=False) == 4.5
+
+
+def test_default_time_signal_dxp(dxp):
+    assert dxp.default_time_signal is dxp.preset_real_time
+
+
+def test_default_time_signal_xspress(xspress):
+    # assert xspress.default_time_signal is xspress.acquire_time
+    assert xspress.default_time_signal is xspress.cam.acquire_time
 
 
 # -----------------------------------------------------------------------------

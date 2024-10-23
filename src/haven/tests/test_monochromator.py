@@ -1,10 +1,21 @@
-from haven import Monochromator
+from bluesky import protocols
+
+from haven.devices.monochromator import Monochromator
 
 
-def test_mono_energy_signal():
-    mono = Monochromator("255idMono", name="monochromator")
+async def mono():
+    mono = Monochromator(prefix="255idMono:")
+    await mono.connect(mock=True)
+    return mono
+
+
+def test_mono_energy_signal(mono):
     # Check PVs are correct
-    mono.energy.user_readback.pvname == "255idMono:Energy.RBV"
+    mono.energy.user_readback.source == "ca+mock://255idMono:Energy.RBV"
+
+
+def test_interfaces(mono):
+    assert isinstance(mono, protocols.Readable)
 
 
 # -----------------------------------------------------------------------------

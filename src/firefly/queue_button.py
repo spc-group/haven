@@ -1,9 +1,17 @@
 """A QPushButton that responds to the state of the queue server."""
 
+import logging
+
 import qtawesome as qta
 from qtpy import QtGui, QtWidgets
+from strenum import StrEnum
 
-from firefly import FireflyApplication
+log = logging.getLogger(__name__)
+
+
+class Colors(StrEnum):
+    ADD_TO_QUEUE = "rgb(0, 123, 255)"
+    RUN_QUEUE = "rgb(25, 135, 84)"
 
 
 class QueueButton(QtWidgets.QPushButton):
@@ -11,33 +19,33 @@ class QueueButton(QtWidgets.QPushButton):
         super().__init__(*args, **kwargs)
         # Initially disable the button until the status of the queue can be determined
         self.setDisabled(True)
-        # Listen for changes to the run engine
-        app = FireflyApplication.instance()
-        app.queue_status_changed.connect(self.handle_queue_status_change)
 
-    def handle_queue_status_change(self, status: dict):
+    def update_queue_style(self, status: dict):
         if status["worker_environment_exists"]:
             self.setEnabled(True)
         else:
             # Should be disabled because the queue is closed
             self.setDisabled(True)
         # Coloration for the whether the item would get run immediately
-        app = FireflyApplication.instance()
-        if status["re_state"] == "idle" and app.queue_autoplay_action.isChecked():
+        if status["re_state"] == "idle" and status["queue_autostart_enabled"]:
             # Will play immediately
             self.setStyleSheet(
-                "background-color: rgb(25, 135, 84);\nborder-color: rgb(25, 135, 84);"
+                f"background-color: {Colors.RUN_QUEUE};\n"
+                f"border-color: {Colors.RUN_QUEUE};"
             )
             self.setIcon(qta.icon("fa5s.play"))
-            self.setText("Run")
+            if self.text() in ["Run", "Add to Queue", ""]:
+                self.setText("Run")
             self.setToolTip("Add this plan to the queue and start it immediately.")
         elif status["worker_environment_exists"]:
             # Will be added to the queue
             self.setStyleSheet(
-                "background-color: rgb(0, 123, 255);\nborder-color: rgb(0, 123, 255);"
+                f"background-color: {Colors.ADD_TO_QUEUE};\n"
+                f"border-color: {Colors.ADD_TO_QUEUE};\n"
             )
             self.setIcon(qta.icon("fa5s.list"))
-            self.setText("Add to Queue")
+            if self.text() in ["Run", "Add to Queue", ""]:
+                self.setText("Add to Queue")
             self.setToolTip("Add this plan to the queue to run later.")
         else:
             # Regular old (probably disabled) button
