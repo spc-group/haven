@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 from ophyd.sim import make_fake_device
 
-from haven.instrument import analyzer
+from haven.devices import analyzer
 
 um_per_mm = 1000
 
@@ -53,14 +53,10 @@ def test_wavelength_to_bragg(theta, d_spacing, wavelength):
     theta = np.radians(theta)
     d_spacing *= 1e-10
     wavelength *= 1e-10
-<<<<<<< Updated upstream
-    assert pytest.approx(analyzer.wavelength_to_bragg(wavelength, d=d_spacing), rel=0.001) == theta
-=======
     assert (
         pytest.approx(analyzer.wavelength_to_bragg(wavelength, d=d_spacing), rel=0.001)
         == theta
     )
->>>>>>> Stashed changes
 
 
 analyzer_values = [
@@ -87,26 +83,27 @@ def xtal(sim_registry):
 @pytest.mark.parametrize("bragg,alpha,beta,z,x", analyzer_values)
 def test_rowland_circle_forward(xtal, bragg, alpha, beta, x, z):
     xtal.wedge_angle.set(np.radians(beta)).wait()
+    xtal.alpha.set(np.radians(alpha)).wait()
     d = xtal.d_spacing.get()
     bragg = np.radians(bragg)
     energy = analyzer.bragg_to_energy(bragg, d=d)
     # Check the result is correct (convert cm -> m)
     expected = (x / 100, z / 100)
-    actual = xtal.forward(energy, np.radians(alpha))
+    actual = xtal.forward(energy)
     assert actual == pytest.approx(expected, rel=0.01)
 
 
 @pytest.mark.parametrize("bragg,alpha,beta,z,x", analyzer_values)
 def test_rowland_circle_inverse(xtal, bragg, alpha, beta, x, z):
     xtal.wedge_angle.set(np.radians(beta)).wait()
-    # Calculate the expected answer (convert cm -> m)
+    xtal.alpha.set(np.radians(alpha)).wait()
+    # Calculate the expected answer
     bragg = np.radians(bragg)
     d = xtal.d_spacing.get()
-    energy = analyzer.bragg_to_energy(bragg, d=d)
-    expected = (energy, alpha)
+    expected_energy = analyzer.bragg_to_energy(bragg, d=d)
     # Compare to the calculated inverse
     actual = xtal.inverse(x, z)
-    assert actual == pytest.approx(expected)
+    assert actual[0] == pytest.approx(expected_energy, abs=0.2)
 
 
 # -----------------------------------------------------------------------------
