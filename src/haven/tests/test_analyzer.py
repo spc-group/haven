@@ -3,6 +3,7 @@ import time
 import numpy as np
 import pytest
 from ophyd.sim import make_fake_device
+from ophyd_async.core import get_mock_put, set_mock_value
 
 from haven.devices import analyzer
 
@@ -70,40 +71,51 @@ analyzer_values = [
 
 
 @pytest.fixture()
-def xtal(sim_registry):
-    FakeAnalyzer = make_fake_device(analyzer.Analyzer)
-    xtal = FakeAnalyzer(name="analyzer", x_motor_pv="", z_motor_pv="")
+async def xtal(sim_registry):
+    # Create the analyzer documents
+    xtal = analyzer.Analyzer(name="analyzer", x_motor_prefix="", z_motor_prefix="")
+    await xtal.connect(mock=True)
     # Set default values for xtal parameters
     d = 1.637 * 1e-10  # Si 311 converted to meters
-    xtal.d_spacing.set(d).wait()
-    xtal.rowland_diameter.set(0.500).wait()
+    await xtal.d_spacing.set(d)
+    await xtal.rowland_diameter.set(0.500)
     return xtal
 
 
 @pytest.mark.parametrize("bragg,alpha,beta,z,x", analyzer_values)
-def test_rowland_circle_forward(xtal, bragg, alpha, beta, x, z):
-    xtal.wedge_angle.set(np.radians(beta)).wait()
-    xtal.alpha.set(np.radians(alpha)).wait()
-    d = xtal.d_spacing.get()
+async def test_rowland_circle_forward(xtal, bragg, alpha, beta, x, z):
+    # Set up sensible values for current positions
+    set_mock_value(xtal.wedge_angle, np.radians(beta))
+    set_mock_value(xtal.alpha, np.radians(alpha))
+    set_mock_value(xtal.x.user_readback, 0)
+    set_mock_value(xtal.z.user_readback, 0)
+    d = await xtal.d_spacing.get_value()
     bragg = np.radians(bragg)
     energy = analyzer.bragg_to_energy(bragg, d=d)
     # Check the result is correct (convert cm -> m)
     expected = (x / 100, z / 100)
-    actual = xtal.forward(energy)
-    assert actual == pytest.approx(expected, rel=0.01)
+    await xtal.energy.set(energy)
+    x_mock = get_mock_put(xtal.x.user_setpoint)
+    x_mock.assert_called_once()
+    assert x_mock.call_args.args[0] == pytest.approx(x/100, abs=0.0001)
+    z_mock = get_mock_put(xtal.z.user_setpoint)
+    z_mock.assert_called_once()
+    assert z_mock.call_args.args[0] == pytest.approx(z/100, abs=0.0001)
 
 
 @pytest.mark.parametrize("bragg,alpha,beta,z,x", analyzer_values)
-def test_rowland_circle_inverse(xtal, bragg, alpha, beta, x, z):
-    xtal.wedge_angle.set(np.radians(beta)).wait()
-    xtal.alpha.set(np.radians(alpha)).wait()
+async def test_rowland_circle_inverse(xtal, bragg, alpha, beta, x, z):
+    set_mock_value(xtal.wedge_angle, np.radians(beta))
+    set_mock_value(xtal.alpha, np.radians(alpha))
     # Calculate the expected answer
     bragg = np.radians(bragg)
-    d = xtal.d_spacing.get()
+    d = await xtal.d_spacing.get_value()
     expected_energy = analyzer.bragg_to_energy(bragg, d=d)
     # Compare to the calculated inverse
-    actual = xtal.inverse(x, z)
-    assert actual[0] == pytest.approx(expected_energy, abs=0.2)
+    set_mock_value(xtal.x.user_readback, x)
+    set_mock_value(xtal.z.user_readback, z)
+    new_energy = await xtal.energy.readback.get_value()
+    assert new_energy == pytest.approx(expected_energy, abs=0.2)
 
 
 # -----------------------------------------------------------------------------
