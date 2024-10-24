@@ -39,12 +39,17 @@ class Positioner(StandardReadable, Movable, Stoppable):
       The device name for this positioner.
     put_complete
       If true, wait on the setpoint to report being done.
+    always_move
+      If false, the positioner will only move if the commanded
+      position is farther from the current readback that the precision
+      of the positioner.
 
     """
 
     done_value = 1
 
-    def __init__(self, name: str = "", put_complete: bool = False):
+    def __init__(self, name: str = "", put_complete: bool = False, min_move=0):
+        self.min_move = min_move
         self.put_complete = put_complete
         super().__init__(name=name)
 
@@ -71,12 +76,18 @@ class Positioner(StandardReadable, Movable, Stoppable):
     async def set(self, value: float, timeout: CalculatableTimeout = CALCULATE_TIMEOUT):
         new_position = value
         self._set_success = True
-        old_position, units, precision, velocity = await asyncio.gather(
+        old_position, current_position, units, precision, velocity = await asyncio.gather(
             self.setpoint.get_value(),
+            self.readback.get_value(),
             self.units.get_value(),
             self.precision.get_value(),
             self.velocity.get_value(),
         )
+        # Check for trivially small moves
+        is_small_move = abs(new_position-current_position) < self.min_move
+        if is_small_move:
+            return
+        # Decide how long we should wait
         if timeout == CALCULATE_TIMEOUT:
             assert velocity > 0, "Mover has zero velocity"
             timeout = abs(new_position - old_position) / velocity + DEFAULT_TIMEOUT
@@ -114,24 +125,27 @@ class Positioner(StandardReadable, Movable, Stoppable):
             aws = asyncio.gather(reached_setpoint.wait(), set_status)
             done_status = AsyncStatus(asyncio.wait_for(aws, timeout))
         # Monitor the position of the readback value
-        async for current_position in observe_value(
-            self.readback, done_status=done_status
-        ):
-            yield WatcherUpdate(
-                current=current_position,
-                initial=old_position,
-                target=new_position,
-                name=self.name,
-                unit=units,
-                precision=int(precision),
-            )
-            # Check if the move has finished
-            target_reached = current_position is not None and np.isclose(
-                current_position, new_position
-            )
-            if target_reached:
-                reached_setpoint.set()
-                break
+        try:
+            async for current_position in observe_value(
+                self.readback, done_status=done_status
+            ):
+                yield WatcherUpdate(
+                    current=current_position,
+                    initial=old_position,
+                    target=new_position,
+                    name=self.name,
+                    unit=units,
+                    precision=int(precision),
+                )
+                # Check if the move has finished
+                target_reached = current_position is not None and np.isclose(
+                    current_position, new_position
+                )
+                if target_reached:
+                    reached_setpoint.set()
+                    break
+        except Exception:
+            breakpoint()
         # Make sure the done point was actually reached
         await done_status
         # Handle failed moves
