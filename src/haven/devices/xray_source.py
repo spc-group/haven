@@ -42,6 +42,7 @@ class UndulatorPositioner(Positioner):
         stop_signal: Signal,
         done_signal: Signal = None,
         name: str = "",
+        min_move: float = 0.0,
     ):
         with self.add_children_as_readables(HintedSignal):
             self.readback = epics_signal_rw(float, f"{prefix}M.VAL")
@@ -55,11 +56,15 @@ class UndulatorPositioner(Positioner):
         )  # Need to figure out what this value is
         # Add control signals that depend on the parent
         if actuate_signal is not None:
-            self.actuate = derived_signal_x(derived_from={"parent_signal": actuate_signal})
+            self.actuate = derived_signal_x(
+                derived_from={"parent_signal": actuate_signal}
+            )
         self.stop_signal = derived_signal_x(derived_from={"parent_signal": stop_signal})
         if done_signal is not None:
-            self.done = derived_signal_r(int, derived_from={"parent_signal": done_signal})
-        super().__init__(name=name, min_move=0.002)
+            self.done = derived_signal_r(
+                int, derived_from={"parent_signal": done_signal}
+            )
+        super().__init__(name=name, min_move=min_move)
 
 
 class PlanarUndulator(StandardReadable):
@@ -110,26 +115,27 @@ class PlanarUndulator(StandardReadable):
                 actuate_signal=self.start_button,
                 stop_signal=self.stop_button,
                 done_signal=self.busy,
+                min_move=0.002,
             )
-            # self.energy_taper = UndulatorPositioner(
-            #     prefix=f"{prefix}TaperEnergy",
-            #     actuate_signal=self.start_button,
-            #     stop_signal=self.stop_button,
-            #     done_signal=self.done,
-            # )
-            # self.gap = UndulatorPositioner(
-            #     prefix=prefix,
-            #     suffix="Gap",
-            #     actuate_signal=self.start_button,
-            #     stop_signal=self.stop_button,
-            #     done_signal=self.done,
-            # )
-            # self.gap_taper = UndulatorPositioner(
-            #     f"{prefix}TaperGap",
-            #     actuate_signal=self.start_button,
-            #     stop_signal=self.stop_button,
-            #     done_signal=self.done,
-            # )
+            self.energy_taper = UndulatorPositioner(
+                prefix=f"{prefix}TaperEnergy",
+                actuate_signal=self.start_button,
+                stop_signal=self.stop_button,
+                done_signal=self.busy,
+            )
+            self.gap = UndulatorPositioner(
+                prefix=f"{prefix}Gap",
+                actuate_signal=self.start_button,
+                stop_signal=self.stop_button,
+                done_signal=self.busy,
+                min_move=0.004,
+            )
+            self.gap_taper = UndulatorPositioner(
+                prefix=f"{prefix}TaperGap",
+                actuate_signal=self.start_button,
+                stop_signal=self.stop_button,
+                done_signal=self.busy,
+            )
         # Miscellaneous control signals
         self.access_mode = epics_signal_r(self.AccessMode, f"{prefix}AccessSecurityC")
         self.message1 = epics_signal_r(str, f"{prefix}Message1M.VAL")

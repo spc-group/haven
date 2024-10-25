@@ -1,7 +1,7 @@
 import asyncio
 
 import pytest
-from ophyd_async.core import set_mock_value
+from ophyd_async.core import get_mock_put, set_mock_value
 from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw, epics_signal_x
 
 from haven.positioner import Positioner
@@ -59,3 +59,14 @@ async def test_set_with_put_complete():
     await positioner.velocity.set(5)
     # Just make sure it doesn't time-out
     await positioner.set(13)
+
+
+async def test_min_move(positioner):
+    """Check that we can specify how small of a move should be ignored."""
+    positioner.put_complete = True
+    positioner.min_move = 5
+    set_mock_value(positioner.readback, 10)
+    # Move the positioner
+    await positioner.set(12)
+    # Check that it didn't actually move anything
+    assert not get_mock_put(positioner.setpoint).called
