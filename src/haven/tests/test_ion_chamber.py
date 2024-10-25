@@ -233,7 +233,9 @@ def test_offset_pv(sim_registry):
 
 @pytest.fixture()
 def trigger_info():
-    return TriggerInfo(number=5, trigger="internal", deadtime=0, livetime=1.3)
+    return TriggerInfo(
+        number_of_triggers=5, trigger="internal", deadtime=0, livetime=1.3
+    )
 
 
 async def test_flyscan_prepare(ion_chamber, trigger_info):
