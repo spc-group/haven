@@ -5,7 +5,6 @@ capture detector signals.
 
 import logging
 import warnings
-from collections import ChainMap
 from typing import Mapping, Optional, Sequence, Union
 
 from .. import exceptions
@@ -161,7 +160,7 @@ def xafs_scan(
         detectors=detectors,
         energy_signals=energy_signals,
         time_signals=time_signals,
-        md=ChainMap(md, {"plan_name": "xafs_scan"}),
+        md=md,
     )
 
 

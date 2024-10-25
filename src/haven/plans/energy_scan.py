@@ -143,7 +143,7 @@ def energy_scan(
     scan_args = [item for items in scan_args for item in items]
     # Add some extra metadata
     config = load_config()
-    md_ = {"edge": E0_str, "E0": E0}
+    md_ = {"edge": E0_str, "E0": E0, "plan_name": "energy_scan"}
     # Do the actual scan
     yield from bp.list_scan(
         real_detectors,
