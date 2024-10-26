@@ -1,3 +1,19 @@
+"""More calculations from Yanna.
+
+def theta_bragg(energy_val, hkl=[4,4,4]):
+    d_spacing = lattice_cons / np.sqrt(hkl[0] ** 2 + hkl[1] ** 2 + hkl[2] ** 2)
+    theta_bragg_val = np.arcsin(hc / (energy_val * 2 * d_spacing))
+    theta_bragg_val = np.degrees(theta_bragg_val)
+    return theta_bragg_val
+
+
+Some sane values for converting hkl and [HKL] to α:
+
+(001), (101), 90°
+(001), (110), 180°
+
+"""
+
 import asyncio
 import logging
 
@@ -16,6 +32,8 @@ from ..positioner import Positioner
 from .signal import derived_signal_r, derived_signal_rw
 
 log = logging.getLogger(__name__)
+
+HKL = tuple[int, int, int]
 
 um_per_mm = 1000
 
@@ -108,47 +126,78 @@ def bragg_to_energy(bragg: float, d: float) -> float:
 
 
 class Analyzer(Device):
-    """A pseudo positioner describing a rowland circle.
+    """A single asymmetric analyzer crystal mounted on an Rowland circle.
 
-    Real Axes
-    =========
-    x
-    y
-    z
-    z1
+    Linear dimensions (e.g. Rowland diameter) should be in units that
+    match those of the real motors. Angles are in radians.
 
-    Pseudo Axes
-    ===========
-    D
-      In mm
-    theta
-      In degrees
-    alpha
-      In degrees
     """
+
+    linear_units = "mm"
+    angular_units = "rad"
 
     def __init__(
         self,
         *,
-        x_motor_prefix: str,
-        z_motor_prefix: str,
+        horizontal_motor_prefix: str,
+        vertical_motor_prefix: str,
+        yaw_motor_prefix: str,
+        surface_plane: str,
+        rowland_diameter: float = 500,  # mm
         name: str = "",
     ):
         # Create the real motors
-        self.x = Motor(x_motor_prefix)
-        self.z = Motor(z_motor_prefix)
+        self.horizontal = Motor(horizontal_motor_prefix)
+        self.vertical = Motor(vertical_motor_prefix)
+        self.crystal_yaw = Motor(yaw_motor_prefix)
         # Soft signals for keeping track of the fixed transform properties
-        self.d_spacing = soft_signal_rw(float, units="Å", precision=4)
-        self.rowland_diameter = soft_signal_rw(float, units="mm")
-        self.wedge_angle = soft_signal_rw(float, units="rad")
-        self.alpha = soft_signal_rw(float, units="rad")
+        self.rowland_diameter = soft_signal_rw(float, units=self.linear_units)
+        self.wedge_angle = soft_signal_rw(float, units=self.angular_units)
+        self.lattice_constant = soft_signal_rw(float, units=self.linear_units)
+        self.bragg_offset = soft_signal_rw(float, units=self.linear_units)
+        self.reflection = soft_signal_rw(HKL)
+        self.surface_plane = soft_signal_rw(HKL)
+        # Soft signals for intermediate, calculated values
+        self.d_spacing = derived_signal_r(
+            float,
+            derived_from = {
+                "hkl": self.reflection,
+                "a": self.lattice_constant,
+            },
+            inverse=self._calc_d_spacing,
+            units=self.linear_units,
+            precision=4
+        )
+        self.asymmetry_angle = derived_signal_r(
+            float,
+            derived_from={
+                "refl": self.reflection,
+                "base": self.surface_plane,
+            },
+            units=self.angular_units,
+            inverse=self._calc_alpha,
+        )
         # The actual energy signal that controls the analyzer
         self.energy = EnergyPositioner(xtal=self)
         super().__init__(name=name)
 
+    def _calc_alpha(self, values, refl, base):
+        hkl = values[base]
+        HKL = values[refl]
+        # hkl1 -> base, h, k, l
+        cos_alpha = np.dot(hkl, HKL) / np.linalg.norm(hkl) / np.linalg.norm(HKL)
+        if cos_alpha > 1:
+            cos_alpha = 1
+        alpha = np.arccos(cos_alpha)
+        return alpha
+
+    def _calc_d_spacing(self, values, hkl, a):
+        return values[a] / np.linalg.norm(values[hkl])
+
 
 class EnergyPositioner(Positioner):
     """Positions the energy of an analyzer crystal."""
+
     put_complete = True
 
     def __init__(self, *, xtal: Analyzer, name: str = ""):
@@ -156,15 +205,15 @@ class EnergyPositioner(Positioner):
             "D": xtal.rowland_diameter,
             "d": xtal.d_spacing,
             "beta": xtal.wedge_angle,
-            "alpha": xtal.alpha,
-            # "x": xtal.x,
-            # "z": xtal.z,
+            "alpha": xtal.asymmetry_angle,
         }
         self.setpoint = derived_signal_rw(
             float,
             units="eV",
             derived_from=dict(
-                x=xtal.x.user_setpoint, z=xtal.z.user_setpoint, **xtal_signals
+                x=xtal.horizontal.user_setpoint,
+                y=xtal.vertical.user_setpoint,
+                **xtal_signals,
             ),
             forward=self.forward,
             inverse=self.inverse,
@@ -173,7 +222,9 @@ class EnergyPositioner(Positioner):
             float,
             units="eV",
             derived_from=dict(
-                x=xtal.x.user_readback, z=xtal.z.user_readback, **xtal_signals
+                x=xtal.horizontal.user_readback,
+                y=xtal.vertical.user_readback,
+                **xtal_signals,
             ),
             inverse=self.inverse,
         )
@@ -182,7 +233,7 @@ class EnergyPositioner(Positioner):
         self.units, _ = soft_signal_r_and_setter(str, initial_value="eV")
         self.precision, _ = soft_signal_r_and_setter(int, initial_value=3)
 
-    async def forward(self, value, D, d, beta, alpha, x, z):
+    async def forward(self, value, D, d, beta, alpha, x, y):
         """Run a forward (pseudo -> real) calculation"""
         # Resolve the dependent signals into their values
         energy = value
@@ -198,26 +249,26 @@ class EnergyPositioner(Positioner):
         theta_M = bragg + alpha
         rho = D * np.sin(theta_M)
         # Step 2: Convert geometry params to motor positions
-        z_val = rho * np.cos(theta_M) / np.cos(beta)
-        x_val = -z_val * np.sin(beta) + rho * np.sin(theta_M)
+        y_val = rho * np.cos(theta_M) / np.cos(beta)
+        x_val = -y_val * np.sin(beta) + rho * np.sin(theta_M)
         # Report the calculated result
         return {
             x: x_val,
-            z: z_val,
+            y: y_val,
         }
 
-    def inverse(self, values, D, d, beta, alpha, x, z):
+    def inverse(self, values, D, d, beta, alpha, x, y):
         """Run an inverse (real -> pseudo) calculation"""
         # Resolve signals into their values
         x = values[x]
-        z = values[z]
+        y = values[y]
         D = values[D]
         d = values[d]
         beta = values[beta]
         alpha = values[alpha]
         # Step 1: Convert motor positions to geometry parameters
-        theta_M = np.arctan2((x + z * np.sin(beta)), (z * np.cos(beta)))
-        rho = z * np.cos(beta) / np.cos(theta_M)
+        theta_M = np.arctan2((x + y * np.sin(beta)), (y * np.cos(beta)))
+        rho = y * np.cos(beta) / np.cos(theta_M)
         # Step 1: Convert geometry params to energy
         bragg = theta_M - alpha
         energy = bragg_to_energy(bragg, d=d)
