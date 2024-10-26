@@ -1,15 +1,14 @@
 from firefly.filters import FiltersDisplay
-from firefly.main_window import FireflyMainWindow
 
 
-def test_embedded_display_widgets(qtbot, filters, ffapp):
+def test_embedded_display_widgets(qtbot, filters):
     """Test the the voltmeters creates a new embedded display widget for
     each ion chamber.
 
     """
-    FireflyMainWindow()
     # Load the display
     display = FiltersDisplay()
+    qtbot.addWidget(display)
     # Check that the embedded display widgets get added correctly
     assert hasattr(display, "_filter_displays")
     assert len(display._filter_displays) == 2

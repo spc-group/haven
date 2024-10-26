@@ -21,6 +21,7 @@ jobs:
       run:
         shell: bash -l {0}
     runs-on: ubuntu-20.04
+    timeout-minutes: 10
     strategy:
       max-parallel: 5
     steps:
@@ -48,8 +49,10 @@ jobs:
     - name: Enforce import ordering with isort
       run: |
         isort --check src/
-    - name: Test with pytest in Xvfb
-      run: xvfb-run python -m pytest -vv --timeout=30
+    - name: Haven tests with pytest in Xvfb
+      run: xvfb-run python -m pytest src/haven -vv --timeout=30
+    - name: Firefly tests with pytest in Xvfb
+      run: xvfb-run python -m pytest src/firefly -vv --timeout=30
     - name: Reporting linting
       run: |
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics	

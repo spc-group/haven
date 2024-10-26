@@ -46,6 +46,18 @@ $ conda activate haven
 $ pip install -e ".[dev]"
 ```
 
+## Usage
+
+The easiest way to start **haven** is to use IPython's magic run command.
+
+```
+$ ipython
+In [1]: %run -m haven.ipython_startup
+```
+
+This will load some common tools, and print some useful information
+about how to use Haven.
+
 ## Running Tests
 
 To run tests, run
@@ -69,7 +81,7 @@ $ firefly
 
 Haven/Firefly uses calendar versioning, with short year and short
 month for the MAJOR and MINOR versions, then a incremental MICRO
-version. For example, version *23.7.2* is the 2nd (*2*) release in
+version. For example, version *2024.7.2* is the 3rd (*2*) release in
 July (*7*) 2023 (*23*).
 
 # Packaging

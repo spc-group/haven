@@ -1,3 +1,4 @@
+import uuid
 from collections import OrderedDict, abc
 from typing import Mapping, Sequence, Union
 
@@ -5,41 +6,164 @@ import numpy as np
 from bluesky import plan_patterns
 from bluesky import plan_stubs as bps
 from bluesky import plans as bp
-from bluesky import preprocessors as bpp
+from bluesky.preprocessors import (
+    __read_and_stash_a_motor,
+    _normalize_devices,
+    finalize_wrapper,
+    pchain,
+    plan_mutator,
+    reset_positions_wrapper,
+    run_wrapper,
+    stage_wrapper,
+)
+from bluesky.protocols import EventPageCollectable
+from bluesky.utils import Msg, single_gen
 from ophyd import Device
 from ophyd.flyers import FlyerInterface
 from ophyd.status import StatusBase
+from ophyd_async.core import TriggerInfo
+from ophyd_async.epics.motor import FlyMotorInfo
+
+from ..preprocessors import baseline_decorator
 
 __all__ = ["fly_scan", "grid_fly_scan"]
 
 
-def fly_line_scan(detectors: list, flyer, start, stop, num, extra_signals=()):
-    """A plan stub for fly-scanning a single trajectory."""
+def reset_flyers_wrapper(plan, devices=None):
+    """Return flyer devices to their initial positions and velocities
+    prior to being prepared for flying.
+
+    Parameters
+    ----------
+    plan : iterable or iterator
+        a generator, list, or similar containing `Msg` objects
+    devices : collection or None, optional
+        If default (None), apply to all devices that are prepared by the plan.
+
+    Yields
+    ------
+    msg : Msg
+        messages from plan with 'read' and finally 'set' messages inserted
+
+    """
+    initial_positions = OrderedDict()
+    if devices is not None:
+        devices, coupled_parents = _normalize_devices(devices)
+    else:
+        coupled_parents = set()
+
+    def insert_reads(msg):
+        eligible = devices is None or msg.obj in devices
+        seen = msg.obj in initial_positions
+        if (msg.command == "prepare") and eligible and not seen:
+            # Stash flyer position
+            plan_bits = [
+                __read_and_stash_a_motor(msg.obj, initial_positions, coupled_parents)
+            ]
+            # Stash flyer velocity
+            if hasattr(msg.obj, "velocity"):
+                plan_bits.append(
+                    __read_and_stash_a_motor(
+                        msg.obj.velocity, initial_positions, coupled_parents
+                    )
+                )
+            return (pchain(*plan_bits, single_gen(msg)), None)
+        else:
+            return None, None
+
+    def reset():
+        blk_grp = f"reset-{str(uuid.uuid4())[:6]}"
+        for k, v in initial_positions.items():
+            if k.parent in coupled_parents:
+                continue
+            yield Msg("set", k, v, group=blk_grp)
+        yield Msg("wait", None, group=blk_grp)
+
+    return (yield from finalize_wrapper(plan_mutator(plan, insert_reads), reset()))
+
+
+def fly_line_scan(detectors: list, *args, num, dwell_time):
+    """A plan stub for fly-scanning a single trajectory.
+
+    Parameters
+    ==========
+    detectors
+      Flyables that will be trigger before the movers move.
+    *args
+      For one dimension, motor, start, stop. In general:
+
+      .. code-block:: python
+
+         motor1, start1, stop1,
+         motor2, start2, stop2,
+         ...,
+         motorN, startN, stopN
+
+      Motors can be any ‘flyable’ object.
+    num
+      Number of measurements to take.
+    dwell_time
+      How long, in seconds, for each measurement point.
+    """
     # Calculate parameters for the fly-scan
-    step_size = abs(start - stop) / (num - 1)
-    yield from bps.mv(flyer.start_position, start)
-    yield from bps.mv(flyer.end_position, stop)
-    yield from bps.mv(flyer.step_size, step_size)
-    # Perform the fly scan
-    flyers = [flyer, *detectors]
-    for flyer_ in flyers:
-        yield from bps.kickoff(flyer_, wait=True)
-    for flyer_ in flyers:
-        yield from bps.complete(flyer_, wait=True)
-    # Collect the data after flying
-    collector = FlyerCollector(
-        flyers=flyers, name="flyer_collector", extra_signals=extra_signals
+    # step_size = abs(start - stop) / (num - 1)
+    motors = args[0::3]
+    starts = args[1::3]
+    ends = args[2::3]
+    # Set up motors in their taxi position
+    prepare_group = uuid.uuid4()
+    for obj, start, end in zip(motors, starts, ends):
+        position_info = FlyMotorInfo(
+            start_position=start,
+            end_position=end,
+            time_for_move=dwell_time * num,
+        )
+        yield from bps.prepare(obj, position_info, wait=False, group=prepare_group)
+    # Set up detectors
+    trigger_info = TriggerInfo(
+        number_of_triggers=num, livetime=dwell_time, deadtime=0, trigger="internal"
     )
-    yield from bps.collect(collector)
+    for obj in detectors:
+        yield from bps.prepare(obj, trigger_info, wait=False, group=prepare_group)
+    yield from bps.wait(group=prepare_group)
+    # Monitor the motors during their move
+    for motor in motors:
+        sig = motor.user_readback
+        yield from bps.monitor(sig, name=sig.name)
+    # Perform the fly scan
+    flyers = [*motors, *detectors]
+    kickoff_group = uuid.uuid4()
+    for flyer in flyers:
+        yield from bps.kickoff(flyer, wait=False, group=kickoff_group)
+    yield from bps.wait(group=kickoff_group)
+    # Wait for all the flyers to be done
+    motor_complete_group = uuid.uuid4()
+    for m in motors:
+        yield from bps.complete(m, wait=False, group=motor_complete_group)
+    yield from bps.wait(group=(motor_complete_group))
+    # Stop detectors
+    det_complete_group = uuid.uuid4()
+    for det in detectors:
+        yield from bps.complete(det, wait=False, group=det_complete_group)
+    yield from bps.wait(group=(det_complete_group))
+    # Stop monitoring motors
+    for motor in motors:
+        sig = motor.user_readback
+        yield from bps.unmonitor(sig)
+    # Collect the data after flying
+    flyers = [*motors, *detectors]
+    flyers = [flyer for flyer in flyers if isinstance(flyer, EventPageCollectable)]
+    for flyer_ in flyers:
+        print(f"Collecting from {flyer_}")
+        yield from bps.collect(flyer_)
 
 
-# @baseline_decorator()
+@baseline_decorator()
 def fly_scan(
     detectors: Sequence[FlyerInterface],
-    flyer: FlyerInterface,
-    start: float,
-    stop: float,
+    *args,
     num: int,
+    dwell_time: float,
     md: Mapping = {},
 ):
     """Do a fly scan with a 'flyer' motor and some 'flyer' detectors.
@@ -48,43 +172,63 @@ def fly_scan(
     ----------
     detectors
       List of 'readable' objects that support the flyer interface
-    flyer
-      The thing going to get moved.
-    start
-      The center of the first pixel in *flyer*.
-    stop
-      The center of the last measurement in *flyer*.
+    *args
+      For one dimension, motor, start, stop. In general:
+
+      .. code-block:: python
+
+         motor1, start1, stop1,
+         motor2, start2, stop2,
+         ...,
+         motorN, startN, stopN
+
+      Motors can be any ‘flyable’ object.
     num
       Number of measurements to take.
+    dwell_time
+      How long, in seconds, for each measurement point.
     md
       metadata
 
     Yields
     ------
     msg
-      'kickoff', 'wait', 'complete, 'wait', 'collect' messages
+      'prepare', 'kickoff', 'complete, and 'collect' messages
 
     """
     # Stage the devices
-    devices = [flyer, *detectors]
+    motors = args[0::3]
+    starts = args[1::3]
+    stops = args[2::3]
+    devices = [*motors, *detectors]
+    # Prepare metadata representation of the motor arguments
+    md_args = zip([repr(m) for m in motors], starts, stops)
+    md_args = tuple(obj for m, start, stop in md_args for obj in [m, start, stop])
     # Prepare metadata
     md_ = {
         "plan_name": "fly_scan",
-        "motors": [flyer.name],
+        "motors": [motor.name for motor in motors],
         "detectors": [det.name for det in detectors],
         "plan_args": {
             "detectors": list(map(repr, detectors)),
-            "flyer": repr(flyer),
-            "start": start,
-            "stop": stop,
+            "*args": md_args,
             "num": num,
+            "dwell_time": dwell_time,
         },
     }
     md_.update(md)
     # Execute the plan
-    line_scan = fly_line_scan(detectors, flyer, start, stop, num)
-    line_scan = bpp.run_wrapper(line_scan, md=md_)
-    line_scan = bpp.stage_wrapper(line_scan, devices)
+    line_scan = fly_line_scan(
+        detectors,
+        *args,
+        num=num,
+        dwell_time=dwell_time,
+    )
+    # Wrapper for reseting the initial motor position/velocity
+    line_scan = reset_flyers_wrapper(line_scan, motors)
+    # Wrapper for making it a proper run
+    line_scan = run_wrapper(line_scan, md=md_)
+    line_scan = stage_wrapper(line_scan, motors)
     yield from line_scan
 
 
@@ -194,13 +338,16 @@ def grid_fly_scan(
         num=fly_num,
         extra_signals=motors,
     )
-    uid = yield from bp.grid_scan(
+    grid_scan = yield from bp.grid_scan(
         detectors,
         *step_args,
         snake_axes=snake_steppers,
         per_step=per_step,
         md=md_,
     )
+    grid_scan = reset_flyers_wrapper(grid_scan)
+    grid_scan = reset_positions_wrapper(grid_scan)
+    uid = yield from grid_scan
     return uid
 
 
@@ -237,9 +384,9 @@ class Snaker:
         # Launch the fly scan
         yield from fly_line_scan(
             detectors,
-            flyer=self.flyer,
-            start=start,
-            stop=stop,
+            self.flyer,
+            start,
+            stop,
             num=self.num,
             extra_signals=step.keys(),
         )
@@ -247,12 +394,21 @@ class Snaker:
 
 class FlyerCollector(FlyerInterface, Device):
     stream_name: str
-    flyers: list
+    detectors: Sequence
+    positioners: Sequence
 
     def __init__(
-        self, flyers, stream_name: str = "primary", extra_signals=(), *args, **kwargs
+        self,
+        detectors,
+        positioners,
+        stream_name: str = "primary",
+        extra_signals=(),
+        *args,
+        **kwargs,
     ):
-        self.flyers = flyers
+        # self.flyers = flyers
+        self.detectors = detectors
+        self.positioners = positioners
         self.stream_name = stream_name
         self.extra_signals = extra_signals
         super().__init__(*args, **kwargs)
@@ -264,7 +420,7 @@ class FlyerCollector(FlyerInterface, Device):
         return StatusBase(success=True)
 
     def collect(self):
-        collections = [iter(flyer.collect()) for flyer in self.flyers]
+        collections = [iter(flyer.collect()) for flyer in self.detectors]
         while True:
             event = {
                 "data": {},
@@ -282,6 +438,11 @@ class FlyerCollector(FlyerInterface, Device):
             for ts in event["timestamps"].values():
                 timestamps.extend(np.asarray(ts).flatten())
             event["time"] = np.median(timestamps)
+            # Add interpolated motor positions
+            for motor in self.positioners:
+                datum = motor.predict(event["time"])
+                event["data"].update(datum["data"])
+                event["timestamps"].update(datum["timestamps"])
             # Add extra non-flying signals (not inc. in event time)
             for signal in self.extra_signals:
                 for signal_name, reading in signal.read().items():
@@ -291,7 +452,7 @@ class FlyerCollector(FlyerInterface, Device):
 
     def describe_collect(self):
         desc = OrderedDict()
-        for flyer in self.flyers:
+        for flyer in [*self.positioners, *self.detectors]:
             for stream, this_desc in flyer.describe_collect().items():
                 desc.update(this_desc)
         # Add extra signals, e.g. slow motor during a grid fly scan

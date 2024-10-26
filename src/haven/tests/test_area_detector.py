@@ -1,10 +1,65 @@
-from haven.instrument.area_detector import load_area_detectors
+import time
+from collections import OrderedDict
+
+import pytest
+from ophyd import ADComponent as ADCpt
+from ophyd.areadetector.cam import AreaDetectorCam
+from ophyd.sim import instantiate_fake_device
+
+from haven.devices.area_detector import DetectorBase, DetectorState, HDF5FilePlugin
 
 
-def test_load_area_detectors(sim_registry):
-    load_area_detectors()
-    # Check that some area detectors were loaded
-    dets = sim_registry.findall(label="area_detectors")
+class Detector(DetectorBase):
+    cam = ADCpt(AreaDetectorCam, "cam1:")
+    hdf = ADCpt(HDF5FilePlugin, "HDF1:", write_path_template="/tmp/")
+
+
+@pytest.fixture()
+def threaded_detector(sim_registry):
+    det = instantiate_fake_device(Detector)
+    return det
+
+
+def test_flyscan_kickoff(threaded_detector):
+    detector = threaded_detector
+    detector.flyer_num_points.set(10)
+    status = detector.kickoff()
+    detector.cam.detector_state.sim_put(DetectorState.ACQUIRE)
+    status.wait(timeout=3)
+    assert status.success
+    assert status.done
+    # Check that the device was properly configured for fly-scanning
+    assert detector.cam.acquire.get() == 1
+    assert detector._fly_data == {}
+    # Check that timestamps get recorded when new data are available
+    detector.cam.array_counter.sim_put(1)
+    event = detector._fly_data[detector.cam.array_counter]
+    assert event[0].timestamp == pytest.approx(time.time())
+
+
+def test_hdf_dtype(threaded_detector):
+    """Check that the right ``dtype_str`` is added to the image data to
+    make tiled happy.
+    """
+    detector = threaded_detector
+    # Set up fake image metadata
+    detector.hdf.data_type.sim_put("UInt8")
+    original_desc = OrderedDict(
+        [
+            (
+                "FakeDetector_image",
+                {
+                    "shape": (1, 1024, 1280),
+                    "source": "PV:25idcARV4:",
+                    "dtype": "array",
+                    "external": "FILESTORE:",
+                },
+            )
+        ]
+    )
+    # Update and check the description
+    new_desc = detector.hdf._add_dtype_str(original_desc)
+    assert new_desc["FakeDetector_image"]["dtype_str"] == "|u1"
 
 
 # -----------------------------------------------------------------------------

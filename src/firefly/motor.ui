@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>190</width>
-    <height>270</height>
+    <width>231</width>
+    <height>271</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,7 +17,7 @@
    <item>
     <layout class="QVBoxLayout" name="verticalLayout">
      <item>
-      <widget class="PyDMLabel" name="PyDMLabel_2">
+      <widget class="PyDMLabel" name="description_label">
        <property name="font">
         <font>
          <pointsize>14</pointsize>
@@ -29,18 +29,18 @@
         <string/>
        </property>
        <property name="text">
-        <string>SAM V</string>
+        <string>######</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignCenter</set>
        </property>
        <property name="channel" stdset="0">
-        <string>haven://${MOTOR}_description</string>
+        <string>haven://${MOTOR}.description</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="PyDMLabel" name="PyDMLabel">
+      <widget class="PyDMLabel" name="readback_label">
        <property name="font">
         <font>
          <pointsize>12</pointsize>
@@ -50,7 +50,7 @@
         <string/>
        </property>
        <property name="text">
-        <string>5000.00324 microns</string>
+        <string>######</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignCenter</set>
@@ -92,7 +92,7 @@
             <string/>
            </property>
            <property name="rules" stdset="0">
-            <string>[{&quot;name&quot;: &quot;limit_autohide&quot;, &quot;property&quot;: &quot;Visible&quot;, &quot;initial_value&quot;: &quot;False&quot;, &quot;expression&quot;: &quot;ch[0] &gt; 0&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;haven://${MOTOR}_low_limit_switch&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}]}]</string>
+            <string>[{&quot;name&quot;: &quot;limit_autohide&quot;, &quot;property&quot;: &quot;Opacity&quot;, &quot;initial_value&quot;: &quot;0.0&quot;, &quot;expression&quot;: &quot;float(ch[0] &gt; 0)&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;haven://${MOTOR}.low_limit_switch&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}]}]</string>
            </property>
            <property name="alarmSensitiveContent" stdset="0">
             <bool>false</bool>
@@ -101,7 +101,7 @@
             <bool>true</bool>
            </property>
            <property name="channel" stdset="0">
-            <string>haven://${MOTOR}_low_limit_switch</string>
+            <string>haven://${MOTOR}.low_limit_switch</string>
            </property>
            <property name="onColor" stdset="0">
             <color>
@@ -145,10 +145,10 @@
             <string/>
            </property>
            <property name="rules" stdset="0">
-            <string>[{&quot;name&quot;: &quot;limit_autohide&quot;, &quot;property&quot;: &quot;Visible&quot;, &quot;initial_value&quot;: &quot;False&quot;, &quot;expression&quot;: &quot;ch[0] &gt; 0&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;haven://${MOTOR}_soft_limit_violation&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}]}]</string>
+            <string>[{&quot;name&quot;: &quot;limit_autohide&quot;, &quot;property&quot;: &quot;Opacity&quot;, &quot;initial_value&quot;: &quot;0.0&quot;, &quot;expression&quot;: &quot;float(ch[0] &gt; 0)&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;haven://${MOTOR}.soft_limit_violation&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}]}]</string>
            </property>
            <property name="channel" stdset="0">
-            <string>haven://${MOTOR}_soft_limit_violation</string>
+            <string>haven://${MOTOR}.soft_limit_violation</string>
            </property>
            <property name="onColor" stdset="0">
             <color>
@@ -172,12 +172,12 @@
         </layout>
        </item>
        <item>
-        <widget class="PyDMLineEdit" name="PyDMLineEdit">
+        <widget class="PyDMLineEdit" name="setpoint_lineedit">
          <property name="toolTip">
           <string/>
          </property>
          <property name="text">
-          <string>5000.0281</string>
+          <string>######</string>
          </property>
          <property name="channel" stdset="0">
           <string>haven://${MOTOR}.user_setpoint</string>
@@ -195,7 +195,7 @@
             <string/>
            </property>
            <property name="rules" stdset="0">
-            <string>[{&quot;name&quot;: &quot;limit_autohide&quot;, &quot;property&quot;: &quot;Visible&quot;, &quot;initial_value&quot;: &quot;False&quot;, &quot;expression&quot;: &quot;ch[0] &gt; 0&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;haven://${MOTOR}_high_limit_switch&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}]}]</string>
+            <string>[{&quot;name&quot;: &quot;limit_autohide&quot;, &quot;property&quot;: &quot;Opacity&quot;, &quot;initial_value&quot;: &quot;0.0&quot;, &quot;expression&quot;: &quot;float(ch[0] &gt; 0)&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;haven://${MOTOR}.high_limit_switch&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}]}]</string>
            </property>
            <property name="alarmSensitiveContent" stdset="0">
             <bool>false</bool>
@@ -203,8 +203,11 @@
            <property name="alarmSensitiveBorder" stdset="0">
             <bool>true</bool>
            </property>
+           <property name="PyDMToolTip" stdset="0">
+            <string/>
+           </property>
            <property name="channel" stdset="0">
-            <string>haven://${MOTOR}_high_limit_switch</string>
+            <string>haven://${MOTOR}.high_limit_switch</string>
            </property>
            <property name="onColor" stdset="0">
             <color>
@@ -248,10 +251,19 @@
             <string/>
            </property>
            <property name="rules" stdset="0">
-            <string>[{&quot;name&quot;: &quot;limit_autohide&quot;, &quot;property&quot;: &quot;Visible&quot;, &quot;initial_value&quot;: &quot;False&quot;, &quot;expression&quot;: &quot;ch[0] &gt; 0&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;haven://${MOTOR}_soft_limit_violation&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}]}]</string>
+            <string>[{&quot;name&quot;: &quot;limit_autohide&quot;, &quot;property&quot;: &quot;Opacity&quot;, &quot;initial_value&quot;: &quot;0.0&quot;, &quot;expression&quot;: &quot;float(ch[0] &gt; 0)&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;haven://${MOTOR}.soft_limit_violation&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}]}]</string>
+           </property>
+           <property name="alarmSensitiveContent" stdset="0">
+            <bool>false</bool>
+           </property>
+           <property name="alarmSensitiveBorder" stdset="0">
+            <bool>true</bool>
+           </property>
+           <property name="PyDMToolTip" stdset="0">
+            <string/>
            </property>
            <property name="channel" stdset="0">
-            <string>haven://${MOTOR}_soft_limit_violation</string>
+            <string>haven://${MOTOR}.soft_limit_violation</string>
            </property>
            <property name="onColor" stdset="0">
             <color>
@@ -269,6 +281,23 @@
            </property>
            <property name="showLabels" stdset="0">
             <bool>false</bool>
+           </property>
+           <property name="bigEndian" stdset="0">
+            <bool>false</bool>
+           </property>
+           <property name="circles" stdset="0">
+            <bool>false</bool>
+           </property>
+           <property name="numBits" stdset="0">
+            <number>1</number>
+           </property>
+           <property name="shift" stdset="0">
+            <number>0</number>
+           </property>
+           <property name="labels" stdset="0">
+            <stringlist>
+             <string>Bit 0</string>
+            </stringlist>
            </property>
           </widget>
          </item>
@@ -297,6 +326,9 @@
        <property name="text">
         <string>Stop</string>
        </property>
+       <property name="rules" stdset="0">
+        <string>[{&quot;name&quot;: &quot;Enable stop button&quot;, &quot;property&quot;: &quot;Enable&quot;, &quot;initial_value&quot;: &quot;True&quot;, &quot;expression&quot;: &quot;ch[0]&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;haven://${MOTOR}.motor_is_moving&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}], &quot;notes&quot;: &quot;We only need the stop button to be usable if the motor is moving. Otherwise, just disable it.&quot;}]</string>
+       </property>
        <property name="channel" stdset="0">
         <string>haven://${MOTOR}.motor_stop</string>
        </property>
@@ -306,123 +338,20 @@
       </widget>
      </item>
      <item>
-      <layout class="QHBoxLayout" name="horizontalLayout">
-       <property name="spacing">
-        <number>0</number>
+      <widget class="PyDMEmbeddedDisplay" name="tweak_display">
+       <property name="toolTip">
+        <string/>
        </property>
-       <property name="bottomMargin">
-        <number>0</number>
+       <property name="frameShape">
+        <enum>QFrame::NoFrame</enum>
        </property>
-       <item>
-        <widget class="PyDMPushButton" name="PyDMPushButton">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="minimumSize">
-          <size>
-           <width>0</width>
-           <height>25</height>
-          </size>
-         </property>
-         <property name="maximumSize">
-          <size>
-           <width>30</width>
-           <height>16777215</height>
-          </size>
-         </property>
-         <property name="font">
-          <font>
-           <pointsize>12</pointsize>
-          </font>
-         </property>
-         <property name="toolTip">
-          <string/>
-         </property>
-         <property name="text">
-          <string>❰</string>
-         </property>
-         <property name="channel" stdset="0">
-          <string>haven://${MOTOR}_tweak_reverse</string>
-         </property>
-         <property name="pressValue" stdset="0">
-          <string>1</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="PyDMLineEdit" name="PyDMLineEdit_2">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="minimumSize">
-          <size>
-           <width>0</width>
-           <height>25</height>
-          </size>
-         </property>
-         <property name="toolTip">
-          <string/>
-         </property>
-         <property name="text">
-          <string>100.0</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-         <property name="placeholderText">
-          <string>Jog step</string>
-         </property>
-         <property name="channel" stdset="0">
-          <string>haven://${MOTOR}.tweak_value</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="PyDMPushButton" name="PyDMPushButton_2">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="minimumSize">
-          <size>
-           <width>0</width>
-           <height>25</height>
-          </size>
-         </property>
-         <property name="maximumSize">
-          <size>
-           <width>30</width>
-           <height>16777215</height>
-          </size>
-         </property>
-         <property name="font">
-          <font>
-           <pointsize>12</pointsize>
-          </font>
-         </property>
-         <property name="toolTip">
-          <string/>
-         </property>
-         <property name="text">
-          <string>❱</string>
-         </property>
-         <property name="channel" stdset="0">
-          <string>haven://${MOTOR}_tweak_forward</string>
-         </property>
-         <property name="pressValue" stdset="0">
-          <string>1</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
+       <property name="macros" stdset="0">
+        <string>SIG=${MOTOR}.user_setpoint</string>
+       </property>
+       <property name="filename" stdset="0">
+        <string>tweak.py</string>
+       </property>
+      </widget>
      </item>
      <item>
       <widget class="Line" name="line">
@@ -488,6 +417,12 @@
    <class>PyDMByteIndicator</class>
    <extends>QWidget</extends>
    <header>pydm.widgets.byte</header>
+  </customwidget>
+  <customwidget>
+   <class>PyDMEmbeddedDisplay</class>
+   <extends>QFrame</extends>
+   <header>pydm.widgets.embedded_display</header>
+   <container>1</container>
   </customwidget>
   <customwidget>
    <class>PyDMLineEdit</class>

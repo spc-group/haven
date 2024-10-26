@@ -37,6 +37,7 @@ def I0(sim_registry):
         sigma=1,
         labels={"ion_chambers"},
     )
+    sim_registry.register(I0)
     return I0
 
 
@@ -94,29 +95,6 @@ def test_energy_scan_basics(
 def test_raises_on_empty_positioners(RE, energies):
     with pytest.raises(ValueError):
         RE(energy_scan(energies, energy_signals=[]))
-
-
-def test_saves_dspacing(mono, energies, I0, It):
-    """Does the mono's d-spacing get added to metadata."""
-    # Prepare the messages from the plan
-    mono.d_spacing._readback = 1.5418
-    msgs = list(
-        energy_scan(
-            energies,
-            detectors=[It],
-            energy_signals=[mono],
-            time_signals=[It.exposure_time],
-        )
-    )
-    # Find the metadata written by the plan
-    for msg in msgs:
-        if msg.command == "open_run":
-            md = msg.kwargs
-            break
-    else:
-        raise RuntimeError("No open run message found")
-    # Check for the dspacing of the mono in the metadata
-    assert md["d_spacing"] == 1.5418
 
 
 def test_single_range(mono_motor, exposure_motor, I0):
