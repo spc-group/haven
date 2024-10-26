@@ -150,9 +150,18 @@ class BrowserMultiPlotWidget(GraphicsLayoutWidget):
 
 
 class Browser1DPlotWidget(PlotWidget):
+    cursor_needed: bool
+    data_items: dict
+
     def __init__(self, parent=None, background="default", plotItem=None, **kargs):
         plot_item = Browser1DPlotItem(**kargs)
         super().__init__(parent=parent, background=background, plotItem=plot_item)
+        self.clear_runs()
+
+    def clear_runs(self):
+        self.getPlotItem().clear()
+        self.cursor_needed = True
+        self.data_items = {}
 
     def plot_runs(self, runs: Mapping, ylabel="", xlabel=""):
         """Take loaded run data and plot it.
@@ -166,24 +175,27 @@ class Browser1DPlotWidget(PlotWidget):
 
         """
         plot_item = self.getPlotItem()
-        plot_item.clear()
         # Plot this run's data
-        cursor_needed = True
         for idx, (label, series) in enumerate(runs.items()):
             color = colors[idx % len(colors)]
-            plot_item.plot(
-                x=series.index,
-                y=series.values,
-                pen=color,
-                name=label,
-                clear=False,
-            )
+            if label in self.data_items.keys():
+                # We've plotted this item before, so reuse it
+                data_item = self.data_items[label]
+                data_item.setData(series.index, series.values)
+            else:
+                self.data_items[label] = plot_item.plot(
+                    x=series.index,
+                    y=series.values,
+                    pen=color,
+                    name=label,
+                    clear=False,
+                )
             # Cursor to drag around on the data
-            if cursor_needed:
+            if self.cursor_needed:
                 plot_item.addLine(
                     x=np.median(series.index), movable=True, label="{value:.3f}"
                 )
-                cursor_needed = False
+                self.cursor_needed = False
         # Axis formatting
         plot_item.setLabels(left=ylabel, bottom=xlabel)
 
@@ -576,7 +588,6 @@ class RunBrowserDisplay(display.FireflyDisplay):
     @asyncSlot()
     @cancellable
     async def update_1d_plot(self, *args):
-        self.plot_1d_item.clear()
         # Figure out which signals to plot
         y_signal = self.ui.signal_y_combobox.currentText()
         x_signal = self.ui.signal_x_combobox.currentText()
@@ -642,10 +653,37 @@ class RunBrowserDisplay(display.FireflyDisplay):
         # Update the widget with the rendered metadata
         self.ui.metadata_textedit.document().setPlainText(text)
 
+    def clear_plots(self):
+        """Clear all the plots.
+
+        If a *uid* is provided, only the plots matching the scan with
+        *uid* will be updated.
+        """
+        self.plot_1d_view.clear_plots()
+
     @asyncSlot()
     @cancellable
-    async def update_selected_runs(self, *args):
-        """Get the current runs from the database and stash them."""
+    async def update_plots(self, uid: str = ""):
+        """Get new data, and update all the plots.
+
+        If a *uid* is provided, only the plots matching the scan with
+        *uid* will be updated.
+        """
+
+        asyncio.gather(
+            self.update_metadata(),
+            self.update_1d_plot(uid=uid),
+            self.update_2d_plot(),
+            self.update_multi_plot(),
+        )
+
+    @asyncSlot()
+    @cancellable
+    async def update_selected_runs(self, uid=None, *args):
+
+        """Get the current runs from the database and stash them.
+
+        """
         # Get UID's from the selection
         col_idx = self._run_col_names.index("UID")
         indexes = self.ui.run_tableview.selectedIndexes()
@@ -657,13 +695,14 @@ class RunBrowserDisplay(display.FireflyDisplay):
             )
             self.selected_runs = await task
             # Update the necessary UI elements
-            await self.update_multi_signals()
-            await self.update_1d_signals()
-            await self.update_2d_signals()
-            await self.update_metadata()
-            await self.update_1d_plot()
-            await self.update_2d_plot()
-            await self.update_multi_plot()
+            await asyncio.gather(
+                self.update_multi_signals(),
+                self.update_1d_signals(),
+                self.update_2d_signals(),
+            )
+            # Update the plots
+            self.clear_plots()
+            await self.update_plots()
             self.update_export_button()
 
     def filters(self, *args):

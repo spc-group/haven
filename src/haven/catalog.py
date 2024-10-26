@@ -222,6 +222,10 @@ class CatalogScan:
     def uid(self):
         return self.container._item["id"]
 
+    async def run(self, to_call, *args):
+        """Run the given syncronous callable in an asynchronous context."""
+        return await self.loop.run_in_executor(self.executor, to_call, *args)
+
     async def export(self, filename: str, format: str):
         target = partial(self.container.export, filename, format=format)
         await self.loop.run_in_executor(None, target)
