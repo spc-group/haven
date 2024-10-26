@@ -9,6 +9,7 @@ import firefly
 from firefly.action import WindowAction
 from firefly.controller import FireflyController
 from firefly.queue_client import QueueClient
+from firefly.kafka_client import KafkaClient
 
 
 @pytest.fixture()
@@ -76,6 +77,12 @@ def test_queue_actions_enabled(controller, qtbot):
     # Pretend the queue is in an unknown state (maybe the environment is closed)
     with qtbot.waitSignal(controller.queue_re_state_changed, timeout=1000):
         controller.queue_re_state_changed.emit(None)
+
+
+def test_prepare_kafka_client(controller):
+    api = MagicMock()
+    controller.prepare_kafka_client()
+    assert isinstance(controller._kafka_client, KafkaClient)
 
 
 @pytest.fixture()

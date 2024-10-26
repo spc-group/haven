@@ -39,6 +39,8 @@ dependencies:
 
   - pip:
     - aioca
+    - aiokafka
+    - asynctest
     - apsbss
     - time-machine
     - rich

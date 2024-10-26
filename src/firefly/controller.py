@@ -22,6 +22,7 @@ from haven.exceptions import ComponentNotFound, InvalidConfiguration
 from .action import Action, ActionsRegistry, WindowAction
 from .main_window import FireflyMainWindow, PlanMainWindow
 from .queue_client import QueueClient, queueserver_api
+from .kafka_client import KafkaClient
 
 generator = type((x for x in []))
 
@@ -51,6 +52,11 @@ class FireflyController(QtCore.QObject):
 
     # Signals for running plans on the queueserver
     queue_item_added = Signal(object)
+
+    # Signals responding to queueserver documents over kafka
+    run_started = Signal(str)
+    run_updated = Signal(str)
+    run_stopped = Signal(str)
 
     # Signals responding to queueserver changes
     queue_status_changed = Signal(dict)
@@ -496,11 +502,25 @@ class FireflyController(QtCore.QObject):
         }
         return actions
 
+    def prepare_kafka_client(self):
+        client = KafkaClient()
+        self._kafka_client = client
+        client.run_started.connect(self.run_started)
+        client.run_updated.connect(self.run_updated)
+        client.run_stopped.connect(self.run_stopped)
+
+    def start_kafka_client(self):
+        try:
+            self._kafka_client.start()
+        except Exception as exc:
+            log.error(f"Could not start kafka client: {exc}")
+
     def start_queue_client(self):
         try:
             self._queue_client.start()
         except Exception as exc:
             log.error(f"Could not start queue client: {exc}")
+
 
     def prepare_queue_client(self, client=None, api=None):
         """Set up the QueueClient object that talks to the queue server.
@@ -573,9 +593,10 @@ class FireflyController(QtCore.QObject):
 
     def start(self):
         """Start the background clients."""
-        # Show the UI stuffs
         self.prepare_queue_client()
+        self.prepare_kafka_client
         self.start_queue_client()
+        self.start_kafka_client
 
     def update_devices_allowed(self, devices):
         pass
