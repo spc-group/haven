@@ -202,10 +202,6 @@ async def test_update_1d_plot(catalog, display):
         "xlabel": "energy_energy",
         "ylabel": "∇ ln(I0_net_counts/It_net_counts)",
     }
-    # data_item = display.plot_1d_item.listDataItems()[0]
-    # xdata, ydata = data_item.getData()
-    # np.testing.assert_almost_equal(xdata, expected_xdata)
-    # np.testing.assert_almost_equal(ydata, expected_ydata)
 
 
 # Warns: Task was destroyed but it is pending!
@@ -372,9 +368,6 @@ async def test_export_button_clicked(catalog, display, mocker, qtbot):
     files = display.export_dialog.selectedFiles.return_value
     assert display.db.export_runs.call_args.args == (files,)
     assert display.db.export_runs.call_args.kwargs["formats"] == ["application/json"]
-
-
-
 
 
 # -----------------------------------------------------------------------------

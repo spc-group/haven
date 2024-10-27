@@ -422,6 +422,13 @@
        <item>
         <layout class="QHBoxLayout" name="run_buttons_layout">
          <item>
+          <widget class="QPushButton" name="reload_plots_button">
+           <property name="text">
+            <string>Reload Plots</string>
+           </property>
+          </widget>
+         </item>
+         <item>
           <spacer name="horizontalSpacer_10">
            <property name="orientation">
             <enum>Qt::Horizontal</enum>

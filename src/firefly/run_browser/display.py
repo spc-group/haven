@@ -189,6 +189,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
         self.ui.filters_widget.returnPressed.connect(self.refresh_runs_button.click)
         # Respond to controls for the current run
         self.ui.export_button.clicked.connect(self.export_runs)
+        self.ui.reload_plots_button.clicked.connect(self.update_plots)
         # Set up 1D plotting widgets
         self.plot_1d_item = self.ui.plot_1d_view.getPlotItem()
         self.plot_2d_item = self.ui.plot_2d_view.getImageItem()
