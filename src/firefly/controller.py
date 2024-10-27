@@ -267,7 +267,7 @@ class FireflyController(QtCore.QObject):
         self.actions.run_browser = WindowAction(
             name="show_run_browser_action",
             text="Browse Runs",
-            display_file=ui_dir / "run_browser.py",
+            display_file=ui_dir / "run_browser" / "display.py",
             shortcut="Ctrl+Shift+B",
             icon=qta.icon("mdi.book-open-variant"),
             WindowClass=FireflyMainWindow,

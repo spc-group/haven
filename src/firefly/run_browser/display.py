@@ -13,9 +13,8 @@ from qtpy.QtGui import QStandardItem, QStandardItemModel
 from qtpy.QtWidgets import QWidget
 
 from firefly import display
-
-from .client import DatabaseWorker
-from .widgets import ExportDialog
+from firefly.run_browser.client import DatabaseWorker
+from firefly.run_browser.widgets import ExportDialog
 
 log = logging.getLogger(__name__)
 
