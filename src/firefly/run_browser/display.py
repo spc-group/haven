@@ -167,14 +167,19 @@ class RunBrowserDisplay(display.FireflyDisplay):
         # Sleep controls for testing async timing
         self.ui.sleep_button.clicked.connect(self.sleep_slot)
         # Respond to changes in displaying the 1d plot
-        self.ui.signal_y_combobox.currentTextChanged.connect(self.update_1d_plot)
-        self.ui.signal_x_combobox.currentTextChanged.connect(self.update_1d_plot)
-        self.ui.signal_r_combobox.currentTextChanged.connect(self.update_1d_plot)
-        self.ui.signal_r_checkbox.stateChanged.connect(self.update_1d_plot)
-        self.ui.logarithm_checkbox.stateChanged.connect(self.update_1d_plot)
-        self.ui.invert_checkbox.stateChanged.connect(self.update_1d_plot)
-        self.ui.gradient_checkbox.stateChanged.connect(self.update_1d_plot)
-        self.ui.plot_1d_hints_checkbox.stateChanged.connect(self.update_1d_signals)
+        for signal in [
+                self.ui.signal_y_combobox.currentTextChanged,
+                self.ui.signal_x_combobox.currentTextChanged,
+                self.ui.signal_r_combobox.currentTextChanged,
+                self.ui.signal_r_checkbox.stateChanged,
+                self.ui.logarithm_checkbox.stateChanged,
+                self.ui.invert_checkbox.stateChanged,
+                self.ui.gradient_checkbox.stateChanged,
+        ]:
+            signal.connect(self.plot_1d_view.reset_auto_range)
+            signal.connect(self.update_1d_plot)
+        self.ui.plot_1d_hints_checkbox.stateChanged.connect(self.update_1d_signals)            
+        # Respond to changes in displaying the 2d plot
         self.ui.plot_multi_hints_checkbox.stateChanged.connect(
             self.update_multi_signals
         )
@@ -368,6 +373,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
     @asyncSlot()
     @cancellable
     async def update_1d_plot(self, *args):
+        """Updates the data used in the plots."""
         # Figure out which signals to plot
         y_signal = self.ui.signal_y_combobox.currentText()
         x_signal = self.ui.signal_x_combobox.currentText()
@@ -408,6 +414,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
             ylabel = f"ln({ylabel})"
         if use_grad:
             ylabel = f"∇ {ylabel}"
+        
         # Do the plotting
         self.ui.plot_1d_view.plot_runs(runs, xlabel=xlabel, ylabel=ylabel)
 

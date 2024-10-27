@@ -127,6 +127,7 @@ class BrowserMultiPlotWidget(GraphicsLayoutWidget):
 
 class Browser1DPlotWidget(PlotWidget):
     cursor_needed: bool
+    auto_range_needed: bool
     data_items: dict
 
     def __init__(self, parent=None, background="default", plotItem=None, **kargs):
@@ -137,6 +138,7 @@ class Browser1DPlotWidget(PlotWidget):
     def clear_runs(self):
         self.getPlotItem().clear()
         self.cursor_needed = True
+        self.auto_range_needed = True
         self.data_items = {}
 
     def plot_runs(self, runs: Mapping, ylabel="", xlabel=""):
@@ -174,6 +176,14 @@ class Browser1DPlotWidget(PlotWidget):
                 self.cursor_needed = False
         # Axis formatting
         plot_item.setLabels(left=ylabel, bottom=xlabel)
+        # Automatically set the plotting range
+        if self.auto_range_needed:
+            plot_item.autoRange()
+
+    def reset_auto_range(self, *args):
+        """Reset the flag on the view to rescale the axis next update."""
+        self.auto_range_needed = True
+            
 
 
 class Browser2DPlotWidget(ImageView):
