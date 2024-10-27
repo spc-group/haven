@@ -1,27 +1,25 @@
-import time
 import asyncio
-from unittest.mock import MagicMock, AsyncMock
+from unittest.mock import MagicMock
 
 import numpy as np
-import pandas as pd
 import pytest
-from pyqtgraph import ImageItem, ImageView, PlotItem, PlotWidget
 from qtpy.QtWidgets import QFileDialog
+from pyqtgraph import ImageItem, ImageView, PlotItem, PlotWidget
 
-from firefly.run_browser import RunBrowserDisplay, Browser1DPlotWidget
-from firefly.run_client import DatabaseWorker
+from firefly.run_browser.display import RunBrowserDisplay
 
 
 @pytest.fixture()
 async def display(qtbot, catalog, mocker):
     mocker.patch(
-        "firefly.run_browser.ExportDialog.exec_", return_value=QFileDialog.Accepted
+        "firefly.run_browser.widgets.ExportDialog.exec_",
+        return_value=QFileDialog.Accepted,
     )
     mocker.patch(
-        "firefly.run_browser.ExportDialog.selectedFiles",
+        "firefly.run_browser.widgets.ExportDialog.selectedFiles",
         return_value=["/net/s255data/export/test_file.nx"],
     )
-    mocker.patch("firefly.run_client.DatabaseWorker.export_runs")
+    mocker.patch("firefly.run_browser.client.DatabaseWorker.export_runs")
     display = RunBrowserDisplay(root_node=catalog)
     qtbot.addWidget(display)
     display.clear_filters()
@@ -75,11 +73,23 @@ async def test_update_selected_runs(display):
     assert len(display.db.selected_runs) > 0
 
 
+@pytest.mark.asyncio
+async def test_update_selected_runs(display):
+    # Change the proposal item
+    item = display.runs_model.item(0, 1)
+    assert item is not None
+    display.ui.run_tableview.selectRow(0)
+    # Update the runs
+    await display.update_selected_runs()
+    # Check that the runs were saved
+    assert len(display.db.selected_runs) > 0
+
+
 async def test_clear_plots(display):
     display.plot_1d_item.clear = MagicMock()
     display.clear_plots()
     assert display.plot_1d_item.clear.called
-
+    
 
 @pytest.mark.asyncio
 async def test_metadata(display):
@@ -190,21 +200,6 @@ async def test_update_1d_plot(catalog, display):
     np.testing.assert_almost_equal(ydata, expected_ydata)
 
 
-async def test_plot_1d_runs(qtbot):
-    widget = Browser1DPlotWidget()
-    qtbot.addWidget(widget)
-    assert len(widget.data_items) == 0
-    # Set some runs
-    widget.plot_runs({"hello": pd.Series(data=[10, 20, 30], index=[1, 2, 3])})
-    assert 'hello' in widget.data_items.keys()
-    # Now update it again and check that the data item is reused
-    mock_data_item = MagicMock()
-    widget.data_items['hello'] = mock_data_item
-    widget.plot_runs({"hello": pd.Series(data=[40, 50], index=[4, 5])})
-    assert widget.data_items['hello'] is mock_data_item
-    mock_data_item.setData.assert_called_once()
-
-
 # Warns: Task was destroyed but it is pending!
 @pytest.mark.asyncio
 async def test_2d_plot_signals(catalog, display):
@@ -270,23 +265,6 @@ async def test_update_multi_plot(catalog, display):
     # xdata, ydata = data_item.getData()
     # np.testing.assert_almost_equal(xdata, expected_xdata)
     # np.testing.assert_almost_equal(ydata, expected_ydata)
-
-
-@pytest.mark.asyncio
-async def test_filter_runs(catalog):
-    worker = DatabaseWorker(catalog=catalog)
-    runs = await worker.load_all_runs(filters={"plan": "xafs_scan"})
-    # Check that the runs were filtered
-    assert len(runs) == 1
-
-
-@pytest.mark.asyncio
-async def test_distinct_fields(catalog, display):
-    worker = DatabaseWorker(catalog=catalog)
-    distinct_fields = await worker.load_distinct_fields()
-    # Check that the dictionary has the right structure
-    for key in ["sample_name"]:
-        assert key in distinct_fields.keys()
 
 
 def test_busy_hints_run_widgets(display):
@@ -388,6 +366,9 @@ async def test_export_button_clicked(catalog, display, mocker, qtbot):
     assert display.db.export_runs.call_args.kwargs["formats"] == ["application/json"]
 
 
+
+
+
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov
@@ -412,3 +393,4 @@ async def test_export_button_clicked(catalog, display, mocker, qtbot):
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 # -----------------------------------------------------------------------------
+    

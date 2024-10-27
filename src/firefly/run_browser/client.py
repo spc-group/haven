@@ -1,8 +1,8 @@
 import datetime as dt
 import logging
+import warnings
 from collections import OrderedDict
 from typing import Mapping, Sequence
-import warnings
 
 import numpy as np
 import pandas as pd
@@ -52,9 +52,7 @@ class DatabaseWorker:
         return runs
 
     async def load_distinct_fields(self):
-        """Get distinct metadata fields for filterable metadata.
-
-        """
+        """Get distinct metadata fields for filterable metadata."""
         new_fields = {}
         target_fields = [
             "sample_name",

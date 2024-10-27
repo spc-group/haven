@@ -468,7 +468,7 @@
           </sizepolicy>
          </property>
          <property name="currentIndex">
-          <number>2</number>
+          <number>1</number>
          </property>
          <widget class="QWidget" name="metadata_tab">
           <attribute name="title">
@@ -559,8 +559,8 @@
                <rect>
                 <x>0</x>
                 <y>0</y>
-                <width>84</width>
-                <height>28</height>
+                <width>864</width>
+                <height>638</height>
                </rect>
               </property>
               <property name="sizePolicy">
@@ -992,25 +992,25 @@
   <customwidget>
    <class>FiltersWidget</class>
    <extends>QWidget</extends>
-   <header>firefly.run_viewer</header>
+   <header>firefly.run_browser.widgets</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>Browser1DPlotWidget</class>
    <extends>QWidget</extends>
-   <header>firefly.run_viewer</header>
+   <header>firefly.run_browser.widgets</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>Browser2DPlotWidget</class>
    <extends>QWidget</extends>
-   <header>firefly.run_viewer</header>
+   <header>firefly.run_browser.widgets</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>BrowserMultiPlotWidget</class>
    <extends>QWidget</extends>
-   <header>firefly.run_viewer</header>
+   <header>firefly.run_browser.widgets</header>
    <container>1</container>
   </customwidget>
  </customwidgets>
