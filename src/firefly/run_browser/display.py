@@ -378,6 +378,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
         use_log = self.ui.logarithm_checkbox.isChecked()
         use_invert = self.ui.invert_checkbox.isChecked()
         use_grad = self.ui.gradient_checkbox.isChecked()
+        # Load data
         task = self.db_task(
             self.db.signals(
                 x_signal,
@@ -390,7 +391,24 @@ class RunBrowserDisplay(display.FireflyDisplay):
             "1D plot",
         )
         runs = await task
-        self.ui.plot_1d_view.plot_runs(runs)
+        # Decide on axes labels
+        xlabel = x_signal
+        if r_signal is not None:
+            if use_invert:
+                ylabel = f"{r_signal}/{y_signal}"
+            else:
+                ylabel = f"{y_signal}/{r_signal}"
+        else:
+            if use_invert:
+                ylabel = f"1/{y_signal}"
+            else:
+                ylabel = y_signal
+        if use_log:
+            ylabel = f"ln({ylabel})"
+        if use_grad:
+            ylabel = f"∇ {ylabel}"
+        # Do the plotting
+        self.ui.plot_1d_view.plot_runs(runs, xlabel=xlabel, ylabel=ylabel)
 
     @asyncSlot()
     @cancellable

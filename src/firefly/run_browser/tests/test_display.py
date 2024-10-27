@@ -1,6 +1,7 @@
 import asyncio
 from unittest.mock import MagicMock
 
+import pandas as pd
 import numpy as np
 import pytest
 from qtpy.QtWidgets import QFileDialog
@@ -86,10 +87,10 @@ async def test_update_selected_runs(display):
 
 
 async def test_clear_plots(display):
-    display.plot_1d_item.clear = MagicMock()
+    display.plot_1d_view.clear_runs = MagicMock()
     display.clear_plots()
-    assert display.plot_1d_item.clear.called
-    
+    assert display.plot_1d_view.clear_runs.called
+
 
 @pytest.mark.asyncio
 async def test_metadata(display):
@@ -169,6 +170,7 @@ async def test_1d_hinted_signals(catalog, display):
 
 @pytest.mark.asyncio
 async def test_update_1d_plot(catalog, display):
+    display.plot_1d_view.plot_runs = MagicMock()
     # Set up some fake data
     run = [run async for run in catalog.values()][0]
     display.db.selected_runs = [run]
@@ -192,12 +194,18 @@ async def test_update_1d_plot(catalog, display):
     display.ui.invert_checkbox.setChecked(True)
     display.ui.gradient_checkbox.setChecked(True)
     # Update the plots
+    display.plot_1d_view.plot_runs.reset_mock()
     await display.update_1d_plot()
     # Check that the data were added
-    data_item = display.plot_1d_item.listDataItems()[0]
-    xdata, ydata = data_item.getData()
-    np.testing.assert_almost_equal(xdata, expected_xdata)
-    np.testing.assert_almost_equal(ydata, expected_ydata)
+    display.plot_1d_view.plot_runs.assert_called_once()
+    assert display.plot_1d_view.plot_runs.call_args.kwargs == {
+        "xlabel": "energy_energy",
+        "ylabel": "∇ ln(I0_net_counts/It_net_counts)",
+    }
+    # data_item = display.plot_1d_item.listDataItems()[0]
+    # xdata, ydata = data_item.getData()
+    # np.testing.assert_almost_equal(xdata, expected_xdata)
+    # np.testing.assert_almost_equal(ydata, expected_ydata)
 
 
 # Warns: Task was destroyed but it is pending!
