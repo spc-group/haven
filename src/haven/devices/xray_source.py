@@ -115,7 +115,7 @@ class PlanarUndulator(StandardReadable):
                 actuate_signal=self.start_button,
                 stop_signal=self.stop_button,
                 done_signal=self.busy,
-                min_move=0.002,
+                min_move=0.010,
             )
             self.energy_taper = UndulatorPositioner(
                 prefix=f"{prefix}TaperEnergy",
