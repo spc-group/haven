@@ -6,7 +6,7 @@ import numpy as np
 from matplotlib.colors import TABLEAU_COLORS
 from pandas.api.types import is_numeric_dtype
 from pyqtgraph import GraphicsLayoutWidget, ImageView, PlotItem, PlotWidget
-from qtpy.QtCore import Signal
+from qtpy.QtCore import Signal, Qt
 from qtpy.QtWidgets import QFileDialog, QWidget
 
 log = logging.getLogger(__name__)
@@ -108,21 +108,22 @@ class BrowserMultiPlotWidget(GraphicsLayoutWidget):
         self._multiplot_items = {}
         for label, data in runs.items():
             # Figure out which signals to plot
-            try:
-                xdata = data[xsignal]
-            except KeyError:
-                log.warning(f"Cannot plot x='{xsignal}' for {list(data.keys())}")
-                continue
+            if xsignal in data.columns:
+                xdata = data[xsignal].values
+            else:
+                # Could not find x signal, so use the index instead
+                log.warning(f"Cannot plot x='{xsignal}' for {list(data.keys())}. Falling back to index.")
+                xdata = data.index
             # Plot each y signal on a separate plot
             for ysignal, plot_item in zip(ysignals, self.multiplot_items()):
-                try:
-                    if is_numeric_dtype(data[ysignal]):
-                        plot_item.plot(xdata, data[ysignal])
-                except KeyError:
-                    log.warning(f"No signal {ysignal} in data.")
-                else:
-                    log.debug(f"Plotted {ysignal} vs. {xsignal} for {data}")
                 plot_item.setTitle(ysignal)
+                if ysignal not in data.columns:
+                    log.warning(f"No signal {ysignal} in data.")
+                    continue
+                ydata = data[ysignal].values
+                if is_numeric_dtype(ydata):
+                    plot_item.plot(xdata, ydata)
+                log.debug(f"Plotted {ysignal} vs. {xsignal} for {data}")
 
 
 class Browser1DPlotWidget(PlotWidget):

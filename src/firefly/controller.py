@@ -602,7 +602,7 @@ class FireflyController(QtCore.QObject):
         self.prepare_queue_client()
         self.prepare_kafka_client
         self.start_queue_client()
-        self.start_kafka_client
+        self.start_kafka_client()
 
     def update_devices_allowed(self, devices):
         pass

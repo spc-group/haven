@@ -71,6 +71,7 @@ class KafkaClient(QObject):
             # Notify clients that a new run has started
             uid = doc.get('uid', "")
             log.info(f"Received new start UID: {uid}")
+            print(f"Emitting run start: {uid=}")
             self.run_started.emit(uid)
         elif doc_type == "descriptor":
             # Save the description to reference to later
@@ -79,10 +80,12 @@ class KafkaClient(QObject):
             # Notify clients that this run has a new event
             descriptor_uid = doc.get('descriptor', "")
             run_uid = self._descriptor_to_run_uid(descriptor_uid)
+            print(f"Emitting run updated: {run_uid=}")
             self.run_updated.emit(run_uid)
         elif doc_type == "stop":
             run_uid = doc['run_start']
             self._drop_descriptors(run_uid)
+            print(f"Emitting run stopped: {run_uid=}")
             self.run_stopped.emit(run_uid)
         else:
             warnings.warn(f"Unknown document type '{doc_type}'")

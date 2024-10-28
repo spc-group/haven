@@ -238,12 +238,12 @@ class DatabaseWorker:
             # Get data from the database
             df = await run.to_dataframe(signals=signals)
             # Check for missing signals
-            missing_x = x_signal not in df.columns
+            missing_x = x_signal not in df.columns and df.index.name != x_signal
             missing_y = y_signal not in df.columns
             missing_r = r_signal not in df.columns
             if missing_x or missing_y or (use_reference and missing_r):
                 log.warning(
-                    "Could not find signals {x_signal}, {y_signal} and {r_signal}"
+                    f"Could not find signals {x_signal=}, {y_signal=} and {r_signal=} in {df.columns}"
                 )
                 continue
             # Apply transformations

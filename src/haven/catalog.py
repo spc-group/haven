@@ -243,6 +243,9 @@ class CatalogScan:
         xarray = await self.run(self._read_data, signals)
         if len(xarray) > 0:
             df = xarray.to_dataframe()
+            # Add a copy of the index to the dataframe itself
+            if df.index.name is not None:
+                df[df.index.name] = df.index
         else:
             df = pd.DataFrame()
         return df
