@@ -171,6 +171,7 @@ async def test_1d_hinted_signals(catalog, display):
 @pytest.mark.asyncio
 async def test_update_1d_plot(catalog, display):
     display.plot_1d_view.plot_runs = MagicMock()
+    display.plot_1d_view.autoRange = MagicMock()
     # Set up some fake data
     run = [run async for run in catalog.values()][0]
     display.db.selected_runs = [run]
@@ -193,6 +194,8 @@ async def test_update_1d_plot(catalog, display):
     display.ui.logarithm_checkbox.setChecked(True)
     display.ui.invert_checkbox.setChecked(True)
     display.ui.gradient_checkbox.setChecked(True)
+    # Check the autorange combobox
+    display.ui.autorange_1d_checkbox.setChecked(True)
     # Update the plots
     display.plot_1d_view.plot_runs.reset_mock()
     await display.update_1d_plot()
@@ -202,13 +205,8 @@ async def test_update_1d_plot(catalog, display):
         "xlabel": "energy_energy",
         "ylabel": "∇ ln(I0_net_counts/It_net_counts)",
     }
-
-
-def test_autorange_checkboxes(display, qtbot):
-    display.plot_1d_view = MagicMock()
-    # Check the combobox entries
-    display.ui.autorange_1d_x_checkbox.setChecked(True)
-    assert display.plot_1d_view.enableAutoRange.called
+    # Check that auto-range was called when done
+    assert display.plot_1d_view.autoRange.called
 
 
 def test_autorange_button(display, qtbot):
