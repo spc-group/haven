@@ -33,7 +33,9 @@ def record_dark_current(
     ion_chambers
       Ion chamber devices or names.
     shutters
-      Shutter devices or names.
+      Shutter devices or names. These shutters will be closed before
+      recording the dark current, and then be returned to its original
+      state afterward recording the dark current.
 
     """
     # Get previous shutter states

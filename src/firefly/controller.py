@@ -335,6 +335,7 @@ class FireflyController(QtCore.QObject):
         """Connect up signals that are specific to the run browser window."""
         display = action.display
         self.run_updated.connect(display.update_running_scan)
+        self.run_stopped.connect(display.update_running_scan)
 
     def finalize_status_window(self, action):
         """Connect up signals that are specific to the voltmeters window."""
@@ -600,7 +601,7 @@ class FireflyController(QtCore.QObject):
     def start(self):
         """Start the background clients."""
         self.prepare_queue_client()
-        self.prepare_kafka_client
+        self.prepare_kafka_client()
         self.start_queue_client()
         self.start_kafka_client()
 

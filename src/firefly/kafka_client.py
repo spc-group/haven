@@ -31,6 +31,10 @@ class KafkaClient(QObject):
         # Start the client
         self.kafka_task = asyncio.ensure_future(self.consumer_loop())
 
+    async def stop(self):
+        await consumer.stop()
+
+
     async def consumer_loop(self):
         # Create a kafka consumer if one was not provided
         if self.kafka_consumer is None:
@@ -44,16 +48,15 @@ class KafkaClient(QObject):
         consumer = self.kafka_consumer
         # Get cluster layout and join group `my-group`
         await consumer.start()
-        try:
-            # Consume events from the queueserver
-            async for doc_type, doc in consumer:
+        # Consume events from the queueserver
+        async for record in consumer:
+            try:
+                doc_type, doc = record.value
+                print(f"Received kafka record. {doc_type=}")
                 self._process_document(doc_type, doc)
-        except Exception as ex:
-            log.exception(ex)
-            raise
-        finally:
-            # Will leave consumer group; perform autocommit if enabled.
-            await consumer.stop()
+            except Exception as ex:
+                log.exception(ex)
+                continue
 
     def _descriptor_to_run_uid(self, descriptor_uid):
         descriptor = self._descriptors[descriptor_uid]
@@ -79,7 +82,11 @@ class KafkaClient(QObject):
         elif doc_type == "event":
             # Notify clients that this run has a new event
             descriptor_uid = doc.get('descriptor', "")
-            run_uid = self._descriptor_to_run_uid(descriptor_uid)
+            try:
+                run_uid = self._descriptor_to_run_uid(descriptor_uid)
+            except KeyError:
+                log.warning("fUnknown descriptor UID {descriptor_uid}")
+                return
             print(f"Emitting run updated: {run_uid=}")
             self.run_updated.emit(run_uid)
         elif doc_type == "stop":
