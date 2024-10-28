@@ -204,6 +204,19 @@ async def test_update_1d_plot(catalog, display):
     }
 
 
+def test_autorange_checkboxes(display, qtbot):
+    display.plot_1d_view = MagicMock()
+    # Check the combobox entries
+    display.ui.autorange_1d_x_checkbox.setChecked(True)
+    assert display.plot_1d_view.enableAutoRange.called
+
+
+def test_autorange_button(display, qtbot):
+    display.plot_1d_view = MagicMock()
+    display.ui.autorange_1d_button.click()
+    assert display.plot_1d_view.autoRange.called
+
+
 # Warns: Task was destroyed but it is pending!
 @pytest.mark.asyncio
 async def test_2d_plot_signals(catalog, display):

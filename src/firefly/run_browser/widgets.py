@@ -176,14 +176,6 @@ class Browser1DPlotWidget(PlotWidget):
                 self.cursor_needed = False
         # Axis formatting
         plot_item.setLabels(left=ylabel, bottom=xlabel)
-        # Automatically set the plotting range
-        if self.auto_range_needed:
-            plot_item.autoRange()
-
-    def reset_auto_range(self, *args):
-        """Reset the flag on the view to rescale the axis next update."""
-        self.auto_range_needed = True
-            
 
 
 class Browser2DPlotWidget(ImageView):

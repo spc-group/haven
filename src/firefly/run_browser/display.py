@@ -2,7 +2,7 @@ import asyncio
 import logging
 from collections import Counter
 from contextlib import contextmanager
-from functools import wraps
+from functools import wraps, partial
 from typing import Mapping, Optional, Sequence
 
 import qtawesome as qta
@@ -11,6 +11,8 @@ from qasync import asyncSlot
 from qtpy.QtCore import Qt, Signal
 from qtpy.QtGui import QStandardItem, QStandardItemModel
 from qtpy.QtWidgets import QWidget
+
+from pyqtgraph import ViewBox
 
 from firefly import display
 from firefly.run_browser.client import DatabaseWorker
@@ -176,9 +178,16 @@ class RunBrowserDisplay(display.FireflyDisplay):
                 self.ui.invert_checkbox.stateChanged,
                 self.ui.gradient_checkbox.stateChanged,
         ]:
-            signal.connect(self.plot_1d_view.reset_auto_range)
             signal.connect(self.update_1d_plot)
-        self.ui.plot_1d_hints_checkbox.stateChanged.connect(self.update_1d_signals)            
+        self.ui.plot_1d_hints_checkbox.stateChanged.connect(self.update_1d_signals)
+        # Auto-range controls for the 1D plot
+        self.ui.autorange_1d_x_checkbox.stateChanged.connect(
+            partial(self.enable_1d_autorange, axis=ViewBox.XAxis)
+        )
+        self.ui.autorange_1d_y_checkbox.stateChanged.connect(
+            partial(self.enable_1d_autorange, axis=ViewBox.YAxis)
+        )
+        self.ui.autorange_1d_button.clicked.connect(self.auto_range)
         # Respond to changes in displaying the 2d plot
         self.ui.plot_multi_hints_checkbox.stateChanged.connect(
             self.update_multi_signals
@@ -204,6 +213,12 @@ class RunBrowserDisplay(display.FireflyDisplay):
         )
         # Create a new export dialog for saving files
         self.export_dialog = ExportDialog(parent=self)
+
+    def auto_range(self):
+        self.plot_1d_view.autoRange()
+
+    def enable_1d_autorange(self, state: int, axis: int):
+        self.plot_1d_view.enableAutoRange(axis=axis, enabled=state)
 
     def update_busy_hints(self):
         """Enable/disable UI elements based on the active hinters."""
