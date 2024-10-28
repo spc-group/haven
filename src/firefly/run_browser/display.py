@@ -175,6 +175,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
             self.ui.invert_checkbox.stateChanged,
             self.ui.gradient_checkbox.stateChanged,
         ]:
+            signal.connect(self.plot_1d_view.clear_runs)
             signal.connect(self.update_1d_plot)
         self.ui.plot_1d_hints_checkbox.stateChanged.connect(self.update_1d_signals)
         self.ui.autorange_1d_button.clicked.connect(self.auto_range)
