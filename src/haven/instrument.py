@@ -43,6 +43,10 @@ log = logging.getLogger(__name__)
 instrument = None
 
 
+def sanitize_name(name):
+    pass
+
+
 class Instrument:
     """A beamline instrument built from config files of Ophyd devices.
 
