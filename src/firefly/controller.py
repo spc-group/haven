@@ -272,6 +272,7 @@ class FireflyController(QtCore.QObject):
             icon=qta.icon("mdi.book-open-variant"),
             WindowClass=FireflyMainWindow,
         )
+        self.actions.run_browser.window_created.connect(self.finalize_run_browser_window)
         # Action for showing the beamline scheduling window
         self.actions.bss = WindowAction(
             name="show_bss_window_action",
@@ -329,6 +330,11 @@ class FireflyController(QtCore.QObject):
         action.display.queue_item_submitted.connect(self.add_queue_item)
         # Send the current devices to the window
         await action.window.update_devices(self.registry)
+
+    def finalize_run_browser_window(self, action):
+        """Connect up signals that are specific to the run browser window."""
+        display = action.display
+        self.run_updated.connect(display.update_running_scan)
 
     def finalize_status_window(self, action):
         """Connect up signals that are specific to the voltmeters window."""
