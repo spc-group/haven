@@ -2,17 +2,14 @@ import asyncio
 import logging
 from collections import Counter
 from contextlib import contextmanager
-from functools import wraps, partial
+from functools import wraps
 from typing import Mapping, Optional, Sequence
 
 import qtawesome as qta
 import yaml
 from qasync import asyncSlot
-from qtpy.QtCore import Qt, Signal
+from qtpy.QtCore import Qt
 from qtpy.QtGui import QStandardItem, QStandardItemModel
-from qtpy.QtWidgets import QWidget
-
-from pyqtgraph import ViewBox
 
 from firefly import display
 from firefly.run_browser.client import DatabaseWorker
@@ -170,13 +167,13 @@ class RunBrowserDisplay(display.FireflyDisplay):
         self.ui.sleep_button.clicked.connect(self.sleep_slot)
         # Respond to changes in displaying the 1d plot
         for signal in [
-                self.ui.signal_y_combobox.currentTextChanged,
-                self.ui.signal_x_combobox.currentTextChanged,
-                self.ui.signal_r_combobox.currentTextChanged,
-                self.ui.signal_r_checkbox.stateChanged,
-                self.ui.logarithm_checkbox.stateChanged,
-                self.ui.invert_checkbox.stateChanged,
-                self.ui.gradient_checkbox.stateChanged,
+            self.ui.signal_y_combobox.currentTextChanged,
+            self.ui.signal_x_combobox.currentTextChanged,
+            self.ui.signal_r_combobox.currentTextChanged,
+            self.ui.signal_r_checkbox.stateChanged,
+            self.ui.logarithm_checkbox.stateChanged,
+            self.ui.invert_checkbox.stateChanged,
+            self.ui.gradient_checkbox.stateChanged,
         ]:
             signal.connect(self.update_1d_plot)
         self.ui.plot_1d_hints_checkbox.stateChanged.connect(self.update_1d_signals)

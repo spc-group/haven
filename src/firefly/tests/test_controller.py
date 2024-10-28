@@ -8,8 +8,8 @@ from ophydregistry import Registry
 import firefly
 from firefly.action import WindowAction
 from firefly.controller import FireflyController
-from firefly.queue_client import QueueClient
 from firefly.kafka_client import KafkaClient
+from firefly.queue_client import QueueClient
 
 
 @pytest.fixture()

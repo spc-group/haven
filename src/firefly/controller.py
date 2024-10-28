@@ -20,9 +20,9 @@ from haven.device import titelize
 from haven.exceptions import ComponentNotFound, InvalidConfiguration
 
 from .action import Action, ActionsRegistry, WindowAction
+from .kafka_client import KafkaClient
 from .main_window import FireflyMainWindow, PlanMainWindow
 from .queue_client import QueueClient, queueserver_api
-from .kafka_client import KafkaClient
 
 generator = type((x for x in []))
 
@@ -272,7 +272,9 @@ class FireflyController(QtCore.QObject):
             icon=qta.icon("mdi.book-open-variant"),
             WindowClass=FireflyMainWindow,
         )
-        self.actions.run_browser.window_created.connect(self.finalize_run_browser_window)
+        self.actions.run_browser.window_created.connect(
+            self.finalize_run_browser_window
+        )
         # Action for showing the beamline scheduling window
         self.actions.bss = WindowAction(
             name="show_bss_window_action",
@@ -527,7 +529,6 @@ class FireflyController(QtCore.QObject):
             self._queue_client.start()
         except Exception as exc:
             log.error(f"Could not start queue client: {exc}")
-
 
     def prepare_queue_client(self, client=None, api=None):
         """Set up the QueueClient object that talks to the queue server.

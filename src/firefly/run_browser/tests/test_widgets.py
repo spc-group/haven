@@ -1,8 +1,7 @@
-import pytest
-
 from unittest.mock import MagicMock
 
 import pandas as pd
+import pytest
 
 from firefly.run_browser.widgets import Browser1DPlotWidget
 
@@ -43,7 +42,8 @@ def test_clear_1d_plot(plot_1d_widget):
     assert widget.cursor_line is None
     assert line not in plot_item.items
     assert len(plot_item.items) == 0
-    
+
+
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov
@@ -68,4 +68,3 @@ def test_clear_1d_plot(plot_1d_widget):
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 # -----------------------------------------------------------------------------
-

@@ -1,6 +1,5 @@
 import pytest
 
-
 from firefly.run_browser.client import DatabaseWorker
 
 
@@ -19,7 +18,6 @@ async def test_distinct_fields(catalog):
     # Check that the dictionary has the right structure
     for key in ["sample_name"]:
         assert key in distinct_fields.keys()
-    
 
 
 # -----------------------------------------------------------------------------
@@ -46,4 +44,3 @@ async def test_distinct_fields(catalog):
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 # -----------------------------------------------------------------------------
-        

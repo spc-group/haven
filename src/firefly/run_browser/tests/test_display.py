@@ -1,11 +1,10 @@
 import asyncio
 from unittest.mock import MagicMock
 
-import pandas as pd
 import numpy as np
 import pytest
-from qtpy.QtWidgets import QFileDialog
 from pyqtgraph import ImageItem, ImageView, PlotItem, PlotWidget
+from qtpy.QtWidgets import QFileDialog
 
 from firefly.run_browser.display import RunBrowserDisplay
 
@@ -412,4 +411,3 @@ async def test_export_button_clicked(catalog, display, mocker, qtbot):
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 # -----------------------------------------------------------------------------
-    

@@ -6,7 +6,7 @@ import numpy as np
 from matplotlib.colors import TABLEAU_COLORS
 from pandas.api.types import is_numeric_dtype
 from pyqtgraph import GraphicsLayoutWidget, ImageView, PlotItem, PlotWidget
-from qtpy.QtCore import Signal, Qt
+from qtpy.QtCore import Qt, Signal
 from qtpy.QtWidgets import QFileDialog, QWidget
 
 log = logging.getLogger(__name__)
@@ -112,7 +112,9 @@ class BrowserMultiPlotWidget(GraphicsLayoutWidget):
                 xdata = data[xsignal].values
             else:
                 # Could not find x signal, so use the index instead
-                log.warning(f"Cannot plot x='{xsignal}' for {list(data.keys())}. Falling back to index.")
+                log.warning(
+                    f"Cannot plot x='{xsignal}' for {list(data.keys())}. Falling back to index."
+                )
                 xdata = data.index
             # Plot each y signal on a separate plot
             for ysignal, plot_item in zip(ysignals, self.multiplot_items()):
