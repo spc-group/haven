@@ -375,10 +375,20 @@ class RunBrowserDisplay(display.FireflyDisplay):
         formats = [mimetype] * len(filenames)
         await self.db_task(self.db.export_runs(filenames, formats=formats), "export")
 
+    @asyncSlot(str)
+    @cancellable
+    async def update_running_scan(self, uid: str):
+        await self.update_1d_plot(uids=[uid])
+
     @asyncSlot()
     @cancellable
-    async def update_1d_plot(self, *args):
-        """Updates the data used in the plots."""
+    async def update_1d_plot(self, *args, uids: Sequence[str] = None):
+        """Updates the data used in the plots.
+
+        If *uids* is given, only runs with UIDs listed in *uids* will
+        be updated.
+
+        """
         # Figure out which signals to plot
         y_signal = self.ui.signal_y_combobox.currentText()
         x_signal = self.ui.signal_x_combobox.currentText()
@@ -399,10 +409,13 @@ class RunBrowserDisplay(display.FireflyDisplay):
                 use_log=use_log,
                 use_invert=use_invert,
                 use_grad=use_grad,
+                uids=uids,
             ),
             "1D plot",
         )
         runs = await task
+        if len(runs) == 0:
+            return
         # Decide on axes labels
         xlabel = x_signal
         if r_signal is not None:
@@ -419,8 +432,8 @@ class RunBrowserDisplay(display.FireflyDisplay):
             ylabel = f"ln({ylabel})"
         if use_grad:
             ylabel = f"∇ {ylabel}"
-        
         # Do the plotting
+        print("RUNNING", self.ui.plot_1d_view.plot_runs)
         self.ui.plot_1d_view.plot_runs(runs, xlabel=xlabel, ylabel=ylabel)
         if self.ui.autorange_1d_checkbox.isChecked():
             self.ui.plot_1d_view.autoRange()
@@ -463,7 +476,6 @@ class RunBrowserDisplay(display.FireflyDisplay):
             text += yaml.dump(md)
             text += f"\n\n{'=' * 20}\n\n"
         # Update the widget with the rendered metadata
-        print(text)
         self.ui.metadata_textedit.document().setPlainText(text)
 
     def clear_plots(self):

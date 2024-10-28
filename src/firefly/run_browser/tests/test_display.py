@@ -27,6 +27,24 @@ async def display(qtbot, catalog, mocker):
     # Wait for the initial database load to process
     await display._running_db_tasks["init_load_runs"]
     await display._running_db_tasks["update_combobox_items"]
+    # Set up some fake data
+    run = [run async for run in catalog.values()][0]
+    display.db.selected_runs = [run]
+    await display.update_1d_signals()
+    run_data = await run.to_dataframe()
+    expected_xdata = run_data.energy_energy
+    expected_ydata = np.log(run_data.I0_net_counts / run_data.It_net_counts)
+    expected_ydata = np.gradient(expected_ydata, expected_xdata)
+    # Set the controls to describe the data we want to test
+    x_combobox = display.ui.signal_x_combobox
+    x_combobox.addItem("energy_energy")
+    x_combobox.setCurrentText("energy_energy")
+    y_combobox = display.ui.signal_y_combobox
+    y_combobox.addItem("It_net_counts")
+    y_combobox.setCurrentText("It_net_counts")
+    r_combobox = display.ui.signal_r_combobox
+    r_combobox.addItem("I0_net_counts")
+    r_combobox.setCurrentText("I0_net_counts")
     return display
 
 
@@ -172,24 +190,6 @@ async def test_1d_hinted_signals(catalog, display):
 async def test_update_1d_plot(catalog, display):
     display.plot_1d_view.plot_runs = MagicMock()
     display.plot_1d_view.autoRange = MagicMock()
-    # Set up some fake data
-    run = [run async for run in catalog.values()][0]
-    display.db.selected_runs = [run]
-    await display.update_1d_signals()
-    run_data = await run.to_dataframe()
-    expected_xdata = run_data.energy_energy
-    expected_ydata = np.log(run_data.I0_net_counts / run_data.It_net_counts)
-    expected_ydata = np.gradient(expected_ydata, expected_xdata)
-    # Set the controls to describe the data we want to test
-    x_combobox = display.ui.signal_x_combobox
-    x_combobox.addItem("energy_energy")
-    x_combobox.setCurrentText("energy_energy")
-    y_combobox = display.ui.signal_y_combobox
-    y_combobox.addItem("It_net_counts")
-    y_combobox.setCurrentText("It_net_counts")
-    r_combobox = display.ui.signal_r_combobox
-    r_combobox.addItem("I0_net_counts")
-    r_combobox.setCurrentText("I0_net_counts")
     display.ui.signal_r_checkbox.setChecked(True)
     display.ui.logarithm_checkbox.setChecked(True)
     display.ui.invert_checkbox.setChecked(True)
@@ -213,6 +213,13 @@ def test_autorange_button(display, qtbot):
     display.plot_1d_view = MagicMock()
     display.ui.autorange_1d_button.click()
     assert display.plot_1d_view.autoRange.called
+
+
+async def test_update_running_scan(display):
+    display.ui.plot_1d_view.plot_runs = MagicMock()
+    # Should not update if UID is wrong
+    await display.update_running_scan(uid="spam")
+    assert not display.plot_1d_view.plot_runs.called
 
 
 # Warns: Task was destroyed but it is pending!

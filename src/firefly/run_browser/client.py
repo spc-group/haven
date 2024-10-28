@@ -200,12 +200,19 @@ class DatabaseWorker:
         use_log=False,
         use_invert=False,
         use_grad=False,
+        uids: Sequence[str] | None = None,
     ) -> Mapping:
         """Produce a dictionary with the 1D datasets for plotting.
 
         The keys of the dictionary are the labels for each curve, and
         the corresponding value is a pandas dataset with the data for
         each signal.
+
+        Parameters
+        ==========
+        uids
+          If not ``None``, only runs with UIDs listed in this
+          parameter will be included.
 
         """
         # Check for sensible inputs
@@ -225,6 +232,9 @@ class DatabaseWorker:
         # Build the dataframes
         dfs = OrderedDict()
         for run in self.selected_runs:
+            # Check that the UID matches
+            if uids is not None and run.uid not in uids:
+                break
             # Get data from the database
             df = await run.to_dataframe(signals=signals)
             # Check for missing signals
