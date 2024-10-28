@@ -180,13 +180,6 @@ class RunBrowserDisplay(display.FireflyDisplay):
         ]:
             signal.connect(self.update_1d_plot)
         self.ui.plot_1d_hints_checkbox.stateChanged.connect(self.update_1d_signals)
-        # Auto-range controls for the 1D plot
-        self.ui.autorange_1d_x_checkbox.stateChanged.connect(
-            partial(self.enable_1d_autorange, axis=ViewBox.XAxis)
-        )
-        self.ui.autorange_1d_y_checkbox.stateChanged.connect(
-            partial(self.enable_1d_autorange, axis=ViewBox.YAxis)
-        )
         self.ui.autorange_1d_button.clicked.connect(self.auto_range)
         # Respond to changes in displaying the 2d plot
         self.ui.plot_multi_hints_checkbox.stateChanged.connect(
@@ -216,9 +209,6 @@ class RunBrowserDisplay(display.FireflyDisplay):
 
     def auto_range(self):
         self.plot_1d_view.autoRange()
-
-    def enable_1d_autorange(self, state: int, axis: int):
-        self.plot_1d_view.enableAutoRange(axis=axis, enabled=state)
 
     def update_busy_hints(self):
         """Enable/disable UI elements based on the active hinters."""
@@ -432,6 +422,8 @@ class RunBrowserDisplay(display.FireflyDisplay):
         
         # Do the plotting
         self.ui.plot_1d_view.plot_runs(runs, xlabel=xlabel, ylabel=ylabel)
+        if self.ui.autorange_1d_checkbox.isChecked():
+            self.ui.plot_1d_view.autoRange()
 
     @asyncSlot()
     @cancellable

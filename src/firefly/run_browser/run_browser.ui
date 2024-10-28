@@ -783,16 +783,16 @@
            <item>
             <layout class="QHBoxLayout" name="horizontalLayout_7">
              <item>
-              <widget class="QLabel" name="label_12">
+              <widget class="QCheckBox" name="autorange_1d_checkbox">
                <property name="text">
-                <string>Mouse:</string>
+                <string>Auto-range</string>
                </property>
               </widget>
              </item>
              <item>
-              <widget class="QLabel" name="hover_coords_label">
+              <widget class="QPushButton" name="autorange_1d_button">
                <property name="text">
-                <string>(252, 119)</string>
+                <string>Reset View</string>
                </property>
               </widget>
              </item>
@@ -804,30 +804,16 @@
               </widget>
              </item>
              <item>
-              <widget class="QLabel" name="label_13">
+              <widget class="QLabel" name="label_12">
                <property name="text">
-                <string>Auto-range:</string>
+                <string>Mouse:</string>
                </property>
               </widget>
              </item>
              <item>
-              <widget class="QCheckBox" name="autorange_1d_x_checkbox">
+              <widget class="QLabel" name="hover_coords_label">
                <property name="text">
-                <string>X</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QCheckBox" name="autorange_1d_y_checkbox">
-               <property name="text">
-                <string>Y</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QPushButton" name="autorange_1d_button">
-               <property name="text">
-                <string>Reset View</string>
+                <string>(252, 119)</string>
                </property>
               </widget>
              </item>
