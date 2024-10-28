@@ -127,7 +127,6 @@ class BrowserMultiPlotWidget(GraphicsLayoutWidget):
 
 
 class Browser1DPlotWidget(PlotWidget):
-    cursor_needed: bool
     auto_range_needed: bool
     data_items: dict
 
@@ -138,7 +137,7 @@ class Browser1DPlotWidget(PlotWidget):
 
     def clear_runs(self):
         self.getPlotItem().clear()
-        self.cursor_needed = True
+        self.cursor_line = None
         self.auto_range_needed = True
         self.data_items = {}
 
@@ -170,11 +169,10 @@ class Browser1DPlotWidget(PlotWidget):
                     clear=False,
                 )
             # Cursor to drag around on the data
-            if self.cursor_needed:
-                plot_item.addLine(
+            if self.cursor_line is None:
+                self.cursor_line = plot_item.addLine(
                     x=np.median(series.index), movable=True, label="{value:.3f}"
                 )
-                self.cursor_needed = False
         # Axis formatting
         plot_item.setLabels(left=ylabel, bottom=xlabel)
 

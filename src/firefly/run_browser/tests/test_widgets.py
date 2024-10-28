@@ -1,3 +1,5 @@
+import pytest
+
 from unittest.mock import MagicMock
 
 import pandas as pd
@@ -5,9 +7,15 @@ import pandas as pd
 from firefly.run_browser.widgets import Browser1DPlotWidget
 
 
-async def test_plot_1d_runs(qtbot):
+@pytest.fixture()
+def plot_1d_widget(qtbot):
     widget = Browser1DPlotWidget()
     qtbot.addWidget(widget)
+    return widget
+
+
+def test_plot_1d_runs(plot_1d_widget):
+    widget = plot_1d_widget
     assert len(widget.data_items) == 0
     # Set some runs
     widget.plot_runs({"hello": pd.Series(data=[10, 20, 30], index=[1, 2, 3])})
@@ -20,8 +28,22 @@ async def test_plot_1d_runs(qtbot):
     mock_data_item.setData.assert_called_once()
 
 
-
-
+def test_clear_1d_plot(plot_1d_widget):
+    widget = plot_1d_widget
+    assert len(widget.data_items) == 0
+    # Set some runs
+    widget.plot_runs({"hello": pd.Series(data=[10, 20, 30], index=[1, 2, 3])})
+    # Check that the right things get drawn
+    plot_item = widget.getPlotItem()
+    line = widget.cursor_line
+    assert line is not None
+    assert line in plot_item.items
+    # Clear the plot
+    widget.clear_runs()
+    assert widget.cursor_line is None
+    assert line not in plot_item.items
+    assert len(plot_item.items) == 0
+    
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov
