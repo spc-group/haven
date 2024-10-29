@@ -4,6 +4,7 @@ from typing import Mapping
 
 import qtawesome as qta
 from bluesky_queueserver_api import BPlan
+from bluesky.protocols import Readable
 from pydm.widgets.label import PyDMLabel
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QTableWidgetItem
@@ -22,7 +23,7 @@ from haven.motor_position import get_motor_position, get_motor_positions
 
 log = logging.getLogger()
 
-test = True
+test = False
 if test:
     # Fake client for testing purpose
     def create_fake_client():
@@ -78,7 +79,7 @@ class MotorRegion(regions_display.RegionBase):
         self.layout.addWidget(self.motor_box)
 
         # Third item, motor readback values
-        self.RBV_label = PyDMLabel(self)
+        # self.RBV_label = PyDMLabel(self)
         self.update_RBV()
         self.layout.addWidget(self.RBV_label)
 
@@ -95,8 +96,17 @@ class MotorRegion(regions_display.RegionBase):
         self.RBV_label.setEnabled(is_checked)
                 
     def update_RBV(self):
-        alternative_channels = ['user_readback', 'user_setpoint']
-        
+        if not isinstance(m, Readable):
+            # tell users it doesn't have meaningful values to save
+            return 
+        value_dict = (await m.read())
+        if len(value_dict) == 1:
+            value = value_dict.values()[0]['value']
+        elif >1 ...
+            # tell users they are multiple values, we do save them but tell them they can not be moved
+        else:
+            # tell users it doesn't have meaningful values to save
+
         try:
             motor = self.motor_box.current_component()
         except ComponentNotFound as e:
@@ -104,20 +114,7 @@ class MotorRegion(regions_display.RegionBase):
             print(e)
             return 
 
-        channel_set = False
-        for rbv_channel in alternative_channels:
-            try:
-                self.RBV_label.channel = f"haven://{motor.name}.{rbv_channel}"
-                if self.is_channel_valid(self.RBV_label.channel):
-                    channel_set = True
-                    break  
-            except Exception as e:
-                print(e)
-                continue  # Try the next alternative channel
-
-        if not channel_set:
-            # No valid channel was found
-            self.RBV_label.channel = ""
+        self.RBV_label.setText(str(value))
 
 
 class SaveMotorDisplay(regions_display.RegionsDisplay):
@@ -428,6 +425,7 @@ class SaveMotorDisplay(regions_display.RegionsDisplay):
 
     def update_queue_status(self, status: Mapping):
         super().update_queue_status(status=status)
+        self.ui.recall_button.update_queue_style(status)
         # Schedule the refresh after the event loop starts
         QtCore.QTimer.singleShot(0, self.refresh_saved_position_list_slot)
 
