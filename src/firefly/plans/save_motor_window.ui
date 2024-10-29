@@ -108,7 +108,7 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>485</width>
+             <width>442</width>
              <height>181</height>
             </rect>
            </property>
@@ -212,7 +212,10 @@
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="run_button">
+           <widget class="QueueButton" name="run_button">
+            <property name="enabled">
+             <bool>true</bool>
+            </property>
             <property name="sizePolicy">
              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
               <horstretch>0</horstretch>
@@ -220,10 +223,13 @@
              </sizepolicy>
             </property>
             <property name="toolTip">
-             <string>Add save motor position to the queue</string>
+             <string>Save motor position immediately</string>
             </property>
             <property name="text">
-             <string>Save on queue</string>
+             <string>Run</string>
+            </property>
+            <property name="checkable">
+             <bool>false</bool>
             </property>
            </widget>
           </item>
@@ -475,7 +481,10 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QPushButton" name="recall_button">
+                 <widget class="QueueButton" name="recall_button">
+                  <property name="enabled">
+                   <bool>true</bool>
+                  </property>
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                     <horstretch>0</horstretch>
@@ -483,10 +492,13 @@
                    </sizepolicy>
                   </property>
                   <property name="toolTip">
-                   <string>Add recall position to the queue</string>
+                   <string>Recall position immediately</string>
                   </property>
                   <property name="text">
-                   <string>Recall on queue</string>
+                   <string>Run</string>
+                  </property>
+                  <property name="checkable">
+                   <bool>false</bool>
                   </property>
                  </widget>
                 </item>
