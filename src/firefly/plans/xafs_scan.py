@@ -341,7 +341,7 @@ class XafsScanDisplay(display.FireflyDisplay):
         pre_edge = [-200, -50, 5]
         XANES_region = [-50, 50, 0.5]
         EXAFS_region = [50, 800, 0.5]
-        
+
         default_regions = [pre_edge, XANES_region, EXAFS_region]
         for i, region_i in enumerate(self.regions):
             region_i.start_line_edit.setText(str(default_regions[i][0]))
