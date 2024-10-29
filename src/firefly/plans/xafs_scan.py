@@ -338,9 +338,10 @@ class XafsScanDisplay(display.FireflyDisplay):
         self.ui.regions_spin_box.setValue(default_num_regions)
 
         # set default values for testing, to be deleted in the future
-        pre_edge = [-50, -20, 1]
-        XANES_region = [-20, 50, 0.2]
-        EXAFS_region = [50, 500, 0.5]
+        pre_edge = [-200, -50, 5]
+        XANES_region = [-50, 50, 0.5]
+        EXAFS_region = [50, 800, 0.5]
+        
         default_regions = [pre_edge, XANES_region, EXAFS_region]
         for i, region_i in enumerate(self.regions):
             region_i.start_line_edit.setText(str(default_regions[i][0]))
