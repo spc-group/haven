@@ -1,7 +1,7 @@
 import asyncio
 import logging
-from functools import partial
 import warnings
+from functools import partial
 
 import numpy as np
 from bluesky.protocols import Movable, Stoppable
@@ -39,12 +39,18 @@ class Positioner(StandardReadable, Movable, Stoppable):
       The device name for this positioner.
     put_complete
       If true, wait on the setpoint to report being done.
+    min_move
+      If the readback is already within *min_move* from the commanded
+      position during ``set()``, no movement will take place.
 
     """
 
     done_value = 1
 
-    def __init__(self, name: str = "", put_complete: bool = False):
+    def __init__(
+        self, name: str = "", put_complete: bool = False, min_move: float = 0.0
+    ):
+        self.min_move = min_move
         self.put_complete = put_complete
         super().__init__(name=name)
 
@@ -71,12 +77,20 @@ class Positioner(StandardReadable, Movable, Stoppable):
     async def set(self, value: float, timeout: CalculatableTimeout = CALCULATE_TIMEOUT):
         new_position = value
         self._set_success = True
-        old_position, units, precision, velocity = await asyncio.gather(
-            self.setpoint.get_value(),
-            self.units.get_value(),
-            self.precision.get_value(),
-            self.velocity.get_value(),
+        old_position, current_position, units, precision, velocity = (
+            await asyncio.gather(
+                self.setpoint.get_value(),
+                self.readback.get_value(),
+                self.units.get_value(),
+                self.precision.get_value(),
+                self.velocity.get_value(),
+            )
         )
+        # Check for trivially small moves
+        is_small_move = abs(new_position - current_position) < self.min_move
+        if is_small_move:
+            return
+        # Decide how long we should wait
         if timeout == CALCULATE_TIMEOUT:
             assert velocity > 0, "Mover has zero velocity"
             timeout = abs(new_position - old_position) / velocity + DEFAULT_TIMEOUT
@@ -107,12 +121,12 @@ class Positioner(StandardReadable, Movable, Stoppable):
                     self.watch_done, done_event=done_event, started_event=started_event
                 )
             )
-            done_status = AsyncStatus(asyncio.wait_for(done_event.wait(), timeout))
+            aws = asyncio.gather(done_event.wait(), set_status)
+            done_status = AsyncStatus(asyncio.wait_for(aws, timeout))
         else:
             # Monitor based on readback position
-            done_status = AsyncStatus(
-                asyncio.wait_for(reached_setpoint.wait(), timeout)
-            )
+            aws = asyncio.gather(reached_setpoint.wait(), set_status)
+            done_status = AsyncStatus(asyncio.wait_for(aws, timeout))
         # Monitor the position of the readback value
         async for current_position in observe_value(
             self.readback, done_status=done_status

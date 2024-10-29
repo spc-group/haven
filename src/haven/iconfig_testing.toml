@@ -1,3 +1,5 @@
+area_detector_root_path = "/tmp"
+
 [beamline]
 # General name for the beamline, used for metadata.
 name = "SPC Beamline (sector unknown)"
@@ -58,12 +60,11 @@ hardware_is_present = false
 # allow_close = false
 # # allow_open = true  # Default
 
-
-# [[ pss_shutter ]]
-# name = "hutch_shutter"
-# prefix = "S255ID-PSS:SCS:"
-# # allow_open = true  # Default
-# # allow_close = true  # Default
+[[ pss_shutter ]]
+name = "hutch_shutter"
+prefix = "S255ID-PSS:SCS:"
+# allow_open = true  # Default
+# allow_close = true  # Default
 
 
 # # Energy Positioner

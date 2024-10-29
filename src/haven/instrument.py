@@ -18,6 +18,8 @@ from .devices.aerotech import AerotechStage
 from .devices.aps import ApsMachine
 from .devices.area_detector import make_area_detector
 from .devices.beamline_manager import BeamlineManager
+from .devices.detectors.aravis import AravisDetector
+from .devices.detectors.sim_detector import SimDetector
 from .devices.dxp import make_dxp_device
 from .devices.energy_positioner import EnergyPositioner
 from .devices.heater import CapillaryHeater
@@ -39,6 +41,10 @@ log = logging.getLogger(__name__)
 
 
 instrument = None
+
+
+def sanitize_name(name):
+    pass
 
 
 class Instrument:
@@ -113,8 +119,33 @@ class Instrument:
         self.devices.extend(devices)
         return devices
 
-    def validate_params(self, params, Klass):
-        """Check that parameters match a Device class's initializer."""
+    def validate_params(self, params: Mapping, Klass) -> bool:
+        """Check that parameters match a Device class's initializer.
+
+        If the function returns successfully, it returns True. Invalid
+        parameters will cause and exception.
+
+        *args and **kwargs are ignored.
+
+        Parameters
+        ==========
+        params
+          The loaded keys and value to be validated.
+        Klass
+          The class (or loading function) to check arguments for.
+
+        Returns
+        =======
+        True
+
+        Raises
+        ======
+        InvalidConfiguration
+          A key for a required argument was not present in *params*,
+          or the value for a type-annotated arguments was of a
+          different type.
+
+        """
         sig = inspect.signature(Klass)
         has_kwargs = any(
             [param.kind == param.VAR_KEYWORD for param in sig.parameters.values()]
@@ -123,9 +154,9 @@ class Instrument:
         for key, sig_param in sig.parameters.items():
             # Check for missing parameters
             param_missing = key not in params
+            var_kinds = [sig_param.VAR_KEYWORD, sig_param.VAR_POSITIONAL]
             param_required = (
-                sig_param.default is sig_param.empty
-                and sig_param.kind != sig_param.VAR_KEYWORD
+                sig_param.default is sig_param.empty and sig_param.kind not in var_kinds
             )
             if param_missing and param_required:
                 raise InvalidConfiguration(
@@ -145,6 +176,7 @@ class Instrument:
                         f"expected `{sig_param.annotation}` but got "
                         f"`{type(params[key])}`."
                     )
+        return True
 
     def make_device(self, params, Klass):
         """Create the devices from their parameters."""
@@ -379,6 +411,9 @@ beamline = HavenInstrument(
         "aerotech_stage": AerotechStage,
         "motor": Motor,
         "energy": EnergyPositioner,
+        "sim_detector": SimDetector,
+        "camera": AravisDetector,
+        "pss_shutter": PssShutter,
         # Threaded ophyd devices
         "blade_slits": BladeSlits,
         "aperture_slits": ApertureSlits,
@@ -387,7 +422,6 @@ beamline = HavenInstrument(
         "synchrotron": ApsMachine,
         "robot": Robot,
         "pfcu4": PFCUFilterBank,  # <-- fails if mocked
-        "pss_shutter": PssShutter,
         "xspress": make_xspress_device,
         "dxp": make_dxp_device,
         "beamline_manager": BeamlineManager,

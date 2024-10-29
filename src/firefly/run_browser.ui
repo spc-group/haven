@@ -178,7 +178,7 @@
          <item>
           <widget class="QLabel" name="sleep_label">
            <property name="text">
-            <string>&lt;- Press the button</string>
+            <string>⬅ Press the button</string>
            </property>
           </widget>
          </item>
@@ -233,7 +233,7 @@
                <bool>true</bool>
               </property>
               <property name="currentText">
-               <string>xafs_scan</string>
+               <string/>
               </property>
              </widget>
             </item>
@@ -559,8 +559,8 @@
                <rect>
                 <x>0</x>
                 <y>0</y>
-                <width>662</width>
-                <height>70</height>
+                <width>84</width>
+                <height>28</height>
                </rect>
               </property>
               <property name="sizePolicy">

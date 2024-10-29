@@ -608,19 +608,6 @@
          </property>
         </widget>
        </item>
-       <item row="1" column="6">
-        <widget class="QueueButton" name="run_button">
-         <property name="toolTip">
-          <string>Run/Add to the queue</string>
-         </property>
-         <property name="styleSheet">
-          <string notr="true"># background-color: #28a745</string>
-         </property>
-         <property name="text">
-          <string>Run Scan</string>
-         </property>
-        </widget>
-       </item>
        <item row="0" column="6">
         <layout class="QHBoxLayout" name="horizontalLayout_2">
          <item>
@@ -647,6 +634,13 @@
           </widget>
          </item>
         </layout>
+       </item>
+       <item row="1" column="6">
+        <widget class="QueueButton" name="run_button">
+         <property name="text">
+          <string>Run</string>
+         </property>
+        </widget>
        </item>
       </layout>
      </item>

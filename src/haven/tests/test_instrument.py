@@ -102,3 +102,12 @@ async def test_load(monkeypatch):
     # Check that the right methods were called
     instrument.parse_toml_file.assert_called_once()
     instrument.connect.assert_called_once_with(mock=True, return_exceptions=True)
+
+
+async def test_star_args(instrument):
+    def null_loader(*args, **kwargs):
+        """A simple instrument loader function that returns no devices."""
+        return []
+
+    instrument = Instrument({})
+    assert instrument.validate_params({}, null_loader)

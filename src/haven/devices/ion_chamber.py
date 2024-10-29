@@ -5,7 +5,8 @@ import logging
 import warnings
 from typing import Dict
 
-from apstools.utils.misc import safe_ophyd_name
+# from apstools.utils.misc import safe_ophyd_name
+safe_ophyd_name = lambda n: n
 from bluesky.protocols import Triggerable
 from ophyd_async.core import (
     DEFAULT_TIMEOUT,
