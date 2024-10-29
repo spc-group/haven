@@ -422,6 +422,13 @@
        <item>
         <layout class="QHBoxLayout" name="run_buttons_layout">
          <item>
+          <widget class="QPushButton" name="reload_plots_button">
+           <property name="text">
+            <string>Reload Plots</string>
+           </property>
+          </widget>
+         </item>
+         <item>
           <spacer name="horizontalSpacer_10">
            <property name="orientation">
             <enum>Qt::Horizontal</enum>
@@ -559,8 +566,8 @@
                <rect>
                 <x>0</x>
                 <y>0</y>
-                <width>84</width>
-                <height>28</height>
+                <width>864</width>
+                <height>638</height>
                </rect>
               </property>
               <property name="sizePolicy">
@@ -775,6 +782,30 @@
            </item>
            <item>
             <layout class="QHBoxLayout" name="horizontalLayout_7">
+             <item>
+              <widget class="QCheckBox" name="autorange_1d_checkbox">
+               <property name="text">
+                <string>Auto-range</string>
+               </property>
+               <property name="checked">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="autorange_1d_button">
+               <property name="text">
+                <string>Reset View</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="Line" name="line_4">
+               <property name="orientation">
+                <enum>Qt::Vertical</enum>
+               </property>
+              </widget>
+             </item>
              <item>
               <widget class="QLabel" name="label_12">
                <property name="text">
@@ -992,25 +1023,25 @@
   <customwidget>
    <class>FiltersWidget</class>
    <extends>QWidget</extends>
-   <header>firefly.run_browser</header>
+   <header>firefly.run_browser.widgets</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>Browser1DPlotWidget</class>
    <extends>QWidget</extends>
-   <header>firefly.run_browser</header>
+   <header>firefly.run_browser.widgets</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>Browser2DPlotWidget</class>
    <extends>QWidget</extends>
-   <header>firefly.run_browser</header>
+   <header>firefly.run_browser.widgets</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>BrowserMultiPlotWidget</class>
    <extends>QWidget</extends>
-   <header>firefly.run_browser</header>
+   <header>firefly.run_browser.widgets</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

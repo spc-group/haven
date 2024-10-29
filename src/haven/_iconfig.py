@@ -44,7 +44,7 @@ def lookup_file_paths():
     if os.environ.get("HAVEN_CONFIG_FILES", "") != "":
         return [Path(fp) for fp in os.environ["HAVEN_CONFIG_FILES"].split(",")]
     else:
-        return [Path(__file__).parent / "iconfig_default.toml"]
+        return [Path(__file__).parent / "iconfig_testing.toml"]
 
 
 def load_config(file_paths: Optional[Sequence[Path]] = None):

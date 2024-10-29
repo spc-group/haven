@@ -381,9 +381,11 @@ def tiled_client():
         yield client["255id_testing"]
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture()
 def catalog(tiled_client):
-    return Catalog(client=tiled_client)
+    cat = Catalog(client=tiled_client)
+    # cat = mock.AsyncMock()
+    return cat
 
 
 # -----------------------------------------------------------------------------

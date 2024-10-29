@@ -1,6 +1,6 @@
 area_detector_root_path = "/tmp"
 
-[beamline]
+[ beamline ]
 # General name for the beamline, used for metadata.
 name = "SPC Beamline (sector unknown)"
 # Should we expect the hardware devices to be available.
@@ -105,7 +105,7 @@ name = "I0"
 [[ scaler ]]
 name = "scaler_1"
 prefix = "255idcVME:3820:"
-num_channels = 32
+channels = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31]
 
 
 # Motors
@@ -136,9 +136,8 @@ prefix = "255idcVME:m1"
 # =============
 
 [[ xy_stage ]]
-prefix = "255idcVME:"
-pv_vert = "m13"
-pv_horiz = "m14"
+vertical_prefix = "255idcVME:m13"
+horizontal_prefix = "255idcVME:m14"
 
 # Aerotech controller support disabled until new controllers are ready
 # [aerotech_stage.aerotech]
@@ -280,15 +279,15 @@ iocs = {ioc255idb = "ioc255idb:", ioc255idc = "ioc255idc:"}
 # Fluorescence Detectors
 # ======================
 
-[[ dxp ]]
-name = "vortex_me4"
-prefix = "vortex_me4:"
-num_elements = 4
+# [[ dxp ]]
+# name = "vortex_me4"
+# prefix = "vortex_me4:"
+# num_elements = 4
 
-[[ dxp ]]
-name = "canberra_Ge7"
-prefix = "20xmap8:"
-num_elements = 4
+# [[ dxp ]]
+# name = "canberra_Ge7"
+# prefix = "20xmap8:"
+# num_elements = 4
 
 [[ xspress ]]
 name = "vortex_me4_xsp"

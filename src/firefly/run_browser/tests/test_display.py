@@ -6,26 +6,44 @@ import pytest
 from pyqtgraph import ImageItem, ImageView, PlotItem, PlotWidget
 from qtpy.QtWidgets import QFileDialog
 
-from firefly.run_browser import RunBrowserDisplay
-from firefly.run_client import DatabaseWorker
+from firefly.run_browser.display import RunBrowserDisplay
 
 
 @pytest.fixture()
 async def display(qtbot, catalog, mocker):
     mocker.patch(
-        "firefly.run_browser.ExportDialog.exec_", return_value=QFileDialog.Accepted
+        "firefly.run_browser.widgets.ExportDialog.exec_",
+        return_value=QFileDialog.Accepted,
     )
     mocker.patch(
-        "firefly.run_browser.ExportDialog.selectedFiles",
+        "firefly.run_browser.widgets.ExportDialog.selectedFiles",
         return_value=["/net/s255data/export/test_file.nx"],
     )
-    mocker.patch("firefly.run_client.DatabaseWorker.export_runs")
+    mocker.patch("firefly.run_browser.client.DatabaseWorker.export_runs")
     display = RunBrowserDisplay(root_node=catalog)
     qtbot.addWidget(display)
     display.clear_filters()
     # Wait for the initial database load to process
     await display._running_db_tasks["init_load_runs"]
     await display._running_db_tasks["update_combobox_items"]
+    # Set up some fake data
+    run = [run async for run in catalog.values()][0]
+    display.db.selected_runs = [run]
+    await display.update_1d_signals()
+    run_data = await run.to_dataframe()
+    expected_xdata = run_data.energy_energy
+    expected_ydata = np.log(run_data.I0_net_counts / run_data.It_net_counts)
+    expected_ydata = np.gradient(expected_ydata, expected_xdata)
+    # Set the controls to describe the data we want to test
+    x_combobox = display.ui.signal_x_combobox
+    x_combobox.addItem("energy_energy")
+    x_combobox.setCurrentText("energy_energy")
+    y_combobox = display.ui.signal_y_combobox
+    y_combobox.addItem("It_net_counts")
+    y_combobox.setCurrentText("It_net_counts")
+    r_combobox = display.ui.signal_r_combobox
+    r_combobox.addItem("I0_net_counts")
+    r_combobox.setCurrentText("I0_net_counts")
     return display
 
 
@@ -71,6 +89,24 @@ async def test_update_selected_runs(display):
     await display.update_selected_runs()
     # Check that the runs were saved
     assert len(display.db.selected_runs) > 0
+
+
+@pytest.mark.asyncio
+async def test_update_selected_runs(display):
+    # Change the proposal item
+    item = display.runs_model.item(0, 1)
+    assert item is not None
+    display.ui.run_tableview.selectRow(0)
+    # Update the runs
+    await display.update_selected_runs()
+    # Check that the runs were saved
+    assert len(display.db.selected_runs) > 0
+
+
+async def test_clear_plots(display):
+    display.plot_1d_view.clear_runs = MagicMock()
+    display.clear_plots()
+    assert display.plot_1d_view.clear_runs.called
 
 
 @pytest.mark.asyncio
@@ -151,35 +187,38 @@ async def test_1d_hinted_signals(catalog, display):
 
 @pytest.mark.asyncio
 async def test_update_1d_plot(catalog, display):
-    # Set up some fake data
-    run = [run async for run in catalog.values()][0]
-    display.db.selected_runs = [run]
-    await display.update_1d_signals()
-    run_data = await run.to_dataframe()
-    expected_xdata = run_data.energy_energy
-    expected_ydata = np.log(run_data.I0_net_counts / run_data.It_net_counts)
-    expected_ydata = np.gradient(expected_ydata, expected_xdata)
-    # Set the controls to describe the data we want to test
-    x_combobox = display.ui.signal_x_combobox
-    x_combobox.addItem("energy_energy")
-    x_combobox.setCurrentText("energy_energy")
-    y_combobox = display.ui.signal_y_combobox
-    y_combobox.addItem("It_net_counts")
-    y_combobox.setCurrentText("It_net_counts")
-    r_combobox = display.ui.signal_r_combobox
-    r_combobox.addItem("I0_net_counts")
-    r_combobox.setCurrentText("I0_net_counts")
+    display.plot_1d_view.plot_runs = MagicMock()
+    display.plot_1d_view.autoRange = MagicMock()
     display.ui.signal_r_checkbox.setChecked(True)
     display.ui.logarithm_checkbox.setChecked(True)
     display.ui.invert_checkbox.setChecked(True)
     display.ui.gradient_checkbox.setChecked(True)
+    # Check the autorange combobox
+    display.ui.autorange_1d_checkbox.setChecked(True)
     # Update the plots
+    display.plot_1d_view.plot_runs.reset_mock()
     await display.update_1d_plot()
     # Check that the data were added
-    data_item = display.plot_1d_item.listDataItems()[0]
-    xdata, ydata = data_item.getData()
-    np.testing.assert_almost_equal(xdata, expected_xdata)
-    np.testing.assert_almost_equal(ydata, expected_ydata)
+    display.plot_1d_view.plot_runs.assert_called_once()
+    assert display.plot_1d_view.plot_runs.call_args.kwargs == {
+        "xlabel": "energy_energy",
+        "ylabel": "∇ ln(I0_net_counts/It_net_counts)",
+    }
+    # Check that auto-range was called when done
+    assert display.plot_1d_view.autoRange.called
+
+
+def test_autorange_button(display, qtbot):
+    display.plot_1d_view = MagicMock()
+    display.ui.autorange_1d_button.click()
+    assert display.plot_1d_view.autoRange.called
+
+
+async def test_update_running_scan(display):
+    display.ui.plot_1d_view.plot_runs = MagicMock()
+    # Should not update if UID is wrong
+    await display.update_running_scan(uid="spam")
+    assert not display.plot_1d_view.plot_runs.called
 
 
 # Warns: Task was destroyed but it is pending!
@@ -247,23 +286,6 @@ async def test_update_multi_plot(catalog, display):
     # xdata, ydata = data_item.getData()
     # np.testing.assert_almost_equal(xdata, expected_xdata)
     # np.testing.assert_almost_equal(ydata, expected_ydata)
-
-
-@pytest.mark.asyncio
-async def test_filter_runs(catalog):
-    worker = DatabaseWorker(catalog=catalog)
-    runs = await worker.load_all_runs(filters={"plan": "xafs_scan"})
-    # Check that the runs were filtered
-    assert len(runs) == 1
-
-
-@pytest.mark.asyncio
-async def test_distinct_fields(catalog, display):
-    worker = DatabaseWorker(catalog=catalog)
-    distinct_fields = await worker.load_distinct_fields()
-    # Check that the dictionary has the right structure
-    for key in ["sample_name"]:
-        assert key in distinct_fields.keys()
 
 
 def test_busy_hints_run_widgets(display):
