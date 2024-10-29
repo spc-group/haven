@@ -12,6 +12,7 @@ from qtpy import QtCore, QtWidgets
 from tiled.adapters.mapping import MapAdapter
 from tiled.client import Context, from_context
 from tiled.server.app import build_app
+from ophydregistry.exceptions import ComponentNotFound
 
 import haven
 from firefly.component_selector import ComponentSelector
@@ -82,6 +83,7 @@ class MotorRegion(regions_display.RegionBase):
         self.layout.addWidget(self.RBV_label)
 
         # Update RBV when motor is changed and edit is finished
+        self.motor_box.combo_box.currentIndexChanged.connect(self.update_RBV)
         self.motor_box.combo_box.lineEdit().editingFinished.connect(self.update_RBV)
 
         # Disable/enable regions when uncheck/check region checkbox
@@ -91,12 +93,30 @@ class MotorRegion(regions_display.RegionBase):
         # disable/enable motor box and RBV label
         self.motor_box.setEnabled(is_checked)
         self.RBV_label.setEnabled(is_checked)
-
+                
     def update_RBV(self):
-        motor = self.motor_box.current_component()
-        if motor:
-            self.RBV_label.channel = f"haven://{motor.name}.user_readback"
-        else:
+        alternative_channels = ['user_readback', 'user_setpoint']
+        
+        try:
+            motor = self.motor_box.current_component()
+        except ComponentNotFound as e:
+            self.RBV_label.channel = ""
+            print(e)
+            return 
+
+        channel_set = False
+        for rbv_channel in alternative_channels:
+            try:
+                self.RBV_label.channel = f"haven://{motor.name}.{rbv_channel}"
+                if self.is_channel_valid(self.RBV_label.channel):
+                    channel_set = True
+                    break  
+            except Exception as e:
+                print(e)
+                continue  # Try the next alternative channel
+
+        if not channel_set:
+            # No valid channel was found
             self.RBV_label.channel = ""
 
 
