@@ -10,9 +10,9 @@ from firefly.plans.xafs_scan import XafsScanDisplay
 
 # default values for EXAFS scan
 pre_edge = [-200, -50, 5]
-XANES_region = [-50, 50, 0.5]
-EXAFS_region = [50, 800, 0.5]
-default_values = [pre_edge, XANES_region, EXAFS_region]
+xanes_region = [-50, 50, 0.5]
+exafs_region = [50, 800, 0.5]
+default_values = [pre_edge, xanes_region, exafs_region]
 
 
 @pytest.fixture()
