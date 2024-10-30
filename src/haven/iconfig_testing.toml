@@ -108,44 +108,44 @@ prefix = "S255ID-PSS:SCS:"
 # # num_channels = 32
 
 
-# # Motors
-# # ======
-# # 
-# # Add a new section for each IOC (or IOC prefix) that has motors
-# # matching the format {prefix}:m1. *num_motors* determines how many
-# # motors will be read. The example below will load three motors with
-# # PVs: "vme_crate_ioc:m1", "vme_crate_ioc:m2", and "vme_crate_ioc:m3".
-# #
-# # By default, the names of the motors are taken from the motor's .DESC
-# # field. This can be disabled by setting ``auto_name = false``.
+# Motors
+# ======
 
-# # [[ motors ]]
-# # prefix = "255idVME:"
-# # num_motors = 3
-# # # auto_name = true
+# Add a new section for each IOC (or IOC prefix) that has motors
+# matching the format {prefix}:m1. *num_motors* determines how many
+# motors will be read. The example below will load three motors with
+# PVs: "vme_crate_ioc:m1", "vme_crate_ioc:m2", and "vme_crate_ioc:m3".
 
-# # [[ motor ]]
-# # # Individual motors can be created as well.
-# # prefix = "255idcVME:m1"
-# # # name = ""
-# # # labels=["motors"]
-# # # auto_name = None
+# By default, the names of the motors are taken from the motor's .DESC
+# field. This can be disabled by setting ``auto_name = false``.
+
+[[ motors ]]
+prefix = "255idVME:"
+num_motors = 3
+# auto_name = true
+
+[[ motor ]]
+# Individual motors can be created as well.
+prefix = "255idcVME:m1"
+# name = ""
+# labels=["motors"]
+# auto_name = None
 
 
-# # # Sample stages
-# # =============
+# Sample stages
+# =============
 
-# [[ xy_stage ]]
-# name = "xy_stage"
-# horizontal_prefix = "255idcVME:m13"
-# vertical_prefix = "255idcVME:m14"
+[[ xy_stage ]]
+name = "xy_stage"
+horizontal_prefix = "255idcVME:m13"
+vertical_prefix = "255idcVME:m14"
 
-# # Aerotech controller support disabled until new controllers are ready
-# # [aerotech_stage.aerotech]
-# # prefix = "255idc"
-# # delay_prefix = "255idc:DG645"
-# # pv_vert = ":m1"
-# # pv_horiz = ":m2"
+# Aerotech controller support disabled until new controllers are ready
+# [aerotech_stage.aerotech]
+# prefix = "255idc"
+# delay_prefix = "255idc:DG645"
+# pv_vert = ":m1"
+# pv_horiz = ":m2"
 
 
 # # External high-voltage power supplies
@@ -234,15 +234,15 @@ prefix = "S255ID-PSS:SCS:"
 # horizontal_prefix = "255idcVME:m25"
 
 
-# # Area detectors
-# # ==============
-# #
-# # Area detectors includes gigE vision cameras.
+# Area detectors
+# ==============
+#
+# Area detectors includes gigE vision cameras.
 
-# [[ area_detector ]]
-# name = "sim_det"
-# prefix = "255idSimDet:"
-# device_class = "SimDetector"
+[[ area_detector ]]
+name = "sim_det"
+prefix = "255idSimDet:"
+device_class = "SimDetector"
 
 # # [lerix.lerix.rowland]
 
