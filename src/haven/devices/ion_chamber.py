@@ -5,8 +5,6 @@ import logging
 import warnings
 from typing import Dict
 
-# from apstools.utils.misc import safe_ophyd_name
-safe_ophyd_name = lambda n: n
 from bluesky.protocols import Triggerable
 from ophyd_async.core import (
     DEFAULT_TIMEOUT,
@@ -210,7 +208,7 @@ class IonChamber(StandardReadable, Triggerable):
                 return
             # Only update the name if the description has been set
             if desc != "":
-                self.set_name(safe_ophyd_name(desc))
+                self.set_name(desc)
                 # Update the labjack's input's .DESC field to match the scaler channel
                 await self.voltmeter_channel.description.set(desc)
 
