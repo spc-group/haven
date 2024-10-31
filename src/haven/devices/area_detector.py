@@ -39,6 +39,7 @@ from ophyd.areadetector.plugins import (
     PvaPlugin_V34,
     ROIPlugin_V31,
     ROIPlugin_V34,
+    TransformPlugin_V34,
 )
 from ophyd.areadetector.plugins import StatsPlugin_V31 as OphydStatsPlugin_V31
 from ophyd.areadetector.plugins import StatsPlugin_V34 as OphydStatsPlugin_V34
@@ -523,6 +524,7 @@ class AravisDetector(SingleImageModeTrigger, DetectorBase):
         "stats2",
         "stats3",
         "stats4",
+        "trans1",
     )
     _default_read_attrs = ("cam", "hdf", "stats1", "stats2", "stats3", "stats4")
 
@@ -539,6 +541,7 @@ class AravisDetector(SingleImageModeTrigger, DetectorBase):
     stats3 = ADCpt(StatsPlugin_V34, "Stats3:", kind=Kind.normal)
     stats4 = ADCpt(StatsPlugin_V34, "Stats4:", kind=Kind.normal)
     stats5 = ADCpt(StatsPlugin_V34, "Stats5:", kind=Kind.normal)
+    trans1 = ADCpt(TransformPlugin_V34, "Trans1:", kind=Kind.config)
     hdf = ADCpt(HDF5FilePlugin, "HDF1:", kind=Kind.normal)
     # tiff = ADCpt(TIFFFilePlugin, "TIFF1:", kind=Kind.normal)
 
