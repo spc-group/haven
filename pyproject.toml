@@ -17,7 +17,7 @@ classifiers = [
 ]
 keywords = ["synchrotron", "xray", "bluesky"]
 dependencies = ["aioca", "aiokafka", "bluesky", "ophyd", "ophyd-async>=0.7.0", "databroker", "apsbss", "xraydb",
-	        "mergedeep", "xrayutilities", "bluesky-queueserver-api",
+	        "mergedeep", "xrayutilities", "bluesky-queueserver-api", "tomlkit",
 		"apstools", "databroker", "ophyd-registry", "caproto", "pcdsdevices",
 		"strenum", "bluesky-adaptive", "tiled[client]"]
 
