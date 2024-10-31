@@ -510,6 +510,7 @@ class Eiger500K(SingleTrigger, DetectorBase):
 class AravisCam(AsyncCamMixin, CamBase):
     gain_auto = ADCpt(EpicsSignal, "GainAuto")
     acquire_time_auto = ADCpt(EpicsSignal, "ExposureAuto")
+    pixel_format = ADCpt(EpicsSignal, "PixelFormat")
 
 
 class AravisDetector(SingleImageModeTrigger, DetectorBase):
