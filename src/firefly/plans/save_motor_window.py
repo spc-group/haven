@@ -16,6 +16,7 @@ from tiled.server.app import build_app
 from ophydregistry.exceptions import ComponentNotFound
 
 import haven
+import asyncio
 from firefly.component_selector import ComponentSelector
 from firefly.plans import regions_display
 from firefly.tests.fake_position_runs import position_runs
@@ -23,7 +24,7 @@ from haven.motor_position import get_motor_position, get_motor_positions
 
 log = logging.getLogger()
 
-test = False
+test = True
 if test:
     # Fake client for testing purpose
     def create_fake_client():
@@ -36,7 +37,7 @@ if test:
     fake_client = create_fake_client()
     haven.motor_position.tiled_client = (
         lambda: fake_client
-    )  # Replace with the fake client
+    ) 
 
 
 class TitleRegion:
@@ -53,7 +54,7 @@ class TitleRegion:
 
         self.layout.addWidget(self.regions_all_checkbox)
 
-        labels = ["Motor", "RBV"]
+        labels = ["Motor", "Value"]
 
         Qlabels_all = {}
         for label_i in labels:
@@ -62,8 +63,7 @@ class TitleRegion:
             Qlabels_all[label_i] = Qlabel_i
 
         # Fix widths so the labels are aligned with MotorRegions
-        Qlabels_all["RBV"].setFixedWidth(60)
-
+        Qlabels_all["Value"].setFixedWidth(60)
 
 class MotorRegion(regions_display.RegionBase):
     def setup_ui(self):
@@ -79,43 +79,55 @@ class MotorRegion(regions_display.RegionBase):
         self.layout.addWidget(self.motor_box)
 
         # Third item, motor readback values
-        # self.RBV_label = PyDMLabel(self)
-        self.update_RBV()
-        self.layout.addWidget(self.RBV_label)
+        self.rbv_label = QtWidgets.QLabel()
+        self.update_rbv()
+        self.layout.addWidget(self.rbv_label)
 
-        # Update RBV when motor is changed and edit is finished
-        self.motor_box.combo_box.currentIndexChanged.connect(self.update_RBV)
-        self.motor_box.combo_box.lineEdit().editingFinished.connect(self.update_RBV)
+        # Update rbv when motor is changed and edit is finished
+        self.motor_box.combo_box.currentIndexChanged.connect(self.update_rbv)
+        self.motor_box.combo_box.lineEdit().editingFinished.connect(self.update_rbv)
 
         # Disable/enable regions when uncheck/check region checkbox
         self.region_checkbox.stateChanged.connect(self.on_region_checkbox)
 
     def on_region_checkbox(self, is_checked):
-        # disable/enable motor box and RBV label
+        # disable/enable motor box and rbv label
         self.motor_box.setEnabled(is_checked)
-        self.RBV_label.setEnabled(is_checked)
-                
-    def update_RBV(self):
-        if not isinstance(m, Readable):
-            # tell users it doesn't have meaningful values to save
-            return 
-        value_dict = (await m.read())
-        if len(value_dict) == 1:
-            value = value_dict.values()[0]['value']
-        elif >1 ...
-            # tell users they are multiple values, we do save them but tell them they can not be moved
-        else:
-            # tell users it doesn't have meaningful values to save
+        self.rbv_label.setEnabled(is_checked)
 
+    @asyncSlot()
+    async def update_rbv(self):
+        await self._update_rbv()
+
+    async def _update_rbv(self):
         try:
             motor = self.motor_box.current_component()
+            if motor is None:
+                self.rbv_label.setText("No motor selected")
+                return
+
+            if not isinstance(motor, Readable):
+                self.rbv_label.setText("Not readable")
+                return
+
+            # Await the asynchronous read method
+            value_dict = await motor.read()
+            print("=" * 50)
+            print(value_dict)
+
+            if len(value_dict) == 1:
+                value = list(value_dict.values())[0]['value']
+                self.rbv_label.setText(str(value))
+            elif len(value_dict) > 1:
+                self.rbv_label.setText("Multiple values")
+            else:
+                self.rbv_label.setText("No values")
         except ComponentNotFound as e:
-            self.RBV_label.channel = ""
+            self.rbv_label.setText("")
             print(e)
-            return 
-
-        self.RBV_label.setText(str(value))
-
+        except Exception as e:
+            self.rbv_label.setText("Error")
+            print(f"An error occurred: {e}")
 
 class SaveMotorDisplay(regions_display.RegionsDisplay):
 
