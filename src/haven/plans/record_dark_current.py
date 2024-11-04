@@ -1,41 +1,63 @@
-from bluesky import plan_stubs as bps
+import uuid
+from typing import Sequence
 
-from ..instrument.instrument_registry import registry
+from bluesky import Msg
+from bluesky import plan_stubs as bps
+from ophyd import Device
+
+from ..devices.shutter import ShutterState
+from ..instrument import beamline
 from .shutters import close_shutters, open_shutters
 
 
-def record_dark_current(ion_chambers, shutters, time):
+def count_is_complete(*, old_value, value, **kwargs):
+    """Check if the value is done."""
+    was_running = old_value == 1
+    is_running_now = value == 1
+    is_done = was_running and not is_running_now
+    print(is_done)
+    return is_done
+
+
+def record_dark_current(
+    ion_chambers: Sequence[Device], shutters: Sequence[Device] = []
+):
     """Record the dark current on the ion chambers.
 
     - Close shutters
     - Record ion chamber dark current
-    - Open shutters
+    - Restore shutters to their previous positions
 
     Parameters
     ==========
     ion_chambers
       Ion chamber devices or names.
     shutters
-      Shutter devices or names.
+      Shutter devices or names. These shutters will be closed before
+      recording the dark current, and then be returned to its original
+      state afterward recording the dark current.
 
     """
+    # Get previous shutter states
+    old_shutters = {}
+    for shutter in shutters:
+        old_shutters[shutter] = yield from bps.rd(shutter.readback)
+    # Close shutters
     yield from close_shutters(shutters)
     # Measure the dark current
-    ion_chambers = registry.findall(ion_chambers)
-    # This is a big hack, we need to come back and just accept the current integration time
-    old_times = [ic.exposure_time.get() for ic in ion_chambers]
-    time_args = [obj for ic in ion_chambers for obj in (ic.record_dark_time, time)]
-    yield from bps.mv(*time_args)
-    mv_args = [obj for ic in ion_chambers for obj in (ic.record_dark_current, 1)]
-    triggers = [ic.record_dark_current for ic in ion_chambers]
-    yield from bps.mv(*mv_args)
-    yield from bps.sleep(time)
-    time_args = [
-        obj for (ic, t) in zip(ion_chambers, old_times) for obj in (ic.exposure_time, t)
+    ion_chambers = beamline.registry.findall(ion_chambers)
+    # Record dark currents
+    group = uuid.uuid4()
+    for ic in ion_chambers:
+        yield Msg("trigger", ic, group=group, record_dark_current=True)
+        # yield from bps.trigger(ic.record_dark_current, group=group, wait=False)
+    # Wait for the devices to be done recording dark current
+    yield from bps.wait(group=group)
+    # Reset shutters to their original states
+    to_open = [
+        sht for sht, old_state in old_shutters.items() if old_state == ShutterState.OPEN
     ]
-    yield from bps.mv(*time_args)
-    # Open shutters again
-    yield from open_shutters(shutters)
+    yield from open_shutters(to_open)
 
 
 # -----------------------------------------------------------------------------

@@ -60,7 +60,7 @@ class LineScanDisplay(regions_display.RegionsDisplay):
         detectors, motor_args, repeat_scan_num = self.get_scan_parameters()
         md = self.get_meta_data()
         num_points = self.ui.scan_pts_spin_box.value()
-
+        # Check for what kind of scan we're running based on use input
         if self.ui.relative_scan_checkbox.isChecked():
             if self.ui.log_scan_checkbox.isChecked():
                 scan_type = "rel_log_scan"
@@ -71,19 +71,17 @@ class LineScanDisplay(regions_display.RegionsDisplay):
                 scan_type = "log_scan"
             else:
                 scan_type = "scan"
-
-        # # Build the queue item
+        # Build the queue item
         item = BPlan(
             scan_type,
             detectors,
             *motor_args,
             num=num_points,
-            # per_step=None,
             md=md,
         )
 
         # Submit the item to the queueserver
-        log.info("Added line scan() plan to queue.")
+        log.info(f"Adding line scan() plan to queue: {item}.")
         # repeat scans
         for i in range(repeat_scan_num):
             self.queue_item_submitted.emit(item)

@@ -1,21 +1,66 @@
-from haven import registry
-from haven.instrument import shutter
+import pytest
+from ophyd.utils.errors import ReadOnlyError
+from ophyd_async.core import get_mock_put, set_mock_value
+
+from haven.devices.shutter import PssShutter, ShutterState
 
 
-def test_shutter(sim_registry, beamline_connected):
-    shutter.load_shutters()
-    shutters = list(registry.findall(label="shutters"))
-    assert len(shutters) == 2
-    shutterA = registry.find(name="front_end_shutter")
-    assert shutterA.name == "front_end_shutter"
-    assert shutterA.open_signal.pvname == "PSS:99ID:FES_OPEN_EPICS.VAL"
-    assert shutterA.close_signal.pvname == "PSS:99ID:FES_CLOSE_EPICS.VAL"
-    assert shutterA.pss_state.pvname == "PSS:99ID:A_BEAM_PRESENT"
-    shutterC = registry.find(name="hutch_shutter")
-    assert shutterC.name == "hutch_shutter"
-    assert shutterC.open_signal.pvname == "PSS:99ID:SCS_OPEN_EPICS.VAL"
-    assert shutterC.close_signal.pvname == "PSS:99ID:SCS_CLOSE_EPICS.VAL"
-    assert shutterC.pss_state.pvname == "PSS:99ID:C_BEAM_PRESENT"
+@pytest.fixture()
+async def shutter(sim_registry):
+    """
+    Example PVs:
+
+    S25ID-PSS:SCS:OpenEPICSC
+    S25ID-PSS:SCS:CloseEPICSC
+    S25ID-PSS:SCS:BeamBlockingM.VAL
+    """
+    shutter = PssShutter(prefix="S255ID-PSS:SCS:", name="shutter")
+    await shutter.connect(mock=True)
+    return shutter
+
+
+async def test_shutter_setpoint(shutter):
+    """When we open and close the shutter, do the right EPICS signals get
+    set?
+
+    """
+    # Prepare some mocking so we can operate properly
+    open_put = get_mock_put(shutter.open_signal)
+    close_put = get_mock_put(shutter.close_signal)
+    set_mock_value(shutter.open_signal, 0)
+    set_mock_value(shutter.close_signal, 0)
+    # Close the shutter
+    set_mock_value(shutter.open_signal, 0)
+    set_mock_value(shutter.close_signal, 0)
+    status = shutter.set(ShutterState.CLOSED)
+    set_mock_value(shutter.readback, ShutterState.CLOSED)
+    await status
+    assert not open_put.called
+    close_put.assert_called_once_with(1, timeout=16, wait=False)
+    # Open the shutter
+    open_put.reset_mock()
+    close_put.reset_mock()
+    set_mock_value(shutter.close_signal, 0)
+    set_mock_value(shutter.open_signal, 0)
+    status = shutter.set(ShutterState.OPEN)
+    set_mock_value(shutter.readback, ShutterState.OPEN)
+    await status
+    assert not close_put.called
+    open_put.assert_called_once_with(1, timeout=18, wait=False)
+
+
+async def test_shutter_check_value(shutter):
+    # Check for non-sense values
+    with pytest.raises(ValueError):
+        await shutter.set(ShutterState.FAULT)
+    # Test shutter allow_close
+    shutter.allow_close = False
+    with pytest.raises(ReadOnlyError):
+        await shutter.set(ShutterState.CLOSED)
+    # Test shutter allow_open
+    shutter.allow_open = False
+    with pytest.raises(ReadOnlyError):
+        await shutter.set(ShutterState.OPEN)
 
 
 # -----------------------------------------------------------------------------

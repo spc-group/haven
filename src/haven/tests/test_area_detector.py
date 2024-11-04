@@ -1,18 +1,12 @@
 import time
 from collections import OrderedDict
 
-import numpy as np
 import pytest
 from ophyd import ADComponent as ADCpt
 from ophyd.areadetector.cam import AreaDetectorCam
 from ophyd.sim import instantiate_fake_device
 
-from haven.instrument.area_detector import (
-    DetectorBase,
-    DetectorState,
-    HDF5FilePlugin,
-    load_area_detectors,
-)
+from haven.devices.area_detector import DetectorBase, DetectorState, HDF5FilePlugin
 
 
 class Detector(DetectorBase):
@@ -21,12 +15,13 @@ class Detector(DetectorBase):
 
 
 @pytest.fixture()
-def detector(sim_registry):
+def threaded_detector(sim_registry):
     det = instantiate_fake_device(Detector)
     return det
 
 
-def test_flyscan_kickoff(detector):
+def test_flyscan_kickoff(threaded_detector):
+    detector = threaded_detector
     detector.flyer_num_points.set(10)
     status = detector.kickoff()
     detector.cam.detector_state.sim_put(DetectorState.ACQUIRE)
@@ -42,51 +37,11 @@ def test_flyscan_kickoff(detector):
     assert event[0].timestamp == pytest.approx(time.time())
 
 
-def test_flyscan_complete(sim_ion_chamber):
-    flyer = sim_ion_chamber
-    # Run the complete method
-    status = flyer.complete()
-    status.wait(timeout=3)
-    # Check that the detector is stopped
-    assert flyer.stop_all._readback == 1
-
-
-def test_flyscan_collect(sim_ion_chamber):
-    flyer = sim_ion_chamber
-    name = flyer.net_counts.name
-    flyer.start_timestamp = 988.0
-    # Make fake fly-scan data
-    sim_data = np.zeros(shape=(8000,))
-    sim_data[:6] = [3, 5, 8, 13, 2, 33]
-    flyer.mca.spectrum._readback = sim_data
-    sim_times = np.asarray([12.0e7, 4.0e7, 4.0e7, 4.0e7, 4.0e7, 4.0e7])
-    flyer.mca_times.spectrum._readback = sim_times
-    flyer.frequency.set(1e7).wait(timeout=3)
-    # Ignore the first collected data point because it's during taxiing
-    expected_data = sim_data[1:]
-    # The real timestamps should be midway between PSO pulses
-    flyer.timestamps = [1000, 1004, 1008, 1012, 1016, 1020]
-    expected_timestamps = [1002.0, 1006.0, 1010.0, 1014.0, 1018.0]
-    payload = list(flyer.collect())
-    # Confirm data have the right structure
-    for datum, value, timestamp in zip(payload, expected_data, expected_timestamps):
-        assert datum == {
-            "data": {name: [value]},
-            "timestamps": {name: [timestamp]},
-            "time": timestamp,
-        }
-
-
-def test_load_area_detectors(sim_registry):
-    load_area_detectors()
-    # Check that some area detectors were loaded
-    dets = sim_registry.findall(label="area_detectors")
-
-
-def test_hdf_dtype(detector):
+def test_hdf_dtype(threaded_detector):
     """Check that the right ``dtype_str`` is added to the image data to
     make tiled happy.
     """
+    detector = threaded_detector
     # Set up fake image metadata
     detector.hdf.data_type.sim_put("UInt8")
     original_desc = OrderedDict(

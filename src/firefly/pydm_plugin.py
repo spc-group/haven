@@ -12,14 +12,14 @@ import logging
 from typing import Mapping
 
 import numpy as np
-from bluesky.protocols import HasName, Movable, Subscribable
+from bluesky.protocols import Movable, Subscribable
 from ophyd import OphydObject
 from ophyd.utils.epics_pvs import AlarmSeverity
 from pydm.data_plugins.plugin import PyDMConnection
 from qasync import asyncSlot
 from typhos.plugins.core import SignalConnection, SignalPlugin
 
-from haven import registry
+from haven import beamline
 
 from .exceptions import UnknownOphydSignal
 
@@ -42,7 +42,7 @@ class RegistryConnection:
         Signal
           The Ophyd signal corresponding to the address.
         """
-        return registry[address]
+        return beamline.registry[address]
 
 
 class HavenConnection(RegistryConnection, SignalConnection):
@@ -50,6 +50,8 @@ class HavenConnection(RegistryConnection, SignalConnection):
 
 
 class HavenAsyncConnection(RegistryConnection, PyDMConnection):
+    _is_ready = False
+
     def __init__(self, channel, address, protocol=None, parent=None):
         # Create base connection
         super().__init__(channel, address, protocol=protocol, parent=parent)
@@ -65,6 +67,7 @@ class HavenAsyncConnection(RegistryConnection, PyDMConnection):
         # Subscribe to updates from Ophyd
         if self.is_subscribable:
             self.signal.subscribe(self.send_new_value)
+        self._is_ready = True
         # Add listener
         self.add_listener(channel)
 
@@ -81,11 +84,6 @@ class HavenAsyncConnection(RegistryConnection, PyDMConnection):
         self._meta_task = asyncio.create_task(
             self.send_new_meta(), name=f"meta_{self.signal.name}"
         )
-        if self.is_subscribable:
-            self.signal._get_cache()._notify(self.send_new_value, want_value=False)
-        elif self.is_triggerable:
-            # Any value will do, we won't use it anyway
-            self.new_value_signal.emit(0)
 
     async def send_new_meta(self):
         # Assume the signal is connected
@@ -106,19 +104,28 @@ class HavenAsyncConnection(RegistryConnection, PyDMConnection):
             self.unit_signal.emit(units)
         # Update choices for enumerated types
         if (enum_strs := description.get("choices")) is not None:
-            self.enum_strings_signal.emit(enum_strs)
+            self.enum_strings_signal.emit(tuple(enum_strs))
+        # Send the current value as well so widgets can update
+        if self.is_subscribable:
+            self.signal._get_cache()._notify(self.send_new_value, want_value=False)
+        elif self.is_triggerable:
+            # Any value will do, we won't use it anyway
+            self.new_value_signal.emit(0)
 
     def send_new_value(self, reading: Mapping = {}, **kwargs):
         """
         Update the UI with a new value from the Signal.
         """
-        reading = reading[self.signal.name]
+        # Ignore the run when ``subscribe()`` is first called
+        if not self._is_ready:
+            return
         # Update value
+        reading = reading[self.signal.name]
         if reading is None:
             return
         value = reading["value"]
         try:
-            self.new_value_signal.emit(value)
+            self.new_value_signal[type(value)].emit(value)
         except Exception:
             log.exception("Unable to update %r with value %r.", self.signal.name, value)
         # Update alarm severity
@@ -137,17 +144,14 @@ class HavenAsyncConnection(RegistryConnection, PyDMConnection):
     async def put_value(self, new_value):
         if self.is_triggerable:
             # Just trigger the signal and be done
-            await self.signal.trigger()
+            await self.signal.trigger(wait=False)
         else:
             # Put the proper value to the signal
             old_value = await self.signal.get_value()
             log.info(
                 f"Moving signal '{self.signal.name}' from {old_value} to {new_value}"
             )
-            await self.signal.set(new_value, timeout=None)
-            log.debug(
-                f"Signal '{self.signal.name}' arrived at {await self.signal.get_value()}."
-            )
+            await self.signal.set(new_value, wait=False)
 
 
 class HavenPlugin(SignalPlugin):
@@ -156,11 +160,11 @@ class HavenPlugin(SignalPlugin):
     @staticmethod
     def connection_class(channel, address, protocol):
         # Check if we need the synchronous or asynchronous version
-        sig = registry[address]
-        is_ophyd_async = isinstance(sig, HasName)
-        is_ophyd_async = hasattr(sig, "connect") and inspect.iscoroutinefunction(
-            sig.connect
-        )
+        try:
+            sig = beamline.registry[address]
+        except KeyError:
+            sig = None
+        is_ophyd_async = inspect.iscoroutinefunction(getattr(sig, "connect", None))
         is_vanilla_ophyd = isinstance(sig, OphydObject)
         # Get the right Connection class and build it
         if is_ophyd_async:

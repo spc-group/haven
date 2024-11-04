@@ -606,7 +606,7 @@ It will change the monochromator and undulator (if applicable), but makes no att
             </property>
             <property name="macros" stdset="0">
              <stringlist>
-              <string>MOTOR=energy.monochromator.roll</string>
+              <string>MOTOR=energy.monochromator.roll2</string>
              </stringlist>
             </property>
             <property name="openInNewWindow" stdset="0">
@@ -991,6 +991,7 @@ It will change the monochromator and undulator (if applicable), but makes no att
    <class>PyDMEmbeddedDisplay</class>
    <extends>QFrame</extends>
    <header>pydm.widgets.embedded_display</header>
+   <container>1</container>
   </customwidget>
   <customwidget>
    <class>PyDMEnumComboBox</class>

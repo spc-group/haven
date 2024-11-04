@@ -1,35 +1,28 @@
+import asyncio
 from unittest import mock
 
 import pytest
 from bluesky_queueserver_api import BPlan
-from ophyd.sim import make_fake_device
+from ophyd_async.core import set_mock_value
 from qtpy import QtCore
 
 from firefly.plans.grid_scan import GridScanDisplay
-from haven.instrument import motor
-
-
-@pytest.fixture
-def fake_motors(sim_registry):
-    motor_names = ["motorA_m1", "motorA_m2"]
-    motors = []
-    for name in motor_names:
-        this_motor = make_fake_device(motor.HavenMotor)(name=name, labels={"motors"})
-        motors.append(this_motor)
-    return motors
 
 
 @pytest.fixture()
-async def display(qtbot, sim_registry, fake_motors, dxp, I0):
+async def display(qtbot, sim_registry, sync_motors, async_motors, dxp, ion_chamber):
     display = GridScanDisplay()
     qtbot.addWidget(display)
     await display.update_devices(sim_registry)
     display.ui.run_button.setEnabled(True)
-    return display
+    try:
+        yield display
+    finally:
+        await asyncio.sleep(0.1)
 
 
 @pytest.mark.asyncio
-async def test_time_calculator(display, sim_registry):
+async def test_time_calculator(display, sim_registry, ion_chamber):
     # set up motor num
     await display.update_regions(2)
 
@@ -42,23 +35,17 @@ async def test_time_calculator(display, sim_registry):
 
     # set up detectors
     display.ui.detectors_list.selected_detectors = mock.MagicMock(
-        return_value=["vortex_me4", "I0"]
+        return_value=["vortex_me4", ion_chamber.name]
     )
 
     # set up default timing for the detector
     detectors = display.ui.detectors_list.selected_detectors()
     detectors = {name: sim_registry[name] for name in detectors}
-    detectors["I0"].default_time_signal.set(0.82).wait(2)
-    detectors["vortex_me4"].default_time_signal.set(0.5).wait(2)
+    set_mock_value(detectors[ion_chamber.name].default_time_signal, 0.82)
+    detectors["vortex_me4"].default_time_signal.set(0.5).wait()
 
-    # Create empty QItemSelection objects
-    selected = QtCore.QItemSelection()
-    deselected = QtCore.QItemSelection()
-
-    # emit the signal so that the time calculator is triggered
-    display.ui.detectors_list.selectionModel().selectionChanged.emit(
-        selected, deselected
-    )
+    # Run the time calculator
+    await display.update_total_time()
 
     # Check whether time is calculated correctly for a single scan
     assert display.ui.label_hour_scan.text() == "0"
@@ -72,11 +59,11 @@ async def test_time_calculator(display, sim_registry):
 
 
 @pytest.mark.asyncio
-async def test_grid_scan_plan_queued(display, qtbot, sim_registry, fake_motors):
+async def test_grid_scan_plan_queued(display, qtbot, sim_registry, ion_chamber):
     await display.update_regions(2)
 
     # set up a test motor 1
-    display.regions[0].motor_box.combo_box.setCurrentText("motorA_m1")
+    display.regions[0].motor_box.combo_box.setCurrentText("sync_motor_2")
     display.regions[0].start_line_edit.setText("1")
     display.regions[0].stop_line_edit.setText("111")
     display.regions[0].scan_pts_spin_box.setValue(5)
@@ -85,16 +72,15 @@ async def test_grid_scan_plan_queued(display, qtbot, sim_registry, fake_motors):
     display.regions[0].snake_checkbox.setChecked(True)
 
     # set up a test motor 2
-    display.regions[1].motor_box.combo_box.setCurrentText("motorA_m2")
+    display.regions[1].motor_box.combo_box.setCurrentText("async_motor_1")
     display.regions[1].start_line_edit.setText("2")
     display.regions[1].stop_line_edit.setText("222")
     display.regions[1].scan_pts_spin_box.setValue(10)
 
     # set up detector list
     display.ui.detectors_list.selected_detectors = mock.MagicMock(
-        return_value=["vortex_me4", "I0"]
+        return_value=["vortex_me4", ion_chamber.name]
     )
-
     # set up meta data
     display.ui.lineEdit_sample.setText("sam")
     display.ui.lineEdit_purpose.setText("test")
@@ -102,20 +88,22 @@ async def test_grid_scan_plan_queued(display, qtbot, sim_registry, fake_motors):
 
     expected_item = BPlan(
         "grid_scan",
-        ["vortex_me4", "I0"],
-        "motorA_m2",
-        2,
-        222,
+        ["vortex_me4", "I00"],
+        "async_motor_1",
+        2.0,
+        222.0,
         10,
-        "motorA_m1",
-        1,
-        111,
+        "sync_motor_2",
+        1.0,
+        111.0,
         5,
-        snake_axes=["motorA_m1"],
+        snake_axes=["sync_motor_2"],
         md={"sample": "sam", "purpose": "test", "notes": "notes"},
     )
 
     def check_item(item):
+        print(item.to_dict())
+        print(expected_item.to_dict())
         return item.to_dict() == expected_item.to_dict()
 
     # Click the run button and see if the plan is queued

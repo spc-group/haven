@@ -1,21 +1,14 @@
 import os
 from pathlib import Path
-from unittest import mock
 
 import numpy as np
 import pandas as pd
 
 # from pydm.data_plugins import plugin_modules, add_plugin
 import pytest
-from apstools.devices.srs570_preamplifier import GainSignal
 from ophyd import DynamicDeviceComponent as DCpt
 from ophyd import Kind
-from ophyd.sim import (
-    FakeEpicsSignal,
-    fake_device_cache,
-    instantiate_fake_device,
-    make_fake_device,
-)
+from ophyd.sim import instantiate_fake_device, make_fake_device
 from tiled.adapters.mapping import MapAdapter
 from tiled.adapters.xarray import DatasetAdapter
 from tiled.client import Context, from_context
@@ -24,28 +17,22 @@ from tiled.server.app import build_app
 import haven
 from haven._iconfig import beamline_connected as _beamline_connected
 from haven.catalog import Catalog
-from haven.instrument.aerotech import AerotechStage
-from haven.instrument.aps import ApsMachine
-from haven.instrument.beamline_manager import BeamlineManager, IOCManager
-from haven.instrument.camera import AravisDetector
-from haven.instrument.delay import EpicsSignalWithIO
-from haven.instrument.dxp import DxpDetector
-from haven.instrument.dxp import add_mcas as add_dxp_mcas
-from haven.instrument.ion_chamber import IonChamber
-from haven.instrument.monochromator import Monochromator
-from haven.instrument.robot import Robot
-from haven.instrument.shutter import Shutter
-from haven.instrument.slits import ApertureSlits, BladeSlits
-from haven.instrument.xia_pfcu import PFCUFilter, PFCUFilterBank, PFCUShutter
-from haven.instrument.xspress import Xspress3Detector
-from haven.instrument.xspress import add_mcas as add_xspress_mcas
+from haven.devices.aps import ApsMachine
+from haven.devices.area_detector import AravisDetector
+from haven.devices.beamline_manager import BeamlineManager, IOCManager
+from haven.devices.dxp import DxpDetector
+from haven.devices.dxp import add_mcas as add_dxp_mcas
+from haven.devices.ion_chamber import IonChamber
+from haven.devices.monochromator import Monochromator
+from haven.devices.robot import Robot
+from haven.devices.shutter import PssShutter
+from haven.devices.slits import ApertureSlits, BladeSlits
+from haven.devices.xia_pfcu import PFCUFilter, PFCUFilterBank, PFCUShutter
+from haven.devices.xspress import Xspress3Detector
+from haven.devices.xspress import add_mcas as add_xspress_mcas
 
 top_dir = Path(__file__).parent.resolve()
 haven_dir = top_dir / "haven"
-
-
-def pytest_configure():
-    haven.registry.auto_register = False
 
 
 # Specify the configuration files to use for testing
@@ -57,21 +44,6 @@ os.environ["HAVEN_CONFIG_FILES"] = ",".join(
 )
 
 
-class FakeEpicsSignalWithIO(FakeEpicsSignal):
-    # An EPICS signal that simply uses the DG-645 convention of
-    # 'AO' being the setpoint and 'AI' being the read-back
-    _metadata_keys = EpicsSignalWithIO._metadata_keys
-
-    def __init__(self, prefix, **kwargs):
-        super().__init__(f"{prefix}I", write_pv=f"{prefix}O", **kwargs)
-
-
-# Ophyd uses a cache of signals and their corresponding fakes
-# We need to add ours in so they get simulated properly.
-fake_device_cache[EpicsSignalWithIO] = FakeEpicsSignalWithIO
-fake_device_cache[GainSignal] = FakeEpicsSignal
-
-
 @pytest.fixture()
 def beamline_connected():
     with _beamline_connected(True):
@@ -81,66 +53,34 @@ def beamline_connected():
 @pytest.fixture()
 def sim_registry(monkeypatch):
     # Save the registry so we can restore it later
-    registry = haven.registry
+    registry = haven.beamline.registry
     objects_by_name = registry._objects_by_name
     objects_by_label = registry._objects_by_label
     registry.clear()
-    registry.auto_register = True
     # Run the test
     try:
         yield registry
     finally:
         # Restore the previous registry components
-        registry.auto_register = False
         registry.clear()
         registry._objects_by_name = objects_by_name
         registry._objects_by_label = objects_by_label
 
 
 @pytest.fixture()
-def sim_ion_chamber(sim_registry):
-    FakeIonChamber = make_fake_device(IonChamber)
-    ion_chamber = FakeIonChamber(
-        prefix="scaler_ioc",
+async def ion_chamber(sim_registry):
+    ion_chamber = IonChamber(
+        scaler_prefix="255idcVME:3820:",
+        scaler_channel=2,
+        preamp_prefix="255idc:SR03",
+        voltmeter_prefix="255idc:LJT7_Voltmeter0:",
+        voltmeter_channel=1,
+        counts_per_volt_second=10e6,
         name="I00",
-        labels={"ion_chambers"},
-        ch_num=2,
     )
-    # Set metadata
-    preamp = ion_chamber.preamp
-    preamp.sensitivity_value._enum_strs = tuple(preamp.values)
-    preamp.sensitivity_unit._enum_strs = tuple(preamp.units)
-    preamp.offset_value._enum_strs = tuple(preamp.values)
-    preamp.offset_unit._enum_strs = tuple(preamp.offset_units)
-    preamp.gain_mode._enum_strs = ("LOW NOISE", "HIGH BW", "LOW DRIFT")
-    preamp.gain_mode.set("LOW NOISE").wait(timeout=3)
-    return ion_chamber
-
-
-@pytest.fixture()
-def I0(sim_registry):
-    """A fake ion chamber named 'I0' on scaler channel 2."""
-    FakeIonChamber = make_fake_device(IonChamber)
-    ion_chamber = FakeIonChamber(
-        prefix="scaler_ioc",
-        preamp_prefix="preamp_ioc:SR04:",
-        name="I0",
-        labels={"ion_chambers"},
-        ch_num=2,
-    )
-    # Set ion chamber signal values to sensible defaults
-    ion_chamber.preamp.sensitivity_value.sim_put("1")
-    ion_chamber.preamp.sensitivity_unit.sim_put("pA/V")
-    return ion_chamber
-
-
-@pytest.fixture()
-def It(sim_registry):
-    """A fake ion chamber named 'It' on scaler channel 3."""
-    FakeIonChamber = make_fake_device(IonChamber)
-    ion_chamber = FakeIonChamber(
-        prefix="scaler_ioc", name="It", labels={"ion_chambers"}, ch_num=3
-    )
+    # Connect to the ion chamber
+    await ion_chamber.connect(mock=True)
+    sim_registry.register(ion_chamber)
     return ion_chamber
 
 
@@ -149,6 +89,7 @@ def blade_slits(sim_registry):
     """A fake set of slits using the 4-blade setup."""
     FakeSlits = make_fake_device(BladeSlits)
     slits = FakeSlits(prefix="255idc:KB_slits", name="kb_slits", labels={"slits"})
+    sim_registry.register(slits)
     return slits
 
 
@@ -176,6 +117,7 @@ def beamline_manager(sim_registry):
     manager = FakeManager(
         prefix="companionCube:", name="companion_cube", labels={"beamline_manager"}
     )
+    sim_registry.register(manager)
     return manager
 
 
@@ -192,6 +134,7 @@ def aperture_slits(sim_registry):
         diagonal_motor="m2",
         labels={"slits"},
     )
+    sim_registry.register(slits)
     return slits
 
 
@@ -199,6 +142,7 @@ def aperture_slits(sim_registry):
 def sim_camera(sim_registry):
     FakeCamera = make_fake_device(AravisDetector)
     camera = FakeCamera(name="s255id-gige-A", labels={"cameras", "area_detectors"})
+    sim_registry.register(camera)
     camera.pva.pv_name._readback = "255idSimDet:Pva1:Image"
     # Registry with the simulated registry
     yield camera
@@ -218,6 +162,7 @@ def dxp(sim_registry):
     FakeDXP = make_fake_device(DxpVortex)
     vortex = FakeDXP(name="vortex_me4", labels={"xrf_detectors", "detectors"})
     # vortex.net_cdf.dimensions.set([1477326, 1, 1])
+    sim_registry.register(vortex)
     yield vortex
 
 
@@ -234,48 +179,29 @@ class Xspress3Vortex(Xspress3Detector):
 def xspress(sim_registry):
     FakeXspress = make_fake_device(Xspress3Vortex)
     vortex = FakeXspress(name="vortex_me4", labels={"xrf_detectors"})
+    sim_registry.register(vortex)
     yield vortex
 
 
 @pytest.fixture()
-def aerotech():
-    Stage = make_fake_device(
-        AerotechStage,
-    )
-    stage = Stage(
-        "255id",
-        delay_prefix="255id:DG645",
-        pv_horiz=":m1",
-        pv_vert=":m2",
-        name="aerotech",
-    )
-    return stage
-
-
-@pytest.fixture()
-def robot():
+def robot(sim_registry):
     RobotClass = make_fake_device(Robot)
     robot = RobotClass(name="robotA", prefix="255idA:")
+    sim_registry.register(robot)
     return robot
-
-
-@pytest.fixture()
-def aerotech_flyer(aerotech):
-    flyer = aerotech.horiz
-    flyer.user_setpoint._limits = (0, 1000)
-    flyer.send_command = mock.MagicMock()
-    yield flyer
 
 
 @pytest.fixture()
 def mono(sim_registry):
     mono = instantiate_fake_device(Monochromator, name="monochromator")
+    sim_registry.register(mono)
     yield mono
 
 
 @pytest.fixture()
 def aps(sim_registry):
     aps = instantiate_fake_device(ApsMachine, name="APS")
+    sim_registry.register(aps)
     yield aps
 
 
@@ -297,28 +223,28 @@ def xia_shutter_bank(sim_registry):
 
     FakeBank = make_fake_device(ShutterBank)
     bank = FakeBank(prefix="255id:pfcu4:", name="xia_filter_bank", shutters=[[3, 4]])
+    sim_registry.register(bank)
     yield bank
 
 
 @pytest.fixture()
 def xia_shutter(xia_shutter_bank):
-    yield xia_shutter_bank.shutters.shutter_0
+    shutter = xia_shutter_bank.shutters.shutter_0
+    yield shutter
 
 
 @pytest.fixture()
 def shutters(sim_registry):
-    FakeShutter = make_fake_device(Shutter)
+    FakeShutter = make_fake_device(PssShutter)
     kw = dict(
         prefix="_prefix",
-        open_pv="_prefix",
-        close_pv="_prefix2",
-        state_pv="_prefix2",
         labels={"shutters"},
     )
     shutters = [
         FakeShutter(name="Shutter A", **kw),
         FakeShutter(name="Shutter C", **kw),
     ]
+    [sim_registry.register(s) for s in shutters]
     yield shutters
 
 
@@ -332,6 +258,7 @@ def filters(sim_registry):
         FakeFilter(name="Filter A", prefix="filter1", **kw),
         FakeFilter(name="Filter B", prefix="filter2", **kw),
     ]
+    [sim_registry.register(f) for f in filters]
     return filters
 
 
@@ -454,9 +381,11 @@ def tiled_client():
         yield client["255id_testing"]
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture()
 def catalog(tiled_client):
-    return Catalog(client=tiled_client)
+    cat = Catalog(client=tiled_client)
+    # cat = mock.AsyncMock()
+    return cat
 
 
 # -----------------------------------------------------------------------------

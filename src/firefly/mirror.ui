@@ -16,7 +16,7 @@
    </font>
   </property>
   <property name="windowTitle">
-   <string>${DEVICE_TITLE}</string>
+   <string>${DEVICE}</string>
   </property>
   <widget class="QLabel" name="label">
    <property name="geometry">
@@ -74,7 +74,9 @@ color: white;
     <string/>
    </property>
    <property name="styleSheet">
-    <string notr="true"/>
+    <string notr="true">#axis_name_line_edit,#readback_line_edit {
+color: white;
+}</string>
    </property>
    <property name="frameShape">
     <enum>QFrame::NoFrame</enum>
@@ -90,9 +92,9 @@ color: white;
    <property name="geometry">
     <rect>
      <x>5</x>
-     <y>191</y>
+     <y>185</y>
      <width>131</width>
-     <height>111</height>
+     <height>120</height>
     </rect>
    </property>
    <property name="toolTip">
@@ -356,7 +358,7 @@ color: white;
     <string/>
    </property>
    <property name="text">
-    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;${DEVICE_TITLE}&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;${DEVICE}&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
    <property name="textFormat">
     <enum>Qt::RichText</enum>
@@ -402,6 +404,7 @@ color: white;
    <class>PyDMEmbeddedDisplay</class>
    <extends>QFrame</extends>
    <header>pydm.widgets.embedded_display</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources>

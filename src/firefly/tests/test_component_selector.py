@@ -29,9 +29,9 @@ class StageAsync(AsyncDevice):
 @pytest.fixture()
 async def motor_registry(sim_registry):
     FakeMotor = sim.make_fake_device(EpicsMotor)
-    FakeMotor(name="motor1")
+    sim_registry.register(FakeMotor(name="motor1"))
     FakeStage = sim.make_fake_device(Stage)
-    FakeStage(name="stage")
+    sim_registry.register(FakeStage(name="stage"))
     # Add async devices
     async_stage = StageAsync(name="async_stage")
     await async_stage.connect(mock=True)
@@ -77,6 +77,18 @@ async def test_selector_adds_devices(selector):
 #     column = 0
 #     cpt_names = [stage_node.child(row, column).text() for row in range(stage_node.rowCount())]
 #     assert "lazy_motor" not in cpt_names
+
+
+async def test_selected_component(selector):
+    """Does the selector properly report the selected device?"""
+    # If no component is selected
+    selected = selector.current_component()
+    assert selected is None
+    # If a component is selected
+    selector.combo_box.setCurrentText("async_stage.motor4")
+    selected = selector.current_component()
+    assert selected is not None
+    assert selected.name == "async_stage-motor4"
 
 
 @pytest.mark.asyncio
