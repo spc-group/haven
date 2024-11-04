@@ -108,7 +108,7 @@ async def test_line_scan_plan_queued(qtbot, display):
         2.0,
         222.0,
         num=10,
-        md={"sample": "sam", "purpose": "test", "notes": "notes"},
+        md={"sample_name": "sam", "purpose": "test", "notes": "notes"},
     )
 
     def check_item(item):
