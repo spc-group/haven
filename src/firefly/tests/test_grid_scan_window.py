@@ -98,7 +98,7 @@ async def test_grid_scan_plan_queued(display, qtbot, sim_registry, ion_chamber):
         111.0,
         5,
         snake_axes=["sync_motor_2"],
-        md={"sample": "sam", "purpose": "test", "notes": "notes"},
+        md={"sample_name": "sam", "purpose": "test", "notes": "notes"},
     )
 
     def check_item(item):
