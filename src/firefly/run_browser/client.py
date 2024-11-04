@@ -1,5 +1,6 @@
 import datetime as dt
 import logging
+import warnings
 from collections import OrderedDict
 from typing import Mapping, Sequence
 
@@ -51,15 +52,7 @@ class DatabaseWorker:
         return runs
 
     async def load_distinct_fields(self):
-        """Get distinct metadata fields for filterable metadata.
-
-        Emits
-        =====
-        distinct_fields_changed
-          Emitted with the new dictionary of distinct metadata choices
-          for each metadata key.
-
-        """
+        """Get distinct metadata fields for filterable metadata."""
         new_fields = {}
         target_fields = [
             "sample_name",
@@ -154,6 +147,8 @@ class DatabaseWorker:
     async def metadata(self):
         """Get all metadata for the selected runs in one big dictionary."""
         md = {}
+        if len(self.selected_runs) == 0:
+            warnings.warn("No runs selected, metadata will be empty.")
         for run in self.selected_runs:
             md[run.uid] = await run.metadata
         return md
@@ -161,6 +156,7 @@ class DatabaseWorker:
     async def load_selected_runs(self, uids):
         # Prepare the query for finding the runs
         uids = list(dict.fromkeys(uids))
+        print(f"Loading runs: {uids}")
         # Retrieve runs from the database
         runs = [await self.catalog[uid] for uid in uids]
         # runs = await asyncio.gather(*run_coros)
@@ -204,12 +200,19 @@ class DatabaseWorker:
         use_log=False,
         use_invert=False,
         use_grad=False,
+        uids: Sequence[str] | None = None,
     ) -> Mapping:
         """Produce a dictionary with the 1D datasets for plotting.
 
         The keys of the dictionary are the labels for each curve, and
         the corresponding value is a pandas dataset with the data for
         each signal.
+
+        Parameters
+        ==========
+        uids
+          If not ``None``, only runs with UIDs listed in this
+          parameter will be included.
 
         """
         # Check for sensible inputs
@@ -229,15 +232,18 @@ class DatabaseWorker:
         # Build the dataframes
         dfs = OrderedDict()
         for run in self.selected_runs:
+            # Check that the UID matches
+            if uids is not None and run.uid not in uids:
+                break
             # Get data from the database
             df = await run.to_dataframe(signals=signals)
             # Check for missing signals
-            missing_x = x_signal not in df.columns
+            missing_x = x_signal not in df.columns and df.index.name != x_signal
             missing_y = y_signal not in df.columns
             missing_r = r_signal not in df.columns
             if missing_x or missing_y or (use_reference and missing_r):
                 log.warning(
-                    "Could not find signals {x_signal}, {y_signal} and {r_signal}"
+                    f"Could not find signals {x_signal=}, {y_signal=} and {r_signal=} in {df.columns}"
                 )
                 continue
             # Apply transformations

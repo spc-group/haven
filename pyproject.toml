@@ -16,14 +16,14 @@ classifiers = [
     "Topic :: System :: Hardware",
 ]
 keywords = ["synchrotron", "xray", "bluesky"]
-dependencies = ["aioca", "bluesky", "ophyd", "ophyd-async>=0.7.0", "databroker", "apsbss", "xraydb",
-	        "mergedeep", "xrayutilities", "bluesky-queueserver-api",
+dependencies = ["aioca", "aiokafka", "bluesky", "ophyd", "ophyd-async>=0.7.0", "databroker", "apsbss", "xraydb",
+	        "mergedeep", "xrayutilities", "bluesky-queueserver-api", "tomlkit",
 		"apstools", "databroker", "ophyd-registry", "caproto", "pcdsdevices",
 		"strenum", "bluesky-adaptive", "tiled[client]"]
 
 [project.optional-dependencies]
 
-dev = ["black", "pytest", "pytest-mongodb", "build", "twine",
+dev = ["black", "pytest", "pytest-mongodb", "asynctest", "build", "twine",
        "time-machine", "pytest-mock", "pytest-qt", "flake8", "pytest-asyncio", "tiled[all]"]
 gui = ["qtawesome", "pydm<=1.24.1", "pyqtgraph", "qasync", "tiled[all]"]
 
