@@ -1,5 +1,6 @@
 import math
 import time
+from unittest.mock import AsyncMock
 
 import numpy as np
 import pytest
@@ -35,10 +36,10 @@ def test_wavelength_to_energy(energy, wavelength):
 braggs_law_values = [
     # (θ°,   d(Å), λ(Å))
     (35.424, 1.33, 1.5418),
-    (48.75,  1.33, 2.0),
-    (75,     1.33, 2.5694),
-    (50.43,  1.0,  1.5418),
-    (22.67,  2.0,  1.5418),
+    (48.75, 1.33, 2.0),
+    (75, 1.33, 2.5694),
+    (50.43, 1.0, 1.5418),
+    (22.67, 2.0, 1.5418),
 ]
 
 
@@ -62,23 +63,31 @@ def test_wavelength_to_bragg(theta, d_spacing, wavelength):
 
 
 analyzer_values = [
-    # (θB,    α,     β,    y,      x)
-    (70,      15,    25,   4.79,   47.60),
-    (80,      7,     10,   2.65,   49.40),
-    (60,      20,    30,   9.87,   43.56),
-    (65,      0,     0,    19.15,  41.07),
-    (80,      30,    10,   -16.32, 46.98),
+    # (θB,  α,  β,      y,     x)
+    (70, 15, 25, 4.79, 47.60),
+    (80, 7, 10, 2.65, 49.40),
+    (60, 20, 30, 9.87, 43.56),
+    (65, 0, 0, 19.15, 41.07),
+    (80, 30, 10, -16.32, 46.98),
 ]
+
+
+Si311_d_spacing = 1.637 * 1e-10  # converted to meters
 
 
 @pytest.fixture()
 async def xtal(sim_registry):
     # Create the analyzer documents
-    xtal = analyzer.Analyzer(name="analyzer", horizontal_motor_prefix="", vertical_motor_prefix="", yaw_motor_prefix="", surface_plane=(0, 0, 1))
+    xtal = analyzer.Analyzer(
+        name="analyzer",
+        horizontal_motor_prefix="",
+        vertical_motor_prefix="",
+        yaw_motor_prefix="",
+        surface_plane=(0, 0, 1),
+    )
     await xtal.connect(mock=True)
     # Set default values for xtal parameters
-    d = 1.637 * 1e-10  # Si 311 converted to meters
-    set_mock_value(xtal.d_spacing, d)
+    set_mock_value(xtal.d_spacing, Si311_d_spacing)
     set_mock_value(xtal.rowland_diameter, 0.500)
     return xtal
 
@@ -86,36 +95,50 @@ async def xtal(sim_registry):
 @pytest.mark.parametrize("bragg,alpha,beta,y,x", analyzer_values)
 async def test_rowland_circle_forward(xtal, bragg, alpha, beta, x, y):
     # Set up sensible values for current positions
-    set_mock_value(xtal.wedge_angle, np.radians(beta))
-    set_mock_value(xtal.asymmetry_angle, np.radians(alpha))
-    set_mock_value(xtal.horizontal.user_readback, 0)
-    set_mock_value(xtal.vertical.user_readback, 0)
-    d = await xtal.d_spacing.get_value()
+    xtal.wedge_angle.get_value = AsyncMock(return_value=np.radians(beta))
+    xtal.asymmetry_angle.get_value = AsyncMock(return_value=np.radians(alpha))
+    xtal.d_spacing.get_value = AsyncMock(return_value=Si311_d_spacing)
     bragg = np.radians(bragg)
-    energy = analyzer.bragg_to_energy(bragg, d=d)
+    energy = analyzer.bragg_to_energy(bragg, d=Si311_d_spacing)
+    # Calculate the new x, z motor positions
+    calculated = await xtal.energy.forward(
+        energy,
+        D=xtal.rowland_diameter,
+        d=xtal.d_spacing,
+        beta=xtal.wedge_angle,
+        alpha=xtal.asymmetry_angle,
+        x=xtal.horizontal,
+        y=xtal.vertical,
+    )
     # Check the result is correct (convert cm -> m)
-    expected = (x / 100, y / 100)
-    await xtal.energy.set(energy)
-    x_mock = get_mock_put(xtal.horizontal.user_setpoint)
-    x_mock.assert_called_once()
-    assert x_mock.call_args.args[0] == pytest.approx(x/100, abs=0.0001)
-    y_mock = get_mock_put(xtal.vertical.user_setpoint)
-    y_mock.assert_called_once()
-    assert y_mock.call_args.args[0] == pytest.approx(y/100, abs=0.0001)
+    expected = {xtal.horizontal: x / 100, xtal.vertical: y / 100}
+    assert calculated == pytest.approx(expected, abs=0.001)
 
 
 @pytest.mark.parametrize("bragg,alpha,beta,y,x", analyzer_values)
 async def test_rowland_circle_inverse(xtal, bragg, alpha, beta, x, y):
-    set_mock_value(xtal.wedge_angle, np.radians(beta))
-    set_mock_value(xtal.asymmetry_angle, np.radians(alpha))
     # Calculate the expected answer
     bragg = np.radians(bragg)
-    d = await xtal.d_spacing.get_value()
-    expected_energy = analyzer.bragg_to_energy(bragg, d=d)
+    expected_energy = analyzer.bragg_to_energy(bragg, d=Si311_d_spacing)
+    # Calculate the new energy
+    D = await xtal.rowland_diameter.get_value()
+    new_energy = xtal.energy.inverse(
+        {
+            xtal.horizontal: x,
+            xtal.vertical: y,
+            xtal.rowland_diameter: D,
+            xtal.d_spacing: Si311_d_spacing,
+            xtal.wedge_angle: np.radians(beta),
+            xtal.asymmetry_angle: np.radians(alpha),
+        },
+        D=xtal.rowland_diameter,
+        d=xtal.d_spacing,
+        beta=xtal.wedge_angle,
+        alpha=xtal.asymmetry_angle,
+        x=xtal.horizontal,
+        y=xtal.vertical,
+    )
     # Compare to the calculated inverse
-    set_mock_value(xtal.horizontal.user_readback, x)
-    set_mock_value(xtal.vertical.user_readback, y)
-    new_energy = await xtal.energy.readback.get_value()
     assert new_energy == pytest.approx(expected_energy, abs=0.2)
 
 
@@ -124,7 +147,7 @@ reflection_values = [
     ("001", "101", 45.0),
     ("001", "110", 90.0),
     ("211", "444", 19.5),
-    ("211", "733",  4.0),
+    ("211", "733", 4.0),
     ("211", "880", 30.0),
 ]
 

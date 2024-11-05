@@ -17,18 +17,17 @@ Some sane values for converting hkl and [HKL] to α:
 import asyncio
 import logging
 
-from scipy import constants
 import numpy as np
 from ophyd import Component as Cpt
 from ophyd import Device, EpicsMotor
 from ophyd import FormattedComponent as FCpt
 from ophyd import PseudoPositioner, PseudoSingle, Signal
 from ophyd.pseudopos import pseudo_position_argument, real_position_argument
-from ophyd_async.core import Device, soft_signal_rw, soft_signal_r_and_setter
+from ophyd_async.core import Device, soft_signal_r_and_setter, soft_signal_rw
 from scipy import constants
 
-from .motor import Motor
 from ..positioner import Positioner
+from .motor import Motor
 from .signal import derived_signal_r, derived_signal_rw
 
 log = logging.getLogger(__name__)
@@ -125,6 +124,16 @@ def bragg_to_energy(bragg: float, d: float) -> float:
     return energy
 
 
+def hkl_to_alpha(base, reflection):
+    cos_alpha = (
+        np.dot(base, reflection) / np.linalg.norm(base) / np.linalg.norm(reflection)
+    )
+    if cos_alpha > 1:
+        cos_alpha = 1
+    alpha = np.arccos(cos_alpha)
+    return alpha
+
+
 class Analyzer(Device):
     """A single asymmetric analyzer crystal mounted on an Rowland circle.
 
@@ -160,13 +169,13 @@ class Analyzer(Device):
         # Soft signals for intermediate, calculated values
         self.d_spacing = derived_signal_r(
             float,
-            derived_from = {
+            derived_from={
                 "hkl": self.reflection,
                 "a": self.lattice_constant,
             },
             inverse=self._calc_d_spacing,
             units=self.linear_units,
-            precision=4
+            precision=4,
         )
         self.asymmetry_angle = derived_signal_r(
             float,
@@ -182,14 +191,8 @@ class Analyzer(Device):
         super().__init__(name=name)
 
     def _calc_alpha(self, values, refl, base):
-        hkl = values[base]
-        HKL = values[refl]
-        # hkl1 -> base, h, k, l
-        cos_alpha = np.dot(hkl, HKL) / np.linalg.norm(hkl) / np.linalg.norm(HKL)
-        if cos_alpha > 1:
-            cos_alpha = 1
-        alpha = np.arccos(cos_alpha)
-        return alpha
+        """Calculate the asymmetry angle for a given reflection and base plane."""
+        return hkl_to_alpha(base=values[base], reflection=values[refl])
 
     def _calc_d_spacing(self, values, hkl, a):
         return values[a] / np.linalg.norm(values[hkl])
