@@ -5,6 +5,7 @@ import logging
 import numpy as np
 from numpy import ndarray
 import pandas as pd
+from bluesky import plans as bp
 from bluesky_adaptive.per_event import adaptive_plan, recommender_factory
 from bluesky_adaptive.recommendations import NoRecommendation
 import autobl.steering
@@ -16,8 +17,9 @@ from autobl.util import to_numpy, to_tensor
 import torch
 import botorch
 import gpytorch
+from ophyd_async.core import Device
 
-from ..instrument.instrument_registry import registry
+from ..catalog import tiled_client
 
 __all__ = ["XANESSamplingRecommender", "adaptive_xanes"]
 
@@ -210,18 +212,18 @@ class XANESSamplingRecommender:
             raise ValueError('{} is not a valid method to generate initial locations.'.format(method))
         return x_init
 
-    def tell(self, energy: float, value: float) -> None:
+    def tell(self, energy: list[float], values: float) -> None:
         """Update model with a single data points.
 
         Parameters
         ----------
         energy
-          The energy (eV) of the measurement..
+          The energy (eV) of the measurement.
         value
           Measured x-ray absorption coefficient at the energy.
         """
         self.check_guide()
-        energy = to_tensor([[float(energy)]])
+        energy = to_tensor([[float(energy[0])]])
         value = to_tensor([[float(value)]])
         self.guide.update(energy, value)
 
@@ -262,8 +264,11 @@ def dummy_measure(*args, **kwargs):
 
 
 def adaptive_xanes(
+    I0: Device,
+    It: Device,
     n_initial_measurements: int,
     energy_range: Tuple[float, float],
+    energy_positioner: Device = "energy",
     override_kernel_lengthscale: Optional[float] = None,
     reference_spectra_x: Optional[ndarray] = None,
     reference_spectra_y: Optional[ndarray] = None,
@@ -331,22 +336,58 @@ def adaptive_xanes(
     input_args = locals()
     
     recommender = XANESSamplingRecommender(**input_args)
+
+    detectors = [I0, It]
+    ind_keys = [energy_positioner.name]
+    dep_keys = [det.name for det in detectors]
+    rr, queue = recommender_factory(
+        recommender,
+        independent_keys=ind_keys,
+        dependent_keys=dep_keys,
+        max_count=np.inf,
+    )
+    # Prime the model with some initial data points
+    yield from _prime_initial_points(It=It, I0=I0, energy_positioner=energy_positioner,
+                                     recommender=recommender, n_initial_measurements=n_initial_measurements)
+    # Execute the plan
+    yield from adaptive_plan(
+        dets=detectors,
+        first_point=first_point,
+        to_recommender=rr,
+        from_recommender=queue,
+    )
+
     
     # Get initial points to measure. In a dynamic experiment, one may save this initial
     # point set and reuse it for subsequent spectra by setting "method" to "supplied"
     # and "supplied_initial_points" to the saved point set.
-    x_init = recommender.get_initial_measurement_locations(n=n_initial_measurements, method='quasirandom')
-    y_init = dummy_measure(x_init)
+    # x_init = recommender.get_initial_measurement_locations(n=n_initial_measurements, method='quasirandom')
+    # y_init = dummy_measure(x_init)
     
+    # recommender.initialize_guide(x_init, y_init)
+    
+    # while True:
+    #     try:
+    #         suggested_energy = recommender.ask(n=1)
+    #         measured_value = dummy_measure(suggested_energy)
+    #         recommender.tell(suggested_energy, measured_value)
+    #     except NoRecommendation:
+    #         break
+
+
+def _prime_initial_points(It, I0, energy_positioner, recommender, n_initial_measurements):
+    # Get some initial data points
+    x_init = recommender.get_initial_measurement_locations(n=n_initial_measurements,
+                                                           method='quasirandom')
+    init_uid = yield from bp.list_scan([It, I0], energy_positioner, x_init)
+    # Retrieve scan data from the database
+    client = tiled_client()
+    run = client[init_uid]
+    It_data = run['primary/data'][It.scaler_channel.net_counts.name].read()
+    I0_data = run['primary/data'][I0.scaler_channel.net_counts.name].read()
+    signal = -np.log(It/I0)
+    # Send the scan data to the recommender
     recommender.initialize_guide(x_init, y_init)
-    
-    while True:
-        try:
-            suggested_energy = recommender.ask(n=1)
-            measured_value = dummy_measure(suggested_energy)
-            recommender.tell(suggested_energy, measured_value)
-        except NoRecommendation:
-            break
     
 
 # -----------------------------------------------------------------------------
