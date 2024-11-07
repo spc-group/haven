@@ -258,6 +258,25 @@ def test_remove_duplicate_energies(mono_motor, exposure_motor, I0):
     assert len(read_msgs) == len(energies)
 
 
+def test_xafs_metadata(mono_motor):
+    scan = energy_scan(
+        [],
+        detectors=[],
+        energy_signals=[mono_motor],
+        E0="Ni_K",
+        md={"sample_name": "unobtanium"},
+    )
+    # Get the metadata passed alongside the "open_run" message
+    msgs = list(scan)
+    open_msg = [m for m in msgs if m.command == "open_run"][0]
+    md = open_msg.kwargs
+    # Check that the metadata has the right values
+    assert md["edge"] == "Ni_K"
+    assert md["E0"] == 8333.0
+    assert md["plan_name"] == "energy_scan"
+    assert md["sample_name"] == "unobtanium"
+
+
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov
