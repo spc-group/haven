@@ -432,7 +432,6 @@ class RunBrowserDisplay(display.FireflyDisplay):
         if use_grad:
             ylabel = f"∇ {ylabel}"
         # Do the plotting
-        print("RUNNING", self.ui.plot_1d_view.plot_runs)
         self.ui.plot_1d_view.plot_runs(runs, xlabel=xlabel, ylabel=ylabel)
         if self.ui.autorange_1d_checkbox.isChecked():
             self.ui.plot_1d_view.autoRange()

@@ -384,14 +384,13 @@ class FireflyController(QtCore.QObject):
             "pause": Action(
                 name="pause_runengine_action",
                 text="Pause",
-                shortcut="Ctrl+D",
                 icon=qta.icon("fa5s.stopwatch"),
                 tooltip="Pause the current plan at the next checkpoint.",
             ),
             "pause_now": Action(
                 name="pause_runengine_now_action",
                 text="Pause now",
-                shortcut="Ctrl+C",
+                shortcut="Pause",
                 icon=qta.icon("fa5s.pause"),
                 tooltip="Pause the run engine now.",
             ),

@@ -172,9 +172,10 @@ class Browser1DPlotWidget(PlotWidget):
                 )
             # Cursor to drag around on the data
             if self.cursor_line is None:
-                print("CURSOR LINE: ", np.median(series.index), series.index)
+                new_x = np.median(series.index)
+                log.debug(f"Setting cursor line: {new_x}")
                 self.cursor_line = plot_item.addLine(
-                    x=np.median(series.index), movable=True, label="{value:.3f}"
+                    x=new_x, movable=True, label="{value:.3f}"
                 )
         # Axis formatting
         plot_item.setLabels(left=ylabel, bottom=xlabel)

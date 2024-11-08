@@ -102,6 +102,7 @@ class QueueClient(QObject):
           checkpoint. Otherwise, it will pause now.
 
         """
+        log.error(f"Requesting queueserver pause: {defer=}.")
         option = "deferred" if defer else "immediate"
         await self.api.re_pause(option=option)
 

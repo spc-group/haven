@@ -234,9 +234,13 @@ class XANESSamplingRecommender:
         :param ys: _description_
         """
         self.check_guide()
-        energies = to_tensor(energies).reshape(-1, 1)
-        values = to_tensor(values).reshape(-1, 1)
-        self.guide.update(energies, values)
+        tenergies = to_tensor(energies).reshape(-1, 1)
+        # Convert the µ(E)
+        I0 = values[:, 0]
+        It = values[:, 1]
+        µ = -np.log(It/I0)
+        tvalues = to_tensor(µ).reshape(-1, 1)
+        self.guide.update(tenergies, tvalues)
 
     def ask(self, n=1, *args, **kwargs) -> list[float]:
         """Figure out the next point based on the past ones we've measured.
@@ -339,7 +343,7 @@ def adaptive_xanes(
 
     detectors = [I0, It]
     ind_keys = [energy_positioner.name]
-    dep_keys = [det.name for det in detectors]
+    dep_keys = [det.scaler_channel.net_count.name for det in detectors]
     rr, queue = recommender_factory(
         recommender,
         independent_keys=ind_keys,
@@ -350,6 +354,9 @@ def adaptive_xanes(
     yield from _prime_initial_points(It=It, I0=I0, energy_positioner=energy_positioner,
                                      recommender=recommender, n_initial_measurements=n_initial_measurements)
     # Execute the plan
+    first_point = {
+        energy_positioner: np.median(energy_range)
+    }
     yield from adaptive_plan(
         dets=detectors,
         first_point=first_point,
@@ -383,11 +390,13 @@ def _prime_initial_points(It, I0, energy_positioner, recommender, n_initial_meas
     # Retrieve scan data from the database
     client = tiled_client()
     run = client[init_uid]
-    It_data = run['primary/data'][It.scaler_channel.net_counts.name].read()
-    I0_data = run['primary/data'][I0.scaler_channel.net_counts.name].read()
-    signal = -np.log(It/I0)
+    It_data = run['primary/data'][It.scaler_channel.net_count.name].read()
+    I0_data = run['primary/data'][I0.scaler_channel.net_count.name].read()
+    signal = -np.log(It_data/I0_data)
     # Send the scan data to the recommender
-    recommender.initialize_guide(x_init, y_init)
+    x_init = torch.tensor(x_init)
+    signal = torch.tensor(signal.compute())[:, None]
+    recommender.initialize_guide(x_init, signal)
     
 
 # -----------------------------------------------------------------------------
