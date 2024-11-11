@@ -1,6 +1,6 @@
 from ophyd_async.core import SubsetEnum
 from ophyd_async.epics.adaravis import AravisDetector as DetectorBase
-from ophyd_async.epics.signal import epics_signal_rw_rbv
+from ophyd_async.epics.core import epics_signal_rw_rbv
 
 from .area_detectors import HavenDetector
 

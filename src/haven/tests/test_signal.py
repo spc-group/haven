@@ -5,7 +5,7 @@ from unittest.mock import MagicMock
 import pytest
 from ophyd_async.core import Device, get_mock_put
 from ophyd_async.core._signal import soft_signal_rw
-from ophyd_async.epics.signal import epics_signal_x, epics_signal_rw
+from ophyd_async.epics.core import epics_signal_x, epics_signal_rw
 
 from haven.devices.signal import derived_signal_rw, derived_signal_x
 

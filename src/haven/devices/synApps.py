@@ -1,7 +1,7 @@
 import asyncio
 
-from ophyd_async.core import ConfigSignal, Device, StandardReadable, SubsetEnum, StrictEnum
-from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw, epics_signal_x
+from ophyd_async.core import Device, StandardReadable, StandardReadableFormat, SubsetEnum, StrictEnum
+from ophyd_async.epics.core import epics_signal_r, epics_signal_rw, epics_signal_x
 
 
 class AlarmStatus(SubsetEnum):
@@ -65,7 +65,7 @@ class EpicsRecordDeviceCommonAll(StandardReadable):
 
     # Config signals
     def __init__(self, prefix: str, name: str = ""):
-        with self.add_children_as_readables(ConfigSignal):
+        with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
             self.description = epics_signal_rw(str, f"{prefix}.DESC")
             self.scanning_rate = epics_signal_rw(self.ScanInterval, f"{prefix}.SCAN")
             self.device_type = epics_signal_r(self.DeviceType, f"{prefix}.DTYP")
@@ -91,7 +91,7 @@ class EpicsSynAppsRecordEnableMixin(Device):
     """Supports ``{PV}Enable`` feature from user databases."""
 
     def __init__(self, prefix, name=""):
-        with self.add_children_as_readables(ConfigSignal):
+        with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
             self.enable = epics_signal_rw(int, "Enable")
         super().__init__(name=name)
 
@@ -108,7 +108,7 @@ class EpicsRecordInputFields(EpicsRecordDeviceCommonAll):
     """
 
     def __init__(self, prefix: str, name: str = ""):
-        with self.add_children_as_readables(ConfigSignal):
+        with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
             self.input_link = epics_signal_rw(str, f"{prefix}.INP")
         super().__init__(prefix=prefix, name=name)
 
@@ -123,7 +123,7 @@ class EpicsRecordOutputFields(EpicsRecordDeviceCommonAll):
         CLOSED_LOOP = "closed_loop"
 
     def __init__(self, prefix: str, name: str = ""):
-        with self.add_children_as_readables(ConfigSignal):
+        with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
             self.output_link = epics_signal_rw(str, f"{prefix}.OUT")
             self.desired_output_location = epics_signal_rw(str, f"{prefix}.DOL")
             self.output_mode_select = epics_signal_rw(self.ModeSelect, f"{prefix}.OMSL")

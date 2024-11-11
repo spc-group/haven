@@ -4,15 +4,14 @@ import asyncio
 
 # from ophyd import Device
 from ophyd_async.core import (
-    ConfigSignal,
     Device,
     DeviceVector,
-    HintedSignal,
     StandardReadable,
+    StandardReadableFormat,
     SubsetEnum,
     StrictEnum,
 )
-from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw
+from ophyd_async.epics.core import epics_signal_r, epics_signal_rw
 
 from .synApps import EpicsRecordDeviceCommonAll, EpicsSynAppsRecordEnableMixin
 
@@ -45,7 +44,7 @@ class TransformRecordChannel(StandardReadable):
         self._ch_letter = letter
         with self.add_children_as_readables():
             self.current_value = epics_signal_rw(float, f"{prefix}.{letter}")
-        with self.add_children_as_readables(ConfigSignal):
+        with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
             self.input_pv = epics_signal_rw(str, f"{prefix}.INP{letter}")
             self.comment = epics_signal_rw(str, f"{prefix}.CMT{letter}")
             self.expression = epics_signal_rw(
@@ -96,7 +95,7 @@ class TransformRecord(EpicsRecordDeviceCommonAll):
         DO_NOTHING = "Do Nothing"
 
     def __init__(self, prefix, name=""):
-        with self.add_children_as_readables(ConfigSignal):
+        with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
             self.units = epics_signal_rw(
                 str,
                 f"{prefix}.EGU",
@@ -143,7 +142,7 @@ class TransformRecord(EpicsRecordDeviceCommonAll):
             *[ch.reset() for ch in channels],
         )
         # Restore the hinted channels
-        self.add_readables(channels, HintedSignal)
+        self.add_readables(channels, StandardReadableFormat.HINTED_SIGNAL)
 
 
 class UserTransformN(EpicsSynAppsRecordEnableMixin, TransformRecord):
@@ -159,7 +158,7 @@ class UserTransformsDevice(Device):
 
     def __init__(self, prefix, name=""):
         # Config attrs
-        with self.add_children_as_readables(ConfigSignal):
+        with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
             self.enable = epics_signal_rw(int, f"{prefix}userTranEnable", name="enable")
         # Read attrs
         with self.add_children_as_readables():

@@ -9,8 +9,8 @@ from bluesky.protocols import Triggerable
 from ophyd_async.core import (
     DEFAULT_TIMEOUT,
     AsyncStatus,
-    ConfigSignal,
     StandardReadable,
+    StandardReadableFormat,
     TriggerInfo,
     soft_signal_rw,
     wait_for_value,
@@ -74,7 +74,7 @@ class IonChamber(StandardReadable, Triggerable):
                 analog_outputs=[],
                 digital_words=[],
             )
-        with self.add_children_as_readables(ConfigSignal):
+        with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
             self.counts_per_volt_second = soft_signal_rw(
                 float, initial_value=counts_per_volt_second
             )
@@ -107,7 +107,7 @@ class IonChamber(StandardReadable, Triggerable):
                 self.mcs.preset_time,
                 self.mcs.snl_connected,
             ],
-            ConfigSignal,
+            StandardReadableFormat.CONFIG_SIGNAL,
         )
         # Add calculated signals
         with self.add_children_as_readables():

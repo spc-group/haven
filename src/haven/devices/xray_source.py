@@ -2,14 +2,13 @@ import logging
 from enum import Enum, IntEnum
 
 from ophyd_async.core import (
-    ConfigSignal,
-    HintedSignal,
     Signal,
     StandardReadable,
+    StandardReadableFormat,
     soft_signal_rw,
     SubsetEnum,
 )
-from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw, epics_signal_x
+from ophyd_async.epics.core import epics_signal_r, epics_signal_rw, epics_signal_x
 
 from ..positioner import Positioner
 from .signal import derived_signal_r, derived_signal_x
@@ -45,11 +44,11 @@ class UndulatorPositioner(Positioner):
         name: str = "",
         min_move: float = 0.0,
     ):
-        with self.add_children_as_readables(HintedSignal):
+        with self.add_children_as_readables(StandardReadableFormat.HINTED_SIGNAL):
             self.readback = epics_signal_rw(float, f"{prefix}M.VAL")
         with self.add_children_as_readables():
             self.setpoint = epics_signal_rw(float, f"{prefix}SetC.VAL")
-        with self.add_children_as_readables(ConfigSignal):
+        with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
             self.units = epics_signal_r(str, f"{prefix}SetC.EGU")
             self.precision = epics_signal_r(int, f"{prefix}SetC.PREC")
         self.velocity = soft_signal_rw(
@@ -99,7 +98,7 @@ class PlanarUndulator(StandardReadable):
         self.done = epics_signal_r(bool, f"{prefix}BusyDeviceM.VAL")
         self.motor_drive_status = epics_signal_r(int, f"{prefix}MotorDriveStatusM.VAL")
         # Configuration state for the undulator
-        with self.add_children_as_readables(ConfigSignal):
+        with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
             self.harmonic_value = epics_signal_rw(int, f"{prefix}HarmonicValueC")
             self.total_power = epics_signal_r(float, f"{prefix}TotalPowerM.VAL")
             self.gap_deadband = epics_signal_rw(int, f"{prefix}DeadbandGapC")

@@ -2,15 +2,15 @@ import enum
 from typing import Type
 
 from ophyd_async.core import (
-    ConfigSignal,
     DeviceVector,
     SignalRW,
     StandardReadable,
+    StandardReadableFormat,
     SubsetEnum,
     StrictEnum,
     T,
 )
-from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw, epics_signal_x
+from ophyd_async.epics.core import epics_signal_r, epics_signal_rw, epics_signal_x
 
 
 class StrEnum(str, enum.Enum):
@@ -49,7 +49,7 @@ class DG645Channel(StandardReadable):
         H = "H"
 
     def __init__(self, prefix: str, name: str = ""):
-        with self.add_children_as_readables(ConfigSignal):
+        with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
             self.reference = epics_signal_io(self.Reference, f"{prefix}ReferenceM")
             self.delay = epics_signal_io(float, f"{prefix}DelayA")
         super().__init__(name=name)
@@ -61,7 +61,7 @@ class DG645Output(StandardReadable):
         POS = "POS"
 
     def __init__(self, prefix: str, name: str = ""):
-        with self.add_children_as_readables(ConfigSignal):
+        with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
             self.polarity = epics_signal_io(self.Polarity, f"{prefix}OutputPolarityB")
             self.amplitude = epics_signal_io(float, f"{prefix}OutputAmpA")
             self.offset = epics_signal_io(float, f"{prefix}OutputOffsetA")
@@ -72,7 +72,7 @@ class DG645Output(StandardReadable):
 
 class DG645DelayOutput(DG645Output):
     def __init__(self, prefix: str, name: str = ""):
-        with self.add_children_as_readables(ConfigSignal):
+        with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
             self.trigger_prescale = epics_signal_io(int, f"{prefix}TriggerPrescaleL")
             self.trigger_phase = epics_signal_io(int, f"{prefix}TriggerPhaseL")
         super().__init__(prefix=prefix, name=name)
@@ -111,7 +111,7 @@ class DG645Delay(StandardReadable):
     
     def __init__(self, prefix: str, name: str = ""):
         # Conventional signals
-        with self.add_children_as_readables(ConfigSignal):
+        with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
             self.label = epics_signal_rw(str, f"{prefix}Label")
             self.device_id = epics_signal_r(str, f"{prefix}IdentSI")
         self.status = epics_signal_r(str, f"{prefix}StatusSI")
@@ -164,7 +164,7 @@ class DG645Delay(StandardReadable):
                 }
             )
         # Trigger control
-        with self.add_children_as_readables(ConfigSignal):
+        with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
             self.trigger_source = epics_signal_io(self.TriggerSource,f"{prefix}TriggerSourceM",)
             self.trigger_inhibit = epics_signal_io(self.TriggerInhibit, f"{prefix}TriggerInhibitM")
             self.trigger_level = epics_signal_io(float, f"{prefix}TriggerLevelA")
@@ -173,7 +173,7 @@ class DG645Delay(StandardReadable):
             self.trigger_holdoff = epics_signal_io(float, f"{prefix}TriggerHoldoffA")
             self.trigger_prescale = epics_signal_io(int, f"{prefix}TriggerPrescaleL")
         # Burst settings
-        with self.add_children_as_readables(ConfigSignal):
+        with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
             self.burst_mode = epics_signal_io(bool, f"{prefix}BurstModeB")
             self.burst_count = epics_signal_io(int, f"{prefix}BurstCountL")
             self.burst_config = epics_signal_io(self.BurstConfig, f"{prefix}BurstConfigB"  )

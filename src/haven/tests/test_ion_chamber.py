@@ -49,6 +49,12 @@ async def test_readables(ion_chamber):
     ]
     actual_readables = (await ion_chamber.describe()).keys()
     assert sorted(actual_readables) == sorted(expected_readables)
+    # Check signal hints
+    expected_hints = [
+        "I0-net_current",
+    ]
+    actual_hints = ion_chamber.hints['fields']
+    assert sorted(actual_hints) == sorted(expected_hints)
     # Check configurables
     expected_configables = [
         "I0-counts_per_volt_second",
