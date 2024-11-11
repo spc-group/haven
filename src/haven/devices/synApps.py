@@ -1,12 +1,10 @@
 import asyncio
 
-from ophyd_async.core import ConfigSignal, Device, StandardReadable, SubsetEnum
+from ophyd_async.core import ConfigSignal, Device, StandardReadable, SubsetEnum, StrictEnum
 from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw, epics_signal_x
 
-from ..typing import StrEnum
 
-
-class AlarmStatus(StrEnum):
+class AlarmStatus(SubsetEnum):
     NO_ALARM = "NO_ALARM"
     READ = "READ"
     WRITE = "WRITE"
@@ -31,7 +29,7 @@ class AlarmStatus(StrEnum):
     # WRITE_ACCESS = "WRITE_ACCESS"
 
 
-class AlarmSeverity(StrEnum):
+class AlarmSeverity(StrictEnum):
     NO_ALARM = "NO_ALARM"
     MINOR = "MINOR"
     MAJOR = "MAJOR"
@@ -46,11 +44,14 @@ class EpicsRecordDeviceCommonAll(StandardReadable):
     an EPICS client or are already provided in other support.
     """
 
-    # The valid options are specific to the record type
-    # Subclasses should set this properly
-    DeviceType = SubsetEnum["None"]
+    # More valid options are specific to the record type
+    # Subclasses may override this attribute
+    class DeviceType(SubsetEnum):
+        SOFT_CHANNEL = "Soft Channel"
+        RAW_SOFT_CHANNEL = "Raw Soft Channel"
+        ASYNC_SOFT_CHANNEL = "Async Soft Channel"
 
-    class ScanInterval(StrEnum):
+    class ScanInterval(SubsetEnum):
         PASSIVE = "Passive"
         EVENT = "Event"
         IO_INTR = "I/O Intr"
@@ -117,7 +118,7 @@ class EpicsRecordOutputFields(EpicsRecordDeviceCommonAll):
     Some fields common to EPICS output records.
     """
 
-    class ModeSelect(StrEnum):
+    class ModeSelect(SubsetEnum):
         SUPERVISORY = "supervisory"
         CLOSED_LOOP = "closed_loop"
 

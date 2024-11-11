@@ -1,3 +1,4 @@
+import asyncio
 from unittest.mock import AsyncMock
 
 import numpy as np
@@ -48,7 +49,7 @@ async def test_readables(ion_chamber):
     ]
     actual_readables = (await ion_chamber.describe()).keys()
     assert sorted(actual_readables) == sorted(expected_readables)
-    # Check confirables
+    # Check configurables
     expected_configables = [
         "I0-counts_per_volt_second",
         "I0-voltmeter-model_name",
@@ -142,6 +143,10 @@ async def test_trigger_dark_current(ion_chamber, monkeypatch):
 async def test_net_current_signal(ion_chamber):
     """Test that scaler tick counts get properly converted to ion chamber current."""
     await ion_chamber.connect(mock=True)
+    await asyncio.gather(
+        ion_chamber.net_current.connect(mock=False),
+        ion_chamber.preamp.gain.connect(mock=False),
+    )
     # Set the necessary dependent signals
     set_mock_value(ion_chamber.counts_per_volt_second, 10e6)  # 100 Mhz / 10 V
     set_mock_value(ion_chamber.scaler_channel.net_count, int(13e6))  # 1.3V
@@ -161,6 +166,10 @@ async def test_net_current_signal(ion_chamber):
 async def test_raw_current_signal(ion_chamber):
     """Test that scaler tick counts get properly converted to ion chamber current."""
     await ion_chamber.connect(mock=True)
+    await asyncio.gather(
+        ion_chamber.raw_current.connect(mock=False),
+        ion_chamber.preamp.gain.connect(mock=False),
+    )
     # Set the necessary dependent signals
     set_mock_value(ion_chamber.counts_per_volt_second, 10e6)  # 100 Mhz / 10 V
     set_mock_value(ion_chamber.scaler_channel.raw_count, int(13e6))  # 1.3V

@@ -9,10 +9,11 @@ from ophyd_async.core import (
     DeviceVector,
     HintedSignal,
     StandardReadable,
+    SubsetEnum,
+    StrictEnum,
 )
 from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw
 
-from ..typing import StrEnum
 from .synApps import EpicsRecordDeviceCommonAll, EpicsSynAppsRecordEnableMixin
 
 CHANNEL_LETTERS_LIST = "A B C D E F G H I J K L M N O P".split()
@@ -34,7 +35,7 @@ class TransformRecordChannel(StandardReadable):
         ~reset
     """
 
-    class PVValidity(StrEnum):
+    class PVValidity(SubsetEnum):
         EXT_PV_NC = "Ext PV NC"
         EXT_PV_OK = "Ext PV OK"
         LOCAL_PV = "Local PV"
@@ -86,11 +87,11 @@ class TransformRecord(EpicsRecordDeviceCommonAll):
     :see: https://htmlpreview.github.io/?https://raw.githubusercontent.com/epics-modules/calc/R3-6-1/documentation/TransformRecord.html#Fields
     """
 
-    class CalcOption(StrEnum):
+    class CalcOption(StrictEnum):
         CONDITIONAL = "Conditional"
         ALWAYS = "Always"
 
-    class InvalidLinkAction(StrEnum):
+    class InvalidLinkAction(SubsetEnum):
         IGNORE_ERROR = "Ignore error"
         DO_NOTHING = "Do Nothing"
 

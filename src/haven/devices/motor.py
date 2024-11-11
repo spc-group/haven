@@ -3,7 +3,7 @@ import warnings
 
 from ophyd import Component as Cpt
 from ophyd import EpicsMotor, EpicsSignal, EpicsSignalRO, Kind
-from ophyd_async.core import DEFAULT_TIMEOUT, ConfigSignal, SubsetEnum
+from ophyd_async.core import DEFAULT_TIMEOUT, ConfigSignal, SubsetEnum, StrictEnum
 from ophyd_async.epics.motor import Motor as MotorBase
 from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw
 from ophydregistry import Registry
@@ -16,6 +16,14 @@ log = logging.getLogger(__name__)
 
 class Motor(MotorBase):
     """The default motor for asynchrnous movement."""
+
+    class Direction(StrictEnum):
+        POSITIVE = "Pos"
+        NEGATIVE = "Neg"
+
+    class FreezeSwitch(SubsetEnum):
+        VARIABLE = "Variable"
+        FROZEN = "Frozen"
 
     def __init__(
         self, prefix: str, name="", labels={"motors"}, auto_name: bool = None
@@ -35,12 +43,8 @@ class Motor(MotorBase):
         with self.add_children_as_readables(ConfigSignal):
             self.description = epics_signal_rw(str, f"{prefix}.DESC")
             self.user_offset = epics_signal_rw(float, f"{prefix}.OFF")
-            self.user_offset_dir = epics_signal_rw(
-                SubsetEnum["Pos", "Neg"], f"{prefix}.DIR"
-            )
-            self.offset_freeze_switch = epics_signal_rw(
-                SubsetEnum["Variable", "Frozen"], f"{prefix}.FOFF"
-            )
+            self.user_offset_dir = epics_signal_rw(self.Direction, f"{prefix}.DIR")
+            self.offset_freeze_switch = epics_signal_rw(self.FreezeSwitch, f"{prefix}.FOFF")
         # Motor status signals
         self.motor_is_moving = epics_signal_r(int, f"{prefix}.MOVN")
         self.motor_done_move = epics_signal_r(int, f"{prefix}.DMOV")

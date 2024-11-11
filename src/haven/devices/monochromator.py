@@ -1,7 +1,7 @@
 import logging
 from enum import Enum
 
-from ophyd_async.core import ConfigSignal, StandardReadable
+from ophyd_async.core import ConfigSignal, StandardReadable, StrictEnum
 from ophyd_async.epics.signal import epics_signal_rw
 
 from .motor import Motor
@@ -12,7 +12,7 @@ log = logging.getLogger(__name__)
 class Monochromator(StandardReadable):
     _ophyd_labels_ = {"monochromators"}
 
-    class Mode(str, Enum):
+    class Mode(StrictEnum):
         FIXED_OFFSET = "Si(111) Fixed Offset"
         CHANNEL_CUT = "Si(111) Channel-cut"
         ML48 = "Multi-layer 4.8nm"

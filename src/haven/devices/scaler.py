@@ -1,8 +1,6 @@
-from enum import Enum
-
 import numpy as np
 from numpy.typing import NDArray
-from ophyd_async.core import ConfigSignal, DeviceVector, HintedSignal, StandardReadable
+from ophyd_async.core import ConfigSignal, DeviceVector, HintedSignal, StandardReadable, SubsetEnum, StrictEnum
 from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw, epics_signal_x
 
 from ..typing import StrEnum
@@ -38,7 +36,7 @@ class ScalerChannel(StandardReadable):
 
 class MCA(StandardReadable):
 
-    class MCAMode(str, Enum):
+    class MCAMode(SubsetEnum):
         PHA = "PHA"
         MCS = "MCS"
         LIST = "List"
@@ -68,37 +66,37 @@ class MultiChannelScaler(StandardReadable):
 
     _ophyd_labels_ = {"scalers"}
 
-    class ChannelAdvanceSource(str, Enum):
+    class ChannelAdvanceSource(SubsetEnum):
         INTERNAL = "Internal"
         EXTERNAL = "External"
 
-    class Acquiring(str, Enum):
+    class Acquiring(StrictEnum):
         DONE = "Done"
         ACQUIRING = "Acquiring"
 
-    class ScalerModel(str, Enum):
+    class ScalerModel(SubsetEnum):
         SIS_3801 = "SIS3801"
         SIS_3820 = "SIS3820"
 
-    class Channel1Source(str, Enum):
+    class Channel1Source(SubsetEnum):
         INTERNAL_CLOCK = "Int. clock"
         EXTERNAL = "External"
 
-    class AcquireMode(str, Enum):
+    class AcquireMode(SubsetEnum):
         MCS = "MCS"
         SCALER = "Scaler"
 
-    class Polarity(str, Enum):
+    class Polarity(StrictEnum):
         NORMAL = "Normal"
         INVERTED = "Inverted"
 
-    class OutputMode(str, Enum):
+    class OutputMode(SubsetEnum):
         MODE_0 = "Mode 0"
         MODE_1 = "Mode 1"
         MODE_2 = "Mode 2"
         MODE_3 = "Mode 3"
 
-    class InputMode(str, Enum):
+    class InputMode(SubsetEnum):
         MODE_0 = "Mode 0"
         MODE_1 = "Mode 1"
         MODE_2 = "Mode 2"
@@ -168,13 +166,9 @@ class MultiChannelScaler(StandardReadable):
 class Scaler(StandardReadable):
     """A scaler device that has one or more channels."""
 
-    class CountMode(StrEnum):
+    class CountMode(SubsetEnum):
         ONE_SHOT = "OneShot"
         AUTO_COUNT = "AutoCount"
-
-    class CountState(StrEnum):
-        DONE = "Done"
-        COUNT = "Count"
 
     def __init__(self, prefix, channels: list[int], name=""):
         # Add invidiaul scaler channels
@@ -195,7 +189,7 @@ class Scaler(StandardReadable):
             self.count_mode = epics_signal_rw(self.CountMode, f"{prefix}.CONT")
             self.preset_time = epics_signal_rw(float, f"{prefix}.TP")
         self.auto_count = epics_signal_rw(bool, f"{prefix}.CONT")
-        self.count = epics_signal_rw(self.CountState, f"{prefix}.CNT")
+        self.count = epics_signal_rw(bool, f"{prefix}.CNT")
         self.record_dark_current = epics_signal_x(f"{prefix}_offset_start.PROC")
         self.auto_count_delay = epics_signal_rw(float, f"{prefix}.DLY1")
         self.auto_count_time = epics_signal_rw(float, f"{prefix}.TP1")

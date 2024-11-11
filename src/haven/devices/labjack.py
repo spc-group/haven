@@ -47,6 +47,7 @@ from ophyd_async.core import (
     HintedSignal,
     StandardReadable,
     SubsetEnum,
+    StrictEnum,
     observe_value,
 )
 from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw, epics_signal_x
@@ -70,7 +71,6 @@ __all__ = [
 KIND_CONFIG_OR_NORMAL = 3
 """Alternative for ``Kind.config | Kind.normal``."""
 
-
 class Input(EpicsRecordInputFields):
     """A generic input record.
 
@@ -85,25 +85,6 @@ class Input(EpicsRecordInputFields):
 
 
 class BinaryInput(Input):
-
-    DeviceType = SubsetEnum[
-        "Soft Channel",
-        "Raw Soft Channel",
-        "Async Soft Channel",
-        "Db State",
-        "asynInt32",
-        "asynUInt32Digital",
-        "asyn bi stringParm",
-        "asyn MPC",
-        "Vg307 GPIB Instrument",
-        "asyn Televac",
-        "asyn TPG261",
-        "lua",
-        "stream",
-        "EtherIP",
-        "dg535",
-        "Zed",
-    ]
 
     def __init__(self, prefix: str, name: str = ""):
         with self.add_children_as_readables():
@@ -123,53 +104,16 @@ class Output(EpicsRecordOutputFields):
 class BinaryOutput(Output):
     """A binary input on the labjack."""
 
-    DeviceType = SubsetEnum[
-        "Soft Channel",
-        "Raw Soft Channel",
-        "Async Soft Channel",
-        "General Time",
-        "Db State",
-        "asynInt32",
-        "asynUInt32Digital",
-        "asyn bo stringParm",
-        "asyn MPC",
-        "Vg307 GPIB Instrument",
-        "PZT Bug",
-        "asyn TPG261",
-        "lua",
-        "stream",
-        "EtherIP",
-        "dg535",
-    ]
-
     def __init__(self, prefix: str, name: str = ""):
         with self.add_children_as_readables():
             self.desired_value = epics_signal_rw(bool, f"{prefix}.VAL")
         self.raw_value = epics_signal_rw(float, f"{prefix}.RVAL")
         self.readback_value = epics_signal_r(float, f"{prefix}.RBV")
+        super().__init__(prefix=prefix, name=name)
 
 
 class AnalogOutput(Output):
     """An analog output on a labjack device."""
-
-    DeviceType = SubsetEnum[
-        "Soft Channel",
-        "Raw Soft Channel",
-        "Async Soft Channel",
-        "asynInt32",
-        "asynFloat64",
-        "asynInt64",
-        "IOC stats",
-        "asyn ao stringParm",
-        "asyn ao Eurotherm",
-        "asyn MPC",
-        "PZT Bug",
-        "asyn TPG261",
-        "lua",
-        "stream",
-        "EtherIP",
-        "dg535",
-    ]
 
     def __init__(self, prefix: str, name: str = ""):
         with self.add_children_as_readables():
@@ -188,16 +132,16 @@ class AnalogInput(Input, Triggerable):
 
     """
 
-    class DifferentialMode(StrEnum):
+    class DifferentialMode(StrictEnum):
         SINGLE_ENDED = "Single-Ended"
         DIFFERENTIAL = "Differential"
 
-    class TemperatureUnits(StrEnum):
+    class TemperatureUnits(SubsetEnum):
         KELVIN = "K"
         CELSIUS = "C"
         FAHRENHEIT = "F"
 
-    class Mode(StrEnum):
+    class Mode(SubsetEnum):
         VOLTS = "Volts"
         TYPE_B_TC = "Type B TC"
         TYPE_C_TC = "Type C TC"
@@ -209,13 +153,13 @@ class AnalogInput(Input, Triggerable):
         TYPE_S_TC = "Type S TC"
         TYPE_T_TC = "Type T TC"
 
-    class Range(StrEnum):
+    class Range(SubsetEnum):
         TEN_VOLTS = "+= 10V"
         ONE_VOLT = "+= 1V"
         HUNDRED_MILLIVOLTS = "+= 0.1V"
         TEN_MILLIVOLTS = "+= 0.01V"
 
-    class Resolution(StrEnum):
+    class Resolution(SubsetEnum):
         DEFAULT = "Default"
         ONE = "1"
         TWO = "2"
@@ -225,25 +169,6 @@ class AnalogInput(Input, Triggerable):
         SIX = "6"
         SEVEN = "7"
         EIGHT = "8"
-
-    DeviceType = SubsetEnum[
-        "Soft Channel",
-        "Raw Soft Channel",
-        "Async Soft Channel",
-        "Soft Timestamp",
-        "General Time",
-        "asynInt32",
-        "asynInt32Average",
-        "asynFloat64",
-        "asynFloat64Average",
-        "asynInt64",
-        "IOC stats",
-        "IOC stats clusts",
-        "GPIB init/report",
-        "Sec Past Epoch",
-        "asyn ai stringParm",
-        "asyn ai HeidND261",
-    ]
 
     def __init__(self, prefix: str, ch_num: int, name: str = ""):
         with self.add_children_as_readables(ConfigSignal):
@@ -291,7 +216,7 @@ class DigitalIO(StandardReadable):
 
     """
 
-    class Direction(StrEnum):
+    class Direction(SubsetEnum):
         INPUT = "In"
         OUTPUT = "Out"
 
@@ -307,10 +232,57 @@ class DigitalIO(StandardReadable):
 class WaveformDigitizer(StandardReadable, Triggerable):
     """A feature of the Labjack devices that allows waveform capture."""
 
-    class TriggerSource(StrEnum):
+    class TriggerSource(StrictEnum):
         INTERNAL = "Internal"
         EXTERNAL = "External"
 
+    class ReadWaveform(StrictEnum):
+        DONE = "Done"
+        READ = "Read"
+
+    class FirstChannel(SubsetEnum):
+        ONE = "1"
+        TWO = "2"
+        THREE = "3"
+        FOUR = "4"
+        FIVE = "5"
+        SIX = "6"
+        SEVEN = "7"
+        EIGHT = "8"
+        NINE = "9"
+        TEN = "10"
+        ELEVEN = "11"
+        TWELVE = "12"
+        THIRTEEN = "13"
+
+    class NumberOfChannels(SubsetEnum):
+        ONE = "1"
+        TWO = "2"
+        THREE = "3"
+        FOUR = "4"
+        FIVE = "5"
+        SIX = "6"
+        SEVEN = "7"
+        EIGHT = "8"
+        NINE = "9"
+        TEN = "10"
+        ELEVEN = "11"
+        TWELVE = "12"
+        THIRTEEN = "13"
+        FOURTEEN = "14"
+
+    class Resolution(SubsetEnum):
+        DEFAULT = "Default"
+        ONE = "1"
+        TWO = "2"
+        THREE = "3"
+        FOUR = "4"
+        FIVE = "5"
+        SIX = "6"
+        SEVEN = "7"
+        EIGHT = "8"
+        
+        
     def __init__(self, prefix: str, name: str = "", waveforms=[]):
         with self.add_children_as_readables():
             self.timebase_waveform = epics_signal_rw(
@@ -321,48 +293,9 @@ class WaveformDigitizer(StandardReadable, Triggerable):
         with self.add_children_as_readables(ConfigSignal):
             self.num_points = epics_signal_rw(int, f"{prefix}WaveDigNumPoints")
             self.dwell_time = epics_signal_rw(float, f"{prefix}WaveDigDwell")
-            self.first_chan = epics_signal_rw(
-                SubsetEnum[
-                    "0",
-                    "1",
-                    "2",
-                    "3",
-                    "4",
-                    "5",
-                    "6",
-                    "7",
-                    "8",
-                    "9",
-                    "10",
-                    "11",
-                    "12",
-                    "13",
-                ],
-                f"{prefix}WaveDigFirstChan",
-            )
-            self.num_chans = epics_signal_rw(
-                SubsetEnum[
-                    "1",
-                    "2",
-                    "3",
-                    "4",
-                    "5",
-                    "6",
-                    "7",
-                    "8",
-                    "9",
-                    "10",
-                    "11",
-                    "12",
-                    "13",
-                    "14",
-                ],
-                f"{prefix}WaveDigNumChans",
-            )
-            self.resolution = epics_signal_rw(
-                SubsetEnum["Default", "1", "2", "3", "4", "5", "6", "7", "8"],
-                f"{prefix}WaveDigResolution",
-            )
+            self.first_chan = epics_signal_rw(self.FirstChannel, f"{prefix}WaveDigFirstChan")
+            self.num_chans = epics_signal_rw(self.NumberOfChannels, f"{prefix}WaveDigNumChans")
+            self.resolution = epics_signal_rw(self.Resolution, f"{prefix}WaveDigResolution")
             self.settling_time = epics_signal_rw(float, f"{prefix}WaveDigSettlingTime")
         self.current_point = epics_signal_rw(int, f"{prefix}WaveDigCurrentPoint")
         self.ext_trigger = epics_signal_rw(
@@ -371,9 +304,7 @@ class WaveformDigitizer(StandardReadable, Triggerable):
         self.ext_clock = epics_signal_rw(self.TriggerSource, f"{prefix}WaveDigExtClock")
         self.auto_restart = epics_signal_x(f"{prefix}WaveDigAutoRestart")
         self.run = epics_signal_rw(bool, f"{prefix}WaveDigRun")
-        self.read_waveform = epics_signal_rw(
-            SubsetEnum["Done", "Read"], f"{prefix}WaveDigReadWF"
-        )
+        self.read_waveform = epics_signal_rw(self.ReadWaveform, f"{prefix}WaveDigReadWF")
         # Add waveforms
         with self.add_children_as_readables():
             self.waveforms = DeviceVector(
@@ -405,7 +336,7 @@ class WaveformDigitizer(StandardReadable, Triggerable):
 class WaveformGenerator(StandardReadable):
     """A feature of the Labjack devices that generates output waveforms."""
 
-    class WaveType(StrEnum):
+    class WaveType(StrictEnum):
         USER_DEFINED = "User-defined"
         SINE_WAVE = "Sin wave"
         SQUARE_WAVE = "Square wave"
@@ -415,7 +346,7 @@ class WaveformGenerator(StandardReadable):
 
     TriggerSource = WaveformDigitizer.TriggerSource
 
-    class TriggerMode(StrEnum):
+    class TriggerMode(StrictEnum):
         ONE_SHOT = "One-shot"
         CONTINUOS = "Continuous"
 
@@ -532,26 +463,8 @@ class LabJackBase(StandardReadable):
     """
 
     Resolution = AnalogInput.Resolution
-    DeviceType = SubsetEnum[
-        "Soft Channel",
-        "Raw Soft Channel",
-        "Async Soft Channel",
-        "Soft Timestamp",
-        "General Time",
-        "asynInt32",
-        "asynInt32Average",
-        "asynFloat64",
-        "asynFloat64Average",
-        "asynInt64",
-        "IOC stats",
-        "IOC stats clusts",
-        "GPIB init/report",
-        "Sec Past Epoch",
-        "asyn ai stringParm",
-        "asyn ai HeidND261",
-    ]
 
-    class Model(StrEnum):
+    class Model(StrictEnum):
         T4 = "T4"
         T7 = "T7"
         T7_PRO = "T7-Pro"

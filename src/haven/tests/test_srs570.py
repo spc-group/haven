@@ -1,7 +1,8 @@
+import asyncio
 from unittest import mock
 
 import pytest
-from ophyd_async.core import DEFAULT_TIMEOUT
+from ophyd_async.core import DEFAULT_TIMEOUT, get_mock_put
 
 from haven.devices.srs570 import GainSignal, SRS570PreAmplifier
 
@@ -9,7 +10,13 @@ from haven.devices.srs570 import GainSignal, SRS570PreAmplifier
 @pytest.fixture()
 async def preamp():
     preamp = SRS570PreAmplifier("255idcVEM:SR02:", name="")
+    # Derived signals should not be mocked
     await preamp.connect(mock=True)
+    await asyncio.gather(
+        preamp.gain_level.connect(mock=False),
+        preamp.gain.connect(mock=False),
+        preamp.gain_db.connect(mock=False),
+    )
     return preamp
 
 
@@ -138,8 +145,8 @@ async def test_preamp_gain_settling(gain_value, gain_unit, gain_mode, mocker, pr
     sleep_mock.reset_mock()
     await preamp.sensitivity_value.set(gain_value)
     # Check that the signal's ``set`` was called with correct arguments
-    preamp.sensitivity_value._backend.put_mock.assert_called_once_with(
-        gain_value, wait=True, timeout=DEFAULT_TIMEOUT
+    get_mock_put(preamp.sensitivity_value).assert_called_once_with(
+        gain_value, wait=True,
     )
     # Check that the settle time was included
     sleep_mock.assert_called_once_with(settle_time)
@@ -216,7 +223,7 @@ async def test_get_gain_level(preamp):
     await preamp.sensitivity_value.set("20")
     await preamp.sensitivity_unit.set("uA/V"),
     await preamp.offset_value.set("2"),  # 2 uA/V
-    await preamp.offset_unit.set("uA/V"),
+    await preamp.offset_unit.set("uA"),
     # Check that the gain level moved
     gain_level = await preamp.gain_level.get_value()
     assert gain_level == 5

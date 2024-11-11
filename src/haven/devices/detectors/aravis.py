@@ -4,7 +4,9 @@ from ophyd_async.epics.signal import epics_signal_rw_rbv
 
 from .area_detectors import HavenDetector
 
-AravisTriggerSource = SubsetEnum["Software", "Line1"]
+class AravisTriggerSource(SubsetEnum):
+    SOFTWARE = "Software"
+    LINE1 = "Line1"
 
 
 class AravisDetector(HavenDetector, DetectorBase):

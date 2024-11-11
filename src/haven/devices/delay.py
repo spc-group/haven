@@ -7,6 +7,7 @@ from ophyd_async.core import (
     SignalRW,
     StandardReadable,
     SubsetEnum,
+    StrictEnum,
     T,
 )
 from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw, epics_signal_x
@@ -36,7 +37,16 @@ def epics_signal_io(datatype: Type[T], prefix: str, name: str = "") -> SignalRW[
 
 
 class DG645Channel(StandardReadable):
-    Reference = SubsetEnum["T0", "A", "B", "C", "D", "E", "F", "G", "H"]
+    class Reference(StrictEnum):
+        T0 = "T0"
+        A = "A"
+        B = "B"
+        C = "C"
+        D = "D"
+        E = "E"
+        F = "F"
+        G = "G"
+        H = "H"
 
     def __init__(self, prefix: str, name: str = ""):
         with self.add_children_as_readables(ConfigSignal):
@@ -46,7 +56,7 @@ class DG645Channel(StandardReadable):
 
 
 class DG645Output(StandardReadable):
-    class Polarity(StrEnum):
+    class Polarity(StrictEnum):
         NEG = "NEG"
         POS = "POS"
 
@@ -69,6 +79,36 @@ class DG645DelayOutput(DG645Output):
 
 
 class DG645Delay(StandardReadable):
+
+    class BaudRate(SubsetEnum):
+        B4800 = "4800"
+        B9600 = "9600"
+        B19200 = "19200"
+        B38400 = "38400"
+        B57600 = "57600"
+        B115200 = "115200"
+
+    class TriggerSource(SubsetEnum):
+        INTERNAL = "Internal"
+        EXT_RISING_EDGE = "Ext rising edge"
+        EXT_FALLING_EDGE = "Ext falling edge"
+        SS_EXT_RISE_EDGE = "SS ext rise edge"
+        SS_EXT_FALL_EDGE = "SS ext fall edge"
+        SINGLE_SHOT = "Single shot"
+        LINE = "Line"
+
+    class TriggerInhibit(SubsetEnum):
+        OFF = "Off"
+        TRIGGERS = "Triggers"
+        AB = "AB"
+        AB_CD = "AB,CD"
+        AB_CD_EF = "AB,CD,EF"
+        AB_CD_EF_GH = "AB,CD,EF,GH"
+
+    class BurstConfig(SubsetEnum):
+        ALL_CYCLES = "All Cycles"
+        FIRST_CYCLE = "1st Cycle"
+    
     def __init__(self, prefix: str, name: str = ""):
         # Conventional signals
         with self.add_children_as_readables(ConfigSignal):
@@ -82,10 +122,7 @@ class DG645Delay(StandardReadable):
         self.status_checking = epics_signal_rw(bool, f"{prefix}StatusCheckingBO")
         self.reset_serial = epics_signal_x(f"{prefix}IfaceSerialResetBO")
         self.serial_state = epics_signal_io(bool, f"{prefix}IfaceSerialStateB")
-        self.serial_baud = epics_signal_io(
-            SubsetEnum["4800", "9600", "19200", "38400", "57600", "115200"],
-            f"{prefix}IfaceSerialBaudM",
-        )
+        self.serial_baud = epics_signal_io(self.BaudRate, f"{prefix}IfaceSerialBaudM")
         self.reset_gpib = epics_signal_x(f"{prefix}IfaceGpibResetBO")
         self.gpib_state = epics_signal_io(bool, f"{prefix}IfaceGpibStateB")
         self.gpib_address = epics_signal_io(int, f"{prefix}IfaceGpibAddrL")
@@ -128,36 +165,18 @@ class DG645Delay(StandardReadable):
             )
         # Trigger control
         with self.add_children_as_readables(ConfigSignal):
-            self.trigger_source = epics_signal_io(
-                SubsetEnum[
-                    "Internal",
-                    "Ext rising edge",
-                    "Ext falling edge",
-                    "SS ext rise edge",
-                    "SS ext fall edge",
-                    "Single shot",
-                    "Line",
-                ],
-                f"{prefix}TriggerSourceM",
-            )
-            self.trigger_inhibit = epics_signal_io(
-                SubsetEnum["Off", "Triggers", "AB", "AB,CD", "AB,CD,EF", "AB,CD,EF,GH"],
-                f"{prefix}TriggerInhibitM",
-            )
+            self.trigger_source = epics_signal_io(self.TriggerSource,f"{prefix}TriggerSourceM",)
+            self.trigger_inhibit = epics_signal_io(self.TriggerInhibit, f"{prefix}TriggerInhibitM")
             self.trigger_level = epics_signal_io(float, f"{prefix}TriggerLevelA")
             self.trigger_rate = epics_signal_io(float, f"{prefix}TriggerRateA")
-            self.trigger_advanced_mode = epics_signal_io(
-                bool, f"{prefix}TriggerAdvancedModeB"
-            )
+            self.trigger_advanced_mode = epics_signal_io(bool, f"{prefix}TriggerAdvancedModeB")
             self.trigger_holdoff = epics_signal_io(float, f"{prefix}TriggerHoldoffA")
             self.trigger_prescale = epics_signal_io(int, f"{prefix}TriggerPrescaleL")
         # Burst settings
         with self.add_children_as_readables(ConfigSignal):
             self.burst_mode = epics_signal_io(bool, f"{prefix}BurstModeB")
             self.burst_count = epics_signal_io(int, f"{prefix}BurstCountL")
-            self.burst_config = epics_signal_io(
-                SubsetEnum["All Cycles", "1st Cycle"], f"{prefix}BurstConfigB"
-            )
+            self.burst_config = epics_signal_io(self.BurstConfig, f"{prefix}BurstConfigB"  )
             self.burst_delay = epics_signal_io(float, f"{prefix}BurstDelayA")
             self.burst_period = epics_signal_io(float, f"{prefix}BurstPeriodA")
         super().__init__(name=name)

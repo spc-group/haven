@@ -237,7 +237,7 @@ class IonChamber(StandardReadable, Triggerable):
             await last_status
             return
         # Nothing to wait on yet, so trigger the scaler and stash the result
-        st = signal.set(self.mcs.scaler.CountState.COUNT)
+        st = signal.set(True)
         self._trigger_statuses[signal.source] = st
         await st
 
@@ -249,7 +249,7 @@ class IonChamber(StandardReadable, Triggerable):
         timeout = integration_time + DEFAULT_TIMEOUT
         count_signal = self.mcs.scaler.count
         await wait_for_value(
-            count_signal, self.mcs.scaler.CountState.DONE, timeout=timeout
+            count_signal, False, timeout=timeout
         )
 
     def record_fly_reading(self, reading, **kwargs):

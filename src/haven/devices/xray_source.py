@@ -7,6 +7,7 @@ from ophyd_async.core import (
     Signal,
     StandardReadable,
     soft_signal_rw,
+    SubsetEnum,
 )
 from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw, epics_signal_x
 
@@ -84,7 +85,7 @@ class PlanarUndulator(StandardReadable):
 
     _ophyd_labels_ = {"xray_sources", "undulators"}
 
-    class AccessMode(str, Enum):
+    class AccessMode(SubsetEnum):
         USER = "User"
         OPERATOR = "Operator"
         MACHINE_PHYSICS = "Machine Physics"
