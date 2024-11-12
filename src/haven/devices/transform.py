@@ -118,12 +118,8 @@ class TransformRecord(EpicsRecordDeviceCommonAll):
                 int, f"{prefix}.MAP", name="input_bitmap"
             )
         with self.add_children_as_readables():
-            self.channels = DeviceVector(
-                {
-                    char: TransformRecordChannel(prefix=prefix, letter=char)
-                    for char in CHANNEL_LETTERS_LIST
-                }
-            )
+            for letter in CHANNEL_LETTERS_LIST:
+                setattr(self, letter, TransformRecordChannel(prefix=prefix, letter=letter))
 
         super().__init__(prefix=prefix, name=name)
         # Remove dtype, it's broken for some reason
@@ -131,7 +127,7 @@ class TransformRecord(EpicsRecordDeviceCommonAll):
 
     async def reset(self):
         """set all fields to default values"""
-        channels = self.channels.values()
+        channels = [getattr(self, letter) for letter in CHANNEL_LETTERS_LIST]
         await asyncio.gather(
             self.scanning_rate.set(self.ScanInterval.PASSIVE),
             self.description.set(self.name),

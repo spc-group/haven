@@ -3,7 +3,7 @@ import math
 from unittest.mock import MagicMock
 
 import pytest
-from ophyd_async.core import Device, get_mock_put
+from ophyd_async.core import Device, get_mock_put, DeviceVector
 from ophyd_async.core._signal import soft_signal_rw
 from ophyd_async.epics.core import epics_signal_x, epics_signal_rw
 
@@ -172,3 +172,24 @@ async def test_signal_x_trigger(device):
     mocked_put = get_mock_put(signal)
     await derived.trigger()
     mocked_put.assert_called_once_with(None, wait=True)
+
+
+async def test_device_vector_parent():
+    class MyDevice(Device):
+        def __init__(self, name):
+            self.my_signal = soft_signal_rw(float)
+            self.channels = DeviceVector({
+                0: soft_signal_rw(float)
+            })
+            super().__init__(name=name)
+
+    my_device = MyDevice(name="my_device")
+    await my_device.connect(mock=True)
+    # Good tests
+    assert my_device.my_signal.name == "my_device-my_signal"
+    assert my_device.my_signal.parent is my_device
+    assert my_device.channels.name == "my_device-channels"
+    assert my_device.channels.parent is my_device
+    assert my_device.channels[0].name == "my_device-channels-0"
+    # Bad tests
+    assert my_device.channels[0].parent is my_device.channels
