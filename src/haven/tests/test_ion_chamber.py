@@ -40,6 +40,7 @@ async def test_readables(ion_chamber):
     await ion_chamber.connect(mock=True)
     expected_readables = [
         "I0-net_current",
+        "I0-raw_current",
         "I0-voltmeter-analog_inputs-1-final_value",
         "I0-mcs-scaler-channels-0-net_count",
         "I0-mcs-scaler-channels-0-raw_count",
@@ -53,7 +54,7 @@ async def test_readables(ion_chamber):
     expected_hints = [
         "I0-net_current",
     ]
-    actual_hints = ion_chamber.hints['fields']
+    actual_hints = ion_chamber.hints["fields"]
     assert sorted(actual_hints) == sorted(expected_hints)
     # Check configurables
     expected_configables = [
@@ -317,14 +318,11 @@ async def test_flyscan_collect(ion_chamber, trigger_info):
         }
         for (datum, timestamp) in zip(channel_numbers, expected_timestamps)
     ]
-    # Ignore the first collected data point because it's during taxiing
-    expected_data = sim_data[1:]
     # The real timestamps should be midway between PSO pulses
     collected = [c async for c in ion_chamber.collect_pages()]
     assert len(collected) == 1
     collected = collected[0]
     # Confirm data have the right structure
-    raw_name = ion_chamber.scaler_channel.net_count.name
     assert collected["time"] == 1024
     assert_allclose(
         collected["data"][ion_chamber.scaler_channel.raw_count.name], sim_raw_data[:6]
