@@ -1,10 +1,12 @@
 from queue import Queue
 from typing import Optional, Tuple, List, Literal
 import logging
+import random
 
 import numpy as np
 from numpy import ndarray
 import pandas as pd
+from scipy.interpolate import griddata
 from bluesky import plans as bp
 from bluesky_adaptive.per_event import adaptive_plan, recommender_factory
 from bluesky_adaptive.recommendations import NoRecommendation
@@ -22,6 +24,12 @@ from ophyd_async.core import Device
 from ..catalog import tiled_client
 
 __all__ = ["XANESSamplingRecommender", "adaptive_xanes"]
+
+
+def resample(xdata: np.ndarray, ydata: np.ndarray, new_xdata: np.ndarray) -> np.ndarray:
+    """Re-sample the x and y data to match new xdata through interpolation."""
+    new_ydata = griddata((xdata,), ydata, (new_xdata,))
+    return new_ydata
 
 
 class XANESSamplingRecommender:
@@ -191,7 +199,13 @@ class XANESSamplingRecommender:
     def get_initial_measurement_locations(
             self, n: int, 
             method: Literal['uniform', 'random', 'quasirandom', 'supplied'] = 'uniform', 
-            supplied_initial_points: Optional[ndarray] = None):
+            supplied_initial_points: Optional[ndarray] = None,
+            random_seed: int = None,
+    ):
+        if random_seed is not None:
+            torch.random.manual_seed(random_seed)
+            np.random.seed(random_seed)
+            random.seed(random_seed)
         lb, ub = self.energy_range
         if method == 'uniform':
             x_init = np.linspace(lb, ub, n).double().reshape(-1, 1)
@@ -274,8 +288,7 @@ def adaptive_xanes(
     energy_range: Tuple[float, float],
     energy_positioner: Device = "energy",
     override_kernel_lengthscale: Optional[float] = None,
-    reference_spectra_x: Optional[ndarray] = None,
-    reference_spectra_y: Optional[ndarray] = None,
+    reference_spectra_uids: list[str] = [],
     phi_r: Optional[float] = None,
     phi_g: Optional[float] = None,
     phi_g2: Optional[float] = None,
@@ -294,6 +307,10 @@ def adaptive_xanes(
 
     Parameters
     ----------
+    It
+        The ophyd device for the transmitted signal intensity.
+    I0
+        The ophyd device for the reference signal intensity.
     n_initial_measurements
         The number of initial measurements.
     energy_range
@@ -301,10 +318,8 @@ def adaptive_xanes(
     override_kernel_lengthscale
         If specified, override the kernel lengthscale with this value instead
         of fitting it from the initial data. 
-    reference_spectra_x
-        The reference spectrum energy values. The shape should be (n,).
-    reference_spectra_y
-        A stack of reference spectrum y values. The shape shuold be (n_spectra, n).
+    reference_spectra_uids
+        The scan UIDs for retrieving reference spectra from the Tiled database.
     phi_r
         Weight of the fitting residue term in the acquisition function.
     phi_g
@@ -338,8 +353,30 @@ def adaptive_xanes(
         If true, use CPU only.
     """
     input_args = locals()
+
+    # Retrieve reference spectra from the database
+    ref_uids = input_args.pop("reference_spectra_uids")
+    client = tiled_client()
+    runs = [client[uid]['primary/data'].read() for uid in ref_uids]
+    # Re-sample the reference spectra so they have the same energy basis
+    x_datas = []
+    for run in runs:
+        x_datas.append(run[energy_positioner.name].compute().values)
+    reference_y = []
+    step = 0.5
+    new_erange = (
+        np.max(np.min(x_datas, axis=1)),
+        np.min(np.max(x_datas, axis=1)),
+    )
+    new_x = np.arange(*new_erange, step)
+    for run, x_data in zip(runs, x_datas):
+        y_data = np.log(run[I0.scaler_channel.net_count.name] / run[It.scaler_channel.net_count.name]).compute().values
+        new_y = resample(x_data, y_data, new_x)
+        reference_y.append(new_y)
     
-    recommender = XANESSamplingRecommender(**input_args)
+    recommender = XANESSamplingRecommender(reference_spectra_x = new_x,
+                                           reference_spectra_y = reference_y,
+                                           **input_args)
 
     detectors = [I0, It]
     ind_keys = [energy_positioner.name]
