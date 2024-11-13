@@ -118,7 +118,6 @@ class EnergyPositioner(Positioner):
         # Turn off the mono-ID tracking in the EPICS IOC since it
         # conflicts with the Haven equivalent
         was_tracking = await self.monochromator.id_tracking.get_value()
-        print(was_tracking)
         await self.monochromator.id_tracking.set(False)
         # Set the actual energy on the mono
         await super().set(value=value, wait=wait, timeout=timeout)
