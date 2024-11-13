@@ -2,7 +2,7 @@ import asyncio
 from unittest import mock
 
 import pytest
-from ophyd_async.core import DEFAULT_TIMEOUT, get_mock_put
+from ophyd_async.core import get_mock_put
 
 from haven.devices.srs570 import GainSignal, SRS570PreAmplifier
 
@@ -146,7 +146,8 @@ async def test_preamp_gain_settling(gain_value, gain_unit, gain_mode, mocker, pr
     await preamp.sensitivity_value.set(gain_value)
     # Check that the signal's ``set`` was called with correct arguments
     get_mock_put(preamp.sensitivity_value).assert_called_once_with(
-        gain_value, wait=True,
+        gain_value,
+        wait=True,
     )
     # Check that the settle time was included
     sleep_mock.assert_called_once_with(settle_time)

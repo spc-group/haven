@@ -74,7 +74,9 @@ class Positioner(StandardReadable, Movable, Stoppable):
             done_event.set()
 
     @WatchableAsyncStatus.wrap
-    async def set(self, value: float, timeout: CalculatableTimeout = CALCULATE_TIMEOUT):
+    async def set(
+        self, value: float, timeout: CalculatableTimeout = CALCULATE_TIMEOUT, wait=True
+    ):
         new_position = value
         self._set_success = True
         old_position, current_position, units, precision, velocity = (
@@ -127,6 +129,9 @@ class Positioner(StandardReadable, Movable, Stoppable):
             # Monitor based on readback position
             aws = asyncio.gather(reached_setpoint.wait(), set_status)
             done_status = AsyncStatus(asyncio.wait_for(aws, timeout))
+        # If we don't care to wait for the return value, we can end
+        if not wait:
+            return
         # Monitor the position of the readback value
         async for current_position in observe_value(
             self.readback, done_status=done_status

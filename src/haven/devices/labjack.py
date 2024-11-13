@@ -45,13 +45,12 @@ from ophyd_async.core import (
     DeviceVector,
     StandardReadable,
     StandardReadableFormat,
-    SubsetEnum,
     StrictEnum,
+    SubsetEnum,
     observe_value,
 )
 from ophyd_async.epics.core import epics_signal_r, epics_signal_rw, epics_signal_x
 
-from ..typing import StrEnum
 from .synApps import EpicsRecordInputFields, EpicsRecordOutputFields
 
 __all__ = [
@@ -69,6 +68,7 @@ __all__ = [
 
 KIND_CONFIG_OR_NORMAL = 3
 """Alternative for ``Kind.config | Kind.normal``."""
+
 
 class Input(EpicsRecordInputFields):
     """A generic input record.
@@ -280,8 +280,7 @@ class WaveformDigitizer(StandardReadable, Triggerable):
         SIX = "6"
         SEVEN = "7"
         EIGHT = "8"
-        
-        
+
     def __init__(self, prefix: str, name: str = "", waveforms=[]):
         with self.add_children_as_readables():
             self.timebase_waveform = epics_signal_rw(
@@ -292,9 +291,15 @@ class WaveformDigitizer(StandardReadable, Triggerable):
         with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
             self.num_points = epics_signal_rw(int, f"{prefix}WaveDigNumPoints")
             self.dwell_time = epics_signal_rw(float, f"{prefix}WaveDigDwell")
-            self.first_chan = epics_signal_rw(self.FirstChannel, f"{prefix}WaveDigFirstChan")
-            self.num_chans = epics_signal_rw(self.NumberOfChannels, f"{prefix}WaveDigNumChans")
-            self.resolution = epics_signal_rw(self.Resolution, f"{prefix}WaveDigResolution")
+            self.first_chan = epics_signal_rw(
+                self.FirstChannel, f"{prefix}WaveDigFirstChan"
+            )
+            self.num_chans = epics_signal_rw(
+                self.NumberOfChannels, f"{prefix}WaveDigNumChans"
+            )
+            self.resolution = epics_signal_rw(
+                self.Resolution, f"{prefix}WaveDigResolution"
+            )
             self.settling_time = epics_signal_rw(float, f"{prefix}WaveDigSettlingTime")
         self.current_point = epics_signal_rw(int, f"{prefix}WaveDigCurrentPoint")
         self.ext_trigger = epics_signal_rw(
@@ -303,7 +308,9 @@ class WaveformDigitizer(StandardReadable, Triggerable):
         self.ext_clock = epics_signal_rw(self.TriggerSource, f"{prefix}WaveDigExtClock")
         self.auto_restart = epics_signal_x(f"{prefix}WaveDigAutoRestart")
         self.run = epics_signal_rw(bool, f"{prefix}WaveDigRun")
-        self.read_waveform = epics_signal_rw(self.ReadWaveform, f"{prefix}WaveDigReadWF")
+        self.read_waveform = epics_signal_rw(
+            self.ReadWaveform, f"{prefix}WaveDigReadWF"
+        )
         # Add waveforms
         with self.add_children_as_readables():
             self.waveforms = DeviceVector(
@@ -518,12 +525,8 @@ class LabJackBase(StandardReadable):
             self.digital_ios = DeviceVector(
                 {idx: DigitalIO(prefix, ch_num=idx) for idx in digital_ios}
             )
-            self.digital_words = DeviceVector(
-                {
-                    word: epics_signal_r(int, f"{prefix}{word.upper()}In")
-                    for word in digital_words
-                }
-            )
+            for word in digital_words:
+                setattr(self, word, epics_signal_r(int, f"{prefix}{word.upper()}In"))
         # Waveform devices (not read by default, should be made readable as needed)
         self.waveform_digitizer = WaveformDigitizer(
             f"{prefix}", waveforms=analog_inputs

@@ -1,5 +1,4 @@
 import logging
-from enum import Enum
 
 from ophyd_async.core import StandardReadable, StandardReadableFormat, StrictEnum
 from ophyd_async.epics.core import epics_signal_rw

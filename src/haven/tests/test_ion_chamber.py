@@ -197,8 +197,11 @@ async def test_voltmeter_name(ion_chamber):
     await ion_chamber.connect(mock=True)
     assert (await ion_chamber.voltmeter_channel.description.get_value()) != "Icake"
     # Change the ion chamber name, and see if the voltmeter name updates
-    set_mock_value(ion_chamber.scaler_channel.description, "Icake")
+    # set_mock_value(ion_chamber.scaler_channel.description, "Icake")
+    ion_chamber.scaler_channel.description.get_value = AsyncMock(return_value="Icake")
+    assert (await ion_chamber.scaler_channel.description.get_value()) == "Icake"
     await ion_chamber.connect(mock=True)
+    assert (await ion_chamber.scaler_channel.description.get_value()) == "Icake"
     assert (await ion_chamber.voltmeter_channel.description.get_value()) == "Icake"
 
 

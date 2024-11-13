@@ -16,7 +16,6 @@ import asyncio
 import logging
 import math
 from collections import OrderedDict
-from enum import Enum
 from typing import Optional, Type
 
 from ophyd_async.core import (
@@ -25,7 +24,6 @@ from ophyd_async.core import (
     CalculatableTimeout,
     Device,
     SignalRW,
-    SubsetEnum,
     StrictEnum,
     T,
 )
@@ -351,7 +349,9 @@ class SRS570PreAmplifier(Device):
         )
         self.filter_reset = epics_signal_x(f"{prefix}filter_reset.PROC")
         self.filter_lowpass = epics_signal_rw(self.FilterLowPass, f"{prefix}low_freq")
-        self.filter_highpass = epics_signal_rw(self.FilterHighPass, f"{prefix}high_freq")
+        self.filter_highpass = epics_signal_rw(
+            self.FilterHighPass, f"{prefix}high_freq"
+        )
         self.gain_mode = gain_signal(self.GainMode, f"{prefix}gain_mode")
         self.invert = epics_signal_rw(bool, f"{prefix}invert_on")
         self.blank = epics_signal_rw(bool, f"{prefix}blank_on")

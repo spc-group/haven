@@ -3,9 +3,9 @@ import math
 from unittest.mock import MagicMock
 
 import pytest
-from ophyd_async.core import Device, get_mock_put, DeviceVector
+from ophyd_async.core import Device, DeviceVector, get_mock_put
 from ophyd_async.core._signal import soft_signal_rw
-from ophyd_async.epics.core import epics_signal_x, epics_signal_rw
+from ophyd_async.epics.core import epics_signal_rw, epics_signal_x
 
 from haven.devices.signal import derived_signal_rw, derived_signal_x
 
@@ -178,9 +178,7 @@ async def test_device_vector_parent():
     class MyDevice(Device):
         def __init__(self, name):
             self.my_signal = soft_signal_rw(float)
-            self.channels = DeviceVector({
-                0: soft_signal_rw(float)
-            })
+            self.channels = DeviceVector({0: soft_signal_rw(float)})
             super().__init__(name=name)
 
     my_device = MyDevice(name="my_device")

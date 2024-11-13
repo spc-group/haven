@@ -5,11 +5,10 @@ import asyncio
 # from ophyd import Device
 from ophyd_async.core import (
     Device,
-    DeviceVector,
     StandardReadable,
     StandardReadableFormat,
-    SubsetEnum,
     StrictEnum,
+    SubsetEnum,
 )
 from ophyd_async.epics.core import epics_signal_r, epics_signal_rw
 
@@ -119,7 +118,11 @@ class TransformRecord(EpicsRecordDeviceCommonAll):
             )
         with self.add_children_as_readables():
             for letter in CHANNEL_LETTERS_LIST:
-                setattr(self, letter, TransformRecordChannel(prefix=prefix, letter=letter))
+                setattr(
+                    self,
+                    f"channel_{letter}",
+                    TransformRecordChannel(prefix=prefix, letter=letter),
+                )
 
         super().__init__(prefix=prefix, name=name)
         # Remove dtype, it's broken for some reason

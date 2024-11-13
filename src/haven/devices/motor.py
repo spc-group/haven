@@ -3,9 +3,14 @@ import warnings
 
 from ophyd import Component as Cpt
 from ophyd import EpicsMotor, EpicsSignal, EpicsSignalRO, Kind
-from ophyd_async.core import DEFAULT_TIMEOUT, SubsetEnum, StrictEnum, StandardReadableFormat
-from ophyd_async.epics.motor import Motor as MotorBase
+from ophyd_async.core import (
+    DEFAULT_TIMEOUT,
+    StandardReadableFormat,
+    StrictEnum,
+    SubsetEnum,
+)
 from ophyd_async.epics.core import epics_signal_r, epics_signal_rw
+from ophyd_async.epics.motor import Motor as MotorBase
 from ophydregistry import Registry
 
 from .motor_flyer import MotorFlyer
@@ -44,7 +49,9 @@ class Motor(MotorBase):
             self.description = epics_signal_rw(str, f"{prefix}.DESC")
             self.user_offset = epics_signal_rw(float, f"{prefix}.OFF")
             self.user_offset_dir = epics_signal_rw(self.Direction, f"{prefix}.DIR")
-            self.offset_freeze_switch = epics_signal_rw(self.FreezeSwitch, f"{prefix}.FOFF")
+            self.offset_freeze_switch = epics_signal_rw(
+                self.FreezeSwitch, f"{prefix}.FOFF"
+            )
         # Motor status signals
         self.motor_is_moving = epics_signal_r(int, f"{prefix}.MOVN")
         self.motor_done_move = epics_signal_r(int, f"{prefix}.DMOV")

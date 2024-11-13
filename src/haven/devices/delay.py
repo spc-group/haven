@@ -2,12 +2,11 @@ import enum
 from typing import Type
 
 from ophyd_async.core import (
-    DeviceVector,
     SignalRW,
     StandardReadable,
     StandardReadableFormat,
-    SubsetEnum,
     StrictEnum,
+    SubsetEnum,
     T,
 )
 from ophyd_async.epics.core import epics_signal_r, epics_signal_rw, epics_signal_x
@@ -108,7 +107,7 @@ class DG645Delay(StandardReadable):
     class BurstConfig(SubsetEnum):
         ALL_CYCLES = "All Cycles"
         FIRST_CYCLE = "1st Cycle"
-    
+
     def __init__(self, prefix: str, name: str = ""):
         # Conventional signals
         with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
@@ -140,43 +139,44 @@ class DG645Delay(StandardReadable):
         self.gateway = epics_signal_io(str, f"{prefix}IfaceGatewayS")
         # Individual delay channels
         with self.add_children_as_readables():
-            self.channels = DeviceVector(
-                {
-                    "A": DG645Channel(f"{prefix}A"),
-                    "B": DG645Channel(f"{prefix}B"),
-                    "C": DG645Channel(f"{prefix}C"),
-                    "D": DG645Channel(f"{prefix}D"),
-                    "E": DG645Channel(f"{prefix}E"),
-                    "F": DG645Channel(f"{prefix}F"),
-                    "G": DG645Channel(f"{prefix}G"),
-                    "H": DG645Channel(f"{prefix}H"),
-                }
-            )
+            self.channel_A = DG645Channel(f"{prefix}A")
+            self.channel_B = DG645Channel(f"{prefix}B")
+            self.channel_C = DG645Channel(f"{prefix}C")
+            self.channel_D = DG645Channel(f"{prefix}D")
+            self.channel_E = DG645Channel(f"{prefix}E")
+            self.channel_F = DG645Channel(f"{prefix}F")
+            self.channel_G = DG645Channel(f"{prefix}G")
+            self.channel_H = DG645Channel(f"{prefix}H")
         # 2-channel delay outputs
         with self.add_children_as_readables():
-            self.outputs = DeviceVector(
-                {
-                    "T0": DG645Output(f"{prefix}T0"),
-                    "AB": DG645DelayOutput(f"{prefix}AB"),
-                    "CD": DG645DelayOutput(f"{prefix}CD"),
-                    "EF": DG645DelayOutput(f"{prefix}EF"),
-                    "GH": DG645DelayOutput(f"{prefix}GH"),
-                }
-            )
+            self.output_T0 = DG645Output(f"{prefix}T0")
+            self.output_AB = DG645DelayOutput(f"{prefix}AB")
+            self.output_CD = DG645DelayOutput(f"{prefix}CD")
+            self.output_EF = DG645DelayOutput(f"{prefix}EF")
+            self.output_GH = DG645DelayOutput(f"{prefix}GH")
         # Trigger control
         with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
-            self.trigger_source = epics_signal_io(self.TriggerSource,f"{prefix}TriggerSourceM",)
-            self.trigger_inhibit = epics_signal_io(self.TriggerInhibit, f"{prefix}TriggerInhibitM")
+            self.trigger_source = epics_signal_io(
+                self.TriggerSource,
+                f"{prefix}TriggerSourceM",
+            )
+            self.trigger_inhibit = epics_signal_io(
+                self.TriggerInhibit, f"{prefix}TriggerInhibitM"
+            )
             self.trigger_level = epics_signal_io(float, f"{prefix}TriggerLevelA")
             self.trigger_rate = epics_signal_io(float, f"{prefix}TriggerRateA")
-            self.trigger_advanced_mode = epics_signal_io(bool, f"{prefix}TriggerAdvancedModeB")
+            self.trigger_advanced_mode = epics_signal_io(
+                bool, f"{prefix}TriggerAdvancedModeB"
+            )
             self.trigger_holdoff = epics_signal_io(float, f"{prefix}TriggerHoldoffA")
             self.trigger_prescale = epics_signal_io(int, f"{prefix}TriggerPrescaleL")
         # Burst settings
         with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
             self.burst_mode = epics_signal_io(bool, f"{prefix}BurstModeB")
             self.burst_count = epics_signal_io(int, f"{prefix}BurstCountL")
-            self.burst_config = epics_signal_io(self.BurstConfig, f"{prefix}BurstConfigB"  )
+            self.burst_config = epics_signal_io(
+                self.BurstConfig, f"{prefix}BurstConfigB"
+            )
             self.burst_delay = epics_signal_io(float, f"{prefix}BurstDelayA")
             self.burst_period = epics_signal_io(float, f"{prefix}BurstPeriodA")
         super().__init__(name=name)

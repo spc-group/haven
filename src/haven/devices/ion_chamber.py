@@ -216,8 +216,10 @@ class IonChamber(StandardReadable, Triggerable):
             return float("nan")
 
     def __repr__(self):
-        return (f"<{type(self).__name__}: '{self.name}' "
-                f"({self.scaler_channel.raw_count.source})>")
+        return (
+            f"<{type(self).__name__}: '{self.name}' "
+            f"({self.scaler_channel.raw_count.source})>"
+        )
 
     @property
     def scaler_channel(self):

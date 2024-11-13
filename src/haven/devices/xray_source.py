@@ -1,12 +1,12 @@
 import logging
-from enum import Enum, IntEnum
+from enum import IntEnum
 
 from ophyd_async.core import (
     Signal,
     StandardReadable,
     StandardReadableFormat,
-    soft_signal_rw,
     SubsetEnum,
+    soft_signal_rw,
 )
 from ophyd_async.epics.core import epics_signal_r, epics_signal_rw, epics_signal_x
 
