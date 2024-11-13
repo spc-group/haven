@@ -1,6 +1,6 @@
 import numpy as np
-from numpy.typing import NDArray
 from ophyd_async.core import (
+    Array1D,
     DeviceVector,
     StandardReadable,
     StandardReadableFormat,
@@ -48,8 +48,8 @@ class MCA(StandardReadable):
     def __init__(self, prefix, name=""):
         # Signals
         with self.add_children_as_readables(StandardReadableFormat.HINTED_SIGNAL):
-            self.spectrum = epics_signal_r(NDArray[np.int32], f"{prefix}.VAL")
-        self.background = epics_signal_r(NDArray[np.int32], f"{prefix}.BG")
+            self.spectrum = epics_signal_r(Array1D[np.int32], f"{prefix}.VAL")
+        self.background = epics_signal_r(Array1D[np.int32], f"{prefix}.BG")
         with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
             self.mode = epics_signal_rw(self.MCAMode, f"{prefix}.MODE")
         super().__init__(name=name)

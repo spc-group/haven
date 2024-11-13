@@ -38,9 +38,9 @@ import asyncio
 
 import numpy as np
 from bluesky.protocols import Triggerable
-from numpy.typing import NDArray
 from ophyd_async.core import (
     DEFAULT_TIMEOUT,
+    Array1D,
     AsyncStatus,
     DeviceVector,
     StandardReadable,
@@ -284,7 +284,7 @@ class WaveformDigitizer(StandardReadable, Triggerable):
     def __init__(self, prefix: str, name: str = "", waveforms=[]):
         with self.add_children_as_readables():
             self.timebase_waveform = epics_signal_rw(
-                NDArray[np.float64], f"{prefix}WaveDigTimeWF"
+                Array1D[np.float64], f"{prefix}WaveDigTimeWF"
             )
             self.dwell_actual = epics_signal_rw(float, f"{prefix}WaveDigDwellActual")
             self.total_time = epics_signal_rw(float, f"{prefix}WaveDigTotalTime")
@@ -316,7 +316,7 @@ class WaveformDigitizer(StandardReadable, Triggerable):
             self.waveforms = DeviceVector(
                 {
                     idx: epics_signal_r(
-                        NDArray[np.float64], f"{prefix}WaveDigVoltWF{idx}"
+                        Array1D[np.float64], f"{prefix}WaveDigVoltWF{idx}"
                     )
                     for idx in waveforms
                 }
@@ -383,7 +383,7 @@ class WaveformGenerator(StandardReadable):
         # Settings for user-defined waveforms
         with self.add_children_as_readables():
             self.user_time_waveform = epics_signal_rw(
-                NDArray[np.float64], f"{prefix}WaveGenUserTimeWF"
+                Array1D[np.float64], f"{prefix}WaveGenUserTimeWF"
             )
         self.user_num_points = epics_signal_rw(int, f"{prefix}WaveGenUserNumPoints")
         self.user_dwell = epics_signal_rw(float, f"{prefix}WaveGenUserDwell")
@@ -392,7 +392,7 @@ class WaveformGenerator(StandardReadable):
         # Settings for internal waveforms
         with self.add_children_as_readables():
             self.internal_time_waveform = epics_signal_rw(
-                NDArray[np.float64], f"{prefix}WaveGenIntTimeWF"
+                Array1D[np.float64], f"{prefix}WaveGenIntTimeWF"
             )
         self.internal_num_points = epics_signal_rw(int, f"{prefix}WaveGenIntNumPoints")
         self.internal_dwell = epics_signal_rw(float, f"{prefix}WaveGenIntDwell")
@@ -401,7 +401,7 @@ class WaveformGenerator(StandardReadable):
         # Waveform specific settings
         with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
             self.user_waveform_0 = epics_signal_rw(
-                NDArray[np.float64], f"{prefix}WaveGenUserWF0"
+                Array1D[np.float64], f"{prefix}WaveGenUserWF0"
             )
             self.enable_0 = epics_signal_rw(bool, f"{prefix}WaveGenEnable0")
             self.type_0 = epics_signal_rw(self.WaveType, f"{prefix}WaveGenType0")
@@ -409,7 +409,7 @@ class WaveformGenerator(StandardReadable):
             self.amplitude_0 = epics_signal_rw(float, f"{prefix}WaveGenAmplitude0")
             self.offset_0 = epics_signal_rw(float, f"{prefix}WaveGenOffset0")
             self.user_waveform_1 = epics_signal_rw(
-                NDArray[np.float64], f"{prefix}WaveGenUserWF1"
+                Array1D[np.float64], f"{prefix}WaveGenUserWF1"
             )
             self.enable_1 = epics_signal_rw(bool, f"{prefix}WaveGenEnable1")
             self.type_1 = epics_signal_rw(self.WaveType, f"{prefix}WaveGenType1")
@@ -417,10 +417,10 @@ class WaveformGenerator(StandardReadable):
             self.amplitude_1 = epics_signal_rw(float, f"{prefix}WaveGenAmplitude1")
             self.offset_1 = epics_signal_rw(float, f"{prefix}WaveGenOffset1")
         self.internal_waveform_0 = epics_signal_rw(
-            NDArray[np.float64], f"{prefix}WaveGenInternalWF0"
+            Array1D[np.float64], f"{prefix}WaveGenInternalWF0"
         )
         self.internal_waveform_1 = epics_signal_r(
-            NDArray[np.float64], f"{prefix}WaveGenInternalWF1"
+            Array1D[np.float64], f"{prefix}WaveGenInternalWF1"
         )
 
         super().__init__(name=name)
@@ -495,7 +495,7 @@ class LabJackBase(StandardReadable):
             self.ljm_version = epics_signal_r(str, f"{prefix}LJMVersion")
             self.driver_version = epics_signal_r(str, f"{prefix}DriverVersion")
             self.last_error_message = epics_signal_r(
-                NDArray[np.uint8], f"{prefix}LastErrorMessage"
+                Array1D[np.uint8], f"{prefix}LastErrorMessage"
             )
             self.poll_sleep_ms = epics_signal_rw(float, f"{prefix}PollSleepMS")
             self.analog_in_settling_time_all = epics_signal_rw(
