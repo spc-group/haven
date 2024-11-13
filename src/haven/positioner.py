@@ -39,12 +39,18 @@ class Positioner(StandardReadable, Movable, Stoppable):
       The device name for this positioner.
     put_complete
       If true, wait on the setpoint to report being done.
+    min_move
+      If the readback is already within *min_move* from the commanded
+      position during ``set()``, no movement will take place.
 
     """
 
     done_value = 1
 
-    def __init__(self, name: str = "", put_complete: bool = False):
+    def __init__(
+        self, name: str = "", put_complete: bool = False, min_move: float = 0.0
+    ):
+        self.min_move = min_move
         self.put_complete = put_complete
         super().__init__(name=name)
 
@@ -68,15 +74,29 @@ class Positioner(StandardReadable, Movable, Stoppable):
             done_event.set()
 
     @WatchableAsyncStatus.wrap
-    async def set(self, value: float, timeout: CalculatableTimeout = CALCULATE_TIMEOUT):
+    async def set(
+        self,
+        value: float,
+        wait: bool = True,
+        timeout: CalculatableTimeout = CALCULATE_TIMEOUT,
+    ):
+        assert wait, "``wait==False`` not supported."
         new_position = value
         self._set_success = True
-        old_position, units, precision, velocity = await asyncio.gather(
-            self.setpoint.get_value(),
-            self.units.get_value(),
-            self.precision.get_value(),
-            self.velocity.get_value(),
+        old_position, current_position, units, precision, velocity = (
+            await asyncio.gather(
+                self.setpoint.get_value(),
+                self.readback.get_value(),
+                self.units.get_value(),
+                self.precision.get_value(),
+                self.velocity.get_value(),
+            )
         )
+        # Check for trivially small moves
+        is_small_move = abs(new_position - current_position) < self.min_move
+        if is_small_move:
+            return
+        # Decide how long we should wait
         if timeout == CALCULATE_TIMEOUT:
             assert velocity > 0, "Mover has zero velocity"
             timeout = abs(new_position - old_position) / velocity + DEFAULT_TIMEOUT

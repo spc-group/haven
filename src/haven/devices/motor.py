@@ -1,8 +1,6 @@
 import logging
 import warnings
 
-# from apstools.utils.misc import safe_ophyd_name
-safe_ophyd_name = lambda n: n
 from ophyd import Component as Cpt
 from ophyd import EpicsMotor, EpicsSignal, EpicsSignalRO, Kind
 from ophyd_async.core import DEFAULT_TIMEOUT, ConfigSignal, SubsetEnum
@@ -91,7 +89,7 @@ class Motor(MotorBase):
                 return
             # Only update the name if the description has been set
             if desc != "":
-                self.set_name(safe_ophyd_name(desc))
+                self.set_name(desc)
 
 
 class HavenMotor(MotorFlyer, EpicsMotor):

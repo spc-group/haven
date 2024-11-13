@@ -36,6 +36,7 @@ from haven import (  # noqa: F401
     knife_scan,
     recall_motor_position,
     record_dark_current,
+    sanitize_name,
     set_energy,
     xafs_scan,
 )
@@ -54,5 +55,6 @@ except NotConnected as exc:
 for cpt in beamline.registry._objects_by_name.values():
     # Replace spaces and other illegal characters in variable name
     # name = re.sub('\W|^(?=\d)','_', cpt.name)
+    name = sanitize_name(cpt.name)
     # Add the device as a variable in module's globals
-    globals().setdefault(cpt.name, cpt)
+    globals().setdefault(name, cpt)

@@ -6,6 +6,7 @@ from qtpy.QtCore import Signal
 
 from firefly import display
 from firefly.plans.util import is_valid_value, time_converter
+from haven import sanitize_name
 
 log = logging.getLogger()
 
@@ -188,7 +189,9 @@ class RegionsDisplay(display.FireflyDisplay):
         # Get paramters from each rows of line regions:
         motor_lst, start_lst, stop_lst = [], [], []
         for region_i in self.regions:
-            motor_lst.append(region_i.motor_box.current_component().name)
+            motor_name = region_i.motor_box.current_component().name
+            motor_name = sanitize_name(motor_name)
+            motor_lst.append(motor_name)
             start_lst.append(float(region_i.start_line_edit.text()))
             stop_lst.append(float(region_i.stop_line_edit.text()))
 
@@ -203,7 +206,7 @@ class RegionsDisplay(display.FireflyDisplay):
     def get_meta_data(self):
         # Get meta data info
         md = {
-            "sample": self.ui.lineEdit_sample.text(),
+            "sample_name": self.ui.lineEdit_sample.text(),
             "purpose": self.ui.lineEdit_purpose.text(),
             "notes": self.ui.textEdit_notes.toPlainText(),
         }
