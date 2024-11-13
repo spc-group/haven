@@ -257,12 +257,12 @@ class SRS570PreAmplifier(Device):
     offset_difference = -3  # How many levels higher should the offset be
 
     class FilterType(StrictEnum):
-        NO_FILTER = "No filter"
-        _6DB_HIGHPASS = "6 dB highpass"
+        NO_FILTER = "  No filter"
+        _6DB_HIGHPASS = " 6 dB highpass"
         _12DB_HIGHPASS = "12 dB highpass"
-        _6DB_BANDPASS = "6 dB bandpass"
-        _6DB_LOWPASS = "6 dB lowpass"
-        _12DB_LOWPASS = "6 dB lowpass"
+        _6DB_BANDPASS = " 6 dB bandpass"
+        _6DB_LOWPASS = " 6 dB lowpass"
+        _12DB_LOWPASS = "12 dB lowpass"
 
     class FilterLowPass(StrictEnum):
         _0_03_HZ = "  0.03 Hz"

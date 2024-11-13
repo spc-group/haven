@@ -52,11 +52,6 @@ class EpicsRecordDeviceCommonAll(StandardReadable):
 
     # More valid options are specific to the record type
     # Subclasses may override this attribute
-    class DeviceType(SubsetEnum):
-        SOFT_CHANNEL = "Soft Channel"
-        RAW_SOFT_CHANNEL = "Raw Soft Channel"
-        ASYNC_SOFT_CHANNEL = "Async Soft Channel"
-
     class ScanInterval(SubsetEnum):
         PASSIVE = "Passive"
         EVENT = "Event"
@@ -74,7 +69,6 @@ class EpicsRecordDeviceCommonAll(StandardReadable):
         with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
             self.description = epics_signal_rw(str, f"{prefix}.DESC")
             self.scanning_rate = epics_signal_rw(self.ScanInterval, f"{prefix}.SCAN")
-            self.device_type = epics_signal_r(self.DeviceType, f"{prefix}.DTYP")
         # Other signals, not included in read
         self.disable_value = epics_signal_rw(int, f"{prefix}.DISV")
         self.scan_disable_input_link_value = epics_signal_rw(int, f"{prefix}.DISA")
@@ -112,10 +106,16 @@ class EpicsRecordInputFields(EpicsRecordDeviceCommonAll):
     """
     Some fields common to EPICS input records.
     """
+    class DeviceType(SubsetEnum):
+        SOFT_CHANNEL = "Soft Channel"
+        RAW_SOFT_CHANNEL = "Raw Soft Channel"
+        ASYNC_SOFT_CHANNEL = "Async Soft Channel"
+
 
     def __init__(self, prefix: str, name: str = ""):
         with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
             self.input_link = epics_signal_rw(str, f"{prefix}.INP")
+            self.device_type = epics_signal_r(self.DeviceType, f"{prefix}.DTYP")
         super().__init__(prefix=prefix, name=name)
 
 
@@ -123,6 +123,12 @@ class EpicsRecordOutputFields(EpicsRecordDeviceCommonAll):
     """
     Some fields common to EPICS output records.
     """
+
+    class DeviceType(SubsetEnum):
+        SOFT_CHANNEL = "Soft Channel"
+        RAW_SOFT_CHANNEL = "Raw Soft Channel"
+        ASYNC_SOFT_CHANNEL = "Async Soft Channel"
+
 
     class ModeSelect(SubsetEnum):
         SUPERVISORY = "supervisory"
@@ -133,4 +139,5 @@ class EpicsRecordOutputFields(EpicsRecordDeviceCommonAll):
             self.output_link = epics_signal_rw(str, f"{prefix}.OUT")
             self.desired_output_location = epics_signal_rw(str, f"{prefix}.DOL")
             self.output_mode_select = epics_signal_rw(self.ModeSelect, f"{prefix}.OMSL")
+            self.device_type = epics_signal_r(self.DeviceType, f"{prefix}.DTYP")
         super().__init__(prefix=prefix, name=name)

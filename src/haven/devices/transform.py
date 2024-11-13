@@ -125,8 +125,6 @@ class TransformRecord(EpicsRecordDeviceCommonAll):
                 )
 
         super().__init__(prefix=prefix, name=name)
-        # Remove dtype, it's broken for some reason
-        del self.device_type
 
     async def reset(self):
         """set all fields to default values"""

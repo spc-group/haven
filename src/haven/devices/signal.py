@@ -125,8 +125,15 @@ class DerivedSignalBackend(SoftSignalBackend):
     async def connect(self, timeout=DEFAULT_TIMEOUT) -> None:
         # Connect this signal
         await super().connect(timeout=timeout)
+        # Make sure the subordinate signal are connected
+        sub_signals = self._derived_from.values()
+        tasks = []
+        for sig in sub_signals:
+            if sig._mock is None and sig._connect_task is not None:
+                tasks.append(sig._connect_task)
+        await asyncio.wait_for(asyncio.gather(*tasks), timeout=timeout)
         # Listen for changes in the derived_from signals
-        for sig in self._derived_from.values():
+        for sig in sub_signals:
             # Subscribe with a partial in case the signal's name changes
             if isinstance(sig, Subscribable):
                 sig.subscribe(partial(self.update_readings, signal=sig))
@@ -149,7 +156,6 @@ class DerivedSignalBackend(SoftSignalBackend):
         Stashes them for later recall.
 
         """
-        print("UPDATING")
         # Stash this reading
         self._cached_readings.update({signal: reading[signal.name]})
         # Update interested parties if we have a full set of readings
@@ -201,10 +207,6 @@ class DerivedSignalBackend(SoftSignalBackend):
         readings = {sig: reading[sig.name] for (sig, reading) in zip(signals, readings)}
         # Return a proper reading for this derived value
         return self.combine_readings(readings)
-
-
-class DerivedSignalRW(SignalRW):
-    pass
 
 
 def derived_signal_rw(
