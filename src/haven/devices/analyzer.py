@@ -23,7 +23,7 @@ from ophyd import Device, EpicsMotor
 from ophyd import FormattedComponent as FCpt
 from ophyd import PseudoPositioner, PseudoSingle, Signal
 from ophyd.pseudopos import pseudo_position_argument, real_position_argument
-from ophyd_async.core import Device, soft_signal_r_and_setter, soft_signal_rw
+from ophyd_async.core import Device, soft_signal_r_and_setter, soft_signal_rw, ConfigSignal, StandardReadable
 from scipy import constants
 
 from ..positioner import Positioner
@@ -134,7 +134,7 @@ def hkl_to_alpha(base, reflection):
     return alpha
 
 
-class Analyzer(Device):
+class Analyzer(StandardReadable):
     """A single asymmetric analyzer crystal mounted on an Rowland circle.
 
     Linear dimensions (e.g. Rowland diameter) should be in units that
@@ -151,43 +151,57 @@ class Analyzer(Device):
         horizontal_motor_prefix: str,
         vertical_motor_prefix: str,
         yaw_motor_prefix: str,
-        surface_plane: str,
-        rowland_diameter: float = 500,  # mm
+        rowland_diameter: float | int = 500000,  # µm
+        lattice_constant: float = 0.543095e-9,  # m
+        wedge_angle: float = np.radians(30),
+        surface_plane: HKL | str = "211",
         name: str = "",
     ):
+        surface_plane = tuple(int(i) for i in surface_plane)
         # Create the real motors
         self.horizontal = Motor(horizontal_motor_prefix)
         self.vertical = Motor(vertical_motor_prefix)
         self.crystal_yaw = Motor(yaw_motor_prefix)
         # Soft signals for keeping track of the fixed transform properties
-        self.rowland_diameter = soft_signal_rw(float, units=self.linear_units)
-        self.wedge_angle = soft_signal_rw(float, units=self.angular_units)
-        self.lattice_constant = soft_signal_rw(float, units=self.linear_units)
-        self.bragg_offset = soft_signal_rw(float, units=self.linear_units)
-        self.reflection = soft_signal_rw(HKL)
-        self.surface_plane = soft_signal_rw(HKL)
-        # Soft signals for intermediate, calculated values
-        self.d_spacing = derived_signal_r(
-            float,
-            derived_from={
-                "hkl": self.reflection,
-                "a": self.lattice_constant,
-            },
-            inverse=self._calc_d_spacing,
-            units=self.linear_units,
-            precision=4,
-        )
-        self.asymmetry_angle = derived_signal_r(
-            float,
-            derived_from={
-                "refl": self.reflection,
-                "base": self.surface_plane,
-            },
-            units=self.angular_units,
-            inverse=self._calc_alpha,
-        )
+        with self.add_children_as_readables(ConfigSignal):
+            self.rowland_diameter = soft_signal_rw(float, units=self.linear_units, initial_value=rowland_diameter)
+            self.wedge_angle = soft_signal_rw(float, units=self.angular_units, initial_value=wedge_angle)
+            self.lattice_constant = soft_signal_rw(float, units=self.linear_units, initial_value=lattice_constant)
+            self.bragg_offset = soft_signal_rw(float, units=self.linear_units)
+            self.reflection = soft_signal_rw(HKL, initial_value=(1, 1, 1))
+            self.surface_plane = soft_signal_rw(HKL, initial_value=surface_plane)
+            # Soft signals for intermediate, calculated values
+            self.d_spacing = derived_signal_r(
+                float,
+                derived_from={
+                    "hkl": self.reflection,
+                    "a": self.lattice_constant,
+                },
+                inverse=self._calc_d_spacing,
+                units=self.linear_units,
+                precision=4,
+            )
+            self.asymmetry_angle = derived_signal_r(
+                float,
+                derived_from={
+                    "refl": self.reflection,
+                    "base": self.surface_plane,
+                },
+                units=self.angular_units,
+                inverse=self._calc_alpha,
+            )
         # The actual energy signal that controls the analyzer
         self.energy = EnergyPositioner(xtal=self)
+        # Decide which signals should be readable/config/etc
+        self.add_readables([
+            self.energy.readback,
+            self.energy.setpoint,
+            self.vertical.user_readback,
+            self.horizontal.user_readback,
+        ])
+        self.add_readables([
+            self.crystal_yaw.user_readback,
+        ], ConfigSignal)
         super().__init__(name=name)
 
     def _calc_alpha(self, values, refl, base):
@@ -200,8 +214,6 @@ class Analyzer(Device):
 
 class EnergyPositioner(Positioner):
     """Positions the energy of an analyzer crystal."""
-
-    put_complete = True
 
     def __init__(self, *, xtal: Analyzer, name: str = ""):
         xtal_signals = {
@@ -221,20 +233,22 @@ class EnergyPositioner(Positioner):
             forward=self.forward,
             inverse=self.inverse,
         )
-        self.readback = derived_signal_r(
-            float,
-            units="eV",
-            derived_from=dict(
-                x=xtal.horizontal.user_readback,
-                y=xtal.vertical.user_readback,
-                **xtal_signals,
-            ),
-            inverse=self.inverse,
-        )
+        with self.add_children_as_readables():
+            self.readback = derived_signal_r(
+                float,
+                units="eV",
+                derived_from=dict(
+                    x=xtal.horizontal.user_readback,
+                    y=xtal.vertical.user_readback,
+                    **xtal_signals,
+                ),
+                inverse=self.inverse,
+            )
         # Metadata
-        self.velocity, _ = soft_signal_r_and_setter(float, initial_value=1)
+        self.velocity, _ = soft_signal_r_and_setter(float, initial_value=0.001)
         self.units, _ = soft_signal_r_and_setter(str, initial_value="eV")
         self.precision, _ = soft_signal_r_and_setter(int, initial_value=3)
+        super().__init__(name=name, put_complete=True)
 
     async def forward(self, value, D, d, beta, alpha, x, y):
         """Run a forward (pseudo -> real) calculation"""
