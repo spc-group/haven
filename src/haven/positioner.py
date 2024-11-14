@@ -74,7 +74,13 @@ class Positioner(StandardReadable, Movable, Stoppable):
             done_event.set()
 
     @WatchableAsyncStatus.wrap
-    async def set(self, value: float, timeout: CalculatableTimeout = CALCULATE_TIMEOUT):
+    async def set(
+        self,
+        value: float,
+        wait: bool = True,
+        timeout: CalculatableTimeout = CALCULATE_TIMEOUT,
+    ):
+        assert wait, "``wait==False`` not supported."
         new_position = value
         self._set_success = True
         old_position, current_position, units, precision, velocity = (
