@@ -106,11 +106,11 @@ class EpicsRecordInputFields(EpicsRecordDeviceCommonAll):
     """
     Some fields common to EPICS input records.
     """
+
     class DeviceType(SubsetEnum):
         SOFT_CHANNEL = "Soft Channel"
         RAW_SOFT_CHANNEL = "Raw Soft Channel"
         ASYNC_SOFT_CHANNEL = "Async Soft Channel"
-
 
     def __init__(self, prefix: str, name: str = ""):
         with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
@@ -128,7 +128,6 @@ class EpicsRecordOutputFields(EpicsRecordDeviceCommonAll):
         SOFT_CHANNEL = "Soft Channel"
         RAW_SOFT_CHANNEL = "Raw Soft Channel"
         ASYNC_SOFT_CHANNEL = "Async Soft Channel"
-
 
     class ModeSelect(SubsetEnum):
         SUPERVISORY = "supervisory"
