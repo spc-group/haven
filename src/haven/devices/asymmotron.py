@@ -292,6 +292,10 @@ class EnergyPositioner(Positioner):
         return energy
 
 
+class Asymmotron(StandardReadable):
+    pass
+
+
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov

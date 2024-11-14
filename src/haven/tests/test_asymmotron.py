@@ -7,7 +7,7 @@ import pytest
 from ophyd.sim import make_fake_device
 from ophyd_async.core import get_mock_put, set_mock_value
 
-from haven.devices import analyzer
+from haven.devices.asymmotron import energy_to_wavelength, wavelength_to_energy, bragg_to_wavelength, wavelength_to_bragg, Analyzer, Asymmotron, bragg_to_energy
 
 um_per_mm = 1000
 
@@ -25,12 +25,12 @@ energy_to_wavelength_values = [
 
 @pytest.mark.parametrize("energy, wavelength", energy_to_wavelength_values)
 def test_energy_to_wavelength(energy, wavelength):
-    assert pytest.approx(analyzer.energy_to_wavelength(energy)) == wavelength
+    assert pytest.approx(energy_to_wavelength(energy)) == wavelength
 
 
 @pytest.mark.parametrize("energy, wavelength", energy_to_wavelength_values)
 def test_wavelength_to_energy(energy, wavelength):
-    assert pytest.approx(analyzer.wavelength_to_energy(wavelength), rel=0.001) == energy
+    assert pytest.approx(wavelength_to_energy(wavelength), rel=0.001) == energy
 
 
 braggs_law_values = [
@@ -48,7 +48,7 @@ def test_bragg_to_wavelength(theta, d_spacing, wavelength):
     theta = np.radians(theta)
     d_spacing *= 1e-10
     wavelength *= 1e-10
-    assert pytest.approx(analyzer.bragg_to_wavelength(theta, d=d_spacing)) == wavelength
+    assert pytest.approx(bragg_to_wavelength(theta, d=d_spacing)) == wavelength
 
 
 @pytest.mark.parametrize("theta, d_spacing, wavelength", braggs_law_values)
@@ -57,7 +57,7 @@ def test_wavelength_to_bragg(theta, d_spacing, wavelength):
     d_spacing *= 1e-10
     wavelength *= 1e-10
     assert (
-        pytest.approx(analyzer.wavelength_to_bragg(wavelength, d=d_spacing), rel=0.001)
+        pytest.approx(wavelength_to_bragg(wavelength, d=d_spacing), rel=0.001)
         == theta
     )
 
@@ -78,7 +78,7 @@ Si311_d_spacing = 1.637 * 1e-10  # converted to meters
 @pytest.fixture()
 async def xtal(sim_registry):
     # Create the analyzer documents
-    xtal = analyzer.Analyzer(
+    xtal = Analyzer(
         name="analyzer",
         horizontal_motor_prefix="",
         vertical_motor_prefix="",
@@ -99,7 +99,7 @@ async def test_rowland_circle_forward(xtal, bragg, alpha, beta, x, y):
     xtal.asymmetry_angle.get_value = AsyncMock(return_value=np.radians(alpha))
     xtal.d_spacing.get_value = AsyncMock(return_value=Si311_d_spacing)
     bragg = np.radians(bragg)
-    energy = analyzer.bragg_to_energy(bragg, d=Si311_d_spacing)
+    energy = bragg_to_energy(bragg, d=Si311_d_spacing)
     # Calculate the new x, z motor positions
     calculated = await xtal.energy.forward(
         energy,
@@ -119,7 +119,7 @@ async def test_rowland_circle_forward(xtal, bragg, alpha, beta, x, y):
 async def test_rowland_circle_inverse(xtal, bragg, alpha, beta, x, y):
     # Calculate the expected answer
     bragg = np.radians(bragg)
-    expected_energy = analyzer.bragg_to_energy(bragg, d=Si311_d_spacing)
+    expected_energy = bragg_to_energy(bragg, d=Si311_d_spacing)
     # Calculate the new energy
     D = await xtal.rowland_diameter.get_value()
     new_energy = xtal.energy.inverse(
@@ -181,6 +181,9 @@ async def test_d_spacing(xtal, hkl, d):
     hkl = tuple(int(h) for h in hkl)  # str to tuple
     await xtal.reflection.set(hkl)
     assert await xtal.d_spacing.get_value() == pytest.approx(d, abs=0.001)
+
+
+
 
 
 # -----------------------------------------------------------------------------

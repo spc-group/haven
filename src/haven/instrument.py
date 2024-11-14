@@ -15,9 +15,9 @@ from ophyd_async.core import DEFAULT_TIMEOUT, NotConnected
 from ophydregistry import Registry
 
 from .devices.aerotech import AerotechStage
-from .devices.analyzer import Analyzer
 from .devices.aps import ApsMachine
 from .devices.area_detector import make_area_detector
+from .devices.asymmotron import Asymmotron
 from .devices.beamline_manager import BeamlineManager
 from .devices.detectors.aravis import AravisDetector
 from .devices.detectors.sim_detector import SimDetector
@@ -415,7 +415,7 @@ beamline = HavenInstrument(
         "sim_detector": SimDetector,
         "camera": AravisDetector,
         "pss_shutter": PssShutter,
-        "analyzer": Analyzer,
+        "asymmotron": Asymmotron,
         # Threaded ophyd devices
         "blade_slits": BladeSlits,
         "aperture_slits": ApertureSlits,
