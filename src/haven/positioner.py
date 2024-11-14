@@ -75,7 +75,10 @@ class Positioner(StandardReadable, Movable, Stoppable):
 
     @WatchableAsyncStatus.wrap
     async def set(
-        self, value: float, timeout: CalculatableTimeout = CALCULATE_TIMEOUT, wait=True
+        self,
+        value: float,
+        wait: bool = True,
+        timeout: CalculatableTimeout = CALCULATE_TIMEOUT,
     ):
         new_position = value
         self._set_success = True
@@ -109,8 +112,10 @@ class Positioner(StandardReadable, Movable, Stoppable):
         else:
             # Wait for the value to set, but don't wait for put completion callback
             set_status = self.setpoint.set(
-                new_position, wait=self.put_complete, timeout=timeout
+                new_position, wait=(wait and self.put_complete), timeout=timeout
             )
+        if not wait:
+            return
         # Decide on how we will wait for completion
         if self.put_complete:
             # await the set call directly

@@ -1,6 +1,12 @@
 import logging
 
-from ophyd_async.core import Signal, StandardReadableFormat
+from ophyd_async.core import (
+    CALCULATE_TIMEOUT,
+    AsyncStatus,
+    CalculatableTimeout,
+    Signal,
+    StandardReadableFormat,
+)
 
 from ..positioner import Positioner
 from .monochromator import Monochromator
@@ -103,6 +109,21 @@ class EnergyPositioner(Positioner):
     def get_energy(self, values, mono: float, undulator: Signal | None = None):
         # Use just the mono value as a readback
         return values[mono]
+
+    @AsyncStatus.wrap
+    async def set(
+        self, value: float, wait=True, timeout: CalculatableTimeout = CALCULATE_TIMEOUT
+    ):
+
+        # Turn off the mono-ID tracking in the EPICS IOC since it
+        # conflicts with the Haven equivalent
+        was_tracking = await self.monochromator.id_tracking.get_value()
+        await self.monochromator.id_tracking.set(False)
+        # Set the actual energy on the mono
+        await super().set(value=value, wait=wait, timeout=timeout)
+        # Restore mono-ID tracking if it was previously enabled
+        if bool(was_tracking):
+            await self.monochromator.id_tracking.set(True)
 
 
 # -----------------------------------------------------------------------------
