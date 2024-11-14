@@ -122,21 +122,31 @@ class DerivedSignalBackend(SoftSignalBackend):
         args = ",".join(self._derived_from.keys())
         return f"{src}({args})"
 
+    async def _subscribe_child(self, child_signal):
+        """Subscribe to a child signal for updating value changes.
+
+        If *child_signal* is not yet connected, keep retrying until
+        sucessful or the timeout value is reached.
+
+        """
+        handler = partial(self.update_readings, signal=child_signal)
+        while True:
+            try:
+                child_signal.subscribe(handler)
+            except NotImplementedError:
+                await asyncio.sleep(0.01)
+            else:
+                break
+
     async def connect(self, timeout=DEFAULT_TIMEOUT) -> None:
-        # Connect this signal
-        await super().connect(timeout=timeout)
-        # Make sure the subordinate signal are connected
-        sub_signals = self._derived_from.values()
-        tasks = []
-        for sig in sub_signals:
-            if sig._mock is None and sig._connect_task is not None:
-                tasks.append(sig._connect_task)
-        await asyncio.wait_for(asyncio.gather(*tasks), timeout=timeout)
         # Listen for changes in the derived_from signals
-        for sig in sub_signals:
-            # Subscribe with a partial in case the signal's name changes
-            if isinstance(sig, Subscribable):
-                sig.subscribe(partial(self.update_readings, signal=sig))
+        sub_signals = self._derived_from.values()
+        sub_signals = (sig for sig in sub_signals if isinstance(sig, Subscribable))
+        subs = (
+            asyncio.wait_for(self._subscribe_child(sig), timeout=timeout)
+            for sig in sub_signals
+        )
+        await asyncio.gather(super().connect(timeout=timeout), *subs)
 
     def combine_readings(self, readings):
         timestamp = max([rd["timestamp"] for rd in readings.values()])
