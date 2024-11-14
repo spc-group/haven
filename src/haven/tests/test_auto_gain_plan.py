@@ -130,11 +130,15 @@ def test_recommender_fill_missing_gains(recommender):
         [9],
         [12],
         [10],
+        # Put in one that's really high to make sure skipped points aren't included
+        [16],
     ]
     volts = [
         [0.3],
         [5.2],
         [1.5],
+        # Put in one that's really high to make sure skipped points aren't included
+        [7.0],
     ]
     recommender.tell_many(gains, volts)
     # Does it recommend the missing gain value?

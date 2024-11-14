@@ -31,7 +31,7 @@ class GainRecommender:
     gain_max: int = 27
     last_point: np.ndarray = None
     dfs: list = None
-    big_step: int = 1
+    big_step: int = 3
 
     def __init__(
         self, volts_min: float = 0.5, volts_max: float = 4.5, target_volts: float = 2.5
