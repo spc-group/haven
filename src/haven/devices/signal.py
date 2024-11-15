@@ -11,16 +11,17 @@ from ophyd_async.core import (
     DEFAULT_TIMEOUT,
     AsyncStatus,
     CalculatableTimeout,
-    ReadingValueCallback,
+    Callback,
     SignalBackend,
-    SignalMetadata,
+    SignalDatatypeT,
     SignalR,
     SignalRW,
     SignalX,
     SoftSignalBackend,
     T,
 )
-from ophyd_async.epics.signal._signal import _epics_signal_backend
+from ophyd_async.core._signal import _wait_for
+from ophyd_async.epics.core._signal import _epics_signal_backend
 
 
 class DerivedSignalBackend(SoftSignalBackend):
@@ -116,30 +117,48 @@ class DerivedSignalBackend(SoftSignalBackend):
             msg += "Provide an explicit inverse transform."
             raise ValueError(msg)
 
-    def source(self, name: str = ""):
-        src = super().source(name)
+    def source(self, name: str, read: bool):
+        src = super().source(name, read)
         args = ",".join(self._derived_from.keys())
         return f"{src}({args})"
 
+    async def _subscribe_child(self, child_signal):
+        """Subscribe to a child signal for updating value changes.
+
+        If *child_signal* is not yet connected, keep retrying until
+        sucessful or the timeout value is reached.
+
+        """
+        handler = partial(self.update_readings, signal=child_signal)
+        while True:
+            try:
+                child_signal.subscribe(handler)
+            except NotImplementedError:
+                await asyncio.sleep(0.01)
+            else:
+                break
+
     async def connect(self, timeout=DEFAULT_TIMEOUT) -> None:
-        await super().connect(timeout=timeout)
-        # Ensure dependent signals are connected
-        connectors = (
-            sig.connect(timeout=timeout) for sig in self._derived_from.values()
-        )
-        await asyncio.gather(*connectors)
         # Listen for changes in the derived_from signals
-        for sig in self._derived_from.values():
-            # Subscribe with a partial in case the signal's name changes
-            if isinstance(sig, Subscribable):
-                sig.subscribe(partial(self.update_readings, signal=sig))
+        sub_signals = self._derived_from.values()
+        sub_signals = (sig for sig in sub_signals if isinstance(sig, Subscribable))
+        subs = (
+            asyncio.wait_for(self._subscribe_child(sig), timeout=timeout)
+            for sig in sub_signals
+        )
+        await asyncio.gather(super().connect(timeout=timeout), *subs)
 
     def combine_readings(self, readings):
         timestamp = max([rd["timestamp"] for rd in readings.values()])
         severity = max([rd.get("severity", 0) for rd in readings.values()])
         values = {sig: rdg["value"] for sig, rdg in readings.items()}
         new_value = self.inverse(values, **self._derived_from)
-        return self.converter.reading(new_value, timestamp, severity)
+        self.reading = Reading(
+            value=self.converter.write_value(new_value),
+            timestamp=timestamp,
+            alarm_severity=severity,
+        )
+        return self.reading
 
     def update_readings(self, reading, signal):
         """Callback receives readings from derived_from signals.
@@ -163,9 +182,9 @@ class DerivedSignalBackend(SoftSignalBackend):
             # We have all the readings, so update the cached values
             new_reading = self.combine_readings(readings)
             if self.callback is not None:
-                self.callback(new_reading, new_reading["value"])
+                self.callback(new_reading)
 
-    def set_callback(self, callback: Optional[ReadingValueCallback[T]]) -> None:
+    def set_callback(self, callback: Callback[Reading[SignalDatatypeT]] | None) -> None:
         super().set_callback(callback)
         self.send_latest_reading()
 
@@ -173,7 +192,7 @@ class DerivedSignalBackend(SoftSignalBackend):
         write_value = (
             self.converter.write_value(value)
             if value is not None
-            else self._initial_value
+            else self.initial_value
         )
         # Calculate the derived set points
         new_values = await self.forward(write_value, **self._derived_from)
@@ -198,21 +217,6 @@ class DerivedSignalBackend(SoftSignalBackend):
         readings = {sig: reading[sig.name] for (sig, reading) in zip(signals, readings)}
         # Return a proper reading for this derived value
         return self.combine_readings(readings)
-
-    async def get_value(self) -> T:
-        # Sort out which types of signals we have
-        gettable_signals = [
-            sig for sig in self._derived_from.values() if hasattr(sig, "get_value")
-        ]
-        # Retrieve current values from signals
-        values = await asyncio.gather(*(sig.get_value() for sig in gettable_signals))
-        values = {sig: val for sig, val in zip(gettable_signals, values)}
-        # Set default value of None for missing signals
-        for sig in self._derived_from.values():
-            values.setdefault(sig, None)
-        # Compute the new value
-        new_value = self.inverse(values, **self._derived_from)
-        return self.converter.value(new_value)
 
 
 def derived_signal_rw(
@@ -287,14 +291,14 @@ def derived_signal_rw(
       values.
 
     """
-    metadata = SignalMetadata(units=units, precision=precision)
     backend = DerivedSignalBackend(
         datatype,
         derived_from=derived_from,
         forward=forward,
         inverse=inverse,
         initial_value=initial_value,
-        metadata=metadata,
+        units=units,
+        precision=precision,
     )
     signal = SignalRW(backend, name=name)
     return signal
@@ -357,13 +361,13 @@ def derived_signal_r(
       values.
 
     """
-    metadata = SignalMetadata(units=units, precision=precision)
     backend = DerivedSignalBackend(
         datatype,
         derived_from=derived_from,
         inverse=inverse,
         initial_value=initial_value,
-        metadata=metadata,
+        units=units,
+        precision=precision,
     )
     signal = SignalR(backend, name=name)
     return signal
@@ -422,12 +426,10 @@ def derived_signal_x(
       values.
 
     """
-    metadata = SignalMetadata()
     backend = DerivedSignalBackend(
         int,
         derived_from=derived_from,
         forward=forward,
-        metadata=metadata,
     )
     signal = SignalX(backend, name=name)
     return signal
@@ -440,14 +442,19 @@ class SignalXVal(SignalX):
         self.trigger_value = trigger_value
         super().__init__(*args, **kwargs)
 
-    def trigger(
-        self, wait=False, timeout: CalculatableTimeout = CALCULATE_TIMEOUT
-    ) -> AsyncStatus:
+    @AsyncStatus.wrap
+    async def trigger(
+        self, wait=True, timeout: CalculatableTimeout = CALCULATE_TIMEOUT
+    ) -> None:
         """Trigger the action and return a status saying when it's done"""
-        if timeout is CALCULATE_TIMEOUT:
+        if timeout == CALCULATE_TIMEOUT:
             timeout = self._timeout
-        coro = self._backend.put(self.trigger_value, wait=wait, timeout=timeout)
-        return AsyncStatus(coro)
+        source = self._connector.backend.source(self.name, read=False)
+        self.log.debug(f"Putting default value to backend at source {source}")
+        await _wait_for(
+            self._connector.backend.put(self.trigger_value, wait=wait), timeout, source
+        )
+        self.log.debug(f"Successfully put default value to backend at source {source}")
 
 
 def epics_signal_xval(write_pv: str, name: str = "", trigger_value=1) -> SignalXVal:

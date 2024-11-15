@@ -4,15 +4,14 @@ import asyncio
 
 # from ophyd import Device
 from ophyd_async.core import (
-    ConfigSignal,
     Device,
-    DeviceVector,
-    HintedSignal,
     StandardReadable,
+    StandardReadableFormat,
+    StrictEnum,
+    SubsetEnum,
 )
-from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw
+from ophyd_async.epics.core import epics_signal_r, epics_signal_rw
 
-from ..typing import StrEnum
 from .synApps import EpicsRecordDeviceCommonAll, EpicsSynAppsRecordEnableMixin
 
 CHANNEL_LETTERS_LIST = "A B C D E F G H I J K L M N O P".split()
@@ -34,7 +33,7 @@ class TransformRecordChannel(StandardReadable):
         ~reset
     """
 
-    class PVValidity(StrEnum):
+    class PVValidity(SubsetEnum):
         EXT_PV_NC = "Ext PV NC"
         EXT_PV_OK = "Ext PV OK"
         LOCAL_PV = "Local PV"
@@ -44,7 +43,7 @@ class TransformRecordChannel(StandardReadable):
         self._ch_letter = letter
         with self.add_children_as_readables():
             self.current_value = epics_signal_rw(float, f"{prefix}.{letter}")
-        with self.add_children_as_readables(ConfigSignal):
+        with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
             self.input_pv = epics_signal_rw(str, f"{prefix}.INP{letter}")
             self.comment = epics_signal_rw(str, f"{prefix}.CMT{letter}")
             self.expression = epics_signal_rw(
@@ -86,16 +85,16 @@ class TransformRecord(EpicsRecordDeviceCommonAll):
     :see: https://htmlpreview.github.io/?https://raw.githubusercontent.com/epics-modules/calc/R3-6-1/documentation/TransformRecord.html#Fields
     """
 
-    class CalcOption(StrEnum):
+    class CalcOption(StrictEnum):
         CONDITIONAL = "Conditional"
         ALWAYS = "Always"
 
-    class InvalidLinkAction(StrEnum):
+    class InvalidLinkAction(SubsetEnum):
         IGNORE_ERROR = "Ignore error"
         DO_NOTHING = "Do Nothing"
 
     def __init__(self, prefix, name=""):
-        with self.add_children_as_readables(ConfigSignal):
+        with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
             self.units = epics_signal_rw(
                 str,
                 f"{prefix}.EGU",
@@ -118,20 +117,18 @@ class TransformRecord(EpicsRecordDeviceCommonAll):
                 int, f"{prefix}.MAP", name="input_bitmap"
             )
         with self.add_children_as_readables():
-            self.channels = DeviceVector(
-                {
-                    char: TransformRecordChannel(prefix=prefix, letter=char)
-                    for char in CHANNEL_LETTERS_LIST
-                }
-            )
+            for letter in CHANNEL_LETTERS_LIST:
+                setattr(
+                    self,
+                    f"channel_{letter}",
+                    TransformRecordChannel(prefix=prefix, letter=letter),
+                )
 
         super().__init__(prefix=prefix, name=name)
-        # Remove dtype, it's broken for some reason
-        del self.device_type
 
     async def reset(self):
         """set all fields to default values"""
-        channels = self.channels.values()
+        channels = [getattr(self, letter) for letter in CHANNEL_LETTERS_LIST]
         await asyncio.gather(
             self.scanning_rate.set(self.ScanInterval.PASSIVE),
             self.description.set(self.name),
@@ -142,7 +139,7 @@ class TransformRecord(EpicsRecordDeviceCommonAll):
             *[ch.reset() for ch in channels],
         )
         # Restore the hinted channels
-        self.add_readables(channels, HintedSignal)
+        self.add_readables(channels, StandardReadableFormat.HINTED_SIGNAL)
 
 
 class UserTransformN(EpicsSynAppsRecordEnableMixin, TransformRecord):
@@ -158,7 +155,7 @@ class UserTransformsDevice(Device):
 
     def __init__(self, prefix, name=""):
         # Config attrs
-        with self.add_children_as_readables(ConfigSignal):
+        with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
             self.enable = epics_signal_rw(int, f"{prefix}userTranEnable", name="enable")
         # Read attrs
         with self.add_children_as_readables():

@@ -14,11 +14,11 @@ async def test_high_heat_load_mirror_PVs():
     assert mirror.bender.user_setpoint.source == "mock+ca://255ida:ORM2:m5.VAL"
     # Check the transform PVs
     assert (
-        mirror.drive_transform.channels["B"].input_pv.source
+        mirror.drive_transform.channel_B.input_pv.source
         == "mock+ca://255ida:ORM2:lats:Drive.INPB"
     )
     assert (
-        mirror.readback_transform.channels["B"].input_pv.source
+        mirror.readback_transform.channel_B.input_pv.source
         == "mock+ca://255ida:ORM2:lats:Readback.INPB"
     )
 
@@ -51,10 +51,10 @@ async def test_kb_mirrors_PVs():
     assert kb.vert.downstream.user_setpoint.source == "mock+ca://255idcVME:m36.VAL"
     # Check the transforms
     assert (
-        kb.horiz.drive_transform.channels["B"].input_pv.source
+        kb.horiz.drive_transform.channel_B.input_pv.source
         == "mock+ca://255idcVME:LongKB_CdnH:Drive.INPB"
     )
     assert (
-        kb.horiz.readback_transform.channels["B"].input_pv.source
+        kb.horiz.readback_transform.channel_B.input_pv.source
         == "mock+ca://255idcVME:LongKB_CdnH:Readback.INPB"
     )
