@@ -1,3 +1,4 @@
+import asyncio
 import math
 import time
 from unittest.mock import AsyncMock
@@ -7,7 +8,15 @@ import pytest
 from ophyd.sim import make_fake_device
 from ophyd_async.core import get_mock_put, set_mock_value
 
-from haven.devices.asymmotron import energy_to_wavelength, wavelength_to_energy, bragg_to_wavelength, wavelength_to_bragg, Analyzer, Asymmotron, bragg_to_energy
+from haven.devices.asymmotron import (
+    Analyzer,
+    Asymmotron,
+    bragg_to_energy,
+    bragg_to_wavelength,
+    energy_to_wavelength,
+    wavelength_to_bragg,
+    wavelength_to_energy,
+)
 
 um_per_mm = 1000
 
@@ -57,8 +66,7 @@ def test_wavelength_to_bragg(theta, d_spacing, wavelength):
     d_spacing *= 1e-10
     wavelength *= 1e-10
     assert (
-        pytest.approx(wavelength_to_bragg(wavelength, d=d_spacing), rel=0.001)
-        == theta
+        pytest.approx(wavelength_to_bragg(wavelength, d=d_spacing), rel=0.001) == theta
     )
 
 
@@ -90,6 +98,16 @@ async def xtal(sim_registry):
     set_mock_value(xtal.d_spacing, Si311_d_spacing)
     set_mock_value(xtal.rowland_diameter, 0.500)
     return xtal
+
+
+async def test_set_hkl(xtal):
+    await xtal.reflection.set("137")
+    hkl = await asyncio.gather(
+        xtal.reflection.h.get_value(),
+        xtal.reflection.k.get_value(),
+        xtal.reflection.l.get_value(),
+    )
+    assert tuple(hkl) == (1, 3, 7)
 
 
 @pytest.mark.parametrize("bragg,alpha,beta,y,x", analyzer_values)
@@ -154,6 +172,7 @@ reflection_values = [
 
 @pytest.mark.parametrize("cut,refl,alpha", reflection_values)
 async def test_asymmetry_angle(xtal, cut, refl, alpha):
+    await xtal.asymmetry_angle.connect(mock=False)
     cut = tuple(int(i) for i in cut)
     refl = tuple(int(i) for i in refl)
     alpha = math.radians(alpha)
@@ -177,13 +196,11 @@ d_spacing_values = [
 
 @pytest.mark.parametrize("hkl,d", d_spacing_values)
 async def test_d_spacing(xtal, hkl, d):
+    await xtal.d_spacing.connect(mock=False)
     await xtal.lattice_constant.set(5.4311959)
     hkl = tuple(int(h) for h in hkl)  # str to tuple
     await xtal.reflection.set(hkl)
     assert await xtal.d_spacing.get_value() == pytest.approx(d, abs=0.001)
-
-
-
 
 
 # -----------------------------------------------------------------------------

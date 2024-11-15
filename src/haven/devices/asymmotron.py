@@ -18,12 +18,20 @@ import asyncio
 import logging
 
 import numpy as np
+from bluesky.protocols import Movable
 from ophyd import Component as Cpt
 from ophyd import Device, EpicsMotor
 from ophyd import FormattedComponent as FCpt
 from ophyd import PseudoPositioner, PseudoSingle, Signal
 from ophyd.pseudopos import pseudo_position_argument, real_position_argument
-from ophyd_async.core import Device, soft_signal_r_and_setter, soft_signal_rw, ConfigSignal, StandardReadable
+from ophyd_async.core import (
+    AsyncStatus,
+    ConfigSignal,
+    Device,
+    StandardReadable,
+    soft_signal_r_and_setter,
+    soft_signal_rw,
+)
 from scipy import constants
 
 from ..positioner import Positioner
@@ -31,8 +39,6 @@ from .motor import Motor
 from .signal import derived_signal_r, derived_signal_rw
 
 log = logging.getLogger(__name__)
-
-HKL = tuple[int, int, int]
 
 um_per_mm = 1000
 
@@ -134,6 +140,36 @@ def hkl_to_alpha(base, reflection):
     return alpha
 
 
+class HKL(StandardReadable, Movable):
+    """A set of (h, k, l) for a lattice plane.
+
+    Settable as ``hkl.set('312')``, which will set ``hkl.h``,
+    ``hkl.k``, and ``hkl.l``.
+
+    """
+
+    def __init__(self, initial_value, name=""):
+        h, k, l = self._to_tuple(initial_value)
+        self.h = soft_signal_rw(int, initial_value=h)
+        self.k = soft_signal_rw(int, initial_value=k)
+        self.l = soft_signal_rw(int, initial_value=l)
+
+        super().__init__(name=name)
+
+    def _to_tuple(self, hkl_str):
+        h, k, l = hkl_str
+        return (h, k, l)
+
+    @AsyncStatus.wrap
+    async def set(self, value):
+        h, k, l = self._to_tuple(value)
+        await asyncio.gather(
+            self.h.set(h),
+            self.k.set(k),
+            self.l.set(l),
+        )
+
+
 class Analyzer(StandardReadable):
     """A single asymmetric analyzer crystal mounted on an Rowland circle.
 
@@ -154,7 +190,7 @@ class Analyzer(StandardReadable):
         rowland_diameter: float | int = 500000,  # µm
         lattice_constant: float = 0.543095e-9,  # m
         wedge_angle: float = np.radians(30),
-        surface_plane: HKL | str = "211",
+        surface_plane: tuple[int, int, int] | str = "211",
         name: str = "",
     ):
         surface_plane = tuple(int(i) for i in surface_plane)
@@ -162,19 +198,39 @@ class Analyzer(StandardReadable):
         self.horizontal = Motor(horizontal_motor_prefix)
         self.vertical = Motor(vertical_motor_prefix)
         self.crystal_yaw = Motor(yaw_motor_prefix)
+        # Reciprocal space geometry
+        self.reflection = HKL(initial_value="111")
+        self.surface_plane = HKL(initial_value=surface_plane)
+        self.add_readables(
+            [
+                self.reflection.h,
+                self.reflection.k,
+                self.reflection.l,
+                self.surface_plane.h,
+                self.surface_plane.k,
+                self.surface_plane.l,
+            ],
+            ConfigSignal,
+        )
         # Soft signals for keeping track of the fixed transform properties
         with self.add_children_as_readables(ConfigSignal):
-            self.rowland_diameter = soft_signal_rw(float, units=self.linear_units, initial_value=rowland_diameter)
-            self.wedge_angle = soft_signal_rw(float, units=self.angular_units, initial_value=wedge_angle)
-            self.lattice_constant = soft_signal_rw(float, units=self.linear_units, initial_value=lattice_constant)
+            self.rowland_diameter = soft_signal_rw(
+                float, units=self.linear_units, initial_value=rowland_diameter
+            )
+            self.wedge_angle = soft_signal_rw(
+                float, units=self.angular_units, initial_value=wedge_angle
+            )
+            self.lattice_constant = soft_signal_rw(
+                float, units=self.linear_units, initial_value=lattice_constant
+            )
             self.bragg_offset = soft_signal_rw(float, units=self.linear_units)
-            self.reflection = soft_signal_rw(HKL, initial_value=(1, 1, 1))
-            self.surface_plane = soft_signal_rw(HKL, initial_value=surface_plane)
             # Soft signals for intermediate, calculated values
             self.d_spacing = derived_signal_r(
                 float,
                 derived_from={
-                    "hkl": self.reflection,
+                    "H": self.reflection.h,
+                    "K": self.reflection.k,
+                    "L": self.reflection.l,
                     "a": self.lattice_constant,
                 },
                 inverse=self._calc_d_spacing,
@@ -184,8 +240,12 @@ class Analyzer(StandardReadable):
             self.asymmetry_angle = derived_signal_r(
                 float,
                 derived_from={
-                    "refl": self.reflection,
-                    "base": self.surface_plane,
+                    "H": self.reflection.h,
+                    "K": self.reflection.k,
+                    "L": self.reflection.l,
+                    "h": self.surface_plane.h,
+                    "k": self.surface_plane.k,
+                    "l": self.surface_plane.l,
                 },
                 units=self.angular_units,
                 inverse=self._calc_alpha,
@@ -193,23 +253,40 @@ class Analyzer(StandardReadable):
         # The actual energy signal that controls the analyzer
         self.energy = EnergyPositioner(xtal=self)
         # Decide which signals should be readable/config/etc
-        self.add_readables([
-            self.energy.readback,
-            self.energy.setpoint,
-            self.vertical.user_readback,
-            self.horizontal.user_readback,
-        ])
-        self.add_readables([
-            self.crystal_yaw.user_readback,
-        ], ConfigSignal)
+        self.add_readables(
+            [
+                self.energy.readback,
+                self.energy.setpoint,
+                self.vertical.user_readback,
+                self.horizontal.user_readback,
+            ]
+        )
+        self.add_readables(
+            [
+                self.crystal_yaw.user_readback,
+            ],
+            ConfigSignal,
+        )
         super().__init__(name=name)
 
-    def _calc_alpha(self, values, refl, base):
-        """Calculate the asymmetry angle for a given reflection and base plane."""
-        return hkl_to_alpha(base=values[base], reflection=values[refl])
+    def _calc_alpha(self, values, H, K, L, h, k, l):
+        """Calculate the asymmetry angle for a given reflection and base plane.
 
-    def _calc_d_spacing(self, values, hkl, a):
-        return values[a] / np.linalg.norm(values[hkl])
+        Parameters
+        ==========
+        H, K, L
+          The specific reflection plane to use.
+        h, k, l
+          The base cut of the crystal surface.
+
+        """
+        base = (values[h], values[k], values[l])
+        refl = (values[H], values[K], values[L])
+        return hkl_to_alpha(base=base, reflection=refl)
+
+    def _calc_d_spacing(self, values, H, K, L, a):
+        hkl = (values[H], values[K], values[L])
+        return values[a] / np.linalg.norm(hkl)
 
 
 class EnergyPositioner(Positioner):
