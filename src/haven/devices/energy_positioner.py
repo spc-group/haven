@@ -4,8 +4,8 @@ from ophyd_async.core import (
     CALCULATE_TIMEOUT,
     AsyncStatus,
     CalculatableTimeout,
-    HintedSignal,
     Signal,
+    StandardReadableFormat,
 )
 
 from ..positioner import Positioner
@@ -78,7 +78,7 @@ class EnergyPositioner(Positioner):
                 forward=self.set_energy,
                 inverse=self.get_energy,
             )
-        with self.add_children_as_readables(HintedSignal):
+        with self.add_children_as_readables(StandardReadableFormat.HINTED_SIGNAL):
             self.readback = derived_signal_r(
                 float,
                 derived_from={"mono": self.monochromator.energy.user_readback},
