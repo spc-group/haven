@@ -63,8 +63,8 @@ settling_times = {
     ("20", "pA/V", "HIGH BW"): 0.5,
     ("50", "pA/V", "HIGH BW"): 0.5,
     ("100", "pA/V", "HIGH BW"): 0.5,
-    ("200", "pA/V", "HIGH BW"): 0.3,
-    ("500", "pA/V", "HIGH BW"): 0.3,
+    ("200", "pA/V", "HIGH BW"): 0.5,
+    ("500", "pA/V", "HIGH BW"): 0.5,
     ("1", "pA/V", "LOW NOISE"): 3.0,
     ("2", "pA/V", "LOW NOISE"): 2.5,
     ("5", "pA/V", "LOW NOISE"): 2.0,
@@ -78,35 +78,35 @@ settling_times = {
 settling_times.update(
     {
         # nA/V, high bandwidth
-        (gain_values[idx], "nA/V", "HIGH BW"): 0.3
+        (gain_values[idx], "nA/V", "HIGH BW"): 0.5
         for idx in range(9)
     }
 )
 settling_times.update(
     {
         # nA/V, low noise
-        (gain_values[idx], "nA/V", "LOW NOISE"): 0.3
+        (gain_values[idx], "nA/V", "LOW NOISE"): 0.5
         for idx in range(9)
     }
 )
 settling_times.update(
     {
         # μA/V, high bandwidth
-        (gain_values[idx], "uA/V", "HIGH BW"): 0.3
+        (gain_values[idx], "uA/V", "HIGH BW"): 0.5
         for idx in range(9)
     }
 )
 settling_times.update(
     {
         # μA/V, low noise
-        (gain_values[idx], "uA/V", "LOW NOISE"): 0.3
+        (gain_values[idx], "uA/V", "LOW NOISE"): 0.5
         for idx in range(9)
     }
 )
 settling_times.update(
     {
-        ("1", "mA/V", "HIGH BW"): 0.3,
-        ("1", "mA/V", "LOW NOISE"): 0.3,
+        ("1", "mA/V", "HIGH BW"): 0.5,
+        ("1", "mA/V", "LOW NOISE"): 0.5,
     }
 )
 
