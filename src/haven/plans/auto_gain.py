@@ -95,7 +95,7 @@ class GainRecommender:
         values_in_range = df[(df.volts < self.volts_max) & (df.volts > self.volts_min)]
         needed_gains = np.arange(
             df[df.volts < self.volts_min].gain.max() + 1,
-            df[df.volts > self.volts_max].gain.max(),
+            df[df.volts > self.volts_max].gain.min(),
         )
         missing_gains = [
             gain for gain in needed_gains if gain not in values_in_range.gain
