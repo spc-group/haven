@@ -80,7 +80,6 @@ class Positioner(StandardReadable, Movable, Stoppable):
         wait: bool = True,
         timeout: CalculatableTimeout = CALCULATE_TIMEOUT,
     ):
-        assert wait, "``wait==False`` not supported."
         new_position = value
         self._set_success = True
         old_position, current_position, units, precision, velocity = (
@@ -113,8 +112,10 @@ class Positioner(StandardReadable, Movable, Stoppable):
         else:
             # Wait for the value to set, but don't wait for put completion callback
             set_status = self.setpoint.set(
-                new_position, wait=self.put_complete, timeout=timeout
+                new_position, wait=(wait and self.put_complete), timeout=timeout
             )
+        if not wait:
+            return
         # Decide on how we will wait for completion
         if self.put_complete:
             # await the set call directly
@@ -133,6 +134,9 @@ class Positioner(StandardReadable, Movable, Stoppable):
             # Monitor based on readback position
             aws = asyncio.gather(reached_setpoint.wait(), set_status)
             done_status = AsyncStatus(asyncio.wait_for(aws, timeout))
+        # If we don't care to wait for the return value, we can end
+        if not wait:
+            return
         # Monitor the position of the readback value
         async for current_position in observe_value(
             self.readback, done_status=done_status

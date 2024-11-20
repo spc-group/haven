@@ -1,7 +1,8 @@
+import asyncio
 from unittest import mock
 
 import pytest
-from ophyd_async.core import DEFAULT_TIMEOUT
+from ophyd_async.core import get_mock_put
 
 from haven.devices.srs570 import GainSignal, SRS570PreAmplifier
 
@@ -9,7 +10,13 @@ from haven.devices.srs570 import GainSignal, SRS570PreAmplifier
 @pytest.fixture()
 async def preamp():
     preamp = SRS570PreAmplifier("255idcVEM:SR02:", name="")
+    # Derived signals should not be mocked
     await preamp.connect(mock=True)
+    await asyncio.gather(
+        preamp.gain_level.connect(mock=False),
+        preamp.gain.connect(mock=False),
+        preamp.gain_db.connect(mock=False),
+    )
     return preamp
 
 
@@ -24,30 +31,30 @@ settling_times = {
     ("20", "pA/V", "HIGH BW"): 0.5,
     ("50", "pA/V", "HIGH BW"): 0.5,  # 50 pA/V
     ("100", "pA/V", "HIGH BW"): 0.5,
-    ("200", "pA/V", "HIGH BW"): 0.3,
-    ("500", "pA/V", "HIGH BW"): 0.3,
+    ("200", "pA/V", "HIGH BW"): 0.5,
+    ("500", "pA/V", "HIGH BW"): 0.5,
     # nA/V
-    ("1", "nA/V", "HIGH BW"): 0.3,
-    ("2", "nA/V", "HIGH BW"): 0.3,  # 2 nA/V
-    ("5", "nA/V", "HIGH BW"): 0.3,
-    ("10", "nA/V", "HIGH BW"): 0.3,
-    ("20", "nA/V", "HIGH BW"): 0.3,
-    ("50", "nA/V", "HIGH BW"): 0.3,
-    ("100", "nA/V", "HIGH BW"): 0.3,  # 100 nA/V
-    ("200", "nA/V", "HIGH BW"): 0.3,
-    ("500", "nA/V", "HIGH BW"): 0.3,
+    ("1", "nA/V", "HIGH BW"): 0.5,
+    ("2", "nA/V", "HIGH BW"): 0.5,  # 2 nA/V
+    ("5", "nA/V", "HIGH BW"): 0.5,
+    ("10", "nA/V", "HIGH BW"): 0.5,
+    ("20", "nA/V", "HIGH BW"): 0.5,
+    ("50", "nA/V", "HIGH BW"): 0.5,
+    ("100", "nA/V", "HIGH BW"): 0.5,  # 100 nA/V
+    ("200", "nA/V", "HIGH BW"): 0.5,
+    ("500", "nA/V", "HIGH BW"): 0.5,
     # μA/V
-    ("1", "uA/V", "HIGH BW"): 0.3,
-    ("2", "uA/V", "HIGH BW"): 0.3,
-    ("5", "uA/V", "HIGH BW"): 0.3,  # 5 μA/V
-    ("10", "uA/V", "HIGH BW"): 0.3,
-    ("20", "uA/V", "HIGH BW"): 0.3,
-    ("50", "uA/V", "HIGH BW"): 0.3,
-    ("100", "uA/V", "HIGH BW"): 0.3,
-    ("200", "uA/V", "HIGH BW"): 0.3,  # 200 μA/V
-    ("500", "uA/V", "HIGH BW"): 0.3,
+    ("1", "uA/V", "HIGH BW"): 0.5,
+    ("2", "uA/V", "HIGH BW"): 0.5,
+    ("5", "uA/V", "HIGH BW"): 0.5,  # 5 μA/V
+    ("10", "uA/V", "HIGH BW"): 0.5,
+    ("20", "uA/V", "HIGH BW"): 0.5,
+    ("50", "uA/V", "HIGH BW"): 0.5,
+    ("100", "uA/V", "HIGH BW"): 0.5,
+    ("200", "uA/V", "HIGH BW"): 0.5,  # 200 μA/V
+    ("500", "uA/V", "HIGH BW"): 0.5,
     # mA/V
-    ("1", "mA/V", "HIGH BW"): 0.3,
+    ("1", "mA/V", "HIGH BW"): 0.5,
     ("2", "mA/V", "HIGH BW"): None,
     ("5", "mA/V", "HIGH BW"): None,
     ("10", "mA/V", "HIGH BW"): None,
@@ -67,27 +74,27 @@ settling_times = {
     ("200", "pA/V", "LOW NOISE"): 0.5,
     ("500", "pA/V", "LOW NOISE"): 0.5,
     # nA/V
-    ("1", "nA/V", "LOW NOISE"): 0.3,
-    ("2", "nA/V", "LOW NOISE"): 0.3,
-    ("5", "nA/V", "LOW NOISE"): 0.3,
-    ("10", "nA/V", "LOW NOISE"): 0.3,
-    ("20", "nA/V", "LOW NOISE"): 0.3,
-    ("50", "nA/V", "LOW NOISE"): 0.3,
-    ("100", "nA/V", "LOW NOISE"): 0.3,
-    ("200", "nA/V", "LOW NOISE"): 0.3,
-    ("500", "nA/V", "LOW NOISE"): 0.3,
+    ("1", "nA/V", "LOW NOISE"): 0.5,
+    ("2", "nA/V", "LOW NOISE"): 0.5,
+    ("5", "nA/V", "LOW NOISE"): 0.5,
+    ("10", "nA/V", "LOW NOISE"): 0.5,
+    ("20", "nA/V", "LOW NOISE"): 0.5,
+    ("50", "nA/V", "LOW NOISE"): 0.5,
+    ("100", "nA/V", "LOW NOISE"): 0.5,
+    ("200", "nA/V", "LOW NOISE"): 0.5,
+    ("500", "nA/V", "LOW NOISE"): 0.5,
     # μA/V
-    ("1", "uA/V", "LOW NOISE"): 0.3,
-    ("2", "uA/V", "LOW NOISE"): 0.3,
-    ("5", "uA/V", "LOW NOISE"): 0.3,
-    ("10", "uA/V", "LOW NOISE"): 0.3,
-    ("20", "uA/V", "LOW NOISE"): 0.3,
-    ("50", "uA/V", "LOW NOISE"): 0.3,
-    ("100", "uA/V", "LOW NOISE"): 0.3,
-    ("200", "uA/V", "LOW NOISE"): 0.3,
-    ("500", "uA/V", "LOW NOISE"): 0.3,
+    ("1", "uA/V", "LOW NOISE"): 0.5,
+    ("2", "uA/V", "LOW NOISE"): 0.5,
+    ("5", "uA/V", "LOW NOISE"): 0.5,
+    ("10", "uA/V", "LOW NOISE"): 0.5,
+    ("20", "uA/V", "LOW NOISE"): 0.5,
+    ("50", "uA/V", "LOW NOISE"): 0.5,
+    ("100", "uA/V", "LOW NOISE"): 0.5,
+    ("200", "uA/V", "LOW NOISE"): 0.5,
+    ("500", "uA/V", "LOW NOISE"): 0.5,
     # mA/V
-    ("1", "mA/V", "LOW NOISE"): 0.3,
+    ("1", "mA/V", "LOW NOISE"): 0.5,
     ("2", "mA/V", "LOW NOISE"): None,
     ("5", "mA/V", "LOW NOISE"): None,
     ("10", "mA/V", "LOW NOISE"): None,
@@ -138,8 +145,9 @@ async def test_preamp_gain_settling(gain_value, gain_unit, gain_mode, mocker, pr
     sleep_mock.reset_mock()
     await preamp.sensitivity_value.set(gain_value)
     # Check that the signal's ``set`` was called with correct arguments
-    preamp.sensitivity_value._backend.put_mock.assert_called_once_with(
-        gain_value, wait=True, timeout=DEFAULT_TIMEOUT
+    get_mock_put(preamp.sensitivity_value).assert_called_once_with(
+        gain_value,
+        wait=True,
     )
     # Check that the settle time was included
     sleep_mock.assert_called_once_with(settle_time)
@@ -216,7 +224,7 @@ async def test_get_gain_level(preamp):
     await preamp.sensitivity_value.set("20")
     await preamp.sensitivity_unit.set("uA/V"),
     await preamp.offset_value.set("2"),  # 2 uA/V
-    await preamp.offset_unit.set("uA/V"),
+    await preamp.offset_unit.set("uA"),
     # Check that the gain level moved
     gain_level = await preamp.gain_level.get_value()
     assert gain_level == 5

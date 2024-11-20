@@ -13,6 +13,7 @@ from bluesky.plan_stubs import mv, mvr, rd  # noqa: F401
 from bluesky.run_engine import RunEngine, call_in_bluesky_event_loop  # noqa: F401
 from bluesky.simulators import summarize_plan  # noqa: F401
 from ophyd_async.core import NotConnected
+from ophydregistry import ComponentNotFound
 import matplotlib.pyplot as plt
 from rich import print
 from rich.align import Align
@@ -59,7 +60,7 @@ except NotConnected as exc:
 num_devices = len(haven.beamline.registry.root_devices)
 print(f"Connected to {num_devices} devices in {time.monotonic() - t0:.2f} seconds.", flush=True)
 
-# Save references to some commonly used things in the global namespace
+# Save references to all the devices in the global namespace
 registry = haven.beamline.registry
 ion_chambers = registry.findall("ion_chambers", allow_none=True)
 for cpt in registry._objects_by_name.values():

@@ -84,11 +84,13 @@ async def test_connect(instrument):
     # Are devices disconnected to start with?
     assert all([d._connect_task is None for d in async_devices])
     assert all([not d.connected is None for d in sync_devices])
+    for device in async_devices:
+        device._connector.connect_mock = AsyncMock()
     # Connect the device
     await instrument.connect(mock=True)
     # Are devices connected afterwards?
     # NB: This doesn't actually test the code for threaded devices
-    assert all([d._connect_task.done for d in async_devices])
+    assert all([d._connector.connect_mock.called for d in async_devices])
 
 
 async def test_load(monkeypatch):

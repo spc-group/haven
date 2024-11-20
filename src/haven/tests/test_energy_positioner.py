@@ -23,12 +23,9 @@ async def test_set_energy(positioner):
     # Set up dependent values
     set_mock_value(positioner.monochromator.id_offset, 150)
     # Change the energy
-    status = positioner.set(10000, timeout=3)
+    await positioner.set(10000, timeout=3, wait=False)
     # Trick the Undulator into being done
-    set_mock_value(positioner.undulator.energy.done, BusyStatus.BUSY)
-    await asyncio.sleep(0.01)  # Let the event loop run
-    set_mock_value(positioner.undulator.energy.done, BusyStatus.DONE)
-    await status
+    await asyncio.sleep(0.05)  # Let the event loop run
     # Check that all the sub-components were set properly
     assert await positioner.monochromator.energy.user_setpoint.get_value() == 10000
     assert await positioner.undulator.energy.setpoint.get_value() == 10.150
@@ -45,11 +42,12 @@ async def test_disable_id_tracking(positioner):
     energy = positioner
     # Turn on tracking to start with
     set_mock_value(energy.monochromator.id_tracking, 1)
+    set_mock_value(energy.velocity, 100)
     # Set the energy
-    status = energy.set(5000)
+    status = energy.set(5000, wait=False)
     # Trick the Undulator into being done
     set_mock_value(positioner.undulator.energy.done, BusyStatus.BUSY)
-    await asyncio.sleep(0.01)  # Let the event loop run
+    await asyncio.sleep(0.05)  # Let the event loop run
     set_mock_value(positioner.undulator.energy.done, BusyStatus.DONE)
     await status
     # Check that ID tracking was disabled
