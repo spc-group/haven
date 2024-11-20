@@ -39,6 +39,7 @@ from ophyd.areadetector.plugins import (
     PvaPlugin_V34,
     ROIPlugin_V31,
     ROIPlugin_V34,
+    TransformPlugin_V34,
 )
 from ophyd.areadetector.plugins import StatsPlugin_V31 as OphydStatsPlugin_V31
 from ophyd.areadetector.plugins import StatsPlugin_V34 as OphydStatsPlugin_V34
@@ -315,18 +316,25 @@ class DynamicFileStore(Device):
     """File store mixin that alters the write_path_template based on
     iconfig values.
 
+    Parameters
+    ==========
+    write_path_template
+      A format string to use for deciding file paths. Can accept keys
+      {root_path} and {name}.
+
     """
 
     def __init__(
-        self, *args, write_path_template="/{root_path}/%Y/%m/{name}/", **kwargs
+        self, *args, write_path_template="{root_path}/%Y/%m/{name}/", **kwargs
     ):
+        write_path_template = write_path_template.lstrip('/')
         super().__init__(*args, write_path_template=write_path_template, **kwargs)
         # Format the file_write_template with per-device values
         config = load_config()
         try:
             self.write_path_template = self.write_path_template.format(
                 name=self.parent.name,
-                root_path=config.get("area_detector_root_path", "tmp"),
+                root_path=config.get("area_detector_root_path", "/tmp").lstrip('/'),
             )
         except KeyError:
             warnings.warn(f"Could not format write_path_template {write_path_template}")
@@ -509,6 +517,7 @@ class Eiger500K(SingleTrigger, DetectorBase):
 class AravisCam(AsyncCamMixin, CamBase):
     gain_auto = ADCpt(EpicsSignal, "GainAuto")
     acquire_time_auto = ADCpt(EpicsSignal, "ExposureAuto")
+    pixel_format = ADCpt(EpicsSignal, "PixelFormat")
 
 
 class AravisDetector(SingleImageModeTrigger, DetectorBase):
@@ -523,6 +532,7 @@ class AravisDetector(SingleImageModeTrigger, DetectorBase):
         "stats2",
         "stats3",
         "stats4",
+        "trans1",
     )
     _default_read_attrs = ("cam", "hdf", "stats1", "stats2", "stats3", "stats4")
 
@@ -539,6 +549,7 @@ class AravisDetector(SingleImageModeTrigger, DetectorBase):
     stats3 = ADCpt(StatsPlugin_V34, "Stats3:", kind=Kind.normal)
     stats4 = ADCpt(StatsPlugin_V34, "Stats4:", kind=Kind.normal)
     stats5 = ADCpt(StatsPlugin_V34, "Stats5:", kind=Kind.normal)
+    trans1 = ADCpt(TransformPlugin_V34, "Trans1:", kind=Kind.config)
     hdf = ADCpt(HDF5FilePlugin, "HDF1:", kind=Kind.normal)
     # tiff = ADCpt(TIFFFilePlugin, "TIFF1:", kind=Kind.normal)
 
