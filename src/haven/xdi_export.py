@@ -3,7 +3,7 @@
 For now it's actually a csv file, but we'll get to the XDI part later.
 
 """
-
+import time
 import numpy as np
 import pandas as pd
 import datetime as dt
@@ -13,6 +13,7 @@ import unicodedata
 import warnings
 from pathlib import Path
 from typing import Mapping, Optional, Sequence, Union
+from httpx import HTTPStatusError
 
 from bluesky.callbacks import CallbackBase
 
@@ -157,8 +158,18 @@ class XDIWriter(CallbackBase):
         roi_data = {f"roi{idx}": imgs[:, slice(*roi[0]), slice(*roi[1])] for idx, roi in enumerate(rois)}
         roi_data['total'] = imgs
         roi_data = {key: np.sum(arr, axis=(1, 2)) for key, arr in roi_data.items()}
-        energy = data['energy']
-        roi_data['energy /eV'] = energy
+        try:
+            energy = data['energy']
+        except KeyError:
+            pass
+        else:
+            roi_data['energy /eV'] = energy
+        for analyzer_idx in range(4):
+            key = f"analyzer{analyzer_idx}-energy"
+            try:
+                roi_data[key] = data[key]
+            except KeyError:
+                pass
         I0 = data["I0-net_current"]
         time = cfg['eiger/eiger_cam_acquire_time'][0].compute()
         corr = {f"{key}_corr": vals / I0 / time for key, vals in roi_data.items()}
@@ -174,7 +185,7 @@ class XDIWriter(CallbackBase):
         ]
         for sig in extra_signals:
             roi_data[sig] = data[sig]
-        df = pd.DataFrame(roi_data, index=energy)
+        df = pd.DataFrame(roi_data)
         return df
 
     def file_path(self, start_doc: Mapping):
@@ -208,18 +219,36 @@ class XDIWriter(CallbackBase):
         fp = Path(fp)
         return fp
 
-    def write_xdi_file(self, uid: str):
+    def write_xdi_file(self, uid: str, overwrite=False):
+        t0 = time.monotonic()
+        timeout = 20
+        scan = None
         # Retrieve scan info from the database
         scan = self.client[uid]
         start_doc = scan.metadata['start']
-        df = self.load_dataframe(uid)
+        df = None
+        while df is None:
+            try:
+                df = self.load_dataframe(uid)
+            except HTTPStatusError:
+                print(time.monotonic() - t0)
+                if (time.monotonic() - t0) < timeout:
+                    time.sleep(0.1)
+                    continue
+                else:
+                    raise
         # Create the file
         fp = self.file_path(scan.metadata['start'])
-        with open(fp, mode='x') as fd:
+        if overwrite:
+            mode = "w"
+        else:
+            mode = "x"
+        with open(fp, mode=mode) as fd:
             # Write header
             self.write_header(doc=start_doc, fd=fd, column_names=df.columns)
             # Write data
             df.to_csv(fd, sep=self.sep, index_label="index")
+        print(f"Wrote scan to file: {str(fp)}.")
 
     def stop(self, doc):
         self.write_xdi_file(doc["run_start"])
