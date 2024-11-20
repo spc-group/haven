@@ -3,7 +3,7 @@ import time
 import pytest
 from ophyd.sim import instantiate_fake_device
 
-from haven.instrument import lerix
+from haven.devices import lerix
 
 um_per_mm = 1000
 
@@ -139,16 +139,6 @@ def test_rowland_circle_component():
     assert result.y.user_setpoint == pytest.approx(375.0 * um_per_mm)
     assert result.z.user_setpoint == pytest.approx(216.50635094610968 * um_per_mm)
     assert result.z1.user_setpoint == pytest.approx(1.5308084989341912e-14 * um_per_mm)
-
-
-def test_load_lerix_spectrometers(sim_registry):
-    lerix.load_lerix_spectrometers()
-    device = sim_registry.find(name="lerix")
-    assert device.name == "lerix"
-    assert device.x.prefix == "255idVME:m1"
-    assert device.y.prefix == "255idVME:m2"
-    assert device.z.prefix == "255idVME:m3"
-    assert device.z1.prefix == "255idVME:m4"
 
 
 # -----------------------------------------------------------------------------

@@ -7,20 +7,20 @@ from pathlib import Path
 import pydm
 import pyqtgraph as pg
 import qtawesome as qta
+from ophyd_async.core import NotConnected
 from ophydregistry import Registry
 from qasync import asyncSlot
 from qtpy import QtCore, QtWidgets
 from qtpy.QtCore import Signal
 from qtpy.QtGui import QIcon, QKeySequence
-from qtpy.QtWidgets import QAction
+from qtpy.QtWidgets import QAction, QErrorMessage
 
-from haven import load_config
-from haven import load_instrument as load_haven_instrument
-from haven import registry
+from haven import beamline, load_config
+from haven.device import titelize
 from haven.exceptions import ComponentNotFound, InvalidConfiguration
-from haven.instrument.device import titelize
 
 from .action import Action, ActionsRegistry, WindowAction
+from .kafka_client import KafkaClient
 from .main_window import FireflyMainWindow, PlanMainWindow
 from .queue_client import QueueClient, queueserver_api
 
@@ -53,6 +53,11 @@ class FireflyController(QtCore.QObject):
     # Signals for running plans on the queueserver
     queue_item_added = Signal(object)
 
+    # Signals responding to queueserver documents over kafka
+    run_started = Signal(str)
+    run_updated = Signal(str)
+    run_stopped = Signal(str)
+
     # Signals responding to queueserver changes
     queue_status_changed = Signal(dict)
     queue_in_use_changed = Signal(bool)  # length > 0, or running
@@ -72,7 +77,9 @@ class FireflyController(QtCore.QObject):
         self.actions = ActionsRegistry()
         self.windows = OrderedDict()
         self.queue_re_state_changed.connect(self.enable_queue_controls)
-        self.registry = registry
+        self.registry = beamline.registry
+        # An error message dialog for later use
+        self.error_message = QErrorMessage()
 
     def _setup_window_action(
         self, action_name: str, text: str, slot: QtCore.Slot, shortcut=None, icon=None
@@ -87,11 +94,6 @@ class FireflyController(QtCore.QObject):
             action.setIcon(qta.icon(icon))
         setattr(self, action_name, action)
         return action
-
-    def reload_instrument(self, load_instrument=True):
-        """(Re)load all the instrument devices."""
-        load_haven_instrument(registry=self.registry)
-        self.registry_changed.emit(self.registry)
 
     async def setup_instrument(self, load_instrument=True):
         """Set up the application to use a previously loaded instrument.
@@ -110,14 +112,15 @@ class FireflyController(QtCore.QObject):
 
         """
         if load_instrument:
-            await load_haven_instrument(registry=self.registry)
-            self.registry_changed.emit(self.registry)
-        # Fake device for testing
-        from ophyd_async.epics.motor import Motor
-
-        sim_async_motor = Motor("255idcVME", name="sim_async_motor")
-        await sim_async_motor.connect(mock=True)
-        registry.register(sim_async_motor, labels={"motors", "extra_motors"})
+            try:
+                await beamline.load()
+            except NotConnected as exc:
+                log.exception(exc)
+                msg = (
+                    "One or more devices failed to load. See console logs for details."
+                )
+                self.error_message.showMessage(msg)
+            self.registry_changed.emit(beamline.registry)
         # Make actions for launching other windows
         self.setup_window_actions()
         # Actions for controlling the bluesky run engine
@@ -169,17 +172,19 @@ class FireflyController(QtCore.QObject):
             device_key="DEVICE",
             icon=qta.icon("mdi.crop"),
         )
-        self.actions.kb_mirrors = self.device_actions(
-            device_label="kb_mirrors",
-            display_file=ui_dir / "kb_mirrors.py",
-            device_key="DEVICE",
-            icon=qta.icon("msc.mirror"),
-        )
         self.actions.mirrors = self.device_actions(
             device_label="mirrors",
             display_file=ui_dir / "mirror.py",
             device_key="DEVICE",
             icon=qta.icon("msc.mirror"),
+        )
+        self.actions.mirrors.update(
+            self.device_actions(
+                device_label="kb_mirrors",
+                display_file=ui_dir / "kb_mirrors.py",
+                device_key="DEVICE",
+                icon=qta.icon("msc.mirror"),
+            )
         )
         self.actions.tables = self.device_actions(
             device_label="tables",
@@ -262,10 +267,13 @@ class FireflyController(QtCore.QObject):
         self.actions.run_browser = WindowAction(
             name="show_run_browser_action",
             text="Browse Runs",
-            display_file=ui_dir / "run_browser.py",
+            display_file=ui_dir / "run_browser" / "display.py",
             shortcut="Ctrl+Shift+B",
             icon=qta.icon("mdi.book-open-variant"),
             WindowClass=FireflyMainWindow,
+        )
+        self.actions.run_browser.window_created.connect(
+            self.finalize_run_browser_window
         )
         # Action for showing the beamline scheduling window
         self.actions.bss = WindowAction(
@@ -324,6 +332,12 @@ class FireflyController(QtCore.QObject):
         action.display.queue_item_submitted.connect(self.add_queue_item)
         # Send the current devices to the window
         await action.window.update_devices(self.registry)
+
+    def finalize_run_browser_window(self, action):
+        """Connect up signals that are specific to the run browser window."""
+        display = action.display
+        self.run_updated.connect(display.update_running_scan)
+        self.run_stopped.connect(display.update_running_scan)
 
     def finalize_status_window(self, action):
         """Connect up signals that are specific to the voltmeters window."""
@@ -497,6 +511,19 @@ class FireflyController(QtCore.QObject):
         }
         return actions
 
+    def prepare_kafka_client(self):
+        client = KafkaClient()
+        self._kafka_client = client
+        client.run_started.connect(self.run_started)
+        client.run_updated.connect(self.run_updated)
+        client.run_stopped.connect(self.run_stopped)
+
+    def start_kafka_client(self):
+        try:
+            self._kafka_client.start()
+        except Exception as exc:
+            log.error(f"Could not start kafka client: {exc}")
+
     def start_queue_client(self):
         try:
             self._queue_client.start()
@@ -574,9 +601,10 @@ class FireflyController(QtCore.QObject):
 
     def start(self):
         """Start the background clients."""
-        # Show the UI stuffs
         self.prepare_queue_client()
+        self.prepare_kafka_client()
         self.start_queue_client()
+        self.start_kafka_client()
 
     def update_devices_allowed(self, devices):
         pass

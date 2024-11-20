@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>${DEVICE_TITLE}</string>
+   <string>${DEVICE}</string>
   </property>
   <widget class="QLabel" name="label">
    <property name="geometry">
@@ -34,7 +34,7 @@
     <rect>
      <x>250</x>
      <y>17</y>
-     <width>111</width>
+     <width>151</width>
      <height>111</height>
     </rect>
    </property>
@@ -48,7 +48,7 @@
     <enum>QFrame::NoFrame</enum>
    </property>
    <property name="macros" stdset="0">
-    <string>TITLE=Vertical,AXIS=${DEVICE}.vertical</string>
+    <string>TITLE=Vertical,AXIS=${DEVICE}.vertical,DIRECTION=vertical</string>
    </property>
    <property name="filename" stdset="0">
     <string>slits_motor.ui</string>
@@ -57,9 +57,9 @@
   <widget class="PyDMEmbeddedDisplay" name="pitch_embedded_display">
    <property name="geometry">
     <rect>
-     <x>80</x>
-     <y>12</y>
-     <width>111</width>
+     <x>10</x>
+     <y>10</y>
+     <width>151</width>
      <height>111</height>
     </rect>
    </property>
@@ -226,9 +226,9 @@
   <widget class="PyDMEmbeddedDisplay" name="horizontal_embedded_display">
    <property name="geometry">
     <rect>
-     <x>200</x>
-     <y>150</y>
-     <width>111</width>
+     <x>190</x>
+     <y>140</y>
+     <width>151</width>
      <height>111</height>
     </rect>
    </property>
@@ -244,7 +244,7 @@ color: white;
     <enum>QFrame::NoFrame</enum>
    </property>
    <property name="macros" stdset="0">
-    <string>TITLE=Horizontal,AXIS=${DEVICE}.horizontal</string>
+    <string>TITLE=Horizontal,AXIS=${DEVICE}.horizontal,DIRECTION=horizontal</string>
    </property>
    <property name="filename" stdset="0">
     <string>slits_motor.ui</string>
@@ -279,6 +279,7 @@ color: white;
    <class>PyDMEmbeddedDisplay</class>
    <extends>QFrame</extends>
    <header>pydm.widgets.embedded_display</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources>

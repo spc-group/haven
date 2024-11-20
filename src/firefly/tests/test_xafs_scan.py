@@ -9,10 +9,10 @@ from qtpy import QtCore
 from firefly.plans.xafs_scan import XafsScanDisplay
 
 # default values for EXAFS scan
-pre_edge = [-50, -20, 1]
-XANES_region = [-20, 50, 0.2]
-EXAFS_region = [50, 500, 0.5]
-default_values = [pre_edge, XANES_region, EXAFS_region]
+pre_edge = [-200, -50, 5]
+xanes_region = [-50, 50, 0.5]
+exafs_region = [50, 800, 0.5]
+default_values = [pre_edge, xanes_region, exafs_region]
 
 
 @pytest.fixture()
@@ -78,7 +78,7 @@ def test_E0_checkbox(display):
         float(display.regions[i].start_line_edit.text()), 3.6226, decimal=4
     )
     np.testing.assert_almost_equal(
-        float(display.regions[i].stop_line_edit.text()), 11.4557, decimal=4
+        float(display.regions[i].stop_line_edit.text()), 14.4905, decimal=4
     )
     np.testing.assert_almost_equal(
         float(display.regions[i].step_line_edit.text()), 3.64069 - 3.6226, decimal=4
@@ -119,7 +119,7 @@ def test_xafs_scan_plan_queued_energies(display, qtbot):
         E0=11500.8,
         detectors=["vortex_me4", "I0"],
         md={
-            "sample": "sam",
+            "sample_name": "sam",
             "purpose": "test",
             "is_standard": True,
             "notes": "sam_notes",
@@ -220,7 +220,7 @@ def test_xafs_scan_plan_queued_energies_k_mixed(qtbot, display):
         E0=11500.8,
         detectors=["vortex_me4", "I0"],
         md={
-            "sample": "sam",
+            "sample_name": "sam",
             "is_standard": False,
             "notes": "sam_notes",
         },

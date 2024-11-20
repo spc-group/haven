@@ -4,9 +4,9 @@ import pytest
 from bluesky.protocols import Flyable
 from ophyd_async.core import get_mock_put
 
-from haven.instrument.motor import HavenMotor
-from haven.instrument.motor import Motor as AsyncMotor
-from haven.instrument.motor import load_motors
+from haven.devices.motor import HavenMotor
+from haven.devices.motor import Motor as AsyncMotor
+from haven.devices.motor import load_motors
 
 
 @pytest.fixture()
@@ -17,11 +17,10 @@ async def motor(sim_registry):
 
 
 @pytest.mark.asyncio
-async def test_load_vme_motors(sim_registry, monkeypatch):
+async def test_load_motors(sim_registry, monkeypatch):
     # Load the Ophyd motor definitions
-    await load_motors(registry=sim_registry, auto_name=False)
+    motors = load_motors(prefix="255idVME:", num_motors=3)
     # Were the motors imported correctly
-    motors = list(sim_registry.findall(label="motors"))
     assert len(motors) == 3
     # assert type(motors[0]) is HavenMotor
     motor_names = [m.name for m in motors]
@@ -29,28 +28,8 @@ async def test_load_vme_motors(sim_registry, monkeypatch):
     assert "255idVME_m2" in motor_names
     assert "255idVME_m3" in motor_names
     # Check that the IOC name is set in labels
-    motor1 = sim_registry.find(name="255idVME_m1")
-    assert "VME_crate" in motor1._ophyd_labels_
-
-
-@pytest.mark.asyncio
-async def test_skip_existing_motors(sim_registry):
-    """If a motor already exists from another device, don't add it to the
-    motors group.
-
-    """
-    # Create an existing fake motor
-    m1 = AsyncMotor("255idVME:m1", name="kb_mirrors_horiz_upstream", labels={"motors"})
-    sim_registry.register(m1)
-    # Load the Ophyd motor definitions
-    await load_motors(auto_name=False)
-    # Were the motors imported correctly
-    motors = list(sim_registry.findall(label="motors"))
-    assert len(motors) == 3
-    motor_names = [m.name for m in motors]
-    assert "kb_mirrors_horiz_upstream" in motor_names
-    assert "255idVME_m2" in motor_names
-    assert "255idVME_m3" in motor_names
+    motor1 = motors[0]
+    assert "extra_motors" in motor1._ophyd_labels_
 
 
 def test_motor_signals():
@@ -87,7 +66,7 @@ async def test_stop_button(motor):
     assert motor.motor_stop.parent is motor
     await motor.motor_stop.trigger()
     mock = get_mock_put(motor.motor_stop)
-    mock.assert_called_once_with(1, wait=False, timeout=10.0)
+    mock.assert_called_once_with(1, wait=True)
 
 
 @pytest.mark.asyncio

@@ -6,7 +6,7 @@ from bluesky import plan_stubs as bps
 from bluesky_adaptive.per_event import adaptive_plan, recommender_factory
 from bluesky_adaptive.recommendations import NoRecommendation
 
-from ..instrument.instrument_registry import registry
+from ..instrument import beamline
 
 __all__ = ["GainRecommender", "auto_gain"]
 
@@ -95,7 +95,7 @@ class GainRecommender:
         values_in_range = df[(df.volts < self.volts_max) & (df.volts > self.volts_min)]
         needed_gains = np.arange(
             df[df.volts < self.volts_min].gain.max() + 1,
-            df[df.volts > self.volts_max].gain.max(),
+            df[df.volts > self.volts_max].gain.min(),
         )
         missing_gains = [
             gain for gain in needed_gains if gain not in values_in_range.gain
@@ -148,7 +148,7 @@ def auto_gain(
 
     """
     # Resolve the detector list into voltmeter AI's
-    ion_chambers = registry.findall(ion_chambers)
+    ion_chambers = beamline.registry.findall(ion_chambers)
     # Prepare the recommendation engine
     targets = {
         "lower": volts_min,

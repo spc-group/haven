@@ -8,6 +8,7 @@ from ophydregistry import Registry
 import firefly
 from firefly.action import WindowAction
 from firefly.controller import FireflyController
+from firefly.kafka_client import KafkaClient
 from firefly.queue_client import QueueClient
 
 
@@ -78,10 +79,17 @@ def test_queue_actions_enabled(controller, qtbot):
         controller.queue_re_state_changed.emit(None)
 
 
+def test_prepare_kafka_client(controller):
+    api = MagicMock()
+    controller.prepare_kafka_client()
+    assert isinstance(controller._kafka_client, KafkaClient)
+
+
 @pytest.fixture()
 def tardis(sim_registry):
     Tardis = make_fake_device(Device)
     tardis = Tardis(name="my_tardis", labels={"tardis"})
+    sim_registry.register(tardis)
     return tardis
 
 
@@ -100,7 +108,7 @@ async def test_load_instrument_registry(controller, qtbot, monkeypatch):
     assert isinstance(controller.registry, Registry)
     # Mock the underlying haven instrument loader
     loader = AsyncMock()
-    monkeypatch.setattr(firefly.controller, "load_haven_instrument", loader)
+    monkeypatch.setattr(firefly.controller.beamline, "load", loader)
     monkeypatch.setattr(controller, "prepare_queue_client", MagicMock())
     # Reload the devices and see if the registry is changed
     with qtbot.waitSignal(controller.registry_changed):

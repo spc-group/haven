@@ -5,8 +5,8 @@ from bluesky import Msg
 from bluesky import plan_stubs as bps
 from ophyd import Device
 
-from ..instrument.instrument_registry import registry
-from ..instrument.shutter import ShutterState
+from ..devices.shutter import ShutterState
+from ..instrument import beamline
 from .shutters import close_shutters, open_shutters
 
 
@@ -33,7 +33,9 @@ def record_dark_current(
     ion_chambers
       Ion chamber devices or names.
     shutters
-      Shutter devices or names.
+      Shutter devices or names. These shutters will be closed before
+      recording the dark current, and then be returned to its original
+      state afterward recording the dark current.
 
     """
     # Get previous shutter states
@@ -43,7 +45,7 @@ def record_dark_current(
     # Close shutters
     yield from close_shutters(shutters)
     # Measure the dark current
-    ion_chambers = registry.findall(ion_chambers)
+    ion_chambers = beamline.registry.findall(ion_chambers)
     # Record dark currents
     group = uuid.uuid4()
     for ic in ion_chambers:

@@ -13,7 +13,7 @@ from tiled.adapters.xarray import DatasetAdapter
 from tiled.client import Context, from_context
 from tiled.server.app import build_app
 
-from haven.instrument import Motor
+from haven.devices import Motor
 from haven.motor_position import (
     get_motor_position,
     get_motor_positions,
@@ -44,12 +44,14 @@ position_runs = {
                     ),
                 },
                 metadata={
-                    "descriptors": {
-                        "data_keys": {
-                            "motor_A": {"object_name": "motor_A"},
-                            "motor_B": {"object_name": "motor_B"},
-                        },
-                    },
+                    "descriptors": [
+                        {
+                            "data_keys": {
+                                "motor_A": {"object_name": "motor_A"},
+                                "motor_B": {"object_name": "motor_B"},
+                            },
+                        }
+                    ],
                 },
             ),
         },
@@ -80,22 +82,24 @@ position_runs = {
                     ),
                 },
                 metadata={
-                    "descriptors": {
-                        "data_keys": {
-                            "motorC": {"object_name": "motorC"},
-                        },
-                    },
+                    "descriptors": [
+                        {
+                            "data_keys": {
+                                "motorC": {"object_name": "motorC"},
+                            },
+                        }
+                    ],
                 },
             ),
         },
         metadata={
             "plan_name": "save_motor_position",
-            "position_name": "Another good position",
+            "position_name": "A good position B",
             "time": 1725897193,
             "uid": "1b7f2ef5-6a3c-496e-9f6f-f1a4805c0065",
             "start": {
                 "plan_name": "save_motor_position",
-                "position_name": "Another good position",
+                "position_name": "A good position B",
                 "time": 1725897193,
                 "uid": "1b7f2ef5-6a3c-496e-9f6f-f1a4805c0065",
             },
@@ -115,22 +119,24 @@ position_runs = {
                     ),
                 },
                 metadata={
-                    "descriptors": {
-                        "data_keys": {
-                            "motorC": {"object_name": "motorC"},
-                        },
-                    },
+                    "descriptors": [
+                        {
+                            "data_keys": {
+                                "motorC": {"object_name": "motorC"},
+                            },
+                        }
+                    ],
                 },
             ),
         },
         metadata={
             "plan_name": "save_motor_position",
-            "position_name": "Another good position",
+            "position_name": "Good position C",
             "time": 1725897033,
             "uid": "5dd9a185-d5c4-4c8b-a719-9d7beb9007dc",
             "start": {
                 "plan_name": "save_motor_position",
-                "position_name": "Another good position",
+                "position_name": "Good position C",
                 "time": 1725897033,
                 "uid": "5dd9a185-d5c4-4c8b-a719-9d7beb9007dc",
             },
@@ -150,11 +156,13 @@ position_runs = {
                     ),
                 },
                 metadata={
-                    "descriptors": {
-                        "data_keys": {
-                            "motorC": {"object_name": "motorC"},
-                        },
-                    },
+                    "descriptors": [
+                        {
+                            "data_keys": {
+                                "motorC": {"object_name": "motorC"},
+                            },
+                        }
+                    ],
                 },
             ),
         },
@@ -245,6 +253,16 @@ def test_get_motor_position(client):
 async def test_get_motor_positions(client):
     results = get_motor_positions(after=1725897100, before=1725897200)
     results = [pos async for pos in results]
+    assert len(results) == 2
+    # Check the motor position details
+    motorA, motorB = results
+    assert motorA.uid == "a9b3e0fa-eba1-43e0-a38c-c7ac76278000"
+
+
+async def test_get_motor_positions_by_name(client):
+    results = get_motor_positions(name=r"^.*good.+itio.+[AB]$", case_sensitive=False)
+    results = [pos async for pos in results]
+    print([r.name for r in results])
     assert len(results) == 2
     # Check the motor position details
     motorA, motorB = results

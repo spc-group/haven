@@ -61,9 +61,9 @@ properly setup, the tests can be run using:
 xfailed, and warnings are expected.
 
 While running the tests, devices created using
-:py:func:`~haven.instrument.device.make_device()` will be replaced
+:py:func:`~haven.devices.device.make_device()` will be replaced
 with simulated devices using Ophyd's *sim* module. This means that
-:py:func:`~haven.instrument.load_instrument()` can be called without
+:py:func:`~haven.devices.load_instrument()` can be called without
 hardware being present, and the corresponding fake devices can be
 found in the :py:obj:`haven.registry`.
 

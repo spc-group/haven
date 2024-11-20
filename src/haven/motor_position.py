@@ -8,10 +8,10 @@ from bluesky import plan_stubs as bps
 from bluesky import plans as bp
 from pydantic import BaseModel
 from rich import print as rprint
-from tiled.queries import Key
+from tiled.queries import Key, Regex
 
 from .catalog import Catalog, tiled_client
-from .instrument.instrument_registry import registry
+from .instrument import beamline
 
 log = logging.getLogger(__name__)
 
@@ -66,7 +66,8 @@ class MotorPosition(BaseModel):
         """Create a new MotorPosition object from a Tiled Bluesky run."""
         return Cls._load(
             run_md=run.metadata,
-            data_keys=run["primary"].metadata["descriptors"]["data_keys"],
+            # Assumes the 0-th descriptor is for the primary stream
+            data_keys=run["primary"].metadata["descriptors"][0]["data_keys"],
             data=run["primary"]["data"].read(),
         )
 
@@ -114,7 +115,7 @@ def save_motor_position(*motors, name: str, md: Mapping = {}):
 
     """
     # Resolve device names or labels
-    motors = registry.findall(motors)
+    motors = beamline.registry.findall(motors)
     # Create the new run object
     _md = {
         "position_name": name,
@@ -209,7 +210,10 @@ def get_motor_position(uid: str) -> MotorPosition:
 
 
 async def get_motor_positions(
-    before: float | None = None, after: float | None = None
+    before: float | None = None,
+    after: float | None = None,
+    name: str | None = None,
+    case_sensitive: bool = True,
 ) -> list[MotorPosition]:
     """Get all motor position objects from the catalog.
 
@@ -221,6 +225,11 @@ async def get_motor_positions(
     after
       Only include motor positions recorded after this unix
       timestamp if provided.
+    name
+      A regular expression used to filter motor positions based on
+      name.
+    case_sensitive
+      Whether the regular expression is applied with case-sensitivity.
 
     Returns
     =======
@@ -229,14 +238,24 @@ async def get_motor_positions(
 
     """
     runs = Catalog(client=tiled_client())
-    # Prepare the database for all plans
+    # Filter only saved motor positions
     runs = await runs.search(Key("plan_name") == "save_motor_position")
+    # Filter by timestamp
     if before is not None:
         runs = await runs.search(Key("time") < before)
     if after is not None:
         runs = await runs.search(Key("time") > after)
+    # Filter by position name
+    if name is not None:
+        runs = await runs.search(
+            Regex("position_name", name, case_sensitive=case_sensitive)
+        )
+    # Create the actual motor position objects
     async for uid, run in runs.items():
-        yield await MotorPosition.aload(run)
+        try:
+            yield await MotorPosition.aload(run)
+        except KeyError:
+            continue
 
 
 def recall_motor_position(uid: str):
@@ -253,8 +272,7 @@ def recall_motor_position(uid: str):
     # Create a move plan to recall the position
     plan_args = []
     for axis in position.motors:
-        print(axis.name)
-        motor = registry.find(name=axis.name)
+        motor = beamline.registry.find(name=axis.name)
         plan_args.append(motor)
         plan_args.append(axis.readback)
     yield from bps.mv(*plan_args)
@@ -273,7 +291,7 @@ async def list_current_motor_positions(*motors, name="Current motor positions"):
 
     """
     # Resolve device names or labels
-    motors = [registry.find(name=m) for m in motors]
+    motors = [beamline.registry.find(name=m) for m in motors]
     # Build the list of motor positions
     motor_axes = []
     for m in motors:

@@ -37,6 +37,7 @@ def I0(sim_registry):
         sigma=1,
         labels={"ion_chambers"},
     )
+    sim_registry.register(I0)
     return I0
 
 
@@ -94,29 +95,6 @@ def test_energy_scan_basics(
 def test_raises_on_empty_positioners(RE, energies):
     with pytest.raises(ValueError):
         RE(energy_scan(energies, energy_signals=[]))
-
-
-def test_saves_dspacing(mono, energies, ion_chamber):
-    """Does the mono's d-spacing get added to metadata."""
-    # Prepare the messages from the plan
-    mono.d_spacing._readback = 1.5418
-    msgs = list(
-        energy_scan(
-            energies,
-            detectors=[ion_chamber],
-            energy_signals=[mono],
-            time_signals=[ion_chamber.default_time_signal],
-        )
-    )
-    # Find the metadata written by the plan
-    for msg in msgs:
-        if msg.command == "open_run":
-            md = msg.kwargs
-            break
-    else:
-        raise RuntimeError("No open run message found")
-    # Check for the dspacing of the mono in the metadata
-    assert md["d_spacing"] == 1.5418
 
 
 def test_single_range(mono_motor, exposure_motor, I0):
@@ -278,6 +256,25 @@ def test_remove_duplicate_energies(mono_motor, exposure_motor, I0):
     energies = [m.args[0] for m in set_msgs]
     # Make sure we only read each point once
     assert len(read_msgs) == len(energies)
+
+
+def test_xafs_metadata(mono_motor):
+    scan = energy_scan(
+        [],
+        detectors=[],
+        energy_signals=[mono_motor],
+        E0="Ni_K",
+        md={"sample_name": "unobtanium"},
+    )
+    # Get the metadata passed alongside the "open_run" message
+    msgs = list(scan)
+    open_msg = [m for m in msgs if m.command == "open_run"][0]
+    md = open_msg.kwargs
+    # Check that the metadata has the right values
+    assert md["edge"] == "Ni_K"
+    assert md["E0"] == 8333.0
+    assert md["plan_name"] == "energy_scan"
+    assert md["sample_name"] == "unobtanium"
 
 
 # -----------------------------------------------------------------------------

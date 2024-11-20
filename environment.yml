@@ -17,9 +17,9 @@ variables:
 
 channels:
   - conda-forge
-  - defaults
   - aps-anl-tag
   - nsls2forge
+  - nodefaults
 
 dependencies:
   # --- Python core packages
@@ -39,6 +39,8 @@ dependencies:
 
   - pip:
     - aioca
+    - aiokafka
+    - asynctest
     - apsbss
     - time-machine
     - rich
@@ -56,8 +58,8 @@ dependencies:
     - bluesky-adaptive
     - bluesky >=1.8.1
     - ophyd >=1.6.3
-    - ophyd-async >= 0.5.1
-    - apstools >= 1.6.20
+    - ophyd-async >=0.8.0a5
+    - apstools == 1.6.20  # Leave at 1.6.20 until this is fixed: https://github.com/BCDA-APS/apstools/issues/1022
     - pcdsdevices  # For extra signal types
     - pydm >=1.18.0
     - typhos >= 3.1.0  # need the find_signal method on the SignalConnection()

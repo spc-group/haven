@@ -44,7 +44,7 @@ def lookup_file_paths():
     if os.environ.get("HAVEN_CONFIG_FILES", "") != "":
         return [Path(fp) for fp in os.environ["HAVEN_CONFIG_FILES"].split(",")]
     else:
-        return [Path(__file__).parent / "iconfig_default.toml"]
+        return [Path(__file__).parent / "iconfig_testing.toml"]
 
 
 def load_config(file_paths: Optional[Sequence[Path]] = None):
@@ -107,7 +107,7 @@ def beamline_connected(is_connected=True):
     # Set temporary value
     if "beamline" not in _local_overrides.keys():
         _local_overrides["beamline"] = {}
-    _local_overrides["beamline"]["is_connected"] = is_connected
+    _local_overrides["beamline"]["hardware_is_present"] = is_connected
     # Return to enclosing code
     yield
     # Restore old value

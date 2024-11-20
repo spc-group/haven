@@ -6,8 +6,8 @@ from qtpy.QtCore import Signal
 from qtpy.QtWidgets import QHBoxLayout, QSizePolicy
 
 from firefly import display
-from haven import registry
-from haven.instrument.shutter import ShutterState
+from haven import beamline
+from haven.devices.shutter import ShutterState
 
 log = logging.getLogger(__name__)
 
@@ -31,15 +31,14 @@ class StatusDisplay(display.FireflyDisplay):
         form.removeRow(self.ui.shutter_A_layout)
         form.removeRow(self.ui.shutter_CD_layout)
         # Add widgets for shutters
-        shutters = registry.findall("shutters", allow_none=True)
+        shutters = beamline.registry.findall("shutters", allow_none=True)
         row_idx = 4
         on_color = self.ui.shutter_permit_indicator.onColor
         off_color = self.ui.shutter_permit_indicator.offColor
         for shutter in shutters[::-1]:
             # Add a layout with the buttons
             layout = QHBoxLayout()
-            name = shutter.attr_name if shutter.attr_name != "" else shutter.name
-            label = name_to_title(name) + ":"
+            label = name_to_title(shutter.name) + ":"
             form.insertRow(row_idx, label, layout)
             # Indicator to show if the shutter is open
             indicator = PyDMByteIndicator(
@@ -62,6 +61,7 @@ class StatusDisplay(display.FireflyDisplay):
                 relative=False,
                 init_channel=f"haven://{shutter.name}.setpoint",
             )
+            print(f"{shutter.name} - {getattr(shutter, 'allow_open', True)=}")
             open_btn.setEnabled(getattr(shutter, "allow_open", True))
             layout.addWidget(open_btn)
             # Button to close the shutter
