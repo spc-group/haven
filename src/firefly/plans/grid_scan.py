@@ -123,11 +123,15 @@ class GridScanDisplay(regions_display.RegionsDisplay):
         Change the background color of the relative scan checkbox based on its state.
         """
         if state:  # Checked
-            self.ui.relative_scan_checkbox.setStyleSheet("background-color: rgb(255, 85, 127);\ntext-decoration: underline;")
+            self.ui.relative_scan_checkbox.setStyleSheet(
+                "background-color: rgb(255, 85, 127);\ntext-decoration: underline;"
+            )
 
         else:  # Unchecked
-            self.ui.relative_scan_checkbox.setStyleSheet("background-color: rgb(0, 170, 255);")
-            
+            self.ui.relative_scan_checkbox.setStyleSheet(
+                "background-color: rgb(0, 170, 255);"
+            )
+
     def time_per_scan(self, detector_time):
         total_num_pnts = np.prod(
             [region_i.scan_pts_spin_box.value() for region_i in self.regions]
