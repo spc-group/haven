@@ -3,27 +3,19 @@ import logging
 from collections import Counter
 from contextlib import contextmanager
 from functools import wraps
-from itertools import count
 from typing import Mapping, Optional, Sequence
 
-import numpy as np
 import qtawesome as qta
 import yaml
-from matplotlib.colors import TABLEAU_COLORS
-from pandas.api.types import is_numeric_dtype
-from pyqtgraph import GraphicsLayoutWidget, ImageView, PlotItem, PlotWidget
 from qasync import asyncSlot
-from qtpy.QtCore import Qt, Signal
+from qtpy.QtCore import Qt
 from qtpy.QtGui import QStandardItem, QStandardItemModel
-from qtpy.QtWidgets import QFileDialog, QWidget
 
 from firefly import display
-from firefly.run_client import DatabaseWorker
+from firefly.run_browser.client import DatabaseWorker
+from firefly.run_browser.widgets import ExportDialog
 
 log = logging.getLogger(__name__)
-
-
-colors = list(TABLEAU_COLORS.values())
 
 
 def cancellable(fn):
@@ -35,208 +27,6 @@ def cancellable(fn):
             log.warning(f"Cancelled task {fn}")
 
     return inner
-
-
-class ExportDialog(QFileDialog):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.setFileMode(QFileDialog.FileMode.AnyFile)
-        self.setAcceptMode(QFileDialog.AcceptSave)
-
-    def ask(self, mimetypes: Optional[Sequence[str]] = None):
-        """Get the name of the file to save for exporting."""
-        self.setMimeTypeFilters(mimetypes)
-        # Show the file dialog
-        if self.exec_() == QFileDialog.Accepted:
-            return self.selectedFiles()
-        else:
-            return None
-
-
-class FiltersWidget(QWidget):
-    returnPressed = Signal()
-
-    def keyPressEvent(self, event):
-        super().keyPressEvent(event)
-        # Check for return keys pressed
-        if event.key() in [Qt.Key_Enter, Qt.Key_Return]:
-            self.returnPressed.emit()
-
-
-class Browser1DPlotItem(PlotItem):
-    hover_coords_changed = Signal(str)
-
-    def hoverEvent(self, event):
-        super().hoverEvent(event)
-        if event.isExit():
-            self.hover_coords_changed.emit("NaN")
-            return
-        # Get data coordinates from event
-        pos = event.scenePos()
-        data_pos = self.vb.mapSceneToView(pos)
-        pos_str = f"({data_pos.x():.3f}, {data_pos.y():.3f})"
-        self.hover_coords_changed.emit(pos_str)
-
-
-class BrowserMultiPlotWidget(GraphicsLayoutWidget):
-    _multiplot_items: Mapping
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._multiplot_items = {}
-
-    def multiplot_items(self, n_cols: int = 3):
-        view = self
-        item0 = None
-        for idx in count():
-            row = int(idx / n_cols)
-            col = idx % n_cols
-            # Make a new plot item if one doesn't exist
-            if (row, col) not in self._multiplot_items:
-                self._multiplot_items[(row, col)] = view.addPlot(row=row, col=col)
-            new_item = self._multiplot_items[(row, col)]
-            # Link the X-axes together
-            if item0 is None:
-                item0 = new_item
-            else:
-                new_item.setXLink(item0)
-            # Resize the viewing area to fit the contents
-            width = view.width()
-            plot_width = width / n_cols
-            # view.resize(int(width), int(plot_width * row))
-            view.setFixedHeight(1200)
-            yield new_item
-
-    def plot_runs(self, runs: Mapping, xsignal: str):
-        """Take loaded run data and plot small multiples.
-
-        Parameters
-        ==========
-        runs
-          Dictionary with pandas series for each curve. The keys
-          should be the curve labels, the series' indexes are the x
-          values and the series' values are the y data.
-        xsignal
-          The name of the signal to use for the common horizontal
-          axis.
-
-        """
-        # Use all the data columns as y signals
-        ysignals = []
-        for run in runs.values():
-            ysignals.extend(run.columns)
-        # Remove the x-signal from the list of y signals
-        ysignals = sorted(list(dict.fromkeys(ysignals)))
-        # Plot the runs
-        self.clear()
-        self._multiplot_items = {}
-        for label, data in runs.items():
-            # Figure out which signals to plot
-            try:
-                xdata = data[xsignal]
-            except KeyError:
-                log.warning(f"Cannot plot x='{xsignal}' for {list(data.keys())}")
-                continue
-            # Plot each y signal on a separate plot
-            for ysignal, plot_item in zip(ysignals, self.multiplot_items()):
-                try:
-                    if is_numeric_dtype(data[ysignal]):
-                        plot_item.plot(xdata, data[ysignal])
-                except KeyError:
-                    log.warning(f"No signal {ysignal} in data.")
-                else:
-                    log.debug(f"Plotted {ysignal} vs. {xsignal} for {data}")
-                plot_item.setTitle(ysignal)
-
-
-class Browser1DPlotWidget(PlotWidget):
-    def __init__(self, parent=None, background="default", plotItem=None, **kargs):
-        plot_item = Browser1DPlotItem(**kargs)
-        super().__init__(parent=parent, background=background, plotItem=plot_item)
-
-    def plot_runs(self, runs: Mapping, ylabel="", xlabel=""):
-        """Take loaded run data and plot it.
-
-        Parameters
-        ==========
-        runs
-          Dictionary with pandas series for each curve. The keys
-          should be the curve labels, the series' indexes are the x
-          values and the series' values are the y data.
-
-        """
-        plot_item = self.getPlotItem()
-        plot_item.clear()
-        # Plot this run's data
-        cursor_needed = True
-        for idx, (label, series) in enumerate(runs.items()):
-            color = colors[idx % len(colors)]
-            plot_item.plot(
-                x=series.index,
-                y=series.values,
-                pen=color,
-                name=label,
-                clear=False,
-            )
-            # Cursor to drag around on the data
-            if cursor_needed:
-                plot_item.addLine(
-                    x=np.median(series.index), movable=True, label="{value:.3f}"
-                )
-                cursor_needed = False
-        # Axis formatting
-        plot_item.setLabels(left=ylabel, bottom=xlabel)
-
-
-class Browser2DPlotWidget(ImageView):
-    """A plot widget for 2D maps."""
-
-    def __init__(self, *args, view=None, **kwargs):
-        if view is None:
-            view = PlotItem()
-        super().__init__(*args, view=view, **kwargs)
-
-    def plot_runs(
-        self, runs: Mapping, xlabel: str = "", ylabel: str = "", extents=None
-    ):
-        """Take loaded 2D or 3D mapping data and plot it.
-
-        Parameters
-        ==========
-        runs
-          Dictionary with pandas series for each curve. The keys
-          should be the curve labels, the series' indexes are the x
-          values and the series' values are the y data.
-        xlabel
-          The label for the horizontal axis.
-        ylabel
-          The label for the vertical axis.
-        extents
-          Spatial extents for the map as ((-y, +y), (-x, +x)).
-
-        """
-        images = np.asarray(list(runs.values()))
-        # Combine the different runs into one image
-        # To-do: make this respond to the combobox selection
-        image = np.mean(images, axis=0)
-        # To-do: Apply transformations
-
-        # # Plot the image
-        if 2 <= image.ndim <= 3:
-            self.setImage(image.T, autoRange=False)
-        else:
-            log.info(f"Could not plot image of dataset with shape {image.shape}.")
-            return
-        # Determine the axes labels
-        self.view.setLabel(axis="bottom", text=xlabel)
-        self.view.setLabel(axis="left", text=ylabel)
-        # Set axes extent
-        yextent, xextent = extents
-        x = xextent[0]
-        y = yextent[0]
-        w = xextent[1] - xextent[0]
-        h = yextent[1] - yextent[0]
-        self.getImageItem().setRect(x, y, w, h)
 
 
 class RunBrowserDisplay(display.FireflyDisplay):
@@ -376,14 +166,20 @@ class RunBrowserDisplay(display.FireflyDisplay):
         # Sleep controls for testing async timing
         self.ui.sleep_button.clicked.connect(self.sleep_slot)
         # Respond to changes in displaying the 1d plot
-        self.ui.signal_y_combobox.currentTextChanged.connect(self.update_1d_plot)
-        self.ui.signal_x_combobox.currentTextChanged.connect(self.update_1d_plot)
-        self.ui.signal_r_combobox.currentTextChanged.connect(self.update_1d_plot)
-        self.ui.signal_r_checkbox.stateChanged.connect(self.update_1d_plot)
-        self.ui.logarithm_checkbox.stateChanged.connect(self.update_1d_plot)
-        self.ui.invert_checkbox.stateChanged.connect(self.update_1d_plot)
-        self.ui.gradient_checkbox.stateChanged.connect(self.update_1d_plot)
+        for signal in [
+            self.ui.signal_y_combobox.currentTextChanged,
+            self.ui.signal_x_combobox.currentTextChanged,
+            self.ui.signal_r_combobox.currentTextChanged,
+            self.ui.signal_r_checkbox.stateChanged,
+            self.ui.logarithm_checkbox.stateChanged,
+            self.ui.invert_checkbox.stateChanged,
+            self.ui.gradient_checkbox.stateChanged,
+        ]:
+            signal.connect(self.plot_1d_view.clear_runs)
+            signal.connect(self.update_1d_plot)
         self.ui.plot_1d_hints_checkbox.stateChanged.connect(self.update_1d_signals)
+        self.ui.autorange_1d_button.clicked.connect(self.auto_range)
+        # Respond to changes in displaying the 2d plot
         self.ui.plot_multi_hints_checkbox.stateChanged.connect(
             self.update_multi_signals
         )
@@ -398,6 +194,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
         self.ui.filters_widget.returnPressed.connect(self.refresh_runs_button.click)
         # Respond to controls for the current run
         self.ui.export_button.clicked.connect(self.export_runs)
+        self.ui.reload_plots_button.clicked.connect(self.update_plots)
         # Set up 1D plotting widgets
         self.plot_1d_item = self.ui.plot_1d_view.getPlotItem()
         self.plot_2d_item = self.ui.plot_2d_view.getImageItem()
@@ -407,6 +204,9 @@ class RunBrowserDisplay(display.FireflyDisplay):
         )
         # Create a new export dialog for saving files
         self.export_dialog = ExportDialog(parent=self)
+
+    def auto_range(self):
+        self.plot_1d_view.autoRange()
 
     def update_busy_hints(self):
         """Enable/disable UI elements based on the active hinters."""
@@ -573,10 +373,21 @@ class RunBrowserDisplay(display.FireflyDisplay):
         formats = [mimetype] * len(filenames)
         await self.db_task(self.db.export_runs(filenames, formats=formats), "export")
 
+    @asyncSlot(str)
+    @cancellable
+    async def update_running_scan(self, uid: str):
+        print(f"Updating running scan: {uid=}")
+        await self.update_1d_plot(uids=[uid])
+
     @asyncSlot()
     @cancellable
-    async def update_1d_plot(self, *args):
-        self.plot_1d_item.clear()
+    async def update_1d_plot(self, *args, uids: Sequence[str] = None):
+        """Updates the data used in the plots.
+
+        If *uids* is given, only runs with UIDs listed in *uids* will
+        be updated.
+
+        """
         # Figure out which signals to plot
         y_signal = self.ui.signal_y_combobox.currentText()
         x_signal = self.ui.signal_x_combobox.currentText()
@@ -588,6 +399,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
         use_log = self.ui.logarithm_checkbox.isChecked()
         use_invert = self.ui.invert_checkbox.isChecked()
         use_grad = self.ui.gradient_checkbox.isChecked()
+        # Load data
         task = self.db_task(
             self.db.signals(
                 x_signal,
@@ -596,11 +408,34 @@ class RunBrowserDisplay(display.FireflyDisplay):
                 use_log=use_log,
                 use_invert=use_invert,
                 use_grad=use_grad,
+                uids=uids,
             ),
             "1D plot",
         )
         runs = await task
-        self.ui.plot_1d_view.plot_runs(runs)
+        if len(runs) == 0:
+            return
+        # Decide on axes labels
+        xlabel = x_signal
+        if r_signal is not None:
+            if use_invert:
+                ylabel = f"{r_signal}/{y_signal}"
+            else:
+                ylabel = f"{y_signal}/{r_signal}"
+        else:
+            if use_invert:
+                ylabel = f"1/{y_signal}"
+            else:
+                ylabel = y_signal
+        if use_log:
+            ylabel = f"ln({ylabel})"
+        if use_grad:
+            ylabel = f"∇ {ylabel}"
+        # Do the plotting
+        print("RUNNING", self.ui.plot_1d_view.plot_runs)
+        self.ui.plot_1d_view.plot_runs(runs, xlabel=xlabel, ylabel=ylabel)
+        if self.ui.autorange_1d_checkbox.isChecked():
+            self.ui.plot_1d_view.autoRange()
 
     @asyncSlot()
     @cancellable
@@ -642,6 +477,30 @@ class RunBrowserDisplay(display.FireflyDisplay):
         # Update the widget with the rendered metadata
         self.ui.metadata_textedit.document().setPlainText(text)
 
+    def clear_plots(self):
+        """Clear all the plots.
+
+        If a *uid* is provided, only the plots matching the scan with
+        *uid* will be updated.
+        """
+        self.plot_1d_view.clear_runs()
+
+    @asyncSlot()
+    @cancellable
+    async def update_plots(self):
+        """Get new data, and update all the plots.
+
+        If a *uid* is provided, only the plots matching the scan with
+        *uid* will be updated.
+        """
+
+        await asyncio.gather(
+            self.update_metadata(),
+            self.update_1d_plot(),
+            self.update_2d_plot(),
+            self.update_multi_plot(),
+        )
+
     @asyncSlot()
     @cancellable
     async def update_selected_runs(self, *args):
@@ -653,17 +512,18 @@ class RunBrowserDisplay(display.FireflyDisplay):
         # Get selected runs from the database
         with self.busy_hints(run_widgets=True, run_table=False, filter_widgets=False):
             task = self.db_task(
-                self.db.load_selected_runs(uids), "update selected runs"
+                self.db.load_selected_runs(uids=uids), "update selected runs"
             )
             self.selected_runs = await task
             # Update the necessary UI elements
-            await self.update_multi_signals()
-            await self.update_1d_signals()
-            await self.update_2d_signals()
-            await self.update_metadata()
-            await self.update_1d_plot()
-            await self.update_2d_plot()
-            await self.update_multi_plot()
+            await asyncio.gather(
+                self.update_multi_signals(),
+                self.update_1d_signals(),
+                self.update_2d_signals(),
+            )
+            # Update the plots
+            self.clear_plots()
+            await self.update_plots()
             self.update_export_button()
 
     def filters(self, *args):
@@ -692,30 +552,4 @@ class RunBrowserDisplay(display.FireflyDisplay):
         self.ui.run_tableview.setModel(self.runs_model)
 
     def ui_filename(self):
-        return "run_browser.ui"
-
-
-# -----------------------------------------------------------------------------
-# :author:    Mark Wolfman
-# :email:     wolfman@anl.gov
-# :copyright: Copyright © 2023, UChicago Argonne, LLC
-#
-# Distributed under the terms of the 3-Clause BSD License
-#
-# The full license is in the file LICENSE, distributed with this software.
-#
-# DISCLAIMER
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# -----------------------------------------------------------------------------
+        return "run_browser/run_browser.ui"

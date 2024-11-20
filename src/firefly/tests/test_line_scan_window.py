@@ -5,10 +5,27 @@ from bluesky_queueserver_api import BPlan
 from ophyd_async.core import set_mock_value
 
 from firefly.plans.line_scan import LineScanDisplay
+from haven.devices.motor import Motor
 
 
 @pytest.fixture()
-async def display(qtbot, sim_registry, sync_motors, async_motors, dxp, ion_chamber):
+async def motors(sim_registry, sync_motors):
+    # Make a motor with a bad queueserver name
+    motor1 = Motor(name="async motor-1", prefix="")
+    assert " " in motor1.name
+    assert "-" in motor1.name
+    motor2 = Motor(name="async_motor_2", prefix="")
+    # Connect motors
+    async_motors = [motor1, motor2]
+    for motor in async_motors:
+        await motor.connect(mock=True)
+        sim_registry.register(motor)
+    return async_motors + sync_motors
+
+
+@pytest.fixture()
+async def display(qtbot, sim_registry, sync_motors, motors, dxp, ion_chamber):
+    print(motors[0].name)
     display = LineScanDisplay()
     qtbot.addWidget(display)
     await display.update_devices(sim_registry)
@@ -59,7 +76,7 @@ async def test_line_scan_plan_queued(display, monkeypatch):
     monkeypatch.setattr(display, "submit_queue_item", mock.MagicMock())
 
     # set up a test motor 1
-    display.regions[0].motor_box.combo_box.setCurrentText("async_motor_1")
+    display.regions[0].motor_box.combo_box.setCurrentText("async motor-1")
     display.regions[0].start_line_edit.setText("1")
     display.regions[0].stop_line_edit.setText("111")
 
@@ -91,7 +108,7 @@ async def test_line_scan_plan_queued(display, monkeypatch):
         2.0,
         222.0,
         num=10,
-        md={"sample": "sam", "purpose": "test", "notes": "notes"},
+        md={"sample_name": "sam", "purpose": "test", "notes": "notes"},
     )
 
     # Click the run button and see if the plan is queued

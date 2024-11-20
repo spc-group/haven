@@ -1,8 +1,7 @@
 import logging
-from enum import Enum
 
-from ophyd_async.core import ConfigSignal, StandardReadable
-from ophyd_async.epics.signal import epics_signal_rw
+from ophyd_async.core import StandardReadable, StandardReadableFormat, StrictEnum
+from ophyd_async.epics.core import epics_signal_rw
 
 from .motor import Motor
 
@@ -12,7 +11,7 @@ log = logging.getLogger(__name__)
 class Monochromator(StandardReadable):
     _ophyd_labels_ = {"monochromators"}
 
-    class Mode(str, Enum):
+    class Mode(StrictEnum):
         FIXED_OFFSET = "Si(111) Fixed Offset"
         CHANNEL_CUT = "Si(111) Channel-cut"
         ML48 = "Multi-layer 4.8nm"
@@ -30,7 +29,7 @@ class Monochromator(StandardReadable):
             self.vert = Motor(f"{prefix}ACS:m2")
             self.roll2 = Motor(f"{prefix}ACS:m5")
             self.pitch2 = Motor(f"{prefix}ACS:m6")
-        with self.add_children_as_readables(ConfigSignal):
+        with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
             # Transform constants, etc.
             self.id_tracking = epics_signal_rw(bool, f"{prefix}ID_tracking")
             self.id_offset = epics_signal_rw(float, f"{prefix}ID_offset")

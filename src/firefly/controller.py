@@ -20,6 +20,7 @@ from haven.device import titelize
 from haven.exceptions import ComponentNotFound, InvalidConfiguration
 
 from .action import Action, ActionsRegistry, WindowAction
+from .kafka_client import KafkaClient
 from .main_window import FireflyMainWindow, PlanMainWindow
 from .queue_client import QueueClient, queueserver_api
 
@@ -51,6 +52,11 @@ class FireflyController(QtCore.QObject):
 
     # Signals for running plans on the queueserver
     queue_item_added = Signal(object)
+
+    # Signals responding to queueserver documents over kafka
+    run_started = Signal(str)
+    run_updated = Signal(str)
+    run_stopped = Signal(str)
 
     # Signals responding to queueserver changes
     queue_status_changed = Signal(dict)
@@ -269,10 +275,13 @@ class FireflyController(QtCore.QObject):
         self.actions.run_browser = WindowAction(
             name="show_run_browser_action",
             text="Browse Runs",
-            display_file=ui_dir / "run_browser.py",
+            display_file=ui_dir / "run_browser" / "display.py",
             shortcut="Ctrl+Shift+B",
             icon=qta.icon("mdi.book-open-variant"),
             WindowClass=FireflyMainWindow,
+        )
+        self.actions.run_browser.window_created.connect(
+            self.finalize_run_browser_window
         )
         # Action for showing the beamline scheduling window
         self.actions.bss = WindowAction(
@@ -331,6 +340,12 @@ class FireflyController(QtCore.QObject):
         action.display.queue_item_submitted.connect(self.add_queue_item)
         # Send the current devices to the window
         await action.window.update_devices(self.registry)
+
+    def finalize_run_browser_window(self, action):
+        """Connect up signals that are specific to the run browser window."""
+        display = action.display
+        self.run_updated.connect(display.update_running_scan)
+        self.run_stopped.connect(display.update_running_scan)
 
     def finalize_status_window(self, action):
         """Connect up signals that are specific to the voltmeters window."""
@@ -504,6 +519,19 @@ class FireflyController(QtCore.QObject):
         }
         return actions
 
+    def prepare_kafka_client(self):
+        client = KafkaClient()
+        self._kafka_client = client
+        client.run_started.connect(self.run_started)
+        client.run_updated.connect(self.run_updated)
+        client.run_stopped.connect(self.run_stopped)
+
+    def start_kafka_client(self):
+        try:
+            self._kafka_client.start()
+        except Exception as exc:
+            log.error(f"Could not start kafka client: {exc}")
+
     def start_queue_client(self):
         try:
             self._queue_client.start()
@@ -581,9 +609,10 @@ class FireflyController(QtCore.QObject):
 
     def start(self):
         """Start the background clients."""
-        # Show the UI stuffs
         self.prepare_queue_client()
+        self.prepare_kafka_client()
         self.start_queue_client()
+        self.start_kafka_client()
 
     def update_devices_allowed(self, devices):
         pass

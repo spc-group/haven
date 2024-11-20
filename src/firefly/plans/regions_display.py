@@ -208,7 +208,7 @@ class RegionsDisplay(display.FireflyDisplay):
     def get_meta_data(self):
         # Get meta data info
         md = {
-            "sample": self.ui.lineEdit_sample.text(),
+            "sample_name": self.ui.lineEdit_sample.text(),
             "purpose": self.ui.lineEdit_purpose.text(),
             "notes": self.ui.textEdit_notes.toPlainText(),
         }

@@ -1,12 +1,16 @@
 import asyncio
 
-from ophyd_async.core import ConfigSignal, Device, StandardReadable, SubsetEnum
-from ophyd_async.epics.signal import epics_signal_r, epics_signal_rw, epics_signal_x
+from ophyd_async.core import (
+    Device,
+    StandardReadable,
+    StandardReadableFormat,
+    StrictEnum,
+    SubsetEnum,
+)
+from ophyd_async.epics.core import epics_signal_r, epics_signal_rw, epics_signal_x
 
-from ..typing import StrEnum
 
-
-class AlarmStatus(StrEnum):
+class AlarmStatus(SubsetEnum):
     NO_ALARM = "NO_ALARM"
     READ = "READ"
     WRITE = "WRITE"
@@ -31,7 +35,7 @@ class AlarmStatus(StrEnum):
     # WRITE_ACCESS = "WRITE_ACCESS"
 
 
-class AlarmSeverity(StrEnum):
+class AlarmSeverity(StrictEnum):
     NO_ALARM = "NO_ALARM"
     MINOR = "MINOR"
     MAJOR = "MAJOR"
@@ -46,11 +50,9 @@ class EpicsRecordDeviceCommonAll(StandardReadable):
     an EPICS client or are already provided in other support.
     """
 
-    # The valid options are specific to the record type
-    # Subclasses should set this properly
-    DeviceType = SubsetEnum["None"]
-
-    class ScanInterval(StrEnum):
+    # More valid options are specific to the record type
+    # Subclasses may override this attribute
+    class ScanInterval(SubsetEnum):
         PASSIVE = "Passive"
         EVENT = "Event"
         IO_INTR = "I/O Intr"
@@ -64,10 +66,9 @@ class EpicsRecordDeviceCommonAll(StandardReadable):
 
     # Config signals
     def __init__(self, prefix: str, name: str = ""):
-        with self.add_children_as_readables(ConfigSignal):
+        with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
             self.description = epics_signal_rw(str, f"{prefix}.DESC")
             self.scanning_rate = epics_signal_rw(self.ScanInterval, f"{prefix}.SCAN")
-            self.device_type = epics_signal_r(self.DeviceType, f"{prefix}.DTYP")
         # Other signals, not included in read
         self.disable_value = epics_signal_rw(int, f"{prefix}.DISV")
         self.scan_disable_input_link_value = epics_signal_rw(int, f"{prefix}.DISA")
@@ -90,7 +91,7 @@ class EpicsSynAppsRecordEnableMixin(Device):
     """Supports ``{PV}Enable`` feature from user databases."""
 
     def __init__(self, prefix, name=""):
-        with self.add_children_as_readables(ConfigSignal):
+        with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
             self.enable = epics_signal_rw(int, "Enable")
         super().__init__(name=name)
 
@@ -106,9 +107,15 @@ class EpicsRecordInputFields(EpicsRecordDeviceCommonAll):
     Some fields common to EPICS input records.
     """
 
+    class DeviceType(SubsetEnum):
+        SOFT_CHANNEL = "Soft Channel"
+        RAW_SOFT_CHANNEL = "Raw Soft Channel"
+        ASYNC_SOFT_CHANNEL = "Async Soft Channel"
+
     def __init__(self, prefix: str, name: str = ""):
-        with self.add_children_as_readables(ConfigSignal):
+        with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
             self.input_link = epics_signal_rw(str, f"{prefix}.INP")
+            self.device_type = epics_signal_r(self.DeviceType, f"{prefix}.DTYP")
         super().__init__(prefix=prefix, name=name)
 
 
@@ -117,13 +124,19 @@ class EpicsRecordOutputFields(EpicsRecordDeviceCommonAll):
     Some fields common to EPICS output records.
     """
 
-    class ModeSelect(StrEnum):
+    class DeviceType(SubsetEnum):
+        SOFT_CHANNEL = "Soft Channel"
+        RAW_SOFT_CHANNEL = "Raw Soft Channel"
+        ASYNC_SOFT_CHANNEL = "Async Soft Channel"
+
+    class ModeSelect(SubsetEnum):
         SUPERVISORY = "supervisory"
         CLOSED_LOOP = "closed_loop"
 
     def __init__(self, prefix: str, name: str = ""):
-        with self.add_children_as_readables(ConfigSignal):
+        with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
             self.output_link = epics_signal_rw(str, f"{prefix}.OUT")
             self.desired_output_location = epics_signal_rw(str, f"{prefix}.DOL")
             self.output_mode_select = epics_signal_rw(self.ModeSelect, f"{prefix}.OMSL")
+            self.device_type = epics_signal_r(self.DeviceType, f"{prefix}.DTYP")
         super().__init__(prefix=prefix, name=name)

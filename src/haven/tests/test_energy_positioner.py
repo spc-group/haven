@@ -1,7 +1,7 @@
 import asyncio
 
 import pytest
-from ophyd_async.core import set_mock_value
+from ophyd_async.core import get_mock_put, set_mock_value
 
 from haven.devices.energy_positioner import EnergyPositioner
 from haven.devices.xray_source import BusyStatus
@@ -15,6 +15,7 @@ async def positioner():
         undulator_prefix="S255ID:",
     )
     await positioner.connect(mock=True)
+    set_mock_value(positioner.monochromator.energy.velocity, 5000)
     return positioner
 
 
@@ -22,12 +23,9 @@ async def test_set_energy(positioner):
     # Set up dependent values
     set_mock_value(positioner.monochromator.id_offset, 150)
     # Change the energy
-    status = positioner.set(10000, timeout=3)
+    await positioner.set(10000, timeout=3, wait=False)
     # Trick the Undulator into being done
-    set_mock_value(positioner.undulator.energy.done, BusyStatus.BUSY)
-    await asyncio.sleep(0.01)  # Let the event loop run
-    set_mock_value(positioner.undulator.energy.done, BusyStatus.DONE)
-    await status
+    await asyncio.sleep(0.05)  # Let the event loop run
     # Check that all the sub-components were set properly
     assert await positioner.monochromator.energy.user_setpoint.get_value() == 10000
     assert await positioner.undulator.energy.setpoint.get_value() == 10.150
@@ -38,6 +36,25 @@ async def test_real_to_pseudo_positioner(positioner):
     # Check that the pseudo single is updated
     reading = await positioner.read()
     assert reading["energy"]["value"] == 5000.0
+
+
+async def test_disable_id_tracking(positioner):
+    energy = positioner
+    # Turn on tracking to start with
+    set_mock_value(energy.monochromator.id_tracking, 1)
+    set_mock_value(energy.velocity, 100)
+    # Set the energy
+    status = energy.set(5000, wait=False)
+    # Trick the Undulator into being done
+    set_mock_value(positioner.undulator.energy.done, BusyStatus.BUSY)
+    await asyncio.sleep(0.05)  # Let the event loop run
+    set_mock_value(positioner.undulator.energy.done, BusyStatus.DONE)
+    await status
+    # Check that ID tracking was disabled
+    tracking_mock = get_mock_put(positioner.monochromator.id_tracking)
+    assert tracking_mock.call_count == 2
+    assert tracking_mock.call_args_list[0].args[0] == 0
+    assert tracking_mock.call_args_list[1].args[0] == 1
 
 
 # -----------------------------------------------------------------------------

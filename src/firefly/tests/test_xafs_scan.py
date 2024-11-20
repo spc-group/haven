@@ -8,9 +8,9 @@ from firefly.plans.xafs_scan import XafsScanDisplay
 
 # default values for EXAFS scan
 pre_edge = [-200, -50, 5]
-XANES_region = [-50, 50, 0.5]
-EXAFS_region = [50, 800, 0.5]
-default_values = [pre_edge, XANES_region, EXAFS_region]
+xanes_region = [-50, 50, 0.5]
+exafs_region = [50, 800, 0.5]
+default_values = [pre_edge, xanes_region, exafs_region]
 
 
 @pytest.fixture()
@@ -118,7 +118,7 @@ def test_xafs_scan_plan_queued_energies(display, qtbot, monkeypatch):
         E0=11500.8,
         detectors=["vortex_me4", "I0"],
         md={
-            "sample": "sam",
+            "sample_name": "sam",
             "purpose": "test",
             "is_standard": True,
             "notes": "sam_notes",
@@ -205,7 +205,7 @@ def test_xafs_scan_plan_queued_energies_k_mixed(qtbot, display, monkeypatch):
         E0=11500.8,
         detectors=["vortex_me4", "I0"],
         md={
-            "sample": "sam",
+            "sample_name": "sam",
             "is_standard": False,
             "notes": "sam_notes",
         },

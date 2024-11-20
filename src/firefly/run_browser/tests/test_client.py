@@ -1,14 +1,23 @@
-from typing import Sequence, Union
+import pytest
 
-from ophyd import Component, Device, Signal
-
-Detector = Union[Device, Component, Signal, str]
+from firefly.run_browser.client import DatabaseWorker
 
 
-DetectorList = Union[str, Sequence[Detector]]
+@pytest.mark.asyncio
+async def test_filter_runs(catalog):
+    worker = DatabaseWorker(catalog=catalog)
+    runs = await worker.load_all_runs(filters={"plan": "xafs_scan"})
+    # Check that the runs were filtered
+    assert len(runs) == 1
 
 
-Motor = Union[Device, Component, Signal, str]
+@pytest.mark.asyncio
+async def test_distinct_fields(catalog):
+    worker = DatabaseWorker(catalog=catalog)
+    distinct_fields = await worker.load_distinct_fields()
+    # Check that the dictionary has the right structure
+    for key in ["sample_name"]:
+        assert key in distinct_fields.keys()
 
 
 # -----------------------------------------------------------------------------

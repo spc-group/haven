@@ -5,7 +5,7 @@ from typing import Mapping
 
 from ophyd.utils.errors import ReadOnlyError
 from ophyd_async.core import soft_signal_rw
-from ophyd_async.epics.signal import epics_signal_r
+from ophyd_async.epics.core import epics_signal_r
 
 from ..positioner import Positioner
 from .signal import derived_signal_rw, epics_signal_xval
