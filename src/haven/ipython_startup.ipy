@@ -60,16 +60,14 @@ except NotConnected as exc:
 num_devices = len(haven.beamline.registry.root_devices)
 print(f"Connected to {num_devices} devices in {time.monotonic() - t0:.2f} seconds.", flush=True)
 
-# Save references to some commonly used things in the global namespace
+# Save references to all the devices in the global namespace
 registry = haven.beamline.registry
-try:
-    ion_chambers = registry.findall("ion_chambers", allow_none=True)
-except ComponentNotFound as exc:
-    log.exception(exc)
-try:
-    energy = registry['energy']
-except ComponentNotFound as exc:
-    log.exception(exc)
+ion_chambers = registry.findall("ion_chambers", allow_none=True)
+for cpt in registry._objects_by_name.values():
+    # Replace spaces and other illegal characters in variable name
+    name = haven.sanitize_name(cpt.name)
+    # Add the device as a variable in module's globals
+    globals().setdefault(name, cpt)
 
 # Print helpful information to the console
 custom_theme = Theme(
