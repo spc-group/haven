@@ -54,7 +54,18 @@ class LineScanDisplay(regions_display.RegionsDisplay):
             self.update_total_time
         )
         self.ui.spinBox_repeat_scan_num.valueChanged.connect(self.update_total_time)
+        self.ui.relative_scan_checkbox.stateChanged.connect(self.change_background)
 
+    def change_background(self, state):
+        """
+        Change the background color of the relative scan checkbox based on its state.
+        """
+        if state:  # Checked
+            self.ui.relative_scan_checkbox.setStyleSheet("background-color: rgb(255, 85, 127);\ntext-decoration: underline;")
+
+        else:  # Unchecked
+            self.ui.relative_scan_checkbox.setStyleSheet("background-color: rgb(0, 170, 255);")
+            
     def queue_plan(self, *args, **kwargs):
         """Execute this plan on the queueserver."""
         detectors, motor_args, repeat_scan_num = self.get_scan_parameters()

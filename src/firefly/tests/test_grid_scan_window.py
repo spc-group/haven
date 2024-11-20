@@ -87,7 +87,7 @@ async def test_grid_scan_plan_queued(display, qtbot, sim_registry, ion_chamber):
     display.ui.textEdit_notes.setText("notes")
 
     expected_item = BPlan(
-        "grid_scan",
+        "rel_grid_scan",
         ["vortex_me4", "I00"],
         "async_motor_1",
         2.0,
