@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>795</width>
-    <height>389</height>
+    <height>384</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -66,8 +66,7 @@
        <item>
         <widget class="QCheckBox" name="relative_scan_checkbox">
          <property name="styleSheet">
-          <string notr="true">background-color: rgb(255, 85, 127);
-text-decoration: underline;</string>
+          <string notr="true">background-color: rgb(255, 85, 127);</string>
          </property>
          <property name="text">
           <string>Relative</string>
@@ -449,7 +448,7 @@ text-decoration: underline;</string>
            <x>0</x>
            <y>0</y>
            <width>498</width>
-           <height>213</height>
+           <height>208</height>
           </rect>
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_7">
@@ -468,10 +467,13 @@ text-decoration: underline;</string>
             <property name="orientation">
              <enum>Qt::Vertical</enum>
             </property>
+            <property name="sizeType">
+             <enum>QSizePolicy::Expanding</enum>
+            </property>
             <property name="sizeHint" stdset="0">
              <size>
-              <width>20</width>
-              <height>40</height>
+              <width>0</width>
+              <height>10</height>
              </size>
             </property>
            </spacer>

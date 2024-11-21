@@ -66,8 +66,7 @@
        <item>
         <widget class="QCheckBox" name="relative_scan_checkbox">
          <property name="styleSheet">
-          <string notr="true">background-color: rgb(255, 85, 127);
-text-decoration: underline;</string>
+          <string notr="true">background-color: rgb(255, 85, 127);</string>
          </property>
          <property name="text">
           <string>Relative</string>
