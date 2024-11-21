@@ -124,7 +124,7 @@ class GridScanDisplay(regions_display.RegionsDisplay):
         """
         if state:  # Checked
             self.ui.relative_scan_checkbox.setStyleSheet(
-                "background-color: rgb(255, 85, 127);\ntext-decoration: underline;"
+                "background-color: rgb(255, 85, 127);"
             )
 
         else:  # Unchecked
