@@ -148,7 +148,7 @@ def auto_gain(
 
     """
     # Resolve the detector list into voltmeter AI's
-    ion_chambers = beamline.registry.findall(ion_chambers)
+    ion_chambers = beamline.devices.findall(ion_chambers)
     # Prepare the recommendation engine
     targets = {
         "lower": volts_min,

@@ -51,7 +51,7 @@ class BssDisplay(display.FireflyDisplay):
         self.ui.refresh_models_button.setIcon(qta.icon("fa5s.sync"))
 
     def customize_device(self):
-        self._device = beamline.registry.find("beamline_manager")
+        self._device = beamline.devices["beamline_manager"]
 
     def proposals(self):
         config = load_config()
@@ -143,7 +143,7 @@ class BssDisplay(display.FireflyDisplay):
     def update_proposal(self):
         new_id = self._proposal_id
         # Change the proposal in the EPICS record
-        bss = beamline.registry.find("beamline_manager.bss")
+        bss = beamline.devices["beamline_manager.bss"]
         bss.proposal.proposal_id.set(new_id).wait()
         # Notify any interested parties that the proposal has been changed
         self.proposal_changed.emit()
@@ -160,7 +160,7 @@ class BssDisplay(display.FireflyDisplay):
     def update_esaf(self):
         new_id = self._esaf_id
         # Change the esaf in the EPICS record
-        bss = beamline.registry.find("beamline_manager.bss")
+        bss = beamline.devices["beamline_manager.bss"]
         bss.wait_for_connection()
         bss.esaf.esaf_id.set(new_id).wait(timeout=5)
         # Notify any interested parties that the esaf has been changed

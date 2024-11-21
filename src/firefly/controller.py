@@ -77,7 +77,7 @@ class FireflyController(QtCore.QObject):
         self.actions = ActionsRegistry()
         self.windows = OrderedDict()
         self.queue_re_state_changed.connect(self.enable_queue_controls)
-        self.registry = beamline.registry
+        self.registry = beamline.devices
         # An error message dialog for later use
         self.error_message = QErrorMessage()
 
@@ -112,15 +112,16 @@ class FireflyController(QtCore.QObject):
 
         """
         if load_instrument:
+            beamline.load()
             try:
-                await beamline.load()
+                await beamline.connect()
             except NotConnected as exc:
                 log.exception(exc)
                 msg = (
                     "One or more devices failed to load. See console logs for details."
                 )
                 self.error_message.showMessage(msg)
-            self.registry_changed.emit(beamline.registry)
+            self.registry_changed.emit(beamline.devices)
         # Make actions for launching other windows
         self.setup_window_actions()
         # Actions for controlling the bluesky run engine

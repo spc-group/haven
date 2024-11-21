@@ -53,7 +53,7 @@ def beamline_connected():
 @pytest.fixture()
 def sim_registry(monkeypatch):
     # Save the registry so we can restore it later
-    registry = haven.beamline.registry
+    registry = haven.beamline.devices
     objects_by_name = registry._objects_by_name
     objects_by_label = registry._objects_by_label
     registry.clear()

@@ -9,7 +9,7 @@ from ..instrument import beamline
 
 def _set_shutters(shutters: Union[str, Sequence[Device]], direction: int):
     if shutters != []:
-        shutters = beamline.registry.findall(shutters)
+        shutters = beamline.devices.findall(shutters)
     # Prepare the plan
     plan_args = [obj for shutter in shutters for obj in (shutter, direction)]
     if len(plan_args) > 0:

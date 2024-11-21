@@ -100,7 +100,7 @@ class FireflyDisplay(Display):
         # Retrieve the device
         device = self.macros().get("DEVICE")
         if device is not None:
-            device = beamline.registry.find(device)
+            device = beamline.devices[device]
         self.device = device
         return device
 

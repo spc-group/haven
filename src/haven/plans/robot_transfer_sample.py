@@ -36,7 +36,7 @@ def robot_transfer_sample(robot, sampleN, *args):
       multiple pairs of motor and pos
     """
 
-    robot = beamline.registry.find(robot)
+    robot = beamline.devices[robot]
 
     # Check if power is on
     # if robot.power_rbv.get() == Off:
@@ -57,7 +57,7 @@ def robot_transfer_sample(robot, sampleN, *args):
     #   raise ValueError("Robot is running now.")
 
     # Find motors
-    motor_list = [beamline.registry.find(motor) for motor in args[::2]]
+    motor_list = [beamline.devices[motor] for motor in args[::2]]
     new_positions = [pos for pos in args[1::2]]
     # Record the motor positions before load sampls
     initial_positions = [rbv(motor) for motor in motor_list]
