@@ -109,10 +109,7 @@ class MotorRegion(regions_display.RegionBase):
                 self.rbv_label.setText("Not readable")
                 return
 
-            # Await the asynchronous read method
             value_dict = await motor.read()
-            print("=" * 50)
-            print(value_dict)
 
             if len(value_dict) == 1:
                 value = list(value_dict.values())[0]["value"]
@@ -123,10 +120,21 @@ class MotorRegion(regions_display.RegionBase):
                 self.rbv_label.setText("No values")
         except ComponentNotFound as e:
             self.rbv_label.setText("")
-            print(e)
+            logging.error(f"ComponentNotFound: {e}")
         except Exception as e:
             self.rbv_label.setText("Error")
-            print(f"An error occurred: {e}")
+            logging.error(f"An error occurred in _update_rbv: {e}")
+
+
+class QTextBrowserHandler(logging.Handler):
+    def __init__(self, text_browser):
+        super().__init__()
+        self.text_browser = text_browser
+
+    def emit(self, record):
+        if "ComponentNotFound" in record.msg or "_update_rbv" in record.msg:
+            msg = self.format(record)
+            self.text_browser.append(msg)
 
 
 class SaveMotorDisplay(regions_display.RegionsDisplay):
@@ -148,6 +156,14 @@ class SaveMotorDisplay(regions_display.RegionsDisplay):
             self.on_regions_all_checkbox
         )
         self.ui.refresh_button.setIcon(qta.icon("fa5s.sync-alt"))
+
+        # Redirect logs to the textBrowser
+        log_handler = QTextBrowserHandler(self.ui.textBrowser)
+        log_handler.setFormatter(
+            logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+        )
+        log_handler.setLevel(logging.DEBUG)
+        logging.getLogger().addHandler(log_handler)
 
     def init_saved_positions_table(self):
         # Set the headers for the table
