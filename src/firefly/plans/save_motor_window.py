@@ -108,8 +108,10 @@ class MotorRegion(regions_display.RegionBase):
             if not isinstance(motor, Readable):
                 self.rbv_label.setText("Not readable")
                 return
-
             value_dict = await motor.read()
+            # add warnings to users about unmovable motors
+            if not isinstance(motor, Movable):
+                logging.error(f"warn user that this is not movable and cannot be moved")
 
             if len(value_dict) == 1:
                 value = list(value_dict.values())[0]["value"]
