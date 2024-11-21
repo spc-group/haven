@@ -35,9 +35,7 @@ if test:
             return client
 
     fake_client = create_fake_client()
-    haven.motor_position.tiled_client = (
-        lambda: fake_client
-    ) 
+    haven.motor_position.tiled_client = lambda: fake_client
 
 
 class TitleRegion:
@@ -64,6 +62,7 @@ class TitleRegion:
 
         # Fix widths so the labels are aligned with MotorRegions
         Qlabels_all["Value"].setFixedWidth(60)
+
 
 class MotorRegion(regions_display.RegionBase):
     def setup_ui(self):
@@ -116,7 +115,7 @@ class MotorRegion(regions_display.RegionBase):
             print(value_dict)
 
             if len(value_dict) == 1:
-                value = list(value_dict.values())[0]['value']
+                value = list(value_dict.values())[0]["value"]
                 self.rbv_label.setText(str(value))
             elif len(value_dict) > 1:
                 self.rbv_label.setText("Multiple values")
@@ -128,6 +127,7 @@ class MotorRegion(regions_display.RegionBase):
         except Exception as e:
             self.rbv_label.setText("Error")
             print(f"An error occurred: {e}")
+
 
 class SaveMotorDisplay(regions_display.RegionsDisplay):
 

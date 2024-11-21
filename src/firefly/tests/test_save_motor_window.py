@@ -117,12 +117,12 @@ def test_on_region_checkbox(display):
     # Uncheck the region checkbox
     region.region_checkbox.setChecked(False)
     assert not region.motor_box.isEnabled()
-    assert not region.RBV_label.isEnabled()
+    assert not region.rbv_label.isEnabled()
 
     # Check the region checkbox
     region.region_checkbox.setChecked(True)
     assert region.motor_box.isEnabled()
-    assert region.RBV_label.isEnabled()
+    assert region.rbv_label.isEnabled()
 
 
 @pytest.mark.asyncio
@@ -139,10 +139,10 @@ async def test_queue_plan_submission(display, monkeypatch):
     ), f"Expected 2 regions, but got {len(display.regions)}"
 
     display.regions[0].motor_box.combo_box.setCurrentText("async_motor_1")
-    display.regions[0].RBV_label.setText("12345.56789")
+    display.regions[0].rbv_label.setText("12345.56789")
 
     display.regions[1].motor_box.combo_box.setCurrentText("async_motor_2")
-    display.regions[1].RBV_label.setText("56789.0")
+    display.regions[1].rbv_label.setText("56789.0")
 
     display.queue_plan()
 
