@@ -1,19 +1,10 @@
 """Loader for creating instances of the devices from a config file."""
 
-import asyncio
-import inspect
 import logging
 import os
-import time
-from pathlib import Path
-from typing import Mapping, Sequence
+from typing import Mapping
 
-import tomlkit
 from guarneri import Instrument
-from ophyd import Device as ThreadedDevice
-from ophyd.sim import make_fake_device
-from ophyd_async.core import DEFAULT_TIMEOUT, NotConnected
-from ophydregistry import Registry
 
 from .devices.aerotech import AerotechStage
 from .devices.aps import ApsMachine
@@ -36,7 +27,6 @@ from .devices.stage import XYStage
 from .devices.table import Table
 from .devices.xia_pfcu import PFCUFilterBank
 from .devices.xspress import make_xspress_device
-from .exceptions import InvalidConfiguration
 
 log = logging.getLogger(__name__)
 
@@ -71,17 +61,20 @@ class HavenInstrument(Instrument):
             self.devices.clear()
         # Check if config files are available
         if "HAVEN_CONFIG_FILES" in os.environ:
-            config_files = os.environ.get('HAVEN_CONFIG_FILES', "").split(":")
+            config_files = os.environ.get("HAVEN_CONFIG_FILES", "").split(":")
         else:
             config_files = []
         # Load devices ("motors" is done later)
         for cfg_file in config_files:
-            super().load(cfg_file, return_exceptions=True,
-                         ignored_classes=["motors"])
+            super().load(cfg_file, return_exceptions=True, ignored_classes=["motors"])
         # VME-style Motors happen later so duplicate motors can be
         # removed
         for cfg_file in config_files:
-            super().load(cfg_file, device_classes={"motors": load_motors}, ignored_classes=self.device_classes.keys())
+            super().load(
+                cfg_file,
+                device_classes={"motors": load_motors},
+                ignored_classes=self.device_classes.keys(),
+            )
         # Return the final list
         if return_devices:
             return self.devices
