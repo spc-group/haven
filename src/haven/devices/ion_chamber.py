@@ -303,6 +303,8 @@ class IonChamber(StandardReadable, Triggerable):
         if record_dark_current:
             await self.record_dark_current()
             return
+        # Calculate expected timeout value
+        timeout = await self.default_timeout()
         # Check if we've seen this signal before
         signal = self.mcs.scaler.count
         last_status = self._trigger_statuses.get(signal.source)
@@ -310,8 +312,6 @@ class IonChamber(StandardReadable, Triggerable):
         if last_status is not None and not last_status.done:
             await last_status
             return
-        # Calculate expected timeout value
-        timeout = await self.default_timeout()
         # Nothing to wait on yet, so trigger the scaler and stash the result
         st = signal.set(True, timeout=timeout)
         self._trigger_statuses[signal.source] = st
