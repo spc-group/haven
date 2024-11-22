@@ -74,13 +74,14 @@ class HavenInstrument(Instrument):
             config_files = os.environ.get('HAVEN_CONFIG_FILES', "").split(":")
         else:
             config_files = []
-        # Load devices
+        # Load devices ("motors" is done later)
         for cfg_file in config_files:
-            super().load(cfg_file, return_exceptions=True)
+            super().load(cfg_file, return_exceptions=True,
+                         ignored_classes=["motors"])
         # VME-style Motors happen later so duplicate motors can be
         # removed
         for cfg_file in config_files:
-            super().load(cfg_file, device_classes={"motors": load_motors})
+            super().load(cfg_file, device_classes={"motors": load_motors}, ignored_classes=self.device_classes.keys())
         # Return the final list
         if return_devices:
             return self.devices

@@ -63,8 +63,8 @@ print(f"Connected to {num_devices} devices in {time.monotonic() - t0:.2f} second
 
 # Save references to all the devices in the global namespace
 devices = haven.beamline.devices
-ion_chambers = registry.findall("ion_chambers", allow_none=True)
-for cpt in registry._objects_by_name.values():
+ion_chambers = devices.findall("ion_chambers", allow_none=True)
+for cpt in devices._objects_by_name.values():
     # Replace spaces and other illegal characters in variable name
     name = haven.sanitize_name(cpt.name)
     # Add the device as a variable in module's globals
@@ -78,10 +78,10 @@ custom_theme = Theme(
 )
 console = Console(theme=custom_theme)
 motd = (
-    "[bold]Devices[/bold] are available directly by name or though the [italic]registry[/italic].\n"
+    "[bold]Devices[/bold] are available directly by name or though the [italic]devices[/italic].\n"
     " ┣━ [code]m2 = sim_motor_2[/]\n"
     " ┃    —or—\n"
-    " ┗━ [code]m2 = registry['sim_motor_2'][/]\n"
+    " ┗━ [code]m2 = devices['sim_motor_2'][/]\n"
     "\n"
     "[bold]Bluesky plans and plan-stubs[/bold] are available as "
     "[italic]bp[/] and [italic]bps[/] respectively.\n"
