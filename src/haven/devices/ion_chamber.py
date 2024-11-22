@@ -49,6 +49,7 @@ class IonChamber(StandardReadable, Triggerable):
 
     _ophyd_labels_ = {"ion_chambers", "detectors"}
     _trigger_statuses = {}
+    _clock_register_width = 32  # bits in the register
 
     def __init__(
         self,
@@ -270,6 +271,21 @@ class IonChamber(StandardReadable, Triggerable):
                 # Update the labjack's input's .DESC field to match the scaler channel
                 await self.voltmeter_channel.description.set(desc)
 
+    async def default_timeout(self):
+        """Calculate the expected timeout for triggering this ion chamber."""
+        aws = [
+            self.mcs.scaler.channels[0].is_gate.get_value(),
+            self.mcs.scaler.preset_time.get_value(),
+            self.mcs.scaler.clock_frequency.get_value(),
+        ]
+        is_time_limited, count_time, clock_freq = await asyncio.gather(*aws)
+        if is_time_limited:
+            # We're using the preset time to decide when to stop
+            return count_time + DEFAULT_TIMEOUT
+        else:
+            max_count = 2**self._clock_register_width / clock_freq
+            return max_count + DEFAULT_TIMEOUT
+
     @AsyncStatus.wrap
     async def trigger(self, record_dark_current=False):
         """Instruct the ion chamber's scaler to capture one data point.
@@ -294,8 +310,10 @@ class IonChamber(StandardReadable, Triggerable):
         if last_status is not None and not last_status.done:
             await last_status
             return
+        # Calculate expected timeout value
+        timeout = await self.default_timeout()
         # Nothing to wait on yet, so trigger the scaler and stash the result
-        st = signal.set(True)
+        st = signal.set(True, timeout=timeout)
         self._trigger_statuses[signal.source] = st
         await st
 
