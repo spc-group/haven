@@ -271,8 +271,23 @@ class IonChamber(StandardReadable, Triggerable):
                 # Update the labjack's input's .DESC field to match the scaler channel
                 await self.voltmeter_channel.description.set(desc)
 
-    async def default_timeout(self):
-        """Calculate the expected timeout for triggering this ion chamber."""
+    async def default_timeout(self) -> float:
+        """Calculate the expected timeout for triggering this ion chamber.
+
+        If ``self.mcs.scaler.preset_time`` is set and the first
+        (clock) channel is serving as a gate
+        (``self.mcs.scaler.channels[0].is_gate.get_value() == True``)
+        then the timeout is a little longer than the preset
+        time. Otherwise the timeout is calculated based on the longest
+        time the scaler can count for based on when the channel 0
+        clock register would fill up.
+
+        Returns
+        =======
+        timeout
+          The optimal timeout for trigger this ion chamber's scaler.
+
+        """
         aws = [
             self.mcs.scaler.channels[0].is_gate.get_value(),
             self.mcs.scaler.preset_time.get_value(),
