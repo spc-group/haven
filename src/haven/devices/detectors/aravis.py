@@ -1,4 +1,4 @@
-from ophyd_async.core import SubsetEnum, PathProvider
+from ophyd_async.core import PathProvider, SubsetEnum
 from ophyd_async.epics.adaravis import AravisDetector as DetectorBase
 from ophyd_async.epics.core import epics_signal_rw_rbv
 
@@ -14,11 +14,7 @@ class AravisDetector(HavenDetector, DetectorBase):
     _ophyd_labels_ = {"cameras", "detectors"}
 
     def __init__(
-            self,
-            prefix,
-            *args,
-            path_provider: PathProvider | None = None,
-            **kwargs
+        self, prefix, *args, path_provider: PathProvider | None = None, **kwargs
     ):
         if path_provider is None:
             path_provider = default_path_provider()

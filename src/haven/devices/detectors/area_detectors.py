@@ -5,8 +5,7 @@ from ophyd_async.core import UUIDFilenameProvider, YMDPathProvider
 from ..._iconfig import load_config
 
 
-class HavenDetector:
-    ...
+class HavenDetector: ...
 
 
 def default_path_provider(path: Path = None, config=None):

@@ -2,20 +2,20 @@ import asyncio
 from collections.abc import Sequence
 
 from ophyd_async.core import (
+    AsyncStatus,
+    DetectorController,
+    DetectorTrigger,
     PathProvider,
     SignalR,
     StandardDetector,
-    DetectorController,
-    DetectorTrigger,
-    AsyncStatus,
-    TriggerInfo,
     StrictEnum,
+    TriggerInfo,
     set_and_wait_for_value,
 )
 from ophyd_async.epics import adcore
 from ophyd_async.epics.core import epics_signal_rw, epics_signal_x
 
-from .area_detectors import default_path_provider, HavenDetector
+from .area_detectors import HavenDetector, default_path_provider
 
 
 class XspressTriggerMode(StrictEnum):
