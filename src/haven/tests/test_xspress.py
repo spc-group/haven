@@ -1,13 +1,21 @@
+import asyncio
+from pathlib import Path
+
 import pytest
+
+from ophyd_async.core import TriggerInfo, UUIDFilenameProvider, StaticPathProvider, set_mock_value, get_mock_put
 
 from haven.devices.detectors.xspress import Xspress3Detector
 from haven.devices.detectors.area_detectors import default_path_provider
 
 
+this_dir = Path(__file__).parent
+
 @pytest.fixture()
 async def detector():
-    det = Xspress3Detector("255id_xsp:", path_provider=default_path_provider())
+    det = Xspress3Detector("255id_xsp:", name="vortex_me4")
     await det.connect(mock=True)
+    set_mock_value(det.hdf.file_path_exists, True)
     return det
 
 
@@ -16,6 +24,21 @@ def test_mca_signals(detector):
     # print(list(detector.drv.children()))
     assert detector.drv.acquire_time.source == "mock+ca://255id_xsp:det1:AcquireTime_RBV"
     assert detector.drv.acquire.source == "mock+ca://255id_xsp:det1:Acquire_RBV"
+
+async def test_trigger(detector):
+    trigger_info = TriggerInfo(number_of_triggers=1)
+    status = detector.trigger()
+    await asyncio.sleep(0.1)  # Let the event loop turn
+    set_mock_value(detector.hdf.num_captured, 1)
+    await status
+    # Check that signals were set
+    get_mock_put(detector.drv.num_images).assert_called_once_with(1, wait=True)
+
+async def test_stage(detector):
+    assert not get_mock_put(detector.drv.erase).called
+    await detector.stage()
+    get_mock_put(detector.drv.erase_on_start).assert_called_once_with(False, wait=True)
+    assert get_mock_put(detector.drv.erase).called
 
 
 # -----------------------------------------------------------------------------
