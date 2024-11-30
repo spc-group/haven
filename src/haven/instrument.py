@@ -424,7 +424,6 @@ beamline = HavenInstrument(
         "synchrotron": ApsMachine,
         "robot": Robot,
         "pfcu4": PFCUFilterBank,  # <-- fails if mocked
-        "xspress": make_xspress_device,
         "dxp": make_dxp_device,
         "beamline_manager": BeamlineManager,
         "area_detector": make_area_detector,
