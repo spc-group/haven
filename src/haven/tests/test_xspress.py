@@ -2,15 +2,8 @@ import asyncio
 from pathlib import Path
 
 import pytest
-from ophyd_async.core import (
-    StaticPathProvider,
-    TriggerInfo,
-    UUIDFilenameProvider,
-    get_mock_put,
-    set_mock_value,
-)
+from ophyd_async.core import TriggerInfo, get_mock_put, set_mock_value
 
-from haven.devices.detectors.area_detectors import default_path_provider
 from haven.devices.detectors.xspress import Xspress3Detector
 
 this_dir = Path(__file__).parent

@@ -4,13 +4,11 @@ from collections.abc import Sequence
 from ophyd_async.core import (
     AsyncStatus,
     DetectorController,
-    DetectorTrigger,
     PathProvider,
     SignalR,
     StandardDetector,
     StrictEnum,
     TriggerInfo,
-    set_and_wait_for_value,
 )
 from ophyd_async.epics import adcore
 from ophyd_async.epics.core import epics_signal_rw, epics_signal_x

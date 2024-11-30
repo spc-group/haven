@@ -35,7 +35,6 @@ from .devices.slits import ApertureSlits, BladeSlits
 from .devices.stage import XYStage
 from .devices.table import Table
 from .devices.xia_pfcu import PFCUFilterBank
-from .devices.xspress import make_xspress_device
 from .exceptions import InvalidConfiguration
 
 log = logging.getLogger(__name__)
