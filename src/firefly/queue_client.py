@@ -29,8 +29,7 @@ class QueueClient(QObject):
     api: REManagerAPI
     _last_queue_status: Optional[dict] = None
     last_update: float = -1
-    timeout: float = 0.2
-    min_timeout: float = 0.2
+    timeout: float = 0.5
     timer: QTimer
 
     # Signals responding to queue changes
@@ -67,30 +66,6 @@ class QueueClient(QObject):
         else:
             log.error(f"Failed to open/close environment: {result['msg']}")
 
-    @asyncSlot()
-    async def update(self):
-        now = time.monotonic()
-        if now >= self.last_update + self.timeout:
-            if not load_config()["beamline"]["hardware_is_present"]:
-                log.warning("Beamline not connected, skipping queue client update.")
-                self.timeout = 60  # Just update every 1 minute
-                self.last_update = now
-                return
-            log.debug("Updating queue client.")
-            try:
-                await self._check_queue_status()
-            except comm_base.RequestTimeoutError as e:
-                # If we can't reach the server, wait for a minute and retry
-                self.timeout = min(60, self.timeout * 2)
-                log.warn(str(e))
-                warnings.warn(str(e))
-                log.info(f"Retrying in {self.timeout} seconds.")
-            else:
-                # Update succeeded, so wait for a bit
-                self.timeout = self.min_timeout
-            finally:
-                self.last_update = now
-
     @asyncSlot(bool)
     async def request_pause(self, *args, defer: bool = True, **kwargs):
         """Ask the queueserver run engine to pause.
@@ -113,10 +88,9 @@ class QueueClient(QObject):
             self.check_result(result)
         except (RuntimeError, comm_base.RequestFailedError) as ex:
             # Request failed, so force a UI update
-            await self.check_queue_status(force=True)
             raise
-        else:
-            await self.check_queue_status(force=False)
+        finally:
+            await self.update()
 
     @asyncSlot(bool)
     async def toggle_autostart(self, enable: bool):
@@ -124,12 +98,9 @@ class QueueClient(QObject):
         try:
             result = await self.api.queue_autostart(enable)
             self.check_result(result, task="toggle auto-start")
-        except (RuntimeError, comm_base.RequestFailedError):
-            # Request failed, so force a UI update
-            await self.check_queue_status(force=True)
-        else:
-            await self.check_queue_status(force=False)
-
+        finally:
+            await self.update()
+            
     @asyncSlot(bool)
     async def stop_queue(self, stop: bool):
         """Turn on/off whether the queue will stop after the current plan."""
@@ -142,11 +113,8 @@ class QueueClient(QObject):
         try:
             result = await api_call
             self.check_result(result, task="toggle stop queue")
-        except (RuntimeError, comm_base.RequestFailedError):
-            # Request failed, so force a UI update
-            await self.check_queue_status(force=True)
-        else:
-            await self.check_queue_status(force=False)
+        finally:
+            await self.update()
 
     @asyncSlot()
     async def start_queue(self):
@@ -186,19 +154,19 @@ class QueueClient(QObject):
             msg = f"Failed to {task}: {result}"
             log.error(msg)
             raise RuntimeError(msg)
+        
 
     @asyncSlot()
-    async def check_queue_status(self, force=False, *args, **kwargs):
+    @asyncSlot(bool)
+    async def update(self, force: bool = False):
         """Get an update queue status from queue server and notify slots.
 
         Parameters
         ==========
         force
-          If false (default), the ``queue_status_changed`` signal will
-          be emitted only if the queue status has changed since last
-          check.
-        *args, *kwargs
-          Unused arguments from qt widgets
+          If false (default), the ``queue_status_changed`` and other
+          signals will be emitted only if the queue status has changed
+          since last check.
 
         Emits
         =====
@@ -206,41 +174,7 @@ class QueueClient(QObject):
           With the updated queue status.
 
         """
-        try:
-            await self._check_queue_status(force=force)
-        except comm_base.RequestTimeoutError as e:
-            log.warning(str(e))
-            warnings.warn(str(e))
-
-    async def _check_queue_status(self, force: bool = False):
-        """Get an update queue status from queue server and notify slots.
-
-        Similar to ``check_queue_status`` but without the exception
-        handling.
-
-        Parameters
-        ==========
-        force
-          If false (default), the ``queue_status_changed`` signal will
-          be emitted only if the queue status has changed since last
-          check.
-
-        Emits
-        =====
-        self.status_changed
-          With the updated queue status.
-
-        """
-        new_status = await self.api.status()
-        # Add a new key for whether the queue is busy (length > 0 or running)
-        has_queue = new_status["items_in_queue"] > 0
-        is_running = new_status["manager_state"] in [
-            "paused",
-            "starting_queue",
-            "executing_queue",
-            "executing_task",
-        ]
-        new_status.setdefault("in_use", has_queue or is_running)
+        new_status = await self.queue_status()
         # Check individual components of the status if they've changed
         signals_to_check = [
             # (status key, signal to emit)
@@ -270,6 +204,34 @@ class QueueClient(QObject):
         if has_changed or force:
             self.status_changed.emit(new_status)
             self._last_queue_status = new_status
+
+    async def queue_status(self) -> dict:
+        """Get the latest queue status from the queue server.
+
+        Parameters
+        ==========
+        status
+          The response from the queueserver regarding its status. If
+          the queueserver is not reachable, then
+          ``status['manager_state']`` will be ``"disconnected"``.
+        
+        """
+        
+        try:
+            status = await self.api.status()
+        except comm_base.RequestTimeoutError as e:
+            log.warning("Could not reach queueserver ZMQ.")
+            status = {"manager_state": "disconnected"}
+        # Add a new key for whether the queue is busy (length > 0 or running)
+        has_queue = status["items_in_queue"] > 0
+        is_running = status["manager_state"] in [
+            "paused",
+            "starting_queue",
+            "executing_queue",
+            "executing_task",
+        ]
+        status.setdefault("in_use", has_queue or is_running)
+        return status
 
     async def update_devices(self):
         "Emit the latest dict of available devices."

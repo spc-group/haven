@@ -572,9 +572,7 @@ class FireflyController(QtCore.QObject):
         self.actions.queue_controls["halt"].triggered.connect(client.halt_runengine)
         self.actions.queue_controls["abort"].triggered.connect(client.abort_runengine)
         self.actions.queue_controls["stop_queue"].triggered.connect(client.stop_queue)
-        self.check_queue_status_action.triggered.connect(
-            partial(client.check_queue_status, True)
-        )
+        self.check_queue_status_action.triggered.connect(partial(client.update, True))
         # Connect signals/slots for queueserver state changes
         client.status_changed.connect(self.queue_status_changed)
         client.in_use_changed.connect(self.queue_in_use_changed)

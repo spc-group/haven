@@ -336,7 +336,7 @@ async def test_stop_queue(client, qtbot):
 
 
 @pytest.mark.asyncio
-async def test_check_queue_status(client, qtbot):
+async def test_update(client, qtbot):
     # Check that the queue length is changed
     signals = [
         client.status_changed,
@@ -348,7 +348,7 @@ async def test_check_queue_status(client, qtbot):
         client.in_use_changed,
     ]
     with qtbot.waitSignals(signals):
-        await client.check_queue_status()
+        await client.update()
     return
     # Check that it isn't emitted a second time
     with pytest.raises(TimeoutError):
