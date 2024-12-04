@@ -25,12 +25,78 @@ def queueserver_api():
     return api
 
 
+def queue_status(status_mapping: Mapping[str, str] = {}):
+    """A generative coroutine that tracks the status of the queueserver.
+
+    Parameters
+    ==========
+    status_mapping
+      Maps the queuestatus parameters that are sent onto the update
+      signal names to yield
+
+    Yields
+    ======
+    to_update
+      Dictionary with signals to emit as keys, and tuples of
+      ``*args`` to emit and values. So ``{self.status_changed:
+      ("spam", "eggs")}`` results in
+      ``self.status_changed.emit("spam", "eggs")``.
+
+    Sends
+    =====
+    status
+      The most recent updated status from the queueserver.
+
+    """
+    to_update = {}
+    last_status = {}
+    was_in_use = None
+    while True:
+        status = yield to_update
+        to_update = {}
+        if status != last_status:
+            to_update["status_changed"] = (status,)
+        # Check individual status items to see if they've changed
+        status_diff = {
+            key: val for key, val in status.items()
+            if key not in last_status or val != last_status[key]
+        }
+        updated_params = {
+            status_mapping[key]: (val,) for key, val in status_diff.items()
+            if key in status_mapping
+        }
+        to_update.update(updated_params)
+        # Add a new key for whether the queue is busy (length > 0 or running)
+        has_queue = status["items_in_queue"] > 0
+        is_running = status["manager_state"] in [
+            "paused",
+            "starting_queue",
+            "executing_queue",
+            "executing_task",
+        ]
+        is_in_use = has_queue or is_running
+        if is_in_use != was_in_use:
+            to_update["in_use_changed"] = (is_in_use,)
+            was_in_use = is_in_use
+        # Stash this status for the next time around
+        last_status = status
+
+
 class QueueClient(QObject):
     api: REManagerAPI
     _last_queue_status: Optional[dict] = None
     last_update: float = -1
     timeout: float = 0.5
     timer: QTimer
+    parameter_mapping: Mapping[str, str] = {
+        "queue_autostart_enabled": "autostart_changed",
+        "worker_environment_exists": "environment_opened",
+        "worker_environment_state": "environment_state_changed",
+        "manager_state": "manager_state_changed",
+        "re_state": "re_state_changed",
+        "devices_allowed_uid": "devices_allowed_changed",
+    }
+
 
     # Signals responding to queue changes
     status_changed = Signal(dict)
@@ -44,9 +110,6 @@ class QueueClient(QObject):
     re_state_changed = Signal(str)  # New state
     devices_changed = Signal(dict)
 
-    def start(self):
-        self.timer.start(int(self.timeout * 1000))
-
     def __init__(self, *args, api, **kwargs):
         self.api = api
         super().__init__(*args, **kwargs)
@@ -54,6 +117,13 @@ class QueueClient(QObject):
         # Setup timer for updating the queue
         self.timer = QTimer()
         self.timer.timeout.connect(self.update)
+        # Create the generator to keep track of the queue states
+        self.status = queue_status()
+        next(self.status)  # Prime the generator
+
+    def start(self):
+        # Start the time so that it 
+        self.timer.start(int(self.timeout * 1000))
 
     @asyncSlot(bool)
     async def open_environment(self, to_open):
@@ -154,19 +224,10 @@ class QueueClient(QObject):
             msg = f"Failed to {task}: {result}"
             log.error(msg)
             raise RuntimeError(msg)
-        
 
     @asyncSlot()
-    @asyncSlot(bool)
-    async def update(self, force: bool = False):
+    async def update(self):
         """Get an update queue status from queue server and notify slots.
-
-        Parameters
-        ==========
-        force
-          If false (default), the ``queue_status_changed`` and other
-          signals will be emitted only if the queue status has changed
-          since last check.
 
         Emits
         =====
@@ -175,35 +236,15 @@ class QueueClient(QObject):
 
         """
         new_status = await self.queue_status()
+        signals_changed = self.status.send(new_status)
         # Check individual components of the status if they've changed
-        signals_to_check = [
-            # (status key, signal to emit)
-            ("worker_environment_exists", self.environment_opened),
-            ("worker_environment_state", self.environment_state_changed),
-            ("manager_state", self.manager_state_changed),
-            ("re_state", self.re_state_changed),
-            ("items_in_queue", self.length_changed),
-            ("in_use", self.in_use_changed),
-            ("queue_stop_pending", self.queue_stop_changed),
-            ("queue_autostart_enabled", self.autostart_changed),
-        ]
-        if force:
-            log.debug(f"Forcing queue server status update: {new_status}")
-        for key, signal in signals_to_check:
-            is_new = key not in self._last_queue_status
-            has_changed = new_status[key] != self._last_queue_status.get(key)
-            if is_new or has_changed or force:
-                signal.emit(new_status[key])
+        for signal_name, args in signals_changed.items():
+            if hasattr(self, signal_name):
+                signal = getattr(self, signal_name)
+                signal.emit(*args)
         # Check for new available devices
-        if new_status["devices_allowed_uid"] != self._last_queue_status.get(
-            "devices_allowed_uid"
-        ):
+        if "devices_allowed_changed" in signals_changed:
             await self.update_devices()
-        # check the whole status to see if it's changed
-        has_changed = new_status != self._last_queue_status
-        if has_changed or force:
-            self.status_changed.emit(new_status)
-            self._last_queue_status = new_status
 
     async def queue_status(self) -> dict:
         """Get the latest queue status from the queue server.
@@ -222,15 +263,6 @@ class QueueClient(QObject):
         except comm_base.RequestTimeoutError as e:
             log.warning("Could not reach queueserver ZMQ.")
             status = {"manager_state": "disconnected"}
-        # Add a new key for whether the queue is busy (length > 0 or running)
-        has_queue = status["items_in_queue"] > 0
-        is_running = status["manager_state"] in [
-            "paused",
-            "starting_queue",
-            "executing_queue",
-            "executing_task",
-        ]
-        status.setdefault("in_use", has_queue or is_running)
         return status
 
     async def update_devices(self):
