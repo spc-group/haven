@@ -271,8 +271,28 @@ class IonChamber(StandardReadable, Triggerable):
                 # Update the labjack's input's .DESC field to match the scaler channel
                 await self.voltmeter_channel.description.set(desc)
 
-    async def default_timeout(self):
-        """Calculate the expected timeout for triggering this ion chamber."""
+    async def default_timeout(self) -> float:
+        """Calculate the expected timeout for triggering this ion chamber.
+
+        If ``self.mcs.scaler.preset_time`` is set and the first
+        (clock) channel is serving as a gate
+        (``self.mcs.scaler.channels[0].is_gate.get_value() == True``)
+        then the timeout is a little longer than the preset
+        time.
+
+        Otherwise the timeout is calculated based on the longest time
+        the scaler can count for based on when the channel 0 clock
+        register would fill up. For example, a 32-bit scaler with a
+        9.6 MHz external clock could count for up to:
+
+          2**32 / 9600000 = 447.4 seconds
+
+        Returns
+        =======
+        timeout
+          The optimal timeout for trigger this ion chamber's scaler.
+
+        """
         aws = [
             self.mcs.scaler.channels[0].is_gate.get_value(),
             self.mcs.scaler.preset_time.get_value(),
@@ -283,8 +303,10 @@ class IonChamber(StandardReadable, Triggerable):
             # We're using the preset time to decide when to stop
             return count_time + DEFAULT_TIMEOUT
         else:
-            max_count = 2**self._clock_register_width / clock_freq
-            return max_count + DEFAULT_TIMEOUT
+            # Use the maximum time the scaler could possibly count
+            max_counts = 2**self._clock_register_width
+            max_count_time = max_counts / clock_freq
+            return max_count_time + DEFAULT_TIMEOUT
 
     @AsyncStatus.wrap
     async def trigger(self, record_dark_current=False):
