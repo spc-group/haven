@@ -12,8 +12,6 @@ __all__ = [
 import argparse
 import logging
 import os
-from contextlib import contextmanager
-from copy import deepcopy
 from pathlib import Path
 from pprint import pprint
 from typing import Optional, Sequence
@@ -97,21 +95,6 @@ def print_config_value(args: Sequence[str] = None):
     else:
         # Simple string, so just print it
         print(value)
-
-
-@contextmanager
-def beamline_connected(is_connected=True):
-    global _local_overrides
-    # Save old value
-    old_dict = deepcopy(_local_overrides)
-    # Set temporary value
-    if "beamline" not in _local_overrides.keys():
-        _local_overrides["beamline"] = {}
-    _local_overrides["beamline"]["hardware_is_present"] = is_connected
-    # Return to enclosing code
-    yield
-    # Restore old value
-    _local_overrides = old_dict
 
 
 # -----------------------------------------------------------------------------

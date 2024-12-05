@@ -1,20 +1,20 @@
-import re
 import logging
+import re
 import time
 from collections import OrderedDict
 from enum import IntEnum
 from functools import partial
-from typing import Dict, Optional, Sequence, Callable
+from typing import Callable, Dict, Optional, Sequence
 
 import numpy as np
 import pandas as pd
 from apstools.devices import CamMixin_V34, SingleTrigger_V34
 from ophyd import ADComponent as ADCpt
+from ophyd import Component
 from ophyd import Component as Cpt
 from ophyd import Device
 from ophyd import DynamicDeviceComponent as DDC
-from ophyd import EpicsSignal, EpicsSignalRO, Kind
-from ophyd import Component, K
+from ophyd import EpicsSignal, EpicsSignalRO, K, Kind
 from ophyd.areadetector.base import EpicsSignalWithRBV as SignalWithRBV
 from ophyd.signal import InternalSignal
 from ophyd.sim import make_fake_device

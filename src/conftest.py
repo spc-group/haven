@@ -15,7 +15,6 @@ from tiled.client import Context, from_context
 from tiled.server.app import build_app
 
 import haven
-from haven._iconfig import beamline_connected as _beamline_connected
 from haven.catalog import Catalog
 from haven.devices.aps import ApsMachine
 from haven.devices.area_detector import AravisDetector
@@ -42,12 +41,6 @@ os.environ["HAVEN_CONFIG_FILES"] = ",".join(
         f"{haven_dir/'iconfig_default.toml'}",
     ]
 )
-
-
-@pytest.fixture()
-def beamline_connected():
-    with _beamline_connected(True):
-        yield
 
 
 @pytest.fixture()

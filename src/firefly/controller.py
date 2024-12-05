@@ -16,8 +16,8 @@ from qtpy.QtGui import QIcon, QKeySequence
 from qtpy.QtWidgets import QAction, QErrorMessage
 
 from haven import beamline, load_config
-from haven.device import titelize
 from haven.exceptions import ComponentNotFound, InvalidConfiguration
+from haven.utils import titleize
 
 from .action import Action, ActionsRegistry, WindowAction
 from .kafka_client import KafkaClient
@@ -502,7 +502,7 @@ class FireflyController(QtCore.QObject):
         actions = {
             device.name: WindowAction(
                 name=f"show_{device.name}_action",
-                text=titelize(device.name),
+                text=titleize(device.name),
                 display_file=display_file,
                 icon=icon,
                 WindowClass=WindowClass,

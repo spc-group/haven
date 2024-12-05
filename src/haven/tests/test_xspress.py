@@ -43,12 +43,15 @@ def test_roi_size(xspress):
 
 
 def test_make_xspress_device():
-    xspress = make_xspress_device(name="xspress", prefix="255id_xsp:", num_elements=3, mock=True)
+    xspress = make_xspress_device(
+        name="xspress", prefix="255id_xsp:", num_elements=3, mock=True
+    )
     xspress.wait_for_connection()
     assert xspress.name == "xspress"
     assert xspress.prefix == "255id_xsp:"
     assert hasattr(xspress.mcas, "mca2")
     assert not hasattr(xspress.mcas, "mca3")
+
 
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
