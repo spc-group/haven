@@ -64,13 +64,13 @@ def set_energy(
     # Prepare arguments for undulator harmonic
     harmonic = auto_harmonic(energy, harmonic)
     if harmonic is not None:
-        harmonic_positioners = beamline.registry.findall(name=harmonic_positioners)
+        harmonic_positioners = beamline.devices.findall(name=harmonic_positioners)
         hargs = []
         for positioner in harmonic_positioners:
             hargs.extend([positioner, harmonic])
         yield from bps.mv(*hargs)
     # Prepare arguments for energy
-    positioners = beamline.registry.findall(name=positioners)
+    positioners = beamline.devices.findall(name=positioners)
     args = []
     for positioner in positioners:
         args.extend([positioner, energy])

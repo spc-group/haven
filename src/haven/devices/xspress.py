@@ -1,26 +1,27 @@
 import logging
+import re
 import time
 from collections import OrderedDict
 from enum import IntEnum
 from functools import partial
-from typing import Dict, Optional, Sequence
+from typing import Callable, Dict, Optional, Sequence
 
 import numpy as np
 import pandas as pd
 from apstools.devices import CamMixin_V34, SingleTrigger_V34
 from ophyd import ADComponent as ADCpt
+from ophyd import Component
 from ophyd import Component as Cpt
 from ophyd import Device
 from ophyd import DynamicDeviceComponent as DDC
-from ophyd import EpicsSignal, EpicsSignalRO, Kind
+from ophyd import EpicsSignal, EpicsSignalRO, K, Kind
 from ophyd.areadetector.base import EpicsSignalWithRBV as SignalWithRBV
 from ophyd.signal import InternalSignal
+from ophyd.sim import make_fake_device
 from ophyd.status import StatusBase, SubscriptionStatus
 from pcdsdevices.signal import MultiDerivedSignal
 from pcdsdevices.type_hints import OphydDataType, SignalToValue
 
-from ..device import RegexComponent as RECpt
-from ..device import make_device
 from .area_detector import DetectorBase, HDF5FilePlugin
 from .fluorescence_detector import (
     MCASumMixin,
@@ -40,6 +41,79 @@ active_kind = Kind.normal | Kind.config
 
 
 NUM_ROIS = 16
+
+
+class RegexComponent(Component[K]):
+    r"""A component with regular expression matching.
+
+    In EPICS, it is not possible to add a field to an existing record,
+    e.g. adding a ``.RnXY`` field to go alongside ``mca1.RnNM`` and
+    other fields in the MCA record. A common solution is to create a
+    new record with an underscore instead of the dot: ``mca1_RnBH``.
+
+    This component include these types of field-like-records as part
+    of the ROI device with a ``mca1.Rn`` prefix but performing
+    subsitution on the device name using regular expressions. See the
+    documentation for ``re.sub`` for full details.
+
+    Example
+    =======
+
+    .. code:: python
+
+        class ROI(mca.ROI):
+            name = RegexComponent(EpicsSignal, "NM", lazy=True)
+            is_hinted = RegexComponent(EpicsSignal, "BH",
+                              pattern=r"^(.+)\.R(\d+)",
+                              repl=r"\1_R\2",
+                              lazy=True)
+
+        class MCA(mca.EpicsMCARecord):
+            roi0 = Cpt(ROI, ".R0")
+            roi1 = Cpt(ROI, ".R1")
+
+        mca = MCA(prefix="mca")
+        # *name* has the normal concatination
+        assert mca.roi0.name.pvname == "mca.R0NM"
+        # *is_hinted* has regex substitution
+        assert mca.roi0.is_hinted.pvname == "mca_R0BH"
+
+    """
+
+    def __init__(self, *args, pattern: str, repl: str | Callable, **kwargs):
+        """*pattern* and *repl* match their use in ``re.sub``."""
+        self.pattern = pattern
+        self.repl = repl
+        super().__init__(*args, **kwargs)
+
+    def maybe_add_prefix(self, instance, kw, suffix):
+        """Parse prefix and suffix with regex suffix if kw is in self.add_prefix.
+
+        Parameters
+        ----------
+        instance : Device
+            The instance from which to extract the prefix to maybe
+            append to the suffix.
+
+        kw : str
+            The key of associated with the suffix.  If this key is
+            self.add_prefix than prepend the prefix to the suffix and
+            return, else just return the suffix.
+
+        suffix : str
+            The suffix to maybe have something prepended to.
+
+        Returns
+        -------
+        str
+
+        """
+        new_val = super().maybe_add_prefix(instance, kw, suffix)
+        try:
+            new_val = re.sub(self.pattern, self.repl, new_val)
+        except TypeError:
+            pass
+        return new_val
 
 
 class ChannelSignal(MultiDerivedSignal):
@@ -168,7 +242,7 @@ def add_rois(
 class MCARecord(MCASumMixin, Device):
     rois = DDC(add_rois(), kind=active_kind)
     spectrum = ADCpt(EpicsSignalRO, ":ArrayData", kind="normal", lazy=True)
-    dead_time_percent = RECpt(
+    dead_time_percent = RegexComponent(
         EpicsSignalRO,
         ":DeadTime_RBV",
         pattern=r":MCA",
@@ -176,7 +250,7 @@ class MCARecord(MCASumMixin, Device):
         lazy=True,
         kind="normal",
     )
-    dead_time_factor = RECpt(
+    dead_time_factor = RegexComponent(
         EpicsSignalRO,
         ":DTFactor_RBV",
         pattern=r":MCA",
@@ -184,7 +258,7 @@ class MCARecord(MCASumMixin, Device):
         lazy=True,
         kind="normal",
     )
-    clock_ticks = RECpt(
+    clock_ticks = RegexComponent(
         EpicsSignalRO,
         "SCA:0:Value_RBV",
         pattern=r":MCA",
@@ -519,7 +593,7 @@ class Xspress3Detector(SingleTrigger_V34, DetectorBase, XRFMixin):
         return {self.name: desc}
 
 
-def make_xspress_device(name, prefix, num_elements):
+def make_xspress_device(name, prefix, num_elements, mock=True):
     # Build the mca components
     # (Epics uses 1-index instead of 0-index)
     mca_range = range(num_elements)
@@ -541,10 +615,11 @@ def make_xspress_device(name, prefix, num_elements):
     class_name = name.title().replace("_", "")
     parent_classes = (Xspress3Detector,)
     Cls = type(class_name, parent_classes, attrs)
-    return make_device(
-        Cls,
+    if mock:
+        Cls = make_fake_device(Cls)
+    return Cls(
         name=name,
-        prefix=f"{prefix}:",
+        prefix=prefix,
         labels={"xrf_detectors", "fluorescence_detectors", "detectors"},
     )
 

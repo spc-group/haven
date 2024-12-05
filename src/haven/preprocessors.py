@@ -37,7 +37,7 @@ def baseline_wrapper(
 ):
     bluesky_baseline_wrapper.__doc__
     # Resolve devices
-    devices = beamline.registry.findall(devices, allow_none=True)
+    devices = beamline.devices.findall(devices, allow_none=True)
     yield from bluesky_baseline_wrapper(plan=plan, devices=devices, name=name)
 
 
@@ -101,12 +101,11 @@ def inject_haven_md_wrapper(plan):
         }
         # Get metadata from the beamline scheduling system (bss)
         try:
-            bss = beamline.registry.find(name="bss")
+            bss = beamline.devices["bss"]
         except ComponentNotFound:
-            if config["beamline"]["hardware_is_present"]:
-                wmsg = "Could not find bss device, metadata may be missing."
-                warnings.warn(wmsg)
-                log.warning(wmsg)
+            wmsg = "Could not find bss device, metadata may be missing."
+            warnings.warn(wmsg)
+            log.warning(wmsg)
             bss_md = None
         else:
             bss_md = bss.get()
@@ -151,7 +150,7 @@ def shutter_suspend_wrapper(plan, shutter_signals=None):
         messages inserted and appended
     """
     if shutter_signals is None:
-        shutters = beamline.registry.findall("shutters", allow_none=True)
+        shutters = beamline.devices.findall("shutters", allow_none=True)
         shutter_signals = [s.pss_state for s in shutters]
     # Create a suspender for each shutter
     suspenders = []

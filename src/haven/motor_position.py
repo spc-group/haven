@@ -115,7 +115,7 @@ def save_motor_position(*motors, name: str, md: Mapping = {}):
 
     """
     # Resolve device names or labels
-    motors = beamline.registry.findall(motors)
+    motors = beamline.devices.findall(motors)
     # Create the new run object
     _md = {
         "position_name": name,
@@ -272,7 +272,7 @@ def recall_motor_position(uid: str):
     # Create a move plan to recall the position
     plan_args = []
     for axis in position.motors:
-        motor = beamline.registry.find(name=axis.name)
+        motor = beamline.devices[axis.name]
         plan_args.append(motor)
         plan_args.append(axis.readback)
     yield from bps.mv(*plan_args)
@@ -291,7 +291,7 @@ async def list_current_motor_positions(*motors, name="Current motor positions"):
 
     """
     # Resolve device names or labels
-    motors = [beamline.registry.find(name=m) for m in motors]
+    motors = [beamline.devices[m] for m in motors]
     # Build the list of motor positions
     motor_axes = []
     for m in motors:
