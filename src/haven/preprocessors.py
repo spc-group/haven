@@ -103,10 +103,9 @@ def inject_haven_md_wrapper(plan):
         try:
             bss = beamline.devices["bss"]
         except ComponentNotFound:
-            if config["beamline"]["hardware_is_present"]:
-                wmsg = "Could not find bss device, metadata may be missing."
-                warnings.warn(wmsg)
-                log.warning(wmsg)
+            wmsg = "Could not find bss device, metadata may be missing."
+            warnings.warn(wmsg)
+            log.warning(wmsg)
             bss_md = None
         else:
             bss_md = bss.get()

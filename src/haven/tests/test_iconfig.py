@@ -55,17 +55,6 @@ def test_haven_config_cli(capsys):
     assert captured.out == "ID255ds:\n"
 
 
-def test_beamline_connected():
-    """Check the context manager to temporarily connect the beamline."""
-    config = load_config()
-    assert not config["beamline"]["hardware_is_present"]
-    with beamline_connected():
-        config = load_config()
-        assert config["beamline"]["hardware_is_present"]
-    config = load_config()
-    assert not config["beamline"]["hardware_is_present"]
-
-
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov
