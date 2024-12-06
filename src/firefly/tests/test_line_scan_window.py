@@ -99,7 +99,7 @@ async def test_line_scan_plan_queued(qtbot, display):
     display.ui.textEdit_notes.setText("notes")
 
     expected_item = BPlan(
-        "scan",
+        "rel_scan",
         ["vortex_me4", "I0"],
         "async_motor_1",
         1.0,
