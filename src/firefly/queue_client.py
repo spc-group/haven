@@ -1,6 +1,4 @@
 import logging
-import time
-import warnings
 from typing import Mapping, Optional
 
 from bluesky_queueserver_api import comm_base
@@ -58,11 +56,13 @@ def queue_status(status_mapping: Mapping[str, str] = {}):
             to_update["status_changed"] = (status,)
         # Check individual status items to see if they've changed
         status_diff = {
-            key: val for key, val in status.items()
+            key: val
+            for key, val in status.items()
             if key not in last_status or val != last_status[key]
         }
         updated_params = {
-            status_mapping[key]: (val,) for key, val in status_diff.items()
+            status_mapping[key]: (val,)
+            for key, val in status_diff.items()
             if key in status_mapping
         }
         to_update.update(updated_params)
@@ -97,7 +97,6 @@ class QueueClient(QObject):
         "devices_allowed_uid": "devices_allowed_changed",
     }
 
-
     # Signals responding to queue changes
     status_changed = Signal(dict)
     length_changed = Signal(int)
@@ -122,7 +121,7 @@ class QueueClient(QObject):
         next(self.status)  # Prime the generator
 
     def start(self):
-        # Start the time so that it 
+        # Start the time so that it
         self.timer.start(int(self.timeout * 1000))
 
     @asyncSlot(bool)
@@ -170,7 +169,7 @@ class QueueClient(QObject):
             self.check_result(result, task="toggle auto-start")
         finally:
             await self.update()
-            
+
     @asyncSlot(bool)
     async def stop_queue(self, stop: bool):
         """Turn on/off whether the queue will stop after the current plan."""
@@ -255,9 +254,9 @@ class QueueClient(QObject):
           The response from the queueserver regarding its status. If
           the queueserver is not reachable, then
           ``status['manager_state']`` will be ``"disconnected"``.
-        
+
         """
-        
+
         try:
             status = await self.api.status()
         except comm_base.RequestTimeoutError as e:

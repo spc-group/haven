@@ -1,12 +1,11 @@
 import logging
 import re  # noqa: F401
-from functools import partial, wraps
 
 import bluesky.preprocessors as bpp  # noqa: F401
 import databroker  # noqa: F401
-from bluesky.plan_stubs import abs_set
+from bluesky.plan_stubs import abs_set  # noqa: F401
 from bluesky.plan_stubs import mv as _mv  # noqa: F401
-from bluesky.plan_stubs import mvr, null, pause, rel_set, sleep, stop
+from bluesky.plan_stubs import mvr, null, pause, rel_set, sleep, stop  # noqa: F401
 from bluesky.plans import (  # noqa: F401
     count,
     grid_scan,
@@ -54,18 +53,13 @@ for cpt in beamline.registry._objects_by_name.values():
     globals().setdefault(name, cpt)
 
 
-from collections.abc import Hashable
-
 # Workaround for https://github.com/bluesky/bluesky-queueserver/issues/310
-from typing import Any, Optional, Union
-
-from bluesky.protocols import Movable, NamedMovable, Status
-from bluesky.utils import MsgGenerator
+from collections.abc import Hashable
 
 
 def mv(
     *args,
-    group: Optional[Hashable] = None,
+    group: Hashable | None = None,
     **kwargs,
 ):
     """

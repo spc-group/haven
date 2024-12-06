@@ -1,15 +1,13 @@
 import datetime as dt
 import time
-from unittest.mock import AsyncMock
 from collections import ChainMap
+from unittest.mock import AsyncMock
 
 import pytest
-from pytestqt.exceptions import TimeoutError
 from qtpy.QtCore import QTimer
 from qtpy.QtWidgets import QAction
 
 from firefly import queue_client
-
 
 qs_status = {
     "msg": "RE Manager v0.0.18",
