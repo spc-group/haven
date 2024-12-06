@@ -1,18 +1,12 @@
 import logging
 import re  # noqa: F401
+from functools import partial, wraps
 
 import bluesky.preprocessors as bpp  # noqa: F401
 import databroker  # noqa: F401
-from bluesky.plan_stubs import (  # noqa: F401
-    abs_set,
-    mv,
-    mvr,
-    null,
-    pause,
-    rel_set,
-    sleep,
-    stop,
-)
+from bluesky.plan_stubs import abs_set
+from bluesky.plan_stubs import mv as _mv  # noqa: F401
+from bluesky.plan_stubs import mvr, null, pause, rel_set, sleep, stop
 from bluesky.plans import (  # noqa: F401
     count,
     grid_scan,
@@ -58,3 +52,48 @@ for cpt in beamline.registry._objects_by_name.values():
     name = sanitize_name(cpt.name)
     # Add the device as a variable in module's globals
     globals().setdefault(name, cpt)
+
+
+from collections.abc import Hashable
+
+# Workaround for https://github.com/bluesky/bluesky-queueserver/issues/310
+from typing import Any, Optional, Union
+
+from bluesky.protocols import Movable, NamedMovable, Status
+from bluesky.utils import MsgGenerator
+
+
+def mv(
+    *args,
+    group: Optional[Hashable] = None,
+    **kwargs,
+):
+    """
+    Move one or more devices to a setpoint. Wait for all to complete.
+
+    If more than one device is specified, the movements are done in parallel.
+
+    Parameters
+    ----------
+    args :
+        device1, value1, device2, value2, ...
+    group : string, optional
+        Used to mark these as a unit to be waited on.
+    kwargs :
+        passed to obj.set()
+
+    Yields
+    ------
+    msg : Msg
+
+    Returns
+    -------
+    statuses :
+        Tuple of n statuses, one for each move operation
+
+    See Also
+    --------
+    :func:`bluesky.plan_stubs.abs_set`
+    :func:`bluesky.plan_stubs.mvr`
+    """
+    yield from _mv(*args, group=group, **kwargs)
