@@ -71,6 +71,10 @@ class VoltmetersDisplay(display.FireflyDisplay):
             # Connect the details button signal
             details_slot = partial(self.details_window_requested.emit, ic.name)
             row.details_button.clicked.connect(details_slot)
+        # Add the shutters to the shutter combobox
+        shutters = registry.findall("shutters")
+        for shutter in shutters:
+            self.ui.shutter_combobox.addItem(shutter.name)
 
     def update_queue_status(self, status):
         super().update_queue_status(status)
@@ -106,7 +110,8 @@ class VoltmetersDisplay(display.FireflyDisplay):
         # Determine which shutters to close
         shutters = []
         if self.ui.shutter_checkbox.isChecked():
-            shutters.append("experiment_shutter")
+            shutter_name = self.ui.shutter_combobox.currentText()
+            shutters.append(shutter_name)
         # Construct the plan
         ic_names = [ic.name for ic in self.ion_chambers]
         item = BPlan("record_dark_current", ic_names, shutters=shutters)

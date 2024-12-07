@@ -1,5 +1,8 @@
+import asyncio
+
 import pytest
 from bluesky_queueserver_api import BPlan
+from ophyd_async.core import Device
 from pydm import widgets as PyDMWidgets
 from pydm.widgets.analog_indicator import PyDMAnalogIndicator
 from qtpy import QtWidgets
@@ -29,7 +32,20 @@ async def ion_chambers(sim_registry):
 
 
 @pytest.fixture()
-async def voltmeters_display(qtbot, ion_chambers, sim_registry):
+async def shutters(sim_registry):
+    shutters = [
+        Device(name="front_end_shutter"),
+        Device(name="enstation_shutter"),
+    ]
+    await asyncio.gather(*[d.connect(mock=True) for d in shutters])
+    for shutter in shutters:
+        shutter._ophyd_labels_ = {"shutters"}
+        sim_registry.register(shutter)
+    return shutters
+
+
+@pytest.fixture()
+async def voltmeters_display(qtbot, ion_chambers, shutters, sim_registry):
     vms_display = VoltmetersDisplay()
     qtbot.addWidget(vms_display)
     await vms_display.update_devices(sim_registry)
@@ -154,11 +170,37 @@ def test_auto_gain_plan_with_args(qtbot, voltmeters_display):
 @pytest.mark.asyncio
 async def test_read_dark_current_plan(voltmeters_display, qtbot):
     display = voltmeters_display
-    display.ui.shutter_checkbox.setChecked(True)
+    display.ui.shutter_checkbox.setChecked(False)
     # Check that the correct plan was sent
-    expected_item = BPlan(
-        "record_dark_current", ["I0", "It"], shutters=["experiment_shutter"]
-    )
+    expected_item = BPlan("record_dark_current", ["I0", "It"], shutters=[])
+
+    def check_item(item):
+        return item.to_dict() == expected_item.to_dict()
+
+    # Click the run button and see if the plan is queued
+    with qtbot.waitSignal(
+        display.queue_item_submitted, timeout=1000, check_params_cb=check_item
+    ):
+        # Simulate clicking on the dark_current button
+        # display.ui.dark_current_button.click()
+        display.ui.record_dark_current()
+
+
+def test_shutters_checkbox(voltmeters_display):
+    display = voltmeters_display
+    combobox = display.ui.shutter_combobox
+    combobox_items = [combobox.itemText(idx) for idx in range(combobox.count())]
+    assert "front_end_shutter" in combobox_items
+
+
+@pytest.mark.asyncio
+async def test_read_dark_current_plan_with_shutters(voltmeters_display, qtbot):
+    display = voltmeters_display
+    display.ui.shutter_checkbox.setChecked(True)
+    display.ui.shutter_combobox.setCurrentIndex(1)
+    # Check that the correct plan was sent
+    shutter_name = display.ui.shutter_combobox.itemText(1)
+    expected_item = BPlan("record_dark_current", ["I0", "It"], shutters=[shutter_name])
 
     def check_item(item):
         return item.to_dict() == expected_item.to_dict()
