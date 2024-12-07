@@ -102,6 +102,7 @@ async def test_prepare(detector):
 
     collect_mode -> MCA spectra
     """
+    await detector.prepare(TriggerInfo(number_of_triggers=1))
 
 
 # async def test_trigger(detector):
