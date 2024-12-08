@@ -45,7 +45,7 @@ async def shutters(sim_registry):
 
 
 @pytest.fixture()
-async def voltmeters_display(qtbot, ion_chambers, shutters, sim_registry):
+async def voltmeters_display(qtbot, ion_chambers, sim_registry):
     vms_display = VoltmetersDisplay()
     qtbot.addWidget(vms_display)
     await vms_display.update_devices(sim_registry)
@@ -167,12 +167,44 @@ def test_auto_gain_plan_with_args(qtbot, voltmeters_display):
         display.ui.auto_gain_button.click()
 
 
+async def test_shutters_checkbox_no_shutters(voltmeters_display, sim_registry):
+    display = voltmeters_display
+    combobox = display.ui.shutter_combobox
+    checkbox = display.ui.shutter_checkbox
+    checkbox.setChecked(True)
+    # Update the state of the UI with no shutters
+    await display.update_devices(sim_registry)
+    # Ensure checkbox has been disabled
+    assert not checkbox.isEnabled()
+    assert not checkbox.checkState()
+    assert not display.ui.shutter_checkbox.setChecked(True)
+    combobox_items = [combobox.itemText(idx) for idx in range(combobox.count())]
+    assert len(combobox_items) == 0
+
+
+async def test_shutters_checkbox_with_shutters(
+    voltmeters_display,
+    sim_registry,
+    shutters,
+):
+    display = voltmeters_display
+    checkbox = display.ui.shutter_checkbox
+    combobox = display.ui.shutter_combobox
+    # Update the state of the UI with no shutters
+    await display.update_devices(sim_registry)
+    # Ensure checkbox has been enabled
+    assert checkbox.isEnabled()
+    # Check that shutters were added to the combobox
+    combobox_items = [combobox.itemText(idx) for idx in range(combobox.count())]
+    assert "front_end_shutter" in combobox_items
+
+
 @pytest.mark.asyncio
 async def test_read_dark_current_plan(voltmeters_display, qtbot):
     display = voltmeters_display
     display.ui.shutter_checkbox.setChecked(False)
     # Check that the correct plan was sent
-    expected_item = BPlan("record_dark_current", ["I0", "It"], shutters=[])
+    expected_item = BPlan("record_dark_current", ["I0", "It"])
 
     def check_item(item):
         return item.to_dict() == expected_item.to_dict()
@@ -184,13 +216,6 @@ async def test_read_dark_current_plan(voltmeters_display, qtbot):
         # Simulate clicking on the dark_current button
         # display.ui.dark_current_button.click()
         display.ui.record_dark_current()
-
-
-def test_shutters_checkbox(voltmeters_display):
-    display = voltmeters_display
-    combobox = display.ui.shutter_combobox
-    combobox_items = [combobox.itemText(idx) for idx in range(combobox.count())]
-    assert "front_end_shutter" in combobox_items
 
 
 @pytest.mark.asyncio
