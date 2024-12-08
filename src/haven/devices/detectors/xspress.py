@@ -40,7 +40,8 @@ class XspressController(DetectorController):
         self._drv = driver
 
     def get_deadtime(self, exposure: float) -> float:
-        # Xspress deadtime handling
+        # Arbitrary value. To-do: fill this in when we know what to
+        # include
         return 0.001
 
     @AsyncStatus.wrap
