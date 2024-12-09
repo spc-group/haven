@@ -42,7 +42,7 @@ class RegistryConnection:
         Signal
           The Ophyd signal corresponding to the address.
         """
-        return beamline.registry[address]
+        return beamline.devices[address]
 
 
 class HavenConnection(RegistryConnection, SignalConnection):
@@ -161,7 +161,7 @@ class HavenPlugin(SignalPlugin):
     def connection_class(channel, address, protocol):
         # Check if we need the synchronous or asynchronous version
         try:
-            sig = beamline.registry[address]
+            sig = beamline.devices[address]
         except KeyError:
             sig = None
         is_ophyd_async = inspect.iscoroutinefunction(getattr(sig, "connect", None))

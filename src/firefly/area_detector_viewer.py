@@ -25,7 +25,7 @@ class AreaDetectorViewerDisplay(display.FireflyDisplay):
 
     def customize_device(self):
         device_name = name = self.macros()["AD"]
-        device = beamline.registry.find(device_name)
+        device = beamline.devices[device_name]
         self.device = device
         img_pv = device.pva.pv_name.get(as_string=True)
         addr = f"pva://{img_pv}"

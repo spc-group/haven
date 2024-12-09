@@ -46,9 +46,9 @@ def knife_scan(
 
     """
     md_ = dict(plan_name="knife_scan", **md)
-    I0 = beamline.registry.find(name=I0)
-    It = beamline.registry.find(name=It)
-    knife_motor = beamline.registry.find(name=knife_motor)
+    I0 = beamline.devices[I0]
+    It = beamline.devices[It]
+    knife_motor = beamline.devices[knife_motor]
     # Check for relative or absolute scan
     if relative:
         plan_func = bp.rel_scan

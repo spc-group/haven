@@ -31,7 +31,7 @@ class StatusDisplay(display.FireflyDisplay):
         form.removeRow(self.ui.shutter_A_layout)
         form.removeRow(self.ui.shutter_CD_layout)
         # Add widgets for shutters
-        shutters = beamline.registry.findall("shutters", allow_none=True)
+        shutters = beamline.devices.findall("shutters", allow_none=True)
         row_idx = 4
         on_color = self.ui.shutter_permit_indicator.onColor
         off_color = self.ui.shutter_permit_indicator.offColor

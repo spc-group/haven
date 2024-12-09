@@ -109,12 +109,12 @@ def energy_scan(
         raise ValueError(msg)
     # Resolve the detector and positioner list if given by name
     if isinstance(detectors, str):
-        detectors = beamline.registry.findall(detectors)
+        detectors = beamline.devices.findall(detectors)
     real_detectors = []
     for det in detectors:
-        real_detectors.extend(beamline.registry.findall(det))
+        real_detectors.extend(beamline.devices.findall(det))
     log.debug(f"Found registered detectors: {real_detectors}")
-    energy_signals = [beamline.registry.find(ep) for ep in energy_signals]
+    energy_signals = [beamline.devices[ep] for ep in energy_signals]
     # Figure out which time positioners to use
     if time_signals is None:
         time_signals = [
@@ -123,7 +123,7 @@ def energy_scan(
             if hasattr(det, "default_time_signal")
         ]
     else:
-        time_signals = [beamline.registry.find(tp) for tp in time_signals]
+        time_signals = [beamline.devices[tp] for tp in time_signals]
     # Convert an individual exposure time to an array of exposure times
     if not hasattr(exposure, "__iter__"):
         exposure = [exposure] * len(energies)

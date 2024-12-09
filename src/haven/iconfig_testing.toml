@@ -3,24 +3,15 @@ area_detector_root_path = "/tmp"
 [ beamline ]
 # General name for the beamline, used for metadata.
 name = "SPC Beamline (sector unknown)"
-# Should we expect the hardware devices to be available.
-#   If not, we will provide mocked devices.
-hardware_is_present = false
-
-[[ synchrotron ]]
-name = "advanced_photon_source"
 
 [database.databroker]
-
 catalog = "bluesky"
 
 [xray_source]
-
 type = "undulator"
 prefix = "ID255ds:"
 
 [bss]
-
 prefix = "255idc:bss"
 beamline = "255-ID-C"
 
@@ -42,14 +33,20 @@ info_port = "60625"
 redis_addr = "localhost:6379"
 
 [database.tiled]
-
 uri = "http://localhost:8337/"
 entry_node = "255id_testing"
 
-################
-# PSS Shutters #
-################
-#
+
+#################
+# Device support
+#################
+
+[[ synchrotron ]]
+name = "advanced_photon_source"
+
+# PSS Shutters
+# ============
+
 # Each PSS shutter has optional arguments *allow_open* and
 # *allow_close*. These determine whether Ophyd will allow the shutter
 # to open and close, but has no relationship to EPICS permissions.
@@ -126,8 +123,8 @@ num_motors = 3
 
 [[ motor ]]
 # Individual motors can be created as well.
+name = "m1"
 prefix = "255idcVME:m1"
-# name = ""
 # labels=["motors"]
 # auto_name = None
 
