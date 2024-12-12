@@ -10,6 +10,8 @@ from qtpy import QtGui, QtWidgets
 
 from haven import load_config
 
+from .queue_client import is_in_use
+
 log = logging.getLogger(__name__)
 
 
@@ -385,7 +387,7 @@ class PlanMainWindow(FireflyMainWindow):
     def update_queue_controls(self, new_status):
         """Update the queue controls to match the state of the queueserver."""
         super().update_queue_controls(new_status)
-        self.ui.navbar.setVisible(bool(new_status["in_use"]))
+        self.ui.navbar.setVisible(is_in_use(new_status))
 
 
 # -----------------------------------------------------------------------------

@@ -12,6 +12,18 @@ from haven.exceptions import InvalidConfiguration
 log = logging.getLogger()
 
 
+def is_in_use(status):
+    # Add a new key for whether the queue is busy (length > 0 or running)
+    has_queue = status.get("items_in_queue", 0) > 0
+    is_running = status.get("manager_state") in [
+        "paused",
+        "starting_queue",
+        "executing_queue",
+        "executing_task",
+    ]
+    return has_queue or is_running
+
+
 def queueserver_api():
     try:
         config = load_config()["queueserver"]
@@ -66,18 +78,11 @@ def queue_status(status_mapping: Mapping[str, str] = {}):
             if key in status_mapping
         }
         to_update.update(updated_params)
-        # Add a new key for whether the queue is busy (length > 0 or running)
-        has_queue = status["items_in_queue"] > 0
-        is_running = status["manager_state"] in [
-            "paused",
-            "starting_queue",
-            "executing_queue",
-            "executing_task",
-        ]
-        is_in_use = has_queue or is_running
-        if is_in_use != was_in_use:
-            to_update["in_use_changed"] = (is_in_use,)
-            was_in_use = is_in_use
+        # Decide if the queue is being used
+        now_in_use = is_in_use(status)
+        if now_in_use != was_in_use:
+            to_update["in_use_changed"] = (now_in_use,)
+            was_in_use = now_in_use
         # Stash this status for the next time around
         last_status = status
 
@@ -237,6 +242,7 @@ class QueueClient(QObject):
         new_status = await self.queue_status()
         signals_changed = self.status.send(new_status)
         # Check individual components of the status if they've changed
+        print(signals_changed)
         for signal_name, args in signals_changed.items():
             if hasattr(self, signal_name):
                 signal = getattr(self, signal_name)
