@@ -328,7 +328,9 @@ class FireflyController(QtCore.QObject):
         self.queue_status_changed.connect(action.window.update_queue_status)
         self.queue_status_changed.connect(action.window.update_queue_controls)
         if getattr(self, "_queue_client", None) is not None:
-            self._queue_client.check_queue_status(force=True)
+            status = await self._queue_client.queue_status()
+            action.window.update_queue_status(status)
+            action.window.update_queue_controls(status)
         action.display.queue_item_submitted.connect(self.add_queue_item)
         # Send the current devices to the window
         await action.window.update_devices(self.registry)
@@ -615,6 +617,7 @@ class FireflyController(QtCore.QObject):
         engine is already running.
 
         """
+        print(f"New re_state: {re_state}")
         queue_actions = self.actions.queue_controls
         # Decide which signals to enable
         unknown_re_state = re_state is None or re_state.strip() == ""

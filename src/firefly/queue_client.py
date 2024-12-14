@@ -242,7 +242,6 @@ class QueueClient(QObject):
         new_status = await self.queue_status()
         signals_changed = self.status.send(new_status)
         # Check individual components of the status if they've changed
-        print(signals_changed)
         for signal_name, args in signals_changed.items():
             if hasattr(self, signal_name):
                 signal = getattr(self, signal_name)
@@ -267,7 +266,11 @@ class QueueClient(QObject):
             status = await self.api.status()
         except comm_base.RequestTimeoutError as e:
             log.warning("Could not reach queueserver ZMQ.")
-            status = {"manager_state": "disconnected"}
+            status = {
+                "manager_state": "N.C.",
+                "worker_environment_state": "N.C.",
+                "re_state": "N.C.",
+            }
         return status
 
     async def update_devices(self):
