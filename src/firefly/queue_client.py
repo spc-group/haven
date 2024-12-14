@@ -72,6 +72,7 @@ def queue_status(status_mapping: Mapping[str, str] = {}):
             for key, val in status.items()
             if key not in last_status or val != last_status[key]
         }
+        log.debug(f"Received updated queue status: {status_diff}")
         updated_params = {
             status_mapping[key]: (val,)
             for key, val in status_diff.items()
@@ -122,7 +123,7 @@ class QueueClient(QObject):
         self.timer = QTimer()
         self.timer.timeout.connect(self.update)
         # Create the generator to keep track of the queue states
-        self.status = queue_status()
+        self.status = queue_status(status_mapping=self.parameter_mapping)
         next(self.status)  # Prime the generator
 
     def start(self):
@@ -242,6 +243,8 @@ class QueueClient(QObject):
         new_status = await self.queue_status()
         signals_changed = self.status.send(new_status)
         # Check individual components of the status if they've changed
+        if signals_changed != {}:
+            log.debug(f"Emitting changed signals: {signals_changed}")
         for signal_name, args in signals_changed.items():
             if hasattr(self, signal_name):
                 signal = getattr(self, signal_name)

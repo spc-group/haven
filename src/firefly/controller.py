@@ -11,7 +11,7 @@ from ophyd_async.core import NotConnected
 from ophydregistry import Registry
 from qasync import asyncSlot
 from qtpy import QtCore, QtWidgets
-from qtpy.QtCore import Signal
+from qtpy.QtCore import Signal, Slot
 from qtpy.QtGui import QIcon, QKeySequence
 from qtpy.QtWidgets import QAction, QErrorMessage
 
@@ -318,9 +318,6 @@ class FireflyController(QtCore.QObject):
             icon=qta.icon("mdi.sine-wave"),
         )
 
-    def update_queue_controls(self, status):
-        print(status)
-
     @asyncSlot(QAction)
     async def finalize_new_window(self, action):
         """Slot for providing new windows for after a new window is created."""
@@ -609,6 +606,7 @@ class FireflyController(QtCore.QObject):
     def update_devices_allowed(self, devices):
         pass
 
+    @Slot(str)
     def enable_queue_controls(self, re_state):
         """Enable/disable the navbar buttons that control the queue.
 
@@ -617,7 +615,6 @@ class FireflyController(QtCore.QObject):
         engine is already running.
 
         """
-        print(f"New re_state: {re_state}")
         queue_actions = self.actions.queue_controls
         # Decide which signals to enable
         unknown_re_state = re_state is None or re_state.strip() == ""
