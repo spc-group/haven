@@ -4,8 +4,10 @@ import databroker
 import IPython
 from bluesky import RunEngine as BlueskyRunEngine
 from bluesky.callbacks.best_effort import BestEffortCallback
+from bluesky.callbacks.tiled_writer import TiledWriter
 from bluesky.utils import ProgressBarManager, register_transform
 
+from .catalog import tiled_client
 from .exceptions import ComponentNotFound
 from .instrument import beamline
 from .preprocessors import inject_haven_md_wrapper
@@ -27,7 +29,29 @@ def save_data(name, doc):
     catalog.v1.insert(name, doc)
 
 
-def run_engine(connect_databroker=True, use_bec=True, **kwargs) -> BlueskyRunEngine:
+client = tiled_client()
+client.include_data_sources()
+tiled_writer = TiledWriter(client)
+
+
+def run_engine(
+    *, connect_tiled=True, connect_databroker=False, use_bec=False, **kwargs
+) -> BlueskyRunEngine:
+    """Build a bluesky RunEngine() for Haven.
+
+    Parameters
+    ==========
+    connect_tiled
+      The run engine will have a callback for writing to the default
+      tiled client.
+    connect_databroker
+      The run engine will have a callback for writing to the default
+      databroker catalog.
+    use_bec
+      The run engine will have the bluesky BestEffortCallback
+      subscribed to it.
+
+    """
     RE = BlueskyRunEngine(**kwargs)
     # Add the best-effort callback
     if use_bec:
@@ -57,6 +81,8 @@ def run_engine(connect_databroker=True, use_bec=True, **kwargs) -> BlueskyRunEng
     # Install databroker connection
     if connect_databroker:
         RE.subscribe(save_data)
+    if connect_tiled:
+        RE.subscribe(tiled_writer)
     # Add preprocessors
     RE.preprocessors.append(inject_haven_md_wrapper)
     return RE

@@ -172,12 +172,13 @@ class ThreadSafeCache(Cache):
 
 
 def tiled_client(
-    entry_node=None, uri=None, cache_filepath=None, structure_clients="dask"
+    entry_node=None, uri=None, cache_filepath=None, structure_clients="numpy"
 ):
     config = load_config()
+    tiled_config = config["database"].get("tiled", {})
     # Create a cache for saving local copies
     if cache_filepath is None:
-        cache_filepath = config["database"].get("tiled", {}).get("cache_filepath", "")
+        cache_filepath = tiled_config.get("cache_filepath", "")
         cache_filepath = cache_filepath or None
     if os.access(cache_filepath, os.W_OK):
         cache = ThreadSafeCache(filepath=cache_filepath)
@@ -186,10 +187,11 @@ def tiled_client(
         cache = None
     # Create the client
     if uri is None:
-        uri = config["database"]["tiled"]["uri"]
-    client_ = from_uri(uri, structure_clients)
+        uri = tiled_config["uri"]
+    api_key = tiled_config.get("api_key")
+    client_ = from_uri(uri, structure_clients, api_key=api_key)
     if entry_node is None:
-        entry_node = config["database"]["tiled"]["entry_node"]
+        entry_node = tiled_config["entry_node"]
     client_ = client_[entry_node]
     return client_
 
