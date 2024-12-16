@@ -112,7 +112,7 @@ gain_modes = ["LOW NOISE", "HIGH BW"]
 
 async def test_preamp_signals(preamp):
     # Check the enums
-    await preamp.sensitivity_value.set(SRS570PreAmplifier.SensValue._5)
+    await preamp.sensitivity_value.set(SRS570PreAmplifier.SensValue.FIVE)
 
 
 @pytest.mark.parametrize("gain_mode", gain_modes)
