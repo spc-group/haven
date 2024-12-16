@@ -3,7 +3,7 @@ from unittest import mock
 
 import pytest
 from bluesky_queueserver_api import BPlan
-from ophyd_async.core import set_mock_value
+from ophyd_async.testing import set_mock_value
 from qtpy import QtCore
 
 from firefly.plans.grid_scan import GridScanDisplay

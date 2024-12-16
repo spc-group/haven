@@ -59,7 +59,7 @@ dependencies:
     - bluesky-adaptive
     - bluesky >=1.8.1
     - ophyd >=1.6.3
-    - ophyd-async >=0.8.0a5
+    - ophyd-async >=0.9.0a1
     - apstools == 1.6.20  # Leave at 1.6.20 until this is fixed: https://github.com/BCDA-APS/apstools/issues/1022
     - pcdsdevices  # For extra signal types
     - pydm >=1.18.0
