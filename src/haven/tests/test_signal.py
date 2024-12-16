@@ -3,9 +3,10 @@ import math
 from unittest.mock import MagicMock
 
 import pytest
-from ophyd_async.core import Device, DeviceVector, get_mock_put
+from ophyd_async.core import Device, DeviceVector
 from ophyd_async.core._signal import soft_signal_rw
 from ophyd_async.epics.core import epics_signal_rw, epics_signal_x
+from ophyd_async.testing import get_mock_put
 
 from haven.devices.signal import derived_signal_rw, derived_signal_x
 
