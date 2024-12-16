@@ -4,7 +4,8 @@ from unittest.mock import AsyncMock
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose
-from ophyd_async.core import TriggerInfo, assert_value, get_mock_put, set_mock_value
+from ophyd_async.core import TriggerInfo
+from ophyd_async.testing import assert_value, get_mock_put, set_mock_value
 
 from haven.devices.ion_chamber import IonChamber
 
