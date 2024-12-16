@@ -54,10 +54,10 @@ class Positioner(StandardReadable, Movable, Stoppable):
         self.put_complete = put_complete
         super().__init__(name=name)
 
-    def set_name(self, name: str):
+    def set_name(self, name: str, *args, **kwargs):
         super().set_name(name)
         # Readback should be named the same as its parent in read()
-        self.readback.set_name(name)
+        self.readback.set_name(name, *args, **kwargs)
 
     def watch_done(
         self, value, done_event: asyncio.Event, started_event: asyncio.Event
