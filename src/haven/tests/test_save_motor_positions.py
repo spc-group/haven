@@ -7,7 +7,7 @@ from zoneinfo import ZoneInfo
 import pandas as pd
 import pytest
 import time_machine
-from ophyd_async.core import set_mock_value
+from ophyd_async.testing import set_mock_value
 from tiled.adapters.mapping import MapAdapter
 from tiled.adapters.xarray import DatasetAdapter
 from tiled.client import Context, from_context

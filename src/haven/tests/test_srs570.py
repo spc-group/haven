@@ -2,7 +2,7 @@ import asyncio
 from unittest import mock
 
 import pytest
-from ophyd_async.core import get_mock_put
+from ophyd_async.testing import get_mock_put
 
 from haven.devices.srs570 import GainSignal, SRS570PreAmplifier
 
