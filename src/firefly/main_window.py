@@ -10,6 +10,8 @@ from qtpy import QtGui, QtWidgets
 
 from haven import load_config
 
+from .queue_client import is_in_use
+
 log = logging.getLogger(__name__)
 
 
@@ -111,10 +113,11 @@ class FireflyMainWindow(PyDMMainWindow):
 
     def update_queue_status(self, status):
         """Update the queue status labels."""
-        self.ui.environment_label.setText(status["worker_environment_state"])
-        new_length = status["items_in_queue"]
+        worker_state = status.get("worker_environment_state", "—")
+        self.ui.environment_label.setText(worker_state)
+        new_length = status.get("items_in_queue", "—")
         self.ui.queue_length_label.setText(f"({new_length})")
-        self.ui.re_label.setText(status["re_state"])
+        self.ui.re_label.setText(status.get("re_state", "—"))
         # Notify the display of the new status
         display = self.display_widget()
         display.update_queue_status(status)
@@ -385,7 +388,7 @@ class PlanMainWindow(FireflyMainWindow):
     def update_queue_controls(self, new_status):
         """Update the queue controls to match the state of the queueserver."""
         super().update_queue_controls(new_status)
-        self.ui.navbar.setVisible(bool(new_status["in_use"]))
+        self.ui.navbar.setVisible(is_in_use(new_status))
 
 
 # -----------------------------------------------------------------------------
