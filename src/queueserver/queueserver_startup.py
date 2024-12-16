@@ -41,11 +41,12 @@ log = logging.getLogger(__name__)
 RE = run_engine(connect_databroker=False, use_bec=False)
 
 # Import devices
+beamline.load()
 try:
-    call_in_bluesky_event_loop(beamline.load())
+    call_in_bluesky_event_loop(beamline.connect())
 except NotConnected as exc:
     log.exception(exc)
-for cpt in beamline.registry._objects_by_name.values():
+for cpt in beamline.devices._objects_by_name.values():
     # Replace spaces and other illegal characters in variable name
     # name = re.sub('\W|^(?=\d)','_', cpt.name)
     name = sanitize_name(cpt.name)

@@ -45,7 +45,7 @@ def record_dark_current(
     # Close shutters
     yield from close_shutters(shutters)
     # Measure the dark current
-    ion_chambers = beamline.registry.findall(ion_chambers)
+    ion_chambers = beamline.devices.findall(ion_chambers)
     # Record dark currents
     group = uuid.uuid4()
     for ic in ion_chambers:

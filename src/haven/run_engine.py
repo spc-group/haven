@@ -34,7 +34,7 @@ def run_engine(connect_databroker=True, use_bec=True, **kwargs) -> BlueskyRunEng
         RE.subscribe(BestEffortCallback())
     # Install suspenders
     try:
-        aps = beamline.registry.find("APS")
+        aps = beamline.devices["APS"]
     except ComponentNotFound:
         log.warning("APS device not found, suspenders not installed.")
     else:

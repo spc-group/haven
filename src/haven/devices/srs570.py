@@ -302,27 +302,27 @@ class SRS570PreAmplifier(Device):
         LOW_DRIFT = "LOW DRIFT"
 
     class SensValue(StrictEnum):
-        _1 = "1"
-        _2 = "2"
-        _5 = "5"
-        _10 = "10"
-        _20 = "20"
-        _50 = "50"
-        _100 = "100"
-        _200 = "200"
-        _500 = "500"
+        ONE = "1"
+        TWO = "2"
+        FIVE = "5"
+        TEN = "10"
+        TWENTY = "20"
+        FIFTY = "50"
+        ONE_HUNDRED = "100"
+        TWO_HUNDRED = "200"
+        FIVE_HUNDRED = "500"
 
     class SensUnit(StrictEnum):
-        pA_V = "pA/V"
-        nA_V = "nA/V"
-        uA_V = "uA/V"
-        mA_V = "mA/V"
+        PICOAMP_PER_VOLT = "pA/V"
+        NANOAMP_PER_VOLT = "nA/V"
+        MICROAMP_PER_VOLT = "uA/V"
+        MILLIAMP_PER_VOLT = "mA/V"
 
     class OffsetUnit(StrictEnum):
-        pA = "pA"
-        nA = "nA"
-        uA = "uA"
-        mA = "mA"
+        PICOAMP = "pA"
+        NANOAMP = "nA"
+        MICROAMP = "uA"
+        MILLIAMP = "mA"
 
     def __init__(self, prefix: str, name: str = ""):
         """

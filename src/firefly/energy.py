@@ -61,7 +61,7 @@ class EnergyDisplay(display.FireflyDisplay):
 
     def customize_device(self):
         try:
-            self.energy_positioner = beamline.registry.find("energy")
+            self.energy_positioner = beamline.devices["energy"]
         except ComponentNotFound:
             warnings.warn("Could not find energy positioner.")
             log.warning("Could not find energy positioner.")

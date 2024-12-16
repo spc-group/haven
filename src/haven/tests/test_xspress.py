@@ -1,6 +1,6 @@
 import pytest
 
-from haven.devices.xspress import Xspress3Detector
+from haven.devices.xspress import Xspress3Detector, make_xspress_device
 
 
 def test_num_elements(xspress):
@@ -40,6 +40,17 @@ def test_roi_size(xspress):
     # Update the minimum and check the size
     roi.lo_chan.set(25).wait()
     assert roi.size.get() == 3
+
+
+def test_make_xspress_device():
+    xspress = make_xspress_device(
+        name="xspress", prefix="255id_xsp:", num_elements=3, mock=True
+    )
+    xspress.wait_for_connection()
+    assert xspress.name == "xspress"
+    assert xspress.prefix == "255id_xsp:"
+    assert hasattr(xspress.mcas, "mca2")
+    assert not hasattr(xspress.mcas, "mca3")
 
 
 # -----------------------------------------------------------------------------
