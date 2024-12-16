@@ -48,7 +48,7 @@ class XspressController(DetectorController):
     async def prepare(self, trigger_info: TriggerInfo):
         await asyncio.gather(
             self._drv.num_images.set(trigger_info.total_number_of_triggers),
-            self._drv.image_mode.set(adcore.ImageMode.multiple),
+            self._drv.image_mode.set(adcore.ImageMode.MULTIPLE),
             self._drv.trigger_mode.set(XspressTriggerMode.INTERNAL),
         )
 

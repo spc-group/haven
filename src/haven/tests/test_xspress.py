@@ -2,7 +2,8 @@ import asyncio
 from pathlib import Path
 
 import pytest
-from ophyd_async.core import TriggerInfo, get_mock_put, set_mock_value
+from ophyd_async.core import TriggerInfo
+from ophyd_async.testing import get_mock_put, set_mock_value
 
 from haven.devices.detectors.xspress import Xspress3Detector
 
