@@ -35,7 +35,7 @@ tiled_writer = TiledWriter(client)
 
 
 def run_engine(
-    *, connect_tiled=True, connect_databroker=False, use_bec=False, **kwargs
+    *, connect_tiled=True, connect_databroker=True, use_bec=False, **kwargs
 ) -> BlueskyRunEngine:
     """Build a bluesky RunEngine() for Haven.
 
