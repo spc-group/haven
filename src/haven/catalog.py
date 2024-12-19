@@ -208,7 +208,7 @@ class CatalogScan:
         self.container = container
         self.executor = executor
 
-    def _read_data(self, signals, dataset="primary/data"):
+    def _read_data(self, signals, dataset="primary/internal/events"):
         # Fetch data if needed
         data = self.container[dataset]
         return data.read(signals)
@@ -234,31 +234,20 @@ class CatalogScan:
     def formats(self):
         return self.container.formats
 
-    async def data(self, stream="primary"):
+    async def data(self, signals=None, stream="primary"):
         return await self.loop.run_in_executor(
-            None, self._read_data, None, f"{stream}/data"
+            None, self._read_data, signals, f"{stream}/internal/events/"
         )
-
-    async def to_dataframe(self, signals=None):
-        """Convert the dataset into a pandas dataframe."""
-        xarray = await self.run(self._read_data, signals)
-        if len(xarray) > 0:
-            df = xarray.to_dataframe()
-            # Add a copy of the index to the dataframe itself
-            if df.index.name is not None:
-                df[df.index.name] = df.index
-        else:
-            df = pd.DataFrame()
-        return df
 
     @property
     def loop(self):
         return asyncio.get_running_loop()
 
+    def _data_keys(self, stream):
+        return self.container[stream]['internal/events'].columns
+
     async def data_keys(self, stream="primary"):
-        stream_md = await self.loop.run_in_executor(None, self._read_metadata, stream)
-        # Assumes the 0-th descriptor is for the primary stream
-        return stream_md["descriptors"][0]["data_keys"]
+        return await self.run(self._data_keys, ("primary",))
 
     async def hints(self):
         """Retrieve the data hints for this scan.
@@ -279,7 +268,7 @@ class CatalogScan:
         # Get hints for the dependent (X)
         dependent = []
         primary_metadata = await self.run(self._read_metadata, "primary")
-        hints = primary_metadata["descriptors"][0]["hints"]
+        hints = primary_metadata["hints"]
         for device, dev_hints in hints.items():
             dependent.extend(dev_hints["fields"])
         return independent, dependent

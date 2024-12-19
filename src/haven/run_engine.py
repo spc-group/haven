@@ -18,7 +18,7 @@ log = logging.getLogger(__name__)
 catalog = None
 
 
-def save_data(name, doc):
+def save_to_databroker(name, doc):
     # This is a hack around a problem with garbage collection
     # Has been fixed in main, maybe released in databroker v2?
     # Create the databroker callback if necessary
@@ -27,11 +27,6 @@ def save_data(name, doc):
         catalog = databroker.catalog["bluesky"]
     # Save the document
     catalog.v1.insert(name, doc)
-
-
-client = tiled_client()
-client.include_data_sources()
-tiled_writer = TiledWriter(client)
 
 
 def run_engine(
@@ -80,8 +75,11 @@ def run_engine(
         register_transform("RE", prefix="<", ip=ip)
     # Install databroker connection
     if connect_databroker:
-        RE.subscribe(save_data)
+        RE.subscribe(save_to_databroker)
     if connect_tiled:
+        client = tiled_client()
+        client.include_data_sources()
+        tiled_writer = TiledWriter(client)
         RE.subscribe(tiled_writer)
     # Add preprocessors
     RE.preprocessors.append(inject_haven_md_wrapper)

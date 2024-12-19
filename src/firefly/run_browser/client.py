@@ -28,22 +28,20 @@ class DatabaseWorker:
         log.debug(f"Filtering nodes: {filters}")
         filter_params = [
             # (filter_name, query type, metadata key)
-            ("user", queries.Regex, "proposal_users"),
-            ("proposal", queries.Regex, "proposal_id"),
-            ("esaf", queries.Regex, "esaf_id"),
-            ("sample", queries.Regex, "sample_name"),
-            # ('exit_status', queries.Regex, "exit_status"),
-            ("plan", queries.Regex, "plan_name"),
-            ("edge", queries.Regex, "edge"),
+            ("user", queries.Contains, "start.proposal_users"),
+            ("proposal", queries.Eq, "start.proposal_id"),
+            ("esaf", queries.Eq, "start.esaf_id"),
+            ("sample", queries.Contains, "start.sample_name"),
+            ('exit_status', queries.Eq, "stop.exit_status"),
+            ("plan", queries.Eq, "start.plan_name"),
+            ("edge", queries.Contains, "start.edge"),
         ]
         # Apply filters
         runs = self.catalog
         for filter_name, Query, md_name in filter_params:
             val = filters.get(filter_name, "")
             if val != "":
-                runs = await runs.search(
-                    Query(md_name, val, case_sensitive=case_sensitive)
-                )
+                runs = await runs.search(Query(md_name, val))
         full_text = filters.get("full_text", "")
         if full_text != "":
             runs = await runs.search(
@@ -135,7 +133,7 @@ class DatabaseWorker:
             if hinted_only:
                 xsig, ysig = await run.hints()
             else:
-                df = await run.to_dataframe()
+                df = await run.data()
                 xsig = ysig = df.columns
             xsignals.extend(xsig)
             ysignals.extend(ysig)
@@ -176,8 +174,8 @@ class DatabaseWorker:
                 images[run.uid] = image
         return images
 
-    async def all_signals(self, hinted_only=False):
-        """Produce dataframe with all signals for each run.
+    async def all_signals(self, hinted_only=False) -> dict:
+        """Produce dataframes with all signals for each run.
 
         The keys of the dictionary are the labels for each curve, and
         the corresponding value is a pandas dataframe with the scan data.
@@ -188,7 +186,7 @@ class DatabaseWorker:
         dfs = OrderedDict()
         for run in self.selected_runs:
             # Get data from the database
-            df = await run.to_dataframe(signals=xsignals + ysignals)
+            df = await run.data(signals=xsignals + ysignals)
             dfs[run.uid] = df
         return dfs
 
@@ -236,7 +234,7 @@ class DatabaseWorker:
             if uids is not None and run.uid not in uids:
                 break
             # Get data from the database
-            df = await run.to_dataframe(signals=signals)
+            df = await run.data(signals=signals)
             # Check for missing signals
             missing_x = x_signal not in df.columns and df.index.name != x_signal
             missing_y = y_signal not in df.columns
