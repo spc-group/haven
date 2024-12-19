@@ -74,9 +74,17 @@ class VoltmetersDisplay(display.FireflyDisplay):
         # Remove old shutters from the combobox
         for idx in range(self.ui.shutter_combobox.count()):
             self.ui.shutter_combobox.removeItem(idx)
-        # Add the shutters to the shutter combobox
+
+        # Decide which shutters we should show (only those that can be opened/closed)
+        def is_controllable(shtr):
+            can_open = getattr(shtr, "allow_open", True)
+            can_close = getattr(shtr, "allow_close", True)
+            return can_open and can_close
+
         shutters = registry.findall("shutters", allow_none=True)
+        shutters = [shtr for shtr in shutters if is_controllable(shtr)]
         has_shutters = bool(len(shutters))
+        # Add the shutters to the shutter combobox
         if has_shutters:
             self.ui.shutter_checkbox.setEnabled(True)
             for shutter in shutters:

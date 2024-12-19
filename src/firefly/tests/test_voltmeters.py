@@ -33,10 +33,10 @@ async def ion_chambers(sim_registry):
 
 @pytest.fixture()
 async def shutters(sim_registry):
-    shutters = [
-        Device(name="front_end_shutter"),
-        Device(name="enstation_shutter"),
-    ]
+    front_end_shutter = Device(name="front_end_shutter")
+    front_end_shutter.allow_close = False
+    endstation_shutter = Device(name="endstation_shutter")
+    shutters = [front_end_shutter, endstation_shutter]
     await asyncio.gather(*[d.connect(mock=True) for d in shutters])
     for shutter in shutters:
         shutter._ophyd_labels_ = {"shutters"}
@@ -196,7 +196,8 @@ async def test_shutters_checkbox_with_shutters(
     assert checkbox.isEnabled()
     # Check that shutters were added to the combobox
     combobox_items = [combobox.itemText(idx) for idx in range(combobox.count())]
-    assert "front_end_shutter" in combobox_items
+    assert "front_end_shutter" not in combobox_items
+    assert "endstation_shutter" in combobox_items
 
 
 @pytest.mark.asyncio
