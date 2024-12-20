@@ -52,6 +52,9 @@ class XspressController(DetectorController):
             self._drv.num_images.set(trigger_info.total_number_of_triggers),
             self._drv.image_mode.set(adcore.ImageMode.MULTIPLE),
             self._drv.trigger_mode.set(XspressTriggerMode.INTERNAL),
+            # Hardware deadtime correciton is not reliable
+            # https://github.com/epics-modules/xspress3/issues/57
+            self._drv.deadtime_correction.set(False),
         )
 
     async def wait_for_idle(self):

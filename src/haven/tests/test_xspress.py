@@ -60,6 +60,19 @@ async def test_descriptor(detector):
     assert await detector.writer._dataset_describer.np_datatype() == "<f8"
 
 
+async def test_deadtime_correction(detector):
+    """Deadtime correction in hardware is not reliable and should be
+    disabled.
+
+    https://github.com/epics-modules/xspress3/issues/57
+
+    """
+    set_mock_value(detector.drv.deadtime_correction, True)
+    trigger_info = TriggerInfo(number_of_triggers=1)
+    await detector.prepare(trigger_info)
+    assert not await detector.drv.deadtime_correction.get_value()
+
+
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov
