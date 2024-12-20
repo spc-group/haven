@@ -44,6 +44,22 @@ async def test_stage(detector):
     assert get_mock_put(detector.drv.erase).called
 
 
+async def test_descriptor(detector):
+    """There is a bug in the xspress3 EPICS driver that means it does not
+    report the datatype correctly. This tests a workaround to decide
+    based on the value of the dead_time_correction.
+
+    https://github.com/epics-modules/xspress3/issues/57
+
+    """
+    # With deadtime correction off, we should get unsigned longs
+    await detector.drv.deadtime_correction.set(False)
+    assert await detector.writer._dataset_describer.np_datatype() == "<u4"
+    # With deadtime correction on, we should get double-precision floats
+    await detector.drv.deadtime_correction.set(True)
+    assert await detector.writer._dataset_describer.np_datatype() == "<f8"
+
+
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov

@@ -11,6 +11,7 @@ from ophyd_async.core import (
     TriggerInfo,
 )
 from ophyd_async.epics import adcore
+from ophyd_async.epics.adcore._utils import ADBaseDataType, convert_ad_dtype_to_np
 from ophyd_async.epics.core import epics_signal_rw, epics_signal_x
 
 from .area_detectors import HavenDetector, default_path_provider
@@ -32,6 +33,7 @@ class XspressDriverIO(adcore.ADBaseIO):
         self.trigger_mode = epics_signal_rw(XspressTriggerMode, f"{prefix}TriggerMode")
         self.erase_on_start = epics_signal_rw(bool, f"{prefix}EraseOnStart")
         self.erase = epics_signal_x(f"{prefix}ERASE")
+        self.deadtime_correction = epics_signal_rw(bool, f"{prefix}CTRL_DTC")
         super().__init__(prefix=prefix, name=name)
 
 
@@ -65,6 +67,24 @@ class XspressController(DetectorController):
         await adcore.stop_busy_record(self._drv.acquire, False, timeout=1)
 
 
+class XspressDatasetDescriber(adcore.ADBaseDatasetDescriber):
+    """The datatype cannot be reliably determined from DataType_RBV.
+
+    Instead, read out whether deadtime correction is enabled and
+    determine the datatype this way.
+
+    https://github.com/epics-modules/xspress3/issues/57
+
+    """
+
+    async def np_datatype(self) -> str:
+        dt_correction = await self._driver.deadtime_correction.get_value()
+        if dt_correction:
+            return convert_ad_dtype_to_np(ADBaseDataType.FLOAT64)
+        else:
+            return convert_ad_dtype_to_np(ADBaseDataType.UINT32)
+
+
 class Xspress3Detector(HavenDetector, StandardDetector):
     _controller: DetectorController
     _writer: adcore.ADHDFWriter
@@ -89,7 +109,7 @@ class Xspress3Detector(HavenDetector, StandardDetector):
                 self.hdf,
                 path_provider,
                 lambda: self.name,
-                adcore.ADBaseDatasetDescriber(self.drv),
+                XspressDatasetDescriber(self.drv),
             ),
             config_sigs=(self.drv.acquire_period, self.drv.acquire_time, *config_sigs),
             name=name,
