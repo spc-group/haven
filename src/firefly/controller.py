@@ -11,7 +11,7 @@ from ophyd_async.core import NotConnected
 from ophydregistry import Registry
 from qasync import asyncSlot
 from qtpy import QtCore, QtWidgets
-from qtpy.QtCore import Signal
+from qtpy.QtCore import Signal, Slot
 from qtpy.QtGui import QIcon, QKeySequence
 from qtpy.QtWidgets import QAction, QErrorMessage
 
@@ -319,9 +319,6 @@ class FireflyController(QtCore.QObject):
             icon=qta.icon("mdi.sine-wave"),
         )
 
-    def update_queue_controls(self, status):
-        print(status)
-
     @asyncSlot(QAction)
     async def finalize_new_window(self, action):
         """Slot for providing new windows for after a new window is created."""
@@ -329,7 +326,9 @@ class FireflyController(QtCore.QObject):
         self.queue_status_changed.connect(action.window.update_queue_status)
         self.queue_status_changed.connect(action.window.update_queue_controls)
         if getattr(self, "_queue_client", None) is not None:
-            self._queue_client.check_queue_status(force=True)
+            status = await self._queue_client.queue_status()
+            action.window.update_queue_status(status)
+            action.window.update_queue_controls(status)
         action.display.queue_item_submitted.connect(self.add_queue_item)
         # Send the current devices to the window
         await action.window.update_devices(self.registry)
@@ -573,9 +572,7 @@ class FireflyController(QtCore.QObject):
         self.actions.queue_controls["halt"].triggered.connect(client.halt_runengine)
         self.actions.queue_controls["abort"].triggered.connect(client.abort_runengine)
         self.actions.queue_controls["stop_queue"].triggered.connect(client.stop_queue)
-        self.check_queue_status_action.triggered.connect(
-            partial(client.check_queue_status, True)
-        )
+        self.check_queue_status_action.triggered.connect(partial(client.update, True))
         # Connect signals/slots for queueserver state changes
         client.status_changed.connect(self.queue_status_changed)
         client.in_use_changed.connect(self.queue_in_use_changed)
@@ -610,6 +607,7 @@ class FireflyController(QtCore.QObject):
     def update_devices_allowed(self, devices):
         pass
 
+    @Slot(str)
     def enable_queue_controls(self, re_state):
         """Enable/disable the navbar buttons that control the queue.
 
