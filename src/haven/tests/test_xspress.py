@@ -12,23 +12,29 @@ this_dir = Path(__file__).parent
 
 @pytest.fixture()
 async def detector():
-    det = Xspress3Detector("255id_xsp:", name="vortex_me4")
+    det = Xspress3Detector("255id_xsp:", name="vortex_me4", elements=4)
     await det.connect(mock=True)
     set_mock_value(det.hdf.file_path_exists, True)
     return det
 
 
-def test_mca_signals(detector):
+async def test_mca_signals(detector):
+    assert await detector.ev_per_bin.get_value() == 10
     # Spot-check some PVs
-    # print(list(detector.drv.children()))
     assert (
         detector.drv.acquire_time.source == "mock+ca://255id_xsp:det1:AcquireTime_RBV"
     )
     assert detector.drv.acquire.source == "mock+ca://255id_xsp:det1:Acquire_RBV"
+    # Individual MCA signals
+    assert len(detector.mcas) == 4
+
+
+async def test_description(detector):
+    config = await detector.read_configuration()
+    assert f"{detector.name}-ev_per_bin" in config
 
 
 async def test_trigger(detector):
-    trigger_info = TriggerInfo(number_of_triggers=1)
     status = detector.trigger()
     await asyncio.sleep(0.1)  # Let the event loop turn
     set_mock_value(detector.hdf.num_captured, 1)
@@ -60,7 +66,7 @@ async def test_descriptor(detector):
     assert await detector.writer._dataset_describer.np_datatype() == "<f8"
 
 
-async def test_deadtime_correction(detector):
+async def test_deadtime_correction_disabled(detector):
     """Deadtime correction in hardware is not reliable and should be
     disabled.
 
