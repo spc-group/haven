@@ -264,11 +264,11 @@ class XRFDetectorDisplay(display.FireflyDisplay):
         self.device = beamline.devices[device_name]
         # Set up data channels
         self._spectrum_channels = []
-        for mca_num, mca in self.device.mcas.items():
-            address = f"haven://{mca.name}.spectrum"
+        for element_num, element in self.device.elements.items():
+            address = f"haven://{element.name}.spectrum"
             channel = pydm.PyDMChannel(
                 address=address,
-                value_slot=partial(self.handle_new_spectrum, mca_num=mca_num),
+                value_slot=partial(self.handle_new_spectrum, mca_num=element_num),
             )
             channel.connect()
             self._spectrum_channels.append(channel)
@@ -294,7 +294,7 @@ class XRFDetectorDisplay(display.FireflyDisplay):
         layout = self.ui.mcas_layout
         self.remove_widgets_from_layout(layout)
         self._count_labels = {}
-        for idx, (key, mca) in enumerate(self.device.mcas.items()):
+        for idx, (key, mca) in enumerate(self.device.elements.items()):
             row = idx + 2  # +2 for the header and total-line
             # Label for the number of the MCA's detector element
             key_label = QLabel()

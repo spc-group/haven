@@ -18,15 +18,19 @@ async def detector():
     return det
 
 
-async def test_mca_signals(detector):
+async def test_signals(detector):
     assert await detector.ev_per_bin.get_value() == 10
     # Spot-check some PVs
     assert (
         detector.drv.acquire_time.source == "mock+ca://255id_xsp:det1:AcquireTime_RBV"
     )
     assert detector.drv.acquire.source == "mock+ca://255id_xsp:det1:Acquire_RBV"
-    # Individual MCA signals
-    assert len(detector.mcas) == 4
+    # Individual element's signals
+    assert len(detector.elements) == 4
+    elem0 = detector.elements[0]
+    assert elem0.spectrum.source == "mock+ca://255id_xsp:MCA1:ArrayData"
+    assert elem0.dead_time_percent.source == "mock+ca://255id_xsp:C1SCA:10:Value_RBV"
+    assert elem0.dead_time_factor.source == "mock+ca://255id_xsp:C1SCA:9:Value_RBV"
 
 
 async def test_description(detector):

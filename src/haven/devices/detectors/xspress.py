@@ -1,10 +1,13 @@
 import asyncio
 from collections.abc import Sequence
 
+import numpy as np
 from ophyd_async.core import (
     AsyncStatus,
+    Array1D,
     DetectorController,
     DeviceVector,
+    Device,
     PathProvider,
     SignalR,
     StandardDetector,
@@ -14,10 +17,9 @@ from ophyd_async.core import (
 )
 from ophyd_async.epics import adcore
 from ophyd_async.epics.adcore._utils import ADBaseDataType, convert_ad_dtype_to_np
-from ophyd_async.epics.core import epics_signal_rw, epics_signal_x
+from ophyd_async.epics.core import epics_signal_rw, epics_signal_x, epics_signal_r
 
 from .area_detectors import HavenDetector, default_path_provider
-from .mca import MCA
 
 
 class XspressTriggerMode(StrictEnum):
@@ -91,6 +93,26 @@ class XspressDatasetDescriber(adcore.ADBaseDatasetDescriber):
             return convert_ad_dtype_to_np(ADBaseDataType.UINT32)
 
 
+class XspressElement(Device):
+    """Data and controls for an individual Xspress3 detector element."""
+    def __init__(self, prefix: str, element_index: int, name: str = ""):
+        """Parameters
+        ==========
+        prefix
+          The detector's overall PV prefix, not including the
+          e.g. "MCA1:" part.
+        element_index
+          This elements positional index, e.g. the first element will
+          have *element_index*=0.
+
+        """
+        elem_num = element_index + 1
+        self.spectrum = epics_signal_r(Array1D[np.float64], f"{prefix}MCA{elem_num}:ArrayData")
+        self.dead_time_percent = epics_signal_r(float, f"{prefix}C{elem_num}SCA:10:Value_RBV")
+        self.dead_time_factor = epics_signal_r(float, f"{prefix}C{elem_num}SCA:9:Value_RBV")
+        super().__init__(name=name)
+
+
 class Xspress3Detector(HavenDetector, StandardDetector):
     """A detector controlled by Xspress3 electronics.
 
@@ -129,8 +151,8 @@ class Xspress3Detector(HavenDetector, StandardDetector):
             elements = range(elements)
         except TypeError:
             pass
-        self.mcas = DeviceVector({
-            idx: MCA("{prefix}MCA{idx+1}") for idx in elements
+        self.elements = DeviceVector({
+            idx: XspressElement(prefix, element_index=idx) for idx in elements
         })
         # Area detector IO devices
         self.drv = XspressDriverIO(prefix + drv_suffix)
