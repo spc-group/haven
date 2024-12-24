@@ -16,8 +16,8 @@ from ophyd import OphydObject, Signal
 
 from haven.devices.dxp import parse_xmap_buffer
 
-DETECTORS = ["dxp", "xspress"]
-# DETECTORS = ['dxp']
+# DETECTORS = ["dxp", "xspress"]
+DETECTORS = ['dxp']
 
 
 @pytest.fixture()

@@ -27,8 +27,8 @@ from haven.devices.robot import Robot
 from haven.devices.shutter import PssShutter
 from haven.devices.slits import ApertureSlits, BladeSlits
 from haven.devices.xia_pfcu import PFCUFilter, PFCUFilterBank, PFCUShutter
-from haven.devices.xspress import Xspress3Detector
-from haven.devices.xspress import add_mcas as add_xspress_mcas
+from haven.devices import Xspress3Detector
+
 
 top_dir = Path(__file__).parent.resolve()
 haven_dir = top_dir / "haven"
@@ -159,19 +159,10 @@ def dxp(sim_registry):
     yield vortex
 
 
-class Xspress3Vortex(Xspress3Detector):
-    mcas = DCpt(
-        add_xspress_mcas(range_=[0, 1, 2, 3]),
-        kind=Kind.normal | Kind.hinted,
-        default_read_attrs=[f"mca{i}" for i in [0, 1, 2, 3]],
-        default_configuration_attrs=[f"mca{i}" for i in [0, 1, 2, 3]],
-    )
-
-
 @pytest.fixture()
-def xspress(sim_registry):
-    FakeXspress = make_fake_device(Xspress3Vortex)
-    vortex = FakeXspress(name="vortex_me4", labels={"xrf_detectors"})
+async def xspress(sim_registry):
+    vortex = Xspress3Detector(name="vortex_me4", prefix="255id_vortex:", elements=4)
+    await vortex.connect(mock=True)
     sim_registry.register(vortex)
     yield vortex
 
