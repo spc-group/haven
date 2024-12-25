@@ -2,6 +2,7 @@ import json
 import logging
 import sys
 from collections import defaultdict
+from itertools import product
 from contextlib import contextmanager
 from enum import IntEnum
 from functools import partial
@@ -231,15 +232,18 @@ class XRFDetectorDisplay(display.FireflyDisplay):
     _mca_lower_receiver = None
     _mca_upper_receiver = None
 
+    _spectra: dict
+
+    num_header_rows = 2
+
     # Signals
-    spectrum_changed = Signal(int, object)  # (MCA index, spectrum)
     mca_row_hovered = Signal(int, int, bool)  # (MCA num, roi_num, entered)
-    roi_row_hovered = Signal(int, int, bool)  # (MCA num, roi_num, entered)
 
     def ui_filename(self):
         return "xrf_detector.ui"
 
     def customize_ui(self):
+        self._spectra = {}
         device = self.device
         self.setWindowTitle(device.name)
         self.ui.mca_plot_widget.device_name = self.device.name
@@ -247,8 +251,7 @@ class XRFDetectorDisplay(display.FireflyDisplay):
         self.draw_mca_widgets()
         # Button for starting/stopping the detector
         self.ui.oneshot_button.setIcon(qta.icon("fa5s.camera"))
-        # Connect signals for when spectra change
-        self.spectrum_changed.connect(self.ui.mca_plot_widget.update_spectrum)
+        super().customize_ui()
 
     def launch_caqtdm(
         self,
@@ -256,8 +259,22 @@ class XRFDetectorDisplay(display.FireflyDisplay):
         super().launch_caqtdm(macros={"P": self.device.prefix.strip(":")})
 
     def handle_new_spectrum(self, new_spectrum, mca_num):
-        self.spectrum_changed.emit(mca_num, new_spectrum)
+        self._spectra[mca_num] = new_spectrum
+        self.ui.mca_plot_widget.update_spectrum(mca_num=mca_num, spectrum=new_spectrum)
+        self.update_spectral_widgets(mca_num=mca_num, spectrum=new_spectrum, spectra=self._spectra.values())
 
+    def update_spectral_widgets(self, mca_num: int, spectrum: Sequence, spectra: Sequence[np.ndarray]):
+        """Update the values of labels with totals, etc from the spectra."""
+        row = mca_num + self.num_header_rows
+        count_label = self.ui.mcas_layout.itemAtPosition(row, 1).widget()
+        count_label.setText(f"{np.sum(spectrum):_}")
+        # Update the sum-total widget
+        total = 0
+        total_label = self.ui.mcas_layout.itemAtPosition(1, 1).widget()
+        for spec in spectra:
+            total += np.sum(spec)
+        total_label.setText(f"{total:_}")
+    
     def customize_device(self):
         # Load the device from the registry
         device_name = self.macros()["DEV"]
@@ -292,10 +309,10 @@ class XRFDetectorDisplay(display.FireflyDisplay):
         """Prepare a row for each element in the detector."""
         # Prepare all the ROI widgets
         layout = self.ui.mcas_layout
-        self.remove_widgets_from_layout(layout)
+        self.clear_elements_layout(layout)
         self._count_labels = {}
         for idx, (key, mca) in enumerate(self.device.elements.items()):
-            row = idx + 2  # +2 for the header and total-line
+            row = idx + self.num_header_rows
             # Label for the number of the MCA's detector element
             key_label = QLabel()
             key_label.setText(str(key))
@@ -306,10 +323,13 @@ class XRFDetectorDisplay(display.FireflyDisplay):
             layout.addWidget(count_label, row, 1)
             self._count_labels[key] = count_label
 
-    def remove_widgets_from_layout(self, layout):
-        # Delete existing ROI widgets
-        for idx in reversed(range(layout.count())):
-            layout.takeAt(idx).widget().deleteLater()
+    def clear_elements_layout(self, layout):
+        rows = range(self.num_header_rows, layout.rowCount())
+        cols = range(layout.columnCount())
+        for row, col in product(rows, cols):
+            item = layout.itemAtPosition(row, col)
+            layout.removeItem(item)
+            item.widget().deleteLater()
 
 
 # -----------------------------------------------------------------------------

@@ -35,6 +35,7 @@ def test_mca_count_labels_created(xrf_display):
     """Check that QLabel objs are created for each element."""
     layout = xrf_display.ui.mcas_layout
     assert layout.rowCount() == 6  # 4 elements plus heading and total
+    assert layout.itemAtPosition(1, 0).widget().text() == "Total"
     assert layout.itemAtPosition(5, 1).widget() is xrf_display._count_labels[3]
 
 
@@ -77,6 +78,22 @@ def test_mca_hovering(xrf_display):
     # Unhighlight and confirm it is invisible
     plot_widget.highlight_spectrum(mca_num=1, roi_num=0, hovered=False)
 
+
+@pytest.mark.parametrize("xrf_display", detectors, indirect=True)
+def test_update_spectral_widgets(xrf_display):
+    spectrum = np.ones(shape=(100,), dtype=int) * 10
+    xrf_display.update_spectral_widgets(mca_num=0, spectrum=spectrum, spectra=[])
+    mcas_layout = xrf_display.ui.mcas_layout
+    elem0_label = mcas_layout.itemAtPosition(2, 1).widget()
+    assert elem0_label.text() == "1_000"
+    total_label = mcas_layout.itemAtPosition(1, 1).widget()
+    assert total_label.text() == "0"
+    # Add a second spectrum for a separate element
+    xrf_display.update_spectral_widgets(mca_num=1, spectrum=spectrum * 2, spectra=[spectrum, spectrum*2])
+    elem1_label = mcas_layout.itemAtPosition(3, 1).widget()
+    assert elem1_label.text() == "2_000"
+    total_label = mcas_layout.itemAtPosition(1, 1).widget()
+    assert total_label.text() == "3_000"
 
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
