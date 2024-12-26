@@ -14,7 +14,6 @@ import pydm
 import pyqtgraph
 import qtawesome as qta
 from matplotlib.colors import TABLEAU_COLORS
-from pydm.widgets import PyDMChannel, PyDMEmbeddedDisplay
 from qtpy import uic
 from qtpy.QtCore import Qt, Signal
 from qtpy.QtWidgets import QApplication, QWidget, QLabel
@@ -205,25 +204,6 @@ class ROIPlotWidget(XRFPlotWidget):
             self.show_region(show=False, mca_num=mca_num, roi_num=roi_num)
 
 
-class ROIEmbeddedDisplay(PyDMEmbeddedDisplay):
-    # Signals
-    selected = Signal(bool)
-    hovered = Signal(bool)
-
-    def open_file(self, **kwargs):
-        widget = super().open_file(**kwargs)
-        # Connect signals if necessary
-        if widget is not None:
-            widget.selected.connect(self.selected)
-        return widget
-
-    def enterEvent(self, event=None):
-        self.hovered.emit(True)
-
-    def leaveEvent(self, event=None):
-        self.hovered.emit(False)
-
-
 class XRFDetectorDisplay(display.FireflyDisplay):
     caqtdm_ui_file = "/APSshare/epics/synApps_6_2_1/support/xspress3-2-5/xspress3App/opi/ui/xspress3_1chan.ui"
 
@@ -322,6 +302,10 @@ class XRFDetectorDisplay(display.FireflyDisplay):
             count_label.setText("##########")
             layout.addWidget(count_label, row, 1)
             self._count_labels[key] = count_label
+            # Label for the dead time for this element
+            dt_signal = mca.dead_time_percent.name
+            dt_label = pydm.widgets.PyDMLabel(init_channel=f"haven://{dt_signal}")
+            layout.addWidget(dt_label, row, 2)
 
     def clear_elements_layout(self, layout):
         rows = range(self.num_header_rows, layout.rowCount())
