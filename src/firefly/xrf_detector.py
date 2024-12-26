@@ -4,7 +4,7 @@ import sys
 from collections import defaultdict
 from itertools import product
 from contextlib import contextmanager
-from enum import IntEnum
+from enum import IntEnum, Enum
 from functools import partial
 from pathlib import Path
 from typing import Sequence
@@ -204,6 +204,15 @@ class ROIPlotWidget(XRFPlotWidget):
             self.show_region(show=False, mca_num=mca_num, roi_num=roi_num)
 
 
+class Color(str, Enum):
+    """Taken from bootstrap 5 alert components."""
+    BLUE = "rgb(5, 81, 96)"
+    GREY = "rgb(226, 227, 229)"
+    GREEN = "rgb(10, 54, 34)"
+    RED = "rgb(248, 215, 218)"
+    YELLOW = "rgb(255, 243, 205)"
+
+
 class XRFDetectorDisplay(display.FireflyDisplay):
     caqtdm_ui_file = "/APSshare/epics/synApps_6_2_1/support/xspress3-2-5/xspress3App/opi/ui/xspress3_1chan.ui"
 
@@ -219,6 +228,17 @@ class XRFDetectorDisplay(display.FireflyDisplay):
     # Signals
     mca_row_hovered = Signal(int, int, bool)  # (MCA num, roi_num, entered)
 
+    # For styling the detector state attribute
+    state_styles = {
+        "Acquire": f"color: {Color.GREEN}; font_weight: bold;",
+        "Saving": f"color: {Color.GREEN}",
+        "Error": f"color: {Color.RED}; font_weight: bold;",
+        "Disconnected": f"color: {Color.RED}",
+        "Aborting": f"color: {Color.YELLOW}",
+        "Initializing": f"color: {Color.YELLOW}",
+        "Waiting": f"color: {Color.YELLOW}",
+    }
+
     def ui_filename(self):
         return "xrf_detector.ui"
 
@@ -227,11 +247,23 @@ class XRFDetectorDisplay(display.FireflyDisplay):
         device = self.device
         self.setWindowTitle(device.name)
         self.ui.mca_plot_widget.device_name = self.device.name
+        # Label for the device_name
+        self.ui.detector_name_label.setText(device.name)
         # Create count totals for each element
         self.draw_mca_widgets()
         # Button for starting/stopping the detector
-        self.ui.oneshot_button.setIcon(qta.icon("fa5s.camera"))
+        self.ui.acquire_button.setIcon(qta.icon("fa5s.camera"))
+        # Handler for updating the detector state label style
+        self.det_state_channel = pydm.PyDMChannel(
+            address=self.ui.detector_state_label.channel,
+            value_slot=self.update_state_style,
+        )
+        self.det_state_channel.connect()
         super().customize_ui()
+
+    def update_state_style(self, new_state: str):
+        new_style = self.state_styles.get(new_state, "")
+        self.ui.detector_state_label.setStyleSheet(new_style)
 
     def launch_caqtdm(
         self,

@@ -31,6 +31,12 @@ def xrf_display(request, qtbot):
 
 
 @pytest.mark.parametrize("xrf_display", detectors, indirect=True)
+def test_device_name(xrf_display):
+    label = xrf_display.ui.detector_name_label
+    assert label.text() == xrf_display.device.name
+
+
+@pytest.mark.parametrize("xrf_display", detectors, indirect=True)
 def test_mca_count_labels_created(xrf_display):
     """Check that QLabel objs are created for each element."""
     layout = xrf_display.ui.mcas_layout
@@ -94,6 +100,19 @@ def test_update_spectral_widgets(xrf_display):
     assert elem1_label.text() == "2_000"
     total_label = mcas_layout.itemAtPosition(1, 1).widget()
     assert total_label.text() == "3_000"
+
+
+@pytest.mark.parametrize("xrf_display", detectors, indirect=True)
+def test_detector_state_style(xrf_display):
+    """The label should change color, etc depending on detector state."""
+    # Check initial state
+    lbl = xrf_display.ui.detector_state_label
+    assert "rgb(" not in lbl.styleSheet()
+    assert "bold" not in lbl.styleSheet()
+    # Update state and check again
+    xrf_display.update_state_style("Acquire")
+    assert "rgb(" in lbl.styleSheet()
+    assert "bold" in lbl.styleSheet()
 
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman

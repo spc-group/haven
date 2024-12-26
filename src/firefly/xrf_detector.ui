@@ -59,6 +59,74 @@
       </widget>
      </item>
      <item>
+      <widget class="PyDMLabel" name="detector_state_label">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="font">
+        <font>
+         <family>Sans Serif</family>
+        </font>
+       </property>
+       <property name="toolTip">
+        <string>Currest status of the detector.</string>
+       </property>
+       <property name="styleSheet">
+        <string notr="true"/>
+       </property>
+       <property name="text">
+        <string>########</string>
+       </property>
+       <property name="precision" stdset="0">
+        <number>0</number>
+       </property>
+       <property name="showUnits" stdset="0">
+        <bool>false</bool>
+       </property>
+       <property name="precisionFromPV" stdset="0">
+        <bool>true</bool>
+       </property>
+       <property name="alarmSensitiveContent" stdset="0">
+        <bool>false</bool>
+       </property>
+       <property name="alarmSensitiveBorder" stdset="0">
+        <bool>true</bool>
+       </property>
+       <property name="PyDMToolTip" stdset="0">
+        <string/>
+       </property>
+       <property name="channel" stdset="0">
+        <string>haven://${DEV}.drv.detector_state</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="PyDMPushButton" name="acquire_button">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Collect a single frame to show on the plot.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;This button does not engage the queueserver, and no data will be saved.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <property name="text">
+        <string>Acquire</string>
+       </property>
+       <property name="channel" stdset="0">
+        <string>${DEV}.drv.acquire</string>
+       </property>
+       <property name="pressValue" stdset="0">
+        <string>1</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="Line" name="line_2">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+      </widget>
+     </item>
+     <item>
       <layout class="QHBoxLayout" name="dwell_time_layout">
        <property name="spacing">
         <number>3</number>
@@ -172,67 +240,6 @@
       </layout>
      </item>
      <item>
-      <widget class="Line" name="line_2">
-       <property name="orientation">
-        <enum>Qt::Vertical</enum>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="oneshot_button">
-       <property name="toolTip">
-        <string>Collect a single frame to show on the plot.
-
-This button engages the queueserver run engine but no data will be saved.</string>
-       </property>
-       <property name="text">
-        <string>Acquire</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="PyDMLabel" name="PyDMLabel_35">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="font">
-        <font>
-         <family>Sans Serif</family>
-        </font>
-       </property>
-       <property name="toolTip">
-        <string>Currest status of the detector.</string>
-       </property>
-       <property name="text">
-        <string>########</string>
-       </property>
-       <property name="precision" stdset="0">
-        <number>0</number>
-       </property>
-       <property name="showUnits" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="precisionFromPV" stdset="0">
-        <bool>true</bool>
-       </property>
-       <property name="alarmSensitiveContent" stdset="0">
-        <bool>false</bool>
-       </property>
-       <property name="alarmSensitiveBorder" stdset="0">
-        <bool>true</bool>
-       </property>
-       <property name="PyDMToolTip" stdset="0">
-        <string/>
-       </property>
-       <property name="channel" stdset="0">
-        <string>haven://${DEV}.drv.detector_state</string>
-       </property>
-      </widget>
-     </item>
-     <item>
       <spacer name="horizontalSpacer_2">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
@@ -281,8 +288,8 @@ This button engages the queueserver run engine but no data will be saved.</strin
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>706</width>
-                 <height>321</height>
+                 <width>682</width>
+                 <height>314</height>
                 </rect>
                </property>
                <layout class="QGridLayout" name="gridLayout">
@@ -379,6 +386,11 @@ This button engages the queueserver run engine but no data will be saved.</strin
    <class>PyDMLineEdit</class>
    <extends>QLineEdit</extends>
    <header>pydm.widgets.line_edit</header>
+  </customwidget>
+  <customwidget>
+   <class>PyDMPushButton</class>
+   <extends>QPushButton</extends>
+   <header>pydm.widgets.pushbutton</header>
   </customwidget>
   <customwidget>
    <class>MCAPlotWidget</class>
