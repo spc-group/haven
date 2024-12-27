@@ -47,10 +47,10 @@ def queue_status(status_mapping: Mapping[str, str] = {}):
     Yields
     ======
     to_update
-      Dictionary with signals to emit as keys, and tuples of
-      ``*args`` to emit and values. So ``{self.status_changed:
-      ("spam", "eggs")}`` results in
-      ``self.status_changed.emit("spam", "eggs")``.
+      Dictionary with signals to emit as keys, and tuples of ``*args``
+      to emit as values. So ``{self.status_changed: ("spam",
+      "eggs")}`` results in ``self.status_changed.emit("spam",
+      "eggs")``.
 
     Sends
     =====
@@ -127,7 +127,7 @@ class QueueClient(QObject):
         next(self.status)  # Prime the generator
 
     def start(self):
-        # Start the time so that it
+        # Start the time so that it triggers status updates
         self.timer.start(int(self.timeout * 1000))
 
     @asyncSlot(bool)

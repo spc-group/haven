@@ -8,9 +8,8 @@ from pydm import data_plugins
 from pydm.main_window import PyDMMainWindow
 from qtpy import QtGui, QtWidgets
 
+from firefly.queue_client import is_in_use
 from haven import load_config
-
-from .queue_client import is_in_use
 
 log = logging.getLogger(__name__)
 
