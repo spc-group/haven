@@ -112,10 +112,10 @@
         <string>Acquire</string>
        </property>
        <property name="channel" stdset="0">
-        <string>${DEV}.drv.acquire</string>
+        <string>haven://${DEV}.drv.acquire</string>
        </property>
        <property name="pressValue" stdset="0">
-        <string>1</string>
+        <string>True</string>
        </property>
       </widget>
      </item>

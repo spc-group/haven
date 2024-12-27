@@ -230,9 +230,9 @@ class XRFDetectorDisplay(display.FireflyDisplay):
 
     # For styling the detector state attribute
     state_styles = {
-        "Acquire": f"color: {Color.GREEN}; font_weight: bold;",
+        "Acquire": f"color: {Color.GREEN}; font-weight: bold;",
         "Saving": f"color: {Color.GREEN}",
-        "Error": f"color: {Color.RED}; font_weight: bold;",
+        "Error": f"color: {Color.RED}; font-weight: bold;",
         "Disconnected": f"color: {Color.RED}",
         "Aborting": f"color: {Color.YELLOW}",
         "Initializing": f"color: {Color.YELLOW}",

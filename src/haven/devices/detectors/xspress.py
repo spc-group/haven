@@ -132,6 +132,7 @@ class Xspress3Detector(HavenDetector, StandardDetector):
       
       det = Xspress3Detector(..., elements=range(4))
     """
+    _ophyd_labels_ = {"detectors", "xrf_detectors"}
     _controller: DetectorController
     _writer: adcore.ADHDFWriter
 
