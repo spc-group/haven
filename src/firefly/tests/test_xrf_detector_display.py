@@ -1,4 +1,7 @@
+import asyncio
+
 import numpy as np
+import pandas as pd
 import pytest
 from pyqtgraph import PlotItem
 
@@ -6,6 +9,7 @@ from firefly.xrf_detector import XRFDetectorDisplay
 
 # detectors = ["dxp", "xspress"]
 detectors = ["xspress"]
+
 
 @pytest.fixture()
 def xrf_display(request, qtbot):
@@ -23,10 +27,11 @@ def xrf_display(request, qtbot):
         0, 65536, dtype=np.int_, size=(4, 1024)
     )
     plot_widget = display.mca_plot_widget
-    plot_widget.update_spectrum(0, spectra[0])
-    plot_widget.update_spectrum(1, spectra[1])
-    plot_widget.update_spectrum(2, spectra[2])
-    plot_widget.update_spectrum(3, spectra[3])
+    energies = np.arange(1024)
+    plot_widget.update_spectrum(0, pd.Series(spectra[0], index=energies))
+    plot_widget.update_spectrum(1, pd.Series(spectra[1], index=energies))
+    plot_widget.update_spectrum(2, pd.Series(spectra[2], index=energies))
+    plot_widget.update_spectrum(3, pd.Series(spectra[3], index=energies))
     yield display
 
 
@@ -46,7 +51,7 @@ def test_mca_count_labels_created(xrf_display):
 
 
 @pytest.mark.parametrize("xrf_display", detectors, indirect=True)
-def test_update_mca_spectra(xrf_display, qtbot):
+async def test_update_mca_spectra(xrf_display, qtbot):
     spectra = np.random.default_rng(seed=0).integers(
         0, 65536, dtype=np.int_, size=(4, 1024)
     )
@@ -60,17 +65,22 @@ def test_update_mca_spectra(xrf_display, qtbot):
     with qtbot.waitSignal(mca_plot_widget.plot_changed):
         xrf_display._spectrum_channels[0].value_slot(spectra[0])
         xrf_display._spectrum_channels[1].value_slot(spectra[1])
+        await asyncio.sleep(0.1)
     # Check that the spectrum was plotted
     data_items = plot_item.listDataItems()
     assert len(data_items) == 2
+    energies = np.linspace(5, 10235, num=1024)
+    np.testing.assert_equal(data_items[0].xData, energies)
     # Check that previous plots get cleared
     spectra2 = np.random.default_rng(seed=1).integers(
         0, 65536, dtype=np.int_, size=(4, 1024)
     )
     with qtbot.waitSignal(mca_plot_widget.plot_changed):
         xrf_display._spectrum_channels[0].value_slot(spectra2[0])
+        await asyncio.sleep(0.1)
     data_items = plot_item.listDataItems()
     assert len(data_items) == 2
+
 
 @pytest.mark.xfail()
 @pytest.mark.parametrize("xrf_display", detectors, indirect=True)
@@ -95,7 +105,9 @@ def test_update_spectral_widgets(xrf_display):
     total_label = mcas_layout.itemAtPosition(1, 1).widget()
     assert total_label.text() == "0"
     # Add a second spectrum for a separate element
-    xrf_display.update_spectral_widgets(mca_num=1, spectrum=spectrum * 2, spectra=[spectrum, spectrum*2])
+    xrf_display.update_spectral_widgets(
+        mca_num=1, spectrum=spectrum * 2, spectra=[spectrum, spectrum * 2]
+    )
     elem1_label = mcas_layout.itemAtPosition(3, 1).widget()
     assert elem1_label.text() == "2_000"
     total_label = mcas_layout.itemAtPosition(1, 1).widget()
@@ -113,6 +125,7 @@ def test_detector_state_style(xrf_display):
     xrf_display.update_state_style("Acquire")
     assert "rgb(" in lbl.styleSheet()
     assert "bold" in lbl.styleSheet()
+
 
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman

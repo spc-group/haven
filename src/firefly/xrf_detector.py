@@ -1,22 +1,23 @@
-import json
 import logging
 import sys
 from collections import defaultdict
-from itertools import product
 from contextlib import contextmanager
-from enum import IntEnum, Enum
+from enum import Enum, IntEnum
 from functools import partial
+from itertools import product
 from pathlib import Path
 from typing import Sequence
 
 import numpy as np
+import pandas as pd
 import pydm
 import pyqtgraph
 import qtawesome as qta
 from matplotlib.colors import TABLEAU_COLORS
+from qasync import asyncSlot
 from qtpy import uic
 from qtpy.QtCore import Qt, Signal
-from qtpy.QtWidgets import QApplication, QWidget, QLabel
+from qtpy.QtWidgets import QApplication, QLabel, QWidget
 
 from firefly import display
 from haven import beamline
@@ -59,6 +60,7 @@ class XRF1DPlotWidget(pyqtgraph.PlotWidget):
 
     def __init__(self, parent=None, background="default", plotItem=None, **kargs):
         plot_item = XRF1DPlotItem(**kargs)
+        plot_item.getAxis("bottom").setLabel("Energy", units="eV")
         super().__init__(parent=parent, background=background, plotItem=plot_item)
 
 
@@ -85,8 +87,17 @@ class XRFPlotWidget(QWidget):
         plot_item.addLegend()
         plot_item.hover_coords_changed.connect(self.ui.coords_label.setText)
 
-    def update_spectrum(self, mca_num, spectrum):
-        """Plot the spectrum associated with the given MCA index."""
+    def update_spectrum(self, mca_num: int, spectrum: pd.Series):
+        """Plot the spectrum associated with the given MCA index.
+
+        Parameters
+        ==========
+        mca_num
+          The 0-index for this MCA. E.g. the 2nd element would have
+          *mca_num* of ``1``.
+        spectrum
+          The spectrum to plot.
+        """
         # Create the plot item itself if necessary
         log.debug(f"New spectrum ({mca_num}): {repr(spectrum)}")
         show_spectrum = self.target_mca is None or mca_num == self.target_mca
@@ -103,10 +114,10 @@ class XRFPlotWidget(QWidget):
                 # Probably this means the spectrum is really just a scaler
                 length = 1
                 spectrum = np.asarray([spectrum])
-            xdata = np.arange(length)
+            xdata = spectrum.index
             color = self.spectrum_color(mca_num)
             self._data_items[mca_num] = plot_item.plot(
-                xdata, spectrum, name=mca_num, pen=color
+                xdata, spectrum.values, name=mca_num, pen=color
             )
             # Add region markers
             self.plot_changed.emit()
@@ -206,6 +217,7 @@ class ROIPlotWidget(XRFPlotWidget):
 
 class Color(str, Enum):
     """Taken from bootstrap 5 alert components."""
+
     BLUE = "rgb(5, 81, 96)"
     GREY = "rgb(226, 227, 229)"
     GREEN = "rgb(10, 54, 34)"
@@ -270,12 +282,22 @@ class XRFDetectorDisplay(display.FireflyDisplay):
     ):
         super().launch_caqtdm(macros={"P": self.device.prefix.strip(":")})
 
-    def handle_new_spectrum(self, new_spectrum, mca_num):
-        self._spectra[mca_num] = new_spectrum
-        self.ui.mca_plot_widget.update_spectrum(mca_num=mca_num, spectrum=new_spectrum)
-        self.update_spectral_widgets(mca_num=mca_num, spectrum=new_spectrum, spectra=self._spectra.values())
+    @asyncSlot(object)
+    async def handle_new_spectrum(self, new_spectrum, mca_num):
+        # Calclulate energies for this spectrum
+        ev_per_bin = await self.device.ev_per_bin.get_value()
+        energies = (np.arange(new_spectrum.shape[0]) + 0.5) * ev_per_bin
+        spectrum = pd.Series(new_spectrum, index=energies)
+        self._spectra[mca_num] = spectrum
+        # Update UI widgets
+        self.ui.mca_plot_widget.update_spectrum(mca_num=mca_num, spectrum=spectrum)
+        self.update_spectral_widgets(
+            mca_num=mca_num, spectrum=spectrum, spectra=self._spectra.values()
+        )
 
-    def update_spectral_widgets(self, mca_num: int, spectrum: Sequence, spectra: Sequence[np.ndarray]):
+    def update_spectral_widgets(
+        self, mca_num: int, spectrum: Sequence, spectra: Sequence[np.ndarray]
+    ):
         """Update the values of labels with totals, etc from the spectra."""
         row = mca_num + self.num_header_rows
         count_label = self.ui.mcas_layout.itemAtPosition(row, 1).widget()
@@ -286,7 +308,7 @@ class XRFDetectorDisplay(display.FireflyDisplay):
         for spec in spectra:
             total += np.sum(spec)
         total_label.setText(f"{total:_}")
-    
+
     def customize_device(self):
         # Load the device from the registry
         device_name = self.macros()["DEV"]

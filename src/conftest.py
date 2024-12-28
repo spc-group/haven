@@ -16,6 +16,7 @@ from tiled.server.app import build_app
 
 import haven
 from haven.catalog import Catalog
+from haven.devices import Xspress3Detector
 from haven.devices.aps import ApsMachine
 from haven.devices.area_detector import AravisDetector
 from haven.devices.beamline_manager import BeamlineManager, IOCManager
@@ -27,8 +28,6 @@ from haven.devices.robot import Robot
 from haven.devices.shutter import PssShutter
 from haven.devices.slits import ApertureSlits, BladeSlits
 from haven.devices.xia_pfcu import PFCUFilter, PFCUFilterBank, PFCUShutter
-from haven.devices import Xspress3Detector
-
 
 top_dir = Path(__file__).parent.resolve()
 haven_dir = top_dir / "haven"
