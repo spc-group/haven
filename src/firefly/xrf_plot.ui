@@ -66,33 +66,6 @@
          </property>
         </spacer>
        </item>
-       <item>
-        <widget class="QLabel" name="label">
-         <property name="text">
-          <string>Domain:</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QComboBox" name="comboBox">
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-         <property name="currentText">
-          <string>Energy</string>
-         </property>
-         <item>
-          <property name="text">
-           <string>Energy</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>Index</string>
-          </property>
-         </item>
-        </widget>
-       </item>
       </layout>
      </item>
     </layout>
