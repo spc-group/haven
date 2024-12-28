@@ -63,6 +63,8 @@ from .plans.set_energy import set_energy  # noqa: F401
 from .plans.shutters import close_shutters, open_shutters  # noqa: F401
 from .plans.xafs_scan import xafs_scan  # noqa: F401
 from .preprocessors import (  # noqa: F401
+    auto_shutter_wrapper,
+    auto_shutter_decorator,
     baseline_decorator,
     baseline_wrapper,
     shutter_suspend_decorator,
