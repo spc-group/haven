@@ -196,3 +196,7 @@ class Xspress3Detector(HavenDetector, StandardDetector):
             self.drv.erase_on_start.set(False),
             self.drv.erase.trigger(),
         )
+
+    @property
+    def default_time_signal(self):
+        return self.drv.acquire_time

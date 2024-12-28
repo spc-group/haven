@@ -1,4 +1,10 @@
-"""Tests for all the fluorescence detectors.
+"""Tests for the old-style fluorescence detectors.
+
+.. note::
+
+  These tests are deprecated because of the move to Ophyd-async
+  devices. The tests have been moved to either ``test_xspress.py`` or
+  the upcoming ``test_dxp.py``.
 
 These tests are mostly parameterized to ensure that both DXP and
 Xspress detectors share a common interface. A few of the tests are
@@ -29,28 +35,6 @@ def vortex(request):
     # Figure out which detector we're using
     det = request.getfixturevalue(request.param)
     yield det
-
-
-# @pytest.mark.parametrize("vortex", ["xspress"], indirect=True)
-def test_acquire_frames_xspress(xspress):
-    """Can we acquire a single frame using the dedicated signal."""
-    vortex = xspress
-    # Acquire a single frame
-    assert vortex.acquire.get() == 0
-    vortex.acquire_single.set(1).wait(timeout=3)
-    # Check that the num of frames and the acquire button were set
-    assert vortex.acquire.get() == 1
-    assert vortex.cam.num_images.get() == 1
-    assert vortex.acquire_single.get() == 1
-    # Does it stop as well
-    vortex.acquire_single.set(0).wait(timeout=3)
-    assert vortex.acquire.get() == 0
-    # Acquire multiple frames
-    vortex.acquire_multiple.set(1).wait(timeout=3)
-    # Check that the num of frames and the acquire button were set
-    assert vortex.acquire.get() == 1
-    assert vortex.cam.num_images.get() == 2000
-    assert vortex.acquire_single.get() == 1
 
 
 @pytest.mark.parametrize("vortex", DETECTORS, indirect=True)
@@ -361,149 +345,6 @@ def test_complete_dxp(dxp):
     assert status.done
 
 
-def test_kickoff_xspress(xspress):
-    """Check the behavior of the Xspress3 electornic's fly-scan complete call."""
-    vortex = xspress
-    # Make sure the num_images is included
-    fly_sigs = [walk.item for walk in vortex.walk_fly_signals()]
-    assert vortex.cam.array_counter in fly_sigs
-    # Do the kickoff
-    vortex.acquire.sim_put(0)
-    status = vortex.kickoff()
-    assert not status.done
-    # Set the acquire signal to true to test that signals got set
-    vortex.detector_state.sim_put(vortex.detector_states.ACQUIRE)
-    status.wait(timeout=3)
-    assert status.done
-    assert vortex.cam.trigger_mode.get() == vortex.trigger_modes.TTL_VETO_ONLY
-    assert vortex.acquire.get() == vortex.acquire_states.ACQUIRE
-
-
-def test_complete_xspress(xspress):
-    """Check the behavior of the Xspress3 electornic's fly-scan complete call."""
-    vortex = xspress
-    vortex.acquire.sim_put(1)
-    status = vortex.complete()
-    time.sleep(0.01)
-    assert vortex.acquire.get(use_monitor=False) == 0
-    assert status.done
-
-
-def test_collect_xspress(xspress):
-    """Check the Xspress3 collects data during fly-scanning."""
-    vortex = xspress
-    # Kick off the detector
-    status = vortex.kickoff()
-    vortex.detector_state.sim_put(vortex.detector_states.ACQUIRE)
-    status.wait(timeout=3)
-    # Set some data so we have something to report
-    roi0 = vortex.mcas.mca0.rois.roi0
-    roi1 = vortex.mcas.mca1.rois.roi0
-    # First data point
-    vortex.cam.array_counter.sim_put(1)
-    roi0.count.sim_put(280)
-    roi1.count.sim_put(216)
-    # Second data point
-    time.sleep(0.1)  # Simulate the frame being acquired for 0.1 seconds
-    vortex.cam.array_counter.sim_put(2)
-    roi0.count.sim_put(281)
-    roi1.count.sim_put(217)
-    assert vortex._fly_data[roi0.count][1][1] == 281
-    assert vortex._fly_data[roi1.count][1][1] == 217
-    assert vortex._fly_data[vortex.roi_sums.roi0.count][-1][1] == 281 + 217
-    # Get data and check its structure
-    data = list(vortex.collect())
-    datum = data[0]
-    assert datum["data"][vortex.mcas.mca0.rois.roi0.count.name] == 281
-    assert datum["data"][vortex.mcas.mca1.rois.roi0.count.name] == 217
-    assert datum["data"][vortex.roi_sums.roi0.count.name] == 281 + 217
-    assert type(datum["time"]) is float
-
-
-def test_fly_data_xspress(xspress):
-    """Check that the Xspress3 processes fly-scanning data."""
-    vortex = xspress
-    # Set come incomplete fly-scan data
-    vortex._fly_data = {
-        vortex.cam.array_counter: [
-            # From last run, read during ``subscribe(read=True)``
-            (51.0, 22),
-            # (timestamp, value)
-            (100.1, 2),
-            (100.2, 3),
-            (100.3, 4),
-        ],
-        vortex.mcas.mca0.rois.roi0.net_count: [
-            # From last run, read during ``subscribe(read=True)``
-            (51.01, 0),
-            # (timestamp, value)
-            (100.11, 500),
-            (100.21, 498),
-            (100.31, 502),
-        ],
-        vortex.mcas.mca1.rois.roi0.net_count: [
-            # From last run, read during ``subscribe(read=True)``
-            (51.02, 0),
-            # (timestamp, value)
-            (100.12, 12.3),
-            # This value is omitted to test for filling in missing values
-            # (100.22, 14.4),
-            (100.32, 9.84),
-        ],
-        # Make the ROI sums the same as how they get updated from real data
-        vortex.roi_sums.roi0: [
-            # From last run, read during ``subscribe(read=True)``
-            (51.02, 0),
-            # (timestamp, value)
-            (100.11, 500 + 0),
-            (100.12, 500 + 12.3),
-            (100.21, 498 + 12.3),
-            (100.31, 502 + 12.3),
-            (100.32, 502 + 9.84),
-        ],
-    }
-    # Check the process dataframe
-    fly_data, fly_ts = vortex.fly_data()
-    expected_columns = [
-        "timestamps",
-        vortex.cam.array_counter,
-        vortex.mcas.mca0.rois.roi0.net_count,
-        vortex.mcas.mca1.rois.roi0.net_count,
-        vortex.roi_sums.roi0,
-    ]
-    assert list(fly_data.columns) == expected_columns
-    assert list(fly_ts.columns) == expected_columns
-    # Check that it fills in missing data
-    series = fly_data[vortex.mcas.mca1.rois.roi0.net_count]
-    np.testing.assert_equal(series.values, [12.3, 12.3, 9.84])
-    assert not fly_data.isnull().values.any()
-    # Check that it fills in missing timestamps
-    series = fly_ts[vortex.mcas.mca1.rois.roi0.net_count]
-    np.testing.assert_equal(series.values, [100.12, 100.21, 100.32])
-    assert not fly_ts.isnull().values.any()
-    # Check that ROI sums are included properly
-    mca_sum = fly_data[vortex.roi_sums.roi0]
-    np.testing.assert_equal(mca_sum.values, [512.3, 510.3, 511.84])
-
-
-def test_describe_collect_xspress(xspress):
-    vortex = xspress
-    # Force all the ROI counts to update
-    for mca_num, mca in enumerate(vortex.mca_records()):
-        for roi_num in range(vortex.num_rois):
-            roi = vortex.get_roi(mca_num, roi_num)
-            roi.count.get()
-    desc = vortex.describe_collect()
-    # Perform some spot-checks for descriptions
-    assert vortex.name in desc.keys()
-    sub_desc = desc[vortex.name]
-    assert vortex.mcas.mca0.total_count.name in sub_desc.keys()
-    assert vortex.mcas.mca0.dead_time_percent.name in sub_desc.keys()
-    assert vortex.mcas.mca0.spectrum.name in sub_desc.keys()
-    assert vortex.mcas.mca0.rois.roi0.net_count.name in sub_desc.keys()
-    assert vortex.mcas.mca0.rois.roi0.count.name in sub_desc.keys()
-
-
 @pytest.mark.skip(reason="DXP fly-scanning not yet implemented")
 def test_parse_dxp_buffer(dxp):
     """The output for fly-scanning with the DXP-based readout electronics
@@ -559,28 +400,8 @@ def test_mca_calcs(vortex):
     assert mca.total_count.get(use_monitor=False) == np.sum(spectrum)
 
 
-@pytest.mark.parametrize("vortex", ["xspress"], indirect=True)
-def test_dead_time_calc(vortex):
-    assert vortex.dead_time_average.get(use_monitor=False) == 0
-    assert vortex.dead_time_max.get(use_monitor=False) == 0
-    assert vortex.dead_time_min.get(use_monitor=False) == 0
-    # Set the per-element dead-times
-    dead_times = [3, 4, 5, 6]
-    for mca, dt in zip(vortex.mca_records(), dead_times):
-        mca.dead_time_percent.sim_put(dt)
-    # Check that the stats get updated
-    assert vortex.dead_time_min.get(use_monitor=False) == 3
-    assert vortex.dead_time_max.get(use_monitor=False) == 6
-    assert vortex.dead_time_average.get(use_monitor=False) == 4.5
-
-
 def test_default_time_signal_dxp(dxp):
     assert dxp.default_time_signal is dxp.preset_real_time
-
-
-def test_default_time_signal_xspress(xspress):
-    # assert xspress.default_time_signal is xspress.acquire_time
-    assert xspress.default_time_signal is xspress.cam.acquire_time
 
 
 # -----------------------------------------------------------------------------

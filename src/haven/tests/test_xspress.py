@@ -83,6 +83,11 @@ async def test_deadtime_correction_disabled(detector):
     assert not await detector.drv.deadtime_correction.get_value()
 
 
+def test_default_time_signal_xspress(xspress):
+    # assert xspress.default_time_signal is xspress.acquire_time
+    assert xspress.default_time_signal is xspress.drv.acquire_time
+
+
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov
