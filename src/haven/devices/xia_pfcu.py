@@ -125,6 +125,9 @@ class PFCUShutter(PVPositionerIsClose):
             labels=labels,
             **kwargs,
         )
+        # Make the default alias for the readback the name of the
+        # shutter itself.
+        self.readback.name = self.name
 
 
 class PFCUFilterBank(PVPositionerIsClose):

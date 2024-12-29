@@ -45,6 +45,17 @@ def test_pfcu_shutter_readback(shutter):
     assert shutter.readback.get() == ShutterState.OPEN
 
 
+def test_pfcu_shutter_reading(shutter):
+    """Ensure the shutter can be read.
+
+    Needed for compatibility with the ``open_shutters_wrapper``.
+
+    """
+    # Set the shutter position
+    reading = shutter.read()
+    assert shutter.name in reading
+
+
 def test_pfcu_shutter_bank_mask(shutter_bank):
     """A bit-mask used for determining how to set the filter bank."""
     shutter = shutter_bank.shutters.shutter_0
