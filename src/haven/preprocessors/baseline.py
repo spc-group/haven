@@ -21,7 +21,6 @@ from haven.instrument import beamline
 log = logging.getLogger()
 
 
-
 def baseline_wrapper(
     plan,
     devices: Union[Sequence, str] = [
