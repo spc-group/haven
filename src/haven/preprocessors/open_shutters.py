@@ -3,6 +3,7 @@ from bluesky.preprocessors import finalize_wrapper
 from bluesky.utils import make_decorator
 from ophydregistry import Registry
 
+from haven.instrument import beamline
 from haven.devices.shutter import ShutterState
 
 
@@ -15,10 +16,13 @@ def _can_open(shutter):
 def _set_shutters(shutters, state: int):
     """A plan stub that sets all shutters to the given state."""
     mv_args = [val for shutter in shutters for val in (shutter, state)]
-    return (yield from bps.mv(*mv_args))
+    if len(mv_args) > 0:
+        return (yield from bps.mv(*mv_args))
+    else:
+        yield from bps.null()
 
 
-def open_shutters_wrapper(plan, registry: Registry):
+def open_shutters_wrapper(plan, registry: Registry | None = None):
     """Wrapper for Bluesky plans that opens and closes shutters as needed.
 
     Only shutters that are closed at the start of the plan are
@@ -31,22 +35,22 @@ def open_shutters_wrapper(plan, registry: Registry):
     categories will be closed at the end of the run.
 
     """
+    if registry is None:
+        registry = beamline.devices
     # Get a list of shutters that could be opened and closed
-    all_shutters = registry.findall(label="shutters")
+    all_shutters = registry.findall(label="shutters", allow_none=True)
     all_shutters = [shtr for shtr in all_shutters if _can_open(shtr)]
     # Check for closed shutters (open shutters just stay open)
     shutters_to_open = []
     for shutter in all_shutters:
-        reading = yield from bps.read(shutter)
-        initial_state = reading[shutter.name]["value"]
+        initial_state = yield from bps.rd(shutter)
         if initial_state == ShutterState.CLOSED:
             shutters_to_open.append(shutter)
     # Organize the shutters into fast and slow
-    fast_shutters = registry.findall(label="fast_shutters")
+    fast_shutters = registry.findall(label="fast_shutters", allow_none=True)
     fast_shutters = [shtr for shtr in shutters_to_open if shtr in fast_shutters]
     slow_shutters = [shtr for shtr in shutters_to_open if shtr not in fast_shutters]
     # Open shutters
-    print(slow_shutters)
     yield from _set_shutters(slow_shutters, ShutterState.OPEN)
     # Add the wrapper for opening fast shutters at every trigger
     new_plan = open_fast_shutters_wrapper(plan, fast_shutters)
