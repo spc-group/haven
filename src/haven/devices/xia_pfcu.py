@@ -9,7 +9,7 @@ from enum import IntEnum
 from typing import Sequence
 import logging
 
-from ophyd_async.core import StrictEnum, StandardReadable, StandardReadableFormat, DeviceVector, SubsetEnum, SignalR, SignalRW, T
+from ophyd_async.core import StrictEnum, StandardReadable, StandardReadableFormat, DeviceVector, SubsetEnum, SignalR, SignalRW, T, soft_signal_rw
 from ophyd_async.epics.core import epics_signal_r, epics_signal_rw
 
 from ophyd import Component as Cpt
@@ -27,12 +27,30 @@ from haven.devices.signal import DerivedSignalBackend, derived_signal_r, derived
 log = logging.getLogger(__name__)
 
 
-class FilterPosition(StrictEnum):
+class ConfigBits(StrictEnum):
+    ZERO = "0000"
+    ONE = "0001"
+    TWO = "0010"
+    THREE = "0011"
+    FOUR = "0100"
+    FIVE = "0101"
+    SIX = "0110"
+    SEVEN = "0111"
+    EIGHT = "1000"
+    NINE = "1001"
+    TEN = "1010"
+    ELEVEN = "1011"
+    TWELVE = "1100"
+    THIRTEEN = "1101"
+    FOURTEEN = "1110"
+    FIFTEEN = "1111"
+
+
+class FilterPosition(SubsetEnum):
     OUT = "Out"
     IN = "In"
     SHORT_CIRCUIT = "Short Circuit"
     OPEN_CIRCUIT = "Open Circuit"
-
 
 class Material(SubsetEnum):
     ALUMINUM = "Al"
@@ -51,12 +69,17 @@ class PFCUFilter(Positioner):
     def __init__(self, prefix: str, *, name: str = ""):
         with self.add_children_as_readables("config"):
             self.material = epics_signal_rw(Material, f"{prefix}_mat")
-            self.thick = epics_signal_rw(str, f"{prefix}_think")
-            self.thick_unit = epics_signal_rw(str, f"{prefix}_think.EGU")
+            self.thick = epics_signal_rw(float, f"{prefix}_thick")
+            self.thick_unit = epics_signal_rw(str, f"{prefix}_thick.EGU")
             self.notes = epics_signal_rw(str, f"{prefix}_other")
         with self.add_children_as_readables():
             self.readback = epics_signal_r(FilterPosition, f"{prefix}_RBV")
-            self.setpoint = epics_signal_rw(FilterPosition, prefix)
+            self.setpoint = epics_signal_rw(bool, prefix)
+        # Just use convenient values for positioner signals since there's no real position
+        self.velocity = soft_signal_rw(float, initial_value=0.5)
+        self.units = soft_signal_rw(str, initial_value="")
+        self.precision = soft_signal_rw(int, initial_value=0)
+            
         super().__init__(name=name)
 
 
@@ -88,8 +111,8 @@ class PFCUFilterBank(StandardReadable):
     def __init__(self, prefix: str, *, name: str = "", num_slots: int = 4, shutters: Sequence[tuple[int, int]] = []):
         self.num_slots = num_slots
         # Positioner signals
-        self.setpoint = epics_signal_rw(int, f"{prefix}config")
-        self.readback = epics_signal_r(int, f"{prefix}config_RBV")
+        self.setpoint = epics_signal_rw(ConfigBits, f"{prefix}config")
+        self.readback = epics_signal_r(ConfigBits, f"{prefix}config_RBV")
         # Sort out filters vs shutters
         all_shutters = [v for shutter in shutters for v in shutter]
         filters = [
