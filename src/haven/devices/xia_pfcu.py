@@ -52,12 +52,28 @@ class FilterPosition(SubsetEnum):
     SHORT_CIRCUIT = "Short Circuit"
     OPEN_CIRCUIT = "Open Circuit"
 
+
+class FilterState(IntEnum):
+    OUT = 0  # 0b000
+    IN = 1  # 0b001
+    FAULT = 3  # 0b011
+    UNKNOWN = 4  # 0b100
+
 class Material(SubsetEnum):
     ALUMINUM = "Al"
     MOLYBDENUM = "Mo"
     TITANIUM = "Ti"
     GLASS = "Glass"
     OTHER = "Other"
+
+
+def normalize_readback(values, readback):
+    return {
+        FilterPosition.OUT: FilterState.OUT,
+        FilterPosition.IN: FilterState.IN,
+        FilterPosition.SHORT_CIRCUIT: FilterState.FAULT,
+        FilterPosition.OPEN_CIRCUIT: FilterState.FAULT,
+    }.get(values[readback], FilterState.UNKNOWN)
 
 
 class PFCUFilter(Positioner):
@@ -72,14 +88,15 @@ class PFCUFilter(Positioner):
             self.thick = epics_signal_rw(float, f"{prefix}_thick")
             self.thick_unit = epics_signal_rw(str, f"{prefix}_thick.EGU")
             self.notes = epics_signal_rw(str, f"{prefix}_other")
+        # We need a second "private" readback to standardize the types
+        self._readback = epics_signal_r(FilterPosition, f"{prefix}_RBV")
         with self.add_children_as_readables():
-            self.readback = epics_signal_r(FilterPosition, f"{prefix}_RBV")
-            self.setpoint = epics_signal_rw(bool, prefix)
+            self.readback = derived_signal_r(int, derived_from={"readback": self._readback}, inverse=normalize_readback)
+        self.setpoint = epics_signal_rw(bool, prefix)
         # Just use convenient values for positioner signals since there's no real position
         self.velocity = soft_signal_rw(float, initial_value=0.5)
         self.units = soft_signal_rw(str, initial_value="")
         self.precision = soft_signal_rw(int, initial_value=0)
-            
         super().__init__(name=name)
 
 
@@ -112,19 +129,21 @@ class PFCUFilterBank(StandardReadable):
         self.num_slots = num_slots
         # Positioner signals
         self.setpoint = epics_signal_rw(ConfigBits, f"{prefix}config")
-        self.readback = epics_signal_r(ConfigBits, f"{prefix}config_RBV")
+        with self.add_children_as_readables():
+            self.readback = epics_signal_r(ConfigBits, f"{prefix}config_RBV")
         # Sort out filters vs shutters
         all_shutters = [v for shutter in shutters for v in shutter]
         filters = [
             idx for idx in range(num_slots) if idx not in all_shutters
         ]
-        # Create shutters
-        self.shutters = DeviceVector({
-            idx: PFCUShutter(prefix=prefix, top_filter=top, bottom_filter=btm, filter_bank=self)
-            for idx, (top, btm) in enumerate(shutters)
-        })
-        # Create filters
-        self.filters = DeviceVector({idx: PFCUFilter(prefix=f"{prefix}filter{idx+1}") for idx in filters})
+        with self.add_children_as_readables():
+            # Create shutters
+            self.shutters = DeviceVector({
+                idx: PFCUShutter(prefix=prefix, top_filter=top, bottom_filter=btm, filter_bank=self)
+                for idx, (top, btm) in enumerate(shutters)
+            })
+            # Create filters
+            self.filters = DeviceVector({idx: PFCUFilter(prefix=f"{prefix}filter{idx+1}") for idx in filters})
         super().__init__(name=name)
 
     # readback = Cpt(EpicsSignalRO, "config_RBV", kind="normal")
@@ -277,9 +296,10 @@ class PFCUShutter(Positioner):
         **kwargs,
     ):
         self._top_filter_idx = top_filter
-        self.top_filter = PFCUFilter(prefix=f"{prefix}filter{top_filter+1}")
         self._bottom_filter_idx = bottom_filter
-        self.bottom_filter = PFCUFilter(prefix=f"{prefix}filter{bottom_filter+1}")
+        with self.add_children_as_readables():
+            self.bottom_filter = PFCUFilter(prefix=f"{prefix}filter{bottom_filter+1}")
+            self.top_filter = PFCUFilter(prefix=f"{prefix}filter{top_filter+1}")
         # Set up the positioner signals
         parent_signals = {"setpoint": filter_bank.setpoint,
                         "readback": filter_bank.readback}
