@@ -37,17 +37,17 @@ def test_shutter_devices(filter_bank):
 
 async def test_pfcu_shutter_signals(shutter):
     # Check initial state
-    assert await shutter.top_filter.setpoint.get_value() == FilterPosition.OUT
-    assert await shutter.bottom_filter.setpoint.get_value() == FilterPosition.OUT
+    assert await shutter.top_filter.setpoint.get_value() == False
+    assert await shutter.bottom_filter.setpoint.get_value() == False
 
 
 async def test_pfcu_shutter_readback(filter_bank, shutter):
     # Set the shutter position
-    set_mock_value(filter_bank.readback, 0b0010)
+    set_mock_value(filter_bank.readback, "0010")
     # Check that the readback signal gets updated
     assert await shutter.readback.get_value() == ShutterState.OPEN
     # Set the shutter position
-    set_mock_value(filter_bank.readback, 0b0100)
+    set_mock_value(filter_bank.readback, "0100")
     # Check that the readback signal gets updated
     assert await shutter.readback.get_value() == ShutterState.CLOSED
 
@@ -72,19 +72,19 @@ def test_pfcu_shutter_mask(shutter):
 async def test_pfcu_shutter_open(filter_bank, shutter):
     """If the PFCU filter bank is available, open both blades simultaneously."""
     # Set the other filters on the filter bank
-    set_mock_value(filter_bank.readback, 0b1001)
+    set_mock_value(filter_bank.readback, "1001")
     # Open the shutter, and check that the filterbank was set
     await shutter.setpoint.set(ShutterState.OPEN)
-    assert await filter_bank.setpoint.get_value() == 0b1011
+    assert await filter_bank.setpoint.get_value() == "1011"
 
 
 async def test_pfcu_shutter_close(filter_bank, shutter):
     """If the PFCU filter bank is available, open both blades simultaneously."""
     # Set the other filters on the filter bank
-    set_mock_value(filter_bank.readback, 0b1001)
+    set_mock_value(filter_bank.readback, "1001")
     # Open the shutter, and check that the filterbank was set
     await shutter.setpoint.set(ShutterState.CLOSED)
-    assert await filter_bank.setpoint.get_value() == 0b1101
+    assert await filter_bank.setpoint.get_value() == "1101"
 
 
 # -----------------------------------------------------------------------------

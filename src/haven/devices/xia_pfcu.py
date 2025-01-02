@@ -297,7 +297,9 @@ class PFCUShutter(Positioner):
     async def forward(self, value, setpoint, readback):
         """Convert shutter state to filter bank state."""
         # Bit masking to set both blades together
-        old_bits = await readback.get_value()
+        readback_value = await readback.get_value()
+        num_bits = len(readback_value)
+        old_bits = int(readback_value, 2)
         if value == ShutterState.OPEN:
             open_bits = self.bottom_mask()
             close_bits = self.top_mask()
@@ -308,11 +310,11 @@ class PFCUShutter(Positioner):
             raise ValueError(bin(value))
         new_bits = (old_bits | open_bits) & (0b1111 - close_bits)
         log.debug(f"{old_bits=:b}, {open_bits=:b}, {close_bits=:b}, {new_bits=:b}")
-        return {setpoint: new_bits}
+        return {setpoint: f"{new_bits:0b}".zfill(num_bits)}
 
     def inverse(self, values, readback, **kwargs):
         """Convert filter bank state to shutter state."""
-        bits = values[readback]
+        bits = int(values[readback], 2)
         # Determine which filters are open and closed
         top_position = int(bool(bits & self.top_mask()))
         bottom_position = int(bool(bits & self.bottom_mask()))
