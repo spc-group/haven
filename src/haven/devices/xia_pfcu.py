@@ -5,24 +5,22 @@ a filter bank can be used as a shutter.
 
 """
 
+import logging
 from enum import IntEnum
 from typing import Sequence
-import logging
 
-from ophyd_async.core import StrictEnum, StandardReadable, StandardReadableFormat, DeviceVector, SubsetEnum, SignalR, SignalRW, T, soft_signal_rw
+from ophyd_async.core import (
+    DeviceVector,
+    StandardReadable,
+    StrictEnum,
+    SubsetEnum,
+    soft_signal_rw,
+)
 from ophyd_async.epics.core import epics_signal_r, epics_signal_rw
 
-from ophyd import Component as Cpt
-from ophyd import DynamicDeviceComponent as DCpt
-from ophyd import EpicsSignal, EpicsSignalRO
-from ophyd import FormattedComponent as FCpt
-from ophyd import PVPositionerIsClose
-from ophyd.signal import DerivedSignal
-
 from haven.devices.shutter import ShutterState
+from haven.devices.signal import derived_signal_r, derived_signal_rw
 from haven.positioner import Positioner
-from haven.devices.signal import DerivedSignalBackend, derived_signal_r, derived_signal_rw
-
 
 log = logging.getLogger(__name__)
 
@@ -59,6 +57,7 @@ class FilterState(IntEnum):
     FAULT = 3  # 0b011
     UNKNOWN = 4  # 0b100
 
+
 class Material(SubsetEnum):
     ALUMINUM = "Al"
     MOLYBDENUM = "Mo"
@@ -81,7 +80,9 @@ class PFCUFilter(Positioner):
 
     E.g. 25idc:pfcu0:filter1_mat
     """
+
     _ophyd_labels_ = {"filters"}
+
     def __init__(self, prefix: str, *, name: str = ""):
         with self.add_children_as_readables("config"):
             self.material = epics_signal_rw(Material, f"{prefix}_mat")
@@ -91,7 +92,11 @@ class PFCUFilter(Positioner):
         # We need a second "private" readback to standardize the types
         self._readback = epics_signal_r(FilterPosition, f"{prefix}_RBV")
         with self.add_children_as_readables():
-            self.readback = derived_signal_r(int, derived_from={"readback": self._readback}, inverse=normalize_readback)
+            self.readback = derived_signal_r(
+                int,
+                derived_from={"readback": self._readback},
+                inverse=normalize_readback,
+            )
         self.setpoint = epics_signal_rw(bool, prefix)
         # Just use convenient values for positioner signals since there's no real position
         self.velocity = soft_signal_rw(float, initial_value=0.5)
@@ -123,143 +128,48 @@ class PFCUFilterBank(StandardReadable):
       filter (top) is open when the filter is set to "out".
 
     """
+
     num_slots: int
 
-    def __init__(self, prefix: str, *, name: str = "", num_slots: int = 4, shutters: Sequence[tuple[int, int]] = []):
+    def __init__(
+        self,
+        prefix: str,
+        *,
+        name: str = "",
+        num_slots: int = 4,
+        shutters: Sequence[tuple[int, int]] = [],
+    ):
         all_shutters = [v for shutter in shutters for v in shutter]
         is_in_bounds = [0 < shtr < num_slots for shtr in all_shutters]
         if not all(is_in_bounds):
-            raise ValueError(f"Shutter indices {shutters} for filterbank {name=} must be in the range (0, {num_slots}).")
+            raise ValueError(
+                f"Shutter indices {shutters} for filterbank {name=} must be in the range (0, {num_slots})."
+            )
         self.num_slots = num_slots
         # Positioner signals
         self.setpoint = epics_signal_rw(ConfigBits, f"{prefix}config")
         with self.add_children_as_readables():
             self.readback = epics_signal_r(ConfigBits, f"{prefix}config_RBV")
         # Sort out filters vs shutters
-        filters = [
-            idx for idx in range(num_slots) if idx not in all_shutters
-        ]
+        filters = [idx for idx in range(num_slots) if idx not in all_shutters]
         with self.add_children_as_readables():
             # Create shutters
-            self.shutters = DeviceVector({
-                idx: PFCUShutter(prefix=prefix, top_filter=top, bottom_filter=btm, filter_bank=self)
-                for idx, (top, btm) in enumerate(shutters)
-            })
+            self.shutters = DeviceVector(
+                {
+                    idx: PFCUShutter(
+                        prefix=prefix,
+                        top_filter=top,
+                        bottom_filter=btm,
+                        filter_bank=self,
+                    )
+                    for idx, (top, btm) in enumerate(shutters)
+                }
+            )
             # Create filters
-            self.filters = DeviceVector({idx: PFCUFilter(prefix=f"{prefix}filter{idx+1}") for idx in filters})
+            self.filters = DeviceVector(
+                {idx: PFCUFilter(prefix=f"{prefix}filter{idx+1}") for idx in filters}
+            )
         super().__init__(name=name)
-
-    # readback = Cpt(EpicsSignalRO, "config_RBV", kind="normal")
-    # setpoint = Cpt(EpicsSignal, "config", kind="normal")
-
-    # def __new__(cls, prefix: str, name: str, shutters=[], **kwargs):
-    #     # Determine which filters to use as filters vs shutters
-    #     all_shutters = [v for shutter in shutters for v in shutter]
-    #     filters = [
-    #         idx for idx in range(1, cls.num_slots + 1) if idx not in all_shutters
-    #     ]
-    #     # Create device components for filters and shutters
-    #     comps = {
-    #         "shutters": DCpt(
-    #             {
-    #                 f"shutter_{idx}": (
-    #                     PFCUShutter,
-    #                     "",
-    #                     {
-    #                         "top_filter": top,
-    #                         "bottom_filter": bottom,
-    #                         "labels": {"shutters"},
-    #                     },
-    #                 )
-    #                 for idx, (top, bottom) in enumerate(shutters)
-    #             }
-    #         ),
-    #         "filters": DCpt(
-    #             {
-    #                 f"filter{idx}": (
-    #                     PFCUFilter,
-    #                     f"filter{idx}",
-    #                     {"labels": {"filters"}},
-    #                 )
-    #                 for idx in filters
-    #             }
-    #         ),
-    #     }
-    #     # Create any new child class with shutters and filters
-    #     new_cls = type(cls.__name__, (PFCUFilterBank,), comps)
-    #     return super().__new__(new_cls)
-
-    # def __init__(
-    #     self,
-    #     prefix: str = "",
-    #     *,
-    #     name: str,
-    #     shutters: Sequence = [],
-    #     labels: str = {"filter_banks"},
-    #     **kwargs,
-    # ):
-    #     super().__init__(prefix=prefix, name=name, labels=labels, **kwargs)
-
-
-# class PFCUShutterBackend(DerivedSignalBackend):
-#     def _mask(self, pos):
-#         num_filters = 4
-#         return 1 << (num_filters - pos)
-
-#     def top_mask(self):
-#         return self._mask(self.parent._top_filter)
-
-#     def bottom_mask(self):
-#         return self._mask(self.parent._bottom_filter)
-
-#     def forward(self, value):
-#         """Convert shutter state to filter bank state."""
-#         # Bit masking to set both blades together
-#         old_bits = self.derived_from.parent.readback.get(as_string=False)
-#         if value == ShutterState.OPEN:
-#             open_bits = self.bottom_mask()
-#             close_bits = self.top_mask()
-#         elif value == ShutterState.CLOSED:
-#             close_bits = self.bottom_mask()
-#             open_bits = self.top_mask()
-#         else:
-#             raise ValueError(bin(value))
-#         new_bits = (old_bits | open_bits) & (0b1111 - close_bits)
-#         return new_bits
-
-#     def inverse(self, value, signal: SignalR):
-#         """Convert filter bank state to shutter state."""
-#         # Determine which filters are open and closed
-#         top_position = int(bool(value & self.top_mask()))
-#         bottom_position = int(bool(value & self.bottom_mask()))
-#         result = shutter_state_map[(top_position, bottom_position)]
-#         return result
-
-
-# def pfcu_shutter_signal_rw(
-#     *,
-#     name: str = "",
-#     derived_from: Sequence,
-# ) -> SignalRW[T]:
-#     backend = PFCUShutterBackend(
-#         datatype=int,
-#         derived_from=derived_from,
-#     )
-#     signal = SignalRW(backend, name=name)
-#     return signal
-
-
-# def pfcu_shutter_signal_r(
-#     *,
-#     name: str = "",
-#     derived_from: Sequence,
-# ) -> SignalR[T]:
-#     backend = PFCUShutterBackend(
-#         datatype=int,
-#         derived_from=derived_from,
-#     )
-#     signal = SignalR(backend, name=name)
-#     return signal
 
 
 class PFCUShutter(Positioner):
@@ -283,10 +193,8 @@ class PFCUShutter(Positioner):
       for actuating both shutter blades together.
 
     """
-    _ophyd_labels_ = {"shutters", "fast_shutters"}
 
-    # readback = Cpt(PFCUShutterSignal, derived_from="parent.parent.readback")
-    # setpoint = Cpt(PFCUShutterSignal, derived_from="parent.parent.setpoint")
+    _ophyd_labels_ = {"shutters", "fast_shutters"}
 
     def __init__(
         self,
@@ -304,11 +212,17 @@ class PFCUShutter(Positioner):
             self.bottom_filter = PFCUFilter(prefix=f"{prefix}filter{bottom_filter+1}")
             self.top_filter = PFCUFilter(prefix=f"{prefix}filter{top_filter+1}")
         # Set up the positioner signals
-        parent_signals = {"setpoint": filter_bank.setpoint,
-                        "readback": filter_bank.readback}
-        self.setpoint = derived_signal_rw(int, derived_from=parent_signals, forward=self.forward, inverse=self.inverse)
+        parent_signals = {
+            "setpoint": filter_bank.setpoint,
+            "readback": filter_bank.readback,
+        }
+        self.setpoint = derived_signal_rw(
+            int, derived_from=parent_signals, forward=self.forward, inverse=self.inverse
+        )
         with self.add_children_as_readables():
-            self.readback = derived_signal_r(int, derived_from=parent_signals, inverse=self.inverse)
+            self.readback = derived_signal_r(
+                int, derived_from=parent_signals, inverse=self.inverse
+            )
         # Just use convenient values for positioner signals since there's no real position
         self.velocity = soft_signal_rw(float, initial_value=0.5)
         self.units = soft_signal_rw(str, initial_value="")
@@ -318,9 +232,6 @@ class PFCUShutter(Positioner):
             put_complete=True,
             **kwargs,
         )
-        # Make the default alias for the readback the name of the
-        # shutter itself.
-        # self.readback.name = self.name
 
     async def forward(self, value, setpoint, readback):
         """Convert shutter state to filter bank state."""
@@ -358,8 +269,6 @@ class PFCUShutter(Positioner):
 
     def bottom_mask(self):
         return self._mask(self._bottom_filter_idx)
-        
-
 
 
 # -----------------------------------------------------------------------------

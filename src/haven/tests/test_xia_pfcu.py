@@ -3,12 +3,20 @@ import asyncio
 import pytest
 from ophyd_async.testing import set_mock_value
 
-from haven.devices.xia_pfcu import PFCUFilter, PFCUFilterBank, PFCUShutter, ShutterState, FilterPosition, FilterState
+from haven.devices.xia_pfcu import (
+    FilterState,
+    PFCUFilter,
+    PFCUFilterBank,
+    PFCUShutter,
+    ShutterState,
+)
 
 
 @pytest.fixture()
 async def filter_bank(sim_registry):
-    bank = PFCUFilterBank(prefix="255id:pfcu4:", name="xia_filter_bank", shutters=[(1, 2)])
+    bank = PFCUFilterBank(
+        prefix="255id:pfcu4:", name="xia_filter_bank", shutters=[(1, 2)]
+    )
     await bank.connect(mock=True)
     sim_registry.register(bank)
     yield bank
@@ -16,7 +24,7 @@ async def filter_bank(sim_registry):
 
 @pytest.fixture()
 async def shutter(filter_bank):
-    shutter =filter_bank.shutters[0]
+    shutter = filter_bank.shutters[0]
     await asyncio.gather(
         shutter.setpoint.connect(mock=False),
         shutter.readback.connect(mock=False),
@@ -39,7 +47,10 @@ def test_shutter_devices(filter_bank):
     assert hasattr(filter_bank, "shutters")
     assert isinstance(filter_bank.shutters[0], PFCUShutter)
     assert "fast_shutters" in filter_bank.shutters[0]._ophyd_labels_
-    assert filter_bank.shutters[0].top_filter.material.source == "mock+ca://255id:pfcu4:filter2_mat"
+    assert (
+        filter_bank.shutters[0].top_filter.material.source
+        == "mock+ca://255id:pfcu4:filter2_mat"
+    )
     assert hasattr(filter_bank, "filters")
     assert isinstance(filter_bank.filters[0], PFCUFilter)
     assert filter_bank.filters[0].material.source == "mock+ca://255id:pfcu4:filter1_mat"
@@ -72,7 +83,7 @@ async def test_shutter_reading(shutter):
     Needed for compatibility with the ``open_shutters_wrapper``.
 
     """
-    # Set the shutter position
+    assert shutter.readback.name == shutter.name
     reading = await shutter.read()
     assert shutter.name in reading
 
@@ -104,7 +115,6 @@ async def test_shutter_close(filter_bank, shutter):
 async def test_filter_readback(filter):
     set_mock_value(filter._readback, "In")
     assert await filter.readback.get_value() == FilterState.IN
-    
 
 
 # -----------------------------------------------------------------------------

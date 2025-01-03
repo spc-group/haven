@@ -9,12 +9,8 @@ from typing import Mapping, Optional, Sequence, Union
 
 from .. import exceptions
 from ..energy_ranges import ERange, KRange, energy_to_wavenumber, merge_ranges
-from ..preprocessors import baseline_decorator
 from ..typing import DetectorList
 from ._energy_scan import energy_scan
-
-log = logging.getLogger(__name__)
-
 
 log = logging.getLogger(__name__)
 

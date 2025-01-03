@@ -27,7 +27,7 @@ from haven.devices.monochromator import Monochromator
 from haven.devices.robot import Robot
 from haven.devices.shutter import PssShutter
 from haven.devices.slits import ApertureSlits, BladeSlits
-from haven.devices.xia_pfcu import PFCUFilter, PFCUFilterBank, PFCUShutter
+from haven.devices.xia_pfcu import PFCUFilter, PFCUFilterBank
 from haven.devices.xspress import Xspress3Detector
 from haven.devices.xspress import add_mcas as add_xspress_mcas
 
@@ -201,7 +201,9 @@ def aps(sim_registry):
 
 @pytest.fixture()
 async def xia_shutter_bank(sim_registry):
-    bank = PFCUFilterBank(prefix="255id:pfcu4:", name="xia_filter_bank", shutters=[[3, 4]])
+    bank = PFCUFilterBank(
+        prefix="255id:pfcu4:", name="xia_filter_bank", shutters=[[2, 3]]
+    )
     await bank.connect(mock=True)
     sim_registry.register(bank)
     yield bank

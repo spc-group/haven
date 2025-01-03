@@ -3,8 +3,8 @@ from bluesky.preprocessors import finalize_wrapper
 from bluesky.utils import make_decorator
 from ophydregistry import Registry
 
-from haven.instrument import beamline
 from haven.devices.shutter import ShutterState
+from haven.instrument import beamline
 
 
 def _can_open(shutter):

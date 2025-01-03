@@ -24,8 +24,6 @@ from ophyd.status import StatusBase
 from ophyd_async.core import TriggerInfo
 from ophyd_async.epics.motor import FlyMotorInfo
 
-from ..preprocessors import baseline_decorator
-
 __all__ = ["fly_scan", "grid_fly_scan"]
 
 

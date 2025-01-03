@@ -51,10 +51,10 @@ from .motor_position import (  # noqa: F401
     save_motor_position,
 )
 from .preprocessors import (  # noqa: F401
-    open_shutters_wrapper,
-    open_shutters_decorator,
     baseline_decorator,
     baseline_wrapper,
+    open_shutters_decorator,
+    open_shutters_wrapper,
     shutter_suspend_decorator,
     shutter_suspend_wrapper,
 )

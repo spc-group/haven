@@ -4,14 +4,15 @@ Includes some standard bluesky plans with decorators.
 
 """
 
-from haven.preprocessors import (
-    open_shutters_decorator,
-    baseline_decorator,
-    shutter_suspend_decorator,
-)
 import bluesky.plans as bp
 
 from haven.instrument import beamline
+from haven.preprocessors import (
+    baseline_decorator,
+    open_shutters_decorator,
+    shutter_suspend_decorator,
+)
+
 from ._align_motor import align_motor
 from ._auto_gain import auto_gain
 from ._energy_scan import energy_scan
@@ -19,10 +20,11 @@ from ._fly import fly_scan, grid_fly_scan
 from ._record_dark_current import record_dark_current  # noqa: F401
 from ._robot_transfer_sample import robot_transfer_sample  # noqa: F401
 from ._set_energy import set_energy  # noqa: F401
-from ._shutters import open_shutters, close_shutters  # noqa: F401
+from ._shutters import close_shutters, open_shutters  # noqa: F401
 from ._xafs_scan import xafs_scan
 
 # open_shutters_decorator = open_shutters_decorator()
+
 
 def chain(*decorators):
     """Chain several decorators together into one decorator.
@@ -31,13 +33,18 @@ def chain(*decorators):
     be the outermost decorator.
 
     """
+
     def decorator(f):
         for d in decorators:
             f = d(f)
         return f
+
     return decorator
 
-all_decorators = chain(shutter_suspend_decorator(), open_shutters_decorator(), baseline_decorator())
+
+all_decorators = chain(
+    shutter_suspend_decorator(), open_shutters_decorator(), baseline_decorator()
+)
 
 # Apply decorators to Haven plans
 align_motor = all_decorators(align_motor)
@@ -58,6 +65,7 @@ scan = all_decorators(bp.scan)
 scan_nd = all_decorators(bp.scan_nd)
 
 # Remove foreign imports
+del beamline
 del open_shutters_decorator
 del baseline_decorator
 del shutter_suspend_decorator

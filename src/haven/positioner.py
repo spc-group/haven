@@ -4,7 +4,7 @@ import warnings
 from functools import partial
 
 import numpy as np
-from bluesky.protocols import Movable, Stoppable, Locatable, Location
+from bluesky.protocols import Locatable, Location, Movable, Stoppable
 from ophyd_async.core import (
     CALCULATE_TIMEOUT,
     DEFAULT_TIMEOUT,
@@ -15,7 +15,6 @@ from ophyd_async.core import (
     WatcherUpdate,
     observe_value,
 )
-
 
 log = logging.getLogger(__name__)
 
@@ -75,7 +74,9 @@ class Positioner(StandardReadable, Locatable, Movable, Stoppable):
             done_event.set()
 
     async def locate(self) -> Location[int]:
-        setpoint, readback = await asyncio.gather(self.setpoint.get_value(), self.readback.get_value())
+        setpoint, readback = await asyncio.gather(
+            self.setpoint.get_value(), self.readback.get_value()
+        )
         location: Location = {
             "setpoint": setpoint,
             "readback": readback,

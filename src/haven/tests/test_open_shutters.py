@@ -1,7 +1,5 @@
-from pprint import pprint
-
 import pytest
-from bluesky.plan_stubs import mv, repeat, trigger_and_read
+from bluesky.plan_stubs import trigger_and_read
 from bluesky.plans import count
 from bluesky.protocols import Triggerable
 from ophyd_async.core import Device
