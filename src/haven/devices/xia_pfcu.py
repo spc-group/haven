@@ -126,13 +126,16 @@ class PFCUFilterBank(StandardReadable):
     num_slots: int
 
     def __init__(self, prefix: str, *, name: str = "", num_slots: int = 4, shutters: Sequence[tuple[int, int]] = []):
+        all_shutters = [v for shutter in shutters for v in shutter]
+        is_in_bounds = [0 < shtr < num_slots for shtr in all_shutters]
+        if not all(is_in_bounds):
+            raise ValueError(f"Shutter indices {shutters} for filterbank {name=} must be in the range (0, {num_slots}).")
         self.num_slots = num_slots
         # Positioner signals
         self.setpoint = epics_signal_rw(ConfigBits, f"{prefix}config")
         with self.add_children_as_readables():
             self.readback = epics_signal_r(ConfigBits, f"{prefix}config_RBV")
         # Sort out filters vs shutters
-        all_shutters = [v for shutter in shutters for v in shutter]
         filters = [
             idx for idx in range(num_slots) if idx not in all_shutters
         ]
@@ -306,8 +309,13 @@ class PFCUShutter(Positioner):
         self.setpoint = derived_signal_rw(int, derived_from=parent_signals, forward=self.forward, inverse=self.inverse)
         with self.add_children_as_readables():
             self.readback = derived_signal_r(int, derived_from=parent_signals, inverse=self.inverse)
+        # Just use convenient values for positioner signals since there's no real position
+        self.velocity = soft_signal_rw(float, initial_value=0.5)
+        self.units = soft_signal_rw(str, initial_value="")
+        self.precision = soft_signal_rw(int, initial_value=0)
         super().__init__(
             name=name,
+            put_complete=True,
             **kwargs,
         )
         # Make the default alias for the readback the name of the
