@@ -22,6 +22,8 @@ from haven.devices.shutter import ShutterState
 from haven.devices.signal import derived_signal_r, derived_signal_rw
 from haven.positioner import Positioner
 
+__all__ = ["PFCUFilterBank", "PFCUFilter", "PFCUShutter"]
+
 log = logging.getLogger(__name__)
 
 

@@ -6,6 +6,8 @@ from ophydregistry import Registry
 from haven.devices.shutter import ShutterState
 from haven.instrument import beamline
 
+__all__ = ["open_shutters_wrapper", "open_shutters_decorator"]
+
 
 def _can_open(shutter):
     return getattr(shutter, "allow_open", True) and getattr(
@@ -28,11 +30,18 @@ def open_shutters_wrapper(plan, registry: Registry | None = None):
     Only shutters that are closed at the start of the plan are
     included.
 
-    Shutters are split into two categories. **Fast shutters* (with the
-    ophyd label ``"fast_shutters"``) will be opened before a new
-    detector trigger, and closed after the trigger is awaited. All
-    other shutters will be opened at the start of the run. Both
+    Shutters are split into two categories. **Fast shutters** (with
+    the ophyd label ``"fast_shutters"``) will be **opened before a new
+    detector trigger**, and closed after the trigger is awaited. All
+    other shutters will be **opened at the start of the run**. Both
     categories will be closed at the end of the run.
+
+    Parameters
+    ==========
+    plan
+      The Bluesky plan instance to decorate.
+    registry
+      An ophyd-registry in which to look for shutters.
 
     """
     if registry is None:

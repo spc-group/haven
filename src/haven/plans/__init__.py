@@ -23,8 +23,6 @@ from ._set_energy import set_energy  # noqa: F401
 from ._shutters import close_shutters, open_shutters  # noqa: F401
 from ._xafs_scan import xafs_scan
 
-# open_shutters_decorator = open_shutters_decorator()
-
 
 def chain(*decorators):
     """Chain several decorators together into one decorator.
@@ -35,7 +33,7 @@ def chain(*decorators):
     """
 
     def decorator(f):
-        for d in decorators:
+        for d in reversed(decorators):
             f = d(f)
         return f
 

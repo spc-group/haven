@@ -10,7 +10,7 @@ from ophyd_async.epics.core import epics_signal_r
 from ..positioner import Positioner
 from .signal import derived_signal_rw, epics_signal_xval
 
-# from apstools.devices.shutters import ApsPssShutterWithStatus as Shutter
+__all__ = ["PssShutter", "ShutterState"]
 
 
 log = logging.getLogger(__name__)
