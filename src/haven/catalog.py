@@ -3,6 +3,7 @@ import logging
 import os
 import sqlite3
 import threading
+from typing import Sequence
 import warnings
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
@@ -179,7 +180,6 @@ def tiled_client(
     # Create a cache for saving local copies
     if cache_filepath is None:
         cache_filepath = tiled_config.get("cache_filepath", "")
-        cache_filepath = cache_filepath or None
     if os.access(cache_filepath, os.W_OK):
         cache = ThreadSafeCache(filepath=cache_filepath)
     else:
@@ -208,15 +208,15 @@ class CatalogScan:
         self.container = container
         self.executor = executor
 
-    def _read_data(self, signals, dataset="primary/internal/events"):
-        # Fetch data if needed
+    def _read_data(self, signals: Sequence | None, dataset: str="primary/internal/events"):
         data = self.container[dataset]
-        try:
-            # Remove duplicates
-            signals = list(set(signals))
-        except TypeError:
-            pass
-        return data.read(signals)
+        if signals is None:
+            return data.read()
+        # Remove duplicates and missing signals
+        signals = set(signals)
+        available_signals = set(data.columns)
+        signals = signals & available_signals
+        return data.read()
 
     def _read_metadata(self, keys=None):
         container = self.container

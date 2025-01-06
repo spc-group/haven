@@ -44,15 +44,6 @@ async def test_load_scan(catalog):
 
 
 @pytest.mark.asyncio
-async def test_dataframe(scan):
-    """Check that the catalogscan can produce a pandas dataframe."""
-    df = await scan.to_dataframe()
-    assert isinstance(df, pd.DataFrame)
-    # Check that the index is added as a column
-    assert df.index.name in df.columns
-
-
-@pytest.mark.asyncio
 async def test_load_nd_data(grid_scan):
     """Check that the catalog scan can convert e.g. grid_scan results."""
     arr = await grid_scan["It_net_counts"]

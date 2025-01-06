@@ -41,16 +41,15 @@ class MotorPosition(BaseModel):
 
     @classmethod
     def _load(Cls, run_md, data_keys, data):
-        """Common routines for synch and async loading."""
+        """Common routines for sync and async loading."""
         if run_md["start"]["plan_name"] != "save_motor_position":
             raise ValueError(f"Run {run_md['start']['uid']} is not a motor position.")
         # Extract motor positions from the run
         motor_axes = []
-        for data_key in data_keys.values():
-            mname = data_key["object_name"]
+        for axis_name in data_keys:
             axis = MotorAxis(
-                name=mname,
-                readback=data[mname][0],
+                name=axis_name,
+                readback=data[axis_name][0],
             )
             motor_axes.append(axis)
         # Create the motor position object
@@ -68,7 +67,7 @@ class MotorPosition(BaseModel):
             run_md=run.metadata,
             # Assumes the 0-th descriptor is for the primary stream
             data_keys=run["primary"].metadata["descriptors"][0]["data_keys"],
-            data=run["primary"]["data"].read(),
+            data=run["primary/internal/events"].read(),
         )
 
     @classmethod
