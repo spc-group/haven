@@ -10,7 +10,6 @@ from ophyd import DynamicDeviceComponent as DCpt
 from ophyd import Kind
 from ophyd.sim import instantiate_fake_device, make_fake_device
 from tiled.adapters.mapping import MapAdapter
-from tiled.adapters.xarray import DatasetAdapter
 from tiled.adapters.table import TableAdapter
 from tiled.client import Context, from_context
 from tiled.server.app import build_app
@@ -322,7 +321,7 @@ bluesky_mapping = {
                 "plan_name": "rel_scan",
                 "uid": "9d33bf66-9701-4ee3-90f4-3be730bc226c",
                 "hints": {"dimensions": [[["pitch2"], "primary"]]},
-            }
+            },
         },
     ),
     # 2D grid scan map data

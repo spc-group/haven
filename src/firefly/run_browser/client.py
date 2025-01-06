@@ -32,7 +32,7 @@ class DatabaseWorker:
             ("proposal", queries.Eq, "start.proposal_id"),
             ("esaf", queries.Eq, "start.esaf_id"),
             ("sample", queries.Contains, "start.sample_name"),
-            ('exit_status', queries.Eq, "stop.exit_status"),
+            ("exit_status", queries.Eq, "stop.exit_status"),
             ("plan", queries.Eq, "start.plan_name"),
             ("edge", queries.Contains, "start.edge"),
         ]

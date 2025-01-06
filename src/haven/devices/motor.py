@@ -14,7 +14,6 @@ from ophyd_async.epics.motor import Motor as MotorBase
 from ophydregistry import Registry
 
 from .motor_flyer import MotorFlyer
-from .signal import epics_signal_xval
 
 log = logging.getLogger(__name__)
 

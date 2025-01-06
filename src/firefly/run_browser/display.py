@@ -181,8 +181,8 @@ class RunBrowserDisplay(display.FireflyDisplay):
         self.ui.autorange_1d_button.clicked.connect(self.auto_range)
         # Respond to changes in displaying the 2d plot
         for signal in [
-                self.ui.plot_multi_hints_checkbox.stateChanged,
-                self.ui.multi_signal_x_combobox.currentTextChanged,
+            self.ui.plot_multi_hints_checkbox.stateChanged,
+            self.ui.multi_signal_x_combobox.currentTextChanged,
         ]:
             signal.connect(self.update_multi_signals)
             signal.connect(self.update_multi_plot)

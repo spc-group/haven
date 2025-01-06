@@ -3,14 +3,13 @@ import logging
 import os
 import sqlite3
 import threading
-from typing import Sequence
 import warnings
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
+from typing import Sequence
 
 import databroker
 import numpy as np
-import pandas as pd
 from tiled.client import from_uri
 from tiled.client.cache import Cache
 
@@ -208,7 +207,9 @@ class CatalogScan:
         self.container = container
         self.executor = executor
 
-    def _read_data(self, signals: Sequence | None, dataset: str="primary/internal/events"):
+    def _read_data(
+        self, signals: Sequence | None, dataset: str = "primary/internal/events"
+    ):
         data = self.container[dataset]
         if signals is None:
             return data.read()
@@ -249,7 +250,7 @@ class CatalogScan:
         return asyncio.get_running_loop()
 
     def _data_keys(self, stream):
-        return self.container[stream]['internal/events'].columns
+        return self.container[stream]["internal/events"].columns
 
     async def data_keys(self, stream="primary"):
         return await self.run(self._data_keys, ("primary",))

@@ -2,7 +2,6 @@ from unittest.mock import AsyncMock
 
 import pytest
 from bluesky.protocols import Flyable
-from ophyd_async.testing import get_mock_put
 
 from haven.devices.motor import HavenMotor
 from haven.devices.motor import Motor as AsyncMotor
