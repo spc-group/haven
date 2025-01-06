@@ -211,6 +211,11 @@ class CatalogScan:
     def _read_data(self, signals, dataset="primary/internal/events"):
         # Fetch data if needed
         data = self.container[dataset]
+        try:
+            # Remove duplicates
+            signals = list(set(signals))
+        except TypeError:
+            pass
         return data.read(signals)
 
     def _read_metadata(self, keys=None):

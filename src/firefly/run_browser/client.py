@@ -154,7 +154,6 @@ class DatabaseWorker:
     async def load_selected_runs(self, uids):
         # Prepare the query for finding the runs
         uids = list(dict.fromkeys(uids))
-        print(f"Loading runs: {uids}")
         # Retrieve runs from the database
         runs = [await self.catalog[uid] for uid in uids]
         # runs = await asyncio.gather(*run_coros)
@@ -168,8 +167,8 @@ class DatabaseWorker:
             # Load datasets from the database
             try:
                 image = await run[signal]
-            except KeyError:
-                log.warning(f"Signal {signal} not found in run {run}.")
+            except KeyError as exc:
+                log.exception(exc)
             else:
                 images[run.uid] = image
         return images

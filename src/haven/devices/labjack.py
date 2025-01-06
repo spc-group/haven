@@ -495,7 +495,7 @@ class LabJackBase(StandardReadable):
             self.ljm_version = epics_signal_r(str, f"{prefix}LJMVersion")
             self.driver_version = epics_signal_r(str, f"{prefix}DriverVersion")
             self.last_error_message = epics_signal_r(
-                Array1D[np.uint8], f"{prefix}LastErrorMessage"
+                str, f"{prefix}LastErrorMessage"
             )
             self.poll_sleep_ms = epics_signal_rw(float, f"{prefix}PollSleepMS")
             self.analog_in_settling_time_all = epics_signal_rw(

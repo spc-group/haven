@@ -101,6 +101,7 @@ class BrowserMultiPlotWidget(GraphicsLayoutWidget):
         ysignals = []
         for run in runs.values():
             ysignals.extend(run.columns)
+        print(xsignal, ysignals)
         # Remove the x-signal from the list of y signals
         ysignals = sorted(list(dict.fromkeys(ysignals)))
         # Plot the runs
@@ -172,7 +173,6 @@ class Browser1DPlotWidget(PlotWidget):
                 )
             # Cursor to drag around on the data
             if self.cursor_line is None:
-                print("CURSOR LINE: ", np.median(series.index), series.index)
                 self.cursor_line = plot_item.addLine(
                     x=np.median(series.index), movable=True, label="{value:.3f}"
                 )

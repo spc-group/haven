@@ -88,7 +88,7 @@ def inject_haven_md_wrapper(plan):
             "EPICS_CA_MAX_ARRAY_BYTES": os.environ.get("EPICS_CA_MAX_ARRAY_BYTES"),
             # Facility
             "beamline_id": config["beamline"]["name"],
-            "facility_id": ", ".join(cfg["name"] for cfg in config["synchrotron"]),
+            "facility_id": ", ".join(cfg["name"] for cfg in config.get("synchrotron", [])),
             "xray_source": config["xray_source"]["type"],
             # Computer
             "login_id": f"{getpass.getuser()}@{socket.gethostname()}",
