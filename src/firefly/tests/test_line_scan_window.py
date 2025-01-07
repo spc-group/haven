@@ -106,7 +106,7 @@ async def test_step_size_calculation(display, qtbot):
 
 
 @pytest.mark.asyncio
-async def test_line_scan_plan_queued(display, monkeypatch):
+async def test_line_scan_plan_queued(display, monkeypatch, qtbot):
     # set up motor num
     await display.update_regions(2)
 
