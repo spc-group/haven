@@ -3,7 +3,6 @@ import logging
 from bluesky_queueserver_api import BPlan
 from qasync import asyncSlot
 from qtpy import QtWidgets
-from qtpy.QtCore import Signal
 from qtpy.QtGui import QDoubleValidator
 
 from firefly.component_selector import ComponentSelector
@@ -13,7 +12,6 @@ log = logging.getLogger()
 
 
 class LineScanRegion(regions_display.RegionBase):
-    update_step_signal = Signal(int)
 
     def setup_ui(self):
         self.layout = QtWidgets.QHBoxLayout()
@@ -44,7 +42,6 @@ class LineScanRegion(regions_display.RegionBase):
         # Connect signals
         self.start_line_edit.textChanged.connect(self.update_step_size)
         self.stop_line_edit.textChanged.connect(self.update_step_size)
-        self.update_step_signal.connect(self.update_step_size)
 
     def update_step_size(self, num_points=None):
         try:
@@ -96,9 +93,11 @@ class LineScanDisplay(regions_display.RegionsDisplay):
         # Connect scan_pts_spin_box value change to regions
         self.ui.scan_pts_spin_box.valueChanged.connect(self.update_regions_step_size)
 
-    def update_regions_step_size(self, value):
+    def update_regions_step_size(self, num_points):
+        """Update the step size for all regions."""
         for region in self.regions:
-            region.update_step_signal.emit(value)
+            region.update_step_size(num_points)
+
 
     def queue_plan(self, *args, **kwargs):
         """Execute this plan on the queueserver."""

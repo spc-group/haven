@@ -79,29 +79,29 @@ async def test_step_size_calculation(display, qtbot):
 
     # Set num_points and emit the signal
     display.ui.scan_pts_spin_box.setValue(5)
-    region.update_step_signal.emit(5)  # Emit the signal with the new num_points value
+    region.update_step_size(5)  # Emit the signal with the new num_points value
     assert region.step_size_line_edit.text() == "2.5"
 
     # Change the number of points and verify step size updates
     display.ui.scan_pts_spin_box.setValue(3)
-    region.update_step_signal.emit(3)
+    region.update_step_size(3)
     assert region.step_size_line_edit.text() == "5.0"
 
     # Test invalid input
     region.start_line_edit.setText("Start..")
-    region.update_step_signal.emit(3)
+    region.update_step_size(3)
     assert region.step_size_line_edit.text() == "N/A"
 
     # Test edge case: num_points = 1
     display.ui.scan_pts_spin_box.setValue(1)
-    region.update_step_signal.emit(1)
+    region.update_step_size(1)
     assert region.step_size_line_edit.text() == "N/A"
 
     # Reset to a valid state and verify
     region.start_line_edit.setText("0")
     region.stop_line_edit.setText("10")
     display.ui.scan_pts_spin_box.setValue(6)
-    region.update_step_signal.emit(6)
+    region.update_step_size(6)
     assert region.step_size_line_edit.text() == "2.0"
 
 
