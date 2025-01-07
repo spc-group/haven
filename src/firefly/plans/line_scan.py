@@ -98,7 +98,6 @@ class LineScanDisplay(regions_display.RegionsDisplay):
         for region in self.regions:
             region.update_step_size(num_points)
 
-
     def queue_plan(self, *args, **kwargs):
         """Execute this plan on the queueserver."""
         detectors, motor_args, repeat_scan_num = self.get_scan_parameters()
