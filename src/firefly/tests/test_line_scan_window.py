@@ -80,12 +80,12 @@ async def test_step_size_calculation(display, qtbot):
     # Set num_points and emit the signal
     display.ui.scan_pts_spin_box.setValue(5)
     region.update_step_signal.emit(5)  # Emit the signal with the new num_points value
-    assert region.step_size_line_edit.text() == "2.500000"
+    assert region.step_size_line_edit.text() == "2.5"
 
     # Change the number of points and verify step size updates
     display.ui.scan_pts_spin_box.setValue(3)
     region.update_step_signal.emit(3)
-    assert region.step_size_line_edit.text() == "5.000000"
+    assert region.step_size_line_edit.text() == "5.0"
 
     # Test invalid input
     region.start_line_edit.setText("Start..")
@@ -102,7 +102,7 @@ async def test_step_size_calculation(display, qtbot):
     region.stop_line_edit.setText("10")
     display.ui.scan_pts_spin_box.setValue(6)
     region.update_step_signal.emit(6)
-    assert region.step_size_line_edit.text() == "2.000000"
+    assert region.step_size_line_edit.text() == "2.0"
 
 
 @pytest.mark.asyncio
