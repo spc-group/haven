@@ -108,7 +108,9 @@ async def test_step_size_calculation(display):
 
 
 @pytest.mark.asyncio
-async def test_grid_scan_plan_queued(display, sim_registry, ion_chamber, monkeypatch, qtbot):
+async def test_grid_scan_plan_queued(
+    display, sim_registry, ion_chamber, monkeypatch, qtbot
+):
     await display.update_regions(2)
 
     # set up a test motor 1
