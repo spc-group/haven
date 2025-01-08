@@ -51,9 +51,6 @@ def test_mcs_signals(mcs):
 async def test_mcs_reading(mcs):
     await mcs.connect(mock=True)
     reading = await mcs.read()
-    from pprint import pprint
-
-    pprint(list(reading.keys()))
     # Check that the correct readings are included
     assert mcs.elapsed_time.name in reading
     assert mcs.current_channel.name in reading

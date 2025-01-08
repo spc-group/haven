@@ -11,12 +11,16 @@ from haven.devices.beamline_manager import BSS
 from haven.preprocessors import shutter_suspend_decorator, shutter_suspend_wrapper
 
 
+@pytest.fixture()
+def RE():
+    return run_engine(use_bec=False, connect_databroker=False, connect_tiled=False)
+
+
 @pytest.mark.xfail
-def test_shutter_suspend_wrapper(aps, shutters, sim_registry):
+def test_shutter_suspend_wrapper(aps, shutters, sim_registry, RE):
     # Check that the run engine does not have any shutter suspenders
     # Currently this test is fragile since we might add non-shutter
     # suspenders in the future.
-    RE = run_engine(use_bec=False, connect_databroker=False)
     assert len(RE.suspenders) == 1
     # Check that the shutter suspenders get added
     plan = bp.count([det])
@@ -41,7 +45,7 @@ def test_shutter_suspend_wrapper(aps, shutters, sim_registry):
     assert len(unsub_msgs) == 2
 
 
-def test_baseline_wrapper(sim_registry, aps, event_loop):
+def test_baseline_wrapper(sim_registry, aps, event_loop, RE):
     # Create a test device
     motor_baseline = SynAxis(name="baseline_motor", labels={"motors", "baseline"})
     sim_registry.register(motor_baseline)
@@ -51,7 +55,6 @@ def test_baseline_wrapper(sim_registry, aps, event_loop):
     cb.descriptor = MagicMock()
     cb.event = MagicMock()
     cb.stop = MagicMock()
-    RE = run_engine(use_bec=False, connect_databroker=False)
     plan = bp.count([det], num=1)
     plan = baseline_wrapper(plan, devices="baseline")
     RE(plan, cb)
@@ -64,7 +67,7 @@ def test_baseline_wrapper(sim_registry, aps, event_loop):
     assert "baseline_motor" in baseline_doc["data_keys"].keys()
 
 
-def test_baseline_decorator(sim_registry, aps):
+def test_baseline_decorator(sim_registry, aps, RE):
     """Similar to baseline wrapper test, but used as a decorator."""
     # Create the decorated function before anything else
     func = baseline_decorator(devices="motors")(bp.count)
@@ -77,7 +80,6 @@ def test_baseline_decorator(sim_registry, aps):
     cb.descriptor = MagicMock()
     cb.event = MagicMock()
     cb.stop = MagicMock()
-    RE = run_engine(use_bec=False, connect_databroker=False)
     plan = func([det], num=1)
     RE(plan, cb)
     # Check that the callback has the baseline stream inserted
@@ -89,7 +91,7 @@ def test_baseline_decorator(sim_registry, aps):
     assert "baseline_motor" in baseline_doc["data_keys"].keys()
 
 
-def test_metadata(sim_registry, aps, monkeypatch):
+def test_metadata(sim_registry, aps, monkeypatch, RE):
     """Similar to baseline wrapper test, but used as a decorator."""
     # Load devices
     bss = instantiate_fake_device(BSS, name="bss", prefix="255id:bss:")
@@ -116,7 +118,6 @@ def test_metadata(sim_registry, aps, monkeypatch):
     cb.descriptor = MagicMock()
     cb.event = MagicMock()
     cb.stop = MagicMock()
-    RE = run_engine(use_bec=False, connect_databroker=False)
     plan = bp.count([det], num=1)
     RE(plan, cb)
     # Check that the callback has the correct metadata

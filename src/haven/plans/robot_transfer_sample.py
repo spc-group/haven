@@ -75,7 +75,6 @@ def robot_transfer_sample(robot, sampleN, *args):
         sample = getattr(
             robot.samples, f"sample{sampleN}"
         )  # Access the Sample device corresponding to sampleN
-        print(sample.load)
         yield from bps.mv(sample.load, ON)  # Assuming '1' initiates the loading action
 
     # Return to the initial position

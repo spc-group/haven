@@ -154,7 +154,6 @@ def fly_line_scan(detectors: list, *args, num, dwell_time):
     flyers = [*motors, *detectors]
     flyers = [flyer for flyer in flyers if isinstance(flyer, EventPageCollectable)]
     for flyer_ in flyers:
-        print(f"Collecting from {flyer_}")
         yield from bps.collect(flyer_)
 
 

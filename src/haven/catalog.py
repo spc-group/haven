@@ -6,10 +6,10 @@ import threading
 import warnings
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
+from typing import Sequence
 
 import databroker
 import numpy as np
-import pandas as pd
 from tiled.client import from_uri
 from tiled.client.cache import Cache
 
@@ -172,13 +172,13 @@ class ThreadSafeCache(Cache):
 
 
 def tiled_client(
-    entry_node=None, uri=None, cache_filepath=None, structure_clients="dask"
+    entry_node=None, uri=None, cache_filepath=None, structure_clients="numpy"
 ):
     config = load_config()
+    tiled_config = config["database"].get("tiled", {})
     # Create a cache for saving local copies
     if cache_filepath is None:
-        cache_filepath = config["database"].get("tiled", {}).get("cache_filepath", "")
-        cache_filepath = cache_filepath or None
+        cache_filepath = tiled_config.get("cache_filepath", "")
     if os.access(cache_filepath, os.W_OK):
         cache = ThreadSafeCache(filepath=cache_filepath)
     else:
@@ -186,10 +186,11 @@ def tiled_client(
         cache = None
     # Create the client
     if uri is None:
-        uri = config["database"]["tiled"]["uri"]
-    client_ = from_uri(uri, structure_clients)
+        uri = tiled_config["uri"]
+    api_key = tiled_config.get("api_key")
+    client_ = from_uri(uri, structure_clients, api_key=api_key)
     if entry_node is None:
-        entry_node = config["database"]["tiled"]["entry_node"]
+        entry_node = tiled_config["entry_node"]
     client_ = client_[entry_node]
     return client_
 
@@ -206,10 +207,17 @@ class CatalogScan:
         self.container = container
         self.executor = executor
 
-    def _read_data(self, signals, dataset="primary/data"):
-        # Fetch data if needed
+    def _read_data(
+        self, signals: Sequence | None, dataset: str = "primary/internal/events"
+    ):
         data = self.container[dataset]
-        return data.read(signals)
+        if signals is None:
+            return data.read()
+        # Remove duplicates and missing signals
+        signals = set(signals)
+        available_signals = set(data.columns)
+        signals = signals & available_signals
+        return data.read()
 
     def _read_metadata(self, keys=None):
         container = self.container
@@ -232,31 +240,20 @@ class CatalogScan:
     def formats(self):
         return self.container.formats
 
-    async def data(self, stream="primary"):
+    async def data(self, signals=None, stream="primary"):
         return await self.loop.run_in_executor(
-            None, self._read_data, None, f"{stream}/data"
+            None, self._read_data, signals, f"{stream}/internal/events/"
         )
-
-    async def to_dataframe(self, signals=None):
-        """Convert the dataset into a pandas dataframe."""
-        xarray = await self.run(self._read_data, signals)
-        if len(xarray) > 0:
-            df = xarray.to_dataframe()
-            # Add a copy of the index to the dataframe itself
-            if df.index.name is not None:
-                df[df.index.name] = df.index
-        else:
-            df = pd.DataFrame()
-        return df
 
     @property
     def loop(self):
         return asyncio.get_running_loop()
 
+    def _data_keys(self, stream):
+        return self.container[stream]["internal/events"].columns
+
     async def data_keys(self, stream="primary"):
-        stream_md = await self.loop.run_in_executor(None, self._read_metadata, stream)
-        # Assumes the 0-th descriptor is for the primary stream
-        return stream_md["descriptors"][0]["data_keys"]
+        return await self.run(self._data_keys, ("primary",))
 
     async def hints(self):
         """Retrieve the data hints for this scan.
@@ -277,7 +274,7 @@ class CatalogScan:
         # Get hints for the dependent (X)
         dependent = []
         primary_metadata = await self.run(self._read_metadata, "primary")
-        hints = primary_metadata["descriptors"][0]["hints"]
+        hints = primary_metadata["hints"]
         for device, dev_hints in hints.items():
             dependent.extend(dev_hints["fields"])
         return independent, dependent
