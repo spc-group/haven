@@ -42,6 +42,21 @@ class AlarmSeverity(StrictEnum):
     INVALID = "INVALID"
 
 
+# More valid options are specific to the record type
+# Subclasses may override this attribute
+class ScanInterval(SubsetEnum):
+    PASSIVE = "Passive"
+    EVENT = "Event"
+    IO_INTR = "I/O Intr"
+    SCAN_10 = "10 second"
+    SCAN_5 = "5 second"
+    SCAN_2 = "2 second"
+    SCAN_1 = "1 second"
+    SCAN_0_5 = ".5 second"
+    SCAN_0_2 = ".2 second"
+    SCAN_0_1 = ".1 second"
+
+
 class EpicsRecordDeviceCommonAll(StandardReadable):
     """
     Many of the fields common to all EPICS records.
@@ -50,19 +65,7 @@ class EpicsRecordDeviceCommonAll(StandardReadable):
     an EPICS client or are already provided in other support.
     """
 
-    # More valid options are specific to the record type
-    # Subclasses may override this attribute
-    class ScanInterval(SubsetEnum):
-        PASSIVE = "Passive"
-        EVENT = "Event"
-        IO_INTR = "I/O Intr"
-        SCAN_10 = "10 second"
-        SCAN_5 = "5 second"
-        SCAN_2 = "2 second"
-        SCAN_1 = "1 second"
-        SCAN_0_5 = ".5 second"
-        SCAN_0_2 = ".2 second"
-        SCAN_0_1 = ".1 second"
+    ScanInterval = ScanInterval
 
     # Config signals
     def __init__(self, prefix: str, name: str = ""):
