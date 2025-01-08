@@ -94,7 +94,7 @@ class TiledConsumer(BlueskyConsumer):
 
 
 def main():
-    """Launch the mongo consumer."""
+    """Launch the tiled consumer."""
     logging.basicConfig(level=logging.WARNING)
     config = haven.load_config()
     bootstrap_servers = ["localhost:9092"]
@@ -108,7 +108,7 @@ def main():
     client = from_uri(tiled_uri, api_key=tiled_api_key)
     client.include_data_sources()
 
-    # Create a MongoConsumer that will listen for new documents.
+    # Create a Tiled consumer that will listen for new documents.
     consumer = TiledConsumer(
         tiled_client=client,
         topic_catalog_map=topic_catalog_map,

@@ -101,7 +101,6 @@ class BrowserMultiPlotWidget(GraphicsLayoutWidget):
         ysignals = []
         for run in runs.values():
             ysignals.extend(run.columns)
-        print(xsignal, ysignals)
         # Remove the x-signal from the list of y signals
         ysignals = sorted(list(dict.fromkeys(ysignals)))
         # Plot the runs
