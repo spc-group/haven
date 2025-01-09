@@ -5,7 +5,7 @@ import pytest
 from ophyd_async.core import TriggerInfo
 from ophyd_async.testing import get_mock_put, set_mock_value
 
-from haven.devices.detectors.xspress import Xspress3Detector
+from haven.devices.detectors.xspress import Xspress3Detector, ndattribute_params
 
 this_dir = Path(__file__).parent
 
@@ -71,6 +71,13 @@ async def test_deadtime_correction(detector):
     trigger_info = TriggerInfo(number_of_triggers=1)
     await detector.prepare(trigger_info)
     assert not await detector.drv.deadtime_correction.get_value()
+
+
+async def test_ndattribute_params():
+    n_elem = 8
+    n_params = 9
+    params = ndattribute_params(device_name="xsp3", elements=range(n_elem))
+    assert len(params) == n_elem * n_params
 
 
 # -----------------------------------------------------------------------------
