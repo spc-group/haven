@@ -113,6 +113,7 @@ class Xspress3Detector(HavenDetector, StandardDetector):
                 path_provider,
                 lambda: self.name,
                 XspressDatasetDescriber(self.drv),
+                self.drv,  # <- for DT ndattributes
             ),
             config_sigs=(self.drv.acquire_period, self.drv.acquire_time, *config_sigs),
             name=name,
