@@ -294,12 +294,20 @@ bluesky_mapping = {
             ),
         },
         metadata={
-            "plan_name": "xafs_scan",
             "start": {
                 "plan_name": "xafs_scan",
+                "esaf_id": "1337",
+                "proposal_id": "158839",
+                "beamline_id": "255-ID-Z",
+                "sample_name": "NMC-532",
+                "sample_formula": "LiNi0.5Mn0.3Co0.2O2",
+                "edge": "Ni-K",
                 "uid": "7d1daf1d-60c7-4aa7-a668-d1cd97e5335f",
                 "hints": {"dimensions": [[["energy_energy"], "primary"]]},
             },
+            "stop": {
+                "exit_status": "success",
+            }
         },
     ),
     "9d33bf66-9701-4ee3-90f4-3be730bc226c": MapAdapter(

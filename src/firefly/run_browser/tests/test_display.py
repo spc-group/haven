@@ -1,3 +1,4 @@
+import datetime as dt
 import asyncio
 from unittest.mock import MagicMock
 
@@ -5,6 +6,7 @@ import numpy as np
 import pytest
 from pyqtgraph import ImageItem, ImageView, PlotItem, PlotWidget
 from qtpy.QtWidgets import QFileDialog
+import time_machine
 
 from firefly.run_browser.display import RunBrowserDisplay
 
@@ -30,7 +32,6 @@ async def display(qtbot, catalog, mocker):
     run = [run async for run in catalog.values()][0]
     display.db.selected_runs = [run]
     await display.update_1d_signals()
-    print(run.uid)
     run_data = await run.data()
     expected_xdata = run_data.energy_energy
     expected_ydata = np.log(run_data.I0_net_counts / run_data.It_net_counts)
@@ -347,6 +348,13 @@ def test_busy_hints_multiple(display):
 async def test_update_combobox_items(display):
     """Check that the comboboxes get the distinct filter fields."""
     assert display.ui.filter_plan_combobox.count() > 0
+    assert display.ui.filter_sample_combobox.count() > 0
+    assert display.ui.filter_formula_combobox.count() > 0
+    assert display.ui.filter_edge_combobox.count() > 0
+    assert display.ui.filter_exit_status_combobox.count() > 0
+    assert display.ui.filter_proposal_combobox.count() > 0
+    assert display.ui.filter_esaf_combobox.count() > 0
+    assert display.ui.filter_beamline_combobox.count() > 0
 
 
 @pytest.mark.asyncio
@@ -387,7 +395,35 @@ async def test_export_button_clicked(catalog, display, mocker, qtbot):
     assert display.db.export_runs.call_args.args == (files,)
     assert display.db.export_runs.call_args.kwargs["formats"] == ["application/json"]
 
+fake_time = dt.datetime(2022, 8, 19, 19, 10, 51).astimezone()
 
+@time_machine.travel(fake_time, tick=False)
+def test_default_filters(display):
+    display.clear_filters()
+    display.reset_default_filters()
+    assert display.ui.filter_exit_status_combobox.currentText() == "success"
+    assert display.ui.filter_current_esaf_checkbox.checkState()
+    assert display.ui.filter_current_proposal_checkbox.checkState()
+    assert display.ui.filter_after_checkbox.checkState()
+    last_week = dt.datetime(2022, 8, 12, 19, 10, 51)
+    filter_time = display.ui.filter_after_datetimeedit.dateTime()
+    filter_time = dt.datetime.fromtimestamp(filter_time.toTime_t())
+    assert filter_time == last_week
+
+
+def test_time_filters(display):
+    """Check that the before and after datetime filters are activated."""
+    display.ui.filter_after_checkbox.setChecked(False)
+    display.ui.filter_before_checkbox.setChecked(False)
+    filters = display.filters()
+    assert "after" not in filters
+    assert "before" not in filters
+    display.ui.filter_after_checkbox.setChecked(True)
+    display.ui.filter_before_checkbox.setChecked(True)
+    filters = display.filters()
+    assert "after" in filters
+    assert "before" in filters
+    
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov

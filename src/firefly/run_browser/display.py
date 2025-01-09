@@ -1,3 +1,4 @@
+import datetime as dt
 import asyncio
 import logging
 from collections import Counter
@@ -8,7 +9,7 @@ from typing import Mapping, Optional, Sequence
 import qtawesome as qta
 import yaml
 from qasync import asyncSlot
-from qtpy.QtCore import Qt
+from qtpy.QtCore import Qt, QDateTime
 from qtpy.QtGui import QStandardItem, QStandardItemModel
 
 from firefly import display
@@ -106,28 +107,46 @@ class RunBrowserDisplay(display.FireflyDisplay):
             self.runs_total_label.setText(str(self.ui.runs_model.rowCount()))
 
     def clear_filters(self):
+        self.ui.filter_plan_combobox.setCurrentText("")
+        self.ui.filter_sample_combobox.setCurrentText("")
+        self.ui.filter_formula_combobox.setCurrentText("")
+        self.ui.filter_edge_combobox.setCurrentText("")
+        self.ui.filter_exit_status_combobox.setCurrentText("")
+        self.ui.filter_user_combobox.setCurrentText("")
         self.ui.filter_proposal_combobox.setCurrentText("")
         self.ui.filter_esaf_combobox.setCurrentText("")
-        self.ui.filter_sample_combobox.setCurrentText("")
-        self.ui.filter_exit_status_combobox.setCurrentText("")
         self.ui.filter_current_proposal_checkbox.setChecked(False)
         self.ui.filter_current_esaf_checkbox.setChecked(False)
-        self.ui.filter_plan_combobox.setCurrentText("")
+        self.ui.filter_beamline_combobox.setCurrentText("")
+        self.ui.filter_after_checkbox.setChecked(False)
+        self.ui.filter_before_checkbox.setChecked(False)
         self.ui.filter_full_text_lineedit.setText("")
-        self.ui.filter_edge_combobox.setCurrentText("")
-        self.ui.filter_user_combobox.setCurrentText("")
+        self.ui.filter_standards_checkbox.setChecked(False)
 
+    def reset_default_filters(self):
+        self.clear_filters()
+        self.ui.filter_exit_status_combobox.setCurrentText("success")
+        self.ui.filter_current_esaf_checkbox.setChecked(True)
+        self.ui.filter_current_proposal_checkbox.setChecked(True)
+        self.ui.filter_after_checkbox.setChecked(True)
+        last_week = dt.datetime.now().astimezone() - dt.timedelta(days=7)
+        last_week = QDateTime.fromTime_t(int(last_week.timestamp()))
+        self.ui.filter_after_datetimeedit.setDateTime(last_week)
+        
     async def update_combobox_items(self):
         """"""
         with self.busy_hints(run_table=False, run_widgets=False, filter_widgets=True):
             fields = await self.db.load_distinct_fields()
+            print(fields)
             for field_name, cb in [
-                ("proposal_users", self.ui.filter_proposal_combobox),
-                ("proposal_id", self.ui.filter_user_combobox),
-                ("esaf_id", self.ui.filter_esaf_combobox),
-                ("sample_name", self.ui.filter_sample_combobox),
                 ("plan_name", self.ui.filter_plan_combobox),
+                ("sample_name", self.ui.filter_sample_combobox),
+                ("sample_formula", self.ui.filter_formula_combobox),
                 ("edge", self.ui.filter_edge_combobox),
+                ("exit_status", self.ui.filter_exit_status_combobox),
+                ("proposal_id", self.ui.filter_proposal_combobox),
+                ("esaf_id", self.ui.filter_esaf_combobox),
+                ("beamline_id", self.ui.filter_beamline_combobox),
             ]:
                 if field_name in fields.keys():
                     old_text = cb.currentText()
@@ -157,12 +176,12 @@ class RunBrowserDisplay(display.FireflyDisplay):
     def customize_ui(self):
         self.load_models()
         # Setup controls for select which run to show
-
         self.ui.run_tableview.selectionModel().selectionChanged.connect(
             self.update_selected_runs
         )
         self.ui.refresh_runs_button.setIcon(qta.icon("fa5s.sync"))
         self.ui.refresh_runs_button.clicked.connect(self.reload_runs)
+        self.ui.reset_filters_button.clicked.connect(self.reset_default_filters)
         # Sleep controls for testing async timing
         self.ui.sleep_button.clicked.connect(self.sleep_slot)
         # Respond to changes in displaying the 1d plot
@@ -531,19 +550,26 @@ class RunBrowserDisplay(display.FireflyDisplay):
 
     def filters(self, *args):
         new_filters = {
+            "plan": self.ui.filter_plan_combobox.currentText(),
+            "sample": self.ui.filter_sample_combobox.currentText(),
+            "formula": self.ui.filter_formula_combobox.currentText(),
+            "edge": self.ui.filter_edge_combobox.currentText(),
+            "exit_status": self.ui.filter_exit_status_combobox.currentText(),
+            "user": self.ui.filter_user_combobox.currentText(),
             "proposal": self.ui.filter_proposal_combobox.currentText(),
             "esaf": self.ui.filter_esaf_combobox.currentText(),
-            "sample": self.ui.filter_sample_combobox.currentText(),
-            "exit_status": self.ui.filter_exit_status_combobox.currentText(),
-            "use_current_proposal": bool(
-                self.ui.filter_current_proposal_checkbox.checkState()
-            ),
-            "use_current_esaf": bool(self.ui.filter_current_esaf_checkbox.checkState()),
-            "plan": self.ui.filter_plan_combobox.currentText(),
+            "beamline": self.ui.filter_beamline_combobox.currentText(),
             "full_text": self.ui.filter_full_text_lineedit.text(),
-            "edge": self.ui.filter_edge_combobox.currentText(),
-            "user": self.ui.filter_user_combobox.currentText(),
+            "standards_only": bool(self.ui.filter_standards_checkbox.checkState()),
         }
+        # Special handling for the time-based filters
+        if self.ui.filter_after_checkbox.checkState():
+            after = self.ui.filter_after_datetimeedit.dateTime().toSecsSinceEpoch()
+            new_filters["after"] = after
+        if self.ui.filter_before_checkbox.checkState():
+            before = self.ui.filter_before_datetimeedit.dateTime().toSecsSinceEpoch()
+            new_filters["before"] = before
+        # Only include values that were actually filled in
         null_values = ["", False]
         new_filters = {k: v for k, v in new_filters.items() if v not in null_values}
         return new_filters

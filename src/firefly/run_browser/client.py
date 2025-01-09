@@ -26,40 +26,40 @@ class DatabaseWorker:
     async def filtered_nodes(self, filters: Mapping):
         case_sensitive = False
         log.debug(f"Filtering nodes: {filters}")
-        filter_params = [
-            # (filter_name, query type, metadata key)
-            ("user", queries.Contains, "start.proposal_users"),
-            ("proposal", queries.Eq, "start.proposal_id"),
-            ("esaf", queries.Eq, "start.esaf_id"),
-            ("sample", queries.Contains, "start.sample_name"),
-            ("exit_status", queries.Eq, "stop.exit_status"),
-            ("plan", queries.Eq, "start.plan_name"),
-            ("edge", queries.Contains, "start.edge"),
-        ]
+        filter_params = {
+            # filter_name: (query type, metadata key)
+            "user": (queries.Contains, "start.proposal_users"),
+            "proposal": (queries.Eq, "start.proposal_id"),
+            "esaf": (queries.Eq, "start.esaf_id"),
+            "sample": (queries.Contains, "start.sample_name"),
+            "exit_status": (queries.Eq, "stop.exit_status"),
+            "plan": (queries.Eq, "start.plan_name"),
+            "edge": (queries.Contains, "start.edge"),
+        }
         # Apply filters
         runs = self.catalog
-        for filter_name, Query, md_name in filter_params:
-            val = filters.get(filter_name, "")
-            if val != "":
-                runs = await runs.search(Query(md_name, val))
-        full_text = filters.get("full_text", "")
-        if full_text != "":
-            runs = await runs.search(
-                queries.FullText(full_text, case_sensitive=case_sensitive)
-            )
+        for filter_name, filter_value in filters.items():
+            if filter_name not in filter_params:
+                continue
+            Query, md_name = filter_params[filter_name]
+            if Query is queries.FullText:
+                runs = await runs.search(Query(md_name, filter_value), case_sensitive=False)
+            else:
+                runs = await runs.search(Query(md_name, filter_value))
         return runs
 
     async def load_distinct_fields(self):
         """Get distinct metadata fields for filterable metadata."""
         new_fields = {}
         target_fields = [
-            "sample_name",
-            "proposal_users",
-            "proposal_id",
-            "esaf_id",
-            "sample_name",
-            "plan_name",
-            "edge",
+            "start.plan_name",
+            "start.sample_name",
+            "start.sample_formula",
+            "start.edge",
+            "stop.exit_status",
+            "start.proposal_id",
+            "start.esaf_id",
+            "start.beamline_id",
         ]
         # Get fields from the database
         response = await self.catalog.distinct(*target_fields)
