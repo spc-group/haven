@@ -1,8 +1,11 @@
+import logging
 import os
 import subprocess
 from pathlib import Path
 
 from haven import load_config
+
+log = logging.getLogger(__name__)
 
 
 def launch_queueserver():

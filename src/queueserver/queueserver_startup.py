@@ -39,10 +39,7 @@ log = logging.getLogger(__name__)
 
 # Create a run engine
 RE = run_engine(
-    connect_databroker=False,
-    connect_tiled=False,
-    connect_kafka=True,
-    use_bec=False
+    connect_databroker=False, connect_tiled=False, connect_kafka=True, use_bec=False
 )
 
 # Import devices

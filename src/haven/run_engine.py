@@ -1,5 +1,5 @@
-from uuid import uuid4 as uuid
 import logging
+from uuid import uuid4 as uuid
 
 import databroker
 import IPython
@@ -10,6 +10,7 @@ from bluesky.utils import ProgressBarManager, register_transform
 from bluesky_kafka import Publisher
 
 from haven import load_config
+
 from .catalog import tiled_client
 from .exceptions import ComponentNotFound
 from .instrument import beamline
