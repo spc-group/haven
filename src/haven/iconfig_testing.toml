@@ -24,8 +24,12 @@ beamline = "255-ID-C"
 # not generate any devices, but is intended to be read by the Firefly
 # GUI application to determine how to interact with the queue.
 
+[kafka]
+servers = ["fedorov.xray.aps.anl.gov:9092"]
+topic = "bluesky.documents.25idc-dev"
+
 [queueserver]
-kafka_topic = "s255idc_queueserver"
+kafka_topic = "bluesky.documents.255idc"
 control_host = "localhost"
 control_port = "60615"
 info_host = "localhost"

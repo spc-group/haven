@@ -18,7 +18,6 @@ def launch_queueserver():
     config = load_config(file_paths=config_files)
     control_port = config["queueserver"]["control_port"]
     info_port = config["queueserver"]["info_port"]
-    kafka_topic = config["queueserver"]["kafka_topic"]
     redis_addr = config["queueserver"]["redis_addr"]
     # Launch the queueserver
     args = [
@@ -36,12 +35,9 @@ def launch_queueserver():
         "--redis-addr",
         redis_addr,
         "--keep-re",
-        "--kafka-topic",
-        kafka_topic,
         "--update-existing-plans-devices",
         "ENVIRONMENT_OPEN",
         "--use-ipython-kernel=ON",
     ]
-    print("Starting queueserver with command:")
-    print("  ", " ".join(args))
+    log.info(f"Starting queueserver with command: {' '.join(args)}")
     subprocess.run(args)
