@@ -11,8 +11,7 @@ from ophyd_async.core import (
     TriggerInfo,
 )
 from ophyd_async.epics import adcore
-from ophyd_async.epics.adcore import NDAttributeParam
-from ophyd_async.epics.adcore._utils import ADBaseDataType, convert_ad_dtype_to_np
+from ophyd_async.epics.adcore._utils import ADBaseDataType, convert_ad_dtype_to_np, NDAttributeParam, NDAttributeDataType
 from ophyd_async.epics.core import epics_signal_rw, epics_signal_x
 
 from .area_detectors import HavenDetector, default_path_provider
@@ -146,63 +145,63 @@ def ndattribute_params(
             NDAttributeParam(
                 name=f"{device_name}-element{idx}-deadtime_factor",
                 param="XSP3_CHAN_DTFACTOR",
-                datatype="DOUBLE",
+                datatype=NDAttributeDataType.DOUBLE,
                 addr=idx,
                 description=f"Chan {idx} DTC Factor",
             ),
             NDAttributeParam(
                 name=f"{device_name}-element{idx}-deadtime_percent",
                 param="XSP3_CHAN_DTPERCENT",
-                datatype="DOUBLE",
+                datatype=NDAttributeDataType.DOUBLE,
                 addr=idx,
                 description=f"Chan {idx} DTC Percent",
             ),
             NDAttributeParam(
                 name=f"{device_name}-element{idx}-event_width",
                 param="XSP3_EVENT_WIDTH",
-                datatype="DOUBLE",
+                datatype=NDAttributeDataType.DOUBLE,
                 addr=idx,
                 description=f"Chan {idx} Event Width",
             ),
             NDAttributeParam(
                 name=f"{device_name}-element{idx}-clock_ticks",
                 param="XSP3_CHAN_SCA0",
-                datatype="DOUBLE",
+                datatype=NDAttributeDataType.DOUBLE,
                 addr=idx,
                 description=f"Chan {idx} ClockTicks",
             ),
             NDAttributeParam(
                 name=f"{device_name}-element{idx}-reset_ticks",
                 param="XSP3_CHAN_SCA1",
-                datatype="DOUBLE",
+                datatype=NDAttributeDataType.DOUBLE,
                 addr=idx,
                 description=f"Chan {idx} ResetTicks",
             ),
             NDAttributeParam(
                 name=f"{device_name}-element{idx}-reset_counts",
                 param="XSP3_CHAN_SCA2",
-                datatype="DOUBLE",
+                datatype=NDAttributeDataType.DOUBLE,
                 addr=idx,
                 description=f"Chan {idx} ResetCounts",
             ),
             NDAttributeParam(
                 name=f"{device_name}-element{idx}-all_event",
                 param="XSP3_CHAN_SCA3",
-                datatype="DOUBLE",
+                datatype=NDAttributeDataType.DOUBLE,
                 addr=idx,
                 description=f"Chan {idx} AllEvent",
             ),
             NDAttributeParam(
                 name=f"{device_name}-element{idx}-all_good",
                 param="XSP3_CHAN_SCA4",
-                datatype="DOUBLE",
+                datatype=NDAttributeDataType.DOUBLE,
                 addr=idx,
                 description=f"Chan {idx} AllGood",
             ),
             NDAttributeParam(
                 name=f"{device_name}-element{idx}-pileup",
                 param="XSP3_CHAN_SCA7",
-                datatype="DOUBLE",
+                datatype=NDAttributeDataType.DOUBLE,
                 addr=idx,
                 description=f"Chan {idx} Pileup",
             ),
