@@ -175,7 +175,7 @@ def tiled_client(
     entry_node=None, uri=None, cache_filepath=None, structure_clients="numpy"
 ):
     config = load_config()
-    tiled_config = config["database"].get("tiled", {})
+    tiled_config = config.get("tiled", {})
     # Create a cache for saving local copies
     if cache_filepath is None:
         cache_filepath = tiled_config.get("cache_filepath", "")

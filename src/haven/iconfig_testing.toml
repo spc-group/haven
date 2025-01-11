@@ -4,9 +4,6 @@ area_detector_root_path = "/tmp"
 # General name for the beamline, used for metadata.
 name = "SPC Beamline (sector unknown)"
 
-[database.databroker]
-catalog = "bluesky"
-
 [xray_source]
 type = "undulator"
 prefix = "ID255ds:"
@@ -16,27 +13,25 @@ prefix = "255idc:bss"
 beamline = "255-ID-C"
 
 
-#####################
-# Queueserver
-#####################
+###################
+# Data Acquisition
+###################
 
-# This section describes how to connect to the queueserver. It does
-# not generate any devices, but is intended to be read by the Firefly
-# GUI application to determine how to interact with the queue.
-
-[kafka]
-servers = ["fedorov.xray.aps.anl.gov:9092"]
-topic = "bluesky.documents.25idc-dev"
+# This section describes the means to connect the various parts of the
+# data acquisition system. It does not generate any devices.
 
 [queueserver]
-kafka_topic = "bluesky.documents.255idc"
 control_host = "localhost"
 control_port = "60615"
 info_host = "localhost"
 info_port = "60625"
 redis_addr = "localhost:6379"
 
-[database.tiled]
+[kafka]
+servers = ["fedorov.xray.aps.anl.gov:9092"]
+topic = "bluesky.documents.haven-dev"
+
+[tiled]
 uri = "http://localhost:8337/"
 entry_node = "255id_testing"
 cache_filterpath = "/tmp/tiled_cache/http_response_cache.db"
