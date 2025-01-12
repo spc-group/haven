@@ -27,12 +27,11 @@ def main():
 
     kafka_deserializer = partial(msgpack.loads, object_hook=mpn.decode)
     auto_offset_reset = "latest"
-    topics = ["s25idc_queueserver", "s25idd_queueserver"]
 
     topic_database_map = {
-        "s25idc_queueserver": "25idc-bluesky",
-        "s25idd_queueserver": "25idd-bluesky",
+        "bluesky.documents.haven": "25idc-bluesky",
     }
+    topics = topic_database_map.keys()
 
     # Create a MongoConsumer that will automatically listen to new beamline topics.
     # The parameter metadata.max.age.ms determines how often the consumer will check for

@@ -1,6 +1,7 @@
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import MagicMock
 
 import pytest
+from bluesky_queueserver_api.zmq.aio import REManagerAPI
 from ophyd import Device
 from ophyd.sim import make_fake_device
 from ophydregistry import Registry
@@ -16,16 +17,16 @@ from firefly.queue_client import QueueClient
 async def controller(qapp):
     controller = FireflyController()
     await controller.setup_instrument(load_instrument=False)
-    return controller
+    yield controller
 
 
 @pytest.fixture()
-def ffapp():
-    return MagicMock()
+async def api():
+    _api = REManagerAPI()
+    return _api
 
 
-def test_prepare_queue_client(controller):
-    api = MagicMock()
+def test_prepare_queue_client(controller, api):
     controller.prepare_queue_client(api=api)
     assert isinstance(controller._queue_client, QueueClient)
 
@@ -107,7 +108,7 @@ async def test_load_instrument_registry(controller, qtbot, monkeypatch):
     """Check that the instrument registry gets created."""
     assert isinstance(controller.registry, Registry)
     # Mock the underlying haven instrument loader
-    loader = AsyncMock()
+    loader = MagicMock()
     monkeypatch.setattr(firefly.controller.beamline, "load", loader)
     monkeypatch.setattr(controller, "prepare_queue_client", MagicMock())
     # Reload the devices and see if the registry is changed
@@ -132,12 +133,12 @@ def test_queue_stopped(controller):
     assert not controller.actions.queue_controls["stop_queue"].isChecked()
 
 
-def test_autostart_changed(controller, qtbot):
+async def test_autostart_changed(controller, qtbot, api):
     """Does the action respond to changes in the queue autostart
     status?
 
     """
-    client = controller.prepare_queue_client(api=MagicMock())
+    client = controller.prepare_queue_client(api=api)
     autostart_action = controller.actions.queue_settings["autostart"]
     autostart_action.setChecked(True)
     assert autostart_action.isChecked()

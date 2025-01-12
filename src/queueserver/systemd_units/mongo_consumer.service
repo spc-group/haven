@@ -5,7 +5,9 @@ Wants=kafka.service
 After=kafka.service
 
 [Service]
-ExecStart=/bin/bash -l -c 'mamba activate haven && env python %h/src/queueserver/mongo_consumer.py'
+ExecStart=/bin/bash -l -c 'mamba activate haven && mongo_consumer'
+Restart=always
+RestartSec=60
 # ExecStopPost=/APSshare/epics/base-7.0.7/bin/rhel8-x86_64/caput 100id:bluesky:mongo_consumer_state 1
 # ExecStartPost=/APSshare/epics/base-7.0.7/bin/rhel8-x86_64/caput 100id:bluesky:mongo_consumer_state 2
 
