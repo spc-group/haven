@@ -59,7 +59,58 @@ async def test_time_calculator(display, sim_registry, ion_chamber):
 
 
 @pytest.mark.asyncio
-async def test_grid_scan_plan_queued(display, qtbot, sim_registry, ion_chamber):
+async def test_step_size_calculation(display):
+    # Set up the display with 2 regions
+    await display.update_regions(2)
+
+    # Region 0: Set Start, Stop, and Points
+    region_0 = display.regions[0]
+    region_0.start_line_edit.setText("0")
+    region_0.stop_line_edit.setText("10")
+    region_0.scan_pts_spin_box.setValue(5)
+
+    # Trigger step size calculation
+    region_0.update_step_size()
+
+    # Check step size calculation for Region 0
+    assert region_0.step_size_line_edit.text() == "2.5"
+
+    # Region 1: Set Start, Stop, and Points
+    region_1 = display.regions[1]
+    region_1.start_line_edit.setText("5")
+    region_1.stop_line_edit.setText("15")
+    region_1.scan_pts_spin_box.setValue(3)
+
+    # Trigger step size calculation
+    region_1.update_step_size()
+
+    # Check step size calculation for Region 1
+    assert region_1.step_size_line_edit.text() == "5.0"
+
+    # Test invalid input for Region 0
+    region_0.start_line_edit.setText("invalid")
+    region_0.update_step_size()
+    assert region_0.step_size_line_edit.text() == "N/A"
+
+    # Test edge case: num_points = 1 for Region 1
+    region_1.scan_pts_spin_box.setValue(1)
+    region_1.update_step_size()
+    assert region_1.step_size_line_edit.text() == "N/A"
+
+    # Reset valid values for Region 0
+    region_0.start_line_edit.setText("10")
+    region_0.stop_line_edit.setText("30")
+    region_0.scan_pts_spin_box.setValue(4)
+    region_0.update_step_size()
+    assert (
+        region_0.step_size_line_edit.text() == "6.666666666666667"
+    )  # Expect float precision
+
+
+@pytest.mark.asyncio
+async def test_grid_scan_plan_queued(
+    display, sim_registry, ion_chamber, monkeypatch, qtbot
+):
     await display.update_regions(2)
 
     # set up a test motor 1
@@ -87,7 +138,7 @@ async def test_grid_scan_plan_queued(display, qtbot, sim_registry, ion_chamber):
     display.ui.textEdit_notes.setText("notes")
 
     expected_item = BPlan(
-        "grid_scan",
+        "rel_grid_scan",
         ["vortex_me4", "I00"],
         "async_motor_1",
         2.0,

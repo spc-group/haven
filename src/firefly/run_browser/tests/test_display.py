@@ -30,7 +30,8 @@ async def display(qtbot, catalog, mocker):
     run = [run async for run in catalog.values()][0]
     display.db.selected_runs = [run]
     await display.update_1d_signals()
-    run_data = await run.to_dataframe()
+    print(run.uid)
+    run_data = await run.data()
     expected_xdata = run_data.energy_energy
     expected_ydata = np.log(run_data.I0_net_counts / run_data.It_net_counts)
     expected_ydata = np.gradient(expected_ydata, expected_xdata)
