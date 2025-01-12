@@ -1,14 +1,23 @@
 import datetime as dt
 import asyncio
 from unittest.mock import MagicMock
+from functools import partial
 
 import numpy as np
 import pytest
 from pyqtgraph import ImageItem, ImageView, PlotItem, PlotWidget
 from qtpy.QtWidgets import QFileDialog
 import time_machine
+from ophyd.sim import instantiate_fake_device
 
+from haven.devices.beamline_manager import EpicsBssDevice
 from firefly.run_browser.display import RunBrowserDisplay
+
+
+@pytest.fixture()
+def bss(sim_registry):
+    bss_ = instantiate_fake_device(EpicsBssDevice, prefix="apsbss:", name="bss")
+    return bss_
 
 
 @pytest.fixture()
@@ -423,6 +432,28 @@ def test_time_filters(display):
     filters = display.filters()
     assert "after" in filters
     assert "before" in filters
+
+
+
+def test_bss_channels(display, bss):
+    """Do the widgets get updated based on the BSS proposal ID, etc."""
+    display.setup_bss_channels(bss)
+    assert display.proposal_channel.address == f"haven://{bss.proposal.proposal_id.name}"
+    assert display.esaf_channel.address == f"haven://{bss.esaf.esaf_id.name}"
+
+
+def test_update_bss_filters(display):
+    checkbox = display.ui.filter_current_proposal_checkbox
+    combobox = display.ui.filter_proposal_combobox
+    update_slot = partial(display.update_bss_filter, combobox=combobox, checkbox=checkbox)
+    # Enable the "current" checkbox, and make sure the combobox updates
+    checkbox.setChecked(True)
+    update_slot("89321")
+    assert combobox.currentText() == "89321"
+    # Disable the "current" checkbox, and make sure the combobox doesn't update
+    checkbox.setChecked(False)
+    update_slot("99531")
+    assert combobox.currentText() == "89321"
     
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman

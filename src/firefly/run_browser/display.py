@@ -3,7 +3,7 @@ import asyncio
 import logging
 from collections import Counter
 from contextlib import contextmanager
-from functools import wraps
+from functools import wraps, partial
 from typing import Mapping, Optional, Sequence
 
 import qtawesome as qta
@@ -11,6 +11,9 @@ import yaml
 from qasync import asyncSlot
 from qtpy.QtCore import Qt, QDateTime
 from qtpy.QtGui import QStandardItem, QStandardItemModel
+from ophyd_async.core import Device
+from ophyd import Device as ThreadedDevice
+from pydm import PyDMChannel
 
 from firefly import display
 from firefly.run_browser.client import DatabaseWorker
@@ -48,6 +51,9 @@ class RunBrowserDisplay(display.FireflyDisplay):
 
     selected_runs: list
     _running_db_tasks: Mapping
+
+    proposal_channel: PyDMChannel
+    esaf_channel: PyDMChannel
 
     export_dialog: Optional[ExportDialog] = None
 
@@ -225,6 +231,45 @@ class RunBrowserDisplay(display.FireflyDisplay):
         )
         # Create a new export dialog for saving files
         self.export_dialog = ExportDialog(parent=self)
+
+    async def update_devices(self, registry):
+        try:
+            bss_device = registry["bss"]
+        except KeyError:
+            log.warning("Could not find device 'bss', disabling 'current' filters.")
+            self.ui.filter_current_proposal_checkbox.setChecked(False),
+            self.ui.filter_current_proposal_checkbox.setEnabled(False),
+            self.ui.filter_current_esaf_checkbox.setChecked(False),
+            self.ui.filter_current_esaf_checkbox.setEnabled(False),
+        else:
+            self.setup_bss_channels(bss_device)
+        await super().update_devices(registry)
+
+    def setup_bss_channels(self, bss: Device | ThreadedDevice):
+        """Setup channels to update the proposal and ESAF ID boxes."""
+        self.proposal_channel.disconnect()
+        self.proposal_channel = PyDMChannel(
+            address=f"haven://{bss.proposal.proposal_id.name}",
+            value_slot=partial(
+                self.update_bss_filter,
+                combobox=self.ui.filter_proposal_combobox,
+                checkbox=self.ui.filter_current_proposal_checkbox,
+            )
+        )
+        self.esaf_channel.disconnect()
+        self.esaf_channel = PyDMChannel(
+            address=f"haven://{bss.esaf.esaf_id.name}",
+            value_slot=partial(
+                self.update_bss_filter,
+                combobox=self.ui.filter_esaf_combobox,
+                checkbox=self.ui.filter_current_esaf_checkbox,
+            )
+        )
+
+    def update_bss_filter(self, text: str, *, combobox, checkbox):
+        """If *checkbox* is checked, update *combobox* with new *text*."""
+        if checkbox.checkState():
+            combobox.setCurrentText(text)
 
     def auto_range(self):
         self.plot_1d_view.autoRange()
