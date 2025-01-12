@@ -2,7 +2,8 @@ import numpy as np
 import pytest
 from ophyd import sim
 
-from haven import KRange, energy_scan, xafs_scan
+from haven.energy_ranges import KRange
+from haven.plans import energy_scan, xafs_scan
 
 
 @pytest.fixture()
