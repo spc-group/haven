@@ -11,7 +11,12 @@ from ophyd_async.core import (
     TriggerInfo,
 )
 from ophyd_async.epics import adcore
-from ophyd_async.epics.adcore._utils import ADBaseDataType, convert_ad_dtype_to_np
+from ophyd_async.epics.adcore._utils import (
+    ADBaseDataType,
+    NDAttributeDataType,
+    NDAttributeParam,
+    convert_ad_dtype_to_np,
+)
 from ophyd_async.epics.core import epics_signal_rw, epics_signal_x
 
 from .area_detectors import HavenDetector, default_path_provider
@@ -117,6 +122,7 @@ class Xspress3Detector(HavenDetector, StandardDetector):
                 path_provider,
                 lambda: self.name,
                 XspressDatasetDescriber(self.drv),
+                self.drv,  # <- for DT ndattributes
             ),
             config_sigs=(self.drv.acquire_period, self.drv.acquire_time, *config_sigs),
             name=name,
@@ -129,3 +135,85 @@ class Xspress3Detector(HavenDetector, StandardDetector):
             self.drv.erase_on_start.set(False),
             self.drv.erase.trigger(),
         )
+
+
+def ndattribute_params(
+    device_name: str, elements: Sequence[int]
+) -> Sequence[NDAttributeParam]:
+    """Create a set of ndattribute params that can be written to the AD's
+    HDF5 file.
+
+    These parameters can then be used with something like
+    :py:func:`ophyd_async.plan_stubs.setup_ndattributes` to build the
+    XML.
+
+    """
+    params = []
+    for idx in elements:
+        new_params = [
+            NDAttributeParam(
+                name=f"{device_name}-element{idx}-deadtime_factor",
+                param="XSP3_CHAN_DTFACTOR",
+                datatype=NDAttributeDataType.DOUBLE,
+                addr=idx,
+                description=f"Chan {idx} DTC Factor",
+            ),
+            NDAttributeParam(
+                name=f"{device_name}-element{idx}-deadtime_percent",
+                param="XSP3_CHAN_DTPERCENT",
+                datatype=NDAttributeDataType.DOUBLE,
+                addr=idx,
+                description=f"Chan {idx} DTC Percent",
+            ),
+            NDAttributeParam(
+                name=f"{device_name}-element{idx}-event_width",
+                param="XSP3_EVENT_WIDTH",
+                datatype=NDAttributeDataType.DOUBLE,
+                addr=idx,
+                description=f"Chan {idx} Event Width",
+            ),
+            NDAttributeParam(
+                name=f"{device_name}-element{idx}-clock_ticks",
+                param="XSP3_CHAN_SCA0",
+                datatype=NDAttributeDataType.DOUBLE,
+                addr=idx,
+                description=f"Chan {idx} ClockTicks",
+            ),
+            NDAttributeParam(
+                name=f"{device_name}-element{idx}-reset_ticks",
+                param="XSP3_CHAN_SCA1",
+                datatype=NDAttributeDataType.DOUBLE,
+                addr=idx,
+                description=f"Chan {idx} ResetTicks",
+            ),
+            NDAttributeParam(
+                name=f"{device_name}-element{idx}-reset_counts",
+                param="XSP3_CHAN_SCA2",
+                datatype=NDAttributeDataType.DOUBLE,
+                addr=idx,
+                description=f"Chan {idx} ResetCounts",
+            ),
+            NDAttributeParam(
+                name=f"{device_name}-element{idx}-all_event",
+                param="XSP3_CHAN_SCA3",
+                datatype=NDAttributeDataType.DOUBLE,
+                addr=idx,
+                description=f"Chan {idx} AllEvent",
+            ),
+            NDAttributeParam(
+                name=f"{device_name}-element{idx}-all_good",
+                param="XSP3_CHAN_SCA4",
+                datatype=NDAttributeDataType.DOUBLE,
+                addr=idx,
+                description=f"Chan {idx} AllGood",
+            ),
+            NDAttributeParam(
+                name=f"{device_name}-element{idx}-pileup",
+                param="XSP3_CHAN_SCA7",
+                datatype=NDAttributeDataType.DOUBLE,
+                addr=idx,
+                description=f"Chan {idx} Pileup",
+            ),
+        ]
+        params.extend(new_params)
+    return params
