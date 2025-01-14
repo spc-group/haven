@@ -3,22 +3,34 @@ import pytest
 from firefly.run_browser.client import DatabaseWorker
 
 
+@pytest.fixture()
+async def worker(tiled_client):
+    worker = DatabaseWorker(tiled_client)
+    await worker.change_catalog("255id_testing")
+    return worker
+
+
 @pytest.mark.asyncio
-async def test_filter_runs(catalog):
-    worker = DatabaseWorker(catalog=catalog)
+async def test_catalog_names(worker):
+    assert (await worker.catalog_names()) == ["255id_testing", "255bm_testing"]
+
+
+@pytest.mark.asyncio
+async def test_filter_runs(worker):
     runs = await worker.load_all_runs(filters={"plan": "xafs_scan"})
     # Check that the runs were filtered
     assert len(runs) == 1
 
 
 @pytest.mark.asyncio
-async def test_distinct_fields(catalog):
-    worker = DatabaseWorker(catalog=catalog)
+async def test_distinct_fields(worker):
     distinct_fields = await worker.load_distinct_fields()
     # Check that the dictionary has the right structure
     for key in ["sample_name"]:
         assert key in distinct_fields.keys()
 
+
+    
 
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman

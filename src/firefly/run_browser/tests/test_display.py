@@ -21,7 +21,7 @@ def bss(sim_registry):
 
 
 @pytest.fixture()
-async def display(qtbot, catalog, mocker):
+async def display(qtbot, tiled_client, catalog, mocker):
     mocker.patch(
         "firefly.run_browser.widgets.ExportDialog.exec_",
         return_value=QFileDialog.Accepted,
@@ -31,20 +31,16 @@ async def display(qtbot, catalog, mocker):
         return_value=["/net/s255data/export/test_file.nx"],
     )
     mocker.patch("firefly.run_browser.client.DatabaseWorker.export_runs")
-    display = RunBrowserDisplay(root_node=catalog)
+    display = RunBrowserDisplay()
     qtbot.addWidget(display)
     display.clear_filters()
     # Wait for the initial database load to process
-    await display._running_db_tasks["init_load_runs"]
-    await display._running_db_tasks["update_combobox_items"]
+    await display.setup_database(tiled_client, catalog_name="255id_testing")
     # Set up some fake data
     run = [run async for run in catalog.values()][0]
     display.db.selected_runs = [run]
     await display.update_1d_signals()
     run_data = await run.data()
-    expected_xdata = run_data.energy_energy
-    expected_ydata = np.log(run_data.I0_net_counts / run_data.It_net_counts)
-    expected_ydata = np.gradient(expected_ydata, expected_xdata)
     # Set the controls to describe the data we want to test
     x_combobox = display.ui.signal_x_combobox
     x_combobox.addItem("energy_energy")
@@ -58,7 +54,6 @@ async def display(qtbot, catalog, mocker):
     return display
 
 
-@pytest.mark.asyncio
 async def test_db_task(display):
     async def test_coro():
         return 15
@@ -67,7 +62,6 @@ async def test_db_task(display):
     assert result == 15
 
 
-@pytest.mark.asyncio
 async def test_db_task_interruption(display):
     async def test_coro(sleep_time):
         await asyncio.sleep(sleep_time)
@@ -90,7 +84,6 @@ def test_load_runs(display):
     assert display.ui.runs_total_label.text() == str(display.runs_model.rowCount())
 
 
-@pytest.mark.asyncio
 async def test_update_selected_runs(display):
     # Change the proposal item
     item = display.runs_model.item(0, 1)
@@ -102,7 +95,6 @@ async def test_update_selected_runs(display):
     assert len(display.db.selected_runs) > 0
 
 
-@pytest.mark.asyncio
 async def test_update_selected_runs(display):
     # Change the proposal item
     item = display.runs_model.item(0, 1)
@@ -120,7 +112,6 @@ async def test_clear_plots(display):
     assert display.plot_1d_view.clear_runs.called
 
 
-@pytest.mark.asyncio
 async def test_metadata(display):
     # Change the proposal item
     display.ui.run_tableview.selectRow(0)
@@ -130,7 +121,6 @@ async def test_metadata(display):
     assert "xafs_scan" in text
 
 
-@pytest.mark.asyncio
 async def test_1d_plot_signals(catalog, display):
     # Check that the 1D plot was created
     plot_widget = display.ui.plot_1d_view
@@ -152,8 +142,7 @@ async def test_1d_plot_signals(catalog, display):
 
 
 # Warns: Task was destroyed but it is pending!
-@pytest.mark.asyncio
-async def test_1d_plot_signal_memory(catalog, display):
+async def test_1d_plot_signal_memory(display):
     """Do we remember the signals that were previously selected."""
     # Check that the 1D plot was created
     plot_widget = display.ui.plot_1d_view
@@ -174,7 +163,6 @@ async def test_1d_plot_signal_memory(catalog, display):
 
 
 # Warns: Task was destroyed but it is pending!
-@pytest.mark.asyncio
 async def test_1d_hinted_signals(catalog, display):
     display.ui.plot_1d_hints_checkbox.setChecked(True)
     # Check that the 1D plot was created
@@ -196,7 +184,6 @@ async def test_1d_hinted_signals(catalog, display):
     ), f"unhinted signal found in {combobox.objectName()}."
 
 
-@pytest.mark.asyncio
 async def test_update_1d_plot(catalog, display):
     display.plot_1d_view.plot_runs = MagicMock()
     display.plot_1d_view.autoRange = MagicMock()
@@ -233,7 +220,6 @@ async def test_update_running_scan(display):
 
 
 # Warns: Task was destroyed but it is pending!
-@pytest.mark.asyncio
 async def test_2d_plot_signals(catalog, display):
     # Check that the 1D plot was created
     plot_widget = display.ui.plot_2d_view
@@ -248,7 +234,6 @@ async def test_2d_plot_signals(catalog, display):
     assert combobox.findText("It_net_counts") > -1
 
 
-@pytest.mark.asyncio
 async def test_update_2d_plot(catalog, display):
     display.plot_2d_item.setRect = MagicMock()
     # Load test data
@@ -279,7 +264,6 @@ async def test_update_2d_plot(catalog, display):
     display.plot_2d_item.setRect.assert_called_with(-100, -80, 200, 160)
 
 
-@pytest.mark.asyncio
 async def test_update_multi_plot(catalog, display):
     run = await catalog["7d1daf1d-60c7-4aa7-a668-d1cd97e5335f"]
     expected_xdata = await run["energy_energy"]
@@ -353,7 +337,6 @@ def test_busy_hints_multiple(display):
     assert display.ui.detail_tabwidget.isEnabled()
 
 
-@pytest.mark.asyncio
 async def test_update_combobox_items(display):
     """Check that the comboboxes get the distinct filter fields."""
     assert display.ui.filter_plan_combobox.count() > 0
@@ -366,7 +349,6 @@ async def test_update_combobox_items(display):
     assert display.ui.filter_beamline_combobox.count() > 0
 
 
-@pytest.mark.asyncio
 async def test_export_button_enabled(catalog, display):
     assert not display.export_button.isEnabled()
     # Update the list with 1 run and see if the control gets enabled
@@ -380,7 +362,6 @@ async def test_export_button_enabled(catalog, display):
     assert not display.export_button.isEnabled()
 
 
-@pytest.mark.asyncio
 async def test_export_button_clicked(catalog, display, mocker, qtbot):
     # Set up a run to be tested against
     run = MagicMock()
@@ -454,6 +435,12 @@ def test_update_bss_filters(display):
     checkbox.setChecked(False)
     update_slot("99531")
     assert combobox.currentText() == "89321"
+
+
+def test_catalog_choices(display, tiled_client):
+    combobox = display.ui.catalog_combobox
+    items = [combobox.itemText(idx) for idx in range(combobox.count())]
+    assert items == ["255id_testing", "255bm_testing"]
     
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman

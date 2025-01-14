@@ -36,7 +36,7 @@
              <item>
               <widget class="QLabel" name="label_18">
                <property name="enabled">
-                <bool>false</bool>
+                <bool>true</bool>
                </property>
                <property name="text">
                 <string>Catalog:</string>
@@ -44,9 +44,9 @@
               </widget>
              </item>
              <item>
-              <widget class="QComboBox" name="comboBox_3">
+              <widget class="QComboBox" name="catalog_combobox">
                <property name="enabled">
-                <bool>false</bool>
+                <bool>true</bool>
                </property>
               </widget>
              </item>
@@ -223,7 +223,7 @@
                 <x>0</x>
                 <y>0</y>
                 <width>373</width>
-                <height>560</height>
+                <height>531</height>
                </rect>
               </property>
               <layout class="QVBoxLayout" name="verticalLayout_9">

@@ -309,6 +309,11 @@ class Catalog:
     are structured, so can make some assumptions and takes care of
     boiler-plate code (e.g. reshaping maps, etc).
 
+    Parameters
+    ==========
+    client
+      A Tiled client that has scan UIDs as its keys.
+
     """
 
     _client = None

@@ -1,3 +1,4 @@
+import asyncio
 import datetime as dt
 import logging
 import warnings
@@ -7,6 +8,7 @@ from typing import Mapping, Sequence
 import numpy as np
 import pandas as pd
 from tiled import queries
+from qasync import asyncSlot
 
 from haven import exceptions
 from haven.catalog import Catalog
@@ -16,12 +18,30 @@ log = logging.getLogger(__name__)
 
 class DatabaseWorker:
     selected_runs: Sequence = []
+    catalog: Catalog = None
 
-    def __init__(self, catalog=None, *args, **kwargs):
-        if catalog is None:
-            catalog = Catalog()
-        self.catalog = catalog
+    def __init__(self, tiled_client, *args, **kwargs):
+        self.client = tiled_client
         super().__init__(*args, **kwargs)
+
+    @asyncSlot(str)
+    async def change_catalog(self, catalog_name: str):
+        """Change the catalog being used for pulling data.
+
+        *catalog_name* should be an entry in *worker.tiled_client()*.
+        """
+        def get_catalog(name):
+            return Catalog(self.client[catalog_name])
+
+        loop = asyncio.get_running_loop()
+        self.catalog = await loop.run_in_executor(None, get_catalog, catalog_name)
+
+    async def catalog_names(self):
+        def get_names():
+            return list(self.client.keys())
+
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(None, get_names)
 
     async def filtered_nodes(self, filters: Mapping):
         case_sensitive = False
@@ -49,6 +69,7 @@ class DatabaseWorker:
         return runs
 
     async def load_distinct_fields(self):
+
         """Get distinct metadata fields for filterable metadata."""
         new_fields = {}
         target_fields = [

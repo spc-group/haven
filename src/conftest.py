@@ -379,6 +379,7 @@ bluesky_mapping = {
 
 mapping = {
     "255id_testing": MapAdapter(bluesky_mapping),
+    "255bm_testing": MapAdapter(bluesky_mapping),
 }
 
 tree = MapAdapter(mapping)
@@ -389,13 +390,12 @@ def tiled_client():
     app = build_app(tree)
     with Context.from_app(app) as context:
         client = from_context(context)
-        yield client["255id_testing"]
+        yield client
 
 
 @pytest.fixture()
 def catalog(tiled_client):
-    cat = Catalog(client=tiled_client)
-    # cat = mock.AsyncMock()
+    cat = Catalog(client=tiled_client["255id_testing"])
     return cat
 
 

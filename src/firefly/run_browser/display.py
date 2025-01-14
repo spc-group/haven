@@ -13,6 +13,7 @@ from qtpy.QtCore import Qt, QDateTime
 from qtpy.QtGui import QStandardItem, QStandardItemModel
 from ophyd_async.core import Device
 from ophyd import Device as ThreadedDevice
+from tiled.client.container import Container
 from pydm import PyDMChannel
 
 from firefly import display
@@ -60,16 +61,29 @@ class RunBrowserDisplay(display.FireflyDisplay):
     # Counter for keeping track of UI hints for long DB hits
     _busy_hinters: Counter
 
-    def __init__(self, root_node=None, args=None, macros=None, **kwargs):
+    def __init__(self, args=None, macros=None, **kwargs):
         super().__init__(args=args, macros=macros, **kwargs)
         self.selected_runs = []
         self._running_db_tasks = {}
         self._busy_hinters = Counter()
-        self.db = DatabaseWorker(catalog=root_node)
-        # Load the list of all runs for the selection widget
-        self.db_task(self.load_runs(), name="init_load_runs")
-        # Load the list of filters' field values into the comboboxes
-        self.db_task(self.update_combobox_items(), name="update_combobox_items")
+
+    async def setup_database(self, tiled_client: Container, catalog_name: str):
+        """Prepare to use a set of databases accessible through *tiled_client*.
+
+        Parameters
+        ==========
+        Each key in *tiled_client* should be """
+        self.db = DatabaseWorker(tiled_client)
+        self.ui.catalog_combobox.addItems(await self.db.catalog_names())
+        await self.change_catalog(catalog_name)
+
+    async def change_catalog(self, catalog_name: str):
+        """Activate a different catalog in the Tiled server."""
+        await self.db_task(self.db.change_catalog(catalog_name), name="change_catalog")
+        await self.db_task(asyncio.gather(
+            self.load_runs(),
+            self.update_combobox_items()
+        ), name="change_catalog")
 
     def db_task(self, coro, name="default task"):
         """Executes a co-routine as a database task. Existing database
@@ -143,7 +157,6 @@ class RunBrowserDisplay(display.FireflyDisplay):
         """"""
         with self.busy_hints(run_table=False, run_widgets=False, filter_widgets=True):
             fields = await self.db.load_distinct_fields()
-            print(fields)
             for field_name, cb in [
                 ("plan_name", self.ui.filter_plan_combobox),
                 ("sample_name", self.ui.filter_sample_combobox),
@@ -247,7 +260,8 @@ class RunBrowserDisplay(display.FireflyDisplay):
 
     def setup_bss_channels(self, bss: Device | ThreadedDevice):
         """Setup channels to update the proposal and ESAF ID boxes."""
-        self.proposal_channel.disconnect()
+        if getattr(self, "proposal_channel", None) is not None:
+            self.proposal_channel.disconnect()
         self.proposal_channel = PyDMChannel(
             address=f"haven://{bss.proposal.proposal_id.name}",
             value_slot=partial(
@@ -256,7 +270,8 @@ class RunBrowserDisplay(display.FireflyDisplay):
                 checkbox=self.ui.filter_current_proposal_checkbox,
             )
         )
-        self.esaf_channel.disconnect()
+        if getattr(self, "esaf_channel", None) is not None:
+            self.esaf_channel.disconnect()
         self.esaf_channel = PyDMChannel(
             address=f"haven://{bss.esaf.esaf_id.name}",
             value_slot=partial(
