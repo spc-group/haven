@@ -173,25 +173,6 @@ class RunBrowserDisplay(display.FireflyDisplay):
                     cb.addItems(fields[field_name])
                     cb.setCurrentText(old_text)
 
-    @asyncSlot()
-    @cancellable
-    async def sleep_slot(self):
-        await self.db_task(self.print_sleep())
-
-    async def print_sleep(self):
-        with self.busy_hints(run_widgets=True, run_table=True, filter_widgets=True):
-            label = self.ui.sleep_label
-            label.setText(f"3...")
-            await asyncio.sleep(1)
-            old_text = label.text()
-            label.setText(f"{old_text}2...")
-            await asyncio.sleep(1)
-            old_text = label.text()
-            label.setText(f"{old_text}1...")
-            await asyncio.sleep(1)
-            old_text = label.text()
-            label.setText(f"{old_text}done!")
-
     def customize_ui(self):
         self.load_models()
         # Setup controls for select which run to show
@@ -201,8 +182,6 @@ class RunBrowserDisplay(display.FireflyDisplay):
         self.ui.refresh_runs_button.setIcon(qta.icon("fa5s.sync"))
         self.ui.refresh_runs_button.clicked.connect(self.reload_runs)
         self.ui.reset_filters_button.clicked.connect(self.reset_default_filters)
-        # Sleep controls for testing async timing
-        self.ui.sleep_button.clicked.connect(self.sleep_slot)
         # Respond to changes in displaying the 1d plot
         for signal in [
             self.ui.signal_y_combobox.currentTextChanged,
