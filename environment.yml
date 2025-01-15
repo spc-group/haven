@@ -41,13 +41,14 @@ dependencies:
     - aioca
     - aiokafka
     - asynctest
-    - apsbss
+    - apsbss < 2.0
     - time-machine
     - rich
     - autoapi
     - pytest-mongodb
     - StrEnum
     - ophyd-registry >= 1.3.3
+    - guarneri >= 0.2.0
     - xraydb >=4.5.0
     - pytest-timeout  # Get rid of this if tests are not hanging
     - git+https://github.com/pcdshub/pcdsdevices
@@ -56,9 +57,10 @@ dependencies:
     - bluesky-queueserver-api
     - bluesky-widgets
     - bluesky-adaptive
-    - bluesky >=1.8.1
+    # - bluesky >=1.13.1
+    - git+https://github.com/bluesky/bluesky.git@v1.13.1rc1  # Replace with pypi version once released
     - ophyd >=1.6.3
-    - ophyd-async >=0.8.0a5
+    - ophyd-async >=0.9.0a1
     - apstools == 1.6.20  # Leave at 1.6.20 until this is fixed: https://github.com/BCDA-APS/apstools/issues/1022
     - pcdsdevices  # For extra signal types
     - pydm >=1.18.0

@@ -58,7 +58,6 @@ class RegionsDisplay(display.FireflyDisplay):
 
         # Disable the line edits in spin box (use up/down buttons instead)
         self.ui.num_motor_spin_box.lineEdit().setReadOnly(True)
-
         # Create the initial (blank) regions
         self.regions = []
         self.ui.num_motor_spin_box.setValue(self.default_num_regions)
@@ -66,6 +65,23 @@ class RegionsDisplay(display.FireflyDisplay):
         # Set up the mechanism for changing region number
         self.ui.num_motor_spin_box.valueChanged.connect(self.update_regions_slot)
         self.ui.run_button.clicked.connect(self.queue_plan)
+        # Color highlights for relative checkbox
+        if hasattr(self, "relative_scan_checkbox"):
+            self.ui.relative_scan_checkbox.stateChanged.connect(self.change_background)
+
+    def change_background(self, state):
+        """
+        Change the background color of the relative scan checkbox based on its state.
+        """
+        if state:  # Checked
+            self.ui.relative_scan_checkbox.setStyleSheet(
+                "background-color: rgb(255, 85, 127);"
+            )
+
+        else:  # Unchecked
+            self.ui.relative_scan_checkbox.setStyleSheet(
+                "background-color: rgb(0, 170, 255);"
+            )
 
     @asyncSlot(object)
     async def update_devices(self, registry):

@@ -1,24 +1,32 @@
-import qtawesome as qta
+import logging
+from typing import Sequence, Union  # , Iterable
 
-from firefly import display
-from haven import beamline
+from bluesky.preprocessors import baseline_wrapper as bluesky_baseline_wrapper
+from bluesky.utils import make_decorator
+
+from haven.instrument import beamline
+
+log = logging.getLogger()
 
 
-class IonChamberDisplay(display.FireflyDisplay):
-    """A GUI window for changing settings in an ion chamber."""
+def baseline_wrapper(
+    plan,
+    devices: Union[Sequence, str] = [
+        "motors",
+        "power_supplies",
+        "xray_sources",
+        "APS",
+        "baseline",
+    ],
+    name: str = "baseline",
+):
+    bluesky_baseline_wrapper.__doc__
+    # Resolve devices
+    devices = beamline.devices.findall(devices, allow_none=True)
+    yield from bluesky_baseline_wrapper(plan=plan, devices=devices, name=name)
 
-    def customize_device(self):
-        self._device = beamline.devices[self.macros()["IC"]]
 
-    def customize_ui(self):
-        # Use qtawesome icons instead of unicode arrows
-        self.ui.gain_down_button.setText("")
-        self.ui.gain_down_button.setIcon(qta.icon("fa5s.arrow-left"))
-        self.ui.gain_up_button.setText("")
-        self.ui.gain_up_button.setIcon(qta.icon("fa5s.arrow-right"))
-
-    def ui_filename(self):
-        return "ion_chamber.ui"
+baseline_decorator = make_decorator(baseline_wrapper)
 
 
 # -----------------------------------------------------------------------------

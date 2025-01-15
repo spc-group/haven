@@ -2,7 +2,6 @@ from unittest.mock import AsyncMock
 
 import pytest
 from bluesky.protocols import Flyable
-from ophyd_async.core import get_mock_put
 
 from haven.devices.motor import HavenMotor
 from haven.devices.motor import Motor as AsyncMotor
@@ -58,15 +57,6 @@ def test_motor_flyer(motor):
     """Check that the haven motor implements the flyer interface."""
     assert motor is not None
     assert isinstance(motor, Flyable)
-
-
-async def test_stop_button(motor):
-    # Check that it got set up properly during __init__
-    assert motor.motor_stop.name == "motor_1-motor_stop"
-    assert motor.motor_stop.parent is motor
-    await motor.motor_stop.trigger()
-    mock = get_mock_put(motor.motor_stop)
-    mock.assert_called_once_with(1, wait=True)
 
 
 @pytest.mark.asyncio

@@ -7,7 +7,7 @@ from ophyd import Device
 
 from ..devices.shutter import ShutterState
 from ..instrument import beamline
-from .shutters import close_shutters, open_shutters
+from ._shutters import close_shutters, open_shutters
 
 
 def count_is_complete(*, old_value, value, **kwargs):
@@ -15,7 +15,6 @@ def count_is_complete(*, old_value, value, **kwargs):
     was_running = old_value == 1
     is_running_now = value == 1
     is_done = was_running and not is_running_now
-    print(is_done)
     return is_done
 
 
@@ -45,7 +44,7 @@ def record_dark_current(
     # Close shutters
     yield from close_shutters(shutters)
     # Measure the dark current
-    ion_chambers = beamline.registry.findall(ion_chambers)
+    ion_chambers = beamline.devices.findall(ion_chambers)
     # Record dark currents
     group = uuid.uuid4()
     for ic in ion_chambers:

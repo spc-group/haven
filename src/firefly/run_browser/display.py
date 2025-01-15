@@ -180,10 +180,12 @@ class RunBrowserDisplay(display.FireflyDisplay):
         self.ui.plot_1d_hints_checkbox.stateChanged.connect(self.update_1d_signals)
         self.ui.autorange_1d_button.clicked.connect(self.auto_range)
         # Respond to changes in displaying the 2d plot
-        self.ui.plot_multi_hints_checkbox.stateChanged.connect(
-            self.update_multi_signals
-        )
-        self.ui.plot_multi_hints_checkbox.stateChanged.connect(self.update_multi_plot)
+        for signal in [
+            self.ui.plot_multi_hints_checkbox.stateChanged,
+            self.ui.multi_signal_x_combobox.currentTextChanged,
+        ]:
+            signal.connect(self.update_multi_signals)
+            signal.connect(self.update_multi_plot)
         # Respond to changes in displaying the 2d plot
         self.ui.signal_value_combobox.currentTextChanged.connect(self.update_2d_plot)
         self.ui.logarithm_checkbox_2d.stateChanged.connect(self.update_2d_plot)
@@ -288,10 +290,12 @@ class RunBrowserDisplay(display.FireflyDisplay):
         )
         xcols, ycols = await signals_task
         # Update the comboboxes with new signals
-        combobox.clear()
-        combobox.addItems(xcols)
-        # Restore previous value
-        combobox.setCurrentText(old_value)
+        old_cols = [combobox.itemText(idx) for idx in range(combobox.count())]
+        if xcols != old_cols:
+            combobox.clear()
+            combobox.addItems(xcols)
+            # Restore previous value
+            combobox.setCurrentText(old_value)
 
     @asyncSlot()
     @cancellable
@@ -376,7 +380,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
     @asyncSlot(str)
     @cancellable
     async def update_running_scan(self, uid: str):
-        print(f"Updating running scan: {uid=}")
+        log.debug(f"Updating running scan: {uid=}")
         await self.update_1d_plot(uids=[uid])
 
     @asyncSlot()
@@ -432,7 +436,6 @@ class RunBrowserDisplay(display.FireflyDisplay):
         if use_grad:
             ylabel = f"∇ {ylabel}"
         # Do the plotting
-        print("RUNNING", self.ui.plot_1d_view.plot_runs)
         self.ui.plot_1d_view.plot_runs(runs, xlabel=xlabel, ylabel=ylabel)
         if self.ui.autorange_1d_checkbox.isChecked():
             self.ui.plot_1d_view.autoRange()
@@ -448,7 +451,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
         use_grad = self.ui.gradient_checkbox_2d.isChecked()
         images = await self.db_task(self.db.images(value_signal), "2D plot")
         # Get axis labels
-        # Eventually this will be replaced with robus choices for plotting multiple images
+        # Eventually this will be replaced with robust choices for plotting multiple images
         metadata = await self.db_task(self.db.metadata(), "2D plot")
         metadata = list(metadata.values())[0]
         dimensions = metadata["start"]["hints"]["dimensions"]

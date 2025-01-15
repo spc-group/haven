@@ -3,26 +3,17 @@ area_detector_root_path = "/tmp"
 [ beamline ]
 # General name for the beamline, used for metadata.
 name = "SPC Beamline (sector unknown)"
-# Should we expect the hardware devices to be available.
-#   If not, we will provide mocked devices.
-hardware_is_present = false
 
-# [[ synchrotron ]]
-# name = "advanced_photon_source"
+[database.databroker]
+catalog = "bluesky"
 
-# [database.databroker]
+[xray_source]
+type = "undulator"
+prefix = "ID255ds:"
 
-# catalog = "bluesky"
-
-# # [xray_source]
-
-# # type = "undulator"
-# # prefix = "ID255ds:"
-
-# [bss]
-
-# prefix = "255idc:bss"
-# beamline = "255-ID-C"
+[bss]
+prefix = "255idc:bss"
+beamline = "255-ID-C"
 
 
 # #####################
@@ -41,18 +32,25 @@ hardware_is_present = false
 # info_port = "60625"
 # redis_addr = "localhost:6379"
 
-# [database.tiled]
+[database.tiled]
+uri = "http://localhost:8337/"
+entry_node = "255id_testing"
+cache_filterpath = "/tmp/tiled_cache/http_response_cache.db"
+api_key = "<tiled-secret-api-key-for-writing>"
 
-# uri = "http://localhost:8337/"
-# entry_node = "255id_testing"
+#################
+# Device support
+#################
 
-# ################
-# # PSS Shutters #
-# ################
-# #
-# # Each PSS shutter has optional arguments *allow_open* and
-# # *allow_close*. These determine whether Ophyd will allow the shutter
-# # to open and close, but has no relationship to EPICS permissions.
+[[ synchrotron ]]
+name = "advanced_photon_source"
+
+# PSS Shutters
+# ============
+
+# Each PSS shutter has optional arguments *allow_open* and
+# *allow_close*. These determine whether Ophyd will allow the shutter
+# to open and close, but has no relationship to EPICS permissions.
 
 # [[ pss_shutter ]]
 # name = "front_end_shutter"
@@ -127,8 +125,8 @@ num_motors = 3
 
 [[ motor ]]
 # Individual motors can be created as well.
+name = "m1"
 prefix = "255idcVME:m1"
-# name = ""
 # labels=["motors"]
 # auto_name = None
 
@@ -290,11 +288,9 @@ device_class = "SimDetector"
 # prefix = "20xmap8:"
 # num_elements = 4
 
-# # [[ xspress ]]
-# # name = "vortex_me4_xsp"
-# # prefix = "vortex_me4_xsp:"
-# # num_elements = 4
-
+[[ xspress3 ]]
+name = "vortex_me4"
+prefix = "vortex_me4_xsp:"
 
 # # Filter boxes
 # # ============
@@ -303,7 +299,7 @@ device_class = "SimDetector"
 # name = "filter_bank0"
 # prefix = "255idc:pfcu0:"
 
-# [[ pfcu4 ]]
-# name = "filter_bank1"
-# prefix = "255idc:pfcu1:"
-# shutters = [[3, 4]]
+[[ pfcu4 ]]
+name = "filter_bank1"
+prefix = "255idc:pfcu1:"
+shutters = [[2, 3]]

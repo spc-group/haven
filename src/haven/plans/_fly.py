@@ -24,8 +24,6 @@ from ophyd.status import StatusBase
 from ophyd_async.core import TriggerInfo
 from ophyd_async.epics.motor import FlyMotorInfo
 
-from ..preprocessors import baseline_decorator
-
 __all__ = ["fly_scan", "grid_fly_scan"]
 
 
@@ -154,11 +152,9 @@ def fly_line_scan(detectors: list, *args, num, dwell_time):
     flyers = [*motors, *detectors]
     flyers = [flyer for flyer in flyers if isinstance(flyer, EventPageCollectable)]
     for flyer_ in flyers:
-        print(f"Collecting from {flyer_}")
         yield from bps.collect(flyer_)
 
 
-@baseline_decorator()
 def fly_scan(
     detectors: Sequence[FlyerInterface],
     *args,
@@ -200,7 +196,6 @@ def fly_scan(
     motors = args[0::3]
     starts = args[1::3]
     stops = args[2::3]
-    devices = [*motors, *detectors]
     # Prepare metadata representation of the motor arguments
     md_args = zip([repr(m) for m in motors], starts, stops)
     md_args = tuple(obj for m, start, stop in md_args for obj in [m, start, stop])
@@ -232,7 +227,6 @@ def fly_scan(
     yield from line_scan
 
 
-# @baseline_decorator()
 def grid_fly_scan(
     detectors: Sequence[FlyerInterface],
     *args,
