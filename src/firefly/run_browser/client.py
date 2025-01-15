@@ -17,8 +17,6 @@ from haven.catalog import Catalog, run_in_executor
 log = logging.getLogger(__name__)
 
 
-
-
 class DatabaseWorker:
     selected_runs: Sequence = []
     catalog: Catalog = None
