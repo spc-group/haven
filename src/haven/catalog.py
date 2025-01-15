@@ -1,4 +1,5 @@
 import asyncio
+import functools
 import logging
 import os
 import sqlite3
@@ -16,6 +17,21 @@ from tiled.client.cache import Cache
 from ._iconfig import load_config
 
 log = logging.getLogger(__name__)
+
+
+def run_in_executor(_func):
+    """Decorator that makes the wrapped synchronous function asynchronous.
+
+    This is done by running the wrapped function in the default
+    asyncio executor.
+
+    """
+    @functools.wraps(_func)
+    def wrapped(*args, **kwargs):
+        loop = asyncio.get_running_loop()
+        func = functools.partial(_func, *args, **kwargs)
+        return loop.run_in_executor(executor=None, func=func)
+    return wrapped
 
 
 def unsnake(arr: np.ndarray, snaking: list) -> np.ndarray:
@@ -206,6 +222,10 @@ class CatalogScan:
     def __init__(self, container, executor=None):
         self.container = container
         self.executor = executor
+
+    @run_in_executor
+    def stream_names(self):
+        return list(self.container.keys())
 
     def _read_data(
         self, signals: Sequence | None, dataset: str = "primary/internal/events"

@@ -30,7 +30,12 @@ async def test_distinct_fields(worker):
         assert key in distinct_fields.keys()
 
 
-    
+async def test_stream_names(worker):
+    uids = (await worker.catalog.client).keys()
+    await worker.load_selected_runs(uids)
+    stream_names = await worker.stream_names()
+    assert stream_names == ["primary"]
+
 
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman

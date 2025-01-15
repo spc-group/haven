@@ -77,6 +77,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
         self.ui.catalog_combobox.addItems(await self.db.catalog_names())
         await self.change_catalog(catalog_name)
 
+    @asyncSlot(str)
     async def change_catalog(self, catalog_name: str):
         """Activate a different catalog in the Tiled server."""
         await self.db_task(self.db.change_catalog(catalog_name), name="change_catalog")
@@ -209,6 +210,8 @@ class RunBrowserDisplay(display.FireflyDisplay):
         self.ui.invert_checkbox_2d.stateChanged.connect(self.update_2d_plot)
         self.ui.gradient_checkbox_2d.stateChanged.connect(self.update_2d_plot)
         self.ui.plot_2d_hints_checkbox.stateChanged.connect(self.update_2d_signals)
+        # Select a new catalog
+        self.ui.catalog_combobox.currentTextChanged.connect(self.change_catalog)
         # Respond to filter controls getting updated
         self.ui.filters_widget.returnPressed.connect(self.refresh_runs_button.click)
         # Respond to controls for the current run
@@ -333,6 +336,14 @@ class RunBrowserDisplay(display.FireflyDisplay):
             # Re-enable widgets if appropriate
             self._busy_hinters.subtract(hinters)
             self.update_busy_hints()
+
+    @asyncSlot()
+    async def update_streams(self, *args):
+        """Update the list of available streams to choose from."""
+        stream_names = await self.db.stream_names()
+        # Sort so that "primary" is first
+        sorted(stream_names, key=lambda x: x != "primary")
+        self.ui.stream_combobox.addItems(stream_names)
 
     @asyncSlot()
     @cancellable
@@ -581,6 +592,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
                 self.update_multi_signals(),
                 self.update_1d_signals(),
                 self.update_2d_signals(),
+                self.update_streams(),
             )
             # Update the plots
             self.clear_plots()

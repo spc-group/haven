@@ -189,7 +189,7 @@
                 <x>0</x>
                 <y>0</y>
                 <width>376</width>
-                <height>588</height>
+                <height>573</height>
                </rect>
               </property>
               <layout class="QVBoxLayout" name="verticalLayout_9">
@@ -610,20 +610,13 @@
         <layout class="QHBoxLayout" name="run_buttons_layout">
          <item>
           <widget class="QLabel" name="label_15">
-           <property name="enabled">
-            <bool>false</bool>
-           </property>
            <property name="text">
             <string>Stream:</string>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QComboBox" name="comboBox_2">
-           <property name="enabled">
-            <bool>false</bool>
-           </property>
-          </widget>
+          <widget class="QComboBox" name="stream_combobox"/>
          </item>
          <item>
           <widget class="QPushButton" name="reload_plots_button">

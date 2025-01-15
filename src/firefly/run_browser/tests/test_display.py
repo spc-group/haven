@@ -1,6 +1,6 @@
 import datetime as dt
 import asyncio
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, AsyncMock
 from functools import partial
 
 import numpy as np
@@ -36,6 +36,7 @@ async def display(qtbot, tiled_client, catalog, mocker):
     display.clear_filters()
     # Wait for the initial database load to process
     await display.setup_database(tiled_client, catalog_name="255id_testing")
+    display.db.stream_names = AsyncMock(return_value=["primary", "baseline"])
     # Set up some fake data
     run = [run async for run in catalog.values()][0]
     display.db.selected_runs = [run]
@@ -441,7 +442,15 @@ def test_catalog_choices(display, tiled_client):
     combobox = display.ui.catalog_combobox
     items = [combobox.itemText(idx) for idx in range(combobox.count())]
     assert items == ["255id_testing", "255bm_testing"]
-    
+
+
+async def test_stream_choices(display, tiled_client):
+    await display.update_streams()
+    combobox = display.ui.stream_combobox
+    items = [combobox.itemText(idx) for idx in range(combobox.count())]
+    assert items == ["primary", "baseline"]
+
+
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov

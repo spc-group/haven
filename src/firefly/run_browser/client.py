@@ -2,6 +2,7 @@ import asyncio
 import datetime as dt
 import logging
 import warnings
+import functools
 from collections import OrderedDict
 from typing import Mapping, Sequence
 
@@ -11,9 +12,11 @@ from tiled import queries
 from qasync import asyncSlot
 
 from haven import exceptions
-from haven.catalog import Catalog
+from haven.catalog import Catalog, run_in_executor
 
 log = logging.getLogger(__name__)
+
+
 
 
 class DatabaseWorker:
@@ -36,12 +39,16 @@ class DatabaseWorker:
         loop = asyncio.get_running_loop()
         self.catalog = await loop.run_in_executor(None, get_catalog, catalog_name)
 
-    async def catalog_names(self):
-        def get_names():
-            return list(self.client.keys())
+    @run_in_executor
+    def catalog_names(self):
+        return list(self.client.keys())
 
-        loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(None, get_names)
+    async def stream_names(self):
+        awaitables = [scan.stream_names() for scan in self.selected_runs]
+        all_streams = await asyncio.gather(*awaitables)
+        # Flatten the lists
+        streams = [stream for streams in all_streams for stream in streams]
+        return list(set(streams))
 
     async def filtered_nodes(self, filters: Mapping):
         case_sensitive = False
