@@ -125,7 +125,7 @@ class GridScanRegion(regions_display.RegionBase):
             # Calculate step size
             if num_points > 1:
                 step_size = (stop - start) / (num_points - 1)
-                self.step_size_line_edit.setText(f"{step_size}")
+                self.step_size_line_edit.setText(f"{step_size:.5g}")
             else:
                 self.step_size_line_edit.setText("N/A")
         except ValueError:
