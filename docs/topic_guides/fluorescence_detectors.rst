@@ -89,6 +89,19 @@ for each detector IOC.
     params = ndattribute_params(device_name=detector.name, elements=range(4))
     setup_ndattributes(detector, params)
 
+.. note::
+
+   The EPICS waveform record holding the XML for these attributes is
+   256 characters long by default. This is not long enough for all but
+   the most trivial cases. If trying to run ``setup_ndattributes``
+   raises a channel access error, this record may need updating.
+
+   Look for a file in the EPICS base folder like
+   ``areaDetector/ADCore/ADApp/Db/NDArrayBase.template`` and change
+   the length for the NDAttribute record. ``20000`` is large enough
+   for up to ~20 elements. Then run ``make`` in the AD top directory
+   and the xspress top directory.
+
 
 Why can't I…
 ############
