@@ -86,61 +86,61 @@ def load_catalog(name: str = "bluesky"):
     return databroker.catalog[name]
 
 
-def load_result(uid: str, catalog_name: str = "bluesky", stream: str = "primary"):
-    """Load a past experiment from the database.
+# def load_result(uid: str, catalog_name: str = "bluesky", stream: str):
+#     """Load a past experiment from the database.
 
-    The result contains metadata and scan parameters. The data
-    themselves are accessible from the result's *read()* method.
+#     The result contains metadata and scan parameters. The data
+#     themselves are accessible from the result's *read()* method.
 
-    Parameters
-    ==========
-    uid
-      The universal identifier for this scan, as return by a bluesky
-      RunEngine.
-    catalog_name
-      The name of the catalog as defined in the Intake file
-      (e.g. ~/.local/share/intake/catalogs.yml)
-    stream
-      The data stream defined by the bluesky RunEngine.
+#     Parameters
+#     ==========
+#     uid
+#       The universal identifier for this scan, as return by a bluesky
+#       RunEngine.
+#     catalog_name
+#       The name of the catalog as defined in the Intake file
+#       (e.g. ~/.local/share/intake/catalogs.yml)
+#     stream
+#       The data stream defined by the bluesky RunEngine.
 
-    Returns
-    =======
-    result
-      The experiment result, with data available via the *read()*
-      method.
+#     Returns
+#     =======
+#     result
+#       The experiment result, with data available via the *read()*
+#       method.
 
-    """
-    cat = load_catalog(name=catalog_name)
-    result = cat[uid][stream]
-    return result
+#     """
+#     cat = load_catalog(name=catalog_name)
+#     result = cat[uid][stream]
+#     return result
 
 
-def load_data(uid, catalog_name="bluesky", stream="primary"):
-    """Load a past experiment's data from the database.
+# def load_data(uid, catalog_name: str="bluesky", stream: str):
+#     """Load a past experiment's data from the database.
 
-    The result is an xarray with the data collected.
+#     The result is an xarray with the data collected.
 
-    Parameters
-    ==========
-    uid
-      The universal identifier for this scan, as return by a bluesky
-      RunEngine.
-    catalog_name
-      The name of the catalog as defined in the Intake file
-      (e.g. ~/.local/share/intake/catalogs.yml)
-    stream
-      The data stream defined by the bluesky RunEngine.
+#     Parameters
+#     ==========
+#     uid
+#       The universal identifier for this scan, as return by a bluesky
+#       RunEngine.
+#     catalog_name
+#       The name of the catalog as defined in the Intake file
+#       (e.g. ~/.local/share/intake/catalogs.yml)
+#     stream
+#       The data stream defined by the bluesky RunEngine.
 
-    Returns
-    =======
-    data
-      The experimental data, as an xarray.
+#     Returns
+#     =======
+#     data
+#       The experimental data, as an xarray.
 
-    """
+#     """
 
-    res = load_result(uid=uid, catalog_name=catalog_name, stream=stream)
-    data = res.read()
-    return data
+#     res = load_result(uid=uid, catalog_name=catalog_name, stream=stream)
+#     data = res.read()
+#     return data
 
 
 def with_thread_lock(fn):
@@ -232,7 +232,7 @@ class CatalogScan:
 
     @run_in_executor
     def _read_data(
-        self, signals: Sequence | None, dataset: str = "primary/internal/events"
+        self, signals: Sequence | None, dataset: str
     ):
         data = self.container[dataset]
         if signals is None:
@@ -254,7 +254,7 @@ class CatalogScan:
     def formats(self):
         return self.container.formats
 
-    async def data(self, signals=None, stream="primary"):
+    async def data(self, *, signals=None, stream: str):
         return await self._read_data(signals, f"{stream}/internal/events/")
 
     @property
@@ -262,11 +262,16 @@ class CatalogScan:
         return asyncio.get_running_loop()
 
     @run_in_executor
-    def data_keys(self, stream="primary"):
+    def data_keys(self, stream):
         return self.container[stream]["internal/events"].columns
 
-    async def hints(self):
+    async def hints(self, stream: str):
         """Retrieve the data hints for this scan.
+
+        Parameters
+        ==========
+        stream
+          The name of the Tiled data stream to look up hints for.
 
         Returns
         =======
@@ -274,6 +279,7 @@ class CatalogScan:
           The hints for the independent scanning axis.
         dependent
           The hints for the dependent scanning axis.
+
         """
         metadata = await self.metadata
         # Get hints for the independent (X)
@@ -283,7 +289,7 @@ class CatalogScan:
             warnings.warn("Could not get independent hints")
         # Get hints for the dependent (X)
         dependent = []
-        primary_metadata = await self._read_metadata("primary")
+        primary_metadata = await self._read_metadata(stream)
         hints = primary_metadata["hints"]
         for device, dev_hints in hints.items():
             dependent.extend(dev_hints["fields"])
@@ -291,6 +297,7 @@ class CatalogScan:
 
     @run_in_executor
     def _read_metadata(self, keys=None):
+        assert keys != "", "Metadata keys cannot be ''."
         container = self.container
         if keys is not None:
             container = container[keys]
@@ -300,9 +307,9 @@ class CatalogScan:
     async def metadata(self):
         return await self._read_metadata()
 
-    async def __getitem__(self, signal):
+    async def __getitem__(self, signal, stream: str):
         """Retrieve a signal from the dataset, with reshaping etc."""
-        arr = await self._read_data([signal])
+        arr = await self._read_data([f"{stream}/{signal}"], dataset=f"{stream}/internal/events")
         arr = np.asarray(arr[signal])
         # Re-shape to match the scan dimensions
         metadata = await self.metadata

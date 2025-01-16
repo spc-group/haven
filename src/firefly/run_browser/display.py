@@ -345,6 +345,11 @@ class RunBrowserDisplay(display.FireflyDisplay):
         sorted(stream_names, key=lambda x: x != "primary")
         self.ui.stream_combobox.addItems(stream_names)
 
+    @property
+    def stream(self):
+        current_text = self.ui.stream_combobox.currentText()
+        return current_text or "primary"
+
     @asyncSlot()
     @cancellable
     async def update_multi_signals(self, *args):
@@ -355,7 +360,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
         # Determine valid list of columns to choose from
         use_hints = self.ui.plot_multi_hints_checkbox.isChecked()
         signals_task = self.db_task(
-            self.db.signal_names(hinted_only=use_hints), "multi signals"
+            self.db.signal_names(hinted_only=use_hints, stream=self.stream), "multi signals"
         )
         xcols, ycols = await signals_task
         # Update the comboboxes with new signals
@@ -379,7 +384,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
         # Determine valid list of columns to choose from
         use_hints = self.ui.plot_1d_hints_checkbox.isChecked()
         signals_task = self.db_task(
-            self.db.signal_names(hinted_only=use_hints), "1D signals"
+            self.db.signal_names(hinted_only=use_hints, stream=self.stream), name="1D signals"
         )
         xcols, ycols = await signals_task
         self.multi_y_signals = ycols
@@ -405,7 +410,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
         # Determine valid list of dependent signals to choose from
         use_hints = self.ui.plot_2d_hints_checkbox.isChecked()
         xcols, vcols = await self.db_task(
-            self.db.signal_names(hinted_only=use_hints), "2D signals"
+            self.db.signal_names(hinted_only=use_hints, stream=self.stream), "2D signals"
         )
         # Update the UI with the list of controls
         val_cb.clear()
@@ -421,7 +426,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
             return
         use_hints = self.ui.plot_multi_hints_checkbox.isChecked()
         runs = await self.db_task(
-            self.db.all_signals(hinted_only=use_hints), "multi-plot"
+            self.db.all_signals(hinted_only=use_hints, stream=self.stream), "multi-plot"
         )
         self.ui.plot_multi_view.plot_runs(runs, xsignal=x_signal)
 
@@ -482,6 +487,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
                 use_invert=use_invert,
                 use_grad=use_grad,
                 uids=uids,
+                stream=self.stream,
             ),
             "1D plot",
         )
@@ -518,7 +524,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
         use_log = self.ui.logarithm_checkbox_2d.isChecked()
         use_invert = self.ui.invert_checkbox_2d.isChecked()
         use_grad = self.ui.gradient_checkbox_2d.isChecked()
-        images = await self.db_task(self.db.images(value_signal), "2D plot")
+        images = await self.db_task(self.db.images(value_signal, stream=self.stream), "2D plot")
         # Get axis labels
         # Eventually this will be replaced with robust choices for plotting multiple images
         metadata = await self.db_task(self.db.metadata(), "2D plot")

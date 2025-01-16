@@ -41,7 +41,7 @@ async def display(qtbot, tiled_client, catalog, mocker):
     run = [run async for run in catalog.values()][0]
     display.db.selected_runs = [run]
     await display.update_1d_signals()
-    run_data = await run.data()
+    run_data = await run.data(stream="primary")
     # Set the controls to describe the data we want to test
     x_combobox = display.ui.signal_x_combobox
     x_combobox.addItem("energy_energy")
@@ -251,7 +251,7 @@ async def test_update_2d_plot(catalog, display):
     # Update the plots
     await display.update_2d_plot()
     # Determine what the image data should look like
-    expected_data = await run["It_net_counts"]
+    expected_data = await run.__getitem__("It_net_counts", stream="primary")
     expected_data = expected_data.reshape((5, 21)).T
     # Check that the data were added
     image = display.plot_2d_item.image
@@ -267,8 +267,10 @@ async def test_update_2d_plot(catalog, display):
 
 async def test_update_multi_plot(catalog, display):
     run = await catalog["7d1daf1d-60c7-4aa7-a668-d1cd97e5335f"]
-    expected_xdata = await run["energy_energy"]
-    expected_ydata = np.log(await run["I0_net_counts"] / await run["It_net_counts"])
+    expected_xdata = await run.__getitem__("energy_energy", stream="primary")
+    I0 = await run.__getitem__("I0_net_counts", stream="primary")
+    It = await run.__getitem__("It_net_counts", stream="primary")
+    expected_ydata = np.log(I0 / It)
     expected_ydata = np.gradient(expected_ydata, expected_xdata)
     # Configure signals
     display.ui.multi_signal_x_combobox.addItem("energy_energy")

@@ -144,11 +144,13 @@ class DatabaseWorker:
             all_runs.append(run_data)
         return all_runs
 
-    async def signal_names(self, hinted_only: bool = False):
+    async def signal_names(self, stream: str, *, hinted_only: bool = False):
         """Get a list of valid signal names (data columns) for selected runs.
 
         Parameters
         ==========
+        stream
+          The Tiled stream name to fetch.
         hinted_only
           If true, only signals with the kind="hinted" parameter get
           picked.
@@ -157,7 +159,7 @@ class DatabaseWorker:
         xsignals, ysignals = [], []
         for run in self.selected_runs:
             if hinted_only:
-                xsig, ysig = await run.hints()
+                xsig, ysig = await run.hints(stream=stream)
             else:
                 df = await run.data()
                 xsig = ysig = df.columns
@@ -186,32 +188,32 @@ class DatabaseWorker:
         self.selected_runs = runs
         return runs
 
-    async def images(self, signal):
+    async def images(self, signal: str, stream: str):
         """Load the selected runs as 2D or 3D images suitable for plotting."""
         images = OrderedDict()
         for idx, run in enumerate(self.selected_runs):
             # Load datasets from the database
             try:
-                image = await run[signal]
+                image = await run.__getitem__(signal, stream=stream)
             except KeyError as exc:
                 log.exception(exc)
             else:
                 images[run.uid] = image
         return images
 
-    async def all_signals(self, hinted_only=False) -> dict:
+    async def all_signals(self, stream: str, *, hinted_only=False) -> dict:
         """Produce dataframes with all signals for each run.
 
         The keys of the dictionary are the labels for each curve, and
         the corresponding value is a pandas dataframe with the scan data.
 
         """
-        xsignals, ysignals = await self.signal_names(hinted_only=hinted_only)
+        xsignals, ysignals = await self.signal_names(hinted_only=hinted_only, stream=stream)
         # Build the dataframes
         dfs = OrderedDict()
         for run in self.selected_runs:
             # Get data from the database
-            df = await run.data(signals=xsignals + ysignals)
+            df = await run.data(signals=xsignals + ysignals, stream=stream)
             dfs[run.uid] = df
         return dfs
 
@@ -220,6 +222,8 @@ class DatabaseWorker:
         x_signal,
         y_signal,
         r_signal=None,
+        *,
+        stream: str,
         use_log=False,
         use_invert=False,
         use_grad=False,
@@ -259,7 +263,7 @@ class DatabaseWorker:
             if uids is not None and run.uid not in uids:
                 break
             # Get data from the database
-            df = await run.data(signals=signals)
+            df = await run.data(signals=signals, stream=stream)
             # Check for missing signals
             missing_x = x_signal not in df.columns and df.index.name != x_signal
             missing_y = y_signal not in df.columns
