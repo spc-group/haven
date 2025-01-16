@@ -4,7 +4,7 @@ from typing import Mapping
 
 import qtawesome as qta
 from bluesky_queueserver_api import BPlan
-from bluesky.protocols import Readable
+from bluesky.protocols import Readable, Movable
 from pydm.widgets.label import PyDMLabel
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QTableWidgetItem
@@ -111,7 +111,7 @@ class MotorRegion(regions_display.RegionBase):
             value_dict = await motor.read()
             # add warnings to users about unmovable motors
             if not isinstance(motor, Movable):
-                logging.error(f"warn user that this is not movable and cannot be moved")
+                logging.error("The motor is not movable and cannot be moved")
 
             if len(value_dict) == 1:
                 value = list(value_dict.values())[0]["value"]
