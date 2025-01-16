@@ -24,7 +24,7 @@ from haven.motor_position import get_motor_position, get_motor_positions
 
 log = logging.getLogger()
 
-test = True
+test = False
 if test:
     # Fake client for testing purpose
     def create_fake_client():
@@ -222,8 +222,7 @@ class SaveMotorDisplay(regions_display.RegionsDisplay):
         # Disable sorting temporarily to prevent UID missing bug
         self.ui.saved_positions_tableWidget.setSortingEnabled(False)
 
-        # Clear the existing rows in the table
-        self.ui.saved_positions_tableWidget.setRowCount(0)
+        
 
         # Determine dates 'after' and 'before' based on checkboxes
         after = None
@@ -248,13 +247,16 @@ class SaveMotorDisplay(regions_display.RegionsDisplay):
             before = stop_datetime.timestamp()
 
         # Retrieve the saved positions with filtering
-        saved_positions_all = get_motor_positions(
-            after=after, before=before, name=filter_text, case_sensitive=False
-        )
+        saved_positions_all = [pos async for pos in get_motor_positions(
+            after=after, before=before, name=filter_text
+        )]
+
+        # Clear the existing rows in the table
+        self.ui.saved_positions_tableWidget.setRowCount(0)
 
         positions_list = []
 
-        async for saved_position_i in saved_positions_all:
+        for saved_position_i in saved_positions_all:
             positions_list.append(saved_position_i)
             current_row_position = self.ui.saved_positions_tableWidget.rowCount()
             self.ui.saved_positions_tableWidget.insertRow(current_row_position)

@@ -8,7 +8,7 @@ from bluesky import plan_stubs as bps
 from bluesky import plans as bp
 from pydantic import BaseModel
 from rich import print as rprint
-from tiled.queries import Key, Regex
+from tiled.queries import Key, Contains
 
 from .catalog import Catalog, tiled_client
 from .instrument import beamline
@@ -66,7 +66,7 @@ class MotorPosition(BaseModel):
         return Cls._load(
             run_md=run.metadata,
             # Assumes the 0-th descriptor is for the primary stream
-            data_keys=run["primary"].metadata["descriptors"][0]["data_keys"],
+            data_keys=run["primary"].metadata["data_keys"].keys(),
             data=run["primary/internal/events"].read(),
         )
 
@@ -212,7 +212,6 @@ async def get_motor_positions(
     before: float | None = None,
     after: float | None = None,
     name: str | None = None,
-    case_sensitive: bool = True,
 ) -> list[MotorPosition]:
     """Get all motor position objects from the catalog.
 
@@ -227,8 +226,6 @@ async def get_motor_positions(
     name
       A regular expression used to filter motor positions based on
       name.
-    case_sensitive
-      Whether the regular expression is applied with case-sensitivity.
 
     Returns
     =======
@@ -238,16 +235,16 @@ async def get_motor_positions(
     """
     runs = Catalog(client=tiled_client())
     # Filter only saved motor positions
-    runs = await runs.search(Key("plan_name") == "save_motor_position")
+    runs = await runs.search(Key("start.plan_name") == "save_motor_position")
     # Filter by timestamp
     if before is not None:
-        runs = await runs.search(Key("time") < before)
+        runs = await runs.search(Key("start.time") < before)
     if after is not None:
-        runs = await runs.search(Key("time") > after)
+        runs = await runs.search(Key("start.time") > after)
     # Filter by position name
     if name is not None:
         runs = await runs.search(
-            Regex("position_name", name, case_sensitive=case_sensitive)
+            Contains("start.position_name", name)
         )
     # Create the actual motor position objects
     async for uid, run in runs.items():
