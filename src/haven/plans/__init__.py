@@ -22,7 +22,7 @@ from ._robot_transfer_sample import robot_transfer_sample  # noqa: F401
 from ._set_energy import set_energy  # noqa: F401
 from ._shutters import close_shutters, open_shutters  # noqa: F401
 from ._xafs_scan import xafs_scan
-
+from ..motor_position import save_motor_position
 
 def chain(*decorators):
     """Chain several decorators together into one decorator.
@@ -50,6 +50,7 @@ auto_gain = all_decorators(auto_gain)
 energy_scan = all_decorators(energy_scan)
 fly_scan = baseline_decorator()(fly_scan)
 grid_fly_scan = baseline_decorator()(grid_fly_scan)
+save_motor_position = baseline_decorator()(save_motor_position)
 xafs_scan = all_decorators(xafs_scan)
 
 # Apply all_decorators to standard Bluesky plans
