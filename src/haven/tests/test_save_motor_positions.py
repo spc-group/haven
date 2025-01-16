@@ -1,8 +1,10 @@
 import datetime as dt
 import logging
+from datetime import datetime
 from unittest.mock import MagicMock
 from zoneinfo import ZoneInfo
 
+import pandas as pd
 import pytest
 import time_machine
 from ophyd_async.testing import set_mock_value
@@ -11,9 +13,8 @@ from tiled.adapters.table import TableAdapter
 from tiled.adapters.xarray import DatasetAdapter
 from tiled.client import Context, from_context
 from tiled.server.app import build_app
-from firefly.tests.fake_position_runs import position_runs
 
-from haven.instrument import Motor
+from haven.devices import Motor
 from haven.motor_position import (
     get_motor_position,
     get_motor_positions,
@@ -326,12 +327,6 @@ async def test_list_current_motor_positions(motors, capsys):
     assert len(captured.out) > 0
     timestamp = "2022-08-19 19:10:51"
     expected = "\n".join(
-        [
-            f"Current motor positions",
-            f"┃ {timestamp}",
-            f"┣━motor_A: 11.0, offset: 1.5",
-            f"┗━motor_B: 23.0, offset: 0.0",
-        ]
     )
     assert captured.out.strip("\n") == expected.strip("\n")
 
@@ -360,3 +355,10 @@ async def test_list_current_motor_positions(motors, capsys):
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 # -----------------------------------------------------------------------------
+
+        [
+            f"Current motor positions",
+            f"┃ {timestamp}",
+            f"┣━motor_A: 11.0, offset: 1.5",
+            f"┗━motor_B: 23.0, offset: 0.0",
+        ]
