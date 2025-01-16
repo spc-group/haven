@@ -106,74 +106,53 @@
               <number>0</number>
              </property>
              <item>
-              <widget class="QWidget" name="runs_total_layout" native="true">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
+              <layout class="QHBoxLayout" name="horizontalLayout_9">
+               <property name="spacing">
+                <number>1</number>
                </property>
-               <property name="minimumSize">
+               <property name="rightMargin">
+                <number>0</number>
+               </property>
+               <item>
+                <widget class="QLabel" name="runs_total_label">
+                 <property name="text">
+                  <string>0</string>
+                 </property>
+                 <property name="margin">
+                  <number>0</number>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="label_11">
+                 <property name="text">
+                  <string> total</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <spacer name="horizontalSpacer_5">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
                 <size>
-                 <width>0</width>
-                 <height>0</height>
+                 <width>40</width>
+                 <height>20</height>
                 </size>
                </property>
-               <layout class="QHBoxLayout" name="horizontalLayout_9">
-                <item>
-                 <widget class="QPushButton" name="refresh_runs_button">
-                  <property name="toolTip">
-                   <string>Retrieve the list of runs matching the filters.</string>
-                  </property>
-                  <property name="text">
-                   <string>Refresh</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <spacer name="horizontalSpacer_6">
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
-                  </property>
-                  <property name="sizeHint" stdset="0">
-                   <size>
-                    <width>40</width>
-                    <height>20</height>
-                   </size>
-                  </property>
-                 </spacer>
-                </item>
-                <item>
-                 <widget class="QLabel" name="runs_total_label">
-                  <property name="text">
-                   <string>0</string>
-                  </property>
-                  <property name="margin">
-                   <number>0</number>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QLabel" name="label_11">
-                  <property name="text">
-                   <string> total</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <spacer name="horizontalSpacer_5">
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
-                  </property>
-                  <property name="sizeHint" stdset="0">
-                   <size>
-                    <width>40</width>
-                    <height>20</height>
-                   </size>
-                  </property>
-                 </spacer>
-                </item>
-               </layout>
+              </spacer>
+             </item>
+             <item>
+              <widget class="QPushButton" name="refresh_runs_button">
+               <property name="toolTip">
+                <string>Retrieve the list of runs matching the filters.</string>
+               </property>
+               <property name="text">
+                <string>Refresh</string>
+               </property>
               </widget>
              </item>
             </layout>
@@ -189,7 +168,7 @@
                 <x>0</x>
                 <y>0</y>
                 <width>376</width>
-                <height>573</height>
+                <height>591</height>
                </rect>
               </property>
               <layout class="QVBoxLayout" name="verticalLayout_9">
@@ -342,7 +321,7 @@
                          <bool>false</bool>
                         </property>
                         <property name="sizePolicy">
-                         <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+                         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
                           <horstretch>0</horstretch>
                           <verstretch>0</verstretch>
                          </sizepolicy>
@@ -572,7 +551,7 @@
                         <property name="sizeHint" stdset="0">
                          <size>
                           <width>40</width>
-                          <height>20</height>
+                          <height>5</height>
                          </size>
                         </property>
                        </spacer>
@@ -588,6 +567,19 @@
                        </widget>
                       </item>
                      </layout>
+                    </item>
+                    <item row="14" column="1">
+                     <spacer name="verticalSpacer">
+                      <property name="orientation">
+                       <enum>Qt::Vertical</enum>
+                      </property>
+                      <property name="sizeHint" stdset="0">
+                       <size>
+                        <width>20</width>
+                        <height>40</height>
+                       </size>
+                      </property>
+                     </spacer>
                     </item>
                    </layout>
                   </item>

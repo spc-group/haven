@@ -15,7 +15,7 @@ from qtpy.QtCore import Signal, Slot
 from qtpy.QtGui import QIcon, QKeySequence
 from qtpy.QtWidgets import QAction, QErrorMessage
 
-from haven import beamline, load_config
+from haven import beamline, load_config, tiled_client
 from haven.exceptions import ComponentNotFound, InvalidConfiguration
 from haven.utils import titleize
 
@@ -340,8 +340,9 @@ class FireflyController(QtCore.QObject):
         self.run_updated.connect(display.update_running_scan)
         self.run_stopped.connect(display.update_running_scan)
         # Set initial state for the run_browser
+        client = tiled_client(catalog=None)
         config = load_config()['database']['tiled']
-        await display.change_catalog(config['entry_node'])
+        await display.setup_database(tiled_client=client, catalog_name=config['default_catalog'])
 
     def finalize_status_window(self, action):
         """Connect up signals that are specific to the voltmeters window."""

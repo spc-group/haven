@@ -2,7 +2,7 @@ import asyncio
 import datetime as dt
 import logging
 import warnings
-import functools
+from functools import partial
 from collections import OrderedDict
 from typing import Mapping, Sequence
 
@@ -53,13 +53,19 @@ class DatabaseWorker:
         log.debug(f"Filtering nodes: {filters}")
         filter_params = {
             # filter_name: (query type, metadata key)
+            "plan": (queries.Eq, "start.plan_name"),
+            "sample": (queries.Contains, "start.sample_name"),
+            "formula": (queries.Contains, "start.sample_formula"),
+            "edge": (queries.Contains, "start.edge"),
+            "exit_status": (queries.Eq, "stop.exit_status"),
             "user": (queries.Contains, "start.proposal_users"),
             "proposal": (queries.Eq, "start.proposal_id"),
             "esaf": (queries.Eq, "start.esaf_id"),
-            "sample": (queries.Contains, "start.sample_name"),
-            "exit_status": (queries.Eq, "stop.exit_status"),
-            "plan": (queries.Eq, "start.plan_name"),
-            "edge": (queries.Contains, "start.edge"),
+            "beamline": (queries.Eq, "start.beamline_id"),
+            "before": (partial(queries.Comparison, "le"), "end.time"),
+            "after": (partial(queries.Comparison, "ge"), "start.time"),
+            "full_text": (queries.FullText, ""),
+            "standards_only": (queries.Eq, "start.is_standard"),
         }
         # Apply filters
         runs = self.catalog
@@ -68,7 +74,7 @@ class DatabaseWorker:
                 continue
             Query, md_name = filter_params[filter_name]
             if Query is queries.FullText:
-                runs = await runs.search(Query(md_name, filter_value), case_sensitive=False)
+                runs = await runs.search(Query(filter_value), case_sensitive=False)
             else:
                 runs = await runs.search(Query(md_name, filter_value))
         return runs
@@ -161,7 +167,7 @@ class DatabaseWorker:
             if hinted_only:
                 xsig, ysig = await run.hints(stream=stream)
             else:
-                df = await run.data()
+                df = await run.data(stream=stream)
                 xsig = ysig = df.columns
             xsignals.extend(xsig)
             ysignals.extend(ysig)

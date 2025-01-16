@@ -66,6 +66,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
         self.selected_runs = []
         self._running_db_tasks = {}
         self._busy_hinters = Counter()
+        self.reset_default_filters()
 
     async def setup_database(self, tiled_client: Container, catalog_name: str):
         """Prepare to use a set of databases accessible through *tiled_client*.
@@ -75,6 +76,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
         Each key in *tiled_client* should be """
         self.db = DatabaseWorker(tiled_client)
         self.ui.catalog_combobox.addItems(await self.db.catalog_names())
+        self.ui.catalog_combobox.setCurrentText(catalog_name)
         await self.change_catalog(catalog_name)
 
     @asyncSlot(str)
@@ -343,6 +345,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
         stream_names = await self.db.stream_names()
         # Sort so that "primary" is first
         sorted(stream_names, key=lambda x: x != "primary")
+        self.ui.stream_combobox.clear()
         self.ui.stream_combobox.addItems(stream_names)
 
     @property
@@ -617,7 +620,6 @@ class RunBrowserDisplay(display.FireflyDisplay):
             "esaf": self.ui.filter_esaf_combobox.currentText(),
             "beamline": self.ui.filter_beamline_combobox.currentText(),
             "full_text": self.ui.filter_full_text_lineedit.text(),
-            "standards_only": bool(self.ui.filter_standards_checkbox.checkState()),
         }
         # Special handling for the time-based filters
         if self.ui.filter_after_checkbox.checkState():
@@ -626,6 +628,9 @@ class RunBrowserDisplay(display.FireflyDisplay):
         if self.ui.filter_before_checkbox.checkState():
             before = self.ui.filter_before_datetimeedit.dateTime().toSecsSinceEpoch()
             new_filters["before"] = before
+        # Limit the search to standards only
+        if self.ui.filter_standards_checkbox.checkState():
+            new_filters["standards_only"] = True
         # Only include values that were actually filled in
         null_values = ["", False]
         new_filters = {k: v for k, v in new_filters.items() if v not in null_values}

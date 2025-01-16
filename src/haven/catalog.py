@@ -31,7 +31,7 @@ def run_in_executor(_func):
     def wrapped(*args, **kwargs):
         loop = asyncio.get_running_loop()
         func = functools.partial(_func, *args, **kwargs)
-        return loop.run_in_executor(executor=None, func=func)
+        return loop.run_in_executor(None, func)
 
     return wrapped
 
@@ -189,10 +189,29 @@ class ThreadSafeCache(Cache):
     delete = with_thread_lock(Cache.delete)
 
 
-@run_in_executor
+DEFAULT_NODE = object()
+
+
 def tiled_client(
-    entry_node=None, uri=None, cache_filepath=None, structure_clients="numpy"
+    catalog: str = DEFAULT_NODE, uri: str = None, cache_filepath=None, structure_clients="numpy"
 ):
+    """Load a tiled client for retrieving data from databses.
+
+    Parameters
+    ==========
+    catalog
+      The node within the catalog to return, by default this will be
+      read from the config file. If ``None``, the root container will
+      be return containing all catalogs.
+    uri
+      The location of the tiled server, e.g. "http://localhost:8000".
+    cache_filepath
+      Where to keep a local cache of tiled nodes.
+    structure_clients
+      "numpy" for immediate retrieval of data, "dask" for just-in-time
+      retrieval.
+
+    """
     config = load_config()
     tiled_config = config["database"].get("tiled", {})
     # Create a cache for saving local copies
@@ -208,9 +227,10 @@ def tiled_client(
         uri = tiled_config["uri"]
     api_key = tiled_config.get("api_key")
     client_ = from_uri(uri, structure_clients, api_key=api_key)
-    if entry_node is None:
-        entry_node = tiled_config["entry_node"]
-    client_ = client_[entry_node]
+    if catalog is DEFAULT_NODE:
+        client_ = client_[tiled_config["default_catalog"]]
+    elif catalog is not None:
+        client_ = client_[catalog]
     return client_
 
 
@@ -300,6 +320,7 @@ class CatalogScan:
         assert keys != "", "Metadata keys cannot be ''."
         container = self.container
         if keys is not None:
+            print(f"{container=}, {keys=}")
             container = container[keys]
         return container.metadata
 
@@ -355,7 +376,7 @@ class Catalog:
     @property
     async def client(self):
         if self._client is None:
-            self._client = await tiled_client()
+            self._client = await run_in_executor(tiled_client)()
         return self._client
 
     async def __getitem__(self, uid) -> CatalogScan:
