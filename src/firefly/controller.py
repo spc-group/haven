@@ -605,12 +605,15 @@ class FireflyController(QtCore.QObject):
         )
         return client
 
-    def start(self):
+    def start(self, queue_client=True, kafka_client=True):
         """Start the background clients."""
-        self.prepare_queue_client()
-        self.prepare_kafka_client()
-        self.start_queue_client()
-        self.start_kafka_client()
+        
+        if queue_client:
+            self.prepare_queue_client()    
+            self.start_queue_client()
+        if kafka_client:
+            self.prepare_kafka_client()
+            self.start_kafka_client()
 
     def update_devices_allowed(self, devices):
         pass

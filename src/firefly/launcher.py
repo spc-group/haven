@@ -78,6 +78,14 @@ def main(default_fullscreen=False, default_display="status"):
         ),
     )
     parser.add_argument(
+        "--no-kafka",
+        action="store_true",
+        help=(
+            "Do not try to connect to the Kafka server. Useful for development if kafka"
+            " server is offline."
+        ),
+    )
+    parser.add_argument(
         "--perfmon",
         action="store_true",
         help="Enable performance monitoring," + " and print CPU usage to the terminal.",
@@ -181,8 +189,10 @@ def main(default_fullscreen=False, default_display="status"):
         # Define devices on the beamline (slow!)
         await controller.setup_instrument(load_instrument=not pydm_args.no_instrument)
         # Start any async clients that the controller needs
-        if not pydm_args.no_queue:
-            controller.start()
+        controller.start(
+            queue_client=not pydm_args.no_queue,
+            kafka_client=not pydm_args.no_kafka
+        )
         # Get rid of the splash screen and show the first window
         splash.close()
         controller.show_default_window()
