@@ -23,6 +23,7 @@ from haven.plans import (  # noqa: F401
     scan,
     scan_nd,
     set_energy,
+    save_motor_position,
     xafs_scan,
 )
 from haven.run_engine import run_engine  # noqa: F401
