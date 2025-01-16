@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import warnings
+from uuid import uuid4
 
 import msgpack
 from aiokafka import AIOKafkaConsumer
@@ -40,7 +41,7 @@ class KafkaClient(QObject):
             self.kafka_consumer = AIOKafkaConsumer(
                 config["queueserver"]["kafka_topic"],
                 bootstrap_servers="fedorov.xray.aps.anl.gov:9092",
-                group_id="my-group",
+                group_id=str(uuid4()),
                 value_deserializer=msgpack.loads,
             )
         consumer = self.kafka_consumer

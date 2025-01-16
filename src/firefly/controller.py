@@ -333,11 +333,15 @@ class FireflyController(QtCore.QObject):
         # Send the current devices to the window
         await action.window.update_devices(self.registry)
 
-    def finalize_run_browser_window(self, action):
-        """Connect up signals that are specific to the run browser window."""
+    @asyncSlot(QAction)
+    async def finalize_run_browser_window(self, action):
+        """Connect up run browser signals and load initial data."""
         display = action.display
         self.run_updated.connect(display.update_running_scan)
         self.run_stopped.connect(display.update_running_scan)
+        # Set initial state for the run_browser
+        config = load_config()['database']['tiled']
+        await display.change_catalog(config['entry_node'])
 
     def finalize_status_window(self, action):
         """Connect up signals that are specific to the voltmeters window."""
@@ -651,12 +655,6 @@ class FireflyController(QtCore.QObject):
         log.debug(f"Application received item to add to queue: {item}")
         if getattr(self, "_queue_client", None) is not None:
             await self._queue_client.add_queue_item(item)
-
-    @QtCore.Slot()
-    def show_sample_viewer_window(self):
-        return self.show_window(
-            FireflyMainWindow, ui_dir / "sample_viewer.ui", name="sample_viewer"
-        )
 
     @QtCore.Slot(bool)
     def set_open_environment_action_state(self, is_open: bool):

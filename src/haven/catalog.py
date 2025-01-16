@@ -1,4 +1,5 @@
 import asyncio
+import functools
 import logging
 import os
 import sqlite3
@@ -16,6 +17,23 @@ from tiled.client.cache import Cache
 from ._iconfig import load_config
 
 log = logging.getLogger(__name__)
+
+
+def run_in_executor(_func):
+    """Decorator that makes the wrapped synchronous function asynchronous.
+
+    This is done by running the wrapped function in the default
+    asyncio executor.
+
+    """
+
+    @functools.wraps(_func)
+    def wrapped(*args, **kwargs):
+        loop = asyncio.get_running_loop()
+        func = functools.partial(_func, *args, **kwargs)
+        return loop.run_in_executor(executor=None, func=func)
+
+    return wrapped
 
 
 def unsnake(arr: np.ndarray, snaking: list) -> np.ndarray:
@@ -68,61 +86,61 @@ def load_catalog(name: str = "bluesky"):
     return databroker.catalog[name]
 
 
-def load_result(uid: str, catalog_name: str = "bluesky", stream: str = "primary"):
-    """Load a past experiment from the database.
+# def load_result(uid: str, catalog_name: str = "bluesky", stream: str):
+#     """Load a past experiment from the database.
 
-    The result contains metadata and scan parameters. The data
-    themselves are accessible from the result's *read()* method.
+#     The result contains metadata and scan parameters. The data
+#     themselves are accessible from the result's *read()* method.
 
-    Parameters
-    ==========
-    uid
-      The universal identifier for this scan, as return by a bluesky
-      RunEngine.
-    catalog_name
-      The name of the catalog as defined in the Intake file
-      (e.g. ~/.local/share/intake/catalogs.yml)
-    stream
-      The data stream defined by the bluesky RunEngine.
+#     Parameters
+#     ==========
+#     uid
+#       The universal identifier for this scan, as return by a bluesky
+#       RunEngine.
+#     catalog_name
+#       The name of the catalog as defined in the Intake file
+#       (e.g. ~/.local/share/intake/catalogs.yml)
+#     stream
+#       The data stream defined by the bluesky RunEngine.
 
-    Returns
-    =======
-    result
-      The experiment result, with data available via the *read()*
-      method.
+#     Returns
+#     =======
+#     result
+#       The experiment result, with data available via the *read()*
+#       method.
 
-    """
-    cat = load_catalog(name=catalog_name)
-    result = cat[uid][stream]
-    return result
+#     """
+#     cat = load_catalog(name=catalog_name)
+#     result = cat[uid][stream]
+#     return result
 
 
-def load_data(uid, catalog_name="bluesky", stream="primary"):
-    """Load a past experiment's data from the database.
+# def load_data(uid, catalog_name: str="bluesky", stream: str):
+#     """Load a past experiment's data from the database.
 
-    The result is an xarray with the data collected.
+#     The result is an xarray with the data collected.
 
-    Parameters
-    ==========
-    uid
-      The universal identifier for this scan, as return by a bluesky
-      RunEngine.
-    catalog_name
-      The name of the catalog as defined in the Intake file
-      (e.g. ~/.local/share/intake/catalogs.yml)
-    stream
-      The data stream defined by the bluesky RunEngine.
+#     Parameters
+#     ==========
+#     uid
+#       The universal identifier for this scan, as return by a bluesky
+#       RunEngine.
+#     catalog_name
+#       The name of the catalog as defined in the Intake file
+#       (e.g. ~/.local/share/intake/catalogs.yml)
+#     stream
+#       The data stream defined by the bluesky RunEngine.
 
-    Returns
-    =======
-    data
-      The experimental data, as an xarray.
+#     Returns
+#     =======
+#     data
+#       The experimental data, as an xarray.
 
-    """
+#     """
 
-    res = load_result(uid=uid, catalog_name=catalog_name, stream=stream)
-    data = res.read()
-    return data
+#     res = load_result(uid=uid, catalog_name=catalog_name, stream=stream)
+#     data = res.read()
+#     return data
 
 
 def with_thread_lock(fn):
@@ -171,6 +189,7 @@ class ThreadSafeCache(Cache):
     delete = with_thread_lock(Cache.delete)
 
 
+@run_in_executor
 def tiled_client(
     entry_node=None, uri=None, cache_filepath=None, structure_clients="numpy"
 ):
@@ -207,8 +226,13 @@ class CatalogScan:
         self.container = container
         self.executor = executor
 
+    @run_in_executor
+    def stream_names(self):
+        return list(self.container.keys())
+
+    @run_in_executor
     def _read_data(
-        self, signals: Sequence | None, dataset: str = "primary/internal/events"
+        self, signals: Sequence | None, dataset: str
     ):
         data = self.container[dataset]
         if signals is None:
@@ -219,19 +243,9 @@ class CatalogScan:
         signals = signals & available_signals
         return data.read()
 
-    def _read_metadata(self, keys=None):
-        container = self.container
-        if keys is not None:
-            container = container[keys]
-        return container.metadata
-
     @property
     def uid(self):
         return self.container._item["id"]
-
-    async def run(self, to_call, *args):
-        """Run the given syncronous callable in an asynchronous context."""
-        return await self.loop.run_in_executor(self.executor, to_call, *args)
 
     async def export(self, filename: str, format: str):
         target = partial(self.container.export, filename, format=format)
@@ -240,23 +254,24 @@ class CatalogScan:
     def formats(self):
         return self.container.formats
 
-    async def data(self, signals=None, stream="primary"):
-        return await self.loop.run_in_executor(
-            None, self._read_data, signals, f"{stream}/internal/events/"
-        )
+    async def data(self, *, signals=None, stream: str):
+        return await self._read_data(signals, f"{stream}/internal/events/")
 
     @property
     def loop(self):
         return asyncio.get_running_loop()
 
-    def _data_keys(self, stream):
+    @run_in_executor
+    def data_keys(self, stream):
         return self.container[stream]["internal/events"].columns
 
-    async def data_keys(self, stream="primary"):
-        return await self.run(self._data_keys, ("primary",))
-
-    async def hints(self):
+    async def hints(self, stream: str):
         """Retrieve the data hints for this scan.
+
+        Parameters
+        ==========
+        stream
+          The name of the Tiled data stream to look up hints for.
 
         Returns
         =======
@@ -264,6 +279,7 @@ class CatalogScan:
           The hints for the independent scanning axis.
         dependent
           The hints for the dependent scanning axis.
+
         """
         metadata = await self.metadata
         # Get hints for the independent (X)
@@ -273,20 +289,27 @@ class CatalogScan:
             warnings.warn("Could not get independent hints")
         # Get hints for the dependent (X)
         dependent = []
-        primary_metadata = await self.run(self._read_metadata, "primary")
+        primary_metadata = await self._read_metadata(stream)
         hints = primary_metadata["hints"]
         for device, dev_hints in hints.items():
             dependent.extend(dev_hints["fields"])
         return independent, dependent
 
+    @run_in_executor
+    def _read_metadata(self, keys=None):
+        assert keys != "", "Metadata keys cannot be ''."
+        container = self.container
+        if keys is not None:
+            container = container[keys]
+        return container.metadata
+
     @property
     async def metadata(self):
-        metadata = await self.run(self._read_metadata)
-        return metadata
+        return await self._read_metadata()
 
-    async def __getitem__(self, signal):
+    async def __getitem__(self, signal, stream: str):
         """Retrieve a signal from the dataset, with reshaping etc."""
-        arr = await self.run(self._read_data, tuple([signal]))
+        arr = await self._read_data([f"{stream}/{signal}"], dataset=f"{stream}/internal/events")
         arr = np.asarray(arr[signal])
         # Re-shape to match the scan dimensions
         metadata = await self.metadata
@@ -309,6 +332,11 @@ class Catalog:
     are structured, so can make some assumptions and takes care of
     boiler-plate code (e.g. reshaping maps, etc).
 
+    Parameters
+    ==========
+    client
+      A Tiled client that has scan UIDs as its keys.
+
     """
 
     _client = None
@@ -320,10 +348,6 @@ class Catalog:
     def __del__(self):
         self.executor.shutdown(wait=True, cancel_futures=True)
 
-    async def run(self, to_call, *args):
-        """Run the given syncronous callable in an asynchronous context."""
-        return await self.loop.run_in_executor(self.executor, to_call, *args)
-
     @property
     def loop(self):
         return asyncio.get_running_loop()
@@ -331,29 +355,29 @@ class Catalog:
     @property
     async def client(self):
         if self._client is None:
-            self._client = await self.run(tiled_client)
+            self._client = await tiled_client()
         return self._client
 
     async def __getitem__(self, uid) -> CatalogScan:
         client = await self.client
-        container = await self.run(client.__getitem__, uid)
+        container = await run_in_executor(client.__getitem__)(uid)
         scan = CatalogScan(container=container, executor=self.executor)
         return scan
 
     async def items(self):
         client = await self.client
-        for key, value in await self.run(client.items):
+        for key, value in await run_in_executor(client.items)():
             yield key, CatalogScan(container=value, executor=self.executor)
 
     async def values(self):
         client = await self.client
-        containers = await self.run(client.values)
+        containers = await run_in_executor(client.values)()
         for container in containers:
             yield CatalogScan(container, executor=self.executor)
 
     async def __len__(self):
         client = await self.client
-        length = await self.run(client.__len__)
+        length = await run_in_executor(client.__len__)()
         return length
 
     async def search(self, query):
