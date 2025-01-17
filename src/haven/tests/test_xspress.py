@@ -13,23 +13,33 @@ this_dir = Path(__file__).parent
 
 @pytest.fixture()
 async def detector():
-    det = Xspress3Detector("255id_xsp:", name="vortex_me4")
+    det = Xspress3Detector("255id_xsp:", name="vortex_me4", elements=4)
     await det.connect(mock=True)
     set_mock_value(det.hdf.file_path_exists, True)
     return det
 
 
-def test_mca_signals(detector):
+async def test_signals(detector):
+    assert await detector.ev_per_bin.get_value() == 10
     # Spot-check some PVs
-    # print(list(detector.drv.children()))
     assert (
         detector.drv.acquire_time.source == "mock+ca://255id_xsp:det1:AcquireTime_RBV"
     )
     assert detector.drv.acquire.source == "mock+ca://255id_xsp:det1:Acquire_RBV"
+    # Individual element's signals
+    assert len(detector.elements) == 4
+    elem0 = detector.elements[0]
+    assert elem0.spectrum.source == "mock+ca://255id_xsp:MCA1:ArrayData"
+    assert elem0.dead_time_percent.source == "mock+ca://255id_xsp:C1SCA:10:Value_RBV"
+    assert elem0.dead_time_factor.source == "mock+ca://255id_xsp:C1SCA:9:Value_RBV"
+
+
+async def test_description(detector):
+    config = await detector.read_configuration()
+    assert f"{detector.name}-ev_per_bin" in config
 
 
 async def test_trigger(detector):
-    trigger_info = TriggerInfo(number_of_triggers=1)
     status = detector.trigger()
     await asyncio.sleep(0.1)  # Let the event loop turn
     set_mock_value(detector.hdf.num_captured, 1)
@@ -61,7 +71,7 @@ async def test_descriptor(detector):
     assert await detector.writer._dataset_describer.np_datatype() == "<f8"
 
 
-async def test_deadtime_correction(detector):
+async def test_deadtime_correction_disabled(detector):
     """Deadtime correction in hardware is not reliable and should be
     disabled.
 
@@ -72,6 +82,11 @@ async def test_deadtime_correction(detector):
     trigger_info = TriggerInfo(number_of_triggers=1)
     await detector.prepare(trigger_info)
     assert not await detector.drv.deadtime_correction.get_value()
+
+
+def test_default_time_signal_xspress(xspress):
+    # assert xspress.default_time_signal is xspress.acquire_time
+    assert xspress.default_time_signal is xspress.drv.acquire_time
 
 
 async def test_ndattribute_params():
