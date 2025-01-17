@@ -71,7 +71,11 @@ The device can then be retrieved by its name for use in Bluesky plans.
 Adding NDAttributes (Xspress3)
 =============================
 
-The EPICS support for an Xspress3 detector provides several additional
+In order to correct for the detector deadtime, we need to record some
+additional deadtime values from the detector. To do this, we need to
+instruct the IOC to add these values to the HDF file, and also need to
+let Bluesky know which values are in the HDF5 file and where. The
+EPICS support for an Xspress3 detector provides several additional
 values besides the spectra, many of them useful for dead-time
 correction. These can be saved using the Ophyd-async NDAttribute
 support. Haven includes a function for generating these parameters so
@@ -79,15 +83,21 @@ they can be set on the IOC in a way that allows Tiled to read the
 resulting values from the HDF5 file. This only needs to be done once
 for each detector IOC.
 
-.code-block:: python
+Be sure to **give this detector a name**, since it will be used as the
+column name in the database.
+
+.. code-block:: python
 
     from haven.devices.detectors.xspress import Xspress3Detector, ndattribute_params
     from ophyd_async.plan_stubs import setup_ndattributes
+    from bluesky import RunEngine
 
     # Assuming a 4-element detector
+    RE = RunEngine()
     detector = Xspress3Detector(...)
+    await detector.connect()
     params = ndattribute_params(device_name=detector.name, elements=range(4))
-    setup_ndattributes(detector, params)
+    RE(setup_ndattributes(detector.drv, params))
 
 .. note::
 
