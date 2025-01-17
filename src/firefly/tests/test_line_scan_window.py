@@ -26,7 +26,6 @@ async def motors(sim_registry, sync_motors):
 
 @pytest.fixture()
 async def display(qtbot, sim_registry, sync_motors, motors, dxp, ion_chamber):
-    print(motors[0].name)
     display = LineScanDisplay()
     qtbot.addWidget(display)
     await display.update_devices(sim_registry)
@@ -125,7 +124,7 @@ async def test_line_scan_plan_queued(display, monkeypatch, qtbot):
 
     # time is calculated when the selection is changed
     display.ui.detectors_list.selected_detectors = mock.MagicMock(
-        return_value=["vortex_me4", "I0"]
+        return_value=["vortex_me4", "I00"]
     )
 
     # set up meta data
@@ -135,7 +134,7 @@ async def test_line_scan_plan_queued(display, monkeypatch, qtbot):
 
     expected_item = BPlan(
         "rel_scan",
-        ["vortex_me4", "I0"],
+        ["vortex_me4", "I00"],
         "async_motor_1",
         1.0,
         111.0,
