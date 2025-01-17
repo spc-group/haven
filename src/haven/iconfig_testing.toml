@@ -4,9 +4,6 @@ area_detector_root_path = "/tmp"
 # General name for the beamline, used for metadata.
 name = "SPC Beamline (sector unknown)"
 
-[database.databroker]
-catalog = "bluesky"
-
 [xray_source]
 type = "undulator"
 prefix = "ID255ds:"
@@ -16,13 +13,14 @@ prefix = "255idc:bss"
 beamline = "255-ID-C"
 
 
-#####################
-# Queueserver
-#####################
+##############
+# Acquisition
+##############
 
-# This section describes how to connect to the queueserver. It does
-# not generate any devices, but is intended to be read by the Firefly
-# GUI application to determine how to interact with the queue.
+# This section describes how to connect to the queueserver and how
+# queueserver data reaches the database. It does not generate any
+# devices, but is intended to be read by the Firefly GUI application
+# to determine how to interact with the queue.
 
 [queueserver]
 kafka_topic = "s255idc_queueserver"
@@ -34,9 +32,12 @@ redis_addr = "localhost:6379"
 
 [database.tiled]
 uri = "http://localhost:8337/"
-entry_node = "255id_testing"
-cache_filterpath = "/tmp/tiled_cache/http_response_cache.db"
+default_catalog = "255id_testing"
+cache_filepath = "/tmp/tiled_cache/http_response_cache.db"
 api_key = "<tiled-secret-api-key-for-writing>"
+
+[database.databroker]
+catalog = "bluesky"
 
 #################
 # Device support
