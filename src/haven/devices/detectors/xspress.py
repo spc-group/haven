@@ -126,8 +126,8 @@ class Xspress3Detector(HavenDetector, StandardDetector):
     The elements of the detector are represented on the *mcas*
     attribute. The number of mcas is determined by passing *elements*
     when initializing an object. *elements* can be either an integer,
-    in which case it represents to number of elements, or an
-    interator, representing the index of each element.
+    in which case it represents to number of elements, or an iterator
+    representing the index of each element.
 
     The following lines are equivalent.
 
@@ -138,6 +138,12 @@ class Xspress3Detector(HavenDetector, StandardDetector):
       det = Xspress3Detector(..., elements=[0, 1, 2, 3])
 
       det = Xspress3Detector(..., elements=range(4))
+
+    The parameter *ev_per_bin* controls the conversion from histogram
+    bin to energy. This is set during calibration; changing the value
+    passed into this class without re-calibrating the detector **will
+    result in an incorrect conversion**.
+
     """
 
     _ophyd_labels_ = {"detectors", "xrf_detectors"}

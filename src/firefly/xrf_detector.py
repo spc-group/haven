@@ -69,8 +69,7 @@ class XRFPlotWidget(QWidget):
 
     ui_dir = Path(__file__).parent
     _data_items: defaultdict
-    _selected_spectrum: int = None
-    _region_items: dict
+    _selected_spectrum: int | None = None
     device_name: str = ""
     target_mca: int = None
 
@@ -80,7 +79,6 @@ class XRFPlotWidget(QWidget):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._data_items = defaultdict(lambda: None)
-        self._region_items = {}
         self.ui = uic.loadUi(self.ui_dir / "xrf_plot.ui", self)
         # Create plotting items
         plot_item = self.ui.plot_widget.getPlotItem()
@@ -226,19 +224,10 @@ class Color(str, Enum):
 
 
 class XRFDetectorDisplay(display.FireflyDisplay):
-    caqtdm_ui_file = "/APSshare/epics/synApps_6_2_1/support/xspress3-2-5/xspress3App/opi/ui/xspress3_1chan.ui"
 
     _spectrum_channels: Sequence
-    _selected_mca: int = None
-    _mca_lower_receiver = None
-    _mca_upper_receiver = None
-
     _spectra: dict
-
-    num_header_rows = 2
-
-    # Signals
-    mca_row_hovered = Signal(int, int, bool)  # (MCA num, roi_num, entered)
+    num_header_rows: int = 2
 
     # For styling the detector state attribute
     state_styles = {
@@ -276,11 +265,6 @@ class XRFDetectorDisplay(display.FireflyDisplay):
     def update_state_style(self, new_state: str):
         new_style = self.state_styles.get(new_state, "")
         self.ui.detector_state_label.setStyleSheet(new_style)
-
-    def launch_caqtdm(
-        self,
-    ):
-        super().launch_caqtdm(macros={"P": self.device.prefix.strip(":")})
 
     @asyncSlot(object)
     async def handle_new_spectrum(self, new_spectrum, mca_num):
