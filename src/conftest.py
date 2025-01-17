@@ -307,7 +307,7 @@ bluesky_mapping = {
             },
             "stop": {
                 "exit_status": "success",
-            }
+            },
         },
     ),
     "9d33bf66-9701-4ee3-90f4-3be730bc226c": MapAdapter(

@@ -1,17 +1,17 @@
-import datetime as dt
 import asyncio
-from unittest.mock import MagicMock, AsyncMock
+import datetime as dt
 from functools import partial
+from unittest.mock import AsyncMock, MagicMock
 
 import numpy as np
 import pytest
-from pyqtgraph import ImageItem, ImageView, PlotItem, PlotWidget
-from qtpy.QtWidgets import QFileDialog
 import time_machine
 from ophyd.sim import instantiate_fake_device
+from pyqtgraph import ImageItem, ImageView, PlotItem, PlotWidget
+from qtpy.QtWidgets import QFileDialog
 
-from haven.devices.beamline_manager import EpicsBssDevice
 from firefly.run_browser.display import RunBrowserDisplay
+from haven.devices.beamline_manager import EpicsBssDevice
 
 
 @pytest.fixture()
@@ -388,7 +388,9 @@ async def test_export_button_clicked(catalog, display, mocker, qtbot):
     assert display.db.export_runs.call_args.args == (files,)
     assert display.db.export_runs.call_args.kwargs["formats"] == ["application/json"]
 
+
 fake_time = dt.datetime(2022, 8, 19, 19, 10, 51).astimezone()
+
 
 @time_machine.travel(fake_time, tick=False)
 def test_default_filters(display):
@@ -418,18 +420,21 @@ def test_time_filters(display):
     assert "before" in filters
 
 
-
 def test_bss_channels(display, bss):
     """Do the widgets get updated based on the BSS proposal ID, etc."""
     display.setup_bss_channels(bss)
-    assert display.proposal_channel.address == f"haven://{bss.proposal.proposal_id.name}"
+    assert (
+        display.proposal_channel.address == f"haven://{bss.proposal.proposal_id.name}"
+    )
     assert display.esaf_channel.address == f"haven://{bss.esaf.esaf_id.name}"
 
 
 def test_update_bss_filters(display):
     checkbox = display.ui.filter_current_proposal_checkbox
     combobox = display.ui.filter_proposal_combobox
-    update_slot = partial(display.update_bss_filter, combobox=combobox, checkbox=checkbox)
+    update_slot = partial(
+        display.update_bss_filter, combobox=combobox, checkbox=checkbox
+    )
     # Enable the "current" checkbox, and make sure the combobox updates
     checkbox.setChecked(True)
     update_slot("89321")

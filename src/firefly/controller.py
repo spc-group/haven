@@ -341,8 +341,10 @@ class FireflyController(QtCore.QObject):
         self.run_stopped.connect(display.update_running_scan)
         # Set initial state for the run_browser
         client = tiled_client(catalog=None)
-        config = load_config()['database']['tiled']
-        await display.setup_database(tiled_client=client, catalog_name=config['default_catalog'])
+        config = load_config()["database"]["tiled"]
+        await display.setup_database(
+            tiled_client=client, catalog_name=config["default_catalog"]
+        )
 
     def finalize_status_window(self, action):
         """Connect up signals that are specific to the voltmeters window."""

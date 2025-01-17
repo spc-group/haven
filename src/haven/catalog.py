@@ -9,7 +9,6 @@ from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 from typing import Sequence
 
-import databroker
 import numpy as np
 from tiled.client import from_uri
 from tiled.client.cache import Cache
@@ -116,7 +115,10 @@ DEFAULT_NODE = object()
 
 
 def tiled_client(
-    catalog: str = DEFAULT_NODE, uri: str = None, cache_filepath=None, structure_clients="numpy"
+    catalog: str = DEFAULT_NODE,
+    uri: str = None,
+    cache_filepath=None,
+    structure_clients="numpy",
 ):
     """Load a tiled client for retrieving data from databses.
 
@@ -174,9 +176,7 @@ class CatalogScan:
         return list(self.container.keys())
 
     @run_in_executor
-    def _read_data(
-        self, signals: Sequence | None, dataset: str
-    ):
+    def _read_data(self, signals: Sequence | None, dataset: str):
         data = self.container[dataset]
         if signals is None:
             return data.read()
@@ -253,7 +253,9 @@ class CatalogScan:
 
     async def __getitem__(self, signal, stream: str = "primary"):
         """Retrieve a signal from the dataset, with reshaping etc."""
-        arr = await self._read_data([f"{stream}/{signal}"], dataset=f"{stream}/internal/events")
+        arr = await self._read_data(
+            [f"{stream}/{signal}"], dataset=f"{stream}/internal/events"
+        )
         arr = np.asarray(arr[signal])
         # Re-shape to match the scan dimensions
         metadata = await self.metadata

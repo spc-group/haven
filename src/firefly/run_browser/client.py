@@ -2,14 +2,14 @@ import asyncio
 import datetime as dt
 import logging
 import warnings
-from functools import partial
 from collections import OrderedDict
+from functools import partial
 from typing import Mapping, Sequence
 
 import numpy as np
 import pandas as pd
-from tiled import queries
 from qasync import asyncSlot
+from tiled import queries
 
 from haven import exceptions
 from haven.catalog import Catalog, run_in_executor
@@ -31,6 +31,7 @@ class DatabaseWorker:
 
         *catalog_name* should be an entry in *worker.tiled_client()*.
         """
+
         def get_catalog(name):
             return Catalog(self.client[catalog_name])
 
@@ -80,7 +81,6 @@ class DatabaseWorker:
         return runs
 
     async def load_distinct_fields(self):
-
         """Get distinct metadata fields for filterable metadata."""
         new_fields = {}
         target_fields = [
@@ -214,7 +214,9 @@ class DatabaseWorker:
         the corresponding value is a pandas dataframe with the scan data.
 
         """
-        xsignals, ysignals = await self.signal_names(hinted_only=hinted_only, stream=stream)
+        xsignals, ysignals = await self.signal_names(
+            hinted_only=hinted_only, stream=stream
+        )
         # Build the dataframes
         dfs = OrderedDict()
         for run in self.selected_runs:

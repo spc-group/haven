@@ -1,20 +1,20 @@
-import datetime as dt
 import asyncio
+import datetime as dt
 import logging
 from collections import Counter
 from contextlib import contextmanager
-from functools import wraps, partial
+from functools import partial, wraps
 from typing import Mapping, Optional, Sequence
 
 import qtawesome as qta
 import yaml
-from qasync import asyncSlot
-from qtpy.QtCore import Qt, QDateTime
-from qtpy.QtGui import QStandardItem, QStandardItemModel
-from ophyd_async.core import Device
 from ophyd import Device as ThreadedDevice
-from tiled.client.container import Container
+from ophyd_async.core import Device
 from pydm import PyDMChannel
+from qasync import asyncSlot
+from qtpy.QtCore import QDateTime, Qt
+from qtpy.QtGui import QStandardItem, QStandardItemModel
+from tiled.client.container import Container
 
 from firefly import display
 from firefly.run_browser.client import DatabaseWorker
@@ -73,7 +73,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
 
         Parameters
         ==========
-        Each key in *tiled_client* should be """
+        Each key in *tiled_client* should be"""
         self.db = DatabaseWorker(tiled_client)
         self.ui.catalog_combobox.addItems(await self.db.catalog_names())
         self.ui.catalog_combobox.setCurrentText(catalog_name)
@@ -83,10 +83,10 @@ class RunBrowserDisplay(display.FireflyDisplay):
     async def change_catalog(self, catalog_name: str):
         """Activate a different catalog in the Tiled server."""
         await self.db_task(self.db.change_catalog(catalog_name), name="change_catalog")
-        await self.db_task(asyncio.gather(
-            self.load_runs(),
-            self.update_combobox_items()
-        ), name="change_catalog")
+        await self.db_task(
+            asyncio.gather(self.load_runs(), self.update_combobox_items()),
+            name="change_catalog",
+        )
 
     def db_task(self, coro, name="default task"):
         """Executes a co-routine as a database task. Existing database
@@ -155,7 +155,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
         last_week = dt.datetime.now().astimezone() - dt.timedelta(days=7)
         last_week = QDateTime.fromTime_t(int(last_week.timestamp()))
         self.ui.filter_after_datetimeedit.setDateTime(last_week)
-        
+
     async def update_combobox_items(self):
         """"""
         with self.busy_hints(run_table=False, run_widgets=False, filter_widgets=True):
@@ -252,7 +252,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
                 self.update_bss_filter,
                 combobox=self.ui.filter_proposal_combobox,
                 checkbox=self.ui.filter_current_proposal_checkbox,
-            )
+            ),
         )
         if getattr(self, "esaf_channel", None) is not None:
             self.esaf_channel.disconnect()
@@ -262,7 +262,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
                 self.update_bss_filter,
                 combobox=self.ui.filter_esaf_combobox,
                 checkbox=self.ui.filter_current_esaf_checkbox,
-            )
+            ),
         )
 
     def update_bss_filter(self, text: str, *, combobox, checkbox):
@@ -363,7 +363,8 @@ class RunBrowserDisplay(display.FireflyDisplay):
         # Determine valid list of columns to choose from
         use_hints = self.ui.plot_multi_hints_checkbox.isChecked()
         signals_task = self.db_task(
-            self.db.signal_names(hinted_only=use_hints, stream=self.stream), "multi signals"
+            self.db.signal_names(hinted_only=use_hints, stream=self.stream),
+            "multi signals",
         )
         xcols, ycols = await signals_task
         # Update the comboboxes with new signals
@@ -387,7 +388,8 @@ class RunBrowserDisplay(display.FireflyDisplay):
         # Determine valid list of columns to choose from
         use_hints = self.ui.plot_1d_hints_checkbox.isChecked()
         signals_task = self.db_task(
-            self.db.signal_names(hinted_only=use_hints, stream=self.stream), name="1D signals"
+            self.db.signal_names(hinted_only=use_hints, stream=self.stream),
+            name="1D signals",
         )
         xcols, ycols = await signals_task
         self.multi_y_signals = ycols
@@ -413,7 +415,8 @@ class RunBrowserDisplay(display.FireflyDisplay):
         # Determine valid list of dependent signals to choose from
         use_hints = self.ui.plot_2d_hints_checkbox.isChecked()
         xcols, vcols = await self.db_task(
-            self.db.signal_names(hinted_only=use_hints, stream=self.stream), "2D signals"
+            self.db.signal_names(hinted_only=use_hints, stream=self.stream),
+            "2D signals",
         )
         # Update the UI with the list of controls
         val_cb.clear()
@@ -527,7 +530,9 @@ class RunBrowserDisplay(display.FireflyDisplay):
         use_log = self.ui.logarithm_checkbox_2d.isChecked()
         use_invert = self.ui.invert_checkbox_2d.isChecked()
         use_grad = self.ui.gradient_checkbox_2d.isChecked()
-        images = await self.db_task(self.db.images(value_signal, stream=self.stream), "2D plot")
+        images = await self.db_task(
+            self.db.images(value_signal, stream=self.stream), "2D plot"
+        )
         # Get axis labels
         # Eventually this will be replaced with robust choices for plotting multiple images
         metadata = await self.db_task(self.db.metadata(), "2D plot")
