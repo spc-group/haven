@@ -43,7 +43,6 @@ def test_merging_dicts():
     ]
     test_file = this_dir / "test_iconfig.toml"
     config = load_config(file_paths=(*default_files, test_file))
-    print(config)
     assert "prefix" in config["area_detector"][0].keys()
 
 

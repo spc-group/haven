@@ -14,7 +14,6 @@ from ophyd_async.epics.motor import Motor as MotorBase
 from ophydregistry import Registry
 
 from .motor_flyer import MotorFlyer
-from .signal import epics_signal_xval
 
 log = logging.getLogger(__name__)
 
@@ -63,9 +62,6 @@ class Motor(MotorBase):
         self.soft_limit_violation = epics_signal_r(int, f"{prefix}.LVIO")
         # Load all the parent signals
         super().__init__(prefix=prefix, name=name)
-        # Override the motor stop signal to use the right trigger value
-        self.motor_stop = epics_signal_xval(f"{prefix}.STOP")
-        self.set_name(self.name)
 
     async def connect(
         self,

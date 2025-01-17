@@ -42,10 +42,10 @@ def test_navbar_autohide(qtbot, actions):
     window.show()
     navbar = window.ui.navbar
     # Pretend the queue has some things in it
-    window.update_queue_controls({"in_use": True})
+    window.update_queue_controls({"items_in_queue": 5})
     assert navbar.isVisible()
     # Make the queue be empty
-    window.update_queue_controls({"in_use": False})
+    window.update_queue_controls({"items_in_queue": 0})
     assert not navbar.isVisible()
 
 

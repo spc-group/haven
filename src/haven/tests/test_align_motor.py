@@ -3,7 +3,7 @@ from bluesky import RunEngine
 from bluesky.callbacks.best_effort import BestEffortCallback
 from ophyd import sim
 
-from haven import align_motor
+from haven.plans import align_motor
 
 # from run_engine import RunEngineStub
 

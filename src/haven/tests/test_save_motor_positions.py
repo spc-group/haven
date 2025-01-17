@@ -9,6 +9,7 @@ import pytest
 import time_machine
 from ophyd_async.testing import set_mock_value
 from tiled.adapters.mapping import MapAdapter
+from tiled.adapters.table import TableAdapter
 from tiled.adapters.xarray import DatasetAdapter
 from tiled.client import Context, from_context
 from tiled.server.app import build_app
@@ -34,13 +35,17 @@ position_runs = {
         {
             "primary": MapAdapter(
                 {
-                    "data": DatasetAdapter.from_dataset(
-                        pd.DataFrame(
-                            {
-                                "motor_A": [12.0],
-                                "motor_B": [-113.25],
-                            }
-                        ).to_xarray()
+                    "internal": MapAdapter(
+                        {
+                            "events": TableAdapter.from_pandas(
+                                pd.DataFrame(
+                                    {
+                                        "motor_A": [12.0],
+                                        "motor_B": [-113.25],
+                                    }
+                                )
+                            ),
+                        }
                     ),
                 },
                 metadata={
@@ -73,12 +78,16 @@ position_runs = {
         {
             "primary": MapAdapter(
                 {
-                    "data": DatasetAdapter.from_dataset(
-                        pd.DataFrame(
-                            {
-                                "motorC": [11250.0],
-                            }
-                        ).to_xarray()
+                    "internal": MapAdapter(
+                        {
+                            "events": TableAdapter.from_pandas(
+                                pd.DataFrame(
+                                    {
+                                        "motorC": [11250.0],
+                                    }
+                                )
+                            ),
+                        }
                     ),
                 },
                 metadata={
@@ -262,7 +271,6 @@ async def test_get_motor_positions(client):
 async def test_get_motor_positions_by_name(client):
     results = get_motor_positions(name=r"^.*good.+itio.+[AB]$", case_sensitive=False)
     results = [pos async for pos in results]
-    print([r.name for r in results])
     assert len(results) == 2
     # Check the motor position details
     motorA, motorB = results

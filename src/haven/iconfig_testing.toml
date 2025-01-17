@@ -35,7 +35,8 @@ redis_addr = "localhost:6379"
 [database.tiled]
 uri = "http://localhost:8337/"
 entry_node = "255id_testing"
-
+cache_filterpath = "/tmp/tiled_cache/http_response_cache.db"
+api_key = "<tiled-secret-api-key-for-writing>"
 
 #################
 # Device support
@@ -301,4 +302,4 @@ prefix = "255idc:pfcu0:"
 [[ pfcu4 ]]
 name = "filter_bank1"
 prefix = "255idc:pfcu1:"
-shutters = [[3, 4]]
+shutters = [[2, 3]]

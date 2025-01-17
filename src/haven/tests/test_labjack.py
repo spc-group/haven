@@ -58,10 +58,6 @@ async def test_base_signals_device(labjack):
         "labjack-analog_outputs-1-scanning_rate",
     }
     desc = await labjack.describe_configuration()
-    from pprint import pprint
-
-    pprint(await labjack.analog_outputs[0].describe_configuration())
-    # pprint(desc)
     assert set(desc.keys()) == cfg_names
 
 
@@ -90,7 +86,6 @@ async def test_analog_inputs(LabJackDevice, num_ais):
     # Check read attrs
     read_attrs = ["final_value"]
     description = await device.describe()
-    print(description)
     for n in range(num_ais):
         for attr in read_attrs:
             full_attr = f"{device.name}-analog_inputs-{n}-{attr}"

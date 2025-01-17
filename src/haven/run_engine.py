@@ -4,8 +4,10 @@ import databroker
 import IPython
 from bluesky import RunEngine as BlueskyRunEngine
 from bluesky.callbacks.best_effort import BestEffortCallback
+from bluesky.callbacks.tiled_writer import TiledWriter
 from bluesky.utils import ProgressBarManager, register_transform
 
+from .catalog import tiled_client
 from .exceptions import ComponentNotFound
 from .instrument import beamline
 from .preprocessors import inject_haven_md_wrapper
@@ -16,7 +18,7 @@ log = logging.getLogger(__name__)
 catalog = None
 
 
-def save_data(name, doc):
+def save_to_databroker(name, doc):
     # This is a hack around a problem with garbage collection
     # Has been fixed in main, maybe released in databroker v2?
     # Create the databroker callback if necessary
@@ -27,7 +29,24 @@ def save_data(name, doc):
     catalog.v1.insert(name, doc)
 
 
-def run_engine(connect_databroker=True, use_bec=True, **kwargs) -> BlueskyRunEngine:
+def run_engine(
+    *, connect_tiled=True, connect_databroker=True, use_bec=False, **kwargs
+) -> BlueskyRunEngine:
+    """Build a bluesky RunEngine() for Haven.
+
+    Parameters
+    ==========
+    connect_tiled
+      The run engine will have a callback for writing to the default
+      tiled client.
+    connect_databroker
+      The run engine will have a callback for writing to the default
+      databroker catalog.
+    use_bec
+      The run engine will have the bluesky BestEffortCallback
+      subscribed to it.
+
+    """
     RE = BlueskyRunEngine(**kwargs)
     # Add the best-effort callback
     if use_bec:
@@ -56,7 +75,12 @@ def run_engine(connect_databroker=True, use_bec=True, **kwargs) -> BlueskyRunEng
         register_transform("RE", prefix="<", ip=ip)
     # Install databroker connection
     if connect_databroker:
-        RE.subscribe(save_data)
+        RE.subscribe(save_to_databroker)
+    if connect_tiled:
+        client = tiled_client()
+        client.include_data_sources()
+        tiled_writer = TiledWriter(client)
+        RE.subscribe(tiled_writer)
     # Add preprocessors
     RE.preprocessors.append(inject_haven_md_wrapper)
     return RE

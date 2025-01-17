@@ -1,3 +1,4 @@
+import asyncio
 import os
 from pathlib import Path
 
@@ -10,7 +11,7 @@ from ophyd import DynamicDeviceComponent as DCpt
 from ophyd import Kind
 from ophyd.sim import instantiate_fake_device, make_fake_device
 from tiled.adapters.mapping import MapAdapter
-from tiled.adapters.xarray import DatasetAdapter
+from tiled.adapters.table import TableAdapter
 from tiled.client import Context, from_context
 from tiled.server.app import build_app
 
@@ -27,7 +28,7 @@ from haven.devices.monochromator import Monochromator
 from haven.devices.robot import Robot
 from haven.devices.shutter import PssShutter
 from haven.devices.slits import ApertureSlits, BladeSlits
-from haven.devices.xia_pfcu import PFCUFilter, PFCUFilterBank, PFCUShutter
+from haven.devices.xia_pfcu import PFCUFilter, PFCUFilterBank
 
 top_dir = Path(__file__).parent.resolve()
 haven_dir = top_dir / "haven"
@@ -189,30 +190,18 @@ def aps(sim_registry):
 
 
 @pytest.fixture()
-def xia_shutter_bank(sim_registry):
-    class ShutterBank(PFCUFilterBank):
-        shutters = DCpt(
-            {
-                "shutter_0": (
-                    PFCUShutter,
-                    "",
-                    {"top_filter": 4, "bottom_filter": 3, "labels": {"shutters"}},
-                )
-            }
-        )
-
-        def __new__(cls, *args, **kwargs):
-            return object.__new__(cls)
-
-    FakeBank = make_fake_device(ShutterBank)
-    bank = FakeBank(prefix="255id:pfcu4:", name="xia_filter_bank", shutters=[[3, 4]])
+async def xia_shutter_bank(sim_registry):
+    bank = PFCUFilterBank(
+        prefix="255id:pfcu4:", name="xia_filter_bank", shutters=[[2, 3]]
+    )
+    await bank.connect(mock=True)
     sim_registry.register(bank)
     yield bank
 
 
 @pytest.fixture()
 def xia_shutter(xia_shutter_bank):
-    shutter = xia_shutter_bank.shutters.shutter_0
+    shutter = xia_shutter_bank.shutters[0]
     yield shutter
 
 
@@ -232,16 +221,13 @@ def shutters(sim_registry):
 
 
 @pytest.fixture()
-def filters(sim_registry):
-    FakeFilter = make_fake_device(PFCUFilter)
-    kw = {
-        "labels": {"filters"},
-    }
+async def filters(sim_registry):
     filters = [
-        FakeFilter(name="Filter A", prefix="filter1", **kw),
-        FakeFilter(name="Filter B", prefix="filter2", **kw),
+        PFCUFilter(name="Filter A", prefix="filter1"),
+        PFCUFilter(name="Filter B", prefix="filter2"),
     ]
     [sim_registry.register(f) for f in filters]
+    await asyncio.gather(*(filter.connect(mock=True) for filter in filters))
     return filters
 
 
@@ -250,10 +236,11 @@ def filters(sim_registry):
 run1 = pd.DataFrame(
     {
         "energy_energy": np.linspace(8300, 8400, num=100),
+        "energy_id_energy_readback": np.linspace(8.3, 8.4, num=100),
         "It_net_counts": np.abs(np.sin(np.linspace(0, 4 * np.pi, num=100))),
         "I0_net_counts": np.linspace(1, 2, num=100),
     }
-).to_xarray()
+)
 
 grid_scan = pd.DataFrame(
     {
@@ -262,7 +249,7 @@ grid_scan = pd.DataFrame(
         "aerotech_horiz": np.linspace(0, 104, num=105),
         "aerotech_vert": np.linspace(0, 104, num=105),
     }
-).to_xarray()
+)
 
 hints = {
     "energy": {"fields": ["energy_energy", "energy_id_energy_readback"]},
@@ -273,9 +260,13 @@ bluesky_mapping = {
         {
             "primary": MapAdapter(
                 {
-                    "data": DatasetAdapter.from_dataset(run1),
+                    "internal": MapAdapter(
+                        {
+                            "events": TableAdapter.from_pandas(run1),
+                        }
+                    ),
                 },
-                metadata={"descriptors": [{"hints": hints}]},
+                metadata={"hints": hints},
             ),
         },
         metadata={
@@ -291,17 +282,22 @@ bluesky_mapping = {
         {
             "primary": MapAdapter(
                 {
-                    "data": DatasetAdapter.from_dataset(run1),
+                    "internal": MapAdapter(
+                        {
+                            "events": TableAdapter.from_pandas(run1),
+                        }
+                    ),
                 },
-                metadata={"descriptors": [{"hints": hints}]},
+                metadata={"hints": hints},
             ),
         },
         metadata={
+            "plan_name": "rel_scan",
             "start": {
                 "plan_name": "rel_scan",
                 "uid": "9d33bf66-9701-4ee3-90f4-3be730bc226c",
                 "hints": {"dimensions": [[["pitch2"], "primary"]]},
-            }
+            },
         },
     ),
     # 2D grid scan map data
@@ -309,24 +305,24 @@ bluesky_mapping = {
         {
             "primary": MapAdapter(
                 {
-                    "data": DatasetAdapter.from_dataset(grid_scan),
+                    "internal": MapAdapter(
+                        {
+                            "events": TableAdapter.from_pandas(grid_scan),
+                        },
+                    ),
                 },
                 metadata={
-                    "descriptors": [
-                        {
-                            "hints": {
-                                "Ipreslit": {"fields": ["Ipreslit_net_counts"]},
-                                "CdnIPreKb": {"fields": ["CdnIPreKb_net_counts"]},
-                                "I0": {"fields": ["I0_net_counts"]},
-                                "CdnIt": {"fields": ["CdnIt_net_counts"]},
-                                "aerotech_vert": {"fields": ["aerotech_vert"]},
-                                "aerotech_horiz": {"fields": ["aerotech_horiz"]},
-                                "Ipre_KB": {"fields": ["Ipre_KB_net_counts"]},
-                                "CdnI0": {"fields": ["CdnI0_net_counts"]},
-                                "It": {"fields": ["It_net_counts"]},
-                            }
-                        }
-                    ]
+                    "hints": {
+                        "Ipreslit": {"fields": ["Ipreslit_net_counts"]},
+                        "CdnIPreKb": {"fields": ["CdnIPreKb_net_counts"]},
+                        "I0": {"fields": ["I0_net_counts"]},
+                        "CdnIt": {"fields": ["CdnIt_net_counts"]},
+                        "aerotech_vert": {"fields": ["aerotech_vert"]},
+                        "aerotech_horiz": {"fields": ["aerotech_horiz"]},
+                        "Ipre_KB": {"fields": ["Ipre_KB_net_counts"]},
+                        "CdnI0": {"fields": ["CdnI0_net_counts"]},
+                        "It": {"fields": ["It_net_counts"]},
+                    },
                 },
             ),
         },

@@ -1,13 +1,33 @@
-from .detectors.aravis import AravisDetector  # noqa: F401
-from .detectors.sim_detector import SimDetector  # noqa: F401
-from .detectors.xspress import Xspress3Detector  # noqa: F401
-from .ion_chamber import IonChamber  # noqa: F401
-from .monochromator import Monochromator  # noqa: F401
-from .motor import HavenMotor, Motor  # noqa: F401
-from .robot import Robot  # noqa: F401
-from .shutter import PssShutter, ShutterState  # noqa: F401
-from .table import Table  # noqa: F401
-from .xia_pfcu import PFCUFilter, PFCUFilterBank  # noqa: F401
+import logging
+from typing import Sequence, Union  # , Iterable
+
+from bluesky.preprocessors import baseline_wrapper as bluesky_baseline_wrapper
+from bluesky.utils import make_decorator
+
+from haven.instrument import beamline
+
+log = logging.getLogger()
+
+
+def baseline_wrapper(
+    plan,
+    devices: Union[Sequence, str] = [
+        "motors",
+        "power_supplies",
+        "xray_sources",
+        "APS",
+        "baseline",
+    ],
+    name: str = "baseline",
+):
+    bluesky_baseline_wrapper.__doc__
+    # Resolve devices
+    devices = beamline.devices.findall(devices, allow_none=True)
+    yield from bluesky_baseline_wrapper(plan=plan, devices=devices, name=name)
+
+
+baseline_decorator = make_decorator(baseline_wrapper)
+
 
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
@@ -32,4 +52,4 @@ from .xia_pfcu import PFCUFilter, PFCUFilterBank  # noqa: F401
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
-# ----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
