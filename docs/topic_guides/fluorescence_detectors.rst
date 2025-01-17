@@ -78,26 +78,11 @@ let Bluesky know which values are in the HDF5 file and where. The
 EPICS support for an Xspress3 detector provides several additional
 values besides the spectra, many of them useful for dead-time
 correction. These can be saved using the Ophyd-async NDAttribute
-support. Haven includes a function for generating these parameters so
-they can be set on the IOC in a way that allows Tiled to read the
-resulting values from the HDF5 file. This only needs to be done once
-for each detector IOC.
+support. The Xspress3 device support in Haven will generate these
+parameters and set them on the IOC during staging in a way that allows
+Tiled to read the resulting values from the HDF5 file alongside the
+image data itself.
 
-Be sure to **give this detector a name**, since it will be used as the
-column name in the database.
-
-.. code-block:: python
-
-    from haven.devices.detectors.xspress import Xspress3Detector, ndattribute_params
-    from ophyd_async.plan_stubs import setup_ndattributes
-    from bluesky import RunEngine
-
-    # Assuming a 4-element detector
-    RE = RunEngine()
-    detector = Xspress3Detector(...)
-    await detector.connect()
-    params = ndattribute_params(device_name=detector.name, elements=range(4))
-    RE(setup_ndattributes(detector.drv, params))
 
 .. note::
 
@@ -114,7 +99,7 @@ column name in the database.
 
 
 Why can't I…
-############
+============
 
 Previously, some steps were performed during data acquisition by the
 IOC that have now been moved to other parts of the system. These

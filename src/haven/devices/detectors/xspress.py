@@ -1,4 +1,5 @@
 import asyncio
+import xml.etree.ElementTree as ET
 from collections.abc import Sequence
 
 from ophyd_async.core import (
@@ -17,7 +18,7 @@ from ophyd_async.epics.adcore._utils import (
     NDAttributeParam,
     convert_ad_dtype_to_np,
 )
-from ophyd_async.epics.core import epics_signal_rw, epics_signal_x
+from ophyd_async.epics.core import epics_signal_r, epics_signal_rw, epics_signal_x
 
 from .area_detectors import HavenDetector, default_path_provider
 
@@ -39,6 +40,7 @@ class XspressDriverIO(adcore.ADBaseIO):
         self.erase_on_start = epics_signal_rw(bool, f"{prefix}EraseOnStart")
         self.erase = epics_signal_x(f"{prefix}ERASE")
         self.deadtime_correction = epics_signal_rw(bool, f"{prefix}CTRL_DTC")
+        self.number_of_elements = epics_signal_r(int, f"{prefix}MaxSizeY_RBV")
         super().__init__(prefix=prefix, name=name)
 
 
@@ -50,6 +52,14 @@ class XspressController(DetectorController):
         # Arbitrary value. To-do: fill this in when we know what to
         # include
         return 0.001
+
+    async def setup_ndattributes(self, device_name: str):
+        num_elements = await self._drv.number_of_elements.get_value()
+        params = ndattribute_params(
+            device_name=device_name, elements=range(num_elements)
+        )
+        xml = ndattribute_xml(params)
+        await self._drv.nd_attributes_file.set(xml)
 
     @AsyncStatus.wrap
     async def prepare(self, trigger_info: TriggerInfo):
@@ -126,11 +136,39 @@ class Xspress3Detector(HavenDetector, StandardDetector):
 
     @AsyncStatus.wrap
     async def stage(self) -> None:
-        await asyncio.gather(
+        self._old_xml_file, *_ = await asyncio.gather(
+            self.drv.nd_attributes_file.get_value(),
             super().stage(),
+            self._controller.setup_ndattributes(device_name=self.name),
             self.drv.erase_on_start.set(False),
             self.drv.erase.trigger(),
         )
+
+    @AsyncStatus.wrap
+    async def unstage(self) -> None:
+        await super().unstage()
+        if self._old_xml_file is not None:
+            # Restore the original XML attributes file
+            await self.drv.nd_attributes_file.set(self._old_xml_file)
+            self._old_xml_file = None
+
+
+def ndattribute_xml(params):
+    """Convert a set of NDAttribute params to XML."""
+    root = ET.Element("Attributes")
+    for ndattribute in params:
+        ET.SubElement(
+            root,
+            "Attribute",
+            name=ndattribute.name,
+            type="PARAM",
+            source=ndattribute.param,
+            addr=str(ndattribute.addr),
+            datatype=ndattribute.datatype.value,
+            description=ndattribute.description,
+        )
+    xml_text = ET.tostring(root, encoding="unicode")
+    return xml_text
 
 
 def ndattribute_params(

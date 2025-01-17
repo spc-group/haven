@@ -1,4 +1,5 @@
 import asyncio
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 import pytest
@@ -78,6 +79,22 @@ async def test_ndattribute_params():
     n_params = 9
     params = ndattribute_params(device_name="xsp3", elements=range(n_elem))
     assert len(params) == n_elem * n_params
+
+
+async def test_stage_ndattributes(detector):
+    num_elem = 8
+    set_mock_value(detector.drv.number_of_elements, num_elem)
+    set_mock_value(detector.drv.nd_attributes_file, "XSP3.xml")
+    await detector.stage()
+    xml_mock = get_mock_put(detector.drv.nd_attributes_file)
+    assert xml_mock.called
+    # Test that the XML is correct
+    args, kwargs = xml_mock.call_args
+    tree = ET.fromstring(args[0])
+    assert len(tree) == num_elem * 9
+    # Check that the XML file gets reset when unstaged
+    await detector.unstage()
+    assert xml_mock.call_args[0][0] == "XSP3.xml"
 
 
 # -----------------------------------------------------------------------------
