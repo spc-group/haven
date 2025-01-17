@@ -66,83 +66,6 @@ def unsnake(arr: np.ndarray, snaking: list) -> np.ndarray:
     return arr
 
 
-def load_catalog(name: str = "bluesky"):
-    """Load a databroker catalog for retrieving data.
-
-    To retrieve individual scans, consider the ``load_result`` and
-    ``load_data`` methods.
-
-    Parameters
-    ==========
-    name
-      The name of the catalog as defined in the Intake file
-      (e.g. ~/.local/share/intake/catalogs.yml)
-
-    Returns
-    =======
-    catalog
-      The databroker catalog.
-    """
-    return databroker.catalog[name]
-
-
-# def load_result(uid: str, catalog_name: str = "bluesky", stream: str):
-#     """Load a past experiment from the database.
-
-#     The result contains metadata and scan parameters. The data
-#     themselves are accessible from the result's *read()* method.
-
-#     Parameters
-#     ==========
-#     uid
-#       The universal identifier for this scan, as return by a bluesky
-#       RunEngine.
-#     catalog_name
-#       The name of the catalog as defined in the Intake file
-#       (e.g. ~/.local/share/intake/catalogs.yml)
-#     stream
-#       The data stream defined by the bluesky RunEngine.
-
-#     Returns
-#     =======
-#     result
-#       The experiment result, with data available via the *read()*
-#       method.
-
-#     """
-#     cat = load_catalog(name=catalog_name)
-#     result = cat[uid][stream]
-#     return result
-
-
-# def load_data(uid, catalog_name: str="bluesky", stream: str):
-#     """Load a past experiment's data from the database.
-
-#     The result is an xarray with the data collected.
-
-#     Parameters
-#     ==========
-#     uid
-#       The universal identifier for this scan, as return by a bluesky
-#       RunEngine.
-#     catalog_name
-#       The name of the catalog as defined in the Intake file
-#       (e.g. ~/.local/share/intake/catalogs.yml)
-#     stream
-#       The data stream defined by the bluesky RunEngine.
-
-#     Returns
-#     =======
-#     data
-#       The experimental data, as an xarray.
-
-#     """
-
-#     res = load_result(uid=uid, catalog_name=catalog_name, stream=stream)
-#     data = res.read()
-#     return data
-
-
 def with_thread_lock(fn):
     """Makes sure the function isn't accessed concurrently."""
 
@@ -274,7 +197,7 @@ class CatalogScan:
     def formats(self):
         return self.container.formats
 
-    async def data(self, *, signals=None, stream: str):
+    async def data(self, *, signals=None, stream: str = "primary"):
         return await self._read_data(signals, f"{stream}/internal/events/")
 
     @property
@@ -282,10 +205,10 @@ class CatalogScan:
         return asyncio.get_running_loop()
 
     @run_in_executor
-    def data_keys(self, stream):
-        return self.container[stream]["internal/events"].columns
+    def data_keys(self, stream: str = "primary"):
+        return self.container[f"{stream}/internal/events"].columns
 
-    async def hints(self, stream: str):
+    async def hints(self, stream: str = "primary"):
         """Retrieve the data hints for this scan.
 
         Parameters
@@ -328,7 +251,7 @@ class CatalogScan:
     async def metadata(self):
         return await self._read_metadata()
 
-    async def __getitem__(self, signal, stream: str):
+    async def __getitem__(self, signal, stream: str = "primary"):
         """Retrieve a signal from the dataset, with reshaping etc."""
         arr = await self._read_data([f"{stream}/{signal}"], dataset=f"{stream}/internal/events")
         arr = np.asarray(arr[signal])
