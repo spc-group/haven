@@ -341,7 +341,7 @@ class FireflyController(QtCore.QObject):
         self.run_stopped.connect(display.update_running_scan)
         # Set initial state for the run_browser
         client = tiled_client(catalog=None)
-        config = load_config()["database"]["tiled"]
+        config = load_config()["tiled"]
         await display.setup_database(
             tiled_client=client, catalog_name=config["default_catalog"]
         )

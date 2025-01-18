@@ -137,8 +137,7 @@ def tiled_client(
       retrieval.
 
     """
-    config = load_config()
-    tiled_config = config["database"].get("tiled", {})
+    tiled_config = load_config().get("tiled", {})
     # Create a cache for saving local copies
     if cache_filepath is None:
         cache_filepath = tiled_config.get("cache_filepath", "")
