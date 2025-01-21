@@ -8,7 +8,6 @@ from ophyd_async.epics.motor import Motor
 
 from haven.plans import fly_scan, grid_fly_scan
 from haven.plans._fly import FlyerCollector
-from haven.preprocessors import baseline_decorator
 
 
 @pytest.fixture()
