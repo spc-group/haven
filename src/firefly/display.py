@@ -7,7 +7,7 @@ from pydm import Display
 from qtpy import QtWidgets
 from qtpy.QtCore import Signal, Slot
 
-from haven import registry
+from haven import beamline
 
 
 class FireflyDisplay(Display):
@@ -100,7 +100,7 @@ class FireflyDisplay(Display):
         # Retrieve the device
         device = self.macros().get("DEVICE")
         if device is not None:
-            device = registry.find(device)
+            device = beamline.devices[device]
         self.device = device
         return device
 

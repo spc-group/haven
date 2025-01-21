@@ -1,12 +1,12 @@
 [project]
 name = "haven-spc"
-version = "2024.8.2"
+version = "2024.11.0"
 authors = [
   { name="Mark Wolfman", email="wolfman@anl.gov" },
 ]
 description = "Tools and GUI for running the spectroscopy group beamlines at the Advanced Photon Source."
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
@@ -16,16 +16,16 @@ classifiers = [
     "Topic :: System :: Hardware",
 ]
 keywords = ["synchrotron", "xray", "bluesky"]
-dependencies = ["aioca", "bluesky", "ophyd", "databroker", "apsbss", "xraydb",
-	        "mergedeep", "xrayutilities", "bluesky-queueserver-api",
+dependencies = ["aioca", "aiokafka", "bluesky", "ophyd", "ophyd-async>=0.8.0a5", "databroker", "apsbss", "xraydb",
+	        "mergedeep", "xrayutilities", "bluesky-queueserver-api", "tomlkit",
 		"apstools", "databroker", "ophyd-registry", "caproto", "pcdsdevices",
-		"strenum", "bluesky-adaptive", "tiled[client]"]
+		"strenum", "bluesky-adaptive", "tiled[client]", "guarneri"]
 
 [project.optional-dependencies]
 
-dev = ["black", "pytest", "pytest-mongodb", "build", "twine",
+dev = ["black", "pytest", "pytest-mongodb", "asynctest", "build", "twine",
        "time-machine", "pytest-mock", "pytest-qt", "flake8", "pytest-asyncio", "tiled[all]"]
-gui = ["qtawesome", "pydm", "pyqtgraph", "qasync", "tiled[all]"]
+gui = ["qtawesome", "pydm<=1.24.1", "pyqtgraph", "qasync", "tiled[all]"]
 
 [project.urls]
 "Homepage" = "https://haven-spc.readthedocs.io/en/latest/"
@@ -36,6 +36,8 @@ HavenPlugin = "firefly.pydm_plugin:HavenPlugin"
 
 [project.scripts]
 haven_config = "haven._iconfig:print_config_value"
+haven_queueserver = "queueserver.launch_queueserver:launch_queueserver"
+mongo_consumer = "queueserver.mongo_consumer:main"
 
 [project.gui-scripts]
 firefly = "firefly.launcher:main"

@@ -1,13 +1,20 @@
 import gc
 
 import databroker
+import pytest
 from bluesky import RunEngine
+from ophyd.sim import instantiate_fake_device
 
 from haven import run_engine
-from haven.instrument.aps import load_aps
+from haven.devices.aps import ApsMachine
 
 
-def test_subscribers_garbage_collection(monkeypatch, sim_registry):
+@pytest.fixture()
+def aps(sim_registry):
+    aps = instantiate_fake_device(ApsMachine, name="advanced_photon_source")
+
+
+def test_subscribers_garbage_collection(monkeypatch, aps):
     """Tests for regression of a bug in databroker.
 
     Since databroker uses a weak reference to the insert function, it
@@ -16,22 +23,19 @@ def test_subscribers_garbage_collection(monkeypatch, sim_registry):
 
     """
     monkeypatch.setattr(databroker, "catalog", {"bluesky": databroker.temp()})
-    load_aps()
-    RE = run_engine(use_bec=False)
+    RE = run_engine(use_bec=False, connect_tiled=False)
     assert len(RE.dispatcher.cb_registry.callbacks) == 12
     gc.collect()
     assert len(RE.dispatcher.cb_registry.callbacks) == 12
 
 
-def test_run_engine_preprocessors(sim_registry):
-    load_aps()
-    RE = run_engine(use_bec=False)
+def test_run_engine_preprocessors(aps):
+    RE = run_engine(use_bec=False, connect_databroker=False, connect_tiled=False)
     assert len(RE.preprocessors) > 0
 
 
-def test_run_engine_created(sim_registry):
-    load_aps()
-    RE = run_engine(use_bec=False)
+def test_run_engine_created(aps):
+    RE = run_engine(use_bec=False, connect_databroker=False, connect_tiled=False)
     assert isinstance(RE, RunEngine)
 
 

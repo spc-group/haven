@@ -26,9 +26,9 @@ using the registry.
 
 The registry uses the built-in concept of device labels in Ophyd. The
 registry's
-:py:meth:`~haven.instrument.instrument_registry.InstrumentRegistry.find()`
+:py:meth:`~haven.devices.instrument_registry.InstrumentRegistry.find()`
 and
-:py:meth:`~haven.instrument.instrument_registry.InstrumentRegistry.findall()`
+:py:meth:`~haven.devices.instrument_registry.InstrumentRegistry.findall()`
 methods allows devices to be looked up by label or device name. For
 example, assuming four devices exist with the label "ion_chamber",
 then these devices can be retrieved using the registry:
@@ -87,7 +87,7 @@ Registering Individual Devices
 Before looking up a device in the registry, it is necessary to inform
 the registry about the device. The simplest way to do this is using
 the
-:py:meth:`~haven.instrument.instrument_registry.InstrumentRegistry.register()`
+:py:meth:`~haven.devices.instrument_registry.InstrumentRegistry.register()`
 method on the registry.
 
 .. code-block:: python
@@ -110,7 +110,7 @@ If you are creating many instances of a custom Device subclass,
 registering each instance individually can be repetitive. Haven allows
 you to modify the class itself so that each instance is automatically
 registered. This is accomplished using the
-:py:meth:`~haven.instrument.instrument_registry.InstrumentRegistry.register`
+:py:meth:`~haven.devices.instrument_registry.InstrumentRegistry.register`
 method as a decorator on the class:
 
 .. code-block:: python
@@ -131,9 +131,9 @@ Creating Your Own Registry
 --------------------------
 
 There is nothing special about
-:py:obj:`haven.instrument.instrument_registry.registry`; it is simply
+:py:obj:`haven.devices.instrument_registry.registry`; it is simply
 an instance of
-:py:class:`haven.instrument.instrument_registry.InstrumentRegistry`
+:py:class:`haven.devices.instrument_registry.InstrumentRegistry`
 created during module import as a default. Most of the devices and
 components defined in Haven register themselves with this default
 registry. However, there's nothing to prevent you from creating your

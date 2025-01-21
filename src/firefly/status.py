@@ -6,8 +6,8 @@ from qtpy.QtCore import Signal
 from qtpy.QtWidgets import QHBoxLayout, QSizePolicy
 
 from firefly import display
-from haven import registry
-from haven.instrument.xia_pfcu import ShutterStates
+from haven import beamline
+from haven.devices.shutter import ShutterState
 
 log = logging.getLogger(__name__)
 
@@ -31,22 +31,21 @@ class StatusDisplay(display.FireflyDisplay):
         form.removeRow(self.ui.shutter_A_layout)
         form.removeRow(self.ui.shutter_CD_layout)
         # Add widgets for shutters
-        shutters = registry.findall("shutters", allow_none=True)
+        shutters = beamline.devices.findall("shutters", allow_none=True)
         row_idx = 4
         on_color = self.ui.shutter_permit_indicator.onColor
         off_color = self.ui.shutter_permit_indicator.offColor
         for shutter in shutters[::-1]:
             # Add a layout with the buttons
             layout = QHBoxLayout()
-            name = shutter.attr_name if shutter.attr_name != "" else shutter.name
-            label = name_to_title(name) + ":"
+            label = name_to_title(shutter.name) + ":"
             form.insertRow(row_idx, label, layout)
             # Indicator to show if the shutter is open
             indicator = PyDMByteIndicator(
                 parent=self, init_channel=f"haven://{shutter.name}.readback"
             )
             # indicator.showLabels = False
-            indicator.labels = ["Closed", "Half Open"]
+            indicator.labels = ["Closed", "Fault"]
             indicator.numBits = 2
             indicator.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
             # Switch colors because open is 0 which should means "good"
@@ -58,20 +57,23 @@ class StatusDisplay(display.FireflyDisplay):
                 parent=self,
                 label="Open",
                 icon=qta.icon("mdi.window-shutter-open"),
-                pressValue=ShutterStates.OPEN,
+                pressValue=ShutterState.OPEN,
                 relative=False,
                 init_channel=f"haven://{shutter.name}.setpoint",
             )
+            print(f"{shutter.name} - {getattr(shutter, 'allow_open', True)=}")
+            open_btn.setEnabled(getattr(shutter, "allow_open", True))
             layout.addWidget(open_btn)
             # Button to close the shutter
             close_btn = PyDMPushButton(
                 parent=self,
                 label="Close",
                 icon=qta.icon("mdi.window-shutter"),
-                pressValue=ShutterStates.CLOSED,
+                pressValue=ShutterState.CLOSED,
                 relative=False,
                 init_channel=f"haven://{shutter.name}.setpoint",
             )
+            close_btn.setEnabled(getattr(shutter, "allow_close", True))
             layout.addWidget(close_btn)
 
     def customize_ui(self):

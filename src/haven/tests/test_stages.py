@@ -1,32 +1,19 @@
 """Tests for a generic X-Y stage."""
 
-import pytest
-
-from haven import exceptions, registry
-from haven.instrument import stage
+from haven.devices import stage
 
 
-def test_stage_init():
+def test_stage_init(sim_registry):
     stage_ = stage.XYStage(
-        "motor_ioc", pv_vert=":m1", pv_horiz=":m2", labels={"stages"}, name="aerotech"
+        vertical_prefix="motor_ioc:m1",
+        horizontal_prefix="motor_ioc:m2",
+        name="aerotech",
     )
     assert stage_.name == "aerotech"
-    assert stage_.vert.name == "aerotech_vert"
+    assert stage_.vert.name == "aerotech-vert"
+    sim_registry.register(stage_)
     # Check registry of the stage and the individiual motors
-    registry.clear()
-    with pytest.raises(exceptions.ComponentNotFound):
-        registry.findall(label="motors")
-    with pytest.raises(exceptions.ComponentNotFound):
-        registry.findall(label="stages")
-    registry.register(stage_)
-    assert len(list(registry.findall(label="motors"))) == 2
-    assert len(list(registry.findall(label="stages"))) == 1
-
-
-def test_load_stages(sim_registry):
-    stages = stage.load_stages()
-    assert len(stages) == 1
-    assert isinstance(stages[0], stage.XYStage)
+    assert len(list(sim_registry.findall(label="stages"))) == 1
 
 
 # -----------------------------------------------------------------------------

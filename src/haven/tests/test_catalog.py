@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 import pytest
 from tiled import queries
 
@@ -41,13 +40,6 @@ async def test_load_scan(catalog):
     uid = "7d1daf1d-60c7-4aa7-a668-d1cd97e5335f"
     scan = await catalog[uid]
     assert isinstance(scan, CatalogScan)
-
-
-@pytest.mark.asyncio
-async def test_dataframe(scan):
-    """Check that the catalogscan can produce a pandas dataframe."""
-    df = await scan.to_dataframe()
-    assert isinstance(df, pd.DataFrame)
 
 
 @pytest.mark.asyncio

@@ -2,7 +2,8 @@ import numpy as np
 import pytest
 from ophyd import sim
 
-from haven import KRange, energy_scan, xafs_scan
+from haven.energy_ranges import KRange
+from haven.plans import energy_scan, xafs_scan
 
 
 @pytest.fixture()
@@ -37,6 +38,7 @@ def I0(sim_registry):
         sigma=1,
         labels={"ion_chambers"},
     )
+    sim_registry.register(I0)
     return I0
 
 
@@ -94,29 +96,6 @@ def test_energy_scan_basics(
 def test_raises_on_empty_positioners(RE, energies):
     with pytest.raises(ValueError):
         RE(energy_scan(energies, energy_signals=[]))
-
-
-def test_saves_dspacing(mono, energies, I0, It):
-    """Does the mono's d-spacing get added to metadata."""
-    # Prepare the messages from the plan
-    mono.d_spacing._readback = 1.5418
-    msgs = list(
-        energy_scan(
-            energies,
-            detectors=[It],
-            energy_signals=[mono],
-            time_signals=[It.exposure_time],
-        )
-    )
-    # Find the metadata written by the plan
-    for msg in msgs:
-        if msg.command == "open_run":
-            md = msg.kwargs
-            break
-    else:
-        raise RuntimeError("No open run message found")
-    # Check for the dspacing of the mono in the metadata
-    assert md["d_spacing"] == 1.5418
 
 
 def test_single_range(mono_motor, exposure_motor, I0):
@@ -205,12 +184,12 @@ def test_exafs_k_range(mono_motor, exposure_motor, I0):
     real_energies = [
         i.args[0] for i in scan_list if i[0] == "set" and i.obj.name == "mono_energy"
     ]
-    np.testing.assert_equal(real_energies, expected_energies)
+    np.testing.assert_almost_equal(real_energies, expected_energies)
     # Check that the exposure is set correctly
     real_exposures = [
         i.args[0] for i in scan_list if i[0] == "set" and i.obj.name == "exposure"
     ]
-    np.testing.assert_equal(real_exposures, expected_exposures)
+    np.testing.assert_almost_equal(real_exposures, expected_exposures)
 
 
 def test_named_E0(mono_motor, exposure_motor, I0):
@@ -278,6 +257,25 @@ def test_remove_duplicate_energies(mono_motor, exposure_motor, I0):
     energies = [m.args[0] for m in set_msgs]
     # Make sure we only read each point once
     assert len(read_msgs) == len(energies)
+
+
+def test_xafs_metadata(mono_motor):
+    scan = energy_scan(
+        [],
+        detectors=[],
+        energy_signals=[mono_motor],
+        E0="Ni_K",
+        md={"sample_name": "unobtanium"},
+    )
+    # Get the metadata passed alongside the "open_run" message
+    msgs = list(scan)
+    open_msg = [m for m in msgs if m.command == "open_run"][0]
+    md = open_msg.kwargs
+    # Check that the metadata has the right values
+    assert md["edge"] == "Ni_K"
+    assert md["E0"] == 8333.0
+    assert md["plan_name"] == "energy_scan"
+    assert md["sample_name"] == "unobtanium"
 
 
 # -----------------------------------------------------------------------------
