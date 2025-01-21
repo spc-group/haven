@@ -24,7 +24,7 @@ from haven.motor_position import get_motor_position, get_motor_positions
 
 log = logging.getLogger()
 
-test = False
+test = True
 if test:
     # Fake client for testing purpose
     def create_fake_client():

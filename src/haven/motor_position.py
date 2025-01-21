@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import Mapping, Sequence
 
 import intake
+import re
 from bluesky import plan_stubs as bps
 from bluesky import plans as bp
 from pydantic import BaseModel
@@ -22,6 +23,10 @@ __all__ = [
     "recall_motor_position",
     "list_current_motor_positions",
 ]
+
+def regex_match(pattern, string):
+    "Regex match since SQL doesn't natively support regex."
+    return re.match(pattern, string) is not None
 
 
 class MotorAxis(BaseModel):
@@ -243,6 +248,7 @@ async def get_motor_positions(
         runs = await runs.search(Key("start.time") > after)
     # Filter by position name
     if name is not None:
+        # breakpoint()
         runs = await runs.search(
             Contains("start.position_name", name)
         )
