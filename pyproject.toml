@@ -1,6 +1,6 @@
 [project]
 name = "haven-spc"
-version = "2024.11.0"
+version = "2025.01.0"
 authors = [
   { name="Mark Wolfman", email="wolfman@anl.gov" },
 ]
