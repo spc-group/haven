@@ -270,11 +270,19 @@ bluesky_mapping = {
             ),
         },
         metadata={
-            "plan_name": "xafs_scan",
             "start": {
                 "plan_name": "xafs_scan",
+                "esaf_id": "1337",
+                "proposal_id": "158839",
+                "beamline_id": "255-ID-Z",
+                "sample_name": "NMC-532",
+                "sample_formula": "LiNi0.5Mn0.3Co0.2O2",
+                "edge": "Ni-K",
                 "uid": "7d1daf1d-60c7-4aa7-a668-d1cd97e5335f",
                 "hints": {"dimensions": [[["energy_energy"], "primary"]]},
+            },
+            "stop": {
+                "exit_status": "success",
             },
         },
     ),
@@ -347,6 +355,7 @@ bluesky_mapping = {
 
 mapping = {
     "255id_testing": MapAdapter(bluesky_mapping),
+    "255bm_testing": MapAdapter(bluesky_mapping),
 }
 
 tree = MapAdapter(mapping)
@@ -357,13 +366,12 @@ def tiled_client():
     app = build_app(tree)
     with Context.from_app(app) as context:
         client = from_context(context)
-        yield client["255id_testing"]
+        yield client
 
 
 @pytest.fixture()
 def catalog(tiled_client):
-    cat = Catalog(client=tiled_client)
-    # cat = mock.AsyncMock()
+    cat = Catalog(client=tiled_client["255id_testing"])
     return cat
 
 
