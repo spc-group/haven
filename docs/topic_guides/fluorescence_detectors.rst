@@ -68,8 +68,38 @@ The device can then be retrieved by its name for use in Bluesky plans.
    detectors = haven.beamline.devices.findall(label="fluorescence_detectors")
 
 
+Adding NDAttributes (Xspress3)
+=============================
+
+In order to correct for the detector deadtime, we need to record some
+additional deadtime values from the detector. To do this, we need to
+instruct the IOC to add these values to the HDF file, and also need to
+let Bluesky know which values are in the HDF5 file and where. The
+EPICS support for an Xspress3 detector provides several additional
+values besides the spectra, many of them useful for dead-time
+correction. These can be saved using the Ophyd-async NDAttribute
+support. The Xspress3 device support in Haven will generate these
+parameters and set them on the IOC during staging in a way that allows
+Tiled to read the resulting values from the HDF5 file alongside the
+image data itself.
+
+
+.. note::
+
+   The EPICS waveform record holding the XML for these attributes is
+   256 characters long by default. This is not long enough for all but
+   the most trivial cases. If trying to run ``setup_ndattributes``
+   raises a channel access error, this record may need updating.
+
+   Look for a file in the EPICS base folder like
+   ``areaDetector/ADCore/ADApp/Db/NDArrayBase.template`` and change
+   the length for the NDAttribute record. ``20000`` is large enough
+   for up to ~20 elements. Then run ``make`` in the AD top directory
+   and the xspress top directory.
+
+
 Why can't I…
-############
+============
 
 Previously, some steps were performed during data acquisition by the
 IOC that have now been moved to other parts of the system. These

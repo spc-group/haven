@@ -23,14 +23,17 @@ beamline = "255-ID-C"
 # to determine how to interact with the queue.
 
 [queueserver]
-kafka_topic = "s255idc_queueserver"
 control_host = "localhost"
 control_port = "60615"
 info_host = "localhost"
 info_port = "60625"
 redis_addr = "localhost:6379"
 
-[database.tiled]
+[kafka]
+servers = ["fedorov.xray.aps.anl.gov:9092"]
+topic = "bluesky.documents.haven-dev"
+
+[tiled]
 uri = "http://localhost:8337/"
 default_catalog = "255id_testing"
 cache_filepath = "/tmp/tiled_cache/http_response_cache.db"
