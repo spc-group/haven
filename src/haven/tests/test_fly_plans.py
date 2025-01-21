@@ -3,19 +3,18 @@ from unittest.mock import MagicMock
 
 import numpy as np
 import pytest
-from ophyd import EpicsMotor, sim
+from ophyd import sim
+from ophyd_async.epics.motor import Motor
 
-from haven.instrument.motor_flyer import MotorFlyer
-from haven.plans.fly import FlyerCollector, fly_scan, grid_fly_scan
+from haven.plans import fly_scan, grid_fly_scan
+from haven.plans._fly import FlyerCollector
+from haven.preprocessors import baseline_decorator
 
 
 @pytest.fixture()
 def flyer(sim_registry, mocker):
-    Motor = type("Motor", (MotorFlyer, EpicsMotor), {})
-    m = sim.instantiate_fake_device(Motor, name="m1")
-    mocker.patch.object(m, "move")
-    m.user_setpoint._use_limits = False
-    return m
+    m1 = Motor("255idcVME:m1", name="m1")
+    return m1
 
 
 def test_set_fly_params(flyer):
@@ -23,7 +22,7 @@ def test_set_fly_params(flyer):
     # step size == 10
     plan = fly_scan([], flyer, -20, 30, num=6, dwell_time=1.5)
     messages = list(plan)
-    prep_msg = messages[3]
+    prep_msg = messages[4]
     assert prep_msg.command == "prepare"
     prep_info = prep_msg.args[0]
     assert prep_info.start_position == -20
@@ -31,25 +30,25 @@ def test_set_fly_params(flyer):
     assert prep_info.time_for_move == 9.0
 
 
-def test_fly_scan_metadata(aerotech_flyer, sim_ion_chamber):
+def test_fly_scan_metadata(flyer, ion_chamber):
     """Does the plan set the parameters of the flyer motor."""
-    flyer = aerotech_flyer
     md = {"spam": "eggs"}
-    plan = fly_scan([sim_ion_chamber], flyer, -20, 30, num=6, dwell_time=1, md=md)
+    print(baseline_decorator)
+    plan = fly_scan([ion_chamber], flyer, -20, 30, num=6, dwell_time=1, md=md)
     messages = list(plan)
     open_msg = messages[1]
     assert open_msg.command == "open_run"
     real_md = open_msg.kwargs
     expected_md = {
         "plan_args": {
-            "detectors": list([repr(sim_ion_chamber)]),
+            "detectors": list([repr(ion_chamber)]),
             "num": 6,
-            "dwell_time": 1.0,
+            "dwell_time": 1,
             "*args": (repr(flyer), -20, 30),
         },
         "plan_name": "fly_scan",
-        "motors": ["aerotech_horiz"],
-        "detectors": ["I00"],
+        "motors": [flyer.name],
+        "detectors": [ion_chamber.name],
         "spam": "eggs",
     }
     assert real_md == expected_md

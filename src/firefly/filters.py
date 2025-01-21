@@ -4,7 +4,7 @@ from typing import Sequence
 from pydm.widgets import PyDMEmbeddedDisplay
 
 from firefly import display
-from haven import registry
+from haven import beamline
 
 
 class FiltersDisplay(display.FireflyDisplay):
@@ -14,10 +14,8 @@ class FiltersDisplay(display.FireflyDisplay):
         return "filters.ui"
 
     def customize_device(self):
-        filters = registry.findall(label="filters", allow_none=True)
-        self.filters = sorted(
-            filters, key=lambda dev: (dev.material.get(), dev.thickness.get())
-        )
+        filters = beamline.devices.findall(label="filters", allow_none=True)
+        self.filters = sorted(filters, key=lambda dev: dev.name)
 
     def customize_ui(self):
         # Delete existing filter widgets

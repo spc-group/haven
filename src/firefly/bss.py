@@ -6,8 +6,8 @@ from dm.common.exceptions.objectNotFound import ObjectNotFound
 from qtpy.QtCore import Signal
 from qtpy.QtGui import QStandardItem, QStandardItemModel
 
-import haven
 from firefly import display
+from haven import beamline, load_config
 
 log = logging.getLogger(__name__)
 
@@ -51,10 +51,10 @@ class BssDisplay(display.FireflyDisplay):
         self.ui.refresh_models_button.setIcon(qta.icon("fa5s.sync"))
 
     def customize_device(self):
-        self._device = haven.registry.find("beamline_manager")
+        self._device = beamline.devices["beamline_manager"]
 
     def proposals(self):
-        config = haven.load_config()
+        config = load_config()
         proposals = []
         beamline = self._device.bss.proposal.beamline_name.get()
         cycle = self._device.bss.esaf.aps_cycle.get()
@@ -79,7 +79,7 @@ class BssDisplay(display.FireflyDisplay):
         return proposals
 
     def esafs(self):
-        config = haven.load_config()
+        config = load_config()
         esafs_ = []
         beamline = self._device.bss.proposal.beamline_name.get()
         cycle = self._device.bss.esaf.aps_cycle.get()
@@ -104,7 +104,7 @@ class BssDisplay(display.FireflyDisplay):
         return esafs_
 
     def load_models(self):
-        config = haven.load_config()
+        config = load_config()
         # Create proposal model object
         col_names = self._proposal_col_names
         self.proposal_model = QStandardItemModel()
@@ -143,7 +143,7 @@ class BssDisplay(display.FireflyDisplay):
     def update_proposal(self):
         new_id = self._proposal_id
         # Change the proposal in the EPICS record
-        bss = haven.registry.find("beamline_manager.bss")
+        bss = beamline.devices["beamline_manager.bss"]
         bss.proposal.proposal_id.set(new_id).wait()
         # Notify any interested parties that the proposal has been changed
         self.proposal_changed.emit()
@@ -160,7 +160,7 @@ class BssDisplay(display.FireflyDisplay):
     def update_esaf(self):
         new_id = self._esaf_id
         # Change the esaf in the EPICS record
-        bss = haven.registry.find("beamline_manager.bss")
+        bss = beamline.devices["beamline_manager.bss"]
         bss.wait_for_connection()
         bss.esaf.esaf_id.set(new_id).wait(timeout=5)
         # Notify any interested parties that the esaf has been changed

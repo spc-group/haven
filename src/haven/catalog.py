@@ -1,13 +1,15 @@
 import asyncio
 import logging
+import os
 import sqlite3
 import threading
 import warnings
+from concurrent.futures import ThreadPoolExecutor
 from functools import partial
+from typing import Sequence
 
 import databroker
 import numpy as np
-import pandas as pd
 from tiled.client import from_uri
 from tiled.client.cache import Cache
 
@@ -170,20 +172,25 @@ class ThreadSafeCache(Cache):
 
 
 def tiled_client(
-    entry_node=None, uri=None, cache_filepath=None, structure_clients="dask"
+    entry_node=None, uri=None, cache_filepath=None, structure_clients="numpy"
 ):
     config = load_config()
+    tiled_config = config["database"].get("tiled", {})
     # Create a cache for saving local copies
     if cache_filepath is None:
-        cache_filepath = config["database"].get("tiled", {}).get("cache_filepath", "")
-        cache_filepath = cache_filepath or None
-    cache = ThreadSafeCache(filepath=cache_filepath)
+        cache_filepath = tiled_config.get("cache_filepath", "")
+    if os.access(cache_filepath, os.W_OK):
+        cache = ThreadSafeCache(filepath=cache_filepath)
+    else:
+        warnings.warn(f"Cache file is not writable: {cache_filepath}")
+        cache = None
     # Create the client
     if uri is None:
-        uri = config["database"]["tiled"]["uri"]
-    client_ = from_uri(uri, structure_clients)
+        uri = tiled_config["uri"]
+    api_key = tiled_config.get("api_key")
+    client_ = from_uri(uri, structure_clients, api_key=api_key)
     if entry_node is None:
-        entry_node = config["database"]["tiled"]["entry_node"]
+        entry_node = tiled_config["entry_node"]
     client_ = client_[entry_node]
     return client_
 
@@ -193,15 +200,24 @@ class CatalogScan:
 
     Parameters
     ==========
-      A tiled container on which to operate."""
+      A tiled container on which to operate.
+    """
 
-    def __init__(self, container):
+    def __init__(self, container, executor=None):
         self.container = container
+        self.executor = executor
 
-    def _read_data(self, signals):
-        # Fetch data if needed
-        data = self.container["primary"]["data"]
-        return data.read(signals)
+    def _read_data(
+        self, signals: Sequence | None, dataset: str = "primary/internal/events"
+    ):
+        data = self.container[dataset]
+        if signals is None:
+            return data.read()
+        # Remove duplicates and missing signals
+        signals = set(signals)
+        available_signals = set(data.columns)
+        signals = signals & available_signals
+        return data.read()
 
     def _read_metadata(self, keys=None):
         container = self.container
@@ -213,6 +229,10 @@ class CatalogScan:
     def uid(self):
         return self.container._item["id"]
 
+    async def run(self, to_call, *args):
+        """Run the given syncronous callable in an asynchronous context."""
+        return await self.loop.run_in_executor(self.executor, to_call, *args)
+
     async def export(self, filename: str, format: str):
         target = partial(self.container.export, filename, format=format)
         await self.loop.run_in_executor(None, target)
@@ -220,18 +240,20 @@ class CatalogScan:
     def formats(self):
         return self.container.formats
 
-    async def to_dataframe(self, signals=None):
-        """Convert the dataset into a pandas dataframe."""
-        xarray = await self.loop.run_in_executor(None, self._read_data, signals)
-        if len(xarray) > 0:
-            df = xarray.to_dataframe()
-        else:
-            df = pd.DataFrame()
-        return df
+    async def data(self, signals=None, stream="primary"):
+        return await self.loop.run_in_executor(
+            None, self._read_data, signals, f"{stream}/internal/events/"
+        )
 
     @property
     def loop(self):
         return asyncio.get_running_loop()
+
+    def _data_keys(self, stream):
+        return self.container[stream]["internal/events"].columns
+
+    async def data_keys(self, stream="primary"):
+        return await self.run(self._data_keys, ("primary",))
 
     async def hints(self):
         """Retrieve the data hints for this scan.
@@ -251,23 +273,20 @@ class CatalogScan:
             warnings.warn("Could not get independent hints")
         # Get hints for the dependent (X)
         dependent = []
-        primary_metadata = await self.loop.run_in_executor(
-            None, self._read_metadata, "primary"
-        )
-        hints = primary_metadata["descriptors"][0]["hints"]
+        primary_metadata = await self.run(self._read_metadata, "primary")
+        hints = primary_metadata["hints"]
         for device, dev_hints in hints.items():
             dependent.extend(dev_hints["fields"])
         return independent, dependent
 
     @property
     async def metadata(self):
-        metadata = await self.loop.run_in_executor(None, self._read_metadata)
+        metadata = await self.run(self._read_metadata)
         return metadata
 
     async def __getitem__(self, signal):
         """Retrieve a signal from the dataset, with reshaping etc."""
-        loop = asyncio.get_running_loop()
-        arr = await loop.run_in_executor(None, self._read_data, tuple([signal]))
+        arr = await self.run(self._read_data, tuple([signal]))
         arr = np.asarray(arr[signal])
         # Re-shape to match the scan dimensions
         metadata = await self.metadata
@@ -296,6 +315,14 @@ class Catalog:
 
     def __init__(self, client=None):
         self._client = client
+        self.executor = ThreadPoolExecutor()
+
+    def __del__(self):
+        self.executor.shutdown(wait=True, cancel_futures=True)
+
+    async def run(self, to_call, *args):
+        """Run the given syncronous callable in an asynchronous context."""
+        return await self.loop.run_in_executor(self.executor, to_call, *args)
 
     @property
     def loop(self):
@@ -304,29 +331,29 @@ class Catalog:
     @property
     async def client(self):
         if self._client is None:
-            self._client = await self.loop.run_in_executor(None, tiled_client)
+            self._client = await self.run(tiled_client)
         return self._client
 
     async def __getitem__(self, uid) -> CatalogScan:
         client = await self.client
-        container = await self.loop.run_in_executor(None, client.__getitem__, uid)
-        scan = CatalogScan(container=container)
+        container = await self.run(client.__getitem__, uid)
+        scan = CatalogScan(container=container, executor=self.executor)
         return scan
 
     async def items(self):
         client = await self.client
-        for key, value in await self.loop.run_in_executor(None, client.items):
-            yield key, CatalogScan(container=value)
+        for key, value in await self.run(client.items):
+            yield key, CatalogScan(container=value, executor=self.executor)
 
     async def values(self):
         client = await self.client
-        containers = await self.loop.run_in_executor(None, client.values)
+        containers = await self.run(client.values)
         for container in containers:
-            yield CatalogScan(container)
+            yield CatalogScan(container, executor=self.executor)
 
     async def __len__(self):
         client = await self.client
-        length = await self.loop.run_in_executor(None, client.__len__)
+        length = await self.run(client.__len__)
         return length
 
     async def search(self, query):
@@ -341,7 +368,7 @@ class Catalog:
         """
         loop = asyncio.get_running_loop()
         client = await self.client
-        return Catalog(await loop.run_in_executor(None, client.search, query))
+        return Catalog(await loop.run_in_executor(self.executor, client.search, query))
 
     async def distinct(
         self, *metadata_keys, structure_families=False, specs=False, counts=False
@@ -370,7 +397,7 @@ class Catalog:
             specs=specs,
             counts=counts,
         )
-        return await loop.run_in_executor(None, query)
+        return await loop.run_in_executor(self.executor, query)
 
 
 # Create a default catalog for basic usage

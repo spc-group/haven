@@ -2,9 +2,11 @@ import asyncio
 import logging
 
 from qasync import asyncSlot
+from qtpy.QtCore import Signal
 
 from firefly import display
 from firefly.plans.util import is_valid_value, time_converter
+from haven import sanitize_name
 
 log = logging.getLogger()
 
@@ -42,6 +44,9 @@ class RegionsDisplay(display.FireflyDisplay):
     default_num_regions = 1
     Region = RegionBase
 
+    scan_time_changed = Signal(float)
+    total_time_changed = Signal(float)
+
     def customize_ui(self):
         # Remove the default layout from .ui file
         try:
@@ -51,7 +56,6 @@ class RegionsDisplay(display.FireflyDisplay):
 
         # Disable the line edits in spin box (use up/down buttons instead)
         self.ui.num_motor_spin_box.lineEdit().setReadOnly(True)
-
         # Create the initial (blank) regions
         self.regions = []
         self.ui.num_motor_spin_box.setValue(self.default_num_regions)
@@ -59,6 +63,23 @@ class RegionsDisplay(display.FireflyDisplay):
         # Set up the mechanism for changing region number
         self.ui.num_motor_spin_box.valueChanged.connect(self.update_regions_slot)
         self.ui.run_button.clicked.connect(self.queue_plan)
+        # Color highlights for relative checkbox
+        if hasattr(self, "relative_scan_checkbox"):
+            self.ui.relative_scan_checkbox.stateChanged.connect(self.change_background)
+
+    def change_background(self, state):
+        """
+        Change the background color of the relative scan checkbox based on its state.
+        """
+        if state:  # Checked
+            self.ui.relative_scan_checkbox.setStyleSheet(
+                "background-color: rgb(255, 85, 127);"
+            )
+
+        else:  # Unchecked
+            self.ui.relative_scan_checkbox.setStyleSheet(
+                "background-color: rgb(0, 170, 255);"
+            )
 
     @asyncSlot(object)
     async def update_devices(self, registry):
@@ -133,18 +154,25 @@ class RegionsDisplay(display.FireflyDisplay):
             ]
             await asyncio.gather(*aws)
 
-    def update_total_time(self):
+    async def _get_time(self, detector):
+        """Get the dwell time value for a given detector."""
+        time_signal = detector.default_time_signal
+        if hasattr(time_signal, "get_value"):
+            return await time_signal.get_value()
+        return time_signal.get()
+
+    @asyncSlot()
+    async def update_total_time(self):
         # get default detector time
         detectors = self.ui.detectors_list.selected_detectors()
         detectors = [self.registry[name] for name in detectors]
         detectors = [det for det in detectors if hasattr(det, "default_time_signal")]
 
         # to prevent detector list is empty
-        try:
-            detector_time = max([det.default_time_signal.get() for det in detectors])
-        except ValueError:
+        if len(detectors) == 0:
             detector_time = float("nan")
-
+        else:
+            detector_time = max([await self._get_time(det) for det in detectors])
         # get scan num points to calculate total time
         total_time_per_scan = self.time_per_scan(detector_time)
 
@@ -154,6 +182,8 @@ class RegionsDisplay(display.FireflyDisplay):
         self.ui.label_min_scan.setText(str(mins))
         self.ui.label_sec_scan.setText(str(secs))
 
+        self.scan_time_changed.emit(total_time_per_scan)
+
         # calculate time for entire plan
         num_scan_repeat = self.ui.spinBox_repeat_scan_num.value()
         total_time = num_scan_repeat * total_time_per_scan
@@ -162,6 +192,7 @@ class RegionsDisplay(display.FireflyDisplay):
         self.ui.label_hour_total.setText(str(hrs_total))
         self.ui.label_min_total.setText(str(mins_total))
         self.ui.label_sec_total.setText(str(secs_total))
+        self.total_time_changed.emit(total_time)
 
     def time_per_scan(self, detector_time):
         raise NotImplementedError
@@ -174,7 +205,9 @@ class RegionsDisplay(display.FireflyDisplay):
         # Get paramters from each rows of line regions:
         motor_lst, start_lst, stop_lst = [], [], []
         for region_i in self.regions:
-            motor_lst.append(region_i.motor_box.current_component().name)
+            motor_name = region_i.motor_box.current_component().name
+            motor_name = sanitize_name(motor_name)
+            motor_lst.append(motor_name)
             start_lst.append(float(region_i.start_line_edit.text()))
             stop_lst.append(float(region_i.stop_line_edit.text()))
 
@@ -189,7 +222,7 @@ class RegionsDisplay(display.FireflyDisplay):
     def get_meta_data(self):
         # Get meta data info
         md = {
-            "sample": self.ui.lineEdit_sample.text(),
+            "sample_name": self.ui.lineEdit_sample.text(),
             "purpose": self.ui.lineEdit_purpose.text(),
             "notes": self.ui.textEdit_notes.toPlainText(),
         }
