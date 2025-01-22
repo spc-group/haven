@@ -11,6 +11,21 @@ async def worker(tiled_client):
 
 
 @pytest.mark.asyncio
+async def test_data_keys(worker):
+    uids = (await worker.catalog.client).keys()
+    await worker.load_selected_runs(uids)
+    data_keys = await worker.data_keys("primary")
+    assert "I0-mcs-scaler-channels-0-net_count" in data_keys
+
+
+@pytest.mark.asyncio
+async def test_hints(worker):
+    uids = (await worker.catalog.client).keys()
+    await worker.load_selected_runs(uids)
+    ihints, dhints = await worker.hints("primary")
+
+
+@pytest.mark.asyncio
 async def test_catalog_names(worker):
     assert (await worker.catalog_names()) == ["255id_testing", "255bm_testing"]
 

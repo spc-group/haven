@@ -207,7 +207,7 @@ async def test_update_1d_plot(catalog, display):
     assert display.plot_1d_view.autoRange.called
 
 
-def test_autorange_button(display, qtbot):
+def test_autorange_button(display):
     display.plot_1d_view = MagicMock()
     display.ui.autorange_1d_button.click()
     assert display.plot_1d_view.autoRange.called
@@ -456,6 +456,12 @@ async def test_stream_choices(display, tiled_client):
     combobox = display.ui.stream_combobox
     items = [combobox.itemText(idx) for idx in range(combobox.count())]
     assert items == ["primary", "baseline"]
+
+
+async def test_retrieve_dataset(display):
+    slot = MagicMock()
+    await display.retrieve_dataset("ge_8element", slot, "testing")
+    assert slot.called
 
 
 # -----------------------------------------------------------------------------

@@ -205,7 +205,8 @@ class CatalogScan:
 
     @run_in_executor
     def data_keys(self, stream: str = "primary"):
-        return self.container[f"{stream}/internal/events"].columns
+        data_keys = self.container[stream].metadata.get('data_keys')
+        return data_keys or {}
 
     async def hints(self, stream: str = "primary"):
         """Retrieve the data hints for this scan.
@@ -242,7 +243,6 @@ class CatalogScan:
         assert keys != "", "Metadata keys cannot be ''."
         container = self.container
         if keys is not None:
-            print(f"{container=}, {keys=}")
             container = container[keys]
         return container.metadata
 

@@ -2,7 +2,7 @@ import asyncio
 import datetime as dt
 import logging
 import warnings
-from collections import OrderedDict
+from collections import OrderedDict, ChainMap
 from functools import partial
 from typing import Mapping, Sequence
 
@@ -48,6 +48,11 @@ class DatabaseWorker:
         # Flatten the lists
         streams = [stream for streams in all_streams for stream in streams]
         return list(set(streams))
+
+    async def data_keys(self, stream: str):
+        aws = [run.data_keys(stream=stream) for run in self.selected_runs]
+        keys = await asyncio.gather(*aws)
+        return ChainMap(*keys)
 
     async def filtered_nodes(self, filters: Mapping):
         case_sensitive = False
@@ -150,7 +155,22 @@ class DatabaseWorker:
             all_runs.append(run_data)
         return all_runs
 
+    async def hints(self, stream: str="primary") -> tuple[list, list]:
+        """Get hints for this stream, as two lists.
+
+        (*independent_hints*, *dependent_hints*)
+
+        *independent_hints* are those operated by the experiment,
+         while *dependent_hints* are those measured as a result.
+        """
+        aws = [run.hints(stream) for run in self.selected_runs]
+        all_hints = await asyncio.gather(*aws)
+        return zip(*all_hints)
+
+        
+
     async def signal_names(self, stream: str, *, hinted_only: bool = False):
+
         """Get a list of valid signal names (data columns) for selected runs.
 
         Parameters
@@ -224,6 +244,35 @@ class DatabaseWorker:
             df = await run.data(signals=xsignals + ysignals, stream=stream)
             dfs[run.uid] = df
         return dfs
+
+    async def dataset(
+        self,
+            dataset_name: str,
+        *,
+        stream: str,
+        uids: Sequence[str] | None = None,
+    ) -> Mapping:
+        """Produce a dictionary with the n-dimensional datasets for plotting.
+
+        The keys of the dictionary are the UIDs for each scan, and
+        the corresponding value is a pandas dataset with the data for
+        each signal.
+
+        Parameters
+        ==========
+        uids
+          If not ``None``, only runs with UIDs listed in this
+          parameter will be included.
+
+        """
+        # Build the dataframes
+        arrays = OrderedDict()
+        for run in self.selected_runs:
+            # Get data from the database
+            arr = await run.dataset(dataset_name, stream=stream)
+            arrays[run.uid] = arr
+        return arrays
+
 
     async def signals(
         self,

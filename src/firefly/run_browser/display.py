@@ -1,18 +1,19 @@
 import asyncio
 import datetime as dt
 import logging
-from collections import Counter
+from collections import Counter, ChainMap
 from contextlib import contextmanager
 from functools import partial, wraps
 from typing import Mapping, Optional, Sequence
 
 import qtawesome as qta
 import yaml
+import numpy as np
 from ophyd import Device as ThreadedDevice
 from ophyd_async.core import Device
 from pydm import PyDMChannel
 from qasync import asyncSlot
-from qtpy.QtCore import QDateTime, Qt
+from qtpy.QtCore import QDateTime, Qt, Signal
 from qtpy.QtGui import QStandardItem, QStandardItemModel
 from tiled.client.container import Container
 
@@ -55,6 +56,8 @@ class RunBrowserDisplay(display.FireflyDisplay):
 
     proposal_channel: PyDMChannel
     esaf_channel: PyDMChannel
+    # (data keys, experiment hints, signal hints)
+    data_keys_changed = Signal(ChainMap, list, list)
 
     export_dialog: Optional[ExportDialog] = None
 
@@ -87,6 +90,24 @@ class RunBrowserDisplay(display.FireflyDisplay):
             asyncio.gather(self.load_runs(), self.update_combobox_items()),
             name="change_catalog",
         )
+
+    @asyncSlot(str)
+    async def retrieve_dataset(self, dataset_name: str, callback, task_name: str) -> np.ndarray:
+        """Retrieve a dataset from disk, and provide it to the slot.
+
+        Parameters
+        ==========
+        dataset_name
+          The name in the Tiled catalog of the dataset to retrieve.
+        callback
+          Will be called with the retrieved dataset.
+        task_name
+          For handling parallel database tasks.
+       """
+        # Retrieve data from the database
+        data = await self.db_task(self.db.dataset(dataset_name, stream=self.stream), task_name)
+        # Pass it back to the slot
+        callback(data)
 
     def db_task(self, coro, name="default task"):
         """Executes a co-routine as a database task. Existing database
@@ -219,13 +240,15 @@ class RunBrowserDisplay(display.FireflyDisplay):
         # Respond to controls for the current run
         self.ui.export_button.clicked.connect(self.export_runs)
         self.ui.reload_plots_button.clicked.connect(self.update_plots)
-        # Set up 1D plotting widgets
+        # Set up plotting widgets
         self.plot_1d_item = self.ui.plot_1d_view.getPlotItem()
         self.plot_2d_item = self.ui.plot_2d_view.getImageItem()
         self.plot_1d_item.addLegend()
         self.plot_1d_item.hover_coords_changed.connect(
             self.ui.hover_coords_label.setText
         )
+        # Connect to signals for individual tabs
+        self.data_keys_changed.connect(self.ui.xrf_view.update_signal_widgets)
         # Create a new export dialog for saving files
         self.export_dialog = ExportDialog(parent=self)
 
@@ -587,6 +610,16 @@ class RunBrowserDisplay(display.FireflyDisplay):
             self.update_multi_plot(),
         )
 
+    @cancellable
+    async def update_data_keys(self, *args):
+        stream = self.ui.stream_combobox.currentText() 
+        data_keys, hints = await asyncio.gather(
+            self.db_task(self.db.data_keys(stream), "update data keys"),
+            self.db_task(self.db.hints(stream), "update data hints"),
+        )
+        independent_hints, dependent_hints = hints
+        self.data_keys_changed.emit(data_keys, list(independent_hints), list(dependent_hints))
+
     @asyncSlot()
     @cancellable
     async def update_selected_runs(self, *args):
@@ -602,11 +635,12 @@ class RunBrowserDisplay(display.FireflyDisplay):
             )
             self.selected_runs = await task
             # Update the necessary UI elements
+            await               self.update_streams()
             await asyncio.gather(
                 self.update_multi_signals(),
                 self.update_1d_signals(),
                 self.update_2d_signals(),
-                self.update_streams(),
+                self.update_data_keys(),
             )
             # Update the plots
             self.clear_plots()
