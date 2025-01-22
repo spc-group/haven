@@ -125,19 +125,6 @@
                  </property>
                 </widget>
                </item>
-               <item>
-                <widget class="QCheckBox" name="ExposureCheckBox">
-                 <property name="text">
-                  <string>Continuous</string>
-                 </property>
-                 <property name="channel" stdset="0">
-                  <string>haven://${AD}.drv.acquire_time_auto</string>
-                 </property>
-                 <property name="pressValue" stdset="0">
-                  <string>2</string>
-                 </property>
-                </widget>
-               </item>
               </layout>
              </item>
              <item row="3" column="0">
@@ -169,19 +156,6 @@
                  </property>
                  <property name="alignment">
                   <set>Qt::AlignCenter</set>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QCheckBox" name="GainCheckBox">
-                 <property name="text">
-                  <string>Continuous</string>
-                 </property>
-                 <property name="channel" stdset="0">
-                  <string>haven://${AD}.drv.gain_auto</string>
-                 </property>
-                 <property name="pressValue" stdset="0">
-                  <string>2</string>
                  </property>
                 </widget>
                </item>
@@ -303,6 +277,19 @@
                  </property>
                 </widget>
                </item>
+               <item>
+                <widget class="QCheckBox" name="ExposureCheckBox">
+                 <property name="text">
+                  <string>Continuous</string>
+                 </property>
+                 <property name="channel" stdset="0">
+                  <string>haven://${AD}.drv.acquire_time_auto</string>
+                 </property>
+                 <property name="pressValue" stdset="0">
+                  <string>2</string>
+                 </property>
+                </widget>
+               </item>
               </layout>
              </item>
              <item row="0" column="0">
@@ -350,6 +337,19 @@
                  </property>
                  <property name="pressValue" stdset="0">
                   <string>1</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QCheckBox" name="GainCheckBox">
+                 <property name="text">
+                  <string>Continuous</string>
+                 </property>
+                 <property name="channel" stdset="0">
+                  <string>haven://${AD}.drv.gain_auto</string>
+                 </property>
+                 <property name="pressValue" stdset="0">
+                  <string>2</string>
                  </property>
                 </widget>
                </item>
