@@ -4,7 +4,7 @@ import numpy as np
 import pydm
 import pyqtgraph
 import pytest
-from pyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt
 
 from firefly.area_detector_viewer import AreaDetectorViewerDisplay
 

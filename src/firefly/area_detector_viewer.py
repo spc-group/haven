@@ -34,7 +34,7 @@ class AreaDetectorViewerDisplay(display.FireflyDisplay):
 
         # Connect Exposure signals to slots
         self.exposure_checkbox.stateChanged.connect(self.handle_exposure_checkbox_change)
-        self.exposure_push_button.clicked.connect(self.set_exposure_auto)
+        self.exposure_push_button.clicked.connect(self.handle_exposure_push_button_click)
 
         # Access Gain widgets
         self.gain_checkbox = self.findChild(QCheckBox, 'GainCheckBox')
@@ -42,7 +42,7 @@ class AreaDetectorViewerDisplay(display.FireflyDisplay):
 
         # Connect Gain signals to slots
         self.gain_checkbox.stateChanged.connect(self.handle_gain_checkbox_change)
-        self.gain_push_button.clicked.connect(self.set_gain_auto)
+        self.gain_push_button.clicked.connect(self.handle_gain_push_button_click)
 
     def customize_device(self):
         device_name = name = self.macros()["AD"]
@@ -97,22 +97,41 @@ class AreaDetectorViewerDisplay(display.FireflyDisplay):
 
     @pyqtSlot(int)
     def handle_exposure_checkbox_change(self, state):
-    """
-    Handle the Exposure checkbox state change.
-    Disable the LineEdit when the checkbox is checked.
-    """
-    if state == 2:  # Checked
-        self.exposure_push_button.setEnabled(False) 
-    else:  # Checkbox is unchecked
-        self.exposure_push_button.setEnabled(True)
+        """
+        Handle the exposure checkbox state change.
+        Disable the push button when the checkbox is checked.
+        """
+        if state == 2:  # Checked
+            self.exposure_push_button.setEnabled(False) 
+        else:  # Checkbox is unchecked
+            self.exposure_push_button.setEnabled(True)
 
     @pyqtSlot()
     def handle_exposure_push_button_click(self):
-    """
-    Handle the Exposure push button click.
-    Disable the LineEdit when the button is clicked.
-    """
-    self.exposure_checkbox.setChecked(False)  
+        """
+        Handle the exposure push button click.
+        Disable the checkbox when the button is clicked.
+        """
+        self.exposure_checkbox.setChecked(False)  
+
+    @pyqtSlot(int)
+    def handle_gain_checkbox_change(self, state):
+        """
+        Handle the gain checkbox state change.
+        Disable the push button when the checkbox is checked.
+        """
+        if state == 2:  # Checked
+            self.exposure_push_button.setEnabled(False)
+        else:  # Checkbox is unchecked
+            self.gain_push_button.setEnabled(True)
+
+    @pyqtSlot()
+    def handle_gain_push_button_click(self):
+        """
+        Handle the gain push button click.
+        Disable the checkbox when the button is clicked.
+        """
+        self.gain_checkbox.setChecked(False)
  
 
 # -----------------------------------------------------------------------------
