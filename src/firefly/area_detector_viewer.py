@@ -121,7 +121,7 @@ class AreaDetectorViewerDisplay(display.FireflyDisplay):
         Disable the push button when the checkbox is checked.
         """
         if state == 2:  # Checked
-            self.exposure_push_button.setEnabled(False)
+            self.gain_push_button.setEnabled(False)
         else:  # Checkbox is unchecked
             self.gain_push_button.setEnabled(True)
 
