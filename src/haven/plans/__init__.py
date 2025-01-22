@@ -41,7 +41,9 @@ def chain(*decorators):
 
 
 all_decorators = chain(
-    shutter_suspend_decorator(), open_shutters_decorator(), baseline_decorator()
+    # shutter_suspend_decorator(),
+    open_shutters_decorator(),
+    baseline_decorator()
 )
 
 # Apply decorators to Haven plans
