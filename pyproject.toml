@@ -1,6 +1,6 @@
 [project]
 name = "haven-spc"
-version = "2024.11.0"
+version = "2025.01.0"
 authors = [
   { name="Mark Wolfman", email="wolfman@anl.gov" },
 ]
@@ -38,6 +38,7 @@ HavenPlugin = "firefly.pydm_plugin:HavenPlugin"
 haven_config = "haven._iconfig:print_config_value"
 haven_queueserver = "queueserver.launch_queueserver:launch_queueserver"
 mongo_consumer = "queueserver.mongo_consumer:main"
+tiled_consumer = "queueserver.tiled_consumer:main"
 
 [project.gui-scripts]
 firefly = "firefly.launcher:main"

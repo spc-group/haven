@@ -1,4 +1,5 @@
 import asyncio
+import xml.etree.ElementTree as ET
 from collections.abc import Sequence
 
 import numpy as np
@@ -16,7 +17,12 @@ from ophyd_async.core import (
     soft_signal_r_and_setter,
 )
 from ophyd_async.epics import adcore
-from ophyd_async.epics.adcore._utils import ADBaseDataType, convert_ad_dtype_to_np
+from ophyd_async.epics.adcore._utils import (
+    ADBaseDataType,
+    NDAttributeDataType,
+    NDAttributeParam,
+    convert_ad_dtype_to_np,
+)
 from ophyd_async.epics.core import epics_signal_r, epics_signal_rw, epics_signal_x
 
 from .area_detectors import HavenDetector, default_path_provider
@@ -39,6 +45,7 @@ class XspressDriverIO(adcore.ADBaseIO):
         self.erase_on_start = epics_signal_rw(bool, f"{prefix}EraseOnStart")
         self.erase = epics_signal_x(f"{prefix}ERASE")
         self.deadtime_correction = epics_signal_rw(bool, f"{prefix}CTRL_DTC")
+        self.number_of_elements = epics_signal_r(int, f"{prefix}MaxSizeY_RBV")
         super().__init__(prefix=prefix, name=name)
 
 
@@ -51,9 +58,16 @@ class XspressController(DetectorController):
         # include
         return 0.001
 
+    async def setup_ndattributes(self, device_name: str):
+        num_elements = await self._drv.number_of_elements.get_value()
+        params = ndattribute_params(
+            device_name=device_name, elements=range(num_elements)
+        )
+        xml = ndattribute_xml(params)
+        await self._drv.nd_attributes_file.set(xml)
+
     @AsyncStatus.wrap
     async def prepare(self, trigger_info: TriggerInfo):
-        print("preparing")
         await asyncio.gather(
             self._drv.num_images.set(trigger_info.total_number_of_triggers),
             self._drv.image_mode.set(adcore.ImageMode.MULTIPLE),
@@ -62,12 +76,9 @@ class XspressController(DetectorController):
             # https://github.com/epics-modules/xspress3/issues/57
             self._drv.deadtime_correction.set(False),
         )
-        print("prepared")
 
     async def wait_for_idle(self):
-        print("Waiting for idle")
         if self._arm_status:
-            print("doing it")
             await self._arm_status
 
     async def arm(self):
@@ -189,6 +200,7 @@ class Xspress3Detector(HavenDetector, StandardDetector):
                 path_provider,
                 lambda: self.name,
                 XspressDatasetDescriber(self.drv),
+                self.drv,  # <- for DT ndattributes
             ),
             config_sigs=(
                 self.drv.acquire_period,
@@ -201,12 +213,122 @@ class Xspress3Detector(HavenDetector, StandardDetector):
 
     @AsyncStatus.wrap
     async def stage(self) -> None:
-        await asyncio.gather(
+        self._old_xml_file, *_ = await asyncio.gather(
+            self.drv.nd_attributes_file.get_value(),
             super().stage(),
+            self._controller.setup_ndattributes(device_name=self.name),
             self.drv.erase_on_start.set(False),
             self.drv.erase.trigger(),
         )
 
+    @AsyncStatus.wrap
+    async def unstage(self) -> None:
+        await super().unstage()
+        if self._old_xml_file is not None:
+            # Restore the original XML attributes file
+            await self.drv.nd_attributes_file.set(self._old_xml_file)
+            self._old_xml_file = None
+
     @property
     def default_time_signal(self):
         return self.drv.acquire_time
+
+
+def ndattribute_xml(params):
+    """Convert a set of NDAttribute params to XML."""
+    root = ET.Element("Attributes")
+    for ndattribute in params:
+        ET.SubElement(
+            root,
+            "Attribute",
+            name=ndattribute.name,
+            type="PARAM",
+            source=ndattribute.param,
+            addr=str(ndattribute.addr),
+            datatype=ndattribute.datatype.value,
+            description=ndattribute.description,
+        )
+    xml_text = ET.tostring(root, encoding="unicode")
+    return xml_text
+
+
+def ndattribute_params(
+    device_name: str, elements: Sequence[int]
+) -> Sequence[NDAttributeParam]:
+    """Create a set of ndattribute params that can be written to the AD's
+    HDF5 file.
+
+    These parameters can then be used with something like
+    :py:func:`ophyd_async.plan_stubs.setup_ndattributes` to build the
+    XML.
+
+    """
+    params = []
+    for idx in elements:
+        new_params = [
+            NDAttributeParam(
+                name=f"{device_name}-element{idx}-deadtime_factor",
+                param="XSP3_CHAN_DTFACTOR",
+                datatype=NDAttributeDataType.DOUBLE,
+                addr=idx,
+                description=f"Chan {idx} DTC Factor",
+            ),
+            NDAttributeParam(
+                name=f"{device_name}-element{idx}-deadtime_percent",
+                param="XSP3_CHAN_DTPERCENT",
+                datatype=NDAttributeDataType.DOUBLE,
+                addr=idx,
+                description=f"Chan {idx} DTC Percent",
+            ),
+            NDAttributeParam(
+                name=f"{device_name}-element{idx}-event_width",
+                param="XSP3_EVENT_WIDTH",
+                datatype=NDAttributeDataType.DOUBLE,
+                addr=idx,
+                description=f"Chan {idx} Event Width",
+            ),
+            NDAttributeParam(
+                name=f"{device_name}-element{idx}-clock_ticks",
+                param="XSP3_CHAN_SCA0",
+                datatype=NDAttributeDataType.DOUBLE,
+                addr=idx,
+                description=f"Chan {idx} ClockTicks",
+            ),
+            NDAttributeParam(
+                name=f"{device_name}-element{idx}-reset_ticks",
+                param="XSP3_CHAN_SCA1",
+                datatype=NDAttributeDataType.DOUBLE,
+                addr=idx,
+                description=f"Chan {idx} ResetTicks",
+            ),
+            NDAttributeParam(
+                name=f"{device_name}-element{idx}-reset_counts",
+                param="XSP3_CHAN_SCA2",
+                datatype=NDAttributeDataType.DOUBLE,
+                addr=idx,
+                description=f"Chan {idx} ResetCounts",
+            ),
+            NDAttributeParam(
+                name=f"{device_name}-element{idx}-all_event",
+                param="XSP3_CHAN_SCA3",
+                datatype=NDAttributeDataType.DOUBLE,
+                addr=idx,
+                description=f"Chan {idx} AllEvent",
+            ),
+            NDAttributeParam(
+                name=f"{device_name}-element{idx}-all_good",
+                param="XSP3_CHAN_SCA4",
+                datatype=NDAttributeDataType.DOUBLE,
+                addr=idx,
+                description=f"Chan {idx} AllGood",
+            ),
+            NDAttributeParam(
+                name=f"{device_name}-element{idx}-pileup",
+                param="XSP3_CHAN_SCA7",
+                datatype=NDAttributeDataType.DOUBLE,
+                addr=idx,
+                description=f"Chan {idx} Pileup",
+            ),
+        ]
+        params.extend(new_params)
+    return params

@@ -1,15 +1,20 @@
 import asyncio
+import datetime as dt
 import logging
 from collections import Counter
 from contextlib import contextmanager
-from functools import wraps
+from functools import partial, wraps
 from typing import Mapping, Optional, Sequence
 
 import qtawesome as qta
 import yaml
+from ophyd import Device as ThreadedDevice
+from ophyd_async.core import Device
+from pydm import PyDMChannel
 from qasync import asyncSlot
-from qtpy.QtCore import Qt
+from qtpy.QtCore import QDateTime, Qt
 from qtpy.QtGui import QStandardItem, QStandardItemModel
+from tiled.client.container import Container
 
 from firefly import display
 from firefly.run_browser.client import DatabaseWorker
@@ -48,21 +53,40 @@ class RunBrowserDisplay(display.FireflyDisplay):
     selected_runs: list
     _running_db_tasks: Mapping
 
+    proposal_channel: PyDMChannel
+    esaf_channel: PyDMChannel
+
     export_dialog: Optional[ExportDialog] = None
 
     # Counter for keeping track of UI hints for long DB hits
     _busy_hinters: Counter
 
-    def __init__(self, root_node=None, args=None, macros=None, **kwargs):
+    def __init__(self, args=None, macros=None, **kwargs):
         super().__init__(args=args, macros=macros, **kwargs)
         self.selected_runs = []
         self._running_db_tasks = {}
         self._busy_hinters = Counter()
-        self.db = DatabaseWorker(catalog=root_node)
-        # Load the list of all runs for the selection widget
-        self.db_task(self.load_runs(), name="init_load_runs")
-        # Load the list of filters' field values into the comboboxes
-        self.db_task(self.update_combobox_items(), name="update_combobox_items")
+        self.reset_default_filters()
+
+    async def setup_database(self, tiled_client: Container, catalog_name: str):
+        """Prepare to use a set of databases accessible through *tiled_client*.
+
+        Parameters
+        ==========
+        Each key in *tiled_client* should be"""
+        self.db = DatabaseWorker(tiled_client)
+        self.ui.catalog_combobox.addItems(await self.db.catalog_names())
+        self.ui.catalog_combobox.setCurrentText(catalog_name)
+        await self.change_catalog(catalog_name)
+
+    @asyncSlot(str)
+    async def change_catalog(self, catalog_name: str):
+        """Activate a different catalog in the Tiled server."""
+        await self.db_task(self.db.change_catalog(catalog_name), name="change_catalog")
+        await self.db_task(
+            asyncio.gather(self.load_runs(), self.update_combobox_items()),
+            name="change_catalog",
+        )
 
     def db_task(self, coro, name="default task"):
         """Executes a co-routine as a database task. Existing database
@@ -106,28 +130,45 @@ class RunBrowserDisplay(display.FireflyDisplay):
             self.runs_total_label.setText(str(self.ui.runs_model.rowCount()))
 
     def clear_filters(self):
+        self.ui.filter_plan_combobox.setCurrentText("")
+        self.ui.filter_sample_combobox.setCurrentText("")
+        self.ui.filter_formula_combobox.setCurrentText("")
+        self.ui.filter_edge_combobox.setCurrentText("")
+        self.ui.filter_exit_status_combobox.setCurrentText("")
+        self.ui.filter_user_combobox.setCurrentText("")
         self.ui.filter_proposal_combobox.setCurrentText("")
         self.ui.filter_esaf_combobox.setCurrentText("")
-        self.ui.filter_sample_combobox.setCurrentText("")
-        self.ui.filter_exit_status_combobox.setCurrentText("")
         self.ui.filter_current_proposal_checkbox.setChecked(False)
         self.ui.filter_current_esaf_checkbox.setChecked(False)
-        self.ui.filter_plan_combobox.setCurrentText("")
+        self.ui.filter_beamline_combobox.setCurrentText("")
+        self.ui.filter_after_checkbox.setChecked(False)
+        self.ui.filter_before_checkbox.setChecked(False)
         self.ui.filter_full_text_lineedit.setText("")
-        self.ui.filter_edge_combobox.setCurrentText("")
-        self.ui.filter_user_combobox.setCurrentText("")
+        self.ui.filter_standards_checkbox.setChecked(False)
+
+    def reset_default_filters(self):
+        self.clear_filters()
+        self.ui.filter_exit_status_combobox.setCurrentText("success")
+        self.ui.filter_current_esaf_checkbox.setChecked(True)
+        self.ui.filter_current_proposal_checkbox.setChecked(True)
+        self.ui.filter_after_checkbox.setChecked(True)
+        last_week = dt.datetime.now().astimezone() - dt.timedelta(days=7)
+        last_week = QDateTime.fromTime_t(int(last_week.timestamp()))
+        self.ui.filter_after_datetimeedit.setDateTime(last_week)
 
     async def update_combobox_items(self):
         """"""
         with self.busy_hints(run_table=False, run_widgets=False, filter_widgets=True):
             fields = await self.db.load_distinct_fields()
             for field_name, cb in [
-                ("proposal_users", self.ui.filter_proposal_combobox),
-                ("proposal_id", self.ui.filter_user_combobox),
-                ("esaf_id", self.ui.filter_esaf_combobox),
-                ("sample_name", self.ui.filter_sample_combobox),
                 ("plan_name", self.ui.filter_plan_combobox),
+                ("sample_name", self.ui.filter_sample_combobox),
+                ("sample_formula", self.ui.filter_formula_combobox),
                 ("edge", self.ui.filter_edge_combobox),
+                ("exit_status", self.ui.filter_exit_status_combobox),
+                ("proposal_id", self.ui.filter_proposal_combobox),
+                ("esaf_id", self.ui.filter_esaf_combobox),
+                ("beamline_id", self.ui.filter_beamline_combobox),
             ]:
                 if field_name in fields.keys():
                     old_text = cb.currentText()
@@ -135,36 +176,15 @@ class RunBrowserDisplay(display.FireflyDisplay):
                     cb.addItems(fields[field_name])
                     cb.setCurrentText(old_text)
 
-    @asyncSlot()
-    @cancellable
-    async def sleep_slot(self):
-        await self.db_task(self.print_sleep())
-
-    async def print_sleep(self):
-        with self.busy_hints(run_widgets=True, run_table=True, filter_widgets=True):
-            label = self.ui.sleep_label
-            label.setText(f"3...")
-            await asyncio.sleep(1)
-            old_text = label.text()
-            label.setText(f"{old_text}2...")
-            await asyncio.sleep(1)
-            old_text = label.text()
-            label.setText(f"{old_text}1...")
-            await asyncio.sleep(1)
-            old_text = label.text()
-            label.setText(f"{old_text}done!")
-
     def customize_ui(self):
         self.load_models()
         # Setup controls for select which run to show
-
         self.ui.run_tableview.selectionModel().selectionChanged.connect(
             self.update_selected_runs
         )
         self.ui.refresh_runs_button.setIcon(qta.icon("fa5s.sync"))
         self.ui.refresh_runs_button.clicked.connect(self.reload_runs)
-        # Sleep controls for testing async timing
-        self.ui.sleep_button.clicked.connect(self.sleep_slot)
+        self.ui.reset_filters_button.clicked.connect(self.reset_default_filters)
         # Respond to changes in displaying the 1d plot
         for signal in [
             self.ui.signal_y_combobox.currentTextChanged,
@@ -192,6 +212,8 @@ class RunBrowserDisplay(display.FireflyDisplay):
         self.ui.invert_checkbox_2d.stateChanged.connect(self.update_2d_plot)
         self.ui.gradient_checkbox_2d.stateChanged.connect(self.update_2d_plot)
         self.ui.plot_2d_hints_checkbox.stateChanged.connect(self.update_2d_signals)
+        # Select a new catalog
+        self.ui.catalog_combobox.currentTextChanged.connect(self.change_catalog)
         # Respond to filter controls getting updated
         self.ui.filters_widget.returnPressed.connect(self.refresh_runs_button.click)
         # Respond to controls for the current run
@@ -206,6 +228,47 @@ class RunBrowserDisplay(display.FireflyDisplay):
         )
         # Create a new export dialog for saving files
         self.export_dialog = ExportDialog(parent=self)
+
+    async def update_devices(self, registry):
+        try:
+            bss_device = registry["bss"]
+        except KeyError:
+            log.warning("Could not find device 'bss', disabling 'current' filters.")
+            self.ui.filter_current_proposal_checkbox.setChecked(False),
+            self.ui.filter_current_proposal_checkbox.setEnabled(False),
+            self.ui.filter_current_esaf_checkbox.setChecked(False),
+            self.ui.filter_current_esaf_checkbox.setEnabled(False),
+        else:
+            self.setup_bss_channels(bss_device)
+        await super().update_devices(registry)
+
+    def setup_bss_channels(self, bss: Device | ThreadedDevice):
+        """Setup channels to update the proposal and ESAF ID boxes."""
+        if getattr(self, "proposal_channel", None) is not None:
+            self.proposal_channel.disconnect()
+        self.proposal_channel = PyDMChannel(
+            address=f"haven://{bss.proposal.proposal_id.name}",
+            value_slot=partial(
+                self.update_bss_filter,
+                combobox=self.ui.filter_proposal_combobox,
+                checkbox=self.ui.filter_current_proposal_checkbox,
+            ),
+        )
+        if getattr(self, "esaf_channel", None) is not None:
+            self.esaf_channel.disconnect()
+        self.esaf_channel = PyDMChannel(
+            address=f"haven://{bss.esaf.esaf_id.name}",
+            value_slot=partial(
+                self.update_bss_filter,
+                combobox=self.ui.filter_esaf_combobox,
+                checkbox=self.ui.filter_current_esaf_checkbox,
+            ),
+        )
+
+    def update_bss_filter(self, text: str, *, combobox, checkbox):
+        """If *checkbox* is checked, update *combobox* with new *text*."""
+        if checkbox.checkState():
+            combobox.setCurrentText(text)
 
     def auto_range(self):
         self.plot_1d_view.autoRange()
@@ -277,6 +340,20 @@ class RunBrowserDisplay(display.FireflyDisplay):
             self.update_busy_hints()
 
     @asyncSlot()
+    async def update_streams(self, *args):
+        """Update the list of available streams to choose from."""
+        stream_names = await self.db.stream_names()
+        # Sort so that "primary" is first
+        sorted(stream_names, key=lambda x: x != "primary")
+        self.ui.stream_combobox.clear()
+        self.ui.stream_combobox.addItems(stream_names)
+
+    @property
+    def stream(self):
+        current_text = self.ui.stream_combobox.currentText()
+        return current_text or "primary"
+
+    @asyncSlot()
     @cancellable
     async def update_multi_signals(self, *args):
         """Retrieve a new list of signals for multi plot and update UI."""
@@ -286,7 +363,8 @@ class RunBrowserDisplay(display.FireflyDisplay):
         # Determine valid list of columns to choose from
         use_hints = self.ui.plot_multi_hints_checkbox.isChecked()
         signals_task = self.db_task(
-            self.db.signal_names(hinted_only=use_hints), "multi signals"
+            self.db.signal_names(hinted_only=use_hints, stream=self.stream),
+            "multi signals",
         )
         xcols, ycols = await signals_task
         # Update the comboboxes with new signals
@@ -310,7 +388,8 @@ class RunBrowserDisplay(display.FireflyDisplay):
         # Determine valid list of columns to choose from
         use_hints = self.ui.plot_1d_hints_checkbox.isChecked()
         signals_task = self.db_task(
-            self.db.signal_names(hinted_only=use_hints), "1D signals"
+            self.db.signal_names(hinted_only=use_hints, stream=self.stream),
+            name="1D signals",
         )
         xcols, ycols = await signals_task
         self.multi_y_signals = ycols
@@ -336,7 +415,8 @@ class RunBrowserDisplay(display.FireflyDisplay):
         # Determine valid list of dependent signals to choose from
         use_hints = self.ui.plot_2d_hints_checkbox.isChecked()
         xcols, vcols = await self.db_task(
-            self.db.signal_names(hinted_only=use_hints), "2D signals"
+            self.db.signal_names(hinted_only=use_hints, stream=self.stream),
+            "2D signals",
         )
         # Update the UI with the list of controls
         val_cb.clear()
@@ -352,7 +432,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
             return
         use_hints = self.ui.plot_multi_hints_checkbox.isChecked()
         runs = await self.db_task(
-            self.db.all_signals(hinted_only=use_hints), "multi-plot"
+            self.db.all_signals(hinted_only=use_hints, stream=self.stream), "multi-plot"
         )
         self.ui.plot_multi_view.plot_runs(runs, xsignal=x_signal)
 
@@ -413,6 +493,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
                 use_invert=use_invert,
                 use_grad=use_grad,
                 uids=uids,
+                stream=self.stream,
             ),
             "1D plot",
         )
@@ -449,7 +530,9 @@ class RunBrowserDisplay(display.FireflyDisplay):
         use_log = self.ui.logarithm_checkbox_2d.isChecked()
         use_invert = self.ui.invert_checkbox_2d.isChecked()
         use_grad = self.ui.gradient_checkbox_2d.isChecked()
-        images = await self.db_task(self.db.images(value_signal), "2D plot")
+        images = await self.db_task(
+            self.db.images(value_signal, stream=self.stream), "2D plot"
+        )
         # Get axis labels
         # Eventually this will be replaced with robust choices for plotting multiple images
         metadata = await self.db_task(self.db.metadata(), "2D plot")
@@ -523,6 +606,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
                 self.update_multi_signals(),
                 self.update_1d_signals(),
                 self.update_2d_signals(),
+                self.update_streams(),
             )
             # Update the plots
             self.clear_plots()
@@ -531,19 +615,28 @@ class RunBrowserDisplay(display.FireflyDisplay):
 
     def filters(self, *args):
         new_filters = {
+            "plan": self.ui.filter_plan_combobox.currentText(),
+            "sample": self.ui.filter_sample_combobox.currentText(),
+            "formula": self.ui.filter_formula_combobox.currentText(),
+            "edge": self.ui.filter_edge_combobox.currentText(),
+            "exit_status": self.ui.filter_exit_status_combobox.currentText(),
+            "user": self.ui.filter_user_combobox.currentText(),
             "proposal": self.ui.filter_proposal_combobox.currentText(),
             "esaf": self.ui.filter_esaf_combobox.currentText(),
-            "sample": self.ui.filter_sample_combobox.currentText(),
-            "exit_status": self.ui.filter_exit_status_combobox.currentText(),
-            "use_current_proposal": bool(
-                self.ui.filter_current_proposal_checkbox.checkState()
-            ),
-            "use_current_esaf": bool(self.ui.filter_current_esaf_checkbox.checkState()),
-            "plan": self.ui.filter_plan_combobox.currentText(),
+            "beamline": self.ui.filter_beamline_combobox.currentText(),
             "full_text": self.ui.filter_full_text_lineedit.text(),
-            "edge": self.ui.filter_edge_combobox.currentText(),
-            "user": self.ui.filter_user_combobox.currentText(),
         }
+        # Special handling for the time-based filters
+        if self.ui.filter_after_checkbox.checkState():
+            after = self.ui.filter_after_datetimeedit.dateTime().toSecsSinceEpoch()
+            new_filters["after"] = after
+        if self.ui.filter_before_checkbox.checkState():
+            before = self.ui.filter_before_datetimeedit.dateTime().toSecsSinceEpoch()
+            new_filters["before"] = before
+        # Limit the search to standards only
+        if self.ui.filter_standards_checkbox.checkState():
+            new_filters["standards_only"] = True
+        # Only include values that were actually filled in
         null_values = ["", False]
         new_filters = {k: v for k, v in new_filters.items() if v not in null_values}
         return new_filters

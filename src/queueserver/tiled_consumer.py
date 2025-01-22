@@ -29,9 +29,9 @@ class TiledConsumer(BlueskyConsumer):
       Translates Kafka topic names to Tiled catalogs. Each value
       should be the name of a catalog available directly under
       *tiled_client*.
-    bootstrap_servers : str
+    bootstrap_servers
         Kafka server addresses as strings such as
-        ``[broker1:9092, broker2:9092, 127.0.0.1:9092]``
+        ``["broker1:9092", "broker2:9092", "127.0.0.1:9092"]``
     group_id : str
         Required string identifier for the consumer's Kafka Consumer group.
     consumer_config : dict
@@ -95,18 +95,17 @@ class TiledConsumer(BlueskyConsumer):
 
 def main():
     """Launch the tiled consumer."""
-    logging.basicConfig(level=logging.WARNING)
+    logging.basicConfig(level=logging.INFO)
     config = haven.load_config()
     bootstrap_servers = ["localhost:9092"]
     topic_catalog_map = {
-        "s25idc_queueserver-dev": "haven-dev",
-        "s25idd_queueserver-dev": "haven-dev",
+        "bluesky.documents.haven": "haven",
+        "bluesky.documents.haven-dev": "haven-dev",
     }
     # Create a tiled writer that will write documents to tiled
     tiled_uri = config["database"]["tiled"]["uri"]
     tiled_api_key = config["database"]["tiled"]["api_key"]
-    client = from_uri(tiled_uri, api_key=tiled_api_key)
-    client.include_data_sources()
+    client = from_uri(tiled_uri, api_key=tiled_api_key, include_data_sources=True)
 
     # Create a Tiled consumer that will listen for new documents.
     consumer = TiledConsumer(
@@ -117,6 +116,7 @@ def main():
         consumer_config={"auto.offset.reset": "latest"},
         polling_duration=1.0,
     )
+    log.info("Starting Tiled consumer")
     consumer.start()
 
 

@@ -29,8 +29,10 @@ from haven.run_engine import run_engine  # noqa: F401
 
 log = logging.getLogger(__name__)
 
-# Create a run engine without all the bells and whistles
-RE = run_engine(connect_databroker=False, use_bec=False)
+# Create a run engine
+RE = run_engine(
+    connect_databroker=False, connect_tiled=False, connect_kafka=True, use_bec=False
+)
 
 # Import devices
 beamline.load()
