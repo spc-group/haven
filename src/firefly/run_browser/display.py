@@ -58,6 +58,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
     esaf_channel: PyDMChannel
     # (data keys, experiment hints, signal hints)
     data_keys_changed = Signal(ChainMap, list, list)
+    metadata_changed = Signal(dict)
 
     export_dialog: Optional[ExportDialog] = None
 
@@ -248,6 +249,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
             self.ui.hover_coords_label.setText
         )
         # Connect to signals for individual tabs
+        self.metadata_changed.connect(self.ui.metadata_view.display_metadata)
         self.data_keys_changed.connect(self.ui.xrf_view.update_signal_widgets)
         # Create a new export dialog for saving files
         self.export_dialog = ExportDialog(parent=self)
@@ -577,14 +579,8 @@ class RunBrowserDisplay(display.FireflyDisplay):
     async def update_metadata(self, *args):
         """Render metadata for the runs into the metadata widget."""
         # Combine the metadata in a human-readable output
-        text = ""
-        all_md = await self.db_task(self.db.metadata(), "metadata")
-        for uid, md in all_md.items():
-            text += f"# {uid}"
-            text += yaml.dump(md)
-            text += f"\n\n{'=' * 20}\n\n"
-        # Update the widget with the rendered metadata
-        self.ui.metadata_textedit.document().setPlainText(text)
+        new_md = await self.db_task(self.db.metadata(), "metadata")
+        self.metadata_changed.emit(new_md)
 
     def clear_plots(self):
         """Clear all the plots.

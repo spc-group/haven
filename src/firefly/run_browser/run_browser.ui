@@ -222,8 +222,8 @@
                <rect>
                 <x>0</x>
                 <y>0</y>
-                <width>373</width>
-                <height>531</height>
+                <width>376</width>
+                <height>552</height>
                </rect>
               </property>
               <layout class="QVBoxLayout" name="verticalLayout_9">
@@ -713,7 +713,7 @@
           </sizepolicy>
          </property>
          <property name="currentIndex">
-          <number>4</number>
+          <number>0</number>
          </property>
          <widget class="QWidget" name="metadata_tab">
           <attribute name="title">
@@ -721,22 +721,7 @@
           </attribute>
           <layout class="QVBoxLayout" name="verticalLayout">
            <item>
-            <widget class="QPlainTextEdit" name="metadata_textedit">
-             <property name="font">
-              <font>
-               <family>Monospace</family>
-              </font>
-             </property>
-             <property name="readOnly">
-              <bool>true</bool>
-             </property>
-             <property name="plainText">
-              <string/>
-             </property>
-             <property name="placeholderText">
-              <string>Select a run from the table on the left to view metadata.</string>
-             </property>
-            </widget>
+            <widget class="MetadataView" name="metadata_view" native="true"/>
            </item>
           </layout>
          </widget>
@@ -804,8 +789,8 @@
                <rect>
                 <x>0</x>
                 <y>0</y>
-                <width>973</width>
-                <height>839</height>
+                <width>964</width>
+                <height>824</height>
                </rect>
               </property>
               <property name="sizePolicy">
@@ -1286,6 +1271,12 @@
    <class>XRFView</class>
    <extends>QWidget</extends>
    <header>firefly.run_browser.xrf_view</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>MetadataView</class>
+   <extends>QWidget</extends>
+   <header>firefly.run_browser.metadata_view</header>
    <container>1</container>
   </customwidget>
  </customwidgets>
