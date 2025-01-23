@@ -2,9 +2,8 @@ import logging
 import sys
 from typing import Mapping, Sequence
 
-import msgpack
 import databroker
-from bluesky.callbacks.tiled_writer import TiledWriter
+import msgpack
 from bluesky_kafka import BlueskyConsumer
 
 import haven
@@ -112,59 +111,3 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
-
-
-# import os
-# import sys
-# import logging
-# from functools import partial
-
-# # This environmental variable needs to be set before importing haven
-# # os.environ["HAVEN_CONFIG_FILES"] = f"{os.environ['BLUESKY_DIR']}/iconfig.toml"
-
-# import databroker
-# import msgpack
-# import msgpack_numpy as mpn
-# from bluesky_kafka import MongoConsumer
-
-# import haven
-
-
-# log = logging.getLogger()
-
-
-# def main():
-#     """Launch the mongo consumer."""
-#     logging.basicConfig(level=logging.INFO)
-
-#     bootstrap_servers = "localhost:9092"
-#     mongo_uri = haven.load_config()['mongo_consumer']['mongo_uri']
-
-#     kafka_deserializer = partial(msgpack.loads, object_hook=mpn.decode)
-#     auto_offset_reset = "latest"
-
-#     topic_database_map = {
-#         "bluesky.documents.haven": "25idc-bluesky",
-#     }
-#     topics = list(topic_database_map.keys())
-
-#     # Create a MongoConsumer that will automatically listen to new beamline topics.
-#     # The parameter metadata.max.age.ms determines how often the consumer will check for
-#     # new topics. The default value is 5000ms.
-#     mongo_consumer = MongoConsumer(
-#         mongo_uri,
-#         topic_database_map,
-#         tls=False,
-#         topics=topics,
-#         bootstrap_servers=bootstrap_servers,
-#         group_id="mongodb",
-#         consumer_config={"auto.offset.reset": auto_offset_reset},
-#         polling_duration=1.0,
-#         deserializer=kafka_deserializer,
-#     )
-#     log.info("Starting mongo consumer")
-#     mongo_consumer.start()
-
-
-# if __name__ == "__main__":
-#     sys.exit(main())
