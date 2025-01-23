@@ -109,6 +109,21 @@ class StatusDisplay(display.FireflyDisplay):
         self.ui.esaf_status_label.setText(md.get("esaf_status", ""))
         self.ui.esaf_end_date_label.setText(md.get("esaf_end", ""))
         self.ui.esaf_users_label.setText(md.get("esaf_users", ""))
+=======
+            open_btn.setEnabled(getattr(shutter, "allow_open", True))
+            layout.addWidget(open_btn)
+            # Button to close the shutter
+            close_btn = PyDMPushButton(
+                parent=self,
+                label="Close",
+                icon=qta.icon("mdi.window-shutter"),
+                pressValue=ShutterState.CLOSED,
+                relative=False,
+                init_channel=f"haven://{shutter.name}.setpoint",
+            )
+            close_btn.setEnabled(getattr(shutter, "allow_close", True))
+            layout.addWidget(close_btn)
+>>>>>>> 75a9445c (Fixed some of the PFCU Firefly filter issues (except the button values).)
 
     def customize_ui(self):
         self.ui.bss_modify_button.clicked.connect(self.bss_window_requested.emit)
