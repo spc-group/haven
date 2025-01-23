@@ -98,40 +98,6 @@
             <number>0</number>
            </property>
            <item>
-            <layout class="QHBoxLayout" name="sleep_button_layout">
-             <property name="topMargin">
-              <number>4</number>
-             </property>
-             <item>
-              <widget class="QPushButton" name="sleep_button">
-               <property name="text">
-                <string>Sleep</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QLabel" name="sleep_label">
-               <property name="text">
-                <string>⬅ Press the button</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <spacer name="horizontalSpacer_8">
-               <property name="orientation">
-                <enum>Qt::Horizontal</enum>
-               </property>
-               <property name="sizeHint" stdset="0">
-                <size>
-                 <width>40</width>
-                 <height>20</height>
-                </size>
-               </property>
-              </spacer>
-             </item>
-            </layout>
-           </item>
-           <item>
             <layout class="QHBoxLayout" name="filters_button_layout">
              <property name="spacing">
               <number>0</number>
@@ -222,8 +188,8 @@
                <rect>
                 <x>0</x>
                 <y>0</y>
-                <width>376</width>
-                <height>552</height>
+                <width>373</width>
+                <height>546</height>
                </rect>
               </property>
               <layout class="QVBoxLayout" name="verticalLayout_9">
@@ -713,7 +679,7 @@
           </sizepolicy>
          </property>
          <property name="currentIndex">
-          <number>0</number>
+          <number>1</number>
          </property>
          <widget class="QWidget" name="metadata_tab">
           <attribute name="title">
@@ -734,85 +700,7 @@
           </attribute>
           <layout class="QVBoxLayout" name="verticalLayout_5">
            <item>
-            <layout class="QHBoxLayout" name="horizontalLayout_10">
-             <item>
-              <spacer name="horizontalSpacer_7">
-               <property name="orientation">
-                <enum>Qt::Horizontal</enum>
-               </property>
-               <property name="sizeHint" stdset="0">
-                <size>
-                 <width>40</width>
-                 <height>20</height>
-                </size>
-               </property>
-              </spacer>
-             </item>
-             <item>
-              <widget class="QCheckBox" name="plot_multi_hints_checkbox">
-               <property name="text">
-                <string>Use Hints</string>
-               </property>
-               <property name="checked">
-                <bool>true</bool>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QLabel" name="label_10">
-               <property name="text">
-                <string>X:</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QComboBox" name="multi_signal_x_combobox"/>
-             </item>
-            </layout>
-           </item>
-           <item>
-            <widget class="QScrollArea" name="multiplot_scrollarea">
-             <property name="verticalScrollBarPolicy">
-              <enum>Qt::ScrollBarAlwaysOn</enum>
-             </property>
-             <property name="horizontalScrollBarPolicy">
-              <enum>Qt::ScrollBarAsNeeded</enum>
-             </property>
-             <property name="sizeAdjustPolicy">
-              <enum>QAbstractScrollArea::AdjustIgnored</enum>
-             </property>
-             <property name="widgetResizable">
-              <bool>true</bool>
-             </property>
-             <widget class="QWidget" name="scrollAreaWidgetContents">
-              <property name="geometry">
-               <rect>
-                <x>0</x>
-                <y>0</y>
-                <width>964</width>
-                <height>824</height>
-               </rect>
-              </property>
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <layout class="QVBoxLayout" name="verticalLayout_7">
-               <item>
-                <widget class="BrowserMultiPlotWidget" name="plot_multi_view" native="true">
-                 <property name="sizePolicy">
-                  <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
-                   <horstretch>0</horstretch>
-                   <verstretch>0</verstretch>
-                  </sizepolicy>
-                 </property>
-                </widget>
-               </item>
-              </layout>
-             </widget>
-            </widget>
+            <widget class="MultiplotView" name="multiplot_view" native="true"/>
            </item>
           </layout>
          </widget>
@@ -1262,15 +1150,15 @@
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>BrowserMultiPlotWidget</class>
-   <extends>QWidget</extends>
-   <header>firefly.run_browser.widgets</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
    <class>XRFView</class>
    <extends>QWidget</extends>
    <header>firefly.run_browser.xrf_view</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>MultiplotView</class>
+   <extends>QWidget</extends>
+   <header>firefly.run_browser.multiplot_view</header>
    <container>1</container>
   </customwidget>
   <customwidget>

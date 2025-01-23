@@ -262,27 +262,6 @@ async def test_update_2d_plot(catalog, display):
     display.plot_2d_item.setRect.assert_called_with(-100, -80, 200, 160)
 
 
-async def test_update_multi_plot(catalog, display):
-    run = await catalog["7d1daf1d-60c7-4aa7-a668-d1cd97e5335f"]
-    expected_xdata = await run.__getitem__("energy_energy", stream="primary")
-    I0 = await run.__getitem__("I0_net_counts", stream="primary")
-    It = await run.__getitem__("It_net_counts", stream="primary")
-    expected_ydata = np.log(I0 / It)
-    expected_ydata = np.gradient(expected_ydata, expected_xdata)
-    # Configure signals
-    display.ui.multi_signal_x_combobox.addItem("energy_energy")
-    display.ui.multi_signal_x_combobox.setCurrentText("energy_energy")
-    display.multi_y_signals = ["energy_energy"]
-    display.db.selected_runs = [run]
-    # Update the plots
-    await display.update_multi_plot()
-    # Check that the data were added
-    # data_item = display._multiplot_items[0].listDataItems()[0]
-    # xdata, ydata = data_item.getData()
-    # np.testing.assert_almost_equal(xdata, expected_xdata)
-    # np.testing.assert_almost_equal(ydata, expected_ydata)
-
-
 def test_busy_hints_run_widgets(display):
     """Check that the display widgets get disabled during DB hits."""
     with display.busy_hints(run_widgets=True, run_table=False):
@@ -424,6 +403,13 @@ def test_bss_channels(display, bss):
         display.proposal_channel.address == f"haven://{bss.proposal.proposal_id.name}"
     )
     assert display.esaf_channel.address == f"haven://{bss.esaf.esaf_id.name}"
+
+
+async def test_update_data_frames(display, qtbot):
+    display.ui.stream_combobox.addItem("primary")
+    display.ui.stream_combobox.setCurrentText("primary")
+    with qtbot.waitSignal(display.data_frames_changed):
+        await display.update_data_frames()
 
 
 def test_update_bss_filters(display):

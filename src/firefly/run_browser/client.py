@@ -54,6 +54,13 @@ class DatabaseWorker:
         keys = await asyncio.gather(*aws)
         return ChainMap(*keys)
 
+    async def data_frames(self, stream: str) -> dict:
+        """Return the internal dataframes for selected runs as {uid: dataframe}."""
+        aws = (run.data(stream=stream) for run in self.selected_runs)
+        dfs = await asyncio.gather(*aws)
+        dfs = {run.uid: df for run, df in zip(self.selected_runs, dfs)}
+        return dfs
+
     async def filtered_nodes(self, filters: Mapping):
         case_sensitive = False
         log.debug(f"Filtering nodes: {filters}")
@@ -165,7 +172,11 @@ class DatabaseWorker:
         """
         aws = [run.hints(stream) for run in self.selected_runs]
         all_hints = await asyncio.gather(*aws)
-        return zip(*all_hints)
+        # Flatten arrays
+        ihints, dhints = zip(*all_hints)
+        ihints = [hint for hints in ihints for hint in hints]
+        dhints = [hint for hints in dhints for hint in hints]
+        return ihints, dhints
 
         
 

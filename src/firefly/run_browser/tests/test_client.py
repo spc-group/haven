@@ -19,6 +19,14 @@ async def test_data_keys(worker):
 
 
 @pytest.mark.asyncio
+async def test_data_frames(worker):
+    uids = (await worker.catalog.client).keys()
+    await worker.load_selected_runs(uids)
+    data_keys = await worker.data_frames("primary")
+    # Check the results
+    assert uids[0] in data_keys.keys()
+
+@pytest.mark.asyncio
 async def test_hints(worker):
     uids = (await worker.catalog.client).keys()
     await worker.load_selected_runs(uids)

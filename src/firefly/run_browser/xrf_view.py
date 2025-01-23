@@ -1,5 +1,6 @@
 from collections import namedtuple
 from pathlib import Path
+from typing import Mapping, Sequence
 
 import numpy as np
 from qtpy import QtCore, QtWidgets, uic
@@ -73,7 +74,7 @@ class XRFView(QtWidgets.QWidget):
         combobox.addItems(self.aggregators.keys())
 
     def update_signal_widgets(
-        self, data_keys: dict, independent_hints: [], dependent_hints: []
+        self, data_keys: Mapping, independent_hints: Sequence, dependent_hints: Sequence
     ):
         """Update the UI based on new data keys and hints."""
         self.independent_hints = independent_hints
