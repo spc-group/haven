@@ -87,7 +87,7 @@
       <string>In</string>
      </property>
      <property name="rules" stdset="0">
-      <string>[{&quot;name&quot;: &quot;Filter is out&quot;, &quot;property&quot;: &quot;Enable&quot;, &quot;initial_value&quot;: &quot;True&quot;, &quot;expression&quot;: &quot;ch[0] != \&quot;IN\&quot;&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;haven://${DEV}.setpoint&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: true}], &quot;notes&quot;: &quot;&quot;}]</string>
+      <string>[{&quot;name&quot;: &quot;Filter is out&quot;, &quot;property&quot;: &quot;Enable&quot;, &quot;initial_value&quot;: &quot;True&quot;, &quot;expression&quot;: &quot;ch[0] == 0&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;haven://${DEV}.setpoint&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}], &quot;notes&quot;: &quot;&quot;}]</string>
      </property>
      <property name="channel" stdset="0">
       <string>haven://${DEV}.setpoint</string>
@@ -96,7 +96,7 @@
       <string>arrow-left</string>
      </property>
      <property name="pressValue" stdset="0">
-      <string>1</string>
+      <string>In</string>
      </property>
     </widget>
    </item>
@@ -109,7 +109,7 @@
       <string>Out</string>
      </property>
      <property name="rules" stdset="0">
-      <string>[{&quot;name&quot;: &quot;Filter is In&quot;, &quot;property&quot;: &quot;Enable&quot;, &quot;initial_value&quot;: &quot;True&quot;, &quot;expression&quot;: &quot;ch[0] != \&quot;OUT\&quot;&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;haven://${DEV}.setpoint&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: true}], &quot;notes&quot;: &quot;&quot;}]</string>
+      <string>[{&quot;name&quot;: &quot;Filter is In&quot;, &quot;property&quot;: &quot;Enable&quot;, &quot;initial_value&quot;: &quot;True&quot;, &quot;expression&quot;: &quot;ch[0] &gt; 0&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;haven://${DEV}.setpoint&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}], &quot;notes&quot;: &quot;&quot;}]</string>
      </property>
      <property name="channel" stdset="0">
       <string>haven://${DEV}.setpoint</string>
@@ -125,7 +125,7 @@
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
      <property name="spacing">
-      <number>0</number>
+      <number>2</number>
      </property>
      <item>
       <widget class="PyDMLabel" name="material_label">
@@ -166,8 +166,11 @@
        <property name="toolTip">
         <string/>
        </property>
+       <property name="text">
+        <string>######</string>
+       </property>
        <property name="channel" stdset="0">
-        <string>haven://${DEV}.thickness</string>
+        <string>haven://${DEV}.thick</string>
        </property>
       </widget>
      </item>
@@ -182,8 +185,11 @@
        <property name="toolTip">
         <string/>
        </property>
+       <property name="text">
+        <string>######</string>
+       </property>
        <property name="channel" stdset="0">
-        <string>haven://${DEV}.thickness_unit</string>
+        <string>haven://${DEV}.thick_unit</string>
        </property>
       </widget>
      </item>

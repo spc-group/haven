@@ -167,7 +167,6 @@ def dotted_name(obj: HasName) -> str:
             attr_name = attr
             break
     else:
-        print(obj.parent.__class__)
         raise RuntimeError(f"Could not find attribute name for {obj.name}.")
     # siblings = list(attrs.values())
     # attr_names = list(attrs.keys())

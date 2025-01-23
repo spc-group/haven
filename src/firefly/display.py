@@ -64,8 +64,6 @@ class FireflyDisplay(Display):
         bluesky plans.
 
         """
-        # from pprint import pprint
-        # pprint([c.objectName() for c in self._all_children(self)])
         # for child in self.ui.children():
         #     if child.objectName() == "set_energy_button":
         #         print(f"**{child.objectName()}**")

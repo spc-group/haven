@@ -61,7 +61,6 @@ class StatusDisplay(display.FireflyDisplay):
                 relative=False,
                 init_channel=f"haven://{shutter.name}.setpoint",
             )
-            print(f"{shutter.name} - {getattr(shutter, 'allow_open', True)=}")
             open_btn.setEnabled(getattr(shutter, "allow_open", True))
             layout.addWidget(open_btn)
             # Button to close the shutter
