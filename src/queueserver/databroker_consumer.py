@@ -2,19 +2,17 @@ import logging
 import sys
 from typing import Mapping, Sequence
 
+import databroker
 import msgpack
-from bluesky.callbacks.tiled_writer import TiledWriter
 from bluesky_kafka import BlueskyConsumer
-from tiled.client import from_uri
-from tiled.client.base import BaseClient
 
 import haven
 
 log = logging.getLogger(__name__)
 
 
-class TiledConsumer(BlueskyConsumer):
-    """Send Bluesky documents received from a Kafka broker to Tiled for writing.
+class DatabrokerConsumer(BlueskyConsumer):
+    """Send Bluesky documents received from a Kafka broker to a databroker catalog.
 
     There is no default configuration. A reasonable configuration for production is
         consumer_config={
@@ -23,8 +21,6 @@ class TiledConsumer(BlueskyConsumer):
 
     Parameters
     ----------
-    tiled_client
-      The top-level Tiled client object to use for writing.
     topic_catalog_map
       Translates Kafka topic names to Tiled catalogs. Each value
       should be the name of a catalog available directly under
@@ -47,7 +43,6 @@ class TiledConsumer(BlueskyConsumer):
 
     def __init__(
         self,
-        tiled_client: BaseClient,
         topic_catalog_map: Mapping,
         bootstrap_servers: Sequence[str],
         group_id: str,
@@ -59,7 +54,7 @@ class TiledConsumer(BlueskyConsumer):
         # Create writers for each Tiled catalog
         catalog_names = set(topic_catalog_map.values())
         self.writers = {
-            catalog: TiledWriter(tiled_client[catalog]) for catalog in catalog_names
+            name: databroker.catalog[name].v1.insert for name in catalog_names
         }
         super().__init__(
             topics=list(topic_catalog_map.keys()),
@@ -99,22 +94,14 @@ def main():
     config = haven.load_config()
     bootstrap_servers = ["localhost:9092"]
     topic_catalog_map = {
-        "25idc.bluesky.documents": "haven",
-        "25idd.bluesky.documents": "haven",
-        "25idc-dev.bluesky.documents": "haven-dev",
-        "25idd-dev.bluesky.documents": "haven-dev",
+        "25idc.bluesky.documents": "25idc_direct",
+        "25idd.bluesky.documents": "25idd_direct",
     }
-    # Create a tiled writer that will write documents to tiled
-    tiled_uri = config["tiled"]["uri"]
-    tiled_api_key = config["tiled"]["api_key"]
-    client = from_uri(tiled_uri, api_key=tiled_api_key, include_data_sources=True)
-
     # Create a Tiled consumer that will listen for new documents.
-    consumer = TiledConsumer(
-        tiled_client=client,
+    consumer = DatabrokerConsumer(
         topic_catalog_map=topic_catalog_map,
         bootstrap_servers=bootstrap_servers,
-        group_id="tiled_writer",
+        group_id="databroker_consumer",
         consumer_config={"auto.offset.reset": "latest"},
         polling_duration=1.0,
     )
