@@ -39,7 +39,7 @@ class KafkaClient(QObject):
         if self.kafka_consumer is None:
             config = load_config()
             self.kafka_consumer = AIOKafkaConsumer(
-                config["queueserver"]["kafka_topic"],
+                config["kafka"]["topic"],
                 bootstrap_servers="fedorov.xray.aps.anl.gov:9092",
                 group_id=str(uuid4()),
                 value_deserializer=msgpack.loads,
