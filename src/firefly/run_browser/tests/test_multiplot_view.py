@@ -103,7 +103,7 @@ def test_hinted_xsignal_options(view):
     ), f"I0-net_current signal should not be in {combobox.objectName()}."
     
     
-async def test_update_plot(view):
+def test_update_plot(view):
     view.use_hints_checkbox.setChecked(True)
     view.independent_hints = ["energy_energy"]
     view.dependent_hints = ["energy_energy", "I0"]

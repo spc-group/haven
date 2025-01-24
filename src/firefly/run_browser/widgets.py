@@ -54,55 +54,56 @@ class Browser1DPlotItem(PlotItem):
         self.hover_coords_changed.emit(pos_str)
 
 
-class Browser1DPlotWidget(PlotWidget):
-    auto_range_needed: bool
-    data_items: dict
+# class Browser1DPlotWidget(PlotWidget):
+#     pass
+    # auto_range_needed: bool
+    # data_items: dict
 
-    def __init__(self, parent=None, background="default", plotItem=None, **kargs):
-        plot_item = Browser1DPlotItem(**kargs)
-        super().__init__(parent=parent, background=background, plotItem=plot_item)
-        self.clear_runs()
+    # def __init__(self, parent=None, background="default", plotItem=None, **kargs):
+    #     plot_item = Browser1DPlotItem(**kargs)
+    #     super().__init__(parent=parent, background=background, plotItem=plot_item)
+    #     self.clear_runs()
 
-    def clear_runs(self):
-        self.getPlotItem().clear()
-        self.cursor_line = None
-        self.auto_range_needed = True
-        self.data_items = {}
+    # def clear_runs(self):
+    #     self.getPlotItem().clear()
+    #     self.cursor_line = None
+    #     self.auto_range_needed = True
+    #     self.data_items = {}
 
-    def plot_runs(self, runs: Mapping, ylabel="", xlabel=""):
-        """Take loaded run data and plot it.
+    # def plot_runs(self, runs: Mapping, ylabel="", xlabel=""):
+    #     """Take loaded run data and plot it.
 
-        Parameters
-        ==========
-        runs
-          Dictionary with pandas series for each curve. The keys
-          should be the curve labels, the series' indexes are the x
-          values and the series' values are the y data.
+    #     Parameters
+    #     ==========
+    #     runs
+    #       Dictionary with pandas series for each curve. The keys
+    #       should be the curve labels, the series' indexes are the x
+    #       values and the series' values are the y data.
 
-        """
-        plot_item = self.getPlotItem()
-        # Plot this run's data
-        for idx, (label, series) in enumerate(runs.items()):
-            color = colors[idx % len(colors)]
-            if label in self.data_items.keys():
-                # We've plotted this item before, so reuse it
-                data_item = self.data_items[label]
-                data_item.setData(series.index, series.values)
-            else:
-                self.data_items[label] = plot_item.plot(
-                    x=series.index,
-                    y=series.values,
-                    pen=color,
-                    name=label,
-                    clear=False,
-                )
-            # Cursor to drag around on the data
-            if self.cursor_line is None:
-                self.cursor_line = plot_item.addLine(
-                    x=np.median(series.index), movable=True, label="{value:.3f}"
-                )
-        # Axis formatting
-        plot_item.setLabels(left=ylabel, bottom=xlabel)
+    #     """
+    #     plot_item = self.getPlotItem()
+    #     # Plot this run's data
+    #     for idx, (label, series) in enumerate(runs.items()):
+    #         color = colors[idx % len(colors)]
+    #         if label in self.data_items.keys():
+    #             # We've plotted this item before, so reuse it
+    #             data_item = self.data_items[label]
+    #             data_item.setData(series.index, series.values)
+    #         else:
+    #             self.data_items[label] = plot_item.plot(
+    #                 x=series.index,
+    #                 y=series.values,
+    #                 pen=color,
+    #                 name=label,
+    #                 clear=False,
+    #             )
+    #         # Cursor to drag around on the data
+    #         if self.cursor_line is None:
+    #             self.cursor_line = plot_item.addLine(
+    #                 x=np.median(series.index), movable=True, label="{value:.3f}"
+    #             )
+    #     # Axis formatting
+    #     plot_item.setLabels(left=ylabel, bottom=xlabel)
 
 
 class Browser2DPlotWidget(ImageView):

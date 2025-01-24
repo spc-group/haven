@@ -209,20 +209,6 @@ class RunBrowserDisplay(display.FireflyDisplay):
         self.ui.refresh_runs_button.setIcon(qta.icon("fa5s.sync"))
         self.ui.refresh_runs_button.clicked.connect(self.reload_runs)
         self.ui.reset_filters_button.clicked.connect(self.reset_default_filters)
-        # Respond to changes in displaying the 1d plot
-        for signal in [
-            self.ui.signal_y_combobox.currentTextChanged,
-            self.ui.signal_x_combobox.currentTextChanged,
-            self.ui.signal_r_combobox.currentTextChanged,
-            self.ui.signal_r_checkbox.stateChanged,
-            self.ui.logarithm_checkbox.stateChanged,
-            self.ui.invert_checkbox.stateChanged,
-            self.ui.gradient_checkbox.stateChanged,
-        ]:
-            signal.connect(self.plot_1d_view.clear_runs)
-            signal.connect(self.update_1d_plot)
-        self.ui.plot_1d_hints_checkbox.stateChanged.connect(self.update_1d_signals)
-        self.ui.autorange_1d_button.clicked.connect(self.auto_range)
         # Respond to changes in displaying the 2d plot
         self.ui.signal_value_combobox.currentTextChanged.connect(self.update_2d_plot)
         self.ui.logarithm_checkbox_2d.stateChanged.connect(self.update_2d_plot)
@@ -237,18 +223,14 @@ class RunBrowserDisplay(display.FireflyDisplay):
         self.ui.reload_plots_button.clicked.connect(self.update_plots)
         self.ui.stream_combobox.currentTextChanged.connect(self.update_data_keys)
         self.ui.stream_combobox.currentTextChanged.connect(self.update_data_frames)
-        # Set up plotting widgets
-        self.plot_1d_item = self.ui.plot_1d_view.getPlotItem()
-        self.plot_2d_item = self.ui.plot_2d_view.getImageItem()
-        self.plot_1d_item.addLegend()
-        self.plot_1d_item.hover_coords_changed.connect(
-            self.ui.hover_coords_label.setText
-        )
         # Connect to signals for individual tabs
         self.metadata_changed.connect(self.ui.metadata_view.display_metadata)
+        self.metadata_changed.connect(self.ui.lineplot_view.stash_metadata)
         self.data_keys_changed.connect(self.ui.xrf_view.update_signal_widgets)
         self.data_keys_changed.connect(self.ui.multiplot_view.update_signal_widgets)
+        self.data_keys_changed.connect(self.ui.lineplot_view.update_signal_widgets)
         self.data_frames_changed.connect(self.ui.multiplot_view.plot_multiples)
+        self.data_frames_changed.connect(self.ui.lineplot_view.plot)
         # Create a new export dialog for saving files
         self.ui.export_button.clicked.connect(self.export_runs)
         self.export_dialog = ExportDialog(parent=self)
@@ -371,42 +353,13 @@ class RunBrowserDisplay(display.FireflyDisplay):
         sorted(stream_names, key=lambda x: x != "primary")
         self.ui.stream_combobox.clear()
         self.ui.stream_combobox.addItems(stream_names)
+        if "primary" in stream_names:
+            self.ui.stream_combobox.setCurrentText("primary")
 
     @property
     def stream(self):
         current_text = self.ui.stream_combobox.currentText()
         return current_text or "primary"
-
-    @asyncSlot()
-    @cancellable
-    async def update_1d_signals(self, *args):
-        # Store old values for restoring later
-        comboboxes = [
-            self.ui.signal_x_combobox,
-            self.ui.signal_y_combobox,
-            self.ui.signal_r_combobox,
-        ]
-        old_values = [cb.currentText() for cb in comboboxes]
-        # Determine valid list of columns to choose from
-        use_hints = self.ui.plot_1d_hints_checkbox.isChecked()
-        signals_task = self.db_task(
-            self.db.signal_names(hinted_only=use_hints, stream=self.stream),
-            name="1D signals",
-        )
-        xcols, ycols = await signals_task
-        self.multi_y_signals = ycols
-        # Update the comboboxes with new signals
-        self.ui.signal_x_combobox.clear()
-        self.ui.signal_x_combobox.addItems(xcols)
-        for cb in [
-            self.ui.signal_y_combobox,
-            self.ui.signal_r_combobox,
-        ]:
-            cb.clear()
-            cb.addItems(ycols)
-        # Restore previous values
-        for val, cb in zip(old_values, comboboxes):
-            cb.setCurrentText(val)
 
     @asyncSlot()
     @cancellable
@@ -455,64 +408,6 @@ class RunBrowserDisplay(display.FireflyDisplay):
 
     @asyncSlot()
     @cancellable
-    async def update_1d_plot(self, *args, uids: Sequence[str] = None):
-        """Updates the data used in the plots.
-
-        If *uids* is given, only runs with UIDs listed in *uids* will
-        be updated.
-
-        """
-        # Figure out which signals to plot
-        y_signal = self.ui.signal_y_combobox.currentText()
-        x_signal = self.ui.signal_x_combobox.currentText()
-        use_reference = self.ui.signal_r_checkbox.isChecked()
-        if use_reference:
-            r_signal = self.ui.signal_r_combobox.currentText()
-        else:
-            r_signal = None
-        use_log = self.ui.logarithm_checkbox.isChecked()
-        use_invert = self.ui.invert_checkbox.isChecked()
-        use_grad = self.ui.gradient_checkbox.isChecked()
-        # Load data
-        task = self.db_task(
-            self.db.signals(
-                x_signal,
-                y_signal,
-                r_signal,
-                use_log=use_log,
-                use_invert=use_invert,
-                use_grad=use_grad,
-                uids=uids,
-                stream=self.stream,
-            ),
-            "1D plot",
-        )
-        runs = await task
-        if len(runs) == 0:
-            return
-        # Decide on axes labels
-        xlabel = x_signal
-        if r_signal is not None:
-            if use_invert:
-                ylabel = f"{r_signal}/{y_signal}"
-            else:
-                ylabel = f"{y_signal}/{r_signal}"
-        else:
-            if use_invert:
-                ylabel = f"1/{y_signal}"
-            else:
-                ylabel = y_signal
-        if use_log:
-            ylabel = f"ln({ylabel})"
-        if use_grad:
-            ylabel = f"∇ {ylabel}"
-        # Do the plotting
-        self.ui.plot_1d_view.plot_runs(runs, xlabel=xlabel, ylabel=ylabel)
-        if self.ui.autorange_1d_checkbox.isChecked():
-            self.ui.plot_1d_view.autoRange()
-
-    @asyncSlot()
-    @cancellable
     async def update_2d_plot(self):
         """Change the 2D map plot based on desired signals, etc."""
         # Figure out which signals to plot
@@ -547,14 +442,6 @@ class RunBrowserDisplay(display.FireflyDisplay):
         new_md = await self.db_task(self.db.metadata(), "metadata")
         self.metadata_changed.emit(new_md)
 
-    def clear_plots(self):
-        """Clear all the plots.
-
-        If a *uid* is provided, only the plots matching the scan with
-        *uid* will be updated.
-        """
-        self.plot_1d_view.clear_runs()
-
     @asyncSlot()
     @cancellable
     async def update_plots(self):
@@ -579,8 +466,6 @@ class RunBrowserDisplay(display.FireflyDisplay):
                 self.db_task(self.db.hints(stream), "update data hints"),
             )
         independent_hints, dependent_hints = hints
-        # print(f"Emitting data_keys_changed: {data_keys=}, {independent_hints=}, {dependent_hints=}")
-        print(f"{independent_hints=}, {dependent_hints=}")
         self.data_keys_changed.emit(data_keys, set(independent_hints), set(dependent_hints))
 
     @asyncSlot()
@@ -614,7 +499,6 @@ class RunBrowserDisplay(display.FireflyDisplay):
             await self.update_streams()
             await self.update_data_keys()
             # Update the plots
-            self.clear_plots()
             await self.update_plots()
             self.update_export_button()
 

@@ -82,14 +82,7 @@
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_7">
        <item>
-        <widget class="GraphicsLayoutWidget" name="plot_widget" native="true">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-        </widget>
+        <widget class="GraphicsLayoutWidget" name="plot_widget"/>
        </item>
       </layout>
      </widget>
@@ -100,9 +93,8 @@
  <customwidgets>
   <customwidget>
    <class>GraphicsLayoutWidget</class>
-   <extends>QWidget</extends>
+   <extends>QGraphicsView</extends>
    <header>pyqtgraph</header>
-   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources/>
