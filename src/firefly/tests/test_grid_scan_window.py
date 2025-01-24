@@ -135,7 +135,7 @@ async def test_grid_scan_plan_queued(
     )
     # set up meta data
     display.ui.lineEdit_sample.setText("sam")
-    display.ui.lineEdit_purpose.setText("test")
+    display.ui.comboBox_purpose.setCurrentText("test")
     display.ui.textEdit_notes.setText("notes")
 
     expected_item = BPlan(
