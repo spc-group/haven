@@ -81,5 +81,3 @@ dependencies:
     # --- Extra Qt UI packages
     - qtawesome
     - qasync
-    
-    - dask >= 2022
