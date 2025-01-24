@@ -107,9 +107,6 @@
          <property name="text">
           <string>Center</string>
          </property>
-         <property name="alignment">
-          <set>Qt::AlignmentFlag::AlignCenter</set>
-         </property>
         </widget>
        </item>
        <item>
@@ -144,9 +141,6 @@
      </item>
      <item>
       <spacer name="horizontalSpacer_4">
-       <property name="orientation">
-        <enum>Qt::Orientation::Horizontal</enum>
-       </property>
        <property name="sizeHint" stdset="0">
         <size>
          <width>40</width>
@@ -188,9 +182,6 @@
          <property name="text">
           <string>Size</string>
          </property>
-         <property name="alignment">
-          <set>Qt::AlignmentFlag::AlignCenter</set>
-         </property>
         </widget>
        </item>
        <item>
@@ -216,9 +207,6 @@
      </item>
      <item>
       <spacer name="horizontalSpacer_5">
-       <property name="orientation">
-        <enum>Qt::Orientation::Horizontal</enum>
-       </property>
        <property name="sizeHint" stdset="0">
         <size>
          <width>40</width>
@@ -238,9 +226,6 @@
          <property name="text">
           <string>Width</string>
          </property>
-         <property name="alignment">
-          <set>Qt::AlignmentFlag::AlignCenter</set>
-         </property>
         </widget>
        </item>
       </layout>
@@ -254,9 +239,6 @@
      </item>
      <item>
       <spacer name="horizontalSpacer_8">
-       <property name="orientation">
-        <enum>Qt::Orientation::Horizontal</enum>
-       </property>
        <property name="sizeHint" stdset="0">
         <size>
          <width>40</width>
