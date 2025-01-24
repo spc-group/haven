@@ -1,2 +1,0 @@
-Requirement already satisfied: aps-dm-api in /home/beams3/YANNACHEN/miniforge3/envs/haven/lib/python3.10/site-packages (9.3.1)
-Requirement already satisfied: decorator in /home/beams3/YANNACHEN/miniforge3/envs/haven/lib/python3.10/site-packages (from aps-dm-api) (5.1.1)
