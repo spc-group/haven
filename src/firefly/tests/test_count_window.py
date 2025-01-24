@@ -1,12 +1,13 @@
-from unittest import mock
 import asyncio
+from unittest import mock
 
-from bluesky_queueserver_api import BPlan
-from qtpy import QtCore
 import pytest
+from bluesky_queueserver_api import BPlan
+from ophyd_async.testing import set_mock_value
+from qtpy import QtCore
 
 from firefly.plans.count import CountDisplay
-from ophyd_async.testing import set_mock_value
+
 
 @pytest.fixture()
 async def display(qtbot, sim_registry):
@@ -26,13 +27,13 @@ async def test_time_calculator(display, sim_registry, ion_chamber):
     display.ui.detectors_list.selected_detectors = mock.MagicMock(
         return_value=["vortex_me4", "I0"]
     )
-    
+
     # Set up default timing for the detector
     detectors = display.ui.detectors_list.selected_detectors()
     detectors = {name: sim_registry[name] for name in detectors}
     set_mock_value(detectors[ion_chamber.name].default_time_signal, 0.82)
     detectors["vortex_me4"].default_time_signal.set(0.5).wait()
-    
+
     # Set up num of repeat scans
     display.ui.spinBox_repeat_scan_num.setValue(6)
 
@@ -51,7 +52,7 @@ async def test_time_calculator(display, sim_registry, ion_chamber):
     assert display.ui.label_hour_total.text() == "0"
     assert display.ui.label_min_total.text() == "1"
     assert display.ui.label_sec_total.text() == "38.4"
-    
+
 
 def test_count_plan_queued(display, qtbot, sim_registry):
     display.ui.run_button.setEnabled(True)
@@ -61,7 +62,9 @@ def test_count_plan_queued(display, qtbot, sim_registry):
     display.ui.detectors_list.selected_detectors = mock.MagicMock(
         return_value=["vortex_me4", "I0"]
     )
-    expected_item = BPlan("count", num=5, detectors=["vortex_me4", "I0"], delay=0.5, md={})
+    expected_item = BPlan(
+        "count", num=5, detectors=["vortex_me4", "I0"], delay=0.5, md={}
+    )
 
     def check_item(item):
         return item.to_dict() == expected_item.to_dict()
@@ -77,7 +80,7 @@ def test_count_plan_metadata(display, qtbot, sim_registry):
     display.ui.run_button.setEnabled(True)
     display.ui.num_spinbox.setValue(5)
     # set up meta data
-    display.ui.lineEdit_sample.setText('LMO') 
+    display.ui.lineEdit_sample.setText("LMO")
     display.ui.comboBox_purpose.setCurrentText("test")
     display.ui.textEdit_notes.setText("notes")
     display.ui.lineEdit_formula.setText("LiMn0.5Ni0.5O")
@@ -85,17 +88,18 @@ def test_count_plan_metadata(display, qtbot, sim_registry):
     display.ui.detectors_list.selected_detectors = mock.MagicMock(
         return_value=["vortex_me4", "I0"]
     )
-    expected_item = BPlan("count", 
-                          num=5, 
-                          detectors=["vortex_me4", "I0"], 
-                          delay=0.0,
-                          md={"sample_name": "LMO", 
-                              "purpose": "test", 
-                              "notes": "notes",
-                              "sample_formula": "LiMn0.5Ni0.5O",
-                              },
+    expected_item = BPlan(
+        "count",
+        num=5,
+        detectors=["vortex_me4", "I0"],
+        delay=0.0,
+        md={
+            "sample_name": "LMO",
+            "purpose": "test",
+            "notes": "notes",
+            "sample_formula": "LiMn0.5Ni0.5O",
+        },
     )
-
 
     def check_item(item):
         from pprint import pprint
@@ -109,7 +113,6 @@ def test_count_plan_metadata(display, qtbot, sim_registry):
         display.queue_item_submitted, timeout=1000, check_params_cb=check_item
     ):
         qtbot.mouseClick(display.ui.run_button, QtCore.Qt.LeftButton)
-
 
 
 # -----------------------------------------------------------------------------
