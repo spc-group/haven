@@ -93,7 +93,6 @@ class LineScanDisplay(regions_display.RegionsDisplay):
         self.ui.detectors_list.selectionModel().selectionChanged.connect(
             self.update_total_time
         )
-        self.ui.spinBox_repeat_scan_num.valueChanged.connect(self.update_total_time)
 
         for region in self.regions:
             self.ui.scan_pts_spin_box.valueChanged.connect(region.set_num_points)
