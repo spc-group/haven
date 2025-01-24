@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>263</width>
-    <height>215</height>
+    <height>181</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -71,15 +71,6 @@
     <layout class="QHBoxLayout" name="horizontalLayout_3">
      <item>
       <widget class="PyDMSlider" name="PyDMSlider_3">
-       <property name="enabled">
-        <bool>true</bool>
-       </property>
-       <property name="mouseTracking">
-        <bool>false</bool>
-       </property>
-       <property name="tabletTracking">
-        <bool>false</bool>
-       </property>
        <property name="toolTip">
         <string/>
        </property>
@@ -87,16 +78,7 @@
         <string>haven://${AD}.overlays.overlay_${OV}.position_y</string>
        </property>
        <property name="orientation" stdset="0">
-        <number>2</number>
-       </property>
-       <property name="userMaximum" stdset="0">
-        <double>3000.000000000000000</double>
-       </property>
-       <property name="userMinimum" stdset="0">
-        <double>0.000000000000000</double>
-       </property>
-       <property name="userDefinedLimits" stdset="0">
-        <bool>true</bool>
+        <enum>Qt::Vertical</enum>
        </property>
       </widget>
      </item>
@@ -108,35 +90,20 @@
           <string>Center</string>
          </property>
          <property name="alignment">
-          <set>Qt::AlignmentFlag::AlignCenter</set>
+          <set>Qt::AlignCenter</set>
          </property>
         </widget>
        </item>
        <item>
-        <widget class="PyDMSlider" name="PyDMSlider_2">
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
+        <widget class="PyDMSlider" name="PyDMSlider_4">
          <property name="toolTip">
           <string/>
-         </property>
-         <property name="rules" stdset="0">
-          <string>[]</string>
          </property>
          <property name="channel" stdset="0">
           <string>haven://${AD}.overlays.overlay_${OV}.position_x</string>
          </property>
-         <property name="userDefinedLimits" stdset="0">
-          <bool>true</bool>
-         </property>
-         <property name="userMinimum" stdset="0">
-          <double>0.000000000000000</double>
-         </property>
-         <property name="userMaximum" stdset="0">
-          <double>3000.000000000000000</double>
-         </property>
-         <property name="num_steps" stdset="0">
-          <number>101</number>
+         <property name="step_size" stdset="0">
+          <number>0</number>
          </property>
         </widget>
        </item>
@@ -145,7 +112,7 @@
      <item>
       <spacer name="horizontalSpacer_4">
        <property name="orientation">
-        <enum>Qt::Orientation::Horizontal</enum>
+        <enum>Qt::Horizontal</enum>
        </property>
        <property name="sizeHint" stdset="0">
         <size>
@@ -168,16 +135,7 @@
         <string>haven://${AD}.overlays.overlay_${OV}.size_y</string>
        </property>
        <property name="orientation" stdset="0">
-        <number>2</number>
-       </property>
-       <property name="userMaximum" stdset="0">
-        <double>3000.000000000000000</double>
-       </property>
-       <property name="userMinimum" stdset="0">
-        <double>0.000000000000000</double>
-       </property>
-       <property name="userDefinedLimits" stdset="0">
-        <bool>true</bool>
+        <enum>Qt::Vertical</enum>
        </property>
       </widget>
      </item>
@@ -189,7 +147,7 @@
           <string>Size</string>
          </property>
          <property name="alignment">
-          <set>Qt::AlignmentFlag::AlignCenter</set>
+          <set>Qt::AlignCenter</set>
          </property>
         </widget>
        </item>
@@ -201,15 +159,6 @@
          <property name="channel" stdset="0">
           <string>haven://${AD}.overlays.overlay_${OV}.size_x</string>
          </property>
-         <property name="userMaximum" stdset="0">
-          <double>3000.000000000000000</double>
-         </property>
-         <property name="userMinimum" stdset="0">
-          <double>0.000000000000000</double>
-         </property>
-         <property name="userDefinedLimits" stdset="0">
-          <bool>true</bool>
-         </property>
         </widget>
        </item>
       </layout>
@@ -217,45 +166,7 @@
      <item>
       <spacer name="horizontalSpacer_5">
        <property name="orientation">
-        <enum>Qt::Orientation::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-    </layout>
-   </item>
-   <item>
-    <layout class="QHBoxLayout" name="horizontalLayout_11">
-     <item>
-      <layout class="QVBoxLayout" name="verticalLayout_8">
-       <item>
-        <widget class="QLabel" name="label_9">
-         <property name="text">
-          <string>Width</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignmentFlag::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </item>
-     <item>
-      <widget class="QLineEdit" name="lineEdit">
-       <property name="channel" stdset="0">
-        <string>haven://${AD}.overlays.overlay_${OV}.widthX</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <spacer name="horizontalSpacer_8">
-       <property name="orientation">
-        <enum>Qt::Orientation::Horizontal</enum>
+        <enum>Qt::Horizontal</enum>
        </property>
        <property name="sizeHint" stdset="0">
         <size>
@@ -271,12 +182,6 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>PyDMSlider</class>
-   <extends>QFrame</extends>
-   <header>pydm.widgets.slider</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
    <class>PyDMCheckbox</class>
    <extends>QCheckBox</extends>
    <header>pydm.widgets.checkbox</header>
@@ -285,6 +190,11 @@
    <class>PyDMEnumComboBox</class>
    <extends>QComboBox</extends>
    <header>pydm.widgets.enum_combo_box</header>
+  </customwidget>
+  <customwidget>
+   <class>PyDMSlider</class>
+   <extends>QFrame</extends>
+   <header>pydm.widgets.slider</header>
   </customwidget>
  </customwidgets>
  <resources/>
