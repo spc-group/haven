@@ -15,7 +15,7 @@ from qtpy.QtCore import Signal, Slot
 from qtpy.QtGui import QIcon, QKeySequence
 from qtpy.QtWidgets import QAction, QErrorMessage
 
-from haven import beamline, load_config
+from haven import beamline, load_config, tiled_client
 from haven.exceptions import ComponentNotFound, InvalidConfiguration
 from haven.utils import titleize
 
@@ -341,11 +341,18 @@ class FireflyController(QtCore.QObject):
         # Send the current devices to the window
         await action.window.update_devices(self.registry)
 
-    def finalize_run_browser_window(self, action):
-        """Connect up signals that are specific to the run browser window."""
+    @asyncSlot(QAction)
+    async def finalize_run_browser_window(self, action):
+        """Connect up run browser signals and load initial data."""
         display = action.display
         self.run_updated.connect(display.update_running_scan)
         self.run_stopped.connect(display.update_running_scan)
+        # Set initial state for the run_browser
+        client = tiled_client(catalog=None)
+        config = load_config()["tiled"]
+        await display.setup_database(
+            tiled_client=client, catalog_name=config["default_catalog"]
+        )
 
     def finalize_status_window(self, action):
         """Connect up signals that are specific to the voltmeters window."""
@@ -662,12 +669,6 @@ class FireflyController(QtCore.QObject):
         log.debug(f"Application received item to add to queue: {item}")
         if getattr(self, "_queue_client", None) is not None:
             await self._queue_client.add_queue_item(item, run_now=run_now)
-
-    @QtCore.Slot()
-    def show_sample_viewer_window(self):
-        return self.show_window(
-            FireflyMainWindow, ui_dir / "sample_viewer.ui", name="sample_viewer"
-        )
 
     @QtCore.Slot(bool)
     def set_open_environment_action_state(self, is_open: bool):

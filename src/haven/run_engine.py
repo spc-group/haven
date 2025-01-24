@@ -1,4 +1,5 @@
 import logging
+from uuid import uuid4 as uuid
 
 import databroker
 import IPython
@@ -6,6 +7,9 @@ from bluesky import RunEngine as BlueskyRunEngine
 from bluesky.callbacks.best_effort import BestEffortCallback
 from bluesky.callbacks.tiled_writer import TiledWriter
 from bluesky.utils import ProgressBarManager, register_transform
+from bluesky_kafka import Publisher
+
+from haven import load_config
 
 from .catalog import tiled_client
 from .exceptions import ComponentNotFound
@@ -29,8 +33,25 @@ def save_to_databroker(name, doc):
     catalog.v1.insert(name, doc)
 
 
+def kafka_publisher():
+    config = load_config()
+    publisher = Publisher(
+        topic=config["kafka"]["topic"],
+        bootstrap_servers=",".join(config["kafka"]["servers"]),
+        producer_config={"enable.idempotence": True},
+        flush_on_stop_doc=True,
+        key=str(uuid()),
+    )
+    return publisher
+
+
 def run_engine(
-    *, connect_tiled=True, connect_databroker=True, use_bec=False, **kwargs
+    *,
+    connect_tiled=False,
+    connect_databroker=False,
+    connect_kafka=True,
+    use_bec=False,
+    **kwargs,
 ) -> BlueskyRunEngine:
     """Build a bluesky RunEngine() for Haven.
 
@@ -81,6 +102,8 @@ def run_engine(
         client.include_data_sources()
         tiled_writer = TiledWriter(client)
         RE.subscribe(tiled_writer)
+    if connect_kafka:
+        RE.subscribe(kafka_publisher())
     # Add preprocessors
     RE.preprocessors.append(inject_haven_md_wrapper)
     return RE

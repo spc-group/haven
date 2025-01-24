@@ -109,6 +109,7 @@ dependencies:
     # --- general support packages
     - bitshuffle
     - h5py
+    - dask >= 2022
     - hdf5plugin
     - imagecodecs-lite
     - ipympl
