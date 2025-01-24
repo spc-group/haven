@@ -4,18 +4,17 @@ from bluesky_queueserver_api import BPlan
 
 from firefly import display
 from firefly.plans import regions_display
-from qasync import asyncSlot
 
 log = logging.getLogger()
 
 
 class CountDisplay(regions_display.PlanDisplay, display.FireflyDisplay):
-    
+
     async def update_devices(self, registry):
         """Set available components in the device list."""
         await super().update_devices(registry)
         await self.ui.detectors_list.update_devices(registry)
-        
+
     def customize_ui(self):
         super().customize_ui()
         # Connect signals for total time updates
@@ -30,25 +29,25 @@ class CountDisplay(regions_display.PlanDisplay, display.FireflyDisplay):
         delay = self.ui.delay_spinbox.value()
         total_time_per_scan = detector_time * num_readings + delay * (num_readings - 1)
         return total_time_per_scan
-        
+
     def queue_plan(self, *args, **kwargs):
         """Execute this plan on the queueserver."""
         # Get scan parameters from widgets
         num_readings = self.ui.num_spinbox.value()
         delay = self.ui.delay_spinbox.value()
         detectors, repeat_scan_num = self.get_scan_parameters()
-        
+
         # Build the queue item
         md = self.get_meta_data()
         item = BPlan("count", delay=delay, num=num_readings, detectors=detectors, md=md)
         # Submit the item to the queueserver
         log.info("Add ``count()`` plan to queue.")
-        
+
         # repeat scans
         for i in range(repeat_scan_num):
             self.queue_item_submitted.emit(item)
         print(item)
-    
+
     def ui_filename(self):
         return "plans/count.ui"
 

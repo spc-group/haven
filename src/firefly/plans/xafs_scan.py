@@ -7,10 +7,9 @@ from qtpy import QtWidgets
 from qtpy.QtCore import QObject, Signal
 from qtpy.QtGui import QDoubleValidator
 from xraydb.xraydb import XrayDB
-from firefly.plans import regions_display
 
 from firefly import display
-from firefly.plans.util import time_converter
+from firefly.plans import regions_display
 from haven.energy_ranges import (
     E_step_to_k_step,
     ERange,
@@ -457,9 +456,9 @@ class XafsScanDisplay(regions_display.PlanDisplay, display.FireflyDisplay):
         energies, exposures = merge_ranges(*energy_ranges_all, sort=True)
         energies = list(np.round(energies, float_accuracy))
         exposures = list(np.round(exposures, float_accuracy))
-        
+
         md = self.get_meta_data()
-        md['is_standard'] = self.ui.checkBox_is_standard.isChecked()
+        md["is_standard"] = self.ui.checkBox_is_standard.isChecked()
         detectors, repeat_scan_num = self.get_scan_parameters()
 
         # Check that an absorption edge was selected
