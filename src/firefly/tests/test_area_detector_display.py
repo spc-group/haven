@@ -62,15 +62,22 @@ def test_exposure_checkbox_push_button(display, qtbot):
 
     # Simulate checking the checkbox
     exposure_checkbox.setChecked(True)
-    assert not exposure_push_button.isEnabled(), "Exposure PushButton should be disabled when Checkbox is checked."
+    assert (
+        not exposure_push_button.isEnabled()
+    ), "Exposure PushButton should be disabled when Checkbox is checked."
 
     # Simulate unchecking the checkbox
     exposure_checkbox.setChecked(False)
-    assert exposure_push_button.isEnabled(), "Exposure PushButton should be enabled when Checkbox is unchecked."
+    assert (
+        exposure_push_button.isEnabled()
+    ), "Exposure PushButton should be enabled when Checkbox is unchecked."
 
     # Simulate clicking the push button
     qtbot.mouseClick(exposure_push_button, Qt.LeftButton)
-    assert not exposure_checkbox.isChecked(), "Exposure Checkbox should be unchecked when PushButton is clicked."
+    assert (
+        not exposure_checkbox.isChecked()
+    ), "Exposure Checkbox should be unchecked when PushButton is clicked."
+
 
 def test_gain_checkbox_push_button(display, qtbot):
     """
@@ -85,15 +92,22 @@ def test_gain_checkbox_push_button(display, qtbot):
 
     # Simulate checking the checkbox
     gain_checkbox.setChecked(True)
-    assert not gain_push_button.isEnabled(), "Gain PushButton should be disabled when Checkbox is checked."
+    assert (
+        not gain_push_button.isEnabled()
+    ), "Gain PushButton should be disabled when Checkbox is checked."
 
     # Simulate unchecking the checkbox
     gain_checkbox.setChecked(False)
-    assert gain_push_button.isEnabled(), "Gain PushButton should be enabled when Checkbox is unchecked."
+    assert (
+        gain_push_button.isEnabled()
+    ), "Gain PushButton should be enabled when Checkbox is unchecked."
 
     # Simulate clicking the push button
     qtbot.mouseClick(gain_push_button, Qt.LeftButton)
-    assert not gain_checkbox.isChecked(), "Gain Checkbox should be unchecked when PushButton is clicked."
+    assert (
+        not gain_checkbox.isChecked()
+    ), "Gain Checkbox should be unchecked when PushButton is clicked."
+
 
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
