@@ -67,6 +67,7 @@ dependencies:
     - typhos >= 3.1.0  # need the find_signal method on the SignalConnection()
     - p4p
     - tiled[all] >= 0.1.0b6  # Make sure we have pydantic2 support
+    - bluesky_tiled_plugins
     - xarray !=2022.6.0  # incompatible with numpy=1.20
     - ipython
     - ipykernel
