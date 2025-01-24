@@ -10,7 +10,7 @@ from firefly.plans.count import CountDisplay
 
 
 @pytest.fixture()
-async def display(qtbot, sim_registry):
+async def display(qtbot, sim_registry, dxp, ion_chamber):
     display = CountDisplay()
     qtbot.addWidget(display)
     await display.update_devices(sim_registry)
@@ -25,7 +25,7 @@ async def display(qtbot, sim_registry):
 async def test_time_calculator(display, sim_registry, ion_chamber):
     # Set up detector list
     display.ui.detectors_list.selected_detectors = mock.MagicMock(
-        return_value=["vortex_me4", "I0"]
+        return_value=["vortex_me4", "I00"]
     )
 
     # Set up default timing for the detector
@@ -60,10 +60,10 @@ def test_count_plan_queued(display, qtbot, sim_registry):
     display.ui.delay_spinbox.setValue(0.5)
     # Set up detector list
     display.ui.detectors_list.selected_detectors = mock.MagicMock(
-        return_value=["vortex_me4", "I0"]
+        return_value=["vortex_me4", "I00"]
     )
     expected_item = BPlan(
-        "count", num=5, detectors=["vortex_me4", "I0"], delay=0.5, md={}
+        "count", num=5, detectors=["vortex_me4", "I00"], delay=0.5, md={}
     )
 
     def check_item(item):
@@ -86,12 +86,12 @@ def test_count_plan_metadata(display, qtbot, sim_registry):
     display.ui.lineEdit_formula.setText("LiMn0.5Ni0.5O")
 
     display.ui.detectors_list.selected_detectors = mock.MagicMock(
-        return_value=["vortex_me4", "I0"]
+        return_value=["vortex_me4", "I00"]
     )
     expected_item = BPlan(
         "count",
         num=5,
-        detectors=["vortex_me4", "I0"],
+        detectors=["vortex_me4", "I00"],
         delay=0.0,
         md={
             "sample_name": "LMO",
