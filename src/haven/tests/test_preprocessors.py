@@ -13,7 +13,12 @@ from haven.preprocessors import shutter_suspend_decorator, shutter_suspend_wrapp
 
 @pytest.fixture()
 def RE():
-    return run_engine(use_bec=False, connect_databroker=False, connect_tiled=False)
+    return run_engine(
+        use_bec=False,
+        connect_databroker=False,
+        connect_tiled=False,
+        connect_kafka=False,
+    )
 
 
 @pytest.mark.xfail

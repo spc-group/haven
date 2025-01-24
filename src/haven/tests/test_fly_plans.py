@@ -8,7 +8,6 @@ from ophyd_async.epics.motor import Motor
 
 from haven.plans import fly_scan, grid_fly_scan
 from haven.plans._fly import FlyerCollector
-from haven.preprocessors import baseline_decorator
 
 
 @pytest.fixture()
@@ -33,7 +32,6 @@ def test_set_fly_params(flyer):
 def test_fly_scan_metadata(flyer, ion_chamber):
     """Does the plan set the parameters of the flyer motor."""
     md = {"spam": "eggs"}
-    print(baseline_decorator)
     plan = fly_scan([ion_chamber], flyer, -20, 30, num=6, dwell_time=1, md=md)
     messages = list(plan)
     open_msg = messages[1]

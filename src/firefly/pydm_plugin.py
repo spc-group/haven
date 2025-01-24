@@ -75,7 +75,7 @@ class HavenAsyncConnection(RegistryConnection, PyDMConnection):
         super().add_listener(channel)
         # If the channel is used for writing to PVs, hook it up to the 'put' methods.
         if channel.value_signal is not None:
-            for type_ in [str, int, float, np.ndarray]:
+            for type_ in [str, int, float, bool, np.ndarray]:
                 try:
                     channel.value_signal[type_].connect(self.put_value)
                 except KeyError:
@@ -140,6 +140,7 @@ class HavenAsyncConnection(RegistryConnection, PyDMConnection):
     @asyncSlot(int)
     @asyncSlot(float)
     @asyncSlot(str)
+    @asyncSlot(bool)
     @asyncSlot(np.ndarray)
     async def put_value(self, new_value):
         if self.is_triggerable:
@@ -172,5 +173,5 @@ class HavenPlugin(SignalPlugin):
         elif is_vanilla_ophyd:
             return HavenConnection(channel, address, protocol)
         else:
-            msg = f"Signal must be ophyd or ophyd_async signal. Got {type(sig)}."
+            msg = f"Signal for {address=} must be ophyd or ophyd_async signal. Got {type(sig)=}."
             raise UnknownOphydSignal(msg)
