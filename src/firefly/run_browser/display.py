@@ -209,12 +209,6 @@ class RunBrowserDisplay(display.FireflyDisplay):
         self.ui.refresh_runs_button.setIcon(qta.icon("fa5s.sync"))
         self.ui.refresh_runs_button.clicked.connect(self.reload_runs)
         self.ui.reset_filters_button.clicked.connect(self.reset_default_filters)
-        # Respond to changes in displaying the 2d plot
-        self.ui.signal_value_combobox.currentTextChanged.connect(self.update_2d_plot)
-        self.ui.logarithm_checkbox_2d.stateChanged.connect(self.update_2d_plot)
-        self.ui.invert_checkbox_2d.stateChanged.connect(self.update_2d_plot)
-        self.ui.gradient_checkbox_2d.stateChanged.connect(self.update_2d_plot)
-        self.ui.plot_2d_hints_checkbox.stateChanged.connect(self.update_2d_signals)
         # Select a new catalog
         self.ui.catalog_combobox.currentTextChanged.connect(self.change_catalog)
         # Respond to filter controls getting updated

@@ -21,6 +21,7 @@ def view(qtbot):
     mp_view.ui.r_signal_checkbox.setCheckState(True)
     mp_view.ui.logarithm_checkbox.setCheckState(True)
     mp_view.ui.invert_checkbox.setCheckState(True)
+    mp_view.ui.gradient_checkbox.setCheckState(True)
     return mp_view
 
 
@@ -165,7 +166,8 @@ def test_plotting_data(view):
     xdata, ydata = view.prepare_plotting_data(dataframe)
     It = dataframe["It-net_current"]
     I0 = dataframe["I0-net_current"]
-    np.testing.assert_array_almost_equal(ydata, np.log(I0 / It))
+    energy = dataframe["energy_energy"]
+    np.testing.assert_array_almost_equal(ydata, np.gradient(np.log(I0 / It), energy))
 
 
 def test_update_plot(view):
@@ -180,18 +182,8 @@ def test_update_plot(view):
     assert len(plot_item.dataItems) == 1
 
 
-# def test_clear_1d_plot(plot_1d_widget):
-#     widget = plot_1d_widget
-#     assert len(widget.data_items) == 0
-#     # Set some runs
-#     widget.plot_runs({"hello": pd.Series(data=[10, 20, 30], index=[1, 2, 3])})
-#     # Check that the right things get drawn
-#     plot_item = widget.getPlotItem()
-#     line = widget.cursor_line
-#     assert line is not None
-#     assert line in plot_item.items
-#     # Clear the plot
-#     widget.clear_runs()
-#     assert widget.cursor_line is None
-#     assert line not in plot_item.items
-#     assert len(plot_item.items) == 0
+def test_axis_labels(view):
+    xlabel, ylabel = view.axis_labels()
+    assert xlabel == "energy_energy"
+    assert ylabel == "grad(ln(I0-net_current/It-net_current))"
+    

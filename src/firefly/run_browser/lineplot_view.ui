@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>696</width>
-    <height>300</height>
+    <height>299</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -119,6 +119,13 @@
       </widget>
      </item>
      <item>
+      <widget class="QCheckBox" name="invert_checkbox">
+       <property name="text">
+        <string>Invert</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QCheckBox" name="logarithm_checkbox">
        <property name="enabled">
         <bool>true</bool>
@@ -129,19 +136,9 @@
       </widget>
      </item>
      <item>
-      <widget class="QCheckBox" name="invert_checkbox">
-       <property name="enabled">
-        <bool>true</bool>
-       </property>
-       <property name="text">
-        <string>Invert</string>
-       </property>
-      </widget>
-     </item>
-     <item>
       <widget class="QCheckBox" name="gradient_checkbox">
        <property name="enabled">
-        <bool>false</bool>
+        <bool>true</bool>
        </property>
        <property name="text">
         <string>dy/dx</string>
@@ -258,5 +255,22 @@
   </customwidget>
  </customwidgets>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>r_signal_checkbox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>r_signal_combobox</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>345</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>406</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
 </ui>

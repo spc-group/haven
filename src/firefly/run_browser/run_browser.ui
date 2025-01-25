@@ -691,12 +691,12 @@
            </item>
           </layout>
          </widget>
-         <widget class="QWidget" name="multi_plots_tab">
+         <widget class="QWidget" name="multiplot_tab">
           <property name="enabled">
            <bool>true</bool>
           </property>
           <attribute name="title">
-           <string>All Plots</string>
+           <string>All Lines</string>
           </attribute>
           <layout class="QVBoxLayout" name="verticalLayout_5">
            <item>
@@ -704,12 +704,12 @@
            </item>
           </layout>
          </widget>
-         <widget class="QWidget" name="plot_1d_tab">
+         <widget class="QWidget" name="lineplot_tab">
           <property name="enabled">
            <bool>true</bool>
           </property>
           <attribute name="title">
-           <string>1D Plot</string>
+           <string>Line</string>
           </attribute>
           <layout class="QVBoxLayout" name="verticalLayout_6">
            <item>
@@ -717,156 +717,16 @@
            </item>
           </layout>
          </widget>
-         <widget class="QWidget" name="map_tab">
+         <widget class="QWidget" name="grid_tab">
           <property name="enabled">
            <bool>true</bool>
           </property>
           <attribute name="title">
-           <string>Map</string>
+           <string>Grid</string>
           </attribute>
           <layout class="QVBoxLayout" name="verticalLayout_2">
            <item>
-            <layout class="QHBoxLayout" name="horizontalLayout_11">
-             <item>
-              <spacer name="horizontalSpacer_9">
-               <property name="orientation">
-                <enum>Qt::Horizontal</enum>
-               </property>
-               <property name="sizeHint" stdset="0">
-                <size>
-                 <width>40</width>
-                 <height>20</height>
-                </size>
-               </property>
-              </spacer>
-             </item>
-             <item>
-              <widget class="QCheckBox" name="plot_2d_hints_checkbox">
-               <property name="enabled">
-                <bool>true</bool>
-               </property>
-               <property name="toolTip">
-                <string>Limits the selectable signals to those marked as &quot;hinted&quot;.</string>
-               </property>
-               <property name="text">
-                <string>Use Hints</string>
-               </property>
-               <property name="checked">
-                <bool>true</bool>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <layout class="QHBoxLayout" name="horizontalLayout_14">
-               <item>
-                <widget class="QLabel" name="signal_value_label">
-                 <property name="text">
-                  <string>Value:</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QComboBox" name="signal_value_combobox">
-                 <property name="enabled">
-                  <bool>true</bool>
-                 </property>
-                </widget>
-               </item>
-              </layout>
-             </item>
-             <item>
-              <widget class="QCheckBox" name="logarithm_checkbox_2d">
-               <property name="enabled">
-                <bool>true</bool>
-               </property>
-               <property name="toolTip">
-                <string>Plot on a logarithmic scale</string>
-               </property>
-               <property name="text">
-                <string>Log</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QCheckBox" name="invert_checkbox_2d">
-               <property name="enabled">
-                <bool>true</bool>
-               </property>
-               <property name="toolTip">
-                <string>Invert the values in the map</string>
-               </property>
-               <property name="text">
-                <string>Invert</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QCheckBox" name="gradient_checkbox_2d">
-               <property name="enabled">
-                <bool>true</bool>
-               </property>
-               <property name="toolTip">
-                <string>Show the magnitude of the gradient</string>
-               </property>
-               <property name="text">
-                <string>Grad</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QComboBox" name="aggregate_combobox_2d">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="toolTip">
-                <string>What comparison to use if multiple compatible scans have been selected.</string>
-               </property>
-               <item>
-                <property name="text">
-                 <string>Median</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>Mean</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>Sum</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>StDev</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>Max</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>Min</string>
-                </property>
-               </item>
-              </widget>
-             </item>
-            </layout>
-           </item>
-           <item>
-            <widget class="Browser2DPlotWidget" name="plot_2d_view" native="true">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-            </widget>
+            <widget class="QWidget" name="gridplot_view" native="true"/>
            </item>
           </layout>
          </widget>
@@ -875,7 +735,7 @@
            <bool>true</bool>
           </property>
           <attribute name="title">
-           <string>XRF</string>
+           <string>Spectra</string>
           </attribute>
           <layout class="QVBoxLayout" name="verticalLayout_16">
            <item>
@@ -888,7 +748,7 @@
            <bool>false</bool>
           </property>
           <attribute name="title">
-           <string>Area Detector</string>
+           <string>Images</string>
           </attribute>
          </widget>
         </widget>
@@ -902,12 +762,6 @@
  <customwidgets>
   <customwidget>
    <class>FiltersWidget</class>
-   <extends>QWidget</extends>
-   <header>firefly.run_browser.widgets</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>Browser2DPlotWidget</class>
    <extends>QWidget</extends>
    <header>firefly.run_browser.widgets</header>
    <container>1</container>

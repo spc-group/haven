@@ -138,10 +138,29 @@ class LineplotView(QtWidgets.QWidget):
             ydata = 1 / ydata
         if self.ui.logarithm_checkbox.checkState():
             ydata = np.log(ydata)
+        if self.ui.gradient_checkbox.checkState():
+            ydata = np.gradient(ydata, xdata)
         return (xdata, ydata)
 
     def axis_labels(self):
-        return "X", "Y"
+        xlabel = self.ui.x_signal_combobox.currentText()
+        ylabel = self.ui.y_signal_combobox.currentText()
+        rlabel = self.ui.r_signal_combobox.currentText()
+        use_reference = self.ui.r_signal_checkbox.checkState()
+        inverted = self.ui.invert_checkbox.checkState()
+        logarithm = self.ui.logarithm_checkbox.checkState()
+        gradient =  self.ui.gradient_checkbox.checkState()
+        if use_reference and inverted:
+            ylabel = f"{rlabel}/{ylabel}"
+        elif use_reference:
+            ylabel = f"{ylabel}/{rlabel}"
+        elif inverted:
+            ylabel = f"1/{ylabel}"
+        if logarithm:
+            ylabel = f"ln({ylabel})"
+        if gradient:
+            ylabel = f"grad({ylabel})"
+        return xlabel, ylabel
 
     @Slot()
     def center_cursor(self):
