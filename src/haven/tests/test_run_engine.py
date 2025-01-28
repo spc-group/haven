@@ -23,19 +23,31 @@ def test_subscribers_garbage_collection(monkeypatch, aps):
 
     """
     monkeypatch.setattr(databroker, "catalog", {"bluesky": databroker.temp()})
-    RE = run_engine(use_bec=False, connect_tiled=False)
+    RE = run_engine(
+        use_bec=False, connect_tiled=False, connect_databroker=True, connect_kafka=False
+    )
     assert len(RE.dispatcher.cb_registry.callbacks) == 12
     gc.collect()
     assert len(RE.dispatcher.cb_registry.callbacks) == 12
 
 
 def test_run_engine_preprocessors(aps):
-    RE = run_engine(use_bec=False, connect_databroker=False, connect_tiled=False)
+    RE = run_engine(
+        use_bec=False,
+        connect_databroker=False,
+        connect_tiled=False,
+        connect_kafka=False,
+    )
     assert len(RE.preprocessors) > 0
 
 
 def test_run_engine_created(aps):
-    RE = run_engine(use_bec=False, connect_databroker=False, connect_tiled=False)
+    RE = run_engine(
+        use_bec=False,
+        connect_databroker=False,
+        connect_tiled=False,
+        connect_kafka=False,
+    )
     assert isinstance(RE, RunEngine)
 
 
