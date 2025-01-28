@@ -1,8 +1,6 @@
-
-import pandas as pd
 import numpy as np
+import pandas as pd
 import pytest
-from qtpy.QtWidgets import QPlainTextEdit
 from pyqtgraph import GraphicsLayoutWidget
 
 from firefly.run_browser.multiplot_view import MultiplotView
@@ -15,7 +13,7 @@ def view(qtbot):
     return mp_view
 
 
-data_keys =  {
+data_keys = {
     "sim_motor_2": {
         "dtype": "number",
     },
@@ -101,8 +99,8 @@ def test_hinted_xsignal_options(view):
     assert (
         combobox.findText("I0-net_current") == -1
     ), f"I0-net_current signal should not be in {combobox.objectName()}."
-    
-    
+
+
 def test_update_plot(view):
     view.use_hints_checkbox.setChecked(True)
     view.independent_hints = ["energy_energy"]
@@ -117,9 +115,7 @@ def test_update_plot(view):
             "I0": np.sin(np.linspace(0, 6.28, num=101)),
         }
     )
-    dataframes = {
-        "7d1daf1d-60c7-4aa7-a668-d1cd97e5335f": df
-    }
+    dataframes = {"7d1daf1d-60c7-4aa7-a668-d1cd97e5335f": df}
     # Configure signals
     view.ui.x_signal_combobox.addItem("energy_energy")
     view.ui.x_signal_combobox.setCurrentText("energy_energy")
@@ -128,7 +124,7 @@ def test_update_plot(view):
     view.plot_multiples(dataframes)
     # Check that the data were added
     assert len(view._multiplot_items) == 1
-    data_item = view._multiplot_items[(0,0)].listDataItems()[0]
+    data_item = view._multiplot_items[(0, 0)].listDataItems()[0]
     xdata, ydata = data_item.getData()
-    np.testing.assert_almost_equal(xdata, df['energy_energy'])
-    np.testing.assert_almost_equal(ydata, df['I0'])
+    np.testing.assert_almost_equal(xdata, df["energy_energy"])
+    np.testing.assert_almost_equal(ydata, df["I0"])

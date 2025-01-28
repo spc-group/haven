@@ -26,6 +26,7 @@ async def test_data_frames(worker):
     # Check the results
     assert uids[0] in data_keys.keys()
 
+
 @pytest.mark.asyncio
 async def test_hints(worker):
     uids = (await worker.catalog.client).keys()

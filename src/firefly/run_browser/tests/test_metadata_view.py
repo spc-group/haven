@@ -1,4 +1,3 @@
-import numpy as np
 import pytest
 from qtpy.QtWidgets import QPlainTextEdit
 

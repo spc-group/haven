@@ -1,14 +1,13 @@
 import asyncio
 import datetime as dt
 import logging
-from collections import Counter, ChainMap
+from collections import ChainMap, Counter
 from contextlib import contextmanager
 from functools import partial, wraps
 from typing import Mapping, Optional, Sequence
 
-import qtawesome as qta
-import yaml
 import numpy as np
+import qtawesome as qta
 from ophyd import Device as ThreadedDevice
 from ophyd_async.core import Device
 from pydm import PyDMChannel
@@ -95,7 +94,9 @@ class RunBrowserDisplay(display.FireflyDisplay):
         )
 
     @asyncSlot(str)
-    async def retrieve_dataset(self, dataset_name: str, callback, task_name: str) -> np.ndarray:
+    async def retrieve_dataset(
+        self, dataset_name: str, callback, task_name: str
+    ) -> np.ndarray:
         """Retrieve a dataset from disk, and provide it to the slot.
 
         Parameters
@@ -106,9 +107,11 @@ class RunBrowserDisplay(display.FireflyDisplay):
           Will be called with the retrieved dataset.
         task_name
           For handling parallel database tasks.
-       """
+        """
         # Retrieve data from the database
-        data = await self.db_task(self.db.dataset(dataset_name, stream=self.stream), task_name)
+        data = await self.db_task(
+            self.db.dataset(dataset_name, stream=self.stream), task_name
+        )
         # Pass it back to the slot
         callback(data)
 
@@ -414,7 +417,9 @@ class RunBrowserDisplay(display.FireflyDisplay):
                 self.db_task(self.db.hints(stream), "update data hints"),
             )
         independent_hints, dependent_hints = hints
-        self.data_keys_changed.emit(data_keys, set(independent_hints), set(dependent_hints))
+        self.data_keys_changed.emit(
+            data_keys, set(independent_hints), set(dependent_hints)
+        )
 
     @asyncSlot()
     @cancellable
@@ -425,8 +430,12 @@ class RunBrowserDisplay(display.FireflyDisplay):
             assert False
             log.info("Not loading data frames for empty stream.")
         else:
-            with self.busy_hints(run_widgets=True, run_table=False, filter_widgets=False):
-                data_frames = await self.db_task(self.db.data_frames(stream), "update data frames")
+            with self.busy_hints(
+                run_widgets=True, run_table=False, filter_widgets=False
+            ):
+                data_frames = await self.db_task(
+                    self.db.data_frames(stream), "update data frames"
+                )
         self.data_frames_changed.emit(data_frames)
 
     @asyncSlot()

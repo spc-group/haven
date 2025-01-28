@@ -3,11 +3,9 @@ import datetime as dt
 from functools import partial
 from unittest.mock import AsyncMock, MagicMock
 
-import numpy as np
 import pytest
 import time_machine
 from ophyd.sim import instantiate_fake_device
-from pyqtgraph import ImageItem, ImageView, PlotItem, PlotWidget
 from qtpy.QtWidgets import QFileDialog
 
 from firefly.run_browser.display import RunBrowserDisplay
@@ -101,37 +99,6 @@ async def test_metadata(display, qtbot):
     display.ui.run_tableview.selectRow(0)
     with qtbot.waitSignal(display.metadata_changed):
         await display.update_selected_runs()
-
-
-@pytest.mark.xfail
-async def test_update_2d_plot(catalog, display):
-    display.plot_2d_item.setRect = MagicMock()
-    # Load test data
-    run = await catalog["85573831-f4b4-4f64-b613-a6007bf03a8d"]
-    display.db.selected_runs = [run]
-    await display.update_1d_signals()
-    # Set the controls to describe the data we want to test
-    val_combobox = display.ui.signal_value_combobox
-    val_combobox.addItem("It_net_counts")
-    val_combobox.setCurrentText("It_net_counts")
-    display.ui.logarithm_checkbox_2d.setChecked(True)
-    display.ui.invert_checkbox_2d.setChecked(True)
-    display.ui.gradient_checkbox_2d.setChecked(True)
-    # Update the plots
-    await display.update_2d_plot()
-    # Determine what the image data should look like
-    expected_data = await run.__getitem__("It_net_counts", stream="primary")
-    expected_data = expected_data.reshape((5, 21)).T
-    # Check that the data were added
-    image = display.plot_2d_item.image
-    np.testing.assert_almost_equal(image, expected_data)
-    # Check that the axes were formatted correctly
-    axes = display.plot_2d_view.view.axes
-    xaxis = axes["bottom"]["item"]
-    yaxis = axes["left"]["item"]
-    assert xaxis.labelText == "aerotech_horiz"
-    assert yaxis.labelText == "aerotech_vert"
-    display.plot_2d_item.setRect.assert_called_with(-100, -80, 200, 160)
 
 
 def test_busy_hints_run_widgets(display):

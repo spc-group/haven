@@ -205,7 +205,7 @@ class CatalogScan:
 
     @run_in_executor
     def data_keys(self, stream: str = "primary"):
-        data_keys = self.container[stream].metadata.get('data_keys')
+        data_keys = self.container[stream].metadata.get("data_keys")
         return data_keys or {}
 
     async def hints(self, stream: str = "primary"):
@@ -228,7 +228,9 @@ class CatalogScan:
         # Get hints for the independent (X)
         try:
             dimensions = metadata["start"]["hints"]["dimensions"]
-            independent = [sig for signals, strm in dimensions if strm == stream for sig in signals]
+            independent = [
+                sig for signals, strm in dimensions if strm == stream for sig in signals
+            ]
         except (KeyError, IndexError):
             warnings.warn("Could not get independent hints")
         # Get hints for the dependent (X)

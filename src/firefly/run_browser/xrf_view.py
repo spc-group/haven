@@ -4,7 +4,6 @@ from typing import Mapping, Sequence
 
 import numpy as np
 from qtpy import QtCore, QtWidgets, uic
-from qtpy.QtCore import Signal
 
 axes = namedtuple("axes", ("z", "y", "x"))
 

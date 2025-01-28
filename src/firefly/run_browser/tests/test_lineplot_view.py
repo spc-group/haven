@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 import pytest
 from pyqtgraph import PlotWidget
-from qtpy.QtWidgets import QPlainTextEdit
 
 from firefly.run_browser.lineplot_view import LineplotView
 
@@ -186,4 +185,3 @@ def test_axis_labels(view):
     xlabel, ylabel = view.axis_labels()
     assert xlabel == "energy_energy"
     assert ylabel == "grad(ln(I0-net_current/It-net_current))"
-    

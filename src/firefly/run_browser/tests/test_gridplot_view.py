@@ -1,9 +1,7 @@
 import numpy as np
 import pandas as pd
 import pytest
-import matplotlib.pyplot as plt
 from pyqtgraph import ImageView
-from qtpy.QtWidgets import QPlainTextEdit
 
 from firefly.run_browser.gridplot_view import GridplotView
 
@@ -34,13 +32,13 @@ def view(qtbot):
 
 
 # Set up fake data
-yy, xx = np.mgrid[0:16,0:32]
+yy, xx = np.mgrid[0:16, 0:32]
 dataframe = pd.DataFrame(
     {
         "slow_motor": yy.flatten(),
         "fast_motor": xx.flatten(),
-        "I0-net_current": np.linspace(1, 100, num=16*32),
-        "It-net_current": np.linspace(101, 200, num=16*32),
+        "I0-net_current": np.linspace(1, 100, num=16 * 32),
+        "It-net_current": np.linspace(101, 200, num=16 * 32),
     }
 )
 dataframes = {"7d1daf1d-60c7-4aa7-a668-d1cd97e5335f": dataframe}
@@ -158,7 +156,9 @@ def test_hinted_signal_options(view):
         view.ui.r_signal_combobox,
     ]
     view.ui.use_hints_checkbox.setChecked(True)
-    view.update_signal_widgets(data_keys, ["fast_motor", "slow_motor"], ["I0-net_current"])
+    view.update_signal_widgets(
+        data_keys, ["fast_motor", "slow_motor"], ["I0-net_current"]
+    )
     # Make sure we don't include array datasets
     for combobox in comboboxes:
         assert (
@@ -199,19 +199,19 @@ def test_plotting_data(view):
 
 def test_regrid_data(view):
     # Prepare some simulated measurement data
-    xx, yy = np.mgrid[-3.2:3.2:0.25,-3.2:3.2:0.2]
-    xy = np.sqrt(xx**2+yy**2)
+    xx, yy = np.mgrid[-3.2:3.2:0.25, -3.2:3.2:0.2]
+    xy = np.sqrt(xx**2 + yy**2)
     data = np.cos(xy)
-    xmax = np.sqrt(2*np.pi)
+    xmax = np.sqrt(2 * np.pi)
     view.shape = (61, 61)
     view.extent = ((-xmax, xmax), (-xmax, xmax))
     points = np.c_[yy.flatten(), xx.flatten()]
     new_data = view.regrid(points=points, values=data.flatten())
-    assert new_data.shape == (61*61, )
+    assert new_data.shape == (61 * 61,)
     # Simulate what the interpolated data should be
-    xstep = 2*xmax/60
-    xx, yy = np.mgrid[-xmax:xmax:xstep,-xmax:xmax:xstep]
-    new_xy = np.sqrt(xx**2+yy**2)
+    xstep = 2 * xmax / 60
+    xx, yy = np.mgrid[-xmax:xmax:xstep, -xmax:xmax:xstep]
+    new_xy = np.sqrt(xx**2 + yy**2)
     test_data = np.cos(new_xy).flatten()
     np.testing.assert_almost_equal(new_data, test_data, decimal=2)
 
@@ -224,12 +224,3 @@ def test_update_plot(view):
     plot_item = view.ui.plot_widget.getImageItem()
     print(view.ui.plot_widget.image)
     assert view.ui.plot_widget.image is not None
-
-
-# Need to implement still
-@pytest.mark.xfail
-def test_axis_labels(view):
-    xlabel, ylabel = view.axis_labels()
-    assert xlabel == "energy_energy"
-    assert ylabel == "grad(ln(I0-net_current/It-net_current))"
-

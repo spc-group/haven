@@ -1,21 +1,14 @@
 import logging
 from itertools import count
-from typing import Mapping, Sequence
 from pathlib import Path
+from typing import Mapping, Sequence
 
-import yaml
-from qtpy import QtCore, QtWidgets, uic
-from qtpy.QtCore import Signal, Slot
-import numpy as np
-from matplotlib.colors import TABLEAU_COLORS
 from pandas.api.types import is_numeric_dtype
-from pyqtgraph import GraphicsLayoutWidget, ImageView, PlotItem, PlotWidget
-from qtpy.QtCore import Qt, Signal
-from qtpy.QtWidgets import QFileDialog, QWidget
-
-
+from qtpy import QtWidgets, uic
+from qtpy.QtCore import Slot
 
 log = logging.getLogger(__name__)
+
 
 class MultiplotView(QtWidgets.QWidget):
     _multiplot_items: Mapping
@@ -155,4 +148,3 @@ class MultiplotView(QtWidgets.QWidget):
             # view.resize(int(width), int(plot_width * row))
             view.setFixedHeight(1200)
             yield new_item
-

@@ -1,20 +1,15 @@
 import logging
-from itertools import count
 from pathlib import Path
 from typing import Mapping, Sequence
 
-from scipy.interpolate import griddata
 import numpy as np
 import pandas as pd
-import yaml
-from matplotlib.colors import TABLEAU_COLORS
-from pandas.api.types import is_numeric_dtype
-from pyqtgraph import GraphicsLayoutWidget, ImageView, PlotItem, PlotWidget
 import pyqtgraph
-import qtawesome as qta
-from qtpy import QtCore, QtWidgets, uic
-from qtpy.QtCore import Qt, Signal, Slot
-from qtpy.QtWidgets import QFileDialog, QWidget
+from matplotlib.colors import TABLEAU_COLORS
+from pyqtgraph import ImageView, PlotItem
+from qtpy import QtWidgets, uic
+from qtpy.QtCore import Slot
+from scipy.interpolate import griddata
 
 log = logging.getLogger(__name__)
 colors = list(TABLEAU_COLORS.values())
@@ -32,6 +27,7 @@ class GridImageView(ImageView):
 
 class GridplotView(QtWidgets.QWidget):
     """Handles the plotting of tabular data that was taken on a grid."""
+
     ui_file = Path(__file__).parent / "gridplot_view.ui"
     shape = ()
     extent = ()
@@ -46,7 +42,7 @@ class GridplotView(QtWidgets.QWidget):
         self.ui = uic.loadUi(self.ui_file, self)
         # Prepare plotting style
         vbox = self.ui.plot_widget.ui.roiPlot.getPlotItem().getViewBox()
-        vbox.setBackgroundColor('k')
+        vbox.setBackgroundColor("k")
         # Connect internal signals/slots
         self.ui.use_hints_checkbox.stateChanged.connect(self.update_signal_widgets)
         self.ui.regrid_checkbox.stateChanged.connect(self.update_signal_widgets)
@@ -67,8 +63,8 @@ class GridplotView(QtWidgets.QWidget):
             return
         md = list(metadata.values())[0]
         try:
-            self.shape = md['start']['shape']
-            self.extent = md['start']['extents']
+            self.shape = md["start"]["shape"]
+            self.extent = md["start"]["extents"]
         except KeyError as exc:
             self.shape = ()
             self.extent = ()
@@ -116,7 +112,9 @@ class GridplotView(QtWidgets.QWidget):
             self.ui.value_signal_combobox,
             self.ui.r_signal_combobox,
         ]
-        for combobox, new_cols in zip(comboboxes, [new_xcols, new_xcols, new_ycols, new_ycols]):
+        for combobox, new_cols in zip(
+            comboboxes, [new_xcols, new_xcols, new_ycols, new_ycols]
+        ):
             old_cols = [combobox.itemText(idx) for idx in range(combobox.count())]
             if old_cols != new_cols:
                 old_value = combobox.currentText()
@@ -173,13 +171,11 @@ class GridplotView(QtWidgets.QWidget):
         return img
 
     def regrid(self, points: np.ndarray, values: np.ndarray):
-        """Calculate a new image with a shape based on metadata.
-
-        """
+        """Calculate a new image with a shape based on metadata."""
         # Prepare new regular grid to interpolate to
         (ymin, ymax), (xmin, xmax) = self.extent
         ystep, xstep = (npts * 1j for npts in self.shape)
-        yy, xx = np.mgrid[ymin:ymax:ystep,xmin:xmax:xstep]
+        yy, xx = np.mgrid[ymin:ymax:ystep, xmin:xmax:xstep]
         xi = np.c_[yy.flatten(), xx.flatten()]
         # Interpolate
         new_values = griddata(points, values, xi, method="cubic")
@@ -218,7 +214,9 @@ class GridplotView(QtWidgets.QWidget):
         try:
             ylabel, xlabel = self.independent_hints
         except ValueError:
-            log.warning(f"Could not determine grid labels from hints: {self.independent_hints}")
+            log.warning(
+                f"Could not determine grid labels from hints: {self.independent_hints}"
+            )
         else:
             view = self.ui.plot_widget.view
             view.setLabels(left=ylabel, bottom=xlabel)
@@ -233,54 +231,3 @@ class GridplotView(QtWidgets.QWidget):
     def clear_plot(self):
         self.ui.plot_widget.getImageItem().clear()
         self.data_items = {}
-
-
-# class Browser2DPlotWidget(ImageView):
-#     """A plot widget for 2D maps."""
-
-#     def __init__(self, *args, view=None, **kwargs):
-#         if view is None:
-#             view = PlotItem()
-#         super().__init__(*args, view=view, **kwargs)
-
-#     def plot_runs(
-#         self, runs: Mapping, xlabel: str = "", ylabel: str = "", extents=None
-#     ):
-#         """Take loaded 2D or 3D mapping data and plot it.
-
-#         Parameters
-#         ==========
-#         runs
-#           Dictionary with pandas series for each curve. The keys
-#           should be the curve labels, the series' indexes are the x
-#           values and the series' values are the y data.
-#         xlabel
-#           The label for the horizontal axis.
-#         ylabel
-#           The label for the vertical axis.
-#         extents
-#           Spatial extents for the map as ((-y, +y), (-x, +x)).
-
-#         """
-#         images = np.asarray(list(runs.values()))
-#         # Combine the different runs into one image
-#         # To-do: make this respond to the combobox selection
-#         image = np.mean(images, axis=0)
-#         # To-do: Apply transformations
-
-#         # # Plot the image
-#         if 2 <= image.ndim <= 3:
-#             self.setImage(image.T, autoRange=False)
-#         else:
-#             log.info(f"Could not plot image of dataset with shape {image.shape}.")
-#             return
-#         # Determine the axes labels
-#         self.view.setLabel(axis="bottom", text=xlabel)
-#         self.view.setLabel(axis="left", text=ylabel)
-#         # Set axes extent
-#         yextent, xextent = extents
-#         x = xextent[0]
-#         y = yextent[0]
-#         w = xextent[1] - xextent[0]
-#         h = yextent[1] - yextent[0]
-#         self.getImageItem().setRect(x, y, w, h)

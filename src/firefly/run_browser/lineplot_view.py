@@ -1,18 +1,14 @@
 import logging
-from itertools import count
 from pathlib import Path
 from typing import Mapping, Sequence
 
 import numpy as np
 import pandas as pd
-import yaml
-from matplotlib.colors import TABLEAU_COLORS
-from pandas.api.types import is_numeric_dtype
-from pyqtgraph import GraphicsLayoutWidget, ImageView, PlotItem, PlotWidget
 import qtawesome as qta
-from qtpy import QtCore, QtWidgets, uic
-from qtpy.QtCore import Qt, Signal, Slot
-from qtpy.QtWidgets import QFileDialog, QWidget
+from matplotlib.colors import TABLEAU_COLORS
+from pyqtgraph import PlotItem, PlotWidget
+from qtpy import QtWidgets, uic
+from qtpy.QtCore import Signal, Slot
 
 log = logging.getLogger(__name__)
 colors = list(TABLEAU_COLORS.values())
@@ -148,7 +144,7 @@ class LineplotView(QtWidgets.QWidget):
         use_reference = self.ui.r_signal_checkbox.checkState()
         inverted = self.ui.invert_checkbox.checkState()
         logarithm = self.ui.logarithm_checkbox.checkState()
-        gradient =  self.ui.gradient_checkbox.checkState()
+        gradient = self.ui.gradient_checkbox.checkState()
         if use_reference and inverted:
             ylabel = f"{rlabel}/{ylabel}"
         elif use_reference:

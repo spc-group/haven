@@ -2,7 +2,7 @@ import asyncio
 import datetime as dt
 import logging
 import warnings
-from collections import OrderedDict, ChainMap
+from collections import ChainMap, OrderedDict
 from functools import partial
 from typing import Mapping, Sequence
 
@@ -162,7 +162,7 @@ class DatabaseWorker:
             all_runs.append(run_data)
         return all_runs
 
-    async def hints(self, stream: str="primary") -> tuple[list, list]:
+    async def hints(self, stream: str = "primary") -> tuple[list, list]:
         """Get hints for this stream, as two lists.
 
         (*independent_hints*, *dependent_hints*)
@@ -178,10 +178,7 @@ class DatabaseWorker:
         dhints = [hint for hints in dhints for hint in hints]
         return ihints, dhints
 
-        
-
     async def signal_names(self, stream: str, *, hinted_only: bool = False):
-
         """Get a list of valid signal names (data columns) for selected runs.
 
         Parameters
@@ -258,7 +255,7 @@ class DatabaseWorker:
 
     async def dataset(
         self,
-            dataset_name: str,
+        dataset_name: str,
         *,
         stream: str,
         uids: Sequence[str] | None = None,
@@ -283,7 +280,6 @@ class DatabaseWorker:
             arr = await run.dataset(dataset_name, stream=stream)
             arrays[run.uid] = arr
         return arrays
-
 
     async def signals(
         self,

@@ -2,8 +2,7 @@ from pathlib import Path
 from typing import Mapping
 
 import yaml
-from qtpy import QtCore, QtWidgets, uic
-from qtpy.QtCore import Signal
+from qtpy import QtWidgets, uic
 
 
 class MetadataView(QtWidgets.QWidget):
