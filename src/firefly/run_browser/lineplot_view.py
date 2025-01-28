@@ -64,7 +64,6 @@ class LineplotView(QtWidgets.QWidget):
         self.ui.logarithm_checkbox.stateChanged.connect(self.plot)
         self.ui.invert_checkbox.stateChanged.connect(self.plot)
         self.ui.gradient_checkbox.stateChanged.connect(self.plot)
-        self.ui.gradient_checkbox.stateChanged.connect(self.plot)
         self.ui.autorange_button.clicked.connect(self.auto_range)
         self.ui.cursor_button.clicked.connect(self.center_cursor)
         # Set up plotting widgets

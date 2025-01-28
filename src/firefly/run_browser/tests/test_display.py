@@ -104,30 +104,6 @@ async def test_metadata(display, qtbot):
 
 
 @pytest.mark.xfail
-async def test_update_running_scan(display):
-    display.ui.plot_1d_view.plot_runs = MagicMock()
-    # Should not update if UID is wrong
-    await display.update_running_scan(uid="spam")
-    assert not display.plot_1d_view.plot_runs.called
-
-
-@pytest.mark.xfail
-# Warns: Task was destroyed but it is pending!
-async def test_2d_plot_signals(catalog, display):
-    # Check that the 1D plot was created
-    plot_widget = display.ui.plot_2d_view
-    plot_item = display.plot_2d_item
-    assert isinstance(plot_widget, ImageView)
-    assert isinstance(plot_item, ImageItem)
-    # Update the list of runs and see if the controls get updated
-    display.db.selected_runs = [await catalog["85573831-f4b4-4f64-b613-a6007bf03a8d"]]
-    await display.update_2d_signals()
-    # Check signals in checkboxes
-    combobox = display.ui.signal_value_combobox
-    assert combobox.findText("It_net_counts") > -1
-
-
-@pytest.mark.xfail
 async def test_update_2d_plot(catalog, display):
     display.plot_2d_item.setRect = MagicMock()
     # Load test data

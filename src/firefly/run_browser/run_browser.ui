@@ -188,8 +188,8 @@
                <rect>
                 <x>0</x>
                 <y>0</y>
-                <width>481</width>
-                <height>546</height>
+                <width>543</width>
+                <height>573</height>
                </rect>
               </property>
               <layout class="QVBoxLayout" name="verticalLayout_9">
@@ -342,7 +342,7 @@
                          <bool>false</bool>
                         </property>
                         <property name="sizePolicy">
-                         <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+                         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
                           <horstretch>0</horstretch>
                           <verstretch>0</verstretch>
                          </sizepolicy>
@@ -559,7 +559,7 @@
                       </property>
                      </widget>
                     </item>
-                    <item row="13" column="1">
+                    <item row="14" column="1">
                      <layout class="QHBoxLayout" name="horizontalLayout_8">
                       <property name="topMargin">
                        <number>0</number>
@@ -588,6 +588,19 @@
                        </widget>
                       </item>
                      </layout>
+                    </item>
+                    <item row="13" column="1">
+                     <spacer name="verticalSpacer">
+                      <property name="orientation">
+                       <enum>Qt::Vertical</enum>
+                      </property>
+                      <property name="sizeHint" stdset="0">
+                       <size>
+                        <width>20</width>
+                        <height>40</height>
+                       </size>
+                      </property>
+                     </spacer>
                     </item>
                    </layout>
                   </item>
@@ -679,7 +692,7 @@
           </sizepolicy>
          </property>
          <property name="currentIndex">
-          <number>2</number>
+          <number>3</number>
          </property>
          <widget class="QWidget" name="metadata_tab">
           <attribute name="title">
@@ -726,7 +739,7 @@
           </attribute>
           <layout class="QVBoxLayout" name="verticalLayout_2">
            <item>
-            <widget class="QWidget" name="gridplot_view" native="true"/>
+            <widget class="GridplotView" name="gridplot_view" native="true"/>
            </item>
           </layout>
          </widget>
@@ -773,21 +786,27 @@
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>MultiplotView</class>
-   <extends>QWidget</extends>
-   <header>firefly.run_browser.multiplot_view</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
    <class>MetadataView</class>
    <extends>QWidget</extends>
    <header>firefly.run_browser.metadata_view</header>
    <container>1</container>
   </customwidget>
   <customwidget>
+   <class>MultiplotView</class>
+   <extends>QWidget</extends>
+   <header>firefly.run_browser.multiplot_view</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
    <class>LineplotView</class>
    <extends>QWidget</extends>
    <header>firefly.run_browser.lineplot_view</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>GridplotView</class>
+   <extends>QWidget</extends>
+   <header>firefly.run_browser.gridplot_view</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

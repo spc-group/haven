@@ -227,7 +227,8 @@ class CatalogScan:
         metadata = await self.metadata
         # Get hints for the independent (X)
         try:
-            independent = metadata["start"]["hints"]["dimensions"][0][0]
+            dimensions = metadata["start"]["hints"]["dimensions"]
+            independent = [sig for signals, strm in dimensions if strm == stream for sig in signals]
         except (KeyError, IndexError):
             warnings.warn("Could not get independent hints")
         # Get hints for the dependent (X)

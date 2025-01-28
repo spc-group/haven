@@ -220,11 +220,14 @@ class RunBrowserDisplay(display.FireflyDisplay):
         # Connect to signals for individual tabs
         self.metadata_changed.connect(self.ui.metadata_view.display_metadata)
         self.metadata_changed.connect(self.ui.lineplot_view.stash_metadata)
-        self.data_keys_changed.connect(self.ui.xrf_view.update_signal_widgets)
+        self.metadata_changed.connect(self.ui.gridplot_view.set_image_dimensions)
         self.data_keys_changed.connect(self.ui.multiplot_view.update_signal_widgets)
         self.data_keys_changed.connect(self.ui.lineplot_view.update_signal_widgets)
+        self.data_keys_changed.connect(self.ui.gridplot_view.update_signal_widgets)
+        self.data_keys_changed.connect(self.ui.xrf_view.update_signal_widgets)
         self.data_frames_changed.connect(self.ui.multiplot_view.plot_multiples)
         self.data_frames_changed.connect(self.ui.lineplot_view.plot)
+        self.data_frames_changed.connect(self.ui.gridplot_view.plot)
         # Create a new export dialog for saving files
         self.ui.export_button.clicked.connect(self.export_runs)
         self.export_dialog = ExportDialog(parent=self)
@@ -355,24 +358,6 @@ class RunBrowserDisplay(display.FireflyDisplay):
         current_text = self.ui.stream_combobox.currentText()
         return current_text or "primary"
 
-    @asyncSlot()
-    @cancellable
-    async def update_2d_signals(self, *args):
-        # Store current selection for restoring later
-        val_cb = self.ui.signal_value_combobox
-        old_value = val_cb.currentText()
-        # Determine valid list of dependent signals to choose from
-        use_hints = self.ui.plot_2d_hints_checkbox.isChecked()
-        xcols, vcols = await self.db_task(
-            self.db.signal_names(hinted_only=use_hints, stream=self.stream),
-            "2D signals",
-        )
-        # Update the UI with the list of controls
-        val_cb.clear()
-        val_cb.addItems(vcols)
-        # Restore previous selection
-        val_cb.setCurrentText(old_value)
-
     def update_export_button(self):
         # We can only export one scan at a time from here
         should_enable = self.selected_runs is not None and len(self.selected_runs) == 1
@@ -401,35 +386,6 @@ class RunBrowserDisplay(display.FireflyDisplay):
         await self.update_1d_plot(uids=[uid])
 
     @asyncSlot()
-    @cancellable
-    async def update_2d_plot(self):
-        """Change the 2D map plot based on desired signals, etc."""
-        # Figure out which signals to plot
-        value_signal = self.ui.signal_value_combobox.currentText()
-        use_log = self.ui.logarithm_checkbox_2d.isChecked()
-        use_invert = self.ui.invert_checkbox_2d.isChecked()
-        use_grad = self.ui.gradient_checkbox_2d.isChecked()
-        images = await self.db_task(
-            self.db.images(value_signal, stream=self.stream), "2D plot"
-        )
-        # Get axis labels
-        # Eventually this will be replaced with robust choices for plotting multiple images
-        metadata = await self.db_task(self.db.metadata(), "2D plot")
-        metadata = list(metadata.values())[0]
-        dimensions = metadata["start"]["hints"]["dimensions"]
-        try:
-            xlabel = dimensions[-1][0][0]
-            ylabel = dimensions[-2][0][0]
-        except IndexError:
-            # Not a 2D scan
-            return
-        # Get spatial extent
-        extents = metadata["start"]["extents"]
-        self.ui.plot_2d_view.plot_runs(
-            images, xlabel=xlabel, ylabel=ylabel, extents=extents
-        )
-
-    @asyncSlot()
     async def update_metadata(self, *args):
         """Render metadata for the runs into the metadata widget."""
         # Combine the metadata in a human-readable output
@@ -445,10 +401,8 @@ class RunBrowserDisplay(display.FireflyDisplay):
         *uid* will be updated.
         """
 
-        await asyncio.gather(
-            self.update_metadata(),
-            self.update_data_frames(),
-        )
+        await self.update_metadata()
+        await self.update_data_frames()
 
     @asyncSlot()
     @cancellable
