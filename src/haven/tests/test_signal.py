@@ -1,10 +1,12 @@
 import asyncio
 import math
+from unittest.mock import MagicMock
 
 import pytest
-from ophyd_async.core import Device, get_mock_put
+from ophyd_async.core import Device, DeviceVector
 from ophyd_async.core._signal import soft_signal_rw
-from ophyd_async.epics.signal import epics_signal_x
+from ophyd_async.epics.core import epics_signal_rw, epics_signal_x
+from ophyd_async.testing import get_mock_put
 
 from haven.devices.signal import derived_signal_rw, derived_signal_x
 
@@ -82,6 +84,21 @@ async def test_derived_forward(device):
     assert await device.y.get_value() == pytest.approx(2 / math.sqrt(2))
 
 
+async def test_mock_subscribe():
+    """This is to test the behavior of ophyd-async, not Haven."""
+    base_signal = epics_signal_rw(float, "sldfkj")
+    derived_signal = derived_signal_rw(float, derived_from={"base": base_signal})
+    callback = MagicMock()
+    await base_signal.connect(mock=True)
+    await derived_signal.connect(mock=False)
+    derived_signal.subscribe(callback)
+    callback.reset_mock()
+    assert not callback.called
+    # Now change the value and check whether the mocked signal was changed
+    await base_signal.set(5)
+    assert callback.called
+
+
 @pytest.mark.asyncio
 async def test_derived_defaults(device):
     """Does the derived signal report the derived value by default."""
@@ -155,4 +172,23 @@ async def test_signal_x_trigger(device):
     # Now trigger the parent
     mocked_put = get_mock_put(signal)
     await derived.trigger()
-    mocked_put.assert_called_once_with(None, wait=True, timeout=10.0)
+    mocked_put.assert_called_once_with(None, wait=True)
+
+
+async def test_device_vector_parent():
+    class MyDevice(Device):
+        def __init__(self, name):
+            self.my_signal = soft_signal_rw(float)
+            self.channels = DeviceVector({0: soft_signal_rw(float)})
+            super().__init__(name=name)
+
+    my_device = MyDevice(name="my_device")
+    await my_device.connect(mock=True)
+    # Good tests
+    assert my_device.my_signal.name == "my_device-my_signal"
+    assert my_device.my_signal.parent is my_device
+    assert my_device.channels.name == "my_device-channels"
+    assert my_device.channels.parent is my_device
+    assert my_device.channels[0].name == "my_device-channels-0"
+    # Bad tests
+    assert my_device.channels[0].parent is my_device.channels

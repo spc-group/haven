@@ -1,67 +1,97 @@
+import asyncio
 import datetime as dt
 import logging
 import warnings
 from collections import OrderedDict
+from functools import partial
 from typing import Mapping, Sequence
 
 import numpy as np
 import pandas as pd
+from qasync import asyncSlot
 from tiled import queries
 
 from haven import exceptions
-from haven.catalog import Catalog
+from haven.catalog import Catalog, run_in_executor
 
 log = logging.getLogger(__name__)
 
 
 class DatabaseWorker:
     selected_runs: Sequence = []
+    catalog: Catalog = None
 
-    def __init__(self, catalog=None, *args, **kwargs):
-        if catalog is None:
-            catalog = Catalog()
-        self.catalog = catalog
+    def __init__(self, tiled_client, *args, **kwargs):
+        self.client = tiled_client
         super().__init__(*args, **kwargs)
+
+    @asyncSlot(str)
+    async def change_catalog(self, catalog_name: str):
+        """Change the catalog being used for pulling data.
+
+        *catalog_name* should be an entry in *worker.tiled_client()*.
+        """
+
+        def get_catalog(name):
+            return Catalog(self.client[catalog_name])
+
+        loop = asyncio.get_running_loop()
+        self.catalog = await loop.run_in_executor(None, get_catalog, catalog_name)
+
+    @run_in_executor
+    def catalog_names(self):
+        return list(self.client.keys())
+
+    async def stream_names(self):
+        awaitables = [scan.stream_names() for scan in self.selected_runs]
+        all_streams = await asyncio.gather(*awaitables)
+        # Flatten the lists
+        streams = [stream for streams in all_streams for stream in streams]
+        return list(set(streams))
 
     async def filtered_nodes(self, filters: Mapping):
         case_sensitive = False
         log.debug(f"Filtering nodes: {filters}")
-        filter_params = [
-            # (filter_name, query type, metadata key)
-            ("user", queries.Regex, "proposal_users"),
-            ("proposal", queries.Regex, "proposal_id"),
-            ("esaf", queries.Regex, "esaf_id"),
-            ("sample", queries.Regex, "sample_name"),
-            # ('exit_status', queries.Regex, "exit_status"),
-            ("plan", queries.Regex, "plan_name"),
-            ("edge", queries.Regex, "edge"),
-        ]
+        filter_params = {
+            # filter_name: (query type, metadata key)
+            "plan": (queries.Eq, "start.plan_name"),
+            "sample": (queries.Contains, "start.sample_name"),
+            "formula": (queries.Contains, "start.sample_formula"),
+            "edge": (queries.Contains, "start.edge"),
+            "exit_status": (queries.Eq, "stop.exit_status"),
+            "user": (queries.Contains, "start.proposal_users"),
+            "proposal": (queries.Eq, "start.proposal_id"),
+            "esaf": (queries.Eq, "start.esaf_id"),
+            "beamline": (queries.Eq, "start.beamline_id"),
+            "before": (partial(queries.Comparison, "le"), "end.time"),
+            "after": (partial(queries.Comparison, "ge"), "start.time"),
+            "full_text": (queries.FullText, ""),
+            "standards_only": (queries.Eq, "start.is_standard"),
+        }
         # Apply filters
         runs = self.catalog
-        for filter_name, Query, md_name in filter_params:
-            val = filters.get(filter_name, "")
-            if val != "":
-                runs = await runs.search(
-                    Query(md_name, val, case_sensitive=case_sensitive)
-                )
-        full_text = filters.get("full_text", "")
-        if full_text != "":
-            runs = await runs.search(
-                queries.FullText(full_text, case_sensitive=case_sensitive)
-            )
+        for filter_name, filter_value in filters.items():
+            if filter_name not in filter_params:
+                continue
+            Query, md_name = filter_params[filter_name]
+            if Query is queries.FullText:
+                runs = await runs.search(Query(filter_value), case_sensitive=False)
+            else:
+                runs = await runs.search(Query(md_name, filter_value))
         return runs
 
     async def load_distinct_fields(self):
         """Get distinct metadata fields for filterable metadata."""
         new_fields = {}
         target_fields = [
-            "sample_name",
-            "proposal_users",
-            "proposal_id",
-            "esaf_id",
-            "sample_name",
-            "plan_name",
-            "edge",
+            "start.plan_name",
+            "start.sample_name",
+            "start.sample_formula",
+            "start.edge",
+            "stop.exit_status",
+            "start.proposal_id",
+            "start.esaf_id",
+            "start.beamline_id",
         ]
         # Get fields from the database
         response = await self.catalog.distinct(*target_fields)
@@ -120,11 +150,13 @@ class DatabaseWorker:
             all_runs.append(run_data)
         return all_runs
 
-    async def signal_names(self, hinted_only: bool = False):
+    async def signal_names(self, stream: str, *, hinted_only: bool = False):
         """Get a list of valid signal names (data columns) for selected runs.
 
         Parameters
         ==========
+        stream
+          The Tiled stream name to fetch.
         hinted_only
           If true, only signals with the kind="hinted" parameter get
           picked.
@@ -133,9 +165,9 @@ class DatabaseWorker:
         xsignals, ysignals = [], []
         for run in self.selected_runs:
             if hinted_only:
-                xsig, ysig = await run.hints()
+                xsig, ysig = await run.hints(stream=stream)
             else:
-                df = await run.to_dataframe()
+                df = await run.data(stream=stream)
                 xsig = ysig = df.columns
             xsignals.extend(xsig)
             ysignals.extend(ysig)
@@ -156,39 +188,40 @@ class DatabaseWorker:
     async def load_selected_runs(self, uids):
         # Prepare the query for finding the runs
         uids = list(dict.fromkeys(uids))
-        print(f"Loading runs: {uids}")
         # Retrieve runs from the database
         runs = [await self.catalog[uid] for uid in uids]
         # runs = await asyncio.gather(*run_coros)
         self.selected_runs = runs
         return runs
 
-    async def images(self, signal):
+    async def images(self, signal: str, stream: str):
         """Load the selected runs as 2D or 3D images suitable for plotting."""
         images = OrderedDict()
         for idx, run in enumerate(self.selected_runs):
             # Load datasets from the database
             try:
-                image = await run[signal]
-            except KeyError:
-                log.warning(f"Signal {signal} not found in run {run}.")
+                image = await run.__getitem__(signal, stream=stream)
+            except KeyError as exc:
+                log.exception(exc)
             else:
                 images[run.uid] = image
         return images
 
-    async def all_signals(self, hinted_only=False):
-        """Produce dataframe with all signals for each run.
+    async def all_signals(self, stream: str, *, hinted_only=False) -> dict:
+        """Produce dataframes with all signals for each run.
 
         The keys of the dictionary are the labels for each curve, and
         the corresponding value is a pandas dataframe with the scan data.
 
         """
-        xsignals, ysignals = await self.signal_names(hinted_only=hinted_only)
+        xsignals, ysignals = await self.signal_names(
+            hinted_only=hinted_only, stream=stream
+        )
         # Build the dataframes
         dfs = OrderedDict()
         for run in self.selected_runs:
             # Get data from the database
-            df = await run.to_dataframe(signals=xsignals + ysignals)
+            df = await run.data(signals=xsignals + ysignals, stream=stream)
             dfs[run.uid] = df
         return dfs
 
@@ -197,6 +230,8 @@ class DatabaseWorker:
         x_signal,
         y_signal,
         r_signal=None,
+        *,
+        stream: str,
         use_log=False,
         use_invert=False,
         use_grad=False,
@@ -236,7 +271,7 @@ class DatabaseWorker:
             if uids is not None and run.uid not in uids:
                 break
             # Get data from the database
-            df = await run.to_dataframe(signals=signals)
+            df = await run.data(signals=signals, stream=stream)
             # Check for missing signals
             missing_x = x_signal not in df.columns and df.index.name != x_signal
             missing_y = y_signal not in df.columns

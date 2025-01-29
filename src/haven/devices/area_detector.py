@@ -9,7 +9,9 @@ import numpy as np
 import pandas as pd
 from apstools.devices import CamMixin_V34, SingleTrigger_V34
 from ophyd import ADComponent as ADCpt
-from ophyd import CamBase
+from ophyd import (
+    CamBase,
+)
 from ophyd import Component as Cpt
 from ophyd import DetectorBase as OphydDetectorBase
 from ophyd import (
@@ -39,11 +41,14 @@ from ophyd.areadetector.plugins import (
     PvaPlugin_V34,
     ROIPlugin_V31,
     ROIPlugin_V34,
-    TransformPlugin_V34,
 )
 from ophyd.areadetector.plugins import StatsPlugin_V31 as OphydStatsPlugin_V31
 from ophyd.areadetector.plugins import StatsPlugin_V34 as OphydStatsPlugin_V34
-from ophyd.areadetector.plugins import TIFFPlugin_V31, TIFFPlugin_V34
+from ophyd.areadetector.plugins import (
+    TIFFPlugin_V31,
+    TIFFPlugin_V34,
+    TransformPlugin_V34,
+)
 from ophyd.flyers import FlyerInterface
 from ophyd.sim import make_fake_device
 from ophyd.status import Status, StatusBase, SubscriptionStatus
@@ -325,16 +330,19 @@ class DynamicFileStore(Device):
     """
 
     def __init__(
-        self, *args, write_path_template="{root_path}/%Y/%m/{name}/", **kwargs
+        self, *args, write_path_template="/{root_path}/{name}/%Y/%m/%d/", **kwargs
     ):
-        write_path_template = write_path_template.lstrip('/')
+        write_path_template = write_path_template.lstrip("/")
         super().__init__(*args, write_path_template=write_path_template, **kwargs)
         # Format the file_write_template with per-device values
         config = load_config()
+        root_path = config.get("area_detector_root_path", "tmp").lstrip("/")
+        # Remove the leading slash for some reason...makes ophyd happy
+        root_path = root_path.lstrip("/")
         try:
             self.write_path_template = self.write_path_template.format(
                 name=self.parent.name,
-                root_path=config.get("area_detector_root_path", "/tmp").lstrip('/'),
+                root_path=root_path,
             )
         except KeyError:
             warnings.warn(f"Could not format write_path_template {write_path_template}")
@@ -491,26 +499,26 @@ class Eiger500K(SingleTrigger, DetectorBase):
     cam = ADCpt(EigerCam, "cam1:")
     image = ADCpt(ImagePlugin_V34, "image1:")
     pva = ADCpt(PvaPlugin_V34, "Pva1:")
-    tiff = ADCpt(TIFFPlugin, "TIFF1:", kind=Kind.normal)
-    hdf1 = ADCpt(HDF5Plugin, "HDF1:", kind=Kind.normal)
-    roi1 = ADCpt(ROIPlugin_V34, "ROI1:", kind=Kind.config)
-    roi2 = ADCpt(ROIPlugin_V34, "ROI2:", kind=Kind.config)
-    roi3 = ADCpt(ROIPlugin_V34, "ROI3:", kind=Kind.config)
-    roi4 = ADCpt(ROIPlugin_V34, "ROI4:", kind=Kind.config)
-    stats1 = ADCpt(StatsPlugin_V34, "Stats1:", kind=Kind.normal)
-    stats2 = ADCpt(StatsPlugin_V34, "Stats2:", kind=Kind.normal)
-    stats3 = ADCpt(StatsPlugin_V34, "Stats3:", kind=Kind.normal)
-    stats4 = ADCpt(StatsPlugin_V34, "Stats4:", kind=Kind.normal)
-    stats5 = ADCpt(StatsPlugin_V34, "Stats5:", kind=Kind.normal)
+    # tiff = ADCpt(TIFFPlugin, "TIFF1:", kind=Kind.normal)
+    hdf = ADCpt(HDF5FilePlugin, "HDF1:", kind=Kind.normal)
+    # roi1 = ADCpt(ROIPlugin_V34, "ROI1:", kind=Kind.config)
+    # roi2 = ADCpt(ROIPlugin_V34, "ROI2:", kind=Kind.config)
+    # roi3 = ADCpt(ROIPlugin_V34, "ROI3:", kind=Kind.config)
+    # roi4 = ADCpt(ROIPlugin_V34, "ROI4:", kind=Kind.config)
+    # stats1 = ADCpt(StatsPlugin_V34, "Stats1:", kind=Kind.normal)
+    # stats2 = ADCpt(StatsPlugin_V34, "Stats2:", kind=Kind.normal)
+    # stats3 = ADCpt(StatsPlugin_V34, "Stats3:", kind=Kind.normal)
+    # stats4 = ADCpt(StatsPlugin_V34, "Stats4:", kind=Kind.normal)
+    # stats5 = ADCpt(StatsPlugin_V34, "Stats5:", kind=Kind.normal)
 
     _default_read_attrs = [
-        "stats1",
-        "stats2",
-        "stats3",
-        "stats4",
-        "stats5",
-        "hdf1",
-        "tiff",
+        # "stats1",
+        # "stats2",
+        # "stats3",
+        # "stats4",
+        # "stats5",
+        "hdf",
+        # "tiff",
     ]
 
 

@@ -9,8 +9,8 @@ from bluesky.protocols import Triggerable
 from ophyd_async.core import (
     DEFAULT_TIMEOUT,
     AsyncStatus,
-    ConfigSignal,
     StandardReadable,
+    StandardReadableFormat,
     TriggerInfo,
     soft_signal_rw,
     wait_for_value,
@@ -49,6 +49,7 @@ class IonChamber(StandardReadable, Triggerable):
 
     _ophyd_labels_ = {"ion_chambers", "detectors"}
     _trigger_statuses = {}
+    _clock_register_width = 32  # bits in the register
 
     def __init__(
         self,
@@ -65,24 +66,64 @@ class IonChamber(StandardReadable, Triggerable):
         self._scaler_channel = scaler_channel
         self._voltmeter_channel = voltmeter_channel
         self.auto_name = auto_name
-        with self.add_children_as_readables():
-            self.preamp = SRS570PreAmplifier(preamp_prefix)
-            self.voltmeter = LabJackT7(
-                prefix=voltmeter_prefix,
-                analog_inputs=[voltmeter_channel],
-                digital_ios=[],
-                analog_outputs=[],
-                digital_words=[],
-            )
-        with self.add_children_as_readables(ConfigSignal):
+        with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
             self.counts_per_volt_second = soft_signal_rw(
                 float, initial_value=counts_per_volt_second
             )
-        # Add subordinate devices
+        # Add the SRS570 pre-amplifier signals
+        with self.add_children_as_readables():
+            self.preamp = SRS570PreAmplifier(preamp_prefix)
+        # Add the labjack voltmeter device
+        self.voltmeter = LabJackT7(
+            prefix=voltmeter_prefix,
+            analog_inputs=[voltmeter_channel],
+            digital_ios=[],
+            analog_outputs=[],
+            digital_words=[],
+        )
+        self.add_readables([self.voltmeter_channel.final_value])
+        self.add_readables(
+            [
+                self.voltmeter.analog_in_resolution_all,
+                self.voltmeter.analog_in_sampling_rate,
+                self.voltmeter.analog_in_settling_time_all,
+                self.voltmeter_channel.description,
+                self.voltmeter_channel.device_type,
+                self.voltmeter_channel.differential,
+                self.voltmeter_channel.enable,
+                self.voltmeter_channel.high,
+                self.voltmeter_channel.input_link,
+                self.voltmeter_channel.low,
+                self.voltmeter_channel.mode,
+                self.voltmeter_channel.range,
+                self.voltmeter_channel.resolution,
+                self.voltmeter_channel.scanning_rate,
+                self.voltmeter_channel.temperature_units,
+                self.voltmeter.device_temperature,
+                self.voltmeter.driver_version,
+                self.voltmeter.firmware_version,
+                self.voltmeter.last_error_message,
+                self.voltmeter.ljm_version,
+                self.voltmeter.model_name,
+                self.voltmeter.poll_sleep_ms,
+                self.voltmeter.serial_number,
+            ],
+            StandardReadableFormat.CONFIG_SIGNAL,
+        )
+        # Add scaler channel
         self.mcs = MultiChannelScaler(
             prefix=scaler_prefix, channels=[0, scaler_channel]
         )
-        self.add_readables([self.mcs.scaler])
+        self.add_readables(
+            [
+                self.mcs.scaler.channels[0].net_count,
+                self.mcs.scaler.channels[0].raw_count,
+                self.scaler_channel.net_count,
+                self.scaler_channel.raw_count,
+                self.mcs.scaler.elapsed_time,
+            ],
+            StandardReadableFormat.UNCACHED_SIGNAL,
+        )
         self.add_readables(
             [
                 self.mcs.acquire_mode,
@@ -106,24 +147,38 @@ class IonChamber(StandardReadable, Triggerable):
                 self.mcs.prescale,
                 self.mcs.preset_time,
                 self.mcs.snl_connected,
+                self.mcs.scaler.clock_frequency,
+                self.mcs.scaler.count_mode,
+                self.mcs.scaler.delay,
+                self.mcs.scaler.preset_time,
+                self.mcs.scaler.channels[0].description,
+                self.mcs.scaler.channels[0].is_gate,
+                self.mcs.scaler.channels[0].offset_rate,
+                self.mcs.scaler.channels[0].preset_count,
+                self.scaler_channel.description,
+                self.scaler_channel.is_gate,
+                self.scaler_channel.offset_rate,
+                self.scaler_channel.preset_count,
             ],
-            ConfigSignal,
+            StandardReadableFormat.CONFIG_SIGNAL,
         )
         # Add calculated signals
-        with self.add_children_as_readables():
-            self.net_current = derived_signal_r(
-                float,
-                name="current",
-                units="A",
-                derived_from={
-                    "gain": self.preamp.gain,
-                    "count": self.scaler_channel.net_count,
-                    "clock_count": self.mcs.scaler.channels[0].raw_count,
-                    "clock_frequency": self.mcs.scaler.clock_frequency,
-                    "counts_per_volt_second": self.counts_per_volt_second,
-                },
-                inverse=self._counts_to_amps,
-            )
+        self.net_current = derived_signal_r(
+            float,
+            name="current",
+            units="A",
+            derived_from={
+                "gain": self.preamp.gain,
+                "count": self.scaler_channel.net_count,
+                "clock_count": self.mcs.scaler.channels[0].raw_count,
+                "clock_frequency": self.mcs.scaler.clock_frequency,
+                "counts_per_volt_second": self.counts_per_volt_second,
+            },
+            inverse=self._counts_to_amps,
+        )
+        self.add_readables(
+            [self.net_current], StandardReadableFormat.HINTED_UNCACHED_SIGNAL
+        )
         # Measured current without dark current correction
         self.raw_current = derived_signal_r(
             float,
@@ -138,6 +193,7 @@ class IonChamber(StandardReadable, Triggerable):
             },
             inverse=self._counts_to_amps,
         )
+        self.add_readables([self.raw_current], StandardReadableFormat.UNCACHED_SIGNAL)
         super().__init__(name=name)
 
     def _counts_to_amps(
@@ -161,7 +217,10 @@ class IonChamber(StandardReadable, Triggerable):
             return float("nan")
 
     def __repr__(self):
-        return f"<{type(self).__name__}: '{self.name}' ({self.scaler_channel.raw_count.source})>"
+        return (
+            f"<{type(self).__name__}: '{self.name}' "
+            f"({self.scaler_channel.raw_count.source})>"
+        )
 
     @property
     def scaler_channel(self):
@@ -212,6 +271,43 @@ class IonChamber(StandardReadable, Triggerable):
                 # Update the labjack's input's .DESC field to match the scaler channel
                 await self.voltmeter_channel.description.set(desc)
 
+    async def default_timeout(self) -> float:
+        """Calculate the expected timeout for triggering this ion chamber.
+
+        If ``self.mcs.scaler.preset_time`` is set and the first
+        (clock) channel is serving as a gate
+        (``self.mcs.scaler.channels[0].is_gate.get_value() == True``)
+        then the timeout is a little longer than the preset
+        time.
+
+        Otherwise the timeout is calculated based on the longest time
+        the scaler can count for based on when the channel 0 clock
+        register would fill up. For example, a 32-bit scaler with a
+        9.6 MHz external clock could count for up to:
+
+          2**32 / 9600000 = 447.4 seconds
+
+        Returns
+        =======
+        timeout
+          The optimal timeout for trigger this ion chamber's scaler.
+
+        """
+        aws = [
+            self.mcs.scaler.channels[0].is_gate.get_value(),
+            self.mcs.scaler.preset_time.get_value(),
+            self.mcs.scaler.clock_frequency.get_value(),
+        ]
+        is_time_limited, count_time, clock_freq = await asyncio.gather(*aws)
+        if is_time_limited:
+            # We're using the preset time to decide when to stop
+            return count_time + DEFAULT_TIMEOUT
+        else:
+            # Use the maximum time the scaler could possibly count
+            max_counts = 2**self._clock_register_width
+            max_count_time = max_counts / clock_freq
+            return max_count_time + DEFAULT_TIMEOUT
+
     @AsyncStatus.wrap
     async def trigger(self, record_dark_current=False):
         """Instruct the ion chamber's scaler to capture one data point.
@@ -229,6 +325,8 @@ class IonChamber(StandardReadable, Triggerable):
         if record_dark_current:
             await self.record_dark_current()
             return
+        # Calculate expected timeout value
+        timeout = await self.default_timeout()
         # Check if we've seen this signal before
         signal = self.mcs.scaler.count
         last_status = self._trigger_statuses.get(signal.source)
@@ -237,7 +335,7 @@ class IonChamber(StandardReadable, Triggerable):
             await last_status
             return
         # Nothing to wait on yet, so trigger the scaler and stash the result
-        st = signal.set(self.mcs.scaler.CountState.COUNT)
+        st = signal.set(True, timeout=timeout)
         self._trigger_statuses[signal.source] = st
         await st
 
@@ -248,9 +346,7 @@ class IonChamber(StandardReadable, Triggerable):
         integration_time = await self.mcs.scaler.dark_current_time.get_value()
         timeout = integration_time + DEFAULT_TIMEOUT
         count_signal = self.mcs.scaler.count
-        await wait_for_value(
-            count_signal, self.mcs.scaler.CountState.DONE, timeout=timeout
-        )
+        await wait_for_value(count_signal, False, timeout=timeout)
 
     def record_fly_reading(self, reading, **kwargs):
         if self._is_flying:

@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import warnings
+from uuid import uuid4
 
 import msgpack
 from aiokafka import AIOKafkaConsumer
@@ -40,7 +41,7 @@ class KafkaClient(QObject):
             self.kafka_consumer = AIOKafkaConsumer(
                 config["queueserver"]["kafka_topic"],
                 bootstrap_servers="fedorov.xray.aps.anl.gov:9092",
-                group_id="my-group",
+                group_id=str(uuid4()),
                 value_deserializer=msgpack.loads,
             )
         consumer = self.kafka_consumer
@@ -50,7 +51,7 @@ class KafkaClient(QObject):
         async for record in consumer:
             try:
                 doc_type, doc = record.value
-                print(f"Received kafka record. {doc_type=}")
+                log.debug(f"Received kafka record. {doc_type=}")
                 self._process_document(doc_type, doc)
             except Exception as ex:
                 log.exception(ex)
@@ -86,7 +87,7 @@ class KafkaClient(QObject):
             except KeyError:
                 log.warning("fUnknown descriptor UID {descriptor_uid}")
                 return
-            print(f"Emitting run updated: {run_uid=}")
+            log.info(f"Emitting run updated: {run_uid=}")
             self.run_updated.emit(run_uid)
         elif doc_type == "stop":
             run_uid = doc["run_start"]

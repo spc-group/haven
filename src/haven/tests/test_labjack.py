@@ -58,10 +58,6 @@ async def test_base_signals_device(labjack):
         "labjack-analog_outputs-1-scanning_rate",
     }
     desc = await labjack.describe_configuration()
-    from pprint import pprint
-
-    pprint(await labjack.analog_outputs[0].describe_configuration())
-    # pprint(desc)
     assert set(desc.keys()) == cfg_names
 
 
@@ -90,7 +86,6 @@ async def test_analog_inputs(LabJackDevice, num_ais):
     # Check read attrs
     read_attrs = ["final_value"]
     description = await device.describe()
-    print(description)
     for n in range(num_ais):
         for attr in read_attrs:
             full_attr = f"{device.name}-analog_inputs-{n}-{attr}"
@@ -202,18 +197,17 @@ async def test_digital_words(LabJackDevice, num_dios):
     """Test analog inputs for different device types."""
     device = LabJackDevice(PV_PREFIX, name="labjack_T")
     await device.connect(mock=True)
-    assert hasattr(device, "digital_words")
     # Check that the individual digital word outputs were created
-    assert "dio" in device.digital_words.keys()
-    assert "fio" in device.digital_words.keys()
-    assert "eio" in device.digital_words.keys()
-    assert "cio" in device.digital_words.keys()
-    assert "mio" in device.digital_words.keys()
+    assert hasattr(device, "dio")
+    assert hasattr(device, "fio")
+    assert hasattr(device, "eio")
+    assert hasattr(device, "cio")
+    assert hasattr(device, "mio")
     # Check read attrs
     read_attrs = ["dio", "eio", "fio", "mio", "cio"]
     description = await device.describe()
     for attr in read_attrs:
-        assert f"{device.name}-digital_words-{attr}" in description.keys()
+        assert f"{device.name}-{attr}" in description.keys()
 
 
 async def test_waveform_digitizer():

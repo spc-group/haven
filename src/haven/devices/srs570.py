@@ -16,7 +16,6 @@ import asyncio
 import logging
 import math
 from collections import OrderedDict
-from enum import Enum
 from typing import Optional, Type
 
 from ophyd_async.core import (
@@ -25,11 +24,11 @@ from ophyd_async.core import (
     CalculatableTimeout,
     Device,
     SignalRW,
-    SubsetEnum,
+    StrictEnum,
     T,
 )
-from ophyd_async.epics.signal import epics_signal_rw, epics_signal_x
-from ophyd_async.epics.signal._signal import _epics_signal_backend
+from ophyd_async.epics.core import epics_signal_rw, epics_signal_x
+from ophyd_async.epics.core._signal import _epics_signal_backend
 
 from .. import exceptions
 from .signal import derived_signal_r, derived_signal_rw
@@ -42,12 +41,12 @@ gain_values = ["1", "2", "5", "10", "20", "50", "100", "200", "500"]
 gain_modes = ["LOW NOISE", "HIGH BW"]
 
 
-class Sign(str, Enum):
+class Sign(StrictEnum):
     PLUS = "+"
     MINUS = "-"
 
 
-class Cal(str, Enum):
+class Cal(StrictEnum):
     CAL = "CAL"
     UNCAL = "UNCAL"
 
@@ -63,8 +62,8 @@ settling_times = {
     ("20", "pA/V", "HIGH BW"): 0.5,
     ("50", "pA/V", "HIGH BW"): 0.5,
     ("100", "pA/V", "HIGH BW"): 0.5,
-    ("200", "pA/V", "HIGH BW"): 0.3,
-    ("500", "pA/V", "HIGH BW"): 0.3,
+    ("200", "pA/V", "HIGH BW"): 0.5,
+    ("500", "pA/V", "HIGH BW"): 0.5,
     ("1", "pA/V", "LOW NOISE"): 3.0,
     ("2", "pA/V", "LOW NOISE"): 2.5,
     ("5", "pA/V", "LOW NOISE"): 2.0,
@@ -78,35 +77,35 @@ settling_times = {
 settling_times.update(
     {
         # nA/V, high bandwidth
-        (gain_values[idx], "nA/V", "HIGH BW"): 0.3
+        (gain_values[idx], "nA/V", "HIGH BW"): 0.5
         for idx in range(9)
     }
 )
 settling_times.update(
     {
         # nA/V, low noise
-        (gain_values[idx], "nA/V", "LOW NOISE"): 0.3
+        (gain_values[idx], "nA/V", "LOW NOISE"): 0.5
         for idx in range(9)
     }
 )
 settling_times.update(
     {
         # μA/V, high bandwidth
-        (gain_values[idx], "uA/V", "HIGH BW"): 0.3
+        (gain_values[idx], "uA/V", "HIGH BW"): 0.5
         for idx in range(9)
     }
 )
 settling_times.update(
     {
         # μA/V, low noise
-        (gain_values[idx], "uA/V", "LOW NOISE"): 0.3
+        (gain_values[idx], "uA/V", "LOW NOISE"): 0.5
         for idx in range(9)
     }
 )
 settling_times.update(
     {
-        ("1", "mA/V", "HIGH BW"): 0.3,
-        ("1", "mA/V", "LOW NOISE"): 0.3,
+        ("1", "mA/V", "HIGH BW"): 0.5,
+        ("1", "mA/V", "LOW NOISE"): 0.5,
     }
 )
 
@@ -257,41 +256,73 @@ class SRS570PreAmplifier(Device):
 
     offset_difference = -3  # How many levels higher should the offset be
 
-    class FilterType(str, Enum):
-        NO_FILTER = "No filter"
-        _6DB_HIGHPASS = "6 dB highpass"
+    class FilterType(StrictEnum):
+        NO_FILTER = "  No filter"
+        _6DB_HIGHPASS = " 6 dB highpass"
         _12DB_HIGHPASS = "12 dB highpass"
-        _6DB_BANDPASS = "6 dB bandpass"
-        _6DB_LOWPASS = "6 dB lowpass"
-        _12DB_LOWPASS = "6 dB lowpass"
+        _6DB_BANDPASS = " 6 dB bandpass"
+        _6DB_LOWPASS = " 6 dB lowpass"
+        _12DB_LOWPASS = "12 dB lowpass"
 
-    class GainMode(str, Enum):
+    class FilterLowPass(StrictEnum):
+        _0_03_HZ = "  0.03 Hz"
+        _0_1_HZ = "  0.1 Hz"
+        _0_3_HZ = "  0.3 Hz"
+        _1_HZ = "  1   Hz"
+        _3_HZ = "  3   Hz"
+        _10_HZ = " 10   Hz"
+        _30_HZ = " 30   Hz"
+        _100_HZ = "100   Hz"
+        _300_HZ = "300   Hz"
+        _1_KHZ = "  1   kHz"
+        _3_KHZ = "  3   kHz"
+        _10_KHZ = " 10   kHz"
+        _30_KHZ = " 30   kHz"
+        _100_KHZ = "100   kHz"
+        _300_KHZ = "300   kHz"
+        _1_MHZ = "  1   MHz"
+
+    class FilterHighPass(StrictEnum):
+        _0_03_HZ = "  0.03 Hz"
+        _0_1_HZ = "  0.1 Hz"
+        _0_3_HZ = "  0.3 Hz"
+        _1_HZ = "  1   Hz"
+        _3_HZ = "  3   Hz"
+        _10_HZ = " 10   Hz"
+        _30_HZ = " 30   Hz"
+        _100_HZ = "100   Hz"
+        _300_HZ = "300   Hz"
+        _1_KHZ = "  1   kHz"
+        _3_KHZ = "  3   kHz"
+        _10_KHZ = " 10   kHz"
+
+    class GainMode(StrictEnum):
         LOW_NOISE = "LOW NOISE"
         HIGH_BW = "HIGH BW"
         LOW_DRIFT = "LOW DRIFT"
 
-    class SensValue(str, Enum):
-        _1 = "1"
-        _2 = "2"
-        _5 = "5"
-        _10 = "10"
-        _20 = "20"
-        _50 = "50"
-        _100 = "100"
-        _200 = "200"
-        _500 = "500"
+    class SensValue(StrictEnum):
+        ONE = "1"
+        TWO = "2"
+        FIVE = "5"
+        TEN = "10"
+        TWENTY = "20"
+        FIFTY = "50"
+        ONE_HUNDRED = "100"
+        TWO_HUNDRED = "200"
+        FIVE_HUNDRED = "500"
 
-    class SensUnit(str, Enum):
-        pA_V = "pA/V"
-        nA_V = "nA/V"
-        uA_V = "uA/V"
-        mA_V = "mA/V"
+    class SensUnit(StrictEnum):
+        PICOAMP_PER_VOLT = "pA/V"
+        NANOAMP_PER_VOLT = "nA/V"
+        MICROAMP_PER_VOLT = "uA/V"
+        MILLIAMP_PER_VOLT = "mA/V"
 
-    class OffsetUnit(str, Enum):
-        pA = "pA"
-        nA = "nA"
-        uA = "uA"
-        mA = "mA"
+    class OffsetUnit(StrictEnum):
+        PICOAMP = "pA"
+        NANOAMP = "nA"
+        MICROAMP = "uA"
+        MILLIAMP = "mA"
 
     def __init__(self, prefix: str, name: str = ""):
         """
@@ -313,56 +344,14 @@ class SRS570PreAmplifier(Device):
         self.bias_on = epics_signal_rw(bool, f"{prefix}bias_on")
 
         self.filter_type = epics_signal_rw(
-            SubsetEnum[
-                "  No filter",
-                " 6 dB highpass",
-                "12 dB highpass",
-                " 6 dB bandpass",
-                " 6 dB lowpass",
-                "12 dB lowpass",
-            ],
+            self.FilterType,
             f"{prefix}filter_type",
         )
         self.filter_reset = epics_signal_x(f"{prefix}filter_reset.PROC")
-        self.filter_lowpass = epics_signal_rw(
-            SubsetEnum[
-                "  0.03 Hz",
-                "  0.1 Hz",
-                "  0.3 Hz",
-                "  1   Hz",
-                "  3   Hz",
-                " 10   Hz",
-                " 30   Hz",
-                "100   Hz",
-                "300   Hz",
-                "  1   kHz",
-                "  3   kHz",
-                " 10   kHz",
-                " 30   kHz",
-                "100   kHz",
-                "300   kHz",
-                "  1   MHz",
-            ],
-            f"{prefix}low_freq",
-        )
+        self.filter_lowpass = epics_signal_rw(self.FilterLowPass, f"{prefix}low_freq")
         self.filter_highpass = epics_signal_rw(
-            SubsetEnum[
-                "  0.03 Hz",
-                "  0.1 Hz",
-                "  0.3 Hz",
-                "  1   Hz",
-                "  3   Hz",
-                " 10   Hz",
-                " 30   Hz",
-                "100   Hz",
-                "300   Hz",
-                "  1   kHz",
-                "  3   kHz",
-                " 10   kHz",
-            ],
-            f"{prefix}high_freq",
+            self.FilterHighPass, f"{prefix}high_freq"
         )
-
         self.gain_mode = gain_signal(self.GainMode, f"{prefix}gain_mode")
         self.invert = epics_signal_rw(bool, f"{prefix}invert_on")
         self.blank = epics_signal_rw(bool, f"{prefix}blank_on")

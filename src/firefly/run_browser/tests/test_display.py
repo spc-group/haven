@@ -1,16 +1,27 @@
 import asyncio
-from unittest.mock import MagicMock
+import datetime as dt
+from functools import partial
+from unittest.mock import AsyncMock, MagicMock
 
 import numpy as np
 import pytest
+import time_machine
+from ophyd.sim import instantiate_fake_device
 from pyqtgraph import ImageItem, ImageView, PlotItem, PlotWidget
 from qtpy.QtWidgets import QFileDialog
 
 from firefly.run_browser.display import RunBrowserDisplay
+from haven.devices.beamline_manager import EpicsBssDevice
 
 
 @pytest.fixture()
-async def display(qtbot, catalog, mocker):
+def bss(sim_registry):
+    bss_ = instantiate_fake_device(EpicsBssDevice, prefix="apsbss:", name="bss")
+    return bss_
+
+
+@pytest.fixture()
+async def display(qtbot, tiled_client, catalog, mocker):
     mocker.patch(
         "firefly.run_browser.widgets.ExportDialog.exec_",
         return_value=QFileDialog.Accepted,
@@ -20,20 +31,17 @@ async def display(qtbot, catalog, mocker):
         return_value=["/net/s255data/export/test_file.nx"],
     )
     mocker.patch("firefly.run_browser.client.DatabaseWorker.export_runs")
-    display = RunBrowserDisplay(root_node=catalog)
+    display = RunBrowserDisplay()
     qtbot.addWidget(display)
     display.clear_filters()
     # Wait for the initial database load to process
-    await display._running_db_tasks["init_load_runs"]
-    await display._running_db_tasks["update_combobox_items"]
+    await display.setup_database(tiled_client, catalog_name="255id_testing")
+    display.db.stream_names = AsyncMock(return_value=["primary", "baseline"])
     # Set up some fake data
     run = [run async for run in catalog.values()][0]
     display.db.selected_runs = [run]
     await display.update_1d_signals()
-    run_data = await run.to_dataframe()
-    expected_xdata = run_data.energy_energy
-    expected_ydata = np.log(run_data.I0_net_counts / run_data.It_net_counts)
-    expected_ydata = np.gradient(expected_ydata, expected_xdata)
+    run_data = await run.data(stream="primary")
     # Set the controls to describe the data we want to test
     x_combobox = display.ui.signal_x_combobox
     x_combobox.addItem("energy_energy")
@@ -47,7 +55,6 @@ async def display(qtbot, catalog, mocker):
     return display
 
 
-@pytest.mark.asyncio
 async def test_db_task(display):
     async def test_coro():
         return 15
@@ -56,7 +63,6 @@ async def test_db_task(display):
     assert result == 15
 
 
-@pytest.mark.asyncio
 async def test_db_task_interruption(display):
     async def test_coro(sleep_time):
         await asyncio.sleep(sleep_time)
@@ -79,7 +85,6 @@ def test_load_runs(display):
     assert display.ui.runs_total_label.text() == str(display.runs_model.rowCount())
 
 
-@pytest.mark.asyncio
 async def test_update_selected_runs(display):
     # Change the proposal item
     item = display.runs_model.item(0, 1)
@@ -91,7 +96,6 @@ async def test_update_selected_runs(display):
     assert len(display.db.selected_runs) > 0
 
 
-@pytest.mark.asyncio
 async def test_update_selected_runs(display):
     # Change the proposal item
     item = display.runs_model.item(0, 1)
@@ -109,7 +113,6 @@ async def test_clear_plots(display):
     assert display.plot_1d_view.clear_runs.called
 
 
-@pytest.mark.asyncio
 async def test_metadata(display):
     # Change the proposal item
     display.ui.run_tableview.selectRow(0)
@@ -119,7 +122,6 @@ async def test_metadata(display):
     assert "xafs_scan" in text
 
 
-@pytest.mark.asyncio
 async def test_1d_plot_signals(catalog, display):
     # Check that the 1D plot was created
     plot_widget = display.ui.plot_1d_view
@@ -141,8 +143,7 @@ async def test_1d_plot_signals(catalog, display):
 
 
 # Warns: Task was destroyed but it is pending!
-@pytest.mark.asyncio
-async def test_1d_plot_signal_memory(catalog, display):
+async def test_1d_plot_signal_memory(display):
     """Do we remember the signals that were previously selected."""
     # Check that the 1D plot was created
     plot_widget = display.ui.plot_1d_view
@@ -163,7 +164,6 @@ async def test_1d_plot_signal_memory(catalog, display):
 
 
 # Warns: Task was destroyed but it is pending!
-@pytest.mark.asyncio
 async def test_1d_hinted_signals(catalog, display):
     display.ui.plot_1d_hints_checkbox.setChecked(True)
     # Check that the 1D plot was created
@@ -185,7 +185,6 @@ async def test_1d_hinted_signals(catalog, display):
     ), f"unhinted signal found in {combobox.objectName()}."
 
 
-@pytest.mark.asyncio
 async def test_update_1d_plot(catalog, display):
     display.plot_1d_view.plot_runs = MagicMock()
     display.plot_1d_view.autoRange = MagicMock()
@@ -222,7 +221,6 @@ async def test_update_running_scan(display):
 
 
 # Warns: Task was destroyed but it is pending!
-@pytest.mark.asyncio
 async def test_2d_plot_signals(catalog, display):
     # Check that the 1D plot was created
     plot_widget = display.ui.plot_2d_view
@@ -237,7 +235,6 @@ async def test_2d_plot_signals(catalog, display):
     assert combobox.findText("It_net_counts") > -1
 
 
-@pytest.mark.asyncio
 async def test_update_2d_plot(catalog, display):
     display.plot_2d_item.setRect = MagicMock()
     # Load test data
@@ -254,7 +251,7 @@ async def test_update_2d_plot(catalog, display):
     # Update the plots
     await display.update_2d_plot()
     # Determine what the image data should look like
-    expected_data = await run["It_net_counts"]
+    expected_data = await run.__getitem__("It_net_counts", stream="primary")
     expected_data = expected_data.reshape((5, 21)).T
     # Check that the data were added
     image = display.plot_2d_item.image
@@ -268,11 +265,12 @@ async def test_update_2d_plot(catalog, display):
     display.plot_2d_item.setRect.assert_called_with(-100, -80, 200, 160)
 
 
-@pytest.mark.asyncio
 async def test_update_multi_plot(catalog, display):
     run = await catalog["7d1daf1d-60c7-4aa7-a668-d1cd97e5335f"]
-    expected_xdata = await run["energy_energy"]
-    expected_ydata = np.log(await run["I0_net_counts"] / await run["It_net_counts"])
+    expected_xdata = await run.__getitem__("energy_energy", stream="primary")
+    I0 = await run.__getitem__("I0_net_counts", stream="primary")
+    It = await run.__getitem__("It_net_counts", stream="primary")
+    expected_ydata = np.log(I0 / It)
     expected_ydata = np.gradient(expected_ydata, expected_xdata)
     # Configure signals
     display.ui.multi_signal_x_combobox.addItem("energy_energy")
@@ -342,13 +340,18 @@ def test_busy_hints_multiple(display):
     assert display.ui.detail_tabwidget.isEnabled()
 
 
-@pytest.mark.asyncio
 async def test_update_combobox_items(display):
     """Check that the comboboxes get the distinct filter fields."""
     assert display.ui.filter_plan_combobox.count() > 0
+    assert display.ui.filter_sample_combobox.count() > 0
+    assert display.ui.filter_formula_combobox.count() > 0
+    assert display.ui.filter_edge_combobox.count() > 0
+    assert display.ui.filter_exit_status_combobox.count() > 0
+    assert display.ui.filter_proposal_combobox.count() > 0
+    assert display.ui.filter_esaf_combobox.count() > 0
+    assert display.ui.filter_beamline_combobox.count() > 0
 
 
-@pytest.mark.asyncio
 async def test_export_button_enabled(catalog, display):
     assert not display.export_button.isEnabled()
     # Update the list with 1 run and see if the control gets enabled
@@ -362,7 +365,6 @@ async def test_export_button_enabled(catalog, display):
     assert not display.export_button.isEnabled()
 
 
-@pytest.mark.asyncio
 async def test_export_button_clicked(catalog, display, mocker, qtbot):
     # Set up a run to be tested against
     run = MagicMock()
@@ -385,6 +387,75 @@ async def test_export_button_clicked(catalog, display, mocker, qtbot):
     files = display.export_dialog.selectedFiles.return_value
     assert display.db.export_runs.call_args.args == (files,)
     assert display.db.export_runs.call_args.kwargs["formats"] == ["application/json"]
+
+
+fake_time = dt.datetime(2022, 8, 19, 19, 10, 51).astimezone()
+
+
+@time_machine.travel(fake_time, tick=False)
+def test_default_filters(display):
+    display.clear_filters()
+    display.reset_default_filters()
+    assert display.ui.filter_exit_status_combobox.currentText() == "success"
+    assert display.ui.filter_current_esaf_checkbox.checkState()
+    assert display.ui.filter_current_proposal_checkbox.checkState()
+    assert display.ui.filter_after_checkbox.checkState()
+    last_week = dt.datetime(2022, 8, 12, 19, 10, 51)
+    filter_time = display.ui.filter_after_datetimeedit.dateTime()
+    filter_time = dt.datetime.fromtimestamp(filter_time.toTime_t())
+    assert filter_time == last_week
+
+
+def test_time_filters(display):
+    """Check that the before and after datetime filters are activated."""
+    display.ui.filter_after_checkbox.setChecked(False)
+    display.ui.filter_before_checkbox.setChecked(False)
+    filters = display.filters()
+    assert "after" not in filters
+    assert "before" not in filters
+    display.ui.filter_after_checkbox.setChecked(True)
+    display.ui.filter_before_checkbox.setChecked(True)
+    filters = display.filters()
+    assert "after" in filters
+    assert "before" in filters
+
+
+def test_bss_channels(display, bss):
+    """Do the widgets get updated based on the BSS proposal ID, etc."""
+    display.setup_bss_channels(bss)
+    assert (
+        display.proposal_channel.address == f"haven://{bss.proposal.proposal_id.name}"
+    )
+    assert display.esaf_channel.address == f"haven://{bss.esaf.esaf_id.name}"
+
+
+def test_update_bss_filters(display):
+    checkbox = display.ui.filter_current_proposal_checkbox
+    combobox = display.ui.filter_proposal_combobox
+    update_slot = partial(
+        display.update_bss_filter, combobox=combobox, checkbox=checkbox
+    )
+    # Enable the "current" checkbox, and make sure the combobox updates
+    checkbox.setChecked(True)
+    update_slot("89321")
+    assert combobox.currentText() == "89321"
+    # Disable the "current" checkbox, and make sure the combobox doesn't update
+    checkbox.setChecked(False)
+    update_slot("99531")
+    assert combobox.currentText() == "89321"
+
+
+def test_catalog_choices(display, tiled_client):
+    combobox = display.ui.catalog_combobox
+    items = [combobox.itemText(idx) for idx in range(combobox.count())]
+    assert items == ["255id_testing", "255bm_testing"]
+
+
+async def test_stream_choices(display, tiled_client):
+    await display.update_streams()
+    combobox = display.ui.stream_combobox
+    items = [combobox.itemText(idx) for idx in range(combobox.count())]
+    assert items == ["primary", "baseline"]
 
 
 # -----------------------------------------------------------------------------

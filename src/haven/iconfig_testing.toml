@@ -3,53 +3,55 @@ area_detector_root_path = "/tmp"
 [ beamline ]
 # General name for the beamline, used for metadata.
 name = "SPC Beamline (sector unknown)"
-# Should we expect the hardware devices to be available.
-#   If not, we will provide mocked devices.
-hardware_is_present = false
-
-[[ synchrotron ]]
-name = "advanced_photon_source"
-
-[database.databroker]
-
-catalog = "bluesky"
 
 [xray_source]
-
 type = "undulator"
 prefix = "ID255ds:"
 
 [bss]
-
 prefix = "255idc:bss"
 beamline = "255-ID-C"
 
 
-#####################
-# Queueserver
-#####################
+##############
+# Acquisition
+##############
 
-# This section describes how to connect to the queueserver. It does
-# not generate any devices, but is intended to be read by the Firefly
-# GUI application to determine how to interact with the queue.
+# This section describes how to connect to the queueserver and how
+# queueserver data reaches the database. It does not generate any
+# devices, but is intended to be read by the Firefly GUI application
+# to determine how to interact with the queue.
 
 [queueserver]
-kafka_topic = "s255idc_queueserver"
 control_host = "localhost"
 control_port = "60615"
 info_host = "localhost"
 info_port = "60625"
 redis_addr = "localhost:6379"
 
-[database.tiled]
+[kafka]
+servers = ["fedorov.xray.aps.anl.gov:9092"]
+topic = "bluesky.documents.haven-dev"
 
+[tiled]
 uri = "http://localhost:8337/"
-entry_node = "255id_testing"
+default_catalog = "255id_testing"
+cache_filepath = "/tmp/tiled_cache/http_response_cache.db"
+api_key = "<tiled-secret-api-key-for-writing>"
 
-################
-# PSS Shutters #
-################
-#
+[database.databroker]
+catalog = "bluesky"
+
+#################
+# Device support
+#################
+
+[[ synchrotron ]]
+name = "advanced_photon_source"
+
+# PSS Shutters
+# ============
+
 # Each PSS shutter has optional arguments *allow_open* and
 # *allow_close*. These determine whether Ophyd will allow the shutter
 # to open and close, but has no relationship to EPICS permissions.
@@ -126,8 +128,8 @@ num_motors = 3
 
 [[ motor ]]
 # Individual motors can be created as well.
+name = "m1"
 prefix = "255idcVME:m1"
-# name = ""
 # labels=["motors"]
 # auto_name = None
 
@@ -289,10 +291,9 @@ iocs = {ioc255idb = "ioc255idb:", ioc255idc = "ioc255idc:"}
 # prefix = "20xmap8:"
 # num_elements = 4
 
-[[ xspress ]]
-name = "vortex_me4_xsp"
+[[ xspress3 ]]
+name = "vortex_me4"
 prefix = "vortex_me4_xsp:"
-num_elements = 4
 
 
 # Filter boxes
@@ -305,4 +306,4 @@ prefix = "255idc:pfcu0:"
 [[ pfcu4 ]]
 name = "filter_bank1"
 prefix = "255idc:pfcu1:"
-shutters = [[3, 4]]
+shutters = [[2, 3]]

@@ -36,8 +36,7 @@ from . import plans  # noqa: F401
 from ._iconfig import load_config  # noqa: F401
 
 #  Top-level imports
-# from .catalog import load_catalog, load_data, load_result, tiled_client  # noqa: F401
-from .catalog import load_catalog, tiled_client  # noqa: F401
+from .catalog import tiled_client  # noqa: F401
 from .constants import edge_energy  # noqa: F401
 from .devices import IonChamber, Monochromator, Robot, ion_chamber  # noqa: F401
 from .devices.motor import HavenMotor  # noqa: F401
@@ -50,21 +49,11 @@ from .motor_position import (  # noqa: F401
     recall_motor_position,
     save_motor_position,
 )
-from .plans.align_motor import align_motor, align_pitch2  # noqa: F401
-from .plans.align_slits import align_slits  # noqa: F401
-from .plans.auto_gain import GainRecommender, auto_gain  # noqa:F401
-from .plans.beam_properties import fit_step  # noqa: F401
-from .plans.beam_properties import knife_scan  # noqa: F401
-from .plans.energy_scan import energy_scan  # noqa: F401
-from .plans.fly import fly_scan, grid_fly_scan  # noqa: F401
-from .plans.record_dark_current import record_dark_current  # noqa: F401
-from .plans.robot_transfer_sample import robot_transfer_sample  # noqa: F401
-from .plans.set_energy import set_energy  # noqa: F401
-from .plans.shutters import close_shutters, open_shutters  # noqa: F401
-from .plans.xafs_scan import xafs_scan  # noqa: F401
 from .preprocessors import (  # noqa: F401
     baseline_decorator,
     baseline_wrapper,
+    open_shutters_decorator,
+    open_shutters_wrapper,
     shutter_suspend_decorator,
     shutter_suspend_wrapper,
 )

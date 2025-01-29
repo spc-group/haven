@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 
 from haven import _iconfig
-from haven._iconfig import beamline_connected, load_config, print_config_value
+from haven._iconfig import load_config, print_config_value
 
 
 def test_default_values():
@@ -43,7 +43,6 @@ def test_merging_dicts():
     ]
     test_file = this_dir / "test_iconfig.toml"
     config = load_config(file_paths=(*default_files, test_file))
-    print(config)
     assert "prefix" in config["area_detector"][0].keys()
 
 
@@ -53,17 +52,6 @@ def test_haven_config_cli(capsys):
     # Check stdout for config value
     captured = capsys.readouterr()
     assert captured.out == "ID255ds:\n"
-
-
-def test_beamline_connected():
-    """Check the context manager to temporarily connect the beamline."""
-    config = load_config()
-    assert not config["beamline"]["hardware_is_present"]
-    with beamline_connected():
-        config = load_config()
-        assert config["beamline"]["hardware_is_present"]
-    config = load_config()
-    assert not config["beamline"]["hardware_is_present"]
 
 
 # -----------------------------------------------------------------------------

@@ -4,7 +4,7 @@ import warnings
 from functools import partial
 
 import numpy as np
-from bluesky.protocols import Movable, Stoppable
+from bluesky.protocols import Locatable, Location, Movable, Stoppable
 from ophyd_async.core import (
     CALCULATE_TIMEOUT,
     DEFAULT_TIMEOUT,
@@ -19,7 +19,7 @@ from ophyd_async.core import (
 log = logging.getLogger(__name__)
 
 
-class Positioner(StandardReadable, Movable, Stoppable):
+class Positioner(StandardReadable, Locatable, Movable, Stoppable):
     """A positioner that has separate setpoint and readback signals.
 
     When set, the Positioner **monitors the state of the move** using
@@ -54,10 +54,10 @@ class Positioner(StandardReadable, Movable, Stoppable):
         self.put_complete = put_complete
         super().__init__(name=name)
 
-    def set_name(self, name: str):
+    def set_name(self, name: str, *args, **kwargs):
         super().set_name(name)
         # Readback should be named the same as its parent in read()
-        self.readback.set_name(name)
+        self.readback.set_name(name, *args, **kwargs)
 
     def watch_done(
         self, value, done_event: asyncio.Event, started_event: asyncio.Event
@@ -73,8 +73,23 @@ class Positioner(StandardReadable, Movable, Stoppable):
             log.debug("Setting done_event")
             done_event.set()
 
+    async def locate(self) -> Location[int]:
+        setpoint, readback = await asyncio.gather(
+            self.setpoint.get_value(), self.readback.get_value()
+        )
+        location: Location = {
+            "setpoint": setpoint,
+            "readback": readback,
+        }
+        return location
+
     @WatchableAsyncStatus.wrap
-    async def set(self, value: float, timeout: CalculatableTimeout = CALCULATE_TIMEOUT):
+    async def set(
+        self,
+        value: float,
+        wait: bool = True,
+        timeout: CalculatableTimeout = CALCULATE_TIMEOUT,
+    ):
         new_position = value
         self._set_success = True
         old_position, current_position, units, precision, velocity = (
@@ -107,8 +122,10 @@ class Positioner(StandardReadable, Movable, Stoppable):
         else:
             # Wait for the value to set, but don't wait for put completion callback
             set_status = self.setpoint.set(
-                new_position, wait=self.put_complete, timeout=timeout
+                new_position, wait=(wait and self.put_complete), timeout=timeout
             )
+        if not wait:
+            return
         # Decide on how we will wait for completion
         if self.put_complete:
             # await the set call directly
@@ -127,6 +144,9 @@ class Positioner(StandardReadable, Movable, Stoppable):
             # Monitor based on readback position
             aws = asyncio.gather(reached_setpoint.wait(), set_status)
             done_status = AsyncStatus(asyncio.wait_for(aws, timeout))
+        # If we don't care to wait for the return value, we can end
+        if not wait:
+            return
         # Monitor the position of the readback value
         async for current_position in observe_value(
             self.readback, done_status=done_status

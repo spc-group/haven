@@ -82,7 +82,7 @@ class MultipleMotorCaQtDM(CaQtDMBase):
 
 class TableDisplay(display.FireflyDisplay):
     def customize_device(self):
-        self.device = beamline.registry.find(self.macros()["DEVICE"])
+        self.device = beamline.devices[self.macros()["DEVICE"]]
         # Determine which flavor of caQtDM parameters we need
         if self.num_legs == 2:
             self.caqtdm = TwoLegCaQtDM(table=self.device)

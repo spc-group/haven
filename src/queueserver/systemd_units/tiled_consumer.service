@@ -1,0 +1,17 @@
+[Unit]
+Description=consumer for saving bluesky documents to Tiled via kafka
+After=syslog.target network.target
+Wants=kafka.service
+After=kafka.service
+
+[Service]
+ExecStart=/bin/bash -l -c 'mamba activate haven && tiled_consumer'
+Restart=always
+RestartSec=60
+# ExecStopPost=/APSshare/epics/base-7.0.7/bin/rhel9-x86_64/caput 25idc:bluesky:tiled_consumer_state 1
+# ExecStopPost=/APSshare/epics/base-7.0.7/bin/rhel9-x86_64/caput 25idd:bluesky:tiled_consumer_state 1
+# ExecStartPost=/APSshare/epics/base-7.0.7/bin/rhel9-x86_64/caput 25idc:bluesky:tiled_consumer_state 2
+# ExecStartPost=/APSshare/epics/base-7.0.7/bin/rhel9-x86_64/caput 25idd:bluesky:tiled_consumer_state 2
+
+[Install]
+WantedBy=default.target

@@ -2,7 +2,7 @@ from unittest import mock
 
 import pytest
 from bluesky_queueserver_api import BPlan
-from ophyd_async.core import set_mock_value
+from ophyd_async.testing import set_mock_value
 from qtpy import QtCore
 
 from firefly.plans.line_scan import LineScanDisplay
@@ -26,7 +26,6 @@ async def motors(sim_registry, sync_motors):
 
 @pytest.fixture()
 async def display(qtbot, sim_registry, sync_motors, motors, dxp, ion_chamber):
-    print(motors[0].name)
     display = LineScanDisplay()
     qtbot.addWidget(display)
     await display.update_devices(sim_registry)
@@ -71,7 +70,42 @@ async def test_time_calculator(display, sim_registry, ion_chamber, qtbot, qapp):
 
 
 @pytest.mark.asyncio
-async def test_line_scan_plan_queued(qtbot, display):
+async def test_step_size_calculation(display, qtbot):
+    await display.update_regions(1)
+    region = display.regions[0]
+    region.start_line_edit.setText("0")
+    region.stop_line_edit.setText("10")
+
+    # Set num_points and emit the signal
+    display.ui.scan_pts_spin_box.setValue(5)
+    region.update_step_size(5)  # Emit the signal with the new num_points value
+    assert region.step_size_line_edit.text() == "2.5"
+
+    # Change the number of points and verify step size updates
+    display.ui.scan_pts_spin_box.setValue(3)
+    region.update_step_size(3)
+    assert region.step_size_line_edit.text() == "5.0"
+
+    # Test invalid input
+    region.start_line_edit.setText("Start..")
+    region.update_step_size(3)
+    assert region.step_size_line_edit.text() == "N/A"
+
+    # Test edge case: num_points = 1
+    display.ui.scan_pts_spin_box.setValue(1)
+    region.update_step_size(1)
+    assert region.step_size_line_edit.text() == "N/A"
+
+    # Reset to a valid state and verify
+    region.start_line_edit.setText("0")
+    region.stop_line_edit.setText("10")
+    display.ui.scan_pts_spin_box.setValue(6)
+    region.update_step_size(6)
+    assert region.step_size_line_edit.text() == "2.0"
+
+
+@pytest.mark.asyncio
+async def test_line_scan_plan_queued(display, monkeypatch, qtbot):
     # set up motor num
     await display.update_regions(2)
 
@@ -90,7 +124,7 @@ async def test_line_scan_plan_queued(qtbot, display):
 
     # time is calculated when the selection is changed
     display.ui.detectors_list.selected_detectors = mock.MagicMock(
-        return_value=["vortex_me4", "I0"]
+        return_value=["vortex_me4", "I00"]
     )
 
     # set up meta data
@@ -99,8 +133,8 @@ async def test_line_scan_plan_queued(qtbot, display):
     display.ui.textEdit_notes.setText("notes")
 
     expected_item = BPlan(
-        "scan",
-        ["vortex_me4", "I0"],
+        "rel_scan",
+        ["vortex_me4", "I00"],
         "async_motor_1",
         1.0,
         111.0,
@@ -108,7 +142,7 @@ async def test_line_scan_plan_queued(qtbot, display):
         2.0,
         222.0,
         num=10,
-        md={"sample": "sam", "purpose": "test", "notes": "notes"},
+        md={"sample_name": "sam", "purpose": "test", "notes": "notes"},
     )
 
     def check_item(item):

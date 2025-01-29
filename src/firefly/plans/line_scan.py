@@ -32,6 +32,41 @@ class LineScanRegion(regions_display.RegionBase):
         self.stop_line_edit.setPlaceholderText("Stop…")
         self.layout.addWidget(self.stop_line_edit)
 
+        # Step size (non-editable)
+        self.step_size_line_edit = QtWidgets.QLineEdit()
+        self.step_size_line_edit.setReadOnly(True)
+        self.step_size_line_edit.setDisabled(True)
+        self.step_size_line_edit.setPlaceholderText("Step Size…")
+        self.layout.addWidget(self.step_size_line_edit)
+
+        # Connect signals
+        self.start_line_edit.textChanged.connect(self.update_step_size)
+        self.stop_line_edit.textChanged.connect(self.update_step_size)
+
+    def update_step_size(self, num_points=None):
+        try:
+            # Get Start and Stop values
+            start_text = self.start_line_edit.text().strip()
+            stop_text = self.stop_line_edit.text().strip()
+            if not start_text or not stop_text:
+                self.step_size_line_edit.setText("N/A")
+                return
+
+            start = float(start_text)
+            stop = float(stop_text)
+
+            # Ensure num_points is an integer
+            num_points = int(num_points) if num_points is not None else 2
+
+            # Calculate step size
+            if num_points > 1:
+                step_size = (stop - start) / (num_points - 1)
+                self.step_size_line_edit.setText(f"{step_size}")
+            else:
+                self.step_size_line_edit.setText("N/A")
+        except ValueError:
+            self.step_size_line_edit.setText("N/A")
+
 
 class LineScanDisplay(regions_display.RegionsDisplay):
     Region = LineScanRegion
@@ -54,6 +89,14 @@ class LineScanDisplay(regions_display.RegionsDisplay):
             self.update_total_time
         )
         self.ui.spinBox_repeat_scan_num.valueChanged.connect(self.update_total_time)
+
+        # Connect scan_pts_spin_box value change to regions
+        self.ui.scan_pts_spin_box.valueChanged.connect(self.update_regions_step_size)
+
+    def update_regions_step_size(self, num_points):
+        """Update the step size for all regions."""
+        for region in self.regions:
+            region.update_step_size(num_points)
 
     def queue_plan(self, *args, **kwargs):
         """Execute this plan on the queueserver."""

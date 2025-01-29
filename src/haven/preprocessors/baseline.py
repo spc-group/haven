@@ -1,37 +1,32 @@
-import qtawesome as qta
-from qtpy.QtCore import Signal
+import logging
+from typing import Sequence, Union  # , Iterable
 
-from firefly import display
+from bluesky.preprocessors import baseline_wrapper as bluesky_baseline_wrapper
+from bluesky.utils import make_decorator
+
+from haven.instrument import beamline
+
+log = logging.getLogger()
 
 
-class XRFROIDisplay(display.FireflyDisplay):
-    enabled_background = "rgb(212, 237, 218)"  # Pale green
-    selected_background = "rgb(204, 229, 255)"  # Pale blue
+def baseline_wrapper(
+    plan,
+    devices: Union[Sequence, str] = [
+        "motors",
+        "power_supplies",
+        "xray_sources",
+        "APS",
+        "baseline",
+    ],
+    name: str = "baseline",
+):
+    bluesky_baseline_wrapper.__doc__
+    # Resolve devices
+    devices = beamline.devices.findall(devices, allow_none=True)
+    yield from bluesky_baseline_wrapper(plan=plan, devices=devices, name=name)
 
-    # Signals
-    selected = Signal(bool)
 
-    def ui_filename(self):
-        return "xrf_roi.ui"
-
-    def customize_ui(self):
-        self.ui.set_roi_button.setIcon(qta.icon("fa5s.chart-line"))
-        self.ui.enabled_checkbox.toggled.connect(self.set_backgrounds)
-        self.ui.set_roi_button.toggled.connect(self.set_backgrounds)
-        self.ui.enabled_checkbox.toggled.connect(self.enable_roi)
-        self.ui.set_roi_button.toggled.connect(self.selected)
-
-    def set_backgrounds(self):
-        is_selected = self.ui.set_roi_button.isChecked()
-        if is_selected:
-            self.setStyleSheet(f"background: {self.selected_background}")
-        else:
-            self.setStyleSheet("")
-
-    def enable_roi(self, is_enabled):
-        if not is_enabled:
-            # Unselect this channel so we don't get locked out
-            self.ui.set_roi_button.setChecked(False)
+baseline_decorator = make_decorator(baseline_wrapper)
 
 
 # -----------------------------------------------------------------------------

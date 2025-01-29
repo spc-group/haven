@@ -1,5 +1,5 @@
 from haven.devices.shutter import ShutterState
-from haven.plans.record_dark_current import record_dark_current
+from haven.plans import record_dark_current
 
 
 def test_shutters_get_reset(shutters, ion_chamber):
@@ -20,9 +20,6 @@ def test_shutters_get_reset(shutters, ion_chamber):
 def test_messages(shutters, ion_chamber):
     shutter = shutters[0]
     msgs = list(record_dark_current(ion_chambers=[ion_chamber], shutters=[shutter]))
-    from pprint import pprint
-
-    pprint(msgs)
     # Check the shutters get closed
     trigger_msg = msgs[3]
     assert trigger_msg.obj is ion_chamber

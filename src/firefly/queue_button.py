@@ -21,7 +21,7 @@ class QueueButton(QtWidgets.QPushButton):
         self.setDisabled(True)
 
     def update_queue_style(self, status: dict):
-        if status["worker_environment_exists"]:
+        if status.get("worker_environment_exists", False):
             self.setEnabled(True)
         else:
             # Should be disabled because the queue is closed

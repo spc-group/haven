@@ -1,9 +1,11 @@
+import asyncio
 from unittest.mock import AsyncMock
 
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose
-from ophyd_async.core import TriggerInfo, assert_value, get_mock_put, set_mock_value
+from ophyd_async.core import TriggerInfo
+from ophyd_async.testing import assert_value, get_mock_put, set_mock_value
 
 from haven.devices.ion_chamber import IonChamber
 
@@ -39,6 +41,7 @@ async def test_readables(ion_chamber):
     await ion_chamber.connect(mock=True)
     expected_readables = [
         "I0-net_current",
+        "I0-raw_current",
         "I0-voltmeter-analog_inputs-1-final_value",
         "I0-mcs-scaler-channels-0-net_count",
         "I0-mcs-scaler-channels-0-raw_count",
@@ -48,7 +51,13 @@ async def test_readables(ion_chamber):
     ]
     actual_readables = (await ion_chamber.describe()).keys()
     assert sorted(actual_readables) == sorted(expected_readables)
-    # Check confirables
+    # Check signal hints
+    expected_hints = [
+        "I0-net_current",
+    ]
+    actual_hints = ion_chamber.hints["fields"]
+    assert sorted(actual_hints) == sorted(expected_hints)
+    # Check configurables
     expected_configables = [
         "I0-counts_per_volt_second",
         "I0-voltmeter-model_name",
@@ -115,6 +124,7 @@ async def test_readables(ion_chamber):
 @pytest.mark.asyncio
 async def test_trigger(ion_chamber):
     await ion_chamber.connect(mock=True)
+    set_mock_value(ion_chamber.mcs.scaler.clock_frequency, 50e6)
     assert ion_chamber._trigger_statuses == {}
     # Does the same trigger twice return the same
     status1 = ion_chamber.trigger()
@@ -138,10 +148,39 @@ async def test_trigger_dark_current(ion_chamber, monkeypatch):
     assert ion_chamber.mcs.scaler.record_dark_current.trigger.called
 
 
+async def test_default_timeout_with_time(ion_chamber):
+    await ion_chamber.connect(mock=True)
+    await ion_chamber.mcs.scaler.channels[0].is_gate.set(True)
+    await ion_chamber.mcs.scaler.preset_time.set(17)
+    timeout = await ion_chamber.default_timeout()
+    assert timeout == pytest.approx(27)
+
+
+async def test_default_timeout_with_gate(ion_chamber):
+    """If another channel is gated, then use the maximum timeout.
+
+    Assume the internal register is 32-bit, then we can count for at most:
+
+      2**32 / clock_freq
+
+    """
+    clock_freq = 50e6
+    await ion_chamber.connect(mock=True)
+    await ion_chamber.mcs.scaler.channels[0].is_gate.set(False)
+    await ion_chamber.mcs.scaler.clock_frequency.set(clock_freq)
+    timeout = await ion_chamber.default_timeout()
+    buff_size = 2**32
+    assert timeout == pytest.approx(buff_size / clock_freq + 10)
+
+
 @pytest.mark.asyncio
 async def test_net_current_signal(ion_chamber):
     """Test that scaler tick counts get properly converted to ion chamber current."""
     await ion_chamber.connect(mock=True)
+    await asyncio.gather(
+        ion_chamber.net_current.connect(mock=False),
+        ion_chamber.preamp.gain.connect(mock=False),
+    )
     # Set the necessary dependent signals
     set_mock_value(ion_chamber.counts_per_volt_second, 10e6)  # 100 Mhz / 10 V
     set_mock_value(ion_chamber.scaler_channel.net_count, int(13e6))  # 1.3V
@@ -161,6 +200,10 @@ async def test_net_current_signal(ion_chamber):
 async def test_raw_current_signal(ion_chamber):
     """Test that scaler tick counts get properly converted to ion chamber current."""
     await ion_chamber.connect(mock=True)
+    await asyncio.gather(
+        ion_chamber.raw_current.connect(mock=False),
+        ion_chamber.preamp.gain.connect(mock=False),
+    )
     # Set the necessary dependent signals
     set_mock_value(ion_chamber.counts_per_volt_second, 10e6)  # 100 Mhz / 10 V
     set_mock_value(ion_chamber.scaler_channel.raw_count, int(13e6))  # 1.3V
@@ -181,8 +224,11 @@ async def test_voltmeter_name(ion_chamber):
     await ion_chamber.connect(mock=True)
     assert (await ion_chamber.voltmeter_channel.description.get_value()) != "Icake"
     # Change the ion chamber name, and see if the voltmeter name updates
-    set_mock_value(ion_chamber.scaler_channel.description, "Icake")
+    # set_mock_value(ion_chamber.scaler_channel.description, "Icake")
+    ion_chamber.scaler_channel.description.get_value = AsyncMock(return_value="Icake")
+    assert (await ion_chamber.scaler_channel.description.get_value()) == "Icake"
     await ion_chamber.connect(mock=True)
+    assert (await ion_chamber.scaler_channel.description.get_value()) == "Icake"
     assert (await ion_chamber.voltmeter_channel.description.get_value()) == "Icake"
 
 
@@ -302,14 +348,11 @@ async def test_flyscan_collect(ion_chamber, trigger_info):
         }
         for (datum, timestamp) in zip(channel_numbers, expected_timestamps)
     ]
-    # Ignore the first collected data point because it's during taxiing
-    expected_data = sim_data[1:]
     # The real timestamps should be midway between PSO pulses
     collected = [c async for c in ion_chamber.collect_pages()]
     assert len(collected) == 1
     collected = collected[0]
     # Confirm data have the right structure
-    raw_name = ion_chamber.scaler_channel.net_count.name
     assert collected["time"] == 1024
     assert_allclose(
         collected["data"][ion_chamber.scaler_channel.raw_count.name], sim_raw_data[:6]

@@ -477,7 +477,7 @@ class XafsScanDisplay(display.FireflyDisplay):
         detectors = self.ui.detectors_list.selected_detectors()
         repeat_scan_num = int(self.ui.spinBox_repeat_scan_num.value())
         md = {
-            "sample": self.ui.lineEdit_sample.text(),
+            "sample_name": self.ui.lineEdit_sample.text(),
             "purpose": self.ui.lineEdit_purpose.text(),
             "is_standard": self.ui.checkBox_is_standard.isChecked(),
             "notes": self.ui.textEdit_notes.toPlainText(),

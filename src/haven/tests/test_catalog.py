@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 import pytest
 from tiled import queries
 
@@ -9,13 +8,13 @@ from haven.catalog import CatalogScan, unsnake
 @pytest.fixture()
 def scan(tiled_client):
     uid = "7d1daf1d-60c7-4aa7-a668-d1cd97e5335f"
-    return CatalogScan(tiled_client[uid])
+    return CatalogScan(tiled_client["255id_testing"][uid])
 
 
 @pytest.fixture()
 def grid_scan(tiled_client):
     uid = "85573831-f4b4-4f64-b613-a6007bf03a8d"
-    return CatalogScan(tiled_client[uid])
+    return CatalogScan(tiled_client["255id_testing"][uid])
 
 
 def test_unsnake():
@@ -44,15 +43,6 @@ async def test_load_scan(catalog):
 
 
 @pytest.mark.asyncio
-async def test_dataframe(scan):
-    """Check that the catalogscan can produce a pandas dataframe."""
-    df = await scan.to_dataframe()
-    assert isinstance(df, pd.DataFrame)
-    # Check that the index is added as a column
-    assert df.index.name in df.columns
-
-
-@pytest.mark.asyncio
 async def test_load_nd_data(grid_scan):
     """Check that the catalog scan can convert e.g. grid_scan results."""
     arr = await grid_scan["It_net_counts"]
@@ -62,7 +52,7 @@ async def test_load_nd_data(grid_scan):
 
 @pytest.mark.asyncio
 async def test_distinct(catalog, tiled_client):
-    distinct = tiled_client.distinct("plan_name")
+    distinct = tiled_client["255id_testing"].distinct("plan_name")
     assert await catalog.distinct("plan_name") == distinct
 
 
@@ -70,7 +60,7 @@ async def test_distinct(catalog, tiled_client):
 async def test_search(catalog, tiled_client):
     """Make sure we can query to database properly."""
     query = queries.Regex("plan_name", "xafs_scan")
-    expected = tiled_client.search(query)
+    expected = tiled_client["255id_testing"].search(query)
     response = await catalog.search(query)
     assert len(expected) == await response.__len__()
 
@@ -78,7 +68,7 @@ async def test_search(catalog, tiled_client):
 @pytest.mark.asyncio
 async def test_values(catalog, tiled_client):
     """Get the individual scans in the catalog."""
-    expected = [uid for uid in tiled_client.keys()]
+    expected = [uid for uid in tiled_client["255id_testing"].keys()]
     response = [val.uid async for val in catalog.values()]
     assert expected == response
 

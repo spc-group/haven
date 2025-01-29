@@ -6,7 +6,8 @@ import pytest
 from ophyd import sim
 from ophyd_async.epics.motor import Motor
 
-from haven.plans.fly import FlyerCollector, fly_scan, grid_fly_scan
+from haven.plans import fly_scan, grid_fly_scan
+from haven.plans._fly import FlyerCollector
 
 
 @pytest.fixture()
