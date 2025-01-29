@@ -1,6 +1,8 @@
 import numpy as np
 import pytest
+from bluesky import RunEngine
 from ophyd import sim
+from ophyd_async.sim.demo._sim_motor import SimMotor
 
 from haven.energy_ranges import KRange
 from haven.plans import energy_scan, xafs_scan
@@ -276,6 +278,31 @@ def test_xafs_metadata(mono_motor):
     assert md["E0"] == 8333.0
     assert md["plan_name"] == "energy_scan"
     assert md["sample_name"] == "unobtanium"
+
+
+async def test_document_plan_args():
+    """Having numpy arrays in the ."""
+    # Set up mocked devices
+    energy = SimMotor(name="energy")
+    await energy.connect(mock=False)
+    # Set up the run engine environment
+    await energy.connect(mock=True)
+    RE = RunEngine({})
+    documents = []
+
+    def track_doc(name, doc):
+        documents.append((name, doc))
+
+    RE.subscribe(track_doc)
+    # Prepare the plan
+    energies = np.linspace(8250, 8550, num=11)
+    plan = energy_scan(energies=energies, detectors=[], energy_signals=[energy])
+    RE(plan)
+    (start_doc,) = [doc for name, doc in documents if name == "start"]
+    # Make sure there are no numpy arrays in the plan args
+    # (causes problems for the Tiled writer)
+    args = start_doc["plan_args"]["args"]
+    assert not any([isinstance(arg, np.ndarray) for arg in args])
 
 
 # -----------------------------------------------------------------------------

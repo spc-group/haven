@@ -138,6 +138,8 @@ def energy_scan(
     energies += E0
     # Todo: sort the energies and exposure times by the energy
     # Prepare the positioners list with associated energies and exposures
+    energies = list(energies)
+    exposure = list(exposure)
     scan_args = [(motor, energies) for motor in energy_signals]
     scan_args += [(motor, exposure) for motor in time_signals]
     scan_args = [item for items in scan_args for item in items]
