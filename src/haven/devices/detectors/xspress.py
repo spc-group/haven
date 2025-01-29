@@ -172,7 +172,7 @@ class Xspress3Detector(HavenDetector, StandardDetector):
         elements: int | Sequence[int] = 1,
         ev_per_bin: float = 10.0,
         drv_suffix="det1:",
-        hdf_suffix="HDF1:",
+        fileio_suffix="HDF1:",
         name: str = "",
         config_sigs: Sequence[SignalR] = (),
     ):
@@ -185,8 +185,8 @@ class Xspress3Detector(HavenDetector, StandardDetector):
             {idx: XspressElement(prefix, element_index=idx) for idx in elements}
         )
         # Area detector IO devices
-        self.drv = XspressDriverIO(prefix + drv_suffix)
-        self.hdf = adcore.NDFileHDFIO(prefix + hdf_suffix)
+        self.driver = XspressDriverIO(prefix + drv_suffix)
+        self.hdf = adcore.NDFileHDFIO(prefix + fileio_suffix)
 
         if path_provider is None:
             path_provider = default_path_provider()
@@ -194,17 +194,17 @@ class Xspress3Detector(HavenDetector, StandardDetector):
         self.ev_per_bin, _ = soft_signal_r_and_setter(float, initial_value=ev_per_bin)
 
         super().__init__(
-            XspressController(self.drv),
+            XspressController(self.driver),
             adcore.ADHDFWriter(
                 self.hdf,
                 path_provider,
                 lambda: self.name,
-                XspressDatasetDescriber(self.drv),
-                self.drv,  # <- for DT ndattributes
+                XspressDatasetDescriber(self.driver),
+                self.driver,  # <- for DT ndattributes
             ),
             config_sigs=(
-                self.drv.acquire_period,
-                self.drv.acquire_time,
+                self.driver.acquire_period,
+                self.driver.acquire_time,
                 self.ev_per_bin,
                 *config_sigs,
             ),
@@ -214,11 +214,11 @@ class Xspress3Detector(HavenDetector, StandardDetector):
     @AsyncStatus.wrap
     async def stage(self) -> None:
         self._old_xml_file, *_ = await asyncio.gather(
-            self.drv.nd_attributes_file.get_value(),
+            self.driver.nd_attributes_file.get_value(),
             super().stage(),
             self._controller.setup_ndattributes(device_name=self.name),
-            self.drv.erase_on_start.set(False),
-            self.drv.erase.trigger(),
+            self.driver.erase_on_start.set(False),
+            self.driver.erase.trigger(),
         )
 
     @AsyncStatus.wrap
@@ -226,12 +226,12 @@ class Xspress3Detector(HavenDetector, StandardDetector):
         await super().unstage()
         if self._old_xml_file is not None:
             # Restore the original XML attributes file
-            await self.drv.nd_attributes_file.set(self._old_xml_file)
+            await self.driver.nd_attributes_file.set(self._old_xml_file)
             self._old_xml_file = None
 
     @property
     def default_time_signal(self):
-        return self.drv.acquire_time
+        return self.driver.acquire_time
 
 
 def ndattribute_xml(params):
