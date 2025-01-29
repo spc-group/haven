@@ -51,7 +51,7 @@ class XspressDriverIO(adcore.ADBaseIO):
 
 class XspressController(DetectorController):
     def __init__(self, driver: adcore.ADBaseIO) -> None:
-        self._drv = driver
+        self.driver = driver
 
     def get_deadtime(self, exposure: float) -> float:
         # Arbitrary value. To-do: fill this in when we know what to
@@ -59,22 +59,22 @@ class XspressController(DetectorController):
         return 0.001
 
     async def setup_ndattributes(self, device_name: str):
-        num_elements = await self._drv.number_of_elements.get_value()
+        num_elements = await self.driver.number_of_elements.get_value()
         params = ndattribute_params(
             device_name=device_name, elements=range(num_elements)
         )
         xml = ndattribute_xml(params)
-        await self._drv.nd_attributes_file.set(xml)
+        await self.driver.nd_attributes_file.set(xml)
 
     @AsyncStatus.wrap
     async def prepare(self, trigger_info: TriggerInfo):
         await asyncio.gather(
-            self._drv.num_images.set(trigger_info.total_number_of_triggers),
-            self._drv.image_mode.set(adcore.ImageMode.MULTIPLE),
-            self._drv.trigger_mode.set(XspressTriggerMode.INTERNAL),
+            self.driver.num_images.set(trigger_info.total_number_of_triggers),
+            self.driver.image_mode.set(adcore.ImageMode.MULTIPLE),
+            self.driver.trigger_mode.set(XspressTriggerMode.INTERNAL),
             # Hardware deadtime correciton is not reliable
             # https://github.com/epics-modules/xspress3/issues/57
-            self._drv.deadtime_correction.set(False),
+            self.driver.deadtime_correction.set(False),
         )
 
     async def wait_for_idle(self):
@@ -83,11 +83,11 @@ class XspressController(DetectorController):
 
     async def arm(self):
         self._arm_status = await adcore.start_acquiring_driver_and_ensure_status(
-            self._drv
+            self.driver
         )
 
     async def disarm(self):
-        await adcore.stop_busy_record(self._drv.acquire, False, timeout=1)
+        await adcore.stop_busy_record(self.driver.acquire, False, timeout=1)
 
 
 class XspressDatasetDescriber(adcore.ADBaseDatasetDescriber):
