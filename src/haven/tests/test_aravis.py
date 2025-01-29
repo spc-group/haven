@@ -27,7 +27,7 @@ async def test_camera_trigger_source_choices(camera):
     >     data_type: NotConnected: ca://25idcARV4:HDF1:NDDataType_RBV
 
     """
-    desc = await camera.drv.trigger_source.describe()
+    desc = await camera.driver.trigger_source.describe()
     choices = desc["s255id-gige-A-drv-trigger_source"]["choices"]
     assert "Software" in choices
     assert "Line1" in choices
@@ -46,7 +46,7 @@ async def test_camera_signals(camera):
     >     data_type: NotConnected: ca://25idcARV4:HDF1:NDDataType_RBV
 
     """
-    desc = await camera.drv.data_type.describe()
+    desc = await camera.driver.data_type.describe()
     cam_source = desc["s255id-gige-A-drv-data_type"]["source"]
     assert cam_source == "mock+ca://255idgigeA:cam1:DataType_RBV"
     # Check HDF signal source
