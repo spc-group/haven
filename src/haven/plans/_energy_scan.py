@@ -1,6 +1,4 @@
-"""A bluesky plan to scan the X-ray energy and capture detector signals.
-
-"""
+"""A bluesky plan to scan the X-ray energy and capture detector signals."""
 
 import logging
 from collections import ChainMap
