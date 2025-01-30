@@ -13,9 +13,11 @@ def view(qtbot):
     # Configure widgets
     mp_view.ui.x_signal_combobox.addItem("energy_energy")
     mp_view.ui.x_signal_combobox.setCurrentText("energy_energy")
-    mp_view.ui.y_signal_combobox.addItem("It-net_current")
+    mp_view.ui.y_signal_combobox.addItem("I0-net_current")
+    mp_view.ui.y_signal_combobox.addItem("It-net_current")    
     mp_view.ui.y_signal_combobox.setCurrentText("It-net_current")
     mp_view.ui.r_signal_combobox.addItem("I0-net_current")
+    mp_view.ui.r_signal_combobox.addItem("It-net_current")
     mp_view.ui.r_signal_combobox.setCurrentText("I0-net_current")
     mp_view.ui.r_signal_checkbox.setCheckState(True)
     mp_view.ui.logarithm_checkbox.setCheckState(True)
@@ -185,3 +187,11 @@ def test_axis_labels(view):
     xlabel, ylabel = view.axis_labels()
     assert xlabel == "energy_energy"
     assert ylabel == "grad(ln(I0-net_current/It-net_current))"
+
+
+def test_swap_signals(view, qtbot):
+    assert view.ui.y_signal_combobox.currentText() == "It-net_current"
+    assert view.ui.r_signal_combobox.currentText() == "I0-net_current"
+    view.swap_signals()
+    assert view.ui.y_signal_combobox.currentText() == "I0-net_current"
+    assert view.ui.r_signal_combobox.currentText() == "It-net_current"

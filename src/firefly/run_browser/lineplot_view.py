@@ -62,6 +62,8 @@ class LineplotView(QtWidgets.QWidget):
         self.ui.gradient_checkbox.stateChanged.connect(self.plot)
         self.ui.autorange_button.clicked.connect(self.auto_range)
         self.ui.cursor_button.clicked.connect(self.center_cursor)
+        self.ui.swap_button.setIcon(qta.icon("mdi.swap-horizontal"))
+        self.ui.swap_button.clicked.connect(self.swap_signals)
         # Set up plotting widgets
         plot_item = self.ui.plot_widget.getPlotItem()
         plot_item.addLegend()
@@ -117,6 +119,13 @@ class LineplotView(QtWidgets.QWidget):
                 combobox.addItems(new_cols)
                 if old_value in new_cols:
                     combobox.setCurrentText(old_value)
+
+    def swap_signals(self):
+        """Swap the value and reference signals."""
+        new_r = self.ui.y_signal_combobox.currentText()
+        new_y = self.ui.r_signal_combobox.currentText()
+        self.ui.y_signal_combobox.setCurrentText(new_y)
+        self.ui.r_signal_combobox.setCurrentText(new_r)
 
     def prepare_plotting_data(self, df: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
         xsignal = self.ui.x_signal_combobox.currentText()

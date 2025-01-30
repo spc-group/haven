@@ -7,6 +7,7 @@ import pandas as pd
 import pyqtgraph
 from matplotlib.colors import TABLEAU_COLORS
 from pyqtgraph import ImageView, PlotItem
+import qtawesome as qta
 from qtpy import QtWidgets, uic
 from qtpy.QtCore import Slot
 from scipy.interpolate import griddata
@@ -40,6 +41,8 @@ class GridplotView(QtWidgets.QWidget):
         self.metadata = {}
         super().__init__(parent)
         self.ui = uic.loadUi(self.ui_file, self)
+        self.ui.swap_button.setIcon(qta.icon("mdi.swap-horizontal"))
+        self.ui.swap_button.clicked.connect(self.swap_signals)
         # Prepare plotting style
         vbox = self.ui.plot_widget.ui.roiPlot.getPlotItem().getViewBox()
         vbox.setBackgroundColor("k")
@@ -122,6 +125,13 @@ class GridplotView(QtWidgets.QWidget):
                 combobox.addItems(new_cols)
                 if old_value in new_cols:
                     combobox.setCurrentText(old_value)
+
+    def swap_signals(self):
+        """Swap the value and reference signals."""
+        new_r = self.ui.value_signal_combobox.currentText()
+        new_value = self.ui.r_signal_combobox.currentText()
+        self.ui.value_signal_combobox.setCurrentText(new_value)
+        self.ui.r_signal_combobox.setCurrentText(new_r)
 
     def prepare_plotting_data(self, df: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
         """Prepare independent and dependent datasets from this

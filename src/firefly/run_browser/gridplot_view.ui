@@ -141,6 +141,13 @@ If unchecked, the data will still be presented on a fixed grid, but this grid ma
       </layout>
      </item>
      <item>
+      <widget class="QPushButton" name="swap_button">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item>
       <layout class="QHBoxLayout" name="horizontalLayout_3">
        <property name="spacing">
         <number>2</number>

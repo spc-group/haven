@@ -20,8 +20,10 @@ def view(qtbot):
     grid_view.ui.regrid_xsignal_combobox.setCurrentText("fast_motor")
     grid_view.ui.regrid_ysignal_combobox.addItem("slow_motor")
     grid_view.ui.regrid_ysignal_combobox.setCurrentText("slow_motor")
+    grid_view.ui.value_signal_combobox.addItem("I0-net_current")
     grid_view.ui.value_signal_combobox.addItem("It-net_current")
     grid_view.ui.value_signal_combobox.setCurrentText("It-net_current")
+    grid_view.ui.r_signal_combobox.addItem("It-net_current")
     grid_view.ui.r_signal_combobox.addItem("I0-net_current")
     grid_view.ui.r_signal_combobox.setCurrentText("I0-net_current")
     grid_view.ui.r_signal_checkbox.setCheckState(True)
@@ -222,5 +224,12 @@ def test_update_plot(view):
     view.plot(dataframes)
     # Check the data were plotted
     plot_item = view.ui.plot_widget.getImageItem()
-    print(view.ui.plot_widget.image)
     assert view.ui.plot_widget.image is not None
+
+
+def test_swap_signals(view, qtbot):
+    assert view.ui.value_signal_combobox.currentText() == "It-net_current"
+    assert view.ui.r_signal_combobox.currentText() == "I0-net_current"
+    view.swap_signals()
+    assert view.ui.value_signal_combobox.currentText() == "I0-net_current"
+    assert view.ui.r_signal_combobox.currentText() == "It-net_current"
