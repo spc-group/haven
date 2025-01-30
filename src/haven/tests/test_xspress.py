@@ -68,10 +68,10 @@ async def test_descriptor(detector):
     """
     # With deadtime correction off, we should get unsigned longs
     await detector.driver.deadtime_correction.set(False)
-    assert await detector.writer._dataset_describer.np_datatype() == "<u4"
+    assert await detector._writer._dataset_describer.np_datatype() == "<u4"
     # With deadtime correction on, we should get double-precision floats
     await detector.driver.deadtime_correction.set(True)
-    assert await detector.writer._dataset_describer.np_datatype() == "<f8"
+    assert await detector._writer._dataset_describer.np_datatype() == "<f8"
 
 
 async def test_deadtime_correction_disabled(detector):
