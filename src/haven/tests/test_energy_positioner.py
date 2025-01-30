@@ -58,29 +58,30 @@ async def test_disable_id_tracking(positioner):
 
 
 async def test_reading(positioner):
-    assert positioner.hints['fields'] == ['energy']
+    assert positioner.hints["fields"] == ["energy"]
     reading = await positioner.read()
     expected_signals = [
-        'energy-undulator-energy',
-        'energy-undulator-energy-setpoint',
-        'energy-undulator-gap',
-        'energy-undulator-gap-setpoint',
-        'energy-undulator-gap_taper',
-        'energy-undulator-gap_taper-setpoint',
-        'energy-undulator-energy_taper',
-        'energy-undulator-energy_taper-setpoint',
-        'energy-setpoint',
-        'energy-monochromator-roll2',
-        'energy-monochromator-pitch2',
-        'energy-monochromator-energy',
-        'energy-monochromator-vert',
-        'energy-monochromator-horiz',
-        'energy-monochromator-bragg',
-        'energy-monochromator-offset',
-        'energy-monochromator-gap',
-        'energy'
+        "energy-undulator-energy",
+        "energy-undulator-energy-setpoint",
+        "energy-undulator-gap",
+        "energy-undulator-gap-setpoint",
+        "energy-undulator-gap_taper",
+        "energy-undulator-gap_taper-setpoint",
+        "energy-undulator-energy_taper",
+        "energy-undulator-energy_taper-setpoint",
+        "energy-setpoint",
+        "energy-monochromator-roll2",
+        "energy-monochromator-pitch2",
+        "energy-monochromator-energy",
+        "energy-monochromator-vert",
+        "energy-monochromator-horiz",
+        "energy-monochromator-bragg",
+        "energy-monochromator-offset",
+        "energy-monochromator-gap",
+        "energy",
     ]
     assert sorted(list(reading.keys())) == sorted(expected_signals)
+
 
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman

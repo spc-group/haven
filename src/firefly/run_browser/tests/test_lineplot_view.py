@@ -14,7 +14,7 @@ def view(qtbot):
     mp_view.ui.x_signal_combobox.addItem("energy_energy")
     mp_view.ui.x_signal_combobox.setCurrentText("energy_energy")
     mp_view.ui.y_signal_combobox.addItem("I0-net_current")
-    mp_view.ui.y_signal_combobox.addItem("It-net_current")    
+    mp_view.ui.y_signal_combobox.addItem("It-net_current")
     mp_view.ui.y_signal_combobox.setCurrentText("It-net_current")
     mp_view.ui.r_signal_combobox.addItem("I0-net_current")
     mp_view.ui.r_signal_combobox.addItem("It-net_current")

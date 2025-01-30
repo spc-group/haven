@@ -54,10 +54,10 @@ class DatabaseWorker:
         keys = await asyncio.gather(*aws)
         keys = ChainMap(*keys)
         keys["seq_num"] = {
-            'dtype': 'number',
-            'dtype_numpy': '<i8',
-            'precision': 0,
-            'shape': [],
+            "dtype": "number",
+            "dtype_numpy": "<i8",
+            "precision": 0,
+            "shape": [],
         }
         return keys
 

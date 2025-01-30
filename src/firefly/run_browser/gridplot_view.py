@@ -5,9 +5,9 @@ from typing import Mapping, Sequence
 import numpy as np
 import pandas as pd
 import pyqtgraph
+import qtawesome as qta
 from matplotlib.colors import TABLEAU_COLORS
 from pyqtgraph import ImageView, PlotItem
-import qtawesome as qta
 from qtpy import QtWidgets, uic
 from qtpy.QtCore import Slot
 from scipy.interpolate import griddata
