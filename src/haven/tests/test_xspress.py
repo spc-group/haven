@@ -23,7 +23,8 @@ async def test_signals(detector):
     assert await detector.ev_per_bin.get_value() == 10
     # Spot-check some PVs
     assert (
-        detector.driver.acquire_time.source == "mock+ca://255id_xsp:det1:AcquireTime_RBV"
+        detector.driver.acquire_time.source
+        == "mock+ca://255id_xsp:det1:AcquireTime_RBV"
     )
     assert detector.driver.acquire.source == "mock+ca://255id_xsp:det1:Acquire_RBV"
     # Individual element's signals
@@ -51,7 +52,9 @@ async def test_trigger(detector):
 async def test_stage(detector):
     assert not get_mock_put(detector.driver.erase).called
     await detector.stage()
-    get_mock_put(detector.driver.erase_on_start).assert_called_once_with(False, wait=True)
+    get_mock_put(detector.driver.erase_on_start).assert_called_once_with(
+        False, wait=True
+    )
     assert get_mock_put(detector.driver.erase).called
 
 
