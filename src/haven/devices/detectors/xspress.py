@@ -186,7 +186,7 @@ class Xspress3Detector(HavenDetector, StandardDetector):
         )
         # Area detector IO devices
         self.driver = XspressDriverIO(prefix + drv_suffix)
-        self.hdf = adcore.NDFileHDFIO(prefix + fileio_suffix)
+        self.fileio = adcore.NDFileHDFIO(prefix + fileio_suffix)
 
         if path_provider is None:
             path_provider = default_path_provider()
@@ -196,7 +196,7 @@ class Xspress3Detector(HavenDetector, StandardDetector):
         super().__init__(
             XspressController(self.driver),
             adcore.ADHDFWriter(
-                self.hdf,
+                self.fileio,
                 path_provider,
                 lambda: self.name,
                 XspressDatasetDescriber(self.driver),
