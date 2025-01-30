@@ -281,7 +281,11 @@ def test_xafs_metadata(mono_motor):
 
 
 async def test_document_plan_args():
-    """Having numpy arrays in the ."""
+    """Having numpy arrays in the arguments to a plan causes problems for
+    the TiledWriter. Make sure that the start doc plan args do not
+    contain numpy arrays.
+
+    """
     # Set up mocked devices
     energy = SimMotor(name="energy")
     await energy.connect(mock=False)
