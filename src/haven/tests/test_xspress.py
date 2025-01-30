@@ -15,7 +15,7 @@ this_dir = Path(__file__).parent
 async def detector():
     det = Xspress3Detector("255id_xsp:", name="vortex_me4", elements=4)
     await det.connect(mock=True)
-    set_mock_value(det.hdf.file_path_exists, True)
+    set_mock_value(det.fileio.file_path_exists, True)
     return det
 
 
