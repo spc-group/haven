@@ -84,6 +84,9 @@ class EnergyPositioner(Positioner):
                 derived_from={"mono": self.monochromator.energy.user_readback},
                 inverse=self.get_energy,
             )
+        # We don't want all the readable signals to be hinted necessarily
+        unhinted = [self.monochromator, self.undulator]
+        self._has_hints = tuple(device for device in self._has_hints if device not in unhinted)
         # Additional derived signals
         self.precision = derived_signal_rw(
             int, derived_from={"precision": self.monochromator.energy.precision}

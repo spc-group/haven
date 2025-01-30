@@ -60,7 +60,7 @@ class GridplotView(QtWidgets.QWidget):
 
     def set_image_dimensions(self, metadata: Sequence):
         if len(metadata) != 1:
-            log.warning(f"Cannot plot grids for {len(metadata)}-D scan.")
+            log.warning(f"Cannot plot grids for {len(metadata)} scans.")
             self.shape = ()
             self.extent = ()
             return
@@ -71,7 +71,7 @@ class GridplotView(QtWidgets.QWidget):
         except KeyError as exc:
             self.shape = ()
             self.extent = ()
-            log.exception(exc)
+            log.warning("Could not determine grid structure.")
 
     @Slot(dict, set, set)
     @Slot()
@@ -213,7 +213,7 @@ class GridplotView(QtWidgets.QWidget):
         df = list(self.dataframes.values())[0]
         try:
             img = self.prepare_plotting_data(df)
-        except KeyError as exc:
+        except (KeyError, ValueError) as exc:
             log.warning(f"Could not plot map of signal {exc}.")
             return
         # Plot this run's data
