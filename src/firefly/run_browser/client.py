@@ -52,7 +52,14 @@ class DatabaseWorker:
     async def data_keys(self, stream: str):
         aws = [run.data_keys(stream=stream) for run in self.selected_runs]
         keys = await asyncio.gather(*aws)
-        return ChainMap(*keys)
+        keys = ChainMap(*keys)
+        keys["seq_num"] = {
+            'dtype': 'number',
+            'dtype_numpy': '<i8',
+            'precision': 0,
+            'shape': [],
+        }
+        return keys
 
     async def data_frames(self, stream: str) -> dict:
         """Return the internal dataframes for selected runs as {uid: dataframe}."""

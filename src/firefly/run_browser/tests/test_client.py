@@ -16,6 +16,7 @@ async def test_data_keys(worker):
     await worker.load_selected_runs(uids)
     data_keys = await worker.data_keys("primary")
     assert "I0-mcs-scaler-channels-0-net_count" in data_keys
+    assert "seq_num" in data_keys
 
 
 @pytest.mark.asyncio
