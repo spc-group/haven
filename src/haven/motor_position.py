@@ -63,10 +63,11 @@ class MotorPosition(BaseModel):
     @classmethod
     def load(Cls, run):
         """Create a new MotorPosition object from a Tiled Bluesky run."""
+        data_keys = run["primary"].metadata["data_keys"]
         return Cls._load(
             run_md=run.metadata,
             # Assumes the 0-th descriptor is for the primary stream
-            data_keys=run["primary"].metadata["descriptors"][0]["data_keys"],
+            data_keys=data_keys,
             data=run["primary/internal/events"].read(),
         )
 

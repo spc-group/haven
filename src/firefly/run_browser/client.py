@@ -2,7 +2,7 @@ import asyncio
 import datetime as dt
 import logging
 import warnings
-from collections import OrderedDict
+from collections import ChainMap, OrderedDict
 from functools import partial
 from typing import Mapping, Sequence
 
@@ -48,6 +48,25 @@ class DatabaseWorker:
         # Flatten the lists
         streams = [stream for streams in all_streams for stream in streams]
         return list(set(streams))
+
+    async def data_keys(self, stream: str):
+        aws = [run.data_keys(stream=stream) for run in self.selected_runs]
+        keys = await asyncio.gather(*aws)
+        keys = ChainMap(*keys)
+        keys["seq_num"] = {
+            "dtype": "number",
+            "dtype_numpy": "<i8",
+            "precision": 0,
+            "shape": [],
+        }
+        return keys
+
+    async def data_frames(self, stream: str) -> dict:
+        """Return the internal dataframes for selected runs as {uid: dataframe}."""
+        aws = (run.data(stream=stream) for run in self.selected_runs)
+        dfs = await asyncio.gather(*aws)
+        dfs = {run.uid: df for run, df in zip(self.selected_runs, dfs)}
+        return dfs
 
     async def filtered_nodes(self, filters: Mapping):
         case_sensitive = False
@@ -150,6 +169,22 @@ class DatabaseWorker:
             all_runs.append(run_data)
         return all_runs
 
+    async def hints(self, stream: str = "primary") -> tuple[list, list]:
+        """Get hints for this stream, as two lists.
+
+        (*independent_hints*, *dependent_hints*)
+
+        *independent_hints* are those operated by the experiment,
+         while *dependent_hints* are those measured as a result.
+        """
+        aws = [run.hints(stream) for run in self.selected_runs]
+        all_hints = await asyncio.gather(*aws)
+        # Flatten arrays
+        ihints, dhints = zip(*all_hints)
+        ihints = [hint for hints in ihints for hint in hints]
+        dhints = [hint for hints in dhints for hint in hints]
+        return ihints, dhints
+
     async def signal_names(self, stream: str, *, hinted_only: bool = False):
         """Get a list of valid signal names (data columns) for selected runs.
 
@@ -224,6 +259,34 @@ class DatabaseWorker:
             df = await run.data(signals=xsignals + ysignals, stream=stream)
             dfs[run.uid] = df
         return dfs
+
+    async def dataset(
+        self,
+        dataset_name: str,
+        *,
+        stream: str,
+        uids: Sequence[str] | None = None,
+    ) -> Mapping:
+        """Produce a dictionary with the n-dimensional datasets for plotting.
+
+        The keys of the dictionary are the UIDs for each scan, and
+        the corresponding value is a pandas dataset with the data for
+        each signal.
+
+        Parameters
+        ==========
+        uids
+          If not ``None``, only runs with UIDs listed in this
+          parameter will be included.
+
+        """
+        # Build the dataframes
+        arrays = OrderedDict()
+        for run in self.selected_runs:
+            # Get data from the database
+            arr = await run.dataset(dataset_name, stream=stream)
+            arrays[run.uid] = arr
+        return arrays
 
     async def signals(
         self,

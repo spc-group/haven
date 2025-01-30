@@ -530,6 +530,8 @@ class FireflyController(QtCore.QObject):
             self._kafka_client.start()
         except Exception as exc:
             log.error(f"Could not start kafka client: {exc}")
+        else:
+            log.info("Started kafka client.")
 
     def start_queue_client(self):
         try:

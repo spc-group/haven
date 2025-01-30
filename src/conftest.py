@@ -255,6 +255,85 @@ hints = {
     "energy": {"fields": ["energy_energy", "energy_id_energy_readback"]},
 }
 
+data_keys = {
+    "I0-mcs-scaler-channels-0-net_count": {
+        "dtype": "number",
+        "dtype_numpy": "<f8",
+        "limits": {
+            "control": {"high": 0.0, "low": 0.0},
+            "display": {"high": 0.0, "low": 0.0},
+        },
+        "object_name": "I0",
+        "precision": 0,
+        "shape": [],
+        "source": "ca://25idcVME:3820:scaler1_netA.A",
+        "units": "",
+    },
+    "I0-mcs-scaler-channels-3-net_count": {
+        "dtype": "number",
+        "dtype_numpy": "<f8",
+        "limits": {
+            "control": {"high": 0.0, "low": 0.0},
+            "display": {"high": 0.0, "low": 0.0},
+        },
+        "object_name": "I0",
+        "precision": 0,
+        "shape": [],
+        "source": "ca://25idcVME:3820:scaler1_netA.D",
+        "units": "",
+    },
+    "I0-mcs-scaler-elapsed_time": {
+        "dtype": "number",
+        "dtype_numpy": "<f8",
+        "limits": {
+            "control": {"high": 0.0, "low": 0.0},
+            "display": {"high": 0.0, "low": 0.0},
+        },
+        "object_name": "I0",
+        "precision": 3,
+        "shape": [],
+        "source": "ca://25idcVME:3820:scaler1.T",
+        "units": "",
+    },
+    "I0-net_current": {
+        "dtype": "number",
+        "dtype_numpy": "<f8",
+        "object_name": "I0",
+        "shape": [],
+        "source": "soft://I0-net_current(gain,count,clock_count,clock_frequency,counts_per_volt_second)",
+        "units": "A",
+    },
+    "ge_8element": {
+        "dtype": "array",
+        "dtype_numpy": "<u4",
+        "external": "STREAM:",
+        "object_name": "ge_8element",
+        "shape": [8, 4096],
+        "source": "ca://XSP_Ge_8elem:HDF1:FullFileName_RBV",
+    },
+    "ge_8element-element0-all_event": {
+        "dtype": "number",
+        "dtype_numpy": "<f8",
+        "external": "STREAM:",
+        "object_name": "ge_8element",
+        "shape": [],
+        "source": "ca://XSP_Ge_8elem:HDF1:FullFileName_RBV",
+    },
+    "sim_motor_2": {
+        "dtype": "number",
+        "dtype_numpy": "<f8",
+        "limits": {
+            "control": {"high": 32000.0, "low": -32000.0},
+            "display": {"high": 32000.0, "low": -32000.0},
+        },
+        "object_name": "sim_motor_2",
+        "precision": 5,
+        "shape": [],
+        "source": "ca://25idc:simMotor:m2.RBV",
+        "units": "degrees",
+    },
+}
+
 bluesky_mapping = {
     "7d1daf1d-60c7-4aa7-a668-d1cd97e5335f": MapAdapter(
         {
@@ -266,7 +345,7 @@ bluesky_mapping = {
                         }
                     ),
                 },
-                metadata={"hints": hints},
+                metadata={"hints": hints, "data_keys": data_keys},
             ),
         },
         metadata={
