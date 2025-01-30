@@ -287,6 +287,15 @@ async def test_retrieve_dataset(display):
     assert slot.called
 
 
+async def test_update_running_scan(display, qtbot):
+    display.update_plots = AsyncMock()
+    await display.update_running_scan("not-the-real-uid")
+    assert not display.update_plots.called
+    # Now try again with some runs selected
+    display.ui.run_tableview.selectRow(0)
+    await display.update_selected_runs()
+
+
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov

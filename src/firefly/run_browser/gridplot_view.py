@@ -217,6 +217,8 @@ class GridplotView(QtWidgets.QWidget):
             log.warning(f"Could not plot map of signal {exc}.")
             return
         # Plot this run's data
+        if not (2 <= img.ndim <= 3):
+            log.warning(f"Cannot plot image with {img.ndim} dimensions.")
         img = np.reshape(img, self.shape)
         self.ui.plot_widget.setImage(img, autoRange=False)
         # Set axis labels

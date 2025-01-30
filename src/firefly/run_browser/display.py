@@ -384,9 +384,11 @@ class RunBrowserDisplay(display.FireflyDisplay):
 
     @asyncSlot(str)
     @cancellable
-    async def update_running_scan(self, uid: str):
-        log.debug(f"Updating running scan: {uid=}")
-        await self.update_1d_plot(uids=[uid])
+    async def update_running_scan(self, uid: str) -> None:
+        selected_uids = [run.uid for run in self.selected_runs]
+        if uid in selected_uids:
+            log.debug(f"Updating running scan: {uid=}")
+            await self.update_plots()
 
     @asyncSlot()
     async def update_metadata(self, *args):
