@@ -11,7 +11,6 @@ from ophyd_async.core import (
     DeviceVector,
     PathProvider,
     SignalR,
-    StandardDetector,
     StrictEnum,
     TriggerInfo,
     soft_signal_r_and_setter,
