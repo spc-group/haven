@@ -43,7 +43,7 @@ async def test_description(detector):
 async def test_trigger(detector):
     status = detector.trigger()
     await asyncio.sleep(0.1)  # Let the event loop turn
-    set_mock_value(detector.hdf.num_captured, 1)
+    set_mock_value(detector.fileio.num_captured, 1)
     await status
     # Check that signals were set
     get_mock_put(detector.driver.num_images).assert_called_once_with(1, wait=True)
