@@ -27,6 +27,7 @@ from ophyd_async.epics.core import epics_signal_r, epics_signal_rw, epics_signal
 
 from .area_detectors import HavenDetector, default_path_provider
 
+from ophyd_async.epics.adcore import AreaDetector
 
 class XspressTriggerMode(StrictEnum):
     SOFTWARE = "Software"
@@ -135,7 +136,7 @@ class XspressElement(Device):
         super().__init__(name=name)
 
 
-class Xspress3Detector(HavenDetector, StandardDetector):
+class Xspress3Detector(HavenDetector, AreaDetector):
     """A detector controlled by Xspress3 electronics.
 
     The elements of the detector are represented on the *mcas*
@@ -187,6 +188,8 @@ class Xspress3Detector(HavenDetector, StandardDetector):
         # Area detector IO devices
         self.driver = XspressDriverIO(prefix + drv_suffix)
         self.fileio = adcore.NDFileHDFIO(prefix + fileio_suffix)
+        
+        self.plugins = {"hdf": self.fileio}
 
         if path_provider is None:
             path_provider = default_path_provider()
@@ -194,14 +197,16 @@ class Xspress3Detector(HavenDetector, StandardDetector):
         self.ev_per_bin, _ = soft_signal_r_and_setter(float, initial_value=ev_per_bin)
 
         super().__init__(
-            XspressController(self.driver),
-            adcore.ADHDFWriter(
-                self.fileio,
-                path_provider,
-                lambda: self.name,
-                XspressDatasetDescriber(self.driver),
-                self.driver,  # <- for DT ndattributes
+            controller=XspressController(self.driver),
+            writer=adcore.ADHDFWriter(
+                fileio=self.fileio,
+                path_provider=path_provider,
+                name_provider=lambda: self.name,
+                dataset_describer=XspressDatasetDescriber(self.driver),
+                #driver=self.driver,  # <- for DT ndattributes
+                plugins=self.plugins
             ),
+            plugins=self.plugins,
             config_sigs=(
                 self.driver.acquire_period,
                 self.driver.acquire_time,
