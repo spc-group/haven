@@ -1,5 +1,7 @@
 from ophyd_async.epics.adsimdetector import SimDetector as SimDetectorBase
+
 from haven._iconfig import load_config
+
 from .area_detectors import HavenDetector
 
 

@@ -39,6 +39,7 @@ async def test_description(detector):
     config = await detector.read_configuration()
     assert f"{detector.name}-ev_per_bin" in config
 
+
 @pytest.mark.asyncio
 async def test_trigger(detector):
     status = await detector.trigger()
