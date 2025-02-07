@@ -4,6 +4,7 @@ from collections import OrderedDict
 from functools import partial
 from pathlib import Path
 
+import httpx
 import pydm
 import pyqtgraph as pg
 import qtawesome as qta
@@ -340,7 +341,13 @@ class FireflyController(QtCore.QObject):
         self.run_updated.connect(display.update_running_scan)
         self.run_stopped.connect(display.update_running_scan)
         # Set initial state for the run_browser
-        client = tiled_client(catalog=None)
+        try:
+            client = tiled_client(catalog=None)
+        except httpx.ConnectError as exc:
+            msg = "Could not connect to Tiled.<br /><br />"
+            msg += f"{exc.request.url}"
+            display.error_dialog.showMessage(msg, "connection error")
+            raise exc
         config = load_config()["tiled"]
         await display.setup_database(
             tiled_client=client, catalog_name=config["default_catalog"]
