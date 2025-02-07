@@ -1,3 +1,5 @@
+#!/bin/env python
+
 import logging
 import sys
 from typing import Mapping, Sequence
@@ -5,10 +7,8 @@ from typing import Mapping, Sequence
 import msgpack
 from bluesky.callbacks.tiled_writer import TiledWriter
 from bluesky_kafka import BlueskyConsumer
-from tiled.client import from_uri
+from tiled.client import from_profile
 from tiled.client.base import BaseClient
-
-import haven
 
 log = logging.getLogger(__name__)
 
@@ -96,18 +96,15 @@ class TiledConsumer(BlueskyConsumer):
 def main():
     """Launch the tiled consumer."""
     logging.basicConfig(level=logging.INFO)
-    config = haven.load_config()
-    bootstrap_servers = ["localhost:9092"]
+    bootstrap_servers = ["fedorov.xray.aps.anl.gov:9092"]
     topic_catalog_map = {
-        "25idc.bluesky.documents": "haven",
-        "25idd.bluesky.documents": "haven",
-        "25idc-dev.bluesky.documents": "haven-dev",
-        "25idd-dev.bluesky.documents": "haven-dev",
+        "25idc.bluesky.documents": "scans",
+        "25idd.bluesky.documents": "scans",
+        "25idc-dev.bluesky.documents": "testing",
+        "25idd-dev.bluesky.documents": "testing",
     }
     # Create a tiled writer that will write documents to tiled
-    tiled_uri = config["tiled"]["uri"]
-    tiled_api_key = config["tiled"]["api_key"]
-    client = from_uri(tiled_uri, api_key=tiled_api_key, include_data_sources=True)
+    client = from_profile("haven", include_data_sources=True)
 
     # Create a Tiled consumer that will listen for new documents.
     consumer = TiledConsumer(
