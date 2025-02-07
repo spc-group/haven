@@ -335,7 +335,7 @@ class FireflyController(QtCore.QObject):
         await action.window.update_devices(self.registry)
 
     @asyncSlot(QAction)
-    async def finalize_run_browser_window(self, action):
+    async def finalize_run_browser_window(self, action: QAction):
         """Connect up run browser signals and load initial data."""
         display = action.display
         self.run_updated.connect(display.update_running_scan)
@@ -353,13 +353,13 @@ class FireflyController(QtCore.QObject):
             tiled_client=client, catalog_name=config["default_catalog"]
         )
 
-    def finalize_status_window(self, action):
+    def finalize_status_window(self, action: QAction):
         """Connect up signals that are specific to the voltmeters window."""
         display = action.display
         display.ui.bss_modify_button.clicked.connect(self.actions.bss.trigger)
         # display.details_window_requested.connect
 
-    def finalize_voltmeter_window(self, action):
+    def finalize_voltmeter_window(self, action: QAction):
         """Connect up signals that are specific to the voltmeters window."""
 
         def launch_ion_chamber_window(ic_name):

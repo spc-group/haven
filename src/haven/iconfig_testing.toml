@@ -34,10 +34,8 @@ servers = ["fedorov.xray.aps.anl.gov:9092"]
 topic = "bluesky.documents.haven-dev"
 
 [tiled]
-uri = "http://localhost:8337/"
-default_catalog = "haven-dev"
-cache_filepath = "/tmp/tiled_cache/http_response_cache.db"
-api_key = "<tiled-secret-api-key-for-writing>"
+default_catalog = "testing"
+cache_filepath = "/tmp/tiled/http_response_cache.db"
 
 [database.databroker]
 catalog = "bluesky"
