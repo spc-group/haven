@@ -387,10 +387,32 @@ class RunBrowserDisplay(display.FireflyDisplay):
             await self.db_task(
                 self.db.export_runs(filenames, formats=formats), "export"
             )
+        except httpx.ConnectError as exc:
+            log.exception(exc)
+            msg = "Could not connect to Tiled.<br /><br />"
+            msg += f"{exc.request.url}"
+            self.error_dialog.showMessage(msg, "connection error")
         except httpx.HTTPStatusError as exc:
             log.exception(exc)
-            msg = "Scan export failed. See Tiled server logs for details."
-            self.error_dialog.showMessage(msg)
+            response = exc.response
+            if 400 <= exc.response.status_code < 500:
+                msg = "Scan export failed. Firefly could not complete request."
+            elif 500 <= exc.response.status_code < 600:
+                msg = "Scan export failed.  See Tiled server logs for details."
+            else:
+                # This shouldn't be possible, only 400 and 500 codes are errors
+                msg = "Scan export failed with unknown status code."
+            msg += f"<br /><br />Status code: {exc.response.status_code}"
+            if response.headers["Content-Type"] == "application/json":
+                detail = response.json().get("detail", "")
+            else:
+                # This can happen when we get an error from a proxy,
+                # such as a 502, which serves an HTML error page.
+                # Use the stock "reason phrase" for the error code
+                # instead of dumping HTML into the terminal.
+                detail = response.reason_phrase
+            msg += f"<br /><br />{detail}"
+            self.error_dialog.showMessage(msg, str(response.status_code))
 
     @asyncSlot(str)
     @cancellable
