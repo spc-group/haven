@@ -91,13 +91,14 @@ def test_default_time_signal_xspress(xspress):
 
 async def test_ndattribute_params():
     n_elem = 8
-    n_params = 9
+    n_params = 1
     params = ndattribute_params(device_name="xsp3", elements=range(n_elem))
     assert len(params) == n_elem * n_params
 
 
 async def test_stage_ndattributes(detector):
     num_elem = 8
+    num_params = 1
     set_mock_value(detector.drv.number_of_elements, num_elem)
     set_mock_value(detector.drv.nd_attributes_file, "XSP3.xml")
     await detector.stage()
@@ -106,7 +107,7 @@ async def test_stage_ndattributes(detector):
     # Test that the XML is correct
     args, kwargs = xml_mock.call_args
     tree = ET.fromstring(args[0])
-    assert len(tree) == num_elem * 9
+    assert len(tree) == num_elem * num_params
     # Check that the XML file gets reset when unstaged
     await detector.unstage()
     assert xml_mock.call_args[0][0] == "XSP3.xml"
