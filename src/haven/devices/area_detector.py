@@ -8,11 +8,11 @@ from typing import Dict, Mapping
 import numpy as np
 import pandas as pd
 from apstools.devices import CamMixin_V34, SingleTrigger_V34
+from ophyd import ADComponent as ADCpt
+from ophyd import CamBase
+from ophyd import Component as Cpt
+from ophyd import DetectorBase as OphydDetectorBase
 from ophyd import (
-    ADComponent as ADCpt,
-    CamBase,
-    Component as Cpt,
-    DetectorBase as OphydDetectorBase,
     Device,
     EigerDetectorCam,
     EpicsSignal,
@@ -39,11 +39,10 @@ from ophyd.areadetector.plugins import (
     PvaPlugin_V34,
     ROIPlugin_V31,
     ROIPlugin_V34,
-    StatsPlugin_V31 as OphydStatsPlugin_V31,
-    StatsPlugin_V34 as OphydStatsPlugin_V34,
-    TIFFPlugin_V31,
-    TIFFPlugin_V34,
 )
+from ophyd.areadetector.plugins import StatsPlugin_V31 as OphydStatsPlugin_V31
+from ophyd.areadetector.plugins import StatsPlugin_V34 as OphydStatsPlugin_V34
+from ophyd.areadetector.plugins import TIFFPlugin_V31, TIFFPlugin_V34
 from ophyd.flyers import FlyerInterface
 from ophyd.sim import make_fake_device
 from ophyd.status import Status, StatusBase, SubscriptionStatus
