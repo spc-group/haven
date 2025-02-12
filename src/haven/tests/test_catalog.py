@@ -73,6 +73,24 @@ async def test_values(catalog, tiled_client):
     assert expected == response
 
 
+async def test_hints(catalog, tiled_client):
+    """Grid example in haven-dev: 518edf43-7370-4670-8e61-e1e18a8152cf"""
+    run = await catalog["85573831-f4b4-4f64-b613-a6007bf03a8d"]
+    ihints, dhints = await run.hints()
+    assert ihints == ["aerotech_vert", "aerotech_horiz"]
+    assert dhints == [
+        "Ipreslit_net_counts",
+        "CdnIPreKb_net_counts",
+        "I0_net_counts",
+        "CdnIt_net_counts",
+        "aerotech_vert",
+        "aerotech_horiz",
+        "Ipre_KB_net_counts",
+        "CdnI0_net_counts",
+        "It_net_counts",
+    ]
+
+
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov

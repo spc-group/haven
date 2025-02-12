@@ -1,19 +1,21 @@
 import asyncio
 import datetime as dt
 import logging
-from collections import Counter
+from collections import ChainMap, Counter
 from contextlib import contextmanager
 from functools import partial, wraps
 from typing import Mapping, Optional, Sequence
 
+import httpx
+import numpy as np
 import qtawesome as qta
-import yaml
 from ophyd import Device as ThreadedDevice
 from ophyd_async.core import Device
 from pydm import PyDMChannel
 from qasync import asyncSlot
-from qtpy.QtCore import QDateTime, Qt
+from qtpy.QtCore import QDateTime, Qt, Signal
 from qtpy.QtGui import QStandardItem, QStandardItemModel
+from qtpy.QtWidgets import QErrorMessage
 from tiled.client.container import Container
 
 from firefly import display
@@ -55,6 +57,10 @@ class RunBrowserDisplay(display.FireflyDisplay):
 
     proposal_channel: PyDMChannel
     esaf_channel: PyDMChannel
+    # (data keys, experiment hints, signal hints)
+    data_keys_changed = Signal(ChainMap, set, set)
+    data_frames_changed = Signal(dict)
+    metadata_changed = Signal(dict)
 
     export_dialog: Optional[ExportDialog] = None
 
@@ -80,6 +86,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
         await self.change_catalog(catalog_name)
 
     @asyncSlot(str)
+    @cancellable
     async def change_catalog(self, catalog_name: str):
         """Activate a different catalog in the Tiled server."""
         await self.db_task(self.db.change_catalog(catalog_name), name="change_catalog")
@@ -87,6 +94,28 @@ class RunBrowserDisplay(display.FireflyDisplay):
             asyncio.gather(self.load_runs(), self.update_combobox_items()),
             name="change_catalog",
         )
+
+    @asyncSlot(str)
+    async def retrieve_dataset(
+        self, dataset_name: str, callback, task_name: str
+    ) -> np.ndarray:
+        """Retrieve a dataset from disk, and provide it to the slot.
+
+        Parameters
+        ==========
+        dataset_name
+          The name in the Tiled catalog of the dataset to retrieve.
+        callback
+          Will be called with the retrieved dataset.
+        task_name
+          For handling parallel database tasks.
+        """
+        # Retrieve data from the database
+        data = await self.db_task(
+            self.db.dataset(dataset_name, stream=self.stream), task_name
+        )
+        # Pass it back to the slot
+        callback(data)
 
     def db_task(self, coro, name="default task"):
         """Executes a co-routine as a database task. Existing database
@@ -185,49 +214,29 @@ class RunBrowserDisplay(display.FireflyDisplay):
         self.ui.refresh_runs_button.setIcon(qta.icon("fa5s.sync"))
         self.ui.refresh_runs_button.clicked.connect(self.reload_runs)
         self.ui.reset_filters_button.clicked.connect(self.reset_default_filters)
-        # Respond to changes in displaying the 1d plot
-        for signal in [
-            self.ui.signal_y_combobox.currentTextChanged,
-            self.ui.signal_x_combobox.currentTextChanged,
-            self.ui.signal_r_combobox.currentTextChanged,
-            self.ui.signal_r_checkbox.stateChanged,
-            self.ui.logarithm_checkbox.stateChanged,
-            self.ui.invert_checkbox.stateChanged,
-            self.ui.gradient_checkbox.stateChanged,
-        ]:
-            signal.connect(self.plot_1d_view.clear_runs)
-            signal.connect(self.update_1d_plot)
-        self.ui.plot_1d_hints_checkbox.stateChanged.connect(self.update_1d_signals)
-        self.ui.autorange_1d_button.clicked.connect(self.auto_range)
-        # Respond to changes in displaying the 2d plot
-        for signal in [
-            self.ui.plot_multi_hints_checkbox.stateChanged,
-            self.ui.multi_signal_x_combobox.currentTextChanged,
-        ]:
-            signal.connect(self.update_multi_signals)
-            signal.connect(self.update_multi_plot)
-        # Respond to changes in displaying the 2d plot
-        self.ui.signal_value_combobox.currentTextChanged.connect(self.update_2d_plot)
-        self.ui.logarithm_checkbox_2d.stateChanged.connect(self.update_2d_plot)
-        self.ui.invert_checkbox_2d.stateChanged.connect(self.update_2d_plot)
-        self.ui.gradient_checkbox_2d.stateChanged.connect(self.update_2d_plot)
-        self.ui.plot_2d_hints_checkbox.stateChanged.connect(self.update_2d_signals)
         # Select a new catalog
         self.ui.catalog_combobox.currentTextChanged.connect(self.change_catalog)
         # Respond to filter controls getting updated
         self.ui.filters_widget.returnPressed.connect(self.refresh_runs_button.click)
         # Respond to controls for the current run
-        self.ui.export_button.clicked.connect(self.export_runs)
         self.ui.reload_plots_button.clicked.connect(self.update_plots)
-        # Set up 1D plotting widgets
-        self.plot_1d_item = self.ui.plot_1d_view.getPlotItem()
-        self.plot_2d_item = self.ui.plot_2d_view.getImageItem()
-        self.plot_1d_item.addLegend()
-        self.plot_1d_item.hover_coords_changed.connect(
-            self.ui.hover_coords_label.setText
-        )
+        self.ui.stream_combobox.currentTextChanged.connect(self.update_data_keys)
+        self.ui.stream_combobox.currentTextChanged.connect(self.update_data_frames)
+        # Connect to signals for individual tabs
+        self.metadata_changed.connect(self.ui.metadata_view.display_metadata)
+        self.metadata_changed.connect(self.ui.lineplot_view.stash_metadata)
+        self.metadata_changed.connect(self.ui.gridplot_view.set_image_dimensions)
+        self.data_keys_changed.connect(self.ui.multiplot_view.update_signal_widgets)
+        self.data_keys_changed.connect(self.ui.lineplot_view.update_signal_widgets)
+        self.data_keys_changed.connect(self.ui.gridplot_view.update_signal_widgets)
+        self.data_keys_changed.connect(self.ui.xrf_view.update_signal_widgets)
+        self.data_frames_changed.connect(self.ui.multiplot_view.plot_multiples)
+        self.data_frames_changed.connect(self.ui.lineplot_view.plot)
+        self.data_frames_changed.connect(self.ui.gridplot_view.plot)
         # Create a new export dialog for saving files
+        self.ui.export_button.clicked.connect(self.export_runs)
         self.export_dialog = ExportDialog(parent=self)
+        self.error_dialog = QErrorMessage(parent=self)
 
     async def update_devices(self, registry):
         try:
@@ -347,94 +356,13 @@ class RunBrowserDisplay(display.FireflyDisplay):
         sorted(stream_names, key=lambda x: x != "primary")
         self.ui.stream_combobox.clear()
         self.ui.stream_combobox.addItems(stream_names)
+        if "primary" in stream_names:
+            self.ui.stream_combobox.setCurrentText("primary")
 
     @property
     def stream(self):
         current_text = self.ui.stream_combobox.currentText()
         return current_text or "primary"
-
-    @asyncSlot()
-    @cancellable
-    async def update_multi_signals(self, *args):
-        """Retrieve a new list of signals for multi plot and update UI."""
-        combobox = self.ui.multi_signal_x_combobox
-        # Store old value for restoring later
-        old_value = combobox.currentText()
-        # Determine valid list of columns to choose from
-        use_hints = self.ui.plot_multi_hints_checkbox.isChecked()
-        signals_task = self.db_task(
-            self.db.signal_names(hinted_only=use_hints, stream=self.stream),
-            "multi signals",
-        )
-        xcols, ycols = await signals_task
-        # Update the comboboxes with new signals
-        old_cols = [combobox.itemText(idx) for idx in range(combobox.count())]
-        if xcols != old_cols:
-            combobox.clear()
-            combobox.addItems(xcols)
-            # Restore previous value
-            combobox.setCurrentText(old_value)
-
-    @asyncSlot()
-    @cancellable
-    async def update_1d_signals(self, *args):
-        # Store old values for restoring later
-        comboboxes = [
-            self.ui.signal_x_combobox,
-            self.ui.signal_y_combobox,
-            self.ui.signal_r_combobox,
-        ]
-        old_values = [cb.currentText() for cb in comboboxes]
-        # Determine valid list of columns to choose from
-        use_hints = self.ui.plot_1d_hints_checkbox.isChecked()
-        signals_task = self.db_task(
-            self.db.signal_names(hinted_only=use_hints, stream=self.stream),
-            name="1D signals",
-        )
-        xcols, ycols = await signals_task
-        self.multi_y_signals = ycols
-        # Update the comboboxes with new signals
-        self.ui.signal_x_combobox.clear()
-        self.ui.signal_x_combobox.addItems(xcols)
-        for cb in [
-            self.ui.signal_y_combobox,
-            self.ui.signal_r_combobox,
-        ]:
-            cb.clear()
-            cb.addItems(ycols)
-        # Restore previous values
-        for val, cb in zip(old_values, comboboxes):
-            cb.setCurrentText(val)
-
-    @asyncSlot()
-    @cancellable
-    async def update_2d_signals(self, *args):
-        # Store current selection for restoring later
-        val_cb = self.ui.signal_value_combobox
-        old_value = val_cb.currentText()
-        # Determine valid list of dependent signals to choose from
-        use_hints = self.ui.plot_2d_hints_checkbox.isChecked()
-        xcols, vcols = await self.db_task(
-            self.db.signal_names(hinted_only=use_hints, stream=self.stream),
-            "2D signals",
-        )
-        # Update the UI with the list of controls
-        val_cb.clear()
-        val_cb.addItems(vcols)
-        # Restore previous selection
-        val_cb.setCurrentText(old_value)
-
-    @asyncSlot()
-    @cancellable
-    async def update_multi_plot(self, *args):
-        x_signal = self.ui.multi_signal_x_combobox.currentText()
-        if x_signal == "":
-            return
-        use_hints = self.ui.plot_multi_hints_checkbox.isChecked()
-        runs = await self.db_task(
-            self.db.all_signals(hinted_only=use_hints, stream=self.stream), "multi-plot"
-        )
-        self.ui.plot_multi_view.plot_runs(runs, xsignal=x_signal)
 
     def update_export_button(self):
         # We can only export one scan at a time from here
@@ -455,121 +383,51 @@ class RunBrowserDisplay(display.FireflyDisplay):
         filenames = dialog.ask(mimetypes=mimetypes)
         mimetype = dialog.selectedMimeTypeFilter()
         formats = [mimetype] * len(filenames)
-        await self.db_task(self.db.export_runs(filenames, formats=formats), "export")
+        try:
+            await self.db_task(
+                self.db.export_runs(filenames, formats=formats), "export"
+            )
+        except httpx.ConnectError as exc:
+            log.exception(exc)
+            msg = "Could not connect to Tiled.<br /><br />"
+            msg += f"{exc.request.url}"
+            self.error_dialog.showMessage(msg, "connection error")
+        except httpx.HTTPStatusError as exc:
+            log.exception(exc)
+            response = exc.response
+            if 400 <= exc.response.status_code < 500:
+                msg = "Scan export failed. Firefly could not complete request."
+            elif 500 <= exc.response.status_code < 600:
+                msg = "Scan export failed.  See Tiled server logs for details."
+            else:
+                # This shouldn't be possible, only 400 and 500 codes are errors
+                msg = "Scan export failed with unknown status code."
+            msg += f"<br /><br />Status code: {exc.response.status_code}"
+            if response.headers["Content-Type"] == "application/json":
+                detail = response.json().get("detail", "")
+            else:
+                # This can happen when we get an error from a proxy,
+                # such as a 502, which serves an HTML error page.
+                # Use the stock "reason phrase" for the error code
+                # instead of dumping HTML into the terminal.
+                detail = response.reason_phrase
+            msg += f"<br /><br />{detail}"
+            self.error_dialog.showMessage(msg, str(response.status_code))
 
     @asyncSlot(str)
     @cancellable
-    async def update_running_scan(self, uid: str):
-        log.debug(f"Updating running scan: {uid=}")
-        await self.update_1d_plot(uids=[uid])
-
-    @asyncSlot()
-    @cancellable
-    async def update_1d_plot(self, *args, uids: Sequence[str] = None):
-        """Updates the data used in the plots.
-
-        If *uids* is given, only runs with UIDs listed in *uids* will
-        be updated.
-
-        """
-        # Figure out which signals to plot
-        y_signal = self.ui.signal_y_combobox.currentText()
-        x_signal = self.ui.signal_x_combobox.currentText()
-        use_reference = self.ui.signal_r_checkbox.isChecked()
-        if use_reference:
-            r_signal = self.ui.signal_r_combobox.currentText()
-        else:
-            r_signal = None
-        use_log = self.ui.logarithm_checkbox.isChecked()
-        use_invert = self.ui.invert_checkbox.isChecked()
-        use_grad = self.ui.gradient_checkbox.isChecked()
-        # Load data
-        task = self.db_task(
-            self.db.signals(
-                x_signal,
-                y_signal,
-                r_signal,
-                use_log=use_log,
-                use_invert=use_invert,
-                use_grad=use_grad,
-                uids=uids,
-                stream=self.stream,
-            ),
-            "1D plot",
-        )
-        runs = await task
-        if len(runs) == 0:
-            return
-        # Decide on axes labels
-        xlabel = x_signal
-        if r_signal is not None:
-            if use_invert:
-                ylabel = f"{r_signal}/{y_signal}"
-            else:
-                ylabel = f"{y_signal}/{r_signal}"
-        else:
-            if use_invert:
-                ylabel = f"1/{y_signal}"
-            else:
-                ylabel = y_signal
-        if use_log:
-            ylabel = f"ln({ylabel})"
-        if use_grad:
-            ylabel = f"∇ {ylabel}"
-        # Do the plotting
-        self.ui.plot_1d_view.plot_runs(runs, xlabel=xlabel, ylabel=ylabel)
-        if self.ui.autorange_1d_checkbox.isChecked():
-            self.ui.plot_1d_view.autoRange()
-
-    @asyncSlot()
-    @cancellable
-    async def update_2d_plot(self):
-        """Change the 2D map plot based on desired signals, etc."""
-        # Figure out which signals to plot
-        value_signal = self.ui.signal_value_combobox.currentText()
-        use_log = self.ui.logarithm_checkbox_2d.isChecked()
-        use_invert = self.ui.invert_checkbox_2d.isChecked()
-        use_grad = self.ui.gradient_checkbox_2d.isChecked()
-        images = await self.db_task(
-            self.db.images(value_signal, stream=self.stream), "2D plot"
-        )
-        # Get axis labels
-        # Eventually this will be replaced with robust choices for plotting multiple images
-        metadata = await self.db_task(self.db.metadata(), "2D plot")
-        metadata = list(metadata.values())[0]
-        dimensions = metadata["start"]["hints"]["dimensions"]
-        try:
-            xlabel = dimensions[-1][0][0]
-            ylabel = dimensions[-2][0][0]
-        except IndexError:
-            # Not a 2D scan
-            return
-        # Get spatial extent
-        extents = metadata["start"]["extents"]
-        self.ui.plot_2d_view.plot_runs(
-            images, xlabel=xlabel, ylabel=ylabel, extents=extents
-        )
+    async def update_running_scan(self, uid: str) -> None:
+        selected_uids = [run.uid for run in self.selected_runs]
+        if uid in selected_uids:
+            log.debug(f"Updating running scan: {uid=}")
+            await self.update_plots()
 
     @asyncSlot()
     async def update_metadata(self, *args):
         """Render metadata for the runs into the metadata widget."""
         # Combine the metadata in a human-readable output
-        text = ""
-        all_md = await self.db_task(self.db.metadata(), "metadata")
-        for uid, md in all_md.items():
-            text += f"# {uid}"
-            text += yaml.dump(md)
-            text += f"\n\n{'=' * 20}\n\n"
-        # Update the widget with the rendered metadata
-        self.ui.metadata_textedit.document().setPlainText(text)
-
-    def clear_plots(self):
-        """Clear all the plots.
-
-        If a *uid* is provided, only the plots matching the scan with
-        *uid* will be updated.
-        """
-        self.plot_1d_view.clear_runs()
+        new_md = await self.db_task(self.db.metadata(), "metadata")
+        self.metadata_changed.emit(new_md)
 
     @asyncSlot()
     @cancellable
@@ -580,12 +438,39 @@ class RunBrowserDisplay(display.FireflyDisplay):
         *uid* will be updated.
         """
 
-        await asyncio.gather(
-            self.update_metadata(),
-            self.update_1d_plot(),
-            self.update_2d_plot(),
-            self.update_multi_plot(),
+        await self.update_metadata()
+        await self.update_data_frames()
+
+    @asyncSlot()
+    @cancellable
+    async def update_data_keys(self, *args):
+        stream = self.ui.stream_combobox.currentText()
+        with self.busy_hints(run_widgets=True, run_table=False, filter_widgets=False):
+            data_keys, hints = await asyncio.gather(
+                self.db_task(self.db.data_keys(stream), "update data keys"),
+                self.db_task(self.db.hints(stream), "update data hints"),
+            )
+        independent_hints, dependent_hints = hints
+        self.data_keys_changed.emit(
+            data_keys, set(independent_hints), set(dependent_hints)
         )
+
+    @asyncSlot()
+    @cancellable
+    async def update_data_frames(self):
+        stream = self.ui.stream_combobox.currentText()
+        if stream == "":
+            data_frames = {}
+            assert False
+            log.info("Not loading data frames for empty stream.")
+        else:
+            with self.busy_hints(
+                run_widgets=True, run_table=False, filter_widgets=False
+            ):
+                data_frames = await self.db_task(
+                    self.db.data_frames(stream), "update data frames"
+                )
+        self.data_frames_changed.emit(data_frames)
 
     @asyncSlot()
     @cancellable
@@ -602,14 +487,9 @@ class RunBrowserDisplay(display.FireflyDisplay):
             )
             self.selected_runs = await task
             # Update the necessary UI elements
-            await asyncio.gather(
-                self.update_multi_signals(),
-                self.update_1d_signals(),
-                self.update_2d_signals(),
-                self.update_streams(),
-            )
+            await self.update_streams()
+            await self.update_data_keys()
             # Update the plots
-            self.clear_plots()
             await self.update_plots()
             self.update_export_button()
 

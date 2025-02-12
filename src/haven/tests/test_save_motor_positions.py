@@ -49,14 +49,10 @@ position_runs = {
                     ),
                 },
                 metadata={
-                    "descriptors": [
-                        {
-                            "data_keys": {
-                                "motor_A": {"object_name": "motor_A"},
-                                "motor_B": {"object_name": "motor_B"},
-                            },
-                        }
-                    ],
+                    "data_keys": {
+                        "motor_A": {"object_name": "motor_A"},
+                        "motor_B": {"object_name": "motor_B"},
+                    },
                 },
             ),
         },
@@ -91,13 +87,9 @@ position_runs = {
                     ),
                 },
                 metadata={
-                    "descriptors": [
-                        {
-                            "data_keys": {
-                                "motorC": {"object_name": "motorC"},
-                            },
-                        }
-                    ],
+                    "data_keys": {
+                        "motorC": {"object_name": "motorC"},
+                    },
                 },
             ),
         },
@@ -128,13 +120,9 @@ position_runs = {
                     ),
                 },
                 metadata={
-                    "descriptors": [
-                        {
-                            "data_keys": {
-                                "motorC": {"object_name": "motorC"},
-                            },
-                        }
-                    ],
+                    "data_keys": {
+                        "motorC": {"object_name": "motorC"},
+                    },
                 },
             ),
         },
@@ -165,13 +153,9 @@ position_runs = {
                     ),
                 },
                 metadata={
-                    "descriptors": [
-                        {
-                            "data_keys": {
-                                "motorC": {"object_name": "motorC"},
-                            },
-                        }
-                    ],
+                    "data_keys": {
+                        "motorC": {"object_name": "motorC"},
+                    },
                 },
             ),
         },
@@ -309,6 +293,9 @@ async def test_list_motor_positions(client, capsys):
             f"┗━motor_B: -113.25, offset: None",
         ]
     )
+    print(first_motor)
+    print("===")
+    print(expected)
     assert first_motor == expected
 
 
