@@ -36,11 +36,6 @@ RE = haven.run_engine(
     use_bec=False,
 )
 
-# Import some ophyd-async stuff
-# NB: This has to be after the run engine setup
-#     or else ipython gets stuck and vanilla ophyd
-#     devices get stuck
-from ophyd_async.core import DeviceCollector  # noqa: F401
 
 # Prepare the haven instrument
 config = haven.load_config()
