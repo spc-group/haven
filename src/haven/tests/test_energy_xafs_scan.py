@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 from bluesky import RunEngine
 from ophyd import sim
-from ophyd_async.sim.demo._sim_motor import SimMotor
+from ophyd_async.sim._sim_motor import SimMotor
 
 from haven.energy_ranges import KRange
 from haven.plans import energy_scan, xafs_scan
