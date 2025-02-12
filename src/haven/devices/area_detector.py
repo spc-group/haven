@@ -18,6 +18,7 @@ from ophyd import (
     EpicsSignal,
     Kind,
     Lambda750kCam,
+    OphydObject,
     Signal,
     SimDetectorCam,
     SingleTrigger,
