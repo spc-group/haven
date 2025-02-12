@@ -16,7 +16,7 @@ from ophyd_async.core import (
     soft_signal_r_and_setter,
 )
 from ophyd_async.epics import adcore
-from ophyd_async.epics.adcore import AreaDetector, ADBaseController
+from ophyd_async.epics.adcore import ADBaseController, AreaDetector
 from ophyd_async.epics.adcore._utils import (
     ADBaseDataType,
     NDAttributeDataType,
@@ -77,6 +77,7 @@ class XspressController(ADBaseController):
             # https://github.com/epics-modules/xspress3/issues/57
             self.driver.deadtime_correction.set(False),
         )
+
 
 class XspressDatasetDescriber(adcore.ADBaseDatasetDescriber):
     """The datatype cannot be reliably determined from DataType_RBV.
