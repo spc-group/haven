@@ -1,8 +1,8 @@
 from ophyd_async.core import PathProvider, SubsetEnum
-from ophyd_async.epics.adaravis import AravisDetector as DetectorBase
+from ophyd_async.epics.adaravis import AravisDetector as AravisDetectorBase
 from ophyd_async.epics.core import epics_signal_rw_rbv
 
-from .area_detectors import HavenDetector, default_path_provider
+from .area_detectors import default_path_provider
 
 
 class AravisTriggerSource(SubsetEnum):
@@ -10,7 +10,7 @@ class AravisTriggerSource(SubsetEnum):
     LINE1 = "Line1"
 
 
-class AravisDetector(HavenDetector, DetectorBase):
+class AravisDetector(AravisDetectorBase):
     _ophyd_labels_ = {"cameras", "detectors"}
 
     def __init__(

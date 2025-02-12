@@ -25,7 +25,7 @@ from ophyd_async.epics.adcore._utils import (
 )
 from ophyd_async.epics.core import epics_signal_r, epics_signal_rw, epics_signal_x
 
-from .area_detectors import HavenDetector, default_path_provider
+from .area_detectors import default_path_provider
 
 
 class XspressTriggerMode(StrictEnum):
@@ -124,7 +124,7 @@ class XspressElement(Device):
         super().__init__(name=name)
 
 
-class Xspress3Detector(HavenDetector, AreaDetector):
+class Xspress3Detector(AreaDetector):
     """A detector controlled by Xspress3 electronics.
 
     The elements of the detector are represented on the *mcas*
