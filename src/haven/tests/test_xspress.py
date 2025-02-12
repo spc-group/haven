@@ -40,7 +40,7 @@ async def test_description(detector):
 
 @pytest.mark.asyncio
 async def test_trigger(detector):
-    status = await detector.trigger()
+    status = detector.trigger()
     await asyncio.sleep(0.1)  # Let the event loop turn
     set_mock_value(detector.plugins["hdf"].num_captured, 1)
     await status

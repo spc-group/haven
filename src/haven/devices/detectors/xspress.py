@@ -17,6 +17,7 @@ from ophyd_async.core import (
     soft_signal_r_and_setter,
 )
 from ophyd_async.epics import adcore
+from ophyd_async.epics.adcore import AreaDetector, ADBaseController
 from ophyd_async.epics.adcore._utils import (
     ADBaseDataType,
     NDAttributeDataType,
@@ -50,8 +51,9 @@ class XspressDriverIO(adcore.ADBaseIO):
         super().__init__(prefix=prefix, name=name)
 
 
-class XspressController(DetectorController):
+class XspressController(ADBaseController):
     def __init__(self, driver: adcore.ADBaseIO) -> None:
+        super().__init__(driver)
         self.driver = driver
 
     def get_deadtime(self, exposure: float) -> float:
@@ -77,19 +79,6 @@ class XspressController(DetectorController):
             # https://github.com/epics-modules/xspress3/issues/57
             self.driver.deadtime_correction.set(False),
         )
-
-    async def wait_for_idle(self):
-        if self._arm_status:
-            await self._arm_status
-
-    async def arm(self):
-        self._arm_status = await adcore.start_acquiring_driver_and_ensure_status(
-            self.driver
-        )
-
-    async def disarm(self):
-        await adcore.stop_busy_record(self.driver.acquire, False, timeout=1)
-
 
 class XspressDatasetDescriber(adcore.ADBaseDatasetDescriber):
     """The datatype cannot be reliably determined from DataType_RBV.
