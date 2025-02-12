@@ -11,13 +11,12 @@ from ophyd_async.core import (
     DeviceVector,
     PathProvider,
     SignalR,
-    StandardDetector,
     StrictEnum,
     TriggerInfo,
     soft_signal_r_and_setter,
 )
 from ophyd_async.epics import adcore
-from ophyd_async.epics.adcore import AreaDetector, ADBaseController
+from ophyd_async.epics.adcore import ADBaseController, AreaDetector
 from ophyd_async.epics.adcore._utils import (
     ADBaseDataType,
     NDAttributeDataType,
@@ -28,7 +27,6 @@ from ophyd_async.epics.core import epics_signal_r, epics_signal_rw, epics_signal
 
 from .area_detectors import HavenDetector, default_path_provider
 
-from ophyd_async.epics.adcore import AreaDetector
 
 class XspressTriggerMode(StrictEnum):
     SOFTWARE = "Software"
@@ -79,6 +77,7 @@ class XspressController(ADBaseController):
             # https://github.com/epics-modules/xspress3/issues/57
             self.driver.deadtime_correction.set(False),
         )
+
 
 class XspressDatasetDescriber(adcore.ADBaseDatasetDescriber):
     """The datatype cannot be reliably determined from DataType_RBV.
@@ -177,7 +176,7 @@ class Xspress3Detector(HavenDetector, AreaDetector):
         # Area detector IO devices
         self.driver = XspressDriverIO(prefix + drv_suffix)
         self.fileio = adcore.NDFileHDFIO(prefix + fileio_suffix)
-        
+
         self.plugins = {"hdf": self.fileio}
 
         if path_provider is None:
@@ -192,8 +191,8 @@ class Xspress3Detector(HavenDetector, AreaDetector):
                 path_provider=path_provider,
                 name_provider=lambda: self.name,
                 dataset_describer=XspressDatasetDescriber(self.driver),
-                #driver=self.driver,  # <- for DT ndattributes
-                plugins=self.plugins
+                # driver=self.driver,  # <- for DT ndattributes
+                plugins=self.plugins,
             ),
             plugins=self.plugins,
             config_sigs=(
