@@ -1,4 +1,5 @@
 import pytest
+from ophyd_async.testing import set_mock_value
 
 from haven.devices.detectors.eiger import EigerDetector
 
@@ -48,15 +49,23 @@ async def test_signals(eiger):
 async def test_configuration(eiger):
     """Confirm the device has the right signals."""
     config = await eiger.read_configuration()
-    from pprint import pprint
-
-    pprint(config)
     assert "eiger-driver-pixel_size_x" in config.keys()
     assert "eiger-driver-pixel_size_y" in config.keys()
     assert "eiger-driver-sensor_material" in config.keys()
     assert "eiger-driver-sensor_thickness" in config.keys()
     assert "eiger-driver-threshold_energy" in config.keys()
     assert "eiger-driver-photon_energy" in config.keys()
+
+
+async def test_dtype(eiger):
+    """Our eiger detector support has a bug where the "DataType_RBV" PV
+    reports "int8" even though the detector is producing other data
+    types.
+
+    """
+    set_mock_value(eiger.driver.bit_depth, 32)
+    dtype = await eiger._writer._dataset_describer.np_datatype()
+    assert dtype == "<u4"
 
 
 # -----------------------------------------------------------------------------

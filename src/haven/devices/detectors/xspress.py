@@ -191,7 +191,6 @@ class Xspress3Detector(AreaDetector):
                 path_provider=path_provider,
                 name_provider=lambda: self.name,
                 dataset_describer=XspressDatasetDescriber(self.driver),
-                # driver=self.driver,  # <- for DT ndattributes
                 plugins=self.plugins,
             ),
             plugins=self.plugins,
