@@ -10,7 +10,7 @@ are in the :py:mod:`haven.devices.area_detector` module. Newer
 
 Currently supported detectors:
 
-- Eiger 500K (:py:class:`~haven.devices.area_detector.Eiger500K`)
+- Eiger (e.g. 500K) (:py:class:`~haven.devices.detector.eiger.EigerDetector`)
 - Lambda (:py:class:`~haven.devices.area_detector.Lambda250K`)
 - Simulated detector (:py:class:`~haven.devices.detectors.sim_detector.SimDetector`)
 - Aravis cameras (:py:class:`~haven.devices.detectors.aravis.AravisDetector`)
