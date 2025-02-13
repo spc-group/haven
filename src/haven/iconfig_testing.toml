@@ -243,8 +243,13 @@ name = "sim_detector"
 prefix = "255idSimDet:"
 
 [[ camera ]]
+# An Aravis-based area detector
 name = "lerix_mono_flag"
 prefix = "255idARV3:"
+
+[[ eiger ]]
+name = "eiger_500k"
+prefix = "255idEiger:"
 
 # What follows is the style for threaded ophyd area detectors. This is
 # deprecated and will be removed in the future.
