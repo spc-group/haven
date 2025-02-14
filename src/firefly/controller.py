@@ -4,6 +4,7 @@ from collections import OrderedDict
 from functools import partial
 from pathlib import Path
 
+import httpx
 import pydm
 import pyqtgraph as pg
 import qtawesome as qta
@@ -334,25 +335,31 @@ class FireflyController(QtCore.QObject):
         await action.window.update_devices(self.registry)
 
     @asyncSlot(QAction)
-    async def finalize_run_browser_window(self, action):
+    async def finalize_run_browser_window(self, action: QAction):
         """Connect up run browser signals and load initial data."""
         display = action.display
         self.run_updated.connect(display.update_running_scan)
         self.run_stopped.connect(display.update_running_scan)
         # Set initial state for the run_browser
-        client = tiled_client(catalog=None)
+        try:
+            client = tiled_client(catalog=None)
+        except httpx.ConnectError as exc:
+            msg = "Could not connect to Tiled.<br /><br />"
+            msg += f"{exc.request.url}"
+            display.error_dialog.showMessage(msg, "connection error")
+            raise exc
         config = load_config()["tiled"]
         await display.setup_database(
             tiled_client=client, catalog_name=config["default_catalog"]
         )
 
-    def finalize_status_window(self, action):
+    def finalize_status_window(self, action: QAction):
         """Connect up signals that are specific to the voltmeters window."""
         display = action.display
         display.ui.bss_modify_button.clicked.connect(self.actions.bss.trigger)
         # display.details_window_requested.connect
 
-    def finalize_voltmeter_window(self, action):
+    def finalize_voltmeter_window(self, action: QAction):
         """Connect up signals that are specific to the voltmeters window."""
 
         def launch_ion_chamber_window(ic_name):
@@ -391,14 +398,14 @@ class FireflyController(QtCore.QObject):
             "pause": Action(
                 name="pause_runengine_action",
                 text="Pause",
-                shortcut="Ctrl+D",
+                shortcut="Ctrl+Space",
                 icon=qta.icon("fa5s.stopwatch"),
                 tooltip="Pause the current plan at the next checkpoint.",
             ),
             "pause_now": Action(
                 name="pause_runengine_now_action",
                 text="Pause now",
-                shortcut="Ctrl+C",
+                shortcut="Ctrl+Shift+Space",
                 icon=qta.icon("fa5s.pause"),
                 tooltip="Pause the run engine now.",
             ),

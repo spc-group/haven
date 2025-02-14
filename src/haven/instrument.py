@@ -6,13 +6,12 @@ from typing import Mapping
 
 from guarneri import Instrument
 
+from haven import devices
+
 from .devices.aerotech import AerotechStage
 from .devices.aps import ApsMachine
 from .devices.area_detector import make_area_detector
 from .devices.beamline_manager import BeamlineManager
-from .devices.detectors.aravis import AravisDetector
-from .devices.detectors.sim_detector import SimDetector
-from .devices.detectors.xspress import Xspress3Detector
 from .devices.dxp import make_dxp_device
 from .devices.energy_positioner import EnergyPositioner
 from .devices.heater import CapillaryHeater
@@ -86,7 +85,8 @@ beamline = HavenInstrument(
     {
         # Ophyd-async devices
         "aerotech_stage": AerotechStage,
-        "camera": AravisDetector,
+        "camera": devices.AravisDetector,
+        "eiger": devices.EigerDetector,
         "energy": EnergyPositioner,
         "high_heat_load_mirror": HighHeatLoadMirror,
         "ion_chamber": IonChamber,
@@ -94,9 +94,9 @@ beamline = HavenInstrument(
         "motor": Motor,
         "pfcu4": PFCUFilterBank,
         "pss_shutter": PssShutter,
-        "sim_detector": SimDetector,
+        "sim_detector": devices.SimDetector,
         "table": Table,
-        "xspress3": Xspress3Detector,
+        "xspress3": devices.Xspress3Detector,
         "xy_stage": XYStage,
         # Threaded ophyd devices
         "blade_slits": BladeSlits,
