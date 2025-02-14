@@ -8,8 +8,8 @@ from qtpy import QtCore, QtWidgets, uic
 axes = namedtuple("axes", ("z", "y", "x"))
 
 
-class XRFView(QtWidgets.QWidget):
-    ui_file = Path(__file__).parent / "xrf_view.ui"
+class FramesetView(QtWidgets.QWidget):
+    ui_file = Path(__file__).parent / "frameset_view.ui"
     spectra: np.ndarray | None = None
     aggregators = {
         "Mean": np.mean,
@@ -17,12 +17,12 @@ class XRFView(QtWidgets.QWidget):
         "StDev": np.std,
     }
 
-    dataset_changed = QtCore.Signal(str)
+    dataset_selected = QtCore.Signal(str)
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self.ui = uic.loadUi(self.ui_file, self)
-        self.ui.dataset_combobox.currentTextChanged.connect(self.dataset_changed)
+        self.ui.dataset_combobox.currentTextChanged.connect(self.dataset_selected)
         # Clear rows from the dimension layout
         for row in range(1, self.row_count(self.ui.dimensions_layout)):
             self.remove_dimension_widgets(row)

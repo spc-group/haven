@@ -2,14 +2,14 @@ import numpy as np
 import pytest
 from qtpy.QtWidgets import QComboBox
 
-from firefly.run_browser.xrf_view import XRFView
+from firefly.run_browser.frameset_view import FramesetView
 
 
 @pytest.fixture()
 def view(qtbot):
-    xrf_view = XRFView()
-    qtbot.addWidget(xrf_view)
-    return xrf_view
+    fs_view = FramesetView()
+    qtbot.addWidget(fs_view)
+    return fs_view
 
 
 def test_load_ui(view):

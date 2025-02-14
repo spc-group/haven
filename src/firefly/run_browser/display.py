@@ -61,6 +61,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
     data_keys_changed = Signal(ChainMap, set, set)
     data_frames_changed = Signal(dict)
     metadata_changed = Signal(dict)
+    dataset_changed = Signal(dict)
 
     export_dialog: Optional[ExportDialog] = None
 
@@ -96,26 +97,25 @@ class RunBrowserDisplay(display.FireflyDisplay):
         )
 
     @asyncSlot(str)
-    async def retrieve_dataset(
-        self, dataset_name: str, callback, task_name: str
-    ) -> np.ndarray:
+    async def retrieve_dataset(self, dataset_name: str):
         """Retrieve a dataset from disk, and provide it to the slot.
 
         Parameters
         ==========
         dataset_name
           The name in the Tiled catalog of the dataset to retrieve.
-        callback
-          Will be called with the retrieved dataset.
-        task_name
-          For handling parallel database tasks.
+
+        Emits
+        =====
+        dataset_changed
+          Emitted with the new datasets as a dictionary.
+
         """
         # Retrieve data from the database
         data = await self.db_task(
-            self.db.dataset(dataset_name, stream=self.stream), task_name
+            self.db.dataset(dataset_name, stream=self.stream), name="retrieve_dataset",
         )
-        # Pass it back to the slot
-        callback(data)
+        self.dataset_changed.emit(data)
 
     def db_task(self, coro, name="default task"):
         """Executes a co-routine as a database task. Existing database
@@ -229,7 +229,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
         self.data_keys_changed.connect(self.ui.multiplot_view.update_signal_widgets)
         self.data_keys_changed.connect(self.ui.lineplot_view.update_signal_widgets)
         self.data_keys_changed.connect(self.ui.gridplot_view.update_signal_widgets)
-        self.data_keys_changed.connect(self.ui.xrf_view.update_signal_widgets)
+        self.data_keys_changed.connect(self.ui.frameset_tab.update_signal_widgets)
         self.data_frames_changed.connect(self.ui.multiplot_view.plot_multiples)
         self.data_frames_changed.connect(self.ui.lineplot_view.plot)
         self.data_frames_changed.connect(self.ui.gridplot_view.plot)
