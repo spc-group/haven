@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>Form</class>
- <widget class="QWidget" name="Form">
+ <class>frameset_view</class>
+ <widget class="QWidget" name="frameset_view">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1102</width>
-    <height>871</height>
+    <width>899</width>
+    <height>548</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout_4">
+  <layout class="QVBoxLayout" name="verticalLayout_2">
    <item>
     <layout class="QHBoxLayout" name="dataset_layout">
      <item>
@@ -48,7 +48,7 @@
     </layout>
    </item>
    <item>
-    <widget class="QSplitter" name="splitter_2">
+    <widget class="QSplitter" name="splitter">
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
      </property>
@@ -151,21 +151,21 @@
        </item>
       </layout>
      </widget>
-     <widget class="QSplitter" name="splitter">
+     <widget class="QSplitter" name="plotting_splitter">
       <property name="orientation">
        <enum>Qt::Vertical</enum>
       </property>
-      <widget class="QTabWidget" name="tabWidget">
+      <widget class="QTabWidget" name="plotting_tabs">
        <property name="currentIndex">
         <number>0</number>
        </property>
-       <widget class="QWidget" name="images_tab">
+       <widget class="QWidget" name="frame_tab">
         <attribute name="title">
          <string>Images</string>
         </attribute>
         <layout class="QVBoxLayout" name="verticalLayout_5">
          <item>
-          <widget class="QWidget" name="frame_view" native="true"/>
+          <widget class="ImageView" name="frame_view" native="true"/>
          </item>
         </layout>
        </widget>
@@ -182,23 +182,6 @@
               <widget class="QLabel" name="label">
                <property name="text">
                 <string>Z:</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QCheckBox" name="z_checkbox">
-               <property name="text">
-                <string>3D</string>
-               </property>
-               <property name="checked">
-                <bool>true</bool>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QComboBox" name="z_combobox">
-               <property name="enabled">
-                <bool>false</bool>
                </property>
               </widget>
              </item>
@@ -238,44 +221,39 @@
         </layout>
        </widget>
       </widget>
-      <widget class="QSplitter" name="splitter_3">
-       <property name="orientation">
-        <enum>Qt::Vertical</enum>
-       </property>
-       <widget class="QWidget" name="verticalLayoutWidget_2">
-        <layout class="QVBoxLayout" name="verticalLayout_2">
-         <item>
-          <layout class="QHBoxLayout" name="horizontalLayout_2">
-           <item>
-            <spacer name="horizontalSpacer">
-             <property name="orientation">
-              <enum>Qt::Horizontal</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>40</width>
-               <height>20</height>
-              </size>
-             </property>
-            </spacer>
-           </item>
-           <item>
-            <widget class="QLabel" name="label_2">
-             <property name="text">
-              <string>Horizontal Signal:</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QComboBox" name="comboBox"/>
-           </item>
-          </layout>
-         </item>
-         <item>
-          <widget class="PlotWidget" name="scan_view"/>
-         </item>
-        </layout>
-       </widget>
+      <widget class="QWidget" name="verticalLayoutWidget_2">
+       <layout class="QVBoxLayout" name="scan_layout">
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_2">
+          <item>
+           <spacer name="horizontalSpacer">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QLabel" name="label_2">
+            <property name="text">
+             <string>Horizontal Signal:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QComboBox" name="comboBox"/>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="PlotWidget" name="scan_view"/>
+        </item>
+       </layout>
       </widget>
      </widget>
     </widget>
@@ -287,6 +265,12 @@
    <class>PlotWidget</class>
    <extends>QGraphicsView</extends>
    <header>pyqtgraph</header>
+  </customwidget>
+  <customwidget>
+   <class>ImageView</class>
+   <extends>QWidget</extends>
+   <header>pyqtgraph</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources/>

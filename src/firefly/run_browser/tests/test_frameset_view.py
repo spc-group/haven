@@ -62,44 +62,86 @@ def test_dataset_combobox_options(view):
 
 
 def test_update_dimension_widgets(view):
-    data = np.mgrid[0:21, 0:8, 0:4096][0]
-    view.update_dimension_widgets(data)
     layout = view.ui.dimensions_layout
+    view.update_dimension_widgets(shape=(21, 8, 4096))
     assert view.row_count(layout) == 4
     assert layout.itemAtPosition(1, 1).widget().text() == "21"
     assert layout.itemAtPosition(2, 1).widget().text() == "8"
     assert layout.itemAtPosition(3, 1).widget().text() == "4096"
+    # New dimensions, does it update the rows?
+    view.update_dimension_widgets(shape=(13, 21, 8, 4096))
+    assert view.row_count(layout) == 5
+    assert layout.itemAtPosition(1, 1).widget().text() == "13"
+    assert layout.itemAtPosition(2, 1).widget().text() == "21"
+    assert layout.itemAtPosition(3, 1).widget().text() == "8"
+    assert layout.itemAtPosition(4, 1).widget().text() == "4096"
+    
+
+def test_radio_row_group(view):
+    """Do other radio buttons get disabled when one is checked?"""
+    layout = view.ui.dimensions_layout
+    view.update_dimension_widgets(shape=(21, 8, 4096))
+    z0_button = layout.itemAtPosition(1, 2).widget()
+    y0_button = layout.itemAtPosition(1, 3).widget()
+    x0_button = layout.itemAtPosition(1, 4).widget()
+    z0_button.setChecked(True)
+    assert not y0_button.isChecked()
+    y0_button.setChecked(True)
+    assert not z0_button.isChecked()
+
+
+def test_radio_column_group(view):
+    """Do other radio buttons get disabled when one is checked?"""
+    layout = view.ui.dimensions_layout
+    view.update_dimension_widgets(shape=(21, 8, 4096))
+    z0_button = layout.itemAtPosition(1, 2).widget()
+    z1_button = layout.itemAtPosition(2, 2).widget()
+    z2_button = layout.itemAtPosition(3, 2).widget()
+    z0_button.setChecked(True)
+    assert not z1_button.isChecked()
+    z1_button.setChecked(True)
+    assert not z0_button.isChecked()
+
+
+def test_disable_aggregate_comboboxes(view):
+    """Do other combo boxes get disabled when a dimension is selected?"""
+    layout = view.ui.dimensions_layout
+    view.update_dimension_widgets(shape=(21, 8, 4096))
+    z0_button = layout.itemAtPosition(1, 2).widget()
+    combobox = layout.itemAtPosition(1, 5).widget()
+    z0_button.setChecked(True)
+    assert not combobox.isEnabled()
 
 
 def test_reduce_dimensions_3d(view):
-    data = np.mgrid[0:14, 0:21, 0:8, 0:4096][0]
+    data = np.mgrid[0:8, 0:51, 0:70, 0:102][0]
     # Make sure the dimension widgets are set up
     view.update_dimension_widgets(data)
     layout = view.ui.dimensions_layout
     z_pos, y_pos, x_pos = (2, 3, 4)
-    layout.itemAtPosition(3, z_pos).widget().setChecked(True)
-    layout.itemAtPosition(4, y_pos).widget().setChecked(True)
-    layout.itemAtPosition(1, x_pos).widget().setChecked(True)
+    layout.itemAtPosition(4, z_pos).widget().setChecked(True)
+    layout.itemAtPosition(1, y_pos).widget().setChecked(True)
+    layout.itemAtPosition(2, x_pos).widget().setChecked(True)
     # Apply dimensionality reduction
     new_data = view.reduce_dimensions(data)
     # Check results
     assert new_data.ndim == 3
-    assert new_data.shape == (8, 4096, 14)
+    assert new_data.shape == (102, 8, 51)
 
 
 def test_reduce_dimensions_2d(view):
-    data = np.mgrid[0:14, 0:21, 0:8, 0:4096][0]
+    """1 of the dimensions gets reduced so we have a 2D image."""
+    data = np.mgrid[0:8, 0:51, 0:70, 0:102][0]
     # Make sure the dimension widgets are set up
     view.update_dimension_widgets(data)
     layout = view.ui.dimensions_layout
     z_pos, y_pos, x_pos = (2, 3, 4)
-    layout.itemAtPosition(3, z_pos).widget().setChecked(True)
-    layout.itemAtPosition(4, y_pos).widget().setChecked(True)
-    layout.itemAtPosition(1, x_pos).widget().setChecked(True)
-    view.ui.z_combobox.setCurrentText("Mean")
-    view.ui.z_checkbox.setChecked(False)
+    layout.itemAtPosition(4, z_pos).widget().setChecked(False)
+    layout.itemAtPosition(4, 5).widget().setCurrentText("Mean")
+    layout.itemAtPosition(1, y_pos).widget().setChecked(True)
+    layout.itemAtPosition(2, x_pos).widget().setChecked(True)
     # Apply dimensionality reduction
     new_data = view.reduce_dimensions(data)
     # Check results
     assert new_data.ndim == 2
-    assert new_data.shape == (4096, 14)
+    assert new_data.shape == (8, 51)

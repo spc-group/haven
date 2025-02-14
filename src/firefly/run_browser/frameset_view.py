@@ -1,11 +1,16 @@
+import logging
 from collections import namedtuple
 from pathlib import Path
 from typing import Mapping, Sequence
+from functools import partial
 
 import numpy as np
 from qtpy import QtCore, QtWidgets, uic
+import pyqtgraph as pg
 
 axes = namedtuple("axes", ("z", "y", "x"))
+
+log = logging.getLogger(__name__)
 
 
 class FramesetView(QtWidgets.QWidget):
@@ -16,6 +21,7 @@ class FramesetView(QtWidgets.QWidget):
         "Median": np.median,
         "StDev": np.std,
     }
+    datasets: dict[str, np.ndarray] | None = None
 
     dataset_selected = QtCore.Signal(str)
 
@@ -23,15 +29,16 @@ class FramesetView(QtWidgets.QWidget):
         super().__init__(parent)
         self.ui = uic.loadUi(self.ui_file, self)
         self.ui.dataset_combobox.currentTextChanged.connect(self.dataset_selected)
+        self.button_groups = [  # One for each plotting dimension
+            QtWidgets.QButtonGroup(),
+            QtWidgets.QButtonGroup(),
+            QtWidgets.QButtonGroup(),
+        ]
+        for grp in self.button_groups:
+            grp.setExclusive(False)  # Handled by a slot
         # Clear rows from the dimension layout
         for row in range(1, self.row_count(self.ui.dimensions_layout)):
             self.remove_dimension_widgets(row)
-        # Set up some button groups for the radio buttons
-        self.x_group = QtWidgets.QButtonGroup()
-        self.y_group = QtWidgets.QButtonGroup()
-        self.z_group = QtWidgets.QButtonGroup()
-        # Other UI updates
-        self.z_combobox.addItems(["None"] + list(self.aggregators.keys()))
 
     def row_count(self, layout: QtWidgets.QGridLayout) -> int:
         """How many rows in *layout* actually contain widgets."""
@@ -44,33 +51,57 @@ class FramesetView(QtWidgets.QWidget):
     def remove_dimension_widgets(self, row_idx: int):
         layout = self.ui.dimensions_layout
         for col in range(layout.columnCount()):
-            widget = layout.itemAtPosition(row_idx, col)
-            print(row_idx, col, widget.widget())
-            layout.removeItem(widget)
+            item = layout.itemAtPosition(row_idx, col)
+            layout.removeItem(item)
 
-    def add_dimension_widgets(self, row_idx: int, shape: int):
+    def add_dimension_widgets(self, row_idx: int):
         layout = self.ui.dimensions_layout
-
         dim_label = QtWidgets.QLabel()
-        dim_label.setText(str(row_idx - 1))
+        dim_idx = row_idx - 1
+        dim_label.setText(str(dim_idx))
         layout.addWidget(dim_label, row_idx, 0)
         shape_label = QtWidgets.QLabel()
-        shape_label.setText(str(shape))
         layout.addWidget(shape_label, row_idx, 1)
         # Dimension radio buttons
-        z_radio = QtWidgets.QRadioButton()
-        self.z_group.addButton(z_radio)
-        layout.addWidget(z_radio, row_idx, 2)
-        y_radio = QtWidgets.QRadioButton()
-        self.y_group.addButton(y_radio)
-        layout.addWidget(y_radio, row_idx, 3)
-        x_radio = QtWidgets.QRadioButton()
-        self.x_group.addButton(x_radio)
-        layout.addWidget(x_radio, row_idx, 4)
+        for col_idx, btn_group in zip(range(2, 5), self.button_groups):
+            radio_btn = QtWidgets.QCheckBox()
+            radio_btn.setAutoExclusive(False)
+            layout.addWidget(radio_btn, row_idx, col_idx)
+            radio_btn.toggled.connect(partial(self.toggle_dimension_widgets, row_idx=row_idx, col_idx=col_idx))
+            btn_group.addButton(radio_btn, dim_idx)
         # Combobox for aggregation
         combobox = QtWidgets.QComboBox()
         layout.addWidget(combobox, row_idx, 5)
         combobox.addItems(self.aggregators.keys())
+        combobox.currentTextChanged.connect(self.plot_datasets)
+
+    def toggle_dimension_widgets(self, checked: bool, row_idx: int, col_idx: int):
+        """Disable or uncheck widgets that are not available when a radio button is checked."""
+        layout = self.ui.dimensions_layout
+        if checked:
+            row_count = self.row_count(self.ui.dimensions_layout) - 1
+            # Uncheck other rows
+            other_rows = [r for r in range(1, row_count+1) if r != row_idx]
+            for ri in other_rows:
+                btn = layout.itemAtPosition(ri, col_idx).widget()
+                btn.setChecked(False)
+            # Uncheck other columns
+            other_cols = [c for c in range(2, 5) if c != col_idx]
+            for ci in other_cols:
+                btn = layout.itemAtPosition(row_idx, ci).widget()
+                btn.setChecked(False)
+        # Enable/disable the aggregate combobox for this row
+        btns = [layout.itemAtPosition(row_idx, c).widget() for c in range(2, 5)]
+        buttons_checked = any([btn.isChecked() for btn in btns])
+        combobox = layout.itemAtPosition(row_idx, 5).widget()
+        combobox.setEnabled(not buttons_checked)
+        # Update the plots
+        self.plot_datasets()
+
+    def set_dimension_widgets(self, row_idx: int, shape: int):
+        layout = self.ui.dimensions_layout
+        shape_label = layout.itemAtPosition(row_idx, 1).widget()
+        shape_label.setText(str(shape))
 
     def update_signal_widgets(
         self, data_keys: Mapping, independent_hints: Sequence, dependent_hints: Sequence
@@ -85,44 +116,78 @@ class FramesetView(QtWidgets.QWidget):
         combobox.clear()
         combobox.addItems(self.data_keys.keys())
 
-    def plot_spectra(self, spectra: np.ndarray | None = None):
-        """Plot a set of spectra as lines.
+    @QtCore.Slot()
+    @QtCore.Slot(dict)
+    def plot_datasets(self, datasets: dict[str, np.ndarray] | None = None):
+        """Plot a set of datasets as lines.
 
-        If *spectra* is not given, the last spectra seen are used.
+        If *datasets* is not given, the last datasets seen are used.
 
         """
-        if spectra is None:
-            spectra = self.spectra
+        if datasets is None:
+            datasets = self.datasets
         else:
-            self.spectra = spectra
-        spectra = self.reduce_dimensions(spectra)
-        # Plot the spectra
-        plot = self.ui.xrf_spectra_view.getPlotItem()
-        plot.clear()
-        for spectrum in spectra:
-            plot.plot(spectrum)
+            self.datasets = datasets
+        # Clear the plot if there's nothing to show
+        im_plot = self.ui.frame_view
+        if datasets is None:
+            im_plot.clear()
+            self.enable(False)
+            return
+        # Make sure it's just one dataset
+        if len(datasets) > 1:
+            log.warning(
+                "Cannot plot framesets for multiple scans. Please submit an issue to request this feature."
+            )
+            return
+        elif len(datasets) == 1:
+            dataset = list(datasets.values())[0]
+        elif len(datasets) == 0:
+            return
+        else:
+            raise RuntimeError(f"Malformed input: {datasets}")
+        self.update_dimension_widgets(shape=dataset.shape)
+        dataset = self.reduce_dimensions(dataset)
+        # Plot the images
+        if 2 <= dataset.ndim <= 3:
+            self.enable()
+            im_plot.setImage(dataset)
+        else:
+            log.info(f"Skipping plot of frames with shape {dataset.shape}.")
+            im_plot.clear()
+            self.enable_plots(False)
 
-    def update_dimension_widgets(self, spectra: np.ndarray | None = None):
+    def enable(self, enabled: bool = True):
+        self.enable_plots(enabled)
+        self.dimensions_layout.setEnabled(enabled)
+
+    def enable_plots(self, enabled: bool = True):
+        self.ui.plotting_splitter.setEnabled(enabled)
+
+    def update_dimension_widgets(self, shape: tuple[int]):
         """Update the widgets for setting dimensions to match the
-        *spectra* array.
+        *dataset* array.
 
         """
+        # Build the dimensions layout
+        dim_count = len(shape)
         row_count = self.row_count(self.ui.dimensions_layout) - 1
-        dim_count = spectra.ndim
         for row in range(dim_count, row_count):
             self.remove_dimension_widgets(row + 1)
         for row in range(row_count, dim_count):
-            self.add_dimension_widgets(row + 1, shape=spectra.shape[row])
+            self.add_dimension_widgets(row + 1)
+        for row in range(dim_count):
+            self.set_dimension_widgets(row+1, shape=shape[row])
 
-    def reduce_dimensions(self, spectra: np.ndarray) -> np.ndarray:
-        """Reduce the input *spectra* to a shape for plotting
+    def reduce_dimensions(self, dataset: np.ndarray) -> np.ndarray:
+        """Reduce the input *dataset* to a shape for plotting
         depending on the dimensions widgets.
 
         """
         layout = self.ui.dimensions_layout
-        ndim = spectra.ndim
-        # Go in reverse to we can apply aggregators without messing up earlier indices
-        for dim in reversed(range(spectra.ndim)):
+        # Apply aggregators
+        axes_to_drop = []
+        for dim in range(dataset.ndim):
             row = dim + 1
             is_plotted = any(
                 [
@@ -133,24 +198,13 @@ class FramesetView(QtWidgets.QWidget):
             if not is_plotted:
                 agg_name = layout.itemAtPosition(row, 5).widget().currentText()
                 aggregator = self.aggregators[agg_name]
-                spectra = aggregator(spectra, axis=dim)
-        # Order axes according to (z, x, y) widgets
-        frm, to = [], []
-        src_dim = 0
-        for dim in range(ndim):
-            row = dim + 1
-            btns = [layout.itemAtPosition(row, col).widget() for col in range(2, 5)]
-            is_checked = [btn.isChecked() for btn in btns]
-            try:
-                plot_idx = is_checked.index(True)
-            except ValueError:
-                continue
-            to.append(plot_idx)
-            frm.append(src_dim)
-            src_dim += 1
-        spectra = np.moveaxis(spectra, frm, to)
-        # Reduce the z-axis if plotting in 2D
-        if not self.ui.z_checkbox.checkState():
-            aggregator = self.aggregators[self.ui.z_combobox.currentText()]
-            spectra = aggregator(spectra, axis=0)
-        return spectra
+                dataset = aggregator(dataset, axis=dim, keepdims=True)
+                axes_to_drop.append(dim)
+        # Order axes according to (z, y, x) widgets
+        to = [d for d in range(dataset.ndim) if d not in axes_to_drop]
+        frm = [grp.checkedId() for grp in self.button_groups]
+        frm = [dim for dim in frm if dim != -1]
+        dataset = np.moveaxis(dataset, frm, to)
+        # Remove axes that were reduced
+        dataset = np.squeeze(dataset, axis=tuple(axes_to_drop))
+        return dataset

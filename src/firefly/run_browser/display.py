@@ -61,7 +61,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
     data_keys_changed = Signal(ChainMap, set, set)
     data_frames_changed = Signal(dict)
     metadata_changed = Signal(dict)
-    dataset_changed = Signal(dict)
+    datasets_changed = Signal(dict)
 
     export_dialog: Optional[ExportDialog] = None
 
@@ -107,7 +107,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
 
         Emits
         =====
-        dataset_changed
+        datasets_changed
           Emitted with the new datasets as a dictionary.
 
         """
@@ -115,7 +115,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
         data = await self.db_task(
             self.db.dataset(dataset_name, stream=self.stream), name="retrieve_dataset",
         )
-        self.dataset_changed.emit(data)
+        self.datasets_changed.emit(data)
 
     def db_task(self, coro, name="default task"):
         """Executes a co-routine as a database task. Existing database
@@ -233,6 +233,8 @@ class RunBrowserDisplay(display.FireflyDisplay):
         self.data_frames_changed.connect(self.ui.multiplot_view.plot_multiples)
         self.data_frames_changed.connect(self.ui.lineplot_view.plot)
         self.data_frames_changed.connect(self.ui.gridplot_view.plot)
+        self.datasets_changed.connect(self.ui.frameset_tab.plot_datasets)
+        self.ui.frameset_tab.dataset_selected.connect(self.retrieve_dataset)
         # Create a new export dialog for saving files
         self.ui.export_button.clicked.connect(self.export_runs)
         self.export_dialog = ExportDialog(parent=self)
