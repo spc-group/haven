@@ -214,12 +214,18 @@ def test_default_filters(display):
     assert display.ui.filter_exit_status_combobox.currentText() == "success"
     assert display.ui.filter_current_esaf_checkbox.checkState()
     assert display.ui.filter_current_proposal_checkbox.checkState()
+    # Test datetime filters
     assert display.ui.filter_after_checkbox.checkState()
     last_week = dt.datetime(2022, 8, 12, 19, 10, 51)
-    filter_time = display.ui.filter_after_datetimeedit.dateTime()
-    filter_time = dt.datetime.fromtimestamp(filter_time.toTime_t())
-    assert filter_time == last_week
+    after_filter_time = display.ui.filter_after_datetimeedit.dateTime()
+    after_filter_time = dt.datetime.fromtimestamp(after_filter_time.toTime_t())
+    assert after_filter_time == last_week
+    next_week = dt.datetime(2022, 8, 26, 19, 10, 51)
+    before_filter_time = display.ui.filter_before_datetimeedit.dateTime()
+    before_filter_time = dt.datetime.fromtimestamp(before_filter_time.toTime_t())
+    assert before_filter_time == next_week
 
+    
 
 def test_time_filters(display):
     """Check that the before and after datetime filters are activated."""

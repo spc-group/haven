@@ -184,6 +184,9 @@ class RunBrowserDisplay(display.FireflyDisplay):
         last_week = dt.datetime.now().astimezone() - dt.timedelta(days=7)
         last_week = QDateTime.fromTime_t(int(last_week.timestamp()))
         self.ui.filter_after_datetimeedit.setDateTime(last_week)
+        next_week = dt.datetime.now().astimezone() + dt.timedelta(days=7)
+        next_week = QDateTime.fromTime_t(int(next_week.timestamp()))
+        self.ui.filter_before_datetimeedit.setDateTime(next_week)
 
     async def update_combobox_items(self):
         """"""
