@@ -282,8 +282,8 @@ async def test_stream_choices(display, tiled_client):
 
 async def test_retrieve_dataset(display, qtbot):
     # See '788b1d91-efa1-4b26-9a0a-3454aa7e1a93' for a sample dataset
-    with qtbot.wait_signal(display.dataset_changed):
-        await display.retrieve_dataset("ge_8element", "testing")
+    with qtbot.wait_signal(display.datasets_changed):
+        await display.fetch_datasets("ge_8element", "testing")
 
 
 async def test_update_running_scan(display, qtbot):

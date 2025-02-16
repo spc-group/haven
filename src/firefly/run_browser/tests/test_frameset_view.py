@@ -1,4 +1,7 @@
+from unittest.mock import MagicMock
+
 import numpy as np
+import pandas as pd
 import pytest
 from qtpy.QtWidgets import QComboBox
 
@@ -48,6 +51,14 @@ def test_dataset_combobox_options(view):
             "source": "ca://25idVME:3820:scaler1.S0",
             "units": "A",
         },
+        "I0-net_counts": {
+            "dtype": "number",
+            "dtype_numpy": "<u4",
+            "object_name": "I0",
+            "shape": [],
+            "source": "ca://25idVME:3820:scaler1.S0",
+            "units": "",
+        },
     }
     ihints = ["sim_motor_2"]
     dhints = ["I0-net_current"]
@@ -59,15 +70,28 @@ def test_dataset_combobox_options(view):
     assert (
         combobox.findText("I0-net_current") == -1
     ), f"I0-net_current signal should not be in {combobox.objectName()}."
+    time_combobox = view.ui.time_signal_combobox
+    assert (
+        time_combobox.findText("ge_8element") == -1
+    ), f"ge_8element signal should not be in {combobox.objectName()}."
+    assert (
+        time_combobox.findText("I0-net_current") > -1
+    ), f"I0-net_current signal not in {combobox.objectName()}."
+    assert (
+        time_combobox.findText("I0-net_counts") > -1
+    ), f"I0-net_counts signal not in {combobox.objectName()}."
 
-
+    
 def test_update_dimension_widgets(view):
     layout = view.ui.dimensions_layout
     view.update_dimension_widgets(shape=(21, 8, 4096))
     assert view.row_count(layout) == 4
     assert layout.itemAtPosition(1, 1).widget().text() == "21"
+    assert layout.itemAtPosition(1, 2).widget().isChecked()
     assert layout.itemAtPosition(2, 1).widget().text() == "8"
+    assert layout.itemAtPosition(2, 3).widget().isChecked()
     assert layout.itemAtPosition(3, 1).widget().text() == "4096"
+    assert layout.itemAtPosition(3, 4).widget().isChecked()
     # New dimensions, does it update the rows?
     view.update_dimension_widgets(shape=(13, 21, 8, 4096))
     assert view.row_count(layout) == 5
@@ -75,7 +99,7 @@ def test_update_dimension_widgets(view):
     assert layout.itemAtPosition(2, 1).widget().text() == "21"
     assert layout.itemAtPosition(3, 1).widget().text() == "8"
     assert layout.itemAtPosition(4, 1).widget().text() == "4096"
-    
+
 
 def test_radio_row_group(view):
     """Do other radio buttons get disabled when one is checked?"""
@@ -145,3 +169,21 @@ def test_reduce_dimensions_2d(view):
     # Check results
     assert new_data.ndim == 2
     assert new_data.shape == (8, 51)
+
+def test_time_signal(view):
+    """Check that the correct time signal gets provided to the plotting widgets."""
+    # Set up
+    df = pd.DataFrame({
+        "I0-net_current": np.linspace(0, 100, num=5),
+    })
+    view.stash_data_frames({"": df})
+    view.ui.time_signal_combobox.addItem("I0-net_current")
+    view.ui.time_signal_combobox.setCurrentText("I0-net_current")
+    plot_mock = MagicMock()
+    view.ui.frame_view.setImage = plot_mock
+    # Code under test
+    view.plot_datasets({"": np.ones(shape=(5, 10, 15))})
+    # Asserts
+    assert plot_mock.called
+    xvals = plot_mock.call_args[1]["xvals"]
+    np.testing.assert_array_equal(xvals, df['I0-net_current'].values)

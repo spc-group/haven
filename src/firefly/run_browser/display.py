@@ -97,7 +97,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
         )
 
     @asyncSlot(str)
-    async def retrieve_dataset(self, dataset_name: str):
+    async def fetch_datasets(self, dataset_name: str):
         """Retrieve a dataset from disk, and provide it to the slot.
 
         Parameters
@@ -233,8 +233,9 @@ class RunBrowserDisplay(display.FireflyDisplay):
         self.data_frames_changed.connect(self.ui.multiplot_view.plot_multiples)
         self.data_frames_changed.connect(self.ui.lineplot_view.plot)
         self.data_frames_changed.connect(self.ui.gridplot_view.plot)
+        self.data_frames_changed.connect(self.ui.frameset_tab.stash_data_frames)
         self.datasets_changed.connect(self.ui.frameset_tab.plot_datasets)
-        self.ui.frameset_tab.dataset_selected.connect(self.retrieve_dataset)
+        self.ui.frameset_tab.dataset_selected.connect(self.fetch_datasets)
         # Create a new export dialog for saving files
         self.ui.export_button.clicked.connect(self.export_runs)
         self.export_dialog = ExportDialog(parent=self)
