@@ -162,6 +162,17 @@ def test_hinted_signal_options(view):
     ), f"energy_energy signal should be in x-signal combobox."
 
 
+def test_symbol_options(view):
+    combobox = view.ui.symbol_combobox
+    assert combobox.count() == 19
+
+
+def test_change_symbol(view):
+    """For now just make sure it doesn't raise exceptions."""
+    view.plot(dataframes)
+    view.change_symbol()
+
+
 def test_plotting_data(view):
     # Check prepared data
     xdata, ydata = view.prepare_plotting_data(dataframe)

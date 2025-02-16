@@ -40,6 +40,29 @@ class LineplotView(QtWidgets.QWidget):
 
     ui_file = Path(__file__).parent / "lineplot_view.ui"
 
+    symbols = {
+        # See pyqtgraph.ScatterPlotItem.setSymbol() for symbols
+        "●": 'o',
+        "■": 's',
+        "▼": 't',
+        "▲": 't1',
+        "▶": 't2',
+        "◀": 't3',
+        "◆": 'd',
+        "+": "+",
+        "⬟": "p",
+        "⬢": 'h',
+        "★": "star",
+        "|": "|",
+        "—": "_",
+        "×": "x",
+        "⬆": "arrow_up",
+        "➡": "arrow_right",
+        "⬇": "arrow_down",
+        "⬅": "arrow_left",
+        "⌖": "crosshair",
+    }
+
     def __init__(self, parent=None):
         self.data_keys = {}
         self.independent_hints = []
@@ -50,7 +73,7 @@ class LineplotView(QtWidgets.QWidget):
         self.ui = uic.loadUi(self.ui_file, self)
         self.cursor_button.setIcon(qta.icon("fa5s.crosshairs"))
         self.autorange_button.setIcon(qta.icon("mdi.image-filter-center-focus"))
-
+        self.ui.symbol_combobox.addItems(self.symbols.keys())
         # Connect internal signals/slots
         self.ui.use_hints_checkbox.stateChanged.connect(self.update_signal_widgets)
         self.ui.x_signal_combobox.currentTextChanged.connect(self.plot)
@@ -64,6 +87,8 @@ class LineplotView(QtWidgets.QWidget):
         self.ui.cursor_button.clicked.connect(self.center_cursor)
         self.ui.swap_button.setIcon(qta.icon("mdi.swap-horizontal"))
         self.ui.swap_button.clicked.connect(self.swap_signals)
+        self.ui.symbol_checkbox.stateChanged.connect(self.change_symbol)
+        self.ui.symbol_combobox.currentTextChanged.connect(self.change_symbol)
         # Set up plotting widgets
         plot_item = self.ui.plot_widget.getPlotItem()
         plot_item.addLegend()
@@ -119,6 +144,20 @@ class LineplotView(QtWidgets.QWidget):
                 combobox.addItems(new_cols)
                 if old_value in new_cols:
                     combobox.setCurrentText(old_value)
+
+    @property
+    def current_symbol(self) -> str | None:
+        if self.ui.symbol_checkbox.isChecked():
+            symbol = self.ui.symbol_combobox.currentText()
+            return self.symbols[symbol]
+        else:
+            return None
+
+    @Slot()
+    def change_symbol(self):
+        symbol = self.current_symbol
+        for item in self.data_items.values():
+            item.setSymbol(symbol)
 
     def swap_signals(self):
         """Swap the value and reference signals."""
@@ -219,6 +258,7 @@ class LineplotView(QtWidgets.QWidget):
                     y=ydata,
                     pen=color,
                     name=label,
+                    symbol=self.current_symbol,
                     clear=False,
                 )
         # Axis formatting
