@@ -194,6 +194,18 @@ def test_update_plot(view):
     assert len(plot_item.dataItems) == 1
 
 
+def test_update_plot_mean(view):
+    view.independent_hints = ["energy_energy"]
+    view.dependent_hints = ["I0-net_current"]
+    view.data_keys = data_keys
+    view.ui.aggregator_combobox.setCurrentText("StDev")
+    # Update the plots
+    view.plot(dataframes)
+    # Check the data were plotted
+    plot_item = view.ui.plot_widget.getPlotItem()
+    assert len(plot_item.dataItems) == 1
+
+
 def test_axis_labels(view):
     xlabel, ylabel = view.axis_labels()
     assert xlabel == "energy_energy"

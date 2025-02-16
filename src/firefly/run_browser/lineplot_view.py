@@ -40,6 +40,11 @@ class LineplotView(QtWidgets.QWidget):
 
     ui_file = Path(__file__).parent / "lineplot_view.ui"
 
+    aggregators = {
+        "Mean": np.mean,
+        "Median": np.median,
+        "StDev": np.std,
+    }
     symbols = {
         # See pyqtgraph.ScatterPlotItem.setSymbol() for symbols
         "●": 'o',
@@ -171,12 +176,12 @@ class LineplotView(QtWidgets.QWidget):
         ysignal = self.ui.y_signal_combobox.currentText()
         rsignal = self.ui.r_signal_combobox.currentText()
         # Get data from dataframe
-        xdata = df[xsignal]
-        ydata = df[ysignal]
-        rdata = df[rsignal]
+        xdata = df[xsignal].values
+        ydata = df[ysignal].values
+        rdata = df[rsignal].values
         # Apply corrections
         if self.ui.r_signal_checkbox.checkState():
-            ydata = ydata / df[rsignal]
+            ydata = ydata / rdata
         if self.ui.invert_checkbox.checkState():
             ydata = 1 / ydata
         if self.ui.logarithm_checkbox.checkState():
@@ -235,13 +240,22 @@ class LineplotView(QtWidgets.QWidget):
             self.dataframes = dataframes
         plot_item = self.ui.plot_widget.getPlotItem()
         xlabel, ylabel = self.axis_labels()
-        # Plot this run's data
-        for idx, (uid, df) in enumerate(self.dataframes.items()):
-            color = colors[idx % len(colors)]
+        # Prepare datasets for plotting
+        data = {}
+        for uid, df in self.dataframes.items():
             try:
                 xdata, ydata = self.prepare_plotting_data(df)
             except KeyError:
                 continue
+            data[uid] = (xdata, ydata)
+        # Combine datasets if requested
+        agg_name = self.ui.aggregator_combobox.currentText()
+        if agg_name != "All":
+            aggregate = self.aggregators[agg_name]
+            xs, ys = zip(*data.values())
+            data = {agg_name: (aggregate(xs, axis=0), aggregate(ys, axis=0))}
+        # Plot each run's data
+        for idx, (uid, (xdata, ydata)) in enumerate(data.items()):
             try:
                 sample_name = self.metadata[uid]["start"]["sample_name"]
                 label = f"{uid.split('-')[0]} — {sample_name}"
@@ -253,6 +267,7 @@ class LineplotView(QtWidgets.QWidget):
                 self.data_items[uid].setData(xdata, ydata)
             else:
                 log.debug(f"Adding new plot item for {label}")
+                color = colors[idx % len(colors)]
                 self.data_items[uid] = plot_item.plot(
                     x=xdata,
                     y=ydata,
