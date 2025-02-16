@@ -81,7 +81,7 @@ def test_dataset_combobox_options(view):
         time_combobox.findText("I0-net_counts") > -1
     ), f"I0-net_counts signal not in {combobox.objectName()}."
 
-    
+
 def test_update_dimension_widgets(view):
     layout = view.ui.dimensions_layout
     view.update_dimension_widgets(shape=(21, 8, 4096))
@@ -170,12 +170,15 @@ def test_reduce_dimensions_2d(view):
     assert new_data.ndim == 2
     assert new_data.shape == (8, 51)
 
+
 def test_time_signal(view):
     """Check that the correct time signal gets provided to the plotting widgets."""
     # Set up
-    df = pd.DataFrame({
-        "I0-net_current": np.linspace(0, 100, num=5),
-    })
+    df = pd.DataFrame(
+        {
+            "I0-net_current": np.linspace(0, 100, num=5),
+        }
+    )
     view.stash_data_frames({"": df})
     view.ui.time_signal_combobox.addItem("I0-net_current")
     view.ui.time_signal_combobox.setCurrentText("I0-net_current")
@@ -186,4 +189,4 @@ def test_time_signal(view):
     # Asserts
     assert plot_mock.called
     xvals = plot_mock.call_args[1]["xvals"]
-    np.testing.assert_array_equal(xvals, df['I0-net_current'].values)
+    np.testing.assert_array_equal(xvals, df["I0-net_current"].values)

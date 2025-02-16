@@ -225,7 +225,6 @@ def test_default_filters(display):
     before_filter_time = dt.datetime.fromtimestamp(before_filter_time.toTime_t())
     assert before_filter_time == next_week
 
-    
 
 def test_time_filters(display):
     """Check that the before and after datetime filters are activated."""

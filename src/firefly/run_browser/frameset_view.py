@@ -1,14 +1,14 @@
 import logging
 from collections import namedtuple
+from functools import partial
 from pathlib import Path
 from typing import Mapping, Sequence
-from functools import partial
 
 import numpy as np
 import pandas as pd
+import pyqtgraph as pg
 import qtawesome as qta
 from qtpy import QtCore, QtWidgets, uic
-import pyqtgraph as pg
 
 axes = namedtuple("axes", ("z", "y", "x"))
 
@@ -21,7 +21,7 @@ class FramesetImageView(pg.ImageView):
             view = pg.PlotItem()
         super().__init__(*args, view=view, **kwargs)
         self.timeLine.setPen((255, 0, 255, 200), width=5)
-        self.timeLine.setHoverPen('r', width=5)
+        self.timeLine.setHoverPen("r", width=5)
 
     @QtCore.Slot()
     def roiChanged(self):
@@ -56,8 +56,9 @@ class FramesetView(QtWidgets.QWidget):
         ]
         for grp in self.button_groups:
             grp.setExclusive(False)  # Handled by a slot
-        from pprint import pprint
-        self.ui.lock_aspect_button.toggled.connect(self.frame_view.getView().setAspectLocked)
+        self.ui.lock_aspect_button.toggled.connect(
+            self.frame_view.getView().setAspectLocked
+        )
         self.ui.lock_aspect_button.toggled.connect(self.toggle_lock_icon)
         self.toggle_lock_icon(True)
         # Clear rows from the dimension layout
@@ -118,11 +119,13 @@ class FramesetView(QtWidgets.QWidget):
         combobox.currentTextChanged.connect(self.plot_datasets)
         # See if we should check a box by default
         if dim_idx < 3 and self.button_groups[dim_idx].checkedId() == -1:
-            layout.itemAtPosition(row_idx, dim_idx+2).widget().setChecked(True)
+            layout.itemAtPosition(row_idx, dim_idx + 2).widget().setChecked(True)
             combobox.setEnabled(False)
         # Connect signals for changing dimensions
         for col_idx, btn in buttons.items():
-            btn.toggled.connect(partial(self.toggle_dimension_widgets, row_idx=row_idx, col_idx=col_idx))
+            btn.toggled.connect(
+                partial(self.toggle_dimension_widgets, row_idx=row_idx, col_idx=col_idx)
+            )
 
     def toggle_dimension_widgets(self, checked: bool, row_idx: int, col_idx: int):
         """Disable or uncheck widgets that are not available when a radio button is checked."""
@@ -130,7 +133,7 @@ class FramesetView(QtWidgets.QWidget):
         if checked:
             row_count = self.row_count(self.ui.dimensions_layout) - 1
             # Uncheck other rows
-            other_rows = [r for r in range(1, row_count+1) if r != row_idx]
+            other_rows = [r for r in range(1, row_count + 1) if r != row_idx]
             for ri in other_rows:
                 btn = layout.itemAtPosition(ri, col_idx).widget()
                 btn.setChecked(False)
@@ -174,7 +177,6 @@ class FramesetView(QtWidgets.QWidget):
         combobox = self.ui.time_signal_combobox
         combobox.clear()
         combobox.addItems(self.signal_keys.keys())
-        
 
     @QtCore.Slot()
     @QtCore.Slot(dict)
@@ -243,7 +245,7 @@ class FramesetView(QtWidgets.QWidget):
         for row in range(row_count, dim_count):
             self.add_dimension_widgets(row + 1)
         for row in range(dim_count):
-            self.set_dimension_widgets(row+1, shape=shape[row])
+            self.set_dimension_widgets(row + 1, shape=shape[row])
 
     def reduce_dimensions(self, dataset: np.ndarray) -> np.ndarray:
         """Reduce the input *dataset* to a shape for plotting
@@ -275,7 +277,7 @@ class FramesetView(QtWidgets.QWidget):
         dataset = np.squeeze(dataset, axis=tuple(axes_to_drop))
         return dataset
 
-    def stash_data_frames(self, data_frames: dict[str: pd.DataFrame]):
+    def stash_data_frames(self, data_frames: dict[str : pd.DataFrame]):
         if len(data_frames) > 1:
             log.warning(
                 "Cannot plot framesets for multiple scans. Please submit an issue to request this feature."

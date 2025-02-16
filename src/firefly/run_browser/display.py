@@ -7,7 +7,6 @@ from functools import partial, wraps
 from typing import Mapping, Optional, Sequence
 
 import httpx
-import numpy as np
 import qtawesome as qta
 from ophyd import Device as ThreadedDevice
 from ophyd_async.core import Device
@@ -113,7 +112,8 @@ class RunBrowserDisplay(display.FireflyDisplay):
         """
         # Retrieve data from the database
         data = await self.db_task(
-            self.db.dataset(dataset_name, stream=self.stream), name="retrieve_dataset",
+            self.db.dataset(dataset_name, stream=self.stream),
+            name="retrieve_dataset",
         )
         self.datasets_changed.emit(data)
 

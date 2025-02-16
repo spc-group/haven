@@ -347,7 +347,9 @@ bluesky_mapping = {
                     ),
                     "external": MapAdapter(
                         {
-                            "ge_8element": ArrayAdapter.from_array(np.ones(shape=(100, 512, 1024))),
+                            "ge_8element": ArrayAdapter.from_array(
+                                np.ones(shape=(100, 512, 1024))
+                            ),
                         }
                     ),
                 },
