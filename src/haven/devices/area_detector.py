@@ -14,7 +14,6 @@ from ophyd import Component as Cpt
 from ophyd import DetectorBase as OphydDetectorBase
 from ophyd import (
     Device,
-    EigerDetectorCam,
     EpicsSignal,
     Kind,
     Lambda750kCam,
@@ -53,7 +52,7 @@ from .._iconfig import load_config
 log = logging.getLogger(__name__)
 
 
-__all__ = ["Eiger500K", "Lambda250K", "SimDetector", "AsyncCamMixin"]
+__all__ = ["Lambda250K", "SimDetector", "AsyncCamMixin"]
 
 
 class WriteModes(IntEnum):
@@ -288,9 +287,6 @@ class SingleImageModeTrigger(SingleTrigger_V34):
 class SimDetectorCam_V34(CamMixin_V34, SimDetectorCam): ...
 
 
-class EigerCam(AsyncCamMixin, EigerDetectorCam): ...
-
-
 class LambdaCam(AsyncCamMixin, Lambda750kCam): ...
 
 
@@ -475,37 +471,6 @@ class Lambda250K(SingleTrigger, DetectorBase):
         "stats5",
         "hdf1",
         "tiff",
-    ]
-
-
-class Eiger500K(SingleTrigger, DetectorBase):
-    """
-    A Eiger S 500K area detector device.
-    """
-
-    cam = ADCpt(EigerCam, "cam1:")
-    image = ADCpt(ImagePlugin_V34, "image1:")
-    pva = ADCpt(PvaPlugin_V34, "Pva1:")
-    # tiff = ADCpt(TIFFPlugin, "TIFF1:", kind=Kind.normal)
-    hdf = ADCpt(HDF5FilePlugin, "HDF1:", kind=Kind.normal)
-    # roi1 = ADCpt(ROIPlugin_V34, "ROI1:", kind=Kind.config)
-    # roi2 = ADCpt(ROIPlugin_V34, "ROI2:", kind=Kind.config)
-    # roi3 = ADCpt(ROIPlugin_V34, "ROI3:", kind=Kind.config)
-    # roi4 = ADCpt(ROIPlugin_V34, "ROI4:", kind=Kind.config)
-    # stats1 = ADCpt(StatsPlugin_V34, "Stats1:", kind=Kind.normal)
-    # stats2 = ADCpt(StatsPlugin_V34, "Stats2:", kind=Kind.normal)
-    # stats3 = ADCpt(StatsPlugin_V34, "Stats3:", kind=Kind.normal)
-    # stats4 = ADCpt(StatsPlugin_V34, "Stats4:", kind=Kind.normal)
-    # stats5 = ADCpt(StatsPlugin_V34, "Stats5:", kind=Kind.normal)
-
-    _default_read_attrs = [
-        # "stats1",
-        # "stats2",
-        # "stats3",
-        # "stats4",
-        # "stats5",
-        "hdf",
-        # "tiff",
     ]
 
 

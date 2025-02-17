@@ -25,7 +25,7 @@ from ophyd_async.epics.adcore._utils import (
 )
 from ophyd_async.epics.core import epics_signal_r, epics_signal_rw, epics_signal_x
 
-from .area_detectors import HavenDetector, default_path_provider
+from .area_detectors import default_path_provider
 
 
 class XspressTriggerMode(StrictEnum):
@@ -124,7 +124,7 @@ class XspressElement(Device):
         super().__init__(name=name)
 
 
-class Xspress3Detector(HavenDetector, AreaDetector):
+class Xspress3Detector(AreaDetector):
     """A detector controlled by Xspress3 electronics.
 
     The elements of the detector are represented on the *mcas*
@@ -191,7 +191,6 @@ class Xspress3Detector(HavenDetector, AreaDetector):
                 path_provider=path_provider,
                 name_provider=lambda: self.name,
                 dataset_describer=XspressDatasetDescriber(self.driver),
-                # driver=self.driver,  # <- for DT ndattributes
                 plugins=self.plugins,
             ),
             plugins=self.plugins,
@@ -328,3 +327,29 @@ def ndattribute_params(
         ]
         params.extend(new_params)
     return params
+
+
+# -----------------------------------------------------------------------------
+# :author:    Mark Wolfman, Yanna Chen
+# :email:     wolfman@anl.gov
+# :copyright: Copyright © 2025, UChicago Argonne, LLC
+#
+# Distributed under the terms of the 3-Clause BSD License
+#
+# The full license is in the file LICENSE, distributed with this software.
+#
+# DISCLAIMER
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+# HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# -----------------------------------------------------------------------------
