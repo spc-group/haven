@@ -20,14 +20,8 @@ class FramesetImageView(pg.ImageView):
         if view is None:
             view = pg.PlotItem()
         super().__init__(*args, view=view, **kwargs)
-        self.timeLine.setPen((255, 0, 255, 200), width=5)
+        self.timeLine.setPen((255, 255, 0, 200), width=5)
         self.timeLine.setHoverPen("r", width=5)
-
-    @QtCore.Slot()
-    def roiChanged(self):
-        super().roiChanged()
-        for curve in self.roiCurves:
-            curve.setPen("k")
 
 
 class FramesetView(QtWidgets.QWidget):
@@ -173,7 +167,6 @@ class FramesetView(QtWidgets.QWidget):
         combobox = self.ui.dataset_combobox
         combobox.clear()
         combobox.addItems(self.array_keys.keys())
-        print(self.signal_keys.keys())
         combobox = self.ui.time_signal_combobox
         combobox.clear()
         combobox.addItems(self.signal_keys.keys())
