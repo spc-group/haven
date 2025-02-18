@@ -1,4 +1,5 @@
 from .detectors.aravis import AravisDetector  # noqa: F401
+from .detectors.eiger import EigerDetector  # noqa: F401
 from .detectors.sim_detector import SimDetector  # noqa: F401
 from .detectors.xspress import Xspress3Detector  # noqa: F401
 from .ion_chamber import IonChamber  # noqa: F401

@@ -3,11 +3,9 @@ import datetime as dt
 from functools import partial
 from unittest.mock import AsyncMock, MagicMock
 
-import numpy as np
 import pytest
 import time_machine
 from ophyd.sim import instantiate_fake_device
-from pyqtgraph import ImageItem, ImageView, PlotItem, PlotWidget
 from qtpy.QtWidgets import QFileDialog
 
 from firefly.run_browser.display import RunBrowserDisplay
@@ -40,18 +38,7 @@ async def display(qtbot, tiled_client, catalog, mocker):
     # Set up some fake data
     run = [run async for run in catalog.values()][0]
     display.db.selected_runs = [run]
-    await display.update_1d_signals()
     run_data = await run.data(stream="primary")
-    # Set the controls to describe the data we want to test
-    x_combobox = display.ui.signal_x_combobox
-    x_combobox.addItem("energy_energy")
-    x_combobox.setCurrentText("energy_energy")
-    y_combobox = display.ui.signal_y_combobox
-    y_combobox.addItem("It_net_counts")
-    y_combobox.setCurrentText("It_net_counts")
-    r_combobox = display.ui.signal_r_combobox
-    r_combobox.addItem("I0_net_counts")
-    r_combobox.setCurrentText("I0_net_counts")
     return display
 
 
@@ -107,183 +94,11 @@ async def test_update_selected_runs(display):
     assert len(display.db.selected_runs) > 0
 
 
-async def test_clear_plots(display):
-    display.plot_1d_view.clear_runs = MagicMock()
-    display.clear_plots()
-    assert display.plot_1d_view.clear_runs.called
-
-
-async def test_metadata(display):
+async def test_metadata(display, qtbot):
     # Change the proposal item
     display.ui.run_tableview.selectRow(0)
-    await display.update_selected_runs()
-    # Check that the metadata was set properly in the Metadata tab
-    text = display.ui.metadata_textedit.document().toPlainText()
-    assert "xafs_scan" in text
-
-
-async def test_1d_plot_signals(catalog, display):
-    # Check that the 1D plot was created
-    plot_widget = display.ui.plot_1d_view
-    plot_item = display.plot_1d_item
-    assert isinstance(plot_widget, PlotWidget)
-    assert isinstance(plot_item, PlotItem)
-    # Update the list of runs and see if the controls get updated
-    display.ui.run_tableview.selectColumn(0)
-    await display.update_selected_runs()
-    # Check signals in checkboxes
-    for combobox in [
-        display.ui.signal_y_combobox,
-        display.ui.signal_r_combobox,
-        display.ui.signal_x_combobox,
-    ]:
-        assert (
-            combobox.findText("energy_energy") > -1
-        ), f"energy_energy signal not in {combobox.objectName()}."
-
-
-# Warns: Task was destroyed but it is pending!
-async def test_1d_plot_signal_memory(display):
-    """Do we remember the signals that were previously selected."""
-    # Check that the 1D plot was created
-    plot_widget = display.ui.plot_1d_view
-    plot_item = display.plot_1d_item
-    assert isinstance(plot_widget, PlotWidget)
-    assert isinstance(plot_item, PlotItem)
-    # Update the list of runs and see if the controls get updated
-    display.ui.run_tableview.selectRow(1)
-    await display.update_selected_runs()
-    # Check signals in comboboxes
-    cb = display.ui.signal_y_combobox
-    assert cb.currentText() == "energy_energy"
-    cb.setCurrentIndex(1)
-    assert cb.currentText() == "energy_id_energy_readback"
-    # Update the combobox signals and make sure the text didn't change
-    await display.update_1d_signals()
-    assert cb.currentText() == "energy_id_energy_readback"
-
-
-# Warns: Task was destroyed but it is pending!
-async def test_1d_hinted_signals(catalog, display):
-    display.ui.plot_1d_hints_checkbox.setChecked(True)
-    # Check that the 1D plot was created
-    plot_widget = display.ui.plot_1d_view
-    plot_item = display.plot_1d_item
-    assert isinstance(plot_widget, PlotWidget)
-    assert isinstance(plot_item, PlotItem)
-    # Update the list of runs and see if the controls get updated
-    display.db.selected_runs = [run async for run in catalog.values()]
-    await display.update_1d_signals()
-    return
-    # Check signals in checkboxes
-    combobox = display.ui.signal_x_combobox
-    assert (
-        combobox.findText("energy_energy") > -1
-    ), f"hinted signal not in {combobox.objectName()}."
-    assert (
-        combobox.findText("It_net_counts") == -1
-    ), f"unhinted signal found in {combobox.objectName()}."
-
-
-async def test_update_1d_plot(catalog, display):
-    display.plot_1d_view.plot_runs = MagicMock()
-    display.plot_1d_view.autoRange = MagicMock()
-    display.ui.signal_r_checkbox.setChecked(True)
-    display.ui.logarithm_checkbox.setChecked(True)
-    display.ui.invert_checkbox.setChecked(True)
-    display.ui.gradient_checkbox.setChecked(True)
-    # Check the autorange combobox
-    display.ui.autorange_1d_checkbox.setChecked(True)
-    # Update the plots
-    display.plot_1d_view.plot_runs.reset_mock()
-    await display.update_1d_plot()
-    # Check that the data were added
-    display.plot_1d_view.plot_runs.assert_called_once()
-    assert display.plot_1d_view.plot_runs.call_args.kwargs == {
-        "xlabel": "energy_energy",
-        "ylabel": "∇ ln(I0_net_counts/It_net_counts)",
-    }
-    # Check that auto-range was called when done
-    assert display.plot_1d_view.autoRange.called
-
-
-def test_autorange_button(display, qtbot):
-    display.plot_1d_view = MagicMock()
-    display.ui.autorange_1d_button.click()
-    assert display.plot_1d_view.autoRange.called
-
-
-async def test_update_running_scan(display):
-    display.ui.plot_1d_view.plot_runs = MagicMock()
-    # Should not update if UID is wrong
-    await display.update_running_scan(uid="spam")
-    assert not display.plot_1d_view.plot_runs.called
-
-
-# Warns: Task was destroyed but it is pending!
-async def test_2d_plot_signals(catalog, display):
-    # Check that the 1D plot was created
-    plot_widget = display.ui.plot_2d_view
-    plot_item = display.plot_2d_item
-    assert isinstance(plot_widget, ImageView)
-    assert isinstance(plot_item, ImageItem)
-    # Update the list of runs and see if the controls get updated
-    display.db.selected_runs = [await catalog["85573831-f4b4-4f64-b613-a6007bf03a8d"]]
-    await display.update_2d_signals()
-    # Check signals in checkboxes
-    combobox = display.ui.signal_value_combobox
-    assert combobox.findText("It_net_counts") > -1
-
-
-async def test_update_2d_plot(catalog, display):
-    display.plot_2d_item.setRect = MagicMock()
-    # Load test data
-    run = await catalog["85573831-f4b4-4f64-b613-a6007bf03a8d"]
-    display.db.selected_runs = [run]
-    await display.update_1d_signals()
-    # Set the controls to describe the data we want to test
-    val_combobox = display.ui.signal_value_combobox
-    val_combobox.addItem("It_net_counts")
-    val_combobox.setCurrentText("It_net_counts")
-    display.ui.logarithm_checkbox_2d.setChecked(True)
-    display.ui.invert_checkbox_2d.setChecked(True)
-    display.ui.gradient_checkbox_2d.setChecked(True)
-    # Update the plots
-    await display.update_2d_plot()
-    # Determine what the image data should look like
-    expected_data = await run.__getitem__("It_net_counts", stream="primary")
-    expected_data = expected_data.reshape((5, 21)).T
-    # Check that the data were added
-    image = display.plot_2d_item.image
-    np.testing.assert_almost_equal(image, expected_data)
-    # Check that the axes were formatted correctly
-    axes = display.plot_2d_view.view.axes
-    xaxis = axes["bottom"]["item"]
-    yaxis = axes["left"]["item"]
-    assert xaxis.labelText == "aerotech_horiz"
-    assert yaxis.labelText == "aerotech_vert"
-    display.plot_2d_item.setRect.assert_called_with(-100, -80, 200, 160)
-
-
-async def test_update_multi_plot(catalog, display):
-    run = await catalog["7d1daf1d-60c7-4aa7-a668-d1cd97e5335f"]
-    expected_xdata = await run.__getitem__("energy_energy", stream="primary")
-    I0 = await run.__getitem__("I0_net_counts", stream="primary")
-    It = await run.__getitem__("It_net_counts", stream="primary")
-    expected_ydata = np.log(I0 / It)
-    expected_ydata = np.gradient(expected_ydata, expected_xdata)
-    # Configure signals
-    display.ui.multi_signal_x_combobox.addItem("energy_energy")
-    display.ui.multi_signal_x_combobox.setCurrentText("energy_energy")
-    display.multi_y_signals = ["energy_energy"]
-    display.db.selected_runs = [run]
-    # Update the plots
-    await display.update_multi_plot()
-    # Check that the data were added
-    # data_item = display._multiplot_items[0].listDataItems()[0]
-    # xdata, ydata = data_item.getData()
-    # np.testing.assert_almost_equal(xdata, expected_xdata)
-    # np.testing.assert_almost_equal(ydata, expected_ydata)
+    with qtbot.waitSignal(display.metadata_changed):
+        await display.update_selected_runs()
 
 
 def test_busy_hints_run_widgets(display):
@@ -429,6 +244,13 @@ def test_bss_channels(display, bss):
     assert display.esaf_channel.address == f"haven://{bss.esaf.esaf_id.name}"
 
 
+async def test_update_data_frames(display, qtbot):
+    display.ui.stream_combobox.addItem("primary")
+    display.ui.stream_combobox.setCurrentText("primary")
+    with qtbot.waitSignal(display.data_frames_changed):
+        await display.update_data_frames()
+
+
 def test_update_bss_filters(display):
     checkbox = display.ui.filter_current_proposal_checkbox
     combobox = display.ui.filter_proposal_combobox
@@ -456,6 +278,22 @@ async def test_stream_choices(display, tiled_client):
     combobox = display.ui.stream_combobox
     items = [combobox.itemText(idx) for idx in range(combobox.count())]
     assert items == ["primary", "baseline"]
+
+
+@pytest.mark.xfail
+async def test_retrieve_dataset(display):
+    slot = MagicMock()
+    await display.retrieve_dataset("ge_8element", slot, "testing")
+    assert slot.called
+
+
+async def test_update_running_scan(display, qtbot):
+    display.update_plots = AsyncMock()
+    await display.update_running_scan("not-the-real-uid")
+    assert not display.update_plots.called
+    # Now try again with some runs selected
+    display.ui.run_tableview.selectRow(0)
+    await display.update_selected_runs()
 
 
 # -----------------------------------------------------------------------------

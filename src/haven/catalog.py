@@ -1,16 +1,15 @@
 import asyncio
 import functools
 import logging
-import os
-import sqlite3
-import threading
 import warnings
+from collections.abc import Sequence
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
-from typing import Sequence
+from pathlib import Path
 
 import numpy as np
-from tiled.client import from_uri
+from tiled.client import from_profile
+from tiled.client.base import BaseClient
 from tiled.client.cache import Cache
 
 from ._iconfig import load_config
@@ -78,84 +77,47 @@ def with_thread_lock(fn):
     return wrapper
 
 
-class ThreadSafeCache(Cache):
-    """Equivalent to the regular cache, but thread-safe.
-
-    Ensures that sqlite3 is built with concurrency features, and
-    ensures that no two write operations happen concurrently.
-
-    """
-
-    def __init__(
-        self,
-        *args,
-        **kwargs,
-    ):
-        super().__init__(*args, **kwargs)
-        self._lock = threading.Lock()
-
-    def write_safe(self):
-        """
-        Check that it is safe to write.
-
-        SQLite is not threadsafe for concurrent _writes_.
-        """
-        is_main_thread = threading.current_thread().ident == self._owner_thread
-        sqlite_is_safe = sqlite3.threadsafety == 1
-        return is_main_thread or sqlite_is_safe
-
-    # Wrap the accessor methods so they wait for the lock
-    clear = with_thread_lock(Cache.clear)
-    set = with_thread_lock(Cache.set)
-    get = with_thread_lock(Cache.get)
-    delete = with_thread_lock(Cache.delete)
-
-
-DEFAULT_NODE = object()
+class DEFAULT:
+    pass
 
 
 def tiled_client(
-    catalog: str = DEFAULT_NODE,
-    uri: str = None,
-    cache_filepath=None,
-    structure_clients="numpy",
-):
-    """Load a tiled client for retrieving data from databses.
+    catalog: str | type[DEFAULT] | None = DEFAULT,
+    profile: str = "haven",
+    cache_filepath: Path | type[DEFAULT] | None = DEFAULT,
+    structure_clients: str = "numpy",
+) -> BaseClient:
+    """Load a Tiled client with some default options.
 
     Parameters
     ==========
     catalog
-      The node within the catalog to return, by default this will be
-      read from the config file. If ``None``, the root container will
-      be return containing all catalogs.
-    uri
-      The location of the tiled server, e.g. "http://localhost:8000".
+      If not None, load a specific catalog within the client. By
+      default, the iconfig.toml file will be consulted for the value
+      of ``tiled.default_catalog``.
+    profile
+      Use a specific Tiled profile. If not provided, the default Tiled
+      profile will be used.
     cache_filepath
-      Where to keep a local cache of tiled nodes.
-    structure_clients
-      "numpy" for immediate retrieval of data, "dask" for just-in-time
-      retrieval.
+      The path on which to store a cache of downloaded data. If
+      omitted, the iconfig.toml file will be consulted for the value
+      of ``tiled.cache_filepath``.
 
     """
-    tiled_config = load_config().get("tiled", {})
-    # Create a cache for saving local copies
-    if cache_filepath is None:
-        cache_filepath = tiled_config.get("cache_filepath", "")
-    if os.access(cache_filepath, os.W_OK):
-        cache = ThreadSafeCache(filepath=cache_filepath)
-    else:
-        warnings.warn(f"Cache file is not writable: {cache_filepath}")
-        cache = None
+    # Get default values from the database
+    tiled_config = load_config()["tiled"]
+    if cache_filepath is DEFAULT:
+        cache_filepath = tiled_config.get("cache_filepath")
+    if catalog is DEFAULT:
+        catalog = tiled_config.get("default_catalog")
     # Create the client
-    if uri is None:
-        uri = tiled_config["uri"]
-    api_key = tiled_config.get("api_key")
-    client_ = from_uri(uri, structure_clients, api_key=api_key)
-    if catalog is DEFAULT_NODE:
-        client_ = client_[tiled_config["default_catalog"]]
-    elif catalog is not None:
-        client_ = client_[catalog]
-    return client_
+    kw = {}
+    if cache_filepath is not None:
+        kw["cache"] = Cache(cache_filepath)
+    client = from_profile(profile, structure_clients=structure_clients, **kw)
+    if catalog is not None:
+        client = client[catalog]
+    return client
 
 
 class CatalogScan:
@@ -175,7 +137,7 @@ class CatalogScan:
         return list(self.container.keys())
 
     @run_in_executor
-    def _read_data(self, signals: Sequence | None, dataset: str):
+    def _read_data(self, signals: Sequence[str] | None, dataset: str):
         data = self.container[dataset]
         if signals is None:
             return data.read()
@@ -205,7 +167,8 @@ class CatalogScan:
 
     @run_in_executor
     def data_keys(self, stream: str = "primary"):
-        return self.container[f"{stream}/internal/events"].columns
+        data_keys = self.container[stream].metadata.get("data_keys")
+        return data_keys or {}
 
     async def hints(self, stream: str = "primary"):
         """Retrieve the data hints for this scan.
@@ -226,7 +189,10 @@ class CatalogScan:
         metadata = await self.metadata
         # Get hints for the independent (X)
         try:
-            independent = metadata["start"]["hints"]["dimensions"][0][0]
+            dimensions = metadata["start"]["hints"]["dimensions"]
+            independent = [
+                sig for signals, strm in dimensions if strm == stream for sig in signals
+            ]
         except (KeyError, IndexError):
             warnings.warn("Could not get independent hints")
         # Get hints for the dependent (X)
@@ -242,7 +208,6 @@ class CatalogScan:
         assert keys != "", "Metadata keys cannot be ''."
         container = self.container
         if keys is not None:
-            print(f"{container=}, {keys=}")
             container = container[keys]
         return container.metadata
 

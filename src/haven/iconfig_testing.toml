@@ -34,10 +34,8 @@ servers = ["fedorov.xray.aps.anl.gov:9092"]
 topic = "bluesky.documents.haven-dev"
 
 [tiled]
-uri = "http://localhost:8337/"
-default_catalog = "255id_testing"
-cache_filepath = "/tmp/tiled_cache/http_response_cache.db"
-api_key = "<tiled-secret-api-key-for-writing>"
+default_catalog = "testing"
+cache_filepath = "/tmp/tiled/http_response_cache.db"
 
 [database.databroker]
 catalog = "bluesky"
@@ -240,17 +238,27 @@ horizontal_prefix = "255idcVME:m25"
 #
 # Area detectors includes gigE vision cameras.
 
+[[ sim_detector ]]
+name = "sim_detector"
+prefix = "255idSimDet:"
+
+[[ camera ]]
+# An Aravis-based area detector
+name = "lerix_mono_flag"
+prefix = "255idARV3:"
+
+[[ eiger ]]
+name = "eiger_500k"
+prefix = "255idEiger:"
+
+# What follows is the style for threaded ophyd area detectors. This is
+# deprecated and will be removed in the future.
+
 [[ area_detector ]]
 name = "sim_det"
 prefix = "255idSimDet:"
 device_class = "SimDetector"
-
-# [lerix.lerix.rowland]
-
-# x_motor_pv = "255idVME:m1"
-# y_motor_pv = "255idVME:m2"
-# z_motor_pv = "255idVME:m3"
-# z1_motor_pv = "255idVME:m4"
+fake = false
 
 
 # Heaters and Furnaces
