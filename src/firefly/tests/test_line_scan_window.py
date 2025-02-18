@@ -80,28 +80,24 @@ async def test_step_size_calculation(display, qtbot):
 
     # Set num_points
     display.ui.scan_pts_spin_box.setValue(7)
-    qtbot.wait(10)
     assert (
         region.step_size_line_edit.text() == "1.6667"
     ), "Step size should be 1.6666 for 7 points from 0 to 10."
 
     # Change the number of points and verify step size updates
     display.ui.scan_pts_spin_box.setValue(3)
-    qtbot.wait(10)
     assert (
         region.step_size_line_edit.text() == "5"
     ), "Step size should be 5.0 for 3 points from 0 to 10."
 
     # Test invalid input
     region.start_line_edit.setText("Start..")
-    qtbot.wait(10)
     assert (
         region.step_size_line_edit.text() == "N/A"
     ), "Step size should be 'N/A' for invalid start input."
 
     # Test edge case: num_points = 1
     display.ui.scan_pts_spin_box.setValue(1)
-    qtbot.wait(10)
     assert (
         region.step_size_line_edit.text() == "N/A"
     ), "Step size should be 'N/A' for num_points = 1."
@@ -110,7 +106,6 @@ async def test_step_size_calculation(display, qtbot):
     region.start_line_edit.setText("0")
     region.stop_line_edit.setText("10")
     display.ui.scan_pts_spin_box.setValue(6)
-    qtbot.wait(10)
     assert (
         region.step_size_line_edit.text() == "2"
     ), "Step size should be 2.0 for 6 points from 0 to 10."
