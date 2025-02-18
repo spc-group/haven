@@ -68,7 +68,6 @@ async def test_step_size_calculation(display, qtbot):
     region_0.start_line_edit.setText("0")
     region_0.stop_line_edit.setText("10")
     region_0.scan_pts_spin_box.setValue(12)
-    qtbot.wait(10)
 
     assert (
         region_0.step_size_line_edit.text() == "0.90909"
@@ -78,7 +77,6 @@ async def test_step_size_calculation(display, qtbot):
     region_1.start_line_edit.setText("5")
     region_1.stop_line_edit.setText("15")
     region_1.scan_pts_spin_box.setValue(3)
-    qtbot.wait(10)
 
     assert (
         region_1.step_size_line_edit.text() == "5"
@@ -86,13 +84,11 @@ async def test_step_size_calculation(display, qtbot):
 
     # Test invalid input for Region 0
     region_0.start_line_edit.setText("invalid")
-    qtbot.wait(10)
     assert (
         region_0.step_size_line_edit.text() == "N/A"
     ), "Step size should be 'N/A' for invalid start input in Region 0."
 
     region_1.scan_pts_spin_box.setValue(1)
-    qtbot.wait(10)
     assert (
         region_1.step_size_line_edit.text() == "N/A"
     ), "Step size should be 'N/A' for num_points = 1 in Region 1."
@@ -101,7 +97,6 @@ async def test_step_size_calculation(display, qtbot):
     region_0.start_line_edit.setText("10")
     region_0.stop_line_edit.setText("30")
     region_0.scan_pts_spin_box.setValue(1)
-    qtbot.wait(10)
 
     assert (
         region_0.step_size_line_edit.text() == "N/A"
