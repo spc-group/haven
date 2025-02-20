@@ -2,11 +2,6 @@
 
 import logging
 
-from apstools.devices import PVPositionerSoftDone
-from apstools.synApps.db_2slit import Optics2Slit1D, Optics2Slit2D_HV
-from ophyd import Component as Cpt
-from ophyd import DerivedSignal, Device, EpicsSignal
-from ophyd import FormattedComponent as FCpt
 from ophyd_async.core import StandardReadable
 
 from .motor import Motor
@@ -42,6 +37,7 @@ class ApertureSlits(StandardReadable):
     Based on the 25-ID-A whitebeam slits.
 
     """
+
     _ophyd_labels_ = {"slits"}
 
     def __init__(

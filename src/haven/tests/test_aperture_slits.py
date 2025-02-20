@@ -17,13 +17,29 @@ def test_signals(slits):
     assert hasattr(slits, "horizontal")
     assert hasattr(slits.horizontal, "center")
     # Test pseudo motors controlled through the transform records
-    assert slits.horizontal.center.user_readback.source == "mock+ca://255ida:slits:US:hCenter.RBV"
-    assert slits.vertical.center.user_readback.source == "mock+ca://255ida:slits:US:vCenter.RBV"
-    assert slits.horizontal.size.user_readback.source == "mock+ca://255ida:slits:US:hSize.RBV"
-    assert slits.vertical.size.user_readback.source == "mock+ca://255ida:slits:US:vSize.RBV"
+    assert (
+        slits.horizontal.center.user_readback.source
+        == "mock+ca://255ida:slits:US:hCenter.RBV"
+    )
+    assert (
+        slits.vertical.center.user_readback.source
+        == "mock+ca://255ida:slits:US:vCenter.RBV"
+    )
+    assert (
+        slits.horizontal.size.user_readback.source
+        == "mock+ca://255ida:slits:US:hSize.RBV"
+    )
+    assert (
+        slits.vertical.size.user_readback.source
+        == "mock+ca://255ida:slits:US:vSize.RBV"
+    )
     # Check the derived signals are simple pass-throughs to the user readback/setpoint
-    assert slits.horizontal.size.readback.source == "mock+ca://255ida:slits:US:hSize.RBV"
-    assert slits.horizontal.size.setpoint.source == "mock+ca://255ida:slits:US:hSize.VAL"
+    assert (
+        slits.horizontal.size.readback.source == "mock+ca://255ida:slits:US:hSize.RBV"
+    )
+    assert (
+        slits.horizontal.size.setpoint.source == "mock+ca://255ida:slits:US:hSize.VAL"
+    )
 
 
 async def test_readable(slits):
@@ -34,36 +50,37 @@ async def test_readable(slits):
     assert "whitebeam_slits-vertical-size" in reading.keys()
     config = await slits.read_configuration()
     expected_config_signals = [
-        'whitebeam_slits-vertical-size-user_offset_dir',
-        'whitebeam_slits-vertical-size-offset_freeze_switch',
-        'whitebeam_slits-vertical-size-description',
-        'whitebeam_slits-vertical-size-user_offset',
-        'whitebeam_slits-vertical-size-offset',
-        'whitebeam_slits-vertical-size-motor_egu',
-        'whitebeam_slits-vertical-size-velocity',
-        'whitebeam_slits-vertical-center-user_offset_dir',
-        'whitebeam_slits-vertical-center-offset_freeze_switch',
-        'whitebeam_slits-vertical-center-description',
-        'whitebeam_slits-vertical-center-user_offset',
-        'whitebeam_slits-vertical-center-offset',
-        'whitebeam_slits-vertical-center-motor_egu',
-        'whitebeam_slits-vertical-center-velocity',
-        'whitebeam_slits-horizontal-size-user_offset_dir',
-        'whitebeam_slits-horizontal-size-offset_freeze_switch',
-        'whitebeam_slits-horizontal-size-description',
-        'whitebeam_slits-horizontal-size-user_offset',
-        'whitebeam_slits-horizontal-size-offset',
-        'whitebeam_slits-horizontal-size-motor_egu',
-        'whitebeam_slits-horizontal-size-velocity',
-        'whitebeam_slits-horizontal-center-user_offset_dir',
-        'whitebeam_slits-horizontal-center-offset_freeze_switch',
-        'whitebeam_slits-horizontal-center-description',
-        'whitebeam_slits-horizontal-center-user_offset',
-        'whitebeam_slits-horizontal-center-offset',
-        'whitebeam_slits-horizontal-center-motor_egu',
-        'whitebeam_slits-horizontal-center-velocity'
+        "whitebeam_slits-vertical-size-user_offset_dir",
+        "whitebeam_slits-vertical-size-offset_freeze_switch",
+        "whitebeam_slits-vertical-size-description",
+        "whitebeam_slits-vertical-size-user_offset",
+        "whitebeam_slits-vertical-size-offset",
+        "whitebeam_slits-vertical-size-motor_egu",
+        "whitebeam_slits-vertical-size-velocity",
+        "whitebeam_slits-vertical-center-user_offset_dir",
+        "whitebeam_slits-vertical-center-offset_freeze_switch",
+        "whitebeam_slits-vertical-center-description",
+        "whitebeam_slits-vertical-center-user_offset",
+        "whitebeam_slits-vertical-center-offset",
+        "whitebeam_slits-vertical-center-motor_egu",
+        "whitebeam_slits-vertical-center-velocity",
+        "whitebeam_slits-horizontal-size-user_offset_dir",
+        "whitebeam_slits-horizontal-size-offset_freeze_switch",
+        "whitebeam_slits-horizontal-size-description",
+        "whitebeam_slits-horizontal-size-user_offset",
+        "whitebeam_slits-horizontal-size-offset",
+        "whitebeam_slits-horizontal-size-motor_egu",
+        "whitebeam_slits-horizontal-size-velocity",
+        "whitebeam_slits-horizontal-center-user_offset_dir",
+        "whitebeam_slits-horizontal-center-offset_freeze_switch",
+        "whitebeam_slits-horizontal-center-description",
+        "whitebeam_slits-horizontal-center-user_offset",
+        "whitebeam_slits-horizontal-center-offset",
+        "whitebeam_slits-horizontal-center-motor_egu",
+        "whitebeam_slits-horizontal-center-velocity",
     ]
     assert sorted(list(config.keys())) == sorted(expected_config_signals)
+
 
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
