@@ -27,7 +27,6 @@ from haven.devices.ion_chamber import IonChamber
 from haven.devices.monochromator import Monochromator
 from haven.devices.robot import Robot
 from haven.devices.shutter import PssShutter
-from haven.devices.slits import ApertureSlits, BladeSlits
 from haven.devices.xia_pfcu import PFCUFilter, PFCUFilterBank
 
 top_dir = Path(__file__).parent.resolve()
@@ -77,13 +76,13 @@ async def ion_chamber(sim_registry):
     return ion_chamber
 
 
-@pytest.fixture()
-def blade_slits(sim_registry):
-    """A fake set of slits using the 4-blade setup."""
-    FakeSlits = make_fake_device(BladeSlits)
-    slits = FakeSlits(prefix="255idc:KB_slits", name="kb_slits", labels={"slits"})
-    sim_registry.register(slits)
-    return slits
+# @pytest.fixture()
+# def blade_slits(sim_registry):
+#     """A fake set of slits using the 4-blade setup."""
+#     FakeSlits = make_fake_device(BladeSlits)
+#     slits = FakeSlits(prefix="255idc:KB_slits", name="kb_slits", labels={"slits"})
+#     sim_registry.register(slits)
+#     return slits
 
 
 class SimpleBeamlineManager(BeamlineManager):
@@ -114,21 +113,21 @@ def beamline_manager(sim_registry):
     return manager
 
 
-@pytest.fixture()
-def aperture_slits(sim_registry):
-    """A fake slit assembling using the rotary aperture design."""
-    FakeSlits = make_fake_device(ApertureSlits)
-    slits = FakeSlits(
-        prefix="255ida:slits:US:",
-        name="whitebeam_slits",
-        pitch_motor="m3",
-        yaw_motor="m4",
-        horizontal_motor="m1",
-        diagonal_motor="m2",
-        labels={"slits"},
-    )
-    sim_registry.register(slits)
-    return slits
+# @pytest.fixture()
+# def aperture_slits(sim_registry):
+#     """A fake slit assembling using the rotary aperture design."""
+#     FakeSlits = make_fake_device(ApertureSlits)
+#     slits = FakeSlits(
+#         prefix="255ida:slits:US:",
+#         name="whitebeam_slits",
+#         pitch_motor="m3",
+#         yaw_motor="m4",
+#         horizontal_motor="m1",
+#         diagonal_motor="m2",
+#         labels={"slits"},
+#     )
+#     sim_registry.register(slits)
+#     return slits
 
 
 @pytest.fixture()

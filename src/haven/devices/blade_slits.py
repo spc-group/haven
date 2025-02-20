@@ -2,64 +2,54 @@
 
 import logging
 
-from apstools.devices import PVPositionerSoftDone
-from apstools.synApps.db_2slit import Optics2Slit1D, Optics2Slit2D_HV
-from ophyd import Component as Cpt
-from ophyd import DerivedSignal, Device, EpicsSignal
-from ophyd import FormattedComponent as FCpt
-from ophyd_async.core import StandardReadable
+from ophyd_async.core import StandardReadable, StandardReadableFormat
+from ophyd_async.epics.core import epics_signal_r, epics_signal_rw
 
-from .motor import Motor
+from haven.positioner import Positioner
 
 log = logging.getLogger(__name__)
 
 
-# Make *readback* and *setpoint* available to match other slits
-class SlitMotor(Motor):
-    @property
-    def readback(self):
-        return self.user_readback
-
-    @property
-    def setpoint(self):
-        return self.user_setpoint
-
-
-class SlitAxis(StandardReadable):
-    def __init__(self, prefix: str, name: str = ""):
+class SlitsPositioner(Positioner):
+    def __init__(self, prefix: str, readback: str, name: str = ""):
+        self.setpoint = epics_signal_rw(float, f"{prefix}.VAL")
         with self.add_children_as_readables():
-            self.size = SlitMotor(f"{prefix}Size")
-            self.center = SlitMotor(f"{prefix}Center")
+            self.readback = epics_signal_r(float, readback)
+        with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
+            self.units = epics_signal_rw(float, f"{prefix}.EGU")
+            self.precision = epics_signal_rw(float, f"{prefix}.PREC")
         super().__init__(name=name)
 
 
-class ApertureSlits(StandardReadable):
-    """A rotating aperture that functions like a set of slits.
+class BladePair(StandardReadable):
+    """A set of blades controlling beam size in one direction."""
 
-    Unlike the blade slits, there are no independent parts to move,
-    so each axis only has center and size.
+    def __init__(self, prefix: str, name: str = ""):
+        with self.add_children_as_readables():
+            self.size = SlitsPositioner(f"{prefix}size", readback=f"{prefix}t2.C")
+            self.center = SlitsPositioner(f"{prefix}center", readback=f"{prefix}t2.D")
+        super().__init__(name=name)
 
-    Based on the 25-ID-A whitebeam slits.
+
+class BladeSlits(StandardReadable):
+    """Set of slits with blades that move in and out to control beam
+    size.
 
     """
+
     _ophyd_labels_ = {"slits"}
 
-    def __init__(
-        self,
-        prefix: str,
-        name: str = "",
-    ):
-        # Individual slit directions
+    def __init__(self, prefix: str, name: str = ""):
         with self.add_children_as_readables():
-            self.horizontal = SlitAxis(f"{prefix}h")
-            self.vertical = SlitAxis(f"{prefix}v")
+            self.horizontal = BladePair(f"{prefix}H")
+            self.vertical = BladePair(f"{prefix}V")
         super().__init__(name=name)
 
 
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov
-# :copyright: Copyright © 2023, UChicago Argonne, LLC
+# :copyright: Copyright © 2025, UChicago Argonne, LLC
 #
 # Distributed under the terms of the 3-Clause BSD License
 #
