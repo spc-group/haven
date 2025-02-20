@@ -76,15 +76,6 @@ async def ion_chamber(sim_registry):
     return ion_chamber
 
 
-# @pytest.fixture()
-# def blade_slits(sim_registry):
-#     """A fake set of slits using the 4-blade setup."""
-#     FakeSlits = make_fake_device(BladeSlits)
-#     slits = FakeSlits(prefix="255idc:KB_slits", name="kb_slits", labels={"slits"})
-#     sim_registry.register(slits)
-#     return slits
-
-
 class SimpleBeamlineManager(BeamlineManager):
     """For a fake class, we need to un-override __new__ to just make
     itself.
@@ -111,23 +102,6 @@ def beamline_manager(sim_registry):
     )
     sim_registry.register(manager)
     return manager
-
-
-# @pytest.fixture()
-# def aperture_slits(sim_registry):
-#     """A fake slit assembling using the rotary aperture design."""
-#     FakeSlits = make_fake_device(ApertureSlits)
-#     slits = FakeSlits(
-#         prefix="255ida:slits:US:",
-#         name="whitebeam_slits",
-#         pitch_motor="m3",
-#         yaw_motor="m4",
-#         horizontal_motor="m1",
-#         diagonal_motor="m2",
-#         labels={"slits"},
-#     )
-#     sim_registry.register(slits)
-#     return slits
 
 
 @pytest.fixture()
