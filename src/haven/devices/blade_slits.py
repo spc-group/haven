@@ -61,7 +61,8 @@ def setup_blade_slits(
 ):
     """Configures the blade slit devices for normal operation.
 
-    - Set each position precision to ``0`` to match the motor precision.
+    - Set each position precision to *precision* to match the motor
+      precision.
 
     Parameters
     ==========
