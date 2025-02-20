@@ -1,6 +1,6 @@
 import pytest
 
-from haven.devices import BladeSlits
+from haven.devices import BladeSlits, setup_blade_slits
 
 
 @pytest.fixture()
@@ -36,6 +36,14 @@ async def test_readback_name(slits):
 async def test_readings(slits):
     reading = await slits.read()
     assert slits.vertical.size.readback.name in reading.keys()
+
+
+async def test_setup_plan(slits):
+    msgs = list(setup_blade_slits([slits], precision=3))
+    assert len(msgs) == 5  # 4 "sets" and a "wait"
+    assert msgs[0].command == "set"
+    assert msgs[0].obj is slits.horizontal.center.precision
+    assert msgs[0].args == (3,)
 
 
 # -----------------------------------------------------------------------------

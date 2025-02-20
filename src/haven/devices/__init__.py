@@ -1,5 +1,5 @@
 from .aperture_slits import ApertureSlits  # noqa: F401
-from .blade_slits import BladeSlits  # noqa: F401
+from .blade_slits import BladeSlits, setup_blade_slits  # noqa: F401
 from .detectors.aravis import AravisDetector  # noqa: F401
 from .detectors.eiger import EigerDetector  # noqa: F401
 from .detectors.sim_detector import SimDetector  # noqa: F401
