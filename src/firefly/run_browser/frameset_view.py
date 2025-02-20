@@ -202,12 +202,19 @@ class FramesetView(QtWidgets.QWidget):
         else:
             raise RuntimeError(f"Malformed input: {datasets}")
         self.update_dimension_widgets(shape=dataset.shape)
-        dataset = self.reduce_dimensions(dataset)
+        try:
+            dataset = self.reduce_dimensions(dataset)
+        except ValueError:
+            # These are usually transient states when signals are being swapped
+            self.enable(False)
+            return
         # Determine how to plot the time series values
         tsignal = self.ui.time_signal_combobox.currentText()
         try:
             tvals = self.data_frames[tsignal].values
-        except TypeError:
+            assert dataset.ndim == 3
+            assert tvals.shape[0] == dataset.shape[0]
+        except (TypeError, AssertionError):
             tvals = None
         # Plot the images
         if 2 <= dataset.ndim <= 3:

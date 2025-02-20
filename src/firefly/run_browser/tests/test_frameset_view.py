@@ -190,3 +190,23 @@ def test_time_signal(view):
     assert plot_mock.called
     xvals = plot_mock.call_args[1]["xvals"]
     np.testing.assert_array_equal(xvals, df["I0-net_current"].values)
+
+
+def test_time_signal_shape_mismatch(view):
+    """What happens if the time signal has a different shape from the dataset?"""
+    df = pd.DataFrame(
+        {
+            "I0-net_current": np.linspace(0, 100, num=5),
+        }
+    )
+    view.stash_data_frames({"": df})
+    view.ui.time_signal_combobox.addItem("I0-net_current")
+    view.ui.time_signal_combobox.setCurrentText("I0-net_current")
+    plot_mock = MagicMock()
+    view.ui.frame_view.setImage = plot_mock
+    # Code under test
+    view.plot_datasets({"": np.ones(shape=(12, 10, 15))})
+    # Asserts
+    assert plot_mock.called
+    xvals = plot_mock.call_args[1]["xvals"]
+    assert xvals is None

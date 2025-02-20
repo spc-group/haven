@@ -6,7 +6,6 @@ from pathlib import Path
 
 import httpx
 import pydm
-import pyqtgraph as pg
 import qtawesome as qta
 from ophyd_async.core import NotConnected
 from ophydregistry import Registry
