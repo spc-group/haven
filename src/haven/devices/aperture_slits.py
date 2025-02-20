@@ -6,6 +6,8 @@ from ophyd_async.core import StandardReadable
 
 from .motor import Motor
 
+__all__ = ["ApertureSlits", "SlitAxis"]
+
 log = logging.getLogger(__name__)
 
 

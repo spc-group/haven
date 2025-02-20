@@ -7,6 +7,8 @@ from ophyd_async.epics.core import epics_signal_r, epics_signal_rw
 
 from haven.positioner import Positioner
 
+__all__ = ["BladeSlits", "BladePair", "SlitsPositioner"]
+
 log = logging.getLogger(__name__)
 
 
