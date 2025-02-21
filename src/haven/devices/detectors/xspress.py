@@ -164,6 +164,7 @@ class Xspress3Detector(AreaDetector):
         fileio_suffix="HDF1:",
         name: str = "",
         config_sigs: Sequence[SignalR] = (),
+        plugins: dict[str, adcore.NDPluginBaseIO] | None = None,
     ):
         # Per-element MCA devices
         try:
@@ -173,30 +174,28 @@ class Xspress3Detector(AreaDetector):
         self.elements = DeviceVector(
             {idx: XspressElement(prefix, element_index=idx) for idx in elements}
         )
-        # Area detector IO devices
-        self.driver = XspressDriverIO(prefix + drv_suffix)
-        self.fileio = adcore.NDFileHDFIO(prefix + fileio_suffix)
-
-        self.plugins = {"hdf": self.fileio}
-
-        if path_provider is None:
-            path_provider = default_path_provider()
         # Extra configuration signals
         self.ev_per_bin, _ = soft_signal_r_and_setter(float, initial_value=ev_per_bin)
-
+        # Area detector IO and control
+        driver = XspressDriverIO(f"{prefix}{drv_suffix}")
+        controller = XspressController(driver)
+        fileio = adcore.NDFileHDFIO(f"{prefix}{fileio_suffix}")
+        if path_provider is None:
+            path_provider = default_path_provider()
+        writer = adcore.ADHDFWriter(
+            fileio=fileio,
+            path_provider=path_provider,
+            name_provider=lambda: self.name,
+            dataset_describer=XspressDatasetDescriber(driver),
+            plugins=plugins,
+        )
         super().__init__(
-            controller=XspressController(self.driver),
-            writer=adcore.ADHDFWriter(
-                fileio=self.fileio,
-                path_provider=path_provider,
-                name_provider=lambda: self.name,
-                dataset_describer=XspressDatasetDescriber(self.driver),
-                plugins=self.plugins,
-            ),
-            plugins=self.plugins,
+            controller=controller,
+            writer=writer,
+            plugins=plugins,
             config_sigs=(
-                self.driver.acquire_period,
-                self.driver.acquire_time,
+                driver.acquire_period,
+                driver.acquire_time,
                 self.ev_per_bin,
                 *config_sigs,
             ),
