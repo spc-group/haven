@@ -170,10 +170,6 @@ prefix = "vme_crate_ioc:KB"
 # A single rotating aperture slit, like the 25-ID whitebeam slits
 name = "whitebeam_slits"
 prefix = "255ida:slits:US:"
-pitch_motor = "m33"
-yaw_motor = "m34"
-horizontal_motor = "m35"
-diagonal_motor = "m36"
 
 
 # KB Mirrors
