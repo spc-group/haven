@@ -18,7 +18,7 @@ async def camera(sim_registry):
 async def test_camera_trigger_source_choices(camera):
     """Confirm the camera device has the right signals.
 
-    Solves this inital error received when using detaul AravisDetector.
+    Solves this inital error received when using upstream AravisDetector.
 
     > drv: NotConnected:
     >     trigger_source: TypeError: 25idcARV4:cam1:TriggerSource_RBV has choices ('Software', 'Line1', 'Line3', 'Action1'), which is not a superset of SubsetEnum['Freerun', 'Line1'].
