@@ -53,6 +53,11 @@ async def test_camera_signals(camera):
     desc = await camera.fileio.data_type.describe()
     hdf_source = desc["s255id-gige-A-fileio-data_type"]["source"]
     assert hdf_source == "mock+ca://255idgigeA:HDF1:DataType_RBV"
+    # Check a few additional signals needed for live viewing
+    assert camera.driver.gain.source == "mock+ca://255idgigeA:cam1:Gain_RBV"
+    assert camera.driver.gain_auto.source == "mock+ca://255idgigeA:cam1:GainAuto_RBV"
+    assert camera.driver.acquire_time_auto.source == "mock+ca://255idgigeA:cam1:ExposureAuto_RBV"
+
 
 
 # -----------------------------------------------------------------------------

@@ -13,7 +13,7 @@ class AravisTriggerSource(SubsetEnum):
     LINE1 = "Line1"
 
 
-class AutoGainMode(SubsetEnum):
+class AutoMode(SubsetEnum):
     OFF = "Off"
     ONCE = "Once"
     CONTINUOUS = "Continuous"
@@ -35,8 +35,17 @@ class AravisDetector(AravisDetectorBase):
             AravisTriggerSource,  # type: ignore
             f"{prefix}cam1:TriggerSource",
         )
+        self.driver.gain = epics_signal_rw_rbv(
+            float,  # type: ignore
+            f"{prefix}cam1:Gain",
+        )
         self.driver.gain_auto = epics_signal_rw_rbv(
-            AutoGainMode,  # type: ignore
+            AutoMode,  # type: ignore
             f"{prefix}cam1:GainAuto",
         )
+        self.driver.acquire_time_auto = epics_signal_rw_rbv(
+            AutoMode,  # type: ignore
+            f"{prefix}cam1:ExposureAuto",
+        )
+
         self.set_name(self.name)
