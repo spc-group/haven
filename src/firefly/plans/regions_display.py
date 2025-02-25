@@ -51,8 +51,9 @@ class PlanDisplay(display.FireflyDisplay):
         if len(detectors) == 0:
             detector_time = float("nan")
         else:
-            detector_time = max([await self._get_time(det) for det in detectors])
-
+            detector_time = max(
+                await asyncio.gather(*[self._get_time(det) for det in detectors])
+            )
         # Calculate time per scan
         total_time_per_scan = self.time_per_scan(detector_time)
         total_time_per_scan, total_time = self.set_time_label(total_time_per_scan)
