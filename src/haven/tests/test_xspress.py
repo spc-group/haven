@@ -105,6 +105,8 @@ async def test_stage_ndattributes(detector):
     set_mock_value(detector.driver.number_of_elements, num_elem)
     set_mock_value(detector.driver.nd_attributes_file, "XSP3.xml")
     num_params = 1
+    set_mock_value(detector.driver.number_of_elements, num_elem)
+    set_mock_value(detector.driver.nd_attributes_file, "XSP3.xml")
     await detector.stage()
     xml_mock = get_mock_put(detector.driver.nd_attributes_file)
     assert xml_mock.called
