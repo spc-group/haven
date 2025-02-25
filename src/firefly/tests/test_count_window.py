@@ -54,7 +54,7 @@ async def test_time_calculator(display, sim_registry, ion_chamber):
     assert display.ui.label_sec_total.text() == "38.4"
 
 
-def test_count_plan_queued(display, qtbot, sim_registry):
+def test_count_plan_queued(display, qtbot):
     display.ui.run_button.setEnabled(True)
     display.ui.num_spinbox.setValue(5)
     display.ui.delay_spinbox.setValue(0.5)
@@ -76,7 +76,7 @@ def test_count_plan_queued(display, qtbot, sim_registry):
         qtbot.mouseClick(display.ui.run_button, QtCore.Qt.LeftButton)
 
 
-def test_count_plan_metadata(display, qtbot, sim_registry):
+def test_count_plan_metadata(display, qtbot):
     display.ui.run_button.setEnabled(True)
     display.ui.num_spinbox.setValue(5)
     # set up meta data
