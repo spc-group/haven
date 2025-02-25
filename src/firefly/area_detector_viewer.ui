@@ -111,7 +111,7 @@
                   <string/>
                  </property>
                  <property name="channel" stdset="0">
-                  <string>haven://${AD}.drv.acquire_time</string>
+                  <string>haven://${AD}.driver.acquire_time</string>
                  </property>
                 </widget>
                </item>
@@ -145,7 +145,7 @@
                   <string/>
                  </property>
                  <property name="channel" stdset="0">
-                  <string>haven://${AD}.drv.gain</string>
+                  <string>haven://${AD}.driver.gain</string>
                  </property>
                 </widget>
                </item>
@@ -186,7 +186,7 @@
                 <string/>
                </property>
                <property name="channel" stdset="0">
-                <string>haven://${AD}.drv.DetectorState_RBV</string>
+                <string>haven://${AD}.driver.detector_state</string>
                </property>
               </widget>
              </item>
@@ -207,7 +207,7 @@
                   <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                  </property>
                  <property name="channel" stdset="0">
-                  <string>haven://${AD}.hdf.array_size_y</string>
+                  <string>haven://${AD}.fileio.array_size0</string>
                  </property>
                 </widget>
                </item>
@@ -230,7 +230,7 @@
                   <string>1224</string>
                  </property>
                  <property name="channel" stdset="0">
-                  <string>haven://${AD}.hdf.array_size_x</string>
+                  <string>haven://${AD}.fileio.array_size1</string>
                  </property>
                 </widget>
                </item>
@@ -270,10 +270,10 @@
                   <string>Auto</string>
                  </property>
                  <property name="channel" stdset="0">
-                  <string>haven://${AD}.drv.acquire_time_auto</string>
+                  <string>haven://${AD}.driver.acquire_time_auto</string>
                  </property>
                  <property name="pressValue" stdset="0">
-                  <string>1</string>
+                  <string>ONCE</string>
                  </property>
                 </widget>
                </item>
@@ -283,10 +283,10 @@
                   <string>Continuous</string>
                  </property>
                  <property name="channel" stdset="0">
-                  <string>haven://${AD}.drv.acquire_time_auto</string>
+                  <string>haven://${AD}.driver.acquire_time_auto</string>
                  </property>
                  <property name="pressValue" stdset="0">
-                  <string>2</string>
+                  <string>CONTINUOUS</string>
                  </property>
                 </widget>
                </item>
@@ -333,10 +333,10 @@
                   <string>Auto</string>
                  </property>
                  <property name="channel" stdset="0">
-                  <string>haven://${AD}.drv.gain_auto</string>
+                  <string>haven://${AD}.driver.gain_auto</string>
                  </property>
                  <property name="pressValue" stdset="0">
-                  <string>1</string>
+                  <string>ONCE</string>
                  </property>
                 </widget>
                </item>
@@ -346,10 +346,10 @@
                   <string>Continuous</string>
                  </property>
                  <property name="channel" stdset="0">
-                  <string>haven://${AD}.drv.gain_auto</string>
+                  <string>haven://${AD}.driver.gain_auto</string>
                  </property>
                  <property name="pressValue" stdset="0">
-                  <string>2</string>
+                  <string>CONTINUOUS</string>
                  </property>
                 </widget>
                </item>
@@ -377,7 +377,7 @@
                 <bool>false</bool>
                </property>
                <property name="channel" stdset="0">
-                <string>haven://${AD}.drv.acquire</string>
+                <string>haven://${AD}.driver.acquire</string>
                </property>
                <property name="passwordProtected" stdset="0">
                 <bool>false</bool>
@@ -395,7 +395,7 @@
                 <string>Are you sure you want to proceed?</string>
                </property>
                <property name="pressValue" stdset="0">
-                <string>1</string>
+                <string>ON</string>
                </property>
                <property name="releaseValue" stdset="0">
                 <string>None</string>
@@ -420,10 +420,10 @@
                 <string>[{&quot;name&quot;: &quot;enable_acquire_buttons&quot;, &quot;property&quot;: &quot;Enable&quot;, &quot;initial_value&quot;: &quot;&quot;, &quot;expression&quot;: &quot;ch[0] == 1&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;${PREFIX}cam1:Acquire&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}]}]</string>
                </property>
                <property name="channel" stdset="0">
-                <string>haven://${AD}.drv.acquire</string>
+                <string>haven://${AD}.driver.acquire</string>
                </property>
                <property name="pressValue" stdset="0">
-                <string>0</string>
+                <string>OFF</string>
                </property>
               </widget>
              </item>
@@ -517,7 +517,7 @@
              </widget>
              <widget class="QWidget" name="tab_8">
               <attribute name="title">
-               <string>Datetime</string>
+               <string>Cursor 3</string>
               </attribute>
               <layout class="QVBoxLayout" name="verticalLayout_4">
                <item>
