@@ -214,7 +214,7 @@ class XafsScanRegion(QObject):
         self.time_calculation_signal.emit()
 
 
-class XafsScanDisplay(regions_display.PlanDisplay, display.FireflyDisplay):
+class XafsScanDisplay(regions_display.PlanDisplay):
     min_energy = 4000
     max_energy = 33000
 

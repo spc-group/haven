@@ -2,13 +2,12 @@ import logging
 
 from bluesky_queueserver_api import BPlan
 
-from firefly import display
 from firefly.plans import regions_display
 
 log = logging.getLogger()
 
 
-class CountDisplay(regions_display.PlanDisplay, display.FireflyDisplay):
+class CountDisplay(regions_display.PlanDisplay):
 
     async def update_devices(self, registry):
         """Set available components in the device list."""
@@ -46,7 +45,6 @@ class CountDisplay(regions_display.PlanDisplay, display.FireflyDisplay):
         # repeat scans
         for i in range(repeat_scan_num):
             self.queue_item_submitted.emit(item)
-        print(item)
 
     def ui_filename(self):
         return "plans/count.ui"
