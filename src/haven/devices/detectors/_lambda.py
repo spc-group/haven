@@ -1,6 +1,6 @@
 from collections.abc import Sequence
 
-from ophyd_async.core import PathProvider, SignalR, StrictEnum
+from ophyd_async.core import PathProvider, SignalR, StrictEnum, SubsetEnum
 from ophyd_async.epics import adcore
 from ophyd_async.epics.adcore import ADBaseController, AreaDetector
 from ophyd_async.epics.core import epics_signal_rw_rbv
@@ -15,7 +15,13 @@ class OperatingMode(StrictEnum):
     TWENTY_FOUR_BIT = "24-Bit"
 
 
+class LambdaImageMode(SubsetEnum):
+    SINGLE = "Single"
+    MULTIPLE = "Multiple"
+
+
 class LambdaDriverIO(adcore.ADBaseIO):
+
     def __init__(self, prefix, name=""):
         self.operating_mode = epics_signal_rw_rbv(
             OperatingMode, f"{prefix}OperatingMode"
@@ -24,13 +30,18 @@ class LambdaDriverIO(adcore.ADBaseIO):
         self.gating_mode = epics_signal_rw_rbv(bool, f"{prefix}GatingMode")
         self.charge_summing = epics_signal_rw_rbv(bool, f"{prefix}ChargeSumming")
         self.energy_threshold = epics_signal_rw_rbv(float, f"{prefix}EnergyThreshold")
-        self.dual_threshold = epics_signal_rw_rbv(bool, f"{prefix}DualThreshold")
+        self.dual_threshold = epics_signal_rw_rbv(float, f"{prefix}DualThreshold")
         super().__init__(prefix=prefix, name=name)
+        # Our lambda's do not support all image modes
+        self.image_mode = epics_signal_rw_rbv(LambdaImageMode, f"{prefix}ImageMode")
+        self.set_name(self.name)
 
 
 class LambdaController(ADBaseController):
     def get_deadtime(self, exposure: float | None) -> float:
-        raise NotImplementedError("Read deadtime from signal")
+        # From manual: No readout time in 12-bit, 6-bit and1-bit mode,
+        # 1 ms in 24-bit mode
+        return 1e-3
 
 
 class LambdaDetector(AreaDetector):
