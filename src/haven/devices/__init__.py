@@ -1,3 +1,4 @@
+from .detectors._lambda import LambdaDetector  # noqa: F401
 from .detectors.aravis import AravisDetector  # noqa: F401
 from .detectors.eiger import EigerDetector  # noqa: F401
 from .detectors.sim_detector import SimDetector  # noqa: F401

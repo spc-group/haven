@@ -91,6 +91,7 @@ beamline = HavenInstrument(
         "high_heat_load_mirror": HighHeatLoadMirror,
         "ion_chamber": IonChamber,
         "kb_mirrors": KBMirrors,
+        "lambda": devices.LambdaDetector,
         "motor": Motor,
         "pfcu4": PFCUFilterBank,
         "pss_shutter": PssShutter,
