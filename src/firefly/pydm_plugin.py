@@ -162,6 +162,7 @@ class HavenPlugin(SignalPlugin):
     def connection_class(channel, address, protocol):
         # Check if we need the synchronous or asynchronous version
         try:
+            print(f"Available attributes in beamline.devices:{dir(beamline.devices[address].source)}")
             sig = beamline.devices[address]
         except KeyError:
             sig = None

@@ -52,7 +52,7 @@ class AreaDetectorViewerDisplay(display.FireflyDisplay):
         device_name = name = self.macros()["AD"]
         device = beamline.devices[device_name]
         self.device = device
-        img_pv = device.pva.pv_name.get(as_string=True)
+        img_pv = device.pva._name #.get(as_string=True)
         addr = f"pva://{img_pv}"
         self.image_channel = pydm.PyDMChannel(
             address=addr, value_slot=self.update_image
@@ -67,7 +67,8 @@ class AreaDetectorViewerDisplay(display.FireflyDisplay):
         # Set some text about the camera
         use_name = getattr(self.device, "description", None) in [self.device.name, None]
         if use_name:
-            lbl_text = self.device.cam.name
+            print(f"Available attributes in self.device:{dir(self.device.driver)}")
+            lbl_text = self.device.driver.name
         else:
             lbl_text = f"{self.device.description} ({self.device.cam.prefix})"
         self.ui.camera_description_label.setText(lbl_text)

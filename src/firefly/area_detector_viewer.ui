@@ -103,6 +103,49 @@
           <layout class="QVBoxLayout" name="verticalLayout_6">
            <item>
             <layout class="QGridLayout" name="gridLayout">
+             <item row="5" column="1">
+              <layout class="QHBoxLayout" name="horizontalLayout_6">
+               <item>
+                <widget class="PyDMPushButton" name="GainPushButton">
+                 <property name="toolTip">
+                  <string/>
+                 </property>
+                 <property name="text">
+                  <string>Auto</string>
+                 </property>
+                 <property name="channel" stdset="0">
+                  <string>haven://${AD}.driver.gain_auto</string>
+                 </property>
+                 <property name="pressValue" stdset="0">
+                  <string>ONCE</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QCheckBox" name="GainCheckBox">
+                 <property name="text">
+                  <string>Continuous</string>
+                 </property>
+                 <property name="channel" stdset="0">
+                  <string>haven://${AD}.driver.gain_auto</string>
+                 </property>
+                 <property name="pressValue" stdset="0">
+                  <string>CONTINUOUS</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+             <item row="2" column="0">
+              <widget class="QLabel" name="label_6">
+               <property name="text">
+                <string/>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+               </property>
+              </widget>
+             </item>
              <item row="1" column="1">
               <layout class="QHBoxLayout" name="horizontalLayout_3">
                <item>
@@ -127,42 +170,8 @@
                </item>
               </layout>
              </item>
-             <item row="3" column="0">
-              <widget class="QLabel" name="label">
-               <property name="text">
-                <string>Gain:</string>
-               </property>
-               <property name="alignment">
-                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-               </property>
-              </widget>
-             </item>
-             <item row="3" column="1">
-              <layout class="QHBoxLayout" name="horizontalLayout_10">
-               <item>
-                <widget class="PyDMLineEdit" name="GainLineEdit">
-                 <property name="toolTip">
-                  <string/>
-                 </property>
-                 <property name="channel" stdset="0">
-                  <string>haven://${AD}.driver.gain</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QLabel" name="label_11">
-                 <property name="text">
-                  <string/>
-                 </property>
-                 <property name="alignment">
-                  <set>Qt::AlignCenter</set>
-                 </property>
-                </widget>
-               </item>
-              </layout>
-             </item>
-             <item row="2" column="0">
-              <widget class="QLabel" name="label_6">
+             <item row="5" column="0">
+              <widget class="QLabel" name="label_5">
                <property name="text">
                 <string/>
                </property>
@@ -170,6 +179,39 @@
                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                </property>
               </widget>
+             </item>
+             <item row="2" column="1">
+              <layout class="QHBoxLayout" name="horizontalLayout_9">
+               <item>
+                <widget class="PyDMPushButton" name="ExposurePushButton">
+                 <property name="toolTip">
+                  <string/>
+                 </property>
+                 <property name="text">
+                  <string>Auto</string>
+                 </property>
+                 <property name="channel" stdset="0">
+                  <string>haven://${AD}.driver.acquire_time_auto</string>
+                 </property>
+                 <property name="pressValue" stdset="0">
+                  <string>ONCE</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QCheckBox" name="ExposureCheckBox">
+                 <property name="text">
+                  <string>Continuous</string>
+                 </property>
+                 <property name="channel" stdset="0">
+                  <string>haven://${AD}.driver.acquire_time_auto</string>
+                 </property>
+                 <property name="pressValue" stdset="0">
+                  <string>CONTINUOUS</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
              </item>
              <item row="0" column="1">
               <widget class="PyDMLabel" name="PyDMLabel_2">
@@ -190,7 +232,17 @@
                </property>
               </widget>
              </item>
-             <item row="6" column="1">
+             <item row="0" column="0">
+              <widget class="QLabel" name="label_3">
+               <property name="text">
+                <string>State:</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+               </property>
+              </widget>
+             </item>
+             <item row="7" column="1">
               <layout class="QHBoxLayout" name="horizontalLayout_5">
                <property name="spacing">
                 <number>0</number>
@@ -249,53 +301,10 @@
                </item>
               </layout>
              </item>
-             <item row="6" column="0">
+             <item row="7" column="0">
               <widget class="QLabel" name="label_8">
                <property name="text">
                 <string>Shape:</string>
-               </property>
-               <property name="alignment">
-                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="1">
-              <layout class="QHBoxLayout" name="horizontalLayout_9">
-               <item>
-                <widget class="PyDMPushButton" name="ExposurePushButton">
-                 <property name="toolTip">
-                  <string/>
-                 </property>
-                 <property name="text">
-                  <string>Auto</string>
-                 </property>
-                 <property name="channel" stdset="0">
-                  <string>haven://${AD}.driver.acquire_time_auto</string>
-                 </property>
-                 <property name="pressValue" stdset="0">
-                  <string>ONCE</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QCheckBox" name="ExposureCheckBox">
-                 <property name="text">
-                  <string>Continuous</string>
-                 </property>
-                 <property name="channel" stdset="0">
-                  <string>haven://${AD}.driver.acquire_time_auto</string>
-                 </property>
-                 <property name="pressValue" stdset="0">
-                  <string>CONTINUOUS</string>
-                 </property>
-                </widget>
-               </item>
-              </layout>
-             </item>
-             <item row="0" column="0">
-              <widget class="QLabel" name="label_3">
-               <property name="text">
-                <string>State:</string>
                </property>
                <property name="alignment">
                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -312,10 +321,20 @@
                </property>
               </widget>
              </item>
-             <item row="4" column="0">
-              <widget class="QLabel" name="label_5">
+             <item row="3" column="0">
+              <widget class="QLabel" name="label_4">
                <property name="text">
-                <string/>
+                <string>Period:</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+               </property>
+              </widget>
+             </item>
+             <item row="4" column="0">
+              <widget class="QLabel" name="label">
+               <property name="text">
+                <string>Gain:</string>
                </property>
                <property name="alignment">
                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -323,33 +342,48 @@
               </widget>
              </item>
              <item row="4" column="1">
-              <layout class="QHBoxLayout" name="horizontalLayout_6">
+              <layout class="QHBoxLayout" name="horizontalLayout_10">
                <item>
-                <widget class="PyDMPushButton" name="GainPushButton">
+                <widget class="PyDMLineEdit" name="GainLineEdit">
                  <property name="toolTip">
                   <string/>
                  </property>
-                 <property name="text">
-                  <string>Auto</string>
-                 </property>
                  <property name="channel" stdset="0">
-                  <string>haven://${AD}.driver.gain_auto</string>
-                 </property>
-                 <property name="pressValue" stdset="0">
-                  <string>ONCE</string>
+                  <string>haven://${AD}.driver.gain</string>
                  </property>
                 </widget>
                </item>
                <item>
-                <widget class="QCheckBox" name="GainCheckBox">
+                <widget class="QLabel" name="label_11">
                  <property name="text">
-                  <string>Continuous</string>
+                  <string/>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignCenter</set>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+             <item row="3" column="1">
+              <layout class="QHBoxLayout" name="horizontalLayout_7">
+               <item>
+                <widget class="PyDMLineEdit" name="ExposureLineEdit_2">
+                 <property name="toolTip">
+                  <string/>
                  </property>
                  <property name="channel" stdset="0">
-                  <string>haven://${AD}.driver.gain_auto</string>
+                  <string>haven://${AD}.driver.acquire_period</string>
                  </property>
-                 <property name="pressValue" stdset="0">
-                  <string>CONTINUOUS</string>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="label_12">
+                 <property name="text">
+                  <string>s</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignCenter</set>
                  </property>
                 </widget>
                </item>
