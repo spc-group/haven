@@ -19,7 +19,6 @@ import haven
 from haven.catalog import Catalog
 from haven.devices import Xspress3Detector
 from haven.devices.aps import ApsMachine
-from haven.devices.area_detector import AravisDetector
 from haven.devices.beamline_manager import BeamlineManager, IOCManager
 from haven.devices.dxp import DxpDetector
 from haven.devices.dxp import add_mcas as add_dxp_mcas
@@ -131,14 +130,14 @@ def aperture_slits(sim_registry):
     return slits
 
 
-@pytest.fixture()
-def sim_camera(sim_registry):
-    FakeCamera = make_fake_device(AravisDetector)
-    camera = FakeCamera(name="s255id-gige-A", labels={"cameras", "area_detectors"})
-    sim_registry.register(camera)
-    camera.pva.pv_name._readback = "255idSimDet:Pva1:Image"
-    # Registry with the simulated registry
-    yield camera
+# @pytest.fixture()
+# def sim_camera(sim_registry):
+#     FakeCamera = make_fake_device(AravisDetector)
+#     camera = FakeCamera(name="s255id-gige-A", labels={"cameras", "area_detectors"})
+#     sim_registry.register(camera)
+#     camera.pva.pv_name._readback = "255idSimDet:Pva1:Image"
+#     # Registry with the simulated registry
+#     yield camera
 
 
 class DxpVortex(DxpDetector):

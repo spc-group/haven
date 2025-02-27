@@ -10,7 +10,6 @@ from haven import devices
 
 from .devices.aerotech import AerotechStage
 from .devices.aps import ApsMachine
-from .devices.area_detector import make_area_detector
 from .devices.beamline_manager import BeamlineManager
 from .devices.dxp import make_dxp_device
 from .devices.energy_positioner import EnergyPositioner
@@ -108,7 +107,6 @@ beamline = HavenInstrument(
         "robot": Robot,
         "dxp": make_dxp_device,
         "beamline_manager": BeamlineManager,
-        "area_detector": make_area_detector,
         "scaler": MultiChannelScaler,
     },
 )
