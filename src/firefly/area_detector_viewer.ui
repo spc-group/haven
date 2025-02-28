@@ -402,7 +402,7 @@
                 <string>Start</string>
                </property>
                <property name="rules" stdset="0">
-                <string>[{&quot;name&quot;: &quot;enable_acquire_buttons&quot;, &quot;property&quot;: &quot;Enable&quot;, &quot;initial_value&quot;: &quot;False&quot;, &quot;expression&quot;: &quot;ch[0] == 0&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;${PREFIX}cam1:Acquire&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}]}]</string>
+                <string>[{&quot;name&quot;: &quot;enable_acquire_buttons&quot;, &quot;property&quot;: &quot;Enable&quot;, &quot;initial_value&quot;: &quot;&quot;, &quot;expression&quot;: &quot;ch[0] == 0&quot;, &quot;channels&quot;: [{&quot;channel&quot;: &quot;${PREFIX}cam1:Acquire&quot;, &quot;trigger&quot;: true, &quot;use_enum&quot;: false}]}]</string>
                </property>
                <property name="alarmSensitiveContent" stdset="0">
                 <bool>false</bool>
@@ -494,7 +494,7 @@
               <string/>
              </property>
              <property name="currentIndex">
-              <number>0</number>
+              <number>2</number>
              </property>
              <property name="alarmChannels" stdset="0">
               <stringlist>
@@ -517,7 +517,7 @@
                   <enum>QFrame::NoFrame</enum>
                  </property>
                  <property name="macros" stdset="0">
-                  <string>AD=${AD},OV=6</string>
+                  <string>AD=${AD},OV=0</string>
                  </property>
                  <property name="filename" stdset="0">
                   <string>area_detector_overlay.ui</string>
@@ -540,7 +540,7 @@
                   <enum>QFrame::NoFrame</enum>
                  </property>
                  <property name="macros" stdset="0">
-                  <string>AD=${AD},OV=7</string>
+                  <string>AD=${AD},OV=1</string>
                  </property>
                  <property name="filename" stdset="0">
                   <string>area_detector_overlay.ui</string>
@@ -563,7 +563,7 @@
                   <enum>QFrame::NoFrame</enum>
                  </property>
                  <property name="macros" stdset="0">
-                  <string>AD=${AD},OV=8</string>
+                  <string>AD=${AD},OV=2</string>
                  </property>
                  <property name="filename" stdset="0">
                   <string>area_detector_overlay.ui</string>

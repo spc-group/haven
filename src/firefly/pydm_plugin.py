@@ -13,8 +13,9 @@ from typing import Mapping
 
 import numpy as np
 from bluesky.protocols import Movable, Subscribable
-from ophyd import OphydObject
+from ophyd import OphydObject 
 from ophyd.utils.epics_pvs import AlarmSeverity
+from ophyd_asyn.core._signal import SignalRW
 from pydm.data_plugins.plugin import PyDMConnection
 from qasync import asyncSlot
 from typhos.plugins.core import SignalConnection, SignalPlugin
@@ -162,14 +163,16 @@ class HavenPlugin(SignalPlugin):
     def connection_class(channel, address, protocol):
         # Check if we need the synchronous or asynchronous version
         try:
-            print(f"Available attributes in beamline.devices:{dir(beamline.devices[address].source)}")
             sig = beamline.devices[address]
         except KeyError:
             sig = None
         is_ophyd_async = inspect.iscoroutinefunction(getattr(sig, "connect", None))
         is_vanilla_ophyd = isinstance(sig, OphydObject)
+        is_signal_rw = isinstance(sig, SignalRW)
         # Get the right Connection class and build it
-        if is_ophyd_async:
+        if is_signal_rw:
+            return HavenAsyncConnection(channel, address, protocol)
+        elif is_ophyd_async:
             return HavenAsyncConnection(channel, address, protocol)
         elif is_vanilla_ophyd:
             return HavenConnection(channel, address, protocol)
