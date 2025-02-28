@@ -46,7 +46,9 @@ class EigerDatasetDescriber(adcore.ADBaseDatasetDescriber):
 
 class EigerController(ADBaseController):
     def get_deadtime(self, exposure: float | None) -> float:
-        raise NotImplementedError("Read deadtime from signal")
+        # According to the manual, readout time is 3.00µs above 6.4
+        # keV threshold energy. Set it to 10× to be safe.
+        return 3e-5
 
 
 class EigerDetector(AreaDetector):
