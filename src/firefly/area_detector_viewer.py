@@ -5,7 +5,7 @@ import numpy as np
 import pydm
 import pyqtgraph
 from PyQt5.QtCore import pyqtSlot
-from PyQt5.QtWidgets import QCheckBox, QPushButton
+from PyQt5.QtWidgets import QCheckBox, QPushButton, PyDMLineEdit
 
 from firefly import display
 from haven import beamline
@@ -41,6 +41,7 @@ class AreaDetectorViewerDisplay(display.FireflyDisplay):
         )
 
         # Access Gain widgets
+        self.gain_line_edit = self.findChild(PyDMLineEdit, "GainLineEdit") 
         self.gain_checkbox = self.findChild(QCheckBox, "GainCheckBox")
         self.gain_push_button = self.findChild(QPushButton, "GainPushButton")
 
@@ -138,6 +139,16 @@ class AreaDetectorViewerDisplay(display.FireflyDisplay):
         """
         self.gain_checkbox.setChecked(False)
 
+    @pyqtSlot(bool)
+    def update_widget_states(self, connected):
+        """
+        Enable or disable widgets based on PV connection state
+        """
+        self.exposure_push_button.setEnabled(not connected)
+        self.exposure_check_box.setEnabled(not connected)
+        self.gain_line_edit.setEnabled(not connected)
+        self.gain_push_button.setEnabled(not connected)
+        self.gain_check_box.setEnabled(not connected)
 
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman

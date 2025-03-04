@@ -15,7 +15,7 @@ import numpy as np
 from bluesky.protocols import Movable, Subscribable
 from ophyd import OphydObject 
 from ophyd.utils.epics_pvs import AlarmSeverity
-from ophyd_asyn.core._signal import SignalRW
+from ophyd_async.core._signal import SignalRW
 from pydm.data_plugins.plugin import PyDMConnection
 from qasync import asyncSlot
 from typhos.plugins.core import SignalConnection, SignalPlugin
