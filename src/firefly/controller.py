@@ -6,7 +6,6 @@ from pathlib import Path
 
 import httpx
 import pydm
-import pyqtgraph as pg
 import qtawesome as qta
 from ophyd_async.core import NotConnected
 from ophydregistry import Registry
@@ -37,8 +36,9 @@ ui_dir = Path(__file__).parent
 plans_dir = ui_dir / "plans"
 
 
-pg.setConfigOption("background", (252, 252, 252))
-pg.setConfigOption("foreground", (0, 0, 0))
+# # Light-mode for plotting. Disabled temporarily to make all plots visible
+# pg.setConfigOption("background", (252, 252, 252))
+# pg.setConfigOption("foreground", (0, 0, 0))
 
 
 class FireflyController(QtCore.QObject):

@@ -15,8 +15,12 @@ this_dir = Path(__file__).parent
 async def detector():
     det = Xspress3Detector("255id_xsp:", name="vortex_me4", elements=4)
     await det.connect(mock=True)
-    set_mock_value(det.plugins["hdf"].file_path_exists, True)
+    set_mock_value(det.fileio.file_path_exists, True)
     return det
+
+
+async def test_name(detector):
+    assert detector.name == "vortex_me4"
 
 
 async def test_signals(detector):
@@ -44,7 +48,7 @@ async def test_description(detector):
 async def test_trigger(detector):
     status = detector.trigger()
     await asyncio.sleep(0.1)  # Let the event loop turn
-    set_mock_value(detector.plugins["hdf"].num_captured, 1)
+    set_mock_value(detector.fileio.num_captured, 1)
     await status
     # Check that signals were set
     get_mock_put(detector.driver.num_images).assert_called_once_with(1, wait=True)
