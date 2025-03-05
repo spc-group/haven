@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>263</width>
-    <height>181</height>
+    <width>250</width>
+    <height>192</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -44,7 +44,7 @@
         <string/>
        </property>
        <property name="channel" stdset="0">
-        <string>haven://${AD}.overlays.overlay_${OV}.use</string>
+        <string>haven://${AD}-overlay-overlays-${OV}.use</string>
        </property>
       </widget>
      </item>
@@ -61,8 +61,28 @@
         <string/>
        </property>
        <property name="channel" stdset="0">
-        <string>haven://${AD}.overlays.overlay_${OV}.shape</string>
+        <string>haven://${AD}-overlay-overlays-${OV}.shape</string>
        </property>
+       <item>
+        <property name="text">
+         <string>CROSS</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>RECTANGLE</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>ELLIPSE</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>TEXT</string>
+        </property>
+       </item>
       </widget>
      </item>
     </layout>
@@ -75,7 +95,7 @@
         <string/>
        </property>
        <property name="channel" stdset="0">
-        <string>haven://${AD}.overlays.overlay_${OV}.position_y</string>
+        <string>haven://${AD}-overlay-overlays-${OV}.center_y</string>
        </property>
        <property name="orientation" stdset="0">
         <enum>Qt::Vertical</enum>
@@ -100,7 +120,7 @@
           <string/>
          </property>
          <property name="channel" stdset="0">
-          <string>haven://${AD}.overlays.overlay_${OV}.position_x</string>
+          <string>haven://${AD}-overlay-overlays-${OV}.center_x</string>
          </property>
          <property name="step_size" stdset="0">
           <number>0</number>
@@ -132,7 +152,7 @@
         <string/>
        </property>
        <property name="channel" stdset="0">
-        <string>haven://${AD}.overlays.overlay_${OV}.size_y</string>
+        <string>haven://${AD}-overlay-overlays-${OV}.size_y</string>
        </property>
        <property name="orientation" stdset="0">
         <enum>Qt::Vertical</enum>
@@ -157,7 +177,7 @@
           <string/>
          </property>
          <property name="channel" stdset="0">
-          <string>haven://${AD}.overlays.overlay_${OV}.size_x</string>
+          <string>haven://${AD}-overlay-overlays-${OV}.size_x</string>
          </property>
         </widget>
        </item>
@@ -165,6 +185,60 @@
      </item>
      <item>
       <spacer name="horizontalSpacer_5">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_10">
+     <item>
+      <widget class="PyDMSlider" name="PyDMSlider_9">
+       <property name="toolTip">
+        <string/>
+       </property>
+       <property name="channel" stdset="0">
+        <string>haven://${AD}-overlay-overlays-${OV}.width_y</string>
+       </property>
+       <property name="orientation" stdset="0">
+        <enum>Qt::Vertical</enum>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <layout class="QVBoxLayout" name="verticalLayout_7">
+       <item>
+        <widget class="QLabel" name="label_8">
+         <property name="text">
+          <string>Width</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="PyDMSlider" name="PyDMSlider_10">
+         <property name="toolTip">
+          <string/>
+         </property>
+         <property name="channel" stdset="0">
+          <string>haven://${AD}-overlay-overlays-${OV}.width_x</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_7">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
        </property>
@@ -195,6 +269,7 @@
    <class>PyDMSlider</class>
    <extends>QFrame</extends>
    <header>pydm.widgets.slider</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources/>
