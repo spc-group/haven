@@ -3,9 +3,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from haven.devices.ion_chamber import IonChamber
-from haven.devices.motor import load_motors
-from haven.devices.slits import BladeSlits
+from haven.devices import IonChamber, Robot, load_motors
 from haven.instrument import Instrument
 
 haven_dir = Path(__file__).parent.parent.resolve()
@@ -18,7 +16,7 @@ def instrument():
         {
             "ion_chamber": IonChamber,
             "motors": load_motors,
-            "blade_slits": BladeSlits,
+            "robot": Robot,
         }
     )
     with open(toml_file, mode="tr", encoding="utf-8") as fd:
