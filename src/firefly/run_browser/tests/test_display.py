@@ -9,6 +9,7 @@ from ophyd.sim import instantiate_fake_device
 from qtpy.QtWidgets import QFileDialog
 
 from firefly.run_browser.display import RunBrowserDisplay
+from haven.catalog import Catalog
 from haven.devices.beamline_manager import EpicsBssDevice
 
 
@@ -19,7 +20,7 @@ def bss(sim_registry):
 
 
 @pytest.fixture()
-async def display(qtbot, tiled_client, catalog, mocker):
+async def display(qtbot, mocker, tiled_api):
     mocker.patch(
         "firefly.run_browser.widgets.ExportDialog.exec_",
         return_value=QFileDialog.Accepted,
@@ -33,12 +34,7 @@ async def display(qtbot, tiled_client, catalog, mocker):
     qtbot.addWidget(display)
     display.clear_filters()
     # Wait for the initial database load to process
-    await display.setup_database(tiled_client, catalog_name="255id_testing")
-    display.db.stream_names = AsyncMock(return_value=["primary", "baseline"])
-    # Set up some fake data
-    run = [run async for run in catalog.values()][0]
-    display.db.selected_runs = [run]
-    run_data = await run.data(stream="primary")
+    await display.setup_database(base_url="http://localhost:8000/api/v1", catalog_name="scans")
     return display
 
 
@@ -70,17 +66,6 @@ async def test_db_task_interruption(display):
 def test_load_runs(display):
     assert display.runs_model.rowCount() > 0
     assert display.ui.runs_total_label.text() == str(display.runs_model.rowCount())
-
-
-async def test_update_selected_runs(display):
-    # Change the proposal item
-    item = display.runs_model.item(0, 1)
-    assert item is not None
-    display.ui.run_tableview.selectRow(0)
-    # Update the runs
-    await display.update_selected_runs()
-    # Check that the runs were saved
-    assert len(display.db.selected_runs) > 0
 
 
 async def test_update_selected_runs(display):
@@ -167,20 +152,19 @@ async def test_update_combobox_items(display):
     assert display.ui.filter_beamline_combobox.count() > 0
 
 
-async def test_export_button_enabled(catalog, display):
+async def test_export_button_enabled(display):
     assert not display.export_button.isEnabled()
     # Update the list with 1 run and see if the control gets enabled
-    display.selected_runs = [run async for run in catalog.values()]
-    display.selected_runs = display.selected_runs[:1]
+    display.selected_runs = [{}]
     display.update_export_button()
     assert display.export_button.isEnabled()
     # Update the list with multiple runs and see if the control gets disabled
-    display.selected_runs = [run async for run in catalog.values()]
+    display.selected_runs = [{}, {}]
     display.update_export_button()
     assert not display.export_button.isEnabled()
 
 
-async def test_export_button_clicked(catalog, display, mocker, qtbot):
+async def test_export_button_clicked(display, mocker, qtbot):
     # Set up a run to be tested against
     run = MagicMock()
     run.formats.return_value = [
@@ -272,13 +256,14 @@ def test_update_bss_filters(display):
     assert combobox.currentText() == "89321"
 
 
-def test_catalog_choices(display, tiled_client):
+def test_catalog_choices(display):
     combobox = display.ui.catalog_combobox
     items = [combobox.itemText(idx) for idx in range(combobox.count())]
-    assert items == ["255id_testing", "255bm_testing"]
+    assert items == ["scans", "testing"]
 
 
-async def test_stream_choices(display, tiled_client):
+async def test_stream_choices(display):
+    display.db.load_selected_runs(["scan1"])
     await display.update_streams()
     combobox = display.ui.stream_combobox
     items = [combobox.itemText(idx) for idx in range(combobox.count())]

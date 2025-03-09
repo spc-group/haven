@@ -1,3 +1,5 @@
+import re
+
 import httpx
 import numpy as np
 import pytest
@@ -6,9 +8,36 @@ from tiled import queries
 from haven.catalog import CatalogScan, unsnake, Catalog
 
 
+run_metadata_re = re.compile(r"^http://localhost:8000/api/v1/metadata/([a-z]+)%2F([-a-z0-9]+)$")
+
+
+def run_metadata(request: httpx.Request):
+    url = str(request.url)
+    catalog, uid = run_metadata_re.match(url).groups()
+    md = {
+        "data": {
+            "attributes": {
+                "metadata": {
+                    "start": {
+                        "uid": uid,
+                    }
+                }
+            }
+        }
+    }
+    return httpx.Response(
+        status_code=200, json=md,
+    )
+
+
 @pytest.fixture()
-def run():
-    client = httpx.AsyncClient(base_url="http://localhost:8000/api/vi/")
+def run(httpx_mock):
+    httpx_mock.add_callback(
+        url=run_metadata_re,
+        callback=run_metadata,
+        is_reusable=True
+    )
+    client = httpx.AsyncClient(base_url="http://localhost:8000/api/v1/")
     return CatalogScan(path="scans/518edf43-7370-4670-8e61-e1e18a8152cf", client=client)
 
 
@@ -170,6 +199,11 @@ async def test_hints(run, httpx_mock):
         "CdnI0_net_counts",
         "It_net_counts",
     ]
+
+
+async def test_metadata(run):
+    assert (await run.metadata)['start']['uid'] == "518edf43-7370-4670-8e61-e1e18a8152cf"
+    assert (await run.uid) == "518edf43-7370-4670-8e61-e1e18a8152cf"
 
 
 # -----------------------------------------------------------------------------

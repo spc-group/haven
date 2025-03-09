@@ -10,6 +10,7 @@ from typing import Mapping
 from urllib.parse import quote_plus
 
 import httpx
+import pandas as pd
 import numpy as np
 from tiled.client import from_profile
 from tiled.client.base import BaseClient
@@ -108,6 +109,26 @@ def tiled_client(
     return client
 
 
+async def _search(path: str, client: httpx.AsyncClient, params: dict = {}):
+        """Find scans in the catalog matching the given criteria.
+
+        This is a batched iterator that will fetch the next batch of
+        scans once the first set have been exhausted.
+
+        """
+        # Build query parameters
+        next_url = "/".join(["search", quote_plus(path)]).rstrip('/')
+        # Get search results from API
+        while next_url is not None:
+            response = await client.get(
+                next_url,
+                params=params,
+            )
+            for run in response.json()['data']:
+                yield run
+            next_url = response.json()['links']['next']
+
+
 class CatalogScan:
     """A single scan from the tiled API with some convenience methods.
 
@@ -140,22 +161,22 @@ class CatalogScan:
             self._client = httpx.AsyncClient(base_url=self.base_uri)
         return self._client
 
-    def stream_names(self):
-        return list(self.container.keys())
+    async def stream_names(self):
+        streams = _search(path=self.path, client=self.client)
+        names = [stream['id'] async for stream in streams]
+        return names
 
-    def _read_data(self, signals: Sequence[str] | None, dataset: str):
-        data = self.container[dataset]
-        if signals is None:
-            return data.read()
-        # Remove duplicates and missing signals
-        signals = set(signals)
-        available_signals = set(data.columns)
-        signals = signals & available_signals
-        return data.read()
+    async def _read_data(self, signals: Sequence[str] | None, dataset: str):
+        params = {}
+        path = "/".join([self.path, dataset]).rstrip("/")
+        url = f"table/full/{quote_plus(path)}"
+        response = await self.client.get(url, params=params)
+        df = pd.DataFrame(response.json())
+        return df
 
     @property
-    def uid(self):
-        return self.container._item["id"]
+    async def uid(self):
+        return (await self.metadata)['start']['uid']
 
     async def export(self, filename: str, format: str):
         target = partial(self.container.export, filename, format=format)
@@ -186,8 +207,10 @@ class CatalogScan:
     def loop(self):
         return asyncio.get_running_loop()
 
-    def data_keys(self, stream: str = "primary"):
-        data_keys = self.container[stream].metadata.get("data_keys")
+    async def data_keys(self, stream: str = "primary"):
+        print(self.path, stream)
+        metadata = await self._read_metadata(stream)
+        data_keys = metadata.get("data_keys")
         return data_keys or {}
 
     async def hints(self, stream: str = "primary"):
@@ -218,9 +241,10 @@ class CatalogScan:
             ]
         except (KeyError, IndexError):
             warnings.warn("Could not get independent hints")
+            independent = []
         # Get hints for the dependent (Y) axes
         dependent = []
-        hints = stream_md["hints"]
+        hints = stream_md.get("hints", {})
         for device, dev_hints in hints.items():
             dependent.extend(dev_hints["fields"])
         return independent, dependent
@@ -257,7 +281,7 @@ class CatalogScan:
 
 
 class Catalog:
-    """An asynchronous wrapper around the tiled client.
+    """Asynchronously access Bluesky data in Tiled.
 
     This class has a more intelligent understanding of how *our* data
     are structured, so can make some assumptions and takes care of
@@ -265,17 +289,25 @@ class Catalog:
 
     Parameters
     ==========
+    path
+      Where the data live in the Tiled server.
+    host
+      The address and port of the service hosting the Tiled
+      API. Ignored if *client* is provided.
     client
-      A Tiled client that has scan UIDs as its keys.
+      An asynchronous HTTP client used for API calls. This client
+      should have *base_url* set. If omitted, a new client will be
+      created.
 
     """
 
-    _client: httpx.AsyncClient | None = None
+    _client: httpx.AsyncClient | None
     base_uri: str
 
-    def __init__(self, path: str, host: str = "http://localhost:8000"):
+    def __init__(self, path: str, host: str = "http://localhost:8000",client: httpx.AsyncClient | None = None):
         self.base_uri = f"{host.strip('/')}/api/v1/"
         self.path = path
+        self._client = client
 
     @property
     def client(self):
@@ -283,13 +315,16 @@ class Catalog:
             self._client = httpx.AsyncClient(base_url=self.base_uri)
         return self._client
 
-    async def __getitem__(self, uid) -> CatalogScan:
+    def __getitem__(self, uid) -> CatalogScan:
         # Check that the child exists in this container
         new_path = f"{self.path}/{uid}"
-        response = await self.client.get(f"metadata/{quote_plus(new_path)}")
         # Create the child scan object
-        scan = CatalogScan(path=new_path, metadata=response.json(), client=self.client)
+        scan = CatalogScan(path=new_path, client=self.client)
         return scan
+
+    async def keys(self):
+        async for run in self.runs():
+            yield run['id']
 
     async def items(self):
         client = await self.client
@@ -307,7 +342,7 @@ class Catalog:
         length = await run_in_executor(client.__len__)()
         return length
 
-    def _search_params(self, queries: Sequence[NoBool] = (), sort: Sequence[str] = ()):
+    def _search_params(self, queries: Sequence[NoBool] = (), sort: Sequence[str] = ()) -> dict:
         query_params = _queries_to_params(*queries)
         params = {
             **query_params
@@ -329,17 +364,11 @@ class Catalog:
 
         """
         # Build query parameters
-        next_url = f"search/{self.path}"
         params = self._search_params(queries=queries, sort=sort)        
         # Get search results from API
-        while next_url is not None:
-            response = await self.client.get(
-                next_url,
-                params=params,
-            )
-            for run in response.json()['data']:
-                yield run
-            next_url = response.json()['links']['next']
+        async for run in _search(path=self.path, params=params, client=self.client):
+            md = run.get('attributes', {}).get('metadata')
+            yield CatalogScan(path=f"{self.path}/{run['id']}", metadata=md, client=self.client)
 
     async def distinct(
             self, *metadata_keys, queries: Sequence[NoBool] = (), sort: Sequence[str] = ()
@@ -366,6 +395,9 @@ class Catalog:
         )
         return response.json()['metadata']
 
+
+def from_profile(catalog: str = "scans", profile: str = "haven") -> Catalog:
+    pass
 
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
