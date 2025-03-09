@@ -20,6 +20,12 @@ def run_metadata(request: httpx.Request):
                 "metadata": {
                     "start": {
                         "uid": uid,
+                        "hints": {
+                            "dimensions": [
+                                [["aerotech_vert"], "primary"],
+                                [["aerotech_horiz"], "primary"],
+                            ],
+                        }
                     }
                 }
             }
@@ -64,17 +70,11 @@ def test_unsnake():
     np.testing.assert_equal(arr, unsnaked)
 
 
-@pytest.mark.asyncio
-async def test_load_scan(catalog, httpx_mock):
+def test_load_scan(catalog):
     """Check that scans can be loaded from the catalog."""
-    # Mock the API call
-    httpx_mock.add_response(
-        url="http://localhost:8000/api/v1/metadata/scans%2F7d1daf1d-60c7-4aa7-a668-d1cd97e5335f",
-        json={},
-    )
     # Do the API call
     uid = "7d1daf1d-60c7-4aa7-a668-d1cd97e5335f"
-    scan = await catalog[uid]
+    scan = catalog[uid]
     assert isinstance(scan, CatalogScan)
 
 
@@ -113,7 +113,7 @@ async def test_catalog_runs(catalog, httpx_mock):
     }
     httpx_mock.add_response(
         json={
-            "data": [{}],
+            "data": [{"id": "scan1"}],
             "links": {
                 "next": "http://localhost:8000/api/v1/search/scans/pt2",
             },
@@ -126,7 +126,7 @@ async def test_catalog_runs(catalog, httpx_mock):
     # Include a second API call to make sure pagination works
     httpx_mock.add_response(
         json={
-            "data": [{}],
+            "data": [{"id": "scan2"}],
             "links": {
                 "next": None,
             },
@@ -146,24 +146,24 @@ async def test_catalog_runs(catalog, httpx_mock):
 
 async def test_hints(run, httpx_mock):
     # Respond with plan hints
-    httpx_mock.add_response(
-        json={
-            "data": {
-                "attributes": {
-                    "metadata": {
-                        "start": {
-                            "hints": {
-                                "dimensions": [
-                                    [["aerotech_vert"], "primary"],
-                                    [["aerotech_horiz"], "primary"],
-                                ],
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    )
+    # httpx_mock.add_response(
+    #     json={
+    #         "data": {
+    #             "attributes": {
+    #                 "metadata": {
+    #                     "start": {
+    #                         "hints": {
+    #                             "dimensions": [
+    #                                 [["aerotech_vert"], "primary"],
+    #                                 [["aerotech_horiz"], "primary"],
+    #                             ],
+    #                         }
+    #                     }
+    #                 }
+    #             }
+    #         }
+    #     }
+    # )
     # Respond with stream hints
     httpx_mock.add_response(
         json={

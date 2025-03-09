@@ -233,6 +233,7 @@ class CatalogScan:
             self._read_metadata(),
             self._read_metadata(path=stream),
         )
+        print(run_md)
         # Get hints for the independent (X)
         try:
             dimensions = run_md["start"]["hints"]["dimensions"]
