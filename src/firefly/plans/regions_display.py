@@ -30,8 +30,6 @@ class PlanDisplay(display.FireflyDisplay):
 
     def customize_ui(self):
         self.ui.run_button.clicked.connect(self.queue_plan)
-        if hasattr(self.ui, "spinBox_repeat_scan_num"):
-            self.ui.spinBox_repeat_scan_num.valueChanged.connect(self.update_total_time)
 
     async def _get_time(self, detector):
         """Get the dwell time value for a given detector."""

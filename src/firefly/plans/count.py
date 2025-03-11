@@ -22,6 +22,7 @@ class CountDisplay(regions_display.PlanDisplay):
         )
         self.ui.num_spinbox.valueChanged.connect(self.update_total_time)
         self.ui.delay_spinbox.valueChanged.connect(self.update_total_time)
+        self.ui.spinBox_repeat_scan_num.valueChanged.connect(self.update_total_time)
 
     def time_per_scan(self, detector_time):
         num_readings = self.ui.num_spinbox.value()

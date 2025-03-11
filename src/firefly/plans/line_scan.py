@@ -96,6 +96,7 @@ class LineScanDisplay(regions_display.RegionsDisplay):
 
         for region in self.regions:
             self.ui.scan_pts_spin_box.valueChanged.connect(region.set_num_points)
+        self.ui.spinBox_repeat_scan_num.valueChanged.connect(self.update_total_time)
 
     def update_regions_step_size(self, num_points):
         """Update the step size for all regions."""

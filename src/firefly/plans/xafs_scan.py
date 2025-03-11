@@ -263,6 +263,9 @@ class XafsScanDisplay(regions_display.PlanDisplay):
         )
         # connect is_standard with a warning box
         self.ui.checkBox_is_standard.clicked.connect(self.on_is_standard)
+        
+        # repeat scans
+        self.ui.spinBox_repeat_scan_num.valueChanged.connect(self.update_total_time)
 
     async def update_devices(self, registry):
         """Set available components in the device list."""
