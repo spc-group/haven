@@ -4,6 +4,8 @@ import sys
 import numpy as np
 import pydm
 import pyqtgraph
+from PyQt5.QtCore import pyqtSlot
+from PyQt5.QtWidgets import QCheckBox, QPushButton, PyDMLineEdit
 
 from firefly import display
 from haven import beamline
@@ -23,11 +25,35 @@ class AreaDetectorViewerDisplay(display.FireflyDisplay):
     )
     image_is_new: bool = True
 
+    def __init__(self, parent=None, args=None, macros=None):
+        super().__init__(parent=parent, args=args, macros=macros)
+
+        # Access Exposure widgets
+        self.exposure_checkbox = self.findChild(QCheckBox, "ExposureCheckBox")
+        self.exposure_push_button = self.findChild(QPushButton, "ExposurePushButton")
+
+        # Connect Exposure signals to slots
+        self.exposure_checkbox.stateChanged.connect(
+            self.handle_exposure_checkbox_change
+        )
+        self.exposure_push_button.clicked.connect(
+            self.handle_exposure_push_button_click
+        )
+
+        # Access Gain widgets
+        self.gain_line_edit = self.findChild(PyDMLineEdit, "GainLineEdit") 
+        self.gain_checkbox = self.findChild(QCheckBox, "GainCheckBox")
+        self.gain_push_button = self.findChild(QPushButton, "GainPushButton")
+
+        # Connect Gain signals to slots
+        self.gain_checkbox.stateChanged.connect(self.handle_gain_checkbox_change)
+        self.gain_push_button.clicked.connect(self.handle_gain_push_button_click)
+
     def customize_device(self):
         device_name = name = self.macros()["AD"]
         device = beamline.devices[device_name]
         self.device = device
-        img_pv = device.pva.pv_name.get(as_string=True)
+        img_pv = device.pva._name #.get(as_string=True)
         addr = f"pva://{img_pv}"
         self.image_channel = pydm.PyDMChannel(
             address=addr, value_slot=self.update_image
@@ -42,7 +68,8 @@ class AreaDetectorViewerDisplay(display.FireflyDisplay):
         # Set some text about the camera
         use_name = getattr(self.device, "description", None) in [self.device.name, None]
         if use_name:
-            lbl_text = self.device.cam.name
+            print(f"Available attributes in self.device:{dir(self.device.driver)}")
+            lbl_text = self.device.driver.name
         else:
             lbl_text = f"{self.device.description} ({self.device.cam.prefix})"
         self.ui.camera_description_label.setText(lbl_text)
@@ -74,6 +101,54 @@ class AreaDetectorViewerDisplay(display.FireflyDisplay):
         log.info(f"Launching caQtDM: {cmd}")
         self._open_caqtdm_subprocess(cmd)
 
+    @pyqtSlot(int)
+    def handle_exposure_checkbox_change(self, state):
+        """
+        Handle the exposure checkbox state change.
+        Disable the push button when the checkbox is checked.
+        """
+        if state == 2:  # Checked
+            self.exposure_push_button.setEnabled(False)
+        else:  # Checkbox is unchecked
+            self.exposure_push_button.setEnabled(True)
+
+    @pyqtSlot()
+    def handle_exposure_push_button_click(self):
+        """
+        Handle the exposure push button click.
+        Disable the checkbox when the button is clicked.
+        """
+        self.exposure_checkbox.setChecked(False)
+
+    @pyqtSlot(int)
+    def handle_gain_checkbox_change(self, state):
+        """
+        Handle the gain checkbox state change.
+        Disable the push button when the checkbox is checked.
+        """
+        if state == 2:  # Checked
+            self.gain_push_button.setEnabled(False)
+        else:  # Checkbox is unchecked
+            self.gain_push_button.setEnabled(True)
+
+    @pyqtSlot()
+    def handle_gain_push_button_click(self):
+        """
+        Handle the gain push button click.
+        Disable the checkbox when the button is clicked.
+        """
+        self.gain_checkbox.setChecked(False)
+
+    @pyqtSlot(bool)
+    def update_widget_states(self, connected):
+        """
+        Enable or disable widgets based on PV connection state
+        """
+        self.exposure_push_button.setEnabled(not connected)
+        self.exposure_check_box.setEnabled(not connected)
+        self.gain_line_edit.setEnabled(not connected)
+        self.gain_push_button.setEnabled(not connected)
+        self.gain_check_box.setEnabled(not connected)
 
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman

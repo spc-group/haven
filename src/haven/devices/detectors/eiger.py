@@ -7,6 +7,8 @@ from ophyd_async.epics.adcore._utils import ADBaseDataType, convert_ad_dtype_to_
 from ophyd_async.epics.core import epics_signal_r, epics_signal_rw_rbv
 
 from .area_detectors import default_path_provider
+from .image_plugin import ImagePlugin
+from .overlay import OverlayPlugin
 
 
 class EigerDriverIO(adcore.ADBaseIO):
@@ -69,6 +71,9 @@ class EigerDetector(AreaDetector):
     ):
         if path_provider is None:
             path_provider = default_path_provider()
+        # Other (non-data) area detector plugins
+        self.overlay = OverlayPlugin(f"{prefix}Over1:")
+        self.pva = ImagePlugin(f"{prefix}Pva1:", protocol="pva")
         # Area detector IO devices
         driver = EigerDriverIO(f"{prefix}{drv_suffix}")
         controller = EigerController(driver)
@@ -101,6 +106,9 @@ class EigerDetector(AreaDetector):
     def default_time_signal(self):
         return self.driver.acquire_time
 
+    @property
+    def default_period_signal(self):
+        return self.driver.period_time
 
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman

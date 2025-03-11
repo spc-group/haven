@@ -18,7 +18,7 @@ async def camera(sim_registry):
 async def test_camera_trigger_source_choices(camera):
     """Confirm the camera device has the right signals.
 
-    Solves this inital error received when using detaul AravisDetector.
+    Solves this inital error received when using upstream AravisDetector.
 
     > drv: NotConnected:
     >     trigger_source: TypeError: 25idcARV4:cam1:TriggerSource_RBV has choices ('Software', 'Line1', 'Line3', 'Action1'), which is not a superset of SubsetEnum['Freerun', 'Line1'].
@@ -53,6 +53,11 @@ async def test_camera_signals(camera):
     desc = await camera.fileio.data_type.describe()
     hdf_source = desc["s255id-gige-A-fileio-data_type"]["source"]
     assert hdf_source == "mock+ca://255idgigeA:HDF1:DataType_RBV"
+    # Check a few additional signals needed for live viewing
+    assert camera.driver.gain.source == "mock+ca://255idgigeA:cam1:Gain_RBV"
+    assert camera.driver.gain_auto.source == "mock+ca://255idgigeA:cam1:GainAuto_RBV"
+    assert camera.driver.acquire_time_auto.source == "mock+ca://255idgigeA:cam1:ExposureAuto_RBV"
+
 
 
 # -----------------------------------------------------------------------------
