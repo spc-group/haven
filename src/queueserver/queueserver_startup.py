@@ -40,7 +40,11 @@ try:
     call_in_bluesky_event_loop(beamline.connect())
 except NotConnected as exc:
     log.exception(exc)
-for cpt in beamline.devices._objects_by_name.values():
+for cpt in beamline.devices.all_devices:
+    # Make sure we're not adding a readback value with the same name
+    # as its parent.
+    if cpt.parent is not None and cpt.name == cpt.parent.name:
+        continue
     # Replace spaces and other illegal characters in variable name
     # name = re.sub('\W|^(?=\d)','_', cpt.name)
     name = sanitize_name(cpt.name)
