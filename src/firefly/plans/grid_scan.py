@@ -79,7 +79,7 @@ class GridScanRegion(regions_display.RegionBase):
 
         # Number of scan point
         self.scan_pts_spin_box = QtWidgets.QSpinBox()
-        self.scan_pts_spin_box.setMinimum(1)
+        self.scan_pts_spin_box.setMinimum(2)
         self.scan_pts_spin_box.setMaximum(99999)
         self.layout.addWidget(self.scan_pts_spin_box)
 
@@ -148,6 +148,7 @@ class GridScanDisplay(regions_display.RegionsDisplay):
         # Connect scan points change to update total time
         for region in self.regions:
             region.scan_pts_spin_box.valueChanged.connect(self.update_total_time)
+        self.ui.spinBox_repeat_scan_num.valueChanged.connect(self.update_total_time)
 
     def time_per_scan(self, detector_time):
         total_num_pnts = np.prod(

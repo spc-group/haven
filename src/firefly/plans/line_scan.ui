@@ -126,7 +126,7 @@
        <item>
         <widget class="QSpinBox" name="scan_pts_spin_box">
          <property name="minimum">
-          <number>1</number>
+          <number>2</number>
          </property>
          <property name="maximum">
           <number>10000</number>

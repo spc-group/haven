@@ -88,19 +88,14 @@ async def test_step_size_calculation(display):
         region_0.step_size_line_edit.text() == "N/A"
     ), "Step size should be 'N/A' for invalid start input in Region 0."
 
-    region_1.scan_pts_spin_box.setValue(1)
-    assert (
-        region_1.step_size_line_edit.text() == "N/A"
-    ), "Step size should be 'N/A' for num_points = 1 in Region 1."
-
     # Reset valid values for Region 0
     region_0.start_line_edit.setText("10")
     region_0.stop_line_edit.setText("30")
-    region_0.scan_pts_spin_box.setValue(1)
+    region_0.scan_pts_spin_box.setValue(3)
 
     assert (
-        region_0.step_size_line_edit.text() == "N/A"
-    ), "Step size should be N/A for 4 points from 10 to 30."
+        region_0.step_size_line_edit.text() == "10"
+    ), "Step size should 10 for 3 points from 10 to 30."
 
 
 @pytest.mark.asyncio
