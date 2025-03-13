@@ -189,6 +189,10 @@ class Xspress3Detector(AreaDetector):
             dataset_describer=XspressDatasetDescriber(driver),
             plugins=plugins,
         )
+        # We need the driver to be a plugin so that NDAttributes get saved
+        # Can be removed once this bug is fixed upstream:
+        # https://github.com/bluesky/ophyd-async/issues/821
+        writer._plugins['camera'] = driver
         super().__init__(
             controller=controller,
             writer=writer,
