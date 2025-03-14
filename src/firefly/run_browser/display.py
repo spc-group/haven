@@ -190,23 +190,25 @@ class RunBrowserDisplay(display.FireflyDisplay):
 
     async def update_combobox_items(self):
         """"""
-        with self.busy_hints(run_table=False, run_widgets=False, filter_widgets=True):
-            fields = await self.db.distinct_fields()
-            for field_name, cb in [
-                ("plan_name", self.ui.filter_plan_combobox),
-                ("sample_name", self.ui.filter_sample_combobox),
-                ("sample_formula", self.ui.filter_formula_combobox),
-                ("edge", self.ui.filter_edge_combobox),
-                ("exit_status", self.ui.filter_exit_status_combobox),
-                ("proposal_id", self.ui.filter_proposal_combobox),
-                ("esaf_id", self.ui.filter_esaf_combobox),
-                ("beamline_id", self.ui.filter_beamline_combobox),
-            ]:
-                if field_name in fields.keys():
-                    old_text = cb.currentText()
-                    cb.clear()
-                    cb.addItems(fields[field_name])
-                    cb.setCurrentText(old_text)
+        filter_boxes = {
+            "start.plan_name": self.ui.filter_plan_combobox,
+            "start.sample_name": self.ui.filter_sample_combobox,
+            "start.sample_formula": self.ui.filter_formula_combobox,
+            "start.edge": self.ui.filter_edge_combobox,
+            "stop.exit_status": self.ui.filter_exit_status_combobox,
+            "start.proposal_id": self.ui.filter_proposal_combobox,
+            "start.esaf_id": self.ui.filter_esaf_combobox,
+            "start.beamline_id": self.ui.filter_beamline_combobox,
+        }
+        # Clear old entries first so we don't have stale ones
+        for key, cb in filter_boxes.items():
+            cb.clear()
+        # Populate with new results
+        async for field_name, fields in self.db.distinct_fields():
+            cb = filter_boxes[field_name]
+            old_value = cb.currentText()
+            cb.addItems(fields)
+            cb.setCurrentText(old_value)
 
     def customize_ui(self):
         self.load_models()
@@ -385,7 +387,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
         """
         dialog = self.export_dialog
         # Determine default mimetypes
-        mimetypes = self.selected_runs[0].formats()
+        mimetypes = await self.selected_runs[0].formats
         filenames = dialog.ask(mimetypes=mimetypes)
         mimetype = dialog.selectedMimeTypeFilter()
         formats = [mimetype] * len(filenames)

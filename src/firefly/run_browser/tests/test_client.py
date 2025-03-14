@@ -153,19 +153,6 @@ async def test_catalog_names(worker, httpx_mock):
 
 @pytest.mark.asyncio
 async def test_filter_runs(worker, tiled_api):
-    # httpx_mock.add_response(
-    #     url=re.compile("^http://localhost:8000/api/v1/search/scans"),
-    #     json={
-    #         "data": [{"id": "scan1"}],
-    #         "links": {"next": None},
-    #     },
-    # )
-    # httpx_mock.add_response(
-    #     url="http://localhost:8000/api/v1/metadata/scans%2Fscan1",
-    #     json=md_to_json({
-    #         "start": {}
-    #     }),
-    # )
     runs = await worker.load_all_runs(filters={"plan": "xafs_scan"})
     # Check that the runs were filtered
     assert len(runs) == 1

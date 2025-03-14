@@ -13,7 +13,7 @@ from qasync import asyncSlot
 from tiled import queries
 
 from haven import exceptions
-from haven.catalog import from_profile, Catalog, _search
+from haven.catalog import from_profile, Catalog, _search, resolve_uri
 
 log = logging.getLogger(__name__)
 
@@ -22,8 +22,9 @@ class DatabaseWorker:
     selected_runs: Sequence = []
     catalog: Catalog = None
 
-    def __init__(self, base_url: str = "http://localhost:8000/api/v1"):
-        self.client = httpx.AsyncClient(base_url=base_url)
+    def __init__(self, base_url: str = "http://localhost:8000"):
+        uri = resolve_uri(base_url)
+        self.client = httpx.AsyncClient(base_url=uri, timeout=20)
 
     def change_catalog(self, catalog_name: str):
         """Change the catalog being used for pulling data.
@@ -37,7 +38,6 @@ class DatabaseWorker:
         return [cat['id'] async for cat in catalogs]
 
     async def stream_names(self):
-        print(self.selected_runs)
         awaitables = [scan.stream_names() for scan in self.selected_runs]
         all_streams = await asyncio.gather(*awaitables)
         # Flatten the lists
@@ -102,23 +102,31 @@ class DatabaseWorker:
     async def distinct_fields(self):
         """Get distinct metadata fields for filterable metadata."""
         new_fields = {}
+        # Some of these are disabled since they take forever
+        # (could be re-enabled when switching to postgres)
         target_fields = [
             "start.plan_name",
-            "start.sample_name",
-            "start.sample_formula",
+            # "start.sample_name",
+            # "start.sample_formula",
             "start.edge",
             "stop.exit_status",
-            "start.proposal_id",
+            # "start.proposal_id",
             "start.esaf_id",
-            "start.beamline_id",
+            # "start.beamline_id",
         ]
         # Get fields from the database
-        response = await self.catalog.distinct(*target_fields)
-        # Build into a new dictionary
-        for key, result in response.items():
-            field = key.split(".")[-1]
-            new_fields[field] = [r["value"] for r in result]
-        return new_fields
+        async for distinct in self.catalog.distinct(*target_fields):
+            field_name = list(distinct.keys())[0]
+            fields = distinct[field_name]
+            fields = [field['value'] for field in fields]
+            fields = [field for field in fields if field not in ["", None]]
+            yield field_name, fields
+        # response = await self.catalog.distinct(*target_fields)
+        # # Build into a new dictionary
+        # for key, result in response.items():
+        #     field = key.split(".")[-1]
+        #     new_fields[field] = [r["value"] for r in result]
+        # return new_fields
 
     async def load_all_runs(self, filters: Mapping = {}):
         all_runs = []
@@ -220,7 +228,7 @@ class DatabaseWorker:
         if len(self.selected_runs) == 0:
             warnings.warn("No runs selected, metadata will be empty.")
         for run in self.selected_runs:
-            md[run.uid] = await run.metadata
+            md[run.path] = await run.metadata
         return md
 
     def load_selected_runs(self, uids):

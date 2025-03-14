@@ -1,11 +1,13 @@
 import re
+import io
 
 import httpx
 import numpy as np
 import pytest
+from pytest_httpx import IteratorStream
 from tiled import queries
 
-from haven.catalog import CatalogScan, unsnake, Catalog
+from haven.catalog import CatalogScan, unsnake, Catalog, resolve_uri, deserialize_array
 
 
 run_metadata_re = re.compile(r"^http://localhost:8000/api/v1/metadata/([a-z]+)%2F([-a-z0-9]+)$")
@@ -17,6 +19,13 @@ def run_metadata(request: httpx.Request):
     md = {
         "data": {
             "attributes": {
+                "structure_family": "container",
+                "specs": [
+                    {
+                        "name": "BlueskyRun",
+                        "version": "1.0"
+                    }
+                ],
                 "metadata": {
                     "start": {
                         "uid": uid,
@@ -41,7 +50,8 @@ def run(httpx_mock):
     httpx_mock.add_callback(
         url=run_metadata_re,
         callback=run_metadata,
-        is_reusable=True
+        is_reusable=True,
+        is_optional=True,
     )
     client = httpx.AsyncClient(base_url="http://localhost:8000/api/v1/")
     return CatalogScan(path="scans/518edf43-7370-4670-8e61-e1e18a8152cf", client=client)
@@ -49,7 +59,7 @@ def run(httpx_mock):
 
 @pytest.fixture()
 def catalog():
-    return Catalog(host="http://localhost:8000/", path="scans")
+    return Catalog(uri="http://localhost:8000/", path="scans")
 
 
 @pytest.fixture()
@@ -205,6 +215,58 @@ async def test_metadata(run):
     assert (await run.metadata)['start']['uid'] == "518edf43-7370-4670-8e61-e1e18a8152cf"
     assert (await run.uid) == "518edf43-7370-4670-8e61-e1e18a8152cf"
 
+
+def test_resolve_uri():
+    assert resolve_uri("http://localhost:8000/") == "http://localhost:8000/api/v1"
+    assert resolve_uri("http://localhost:8000/api/") == "http://localhost:8000/api/v1"
+    assert resolve_uri("http://localhost:8000/api/v1/") == "http://localhost:8000/api/v1"
+
+
+def test_deserialize_array():
+    arr = np.arange(10, dtype="uint32").reshape(2, 5)
+    buff = arr.tobytes()
+    deserialized = deserialize_array(buff, {
+        "data_type": {
+            "endianness": "little",
+            "kind": "u",
+            "itemsize": 4,
+            "dt_units": None
+        },
+        "chunks": [
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [514],
+            [1030]
+        ],
+        "shape": [2, 5],
+        "dims": None,
+        "resizable": False
+    })
+    np.testing.assert_array_equal(deserialized, arr)
+
+
+async def test_formats(run, httpx_mock):
+    httpx_mock.add_response(
+        "http://localhost:8000/api/v1/",
+        json={
+            "formats": {
+                "container": ["application/x-nexus"],
+                "BlueskyRun": ["text/tab-separated-values"],
+            },
+        }
+    )
+    assert await run.formats == ["application/x-nexus", "text/tab-separated-values"]
+
+
+async def test_export(run, httpx_mock):
+    httpx_mock.add_response(
+        url="http://localhost:8000/api/v1/container/full/scans%2F518edf43-7370-4670-8e61-e1e18a8152cf?format=text%2Ftab-separate-values",
+        stream=IteratorStream([b"hello\n", b"world\n"]),
+    )
+    buff = io.BytesIO()
+    await run._export(buff, format="text/tab-separate-values")
+    buff.seek(0)
+    streamed = buff.read()
+    assert streamed == b"hello\nworld\n"
 
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman

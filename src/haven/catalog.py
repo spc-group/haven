@@ -1,3 +1,5 @@
+import io
+import itertools
 import asyncio
 import functools
 import logging
@@ -6,17 +8,19 @@ from collections.abc import Sequence
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 from pathlib import Path
-from typing import Mapping
-from urllib.parse import quote_plus
+from typing import Mapping, IO
+from urllib.parse import quote_plus, urlparse, parse_qs
 
 import httpx
 import pandas as pd
 import numpy as np
-from tiled.client import from_profile
+from tiled.client import from_profile as tiled_from_profile
 from tiled.client.base import BaseClient
 from tiled.client.cache import Cache
 from tiled.client.container import _queries_to_params
 from tiled.queries import NoBool
+from tiled.serialization.table import deserialize_arrow
+from tiled.structures.array import BuiltinDtype
 
 from ._iconfig import load_config
 
@@ -70,6 +74,13 @@ class DEFAULT:
     pass
 
 
+def deserialize_array(stream: IO[bytes], structure: dict):
+    dtype = BuiltinDtype.from_json(structure['data_type'])
+    arr = np.frombuffer(stream, dtype=dtype.to_numpy_dtype())
+    arr = arr.reshape(structure['shape'])
+    return arr
+
+
 def tiled_client(
     catalog: str | type[DEFAULT] | None = DEFAULT,
     profile: str = "haven",
@@ -103,7 +114,7 @@ def tiled_client(
     kw = {}
     if cache_filepath is not None:
         kw["cache"] = Cache(cache_filepath)
-    client = from_profile(profile, structure_clients=structure_clients, **kw)
+    client = tiled_from_profile(profile, structure_clients=structure_clients, **kw)
     if catalog is not None:
         client = client[catalog]
     return client
@@ -117,16 +128,74 @@ async def _search(path: str, client: httpx.AsyncClient, params: dict = {}):
 
         """
         # Build query parameters
-        next_url = "/".join(["search", quote_plus(path)]).rstrip('/')
+        next_url = "/".join(["search", quote_plus(path)]).rstrip('/') + "/"
         # Get search results from API
         while next_url is not None:
-            response = await client.get(
-                next_url,
-                params=params,
-            )
+            # Re-use the query parameters
+            paging_params = parse_qs(urlparse(next_url).query)
+            # Extract the next page's parameters to combine with ours
+            parsed = urlparse(next_url)
+            log.info(f"Retrieving search page: {next_url}")
+            try:
+                response = await client.get(
+                    next_url,
+                    params={
+                        **params,
+                        **paging_params,
+                    }
+                )
+            except httpx.ReadTimeout as exc:
+                log.error(f"Read timeout when searching for scans: {exc.request.url}")
+                raise StopIteration
+            response.raise_for_status()
             for run in response.json()['data']:
                 yield run
             next_url = response.json()['links']['next']
+
+
+async def get_table(path: str, structure: dict, client: httpx.AsyncClient) -> pd.DataFrame:
+    url = f"table/full/{quote_plus(path)}"
+    deserialize = deserialize_arrow
+    response = await client.get(url, timeout=20)
+    response.raise_for_status()
+    return deserialize_arrow(response.content)
+
+
+async def get_array(path: str, structure: dict, client: httpx.AsyncClient) -> np.ndarray:
+    url = f"array/block/{quote_plus(path)}"
+    chunks = structure['chunks']
+    num_blocks = num_blocks = (range(len(n)) for n in chunks)
+    blocks = itertools.product(*num_blocks)
+    block_strings = [",".join(str(i) for i in block) for block in blocks]
+    # Get bytes stream from API
+    timeout = len(block_strings) * 5
+    timeout = httpx.Timeout(timeout, pool=timeout)
+    responses = await asyncio.gather(
+        *(client.get(url, params={"block": block}, timeout=timeout)
+          for block in block_strings)
+    )
+    for response in responses:
+        response.raise_for_status()
+    stream = b''.join([response.content for response in responses])
+    return deserialize_array(stream, structure=structure)
+
+def resolve_uri(uri: str) -> str:
+    """Take a Tiled server URI and produce the proper version.
+
+    Makes sure the path to the API is present, and API version.
+
+    """
+    uri = uri.rstrip('/')
+    parts = uri.split('/')
+    if "api" not in parts:
+        new_parts = ["api", "v1"]
+    elif "v1" not in parts:
+        new_parts = ["v1"]
+    else:
+        new_parts = []
+    new_uri = "/".join([*parts, *new_parts])
+    log.info(f"Resolved {uri} to {new_uri}")
+    return new_uri
 
 
 class CatalogScan:
@@ -158,7 +227,7 @@ class CatalogScan:
     @property
     def client(self):
         if self._client is None:
-            self._client = httpx.AsyncClient(base_url=self.base_uri)
+            self._client = httpx.AsyncClient(base_url=self.base_uri, timeout=10)
         return self._client
 
     async def stream_names(self):
@@ -169,21 +238,55 @@ class CatalogScan:
     async def _read_data(self, signals: Sequence[str] | None, dataset: str):
         params = {}
         path = "/".join([self.path, dataset]).rstrip("/")
-        url = f"table/full/{quote_plus(path)}"
-        response = await self.client.get(url, params=params)
-        df = pd.DataFrame(response.json())
-        return df
+        # First figure out what kind of data we're getting
+        response = await self.client.get(f"metadata/{quote_plus(path)}")
+        response.raise_for_status()
+        md = response.json()['data']['attributes']
+        structure_family = md['structure_family']
+        structure = md['structure']
+        loaders = {
+            "table": get_table,
+            "array": get_array,
+        }
+        try:
+            load_dataset = loaders[structure_family]
+        except KeyError:
+            raise KeyError(f"Structure family {structure_family} not yet supported.")
+        return await load_dataset(client=self.client, path=path, structure=structure)
 
     @property
     async def uid(self):
         return (await self.metadata)['start']['uid']
 
-    async def export(self, filename: str, format: str):
-        target = partial(self.container.export, filename, format=format)
-        await self.loop.run_in_executor(None, target)
+    async def _export(self, buff: IO[bytes], format: str):
+        url = f"container/full/{quote_plus(self.path)}"
+        async with self.client.stream("GET", url, params = {"format": format}) as response:
+            if response.is_error:
+                # Make sure error handlers can access the details
+                await response.aread()
+            response.raise_for_status()
+            # Write stream into the file
+            async for chunk in response.aiter_bytes():
+                buff.write(chunk)
 
-    def formats(self):
-        return self.container.formats
+    async def export(self, filename: str, format: str):
+        with open(filename, mode='bw') as fd:
+            await self._export(fd, format=format)
+
+    @property
+    async def formats(self):
+        # Get needed data from API
+        api_info, md = await asyncio.gather(
+            self.client.get(""),
+            self._read_metadata(),
+        )
+        api_info.raise_for_status()
+        api_formats = api_info.json()['formats']
+        # Decide which formats we can support
+        specs = [md['structure_family'], *[spec['name'] for spec in md['specs']]]
+        formats = [api_formats.get(spec, []) for spec in specs]
+        formats = [fmt for fmts in formats for fmt in fmts]
+        return formats
 
     async def data(self, *, signals=None, stream: str = "primary"):
         return await self._read_data(signals, f"{stream}/internal/events/")
@@ -208,8 +311,7 @@ class CatalogScan:
         return asyncio.get_running_loop()
 
     async def data_keys(self, stream: str = "primary"):
-        print(self.path, stream)
-        metadata = await self._read_metadata(stream)
+        metadata = (await self._read_metadata(stream))['metadata']
         data_keys = metadata.get("data_keys")
         return data_keys or {}
 
@@ -230,10 +332,10 @@ class CatalogScan:
 
         """
         run_md, stream_md = await asyncio.gather(
-            self._read_metadata(),
+            self.metadata,
             self._read_metadata(path=stream),
         )
-        print(run_md)
+        stream_md = stream_md['metadata']
         # Get hints for the independent (X)
         try:
             dimensions = run_md["start"]["hints"]["dimensions"]
@@ -255,11 +357,15 @@ class CatalogScan:
         response = await self.client.get(
             f"metadata/{quote_plus(new_path)}",
         )
-        return response.json()["data"]["attributes"]["metadata"]
+        response.raise_for_status()
+        return response.json()["data"]["attributes"]
 
     @property
     async def metadata(self):
-        return await self._read_metadata()
+        if self._metadata is not None:
+            return self._metadata
+        else:
+            return (await self._read_metadata())['metadata']
 
     async def __getitem__(self, signal, stream: str = "primary"):
         """Retrieve a signal from the dataset, with reshaping etc."""
@@ -305,10 +411,10 @@ class Catalog:
     _client: httpx.AsyncClient | None
     base_uri: str
 
-    def __init__(self, path: str, host: str = "http://localhost:8000",client: httpx.AsyncClient | None = None):
-        self.base_uri = f"{host.strip('/')}/api/v1/"
+    def __init__(self, path: str, uri: str = "http://localhost:8000", client: httpx.AsyncClient | None = None):
+        self.base_uri = resolve_uri(uri)
         self.path = path
-        self._client = client
+        self._client = client  # Created on first use if `None`
 
     @property
     def client(self):
@@ -326,22 +432,6 @@ class Catalog:
     async def keys(self):
         async for run in self.runs():
             yield run['id']
-
-    async def items(self):
-        client = await self.client
-        for key, value in await run_in_executor(client.items)():
-            yield key, CatalogScan(container=value, executor=self.executor)
-
-    async def values(self):
-        client = await self.client
-        containers = await run_in_executor(client.values)()
-        for container in containers:
-            yield CatalogScan(container, executor=self.executor)
-
-    async def __len__(self):
-        client = await self.client
-        length = await run_in_executor(client.__len__)()
-        return length
 
     def _search_params(self, queries: Sequence[NoBool] = (), sort: Sequence[str] = ()) -> dict:
         query_params = _queries_to_params(*queries)
@@ -389,12 +479,20 @@ class Catalog:
         >>> await catalog.distinct("foo", "bar", counts=True)
 
         """
+        path = f"distinct/{quote_plus(self.path)}"
         params = self._search_params(queries=queries)
-        response = await self.client.get(
-            f"distinct/{self.path}",
-            params=params,
-        )
-        return response.json()['metadata']
+        params = [{"metadata": key, **params} for key in metadata_keys]
+        aws = [self.client.get(path, params=param) for param in params]
+        for next_response in aws:
+            try:
+                response = await next_response
+                response.raise_for_status()
+            except httpx.ReadTimeout as exc:
+                log.error(f"Timeout reading {exc.request.url}")
+            except httpx.HTTPStatusError as exc:
+                log.exception(exc)
+            else:
+                yield response.json()['metadata']
 
 
 def from_profile(catalog: str = "scans", profile: str = "haven") -> Catalog:
