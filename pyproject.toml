@@ -21,7 +21,7 @@ dependencies = ["aioca", "aiokafka", "bluesky", "ophyd",
 	        "mergedeep", "xrayutilities", "bluesky-queueserver-api", "tomlkit",
 		"apstools", "ophyd-registry>=2.0.0rc1", "caproto", "pcdsdevices",
 		"bluesky-adaptive", "tiled[client]", "guarneri>=0.2.0",
-		"httpx"]
+		"httpx[http2]"]
 
 [project.optional-dependencies]
 

@@ -419,7 +419,7 @@ class Catalog:
     @property
     def client(self):
         if self._client is None:
-            self._client = httpx.AsyncClient(base_url=self.base_uri)
+            self._client = httpx.AsyncClient(base_url=self.base_uri, http2=True)
         return self._client
 
     def __getitem__(self, uid) -> CatalogScan:

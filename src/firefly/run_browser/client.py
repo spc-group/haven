@@ -24,7 +24,7 @@ class DatabaseWorker:
 
     def __init__(self, base_url: str = "http://localhost:8000"):
         uri = resolve_uri(base_url)
-        self.client = httpx.AsyncClient(base_url=uri, timeout=20)
+        self.client = httpx.AsyncClient(base_url=uri, timeout=20, http2=True)
 
     def change_catalog(self, catalog_name: str):
         """Change the catalog being used for pulling data.
