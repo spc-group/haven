@@ -81,7 +81,9 @@ class RunBrowserDisplay(display.FireflyDisplay):
         ==========
         Each key in *tiled_client* should be"""
         self.db = DatabaseWorker(base_url=base_url)
-        self.ui.catalog_combobox.addItems(await self.db.catalog_names())
+        with self.busy_hints(run_widgets=True, run_table=True, filter_widgets=False):
+            catalog_names = await self.db.catalog_names()
+        self.ui.catalog_combobox.addItems(catalog_names)
         self.ui.catalog_combobox.setCurrentText(catalog_name)
         await self.change_catalog(catalog_name)
 

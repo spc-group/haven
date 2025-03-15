@@ -80,7 +80,7 @@ class DatabaseWorker:
             "proposal": (queries.Eq, "start.proposal_id"),
             "esaf": (queries.Eq, "start.esaf_id"),
             "beamline": (queries.Eq, "start.beamline_id"),
-            "before": (partial(queries.Comparison, "le"), "end.time"),
+            "before": (partial(queries.Comparison, "le"), "stop.time"),
             "after": (partial(queries.Comparison, "ge"), "start.time"),
             "full_text": (queries.FullText, ""),
             "standards_only": (queries.Eq, "start.is_standard"),
