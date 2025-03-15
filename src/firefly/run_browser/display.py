@@ -74,14 +74,16 @@ class RunBrowserDisplay(display.FireflyDisplay):
         self._busy_hinters = Counter()
         self.reset_default_filters()
 
-    async def setup_database(self, tiled_client: Container, catalog_name: str):
+    async def setup_database(self, base_url: str, catalog_name: str):
         """Prepare to use a set of databases accessible through *tiled_client*.
 
         Parameters
         ==========
         Each key in *tiled_client* should be"""
-        self.db = DatabaseWorker(tiled_client)
-        self.ui.catalog_combobox.addItems(await self.db.catalog_names())
+        self.db = DatabaseWorker(base_url=base_url)
+        with self.busy_hints(run_widgets=True, run_table=True, filter_widgets=False):
+            catalog_names = await self.db.catalog_names()
+        self.ui.catalog_combobox.addItems(catalog_names)
         self.ui.catalog_combobox.setCurrentText(catalog_name)
         await self.change_catalog(catalog_name)
 
@@ -89,7 +91,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
     @cancellable
     async def change_catalog(self, catalog_name: str):
         """Activate a different catalog in the Tiled server."""
-        await self.db_task(self.db.change_catalog(catalog_name), name="change_catalog")
+        self.db.change_catalog(catalog_name)
         await self.db_task(
             asyncio.gather(self.load_runs(), self.update_combobox_items()),
             name="change_catalog",
@@ -190,23 +192,25 @@ class RunBrowserDisplay(display.FireflyDisplay):
 
     async def update_combobox_items(self):
         """"""
-        with self.busy_hints(run_table=False, run_widgets=False, filter_widgets=True):
-            fields = await self.db.load_distinct_fields()
-            for field_name, cb in [
-                ("plan_name", self.ui.filter_plan_combobox),
-                ("sample_name", self.ui.filter_sample_combobox),
-                ("sample_formula", self.ui.filter_formula_combobox),
-                ("edge", self.ui.filter_edge_combobox),
-                ("exit_status", self.ui.filter_exit_status_combobox),
-                ("proposal_id", self.ui.filter_proposal_combobox),
-                ("esaf_id", self.ui.filter_esaf_combobox),
-                ("beamline_id", self.ui.filter_beamline_combobox),
-            ]:
-                if field_name in fields.keys():
-                    old_text = cb.currentText()
-                    cb.clear()
-                    cb.addItems(fields[field_name])
-                    cb.setCurrentText(old_text)
+        filter_boxes = {
+            "start.plan_name": self.ui.filter_plan_combobox,
+            "start.sample_name": self.ui.filter_sample_combobox,
+            "start.sample_formula": self.ui.filter_formula_combobox,
+            "start.edge": self.ui.filter_edge_combobox,
+            "stop.exit_status": self.ui.filter_exit_status_combobox,
+            "start.proposal_id": self.ui.filter_proposal_combobox,
+            "start.esaf_id": self.ui.filter_esaf_combobox,
+            "start.beamline_id": self.ui.filter_beamline_combobox,
+        }
+        # Clear old entries first so we don't have stale ones
+        for key, cb in filter_boxes.items():
+            cb.clear()
+        # Populate with new results
+        async for field_name, fields in self.db.distinct_fields():
+            cb = filter_boxes[field_name]
+            old_value = cb.currentText()
+            cb.addItems(fields)
+            cb.setCurrentText(old_value)
 
     def customize_ui(self):
         self.load_models()
@@ -359,7 +363,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
         """Update the list of available streams to choose from."""
         stream_names = await self.db.stream_names()
         # Sort so that "primary" is first
-        sorted(stream_names, key=lambda x: x != "primary")
+        stream_names = sorted(stream_names, key=lambda x: x != "primary")
         self.ui.stream_combobox.clear()
         self.ui.stream_combobox.addItems(stream_names)
         if "primary" in stream_names:
@@ -385,7 +389,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
         """
         dialog = self.export_dialog
         # Determine default mimetypes
-        mimetypes = self.selected_runs[0].formats()
+        mimetypes = await self.selected_runs[0].formats
         filenames = dialog.ask(mimetypes=mimetypes)
         mimetype = dialog.selectedMimeTypeFilter()
         formats = [mimetype] * len(filenames)
@@ -487,17 +491,13 @@ class RunBrowserDisplay(display.FireflyDisplay):
         indexes = self.ui.run_tableview.selectedIndexes()
         uids = [i.siblingAtColumn(col_idx).data() for i in indexes]
         # Get selected runs from the database
-        with self.busy_hints(run_widgets=True, run_table=False, filter_widgets=False):
-            task = self.db_task(
-                self.db.load_selected_runs(uids=uids), "update selected runs"
-            )
-            self.selected_runs = await task
-            # Update the necessary UI elements
-            await self.update_streams()
-            await self.update_data_keys()
-            # Update the plots
-            await self.update_plots()
-            self.update_export_button()
+        self.selected_runs = self.db.load_selected_runs(uids=uids)
+        # Update the necessary UI elements
+        await self.update_streams()
+        await self.update_data_keys()
+        # Update the plots
+        await self.update_plots()
+        self.update_export_button()
 
     def filters(self, *args):
         new_filters = {

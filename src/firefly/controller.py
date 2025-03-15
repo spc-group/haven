@@ -14,6 +14,7 @@ from qtpy import QtCore, QtWidgets
 from qtpy.QtCore import Signal, Slot
 from qtpy.QtGui import QIcon, QKeySequence
 from qtpy.QtWidgets import QAction, QErrorMessage
+from tiled.profiles import load_profiles
 
 from haven import beamline, load_config, tiled_client
 from haven.exceptions import ComponentNotFound, InvalidConfiguration
@@ -341,16 +342,10 @@ class FireflyController(QtCore.QObject):
         self.run_updated.connect(display.update_running_scan)
         self.run_stopped.connect(display.update_running_scan)
         # Set initial state for the run_browser
-        try:
-            client = tiled_client(catalog=None)
-        except httpx.ConnectError as exc:
-            msg = "Could not connect to Tiled.<br /><br />"
-            msg += f"{exc.request.url}"
-            display.error_dialog.showMessage(msg, "connection error")
-            raise exc
         config = load_config()["tiled"]
+        path, tiled_config = load_profiles()['haven']
         await display.setup_database(
-            tiled_client=client, catalog_name=config["default_catalog"]
+            base_url=tiled_config['uri'], catalog_name=config["default_catalog"]
         )
 
     def finalize_status_window(self, action: QAction):
