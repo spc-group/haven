@@ -142,13 +142,15 @@ def test_busy_hints_multiple(display):
 
 async def test_update_combobox_items(display):
     """Check that the comboboxes get the distinct filter fields."""
+    # Some of these have filters are disabled because they are slow
+    # with sqlite They may be re-enabled when switching to postgres
     assert display.ui.filter_plan_combobox.count() > 0
-    assert display.ui.filter_sample_combobox.count() > 0
-    assert display.ui.filter_formula_combobox.count() > 0
+    assert display.ui.filter_sample_combobox.count() == 0
+    assert display.ui.filter_formula_combobox.count() == 0
     assert display.ui.filter_edge_combobox.count() > 0
     assert display.ui.filter_exit_status_combobox.count() > 0
-    assert display.ui.filter_proposal_combobox.count() > 0
-    assert display.ui.filter_esaf_combobox.count() > 0
+    assert display.ui.filter_proposal_combobox.count() == 0
+    assert display.ui.filter_esaf_combobox.count() == 0
     assert display.ui.filter_beamline_combobox.count() > 0
 
 
@@ -166,7 +168,7 @@ async def test_export_button_enabled(display):
 
 async def test_export_button_clicked(display, mocker, qtbot):
     # Set up a run to be tested against
-    run = MagicMock()
+    run = AsyncMock()
     run.formats.return_value = [
         "application/json",
         "application/x-hdf5",
@@ -284,6 +286,9 @@ async def test_update_running_scan(display, qtbot):
     display.ui.run_tableview.selectRow(0)
     await display.update_selected_runs()
 
+
+async def test_infinite_scroll(display):
+    pass
 
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman

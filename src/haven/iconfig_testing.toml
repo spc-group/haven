@@ -34,8 +34,10 @@ servers = ["fedorov.xray.aps.anl.gov:9092"]
 topic = "bluesky.documents.haven-dev"
 
 [tiled]
+# uri = "http://localhost:8000/api"
 default_catalog = "testing"
 cache_filepath = "/tmp/tiled/http_response_cache.db"
+# api_key = ""
 
 [database.databroker]
 catalog = "bluesky"

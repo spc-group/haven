@@ -207,6 +207,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
             cb.clear()
         # Populate with new results
         async for field_name, fields in self.db.distinct_fields():
+            print(field_name)
             cb = filter_boxes[field_name]
             old_value = cb.currentText()
             cb.addItems(fields)
@@ -389,7 +390,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
         """
         dialog = self.export_dialog
         # Determine default mimetypes
-        mimetypes = await self.selected_runs[0].formats
+        mimetypes = await self.selected_runs[0].formats()
         filenames = dialog.ask(mimetypes=mimetypes)
         mimetype = dialog.selectedMimeTypeFilter()
         formats = [mimetype] * len(filenames)

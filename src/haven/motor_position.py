@@ -10,7 +10,8 @@ from pydantic import BaseModel
 from rich import print as rprint
 from tiled.queries import Key, Regex
 
-from .catalog import Catalog, tiled_client
+from haven._iconfig import load_config
+from .catalog import Catalog, tiled_client, CatalogScan
 from .instrument import beamline
 
 log = logging.getLogger(__name__)
@@ -185,7 +186,7 @@ async def list_motor_positions(after: float | None = None, before: float | None 
         rprint(f"[yellow]No motor positions found: {before=}, {after=}[/]")
 
 
-def get_motor_position(uid: str) -> MotorPosition:
+async def get_motor_position(uid: str) -> MotorPosition:
     """Retrieve a previously saved motor position from the database.
 
     Parameters
@@ -202,10 +203,10 @@ def get_motor_position(uid: str) -> MotorPosition:
 
     """
     # Filter out query parameters that are ``None``
-    client = tiled_client()
-    run = client[uid]
+    catalog_name = load_config()['tiled']['default_catalog']
+    run = CatalogScan("/".join([catalog_name, uid]))
     # Feedback for if no matching motor positions are in the database
-    position = MotorPosition.load(run)
+    position = await MotorPosition.aload(run)
     return position
 
 
@@ -214,6 +215,7 @@ async def get_motor_positions(
     after: float | None = None,
     name: str | None = None,
     case_sensitive: bool = True,
+    catalog: Catalog | None = None,
 ) -> list[MotorPosition]:
     """Get all motor position objects from the catalog.
 
@@ -237,25 +239,27 @@ async def get_motor_positions(
       The motor positions matching the requested parameters.
 
     """
-    runs = Catalog(client=tiled_client())
+    if catalog is None:
+        path = load_config()["tiled"]['default_catalog']
+        catalog = Catalog(path=path)
     # Filter only saved motor positions
-    runs = await runs.search(Key("plan_name") == "save_motor_position")
+    queries = [Key("plan_name") == "save_motor_position"]
+    # runs = await catalog.search(Key("plan_name") == "save_motor_position")
     # Filter by timestamp
     if before is not None:
-        runs = await runs.search(Key("time") < before)
+        queries.append(Key("time") < before)
     if after is not None:
-        runs = await runs.search(Key("time") > after)
+        queries.append(Key("time") > after)
     # Filter by position name
     if name is not None:
-        runs = await runs.search(
+        queries.append(
             Regex("position_name", name, case_sensitive=case_sensitive)
         )
+    # Retrieve from the database
+    runs = catalog.runs(queries=queries)
     # Create the actual motor position objects
-    async for uid, run in runs.items():
-        try:
-            yield await MotorPosition.aload(run)
-        except KeyError:
-            continue
+    async for run in runs:
+        yield await MotorPosition.aload(run)
 
 
 def recall_motor_position(uid: str):
@@ -268,7 +272,12 @@ def recall_motor_position(uid: str):
 
     """
     # Get the saved position from the database
-    position = get_motor_position(uid=uid)
+    def builder():
+        return get_motor_position(uid=uid)
+
+    task, = yield from bps.wait_for([builder])
+    position = task.result()
+    print(position)
     # Create a move plan to recall the position
     plan_args = []
     for axis in position.motors:

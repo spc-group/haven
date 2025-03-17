@@ -3,6 +3,8 @@ import re
 import httpx
 import pandas as pd
 import pytest
+from tiled.serialization.table import serialize_arrow
+from pytest_httpx import IteratorStream
 
 from firefly.run_browser.client import DatabaseWorker
 
@@ -36,7 +38,6 @@ def run_metadata_api(httpx_mock):
         url=run_metadata_urls,
         is_reusable=True,
     )
-
 
 
 @pytest.fixture()
@@ -83,16 +84,8 @@ async def test_load_selected_runs():
 
 
 @pytest.mark.asyncio
-async def test_data_frames(worker, httpx_mock, run_metadata_api):
+async def test_data_frames(worker, httpx_mock, run_metadata_api, tiled_api):
     df = pd.DataFrame()
-    httpx_mock.add_response(
-        url=re.compile("http://localhost:8000/api/v1/table/full/scans%2F[-a-z0-9]+%2Fprimary%2Finternal%2Fevents"),
-        json={
-            "seq_num": [1, 2, 3],
-            "I0": [2000, 2013, 1998],
-        },
-        is_reusable=True,
-    )
     worker.load_selected_runs([
         "85573831-f4b4-4f64-b613-a6007bf03a8d",
         "7d1daf1d-60c7-4aa7-a668-d1cd97e5335f",
@@ -142,7 +135,7 @@ async def test_hints(worker, httpx_mock):
 @pytest.mark.asyncio
 async def test_catalog_names(worker, httpx_mock):
     httpx_mock.add_response(
-        url="http://localhost:8000/api/v1/search",
+        url="http://localhost:8000/api/v1/search/",
         json={
             "data": [{"id": "255id_testing"}, {"id": "255bm_testing"}],
             "links": {"next": None},
@@ -160,10 +153,11 @@ async def test_filter_runs(worker, tiled_api):
 
 @pytest.mark.asyncio
 async def test_distinct_fields(worker, tiled_api):
-    distinct_fields = await worker.distinct_fields()
+    distinct_fields = [field async for field in worker.distinct_fields()]
+    keys, fields = zip(*distinct_fields)
     # Check that the dictionary has the right structure
-    for key in ["plan_name"]:
-        assert key in distinct_fields.keys()
+    for key in ["start.plan_name"]:
+        assert key in keys
 
 
 async def test_stream_names(worker, tiled_api):

@@ -4,7 +4,7 @@ import asyncio
 import functools
 import logging
 import warnings
-from collections.abc import Sequence
+from collections.abc import Sequence, Generator
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 from pathlib import Path
@@ -155,7 +155,6 @@ async def _search(path: str, client: httpx.AsyncClient, params: dict = {}):
 
 async def get_table(path: str, structure: dict, client: httpx.AsyncClient) -> pd.DataFrame:
     url = f"table/full/{quote_plus(path)}"
-    deserialize = deserialize_arrow
     response = await client.get(url, timeout=20)
     response.raise_for_status()
     return deserialize_arrow(response.content)
@@ -164,7 +163,7 @@ async def get_table(path: str, structure: dict, client: httpx.AsyncClient) -> pd
 async def get_array(path: str, structure: dict, client: httpx.AsyncClient) -> np.ndarray:
     url = f"array/block/{quote_plus(path)}"
     chunks = structure['chunks']
-    num_blocks = num_blocks = (range(len(n)) for n in chunks)
+    num_blocks = (range(len(n)) for n in chunks)
     blocks = itertools.product(*num_blocks)
     block_strings = [",".join(str(i) for i in block) for block in blocks]
     # Get bytes stream from API
@@ -227,7 +226,10 @@ class CatalogScan:
     @property
     def client(self):
         if self._client is None:
-            self._client = httpx.AsyncClient(base_url=self.base_uri, timeout=10)
+            tiled_config = load_config()['tiled']
+            base_uri = tiled_config.get("uri", "http://localhost:8000/api")
+            base_uri = resolve_uri(base_uri)
+            self._client = httpx.AsyncClient(base_url=base_uri, timeout=10)
         return self._client
 
     async def stream_names(self):
@@ -243,7 +245,7 @@ class CatalogScan:
         response.raise_for_status()
         md = response.json()['data']['attributes']
         structure_family = md['structure_family']
-        structure = md['structure']
+        structure = md.get('structure', {})
         loaders = {
             "table": get_table,
             "array": get_array,
@@ -256,7 +258,8 @@ class CatalogScan:
 
     @property
     async def uid(self):
-        return (await self.metadata)['start']['uid']
+        md = await self.metadata
+        return md['start']['uid']
 
     async def _export(self, buff: IO[bytes], format: str):
         url = f"container/full/{quote_plus(self.path)}"
@@ -273,7 +276,6 @@ class CatalogScan:
         with open(filename, mode='bw') as fd:
             await self._export(fd, format=format)
 
-    @property
     async def formats(self):
         # Get needed data from API
         api_info, md = await asyncio.gather(
@@ -365,7 +367,8 @@ class CatalogScan:
         if self._metadata is not None:
             return self._metadata
         else:
-            return (await self._read_metadata())['metadata']
+            response = await self._read_metadata()
+            return response['metadata']
 
     async def __getitem__(self, signal, stream: str = "primary"):
         """Retrieve a signal from the dataset, with reshaping etc."""
@@ -447,7 +450,7 @@ class Catalog:
         queries: Sequence[NoBool] = (),
         sort: Sequence[str] = (),
         batch_size: int = 100,
-    ):
+    ) -> Generator[CatalogScan, None, None]:
         """All the scans in the catalog matching the given criteria.
 
         This is a batched iterator that will fetch the next batch of

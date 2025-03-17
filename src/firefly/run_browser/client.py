@@ -3,6 +3,7 @@ import datetime as dt
 import logging
 import warnings
 from collections import ChainMap, OrderedDict
+from collections.abc import Generator
 from functools import partial
 from typing import Mapping, Sequence
 
@@ -99,7 +100,7 @@ class DatabaseWorker:
         async for run in self.catalog.runs(queries=_queries):
             yield run
 
-    async def distinct_fields(self):
+    async def distinct_fields(self) -> Generator[tuple[str, dict], None, None]:
         """Get distinct metadata fields for filterable metadata."""
         new_fields = {}
         # Some of these are disabled since they take forever
@@ -111,8 +112,8 @@ class DatabaseWorker:
             "start.edge",
             "stop.exit_status",
             # "start.proposal_id",
-            "start.esaf_id",
-            # "start.beamline_id",
+            # "start.esaf_id",
+            "start.beamline_id",
         ]
         # Get fields from the database
         async for distinct in self.catalog.distinct(*target_fields):
@@ -121,12 +122,6 @@ class DatabaseWorker:
             fields = [field['value'] for field in fields]
             fields = [field for field in fields if field not in ["", None]]
             yield field_name, fields
-        # response = await self.catalog.distinct(*target_fields)
-        # # Build into a new dictionary
-        # for key, result in response.items():
-        #     field = key.split(".")[-1]
-        #     new_fields[field] = [r["value"] for r in result]
-        # return new_fields
 
     async def load_all_runs(self, filters: Mapping = {}):
         all_runs = []

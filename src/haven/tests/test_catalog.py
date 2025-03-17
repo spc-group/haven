@@ -107,14 +107,13 @@ async def test_distinct(catalog, httpx_mock):
     }
     httpx_mock.add_response(
         json={"metadata": distinct},
-        url="http://localhost:8000/api/v1/distinct/scans",
+        url="http://localhost:8000/api/v1/distinct/scans?metadata=plan_name",
     )
-    assert await catalog.distinct("plan_name") == distinct
+    assert [run async for run in catalog.distinct("plan_name")] == [distinct]
 
 
-@pytest.mark.asyncio
-async def test_catalog_runs(catalog, httpx_mock):
-    """Make sure we can query to database properly."""
+@pytest.fixture()
+def search_api(httpx_mock):
     params = {
         "sort": "-name",
         "filter[regex][condition][key]": ["plan_name"],
@@ -129,7 +128,7 @@ async def test_catalog_runs(catalog, httpx_mock):
             },
         },
         url=httpx.URL(
-            "http://localhost:8000/api/v1/search/scans",
+            "http://localhost:8000/api/v1/search/scans/",
             params=params,
         ),
     )
@@ -146,12 +145,25 @@ async def test_catalog_runs(catalog, httpx_mock):
             params=params,
         ),
     )
+
+
+
+@pytest.mark.asyncio
+async def test_catalog_runs(catalog, search_api):
+    """Make sure we can query to database properly."""
     # Run the gnerator
     query = queries.Regex("plan_name", "xafs_scan")
     runs = catalog.runs(queries=[query], sort=["-name"])
     runs = [run async for run in runs]
     # Make sure the results are right
     assert len(runs) == 2
+
+
+@pytest.mark.skip("Come back to this one")
+async def test_run_pages(catalog, search_api):
+    """Check that we can get pages of runs in a generator."""
+    pages = [page async for page in catalog.run_pages]
+    assert len(pages) == 2
 
 
 async def test_hints(run, httpx_mock):
@@ -246,7 +258,7 @@ def test_deserialize_array():
 
 async def test_formats(run, httpx_mock):
     httpx_mock.add_response(
-        "http://localhost:8000/api/v1/",
+        url="http://localhost:8000/api/v1/",
         json={
             "formats": {
                 "container": ["application/x-nexus"],
@@ -254,7 +266,7 @@ async def test_formats(run, httpx_mock):
             },
         }
     )
-    assert await run.formats == ["application/x-nexus", "text/tab-separated-values"]
+    assert await run.formats() == ["application/x-nexus", "text/tab-separated-values"]
 
 
 async def test_export(run, httpx_mock):
