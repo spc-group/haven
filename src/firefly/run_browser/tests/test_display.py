@@ -1,7 +1,7 @@
 import asyncio
 import datetime as dt
 from functools import partial
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 
 import pytest
 import time_machine
@@ -9,7 +9,6 @@ from ophyd.sim import instantiate_fake_device
 from qtpy.QtWidgets import QFileDialog
 
 from firefly.run_browser.display import RunBrowserDisplay
-from haven.catalog import Catalog
 from haven.devices.beamline_manager import EpicsBssDevice
 
 
@@ -34,7 +33,9 @@ async def display(qtbot, mocker, tiled_api):
     qtbot.addWidget(display)
     display.clear_filters()
     # Wait for the initial database load to process
-    await display.setup_database(base_url="http://localhost:8000/api/v1", catalog_name="scans")
+    await display.setup_database(
+        base_url="http://localhost:8000/api/v1", catalog_name="scans"
+    )
     return display
 
 
@@ -289,6 +290,7 @@ async def test_update_running_scan(display, qtbot):
 
 async def test_infinite_scroll(display):
     pass
+
 
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman

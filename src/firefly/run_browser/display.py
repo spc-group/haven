@@ -15,7 +15,6 @@ from qasync import asyncSlot
 from qtpy.QtCore import QDateTime, Qt, Signal
 from qtpy.QtGui import QStandardItem, QStandardItemModel
 from qtpy.QtWidgets import QErrorMessage
-from tiled.client.container import Container
 
 from firefly import display
 from firefly.run_browser.client import DatabaseWorker

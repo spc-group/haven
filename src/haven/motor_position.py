@@ -11,7 +11,8 @@ from rich import print as rprint
 from tiled.queries import Key, Regex
 
 from haven._iconfig import load_config
-from .catalog import Catalog, tiled_client, CatalogScan
+
+from .catalog import Catalog, CatalogScan
 from .instrument import beamline
 
 log = logging.getLogger(__name__)
@@ -203,7 +204,7 @@ async def get_motor_position(uid: str) -> MotorPosition:
 
     """
     # Filter out query parameters that are ``None``
-    catalog_name = load_config()['tiled']['default_catalog']
+    catalog_name = load_config()["tiled"]["default_catalog"]
     run = CatalogScan("/".join([catalog_name, uid]))
     # Feedback for if no matching motor positions are in the database
     position = await MotorPosition.aload(run)
@@ -240,7 +241,7 @@ async def get_motor_positions(
 
     """
     if catalog is None:
-        path = load_config()["tiled"]['default_catalog']
+        path = load_config()["tiled"]["default_catalog"]
         catalog = Catalog(path=path)
     # Filter only saved motor positions
     queries = [Key("plan_name") == "save_motor_position"]
@@ -252,9 +253,7 @@ async def get_motor_positions(
         queries.append(Key("time") > after)
     # Filter by position name
     if name is not None:
-        queries.append(
-            Regex("position_name", name, case_sensitive=case_sensitive)
-        )
+        queries.append(Regex("position_name", name, case_sensitive=case_sensitive))
     # Retrieve from the database
     runs = catalog.runs(queries=queries)
     # Create the actual motor position objects
@@ -271,11 +270,12 @@ def recall_motor_position(uid: str):
       The universal identifier for the the document in the collection.
 
     """
+
     # Get the saved position from the database
     def builder():
         return get_motor_position(uid=uid)
 
-    task, = yield from bps.wait_for([builder])
+    (task,) = yield from bps.wait_for([builder])
     position = task.result()
     print(position)
     # Create a move plan to recall the position

@@ -10,11 +10,10 @@ from typing import Mapping, Sequence
 import httpx
 import numpy as np
 import pandas as pd
-from qasync import asyncSlot
 from tiled import queries
 
 from haven import exceptions
-from haven.catalog import from_profile, Catalog, _search, resolve_uri
+from haven.catalog import Catalog, _search, resolve_uri
 
 log = logging.getLogger(__name__)
 
@@ -36,7 +35,7 @@ class DatabaseWorker:
 
     async def catalog_names(self):
         catalogs = _search(path="", client=self.client)
-        return [cat['id'] async for cat in catalogs]
+        return [cat["id"] async for cat in catalogs]
 
     async def stream_names(self):
         awaitables = [scan.stream_names() for scan in self.selected_runs]
@@ -64,8 +63,8 @@ class DatabaseWorker:
         aws = [run.data(stream=stream) for run in self.selected_runs]
         aws += [run.uid for run in self.selected_runs]
         results = await asyncio.gather(*aws)
-        dfs = results[:len(results)//2]
-        uids = results[len(results)//2:]
+        dfs = results[: len(results) // 2]
+        uids = results[len(results) // 2 :]
         return {uid: df for uid, df in zip(uids, dfs)}
 
     async def filtered_runs(self, filters: Mapping):
@@ -119,7 +118,7 @@ class DatabaseWorker:
         async for distinct in self.catalog.distinct(*target_fields):
             field_name = list(distinct.keys())[0]
             fields = distinct[field_name]
-            fields = [field['value'] for field in fields]
+            fields = [field["value"] for field in fields]
             fields = [field for field in fields if field not in ["", None]]
             yield field_name, fields
 

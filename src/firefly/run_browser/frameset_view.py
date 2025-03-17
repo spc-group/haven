@@ -22,7 +22,8 @@ class FramesetImageView(pg.ImageView):
         super().__init__(*args, view=view, **kwargs)
         self.timeLine.setPen((255, 255, 0, 200), width=5)
         self.timeLine.setHoverPen("r", width=5)
-        self.setColorMap(pg.colormap.get("viridis"));
+        self.setColorMap(pg.colormap.get("viridis"))
+
 
 class FramesetView(QtWidgets.QWidget):
     ui_file = Path(__file__).parent / "frameset_view.ui"

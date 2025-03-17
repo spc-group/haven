@@ -1,11 +1,11 @@
 import re
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import parse_qs, urlparse
 
 import httpx
 import pandas as pd
+import pytest
 from pytest_httpx import IteratorStream
 from tiled.serialization.table import serialize_arrow
-import pytest
 
 
 def md_to_json(metadata):
@@ -14,7 +14,7 @@ def md_to_json(metadata):
 
 
 def distinct_fields(request: httpx.Request):
-    queries = parse_qs(urlparse(str(request.url)).query)['metadata']
+    queries = parse_qs(urlparse(str(request.url)).query)["metadata"]
     md = {
         "start.plan_name": [
             {"value": "scan", "count": None},
@@ -51,7 +51,8 @@ def distinct_fields(request: httpx.Request):
     }
     md = {key: fields for key, fields in md.items() if key in queries}
     return httpx.Response(
-        status_code=200, json={"metadata": md},
+        status_code=200,
+        json={"metadata": md},
     )
 
 
@@ -88,25 +89,22 @@ def tiled_api(httpx_mock):
     )
     httpx_mock.add_response(
         url="http://localhost:8000/api/v1/metadata/scans%2Fscan1",
-        json=md_to_json({
-            "start": {
-                "uid": "scan1"
-            },
-        }),
+        json=md_to_json(
+            {
+                "start": {"uid": "scan1"},
+            }
+        ),
         is_reusable=True,
         is_optional=True,
     )
     httpx_mock.add_response(
         url=re.compile(r"^http://localhost:8000/api/v1/search/scans/($|\?)"),
         json={
-            "data": [
-                {"id": "scan1"}
-            ],
+            "data": [{"id": "scan1"}],
             "links": {"next": None},
         },
         is_reusable=True,
         is_optional=True,
-        
     )
     httpx_mock.add_response(
         url="http://localhost:8000/api/v1/metadata/scans%2Fscan1%2Fprimary",
@@ -115,7 +113,9 @@ def tiled_api(httpx_mock):
         is_optional=True,
     )
     httpx_mock.add_response(
-        url=re.compile("http://localhost:8000/api/v1/metadata/scans%2F[-a-z0-9]+%2Fprimary%2Finternal%2Fevents"),
+        url=re.compile(
+            "http://localhost:8000/api/v1/metadata/scans%2F[-a-z0-9]+%2Fprimary%2Finternal%2Fevents"
+        ),
         json={
             "data": {
                 "id": "events",
@@ -124,7 +124,7 @@ def tiled_api(httpx_mock):
                         "scans",
                         "a21b0ee2-6a06-4c7c-b96b-0dab9b0eef75",
                         "primary",
-                        "internal"
+                        "internal",
                     ],
                     "metadata": {
                         "uid": "ba1bfc01-9382-4f78-8e19-513fa0e217fd",
@@ -157,11 +157,22 @@ def tiled_api(httpx_mock):
         is_optional=True,
     )
     httpx_mock.add_response(
-        url=re.compile("http://localhost:8000/api/v1/table/full/scans%2F[-a-z0-9]+%2Fprimary%2Finternal%2Fevents"),
-        stream=IteratorStream([serialize_arrow(pd.DataFrame({
-            "seq_num": [1, 2, 3],
-            "I0": [2000, 2013, 1998],
-        }), metadata={})]),
+        url=re.compile(
+            "http://localhost:8000/api/v1/table/full/scans%2F[-a-z0-9]+%2Fprimary%2Finternal%2Fevents"
+        ),
+        stream=IteratorStream(
+            [
+                serialize_arrow(
+                    pd.DataFrame(
+                        {
+                            "seq_num": [1, 2, 3],
+                            "I0": [2000, 2013, 1998],
+                        }
+                    ),
+                    metadata={},
+                )
+            ]
+        ),
         is_reusable=True,
         is_optional=True,
     )

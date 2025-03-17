@@ -4,7 +4,6 @@ from collections import OrderedDict
 from functools import partial
 from pathlib import Path
 
-import httpx
 import pydm
 import qtawesome as qta
 from ophyd_async.core import NotConnected
@@ -16,7 +15,7 @@ from qtpy.QtGui import QIcon, QKeySequence
 from qtpy.QtWidgets import QAction, QErrorMessage
 from tiled.profiles import load_profiles
 
-from haven import beamline, load_config, tiled_client
+from haven import beamline, load_config
 from haven.exceptions import ComponentNotFound, InvalidConfiguration
 from haven.utils import titleize
 
@@ -343,9 +342,9 @@ class FireflyController(QtCore.QObject):
         self.run_stopped.connect(display.update_running_scan)
         # Set initial state for the run_browser
         config = load_config()["tiled"]
-        path, tiled_config = load_profiles()['haven']
+        path, tiled_config = load_profiles()["haven"]
         await display.setup_database(
-            base_url=tiled_config['uri'], catalog_name=config["default_catalog"]
+            base_url=tiled_config["uri"], catalog_name=config["default_catalog"]
         )
 
     def finalize_status_window(self, action: QAction):
