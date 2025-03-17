@@ -26,7 +26,8 @@ dependencies = ["aioca", "aiokafka", "bluesky", "ophyd",
 [project.optional-dependencies]
 
 dev = ["black", "pytest", "asynctest", "build", "twine", "pytest-httpx",
-       "time-machine", "pytest-mock", "pytest-qt", "flake8", "pytest-asyncio", "tiled[all]"]
+       "time-machine", "pytest-mock", "pytest-qt", "flake8", "pytest-asyncio",
+       "pytest_httpx"]
 gui = ["qtawesome", "pydm<=1.24.1", "pyqtgraph", "qasync", "tiled[all]"]
 
 [project.urls]
