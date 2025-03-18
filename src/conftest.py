@@ -42,6 +42,7 @@ def sim_registry(monkeypatch):
     objects_by_name = registry._objects_by_name
     objects_by_label = registry._objects_by_label
     registry.clear()
+    registry.use_typhos = False
     # Run the test
     try:
         yield registry

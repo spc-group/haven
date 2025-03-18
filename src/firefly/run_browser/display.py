@@ -206,7 +206,6 @@ class RunBrowserDisplay(display.FireflyDisplay):
             cb.clear()
         # Populate with new results
         async for field_name, fields in self.db.distinct_fields():
-            print(field_name)
             cb = filter_boxes[field_name]
             old_value = cb.currentText()
             cb.addItems(fields)

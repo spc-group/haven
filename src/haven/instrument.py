@@ -111,6 +111,7 @@ beamline = HavenInstrument(
         "scaler": MultiChannelScaler,
     },
 )
+beamline.devices.use_typhos = False
 
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman

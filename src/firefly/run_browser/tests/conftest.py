@@ -70,7 +70,9 @@ def tiled_api(httpx_mock):
         is_optional=True,
     )
     httpx_mock.add_callback(
-        url=re.compile("http://localhost:8000/api/v1/distinct/scans\?metadata=[a-z.]+"),
+        url=re.compile(
+            r"http://localhost:8000/api/v1/distinct/scans\?metadata=[a-z.]+"
+        ),
         callback=distinct_fields,
         is_reusable=True,
         is_optional=True,
