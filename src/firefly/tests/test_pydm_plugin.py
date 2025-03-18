@@ -2,9 +2,7 @@ import asyncio
 import uuid
 from unittest.mock import MagicMock
 
-import pydm
 import pytest
-from ophyd import Signal
 from ophyd_async.core import soft_signal_rw
 from pydm.data_plugins import plugin_for_address
 from pydm.widgets import PyDMChannel, PyDMLineEdit
@@ -14,27 +12,28 @@ from qtpy.QtCore import Signal as QSignal
 from firefly.pydm_plugin import HavenPlugin
 
 
-def test_plugin_registered():
-    plugin = plugin_for_address("haven://")
+@pytest.fixture()
+async def plugin():
+    _plugin = plugin_for_address("haven://")
+    # For some reason, this lock doesn't get released when exiting tests
+    _plugin.lock = MagicMock()
+    return _plugin
+
+
+def test_plugin_registered(plugin):
     assert isinstance(plugin, HavenPlugin)
 
 
-def test_signal_connection(qapp, qtbot, sim_registry):
+async def test_signal_connection(qapp, qtbot, sim_registry, plugin):
     # Create a signal and attach our listener
-    sig = Signal(name="my_signal", value=1)
-    # sig = soft_signal_rw(float, name="my_signal")
+    sig = soft_signal_rw(float, name="my_signal", initial_value=1)
     sim_registry.register(sig)
-    widget = PyDMLineEdit()
+    widget = PyDMLineEdit(init_channel="haven://my_signal")
     qtbot.addWidget(widget)
-    widget.channel = "haven://my_signal"
-    listener = widget.channels()[0]
-    # If PyDMChannel can not connect, we need to connect it ourselves
-    # In PyDM > 1.5.0 this will not be neccesary as the widget will be
-    # connected after we set the channel name
-    if not hasattr(listener, "connect"):
-        pydm.utilities.establish_widget_connections(widget)
-    # Check that our widget receives the initial value
+    # Let the Qt event loop catch up
+    await asyncio.sleep(0.1)
     qapp.processEvents()
+    # Check that our widget receives the initial value
     assert widget._write_access
     assert widget._connected
     assert widget.value == 1

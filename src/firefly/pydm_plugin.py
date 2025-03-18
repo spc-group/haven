@@ -89,6 +89,7 @@ class HavenAsyncConnection(RegistryConnection, PyDMConnection):
         # Assume the signal is connected
         self.connection_state_signal.emit(True)
         # Check the bluesky interface for writability
+        log.debug(f"Sending new write access: {self.is_writable}")
         self.write_access_signal.emit(self.is_writable)
         # Get some more metadata
         if hasattr(self.signal, "describe"):
