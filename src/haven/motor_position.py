@@ -277,7 +277,6 @@ def recall_motor_position(uid: str):
 
     (task,) = yield from bps.wait_for([builder])
     position = task.result()
-    print(position)
     # Create a move plan to recall the position
     plan_args = []
     for axis in position.motors:
