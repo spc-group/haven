@@ -66,9 +66,9 @@ class FramesetView(QtWidgets.QWidget):
     def toggle_lock_icon(self, state: bool):
         """Toggle the lock icon on the lock aspect button."""
         if state:
-            icon = qta.icon("fa.lock")
+            icon = qta.icon("fa6s.lock")
         else:
-            icon = qta.icon("fa.unlock")
+            icon = qta.icon("fa6s.unlock")
         self.ui.lock_aspect_button.setIcon(icon)
 
     def select_dataset(self, new_dataset: str | None):

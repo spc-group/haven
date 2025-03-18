@@ -217,7 +217,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
         self.ui.run_tableview.selectionModel().selectionChanged.connect(
             self.update_selected_runs
         )
-        self.ui.refresh_runs_button.setIcon(qta.icon("fa5s.sync"))
+        self.ui.refresh_runs_button.setIcon(qta.icon("fa6s.arrows-rotate"))
         self.ui.refresh_runs_button.clicked.connect(self.reload_runs)
         self.ui.reset_filters_button.clicked.connect(self.reset_default_filters)
         # Select a new catalog
