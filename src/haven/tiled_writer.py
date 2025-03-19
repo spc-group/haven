@@ -1,0 +1,38 @@
+import re
+from typing import Sequence
+
+from bluesky.callbacks.tiled_writer import TiledWriter as BlueskyTiledWriter
+from bluesky.callbacks.tiled_writer import _RunWriter as BlueskyRunWriter
+from event_model.documents import RunStart
+from tiled.structures.core import Spec
+
+xas_edge_regex = re.compile("^[A-Za-z]+[-_ ][K-Zk-z0-9]+$")
+
+
+__all__ = ["TiledWriter"]
+
+
+def md_to_specs(start_doc: dict) -> Sequence[Spec]:
+    """Determine which specs apply based on *start_doc*."""
+    specs = [Spec("BlueskyRun", version="1.0")]
+    # Check for XAS runs
+    has_d_spacing = "d_spacing" in start_doc.keys()
+    has_edge = xas_edge_regex.match(start_doc.get("edge", ""))
+    print(start_doc, has_d_spacing, has_edge)
+    if has_d_spacing and has_edge:
+        specs.insert(0, Spec("XASRun", version="1.0"))
+    return specs
+
+
+class TiledWriter(BlueskyTiledWriter):
+    def _factory(self, name, doc):
+        return [_RunWriter(self.client)], []
+
+
+class _RunWriter(BlueskyRunWriter):
+    def start(self, doc: RunStart):
+        self.root_node = self.client.create_container(
+            key=doc["uid"],
+            metadata={"start": doc},
+            specs=md_to_specs(doc),
+        )
