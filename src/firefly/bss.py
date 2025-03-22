@@ -41,14 +41,14 @@ class BssDisplay(display.FireflyDisplay):
 
     def customize_ui(self):
         super().customize_ui()
-        icon = qta.icon("fa5s.arrow-right")
+        icon = qta.icon("fa6s.arrow-right")
         self.ui.update_proposal_button.setIcon(icon)
         self.ui.update_proposal_button.clicked.connect(self.update_proposal)
         self.ui.update_esaf_button.setIcon(icon)
         self.ui.update_esaf_button.clicked.connect(self.update_esaf)
         self.ui.refresh_models_button.clicked.connect(self.load_models)
         # Icon for the refresh button
-        self.ui.refresh_models_button.setIcon(qta.icon("fa5s.sync"))
+        self.ui.refresh_models_button.setIcon(qta.icon("fa6s.arrows-rotate"))
 
     def customize_device(self):
         self._device = beamline.devices["beamline_manager"]

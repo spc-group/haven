@@ -13,9 +13,9 @@ class IonChamberDisplay(display.FireflyDisplay):
     def customize_ui(self):
         # Use qtawesome icons instead of unicode arrows
         self.ui.gain_down_button.setText("")
-        self.ui.gain_down_button.setIcon(qta.icon("fa5s.arrow-left"))
+        self.ui.gain_down_button.setIcon(qta.icon("fa6s.arrow-left"))
         self.ui.gain_up_button.setText("")
-        self.ui.gain_up_button.setIcon(qta.icon("fa5s.arrow-right"))
+        self.ui.gain_up_button.setIcon(qta.icon("fa6s.arrow-right"))
 
     def ui_filename(self):
         return "ion_chamber.ui"

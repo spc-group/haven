@@ -9,7 +9,7 @@ class MotorDisplay(display.FireflyDisplay):
 
     def customize_ui(self):
         super().customize_ui()
-        self.ui.stop_button.setIcon(qta.icon("fa5s.stop"))
+        self.ui.stop_button.setIcon(qta.icon("fa6s.stop"))
 
     def ui_filename(self):
         return "motor.ui"
