@@ -253,7 +253,7 @@ class XRFDetectorDisplay(display.FireflyDisplay):
         # Create count totals for each element
         self.draw_mca_widgets()
         # Button for starting/stopping the detector
-        self.ui.acquire_button.setIcon(qta.icon("fa5s.camera"))
+        self.ui.acquire_button.setIcon(qta.icon("fa6s.camera"))
         # Handler for updating the detector state label style
         self.det_state_channel = pydm.PyDMChannel(
             address=self.ui.detector_state_label.channel,

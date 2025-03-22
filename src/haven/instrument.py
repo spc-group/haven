@@ -109,6 +109,7 @@ beamline = HavenInstrument(
         "area_detector": make_area_detector,
     },
 )
+beamline.devices.use_typhos = False
 
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman

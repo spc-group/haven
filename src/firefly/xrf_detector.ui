@@ -99,7 +99,7 @@
         <string/>
        </property>
        <property name="channel" stdset="0">
-        <string>haven://${DEV}.drv.detector_state</string>
+        <string>haven://${DEV}.driver.detector_state</string>
        </property>
       </widget>
      </item>
@@ -112,7 +112,7 @@
         <string>Acquire</string>
        </property>
        <property name="channel" stdset="0">
-        <string>haven://${DEV}.drv.acquire</string>
+        <string>haven://${DEV}.driver.acquire</string>
        </property>
        <property name="pressValue" stdset="0">
         <string>True</string>
@@ -173,7 +173,7 @@
           <bool>true</bool>
          </property>
          <property name="channel" stdset="0">
-          <string>haven://${DEV}.drv.acquire_time</string>
+          <string>haven://${DEV}.driver.acquire_time</string>
          </property>
         </widget>
        </item>
@@ -216,7 +216,7 @@
           <set>Qt::TextSelectableByMouse</set>
          </property>
          <property name="channel" stdset="0">
-          <string>haven://${DEV}.drv.array_counter</string>
+          <string>haven://${DEV}.driver.array_counter</string>
          </property>
         </widget>
        </item>
@@ -233,7 +233,7 @@
           <string>Number of frames to collect when &quot;Acquire&quot; is triggered.</string>
          </property>
          <property name="channel" stdset="0">
-          <string>haven://${DEV}.drv.num_images</string>
+          <string>haven://${DEV}.driver.num_images</string>
          </property>
         </widget>
        </item>

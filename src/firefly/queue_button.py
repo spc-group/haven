@@ -33,7 +33,7 @@ class QueueButton(QtWidgets.QPushButton):
                 f"background-color: {Colors.RUN_QUEUE};\n"
                 f"border-color: {Colors.RUN_QUEUE};"
             )
-            self.setIcon(qta.icon("fa5s.play"))
+            self.setIcon(qta.icon("fa6s.play"))
             if self.text() in ["Run", "Add to Queue", ""]:
                 self.setText("Run")
             self.setToolTip("Add this plan to the queue and start it immediately.")
@@ -43,7 +43,7 @@ class QueueButton(QtWidgets.QPushButton):
                 f"background-color: {Colors.ADD_TO_QUEUE};\n"
                 f"border-color: {Colors.ADD_TO_QUEUE};\n"
             )
-            self.setIcon(qta.icon("fa5s.list"))
+            self.setIcon(qta.icon("fa6s.list"))
             if self.text() in ["Run", "Add to Queue", ""]:
                 self.setText("Add to Queue")
             self.setToolTip("Add this plan to the queue to run later.")

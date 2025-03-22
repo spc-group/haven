@@ -17,7 +17,7 @@ class MetadataView(QtWidgets.QWidget):
         # Combine the metadata in a human-readable output
         text = ""
         for uid, md in metadata.items():
-            text += f"# {uid}"
+            text += f"# {uid}\n\n"
             text += yaml.dump(md)
-            text += f"\n\n{'=' * 20}\n\n"
+            text += f"\n{'=' * 20}\n\n"
         self.ui.metadata_textedit.setPlainText(text)
