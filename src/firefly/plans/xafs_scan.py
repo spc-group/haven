@@ -8,7 +8,6 @@ from qtpy.QtCore import QObject, Signal
 from qtpy.QtGui import QDoubleValidator
 from xraydb.xraydb import XrayDB
 
-from firefly import display
 from firefly.plans import regions_display
 from haven.energy_ranges import (
     E_step_to_k_step,
@@ -263,7 +262,7 @@ class XafsScanDisplay(regions_display.PlanDisplay):
         )
         # connect is_standard with a warning box
         self.ui.checkBox_is_standard.clicked.connect(self.on_is_standard)
-        
+
         # repeat scans
         self.ui.spinBox_repeat_scan_num.valueChanged.connect(self.update_total_time)
 
