@@ -161,7 +161,9 @@ class Positioner(StandardReadable, Locatable, Movable, Stoppable):
             )
             # Check if the move has finished
             target_reached = current_position is not None and np.isclose(
-                current_position, new_position
+                current_position,
+                new_position,
+                atol=10 ** (-precision),
             )
             if target_reached:
                 reached_setpoint.set()
