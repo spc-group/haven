@@ -37,6 +37,8 @@ topic = "bluesky.documents.haven-dev"
 # uri = "http://localhost:8000/api"
 default_catalog = "testing"
 cache_filepath = "/tmp/tiled/http_response_cache.db"
+# In most cases, *api_key* is not necessary. Only used by the Tiled
+# consumer.
 # api_key = ""
 
 [database.databroker]

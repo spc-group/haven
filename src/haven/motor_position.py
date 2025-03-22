@@ -8,7 +8,7 @@ from bluesky import plan_stubs as bps
 from bluesky import plans as bp
 from pydantic import BaseModel
 from rich import print as rprint
-from tiled.queries import Key, Regex
+from tiled.queries import Contains, Key
 
 from haven._iconfig import load_config
 
@@ -248,12 +248,12 @@ async def get_motor_positions(
     # runs = await catalog.search(Key("plan_name") == "save_motor_position")
     # Filter by timestamp
     if before is not None:
-        queries.append(Key("time") < before)
+        queries.append(Key("start.time") < before)
     if after is not None:
-        queries.append(Key("time") > after)
+        queries.append(Key("stop.time") > after)
     # Filter by position name
     if name is not None:
-        queries.append(Regex("position_name", name, case_sensitive=case_sensitive))
+        queries.append(Contains("start.position_name", name))
     # Retrieve from the database
     runs = catalog.runs(queries=queries)
     # Create the actual motor position objects
