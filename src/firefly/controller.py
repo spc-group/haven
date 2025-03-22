@@ -4,7 +4,6 @@ from collections import OrderedDict
 from functools import partial
 from pathlib import Path
 
-import httpx
 import pydm
 import qtawesome as qta
 from ophyd_async.core import NotConnected
@@ -14,8 +13,9 @@ from qtpy import QtCore, QtWidgets
 from qtpy.QtCore import Signal, Slot
 from qtpy.QtGui import QIcon, QKeySequence
 from qtpy.QtWidgets import QAction, QErrorMessage
+from tiled.profiles import load_profiles
 
-from haven import beamline, load_config, tiled_client
+from haven import beamline, load_config
 from haven.exceptions import ComponentNotFound, InvalidConfiguration
 from haven.utils import titleize
 
@@ -283,7 +283,7 @@ class FireflyController(QtCore.QObject):
             text="Scheduling (&BSS)",
             display_file=ui_dir / "bss.py",
             WindowClass=FireflyMainWindow,
-            icon=qta.icon("fa5s.calendar"),
+            icon=qta.icon("fa6s.calendar"),
         )
         # Action for shoing the IOC start/restart/stop window
         self.actions.iocs = WindowAction(
@@ -341,16 +341,10 @@ class FireflyController(QtCore.QObject):
         self.run_updated.connect(display.update_running_scan)
         self.run_stopped.connect(display.update_running_scan)
         # Set initial state for the run_browser
-        try:
-            client = tiled_client(catalog=None)
-        except httpx.ConnectError as exc:
-            msg = "Could not connect to Tiled.<br /><br />"
-            msg += f"{exc.request.url}"
-            display.error_dialog.showMessage(msg, "connection error")
-            raise exc
         config = load_config()["tiled"]
+        path, tiled_config = load_profiles()["haven"]
         await display.setup_database(
-            tiled_client=client, catalog_name=config["default_catalog"]
+            base_url=tiled_config["uri"], catalog_name=config["default_catalog"]
         )
 
     def finalize_status_window(self, action: QAction):
@@ -399,51 +393,51 @@ class FireflyController(QtCore.QObject):
                 name="pause_runengine_action",
                 text="Pause",
                 shortcut="Ctrl+Space",
-                icon=qta.icon("fa5s.stopwatch"),
+                icon=qta.icon("fa6s.stopwatch"),
                 tooltip="Pause the current plan at the next checkpoint.",
             ),
             "pause_now": Action(
                 name="pause_runengine_now_action",
                 text="Pause now",
                 shortcut="Ctrl+Shift+Space",
-                icon=qta.icon("fa5s.pause"),
+                icon=qta.icon("fa6s.pause"),
                 tooltip="Pause the run engine now.",
             ),
             "resume": Action(
                 name="resume_runengine_action",
                 text="Resume",
-                icon=qta.icon("fa5s.play"),
+                icon=qta.icon("fa6s.play"),
                 tooltip="Resume a paused run engine at the last checkpoint.",
             ),
             "stop_runengine": Action(
                 name="stop_runengine_action",
                 text="Success",
-                icon=qta.icon("fa5s.check"),
+                icon=qta.icon("fa6s.check"),
                 tooltip="End the current plan, marking as successful.",
                 checkable=True,
             ),
             "abort": Action(
                 name="abort_runengine_action",
                 text="Abort",
-                icon=qta.icon("fa5s.times"),
+                icon=qta.icon("fa6s.xmark"),
                 tooltip="End the current plan, marking as failure.",
             ),
             "start": Action(
                 name="start_queue_action",
                 text="Start",
-                icon=qta.icon("fa5s.play"),
+                icon=qta.icon("fa6s.play"),
                 tooltip="Start the queue",
             ),
             "halt": Action(
                 name="halt_runengine_action",
                 text="Halt",
-                icon=qta.icon("fa5s.ban"),
+                icon=qta.icon("fa6s.ban"),
                 tooltip="End the current plan immediately, do not clean up.",
             ),
             "stop_queue": Action(
                 name="stop_queue_action",
                 text="Stop Queue",
-                icon=qta.icon("fa5s.stop"),
+                icon=qta.icon("fa6s.stop"),
                 tooltip="Instruct the queue to stop after the current item is done.",
                 checkable=True,
             ),

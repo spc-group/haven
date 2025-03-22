@@ -1,37 +1,26 @@
 import asyncio
-import functools
+import itertools
 import logging
 import warnings
-from collections.abc import Sequence
-from concurrent.futures import ThreadPoolExecutor
-from functools import partial
+from collections.abc import Generator, Sequence
 from pathlib import Path
+from typing import IO, Mapping
+from urllib.parse import parse_qs, quote_plus, urlparse
 
+import httpx
 import numpy as np
-from tiled.client import from_profile
+import pandas as pd
+from tiled.client import from_profile as tiled_from_profile
 from tiled.client.base import BaseClient
 from tiled.client.cache import Cache
+from tiled.client.container import _queries_to_params
+from tiled.queries import NoBool
+from tiled.serialization.table import deserialize_arrow
+from tiled.structures.array import BuiltinDtype
 
 from ._iconfig import load_config
 
 log = logging.getLogger(__name__)
-
-
-def run_in_executor(_func):
-    """Decorator that makes the wrapped synchronous function asynchronous.
-
-    This is done by running the wrapped function in the default
-    asyncio executor.
-
-    """
-
-    @functools.wraps(_func)
-    def wrapped(*args, **kwargs):
-        loop = asyncio.get_running_loop()
-        func = functools.partial(_func, *args, **kwargs)
-        return loop.run_in_executor(None, func)
-
-    return wrapped
 
 
 def unsnake(arr: np.ndarray, snaking: list) -> np.ndarray:
@@ -81,6 +70,13 @@ class DEFAULT:
     pass
 
 
+def deserialize_array(stream: IO[bytes], structure: dict):
+    dtype = BuiltinDtype.from_json(structure["data_type"])
+    arr = np.frombuffer(stream, dtype=dtype.to_numpy_dtype())
+    arr = arr.reshape(structure["shape"])
+    return arr
+
+
 def tiled_client(
     catalog: str | type[DEFAULT] | None = DEFAULT,
     profile: str = "haven",
@@ -114,10 +110,94 @@ def tiled_client(
     kw = {}
     if cache_filepath is not None:
         kw["cache"] = Cache(cache_filepath)
-    client = from_profile(profile, structure_clients=structure_clients, **kw)
+    client = tiled_from_profile(profile, structure_clients=structure_clients, **kw)
     if catalog is not None:
         client = client[catalog]
     return client
+
+
+async def _search(path: str, client: httpx.AsyncClient, params: dict = {}):
+    """Find scans in the catalog matching the given criteria.
+
+    This is a batched iterator that will fetch the next batch of
+    scans once the first set have been exhausted.
+
+    """
+    # Build query parameters
+    next_url = "/".join(["search", quote_plus(path)]).rstrip("/") + "/"
+    # Get search results from API
+    while next_url is not None:
+        # Re-use the query parameters
+        paging_params = parse_qs(urlparse(next_url).query)
+        # Extract the next page's parameters to combine with ours
+        parsed = urlparse(next_url)
+        log.info(f"Retrieving search page: {next_url}")
+        try:
+            response = await client.get(
+                next_url,
+                params={
+                    **params,
+                    **paging_params,
+                },
+            )
+        except httpx.ReadTimeout as exc:
+            log.error(f"Read timeout when searching for scans: {exc.request.url}")
+            raise StopIteration
+        response.raise_for_status()
+        for run in response.json()["data"]:
+            yield run
+        next_url = response.json()["links"]["next"]
+
+
+async def get_table(
+    path: str, structure: dict, client: httpx.AsyncClient
+) -> pd.DataFrame:
+    url = f"table/full/{quote_plus(path)}"
+    response = await client.get(url, timeout=20)
+    response.raise_for_status()
+    return deserialize_arrow(response.content)
+
+
+async def get_array(
+    path: str, structure: dict, client: httpx.AsyncClient
+) -> np.ndarray:
+    url = f"array/block/{quote_plus(path)}"
+    chunks = structure["chunks"]
+    num_blocks = (range(len(n)) for n in chunks)
+    blocks = itertools.product(*num_blocks)
+    block_strings = [",".join(str(i) for i in block) for block in blocks]
+    # Get bytes stream from API
+    timeout = len(block_strings) * 5
+    timeout = httpx.Timeout(timeout, pool=timeout)
+    responses = await asyncio.gather(
+        *(
+            client.get(url, params={"block": block}, timeout=timeout)
+            for block in block_strings
+        )
+    )
+    for response in responses:
+        response.raise_for_status()
+    stream = b"".join([response.content for response in responses])
+    return deserialize_array(stream, structure=structure)
+
+
+def resolve_uri(uri: str) -> str:
+    """Take a Tiled server URI and produce the proper version.
+
+    Makes sure the path to the API is present, and API version.
+
+    """
+    uri = uri.rstrip("/")
+    parts = uri.split("/")
+    if "api" not in parts:
+        new_parts = ["api", "v1"]
+    elif "v1" not in parts:
+        new_parts = ["v1"]
+    else:
+        new_parts = []
+    new_uri = "/".join([*parts, *new_parts])
+    log.info(f"Resolved {uri} to {new_uri}")
+    return new_uri
 
 
 class CatalogScan:
@@ -125,38 +205,95 @@ class CatalogScan:
 
     Parameters
     ==========
-      A tiled container on which to operate.
+    path
+      The catalog path in the API from which to fetch data.
+    metadata
+      Pre-fetched mapping of metadata. If `None` (default), new data
+      will be fetched when needed.
+    client
+      An http client object to use for accessing the API. If `None`
+      (default), a new client will be created.
+
     """
 
-    def __init__(self, container, executor=None):
-        self.container = container
-        self.executor = executor
-
-    @run_in_executor
-    def stream_names(self):
-        return list(self.container.keys())
-
-    @run_in_executor
-    def _read_data(self, signals: Sequence[str] | None, dataset: str):
-        data = self.container[dataset]
-        if signals is None:
-            return data.read()
-        # Remove duplicates and missing signals
-        signals = set(signals)
-        available_signals = set(data.columns)
-        signals = signals & available_signals
-        return data.read()
+    def __init__(
+        self,
+        path: str,
+        metadata: Mapping | None = None,
+        client: httpx.AsyncClient | None = None,
+    ):
+        self.path = path
+        self._client = client
+        self._metadata = metadata
 
     @property
-    def uid(self):
-        return self.container._item["id"]
+    def client(self):
+        if self._client is None:
+            tiled_config = load_config()["tiled"]
+            base_uri = tiled_config.get("uri", "http://localhost:8000/api")
+            base_uri = resolve_uri(base_uri)
+            self._client = httpx.AsyncClient(base_url=base_uri, timeout=10)
+        return self._client
+
+    async def stream_names(self):
+        streams = _search(path=self.path, client=self.client)
+        names = [stream["id"] async for stream in streams]
+        return names
+
+    async def _read_data(self, signals: Sequence[str] | None, dataset: str):
+        params = {}
+        path = "/".join([self.path, dataset]).rstrip("/")
+        # First figure out what kind of data we're getting
+        response = await self.client.get(f"metadata/{quote_plus(path)}")
+        response.raise_for_status()
+        md = response.json()["data"]["attributes"]
+        structure_family = md["structure_family"]
+        structure = md.get("structure", {})
+        loaders = {
+            "table": get_table,
+            "array": get_array,
+        }
+        try:
+            load_dataset = loaders[structure_family]
+        except KeyError:
+            raise KeyError(f"Structure family {structure_family} not yet supported.")
+        return await load_dataset(client=self.client, path=path, structure=structure)
+
+    @property
+    async def uid(self):
+        md = await self.metadata
+        return md["start"]["uid"]
+
+    async def _export(self, buff: IO[bytes], format: str):
+        url = f"container/full/{quote_plus(self.path)}"
+        async with self.client.stream(
+            "GET", url, params={"format": format}
+        ) as response:
+            if response.is_error:
+                # Make sure error handlers can access the details
+                await response.aread()
+            response.raise_for_status()
+            # Write stream into the file
+            async for chunk in response.aiter_bytes():
+                buff.write(chunk)
 
     async def export(self, filename: str, format: str):
-        target = partial(self.container.export, filename, format=format)
-        await self.loop.run_in_executor(None, target)
+        with open(filename, mode="bw") as fd:
+            await self._export(fd, format=format)
 
-    def formats(self):
-        return self.container.formats
+    async def formats(self):
+        # Get needed data from API
+        api_info, md = await asyncio.gather(
+            self.client.get(""),
+            self._read_metadata(),
+        )
+        api_info.raise_for_status()
+        api_formats = api_info.json()["formats"]
+        # Decide which formats we can support
+        specs = [md["structure_family"], *[spec["name"] for spec in md["specs"]]]
+        formats = [api_formats.get(spec, []) for spec in specs]
+        formats = [fmt for fmts in formats for fmt in fmts]
+        return formats
 
     async def data(self, *, signals=None, stream: str = "primary"):
         return await self._read_data(signals, f"{stream}/internal/events/")
@@ -180,9 +317,9 @@ class CatalogScan:
     def loop(self):
         return asyncio.get_running_loop()
 
-    @run_in_executor
-    def data_keys(self, stream: str = "primary"):
-        data_keys = self.container[stream].metadata.get("data_keys")
+    async def data_keys(self, stream: str = "primary"):
+        metadata = (await self._read_metadata(stream))["metadata"]
+        data_keys = metadata.get("data_keys")
         return data_keys or {}
 
     async def hints(self, stream: str = "primary"):
@@ -201,34 +338,42 @@ class CatalogScan:
           The hints for the dependent scanning axis.
 
         """
-        metadata = await self.metadata
+        run_md, stream_md = await asyncio.gather(
+            self.metadata,
+            self._read_metadata(path=stream),
+        )
+        stream_md = stream_md["metadata"]
         # Get hints for the independent (X)
         try:
-            dimensions = metadata["start"]["hints"]["dimensions"]
+            dimensions = run_md["start"]["hints"]["dimensions"]
             independent = [
                 sig for signals, strm in dimensions if strm == stream for sig in signals
             ]
         except (KeyError, IndexError):
             warnings.warn("Could not get independent hints")
-        # Get hints for the dependent (X)
+            independent = []
+        # Get hints for the dependent (Y) axes
         dependent = []
-        primary_metadata = await self._read_metadata(stream)
-        hints = primary_metadata["hints"]
+        hints = stream_md.get("hints", {})
         for device, dev_hints in hints.items():
             dependent.extend(dev_hints["fields"])
         return independent, dependent
 
-    @run_in_executor
-    def _read_metadata(self, keys=None):
-        assert keys != "", "Metadata keys cannot be ''."
-        container = self.container
-        if keys is not None:
-            container = container[keys]
-        return container.metadata
+    async def _read_metadata(self, path: str = ""):
+        new_path = "/".join([self.path, path]).rstrip("/")
+        response = await self.client.get(
+            f"metadata/{quote_plus(new_path)}",
+        )
+        response.raise_for_status()
+        return response.json()["data"]["attributes"]
 
     @property
     async def metadata(self):
-        return await self._read_metadata()
+        if self._metadata is not None:
+            return self._metadata
+        else:
+            response = await self._read_metadata()
+            return response["metadata"]
 
     async def __getitem__(self, signal, stream: str = "primary"):
         """Retrieve a signal from the dataset, with reshaping etc."""
@@ -251,7 +396,7 @@ class CatalogScan:
 
 
 class Catalog:
-    """An asynchronous wrapper around the tiled client.
+    """Asynchronously access Bluesky data in Tiled.
 
     This class has a more intelligent understanding of how *our* data
     are structured, so can make some assumptions and takes care of
@@ -259,68 +404,80 @@ class Catalog:
 
     Parameters
     ==========
+    path
+      Where the data live in the Tiled server.
+    host
+      The address and port of the service hosting the Tiled
+      API. Ignored if *client* is provided.
     client
-      A Tiled client that has scan UIDs as its keys.
+      An asynchronous HTTP client used for API calls. This client
+      should have *base_url* set. If omitted, a new client will be
+      created.
 
     """
 
-    _client = None
+    _client: httpx.AsyncClient | None
+    base_uri: str
 
-    def __init__(self, client=None):
-        self._client = client
-        self.executor = ThreadPoolExecutor()
-
-    def __del__(self):
-        self.executor.shutdown(wait=True, cancel_futures=True)
+    def __init__(
+        self,
+        path: str,
+        uri: str = "http://localhost:8000",
+        client: httpx.AsyncClient | None = None,
+    ):
+        self.base_uri = resolve_uri(uri)
+        self.path = path
+        self._client = client  # Created on first use if `None`
 
     @property
-    def loop(self):
-        return asyncio.get_running_loop()
-
-    @property
-    async def client(self):
+    def client(self):
         if self._client is None:
-            self._client = await run_in_executor(tiled_client)()
+            self._client = httpx.AsyncClient(base_url=self.base_uri, http2=True)
         return self._client
 
-    async def __getitem__(self, uid) -> CatalogScan:
-        client = await self.client
-        container = await run_in_executor(client.__getitem__)(uid)
-        scan = CatalogScan(container=container, executor=self.executor)
+    def __getitem__(self, uid) -> CatalogScan:
+        # Check that the child exists in this container
+        new_path = f"{self.path}/{uid}"
+        # Create the child scan object
+        scan = CatalogScan(path=new_path, client=self.client)
         return scan
 
-    async def items(self):
-        client = await self.client
-        for key, value in await run_in_executor(client.items)():
-            yield key, CatalogScan(container=value, executor=self.executor)
+    async def keys(self):
+        async for run in self.runs():
+            yield run["id"]
 
-    async def values(self):
-        client = await self.client
-        containers = await run_in_executor(client.values)()
-        for container in containers:
-            yield CatalogScan(container, executor=self.executor)
+    def _search_params(
+        self, queries: Sequence[NoBool] = (), sort: Sequence[str] = ()
+    ) -> dict:
+        query_params = _queries_to_params(*queries)
+        params = {**query_params}
+        if len(sort) > 0:
+            params["sort"] = sort
+        return params
 
-    async def __len__(self):
-        client = await self.client
-        length = await run_in_executor(client.__len__)()
-        return length
+    async def runs(
+        self,
+        queries: Sequence[NoBool] = (),
+        sort: Sequence[str] = (),
+        batch_size: int = 100,
+    ) -> Generator[CatalogScan, None, None]:
+        """All the scans in the catalog matching the given criteria.
 
-    async def search(self, query):
+        This is a batched iterator that will fetch the next batch of
+        scans once the first set have been exhausted.
+
         """
-        Make a Node with a subset of this Node's entries, filtered by query.
-
-        Examples
-        --------
-
-        >>> from tiled.queries import FullText
-        >>> await tree.search(FullText("hello"))
-        """
-        loop = asyncio.get_running_loop()
-        client = await self.client
-        return Catalog(await loop.run_in_executor(self.executor, client.search, query))
+        # Build query parameters
+        params = self._search_params(queries=queries, sort=sort)
+        # Get search results from API
+        async for run in _search(path=self.path, params=params, client=self.client):
+            md = run.get("attributes", {}).get("metadata")
+            yield CatalogScan(
+                path=f"{self.path}/{run['id']}", metadata=md, client=self.client
+            )
 
     async def distinct(
-        self, *metadata_keys, structure_families=False, specs=False, counts=False
+        self, *metadata_keys, queries: Sequence[NoBool] = (), sort: Sequence[str] = ()
     ):
         """Get the unique values and optionally counts of metadata_keys,
         structure_families, and specs in this Node's entries
@@ -337,20 +494,24 @@ class Catalog:
         >>> await catalog.distinct("foo", "bar", counts=True)
 
         """
-        loop = asyncio.get_running_loop()
-        client = await self.client
-        query = partial(
-            client.distinct,
-            *metadata_keys,
-            structure_families=structure_families,
-            specs=specs,
-            counts=counts,
-        )
-        return await loop.run_in_executor(self.executor, query)
+        path = f"distinct/{quote_plus(self.path)}"
+        params = self._search_params(queries=queries)
+        params = [{"metadata": key, **params} for key in metadata_keys]
+        aws = [self.client.get(path, params=param) for param in params]
+        for next_response in aws:
+            try:
+                response = await next_response
+                response.raise_for_status()
+            except httpx.ReadTimeout as exc:
+                log.error(f"Timeout reading {exc.request.url}")
+            except httpx.HTTPStatusError as exc:
+                log.exception(exc)
+            else:
+                yield response.json()["metadata"]
 
 
-# Create a default catalog for basic usage
-catalog = Catalog()
+def from_profile(catalog: str = "scans", profile: str = "haven") -> Catalog:
+    pass
 
 
 # -----------------------------------------------------------------------------

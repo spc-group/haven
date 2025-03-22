@@ -78,7 +78,7 @@ class StatusDisplay(display.FireflyDisplay):
 
     def customize_ui(self):
         self.ui.bss_modify_button.clicked.connect(self.bss_window_requested.emit)
-        self.ui.bss_modify_button.setIcon(qta.icon("fa5s.calendar"))
+        self.ui.bss_modify_button.setIcon(qta.icon("fa6s.calendar"))
         self.add_shutter_widgets()
 
     def ui_filename(self):
