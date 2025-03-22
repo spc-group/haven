@@ -19,6 +19,7 @@ from qtpy.QtWidgets import QErrorMessage
 from firefly import display
 from firefly.run_browser.client import DatabaseWorker
 from firefly.run_browser.widgets import ExportDialog
+from haven import load_config
 
 log = logging.getLogger(__name__)
 
@@ -188,6 +189,9 @@ class RunBrowserDisplay(display.FireflyDisplay):
         next_week = dt.datetime.now().astimezone() + dt.timedelta(days=7)
         next_week = QDateTime.fromTime_t(int(next_week.timestamp()))
         self.ui.filter_before_datetimeedit.setDateTime(next_week)
+        # Set beamline based on config file
+        beamline_id = load_config()["beamline"]["name"]
+        self.ui.filter_beamline_combobox.setCurrentText(beamline_id)
 
     async def update_combobox_items(self):
         """"""
