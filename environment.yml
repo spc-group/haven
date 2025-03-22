@@ -23,7 +23,7 @@ channels:
 
 dependencies:
   # --- Python core packages
-  - python=3.10  # Until this is fixed in pydm: https://github.com/slaclab/pydm/issues/951
+  - python=3.11
   - pip
 
   # This package is not available on pip as of 2024-07-25
@@ -61,7 +61,7 @@ dependencies:
     - git+https://github.com/bluesky/bluesky.git@v1.13.1rc1  # Replace with pypi version once released
     - ophyd >=1.6.3
     - ophyd-async >=0.9.0a2
-    - apstools == 1.6.20  # Leave at 1.6.20 until this is fixed: https://github.com/BCDA-APS/apstools/issues/1022
+    - apstools
     - pcdsdevices  # For extra signal types
     - pydm >=1.18.0
     - typhos >= 3.1.0  # need the find_signal method on the SignalConnection()
@@ -96,7 +96,6 @@ dependencies:
     # Database management
     - pymongo
     - databroker-pack
-    - databroker==1.2.5    
     # --- packaging and publishing
     - build
     - twine
