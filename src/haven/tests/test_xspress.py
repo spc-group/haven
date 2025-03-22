@@ -105,7 +105,7 @@ async def test_ndattribute_params():
 
 
 async def test_stage_ndattributes(detector):
-    num_elem = 8
+    num_elem = 4
     num_params = 1
     set_mock_value(detector.driver.number_of_elements, num_elem)
     set_mock_value(detector.driver.nd_attributes_file, "XSP3.xml")
@@ -119,6 +119,15 @@ async def test_stage_ndattributes(detector):
     # Check that the XML file gets reset when unstaged
     await detector.unstage()
     assert xml_mock.call_args[0][0] == "XSP3.xml"
+
+
+async def test_ndattribute_set(detector):
+    await detector.stage()
+    desc = await detector._writer.open()
+    assert "vortex_me4-element0-deadtime_factor" in desc.keys()
+    assert "vortex_me4-element1-deadtime_factor" in desc.keys()
+    assert "vortex_me4-element2-deadtime_factor" in desc.keys()
+    assert "vortex_me4-element3-deadtime_factor" in desc.keys()
 
 
 # -----------------------------------------------------------------------------

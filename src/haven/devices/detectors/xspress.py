@@ -59,11 +59,8 @@ class XspressController(ADBaseController):
         # include
         return 0.001
 
-    async def setup_ndattributes(self, device_name: str):
-        num_elements = await self.driver.number_of_elements.get_value()
-        params = ndattribute_params(
-            device_name=device_name, elements=range(num_elements)
-        )
+    async def setup_ndattributes(self, device_name: str, elements: Sequence[int]):
+        params = ndattribute_params(device_name=device_name, elements=elements)
         xml = ndattribute_xml(params)
         await self.driver.nd_attributes_file.set(xml)
 
@@ -192,7 +189,7 @@ class Xspress3Detector(AreaDetector):
         # We need the driver to be a plugin so that NDAttributes get saved
         # Can be removed once this bug is fixed upstream:
         # https://github.com/bluesky/ophyd-async/issues/821
-        writer._plugins['camera'] = driver
+        writer._plugins["camera"] = driver
         super().__init__(
             controller=controller,
             writer=writer,
@@ -211,7 +208,9 @@ class Xspress3Detector(AreaDetector):
         self._old_xml_file, *_ = await asyncio.gather(
             self.driver.nd_attributes_file.get_value(),
             super().stage(),
-            self._controller.setup_ndattributes(device_name=self.name),
+            self._controller.setup_ndattributes(
+                device_name=self.name, elements=self.elements.keys()
+            ),
             self.driver.erase_on_start.set(False),
             self.driver.erase.trigger(),
         )
