@@ -10,14 +10,14 @@ class TweakDisplay(display.FireflyDisplay):
         # Set button icons
         direction = self.macros().get("DIRECTION", "").lower()
         if direction == "vertical":
-            forward_icon = qta.icon("fa5s.arrow-up")
-            reverse_icon = qta.icon("fa5s.arrow-down")
+            forward_icon = qta.icon("fa6s.arrow-up")
+            reverse_icon = qta.icon("fa6s.arrow-down")
         elif direction == "horizontal":
-            forward_icon = qta.icon("fa5s.arrow-right")
-            reverse_icon = qta.icon("fa5s.arrow-left")
+            forward_icon = qta.icon("fa6s.arrow-right")
+            reverse_icon = qta.icon("fa6s.arrow-left")
         else:
-            forward_icon = qta.icon("fa5s.plus")
-            reverse_icon = qta.icon("fa5s.minus")
+            forward_icon = qta.icon("fa6s.plus")
+            reverse_icon = qta.icon("fa6s.minus")
         self.ui.forward_button.setIcon(forward_icon)
         self.ui.reverse_button.setIcon(reverse_icon)
         for btn in [self.ui.reverse_button, self.ui.forward_button]:

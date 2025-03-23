@@ -1,7 +1,7 @@
 import asyncio
 import datetime as dt
 from functools import partial
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 
 import pytest
 import time_machine
@@ -19,7 +19,7 @@ def bss(sim_registry):
 
 
 @pytest.fixture()
-async def display(qtbot, tiled_client, catalog, mocker):
+async def display(qtbot, mocker, tiled_api):
     mocker.patch(
         "firefly.run_browser.widgets.ExportDialog.exec_",
         return_value=QFileDialog.Accepted,
@@ -33,12 +33,9 @@ async def display(qtbot, tiled_client, catalog, mocker):
     qtbot.addWidget(display)
     display.clear_filters()
     # Wait for the initial database load to process
-    await display.setup_database(tiled_client, catalog_name="255id_testing")
-    display.db.stream_names = AsyncMock(return_value=["primary", "baseline"])
-    # Set up some fake data
-    run = [run async for run in catalog.values()][0]
-    display.db.selected_runs = [run]
-    run_data = await run.data(stream="primary")
+    await display.setup_database(
+        base_url="http://localhost:8000/api/v1", catalog_name="scans"
+    )
     return display
 
 
@@ -70,17 +67,6 @@ async def test_db_task_interruption(display):
 def test_load_runs(display):
     assert display.runs_model.rowCount() > 0
     assert display.ui.runs_total_label.text() == str(display.runs_model.rowCount())
-
-
-async def test_update_selected_runs(display):
-    # Change the proposal item
-    item = display.runs_model.item(0, 1)
-    assert item is not None
-    display.ui.run_tableview.selectRow(0)
-    # Update the runs
-    await display.update_selected_runs()
-    # Check that the runs were saved
-    assert len(display.db.selected_runs) > 0
 
 
 async def test_update_selected_runs(display):
@@ -157,32 +143,33 @@ def test_busy_hints_multiple(display):
 
 async def test_update_combobox_items(display):
     """Check that the comboboxes get the distinct filter fields."""
+    # Some of these have filters are disabled because they are slow
+    # with sqlite They may be re-enabled when switching to postgres
     assert display.ui.filter_plan_combobox.count() > 0
-    assert display.ui.filter_sample_combobox.count() > 0
-    assert display.ui.filter_formula_combobox.count() > 0
+    assert display.ui.filter_sample_combobox.count() == 0
+    assert display.ui.filter_formula_combobox.count() == 0
     assert display.ui.filter_edge_combobox.count() > 0
     assert display.ui.filter_exit_status_combobox.count() > 0
-    assert display.ui.filter_proposal_combobox.count() > 0
-    assert display.ui.filter_esaf_combobox.count() > 0
+    assert display.ui.filter_proposal_combobox.count() == 0
+    assert display.ui.filter_esaf_combobox.count() == 0
     assert display.ui.filter_beamline_combobox.count() > 0
 
 
-async def test_export_button_enabled(catalog, display):
+async def test_export_button_enabled(display):
     assert not display.export_button.isEnabled()
     # Update the list with 1 run and see if the control gets enabled
-    display.selected_runs = [run async for run in catalog.values()]
-    display.selected_runs = display.selected_runs[:1]
+    display.selected_runs = [{}]
     display.update_export_button()
     assert display.export_button.isEnabled()
     # Update the list with multiple runs and see if the control gets disabled
-    display.selected_runs = [run async for run in catalog.values()]
+    display.selected_runs = [{}, {}]
     display.update_export_button()
     assert not display.export_button.isEnabled()
 
 
-async def test_export_button_clicked(catalog, display, mocker, qtbot):
+async def test_export_button_clicked(display, mocker, qtbot):
     # Set up a run to be tested against
-    run = MagicMock()
+    run = AsyncMock()
     run.formats.return_value = [
         "application/json",
         "application/x-hdf5",
@@ -214,11 +201,21 @@ def test_default_filters(display):
     assert display.ui.filter_exit_status_combobox.currentText() == "success"
     assert display.ui.filter_current_esaf_checkbox.checkState()
     assert display.ui.filter_current_proposal_checkbox.checkState()
+    # Test datetime filters
     assert display.ui.filter_after_checkbox.checkState()
     last_week = dt.datetime(2022, 8, 12, 19, 10, 51)
-    filter_time = display.ui.filter_after_datetimeedit.dateTime()
-    filter_time = dt.datetime.fromtimestamp(filter_time.toTime_t())
-    assert filter_time == last_week
+    after_filter_time = display.ui.filter_after_datetimeedit.dateTime()
+    after_filter_time = dt.datetime.fromtimestamp(after_filter_time.toTime_t())
+    assert after_filter_time == last_week
+    next_week = dt.datetime(2022, 8, 26, 19, 10, 51)
+    before_filter_time = display.ui.filter_before_datetimeedit.dateTime()
+    before_filter_time = dt.datetime.fromtimestamp(before_filter_time.toTime_t())
+    assert before_filter_time == next_week
+    # Test beamline filters
+    assert (
+        display.ui.filter_beamline_combobox.currentText()
+        == "SPC Beamline (sector unknown)"
+    )
 
 
 def test_time_filters(display):
@@ -267,24 +264,24 @@ def test_update_bss_filters(display):
     assert combobox.currentText() == "89321"
 
 
-def test_catalog_choices(display, tiled_client):
+def test_catalog_choices(display):
     combobox = display.ui.catalog_combobox
     items = [combobox.itemText(idx) for idx in range(combobox.count())]
-    assert items == ["255id_testing", "255bm_testing"]
+    assert items == ["scans", "testing"]
 
 
-async def test_stream_choices(display, tiled_client):
+async def test_stream_choices(display):
+    display.db.load_selected_runs(["scan1"])
     await display.update_streams()
     combobox = display.ui.stream_combobox
     items = [combobox.itemText(idx) for idx in range(combobox.count())]
     assert items == ["primary", "baseline"]
 
 
-@pytest.mark.xfail
-async def test_retrieve_dataset(display):
-    slot = MagicMock()
-    await display.retrieve_dataset("ge_8element", slot, "testing")
-    assert slot.called
+async def test_retrieve_dataset(display, qtbot):
+    # See '788b1d91-efa1-4b26-9a0a-3454aa7e1a93' for a sample dataset
+    with qtbot.wait_signal(display.datasets_changed):
+        await display.fetch_datasets("ge_8element", "testing")
 
 
 async def test_update_running_scan(display, qtbot):
@@ -294,6 +291,10 @@ async def test_update_running_scan(display, qtbot):
     # Now try again with some runs selected
     display.ui.run_tableview.selectRow(0)
     await display.update_selected_runs()
+
+
+async def test_infinite_scroll(display):
+    pass
 
 
 # -----------------------------------------------------------------------------

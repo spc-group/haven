@@ -140,7 +140,7 @@ class FireflyMainWindow(PyDMMainWindow):
         if len(caqtdm_actions) > 0:
             caqtdm_menu.addSeparator()
         for action in caqtdm_actions:
-            action.setIcon(qta.icon("fa5s.wrench"))
+            action.setIcon(qta.icon("fa6s.wrench"))
             caqtdm_menu.addAction(action)
 
     def closeEvent(self, event):

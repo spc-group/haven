@@ -47,7 +47,7 @@ dependencies:
     - autoapi
     - pytest-mongodb
     - StrEnum
-    - ophyd-registry >= 1.3.3
+    - ophyd-registry >= 2.0.0rc1
     - guarneri >= 0.2.0
     - xraydb >=4.5.0
     - pytest-timeout  # Get rid of this if tests are not hanging
@@ -66,7 +66,7 @@ dependencies:
     - pydm >=1.18.0
     - typhos >= 3.1.0  # need the find_signal method on the SignalConnection()
     - p4p
-    - tiled[all] >= 0.1.0b6  # Make sure we have pydantic2 support
+    - tiled[client] >= 0.1.0b6  # Make sure we have pydantic2 support
     - bluesky_tiled_plugins
     - xarray !=2022.6.0  # incompatible with numpy=1.20
     - ipython
@@ -110,7 +110,7 @@ dependencies:
     # --- general support packages
     - bitshuffle
     - h5py
-    - dask >= 2022
+    - dask >= 2024
     - hdf5plugin
     - imagecodecs-lite
     - ipympl

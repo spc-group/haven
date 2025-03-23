@@ -3,16 +3,17 @@ import datetime as dt
 import logging
 import warnings
 from collections import ChainMap, OrderedDict
+from collections.abc import Generator
 from functools import partial
 from typing import Mapping, Sequence
 
+import httpx
 import numpy as np
 import pandas as pd
-from qasync import asyncSlot
 from tiled import queries
 
 from haven import exceptions
-from haven.catalog import Catalog, run_in_executor
+from haven.catalog import Catalog, _search, resolve_uri
 
 log = logging.getLogger(__name__)
 
@@ -21,26 +22,20 @@ class DatabaseWorker:
     selected_runs: Sequence = []
     catalog: Catalog = None
 
-    def __init__(self, tiled_client, *args, **kwargs):
-        self.client = tiled_client
-        super().__init__(*args, **kwargs)
+    def __init__(self, base_url: str = "http://localhost:8000"):
+        uri = resolve_uri(base_url)
+        self.client = httpx.AsyncClient(base_url=uri, timeout=20, http2=True)
 
-    @asyncSlot(str)
-    async def change_catalog(self, catalog_name: str):
+    def change_catalog(self, catalog_name: str):
         """Change the catalog being used for pulling data.
 
         *catalog_name* should be an entry in *worker.tiled_client()*.
         """
+        self.catalog = Catalog(path=catalog_name, client=self.client)
 
-        def get_catalog(name):
-            return Catalog(self.client[catalog_name])
-
-        loop = asyncio.get_running_loop()
-        self.catalog = await loop.run_in_executor(None, get_catalog, catalog_name)
-
-    @run_in_executor
-    def catalog_names(self):
-        return list(self.client.keys())
+    async def catalog_names(self):
+        catalogs = _search(path="", client=self.client)
+        return [cat["id"] async for cat in catalogs]
 
     async def stream_names(self):
         awaitables = [scan.stream_names() for scan in self.selected_runs]
@@ -63,13 +58,16 @@ class DatabaseWorker:
 
     async def data_frames(self, stream: str) -> dict:
         """Return the internal dataframes for selected runs as {uid: dataframe}."""
-        aws = (run.data(stream=stream) for run in self.selected_runs)
-        dfs = await asyncio.gather(*aws)
-        dfs = {run.uid: df for run, df in zip(self.selected_runs, dfs)}
-        return dfs
+        if len(self.selected_runs) == 0:
+            return {}
+        aws = [run.data(stream=stream) for run in self.selected_runs]
+        aws += [run.uid for run in self.selected_runs]
+        results = await asyncio.gather(*aws)
+        dfs = results[: len(results) // 2]
+        uids = results[len(results) // 2 :]
+        return {uid: df for uid, df in zip(uids, dfs)}
 
-    async def filtered_nodes(self, filters: Mapping):
-        case_sensitive = False
+    async def filtered_runs(self, filters: Mapping):
         log.debug(f"Filtering nodes: {filters}")
         filter_params = {
             # filter_name: (query type, metadata key)
@@ -82,53 +80,57 @@ class DatabaseWorker:
             "proposal": (queries.Eq, "start.proposal_id"),
             "esaf": (queries.Eq, "start.esaf_id"),
             "beamline": (queries.Eq, "start.beamline_id"),
-            "before": (partial(queries.Comparison, "le"), "end.time"),
+            "before": (partial(queries.Comparison, "le"), "stop.time"),
             "after": (partial(queries.Comparison, "ge"), "start.time"),
             "full_text": (queries.FullText, ""),
             "standards_only": (queries.Eq, "start.is_standard"),
         }
         # Apply filters
-        runs = self.catalog
+        _queries = []
         for filter_name, filter_value in filters.items():
             if filter_name not in filter_params:
                 continue
             Query, md_name = filter_params[filter_name]
             if Query is queries.FullText:
-                runs = await runs.search(Query(filter_value), case_sensitive=False)
+                query = Query(filter_value)
             else:
-                runs = await runs.search(Query(md_name, filter_value))
-        return runs
+                query = Query(md_name, filter_value)
+            _queries.append(query)
+        async for run in self.catalog.runs(queries=_queries):
+            yield run
 
-    async def load_distinct_fields(self):
+    async def distinct_fields(self) -> Generator[tuple[str, dict], None, None]:
         """Get distinct metadata fields for filterable metadata."""
         new_fields = {}
+        # Some of these are disabled since they take forever
+        # (could be re-enabled when switching to postgres)
         target_fields = [
             "start.plan_name",
-            "start.sample_name",
-            "start.sample_formula",
+            # "start.sample_name",
+            # "start.sample_formula",
             "start.edge",
             "stop.exit_status",
-            "start.proposal_id",
-            "start.esaf_id",
+            # "start.proposal_id",
+            # "start.esaf_id",
             "start.beamline_id",
         ]
         # Get fields from the database
-        response = await self.catalog.distinct(*target_fields)
-        # Build into a new dictionary
-        for key, result in response["metadata"].items():
-            field = key.split(".")[-1]
-            new_fields[field] = [r["value"] for r in result]
-        return new_fields
+        async for distinct in self.catalog.distinct(*target_fields):
+            field_name = list(distinct.keys())[0]
+            fields = distinct[field_name]
+            fields = [field["value"] for field in fields]
+            fields = [field for field in fields if field not in ["", None]]
+            yield field_name, fields
 
     async def load_all_runs(self, filters: Mapping = {}):
         all_runs = []
-        nodes = await self.filtered_nodes(filters=filters)
-        async for uid, node in nodes.items():
+        runs = self.filtered_runs(filters=filters)
+        async for run in runs:
             # Get meta-data documents
-            metadata = await node.metadata
+            metadata = await run.metadata
             start_doc = metadata.get("start")
             if start_doc is None:
-                log.debug(f"Skipping run with no start doc: {uid}")
+                log.debug(f"Skipping run with no start doc: {run.path}")
                 continue
             stop_doc = metadata.get("stop")
             if stop_doc is None:
@@ -161,7 +163,7 @@ class DatabaseWorker:
                 E0=E0_str,
                 exit_status=stop_doc.get("exit_status", ""),
                 run_datetime=run_datetime,
-                uid=uid,
+                uid=start_doc.get("uid", ""),
                 proposal_id=start_doc.get("proposal_id", ""),
                 esaf_id=start_doc.get("esaf_id", ""),
                 esaf_users=start_doc.get("esaf_users", ""),
@@ -180,7 +182,10 @@ class DatabaseWorker:
         aws = [run.hints(stream) for run in self.selected_runs]
         all_hints = await asyncio.gather(*aws)
         # Flatten arrays
-        ihints, dhints = zip(*all_hints)
+        try:
+            ihints, dhints = zip(*all_hints)
+        except ValueError:
+            ihints, dhints = [], []
         ihints = [hint for hints in ihints for hint in hints]
         dhints = [hint for hints in dhints for hint in hints]
         return ihints, dhints
@@ -217,14 +222,14 @@ class DatabaseWorker:
         if len(self.selected_runs) == 0:
             warnings.warn("No runs selected, metadata will be empty.")
         for run in self.selected_runs:
-            md[run.uid] = await run.metadata
+            md[run.path] = await run.metadata
         return md
 
-    async def load_selected_runs(self, uids):
+    def load_selected_runs(self, uids):
         # Prepare the query for finding the runs
         uids = list(dict.fromkeys(uids))
         # Retrieve runs from the database
-        runs = [await self.catalog[uid] for uid in uids]
+        runs = [self.catalog[uid] for uid in uids]
         # runs = await asyncio.gather(*run_coros)
         self.selected_runs = runs
         return runs
@@ -284,7 +289,7 @@ class DatabaseWorker:
         arrays = OrderedDict()
         for run in self.selected_runs:
             # Get data from the database
-            arr = await run.dataset(dataset_name, stream=stream)
+            arr = await run.external_dataset(dataset_name, stream=stream)
             arrays[run.uid] = arr
         return arrays
 
