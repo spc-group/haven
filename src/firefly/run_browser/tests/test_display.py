@@ -211,6 +211,11 @@ def test_default_filters(display):
     before_filter_time = display.ui.filter_before_datetimeedit.dateTime()
     before_filter_time = dt.datetime.fromtimestamp(before_filter_time.toTime_t())
     assert before_filter_time == next_week
+    # Test beamline filters
+    assert (
+        display.ui.filter_beamline_combobox.currentText()
+        == "SPC Beamline (sector unknown)"
+    )
 
 
 def test_time_filters(display):

@@ -37,6 +37,8 @@ topic = "bluesky.documents.haven-dev"
 # uri = "http://localhost:8000/api"
 default_catalog = "testing"
 cache_filepath = "/tmp/tiled/http_response_cache.db"
+# In most cases, *api_key* is not necessary. Only used by the Tiled
+# consumer.
 # api_key = ""
 
 [database.databroker]
@@ -172,10 +174,6 @@ prefix = "vme_crate_ioc:KB"
 # A single rotating aperture slit, like the 25-ID whitebeam slits
 name = "whitebeam_slits"
 prefix = "255ida:slits:US:"
-pitch_motor = "m33"
-yaw_motor = "m34"
-horizontal_motor = "m35"
-diagonal_motor = "m36"
 
 
 # KB Mirrors

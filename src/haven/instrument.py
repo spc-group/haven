@@ -20,9 +20,7 @@ from .devices.mirrors import HighHeatLoadMirror, KBMirrors
 from .devices.motor import Motor, load_motors
 from .devices.power_supply import NHQ203MChannel
 from .devices.robot import Robot
-from .devices.scaler import MultiChannelScaler
 from .devices.shutter import PssShutter
-from .devices.slits import ApertureSlits, BladeSlits
 from .devices.stage import XYStage
 from .devices.table import Table
 from .devices.xia_pfcu import PFCUFilterBank
@@ -85,6 +83,8 @@ beamline = HavenInstrument(
     {
         # Ophyd-async devices
         "aerotech_stage": AerotechStage,
+        "aperture_slits": devices.ApertureSlits,
+        "blade_slits": devices.BladeSlits,
         "camera": devices.AravisDetector,
         "eiger": devices.EigerDetector,
         "energy": EnergyPositioner,
@@ -94,13 +94,12 @@ beamline = HavenInstrument(
         "motor": Motor,
         "pfcu4": PFCUFilterBank,
         "pss_shutter": PssShutter,
+        "scaler": devices.MultiChannelScaler,
         "sim_detector": devices.SimDetector,
         "table": Table,
         "xspress3": devices.Xspress3Detector,
         "xy_stage": XYStage,
         # Threaded ophyd devices
-        "blade_slits": BladeSlits,
-        "aperture_slits": ApertureSlits,
         "capillary_heater": CapillaryHeater,
         "power_supply": NHQ203MChannel,
         "synchrotron": ApsMachine,
@@ -108,7 +107,6 @@ beamline = HavenInstrument(
         "dxp": make_dxp_device,
         "beamline_manager": BeamlineManager,
         "area_detector": make_area_detector,
-        "scaler": MultiChannelScaler,
     },
 )
 beamline.devices.use_typhos = False

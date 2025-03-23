@@ -8,7 +8,8 @@ from bluesky.callbacks.best_effort import BestEffortCallback
 from bluesky.utils import ProgressBarManager, register_transform
 from bluesky_kafka import Publisher
 
-from haven import TiledWriter, load_config
+from haven import load_config
+from haven.tiled_writer import TiledWriter
 
 from .catalog import tiled_client
 from .exceptions import ComponentNotFound
