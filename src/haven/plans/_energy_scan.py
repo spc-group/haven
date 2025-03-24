@@ -2,12 +2,11 @@
 
 import logging
 from collections import ChainMap
-from typing import Mapping, Optional, Sequence, Union
+from typing import Mapping, Sequence
 
 import numpy as np
 from bluesky import plans as bp
 
-from .._iconfig import load_config
 from ..constants import edge_energy
 from ..instrument import beamline
 from ..preprocessors import baseline_decorator
@@ -23,11 +22,11 @@ log = logging.getLogger(__name__)
 @baseline_decorator()
 def energy_scan(
     energies: Sequence[float],
-    exposure: Union[float, Sequence[float]] = 0.1,
-    E0: Union[float, str] = 0,
+    exposure: float | Sequence[float] = 0.1,
+    E0: float | str = 0,
     detectors: DetectorList = "ion_chambers",
     energy_signals: Sequence = ["energy"],
-    time_signals: Optional[Sequence] = None,
+    time_signals: Sequence | None = None,
     md: Mapping = {},
 ):
     """Collect a spectrum by scanning X-ray energy.
@@ -142,13 +141,12 @@ def energy_scan(
     scan_args += [(motor, exposure) for motor in time_signals]
     scan_args = [item for items in scan_args for item in items]
     # Add some extra metadata
-    config = load_config()
     md_ = {"edge": E0_str, "E0": E0, "plan_name": "energy_scan"}
     # Do the actual scan
     yield from bp.list_scan(
         real_detectors,
         *scan_args,
-        md=ChainMap(md, md_, config),
+        md=ChainMap(md, md_),
     )
 
 

@@ -66,28 +66,12 @@ class TitleRegion:
 
 class XafsScanRegion(QObject):
     time_calculation_signal = Signal()
+    # Flag for whether time is calculated correctly, if not, will set to -1
+    xafs_region_time: int = 0
 
     def __init__(self):
         super().__init__()
         self.setup_ui()
-        self.kErange = None
-        self.xafs_region_time = (
-            0  # flag for whether time is calculated correctly, if not, will set to -1
-        )
-
-        # List of widgets and their signals to connect to update_total_time
-        widgets_signals = [
-            (self.start_line_edit, "textChanged"),
-            (self.stop_line_edit, "textChanged"),
-            (self.step_line_edit, "textChanged"),
-            (self.weight_spinbox, "valueChanged"),
-            (self.exposure_time_spinbox, "valueChanged"),
-            (self.k_space_checkbox, "stateChanged"),
-        ]
-
-        # Connect all signals to the update_total_time method
-        for widget, signal_name in widgets_signals:
-            getattr(widget, signal_name).connect(self.update_total_time)
 
     def setup_ui(self):
         self.layout = QtWidgets.QHBoxLayout()
@@ -178,41 +162,24 @@ class XafsScanRegion(QObject):
             else:
                 self.update_line_edit_value(line_edit, func)
 
-    def update_total_time(self):
+    @property
+    def energy_range(self):
         weight = self.weight_spinbox.value()
         exposure_time = self.exposure_time_spinbox.value()
-
-        # prevent invalid inputs such as nan
+        # Prevent invalid inputs such as nan
         try:
             start = round(float(self.start_line_edit.text()), float_accuracy)
             stop = round(float(self.stop_line_edit.text()), float_accuracy)
             step = round(float(self.step_line_edit.text()), float_accuracy)
-
-        # when the round doesn't work for nan values
+        # When the round doesn't work for nan values
         except ValueError:
             self.kErange = []
             start, stop, step = float("nan"), float("nan"), float("nan")
 
         if self.k_space_checkbox.isChecked():
-            self.kErange = KRange(
-                k_min=start,
-                k_max=stop,
-                k_step=step,
-                k_weight=weight,
-                exposure=exposure_time,
-            )
-
+            return KRange(start, stop, step, exposure=exposure_time, weight=weight)
         else:
-            self.kErange = ERange(
-                E_min=start,
-                E_max=stop,
-                E_step=step,
-                weight=weight,
-                exposure=exposure_time,
-            )
-
-        # Emit the signal regardless of success or failure
-        self.time_calculation_signal.emit()
+            return ERange(start, stop, step, exposure=exposure_time)
 
 
 class XafsScanDisplay(regions_display.PlanDisplay):
@@ -358,9 +325,17 @@ class XafsScanDisplay(regions_display.PlanDisplay):
             self.regions.append(region)
             # disable/enabale regions when selected
             region.region_checkbox.stateChanged.connect(self.on_region_checkbox)
-            region.region_checkbox.stateChanged.connect(self.update_total_time)
-            # receive time signals from XafsRegion
-            region.time_calculation_signal.connect(self.update_total_time)
+            # Connect all signals to the update_total_time method
+            for signal in [
+                region.region_checkbox.stateChanged,
+                region.start_line_edit.textChanged,
+                region.stop_line_edit.textChanged,
+                region.step_line_edit.textChanged,
+                region.weight_spinbox.valueChanged,
+                region.exposure_time_spinbox.valueChanged,
+                region.k_space_checkbox.stateChanged,
+            ]:
+                signal.connect(self.update_total_time)
 
     def remove_regions(self, num=1):
         for i in range(num):
@@ -384,15 +359,15 @@ class XafsScanDisplay(regions_display.PlanDisplay):
 
     def update_total_time(self):
         # Summing total_time for all checked regions directly within the sum function using a generator expression
-        kEranges_all = [
-            region_i.kErange
-            for region_i in self.regions
-            if region_i.region_checkbox.isChecked()
+        energy_ranges = [
+            region.energy_range
+            for region in self.regions
+            if region.region_checkbox.isChecked()
         ]
 
-        # prevent end points are smaller than start points
+        # Keep end points from being smaller than start points
         try:
-            _, exposures = merge_ranges(*kEranges_all, sort=True)
+            _, exposures = merge_ranges(*energy_ranges, sort=True)
             total_time_per_scan = exposures.sum()
         except ValueError:
             total_time_per_scan = float("nan")
@@ -441,47 +416,15 @@ class XafsScanDisplay(regions_display.PlanDisplay):
         # Get parameters from each rows of line regions:
         energy_ranges_all = []
 
-        # iterate through only selected regions
+        # Iterate through only selected regions
         checked_regions = [
             region_i
             for region_i in self.regions
             if region_i.region_checkbox.isChecked()
         ]
-        for region_i in checked_regions:
-            try:
-                start = round(float(region_i.start_line_edit.text()), float_accuracy)
-                stop = round(float(region_i.stop_line_edit.text()), float_accuracy)
-                step = round(float(region_i.step_line_edit.text()), float_accuracy)
-                weight = region_i.weight_spinbox.value()
-                exposure_time = region_i.exposure_time_spinbox.value()
-            except ValueError:
-                QtWidgets.QMessageBox.warning(
-                    self, "Value Error", "Invalid value detected!"
-                )
-                return None
-            if region_i.k_space_checkbox.isChecked():
-                energy_ranges_all.append(
-                    KRange(
-                        k_min=start,
-                        k_max=stop,
-                        k_step=step,
-                        k_weight=weight,
-                        exposure=exposure_time,
-                    )
-                )
-            else:
-                energy_ranges_all.append(
-                    ERange(
-                        E_min=start,
-                        E_max=stop,
-                        E_step=step,
-                        weight=weight,
-                        exposure=exposure_time,
-                    )
-                )
-
+        energy_ranges = [region.energy_range for region in checked_regions]
         # Turn ndarrays into lists so they can be JSON serialized
-        energies, exposures = merge_ranges(*energy_ranges_all, sort=True)
+        energies, exposures = merge_ranges(*energy_ranges, sort=True)
         energies = list(np.round(energies, float_accuracy))
         exposures = list(np.round(exposures, float_accuracy))
         # Set up other plan arguments
@@ -513,7 +456,7 @@ class XafsScanDisplay(regions_display.PlanDisplay):
         )
         # Submit the item to the queueserver
         log.info("Adding XAFS scan to queue.")
-        # repeat scans
+        # Repeat scans
         for i in range(repeat_scan_num):
             self.queue_item_submitted.emit(item)
 
