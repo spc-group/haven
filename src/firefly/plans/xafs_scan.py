@@ -1,7 +1,6 @@
 import logging
 import re
 
-import numpy as np
 import xraydb
 from bluesky_queueserver_api import BPlan
 from qtpy import QtWidgets
@@ -430,28 +429,18 @@ class XafsScanDisplay(regions_display.PlanDisplay):
             if region_i.region_checkbox.isChecked()
         ]
         energy_ranges = [region.energy_range for region in checked_regions]
-        # Turn ndarrays into lists so they can be JSON serialized
-        energies, exposures = merge_ranges(*energy_ranges, sort=True)
-        energies = list(np.round(energies, float_accuracy))
-        exposures = list(np.round(exposures, float_accuracy))
         # Set up other plan arguments
         md = self.get_meta_data()
         md["is_standard"] = self.ui.checkBox_is_standard.isChecked()
         detectors, repeat_scan_num = self.get_scan_parameters()
-        plan_args = dict(
-            energies=energies,
-            exposure=exposures,
-            detectors=detectors,
-            md=md,
-        )
         # Check that an absorption edge was selected
         if self.use_edge_checkbox.isChecked():
             edge = self.edge_name
             E0 = self.E0
             if edge is not None:
-                plan_args["E0"] = edge
+                E0_arg = edge
             elif E0 is not None:
-                plan_args["E0"] = E0
+                E0_arg = E0
             else:
                 QtWidgets.QMessageBox.warning(
                     self, "Error", "Please select an absorption edge."
@@ -459,8 +448,11 @@ class XafsScanDisplay(regions_display.PlanDisplay):
                 return None
         # Build the queue item
         item = BPlan(
-            "energy_scan",
-            **plan_args,
+            "xafs_scan",
+            detectors,
+            *energy_ranges,
+            E0=E0_arg,
+            md=md,
         )
         # Submit the item to the queueserver
         log.info("Adding XAFS scan to queue.")

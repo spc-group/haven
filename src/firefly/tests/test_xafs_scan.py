@@ -1,12 +1,11 @@
-from pprint import pprint
 from unittest import mock
 
 import numpy as np
 import pytest
-from bluesky_queueserver_api import BPlan
 from qtpy import QtCore
 
 from firefly.plans.xafs_scan import XafsScanDisplay
+from haven.energy_ranges import ERange, KRange
 
 # default values for EXAFS scan
 pre_edge = [-200, -50, 5]
@@ -92,65 +91,32 @@ def test_xafs_scan_plan_queued_energies(display, qtbot):
     display.ui.detectors_list.selected_detectors = mock.MagicMock(
         return_value=["vortex_me4", "I0"]
     )
-    energies_region0 = np.arange(
-        default_values[0][0],
-        default_values[0][1] + default_values[0][2],
-        default_values[0][2],
-    )
-    energies_region1 = np.arange(
-        default_values[1][0] + default_values[1][2],
-        default_values[1][1] + default_values[1][2],
-        default_values[1][2],
-    )
-    energies_merge = np.hstack([energies_region0, energies_region1])
-    exposures = np.ones(energies_merge.shape)
-
     # set up meta data
     display.ui.lineEdit_sample.setText("sam")
     display.ui.checkBox_is_standard.setChecked(True)
     display.ui.comboBox_purpose.setCurrentText("test")
     display.ui.textEdit_notes.setText("sam_notes")
 
-    expected_item = BPlan(
-        "energy_scan",
-        energies=energies_merge,
-        exposure=exposures,
-        E0="Sc-K",
-        detectors=["vortex_me4", "I0"],
-        md={
-            "sample_name": "sam",
-            "purpose": "test",
-            "is_standard": True,
-            "notes": "sam_notes",
-        },
-    )
-
     def check_item(item):
-        item_dict = item.to_dict()["kwargs"]
-        expected_dict = expected_item.to_dict()["kwargs"]
-
+        kwargs = item.to_dict()["kwargs"]
+        detectors, *energy_ranges = item.to_dict()["args"]
         try:
-            # Check energies & exposures within 3 decimals
-            np.testing.assert_array_almost_equal(
-                item_dict["energies"], expected_dict["energies"], decimal=3
-            )
-            np.testing.assert_array_almost_equal(
-                item_dict["exposure"], expected_dict["exposure"], decimal=3
-            )
-
-            # Now check the rest of the dictionary, excluding the numpy array keys
-            item_dict.pop("energies")
-            item_dict.pop("exposure")
-            expected_dict.pop("energies")
-            expected_dict.pop("exposure")
-
+            assert detectors == ["vortex_me4", "I0"]
+            # Check energies ranges
+            assert energy_ranges == [
+                ERange(start=-200.0, stop=-50.0, step=5.0, exposure=1.0),
+                ERange(start=-50.0, stop=50.0, step=0.5, exposure=1.0),
+            ]
             # Check if the remaining dictionary items are equal
-            assert item_dict == expected_dict, "Non-array items do not match."
-
+            assert kwargs["E0"] == "Sc-K"
+            assert kwargs["md"] == {
+                "sample_name": "sam",
+                "purpose": "test",
+                "is_standard": True,
+                "notes": "sam_notes",
+            }
         except AssertionError as e:
             # Print detailed debug info
-            pprint(item_dict)
-            pprint(expected_dict)
             print(str(e))
             return False
         return True
@@ -170,64 +136,32 @@ def test_xafs_scan_plan_queued_numeric_E0(display, qtbot):
     display.ui.detectors_list.selected_detectors = mock.MagicMock(
         return_value=["vortex_me4", "I0"]
     )
-    energies_region0 = np.arange(
-        default_values[0][0],
-        default_values[0][1] + default_values[0][2],
-        default_values[0][2],
-    )
-    energies_region1 = np.arange(
-        default_values[1][0] + default_values[1][2],
-        default_values[1][1] + default_values[1][2],
-        default_values[1][2],
-    )
-    energies_merge = np.hstack([energies_region0, energies_region1])
-    exposures = np.ones(energies_merge.shape)
     # set up meta data
     display.ui.lineEdit_sample.setText("sam")
     display.ui.checkBox_is_standard.setChecked(True)
     display.ui.comboBox_purpose.setCurrentText("test")
     display.ui.textEdit_notes.setText("sam_notes")
 
-    expected_item = BPlan(
-        "energy_scan",
-        energies=energies_merge,
-        exposure=exposures,
-        E0=58893.0,
-        detectors=["vortex_me4", "I0"],
-        md={
-            "sample_name": "sam",
-            "purpose": "test",
-            "is_standard": True,
-            "notes": "sam_notes",
-        },
-    )
-
     def check_item(item):
-        item_dict = item.to_dict()["kwargs"]
-        expected_dict = expected_item.to_dict()["kwargs"]
-
+        kwargs = item.to_dict()["kwargs"]
+        detectors, *energy_ranges = item.to_dict()["args"]
         try:
-            # Check energies & exposures within 3 decimals
-            np.testing.assert_array_almost_equal(
-                item_dict["energies"], expected_dict["energies"], decimal=3
-            )
-            np.testing.assert_array_almost_equal(
-                item_dict["exposure"], expected_dict["exposure"], decimal=3
-            )
-
-            # Now check the rest of the dictionary, excluding the numpy array keys
-            item_dict.pop("energies")
-            item_dict.pop("exposure")
-            expected_dict.pop("energies")
-            expected_dict.pop("exposure")
-
+            assert detectors == ["vortex_me4", "I0"]
+            # Check energy ranges
+            assert energy_ranges == [
+                ERange(start=-200.0, stop=-50.0, step=5.0, exposure=1.0),
+                ERange(start=-50.0, stop=50.0, step=0.5, exposure=1.0),
+            ]
             # Check if the remaining dictionary items are equal
-            assert item_dict == expected_dict, "Non-array items do not match."
-
+            assert kwargs["E0"] == 58893.0
+            assert kwargs["md"] == {
+                "sample_name": "sam",
+                "purpose": "test",
+                "is_standard": True,
+                "notes": "sam_notes",
+            }
         except AssertionError as e:
             # Print detailed debug info
-            pprint(item_dict)
-            pprint(expected_dict)
             print(str(e))
             return False
         return True
@@ -243,96 +177,51 @@ def test_xafs_scan_plan_queued_numeric_E0(display, qtbot):
 def test_xafs_scan_plan_queued_energies_k_mixed(qtbot, display):
     display.ui.regions_spin_box.setValue(2)
     display.edge_combo_box.setCurrentIndex(1)
-
-    # set up the first region
+    # Set up the first region
     display.regions[0].start_line_edit.setText("-20")
     display.regions[0].stop_line_edit.setText("40")
     display.regions[0].step_line_edit.setText("10")
-
-    # set up the second region
+    # Set up the second region
     display.regions[1].start_line_edit.setText("50")
     display.regions[1].stop_line_edit.setText("800")
-
-    # convert to k space
+    # Convert to k space
     display.regions[1].k_space_checkbox.setChecked(True)
     display.regions[1].step_line_edit.setText("5")
     display.regions[1].weight_spinbox.setValue(2)
-
-    # set up detector list
+    # Set up detector list
     display.ui.detectors_list.selected_detectors = mock.MagicMock(
         return_value=["vortex_me4", "I0"]
     )
-
-    # set repeat scan num to 2
+    # Set repeat scan num to 2
     display.ui.spinBox_repeat_scan_num.setValue(3)
-
-    energies = np.array(
-        [
-            -20,
-            -10,
-            0,
-            10,
-            20,
-            30,
-            40,
-            50,
-            283.27,
-            707.04,
-        ]  # k values obtained from Athena software to double confirm ours
-    )
-    exposures = np.array(
-        [1, 1, 1, 1, 1, 1, 1, 1, 5.665, 14.141]
-    )  # k exposures kmin 3.62263
-
-    # set up meta data
+    # Set up meta data
     display.ui.lineEdit_sample.setText("sam")
     display.ui.textEdit_notes.setText("sam_notes")
 
-    expected_item = BPlan(
-        "energy_scan",
-        energies=energies,
-        exposure=exposures,
-        E0="Sc-K",
-        detectors=["vortex_me4", "I0"],
-        md={
-            "sample_name": "sam",
-            "is_standard": False,
-            "notes": "sam_notes",
-        },
-    )
-
     def check_item(item):
-        item_dict = item.to_dict()["kwargs"]
-        expected_dict = expected_item.to_dict()["kwargs"]
-
+        kwargs = item.to_dict()["kwargs"]
+        detectors, *energy_ranges = item.to_dict()["args"]
         try:
+            assert detectors == ["vortex_me4", "I0"]
+            assert energy_ranges == [
+                ERange(start=-20.0, stop=40.0, step=10, exposure=1.0),
+                KRange(start=3.6226, stop=14.4905, step=5.0, exposure=1.0, weight=2),
+            ]
             # Check whether time is calculated correctly for a single scan
             assert display.ui.label_hour_scan.text() == "0"
             assert display.ui.label_min_scan.text() == "0"
             assert display.ui.label_sec_scan.text() == "27.8"
-
             # Check whether time is calculated correctly including the repeated scan
             assert display.ui.label_hour_total.text() == "0"
             assert display.ui.label_min_total.text() == "1"
             assert display.ui.label_sec_total.text() == "23.4"
-
-            # Check energies & exposures within 3 decimals
-            np.testing.assert_array_almost_equal(
-                item_dict["energies"], expected_dict["energies"], decimal=2
-            )
-            np.testing.assert_array_almost_equal(
-                item_dict["exposure"], expected_dict["exposure"], decimal=2
-            )
-
-            # Now check the rest of the dictionary, excluding the numpy array keys
-            item_dict.pop("energies")
-            item_dict.pop("exposure")
-            expected_dict.pop("energies")
-            expected_dict.pop("exposure")
-
             # Check if the remaining dictionary items are equal
-            assert item_dict == expected_dict, "Non-array items do not match."
-
+            assert kwargs["E0"] == "Sc-K"
+            assert kwargs["md"] == {
+                "sample_name": "sam",
+                "is_standard": False,
+                "notes": "sam_notes",
+            }
         except AssertionError as e:
             print(e)
             return False
