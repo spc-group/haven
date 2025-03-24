@@ -356,6 +356,7 @@ class XafsScanDisplay(regions_display.PlanDisplay):
             self.remove_regions(abs(diff_region_num))
         elif diff_region_num > 0:
             self.add_regions(diff_region_num)
+        self.update_total_time()
 
     def update_total_time(self):
         # Summing total_time for all checked regions directly within the sum function using a generator expression
@@ -442,13 +443,14 @@ class XafsScanDisplay(regions_display.PlanDisplay):
             edge = self.edge_name
             E0 = self.E0
             if edge is not None:
-                plan_args["edge"] = edge
+                plan_args["E0"] = edge
             elif E0 is not None:
                 plan_args["E0"] = E0
             else:
                 QtWidgets.QMessageBox.warning(
                     self, "Error", "Please select an absorption edge."
                 )
+                return None
         # Build the queue item
         item = BPlan(
             "energy_scan",

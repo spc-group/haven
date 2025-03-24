@@ -30,6 +30,9 @@ class PlanDisplay(display.FireflyDisplay):
 
     def customize_ui(self):
         self.ui.run_button.clicked.connect(self.queue_plan)
+        self.ui.comboBox_purpose.lineEdit().setPlaceholderText(
+            "e.g. commissioning, alignment…"
+        )
 
     async def _get_time(self, detector):
         """Get the dwell time value for a given detector."""
@@ -92,6 +95,7 @@ class PlanDisplay(display.FireflyDisplay):
         """Get metadata information."""
         md = {
             "sample_name": self.ui.lineEdit_sample.text(),
+            "scan_name": self.ui.lineEdit_scan.text(),
             "purpose": self.ui.comboBox_purpose.currentText(),
             "notes": self.ui.textEdit_notes.toPlainText(),
             "sample_formula": self.ui.lineEdit_formula.text(),
