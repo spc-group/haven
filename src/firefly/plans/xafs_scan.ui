@@ -32,13 +32,6 @@
         </widget>
        </item>
        <item>
-        <widget class="Line" name="line_2">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-        </widget>
-       </item>
-       <item>
         <widget class="QComboBox" name="edge_combo_box">
          <property name="enabled">
           <bool>true</bool>
@@ -57,6 +50,13 @@
          </property>
          <property name="currentText">
           <string>Ni K (8333 eV)</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="Line" name="line_2">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
          </property>
         </widget>
        </item>
@@ -86,13 +86,6 @@
          </property>
          <property name="displayIntegerBase">
           <number>10</number>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="Line" name="line_3">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
          </property>
         </widget>
        </item>
@@ -143,8 +136,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>581</width>
-            <height>215</height>
+            <width>527</width>
+            <height>211</height>
            </rect>
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_8">
@@ -648,14 +641,14 @@
          <property name="currentIndex">
           <number>-1</number>
          </property>
-         <property name="placeholderText">
-          <string>e.g., commissioning, alignment..</string>
-         </property>
          <property name="duplicatesEnabled">
           <bool>false</bool>
          </property>
          <property name="frame">
           <bool>true</bool>
+         </property>
+         <property name="placeholderText" stdset="0">
+          <string>e.g., commissioning, alignment..</string>
          </property>
          <item>
           <property name="text">

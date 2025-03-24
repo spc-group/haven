@@ -41,26 +41,26 @@ def test_region_number(display):
 def test_E0_checkbox(display):
     """Does selecting the E0 checkbox adjust the UI properly?"""
     # check whether extracted edge value is correct
-    display.edge_combo_box.setCurrentText("Pt L3 (11500.8 eV)")
+    display.edge_combo_box.setCurrentIndex(2)
+    E0 = 4966.0
     display.ui.use_edge_checkbox.setChecked(True)
 
     # check whether the math is done correctly when switching off E0
     display.ui.use_edge_checkbox.setChecked(False)
-    # check whether edge value is extracted correctly
-    np.testing.assert_equal(display.edge_value, 11500.8)
     # K-space checkboxes should be disabled when E0 is unchecked
     assert not display.regions[0].k_space_checkbox.isEnabled()
 
     # check whether energy values is added correctly
     for i in range(len(default_values)):
+        print(display.edge_name)
         np.testing.assert_almost_equal(
             float(display.regions[i].start_line_edit.text()),
-            default_values[i][0] + display.edge_value,
+            default_values[i][0] + E0,
             decimal=3,
         )
         np.testing.assert_almost_equal(
             float(display.regions[i].stop_line_edit.text()),
-            default_values[i][1] + display.edge_value,
+            default_values[i][1] + E0,
             decimal=3,
         )
         np.testing.assert_almost_equal(
@@ -86,7 +86,7 @@ def test_E0_checkbox(display):
 
 
 def test_xafs_scan_plan_queued_energies(display, qtbot):
-    display.edge_combo_box.setCurrentText("Pt L3 (11500.8 eV)")
+    display.edge_combo_box.setCurrentIndex(1)
     display.regions[-1].region_checkbox.setChecked(False)
     # Set up detector list
     display.ui.detectors_list.selected_detectors = mock.MagicMock(
@@ -115,7 +115,84 @@ def test_xafs_scan_plan_queued_energies(display, qtbot):
         "energy_scan",
         energies=energies_merge,
         exposure=exposures,
-        E0=11500.8,
+        edge="Sc-K",
+        detectors=["vortex_me4", "I0"],
+        md={
+            "sample_name": "sam",
+            "purpose": "test",
+            "is_standard": True,
+            "notes": "sam_notes",
+        },
+    )
+
+    def check_item(item):
+        item_dict = item.to_dict()["kwargs"]
+        expected_dict = expected_item.to_dict()["kwargs"]
+
+        try:
+            # Check energies & exposures within 3 decimals
+            np.testing.assert_array_almost_equal(
+                item_dict["energies"], expected_dict["energies"], decimal=3
+            )
+            np.testing.assert_array_almost_equal(
+                item_dict["exposure"], expected_dict["exposure"], decimal=3
+            )
+
+            # Now check the rest of the dictionary, excluding the numpy array keys
+            item_dict.pop("energies")
+            item_dict.pop("exposure")
+            expected_dict.pop("energies")
+            expected_dict.pop("exposure")
+
+            # Check if the remaining dictionary items are equal
+            assert item_dict == expected_dict, "Non-array items do not match."
+
+        except AssertionError as e:
+            # Print detailed debug info
+            pprint(item_dict)
+            pprint(expected_dict)
+            print(str(e))
+            return False
+        return True
+
+    # Click the run button and see if the plan is queued
+    display.ui.run_button.setEnabled(True)
+    with qtbot.waitSignal(
+        display.queue_item_submitted, timeout=1000, check_params_cb=check_item
+    ):
+        qtbot.mouseClick(display.ui.run_button, QtCore.Qt.LeftButton)
+
+
+def test_xafs_scan_plan_queued_numeric_E0(display, qtbot):
+    display.edge_combo_box.setCurrentText("58893.0")
+    display.regions[-1].region_checkbox.setChecked(False)
+    # Set up detector list
+    display.ui.detectors_list.selected_detectors = mock.MagicMock(
+        return_value=["vortex_me4", "I0"]
+    )
+    energies_region0 = np.arange(
+        default_values[0][0],
+        default_values[0][1] + default_values[0][2],
+        default_values[0][2],
+    )
+    energies_region1 = np.arange(
+        default_values[1][0] + default_values[1][2],
+        default_values[1][1] + default_values[1][2],
+        default_values[1][2],
+    )
+    energies_merge = np.hstack([energies_region0, energies_region1])
+    exposures = np.ones(energies_merge.shape)
+    # set up meta data
+    display.ui.lineEdit_sample.setText("sam")
+    display.ui.checkBox_is_standard.setChecked(True)
+    display.ui.comboBox_purpose.setCurrentText("test")
+    display.ui.textEdit_notes.setText("sam_notes")
+
+    expected_item = BPlan(
+        "energy_scan",
+        energies=energies_merge,
+        exposure=exposures,
+        E0=58893.0,
         detectors=["vortex_me4", "I0"],
         md={
             "sample_name": "sam",
@@ -165,7 +242,7 @@ def test_xafs_scan_plan_queued_energies(display, qtbot):
 
 def test_xafs_scan_plan_queued_energies_k_mixed(qtbot, display):
     display.ui.regions_spin_box.setValue(2)
-    display.edge_combo_box.setCurrentText("Pt L3 (11500.8 eV)")
+    display.edge_combo_box.setCurrentIndex(1)
 
     # set up the first region
     display.regions[0].start_line_edit.setText("-20")
@@ -215,7 +292,7 @@ def test_xafs_scan_plan_queued_energies_k_mixed(qtbot, display):
         "energy_scan",
         energies=energies,
         exposure=exposures,
-        E0=11500.8,
+        edge="Sc-K",
         detectors=["vortex_me4", "I0"],
         md={
             "sample_name": "sam",
@@ -267,6 +344,33 @@ def test_xafs_scan_plan_queued_energies_k_mixed(qtbot, display):
         display.queue_item_submitted, timeout=1000, check_params_cb=check_item
     ):
         qtbot.mouseClick(display.ui.run_button, QtCore.Qt.LeftButton)
+
+
+def test_edge_name(display):
+    # With a pre-defined option, return just the edge name
+    display.edge_combo_box.setCurrentIndex(1)
+    assert display.edge_name == "Sc-K"
+    # With a write-in edge name, return the edge name
+    display.edge_combo_box.setCurrentText("Zz-Z9")
+    assert display.edge_name == "Zz-Z9"
+    # With a non-edge name, raise an exception
+    display.edge_combo_box.setCurrentText("1153")
+    assert display.edge_name is None
+
+
+def test_E0(display):
+    # With a pre-defined option, return just the edge name
+    display.edge_combo_box.setCurrentIndex(1)
+    assert display.E0 == 4492.0
+    # With a write-in edge name, return the edge name
+    display.edge_combo_box.setCurrentText("Ni-K")
+    assert display.E0 == 8333.0
+    # With a non-edge name, raise an exception
+    display.edge_combo_box.setCurrentText("1153")
+    assert display.E0 == 1153.0
+    # Check that non-edges return None
+    display.edge_combo_box.setCurrentText("spam and eggs")
+    assert display.E0 is None
 
 
 # -----------------------------------------------------------------------------

@@ -2,12 +2,14 @@ import logging
 import re
 
 import numpy as np
+import xraydb
 from bluesky_queueserver_api import BPlan
 from qtpy import QtWidgets
 from qtpy.QtCore import QObject, Signal
 from qtpy.QtGui import QDoubleValidator
 from xraydb.xraydb import XrayDB
 
+from firefly.exceptions import UnknownAbsorptionEdge
 from firefly.plans import regions_display
 from haven.energy_ranges import (
     E_step_to_k_step,
@@ -227,21 +229,22 @@ class XafsScanDisplay(regions_display.PlanDisplay):
         self.ui.title_layout.addLayout(self.title_region.layout)
 
         self.reset_default_regions()
-        # add absorption edges from XrayDB
+        # Add absorption edges from XrayDB
         self.xraydb = XrayDB()
-
         combo_box = self.ui.edge_combo_box
+        combo_box.lineEdit().setPlaceholderText("Select edge…")
         ltab = self.xraydb.tables["xray_levels"]
         edges = self.xraydb.query(ltab)
         edges = edges.filter(
             ltab.c.absorption_edge < self.max_energy,
             ltab.c.absorption_edge > self.min_energy,
         )
-        items = [
-            f"{r.element} {r.iupac_symbol} ({int(r.absorption_edge)} eV)"
-            for r in edges.all()
-        ]
-        combo_box.addItems(["Select edge…", *items])
+        for edge in edges:
+            text = (
+                f"{edge.element} {edge.iupac_symbol} ({int(edge.absorption_edge)} eV)"
+            )
+            combo_box.addItem(text, userData=edge)
+        combo_box.setCurrentText("")
 
         # Connect the E0 checkbox to the E0 combobox
         self.ui.use_edge_checkbox.stateChanged.connect(self.use_edge)
@@ -293,7 +296,7 @@ class XafsScanDisplay(regions_display.PlanDisplay):
 
         # extract edge values
         match = re.findall(r"\d+\.?\d*", self.edge_combo_box.currentText())
-        self.edge_value = round(float(match[-1]), float_accuracy) if match else 0
+        edge_eV = round(float(match[-1]), float_accuracy) if match else 0
 
         # iterate through selected regions
         checked_regions = [
@@ -312,9 +315,9 @@ class XafsScanDisplay(regions_display.PlanDisplay):
                 text = line_edit.text()
                 if text:
                     value = (
-                        round(float(text), float_accuracy) - self.edge_value
+                        round(float(text), float_accuracy) - edge_eV
                         if is_checked
-                        else round(float(text), float_accuracy) + self.edge_value
+                        else round(float(text), float_accuracy) + edge_eV
                     )
                     line_edit.setText(f"{value:.6g}")
 
@@ -409,6 +412,30 @@ class XafsScanDisplay(regions_display.PlanDisplay):
             if response != QtWidgets.QMessageBox.Yes:
                 self.ui.checkBox_is_standard.setChecked(False)
 
+    @property
+    def edge_name(self) -> str | None:
+        edge_regex = r"([A-Z][a-z]?)[-_ ]([K-Z][0-9]*)"
+        edge_text = self.ui.edge_combo_box.currentText()
+        if re_match := re.search(edge_regex, edge_text):
+            return "-".join(re_match.groups())
+        else:
+            return None
+
+    @property
+    def E0(self):
+        try:
+            element, edge = self.edge_name.split("-")
+        except (UnknownAbsorptionEdge, AttributeError):
+            pass
+        else:
+            return xraydb.xray_edge(element, edge).energy
+        # Try and parse as a number
+        edge_text = self.ui.edge_combo_box.currentText()
+        try:
+            return float(edge_text)
+        except ValueError:
+            return None
+
     def queue_plan(self, *args, **kwargs):
         """Execute this plan on the queueserver."""
         # Get parameters from each rows of line regions:
@@ -442,7 +469,6 @@ class XafsScanDisplay(regions_display.PlanDisplay):
                         exposure=exposure_time,
                     )
                 )
-
             else:
                 energy_ranges_all.append(
                     ERange(
@@ -458,33 +484,32 @@ class XafsScanDisplay(regions_display.PlanDisplay):
         energies, exposures = merge_ranges(*energy_ranges_all, sort=True)
         energies = list(np.round(energies, float_accuracy))
         exposures = list(np.round(exposures, float_accuracy))
-
+        # Set up other plan arguments
         md = self.get_meta_data()
         md["is_standard"] = self.ui.checkBox_is_standard.isChecked()
         detectors, repeat_scan_num = self.get_scan_parameters()
-
+        plan_args = dict(
+            energies=energies,
+            exposure=exposures,
+            detectors=detectors,
+            md=md,
+        )
         # Check that an absorption edge was selected
         if self.use_edge_checkbox.isChecked():
-            try:
-                match = re.findall(r"\d+\.?\d*", self.edge_combo_box.currentText())
-                self.edge_value = round(float(match[-1]), float_accuracy)
-
-            except IndexError:
+            edge = self.edge_name
+            E0 = self.E0
+            if edge is not None:
+                plan_args["edge"] = edge
+            elif E0 is not None:
+                plan_args["E0"] = E0
+            else:
                 QtWidgets.QMessageBox.warning(
                     self, "Error", "Please select an absorption edge."
                 )
-                return None
-        else:
-            self.edge_value = 0
-
         # Build the queue item
         item = BPlan(
             "energy_scan",
-            energies=energies,
-            exposure=exposures,
-            E0=self.edge_value,
-            detectors=detectors,
-            md=md,
+            **plan_args,
         )
         # Submit the item to the queueserver
         log.info("Adding XAFS scan to queue.")
