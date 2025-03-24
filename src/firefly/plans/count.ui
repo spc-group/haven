@@ -178,7 +178,7 @@
           <bool>true</bool>
          </property>
          <property name="currentText">
-          <string>commissioning</string>
+          <string/>
          </property>
          <property name="currentIndex">
           <number>0</number>

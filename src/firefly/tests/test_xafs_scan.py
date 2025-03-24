@@ -115,7 +115,7 @@ def test_xafs_scan_plan_queued_energies(display, qtbot):
         "energy_scan",
         energies=energies_merge,
         exposure=exposures,
-        edge="Sc-K",
+        E0="Sc-K",
         detectors=["vortex_me4", "I0"],
         md={
             "sample_name": "sam",
@@ -292,7 +292,7 @@ def test_xafs_scan_plan_queued_energies_k_mixed(qtbot, display):
         "energy_scan",
         energies=energies,
         exposure=exposures,
-        edge="Sc-K",
+        E0="Sc-K",
         detectors=["vortex_me4", "I0"],
         md={
             "sample_name": "sam",

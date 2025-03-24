@@ -236,6 +236,12 @@ class XafsScanDisplay(regions_display.PlanDisplay):
         # repeat scans
         self.ui.spinBox_repeat_scan_num.valueChanged.connect(self.update_total_time)
 
+        # Default metadata values
+        self.ui.comboBox_purpose.lineEdit().setPlaceholderText(
+            "e.g. commissioning, alignment…"
+        )
+        self.ui.comboBox_purpose.setCurrentText("")
+
     async def update_devices(self, registry):
         """Set available components in the device list."""
         await super().update_devices(registry)

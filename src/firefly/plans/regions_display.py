@@ -30,9 +30,6 @@ class PlanDisplay(display.FireflyDisplay):
 
     def customize_ui(self):
         self.ui.run_button.clicked.connect(self.queue_plan)
-        self.ui.comboBox_purpose.lineEdit().setPlaceholderText(
-            "e.g. commissioning, alignment…"
-        )
 
     async def _get_time(self, detector):
         """Get the dwell time value for a given detector."""
@@ -136,7 +133,6 @@ class RegionsDisplay(PlanDisplay, display.FireflyDisplay):
             self.clearLayout(self.ui.region_template_layout)
         except AttributeError:
             pass
-
         # Disable the line edits in spin box (use up/down buttons instead)
         self.ui.num_motor_spin_box.lineEdit().setReadOnly(True)
         # Create the initial (blank) regions
