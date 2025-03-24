@@ -49,6 +49,8 @@ firefly_cameras = "firefly.launcher:cameras"
 
 [tool.setuptools.package-data]
 firefly = ["firefly.qss"]
+# This might be necessary in the future for BITS compatibility
+# "" = "src"
 
 [tool.setuptools_scm]
 
