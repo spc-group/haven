@@ -1,6 +1,6 @@
 import pytest
 from ophyd.utils.errors import ReadOnlyError
-from ophyd_async.core import get_mock_put, set_mock_value
+from ophyd_async.testing import get_mock_put, set_mock_value
 
 from haven.devices.shutter import PssShutter, ShutterState
 
@@ -17,6 +17,16 @@ async def shutter(sim_registry):
     shutter = PssShutter(prefix="S255ID-PSS:SCS:", name="shutter")
     await shutter.connect(mock=True)
     return shutter
+
+
+async def test_read_shutter(shutter):
+    """The current state of the shutter should be readable.
+
+    This makes it compatible with the ``open_shutters_wrapper``.
+
+    """
+    reading = await shutter.read()
+    assert shutter.name in reading
 
 
 async def test_shutter_setpoint(shutter):

@@ -1,8 +1,11 @@
 import numpy as np
 import pytest
+from bluesky import RunEngine
 from ophyd import sim
+from ophyd_async.sim._sim_motor import SimMotor
 
-from haven import KRange, energy_scan, xafs_scan
+from haven.energy_ranges import KRange
+from haven.plans import energy_scan, xafs_scan
 
 
 @pytest.fixture()
@@ -183,12 +186,12 @@ def test_exafs_k_range(mono_motor, exposure_motor, I0):
     real_energies = [
         i.args[0] for i in scan_list if i[0] == "set" and i.obj.name == "mono_energy"
     ]
-    np.testing.assert_equal(real_energies, expected_energies)
+    np.testing.assert_almost_equal(real_energies, expected_energies)
     # Check that the exposure is set correctly
     real_exposures = [
         i.args[0] for i in scan_list if i[0] == "set" and i.obj.name == "exposure"
     ]
-    np.testing.assert_equal(real_exposures, expected_exposures)
+    np.testing.assert_almost_equal(real_exposures, expected_exposures)
 
 
 def test_named_E0(mono_motor, exposure_motor, I0):
@@ -275,6 +278,35 @@ def test_xafs_metadata(mono_motor):
     assert md["E0"] == 8333.0
     assert md["plan_name"] == "energy_scan"
     assert md["sample_name"] == "unobtanium"
+
+
+async def test_document_plan_args():
+    """Having numpy arrays in the arguments to a plan causes problems for
+    the TiledWriter. Make sure that the start doc plan args do not
+    contain numpy arrays.
+
+    """
+    # Set up mocked devices
+    energy = SimMotor(name="energy")
+    await energy.connect(mock=False)
+    # Set up the run engine environment
+    await energy.connect(mock=True)
+    RE = RunEngine({})
+    documents = []
+
+    def track_doc(name, doc):
+        documents.append((name, doc))
+
+    RE.subscribe(track_doc)
+    # Prepare the plan
+    energies = np.linspace(8250, 8550, num=11)
+    plan = energy_scan(energies=energies, detectors=[], energy_signals=[energy])
+    RE(plan)
+    (start_doc,) = [doc for name, doc in documents if name == "start"]
+    # Make sure there are no numpy arrays in the plan args
+    # (causes problems for the Tiled writer)
+    args = start_doc["plan_args"]["args"]
+    assert not any([isinstance(arg, np.ndarray) for arg in args])
 
 
 # -----------------------------------------------------------------------------

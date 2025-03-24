@@ -8,9 +8,11 @@ from bluesky import plan_stubs as bps
 from bluesky import plans as bp
 from pydantic import BaseModel
 from rich import print as rprint
-from tiled.queries import Key, Regex
+from tiled.queries import Contains, Key
 
-from .catalog import Catalog, tiled_client
+from haven._iconfig import load_config
+
+from .catalog import Catalog, CatalogScan
 from .instrument import beamline
 
 log = logging.getLogger(__name__)
@@ -41,16 +43,15 @@ class MotorPosition(BaseModel):
 
     @classmethod
     def _load(Cls, run_md, data_keys, data):
-        """Common routines for synch and async loading."""
+        """Common routines for sync and async loading."""
         if run_md["start"]["plan_name"] != "save_motor_position":
             raise ValueError(f"Run {run_md['start']['uid']} is not a motor position.")
         # Extract motor positions from the run
         motor_axes = []
-        for data_key in data_keys.values():
-            mname = data_key["object_name"]
+        for axis_name in data_keys:
             axis = MotorAxis(
-                name=mname,
-                readback=data[mname][0],
+                name=axis_name,
+                readback=data[axis_name][0],
             )
             motor_axes.append(axis)
         # Create the motor position object
@@ -64,11 +65,12 @@ class MotorPosition(BaseModel):
     @classmethod
     def load(Cls, run):
         """Create a new MotorPosition object from a Tiled Bluesky run."""
+        data_keys = run["primary"].metadata["data_keys"]
         return Cls._load(
             run_md=run.metadata,
             # Assumes the 0-th descriptor is for the primary stream
-            data_keys=run["primary"].metadata["descriptors"][0]["data_keys"],
-            data=run["primary"]["data"].read(),
+            data_keys=data_keys,
+            data=run["primary/internal/events"].read(),
         )
 
     @classmethod
@@ -115,7 +117,7 @@ def save_motor_position(*motors, name: str, md: Mapping = {}):
 
     """
     # Resolve device names or labels
-    motors = beamline.registry.findall(motors)
+    motors = [beamline.devices[motor] for motor in motors]
     # Create the new run object
     _md = {
         "position_name": name,
@@ -185,7 +187,7 @@ async def list_motor_positions(after: float | None = None, before: float | None 
         rprint(f"[yellow]No motor positions found: {before=}, {after=}[/]")
 
 
-def get_motor_position(uid: str) -> MotorPosition:
+async def get_motor_position(uid: str) -> MotorPosition:
     """Retrieve a previously saved motor position from the database.
 
     Parameters
@@ -202,10 +204,10 @@ def get_motor_position(uid: str) -> MotorPosition:
 
     """
     # Filter out query parameters that are ``None``
-    client = tiled_client()
-    run = client[uid]
+    catalog_name = load_config()["tiled"]["default_catalog"]
+    run = CatalogScan("/".join([catalog_name, uid]))
     # Feedback for if no matching motor positions are in the database
-    position = MotorPosition.load(run)
+    position = await MotorPosition.aload(run)
     return position
 
 
@@ -214,6 +216,7 @@ async def get_motor_positions(
     after: float | None = None,
     name: str | None = None,
     case_sensitive: bool = True,
+    catalog: Catalog | None = None,
 ) -> list[MotorPosition]:
     """Get all motor position objects from the catalog.
 
@@ -237,25 +240,25 @@ async def get_motor_positions(
       The motor positions matching the requested parameters.
 
     """
-    runs = Catalog(client=tiled_client())
+    if catalog is None:
+        path = load_config()["tiled"]["default_catalog"]
+        catalog = Catalog(path=path)
     # Filter only saved motor positions
-    runs = await runs.search(Key("plan_name") == "save_motor_position")
+    queries = [Key("plan_name") == "save_motor_position"]
+    # runs = await catalog.search(Key("plan_name") == "save_motor_position")
     # Filter by timestamp
     if before is not None:
-        runs = await runs.search(Key("time") < before)
+        queries.append(Key("start.time") < before)
     if after is not None:
-        runs = await runs.search(Key("time") > after)
+        queries.append(Key("stop.time") > after)
     # Filter by position name
     if name is not None:
-        runs = await runs.search(
-            Regex("position_name", name, case_sensitive=case_sensitive)
-        )
+        queries.append(Contains("start.position_name", name))
+    # Retrieve from the database
+    runs = catalog.runs(queries=queries)
     # Create the actual motor position objects
-    async for uid, run in runs.items():
-        try:
-            yield await MotorPosition.aload(run)
-        except KeyError:
-            continue
+    async for run in runs:
+        yield await MotorPosition.aload(run)
 
 
 def recall_motor_position(uid: str):
@@ -267,12 +270,17 @@ def recall_motor_position(uid: str):
       The universal identifier for the the document in the collection.
 
     """
+
     # Get the saved position from the database
-    position = get_motor_position(uid=uid)
+    def builder():
+        return get_motor_position(uid=uid)
+
+    (task,) = yield from bps.wait_for([builder])
+    position = task.result()
     # Create a move plan to recall the position
     plan_args = []
     for axis in position.motors:
-        motor = beamline.registry.find(name=axis.name)
+        motor = beamline.devices[axis.name]
         plan_args.append(motor)
         plan_args.append(axis.readback)
     yield from bps.mv(*plan_args)
@@ -291,7 +299,7 @@ async def list_current_motor_positions(*motors, name="Current motor positions"):
 
     """
     # Resolve device names or labels
-    motors = [beamline.registry.find(name=m) for m in motors]
+    motors = [beamline.devices[m] for m in motors]
     # Build the list of motor positions
     motor_axes = []
     for m in motors:

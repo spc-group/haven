@@ -9,12 +9,13 @@ import numpy as np
 import pandas as pd
 from apstools.devices import CamMixin_V34, SingleTrigger_V34
 from ophyd import ADComponent as ADCpt
-from ophyd import CamBase
+from ophyd import (
+    CamBase,
+)
 from ophyd import Component as Cpt
 from ophyd import DetectorBase as OphydDetectorBase
 from ophyd import (
     Device,
-    EigerDetectorCam,
     EpicsSignal,
     Kind,
     Lambda750kCam,
@@ -42,7 +43,10 @@ from ophyd.areadetector.plugins import (
 )
 from ophyd.areadetector.plugins import StatsPlugin_V31 as OphydStatsPlugin_V31
 from ophyd.areadetector.plugins import StatsPlugin_V34 as OphydStatsPlugin_V34
-from ophyd.areadetector.plugins import TIFFPlugin_V31, TIFFPlugin_V34
+from ophyd.areadetector.plugins import (
+    TIFFPlugin_V31,
+    TIFFPlugin_V34,
+)
 from ophyd.flyers import FlyerInterface
 from ophyd.sim import make_fake_device
 from ophyd.status import Status, StatusBase, SubscriptionStatus
@@ -53,7 +57,7 @@ from .._iconfig import load_config
 log = logging.getLogger(__name__)
 
 
-__all__ = ["Eiger500K", "Lambda250K", "SimDetector", "AsyncCamMixin"]
+__all__ = ["Lambda250K", "SimDetector", "AsyncCamMixin"]
 
 
 class WriteModes(IntEnum):
@@ -288,9 +292,6 @@ class SingleImageModeTrigger(SingleTrigger_V34):
 class SimDetectorCam_V34(CamMixin_V34, SimDetectorCam): ...
 
 
-class EigerCam(AsyncCamMixin, EigerDetectorCam): ...
-
-
 class LambdaCam(AsyncCamMixin, Lambda750kCam): ...
 
 
@@ -318,7 +319,7 @@ class DynamicFileStore(Device):
     """
 
     def __init__(
-        self, *args, write_path_template="/{root_path}/%Y/%m/{name}/", **kwargs
+        self, *args, write_path_template="/{root_path}/{name}/%Y/%m/", **kwargs
     ):
         super().__init__(*args, write_path_template=write_path_template, **kwargs)
         # Format the file_write_template with per-device values
@@ -476,37 +477,6 @@ class Lambda250K(SingleTrigger, DetectorBase):
         "stats5",
         "hdf1",
         "tiff",
-    ]
-
-
-class Eiger500K(SingleTrigger, DetectorBase):
-    """
-    A Eiger S 500K area detector device.
-    """
-
-    cam = ADCpt(EigerCam, "cam1:")
-    image = ADCpt(ImagePlugin_V34, "image1:")
-    pva = ADCpt(PvaPlugin_V34, "Pva1:")
-    # tiff = ADCpt(TIFFPlugin, "TIFF1:", kind=Kind.normal)
-    hdf = ADCpt(HDF5FilePlugin, "HDF1:", kind=Kind.normal)
-    roi1 = ADCpt(ROIPlugin_V34, "ROI1:", kind=Kind.config)
-    roi2 = ADCpt(ROIPlugin_V34, "ROI2:", kind=Kind.config)
-    roi3 = ADCpt(ROIPlugin_V34, "ROI3:", kind=Kind.config)
-    roi4 = ADCpt(ROIPlugin_V34, "ROI4:", kind=Kind.config)
-    stats1 = ADCpt(StatsPlugin_V34, "Stats1:", kind=Kind.normal)
-    stats2 = ADCpt(StatsPlugin_V34, "Stats2:", kind=Kind.normal)
-    stats3 = ADCpt(StatsPlugin_V34, "Stats3:", kind=Kind.normal)
-    stats4 = ADCpt(StatsPlugin_V34, "Stats4:", kind=Kind.normal)
-    stats5 = ADCpt(StatsPlugin_V34, "Stats5:", kind=Kind.normal)
-
-    _default_read_attrs = [
-        "stats1",
-        "stats2",
-        "stats3",
-        "stats4",
-        "stats5",
-        "hdf",
-        # "tiff",
     ]
 
 

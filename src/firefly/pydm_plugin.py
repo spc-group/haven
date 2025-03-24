@@ -42,7 +42,7 @@ class RegistryConnection:
         Signal
           The Ophyd signal corresponding to the address.
         """
-        return beamline.registry[address]
+        return beamline.devices[address]
 
 
 class HavenConnection(RegistryConnection, SignalConnection):
@@ -75,7 +75,7 @@ class HavenAsyncConnection(RegistryConnection, PyDMConnection):
         super().add_listener(channel)
         # If the channel is used for writing to PVs, hook it up to the 'put' methods.
         if channel.value_signal is not None:
-            for type_ in [str, int, float, np.ndarray]:
+            for type_ in [str, int, float, bool, np.ndarray]:
                 try:
                     channel.value_signal[type_].connect(self.put_value)
                 except KeyError:
@@ -89,6 +89,7 @@ class HavenAsyncConnection(RegistryConnection, PyDMConnection):
         # Assume the signal is connected
         self.connection_state_signal.emit(True)
         # Check the bluesky interface for writability
+        log.debug(f"Sending new write access: {self.is_writable}")
         self.write_access_signal.emit(self.is_writable)
         # Get some more metadata
         if hasattr(self.signal, "describe"):
@@ -140,6 +141,7 @@ class HavenAsyncConnection(RegistryConnection, PyDMConnection):
     @asyncSlot(int)
     @asyncSlot(float)
     @asyncSlot(str)
+    @asyncSlot(bool)
     @asyncSlot(np.ndarray)
     async def put_value(self, new_value):
         if self.is_triggerable:
@@ -161,7 +163,7 @@ class HavenPlugin(SignalPlugin):
     def connection_class(channel, address, protocol):
         # Check if we need the synchronous or asynchronous version
         try:
-            sig = beamline.registry[address]
+            sig = beamline.devices[address]
         except KeyError:
             sig = None
         is_ophyd_async = inspect.iscoroutinefunction(getattr(sig, "connect", None))
@@ -172,5 +174,5 @@ class HavenPlugin(SignalPlugin):
         elif is_vanilla_ophyd:
             return HavenConnection(channel, address, protocol)
         else:
-            msg = f"Signal must be ophyd or ophyd_async signal. Got {type(sig)}."
+            msg = f"Signal for {address=} must be ophyd or ophyd_async signal. Got {type(sig)=}."
             raise UnknownOphydSignal(msg)

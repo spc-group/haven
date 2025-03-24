@@ -62,8 +62,8 @@ settling_times = {
     ("20", "pA/V", "HIGH BW"): 0.5,
     ("50", "pA/V", "HIGH BW"): 0.5,
     ("100", "pA/V", "HIGH BW"): 0.5,
-    ("200", "pA/V", "HIGH BW"): 0.3,
-    ("500", "pA/V", "HIGH BW"): 0.3,
+    ("200", "pA/V", "HIGH BW"): 0.5,
+    ("500", "pA/V", "HIGH BW"): 0.5,
     ("1", "pA/V", "LOW NOISE"): 3.0,
     ("2", "pA/V", "LOW NOISE"): 2.5,
     ("5", "pA/V", "LOW NOISE"): 2.0,
@@ -77,35 +77,35 @@ settling_times = {
 settling_times.update(
     {
         # nA/V, high bandwidth
-        (gain_values[idx], "nA/V", "HIGH BW"): 0.3
+        (gain_values[idx], "nA/V", "HIGH BW"): 0.5
         for idx in range(9)
     }
 )
 settling_times.update(
     {
         # nA/V, low noise
-        (gain_values[idx], "nA/V", "LOW NOISE"): 0.3
+        (gain_values[idx], "nA/V", "LOW NOISE"): 0.5
         for idx in range(9)
     }
 )
 settling_times.update(
     {
         # μA/V, high bandwidth
-        (gain_values[idx], "uA/V", "HIGH BW"): 0.3
+        (gain_values[idx], "uA/V", "HIGH BW"): 0.5
         for idx in range(9)
     }
 )
 settling_times.update(
     {
         # μA/V, low noise
-        (gain_values[idx], "uA/V", "LOW NOISE"): 0.3
+        (gain_values[idx], "uA/V", "LOW NOISE"): 0.5
         for idx in range(9)
     }
 )
 settling_times.update(
     {
-        ("1", "mA/V", "HIGH BW"): 0.3,
-        ("1", "mA/V", "LOW NOISE"): 0.3,
+        ("1", "mA/V", "HIGH BW"): 0.5,
+        ("1", "mA/V", "LOW NOISE"): 0.5,
     }
 )
 
@@ -302,27 +302,27 @@ class SRS570PreAmplifier(Device):
         LOW_DRIFT = "LOW DRIFT"
 
     class SensValue(StrictEnum):
-        _1 = "1"
-        _2 = "2"
-        _5 = "5"
-        _10 = "10"
-        _20 = "20"
-        _50 = "50"
-        _100 = "100"
-        _200 = "200"
-        _500 = "500"
+        ONE = "1"
+        TWO = "2"
+        FIVE = "5"
+        TEN = "10"
+        TWENTY = "20"
+        FIFTY = "50"
+        ONE_HUNDRED = "100"
+        TWO_HUNDRED = "200"
+        FIVE_HUNDRED = "500"
 
     class SensUnit(StrictEnum):
-        pA_V = "pA/V"
-        nA_V = "nA/V"
-        uA_V = "uA/V"
-        mA_V = "mA/V"
+        PICOAMP_PER_VOLT = "pA/V"
+        NANOAMP_PER_VOLT = "nA/V"
+        MICROAMP_PER_VOLT = "uA/V"
+        MILLIAMP_PER_VOLT = "mA/V"
 
     class OffsetUnit(StrictEnum):
-        pA = "pA"
-        nA = "nA"
-        uA = "uA"
-        mA = "mA"
+        PICOAMP = "pA"
+        NANOAMP = "nA"
+        MICROAMP = "uA"
+        MILLIAMP = "mA"
 
     def __init__(self, prefix: str, name: str = ""):
         """

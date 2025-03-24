@@ -10,9 +10,10 @@ are in the :py:mod:`haven.devices.area_detector` module. Newer
 
 Currently supported detectors:
 
-- Eiger 500K (:py:class:`~haven.devices.area_detector.Eiger500K`)
+- Eiger (e.g. 500K) (:py:class:`~haven.devices.detector.eiger.EigerDetector`)
 - Lambda (:py:class:`~haven.devices.area_detector.Lambda250K`)
 - Simulated detector (:py:class:`~haven.devices.detectors.sim_detector.SimDetector`)
+- Aravis cameras (:py:class:`~haven.devices.detectors.aravis.AravisDetector`)
 
 EPICS and Ophyd do not make a distinction between area detectors and
 cameras. After all, a camera is just an area detector for visible
@@ -25,9 +26,10 @@ label "area_detectors". They can be used interchangeably in plans.
 
 .. warning::
 
-   The first time you stage the device after the IOC has been
-   restarted, you may receive an error about the **plugin not being
-   primed**. The means that the plugin does not know the size of the
-   image to expect since it has not seen one yet. The solution is to
-   open the caQtDM panels for the detector, ensure the corresponding
-   plugins are enabled, and then manually acquire a frame.
+   For threaded devices, the first time you stage the device after the
+   IOC has been restarted, you may receive an error about the **plugin
+   not being primed**. The means that the plugin does not know the
+   size of the image to expect since it has not seen one yet. The
+   solution is to open the caQtDM panels for the detector, ensure the
+   corresponding plugins are enabled, and then manually acquire a
+   frame.

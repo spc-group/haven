@@ -1,7 +1,7 @@
 import asyncio
 
 import pytest
-from ophyd_async.core import get_mock_put, set_mock_value
+from ophyd_async.testing import get_mock_put, set_mock_value
 
 from haven.devices.energy_positioner import EnergyPositioner
 from haven.devices.xray_source import BusyStatus
@@ -55,6 +55,32 @@ async def test_disable_id_tracking(positioner):
     assert tracking_mock.call_count == 2
     assert tracking_mock.call_args_list[0].args[0] == 0
     assert tracking_mock.call_args_list[1].args[0] == 1
+
+
+async def test_reading(positioner):
+    assert positioner.hints["fields"] == ["energy"]
+    reading = await positioner.read()
+    expected_signals = [
+        "energy-undulator-energy",
+        "energy-undulator-energy-setpoint",
+        "energy-undulator-gap",
+        "energy-undulator-gap-setpoint",
+        "energy-undulator-gap_taper",
+        "energy-undulator-gap_taper-setpoint",
+        "energy-undulator-energy_taper",
+        "energy-undulator-energy_taper-setpoint",
+        "energy-setpoint",
+        "energy-monochromator-roll2",
+        "energy-monochromator-pitch2",
+        "energy-monochromator-energy",
+        "energy-monochromator-vert",
+        "energy-monochromator-horiz",
+        "energy-monochromator-bragg",
+        "energy-monochromator-offset",
+        "energy-monochromator-gap",
+        "energy",
+    ]
+    assert sorted(list(reading.keys())) == sorted(expected_signals)
 
 
 # -----------------------------------------------------------------------------

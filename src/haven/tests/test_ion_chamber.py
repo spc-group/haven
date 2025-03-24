@@ -4,7 +4,8 @@ from unittest.mock import AsyncMock
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose
-from ophyd_async.core import TriggerInfo, assert_value, get_mock_put, set_mock_value
+from ophyd_async.core import TriggerInfo
+from ophyd_async.testing import assert_value, get_mock_put, set_mock_value
 
 from haven.devices.ion_chamber import IonChamber
 
@@ -123,6 +124,7 @@ async def test_readables(ion_chamber):
 @pytest.mark.asyncio
 async def test_trigger(ion_chamber):
     await ion_chamber.connect(mock=True)
+    set_mock_value(ion_chamber.mcs.scaler.clock_frequency, 50e6)
     assert ion_chamber._trigger_statuses == {}
     # Does the same trigger twice return the same
     status1 = ion_chamber.trigger()
@@ -144,6 +146,31 @@ async def test_trigger_dark_current(ion_chamber, monkeypatch):
     status = ion_chamber.trigger(record_dark_current=True)
     await status
     assert ion_chamber.mcs.scaler.record_dark_current.trigger.called
+
+
+async def test_default_timeout_with_time(ion_chamber):
+    await ion_chamber.connect(mock=True)
+    await ion_chamber.mcs.scaler.channels[0].is_gate.set(True)
+    await ion_chamber.mcs.scaler.preset_time.set(17)
+    timeout = await ion_chamber.default_timeout()
+    assert timeout == pytest.approx(27)
+
+
+async def test_default_timeout_with_gate(ion_chamber):
+    """If another channel is gated, then use the maximum timeout.
+
+    Assume the internal register is 32-bit, then we can count for at most:
+
+      2**32 / clock_freq
+
+    """
+    clock_freq = 50e6
+    await ion_chamber.connect(mock=True)
+    await ion_chamber.mcs.scaler.channels[0].is_gate.set(False)
+    await ion_chamber.mcs.scaler.clock_frequency.set(clock_freq)
+    timeout = await ion_chamber.default_timeout()
+    buff_size = 2**32
+    assert timeout == pytest.approx(buff_size / clock_freq + 10)
 
 
 @pytest.mark.asyncio

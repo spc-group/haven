@@ -1,9 +1,9 @@
 import datetime as dt
 import time
+from collections import ChainMap
 from unittest.mock import AsyncMock
 
 import pytest
-from pytestqt.exceptions import TimeoutError
 from qtpy.QtCore import QTimer
 from qtpy.QtWidgets import QAction
 
@@ -246,6 +246,13 @@ def client():
     yield client
 
 
+@pytest.fixture()
+def status():
+    status_ = queue_client.queue_status(queue_client.QueueClient.parameter_mapping)
+    next(status_)
+    return status_
+
+
 def test_client_timer(client):
     assert isinstance(client.timer, QTimer)
 
@@ -293,12 +300,8 @@ async def test_run_plan(client, qtbot):
     api.item_add.return_value = {"success": True, "qsize": 2}
     new_status = qs_status.copy()
     new_status["items_in_queue"] = 2
-    api.status.return_value = new_status
     # Send a plan
-    with qtbot.waitSignal(
-        client.length_changed, timeout=1000, check_params_cb=lambda l: l == 2
-    ):
-        await client.add_queue_item({})
+    await client.add_queue_item({})
     # Check if the API sent it
     api.item_add.assert_called_once_with(item={})
 
@@ -336,26 +339,23 @@ async def test_stop_queue(client, qtbot):
 
 
 @pytest.mark.asyncio
-async def test_check_queue_status(client, qtbot):
-    # Check that the queue length is changed
-    signals = [
-        client.status_changed,
-        client.environment_opened,
-        client.environment_state_changed,
-        client.re_state_changed,
-        client.autostart_changed,
-        client.manager_state_changed,
-        client.in_use_changed,
-    ]
-    with qtbot.waitSignals(signals):
-        await client.check_queue_status()
-    return
-    # Check that it isn't emitted a second time
-    with pytest.raises(TimeoutError):
-        with qtbot.waitSignals(signals, timeout=10):
-            client.check_queue_status()
+async def test_send_status(status, qtbot):
+    to_update = status.send(qs_status)
+    assert to_update == {
+        "status_changed": (qs_status,),
+        "environment_opened": (False,),
+        "environment_state_changed": ("closed",),
+        "re_state_changed": (None,),
+        "autostart_changed": (False,),
+        "manager_state_changed": ("idle",),
+        "in_use_changed": (False,),
+        "devices_allowed_changed": ("a5ddff29-917c-462e-ba66-399777d2442a",),
+    }
+    # Check that it isn't updated a second time
+    to_update = status.send(qs_status)
+    assert to_update == {}
     # Now check a non-empty length queue
-    new_status = qs_status.copy()
+    new_status = ChainMap({}, qs_status)
     new_status.update(
         {
             "worker_environment_exists": True,
@@ -369,9 +369,14 @@ async def test_check_queue_status(client, qtbot):
             # "plan_queue_uid": "f682e6fa-983c-4bd8-b643-b3baec2ec764",
         }
     )
-    client.api.status.return_value = new_status
-    with qtbot.waitSignals(signals):
-        client.check_queue_status()
+    to_update = status.send(new_status)
+    assert to_update == {
+        "environment_opened": (True,),
+        "environment_state_changed": ("initializing",),
+        "re_state_changed": ("idle",),
+        "manager_state_changed": ("creating_environment",),
+        "status_changed": (new_status,),
+    }
 
 
 @pytest.mark.asyncio
@@ -410,7 +415,7 @@ async def test_devices_available(client, qtbot):
 
 
 @pytest.mark.asyncio
-async def test_update_status(client, time_machine, monkeypatch):
+async def test_update(client, time_machine, monkeypatch):
     api = client.api
     monkeypatch.setattr(
         queue_client, "load_config", lambda: {"beamline": {"hardware_is_present": True}}

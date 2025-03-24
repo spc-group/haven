@@ -3,53 +3,57 @@ area_detector_root_path = "/tmp"
 [ beamline ]
 # General name for the beamline, used for metadata.
 name = "SPC Beamline (sector unknown)"
-# Should we expect the hardware devices to be available.
-#   If not, we will provide mocked devices.
-hardware_is_present = false
-
-[[ synchrotron ]]
-name = "advanced_photon_source"
-
-[database.databroker]
-
-catalog = "bluesky"
 
 [xray_source]
-
 type = "undulator"
 prefix = "ID255ds:"
 
 [bss]
-
 prefix = "255idc:bss"
 beamline = "255-ID-C"
 
 
-#####################
-# Queueserver
-#####################
+##############
+# Acquisition
+##############
 
-# This section describes how to connect to the queueserver. It does
-# not generate any devices, but is intended to be read by the Firefly
-# GUI application to determine how to interact with the queue.
+# This section describes how to connect to the queueserver and how
+# queueserver data reaches the database. It does not generate any
+# devices, but is intended to be read by the Firefly GUI application
+# to determine how to interact with the queue.
 
 [queueserver]
-kafka_topic = "s255idc_queueserver"
 control_host = "localhost"
 control_port = "60615"
 info_host = "localhost"
 info_port = "60625"
 redis_addr = "localhost:6379"
 
-[database.tiled]
+[kafka]
+servers = ["fedorov.xray.aps.anl.gov:9092"]
+topic = "bluesky.documents.haven-dev"
 
-uri = "http://localhost:8337/"
-entry_node = "255id_testing"
+[tiled]
+# uri = "http://localhost:8000/api"
+default_catalog = "testing"
+cache_filepath = "/tmp/tiled/http_response_cache.db"
+# In most cases, *api_key* is not necessary. Only used by the Tiled
+# consumer.
+# api_key = ""
 
-################
-# PSS Shutters #
-################
-#
+[database.databroker]
+catalog = "bluesky"
+
+#################
+# Device support
+#################
+
+[[ synchrotron ]]
+name = "advanced_photon_source"
+
+# PSS Shutters
+# ============
+
 # Each PSS shutter has optional arguments *allow_open* and
 # *allow_close*. These determine whether Ophyd will allow the shutter
 # to open and close, but has no relationship to EPICS permissions.
@@ -126,8 +130,8 @@ num_motors = 3
 
 [[ motor ]]
 # Individual motors can be created as well.
+name = "m1"
 prefix = "255idcVME:m1"
-# name = ""
 # labels=["motors"]
 # auto_name = None
 
@@ -170,10 +174,6 @@ prefix = "vme_crate_ioc:KB"
 # A single rotating aperture slit, like the 25-ID whitebeam slits
 name = "whitebeam_slits"
 prefix = "255ida:slits:US:"
-pitch_motor = "m33"
-yaw_motor = "m34"
-horizontal_motor = "m35"
-diagonal_motor = "m36"
 
 
 # KB Mirrors
@@ -238,17 +238,27 @@ horizontal_prefix = "255idcVME:m25"
 #
 # Area detectors includes gigE vision cameras.
 
+[[ sim_detector ]]
+name = "sim_detector"
+prefix = "255idSimDet:"
+
+[[ camera ]]
+# An Aravis-based area detector
+name = "lerix_mono_flag"
+prefix = "255idARV3:"
+
+[[ eiger ]]
+name = "eiger_500k"
+prefix = "255idEiger:"
+
+# What follows is the style for threaded ophyd area detectors. This is
+# deprecated and will be removed in the future.
+
 [[ area_detector ]]
 name = "sim_det"
 prefix = "255idSimDet:"
 device_class = "SimDetector"
-
-# [lerix.lerix.rowland]
-
-# x_motor_pv = "255idVME:m1"
-# y_motor_pv = "255idVME:m2"
-# z_motor_pv = "255idVME:m3"
-# z1_motor_pv = "255idVME:m4"
+fake = false
 
 
 # Heaters and Furnaces
@@ -289,10 +299,9 @@ iocs = {ioc255idb = "ioc255idb:", ioc255idc = "ioc255idc:"}
 # prefix = "20xmap8:"
 # num_elements = 4
 
-[[ xspress ]]
-name = "vortex_me4_xsp"
+[[ xspress3 ]]
+name = "vortex_me4"
 prefix = "vortex_me4_xsp:"
-num_elements = 4
 
 
 # Filter boxes
@@ -310,4 +319,4 @@ prefix = "255idc:pfcu0:"
 [[ pfcu4 ]]
 name = "filter_bank1"
 prefix = "255idc:pfcu1:"
-shutters = [[3, 4]]
+shutters = [[2, 3]]

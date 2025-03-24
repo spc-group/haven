@@ -42,7 +42,6 @@ class UndulatorPositioner(Positioner):
         stop_signal: Signal,
         done_signal: Signal = None,
         name: str = "",
-        min_move: float = 0.0,
     ):
         with self.add_children_as_readables(StandardReadableFormat.HINTED_SIGNAL):
             self.readback = epics_signal_rw(float, f"{prefix}M.VAL")
@@ -64,7 +63,7 @@ class UndulatorPositioner(Positioner):
             self.done = derived_signal_r(
                 int, derived_from={"parent_signal": done_signal}
             )
-        super().__init__(name=name, min_move=min_move)
+        super().__init__(name=name)
 
 
 class PlanarUndulator(StandardReadable):
@@ -115,7 +114,6 @@ class PlanarUndulator(StandardReadable):
                 actuate_signal=self.start_button,
                 stop_signal=self.stop_button,
                 done_signal=self.busy,
-                min_move=0.0,
             )
             self.energy_taper = UndulatorPositioner(
                 prefix=f"{prefix}TaperEnergy",
@@ -128,7 +126,6 @@ class PlanarUndulator(StandardReadable):
                 actuate_signal=self.start_button,
                 stop_signal=self.stop_button,
                 done_signal=self.busy,
-                min_move=0.0,
             )
             self.gap_taper = UndulatorPositioner(
                 prefix=f"{prefix}TaperGap",

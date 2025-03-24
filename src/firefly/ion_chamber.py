@@ -8,14 +8,14 @@ class IonChamberDisplay(display.FireflyDisplay):
     """A GUI window for changing settings in an ion chamber."""
 
     def customize_device(self):
-        self._device = beamline.registry.find(self.macros()["IC"])
+        self._device = beamline.devices[self.macros()["IC"]]
 
     def customize_ui(self):
         # Use qtawesome icons instead of unicode arrows
         self.ui.gain_down_button.setText("")
-        self.ui.gain_down_button.setIcon(qta.icon("fa5s.arrow-left"))
+        self.ui.gain_down_button.setIcon(qta.icon("fa6s.arrow-left"))
         self.ui.gain_up_button.setText("")
-        self.ui.gain_up_button.setIcon(qta.icon("fa5s.arrow-right"))
+        self.ui.gain_up_button.setIcon(qta.icon("fa6s.arrow-right"))
 
     def ui_filename(self):
         return "ion_chamber.ui"

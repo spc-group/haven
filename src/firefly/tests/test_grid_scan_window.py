@@ -3,7 +3,7 @@ from unittest import mock
 
 import pytest
 from bluesky_queueserver_api import BPlan
-from ophyd_async.core import set_mock_value
+from ophyd_async.testing import set_mock_value
 from qtpy import QtCore
 
 from firefly.plans.grid_scan import GridScanDisplay
@@ -59,7 +59,47 @@ async def test_time_calculator(display, sim_registry, ion_chamber):
 
 
 @pytest.mark.asyncio
-async def test_grid_scan_plan_queued(display, qtbot, sim_registry, ion_chamber):
+async def test_step_size_calculation(display):
+    # Set up the display with 2 regions
+    await display.update_regions(2)
+
+    # Region 0: Set Start, Stop, and Points
+    region_0 = display.regions[0]
+    region_0.start_line_edit.setText("0")
+    region_0.stop_line_edit.setText("10")
+    region_0.scan_pts_spin_box.setValue(12)
+
+    assert (
+        region_0.step_size_line_edit.text() == "0.90909"
+    ), "Step size should be 0.90909 for 11 points from 0 to 10."
+
+    region_1 = display.regions[1]
+    region_1.start_line_edit.setText("5")
+    region_1.stop_line_edit.setText("15")
+    region_1.scan_pts_spin_box.setValue(3)
+
+    assert (
+        region_1.step_size_line_edit.text() == "5"
+    ), "Step size should be 5 for 3 points from 5 to 15."
+
+    # Test invalid input for Region 0
+    region_0.start_line_edit.setText("invalid")
+    assert (
+        region_0.step_size_line_edit.text() == "N/A"
+    ), "Step size should be 'N/A' for invalid start input in Region 0."
+
+    # Reset valid values for Region 0
+    region_0.start_line_edit.setText("10")
+    region_0.stop_line_edit.setText("30")
+    region_0.scan_pts_spin_box.setValue(3)
+
+    assert (
+        region_0.step_size_line_edit.text() == "10"
+    ), "Step size should 10 for 3 points from 10 to 30."
+
+
+@pytest.mark.asyncio
+async def test_grid_scan_plan_queued(display, ion_chamber, qtbot):
     await display.update_regions(2)
 
     # set up a test motor 1
@@ -83,11 +123,11 @@ async def test_grid_scan_plan_queued(display, qtbot, sim_registry, ion_chamber):
     )
     # set up meta data
     display.ui.lineEdit_sample.setText("sam")
-    display.ui.lineEdit_purpose.setText("test")
+    display.ui.comboBox_purpose.setCurrentText("test")
     display.ui.textEdit_notes.setText("notes")
 
     expected_item = BPlan(
-        "grid_scan",
+        "rel_grid_scan",
         ["vortex_me4", "I00"],
         "async_motor_1",
         2.0,

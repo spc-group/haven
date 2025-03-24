@@ -4,7 +4,7 @@ import warnings
 from functools import partial
 
 import numpy as np
-from bluesky.protocols import Movable, Stoppable
+from bluesky.protocols import Locatable, Location, Movable, Stoppable
 from ophyd_async.core import (
     CALCULATE_TIMEOUT,
     DEFAULT_TIMEOUT,
@@ -19,7 +19,7 @@ from ophyd_async.core import (
 log = logging.getLogger(__name__)
 
 
-class Positioner(StandardReadable, Movable, Stoppable):
+class Positioner(StandardReadable, Locatable, Movable, Stoppable):
     """A positioner that has separate setpoint and readback signals.
 
     When set, the Positioner **monitors the state of the move** using
@@ -54,10 +54,10 @@ class Positioner(StandardReadable, Movable, Stoppable):
         self.put_complete = put_complete
         super().__init__(name=name)
 
-    def set_name(self, name: str):
+    def set_name(self, name: str, *args, **kwargs):
         super().set_name(name)
         # Readback should be named the same as its parent in read()
-        self.readback.set_name(name)
+        self.readback.set_name(name, *args, **kwargs)
 
     def watch_done(
         self, value, done_event: asyncio.Event, started_event: asyncio.Event
@@ -72,6 +72,16 @@ class Positioner(StandardReadable, Movable, Stoppable):
             # Move has finished
             log.debug("Setting done_event")
             done_event.set()
+
+    async def locate(self) -> Location[int]:
+        setpoint, readback = await asyncio.gather(
+            self.setpoint.get_value(), self.readback.get_value()
+        )
+        location: Location = {
+            "setpoint": setpoint,
+            "readback": readback,
+        }
+        return location
 
     @WatchableAsyncStatus.wrap
     async def set(
@@ -151,7 +161,9 @@ class Positioner(StandardReadable, Movable, Stoppable):
             )
             # Check if the move has finished
             target_reached = current_position is not None and np.isclose(
-                current_position, new_position
+                current_position,
+                new_position,
+                atol=10 ** (-precision),
             )
             if target_reached:
                 reached_setpoint.set()
