@@ -297,6 +297,61 @@ def test_energy_scan_metadata(energy_positioner):
     assert md["sample_name"] == "unobtanium"
 
 
+async def test_energy_scan_metadata_multiple_monos(energy_positioner):
+    """Having additional monochromators in the scan means we can have
+    multiple sets of metadata.
+
+    """
+    mono2 = EnergyPositioner(monochromator_prefix="", undulator_prefix="", name="mono2")
+    await mono2.connect(mock=True)
+    scan = energy_scan(
+        [1.0, 2.0, 3.0],
+        detectors=[],
+        energy_signals=[energy_positioner, mono2],
+        E0="Ni-K",
+        md={"sample_name": "unobtanium"},
+    )
+    # First we need to inject an energy d_spacing reading
+    msgs = []
+    read_msg = None
+    while read_msg is None:
+        msgs.append(next(scan))
+        if msgs[-1].command == "read":
+            read_msg = msgs[-1]
+    msgs.extend(
+        [
+            scan.send(
+                {
+                    "energy-monochromator-d_spacing": {
+                        "value": 3.134734,
+                        "timestamp": 1742397744.329849,
+                        "alarm_severity": 0,
+                    }
+                }
+            ),
+            scan.send(
+                {
+                    "mono2-monochromator-d_spacing": {
+                        "value": 4.20,
+                        "timestamp": 1742397744.329849,
+                        "alarm_severity": 0,
+                    }
+                }
+            ),
+        ]
+    )
+    # Produce the rest of the msgs
+    msgs.extend(list(scan))
+    open_msg = [m for m in msgs if m.command == "open_run"][0]
+    md = open_msg.kwargs
+    # Check that the metadata has the right values
+    assert md["edge"] == "Ni-K"
+    assert md["E0"] == 8333.0
+    assert md["d_spacing"] == [3.134734, 4.20]
+    assert md["plan_name"] == "energy_scan"
+    assert md["sample_name"] == "unobtanium"
+
+
 def test_xafs_scan_metadata(mono_motor):
     scan = xafs_scan(
         [],

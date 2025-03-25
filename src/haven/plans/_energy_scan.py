@@ -149,15 +149,21 @@ def energy_scan(
     scan_args = [item for items in scan_args for item in items]
     # Add some extra metadata
     md_ = {"edge": E0_str, "E0": E0, "plan_name": "energy_scan"}
-    d_spacing = None
+    d_spacings = []
     for device in energy_signals:
         if not hasattr(device, "d_spacing"):
             continue
         reading = yield from bps.read(device.d_spacing)
-        d_spacing = reading[device.d_spacing.name]["value"]
-    if d_spacing is not None:
-        md_["d_spacing"] = d_spacing
+        if reading is None:
+            log.warning(f"Did not receive reading for {device.name} d-spacing.")
+            continue
+        d_spacings.append(reading[device.d_spacing.name]["value"])
+    if len(d_spacings) == 1:
+        md_["d_spacing"] = d_spacings[0]
+    elif len(d_spacings) > 1:
+        md_["d_spacing"] = d_spacings
     # Do the actual scan
+    print(scan_args)
     yield from bp.list_scan(
         real_detectors,
         *scan_args,
