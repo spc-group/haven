@@ -251,6 +251,10 @@ prefix = "255idARV3:"
 name = "eiger_500k"
 prefix = "255idEiger:"
 
+[[ lambda ]]
+name = "lambda_250K"
+prefix = "255idLambda250K:"
+
 # What follows is the style for threaded ophyd area detectors. This is
 # deprecated and will be removed in the future.
 

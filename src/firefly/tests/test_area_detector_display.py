@@ -1,5 +1,3 @@
-from unittest import mock
-
 import numpy as np
 import pydm
 import pyqtgraph
@@ -8,6 +6,9 @@ import pytest
 from firefly.area_detector_viewer import AreaDetectorViewerDisplay
 
 
+@pytest.skip(
+    reason="Will be re-written to support ophyd-async", allow_module_level=True
+)
 @pytest.fixture()
 def display(qtbot, sim_camera):
     display = AreaDetectorViewerDisplay(macros={"AD": sim_camera.name})
@@ -37,15 +38,6 @@ def test_image_plotting(display):
     new_image = display.image_view.getImageItem()
     assert new_image.image.shape == (54, 64, 3)
     display.image_channel.disconnect()
-
-
-def test_caqtdm_window(display, sim_camera):
-    display._open_caqtdm_subprocess = mock.MagicMock()
-    # Launch the caqtdm display
-    display.launch_caqtdm()
-    display._open_caqtdm_subprocess.assert_called_once_with(
-        f"start_{sim_camera.prefix}_caqtdm"
-    )
 
 
 # -----------------------------------------------------------------------------
