@@ -1,5 +1,5 @@
 import math
-from dataclasses import dataclass
+from dataclasses import astuple, dataclass
 
 import numpy as np
 import pint
@@ -65,6 +65,17 @@ class EnergyRange:
         raise NotImplementedError
 
 
+def from_tuple(energy_range):
+    """Convert tuple of (start, stop, step?, exposure?, weight?) to energy range."""
+    if isinstance(energy_range, EnergyRange):
+        return energy_range
+    if energy_range[0] == "E":
+        return ERange(*energy_range[1:])
+    if energy_range[0] == "K":
+        return KRange(*energy_range[1:])
+    return ERange(*energy_range)
+
+
 def full_range(start, end, step):
     """Calculate a range, but inclusive of start and end (if a multiple of
     the step).
@@ -95,6 +106,9 @@ class ERange(EnergyRange):
       How long to spend at each energy, in seconds.
 
     """
+
+    def astuple(self):
+        return ("E", *astuple(self))
 
     def energies(self):
         """Convert the range to a sequence of actual energy values, in eV."""
@@ -128,6 +142,9 @@ class KRange(EnergyRange):
     """
 
     weight: float = 0.0
+
+    def astuple(self):
+        return ("K", *astuple(self))
 
     def energies(self):
         """Calculates photon energies in units of eV."""

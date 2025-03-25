@@ -4,7 +4,7 @@ from bluesky import RunEngine
 from ophyd import sim
 from ophyd_async.sim._sim_motor import SimMotor
 
-from haven.energy_ranges import ERange, KRange
+from haven.energy_ranges import ERange, KRange, from_tuple
 from haven.plans import energy_scan, xafs_scan
 
 
@@ -107,7 +107,7 @@ def test_single_range(mono_motor, exposure_motor, I0):
     scan = xafs_scan(
         [],
         # (start, stop, step, time)
-        ERange(-10, 0, 1, 1),
+        (-10, 0, 1, 1),
         E0=E0,
         energy_signals=[mono_motor],
         time_signals=[exposure_motor],
@@ -326,6 +326,17 @@ async def test_document_plan_args():
     # (causes problems for the Tiled writer)
     args = start_doc["plan_args"]["args"]
     assert not any([isinstance(arg, np.ndarray) for arg in args])
+
+
+def test_from_tuple():
+    assert from_tuple(ERange(3, 9, 0.5)) == ERange(start=3, stop=9, step=0.5)
+    assert from_tuple(("E", 10, 15)) == ERange(10, 15)
+    assert from_tuple(("K", 4, 12, 0.1, 1.0, 1)) == KRange(
+        start=4, stop=12, step=0.1, exposure=1.0, weight=1
+    )
+    assert from_tuple((10, 15, 0.25, 1.5)) == ERange(
+        start=10, stop=15, step=0.25, exposure=1.5
+    )
 
 
 # -----------------------------------------------------------------------------

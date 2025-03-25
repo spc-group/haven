@@ -428,7 +428,7 @@ class XafsScanDisplay(regions_display.PlanDisplay):
             for region_i in self.regions
             if region_i.region_checkbox.isChecked()
         ]
-        energy_ranges = [region.energy_range for region in checked_regions]
+        energy_ranges = [region.energy_range.astuple() for region in checked_regions]
         # Set up other plan arguments
         md = self.get_meta_data()
         md["is_standard"] = self.ui.checkBox_is_standard.isChecked()

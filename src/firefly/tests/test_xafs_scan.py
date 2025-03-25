@@ -5,7 +5,6 @@ import pytest
 from qtpy import QtCore
 
 from firefly.plans.xafs_scan import XafsScanDisplay
-from haven.energy_ranges import ERange, KRange
 
 # default values for EXAFS scan
 pre_edge = [-200, -50, 5]
@@ -104,8 +103,8 @@ def test_xafs_scan_plan_queued_energies(display, qtbot):
             assert detectors == ["vortex_me4", "I0"]
             # Check energies ranges
             assert energy_ranges == [
-                ERange(start=-200.0, stop=-50.0, step=5.0, exposure=1.0),
-                ERange(start=-50.0, stop=50.0, step=0.5, exposure=1.0),
+                ("E", -200.0, -50.0, 5.0, 1.0),
+                ("E", -50.0, 50.0, 0.5, 1.0),
             ]
             # Check if the remaining dictionary items are equal
             assert kwargs["E0"] == "Sc-K"
@@ -149,8 +148,8 @@ def test_xafs_scan_plan_queued_numeric_E0(display, qtbot):
             assert detectors == ["vortex_me4", "I0"]
             # Check energy ranges
             assert energy_ranges == [
-                ERange(start=-200.0, stop=-50.0, step=5.0, exposure=1.0),
-                ERange(start=-50.0, stop=50.0, step=0.5, exposure=1.0),
+                ("E", -200.0, -50.0, 5.0, 1.0),
+                ("E", -50.0, 50.0, 0.5, 1.0),
             ]
             # Check if the remaining dictionary items are equal
             assert kwargs["E0"] == 58893.0
@@ -204,8 +203,8 @@ def test_xafs_scan_plan_queued_energies_k_mixed(qtbot, display):
         try:
             assert detectors == ["vortex_me4", "I0"]
             assert energy_ranges == [
-                ERange(start=-20.0, stop=40.0, step=10, exposure=1.0),
-                KRange(start=3.6226, stop=14.4905, step=5.0, exposure=1.0, weight=2),
+                ("E", -20.0, 40.0, 10, 1.0),
+                ("K", 3.6226, 14.4905, 5.0, 1.0, 2),
             ]
             # Check whether time is calculated correctly for a single scan
             assert display.ui.label_hour_scan.text() == "0"

@@ -12,6 +12,7 @@ from bluesky.utils import MsgGenerator
 from .. import exceptions
 from ..energy_ranges import (
     EnergyRange,
+    from_tuple,
     merge_ranges,
 )
 from ..typing import DetectorList
@@ -31,7 +32,7 @@ def chunks(lst, n):
 
 def xafs_scan(
     detectors: DetectorList,
-    *energy_ranges: Sequence[EnergyRange],
+    *energy_ranges: Sequence[EnergyRange | tuple],
     E0: float | str,
     energy_signals: Sequence = ["energy"],
     time_signals: Sequence | None = None,
@@ -79,6 +80,10 @@ def xafs_scan(
             E0="Ni_K"
         )
 
+    *energy_ranges* can also be tuples like:
+    - ("E", -50, 0, 0.25, 1) == ERange(-50, 0, step=0.25, exposure=1)
+    - ("k", -50, 0, 0.25, 1.5, 1) == KRange(-50, 0, step=0.25, exposure=1.5, weight=1)
+
     The calculated exposure times, including k-weights, will be set
     for every signal in *time_signals*. If *time_signals* is ``None``,
     then *time_signals* will be determined automatically from
@@ -111,6 +116,7 @@ def xafs_scan(
 
     """
     # Convert energy ranges to energy list and exposure list
+    energy_ranges = [from_tuple(rng) for rng in energy_ranges]
     energies, exposures = merge_ranges(*energy_ranges)
     if len(energies) < 1:
         raise exceptions.NoEnergies("Plan would not produce any energy points.")
