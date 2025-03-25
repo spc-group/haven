@@ -1,5 +1,5 @@
 import math
-from dataclasses import dataclass
+from dataclasses import astuple, dataclass
 
 import numpy as np
 import pint
@@ -49,15 +49,31 @@ def round_to_int(num):
     return int(round(num, digits))
 
 
-@dataclass
+@dataclass(eq=True, frozen=True)
 class EnergyRange:
     """A range of energies used for scanning."""
+
+    start: float
+    stop: float
+    step: float = 1.0
+    exposure: float = DEFAULT_EXPOSURE
 
     def energies(self):
         raise NotImplementedError
 
     def exposures(self):
         raise NotImplementedError
+
+
+def from_tuple(energy_range):
+    """Convert tuple of (start, stop, step?, exposure?, weight?) to energy range."""
+    if isinstance(energy_range, EnergyRange):
+        return energy_range
+    if energy_range[0] == "E":
+        return ERange(*energy_range[1:])
+    if energy_range[0] == "K":
+        return KRange(*energy_range[1:])
+    return ERange(*energy_range)
 
 
 def full_range(start, end, step):
@@ -71,7 +87,7 @@ def full_range(start, end, step):
     return np.linspace(start, lin_max, num=num_steps + 1)
 
 
-@dataclass
+@dataclass(eq=True, frozen=True)
 class ERange(EnergyRange):
     """A range of energies used for scanning.
 
@@ -80,37 +96,30 @@ class ERange(EnergyRange):
     Parameters
     ==========
 
-    E_min
+    start
       Starting energy of the range, in eV.
-    E_max
+    stop
       Ending energy of the range, in eV.
-    E_step
+    step
       Step-size between energies, in eV.
-    weight
-      Weighting factor for longer exposures at higher energies.
     exposure
       How long to spend at each energy, in seconds.
 
     """
 
-    E_min: float
-    E_max: float
-    E_step: float = 1.0
-    weight: float = 0.0
-    exposure: float = DEFAULT_EXPOSURE
+    def astuple(self):
+        return ("E", *astuple(self))
 
     def energies(self):
         """Convert the range to a sequence of actual energy values, in eV."""
-        return full_range(self.E_min, self.E_max, self.E_step)
+        return full_range(self.start, self.stop, self.step)
 
     def exposures(self):
         """Convert the range to a sequence of exposure times, in seconds."""
-        # disable weight for now
-        # return self.exposure  * self.energies() ** self.weight
         return self.exposure * self.energies() ** 0  # do not consider weights for now
 
 
-@dataclass
+@dataclass(eq=True, frozen=True)
 class KRange(EnergyRange):
     """A range of energies used for scanning in the EXAFS region.
 
@@ -119,24 +128,23 @@ class KRange(EnergyRange):
     Parameters
     ==========
 
-    k_min
-      Starting energy of the range, in eV.
-    k_max
+    start
+      Starting energy of the range, in Å⁻.
+    stop
       Ending energy of the range, in Å⁻.
-    k_step
+    step
       Step-size between energies, in Å⁻.
-    k_weight
-      Weighting factor for longer exposures at higher energies.
     exposure
       How long to spend at each energy, in seconds.
+    weight
+      Weighting factor for longer exposures at higher energies.
 
     """
 
-    k_min: float
-    k_max: float
-    k_step: float = 0.1
-    k_weight: float = 0.0
-    exposure: float = DEFAULT_EXPOSURE
+    weight: float = 0.0
+
+    def astuple(self):
+        return ("K", *astuple(self))
 
     def energies(self):
         """Calculates photon energies in units of eV."""
@@ -144,12 +152,12 @@ class KRange(EnergyRange):
 
     def wavenumbers(self):
         """Calculates wavenumbers (k) for the photo-electron in units Å⁻."""
-        ks = full_range(self.k_min, self.k_max, self.k_step)
+        ks = full_range(self.start, self.stop, self.step)
         return ks
 
     def exposures(self):
         ks = self.wavenumbers()
-        return self.exposure * ((ks / np.min(ks)) ** self.k_weight)
+        return self.exposure * ((ks / np.min(ks)) ** self.weight)
 
 
 def merge_ranges(*ranges, default_exposure=DEFAULT_EXPOSURE, sort=False):

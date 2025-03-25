@@ -256,18 +256,15 @@ class LineplotView(QtWidgets.QWidget):
             data = {agg_name: (aggregate(xs, axis=0), aggregate(ys, axis=0))}
         # Plot each run's data
         for idx, (uid, (xdata, ydata)) in enumerate(data.items()):
-            try:
-                sample_name = self.metadata[uid]["start"]["sample_name"]
-                label = f"{uid.split('-')[0]} — {sample_name}"
-            except KeyError:
-                label = uid
+            start_doc = self.metadata.get(uid, {}).get("start", {})
+            label = self.label_from_metadata(start_doc) or uid
             if uid in self.data_items.keys():
                 log.debug(f"Reusing plot item for {label}")
                 # We've plotted this item before, so reuse it
                 self.data_items[uid].setData(xdata, ydata)
             else:
-                log.debug(f"Adding new plot item for {label}")
                 color = colors[idx % len(colors)]
+                log.debug(f"Adding new plot item for {label}")
                 self.data_items[uid] = plot_item.plot(
                     x=xdata,
                     y=ydata,
@@ -280,6 +277,26 @@ class LineplotView(QtWidgets.QWidget):
         plot_item.setLabels(left=ylabel, bottom=xlabel)
         if self.ui.autorange_checkbox.checkState():
             self.auto_range()
+
+    def label_from_metadata(self, start_doc: Mapping) -> str:
+        # Determine label from metadata
+        uid = start_doc.get("uid", "")
+        sample_name = start_doc.get("sample_name")
+        scan_name = start_doc.get("scan_name")
+        sample_formula = start_doc.get("sample_formula")
+        if sample_name is not None and sample_formula is not None:
+            sample_name = f"{sample_name} ({sample_formula})"
+        elif sample_formula is not None:
+            sample_name = sample_formula
+        md_values = [val for val in [sample_name, scan_name] if val is not None]
+        # Use the full UID unless we have something else to show
+        if len(md_values) > 0:
+            uid = uid.split("-")[0]
+        # Build the label
+        label = " — ".join([uid, *md_values])
+        if start_doc.get("is_standard", False):
+            label = f"{label} ★"
+        return label
 
     def auto_range(self):
         self.plot_widget.autoRange(items=self.data_items.values())

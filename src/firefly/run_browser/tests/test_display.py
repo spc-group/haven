@@ -148,6 +148,7 @@ async def test_update_combobox_items(display):
     assert display.ui.filter_plan_combobox.count() > 0
     assert display.ui.filter_sample_combobox.count() == 0
     assert display.ui.filter_formula_combobox.count() == 0
+    assert display.ui.filter_scan_combobox.count() == 0
     assert display.ui.filter_edge_combobox.count() > 0
     assert display.ui.filter_exit_status_combobox.count() > 0
     assert display.ui.filter_proposal_combobox.count() == 0

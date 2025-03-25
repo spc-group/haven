@@ -22,14 +22,14 @@ energy_range_parameters = [
 @pytest.mark.parametrize("start,stop,step,expected_energies", energy_range_parameters)
 def test_e_range(start, stop, step, expected_energies):
     """Test the ERange class for calculating energy points."""
-    e_range = ERange(E_min=start, E_max=stop, E_step=step, exposure=0.1)
+    e_range = ERange(start, stop, step, exposure=0.1)
     np.testing.assert_allclose(e_range.energies(), expected_energies)
     np.testing.assert_allclose(e_range.exposures(), [0.1] * len(expected_energies))
 
 
 def test_k_range():
     E0 = 17038
-    k_range = KRange(k_min=2.8, k_max=14, k_step=0.05, k_weight=1, exposure=1.0)
+    k_range = KRange(2.8, 14, 0.05, weight=1, exposure=1.0)
 
     np.testing.assert_almost_equal(k_range.wavenumbers()[0], 2.8)
     np.testing.assert_almost_equal(k_range.wavenumbers()[-1], 14)

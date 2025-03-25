@@ -2,12 +2,12 @@
 
 import logging
 from collections import ChainMap
-from typing import Mapping, Optional, Sequence, Union
+from typing import Mapping, Sequence
 
 import numpy as np
+from bluesky import plan_stubs as bps
 from bluesky import plans as bp
 
-from .._iconfig import load_config
 from ..constants import edge_energy
 from ..instrument import beamline
 from ..preprocessors import baseline_decorator
@@ -23,11 +23,11 @@ log = logging.getLogger(__name__)
 @baseline_decorator()
 def energy_scan(
     energies: Sequence[float],
-    exposure: Union[float, Sequence[float]] = 0.1,
-    E0: Union[float, str] = 0,
+    exposure: float | Sequence[float] = 0.1,
+    E0: float | str = 0,
     detectors: DetectorList = "ion_chambers",
     energy_signals: Sequence = ["energy"],
-    time_signals: Optional[Sequence] = None,
+    time_signals: Sequence | None = None,
     md: Mapping = {},
 ):
     """Collect a spectrum by scanning X-ray energy.
@@ -77,6 +77,12 @@ def energy_scan(
 
         RE(energy_scan(...), LiveXAFSPlot())
 
+    **Metadata:**
+
+    Several key pieces of metadata will be extract from the run. The
+    first device in *energy_signals* that has a *d_spacing* attribute
+    will be read for the ``"d_spacing"`` metadata entry.
+
     Parameters
     ==========
     energies
@@ -89,7 +95,7 @@ def energy_scan(
     detectors
       The detectors to collect X-ray signal from at each energy.
     energy_signals
-      Positioners that will receive the changing energies.
+      Devices that will receive the changing energies.
     time_signals
       Positioners that will receive the exposure time for each scan.
     md
@@ -142,13 +148,26 @@ def energy_scan(
     scan_args += [(motor, exposure) for motor in time_signals]
     scan_args = [item for items in scan_args for item in items]
     # Add some extra metadata
-    config = load_config()
     md_ = {"edge": E0_str, "E0": E0, "plan_name": "energy_scan"}
+    d_spacings = []
+    for device in energy_signals:
+        if not hasattr(device, "d_spacing"):
+            continue
+        reading = yield from bps.read(device.d_spacing)
+        if reading is None:
+            log.warning(f"Did not receive reading for {device.name} d-spacing.")
+            continue
+        d_spacings.append(reading[device.d_spacing.name]["value"])
+    if len(d_spacings) == 1:
+        md_["d_spacing"] = d_spacings[0]
+    elif len(d_spacings) > 1:
+        md_["d_spacing"] = d_spacings
     # Do the actual scan
+    print(scan_args)
     yield from bp.list_scan(
         real_detectors,
         *scan_args,
-        md=ChainMap(md, md_, config),
+        md=ChainMap(md, md_),
     )
 
 

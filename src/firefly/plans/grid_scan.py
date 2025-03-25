@@ -149,6 +149,11 @@ class GridScanDisplay(regions_display.RegionsDisplay):
         for region in self.regions:
             region.scan_pts_spin_box.valueChanged.connect(self.update_total_time)
         self.ui.spinBox_repeat_scan_num.valueChanged.connect(self.update_total_time)
+        # Default metadata values
+        self.ui.comboBox_purpose.lineEdit().setPlaceholderText(
+            "e.g. commissioning, alignment…"
+        )
+        self.ui.comboBox_purpose.setCurrentText("")
 
     def time_per_scan(self, detector_time):
         total_num_pnts = np.prod(

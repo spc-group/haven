@@ -102,6 +102,10 @@ class EnergyPositioner(Positioner):
 
         super().__init__(name=name, put_complete=True)
 
+    @property
+    def d_spacing(self):
+        return self.monochromator.d_spacing
+
     async def set_energy(self, value, mono: Signal, undulator: Signal):
         ev_per_kev = 1000
         offset = await self.monochromator.id_offset.get_value()

@@ -4,6 +4,7 @@ from .detectors.aravis import AravisDetector  # noqa: F401
 from .detectors.eiger import EigerDetector  # noqa: F401
 from .detectors.sim_detector import SimDetector  # noqa: F401
 from .detectors.xspress import Xspress3Detector  # noqa: F401
+from .energy_positioner import EnergyPositioner  # noqa: F401
 from .ion_chamber import IonChamber  # noqa: F401
 from .monochromator import Monochromator  # noqa: F401
 from .motor import HavenMotor, Motor, load_motors  # noqa: F401

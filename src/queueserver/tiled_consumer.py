@@ -5,10 +5,11 @@ import sys
 from typing import Mapping, Sequence
 
 import msgpack
-from bluesky.callbacks.tiled_writer import TiledWriter
 from bluesky_kafka import BlueskyConsumer
 from tiled.client import from_profile
 from tiled.client.base import BaseClient
+
+from haven import TiledWriter
 
 log = logging.getLogger(__name__)
 

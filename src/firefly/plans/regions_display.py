@@ -92,6 +92,7 @@ class PlanDisplay(display.FireflyDisplay):
         """Get metadata information."""
         md = {
             "sample_name": self.ui.lineEdit_sample.text(),
+            "scan_name": self.ui.lineEdit_scan.text(),
             "purpose": self.ui.comboBox_purpose.currentText(),
             "notes": self.ui.textEdit_notes.toPlainText(),
             "sample_formula": self.ui.lineEdit_formula.text(),
@@ -132,7 +133,6 @@ class RegionsDisplay(PlanDisplay, display.FireflyDisplay):
             self.clearLayout(self.ui.region_template_layout)
         except AttributeError:
             pass
-
         # Disable the line edits in spin box (use up/down buttons instead)
         self.ui.num_motor_spin_box.lineEdit().setReadOnly(True)
         # Create the initial (blank) regions
