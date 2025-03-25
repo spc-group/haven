@@ -5,6 +5,7 @@ from collections import ChainMap
 from typing import Mapping, Sequence
 
 import numpy as np
+from bluesky import plan_stubs as bps
 from bluesky import plans as bp
 
 from ..constants import edge_energy
@@ -76,6 +77,12 @@ def energy_scan(
 
         RE(energy_scan(...), LiveXAFSPlot())
 
+    **Metadata:**
+
+    Several key pieces of metadata will be extract from the run. The
+    first device in *energy_signals* that has a *d_spacing* attribute
+    will be read for the ``"d_spacing"`` metadata entry.
+
     Parameters
     ==========
     energies
@@ -88,7 +95,7 @@ def energy_scan(
     detectors
       The detectors to collect X-ray signal from at each energy.
     energy_signals
-      Positioners that will receive the changing energies.
+      Devices that will receive the changing energies.
     time_signals
       Positioners that will receive the exposure time for each scan.
     md
@@ -142,6 +149,14 @@ def energy_scan(
     scan_args = [item for items in scan_args for item in items]
     # Add some extra metadata
     md_ = {"edge": E0_str, "E0": E0, "plan_name": "energy_scan"}
+    d_spacing = None
+    for device in energy_signals:
+        if not hasattr(device, "d_spacing"):
+            continue
+        reading = yield from bps.read(device.d_spacing)
+        d_spacing = reading[device.d_spacing.name]["value"]
+    if d_spacing is not None:
+        md_["d_spacing"] = d_spacing
     # Do the actual scan
     yield from bp.list_scan(
         real_detectors,

@@ -1,3 +1,4 @@
+import logging
 import re
 from typing import Sequence
 
@@ -5,6 +6,8 @@ from bluesky.callbacks.tiled_writer import TiledWriter as BlueskyTiledWriter
 from bluesky.callbacks.tiled_writer import _RunWriter as BlueskyRunWriter
 from event_model.documents import RunStart
 from tiled.structures.core import Spec
+
+log = logging.getLogger()
 
 xas_edge_regex = re.compile("^[A-Za-z]+[-_ ][K-Zk-z0-9]+$")
 
@@ -18,9 +21,10 @@ def md_to_specs(start_doc: dict) -> Sequence[Spec]:
     # Check for XAS runs
     has_d_spacing = "d_spacing" in start_doc.keys()
     has_edge = xas_edge_regex.match(start_doc.get("edge", ""))
-    print(start_doc, has_d_spacing, has_edge)
     if has_d_spacing and has_edge:
         specs.insert(0, Spec("XASRun", version="1.0"))
+    else:
+        log.info(f"Not adding XASRun spec: {has_d_spacing=}, {has_edge=}")
     return specs
 
 

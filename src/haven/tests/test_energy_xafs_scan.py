@@ -4,8 +4,18 @@ from bluesky import RunEngine
 from ophyd import sim
 from ophyd_async.sim._sim_motor import SimMotor
 
+from haven.devices import EnergyPositioner
 from haven.energy_ranges import ERange, KRange, from_tuple
 from haven.plans import energy_scan, xafs_scan
+
+
+@pytest.fixture()
+async def energy_positioner():
+    device = EnergyPositioner(
+        name="energy", monochromator_prefix="255idMono:", undulator_prefix="255ID:DS:"
+    )
+    await device.connect(mock=True)
+    return device
 
 
 @pytest.fixture()
@@ -249,21 +259,40 @@ def test_remove_duplicate_energies(mono_motor, exposure_motor, I0):
     assert len(read_msgs) == len(energies)
 
 
-def test_energy_scan_metadata(mono_motor):
+def test_energy_scan_metadata(energy_positioner):
     scan = energy_scan(
         [],
         detectors=[],
-        energy_signals=[mono_motor],
+        energy_signals=[energy_positioner],
         E0="Ni-K",
         md={"sample_name": "unobtanium"},
     )
-    # Get the metadata passed alongside the "open_run" message
-    msgs = list(scan)
+    # First we need to inject an energy d_spacing reading
+    msgs = []
+    read_msg = None
+    while read_msg is None:
+        msgs.append(next(scan))
+        if msgs[-1].command == "read":
+            read_msg = msgs[-1]
+    msgs.append(
+        scan.send(
+            {
+                "energy-monochromator-d_spacing": {
+                    "value": 3.134734,
+                    "timestamp": 1742397744.329849,
+                    "alarm_severity": 0,
+                }
+            }
+        )
+    )
+    # Produce the rest of the msgs
+    msgs.extend(list(scan))
     open_msg = [m for m in msgs if m.command == "open_run"][0]
     md = open_msg.kwargs
     # Check that the metadata has the right values
     assert md["edge"] == "Ni-K"
     assert md["E0"] == 8333.0
+    assert md["d_spacing"] == 3.134734
     assert md["plan_name"] == "energy_scan"
     assert md["sample_name"] == "unobtanium"
 
