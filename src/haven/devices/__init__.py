@@ -1,5 +1,5 @@
 from .aperture_slits import ApertureSlits  # noqa: F401
-from .asymmotron import Asymmotron, Analyzer  # noqa: F401
+from .asymmotron import Analyzer, Asymmotron  # noqa: F401
 from .blade_slits import BladeSlits, setup_blade_slits  # noqa: F401
 from .detectors.aravis import AravisDetector  # noqa: F401
 from .detectors.eiger import EigerDetector  # noqa: F401

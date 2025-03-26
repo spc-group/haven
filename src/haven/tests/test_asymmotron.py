@@ -1,16 +1,13 @@
 import asyncio
 import math
-import time
 from unittest.mock import AsyncMock
 
 import numpy as np
 import pytest
-from ophyd.sim import make_fake_device
-from ophyd_async.core import get_mock_put, set_mock_value
+from ophyd_async.testing import set_mock_value
 
 from haven.devices.asymmotron import (
     Analyzer,
-    Asymmotron,
     bragg_to_energy,
     bragg_to_wavelength,
     energy_to_wavelength,

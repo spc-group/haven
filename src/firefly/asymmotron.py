@@ -1,15 +1,12 @@
 import logging
-import warnings
 
 import haven
 from firefly import display
 
-# from haven.instrument import analyzer
-
 log = logging.getLogger(__name__)
 
 
-class SlitsDisplay(display.FireflyDisplay):
+class AsymmotronDisplay(display.FireflyDisplay):
 
     def customize_device(self):
         self.device = haven.registry.find(self.macros()["DEVICE"])

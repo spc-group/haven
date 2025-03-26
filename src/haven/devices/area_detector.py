@@ -328,7 +328,7 @@ class DynamicFileStore(Device):
         # Remove the leading slash for some reason...makes ophyd happy
         root_path = root_path.lstrip("/")
         try:
-            
+
             self.write_path_template = self.write_path_template.format(
                 name=self.parent.name,
                 root_path=root_path,

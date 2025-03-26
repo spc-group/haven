@@ -19,15 +19,9 @@ import logging
 
 import numpy as np
 from bluesky.protocols import Movable
-from ophyd import Component as Cpt
-from ophyd import Device, EpicsMotor
-from ophyd import FormattedComponent as FCpt
-from ophyd import PseudoPositioner, PseudoSingle, Signal
-from ophyd.pseudopos import pseudo_position_argument, real_position_argument
 from ophyd_async.core import (
     AsyncStatus,
     ConfigSignal,
-    Device,
     StandardReadable,
     soft_signal_r_and_setter,
     soft_signal_rw,
@@ -367,10 +361,6 @@ class EnergyPositioner(Positioner):
         bragg = theta_M - alpha
         energy = bragg_to_energy(bragg, d=d)
         return energy
-
-
-class Asymmotron(StandardReadable):
-    pass
 
 
 # -----------------------------------------------------------------------------
