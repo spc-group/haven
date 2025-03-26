@@ -15,7 +15,6 @@ from .catalog import tiled_client
 from .exceptions import ComponentNotFound
 from .instrument import beamline
 from .preprocessors import inject_haven_md_wrapper
-from .xdi_export import XDIWriter
 
 log = logging.getLogger(__name__)
 
