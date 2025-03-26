@@ -17,6 +17,7 @@ Some sane values for converting hkl and [HKL] to α:
 import asyncio
 import logging
 
+from pint import Quantity, UnitRegistry
 import numpy as np
 from bluesky.protocols import Movable
 from ophyd_async.core import (
@@ -32,16 +33,18 @@ from ..positioner import Positioner
 from .motor import Motor
 from .signal import derived_signal_r, derived_signal_rw
 
+ureg = UnitRegistry()
+
 log = logging.getLogger(__name__)
 
 um_per_mm = 1000
 
 
-h = constants.physical_constants["Planck constant in eV/Hz"][0]
-c = constants.c
+h = constants.physical_constants["Planck constant in eV/Hz"][0] * ureg.electron_volt / ureg.hertz
+c = constants.c * ureg.meter / ureg.second
 
 
-def energy_to_wavelength(energy):
+def energy_to_wavelength(energy: Quantity) -> Quantity:
     """Energy in eV to wavelength in meters."""
     return h * c / energy
 
@@ -49,7 +52,10 @@ def energy_to_wavelength(energy):
 wavelength_to_energy = energy_to_wavelength
 
 
-def bragg_to_wavelength(bragg_angle: float, d: float, n: int = 1):
+def units(quantity: Quantity) -> str:
+    return str(quantity.reduced_units)
+
+def bragg_to_wavelength(bragg_angle: Quantity, d: Quantity, n: int = 1) -> Quantity:
     """Convert Bragg angle to wavelength.
 
     Parameters
@@ -64,7 +70,7 @@ def bragg_to_wavelength(bragg_angle: float, d: float, n: int = 1):
     return 2 * d * np.sin(bragg_angle) / n
 
 
-def wavelength_to_bragg(wavelength: float, d: float, n: int = 1):
+def wavelength_to_bragg(wavelength: Quantity, d: Quantity, n: int = 1) -> Quantity:
     """Convert wavelength to Bragg angle.
 
     Parameters
@@ -84,7 +90,7 @@ def wavelength_to_bragg(wavelength: float, d: float, n: int = 1):
     return np.arcsin(n * wavelength / 2 / d)
 
 
-def energy_to_bragg(energy: float, d: float) -> float:
+def energy_to_bragg(energy: Quantity, d: Quantity) -> Quantity:
     """Convert photon energy to Bragg angle.
 
     Parameters
@@ -104,33 +110,33 @@ def energy_to_bragg(energy: float, d: float) -> float:
     return bragg
 
 
-def bragg_to_energy(bragg: float, d: float) -> float:
+def bragg_to_energy(bragg: Quantity, d: Quantity) -> Quantity:
     """Convert Bragg angle to photon energy.
 
     Parameters
     ==========
     bragg
-      Bragg angle for the crystal, in radians.
+      Bragg angle for the crystal.
     d
-      d-spacing of the analyzer crystal, in meters.
+      d-spacing of the analyzer crystal.
 
     Returns
     =======
     energy
-      Photon energy, in eV.
+      Photon energy.
 
     """
     energy = h * c / 2 / d / np.sin(bragg)
     return energy
 
 
-def hkl_to_alpha(base, reflection):
+def hkl_to_alpha(base, reflection) -> Quantity:
     cos_alpha = (
         np.dot(base, reflection) / np.linalg.norm(base) / np.linalg.norm(reflection)
     )
     if cos_alpha > 1:
         cos_alpha = 1
-    alpha = np.arccos(cos_alpha)
+    alpha = np.arccos(cos_alpha) * ureg.radians
     return alpha
 
 
@@ -144,9 +150,10 @@ class HKL(StandardReadable, Movable):
 
     def __init__(self, initial_value, name=""):
         h, k, l = self._to_tuple(initial_value)
-        self.h = soft_signal_rw(int, initial_value=h)
-        self.k = soft_signal_rw(int, initial_value=k)
-        self.l = soft_signal_rw(int, initial_value=l)
+        with self.add_children_as_readables():
+            self.h = soft_signal_rw(int, initial_value=h)
+            self.k = soft_signal_rw(int, initial_value=k)
+            self.l = soft_signal_rw(int, initial_value=l)
 
         super().__init__(name=name)
 
@@ -167,13 +174,9 @@ class HKL(StandardReadable, Movable):
 class Analyzer(StandardReadable):
     """A single asymmetric analyzer crystal mounted on an Rowland circle.
 
-    Linear dimensions (e.g. Rowland diameter) should be in units that
-    match those of the real motors. Angles are in radians.
+    Linear dimensions (e.g. Rowland diameter) should be in meters.
 
     """
-
-    linear_units = "mm"
-    angular_units = "rad"
 
     def __init__(
         self,
@@ -181,13 +184,17 @@ class Analyzer(StandardReadable):
         horizontal_motor_prefix: str,
         vertical_motor_prefix: str,
         yaw_motor_prefix: str,
-        rowland_diameter: float | int = 500000,  # µm
-        lattice_constant: float = 0.543095e-9,  # m
+        rowland_diameter: float = 0.5,
+        lattice_constant: float = 0.543095e-9,
         wedge_angle: float = np.radians(30),
         surface_plane: tuple[int, int, int] | str = "211",
         name: str = "",
     ):
         surface_plane = tuple(int(i) for i in surface_plane)
+        # Apply units to the input parameters
+        rowland_diameter *= ureg.meter
+        lattice_constant *= ureg.meter
+        wedge_angle *= ureg.radians
         # Create the real motors
         self.horizontal = Motor(horizontal_motor_prefix)
         self.vertical = Motor(vertical_motor_prefix)
@@ -209,13 +216,13 @@ class Analyzer(StandardReadable):
         # Soft signals for keeping track of the fixed transform properties
         with self.add_children_as_readables(ConfigSignal):
             self.rowland_diameter = soft_signal_rw(
-                float, units=self.linear_units, initial_value=rowland_diameter
+                float, units=units(rowland_diameter), initial_value=rowland_diameter.magnitude
             )
             self.wedge_angle = soft_signal_rw(
-                float, units=self.angular_units, initial_value=wedge_angle
+                float, units=units(wedge_angle), initial_value=wedge_angle.magnitude
             )
             self.lattice_constant = soft_signal_rw(
-                float, units=self.linear_units, initial_value=lattice_constant
+                float, units=units(lattice_constant), initial_value=lattice_constant.magnitude
             )
             self.bragg_offset = soft_signal_rw(float, units=self.linear_units)
             # Soft signals for intermediate, calculated values
