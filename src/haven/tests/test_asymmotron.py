@@ -2,21 +2,21 @@ import asyncio
 import math
 from unittest.mock import AsyncMock
 
-import numpy as np
 import pytest
+from ophyd_async.core import soft_signal_rw
 from ophyd_async.testing import set_mock_value
 
 from haven.devices.asymmotron import (
     Analyzer,
+    Motor,
     bragg_to_energy,
     bragg_to_wavelength,
+    device_units,
     energy_to_wavelength,
+    ureg,
     wavelength_to_bragg,
     wavelength_to_energy,
 )
-
-um_per_mm = 1000
-
 
 energy_to_wavelength_values = [
     # (eV,      meters)
@@ -29,14 +29,29 @@ energy_to_wavelength_values = [
 ]
 
 
+async def test_motor_units():
+    motor = Motor("")
+    await motor.connect(mock=True)
+    set_mock_value(motor.motor_egu, "μm")
+    assert await device_units(motor) == ureg.um
+
+
+async def test_signal_units():
+    signal = soft_signal_rw(float, units="nm")
+    await signal.connect(mock=True)
+    assert await device_units(signal) == ureg.nm
+
+
 @pytest.mark.parametrize("energy, wavelength", energy_to_wavelength_values)
-def test_energy_to_wavelength(energy, wavelength):
-    assert pytest.approx(energy_to_wavelength(energy)) == wavelength
+def test_energy_to_wavelength(energy: float, wavelength: float):
+    new_wavelength = energy_to_wavelength(energy * ureg.eV).to(ureg.meter).magnitude
+    assert pytest.approx(new_wavelength) == wavelength
 
 
 @pytest.mark.parametrize("energy, wavelength", energy_to_wavelength_values)
 def test_wavelength_to_energy(energy, wavelength):
-    assert pytest.approx(wavelength_to_energy(wavelength), rel=0.001) == energy
+    new_energy = wavelength_to_energy(wavelength * ureg.m).to(ureg.eV).magnitude
+    assert pytest.approx(new_energy, rel=0.001) == energy
 
 
 braggs_law_values = [
@@ -51,20 +66,20 @@ braggs_law_values = [
 
 @pytest.mark.parametrize("theta, d_spacing, wavelength", braggs_law_values)
 def test_bragg_to_wavelength(theta, d_spacing, wavelength):
-    theta = np.radians(theta)
-    d_spacing *= 1e-10
-    wavelength *= 1e-10
-    assert pytest.approx(bragg_to_wavelength(theta, d=d_spacing)) == wavelength
+    theta = theta * ureg.degrees
+    d_spacing *= ureg.angstrom
+    wavelength *= ureg.angstrom
+    assert (
+        pytest.approx(bragg_to_wavelength(theta, d=d_spacing), rel=0.0001) == wavelength
+    )
 
 
 @pytest.mark.parametrize("theta, d_spacing, wavelength", braggs_law_values)
 def test_wavelength_to_bragg(theta, d_spacing, wavelength):
-    theta = np.radians(theta)
-    d_spacing *= 1e-10
-    wavelength *= 1e-10
-    assert (
-        pytest.approx(wavelength_to_bragg(wavelength, d=d_spacing), rel=0.001) == theta
-    )
+    d_spacing *= ureg.angstrom
+    wavelength *= ureg.angstrom
+    new_bragg = wavelength_to_bragg(wavelength, d=d_spacing).to(ureg.degrees).magnitude
+    assert new_bragg == pytest.approx(theta, rel=0.001)
 
 
 analyzer_values = [
@@ -77,7 +92,7 @@ analyzer_values = [
 ]
 
 
-Si311_d_spacing = 1.637 * 1e-10  # converted to meters
+Si311_d_spacing = 0.1637  # in nm
 
 
 @pytest.fixture()
@@ -93,7 +108,13 @@ async def xtal(sim_registry):
     await xtal.connect(mock=True)
     # Set default values for xtal parameters
     set_mock_value(xtal.d_spacing, Si311_d_spacing)
-    set_mock_value(xtal.rowland_diameter, 0.500)
+    set_mock_value(xtal.rowland_diameter, 500)
+    xtal.units[xtal.horizontal] = ureg.cm
+    xtal.units[xtal.vertical] = ureg.cm
+    xtal.units[xtal.rowland_diameter] = ureg.mm
+    xtal.units[xtal.d_spacing] = ureg.nm
+    xtal.units[xtal.wedge_angle] = ureg.degrees
+    xtal.units[xtal.asymmetry_angle] = ureg.degrees
     return xtal
 
 
@@ -110,14 +131,13 @@ async def test_set_hkl(xtal):
 @pytest.mark.parametrize("bragg,alpha,beta,y,x", analyzer_values)
 async def test_rowland_circle_forward(xtal, bragg, alpha, beta, x, y):
     # Set up sensible values for current positions
-    xtal.wedge_angle.get_value = AsyncMock(return_value=np.radians(beta))
-    xtal.asymmetry_angle.get_value = AsyncMock(return_value=np.radians(alpha))
+    xtal.wedge_angle.get_value = AsyncMock(return_value=beta)
+    xtal.asymmetry_angle.get_value = AsyncMock(return_value=alpha)
     xtal.d_spacing.get_value = AsyncMock(return_value=Si311_d_spacing)
-    bragg = np.radians(bragg)
-    energy = bragg_to_energy(bragg, d=Si311_d_spacing)
+    energy = bragg_to_energy(bragg * ureg.degrees, d=Si311_d_spacing * ureg.nm)
     # Calculate the new x, z motor positions
     calculated = await xtal.energy.forward(
-        energy,
+        energy.to(ureg.electron_volt).magnitude,
         D=xtal.rowland_diameter,
         d=xtal.d_spacing,
         beta=xtal.wedge_angle,
@@ -126,15 +146,13 @@ async def test_rowland_circle_forward(xtal, bragg, alpha, beta, x, y):
         y=xtal.vertical,
     )
     # Check the result is correct (convert cm -> m)
-    expected = {xtal.horizontal: x / 100, xtal.vertical: y / 100}
-    assert calculated == pytest.approx(expected, abs=0.001)
+    expected = {xtal.horizontal: x, xtal.vertical: y}
+    assert calculated[xtal.horizontal] == pytest.approx(x, abs=0.1)
+    assert calculated[xtal.vertical] == pytest.approx(y, abs=0.1)
 
 
 @pytest.mark.parametrize("bragg,alpha,beta,y,x", analyzer_values)
 async def test_rowland_circle_inverse(xtal, bragg, alpha, beta, x, y):
-    # Calculate the expected answer
-    bragg = np.radians(bragg)
-    expected_energy = bragg_to_energy(bragg, d=Si311_d_spacing)
     # Calculate the new energy
     D = await xtal.rowland_diameter.get_value()
     new_energy = xtal.energy.inverse(
@@ -143,8 +161,8 @@ async def test_rowland_circle_inverse(xtal, bragg, alpha, beta, x, y):
             xtal.vertical: y,
             xtal.rowland_diameter: D,
             xtal.d_spacing: Si311_d_spacing,
-            xtal.wedge_angle: np.radians(beta),
-            xtal.asymmetry_angle: np.radians(alpha),
+            xtal.wedge_angle: beta,
+            xtal.asymmetry_angle: alpha,
         },
         D=xtal.rowland_diameter,
         d=xtal.d_spacing,
@@ -154,6 +172,8 @@ async def test_rowland_circle_inverse(xtal, bragg, alpha, beta, x, y):
         y=xtal.vertical,
     )
     # Compare to the calculated inverse
+    expected_energy = bragg_to_energy(bragg * ureg.degrees, d=Si311_d_spacing * ureg.nm)
+    expected_energy = expected_energy.to(ureg.electron_volt).magnitude
     assert new_energy == pytest.approx(expected_energy, abs=0.2)
 
 

@@ -17,16 +17,19 @@ Some sane values for converting hkl and [HKL] to α:
 import asyncio
 import logging
 
-from pint import Quantity, UnitRegistry
 import numpy as np
 from bluesky.protocols import Movable
 from ophyd_async.core import (
+    DEFAULT_TIMEOUT,
     AsyncStatus,
     ConfigSignal,
+    Device,
+    LazyMock,
     StandardReadable,
     soft_signal_r_and_setter,
     soft_signal_rw,
 )
+from pint import Quantity, UnitRegistry
 from scipy import constants
 
 from ..positioner import Positioner
@@ -40,7 +43,11 @@ log = logging.getLogger(__name__)
 um_per_mm = 1000
 
 
-h = constants.physical_constants["Planck constant in eV/Hz"][0] * ureg.electron_volt / ureg.hertz
+h = (
+    constants.physical_constants["Planck constant in eV/Hz"][0]
+    * ureg.electron_volt
+    / ureg.hertz
+)
 c = constants.c * ureg.meter / ureg.second
 
 
@@ -52,8 +59,25 @@ def energy_to_wavelength(energy: Quantity) -> Quantity:
 wavelength_to_energy = energy_to_wavelength
 
 
+async def device_units(device: Device):
+    """Figure out the most likely units to use for *device*.
+
+    Defaults to meters if no other unit can be found."""
+    if hasattr(device, "motor_egu"):
+        egu = await device.motor_egu.get_value()
+    else:
+        # Probably a signal
+        desc = (await device.describe())[device.name]
+        if "units" in desc:
+            egu = desc["units"]
+        else:
+            egu = "m"
+    return ureg[egu].units
+
+
 def units(quantity: Quantity) -> str:
-    return str(quantity.reduced_units)
+    return str(quantity.to_reduced_units())
+
 
 def bragg_to_wavelength(bragg_angle: Quantity, d: Quantity, n: int = 1) -> Quantity:
     """Convert Bragg angle to wavelength.
@@ -174,7 +198,34 @@ class HKL(StandardReadable, Movable):
 class Analyzer(StandardReadable):
     """A single asymmetric analyzer crystal mounted on an Rowland circle.
 
-    Linear dimensions (e.g. Rowland diameter) should be in meters.
+    **Units** are handled automatically based on units set in EPICS
+    PVs. However, the following values are used as parameters when
+    creating the analyzer, and are assumed to have the following
+    units.
+
+    - rowland_diameter: meters
+    - lattice_constant: nanometers
+    - wedge_angle: degrees
+
+    Parameters
+    ==========
+    horizontal_motor_prefix
+      The PV prefix for the motor moving the crystal inboard/outboard.
+    vertical_motor_prefix
+      The PV prefix for the motor moving the crystal closer to the
+      ceiling.
+    yaw_motor_prefix
+      The PV prefix for the motor rotating the crystal around its
+      optical axis.
+    rowland_diameter
+      The diameter of the Rowland circle.
+    lattice_constant
+      The lattice constant of the analyzer (e.g. Si 111) crystal.
+    wedge_angle
+      The angle of the horizontal motor axis.
+    surface_plane
+      The cut of the analyzer crystal. Either as a tuple (e.g.
+      ``(2, 1, 1)`` or a string (e.g. ``"211"``).
 
     """
 
@@ -185,23 +236,19 @@ class Analyzer(StandardReadable):
         vertical_motor_prefix: str,
         yaw_motor_prefix: str,
         rowland_diameter: float = 0.5,
-        lattice_constant: float = 0.543095e-9,
-        wedge_angle: float = np.radians(30),
+        lattice_constant: float = 0.543095,
+        wedge_angle: float = 30.0,
         surface_plane: tuple[int, int, int] | str = "211",
         name: str = "",
     ):
-        surface_plane = tuple(int(i) for i in surface_plane)
-        # Apply units to the input parameters
-        rowland_diameter *= ureg.meter
-        lattice_constant *= ureg.meter
-        wedge_angle *= ureg.radians
+        surface_plane_hkl: tuple[int, ...] = tuple(int(i) for i in surface_plane)
         # Create the real motors
         self.horizontal = Motor(horizontal_motor_prefix)
         self.vertical = Motor(vertical_motor_prefix)
         self.crystal_yaw = Motor(yaw_motor_prefix)
         # Reciprocal space geometry
         self.reflection = HKL(initial_value="111")
-        self.surface_plane = HKL(initial_value=surface_plane)
+        self.surface_plane = HKL(initial_value=surface_plane_hkl)
         self.add_readables(
             [
                 self.reflection.h,
@@ -216,15 +263,15 @@ class Analyzer(StandardReadable):
         # Soft signals for keeping track of the fixed transform properties
         with self.add_children_as_readables(ConfigSignal):
             self.rowland_diameter = soft_signal_rw(
-                float, units=units(rowland_diameter), initial_value=rowland_diameter.magnitude
+                float, units="meter", initial_value=rowland_diameter
             )
             self.wedge_angle = soft_signal_rw(
-                float, units=units(wedge_angle), initial_value=wedge_angle.magnitude
+                float, units="degrees", initial_value=wedge_angle
             )
             self.lattice_constant = soft_signal_rw(
-                float, units=units(lattice_constant), initial_value=lattice_constant.magnitude
+                float, units="nm", initial_value=lattice_constant
             )
-            self.bragg_offset = soft_signal_rw(float, units=self.linear_units)
+            self.bragg_offset = soft_signal_rw(float, units="radians")
             # Soft signals for intermediate, calculated values
             self.d_spacing = derived_signal_r(
                 float,
@@ -235,7 +282,7 @@ class Analyzer(StandardReadable):
                     "a": self.lattice_constant,
                 },
                 inverse=self._calc_d_spacing,
-                units=self.linear_units,
+                units="nm",
                 precision=4,
             )
             self.asymmetry_angle = derived_signal_r(
@@ -248,7 +295,7 @@ class Analyzer(StandardReadable):
                     "k": self.surface_plane.k,
                     "l": self.surface_plane.l,
                 },
-                units=self.angular_units,
+                units="radians",
                 inverse=self._calc_alpha,
             )
         # The actual energy signal that controls the analyzer
@@ -269,6 +316,21 @@ class Analyzer(StandardReadable):
             ConfigSignal,
         )
         super().__init__(name=name)
+
+    async def connect(
+        self,
+        mock: bool | LazyMock = False,
+        timeout: float = DEFAULT_TIMEOUT,
+        force_reconnect: bool = False,
+    ) -> None:
+        await super().connect(
+            mock=mock, timeout=timeout, force_reconnect=force_reconnect
+        )
+        # Stash units for later. Assumes they won't change
+        devices = [self.horizontal]
+        aws = [device_units(device) for device in devices]
+        units = await asyncio.gather(*aws)
+        self.units = {device: unit for device, unit in zip(devices, units)}
 
     def _calc_alpha(self, values, H, K, L, h, k, l):
         """Calculate the asymmetry angle for a given reflection and base plane.
@@ -292,6 +354,8 @@ class Analyzer(StandardReadable):
 
 class EnergyPositioner(Positioner):
     """Positions the energy of an analyzer crystal."""
+
+    energy_unit = "eV"
 
     def __init__(self, *, xtal: Analyzer, name: str = ""):
         xtal_signals = {
@@ -324,20 +388,21 @@ class EnergyPositioner(Positioner):
             )
         # Metadata
         self.velocity, _ = soft_signal_r_and_setter(float, initial_value=0.001)
-        self.units, _ = soft_signal_r_and_setter(str, initial_value="eV")
+        self.units, _ = soft_signal_r_and_setter(str, initial_value=self.energy_unit)
         self.precision, _ = soft_signal_r_and_setter(int, initial_value=3)
         super().__init__(name=name, put_complete=True)
 
     async def forward(self, value, D, d, beta, alpha, x, y):
         """Run a forward (pseudo -> real) calculation"""
         # Resolve the dependent signals into their values
-        energy = value
-        D, d, beta, alpha = await asyncio.gather(
-            D.get_value(),
-            d.get_value(),
-            beta.get_value(),
-            alpha.get_value(),
-        )
+        energy = value * getattr(ureg, self.energy_unit)
+        units = self.parent.units
+        devices = [D, d, beta, alpha]
+        values = await asyncio.gather(*[device.get_value() for device in devices])
+        # Apply units
+        D, d, beta, alpha = [
+            val * units[device] for val, device in zip(values, devices)
+        ]
         # Step 0: convert energy to bragg angle
         bragg = energy_to_bragg(energy, d=d)
         # Step 1: Convert energy params to geometry params
@@ -348,26 +413,28 @@ class EnergyPositioner(Positioner):
         x_val = -y_val * np.sin(beta) + rho * np.sin(theta_M)
         # Report the calculated result
         return {
-            x: x_val,
-            y: y_val,
+            x: x_val.to(units[x]).magnitude,
+            y: y_val.to(units[y]).magnitude,
         }
 
     def inverse(self, values, D, d, beta, alpha, x, y):
         """Run an inverse (real -> pseudo) calculation"""
-        # Resolve signals into their values
-        x = values[x]
-        y = values[y]
-        D = values[D]
-        d = values[d]
-        beta = values[beta]
-        alpha = values[alpha]
+        # Resolve signals into their quantities (with units)
+        units = self.parent.units
+        x = values[x] * units[x]
+        y = values[y] * units[y]
+        D = values[D] * units[D]
+        d = values[d] * units[d]
+        beta = values[beta] * units[beta]
+        alpha = values[alpha] * units[alpha]
         # Step 1: Convert motor positions to geometry parameters
         theta_M = np.arctan2((x + y * np.sin(beta)), (y * np.cos(beta)))
         rho = y * np.cos(beta) / np.cos(theta_M)
         # Step 1: Convert geometry params to energy
         bragg = theta_M - alpha
         energy = bragg_to_energy(bragg, d=d)
-        return energy
+        energy_unit = getattr(ureg, self.energy_unit)
+        return energy.to(energy_unit).magnitude
 
 
 # -----------------------------------------------------------------------------
