@@ -27,7 +27,7 @@ dependencies = ["aioca", "aiokafka", "bluesky", "ophyd",
 
 dev = ["black", "pytest", "asynctest", "build", "twine", "pytest-httpx",
        "time-machine", "pytest-mock", "pytest-qt", "flake8", "pytest-asyncio",
-       "pytest_httpx"]
+       "pytest_httpx", "scipy-stubs", "mypy"]
 gui = ["qtawesome>=1.4.0", "pydm<=1.24.1", "pyqtgraph", "qasync", "tiled[all]"]
 
 [project.urls]
@@ -64,3 +64,7 @@ versionfile_source = "src/haven/_version.py"
 versionfile_build = "haven/_version.py"
 tag_prefix = "haven-"
 parentdir_prefix = "haven-"
+
+[tool.mypy]
+files = ['src/haven/devices/asymmotron.py', "src/haven/tests/test_asymmotron.py"]
+follow_imports = "skip"
