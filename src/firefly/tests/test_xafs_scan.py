@@ -2,9 +2,9 @@ from unittest import mock
 
 import numpy as np
 import pytest
-from qtpy import QtCore
+from qtpy import QtCore, QtWidgets
 
-from firefly.plans.xafs_scan import XafsScanDisplay
+from firefly.plans.xafs_scan import XafsScanDisplay, XafsScanRegion
 
 # default values for EXAFS scan
 pre_edge = [-200, -50, 5]
@@ -18,6 +18,13 @@ def display(qtbot):
     display = XafsScanDisplay()
     qtbot.addWidget(display)
     return display
+
+
+@pytest.fixture()
+def region(qtbot):
+    layout = QtWidgets.QGridLayout()
+    region = XafsScanRegion(layout, row=1)
+    return region
 
 
 def test_region_number(display):
@@ -48,38 +55,34 @@ def test_E0_checkbox(display):
     # K-space checkboxes should be disabled when E0 is unchecked
     assert not display.regions[0].k_space_checkbox.isEnabled()
 
-    # check whether energy values is added correctly
-    for i in range(len(default_values)):
-        print(display.edge_name)
+    # check whether energy values are added correctly
+    for (start, stop, step), region in zip(default_values, display.regions):
         np.testing.assert_almost_equal(
-            float(display.regions[i].start_line_edit.text()),
-            default_values[i][0] + E0,
+            region.start_line_edit.value(),
+            start + E0,
             decimal=3,
         )
         np.testing.assert_almost_equal(
-            float(display.regions[i].stop_line_edit.text()),
-            default_values[i][1] + E0,
+            region.stop_line_edit.value(),
+            stop + E0,
             decimal=3,
         )
         np.testing.assert_almost_equal(
-            float(display.regions[i].step_line_edit.text()),
-            default_values[i][2],
+            region.step_line_edit.value(),
+            step,
             decimal=3,
         )
 
     # check whether k range is calculated right
     display.ui.use_edge_checkbox.setChecked(True)
     # K-space checkbox should become re-enabled after E0 is checked
-    assert display.regions[-1].k_space_checkbox.isEnabled()
-    display.regions[-1].k_space_checkbox.setChecked(True)
+    k_region = display.regions[-1]
+    assert k_region.k_space_checkbox.isEnabled()
+    k_region.k_space_checkbox.setChecked(True)
+    np.testing.assert_almost_equal(k_region.start_line_edit.value(), 3.6226, decimal=4)
+    np.testing.assert_almost_equal(k_region.stop_line_edit.value(), 14.4905, decimal=4)
     np.testing.assert_almost_equal(
-        float(display.regions[i].start_line_edit.text()), 3.6226, decimal=4
-    )
-    np.testing.assert_almost_equal(
-        float(display.regions[i].stop_line_edit.text()), 14.4905, decimal=4
-    )
-    np.testing.assert_almost_equal(
-        float(display.regions[i].step_line_edit.text()), 3.64069 - 3.6226, decimal=4
+        k_region.step_line_edit.value(), 3.64069 - 3.6226, decimal=4
     )
 
 
@@ -177,15 +180,15 @@ def test_xafs_scan_plan_queued_energies_k_mixed(qtbot, display):
     display.ui.regions_spin_box.setValue(2)
     display.edge_combo_box.setCurrentIndex(1)
     # Set up the first region
-    display.regions[0].start_line_edit.setText("-20")
-    display.regions[0].stop_line_edit.setText("40")
-    display.regions[0].step_line_edit.setText("10")
+    display.regions[0].start_line_edit.setValue(-20)
+    display.regions[0].stop_line_edit.setValue(40)
+    display.regions[0].step_line_edit.setValue(10)
     # Set up the second region
-    display.regions[1].start_line_edit.setText("50")
-    display.regions[1].stop_line_edit.setText("800")
+    display.regions[1].start_line_edit.setValue(50)
+    display.regions[1].stop_line_edit.setValue(800)
     # Convert to k space
     display.regions[1].k_space_checkbox.setChecked(True)
-    display.regions[1].step_line_edit.setText("5")
+    display.regions[1].step_line_edit.setValue(5)
     display.regions[1].weight_spinbox.setValue(2)
     # Set up detector list
     display.ui.detectors_list.selected_detectors = mock.MagicMock(
@@ -261,9 +264,24 @@ def test_E0(display):
     assert display.E0 is None
 
 
+def test_region_domain(qtbot, region):
+
+    assert region.start_line_edit.suffix() == " eV"
+    assert region.stop_line_edit.suffix() == " eV"
+    assert region.step_line_edit.suffix() == " eV"
+    region.set_domain(domain=1)
+    assert region.start_line_edit.suffix() == " Å⁻"
+    assert region.stop_line_edit.suffix() == " Å⁻"
+    assert region.step_line_edit.suffix() == " Å⁻"
+    region.set_domain(domain=0)
+    assert region.start_line_edit.suffix() == " eV"
+    assert region.stop_line_edit.suffix() == " eV"
+    assert region.step_line_edit.suffix() == " eV"
+
+
 # -----------------------------------------------------------------------------
-# :author:    Mark Wolfman
-# :email:     wolfman@anl.gov
+# :author:    Mark Wolfman, Juan Juan Huang
+# :email:     wolfman@anl.gov, juanjuan.huang@anl.gov
 # :copyright: Copyright © 2023, UChicago Argonne, LLC
 #
 # Distributed under the terms of the 3-Clause BSD License
