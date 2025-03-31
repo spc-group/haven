@@ -1,3 +1,4 @@
+import asyncio
 import logging
 
 from bluesky_queueserver_api import BPlan
@@ -12,64 +13,60 @@ log = logging.getLogger()
 
 
 class LineScanRegion(regions_display.RegionBase):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.num_points = 2  # Default value for num_points
-
+    num_points: int = 2
+    
     def setup_ui(self):
-        self.layout = QtWidgets.QHBoxLayout()
-
-        # First item, ComponentSelector
+        # Component selector
         self.motor_box = ComponentSelector()
-        self.layout.addWidget(self.motor_box)
 
-        # Second item, start point
-        self.start_line_edit = QtWidgets.QLineEdit()
-        self.start_line_edit.setValidator(QDoubleValidator())  # only takes floats
-        self.start_line_edit.setPlaceholderText("Start…")
-        self.layout.addWidget(self.start_line_edit)
+        # start point
+        self.start_line_edit = QtWidgets.QDoubleSpinBox()
+        self.start_line_edit.lineEdit().setPlaceholderText("Start…")
+        self.start_line_edit.setMinimum(float('-inf'))
+        self.start_line_edit.setMaximum(float('inf'))
 
-        # Third item, stop point
-        self.stop_line_edit = QtWidgets.QLineEdit()
-        self.stop_line_edit.setValidator(QDoubleValidator())  # only takes floats
-        self.stop_line_edit.setPlaceholderText("Stop…")
-        self.layout.addWidget(self.stop_line_edit)
+        # Stop point
+        self.stop_line_edit = QtWidgets.QDoubleSpinBox()
+        self.stop_line_edit.lineEdit().setPlaceholderText("Stop…")
+        self.stop_line_edit.setMinimum(float('-inf'))
+        self.stop_line_edit.setMaximum(float('inf'))
 
         # Step size (non-editable)
-        self.step_size_line_edit = QtWidgets.QLineEdit()
-        self.step_size_line_edit.setReadOnly(True)
-        self.step_size_line_edit.setDisabled(True)
-        self.step_size_line_edit.setPlaceholderText("Step Size…")
-        self.layout.addWidget(self.step_size_line_edit)
+        self.step_line_edit = QtWidgets.QDoubleSpinBox()
+        self.step_line_edit.setReadOnly(True)
+        self.step_line_edit.setDisabled(True)
+        self.step_line_edit.setMinimum(float('-inf'))
+        self.step_line_edit.setMaximum(float('inf'))
+        self.step_line_edit.setDecimals(4)
+        self.step_line_edit.lineEdit().setPlaceholderText("Step Size…")
+
+        # Add widgets to the layout
+        self.widgets = [self.start_line_edit, self.stop_line_edit, self.step_line_edit]
+        for column, widget in enumerate(self.widgets):
+            self.layout.addWidget(widget, self.row, column)
 
         # Connect signals
-        self.start_line_edit.textChanged.connect(self.update_step_size)
-        self.stop_line_edit.textChanged.connect(self.update_step_size)
+        self.start_line_edit.valueChanged.connect(self.update_step_size)
+        self.stop_line_edit.valueChanged.connect(self.update_step_size)
+
+    async def update_devices(self, registry):
+        await self.motor_box.update_devices(registry)
 
     def set_num_points(self, num_points):
         self.num_points = max(2, int(num_points))  # Ensure num_points is >= 2
         self.update_step_size()
 
     def update_step_size(self):
+        # Get Start and Stop values
+        start = self.start_line_edit.value()
+        stop = self.stop_line_edit.value()
+        # Calculate step size
         try:
-            # Get Start and Stop values
-            start_text = self.start_line_edit.text().strip()
-            stop_text = self.stop_line_edit.text().strip()
-            if not start_text or not stop_text:
-                self.step_size_line_edit.setText("N/A")
-                return
-
-            start = float(start_text)
-            stop = float(stop_text)
-
-            # Calculate step size
-            if self.num_points > 1:
-                step_size = (stop - start) / (self.num_points - 1)
-                self.step_size_line_edit.setText(f"{step_size:.5g}")
-            else:
-                self.step_size_line_edit.setText("N/A")
-        except ValueError:
-            self.step_size_line_edit.setText("N/A")
+            step_size = (stop - start) / (self.num_points - 1)
+        except (ValueError, ZeroDivisionError):
+            self.step_line_edit.setValue(float('nan'))
+        else:
+            self.step_line_edit.setValue(step_size)
 
 
 class LineScanDisplay(regions_display.RegionsDisplay):
@@ -102,11 +99,6 @@ class LineScanDisplay(regions_display.RegionsDisplay):
             "e.g. commissioning, alignment…"
         )
         self.ui.comboBox_purpose.setCurrentText("")
-
-    def update_regions_step_size(self, num_points):
-        """Update the step size for all regions."""
-        for region in self.regions:
-            region.set_num_points(num_points)
 
     def queue_plan(self, *args, **kwargs):
         """Execute this plan on the queueserver."""

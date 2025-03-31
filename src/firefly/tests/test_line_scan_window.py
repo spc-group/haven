@@ -69,46 +69,32 @@ async def test_time_calculator(display, sim_registry, ion_chamber, qtbot, qapp):
     assert display.ui.label_sec_total.text() == "33.0"
 
 
+async def test_regions_in_layout(display):
+    assert display.regions_layout.rowCount() == 2  # header + default row
+
+
 @pytest.mark.asyncio
 async def test_step_size_calculation(display, qtbot):
     await display.update_regions(1)
     region = display.regions[0]
 
     # Test valid inputs
-    region.start_line_edit.setText("0")
-    region.stop_line_edit.setText("10")
+    region.start_line_edit.setValue(0)
+    region.stop_line_edit.setValue(10)
 
     # Set num_points
     display.ui.scan_pts_spin_box.setValue(7)
-    assert (
-        region.step_size_line_edit.text() == "1.6667"
-    ), "Step size should be 1.6666 for 7 points from 0 to 10."
-
+    # Step size should be 1.6666 for 7 points from 0 to 10.
+    assert region.step_line_edit.value() == 1.6667
     # Change the number of points and verify step size updates
     display.ui.scan_pts_spin_box.setValue(3)
-    assert (
-        region.step_size_line_edit.text() == "5"
-    ), "Step size should be 5.0 for 3 points from 0 to 10."
-
-    # Test invalid input
-    region.start_line_edit.setText("Start..")
-    assert (
-        region.step_size_line_edit.text() == "N/A"
-    ), "Step size should be 'N/A' for invalid start input."
-
-    # Test edge case: num_points = 1
-    display.ui.scan_pts_spin_box.setValue(1)
-    assert (
-        region.step_size_line_edit.text() == "N/A"
-    ), "Step size should be 'N/A' for num_points = 1."
-
-    # Reset to a valid state and verify
-    region.start_line_edit.setText("0")
-    region.stop_line_edit.setText("10")
+    # Step size should be 5.0 for 3 points from 0 to 10."
+    assert region.step_line_edit.value() == 5
+    # Reset to another state and verify
+    region.start_line_edit.setValue(0)
+    region.stop_line_edit.setValue(10)
     display.ui.scan_pts_spin_box.setValue(6)
-    assert (
-        region.step_size_line_edit.text() == "2"
-    ), "Step size should be 2.0 for 6 points from 0 to 10."
+    assert region.step_line_edit.value() == 2
 
 
 @pytest.mark.asyncio
@@ -118,13 +104,13 @@ async def test_line_scan_plan_queued(display, monkeypatch, qtbot):
 
     # set up a test motor 1
     display.regions[0].motor_box.combo_box.setCurrentText("async motor-1")
-    display.regions[0].start_line_edit.setText("1")
-    display.regions[0].stop_line_edit.setText("111")
+    display.regions[0].start_line_edit.setValue(1)
+    display.regions[0].stop_line_edit.setValue(111)
 
     # set up a test motor 2
     display.regions[1].motor_box.combo_box.setCurrentText("sync_motor_2")
-    display.regions[1].start_line_edit.setText("2")
-    display.regions[1].stop_line_edit.setText("222")
+    display.regions[1].start_line_edit.setValue(2)
+    display.regions[1].stop_line_edit.setValue(222)
 
     # set up scan num of points
     display.ui.scan_pts_spin_box.setValue(10)

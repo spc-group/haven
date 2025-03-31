@@ -28,17 +28,11 @@ class Domain(IntEnum):
     WAVENUMBER = 1
 
 
-class XafsScanRegion(QObject):
+class XafsScanRegion(regions_display.RegionBase):
     energy_suffix = "eV"
     wavenumber_suffix = "Å⁻"
     energy_precision = 1
     wavenumber_precision = 4
-
-    def __init__(self, parent_layout: QtWidgets.QGridLayout, row: int):
-        super().__init__()
-        self.layout = parent_layout
-        self.row = row
-        self.setup_ui()
 
     def setup_ui(self):
 
@@ -88,6 +82,16 @@ class XafsScanRegion(QObject):
 
         # Connect the k-space enabled checkbox to the relevant signals
         self.k_space_checkbox.stateChanged.connect(self.update_wavenumber_energy)
+        # Disable/enable regions when selected
+        self.region_checkbox.stateChanged.connect(self.enable)
+
+    def enable(self, is_checked: bool):
+        self.start_line_edit.setEnabled(is_checked)
+        self.stop_line_edit.setEnabled(is_checked)
+        self.step_line_edit.setEnabled(is_checked)
+        self.exposure_time_spinbox.setEnabled(is_checked)
+        self.weight_spinbox.setEnabled(is_checked)
+        self.k_space_checkbox.setEnabled(is_checked)
 
     def remove(self):
         widgets = [
@@ -190,13 +194,12 @@ class XafsScanRegion(QObject):
             line_edit.setValue(new_value)
 
 
-class XafsScanDisplay(regions_display.PlanDisplay):
+class XafsScanDisplay(regions_display.RegionsDisplay):
     min_energy = 4000
     max_energy = 33000
 
     def customize_ui(self):
         super().customize_ui()
-        self.reset_default_regions()
         # Add absorption edges from XrayDB
         self.xraydb = XrayDB()
         combo_box = self.ui.edge_combo_box
@@ -246,19 +249,6 @@ class XafsScanDisplay(regions_display.PlanDisplay):
         await super().update_devices(registry)
         await self.ui.detectors_list.update_devices(registry)
 
-    def on_region_checkbox(self):
-        for region_i in self.regions:
-            is_region_i_checked = region_i.region_checkbox.isChecked()
-            region_i.start_line_edit.setEnabled(is_region_i_checked)
-            region_i.stop_line_edit.setEnabled(is_region_i_checked)
-            region_i.step_line_edit.setEnabled(is_region_i_checked)
-            region_i.exposure_time_spinbox.setEnabled(is_region_i_checked)
-            region_i.weight_spinbox.setEnabled(is_region_i_checked)
-            if not self.use_edge_checkbox.isChecked():
-                region_i.k_space_checkbox.setEnabled(False)
-            else:
-                region_i.k_space_checkbox.setEnabled(is_region_i_checked)
-
     def on_regions_all_checkbox(self, is_checked):
         for region_i in self.regions:
             region_i.region_checkbox.setChecked(is_checked)
@@ -275,15 +265,7 @@ class XafsScanDisplay(regions_display.PlanDisplay):
                 region.unapply_E0(self.E0)
 
     def reset_default_regions(self):
-        default_num_regions = 3
-
-        for region in getattr(self, "regions", ()):
-            region.remove()
-        self.regions = []
-        for i in range(default_num_regions):
-            self.add_region()
-        self.ui.regions_spin_box.setValue(default_num_regions)
-
+        super().reset_default_regions()
         # set default values for EXAFS scans
         pre_edge = [-200, -50, 5]
         xanes_region = [-50, 50, 0.5]
@@ -295,30 +277,17 @@ class XafsScanDisplay(regions_display.PlanDisplay):
             region.stop_line_edit.setValue(stop)
             region.step_line_edit.setValue(step)
 
-        # reset scan repeat num to 1
-        self.ui.spinBox_repeat_scan_num.setValue(1)
-
     def add_region(self):
-        row = len(self.regions) + 2  # Include the header
-        region = XafsScanRegion(self.ui.regions_layout, row=row)
-        self.regions.append(region)
-        # disable/enabale regions when selected
-        region.region_checkbox.stateChanged.connect(self.on_region_checkbox)
-        # All these signals change the calculated scan time
+        region = super().add_region()
+        # Connect some extra signals
         for signal in [
-            region.region_checkbox.stateChanged,
-            region.start_line_edit.textChanged,
-            region.stop_line_edit.textChanged,
-            region.step_line_edit.textChanged,
-            region.weight_spinbox.valueChanged,
-            region.exposure_time_spinbox.valueChanged,
-            region.k_space_checkbox.stateChanged,
+                region.region_checkbox.stateChanged,
+                region.weight_spinbox.valueChanged,
+                region.exposure_time_spinbox.valueChanged,
+                region.k_space_checkbox.stateChanged,
         ]:
             signal.connect(self.update_total_time)
-
-    def remove_region(self):
-        region = self.regions.pop()
-        region.remove()
+        return signal
 
     def update_regions(self):
         new_region_num = self.ui.regions_spin_box.value()

@@ -1,8 +1,10 @@
 import asyncio
 import logging
+from typing import Sequence
 
 from qasync import asyncSlot
-from qtpy.QtCore import Signal
+from qtpy.QtCore import Signal, QObject
+from qtpy import QtWidgets
 
 from firefly import display
 from firefly.plans.util import is_valid_value, time_converter
@@ -11,12 +13,28 @@ from haven import sanitize_name
 log = logging.getLogger()
 
 
-class RegionBase:
-    def __init__(self, line_label: str = ""):
-        self.line_label = line_label
+class RegionBase(QObject):
+    widgets: Sequence[QtWidgets.QWidget]
+    
+    def __init__(self, parent_layout: QtWidgets.QGridLayout, row: int):
+        super().__init__()
+        self.layout = parent_layout
+        self.row = row
         self.setup_ui()
 
-    def setup_ui(self):
+    async def setup_ui(self):
+        raise NotImplementedError
+
+    def remove(self):
+        widgets = [
+            self.motor_box,
+            self.start_line_edit,
+            self.stop_line_edit,
+            self.step_line_edit,
+        ]
+        for widget in widgets:
+            self.layout.removeWidget(widget)
+            widget.deleteLater()
         raise NotImplementedError
 
 
@@ -128,19 +146,11 @@ class RegionsDisplay(PlanDisplay, display.FireflyDisplay):
 
     def customize_ui(self):
         super().customize_ui()
-        # Remove the default layout from .ui file
-        try:
-            self.clearLayout(self.ui.region_template_layout)
-        except AttributeError:
-            pass
+        self.reset_default_regions()
         # Disable the line edits in spin box (use up/down buttons instead)
-        self.ui.num_motor_spin_box.lineEdit().setReadOnly(True)
-        # Create the initial (blank) regions
-        self.regions = []
-        self.ui.num_motor_spin_box.setValue(self.default_num_regions)
-        self.add_regions(self.default_num_regions)
+        self.ui.num_regions_spin_box.lineEdit().setReadOnly(True)
         # Set up the mechanism for changing region number
-        self.ui.num_motor_spin_box.valueChanged.connect(self.update_regions_slot)
+        self.ui.num_regions_spin_box.valueChanged.connect(self.update_regions_slot)
         # Color highlights for relative checkbox
         if hasattr(self, "relative_scan_checkbox"):
             self.ui.relative_scan_checkbox.stateChanged.connect(self.change_background)
@@ -173,41 +183,44 @@ class RegionsDisplay(PlanDisplay, display.FireflyDisplay):
         aws = [box.update_devices(registry) for box in selectors]
         await asyncio.gather(*aws)
 
-    def clearLayout(self, layout):
-        if layout is not None:
-            while layout.count():
-                item = layout.takeAt(0)
-                if item.widget():
-                    item.widget().deleteLater()
+    def reset_default_regions(self):
+        for region in getattr(self, "regions", ()):
+            region.remove()
+        self.regions = []
+        for i in range(self.default_num_regions):
+            self.add_region()
+        self.ui.num_regions_spin_box.setValue(self.default_num_regions)
+        # Reset scan repeat num to 1
+        self.ui.spinBox_repeat_scan_num.setValue(1)
 
-    def add_regions(self, num: int = 1):
-        """Add *num* regions to the list of scan parameters.
+    def add_region(self):
+        """Add a single row to the regions layout."""
+        row = len(self.regions) + 1  # Include the header
+        region = self.Region(self.ui.regions_layout, row=row)
+        self.regions.append(region)
+        # All these signals change the calculated scan time
+        for signal in [
+            region.start_line_edit.textChanged,
+            region.stop_line_edit.textChanged,
+            region.step_line_edit.textChanged,
+        ]:
+            signal.connect(self.update_total_time)
+        return region
 
-        Returns
-        =======
-        new_regions
-          The newly created region objects.
+    def remove_region(self):
+        region = self.regions.pop()
+        region.remove()
+        return region
 
-        """
-        new_regions = []
-        for i in range(num):
-            region = self.Region(len(self.regions))
-            self.ui.regions_layout.addLayout(region.layout)
-            # Save it to the list
-            self.regions.append(region)
-            new_regions.append(region)
-        # Finish setting up the new regions
-        return new_regions
-
-    def remove_regions(self, num=1):
-        for i in range(num):
-            layout = self.regions[-1].layout
-            # iterate/wait, and delete all widgets in the layout in the end
-            while layout.count() > 0:
-                item = layout.takeAt(0)
-                if item.widget():
-                    item.widget().deleteLater()
-            self.regions.pop()
+    # def remove_regions(self, num=1):
+    #     for i in range(num):
+    #         layout = self.regions[-1].layout
+    #         # iterate/wait, and delete all widgets in the layout in the end
+    #         while layout.count() > 0:
+    #             item = layout.takeAt(0)
+    #             if item.widget():
+    #                 item.widget().deleteLater()
+    #         self.regions.pop()
 
     @asyncSlot(int)
     async def update_regions_slot(self, new_region_num):
@@ -219,18 +232,14 @@ class RegionsDisplay(PlanDisplay, display.FireflyDisplay):
 
         """
         old_region_num = len(self.regions)
-        diff_region_num = new_region_num - old_region_num
-        new_regions = []
-        if diff_region_num < 0:
-            self.remove_regions(abs(diff_region_num))
-        elif diff_region_num > 0:
-            new_regions = self.add_regions(diff_region_num)
-        # Setup the component selector devices with existing device definitions
-        if len(new_regions) > 0:
-            aws = [
-                region.motor_box.update_devices(self.registry) for region in new_regions
-            ]
-            await asyncio.gather(*aws)
+        # Only one of ``add`` or ``remove`` will have entries
+        new_regions = [self.add_region() for i in range(old_region_num, new_region_num)]
+        for i in range(new_region_num, old_region_num):
+            self.remove_region()
+        self.update_total_time()
+        # Make sure new regions have device info
+        await asyncio.gather(*[region.update_devices(self.registry) for region in new_regions])
+        return new_regions
 
     def get_scan_parameters(self):
         detectors, repeat_scan_num = super().get_scan_parameters()
