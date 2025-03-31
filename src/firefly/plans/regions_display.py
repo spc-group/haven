@@ -26,16 +26,9 @@ class RegionBase(QObject):
         raise NotImplementedError
 
     def remove(self):
-        widgets = [
-            self.motor_box,
-            self.start_line_edit,
-            self.stop_line_edit,
-            self.step_line_edit,
-        ]
-        for widget in widgets:
+        for widget in self.widgets:
             self.layout.removeWidget(widget)
             widget.deleteLater()
-        raise NotImplementedError
 
 
 class PlanDisplay(display.FireflyDisplay):

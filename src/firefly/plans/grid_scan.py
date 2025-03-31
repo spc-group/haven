@@ -12,100 +12,51 @@ from firefly.plans import regions_display
 log = logging.getLogger()
 
 
-class TitleRegion:
-    def __init__(self):
-        self.setup_ui()
-
-    def setup_ui(self):
-        self.layout = QtWidgets.QGridLayout()
-        labels = [
-            "Priority axis",
-            "Motor",
-            "Start",
-            "Stop",
-            "N. points",
-            "Size",
-            "Snake",
-            "Fly",
-        ]
-        Qlabels_all = {}
-
-        # add labels in the first row
-        for i, label_i in enumerate(labels):
-            Qlabel_i = QtWidgets.QLabel(label_i)
-            self.layout.addWidget(Qlabel_i, 0, i)
-            Qlabels_all[label_i] = Qlabel_i
-
-        # fix widths so the labels are aligned with GridScanRegions
-        Qlabels_all["Priority axis"].setFixedWidth(70)
-        Qlabels_all["Motor"].setFixedWidth(100)
-        Qlabels_all["N. points"].setFixedWidth(68)
-        Qlabels_all["Snake"].setFixedWidth(53)
-        Qlabels_all["Fly"].setFixedWidth(43)
-
-        # add labels in the second row
-        label = QtWidgets.QLabel("fast -> slow")
-        self.layout.addWidget(label, 1, 0)
-
-
 class GridScanRegion(regions_display.RegionBase):
 
     def setup_ui(self):
-        self.layout = QtWidgets.QHBoxLayout()
-
         # motor No.
         self.motor_label = QtWidgets.QLCDNumber()
         self.motor_label.setStyleSheet(
             "QLCDNumber { background-color: white; color: red; }"
         )
-        self.motor_label.display(self.line_label)
-        self.layout.addWidget(self.motor_label)
-
+        self.motor_label.display(str(self.row - 1))
         # ComponentSelector
         self.motor_box = ComponentSelector()
-        self.layout.addWidget(self.motor_box)
-
         # Start point
-        self.start_line_edit = QtWidgets.QLineEdit()
-        self.start_line_edit.setValidator(QDoubleValidator())  # only takes floats
-        self.start_line_edit.setPlaceholderText("Start…")
-        self.layout.addWidget(self.start_line_edit)
-
+        self.start_line_edit = QtWidgets.QDoubleSpinBox()
+        self.start_line_edit.setMinimum(float('-inf'))
+        self.start_line_edit.setMaximum(float('inf'))
         # Stop point
-        self.stop_line_edit = QtWidgets.QLineEdit()
-        self.stop_line_edit.setValidator(QDoubleValidator())  # only takes floats
-        self.stop_line_edit.setPlaceholderText("Stop…")
-        self.layout.addWidget(self.stop_line_edit)
-
-        # Number of scan point
+        self.stop_line_edit = QtWidgets.QDoubleSpinBox()
+        self.stop_line_edit.setMinimum(float('-inf'))
+        self.stop_line_edit.setMaximum(float('inf'))
+        # Number of scan points
         self.scan_pts_spin_box = QtWidgets.QSpinBox()
         self.scan_pts_spin_box.setMinimum(2)
         self.scan_pts_spin_box.setMaximum(99999)
-        self.layout.addWidget(self.scan_pts_spin_box)
-
         # Step size (non-editable)
-        self.step_size_line_edit = QtWidgets.QLineEdit()
-        self.step_size_line_edit.setReadOnly(True)
-        self.step_size_line_edit.setDisabled(True)
-        self.step_size_line_edit.setPlaceholderText("Step Size…")
-        self.layout.addWidget(self.step_size_line_edit)
-
+        self.step_line_edit = QtWidgets.QLineEdit()
+        self.step_line_edit.setReadOnly(True)
+        self.step_line_edit.setDisabled(True)
+        self.step_line_edit.setPlaceholderText("Step Size…")
         # Snake checkbox
         self.snake_checkbox = QtWidgets.QCheckBox()
         self.snake_checkbox.setText("Snake")
         self.snake_checkbox.setEnabled(True)
-        self.layout.addWidget(self.snake_checkbox)
-
         # Fly checkbox # not available right now
         self.fly_checkbox = QtWidgets.QCheckBox()
         self.fly_checkbox.setText("Fly")
         self.fly_checkbox.setEnabled(False)
-        self.layout.addWidget(self.fly_checkbox)
-
         # Connect signals
         self.start_line_edit.textChanged.connect(self.update_step_size)
         self.stop_line_edit.textChanged.connect(self.update_step_size)
         self.scan_pts_spin_box.valueChanged.connect(self.update_step_size)
+        # Add all widgets to the layout
+        self.widgets = [self.motor_label, self.motor_box, self.start_line_edit, self.stop_line_edit, self.scan_pts_spin_box, self.step_line_edit, self.snake_checkbox, self.fly_checkbox]
+        for column, widget in enumerate(self.widgets):
+            self.layout.addWidget(widget, self.row, column)
+                        
 
     def update_step_size(self):
         try:
@@ -113,7 +64,7 @@ class GridScanRegion(regions_display.RegionBase):
             start_text = self.start_line_edit.text().strip()
             stop_text = self.stop_line_edit.text().strip()
             if not start_text or not stop_text:
-                self.step_size_line_edit.setText("N/A")
+                self.step_line_edit.setText("N/A")
                 return
 
             start = float(start_text)
@@ -125,11 +76,11 @@ class GridScanRegion(regions_display.RegionBase):
             # Calculate step size
             if num_points > 1:
                 step_size = (stop - start) / (num_points - 1)
-                self.step_size_line_edit.setText(f"{step_size:.5g}")
+                self.step_line_edit.setText(f"{step_size:.5g}")
             else:
-                self.step_size_line_edit.setText("N/A")
+                self.step_line_edit.setText("N/A")
         except ValueError:
-            self.step_size_line_edit.setText("N/A")
+            self.step_line_edit.setText("N/A")
 
 
 class GridScanDisplay(regions_display.RegionsDisplay):
@@ -142,9 +93,6 @@ class GridScanDisplay(regions_display.RegionsDisplay):
     def customize_ui(self):
         super().customize_ui()
         self.update_snakes()
-        # add title layout
-        self.title_region = TitleRegion()
-        self.ui.title_layout.addLayout(self.title_region.layout)
         # Connect scan points change to update total time
         for region in self.regions:
             region.scan_pts_spin_box.valueChanged.connect(self.update_total_time)
