@@ -67,6 +67,10 @@ def test_count_plan_queued(display, qtbot):
     )
 
     def check_item(item):
+        from pprint import pprint
+
+        pprint(item)
+        pprint(expected_item)
         return item.to_dict() == expected_item.to_dict()
 
     # Click the run button and see if the plan is queued

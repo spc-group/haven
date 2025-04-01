@@ -59,6 +59,7 @@ from .preprocessors import (  # noqa: F401
 )
 from .progress_bar import ProgressBar  # noqa: F401
 from .run_engine import run_engine  # noqa: F401
+from .tiled_writer import TiledWriter  # noqa: F401
 from .utils import sanitize_name  # noqa: F401
 
 # -----------------------------------------------------------------------------
