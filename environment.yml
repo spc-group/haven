@@ -23,7 +23,7 @@ channels:
 
 dependencies:
   # --- Python core packages
-  - python=3.10  # Until this is fixed in pydm: https://github.com/slaclab/pydm/issues/951
+  - python=3.12
   - pip
 
   # This package is not available on pip as of 2024-07-25
@@ -46,23 +46,19 @@ dependencies:
     - rich
     - autoapi
     - pytest-mongodb
-    - StrEnum
-    - ophyd-registry >= 2.0.0rc1
+    - ophyd-registry >= 2.0.0
     - guarneri >= 0.2.0
     - xraydb >=4.5.0
     - pytest-timeout  # Get rid of this if tests are not hanging
-    - git+https://github.com/pcdshub/pcdsdevices
-    - area-detector-handlers
     - bluesky-queueserver
     - bluesky-queueserver-api
     - bluesky-widgets
     - bluesky-adaptive
-    # - bluesky >=1.13.1
-    - git+https://github.com/bluesky/bluesky.git@v1.13.1rc1  # Replace with pypi version once released
+    - bluesky >=1.13.1
     - ophyd >=1.6.3
-    - ophyd-async >=0.9.0a2
-    - apstools == 1.6.20  # Leave at 1.6.20 until this is fixed: https://github.com/BCDA-APS/apstools/issues/1022
-    - pcdsdevices  # For extra signal types
+    - ophyd-async >=0.9.0
+    - apstools
+    - intake >= 0.7.0  # Older version are broken on python 3.12
     - pydm >=1.18.0
     - typhos >= 3.1.0  # need the find_signal method on the SignalConnection()
     - p4p
@@ -78,9 +74,9 @@ dependencies:
     - psutil
     - numba>=0.56  # Ensures 0.53 (broken) isn't installed
     # This version of networkx has an importlib bug in it
-    - networkx < 3.3
+    - networkx > 3.3
     # Version 0.38.3 doesn't work properly with tiled
-    - starlette <= 0.38.2
+    - starlette > 0.38.3
     # --- testing and quality assurance
     - black >=24
     - flake8
@@ -96,7 +92,6 @@ dependencies:
     # Database management
     - pymongo
     - databroker-pack
-    - databroker==1.2.5    
     # --- packaging and publishing
     - build
     - twine
@@ -122,8 +117,6 @@ dependencies:
     - tqdm
     - peakutils
     - xrayutilities
-    - pyarrow < 11.0.0  # Tempoary fix, remove once the libort missing symbol doesn't break CI
-    - pyarrow-hotfix
     # XES analysis packages
     - scikit-learn
     - kneed

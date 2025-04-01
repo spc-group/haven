@@ -2,7 +2,7 @@ import logging
 import sys
 from collections import defaultdict
 from contextlib import contextmanager
-from enum import Enum, IntEnum
+from enum import IntEnum, StrEnum
 from functools import partial
 from itertools import product
 from pathlib import Path
@@ -213,7 +213,7 @@ class ROIPlotWidget(XRFPlotWidget):
             self.show_region(show=False, mca_num=mca_num, roi_num=roi_num)
 
 
-class Color(str, Enum):
+class Color(StrEnum):
     """Taken from bootstrap 5 alert components."""
 
     BLUE = "rgb(5, 81, 96)"
