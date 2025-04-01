@@ -4,7 +4,7 @@ from haven import TiledWriter
 
 
 def test_xas_spec():
-    """Does the XASRun spec is  added for invalid XAS runs?"""
+    """Does the XASRun spec get added for valid XAS runs?"""
     client = MagicMock()
     writer = TiledWriter(client=client)
     start_doc = {
