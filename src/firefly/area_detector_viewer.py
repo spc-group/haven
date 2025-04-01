@@ -18,9 +18,6 @@ pyqtgraph.setConfigOption("imageAxisOrder", "row-major")
 
 
 class AreaDetectorViewerDisplay(display.FireflyDisplay):
-    caqtdm_ui_file: str = (
-        "/APSshare/epics/synApps_6_2_1/support/areaDetector-R3-12-1/ADAravis/aravisApp/op/ui/autoconvert/ADAravis.ui"
-    )
     image_is_new: bool = True
 
     def customize_device(self):
@@ -66,13 +63,6 @@ class AreaDetectorViewerDisplay(display.FireflyDisplay):
 
     def ui_filename(self):
         return "area_detector_viewer.ui"
-
-    def launch_caqtdm(self):
-        # Determine for which IOC to launch caQtDM panels
-        cmd = f"start_{self.device.prefix.strip(':')}_caqtdm"
-        # Launch caQtDM for the given IOC
-        log.info(f"Launching caQtDM: {cmd}")
-        self._open_caqtdm_subprocess(cmd)
 
 
 # -----------------------------------------------------------------------------
