@@ -266,7 +266,8 @@ class XafsScanDisplay(regions_display.RegionsDisplay):
 
     def reset_default_regions(self):
         super().reset_default_regions()
-        # set default values for EXAFS scans
+        self.ui.spinBox_repeat_scan_num.setValue(1)
+        # Set default ranges for EXAFS scans
         pre_edge = [-200, -50, 5]
         xanes_region = [-50, 50, 0.5]
         exafs_region = [50, 800, 0.5]

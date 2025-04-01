@@ -183,21 +183,12 @@ class RegionsDisplay(PlanDisplay, display.FireflyDisplay):
         for i in range(self.default_num_regions):
             self.add_region()
         self.ui.num_regions_spin_box.setValue(self.default_num_regions)
-        # Reset scan repeat num to 1
-        self.ui.spinBox_repeat_scan_num.setValue(1)
 
     def add_region(self):
         """Add a single row to the regions layout."""
         row = len(self.regions) + 1  # Include the header
         region = self.Region(self.ui.regions_layout, row=row)
         self.regions.append(region)
-        # All these signals change the calculated scan time
-        for signal in [
-            region.start_line_edit.textChanged,
-            region.stop_line_edit.textChanged,
-            region.step_line_edit.textChanged,
-        ]:
-            signal.connect(self.update_total_time)
         return region
 
     def remove_region(self):

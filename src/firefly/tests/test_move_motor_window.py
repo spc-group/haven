@@ -24,11 +24,11 @@ async def test_move_motor_plan_queued(display, qtbot):
 
     # set up a test motor 1
     display.regions[0].motor_box.combo_box.setCurrentText("async_motor_1")
-    display.regions[0].position_line_edit.setText("111")
+    display.regions[0].position_line_edit.setValue(111)
 
     # set up a test motor 2
     display.regions[1].motor_box.combo_box.setCurrentText("sync_motor_2")
-    display.regions[1].position_line_edit.setText("222")
+    display.regions[1].position_line_edit.setValue(222)
 
     expected_item = BPlan(
         "mv",

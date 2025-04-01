@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>773</width>
-    <height>452</height>
+    <width>774</width>
+    <height>402</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -90,13 +90,6 @@
     </layout>
    </item>
    <item>
-    <widget class="Line" name="line_6">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-    </widget>
-   </item>
-   <item>
     <layout class="QHBoxLayout" name="horizontalLayout_6">
      <item>
       <widget class="QSplitter" name="splitter">
@@ -119,7 +112,7 @@
            <x>0</x>
            <y>0</y>
            <width>498</width>
-           <height>215</height>
+           <height>211</height>
           </rect>
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_7">
@@ -281,13 +274,6 @@
       </widget>
      </item>
     </layout>
-   </item>
-   <item>
-    <widget class="Line" name="line">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-    </widget>
    </item>
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout_7">

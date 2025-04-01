@@ -48,6 +48,9 @@ class LineScanRegion(regions_display.RegionBase):
         # Connect signals
         self.start_line_edit.valueChanged.connect(self.update_step_size)
         self.stop_line_edit.valueChanged.connect(self.update_step_size)
+        self.start_line_edit.valueChanged.connect(self.update_total_time)
+        self.stop_line_edit.valueChanged.connect(self.update_total_time)
+        self.step_line_edit.valueChanged.connect(self.update_total_time)
 
     async def update_devices(self, registry):
         await self.motor_box.update_devices(registry)
@@ -99,6 +102,11 @@ class LineScanDisplay(regions_display.RegionsDisplay):
             "e.g. commissioning, alignment…"
         )
         self.ui.comboBox_purpose.setCurrentText("")
+
+    def reset_default_regions(self):
+        super().reset_default_regions()
+        # Reset scan repeat num to 1
+        self.ui.spinBox_repeat_scan_num.setValue(1)
 
     def queue_plan(self, *args, **kwargs):
         """Execute this plan on the queueserver."""

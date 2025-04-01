@@ -52,6 +52,11 @@ class GridScanRegion(regions_display.RegionBase):
         self.start_line_edit.textChanged.connect(self.update_step_size)
         self.stop_line_edit.textChanged.connect(self.update_step_size)
         self.scan_pts_spin_box.valueChanged.connect(self.update_step_size)
+        self.start_line_edit.valueChanged.connect(self.update_total_time)
+        self.stop_line_edit.valueChanged.connect(self.update_total_time)
+        self.step_line_edit.valueChanged.connect(self.update_total_time)
+        self.scan_pts_spin_box.valueChanged.connect(self.update_total_time)
+        
         # Add all widgets to the layout
         self.widgets = [self.motor_label, self.motor_box, self.start_line_edit, self.stop_line_edit, self.scan_pts_spin_box, self.step_line_edit, self.snake_checkbox, self.fly_checkbox]
         for column, widget in enumerate(self.widgets):
@@ -102,6 +107,11 @@ class GridScanDisplay(regions_display.RegionsDisplay):
             "e.g. commissioning, alignment…"
         )
         self.ui.comboBox_purpose.setCurrentText("")
+
+    def reset_default_regions(self):
+        super().reset_default_regions()
+        # Reset scan repeat num to 1
+        self.ui.spinBox_repeat_scan_num.setValue(1)
 
     def time_per_scan(self, detector_time):
         total_num_pnts = np.prod(

@@ -13,17 +13,18 @@ log = logging.getLogger()
 class MotorRegion(regions_display.RegionBase):
 
     def setup_ui(self):
-        self.layout = QtWidgets.QHBoxLayout()
-
-        # First item, ComponentSelector
+        # ComponentSelector
         self.motor_box = ComponentSelector()
-        self.layout.addWidget(self.motor_box)
 
-        # Second item, position point
-        self.position_line_edit = QtWidgets.QLineEdit()
-        self.position_line_edit.setValidator(QDoubleValidator())  # only takes floats
-        self.position_line_edit.setPlaceholderText("Position…")
-        self.layout.addWidget(self.position_line_edit)
+        # Set point
+        self.position_line_edit = QtWidgets.QDoubleSpinBox()
+
+        self.widgets = [self.motor_box, self.position_line_edit]
+        for column, widget in enumerate(self.widgets):
+            self.layout.addWidget(self.position_line_edit, self.row, column)
+
+    async def update_devices(self, registry):
+        await self.motor_box.update_devices(registry)
 
 
 class MoveMotorDisplay(regions_display.RegionsDisplay):
@@ -52,7 +53,7 @@ class MoveMotorDisplay(regions_display.RegionsDisplay):
         else:
             scan_type = "mv"
 
-        # # Build the queue item
+        # Build the queue item
         item = BPlan(
             scan_type,
             *motor_args,
