@@ -1,6 +1,7 @@
 import asyncio
 import inspect
 import numbers
+import logging
 from functools import partial
 from typing import Callable, Mapping, Optional, Sequence, Type
 
@@ -22,6 +23,9 @@ from ophyd_async.core import (
 )
 from ophyd_async.core._signal import _wait_for
 from ophyd_async.epics.core._signal import _epics_signal_backend
+
+
+log = logging.getLogger(__name__)
 
 
 class DerivedSignalBackend(SoftSignalBackend):
@@ -166,6 +170,7 @@ class DerivedSignalBackend(SoftSignalBackend):
         Stashes them for later recall.
 
         """
+        log.debug(f"Reveived updating reading for {signal}: {reading}")
         # Stash this reading
         self._cached_readings.update({signal: reading[signal.name]})
         # Update interested parties if we have a full set of readings

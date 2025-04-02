@@ -327,7 +327,12 @@ class Analyzer(StandardReadable):
             mock=mock, timeout=timeout, force_reconnect=force_reconnect
         )
         # Stash units for later. Assumes they won't change
-        devices = [self.horizontal]
+        devices = [self.horizontal, self.horizontal.user_readback, self.horizontal.user_setpoint,
+                   self.vertical, self.vertical.user_readback, self.vertical.user_setpoint,
+                   self.crystal_yaw, self.crystal_yaw.user_readback, self.crystal_yaw.user_setpoint,
+                   self.lattice_constant, self.rowland_diameter,
+                   self.wedge_angle, self.asymmetry_angle, self.d_spacing,
+                   self.energy, self.bragg_offset]
         aws = [device_units(device) for device in devices]
         units = await asyncio.gather(*aws)
         self.units = {device: unit for device, unit in zip(devices, units)}
@@ -420,19 +425,29 @@ class EnergyPositioner(Positioner):
     def inverse(self, values, D, d, beta, alpha, x, y):
         """Run an inverse (real -> pseudo) calculation"""
         # Resolve signals into their quantities (with units)
-        units = self.parent.units
-        x = values[x] * units[x]
-        y = values[y] * units[y]
-        D = values[D] * units[D]
-        d = values[d] * units[d]
-        beta = values[beta] * units[beta]
-        alpha = values[alpha] * units[alpha]
+        log.debug(f"Inverse: {values=}")
+        try:
+            units = self.parent.units
+            x = values[x] * units[x]
+            y = values[y] * units[y]
+            D = values[D] * units[D]
+            d = values[d] * units[d]
+            beta = values[beta] * units[beta]
+            alpha = values[alpha] * units[alpha]
+        except (AttributeError, KeyError) as exc:
+            log.info(exc)
+            return
+        log.info(f"Inverse: {x=}, {y=}, {D=}, {d=}, {beta=}, {alpha=}")
         # Step 1: Convert motor positions to geometry parameters
         theta_M = np.arctan2((x + y * np.sin(beta)), (y * np.cos(beta)))
+        log.info(f"Inverse: {theta_M=}")
         rho = y * np.cos(beta) / np.cos(theta_M)
+        log.info(f"Inverse: {rho=}")
         # Step 1: Convert geometry params to energy
         bragg = theta_M - alpha
+        log.info(f"Inverse: {bragg=}")
         energy = bragg_to_energy(bragg, d=d)
+        log.info(f"Inverse: {energy=}")
         energy_unit = getattr(ureg, self.energy_unit)
         return energy.to(energy_unit).magnitude
 
