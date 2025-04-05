@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>865</width>
-    <height>400</height>
+    <width>774</width>
+    <height>398</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -459,8 +459,11 @@
      <item>
       <layout class="QVBoxLayout" name="verticalLayout">
        <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_2">
-         <item>
+        <layout class="QFormLayout" name="formLayout_3">
+         <property name="labelAlignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+         <item row="0" column="0">
           <widget class="QLabel" name="label_11">
            <property name="toolTip">
             <string>Do this scan by multiple times</string>
@@ -470,7 +473,7 @@
            </property>
           </widget>
          </item>
-         <item>
+         <item row="0" column="1">
           <widget class="QSpinBox" name="spinBox_repeat_scan_num">
            <property name="toolTip">
             <string>Do this scan by multiple times</string>
@@ -483,147 +486,43 @@
            </property>
           </widget>
          </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QGridLayout" name="gridLayout_3">
-         <item row="0" column="0">
+         <item row="1" column="0">
           <widget class="QLabel" name="label_10">
            <property name="toolTip">
             <string>total exposure time for a single scan</string>
            </property>
            <property name="text">
-            <string>Exposure time each scan</string>
+            <string>Time per scan:</string>
            </property>
           </widget>
          </item>
-         <item row="0" column="2">
-          <widget class="QLabel" name="label_16">
-           <property name="text">
-            <string>h</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignCenter</set>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="0">
+         <item row="2" column="0">
           <widget class="QLabel" name="label_12">
            <property name="toolTip">
             <string>total exposure time for a single scan</string>
            </property>
            <property name="text">
-            <string>Total exposure time</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="1">
-          <widget class="QLabel" name="label_hour_scan">
-           <property name="text">
-            <string>0</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignCenter</set>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="4">
-          <widget class="QLabel" name="label_17">
-           <property name="text">
-            <string>min</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignCenter</set>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="5">
-          <widget class="QLabel" name="label_sec_scan">
-           <property name="text">
-            <string>0</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignCenter</set>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="3">
-          <widget class="QLabel" name="label_min_scan">
-           <property name="text">
-            <string>0</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignCenter</set>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="6">
-          <widget class="QLabel" name="label_18">
-           <property name="text">
-            <string>s</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignCenter</set>
+            <string>Total time:</string>
            </property>
           </widget>
          </item>
          <item row="1" column="1">
-          <widget class="QLabel" name="label_hour_total">
+          <widget class="DurationLabel" name="scan_duration_label">
            <property name="text">
-            <string>0</string>
+            <string>N/A</string>
            </property>
            <property name="alignment">
-            <set>Qt::AlignCenter</set>
+            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
            </property>
           </widget>
          </item>
-         <item row="1" column="2">
-          <widget class="QLabel" name="label_13">
+         <item row="2" column="1">
+          <widget class="DurationLabel" name="total_duration_label">
            <property name="text">
-            <string>h</string>
+            <string>N/A</string>
            </property>
            <property name="alignment">
-            <set>Qt::AlignCenter</set>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="3">
-          <widget class="QLabel" name="label_min_total">
-           <property name="text">
-            <string>0</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignCenter</set>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="4">
-          <widget class="QLabel" name="label_14">
-           <property name="text">
-            <string>min</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignCenter</set>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="5">
-          <widget class="QLabel" name="label_sec_total">
-           <property name="text">
-            <string>0</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignCenter</set>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="6">
-          <widget class="QLabel" name="label_15">
-           <property name="text">
-            <string>s</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignCenter</set>
+            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
            </property>
           </widget>
          </item>
@@ -683,6 +582,11 @@
    <extends>QListWidget</extends>
    <header>firefly.detector_list</header>
   </customwidget>
+  <customwidget>
+   <class>DurationLabel</class>
+   <extends>QLabel</extends>
+   <header>firefly.plans.duration_label</header>
+  </customwidget>
  </customwidgets>
  <tabstops>
   <tabstop>num_regions_spin_box</tabstop>
@@ -695,7 +599,6 @@
   <tabstop>lineEdit_scan</tabstop>
   <tabstop>comboBox_purpose</tabstop>
   <tabstop>textEdit_notes</tabstop>
-  <tabstop>spinBox_repeat_scan_num</tabstop>
   <tabstop>run_button</tabstop>
   <tabstop>scrollArea_2</tabstop>
  </tabstops>

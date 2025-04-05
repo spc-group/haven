@@ -2,7 +2,6 @@ import logging
 
 from bluesky_queueserver_api import BPlan
 from qtpy import QtWidgets
-from qtpy.QtGui import QDoubleValidator
 
 from firefly.component_selector import ComponentSelector
 from firefly.plans import regions_display
@@ -18,6 +17,8 @@ class MotorRegion(regions_display.RegionBase):
 
         # Set point
         self.position_line_edit = QtWidgets.QDoubleSpinBox()
+        self.position_line_edit.setMaximum(float("inf"))
+        self.position_line_edit.setMinimum(float("-inf"))
 
         self.widgets = [self.motor_box, self.position_line_edit]
         for column, widget in enumerate(self.widgets):

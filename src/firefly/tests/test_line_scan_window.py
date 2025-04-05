@@ -56,17 +56,12 @@ async def test_time_calculator(display, sim_registry, ion_chamber, qtbot, qapp):
     detectors["vortex_me4"].default_time_signal.set(0.5).wait(2)
 
     # Trigger an update of the time calculator
+    display.detectors_list.acquire_times = mock.AsyncMock(return_value=[1.0])
     await display.update_total_time()
 
-    # Check whether time is calculated correctly for a single scan
-    assert display.ui.label_hour_scan.text() == "0"
-    assert display.ui.label_min_scan.text() == "10"
-    assert display.ui.label_sec_scan.text() == "25.5"
-
-    # Check whether time is calculated correctly including the repeated scan
-    assert display.ui.label_hour_total.text() == "1"
-    assert display.ui.label_min_total.text() == "2"
-    assert display.ui.label_sec_total.text() == "33.0"
+    # Check whether time is calculated correctly for the scans
+    assert display.ui.scan_duration_label.text() == "0 h 16 m 40 s"
+    assert display.ui.total_duration_label.text() == "1 h 40 m 0 s"
 
 
 async def test_regions_in_layout(display):

@@ -1,3 +1,5 @@
+import asyncio
+
 from PyQt5.QtGui import QStandardItem, QStandardItemModel
 from qtpy.QtWidgets import QAbstractItemView, QListView
 
@@ -28,6 +30,16 @@ class DetectorListView(QListView):
         items = [self.detector_model.itemFromIndex(i) for i in indexes]
         names = [item.text() for item in items]
         return names
+
+    async def acquire_times(self):
+        devices = self.selected_detectors()
+        devices = [
+            device for device in devices if hasattr(device, "default_time_signal")
+        ]
+        print(devices)
+        aws = [device.default_time_signal.get_value() for device in devices]
+        times = await asyncio.gather(*aws)
+        return times
 
 
 # -----------------------------------------------------------------------------

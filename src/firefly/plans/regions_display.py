@@ -3,11 +3,11 @@ import logging
 from typing import Sequence
 
 from qasync import asyncSlot
-from qtpy.QtCore import Signal, QObject
 from qtpy import QtWidgets
+from qtpy.QtCore import QObject, Signal
 
 from firefly import display
-from firefly.plans.util import is_valid_value, time_converter
+from firefly.plans.util import is_valid_value
 from haven import sanitize_name
 
 log = logging.getLogger()
@@ -15,7 +15,8 @@ log = logging.getLogger()
 
 class RegionBase(QObject):
     widgets: Sequence[QtWidgets.QWidget]
-    
+    num_points_changed = Signal(int)
+
     def __init__(self, parent_layout: QtWidgets.QGridLayout, row: int):
         super().__init__()
         self.layout = parent_layout
@@ -49,48 +50,30 @@ class PlanDisplay(display.FireflyDisplay):
             return await time_signal.get_value()
         return time_signal.get()
 
-    @asyncSlot()
-    async def update_total_time(self):
-        """Update the total scan time and display it."""
-        # Get default detector time
-        detectors = self.ui.detectors_list.selected_detectors()
-        detectors = [self.registry[name] for name in detectors]
-        detectors = [det for det in detectors if hasattr(det, "default_time_signal")]
+    def update_total_time(self):
+        raise NotImplementedError
 
-        if len(detectors) == 0:
-            detector_time = float("nan")
-        else:
-            detector_time = max(
-                await asyncio.gather(*[self._get_time(det) for det in detectors])
-            )
-        # Calculate time per scan
-        total_time_per_scan = self.time_per_scan(detector_time)
-        total_time_per_scan, total_time = self.set_time_label(total_time_per_scan)
+    def scan_durations(self, detector_time: float) -> tuple[float, float]:
+        """Calculate the time needed for a single scan, and all scans.
 
-        # enmit signals
-        self.scan_time_changed.emit(total_time_per_scan)
-        self.total_time_changed.emit(total_time)
+        Placeholder for time calculation logic. Should be implemented
+        in subclasses.
 
-    def set_time_label(self, total_time_per_scan):
-        # Time label for one scan
-        hrs, mins, secs = time_converter(total_time_per_scan)
-        self.ui.label_hour_scan.setText(str(hrs))
-        self.ui.label_min_scan.setText(str(mins))
-        self.ui.label_sec_scan.setText(str(secs))
 
-        # Calculate total time for the entire plan
-        num_scan_repeat = self.ui.spinBox_repeat_scan_num.value()
-        total_time = num_scan_repeat * total_time_per_scan
-        # Time label for all repeated scans
-        hrs_total, mins_total, secs_total = time_converter(total_time)
-        self.ui.label_hour_total.setText(str(hrs_total))
-        self.ui.label_min_total.setText(str(mins_total))
-        self.ui.label_sec_total.setText(str(secs_total))
+        Parameters
+        ==========
+        detector_time
+          The time, in seconds, needed at each point for the
+          detectors.
 
-        return total_time_per_scan, total_time
+        Returns
+        =======
+        time_per_scan
+          The time, in seconds, for each individual scan.
+        total_time
+          The time, in seconds, for all repeats of a scan.
 
-    def time_per_scan(self, detector_time):
-        """Placeholder for time calculation logic. Must be implemented in subclasses."""
+        """
         raise NotImplementedError
 
     def get_scan_parameters(self):
@@ -136,6 +119,7 @@ class RegionsDisplay(PlanDisplay, display.FireflyDisplay):
 
     default_num_regions = 1
     Region = RegionBase
+    regions: list[RegionBase]
 
     def customize_ui(self):
         super().customize_ui()
@@ -188,6 +172,7 @@ class RegionsDisplay(PlanDisplay, display.FireflyDisplay):
         """Add a single row to the regions layout."""
         row = len(self.regions) + 1  # Include the header
         region = self.Region(self.ui.regions_layout, row=row)
+        region.num_points_changed.connect(self.update_total_time)
         self.regions.append(region)
         return region
 
@@ -195,16 +180,6 @@ class RegionsDisplay(PlanDisplay, display.FireflyDisplay):
         region = self.regions.pop()
         region.remove()
         return region
-
-    # def remove_regions(self, num=1):
-    #     for i in range(num):
-    #         layout = self.regions[-1].layout
-    #         # iterate/wait, and delete all widgets in the layout in the end
-    #         while layout.count() > 0:
-    #             item = layout.takeAt(0)
-    #             if item.widget():
-    #                 item.widget().deleteLater()
-    #         self.regions.pop()
 
     @asyncSlot(int)
     async def update_regions_slot(self, new_region_num):
@@ -220,9 +195,10 @@ class RegionsDisplay(PlanDisplay, display.FireflyDisplay):
         new_regions = [self.add_region() for i in range(old_region_num, new_region_num)]
         for i in range(new_region_num, old_region_num):
             self.remove_region()
-        self.update_total_time()
         # Make sure new regions have device info
-        await asyncio.gather(*[region.update_devices(self.registry) for region in new_regions])
+        await asyncio.gather(
+            *[region.update_devices(self.registry) for region in new_regions]
+        )
         return new_regions
 
     def get_scan_parameters(self):
@@ -243,3 +219,29 @@ class RegionsDisplay(PlanDisplay, display.FireflyDisplay):
         ]
 
         return detectors, motor_args, repeat_scan_num
+
+
+# -----------------------------------------------------------------------------
+# :author:    Juanjuan Huang, Mark Wolfman
+# :email:     juanjuan.huang@anl.gov, wolfman@anl.gov
+# :copyright: Copyright © 2024, UChicago Argonne, LLC
+#
+# Distributed under the terms of the 3-Clause BSD License
+#
+# The full license is in the file LICENSE, distributed with this software.
+#
+# DISCLAIMER
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+# HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# -----------------------------------------------------------------------------

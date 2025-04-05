@@ -27,7 +27,7 @@
           </sizepolicy>
          </property>
          <property name="text">
-          <string>Num. Motors</string>
+          <string>Num. Devices</string>
          </property>
         </widget>
        </item>

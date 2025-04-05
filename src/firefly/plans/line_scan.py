@@ -1,10 +1,8 @@
-import asyncio
 import logging
 
 from bluesky_queueserver_api import BPlan
 from qasync import asyncSlot
 from qtpy import QtWidgets
-from qtpy.QtGui import QDoubleValidator
 
 from firefly.component_selector import ComponentSelector
 from firefly.plans import regions_display
@@ -14,7 +12,7 @@ log = logging.getLogger()
 
 class LineScanRegion(regions_display.RegionBase):
     num_points: int = 2
-    
+
     def setup_ui(self):
         # Component selector
         self.motor_box = ComponentSelector()
@@ -22,21 +20,21 @@ class LineScanRegion(regions_display.RegionBase):
         # start point
         self.start_line_edit = QtWidgets.QDoubleSpinBox()
         self.start_line_edit.lineEdit().setPlaceholderText("Start…")
-        self.start_line_edit.setMinimum(float('-inf'))
-        self.start_line_edit.setMaximum(float('inf'))
+        self.start_line_edit.setMinimum(float("-inf"))
+        self.start_line_edit.setMaximum(float("inf"))
 
         # Stop point
         self.stop_line_edit = QtWidgets.QDoubleSpinBox()
         self.stop_line_edit.lineEdit().setPlaceholderText("Stop…")
-        self.stop_line_edit.setMinimum(float('-inf'))
-        self.stop_line_edit.setMaximum(float('inf'))
+        self.stop_line_edit.setMinimum(float("-inf"))
+        self.stop_line_edit.setMaximum(float("inf"))
 
         # Step size (non-editable)
         self.step_line_edit = QtWidgets.QDoubleSpinBox()
         self.step_line_edit.setReadOnly(True)
         self.step_line_edit.setDisabled(True)
-        self.step_line_edit.setMinimum(float('-inf'))
-        self.step_line_edit.setMaximum(float('inf'))
+        self.step_line_edit.setMinimum(float("-inf"))
+        self.step_line_edit.setMaximum(float("inf"))
         self.step_line_edit.setDecimals(4)
         self.step_line_edit.lineEdit().setPlaceholderText("Step Size…")
 
@@ -48,9 +46,6 @@ class LineScanRegion(regions_display.RegionBase):
         # Connect signals
         self.start_line_edit.valueChanged.connect(self.update_step_size)
         self.stop_line_edit.valueChanged.connect(self.update_step_size)
-        self.start_line_edit.valueChanged.connect(self.update_total_time)
-        self.stop_line_edit.valueChanged.connect(self.update_total_time)
-        self.step_line_edit.valueChanged.connect(self.update_total_time)
 
     async def update_devices(self, registry):
         await self.motor_box.update_devices(registry)
@@ -67,7 +62,7 @@ class LineScanRegion(regions_display.RegionBase):
         try:
             step_size = (stop - start) / (self.num_points - 1)
         except (ValueError, ZeroDivisionError):
-            self.step_line_edit.setValue(float('nan'))
+            self.step_line_edit.setValue(float("nan"))
         else:
             self.step_line_edit.setValue(step_size)
 
@@ -80,11 +75,6 @@ class LineScanDisplay(regions_display.RegionsDisplay):
         await self.update_devices(registry)
         await self.detectors_list.update_devices(registry)
 
-    def time_per_scan(self, detector_time):
-        num_points = self.ui.scan_pts_spin_box.value()
-        total_time_per_scan = detector_time * num_points
-        return total_time_per_scan
-
     def customize_ui(self):
         super().customize_ui()
 
@@ -93,15 +83,33 @@ class LineScanDisplay(regions_display.RegionsDisplay):
         self.ui.detectors_list.selectionModel().selectionChanged.connect(
             self.update_total_time
         )
-
         for region in self.regions:
             self.ui.scan_pts_spin_box.valueChanged.connect(region.set_num_points)
         self.ui.spinBox_repeat_scan_num.valueChanged.connect(self.update_total_time)
+        self.scan_time_changed.connect(self.scan_duration_label.set_seconds)
+        self.total_time_changed.connect(self.total_duration_label.set_seconds)
         # Default metadata values
         self.ui.comboBox_purpose.lineEdit().setPlaceholderText(
             "e.g. commissioning, alignment…"
         )
         self.ui.comboBox_purpose.setCurrentText("")
+
+    def scan_durations(self, detector_time):
+        num_points = self.ui.scan_pts_spin_box.value()
+        time_per_scan = detector_time * num_points
+        num_scan_repeat = self.ui.spinBox_repeat_scan_num.value()
+        total_time = num_scan_repeat * time_per_scan
+        return time_per_scan, total_time
+
+    @asyncSlot()
+    async def update_total_time(self):
+        """Update the total scan time and display it."""
+        acquire_times = await self.detectors_list.acquire_times()
+        detector_time = max([*acquire_times, float("nan")])
+        # Calculate time per scan
+        time_per_scan, total_time = self.scan_durations(detector_time)
+        self.scan_time_changed.emit(time_per_scan)
+        self.total_time_changed.emit(total_time)
 
     def reset_default_regions(self):
         super().reset_default_regions()

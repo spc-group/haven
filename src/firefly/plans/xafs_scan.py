@@ -5,7 +5,6 @@ from enum import IntEnum
 import xraydb
 from bluesky_queueserver_api import BPlan
 from qtpy import QtWidgets
-from qtpy.QtCore import QObject
 from qtpy.QtWidgets import QSizePolicy
 from xraydb.xraydb import XrayDB
 
@@ -195,6 +194,8 @@ class XafsScanRegion(regions_display.RegionBase):
 
 
 class XafsScanDisplay(regions_display.RegionsDisplay):
+    Region = XafsScanRegion
+    default_num_regions = 3
     min_energy = 4000
     max_energy = 33000
 
@@ -217,15 +218,19 @@ class XafsScanDisplay(regions_display.RegionsDisplay):
             combo_box.addItem(text, userData=edge)
         combo_box.setCurrentText("")
 
+        # Connect signals for total time updates
+        self.scan_time_changed.connect(self.scan_duration_label.set_seconds)
+        self.total_time_changed.connect(self.total_duration_label.set_seconds)
+
         # Connect the E0 checkbox to the E0 combobox
         self.ui.use_edge_checkbox.stateChanged.connect(self.use_edge)
 
         # disable the line edits in spin box
-        self.ui.regions_spin_box.lineEdit().setReadOnly(True)
+        self.ui.num_regions_spin_box.lineEdit().setReadOnly(True)
 
         # when regions number changed
-        self.ui.regions_spin_box.valueChanged.connect(self.update_regions)
-        self.ui.regions_spin_box.editingFinished.connect(self.update_regions)
+        self.ui.num_regions_spin_box.valueChanged.connect(self.update_regions)
+        self.ui.num_regions_spin_box.editingFinished.connect(self.update_regions)
 
         # reset button
         self.ui.reset_button.clicked.connect(self.reset_default_regions)
@@ -280,18 +285,19 @@ class XafsScanDisplay(regions_display.RegionsDisplay):
 
     def add_region(self):
         region = super().add_region()
+        print(region)
         # Connect some extra signals
         for signal in [
-                region.region_checkbox.stateChanged,
-                region.weight_spinbox.valueChanged,
-                region.exposure_time_spinbox.valueChanged,
-                region.k_space_checkbox.stateChanged,
+            region.region_checkbox.stateChanged,
+            region.weight_spinbox.valueChanged,
+            region.exposure_time_spinbox.valueChanged,
+            region.k_space_checkbox.stateChanged,
         ]:
             signal.connect(self.update_total_time)
         return signal
 
     def update_regions(self):
-        new_region_num = self.ui.regions_spin_box.value()
+        new_region_num = self.ui.num_regions_spin_box.value()
         old_region_num = len(self.regions)
 
         for i in range(old_region_num, new_region_num):
@@ -308,15 +314,15 @@ class XafsScanDisplay(regions_display.RegionsDisplay):
             for region in self.regions
             if region.region_checkbox.isChecked()
         ]
-
-        # Keep end points from being smaller than start points
         try:
             _, exposures = merge_ranges(*energy_ranges, sort=True)
-            total_time_per_scan = exposures.sum()
+            time_per_scan = exposures.sum()
         except (ValueError, ZeroDivisionError, OverflowError):
-            total_time_per_scan = float("nan")
-
-        self.set_time_label(total_time_per_scan)
+            time_per_scan = float("nan")
+        repetitions = self.ui.spinBox_repeat_scan_num.value()
+        total_time = time_per_scan * repetitions
+        self.scan_time_changed.emit(time_per_scan)
+        self.total_time_changed.emit(total_time)
 
     def on_is_standard(self, is_checked):
         # if is_standard checked, warn that the data will be used for public
@@ -355,11 +361,9 @@ class XafsScanDisplay(regions_display.RegionsDisplay):
         except ValueError:
             return None
 
-    def queue_plan(self, *args, **kwargs):
-        """Execute this plan on the queueserver."""
-        # Get parameters from each rows of line regions:
-        energy_ranges_all = []
-
+    def plan_args(self) -> tuple[list, dict]:
+        """Build the arguments that will be used when building a plan object."""
+        detectors = self.ui.detectors_list.selected_detectors()
         # Iterate through only selected regions
         checked_regions = [
             region_i
@@ -367,34 +371,32 @@ class XafsScanDisplay(regions_display.RegionsDisplay):
             if region_i.region_checkbox.isChecked()
         ]
         energy_ranges = [region.energy_range.astuple() for region in checked_regions]
-        # Set up other plan arguments
+        # Edge position
+        E0 = self.edge_name if self.edge_name is not None else self.E0
+        # Additional metadata
         md = self.get_meta_data()
         md["is_standard"] = self.ui.checkBox_is_standard.isChecked()
-        detectors, repeat_scan_num = self.get_scan_parameters()
-        # Check that an absorption edge was selected
+        args = [detectors, *energy_ranges]
+        kwargs = {
+            "md": md,
+        }
         if self.use_edge_checkbox.isChecked():
-            edge = self.edge_name
-            E0 = self.E0
-            if edge is not None:
-                E0_arg = edge
-            elif E0 is not None:
-                E0_arg = E0
-            else:
-                QtWidgets.QMessageBox.warning(
-                    self, "Error", "Please select an absorption edge."
-                )
-                return None
-        # Build the queue item
-        item = BPlan(
-            "xafs_scan",
-            detectors,
-            *energy_ranges,
-            E0=E0_arg,
-            md=md,
-        )
+            kwargs["E0"] = E0
+        return args, kwargs
+
+    def queue_plan(self, *args, **kwargs):
+        """Execute this plan on the queueserver."""
+        args, kwargs = self.plan_args()
+        repeat_scan_num = int(self.ui.spinBox_repeat_scan_num.value())
+        # Check that an absorption edge was selected
+        if "E0" in kwargs and kwargs["E0"] is None:
+            QtWidgets.QMessageBox.warning(
+                self, "Error", "Please select an absorption edge."
+            )
+            return
         # Submit the item to the queueserver
+        item = BPlan("xafs_scan", *args, **kwargs)
         log.info("Adding XAFS scan to queue.")
-        # Repeat scans
         for i in range(repeat_scan_num):
             self.queue_item_submitted.emit(item)
 

@@ -1,33 +1,24 @@
-def is_valid_value(value) -> bool:
-    """Check if the value is considered valid for inclusion in metadata.
+import math
 
-    Valid values are non-None, and if they are str/list/tuple/dict,
-    they should have a positive length.
+from qtpy import QtWidgets
 
-    Parameters
-    ==========
-      value
-    The value to check.
 
-    Returns
-    =======
-    is_valid
-      True if the value is valid, False otherwise.
+class DurationLabel(QtWidgets.QLabel):
+    """A label that shows individual hours, minutes, seconds, etc."""
 
-    """
-    # Check if the value is None
-    if value is None:
-        return False
-    # Check if the value is a collection with length
-    if isinstance(value, (str, list, tuple, dict)):
-        return len(value) > 0
-    # All other non-None values are considered valid
-    return True
+    def set_seconds(self, seconds: float):
+        if math.isnan(seconds):
+            text = "– h – m – s"
+        else:
+            hours, more_seconds = divmod(seconds, 3600)
+            minutes, more_seconds = divmod(more_seconds, 60)
+            text = f"{int(hours)} h {int(minutes)} m {int(more_seconds)} s"
+        self.setText(text)
 
 
 # -----------------------------------------------------------------------------
-# :author:    Juanjuan Huang
-# :email:     juanjuan.huang@anl.gov
+# :author:    Juanjuan Huang, Mark Wolfman
+# :email:     juanjuan.huang@anl.gov, wolfman@anl.gov
 # :copyright: Copyright © 2024, UChicago Argonne, LLC
 #
 # Distributed under the terms of the 3-Clause BSD License

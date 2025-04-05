@@ -30,17 +30,44 @@ def region(qtbot):
 def test_region_number(display):
     """Does changing the region number affect the UI?"""
     # Check that the display has the right number of rows to start with
-    assert display.ui.regions_spin_box.value() == 3
+    assert display.ui.num_regions_spin_box.value() == 3
     assert hasattr(display, "regions")
     assert len(display.regions) == 3
 
     # Check that regions can be inserted
-    display.ui.regions_spin_box.setValue(5)
+    display.ui.num_regions_spin_box.setValue(5)
     assert len(display.regions) == 5
 
     # Check that regions can be removed
-    display.ui.regions_spin_box.setValue(1)
+    display.ui.num_regions_spin_box.setValue(1)
     assert len(display.regions) == 1
+
+
+def test_time_calculator(display):
+    display.ui.num_regions_spin_box.setValue(2)
+    display.edge_combo_box.setCurrentIndex(1)
+    # Set up the first region
+    display.regions[0].start_line_edit.setValue(-20)
+    display.regions[0].stop_line_edit.setValue(40)
+    display.regions[0].step_line_edit.setValue(10)
+    # Set up the second region
+    display.regions[1].start_line_edit.setValue(50)
+    display.regions[1].stop_line_edit.setValue(800)
+    # Convert to k space
+    display.regions[1].k_space_checkbox.setChecked(True)
+    display.regions[1].step_line_edit.setValue(5)
+    display.regions[1].weight_spinbox.setValue(2)
+    # Set up detector list
+    display.ui.detectors_list.selected_detectors = mock.MagicMock(
+        return_value=["vortex_me4", "I0"]
+    )
+    display.update_total_time()
+    # Set repeat scan num to 2
+    display.ui.spinBox_repeat_scan_num.setValue(3)
+    # Check whether time is calculated correctly for a single scan
+    assert display.ui.scan_duration_label.text() == "0 h 0 m 27 s"
+    # Check whether time is calculated correctly including the repeated scan
+    assert display.ui.total_duration_label.text() == "0 h 1 m 23 s"
 
 
 def test_E0_checkbox(display):
@@ -86,52 +113,8 @@ def test_E0_checkbox(display):
     )
 
 
-def test_xafs_scan_plan_queued_energies(display, qtbot):
-    display.edge_combo_box.setCurrentIndex(1)
-    display.regions[-1].region_checkbox.setChecked(False)
-    # Set up detector list
-    display.ui.detectors_list.selected_detectors = mock.MagicMock(
-        return_value=["vortex_me4", "I0"]
-    )
-    # set up meta data
-    display.ui.lineEdit_sample.setText("sam")
-    display.ui.checkBox_is_standard.setChecked(True)
-    display.ui.comboBox_purpose.setCurrentText("test")
-    display.ui.textEdit_notes.setText("sam_notes")
-
-    def check_item(item):
-        kwargs = item.to_dict()["kwargs"]
-        detectors, *energy_ranges = item.to_dict()["args"]
-        try:
-            assert detectors == ["vortex_me4", "I0"]
-            # Check energies ranges
-            assert energy_ranges == [
-                ("E", -200.0, -50.0, 5.0, 1.0),
-                ("E", -50.0, 50.0, 0.5, 1.0),
-            ]
-            # Check if the remaining dictionary items are equal
-            assert kwargs["E0"] == "Sc-K"
-            assert kwargs["md"] == {
-                "sample_name": "sam",
-                "purpose": "test",
-                "is_standard": True,
-                "notes": "sam_notes",
-            }
-        except AssertionError as e:
-            # Print detailed debug info
-            print(str(e))
-            return False
-        return True
-
-    # Click the run button and see if the plan is queued
-    display.ui.run_button.setEnabled(True)
-    with qtbot.waitSignal(
-        display.queue_item_submitted, timeout=1000, check_params_cb=check_item
-    ):
-        qtbot.mouseClick(display.ui.run_button, QtCore.Qt.LeftButton)
-
-
-def test_xafs_scan_plan_queued_numeric_E0(display, qtbot):
+def test_queue_plan(display, qtbot):
+    """Does a plan actually get emitted when queued?"""
     display.edge_combo_box.setCurrentText("58893.0")
     display.regions[-1].region_checkbox.setChecked(False)
     # Set up detector list
@@ -176,8 +159,69 @@ def test_xafs_scan_plan_queued_numeric_E0(display, qtbot):
         qtbot.mouseClick(display.ui.run_button, QtCore.Qt.LeftButton)
 
 
-def test_xafs_scan_plan_queued_energies_k_mixed(qtbot, display):
-    display.ui.regions_spin_box.setValue(2)
+def test_plan_energies(display, qtbot):
+    display.edge_combo_box.setCurrentIndex(1)
+    display.regions[-1].region_checkbox.setChecked(False)
+    # Set up detector list
+    display.ui.detectors_list.selected_detectors = mock.MagicMock(
+        return_value=["vortex_me4", "I0"]
+    )
+    # set up meta data
+    display.ui.lineEdit_sample.setText("sam")
+    display.ui.checkBox_is_standard.setChecked(True)
+    display.ui.comboBox_purpose.setCurrentText("test")
+    display.ui.textEdit_notes.setText("sam_notes")
+
+    args, kwargs = display.plan_args()
+    detectors, *energy_ranges = args
+
+    assert detectors == ["vortex_me4", "I0"]
+    # Check energies ranges
+    assert energy_ranges == [
+        ("E", -200.0, -50.0, 5.0, 1.0),
+        ("E", -50.0, 50.0, 0.5, 1.0),
+    ]
+    assert kwargs["E0"] == "Sc-K"
+    assert kwargs["md"] == {
+        "sample_name": "sam",
+        "purpose": "test",
+        "is_standard": True,
+        "notes": "sam_notes",
+    }
+
+
+def test_xafs_scan_plan_queued_numeric_E0(display, qtbot):
+    display.edge_combo_box.setCurrentText("58893.0")
+    display.regions[-1].region_checkbox.setChecked(False)
+    # Set up detector list
+    display.ui.detectors_list.selected_detectors = mock.MagicMock(
+        return_value=["vortex_me4", "I0"]
+    )
+    # set up meta data
+    display.ui.lineEdit_sample.setText("sam")
+    display.ui.checkBox_is_standard.setChecked(True)
+    display.ui.comboBox_purpose.setCurrentText("test")
+    display.ui.textEdit_notes.setText("sam_notes")
+
+    # Check plan arguments
+    args, kwargs = display.plan_args()
+    detectors, *energy_ranges = args
+    assert detectors == ["vortex_me4", "I0"]
+    assert energy_ranges == [
+        ("E", -200.0, -50.0, 5.0, 1.0),
+        ("E", -50.0, 50.0, 0.5, 1.0),
+    ]
+    assert kwargs["E0"] == 58893.0
+    assert kwargs["md"] == {
+        "sample_name": "sam",
+        "purpose": "test",
+        "is_standard": True,
+        "notes": "sam_notes",
+    }
+
+
+def test_plan_energies_k_mixed(qtbot, display):
+    display.ui.num_regions_spin_box.setValue(2)
     display.edge_combo_box.setCurrentIndex(1)
     # Set up the first region
     display.regions[0].start_line_edit.setValue(-20)
@@ -200,41 +244,19 @@ def test_xafs_scan_plan_queued_energies_k_mixed(qtbot, display):
     display.ui.lineEdit_sample.setText("sam")
     display.ui.textEdit_notes.setText("sam_notes")
 
-    def check_item(item):
-        kwargs = item.to_dict()["kwargs"]
-        detectors, *energy_ranges = item.to_dict()["args"]
-        try:
-            assert detectors == ["vortex_me4", "I0"]
-            assert energy_ranges == [
-                ("E", -20.0, 40.0, 10, 1.0),
-                ("K", 3.6226, 14.4905, 5.0, 1.0, 2),
-            ]
-            # Check whether time is calculated correctly for a single scan
-            assert display.ui.label_hour_scan.text() == "0"
-            assert display.ui.label_min_scan.text() == "0"
-            assert display.ui.label_sec_scan.text() == "27.8"
-            # Check whether time is calculated correctly including the repeated scan
-            assert display.ui.label_hour_total.text() == "0"
-            assert display.ui.label_min_total.text() == "1"
-            assert display.ui.label_sec_total.text() == "23.4"
-            # Check if the remaining dictionary items are equal
-            assert kwargs["E0"] == "Sc-K"
-            assert kwargs["md"] == {
-                "sample_name": "sam",
-                "is_standard": False,
-                "notes": "sam_notes",
-            }
-        except AssertionError as e:
-            print(e)
-            return False
-        return True
-
-    # Click the run button and see if the plan is queued
-    display.ui.run_button.setEnabled(True)
-    with qtbot.waitSignal(
-        display.queue_item_submitted, timeout=1000, check_params_cb=check_item
-    ):
-        qtbot.mouseClick(display.ui.run_button, QtCore.Qt.LeftButton)
+    args, kwargs = display.plan_args()
+    detectors, *energy_ranges = args
+    assert detectors == ["vortex_me4", "I0"]
+    assert energy_ranges == [
+        ("E", -20.0, 40.0, 10, 1.0),
+        ("K", 3.6226, 14.4905, 5.0, 1.0, 2),
+    ]
+    assert kwargs["E0"] == "Sc-K"
+    assert kwargs["md"] == {
+        "sample_name": "sam",
+        "is_standard": False,
+        "notes": "sam_notes",
+    }
 
 
 def test_edge_name(display):
@@ -265,7 +287,6 @@ def test_E0(display):
 
 
 def test_region_domain(qtbot, region):
-
     assert region.start_line_edit.suffix() == " eV"
     assert region.stop_line_edit.suffix() == " eV"
     assert region.step_line_edit.suffix() == " eV"

@@ -1,10 +1,11 @@
 import logging
+import math
 
 import numpy as np
 from bluesky_queueserver_api import BPlan
 from qasync import asyncSlot
 from qtpy import QtWidgets
-from qtpy.QtGui import QDoubleValidator
+from qtpy.QtCore import Qt
 
 from firefly.component_selector import ComponentSelector
 from firefly.plans import regions_display
@@ -16,21 +17,18 @@ class GridScanRegion(regions_display.RegionBase):
 
     def setup_ui(self):
         # motor No.
-        self.motor_label = QtWidgets.QLCDNumber()
-        self.motor_label.setStyleSheet(
-            "QLCDNumber { background-color: white; color: red; }"
-        )
-        self.motor_label.display(str(self.row - 1))
+        self.motor_label = QtWidgets.QLabel()
+        self.motor_label.setText(str(self.row - 1))
         # ComponentSelector
         self.motor_box = ComponentSelector()
         # Start point
         self.start_line_edit = QtWidgets.QDoubleSpinBox()
-        self.start_line_edit.setMinimum(float('-inf'))
-        self.start_line_edit.setMaximum(float('inf'))
+        self.start_line_edit.setMinimum(float("-inf"))
+        self.start_line_edit.setMaximum(float("inf"))
         # Stop point
         self.stop_line_edit = QtWidgets.QDoubleSpinBox()
-        self.stop_line_edit.setMinimum(float('-inf'))
-        self.stop_line_edit.setMaximum(float('inf'))
+        self.stop_line_edit.setMinimum(float("-inf"))
+        self.stop_line_edit.setMaximum(float("inf"))
         # Number of scan points
         self.scan_pts_spin_box = QtWidgets.QSpinBox()
         self.scan_pts_spin_box.setMinimum(2)
@@ -52,16 +50,24 @@ class GridScanRegion(regions_display.RegionBase):
         self.start_line_edit.textChanged.connect(self.update_step_size)
         self.stop_line_edit.textChanged.connect(self.update_step_size)
         self.scan_pts_spin_box.valueChanged.connect(self.update_step_size)
-        self.start_line_edit.valueChanged.connect(self.update_total_time)
-        self.stop_line_edit.valueChanged.connect(self.update_total_time)
-        self.step_line_edit.valueChanged.connect(self.update_total_time)
-        self.scan_pts_spin_box.valueChanged.connect(self.update_total_time)
-        
+        self.scan_pts_spin_box.valueChanged.connect(self.num_points_changed)
+
         # Add all widgets to the layout
-        self.widgets = [self.motor_label, self.motor_box, self.start_line_edit, self.stop_line_edit, self.scan_pts_spin_box, self.step_line_edit, self.snake_checkbox, self.fly_checkbox]
+        self.widgets = [
+            self.motor_label,
+            self.motor_box,
+            self.start_line_edit,
+            self.stop_line_edit,
+            self.scan_pts_spin_box,
+            self.step_line_edit,
+            self.snake_checkbox,
+            self.fly_checkbox,
+        ]
         for column, widget in enumerate(self.widgets):
-            self.layout.addWidget(widget, self.row, column)
-                        
+            self.layout.addWidget(widget, self.row, column, alignment=Qt.AlignTop)
+
+        # Connect Qt signals/slots
+        self.scan_pts_spin_box.valueChanged.connect(self.num_points_changed)
 
     def update_step_size(self):
         try:
@@ -99,23 +105,42 @@ class GridScanDisplay(regions_display.RegionsDisplay):
         super().customize_ui()
         self.update_snakes()
         # Connect scan points change to update total time
-        for region in self.regions:
-            region.scan_pts_spin_box.valueChanged.connect(self.update_total_time)
         self.ui.spinBox_repeat_scan_num.valueChanged.connect(self.update_total_time)
+        self.scan_time_changed.connect(self.scan_duration_label.set_seconds)
+        self.total_time_changed.connect(self.total_duration_label.set_seconds)
         # Default metadata values
         self.ui.comboBox_purpose.lineEdit().setPlaceholderText(
             "e.g. commissioning, alignment…"
         )
         self.ui.comboBox_purpose.setCurrentText("")
 
+    def scan_durations(self, detector_time: float) -> tuple[float, float]:
+        num_points = math.prod(
+            [region.scan_pts_spin_box.value() for region in self.regions]
+        )
+        time_per_scan = detector_time * num_points
+        num_scan_repeat = self.ui.spinBox_repeat_scan_num.value()
+        total_time = num_scan_repeat * time_per_scan
+        return time_per_scan, total_time
+
+    @asyncSlot()
+    async def update_total_time(self):
+        """Update the total scan time and display it."""
+        acquire_times = await self.detectors_list.acquire_times()
+        detector_time = max([*acquire_times, float("nan")])
+        # Calculate time per scan
+        time_per_scan, total_time = self.scan_durations(detector_time)
+        self.scan_time_changed.emit(time_per_scan)
+        self.total_time_changed.emit(total_time)
+
     def reset_default_regions(self):
         super().reset_default_regions()
         # Reset scan repeat num to 1
         self.ui.spinBox_repeat_scan_num.setValue(1)
 
-    def time_per_scan(self, detector_time):
+    def time_per_scan(self, detector_time: float) -> float:
         total_num_pnts = np.prod(
-            [region_i.scan_pts_spin_box.value() for region_i in self.regions]
+            [region.scan_pts_spin_box.value() for region in self.regions]
         )
         total_time_per_scan = total_num_pnts * detector_time
         return total_time_per_scan

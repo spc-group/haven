@@ -18,9 +18,13 @@ class RobotMotorRegion(regions_display.RegionBase):
         self.layout.addWidget(self.motor_box)
 
         # Motor position for robot transferring samples
-        self.start_line_edit = QtWidgets.QLineEdit()
-        self.start_line_edit.setPlaceholderText("Position…")
+        self.start_line_edit = QtWidgets.QDoubleSpinBox()
+        self.start_line_edit.setMinimum(float("-inf"))
+        self.start_line_edit.setMaximum(float("inf"))
         self.layout.addWidget(self.start_line_edit)
+
+    async def update_devices(self, registry):
+        await self.motor_box.update_devices(registry)
 
 
 class RobotDisplay(regions_display.RegionsDisplay):
@@ -51,8 +55,6 @@ class RobotDisplay(regions_display.RegionsDisplay):
 
     def queue_plan(self, *args, **kwargs):
         """Execute this plan on the queueserver."""
-        # Get scan parameters from widgets
-        num_motor = self.ui.num_motor_spin_box.value()
 
         # Get the sample number from the sample_spin_box
         sam_num_str = self.ui.sample_combo_box.currentText()

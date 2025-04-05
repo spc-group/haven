@@ -39,12 +39,12 @@ def test_region_number(display):
 async def test_robot_queued(qtbot, sim_motor_registry, display):
     await display.update_devices(sim_motor_registry)
     display.ui.run_button.setEnabled(True)
-    display.ui.num_motor_spin_box.setValue(1)
+    display.ui.num_regions_spin_box.setValue(1)
     await display.update_regions(1)
 
     # set up a test motor
     display.regions[0].motor_box.combo_box.setCurrentText("motor1")
-    display.regions[0].start_line_edit.setText("100")
+    display.regions[0].start_line_edit.setValue(100)
 
     expected_item = BPlan("robot_transfer_sample", "robotA", 8, "motor1", 100)
 

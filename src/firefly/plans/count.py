@@ -1,6 +1,7 @@
 import logging
 
 from bluesky_queueserver_api import BPlan
+from qasync import asyncSlot
 
 from firefly.plans import regions_display
 
@@ -29,11 +30,21 @@ class CountDisplay(regions_display.PlanDisplay):
         )
         self.ui.comboBox_purpose.setCurrentText("")
 
-    def time_per_scan(self, detector_time):
+    def scan_durations(self, detector_time: float) -> tuple[float, float]:
         num_readings = self.ui.num_spinbox.value()
         delay = self.ui.delay_spinbox.value()
-        total_time_per_scan = detector_time * num_readings + delay * (num_readings - 1)
-        return total_time_per_scan
+        time_per_scan = detector_time * num_readings + delay * (num_readings - 1)
+        repetitions = self.ui.spinBox_repeat_scan_num.value()
+        total_time = time_per_scan * repetitions
+        return time_per_scan, total_time
+
+    @asyncSlot()
+    async def update_total_time(self):
+        acquire_times = await self.detectors_list.acquire_times()
+        detector_time = max([*acquire_times, float("nan")])
+        time_per_scan, total_time = self.scan_durations(detector_time)
+        self.ui.scan_duration_label.set_seconds(time_per_scan)
+        self.ui.total_duration_label.set_seconds(total_time)
 
     def queue_plan(self, *args, **kwargs):
         """Execute this plan on the queueserver."""
