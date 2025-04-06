@@ -64,7 +64,10 @@
         </widget>
        </item>
        <item>
-        <widget class="QCheckBox" name="relative_scan_checkbox">
+        <widget class="RelativeCheckbox" name="relative_scan_checkbox">
+         <property name="styleSheet">
+          <string notr="true"/>
+         </property>
          <property name="text">
           <string>Relative</string>
          </property>
@@ -121,8 +124,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>512</width>
-            <height>96</height>
+            <width>510</width>
+            <height>83</height>
            </rect>
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_4">
@@ -187,6 +190,11 @@
    <class>QueueButton</class>
    <extends>QPushButton</extends>
    <header>firefly.queue_button</header>
+  </customwidget>
+  <customwidget>
+   <class>RelativeCheckbox</class>
+   <extends>QCheckBox</extends>
+   <header>firefly.plans.relative_checkbox</header>
   </customwidget>
  </customwidgets>
  <resources/>

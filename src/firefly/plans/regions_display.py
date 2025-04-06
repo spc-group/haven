@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from dataclasses import dataclass
 from typing import Sequence
 
 from qasync import asyncSlot
@@ -11,6 +12,26 @@ from firefly.plans.util import is_valid_value
 from haven import sanitize_name
 
 log = logging.getLogger()
+
+
+units_mapping = {
+    "degrees": "°",
+    "micron": "µm",
+    "microns": "µm",
+    "um": "µm",
+    "radian": "rad",
+    "radians": "rad",
+}
+
+
+@dataclass(frozen=True)
+class DeviceParameters:
+    minimum: float
+    maximum: float
+    current_value: float
+    units: str
+    precision: int
+    is_numeric: bool
 
 
 class RegionBase(QObject):
@@ -128,23 +149,6 @@ class RegionsDisplay(PlanDisplay, display.FireflyDisplay):
         self.ui.num_regions_spin_box.lineEdit().setReadOnly(True)
         # Set up the mechanism for changing region number
         self.ui.num_regions_spin_box.valueChanged.connect(self.update_regions_slot)
-        # Color highlights for relative checkbox
-        if hasattr(self, "relative_scan_checkbox"):
-            self.ui.relative_scan_checkbox.stateChanged.connect(self.change_background)
-
-    def change_background(self, state):
-        """
-        Change the background color of the relative scan checkbox based on its state.
-        """
-        if state:  # Checked
-            self.ui.relative_scan_checkbox.setStyleSheet(
-                "background-color: rgb(255, 85, 127);"
-            )
-
-        else:  # Unchecked
-            self.ui.relative_scan_checkbox.setStyleSheet(
-                "background-color: rgb(0, 170, 255);"
-            )
 
     @asyncSlot(object)
     async def update_devices(self, registry):

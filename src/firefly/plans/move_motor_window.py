@@ -1,31 +1,111 @@
+import asyncio
 import logging
 
 from bluesky_queueserver_api import BPlan
+from ophyd_async.core import Device
+from qasync import asyncSlot
 from qtpy import QtWidgets
 
 from firefly.component_selector import ComponentSelector
 from firefly.plans import regions_display
+from firefly.plans.regions_display import DeviceParameters
 
 log = logging.getLogger()
 
 
 class MotorRegion(regions_display.RegionBase):
+    default_precision = 5
+    is_relative: bool
 
     def setup_ui(self):
         # ComponentSelector
         self.motor_box = ComponentSelector()
+        self.motor_box.device_selected.connect(self.update_device_parameters)
 
         # Set point
-        self.position_line_edit = QtWidgets.QDoubleSpinBox()
-        self.position_line_edit.setMaximum(float("inf"))
-        self.position_line_edit.setMinimum(float("-inf"))
+        self.position_spin_box = QtWidgets.QDoubleSpinBox()
+        self.position_spin_box.setMaximum(float("inf"))
+        self.position_spin_box.setMinimum(float("-inf"))
 
-        self.widgets = [self.motor_box, self.position_line_edit]
+        self.widgets = [self.motor_box, self.position_spin_box]
         for column, widget in enumerate(self.widgets):
-            self.layout.addWidget(self.position_line_edit, self.row, column)
+            self.layout.addWidget(widget, self.row, column)
 
     async def update_devices(self, registry):
         await self.motor_box.update_devices(registry)
+
+    @asyncSlot(Device)
+    async def update_device_parameters(self, new_device: Device):
+        device = await self.device_parameters(new_device)
+        # Filter out non-numeric datatypes
+        self.position_spin_box.setEnabled(device.is_numeric)
+        # Set other metadata
+        self.set_limits(device)
+        self.position_spin_box.setDecimals(device.precision)
+        # Handle units
+        self.position_spin_box.setSuffix(f" {device.units}")
+        # Set starting motor position
+        if self.is_relative:
+            self.position_spin_box.setValue(0)
+        else:
+            self.position_spin_box.setValue(device.current_value)
+
+    async def device_parameters(self, device: Device) -> dict:
+        """Retrieve the relevant parameters from the selected device.
+
+        - current value
+        - limits
+        - precision
+        - units
+
+        """
+        # Retrieve parameters from the device
+        try:
+            aws = [device.read(), device.describe()]
+            reading, desc = await asyncio.gather(*aws)
+        except (AttributeError, TypeError):
+            desc = {}
+            value = 0
+        else:
+            desc = desc[device.name]
+            value = reading[device.name]["value"]
+        # Build into a new dictionary
+        limits = desc.get("limits", {}).get("control", {})
+        units = desc.get("units", "")
+        units = regions_display.units_mapping.get(units, units)
+        return DeviceParameters(
+            minimum=limits.get("low", float("-inf")),
+            maximum=limits.get("high", float("inf")),
+            current_value=value,
+            precision=desc.get("precision", self.default_precision),
+            units=units,
+            is_numeric=desc.get("dtype", "number") == "number",
+        )
+
+    def set_limits(self, device: DeviceParameters):
+        """Set limits on the spin boxes to match the device limits."""
+        if self.is_relative:
+            minimum = device.minimum - device.current_value
+            maximum = device.maximum - device.current_value
+        else:
+            maximum, minimum = device.maximum, device.minimum
+        self.position_spin_box.setMaximum(maximum)
+        self.position_spin_box.setMinimum(minimum)
+
+    @asyncSlot(int)
+    async def set_relative_position(self, is_relative: int):
+        """Adjust the target position based on relative/aboslute mode."""
+        self.is_relative = bool(is_relative)
+        device = self.motor_box.current_component()
+        if device is None:
+            return
+        params = await self.device_parameters(device)
+        if is_relative:
+            new_position = self.position_spin_box.value() - params.current_value
+        else:
+            new_position = self.position_spin_box.value() + params.current_value
+        self.position_spin_box.setValue(new_position)
+        self.set_limits(params)
 
 
 class MoveMotorDisplay(regions_display.RegionsDisplay):
@@ -37,13 +117,21 @@ class MoveMotorDisplay(regions_display.RegionsDisplay):
         motor_lst, position_lst = [], []
         for region_i in self.regions:
             motor_lst.append(region_i.motor_box.current_component().name)
-            position_lst.append(float(region_i.position_line_edit.text()))
+            position_lst.append(region_i.position_spin_box.value())
 
         motor_args = [
             values for motor_i in zip(motor_lst, position_lst) for values in motor_i
         ]
 
         return motor_args
+
+    def add_region(self):
+        new_region = super().add_region()
+        self.relative_scan_checkbox.stateChanged.connect(
+            new_region.set_relative_position
+        )
+        new_region.set_relative_position(self.relative_scan_checkbox.checkState())
+        return new_region
 
     def queue_plan(self, *args, **kwargs):
         """Execute this plan on the queueserver."""
