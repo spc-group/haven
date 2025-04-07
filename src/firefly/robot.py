@@ -1,15 +1,22 @@
 import logging
 
+from ophyd_async.core import Device
+from qasync import asyncSlot
 from qtpy import QtWidgets
 
 from firefly.component_selector import ComponentSelector
-from firefly.plans import regions_display  # import RegionBase, RegionsDisplay
+from firefly.plans.regions_display import (
+    DeviceParameters,
+    RegionBase,
+    RegionsDisplay,
+    device_parameters,
+)
 from haven import sanitize_name
 
 log = logging.getLogger(__name__)
 
 
-class RobotMotorRegion(regions_display.RegionBase):
+class RobotMotorRegion(RegionBase):
     def setup_ui(self):
         self.layout = QtWidgets.QHBoxLayout()
 
@@ -26,8 +33,27 @@ class RobotMotorRegion(regions_display.RegionBase):
     async def update_devices(self, registry):
         await self.motor_box.update_devices(registry)
 
+    @asyncSlot(Device)
+    async def update_device_parameters(self, new_device: Device):
+        device = await device_parameters(new_device)
+        # Filter out non-numeric datatypes
+        self.position_spin_box.setEnabled(device.is_numeric)
+        # Set other metadata
+        self.set_limits(device)
+        self.position_spin_box.setDecimals(device.precision)
+        # Handle units
+        self.position_spin_box.setSuffix(f" {device.units}")
+        # Set starting motor position
+        self.position_spin_box.setValue(device.current_value)
 
-class RobotDisplay(regions_display.RegionsDisplay):
+    def set_limits(self, device: DeviceParameters):
+        """Set limits on the spin boxes to match the device limits."""
+        maximum, minimum = device.maximum, device.minimum
+        self.position_spin_box.setMaximum(maximum)
+        self.position_spin_box.setMinimum(minimum)
+
+
+class RobotDisplay(RegionsDisplay):
     """Manage sample transfer using a robot plan.
 
     .. code-block:: python
