@@ -66,5 +66,8 @@ tag_prefix = "haven-"
 parentdir_prefix = "haven-"
 
 [tool.mypy]
-files = ['src/haven/devices/asymmotron.py', "src/haven/tests/test_asymmotron.py"]
+files = [
+    'src/haven/devices/asymmotron.py', "src/haven/tests/test_asymmotron.py",
+    'src/haven/positioner.py', "src/haven/tests/test_positioner.py",
+]
 # follow_imports = "skip"
