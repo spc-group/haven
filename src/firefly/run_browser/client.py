@@ -74,6 +74,7 @@ class DatabaseWorker:
             "plan": (queries.Eq, "start.plan_name"),
             "sample": (queries.Contains, "start.sample_name"),
             "formula": (queries.Contains, "start.sample_formula"),
+            "scan": (queries.Contains, "start.scan_name"),
             "edge": (queries.Contains, "start.edge"),
             "exit_status": (queries.Eq, "stop.exit_status"),
             "user": (queries.Contains, "start.proposal_users"),
@@ -108,6 +109,7 @@ class DatabaseWorker:
             "start.plan_name",
             # "start.sample_name",
             # "start.sample_formula",
+            # "start.scan_name",
             "start.edge",
             "stop.exit_status",
             # "start.proposal_id",
@@ -154,19 +156,23 @@ class DatabaseWorker:
                 edge_str = E0_str
             else:
                 edge_str = ""
+            # Combine sample and formula together
+            sample_name = start_doc.get("sample_name", "")
+            formula = start_doc.get("sample_formula", "")
+            if sample_name and formula:
+                sample_str = f"{sample_name} ({formula})"
+            else:
+                sample_str = sample_name or formula
             # Build the table item
             # Get sample data from: dd80f432-c849-4749-a8f3-bdeec6f9c1f0
             run_data = OrderedDict(
                 plan_name=start_doc.get("plan_name", ""),
-                sample_name=start_doc.get("sample_name", ""),
+                sample_name=sample_str,
+                scan_name=start_doc.get("scan_name", ""),
                 edge=edge_str,
-                E0=E0_str,
                 exit_status=stop_doc.get("exit_status", ""),
                 run_datetime=run_datetime,
                 uid=start_doc.get("uid", ""),
-                proposal_id=start_doc.get("proposal_id", ""),
-                esaf_id=start_doc.get("esaf_id", ""),
-                esaf_users=start_doc.get("esaf_users", ""),
             )
             all_runs.append(run_data)
         return all_runs

@@ -327,12 +327,24 @@ class Analyzer(StandardReadable):
             mock=mock, timeout=timeout, force_reconnect=force_reconnect
         )
         # Stash units for later. Assumes they won't change
-        devices = [self.horizontal, self.horizontal.user_readback, self.horizontal.user_setpoint,
-                   self.vertical, self.vertical.user_readback, self.vertical.user_setpoint,
-                   self.crystal_yaw, self.crystal_yaw.user_readback, self.crystal_yaw.user_setpoint,
-                   self.lattice_constant, self.rowland_diameter,
-                   self.wedge_angle, self.asymmetry_angle, self.d_spacing,
-                   self.energy, self.bragg_offset]
+        devices = [
+            self.horizontal,
+            self.horizontal.user_readback,
+            self.horizontal.user_setpoint,
+            self.vertical,
+            self.vertical.user_readback,
+            self.vertical.user_setpoint,
+            self.crystal_yaw,
+            self.crystal_yaw.user_readback,
+            self.crystal_yaw.user_setpoint,
+            self.lattice_constant,
+            self.rowland_diameter,
+            self.wedge_angle,
+            self.asymmetry_angle,
+            self.d_spacing,
+            self.energy,
+            self.bragg_offset,
+        ]
         aws = [device_units(device) for device in devices]
         units = await asyncio.gather(*aws)
         self.units = {device: unit for device, unit in zip(devices, units)}

@@ -28,7 +28,7 @@ dependencies = ["aioca", "aiokafka", "bluesky", "ophyd",
 dev = ["black", "pytest", "asynctest", "build", "twine", "pytest-httpx",
        "time-machine", "pytest-mock", "pytest-qt", "flake8", "pytest-asyncio",
        "pytest_httpx", "scipy-stubs", "mypy"]
-gui = ["qtawesome>=1.4.0", "pydm<=1.24.1", "pyqtgraph", "qasync", "tiled[all]"]
+gui = ["qtawesome>=1.4.0", "pydm", "pyqtgraph", "qasync", "tiled[all]"]
 
 [project.urls]
 "Homepage" = "https://haven-spc.readthedocs.io/en/latest/"

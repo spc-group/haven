@@ -28,6 +28,10 @@ def distinct_fields(request: httpx.Request):
             {"value": "N2", "count": None},
             {"value": "Xe8", "count": None},
         ],
+        "start.scan_name": [
+            {"value": "pristine", "count": None},
+            {"value": "fully charged", "count": None},
+        ],
         "start.edge": [
             {"value": "N-L3", "count": None},
             {"value": "Xe-K", "count": None},

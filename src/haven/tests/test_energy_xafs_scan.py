@@ -4,8 +4,18 @@ from bluesky import RunEngine
 from ophyd import sim
 from ophyd_async.sim._sim_motor import SimMotor
 
-from haven.energy_ranges import KRange
+from haven.devices import EnergyPositioner
+from haven.energy_ranges import ERange, KRange, from_tuple
 from haven.plans import energy_scan, xafs_scan
+
+
+@pytest.fixture()
+async def energy_positioner():
+    device = EnergyPositioner(
+        name="energy", monochromator_prefix="255idMono:", undulator_prefix="255ID:DS:"
+    )
+    await device.connect(mock=True)
+    return device
 
 
 @pytest.fixture()
@@ -105,10 +115,9 @@ def test_single_range(mono_motor, exposure_motor, I0):
     expected_energies = np.arange(9990, 10001, step=1)
     expected_exposures = np.asarray([1.0])
     scan = xafs_scan(
-        -10,
-        1,
-        1,
-        0,
+        [],
+        # (start, stop, step, time)
+        (-10, 0, 1, 1),
         E0=E0,
         energy_signals=[mono_motor],
         time_signals=[exposure_motor],
@@ -136,13 +145,9 @@ def test_multi_range(mono_motor, exposure_motor, I0):
     )
     expected_exposures = np.asarray([0.5, 1.0])
     scan = xafs_scan(
-        -10,
-        2,
-        0.5,
-        0,
-        1,
-        1.0,
-        10,
+        [],
+        ERange(-10, 0, 2, 0.5),
+        ERange(0, 10, 1, 1.0),
         E0=E0,
         energy_signals=[mono_motor],
         time_signals=[exposure_motor],
@@ -168,15 +173,12 @@ def test_exafs_k_range(mono_motor, exposure_motor, I0):
     E0 = 10000
     E_min = 10
     k_min = 1.6200877248145786
-    krange = KRange(k_min=k_min, k_max=14, k_step=0.5, k_weight=0.5, exposure=0.75)
+    krange = KRange(k_min, 14, step=0.5, weight=0.5, exposure=0.75)
     expected_energies = krange.energies() + E0
     expected_exposures = krange.exposures()
     scan = xafs_scan(
-        E_min=10,
-        k_step=0.5,
-        k_max=14,
-        k_exposure=0.75,
-        k_weight=0.5,
+        [],
+        KRange(k_min, 14, step=0.5, exposure=0.75, weight=0.5),
         E0=E0,
         energy_signals=[mono_motor],
         time_signals=[exposure_motor],
@@ -203,13 +205,9 @@ def test_named_E0(mono_motor, exposure_motor, I0):
     )
     expected_exposures = np.asarray([0.5, 1.0])
     scan = xafs_scan(
-        -10,
-        2,
-        0.5,
-        0,
-        1,
-        1.0,
-        10,
+        [],
+        ERange(-10, 0, 2, exposure=0.5),
+        ERange(0, 10, 1, exposure=1.0),
         E0="Ni_K",
         energy_signals=[mono_motor],
         time_signals=[exposure_motor],
@@ -230,7 +228,11 @@ def test_named_E0(mono_motor, exposure_motor, I0):
 def test_uses_default_time_signals(dxp, mono_motor):
     """Test that the default time positioners are used if no specific ones are given."""
     scan = xafs_scan(
-        -10, 2, 0.5, 0, detectors=[dxp], time_signals=None, energy_signals=[mono_motor]
+        [dxp],
+        ERange(-10, 0, 2, exposure=0.5),
+        E0=0,
+        time_signals=None,
+        energy_signals=[mono_motor],
     )
     msgs = list(scan)
     set_msgs = [m for m in msgs if m.command == "set" and dxp.name in m.obj.name]
@@ -242,13 +244,9 @@ def test_uses_default_time_signals(dxp, mono_motor):
 
 def test_remove_duplicate_energies(mono_motor, exposure_motor, I0):
     plan = xafs_scan(
-        -4,
-        2,
-        1.0,
-        6,
-        34,
-        1.0,
-        40,
+        "ion_chambers",
+        ERange(-4, 6, 2),
+        ERange(6, 40, 34),
         E0=8333,
         energy_signals=[mono_motor],
         time_signals=[exposure_motor],
@@ -261,12 +259,105 @@ def test_remove_duplicate_energies(mono_motor, exposure_motor, I0):
     assert len(read_msgs) == len(energies)
 
 
-def test_xafs_metadata(mono_motor):
+def test_energy_scan_metadata(energy_positioner):
     scan = energy_scan(
         [],
         detectors=[],
+        energy_signals=[energy_positioner],
+        E0="Ni-K",
+        md={"sample_name": "unobtanium"},
+    )
+    # First we need to inject an energy d_spacing reading
+    msgs = []
+    read_msg = None
+    while read_msg is None:
+        msgs.append(next(scan))
+        if msgs[-1].command == "read":
+            read_msg = msgs[-1]
+    msgs.append(
+        scan.send(
+            {
+                "energy-monochromator-d_spacing": {
+                    "value": 3.134734,
+                    "timestamp": 1742397744.329849,
+                    "alarm_severity": 0,
+                }
+            }
+        )
+    )
+    # Produce the rest of the msgs
+    msgs.extend(list(scan))
+    open_msg = [m for m in msgs if m.command == "open_run"][0]
+    md = open_msg.kwargs
+    # Check that the metadata has the right values
+    assert md["edge"] == "Ni-K"
+    assert md["E0"] == 8333.0
+    assert md["d_spacing"] == 3.134734
+    assert md["plan_name"] == "energy_scan"
+    assert md["sample_name"] == "unobtanium"
+
+
+async def test_energy_scan_metadata_multiple_monos(energy_positioner):
+    """Having additional monochromators in the scan means we can have
+    multiple sets of metadata.
+
+    """
+    mono2 = EnergyPositioner(monochromator_prefix="", undulator_prefix="", name="mono2")
+    await mono2.connect(mock=True)
+    scan = energy_scan(
+        [1.0, 2.0, 3.0],
+        detectors=[],
+        energy_signals=[energy_positioner, mono2],
+        E0="Ni-K",
+        md={"sample_name": "unobtanium"},
+    )
+    # First we need to inject an energy d_spacing reading
+    msgs = []
+    read_msg = None
+    while read_msg is None:
+        msgs.append(next(scan))
+        if msgs[-1].command == "read":
+            read_msg = msgs[-1]
+    msgs.extend(
+        [
+            scan.send(
+                {
+                    "energy-monochromator-d_spacing": {
+                        "value": 3.134734,
+                        "timestamp": 1742397744.329849,
+                        "alarm_severity": 0,
+                    }
+                }
+            ),
+            scan.send(
+                {
+                    "mono2-monochromator-d_spacing": {
+                        "value": 4.20,
+                        "timestamp": 1742397744.329849,
+                        "alarm_severity": 0,
+                    }
+                }
+            ),
+        ]
+    )
+    # Produce the rest of the msgs
+    msgs.extend(list(scan))
+    open_msg = [m for m in msgs if m.command == "open_run"][0]
+    md = open_msg.kwargs
+    # Check that the metadata has the right values
+    assert md["edge"] == "Ni-K"
+    assert md["E0"] == 8333.0
+    assert md["d_spacing"] == [3.134734, 4.20]
+    assert md["plan_name"] == "energy_scan"
+    assert md["sample_name"] == "unobtanium"
+
+
+def test_xafs_scan_metadata(mono_motor):
+    scan = xafs_scan(
+        [],
+        ERange(0, 10),
         energy_signals=[mono_motor],
-        E0="Ni_K",
+        E0="Ni-K",
         md={"sample_name": "unobtanium"},
     )
     # Get the metadata passed alongside the "open_run" message
@@ -274,10 +365,22 @@ def test_xafs_metadata(mono_motor):
     open_msg = [m for m in msgs if m.command == "open_run"][0]
     md = open_msg.kwargs
     # Check that the metadata has the right values
-    assert md["edge"] == "Ni_K"
+    assert md["edge"] == "Ni-K"
     assert md["E0"] == 8333.0
-    assert md["plan_name"] == "energy_scan"
+    assert md["plan_name"] == "xafs_scan"
     assert md["sample_name"] == "unobtanium"
+    assert md["plan_args"] == {
+        "detectors": [],
+        "energy_ranges": ["ERange(start=0, stop=10, step=1.0, exposure=0.5)"],
+        "energy_signals": [
+            (
+                "SynAxis(prefix='', name='mono_energy', read_attrs=['readback', "
+                "'setpoint'], configuration_attrs=['velocity', 'acceleration'])"
+            )
+        ],
+        "time_signals": None,
+        "E0": "Ni-K",
+    }
 
 
 async def test_document_plan_args():
@@ -307,6 +410,17 @@ async def test_document_plan_args():
     # (causes problems for the Tiled writer)
     args = start_doc["plan_args"]["args"]
     assert not any([isinstance(arg, np.ndarray) for arg in args])
+
+
+def test_from_tuple():
+    assert from_tuple(ERange(3, 9, 0.5)) == ERange(start=3, stop=9, step=0.5)
+    assert from_tuple(("E", 10, 15)) == ERange(10, 15)
+    assert from_tuple(("K", 4, 12, 0.1, 1.0, 1)) == KRange(
+        start=4, stop=12, step=0.1, exposure=1.0, weight=1
+    )
+    assert from_tuple((10, 15, 0.25, 1.5)) == ERange(
+        start=10, stop=15, step=0.25, exposure=1.5
+    )
 
 
 # -----------------------------------------------------------------------------

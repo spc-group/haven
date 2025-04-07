@@ -1,7 +1,7 @@
 import asyncio
 import inspect
-import numbers
 import logging
+import numbers
 from functools import partial
 from typing import Callable, Mapping, Optional, Sequence, Type
 
@@ -23,7 +23,6 @@ from ophyd_async.core import (
 )
 from ophyd_async.core._signal import _wait_for
 from ophyd_async.epics.core._signal import _epics_signal_backend
-
 
 log = logging.getLogger(__name__)
 
