@@ -1,7 +1,7 @@
 from qtpy.QtWidgets import QCheckBox
 
-RED = "rgb(255, 85, 127)"
-BLUE = "rgb(0, 170, 255)"
+BLUE = "rgb(0, 186, 254)"
+RED = "rgb(255, 98, 125)"
 
 
 class RelativeCheckbox(QCheckBox):
@@ -23,7 +23,7 @@ class RelativeCheckbox(QCheckBox):
         """
         color = RED if is_checked else BLUE
         self.setStyleSheet(
-            "padding: 3px; border-radius: 7px; " f"background-color: {color}"
+            f"padding: 4px; border-radius: 7px; background-color: {color}; "
         )
 
     @property

@@ -62,9 +62,9 @@
       </widget>
      </item>
      <item>
-      <widget class="QCheckBox" name="relative_scan_checkbox">
+      <widget class="RelativeCheckbox" name="relative_scan_checkbox">
        <property name="styleSheet">
-        <string notr="true">background-color: rgb(255, 85, 127);</string>
+        <string notr="true"/>
        </property>
        <property name="text">
         <string>Relative</string>
@@ -160,7 +160,7 @@
          <x>0</x>
          <y>0</y>
          <width>498</width>
-         <height>211</height>
+         <height>199</height>
         </rect>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_7">
@@ -586,6 +586,11 @@
    <class>DurationLabel</class>
    <extends>QLabel</extends>
    <header>firefly.plans.duration_label</header>
+  </customwidget>
+  <customwidget>
+   <class>RelativeCheckbox</class>
+   <extends>QCheckBox</extends>
+   <header>firefly.plans.relative_checkbox</header>
   </customwidget>
  </customwidgets>
  <tabstops>

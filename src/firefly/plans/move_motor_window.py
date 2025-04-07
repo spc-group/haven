@@ -1,4 +1,3 @@
-import asyncio
 import logging
 
 from bluesky_queueserver_api import BPlan
@@ -7,13 +6,17 @@ from qasync import asyncSlot
 from qtpy import QtWidgets
 
 from firefly.component_selector import ComponentSelector
-from firefly.plans import regions_display
-from firefly.plans.regions_display import DeviceParameters
+from firefly.plans.regions_display import (
+    DeviceParameters,
+    RegionBase,
+    RegionsDisplay,
+    device_parameters,
+)
 
 log = logging.getLogger()
 
 
-class MotorRegion(regions_display.RegionBase):
+class MotorRegion(RegionBase):
     default_precision = 5
     is_relative: bool
 
@@ -36,7 +39,7 @@ class MotorRegion(regions_display.RegionBase):
 
     @asyncSlot(Device)
     async def update_device_parameters(self, new_device: Device):
-        device = await self.device_parameters(new_device)
+        device = await device_parameters(new_device)
         # Filter out non-numeric datatypes
         self.position_spin_box.setEnabled(device.is_numeric)
         # Set other metadata
@@ -49,38 +52,6 @@ class MotorRegion(regions_display.RegionBase):
             self.position_spin_box.setValue(0)
         else:
             self.position_spin_box.setValue(device.current_value)
-
-    async def device_parameters(self, device: Device) -> dict:
-        """Retrieve the relevant parameters from the selected device.
-
-        - current value
-        - limits
-        - precision
-        - units
-
-        """
-        # Retrieve parameters from the device
-        try:
-            aws = [device.read(), device.describe()]
-            reading, desc = await asyncio.gather(*aws)
-        except (AttributeError, TypeError):
-            desc = {}
-            value = 0
-        else:
-            desc = desc[device.name]
-            value = reading[device.name]["value"]
-        # Build into a new dictionary
-        limits = desc.get("limits", {}).get("control", {})
-        units = desc.get("units", "")
-        units = regions_display.units_mapping.get(units, units)
-        return DeviceParameters(
-            minimum=limits.get("low", float("-inf")),
-            maximum=limits.get("high", float("inf")),
-            current_value=value,
-            precision=desc.get("precision", self.default_precision),
-            units=units,
-            is_numeric=desc.get("dtype", "number") == "number",
-        )
 
     def set_limits(self, device: DeviceParameters):
         """Set limits on the spin boxes to match the device limits."""
@@ -99,7 +70,7 @@ class MotorRegion(regions_display.RegionBase):
         device = self.motor_box.current_component()
         if device is None:
             return
-        params = await self.device_parameters(device)
+        params = await device_parameters(device)
         if is_relative:
             new_position = self.position_spin_box.value() - params.current_value
         else:
@@ -108,7 +79,7 @@ class MotorRegion(regions_display.RegionBase):
         self.set_limits(params)
 
 
-class MoveMotorDisplay(regions_display.RegionsDisplay):
+class MoveMotorDisplay(RegionsDisplay):
     Region = MotorRegion
     default_num_regions = 1
 

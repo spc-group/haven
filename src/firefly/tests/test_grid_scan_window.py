@@ -3,6 +3,7 @@ from unittest import mock
 
 import pytest
 from bluesky_queueserver_api import BPlan
+from ophyd_async.testing import set_mock_value
 from qtpy import QtCore
 
 from firefly.plans.grid_scan import GridScanDisplay
@@ -11,6 +12,22 @@ from firefly.plans.grid_scan import GridScanDisplay
 @pytest.fixture()
 async def display(qtbot, sim_registry, sync_motors, async_motors, dxp, ion_chamber):
     display = GridScanDisplay()
+    motor1 = async_motors[0]
+    description = {
+        motor1.name: {
+            "dtype": "number",
+            "shape": [],
+            "dtype_numpy": "<f8",
+            "source": "ca://25idc:simMotor:m2.RBV",
+            "units": "degrees",
+            "precision": 5,
+            "limits": {
+                "control": {"low": -10, "high": 10},
+                "display": {"low": -10, "high": 10},
+            },
+        }
+    }
+    motor1.describe = mock.AsyncMock(return_value=description)
     qtbot.addWidget(display)
     await display.update_devices(sim_registry)
     display.ui.run_button.setEnabled(True)
@@ -128,3 +145,48 @@ async def test_grid_scan_plan_queued(display, ion_chamber, qtbot):
         display.queue_item_submitted, timeout=1000, check_params_cb=check_item
     ):
         qtbot.mouseClick(display.ui.run_button, QtCore.Qt.LeftButton)
+
+
+async def test_full_motor_parameters(display, async_motors):
+    motor = async_motors[0]
+    display.ui.relative_scan_checkbox.setChecked(False)
+    set_mock_value(motor.user_readback, 7.5)
+    region = display.regions[0]
+    await region.update_device_parameters(motor)
+    start_box = region.start_line_edit
+    assert start_box.minimum() == -10
+    assert start_box.maximum() == 10
+    assert start_box.decimals() == 5
+    assert start_box.suffix() == " °"
+    assert start_box.value() == 7.5
+    stop_box = region.stop_line_edit
+    assert stop_box.minimum() == -10
+    assert stop_box.maximum() == 10
+    assert stop_box.decimals() == 5
+    assert stop_box.suffix() == " °"
+    assert stop_box.value() == 7.5
+
+
+async def test_relative_positioning(display, async_motors):
+    motor = async_motors[0]
+    region = display.regions[0]
+    set_mock_value(motor.user_readback, 7.5)
+    region.motor_box.current_component = mock.MagicMock(return_value=motor)
+    region.start_line_edit.setValue(5)
+    region.stop_line_edit.setValue(10)
+    # Relative positioning mode
+    await region.set_relative_position(True)
+    assert region.start_line_edit.value() == -2.5
+    assert region.start_line_edit.maximum() == 2.5
+    assert region.start_line_edit.minimum() == -17.5
+    assert region.stop_line_edit.value() == 2.5
+    assert region.stop_line_edit.maximum() == 2.5
+    assert region.stop_line_edit.minimum() == -17.5
+    # Absolute positioning mode
+    await region.set_relative_position(False)
+    assert region.start_line_edit.value() == 5.0
+    assert region.start_line_edit.maximum() == 10
+    assert region.start_line_edit.minimum() == -10
+    assert region.stop_line_edit.value() == 10.0
+    assert region.stop_line_edit.maximum() == 10
+    assert region.stop_line_edit.minimum() == -10

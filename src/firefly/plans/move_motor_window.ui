@@ -66,10 +66,13 @@
        <item>
         <widget class="RelativeCheckbox" name="relative_scan_checkbox">
          <property name="styleSheet">
-          <string notr="true"/>
+          <string notr="true">padding: 4px; border-radius: 7px; background-color: rgb(0, 186, 254);</string>
          </property>
          <property name="text">
           <string>Relative</string>
+         </property>
+         <property name="checked">
+          <bool>false</bool>
          </property>
         </widget>
        </item>
@@ -125,7 +128,7 @@
             <x>0</x>
             <y>0</y>
             <width>510</width>
-            <height>83</height>
+            <height>82</height>
            </rect>
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_4">

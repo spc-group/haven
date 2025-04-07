@@ -15,6 +15,21 @@ async def motors(sim_registry, sync_motors):
     motor1 = Motor(name="async motor-1", prefix="")
     assert " " in motor1.name
     assert "-" in motor1.name
+    description = {
+        motor1.name: {
+            "dtype": "number",
+            "shape": [],
+            "dtype_numpy": "<f8",
+            "source": "ca://25idc:simMotor:m2.RBV",
+            "units": "degrees",
+            "precision": 5,
+            "limits": {
+                "control": {"low": -10, "high": 10},
+                "display": {"low": -10, "high": 10},
+            },
+        }
+    }
+    motor1.describe = mock.AsyncMock(return_value=description)
     motor2 = Motor(name="async_motor_2", prefix="")
     # Connect motors
     async_motors = [motor1, motor2]
@@ -145,3 +160,48 @@ async def test_line_scan_plan_queued(display, monkeypatch, qtbot):
         display.queue_item_submitted, timeout=1000, check_params_cb=check_item
     ):
         qtbot.mouseClick(display.ui.run_button, QtCore.Qt.LeftButton)
+
+
+async def test_full_motor_parameters(display, motors):
+    motor = motors[0]
+    display.ui.relative_scan_checkbox.setChecked(False)
+    set_mock_value(motor.user_readback, 7.5)
+    region = display.regions[0]
+    await region.update_device_parameters(motor)
+    start_box = region.start_line_edit
+    assert start_box.minimum() == -10
+    assert start_box.maximum() == 10
+    assert start_box.decimals() == 5
+    assert start_box.suffix() == " °"
+    assert start_box.value() == 7.5
+    stop_box = region.stop_line_edit
+    assert stop_box.minimum() == -10
+    assert stop_box.maximum() == 10
+    assert stop_box.decimals() == 5
+    assert stop_box.suffix() == " °"
+    assert stop_box.value() == 7.5
+
+
+async def test_relative_positioning(display, motors):
+    motor = motors[0]
+    region = display.regions[0]
+    set_mock_value(motor.user_readback, 7.5)
+    region.motor_box.current_component = mock.MagicMock(return_value=motor)
+    region.start_line_edit.setValue(5.0)
+    region.stop_line_edit.setValue(10.0)
+    # Relative positioning mode
+    await region.set_relative_position(True)
+    assert region.start_line_edit.value() == -2.5
+    assert region.start_line_edit.maximum() == 2.5
+    assert region.start_line_edit.minimum() == -17.5
+    assert region.stop_line_edit.value() == 2.5
+    assert region.stop_line_edit.maximum() == 2.5
+    assert region.stop_line_edit.minimum() == -17.5
+    # Absolute positioning mode
+    await region.set_relative_position(False)
+    assert region.start_line_edit.value() == 5.0
+    assert region.start_line_edit.maximum() == 10
+    assert region.start_line_edit.minimum() == -10
+    assert region.stop_line_edit.value() == 10.0
+    assert region.stop_line_edit.maximum() == 10
+    assert region.stop_line_edit.minimum() == -10

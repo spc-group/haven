@@ -58,6 +58,7 @@ class XafsScanRegion(regions_display.RegionBase):
         # Exposure time double spin box
         self.exposure_time_spinbox = QtWidgets.QDoubleSpinBox()
         self.exposure_time_spinbox.setValue(1.0)
+        self.exposure_time_spinbox.setSuffix(' s')
         self.layout.addWidget(self.exposure_time_spinbox, self.row, 4)
 
         # K-space checkbox

@@ -3,6 +3,7 @@ import logging
 from dataclasses import dataclass
 from typing import Sequence
 
+from ophyd_async.core import Device
 from qasync import asyncSlot
 from qtpy import QtWidgets
 from qtpy.QtCore import QObject, Signal
@@ -22,6 +23,42 @@ units_mapping = {
     "radian": "rad",
     "radians": "rad",
 }
+
+
+DEFAULT_PRECISION = 5
+
+
+async def device_parameters(device: Device) -> dict:
+    """Retrieve the relevant parameters from the selected device.
+
+    - current value
+    - limits
+    - precision
+    - units
+
+    """
+    # Retrieve parameters from the device
+    try:
+        aws = [device.read(), device.describe()]
+        reading, desc = await asyncio.gather(*aws)
+    except (AttributeError, TypeError):
+        desc = {}
+        value = 0
+    else:
+        desc = desc[device.name]
+        value = reading[device.name]["value"]
+    # Build into a new dictionary
+    limits = desc.get("limits", {}).get("control", {})
+    units = desc.get("units", "")
+    units = units_mapping.get(units, units)
+    return DeviceParameters(
+        minimum=limits.get("low", float("-inf")),
+        maximum=limits.get("high", float("inf")),
+        current_value=value,
+        precision=desc.get("precision", DEFAULT_PRECISION),
+        units=units,
+        is_numeric=desc.get("dtype", "number") == "number",
+    )
 
 
 @dataclass(frozen=True)

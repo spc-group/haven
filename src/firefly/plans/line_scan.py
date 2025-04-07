@@ -1,22 +1,29 @@
 import logging
 
 from bluesky_queueserver_api import BPlan
+from ophyd_async.core import Device
 from qasync import asyncSlot
 from qtpy import QtWidgets
 
 from firefly.component_selector import ComponentSelector
-from firefly.plans import regions_display
+from firefly.plans.regions_display import (
+    DeviceParameters,
+    RegionBase,
+    RegionsDisplay,
+    device_parameters,
+)
 
 log = logging.getLogger()
 
 
-class LineScanRegion(regions_display.RegionBase):
+class LineScanRegion(RegionBase):
     num_points: int = 2
+    is_relative: bool
 
     def setup_ui(self):
         # Component selector
         self.motor_box = ComponentSelector()
-
+        self.motor_box.device_selected.connect(self.update_device_parameters)
         # start point
         self.start_line_edit = QtWidgets.QDoubleSpinBox()
         self.start_line_edit.lineEdit().setPlaceholderText("Start…")
@@ -39,7 +46,12 @@ class LineScanRegion(regions_display.RegionBase):
         self.step_line_edit.lineEdit().setPlaceholderText("Step Size…")
 
         # Add widgets to the layout
-        self.widgets = [self.start_line_edit, self.stop_line_edit, self.step_line_edit]
+        self.widgets = [
+            self.motor_box,
+            self.start_line_edit,
+            self.stop_line_edit,
+            self.step_line_edit,
+        ]
         for column, widget in enumerate(self.widgets):
             self.layout.addWidget(widget, self.row, column)
 
@@ -49,6 +61,59 @@ class LineScanRegion(regions_display.RegionBase):
 
     async def update_devices(self, registry):
         await self.motor_box.update_devices(registry)
+
+    @asyncSlot(Device)
+    async def update_device_parameters(self, new_device: Device):
+        device = await device_parameters(new_device)
+        # Filter out non-numeric datatypes
+        for widget in [self.start_line_edit, self.stop_line_edit]:
+            widget.setEnabled(device.is_numeric)
+            widget.setEnabled(device.is_numeric)
+            # Set other metadata
+            self.set_limits(device)
+            widget.setDecimals(device.precision)
+            # Handle units
+            widget.setSuffix(f" {device.units}")
+            # Set starting motor position
+            if self.is_relative:
+                widget.setValue(0)
+            else:
+                widget.setValue(device.current_value)
+
+    def set_limits(self, device: DeviceParameters):
+        """Set limits on the spin boxes to match the device limits."""
+        if self.is_relative:
+            minimum = device.minimum - device.current_value
+            maximum = device.maximum - device.current_value
+        else:
+            maximum, minimum = device.maximum, device.minimum
+        self.start_line_edit.setMaximum(maximum)
+        self.start_line_edit.setMinimum(minimum)
+        self.stop_line_edit.setMaximum(maximum)
+        self.stop_line_edit.setMinimum(minimum)
+
+    @asyncSlot(int)
+    async def set_relative_position(self, is_relative: int):
+        """Adjust the target position based on relative/aboslute mode."""
+        self.is_relative = bool(is_relative)
+        device = self.motor_box.current_component()
+        if device is None:
+            return
+        params = await device_parameters(device)
+        # Get last values first to avoid limit crossing
+        widgets = [self.start_line_edit, self.stop_line_edit]
+        if is_relative:
+            new_positions = [
+                widget.value() - params.current_value for widget in widgets
+            ]
+        else:
+            new_positions = [
+                widget.value() + params.current_value for widget in widgets
+            ]
+        # Update the current limits and positions
+        self.set_limits(params)
+        for widget, new_position in zip(widgets, new_positions):
+            widget.setValue(new_position)
 
     def set_num_points(self, num_points):
         self.num_points = max(2, int(num_points))  # Ensure num_points is >= 2
@@ -67,7 +132,7 @@ class LineScanRegion(regions_display.RegionBase):
             self.step_line_edit.setValue(step_size)
 
 
-class LineScanDisplay(regions_display.RegionsDisplay):
+class LineScanDisplay(RegionsDisplay):
     Region = LineScanRegion
 
     @asyncSlot(object)
@@ -110,6 +175,14 @@ class LineScanDisplay(regions_display.RegionsDisplay):
         time_per_scan, total_time = self.scan_durations(detector_time)
         self.scan_time_changed.emit(time_per_scan)
         self.total_time_changed.emit(total_time)
+
+    def add_region(self):
+        new_region = super().add_region()
+        self.relative_scan_checkbox.stateChanged.connect(
+            new_region.set_relative_position
+        )
+        new_region.set_relative_position(self.relative_scan_checkbox.checkState())
+        return new_region
 
     def reset_default_regions(self):
         super().reset_default_regions()
