@@ -1,9 +1,7 @@
 from unittest import mock
 
 import pytest
-from bluesky_queueserver_api import BPlan
 from ophyd_async.testing import set_mock_value
-from qtpy import QtCore
 
 from firefly.plans.move_motor_window import MoveMotorDisplay
 from haven.devices import Motor
@@ -53,7 +51,12 @@ async def test_move_motor_plan_queued(display, qtbot):
     display.regions[1].position_spin_box.setValue(222)
     # Confirm that the correct plan arguments are built
     args, kwargs = display.plan_args()
-    assert args == ("async_motor_1",111.0,"sync_motor_2",222.0,)
+    assert args == (
+        "async_motor_1",
+        111.0,
+        "sync_motor_2",
+        222.0,
+    )
     assert kwargs == {}
 
 

@@ -1,11 +1,10 @@
 import logging
 
-from bluesky_queueserver_api import BPlan
 from qtpy import QtWidgets
 
-from haven import sanitize_name
 from firefly.component_selector import ComponentSelector
 from firefly.plans import regions_display  # import RegionBase, RegionsDisplay
+from haven import sanitize_name
 
 log = logging.getLogger(__name__)
 
@@ -19,10 +18,10 @@ class RobotMotorRegion(regions_display.RegionBase):
         self.layout.addWidget(self.motor_box)
 
         # Motor position for robot transferring samples
-        self.start_line_edit = QtWidgets.QDoubleSpinBox()
-        self.start_line_edit.setMinimum(float("-inf"))
-        self.start_line_edit.setMaximum(float("inf"))
-        self.layout.addWidget(self.start_line_edit)
+        self.position_spin_box = QtWidgets.QDoubleSpinBox()
+        self.position_spin_box.setMinimum(float("-inf"))
+        self.position_spin_box.setMaximum(float("inf"))
+        self.layout.addWidget(self.position_spin_box)
 
     async def update_devices(self, registry):
         await self.motor_box.update_devices(registry)
@@ -63,8 +62,10 @@ class RobotDisplay(regions_display.RegionsDisplay):
         # Get parameters from device regions
         devices = [region.motor_box.current_component() for region in self.regions]
         device_names = [sanitize_name(device.name) for device in devices]
-        positions = [float(region.start_line_edit.text()) for region in self.regions]
-        position_args = [values for region in zip(device_names, positions) for values in region]
+        positions = [float(region.position_spin_box.text()) for region in self.regions]
+        position_args = [
+            values for region in zip(device_names, positions) for values in region
+        ]
         # Build the arguments
         robot = self.macros()["DEVICE"]
         args = (robot, sam_num, *position_args)

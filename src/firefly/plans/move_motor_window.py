@@ -1,11 +1,9 @@
 import logging
 
-from bluesky_queueserver_api import BPlan
 from ophyd_async.core import Device
 from qasync import asyncSlot
 from qtpy import QtWidgets
 
-from haven import sanitize_name
 from firefly.component_selector import ComponentSelector
 from firefly.plans.regions_display import (
     DeviceParameters,
@@ -13,6 +11,7 @@ from firefly.plans.regions_display import (
     RegionsDisplay,
     device_parameters,
 )
+from haven import sanitize_name
 
 log = logging.getLogger()
 
@@ -92,13 +91,16 @@ class MoveMotorDisplay(RegionsDisplay):
         new_region.set_relative_position(self.relative_scan_checkbox.checkState())
         return new_region
 
-
     def plan_args(self):
         # Get parameters from each row of line regions
         devices = [region.motor_box.current_component() for region in self.regions]
         device_names = [sanitize_name(device.name) for device in devices]
         positions = [region.position_spin_box.value() for region in self.regions]
-        args = tuple(values for device_row in zip(device_names, positions) for values in device_row)
+        args = tuple(
+            values
+            for device_row in zip(device_names, positions)
+            for values in device_row
+        )
         kwargs = {}
         return args, kwargs
 

@@ -2,7 +2,7 @@ from unittest import mock
 
 import numpy as np
 import pytest
-from qtpy import QtCore, QtWidgets
+from qtpy import QtWidgets
 
 from firefly.plans.xafs_scan import XafsScanDisplay, XafsScanRegion
 
@@ -47,15 +47,15 @@ def test_time_calculator(display):
     display.ui.num_regions_spin_box.setValue(2)
     display.edge_combo_box.setCurrentIndex(1)
     # Set up the first region
-    display.regions[0].start_line_edit.setValue(-20)
-    display.regions[0].stop_line_edit.setValue(40)
-    display.regions[0].step_line_edit.setValue(10)
+    display.regions[0].start_spin_box.setValue(-20)
+    display.regions[0].stop_spin_box.setValue(40)
+    display.regions[0].step_spin_box.setValue(10)
     # Set up the second region
-    display.regions[1].start_line_edit.setValue(50)
-    display.regions[1].stop_line_edit.setValue(800)
+    display.regions[1].start_spin_box.setValue(50)
+    display.regions[1].stop_spin_box.setValue(800)
     # Convert to k space
     display.regions[1].k_space_checkbox.setChecked(True)
-    display.regions[1].step_line_edit.setValue(5)
+    display.regions[1].step_spin_box.setValue(5)
     display.regions[1].weight_spinbox.setValue(2)
     # Set up detector list
     display.ui.detectors_list.selected_detectors = mock.MagicMock(
@@ -85,17 +85,17 @@ def test_E0_checkbox(display):
     # check whether energy values are added correctly
     for (start, stop, step), region in zip(default_values, display.regions):
         np.testing.assert_almost_equal(
-            region.start_line_edit.value(),
+            region.start_spin_box.value(),
             start + E0,
             decimal=3,
         )
         np.testing.assert_almost_equal(
-            region.stop_line_edit.value(),
+            region.stop_spin_box.value(),
             stop + E0,
             decimal=3,
         )
         np.testing.assert_almost_equal(
-            region.step_line_edit.value(),
+            region.step_spin_box.value(),
             step,
             decimal=3,
         )
@@ -106,10 +106,10 @@ def test_E0_checkbox(display):
     k_region = display.regions[-1]
     assert k_region.k_space_checkbox.isEnabled()
     k_region.k_space_checkbox.setChecked(True)
-    np.testing.assert_almost_equal(k_region.start_line_edit.value(), 3.6226, decimal=4)
-    np.testing.assert_almost_equal(k_region.stop_line_edit.value(), 14.4905, decimal=4)
+    np.testing.assert_almost_equal(k_region.start_spin_box.value(), 3.6226, decimal=4)
+    np.testing.assert_almost_equal(k_region.stop_spin_box.value(), 14.4905, decimal=4)
     np.testing.assert_almost_equal(
-        k_region.step_line_edit.value(), 3.64069 - 3.6226, decimal=4
+        k_region.step_spin_box.value(), 3.64069 - 3.6226, decimal=4
     )
 
 
@@ -136,11 +136,11 @@ def test_queue_plan(display, qtbot):
     assert kwargs == {
         "E0": 58893.0,
         "md": {
-                "sample_name": "sam",
-                "purpose": "test",
-                "is_standard": True,
-                "notes": "sam_notes",
-        }
+            "sample_name": "sam",
+            "purpose": "test",
+            "is_standard": True,
+            "notes": "sam_notes",
+        },
     }
 
 
@@ -170,7 +170,7 @@ def test_plan_energies(display, qtbot):
             "purpose": "test",
             "is_standard": True,
             "notes": "sam_notes",
-        }
+        },
     }
 
 
@@ -208,15 +208,15 @@ def test_plan_energies_k_mixed(qtbot, display):
     display.ui.num_regions_spin_box.setValue(2)
     display.edge_combo_box.setCurrentIndex(1)
     # Set up the first region
-    display.regions[0].start_line_edit.setValue(-20)
-    display.regions[0].stop_line_edit.setValue(40)
-    display.regions[0].step_line_edit.setValue(10)
+    display.regions[0].start_spin_box.setValue(-20)
+    display.regions[0].stop_spin_box.setValue(40)
+    display.regions[0].step_spin_box.setValue(10)
     # Set up the second region
-    display.regions[1].start_line_edit.setValue(50)
-    display.regions[1].stop_line_edit.setValue(800)
+    display.regions[1].start_spin_box.setValue(50)
+    display.regions[1].stop_spin_box.setValue(800)
     # Convert to k space
     display.regions[1].k_space_checkbox.setChecked(True)
-    display.regions[1].step_line_edit.setValue(5)
+    display.regions[1].step_spin_box.setValue(5)
     display.regions[1].weight_spinbox.setValue(2)
     # Set up detector list
     display.ui.detectors_list.selected_detectors = mock.MagicMock(
@@ -271,17 +271,17 @@ def test_E0(display):
 
 
 def test_region_domain(qtbot, region):
-    assert region.start_line_edit.suffix() == " eV"
-    assert region.stop_line_edit.suffix() == " eV"
-    assert region.step_line_edit.suffix() == " eV"
+    assert region.start_spin_box.suffix() == " eV"
+    assert region.stop_spin_box.suffix() == " eV"
+    assert region.step_spin_box.suffix() == " eV"
     region.set_domain(domain=1)
-    assert region.start_line_edit.suffix() == " Å⁻"
-    assert region.stop_line_edit.suffix() == " Å⁻"
-    assert region.step_line_edit.suffix() == " Å⁻"
+    assert region.start_spin_box.suffix() == " Å⁻"
+    assert region.stop_spin_box.suffix() == " Å⁻"
+    assert region.step_spin_box.suffix() == " Å⁻"
     region.set_domain(domain=0)
-    assert region.start_line_edit.suffix() == " eV"
-    assert region.stop_line_edit.suffix() == " eV"
-    assert region.step_line_edit.suffix() == " eV"
+    assert region.start_spin_box.suffix() == " eV"
+    assert region.stop_spin_box.suffix() == " eV"
+    assert region.step_spin_box.suffix() == " eV"
 
 
 # -----------------------------------------------------------------------------

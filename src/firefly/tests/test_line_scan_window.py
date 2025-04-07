@@ -1,9 +1,7 @@
 from unittest import mock
 
 import pytest
-from bluesky_queueserver_api import BPlan
 from ophyd_async.testing import set_mock_value
-from qtpy import QtCore
 
 from firefly.plans.line_scan import LineScanDisplay
 from haven.devices.motor import Motor
@@ -89,22 +87,22 @@ async def test_step_size_calculation(display, qtbot):
     region = display.regions[0]
 
     # Test valid inputs
-    region.start_line_edit.setValue(0)
-    region.stop_line_edit.setValue(10)
+    region.start_spin_box.setValue(0)
+    region.stop_spin_box.setValue(10)
 
     # Set num_points
     display.ui.scan_pts_spin_box.setValue(7)
     # Step size should be 1.6666 for 7 points from 0 to 10.
-    assert region.step_line_edit.value() == 1.6667
+    assert region.step_spin_box.value() == 1.6667
     # Change the number of points and verify step size updates
     display.ui.scan_pts_spin_box.setValue(3)
     # Step size should be 5.0 for 3 points from 0 to 10."
-    assert region.step_line_edit.value() == 5
+    assert region.step_spin_box.value() == 5
     # Reset to another state and verify
-    region.start_line_edit.setValue(0)
-    region.stop_line_edit.setValue(10)
+    region.start_spin_box.setValue(0)
+    region.stop_spin_box.setValue(10)
     display.ui.scan_pts_spin_box.setValue(6)
-    assert region.step_line_edit.value() == 2
+    assert region.step_spin_box.value() == 2
 
 
 @pytest.mark.asyncio
@@ -113,12 +111,12 @@ async def test_line_scan_plan_queued(display, monkeypatch, qtbot):
     await display.update_regions(2)
     # set up a test motor 1
     display.regions[0].motor_box.combo_box.setCurrentText("async motor-1")
-    display.regions[0].start_line_edit.setValue(1)
-    display.regions[0].stop_line_edit.setValue(111)
+    display.regions[0].start_spin_box.setValue(1)
+    display.regions[0].stop_spin_box.setValue(111)
     # set up a test motor 2
     display.regions[1].motor_box.combo_box.setCurrentText("sync_motor_2")
-    display.regions[1].start_line_edit.setValue(2)
-    display.regions[1].stop_line_edit.setValue(222)
+    display.regions[1].start_spin_box.setValue(2)
+    display.regions[1].stop_spin_box.setValue(222)
     # set up scan num of points
     display.ui.scan_pts_spin_box.setValue(10)
     # time is calculated when the selection is changed
@@ -152,13 +150,13 @@ async def test_full_motor_parameters(display, motors):
     set_mock_value(motor.user_readback, 7.5)
     region = display.regions[0]
     await region.update_device_parameters(motor)
-    start_box = region.start_line_edit
+    start_box = region.start_spin_box
     assert start_box.minimum() == -10
     assert start_box.maximum() == 10
     assert start_box.decimals() == 5
     assert start_box.suffix() == " °"
     assert start_box.value() == 7.5
-    stop_box = region.stop_line_edit
+    stop_box = region.stop_spin_box
     assert stop_box.minimum() == -10
     assert stop_box.maximum() == 10
     assert stop_box.decimals() == 5
@@ -171,21 +169,21 @@ async def test_relative_positioning(display, motors):
     region = display.regions[0]
     set_mock_value(motor.user_readback, 7.5)
     region.motor_box.current_component = mock.MagicMock(return_value=motor)
-    region.start_line_edit.setValue(5.0)
-    region.stop_line_edit.setValue(10.0)
+    region.start_spin_box.setValue(5.0)
+    region.stop_spin_box.setValue(10.0)
     # Relative positioning mode
     await region.set_relative_position(True)
-    assert region.start_line_edit.value() == -2.5
-    assert region.start_line_edit.maximum() == 2.5
-    assert region.start_line_edit.minimum() == -17.5
-    assert region.stop_line_edit.value() == 2.5
-    assert region.stop_line_edit.maximum() == 2.5
-    assert region.stop_line_edit.minimum() == -17.5
+    assert region.start_spin_box.value() == -2.5
+    assert region.start_spin_box.maximum() == 2.5
+    assert region.start_spin_box.minimum() == -17.5
+    assert region.stop_spin_box.value() == 2.5
+    assert region.stop_spin_box.maximum() == 2.5
+    assert region.stop_spin_box.minimum() == -17.5
     # Absolute positioning mode
     await region.set_relative_position(False)
-    assert region.start_line_edit.value() == 5.0
-    assert region.start_line_edit.maximum() == 10
-    assert region.start_line_edit.minimum() == -10
-    assert region.stop_line_edit.value() == 10.0
-    assert region.stop_line_edit.maximum() == 10
-    assert region.stop_line_edit.minimum() == -10
+    assert region.start_spin_box.value() == 5.0
+    assert region.start_spin_box.maximum() == 10
+    assert region.start_spin_box.minimum() == -10
+    assert region.stop_spin_box.value() == 10.0
+    assert region.stop_spin_box.maximum() == 10
+    assert region.stop_spin_box.minimum() == -10

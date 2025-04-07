@@ -11,7 +11,6 @@ from qtpy.QtCore import QObject, Signal
 
 from firefly import display
 from firefly.plans.util import is_valid_value
-from haven import sanitize_name
 
 log = logging.getLogger()
 
@@ -95,6 +94,7 @@ class PlanDisplay(display.FireflyDisplay):
     """Base class containing common functionality for basic plan window displays.
     Should be subclassed to produce a usable display.
     """
+
     plan_type: str
     scan_repetitions: int = 1
     scan_time_changed = Signal(float)

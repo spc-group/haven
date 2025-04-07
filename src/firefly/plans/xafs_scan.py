@@ -3,7 +3,6 @@ import re
 from enum import IntEnum
 
 import xraydb
-from bluesky_queueserver_api import BPlan
 from qtpy import QtWidgets
 from qtpy.QtWidgets import QSizePolicy
 from xraydb.xraydb import XrayDB
@@ -41,24 +40,24 @@ class XafsScanRegion(regions_display.RegionBase):
         self.layout.addWidget(self.region_checkbox, self.row, 0)
 
         # First energy box
-        self.start_line_edit = QtWidgets.QDoubleSpinBox()
-        self.start_line_edit.lineEdit().setPlaceholderText("Start…")
-        self.layout.addWidget(self.start_line_edit, self.row, 1)
+        self.start_spin_box = QtWidgets.QDoubleSpinBox()
+        self.start_spin_box.lineEdit().setPlaceholderText("Start…")
+        self.layout.addWidget(self.start_spin_box, self.row, 1)
         # Last energy box
-        self.stop_line_edit = QtWidgets.QDoubleSpinBox()
-        self.stop_line_edit.lineEdit().setPlaceholderText("Stop…")
-        self.layout.addWidget(self.stop_line_edit, self.row, 2)
+        self.stop_spin_box = QtWidgets.QDoubleSpinBox()
+        self.stop_spin_box.lineEdit().setPlaceholderText("Stop…")
+        self.layout.addWidget(self.stop_spin_box, self.row, 2)
         # Energy step box
-        self.step_line_edit = QtWidgets.QDoubleSpinBox()
-        self.step_line_edit.lineEdit().setPlaceholderText("Step…")
-        self.layout.addWidget(self.step_line_edit, self.row, 3)
+        self.step_spin_box = QtWidgets.QDoubleSpinBox()
+        self.step_spin_box.lineEdit().setPlaceholderText("Step…")
+        self.layout.addWidget(self.step_spin_box, self.row, 3)
         # Apply hints to number
         self.set_domain(Domain.ENERGY)
 
         # Exposure time double spin box
         self.exposure_time_spinbox = QtWidgets.QDoubleSpinBox()
         self.exposure_time_spinbox.setValue(1.0)
-        self.exposure_time_spinbox.setSuffix(' s')
+        self.exposure_time_spinbox.setSuffix(" s")
         self.layout.addWidget(self.exposure_time_spinbox, self.row, 4)
 
         # K-space checkbox
@@ -74,7 +73,7 @@ class XafsScanRegion(regions_display.RegionBase):
         self.weight_spinbox.setEnabled(False)
 
         # Apply validation criteria
-        for spinbox in [self.start_line_edit, self.stop_line_edit, self.step_line_edit]:
+        for spinbox in [self.start_spin_box, self.stop_spin_box, self.step_spin_box]:
             spinbox.setMinimum(float("-inf"))
             spinbox.setMaximum(float("inf"))
             spinbox.setStepType(spinbox.AdaptiveDecimalStepType)
@@ -86,9 +85,9 @@ class XafsScanRegion(regions_display.RegionBase):
         self.region_checkbox.stateChanged.connect(self.enable)
 
     def enable(self, is_checked: bool):
-        self.start_line_edit.setEnabled(is_checked)
-        self.stop_line_edit.setEnabled(is_checked)
-        self.step_line_edit.setEnabled(is_checked)
+        self.start_spin_box.setEnabled(is_checked)
+        self.stop_spin_box.setEnabled(is_checked)
+        self.step_spin_box.setEnabled(is_checked)
         self.exposure_time_spinbox.setEnabled(is_checked)
         self.weight_spinbox.setEnabled(is_checked)
         self.k_space_checkbox.setEnabled(is_checked)
@@ -96,9 +95,9 @@ class XafsScanRegion(regions_display.RegionBase):
     def remove(self):
         widgets = [
             self.region_checkbox,
-            self.start_line_edit,
-            self.stop_line_edit,
-            self.step_line_edit,
+            self.start_spin_box,
+            self.stop_spin_box,
+            self.step_spin_box,
             self.exposure_time_spinbox,
             self.k_space_checkbox,
             self.weight_spinbox,
@@ -110,9 +109,9 @@ class XafsScanRegion(regions_display.RegionBase):
     def set_domain(self, domain: Domain):
         """Set up the UI to be in either energy (eV) or wavenumber (Å⁻) units."""
         double_widgets = [
-            self.start_line_edit,
-            self.stop_line_edit,
-            self.step_line_edit,
+            self.start_spin_box,
+            self.stop_spin_box,
+            self.step_spin_box,
         ]
         suffix = (
             self.wavenumber_suffix
@@ -129,7 +128,7 @@ class XafsScanRegion(regions_display.RegionBase):
         self.weight_spinbox.setEnabled(is_k_checked)
 
         # Define conversion functions
-        line_edits = [self.start_line_edit, self.stop_line_edit, self.step_line_edit]
+        line_edits = [self.start_spin_box, self.stop_spin_box, self.step_spin_box]
         start, stop, step = [widget.value() for widget in line_edits]
         if is_k_checked:
             convert = energy_to_wavenumber
@@ -141,9 +140,9 @@ class XafsScanRegion(regions_display.RegionBase):
         precision = self.wavenumber_precision if is_k_checked else self.energy_precision
         for widget in line_edits:
             widget.setDecimals(precision)
-        self.start_line_edit.setValue(new_start)
-        self.stop_line_edit.setValue(new_stop)
-        self.step_line_edit.setValue(new_step)
+        self.start_spin_box.setValue(new_start)
+        self.stop_spin_box.setValue(new_stop)
+        self.step_spin_box.setValue(new_step)
 
     @property
     def energy_range(self) -> EnergyRange | None:
@@ -151,9 +150,9 @@ class XafsScanRegion(regions_display.RegionBase):
         exposure_time = self.exposure_time_spinbox.value()
         # Prevent invalid inputs such as nan
         try:
-            start = self.start_line_edit.value()
-            stop = self.stop_line_edit.value()
-            step = self.step_line_edit.value()
+            start = self.start_spin_box.value()
+            stop = self.stop_spin_box.value()
+            step = self.step_spin_box.value()
         # When the round doesn't work for nan values
         except ValueError as exc:
             log.exception(exc)
@@ -173,7 +172,7 @@ class XafsScanRegion(regions_display.RegionBase):
         # Un-check k-space to convert back to energy from wavenumber
         self.k_space_checkbox.setChecked(False)
         # Convert between absolute energies and relative energies
-        for line_edit in [self.start_line_edit, self.stop_line_edit]:
+        for line_edit in [self.start_spin_box, self.stop_spin_box]:
             old_value = line_edit.value()
             new_value = old_value - E0
             line_edit.setValue(new_value)
@@ -188,7 +187,7 @@ class XafsScanRegion(regions_display.RegionBase):
         # Un-check k-space to convert back to energy from wavenumber
         self.k_space_checkbox.setChecked(False)
         # Convert between absolute energies and relative energies
-        for line_edit in [self.start_line_edit, self.stop_line_edit]:
+        for line_edit in [self.start_spin_box, self.stop_spin_box]:
             old_value = line_edit.value()
             new_value = old_value + E0
             line_edit.setValue(new_value)
@@ -281,9 +280,9 @@ class XafsScanDisplay(regions_display.RegionsDisplay):
 
         default_regions = [pre_edge, xanes_region, exafs_region]
         for (start, stop, step), region in zip(default_regions, self.regions):
-            region.start_line_edit.setValue(start)
-            region.stop_line_edit.setValue(stop)
-            region.step_line_edit.setValue(step)
+            region.start_spin_box.setValue(start)
+            region.stop_spin_box.setValue(stop)
+            region.step_spin_box.setValue(step)
 
     def add_region(self):
         region = super().add_region()
@@ -388,7 +387,9 @@ class XafsScanDisplay(regions_display.RegionsDisplay):
                 QtWidgets.QMessageBox.warning(
                     self, "Error", "Please select an absorption edge."
                 )
-                raise ValueError("Absorption edge is selected, but no valid value was provided.")
+                raise ValueError(
+                    "Absorption edge is selected, but no valid value was provided."
+                )
             kwargs["E0"] = E0
         return args, kwargs
 

@@ -2,12 +2,10 @@ import logging
 import math
 
 import numpy as np
-from bluesky_queueserver_api import BPlan
 from ophyd_async.core import Device
 from qasync import asyncSlot
 from qtpy import QtWidgets
 from qtpy.QtCore import Qt
-from haven import sanitize_name
 
 from firefly.component_selector import ComponentSelector
 from firefly.plans.regions_display import (
@@ -16,6 +14,7 @@ from firefly.plans.regions_display import (
     RegionsDisplay,
     device_parameters,
 )
+from haven import sanitize_name
 
 log = logging.getLogger()
 
@@ -31,22 +30,22 @@ class GridScanRegion(RegionBase):
         self.motor_box = ComponentSelector()
         self.motor_box.device_selected.connect(self.update_device_parameters)
         # Start point
-        self.start_line_edit = QtWidgets.QDoubleSpinBox()
-        self.start_line_edit.setMinimum(float("-inf"))
-        self.start_line_edit.setMaximum(float("inf"))
+        self.start_spin_box = QtWidgets.QDoubleSpinBox()
+        self.start_spin_box.setMinimum(float("-inf"))
+        self.start_spin_box.setMaximum(float("inf"))
         # Stop point
-        self.stop_line_edit = QtWidgets.QDoubleSpinBox()
-        self.stop_line_edit.setMinimum(float("-inf"))
-        self.stop_line_edit.setMaximum(float("inf"))
+        self.stop_spin_box = QtWidgets.QDoubleSpinBox()
+        self.stop_spin_box.setMinimum(float("-inf"))
+        self.stop_spin_box.setMaximum(float("inf"))
         # Number of scan points
         self.scan_pts_spin_box = QtWidgets.QSpinBox()
         self.scan_pts_spin_box.setMinimum(2)
         self.scan_pts_spin_box.setMaximum(99999)
         # Step size (non-editable)
-        self.step_line_edit = QtWidgets.QLineEdit()
-        self.step_line_edit.setReadOnly(True)
-        self.step_line_edit.setDisabled(True)
-        self.step_line_edit.setPlaceholderText("Step Size…")
+        self.step_spin_box = QtWidgets.QLineEdit()
+        self.step_spin_box.setReadOnly(True)
+        self.step_spin_box.setDisabled(True)
+        self.step_spin_box.setPlaceholderText("Step Size…")
         # Snake checkbox
         self.snake_checkbox = QtWidgets.QCheckBox()
         self.snake_checkbox.setText("Snake")
@@ -56,8 +55,8 @@ class GridScanRegion(RegionBase):
         self.fly_checkbox.setText("Fly")
         self.fly_checkbox.setEnabled(False)
         # Connect signals
-        self.start_line_edit.textChanged.connect(self.update_step_size)
-        self.stop_line_edit.textChanged.connect(self.update_step_size)
+        self.start_spin_box.textChanged.connect(self.update_step_size)
+        self.stop_spin_box.textChanged.connect(self.update_step_size)
         self.scan_pts_spin_box.valueChanged.connect(self.update_step_size)
         self.scan_pts_spin_box.valueChanged.connect(self.num_points_changed)
 
@@ -65,10 +64,10 @@ class GridScanRegion(RegionBase):
         self.widgets = [
             self.motor_label,
             self.motor_box,
-            self.start_line_edit,
-            self.stop_line_edit,
+            self.start_spin_box,
+            self.stop_spin_box,
             self.scan_pts_spin_box,
-            self.step_line_edit,
+            self.step_spin_box,
             self.snake_checkbox,
             self.fly_checkbox,
         ]
@@ -82,7 +81,7 @@ class GridScanRegion(RegionBase):
     async def update_device_parameters(self, new_device: Device):
         device = await device_parameters(new_device)
         # Filter out non-numeric datatypes
-        for widget in [self.start_line_edit, self.stop_line_edit]:
+        for widget in [self.start_spin_box, self.stop_spin_box]:
             widget.setEnabled(device.is_numeric)
             widget.setEnabled(device.is_numeric)
             # Set other metadata
@@ -103,10 +102,10 @@ class GridScanRegion(RegionBase):
             maximum = device.maximum - device.current_value
         else:
             maximum, minimum = device.maximum, device.minimum
-        self.start_line_edit.setMaximum(maximum)
-        self.start_line_edit.setMinimum(minimum)
-        self.stop_line_edit.setMaximum(maximum)
-        self.stop_line_edit.setMinimum(minimum)
+        self.start_spin_box.setMaximum(maximum)
+        self.start_spin_box.setMinimum(minimum)
+        self.stop_spin_box.setMaximum(maximum)
+        self.stop_spin_box.setMinimum(minimum)
 
     @asyncSlot(int)
     async def set_relative_position(self, is_relative: int):
@@ -117,7 +116,7 @@ class GridScanRegion(RegionBase):
             return
         params = await device_parameters(device)
         # Get last values first to avoid limit crossing
-        widgets = [self.start_line_edit, self.stop_line_edit]
+        widgets = [self.start_spin_box, self.stop_spin_box]
         if is_relative:
             new_positions = [
                 widget.value() - params.current_value for widget in widgets
@@ -134,10 +133,10 @@ class GridScanRegion(RegionBase):
     def update_step_size(self):
         try:
             # Get Start and Stop values
-            start_text = self.start_line_edit.text().strip()
-            stop_text = self.stop_line_edit.text().strip()
+            start_text = self.start_spin_box.text().strip()
+            stop_text = self.stop_spin_box.text().strip()
             if not start_text or not stop_text:
-                self.step_line_edit.setText("N/A")
+                self.step_spin_box.setText("N/A")
                 return
 
             start = float(start_text)
@@ -149,11 +148,11 @@ class GridScanRegion(RegionBase):
             # Calculate step size
             if num_points > 1:
                 step_size = (stop - start) / (num_points - 1)
-                self.step_line_edit.setText(f"{step_size:.5g}")
+                self.step_spin_box.setText(f"{step_size:.5g}")
             else:
-                self.step_line_edit.setText("N/A")
+                self.step_spin_box.setText("N/A")
         except ValueError:
-            self.step_line_edit.setText("N/A")
+            self.step_spin_box.setText("N/A")
 
 
 class GridScanDisplay(RegionsDisplay):
@@ -238,23 +237,6 @@ class GridScanDisplay(RegionsDisplay):
             for region_i in self.regions[:-1]:
                 region_i.snake_checkbox.setEnabled(True)
 
-    def get_scan_parameters(self):
-        # Get paramters from each rows of line regions:
-        motor_lst, start_lst, stop_lst, num_points_lst = [], [], [], []
-        for region_i in reversed(self.regions):
-            motor_lst.append(region_i.motor_box.current_component().name)
-            start_lst.append(float(region_i.start_line_edit.text()))
-            stop_lst.append(float(region_i.stop_line_edit.text()))
-            num_points_lst.append(int(region_i.scan_pts_spin_box.value()))
-
-        motor_args = [
-            values
-            for motor_i in zip(motor_lst, start_lst, stop_lst, num_points_lst)
-            for values in motor_i
-        ]
-
-        return detectors, motor_args, repeat_scan_num
-
     def plan_type(self):
         if self.ui.relative_scan_checkbox.isChecked():
             return "rel_grid_scan"
@@ -269,10 +251,12 @@ class GridScanDisplay(RegionsDisplay):
     def plan_args(self):
         detectors = self.ui.detectors_list.selected_detectors()
         # Get parameters from each row of line regions:
-        device_names = [region.motor_box.current_component().name for region in self.regions]
+        device_names = [
+            region.motor_box.current_component().name for region in self.regions
+        ]
         device_names = [sanitize_name(name) for name in device_names]
-        start_points = [region.start_line_edit.value() for region in self.regions]
-        stop_points = [region.stop_line_edit.value() for region in self.regions]
+        start_points = [region.start_spin_box.value() for region in self.regions]
+        stop_points = [region.stop_spin_box.value() for region in self.regions]
         num_points = [region.scan_pts_spin_box.value() for region in self.regions]
         device_args = [
             values
@@ -288,13 +272,10 @@ class GridScanDisplay(RegionsDisplay):
         ]
         if snake_axes == []:
             snake_axes = False
-        
+
         # Prepare the argument collections
         args = (detectors, *device_args)
-        kwargs = {
-            "snake_axes": snake_axes,
-            "md": self.get_meta_data()
-        }
+        kwargs = {"snake_axes": snake_axes, "md": self.get_meta_data()}
         return args, kwargs
 
     def ui_filename(self):

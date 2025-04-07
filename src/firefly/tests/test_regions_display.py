@@ -1,9 +1,9 @@
 import pytest
-
 from bluesky_queueserver_api import BPlan
 from qtpy import QtCore
 
 from firefly.plans.move_motor_window import MoveMotorDisplay
+
 
 @pytest.fixture()
 async def display(qtbot, sim_registry, sync_motors, async_motors):

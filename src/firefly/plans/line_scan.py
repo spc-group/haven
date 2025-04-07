@@ -1,10 +1,8 @@
 import logging
 
-from bluesky_queueserver_api import BPlan
 from ophyd_async.core import Device
 from qasync import asyncSlot
 from qtpy import QtWidgets
-from haven import sanitize_name
 
 from firefly.component_selector import ComponentSelector
 from firefly.plans.regions_display import (
@@ -13,6 +11,7 @@ from firefly.plans.regions_display import (
     RegionsDisplay,
     device_parameters,
 )
+from haven import sanitize_name
 
 log = logging.getLogger()
 
@@ -26,39 +25,39 @@ class LineScanRegion(RegionBase):
         self.motor_box = ComponentSelector()
         self.motor_box.device_selected.connect(self.update_device_parameters)
         # start point
-        self.start_line_edit = QtWidgets.QDoubleSpinBox()
-        self.start_line_edit.lineEdit().setPlaceholderText("Start…")
-        self.start_line_edit.setMinimum(float("-inf"))
-        self.start_line_edit.setMaximum(float("inf"))
+        self.start_spin_box = QtWidgets.QDoubleSpinBox()
+        self.start_spin_box.lineEdit().setPlaceholderText("Start…")
+        self.start_spin_box.setMinimum(float("-inf"))
+        self.start_spin_box.setMaximum(float("inf"))
 
         # Stop point
-        self.stop_line_edit = QtWidgets.QDoubleSpinBox()
-        self.stop_line_edit.lineEdit().setPlaceholderText("Stop…")
-        self.stop_line_edit.setMinimum(float("-inf"))
-        self.stop_line_edit.setMaximum(float("inf"))
+        self.stop_spin_box = QtWidgets.QDoubleSpinBox()
+        self.stop_spin_box.lineEdit().setPlaceholderText("Stop…")
+        self.stop_spin_box.setMinimum(float("-inf"))
+        self.stop_spin_box.setMaximum(float("inf"))
 
         # Step size (non-editable)
-        self.step_line_edit = QtWidgets.QDoubleSpinBox()
-        self.step_line_edit.setReadOnly(True)
-        self.step_line_edit.setDisabled(True)
-        self.step_line_edit.setMinimum(float("-inf"))
-        self.step_line_edit.setMaximum(float("inf"))
-        self.step_line_edit.setDecimals(4)
-        self.step_line_edit.lineEdit().setPlaceholderText("Step Size…")
+        self.step_spin_box = QtWidgets.QDoubleSpinBox()
+        self.step_spin_box.setReadOnly(True)
+        self.step_spin_box.setDisabled(True)
+        self.step_spin_box.setMinimum(float("-inf"))
+        self.step_spin_box.setMaximum(float("inf"))
+        self.step_spin_box.setDecimals(4)
+        self.step_spin_box.lineEdit().setPlaceholderText("Step Size…")
 
         # Add widgets to the layout
         self.widgets = [
             self.motor_box,
-            self.start_line_edit,
-            self.stop_line_edit,
-            self.step_line_edit,
+            self.start_spin_box,
+            self.stop_spin_box,
+            self.step_spin_box,
         ]
         for column, widget in enumerate(self.widgets):
             self.layout.addWidget(widget, self.row, column)
 
         # Connect signals
-        self.start_line_edit.valueChanged.connect(self.update_step_size)
-        self.stop_line_edit.valueChanged.connect(self.update_step_size)
+        self.start_spin_box.valueChanged.connect(self.update_step_size)
+        self.stop_spin_box.valueChanged.connect(self.update_step_size)
 
     async def update_devices(self, registry):
         await self.motor_box.update_devices(registry)
@@ -67,7 +66,7 @@ class LineScanRegion(RegionBase):
     async def update_device_parameters(self, new_device: Device):
         device = await device_parameters(new_device)
         # Filter out non-numeric datatypes
-        for widget in [self.start_line_edit, self.stop_line_edit]:
+        for widget in [self.start_spin_box, self.stop_spin_box]:
             widget.setEnabled(device.is_numeric)
             widget.setEnabled(device.is_numeric)
             # Set other metadata
@@ -88,10 +87,10 @@ class LineScanRegion(RegionBase):
             maximum = device.maximum - device.current_value
         else:
             maximum, minimum = device.maximum, device.minimum
-        self.start_line_edit.setMaximum(maximum)
-        self.start_line_edit.setMinimum(minimum)
-        self.stop_line_edit.setMaximum(maximum)
-        self.stop_line_edit.setMinimum(minimum)
+        self.start_spin_box.setMaximum(maximum)
+        self.start_spin_box.setMinimum(minimum)
+        self.stop_spin_box.setMaximum(maximum)
+        self.stop_spin_box.setMinimum(minimum)
 
     @asyncSlot(int)
     async def set_relative_position(self, is_relative: int):
@@ -102,7 +101,7 @@ class LineScanRegion(RegionBase):
             return
         params = await device_parameters(device)
         # Get last values first to avoid limit crossing
-        widgets = [self.start_line_edit, self.stop_line_edit]
+        widgets = [self.start_spin_box, self.stop_spin_box]
         if is_relative:
             new_positions = [
                 widget.value() - params.current_value for widget in widgets
@@ -122,15 +121,15 @@ class LineScanRegion(RegionBase):
 
     def update_step_size(self):
         # Get Start and Stop values
-        start = self.start_line_edit.value()
-        stop = self.stop_line_edit.value()
+        start = self.start_spin_box.value()
+        stop = self.stop_spin_box.value()
         # Calculate step size
         try:
             step_size = (stop - start) / (self.num_points - 1)
         except (ValueError, ZeroDivisionError):
-            self.step_line_edit.setValue(float("nan"))
+            self.step_spin_box.setValue(float("nan"))
         else:
-            self.step_line_edit.setValue(step_size)
+            self.step_spin_box.setValue(step_size)
 
 
 class LineScanDisplay(RegionsDisplay):
@@ -194,10 +193,12 @@ class LineScanDisplay(RegionsDisplay):
         # Get scan parameters from widgets
         detectors = self.ui.detectors_list.selected_detectors()
         # Get parameters from each row of line regions
-        device_names = [region.motor_box.current_component().name for region in self.regions]
+        device_names = [
+            region.motor_box.current_component().name for region in self.regions
+        ]
         device_names = [sanitize_name(name) for name in device_names]
-        start_points = [region.start_line_edit.value() for region in self.regions]
-        stop_points = [region.stop_line_edit.value() for region in self.regions]
+        start_points = [region.start_spin_box.value() for region in self.regions]
+        stop_points = [region.stop_spin_box.value() for region in self.regions]
         device_args = [
             values
             for entry in zip(device_names, start_points, stop_points)
@@ -219,7 +220,12 @@ class LineScanDisplay(RegionsDisplay):
             (True, False): "rel_scan",
             (False, True): "log_scan",
             (False, False): "scan",
-        }[(self.ui.relative_scan_checkbox.isChecked(), self.ui.log_scan_checkbox.isChecked())]
+        }[
+            (
+                self.ui.relative_scan_checkbox.isChecked(),
+                self.ui.log_scan_checkbox.isChecked(),
+            )
+        ]
 
     @property
     def scan_repetitions(self) -> int:

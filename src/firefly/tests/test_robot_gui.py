@@ -1,9 +1,7 @@
 import pytest
-from bluesky_queueserver_api import BPlan
 from ophyd import Component as Cpt
 from ophyd import Signal
 from ophyd.sim import SynAxis
-from qtpy import QtCore
 
 from firefly.robot import RobotDisplay
 
@@ -44,7 +42,7 @@ async def test_robot_queued(qtbot, sim_motor_registry, display):
 
     # set up a test motor
     display.regions[0].motor_box.combo_box.setCurrentText("motor1")
-    display.regions[0].start_line_edit.setValue(100)
+    display.regions[0].position_spin_box.setValue(100)
     # Check arguments that will be given to the plan
     args, kwargs = display.plan_args()
     assert args == ("robotA", 8, "motor1", 100)
