@@ -3,7 +3,7 @@ import inspect
 import logging
 import numbers
 from functools import partial
-from typing import Callable, Mapping, Optional, Sequence, Type
+from typing import Callable, Mapping, Optional, Type
 
 import numpy as np
 from bluesky.protocols import Reading, Subscribable
@@ -228,7 +228,7 @@ def derived_signal_rw(
     *,
     initial_value: Optional[T] = None,
     name: str = "",
-    derived_from: Sequence,
+    derived_from: Mapping,
     forward: Callable = None,
     inverse: Callable = None,
     units: str | None = None,
@@ -313,7 +313,7 @@ def derived_signal_r(
     *,
     initial_value: Optional[T] = None,
     name: str = "",
-    derived_from: Sequence,
+    derived_from: Mapping,
     inverse: Callable = None,
     units: str | None = None,
     precision: int | None = None,
@@ -380,7 +380,7 @@ def derived_signal_r(
 def derived_signal_x(
     *,
     name: str = "",
-    derived_from: Sequence,
+    derived_from: Mapping,
     forward: Callable = None,
 ) -> SignalX:
     """Creates a signal linked to one or more other signals.

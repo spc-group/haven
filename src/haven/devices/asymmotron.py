@@ -23,12 +23,13 @@ from ophyd_async.core import (
     DEFAULT_TIMEOUT,
     AsyncStatus,
     ConfigSignal,
-    Device,
     LazyMock,
+    SignalR,
     StandardReadable,
     soft_signal_r_and_setter,
     soft_signal_rw,
 )
+from ophyd_async.epics.motor import Motor
 from pint import Quantity, UnitRegistry
 from scipy import constants
 
@@ -59,7 +60,7 @@ def energy_to_wavelength(energy: Quantity) -> Quantity:
 wavelength_to_energy = energy_to_wavelength
 
 
-async def device_units(device: Device):
+async def device_units(device: SignalR | StandardReadable):
     """Figure out the most likely units to use for *device*.
 
     Defaults to meters if no other unit can be found."""
@@ -72,7 +73,7 @@ async def device_units(device: Device):
             egu = desc["units"]
         else:
             egu = "m"
-    return ureg[egu].units
+    return ureg(egu).units
 
 
 def units(quantity: Quantity) -> str:
@@ -327,7 +328,7 @@ class Analyzer(StandardReadable):
             mock=mock, timeout=timeout, force_reconnect=force_reconnect
         )
         # Stash units for later. Assumes they won't change
-        devices = [
+        devices: list[SignalR | StandardReadable] = [
             self.horizontal,
             self.horizontal.user_readback,
             self.horizontal.user_setpoint,
@@ -345,6 +346,9 @@ class Analyzer(StandardReadable):
             self.energy,
             self.bragg_offset,
         ]
+        # for device in devices:
+        #     print(device.name, type(device).__mro__)
+        # assert False
         aws = [device_units(device) for device in devices]
         units = await asyncio.gather(*aws)
         self.units = {device: unit for device, unit in zip(devices, units)}

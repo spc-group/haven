@@ -67,4 +67,4 @@ parentdir_prefix = "haven-"
 
 [tool.mypy]
 files = ['src/haven/devices/asymmotron.py', "src/haven/tests/test_asymmotron.py"]
-follow_imports = "skip"
+# follow_imports = "skip"
