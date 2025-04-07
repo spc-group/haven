@@ -127,36 +127,21 @@ def test_queue_plan(display, qtbot):
     display.ui.comboBox_purpose.setCurrentText("test")
     display.ui.textEdit_notes.setText("sam_notes")
 
-    def check_item(item):
-        kwargs = item.to_dict()["kwargs"]
-        detectors, *energy_ranges = item.to_dict()["args"]
-        try:
-            assert detectors == ["vortex_me4", "I0"]
-            # Check energy ranges
-            assert energy_ranges == [
-                ("E", -200.0, -50.0, 5.0, 1.0),
-                ("E", -50.0, 50.0, 0.5, 1.0),
-            ]
-            # Check if the remaining dictionary items are equal
-            assert kwargs["E0"] == 58893.0
-            assert kwargs["md"] == {
+    args, kwargs = display.plan_args()
+    assert args == (
+        ["vortex_me4", "I0"],
+        ("E", -200.0, -50.0, 5.0, 1.0),
+        ("E", -50.0, 50.0, 0.5, 1.0),
+    )
+    assert kwargs == {
+        "E0": 58893.0,
+        "md": {
                 "sample_name": "sam",
                 "purpose": "test",
                 "is_standard": True,
                 "notes": "sam_notes",
-            }
-        except AssertionError as e:
-            # Print detailed debug info
-            print(str(e))
-            return False
-        return True
-
-    # Click the run button and see if the plan is queued
-    display.ui.run_button.setEnabled(True)
-    with qtbot.waitSignal(
-        display.queue_item_submitted, timeout=1000, check_params_cb=check_item
-    ):
-        qtbot.mouseClick(display.ui.run_button, QtCore.Qt.LeftButton)
+        }
+    }
 
 
 def test_plan_energies(display, qtbot):
@@ -171,22 +156,21 @@ def test_plan_energies(display, qtbot):
     display.ui.checkBox_is_standard.setChecked(True)
     display.ui.comboBox_purpose.setCurrentText("test")
     display.ui.textEdit_notes.setText("sam_notes")
-
+    # Check plan arguments that will be sent to the queue
     args, kwargs = display.plan_args()
-    detectors, *energy_ranges = args
-
-    assert detectors == ["vortex_me4", "I0"]
-    # Check energies ranges
-    assert energy_ranges == [
+    assert args == (
+        ["vortex_me4", "I0"],
         ("E", -200.0, -50.0, 5.0, 1.0),
         ("E", -50.0, 50.0, 0.5, 1.0),
-    ]
-    assert kwargs["E0"] == "Sc-K"
-    assert kwargs["md"] == {
-        "sample_name": "sam",
-        "purpose": "test",
-        "is_standard": True,
-        "notes": "sam_notes",
+    )
+    assert kwargs == {
+        "E0": "Sc-K",
+        "md": {
+            "sample_name": "sam",
+            "purpose": "test",
+            "is_standard": True,
+            "notes": "sam_notes",
+        }
     }
 
 

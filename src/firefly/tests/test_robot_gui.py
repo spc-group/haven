@@ -45,14 +45,7 @@ async def test_robot_queued(qtbot, sim_motor_registry, display):
     # set up a test motor
     display.regions[0].motor_box.combo_box.setCurrentText("motor1")
     display.regions[0].start_line_edit.setValue(100)
-
-    expected_item = BPlan("robot_transfer_sample", "robotA", 8, "motor1", 100)
-
-    def check_item(item):
-        return item.to_dict() == expected_item.to_dict()
-
-    # Click the run button and see if the plan is queued
-    with qtbot.waitSignal(
-        display.queue_item_submitted, timeout=1000, check_params_cb=check_item
-    ):
-        qtbot.mouseClick(display.ui.run_button, QtCore.Qt.LeftButton)
+    # Check arguments that will be given to the plan
+    args, kwargs = display.plan_args()
+    assert args == ("robotA", 8, "motor1", 100)
+    assert kwargs == {}

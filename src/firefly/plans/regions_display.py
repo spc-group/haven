@@ -3,6 +3,7 @@ import logging
 from dataclasses import dataclass
 from typing import Sequence
 
+from bluesky_queueserver_api import BPlan
 from ophyd_async.core import Device
 from qasync import asyncSlot
 from qtpy import QtWidgets
@@ -94,7 +95,8 @@ class PlanDisplay(display.FireflyDisplay):
     """Base class containing common functionality for basic plan window displays.
     Should be subclassed to produce a usable display.
     """
-
+    plan_type: str
+    scan_repetitions: int = 1
     scan_time_changed = Signal(float)
     total_time_changed = Signal(float)
 
@@ -134,12 +136,6 @@ class PlanDisplay(display.FireflyDisplay):
         """
         raise NotImplementedError
 
-    def get_scan_parameters(self):
-        # Get scan parameters from widgets
-        detectors = self.ui.detectors_list.selected_detectors()
-        repeat_scan_num = int(self.ui.spinBox_repeat_scan_num.value())
-        return detectors, repeat_scan_num
-
     def get_meta_data(self):
         """Get metadata information."""
         md = {
@@ -152,6 +148,19 @@ class PlanDisplay(display.FireflyDisplay):
         # Only include metadata that isn't an empty string
         md = {key: val for key, val in md.items() if is_valid_value(val)}
         return md
+
+    def plan_args(self):
+        raise NotImplementedError
+
+    def queue_plan(self, *args, **kwargs):
+        """Execute this plan on the queueserver."""
+        args, kwargs = self.plan_args()
+        # Build the queue item
+        item = BPlan(self.plan_type, *args, **kwargs)
+        # Submit the item to the queueserver
+        log.info(f"Adding {self.plan_type} plan to queue: {item}.")
+        for i in range(self.scan_repetitions):
+            self.queue_item_submitted.emit(item)
 
 
 class RegionsDisplay(PlanDisplay, display.FireflyDisplay):
@@ -241,25 +250,6 @@ class RegionsDisplay(PlanDisplay, display.FireflyDisplay):
             *[region.update_devices(self.registry) for region in new_regions]
         )
         return new_regions
-
-    def get_scan_parameters(self):
-        detectors, repeat_scan_num = super().get_scan_parameters()
-        # Get paramters from each rows of line regions:
-        motor_lst, start_lst, stop_lst = [], [], []
-        for region_i in self.regions:
-            motor_name = region_i.motor_box.current_component().name
-            motor_name = sanitize_name(motor_name)
-            motor_lst.append(motor_name)
-            start_lst.append(float(region_i.start_line_edit.text()))
-            stop_lst.append(float(region_i.stop_line_edit.text()))
-
-        motor_args = [
-            values
-            for motor_i in zip(motor_lst, start_lst, stop_lst)
-            for values in motor_i
-        ]
-
-        return detectors, motor_args, repeat_scan_num
 
 
 # -----------------------------------------------------------------------------

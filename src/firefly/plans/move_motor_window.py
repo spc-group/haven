@@ -5,6 +5,7 @@ from ophyd_async.core import Device
 from qasync import asyncSlot
 from qtpy import QtWidgets
 
+from haven import sanitize_name
 from firefly.component_selector import ComponentSelector
 from firefly.plans.regions_display import (
     DeviceParameters,
@@ -83,19 +84,6 @@ class MoveMotorDisplay(RegionsDisplay):
     Region = MotorRegion
     default_num_regions = 1
 
-    def get_scan_parameters(self):
-        # get paramters from each rows of line regions:
-        motor_lst, position_lst = [], []
-        for region_i in self.regions:
-            motor_lst.append(region_i.motor_box.current_component().name)
-            position_lst.append(region_i.position_spin_box.value())
-
-        motor_args = [
-            values for motor_i in zip(motor_lst, position_lst) for values in motor_i
-        ]
-
-        return motor_args
-
     def add_region(self):
         new_region = super().add_region()
         self.relative_scan_checkbox.stateChanged.connect(
@@ -104,24 +92,22 @@ class MoveMotorDisplay(RegionsDisplay):
         new_region.set_relative_position(self.relative_scan_checkbox.checkState())
         return new_region
 
-    def queue_plan(self, *args, **kwargs):
-        """Execute this plan on the queueserver."""
-        motor_args = self.get_scan_parameters()
 
+    def plan_args(self):
+        # Get parameters from each row of line regions
+        devices = [region.motor_box.current_component() for region in self.regions]
+        device_names = [sanitize_name(device.name) for device in devices]
+        positions = [region.position_spin_box.value() for region in self.regions]
+        args = tuple(values for device_row in zip(device_names, positions) for values in device_row)
+        kwargs = {}
+        return args, kwargs
+
+    @property
+    def plan_type(self):
         if self.ui.relative_scan_checkbox.isChecked():
-            scan_type = "mvr"
+            return "mvr"
         else:
-            scan_type = "mv"
-
-        # Build the queue item
-        item = BPlan(
-            scan_type,
-            *motor_args,
-        )
-
-        # Submit the item to the queueserver
-        log.info("Added line scan() plan to queue.")
-        self.queue_item_submitted.emit(item)
+            return "mv"
 
     def ui_filename(self):
         return "plans/move_motor_window.ui"

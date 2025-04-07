@@ -197,6 +197,7 @@ class XafsScanRegion(regions_display.RegionBase):
 class XafsScanDisplay(regions_display.RegionsDisplay):
     Region = XafsScanRegion
     default_num_regions = 3
+    plan_type = "xafs_scan"
     min_energy = 4000
     max_energy = 33000
 
@@ -362,7 +363,7 @@ class XafsScanDisplay(regions_display.RegionsDisplay):
         except ValueError:
             return None
 
-    def plan_args(self) -> tuple[list, dict]:
+    def plan_args(self) -> tuple[tuple, dict]:
         """Build the arguments that will be used when building a plan object."""
         detectors = self.ui.detectors_list.selected_detectors()
         # Iterate through only selected regions
@@ -377,29 +378,19 @@ class XafsScanDisplay(regions_display.RegionsDisplay):
         # Additional metadata
         md = self.get_meta_data()
         md["is_standard"] = self.ui.checkBox_is_standard.isChecked()
-        args = [detectors, *energy_ranges]
+        args = (detectors, *energy_ranges)
         kwargs = {
             "md": md,
         }
         if self.use_edge_checkbox.isChecked():
+            # Check that an absorption edge was selected
+            if E0 is None:
+                QtWidgets.QMessageBox.warning(
+                    self, "Error", "Please select an absorption edge."
+                )
+                raise ValueError("Absorption edge is selected, but no valid value was provided.")
             kwargs["E0"] = E0
         return args, kwargs
-
-    def queue_plan(self, *args, **kwargs):
-        """Execute this plan on the queueserver."""
-        args, kwargs = self.plan_args()
-        repeat_scan_num = int(self.ui.spinBox_repeat_scan_num.value())
-        # Check that an absorption edge was selected
-        if "E0" in kwargs and kwargs["E0"] is None:
-            QtWidgets.QMessageBox.warning(
-                self, "Error", "Please select an absorption edge."
-            )
-            return
-        # Submit the item to the queueserver
-        item = BPlan("xafs_scan", *args, **kwargs)
-        log.info("Adding XAFS scan to queue.")
-        for i in range(repeat_scan_num):
-            self.queue_item_submitted.emit(item)
 
     def ui_filename(self):
         return "plans/xafs_scan.ui"

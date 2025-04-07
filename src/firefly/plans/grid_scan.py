@@ -7,6 +7,7 @@ from ophyd_async.core import Device
 from qasync import asyncSlot
 from qtpy import QtWidgets
 from qtpy.QtCore import Qt
+from haven import sanitize_name
 
 from firefly.component_selector import ComponentSelector
 from firefly.plans.regions_display import (
@@ -238,10 +239,6 @@ class GridScanDisplay(RegionsDisplay):
                 region_i.snake_checkbox.setEnabled(True)
 
     def get_scan_parameters(self):
-        # Get scan parameters from widgets
-        detectors = self.ui.detectors_list.selected_detectors()
-        repeat_scan_num = int(self.ui.spinBox_repeat_scan_num.value())
-
         # Get paramters from each rows of line regions:
         motor_lst, start_lst, stop_lst, num_points_lst = [], [], [], []
         for region_i in reversed(self.regions):
@@ -258,40 +255,47 @@ class GridScanDisplay(RegionsDisplay):
 
         return detectors, motor_args, repeat_scan_num
 
-    def queue_plan(self, *args, **kwargs):
-        """Execute this plan on the queueserver."""
-        detectors, motor_args, repeat_scan_num = self.get_scan_parameters()
-        md = self.get_meta_data()
+    def plan_type(self):
+        if self.ui.relative_scan_checkbox.isChecked():
+            return "rel_grid_scan"
+        else:
+            return "grid_scan"
 
+    @property
+    def scan_repetitions(self) -> int:
+        """How many times should each scan be run."""
+        return self.ui.spinBox_repeat_scan_num.value()
+
+    def plan_args(self):
+        detectors = self.ui.detectors_list.selected_detectors()
+        # Get parameters from each row of line regions:
+        device_names = [region.motor_box.current_component().name for region in self.regions]
+        device_names = [sanitize_name(name) for name in device_names]
+        start_points = [region.start_line_edit.value() for region in self.regions]
+        stop_points = [region.stop_line_edit.value() for region in self.regions]
+        num_points = [region.scan_pts_spin_box.value() for region in self.regions]
+        device_args = [
+            values
+            for line in zip(device_names, start_points, stop_points, num_points)
+            for values in line
+        ]
+        # Decide whether and how to snake the axes
         # get snake axes, if all unchecked, set it None
         snake_axes = [
-            region_i.motor_box.current_component().name
-            for i, region_i in enumerate(self.regions)
-            if region_i.snake_checkbox.isChecked()
+            region.motor_box.current_component().name
+            for region in self.regions
+            if region.snake_checkbox.isChecked()
         ]
-
         if snake_axes == []:
             snake_axes = False
-
-        if self.ui.relative_scan_checkbox.isChecked():
-            scan_type = "rel_grid_scan"
-        else:
-            scan_type = "grid_scan"
-
-        # Build the queue item
-        item = BPlan(
-            scan_type,
-            detectors,
-            *motor_args,
-            snake_axes=snake_axes,
-            md=md,
-        )
-
-        # Submit the item to the queueserver
-        log.info(f"Added grid_scan() plan to queue ({repeat_scan_num} scans).")
-        # repeat scans
-        for i in range(repeat_scan_num):
-            self.queue_item_submitted.emit(item)
+        
+        # Prepare the argument collections
+        args = (detectors, *device_args)
+        kwargs = {
+            "snake_axes": snake_axes,
+            "md": self.get_meta_data()
+        }
+        return args, kwargs
 
     def ui_filename(self):
         return "plans/grid_scan.ui"

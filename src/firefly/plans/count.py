@@ -46,21 +46,25 @@ class CountDisplay(regions_display.PlanDisplay):
         self.ui.scan_duration_label.set_seconds(time_per_scan)
         self.ui.total_duration_label.set_seconds(total_time)
 
+    def plan_args(self):
+        args = ()
+        kwargs = {
+            "detectors": self.ui.detectors_list.selected_detectors(),
+            "num": self.ui.num_spinbox.value(),
+            "delay": self.ui.delay_spinbox.value(),
+            "md": self.get_meta_data(),
+        }
+        return args, kwargs
+
     def queue_plan(self, *args, **kwargs):
         """Execute this plan on the queueserver."""
-        # Get scan parameters from widgets
-        num_readings = self.ui.num_spinbox.value()
-        delay = self.ui.delay_spinbox.value()
-        detectors, repeat_scan_num = self.get_scan_parameters()
-
-        # Build the queue item
-        md = self.get_meta_data()
-        item = BPlan("count", delay=delay, num=num_readings, detectors=detectors, md=md)
+        args, kwargs = self.plan_args()
+        item = BPlan("count", *args, **kwargs)
         # Submit the item to the queueserver
         log.info("Add ``count()`` plan to queue.")
 
         # repeat scans
-        for i in range(repeat_scan_num):
+        for i in range(self.ui.spinBox_repeat_scan_num.value()):
             self.queue_item_submitted.emit(item)
 
     def ui_filename(self):

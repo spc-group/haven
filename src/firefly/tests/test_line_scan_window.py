@@ -111,32 +111,27 @@ async def test_step_size_calculation(display, qtbot):
 async def test_line_scan_plan_queued(display, monkeypatch, qtbot):
     # set up motor num
     await display.update_regions(2)
-
     # set up a test motor 1
     display.regions[0].motor_box.combo_box.setCurrentText("async motor-1")
     display.regions[0].start_line_edit.setValue(1)
     display.regions[0].stop_line_edit.setValue(111)
-
     # set up a test motor 2
     display.regions[1].motor_box.combo_box.setCurrentText("sync_motor_2")
     display.regions[1].start_line_edit.setValue(2)
     display.regions[1].stop_line_edit.setValue(222)
-
     # set up scan num of points
     display.ui.scan_pts_spin_box.setValue(10)
-
     # time is calculated when the selection is changed
     display.ui.detectors_list.selected_detectors = mock.MagicMock(
         return_value=["vortex_me4", "I00"]
     )
-
     # set up meta data
     display.ui.lineEdit_sample.setText("sam")
     display.ui.comboBox_purpose.setCurrentText("test")
     display.ui.textEdit_notes.setText("notes")
-
-    expected_item = BPlan(
-        "rel_scan",
+    # Check the arguments that will get used by the plan
+    args, kwargs = display.plan_args()
+    assert args == (
         ["vortex_me4", "I00"],
         "async_motor_1",
         1.0,
@@ -144,22 +139,11 @@ async def test_line_scan_plan_queued(display, monkeypatch, qtbot):
         "sync_motor_2",
         2.0,
         222.0,
-        num=10,
-        md={"sample_name": "sam", "purpose": "test", "notes": "notes"},
     )
-
-    def check_item(item):
-        from pprint import pprint
-
-        pprint(item.to_dict())
-        pprint(expected_item.to_dict())
-        return item.to_dict() == expected_item.to_dict()
-
-    # Click the run button and see if the plan is queued
-    with qtbot.waitSignal(
-        display.queue_item_submitted, timeout=1000, check_params_cb=check_item
-    ):
-        qtbot.mouseClick(display.ui.run_button, QtCore.Qt.LeftButton)
+    assert kwargs == {
+        "num": 10,
+        "md": {"sample_name": "sam", "purpose": "test", "notes": "notes"},
+    }
 
 
 async def test_full_motor_parameters(display, motors):

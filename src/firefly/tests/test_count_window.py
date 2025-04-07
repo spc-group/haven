@@ -79,8 +79,8 @@ def test_count_plan_metadata(display, qtbot):
     display.ui.detectors_list.selected_detectors = mock.MagicMock(
         return_value=["vortex_me4", "I00"]
     )
-    expected_item = BPlan(
-        "count",
+    args, kwargs = display.plan_args()
+    assert kwargs == dict(
         num=5,
         detectors=["vortex_me4", "I00"],
         delay=0.0,
@@ -91,19 +91,6 @@ def test_count_plan_metadata(display, qtbot):
             "sample_formula": "LiMn0.5Ni0.5O",
         },
     )
-
-    def check_item(item):
-        from pprint import pprint
-
-        pprint(item.to_dict())
-        pprint(expected_item.to_dict())
-        return item.to_dict() == expected_item.to_dict()
-
-    # Click the run button and see if the plan is queued
-    with qtbot.waitSignal(
-        display.queue_item_submitted, timeout=1000, check_params_cb=check_item
-    ):
-        qtbot.mouseClick(display.ui.run_button, QtCore.Qt.LeftButton)
 
 
 # -----------------------------------------------------------------------------

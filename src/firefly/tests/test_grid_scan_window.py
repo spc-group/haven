@@ -95,22 +95,18 @@ async def test_step_size_calculation(display):
 @pytest.mark.asyncio
 async def test_grid_scan_plan_queued(display, ion_chamber, qtbot):
     await display.update_regions(2)
-
     # set up a test motor 1
     display.regions[0].motor_box.combo_box.setCurrentText("sync_motor_2")
     display.regions[0].start_line_edit.setValue(1)
     display.regions[0].stop_line_edit.setValue(111)
     display.regions[0].scan_pts_spin_box.setValue(5)
-
     # select snake for the first motor
     display.regions[0].snake_checkbox.setChecked(True)
-
     # set up a test motor 2
     display.regions[1].motor_box.combo_box.setCurrentText("async_motor_1")
     display.regions[1].start_line_edit.setValue(2)
     display.regions[1].stop_line_edit.setValue(222)
     display.regions[1].scan_pts_spin_box.setValue(10)
-
     # set up detector list
     display.ui.detectors_list.selected_detectors = mock.MagicMock(
         return_value=["vortex_me4", ion_chamber.name]
@@ -119,32 +115,23 @@ async def test_grid_scan_plan_queued(display, ion_chamber, qtbot):
     display.ui.lineEdit_sample.setText("sam")
     display.ui.comboBox_purpose.setCurrentText("test")
     display.ui.textEdit_notes.setText("notes")
-
-    expected_item = BPlan(
-        "rel_grid_scan",
+    # Check arguments that will get used by the plan
+    args, kwargs = display.plan_args()
+    assert args == (
         ["vortex_me4", "I00"],
-        "async_motor_1",
-        2.0,
-        222.0,
-        10,
         "sync_motor_2",
         1.0,
         111.0,
         5,
+        "async_motor_1",
+        2.0,
+        222.0,
+        10,
+    )
+    assert kwargs == dict(
         snake_axes=["sync_motor_2"],
         md={"sample_name": "sam", "purpose": "test", "notes": "notes"},
     )
-
-    def check_item(item):
-        print(item.to_dict())
-        print(expected_item.to_dict())
-        return item.to_dict() == expected_item.to_dict()
-
-    # Click the run button and see if the plan is queued
-    with qtbot.waitSignal(
-        display.queue_item_submitted, timeout=1000, check_params_cb=check_item
-    ):
-        qtbot.mouseClick(display.ui.run_button, QtCore.Qt.LeftButton)
 
 
 async def test_full_motor_parameters(display, async_motors):

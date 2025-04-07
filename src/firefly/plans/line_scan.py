@@ -4,6 +4,7 @@ from bluesky_queueserver_api import BPlan
 from ophyd_async.core import Device
 from qasync import asyncSlot
 from qtpy import QtWidgets
+from haven import sanitize_name
 
 from firefly.component_selector import ComponentSelector
 from firefly.plans.regions_display import (
@@ -189,36 +190,41 @@ class LineScanDisplay(RegionsDisplay):
         # Reset scan repeat num to 1
         self.ui.spinBox_repeat_scan_num.setValue(1)
 
-    def queue_plan(self, *args, **kwargs):
-        """Execute this plan on the queueserver."""
-        detectors, motor_args, repeat_scan_num = self.get_scan_parameters()
-        md = self.get_meta_data()
-        num_points = self.ui.scan_pts_spin_box.value()
-        # Check for what kind of scan we're running based on use input
-        if self.ui.relative_scan_checkbox.isChecked():
-            if self.ui.log_scan_checkbox.isChecked():
-                scan_type = "rel_log_scan"
-            else:
-                scan_type = "rel_scan"
-        else:
-            if self.ui.log_scan_checkbox.isChecked():
-                scan_type = "log_scan"
-            else:
-                scan_type = "scan"
-        # Build the queue item
-        item = BPlan(
-            scan_type,
-            detectors,
-            *motor_args,
-            num=num_points,
-            md=md,
-        )
+    def plan_args(self) -> tuple[tuple, dict]:
+        # Get scan parameters from widgets
+        detectors = self.ui.detectors_list.selected_detectors()
+        # Get parameters from each row of line regions
+        device_names = [region.motor_box.current_component().name for region in self.regions]
+        device_names = [sanitize_name(name) for name in device_names]
+        start_points = [region.start_line_edit.value() for region in self.regions]
+        stop_points = [region.stop_line_edit.value() for region in self.regions]
+        device_args = [
+            values
+            for entry in zip(device_names, start_points, stop_points)
+            for values in entry
+        ]
+        args = (detectors, *device_args)
+        kwargs = {
+            "num": self.ui.scan_pts_spin_box.value(),
+            "md": self.get_meta_data(),
+        }
+        return args, kwargs
 
-        # Submit the item to the queueserver
-        log.info(f"Adding line scan() plan to queue: {item}.")
-        # repeat scans
-        for i in range(repeat_scan_num):
-            self.queue_item_submitted.emit(item)
+    @property
+    def plan_type(self) -> str:
+        """Determine what kind of scan we're running based on use input."""
+        return {
+            # Rel, log
+            (True, True): "rel_log_scan",
+            (True, False): "rel_scan",
+            (False, True): "log_scan",
+            (False, False): "scan",
+        }[(self.ui.relative_scan_checkbox.isChecked(), self.ui.log_scan_checkbox.isChecked())]
+
+    @property
+    def scan_repetitions(self) -> int:
+        """How many times should each scan be run."""
+        return self.ui.spinBox_repeat_scan_num.value()
 
     def ui_filename(self):
         return "plans/line_scan.ui"
