@@ -37,6 +37,8 @@ from ..positioner import Positioner
 from .motor import Motor
 from .signal import derived_signal_r, derived_signal_rw
 
+__all__ = ["Analyzer", "HKL"]
+
 ureg = UnitRegistry()
 
 log = logging.getLogger(__name__)
