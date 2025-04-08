@@ -2,6 +2,7 @@ import asyncio
 import logging
 import warnings
 from functools import partial
+from typing import cast
 
 import numpy as np
 from bluesky.protocols import Locatable, Location, Movable, Stoppable
@@ -10,6 +11,8 @@ from ophyd_async.core import (
     DEFAULT_TIMEOUT,
     AsyncStatus,
     CalculatableTimeout,
+    SignalR,
+    SignalRW,
     StandardReadable,
     WatchableAsyncStatus,
     WatcherUpdate,
@@ -46,6 +49,11 @@ class Positioner(StandardReadable, Locatable, Movable, Stoppable):
     """
 
     done_value = 1
+    readback: SignalR
+    setpoint: SignalRW
+    units: SignalR
+    precision: SignalR
+    velocity: SignalR
 
     def __init__(
         self, name: str = "", put_complete: bool = False, min_move: float = 0.0
@@ -88,7 +96,7 @@ class Positioner(StandardReadable, Locatable, Movable, Stoppable):
         self,
         value: float,
         wait: bool = True,
-        timeout: CalculatableTimeout = CALCULATE_TIMEOUT,
+        timeout: CalculatableTimeout = "CALCULATE_TIMEOUT",
     ):
         new_position = value
         self._set_success = True
@@ -106,9 +114,12 @@ class Positioner(StandardReadable, Locatable, Movable, Stoppable):
         if is_small_move:
             return
         # Decide how long we should wait
+        timeout_: float
         if timeout == CALCULATE_TIMEOUT:
             assert velocity > 0, "Mover has zero velocity"
-            timeout = abs(new_position - old_position) / velocity + DEFAULT_TIMEOUT
+            timeout_ = abs(new_position - old_position) / velocity + DEFAULT_TIMEOUT
+        else:
+            timeout_ = cast(float, timeout)
         # Make an Event that will be set on completion, and a Status that will
         # error if not done in time
         reached_setpoint = asyncio.Event()
@@ -139,11 +150,11 @@ class Positioner(StandardReadable, Locatable, Movable, Stoppable):
                 )
             )
             aws = asyncio.gather(done_event.wait(), set_status)
-            done_status = AsyncStatus(asyncio.wait_for(aws, timeout))
+            done_status = AsyncStatus(asyncio.wait_for(aws, timeout_))
         else:
             # Monitor based on readback position
             aws = asyncio.gather(reached_setpoint.wait(), set_status)
-            done_status = AsyncStatus(asyncio.wait_for(aws, timeout))
+            done_status = AsyncStatus(asyncio.wait_for(aws, timeout_))
         # If we don't care to wait for the return value, we can end
         if not wait:
             return

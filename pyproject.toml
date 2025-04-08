@@ -27,8 +27,14 @@ dependencies = ["aioca", "aiokafka", "bluesky", "ophyd",
 
 dev = ["black", "pytest", "asynctest", "build", "twine", "pytest-httpx",
        "time-machine", "pytest-mock", "pytest-qt", "flake8", "pytest-asyncio",
-       "pytest_httpx"]
-gui = ["qtawesome>=1.4.0", "pydm", "pyqtgraph", "qasync", "tiled[all]"]
+       "pytest_httpx", "scipy-stubs", "mypy"]
+gui = [
+    "qtawesome>=1.4.0",
+    "pydm==1.25.2",
+    "pyqtgraph",
+    "qasync",
+    "tiled[all]"
+]
 
 [project.urls]
 "Homepage" = "https://haven-spc.readthedocs.io/en/latest/"
@@ -64,3 +70,10 @@ versionfile_source = "src/haven/_version.py"
 versionfile_build = "haven/_version.py"
 tag_prefix = "haven-"
 parentdir_prefix = "haven-"
+
+[tool.mypy]
+files = [
+    'src/haven/devices/asymmotron.py', "src/haven/tests/test_asymmotron.py",
+    'src/haven/positioner.py', "src/haven/tests/test_positioner.py",
+]
+# follow_imports = "skip"
