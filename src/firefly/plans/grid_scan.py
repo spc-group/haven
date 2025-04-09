@@ -40,12 +40,11 @@ class GridScanRegion(RegionBase):
         # Number of scan points
         self.scan_pts_spin_box = QtWidgets.QSpinBox()
         self.scan_pts_spin_box.setMinimum(2)
+        self.scan_pts_spin_box.setValue(2)
         self.scan_pts_spin_box.setMaximum(99999)
         # Step size (non-editable)
-        self.step_spin_box = QtWidgets.QLineEdit()
-        self.step_spin_box.setReadOnly(True)
-        self.step_spin_box.setDisabled(True)
-        self.step_spin_box.setPlaceholderText("Step Size…")
+        self.step_label = QtWidgets.QLabel()
+        self.step_label.setText("NaN")
         # Snake checkbox
         self.snake_checkbox = QtWidgets.QCheckBox()
         self.snake_checkbox.setText("Snake")
@@ -67,7 +66,7 @@ class GridScanRegion(RegionBase):
             self.start_spin_box,
             self.stop_spin_box,
             self.scan_pts_spin_box,
-            self.step_spin_box,
+            self.step_label,
             self.snake_checkbox,
             self.fly_checkbox,
         ]
@@ -136,7 +135,7 @@ class GridScanRegion(RegionBase):
             start_text = self.start_spin_box.text().strip()
             stop_text = self.stop_spin_box.text().strip()
             if not start_text or not stop_text:
-                self.step_spin_box.setText("N/A")
+                self.step_label.setText("N/A")
                 return
 
             start = float(start_text)
@@ -144,15 +143,15 @@ class GridScanRegion(RegionBase):
 
             # Ensure num_points is an integer
             num_points = int(self.scan_pts_spin_box.value())  # Corrected method call
-
             # Calculate step size
-            if num_points > 1:
-                step_size = (stop - start) / (num_points - 1)
-                self.step_spin_box.setText(f"{step_size:.5g}")
-            else:
-                self.step_spin_box.setText("N/A")
+            precision = max(
+                self.start_spin_box.decimals(), self.stop_spin_box.decimals()
+            )
+            step_size = (stop - start) / (num_points - 1)
+            step_size = round(step_size, precision)
+            self.step_label.setText(str(step_size))
         except ValueError:
-            self.step_spin_box.setText("N/A")
+            self.step_label.setText("NaN")
 
 
 class GridScanDisplay(RegionsDisplay):

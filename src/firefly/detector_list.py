@@ -36,7 +36,6 @@ class DetectorListView(QListView):
         devices = [
             device for device in devices if hasattr(device, "default_time_signal")
         ]
-        print(devices)
         aws = [device.default_time_signal.get_value() for device in devices]
         times = await asyncio.gather(*aws)
         return times

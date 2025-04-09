@@ -41,15 +41,12 @@ class XafsScanRegion(regions_display.RegionBase):
 
         # First energy box
         self.start_spin_box = QtWidgets.QDoubleSpinBox()
-        self.start_spin_box.lineEdit().setPlaceholderText("Start…")
         self.layout.addWidget(self.start_spin_box, self.row, 1)
         # Last energy box
         self.stop_spin_box = QtWidgets.QDoubleSpinBox()
-        self.stop_spin_box.lineEdit().setPlaceholderText("Stop…")
         self.layout.addWidget(self.stop_spin_box, self.row, 2)
         # Energy step box
         self.step_spin_box = QtWidgets.QDoubleSpinBox()
-        self.step_spin_box.lineEdit().setPlaceholderText("Step…")
         self.layout.addWidget(self.step_spin_box, self.row, 3)
         # Apply hints to number
         self.set_domain(Domain.ENERGY)

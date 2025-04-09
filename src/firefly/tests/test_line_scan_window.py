@@ -93,16 +93,16 @@ async def test_step_size_calculation(display, qtbot):
     # Set num_points
     display.ui.scan_pts_spin_box.setValue(7)
     # Step size should be 1.6666 for 7 points from 0 to 10.
-    assert region.step_spin_box.value() == 1.6667
+    assert region.step_label.text() == "1.67"
     # Change the number of points and verify step size updates
     display.ui.scan_pts_spin_box.setValue(3)
     # Step size should be 5.0 for 3 points from 0 to 10."
-    assert region.step_spin_box.value() == 5
+    assert region.step_label.text() == "5.0"
     # Reset to another state and verify
     region.start_spin_box.setValue(0)
     region.stop_spin_box.setValue(10)
     display.ui.scan_pts_spin_box.setValue(6)
-    assert region.step_spin_box.value() == 2
+    assert region.step_label.text() == "2.0"
 
 
 @pytest.mark.asyncio

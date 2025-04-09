@@ -37,20 +37,15 @@ class LineScanRegion(RegionBase):
         self.stop_spin_box.setMaximum(float("inf"))
 
         # Step size (non-editable)
-        self.step_spin_box = QtWidgets.QDoubleSpinBox()
-        self.step_spin_box.setReadOnly(True)
-        self.step_spin_box.setDisabled(True)
-        self.step_spin_box.setMinimum(float("-inf"))
-        self.step_spin_box.setMaximum(float("inf"))
-        self.step_spin_box.setDecimals(4)
-        self.step_spin_box.lineEdit().setPlaceholderText("Step Size…")
+        self.step_label = QtWidgets.QLabel()
+        self.step_label.setText("nan")
 
         # Add widgets to the layout
         self.widgets = [
             self.motor_box,
             self.start_spin_box,
             self.stop_spin_box,
-            self.step_spin_box,
+            self.step_label,
         ]
         for column, widget in enumerate(self.widgets):
             self.layout.addWidget(widget, self.row, column)
@@ -123,13 +118,15 @@ class LineScanRegion(RegionBase):
         # Get Start and Stop values
         start = self.start_spin_box.value()
         stop = self.stop_spin_box.value()
+        precision = max(self.start_spin_box.decimals(), self.stop_spin_box.decimals())
         # Calculate step size
         try:
             step_size = (stop - start) / (self.num_points - 1)
         except (ValueError, ZeroDivisionError):
-            self.step_spin_box.setValue(float("nan"))
+            self.step_label.setText("nan")
         else:
-            self.step_spin_box.setValue(step_size)
+            step_size = round(step_size, precision)
+            self.step_label.setText(str(step_size))
 
 
 class LineScanDisplay(RegionsDisplay):
