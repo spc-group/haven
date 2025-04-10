@@ -14,6 +14,7 @@ from .robot import Robot  # noqa: F401
 from .scaler import MultiChannelScaler  # noqa: F401
 from .shutter import PssShutter, ShutterState  # noqa: F401
 from .table import Table  # noqa: F401
+from .undulator import PlanarUndulator  # noqa: F401
 from .xia_pfcu import PFCUFilter, PFCUFilterBank  # noqa: F401
 
 # -----------------------------------------------------------------------------

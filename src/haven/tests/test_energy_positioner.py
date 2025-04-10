@@ -4,7 +4,7 @@ import pytest
 from ophyd_async.testing import get_mock_put, set_mock_value
 
 from haven.devices.energy_positioner import EnergyPositioner
-from haven.devices.xray_source import BusyStatus
+from haven.devices.undulator import BusyStatus
 
 
 @pytest.fixture()

@@ -11,7 +11,7 @@ from ophyd_async.core import (
 from ..positioner import Positioner
 from .monochromator import Monochromator
 from .signal import derived_signal_r, derived_signal_rw
-from .xray_source import PlanarUndulator
+from .undulator import PlanarUndulator
 
 log = logging.getLogger(__name__)
 

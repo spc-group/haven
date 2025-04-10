@@ -9,7 +9,7 @@ from ..typing import DetectorList
 __all__ = ["set_energy"]
 
 
-Harmonic = Union[str, int, None]
+Harmonic = str | int | None
 
 
 def auto_harmonic(energy: float, harmonic: Harmonic) -> Harmonic:
