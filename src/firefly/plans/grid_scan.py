@@ -249,6 +249,7 @@ class GridScanDisplay(RegionsDisplay):
 
     def plan_args(self):
         detectors = self.ui.detectors_list.selected_detectors()
+        detector_names = [detector.name for detector in detectors]
         # Get parameters from each row of line regions:
         device_names = [
             region.motor_box.current_component().name for region in self.regions
@@ -273,7 +274,7 @@ class GridScanDisplay(RegionsDisplay):
             snake_axes = False
 
         # Prepare the argument collections
-        args = (detectors, *device_args)
+        args = (detector_names, *device_args)
         kwargs = {"snake_axes": snake_axes, "md": self.get_meta_data()}
         return args, kwargs
 

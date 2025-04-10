@@ -91,7 +91,7 @@ async def test_step_size_calculation(display):
 
 
 @pytest.mark.asyncio
-async def test_grid_scan_plan_queued(display, ion_chamber, qtbot):
+async def test_grid_scan_plan_args(display, xspress, ion_chamber, qtbot):
     await display.update_regions(2)
     # set up a test motor 1
     display.regions[0].motor_box.combo_box.setCurrentText("sync_motor_2")
@@ -107,7 +107,7 @@ async def test_grid_scan_plan_queued(display, ion_chamber, qtbot):
     display.regions[1].scan_pts_spin_box.setValue(10)
     # set up detector list
     display.ui.detectors_list.selected_detectors = mock.MagicMock(
-        return_value=["vortex_me4", ion_chamber.name]
+        return_value=[xspress, ion_chamber]
     )
     # set up meta data
     display.ui.lineEdit_sample.setText("sam")

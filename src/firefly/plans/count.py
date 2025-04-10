@@ -48,8 +48,9 @@ class CountDisplay(regions_display.PlanDisplay):
 
     def plan_args(self):
         args = ()
+        names = [det.name for det in self.ui.detectors_list.selected_detectors()]
         kwargs = {
-            "detectors": self.ui.detectors_list.selected_detectors(),
+            "detectors": names,
             "num": self.ui.num_spinbox.value(),
             "delay": self.ui.delay_spinbox.value(),
             "md": self.get_meta_data(),

@@ -1,11 +1,14 @@
 import asyncio
 
+from ophyd_async.core import Device
+from ophydregistry import Registry
 from PyQt5.QtGui import QStandardItem, QStandardItemModel
 from qtpy.QtWidgets import QAbstractItemView, QListView
 
 
 class DetectorListView(QListView):
     detector_model: QStandardItemModel
+    registry: Registry
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -15,7 +18,8 @@ class DetectorListView(QListView):
         # Make it possible to select multiple detectors
         self.setSelectionMode(QAbstractItemView.ExtendedSelection)
 
-    async def update_devices(self, registry):
+    async def update_devices(self, registry: Registry):
+        self.registry = registry
         # Get devices
         detectors = registry.findall(label="detectors", allow_none=True)
         # Remove old detectors list from model
@@ -25,13 +29,14 @@ class DetectorListView(QListView):
         for det in detectors:
             model.appendRow(QStandardItem(det.name))
 
-    def selected_detectors(self):
+    def selected_detectors(self) -> list[Device]:
         indexes = self.selectedIndexes()
         items = [self.detector_model.itemFromIndex(i) for i in indexes]
         names = [item.text() for item in items]
-        return names
+        devices = [self.registry[name] for name in names]
+        return devices
 
-    async def acquire_times(self):
+    async def acquire_times(self) -> list[float]:
         devices = self.selected_detectors()
         devices = [
             device for device in devices if hasattr(device, "default_time_signal")

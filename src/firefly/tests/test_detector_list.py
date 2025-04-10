@@ -19,7 +19,7 @@ def test_detector_model(view):
     assert view.detector_model.item(0).text() == "vortex_me4"
 
 
-def test_selected_detectors(qtbot, view):
+def test_selected_detectors(qtbot, view, xspress):
     """Do we get the list of detectors after they have been selected?"""
     # No detectors selected, so empty list
     assert view.selected_detectors() == []
@@ -29,7 +29,7 @@ def test_selected_detectors(qtbot, view):
     rect = view.visualRect(item.index())
     with qtbot.waitSignal(view.selectionModel().selectionChanged):
         qtbot.mouseClick(view.viewport(), Qt.LeftButton, pos=rect.center())
-    assert view.selected_detectors() == ["vortex_me4"]
+    assert view.selected_detectors() == [xspress]
 
 
 async def test_acquire_times(view, xspress):

@@ -189,6 +189,7 @@ class LineScanDisplay(RegionsDisplay):
     def plan_args(self) -> tuple[tuple, dict]:
         # Get scan parameters from widgets
         detectors = self.ui.detectors_list.selected_detectors()
+        detector_names = [detector.name for detector in detectors]
         # Get parameters from each row of line regions
         device_names = [
             region.motor_box.current_component().name for region in self.regions
@@ -201,7 +202,7 @@ class LineScanDisplay(RegionsDisplay):
             for entry in zip(device_names, start_points, stop_points)
             for values in entry
         ]
-        args = (detectors, *device_args)
+        args = (detector_names, *device_args)
         kwargs = {
             "num": self.ui.scan_pts_spin_box.value(),
             "md": self.get_meta_data(),

@@ -43,7 +43,7 @@ def test_region_number(display):
     assert len(display.regions) == 1
 
 
-def test_time_calculator(display):
+def test_time_calculator(display, xspress, ion_chamber):
     display.ui.num_regions_spin_box.setValue(2)
     display.edge_combo_box.setCurrentIndex(1)
     # Set up the first region
@@ -59,7 +59,7 @@ def test_time_calculator(display):
     display.regions[1].weight_spinbox.setValue(2)
     # Set up detector list
     display.ui.detectors_list.selected_detectors = mock.MagicMock(
-        return_value=["vortex_me4", "I0"]
+        return_value=[xspress, ion_chamber]
     )
     display.update_total_time()
     # Set repeat scan num to 2

@@ -106,7 +106,7 @@ async def test_step_size_calculation(display, qtbot):
 
 
 @pytest.mark.asyncio
-async def test_line_scan_plan_queued(display, monkeypatch, qtbot):
+async def test_line_scan_plan_args(display, monkeypatch, qtbot, xspress, ion_chamber):
     # set up motor num
     await display.update_regions(2)
     # set up a test motor 1
@@ -121,7 +121,7 @@ async def test_line_scan_plan_queued(display, monkeypatch, qtbot):
     display.ui.scan_pts_spin_box.setValue(10)
     # time is calculated when the selection is changed
     display.ui.detectors_list.selected_detectors = mock.MagicMock(
-        return_value=["vortex_me4", "I00"]
+        return_value=[xspress, ion_chamber]
     )
     # set up meta data
     display.ui.lineEdit_sample.setText("sam")

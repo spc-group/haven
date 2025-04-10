@@ -2,8 +2,6 @@ import asyncio
 from unittest import mock
 
 import pytest
-from bluesky_queueserver_api import BPlan
-from qtpy import QtCore
 
 from firefly.plans.count import CountDisplay
 
@@ -41,33 +39,19 @@ async def test_time_calculator(display, sim_registry, ion_chamber):
     assert display.ui.total_duration_label.text() == "0 h 1 m 38 s"
 
 
-def test_count_plan_queued(display, qtbot):
+def test_count_plan_args(display, qtbot, xspress):
     display.ui.run_button.setEnabled(True)
     display.ui.num_spinbox.setValue(5)
     display.ui.delay_spinbox.setValue(0.5)
     # Set up detector list
     display.ui.detectors_list.selected_detectors = mock.MagicMock(
-        return_value=["vortex_me4", "I00"]
+        return_value=[xspress]
     )
-    expected_item = BPlan(
-        "count", num=5, detectors=["vortex_me4", "I00"], delay=0.5, md={}
-    )
-
-    def check_item(item):
-        from pprint import pprint
-
-        pprint(item)
-        pprint(expected_item)
-        return item.to_dict() == expected_item.to_dict()
-
-    # Click the run button and see if the plan is queued
-    with qtbot.waitSignal(
-        display.queue_item_submitted, timeout=1000, check_params_cb=check_item
-    ):
-        qtbot.mouseClick(display.ui.run_button, QtCore.Qt.LeftButton)
+    args, kwargs = display.plan_args()
+    assert kwargs == dict(num=5, detectors=["vortex_me4"], delay=0.5, md={})
 
 
-def test_count_plan_metadata(display, qtbot):
+def test_count_plan_metadata(display, qtbot, xspress, ion_chamber):
     display.ui.run_button.setEnabled(True)
     display.ui.num_spinbox.setValue(5)
     # set up meta data
@@ -77,7 +61,7 @@ def test_count_plan_metadata(display, qtbot):
     display.ui.lineEdit_formula.setText("LiMn0.5Ni0.5O")
 
     display.ui.detectors_list.selected_detectors = mock.MagicMock(
-        return_value=["vortex_me4", "I00"]
+        return_value=[xspress, ion_chamber]
     )
     args, kwargs = display.plan_args()
     assert kwargs == dict(

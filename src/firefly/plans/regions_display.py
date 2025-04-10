@@ -194,7 +194,7 @@ class RegionsDisplay(PlanDisplay, display.FireflyDisplay):
         # Disable the line edits in spin box (use up/down buttons instead)
         self.ui.num_regions_spin_box.lineEdit().setReadOnly(True)
         # Set up the mechanism for changing region number
-        self.ui.num_regions_spin_box.valueChanged.connect(self.update_regions_slot)
+        self.ui.num_regions_spin_box.valueChanged.connect(self.update_regions)
 
     @asyncSlot(object)
     async def update_devices(self, registry):
@@ -230,10 +230,6 @@ class RegionsDisplay(PlanDisplay, display.FireflyDisplay):
         region = self.regions.pop()
         region.remove()
         return region
-
-    @asyncSlot(int)
-    async def update_regions_slot(self, new_region_num):
-        return await self.update_regions(new_region_num)
 
     async def update_regions(self, new_region_num: int):
         """Adjust regions from the scan params layout to reach
