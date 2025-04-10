@@ -61,6 +61,7 @@ class LineScanRegion(RegionBase):
     async def update_device_parameters(self, new_device: Device):
         device = await device_parameters(new_device)
         # Filter out non-numeric datatypes
+        self.step_label.setDecimals(device.precision)
         for widget in [self.start_spin_box, self.stop_spin_box]:
             widget.setEnabled(device.is_numeric)
             widget.setEnabled(device.is_numeric)
@@ -131,11 +132,6 @@ class LineScanRegion(RegionBase):
 
 class LineScanDisplay(RegionsDisplay):
     Region = LineScanRegion
-
-    @asyncSlot(object)
-    async def update_devices_slot(self, registry):
-        await self.update_devices(registry)
-        await self.detectors_list.update_devices(registry)
 
     def customize_ui(self):
         super().customize_ui()

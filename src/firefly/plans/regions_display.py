@@ -17,6 +17,7 @@ log = logging.getLogger()
 
 units_mapping = {
     "degrees": "°",
+    "deg": "°",
     "micron": "µm",
     "microns": "µm",
     "um": "µm",
@@ -206,7 +207,10 @@ class RegionsDisplay(PlanDisplay, display.FireflyDisplay):
 
     async def update_component_selector_devices(self, registry):
         """Update the devices for all the component selectors"""
-        selectors = [region.motor_box for region in self.regions]
+        try:
+            selectors = [region.motor_box for region in self.regions]
+        except AttributeError:
+            return
         aws = [box.update_devices(registry) for box in selectors]
         await asyncio.gather(*aws)
 

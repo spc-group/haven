@@ -21,6 +21,7 @@ class CountDisplay(regions_display.PlanDisplay):
         self.ui.detectors_list.selectionModel().selectionChanged.connect(
             self.update_total_time
         )
+
         self.ui.num_spinbox.valueChanged.connect(self.update_total_time)
         self.ui.delay_spinbox.valueChanged.connect(self.update_total_time)
         self.ui.spinBox_repeat_scan_num.valueChanged.connect(self.update_total_time)

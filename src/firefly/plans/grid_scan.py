@@ -166,6 +166,10 @@ class GridScanDisplay(RegionsDisplay):
         self.update_snakes()
         # Connect scan points change to update total time
         self.ui.spinBox_repeat_scan_num.valueChanged.connect(self.update_total_time)
+        self.ui.detectors_list.selectionModel().selectionChanged.connect(
+            self.update_total_time
+        )
+
         self.scan_time_changed.connect(self.scan_duration_label.set_seconds)
         self.total_time_changed.connect(self.total_duration_label.set_seconds)
         # Default metadata values
@@ -213,11 +217,6 @@ class GridScanDisplay(RegionsDisplay):
         total_time_per_scan = total_num_pnts * detector_time
         return total_time_per_scan
 
-    @asyncSlot(object)
-    async def update_devices_slot(self, registry):
-        await super().update_devices(registry)
-        await self.detectors_list.update_devices(registry)
-
     @asyncSlot(int)
     async def update_regions_slot(self, new_region_num: int):
         await super().update_regions(new_region_num)
@@ -236,6 +235,7 @@ class GridScanDisplay(RegionsDisplay):
             for region_i in self.regions[:-1]:
                 region_i.snake_checkbox.setEnabled(True)
 
+    @property
     def plan_type(self):
         if self.ui.relative_scan_checkbox.isChecked():
             return "rel_grid_scan"
