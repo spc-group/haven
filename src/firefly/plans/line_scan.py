@@ -61,7 +61,6 @@ class LineScanRegion(RegionBase):
     async def update_device_parameters(self, new_device: Device):
         device = await device_parameters(new_device)
         # Filter out non-numeric datatypes
-        self.step_label.setDecimals(device.precision)
         for widget in [self.start_spin_box, self.stop_spin_box]:
             widget.setEnabled(device.is_numeric)
             widget.setEnabled(device.is_numeric)
