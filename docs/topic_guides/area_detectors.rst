@@ -3,15 +3,14 @@ Area Detectors and Cameras
 ###########################
 
 Area detectors are all largely the same but with small variations from
-device-to-device. Old (threaded) device definitions for area detectors
-are in the :py:mod:`haven.devices.area_detector` module. Newer
-(awaitable) device definitions are in the
+device-to-device. All area detectors are the newer
+(awaitable) device definitions based on ophyd-async. They can be found in the
 :pyd:mod:`haven.devices.detectors` package.
 
 Currently supported detectors:
 
 - Eiger (e.g. 500K) (:py:class:`~haven.devices.detector.eiger.EigerDetector`)
-- Lambda (:py:class:`~haven.devices.area_detector.Lambda250K`)
+- Lambda Flex and 250K (:py:class:`~haven.devices.detector._lambda.LambdaDetector`)
 - Simulated detector (:py:class:`~haven.devices.detectors.sim_detector.SimDetector`)
 - Aravis cameras (:py:class:`~haven.devices.detectors.aravis.AravisDetector`)
 
@@ -24,12 +23,6 @@ substantive difference is that cameras have the ophyd label "cameras",
 whereas non-camera area detectors (e.g. Eiger 500K), have the ophyd
 label "area_detectors". They can be used interchangeably in plans.
 
-.. warning::
-
-   For threaded devices, the first time you stage the device after the
-   IOC has been restarted, you may receive an error about the **plugin
-   not being primed**. The means that the plugin does not know the
-   size of the image to expect since it has not seen one yet. The
-   solution is to open the caQtDM panels for the detector, ensure the
-   corresponding plugins are enabled, and then manually acquire a
-   frame.
+Data saving is handled automatically by the Ophyd-async device. For
+Tiled to read the HDF5 file properly, it may be necessary to set the
+"Dim 2 Chunk Size" PV in the detectors HDF5 NDFilePlugin to ``1``.
