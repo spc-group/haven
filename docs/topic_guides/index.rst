@@ -11,7 +11,8 @@ These guides do not cover the individual beamlines thoroughly.
    :maxdepth: 2
    :caption: Contents:
 
-   area_detectors.rst	     
+   area_detectors.rst
+   asymmetric_analyzer.rst
    changing_haven.rst
    beamline_configuration.rst
    define_new_motor.rst

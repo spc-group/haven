@@ -82,6 +82,7 @@ beamline = HavenInstrument(
     {
         # Ophyd-async devices
         "aerotech_stage": AerotechStage,
+        "analyzer": devices.Analyzer,
         "aperture_slits": devices.ApertureSlits,
         "blade_slits": devices.BladeSlits,
         "camera": devices.AravisDetector,
