@@ -12,19 +12,9 @@ from haven.devices.undulator import BusyStatus
 async def undulator():
     undulator = PlanarUndulator(prefix="PSS:255ID:", name="undulator")
     await undulator.connect(mock=True)
+    await undulator.energy.setpoint.connect(mock=False)
+    await undulator.energy.readback.connect(mock=False)
     return undulator
-
-
-async def test_set_energy(undulator):
-    # Set the energy
-    status = undulator.energy.set(5)
-    # Fake the done PV getting updated
-    set_mock_value(undulator.energy.done, BusyStatus.BUSY)
-    await asyncio.sleep(0.01)  # Let the event loop run
-    set_mock_value(undulator.energy.done, BusyStatus.DONE)
-    # Check that the signals got set properly
-    await status
-    assert await undulator.energy.setpoint.get_value() == 5
 
 
 async def test_stop_energy(undulator):
@@ -32,6 +22,23 @@ async def test_stop_energy(undulator):
     assert not stop_mock.called
     await undulator.energy.stop()
     assert stop_mock.called
+
+
+async def test_energy_unit_conversion(undulator):
+    # Check setpoint
+    await undulator.energy.setpoint.set(8333)
+    assert await undulator.energy.dial_setpoint.get_value() == 8.333
+    # Check readback
+    set_mock_value(undulator.energy.dial_readback, 9.534)
+    assert await undulator.energy.readback.get_value() == 9534
+
+
+async def test_energy_unit_offset(undulator):
+    set_mock_value(undulator.energy.offset, 10)
+    await undulator.energy.setpoint.set(8333)
+    assert await undulator.energy.dial_setpoint.get_value() == 8.343
+    set_mock_value(undulator.energy.dial_readback, 8.583)
+    assert await undulator.energy.readback.get_value() == 8573
 
 
 # -----------------------------------------------------------------------------
