@@ -355,7 +355,7 @@
     <enum>QFrame::NoFrame</enum>
    </property>
    <property name="macros" stdset="0">
-    <string>TITLE=Horizontal Center,AXIS=${DEVICE}.h.center,DIRECTION=horizontal</string>
+    <string>TITLE=Horizontal Center,AXIS=${DEVICE}.horizontal.center,DIRECTION=horizontal</string>
    </property>
    <property name="filename" stdset="0">
     <string>slits_motor.py</string>
@@ -377,7 +377,7 @@
     <enum>QFrame::NoFrame</enum>
    </property>
    <property name="macros" stdset="0">
-    <string>TITLE=Vertical Size,AXIS=${DEVICE}.v.size</string>
+    <string>TITLE=Vertical Size,AXIS=${DEVICE}.vertical.size</string>
    </property>
    <property name="filename" stdset="0">
     <string>slits_motor.py</string>
@@ -399,7 +399,7 @@
     <enum>QFrame::NoFrame</enum>
    </property>
    <property name="macros" stdset="0">
-    <string>TITLE=Horizontal Size,AXIS=${DEVICE}.h.size</string>
+    <string>TITLE=Horizontal Size,AXIS=${DEVICE}.horizontal.size</string>
    </property>
    <property name="filename" stdset="0">
     <string>slits_motor.py</string>
@@ -421,7 +421,7 @@
     <enum>QFrame::NoFrame</enum>
    </property>
    <property name="macros" stdset="0">
-    <string>TITLE=Vertical Center,AXIS=${DEVICE}.v.center,DIRECTION=vertical</string>
+    <string>TITLE=Vertical Center,AXIS=${DEVICE}.vertical.center,DIRECTION=vertical</string>
    </property>
    <property name="filename" stdset="0">
     <string>slits_motor.py</string>
