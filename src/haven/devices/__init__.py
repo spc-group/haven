@@ -9,7 +9,7 @@ from .detectors.xspress import Xspress3Detector  # noqa: F401
 from .energy_positioner import EnergyPositioner  # noqa: F401
 from .ion_chamber import IonChamber  # noqa: F401
 from .monochromator import Monochromator  # noqa: F401
-from .motor import HavenMotor, Motor, load_motors  # noqa: F401
+from .motor import Motor  # noqa: F401
 from .robot import Robot  # noqa: F401
 from .scaler import MultiChannelScaler  # noqa: F401
 from .shutter import PssShutter, ShutterState  # noqa: F401

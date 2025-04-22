@@ -36,11 +36,7 @@ class HavenInstrument(Instrument):
     ):
         """Load the beamline instrumentation.
 
-        This function will reach out and query various IOCs for motor
-        information based on the information in *config* (see
-        ``iconfig_default.toml`` for examples). Based on the
-        configuration, it will create Ophyd devices and register them with
-        *registry*.
+        Adds some custom configuration for Haven.
 
         Parameters
         ==========
@@ -63,14 +59,6 @@ class HavenInstrument(Instrument):
         # Load devices ("motors" is done later)
         for cfg_file in config_files:
             super().load(cfg_file, return_exceptions=True, ignored_classes=["motors"])
-        # VME-style Motors happen later so duplicate motors can be
-        # removed
-        for cfg_file in config_files:
-            super().load(
-                cfg_file,
-                device_classes={"motors": load_motors},
-                ignored_classes=self.device_classes.keys(),
-            )
         # Return the final list
         if return_devices:
             return self.devices
@@ -93,6 +81,7 @@ beamline = HavenInstrument(
         "kb_mirrors": KBMirrors,
         "lambda": devices.LambdaDetector,
         "motor": Motor,
+        "motors": load_motors,
         "pfcu4": PFCUFilterBank,
         "pss_shutter": PssShutter,
         "scaler": devices.MultiChannelScaler,

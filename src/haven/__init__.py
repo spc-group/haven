@@ -38,8 +38,6 @@ from ._iconfig import load_config  # noqa: F401
 #  Top-level imports
 from .catalog import tiled_client  # noqa: F401
 from .constants import edge_energy  # noqa: F401
-from .devices import IonChamber, Monochromator, Robot, ion_chamber  # noqa: F401
-from .devices.motor import HavenMotor  # noqa: F401
 from .energy_ranges import ERange, KRange, merge_ranges  # noqa: F401
 from .instrument import beamline  # noqa: F401
 from .motor_position import (  # noqa: F401

@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 from bluesky import RunEngine
 from ophyd import sim
-from ophyd_async.sim._sim_motor import SimMotor
+from ophyd_async.sim import SimMotor
 
 from haven.devices import EnergyPositioner
 from haven.energy_ranges import ERange, KRange, from_tuple

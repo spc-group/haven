@@ -42,9 +42,9 @@ class BasePositioner(Positioner):
         self,
         *,
         prefix: str,
-        actuate_signal: Signal = None,
+        actuate_signal: Signal,
         stop_signal: Signal,
-        done_signal: Signal = None,
+        done_signal: Signal,
         name: str = "",
     ):
         with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):

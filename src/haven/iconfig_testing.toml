@@ -114,27 +114,16 @@ channels = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19
 
 # Motors
 # ======
-# 
-# Add a new section for each IOC (or IOC prefix) that has motors
-# matching the format {prefix}:m1. *num_motors* determines how many
-# motors will be read. The example below will load three motors with
-# PVs: "vme_crate_ioc:m1", "vme_crate_ioc:m2", and "vme_crate_ioc:m3".
-#
-# By default, the names of the motors are taken from the motor's .DESC
-# field. This can be disabled by setting ``auto_name = false``.
 
 [[ motors ]]
-prefix = "255idVME:"
-num_motors = 3
-# auto_name = true
+# Creating multiple motors with a special short-hand
+m1 = "255idcVME:m1"
+m2 = "255idcVME:m2"
 
 [[ motor ]]
-# Individual motors can be created as well.
+# Indivudal motors can also be created like so
 name = "m1"
 prefix = "255idcVME:m1"
-# labels=["motors"]
-# auto_name = None
-
 
 # Sample stages
 # =============

@@ -1,5 +1,5 @@
 import enum
-from typing import Type
+from typing import Type, TypeVar
 
 from ophyd_async.core import (
     SignalRW,
@@ -7,9 +7,11 @@ from ophyd_async.core import (
     StandardReadableFormat,
     StrictEnum,
     SubsetEnum,
-    T,
 )
 from ophyd_async.epics.core import epics_signal_r, epics_signal_rw, epics_signal_x
+
+
+T = TypeVar("T")
 
 
 class StrEnum(str, enum.Enum):
