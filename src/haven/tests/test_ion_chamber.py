@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose
-from ophyd_async.core import TriggerInfo
+from ophyd_async.core import TriggerInfo, DetectorTrigger
 from ophyd_async.testing import assert_value, get_mock_put, set_mock_value
 
 from haven.devices.ion_chamber import IonChamber
@@ -280,7 +280,7 @@ def test_offset_pv(sim_registry):
 @pytest.fixture()
 def trigger_info():
     return TriggerInfo(
-        number_of_triggers=5, trigger="internal", deadtime=0, livetime=1.3
+        number_of_triggers=5, trigger=DetectorTrigger.INTERNAL, deadtime=0, livetime=1.3
     )
 
 

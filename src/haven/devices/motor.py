@@ -25,10 +25,6 @@ class Motor(MotorBase):
         POSITIVE = "Pos"
         NEGATIVE = "Neg"
 
-    class FreezeSwitch(SubsetEnum):
-        VARIABLE = "Variable"
-        FROZEN = "Frozen"
-
     def __init__(self, prefix: str, name=""):
         # Configuration signals
         with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
