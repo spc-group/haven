@@ -75,6 +75,7 @@ parentdir_prefix = "haven-"
 files = [
     'src/haven/devices/asymmotron.py', "src/haven/tests/test_asymmotron.py",
     'src/haven/devices/motor.py', "src/haven/tests/test_motor.py",
+    'src/haven/plans/_xafs_scan.py', 'src/haven/plans/_energy_scan.py', 'src/haven/tests/test_energy_xafs_scan.py',
     'src/haven/positioner.py', "src/haven/tests/test_positioner.py",
     'src/haven/devices/undulator.py', "src/haven/tests/test_undulator.py",
 ]

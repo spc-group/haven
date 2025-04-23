@@ -12,11 +12,7 @@ from .devices.aerotech import AerotechStage
 from .devices.aps import ApsMachine
 from .devices.beamline_manager import BeamlineManager
 from .devices.dxp import make_dxp_device
-from .devices.energy_positioner import EnergyPositioner
 from .devices.heater import CapillaryHeater
-from .devices.ion_chamber import IonChamber
-from .devices.mirrors import HighHeatLoadMirror, KBMirrors
-from .devices.motor import Motor, load_motors
 from .devices.power_supply import NHQ203MChannel
 from .devices.robot import Robot
 from .devices.shutter import PssShutter
@@ -75,18 +71,19 @@ beamline = HavenInstrument(
         "blade_slits": devices.BladeSlits,
         "camera": devices.AravisDetector,
         "eiger": devices.EigerDetector,
-        "energy": EnergyPositioner,
-        "high_heat_load_mirror": HighHeatLoadMirror,
-        "ion_chamber": IonChamber,
-        "kb_mirrors": KBMirrors,
+        "high_heat_load_mirror": devices.HighHeatLoadMirror,
+        "ion_chamber": devices.IonChamber,
+        "kb_mirrors": devices.KBMirrors,
         "lambda": devices.LambdaDetector,
-        "motor": Motor,
-        "motors": load_motors,
+        "monochromator": devices.Monochromator,
+        "motor": devices.Motor,
+        "motors": devices.load_motors,
         "pfcu4": PFCUFilterBank,
         "pss_shutter": PssShutter,
         "scaler": devices.MultiChannelScaler,
         "sim_detector": devices.SimDetector,
         "table": Table,
+        "undulator": devices.PlanarUndulator,
         "xspress3": devices.Xspress3Detector,
         "xy_stage": XYStage,
         # Threaded ophyd devices

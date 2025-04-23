@@ -1,141 +1,93 @@
 import numpy as np
 import pytest
 from bluesky import RunEngine
-from ophyd import sim
 from ophyd_async.sim import SimMotor
 
-from haven.devices import EnergyPositioner
 from haven.energy_ranges import ERange, KRange, from_tuple
-from haven.plans import energy_scan, xafs_scan
+from haven.devices import Monochromator, PlanarUndulator
+from haven.plans._xafs_scan import xafs_scan
+from haven.plans._energy_scan import energy_scan
 
 
 @pytest.fixture()
-async def energy_positioner():
-    device = EnergyPositioner(
-        name="energy", monochromator_prefix="255idMono:", undulator_prefix="255ID:DS:"
-    )
+async def mono():
+    device = Monochromator("255idFUP:", name="mono")
     await device.connect(mock=True)
     return device
 
 
 @pytest.fixture()
-def mono_motor():
-    return sim.SynAxis(name="mono_energy", labels={"motors", "energies"})
-
-
-@pytest.fixture()
-def id_gap_motor():
-    return sim.SynAxis(name="id_gap_energy", labels={"motors", "energies"})
-
-
-@pytest.fixture()
-def exposure_motor():
-    return sim.Signal(name="exposure")
+async def undulator():
+    device = PlanarUndulator("ID255:DSID:", name="undulator")
+    await device.connect(mock=True)
+    return device
 
 
 @pytest.fixture()
 def energies():
-    return np.linspace(8300, 8500, 100)
-
-
-@pytest.fixture()
-def I0(sim_registry):
-    # Register an ion chamber
-    I0 = sim.SynGauss(
-        "I0",
-        sim.motor,
-        "motor",
-        center=-0.5,
-        Imax=1,
-        sigma=1,
-        labels={"ion_chambers"},
-    )
-    sim_registry.register(I0)
-    return I0
+    return np.linspace(8300, 8500, 3)
 
 
 def test_energy_scan_basics(
-    beamline_manager, mono_motor, id_gap_motor, energies, RE, tmp_path
+        mono, undulator, ion_chamber, energies, tmp_path
 ):
-    beamline_manager.local_storage.full_path._readback = str(tmp_path)
     exposure_time = 1e-3
-    # Set up fake detectors and motors
-    I0_exposure = sim.SynAxis(
-        name="I0_exposure",
-        labels={
-            "exposures",
-        },
-    )
-    It_exposure = sim.SynAxis(
-        name="It_exposure",
-        labels={
-            "exposures",
-        },
-    )
-    I0 = sim.SynGauss(
-        name="I0",
-        motor=mono_motor,
-        motor_field="mono_energy",
-        center=np.median(energies),
-        Imax=1,
-        sigma=1,
-        labels={"detectors"},
-    )
-    It = sim.SynSignal(
-        func=lambda: 1.0,
-        name="It",
-        exposure_time=exposure_time,
-    )
     # Execute the plan
-    scan = energy_scan(
+    plan = energy_scan(
         energies,
-        detectors=[I0, It],
+        detectors=[ion_chamber],
         exposure=exposure_time,
-        energy_signals=[mono_motor, id_gap_motor],
-        time_signals=[I0_exposure, It_exposure],
+        energy_devices=[mono, undulator],
+        time_signals=[ion_chamber.default_time_signal],
         md={"edge": "Ni_K"},
     )
-    result = RE(scan, sample_name="xafs_sample")
+    msgs = list(plan)
     # Check that the mono and ID gap ended up in the right position
     # time.sleep(1.0)
-    assert mono_motor.readback.get() == np.max(energies)
-    # assert mono_motor.get().readback == np.max(energies)
-    assert id_gap_motor.get().readback == np.max(energies)
-    assert I0_exposure.get().readback == exposure_time
-    assert It_exposure.get().readback == exposure_time
+    from pprint import pprint
+    set_msgs = [msg for msg in msgs if msg.command == "set"]
+    mono_msgs = [msg for msg in set_msgs if msg.obj is mono.energy]
+    mono_setpoints = [msg.args[0] for msg in mono_msgs]
+    assert np.all(mono_setpoints == energies)
+    id_msgs = [msg for msg in set_msgs if msg.obj is undulator.energy]
+    id_setpoints = [msg.args[0] for msg in id_msgs]
+    assert np.all(id_setpoints == energies)
+    time_msgs = [msg for msg in set_msgs if msg.obj is ion_chamber.default_time_signal]
+    time_setpoints = [msg.args[0] for msg in time_msgs]
+    assert np.all(time_setpoints == [0.001])
 
 
-def test_raises_on_empty_positioners(RE, energies):
+def test_raises_on_empty_positioners(energies):
     with pytest.raises(ValueError):
-        RE(energy_scan(energies, energy_signals=[]))
+        list(energy_scan(energies, energy_devices=[]))
 
 
-def test_single_range(mono_motor, exposure_motor, I0):
+def test_single_range(mono, ion_chamber):
     E0 = 10000
     expected_energies = np.arange(9990, 10001, step=1)
     expected_exposures = np.asarray([1.0])
-    scan = xafs_scan(
+    plan = xafs_scan(
         [],
         # (start, stop, step, time)
         (-10, 0, 1, 1),
         E0=E0,
-        energy_signals=[mono_motor],
-        time_signals=[exposure_motor],
+        energy_devices=[mono],
+        time_signals=[ion_chamber.default_time_signal],
     )
     # Check that the mono motor is moved to the correct positions
-    scan_list = list(scan)
+    scan_list = list(plan)
     real_energies = [
-        i.args[0] for i in scan_list if i[0] == "set" and i.obj.name == "mono_energy"
+        i.args[0] for i in scan_list if i[0] == "set" and i.obj is mono.energy
     ]
     np.testing.assert_equal(real_energies, expected_energies)
     # Check that the exposure is set correctly
     real_exposures = [
-        i.args[0] for i in scan_list if i[0] == "set" and i.obj.name == "exposure"
+        i.args[0] for i in scan_list if i[0] == "set" and i.obj is ion_chamber.default_time_signal
     ]
     np.testing.assert_equal(real_exposures, expected_exposures)
 
 
-def test_multi_range(mono_motor, exposure_motor, I0):
+def test_multi_range(mono, ion_chamber):
     E0 = 10000
     expected_energies = np.concatenate(
         [
@@ -149,23 +101,23 @@ def test_multi_range(mono_motor, exposure_motor, I0):
         ERange(-10, 0, 2, 0.5),
         ERange(0, 10, 1, 1.0),
         E0=E0,
-        energy_signals=[mono_motor],
-        time_signals=[exposure_motor],
+        energy_devices=[mono],
+        time_signals=[ion_chamber.default_time_signal],
     )
     # Check that the mono motor is moved to the correct positions
     scan_list = list(scan)
     real_energies = [
-        i.args[0] for i in scan_list if i[0] == "set" and i.obj.name == "mono_energy"
+        i.args[0] for i in scan_list if i.command == "set" and i.obj is mono.energy
     ]
     np.testing.assert_equal(real_energies, expected_energies)
     # Check that the exposure is set correctly
     real_exposures = [
-        i.args[0] for i in scan_list if i[0] == "set" and i.obj.name == "exposure"
+        i.args[0] for i in scan_list if i[0] == "set" and i.obj is ion_chamber.default_time_signal
     ]
     np.testing.assert_equal(real_exposures, expected_exposures)
 
 
-def test_exafs_k_range(mono_motor, exposure_motor, I0):
+def test_exafs_k_range(mono, ion_chamber):
     """Ensure that passing in k_min, etc. produces an energy range
     in K-space.
 
@@ -180,23 +132,23 @@ def test_exafs_k_range(mono_motor, exposure_motor, I0):
         [],
         KRange(k_min, 14, step=0.5, exposure=0.75, weight=0.5),
         E0=E0,
-        energy_signals=[mono_motor],
-        time_signals=[exposure_motor],
+        energy_devices=[mono],
+        time_signals=[ion_chamber.default_time_signal],
     )
     # Check that the mono motor is moved to the correct positions
     scan_list = list(scan)
     real_energies = [
-        i.args[0] for i in scan_list if i[0] == "set" and i.obj.name == "mono_energy"
+        i.args[0] for i in scan_list if i[0] == "set" and i.obj is mono.energy
     ]
     np.testing.assert_almost_equal(real_energies, expected_energies)
     # Check that the exposure is set correctly
     real_exposures = [
-        i.args[0] for i in scan_list if i[0] == "set" and i.obj.name == "exposure"
+        i.args[0] for i in scan_list if i[0] == "set" and i.obj is ion_chamber.default_time_signal
     ]
     np.testing.assert_almost_equal(real_exposures, expected_exposures)
 
 
-def test_named_E0(mono_motor, exposure_motor, I0):
+def test_named_E0(mono, ion_chamber):
     expected_energies = np.concatenate(
         [
             np.arange(8323, 8334, step=2),
@@ -209,61 +161,61 @@ def test_named_E0(mono_motor, exposure_motor, I0):
         ERange(-10, 0, 2, exposure=0.5),
         ERange(0, 10, 1, exposure=1.0),
         E0="Ni_K",
-        energy_signals=[mono_motor],
-        time_signals=[exposure_motor],
+        energy_devices=[mono],
+        time_signals=[ion_chamber.default_time_signal],
     )
     # Check that the mono motor is moved to the correct positions
     scan_list = list(scan)
     real_energies = [
-        i.args[0] for i in scan_list if i[0] == "set" and i.obj.name == "mono_energy"
+        i.args[0] for i in scan_list if i[0] == "set" and i.obj is mono.energy
     ]
     np.testing.assert_equal(real_energies, expected_energies)
     # Check that the exposure is set correctly
     real_exposures = [
-        i.args[0] for i in scan_list if i[0] == "set" and i.obj.name == "exposure"
+        i.args[0] for i in scan_list if i[0] == "set" and i.obj is ion_chamber.default_time_signal
     ]
     np.testing.assert_equal(real_exposures, expected_exposures)
 
 
-def test_uses_default_time_signals(dxp, mono_motor):
+def test_uses_default_time_signals(xspress, mono):
     """Test that the default time positioners are used if no specific ones are given."""
     scan = xafs_scan(
-        [dxp],
+        [xspress],
         ERange(-10, 0, 2, exposure=0.5),
         E0=0,
         time_signals=None,
-        energy_signals=[mono_motor],
+        energy_devices=[mono],
     )
     msgs = list(scan)
-    set_msgs = [m for m in msgs if m.command == "set" and dxp.name in m.obj.name]
+    set_msgs = [m for m in msgs if m.command == "set" and m.obj is xspress.driver.acquire_time]
     assert len(set_msgs) == 1
     time_msg = set_msgs[0]
-    assert time_msg.obj is dxp.preset_real_time
+    assert time_msg.obj is xspress.driver.acquire_time
     assert time_msg.args[0] == 0.5
 
 
-def test_remove_duplicate_energies(mono_motor, exposure_motor, I0):
+def test_remove_duplicate_energies(mono, ion_chamber):
     plan = xafs_scan(
         "ion_chambers",
         ERange(-4, 6, 2),
         ERange(6, 40, 34),
         E0=8333,
-        energy_signals=[mono_motor],
-        time_signals=[exposure_motor],
+        energy_devices=[mono],
+        time_signals=[ion_chamber.default_time_signal],
     )
     msgs = list(plan)
-    set_msgs = [m for m in msgs if m.command == "set" and m.obj.name == "mono_energy"]
-    read_msgs = [m for m in msgs if m.command == "read" and m.obj.name == "I0"]
+    set_msgs = [m for m in msgs if m.command == "set" and m.obj is mono.energy]
+    read_msgs = [m for m in msgs if m.command == "read" and m.obj is ion_chamber]
     energies = [m.args[0] for m in set_msgs]
     # Make sure we only read each point once
     assert len(read_msgs) == len(energies)
 
 
-def test_energy_scan_metadata(energy_positioner):
+def test_energy_scan_metadata(mono):
     scan = energy_scan(
         [],
         detectors=[],
-        energy_signals=[energy_positioner],
+        energy_devices=[mono],
         E0="Ni-K",
         md={"sample_name": "unobtanium"},
     )
@@ -277,7 +229,7 @@ def test_energy_scan_metadata(energy_positioner):
     msgs.append(
         scan.send(
             {
-                "energy-monochromator-d_spacing": {
+                f"{mono.name}-d_spacing": {
                     "value": 3.134734,
                     "timestamp": 1742397744.329849,
                     "alarm_severity": 0,
@@ -297,17 +249,17 @@ def test_energy_scan_metadata(energy_positioner):
     assert md["sample_name"] == "unobtanium"
 
 
-async def test_energy_scan_metadata_multiple_monos(energy_positioner):
+async def test_energy_scan_metadata_multiple_monos(mono):
     """Having additional monochromators in the scan means we can have
     multiple sets of metadata.
 
     """
-    mono2 = EnergyPositioner(monochromator_prefix="", undulator_prefix="", name="mono2")
+    mono2 = Monochromator(prefix="", name="mono2")
     await mono2.connect(mock=True)
     scan = energy_scan(
         [1.0, 2.0, 3.0],
         detectors=[],
-        energy_signals=[energy_positioner, mono2],
+        energy_devices=[mono, mono2],
         E0="Ni-K",
         md={"sample_name": "unobtanium"},
     )
@@ -322,7 +274,7 @@ async def test_energy_scan_metadata_multiple_monos(energy_positioner):
         [
             scan.send(
                 {
-                    "energy-monochromator-d_spacing": {
+                    f"{mono.name}-d_spacing": {
                         "value": 3.134734,
                         "timestamp": 1742397744.329849,
                         "alarm_severity": 0,
@@ -331,7 +283,7 @@ async def test_energy_scan_metadata_multiple_monos(energy_positioner):
             ),
             scan.send(
                 {
-                    "mono2-monochromator-d_spacing": {
+                    f"{mono2.name}-d_spacing": {
                         "value": 4.20,
                         "timestamp": 1742397744.329849,
                         "alarm_severity": 0,
@@ -352,11 +304,11 @@ async def test_energy_scan_metadata_multiple_monos(energy_positioner):
     assert md["sample_name"] == "unobtanium"
 
 
-def test_xafs_scan_metadata(mono_motor):
+def test_xafs_scan_metadata(mono):
     scan = xafs_scan(
         [],
         ERange(0, 10),
-        energy_signals=[mono_motor],
+        energy_devices=[mono],
         E0="Ni-K",
         md={"sample_name": "unobtanium"},
     )
@@ -372,28 +324,19 @@ def test_xafs_scan_metadata(mono_motor):
     assert md["plan_args"] == {
         "detectors": [],
         "energy_ranges": ["ERange(start=0, stop=10, step=1.0, exposure=0.5)"],
-        "energy_signals": [
-            (
-                "SynAxis(prefix='', name='mono_energy', read_attrs=['readback', "
-                "'setpoint'], configuration_attrs=['velocity', 'acceleration'])"
-            )
-        ],
+        "energy_devices": [repr(mono)],
         "time_signals": None,
         "E0": "Ni-K",
     }
 
 
-async def test_document_plan_args():
+async def test_document_plan_args(mono):
     """Having numpy arrays in the arguments to a plan causes problems for
     the TiledWriter. Make sure that the start doc plan args do not
     contain numpy arrays.
 
     """
-    # Set up mocked devices
-    energy = SimMotor(name="energy")
-    await energy.connect(mock=False)
     # Set up the run engine environment
-    await energy.connect(mock=True)
     RE = RunEngine({})
     documents = []
 
@@ -403,7 +346,7 @@ async def test_document_plan_args():
     RE.subscribe(track_doc)
     # Prepare the plan
     energies = np.linspace(8250, 8550, num=11)
-    plan = energy_scan(energies=energies, detectors=[], energy_signals=[energy])
+    plan = energy_scan(energies=energies, detectors=[], energy_devices=[mono])
     RE(plan)
     (start_doc,) = [doc for name, doc in documents if name == "start"]
     # Make sure there are no numpy arrays in the plan args
