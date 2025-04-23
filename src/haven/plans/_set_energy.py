@@ -37,7 +37,7 @@ def auto_harmonic(energy: float, harmonic: Harmonic) -> Harmonic:
 def set_energy(
     energy: float,
     harmonic: Harmonic = None,
-    positioners: DetectorList = ["energy"],
+    positioners: DetectorList = ["undulators", "monochromators"],
     harmonic_positioners: DetectorList = ["undulator_harmonic_value"],
 ):
     """Set the energy of the beamline, in electron volts.
@@ -70,7 +70,8 @@ def set_energy(
             hargs.extend([positioner, harmonic])
         yield from bps.mv(*hargs)
     # Prepare arguments for energy
-    positioners = beamline.devices.findall(name=positioners)
+    positioners = beamline.devices.findall(positioners)
+    positioners = [device.energy for device in positioners]
     args = []
     for positioner in positioners:
         args.extend([positioner, energy])

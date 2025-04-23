@@ -19,13 +19,14 @@ log = logging.getLogger(__name__)
 
 class Motor(MotorBase):
     """The default motor for asynchrnous movement."""
-    _ophyd_labels_ = {"motors"}
+    _ophyd_labels_: set[str]
 
     class Direction(StrictEnum):
         POSITIVE = "Pos"
         NEGATIVE = "Neg"
 
-    def __init__(self, prefix: str, name=""):
+    def __init__(self, prefix: str, name="", labels={"motors"}):
+        self._ophyd_labels_ = labels
         # Configuration signals
         with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
             self.description = epics_signal_rw(str, f"{prefix}.DESC")
@@ -53,7 +54,7 @@ def load_motors(**defns: str) -> Generator[Motor, None, None]:
     
     """
     for name, prefix in defns.items():
-        yield Motor(prefix, name=name)
+        yield Motor(prefix, name=name, labels={"motors", "extra_motors"})
 
 
 # -----------------------------------------------------------------------------

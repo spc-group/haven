@@ -34,7 +34,7 @@ def energy_scan(
     exposure: float | Sequence[float] = 0.1,
     E0: float | str = 0,
     detectors: DetectorList = "ion_chambers",
-    energy_devices: Sequence = ["energy"],
+    energy_devices: Sequence = ["monochromators", "undulators"],
     time_signals: Sequence | None = None,
     md: Mapping = {},
 ):

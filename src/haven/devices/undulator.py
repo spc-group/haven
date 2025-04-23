@@ -85,7 +85,6 @@ class UndulatorPositioner(BasePositioner):
 
 
 class EnergyPositioner(BasePositioner):
-    _ophyd_labels_ = {"energy"}
     def __init__(
         self,
         *,

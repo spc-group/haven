@@ -34,7 +34,7 @@ def xafs_scan(
     detectors: DetectorList,
     *energy_ranges: Sequence[EnergyRange | tuple],
     E0: float | str,
-    energy_devices: Sequence = ["energy"],
+    energy_devices: Sequence = ["monochromators", "undulators"],
     time_signals: Sequence | None = None,
     md: Mapping = {},
 ) -> MsgGenerator[str]:

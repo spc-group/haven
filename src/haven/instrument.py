@@ -54,7 +54,7 @@ class HavenInstrument(Instrument):
             config_files = []
         # Load devices ("motors" is done later)
         for cfg_file in config_files:
-            super().load(cfg_file, return_exceptions=True, ignored_classes=["motors"])
+            super().load(cfg_file, return_exceptions=True)
         # Return the final list
         if return_devices:
             return self.devices
