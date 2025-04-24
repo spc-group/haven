@@ -48,6 +48,7 @@ haven_config = "haven._iconfig:print_config_value"
 haven_queueserver = "queueserver.launch_queueserver:launch_queueserver"
 databroker_consumer = "queueserver.databroker_consumer:main"
 tiled_consumer = "queueserver.tiled_consumer:main"
+"export-runs" = "haven.export:main"
 
 [project.gui-scripts]
 firefly = "firefly.launcher:main"

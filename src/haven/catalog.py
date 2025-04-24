@@ -8,8 +8,10 @@ from typing import IO, Mapping
 from urllib.parse import parse_qs, quote_plus, urlparse
 
 import httpx
+import httpcore
 import numpy as np
 import pandas as pd
+import stamina
 from tiled.client import from_profile as tiled_from_profile
 from tiled.client.base import BaseClient
 from tiled.client.cache import Cache
@@ -116,6 +118,7 @@ def tiled_client(
     return client
 
 
+@stamina.retry(on=httpcore.ReadTimeout, attempts=3)
 async def _search(path: str, client: httpx.AsyncClient, params: dict = {}):
     """Find scans in the catalog matching the given criteria.
 
@@ -139,6 +142,7 @@ async def _search(path: str, client: httpx.AsyncClient, params: dict = {}):
                     **params,
                     **paging_params,
                 },
+                timeout=30,
             )
         except httpx.ReadTimeout as exc:
             log.error(f"Read timeout when searching for scans: {exc.request.url}")
@@ -264,10 +268,12 @@ class CatalogScan:
         md = await self.metadata
         return md["start"]["uid"]
 
+    @stamina.retry(on=httpcore.ReadTimeout, attempts=3)
     async def _export(self, buff: IO[bytes], format: str):
         url = f"container/full/{quote_plus(self.path)}"
         async with self.client.stream(
-            "GET", url, params={"format": format}
+                "GET", url, params={"format": format},
+                timeout=30
         ) as response:
             if response.is_error:
                 # Make sure error handlers can access the details
@@ -276,7 +282,7 @@ class CatalogScan:
             # Write stream into the file
             async for chunk in response.aiter_bytes():
                 buff.write(chunk)
-
+    
     async def export(self, filename: str, format: str):
         with open(filename, mode="bw") as fd:
             await self._export(fd, format=format)
