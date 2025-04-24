@@ -106,8 +106,14 @@ async def xtal(sim_registry):
         surface_plane=(0, 0, 1),
     )
     await xtal.connect(mock=True)
+    await xtal.d_spacing.connect(mock=False)
+    await xtal.energy.readback.connect(mock=False)
+    await xtal.energy.setpoint.connect(mock=False)
     # Set default values for xtal parameters
-    set_mock_value(xtal.d_spacing, Si311_d_spacing)
+    set_mock_value(xtal.reflection.h, 3)
+    set_mock_value(xtal.reflection.k, 1)
+    set_mock_value(xtal.reflection.l, 1)
+    set_mock_value(xtal.lattice_constant, 0.5431)
     set_mock_value(xtal.rowland_diameter, 500)
     xtal.units[xtal.horizontal] = ureg.cm
     xtal.units[xtal.vertical] = ureg.cm
@@ -136,40 +142,21 @@ async def test_rowland_circle_forward(xtal, bragg, alpha, beta, x, y):
     xtal.d_spacing.get_value = AsyncMock(return_value=Si311_d_spacing)
     energy = bragg_to_energy(bragg * ureg.degrees, d=Si311_d_spacing * ureg.nm)
     # Calculate the new x, z motor positions
-    calculated = await xtal.energy.forward(
-        energy.to(ureg.electron_volt).magnitude,
-        D=xtal.rowland_diameter,
-        d=xtal.d_spacing,
-        beta=xtal.wedge_angle,
-        alpha=xtal.asymmetry_angle,
-        x=xtal.horizontal,
-        y=xtal.vertical,
-    )
+    await xtal._set_from_energy(energy.to(ureg.electron_volt).magnitude)
     # Check the result is correct (convert cm -> m)
     expected = {xtal.horizontal: x, xtal.vertical: y}
-    assert calculated[xtal.horizontal] == pytest.approx(x, abs=0.1)
-    assert calculated[xtal.vertical] == pytest.approx(y, abs=0.1)
+    new_x = await xtal.horizontal.user_setpoint.get_value()
+    new_y = await xtal.vertical.user_setpoint.get_value()
+    assert new_x == pytest.approx(x, abs=0.1)
+    assert new_y == pytest.approx(y, abs=0.1)
 
 
 @pytest.mark.parametrize("bragg,alpha,beta,y,x", analyzer_values)
 async def test_rowland_circle_inverse(xtal, bragg, alpha, beta, x, y):
     # Calculate the new energy
     D = await xtal.rowland_diameter.get_value()
-    new_energy = xtal.energy.inverse(
-        {
-            xtal.horizontal: x,
-            xtal.vertical: y,
-            xtal.rowland_diameter: D,
-            xtal.d_spacing: Si311_d_spacing,
-            xtal.wedge_angle: beta,
-            xtal.asymmetry_angle: alpha,
-        },
-        D=xtal.rowland_diameter,
-        d=xtal.d_spacing,
-        beta=xtal.wedge_angle,
-        alpha=xtal.asymmetry_angle,
-        x=xtal.horizontal,
-        y=xtal.vertical,
+    new_energy = xtal._to_energy(
+        D=D, d=Si311_d_spacing, beta=beta, alpha=alpha, x=x, y=y
     )
     # Compare to the calculated inverse
     expected_energy = bragg_to_energy(bragg * ureg.degrees, d=Si311_d_spacing * ureg.nm)
@@ -218,6 +205,10 @@ async def test_d_spacing(xtal, hkl, d):
     hkl = tuple(int(h) for h in hkl)  # str to tuple
     await xtal.reflection.set(hkl)
     assert await xtal.d_spacing.get_value() == pytest.approx(d, abs=0.001)
+
+
+async def test_energy_setpoint(xtal):
+    await xtal.energy.set(8333)
 
 
 # -----------------------------------------------------------------------------
