@@ -89,6 +89,7 @@ class EnergyPositioner(BasePositioner):
         self,
         *,
         prefix: str,
+        offset_pv: str,
         **kwargs,
     ):
             
@@ -98,7 +99,7 @@ class EnergyPositioner(BasePositioner):
         self.dial_setpoint = epics_signal_rw(float, f"{prefix}SetC.VAL")
         # Derived signals so we can apply offsets and convert units
         with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):        
-            self.offset = soft_signal_rw(float, initial_value=0, units="eV")
+            self.offset = epics_signal_rw(float, offset_pv)
         with self.add_children_as_readables(StandardReadableFormat.HINTED_SIGNAL):
             self.readback = derived_signal_r(_keV_to_energy, keV=self.dial_readback, offset=self.offset)
         self.setpoint = derived_signal_rw(_keV_to_energy, self._set_raw, keV=self.dial_readback, offset=self.offset)
@@ -145,7 +146,7 @@ class PlanarUndulator(StandardReadable):
         MACHINE_PHYSICS = "Machine Physics"
         SYSTEM_MANAGER = "System Manager"
 
-    def __init__(self, prefix: str, name: str = ""):
+    def __init__(self, prefix: str, offset_pv: str, name: str = "", ):
         # Signals for moving the undulator
         self.start_button = epics_signal_x(f"{prefix}StartC.VAL")
         self.stop_button = epics_signal_x(f"{prefix}StopC.VAL")
@@ -170,6 +171,7 @@ class PlanarUndulator(StandardReadable):
                 actuate_signal=self.start_button,
                 stop_signal=self.stop_button,
                 done_signal=self.busy,
+                offset_pv=offset_pv,
             )
             self.energy_taper = UndulatorPositioner(
                 prefix=f"{prefix}TaperEnergy",

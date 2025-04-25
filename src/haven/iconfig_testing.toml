@@ -71,12 +71,17 @@ prefix = "S255ID-PSS:SCS:"
 # allow_close = true  # Default
 
 
-# Energy Positioner
+# Energy Positioners
 # =================
 
-[[ energy ]]
-monochromator_prefix = "mono_ioc:"
-undulator_prefix = "id_ioc:"
+[[ monochromator ]]
+name = "mono"
+prefix = "mono_ioc:"
+
+[[ undulator ]]
+name = "undulator"
+prefix = "id_ioc:"
+offset_pv = "mono_ioc:offset"
 
 
 # Ion chambers

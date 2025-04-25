@@ -10,7 +10,7 @@ from haven.devices.undulator import BusyStatus
 
 @pytest.fixture()
 async def undulator():
-    undulator = PlanarUndulator(prefix="PSS:255ID:", name="undulator")
+    undulator = PlanarUndulator(prefix="PSS:255ID:", offset_pv="255idNP:id_offset", name="undulator")
     await undulator.connect(mock=True)
     await undulator.energy.setpoint.connect(mock=False)
     await undulator.energy.readback.connect(mock=False)
