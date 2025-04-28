@@ -73,6 +73,7 @@ parentdir_prefix = "haven-"
 
 [tool.mypy]
 files = [
+    'src/firefly/energy.py', 'src/firefly/tests/test_energy_display.py',
     'src/haven/devices/asymmotron.py', "src/haven/tests/test_asymmotron.py",
     'src/haven/devices/ion_chamber.py', "src/haven/tests/test_ion_chamber.py",
     'src/haven/devices/motor.py', "src/haven/tests/test_motor.py",
@@ -82,3 +83,4 @@ files = [
     'src/haven/devices/undulator.py', "src/haven/tests/test_undulator.py",
 ]
 follow_imports = "skip"
+follow_untyped_imports = true

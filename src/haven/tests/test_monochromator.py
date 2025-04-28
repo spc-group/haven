@@ -1,6 +1,6 @@
 from bluesky import protocols
 
-from haven.devices.monochromator import Monochromator
+from haven.devices.axilon_monochromator import AxilonMonochromator as Monochromator
 
 
 async def mono():

@@ -3,42 +3,66 @@ from bluesky_queueserver_api import BPlan
 from qtpy import QtCore
 
 from firefly.energy import EnergyDisplay
-from haven.devices.energy_positioner import EnergyPositioner
+from haven.devices import AxilonMonochromator, PlanarUndulator
 
 
 @pytest.fixture()
-async def energy_positioner(sim_registry):
-    energy = EnergyPositioner(
-        monochromator_prefix="mono_ioc:",
-        undulator_prefix="id_ioc:",
-        name="energy",
-    )
-    await energy.connect(mock=True)
-    sim_registry.register(energy)
-    return energy
+async def mono(sim_registry):
+    mono_ = AxilonMonochromator(name="mono", prefix="")
+    await mono_.connect(mock=True)
+    sim_registry.register(mono_)
+    return mono_
+
+@pytest.fixture()
+async def undulator(sim_registry):
+    undulator_ = PlanarUndulator(name="undulator", prefix="", offset_pv="")
+    await undulator_.connect(mock=True)
+    sim_registry.register(undulator_)
+    return undulator_
 
 
 @pytest.fixture()
-def display(qtbot, energy_positioner):
+def display(qtbot, mono, undulator):
     # Load display
     display = EnergyDisplay()
     qtbot.addWidget(display)
     return display
 
 
-async def test_move_energy(qtbot, display):
+async def test_set_energy_plan(qtbot, display):
     # Click the set energy button
     btn = display.ui.set_energy_button
     expected_item = BPlan("set_energy", energy=8402.0)
 
     def check_item(item):
+        from pprint import pprint
+        pprint(item.to_dict())
+        pprint(expected_item.to_dict())
         return item.to_dict() == expected_item.to_dict()
 
-    qtbot.keyClicks(display.target_energy_lineedit, "8402")
+    display.target_energy_spinbox.setValue(8402)
     with qtbot.waitSignal(
         display.queue_item_submitted, timeout=1000, check_params_cb=check_item
     ):
         qtbot.mouseClick(btn, QtCore.Qt.LeftButton)
+
+
+def test_set_energy_args(display):
+    args, kwargs = display.set_energy_args()
+    assert kwargs == {"energy": 0.0}
+    # Set specific harmonic/offset
+    display.ui.harmonic_auto_checkbox.setChecked(False)
+    display.ui.harmonic_spinbox.setValue(3)
+    display.ui.offset_auto_checkbox.setChecked(False)
+    display.ui.offset_spinbox.setValue(25.0)
+    args, kwargs = display.set_energy_args()
+    assert kwargs == {"energy": 0.0, "harmonic": 3, "undulator_offset": 25.0}
+    # Don't change the harmonic/offset
+    display.ui.harmonic_checkbox.setChecked(False)
+    display.ui.offset_checkbox.setChecked(False)
+    args, kwargs = display.set_energy_args()
+    assert kwargs == {"energy": 0.0, "harmonic": None, "undulator_offset": None}
+    
 
 
 def test_predefined_energies(qtbot, display):
@@ -53,8 +77,47 @@ def test_predefined_energies(qtbot, display):
     with qtbot.waitSignal(combo_box.activated, timeout=1000):
         qtbot.keyClicks(combo_box, "Ni K (8333 eV)\t")
         combo_box.activated.emit(9)  # <- this shouldn't be necessary
-    line_edit = display.ui.target_energy_lineedit
-    assert line_edit.text() == "8333.000"
+    spin_box = display.ui.target_energy_spinbox
+    assert spin_box.value() == 8333.0
+
+
+async def test_jog_energy_plan(qtbot, display, mono, undulator):
+    display.jog_value_spinbox.setValue(10.0)
+    # Click the set energy button
+    btn = display.ui.jog_reverse_button
+    expected_item = BPlan("mvr", mono.energy.name, -10, undulator.energy.name, -10)
+
+    def check_item(item):
+        from pprint import pprint
+        pprint(item.to_dict())
+        pprint(expected_item.to_dict())
+        return item.to_dict() == expected_item.to_dict()
+
+    display.target_energy_spinbox.setValue(8402)
+    with qtbot.waitSignal(
+        display.queue_item_executed, timeout=1000, check_params_cb=check_item
+    ):
+        qtbot.mouseClick(btn, QtCore.Qt.LeftButton)
+
+
+
+async def test_move_energy_plan(qtbot, display, mono, undulator):
+    display.move_energy_devices_spinbox.setValue(8420.0)
+    # Click the set energy button
+    btn = display.ui.move_energy_devices_button
+    expected_item = BPlan("mv", mono.energy.name, 8420.0, undulator.energy.name, 8420.0)
+
+    def check_item(item):
+        from pprint import pprint
+        pprint(item.to_dict())
+        pprint(expected_item.to_dict())
+        return item.to_dict() == expected_item.to_dict()
+
+    display.target_energy_spinbox.setValue(8402)
+    with qtbot.waitSignal(
+        display.queue_item_executed, timeout=1000, check_params_cb=check_item
+    ):
+        qtbot.mouseClick(btn, QtCore.Qt.LeftButton)
 
 
 # -----------------------------------------------------------------------------

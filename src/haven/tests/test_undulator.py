@@ -1,11 +1,13 @@
 import asyncio
+import math
+from io import StringIO
 
 import pytest
 from ophyd_async.testing import get_mock_put, set_mock_value
+import pandas as pd
 
 from haven.devices import PlanarUndulator
 from haven.devices.undulator import BusyStatus
-
 
 
 @pytest.fixture()
@@ -15,6 +17,40 @@ async def undulator():
     await undulator.energy.setpoint.connect(mock=False)
     await undulator.energy.readback.connect(mock=False)
     return undulator
+
+
+async def test_data_keys(undulator):
+    reading = await undulator.read()
+    assert set(reading.keys()) == {
+        "undulator-gap",
+        "undulator-gap_taper",
+        "undulator-energy",
+        "undulator-energy_taper",
+        "undulator-energy-dial_readback",
+        "undulator-total_power",
+    }
+    config = await undulator.read_configuration()
+    assert set(config.keys()) == {
+        "undulator-device",
+        "undulator-device_limit",
+        'undulator-energy-offset',
+        'undulator-energy-precision',
+        'undulator-energy-units',
+        'undulator-energy_taper-precision',
+        'undulator-energy_taper-units',
+        'undulator-gap-precision',
+        'undulator-gap-units',
+        'undulator-gap_deadband',
+        'undulator-gap_taper-precision',
+        'undulator-gap_taper-units',
+        'undulator-harmonic_value',
+        'undulator-location',
+        'undulator-magnet',
+        'undulator-version_hpmu',
+        'undulator-version_plc',
+    }
+    # We probably don't want hints from the undulator, just the mono
+    assert undulator.hints == {}
 
 
 async def test_stop_energy(undulator):
@@ -39,6 +75,23 @@ async def test_energy_unit_offset(undulator):
     assert await undulator.energy.dial_setpoint.get_value() == 8.343
     set_mock_value(undulator.energy.dial_readback, 8.583)
     assert await undulator.energy.readback.get_value() == 8573
+
+
+def test_auto_offset_lookup(undulator):
+    # Should fail without a lookup table
+    with pytest.raises(ValueError):
+        undulator.auto_offset(1500)
+    # Now try again with a lookup table
+    undulator._offset_table = StringIO(
+        "# energy\toffset\n"
+        "1000\t10\n"
+        "2000\t20\n"
+        "3000\t30\n"
+    )
+    assert undulator.auto_offset(1500) == 15
+    # Out-of-bounds interpolation should fail
+    with pytest.raises(ValueError):
+        undulator.auto_offset(500)
 
 
 # -----------------------------------------------------------------------------

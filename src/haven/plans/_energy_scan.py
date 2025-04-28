@@ -176,7 +176,7 @@ def energy_scan(
         md_["d_spacing"] = d_spacings
     # Do the actual scan
     yield from bp.list_scan(
-        real_detectors,
+        [*real_detectors, *energy_devices],
         *scan_args,
         md={**md_, **md},
     )

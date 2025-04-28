@@ -4,7 +4,7 @@ from bluesky import RunEngine
 from ophyd_async.sim import SimMotor
 
 from haven.energy_ranges import ERange, KRange, from_tuple
-from haven.devices import Monochromator, PlanarUndulator
+from haven.devices import AxilonMonochromator as Monochromator, PlanarUndulator
 from haven.plans._xafs_scan import xafs_scan
 from haven.plans._energy_scan import energy_scan
 
@@ -18,7 +18,7 @@ async def mono():
 
 @pytest.fixture()
 async def undulator():
-    device = PlanarUndulator("ID255:DSID:", name="undulator")
+    device = PlanarUndulator("ID255:DSID:", name="undulator", offset_pv="255idbFP:id_offset")
     await device.connect(mock=True)
     return device
 
@@ -43,8 +43,6 @@ def test_energy_scan_basics(
     )
     msgs = list(plan)
     # Check that the mono and ID gap ended up in the right position
-    # time.sleep(1.0)
-    from pprint import pprint
     set_msgs = [msg for msg in msgs if msg.command == "set"]
     mono_msgs = [msg for msg in set_msgs if msg.obj is mono.energy]
     mono_setpoints = [msg.args[0] for msg in mono_msgs]

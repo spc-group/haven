@@ -8,7 +8,7 @@ from .motor import Motor
 log = logging.getLogger(__name__)
 
 
-class Monochromator(StandardReadable):
+class AxilonMonochromator(StandardReadable):
     _ophyd_labels_ = {"monochromators"}
 
     class Mode(StrictEnum):

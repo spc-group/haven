@@ -9,13 +9,13 @@ from ophyd import Kind
 from ophyd.sim import instantiate_fake_device, make_fake_device
 
 import haven
+from haven import devices
 from haven.devices import Xspress3Detector
 from haven.devices.aps import ApsMachine
 from haven.devices.beamline_manager import BeamlineManager, IOCManager
 from haven.devices.dxp import DxpDetector
 from haven.devices.dxp import add_mcas as add_dxp_mcas
 from haven.devices.ion_chamber import IonChamber
-from haven.devices.monochromator import Monochromator
 from haven.devices.robot import Robot
 from haven.devices.shutter import PssShutter
 from haven.devices.xia_pfcu import PFCUFilter, PFCUFilterBank
@@ -132,7 +132,7 @@ def robot(sim_registry):
 
 @pytest.fixture()
 def mono(sim_registry):
-    mono = instantiate_fake_device(Monochromator, name="monochromator")
+    mono = instantiate_fake_device(devices.AxilonMonochromator, name="monochromator")
     sim_registry.register(mono)
     yield mono
 

@@ -8,13 +8,13 @@ from haven.plans import set_energy
 
 @pytest.fixture()
 async def undulator():
-    undulator = PlanarUndulator("ID255:DSID:")
+    undulator = PlanarUndulator("ID255:DSID:", offset_pv="255idbFP:id_offset")
     await undulator.connect(mock=True)
     return undulator
 
 def test_plan_messages(mono):
     """Check that the right messages are getting produced."""
-    plan = set_energy(energy=8400, energy_devices=[mono])
+    plan = set_energy(energy=8400, monochromators=[mono], undulators=[])
     msgs = list(plan)
     assert len(msgs) == 2
     msg0 = msgs[0]
@@ -28,7 +28,7 @@ def test_id_harmonic(undulator):
 
     """
     plan = set_energy(
-        energy=8400, harmonic=3, energy_devices=[undulator], harmonic_positioners=[undulator.harmonic_value]
+        energy=8400, harmonic=3, undulator_offset=None, undulators=[undulator], monochromators=[],
     )
     msgs = list(plan)
     # Check that a message exists to the ID harmonic
@@ -38,12 +38,12 @@ def test_id_harmonic(undulator):
     assert msg0.obj is undulator.harmonic_value
 
 
-def test_id_harmonic_auto(mono, undulator):
+def test_id_harmonic_auto(undulator):
     plan = set_energy(
         energy=8400,
-        harmonic="auto",
-        energy_devices=[mono],
-        harmonic_positioners=[undulator.harmonic_value],
+        undulator_offset=None,
+        monochromators=[],
+        undulators=[undulator]
     )
     msgs = list(plan)
     # Check that a message exists to the ID harmonic
@@ -54,9 +54,9 @@ def test_id_harmonic_auto(mono, undulator):
     # Try again but with a 3rd harmonic
     plan = set_energy(
         energy=18400,
-        harmonic="auto",
-        energy_devices=[mono],
-        harmonic_positioners=[undulator.harmonic_value],
+        undulator_offset=None,
+        monochromators=[],
+        undulators=[undulator],
     )
     msgs = list(plan)
     # Check that a message exists to the ID harmonic
@@ -64,17 +64,6 @@ def test_id_harmonic_auto(mono, undulator):
     msg0 = msgs[0]
     assert msg0.args == (3,)
     assert msg0.obj is undulator.harmonic_value
-
-
-def test_invalid_harmonic(mono, undulator):
-    plan = set_energy(
-        energy=8400,
-        harmonic="jabberwocky",
-        energy_devices=[mono],
-        harmonic_positioners=[undulator.harmonic_value],
-    )
-    with pytest.raises(exceptions.InvalidHarmonic):
-        list(plan)
 
 
 # -----------------------------------------------------------------------------

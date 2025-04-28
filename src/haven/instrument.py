@@ -75,7 +75,7 @@ beamline = HavenInstrument(
         "ion_chamber": devices.IonChamber,
         "kb_mirrors": devices.KBMirrors,
         "lambda": devices.LambdaDetector,
-        "monochromator": devices.Monochromator,
+        "monochromator": devices.AxilonMonochromator,
         "motor": devices.Motor,
         "motors": devices.load_motors,
         "pfcu4": PFCUFilterBank,

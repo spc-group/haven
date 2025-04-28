@@ -8,7 +8,7 @@ from .detectors.sim_detector import SimDetector  # noqa: F401
 from .detectors.xspress import Xspress3Detector  # noqa: F401
 from .ion_chamber import IonChamber  # noqa: F401
 from .mirrors import HighHeatLoadMirror, KBMirrors  # noqa: F401
-from .monochromator import Monochromator  # noqa: F401
+from .axilon_monochromator import AxilonMonochromator  # noqa: F401
 from .motor import Motor, load_motors  # noqa: F401
 from .robot import Robot  # noqa: F401
 from .scaler import MultiChannelScaler  # noqa: F401

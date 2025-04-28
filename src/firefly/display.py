@@ -20,6 +20,7 @@ class FireflyDisplay(Display):
     # Signals
     status_message_changed = Signal(str, int)
     queue_item_submitted = Signal(object)
+    queue_item_executed = Signal(object)
 
     def __init__(self, parent=None, args=None, macros=None, ui_filename=None, **kwargs):
         super().__init__(
