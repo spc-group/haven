@@ -1,6 +1,5 @@
 import asyncio
 import math
-from unittest.mock import AsyncMock
 
 import pytest
 from ophyd_async.core import soft_signal_rw
@@ -8,6 +7,7 @@ from ophyd_async.testing import set_mock_value
 
 from haven.devices.asymmotron import (
     Analyzer,
+    EnergyTransform,
     Motor,
     bragg_to_energy,
     bragg_to_wavelength,
@@ -115,12 +115,13 @@ async def xtal(sim_registry):
     set_mock_value(xtal.reflection.l, 1)
     set_mock_value(xtal.lattice_constant, 0.5431)
     set_mock_value(xtal.rowland_diameter, 500)
-    xtal.units[xtal.horizontal] = ureg.cm
-    xtal.units[xtal.vertical] = ureg.cm
-    xtal.units[xtal.rowland_diameter] = ureg.mm
-    xtal.units[xtal.d_spacing] = ureg.nm
-    xtal.units[xtal.wedge_angle] = ureg.degrees
-    xtal.units[xtal.asymmetry_angle] = ureg.degrees
+    xtal.units["horizontal"] = ureg.cm
+    xtal.units["vertical"] = ureg.cm
+    xtal.units["rowland_diameter"] = ureg.mm
+    xtal.units["d_spacing"] = ureg.nm
+    xtal.units["wedge_angle"] = ureg.degrees
+    xtal.units["asymmetry_angle"] = ureg.degrees
+    xtal.units["energy"] = ureg.electron_volt
     return xtal
 
 
@@ -136,28 +137,32 @@ async def test_set_hkl(xtal):
 
 @pytest.mark.parametrize("bragg,alpha,beta,y,x", analyzer_values)
 async def test_rowland_circle_forward(xtal, bragg, alpha, beta, x, y):
-    # Set up sensible values for current positions
-    xtal.wedge_angle.get_value = AsyncMock(return_value=beta)
-    xtal.asymmetry_angle.get_value = AsyncMock(return_value=alpha)
-    xtal.d_spacing.get_value = AsyncMock(return_value=Si311_d_spacing)
+    NewTransform = type("NewEnergyTransform", (EnergyTransform,), {"xtal": xtal})
+    transform = NewTransform(
+        rowland_diameter=await xtal.rowland_diameter.get_value(),
+        d_spacing=Si311_d_spacing,
+        wedge_angle=beta,
+        asymmetry_angle=alpha,
+    )
     energy = bragg_to_energy(bragg * ureg.degrees, d=Si311_d_spacing * ureg.nm)
-    # Calculate the new x, z motor positions
-    await xtal._set_from_energy(energy.to(ureg.electron_volt).magnitude)
+    energy_val = energy.to(ureg.electron_volt).magnitude
+    new_position = transform.derived_to_raw(energy=energy_val)
     # Check the result is correct (convert cm -> m)
-    expected = {xtal.horizontal: x, xtal.vertical: y}
-    new_x = await xtal.horizontal.user_setpoint.get_value()
-    new_y = await xtal.vertical.user_setpoint.get_value()
-    assert new_x == pytest.approx(x, abs=0.1)
-    assert new_y == pytest.approx(y, abs=0.1)
+    expected = {"horizontal": x, "vertical": y}
+    assert new_position == pytest.approx(expected, abs=0.1)
 
 
 @pytest.mark.parametrize("bragg,alpha,beta,y,x", analyzer_values)
 async def test_rowland_circle_inverse(xtal, bragg, alpha, beta, x, y):
     # Calculate the new energy
-    D = await xtal.rowland_diameter.get_value()
-    new_energy = xtal._to_energy(
-        D=D, d=Si311_d_spacing, beta=beta, alpha=alpha, x=x, y=y
+    NewTransform = type("NewEnergyTransform", (EnergyTransform,), {"xtal": xtal})
+    transform = NewTransform(
+        rowland_diameter=await xtal.rowland_diameter.get_value(),
+        d_spacing=Si311_d_spacing,
+        wedge_angle=beta,
+        asymmetry_angle=alpha,
     )
+    new_energy = transform.raw_to_derived(horizontal=x, vertical=y)["energy"]
     # Compare to the calculated inverse
     expected_energy = bragg_to_energy(bragg * ureg.degrees, d=Si311_d_spacing * ureg.nm)
     expected_energy = expected_energy.to(ureg.electron_volt).magnitude
@@ -209,6 +214,7 @@ async def test_d_spacing(xtal, hkl, d):
 
 async def test_energy_setpoint(xtal):
     await xtal.energy.set(8333)
+    assert await xtal.horizontal.user_setpoint.get_value() != 0
 
 
 # -----------------------------------------------------------------------------
