@@ -301,7 +301,6 @@ class FireflyController(QtCore.QObject):
             shortcut="Ctrl+V",
             icon=qta.icon("ph.faders-horizontal"),
         )
-        self.actions.voltmeter.window_created.connect(self.finalize_voltmeter_window)
         # Launch log window
         self.actions.log = WindowAction(
             name="show_logs_window_action",
@@ -320,10 +319,18 @@ class FireflyController(QtCore.QObject):
             icon=qta.icon("mdi.sine-wave"),
         )
 
+    @Slot(str)
+    def launch_device_window(self, device_name: str):
+        action = self.actions.devices[device_name]
+        action.trigger()
+
     @asyncSlot(QAction)
     async def finalize_new_window(self, action):
         """Slot for providing new windows for after a new window is created."""
         action.window.setup_menu_actions(actions=self.actions)
+        # Connect signals for viewing other device windows
+        action.display.device_window_requested.connect(self.launch_device_window)
+        # Prepare queue-server interactions
         self.queue_status_changed.connect(action.window.update_queue_status)
         self.queue_status_changed.connect(action.window.update_queue_controls)
         if getattr(self, "_queue_client", None) is not None:
@@ -352,16 +359,6 @@ class FireflyController(QtCore.QObject):
         display = action.display
         display.ui.bss_modify_button.clicked.connect(self.actions.bss.trigger)
         # display.details_window_requested.connect
-
-    def finalize_voltmeter_window(self, action: QAction):
-        """Connect up signals that are specific to the voltmeters window."""
-
-        def launch_ion_chamber_window(ic_name):
-            action = self.actions.ion_chambers[ic_name]
-            action.trigger()
-
-        display = action.window.display_widget()
-        display.details_window_requested.connect(launch_ion_chamber_window)
 
     def launch_queuemonitor(self):
         config = load_config()["queueserver"]

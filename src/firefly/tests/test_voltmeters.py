@@ -115,7 +115,7 @@ def test_details_button(qtbot, voltmeters_display):
     # Get an embedded display widget
     row = voltmeters_display._ion_chamber_rows[0]
     # Check that the signals are properly connected
-    with qtbot.waitSignal(voltmeters_display.ui.details_window_requested, timeout=500):
+    with qtbot.waitSignal(voltmeters_display.ui.device_window_requested, timeout=500):
         row.details_button.click()
 
 

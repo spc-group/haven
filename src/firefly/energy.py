@@ -29,9 +29,6 @@ class EnergyDisplay(display.FireflyDisplay):
     monochromators: list[Device]
     undulators: list[Device]
 
-    # Signals
-    device_window_requested = Signal(str)  # ion-chamber device name
-
     def __init__(self, args=None, macros={}, **kwargs):
         # Load X-ray database for calculating edge energies
         self.xraydb = XrayDB()

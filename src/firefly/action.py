@@ -1,5 +1,6 @@
 import logging
 from typing import Mapping
+from collections import ChainMap
 
 from qtpy.QtCore import Signal
 from qtpy.QtGui import QIcon, QKeySequence
@@ -37,6 +38,9 @@ class Action(QAction):
     def display(self):
         if self.window is not None:
             return self.window.display_widget()
+
+    def __repr__(self) -> str:
+        return f"<WindowAction: {self.objectName()}>"
 
 
 class WindowAction(Action):
@@ -114,6 +118,7 @@ class ActionsRegistry:
     queue_controls: Mapping[str, QAction]
 
     # Show windows for controlling devices
+    devices: Mapping[str, WindowAction]
     area_detectors: Mapping[str, WindowAction]
     cameras: Mapping[str, WindowAction]
     ion_chambers: Mapping[str, WindowAction]
@@ -129,16 +134,21 @@ class ActionsRegistry:
         self.plans = {}
         self.queue_settings = {}
         self.queue_controls = {}
-        self.motors = {}
-        self.cameras = {}
+        # Devices
         self.area_detectors = {}
-        self.slits = {}
-        self.mirrors = {}
+        self.cameras = {}
         self.ion_chambers = {}
         self.kb_mirrors = {}
+        self.mirrors = {}
+        self.motors = {}
         self.robots = {}
+        self.slits = {}
         self.tables = {}
         self.xrf_detectors = {}
+
+    @property
+    def devices(self):
+        return ChainMap(self.area_detectors, self.cameras, self.ion_chambers, self.kb_mirrors, self.mirrors, self.motors, self.robots, self.slits, self.tables, self.xrf_detectors)
 
     @property
     def all_actions(self):
