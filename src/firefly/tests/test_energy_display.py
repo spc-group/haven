@@ -120,6 +120,23 @@ async def test_move_energy_plan(qtbot, display, mono, undulator):
         qtbot.mouseClick(btn, QtCore.Qt.LeftButton)
 
 
+def test_energy_readbacks(display, mono):
+    """Do we have widgets for reporting the readback energy value for each
+    energy device.
+
+    """
+    layout = display.ui.energy_layout
+    assert layout.rowCount() == 4
+    # First device (mono)
+    lbl = layout.itemAt(2, layout.LabelRole).widget()
+    assert lbl.text() == "Mono:"
+    hlayout = layout.itemAt(2, layout.FieldRole)
+    assert hlayout.count() == 2
+    # Second device (ID)
+    lbl = layout.itemAt(3, layout.LabelRole).widget()
+    assert lbl.text() == "Undulator:"
+
+
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov

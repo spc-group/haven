@@ -1,6 +1,7 @@
 import logging
 import warnings
 from functools import partial
+from typing import Sequence
 
 from bluesky_queueserver_api import BPlan
 from ophydregistry import ComponentNotFound
@@ -8,9 +9,11 @@ from ophyd_async.core import Device
 from pydm.widgets.label import PyDMLabel
 from pydm.widgets.line_edit import PyDMLineEdit
 from qtpy import QtCore, QtWidgets
-from qtpy.QtWidgets import QDialogButtonBox, QFormLayout, QLineEdit, QVBoxLayout
+from qtpy.QtCore import Signal
+from qtpy.QtWidgets import QDialogButtonBox, QFormLayout, QLineEdit, QVBoxLayout, QHBoxLayout, QSizePolicy, QPushButton
 from xraydb.xraydb import XrayDB
 from ophydregistry.exceptions import ComponentNotFound
+import qtawesome as qta
 
 from firefly import display
 from haven import beamline
@@ -26,6 +29,9 @@ class EnergyDisplay(display.FireflyDisplay):
     monochromators: list[Device]
     undulators: list[Device]
 
+    # Signals
+    device_window_requested = Signal(str)  # ion-chamber device name
+
     def __init__(self, args=None, macros={}, **kwargs):
         # Load X-ray database for calculating edge energies
         self.xraydb = XrayDB()
@@ -39,6 +45,30 @@ class EnergyDisplay(display.FireflyDisplay):
             log.warning("Could not find monochromators.")
         if len(self.monochromators) + len(self.undulators) == 0:
             raise ComponentNotFound("No devices with label 'energy'")
+        self.build_readback_widgets(self.monochromators + self.undulators)
+
+    def build_readback_widgets(self, devices: Sequence[Device]):
+        num_static_rows = 2
+        layout = self.ui.energy_layout
+        # Remove existing rows, last row first
+        for row_num in range(layout.rowCount(), num_static_rows, -1):
+            layout.removeRow(row_num-1)
+            # print(layout.rowCount())
+        # Add new row for each device
+        for idx, device in enumerate(devices):
+            row = idx + num_static_rows
+            channel = f"haven://{device.energy.name}.readback"
+            hlayout = QHBoxLayout()
+            readback_widget = PyDMLabel(parent=self, init_channel=channel)
+            hlayout.addWidget(readback_widget)
+            more_button = QPushButton()
+            more_button.setIcon(qta.icon("fa6s.gear"))
+            more_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Minimum)
+            details_slot = partial(self.device_window_requested.emit, device.name)
+            more_button.clicked.connect(details_slot)
+            hlayout.addWidget(more_button)
+            device_name = f"{device.name.title()}:"
+            layout.addRow(device_name, hlayout)
 
     def set_energy_args(self) -> tuple[list, dict]:
         kwargs = {
