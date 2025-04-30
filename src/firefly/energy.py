@@ -41,7 +41,8 @@ class EnergyDisplay(display.FireflyDisplay):
             warnings.warn("Could not find monochromators.")
             log.warning("Could not find monochromators.")
         if len(self.monochromators) + len(self.undulators) == 0:
-            raise ComponentNotFound("No devices with label 'energy'")
+            warnings.warn("No devices with label 'energy'.")
+            log.error("No devices with label 'energy'.")
         self.build_readback_widgets(self.monochromators + self.undulators)
 
     def build_readback_widgets(self, devices: Sequence[Device]):
@@ -91,13 +92,13 @@ class EnergyDisplay(display.FireflyDisplay):
         jog_value = direction * self.ui.jog_value_spinbox.value()
         args = tuple(arg for device in self.energy_devices for arg in (device.name, jog_value))
         item = BPlan("mvr", *args)
-        self.queue_item_executed.emit(item)
+        self.execute_item_submitted.emit(item)
 
     def move_energy_devices(self,  *args, **kwargs):
         new_energy = self.ui.move_energy_devices_spinbox.value()
         args = [arg for device in self.energy_devices for arg in (device.name, new_energy)]
         item = BPlan("mv", *args)
-        self.queue_item_executed.emit(item)
+        self.execute_item_submitted.emit(item)
     
     def set_energy(self, *args, **kwargs):
         args, kwargs = self.set_energy_args()
@@ -116,11 +117,12 @@ class EnergyDisplay(display.FireflyDisplay):
         self.ui.move_energy_devices_button.clicked.connect(self.move_energy_devices)
         self.ui.jog_forward_button.clicked.connect(partial(self.jog_energy_devices, direction=1))
         self.ui.jog_reverse_button.clicked.connect(partial(self.jog_energy_devices, direction=-1))
+        self.ui.jog_reverse_button.setIcon(qta.icon("fa6s.minus"))
+        self.ui.jog_forward_button.setIcon(qta.icon("fa6s.plus"))
         # Set up the combo box with X-ray energies
         combo_box = self.ui.edge_combo_box
         ltab = self.xraydb.tables["xray_levels"]
         edges = self.xraydb.query(ltab)
-        # min_energy, max_energy = self.energy_positioner.limits
         min_energy, max_energy = 4000, 33000
         edges = edges.filter(
             ltab.c.absorption_edge < max_energy,

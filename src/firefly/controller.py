@@ -338,6 +338,7 @@ class FireflyController(QtCore.QObject):
             action.window.update_queue_status(status)
             action.window.update_queue_controls(status)
         action.display.queue_item_submitted.connect(self.add_queue_item)
+        action.display.execute_item_submitted.connect(self.execute_queue_item)
         # Send the current devices to the window
         await action.window.update_devices(self.registry)
 
@@ -658,6 +659,12 @@ class FireflyController(QtCore.QObject):
         log.debug(f"Application received item to add to queue: {item}")
         if getattr(self, "_queue_client", None) is not None:
             await self._queue_client.add_queue_item(item)
+
+    @asyncSlot(object)
+    async def execute_queue_item(self, item):
+        log.debug(f"Application received item to execute: {item}")
+        if getattr(self, "_queue_client", None) is not None:
+            await self._queue_client.execute_queue_item(item)
 
     @QtCore.Slot(bool)
     def set_open_environment_action_state(self, is_open: bool):

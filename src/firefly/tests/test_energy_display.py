@@ -95,7 +95,7 @@ async def test_jog_energy_plan(qtbot, display, mono, undulator):
 
     display.target_energy_spinbox.setValue(8402)
     with qtbot.waitSignal(
-        display.queue_item_executed, timeout=1000, check_params_cb=check_item
+        display.execute_item_submitted, timeout=1000, check_params_cb=check_item
     ):
         qtbot.mouseClick(btn, QtCore.Qt.LeftButton)
 
@@ -115,7 +115,7 @@ async def test_move_energy_plan(qtbot, display, mono, undulator):
 
     display.target_energy_spinbox.setValue(8402)
     with qtbot.waitSignal(
-        display.queue_item_executed, timeout=1000, check_params_cb=check_item
+        display.execute_item_submitted, timeout=1000, check_params_cb=check_item
     ):
         qtbot.mouseClick(btn, QtCore.Qt.LeftButton)
 

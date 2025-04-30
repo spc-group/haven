@@ -20,7 +20,7 @@ class FireflyDisplay(Display):
     # Signals
     status_message_changed = Signal(str, int)
     queue_item_submitted = Signal(object)
-    queue_item_executed = Signal(object)
+    execute_item_submitted = Signal(object)
     device_window_requested = Signal(str)  # device name
 
     def __init__(self, parent=None, args=None, macros=None, ui_filename=None, **kwargs):
@@ -60,19 +60,6 @@ class FireflyDisplay(Display):
         for child in widget.children():
             yield widget
             yield from self._all_children(widget=child)
-
-    def find_plan_widgets(self):
-        """Look through widgets and determine if any of them are used for
-        bluesky plans.
-
-        """
-        # from pprint import pprint
-        # pprint([c.objectName() for c in self._all_children(self)])
-        # for child in self.ui.children():
-        #     if child.objectName() == "set_energy_button":
-        #         print(f"**{child.objectName()}**")
-        #     else:
-        #         print(child.objectName())
 
     def _open_caqtdm_subprocess(self, cmds, *args, **kwargs):
         """Launch a new subprocess and save it to self._caqtdm_process."""
