@@ -40,14 +40,11 @@ class RunBrowserDisplay(display.FireflyDisplay):
     _run_col_names: Sequence = [
         "Plan",
         "Sample",
+        "Scan",
         "Edge",
-        "E0",
         "Exit Status",
         "Datetime",
         "UID",
-        "Proposal",
-        "ESAF",
-        "ESAF Users",
     ]
     _multiplot_items = {}
 
@@ -164,6 +161,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
         self.ui.filter_plan_combobox.setCurrentText("")
         self.ui.filter_sample_combobox.setCurrentText("")
         self.ui.filter_formula_combobox.setCurrentText("")
+        self.ui.filter_scan_combobox.setCurrentText("")
         self.ui.filter_edge_combobox.setCurrentText("")
         self.ui.filter_exit_status_combobox.setCurrentText("")
         self.ui.filter_user_combobox.setCurrentText("")
@@ -199,6 +197,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
             "start.plan_name": self.ui.filter_plan_combobox,
             "start.sample_name": self.ui.filter_sample_combobox,
             "start.sample_formula": self.ui.filter_formula_combobox,
+            "start.scan_name": self.ui.filter_scan_combobox,
             "start.edge": self.ui.filter_edge_combobox,
             "stop.exit_status": self.ui.filter_exit_status_combobox,
             "start.proposal_id": self.ui.filter_proposal_combobox,
@@ -440,6 +439,8 @@ class RunBrowserDisplay(display.FireflyDisplay):
         """Render metadata for the runs into the metadata widget."""
         # Combine the metadata in a human-readable output
         new_md = await self.db_task(self.db.metadata(), "metadata")
+        # Remove catalog names from MD keys
+        new_md = {key.split("/")[-1]: val for key, val in new_md.items()}
         self.metadata_changed.emit(new_md)
 
     @asyncSlot()
@@ -507,6 +508,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
             "plan": self.ui.filter_plan_combobox.currentText(),
             "sample": self.ui.filter_sample_combobox.currentText(),
             "formula": self.ui.filter_formula_combobox.currentText(),
+            "scan": self.ui.filter_scan_combobox.currentText(),
             "edge": self.ui.filter_edge_combobox.currentText(),
             "exit_status": self.ui.filter_exit_status_combobox.currentText(),
             "user": self.ui.filter_user_combobox.currentText(),

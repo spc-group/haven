@@ -1,15 +1,15 @@
 import logging
 import re
 
-import numpy as np
+import xraydb
 from bluesky_queueserver_api import BPlan
 from qtpy import QtWidgets
 from qtpy.QtCore import QObject, Signal
 from qtpy.QtGui import QDoubleValidator
 from xraydb.xraydb import XrayDB
 
-from firefly import display
-from firefly.plans.util import is_valid_value, time_converter
+from firefly.exceptions import UnknownAbsorptionEdge
+from firefly.plans import regions_display
 from haven.energy_ranges import (
     E_step_to_k_step,
     ERange,
@@ -65,28 +65,12 @@ class TitleRegion:
 
 class XafsScanRegion(QObject):
     time_calculation_signal = Signal()
+    # Flag for whether time is calculated correctly, if not, will set to -1
+    xafs_region_time: int = 0
 
     def __init__(self):
         super().__init__()
         self.setup_ui()
-        self.kErange = None
-        self.xafs_region_time = (
-            0  # flag for whether time is calculated correctly, if not, will set to -1
-        )
-
-        # List of widgets and their signals to connect to update_total_time
-        widgets_signals = [
-            (self.start_line_edit, "textChanged"),
-            (self.stop_line_edit, "textChanged"),
-            (self.step_line_edit, "textChanged"),
-            (self.weight_spinbox, "valueChanged"),
-            (self.exposure_time_spinbox, "valueChanged"),
-            (self.k_space_checkbox, "stateChanged"),
-        ]
-
-        # Connect all signals to the update_total_time method
-        for widget, signal_name in widgets_signals:
-            getattr(widget, signal_name).connect(self.update_total_time)
 
     def setup_ui(self):
         self.layout = QtWidgets.QHBoxLayout()
@@ -177,48 +161,32 @@ class XafsScanRegion(QObject):
             else:
                 self.update_line_edit_value(line_edit, func)
 
-    def update_total_time(self):
+    @property
+    def energy_range(self):
         weight = self.weight_spinbox.value()
         exposure_time = self.exposure_time_spinbox.value()
-
-        # prevent invalid inputs such as nan
+        # Prevent invalid inputs such as nan
         try:
             start = round(float(self.start_line_edit.text()), float_accuracy)
             stop = round(float(self.stop_line_edit.text()), float_accuracy)
             step = round(float(self.step_line_edit.text()), float_accuracy)
-
-        # when the round doesn't work for nan values
+        # When the round doesn't work for nan values
         except ValueError:
             self.kErange = []
             start, stop, step = float("nan"), float("nan"), float("nan")
 
         if self.k_space_checkbox.isChecked():
-            self.kErange = KRange(
-                k_min=start,
-                k_max=stop,
-                k_step=step,
-                k_weight=weight,
-                exposure=exposure_time,
-            )
-
+            return KRange(start, stop, step, exposure=exposure_time, weight=weight)
         else:
-            self.kErange = ERange(
-                E_min=start,
-                E_max=stop,
-                E_step=step,
-                weight=weight,
-                exposure=exposure_time,
-            )
-
-        # Emit the signal regardless of success or failure
-        self.time_calculation_signal.emit()
+            return ERange(start, stop, step, exposure=exposure_time)
 
 
-class XafsScanDisplay(display.FireflyDisplay):
+class XafsScanDisplay(regions_display.PlanDisplay):
     min_energy = 4000
     max_energy = 33000
 
     def customize_ui(self):
+        super().customize_ui()
         # Remove the defaut XAFS layout from .ui file
         self.ui.clearLayout(self.ui.region_layout)
 
@@ -227,21 +195,22 @@ class XafsScanDisplay(display.FireflyDisplay):
         self.ui.title_layout.addLayout(self.title_region.layout)
 
         self.reset_default_regions()
-        # add absorption edges from XrayDB
+        # Add absorption edges from XrayDB
         self.xraydb = XrayDB()
-
         combo_box = self.ui.edge_combo_box
+        combo_box.lineEdit().setPlaceholderText("Select edge…")
         ltab = self.xraydb.tables["xray_levels"]
         edges = self.xraydb.query(ltab)
         edges = edges.filter(
             ltab.c.absorption_edge < self.max_energy,
             ltab.c.absorption_edge > self.min_energy,
         )
-        items = [
-            f"{r.element} {r.iupac_symbol} ({int(r.absorption_edge)} eV)"
-            for r in edges.all()
-        ]
-        combo_box.addItems(["Select edge…", *items])
+        for edge in edges:
+            text = (
+                f"{edge.element} {edge.iupac_symbol} ({int(edge.absorption_edge)} eV)"
+            )
+            combo_box.addItem(text, userData=edge)
+        combo_box.setCurrentText("")
 
         # Connect the E0 checkbox to the E0 combobox
         self.ui.use_edge_checkbox.stateChanged.connect(self.use_edge)
@@ -256,9 +225,6 @@ class XafsScanDisplay(display.FireflyDisplay):
         # reset button
         self.ui.reset_button.clicked.connect(self.reset_default_regions)
 
-        # Run scan button
-        self.ui.run_button.clicked.connect(self.queue_plan)
-
         # connect checkboxes with all regions' check box
         self.title_region.regions_all_checkbox.stateChanged.connect(
             self.on_regions_all_checkbox
@@ -266,8 +232,14 @@ class XafsScanDisplay(display.FireflyDisplay):
         # connect is_standard with a warning box
         self.ui.checkBox_is_standard.clicked.connect(self.on_is_standard)
 
-        # connect num. of scans with total_time
+        # repeat scans
         self.ui.spinBox_repeat_scan_num.valueChanged.connect(self.update_total_time)
+
+        # Default metadata values
+        self.ui.comboBox_purpose.lineEdit().setPlaceholderText(
+            "e.g. commissioning, alignment…"
+        )
+        self.ui.comboBox_purpose.setCurrentText("")
 
     async def update_devices(self, registry):
         """Set available components in the device list."""
@@ -296,7 +268,7 @@ class XafsScanDisplay(display.FireflyDisplay):
 
         # extract edge values
         match = re.findall(r"\d+\.?\d*", self.edge_combo_box.currentText())
-        self.edge_value = round(float(match[-1]), float_accuracy) if match else 0
+        edge_eV = round(float(match[-1]), float_accuracy) if match else 0
 
         # iterate through selected regions
         checked_regions = [
@@ -315,9 +287,9 @@ class XafsScanDisplay(display.FireflyDisplay):
                 text = line_edit.text()
                 if text:
                     value = (
-                        round(float(text), float_accuracy) - self.edge_value
+                        round(float(text), float_accuracy) - edge_eV
                         if is_checked
-                        else round(float(text), float_accuracy) + self.edge_value
+                        else round(float(text), float_accuracy) + edge_eV
                     )
                     line_edit.setText(f"{value:.6g}")
 
@@ -358,9 +330,17 @@ class XafsScanDisplay(display.FireflyDisplay):
             self.regions.append(region)
             # disable/enabale regions when selected
             region.region_checkbox.stateChanged.connect(self.on_region_checkbox)
-            region.region_checkbox.stateChanged.connect(self.update_total_time)
-            # receive time signals from XafsRegion
-            region.time_calculation_signal.connect(self.update_total_time)
+            # Connect all signals to the update_total_time method
+            for signal in [
+                region.region_checkbox.stateChanged,
+                region.start_line_edit.textChanged,
+                region.stop_line_edit.textChanged,
+                region.step_line_edit.textChanged,
+                region.weight_spinbox.valueChanged,
+                region.exposure_time_spinbox.valueChanged,
+                region.k_space_checkbox.stateChanged,
+            ]:
+                signal.connect(self.update_total_time)
 
     def remove_regions(self, num=1):
         for i in range(num):
@@ -381,36 +361,24 @@ class XafsScanDisplay(display.FireflyDisplay):
             self.remove_regions(abs(diff_region_num))
         elif diff_region_num > 0:
             self.add_regions(diff_region_num)
+        self.update_total_time()
 
     def update_total_time(self):
         # Summing total_time for all checked regions directly within the sum function using a generator expression
-        kEranges_all = [
-            region_i.kErange
-            for region_i in self.regions
-            if region_i.region_checkbox.isChecked()
+        energy_ranges = [
+            region.energy_range
+            for region in self.regions
+            if region.region_checkbox.isChecked()
         ]
 
-        # prevent end points are smaller than start points
+        # Keep end points from being smaller than start points
         try:
-            _, exposures = merge_ranges(*kEranges_all, sort=True)
+            _, exposures = merge_ranges(*energy_ranges, sort=True)
             total_time_per_scan = exposures.sum()
         except ValueError:
             total_time_per_scan = float("nan")
 
-        # calculate time for each scan
-        hr, min, sec = time_converter(total_time_per_scan)
-        self.ui.label_hour_scan.setText(str(hr))
-        self.ui.label_min_scan.setText(str(min))
-        self.ui.label_sec_scan.setText(str(sec))
-
-        # calculate time for entire planf
-        num_scan_repeat = self.ui.spinBox_repeat_scan_num.value()
-        total_time = num_scan_repeat * total_time_per_scan
-        hr_total, min_total, sec_total = time_converter(total_time)
-
-        self.ui.label_hour_total.setText(str(hr_total))
-        self.ui.label_min_total.setText(str(min_total))
-        self.ui.label_sec_total.setText(str(sec_total))
+        self.set_time_label(total_time_per_scan)
 
     def on_is_standard(self, is_checked):
         # if is_standard checked, warn that the data will be used for public
@@ -425,92 +393,70 @@ class XafsScanDisplay(display.FireflyDisplay):
             if response != QtWidgets.QMessageBox.Yes:
                 self.ui.checkBox_is_standard.setChecked(False)
 
+    @property
+    def edge_name(self) -> str | None:
+        edge_regex = r"([A-Z][a-z]?)[-_ ]([K-Z][0-9]*)"
+        edge_text = self.ui.edge_combo_box.currentText()
+        if re_match := re.search(edge_regex, edge_text):
+            return "-".join(re_match.groups())
+        else:
+            return None
+
+    @property
+    def E0(self):
+        try:
+            element, edge = self.edge_name.split("-")
+        except (UnknownAbsorptionEdge, AttributeError):
+            pass
+        else:
+            return xraydb.xray_edge(element, edge).energy
+        # Try and parse as a number
+        edge_text = self.ui.edge_combo_box.currentText()
+        try:
+            return float(edge_text)
+        except ValueError:
+            return None
+
     def queue_plan(self, *args, **kwargs):
         """Execute this plan on the queueserver."""
         # Get parameters from each rows of line regions:
         energy_ranges_all = []
 
-        # iterate through only selected regions
+        # Iterate through only selected regions
         checked_regions = [
             region_i
             for region_i in self.regions
             if region_i.region_checkbox.isChecked()
         ]
-        for region_i in checked_regions:
-            try:
-                start = round(float(region_i.start_line_edit.text()), float_accuracy)
-                stop = round(float(region_i.stop_line_edit.text()), float_accuracy)
-                step = round(float(region_i.step_line_edit.text()), float_accuracy)
-                weight = region_i.weight_spinbox.value()
-                exposure_time = region_i.exposure_time_spinbox.value()
-            except ValueError:
-                QtWidgets.QMessageBox.warning(
-                    self, "Value Error", "Invalid value detected!"
-                )
-                return None
-            if region_i.k_space_checkbox.isChecked():
-                energy_ranges_all.append(
-                    KRange(
-                        k_min=start,
-                        k_max=stop,
-                        k_step=step,
-                        k_weight=weight,
-                        exposure=exposure_time,
-                    )
-                )
-
-            else:
-                energy_ranges_all.append(
-                    ERange(
-                        E_min=start,
-                        E_max=stop,
-                        E_step=step,
-                        weight=weight,
-                        exposure=exposure_time,
-                    )
-                )
-
-        # Turn ndarrays into lists so they can be JSON serialized
-        energies, exposures = merge_ranges(*energy_ranges_all, sort=True)
-        energies = list(np.round(energies, float_accuracy))
-        exposures = list(np.round(exposures, float_accuracy))
-        detectors = self.ui.detectors_list.selected_detectors()
-        repeat_scan_num = int(self.ui.spinBox_repeat_scan_num.value())
-        md = {
-            "sample_name": self.ui.lineEdit_sample.text(),
-            "purpose": self.ui.lineEdit_purpose.text(),
-            "is_standard": self.ui.checkBox_is_standard.isChecked(),
-            "notes": self.ui.textEdit_notes.toPlainText(),
-        }
-        # Only include metadata that isn't an empty string
-        md = {key: val for key, val in md.items() if is_valid_value(val)}
-
+        energy_ranges = [region.energy_range.astuple() for region in checked_regions]
+        # Set up other plan arguments
+        md = self.get_meta_data()
+        md["is_standard"] = self.ui.checkBox_is_standard.isChecked()
+        detectors, repeat_scan_num = self.get_scan_parameters()
         # Check that an absorption edge was selected
         if self.use_edge_checkbox.isChecked():
-            try:
-                match = re.findall(r"\d+\.?\d*", self.edge_combo_box.currentText())
-                self.edge_value = round(float(match[-1]), float_accuracy)
-
-            except IndexError:
+            edge = self.edge_name
+            E0 = self.E0
+            if edge is not None:
+                E0_arg = edge
+            elif E0 is not None:
+                E0_arg = E0
+            else:
                 QtWidgets.QMessageBox.warning(
                     self, "Error", "Please select an absorption edge."
                 )
                 return None
-        else:
-            self.edge_value = 0
-
         # Build the queue item
         item = BPlan(
-            "energy_scan",
-            energies=energies,
-            exposure=exposures,
-            E0=self.edge_value,
-            detectors=detectors,
+            "xafs_scan",
+            detectors,
+            *energy_ranges,
+            E0=E0_arg,
             md=md,
         )
         # Submit the item to the queueserver
-        log.info(f"Adding XAFS scan to queue.")
-        # repeat scans
+        log.info("Adding XAFS scan to queue.")
+        # Repeat scans
         for i in range(repeat_scan_num):
             self.queue_item_submitted.emit(item)
 

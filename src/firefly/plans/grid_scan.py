@@ -79,7 +79,7 @@ class GridScanRegion(regions_display.RegionBase):
 
         # Number of scan point
         self.scan_pts_spin_box = QtWidgets.QSpinBox()
-        self.scan_pts_spin_box.setMinimum(1)
+        self.scan_pts_spin_box.setMinimum(2)
         self.scan_pts_spin_box.setMaximum(99999)
         self.layout.addWidget(self.scan_pts_spin_box)
 
@@ -125,7 +125,7 @@ class GridScanRegion(regions_display.RegionBase):
             # Calculate step size
             if num_points > 1:
                 step_size = (stop - start) / (num_points - 1)
-                self.step_size_line_edit.setText(f"{step_size}")
+                self.step_size_line_edit.setText(f"{step_size:.5g}")
             else:
                 self.step_size_line_edit.setText("N/A")
         except ValueError:
@@ -145,10 +145,15 @@ class GridScanDisplay(regions_display.RegionsDisplay):
         # add title layout
         self.title_region = TitleRegion()
         self.ui.title_layout.addLayout(self.title_region.layout)
-        self.ui.spinBox_repeat_scan_num.valueChanged.connect(self.update_total_time)
         # Connect scan points change to update total time
         for region in self.regions:
             region.scan_pts_spin_box.valueChanged.connect(self.update_total_time)
+        self.ui.spinBox_repeat_scan_num.valueChanged.connect(self.update_total_time)
+        # Default metadata values
+        self.ui.comboBox_purpose.lineEdit().setPlaceholderText(
+            "e.g. commissioning, alignment…"
+        )
+        self.ui.comboBox_purpose.setCurrentText("")
 
     def time_per_scan(self, detector_time):
         total_num_pnts = np.prod(

@@ -4,11 +4,17 @@ capture detector signals.
 """
 
 import logging
-import warnings
-from typing import Mapping, Optional, Sequence, Union
+from collections import ChainMap
+from typing import Mapping, Sequence
+
+from bluesky.utils import MsgGenerator
 
 from .. import exceptions
-from ..energy_ranges import ERange, KRange, energy_to_wavenumber, merge_ranges
+from ..energy_ranges import (
+    EnergyRange,
+    from_tuple,
+    merge_ranges,
+)
 from ..typing import DetectorList
 from ._energy_scan import energy_scan
 
@@ -25,18 +31,13 @@ def chunks(lst, n):
 
 
 def xafs_scan(
-    E_min: float,
-    *E_params: Sequence[float],
-    k_step: Optional[float] = None,
-    k_exposure: Optional[float] = None,
-    k_max: Optional[float] = None,
-    k_weight: float = 0.0,
-    E0: Union[float, str] = 0,
-    detectors: DetectorList = "ion_chambers",
+    detectors: DetectorList,
+    *energy_ranges: Sequence[EnergyRange | tuple],
+    E0: float | str,
     energy_signals: Sequence = ["energy"],
-    time_signals: Sequence = None,
+    time_signals: Sequence | None = None,
     md: Mapping = {},
-):
+) -> MsgGenerator[str]:
     """Collect a spectrum by scanning X-ray energies relative to an
     absorbance edge.
 
@@ -44,18 +45,20 @@ def xafs_scan(
 
     .. code-block:: python
 
-        xafs_scan(energy, step, exposure, energy, step, exposure energy, ...)
+        xafs_scan(
+          [detector1, ...],
+          ERange(start, stop, step, exposure),
+          E0=8333,
+        )
 
-    The optional parameter *E0* can either be an absolute energy in
-    electron-volts, or a string of the form "Ni_K" to be looked up in
-    a reference table. If omitted, energies will be absolute and
-    K-space parameters should be omitted.
+    The parameter *E0* can either be an absolute energy in
+    electron-volts, or a string of the form "Ni-K" to be looked up in
+    a reference table. If ``E0=0`` is given, energies will be absolute
+    and K-space parameters should probably be omitted.
 
-    If *E0* is given, then energies should then be given relative to
-    this edge in groups of ``(min, step, exposure, max)``. More than
-    one range can be specified by giving additional groups of ``(step,
-    exposure, max)`` since the maximum energy of the previous range
-    will be the minimum energy of the subsequent range.
+    Positional arguments should be energy ranges, like
+    :py:class:`~haven.energy_ranges.ERange` or
+    :py:class:`~haven.energy_ranges.KRange`.
 
     For example, the following invocation will scan three regions
     relative to the Ni K-edge:
@@ -65,22 +68,25 @@ def xafs_scan(
     - Edge: from 30 eV below the edge to 50 eV above the edge in 0.1
       eV steps with 1 sec exposure.
     - EXAFS: from 50 eV above the edge to K=8 Å⁻ in 0.2 Å⁻ steps with
-      1.5 sec exposure.
+      1.5 sec exposure and 0.5 k-weight.
 
     .. code-block:: python
 
-        xafs_scan(-100, 2, 0.5, -30, 0.1, 1., 50,
-                  k_step=0.2, k_exposure=1.5, k_max=8,
-                  E0="Ni_K")
+        xafs_scan(
+            [],  # Empty detector list for demo
+            ERange(-100, -30, 2, exposure=0.5),
+            ERange(-30, 50, 0.1, exposure=1.),
+            KRange(3.623, 8, 0.2, exposure=1.5, weight=0.5),
+            E0="Ni_K"
+        )
 
-    For measuring the extended structure (EXAFS) *k_step*, *k_max*,
-    and *k_exposure* can be given instead of the equivalent
-    energies. *k_weights* will apply longer exposure times to higher K
-    values.
+    *energy_ranges* can also be tuples like:
+    - ("E", -50, 0, 0.25, 1) == ERange(-50, 0, step=0.25, exposure=1)
+    - ("k", -50, 0, 0.25, 1.5, 1) == KRange(-50, 0, step=0.25, exposure=1.5, weight=1)
 
-    The calculated exposure times will be set for every signal in
-    *time_signals*. If *time_signals* is ``None``, then
-    *time_signals* will be determined automatically from
+    The calculated exposure times, including k-weights, will be set
+    for every signal in *time_signals*. If *time_signals* is ``None``,
+    then *time_signals* will be determined automatically from
     *detectors*: for each detector, if it has an attribute/property
     *default_time_signal*, then this signal will be included in
     *time_signals*.
@@ -90,63 +96,45 @@ def xafs_scan(
 
     Parameters
     ==========
-    E_min
-      The starting energy for the first energy range, in eV.
-    E_params
-      Should be any number of parameters of the form ``energy_step,
-      exposure, energy, energy_step, exposure, energy, ...``. Energies
-      should be in eV and *exposure* in seconds.
-    k_step
-      Wavenumber (k) step for the EXAFS region, in Å⁻.
-    k_exposure
-      Base exposure time for the EXAFS region, in seconds.
-    k_max
-      Last energy for the EXAFS region, in eV.
-    k_weight
-      Weighting factor for exposure time at higher energies in the
-      EXAFS region. Default (0) results in constant exposure.
+    detectors
+      Which detectors to measure. Can be a label string
+      (e.g. ``"ion_chambers"``), or sequence that includes label
+      strings (e.g. ``["ion_chambers", detector1, "area_detectors"]``.
+    *energy_ranges
+      Energy ranges to scan.
     E0
       An edge energy, in eV, or name of the edge of the form
       "Ni_L3". All energies will be relative to this value.
-    detectors
-      Overrides the list of Ophyd signals to record during this
-      scan. Useful for testing.
     energy_signals
       Overrides the list of Ophyd positioners used to set energy
       during this scan. Useful for testing.
     time_signals
       Overrides the list of Ophyd positioners used to set exposure
       time during this scan. Useful for testing.
+    md
+      Additional metadata to pass to the run engine.
 
     """
-    # Make sure the right number of energies have been given
-    # Turn the energies in energy ranges
-    curr_E_min = E_min
-    energy_ranges = []
-    for E_step, E_exposure, E_max in chunks(E_params, 3):
-        energy_ranges.append(ERange(curr_E_min, E_max, E_step, exposure=E_exposure))
-        curr_E_min = E_max
-    # Check for k-space region but no E0 specified
-    has_krange = not any([k is None for k in [k_step, k_exposure, k_max]])
-    if has_krange and E0 == 0:
-        msg = "Specified K-range for scan, but no *E0* given."
-        warnings.warn(msg)
-        log.warning(msg)
-    if has_krange:
-        energy_ranges.append(
-            KRange(
-                k_min=energy_to_wavenumber(curr_E_min),
-                k_max=k_max,
-                k_step=k_step,
-                k_weight=k_weight,
-                exposure=k_exposure,
-            )
-        )
     # Convert energy ranges to energy list and exposure list
+    energy_ranges = [from_tuple(rng) for rng in energy_ranges]
     energies, exposures = merge_ranges(*energy_ranges)
     if len(energies) < 1:
         raise exceptions.NoEnergies("Plan would not produce any energy points.")
     # Execute the energy scan
+    md_ = {
+        "plan_name": "xafs_scan",
+        "plan_args": {
+            "detectors": list(map(repr, detectors)),
+            "energy_ranges": list(map(repr, energy_ranges)),
+            "E0": E0,
+            "energy_signals": list(map(repr, energy_signals)),
+            "time_signals": (
+                list(map(repr, time_signals))
+                if time_signals is not None
+                else time_signals
+            ),
+        },
+    }
     yield from energy_scan(
         energies=energies,
         exposure=exposures,
@@ -154,7 +142,7 @@ def xafs_scan(
         detectors=detectors,
         energy_signals=energy_signals,
         time_signals=time_signals,
-        md=md,
+        md=ChainMap(md, md_),
     )
 
 
