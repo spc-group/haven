@@ -3,10 +3,13 @@ import logging
 import numpy as np
 import pytest
 
-from haven import ERange, KRange, merge_ranges
-
-# import unittest
-
+from haven import (
+    ERange,
+    KRange,
+    energy_to_wavenumber,
+    merge_ranges,
+    wavenumber_to_energy,
+)
 
 logging.basicConfig(level=logging.INFO)
 
@@ -25,6 +28,21 @@ def test_e_range(start, stop, step, expected_energies):
     e_range = ERange(start, stop, step, exposure=0.1)
     np.testing.assert_allclose(e_range.energies(), expected_energies)
     np.testing.assert_allclose(e_range.exposures(), [0.1] * len(expected_energies))
+
+
+def test_energy_to_wavenumber():
+    assert energy_to_wavenumber(50) == pytest.approx(3.622626282198371)
+    assert energy_to_wavenumber(25, relative_to=20) == pytest.approx(
+        0.27043357718013183
+    )
+
+
+def test_wavenumber_to_energy():
+    assert wavenumber_to_energy(3.622626282198371) == pytest.approx(50)
+    k0 = energy_to_wavenumber(20)
+    assert wavenumber_to_energy(k0 + 0.25, relative_to=k0) == pytest.approx(
+        4.602744207169479
+    )
 
 
 def test_k_range():
