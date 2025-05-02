@@ -3,12 +3,16 @@ import asyncio
 import datetime as dt
 import re
 from pathlib import Path
+from typing import Sequence
 
+from httpx import HTTPStatusError
+import pandas as pd
 from tiled import queries
 from tiled.client.container import Container
 from tqdm.asyncio import tqdm
+from tabulate import tabulate
 
-from haven.catalog import Catalog
+from haven.catalog import Catalog, CatalogScan
 
 extensions = {
     "application/x-nexus": ".hdf",
@@ -30,8 +34,8 @@ async def export_run(
             if "text/x-xdi" in valid_formats
             else "text/tab-separated-values"
         )
-    if len(target_formats) == 0:
-        return
+    # if len(target_formats) == 0:
+    #     return
     # Retrieve needed metadata
     md = await run.metadata
     start_doc = md["start"]
@@ -39,7 +43,7 @@ async def export_run(
     pi_name = "nopi"
     start_time = dt.datetime.fromtimestamp(start_doc.get("time"))
     # Decide on how to structure the file storage
-    esaf_dir = base_dir / f"{pi_name}-{start_time.strftime('%Y_%m')}-{esaf}"
+    esaf_dir = base_dir / f"{pi_name}_{start_time.strftime('%Y-%m')}_{esaf}"
     sample_name = start_doc.get("sample_name")
     scan_name = start_doc.get("scan_name")
     plan_name = start_doc["plan_name"]
@@ -56,15 +60,39 @@ async def export_run(
     base_name = re.sub(r"[ ]", "_", base_name)
     base_name = re.sub(r"[/]", "", base_name)
     # Write to disk
+    esaf_dir.mkdir(parents=True, exist_ok=True)
     for fmt in target_formats:
         ext = extensions[fmt]
         fp = esaf_dir / f"{base_name}{ext}"
         if fp.exists():
             continue
-        # Create the base directory
-        esaf_dir.mkdir(parents=True, exist_ok=True)
         # Export files
-        await run.export(fp, format=fmt)
+        try:
+            await run.export(fp, format=fmt)
+        except HttpStatusError as exc:
+            print(start_doc['uid'], exc)
+    # Add an entry to the spreadsheet for this run
+    spreadsheet_path = esaf_dir / "runs_summary.ods"
+    if spreadsheet_path.exists():
+        df = pd.read_excel(spreadsheet_path, engine="odf")
+    else:
+        df = pd.DataFrame(
+            columns=["uid", "start_timestamp", "start_datetime", "exit_status", "sample", "scan", "plan", "filebase"]
+        )
+    if start_doc["uid"] not in df.uid.values:
+        
+        # Add the row to the spreadsheet
+        df.loc[len(df)] = [
+            start_doc["uid"],
+            start_doc["time"],
+            start_time.isoformat(),
+            md.get("stop", {}).get("exit_status", ""),
+            start_doc.get("sample_name", ""),
+            start_doc.get("scan_name", ""),
+            start_doc.get("plan_name", ""),
+            base_name,
+        ]
+        df.to_excel(spreadsheet_path, engine="odf", index=False)
 
 
 def build_queries(
@@ -86,20 +114,38 @@ def build_queries(
     return qs
 
 
+async def table_row(run: CatalogScan) -> list[str]:
+    md = await run.metadata
+    start_time = dt.datetime.fromtimestamp(md["start"]["time"]).isoformat()
+    return [
+        md["start"]["uid"],
+        start_time,
+        md.get("stop", {}).get("exit_status", ""),
+        md["start"].get("sample_name", ""),
+        md["start"].get("scan_name", ""),
+        md["start"].get("plan_name", ""),
+    ]
+
+
 async def export_runs(
     base_dir: Path,
-    before: str | None,
-    after: str | None,
-    esaf: str | None,
-    proposal: str | None,
+    runs: Sequence[CatalogScan],
     use_xdi: bool,
     use_nexus: bool,
 ):
-    catalog = Catalog("scans", uri="http://fedorov.xray.aps.anl.gov:8020")
-    qs = build_queries(before=before, after=after, esaf=esaf, proposal=proposal)
-    runs = catalog.runs(queries=qs)
-    async for run in tqdm(runs, desc="Exporting", unit="runs"):
-        await export_run(run, base_dir=base_dir)
+    valid_runs = []
+    rows = []
+    headers = ["#", "UID", "Start", "Status", "Sample", "Scan", "Plan"]
+    # Print a table of runs for approval
+    row_num = 0
+    async for run in runs:
+        rows.append(await table_row(run))
+        valid_runs.append(run)
+    print(tabulate(rows, headers=headers, tablefmt="fancy_outline", showindex=True))
+    # Save a table of runs for
+    # Do the exporting
+    for run in tqdm(valid_runs, desc="Exporting", unit="runs"):
+        await export_run(run, base_dir=base_dir, use_xdi=use_xdi, use_nexus=use_nexus)
 
 
 def main():
@@ -137,14 +183,17 @@ def main():
         action="store_true",
     )
     args = parser.parse_args()
+    # Get the list of runs we need
+    catalog = Catalog("scans", uri="http://fedorov.xray.aps.anl.gov:8020")
+    qs = build_queries(
+        before=args.before, after=args.after, esaf=args.esaf, proposal=args.proposal
+    )
+    runs = catalog.runs(queries=qs)
     # Save each run to disk
     base_dir = Path(args.base_dir)
     do_export = export_runs(
         base_dir=base_dir,
-        before=args.before,
-        after=args.after,
-        esaf=args.esaf,
-        proposal=args.proposal,
+        runs=runs,
         use_xdi=args.xdi,
         use_nexus=args.nexus,
     )
