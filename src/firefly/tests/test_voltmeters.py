@@ -98,6 +98,7 @@ async def test_gain_button_hints(voltmeters_display, ion_chambers):
     """Test that the gain buttons get disabled when not usable."""
     row = voltmeters_display._ion_chamber_rows[0]
     ic = ion_chambers[0]
+    row.update_gain_level_widgets(13)
     assert row.gain_up_button.isEnabled()
     assert row.gain_down_button.isEnabled()
     # Now set the gain all the way to one limit

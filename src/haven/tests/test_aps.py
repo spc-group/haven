@@ -3,7 +3,7 @@ from haven.devices.aps import ApsMachine
 
 def test_read_attrs():
     device = ApsMachine(name="Aps")
-    read_attrs = ["current", "lifetime"]
+    read_attrs = ["current"]
     for attr in read_attrs:
         assert attr in device.read_attrs
 

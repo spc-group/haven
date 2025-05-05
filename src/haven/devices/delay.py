@@ -2,23 +2,23 @@ import enum
 from typing import Type, TypeVar
 
 from ophyd_async.core import (
+    DEFAULT_TIMEOUT,
     SignalRW,
     StandardReadable,
     StandardReadableFormat,
     StrictEnum,
     SubsetEnum,
+    SignalDatatypeT,
 )
 from ophyd_async.epics.core import epics_signal_r, epics_signal_rw, epics_signal_x
 
 
-T = TypeVar("T")
-
-
-class StrEnum(str, enum.Enum):
-    pass
-
-
-def epics_signal_io(datatype: Type[T], prefix: str, name: str = "") -> SignalRW[T]:
+def epics_signal_io(
+    datatype: type[SignalDatatypeT],
+    prefix: str,
+    name: str = "",
+    timeout: float = DEFAULT_TIMEOUT,
+) -> SignalRW[SignalDatatypeT]:
     """Create a `SignalRW` backed by 2 EPICS PVs.
 
     The write PV gets an extra 'O' and the read PV gets an extra 'I'
@@ -33,7 +33,7 @@ def epics_signal_io(datatype: Type[T], prefix: str, name: str = "") -> SignalRW[
 
     """
     return epics_signal_rw(
-        datatype, read_pv=f"{prefix}I", write_pv=f"{prefix}O", name=name
+        datatype, read_pv=f"{prefix}I", write_pv=f"{prefix}O", name=name, timeout=timeout
     )
 
 

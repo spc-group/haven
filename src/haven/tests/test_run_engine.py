@@ -60,8 +60,9 @@ def test_calibrate_message():
             connect_tiled=False,
             connect_kafka=False,
         )
+        assert not device.calibrate.called
         RE([Msg("calibrate", device, truth=1304, target=1314)])
-        assert device.calibrate.called_once
+        assert device.calibrate.called
 
 
 # -----------------------------------------------------------------------------
