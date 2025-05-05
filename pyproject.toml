@@ -75,6 +75,7 @@ parentdir_prefix = "haven-"
 files = [
     'src/firefly/energy.py', 'src/firefly/tests/test_energy_display.py',
     'src/firefly/devices/axilon_monochromator.py', 'src/firefly/tests/test_monochromator.py',
+    'src/firefly/devices/undulator.py', 'src/firefly/tests/test_undulator.py',
     'src/haven/run_engine.py', 'src/haven/tests/test_run_engine.py',
     'src/haven/devices/asymmotron.py', "src/haven/tests/test_asymmotron.py",
     'src/haven/devices/ion_chamber.py', "src/haven/tests/test_ion_chamber.py",

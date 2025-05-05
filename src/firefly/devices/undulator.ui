@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>378</width>
-    <height>166</height>
+    <height>168</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -63,7 +63,7 @@
         <bool>true</bool>
        </property>
        <property name="channel" stdset="0">
-        <string>haven://energy.undulator.energy.readback</string>
+        <string>haven://${DEVICE}.energy.readback</string>
        </property>
       </widget>
      </item>
@@ -91,7 +91,7 @@
         <bool>true</bool>
        </property>
        <property name="channel" stdset="0">
-        <string>haven://energy.undulator.energy_taper.readback</string>
+        <string>haven://${DEVICE}.energy_taper.readback</string>
        </property>
       </widget>
      </item>
@@ -130,7 +130,7 @@
         <bool>true</bool>
        </property>
        <property name="channel" stdset="0">
-        <string>haven://energy.undulator.gap.readback</string>
+        <string>haven://${DEVICE}.gap.readback</string>
        </property>
       </widget>
      </item>
@@ -171,7 +171,7 @@
         <bool>true</bool>
        </property>
        <property name="channel" stdset="0">
-        <string>haven://energy.monochromator.offset.user_readback</string>
+        <string>haven://${DEVICE}.offset</string>
        </property>
       </widget>
      </item>
@@ -186,6 +186,9 @@
       <widget class="PyDMLabel" name="PyDMLabel_12">
        <property name="toolTip">
         <string/>
+       </property>
+       <property name="channel" stdset="0">
+        <string>haven://${DEVICE}.energy.dial_readback</string>
        </property>
       </widget>
      </item>
