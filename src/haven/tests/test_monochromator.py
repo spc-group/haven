@@ -1,4 +1,6 @@
+import pytest
 from bluesky import protocols
+from ophyd_async.testing import set_mock_value
 
 from haven.devices.axilon_monochromator import AxilonMonochromator as Monochromator
 
@@ -12,6 +14,17 @@ async def mono():
 def test_mono_energy_signal(mono):
     # Check PVs are correct
     mono.energy.user_readback.source == "ca+mock://255idMono:Energy.RBV"
+
+
+async def test_calibrate(mono):
+    set_mock_value(mono.d_spacing, 3.134734)
+    set_mock_value(mono.d_spacing_unit, "Angstroms")
+    set_mock_value(mono.bragg.motor_egu, "arcsec")
+    set_mock_value(mono.energy.motor_egu, "eV")
+    # Pretend we're running 10eV higher than the true energy
+    await mono.energy.calibrate(target=8380, truth=8370)
+    new_offset = await mono.transform_offset.get_value()
+    assert new_offset == pytest.approx(59.84797)
 
 
 def test_interfaces(mono):

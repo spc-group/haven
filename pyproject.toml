@@ -74,9 +74,12 @@ parentdir_prefix = "haven-"
 [tool.mypy]
 files = [
     'src/firefly/energy.py', 'src/firefly/tests/test_energy_display.py',
+    'src/firefly/devices/axilon_monochromator.py', 'src/firefly/tests/test_monochromator.py',
+    'src/haven/run_engine.py', 'src/haven/tests/test_run_engine.py',
     'src/haven/devices/asymmotron.py', "src/haven/tests/test_asymmotron.py",
     'src/haven/devices/ion_chamber.py', "src/haven/tests/test_ion_chamber.py",
     'src/haven/devices/motor.py', "src/haven/tests/test_motor.py",
+    'src/haven/plans/_calibrate.py', 'src/haven/tests/test_calibrate_plan.py',
     'src/haven/plans/_set_energy.py', 'src/haven/tests/test_set_energy.py',
     'src/haven/plans/_xafs_scan.py', 'src/haven/plans/_energy_scan.py', 'src/haven/tests/test_energy_xafs_scan.py',
     'src/haven/positioner.py', "src/haven/tests/test_positioner.py",

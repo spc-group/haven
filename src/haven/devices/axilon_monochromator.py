@@ -1,11 +1,68 @@
 import logging
+import asyncio
 
-from ophyd_async.core import StandardReadable, StandardReadableFormat, StrictEnum
+import numpy as np
+from ophyd_async.core import (
+    StandardReadable,
+    StandardReadableFormat,
+    StrictEnum,
+    AsyncStatus,
+)
 from ophyd_async.epics.core import epics_signal_rw
+from pint import UnitRegistry, Quantity
+from scipy import constants
 
 from .motor import Motor
 
 log = logging.getLogger(__name__)
+
+ureg = UnitRegistry()
+
+h = (
+    constants.physical_constants["Planck constant in eV/Hz"][0]
+    * ureg.electron_volt
+    / ureg.hertz
+)
+c = constants.c * ureg.meter / ureg.second
+
+
+def energy_to_bragg(energy: Quantity, *, d_spacing: Quantity) -> Quantity:
+    bragg = np.arcsin(h * c / 2 / d_spacing / energy)
+    return bragg
+
+
+class EnergyMotor(Motor):
+    @AsyncStatus.wrap
+    async def calibrate(self, truth: float, target: float | None = None):
+        """Calibrate mono energy by applying an offset to the Bragg motor.
+
+        Parameters
+        ==========
+        truth
+          The actual energy when the readback is set to *target*.
+        target
+          The readback/setpoint position corresponding for when the
+          motor is actually at *truth*.
+
+        """
+        # Target the current position if none provided
+        if target is None:
+            target = await self.user_readback.get_value()
+        # Get some additional data
+        energy_unit, bragg_unit, d_val, d_unit = await asyncio.gather(
+            self.motor_egu.get_value(),
+            self.parent.bragg.motor_egu.get_value(),
+            self.parent.d_spacing.get_value(),
+            self.parent.d_spacing_unit.get_value(),
+        )
+        d = d_val * ureg(d_unit.lower())
+        # Convert from energy to bragg angle
+        bragg_truth = energy_to_bragg(truth * ureg(energy_unit), d_spacing=d)
+        bragg_target = energy_to_bragg(target * ureg(energy_unit), d_spacing=d)
+        offset = bragg_truth - bragg_target
+        # Set the offset PV
+        offset_val = offset.to(ureg(bragg_unit)).magnitude
+        await self.parent.transform_offset.set(offset_val)
 
 
 class AxilonMonochromator(StandardReadable):
@@ -20,7 +77,7 @@ class AxilonMonochromator(StandardReadable):
     def __init__(self, prefix: str, name: str = ""):
         with self.add_children_as_readables():
             # Virtual motors
-            self.energy = Motor(f"{prefix}Energy")
+            self.energy = EnergyMotor(f"{prefix}Energy")
             self.offset = Motor(f"{prefix}Offset")
             # ACS Motors
             self.bragg = Motor(f"{prefix}ACS:m3")
@@ -36,9 +93,9 @@ class AxilonMonochromator(StandardReadable):
             self.d_spacing = epics_signal_rw(float, f"{prefix}dspacing")
             self.d_spacing_unit = epics_signal_rw(str, f"{prefix}dspacing.EGU")
             self.mode = epics_signal_rw(self.Mode, f"{prefix}mode")
-            self.energy_constant1 = epics_signal_rw(float, f"{prefix}EnergyC1.VAL")
-            self.energy_constant2 = epics_signal_rw(float, f"{prefix}EnergyC2.VAL")
-            self.energy_constant3 = epics_signal_rw(float, f"{prefix}EnergyC3.VAL")
+            self.transform_d_spacing = epics_signal_rw(float, f"{prefix}EnergyC1.VAL")
+            self.transform_direction = epics_signal_rw(float, f"{prefix}EnergyC2.VAL")
+            self.transform_offset = epics_signal_rw(float, f"{prefix}EnergyC3.VAL")
             # Interferomters
             # self.roll_int = Motor(f"{prefix}ACS:m7")
             # self.pi_int = Motor(f"{prefix}ACS:m8")

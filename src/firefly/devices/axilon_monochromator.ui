@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>316</width>
-    <height>586</height>
+    <width>335</width>
+    <height>602</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -56,7 +56,7 @@
           <bool>true</bool>
          </property>
          <property name="channel" stdset="0">
-          <string>haven://energy.readback</string>
+          <string>haven://${DEVICE}.energy.user_readback</string>
          </property>
         </widget>
        </item>
@@ -74,7 +74,7 @@
         </widget>
        </item>
        <item>
-        <spacer name="horizontalSpacer_4">
+        <spacer name="horizontalSpacer_5">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
          </property>
@@ -87,6 +87,56 @@
         </spacer>
        </item>
        <item>
+        <widget class="PyDMRelatedDisplayButton" name="PyDMRelatedDisplayButton_4">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="toolTip">
+          <string/>
+         </property>
+         <property name="PyDMIcon" stdset="0">
+          <string>cog</string>
+         </property>
+         <property name="filenames" stdset="0">
+          <stringlist>
+           <string>motor.py</string>
+          </stringlist>
+         </property>
+         <property name="titles" stdset="0">
+          <stringlist>
+           <string>More</string>
+          </stringlist>
+         </property>
+         <property name="showIcon" stdset="0">
+          <bool>true</bool>
+         </property>
+         <property name="macros" stdset="0">
+          <stringlist>
+           <string>MOTOR=${DEVICE}.energy</string>
+          </stringlist>
+         </property>
+         <property name="openInNewWindow" stdset="0">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item row="1" column="1">
+      <layout class="QHBoxLayout" name="horizontalLayout_3">
+       <item>
         <widget class="QPushButton" name="calibrate_button">
          <property name="toolTip">
           <string>Open a dialog to adjust the energy calibration of the monochromator.</string>
@@ -95,6 +145,19 @@
           <string>Calibrate</string>
          </property>
         </widget>
+       </item>
+       <item>
+        <spacer name="horizontalSpacer">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
        </item>
       </layout>
      </item>
@@ -116,141 +179,54 @@
       </widget>
      </item>
      <item row="2" column="1">
-      <widget class="PyDMLabel" name="PyDMLabel_3">
-       <property name="font">
-        <font>
-         <family>Monospace</family>
-         <weight>50</weight>
-         <bold>false</bold>
-        </font>
-       </property>
-       <property name="toolTip">
-        <string/>
-       </property>
-       <property name="text">
-        <string>#####.###### arcsec</string>
-       </property>
-       <property name="precision" stdset="0">
-        <number>0</number>
-       </property>
-       <property name="showUnits" stdset="0">
-        <bool>true</bool>
-       </property>
-       <property name="precisionFromPV" stdset="0">
-        <bool>true</bool>
-       </property>
-       <property name="channel" stdset="0">
-        <string>haven://energy.monochromator.bragg.user_readback</string>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="0">
-      <widget class="QLabel" name="label_15">
-       <property name="text">
-        <string>Gap:</string>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="1">
-      <widget class="PyDMLabel" name="PyDMLabel_8">
-       <property name="font">
-        <font>
-         <family>Monospace</family>
-        </font>
-       </property>
-       <property name="toolTip">
-        <string/>
-       </property>
-       <property name="text">
-        <string>####.###### um</string>
-       </property>
-       <property name="showUnits" stdset="0">
-        <bool>true</bool>
-       </property>
-       <property name="channel" stdset="0">
-        <string>haven://energy.monochromator.gap.user_readback</string>
-       </property>
-      </widget>
-     </item>
-     <item row="4" column="0">
-      <widget class="QLabel" name="label_16">
-       <property name="text">
-        <string>Pitch:</string>
-       </property>
-      </widget>
-     </item>
-     <item row="4" column="1">
-      <widget class="PyDMLabel" name="PyDMLabel_6">
-       <property name="font">
-        <font>
-         <family>Monospace</family>
-        </font>
-       </property>
-       <property name="toolTip">
-        <string/>
-       </property>
-       <property name="text">
-        <string>#####.###### urad</string>
-       </property>
-       <property name="showUnits" stdset="0">
-        <bool>true</bool>
-       </property>
-       <property name="channel" stdset="0">
-        <string>haven://energy.monochromator.pitch2.user_readback</string>
-       </property>
-      </widget>
-     </item>
-     <item row="5" column="1">
-      <layout class="QHBoxLayout" name="horizontalLayout_9">
+      <layout class="QHBoxLayout" name="horizontalLayout_4">
        <item>
-        <widget class="QDoubleSpinBox" name="doubleSpinBox">
-         <property name="enabled">
-          <bool>false</bool>
+        <widget class="PyDMLabel" name="PyDMLabel_3">
+         <property name="font">
+          <font>
+           <family>Monospace</family>
+           <weight>50</weight>
+           <bold>false</bold>
+          </font>
          </property>
          <property name="toolTip">
-          <string>How much to detune the mono, as a percentage of it's fully tuned maximum flux.</string>
-         </property>
-         <property name="suffix">
-          <string>%</string>
-         </property>
-         <property name="decimals">
-          <number>0</number>
-         </property>
-         <property name="minimum">
-          <double>1.000000000000000</double>
-         </property>
-         <property name="maximum">
-          <double>100.000000000000000</double>
-         </property>
-         <property name="singleStep">
-          <double>5.000000000000000</double>
-         </property>
-         <property name="stepType">
-          <enum>QAbstractSpinBox::DefaultStepType</enum>
-         </property>
-         <property name="value">
-          <double>85.000000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QueueButton" name="pushButton">
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
+          <string/>
          </property>
          <property name="text">
-          <string>Tune</string>
+          <string>#####.###### arcsec</string>
+         </property>
+         <property name="precision" stdset="0">
+          <number>0</number>
+         </property>
+         <property name="showUnits" stdset="0">
+          <bool>true</bool>
+         </property>
+         <property name="precisionFromPV" stdset="0">
+          <bool>true</bool>
+         </property>
+         <property name="channel" stdset="0">
+          <string>haven://${DEVICE}.bragg.user_readback</string>
          </property>
         </widget>
        </item>
        <item>
-        <widget class="PyDMRelatedDisplayButton" name="PyDMRelatedDisplayButton_2">
+        <spacer name="horizontalSpacer_4">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="PyDMRelatedDisplayButton" name="PyDMRelatedDisplayButton_3">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
          <property name="sizePolicy">
           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
            <horstretch>0</horstretch>
@@ -267,7 +243,7 @@
           <string/>
          </property>
          <property name="PyDMIcon" stdset="0">
-          <string>wrench</string>
+          <string>cog</string>
          </property>
          <property name="filenames" stdset="0">
           <stringlist>
@@ -284,7 +260,7 @@
          </property>
          <property name="macros" stdset="0">
           <stringlist>
-           <string>MOTOR=energy.monochromator.pitch2</string>
+           <string>MOTOR=${DEVICE}.bragg</string>
           </stringlist>
          </property>
          <property name="openInNewWindow" stdset="0">
@@ -294,23 +270,108 @@
        </item>
       </layout>
      </item>
-     <item row="6" column="0">
-      <widget class="QLabel" name="label_17">
+     <item row="3" column="0">
+      <widget class="QLabel" name="label_15">
        <property name="text">
-        <string>Roll:</string>
+        <string>Offset:</string>
        </property>
       </widget>
      </item>
-     <item row="6" column="1">
-      <layout class="QHBoxLayout" name="horizontalLayout_10">
+     <item row="3" column="1">
+      <layout class="QHBoxLayout" name="horizontalLayout_5">
        <item>
-        <widget class="PyDMLabel" name="PyDMLabel_7">
+        <widget class="PyDMLabel" name="PyDMLabel_8">
+         <property name="font">
+          <font>
+           <family>Monospace</family>
+          </font>
+         </property>
+         <property name="toolTip">
+          <string/>
+         </property>
+         <property name="text">
+          <string>####.###### um</string>
+         </property>
+         <property name="showUnits" stdset="0">
+          <bool>true</bool>
+         </property>
+         <property name="channel" stdset="0">
+          <string>haven://${DEVICE}.offset.user_readback</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="horizontalSpacer_6">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="PyDMRelatedDisplayButton" name="PyDMRelatedDisplayButton_5">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
          <property name="sizePolicy">
-          <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="toolTip">
+          <string/>
+         </property>
+         <property name="PyDMIcon" stdset="0">
+          <string>cog</string>
+         </property>
+         <property name="filenames" stdset="0">
+          <stringlist>
+           <string>motor.py</string>
+          </stringlist>
+         </property>
+         <property name="titles" stdset="0">
+          <stringlist>
+           <string>More</string>
+          </stringlist>
+         </property>
+         <property name="showIcon" stdset="0">
+          <bool>true</bool>
+         </property>
+         <property name="macros" stdset="0">
+          <stringlist>
+           <string>MOTOR=${DEVICE}.offset</string>
+          </stringlist>
+         </property>
+         <property name="openInNewWindow" stdset="0">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item row="4" column="0">
+      <widget class="QLabel" name="label_16">
+       <property name="text">
+        <string>2nd Xtal Pitch:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="1">
+      <layout class="QHBoxLayout" name="horizontalLayout_6">
+       <item>
+        <widget class="PyDMLabel" name="PyDMLabel_6">
          <property name="font">
           <font>
            <family>Monospace</family>
@@ -326,16 +387,12 @@
           <bool>true</bool>
          </property>
          <property name="channel" stdset="0">
-          <string>haven://energy.monochromator.roll2.user_readback</string>
+          <string>haven://${DEVICE}.pitch2.user_readback</string>
          </property>
         </widget>
        </item>
-      </layout>
-     </item>
-     <item row="7" column="1">
-      <layout class="QHBoxLayout" name="horizontalLayout_11">
        <item>
-        <spacer name="horizontalSpacer_6">
+        <spacer name="horizontalSpacer_7">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
          </property>
@@ -348,25 +405,12 @@
         </spacer>
        </item>
        <item>
-        <widget class="QueueButton" name="pushButton_2">
+        <widget class="PyDMRelatedDisplayButton" name="PyDMRelatedDisplayButton_6">
          <property name="enabled">
-          <bool>false</bool>
+          <bool>true</bool>
          </property>
          <property name="sizePolicy">
           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="text">
-          <string>Tune</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="PyDMRelatedDisplayButton" name="PyDMRelatedDisplayButton">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
@@ -381,7 +425,7 @@
           <string/>
          </property>
          <property name="PyDMIcon" stdset="0">
-          <string>wrench</string>
+          <string>cog</string>
          </property>
          <property name="filenames" stdset="0">
           <stringlist>
@@ -398,7 +442,7 @@
          </property>
          <property name="macros" stdset="0">
           <stringlist>
-           <string>MOTOR=energy.monochromator.roll2</string>
+           <string>MOTOR=${DEVICE}.pitch2</string>
           </stringlist>
          </property>
          <property name="openInNewWindow" stdset="0">
@@ -408,7 +452,108 @@
        </item>
       </layout>
      </item>
-     <item row="8" column="0">
+     <item row="5" column="0">
+      <widget class="QLabel" name="label_17">
+       <property name="text">
+        <string>2nd Xtal Roll:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="1">
+      <layout class="QHBoxLayout" name="horizontalLayout_10">
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_8">
+         <item>
+          <widget class="PyDMLabel" name="PyDMLabel_7">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="font">
+            <font>
+             <family>Monospace</family>
+            </font>
+           </property>
+           <property name="toolTip">
+            <string/>
+           </property>
+           <property name="text">
+            <string>#####.###### urad</string>
+           </property>
+           <property name="showUnits" stdset="0">
+            <bool>true</bool>
+           </property>
+           <property name="channel" stdset="0">
+            <string>haven://${DEVICE}.roll2.user_readback</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer_8">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="PyDMRelatedDisplayButton" name="PyDMRelatedDisplayButton_7">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="toolTip">
+            <string/>
+           </property>
+           <property name="PyDMIcon" stdset="0">
+            <string>cog</string>
+           </property>
+           <property name="filenames" stdset="0">
+            <stringlist>
+             <string>motor.py</string>
+            </stringlist>
+           </property>
+           <property name="titles" stdset="0">
+            <stringlist>
+             <string>More</string>
+            </stringlist>
+           </property>
+           <property name="showIcon" stdset="0">
+            <bool>true</bool>
+           </property>
+           <property name="macros" stdset="0">
+            <stringlist>
+             <string>MOTOR=${DEVICE}.roll2</string>
+            </stringlist>
+           </property>
+           <property name="openInNewWindow" stdset="0">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </item>
+     <item row="6" column="0">
       <widget class="QLabel" name="label">
        <property name="text">
         <string>Mode:</string>
@@ -418,17 +563,17 @@
        </property>
       </widget>
      </item>
-     <item row="8" column="1">
+     <item row="6" column="1">
       <widget class="PyDMEnumComboBox" name="PyDMEnumComboBox">
        <property name="toolTip">
         <string/>
        </property>
        <property name="channel" stdset="0">
-        <string>haven://monochromator.mode</string>
+        <string>haven://${DEVICE}.mode</string>
        </property>
       </widget>
      </item>
-     <item row="9" column="0">
+     <item row="7" column="0">
       <widget class="QLabel" name="label_8">
        <property name="text">
         <string>Feedback θ:</string>
@@ -438,7 +583,7 @@
        </property>
       </widget>
      </item>
-     <item row="9" column="1">
+     <item row="7" column="1">
       <layout class="QHBoxLayout" name="horizontalLayout">
        <item>
         <widget class="PyDMByteIndicator" name="PyDMByteIndicator">
@@ -481,14 +626,14 @@
        </item>
       </layout>
      </item>
-     <item row="10" column="0">
+     <item row="8" column="0">
       <widget class="QLabel" name="label_9">
        <property name="text">
         <string>Feedback χ:</string>
        </property>
       </widget>
      </item>
-     <item row="10" column="1">
+     <item row="8" column="1">
       <layout class="QHBoxLayout" name="horizontalLayout_2">
        <item>
         <widget class="PyDMByteIndicator" name="PyDMByteIndicator_2">
@@ -567,11 +712,6 @@
    <class>PyDMRelatedDisplayButton</class>
    <extends>QPushButton</extends>
    <header>pydm.widgets.related_display_button</header>
-  </customwidget>
-  <customwidget>
-   <class>QueueButton</class>
-   <extends>QPushButton</extends>
-   <header>firefly.queue_button</header>
   </customwidget>
  </customwidgets>
  <resources/>

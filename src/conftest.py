@@ -131,8 +131,9 @@ def robot(sim_registry):
 
 
 @pytest.fixture()
-def mono(sim_registry):
-    mono = instantiate_fake_device(devices.AxilonMonochromator, name="monochromator")
+async def mono(sim_registry):
+    mono = devices.AxilonMonochromator(name="monochromator", prefix="255idfNP:")
+    await mono.connect(mock=True)
     sim_registry.register(mono)
     yield mono
 

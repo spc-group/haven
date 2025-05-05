@@ -1,4 +1,7 @@
+from bluesky_queueserver_api import BPlan
 from qtpy import QtWidgets
+
+from firefly import display
 
 
 class EnergyCalibrationDialog(QtWidgets.QDialog):
@@ -7,7 +10,7 @@ class EnergyCalibrationDialog(QtWidgets.QDialog):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.setWindowTitle("Energy calibration")
+        self.setWindowTitle("Monochromator calibration")
 
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)
@@ -33,8 +36,25 @@ class EnergyCalibrationDialog(QtWidgets.QDialog):
         self.layout.addWidget(self.buttonBox)
 
 
-class MonochromatorDisplay(display.FireflyDisplay):
+class AxilonMonochromatorDisplay(display.FireflyDisplay):
+
+    def show_calibrate_dialog(self):
+        dialog = EnergyCalibrationDialog(self)
+        accepted = dialog.exec()
+        if accepted:
+            self.calibrate()
+
+    def customize_device(self):
+        super().customize_device()
+        self.setWindowTitle(self.device.name.title())
+    
     def customize_ui(self):
         # Respond to the "calibrate" button
         self.ui.calibrate_button.clicked.connect(self.show_calibrate_dialog)
         
+    def ui_filename(self):
+        return "devices/axilon_monochromator.ui"
+
+    def queue_calibration(self, truth: float, target: float):
+        plan = BPlan("calibrate", self.device.energy.name, truth, target=target)
+        self.execute_item_submitted.emit(plan)
