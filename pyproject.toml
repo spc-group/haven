@@ -6,20 +6,20 @@ authors = [
 ]
 description = "Tools and GUI for running the spectroscopy group beamlines at the Advanced Photon Source."
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
     "Development Status :: 3 - Alpha",
-    "License :: OSI Approved :: BSD License",
     "Topic :: Scientific/Engineering",
     "Topic :: System :: Hardware",
 ]
+license = "BSD-3-clause"
 keywords = ["synchrotron", "xray", "bluesky"]
 dependencies = ["aioca", "aiokafka", "bluesky", "ophyd",
 	        "ophyd-async>=0.9.0a2", "apsbss", "xraydb",
 	        "mergedeep", "xrayutilities", "bluesky-queueserver-api", "tomlkit",
-		"apstools", "ophyd-registry>=2.0.0rc1", "caproto", "pcdsdevices",
+		"apstools", "apsbits", "ophyd-registry>=2.0.0rc1", "caproto", "pcdsdevices",
 		"bluesky-adaptive", "tiled[client]", "guarneri>=0.2.0",
 		"httpx[http2]"]
 
@@ -55,6 +55,10 @@ firefly_cameras = "firefly.launcher:cameras"
 
 [tool.setuptools.package-data]
 firefly = ["firefly.qss"]
+# This might be necessary in the future for BITS compatibility
+# "" = "src"
+
+[tool.setuptools_scm]
 
 [build-system]
 requires = ["setuptools>=61.0", "setuptools-scm>=8.0"]
