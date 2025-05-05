@@ -188,6 +188,12 @@ class FireflyController(QtCore.QObject):
                 icon=qta.icon("msc.mirror"),
             )
         )
+        self.actions.monochromators = self.device_actions(
+            device_label="monochromators",
+            display_file=ui_dir / "axilon_monochromator.py",
+            device_key="DEVICE",
+            icon=qta.icon("mdi.crystal-ball"),
+        )
         self.actions.tables = self.device_actions(
             device_label="tables",
             display_file=ui_dir / "table.py",
@@ -200,6 +206,12 @@ class FireflyController(QtCore.QObject):
             device_key="DEVICE",
             WindowClass=PlanMainWindow,
             icon=qta.icon("mdi.robot-industrial"),
+        )
+        self.actions.monochromators = self.device_actions(
+            device_label="undulators",
+            display_file=ui_dir / "undulator.py",
+            device_key="DEVICE",
+            icon=qta.icon("fa6s.wave-square"),
         )
         self.actions.xrf_detectors = self.device_actions(
             device_label="xrf_detectors",
@@ -264,7 +276,6 @@ class FireflyController(QtCore.QObject):
                 WindowClass=PlanMainWindow,
             ),
         }
-
         # Action for showing the run browser window
         self.actions.run_browser = WindowAction(
             name="show_run_browser_action",

@@ -54,8 +54,11 @@ class EnergyDisplay(display.FireflyDisplay):
             # print(layout.rowCount())
         # Add new row for each device
         for idx, device in enumerate(devices):
-            row = idx + num_static_rows
-            channel = f"haven://{device.energy.name}.readback"
+            if hasattr(device.energy, "user_readback"):
+                signal = device.energy.user_readback
+            else:
+                signal = device.energy.readback
+            channel = f"haven://{signal.name}"
             hlayout = QHBoxLayout()
             readback_widget = PyDMLabel(parent=self, init_channel=channel)
             hlayout.addWidget(readback_widget)

@@ -140,10 +140,12 @@ class ActionsRegistry:
         self.ion_chambers = {}
         self.kb_mirrors = {}
         self.mirrors = {}
+        self.monochromators = {}
         self.motors = {}
         self.robots = {}
         self.slits = {}
         self.tables = {}
+        self.undulators = {}
         self.xrf_detectors = {}
 
     @property
@@ -171,9 +173,11 @@ class ActionsRegistry:
             *self.ion_chambers.values(),
             *self.kb_mirrors.values(),
             *self.mirrors.values(),
+            *self.monochromators.values(),
             *self.motors.values(),
             *self.robots.values(),
             *self.slits.values(),
             *self.tables.values(),
+            *self.undulators.values(),
             *self.xrf_detectors.values(),
         ]
