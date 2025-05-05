@@ -188,7 +188,7 @@ class HKL(StandardReadable, Movable):
 
         super().__init__(name=name)
 
-    def _to_tuple(self, hkl_str):
+    def _to_tuple(self, hkl_str) -> tuple[str, str, str]:
         h, k, l = hkl_str
         return (h, k, l)
 
