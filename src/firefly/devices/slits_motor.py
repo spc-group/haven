@@ -7,7 +7,7 @@ class SlitsMotorDisplay(display.FireflyDisplay):
         title = self.macros()["TITLE"]
 
     def ui_filename(self):
-        return "slits_motor.ui"
+        return "devices/slits_motor.ui"
 
 
 # -----------------------------------------------------------------------------

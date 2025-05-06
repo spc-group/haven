@@ -12,7 +12,7 @@ class AsymmotronDisplay(display.FireflyDisplay):
         self.device = haven.registry.find(self.macros()["DEVICE"])
 
     def ui_filename(self):
-        return "asymmotron.ui"
+        return "devices/asymmotron.ui"
 
 
 # -----------------------------------------------------------------------------

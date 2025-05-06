@@ -25,6 +25,9 @@ class AxilonMonochromatorDisplay(display.FireflyDisplay):
         self.ui.truth_spinbox.setMinimum(-float("inf"))
         # Respond to the "calibrate" button
         self.ui.calibrate_button.clicked.connect(self.show_calibrate_dialog)
+
+    def update_queue_status(self, status):
+        self.calibrate_button.update_queue_style(status)
         
     def ui_filename(self):
         return "devices/axilon_monochromator.ui"

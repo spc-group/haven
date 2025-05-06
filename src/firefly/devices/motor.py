@@ -12,7 +12,7 @@ class MotorDisplay(display.FireflyDisplay):
         self.ui.stop_button.setIcon(qta.icon("fa6s.stop"))
 
     def ui_filename(self):
-        return "motor.ui"
+        return "devices/motor.ui"
 
     def launch_caqtdm(self):
         device = haven.registry.find(self.macros()["MOTOR"])

@@ -310,7 +310,7 @@ It will change the monochromator and undulator (if applicable), but makes no att
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="move_energy_devices_button">
+           <widget class="QueueserverButton" name="move_energy_devices_button">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
               <horstretch>0</horstretch>
@@ -327,7 +327,7 @@ It will change the monochromator and undulator (if applicable), but makes no att
         <item row="1" column="1">
          <layout class="QHBoxLayout" name="horizontalLayout_14">
           <item>
-           <widget class="QPushButton" name="jog_reverse_button">
+           <widget class="QueueserverButton" name="jog_reverse_button">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
               <horstretch>0</horstretch>
@@ -368,7 +368,7 @@ It will change the monochromator and undulator (if applicable), but makes no att
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="jog_forward_button">
+           <widget class="QueueserverButton" name="jog_forward_button">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
               <horstretch>0</horstretch>

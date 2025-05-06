@@ -61,6 +61,8 @@ class EnergyDisplay(display.FireflyDisplay):
             channel = f"haven://{signal_name}"
             hlayout = QHBoxLayout()
             readback_widget = PyDMLabel(parent=self, init_channel=channel)
+            from pprint import pprint
+            readback_widget.showUnits = True
             hlayout.addWidget(readback_widget)
             more_button = QPushButton()
             more_button.setIcon(qta.icon("fa6s.gear"))
@@ -112,7 +114,13 @@ class EnergyDisplay(display.FireflyDisplay):
         self.queue_item_submitted.emit(item)
 
     def update_queue_status(self, status):
-        self.set_energy_button.update_queue_style(status)
+        for widget in [self.set_energy_button,
+                       self.move_energy_devices_button,
+                       self.jog_forward_button,
+                       self.jog_reverse_button,]:
+            widget.update_queue_style(status)
+                       
+        
 
     def customize_ui(self):
         self.ui.move_energy_devices_spinbox.setMaximum(float('inf'))

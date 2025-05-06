@@ -50,6 +50,9 @@
        <property name="toolTip">
         <string>Current set point for the ID (in keV).</string>
        </property>
+       <property name="styleSheet">
+        <string notr="true">font-weight: bold;</string>
+       </property>
        <property name="text">
         <string>#.## keV</string>
        </property>

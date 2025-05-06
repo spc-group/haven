@@ -7,7 +7,7 @@ log = logging.getLogger(__name__)
 
 class SlitsDisplay(display.FireflyDisplay):
     def ui_filename(self):
-        return "slits.ui"
+        return "devices/slits.ui"
 
 
 # -----------------------------------------------------------------------------
