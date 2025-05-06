@@ -19,8 +19,10 @@ def test_title(display, mono):
 
 async def test_calibrate_mono(qtbot, display, mono):
     await mono.connect(mock=True)
+    display.ui.dial_spinbox.setValue(8720)
+    display.ui.truth_spinbox.setValue(8730)
     # Click the set energy button
-    expected_item = BPlan("calibrate", "monochromator-energy", 8730, target=8720)
+    expected_item = BPlan("calibrate", "monochromator-energy", 8730, target=8720, relative=True)
 
     def check_item(item):
         from pprint import pprint
@@ -31,4 +33,4 @@ async def test_calibrate_mono(qtbot, display, mono):
     with qtbot.waitSignal(
         display.execute_item_submitted, timeout=1000, check_params_cb=check_item
     ):
-        display.queue_calibration(8730, 8720)
+        display.queue_calibration()

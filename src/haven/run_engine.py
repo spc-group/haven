@@ -32,7 +32,7 @@ async def _calibrate(msg: Msg):
 
         Expected message object is:
 
-            Msg('calibrate', obj, truth, target)
+            Msg('calibrate', obj, truth, target, relative)
 
         """
         # actually _calibrate_ the object

@@ -33,35 +33,41 @@ def energy_to_bragg(energy: Quantity, *, d_spacing: Quantity) -> Quantity:
 
 class EnergyMotor(Motor):
     @AsyncStatus.wrap
-    async def calibrate(self, truth: float, target: float | None = None):
+    async def calibrate(self, truth: float, dial: float | None = None, relative: bool = False):
         """Calibrate mono energy by applying an offset to the Bragg motor.
 
         Parameters
         ==========
         truth
           The actual energy when the readback is set to *target*.
-        target
+        dial
           The readback/setpoint position corresponding for when the
           motor is actually at *truth*.
+        relative
+          If true, the offset will be added to any previous offsets,
+          otherwise previous offsets will be overwritten (default).
 
         """
         # Target the current position if none provided
-        if target is None:
-            target = await self.user_readback.get_value()
+        if dial is None:
+            dial = await self.user_readback.get_value()
         # Get some additional data
-        energy_unit, bragg_unit, d_val, d_unit = await asyncio.gather(
+        energy_unit, bragg_unit, d_val, d_unit, last_offset = await asyncio.gather(
             self.motor_egu.get_value(),
             self.parent.bragg.motor_egu.get_value(),
             self.parent.d_spacing.get_value(),
             self.parent.d_spacing_unit.get_value(),
+            self.parent.transform_offset.get_value(),
         )
         d = d_val * ureg(d_unit.lower())
         # Convert from energy to bragg angle
         bragg_truth = energy_to_bragg(truth * ureg(energy_unit), d_spacing=d)
-        bragg_target = energy_to_bragg(target * ureg(energy_unit), d_spacing=d)
-        offset = bragg_truth - bragg_target
+        bragg_dial = energy_to_bragg(dial * ureg(energy_unit), d_spacing=d)
+        offset = bragg_truth - bragg_dial
         # Set the offset PV
         offset_val = offset.to(ureg(bragg_unit)).magnitude
+        if relative:
+            offset_val += last_offset
         await self.parent.transform_offset.set(offset_val)
 
 

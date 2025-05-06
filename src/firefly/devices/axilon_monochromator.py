@@ -55,6 +55,8 @@ class AxilonMonochromatorDisplay(display.FireflyDisplay):
     def ui_filename(self):
         return "devices/axilon_monochromator.ui"
 
-    def queue_calibration(self, truth: float, target: float):
-        plan = BPlan("calibrate", self.device.energy.name, truth, target=target)
+    def queue_calibration(self):
+        truth = self.ui.truth_spinbox.value()
+        dial = self.ui.dial_spinbox.value()
+        plan = BPlan("calibrate", self.device.energy.name, truth, dial=dial, relative=True)
         self.execute_item_submitted.emit(plan)

@@ -22,10 +22,22 @@ async def test_calibrate(mono):
     set_mock_value(mono.bragg.motor_egu, "arcsec")
     set_mock_value(mono.energy.motor_egu, "eV")
     # Pretend we're running 10eV higher than the true energy
-    await mono.energy.calibrate(target=8380, truth=8370)
+    await mono.energy.calibrate(dial=8380, truth=8370)
     new_offset = await mono.transform_offset.get_value()
     assert new_offset == pytest.approx(59.84797)
 
+
+async def test_calibrate_relative(mono):
+    set_mock_value(mono.d_spacing, 3.134734)
+    set_mock_value(mono.d_spacing_unit, "Angstroms")
+    set_mock_value(mono.bragg.motor_egu, "arcsec")
+    set_mock_value(mono.energy.motor_egu, "eV")
+    set_mock_value(mono.transform_offset, 20)
+    # Pretend we're running 10eV higher than the true energy
+    await mono.energy.calibrate(dial=8380, truth=8370, relative=True)
+    new_offset = await mono.transform_offset.get_value()
+    assert new_offset == pytest.approx(79.84797)
+    
 
 def test_interfaces(mono):
     assert isinstance(mono, protocols.Readable)
