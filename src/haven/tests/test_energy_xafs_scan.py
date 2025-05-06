@@ -1,12 +1,12 @@
 import numpy as np
 import pytest
 from bluesky import RunEngine
-from ophyd_async.sim import SimMotor
 
+from haven.devices import AxilonMonochromator as Monochromator
+from haven.devices import PlanarUndulator
 from haven.energy_ranges import ERange, KRange, from_tuple
-from haven.devices import AxilonMonochromator as Monochromator, PlanarUndulator
-from haven.plans._xafs_scan import xafs_scan
 from haven.plans._energy_scan import energy_scan
+from haven.plans._xafs_scan import xafs_scan
 
 
 @pytest.fixture()
@@ -18,7 +18,9 @@ async def mono():
 
 @pytest.fixture()
 async def undulator():
-    device = PlanarUndulator("ID255:DSID:", name="undulator", offset_pv="255idbFP:id_offset")
+    device = PlanarUndulator(
+        "ID255:DSID:", name="undulator", offset_pv="255idbFP:id_offset"
+    )
     await device.connect(mock=True)
     return device
 
@@ -28,9 +30,7 @@ def energies():
     return np.linspace(8300, 8500, 3)
 
 
-def test_energy_scan_basics(
-        mono, undulator, ion_chamber, energies, tmp_path
-):
+def test_energy_scan_basics(mono, undulator, ion_chamber, energies, tmp_path):
     exposure_time = 1e-3
     # Execute the plan
     plan = energy_scan(
@@ -80,7 +80,9 @@ def test_single_range(mono, ion_chamber):
     np.testing.assert_equal(real_energies, expected_energies)
     # Check that the exposure is set correctly
     real_exposures = [
-        i.args[0] for i in scan_list if i[0] == "set" and i.obj is ion_chamber.default_time_signal
+        i.args[0]
+        for i in scan_list
+        if i[0] == "set" and i.obj is ion_chamber.default_time_signal
     ]
     np.testing.assert_equal(real_exposures, expected_exposures)
 
@@ -110,7 +112,9 @@ def test_multi_range(mono, ion_chamber):
     np.testing.assert_equal(real_energies, expected_energies)
     # Check that the exposure is set correctly
     real_exposures = [
-        i.args[0] for i in scan_list if i[0] == "set" and i.obj is ion_chamber.default_time_signal
+        i.args[0]
+        for i in scan_list
+        if i[0] == "set" and i.obj is ion_chamber.default_time_signal
     ]
     np.testing.assert_equal(real_exposures, expected_exposures)
 
@@ -141,7 +145,9 @@ def test_exafs_k_range(mono, ion_chamber):
     np.testing.assert_almost_equal(real_energies, expected_energies)
     # Check that the exposure is set correctly
     real_exposures = [
-        i.args[0] for i in scan_list if i[0] == "set" and i.obj is ion_chamber.default_time_signal
+        i.args[0]
+        for i in scan_list
+        if i[0] == "set" and i.obj is ion_chamber.default_time_signal
     ]
     np.testing.assert_almost_equal(real_exposures, expected_exposures)
 
@@ -170,7 +176,9 @@ def test_named_E0(mono, ion_chamber):
     np.testing.assert_equal(real_energies, expected_energies)
     # Check that the exposure is set correctly
     real_exposures = [
-        i.args[0] for i in scan_list if i[0] == "set" and i.obj is ion_chamber.default_time_signal
+        i.args[0]
+        for i in scan_list
+        if i[0] == "set" and i.obj is ion_chamber.default_time_signal
     ]
     np.testing.assert_equal(real_exposures, expected_exposures)
 
@@ -185,7 +193,9 @@ def test_uses_default_time_signals(xspress, mono):
         energy_devices=[mono],
     )
     msgs = list(scan)
-    set_msgs = [m for m in msgs if m.command == "set" and m.obj is xspress.driver.acquire_time]
+    set_msgs = [
+        m for m in msgs if m.command == "set" and m.obj is xspress.driver.acquire_time
+    ]
     assert len(set_msgs) == 1
     time_msg = set_msgs[0]
     assert time_msg.obj is xspress.driver.acquire_time

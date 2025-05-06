@@ -140,7 +140,9 @@ async def mono(sim_registry):
 
 @pytest.fixture()
 async def undulator(sim_registry):
-    undulator = devices.PlanarUndulator(name="undulator", prefix="ID255:DSID:", offset_pv="255idfNP:IDOffset")
+    undulator = devices.PlanarUndulator(
+        name="undulator", prefix="ID255:DSID:", offset_pv="255idfNP:IDOffset"
+    )
     await undulator.connect(mock=True)
     sim_registry.register(undulator)
     yield undulator

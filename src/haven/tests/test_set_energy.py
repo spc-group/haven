@@ -1,9 +1,7 @@
 import pytest
 
-from haven import exceptions
 from haven.devices import PlanarUndulator
 from haven.plans import set_energy
-
 
 
 @pytest.fixture()
@@ -11,6 +9,7 @@ async def undulator():
     undulator = PlanarUndulator("ID255:DSID:", offset_pv="255idbFP:id_offset")
     await undulator.connect(mock=True)
     return undulator
+
 
 def test_plan_messages(mono):
     """Check that the right messages are getting produced."""
@@ -28,7 +27,11 @@ def test_id_harmonic(undulator):
 
     """
     plan = set_energy(
-        energy=8400, harmonic=3, undulator_offset=None, undulators=[undulator], monochromators=[],
+        energy=8400,
+        harmonic=3,
+        undulator_offset=None,
+        undulators=[undulator],
+        monochromators=[],
     )
     msgs = list(plan)
     # Check that a message exists to the ID harmonic
@@ -40,10 +43,7 @@ def test_id_harmonic(undulator):
 
 def test_id_harmonic_auto(undulator):
     plan = set_energy(
-        energy=8400,
-        undulator_offset=None,
-        monochromators=[],
-        undulators=[undulator]
+        energy=8400, undulator_offset=None, monochromators=[], undulators=[undulator]
     )
     msgs = list(plan)
     # Check that a message exists to the ID harmonic

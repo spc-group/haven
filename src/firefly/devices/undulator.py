@@ -1,6 +1,3 @@
-from bluesky_queueserver_api import BPlan
-from qtpy import QtWidgets
-
 from firefly import display
 
 

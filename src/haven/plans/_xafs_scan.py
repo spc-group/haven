@@ -4,7 +4,6 @@ capture detector signals.
 """
 
 import logging
-from collections import ChainMap
 from typing import Mapping, Sequence
 
 from bluesky.utils import MsgGenerator

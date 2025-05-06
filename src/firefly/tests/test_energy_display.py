@@ -13,6 +13,7 @@ async def mono(sim_registry):
     sim_registry.register(mono_)
     return mono_
 
+
 @pytest.fixture()
 async def undulator(sim_registry):
     undulator_ = PlanarUndulator(name="undulator", prefix="", offset_pv="")
@@ -36,6 +37,7 @@ async def test_set_energy_plan(qtbot, display):
 
     def check_item(item):
         from pprint import pprint
+
         pprint(item.to_dict())
         pprint(expected_item.to_dict())
         return item.to_dict() == expected_item.to_dict()
@@ -62,7 +64,6 @@ def test_set_energy_args(display):
     display.ui.offset_checkbox.setChecked(False)
     args, kwargs = display.set_energy_args()
     assert kwargs == {"energy": 0.0, "harmonic": None, "undulator_offset": None}
-    
 
 
 def test_predefined_energies(qtbot, display):
@@ -89,6 +90,7 @@ async def test_jog_energy_plan(qtbot, display, mono, undulator):
 
     def check_item(item):
         from pprint import pprint
+
         pprint(item.to_dict())
         pprint(expected_item.to_dict())
         return item.to_dict() == expected_item.to_dict()
@@ -100,7 +102,6 @@ async def test_jog_energy_plan(qtbot, display, mono, undulator):
         qtbot.mouseClick(btn, QtCore.Qt.LeftButton)
 
 
-
 async def test_move_energy_plan(qtbot, display, mono, undulator):
     display.move_energy_devices_spinbox.setValue(8420.0)
     # Click the set energy button
@@ -109,6 +110,7 @@ async def test_move_energy_plan(qtbot, display, mono, undulator):
 
     def check_item(item):
         from pprint import pprint
+
         pprint(item.to_dict())
         pprint(expected_item.to_dict())
         return item.to_dict() == expected_item.to_dict()

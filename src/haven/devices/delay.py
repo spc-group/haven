@@ -1,14 +1,11 @@
-import enum
-from typing import Type, TypeVar
-
 from ophyd_async.core import (
     DEFAULT_TIMEOUT,
+    SignalDatatypeT,
     SignalRW,
     StandardReadable,
     StandardReadableFormat,
     StrictEnum,
     SubsetEnum,
-    SignalDatatypeT,
 )
 from ophyd_async.epics.core import epics_signal_r, epics_signal_rw, epics_signal_x
 
@@ -33,7 +30,11 @@ def epics_signal_io(
 
     """
     return epics_signal_rw(
-        datatype, read_pv=f"{prefix}I", write_pv=f"{prefix}O", name=name, timeout=timeout
+        datatype,
+        read_pv=f"{prefix}I",
+        write_pv=f"{prefix}O",
+        name=name,
+        timeout=timeout,
     )
 
 

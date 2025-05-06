@@ -1,6 +1,6 @@
 import logging
-from typing import Mapping
 from collections import ChainMap
+from typing import Mapping
 
 from qtpy.QtCore import Signal
 from qtpy.QtGui import QIcon, QKeySequence
@@ -150,7 +150,20 @@ class ActionsRegistry:
 
     @property
     def devices(self):
-        return ChainMap(self.area_detectors, self.cameras, self.ion_chambers, self.kb_mirrors, self.monochromators, self.mirrors, self.motors, self.robots, self.slits, self.tables, self.undulators, self.xrf_detectors)
+        return ChainMap(
+            self.area_detectors,
+            self.cameras,
+            self.ion_chambers,
+            self.kb_mirrors,
+            self.monochromators,
+            self.mirrors,
+            self.motors,
+            self.robots,
+            self.slits,
+            self.tables,
+            self.undulators,
+            self.xrf_detectors,
+        )
 
     @property
     def all_actions(self):

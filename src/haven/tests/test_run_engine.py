@@ -1,9 +1,9 @@
-from unittest import mock
 import gc
+from unittest import mock
 
 import databroker
 import pytest
-from bluesky import RunEngine, Msg
+from bluesky import Msg, RunEngine
 from ophyd.sim import instantiate_fake_device
 
 from haven import run_engine
@@ -53,16 +53,16 @@ def test_run_engine_created(aps):
 
 
 def test_calibrate_message():
-        device = mock.AsyncMock()
-        RE = run_engine(
-            use_bec=False,
-            connect_databroker=False,
-            connect_tiled=False,
-            connect_kafka=False,
-        )
-        assert not device.calibrate.called
-        RE([Msg("calibrate", device, truth=1304, target=1314)])
-        assert device.calibrate.called
+    device = mock.AsyncMock()
+    RE = run_engine(
+        use_bec=False,
+        connect_databroker=False,
+        connect_tiled=False,
+        connect_kafka=False,
+    )
+    assert not device.calibrate.called
+    RE([Msg("calibrate", device, truth=1304, target=1314)])
+    assert device.calibrate.called
 
 
 # -----------------------------------------------------------------------------

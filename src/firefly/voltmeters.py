@@ -8,7 +8,7 @@ from pydm.widgets import PyDMChannel, PyDMLabel, PyDMPushButton
 from pydm.widgets.analog_indicator import PyDMAnalogIndicator
 from pydm.widgets.display_format import DisplayFormat
 from qasync import asyncSlot
-from qtpy.QtCore import Qt, Signal
+from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QCheckBox,
     QHBoxLayout,

@@ -1,7 +1,6 @@
-from typing import Generator, Any
+from typing import Any, Generator
 
-from bluesky import Msg, plan_stubs as bps
-from ophyd_async.core import Device
+from bluesky import Msg
 from pint import UnitRegistry
 
 from haven.typing import Calibratable
@@ -9,7 +8,12 @@ from haven.typing import Calibratable
 ureg = UnitRegistry()
 
 
-def calibrate(device: Calibratable, truth: float, dial: float | None = None, relative: bool = False) -> Generator[Msg, Any, None]:
+def calibrate(
+    device: Calibratable,
+    truth: float,
+    dial: float | None = None,
+    relative: bool = False,
+) -> Generator[Msg, Any, None]:
     """A Bluesky plan to calibrate a monochromator to a known energy.
 
     device

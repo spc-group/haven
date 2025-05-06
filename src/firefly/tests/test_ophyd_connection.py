@@ -12,7 +12,6 @@ from qtpy import QtCore
 from typhos.plugins.core import SignalPlugin
 
 
-
 class DummyObject(QtCore.QObject):
     signal = QtCore.Signal()
 

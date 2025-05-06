@@ -1,5 +1,4 @@
 from unittest.mock import MagicMock
-import asyncio
 
 import pytest
 from bluesky_queueserver_api.zmq.aio import REManagerAPI
@@ -121,9 +120,7 @@ async def test_load_instrument_registry(controller, qtbot, monkeypatch):
 
 @pytest.mark.asyncio
 async def test_device_details_window(qtbot, sim_registry, ion_chamber, controller):
-    """Check that the controller opens device window when requested.
-
-    """
+    """Check that the controller opens device window when requested."""
     vm_action = controller.actions.voltmeter
     ic_action = controller.actions.ion_chambers[ion_chamber.name]
     # Create the ion chamber display

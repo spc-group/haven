@@ -3,8 +3,8 @@ import subprocess
 import psutil
 import pydm
 import pytest
-from ophyd.sim import make_fake_device
 from ophyd import EpicsMotor
+from ophyd.sim import make_fake_device
 from ophyd_async.core import wait_for_connection
 
 from haven.devices.motor import Motor

@@ -1,10 +1,8 @@
-from typing import Union, Literal
+from typing import Literal
 
 from bluesky import plan_stubs as bps
-import pandas as pd
 from bluesky.protocols import Movable
 
-from .. import exceptions
 from ..instrument import beamline
 from ..typing import DetectorList
 

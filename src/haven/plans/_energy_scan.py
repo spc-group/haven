@@ -1,13 +1,11 @@
 """A bluesky plan to scan the X-ray energy and capture detector signals."""
 
 import logging
-from collections import ChainMap
 from typing import Mapping, Sequence
-from typing_extensions import NotRequired, TypedDict
 
-import numpy as np
 from bluesky import plan_stubs as bps
 from bluesky import plans as bp
+from typing_extensions import NotRequired, TypedDict
 
 from ..constants import edge_energy
 from ..instrument import beamline
@@ -160,7 +158,7 @@ def energy_scan(
     # Add some extra metadata
     md_: Metadata = {"E0": E0_val, "plan_name": "energy_scan"}
     if E0_str != "":
-        md_['edge'] = E0_str
+        md_["edge"] = E0_str
     d_spacings = []
     for device in energy_devices:
         if not hasattr(device, "d_spacing"):

@@ -1,7 +1,7 @@
 import logging
 import warnings
-from pathlib import Path
 from itertools import chain
+from pathlib import Path
 from typing import Sequence
 
 import qtawesome as qta
@@ -262,7 +262,11 @@ class FireflyMainWindow(PyDMMainWindow):
         # Menu to launch the Window to change energy
         self.ui.positioners_menu.addSection("Energy")
         self.ui.positioners_menu.addAction(energy_window_action)
-        energy_actions = chain([energy_window_action], monochromator_actions.values(), undulator_actions.values())
+        energy_actions = chain(
+            [energy_window_action],
+            monochromator_actions.values(),
+            undulator_actions.values(),
+        )
         for action in energy_actions:
             self.ui.positioners_menu.addAction(action)
         # Add optical components

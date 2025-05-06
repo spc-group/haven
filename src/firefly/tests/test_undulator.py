@@ -1,6 +1,4 @@
 import pytest
-from bluesky_queueserver_api import BPlan
-from qtpy import QtCore
 
 from firefly.devices.undulator import UndulatorDisplay
 

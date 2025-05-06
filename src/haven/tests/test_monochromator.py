@@ -37,7 +37,7 @@ async def test_calibrate_relative(mono):
     await mono.energy.calibrate(dial=8380, truth=8370, relative=True)
     new_offset = await mono.transform_offset.get_value()
     assert new_offset == pytest.approx(79.84797)
-    
+
 
 def test_interfaces(mono):
     assert isinstance(mono, protocols.Readable)

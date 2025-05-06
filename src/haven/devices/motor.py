@@ -1,24 +1,19 @@
 import logging
-import warnings
 from collections.abc import Generator
 
 from ophyd_async.core import (
-    DEFAULT_TIMEOUT,
     StandardReadableFormat,
     StrictEnum,
-    SubsetEnum,
 )
 from ophyd_async.epics.core import epics_signal_r, epics_signal_rw
 from ophyd_async.epics.motor import Motor as MotorBase
-from ophydregistry import Registry
-
-from .motor_flyer import MotorFlyer
 
 log = logging.getLogger(__name__)
 
 
 class Motor(MotorBase):
     """The default motor for asynchrnous movement."""
+
     _ophyd_labels_: set[str]
 
     class Direction(StrictEnum):
@@ -51,7 +46,7 @@ def load_motors(**defns: str) -> Generator[Motor, None, None]:
         list(load_motors(m1="255idcVME:m1", m2="255idcVME:m2"))
         # Create each motor individually
         [Motor("255idcVME:m1", name="m1"), Motor("255idcVME:m2", name="m2")]
-    
+
     """
     for name, prefix in defns.items():
         yield Motor(prefix, name=name, labels={"motors", "extra_motors"})

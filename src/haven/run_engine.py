@@ -1,19 +1,18 @@
 import logging
-from uuid import uuid4 as uuid
 from collections.abc import Mapping
+from uuid import uuid4 as uuid
 
 import databroker
 import IPython
-from bluesky import RunEngine as BlueskyRunEngine, Msg
+from bluesky import Msg
+from bluesky import RunEngine as BlueskyRunEngine
 from bluesky.bundlers import maybe_await
-from bluesky.protocols import check_supports
 from bluesky.callbacks.best_effort import BestEffortCallback
 from bluesky.utils import ProgressBarManager, register_transform
 from bluesky_kafka import Publisher
 
 from haven import load_config
 from haven.tiled_writer import TiledWriter
-from haven.typing import Calibratable
 
 from .catalog import tiled_client
 from .exceptions import ComponentNotFound
@@ -27,16 +26,16 @@ catalog = None
 
 
 async def _calibrate(msg: Msg):
-        """
-        Calibrate an objects requested value to its true value.
+    """
+    Calibrate an objects requested value to its true value.
 
-        Expected message object is:
+    Expected message object is:
 
-            Msg('calibrate', obj, truth, target, relative)
+        Msg('calibrate', obj, truth, target, relative)
 
-        """
-        # actually _calibrate_ the object
-        await maybe_await(msg.obj.calibrate(*msg.args, **msg.kwargs))
+    """
+    # actually _calibrate_ the object
+    await maybe_await(msg.obj.calibrate(*msg.args, **msg.kwargs))
 
 
 def save_to_databroker(name: str, doc: Mapping):
@@ -64,10 +63,10 @@ def kafka_publisher():
 
 def run_engine(
     *,
-    connect_tiled: bool=False,
-    connect_databroker: bool=False,
-    connect_kafka: bool=True,
-    use_bec: bool=False,
+    connect_tiled: bool = False,
+    connect_databroker: bool = False,
+    connect_kafka: bool = True,
+    use_bec: bool = False,
     **kwargs,
 ) -> BlueskyRunEngine:
     """Build a bluesky RunEngine() for Haven.
@@ -86,7 +85,7 @@ def run_engine(
 
     """
     RE = BlueskyRunEngine(**kwargs)
-    RE.register_command('calibrate', _calibrate)
+    RE.register_command("calibrate", _calibrate)
     # Add the best-effort callback
     if use_bec:
         RE.subscribe(BestEffortCallback())

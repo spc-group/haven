@@ -1,15 +1,15 @@
-import logging
 import asyncio
+import logging
 
 import numpy as np
 from ophyd_async.core import (
+    AsyncStatus,
     StandardReadable,
     StandardReadableFormat,
     StrictEnum,
-    AsyncStatus,
 )
 from ophyd_async.epics.core import epics_signal_rw
-from pint import UnitRegistry, Quantity
+from pint import Quantity, UnitRegistry
 from scipy import constants
 
 from .motor import Motor
@@ -33,7 +33,9 @@ def energy_to_bragg(energy: Quantity, *, d_spacing: Quantity) -> Quantity:
 
 class EnergyMotor(Motor):
     @AsyncStatus.wrap
-    async def calibrate(self, truth: float, dial: float | None = None, relative: bool = False):
+    async def calibrate(
+        self, truth: float, dial: float | None = None, relative: bool = False
+    ):
         """Calibrate mono energy by applying an offset to the Bragg motor.
 
         Parameters

@@ -3,17 +3,17 @@ import warnings
 from functools import partial
 from typing import Sequence
 
+import qtawesome as qta
 from bluesky_queueserver_api import BPlan
-from ophydregistry import ComponentNotFound
 from ophyd_async.core import Device
 from pydm.widgets.label import PyDMLabel
-from pydm.widgets.line_edit import PyDMLineEdit
-from qtpy import QtCore, QtWidgets
-from qtpy.QtCore import Signal
-from qtpy.QtWidgets import QDialogButtonBox, QFormLayout, QLineEdit, QVBoxLayout, QHBoxLayout, QSizePolicy, QPushButton
+from qtpy import QtCore
+from qtpy.QtWidgets import (
+    QHBoxLayout,
+    QPushButton,
+    QSizePolicy,
+)
 from xraydb.xraydb import XrayDB
-from ophydregistry.exceptions import ComponentNotFound
-import qtawesome as qta
 
 from firefly import display
 from haven import beamline
@@ -35,7 +35,9 @@ class EnergyDisplay(display.FireflyDisplay):
         super().__init__(args=args, macros=macros, **kwargs)
 
     def customize_device(self):
-        self.monochromators = beamline.devices.findall("monochromators", allow_none=True)
+        self.monochromators = beamline.devices.findall(
+            "monochromators", allow_none=True
+        )
         self.undulators = beamline.devices.findall("undulators", allow_none=True)
         if len(self.monochromators) == 0:
             warnings.warn("Could not find monochromators.")
@@ -50,7 +52,7 @@ class EnergyDisplay(display.FireflyDisplay):
         layout = self.ui.energy_layout
         # Remove existing rows, last row first
         for row_num in range(layout.rowCount(), num_static_rows, -1):
-            layout.removeRow(row_num-1)
+            layout.removeRow(row_num - 1)
             # print(layout.rowCount())
         # Add new row for each device
         for idx, device in enumerate(devices):
@@ -74,37 +76,39 @@ class EnergyDisplay(display.FireflyDisplay):
             layout.addRow(device_name, hlayout)
 
     def set_energy_args(self) -> tuple[list, dict]:
-        kwargs = {
-            "energy": self.ui.target_energy_spinbox.value()
-        }
+        kwargs = {"energy": self.ui.target_energy_spinbox.value()}
         # Parse checkbox states (e.g. "auto") into kwargs
         if not self.harmonic_checkbox.isChecked():
-            kwargs['harmonic'] = None
+            kwargs["harmonic"] = None
         elif not self.harmonic_auto_checkbox.isChecked():
-            kwargs['harmonic'] = self.harmonic_spinbox.value()
+            kwargs["harmonic"] = self.harmonic_spinbox.value()
         if not self.offset_checkbox.isChecked():
-            kwargs['undulator_offset'] = None
+            kwargs["undulator_offset"] = None
         elif not self.offset_auto_checkbox.isChecked():
-            kwargs['undulator_offset'] = self.offset_spinbox.value()
-            
+            kwargs["undulator_offset"] = self.offset_spinbox.value()
+
         return [], kwargs
 
     @property
     def energy_devices(self) -> list[Device]:
         return [device.energy for device in self.monochromators + self.undulators]
 
-    def jog_energy_devices(self,  *args, direction: int | float = 1, **kwargs):
+    def jog_energy_devices(self, *args, direction: int | float = 1, **kwargs):
         jog_value = direction * self.ui.jog_value_spinbox.value()
-        args = tuple(arg for device in self.energy_devices for arg in (device.name, jog_value))
+        args = tuple(
+            arg for device in self.energy_devices for arg in (device.name, jog_value)
+        )
         item = BPlan("mvr", *args)
         self.execute_item_submitted.emit(item)
 
-    def move_energy_devices(self,  *args, **kwargs):
+    def move_energy_devices(self, *args, **kwargs):
         new_energy = self.ui.move_energy_devices_spinbox.value()
-        args = [arg for device in self.energy_devices for arg in (device.name, new_energy)]
+        args = [
+            arg for device in self.energy_devices for arg in (device.name, new_energy)
+        ]
         item = BPlan("mv", *args)
         self.execute_item_submitted.emit(item)
-    
+
     def set_energy(self, *args, **kwargs):
         args, kwargs = self.set_energy_args()
         log.info(f"Setting new energy: {kwargs['energy']}")
@@ -123,11 +127,15 @@ class EnergyDisplay(display.FireflyDisplay):
         
 
     def customize_ui(self):
-        self.ui.move_energy_devices_spinbox.setMaximum(float('inf'))
+        self.ui.move_energy_devices_spinbox.setMaximum(float("inf"))
         self.ui.set_energy_button.clicked.connect(self.set_energy)
         self.ui.move_energy_devices_button.clicked.connect(self.move_energy_devices)
-        self.ui.jog_forward_button.clicked.connect(partial(self.jog_energy_devices, direction=1))
-        self.ui.jog_reverse_button.clicked.connect(partial(self.jog_energy_devices, direction=-1))
+        self.ui.jog_forward_button.clicked.connect(
+            partial(self.jog_energy_devices, direction=1)
+        )
+        self.ui.jog_reverse_button.clicked.connect(
+            partial(self.jog_energy_devices, direction=-1)
+        )
         self.ui.jog_reverse_button.setIcon(qta.icon("fa6s.minus"))
         self.ui.jog_forward_button.setIcon(qta.icon("fa6s.plus"))
         # Set up the combo box with X-ray energies

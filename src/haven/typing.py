@@ -1,20 +1,14 @@
 from abc import abstractmethod
-from typing import Sequence, Union
 from typing import (
-    Any,
-    Callable,
-    Generic,
-    Literal,
-    Optional,
     Protocol,
-    TypeVar,
+    Sequence,
     Union,
     runtime_checkable,
 )
 
+from bluesky.protocols import HasName, Locatable, Readable
 from ophyd import Component, Device, Signal
 from ophyd_async.epics.motor import Motor
-from bluesky.protocols import Readable, HasName, Locatable
 
 Detector = Union[Device, Component, Signal, str]
 
@@ -28,15 +22,17 @@ Motor = Union[Device, Component, Signal, str]
 class EnergyDevice(Readable, HasName):
     energy: Locatable[float]
 
+
 class Monochromator(EnergyDevice):
     d_spacing: Readable
     bragg: Motor
 
+
 @runtime_checkable
 class Calibratable(Protocol):
     @abstractmethod
-    def calibrate(self, truth: float, target: float | None = None):
-        ...
+    def calibrate(self, truth: float, target: float | None = None): ...
+
 
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
