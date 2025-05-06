@@ -171,7 +171,7 @@
         <bool>true</bool>
        </property>
        <property name="channel" stdset="0">
-        <string>haven://${DEVICE}.offset</string>
+        <string>haven://${DEVICE}.energy.offset</string>
        </property>
       </widget>
      </item>
@@ -186,6 +186,9 @@
       <widget class="PyDMLabel" name="PyDMLabel_12">
        <property name="toolTip">
         <string/>
+       </property>
+       <property name="showUnits" stdset="0">
+        <bool>true</bool>
        </property>
        <property name="channel" stdset="0">
         <string>haven://${DEVICE}.energy.dial_readback</string>
@@ -235,6 +238,8 @@
    <header>pydm.widgets.label</header>
   </customwidget>
  </customwidgets>
- <resources/>
+ <resources>
+  <include location="../resources/beamline_components.qrc"/>
+ </resources>
  <connections/>
 </ui>

@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, Literal
 
 from bluesky import plan_stubs as bps
 import pandas as pd
@@ -14,14 +14,6 @@ __all__ = ["set_energy"]
 Harmonic = str | int | None
 
 
-class Auto:
-    """Sentinel value for automatic calculations."""
-    def __repr__(self):
-        return "<Auto>"
-
-AUTO = Auto()
-
-
 def auto_harmonic(energy: float) -> int:
     # Check for auto harmonic selection
     threshold = 11000
@@ -33,8 +25,8 @@ def auto_harmonic(energy: float) -> int:
 
 def set_energy(
     energy: float,
-    harmonic: int | Auto | None = AUTO,
-    undulator_offset: float | Auto | None = AUTO,
+    harmonic: int | Literal["auto"] | None = "auto",
+    undulator_offset: float | Literal["auto"] | None = "auto",
     undulators: DetectorList = ["undulators"],
     monochromators: DetectorList = ["monochromators"],
 ):
@@ -44,13 +36,13 @@ def set_energy(
     calibrated offset.
 
     The *harmonic* parameter selects a harmonic for the undulator. If
-    ``AUTO``, then the harmonic will be selected based on the
+    ``"auto"``, then the harmonic will be selected based on the
     energy. If *harmonic* is ``None``, then the current harmonic is
     used. If *harmonic* is an integer (e.g. 1, 3, 5) then this value
     will be used.
 
     The *undulator_offset* parameter sets the offset applied to any
-    undulators. If ``AUTO``, then the offset will be selected from a
+    undulators. If ``"auto"``, then the offset will be selected from a
     calibration look-up table. If ``None``, then offset will not be
     changed. Otherwise, *id_offset* will be set directly.
 
@@ -60,10 +52,10 @@ def set_energy(
       The target energy of the beamline, in electron-volts.
     harmonic
       Which harmonic to use for the undulator. Can be an integer
-      (e.g. 1, 3, 5), ``None``, or ``AUTO``.
+      (e.g. 1, 3, 5), ``None``, or ``"auto"``.
     undulator_offset
       Offset to apply for the undulators. Can be a float, ``None``, or
-      ``AUTO``.
+      ``"auto"``.
 
     """
     if undulators:
@@ -72,12 +64,12 @@ def set_energy(
         monochromators = beamline.devices.findall(monochromators)
     # Prepare arguments for undulator harmonics and offsets
     mv_args: list[Movable | int | float] = []
-    if harmonic is AUTO:
+    if harmonic == "auto":
         harmonic = auto_harmonic(energy)
     if harmonic is not None:
         harmonic_signals = [undulator.harmonic_value for undulator in undulators]
         mv_args.extend(arg for signal in harmonic_signals for arg in (signal, harmonic))
-    if undulator_offset is AUTO:
+    if undulator_offset == "auto":
         offsets = [undulator.auto_offset(energy) for undulator in undulators]
     elif undulator_offset is not None:
         offsets = [undulator_offset for undulator in undulators]

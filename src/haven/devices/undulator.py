@@ -102,10 +102,10 @@ class EnergyPositioner(BasePositioner):
             self.dial_readback = epics_signal_rw(float, f"{prefix}M.VAL")
         self.dial_setpoint = epics_signal_rw(float, f"{prefix}SetC.VAL")
         # Derived signals so we can apply offsets and convert units
-        with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):        
+        with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
             self.offset = epics_signal_rw(float, offset_pv)
         with self.add_children_as_readables():
-            self.readback = derived_signal_r(_keV_to_energy, keV=self.dial_readback, offset=self.offset)
+            self.readback = derived_signal_r(_keV_to_energy, keV=self.dial_readback, offset=self.offset, derived_units="eV")
         self.setpoint = derived_signal_rw(_keV_to_energy, self._set_raw, keV=self.dial_readback, offset=self.offset)
         super().__init__(prefix=prefix, **kwargs)
 

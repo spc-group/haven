@@ -262,7 +262,8 @@ class FireflyMainWindow(PyDMMainWindow):
         # Menu to launch the Window to change energy
         self.ui.positioners_menu.addSection("Energy")
         self.ui.positioners_menu.addAction(energy_window_action)
-        for action in chain(monochromator_actions, undulator_actions):
+        energy_actions = chain([energy_window_action], monochromator_actions.values(), undulator_actions.values())
+        for action in energy_actions:
             self.ui.positioners_menu.addAction(action)
         # Add optical components
         for action in mirror_actions.values():

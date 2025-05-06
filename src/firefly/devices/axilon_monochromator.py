@@ -1,45 +1,14 @@
+from ophyd_async.core import Device
 from bluesky_queueserver_api import BPlan
 from qtpy import QtWidgets
+from pydm.widgets import PyDMLabel, PyDMLineEdit
 
 from firefly import display
 
 
-class EnergyCalibrationDialog(QtWidgets.QDialog):
-    """A dialog box for calibrating the energy."""
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        self.setWindowTitle("Monochromator calibration")
-
-        self.layout = QVBoxLayout()
-        self.setLayout(self.layout)
-        # Widgets for inputting calibration parameters
-        self.form_layout = QFormLayout()
-        self.layout.addLayout(self.form_layout)
-        self.form_layout.addRow(
-            "Energy readback:", PyDMLabel(self, init_channel="haven://energy.readback")
-        )
-        self.form_layout.addRow(
-            "Energy setpoint:",
-            PyDMLineEdit(self, init_channel="haven://energy.setpoint"),
-        )
-        self.form_layout.addRow(
-            "Calibrated energy:",
-            QLineEdit(),
-        )
-        # Button for accept/close
-        buttons = QDialogButtonBox.Apply | QDialogButtonBox.Close
-        self.buttonBox = QDialogButtonBox(buttons)
-        self.buttonBox.accepted.connect(self.accept)
-        self.buttonBox.rejected.connect(self.reject)
-        self.layout.addWidget(self.buttonBox)
-
-
 class AxilonMonochromatorDisplay(display.FireflyDisplay):
-
     def show_calibrate_dialog(self):
-        dialog = EnergyCalibrationDialog(self)
+        dialog = EnergyCalibrationDialog(self, device=self.device)
         accepted = dialog.exec()
         if accepted:
             self.calibrate()

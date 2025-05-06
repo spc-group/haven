@@ -190,9 +190,9 @@ class FireflyController(QtCore.QObject):
         )
         self.actions.monochromators = self.device_actions(
             device_label="monochromators",
-            display_file=ui_dir / "axilon_monochromator.py",
+            display_file=ui_dir / "devices/axilon_monochromator.py",
             device_key="DEVICE",
-            icon=qta.icon("mdi.crystal-ball"),
+            icon=qta.icon("mdi6.lambda"),
         )
         self.actions.tables = self.device_actions(
             device_label="tables",
@@ -207,9 +207,9 @@ class FireflyController(QtCore.QObject):
             WindowClass=PlanMainWindow,
             icon=qta.icon("mdi.robot-industrial"),
         )
-        self.actions.monochromators = self.device_actions(
+        self.actions.undulators = self.device_actions(
             device_label="undulators",
-            display_file=ui_dir / "undulator.py",
+            display_file=ui_dir / "devices/undulator.py",
             device_key="DEVICE",
             icon=qta.icon("fa6s.wave-square"),
         )
