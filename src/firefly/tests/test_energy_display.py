@@ -26,6 +26,9 @@ async def undulator(sim_registry):
 def display(qtbot, mono, undulator):
     # Load display
     display = EnergyDisplay()
+    display.jog_forward_button.setEnabled(True)
+    display.jog_reverse_button.setEnabled(True)
+    display.move_energy_devices_button.setEnabled(True)
     qtbot.addWidget(display)
     return display
 
