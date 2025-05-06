@@ -1,7 +1,7 @@
 import pytest
 from ophyd.sim import make_fake_device
 
-from firefly.kb_mirrors import KBMirrorsDisplay
+from firefly.devices.kb_mirrors import KBMirrorsDisplay
 from haven.devices.mirrors import KBMirrors
 
 

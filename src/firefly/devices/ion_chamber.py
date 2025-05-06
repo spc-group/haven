@@ -1,27 +1,24 @@
-from firefly.slits import SlitsDisplay
+import qtawesome as qta
 
-# from haven.instrument import mirrors
+from firefly import display
+from haven import beamline
 
 
-class KBMirrorsDisplay(SlitsDisplay):
+class IonChamberDisplay(display.FireflyDisplay):
+    """A GUI window for changing settings in an ion chamber."""
 
-    def ui_filename(self):
-        return "kb_mirrors.ui"
+    def customize_device(self):
+        self._device = beamline.devices[self.macros()["IC"]]
 
     def customize_ui(self):
-        # Enable/disable bender controls
-        horiz = self.device.horiz
-        self.ui.horizontal_upstream_display.setEnabled(
-            hasattr(horiz, "bender_upstream")
-        )
-        self.ui.horizontal_downstream_display.setEnabled(
-            hasattr(horiz, "bender_downstream")
-        )
-        vert = self.device.vert
-        self.ui.vertical_upstream_display.setEnabled(hasattr(vert, "bender_upstream"))
-        self.ui.vertical_downstream_display.setEnabled(
-            hasattr(vert, "bender_downstream")
-        )
+        # Use qtawesome icons instead of unicode arrows
+        self.ui.gain_down_button.setText("")
+        self.ui.gain_down_button.setIcon(qta.icon("fa6s.arrow-left"))
+        self.ui.gain_up_button.setText("")
+        self.ui.gain_up_button.setIcon(qta.icon("fa6s.arrow-right"))
+
+    def ui_filename(self):
+        return "devices/ion_chamber.ui"
 
 
 # -----------------------------------------------------------------------------

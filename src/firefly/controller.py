@@ -150,40 +150,40 @@ class FireflyController(QtCore.QObject):
         # Setup actions for the various categories of devices
         self.actions.motors = self.device_actions(
             device_label="extra_motors",
-            display_file=ui_dir / "motor.py",
+            display_file=ui_dir / "devices/motor.py",
             device_key="MOTOR",
         )
         self.actions.ion_chambers = self.device_actions(
             device_label="ion_chambers",
-            display_file=ui_dir / "ion_chamber.py",
+            display_file=ui_dir / "devices/ion_chamber.py",
             device_key="IC",
         )
         self.actions.cameras = self.device_actions(
             device_label="cameras",
-            display_file=ui_dir / "area_detector_viewer.py",
+            display_file=ui_dir / "devices/area_detector_viewer.py",
             device_key="AD",
         )
         self.actions.area_detectors = self.device_actions(
             device_label="area_detectors",
-            display_file=ui_dir / "area_detector_viewer.py",
+            display_file=ui_dir / "devices/area_detector_viewer.py",
             device_key="AD",
         )
         self.actions.slits = self.device_actions(
             device_label="slits",
-            display_file=ui_dir / "slits.py",
+            display_file=ui_dir / "devices/slits.py",
             device_key="DEVICE",
             icon=qta.icon("mdi.crop"),
         )
         self.actions.mirrors = self.device_actions(
             device_label="mirrors",
-            display_file=ui_dir / "mirror.py",
+            display_file=ui_dir / "devices/mirror.py",
             device_key="DEVICE",
             icon=qta.icon("msc.mirror"),
         )
         self.actions.mirrors.update(
             self.device_actions(
                 device_label="kb_mirrors",
-                display_file=ui_dir / "kb_mirrors.py",
+                display_file=ui_dir / "devices/kb_mirrors.py",
                 device_key="DEVICE",
                 icon=qta.icon("msc.mirror"),
             )
@@ -196,13 +196,13 @@ class FireflyController(QtCore.QObject):
         )
         self.actions.tables = self.device_actions(
             device_label="tables",
-            display_file=ui_dir / "table.py",
+            display_file=ui_dir / "devices/table.py",
             device_key="DEVICE",
             icon=qta.icon("mdi.table-furniture"),
         )
         self.actions.robots = self.device_actions(
             device_label="robots",
-            display_file=ui_dir / "robot.py",
+            display_file=ui_dir / "devices/robot.py",
             device_key="DEVICE",
             WindowClass=PlanMainWindow,
             icon=qta.icon("mdi.robot-industrial"),
@@ -215,13 +215,13 @@ class FireflyController(QtCore.QObject):
         )
         self.actions.xrf_detectors = self.device_actions(
             device_label="xrf_detectors",
-            display_file=ui_dir / "xrf_detector.py",
+            display_file=ui_dir / "devices/xrf_detector.py",
             device_key="DEV",
         )
         self.actions.xray_filter = WindowAction(
             name="show_filters_window_action",
             text="Filters",
-            display_file=ui_dir / "filters.py",
+            display_file=ui_dir / "devices/filters.py",
             WindowClass=FireflyMainWindow,
             icon=qta.icon("mdi.air-filter"),
         )

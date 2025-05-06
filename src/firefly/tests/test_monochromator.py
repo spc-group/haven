@@ -22,7 +22,7 @@ async def test_calibrate_mono(qtbot, display, mono):
     display.ui.dial_spinbox.setValue(8720)
     display.ui.truth_spinbox.setValue(8730)
     # Click the set energy button
-    expected_item = BPlan("calibrate", "monochromator-energy", 8730, target=8720, relative=True)
+    expected_item = BPlan("calibrate", "monochromator-energy", 8730, dial=8720, relative=True)
 
     def check_item(item):
         from pprint import pprint

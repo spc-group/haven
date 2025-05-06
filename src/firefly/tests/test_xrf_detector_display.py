@@ -5,7 +5,7 @@ import pandas as pd
 import pytest
 from pyqtgraph import PlotItem
 
-from firefly.xrf_detector import XRFDetectorDisplay
+from firefly.devices.xrf_detector import XRFDetectorDisplay
 
 # detectors = ["dxp", "xspress"]
 detectors = ["xspress"]
