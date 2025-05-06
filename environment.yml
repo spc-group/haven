@@ -89,9 +89,6 @@ dependencies:
     - pytest-mock
     - pytest-asyncio
     - caproto >=1.0.0
-    # Database management
-    - pymongo
-    - databroker-pack
     # --- packaging and publishing
     - build
     - twine
