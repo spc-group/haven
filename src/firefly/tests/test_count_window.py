@@ -2,9 +2,6 @@ import asyncio
 from unittest import mock
 
 import pytest
-from bluesky_queueserver_api import BPlan
-from ophyd_async.testing import set_mock_value
-from qtpy import QtCore
 
 from firefly.plans.count import CountDisplay
 
@@ -24,15 +21,7 @@ async def display(qtbot, sim_registry, dxp, ion_chamber):
 @pytest.mark.asyncio
 async def test_time_calculator(display, sim_registry, ion_chamber):
     # Set up detector list
-    display.ui.detectors_list.selected_detectors = mock.MagicMock(
-        return_value=["vortex_me4", "I00"]
-    )
-
-    # Set up default timing for the detector
-    detectors = display.ui.detectors_list.selected_detectors()
-    detectors = {name: sim_registry[name] for name in detectors}
-    set_mock_value(detectors[ion_chamber.name].default_time_signal, 0.82)
-    detectors["vortex_me4"].default_time_signal.set(0.5).wait()
+    display.ui.detectors_list.acquire_times = mock.AsyncMock(return_value=[0.82])
 
     # Set up num of repeat scans
     display.ui.spinBox_repeat_scan_num.setValue(6)
@@ -44,39 +33,25 @@ async def test_time_calculator(display, sim_registry, ion_chamber):
     await display.update_total_time()
 
     # Check whether time is calculated correctly for a single scan
-    assert display.ui.label_hour_scan.text() == "0"
-    assert display.ui.label_min_scan.text() == "0"
-    assert display.ui.label_sec_scan.text() == "16.4"
+    assert display.ui.scan_duration_label.text() == "0 h 0 m 16 s"
 
     # Check whether time is calculated correctly including the repeated scan
-    assert display.ui.label_hour_total.text() == "0"
-    assert display.ui.label_min_total.text() == "1"
-    assert display.ui.label_sec_total.text() == "38.4"
+    assert display.ui.total_duration_label.text() == "0 h 1 m 38 s"
 
 
-def test_count_plan_queued(display, qtbot):
+def test_count_plan_args(display, qtbot, xspress):
     display.ui.run_button.setEnabled(True)
     display.ui.num_spinbox.setValue(5)
     display.ui.delay_spinbox.setValue(0.5)
     # Set up detector list
     display.ui.detectors_list.selected_detectors = mock.MagicMock(
-        return_value=["vortex_me4", "I00"]
+        return_value=[xspress]
     )
-    expected_item = BPlan(
-        "count", num=5, detectors=["vortex_me4", "I00"], delay=0.5, md={}
-    )
-
-    def check_item(item):
-        return item.to_dict() == expected_item.to_dict()
-
-    # Click the run button and see if the plan is queued
-    with qtbot.waitSignal(
-        display.queue_item_submitted, timeout=1000, check_params_cb=check_item
-    ):
-        qtbot.mouseClick(display.ui.run_button, QtCore.Qt.LeftButton)
+    args, kwargs = display.plan_args()
+    assert kwargs == dict(num=5, detectors=["vortex_me4"], delay=0.5, md={})
 
 
-def test_count_plan_metadata(display, qtbot):
+def test_count_plan_metadata(display, qtbot, xspress, ion_chamber):
     display.ui.run_button.setEnabled(True)
     display.ui.num_spinbox.setValue(5)
     # set up meta data
@@ -86,10 +61,10 @@ def test_count_plan_metadata(display, qtbot):
     display.ui.lineEdit_formula.setText("LiMn0.5Ni0.5O")
 
     display.ui.detectors_list.selected_detectors = mock.MagicMock(
-        return_value=["vortex_me4", "I00"]
+        return_value=[xspress, ion_chamber]
     )
-    expected_item = BPlan(
-        "count",
+    args, kwargs = display.plan_args()
+    assert kwargs == dict(
         num=5,
         detectors=["vortex_me4", "I00"],
         delay=0.0,
@@ -100,19 +75,6 @@ def test_count_plan_metadata(display, qtbot):
             "sample_formula": "LiMn0.5Ni0.5O",
         },
     )
-
-    def check_item(item):
-        from pprint import pprint
-
-        pprint(item.to_dict())
-        pprint(expected_item.to_dict())
-        return item.to_dict() == expected_item.to_dict()
-
-    # Click the run button and see if the plan is queued
-    with qtbot.waitSignal(
-        display.queue_item_submitted, timeout=1000, check_params_cb=check_item
-    ):
-        qtbot.mouseClick(display.ui.run_button, QtCore.Qt.LeftButton)
 
 
 # -----------------------------------------------------------------------------

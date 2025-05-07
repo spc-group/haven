@@ -80,6 +80,7 @@ async def test_reading(positioner):
         "energy-monochromator-gap",
         "energy",
     ]
+    print(reading)
     assert sorted(list(reading.keys())) == sorted(expected_signals)
 
 

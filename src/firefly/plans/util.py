@@ -1,43 +1,19 @@
-import numpy as np
+def is_valid_value(value) -> bool:
+    """Check if the value is considered valid for inclusion in metadata.
 
-__all__ = ["time_converter"]
-
-
-def time_converter(total_seconds):
-    """
-    Convert time (in seconds) to a tuple of hours, minutes, seconds
+    Valid values are non-None, and if they are str/list/tuple/dict,
+    they should have a positive length.
 
     Parameters
     ==========
-    total_seconds (float/int)
+      value
+    The value to check.
 
     Returns
-    ==========
-    tuple: hours, minutes, seconds
-    """
-    if np.isnan(total_seconds):
-        return float("nan"), float("nan"), float("nan")
-    # Use np.floor to round to the smaller integer
-    hours = np.floor(total_seconds / 3600).astype(int)
-    minutes = np.floor((total_seconds % 3600) / 60).astype(int)
-    seconds = np.round(total_seconds % 60, decimals=1)
+    =======
+    is_valid
+      True if the value is valid, False otherwise.
 
-    # Convert float values to integers
-    return hours, minutes, seconds
-
-
-def is_valid_value(value):
-    """
-    Check if the value is considered valid for inclusion in metadata.
-    Valid values are non-None, and if they are str/list/tuple/dict, they should have a positive length.
-
-    Parameters
-    ==========
-        value (any): The value to check.
-
-    Returns
-    ==========
-        bool: True if the value is valid, False otherwise.
     """
     # Check if the value is None
     if value is None:
