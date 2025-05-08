@@ -33,6 +33,10 @@ class Motor(MotorBase):
         # Load all the parent signals
         super().__init__(prefix=prefix, name=name)
 
+    async def connect(self, *args, **kwargs):
+        await super().connect(*args, **kwargs)
+        await self.description.set(self.name)
+
 
 def load_motors(**defns: str) -> Generator[Motor, None, None]:
     """Batch-create several motors.

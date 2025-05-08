@@ -2,8 +2,6 @@
 
 import asyncio
 import logging
-import warnings
-from typing import Dict
 
 from bluesky.protocols import Triggerable
 from ophyd_async.core import (
@@ -266,21 +264,11 @@ class IonChamber(StandardReadable, Triggerable):
         await super().connect(
             mock=mock, timeout=timeout, force_reconnect=force_reconnect
         )
-        # Update the device's name
-        auto_name = bool(self.auto_name) or (self.auto_name is None and self.name == "")
-        if bool(auto_name):
-            try:
-                desc = await self.scaler_channel.description.get_value()
-            except Exception as exc:
-                warnings.warn(
-                    f"Could not read description for {self}. Name not updated. {exc}"
-                )
-                return
-            # Only update the name if the description has been set
-            if desc != "":
-                self.set_name(desc)
-                # Update the labjack's input's .DESC field to match the scaler channel
-                await self.voltmeter_channel.description.set(desc)
+        # Update the device's description signals to keep them aligned
+        await asyncio.gather(
+            self.voltmeter_channel.description.set(self.name),
+            self.scaler_channel.description.set(self.name),
+        )
 
     async def default_timeout(self) -> float:
         """Calculate the expected timeout for triggering this ion chamber.
@@ -425,7 +413,7 @@ class IonChamber(StandardReadable, Triggerable):
         }
         yield results
 
-    async def describe_collect(self) -> Dict[str, Dict]:
+    async def describe_collect(self) -> dict[str, dict]:
         signals = [
             self.scaler_channel.raw_count,
             self.scaler_channel.net_count,

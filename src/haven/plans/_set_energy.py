@@ -12,7 +12,9 @@ __all__ = ["set_energy"]
 Harmonic = str | int | None
 
 
-def auto_harmonic(energy: float, thresholds: Sequence[float | int] = [10000, 20000]) -> int:
+def auto_harmonic(
+    energy: float, thresholds: Sequence[float | int] = [10000, 20000]
+) -> int:
     """Decide which harmonic to use for the undulator at a given energy.
 
     Parameters

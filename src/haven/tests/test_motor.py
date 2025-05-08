@@ -1,23 +1,36 @@
+import pytest
+
 from haven.devices.motor import Motor, load_motors
 
 
-def test_async_motor_signals():
+@pytest.fixture()
+async def motor():
     m = Motor("motor_ioc", name="test_motor")
-    assert m.description.source == "ca://motor_ioc.DESC"
-    assert m.motor_is_moving.source == "ca://motor_ioc.MOVN"
-    assert m.motor_done_move.source == "ca://motor_ioc.DMOV"
-    assert m.high_limit_switch.source == "ca://motor_ioc.HLS"
-    assert m.low_limit_switch.source == "ca://motor_ioc.LLS"
-    assert m.high_limit_travel.source == "ca://motor_ioc.HLM"
-    assert m.low_limit_travel.source == "ca://motor_ioc.LLM"
-    assert m.direction_of_travel.source == "ca://motor_ioc.TDIR"
-    assert m.soft_limit_violation.source == "ca://motor_ioc.LVIO"
+    await m.connect(mock=True)
+    return m
+
+
+def test_async_motor_signals(motor):
+    assert motor.description.source == "mock+ca://motor_ioc.DESC"
+    assert motor.motor_is_moving.source == "mock+ca://motor_ioc.MOVN"
+    assert motor.motor_done_move.source == "mock+ca://motor_ioc.DMOV"
+    assert motor.high_limit_switch.source == "mock+ca://motor_ioc.HLS"
+    assert motor.low_limit_switch.source == "mock+ca://motor_ioc.LLS"
+    assert motor.high_limit_travel.source == "mock+ca://motor_ioc.HLM"
+    assert motor.low_limit_travel.source == "mock+ca://motor_ioc.LLM"
+    assert motor.direction_of_travel.source == "mock+ca://motor_ioc.TDIR"
+    assert motor.soft_limit_violation.source == "mock+ca://motor_ioc.LVIO"
 
 
 def test_load_motors():
     m1, m2 = load_motors(m1="255idcVME:m1", m2="255idcVME:m2")
     assert m1.user_readback.source == "ca://255idcVME:m1.RBV"
     assert m2.user_readback.source == "ca://255idcVME:m2.RBV"
+
+
+async def test_description_field_updates(motor):
+    """Do the EPICS .DESC fields get set to the device name?"""
+    assert (await motor.description.get_value()) == "test_motor"
 
 
 # -----------------------------------------------------------------------------

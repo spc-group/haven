@@ -86,12 +86,6 @@ offset_pv = "mono_ioc:offset"
 
 # Ion chambers
 # ============
-# 
-# Each ion chamber is listed in a section starting with
-#   [[ ion_chamber ]]
-# 
-# The *name* parameter can be omitted, in which case the name will be
-# updated based on the .DESC PV for the scaler channel.
 
 [[ ion_chamber ]]
 scaler_prefix = "255idcVME:3820:"
