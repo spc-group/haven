@@ -86,7 +86,7 @@ This will move the X-ray source (if applicable), change the harmonic, and move a
         <item row="4" column="1">
          <layout class="QHBoxLayout" name="horizontalLayout_12">
           <item>
-           <widget class="QueueserverButton" name="set_energy_button">
+           <widget class="QueueButton" name="set_energy_button">
             <property name="enabled">
              <bool>true</bool>
             </property>
@@ -238,6 +238,9 @@ This will move the X-ray source (if applicable), change the harmonic, and move a
                </property>
                <property name="minimum">
                 <number>1</number>
+               </property>
+               <property name="maximum">
+                <number>7</number>
                </property>
                <property name="singleStep">
                 <number>2</number>
@@ -537,6 +540,11 @@ It will change the monochromator and undulator (if applicable), but makes no att
   </customwidget>
   <customwidget>
    <class>QueueserverButton</class>
+   <extends>QPushButton</extends>
+   <header>firefly.queue_button</header>
+  </customwidget>
+  <customwidget>
+   <class>QueueButton</class>
    <extends>QPushButton</extends>
    <header>firefly.queue_button</header>
   </customwidget>

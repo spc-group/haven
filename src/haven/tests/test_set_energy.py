@@ -64,6 +64,19 @@ def test_id_harmonic_auto(undulator):
     msg0 = msgs[0]
     assert msg0.args == (3,)
     assert msg0.obj is undulator.harmonic_value
+    # Try again but with a 5th harmonic
+    plan = set_energy(
+        energy=25000,
+        undulator_offset=None,
+        monochromators=[],
+        undulators=[undulator],
+    )
+    msgs = list(plan)
+    # Check that a message exists to the ID harmonic
+    assert len(msgs) == 4
+    msg0 = msgs[0]
+    assert msg0.args == (5,)
+    assert msg0.obj is undulator.harmonic_value
 
 
 # -----------------------------------------------------------------------------

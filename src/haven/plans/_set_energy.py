@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Literal, Sequence
 
 from bluesky import plan_stubs as bps
 from bluesky.protocols import Movable
@@ -12,13 +12,21 @@ __all__ = ["set_energy"]
 Harmonic = str | int | None
 
 
-def auto_harmonic(energy: float) -> int:
-    # Check for auto harmonic selection
-    threshold = 11000
-    if energy < threshold:
-        return 1
-    else:
-        return 3
+def auto_harmonic(energy: float, thresholds: Sequence[float | int] = [10000, 20000]) -> int:
+    """Decide which harmonic to use for the undulator at a given energy.
+
+    Parameters
+    ==========
+    energy
+      The energy for deciding which harmonic to use.
+    thresholds
+      Energies marking the boundaries for switching from one harmonic
+      to the next. Should increase monotonically.
+
+    """
+    segment = sum([energy > th for th in thresholds])
+    harmonic = segment * 2 + 1
+    return harmonic
 
 
 def set_energy(
