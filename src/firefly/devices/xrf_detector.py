@@ -241,7 +241,7 @@ class XRFDetectorDisplay(display.FireflyDisplay):
     }
 
     def ui_filename(self):
-        return "xrf_detector.ui"
+        return "devices/xrf_detector.ui"
 
     def customize_ui(self):
         self._spectra = {}

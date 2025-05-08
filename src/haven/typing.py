@@ -1,6 +1,14 @@
-from typing import Sequence, Union
+from abc import abstractmethod
+from typing import (
+    Protocol,
+    Sequence,
+    Union,
+    runtime_checkable,
+)
 
+from bluesky.protocols import HasName, Locatable, Readable
 from ophyd import Component, Device, Signal
+from ophyd_async.epics.motor import Motor
 
 Detector = Union[Device, Component, Signal, str]
 
@@ -9,6 +17,21 @@ DetectorList = Union[str, Sequence[Detector]]
 
 
 Motor = Union[Device, Component, Signal, str]
+
+
+class EnergyDevice(Readable, HasName):
+    energy: Locatable[float]
+
+
+class Monochromator(EnergyDevice):
+    d_spacing: Readable
+    bragg: Motor
+
+
+@runtime_checkable
+class Calibratable(Protocol):
+    @abstractmethod
+    def calibrate(self, truth: float, target: float | None = None): ...
 
 
 # -----------------------------------------------------------------------------

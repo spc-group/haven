@@ -1,6 +1,6 @@
 import pytest
 
-from firefly.slits import SlitsDisplay
+from firefly.devices.slits import SlitsDisplay
 
 
 @pytest.fixture()

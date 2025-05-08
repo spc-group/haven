@@ -11,7 +11,7 @@ class FiltersDisplay(display.FireflyDisplay):
     filters: Sequence
 
     def ui_filename(self):
-        return "filters.ui"
+        return "devices/filters.ui"
 
     def customize_device(self):
         filters = beamline.devices.findall(label="filters", allow_none=True)

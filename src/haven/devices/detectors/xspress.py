@@ -68,7 +68,7 @@ class XspressController(ADBaseController):
     async def prepare(self, trigger_info: TriggerInfo):
         await asyncio.gather(
             self.driver.num_images.set(trigger_info.total_number_of_triggers),
-            self.driver.image_mode.set(adcore.ImageMode.MULTIPLE),
+            self.driver.image_mode.set(adcore.ADImageMode.MULTIPLE),
             self.driver.trigger_mode.set(XspressTriggerMode.INTERNAL),
             # Hardware deadtime correciton is not reliable
             # https://github.com/epics-modules/xspress3/issues/57

@@ -1,4 +1,4 @@
-from firefly.filters import FiltersDisplay
+from firefly.devices.filters import FiltersDisplay
 
 
 def test_embedded_display_widgets(qtbot, filters):

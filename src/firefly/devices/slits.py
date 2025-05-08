@@ -1,27 +1,13 @@
-from firefly.slits import SlitsDisplay
+import logging
 
-# from haven.instrument import mirrors
+from firefly import display
+
+log = logging.getLogger(__name__)
 
 
-class KBMirrorsDisplay(SlitsDisplay):
-
+class SlitsDisplay(display.FireflyDisplay):
     def ui_filename(self):
-        return "kb_mirrors.ui"
-
-    def customize_ui(self):
-        # Enable/disable bender controls
-        horiz = self.device.horiz
-        self.ui.horizontal_upstream_display.setEnabled(
-            hasattr(horiz, "bender_upstream")
-        )
-        self.ui.horizontal_downstream_display.setEnabled(
-            hasattr(horiz, "bender_downstream")
-        )
-        vert = self.device.vert
-        self.ui.vertical_upstream_display.setEnabled(hasattr(vert, "bender_upstream"))
-        self.ui.vertical_downstream_display.setEnabled(
-            hasattr(vert, "bender_downstream")
-        )
+        return "devices/slits.ui"
 
 
 # -----------------------------------------------------------------------------

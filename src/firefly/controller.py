@@ -150,66 +150,78 @@ class FireflyController(QtCore.QObject):
         # Setup actions for the various categories of devices
         self.actions.motors = self.device_actions(
             device_label="extra_motors",
-            display_file=ui_dir / "motor.py",
+            display_file=ui_dir / "devices/motor.py",
             device_key="MOTOR",
         )
         self.actions.ion_chambers = self.device_actions(
             device_label="ion_chambers",
-            display_file=ui_dir / "ion_chamber.py",
+            display_file=ui_dir / "devices/ion_chamber.py",
             device_key="IC",
         )
         self.actions.cameras = self.device_actions(
             device_label="cameras",
-            display_file=ui_dir / "area_detector_viewer.py",
+            display_file=ui_dir / "devices/area_detector_viewer.py",
             device_key="AD",
         )
         self.actions.area_detectors = self.device_actions(
             device_label="area_detectors",
-            display_file=ui_dir / "area_detector_viewer.py",
+            display_file=ui_dir / "devices/area_detector_viewer.py",
             device_key="AD",
         )
         self.actions.slits = self.device_actions(
             device_label="slits",
-            display_file=ui_dir / "slits.py",
+            display_file=ui_dir / "devices/slits.py",
             device_key="DEVICE",
             icon=qta.icon("mdi.crop"),
         )
         self.actions.mirrors = self.device_actions(
             device_label="mirrors",
-            display_file=ui_dir / "mirror.py",
+            display_file=ui_dir / "devices/mirror.py",
             device_key="DEVICE",
             icon=qta.icon("msc.mirror"),
         )
         self.actions.mirrors.update(
             self.device_actions(
                 device_label="kb_mirrors",
-                display_file=ui_dir / "kb_mirrors.py",
+                display_file=ui_dir / "devices/kb_mirrors.py",
                 device_key="DEVICE",
                 icon=qta.icon("msc.mirror"),
             )
         )
+        self.actions.monochromators = self.device_actions(
+            device_label="monochromators",
+            display_file=ui_dir / "devices/axilon_monochromator.py",
+            device_key="DEVICE",
+            icon=qta.icon("mdi6.lambda"),
+        )
         self.actions.tables = self.device_actions(
             device_label="tables",
-            display_file=ui_dir / "table.py",
+            display_file=ui_dir / "devices/table.py",
             device_key="DEVICE",
             icon=qta.icon("mdi.table-furniture"),
         )
         self.actions.robots = self.device_actions(
             device_label="robots",
-            display_file=ui_dir / "robot.py",
+            display_file=ui_dir / "devices/robot.py",
             device_key="DEVICE",
             WindowClass=PlanMainWindow,
             icon=qta.icon("mdi.robot-industrial"),
         )
+        self.actions.undulators = self.device_actions(
+            device_label="undulators",
+            display_file=ui_dir / "devices/undulator.py",
+            device_key="DEVICE",
+            icon=qta.icon("fa6s.wave-square"),
+        )
         self.actions.xrf_detectors = self.device_actions(
             device_label="xrf_detectors",
-            display_file=ui_dir / "xrf_detector.py",
+            display_file=ui_dir / "devices/xrf_detector.py",
             device_key="DEV",
         )
         self.actions.xray_filter = WindowAction(
             name="show_filters_window_action",
             text="Filters",
-            display_file=ui_dir / "filters.py",
+            display_file=ui_dir / "devices/filters.py",
             WindowClass=FireflyMainWindow,
             icon=qta.icon("mdi.air-filter"),
         )
@@ -264,7 +276,6 @@ class FireflyController(QtCore.QObject):
                 WindowClass=PlanMainWindow,
             ),
         }
-
         # Action for showing the run browser window
         self.actions.run_browser = WindowAction(
             name="show_run_browser_action",
@@ -301,7 +312,6 @@ class FireflyController(QtCore.QObject):
             shortcut="Ctrl+V",
             icon=qta.icon("ph.faders-horizontal"),
         )
-        self.actions.voltmeter.window_created.connect(self.finalize_voltmeter_window)
         # Launch log window
         self.actions.log = WindowAction(
             name="show_logs_window_action",
@@ -320,10 +330,18 @@ class FireflyController(QtCore.QObject):
             icon=qta.icon("mdi.sine-wave"),
         )
 
+    @Slot(str)
+    def launch_device_window(self, device_name: str):
+        action = self.actions.devices[device_name]
+        action.trigger()
+
     @asyncSlot(QAction)
     async def finalize_new_window(self, action):
         """Slot for providing new windows for after a new window is created."""
         action.window.setup_menu_actions(actions=self.actions)
+        # Connect signals for viewing other device windows
+        action.display.device_window_requested.connect(self.launch_device_window)
+        # Prepare queue-server interactions
         self.queue_status_changed.connect(action.window.update_queue_status)
         self.queue_status_changed.connect(action.window.update_queue_controls)
         if getattr(self, "_queue_client", None) is not None:
@@ -331,6 +349,7 @@ class FireflyController(QtCore.QObject):
             action.window.update_queue_status(status)
             action.window.update_queue_controls(status)
         action.display.queue_item_submitted.connect(self.add_queue_item)
+        action.display.execute_item_submitted.connect(self.execute_queue_item)
         # Send the current devices to the window
         await action.window.update_devices(self.registry)
 
@@ -352,16 +371,6 @@ class FireflyController(QtCore.QObject):
         display = action.display
         display.ui.bss_modify_button.clicked.connect(self.actions.bss.trigger)
         # display.details_window_requested.connect
-
-    def finalize_voltmeter_window(self, action: QAction):
-        """Connect up signals that are specific to the voltmeters window."""
-
-        def launch_ion_chamber_window(ic_name):
-            action = self.actions.ion_chambers[ic_name]
-            action.trigger()
-
-        display = action.window.display_widget()
-        display.details_window_requested.connect(launch_ion_chamber_window)
 
     def launch_queuemonitor(self):
         config = load_config()["queueserver"]
@@ -661,6 +670,12 @@ class FireflyController(QtCore.QObject):
         log.debug(f"Application received item to add to queue: {item}")
         if getattr(self, "_queue_client", None) is not None:
             await self._queue_client.add_queue_item(item)
+
+    @asyncSlot(object)
+    async def execute_queue_item(self, item):
+        log.debug(f"Application received item to execute: {item}")
+        if getattr(self, "_queue_client", None) is not None:
+            await self._queue_client.execute_queue_item(item)
 
     @QtCore.Slot(bool)
     def set_open_environment_action_state(self, is_open: bool):
