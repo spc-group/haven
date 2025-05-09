@@ -6,6 +6,7 @@ from haven import TiledWriter
 def test_xas_spec():
     """Does the XASRun spec get added for valid XAS runs?"""
     client = MagicMock()
+    client.include_data_sources.return_value = client
     writer = TiledWriter(client=client)
     start_doc = {
         "uid": "0",
@@ -13,7 +14,9 @@ def test_xas_spec():
         "edge": "Ni-K",
     }
     writer("start", start_doc)
-    assert client.create_container.called
+    assert writer.client is client
+    print("TEST: ", writer.client)
+    assert writer.client.create_container.called
     specs = client.create_container.call_args[1]["specs"]
     assert len(specs) == 2
     assert specs[0].name == "XASRun"
@@ -23,6 +26,7 @@ def test_xas_spec():
 def test_no_xas_spec():
     """Does the XASRun spec get skipped for invalid XAS runs?"""
     client = MagicMock()
+    client.include_data_sources.return_value = client
     writer = TiledWriter(client=client)
     start_doc = {
         "uid": "0",

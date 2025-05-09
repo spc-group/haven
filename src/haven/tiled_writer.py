@@ -4,6 +4,7 @@ from typing import Sequence
 
 from bluesky.callbacks.tiled_writer import TiledWriter as BlueskyTiledWriter
 from bluesky.callbacks.tiled_writer import _RunWriter as BlueskyRunWriter
+from bluesky.utils import truncate_json_overflow
 from event_model.documents import RunStart
 from tiled.structures.core import Spec
 
@@ -17,7 +18,7 @@ __all__ = ["TiledWriter"]
 
 def md_to_specs(start_doc: dict) -> Sequence[Spec]:
     """Determine which specs apply based on *start_doc*."""
-    specs = [Spec("BlueskyRun", version="1.0")]
+    specs = [Spec("BlueskyRun", version="3.0")]
     # Check for XAS runs
     has_d_spacing = "d_spacing" in start_doc.keys()
     has_edge = xas_edge_regex.match(start_doc.get("edge", ""))
@@ -35,8 +36,10 @@ class TiledWriter(BlueskyTiledWriter):
 
 class _RunWriter(BlueskyRunWriter):
     def start(self, doc: RunStart):
+        print(self.client)
         self.root_node = self.client.create_container(
             key=doc["uid"],
-            metadata={"start": doc},
+            metadata={"start": truncate_json_overflow(dict(doc))},
             specs=md_to_specs(doc),
         )
+        self._streams_node = self.root_node.create_container(key="streams")
