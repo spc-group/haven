@@ -228,7 +228,7 @@ class DatabaseWorker:
         if len(self.selected_runs) == 0:
             warnings.warn("No runs selected, metadata will be empty.")
         for run in self.selected_runs:
-            md[run.path] = await run.metadata
+            md[str(run.path)] = await run.metadata
         return md
 
     def load_selected_runs(self, uids):

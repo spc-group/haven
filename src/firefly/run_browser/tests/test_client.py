@@ -10,7 +10,10 @@ run_metadata_urls = re.compile(
     r"^http://localhost:8000/api/v1/metadata/([a-z]+)%2F([-a-z0-9]+)$"
 )
 stream_metadata_urls = re.compile(
-    r"^http://localhost:8000/api/v1/metadata/([a-z]+)%2F([-a-z0-9]+)%2F([a-z]+)$"
+    r"^http://localhost:8000/api/v1/metadata/"
+    r"([a-z]+)%2F"  # catalog name
+    r"([-a-z0-9]+)%2F"  # scan name
+    r"streams%2F([a-z]+)$"  # stream name
 )
 
 
@@ -82,7 +85,6 @@ async def test_load_selected_runs():
 
 @pytest.mark.asyncio
 async def test_data_frames(worker, httpx_mock, run_metadata_api, tiled_api):
-    df = pd.DataFrame()
     worker.load_selected_runs(
         [
             "85573831-f4b4-4f64-b613-a6007bf03a8d",
