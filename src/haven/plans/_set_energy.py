@@ -67,9 +67,9 @@ def set_energy(
 
     """
     if undulators:
-        undulators = beamline.devices.findall(undulators)
+        undulators = beamline.devices.findall(undulators, allow_none=True)
     if monochromators:
-        monochromators = beamline.devices.findall(monochromators)
+        monochromators = beamline.devices.findall(monochromators, allow_none=True)
     # Prepare arguments for undulator harmonics and offsets
     mv_args: list[Movable | int | float] = []
     if harmonic == "auto":
