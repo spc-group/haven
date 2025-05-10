@@ -4,6 +4,7 @@ import datetime as dt
 import re
 from pathlib import Path
 from typing import Sequence
+from functools import partial
 
 from httpx import HTTPStatusError
 import pandas as pd
@@ -16,7 +17,7 @@ from haven.catalog import Catalog, CatalogScan
 
 extensions = {
     "application/x-nexus": ".hdf",
-    "text/tab-separated-values": ".tsv",
+    "text/tab-separated-values": ".tab",
 }
 
 
@@ -70,17 +71,26 @@ async def export_run(
         try:
             await run.export(fp, format=fmt)
         except HttpStatusError as exc:
-            print(start_doc['uid'], exc)
+            print(start_doc["uid"], exc)
     # Add an entry to the spreadsheet for this run
     spreadsheet_path = esaf_dir / "runs_summary.ods"
     if spreadsheet_path.exists():
         df = pd.read_excel(spreadsheet_path, engine="odf")
     else:
         df = pd.DataFrame(
-            columns=["uid", "start_timestamp", "start_datetime", "exit_status", "sample", "scan", "plan", "filebase"]
+            columns=[
+                "uid",
+                "start_timestamp",
+                "start_datetime",
+                "exit_status",
+                "sample",
+                "scan",
+                "plan",
+                "filebase",
+            ]
         )
     if start_doc["uid"] not in df.uid.values:
-        
+
         # Add the row to the spreadsheet
         df.loc[len(df)] = [
             start_doc["uid"],
@@ -96,21 +106,37 @@ async def export_run(
 
 
 def build_queries(
-    before: str | None, after: str | None, esaf: str | None, proposal: str | None
+    *,
+    exit_status: str | None = "success",
+    before: str | None = None,
+    after: str | None = None,
+    esaf: str | None = None,
+    proposal: str | None = None,
+    sample_name: str | None = None,
+    plan_name: str | None = None,
+    sample_formula: str | None = None,
+    scan_name: str | None = None,
+    edge: str | None = None,
+    uid: str | None = None,
 ) -> list[queries.NoBool]:
-    qs = [
-        queries.Eq("stop.exit_status", "success"),
+    qs = []
+    query_params = [
+        # filter_name: (query type, metadata key)
+        (exit_status, queries.Eq, "stop.exit_status"),
+        (plan_name, queries.Eq, "start.plan_name"),
+        (sample_name, queries.Contains, "start.sample_name"),
+        (sample_formula, queries.Contains, "start.sample_formula"),
+        (scan_name, queries.Contains, "start.scan_name"),
+        (edge, queries.Contains, "start.edge"),
+        (proposal, queries.Eq, "start.proposal_id"),
+        (esaf, queries.Eq, "start.esaf_id"),
+        (before, partial(queries.Comparison, "le"), "stop.time"),
+        (after, partial(queries.Comparison, "ge"), "start.time"),
+        (uid, queries.Contains, "start.uid"),
     ]
-    if after is not None:
-        timestamp = dt.datetime.fromisoformat(after).timestamp()
-        qs.append(queries.Comparison("ge", "start.time", timestamp))
-    if before is not None:
-        timestamp = dt.datetime.fromisoformat(before).timestamp()
-        qs.append(queries.Comparison("le", "stop.time", timestamp))
-    if esaf is not None:
-        raise ValueError("ESAF filtering not yet supported")
-    if proposal is not None:
-        raise ValueError("Proposal filtering not yet supported")
+    for (arg, query, key) in query_params:
+        if arg is not None:
+            qs.append(query(key, arg))
     return qs
 
 
@@ -157,6 +183,17 @@ def main():
         "base_dir", help="The base directory for storing files.", type=str
     )
     # Arguments for filtering runs
+    parser.add_argument("--failed", help="Also include scans that did not complete.", action="store_true")
+    parser.add_argument("--plan", help="Export runs with plan name.", type=str)
+    parser.add_argument("--sample", help="Export runs with this sample name.", type=str)
+    parser.add_argument("--formula", help="Export runs with samples matching this chemical formula.", type=str)
+    parser.add_argument("--scan", help="Export runs with this scan name.", type=str)
+    parser.add_argument("--edge", help="Export runs with this edge.", type=str)
+    parser.add_argument("--esaf", help="Export runs with this ESAF ID.", type=str)
+    parser.add_argument(
+        "--proposal", help="Export runs with this proposal ID.", type=str
+    )
+                    
     parser.add_argument(
         "--before",
         help="Only include runs before this timestamp. E.g. 2025-04-22T8:00:00.",
@@ -167,10 +204,7 @@ def main():
         help="Only include runs after this ISO datetime. E.g. 2025-04-22T8:00:00.",
         type=str,
     )
-    parser.add_argument("--esaf", help="Export runs with this ESAF ID.", type=str)
-    parser.add_argument(
-        "--proposal", help="Export runs with this proposal ID.", type=str
-    )
+    parser.add_argument("--uid", help="Export runs with this UID.", type=str)
     # Arguments for export formats
     parser.add_argument(
         "--nexus",
@@ -185,8 +219,16 @@ def main():
     args = parser.parse_args()
     # Get the list of runs we need
     catalog = Catalog("scans", uri="http://fedorov.xray.aps.anl.gov:8020")
+    exit_status = None if args.failed else "success"
     qs = build_queries(
-        before=args.before, after=args.after, esaf=args.esaf, proposal=args.proposal
+        before=args.before, after=args.after, esaf=args.esaf, proposal=args.proposal,
+        plan_name=args.plan_name,
+        sample_name=args.sample,
+        sample_formula=args.formula,
+        scan_name=args.scan,
+        edge=args.edge,
+        uid=args.uid,
+        exit_status=exit_status,
     )
     runs = catalog.runs(queries=qs)
     # Save each run to disk
