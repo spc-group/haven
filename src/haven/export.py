@@ -22,7 +22,7 @@ extensions = {
 
 
 async def export_run(
-    run: Container, *, base_dir: Path, use_xdi: bool = True, use_nexus: bool = True
+    run: Container, *, base_dir: Path, use_xdi: bool = False, use_nexus: bool = False
 ):
     # Decide on export formats
     valid_formats = await run.formats()
@@ -35,8 +35,6 @@ async def export_run(
             if "text/x-xdi" in valid_formats
             else "text/tab-separated-values"
         )
-    # if len(target_formats) == 0:
-    #     return
     # Retrieve needed metadata
     md = await run.metadata
     start_doc = md["start"]
@@ -62,6 +60,7 @@ async def export_run(
     base_name = re.sub(r"[/]", "", base_name)
     # Write to disk
     esaf_dir.mkdir(parents=True, exist_ok=True)
+    print(taget_formats)
     for fmt in target_formats:
         ext = extensions[fmt]
         fp = esaf_dir / f"{base_name}{ext}"

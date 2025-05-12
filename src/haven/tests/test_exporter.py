@@ -1,4 +1,7 @@
-from haven.export import build_queries
+from unittest import mock
+from tempfile import TemporaryDirectory
+from pathlib import Path
+from haven.export import build_queries, export_run
 
 
 def test_build_quries_empty():
@@ -21,3 +24,12 @@ def test_build_quries_with_filters():
     )
     assert len(qs) == 11
     assert qs[0].key == "stop.exit_status"
+
+
+async def test_export_run():
+    run = mock.AsyncMock()
+    run.metadata = {}
+    with TemporaryDirectory() as tmp_dir:
+        base_dir = Path(tmp_dir)
+        await export_run(run, base_dir=base_dir, use_xdi=True)
+    assert run.export.called
