@@ -99,8 +99,8 @@ def main():
     logging.basicConfig(level=logging.INFO)
     bootstrap_servers = ["fedorov.xray.aps.anl.gov:9092"]
     topic_catalog_map = {
-        "25idc.bluesky.documents": "scans",
-        "25idd.bluesky.documents": "scans",
+        "25idc.bluesky.documents": "scans-postgres",
+        "25idd.bluesky.documents": "scans-postgres",
         "25idc-dev.bluesky.documents": "testing",
         "25idd-dev.bluesky.documents": "testing",
     }
