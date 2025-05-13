@@ -36,7 +36,6 @@ class TiledWriter(BlueskyTiledWriter):
 
 class _RunWriter(BlueskyRunWriter):
     def start(self, doc: RunStart):
-        print(self.client)
         self.root_node = self.client.create_container(
             key=doc["uid"],
             metadata={"start": truncate_json_overflow(dict(doc))},

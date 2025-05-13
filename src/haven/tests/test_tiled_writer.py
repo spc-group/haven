@@ -15,7 +15,6 @@ def test_xas_spec():
     }
     writer("start", start_doc)
     assert writer.client is client
-    print("TEST: ", writer.client)
     assert writer.client.create_container.called
     specs = client.create_container.call_args[1]["specs"]
     assert len(specs) == 2
