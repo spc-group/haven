@@ -1,10 +1,10 @@
 """A QPushButton that responds to the state of the queue server."""
 
 import logging
+from enum import StrEnum
 
 import qtawesome as qta
 from qtpy import QtGui, QtWidgets
-from strenum import StrEnum
 
 log = logging.getLogger(__name__)
 
