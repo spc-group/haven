@@ -16,11 +16,11 @@ classifiers = [
 ]
 license = "BSD-3-clause"
 keywords = ["synchrotron", "xray", "bluesky"]
-dependencies = ["aioca", "aiokafka", "bluesky==1.13.1", "ophyd",
+dependencies = ["aioca", "aiokafka", "apstools", "apsbss==1.5.6", "bluesky==1.13.1", "ophyd==1.10.5",
 	        "ophyd-async==0.10.0a3", "apsbss", "xraydb",
 	        "mergedeep", "xrayutilities", "bluesky-queueserver-api", "tomlkit",
 		"apstools", "apsbits", "ophyd-registry>=2.0.0rc1", "caproto", "pcdsdevices",
-		"bluesky-adaptive", "tiled[client]", "guarneri>=0.2.0",
+		"bluesky-adaptive", "tiled[client]", "guarneri==0.2.0",
 		"httpx[http2]", "stamina"]
 
 [project.optional-dependencies]
