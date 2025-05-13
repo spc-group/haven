@@ -76,7 +76,7 @@ def from_tuple(energy_range):
         return energy_range
     if energy_range[0] == "E":
         return ERange(*energy_range[1:])
-    if energy_range[0] == "K":
+    if energy_range[0] in ["k", "K"]:
         return KRange(*energy_range[1:])
     return ERange(*energy_range)
 
