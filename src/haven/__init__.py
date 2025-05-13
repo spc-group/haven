@@ -27,11 +27,6 @@ from pathlib import Path
 ipython_startup_file = Path(__file__).parent / "ipython_startup.ipy"
 del Path
 
-
-# Force ophyd to use caproto as its backend
-# import ophyd
-# ophyd.set_cl("caproto")
-
 from . import plans  # noqa: F401
 from ._iconfig import load_config  # noqa: F401
 
@@ -61,7 +56,6 @@ from .preprocessors import (  # noqa: F401
     shutter_suspend_decorator,
     shutter_suspend_wrapper,
 )
-from .progress_bar import ProgressBar  # noqa: F401
 from .run_engine import run_engine  # noqa: F401
 from .tiled_writer import TiledWriter  # noqa: F401
 from .utils import sanitize_name  # noqa: F401

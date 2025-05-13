@@ -16,24 +16,63 @@ classifiers = [
 ]
 license = "BSD-3-clause"
 keywords = ["synchrotron", "xray", "bluesky"]
-dependencies = ["aioca", "aiokafka", "apstools", "apsbss==1.5.6", "bluesky==1.13.1", "ophyd==1.10.5",
-	        "ophyd-async==0.10.0a3", "apsbss", "xraydb",
-	        "mergedeep", "xrayutilities", "bluesky-queueserver-api", "tomlkit",
-		"apstools", "apsbits", "ophyd-registry>=2.0.0rc1", "caproto", "pcdsdevices",
-		"bluesky-adaptive", "tiled[client]", "guarneri==0.2.0",
-		"httpx[http2]", "stamina"]
+dependencies = [
+    "aioca",
+    "aiokafka==0.12.0",
+    "apsbss==1.5.6",
+    "apstools==1.7.3",
+    "bluesky==1.13.1",
+    "ophyd==1.10.5",
+    "ophyd-async==0.10.0a3",
+    "apsbss",
+    "xraydb>=4.5.0",
+    "mergedeep",
+    "xrayutilities",
+    "bluesky-queueserver-api",
+    "tomlkit",
+    "apsbits",
+    "pint",
+    "pcdsdevices",
+    "bluesky-adaptive",
+    "tiled[client]",
+    "guarneri==0.2.0",
+    "httpx[http2]",
+    "stamina",
+    "rich",
+]
 
 [project.optional-dependencies]
-
-dev = ["black", "pytest", "asynctest", "build", "twine", "pytest-httpx",
-       "time-machine", "pytest-mock", "pytest-qt", "flake8", "pytest-asyncio",
-       "pytest_httpx", "scipy-stubs", "mypy"]
+dev = [
+    "black",
+    "pytest",
+    "asynctest",
+    "build",
+    "twine",
+    "pytest-httpx",
+    "time-machine",
+    "pytest-mock",
+    "pytest-qt",
+    "pytest-xvfb",
+    "flake8",
+    "isort",
+    "sphinx",
+    "autoapi",
+    "nbsphinx",
+    "graphviz",
+    "sphinxcontrib-napoleon",
+    "pytest-asyncio",
+    "pytest_httpx",
+    "scipy-stubs",
+    "mypy"
+]
 gui = [
     "qtawesome>=1.4.0",
     "pydm==1.25.2",
     "pyqtgraph",
     "qasync",
-    "tiled[all]"
+    "tiled[all]",
+    "bluesky-widgets",
+    "typhos>=3.1.0",  # need the find_signal method on the SignalConnection()
 ]
 
 [project.urls]
