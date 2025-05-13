@@ -20,7 +20,6 @@ These guides do not cover the individual beamlines thoroughly.
    exporting.rst
    fluorescence_detectors.rst
    fly_scanning.rst
-   hardware_triggering.rst
    instrument_registry.rst
    shutters_and_filters.rst
    motor_positions.rst
