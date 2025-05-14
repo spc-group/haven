@@ -99,14 +99,14 @@ def test_default_time_signal_xspress(xspress):
 
 async def test_ndattribute_params():
     n_elem = 8
-    n_params = 1
+    n_params = 9
     params = ndattribute_params(device_name="xsp3", elements=range(n_elem))
     assert len(params) == n_elem * n_params
 
 
 async def test_stage_ndattributes(detector):
     num_elem = 4
-    num_params = 1
+    num_params = 9
     set_mock_value(detector.driver.number_of_elements, num_elem)
     set_mock_value(detector.driver.nd_attributes_file, "XSP3.xml")
     await detector.stage()
