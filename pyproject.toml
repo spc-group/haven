@@ -16,16 +16,33 @@ classifiers = [
 ]
 license = "BSD-3-clause"
 keywords = ["synchrotron", "xray", "bluesky"]
-dependencies = ["aioca", "aiokafka", "bluesky==1.14.0", "ophyd",
-	        "ophyd-async==0.9.0", "apsbss", "xraydb",
-	        "mergedeep", "xrayutilities", "bluesky-queueserver-api", "tomlkit",
-		"bluesky-tiled-plugins==2.0.0b62",
-		"apstools", "apsbits", "ophyd-registry>=2.0.0rc1", "caproto", "pcdsdevices",
-		"bluesky-adaptive", "tiled[client]==0.1.0b27", "guarneri>=0.2.0",
-		"httpx[http2]"]
+dependencies = [
+    "aioca",
+    "aiokafka",
+    "bluesky==1.14.0",
+    "ophyd",
+    "ophyd-async>=0.9.0",
+    # We need this custom ophyd-async fork until merge into main
+    #         https://github.com/bluesky/ophyd-async/issues/713
+    # "ophyd-async @ git+https://github.com/spc-group/ophyd-async@detector_races",
+    "apsbss",
+    "xraydb",
+    "mergedeep",
+    "xrayutilities",
+    "bluesky-queueserver-api",
+    "tomlkit",
+    "apstools",
+    "apsbits",
+    "ophyd-registry>=2.0.0rc1",
+    "caproto",
+    "pcdsdevices",
+    "bluesky-adaptive",
+    "tiled[client]==0.1.0b27",
+    "guarneri>=0.2.0",
+    "httpx[http2]"
+]
 
 [project.optional-dependencies]
-
 dev = ["black", "pytest", "asynctest", "build", "twine", "pytest-httpx",
        "time-machine", "pytest-mock", "pytest-qt", "flake8", "pytest-asyncio",
        "pytest_httpx", "scipy-stubs", "mypy"]
