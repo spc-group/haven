@@ -67,7 +67,11 @@ class BasePositioner(Positioner):
         super().__init__(name=name)
 
     @staticmethod
-    def _done_to_done(done: int) -> int:
+    def _done_to_done(done: bool) -> bool:
+        """No-op so we can turn the *done_signal* into a child of this
+        device.
+
+        """
         return done
 
 

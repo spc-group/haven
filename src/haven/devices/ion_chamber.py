@@ -192,26 +192,15 @@ class IonChamber(StandardReadable, Triggerable):
             clock_count=self.mcs.scaler.channels[0].raw_count,
             clock_frequency=self.mcs.scaler.clock_frequency,
             counts_per_volt_second=self.counts_per_volt_second,
-            # float,
-            # name="current",
-            # units="A",
-            # derived_from={
-            #     "gain": self.preamp.gain,
-            #     "count": self.scaler_channel.raw_count,
-            #     "clock_count": self.mcs.scaler.channels[0].raw_count,
-            #     "clock_frequency": self.mcs.scaler.clock_frequency,
-            #     "counts_per_volt_second": self.counts_per_volt_second,
-            # },
-            # inverse=self._counts_to_amps,
         )
         self.add_readables([self.raw_current], StandardReadableFormat.UNCACHED_SIGNAL)
         super().__init__(name=name)
 
     def _counts_to_amps(
         self,
-        count: int,
+        count: float,
         gain: float,
-        clock_count: int,
+        clock_count: float,
         clock_frequency: float,
         counts_per_volt_second: float,
     ) -> float:
