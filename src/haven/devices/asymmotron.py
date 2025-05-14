@@ -16,6 +16,7 @@ Some sane values for converting hkl and [HKL] to α:
 
 import asyncio
 import logging
+from typing import TypedDict
 
 import numpy as np
 from bluesky.protocols import Movable
@@ -23,19 +24,22 @@ from ophyd_async.core import (
     DEFAULT_TIMEOUT,
     AsyncStatus,
     ConfigSignal,
+    DerivedSignalFactory,
     LazyMock,
     SignalR,
     StandardReadable,
+    Transform,
+    derived_signal_r,
     soft_signal_r_and_setter,
     soft_signal_rw,
 )
 from ophyd_async.epics.motor import Motor
 from pint import Quantity, UnitRegistry
+from pydantic import ConfigDict
 from scipy import constants
 
 from ..positioner import Positioner
 from .motor import Motor
-from .signal import derived_signal_r, derived_signal_rw
 
 __all__ = ["Analyzer", "HKL"]
 
@@ -184,7 +188,7 @@ class HKL(StandardReadable, Movable):
 
         super().__init__(name=name)
 
-    def _to_tuple(self, hkl_str):
+    def _to_tuple(self, hkl_str) -> tuple[str, str, str]:
         h, k, l = hkl_str
         return (h, k, l)
 
@@ -232,6 +236,8 @@ class Analyzer(StandardReadable):
 
     """
 
+    energy_unit = "eV"
+
     def __init__(
         self,
         *,
@@ -277,29 +283,23 @@ class Analyzer(StandardReadable):
             self.bragg_offset = soft_signal_rw(float, units="radians")
             # Soft signals for intermediate, calculated values
             self.d_spacing = derived_signal_r(
-                float,
-                derived_from={
-                    "H": self.reflection.h,
-                    "K": self.reflection.k,
-                    "L": self.reflection.l,
-                    "a": self.lattice_constant,
-                },
-                inverse=self._calc_d_spacing,
-                units="nm",
-                precision=4,
+                raw_to_derived=self._calc_d_spacing,
+                derived_units="nm",
+                derived_precision=4,
+                H=self.reflection.h,
+                K=self.reflection.k,
+                L=self.reflection.l,
+                a=self.lattice_constant,
             )
             self.asymmetry_angle = derived_signal_r(
-                float,
-                derived_from={
-                    "H": self.reflection.h,
-                    "K": self.reflection.k,
-                    "L": self.reflection.l,
-                    "h": self.surface_plane.h,
-                    "k": self.surface_plane.k,
-                    "l": self.surface_plane.l,
-                },
-                units="radians",
-                inverse=self._calc_alpha,
+                raw_to_derived=self._calc_alpha,
+                derived_units="radians",
+                H=self.reflection.h,
+                K=self.reflection.k,
+                L=self.reflection.l,
+                h=self.surface_plane.h,
+                k=self.surface_plane.k,
+                l=self.surface_plane.l,
             )
         # The actual energy signal that controls the analyzer
         self.energy = EnergyPositioner(xtal=self)
@@ -330,32 +330,24 @@ class Analyzer(StandardReadable):
             mock=mock, timeout=timeout, force_reconnect=force_reconnect
         )
         # Stash units for later. Assumes they won't change
-        devices: list[SignalR | StandardReadable] = [
-            self.horizontal,
-            self.horizontal.user_readback,
-            self.horizontal.user_setpoint,
-            self.vertical,
-            self.vertical.user_readback,
-            self.vertical.user_setpoint,
-            self.crystal_yaw,
-            self.crystal_yaw.user_readback,
-            self.crystal_yaw.user_setpoint,
-            self.lattice_constant,
-            self.rowland_diameter,
-            self.wedge_angle,
-            self.asymmetry_angle,
-            self.d_spacing,
-            self.energy,
-            self.bragg_offset,
+        device_names: list[str] = [
+            "horizontal",
+            "vertical",
+            "crystal_yaw",
+            "lattice_constant",
+            "rowland_diameter",
+            "wedge_angle",
+            "asymmetry_angle",
+            "d_spacing",
+            "energy",
+            "bragg_offset",
         ]
-        # for device in devices:
-        #     print(device.name, type(device).__mro__)
-        # assert False
+        devices = [getattr(self, name) for name in device_names]
         aws = [device_units(device) for device in devices]
         units = await asyncio.gather(*aws)
-        self.units = {device: unit for device, unit in zip(devices, units)}
+        self.units = {name: unit for name, unit in zip(device_names, units)}
 
-    def _calc_alpha(self, values, H, K, L, h, k, l):
+    def _calc_alpha(self, H: int, K: int, L: int, h: int, k: int, l: int) -> float:
         """Calculate the asymmetry angle for a given reflection and base plane.
 
         Parameters
@@ -366,96 +358,79 @@ class Analyzer(StandardReadable):
           The base cut of the crystal surface.
 
         """
-        base = (values[h], values[k], values[l])
-        refl = (values[H], values[K], values[L])
-        return hkl_to_alpha(base=base, reflection=refl)
+        base = (h, k, l)
+        refl = (H, K, L)
+        alpha = hkl_to_alpha(base=base, reflection=refl)
+        return float(alpha / ureg.radians)
 
-    def _calc_d_spacing(self, values, H, K, L, a):
-        hkl = (values[H], values[K], values[L])
-        return values[a] / np.linalg.norm(hkl)
+    def _calc_d_spacing(self, H: int, K: int, L: int, a: float) -> float:
+        hkl = (H, K, L)
+        return float(a / np.linalg.norm(hkl))
 
 
-class EnergyPositioner(Positioner):
-    """Positions the energy of an analyzer crystal."""
+class EnergyRaw(TypedDict):
+    horizontal: float
+    vertical: float
 
-    energy_unit = "eV"
 
-    def __init__(self, *, xtal: Analyzer, name: str = ""):
-        xtal_signals = {
-            "D": xtal.rowland_diameter,
-            "d": xtal.d_spacing,
-            "beta": xtal.wedge_angle,
-            "alpha": xtal.asymmetry_angle,
-        }
-        self.setpoint = derived_signal_rw(
-            float,
-            units="eV",
-            derived_from=dict(
-                x=xtal.horizontal.user_setpoint,
-                y=xtal.vertical.user_setpoint,
-                **xtal_signals,
-            ),
-            forward=self.forward,
-            inverse=self.inverse,
-        )
-        with self.add_children_as_readables():
-            self.readback = derived_signal_r(
-                float,
-                units="eV",
-                derived_from=dict(
-                    x=xtal.horizontal.user_readback,
-                    y=xtal.vertical.user_readback,
-                    **xtal_signals,
-                ),
-                inverse=self.inverse,
-            )
-        # Metadata
-        self.velocity, _ = soft_signal_r_and_setter(float, initial_value=0.001)
-        self.units, _ = soft_signal_r_and_setter(str, initial_value=self.energy_unit)
-        self.precision, _ = soft_signal_r_and_setter(int, initial_value=3)
-        super().__init__(name=name, put_complete=True)
+class EnergyDerived(TypedDict):
+    energy: float
 
-    async def forward(self, value, D, d, beta, alpha, x, y):
+
+class EnergyTransform(Transform):
+    # To let us get the parent crystal defined on a dynamic subclass
+    model_config = ConfigDict(ignored_types=(Analyzer,))
+
+    rowland_diameter: float
+    d_spacing: float
+    asymmetry_angle: float
+    wedge_angle: float
+
+    def derived_to_raw(self, energy: float) -> EnergyRaw:
         """Run a forward (pseudo -> real) calculation"""
-        # Resolve the dependent signals into their values
-        energy = value * getattr(ureg, self.energy_unit)
-        units = self.parent.units
-        devices = [D, d, beta, alpha]
-        values = await asyncio.gather(*[device.get_value() for device in devices])
         # Apply units
-        D, d, beta, alpha = [
-            val * units[device] for val, device in zip(values, devices)
-        ]
+        units = self.xtal.units
+        energy = energy * units["energy"]
+        D = self.rowland_diameter * units["rowland_diameter"]
+        d = self.d_spacing * units["d_spacing"]
+        beta = self.wedge_angle * units["wedge_angle"]
+        alpha = self.asymmetry_angle * units["asymmetry_angle"]
         # Step 0: convert energy to bragg angle
         bragg = energy_to_bragg(energy, d=d)
         # Step 1: Convert energy params to geometry params
         theta_M = bragg + alpha
         rho = D * np.sin(theta_M)
         # Step 2: Convert geometry params to motor positions
-        y_val = rho * np.cos(theta_M) / np.cos(beta)
-        x_val = -y_val * np.sin(beta) + rho * np.sin(theta_M)
-        # Report the calculated result
-        return {
-            x: x_val.to(units[x]).magnitude,
-            y: y_val.to(units[y]).magnitude,
-        }
+        y = rho * np.cos(theta_M) / np.cos(beta)
+        x = -y * np.sin(beta) + rho * np.sin(theta_M)
+        # Unroll the units
+        x = x.to(units["horizontal"]).magnitude
+        y = y.to(units["vertical"]).magnitude
+        return EnergyRaw(horizontal=x, vertical=y)
 
-    def inverse(self, values, D, d, beta, alpha, x, y):
+    def raw_to_derived(self, horizontal: float, vertical: float) -> EnergyDerived:
         """Run an inverse (real -> pseudo) calculation"""
+        x, y, D, d, beta, alpha = (
+            horizontal,
+            vertical,
+            self.rowland_diameter,
+            self.d_spacing,
+            self.wedge_angle,
+            self.asymmetry_angle,
+        )
+        log.debug(f"Inverse: {x=}, {y=}, {D=}, {d=}, {beta=}, {alpha=}")
         # Resolve signals into their quantities (with units)
-        log.debug(f"Inverse: {values=}")
         try:
-            units = self.parent.units
-            x = values[x] * units[x]
-            y = values[y] * units[y]
-            D = values[D] * units[D]
-            d = values[d] * units[d]
-            beta = values[beta] * units[beta]
-            alpha = values[alpha] * units[alpha]
+            units = self.xtal.units
+            x = x * units["horizontal"]
+            y = y * units["vertical"]
+            D = D * units["rowland_diameter"]
+            d = d * units["d_spacing"]
+            beta = beta * units["wedge_angle"]
+            alpha = alpha * units["asymmetry_angle"]
         except (AttributeError, KeyError) as exc:
             log.info(exc)
-            return
-        log.info(f"Inverse: {x=}, {y=}, {D=}, {d=}, {beta=}, {alpha=}")
+            return EnergyDerived(energy=float("nan"))
         # Step 1: Convert motor positions to geometry parameters
         theta_M = np.arctan2((x + y * np.sin(beta)), (y * np.cos(beta)))
         log.info(f"Inverse: {theta_M=}")
@@ -466,8 +441,71 @@ class EnergyPositioner(Positioner):
         log.info(f"Inverse: {bragg=}")
         energy = bragg_to_energy(bragg, d=d)
         log.info(f"Inverse: {energy=}")
-        energy_unit = getattr(ureg, self.energy_unit)
-        return energy.to(energy_unit).magnitude
+        derived = EnergyDerived(energy=energy.to(units["energy"]).magnitude)
+        return derived
+
+
+class EnergyPositioner(Positioner):
+    """Positions the energy of an analyzer crystal."""
+
+    _xtals: dict[str, Analyzer] = {}
+
+    def __init__(self, *, xtal: Analyzer, name: str = ""):
+        xtal_signals = {
+            "rowland_diameter": xtal.rowland_diameter,
+            "d_spacing": xtal.d_spacing,
+            "wedge_angle": xtal.wedge_angle,
+            "asymmetry_angle": xtal.asymmetry_angle,
+        }
+        # We need a dynamic class so we can keep access to the xtal units
+        this_transform = type("EnergyTransform", (EnergyTransform,), {"xtal": xtal})
+
+        # Need the xtal object in the method, but it can't be a child
+        # device of the positioner, but we can't use a partial
+        # otherwise we hit this bug maybe(?)
+        # https://github.com/python/typing/issues/797
+        self._xtals["xtal"] = xtal
+
+        self._setpoint_factory = DerivedSignalFactory(
+            this_transform,
+            self._set_from_energy,
+            horizontal=xtal.horizontal.user_setpoint,
+            vertical=xtal.vertical.user_setpoint,
+            **xtal_signals,
+        )
+        self.setpoint = self._setpoint_factory.derived_signal_rw(
+            float,
+            "energy",
+            units="eV",
+        )
+        self._readback_factory = DerivedSignalFactory(
+            this_transform,
+            horizontal=xtal.horizontal.user_readback,
+            vertical=xtal.vertical.user_readback,
+            **xtal_signals,
+        )
+        with self.add_children_as_readables():
+            self.readback = self._readback_factory.derived_signal_r(
+                float,
+                "energy",
+                units="eV",
+            )
+
+        # Metadata
+        self.velocity, _ = soft_signal_r_and_setter(float, initial_value=0.001)
+        self.units, _ = soft_signal_r_and_setter(str, initial_value=xtal.energy_unit)
+        self.precision, _ = soft_signal_r_and_setter(int, initial_value=3)
+        super().__init__(name=name, put_complete=True)
+
+    async def _set_from_energy(self, value: float):
+        transform = await self._setpoint_factory.transform()
+        raw = transform.derived_to_raw(energy=value)
+        # Set the new calculated signals
+        xtal = self._xtals["xtal"]
+        await asyncio.gather(
+            xtal.horizontal.set(raw["horizontal"]),
+            xtal.vertical.set(raw["vertical"]),
+        )
 
 
 # -----------------------------------------------------------------------------

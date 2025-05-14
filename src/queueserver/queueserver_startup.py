@@ -12,6 +12,7 @@ from ophyd_async.core import NotConnected
 from haven import beamline, recall_motor_position, sanitize_name  # noqa: F401
 from haven.plans import (  # noqa: F401; grid_scan,
     auto_gain,
+    calibrate,
     count,
     energy_scan,
     list_scan,

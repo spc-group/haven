@@ -3,7 +3,7 @@ import pydm
 import pyqtgraph
 import pytest
 
-from firefly.area_detector_viewer import AreaDetectorViewerDisplay
+from firefly.devices.area_detector_viewer import AreaDetectorViewerDisplay
 
 
 @pytest.skip(

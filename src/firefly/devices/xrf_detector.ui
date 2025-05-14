@@ -395,7 +395,7 @@
   <customwidget>
    <class>MCAPlotWidget</class>
    <extends>QWidget</extends>
-   <header>firefly.xrf_detector</header>
+   <header>firefly.devices.xrf_detector</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

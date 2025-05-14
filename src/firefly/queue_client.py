@@ -161,9 +161,15 @@ class QueueClient(QObject):
         try:
             result = await self.api.item_add(item=item)
             self.check_result(result)
-        except (RuntimeError, comm_base.RequestFailedError) as ex:
-            # Request failed, so force a UI update
-            raise
+        finally:
+            await self.update()
+
+    @asyncSlot(object)
+    async def execute_queue_item(self, item):
+        log.info(f"Executing item in queue environment: {item}")
+        try:
+            result = await self.api.item_execute(item=item)
+            self.check_result(result)
         finally:
             await self.update()
 

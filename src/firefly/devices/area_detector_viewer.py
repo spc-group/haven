@@ -62,7 +62,7 @@ class AreaDetectorViewerDisplay(display.FireflyDisplay):
         self.image_is_new = False
 
     def ui_filename(self):
-        return "area_detector_viewer.ui"
+        return "devices/area_detector_viewer.ui"
 
 
 # -----------------------------------------------------------------------------

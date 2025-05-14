@@ -99,7 +99,7 @@ class RobotDisplay(RegionsDisplay):
         return args, kwargs
 
     def ui_filename(self):
-        return "robot.ui"
+        return "devices/robot.ui"
 
 
 # -----------------------------------------------------------------------------

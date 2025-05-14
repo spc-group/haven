@@ -76,7 +76,6 @@ class EigerDetector(AreaDetector):
         writer = writer_cls(
             fileio,
             path_provider=path_provider,
-            name_provider=lambda: self.name,
             dataset_describer=EigerDatasetDescriber(driver),
             plugins=plugins,
         )

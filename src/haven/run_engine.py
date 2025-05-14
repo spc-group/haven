@@ -1,9 +1,12 @@
 import logging
+from collections.abc import Mapping
 from uuid import uuid4 as uuid
 
 import databroker
 import IPython
+from bluesky import Msg
 from bluesky import RunEngine as BlueskyRunEngine
+from bluesky.bundlers import maybe_await
 from bluesky.callbacks.best_effort import BestEffortCallback
 from bluesky.utils import ProgressBarManager, register_transform
 from bluesky_kafka import Publisher
@@ -22,7 +25,20 @@ log = logging.getLogger(__name__)
 catalog = None
 
 
-def save_to_databroker(name, doc):
+async def _calibrate(msg: Msg):
+    """
+    Calibrate an objects requested value to its true value.
+
+    Expected message object is:
+
+        Msg('calibrate', obj, truth, target, relative)
+
+    """
+    # actually _calibrate_ the object
+    await maybe_await(msg.obj.calibrate(*msg.args, **msg.kwargs))
+
+
+def save_to_databroker(name: str, doc: Mapping):
     # This is a hack around a problem with garbage collection
     # Has been fixed in main, maybe released in databroker v2?
     # Create the databroker callback if necessary
@@ -47,10 +63,10 @@ def kafka_publisher():
 
 def run_engine(
     *,
-    connect_tiled=False,
-    connect_databroker=False,
-    connect_kafka=True,
-    use_bec=False,
+    connect_tiled: bool = False,
+    connect_databroker: bool = False,
+    connect_kafka: bool = True,
+    use_bec: bool = False,
     **kwargs,
 ) -> BlueskyRunEngine:
     """Build a bluesky RunEngine() for Haven.
@@ -69,6 +85,7 @@ def run_engine(
 
     """
     RE = BlueskyRunEngine(**kwargs)
+    RE.register_command("calibrate", _calibrate)
     # Add the best-effort callback
     if use_bec:
         RE.subscribe(BestEffortCallback())

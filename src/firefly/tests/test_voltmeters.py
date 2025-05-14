@@ -7,7 +7,6 @@ from pydm import widgets as PyDMWidgets
 from pydm.widgets.analog_indicator import PyDMAnalogIndicator
 from qtpy import QtWidgets
 
-import haven
 from firefly.voltmeters import VoltmetersDisplay
 from haven.devices.ion_chamber import IonChamber
 
@@ -91,7 +90,7 @@ async def test_rows(voltmeters_display):
     assert row.gain_unit_label is row.column_layouts[3].itemAt(3).itemAt(2).widget()
     assert row.auto_gain_checkbox is row.column_layouts[4].itemAt(1).widget()
     # Check that a device has been created properly
-    assert isinstance(row.device, haven.IonChamber)
+    assert isinstance(row.device, IonChamber)
 
 
 @pytest.mark.asyncio
@@ -117,7 +116,7 @@ def test_details_button(qtbot, voltmeters_display):
     # Get an embedded display widget
     row = voltmeters_display._ion_chamber_rows[0]
     # Check that the signals are properly connected
-    with qtbot.waitSignal(voltmeters_display.ui.details_window_requested, timeout=500):
+    with qtbot.waitSignal(voltmeters_display.ui.device_window_requested, timeout=500):
         row.details_button.click()
 
 
