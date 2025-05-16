@@ -19,12 +19,12 @@ keywords = ["synchrotron", "xray", "bluesky"]
 dependencies = [
     "aioca",
     "aiokafka",
-    "bluesky",
+    "bluesky==1.13.1",
     "ophyd",
-    # "ophyd-async>=0.9.0",
+    "ophyd-async==0.9.0",
     # We need this custom ophyd-async fork until merge into main
     #         https://github.com/bluesky/ophyd-async/issues/713
-    "ophyd-async @ git+https://github.com/spc-group/ophyd-async@detector_races",
+    # "ophyd-async @ git+https://github.com/spc-group/ophyd-async@detector_races",
     "apsbss",
     "xraydb",
     "mergedeep",
