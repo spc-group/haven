@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from haven.devices import IonChamber, Robot, load_motors, Motor
+from haven.devices import IonChamber, Motor, Robot, load_motors
 from haven.instrument import Instrument, make_devices
 
 haven_dir = Path(__file__).parent.parent.resolve()

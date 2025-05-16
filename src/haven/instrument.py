@@ -3,8 +3,7 @@
 import logging
 import os
 from collections.abc import Callable, Mapping
-from typing import Generator, Any
-from functools import partial
+from typing import Generator
 
 from guarneri import Instrument
 

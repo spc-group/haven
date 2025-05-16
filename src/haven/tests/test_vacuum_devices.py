@@ -49,7 +49,7 @@ async def test_qpc_config(qpc_pump):
 
 
 def test_televac_signals(televac):
-    assert televac.pressure.source == "mock+ca://255idVac:VSA6.VAL" 
+    assert televac.pressure.source == "mock+ca://255idVac:VSA6.VAL"
     assert televac.device_type.source == "mock+ca://255idVac:VSA6.TYPE"
 
 
@@ -63,7 +63,5 @@ async def test_televac_reading(televac):
 
 async def test_televac_config(televac):
     config = await televac.read_configuration()
-    expected_keys = {
-        "outdoor_ion_gauge-device_type"
-    }
+    expected_keys = {"outdoor_ion_gauge-device_type"}
     assert set(config.keys()) == expected_keys

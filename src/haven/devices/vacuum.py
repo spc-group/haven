@@ -1,8 +1,9 @@
 import re
-from typing import Generator
 
-from ophyd_async.epics.core import epics_signal_rw, epics_signal_r
 from ophyd_async.core import StandardReadable, StandardReadableFormat
+from ophyd_async.epics.core import epics_signal_r
+
+__all__ = ["PumpController", "TelevacIonGauge"]
 
 
 class PumpController(StandardReadable):
@@ -12,8 +13,9 @@ class PumpController(StandardReadable):
     https://github.com/epics-modules/vac/blob/master/vacApp/Db/QPCstreams.db
 
     """
+
     _ophyd_labels_ = {"vacuum"}
-    
+
     def __init__(self, prefix, name=""):
         # Work out which position the controller is in
         regex = r":[qm]pc+\d+([a-z])"
@@ -37,7 +39,7 @@ class PumpController(StandardReadable):
 
 class TelevacIonGauge(StandardReadable):
     _ophyd_labels_ = {"vacuum"}
-    
+
     def __init__(self, prefix, name=""):
         with self.add_children_as_readables():
             self.pressure = epics_signal_r(str, f"{prefix}.VAL")
