@@ -1,4 +1,5 @@
 from .aperture_slits import ApertureSlits  # noqa: F401
+from .apsbss import BeamlineSchedulingSystem  # noqa: F401
 from .asymmotron import Analyzer  # noqa: F401
 from .blade_slits import BladeSlits, setup_blade_slits  # noqa: F401
 from .detectors._lambda import LambdaDetector  # noqa: F401

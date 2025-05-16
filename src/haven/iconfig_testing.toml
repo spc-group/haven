@@ -9,8 +9,8 @@ type = "undulator"
 prefix = "ID255ds:"
 
 [bss]
+name = "bss"
 prefix = "255idc:bss"
-beamline = "255-ID-C"
 
 
 ##############
