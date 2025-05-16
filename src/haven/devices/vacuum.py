@@ -42,7 +42,7 @@ class TelevacIonGauge(StandardReadable):
 
     def __init__(self, prefix, name=""):
         with self.add_children_as_readables():
-            self.pressure = epics_signal_r(str, f"{prefix}.VAL")
+            self.pressure = epics_signal_r(float, f"{prefix}.VAL")
         with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
             self.device_type = epics_signal_r(str, f"{prefix}.TYPE")
         super().__init__(name=name)
