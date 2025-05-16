@@ -22,10 +22,10 @@ from bluesky.protocols import Movable
 from ophyd_async.core import (
     DEFAULT_TIMEOUT,
     AsyncStatus,
-    ConfigSignal,
     LazyMock,
     SignalR,
     StandardReadable,
+    StandardReadableFormat,
     soft_signal_r_and_setter,
     soft_signal_rw,
 )
@@ -261,10 +261,10 @@ class Analyzer(StandardReadable):
                 self.surface_plane.k,
                 self.surface_plane.l,
             ],
-            ConfigSignal,
+            StandardReadableFormat.CONFIG_SIGNAL,
         )
         # Soft signals for keeping track of the fixed transform properties
-        with self.add_children_as_readables(ConfigSignal):
+        with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
             self.rowland_diameter = soft_signal_rw(
                 float, units="meter", initial_value=rowland_diameter
             )
@@ -316,7 +316,7 @@ class Analyzer(StandardReadable):
             [
                 self.crystal_yaw.user_readback,
             ],
-            ConfigSignal,
+            StandardReadableFormat.CONFIG_SIGNAL,
         )
         super().__init__(name=name)
 
