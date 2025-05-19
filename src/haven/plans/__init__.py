@@ -11,6 +11,7 @@ from haven.preprocessors import (
     baseline_decorator,
     open_shutters_decorator,
     shutter_suspend_decorator,
+    inject_metadata_decorator,
 )
 
 from ._align_motor import align_motor
@@ -44,6 +45,7 @@ all_decorators = chain(
     # shutter_suspend_decorator(),
     open_shutters_decorator(),
     baseline_decorator(),
+    inject_metadata_decorator(),
 )
 
 # Apply decorators to Haven plans

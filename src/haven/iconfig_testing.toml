@@ -48,7 +48,7 @@ catalog = "bluesky"
 # Device support
 #################
 
-[[ synchrotron ]]
+[ synchrotron ]
 name = "advanced_photon_source"
 
 # PSS Shutters
