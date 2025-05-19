@@ -123,7 +123,7 @@ async def test_stage_ndattributes(detector):
 
 async def test_ndattribute_set(detector):
     await detector.stage()
-    desc = await detector._writer.open()
+    desc = await detector._writer.open(detector.name)
     assert "vortex_me4-element0-deadtime_factor" in desc.keys()
     assert "vortex_me4-element1-deadtime_factor" in desc.keys()
     assert "vortex_me4-element2-deadtime_factor" in desc.keys()

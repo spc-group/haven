@@ -3,7 +3,7 @@ import inspect
 import logging
 import numbers
 from functools import partial
-from typing import Callable, Mapping, Optional, Type
+from typing import Callable, Mapping, Optional, Type, TypeVar
 
 import numpy as np
 from bluesky.protocols import Reading, Subscribable
@@ -19,12 +19,14 @@ from ophyd_async.core import (
     SignalRW,
     SignalX,
     SoftSignalBackend,
-    T,
 )
 from ophyd_async.core._signal import _wait_for
 from ophyd_async.epics.core._signal import _epics_signal_backend
 
 log = logging.getLogger(__name__)
+
+
+T = TypeVar("T")
 
 
 class DerivedSignalBackend(SoftSignalBackend):

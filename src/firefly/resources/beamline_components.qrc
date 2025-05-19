@@ -8,6 +8,7 @@
     <file>slits_3d.png</file>
     <file>filter.png</file>
   </qresource>
+  <qresource prefix="diagrams"/>
   <qresource prefix="Asymmotron">
     <file>asymmotron.png</file>
   </qresource>

@@ -5,7 +5,7 @@ Area Detectors and Cameras
 Area detectors are all largely the same but with small variations from
 device-to-device. All area detectors are the newer
 (awaitable) device definitions based on ophyd-async. They can be found in the
-:pyd:mod:`haven.devices.detectors` package.
+:py:mod:`haven.devices.detectors` package.
 
 Currently supported detectors:
 

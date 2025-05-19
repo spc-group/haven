@@ -408,7 +408,7 @@ color: white;
   </customwidget>
  </customwidgets>
  <resources>
-  <include location="resources/beamline_components.qrc"/>
+  <include location="../resources/beamline_components.qrc"/>
  </resources>
  <connections/>
 </ui>

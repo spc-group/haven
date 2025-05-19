@@ -1,6 +1,6 @@
 import pytest
 
-from firefly.table import TableDisplay
+from firefly.devices.table import TableDisplay
 from haven.devices import Table
 
 

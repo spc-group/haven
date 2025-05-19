@@ -1,12 +1,18 @@
 import logging
 import warnings
+from functools import partial
+from typing import Sequence
 
+import qtawesome as qta
 from bluesky_queueserver_api import BPlan
-from ophydregistry import ComponentNotFound
+from ophyd_async.core import Device
 from pydm.widgets.label import PyDMLabel
-from pydm.widgets.line_edit import PyDMLineEdit
-from qtpy import QtCore, QtWidgets
-from qtpy.QtWidgets import QDialogButtonBox, QFormLayout, QLineEdit, QVBoxLayout
+from qtpy import QtCore
+from qtpy.QtWidgets import (
+    QHBoxLayout,
+    QPushButton,
+    QSizePolicy,
+)
 from xraydb.xraydb import XrayDB
 
 from firefly import display
@@ -15,44 +21,13 @@ from haven import beamline
 log = logging.getLogger(__name__)
 
 
-class EnergyCalibrationDialog(QtWidgets.QDialog):
-    """A dialog box for calibrating the energy."""
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        self.setWindowTitle("Energy calibration")
-
-        self.layout = QVBoxLayout()
-        self.setLayout(self.layout)
-        # Widgets for inputting calibration parameters
-        self.form_layout = QFormLayout()
-        self.layout.addLayout(self.form_layout)
-        self.form_layout.addRow(
-            "Energy readback:", PyDMLabel(self, init_channel="haven://energy.readback")
-        )
-        self.form_layout.addRow(
-            "Energy setpoint:",
-            PyDMLineEdit(self, init_channel="haven://energy.setpoint"),
-        )
-        self.form_layout.addRow(
-            "Calibrated energy:",
-            QLineEdit(),
-        )
-        # Button for accept/close
-        buttons = QDialogButtonBox.Apply | QDialogButtonBox.Close
-        self.buttonBox = QDialogButtonBox(buttons)
-        self.buttonBox.accepted.connect(self.accept)
-        self.buttonBox.rejected.connect(self.reject)
-        self.layout.addWidget(self.buttonBox)
-
-
 class EnergyDisplay(display.FireflyDisplay):
     stylesheet_danger = (
         "background: rgb(220, 53, 69); color: white; border-color: rgb(220, 53, 69)"
     )
     stylesheet_normal = ""
-    energy_positioner = None
+    monochromators: list[Device]
+    undulators: list[Device]
 
     def __init__(self, args=None, macros={}, **kwargs):
         # Load X-ray database for calculating edge energies
@@ -60,30 +35,112 @@ class EnergyDisplay(display.FireflyDisplay):
         super().__init__(args=args, macros=macros, **kwargs)
 
     def customize_device(self):
-        try:
-            self.energy_positioner = beamline.devices["energy"]
-        except ComponentNotFound:
-            warnings.warn("Could not find energy positioner.")
-            log.warning("Could not find energy positioner.")
+        self.monochromators = beamline.devices.findall(
+            "monochromators", allow_none=True
+        )
+        self.undulators = beamline.devices.findall("undulators", allow_none=True)
+        if len(self.monochromators) == 0:
+            warnings.warn("Could not find monochromators.")
+            log.warning("Could not find monochromators.")
+        if len(self.monochromators) + len(self.undulators) == 0:
+            warnings.warn("No devices with label 'energy'.")
+            log.error("No devices with label 'energy'.")
+        self.build_readback_widgets(self.monochromators + self.undulators)
+
+    def build_readback_widgets(self, devices: Sequence[Device]):
+        num_static_rows = 2
+        layout = self.ui.energy_layout
+        # Remove existing rows, last row first
+        for row_num in range(layout.rowCount(), num_static_rows, -1):
+            layout.removeRow(row_num - 1)
+            # print(layout.rowCount())
+        # Add new row for each device
+        for idx, device in enumerate(devices):
+            if hasattr(device.energy, "user_readback"):
+                signal_name = f"{device.name}.energy.user_readback"
+            else:
+                signal_name = f"{device.name}.energy.readback"
+            channel = f"haven://{signal_name}"
+            hlayout = QHBoxLayout()
+            readback_widget = PyDMLabel(parent=self, init_channel=channel)
+            readback_widget.showUnits = True
+            hlayout.addWidget(readback_widget)
+            more_button = QPushButton()
+            more_button.setIcon(qta.icon("fa6s.gear"))
+            more_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Minimum)
+            details_slot = partial(self.device_window_requested.emit, device.name)
+            more_button.clicked.connect(details_slot)
+            hlayout.addWidget(more_button)
+            device_name = f"{device.name.title()}:"
+            layout.addRow(device_name, hlayout)
+
+    def set_energy_args(self) -> tuple[list, dict]:
+        kwargs = {"energy": self.ui.target_energy_spinbox.value()}
+        # Parse checkbox states (e.g. "auto") into kwargs
+        if not self.harmonic_checkbox.isChecked():
+            kwargs["harmonic"] = None
+        elif not self.harmonic_auto_checkbox.isChecked():
+            kwargs["harmonic"] = self.harmonic_spinbox.value()
+        if not self.offset_checkbox.isChecked():
+            kwargs["undulator_offset"] = None
+        elif not self.offset_auto_checkbox.isChecked():
+            kwargs["undulator_offset"] = self.offset_spinbox.value()
+
+        return [], kwargs
+
+    @property
+    def energy_devices(self) -> list[Device]:
+        return [device.energy for device in self.monochromators + self.undulators]
+
+    def jog_energy_devices(self, *args, direction: int | float = 1, **kwargs):
+        jog_value = direction * self.ui.jog_value_spinbox.value()
+        args = tuple(
+            arg for device in self.energy_devices for arg in (device.name, jog_value)
+        )
+        item = BPlan("mvr", *args)
+        self.execute_item_submitted.emit(item)
+
+    def move_energy_devices(self, *args, **kwargs):
+        new_energy = self.ui.move_energy_devices_spinbox.value()
+        args = [
+            arg for device in self.energy_devices for arg in (device.name, new_energy)
+        ]
+        item = BPlan("mv", *args)
+        self.execute_item_submitted.emit(item)
 
     def set_energy(self, *args, **kwargs):
-        energy = float(self.ui.target_energy_lineedit.text())
-        log.info(f"Setting new energy: {energy}")
+        args, kwargs = self.set_energy_args()
+        log.info(f"Setting new energy: {kwargs['energy']}")
         # Build the queue item
-        item = BPlan("set_energy", energy=energy)
+        item = BPlan("set_energy", *args, **kwargs)
         # Submit the item to the queueserver
         self.queue_item_submitted.emit(item)
 
     def update_queue_status(self, status):
-        self.set_energy_button.update_queue_style(status)
+        for widget in [
+            self.set_energy_button,
+            self.move_energy_devices_button,
+            self.jog_forward_button,
+            self.jog_reverse_button,
+        ]:
+            widget.update_queue_style(status)
 
     def customize_ui(self):
+        self.ui.move_energy_devices_spinbox.setMaximum(float("inf"))
         self.ui.set_energy_button.clicked.connect(self.set_energy)
+        self.ui.move_energy_devices_button.clicked.connect(self.move_energy_devices)
+        self.ui.jog_forward_button.clicked.connect(
+            partial(self.jog_energy_devices, direction=1)
+        )
+        self.ui.jog_reverse_button.clicked.connect(
+            partial(self.jog_energy_devices, direction=-1)
+        )
+        self.ui.jog_reverse_button.setIcon(qta.icon("fa6s.minus"))
+        self.ui.jog_forward_button.setIcon(qta.icon("fa6s.plus"))
         # Set up the combo box with X-ray energies
         combo_box = self.ui.edge_combo_box
         ltab = self.xraydb.tables["xray_levels"]
         edges = self.xraydb.query(ltab)
-        # min_energy, max_energy = self.energy_positioner.limits
         min_energy, max_energy = 4000, 33000
         edges = edges.filter(
             ltab.c.absorption_edge < max_energy,
@@ -95,12 +152,6 @@ class EnergyDisplay(display.FireflyDisplay):
         ]
         combo_box.addItems(["Select edge…", *items])
         combo_box.activated.connect(self.select_edge)
-        # Respond to the "calibrate" button
-        self.ui.calibrate_button.clicked.connect(self.show_calibrate_dialog)
-
-    def show_calibrate_dialog(self):
-        dialog = EnergyCalibrationDialog(self)
-        dialog.exec()
 
     @QtCore.Slot(int)
     def select_edge(self, index):
@@ -119,7 +170,7 @@ class EnergyDisplay(display.FireflyDisplay):
         else:
             # Set the text field to the selected edge's energy
             energy, fyield, edge_jump = edge_info
-            self.ui.target_energy_lineedit.setText(f"{energy:.3f}")
+            self.ui.target_energy_spinbox.setValue(energy)
             combo_box.setStyleSheet(self.stylesheet_normal)
 
     def ui_filename(self):

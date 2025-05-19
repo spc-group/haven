@@ -2,8 +2,6 @@
 
 import asyncio
 import logging
-import warnings
-from typing import Dict
 
 from bluesky.protocols import Triggerable
 from ophyd_async.core import (
@@ -12,13 +10,13 @@ from ophyd_async.core import (
     StandardReadable,
     StandardReadableFormat,
     TriggerInfo,
+    derived_signal_r,
     soft_signal_rw,
     wait_for_value,
 )
 
 from .labjack import LabJackT7
 from .scaler import MultiChannelScaler
-from .signal import derived_signal_r
 from .srs570 import SRS570PreAmplifier
 
 log = logging.getLogger(__name__)
@@ -48,7 +46,7 @@ class IonChamber(StandardReadable, Triggerable):
     """
 
     _ophyd_labels_ = {"ion_chambers", "detectors"}
-    _trigger_statuses = {}
+    _trigger_statuses: dict[str, AsyncStatus] = {}
     _clock_register_width = 32  # bits in the register
 
     def __init__(
@@ -60,7 +58,7 @@ class IonChamber(StandardReadable, Triggerable):
         voltmeter_channel: int,
         counts_per_volt_second: float,
         name="",
-        auto_name: bool = None,
+        auto_name: bool | None = None,
     ):
         self.scaler_prefix = scaler_prefix
         self._scaler_channel = scaler_channel
@@ -164,55 +162,55 @@ class IonChamber(StandardReadable, Triggerable):
         )
         # Add calculated signals
         self.net_current = derived_signal_r(
-            float,
-            name="current",
-            units="A",
-            derived_from={
-                "gain": self.preamp.gain,
-                "count": self.scaler_channel.net_count,
-                "clock_count": self.mcs.scaler.channels[0].raw_count,
-                "clock_frequency": self.mcs.scaler.clock_frequency,
-                "counts_per_volt_second": self.counts_per_volt_second,
-            },
-            inverse=self._counts_to_amps,
+            raw_to_derived=self._counts_to_amps,
+            derived_units="A",
+            gain=self.preamp.gain,
+            count=self.scaler_channel.net_count,
+            clock_count=self.mcs.scaler.channels[0].raw_count,
+            clock_frequency=self.mcs.scaler.clock_frequency,
+            counts_per_volt_second=self.counts_per_volt_second,
+            # name="current",
+            # units="A",
+            # derived_from={
+            #     "gain": self.preamp.gain,
+            #     "count": self.scaler_channel.net_count,
+            #     "clock_count": self.mcs.scaler.channels[0].raw_count,
+            #     "clock_frequency": self.mcs.scaler.clock_frequency,
+            #     "counts_per_volt_second": self.counts_per_volt_second,
+            # },
+            # inverse=self._counts_to_amps,
         )
         self.add_readables(
             [self.net_current], StandardReadableFormat.HINTED_UNCACHED_SIGNAL
         )
         # Measured current without dark current correction
         self.raw_current = derived_signal_r(
-            float,
-            name="current",
-            units="A",
-            derived_from={
-                "gain": self.preamp.gain,
-                "count": self.scaler_channel.raw_count,
-                "clock_count": self.mcs.scaler.channels[0].raw_count,
-                "clock_frequency": self.mcs.scaler.clock_frequency,
-                "counts_per_volt_second": self.counts_per_volt_second,
-            },
-            inverse=self._counts_to_amps,
+            raw_to_derived=self._counts_to_amps,
+            derived_units="A",
+            gain=self.preamp.gain,
+            count=self.scaler_channel.raw_count,
+            clock_count=self.mcs.scaler.channels[0].raw_count,
+            clock_frequency=self.mcs.scaler.clock_frequency,
+            counts_per_volt_second=self.counts_per_volt_second,
         )
         self.add_readables([self.raw_current], StandardReadableFormat.UNCACHED_SIGNAL)
         super().__init__(name=name)
 
     def _counts_to_amps(
         self,
-        values,
-        *,
-        count,
-        gain,
-        clock_count,
-        clock_frequency,
-        counts_per_volt_second,
-    ):
+        count: float,
+        gain: float,
+        clock_count: float,
+        clock_frequency: float,
+        counts_per_volt_second: float,
+    ) -> float:
         """Pre-amp output current calculated from scaler counts."""
         try:
             # Calculate the output voltage from the pre-amp
-            time = values[clock_count] / values[clock_frequency]
-            voltage = values[count] / values[counts_per_volt_second] / time
+            time = clock_count / clock_frequency
+            voltage = count / counts_per_volt_second / time
             # Calculate the input current from pre-amp gain
-            return voltage / values[gain]
+            return voltage / gain
         except ZeroDivisionError:
             return float("nan")
 
@@ -255,21 +253,11 @@ class IonChamber(StandardReadable, Triggerable):
         await super().connect(
             mock=mock, timeout=timeout, force_reconnect=force_reconnect
         )
-        # Update the device's name
-        auto_name = bool(self.auto_name) or (self.auto_name is None and self.name == "")
-        if bool(auto_name):
-            try:
-                desc = await self.scaler_channel.description.get_value()
-            except Exception as exc:
-                warnings.warn(
-                    f"Could not read description for {self}. Name not updated. {exc}"
-                )
-                return
-            # Only update the name if the description has been set
-            if desc != "":
-                self.set_name(desc)
-                # Update the labjack's input's .DESC field to match the scaler channel
-                await self.voltmeter_channel.description.set(desc)
+        # Update the device's description signals to keep them aligned
+        await asyncio.gather(
+            self.voltmeter_channel.description.set(self.name),
+            self.scaler_channel.description.set(self.name),
+        )
 
     async def default_timeout(self) -> float:
         """Calculate the expected timeout for triggering this ion chamber.
@@ -365,7 +353,7 @@ class IonChamber(StandardReadable, Triggerable):
             self.mcs.erase_all.trigger(),
         )
         # Start acquiring data
-        self._fly_readings = []
+        self._fly_readings: list[dict] = []
         self._is_flying = False  # Gets set during kickoff
 
     @AsyncStatus.wrap
@@ -414,7 +402,7 @@ class IonChamber(StandardReadable, Triggerable):
         }
         yield results
 
-    async def describe_collect(self) -> Dict[str, Dict]:
+    async def describe_collect(self) -> dict[str, dict]:
         signals = [
             self.scaler_channel.raw_count,
             self.scaler_channel.net_count,

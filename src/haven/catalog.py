@@ -356,7 +356,7 @@ class CatalogScan:
         dependent = []
         hints = stream_md.get("hints", {})
         for device, dev_hints in hints.items():
-            dependent.extend(dev_hints["fields"])
+            dependent.extend(dev_hints.get("fields", []))
         return independent, dependent
 
     async def _read_metadata(self, path: str = ""):
