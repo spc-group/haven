@@ -70,7 +70,7 @@ def tiled_api(httpx_mock):
     )
     httpx_mock.add_response(
         url=re.compile(
-            "^http://localhost:8000/api/v1/metadata/testing%2Fscan[0-9]%2Fprimary$"
+            "^http://localhost:8000/api/v1/metadata/testing%2Fscan[0-9]%2Fstreams%2Fprimary$"
         ),
         json={
             "data": {
@@ -88,7 +88,7 @@ def tiled_api(httpx_mock):
     )
     httpx_mock.add_response(
         url=re.compile(
-            "^http://localhost:8000/api/v1/metadata/testing%2Fscan[1-2]%2Fprimary%2Finternal%2Fevents$"
+            "^http://localhost:8000/api/v1/metadata/testing%2Fscan[1-2]%2Fstreams%2Fprimary%2Finternal$"
         ),
         json={
             "data": {
@@ -101,7 +101,7 @@ def tiled_api(httpx_mock):
     )
     httpx_mock.add_response(
         url=re.compile(
-            "^http://localhost:8000/api/v1/table/full/testing%2Fscan[1-2]%2Fprimary%2Finternal%2Fevents$"
+            "^http://localhost:8000/api/v1/table/full/testing%2Fscan[1-2]%2Fstreams%2Fprimary%2Finternal$"
         ),
         stream=IteratorStream(
             [
@@ -165,7 +165,7 @@ def test_save_motor_position_by_name(motors):
     assert readB.obj is motorB
 
 
-async def test_get_motor_position(tiled_api, httpx_mock):
+async def test_get_motor_position(tiled_api):
     uid = "scan1"
     result = await get_motor_position(uid=uid)
     assert result.name == "Good position A"
