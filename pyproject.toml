@@ -25,7 +25,6 @@ dependencies = [
     # We need this custom ophyd-async fork until merge into main
     #         https://github.com/bluesky/ophyd-async/issues/713
     # "ophyd-async @ git+https://github.com/spc-group/ophyd-async@detector_races",
-    "apsbss==2.0.0",
     "xraydb",
     "mergedeep",
     "xrayutilities",
@@ -96,7 +95,7 @@ parentdir_prefix = "haven-"
 [tool.mypy]
 files = [
     'src/haven/devices/asymmotron.py', "src/haven/tests/test_asymmotron.py",
-    "src/haven/devices/apsbss.py", "src/haven/tests/test_apsbss.py",
+    "src/haven/bss.py", "src/haven/tests/test_bss.py",
     'src/haven/positioner.py', "src/haven/tests/test_positioner.py",
     
 ]

@@ -85,7 +85,6 @@ beamline = HavenInstrument(
         "analyzer": devices.Analyzer,
         "aperture_slits": devices.ApertureSlits,
         "blade_slits": devices.BladeSlits,
-        "bss": devices.BeamlineSchedulingSystem,
         "camera": devices.AravisDetector,
         "eiger": devices.EigerDetector,
         "energy": EnergyPositioner,
