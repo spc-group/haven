@@ -4,9 +4,6 @@ area_detector_root_path = "/tmp"
 # General name for the beamline, used for metadata.
 name = "SPC Beamline (sector unknown)"
 
-[database.databroker]
-catalog = "bluesky"
-
 [xray_source]
 type = "undulator"
 prefix = "ID255ds:"
@@ -16,27 +13,36 @@ prefix = "255idc:bss"
 beamline = "255-ID-C"
 
 
-#####################
-# Queueserver
-#####################
+##############
+# Acquisition
+##############
 
-# This section describes how to connect to the queueserver. It does
-# not generate any devices, but is intended to be read by the Firefly
-# GUI application to determine how to interact with the queue.
+# This section describes how to connect to the queueserver and how
+# queueserver data reaches the database. It does not generate any
+# devices, but is intended to be read by the Firefly GUI application
+# to determine how to interact with the queue.
 
 [queueserver]
-kafka_topic = "s255idc_queueserver"
 control_host = "localhost"
 control_port = "60615"
 info_host = "localhost"
 info_port = "60625"
 redis_addr = "localhost:6379"
 
-[database.tiled]
-uri = "http://localhost:8337/"
-entry_node = "255id_testing"
-cache_filterpath = "/tmp/tiled_cache/http_response_cache.db"
-api_key = "<tiled-secret-api-key-for-writing>"
+[kafka]
+servers = ["fedorov.xray.aps.anl.gov:9092"]
+topic = "bluesky.documents.haven-dev"
+
+[tiled]
+# uri = "http://localhost:8000/api"
+default_catalog = "testing"
+cache_filepath = "/tmp/tiled/http_response_cache.db"
+# In most cases, *api_key* is not necessary. Only used by the Tiled
+# consumer.
+# api_key = ""
+
+[database.databroker]
+catalog = "bluesky"
 
 #################
 # Device support
@@ -168,10 +174,6 @@ prefix = "vme_crate_ioc:KB"
 # A single rotating aperture slit, like the 25-ID whitebeam slits
 name = "whitebeam_slits"
 prefix = "255ida:slits:US:"
-pitch_motor = "m33"
-yaw_motor = "m34"
-horizontal_motor = "m35"
-diagonal_motor = "m36"
 
 
 # KB Mirrors
@@ -236,17 +238,31 @@ horizontal_prefix = "255idcVME:m25"
 #
 # Area detectors includes gigE vision cameras.
 
+[[ sim_detector ]]
+name = "sim_detector"
+prefix = "255idSimDet:"
+
+[[ camera ]]
+# An Aravis-based area detector
+name = "lerix_mono_flag"
+prefix = "255idARV3:"
+
+[[ eiger ]]
+name = "eiger_500k"
+prefix = "255idEiger:"
+
+[[ lambda ]]
+name = "lambda_250K"
+prefix = "255idLambda250K:"
+
+# What follows is the style for threaded ophyd area detectors. This is
+# deprecated and will be removed in the future.
+
 [[ area_detector ]]
 name = "sim_det"
 prefix = "255idSimDet:"
 device_class = "SimDetector"
-
-# [lerix.lerix.rowland]
-
-# x_motor_pv = "255idVME:m1"
-# y_motor_pv = "255idVME:m2"
-# z_motor_pv = "255idVME:m3"
-# z1_motor_pv = "255idVME:m4"
+fake = false
 
 
 # Heaters and Furnaces
@@ -299,7 +315,26 @@ prefix = "vortex_me4_xsp:"
 name = "filter_bank0"
 prefix = "255idc:pfcu0:"
 
+[[ filter_bank0 ]]
+class = "pfcu4"
+prefix = "255idc:pfcu0:"
+
+
 [[ pfcu4 ]]
 name = "filter_bank1"
 prefix = "255idc:pfcu1:"
 shutters = [[2, 3]]
+
+
+# Asymmetric Analyzer
+# ===================
+
+[[ analyzer ]]
+horizontal_motor_prefix = "255idcVME:m1"
+vertical_motor_prefix = "255idcVME:m1"
+yaw_motor_prefix = "255idcVME:m1"
+rowland_diameter = 0.5  # in m
+lattice_constant = 0.543095  # in nm
+wedge_angle = 30  # in degrees
+surface_plane = "211"
+name = "analyzer_crystal"

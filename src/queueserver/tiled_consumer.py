@@ -1,14 +1,15 @@
+#!/bin/env python
+
 import logging
 import sys
 from typing import Mapping, Sequence
 
 import msgpack
-from bluesky.callbacks.tiled_writer import TiledWriter
 from bluesky_kafka import BlueskyConsumer
-from tiled.client import from_uri
+from tiled.client import from_profile
 from tiled.client.base import BaseClient
 
-import haven
+from haven import TiledWriter
 
 log = logging.getLogger(__name__)
 
@@ -29,9 +30,9 @@ class TiledConsumer(BlueskyConsumer):
       Translates Kafka topic names to Tiled catalogs. Each value
       should be the name of a catalog available directly under
       *tiled_client*.
-    bootstrap_servers : str
+    bootstrap_servers
         Kafka server addresses as strings such as
-        ``[broker1:9092, broker2:9092, 127.0.0.1:9092]``
+        ``["broker1:9092", "broker2:9092", "127.0.0.1:9092"]``
     group_id : str
         Required string identifier for the consumer's Kafka Consumer group.
     consumer_config : dict
@@ -95,18 +96,16 @@ class TiledConsumer(BlueskyConsumer):
 
 def main():
     """Launch the tiled consumer."""
-    logging.basicConfig(level=logging.WARNING)
-    config = haven.load_config()
-    bootstrap_servers = ["localhost:9092"]
+    logging.basicConfig(level=logging.INFO)
+    bootstrap_servers = ["fedorov.xray.aps.anl.gov:9092"]
     topic_catalog_map = {
-        "s25idc_queueserver-dev": "haven-dev",
-        "s25idd_queueserver-dev": "haven-dev",
+        "25idc.bluesky.documents": "scans",
+        "25idd.bluesky.documents": "scans",
+        "25idc-dev.bluesky.documents": "testing",
+        "25idd-dev.bluesky.documents": "testing",
     }
     # Create a tiled writer that will write documents to tiled
-    tiled_uri = config["database"]["tiled"]["uri"]
-    tiled_api_key = config["database"]["tiled"]["api_key"]
-    client = from_uri(tiled_uri, api_key=tiled_api_key)
-    client.include_data_sources()
+    client = from_profile("haven", include_data_sources=True)
 
     # Create a Tiled consumer that will listen for new documents.
     consumer = TiledConsumer(
@@ -117,6 +116,7 @@ def main():
         consumer_config={"auto.offset.reset": "latest"},
         polling_duration=1.0,
     )
+    log.info("Starting Tiled consumer")
     consumer.start()
 
 

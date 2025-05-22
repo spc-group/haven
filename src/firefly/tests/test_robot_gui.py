@@ -1,60 +1,90 @@
 from unittest import mock
 
 import pytest
-from bluesky_queueserver_api import BPlan
-from ophyd import Component as Cpt
-from ophyd import Signal
-from ophyd.sim import SynAxis
+from ophyd_async.testing import set_mock_value
 
 from firefly.robot import RobotDisplay
+from haven.devices import Motor
 
 
-class FakeHavenMotor(SynAxis):
-    user_offset = Cpt(Signal, value=0, kind="config")
+@pytest.fixture()
+async def motor(sim_registry):
+    m1 = Motor(prefix="", name="motor1")
+    await m1.connect(mock=True)
+    description = {
+        m1.name: {
+            "dtype": "number",
+            "shape": [],
+            "dtype_numpy": "<f8",
+            "source": "ca://25idc:simMotor:m2.RBV",
+            "units": "degrees",
+            "precision": 5,
+            "limits": {
+                "control": {"low": -32000.0, "high": 32000.0},
+                "display": {"low": -32000.0, "high": 32000.0},
+            },
+        }
+    }
+    m1.describe = mock.AsyncMock(return_value=description)
+    sim_registry.register(m1)
+    return m1
 
 
 @pytest.fixture
-def sim_motor_registry(sim_registry):
-    # Create the motors
-    sim_registry.register(FakeHavenMotor(name="motor1"))
-    sim_registry.register(FakeHavenMotor(name="motor2"))
-    yield sim_registry
-
-
-@pytest.fixture
-async def display(qtbot, sim_motor_registry, robot):
+async def display(qtbot, motor, sim_registry, robot):
     display = RobotDisplay(macros={"DEVICE": robot.name})
     qtbot.addWidget(display)
-    await display.update_devices(sim_motor_registry)
+    await display.update_devices(sim_registry)
+    display.ui.run_button.setEnabled(True)
+    display.ui.num_regions_spin_box.setValue(1)
+    await display.update_regions(1)
     return display
 
 
-def test_region_number(display):
+def test_sample_numbers(display):
     # Check that the display has the right number of rows to start with
     assert display.ui.sample_combo_box.count() == 10
-    assert hasattr(display, "regions")
-    assert len(display.regions) == 0
 
 
 @pytest.mark.asyncio
-async def test_robot_queued(qtbot, sim_motor_registry, display, monkeypatch):
-    monkeypatch.setattr(display, "submit_queue_item", mock.MagicMock())
-    await display.update_devices(sim_motor_registry)
+async def test_robot_queued(qtbot, motor, display, sim_registry):
+    await display.update_devices(sim_registry)
     display.ui.run_button.setEnabled(True)
-    display.ui.num_motor_spin_box.setValue(1)
+    display.ui.num_regions_spin_box.setValue(1)
     await display.update_regions(1)
 
     # set up a test motor
     display.regions[0].motor_box.combo_box.setCurrentText("motor1")
-    display.regions[0].start_line_edit.setText("100")
+    display.regions[0].position_spin_box.setValue(100)
+    # Check arguments that will be given to the plan
+    args, kwargs = display.plan_args()
+    assert args == ("robotA", 8, "motor1", 100)
+    assert kwargs == {}
 
-    expected_item = BPlan("robot_transfer_sample", "robotA", 8, "motor1", 100)
 
-    def check_item(item):
-        return item.to_dict() == expected_item.to_dict()
+async def test_full_motor_parameters(display, motor):
+    set_mock_value(motor.user_readback, 420)
+    region = display.regions[0]
+    await region.update_device_parameters(motor)
+    spin_box = region.position_spin_box
+    assert spin_box.minimum() == -32000
+    assert spin_box.maximum() == 32000
+    assert spin_box.decimals() == 5
+    assert spin_box.suffix() == " °"
+    assert spin_box.value() == 420
 
-    # Click the run button and see if the plan is queued
-    display.queue_plan()
-    assert display.submit_queue_item.called
-    submitted_item = display.submit_queue_item.call_args[0][0]
-    assert submitted_item.to_dict() == expected_item.to_dict()
+
+async def test_nonnumeric_motor_parameters(display, motor):
+    region = display.regions[0]
+    spin_box = region.position_spin_box
+    description = {
+        motor.name: {
+            "dtype": "string",
+            "shape": [],
+            "dtype_numpy": "<f8",
+            "source": "ca://25idc:simMotor:m2.RBV",
+        }
+    }
+    motor.describe = mock.AsyncMock(return_value=description)
+    await region.update_device_parameters(motor)
+    assert not spin_box.isEnabled()

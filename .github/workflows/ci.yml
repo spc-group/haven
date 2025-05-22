@@ -20,7 +20,7 @@ jobs:
     defaults:
       run:
         shell: bash -l {0}
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     strategy:
       max-parallel: 5
@@ -31,12 +31,13 @@ jobs:
       with:
         environment-file: environment.yml
     - name: Install haven
-      run: pip install -e .
+      run: pip install -e ".[dev,gui]"
     - name: Environment info
       run: |
         env
         micromamba info
         micromamba list
+        pip freeze
     - name: Check syntax
       run: |
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
@@ -50,9 +51,11 @@ jobs:
       run: |
         isort --check src/
     - name: Haven tests with pytest in Xvfb
-      run: xvfb-run python -m pytest src/haven -vv --timeout=30
+      run: xvfb-run python -m pytest src/haven -vv  --timeout=30
     - name: Firefly tests with pytest in Xvfb
-      run: xvfb-run python -m pytest src/firefly -vv --timeout=30
+      run: xvfb-run python -m pytest src/firefly -vv --exitfirst --timeout=30
+    - name: Static type checking
+      run: mypy
     - name: Reporting linting
       run: |
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics	

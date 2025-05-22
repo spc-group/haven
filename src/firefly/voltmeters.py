@@ -232,14 +232,14 @@ class Row:
             init_channel=f"haven://{device_name}.preamp.gain_level",
             relative=True,
             pressValue=-1,
-            icon=qta.icon("fa5s.arrow-left"),
+            icon=qta.icon("fa6s.arrow-left"),
         )
         self.gain_buttons_layout.addWidget(self.gain_down_button)
         self.gain_up_button = PyDMPushButton(
             init_channel=f"haven://{device_name}.preamp.gain_level",
             relative=True,
             pressValue=1,
-            icon=qta.icon("fa5s.arrow-right"),
+            icon=qta.icon("fa6s.arrow-right"),
         )
         self.gain_buttons_layout.addWidget(self.gain_up_button)
         self.gain_buttons_layout.addItem(HSpacer())
@@ -270,7 +270,7 @@ class Row:
         self.column_layouts[4].addWidget(self.auto_gain_checkbox)
         self.details_button = QPushButton(parent=self.parent)
         self.details_button.setText("More")
-        self.details_button.setIcon(qta.icon("fa5s.cog"))
+        self.details_button.setIcon(qta.icon("fa6s.gear"))
         self.details_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Minimum)
         self.column_layouts[4].addWidget(self.details_button)
         self.column_layouts[4].addItem(VSpacer())

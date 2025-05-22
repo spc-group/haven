@@ -1,31 +1,58 @@
 [project]
 name = "haven-spc"
-version = "2024.11.0"
+version = "2025.02.1"
 authors = [
   { name="Mark Wolfman", email="wolfman@anl.gov" },
 ]
 description = "Tools and GUI for running the spectroscopy group beamlines at the Advanced Photon Source."
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
     "Development Status :: 3 - Alpha",
-    "License :: OSI Approved :: BSD License",
     "Topic :: Scientific/Engineering",
     "Topic :: System :: Hardware",
 ]
+license = "BSD-3-clause"
 keywords = ["synchrotron", "xray", "bluesky"]
-dependencies = ["aioca", "aiokafka", "bluesky", "ophyd", "ophyd-async>=0.8.0a5", "databroker", "apsbss", "xraydb",
-	        "mergedeep", "xrayutilities", "bluesky-queueserver-api", "tomlkit",
-		"apstools", "databroker", "ophyd-registry", "caproto", "pcdsdevices",
-		"strenum", "bluesky-adaptive", "tiled[client]", "guarneri"]
+dependencies = [
+    "aioca",
+    "aiokafka",
+    "bluesky==1.14.0",
+    "ophyd",
+    "ophyd-async>=0.9.0",
+    # We need this custom ophyd-async fork until merge into main
+    #         https://github.com/bluesky/ophyd-async/issues/713
+    # "ophyd-async @ git+https://github.com/spc-group/ophyd-async@detector_races",
+    "apsbss",
+    "xraydb",
+    "mergedeep",
+    "xrayutilities",
+    "bluesky-queueserver-api",
+    "tomlkit",
+    "apstools",
+    "apsbits",
+    "ophyd-registry>=2.0.0rc1",
+    "caproto",
+    "pcdsdevices",
+    "bluesky-adaptive",
+    "tiled[client]==0.1.0b27",
+    "guarneri>=0.2.0",
+    "httpx[http2]"
+]
 
 [project.optional-dependencies]
-
-dev = ["black", "pytest", "pytest-mongodb", "asynctest", "build", "twine",
-       "time-machine", "pytest-mock", "pytest-qt", "flake8", "pytest-asyncio", "tiled[all]"]
-gui = ["qtawesome", "pydm<=1.24.1", "pyqtgraph", "qasync", "tiled[all]"]
+dev = ["black", "pytest", "asynctest", "build", "twine", "pytest-httpx",
+       "time-machine", "pytest-mock", "pytest-qt", "flake8", "pytest-asyncio",
+       "pytest_httpx", "scipy-stubs", "mypy"]
+gui = [
+    "qtawesome>=1.4.0",
+    "pydm==1.25.2",
+    "pyqtgraph",
+    "qasync",
+    "tiled[all]"
+]
 
 [project.urls]
 "Homepage" = "https://haven-spc.readthedocs.io/en/latest/"
@@ -37,7 +64,8 @@ HavenPlugin = "firefly.pydm_plugin:HavenPlugin"
 [project.scripts]
 haven_config = "haven._iconfig:print_config_value"
 haven_queueserver = "queueserver.launch_queueserver:launch_queueserver"
-mongo_consumer = "queueserver.mongo_consumer:main"
+databroker_consumer = "queueserver.databroker_consumer:main"
+tiled_consumer = "queueserver.tiled_consumer:main"
 
 [project.gui-scripts]
 firefly = "firefly.launcher:main"
@@ -45,6 +73,10 @@ firefly_cameras = "firefly.launcher:cameras"
 
 [tool.setuptools.package-data]
 firefly = ["firefly.qss"]
+# This might be necessary in the future for BITS compatibility
+# "" = "src"
+
+[tool.setuptools_scm]
 
 [build-system]
 requires = ["setuptools>=61.0", "setuptools-scm>=8.0"]
@@ -60,3 +92,10 @@ versionfile_source = "src/haven/_version.py"
 versionfile_build = "haven/_version.py"
 tag_prefix = "haven-"
 parentdir_prefix = "haven-"
+
+[tool.mypy]
+files = [
+    'src/haven/devices/asymmotron.py', "src/haven/tests/test_asymmotron.py",
+    'src/haven/positioner.py', "src/haven/tests/test_positioner.py",
+]
+# follow_imports = "skip"

@@ -41,12 +41,14 @@ def chain(*decorators):
 
 
 all_decorators = chain(
-    shutter_suspend_decorator(), open_shutters_decorator(), baseline_decorator()
+    # shutter_suspend_decorator(),
+    open_shutters_decorator(),
+    baseline_decorator(),
 )
 
 # Apply decorators to Haven plans
 align_motor = all_decorators(align_motor)
-auto_gain = all_decorators(auto_gain)
+auto_gain = open_shutters_decorator()(auto_gain)
 energy_scan = all_decorators(energy_scan)
 fly_scan = baseline_decorator()(fly_scan)
 grid_fly_scan = baseline_decorator()(grid_fly_scan)

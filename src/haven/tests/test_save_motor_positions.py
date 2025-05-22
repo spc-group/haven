@@ -1,5 +1,6 @@
 import datetime as dt
 import logging
+import re
 from datetime import datetime
 from unittest.mock import MagicMock
 from zoneinfo import ZoneInfo
@@ -8,12 +9,8 @@ import pandas as pd
 import pytest
 import time_machine
 from ophyd_async.testing import set_mock_value
-from tiled.adapters.mapping import MapAdapter
-from tiled.adapters.table import TableAdapter
-from tiled.adapters.xarray import DatasetAdapter
-from tiled.client import Context, from_context
-from tiled.server.app import build_app
-from firefly.tests.fake_position_runs import position_runs
+from pytest_httpx import IteratorStream
+from tiled.serialization.table import serialize_arrow
 
 from haven.devices import Motor
 from haven.motor_position import (
@@ -31,16 +28,101 @@ log = logging.getLogger(__name__)
 fake_time = dt.datetime(2022, 8, 19, 19, 10, 51, tzinfo=ZoneInfo("Asia/Taipei"))
 
 
+scan1_metadata = {
+    "id": "scan1",
+    "attributes": {
+        "metadata": {
+            "start": {
+                "plan_name": "save_motor_position",
+                "position_name": "Good position A",
+                "uid": "scan1",
+                "time": 1725897133,
+            }
+        }
+    },
+}
+
+
+scan2_metadata = {
+    "id": "scan2",
+    "attributes": {
+        "metadata": {
+            "start": {
+                "plan_name": "save_motor_position",
+                "position_name": "Good position B",
+                "uid": "scan2",
+                "time": 150,
+            }
+        }
+    },
+}
+
+
 @pytest.fixture()
-def client(mocker):
-    tree = MapAdapter(position_runs)
-    app = build_app(tree)
-    with Context.from_app(app) as context:
-        client = from_context(context)
-        mocker.patch(
-            "haven.motor_position.tiled_client", MagicMock(return_value=client)
-        )
-        yield client
+def tiled_api(httpx_mock):
+    httpx_mock.add_response(
+        url=re.compile("^http://localhost:8000/api/v1/search/testing/"),
+        json={
+            "data": [scan1_metadata, scan2_metadata],
+            "links": {"next": None},
+        },
+        is_optional=True,
+    )
+    httpx_mock.add_response(
+        url=re.compile(
+            "^http://localhost:8000/api/v1/metadata/testing%2Fscan[0-9]%2Fstreams%2Fprimary$"
+        ),
+        json={
+            "data": {
+                "attributes": {
+                    "metadata": {
+                        "data_keys": {
+                            "motor_A": {"object_name": "motor_A"},
+                            "motor_B": {"object_name": "motor_B"},
+                        },
+                    },
+                },
+            },
+        },
+        is_reusable=True,
+    )
+    httpx_mock.add_response(
+        url=re.compile(
+            "^http://localhost:8000/api/v1/metadata/testing%2Fscan[1-2]%2Fstreams%2Fprimary%2Finternal$"
+        ),
+        json={
+            "data": {
+                "attributes": {
+                    "structure_family": "table",
+                },
+            },
+        },
+        is_reusable=True,
+    )
+    httpx_mock.add_response(
+        url=re.compile(
+            "^http://localhost:8000/api/v1/table/full/testing%2Fscan[1-2]%2Fstreams%2Fprimary%2Finternal$"
+        ),
+        stream=IteratorStream(
+            [
+                serialize_arrow(
+                    pd.DataFrame(
+                        {
+                            "motor_A": [12.0],
+                            "motor_B": [-113.25],
+                        }
+                    ),
+                    metadata={},
+                )
+            ]
+        ),
+        is_reusable=True,
+    )
+    httpx_mock.add_response(
+        url="http://localhost:8000/api/v1/metadata/testing%2Fscan1",
+        json={"data": scan1_metadata},
+        is_optional=True,
+    )
 
 
 @pytest.fixture
@@ -83,38 +165,44 @@ def test_save_motor_position_by_name(motors):
     assert readB.obj is motorB
 
 
-def test_get_motor_position(client):
-    uid = "a9b3e0fa-eba1-43e0-a38c-c7ac76278000"
-    result = get_motor_position(uid=uid)
+async def test_get_motor_position(tiled_api):
+    uid = "scan1"
+    result = await get_motor_position(uid=uid)
     assert result.name == "Good position A"
     assert result.motors[0].name == "motor_A"
     assert result.motors[0].readback == 12.0
 
 
-async def test_get_motor_positions(client):
+async def test_get_motor_positions(tiled_api):
     results = get_motor_positions(after=1725897100, before=1725897200)
-    list_motor_positions(after=1725897100, before=1725897200)
     results = [pos async for pos in results]
-    assert len(results) == 3
+    assert len(results) == 2
     # Check the motor position details
-    motorA, *_ = results
-    assert motorA.uid == "a9b3e0fa-eba1-43e0-a38c-c7ac76278000"
+    motorA, motorB = results
+    assert motorA.uid == "scan1"
 
 
-async def test_get_motor_positions_by_name(client):
-    results = get_motor_positions(name="Good position A")
+async def test_get_motor_positions_by_name(tiled_api):
+    results = get_motor_positions(name=r"^.*good.+itio.+[AB]$", case_sensitive=False)
     results = [pos async for pos in results]
-    assert len(results) == 3
+    assert len(results) == 2
     # Check the motor position details
-    motorA, *_ = results
-    assert motorA.uid == "a9b3e0fa-eba1-43e0-a38c-c7ac76278000"
+    motorA, motorB = results
+    assert motorA.uid == "scan1"
 
 
-def test_recall_motor_position(client, motors):
+async def test_recall_motor_position(tiled_api, motors):
     # Re-set the previous value
-    uid = "a9b3e0fa-eba1-43e0-a38c-c7ac76278000"
+    uid = "scan1"
     plan = recall_motor_position(uid=uid)
-    messages = list(plan)
+    wf_message = next(plan)
+    assert wf_message.command == "wait_for"
+    # Inject a valid motor position back in to mock the wait_for plan
+    position = await get_motor_position(uid)
+    task = MagicMock()
+    task.result.return_value = position
+    next_msg = plan.send((task,))
+    messages = [next_msg, *plan]
     # Check the plan output
     msg0 = messages[0]
     assert msg0.obj.name == "motor_A"
@@ -125,14 +213,14 @@ def test_recall_motor_position(client, motors):
 
 
 @time_machine.travel(fake_time, tick=True)
-async def test_list_motor_positions(client, capsys):
+async def test_list_motor_positions(tiled_api, capsys):
     # Do the listing
     await list_motor_positions()
     # Check stdout for printed motor positions
     captured = capsys.readouterr()
     assert len(captured.out) > 0
     first_motor = captured.out.split("\n\n")[0]
-    uid = "a9b3e0fa-eba1-43e0-a38c-c7ac76278000"
+    uid = "scan1"
     timestamp = "2024-09-09 23:52:13"
     expected = "\n".join(
         [
@@ -142,6 +230,9 @@ async def test_list_motor_positions(client, capsys):
             f"┗━motor_B: -113.25, offset: None",
         ]
     )
+    # print(first_motor)
+    # print("===")
+    # print(expected)
     assert first_motor == expected
 
 
@@ -194,4 +285,4 @@ async def test_list_current_motor_positions(motors, capsys):
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
-# ----------------------------------------------------------------------------- position
+# -----------------------------------------------------------------------------

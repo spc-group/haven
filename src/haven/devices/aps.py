@@ -10,7 +10,7 @@ log = logging.getLogger(__name__)
 class ApsMachine(ApsMachineParametersDevice):
     _default_read_attrs = [
         "current",
-        "lifetime",
+        # "lifetime",
     ]
     _default_configuration_attrs = [
         "aps_cycle",

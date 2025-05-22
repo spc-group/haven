@@ -2,23 +2,15 @@ import asyncio
 import os
 from pathlib import Path
 
-import numpy as np
-import pandas as pd
-
 # from pydm.data_plugins import plugin_modules, add_plugin
 import pytest
 from ophyd import DynamicDeviceComponent as DCpt
 from ophyd import Kind
 from ophyd.sim import instantiate_fake_device, make_fake_device
-from tiled.adapters.mapping import MapAdapter
-from tiled.adapters.table import TableAdapter
-from tiled.client import Context, from_context
-from tiled.server.app import build_app
 
 import haven
-from haven.catalog import Catalog
+from haven.devices import Xspress3Detector
 from haven.devices.aps import ApsMachine
-from haven.devices.area_detector import AravisDetector
 from haven.devices.beamline_manager import BeamlineManager, IOCManager
 from haven.devices.dxp import DxpDetector
 from haven.devices.dxp import add_mcas as add_dxp_mcas
@@ -26,10 +18,7 @@ from haven.devices.ion_chamber import IonChamber
 from haven.devices.monochromator import Monochromator
 from haven.devices.robot import Robot
 from haven.devices.shutter import PssShutter
-from haven.devices.slits import ApertureSlits, BladeSlits
 from haven.devices.xia_pfcu import PFCUFilter, PFCUFilterBank
-from haven.devices.xspress import Xspress3Detector
-from haven.devices.xspress import add_mcas as add_xspress_mcas
 
 top_dir = Path(__file__).parent.resolve()
 haven_dir = top_dir / "haven"
@@ -51,6 +40,7 @@ def sim_registry(monkeypatch):
     objects_by_name = registry._objects_by_name
     objects_by_label = registry._objects_by_label
     registry.clear()
+    registry.use_typhos = False
     # Run the test
     try:
         yield registry
@@ -76,15 +66,6 @@ async def ion_chamber(sim_registry):
     await ion_chamber.connect(mock=True)
     sim_registry.register(ion_chamber)
     return ion_chamber
-
-
-@pytest.fixture()
-def blade_slits(sim_registry):
-    """A fake set of slits using the 4-blade setup."""
-    FakeSlits = make_fake_device(BladeSlits)
-    slits = FakeSlits(prefix="255idc:KB_slits", name="kb_slits", labels={"slits"})
-    sim_registry.register(slits)
-    return slits
 
 
 class SimpleBeamlineManager(BeamlineManager):
@@ -115,33 +96,6 @@ def beamline_manager(sim_registry):
     return manager
 
 
-@pytest.fixture()
-def aperture_slits(sim_registry):
-    """A fake slit assembling using the rotary aperture design."""
-    FakeSlits = make_fake_device(ApertureSlits)
-    slits = FakeSlits(
-        prefix="255ida:slits:US:",
-        name="whitebeam_slits",
-        pitch_motor="m3",
-        yaw_motor="m4",
-        horizontal_motor="m1",
-        diagonal_motor="m2",
-        labels={"slits"},
-    )
-    sim_registry.register(slits)
-    return slits
-
-
-@pytest.fixture()
-def sim_camera(sim_registry):
-    FakeCamera = make_fake_device(AravisDetector)
-    camera = FakeCamera(name="s255id-gige-A", labels={"cameras", "area_detectors"})
-    sim_registry.register(camera)
-    camera.pva.pv_name._readback = "255idSimDet:Pva1:Image"
-    # Registry with the simulated registry
-    yield camera
-
-
 class DxpVortex(DxpDetector):
     mcas = DCpt(
         add_dxp_mcas(range_=[0, 1, 2, 3]),
@@ -160,19 +114,10 @@ def dxp(sim_registry):
     yield vortex
 
 
-class Xspress3Vortex(Xspress3Detector):
-    mcas = DCpt(
-        add_xspress_mcas(range_=[0, 1, 2, 3]),
-        kind=Kind.normal | Kind.hinted,
-        default_read_attrs=[f"mca{i}" for i in [0, 1, 2, 3]],
-        default_configuration_attrs=[f"mca{i}" for i in [0, 1, 2, 3]],
-    )
-
-
 @pytest.fixture()
-def xspress(sim_registry):
-    FakeXspress = make_fake_device(Xspress3Vortex)
-    vortex = FakeXspress(name="vortex_me4", labels={"xrf_detectors"})
+async def xspress(sim_registry):
+    vortex = Xspress3Detector(name="vortex_me4", prefix="255id_vortex:", elements=4)
+    await vortex.connect(mock=True)
     sim_registry.register(vortex)
     yield vortex
 
@@ -239,142 +184,6 @@ async def filters(sim_registry):
     [sim_registry.register(f) for f in filters]
     await asyncio.gather(*(filter.connect(mock=True) for filter in filters))
     return filters
-
-
-# Tiled data to use for testing
-# Some mocked test data
-run1 = pd.DataFrame(
-    {
-        "energy_energy": np.linspace(8300, 8400, num=100),
-        "energy_id_energy_readback": np.linspace(8.3, 8.4, num=100),
-        "It_net_counts": np.abs(np.sin(np.linspace(0, 4 * np.pi, num=100))),
-        "I0_net_counts": np.linspace(1, 2, num=100),
-    }
-)
-
-grid_scan = pd.DataFrame(
-    {
-        "CdnIPreKb": np.linspace(0, 104, num=105),
-        "It_net_counts": np.linspace(0, 104, num=105),
-        "aerotech_horiz": np.linspace(0, 104, num=105),
-        "aerotech_vert": np.linspace(0, 104, num=105),
-    }
-)
-
-hints = {
-    "energy": {"fields": ["energy_energy", "energy_id_energy_readback"]},
-}
-
-bluesky_mapping = {
-    "7d1daf1d-60c7-4aa7-a668-d1cd97e5335f": MapAdapter(
-        {
-            "primary": MapAdapter(
-                {
-                    "internal": MapAdapter(
-                        {
-                            "events": TableAdapter.from_pandas(run1),
-                        }
-                    ),
-                },
-                metadata={"hints": hints},
-            ),
-        },
-        metadata={
-            "plan_name": "xafs_scan",
-            "start": {
-                "plan_name": "xafs_scan",
-                "uid": "7d1daf1d-60c7-4aa7-a668-d1cd97e5335f",
-                "hints": {"dimensions": [[["energy_energy"], "primary"]]},
-            },
-        },
-    ),
-    "9d33bf66-9701-4ee3-90f4-3be730bc226c": MapAdapter(
-        {
-            "primary": MapAdapter(
-                {
-                    "internal": MapAdapter(
-                        {
-                            "events": TableAdapter.from_pandas(run1),
-                        }
-                    ),
-                },
-                metadata={"hints": hints},
-            ),
-        },
-        metadata={
-            "plan_name": "rel_scan",
-            "start": {
-                "plan_name": "rel_scan",
-                "uid": "9d33bf66-9701-4ee3-90f4-3be730bc226c",
-                "hints": {"dimensions": [[["pitch2"], "primary"]]},
-            },
-        },
-    ),
-    # 2D grid scan map data
-    "85573831-f4b4-4f64-b613-a6007bf03a8d": MapAdapter(
-        {
-            "primary": MapAdapter(
-                {
-                    "internal": MapAdapter(
-                        {
-                            "events": TableAdapter.from_pandas(grid_scan),
-                        },
-                    ),
-                },
-                metadata={
-                    "hints": {
-                        "Ipreslit": {"fields": ["Ipreslit_net_counts"]},
-                        "CdnIPreKb": {"fields": ["CdnIPreKb_net_counts"]},
-                        "I0": {"fields": ["I0_net_counts"]},
-                        "CdnIt": {"fields": ["CdnIt_net_counts"]},
-                        "aerotech_vert": {"fields": ["aerotech_vert"]},
-                        "aerotech_horiz": {"fields": ["aerotech_horiz"]},
-                        "Ipre_KB": {"fields": ["Ipre_KB_net_counts"]},
-                        "CdnI0": {"fields": ["CdnI0_net_counts"]},
-                        "It": {"fields": ["It_net_counts"]},
-                    },
-                },
-            ),
-        },
-        metadata={
-            "start": {
-                "plan_name": "grid_scan",
-                "uid": "85573831-f4b4-4f64-b613-a6007bf03a8d",
-                "hints": {
-                    "dimensions": [
-                        [["aerotech_vert"], "primary"],
-                        [["aerotech_horiz"], "primary"],
-                    ],
-                    "gridding": "rectilinear",
-                },
-                "shape": [5, 21],
-                "extents": [[-80, 80], [-100, 100]],
-            },
-        },
-    ),
-}
-
-
-mapping = {
-    "255id_testing": MapAdapter(bluesky_mapping),
-}
-
-tree = MapAdapter(mapping)
-
-
-@pytest.fixture(scope="session")
-def tiled_client():
-    app = build_app(tree)
-    with Context.from_app(app) as context:
-        client = from_context(context)
-        yield client["255id_testing"]
-
-
-@pytest.fixture()
-def catalog(tiled_client):
-    cat = Catalog(client=tiled_client)
-    # cat = mock.AsyncMock()
-    return cat
 
 
 # -----------------------------------------------------------------------------

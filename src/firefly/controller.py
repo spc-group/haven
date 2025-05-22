@@ -5,7 +5,6 @@ from functools import partial
 from pathlib import Path
 
 import pydm
-import pyqtgraph as pg
 import qtawesome as qta
 from ophyd_async.core import NotConnected
 from ophydregistry import Registry
@@ -14,6 +13,7 @@ from qtpy import QtCore, QtWidgets
 from qtpy.QtCore import Signal, Slot
 from qtpy.QtGui import QIcon, QKeySequence
 from qtpy.QtWidgets import QAction, QErrorMessage
+from tiled.profiles import load_profiles
 
 from haven import beamline, load_config
 from haven.exceptions import ComponentNotFound, InvalidConfiguration
@@ -36,8 +36,9 @@ ui_dir = Path(__file__).parent
 plans_dir = ui_dir / "plans"
 
 
-pg.setConfigOption("background", (252, 252, 252))
-pg.setConfigOption("foreground", (0, 0, 0))
+# # Light-mode for plotting. Disabled temporarily to make all plots visible
+# pg.setConfigOption("background", (252, 252, 252))
+# pg.setConfigOption("foreground", (0, 0, 0))
 
 
 class FireflyController(QtCore.QObject):
@@ -290,7 +291,7 @@ class FireflyController(QtCore.QObject):
             text="Scheduling (&BSS)",
             display_file=ui_dir / "bss.py",
             WindowClass=FireflyMainWindow,
-            icon=qta.icon("fa5s.calendar"),
+            icon=qta.icon("fa6s.calendar"),
         )
         # Action for shoing the IOC start/restart/stop window
         self.actions.iocs = WindowAction(
@@ -341,19 +342,26 @@ class FireflyController(QtCore.QObject):
         # Send the current devices to the window
         await action.window.update_devices(self.registry)
 
-    def finalize_run_browser_window(self, action):
-        """Connect up signals that are specific to the run browser window."""
+    @asyncSlot(QAction)
+    async def finalize_run_browser_window(self, action: QAction):
+        """Connect up run browser signals and load initial data."""
         display = action.display
         self.run_updated.connect(display.update_running_scan)
         self.run_stopped.connect(display.update_running_scan)
+        # Set initial state for the run_browser
+        config = load_config()["tiled"]
+        path, tiled_config = load_profiles()["haven"]
+        await display.setup_database(
+            base_url=tiled_config["uri"], catalog_name=config["default_catalog"]
+        )
 
-    def finalize_status_window(self, action):
+    def finalize_status_window(self, action: QAction):
         """Connect up signals that are specific to the voltmeters window."""
         display = action.display
         display.ui.bss_modify_button.clicked.connect(self.actions.bss.trigger)
         # display.details_window_requested.connect
 
-    def finalize_voltmeter_window(self, action):
+    def finalize_voltmeter_window(self, action: QAction):
         """Connect up signals that are specific to the voltmeters window."""
 
         def launch_ion_chamber_window(ic_name):
@@ -392,52 +400,52 @@ class FireflyController(QtCore.QObject):
             "pause": Action(
                 name="pause_runengine_action",
                 text="Pause",
-                shortcut="Ctrl+D",
-                icon=qta.icon("fa5s.stopwatch"),
+                shortcut="Ctrl+Space",
+                icon=qta.icon("fa6s.stopwatch"),
                 tooltip="Pause the current plan at the next checkpoint.",
             ),
             "pause_now": Action(
                 name="pause_runengine_now_action",
                 text="Pause now",
-                shortcut="Ctrl+C",
-                icon=qta.icon("fa5s.pause"),
+                shortcut="Ctrl+Shift+Space",
+                icon=qta.icon("fa6s.pause"),
                 tooltip="Pause the run engine now.",
             ),
             "resume": Action(
                 name="resume_runengine_action",
                 text="Resume",
-                icon=qta.icon("fa5s.play"),
+                icon=qta.icon("fa6s.play"),
                 tooltip="Resume a paused run engine at the last checkpoint.",
             ),
             "stop_runengine": Action(
                 name="stop_runengine_action",
                 text="Success",
-                icon=qta.icon("fa5s.check"),
+                icon=qta.icon("fa6s.check"),
                 tooltip="End the current plan, marking as successful.",
                 checkable=True,
             ),
             "abort": Action(
                 name="abort_runengine_action",
                 text="Abort",
-                icon=qta.icon("fa5s.times"),
+                icon=qta.icon("fa6s.xmark"),
                 tooltip="End the current plan, marking as failure.",
             ),
             "start": Action(
                 name="start_queue_action",
                 text="Start",
-                icon=qta.icon("fa5s.play"),
+                icon=qta.icon("fa6s.play"),
                 tooltip="Start the queue",
             ),
             "halt": Action(
                 name="halt_runengine_action",
                 text="Halt",
-                icon=qta.icon("fa5s.ban"),
+                icon=qta.icon("fa6s.ban"),
                 tooltip="End the current plan immediately, do not clean up.",
             ),
             "stop_queue": Action(
                 name="stop_queue_action",
                 text="Stop Queue",
-                icon=qta.icon("fa5s.stop"),
+                icon=qta.icon("fa6s.stop"),
                 tooltip="Instruct the queue to stop after the current item is done.",
                 checkable=True,
             ),
@@ -531,6 +539,8 @@ class FireflyController(QtCore.QObject):
             self._kafka_client.start()
         except Exception as exc:
             log.error(f"Could not start kafka client: {exc}")
+        else:
+            log.info("Started kafka client.")
 
     def start_queue_client(self):
         try:
@@ -662,12 +672,6 @@ class FireflyController(QtCore.QObject):
         log.debug(f"Application received item to add to queue: {item}")
         if getattr(self, "_queue_client", None) is not None:
             await self._queue_client.add_queue_item(item, run_now=run_now)
-
-    @QtCore.Slot()
-    def show_sample_viewer_window(self):
-        return self.show_window(
-            FireflyMainWindow, ui_dir / "sample_viewer.ui", name="sample_viewer"
-        )
 
     @QtCore.Slot(bool)
     def set_open_environment_action_state(self, is_open: bool):

@@ -1,9 +1,7 @@
 from unittest import mock
 
 import pytest
-from bluesky_queueserver_api import BPlan
 from ophyd_async.testing import set_mock_value
-from qtpy import QtCore
 
 from firefly.plans.line_scan import LineScanDisplay
 from haven.devices.motor import Motor
@@ -15,6 +13,21 @@ async def motors(sim_registry, sync_motors):
     motor1 = Motor(name="async motor-1", prefix="")
     assert " " in motor1.name
     assert "-" in motor1.name
+    description = {
+        motor1.name: {
+            "dtype": "number",
+            "shape": [],
+            "dtype_numpy": "<f8",
+            "source": "ca://25idc:simMotor:m2.RBV",
+            "units": "degrees",
+            "precision": 5,
+            "limits": {
+                "control": {"low": -10, "high": 10},
+                "display": {"low": -10, "high": 10},
+            },
+        }
+    }
+    motor1.describe = mock.AsyncMock(return_value=description)
     motor2 = Motor(name="async_motor_2", prefix="")
     # Connect motors
     async_motors = [motor1, motor2]
@@ -56,85 +69,67 @@ async def test_time_calculator(display, sim_registry, ion_chamber, qtbot, qapp):
     detectors["vortex_me4"].default_time_signal.set(0.5).wait(2)
 
     # Trigger an update of the time calculator
+    display.detectors_list.acquire_times = mock.AsyncMock(return_value=[1.0])
     await display.update_total_time()
 
-    # Check whether time is calculated correctly for a single scan
-    assert display.ui.label_hour_scan.text() == "0"
-    assert display.ui.label_min_scan.text() == "10"
-    assert display.ui.label_sec_scan.text() == "25.5"
+    # Check whether time is calculated correctly for the scans
+    assert display.ui.scan_duration_label.text() == "0 h 16 m 40 s"
+    assert display.ui.total_duration_label.text() == "1 h 40 m 0 s"
 
-    # Check whether time is calculated correctly including the repeated scan
-    assert display.ui.label_hour_total.text() == "1"
-    assert display.ui.label_min_total.text() == "2"
-    assert display.ui.label_sec_total.text() == "33.0"
+
+async def test_regions_in_layout(display):
+    assert display.regions_layout.rowCount() == 2  # header + default row
 
 
 @pytest.mark.asyncio
 async def test_step_size_calculation(display, qtbot):
     await display.update_regions(1)
     region = display.regions[0]
-    region.start_line_edit.setText("0")
-    region.stop_line_edit.setText("10")
 
-    # Set num_points and emit the signal
-    display.ui.scan_pts_spin_box.setValue(5)
-    region.update_step_size(5)  # Emit the signal with the new num_points value
-    assert region.step_size_line_edit.text() == "2.5"
+    # Test valid inputs
+    region.start_spin_box.setValue(0)
+    region.stop_spin_box.setValue(10)
 
+    # Set num_points
+    display.ui.scan_pts_spin_box.setValue(7)
+    # Step size should be 1.6666 for 7 points from 0 to 10.
+    assert region.step_label.text() == "1.67"
     # Change the number of points and verify step size updates
     display.ui.scan_pts_spin_box.setValue(3)
-    region.update_step_size(3)
-    assert region.step_size_line_edit.text() == "5.0"
-
-    # Test invalid input
-    region.start_line_edit.setText("Start..")
-    region.update_step_size(3)
-    assert region.step_size_line_edit.text() == "N/A"
-
-    # Test edge case: num_points = 1
-    display.ui.scan_pts_spin_box.setValue(1)
-    region.update_step_size(1)
-    assert region.step_size_line_edit.text() == "N/A"
-
-    # Reset to a valid state and verify
-    region.start_line_edit.setText("0")
-    region.stop_line_edit.setText("10")
+    # Step size should be 5.0 for 3 points from 0 to 10."
+    assert region.step_label.text() == "5.0"
+    # Reset to another state and verify
+    region.start_spin_box.setValue(0)
+    region.stop_spin_box.setValue(10)
     display.ui.scan_pts_spin_box.setValue(6)
-    region.update_step_size(6)
-    assert region.step_size_line_edit.text() == "2.0"
+    assert region.step_label.text() == "2.0"
 
 
 @pytest.mark.asyncio
-async def test_line_scan_plan_queued(display, monkeypatch, qtbot):
+async def test_line_scan_plan_args(display, monkeypatch, qtbot, xspress, ion_chamber):
     # set up motor num
     await display.update_regions(2)
-    monkeypatch.setattr(display, "submit_queue_item", mock.MagicMock())
-
     # set up a test motor 1
     display.regions[0].motor_box.combo_box.setCurrentText("async motor-1")
-    display.regions[0].start_line_edit.setText("1")
-    display.regions[0].stop_line_edit.setText("111")
-
+    display.regions[0].start_spin_box.setValue(1)
+    display.regions[0].stop_spin_box.setValue(111)
     # set up a test motor 2
     display.regions[1].motor_box.combo_box.setCurrentText("sync_motor_2")
-    display.regions[1].start_line_edit.setText("2")
-    display.regions[1].stop_line_edit.setText("222")
-
+    display.regions[1].start_spin_box.setValue(2)
+    display.regions[1].stop_spin_box.setValue(222)
     # set up scan num of points
     display.ui.scan_pts_spin_box.setValue(10)
-
     # time is calculated when the selection is changed
     display.ui.detectors_list.selected_detectors = mock.MagicMock(
-        return_value=["vortex_me4", "I00"]
+        return_value=[xspress, ion_chamber]
     )
-
     # set up meta data
     display.ui.lineEdit_sample.setText("sam")
-    display.ui.lineEdit_purpose.setText("test")
+    display.ui.comboBox_purpose.setCurrentText("test")
     display.ui.textEdit_notes.setText("notes")
-
-    expected_item = BPlan(
-        "rel_scan",
+    # Check the arguments that will get used by the plan
+    args, kwargs = display.plan_args()
+    assert args == (
         ["vortex_me4", "I00"],
         "async_motor_1",
         1.0,
@@ -142,12 +137,53 @@ async def test_line_scan_plan_queued(display, monkeypatch, qtbot):
         "sync_motor_2",
         2.0,
         222.0,
-        num=10,
-        md={"sample_name": "sam", "purpose": "test", "notes": "notes"},
     )
+    assert kwargs == {
+        "num": 10,
+        "md": {"sample_name": "sam", "purpose": "test", "notes": "notes"},
+    }
 
-    # Click the run button and see if the plan is queued
-    display.queue_plan()
-    assert display.submit_queue_item.called
-    submitted_item = display.submit_queue_item.call_args[0][0]
-    assert submitted_item.to_dict() == expected_item.to_dict()
+
+async def test_full_motor_parameters(display, motors):
+    motor = motors[0]
+    display.ui.relative_scan_checkbox.setChecked(False)
+    set_mock_value(motor.user_readback, 7.5)
+    region = display.regions[0]
+    await region.update_device_parameters(motor)
+    start_box = region.start_spin_box
+    assert start_box.minimum() == -10
+    assert start_box.maximum() == 10
+    assert start_box.decimals() == 5
+    assert start_box.suffix() == " °"
+    assert start_box.value() == 7.5
+    stop_box = region.stop_spin_box
+    assert stop_box.minimum() == -10
+    assert stop_box.maximum() == 10
+    assert stop_box.decimals() == 5
+    assert stop_box.suffix() == " °"
+    assert stop_box.value() == 7.5
+
+
+async def test_relative_positioning(display, motors):
+    motor = motors[0]
+    region = display.regions[0]
+    set_mock_value(motor.user_readback, 7.5)
+    region.motor_box.current_component = mock.MagicMock(return_value=motor)
+    region.start_spin_box.setValue(5.0)
+    region.stop_spin_box.setValue(10.0)
+    # Relative positioning mode
+    await region.set_relative_position(True)
+    assert region.start_spin_box.value() == -2.5
+    assert region.start_spin_box.maximum() == 2.5
+    assert region.start_spin_box.minimum() == -17.5
+    assert region.stop_spin_box.value() == 2.5
+    assert region.stop_spin_box.maximum() == 2.5
+    assert region.stop_spin_box.minimum() == -17.5
+    # Absolute positioning mode
+    await region.set_relative_position(False)
+    assert region.start_spin_box.value() == 5.0
+    assert region.start_spin_box.maximum() == 10
+    assert region.start_spin_box.minimum() == -10
+    assert region.stop_spin_box.value() == 10.0
+    assert region.stop_spin_box.maximum() == 10
+    assert region.stop_spin_box.minimum() == -10

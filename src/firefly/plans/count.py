@@ -1,13 +1,14 @@
 import logging
 
 from bluesky_queueserver_api import BPlan
+from qasync import asyncSlot
 
-from firefly import display
+from firefly.plans import regions_display
 
 log = logging.getLogger()
 
 
-class CountDisplay(display.FireflyDisplay):
+class CountDisplay(regions_display.PlanDisplay):
 
     async def update_devices(self, registry):
         """Set available components in the device list."""
@@ -15,20 +16,57 @@ class CountDisplay(display.FireflyDisplay):
         await self.ui.detectors_list.update_devices(registry)
 
     def customize_ui(self):
-        self.ui.run_button.clicked.connect(self.queue_plan)
+        super().customize_ui()
+        # Connect signals for total time updates
+        self.ui.detectors_list.selectionModel().selectionChanged.connect(
+            self.update_total_time
+        )
+
+        self.ui.num_spinbox.valueChanged.connect(self.update_total_time)
+        self.ui.delay_spinbox.valueChanged.connect(self.update_total_time)
+        self.ui.spinBox_repeat_scan_num.valueChanged.connect(self.update_total_time)
+        # Default metadata values
+        self.ui.comboBox_purpose.lineEdit().setPlaceholderText(
+            "e.g. commissioning, alignment…"
+        )
+        self.ui.comboBox_purpose.setCurrentText("")
+
+    def scan_durations(self, detector_time: float) -> tuple[float, float]:
+        num_readings = self.ui.num_spinbox.value()
+        delay = self.ui.delay_spinbox.value()
+        time_per_scan = detector_time * num_readings + delay * (num_readings - 1)
+        repetitions = self.ui.spinBox_repeat_scan_num.value()
+        total_time = time_per_scan * repetitions
+        return time_per_scan, total_time
+
+    @asyncSlot()
+    async def update_total_time(self):
+        acquire_times = await self.detectors_list.acquire_times()
+        detector_time = max([*acquire_times, float("nan")])
+        time_per_scan, total_time = self.scan_durations(detector_time)
+        self.ui.scan_duration_label.set_seconds(time_per_scan)
+        self.ui.total_duration_label.set_seconds(total_time)
+
+    def plan_args(self):
+        args = ()
+        names = [det.name for det in self.ui.detectors_list.selected_detectors()]
+        kwargs = {
+            "detectors": names,
+            "num": self.ui.num_spinbox.value(),
+            "delay": self.ui.delay_spinbox.value(),
+            "md": self.get_meta_data(),
+        }
+        return args, kwargs
 
     def queue_plan(self, *args, **kwargs):
         """Execute this plan on the queueserver."""
-        # Get scan parameters from widgets
-        num_readings = self.ui.num_spinbox.value()
-        delay = self.ui.delay_spinbox.value()
-        detectors = self.ui.detectors_list.selected_detectors()
-        # Build the queue item
-
-        item = BPlan("count", delay=delay, num=num_readings, detectors=detectors)
+        args, kwargs = self.plan_args()
+        item = BPlan("count", *args, **kwargs)
         # Submit the item to the queueserver
         log.info("Add ``count()`` plan to queue.")
-        self.submit_queue_item(item)
+        # repeat scans
+        for i in range(self.ui.spinBox_repeat_scan_num.value()):
+            self.queue_item_submitted.emit(item)
 
     def ui_filename(self):
         return "plans/count.ui"

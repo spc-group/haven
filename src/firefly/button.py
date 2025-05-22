@@ -10,8 +10,8 @@ class RevealButton(QtWidgets.QPushButton):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Load icons
-        self.closed_icon = qta.icon("fa5s.angle-up")
-        self.open_icon = qta.icon("fa5s.angle-down")
+        self.closed_icon = qta.icon("fa6s.angle-up")
+        self.open_icon = qta.icon("fa6s.angle-down")
         # Set up signals
         self.toggled.connect(self.toggle_icon)
         self.toggle_icon(self.isChecked())

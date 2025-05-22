@@ -36,12 +36,17 @@ from . import plans  # noqa: F401
 from ._iconfig import load_config  # noqa: F401
 
 #  Top-level imports
-# from .catalog import load_catalog, load_data, load_result, tiled_client  # noqa: F401
-from .catalog import load_catalog, tiled_client  # noqa: F401
+from .catalog import tiled_client  # noqa: F401
 from .constants import edge_energy  # noqa: F401
 from .devices import IonChamber, Monochromator, Robot, ion_chamber  # noqa: F401
 from .devices.motor import HavenMotor  # noqa: F401
-from .energy_ranges import ERange, KRange, merge_ranges  # noqa: F401
+from .energy_ranges import (  # noqa: F401
+    ERange,
+    KRange,
+    energy_to_wavenumber,
+    merge_ranges,
+    wavenumber_to_energy,
+)
 from .instrument import beamline  # noqa: F401
 from .motor_position import (  # noqa: F401
     get_motor_position,
@@ -60,6 +65,7 @@ from .preprocessors import (  # noqa: F401
 )
 from .progress_bar import ProgressBar  # noqa: F401
 from .run_engine import run_engine  # noqa: F401
+from .tiled_writer import TiledWriter  # noqa: F401
 from .utils import sanitize_name  # noqa: F401
 
 # -----------------------------------------------------------------------------

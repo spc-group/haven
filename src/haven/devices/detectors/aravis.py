@@ -1,8 +1,8 @@
 from ophyd_async.core import PathProvider, SubsetEnum
-from ophyd_async.epics.adaravis import AravisDetector as DetectorBase
+from ophyd_async.epics.adaravis import AravisDetector as AravisDetectorBase
 from ophyd_async.epics.core import epics_signal_rw_rbv
 
-from .area_detectors import HavenDetector, default_path_provider
+from .area_detectors import default_path_provider
 
 
 class AravisTriggerSource(SubsetEnum):
@@ -10,7 +10,7 @@ class AravisTriggerSource(SubsetEnum):
     LINE1 = "Line1"
 
 
-class AravisDetector(HavenDetector, DetectorBase):
+class AravisDetector(AravisDetectorBase):
     _ophyd_labels_ = {"cameras", "detectors"}
 
     def __init__(
@@ -20,7 +20,7 @@ class AravisDetector(HavenDetector, DetectorBase):
             path_provider = default_path_provider()
         super().__init__(*args, prefix=prefix, path_provider=path_provider, **kwargs)
         # Replace a signal that has different enum options
-        self.drv.trigger_source = epics_signal_rw_rbv(
+        self.driver.trigger_source = epics_signal_rw_rbv(
             AravisTriggerSource,  # type: ignore
             f"{prefix}cam1:TriggerSource",
         )

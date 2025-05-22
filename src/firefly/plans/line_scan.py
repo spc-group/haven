@@ -1,133 +1,229 @@
 import logging
 
-from bluesky_queueserver_api import BPlan
+from ophyd_async.core import Device
 from qasync import asyncSlot
 from qtpy import QtWidgets
-from qtpy.QtGui import QDoubleValidator
 
 from firefly.component_selector import ComponentSelector
-from firefly.plans import regions_display
+from firefly.plans.regions_display import (
+    DeviceParameters,
+    RegionBase,
+    RegionsDisplay,
+    device_parameters,
+)
+from haven import sanitize_name
 
 log = logging.getLogger()
 
 
-class LineScanRegion(regions_display.RegionBase):
+class LineScanRegion(RegionBase):
+    num_points: int = 2
+    is_relative: bool
 
     def setup_ui(self):
-        self.layout = QtWidgets.QHBoxLayout()
-
-        # First item, ComponentSelector
+        # Component selector
         self.motor_box = ComponentSelector()
-        self.layout.addWidget(self.motor_box)
+        self.motor_box.device_selected.connect(self.update_device_parameters)
+        # start point
+        self.start_spin_box = QtWidgets.QDoubleSpinBox()
+        self.start_spin_box.lineEdit().setPlaceholderText("Start…")
+        self.start_spin_box.setMinimum(float("-inf"))
+        self.start_spin_box.setMaximum(float("inf"))
 
-        # Second item, start point
-        self.start_line_edit = QtWidgets.QLineEdit()
-        self.start_line_edit.setValidator(QDoubleValidator())  # only takes floats
-        self.start_line_edit.setPlaceholderText("Start…")
-        self.layout.addWidget(self.start_line_edit)
-
-        # Third item, stop point
-        self.stop_line_edit = QtWidgets.QLineEdit()
-        self.stop_line_edit.setValidator(QDoubleValidator())  # only takes floats
-        self.stop_line_edit.setPlaceholderText("Stop…")
-        self.layout.addWidget(self.stop_line_edit)
+        # Stop point
+        self.stop_spin_box = QtWidgets.QDoubleSpinBox()
+        self.stop_spin_box.lineEdit().setPlaceholderText("Stop…")
+        self.stop_spin_box.setMinimum(float("-inf"))
+        self.stop_spin_box.setMaximum(float("inf"))
 
         # Step size (non-editable)
-        self.step_size_line_edit = QtWidgets.QLineEdit()
-        self.step_size_line_edit.setReadOnly(True)
-        self.step_size_line_edit.setDisabled(True)
-        self.step_size_line_edit.setPlaceholderText("Step Size…")
-        self.layout.addWidget(self.step_size_line_edit)
+        self.step_label = QtWidgets.QLabel()
+        self.step_label.setText("nan")
+
+        # Add widgets to the layout
+        self.widgets = [
+            self.motor_box,
+            self.start_spin_box,
+            self.stop_spin_box,
+            self.step_label,
+        ]
+        for column, widget in enumerate(self.widgets):
+            self.layout.addWidget(widget, self.row, column)
 
         # Connect signals
-        self.start_line_edit.textChanged.connect(self.update_step_size)
-        self.stop_line_edit.textChanged.connect(self.update_step_size)
+        self.start_spin_box.valueChanged.connect(self.update_step_size)
+        self.stop_spin_box.valueChanged.connect(self.update_step_size)
 
-    def update_step_size(self, num_points=None):
-        try:
-            # Get Start and Stop values
-            start_text = self.start_line_edit.text().strip()
-            stop_text = self.stop_line_edit.text().strip()
-            if not start_text or not stop_text:
-                self.step_size_line_edit.setText("N/A")
-                return
+    async def update_devices(self, registry):
+        await self.motor_box.update_devices(registry)
 
-            start = float(start_text)
-            stop = float(stop_text)
-
-            # Ensure num_points is an integer
-            num_points = int(num_points) if num_points is not None else 2
-
-            # Calculate step size
-            if num_points > 1:
-                step_size = (stop - start) / (num_points - 1)
-                self.step_size_line_edit.setText(f"{step_size}")
+    @asyncSlot(Device)
+    async def update_device_parameters(self, new_device: Device):
+        device = await device_parameters(new_device)
+        # Filter out non-numeric datatypes
+        for widget in [self.start_spin_box, self.stop_spin_box]:
+            widget.setEnabled(device.is_numeric)
+            widget.setEnabled(device.is_numeric)
+            # Set other metadata
+            self.set_limits(device)
+            widget.setDecimals(device.precision)
+            # Handle units
+            widget.setSuffix(f" {device.units}")
+            # Set starting motor position
+            if self.is_relative:
+                widget.setValue(0)
             else:
-                self.step_size_line_edit.setText("N/A")
-        except ValueError:
-            self.step_size_line_edit.setText("N/A")
+                widget.setValue(device.current_value)
+
+    def set_limits(self, device: DeviceParameters):
+        """Set limits on the spin boxes to match the device limits."""
+        if self.is_relative:
+            minimum = device.minimum - device.current_value
+            maximum = device.maximum - device.current_value
+        else:
+            maximum, minimum = device.maximum, device.minimum
+        self.start_spin_box.setMaximum(maximum)
+        self.start_spin_box.setMinimum(minimum)
+        self.stop_spin_box.setMaximum(maximum)
+        self.stop_spin_box.setMinimum(minimum)
+
+    @asyncSlot(int)
+    async def set_relative_position(self, is_relative: int):
+        """Adjust the target position based on relative/aboslute mode."""
+        self.is_relative = bool(is_relative)
+        device = self.motor_box.current_component()
+        if device is None:
+            return
+        params = await device_parameters(device)
+        # Get last values first to avoid limit crossing
+        widgets = [self.start_spin_box, self.stop_spin_box]
+        if is_relative:
+            new_positions = [
+                widget.value() - params.current_value for widget in widgets
+            ]
+        else:
+            new_positions = [
+                widget.value() + params.current_value for widget in widgets
+            ]
+        # Update the current limits and positions
+        self.set_limits(params)
+        for widget, new_position in zip(widgets, new_positions):
+            widget.setValue(new_position)
+
+    def set_num_points(self, num_points):
+        self.num_points = max(2, int(num_points))  # Ensure num_points is >= 2
+        self.update_step_size()
+
+    def update_step_size(self):
+        # Get Start and Stop values
+        start = self.start_spin_box.value()
+        stop = self.stop_spin_box.value()
+        precision = max(self.start_spin_box.decimals(), self.stop_spin_box.decimals())
+        # Calculate step size
+        try:
+            step_size = (stop - start) / (self.num_points - 1)
+        except (ValueError, ZeroDivisionError):
+            self.step_label.setText("nan")
+        else:
+            step_size = round(step_size, precision)
+            self.step_label.setText(str(step_size))
 
 
-class LineScanDisplay(regions_display.RegionsDisplay):
+class LineScanDisplay(RegionsDisplay):
     Region = LineScanRegion
-
-    @asyncSlot(object)
-    async def update_devices_slot(self, registry):
-        await self.update_devices(registry)
-        await self.detectors_list.update_devices(registry)
-
-    def time_per_scan(self, detector_time):
-        num_points = self.ui.scan_pts_spin_box.value()
-        total_time_per_scan = detector_time * num_points
-        return total_time_per_scan
 
     def customize_ui(self):
         super().customize_ui()
-        # When selections of detectors changed update_total_time
+
+        # Connect signals for total time updates
         self.ui.scan_pts_spin_box.valueChanged.connect(self.update_total_time)
         self.ui.detectors_list.selectionModel().selectionChanged.connect(
             self.update_total_time
         )
-        self.ui.spinBox_repeat_scan_num.valueChanged.connect(self.update_total_time)
-
-        # Connect scan_pts_spin_box value change to regions
-        self.ui.scan_pts_spin_box.valueChanged.connect(self.update_regions_step_size)
-
-    def update_regions_step_size(self, num_points):
-        """Update the step size for all regions."""
         for region in self.regions:
-            region.update_step_size(num_points)
-
-    def queue_plan(self, *args, **kwargs):
-        """Execute this plan on the queueserver."""
-        detectors, motor_args, repeat_scan_num = self.get_scan_parameters()
-        md = self.get_meta_data()
-        num_points = self.ui.scan_pts_spin_box.value()
-        # Check for what kind of scan we're running based on use input
-        if self.ui.relative_scan_checkbox.isChecked():
-            if self.ui.log_scan_checkbox.isChecked():
-                scan_type = "rel_log_scan"
-            else:
-                scan_type = "rel_scan"
-        else:
-            if self.ui.log_scan_checkbox.isChecked():
-                scan_type = "log_scan"
-            else:
-                scan_type = "scan"
-        # Build the queue item
-        item = BPlan(
-            scan_type,
-            detectors,
-            *motor_args,
-            num=num_points,
-            md=md,
+            self.ui.scan_pts_spin_box.valueChanged.connect(region.set_num_points)
+        self.ui.spinBox_repeat_scan_num.valueChanged.connect(self.update_total_time)
+        self.scan_time_changed.connect(self.scan_duration_label.set_seconds)
+        self.total_time_changed.connect(self.total_duration_label.set_seconds)
+        # Default metadata values
+        self.ui.comboBox_purpose.lineEdit().setPlaceholderText(
+            "e.g. commissioning, alignment…"
         )
+        self.ui.comboBox_purpose.setCurrentText("")
 
-        # Submit the item to the queueserver
-        log.info(f"Adding line scan() plan to queue: {item}.")
-        # repeat scans
-        for i in range(repeat_scan_num):
-            self.submit_queue_item(item)
+    def scan_durations(self, detector_time):
+        num_points = self.ui.scan_pts_spin_box.value()
+        time_per_scan = detector_time * num_points
+        num_scan_repeat = self.ui.spinBox_repeat_scan_num.value()
+        total_time = num_scan_repeat * time_per_scan
+        return time_per_scan, total_time
+
+    @asyncSlot()
+    async def update_total_time(self):
+        """Update the total scan time and display it."""
+        acquire_times = await self.detectors_list.acquire_times()
+        detector_time = max([*acquire_times, float("nan")])
+        # Calculate time per scan
+        time_per_scan, total_time = self.scan_durations(detector_time)
+        self.scan_time_changed.emit(time_per_scan)
+        self.total_time_changed.emit(total_time)
+
+    def add_region(self):
+        new_region = super().add_region()
+        self.relative_scan_checkbox.stateChanged.connect(
+            new_region.set_relative_position
+        )
+        new_region.set_relative_position(self.relative_scan_checkbox.checkState())
+        return new_region
+
+    def reset_default_regions(self):
+        super().reset_default_regions()
+        # Reset scan repeat num to 1
+        self.ui.spinBox_repeat_scan_num.setValue(1)
+
+    def plan_args(self) -> tuple[tuple, dict]:
+        # Get scan parameters from widgets
+        detectors = self.ui.detectors_list.selected_detectors()
+        detector_names = [detector.name for detector in detectors]
+        # Get parameters from each row of line regions
+        device_names = [
+            region.motor_box.current_component().name for region in self.regions
+        ]
+        device_names = [sanitize_name(name) for name in device_names]
+        start_points = [region.start_spin_box.value() for region in self.regions]
+        stop_points = [region.stop_spin_box.value() for region in self.regions]
+        device_args = [
+            values
+            for entry in zip(device_names, start_points, stop_points)
+            for values in entry
+        ]
+        args = (detector_names, *device_args)
+        kwargs = {
+            "num": self.ui.scan_pts_spin_box.value(),
+            "md": self.get_meta_data(),
+        }
+        return args, kwargs
+
+    @property
+    def plan_type(self) -> str:
+        """Determine what kind of scan we're running based on use input."""
+        return {
+            # Rel, log
+            (True, True): "rel_log_scan",
+            (True, False): "rel_scan",
+            (False, True): "log_scan",
+            (False, False): "scan",
+        }[
+            (
+                self.ui.relative_scan_checkbox.isChecked(),
+                self.ui.log_scan_checkbox.isChecked(),
+            )
+        ]
+
+    @property
+    def scan_repetitions(self) -> int:
+        """How many times should each scan be run."""
+        return self.ui.spinBox_repeat_scan_num.value()
 
     def ui_filename(self):
         return "plans/line_scan.ui"

@@ -2,8 +2,8 @@ import asyncio
 import logging
 import time
 
+import numpy as np
 import databroker  # noqa: F401
-import matplotlib.pyplot as plt  # noqa: F401
 from bluesky import plan_stubs as bps  # noqa: F401
 from bluesky.plan_stubs import mv, mvr, rd  # noqa: F401
 from bluesky import plans as bp  # noqa: F401
@@ -14,7 +14,6 @@ from bluesky.run_engine import RunEngine, call_in_bluesky_event_loop  # noqa: F4
 from bluesky.simulators import summarize_plan  # noqa: F401
 from ophyd_async.core import NotConnected
 from ophydregistry import ComponentNotFound
-import matplotlib.pyplot as plt
 from rich import print
 from rich.align import Align
 from rich.console import Console
@@ -28,21 +27,16 @@ logging.basicConfig(level=logging.WARNING)
 
 log = logging.getLogger(__name__)
 
+# Load the Tiled catalog for reading data back outline
+catalog = haven.tiled_client()
+
 # Create a run engine
 RE = haven.run_engine(
-    connect_databroker=True,
+    connect_kafka=True,
     call_returns_result=True,
     use_bec=False,
 )
 
-# Import some ophyd-async stuff
-# NB: This has to be after the run engine setup
-#     or else ipython gets stuck and vanilla ophyd
-#     devices get stuck
-from ophyd_async.core import DeviceCollector  # noqa: F401
-
-# Allow best effort callback to update properly
-plt.ion()
 
 # Prepare the haven instrument
 config = haven.load_config()
@@ -62,7 +56,11 @@ print(f"Connected to {num_devices} devices in {time.monotonic() - t0:.2f} second
 # Save references to all the devices in the global namespace
 devices = haven.beamline.devices
 ion_chambers = devices.findall("ion_chambers", allow_none=True)
-for cpt in devices._objects_by_name.values():
+for cpt in devices.all_devices:
+    # Make sure we're not adding a readback value with the same name
+    # as its parent.
+    if cpt.parent is not None and cpt.name == cpt.parent.name:
+        continue
     # Replace spaces and other illegal characters in variable name
     name = haven.sanitize_name(cpt.name)
     # Add the device as a variable in module's globals

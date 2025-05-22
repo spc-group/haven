@@ -1,8 +1,9 @@
 import asyncio
 import inspect
+import logging
 import numbers
 from functools import partial
-from typing import Callable, Mapping, Optional, Sequence, Type
+from typing import Callable, Mapping, Optional, Type
 
 import numpy as np
 from bluesky.protocols import Reading, Subscribable
@@ -22,6 +23,8 @@ from ophyd_async.core import (
 )
 from ophyd_async.core._signal import _wait_for
 from ophyd_async.epics.core._signal import _epics_signal_backend
+
+log = logging.getLogger(__name__)
 
 
 class DerivedSignalBackend(SoftSignalBackend):
@@ -166,6 +169,7 @@ class DerivedSignalBackend(SoftSignalBackend):
         Stashes them for later recall.
 
         """
+        log.debug(f"Reveived updating reading for {signal}: {reading}")
         # Stash this reading
         self._cached_readings.update({signal: reading[signal.name]})
         # Update interested parties if we have a full set of readings
@@ -224,7 +228,7 @@ def derived_signal_rw(
     *,
     initial_value: Optional[T] = None,
     name: str = "",
-    derived_from: Sequence,
+    derived_from: Mapping,
     forward: Callable = None,
     inverse: Callable = None,
     units: str | None = None,
@@ -309,7 +313,7 @@ def derived_signal_r(
     *,
     initial_value: Optional[T] = None,
     name: str = "",
-    derived_from: Sequence,
+    derived_from: Mapping,
     inverse: Callable = None,
     units: str | None = None,
     precision: int | None = None,
@@ -376,7 +380,7 @@ def derived_signal_r(
 def derived_signal_x(
     *,
     name: str = "",
-    derived_from: Sequence,
+    derived_from: Mapping,
     forward: Callable = None,
 ) -> SignalX:
     """Creates a signal linked to one or more other signals.

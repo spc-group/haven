@@ -6,13 +6,11 @@ from typing import Mapping
 
 from guarneri import Instrument
 
+from haven import devices
+
 from .devices.aerotech import AerotechStage
 from .devices.aps import ApsMachine
-from .devices.area_detector import make_area_detector
 from .devices.beamline_manager import BeamlineManager
-from .devices.detectors.aravis import AravisDetector
-from .devices.detectors.sim_detector import SimDetector
-from .devices.detectors.xspress import Xspress3Detector
 from .devices.dxp import make_dxp_device
 from .devices.energy_positioner import EnergyPositioner
 from .devices.heater import CapillaryHeater
@@ -21,9 +19,7 @@ from .devices.mirrors import HighHeatLoadMirror, KBMirrors
 from .devices.motor import Motor, load_motors
 from .devices.power_supply import NHQ203MChannel
 from .devices.robot import Robot
-from .devices.scaler import MultiChannelScaler
 from .devices.shutter import PssShutter
-from .devices.slits import ApertureSlits, BladeSlits
 from .devices.stage import XYStage
 from .devices.table import Table
 from .devices.xia_pfcu import PFCUFilterBank
@@ -86,31 +82,34 @@ beamline = HavenInstrument(
     {
         # Ophyd-async devices
         "aerotech_stage": AerotechStage,
-        "camera": AravisDetector,
+        "analyzer": devices.Analyzer,
+        "aperture_slits": devices.ApertureSlits,
+        "blade_slits": devices.BladeSlits,
+        "camera": devices.AravisDetector,
+        "eiger": devices.EigerDetector,
         "energy": EnergyPositioner,
         "high_heat_load_mirror": HighHeatLoadMirror,
         "ion_chamber": IonChamber,
         "kb_mirrors": KBMirrors,
+        "lambda": devices.LambdaDetector,
         "motor": Motor,
         "pfcu4": PFCUFilterBank,
         "pss_shutter": PssShutter,
-        "sim_detector": SimDetector,
+        "scaler": devices.MultiChannelScaler,
+        "sim_detector": devices.SimDetector,
         "table": Table,
-        "xspress3": Xspress3Detector,
+        "xspress3": devices.Xspress3Detector,
         "xy_stage": XYStage,
         # Threaded ophyd devices
-        "blade_slits": BladeSlits,
-        "aperture_slits": ApertureSlits,
         "capillary_heater": CapillaryHeater,
         "power_supply": NHQ203MChannel,
         "synchrotron": ApsMachine,
         "robot": Robot,
         "dxp": make_dxp_device,
         "beamline_manager": BeamlineManager,
-        "area_detector": make_area_detector,
-        "scaler": MultiChannelScaler,
     },
 )
+beamline.devices.use_typhos = False
 
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
