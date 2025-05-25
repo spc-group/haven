@@ -19,49 +19,138 @@ runs = [
         "runName": "2024-3",
         "startTime": "2024-10-01T00:00:00-05:00",
         "endTime": "2024-12-19T08:00:00-06:00",
-        "version": 0
+        "version": 0,
     },
     {
         "runId": 486,
         "runName": "2025-1",
         "startTime": "2024-05-06T08:00:00-05:00",
         "endTime": "2024-10-01T00:00:00-05:00",
-        "version": 0
+        "version": 0,
     },
     {
         "runId": 506,
         "runName": "2025-3",
         "startTime": "2025-09-05T15:06:00-05:00",
-    "endTime": "2026-01-16T15:07:00-06:00",
-    "version": 0
-  }
+        "endTime": "2026-01-16T15:07:00-06:00",
+        "version": 0,
+    },
 ]
 
 
-base_uri = "https://beam-api-dev.aps.anl.gov:80/beamline-scheduling/sched-api"
+proposal_data = {
+    "title": "Elucidation of DNA structure",
+    "id": 158394,  # only 6 digits to test zero-fill
+    "experimenters": [
+        {
+            "id": 1,
+            "badge": "456789",
+            "piFlag": "Y",
+            "firstName": "Rosalind",
+            "lastName": "Franklin",
+            "institution": "Washington State University",
+        },
+        {
+            "id": 2,
+            "badge": "314769",
+            "piFlag": "N",
+            "firstName": "Francis",
+            "lastName": "Crick",
+            "institution": "Argonne National Laboratory",
+        },
+    ],
+    "activities": [
+        {
+            "startTime": "2025-04-22T08:00:00-05:00",
+            "endTime": "2025-04-24T08:00:00-05:00",
+            "duration": 172800,
+        }
+    ],
+    "totalShiftsRequested": "",
+    "submittedDate": "",
+    "proprietaryFlag": "",
+    "mailInFlag": "",
+    "startTime": "2025-04-22T08:00:00-05:00",
+    "endTime": "2025-04-24T08:00:00-05:00",
+    "duration": 172800,
+}
+
+
+esaf_data = {
+    "esafId": 279007,
+    "description": "DNA will be put in the X-ray machine and scienced.",
+    "sector": "25",
+    "esafTitle": "EXAFS of DNA structure",
+    "experimentStartDate": "2025-04-15 08:00:00",
+    "experimentEndDate": "2025-04-19 08:00:00",
+    "esafStatus": "Approved",
+    "experimentUsers": [
+        {
+            "badge": "123456",
+            "badgeNumber": "123456",
+            "firstName": "Rosalind",
+            "lastName": "Franklin",
+            "email": "rfranklin@anl.gov",
+            "piFlag": "Yes",
+        },
+        {
+            "badge": "123457",
+            "badgeNumber": "123457",
+            "firstName": "Francis",
+            "lastName": "Crick",
+            "email": "frick@anl.gov",
+            "piFlag": "No",
+        },
+    ],
+}
+
+
+base_uri = "https://xraydtn02.xray.aps.anl.gov:11336"
 
 
 @pytest.fixture()
-def mock_api(httpx_mock):
-    pass
+def api():
+    return bss.BSSApi()
 
 
-async def test_get_beamlines(mock_api, httpx_mock):
-    # List of beamlines
-    httpx_mock.add_response(url="/".join([base_uri, "beamline", "findAllActiveBeamlines"]), json=beamlines)
-    api = bss.BSSApi()
-    beamlines_ = await api.beamlines()
-    assert len(beamlines_) == 1
-    names = {bl.name for bl in beamlines_}
-    assert names == {"Advanced Spectroscopy"}
+async def test_get_esafs(httpx_mock, api):
+    httpx_mock.add_response(f"{base_uri}/dm/esafsBySectorAndYear/25/2025", json=[esaf_data])
+    esafs_ = await api.esafs(sector="20", year="2025")
+    assert len(esafs_) == 1
+    this_esaf, = esafs_
+    assert this_esaf.title == esaf_data['esafTitle']
+    assert this_esaf.esaf_id == str(esaf_data['esafId'])
+    assert len(this_esaf.users) == 2
+    # Check properties of a signle user
+    user = this_esaf.users[0]
+    assert user.badge == "123456"
+    assert user.first_name == "Rosalind"
+    assert user.last_name == "Franklin"
+    assert user.email == "rfranklin@anl.gov"
+    assert user.is_pi == True
 
 
-async def test_get_runs(mock_api, httpx_mock):
-    # List of runs
-    httpx_mock.add_response(url="/".join([base_uri, "run", "getAllRuns"]), json=runs)
-    api = bss.BSSApi()
-    runs_ = await api.runs()
-    assert len(runs_) == 3
-    names = {run.name for run in runs_}
-    assert names == {"2024-3", "2025-1", "2025-3"}
+async def test_get_esaf(httpx_mock, api):
+    httpx_mock.add_response(url=f"{base_uri}/dm/esafs/279007", json=esaf_data)
+    esaf = await api.esaf(esaf_id="279007")
+
+
+async def test_get_proposals(httpx_mock, api):
+    httpx_mock.add_response(f"{base_uri}/dm/proposals/2025-1/25-ID-C", json=[proposal_data])
+    proposals_ = await api.proposals(cycle="2025-1", beamline="25-ID-C")
+    assert len(proposals_) == 1
+    proposal = proposals_[0]
+    assert proposal.proposal_id == "0158394"
+    assert proposal.title == proposal_data['title']
+    # Check user list
+    users = proposal.users
+    assert len(users) == 2
     
+
+async def test_get_proposal(httpx_mock, api):
+    httpx_mock.add_response(
+        url=f"{base_uri}/dm/proposals/2025-1/99-ID-C/0158394", json=proposal_data
+    )
+    proposal = await api.proposal(proposal_id="0158394", cycle="2025-1", beamline="99-ID-C")
+    assert proposal.title == proposal_data['title']
+
