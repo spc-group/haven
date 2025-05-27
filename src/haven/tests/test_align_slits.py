@@ -7,9 +7,15 @@ More critical plans (e.g. xafs_scan) are tested in other test files.
 import warnings
 
 import pytest
+from bluesky import RunEngine
 from ophyd import sim
 
 from haven.plans._align_slits import align_slits
+
+
+@pytest.fixture()
+def RE():
+    return RunEngine({})
 
 
 def test_align_slits(RE):
