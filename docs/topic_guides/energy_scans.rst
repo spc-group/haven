@@ -37,7 +37,7 @@ arguments should match the ``ERange`` example provided above.
 
     # The following two regions will produce equivalent scans
     region = ("k", -20, 50, 0.5, 1.0, 1.5)
-    region = KRange(start=-20, stop=50, step=0.5, exposure=1.0)
+    region = KRange(start=-20, stop=50, step=0.5, exposure=1.0, weight=1.5)
 
 
 Absolute vs. Relative Scans

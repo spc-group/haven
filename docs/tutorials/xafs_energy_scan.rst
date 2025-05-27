@@ -48,7 +48,7 @@ absorbance edge. If given, all other energy values (i.e. *start* and
    >>> # These two plans will scan from 8323 eV to 8383 eV
    >>> #   in 2eV steps with 1 sec exposure
    >>> absolute_plan = haven.xafs_scan([], ("E", 8323, 8383, 2, 1))
-   >>> relative_plan = haven.xafs_scan([], ("E", -20, 50, 2, 1) E0=8333)
+   >>> relative_plan = haven.xafs_scan([], ("E", -10, 50, 2, 1) E0=8333)
 
 Before running either of these plans, we can **verify that it will do
 what we expect** with the
@@ -109,7 +109,7 @@ The call below will scan the following energies, relative to 8333 eV:
    >>> multisegment_plan = haven.xafs_scan(
            ("E", -50, -10,  5, 0.5), # start, stop, step, exposure
            ("E", -10,  50,  1, 1),   # start, stop, step, exposure
-           ("E",  50, 200, 10, 0.5), # start, step, exposure
+           ("E",  50, 200, 10, 0.5), # start, stop, step, exposure
            E0="Ni_K"
        )
    >>> # Run the plan with the previously created RunEngine
