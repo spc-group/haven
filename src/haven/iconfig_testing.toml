@@ -335,6 +335,6 @@ vertical_motor_prefix = "255idcVME:m1"
 yaw_motor_prefix = "255idcVME:m1"
 rowland_diameter = 0.5  # in m
 lattice_constant = 0.543095  # in nm
-wedge_angle = 30  # in degrees
+wedge_angle = 30.0  # in degrees
 surface_plane = "211"
 name = "analyzer_crystal"
