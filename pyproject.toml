@@ -29,10 +29,9 @@ dependencies = [
     "httpx[http2]",
     "mergedeep",
     "ophyd==1.10.5",
-    # "ophyd-async==0.10.0a3",
-    # We need this custom ophyd-async fork until merge into main
-    #         https://github.com/bluesky/ophyd-async/issues/713
-    "ophyd-async @ git+https://github.com/spc-group/ophyd-async@detector_races",
+    # "ophyd-async==0.10.0",
+    # We need this ophyd-async development branch until a new release (>0.10.0a4)
+    "ophyd-async @ git+https://github.com/bluesky/ophyd-async@f652399e24c045b0f6c675d173c1ef588f909062",
     "pint",
     "pcdsdevices",
     "rich",
