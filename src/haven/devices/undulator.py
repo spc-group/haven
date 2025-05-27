@@ -229,10 +229,10 @@ class PlanarUndulator(StandardReadable):
     def auto_offset(self, energy: float) -> float:
         """Calculate an offset for a given energy based on a calibration lookup table."""
         xp, fp = self.offset_table.T.to_numpy()
-        new_offset = np.interp([energy], xp, fp, right=float("nan"), left=float("nan"))
+        new_offset = np.interp(energy, xp, fp, right=float("nan"), left=float("nan"))
         if math.isnan(new_offset):
             raise ValueError(f"Refusing to extrapolate ID offset: {energy}")
-        return float(new_offset[0])
+        return float(new_offset)
 
 
 # -----------------------------------------------------------------------------
