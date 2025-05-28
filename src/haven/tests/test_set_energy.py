@@ -1,73 +1,82 @@
 import pytest
-from ophyd.sim import motor, motor1, motor2
 
-from haven import exceptions
+from haven.devices import PlanarUndulator
 from haven.plans import set_energy
 
 
-def test_plan_messages():
+@pytest.fixture()
+async def undulator():
+    undulator = PlanarUndulator("ID255:DSID:", offset_pv="255idbFP:id_offset")
+    await undulator.connect(mock=True)
+    return undulator
+
+
+def test_plan_messages(mono):
     """Check that the right messages are getting produced."""
-    plan = set_energy(energy=8400, positioners=[motor])
+    plan = set_energy(energy=8400, monochromators=[mono], undulators=[])
     msgs = list(plan)
     assert len(msgs) == 2
     msg0 = msgs[0]
     assert msg0.args == (8400,)
-    assert msg0.obj.name == "motor"
+    assert msg0.obj is mono.energy
 
 
-def test_id_harmonic():
+def test_id_harmonic(undulator):
     """See if messages get emitted to change the ID harmonic at
     certain intervals.
 
     """
     plan = set_energy(
-        energy=8400, harmonic=3, positioners=[motor1], harmonic_positioners=[motor2]
+        energy=8400,
+        harmonic=3,
+        undulator_offset=None,
+        undulators=[undulator],
+        monochromators=[],
     )
     msgs = list(plan)
     # Check that a message exists to the ID harmonic
     assert len(msgs) == 4
     msg0 = msgs[0]
     assert msg0.args == (3,)
-    assert msg0.obj.name == "motor2"
+    assert msg0.obj is undulator.harmonic_value
 
 
-def test_id_harmonic_auto():
+def test_id_harmonic_auto(undulator):
     plan = set_energy(
-        energy=8400,
-        harmonic="auto",
-        positioners=[motor1],
-        harmonic_positioners=[motor2],
+        energy=8400, undulator_offset=None, monochromators=[], undulators=[undulator]
     )
     msgs = list(plan)
     # Check that a message exists to the ID harmonic
     assert len(msgs) == 4
     msg0 = msgs[0]
     assert msg0.args == (1,)
-    assert msg0.obj.name == "motor2"
+    assert msg0.obj is undulator.harmonic_value
     # Try again but with a 3rd harmonic
     plan = set_energy(
         energy=18400,
-        harmonic="auto",
-        positioners=[motor1],
-        harmonic_positioners=[motor2],
+        undulator_offset=None,
+        monochromators=[],
+        undulators=[undulator],
     )
     msgs = list(plan)
     # Check that a message exists to the ID harmonic
     assert len(msgs) == 4
     msg0 = msgs[0]
     assert msg0.args == (3,)
-    assert msg0.obj.name == "motor2"
-
-
-def test_invalid_harmonic():
+    assert msg0.obj is undulator.harmonic_value
+    # Try again but with a 5th harmonic
     plan = set_energy(
-        energy=8400,
-        harmonic="jabberwocky",
-        positioners=[motor1],
-        harmonic_positioners=[motor2],
+        energy=25000,
+        undulator_offset=None,
+        monochromators=[],
+        undulators=[undulator],
     )
-    with pytest.raises(exceptions.InvalidHarmonic):
-        list(plan)
+    msgs = list(plan)
+    # Check that a message exists to the ID harmonic
+    assert len(msgs) == 4
+    msg0 = msgs[0]
+    assert msg0.args == (5,)
+    assert msg0.obj is undulator.harmonic_value
 
 
 # -----------------------------------------------------------------------------

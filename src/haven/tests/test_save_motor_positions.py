@@ -243,7 +243,7 @@ async def test_list_current_motor_positions(motors, capsys):
     with capsys.disabled():
         # Move to some other motor position so we can tell it saved the right one
         set_mock_value(motorA.user_readback, 11.0)
-        set_mock_value(motorA.user_offset, 1.5)
+        set_mock_value(motorA.offset, 1.5)
         set_mock_value(motorB.user_readback, 23.0)
     # List the current motor position
     await list_current_motor_positions(motorA, motorB, name="Current motor positions")

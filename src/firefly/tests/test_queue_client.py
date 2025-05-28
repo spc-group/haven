@@ -294,7 +294,7 @@ async def test_queue_re_control(client):
 
 
 @pytest.mark.asyncio
-async def test_run_plan(client, qtbot):
+async def test_queue_plan(client, qtbot):
     """Test if a plan can be queued in the queueserver."""
     api = client.api
     api.item_add.return_value = {"success": True, "qsize": 2}
@@ -304,6 +304,19 @@ async def test_run_plan(client, qtbot):
     await client.add_queue_item({})
     # Check if the API sent it
     api.item_add.assert_called_once_with(item={})
+
+
+@pytest.mark.asyncio
+async def test_execute_plan(client, qtbot):
+    """Test if a plan can be executed in the queueserver."""
+    api = client.api
+    api.item_execute.return_value = {"success": True, "qsize": 1}
+    new_status = qs_status.copy()
+    new_status["items_in_queue"] = 1
+    # Send a plan
+    await client.execute_queue_item({})
+    # Check if the API sent it
+    api.item_execute.assert_called_once_with(item={})
 
 
 @pytest.mark.asyncio

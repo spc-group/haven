@@ -3,10 +3,11 @@ import subprocess
 import psutil
 import pydm
 import pytest
+from ophyd import EpicsMotor
 from ophyd.sim import make_fake_device
 from ophyd_async.core import wait_for_connection
 
-from haven.devices.motor import HavenMotor, Motor
+from haven.devices.motor import Motor
 
 
 def tiled_is_running(port, match_command=True):
@@ -66,7 +67,7 @@ def sync_motors(sim_registry):
     motor_names = ["sync_motor_1", "sync_motor_2"]
     motors = []
     for name in motor_names:
-        this_motor = make_fake_device(HavenMotor)(name=name, labels={"motors"})
+        this_motor = make_fake_device(EpicsMotor)(name=name, labels={"motors"})
         motors.append(this_motor)
         sim_registry.register(this_motor)
     return motors

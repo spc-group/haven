@@ -8,7 +8,7 @@ from pydm.widgets import PyDMChannel, PyDMLabel, PyDMPushButton
 from pydm.widgets.analog_indicator import PyDMAnalogIndicator
 from pydm.widgets.display_format import DisplayFormat
 from qasync import asyncSlot
-from qtpy.QtCore import Qt, Signal
+from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QCheckBox,
     QHBoxLayout,
@@ -27,9 +27,6 @@ log = logging.getLogger(__name__)
 
 class VoltmetersDisplay(display.FireflyDisplay):
     _ion_chamber_rows: Sequence
-
-    # Signals
-    details_window_requested = Signal(str)  # ion-chamber device name
 
     def customize_ui(self):
         # Connect support for running the auto_gain and dark current plans
@@ -69,8 +66,9 @@ class VoltmetersDisplay(display.FireflyDisplay):
             for col_idx, layout in enumerate(row.column_layouts):
                 self.ui.voltmeters_layout.addLayout(layout, row_idx, col_idx)
             # Connect the details button signal
-            details_slot = partial(self.details_window_requested.emit, ic.name)
+            details_slot = partial(self.device_window_requested.emit, ic.name)
             row.details_button.clicked.connect(details_slot)
+            print("Updating", row.details_button)
         # Remove old shutters from the combobox
         for idx in range(self.ui.shutter_combobox.count()):
             self.ui.shutter_combobox.removeItem(idx)
