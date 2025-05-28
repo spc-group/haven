@@ -126,7 +126,7 @@ def energy_scan(
     for det in detectors:
         real_detectors.extend(beamline.devices.findall(det))
     log.debug(f"Found registered detectors: {real_detectors}")
-    energy_devices = [beamline.devices[ep] for ep in energy_devices]
+    energy_devices = beamline.devices.findall(energy_devices, allow_none=True)
     # Figure out which time positioners to use
     if time_signals is None:
         time_signals = [
