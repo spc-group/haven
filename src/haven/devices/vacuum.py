@@ -17,12 +17,14 @@ class PumpController(StandardReadable):
     _ophyd_labels_ = {"vacuum"}
 
     def __init__(self, prefix, name=""):
-        # Work out which position the controller is in
+        # Work out which slot this pump's controller is in
+        # (each QPC has 4 slots)
+        # e.g. ":qpc01c" is in slot `3` because of the 'c'.
         regex = r":[qm]pc+\d+([a-z])"
         match = re.search(regex, prefix)
         if match is None:
             raise ValueError(f"prefix {prefix} does not match expected pattern {regex}")
-        position = ord(match.group(1)) - 96
+        slot = ord(match.group(1)) - ord("a")  # Find ordinal relative to 'a'
         # Create signals
         with self.add_children_as_readables(StandardReadableFormat.HINTED_SIGNAL):
             self.pressure = epics_signal_r(float, f"{prefix}Pressure")
@@ -32,7 +34,7 @@ class PumpController(StandardReadable):
             self.status = epics_signal_r(str, f"{prefix}Status")
         with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
             self.size = epics_signal_r(float, f"{prefix}PumpSize")
-            self.description = epics_signal_r(str, f"{prefix}Pump{position}Name")
+            self.description = epics_signal_r(str, f"{prefix}Pump{slot+1}Name")
             self.model = epics_signal_r(str, f"{prefix}Model")
         super().__init__(name=name)
 
