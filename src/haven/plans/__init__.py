@@ -16,6 +16,7 @@ from haven.preprocessors import (
 
 from ._align_motor import align_motor
 from ._auto_gain import auto_gain
+from ._calibrate import calibrate  # noqa: F401
 from ._energy_scan import energy_scan
 from ._fly import fly_scan, grid_fly_scan
 from ._record_dark_current import record_dark_current  # noqa: F401

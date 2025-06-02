@@ -74,9 +74,9 @@ def from_tuple(energy_range):
     """Convert tuple of (start, stop, step?, exposure?, weight?) to energy range."""
     if isinstance(energy_range, EnergyRange):
         return energy_range
-    if energy_range[0] == "E":
+    if energy_range[0] in ["E", "e"]:
         return ERange(*energy_range[1:])
-    if energy_range[0] == "K":
+    if energy_range[0] in ["k", "K"]:
         return KRange(*energy_range[1:])
     return ERange(*energy_range)
 

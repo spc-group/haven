@@ -82,7 +82,7 @@ def tiled_api(httpx_mock):
         is_optional=True,
     )
     httpx_mock.add_response(
-        url="http://localhost:8000/api/v1/search/scans%2Fscan1/",
+        url="http://localhost:8000/api/v1/search/scans%2Fscan1%2Fstreams/",
         json={
             "data": [
                 {"id": "primary"},
@@ -113,14 +113,14 @@ def tiled_api(httpx_mock):
         is_optional=True,
     )
     httpx_mock.add_response(
-        url="http://localhost:8000/api/v1/metadata/scans%2Fscan1%2Fprimary",
+        url="http://localhost:8000/api/v1/metadata/scans%2Fscan1%2Fstreams%2Fprimary",
         json=md_to_json({}),
         is_reusable=True,
         is_optional=True,
     )
     httpx_mock.add_response(
         url=re.compile(
-            "http://localhost:8000/api/v1/metadata/scans%2F[-a-z0-9]+%2Fprimary%2Finternal%2Fevents"
+            "http://localhost:8000/api/v1/metadata/scans%2F[-a-z0-9]+%2Fstreams%2Fprimary%2Finternal"
         ),
         json={
             "data": {
@@ -164,7 +164,7 @@ def tiled_api(httpx_mock):
     )
     httpx_mock.add_response(
         url=re.compile(
-            "http://localhost:8000/api/v1/table/full/scans%2F[-a-z0-9]+%2Fprimary%2Finternal%2Fevents"
+            "http://localhost:8000/api/v1/table/full/scans%2F[-a-z0-9]+%2Fstreams%2Fprimary%2Finternal"
         ),
         stream=IteratorStream(
             [

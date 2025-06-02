@@ -1,14 +1,18 @@
-from firefly import slits
+import logging
+
+import haven
+from firefly import display
+
+log = logging.getLogger(__name__)
 
 
-class MirrorDisplay(slits.SlitsDisplay):
-    def customize_ui(self):
-        # Enable the bender controls if the mirror is bendable
-        if hasattr(self.device, "bender"):
-            self.ui.bender_embedded_display.setEnabled(True)
+class AsymmotronDisplay(display.FireflyDisplay):
+
+    def customize_device(self):
+        self.device = haven.registry.find(self.macros()["DEVICE"])
 
     def ui_filename(self):
-        return "mirror.ui"
+        return "devices/asymmotron.ui"
 
 
 # -----------------------------------------------------------------------------

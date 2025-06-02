@@ -1,18 +1,24 @@
-import logging
+import qtawesome as qta
 
-import haven
 from firefly import display
+from haven import beamline
 
-log = logging.getLogger(__name__)
 
-
-class AsymmotronDisplay(display.FireflyDisplay):
+class IonChamberDisplay(display.FireflyDisplay):
+    """A GUI window for changing settings in an ion chamber."""
 
     def customize_device(self):
-        self.device = haven.registry.find(self.macros()["DEVICE"])
+        self._device = beamline.devices[self.macros()["IC"]]
+
+    def customize_ui(self):
+        # Use qtawesome icons instead of unicode arrows
+        self.ui.gain_down_button.setText("")
+        self.ui.gain_down_button.setIcon(qta.icon("fa6s.arrow-left"))
+        self.ui.gain_up_button.setText("")
+        self.ui.gain_up_button.setIcon(qta.icon("fa6s.arrow-right"))
 
     def ui_filename(self):
-        return "asymmotron.ui"
+        return "devices/ion_chamber.ui"
 
 
 # -----------------------------------------------------------------------------

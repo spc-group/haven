@@ -305,8 +305,8 @@ async def list_current_motor_positions(*motors, name="Current motor positions"):
     for m in motors:
         payload = dict(name=m.name, readback=await rbv(m))
         # Save the calibration offset for motors
-        if hasattr(m, "user_offset"):
-            payload["offset"] = await m.user_offset.get_value()
+        if hasattr(m, "offset"):
+            payload["offset"] = await m.offset.get_value()
         axis = MotorAxis(**payload)
         motor_axes.append(axis)
     position = MotorPosition(
