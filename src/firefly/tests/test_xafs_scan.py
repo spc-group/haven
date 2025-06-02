@@ -113,13 +113,13 @@ def test_E0_checkbox(display):
     )
 
 
-def test_queue_plan(display, qtbot):
+def test_queue_plan(display, qtbot, xspress, ion_chamber):
     """Does a plan actually get emitted when queued?"""
     display.edge_combo_box.setCurrentText("58893.0")
     display.regions[-1].region_checkbox.setChecked(False)
     # Set up detector list
     display.ui.detectors_list.selected_detectors = mock.MagicMock(
-        return_value=["vortex_me4", "I0"]
+        return_value=[xspress, ion_chamber]
     )
     # set up meta data
     display.ui.lineEdit_sample.setText("sam")
@@ -129,7 +129,7 @@ def test_queue_plan(display, qtbot):
 
     args, kwargs = display.plan_args()
     assert args == (
-        ["vortex_me4", "I0"],
+        ["vortex_me4", "I00"],
         ("E", -200.0, -50.0, 5.0, 1.0),
         ("E", -50.0, 50.0, 0.5, 1.0),
     )
@@ -144,12 +144,12 @@ def test_queue_plan(display, qtbot):
     }
 
 
-def test_plan_energies(display, qtbot):
+def test_plan_energies(display, qtbot, xspress, ion_chamber):
     display.edge_combo_box.setCurrentIndex(1)
     display.regions[-1].region_checkbox.setChecked(False)
     # Set up detector list
     display.ui.detectors_list.selected_detectors = mock.MagicMock(
-        return_value=["vortex_me4", "I0"]
+        return_value=[xspress, ion_chamber]
     )
     # set up meta data
     display.ui.lineEdit_sample.setText("sam")
@@ -159,7 +159,7 @@ def test_plan_energies(display, qtbot):
     # Check plan arguments that will be sent to the queue
     args, kwargs = display.plan_args()
     assert args == (
-        ["vortex_me4", "I0"],
+        ["vortex_me4", "I00"],
         ("E", -200.0, -50.0, 5.0, 1.0),
         ("E", -50.0, 50.0, 0.5, 1.0),
     )
@@ -174,12 +174,12 @@ def test_plan_energies(display, qtbot):
     }
 
 
-def test_xafs_scan_plan_queued_numeric_E0(display, qtbot):
+def test_xafs_scan_plan_queued_numeric_E0(display, qtbot, xspress, ion_chamber):
     display.edge_combo_box.setCurrentText("58893.0")
     display.regions[-1].region_checkbox.setChecked(False)
     # Set up detector list
     display.ui.detectors_list.selected_detectors = mock.MagicMock(
-        return_value=["vortex_me4", "I0"]
+        return_value=[xspress, ion_chamber]
     )
     # set up meta data
     display.ui.lineEdit_sample.setText("sam")
@@ -190,7 +190,7 @@ def test_xafs_scan_plan_queued_numeric_E0(display, qtbot):
     # Check plan arguments
     args, kwargs = display.plan_args()
     detectors, *energy_ranges = args
-    assert detectors == ["vortex_me4", "I0"]
+    assert detectors == ["vortex_me4", "I00"]
     assert energy_ranges == [
         ("E", -200.0, -50.0, 5.0, 1.0),
         ("E", -50.0, 50.0, 0.5, 1.0),
@@ -204,7 +204,7 @@ def test_xafs_scan_plan_queued_numeric_E0(display, qtbot):
     }
 
 
-def test_plan_energies_k_mixed(qtbot, display):
+def test_plan_energies_k_mixed(qtbot, display, xspress, ion_chamber):
     display.ui.num_regions_spin_box.setValue(2)
     display.edge_combo_box.setCurrentIndex(1)
     # Set up the first region
@@ -220,7 +220,7 @@ def test_plan_energies_k_mixed(qtbot, display):
     display.regions[1].weight_spinbox.setValue(2)
     # Set up detector list
     display.ui.detectors_list.selected_detectors = mock.MagicMock(
-        return_value=["vortex_me4", "I0"]
+        return_value=[xspress, ion_chamber]
     )
     # Set repeat scan num to 2
     display.ui.spinBox_repeat_scan_num.setValue(3)
@@ -230,7 +230,7 @@ def test_plan_energies_k_mixed(qtbot, display):
 
     args, kwargs = display.plan_args()
     detectors, *energy_ranges = args
-    assert detectors == ["vortex_me4", "I0"]
+    assert detectors == ["vortex_me4", "I00"]
     assert energy_ranges == [
         ("E", -20.0, 40.0, 10, 1.0),
         ("K", 3.6226, 14.4905, 5.0, 1.0, 2),
