@@ -16,6 +16,7 @@ def baseline_wrapper(
         "power_supplies",
         "xray_sources",
         "APS",
+        "vacuum",
         "baseline",
     ],
     name: str = "baseline",
