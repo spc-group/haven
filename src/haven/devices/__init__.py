@@ -1,19 +1,20 @@
 from .aperture_slits import ApertureSlits  # noqa: F401
 from .asymmotron import Analyzer  # noqa: F401
+from .axilon_monochromator import AxilonMonochromator  # noqa: F401
 from .blade_slits import BladeSlits, setup_blade_slits  # noqa: F401
 from .detectors._lambda import LambdaDetector  # noqa: F401
 from .detectors.aravis import AravisDetector  # noqa: F401
 from .detectors.eiger import EigerDetector  # noqa: F401
 from .detectors.sim_detector import SimDetector  # noqa: F401
 from .detectors.xspress import Xspress3Detector  # noqa: F401
-from .energy_positioner import EnergyPositioner  # noqa: F401
 from .ion_chamber import IonChamber  # noqa: F401
-from .monochromator import Monochromator  # noqa: F401
-from .motor import HavenMotor, Motor, load_motors  # noqa: F401
+from .mirrors import HighHeatLoadMirror, KBMirrors  # noqa: F401
+from .motor import Motor, load_motors  # noqa: F401
 from .robot import Robot  # noqa: F401
 from .scaler import MultiChannelScaler  # noqa: F401
 from .shutter import PssShutter, ShutterState  # noqa: F401
 from .table import Table  # noqa: F401
+from .undulator import PlanarUndulator  # noqa: F401
 from .vacuum import PumpController, TelevacIonGauge  # noqa: F401
 from .xia_pfcu import PFCUFilter, PFCUFilterBank  # noqa: F401
 

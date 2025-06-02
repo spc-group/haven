@@ -1,24 +1,24 @@
 from unittest.mock import MagicMock
 
 import pytest
+from bluesky import RunEngine
 from bluesky import plans as bp
 from bluesky.callbacks import CallbackBase
 from ophyd.sim import SynAxis, det, instantiate_fake_device
 
 import haven
-from haven import baseline_decorator, baseline_wrapper, run_engine
+from haven import baseline_decorator, baseline_wrapper
 from haven.devices.beamline_manager import BSS
-from haven.preprocessors import shutter_suspend_decorator, shutter_suspend_wrapper
+from haven.preprocessors import (
+    inject_haven_md_wrapper,
+    shutter_suspend_decorator,
+    shutter_suspend_wrapper,
+)
 
 
 @pytest.fixture()
 def RE():
-    return run_engine(
-        use_bec=False,
-        connect_databroker=False,
-        connect_tiled=False,
-        connect_kafka=False,
-    )
+    return RunEngine({})
 
 
 @pytest.mark.xfail
@@ -50,7 +50,7 @@ def test_shutter_suspend_wrapper(aps, shutters, sim_registry, RE):
     assert len(unsub_msgs) == 2
 
 
-def test_baseline_wrapper(sim_registry, aps, event_loop, RE):
+def test_baseline_wrapper(sim_registry, aps, RE):
     # Create a test device
     motor_baseline = SynAxis(name="baseline_motor", labels={"motors", "baseline"})
     sim_registry.register(motor_baseline)
@@ -98,6 +98,7 @@ def test_baseline_decorator(sim_registry, aps, RE):
 
 def test_metadata(sim_registry, aps, monkeypatch, RE):
     """Similar to baseline wrapper test, but used as a decorator."""
+    RE.preprocessors.append(inject_haven_md_wrapper)
     # Load devices
     bss = instantiate_fake_device(BSS, name="bss", prefix="255id:bss:")
     sim_registry.register(bss)

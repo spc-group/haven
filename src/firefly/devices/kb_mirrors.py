@@ -1,23 +1,27 @@
-from bluesky.callbacks import CallbackBase
-from tqdm import tqdm
+from firefly.devices.slits import SlitsDisplay
+
+# from haven.instrument import mirrors
 
 
-class ProgressBar(CallbackBase):
-    num_points: int = 0
+class KBMirrorsDisplay(SlitsDisplay):
 
-    """A progress bar that tracks a scan."""
+    def ui_filename(self):
+        return "devices/kb_mirrors.ui"
 
-    def start(self, doc):
-        self.num_points = doc["num_points"]
-        self.plan_name = doc.get("plan_name", "Scanning")
-        # Set up the tqdm bar
-        self.pbar = tqdm(total=self.num_points, unit="pt", desc=self.plan_name)
-
-    def event(self, doc):
-        self.pbar.update(1)
-
-    def stop(self, doc):
-        self.pbar.close()
+    def customize_ui(self):
+        # Enable/disable bender controls
+        horiz = self.device.horiz
+        self.ui.horizontal_upstream_display.setEnabled(
+            hasattr(horiz, "bender_upstream")
+        )
+        self.ui.horizontal_downstream_display.setEnabled(
+            hasattr(horiz, "bender_downstream")
+        )
+        vert = self.device.vert
+        self.ui.vertical_upstream_display.setEnabled(hasattr(vert, "bender_upstream"))
+        self.ui.vertical_downstream_display.setEnabled(
+            hasattr(vert, "bender_downstream")
+        )
 
 
 # -----------------------------------------------------------------------------

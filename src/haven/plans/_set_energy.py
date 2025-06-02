@@ -1,44 +1,42 @@
-from typing import Union
+from typing import Literal, Sequence
 
 from bluesky import plan_stubs as bps
+from bluesky.protocols import Movable
 
-from .. import exceptions
 from ..instrument import beamline
 from ..typing import DetectorList
 
 __all__ = ["set_energy"]
 
 
-Harmonic = Union[str, int, None]
+Harmonic = str | int | None
 
 
-def auto_harmonic(energy: float, harmonic: Harmonic) -> Harmonic:
-    # No harmonic change is requested
-    if harmonic is None:
-        return harmonic
-    # Check for specific harmonics
-    try:
-        return int(harmonic)
-    except ValueError:
-        pass
-    # Check for auto harmonic selection
-    threshold = 11000
-    if harmonic == "auto":
-        if energy < threshold:
-            return 1
-        else:
-            return 3
-    # If we get here, the harmonic was not a valid option
-    raise exceptions.InvalidHarmonic(
-        f"Insertion device cannot accept harmonic: {harmonic}"
-    )
+def auto_harmonic(
+    energy: float, thresholds: Sequence[float | int] = [10000, 20000]
+) -> int:
+    """Decide which harmonic to use for the undulator at a given energy.
+
+    Parameters
+    ==========
+    energy
+      The energy for deciding which harmonic to use.
+    thresholds
+      Energies marking the boundaries for switching from one harmonic
+      to the next. Should increase monotonically.
+
+    """
+    segment = sum([energy > th for th in thresholds])
+    harmonic = segment * 2 + 1
+    return harmonic
 
 
 def set_energy(
     energy: float,
-    harmonic: Harmonic = None,
-    positioners: DetectorList = ["energy"],
-    harmonic_positioners: DetectorList = ["undulator_harmonic_value"],
+    harmonic: int | Literal["auto"] | None = "auto",
+    undulator_offset: float | Literal["auto"] | None = "auto",
+    undulators: DetectorList = ["undulators"],
+    monochromators: DetectorList = ["monochromators"],
 ):
     """Set the energy of the beamline, in electron volts.
 
@@ -51,29 +49,49 @@ def set_energy(
     used. If *harmonic* is an integer (e.g. 1, 3, 5) then this value
     will be used.
 
+    The *undulator_offset* parameter sets the offset applied to any
+    undulators. If ``"auto"``, then the offset will be selected from a
+    calibration look-up table. If ``None``, then offset will not be
+    changed. Otherwise, *id_offset* will be set directly.
+
     Parameters
     ==========
     energy
       The target energy of the beamline, in electron-volts.
     harmonic
-
       Which harmonic to use for the undulator. Can be an integer
       (e.g. 1, 3, 5), ``None``, or ``"auto"``.
+    undulator_offset
+      Offset to apply for the undulators. Can be a float, ``None``, or
+      ``"auto"``.
 
     """
-    # Prepare arguments for undulator harmonic
-    harmonic = auto_harmonic(energy, harmonic)
+    if undulators:
+        undulators = beamline.devices.findall(undulators, allow_none=True)
+    if monochromators:
+        monochromators = beamline.devices.findall(monochromators, allow_none=True)
+    # Prepare arguments for undulator harmonics and offsets
+    mv_args: list[Movable | int | float] = []
+    if harmonic == "auto":
+        harmonic = auto_harmonic(energy)
     if harmonic is not None:
-        harmonic_positioners = beamline.devices.findall(name=harmonic_positioners)
-        hargs = []
-        for positioner in harmonic_positioners:
-            hargs.extend([positioner, harmonic])
-        yield from bps.mv(*hargs)
-    # Prepare arguments for energy
-    positioners = beamline.devices.findall(name=positioners)
-    args = []
-    for positioner in positioners:
-        args.extend([positioner, energy])
+        harmonic_signals = [undulator.harmonic_value for undulator in undulators]
+        mv_args.extend(arg for signal in harmonic_signals for arg in (signal, harmonic))
+    if undulator_offset == "auto":
+        offsets = [undulator.auto_offset(energy) for undulator in undulators]
+    elif undulator_offset is not None:
+        offsets = [undulator_offset for undulator in undulators]
+    else:
+        offsets = []
+    # Move the undulator harmonics/offsets before setting energy
+    for offset, undulator in zip(offsets, undulators):
+        if offset is not None:
+            mv_args.extend((undulator.energy.offset, offset))
+    if len(mv_args) > 0:
+        yield from bps.mv(*mv_args)
+    # Prepare arguments for moving energy
+    energy_devices = [device.energy for device in [*undulators, *monochromators]]
+    args = [arg for device in energy_devices for arg in (device, energy)]
     # Execute the plan
     yield from bps.mv(*args)
 

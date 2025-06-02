@@ -13,11 +13,7 @@ from .devices.aerotech import AerotechStage
 from .devices.aps import ApsMachine
 from .devices.beamline_manager import BeamlineManager
 from .devices.dxp import make_dxp_device
-from .devices.energy_positioner import EnergyPositioner
 from .devices.heater import CapillaryHeater
-from .devices.ion_chamber import IonChamber
-from .devices.mirrors import HighHeatLoadMirror, KBMirrors
-from .devices.motor import Motor, load_motors
 from .devices.power_supply import NHQ203MChannel
 from .devices.robot import Robot
 from .devices.shutter import PssShutter
@@ -63,11 +59,7 @@ class HavenInstrument(Instrument):
     ):
         """Load the beamline instrumentation.
 
-        This function will reach out and query various IOCs for motor
-        information based on the information in *config* (see
-        ``iconfig_default.toml`` for examples). Based on the
-        configuration, it will create Ophyd devices and register them with
-        *registry*.
+        Adds some custom configuration for Haven.
 
         Parameters
         ==========
@@ -89,15 +81,7 @@ class HavenInstrument(Instrument):
             config_files = []
         # Load devices ("motors" is done later)
         for cfg_file in config_files:
-            super().load(cfg_file, return_exceptions=True, ignored_classes=["motors"])
-        # VME-style Motors happen later so duplicate motors can be
-        # removed
-        for cfg_file in config_files:
-            super().load(
-                cfg_file,
-                device_classes={"motors": load_motors},
-                ignored_classes=self.device_classes.keys(),
-            )
+            super().load(cfg_file, return_exceptions=True)
         # Return the final list
         if return_devices:
             return self.devices
@@ -114,17 +98,19 @@ beamline = HavenInstrument(
         "blade_slits": devices.BladeSlits,
         "camera": devices.AravisDetector,
         "eiger": devices.EigerDetector,
-        "energy": EnergyPositioner,
-        "high_heat_load_mirror": HighHeatLoadMirror,
-        "ion_chamber": IonChamber,
-        "kb_mirrors": KBMirrors,
+        "high_heat_load_mirror": devices.HighHeatLoadMirror,
+        "ion_chamber": devices.IonChamber,
+        "kb_mirrors": devices.KBMirrors,
         "lambda": devices.LambdaDetector,
-        "motor": Motor,
+        "monochromator": devices.AxilonMonochromator,
+        "motor": devices.Motor,
+        "motors": devices.load_motors,
         "pfcu4": PFCUFilterBank,
         "pss_shutter": PssShutter,
         "scaler": devices.MultiChannelScaler,
         "sim_detector": devices.SimDetector,
         "table": Table,
+        "undulator": devices.PlanarUndulator,
         "vacuum_gauges": make_devices(devices.TelevacIonGauge),
         "vacuum_pumps": make_devices(devices.PumpController),
         "xspress3": devices.Xspress3Detector,

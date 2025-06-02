@@ -16,7 +16,7 @@ import asyncio
 import logging
 import math
 from collections import OrderedDict
-from typing import Optional, Type
+from typing import Optional, Type, TypeVar
 
 from ophyd_async.core import (
     CALCULATE_TIMEOUT,
@@ -25,7 +25,6 @@ from ophyd_async.core import (
     Device,
     SignalRW,
     StrictEnum,
-    T,
 )
 from ophyd_async.epics.core import epics_signal_rw, epics_signal_x
 from ophyd_async.epics.core._signal import _epics_signal_backend
@@ -34,6 +33,8 @@ from .. import exceptions
 from .signal import derived_signal_r, derived_signal_rw
 
 logger = logging.getLogger(__name__)
+
+T = TypeVar("T")
 
 
 gain_units = ["pA/V", "nA/V", "uA/V", "mA/V"]
