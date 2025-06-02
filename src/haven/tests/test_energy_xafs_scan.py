@@ -278,26 +278,22 @@ async def test_energy_scan_metadata_multiple_monos(mono):
         msgs.append(next(scan))
         if msgs[-1].command == "read":
             read_msg = msgs[-1]
+    readings = {
+        f"{mono.name}-d_spacing": {
+            "value": 3.134734,
+            "timestamp": 1742397744.329849,
+            "alarm_severity": 0,
+        },
+        f"{mono2.name}-d_spacing": {
+            "value": 4.20,
+            "timestamp": 1742397744.329849,
+            "alarm_severity": 0,
+        },
+    }
     msgs.extend(
         [
-            scan.send(
-                {
-                    f"{mono.name}-d_spacing": {
-                        "value": 3.134734,
-                        "timestamp": 1742397744.329849,
-                        "alarm_severity": 0,
-                    }
-                }
-            ),
-            scan.send(
-                {
-                    f"{mono2.name}-d_spacing": {
-                        "value": 4.20,
-                        "timestamp": 1742397744.329849,
-                        "alarm_severity": 0,
-                    }
-                }
-            ),
+            scan.send(readings),
+            scan.send(readings),
         ]
     )
     # Produce the rest of the msgs
@@ -307,7 +303,7 @@ async def test_energy_scan_metadata_multiple_monos(mono):
     # Check that the metadata has the right values
     assert md["edge"] == "Ni-K"
     assert md["E0"] == 8333.0
-    assert md["d_spacing"] == [3.134734, 4.20]
+    assert md["d_spacing"] == {"mono2-d_spacing": 4.20, "mono-d_spacing": 3.134734}
     assert md["plan_name"] == "energy_scan"
     assert md["sample_name"] == "unobtanium"
 
