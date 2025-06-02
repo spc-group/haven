@@ -1,14 +1,19 @@
+import pytest
 from pydm.widgets import PyDMByteIndicator
 from qtpy.QtWidgets import QFormLayout
 
 from firefly.status import StatusDisplay
 
 
-def test_shutter_controls(qtbot, shutters, xia_shutter, sim_registry):
-    """Do shutter controls get added to the window?"""
+@pytest.fixture()
+def display(qtbot, shutters, xia_shutter, sim_registry):
     disp = StatusDisplay()
     qtbot.addWidget(disp)
-    form = disp.ui.beamline_layout
+    return disp
+
+def test_shutter_controls(display):
+    """Do shutter controls get added to the window?"""
+    form = display.ui.beamline_layout
     # Check label text
     label0 = form.itemAt(4, QFormLayout.LabelRole)
     assert "shutter" in label0.widget().text().lower()
@@ -21,6 +26,24 @@ def test_shutter_controls(qtbot, shutters, xia_shutter, sim_registry):
     close_btn = layout0.itemAt(2).widget()
     assert close_btn.text() == "Close"
 
+
+def test_bss_widgets(display):
+    display.update_bss_metadata({
+        "proposal_id": "1234567",
+        "proposal_title": "Science!",
+        "esaf_id": "987654",
+        "esaf_title": "Science!",
+        "esaf_status": "Approved",
+        "esaf_end": "2025-05-29T17:53:00-05:00",
+        "esaf_users": "Rosalind Franklin, James Crick",
+    })
+    assert display.ui.proposal_id_label.text() == "1234567"
+    assert display.ui.proposal_title_label.text() == "Science!"
+    assert display.ui.esaf_id_label.text() == "987654"
+    assert display.ui.esaf_title_label.text() == "Science!"
+    assert display.ui.esaf_status_label.text() == "Approved"
+    assert display.ui.esaf_end_date_label.text() == "2025-05-29T17:53:00-05:00"
+    assert display.ui.esaf_users_label.text() == "Rosalind Franklin, James Crick"
 
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman

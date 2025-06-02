@@ -1,13 +1,15 @@
+import asyncio
 import logging
+import dataclasses
 
 import qtawesome as qta
-from apsbss import apsbss
-from dm.common.exceptions.objectNotFound import ObjectNotFound
-from qtpy.QtCore import Signal
+from qtpy.QtCore import Signal, Qt, QDateTime
 from qtpy.QtGui import QStandardItem, QStandardItemModel
+from qtpy.QtWidgets import QAbstractItemView, QDateTimeEdit
 
 from firefly import display
 from haven import beamline, load_config
+from haven.bss import BssApi, Proposal, Esaf
 
 log = logging.getLogger(__name__)
 
@@ -15,29 +17,28 @@ log = logging.getLogger(__name__)
 class BssDisplay(display.FireflyDisplay):
     """A PyDM display for the beamline scheduling system (BSS)."""
 
-    _proposal_col_names = ["ID", "Title", "Start", "End", "Users", "Badges"]
+    _proposal_col_names = ["proposal_id", "title", "start", "end", "users", "mail_in", "proprietary"]
     _esaf_col_names = [
-        "ID",
-        "Title",
-        "Start",
-        "End",
-        "Users",
-        "Badges",
+        "esaf_id",
+        "title",
+        "start",
+        "end",
+        "users",
+        "status"
     ]
-    _esaf_id: str = ""
-    _psoporsal_id: str = ""
-
     # Signal
+    metadata_changed = Signal(dict)
+    # These might only be used for testing, maybe they can be removed
     proposal_changed = Signal()
     proposal_selected = Signal()
     esaf_changed = Signal()
     esaf_selected = Signal()
 
-    def __init__(self, api=apsbss, args=None, macros={}, **kwargs):
+    def __init__(self, api=None, args=None, macros={}, **kwargs):
+        if api is None:
+            api = BssApi()
         self.api = api
         super().__init__(args=args, macros=macros, **kwargs)
-        # Load data models for proposals and ESAFs
-        self.load_models()
 
     def customize_ui(self):
         super().customize_ui()
@@ -46,73 +47,91 @@ class BssDisplay(display.FireflyDisplay):
         self.ui.update_proposal_button.clicked.connect(self.update_proposal)
         self.ui.update_esaf_button.setIcon(icon)
         self.ui.update_esaf_button.clicked.connect(self.update_esaf)
-        self.ui.refresh_models_button.clicked.connect(self.load_models)
-        # Icon for the refresh button
-        self.ui.refresh_models_button.setIcon(qta.icon("fa6s.arrows-rotate"))
+        # Want tables to select the whole row
+        self.ui.proposal_view.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.ui.proposal_view.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.ui.esaf_view.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.ui.esaf_view.setSelectionBehavior(QAbstractItemView.SelectRows)
+        # Emit new metadata when the widgets are changed
+        self.ui.esaf_title_lineedit.textChanged.connect(self.check_metadata)
+        self.ui.esaf_id_lineedit.textChanged.connect(self.check_metadata)
+        self.ui.esaf_start_datetimeedit.dateTimeChanged.connect(self.check_metadata)
+        self.ui.esaf_end_datetimeedit.dateTimeChanged.connect(self.check_metadata)
+        self.ui.esaf_pis_lineedit.textChanged.connect(self.check_metadata)
+        self.ui.esaf_users_lineedit.textChanged.connect(self.check_metadata)
+        self.ui.proposal_title_lineedit.textChanged.connect(self.check_metadata)
+        self.ui.proposal_id_lineedit.textChanged.connect(self.check_metadata)
+        self.ui.proposal_start_datetimeedit.dateTimeChanged.connect(self.check_metadata)
+        self.ui.proposal_end_datetimeedit.dateTimeChanged.connect(self.check_metadata)
+        self.ui.proposal_pis_lineedit.textChanged.connect(self.check_metadata)
+        self.ui.proposal_users_lineedit.textChanged.connect(self.check_metadata)
+        self.ui.proposal_mailin_checkbox.stateChanged.connect(self.check_metadata)
+        self.ui.proposal_proprietary_checkbox.stateChanged.connect(self.check_metadata)
 
-    def customize_device(self):
-        self._device = beamline.devices["beamline_manager"]
+    def check_metadata(self):
+        """Emit the latest metadata from display widgets.
 
-    def proposals(self):
-        config = load_config()
-        proposals = []
-        beamline = self._device.bss.proposal.beamline_name.get()
-        cycle = self._device.bss.esaf.aps_cycle.get()
+        Emits
+        =====
+        bss_metadata_changed
+          The latest metadata as entered into the widgets.
+
+        """
+        md = self.metadata()
+        self.metadata_changed.emit(md)
+
+    def metadata(self) -> dict[str, str]:
+        """Read the UI widgets and prepare a metadata dictionary."""
+        def dt_iso(widget: QDateTimeEdit) -> str:
+            pydt = widget.dateTime().toPyDateTime()
+            return pydt.astimezone().isoformat()
+        
+        return {
+            "esaf_title": self.ui.esaf_title_lineedit.text(),
+            "esaf_id": self.ui.esaf_id_lineedit.text(),
+            "esaf_status": self.ui.esaf_status_label.text(),
+            "esaf_start": dt_iso(self.ui.esaf_start_datetimeedit),
+            "esaf_end": dt_iso(self.ui.esaf_end_datetimeedit),
+            "esaf_PIs": self.ui.esaf_pis_lineedit.text(),
+            "esaf_users": self.ui.esaf_users_lineedit.text(),
+            "proposal_title": self.ui.proposal_title_lineedit.text(),
+            "proposal_id": self.ui.proposal_id_lineedit.text(),
+            "proposal_start": dt_iso(self.ui.proposal_start_datetimeedit),
+            "proposal_end": dt_iso(self.ui.proposal_end_datetimeedit),
+            "proposal_PIs": self.ui.proposal_pis_lineedit.text(),
+            "proposal_users": self.ui.proposal_users_lineedit.text(),
+            "proposal_is_mail_in": self.ui.proposal_mailin_checkbox.isChecked(),
+            "proposal_is_proprietary": self.ui.proposal_proprietary_checkbox.isChecked(),
+        }
+
+    async def proposals(self) -> list[Proposal]:
+        beamline = self.ui.beamline_lineedit.text()
+        cycle = self.ui.cycle_lineedit.text()
         # Get proposal data from the API
-        try:
-            api_result = self.api.listProposals(cycle, beamline)
-        except ObjectNotFound:
-            api_result = []
+        proposals = self.api.proposals(cycle=cycle, beamline=beamline)
         # Parse the API payload into the format for the BSS IOC
-        for proposal in api_result:
-            users = proposal["experimenters"]
-            proposals.append(
-                {
-                    "Title": proposal["title"],
-                    "ID": proposal["id"],
-                    "Start": proposal["startTime"],
-                    "End": proposal["endTime"],
-                    "Users": ", ".join([usr["lastName"] for usr in users]),
-                    "Badges": ", ".join([usr["badge"] for usr in users]),
-                }
-            )
         return proposals
 
-    def esafs(self):
-        config = load_config()
-        esafs_ = []
-        beamline = self._device.bss.proposal.beamline_name.get()
-        cycle = self._device.bss.esaf.aps_cycle.get()
-        # Retrieve current ESAFS from data management API
-        try:
-            api_result = self.api.listESAFs(cycle, beamline.split("-")[0])
-        except (ObjectNotFound, KeyError):
-            api_result = []
-        # Parse the API data into a format usable by the BSS IOC
-        for esaf in api_result:
-            users = esaf["experimentUsers"]
-            esafs_.append(
-                {
-                    "Title": esaf["esafTitle"],
-                    "ID": esaf["esafId"],
-                    "Start": esaf["experimentStartDate"],
-                    "End": esaf["experimentEndDate"],
-                    "Users": ", ".join([usr["lastName"] for usr in users]),
-                    "Badges": ", ".join([usr["badge"] for usr in users]),
-                }
-            )
-        return esafs_
+    async def esafs(self) -> list[Esaf]:
+        beamline = self.ui.beamline_lineedit.text()
+        cycle = self.ui.cycle_lineedit.text()
+        esafs = self.api.esafs(cycle=cycle, beamline=beamline)
+        return esafs
 
-    def load_models(self):
-        config = load_config()
+    async def load_models(self):
+        # Load data
+        proposals, esafs = await asyncio.gather(
+            self.proposals(), self.esafs()
+        )
         # Create proposal model object
         col_names = self._proposal_col_names
         self.proposal_model = QStandardItemModel()
         self.proposal_model.setHorizontalHeaderLabels(col_names)
         # Load individual proposals
-        proposals = self.proposals()
         for proposal in proposals:
-            items = [QStandardItem(str(proposal[col])) for col in col_names]
+            items = [QStandardItem(str(getattr(proposal, col))) for col in col_names]
+            for item in items:
+                item.setData(proposal, role=Qt.UserRole)
             self.proposal_model.appendRow(items)
         self.ui.proposal_view.setModel(self.proposal_model)
         # Create proposal model object
@@ -120,9 +139,10 @@ class BssDisplay(display.FireflyDisplay):
         self.esaf_model = QStandardItemModel()
         self.esaf_model.setHorizontalHeaderLabels(col_names)
         # Load individual esafs
-        esafs = self.esafs()
         for esaf in esafs:
-            items = [QStandardItem(str(esaf[col])) for col in col_names]
+            items = [QStandardItem(str(getattr(esaf, col))) for col in col_names]
+            for item in items:
+                item.setData(esaf, role=Qt.UserRole)
             self.esaf_model.appendRow(items)
         self.ui.esaf_view.setModel(self.esaf_model)
         # Connect slots for when proposal/ESAF is changed
@@ -132,40 +152,55 @@ class BssDisplay(display.FireflyDisplay):
         self.ui.esaf_view.selectionModel().currentChanged.connect(self.select_esaf)
 
     def select_proposal(self, current, previous):
-        # Determine which proposal was selected
-        id_col_idx = self._proposal_col_names.index("ID")
-        new_id = current.siblingAtColumn(id_col_idx).data()
-        self._proposal_id = new_id
         # Enable controls for updating the metadata
         self.ui.update_proposal_button.setEnabled(True)
         self.proposal_selected.emit()
 
     def update_proposal(self):
-        new_id = self._proposal_id
-        # Change the proposal in the EPICS record
-        bss = beamline.devices["beamline_manager.bss"]
-        bss.proposal.proposal_id.set(new_id).wait()
-        # Notify any interested parties that the proposal has been changed
-        self.proposal_changed.emit()
+        """Set the metadata widgets based on which proposal is selected."""
+        # Determine which proposal was selected
+        index = self.ui.proposal_view.currentIndex()
+        proposal = index.model().itemFromIndex(index).data(role=Qt.UserRole)
+        # Change the proposal widgets
+        self.ui.proposal_id_lineedit.setText(proposal.proposal_id)
+        self.ui.proposal_title_lineedit.setText(proposal.title)
+        qstart = QDateTime.fromMSecsSinceEpoch(int(proposal.start.timestamp() * 1000))
+        qend = QDateTime.fromMSecsSinceEpoch(int(proposal.end.timestamp() * 1000))
+        self.ui.proposal_start_datetimeedit.setDateTime(qstart)
+        self.ui.proposal_end_datetimeedit.setDateTime(qend)
+        # Convert user info into commma-separated lists
+        users_text = ", ".join([f"{user.first_name} {user.last_name}" for user in proposal.users])
+        self.ui.proposal_users_lineedit.setText(users_text)
+        pis = [user for user in proposal.users if user.is_pi]
+        pis_text = ", ".join([f"{pi.first_name} {pi.last_name}" for pi in pis])
+        self.ui.proposal_pis_lineedit.setText(pis_text)
+
 
     def select_esaf(self, current, previous):
-        # Determine which esaf was selected
-        id_col_idx = self._esaf_col_names.index("ID")
-        new_id = current.siblingAtColumn(id_col_idx).data()
-        self._esaf_id = new_id
         # Enable controls for updating the metadata
         self.ui.update_esaf_button.setEnabled(True)
         self.esaf_selected.emit()
-
+    
     def update_esaf(self):
-        new_id = self._esaf_id
-        # Change the esaf in the EPICS record
-        bss = beamline.devices["beamline_manager.bss"]
-        bss.wait_for_connection()
-        bss.esaf.esaf_id.set(new_id).wait(timeout=5)
-        # Notify any interested parties that the esaf has been changed
-        self.esaf_changed.emit()
-
+        """Set the metadata widgets based on which ESAF is selected."""
+        # Determine which esaf was selected
+        index = self.ui.esaf_view.currentIndex()
+        esaf = index.model().itemFromIndex(index).data(role=Qt.UserRole)
+        # Change the ESAF widgets
+        self.ui.esaf_id_lineedit.setText(esaf.esaf_id)
+        self.ui.esaf_status_label.setText(esaf.status)
+        self.ui.esaf_title_lineedit.setText(esaf.title)
+        qstart = QDateTime.fromMSecsSinceEpoch(int(esaf.start.timestamp() * 1000))
+        qend = QDateTime.fromMSecsSinceEpoch(int(esaf.end.timestamp() * 1000))
+        self.ui.esaf_start_datetimeedit.setDateTime(qstart)
+        self.ui.esaf_end_datetimeedit.setDateTime(qend)
+        # Convert user info into commma-separated lists
+        users_text = ", ".join([f"{user.first_name} {user.last_name}" for user in esaf.users])
+        self.ui.esaf_users_lineedit.setText(users_text)
+        pis = [user for user in esaf.users if user.is_pi]
+        pis_text = ", ".join([f"{pi.first_name} {pi.last_name}" for pi in pis])
+        self.ui.esaf_pis_lineedit.setText(pis_text)
+    
     def ui_filename(self):
         return "bss.ui"
 

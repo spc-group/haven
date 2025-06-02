@@ -8,9 +8,14 @@ name = "SPC Beamline (sector unknown)"
 type = "undulator"
 prefix = "ID255ds:"
 
+
+# Metadata from the beamline scheduling system (BSS)
+####################################################
+
 [bss]
-name = "bss"
-prefix = "255idc:bss"
+uri = "https://localhost:12345"
+beamline = "255-ID-F"
+# cycle = "2025-1"
 
 
 ##############

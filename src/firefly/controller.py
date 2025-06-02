@@ -3,6 +3,7 @@ import subprocess
 from collections import OrderedDict
 from functools import partial
 from pathlib import Path
+from typing import Mapping
 
 import pydm
 import qtawesome as qta
@@ -43,6 +44,7 @@ plans_dir = ui_dir / "plans"
 
 class FireflyController(QtCore.QObject):
     default_display = None
+    _bss_metadata: Mapping[str, str] = {}
 
     # For keeping track of ophyd devices
     registry: Registry = None
@@ -58,6 +60,7 @@ class FireflyController(QtCore.QObject):
     run_started = Signal(str)
     run_updated = Signal(str)
     run_stopped = Signal(str)
+    bss_metadata_changed = Signal(dict)
 
     # Signals responding to queueserver changes
     queue_status_changed = Signal(dict)
@@ -296,6 +299,9 @@ class FireflyController(QtCore.QObject):
             WindowClass=FireflyMainWindow,
             icon=qta.icon("fa6s.calendar"),
         )
+        self.actions.bss.window_created.connect(
+            self.finalize_bss_window
+        )
         # Action for shoing the IOC start/restart/stop window
         self.actions.iocs = WindowAction(
             name="show_iocs_window_action",
@@ -352,6 +358,9 @@ class FireflyController(QtCore.QObject):
         action.display.execute_item_submitted.connect(self.execute_queue_item)
         # Send the current devices to the window
         await action.window.update_devices(self.registry)
+        # Update the scheduling metadata for each window (especially plans)
+        self.bss_metadata_changed.connect(action.display.update_bss_metadata)
+        action.display.update_bss_metadata(self._bss_metadata)
 
     @asyncSlot(QAction)
     async def finalize_run_browser_window(self, action: QAction):
@@ -366,11 +375,16 @@ class FireflyController(QtCore.QObject):
             base_url=tiled_config["uri"], catalog_name=config["default_catalog"]
         )
 
+    @asyncSlot(QAction)
+    async def finalize_bss_window(self, action: QAction):
+        """Connect up signals for the scheduling display window."""
+        action.display.metadata_changed.connect(self._stash_bss_metadata)
+        action.display.metadata_changed.connect(self.bss_metadata_changed)
+
     def finalize_status_window(self, action: QAction):
         """Connect up signals that are specific to the voltmeters window."""
         display = action.display
         display.ui.bss_modify_button.clicked.connect(self.actions.bss.trigger)
-        # display.details_window_requested.connect
 
     def launch_queuemonitor(self):
         config = load_config()["queueserver"]
@@ -622,6 +636,9 @@ class FireflyController(QtCore.QObject):
         self.prepare_kafka_client()
         self.start_queue_client()
         self.start_kafka_client()
+
+    def _stash_bss_metadata(self, metadata: Mapping[str, str]):
+        self._bss_metadata = metadata
 
     def update_devices_allowed(self, devices):
         pass

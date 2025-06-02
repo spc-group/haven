@@ -117,6 +117,7 @@ parentdir_prefix = "haven-"
 
 [tool.mypy]
 files = [
+    'src/firefly/bss.py', 'src/firefly/tests/test_bss_display.py',
     'src/firefly/energy.py', 'src/firefly/tests/test_energy_display.py',
     'src/firefly/devices/axilon_monochromator.py', 'src/firefly/tests/test_monochromator.py',
     'src/firefly/devices/undulator.py', 'src/firefly/tests/test_undulator.py',

@@ -1,6 +1,6 @@
 import subprocess
 from pathlib import Path
-from typing import Optional, Sequence
+from typing import Optional, Sequence, Mapping
 
 from ophyd import Device
 from pydm import Display
@@ -16,6 +16,7 @@ class FireflyDisplay(Display):
     caqtdm_actions: Sequence
     device: Optional[Device]
     registry = None
+    _bss_metadata: Mapping[str, str] = {}
 
     # Signals
     status_message_changed = Signal(str, int)
@@ -95,6 +96,9 @@ class FireflyDisplay(Display):
 
     def customize_ui(self):
         pass
+
+    def update_bss_metadata(self, md: Mapping[str, str]):
+        self._bss_metadata = md
 
     def update_queue_status(self, status):
         pass

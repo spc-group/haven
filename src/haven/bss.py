@@ -6,20 +6,7 @@ import datetime as dt
 import httpx
 import stamina
 
-
-# @dataclasses.dataclass(frozen=True)
-# class Run:
-#     run_id: str
-#     name: str
-#     start: float
-#     end: float
-
-
-# @dataclasses.dataclass(frozen=True)
-# class Beamline:
-#     number: int
-#     beamline_id: str
-#     name: str
+__all__ = ["Esaf", "Proposal", "User", "BssApi"]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -113,7 +100,7 @@ class BSSParser:
                 first_name=user_data['firstName'],
                 last_name=user_data['lastName'],
                 is_pi=user_data['piFlag'],
-                email=None,
+                email="",
                 institution=user_data["institution"],
 
             )
@@ -130,35 +117,9 @@ class BSSParser:
             mail_in=(data['mailInFlag'] == "Yes"),
             proprietary=(data['proprietaryFlag'] == "Yes"),
         )
-    
-    # def beamlines(self, json_data: str) -> list[Beamline]:
-    #     run_data = json.loads(json_data)
-    #     beamlines = [
-    #         Beamline(
-    #             beamline_id=beamline["beamlineId"],
-    #             number=beamline['beamlineNum'],
-    #             name=beamline['beamlineName'],
-    #         )
-    #         for beamline in run_data
-    #     ]
-    #     return beamlines
-
-    # def runs(self, json_data: str) -> list[Run]:
-    #     run_data = json.loads(json_data)
-    #     # Translate keys to match the dataclass
-    #     runs = [
-    #         Run(
-    #             run_id=run["runId"],
-    #             name=run["runName"],
-    #             start=dt.datetime.fromisoformat(run["startTime"]),
-    #             end=dt.datetime.fromisoformat(run["endTime"]),
-    #         )
-    #         for run in run_data
-    #     ]
-    #     return runs
 
 
-class BSSApi:
+class BssApi:
     """Client for the APS data management REST API.
 
     REST API Endpoints
@@ -187,16 +148,6 @@ class BSSApi:
     async def _http_get(self, url: str) -> httpx.Response:
         return await self.client.get(url)
 
-    # async def beamlines(self) -> list[Beamline]:
-    #     """Load the activate beamlines at the APS."""
-    #     response = await self._http_get("/beamline/findAllActiveBeamlines")
-    #     return self.parser.beamlines(response.text)
-
-    # async def runs(self) -> list[Run]:
-    #     """Load the operating runs at the APS (e.g. 2025-3)."""
-    #     response = await self._http_get("/run/getAllRuns")
-    #     return self.parser.runs(response.text)
-
     async def esafs(self, sector: str, year: str) -> list[Esaf]:
         """Load the ESAF's for the given *sector* and *year*."""
         response = await self._http_get(f"esafsBySectorAndYear/{sector}/{year}")
@@ -218,3 +169,27 @@ class BSSApi:
         response = await self._http_get(f"proposals/{cycle}/{beamline}/{proposal_id}")
         return self.parser.proposal(response.text)
     
+# -----------------------------------------------------------------------------
+# :author:    Mark Wolfman
+# :email:     wolfman@anl.gov
+# :copyright: Copyright © 2025, UChicago Argonne, LLC
+#
+# Distributed under the terms of the 3-Clause BSD License
+#
+# The full license is in the file LICENSE, distributed with this software.
+#
+# DISCLAIMER
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+# HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# -----------------------------------------------------------------------------
