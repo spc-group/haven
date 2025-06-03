@@ -360,6 +360,7 @@ class XafsScanDisplay(regions_display.RegionsDisplay):
     def plan_args(self) -> tuple[tuple, dict]:
         """Build the arguments that will be used when building a plan object."""
         detectors = self.ui.detectors_list.selected_detectors()
+        detector_names = [detector.name for detector in detectors]
         # Iterate through only selected regions
         checked_regions = [
             region_i
@@ -372,7 +373,7 @@ class XafsScanDisplay(regions_display.RegionsDisplay):
         # Additional metadata
         md = self.get_meta_data()
         md["is_standard"] = self.ui.checkBox_is_standard.isChecked()
-        args = (detectors, *energy_ranges)
+        args = (detector_names, *energy_ranges)
         kwargs = {
             "md": md,
         }
