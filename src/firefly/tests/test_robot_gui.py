@@ -3,7 +3,7 @@ from unittest import mock
 import pytest
 from ophyd_async.testing import set_mock_value
 
-from firefly.robot import RobotDisplay
+from firefly.devices.robot import RobotDisplay
 from haven.devices import Motor
 
 

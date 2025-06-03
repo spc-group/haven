@@ -67,8 +67,8 @@ class XspressController(ADBaseController):
     @AsyncStatus.wrap
     async def prepare(self, trigger_info: TriggerInfo):
         await asyncio.gather(
-            self.driver.num_images.set(trigger_info.total_number_of_triggers),
-            self.driver.image_mode.set(adcore.ImageMode.MULTIPLE),
+            self.driver.num_images.set(trigger_info.total_number_of_exposures),
+            self.driver.image_mode.set(adcore.ADImageMode.MULTIPLE),
             self.driver.trigger_mode.set(XspressTriggerMode.INTERNAL),
             # Hardware deadtime correciton is not reliable
             # https://github.com/epics-modules/xspress3/issues/57
@@ -182,7 +182,6 @@ class Xspress3Detector(AreaDetector):
         writer = adcore.ADHDFWriter(
             fileio=fileio,
             path_provider=path_provider,
-            name_provider=lambda: self.name,
             dataset_describer=XspressDatasetDescriber(driver),
             plugins=plugins,
         )
@@ -267,65 +266,62 @@ def ndattribute_params(
                 addr=idx,
                 description=f"Chan {idx} DTC Factor",
             ),
-            # The following attributes are not required, and so are removed for efficiency
-            #   but can be re-enabled for testing.
-            #
-            # NDAttributeParam(
-            #     name=f"{device_name}-element{idx}-deadtime_percent",
-            #     param="XSP3_CHAN_DTPERCENT",
-            #     datatype=NDAttributeDataType.DOUBLE,
-            #     addr=idx,
-            #     description=f"Chan {idx} DTC Percent",
-            # ),
-            # NDAttributeParam(
-            #     name=f"{device_name}-element{idx}-event_width",
-            #     param="XSP3_EVENT_WIDTH",
-            #     datatype=NDAttributeDataType.DOUBLE,
-            #     addr=idx,
-            #     description=f"Chan {idx} Event Width",
-            # ),
-            # NDAttributeParam(
-            #     name=f"{device_name}-element{idx}-clock_ticks",
-            #     param="XSP3_CHAN_SCA0",
-            #     datatype=NDAttributeDataType.DOUBLE,
-            #     addr=idx,
-            #     description=f"Chan {idx} ClockTicks",
-            # ),
-            # NDAttributeParam(
-            #     name=f"{device_name}-element{idx}-reset_ticks",
-            #     param="XSP3_CHAN_SCA1",
-            #     datatype=NDAttributeDataType.DOUBLE,
-            #     addr=idx,
-            #     description=f"Chan {idx} ResetTicks",
-            # ),
-            # NDAttributeParam(
-            #     name=f"{device_name}-element{idx}-reset_counts",
-            #     param="XSP3_CHAN_SCA2",
-            #     datatype=NDAttributeDataType.DOUBLE,
-            #     addr=idx,
-            #     description=f"Chan {idx} ResetCounts",
-            # ),
-            # NDAttributeParam(
-            #     name=f"{device_name}-element{idx}-all_event",
-            #     param="XSP3_CHAN_SCA3",
-            #     datatype=NDAttributeDataType.DOUBLE,
-            #     addr=idx,
-            #     description=f"Chan {idx} AllEvent",
-            # ),
-            # NDAttributeParam(
-            #     name=f"{device_name}-element{idx}-all_good",
-            #     param="XSP3_CHAN_SCA4",
-            #     datatype=NDAttributeDataType.DOUBLE,
-            #     addr=idx,
-            #     description=f"Chan {idx} AllGood",
-            # ),
-            # NDAttributeParam(
-            #     name=f"{device_name}-element{idx}-pileup",
-            #     param="XSP3_CHAN_SCA7",
-            #     datatype=NDAttributeDataType.DOUBLE,
-            #     addr=idx,
-            #     description=f"Chan {idx} Pileup",
-            # ),
+            NDAttributeParam(
+                name=f"{device_name}-element{idx}-deadtime_percent",
+                param="XSP3_CHAN_DTPERCENT",
+                datatype=NDAttributeDataType.DOUBLE,
+                addr=idx,
+                description=f"Chan {idx} DTC Percent",
+            ),
+            NDAttributeParam(
+                name=f"{device_name}-element{idx}-event_width",
+                param="XSP3_EVENT_WIDTH",
+                datatype=NDAttributeDataType.DOUBLE,
+                addr=idx,
+                description=f"Chan {idx} Event Width",
+            ),
+            NDAttributeParam(
+                name=f"{device_name}-element{idx}-clock_ticks",
+                param="XSP3_CHAN_SCA0",
+                datatype=NDAttributeDataType.DOUBLE,
+                addr=idx,
+                description=f"Chan {idx} ClockTicks",
+            ),
+            NDAttributeParam(
+                name=f"{device_name}-element{idx}-reset_ticks",
+                param="XSP3_CHAN_SCA1",
+                datatype=NDAttributeDataType.DOUBLE,
+                addr=idx,
+                description=f"Chan {idx} ResetTicks",
+            ),
+            NDAttributeParam(
+                name=f"{device_name}-element{idx}-reset_counts",
+                param="XSP3_CHAN_SCA2",
+                datatype=NDAttributeDataType.DOUBLE,
+                addr=idx,
+                description=f"Chan {idx} ResetCounts",
+            ),
+            NDAttributeParam(
+                name=f"{device_name}-element{idx}-all_event",
+                param="XSP3_CHAN_SCA3",
+                datatype=NDAttributeDataType.DOUBLE,
+                addr=idx,
+                description=f"Chan {idx} AllEvent",
+            ),
+            NDAttributeParam(
+                name=f"{device_name}-element{idx}-all_good",
+                param="XSP3_CHAN_SCA4",
+                datatype=NDAttributeDataType.DOUBLE,
+                addr=idx,
+                description=f"Chan {idx} AllGood",
+            ),
+            NDAttributeParam(
+                name=f"{device_name}-element{idx}-pileup",
+                param="XSP3_CHAN_SCA7",
+                datatype=NDAttributeDataType.DOUBLE,
+                addr=idx,
+                description=f"Chan {idx} Pileup",
+            ),
         ]
         params.extend(new_params)
     return params

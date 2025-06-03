@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose
-from ophyd_async.core import TriggerInfo
+from ophyd_async.core import DetectorTrigger, TriggerInfo
 from ophyd_async.testing import assert_value, get_mock_put, set_mock_value
 
 from haven.devices.ion_chamber import IonChamber
@@ -219,17 +219,11 @@ async def test_raw_current_signal(ion_chamber):
     assert (await ion_chamber.raw_current.get_value()) == pytest.approx(5.2e-5)
 
 
-async def test_voltmeter_name(ion_chamber):
-    ion_chamber.auto_name = True
+async def test_description_field_updates(ion_chamber):
+    """Do the EPICS .DESC fields get set to the device name?"""
     await ion_chamber.connect(mock=True)
-    assert (await ion_chamber.voltmeter_channel.description.get_value()) != "Icake"
-    # Change the ion chamber name, and see if the voltmeter name updates
-    # set_mock_value(ion_chamber.scaler_channel.description, "Icake")
-    ion_chamber.scaler_channel.description.get_value = AsyncMock(return_value="Icake")
-    assert (await ion_chamber.scaler_channel.description.get_value()) == "Icake"
-    await ion_chamber.connect(mock=True)
-    assert (await ion_chamber.scaler_channel.description.get_value()) == "Icake"
-    assert (await ion_chamber.voltmeter_channel.description.get_value()) == "Icake"
+    assert (await ion_chamber.voltmeter_channel.description.get_value()) == "I0"
+    assert (await ion_chamber.scaler_channel.description.get_value()) == "I0"
 
 
 def test_offset_pv(sim_registry):
@@ -280,7 +274,7 @@ def test_offset_pv(sim_registry):
 @pytest.fixture()
 def trigger_info():
     return TriggerInfo(
-        number_of_triggers=5, trigger="internal", deadtime=0, livetime=1.3
+        number_of_triggers=5, trigger=DetectorTrigger.INTERNAL, deadtime=0, livetime=1.3
     )
 
 
@@ -379,43 +373,6 @@ async def test_flyscan_collect(ion_chamber, trigger_info):
 
 def test_default_time_signal(ion_chamber):
     assert ion_chamber.default_time_signal.source == "ca://255idcVME:3820:scaler1.TP"
-
-
-@pytest.mark.asyncio
-async def test_auto_naming_default(ion_chamber, monkeypatch):
-    monkeypatch.setattr(
-        ion_chamber.mcs.scaler.channels[2].description,
-        "get_value",
-        AsyncMock(return_value="I0"),
-    )
-    ion_chamber.auto_name = None
-    ion_chamber.set_name("")
-    await ion_chamber.connect(mock=True)
-    assert ion_chamber.name == "I0"
-    assert ion_chamber.mcs.name == "I0-mcs"
-
-
-@pytest.mark.asyncio
-async def test_auto_naming(ion_chamber, monkeypatch):
-    monkeypatch.setattr(
-        ion_chamber.mcs.scaler.channels[2].description,
-        "get_value",
-        AsyncMock(return_value="I0"),
-    )
-    ion_chamber.auto_name = True
-    ion_chamber.set_name("")
-    await ion_chamber.connect(mock=True)
-    assert ion_chamber.name == "I0"
-    assert ion_chamber.mcs.name == "I0-mcs"
-
-
-@pytest.mark.asyncio
-async def test_manual_naming(ion_chamber, monkeypatch):
-    ion_chamber.set_name("")
-    ion_chamber.auto_name = False
-    await ion_chamber.connect(mock=True)
-    assert ion_chamber.name == ""
-    assert ion_chamber.mcs.name == ""
 
 
 # -----------------------------------------------------------------------------

@@ -97,7 +97,7 @@ class TableDisplay(display.FireflyDisplay):
             self.caqtdm = CaQtDMBase(table=self.device)
 
     def ui_filename(self):
-        return "table.ui"
+        return "devices/table.ui"
 
     @property
     def caqtdm_ui_file(self):

@@ -1,12 +1,11 @@
 """A bluesky plan to scan the X-ray energy and capture detector signals."""
 
 import logging
-from collections import ChainMap
 from typing import Mapping, Sequence
 
-import numpy as np
 from bluesky import plan_stubs as bps
 from bluesky import plans as bp
+from typing_extensions import NotRequired, TypedDict
 
 from ..constants import edge_energy
 from ..instrument import beamline
@@ -19,6 +18,13 @@ __all__ = ["energy_scan"]
 log = logging.getLogger(__name__)
 
 
+class Metadata(TypedDict):
+    edge: NotRequired[str]
+    E0: float
+    plan_name: str
+    d_spacing: NotRequired[float | dict[str, float] | None]
+
+
 # @shutter_suspend_decorator()
 @baseline_decorator()
 def energy_scan(
@@ -26,7 +32,7 @@ def energy_scan(
     exposure: float | Sequence[float] = 0.1,
     E0: float | str = 0,
     detectors: DetectorList = "ion_chambers",
-    energy_signals: Sequence = ["energy"],
+    energy_devices: Sequence = ["monochromators", "undulators"],
     time_signals: Sequence | None = None,
     md: Mapping = {},
 ):
@@ -79,9 +85,9 @@ def energy_scan(
 
     **Metadata:**
 
-    Several key pieces of metadata will be extract from the run. The
-    first device in *energy_signals* that has a *d_spacing* attribute
-    will be read for the ``"d_spacing"`` metadata entry.
+    Several key pieces of metadata will be extract from the run. Any
+    device in *energy_devices* that has a *d_spacing* attribute will
+    be read for the ``"d_spacing"`` metadata entry.
 
     Parameters
     ==========
@@ -94,8 +100,10 @@ def energy_scan(
       ``"Ni_L3"``. All energies will be relative to this value.
     detectors
       The detectors to collect X-ray signal from at each energy.
-    energy_signals
-      Devices that will receive the changing energies.
+    energy_devices
+      Overrides the list of Ophyd devices used to set energy during
+      this scan. Each device must have a child *energy* that is
+      movable.
     time_signals
       Positioners that will receive the exposure time for each scan.
     md
@@ -107,8 +115,8 @@ def energy_scan(
 
     """
     # Check that arguments are sensible
-    if len(energy_signals) < 1:
-        msg = "Cannot run energy_scan with empty *energy_signals*."
+    if len(energy_devices) < 1:
+        msg = "Cannot run energy_scan with empty *energy_devices*."
         log.error(msg)
         raise ValueError(msg)
     # Resolve the detector and positioner list if given by name
@@ -118,7 +126,7 @@ def energy_scan(
     for det in detectors:
         real_detectors.extend(beamline.devices.findall(det))
     log.debug(f"Found registered detectors: {real_detectors}")
-    energy_signals = [beamline.devices[ep] for ep in energy_signals]
+    energy_devices = beamline.devices.findall(energy_devices, allow_none=True)
     # Figure out which time positioners to use
     if time_signals is None:
         time_signals = [
@@ -135,39 +143,42 @@ def energy_scan(
     if isinstance(E0, str):
         # Look up E0 in the database if e.g. "Ni_K" is given as E0
         E0_str = E0
-        E0 = edge_energy(E0)
+        E0_val = edge_energy(E0)
     else:
-        E0_str = None
-    energies = np.asarray(energies)
-    energies += E0
+        E0_str = ""
+        E0_val = float(E0)
+    energies = [energy + E0_val for energy in energies]
     # Todo: sort the energies and exposure times by the energy
     # Prepare the positioners list with associated energies and exposures
-    energies = list(energies)
     exposure = list(exposure)
-    scan_args = [(motor, energies) for motor in energy_signals]
-    scan_args += [(motor, exposure) for motor in time_signals]
-    scan_args = [item for items in scan_args for item in items]
+    energy_movers = [device.energy for device in energy_devices]
+    _args = [(mover, energies) for mover in energy_movers]
+    _args += [(motor, exposure) for motor in time_signals]
+    scan_args = [item for items in _args for item in items]
     # Add some extra metadata
-    md_ = {"edge": E0_str, "E0": E0, "plan_name": "energy_scan"}
-    d_spacings = []
-    for device in energy_signals:
+    md_: Metadata = {"E0": E0_val, "plan_name": "energy_scan"}
+    if E0_str != "":
+        md_["edge"] = E0_str
+    d_spacings = {}
+    for device in energy_devices:
         if not hasattr(device, "d_spacing"):
             continue
         reading = yield from bps.read(device.d_spacing)
         if reading is None:
             log.warning(f"Did not receive reading for {device.name} d-spacing.")
             continue
-        d_spacings.append(reading[device.d_spacing.name]["value"])
+        d_spacings[device.d_spacing.name] = reading[device.d_spacing.name]["value"]
     if len(d_spacings) == 1:
-        md_["d_spacing"] = d_spacings[0]
+        # Only 1 mono, so just include the 1-and-only d-spacing
+        md_["d_spacing"] = tuple(d_spacings.values())[0]
     elif len(d_spacings) > 1:
+        # More than 1 mono, so include all d-spacings
         md_["d_spacing"] = d_spacings
     # Do the actual scan
-    print(scan_args)
     yield from bp.list_scan(
-        real_detectors,
+        [*real_detectors, *energy_devices],
         *scan_args,
-        md=ChainMap(md, md_),
+        md={**md_, **md},
     )
 
 

@@ -1,17 +1,24 @@
 import logging
+import math
 from enum import IntEnum
+from pathlib import Path
+from typing import IO
 
+import numpy as np
+import pandas as pd
 from ophyd_async.core import (
     Signal,
     StandardReadable,
     StandardReadableFormat,
     SubsetEnum,
+    derived_signal_r,
+    derived_signal_rw,
     soft_signal_rw,
 )
 from ophyd_async.epics.core import epics_signal_r, epics_signal_rw, epics_signal_x
 
 from ..positioner import Positioner
-from .signal import derived_signal_r, derived_signal_x
+from .signal import derived_signal_x
 
 log = logging.getLogger(__name__)
 
@@ -31,22 +38,18 @@ class MotorDriveStatus(IntEnum):
     READY_TO_MOVE = 1
 
 
-class UndulatorPositioner(Positioner):
+class BasePositioner(Positioner):
     done_value: int = BusyStatus.DONE
 
     def __init__(
         self,
         *,
         prefix: str,
-        actuate_signal: Signal = None,
+        actuate_signal: Signal,
         stop_signal: Signal,
-        done_signal: Signal = None,
+        done_signal: Signal,
         name: str = "",
     ):
-        with self.add_children_as_readables(StandardReadableFormat.HINTED_SIGNAL):
-            self.readback = epics_signal_rw(float, f"{prefix}M.VAL")
-        with self.add_children_as_readables():
-            self.setpoint = epics_signal_rw(float, f"{prefix}SetC.VAL")
         with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
             self.units = epics_signal_r(str, f"{prefix}SetC.EGU")
             self.precision = epics_signal_r(int, f"{prefix}SetC.PREC")
@@ -60,10 +63,75 @@ class UndulatorPositioner(Positioner):
             )
         self.stop_signal = derived_signal_x(derived_from={"parent_signal": stop_signal})
         if done_signal is not None:
-            self.done = derived_signal_r(
-                int, derived_from={"parent_signal": done_signal}
-            )
+            self.done = derived_signal_r(self._done_to_done, done=done_signal)
         super().__init__(name=name)
+
+    @staticmethod
+    def _done_to_done(done: bool) -> bool:
+        """No-op so we can turn the *done_signal* into a child of this
+        device.
+
+        """
+        return done
+
+
+class UndulatorPositioner(BasePositioner):
+    def __init__(
+        self,
+        *,
+        prefix: str,
+        **kwargs,
+    ):
+        with self.add_children_as_readables():
+            self.readback = epics_signal_rw(float, f"{prefix}M.VAL")
+        self.setpoint = epics_signal_rw(float, f"{prefix}SetC.VAL")
+        super().__init__(prefix=prefix, **kwargs)
+
+
+class EnergyPositioner(BasePositioner):
+    def __init__(
+        self,
+        *,
+        prefix: str,
+        offset_pv: str,
+        **kwargs,
+    ):
+
+        with self.add_children_as_readables():
+            self.dial_readback = epics_signal_rw(float, f"{prefix}M.VAL")
+        self.dial_setpoint = epics_signal_rw(float, f"{prefix}SetC.VAL")
+        # Derived signals so we can apply offsets and convert units
+        with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
+            self.offset = epics_signal_rw(float, offset_pv)
+        with self.add_children_as_readables():
+            self.readback = derived_signal_r(
+                _keV_to_energy,
+                keV=self.dial_readback,
+                offset=self.offset,
+                derived_units="eV",
+            )
+        self.setpoint = derived_signal_rw(
+            _keV_to_energy, self._set_raw, keV=self.dial_readback, offset=self.offset
+        )
+        super().__init__(prefix=prefix, **kwargs)
+
+    async def _set_raw(self, value: float):
+        """Set the dial value based on the user setpoint, converting units and
+        applying offsets.
+
+        """
+        offset = await self.offset.get_value()
+        raw = _energy_to_keV(value, offset=offset)
+        await self.dial_setpoint.set(raw)
+
+
+def _keV_to_energy(keV: float, offset: float) -> float:
+    energy = keV * 1000 - offset
+    return energy
+
+
+def _energy_to_keV(energy: float, offset: float) -> float:
+    return (energy + offset) / 1000
 
 
 class PlanarUndulator(StandardReadable):
@@ -82,6 +150,7 @@ class PlanarUndulator(StandardReadable):
     """
 
     _ophyd_labels_ = {"xray_sources", "undulators"}
+    _offset_table: IO | str | Path
 
     class AccessMode(SubsetEnum):
         USER = "User"
@@ -89,7 +158,14 @@ class PlanarUndulator(StandardReadable):
         MACHINE_PHYSICS = "Machine Physics"
         SYSTEM_MANAGER = "System Manager"
 
-    def __init__(self, prefix: str, name: str = ""):
+    def __init__(
+        self,
+        prefix: str,
+        offset_pv: str,
+        name: str = "",
+        offset_table: IO | str | Path = "",
+    ):
+        self._offset_table = offset_table
         # Signals for moving the undulator
         self.start_button = epics_signal_x(f"{prefix}StartC.VAL")
         self.stop_button = epics_signal_x(f"{prefix}StopC.VAL")
@@ -97,9 +173,10 @@ class PlanarUndulator(StandardReadable):
         self.done = epics_signal_r(bool, f"{prefix}BusyDeviceM.VAL")
         self.motor_drive_status = epics_signal_r(int, f"{prefix}MotorDriveStatusM.VAL")
         # Configuration state for the undulator
+        with self.add_children_as_readables():
+            self.total_power = epics_signal_r(float, f"{prefix}TotalPowerM.VAL")
         with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
             self.harmonic_value = epics_signal_rw(int, f"{prefix}HarmonicValueC")
-            self.total_power = epics_signal_r(float, f"{prefix}TotalPowerM.VAL")
             self.gap_deadband = epics_signal_rw(int, f"{prefix}DeadbandGapC")
             self.device_limit = epics_signal_rw(float, f"{prefix}DeviceLimitM.VAL")
             self.device = epics_signal_r(str, f"{prefix}DeviceM")
@@ -109,11 +186,12 @@ class PlanarUndulator(StandardReadable):
             self.version_hpmu = epics_signal_r(str, f"{prefix}HPMUVersionM.VAL")
         # X-ray spectrum positioners
         with self.add_children_as_readables():
-            self.energy = UndulatorPositioner(
+            self.energy = EnergyPositioner(
                 prefix=f"{prefix}Energy",
                 actuate_signal=self.start_button,
                 stop_signal=self.stop_button,
                 done_signal=self.busy,
+                offset_pv=offset_pv,
             )
             self.energy_taper = UndulatorPositioner(
                 prefix=f"{prefix}TaperEnergy",
@@ -137,8 +215,24 @@ class PlanarUndulator(StandardReadable):
         self.access_mode = epics_signal_r(self.AccessMode, f"{prefix}AccessSecurityC")
         self.message1 = epics_signal_r(str, f"{prefix}Message1M.VAL")
         self.message2 = epics_signal_r(str, f"{prefix}Message2M.VAL")
-
         super().__init__(name=name)
+
+    @property
+    def offset_table(self):
+        if self._offset_table == "":
+            raise ValueError(
+                "Cannot create an offset table, please provide *offset_table* parameter to constructor."
+            )
+        else:
+            return pd.read_csv(self._offset_table, sep="\t")
+
+    def auto_offset(self, energy: float) -> float:
+        """Calculate an offset for a given energy based on a calibration lookup table."""
+        xp, fp = self.offset_table.T.to_numpy()
+        new_offset = np.interp(energy, xp, fp, right=float("nan"), left=float("nan"))
+        if math.isnan(new_offset):
+            raise ValueError(f"Refusing to extrapolate ID offset: {energy}")
+        return float(new_offset)
 
 
 # -----------------------------------------------------------------------------

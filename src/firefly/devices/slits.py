@@ -1,13 +1,13 @@
+import logging
+
 from firefly import display
 
+log = logging.getLogger(__name__)
 
-class SlitsMotorDisplay(display.FireflyDisplay):
-    def customize_ui(self):
-        # Make the tweak buttons use proper arrow icons
-        title = self.macros()["TITLE"]
 
+class SlitsDisplay(display.FireflyDisplay):
     def ui_filename(self):
-        return "slits_motor.ui"
+        return "devices/slits.ui"
 
 
 # -----------------------------------------------------------------------------

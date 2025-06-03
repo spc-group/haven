@@ -1,27 +1,13 @@
-from firefly.slits import SlitsDisplay
-
-# from haven.instrument import mirrors
+from firefly import display
 
 
-class KBMirrorsDisplay(SlitsDisplay):
+class SlitsMotorDisplay(display.FireflyDisplay):
+    def customize_ui(self):
+        # Make the tweak buttons use proper arrow icons
+        title = self.macros()["TITLE"]
 
     def ui_filename(self):
-        return "kb_mirrors.ui"
-
-    def customize_ui(self):
-        # Enable/disable bender controls
-        horiz = self.device.horiz
-        self.ui.horizontal_upstream_display.setEnabled(
-            hasattr(horiz, "bender_upstream")
-        )
-        self.ui.horizontal_downstream_display.setEnabled(
-            hasattr(horiz, "bender_downstream")
-        )
-        vert = self.device.vert
-        self.ui.vertical_upstream_display.setEnabled(hasattr(vert, "bender_upstream"))
-        self.ui.vertical_downstream_display.setEnabled(
-            hasattr(vert, "bender_downstream")
-        )
+        return "devices/slits_motor.ui"
 
 
 # -----------------------------------------------------------------------------

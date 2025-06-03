@@ -6,7 +6,7 @@ authors = [
 ]
 description = "Tools and GUI for running the spectroscopy group beamlines at the Advanced Photon Source."
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
@@ -16,24 +16,65 @@ classifiers = [
 ]
 license = "BSD-3-clause"
 keywords = ["synchrotron", "xray", "bluesky"]
-dependencies = ["aioca", "aiokafka", "bluesky==1.13.1", "ophyd",
-	        "ophyd-async>=0.9.0a2", "apsbss", "xraydb",
-	        "mergedeep", "xrayutilities", "bluesky-queueserver-api", "tomlkit",
-		"apstools", "apsbits", "ophyd-registry>=2.0.0rc1", "caproto", "pcdsdevices",
-		"bluesky-adaptive", "tiled[client]", "guarneri>=0.2.0",
-		"httpx[http2]"]
+dependencies = [
+    "aioca",
+    "aiokafka==0.12.0",
+    "apsbits",
+    "apsbss==1.5.6",
+    "apstools==1.7.3",
+    "bluesky==1.14.0",
+    "bluesky-adaptive",
+    "bluesky-queueserver==0.0.22",
+    "bluesky-queueserver-api==0.0.12",
+    "guarneri==0.2.0",
+    "httpx[http2]",
+    "mergedeep",
+    "ophyd==1.10.5",
+    # "ophyd-async==0.10.0",
+    # We need this ophyd-async development branch until a new release (>0.10.0a4)
+    "ophyd-async @ git+https://github.com/bluesky/ophyd-async@f652399e24c045b0f6c675d173c1ef588f909062",
+    "pint",
+    "pcdsdevices",
+    "rich",
+    "stamina",
+    "tiled[client]==0.1.0b27",
+    "tomlkit",
+    "xraydb>=4.5.0",
+    "xrayutilities",
+]
 
 [project.optional-dependencies]
-
-dev = ["black", "pytest", "asynctest", "build", "twine", "pytest-httpx",
-       "time-machine", "pytest-mock", "pytest-qt", "flake8", "pytest-asyncio",
-       "pytest_httpx", "scipy-stubs", "mypy"]
+dev = [
+    "black",
+    "pytest",
+    "asynctest",
+    "build",
+    "twine",
+    "pytest-httpx",
+    "time-machine",
+    "pytest-mock",
+    "pytest-qt",
+    "pytest-xvfb",
+    "flake8",
+    "isort",
+    "sphinx",
+    "autoapi",
+    "nbsphinx",
+    "graphviz",
+    "sphinxcontrib-napoleon",
+    "pytest-asyncio",
+    "pytest_httpx",
+    "scipy-stubs",
+    "mypy"
+]
 gui = [
     "qtawesome>=1.4.0",
     "pydm==1.25.2",
     "pyqtgraph",
     "qasync",
-    "tiled[all]"
+    "tiled[all]",
+    "bluesky-widgets",
+    "typhos>=3.1.0",  # need the find_signal method on the SignalConnection()
 ]
 
 [project.urls]
@@ -77,7 +118,19 @@ parentdir_prefix = "haven-"
 
 [tool.mypy]
 files = [
+    'src/firefly/energy.py', 'src/firefly/tests/test_energy_display.py',
+    'src/firefly/devices/axilon_monochromator.py', 'src/firefly/tests/test_monochromator.py',
+    'src/firefly/devices/undulator.py', 'src/firefly/tests/test_undulator.py',
+    'src/haven/run_engine.py', 'src/haven/tests/test_run_engine.py',
     'src/haven/devices/asymmotron.py', "src/haven/tests/test_asymmotron.py",
+    'src/haven/devices/ion_chamber.py', "src/haven/tests/test_ion_chamber.py",
+    'src/haven/devices/motor.py', "src/haven/tests/test_motor.py",
+    'src/haven/devices/undulator.py', "src/haven/tests/test_undulator.py",
+    'src/haven/devices/vacuum.py', 'src/haven/tests/test_vacuum_devices.py',
+    'src/haven/plans/_calibrate.py', 'src/haven/tests/test_calibrate_plan.py',
+    'src/haven/plans/_set_energy.py', 'src/haven/tests/test_set_energy.py',
+    'src/haven/plans/_xafs_scan.py', 'src/haven/plans/_energy_scan.py', 'src/haven/tests/test_energy_xafs_scan.py',
     'src/haven/positioner.py', "src/haven/tests/test_positioner.py",
 ]
-# follow_imports = "skip"
+follow_imports = "skip"
+follow_untyped_imports = true

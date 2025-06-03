@@ -12,6 +12,7 @@ from typing import Sequence
 from ophyd_async.core import (
     DeviceVector,
     StandardReadable,
+    StandardReadableFormat,
     StrictEnum,
     SubsetEnum,
     soft_signal_rw,
@@ -86,7 +87,7 @@ class PFCUFilter(Positioner):
     _ophyd_labels_ = {"filters"}
 
     def __init__(self, prefix: str, *, name: str = ""):
-        with self.add_children_as_readables("config"):
+        with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
             self.material = epics_signal_rw(Material, f"{prefix}_mat")
             self.thick = epics_signal_rw(float, f"{prefix}_thick")
             self.thick_unit = epics_signal_rw(str, f"{prefix}_thick.EGU")
