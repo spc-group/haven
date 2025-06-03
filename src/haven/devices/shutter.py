@@ -47,7 +47,7 @@ class PssShutter(Positioner):
         # Just use convenient values for these since there's no real position
         self.velocity = soft_signal_rw(float, initial_value=0.5)
         self.units = soft_signal_rw(str, initial_value="")
-        self.precision = soft_signal_rw(int, initial_value=0)
+        self.precision = soft_signal_rw(int, initial_value=2**16)
         # Positioner signals for moving the shutter
         with self.add_children_as_readables():
             self.readback = epics_signal_r(bool, f"{prefix}BeamBlockingM.VAL")
