@@ -84,7 +84,7 @@ class KafkaClient(QObject):
             try:
                 run_uid = self._descriptor_to_run_uid(descriptor_uid)
             except KeyError:
-                log.warning("fUnknown descriptor UID {descriptor_uid}")
+                log.warning(f"Unknown descriptor UID {descriptor_uid}")
                 return
             log.info(f"Emitting run updated: {run_uid=}")
             print(f"Emitting run updated: {run_uid=}")

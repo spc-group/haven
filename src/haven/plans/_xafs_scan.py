@@ -4,17 +4,12 @@ capture detector signals.
 """
 
 import logging
-from collections import ChainMap
 from typing import Mapping, Sequence
 
 from bluesky.utils import MsgGenerator
 
 from .. import exceptions
-from ..energy_ranges import (
-    EnergyRange,
-    from_tuple,
-    merge_ranges,
-)
+from ..energy_ranges import EnergyRange, from_tuple, merge_ranges
 from ..typing import DetectorList
 from ._energy_scan import energy_scan
 
@@ -34,7 +29,7 @@ def xafs_scan(
     detectors: DetectorList,
     *energy_ranges: Sequence[EnergyRange | tuple],
     E0: float | str,
-    energy_signals: Sequence = ["energy"],
+    energy_devices: Sequence = ["monochromators", "undulators"],
     time_signals: Sequence | None = None,
     md: Mapping = {},
 ) -> MsgGenerator[str]:
@@ -105,9 +100,10 @@ def xafs_scan(
     E0
       An edge energy, in eV, or name of the edge of the form
       "Ni_L3". All energies will be relative to this value.
-    energy_signals
-      Overrides the list of Ophyd positioners used to set energy
-      during this scan. Useful for testing.
+    energy_devices
+      Overrides the list of Ophyd devices used to set energy during
+      this scan. Each device must have a child *energy* that is
+      movable.
     time_signals
       Overrides the list of Ophyd positioners used to set exposure
       time during this scan. Useful for testing.
@@ -116,8 +112,8 @@ def xafs_scan(
 
     """
     # Convert energy ranges to energy list and exposure list
-    energy_ranges = [from_tuple(rng) for rng in energy_ranges]
-    energies, exposures = merge_ranges(*energy_ranges)
+    ranges = [from_tuple(rng) for rng in energy_ranges]
+    energies, exposures = merge_ranges(*ranges)
     if len(energies) < 1:
         raise exceptions.NoEnergies("Plan would not produce any energy points.")
     # Execute the energy scan
@@ -125,9 +121,9 @@ def xafs_scan(
         "plan_name": "xafs_scan",
         "plan_args": {
             "detectors": list(map(repr, detectors)),
-            "energy_ranges": list(map(repr, energy_ranges)),
+            "energy_ranges": list(map(repr, ranges)),
             "E0": E0,
-            "energy_signals": list(map(repr, energy_signals)),
+            "energy_devices": list(map(repr, energy_devices)),
             "time_signals": (
                 list(map(repr, time_signals))
                 if time_signals is not None
@@ -140,9 +136,9 @@ def xafs_scan(
         exposure=exposures,
         E0=E0,
         detectors=detectors,
-        energy_signals=energy_signals,
+        energy_devices=energy_devices,
         time_signals=time_signals,
-        md=ChainMap(md, md_),
+        md={**md_, **md},
     )
 
 

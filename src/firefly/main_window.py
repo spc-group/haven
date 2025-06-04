@@ -1,5 +1,6 @@
 import logging
 import warnings
+from itertools import chain
 from pathlib import Path
 from typing import Sequence
 
@@ -188,6 +189,7 @@ class FireflyMainWindow(PyDMMainWindow):
             filters_action=actions.xray_filter,
             slits_actions=actions.slits,
             mirror_actions=actions.mirrors,
+            monochromator_actions=actions.monochromators,
             table_actions=actions.tables,
             robot_actions=actions.robots,
             plan_actions=actions.plans,
@@ -197,6 +199,7 @@ class FireflyMainWindow(PyDMMainWindow):
             ion_chamber_actions=actions.ion_chambers,
             camera_actions=actions.cameras,
             area_detector_actions=actions.area_detectors,
+            undulator_actions=actions.undulators,
             xrf_detector_actions=actions.xrf_detectors,
             status_window_action=actions.status,
             bss_window_action=actions.bss,
@@ -212,6 +215,7 @@ class FireflyMainWindow(PyDMMainWindow):
         energy_window_action,
         filters_action,
         slits_actions,
+        monochromator_actions,
         mirror_actions,
         table_actions,
         robot_actions,
@@ -222,6 +226,7 @@ class FireflyMainWindow(PyDMMainWindow):
         ion_chamber_actions,
         camera_actions,
         area_detector_actions,
+        undulator_actions,
         xrf_detector_actions,
         status_window_action,
         bss_window_action,
@@ -255,8 +260,19 @@ class FireflyMainWindow(PyDMMainWindow):
         for action in motor_actions.values():
             self.ui.motors_menu.addAction(action)
         # Menu to launch the Window to change energy
+        self.ui.positioners_menu.addSection("Energy")
         self.ui.positioners_menu.addAction(energy_window_action)
+        energy_actions = chain(
+            [energy_window_action],
+            monochromator_actions.values(),
+            undulator_actions.values(),
+        )
+        for action in energy_actions:
+            self.ui.positioners_menu.addAction(action)
         # Add optical components
+        for action in mirror_actions.values():
+            self.ui.positioners_menu.addAction(action)
+
         if filters_action is not None:
             self.ui.positioners_menu.addAction(filters_action)
         if len(slits_actions) > 0:

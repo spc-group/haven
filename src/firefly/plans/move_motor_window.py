@@ -1,66 +1,115 @@
 import logging
 
-from bluesky_queueserver_api import BPlan
+from ophyd_async.core import Device
+from qasync import asyncSlot
 from qtpy import QtWidgets
-from qtpy.QtGui import QDoubleValidator
 
 from firefly.component_selector import ComponentSelector
-from firefly.plans import regions_display
+from firefly.plans.regions_display import (
+    DeviceParameters,
+    RegionBase,
+    RegionsDisplay,
+    device_parameters,
+)
+from haven import sanitize_name
 
 log = logging.getLogger()
 
 
-class MotorRegion(regions_display.RegionBase):
+class MotorRegion(RegionBase):
+    default_precision = 5
+    is_relative: bool
 
     def setup_ui(self):
-        self.layout = QtWidgets.QHBoxLayout()
-
-        # First item, ComponentSelector
+        # ComponentSelector
         self.motor_box = ComponentSelector()
-        self.layout.addWidget(self.motor_box)
+        self.motor_box.device_selected.connect(self.update_device_parameters)
 
-        # Second item, position point
-        self.position_line_edit = QtWidgets.QLineEdit()
-        self.position_line_edit.setValidator(QDoubleValidator())  # only takes floats
-        self.position_line_edit.setPlaceholderText("Position…")
-        self.layout.addWidget(self.position_line_edit)
+        # Set point
+        self.position_spin_box = QtWidgets.QDoubleSpinBox()
+        self.position_spin_box.setMaximum(float("inf"))
+        self.position_spin_box.setMinimum(float("-inf"))
+
+        self.widgets = [self.motor_box, self.position_spin_box]
+        for column, widget in enumerate(self.widgets):
+            self.layout.addWidget(widget, self.row, column)
+
+    async def update_devices(self, registry):
+        await self.motor_box.update_devices(registry)
+
+    @asyncSlot(Device)
+    async def update_device_parameters(self, new_device: Device):
+        device = await device_parameters(new_device)
+        # Filter out non-numeric datatypes
+        self.position_spin_box.setEnabled(device.is_numeric)
+        # Set other metadata
+        self.set_limits(device)
+        self.position_spin_box.setDecimals(device.precision)
+        # Handle units
+        self.position_spin_box.setSuffix(f" {device.units}")
+        # Set starting motor position
+        if self.is_relative:
+            self.position_spin_box.setValue(0)
+        else:
+            self.position_spin_box.setValue(device.current_value)
+
+    def set_limits(self, device: DeviceParameters):
+        """Set limits on the spin boxes to match the device limits."""
+        if self.is_relative:
+            minimum = device.minimum - device.current_value
+            maximum = device.maximum - device.current_value
+        else:
+            maximum, minimum = device.maximum, device.minimum
+        self.position_spin_box.setMaximum(maximum)
+        self.position_spin_box.setMinimum(minimum)
+
+    @asyncSlot(int)
+    async def set_relative_position(self, is_relative: int):
+        """Adjust the target position based on relative/aboslute mode."""
+        self.is_relative = bool(is_relative)
+        device = self.motor_box.current_component()
+        if device is None:
+            return
+        params = await device_parameters(device)
+        if is_relative:
+            new_position = self.position_spin_box.value() - params.current_value
+        else:
+            new_position = self.position_spin_box.value() + params.current_value
+        self.position_spin_box.setValue(new_position)
+        self.set_limits(params)
 
 
-class MoveMotorDisplay(regions_display.RegionsDisplay):
+class MoveMotorDisplay(RegionsDisplay):
     Region = MotorRegion
     default_num_regions = 1
 
-    def get_scan_parameters(self):
-        # get paramters from each rows of line regions:
-        motor_lst, position_lst = [], []
-        for region_i in self.regions:
-            motor_lst.append(region_i.motor_box.current_component().name)
-            position_lst.append(float(region_i.position_line_edit.text()))
-
-        motor_args = [
-            values for motor_i in zip(motor_lst, position_lst) for values in motor_i
-        ]
-
-        return motor_args
-
-    def queue_plan(self, *args, **kwargs):
-        """Execute this plan on the queueserver."""
-        motor_args = self.get_scan_parameters()
-
-        if self.ui.relative_scan_checkbox.isChecked():
-            scan_type = "mvr"
-        else:
-            scan_type = "mv"
-
-        # # Build the queue item
-        item = BPlan(
-            scan_type,
-            *motor_args,
+    def add_region(self):
+        new_region = super().add_region()
+        self.relative_scan_checkbox.stateChanged.connect(
+            new_region.set_relative_position
         )
+        new_region.set_relative_position(self.relative_scan_checkbox.checkState())
+        return new_region
 
-        # Submit the item to the queueserver
-        log.info("Added line scan() plan to queue.")
-        self.queue_item_submitted.emit(item)
+    def plan_args(self):
+        # Get parameters from each row of line regions
+        devices = [region.motor_box.current_component() for region in self.regions]
+        device_names = [sanitize_name(device.name) for device in devices]
+        positions = [region.position_spin_box.value() for region in self.regions]
+        args = tuple(
+            values
+            for device_row in zip(device_names, positions)
+            for values in device_row
+        )
+        kwargs = {}
+        return args, kwargs
+
+    @property
+    def plan_type(self):
+        if self.ui.relative_scan_checkbox.isChecked():
+            return "mvr"
+        else:
+            return "mv"
 
     def ui_filename(self):
         return "plans/move_motor_window.ui"

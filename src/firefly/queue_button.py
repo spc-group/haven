@@ -1,10 +1,10 @@
 """A QPushButton that responds to the state of the queue server."""
 
 import logging
+from enum import StrEnum
 
 import qtawesome as qta
 from qtpy import QtGui, QtWidgets
-from strenum import StrEnum
 
 log = logging.getLogger(__name__)
 
@@ -14,7 +14,7 @@ class Colors(StrEnum):
     RUN_QUEUE = "rgb(25, 135, 84)"
 
 
-class QueueButton(QtWidgets.QPushButton):
+class QueueserverButton(QtWidgets.QPushButton):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Initially disable the button until the status of the queue can be determined
@@ -26,6 +26,11 @@ class QueueButton(QtWidgets.QPushButton):
         else:
             # Should be disabled because the queue is closed
             self.setDisabled(True)
+
+
+class QueueButton(QueueserverButton):
+    def update_queue_style(self, status: dict):
+        super().update_queue_style(status)
         # Coloration for the whether the item would get run immediately
         if status["re_state"] == "idle" and status["queue_autostart_enabled"]:
             # Will play immediately

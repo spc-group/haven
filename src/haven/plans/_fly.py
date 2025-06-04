@@ -21,7 +21,7 @@ from bluesky.utils import Msg, single_gen
 from ophyd import Device
 from ophyd.flyers import FlyerInterface
 from ophyd.status import StatusBase
-from ophyd_async.core import TriggerInfo
+from ophyd_async.core import DetectorTrigger, TriggerInfo
 from ophyd_async.epics.motor import FlyMotorInfo
 
 __all__ = ["fly_scan", "grid_fly_scan"]
@@ -119,7 +119,10 @@ def fly_line_scan(detectors: list, *args, num, dwell_time):
         yield from bps.prepare(obj, position_info, wait=False, group=prepare_group)
     # Set up detectors
     trigger_info = TriggerInfo(
-        number_of_triggers=num, livetime=dwell_time, deadtime=0, trigger="internal"
+        number_of_triggers=num,
+        livetime=dwell_time,
+        deadtime=0,
+        trigger=DetectorTrigger.INTERNAL,
     )
     for obj in detectors:
         yield from bps.prepare(obj, trigger_info, wait=False, group=prepare_group)

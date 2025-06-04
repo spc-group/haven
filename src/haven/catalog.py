@@ -226,7 +226,7 @@ class CatalogScan:
         metadata: Mapping | None = None,
         client: httpx.AsyncClient | None = None,
     ):
-        self.path = path
+        self.path = Path(path)
         self._client = client
         self._metadata = metadata
 
@@ -240,13 +240,13 @@ class CatalogScan:
         return self._client
 
     async def stream_names(self):
-        streams = _search(path=self.path, client=self.client)
+        streams = _search(path=str(self.path / "streams"), client=self.client)
         names = [stream["id"] async for stream in streams]
         return names
 
     async def _read_data(self, signals: Sequence[str] | None, dataset: str):
         params = {}
-        path = "/".join([self.path, dataset]).rstrip("/")
+        path = str(self.path / dataset).rstrip("/")
         # First figure out what kind of data we're getting
         response = await self.client.get(f"metadata/{quote_plus(path)}")
         response.raise_for_status()
@@ -270,7 +270,7 @@ class CatalogScan:
 
     @stamina.retry(on=httpcore.ReadTimeout, attempts=3)
     async def _export(self, buff: IO[bytes], format: str):
-        url = f"container/full/{quote_plus(self.path)}"
+        url = f"container/full/{quote_plus(str(self.path))}"
         async with self.client.stream(
                 "GET", url, params={"format": format},
                 timeout=30
@@ -302,7 +302,7 @@ class CatalogScan:
         return formats
 
     async def data(self, *, signals=None, stream: str = "primary"):
-        return await self._read_data(signals, f"{stream}/internal/events/")
+        return await self._read_data(signals, f"streams/{stream}/internal/")
 
     async def external_dataset(self, name: str, stream: str = "primary") -> np.ndarray:
         """Load an external N-dimensional dataset from the database.
@@ -317,14 +317,14 @@ class CatalogScan:
           The loaded dataset.
 
         """
-        return await self._read_data(None, f"{stream}/external/{name}")
+        return await self._read_data(None, f"streams/{stream}/{name}")
 
     @property
     def loop(self):
         return asyncio.get_running_loop()
 
     async def data_keys(self, stream: str = "primary"):
-        metadata = (await self._read_metadata(stream))["metadata"]
+        metadata = (await self._read_metadata(f"streams/{stream}"))["metadata"]
         data_keys = metadata.get("data_keys")
         return data_keys or {}
 
@@ -346,7 +346,7 @@ class CatalogScan:
         """
         run_md, stream_md = await asyncio.gather(
             self.metadata,
-            self._read_metadata(path=stream),
+            self._read_metadata(path=f"streams/{stream}"),
         )
         stream_md = stream_md["metadata"]
         # Get hints for the independent (X)
@@ -362,11 +362,11 @@ class CatalogScan:
         dependent = []
         hints = stream_md.get("hints", {})
         for device, dev_hints in hints.items():
-            dependent.extend(dev_hints["fields"])
+            dependent.extend(dev_hints.get("fields", []))
         return independent, dependent
 
     async def _read_metadata(self, path: str = ""):
-        new_path = "/".join([self.path, path]).rstrip("/")
+        new_path = str(self.path / path).rstrip("/")
         response = await self.client.get(
             f"metadata/{quote_plus(new_path)}",
         )

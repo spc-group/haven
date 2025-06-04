@@ -23,25 +23,30 @@ ALPHA = hbar**2 * c**2 / 2 / m_e
 ALPHA = ALPHA.to("electron_volt * angstrom * angstrom").magnitude
 
 
-def energy_to_wavenumber(energy):
-    return np.sqrt(energy / ALPHA)
+def energy_to_wavenumber(energy, relative_to: float = 0):
+    """Convert a wavenumber (eV) to energy (Å⁻).
+
+    *relative_to* can be used to calculate step sizes, e.g
+    ``wavenumber_to_energy(700, relative_to=50)`` calculates the size
+    in eV of the step between 50 eV and 70 eV.
+
+    """
+    kref = np.sqrt(relative_to / ALPHA)
+    k = np.sqrt(energy / ALPHA)
+    return k - kref
 
 
-def wavenumber_to_energy(wavenumber):
-    return wavenumber**2 * ALPHA
+def wavenumber_to_energy(wavenumber, relative_to: float = 0.0):
+    """Convert a wavenumber (Å⁻) to energy (eV).
 
+    *relative_to* can be used to calculate step sizes, e.g
+    ``wavenumber_to_energy(2.5, relative_to=2.0)`` calculates the size
+    in eV of the step between 2.0Å⁻ and 2.5Å⁻.
 
-# converting between energy steps and k steps
-def E_step_to_k_step(E_start, E_step):
-    k0 = energy_to_wavenumber(E_start)
-    k1 = energy_to_wavenumber(E_start + E_step)
-    return k1 - k0
-
-
-def k_step_to_E_step(k_start, k_step):
-    E0 = wavenumber_to_energy(k_start)
-    E1 = wavenumber_to_energy(k_start + k_step)
-    return E1 - E0
+    """
+    E = wavenumber**2 * ALPHA
+    E0 = relative_to**2 * ALPHA
+    return E - E0
 
 
 def round_to_int(num):
@@ -69,9 +74,9 @@ def from_tuple(energy_range):
     """Convert tuple of (start, stop, step?, exposure?, weight?) to energy range."""
     if isinstance(energy_range, EnergyRange):
         return energy_range
-    if energy_range[0] == "E":
+    if energy_range[0] in ["E", "e"]:
         return ERange(*energy_range[1:])
-    if energy_range[0] == "K":
+    if energy_range[0] in ["k", "K"]:
         return KRange(*energy_range[1:])
     return ERange(*energy_range)
 
