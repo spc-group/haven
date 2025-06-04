@@ -18,6 +18,7 @@ from haven.catalog import Catalog, CatalogScan
 extensions = {
     "application/x-nexus": ".hdf",
     "text/tab-separated-values": ".tab",
+    "text/x-xdi": ".xdi",
 }
 
 
