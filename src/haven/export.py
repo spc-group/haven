@@ -5,6 +5,7 @@ import re
 from pathlib import Path
 from typing import Sequence
 from functools import partial
+import logging
 
 from httpx import HTTPStatusError
 import pandas as pd
@@ -20,6 +21,9 @@ extensions = {
     "text/tab-separated-values": ".tab",
     "text/x-xdi": ".xdi",
 }
+
+
+log = logging.getLogger("haven")
 
 
 async def export_run(
@@ -61,7 +65,6 @@ async def export_run(
     base_name = re.sub(r"[/]", "", base_name)
     # Write to disk
     esaf_dir.mkdir(parents=True, exist_ok=True)
-    print(taget_formats)
     for fmt in target_formats:
         ext = extensions[fmt]
         fp = esaf_dir / f"{base_name}{ext}"
@@ -70,7 +73,7 @@ async def export_run(
         # Export files
         try:
             await run.export(fp, format=fmt)
-        except HttpStatusError as exc:
+        except HTTPStatusError as exc:
             print(start_doc["uid"], exc)
     # Add an entry to the spreadsheet for this run
     spreadsheet_path = esaf_dir / "runs_summary.ods"
@@ -119,6 +122,8 @@ def build_queries(
     edge: str | None = None,
     uid: str | None = None,
 ) -> list[queries.NoBool]:
+    before_dt = dt.datetime.fromisoformat(before)
+    after_dt = dt.datetime.fromisoformat(after)
     qs = []
     query_params = [
         # filter_name: (query type, metadata key)
@@ -130,8 +135,8 @@ def build_queries(
         (edge, queries.Contains, "start.edge"),
         (proposal, queries.Eq, "start.proposal_id"),
         (esaf, queries.Eq, "start.esaf_id"),
-        (before, partial(queries.Comparison, "le"), "stop.time"),
-        (after, partial(queries.Comparison, "ge"), "start.time"),
+        (before_dt.timestamp(), partial(queries.Comparison, "le"), "stop.time"),
+        (after_dt.timestamp(), partial(queries.Comparison, "ge"), "start.time"),
         (uid, queries.Contains, "start.uid"),
     ]
     for (arg, query, key) in query_params:
@@ -182,6 +187,12 @@ def main():
     parser.add_argument(
         "base_dir", help="The base directory for storing files.", type=str
     )
+    parser.add_argument(
+        "-v", "--verbose", help="Verbose output", action="store_true"
+    )
+    parser.add_argument(
+        "-q", "--quiet", help="Verbose output", action="store_true"
+    )
     # Arguments for filtering runs
     parser.add_argument("--failed", help="Also include scans that did not complete.", action="store_true")
     parser.add_argument("--plan", help="Export runs with plan name.", type=str)
@@ -217,12 +228,15 @@ def main():
         action="store_true",
     )
     args = parser.parse_args()
+    log_level = logging.DEBUG if args.verbose else logging.WARNING
+    if not args.quiet:
+        logging.basicConfig(level=log_level)
     # Get the list of runs we need
     catalog = Catalog("scans", uri="http://fedorov.xray.aps.anl.gov:8020")
     exit_status = None if args.failed else "success"
     qs = build_queries(
         before=args.before, after=args.after, esaf=args.esaf, proposal=args.proposal,
-        plan_name=args.plan_name,
+        plan_name=args.plan,
         sample_name=args.sample,
         sample_formula=args.formula,
         scan_name=args.scan,
