@@ -37,7 +37,7 @@ dependencies = [
     "pcdsdevices",
     "rich",
     "stamina",
-    "tiled[client]==0.1.0b27",
+    "tiled[client]==0.1.0b28",
     "tomlkit",
     "xraydb>=4.5.0",
     "xrayutilities",
