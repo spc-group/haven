@@ -2,9 +2,10 @@
 
 import logging
 import uuid
-from collections.abc import Sequence
-from typing import Hashable
+from collections.abc import Generator, Sequence
+from typing import Any, Hashable
 
+from bluesky import Msg
 from bluesky import plan_stubs as bps
 from ophyd_async.core import StandardReadable, StandardReadableFormat, soft_signal_rw
 from ophyd_async.epics.core import epics_signal_r, epics_signal_rw
@@ -19,7 +20,7 @@ log = logging.getLogger(__name__)
 class SlitsPositioner(Positioner):
     def __init__(self, prefix: str, readback: str, name: str = ""):
         self.setpoint = epics_signal_rw(float, f"{prefix}.VAL")
-        with self.add_children_as_readables():
+        with self.add_children_as_readables(StandardReadableFormat.HINTED_SIGNAL):
             self.readback = epics_signal_r(float, readback)
         with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
             self.units = epics_signal_rw(str, f"{prefix}.EGU")
@@ -58,7 +59,7 @@ def setup_blade_slits(
     precision: int = 0,
     group: Hashable | None = None,
     wait: bool = True,
-):
+) -> Generator[Msg, Any, None]:
     """Configures the blade slit devices for normal operation.
 
     - Set each position precision to *precision* to match the motor

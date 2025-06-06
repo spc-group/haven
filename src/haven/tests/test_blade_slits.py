@@ -38,6 +38,11 @@ async def test_readings(slits):
     assert slits.vertical.size.readback.name in reading.keys()
 
 
+def test_hints(slits):
+    hints = slits.vertical.center.hints["fields"]
+    assert slits.vertical.center.name in hints
+
+
 async def test_setup_plan(slits):
     msgs = list(setup_blade_slits([slits], precision=3))
     assert len(msgs) == 5  # 4 "sets" and a "wait"
