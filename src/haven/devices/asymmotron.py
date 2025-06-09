@@ -24,6 +24,7 @@ from ophyd_async.core import (
     DEFAULT_TIMEOUT,
     AsyncStatus,
     DerivedSignalFactory,
+    Device,
     LazyMock,
     SignalR,
     StandardReadable,
@@ -237,6 +238,7 @@ class Analyzer(StandardReadable):
     """
 
     energy_unit = "eV"
+    _has_hints: tuple[Device]
 
     def __init__(
         self,
@@ -307,8 +309,8 @@ class Analyzer(StandardReadable):
         self.add_readables([self.energy.readback], StandardReadableFormat.HINTED_SIGNAL)
         self.add_readables(
             [
-                self.vertical.user_readback,
-                self.horizontal.user_readback,
+                self.vertical,
+                self.horizontal,
             ]
         )
         self.add_readables(
@@ -318,6 +320,12 @@ class Analyzer(StandardReadable):
             StandardReadableFormat.CONFIG_SIGNAL,
         )
         super().__init__(name=name)
+        # We don't have vertical/horizontal to be hinted, but still configuration
+        self._has_hints = tuple(
+            device
+            for device in self._has_hints
+            if device not in [self.vertical, self.horizontal]
+        )
 
     async def connect(
         self,

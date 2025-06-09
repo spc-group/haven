@@ -231,6 +231,11 @@ async def test_readings(xtal):
         "analyzer-bragg_offset",
         "analyzer-crystal_yaw",
         "analyzer-d_spacing",
+        "analyzer-horizontal-description",
+        "analyzer-horizontal-motor_egu",
+        "analyzer-horizontal-offset",
+        "analyzer-horizontal-offset_dir",
+        "analyzer-horizontal-velocity",
         "analyzer-lattice_constant",
         "analyzer-reflection-h",
         "analyzer-reflection-k",
@@ -239,6 +244,11 @@ async def test_readings(xtal):
         "analyzer-surface_plane-h",
         "analyzer-surface_plane-k",
         "analyzer-surface_plane-l",
+        "analyzer-vertical-description",
+        "analyzer-vertical-motor_egu",
+        "analyzer-vertical-offset",
+        "analyzer-vertical-offset_dir",
+        "analyzer-vertical-velocity",
         "analyzer-wedge_angle",
     }
     desc = await xtal.describe()
