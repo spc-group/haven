@@ -217,6 +217,34 @@ async def test_energy_setpoint(xtal):
     assert await xtal.horizontal.user_setpoint.get_value() != 0
 
 
+async def test_readings(xtal):
+    reading = await xtal.read()
+    assert set(reading.keys()) == {
+        "analyzer-energy",
+        "analyzer-horizontal",
+        "analyzer-vertical",
+    }
+    assert xtal.hints == {"fields": ["analyzer-energy"]}
+    config = await xtal.read_configuration()
+    assert set(config.keys()) == {
+        "analyzer-asymmetry_angle",
+        "analyzer-bragg_offset",
+        "analyzer-crystal_yaw",
+        "analyzer-d_spacing",
+        "analyzer-lattice_constant",
+        "analyzer-reflection-h",
+        "analyzer-reflection-k",
+        "analyzer-reflection-l",
+        "analyzer-rowland_diameter",
+        "analyzer-surface_plane-h",
+        "analyzer-surface_plane-k",
+        "analyzer-surface_plane-l",
+        "analyzer-wedge_angle",
+    }
+    desc = await xtal.describe()
+    assert desc.keys() == reading.keys()
+
+
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov

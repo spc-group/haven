@@ -303,11 +303,10 @@ class Analyzer(StandardReadable):
             )
         # The actual energy signal that controls the analyzer
         self.energy = EnergyPositioner(xtal=self)
-        # Decide which signals should be readable/config/etc
+        # Decide which signals should be readable/config/etc.
+        self.add_readables([self.energy.readback], StandardReadableFormat.HINTED_SIGNAL)
         self.add_readables(
             [
-                self.energy.readback,
-                self.energy.setpoint,
                 self.vertical.user_readback,
                 self.horizontal.user_readback,
             ]
@@ -441,7 +440,8 @@ class EnergyTransform(Transform):
         log.info(f"Inverse: {bragg=}")
         energy = bragg_to_energy(bragg, d=d)
         log.info(f"Inverse: {energy=}")
-        derived = EnergyDerived(energy=energy.to(units["energy"]).magnitude)
+        energy_val = float(energy.to(units["energy"]).magnitude)
+        derived = EnergyDerived(energy=energy_val)
         return derived
 
 
