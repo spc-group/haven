@@ -161,6 +161,20 @@ class IonChamber(StandardReadable, Triggerable):
             StandardReadableFormat.CONFIG_SIGNAL,
         )
         # Add calculated signals
+        self.net_count_rate = derived_signal_r(
+            raw_to_derived=self._count_rate,
+            derived_units="s⁻",
+            count=self.scaler_channel.net_count,
+            clock_count=self.mcs.scaler.channels[0].raw_count,
+            clock_frequency=self.mcs.scaler.clock_frequency,
+        )
+        self.raw_count_rate = derived_signal_r(
+            raw_to_derived=self._count_rate,
+            derived_units="s⁻",
+            count=self.scaler_channel.raw_count,
+            clock_count=self.mcs.scaler.channels[0].raw_count,
+            clock_frequency=self.mcs.scaler.clock_frequency,
+        )
         self.net_current = derived_signal_r(
             raw_to_derived=self._counts_to_amps,
             derived_units="A",
@@ -169,19 +183,6 @@ class IonChamber(StandardReadable, Triggerable):
             clock_count=self.mcs.scaler.channels[0].raw_count,
             clock_frequency=self.mcs.scaler.clock_frequency,
             counts_per_volt_second=self.counts_per_volt_second,
-            # name="current",
-            # units="A",
-            # derived_from={
-            #     "gain": self.preamp.gain,
-            #     "count": self.scaler_channel.net_count,
-            #     "clock_count": self.mcs.scaler.channels[0].raw_count,
-            #     "clock_frequency": self.mcs.scaler.clock_frequency,
-            #     "counts_per_volt_second": self.counts_per_volt_second,
-            # },
-            # inverse=self._counts_to_amps,
-        )
-        self.add_readables(
-            [self.net_current], StandardReadableFormat.HINTED_UNCACHED_SIGNAL
         )
         # Measured current without dark current correction
         self.raw_current = derived_signal_r(
@@ -193,7 +194,14 @@ class IonChamber(StandardReadable, Triggerable):
             clock_frequency=self.mcs.scaler.clock_frequency,
             counts_per_volt_second=self.counts_per_volt_second,
         )
-        self.add_readables([self.raw_current], StandardReadableFormat.UNCACHED_SIGNAL)
+        self.add_readables(
+            [self.net_count_rate, self.scaler_channel.net_count],
+            StandardReadableFormat.HINTED_UNCACHED_SIGNAL,
+        )
+        self.add_readables(
+            [self.net_current, self.raw_current, self.raw_count_rate],
+            StandardReadableFormat.UNCACHED_SIGNAL,
+        )
         super().__init__(name=name)
 
     def _counts_to_amps(
@@ -214,10 +222,34 @@ class IonChamber(StandardReadable, Triggerable):
         except ZeroDivisionError:
             return float("nan")
 
+    def _count_rate(
+        self,
+        count: float,
+        clock_count: float,
+        clock_frequency: float,
+    ) -> float:
+        """Pre-amp output current calculated from scaler counts."""
+        try:
+            time = clock_count / clock_frequency
+            return float(count / time)
+        except ZeroDivisionError:
+            return float("nan")
+
     def __repr__(self):
         return (
             f"<{type(self).__name__}: '{self.name}' "
             f"({self.scaler_channel.raw_count.source})>"
+        )
+
+    def set_name(self, name: str, *, child_name_separator: str | None = None) -> None:
+        """Set name of the motor and its children."""
+        super().set_name(name, child_name_separator=child_name_separator)
+        # Hinted signals get their names mangled so we have human-friendly data keys
+        self.scaler_channel.net_count.set_name(
+            self._child_name_separator.join([name, "count"])
+        )
+        self.net_count_rate.set_name(
+            self._child_name_separator.join([name, "count_rate"])
         )
 
     @property
