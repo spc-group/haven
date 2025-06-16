@@ -98,6 +98,7 @@ beamline = HavenInstrument(
         "blade_slits": devices.BladeSlits,
         "camera": devices.AravisDetector,
         "eiger": devices.EigerDetector,
+        "fixed_bounce_monochromator": devices.FixedBounceMonochromator,
         "high_heat_load_mirror": devices.HighHeatLoadMirror,
         "ion_chamber": devices.IonChamber,
         "kb_mirrors": devices.KBMirrors,
