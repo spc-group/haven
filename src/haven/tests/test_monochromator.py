@@ -11,6 +11,75 @@ async def mono():
     return mono
 
 
+async def test_signals(mono):
+    reading = await mono.read()
+    assert set(reading.keys()) == {
+        "monochromator-beam_offset",
+        "monochromator-bragg",
+        "monochromator-energy",
+        "monochromator-gap",
+        "monochromator-horizontal",
+        "monochromator-pitch2",
+        "monochromator-roll2",
+        "monochromator-vertical",
+    }
+    assert set(mono.hints["fields"]) == {
+        "monochromator-bragg",
+        "monochromator-energy",
+    }
+    config = await mono.read_configuration()
+    assert set(config.keys()) == {
+        "monochromator-bragg-description",
+        "monochromator-bragg-motor_egu",
+        "monochromator-bragg-offset",
+        "monochromator-bragg-offset_dir",
+        "monochromator-bragg-velocity",
+        "monochromator-energy-description",
+        "monochromator-energy-motor_egu",
+        "monochromator-energy-offset",
+        "monochromator-energy-offset_dir",
+        "monochromator-energy-velocity",
+        "monochromator-beam_offset-description",
+        "monochromator-beam_offset-motor_egu",
+        "monochromator-beam_offset-offset",
+        "monochromator-beam_offset-offset_dir",
+        "monochromator-beam_offset-velocity",
+        "monochromator-gap-description",
+        "monochromator-gap-motor_egu",
+        "monochromator-gap-offset",
+        "monochromator-gap-offset_dir",
+        "monochromator-gap-velocity",
+        "monochromator-horizontal-description",
+        "monochromator-horizontal-motor_egu",
+        "monochromator-horizontal-offset",
+        "monochromator-horizontal-offset_dir",
+        "monochromator-horizontal-velocity",
+        "monochromator-pitch2-description",
+        "monochromator-pitch2-motor_egu",
+        "monochromator-pitch2-offset",
+        "monochromator-pitch2-offset_dir",
+        "monochromator-pitch2-velocity",
+        "monochromator-roll2-description",
+        "monochromator-roll2-motor_egu",
+        "monochromator-roll2-offset",
+        "monochromator-roll2-offset_dir",
+        "monochromator-roll2-velocity",
+        "monochromator-vertical-description",
+        "monochromator-vertical-motor_egu",
+        "monochromator-vertical-offset",
+        "monochromator-vertical-offset_dir",
+        "monochromator-vertical-velocity",
+        "monochromator-id_tracking",
+        "monochromator-id_offset",
+        "monochromator-d_spacing",
+        "monochromator-d_spacing_unit",
+        "monochromator-mode",
+        "monochromator-transform_d_spacing",
+        "monochromator-transform_direction",
+        "monochromator-transform_offset",
+    }
+
+
 def test_mono_energy_signal(mono):
     # Check PVs are correct
     mono.energy.user_readback.source == "ca+mock://255idMono:Energy.RBV"
