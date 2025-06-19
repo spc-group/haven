@@ -154,6 +154,10 @@ async def test_get_proposal(httpx_mock, api):
     proposal = await api.proposal(proposal_id="0158394", cycle="2025-1", beamline="99-ID-C")
     assert proposal.title == proposal_data['title']
 
+
+async def test_bss_validation():
+    assert False, "Convert BSS to use pydantic models."
+
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov

@@ -363,6 +363,12 @@ class FireflyController(QtCore.QObject):
         action.display.update_bss_metadata(self._bss_metadata)
 
     @asyncSlot(QAction)
+    async def finalize_plan_regions(self, action: QAction):
+        """Finished setting up the plan windows."""
+        display = action.display
+        await display.setup_default_regions()
+
+    @asyncSlot(QAction)
     async def finalize_run_browser_window(self, action: QAction):
         """Connect up run browser signals and load initial data."""
         display = action.display

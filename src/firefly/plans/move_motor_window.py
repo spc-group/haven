@@ -1,106 +1,103 @@
 import logging
+from dataclasses import dataclass
+from functools import partial
 
 from ophyd_async.core import Device
 from qasync import asyncSlot
-from qtpy import QtWidgets
+from qtpy.QtWidgets import QCheckBox, QDoubleSpinBox, QWidget, QLabel
 
 from firefly.component_selector import ComponentSelector
-from firefly.plans.regions_display import (
-    DeviceParameters,
-    RegionBase,
-    RegionsDisplay,
-    device_parameters,
-)
+from firefly.plans.regions import RegionsManager,     DeviceParameters,    device_parameters, update_device_parameters, set_limits, make_relative
+from firefly.plans.plan_display import     PlanStubDisplay
 from haven import sanitize_name
 
 log = logging.getLogger()
 
 
-class MotorRegion(RegionBase):
+class MotorRegionsManager(RegionsManager):
     default_precision = 5
     is_relative: bool
 
-    def setup_ui(self):
-        # ComponentSelector
-        self.motor_box = ComponentSelector()
-        self.motor_box.device_selected.connect(self.update_device_parameters)
+    @dataclass(frozen=True)
+    class WidgetSet():
+        active_checkbox: QCheckBox
+        device_selector: ComponentSelector
+        position_spin_box: QDoubleSpinBox
 
-        # Set point
-        self.position_spin_box = QtWidgets.QDoubleSpinBox()
-        self.position_spin_box.setMaximum(float("inf"))
-        self.position_spin_box.setMinimum(float("-inf"))
+    @dataclass(frozen=True, eq=True)
+    class Region():
+        is_active: bool
+        device: str
+        position: float
 
-        self.widgets = [self.motor_box, self.position_spin_box]
-        for column, widget in enumerate(self.widgets):
-            self.layout.addWidget(widget, self.row, column)
+    def widgets_to_region(self, widgets: WidgetSet) -> Region:
+        """Take a list of widgets in a row, and build a Region object.
+
+        """
+        device_name = widgets.device_selector.current_device_name()
+        return self.Region(
+            is_active=widgets.active_checkbox.isChecked(),
+            device=sanitize_name(device_name),
+            position=widgets.position_spin_box.value(),
+        )
+
+    async def create_row_widgets(self, row: int) -> list[QWidget]:
+        # Component selector
+        device_selector = ComponentSelector()
+        device_selector.device_selected.connect(partial(self.update_device_parameters, row=row))
+        # start point
+        position_spin_box = QDoubleSpinBox()
+        position_spin_box.lineEdit().setPlaceholderText("Position…")
+        position_spin_box.setMinimum(float("-inf"))
+        position_spin_box.setMaximum(float("inf"))
+
+        # Add widgets to the layout
+        return [
+            device_selector,
+            position_spin_box,
+        ]
 
     async def update_devices(self, registry):
         await self.motor_box.update_devices(registry)
 
     @asyncSlot(Device)
-    async def update_device_parameters(self, new_device: Device):
-        device = await device_parameters(new_device)
-        # Filter out non-numeric datatypes
-        self.position_spin_box.setEnabled(device.is_numeric)
-        # Set other metadata
-        self.set_limits(device)
-        self.position_spin_box.setDecimals(device.precision)
-        # Handle units
-        self.position_spin_box.setSuffix(f" {device.units}")
-        # Set starting motor position
-        if self.is_relative:
-            self.position_spin_box.setValue(0)
-        else:
-            self.position_spin_box.setValue(device.current_value)
-
-    def set_limits(self, device: DeviceParameters):
-        """Set limits on the spin boxes to match the device limits."""
-        if self.is_relative:
-            minimum = device.minimum - device.current_value
-            maximum = device.maximum - device.current_value
-        else:
-            maximum, minimum = device.maximum, device.minimum
-        self.position_spin_box.setMaximum(maximum)
-        self.position_spin_box.setMinimum(minimum)
+    async def update_device_parameters(self, device: Device, row: int):
+        widgets = self.row_widgets(row=row)
+        await update_device_parameters(
+            device=device,
+            widgets=[widgets.position_spin_box],
+            is_relative=self.is_relative
+        )
 
     @asyncSlot(int)
     async def set_relative_position(self, is_relative: int):
         """Adjust the target position based on relative/aboslute mode."""
         self.is_relative = bool(is_relative)
-        device = self.motor_box.current_component()
-        if device is None:
-            return
-        params = await device_parameters(device)
-        if is_relative:
-            new_position = self.position_spin_box.value() - params.current_value
-        else:
-            new_position = self.position_spin_box.value() + params.current_value
-        self.position_spin_box.setValue(new_position)
-        self.set_limits(params)
+        for row in self.row_numbers:
+            widgets = self.row_widgets(row)
+            device = widgets.device_selector.current_component()
+            if device is None:
+                continue
+            await make_relative(
+                device=device,
+                widgets=[widgets.position_spin_box],
+                is_relative=is_relative,
+            )
 
 
-class MoveMotorDisplay(RegionsDisplay):
-    Region = MotorRegion
-    default_num_regions = 1
+class MoveMotorDisplay(PlanStubDisplay):
 
-    def add_region(self):
-        new_region = super().add_region()
-        self.relative_scan_checkbox.stateChanged.connect(
-            new_region.set_relative_position
-        )
-        new_region.set_relative_position(self.relative_scan_checkbox.checkState())
-        return new_region
+    def customize_ui(self):
+        super().customize_ui()
+        self.regions = MotorRegionsManager(layout=self.regions_layout)
 
-    def plan_args(self):
+    def plan_args(self) -> tuple[tuple, dict]:
         # Get parameters from each row of line regions
-        devices = [region.motor_box.current_component() for region in self.regions]
-        device_names = [sanitize_name(device.name) for device in devices]
-        positions = [region.position_spin_box.value() for region in self.regions]
-        args = tuple(
-            values
-            for device_row in zip(device_names, positions)
-            for values in device_row
-        )
+        region_args = [
+            (region.device, region.position)
+            for region in self.regions
+        ]
+        args = tuple(arg for region in region_args for arg in region)
         kwargs = {}
         return args, kwargs
 

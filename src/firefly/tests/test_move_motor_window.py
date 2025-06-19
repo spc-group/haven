@@ -38,17 +38,19 @@ async def display(qtbot, sim_registry, sync_motors, async_motors):
 
 
 @pytest.mark.asyncio
-async def test_move_motor_plan_queued(display, qtbot):
+async def test_plan_args(display):
     display.ui.run_button.setEnabled(True)
     # uncheck relative
     display.ui.relative_scan_checkbox.setChecked(False)
-    await display.update_regions(2)
+    await display.regions.set_region_count(2)
     # set up a test motor 1
-    display.regions[0].motor_box.combo_box.setCurrentText("async_motor_1")
-    display.regions[0].position_spin_box.setValue(111)
+    widgets = display.regions.row_widgets(1)
+    widgets.device_selector.combo_box.setCurrentText("async_motor_1")
+    widgets.position_spin_box.setValue(111)
     # set up a test motor 2
-    display.regions[1].motor_box.combo_box.setCurrentText("sync_motor_2")
-    display.regions[1].position_spin_box.setValue(222)
+    widgets = display.regions.row_widgets(2)
+    widgets.device_selector.combo_box.setCurrentText("sync_motor_2")
+    widgets.position_spin_box.setValue(222)
     # Confirm that the correct plan arguments are built
     args, kwargs = display.plan_args()
     assert args == (
@@ -61,20 +63,22 @@ async def test_move_motor_plan_queued(display, qtbot):
 
 
 async def test_full_motor_parameters(display, motor):
+    await display.regions.set_region_count(1)
+    display.regions.is_relative=False
     set_mock_value(motor.user_readback, 420)
-    region = display.regions[0]
-    await region.update_device_parameters(motor)
-    spin_box = region.position_spin_box
+    await display.regions.update_device_parameters(motor, row=1)
+    spin_box = display.regions.row_widgets(1).position_spin_box
     assert spin_box.minimum() == -32000
     assert spin_box.maximum() == 32000
     assert spin_box.decimals() == 5
-    assert spin_box.suffix() == " °"
+    assert spin_box.suffix() == "\u202F°"
     assert spin_box.value() == 420
 
 
 async def test_nonnumeric_motor_parameters(display, motor):
-    region = display.regions[0]
-    spin_box = region.position_spin_box
+    await display.regions.set_region_count(1)
+    display.regions.is_relative = False
+    spin_box = display.regions.row_widgets(1).position_spin_box
     description = {
         motor.name: {
             "dtype": "string",
@@ -84,22 +88,24 @@ async def test_nonnumeric_motor_parameters(display, motor):
         }
     }
     motor.describe = mock.AsyncMock(return_value=description)
-    await region.update_device_parameters(motor)
+    await display.regions.update_device_parameters(motor, row=1)
     assert not spin_box.isEnabled()
 
 
 async def test_relative_positioning(display, motor):
-    region = display.regions[0]
+    await display.regions.set_region_count(1)
+    display.regions.is_relative = False    
     set_mock_value(motor.user_readback, 410)
-    region.motor_box.current_component = mock.MagicMock(return_value=motor)
-    region.position_spin_box.setValue(420)
+    widgets = display.regions.row_widgets(1)
+    widgets.device_selector.current_component = mock.MagicMock(return_value=motor)
+    widgets.position_spin_box.setValue(420)
     # Relative positioning mode
-    await region.set_relative_position(True)
-    assert region.position_spin_box.value() == 10
-    assert region.position_spin_box.maximum() == 32000 - 410
-    assert region.position_spin_box.minimum() == -32000 - 410
+    await display.regions.set_relative_position(True)
+    assert widgets.position_spin_box.value() == 10
+    assert widgets.position_spin_box.maximum() == 32000 - 410
+    assert widgets.position_spin_box.minimum() == -32000 - 410
     # Absolute positioning mode
-    await region.set_relative_position(False)
-    assert region.position_spin_box.value() == 420
-    assert region.position_spin_box.maximum() == 32000
-    assert region.position_spin_box.minimum() == -32000
+    await display.regions.set_relative_position(False)
+    assert widgets.position_spin_box.value() == 420
+    assert widgets.position_spin_box.maximum() == 32000
+    assert widgets.position_spin_box.minimum() == -32000

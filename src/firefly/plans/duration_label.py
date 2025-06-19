@@ -3,16 +3,19 @@ import math
 from qtpy import QtWidgets
 
 
+HALF_SPACE = '\u202F'
+
+
 class DurationLabel(QtWidgets.QLabel):
     """A label that shows individual hours, minutes, seconds, etc."""
 
     def set_seconds(self, seconds: float):
         if math.isnan(seconds):
-            text = "– h – m – s"
+            text = f"–{HALF_SPACE}h –{HALF_SPACE}m –{HALF_SPACE}s"
         else:
             hours, more_seconds = divmod(seconds, 3600)
             minutes, more_seconds = divmod(more_seconds, 60)
-            text = f"{int(hours)} h {int(minutes)} m {int(more_seconds)} s"
+            text = f"{int(hours)}{HALF_SPACE}h {int(minutes)}{HALF_SPACE}m {int(more_seconds)}{HALF_SPACE}s"
         self.setText(text)
 
 

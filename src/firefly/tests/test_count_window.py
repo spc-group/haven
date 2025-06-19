@@ -11,7 +11,7 @@ async def display(qtbot, sim_registry, dxp, ion_chamber):
     display = CountDisplay()
     qtbot.addWidget(display)
     await display.update_devices(sim_registry)
-    display.ui.run_button.setEnabled(True)
+    display.run_button.setEnabled(True)
     try:
         yield display
     finally:
@@ -48,18 +48,18 @@ def test_count_plan_args(display, qtbot, xspress):
         return_value=[xspress]
     )
     args, kwargs = display.plan_args()
-    assert kwargs == dict(num=5, detectors=["vortex_me4"], delay=0.5, md={})
+    assert kwargs == dict(num=5, detectors=["vortex_me4"], delay=0.5, md={"is_standard": False})
 
 
 def test_count_plan_metadata(display, qtbot, xspress, ion_chamber):
     display.ui.run_button.setEnabled(True)
     display.ui.num_spinbox.setValue(5)
     # set up meta data
-    display.ui.lineEdit_sample.setText("LMO")
-    display.ui.comboBox_purpose.setCurrentText("test")
-    display.ui.textEdit_notes.setText("notes")
-    display.ui.lineEdit_formula.setText("LiMn0.5Ni0.5O")
-
+    display.metadata_widget.sample_line_edit.setText("LMO")
+    display.metadata_widget.purpose_combo_box.setCurrentText("test")
+    display.metadata_widget.notes_text_edit.setText("notes")
+    display.metadata_widget.formula_line_edit.setText("LiMn0.5Ni0.5O")
+    display.metadata_widget.standard_check_box.setChecked(True)
     display.ui.detectors_list.selected_detectors = mock.MagicMock(
         return_value=[xspress, ion_chamber]
     )
@@ -69,6 +69,7 @@ def test_count_plan_metadata(display, qtbot, xspress, ion_chamber):
         detectors=["vortex_me4", "I00"],
         delay=0.0,
         md={
+            "is_standard": True,
             "sample_name": "LMO",
             "purpose": "test",
             "notes": "notes",

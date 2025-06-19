@@ -3,12 +3,12 @@ import logging
 from bluesky_queueserver_api import BPlan
 from qasync import asyncSlot
 
-from firefly.plans import regions_display
+from firefly.plans import plan_display
 
 log = logging.getLogger()
 
 
-class CountDisplay(regions_display.PlanDisplay):
+class CountDisplay(plan_display.PlanDisplay):
 
     async def update_devices(self, registry):
         """Set available components in the device list."""
@@ -26,10 +26,6 @@ class CountDisplay(regions_display.PlanDisplay):
         self.ui.delay_spinbox.valueChanged.connect(self.update_total_time)
         self.ui.spinBox_repeat_scan_num.valueChanged.connect(self.update_total_time)
         # Default metadata values
-        self.ui.comboBox_purpose.lineEdit().setPlaceholderText(
-            "e.g. commissioning, alignment…"
-        )
-        self.ui.comboBox_purpose.setCurrentText("")
 
     def scan_durations(self, detector_time: float) -> tuple[float, float]:
         num_readings = self.ui.num_spinbox.value()
@@ -54,7 +50,7 @@ class CountDisplay(regions_display.PlanDisplay):
             "detectors": names,
             "num": self.ui.num_spinbox.value(),
             "delay": self.ui.delay_spinbox.value(),
-            "md": self.get_meta_data(),
+            "md": self.plan_metadata(),
         }
         return args, kwargs
 

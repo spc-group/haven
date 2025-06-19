@@ -1,14 +1,18 @@
 import logging
 import re
 from enum import IntEnum
+from dataclasses import dataclass
+from functools import partial
 
+from bluesky_queueserver_api import BPlan
 import xraydb
-from qtpy import QtWidgets
-from qtpy.QtWidgets import QSizePolicy
+from qasync import asyncSlot
+from qtpy.QtWidgets import QCheckBox, QDoubleSpinBox, QSpinBox, QSizePolicy, QWidget, QMessageBox
 from xraydb.xraydb import XrayDB
 
 from firefly.exceptions import UnknownAbsorptionEdge
-from firefly.plans import regions_display
+from firefly.plans.plan_display import PlanDisplay
+from firefly.plans.regions import RegionsManager
 from haven.energy_ranges import (
     EnergyRange,
     ERange,
@@ -26,89 +30,98 @@ class Domain(IntEnum):
     WAVENUMBER = 1
 
 
-class XafsScanRegion(regions_display.RegionBase):
+class XafsRegionsManager(RegionsManager):
     energy_suffix = "eV"
     wavenumber_suffix = "Å⁻"
     energy_precision = 1
     wavenumber_precision = 4
 
-    def setup_ui(self):
+    @dataclass(frozen=True)
+    class WidgetSet():
+        active_checkbox: QCheckBox
+        start_spin_box: QDoubleSpinBox
+        stop_spin_box: QDoubleSpinBox
+        step_spin_box: QDoubleSpinBox
+        exposure_time_spin_box: QDoubleSpinBox
+        k_space_checkbox: QCheckBox
+        weight_spin_box: QDoubleSpinBox
 
-        # Enable checkbox
-        self.region_checkbox = QtWidgets.QCheckBox()
-        self.region_checkbox.setChecked(True)
-        self.layout.addWidget(self.region_checkbox, self.row, 0)
+    @dataclass(frozen=True, eq=True)
+    class Region():
+        is_active: bool
+        start: float
+        stop: float
+        step: float
+        exposure_time: float
+        domain: Domain
+        weight: float
 
-        # First energy box
-        self.start_spin_box = QtWidgets.QDoubleSpinBox()
-        self.layout.addWidget(self.start_spin_box, self.row, 1)
-        # Last energy box
-        self.stop_spin_box = QtWidgets.QDoubleSpinBox()
-        self.layout.addWidget(self.stop_spin_box, self.row, 2)
-        # Energy step box
-        self.step_spin_box = QtWidgets.QDoubleSpinBox()
-        self.layout.addWidget(self.step_spin_box, self.row, 3)
+        @property
+        def energy_range(self):
+            print(self.start, self.stop, self.step, self.exposure_time, self.weight)
+            print(self.domain)
+            if self.domain == Domain.WAVENUMBER:
+                return KRange(self.start, self.stop, self.step, self.exposure_time, self.weight)
+            else:
+                return ERange(self.start, self.stop, self.step, self.exposure_time)
+
+    async def add_row(self):
+        row = await super().add_row()
+        self.set_domain(Domain.ENERGY, row=row)
+
+    async def create_row_widgets(self, row: int) -> list[QWidget]:
+        """Create the widgets that are to go in each row, in order."""
+        start_spin_box = QDoubleSpinBox()
+        stop_spin_box = QDoubleSpinBox()
+        step_spin_box = QDoubleSpinBox()
         # Apply hints to number
-        self.set_domain(Domain.ENERGY)
-
-        # Exposure time double spin box
-        self.exposure_time_spinbox = QtWidgets.QDoubleSpinBox()
-        self.exposure_time_spinbox.setValue(1.0)
-        self.exposure_time_spinbox.setSuffix(" s")
-        self.layout.addWidget(self.exposure_time_spinbox, self.row, 4)
-
-        # K-space checkbox
-        self.k_space_checkbox = QtWidgets.QCheckBox()
-        self.k_space_checkbox.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        self.k_space_checkbox.setEnabled(True)
-        self.layout.addWidget(self.k_space_checkbox, self.row, 5)
-
+        exposure_time_spin_box = QDoubleSpinBox()
+        exposure_time_spin_box.setValue(1.0)
+        exposure_time_spin_box.setSuffix(" s")
+        # For converting between k and E space
+        k_space_checkbox = QCheckBox()
+        k_space_checkbox.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        k_space_checkbox.setEnabled(True)
         # Weight factor box
-        self.weight_spinbox = QtWidgets.QDoubleSpinBox()
-        self.layout.addWidget(self.weight_spinbox, self.row, 6)
-        self.weight_spinbox.setDecimals(1)
-        self.weight_spinbox.setEnabled(False)
+        weight_spin_box = QDoubleSpinBox()
+        weight_spin_box.setDecimals(1)
+        weight_spin_box.setEnabled(False)
 
         # Apply validation criteria
-        for spinbox in [self.start_spin_box, self.stop_spin_box, self.step_spin_box]:
+        for spinbox in [start_spin_box, stop_spin_box, step_spin_box]:
             spinbox.setMinimum(float("-inf"))
             spinbox.setMaximum(float("inf"))
             spinbox.setStepType(spinbox.AdaptiveDecimalStepType)
             spinbox.setDecimals(self.energy_precision)
 
         # Connect the k-space enabled checkbox to the relevant signals
-        self.k_space_checkbox.stateChanged.connect(self.update_wavenumber_energy)
+        k_space_checkbox.stateChanged.connect(partial(self.update_wavenumber_energy, row=row))
         # Disable/enable regions when selected
-        self.region_checkbox.stateChanged.connect(self.enable)
-
-    def enable(self, is_checked: bool):
-        self.start_spin_box.setEnabled(is_checked)
-        self.stop_spin_box.setEnabled(is_checked)
-        self.step_spin_box.setEnabled(is_checked)
-        self.exposure_time_spinbox.setEnabled(is_checked)
-        self.weight_spinbox.setEnabled(is_checked)
-        self.k_space_checkbox.setEnabled(is_checked)
-
-    def remove(self):
-        widgets = [
-            self.region_checkbox,
-            self.start_spin_box,
-            self.stop_spin_box,
-            self.step_spin_box,
-            self.exposure_time_spinbox,
-            self.k_space_checkbox,
-            self.weight_spinbox,
+        return [
+            start_spin_box, stop_spin_box, step_spin_box, exposure_time_spin_box, k_space_checkbox, weight_spin_box
         ]
-        for widget in widgets:
-            self.layout.removeWidget(widget)
-            widget.deleteLater()
 
-    def set_domain(self, domain: Domain):
+    def widgets_to_region(self, widgets: WidgetSet) -> Region:
+        """Take a list of widgets in a row, and build a Region object.
+
+        """
+        return self.Region(
+            is_active=widgets.active_checkbox.isChecked(),
+            start=widgets.start_spin_box.value(),
+            stop=widgets.stop_spin_box.value(),
+            step=widgets.step_spin_box.value(),
+            exposure_time=widgets.exposure_time_spin_box.value(),
+            domain=widgets.k_space_checkbox.isChecked(),
+            weight=widgets.weight_spin_box.value(),
+        )
+
+    def set_domain(self, domain: Domain, *, row: int):
         """Set up the UI to be in either energy (eV) or wavenumber (Å⁻) units."""
+        widgets = self.row_widgets(row)
         double_widgets = [
-            self.start_spin_box,
-            self.stop_spin_box,
-            self.step_spin_box,
+            widgets.start_spin_box,
+            widgets.stop_spin_box,
+            widgets.step_spin_box,
         ]
         suffix = (
             self.wavenumber_suffix
@@ -117,16 +130,16 @@ class XafsScanRegion(regions_display.RegionBase):
         )
         for widget in double_widgets:
             widget.setSuffix(f" {suffix}")
-
-    def update_wavenumber_energy(self, is_k_checked: bool):
-        domain = Domain.WAVENUMBER if is_k_checked else Domain.ENERGY
-        self.set_domain(domain)
         # Disable weight box when k is not selected
-        self.weight_spinbox.setEnabled(is_k_checked)
+        widgets.weight_spin_box.setEnabled(domain == Domain.WAVENUMBER)
 
+    def update_wavenumber_energy(self, is_k_checked: bool, row: int):
+        domain = Domain.WAVENUMBER if is_k_checked else Domain.ENERGY
+        self.set_domain(domain, row=row)
         # Define conversion functions
-        line_edits = [self.start_spin_box, self.stop_spin_box, self.step_spin_box]
-        start, stop, step = [widget.value() for widget in line_edits]
+        widgets = self.row_widgets(row=row)
+        spin_boxes = [widgets.start_spin_box, widgets.stop_spin_box, widgets.step_spin_box]
+        start, stop, step = [widget.value() for widget in spin_boxes]
         if is_k_checked:
             convert = energy_to_wavenumber
         else:
@@ -135,44 +148,28 @@ class XafsScanRegion(regions_display.RegionBase):
         new_start, new_stop = convert(start), convert(stop)
         new_step = convert(start + step, relative_to=start)
         precision = self.wavenumber_precision if is_k_checked else self.energy_precision
-        for widget in line_edits:
+        for widget in spin_boxes:
             widget.setDecimals(precision)
-        self.start_spin_box.setValue(new_start)
-        self.stop_spin_box.setValue(new_stop)
-        self.step_spin_box.setValue(new_step)
-
-    @property
-    def energy_range(self) -> EnergyRange | None:
-        weight = self.weight_spinbox.value()
-        exposure_time = self.exposure_time_spinbox.value()
-        # Prevent invalid inputs such as nan
-        try:
-            start = self.start_spin_box.value()
-            stop = self.stop_spin_box.value()
-            step = self.step_spin_box.value()
-        # When the round doesn't work for nan values
-        except ValueError as exc:
-            log.exception(exc)
-            return None
-        if self.k_space_checkbox.isChecked():
-            return KRange(start, stop, step, exposure=exposure_time, weight=weight)
-        else:
-            return ERange(start, stop, step, exposure=exposure_time)
+        widgets.start_spin_box.setValue(new_start)
+        widgets.stop_spin_box.setValue(new_stop)
+        widgets.step_spin_box.setValue(new_step)
 
     def apply_E0(self, E0: float):
-        """Apply an E0 correction.
+        """Apply an energy offset correction, *E0*, to widgets.
 
         Effectively, converts from absolute to relative regions.
 
         """
-        self.k_space_checkbox.setEnabled(True)
-        # Un-check k-space to convert back to energy from wavenumber
-        self.k_space_checkbox.setChecked(False)
-        # Convert between absolute energies and relative energies
-        for line_edit in [self.start_spin_box, self.stop_spin_box]:
-            old_value = line_edit.value()
-            new_value = old_value - E0
-            line_edit.setValue(new_value)
+        for row in self.row_numbers:
+            widgets = self.row_widgets(row=row)
+            widgets.k_space_checkbox.setEnabled(True)
+            # Un-check k-space to convert back to energy from wavenumber
+            widgets.k_space_checkbox.setChecked(False)
+            # Convert between absolute energies and relative energies
+            for line_edit in [widgets.start_spin_box, widgets.stop_spin_box]:
+                old_value = line_edit.value()
+                new_value = old_value - E0
+                line_edit.setValue(new_value)
 
     def unapply_E0(self, E0: float):
         """Remove an E0 correction.
@@ -180,25 +177,31 @@ class XafsScanRegion(regions_display.RegionBase):
         Effectively, converts from relative to absolute regions.
 
         """
-        self.k_space_checkbox.setEnabled(False)
-        # Un-check k-space to convert back to energy from wavenumber
-        self.k_space_checkbox.setChecked(False)
-        # Convert between absolute energies and relative energies
-        for line_edit in [self.start_spin_box, self.stop_spin_box]:
-            old_value = line_edit.value()
-            new_value = old_value + E0
-            line_edit.setValue(new_value)
+        for row in self.row_numbers:
+            widgets = self.row_widgets(row=row)
+            # Un-check k-space to convert back to energy from wavenumber
+            widgets.k_space_checkbox.setEnabled(False)
+            # Convert between absolute energies and relative energies
+            for line_edit in [widgets.start_spin_box, widgets.stop_spin_box]:
+                old_value = line_edit.value()
+                new_value = old_value + E0
+                print(f"{old_value} + {E0} = {new_value}")
+                line_edit.setValue(new_value)
 
 
-class XafsScanDisplay(regions_display.RegionsDisplay):
-    Region = XafsScanRegion
-    default_num_regions = 3
+class XafsScanDisplay(PlanDisplay):
     plan_type = "xafs_scan"
     min_energy = 4000
     max_energy = 33000
+    _default_region_count = 3
 
     def customize_ui(self):
         super().customize_ui()
+        self.regions = XafsRegionsManager(layout=self.regions_layout)
+        self.num_regions_spin_box.valueChanged.connect(self.regions.set_region_count)
+        self.num_regions_spin_box.setValue(self._default_region_count)
+        # Disable the line edits in spin box (use up/down buttons instead)
+        self.ui.num_regions_spin_box.lineEdit().setReadOnly(True)
         # Add absorption edges from XrayDB
         self.xraydb = XrayDB()
         combo_box = self.ui.edge_combo_box
@@ -227,28 +230,17 @@ class XafsScanDisplay(regions_display.RegionsDisplay):
         self.ui.num_regions_spin_box.lineEdit().setReadOnly(True)
 
         # when regions number changed
-        self.ui.num_regions_spin_box.valueChanged.connect(self.update_regions)
-        self.ui.num_regions_spin_box.editingFinished.connect(self.update_regions)
-
-        # reset button
-        self.ui.reset_button.clicked.connect(self.reset_default_regions)
+        self.ui.num_regions_spin_box.valueChanged.connect(self.regions.set_region_count)
+        self.ui.num_regions_spin_box.editingFinished.connect(self.regions.set_region_count)
 
         # connect checkboxes with all regions' check box
         self.ui.regions_all_checkbox.stateChanged.connect(self.on_regions_all_checkbox)
-        # connect is_standard with a warning box
-        self.ui.checkBox_is_standard.clicked.connect(self.on_is_standard)
 
         # repeat scans
         self.ui.spinBox_repeat_scan_num.valueChanged.connect(self.update_total_time)
         self.ui.detectors_list.selectionModel().selectionChanged.connect(
             self.update_total_time
         )
-
-        # Default metadata values
-        self.ui.comboBox_purpose.lineEdit().setPlaceholderText(
-            "e.g. commissioning, alignment, etc."
-        )
-        self.ui.comboBox_purpose.setCurrentText("")
 
     def on_regions_all_checkbox(self, is_checked):
         for region_i in self.regions:
@@ -257,81 +249,30 @@ class XafsScanDisplay(regions_display.RegionsDisplay):
     def use_edge(self, is_checked: bool):
         self.edge_combo_box.setEnabled(is_checked)
         # Update regions
-        for region in self.regions:
-            if self.E0 is None:
-                return
-            elif is_checked:
-                region.apply_E0(self.E0)
-            else:
-                region.unapply_E0(self.E0)
+        if self.E0 is None:
+            return
+        elif is_checked:
+            self.regions.apply_E0(self.E0)
+        else:
+            self.regions.unapply_E0(self.E0)
 
-    def reset_default_regions(self):
-        super().reset_default_regions()
-        self.ui.spinBox_repeat_scan_num.setValue(1)
-        # Set default ranges for EXAFS scans
-        pre_edge = [-200, -50, 5]
-        xanes_region = [-50, 50, 0.5]
-        exafs_region = [50, 800, 0.5]
+    async def scan_durations(self) -> tuple[float, float]:
+        energy_ranges = [region.energy_range for region in self.regions]
+        _, exposures = merge_ranges(*energy_ranges, sort=True)
+        time_per_scan = sum(exposures)
+        num_scan_repeat = self.ui.spinBox_repeat_scan_num.value()
+        total_time = num_scan_repeat * time_per_scan
+        return time_per_scan, total_time
 
-        default_regions = [pre_edge, xanes_region, exafs_region]
-        for (start, stop, step), region in zip(default_regions, self.regions):
-            region.start_spin_box.setValue(start)
-            region.stop_spin_box.setValue(stop)
-            region.step_spin_box.setValue(step)
-
-    def add_region(self):
-        region = super().add_region()
-        # Connect some extra signals
-        for signal in [
-            region.region_checkbox.stateChanged,
-            region.step_spin_box.valueChanged,
-            region.weight_spinbox.valueChanged,
-            region.exposure_time_spinbox.valueChanged,
-            region.k_space_checkbox.stateChanged,
-        ]:
-            signal.connect(self.update_total_time)
-        return signal
-
-    def update_regions(self):
-        new_region_num = self.ui.num_regions_spin_box.value()
-        old_region_num = len(self.regions)
-
-        for i in range(old_region_num, new_region_num):
-            self.add_region()
-        for i in range(new_region_num, old_region_num):
-            self.remove_region()
-
-        self.update_total_time()
-
-    def update_total_time(self):
+    @asyncSlot()
+    async def update_total_time(self):
         # Summing total_time for all checked regions directly within the sum function using a generator expression
-        energy_ranges = [
-            region.energy_range
-            for region in self.regions
-            if region.region_checkbox.isChecked()
-        ]
         try:
-            _, exposures = merge_ranges(*energy_ranges, sort=True)
-            time_per_scan = exposures.sum()
-        except (ValueError, ZeroDivisionError, OverflowError):
-            time_per_scan = float("nan")
-        repetitions = self.ui.spinBox_repeat_scan_num.value()
-        total_time = time_per_scan * repetitions
+            time_per_scan, total_time = await self.scan_durations()
+        except ZeroDivisionError:
+            time_per_scan, total_time = float('nan'), float('nan')
         self.scan_time_changed.emit(time_per_scan)
         self.total_time_changed.emit(total_time)
-
-    def on_is_standard(self, is_checked):
-        # if is_standard checked, warn that the data will be used for public
-        if is_checked:
-            response = QtWidgets.QMessageBox.warning(
-                self,
-                "Notice",
-                "When checking this option, you acknowledge that these data may be made publicly available.",
-                QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
-                QtWidgets.QMessageBox.No,
-            )
-            if response != QtWidgets.QMessageBox.Yes:
-                self.ui.checkBox_is_standard.setChecked(False)
 
     @property
     def edge_name(self) -> str | None:
@@ -360,33 +301,32 @@ class XafsScanDisplay(regions_display.RegionsDisplay):
     def plan_args(self) -> tuple[tuple, dict]:
         """Build the arguments that will be used when building a plan object."""
         detectors = self.ui.detectors_list.selected_detectors()
-        # Iterate through only selected regions
-        checked_regions = [
-            region_i
-            for region_i in self.regions
-            if region_i.region_checkbox.isChecked()
-        ]
-        energy_ranges = [region.energy_range.astuple() for region in checked_regions]
-        # Edge position
+        regions = [region for region in self.regions if region.is_active]
+        energy_ranges = [region.energy_range.astuple() for region in regions]
         E0 = self.edge_name if self.edge_name is not None else self.E0
         # Additional metadata
-        md = self.get_meta_data()
-        md["is_standard"] = self.ui.checkBox_is_standard.isChecked()
+        md = {**self.plan_metadata()}
         args = (detectors, *energy_ranges)
         kwargs = {
             "md": md,
         }
         if self.use_edge_checkbox.isChecked():
+            kwargs["E0"] = E0
+        return args, kwargs
+
+    def queue_plan(self, *args, **kwargs) -> BPlan:
+        # Fail if no energy is selected
+        use_edge = self.use_edge_checkbox.isChecked()
+        if use_edge and self.E0 is None:
             # Check that an absorption edge was selected
             if E0 is None:
-                QtWidgets.QMessageBox.warning(
+                QMessageBox.warning(
                     self, "Error", "Please select an absorption edge."
                 )
                 raise ValueError(
                     "Absorption edge is selected, but no valid value was provided."
                 )
-            kwargs["E0"] = E0
-        return args, kwargs
+        super().queue_plan(*args, **kwargs)
 
     def ui_filename(self):
         return "plans/xafs_scan.ui"
