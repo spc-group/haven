@@ -6,7 +6,7 @@ authors = [
 ]
 description = "Tools and GUI for running the spectroscopy group beamlines at the Advanced Photon Source."
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
@@ -24,7 +24,8 @@ dependencies = [
     "apstools==1.7.3",
     "bluesky==1.14.0",
     "bluesky-adaptive",
-    "bluesky-queueserver-api",
+    "bluesky-queueserver==0.0.22",
+    "bluesky-queueserver-api==0.0.12",
     "guarneri==0.2.0",
     "httpx[http2]",
     "mergedeep",
@@ -36,7 +37,7 @@ dependencies = [
     "pcdsdevices",
     "rich",
     "stamina",
-    "tiled[client]==0.1.0b27",
+    "tiled[client]==0.1.0b28",
     "tomlkit",
     "xraydb>=4.5.0",
     "xrayutilities",
@@ -135,10 +136,12 @@ files = [
     'src/haven/run_engine.py', 'src/haven/tests/test_run_engine.py',
     'src/haven/devices/asymmotron.py', "src/haven/tests/test_asymmotron.py",
     "src/haven/bss.py", "src/haven/tests/test_bss.py",
+    'src/haven/devices/blade_slits.py', "src/haven/tests/test_blade_slits.py",
     'src/haven/devices/ion_chamber.py', "src/haven/tests/test_ion_chamber.py",
     'src/haven/devices/motor.py', "src/haven/tests/test_motor.py",
     'src/haven/plans/_robot_transfer_sample.py', "src/haven/tests/test_robot_transfer_sample.py",
     'src/haven/devices/undulator.py', "src/haven/tests/test_undulator.py",
+    'src/haven/devices/vacuum.py', 'src/haven/tests/test_vacuum_devices.py',
     'src/haven/plans/_calibrate.py', 'src/haven/tests/test_calibrate_plan.py',
     'src/haven/plans/_set_energy.py', 'src/haven/tests/test_set_energy.py',
     'src/haven/plans/_xafs_scan.py', 'src/haven/plans/_energy_scan.py', 'src/haven/tests/test_energy_xafs_scan.py',

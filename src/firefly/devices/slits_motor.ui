@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>229</width>
-    <height>128</height>
+    <height>203</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -62,7 +62,7 @@
       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Curent value for this signal.&lt;/p&gt;&lt;p&gt;haven://${AXIS}.user_readback&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="channel" stdset="0">
-      <string>haven://${AXIS}.user_readback</string>
+      <string>haven://${AXIS}.readback</string>
      </property>
     </widget>
    </item>
@@ -78,7 +78,7 @@
       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Directly change the setpoint for this set of slits.&lt;/p&gt;&lt;p&gt;haven://${AXIS}.user_setpoint&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="channel" stdset="0">
-      <string>haven://${AXIS}.user_setpoint</string>
+      <string>haven://${AXIS}.setpoint</string>
      </property>
     </widget>
    </item>
@@ -91,7 +91,7 @@
       <enum>QFrame::NoFrame</enum>
      </property>
      <property name="macros" stdset="0">
-      <string>SIG=${AXIS}.user_setpoint</string>
+      <string>SIG=${AXIS}.setpoint</string>
      </property>
      <property name="filename" stdset="0">
       <string>tweak.py</string>

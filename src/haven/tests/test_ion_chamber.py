@@ -42,12 +42,12 @@ async def test_readables(ion_chamber):
     expected_readables = [
         "I0-net_current",
         "I0-raw_current",
-        "I0-counts",
+        "I0-count",
         "I0-count_rate",
+        "I0-raw_count_rate",
         "I0-voltmeter-analog_inputs-1-final_value",
         "I0-mcs-scaler-channels-0-net_count",
         "I0-mcs-scaler-channels-0-raw_count",
-        "I0-mcs-scaler-channels-2-net_count",
         "I0-mcs-scaler-channels-2-raw_count",
         "I0-mcs-scaler-elapsed_time",
     ]
@@ -55,7 +55,7 @@ async def test_readables(ion_chamber):
     assert sorted(actual_readables) == sorted(expected_readables)
     # Check signal hints
     expected_hints = [
-        "I0-counts",
+        "I0-count",
         "I0-count_rate",
     ]
     actual_hints = ion_chamber.hints["fields"]

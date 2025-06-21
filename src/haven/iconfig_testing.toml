@@ -331,3 +331,19 @@ lattice_constant = 0.543095  # in nm
 wedge_angle = 30  # in degrees
 surface_plane = "211"
 name = "analyzer_crystal"
+
+
+# Vacuum devices
+# ==============
+#
+# These devices are mostly used for the baseline stream. The following
+# examples create several QPC/MPC ion pump controllers, and some Televac
+# ion gauges.
+
+[[ vacuum_pumps ]]
+ip1 = "255idVac:qpc01a"
+ip6 = "255idVac:qpc03b"
+
+[[ vacuum_gauges ]]
+ig1 = "255idVac:VSA5"
+ig2 = "255idVac:VSA9"

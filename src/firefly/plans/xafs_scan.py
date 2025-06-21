@@ -301,12 +301,13 @@ class XafsScanDisplay(PlanDisplay):
     def plan_args(self) -> tuple[tuple, dict]:
         """Build the arguments that will be used when building a plan object."""
         detectors = self.ui.detectors_list.selected_detectors()
+        detector_names = [detector.name for detector in detectors]
         regions = [region for region in self.regions if region.is_active]
         energy_ranges = [region.energy_range.astuple() for region in regions]
         E0 = self.edge_name if self.edge_name is not None else self.E0
         # Additional metadata
         md = {**self.plan_metadata()}
-        args = (detectors, *energy_ranges)
+        args = (detectors_names, *energy_ranges)
         kwargs = {
             "md": md,
         }

@@ -58,6 +58,7 @@ def _inject_md(msg, config: Mapping | None = None):
     if msg.command != "open_run":
         return (None, None)
     md = version_md(config=config)
+    print(md)
     # Filter out `None` values since they were not found
     md = {key: val for key, val in md.items() if val not in [None, ""]}
 

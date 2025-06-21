@@ -2,7 +2,8 @@
 
 import logging
 import os
-from typing import Mapping
+from collections.abc import Callable, Mapping
+from typing import Generator
 
 from guarneri import Instrument
 
@@ -21,6 +22,32 @@ from .devices.table import Table
 from .devices.xia_pfcu import PFCUFilterBank
 
 log = logging.getLogger(__name__)
+
+
+class make_devices[T]:
+    """Create several devices that only use *name* and *prefix* arguments.
+
+    Each entry in `**defns` is a separate device to be created, so the
+    following statements are equivalent.
+
+    ..code-block :: python
+
+        # Create all at once
+        list(make_devices(Motor)(m1="255idcVME:m1", m2="255idcVME:m2"))
+        # Create each motor individually
+        [
+            Motor("255idcVME:m1", name="m1"),
+            Motor("255idcVME:m2", name="m2"),
+        ]
+
+    """
+
+    def __init__(self, DeviceClass: Callable[[str, str], T]):
+        self._Klass = DeviceClass
+
+    def __call__(self, **defns: Mapping[str, str]) -> Generator[T, None, None]:
+        for name, prefix in defns.items():
+            yield self._Klass(prefix, name=name)
 
 
 class HavenInstrument(Instrument):
@@ -84,6 +111,8 @@ beamline = HavenInstrument(
         "sim_detector": devices.SimDetector,
         "table": Table,
         "undulator": devices.PlanarUndulator,
+        "vacuum_gauges": make_devices(devices.TelevacIonGauge),
+        "vacuum_pumps": make_devices(devices.PumpController),
         "xspress3": devices.Xspress3Detector,
         "xy_stage": XYStage,
         # Threaded ophyd devices

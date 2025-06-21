@@ -184,6 +184,7 @@ class IonChamber(StandardReadable, Triggerable):
             clock_frequency=self.mcs.scaler.clock_frequency,
             counts_per_volt_second=self.counts_per_volt_second,
         )
+        # Measured current without dark current correction
         self.raw_current = derived_signal_r(
             raw_to_derived=self._counts_to_amps,
             derived_units="A",
@@ -194,11 +195,14 @@ class IonChamber(StandardReadable, Triggerable):
             counts_per_volt_second=self.counts_per_volt_second,
         )
         self.add_readables(
-            [self.net_count_rate], StandardReadableFormat.HINTED_UNCACHED_SIGNAL
+            [self.net_count_rate, self.scaler_channel.net_count],
+            StandardReadableFormat.HINTED_UNCACHED_SIGNAL,
         )
-        self.add_readables([self.net_current, self.raw_current, self.raw_count_rate], StandardReadableFormat.UNCACHED_SIGNAL)
+        self.add_readables(
+            [self.net_current, self.raw_current, self.raw_count_rate],
+            StandardReadableFormat.UNCACHED_SIGNAL,
+        )
         super().__init__(name=name)
-        print(self.raw_count_rate.name)
 
     def _counts_to_amps(
         self,
@@ -235,6 +239,17 @@ class IonChamber(StandardReadable, Triggerable):
         return (
             f"<{type(self).__name__}: '{self.name}' "
             f"({self.scaler_channel.raw_count.source})>"
+        )
+
+    def set_name(self, name: str, *, child_name_separator: str | None = None) -> None:
+        """Set name of the motor and its children."""
+        super().set_name(name, child_name_separator=child_name_separator)
+        # Hinted signals get their names mangled so we have human-friendly data keys
+        self.scaler_channel.net_count.set_name(
+            self._child_name_separator.join([name, "count"])
+        )
+        self.net_count_rate.set_name(
+            self._child_name_separator.join([name, "count_rate"])
         )
 
     @property

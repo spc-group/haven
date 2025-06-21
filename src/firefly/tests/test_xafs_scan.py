@@ -105,35 +105,63 @@ async def test_plan_energies(display, qtbot):
     display.regions.row_widgets(3).active_checkbox.setChecked(False)    
     # Set up detector list
     display.ui.detectors_list.selected_detectors = mock.MagicMock(
-        return_value=["vortex_me4", "I0"]
+        return_value=[]
     )
     args, kwargs = display.plan_args()
-    assert args == (
-        ["vortex_me4", "I0"],
+    assert args[1:] == (
         ("E", -200.0, -50.0, 5.0, 1.0),
         ("E", -50.0, 50.0, 0.5, 1.0),
     )
     assert kwargs["E0"] == 58893.0
 
 
-async def test_plan_energies_k_mixed(qtbot, display):
-    await display.regions.set_region_count(2)
+def test_plan_energies(display, qtbot, xspress, ion_chamber):
     display.edge_combo_box.setCurrentIndex(1)
-    # Set up the first region
-    widgets = display.regions.row_widgets(1)
-    widgets.start_spin_box.setValue(-20)
-    widgets.stop_spin_box.setValue(40)
-    widgets.step_spin_box.setValue(10)
-    # Set up the second region
-    widgets = display.regions.row_widgets(2)
-    widgets.start_spin_box.setValue(50)
-    widgets.stop_spin_box.setValue(800)
-    # Convert to k space
-    widgets.k_space_checkbox.setChecked(True)
-    widgets.step_spin_box.setValue(5)
-    widgets.weight_spin_box.setValue(2)
+    display.regions[-1].region_checkbox.setChecked(False)
+    # Set up detector list
+    display.ui.detectors_list.selected_detectors = mock.MagicMock(
+        return_value=[xspress, ion_chamber]
+    )
+    # set up meta data
+    display.ui.lineEdit_sample.setText("sam")
+    display.ui.checkBox_is_standard.setChecked(True)
+    display.ui.comboBox_purpose.setCurrentText("test")
+    display.ui.textEdit_notes.setText("sam_notes")
+    # Check plan arguments that will be sent to the queue
+    args, kwargs = display.plan_args()
+    assert args == (
+        ["vortex_me4", "I00"],
+        ("E", -200.0, -50.0, 5.0, 1.0),
+        ("E", -50.0, 50.0, 0.5, 1.0),
+    )
+    assert kwargs == {
+        "E0": "Sc-K",
+        "md": {
+            "sample_name": "sam",
+            "purpose": "test",
+            "is_standard": True,
+            "notes": "sam_notes",
+        },
+    }
+
+
+def test_xafs_scan_plan_queued_numeric_E0(display, qtbot, xspress, ion_chamber):
+    display.edge_combo_box.setCurrentText("58893.0")
+    display.regions[-1].region_checkbox.setChecked(False)
+    # Set up detector list
+    display.ui.detectors_list.selected_detectors = mock.MagicMock(
+        return_value=[xspress, ion_chamber]
+    )
+    # set up meta data
+    display.ui.lineEdit_sample.setText("sam")
+    display.ui.checkBox_is_standard.setChecked(True)
+    display.ui.comboBox_purpose.setCurrentText("test")
+    display.ui.textEdit_notes.setText("sam_notes")
+
+    # Check plan arguments
     args, kwargs = display.plan_args()
     detectors, *energy_ranges = args
+    assert detectors == ["vortex_me4", "I00"]
     assert energy_ranges == [
         ("E", -20.0, 40.0, 10.0, 1.0),
         ("K", 3.6226, 14.4905, 5.0, 1.0, 2),
@@ -157,11 +185,37 @@ async def test_plan_metadata(display, qtbot):
     }
 
 
-async def test_plan_edge(display, qtbot):
-    """Check that the edge name is passed properly."""
+def test_plan_energies_k_mixed(qtbot, display, xspress, ion_chamber):
+    display.ui.num_regions_spin_box.setValue(2)
     display.edge_combo_box.setCurrentIndex(1)
-    # Check plan arguments that will be sent to the queue
+    # Set up the first region
+    display.regions[0].start_spin_box.setValue(-20)
+    display.regions[0].stop_spin_box.setValue(40)
+    display.regions[0].step_spin_box.setValue(10)
+    # Set up the second region
+    display.regions[1].start_spin_box.setValue(50)
+    display.regions[1].stop_spin_box.setValue(800)
+    # Convert to k space
+    display.regions[1].k_space_checkbox.setChecked(True)
+    display.regions[1].step_spin_box.setValue(5)
+    display.regions[1].weight_spinbox.setValue(2)
+    # Set up detector list
+    display.ui.detectors_list.selected_detectors = mock.MagicMock(
+        return_value=[xspress, ion_chamber]
+    )
+    # Set repeat scan num to 2
+    display.ui.spinBox_repeat_scan_num.setValue(3)
+    # Set up meta data
+    display.ui.lineEdit_sample.setText("sam")
+    display.ui.textEdit_notes.setText("sam_notes")
+
     args, kwargs = display.plan_args()
+    detectors, *energy_ranges = args
+    assert detectors == ["vortex_me4", "I00"]
+    assert energy_ranges == [
+        ("E", -20.0, 40.0, 10, 1.0),
+        ("K", 3.6226, 14.4905, 5.0, 1.0, 2),
+    ]
     assert kwargs["E0"] == "Sc-K"
 
 

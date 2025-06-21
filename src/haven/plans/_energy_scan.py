@@ -22,7 +22,7 @@ class Metadata(TypedDict):
     edge: NotRequired[str]
     E0: float
     plan_name: str
-    d_spacing: NotRequired[float | Sequence[float] | None]
+    d_spacing: NotRequired[float | dict[str, float] | None]
 
 
 # @shutter_suspend_decorator()
@@ -159,7 +159,7 @@ def energy_scan(
     md_: Metadata = {"E0": E0_val, "plan_name": "energy_scan"}
     if E0_str != "":
         md_["edge"] = E0_str
-    d_spacings = []
+    d_spacings = {}
     for device in energy_devices:
         if not hasattr(device, "d_spacing"):
             continue
@@ -167,10 +167,12 @@ def energy_scan(
         if reading is None:
             log.warning(f"Did not receive reading for {device.name} d-spacing.")
             continue
-        d_spacings.append(reading[device.d_spacing.name]["value"])
+        d_spacings[device.d_spacing.name] = reading[device.d_spacing.name]["value"]
     if len(d_spacings) == 1:
-        md_["d_spacing"] = d_spacings[0]
+        # Only 1 mono, so just include the 1-and-only d-spacing
+        md_["d_spacing"] = tuple(d_spacings.values())[0]
     elif len(d_spacings) > 1:
+        # More than 1 mono, so include all d-spacings
         md_["d_spacing"] = d_spacings
     # Do the actual scan
     yield from bp.list_scan(
