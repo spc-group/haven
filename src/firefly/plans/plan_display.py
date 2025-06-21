@@ -89,7 +89,10 @@ class PlanDisplay(PlanStubDisplay):
 
     def plan_metadata(self) -> dict[str, Any]:
         """Build a metadata dictionary to be suitable for including in the plan."""
-        return self.metadata_widget.metadata()
+        return {
+            **self._bss_metadata,
+            **self.metadata_widget.metadata(),
+        }
 
 
 # -----------------------------------------------------------------------------

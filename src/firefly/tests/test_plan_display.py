@@ -45,4 +45,16 @@ async def test_plan_queued(display, qtbot):
 
 
 def test_plan_metadata(display):
+    # Set metadata in the metadata widget
+    display.metadata_widget.purpose_combo_box.setCurrentText("dancing")
+    display.metadata_widget.standard_check_box.setChecked(True)
+    # Set metadata from the beamline scheduling system
+    display.update_bss_metadata({
+        "proposal_id": "123456",
+    })
     md = display.plan_metadata()
+    assert md == {
+        "is_standard": True,
+        "purpose": "dancing",
+        "proposal_id": "123456",
+    }
