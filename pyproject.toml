@@ -29,7 +29,7 @@ dependencies = [
     "guarneri==0.2.0",
     "httpx[http2]",
     "mergedeep",
-    "ophyd==1.10.5",
+    "ophyd==1.10.7",
     # "ophyd-async==0.10.0",
     # We need this ophyd-async development branch until a new release (>0.10.0a4)
     "ophyd-async @ git+https://github.com/bluesky/ophyd-async@f652399e24c045b0f6c675d173c1ef588f909062",
