@@ -307,7 +307,7 @@ class XafsScanDisplay(PlanDisplay):
         E0 = self.edge_name if self.edge_name is not None else self.E0
         # Additional metadata
         md = {**self.plan_metadata()}
-        args = (detectors_names, *energy_ranges)
+        args = (detector_names, *energy_ranges)
         kwargs = {
             "md": md,
         }

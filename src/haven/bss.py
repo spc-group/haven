@@ -2,6 +2,7 @@ import dataclasses
 from typing import Any, Mapping, Sequence
 import json
 import datetime as dt
+from pydantic import BaseModel
 
 import httpx
 import stamina
@@ -9,8 +10,7 @@ import stamina
 __all__ = ["Esaf", "Proposal", "User", "BssApi"]
 
 
-@dataclasses.dataclass(frozen=True)
-class User:
+class User(BaseModel):
     badge: str
     first_name: str
     last_name: str
@@ -19,8 +19,7 @@ class User:
     institution: str | None
 
 
-@dataclasses.dataclass(frozen=True)
-class Esaf:
+class Esaf(BaseModel):
     esaf_id: str
     description: str
     sector: str
@@ -31,8 +30,7 @@ class Esaf:
     users: list[User]
 
 
-@dataclasses.dataclass(frozen=True)
-class Proposal:
+class Proposal(BaseModel):
     title: str
     proposal_id: str
     users: list[User]

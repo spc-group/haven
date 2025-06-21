@@ -51,6 +51,17 @@ from firefly.plans.util import is_valid_value
 from firefly.queue_button import QueueButton
 
 
+@dataclass(frozen=True)
+class DeviceParameters:
+    minimum: float
+    maximum: float
+    current_value: float
+    units: str
+    precision: int
+    is_numeric: bool
+
+
+
 async def device_parameters(device: Device) -> DeviceParameters:
     """Retrieve the relevant parameters from the selected device.
 
@@ -82,16 +93,6 @@ async def device_parameters(device: Device) -> DeviceParameters:
         units=units,
         is_numeric=desc.get("dtype", "number") == "number",
     )
-
-
-@dataclass(frozen=True)
-class DeviceParameters:
-    minimum: float
-    maximum: float
-    current_value: float
-    units: str
-    precision: int
-    is_numeric: bool
 
 
 def iter_widgets(widgets) -> Generator[QWidget, Any, None]:

@@ -1,12 +1,10 @@
 area_detector_root_path = "/tmp"
 
-[ beamline ]
-# General name for the beamline, used for metadata.
-name = "SPC Beamline (sector unknown)"
-
-[xray_source]
-type = "undulator"
-prefix = "ID255ds:"
+[metadata]
+# Additional metadata to inject in every scan
+facility = "Advanced Photon Source"
+beamline = "SPC Beamline (sector unknown)"
+xray_source = "2.8 mm planar undulator"
 
 
 # Metadata from the beamline scheduling system (BSS)

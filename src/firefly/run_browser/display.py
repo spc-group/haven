@@ -188,7 +188,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
         next_week = QDateTime.fromTime_t(int(next_week.timestamp()))
         self.ui.filter_before_datetimeedit.setDateTime(next_week)
         # Set beamline based on config file
-        beamline_id = load_config()["beamline"]["name"]
+        beamline_id = load_config()['metadata']["beamline"]
         self.ui.filter_beamline_combobox.setCurrentText(beamline_id)
 
     async def update_combobox_items(self):

@@ -6,11 +6,11 @@ import socket
 import warnings
 from collections import ChainMap
 import importlib
-from typing import Mapping
+from typing import Mapping, Any
 
 import epics
 from bluesky import plan_stubs as bps, Msg
-from bluesky.preprocessors import plan_mutator
+from bluesky.preprocessors import msg_mutator
 from bluesky.utils import make_decorator
 
 from haven import __version__ as haven_version
@@ -25,7 +25,7 @@ def get_version(pkg_name):
     return importlib.metadata.version(pkg_name)
 
 
-def version_md(config: Mapping | None):
+def version_md(config: Mapping | None) -> dict[str, Any]:
     if config is None:
         config = load_config()
     # Prepare the metadata dictionary
@@ -43,72 +43,30 @@ def version_md(config: Mapping | None):
         "EPICS_HOST_ARCH": os.environ.get("EPICS_HOST_ARCH"),
         "epics_libca": os.environ.get("PYEPICS_LIBCA"),
         "EPICS_CA_MAX_ARRAY_BYTES": os.environ.get("EPICS_CA_MAX_ARRAY_BYTES"),
-        # Facility
-        "beamline_id": config.get("beamline", {}).get("name"),
-        "facility_id": config.get("synchrotron", {}).get("name"),
-        "xray_source": config.get("xray_source", {}).get("type"),
         # Computer
         "login_id": f"{getpass.getuser()}@{socket.gethostname()}",
         "pid": os.getpid(),
     }
+    md.update(config.get('metadata', {}))
     return md
 
 
 def _inject_md(msg, config: Mapping | None = None):
     if msg.command != "open_run":
         return (None, None)
+    from pprint import pprint
+    pprint(msg.kwargs)
     md = version_md(config=config)
-    print(md)
     # Filter out `None` values since they were not found
     md = {key: val for key, val in md.items() if val not in [None, ""]}
-
-    def md_gen():
-        # Get metadata from the beamline scheduling system (bss)
-        try:
-            bss = beamline.devices["bss"]
-        except ComponentNotFound:
-            wmsg = "Could not find bss device, metadata may be missing."
-            warnings.warn(wmsg)
-            log.warning(wmsg)
-        else:
-            # bss_md = yield from bps.read(bss)
-            bss_md = {}
-            md_keys = [
-                # (metadata key, device reading key)
-                # ("proposal_id", "proposal-proposal_id"),
-                # ("proposal_title", "proposal-title"),
-                # ("prposal_users", "proposal-user_last_names"),
-                # ("proposal_user_badges", "proposal-user_badges"),
-            ]
-            md.update(
-                {
-                    key: bss_md[f"{bss.name}-{data_key}"]['value']
-                    for key, data_key in md_keys
-                    # "proposal_id": bss_md[f'{bss.name}-proposal-proposal_id']['value'],
-                    # "proposal_title": bss_md[f'{bss.name}-proposal-title']['value'],
-                    # "proposal_users": bss_md[f'{bss.name}-proposal-user_last_names']['value'],
-                    # "proposal_user_badges": bss_md[f'{bss.name}-proposal-user_badges']['value'],
-                    # "esaf_id": bss_md[f'{bss.name}-esaf-esaf_id']['value'],
-                    # "esaf_title": bss_md[f'{bss.name}-esaf-title']['value'],
-                    # "esaf_users": bss_md[f'{bss.name}-esaf-user_last_names']['value'],
-                    # "esaf_user_badges": bss_md[f'{bss.name}-esaf-user_badges']['value'],
-                    # "esaf_aps_run": bss_md[f'{bss.name}-esaf.aps_run']['value'],
-                    # "mail_in_flag": bss_md[f'{bss.name}-proposal-mail_in_flag']['value'],
-                    # "proprietary_flag": bss_md[f'{bss.name}-proposal-proprietary_flag']['value'],
-                    # "bss_beamline_name": bss_md[f'{bss.name}-proposal-beamline_name']['value'],
-                }
-            )
-        # Update the message
-        md.update(msg.kwargs)
-        new_msg = msg._replace(kwargs={})
-        print("===")
-        print(id(msg), msg)
-        print(id(new_msg), new_msg)
-        print('---')
-        new_msg = msg
-        return (yield new_msg)
-    return [md_gen(), None]
-
+    # Update the message
+    md.update(msg.kwargs)
+    pprint(md)
+    new_msg = msg._replace(kwargs=md)
+    # new_msg = Msg("open_run", **md)
+    print("---")
+    pprint(new_msg.kwargs)
+    return new_msg
 
 
 def inject_metadata_wrapper(plan, config: Mapping | None = None):
@@ -124,7 +82,7 @@ def inject_metadata_wrapper(plan, config: Mapping | None = None):
         a generator, list, or similar containing `Msg` objects
 
     """
-    return (yield from plan_mutator(plan, partial(_inject_md, config=config)))
+    return (yield from msg_mutator(plan, partial(_inject_md, config=config)))
 
 
 inject_metadata_decorator = make_decorator(inject_metadata_wrapper)
