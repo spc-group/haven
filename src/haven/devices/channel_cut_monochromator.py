@@ -4,7 +4,7 @@ from ophyd_async.epics.core import epics_signal_r, epics_signal_rw
 from haven.devices.motor import Motor
 
 
-class FixedBounceMonochromator(StandardReadable):
+class ChannelCutMonochromator(StandardReadable):
     """A dual-crystal mono where the geometry of the two crystals is fixed.
 
     This type of mono would often be used as a secondary monochromator
