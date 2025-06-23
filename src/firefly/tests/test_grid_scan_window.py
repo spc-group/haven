@@ -74,17 +74,18 @@ async def test_step_size_calculation(display, qtbot):
     step_label = display.regions.layout.itemAtPosition(row, 5).widget()
     assert step_label.text() == "0.91"
     # Step size should be 5 for 3 points from 5 to 15.
-    region_1 = display.regions[1]
-    region_1.start_spin_box.setValue(5)
-    region_1.stop_spin_box.setValue(15)
-    region_1.scan_pts_spin_box.setValue(3)
-    assert region_1.step_label.text() == "5.0"
+    widgets = display.regions.row_widgets(2)
+    widgets.start_spin_box.setValue(5)
+    widgets.stop_spin_box.setValue(15)
+    widgets.num_points_spin_box.setValue(3)
+    assert widgets.step_label.text() == "5.0"
 
     # Step size should 10 for 3 points from 10 to 30.
-    region_0.start_spin_box.setValue(10)
-    region_0.stop_spin_box.setValue(30)
-    region_0.scan_pts_spin_box.setValue(3)
-    assert region_0.step_label.text() == "10.0"
+    widgets = display.regions.row_widgets(1)
+    widgets.start_spin_box.setValue(10)
+    widgets.stop_spin_box.setValue(30)
+    widgets.num_points_spin_box.setValue(3)
+    assert widgets.step_label.text() == "10.0"
 
 
 @pytest.mark.asyncio
