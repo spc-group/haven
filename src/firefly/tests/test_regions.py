@@ -6,7 +6,7 @@ from qtpy.QtWidgets import QWidget, QGridLayout, QLineEdit, QCheckBox
 from firefly.plans.regions import RegionsManager
 
 
-class TestManager(RegionsManager):
+class MockManager[WidgetsType](RegionsManager):
 
     @dataclass(frozen=True)
     class WidgetSet():
@@ -16,12 +16,21 @@ class TestManager(RegionsManager):
     async def create_row_widgets(self, row: int) -> list[QWidget]:
         return [QLineEdit()]
 
+    def widgets_to_region(self, widgets: WidgetSet) -> RegionsManager.Region:
+        """Take a list of widgets in a row, and build a Region object.
+
+        This method is meant be over-ridden by subclasses.
+
+        """
+        return self.Region(is_active=widgets.active_checkbox.isChecked())
+    
+
 @pytest.fixture()
 def manager(qtbot):
     parent = QWidget()
     layout = QGridLayout()
     parent.setLayout(layout)
-    manager = TestManager(layout=layout, parent=parent)
+    manager = MockManager[RegionsManager.WidgetSet](layout=layout, parent=parent)
     qtbot.addWidget(parent)
     yield manager
 

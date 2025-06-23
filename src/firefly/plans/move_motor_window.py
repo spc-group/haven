@@ -81,7 +81,7 @@ class MotorRegionsManager(RegionsManager):
             await make_relative(
                 device=device,
                 widgets=[widgets.position_spin_box],
-                is_relative=is_relative,
+                is_relative=self.is_relative,
             )
 
 
@@ -98,7 +98,7 @@ class MoveMotorDisplay(PlanStubDisplay):
             for region in self.regions
         ]
         args = tuple(arg for region in region_args for arg in region)
-        kwargs = {}
+        kwargs: dict[str, float] = {}
         return args, kwargs
 
     @property

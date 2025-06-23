@@ -102,7 +102,7 @@ async def test_plan_energies(display, qtbot):
     widgets.stop_spin_box.setValue(50)
     widgets.step_spin_box.setValue(0.5)
     # Disable the last row
-    display.regions.row_widgets(3).active_checkbox.setChecked(False)    
+    display.regions.row_widgets(3).active_checkbox.setChecked(False)
     # Set up detector list
     args, kwargs = display.plan_args()
     detectors, *energy_ranges = args
@@ -171,7 +171,7 @@ def test_edge_name(display):
     assert display.edge_name == "Zz-Z9"
     # With a non-edge name, raise an exception
     display.edge_combo_box.setCurrentText("1153")
-    assert display.edge_name is None
+    assert display.edge_name == ""
 
 
 def test_E0(display):

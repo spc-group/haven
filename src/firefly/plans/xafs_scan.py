@@ -3,6 +3,7 @@ import re
 from enum import IntEnum
 from dataclasses import dataclass
 from functools import partial
+from typing import Any
 
 from bluesky_queueserver_api import BPlan
 import xraydb
@@ -58,8 +59,6 @@ class XafsRegionsManager(RegionsManager):
 
         @property
         def energy_range(self):
-            print(self.start, self.stop, self.step, self.exposure_time, self.weight)
-            print(self.domain)
             if self.domain == Domain.WAVENUMBER:
                 return KRange(self.start, self.stop, self.step, self.exposure_time, self.weight)
             else:
@@ -256,7 +255,7 @@ class XafsScanDisplay(PlanDisplay):
         else:
             self.regions.unapply_E0(self.E0)
 
-    async def scan_durations(self) -> tuple[float, float]:
+    def scan_durations(self, detector_time: float = 0) -> tuple[float, float]:
         energy_ranges = [region.energy_range for region in self.regions]
         _, exposures = merge_ranges(*energy_ranges, sort=True)
         time_per_scan = sum(exposures)
@@ -268,26 +267,26 @@ class XafsScanDisplay(PlanDisplay):
     async def update_total_time(self):
         # Summing total_time for all checked regions directly within the sum function using a generator expression
         try:
-            time_per_scan, total_time = await self.scan_durations()
+            time_per_scan, total_time = self.scan_durations()
         except ZeroDivisionError:
             time_per_scan, total_time = float('nan'), float('nan')
         self.scan_time_changed.emit(time_per_scan)
         self.total_time_changed.emit(total_time)
 
     @property
-    def edge_name(self) -> str | None:
+    def edge_name(self) -> str:
         edge_regex = r"([A-Z][a-z]?)[-_ ]([K-Z][0-9]*)"
         edge_text = self.ui.edge_combo_box.currentText()
         if re_match := re.search(edge_regex, edge_text):
             return "-".join(re_match.groups())
         else:
-            return None
+            return ""
 
     @property
     def E0(self) -> float | None:
         try:
             element, edge = self.edge_name.split("-")
-        except (UnknownAbsorptionEdge, AttributeError):
+        except (UnknownAbsorptionEdge, ValueError):
             pass
         else:
             return xraydb.xray_edge(element, edge).energy
@@ -304,11 +303,11 @@ class XafsScanDisplay(PlanDisplay):
         detector_names = [detector.name for detector in detectors]
         regions = [region for region in self.regions if region.is_active]
         energy_ranges = [region.energy_range.astuple() for region in regions]
-        E0 = self.edge_name if self.edge_name is not None else self.E0
+        E0 = self.edge_name if self.edge_name != "" else self.E0
         # Additional metadata
         md = {**self.plan_metadata()}
         args = (detector_names, *energy_ranges)
-        kwargs = {
+        kwargs: dict[str, Any] = {
             "md": md,
         }
         if self.use_edge_checkbox.isChecked():
@@ -320,7 +319,7 @@ class XafsScanDisplay(PlanDisplay):
         use_edge = self.use_edge_checkbox.isChecked()
         if use_edge and self.E0 is None:
             # Check that an absorption edge was selected
-            if E0 is None:
+            if self.E0 is None:
                 QMessageBox.warning(
                     self, "Error", "Please select an absorption edge."
                 )

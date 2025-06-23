@@ -18,14 +18,15 @@ from haven import sanitize_name
 log = logging.getLogger()
 
 
-class GridRegionsManager(RegionsManager):
+
+class GridRegionsManager[WidgetsType](RegionsManager):
     is_relative: bool = False
     
     # Signals
     num_points_changed = Signal(int)
 
-    @dataclass(frozen=True)
-    class WidgetSet():
+    @dataclass(frozen=True, eq=True)
+    class WidgetSet(RegionsManager.WidgetSet):
         active_checkbox: QCheckBox
         device_selector: ComponentSelector
         start_spin_box: QDoubleSpinBox
@@ -36,7 +37,7 @@ class GridRegionsManager(RegionsManager):
         fly_checkbox: QCheckBox
 
     @dataclass(frozen=True, eq=True)
-    class Region():
+    class Region(RegionsManager.Region):
         is_active: bool
         device: str
         start: float
@@ -116,7 +117,7 @@ class GridRegionsManager(RegionsManager):
     def update_num_points(self):
         self.num_points_changed.emit(self.num_points())
 
-    def num_points(self):
+    def num_points(self) -> int:
         rows = self.row_numbers
         num_pts_col = 4
         spin_boxes = [self.layout.itemAtPosition(row, num_pts_col).widget() for row in rows]
@@ -152,7 +153,7 @@ class GridRegionsManager(RegionsManager):
             await make_relative(
                 device=device,
                 widgets=[widgets.start_spin_box, widgets.stop_spin_box],
-                is_relative=is_relative,
+                is_relative=self.is_relative,
             )
 
     @Slot()
@@ -182,7 +183,7 @@ class GridScanDisplay(PlanDisplay):
 
     def customize_ui(self):
         super().customize_ui()
-        self.regions = GridRegionsManager(layout=self.regions_layout)
+        self.regions = GridRegionsManager[GridRegionsManager.WidgetSet](layout=self.regions_layout)
         self.num_regions_spin_box.valueChanged.connect(self.regions.set_region_count)
         self.num_regions_spin_box.setValue(self._default_region_count)
         # Connect scan points change to update total time
@@ -193,10 +194,8 @@ class GridScanDisplay(PlanDisplay):
         self.scan_time_changed.connect(self.scan_duration_label.set_seconds)
         self.total_time_changed.connect(self.total_duration_label.set_seconds)
 
-    async def scan_durations(self) -> tuple[float, float]:
+    def scan_durations(self, detector_time: float) -> tuple[float, float]:
         num_points = self.regions.num_points()
-        acquire_times = await self.detectors_list.acquire_times()
-        detector_time = max([*acquire_times, float("nan")])
         time_per_scan = num_points * detector_time
         num_scan_repeat = self.ui.spinBox_repeat_scan_num.value()
         total_time = num_scan_repeat * time_per_scan
@@ -206,7 +205,9 @@ class GridScanDisplay(PlanDisplay):
     async def update_total_time(self):
         """Update the total scan time and display it."""
         # Calculate time per scan
-        time_per_scan, total_time = await self.scan_durations()
+        acquire_times = await self.detectors_list.acquire_times()
+        detector_time = max([*acquire_times, float("nan")])
+        time_per_scan, total_time = self.scan_durations(detector_time=detector_time)
         self.scan_time_changed.emit(time_per_scan)
         self.total_time_changed.emit(total_time)
 
@@ -246,6 +247,10 @@ class GridScanDisplay(PlanDisplay):
     def scan_repetitions(self) -> int:
         """How many times should each scan be run."""
         return self.ui.spinBox_repeat_scan_num.value()
+
+    @scan_repetitions.setter
+    def scan_repetitions(self, value: int):
+        self.spinBox_repeat_scan_num.setValue(value)
 
     def plan_args(self):
         detectors = self.ui.detectors_list.selected_detectors()

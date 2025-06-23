@@ -25,7 +25,7 @@ import asyncio
 import logging
 from dataclasses import dataclass, fields
 from collections.abc import Sequence
-from typing import Any, Generator
+from typing import Any, Generator, cast
 from functools import partial
 import warnings
 
@@ -95,8 +95,19 @@ async def device_parameters(device: Device) -> DeviceParameters:
     )
 
 
-def iter_widgets(widgets) -> Generator[QWidget, Any, None]:
-    for field in fields(widgets):
+def iter_widgets(widgets, all_widgets: bool) -> Generator[QWidget, Any, None]:
+    """Iterate over all the widgets in a widget set.
+
+    Parameters
+    ----------
+    all
+      If False, skip the first widget since it is the isActive checkbox.
+
+    """
+    _fields = fields(widgets)
+    if not all_widgets:
+        _fields = _fields[1:]
+    for field in _fields:
         widget = getattr(widgets, field.name)
         yield widget
 
@@ -167,7 +178,7 @@ def set_limits(widgets: Sequence[QDoubleSpinBox | QSpinBox], params: DeviceParam
         widget.setMinimum(minimum)
 
 
-class RegionsManager(QObject):
+class RegionsManager[WidgetsType](QObject):
     """Contains variable number of plan parameter regions in a table.
 
     """
@@ -186,13 +197,13 @@ class RegionsManager(QObject):
     class Region():
         is_active: bool
 
-    def widgets_to_region(self, widgets: WidgetSet) -> Region:
-        """Take a list of widgets in a row, and build a Region object.
+    # def widgets_to_region(self, widgets: WidgetSet) -> Region:
+    #     """Take a list of widgets in a row, and build a Region object.
 
-        This method is meant be over-ridden by subclasses.
+    #     This method is meant be over-ridden by subclasses.
 
-        """
-        return self.Region(is_active=widgets.active_checkbox.isChecked())
+    #     """
+    #     return self.Region(is_active=widgets.active_checkbox.isChecked())
 
     async def create_row_widgets(self, row: int) -> list[QWidget]:
         """Create the widgets that are to go in each row, in order."""
@@ -263,18 +274,17 @@ class RegionsManager(QObject):
     def remove_row(self):
         """Remove the last row of widgets from the layout."""
         row = len(self) + self.header_rows - 1
-        print("Removing", row)
-        for widget in iter_widgets(self.row_widgets(row)):
+        for widget in iter_widgets(self.row_widgets(row), all_widgets=True):
             self.layout.removeWidget(widget)
             widget.deleteLater()
 
-    def row_widgets(self, row: int) -> WidgetSet:
+    def row_widgets(self, row: int) -> WidgetsType:
         layout = self.layout
         items = [layout.itemAtPosition(row, col) for col in range(layout.columnCount())]
         widgets = [item.widget() if item is not None else item for item in items]
         if any([widget is None for widget in widgets]):
             raise FireflyError(f"Row {row} does not have a full list of widgets: {widgets}")
-        return self.WidgetSet(*widgets)
+        return cast(WidgetsType, self.WidgetSet(*widgets))
 
     @property
     def row_numbers(self):
@@ -288,9 +298,8 @@ class RegionsManager(QObject):
 
         """
         widgets = self.row_widgets(row)
-        for widget in iter_widgets(widgets):
-            if widget is not widgets.active_checkbox:
-                widget.setEnabled(enabled)
+        for widget in iter_widgets(widgets, all_widgets=False):
+            widget.setEnabled(enabled)
 
     async def set_region_count(self, new_region_num: int):
         """Adjust regions from the scan params layout to reach

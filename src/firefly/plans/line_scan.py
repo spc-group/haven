@@ -106,7 +106,7 @@ class LineRegionsManager(RegionsManager):
             await make_relative(
                 device=device,
                 widgets=[widgets.start_spin_box, widgets.stop_spin_box],
-                is_relative=is_relative,
+                is_relative=self.is_relative,
             )
 
     def set_num_points(self, num_points):
@@ -182,7 +182,7 @@ class LineScanDisplay(PlanDisplay):
 
     @property
     def plan_type(self) -> str:
-        """Determine what kind of scan we're running based on use input."""
+        """Determine what kind of scan we're running based on user input."""
         return {
             # Rel, log
             (True, True): "rel_log_scan",
@@ -196,10 +196,27 @@ class LineScanDisplay(PlanDisplay):
             )
         ]
 
+    @plan_type.setter
+    def plan_type(self, plan_type: str):
+        """Set UI widgets based on what kind of scan we're running."""
+        is_rel, is_log = {
+            #               Rel, log
+            "rel_log_scan": (True, True),
+            "rel_scan": (True, False),
+            "log_scan": (False, True),
+            "scan": (False, False),
+        }[plan_type]
+        self.ui.relative_scan_checkbox.setChecked(is_rel)
+        self.ui.log_scan_checkbox.setChecked(is_log)
+
     @property
     def scan_repetitions(self) -> int:
         """How many times should each scan be run."""
         return self.ui.spinBox_repeat_scan_num.value()
+
+    @scan_repetitions.setter
+    def scan_repetitions(self, value: int):
+        self.spinBox_repeat_scan_num.setValue(value)
 
     def ui_filename(self):
         return "plans/line_scan.ui"
