@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 import pytest
-from qtpy.QtWidgets import QWidget, QGridLayout, QLineEdit, QCheckBox
+from qtpy.QtWidgets import QCheckBox, QGridLayout, QLineEdit, QWidget
 
 from firefly.plans.regions import RegionsManager
 
@@ -9,7 +9,7 @@ from firefly.plans.regions import RegionsManager
 class MockManager[WidgetsType](RegionsManager):
 
     @dataclass(frozen=True)
-    class WidgetSet():
+    class WidgetSet:
         active_checkbox: QCheckBox
         name: QLineEdit
 
@@ -23,7 +23,7 @@ class MockManager[WidgetsType](RegionsManager):
 
         """
         return self.Region(is_active=widgets.active_checkbox.isChecked())
-    
+
 
 @pytest.fixture()
 def manager(qtbot):

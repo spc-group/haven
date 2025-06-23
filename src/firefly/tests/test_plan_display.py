@@ -1,10 +1,9 @@
 import pytest
 from bluesky_queueserver_api import BPlan
-from qtpy import QtCore
-from qtpy.QtWidgets import QPushButton, QLineEdit, QTextEdit, QComboBox
+from qtpy.QtWidgets import QPushButton
 
-from firefly.plans.plan_display import PlanDisplay
 from firefly.plans.metadata import MetadataWidget
+from firefly.plans.plan_display import PlanDisplay
 
 
 class DummyScanDisplay(PlanDisplay):
@@ -49,9 +48,11 @@ def test_plan_metadata(display):
     display.metadata_widget.purpose_combo_box.setCurrentText("dancing")
     display.metadata_widget.standard_check_box.setChecked(True)
     # Set metadata from the beamline scheduling system
-    display.update_bss_metadata({
-        "proposal_id": "123456",
-    })
+    display.update_bss_metadata(
+        {
+            "proposal_id": "123456",
+        }
+    )
     md = display.plan_metadata()
     assert md == {
         "is_standard": True,

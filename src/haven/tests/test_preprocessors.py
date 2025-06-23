@@ -4,11 +4,9 @@ import pytest
 from bluesky import RunEngine
 from bluesky import plans as bp
 from bluesky.callbacks import CallbackBase
-from ophyd.sim import SynAxis, det, instantiate_fake_device
+from ophyd.sim import SynAxis, det
 
-import haven
 from haven import baseline_decorator, baseline_wrapper
-from haven.devices.beamline_manager import BSS
 from haven.preprocessors import (
     inject_metadata_wrapper,
     shutter_suspend_decorator,
@@ -103,11 +101,14 @@ async def test_inject_metadata(sim_registry, aps, monkeypatch, mocker):
     monkeypatch.setenv("EPICS_CA_MAX_ARRAY_BYTES", "16", prepend=False)
     # Check that the callback has the correct metadata
     plan = bp.count([det], num=1, md={"purpose": "testing"})
-    plan = inject_metadata_wrapper(plan, config={
-        "metadata": {
-            "xray_source": "25-ID-C",
-        }
-    })
+    plan = inject_metadata_wrapper(
+        plan,
+        config={
+            "metadata": {
+                "xray_source": "25-ID-C",
+            }
+        },
+    )
     msgs = list(plan)
     # Check versions
     start_doc = msgs[1].kwargs

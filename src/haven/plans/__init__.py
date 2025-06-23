@@ -9,9 +9,9 @@ import bluesky.plans as bp
 from haven.instrument import beamline
 from haven.preprocessors import (
     baseline_decorator,
+    inject_metadata_decorator,
     open_shutters_decorator,
     shutter_suspend_decorator,
-    inject_metadata_decorator,
 )
 
 from ._align_motor import align_motor

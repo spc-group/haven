@@ -1,10 +1,11 @@
 from pathlib import Path
 from typing import Any
 
-from qtpy.QtWidgets import QWidget
 from qtpy import QtWidgets, uic
+from qtpy.QtWidgets import QWidget
 
 from firefly.plans.util import is_valid_value
+
 
 class MetadataWidget(QWidget):
     ui_file = Path(__file__).parent / "metadata.ui"
@@ -30,7 +31,6 @@ class MetadataWidget(QWidget):
             )
             if response != QtWidgets.QMessageBox.Yes:
                 self.ui.standard_check_box.setChecked(False)
-        
 
     def metadata(self) -> dict[str, Any]:
         md = {

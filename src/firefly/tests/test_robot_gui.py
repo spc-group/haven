@@ -70,7 +70,7 @@ async def test_full_motor_parameters(display, motor):
     assert spin_box.minimum() == -32000
     assert spin_box.maximum() == 32000
     assert spin_box.decimals() == 5
-    assert spin_box.suffix() == "\u202F°"
+    assert spin_box.suffix() == "\u202f°"
     assert spin_box.value() == 420
 
 

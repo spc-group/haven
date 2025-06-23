@@ -2,8 +2,7 @@ import math
 
 from qtpy import QtWidgets
 
-
-HALF_SPACE = '\u202F'
+HALF_SPACE = "\u202f"
 
 
 class DurationLabel(QtWidgets.QLabel):

@@ -1,18 +1,9 @@
 import logging
-from dataclasses import dataclass
-from functools import partial
 
-from ophyd_async.core import Device
-from qasync import asyncSlot
-from qtpy.QtWidgets import QCheckBox, QDoubleSpinBox, QWidget, QLabel
-
-from firefly.component_selector import ComponentSelector
-from firefly.plans.regions import RegionsManager,     device_parameters,     DeviceParameters
 from firefly.plans.move_motor_window import MotorRegionsManager
 from firefly.plans.plan_display import (
     PlanDisplay,
 )
-from haven import sanitize_name
 
 log = logging.getLogger(__name__)
 
@@ -45,22 +36,18 @@ class RobotDisplay(PlanDisplay):
         for sam in self.sample_numbers():
             self.ui.sample_combo_box.addItem(str(sam))
 
-
     def plan_args(self) -> tuple[tuple, dict]:
         # Get parameters from each row of line regions
         kwargs = {}
-        return args, kwargs
-            
+        return (), kwargs
+
     def plan_args(self):
         # Get the sample number from the sample_spin_box
         sam_num_str = self.ui.sample_combo_box.currentText()
         # Convert sam_num_str to an integer if it's a string representation of a number
         sam_num = int(sam_num_str) if sam_num_str.isdigit() else None
         # Get parameters from device regions
-        region_args = [
-            (region.device, region.position)
-            for region in self.regions
-        ]
+        region_args = [(region.device, region.position) for region in self.regions]
         position_args = tuple(arg for region in region_args for arg in region)
         # Build the arguments
         robot = self.macros()["DEVICE"]

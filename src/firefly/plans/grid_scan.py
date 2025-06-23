@@ -1,27 +1,29 @@
 import logging
 import math
-from collections.abc import Sequence
-from functools import partial
 from dataclasses import dataclass
+from functools import partial
 
 import numpy as np
 from ophyd_async.core import Device
 from qasync import asyncSlot
-from qtpy.QtWidgets import QWidget, QDoubleSpinBox, QSpinBox, QLabel, QCheckBox
-from qtpy.QtCore import Qt, Signal, Slot
+from qtpy.QtCore import Signal, Slot
+from qtpy.QtWidgets import QCheckBox, QDoubleSpinBox, QLabel, QSpinBox, QWidget
 
 from firefly.component_selector import ComponentSelector
-from firefly.plans.regions import RegionsManager, make_relative, DeviceParameters, update_device_parameters, set_limits
 from firefly.plans.plan_display import PlanDisplay
+from firefly.plans.regions import (
+    RegionsManager,
+    make_relative,
+    update_device_parameters,
+)
 from haven import sanitize_name
 
 log = logging.getLogger()
 
 
-
 class GridRegionsManager[WidgetsType](RegionsManager):
     is_relative: bool = False
-    
+
     # Signals
     num_points_changed = Signal(int)
 
@@ -44,21 +46,19 @@ class GridRegionsManager[WidgetsType](RegionsManager):
         stop: float
         num_points: int
         snake: bool
-    
-    def widgets_to_region(self, widgets: WidgetSet) -> Region:
-        """Take a list of widgets in a row, and build a Region object.
 
-        """
+    def widgets_to_region(self, widgets: WidgetSet) -> Region:
+        """Take a list of widgets in a row, and build a Region object."""
         device_name = widgets.device_selector.current_device_name()
         return self.Region(
             is_active=widgets.active_checkbox.isChecked(),
             device=sanitize_name(device_name),
             start=widgets.start_spin_box.value(),
             stop=widgets.stop_spin_box.value(),
-            num_points = widgets.num_points_spin_box.value(),
-            snake = widgets.snake_checkbox.isChecked(),
+            num_points=widgets.num_points_spin_box.value(),
+            snake=widgets.snake_checkbox.isChecked(),
         )
-    
+
     async def create_row_widgets(self, row: int) -> list[QWidget]:
         # ComponentSelector
         device_selector = ComponentSelector()
@@ -111,7 +111,7 @@ class GridRegionsManager[WidgetsType](RegionsManager):
         await update_device_parameters(
             device=device,
             widgets=[widgets.start_spin_box, widgets.stop_spin_box],
-            is_relative=self.is_relative
+            is_relative=self.is_relative,
         )
 
     def update_num_points(self):
@@ -120,7 +120,9 @@ class GridRegionsManager[WidgetsType](RegionsManager):
     def num_points(self) -> int:
         rows = self.row_numbers
         num_pts_col = 4
-        spin_boxes = [self.layout.itemAtPosition(row, num_pts_col).widget() for row in rows]
+        spin_boxes = [
+            self.layout.itemAtPosition(row, num_pts_col).widget() for row in rows
+        ]
         num_points = math.prod([box.value() for box in spin_boxes])
         return num_points
 
@@ -183,7 +185,9 @@ class GridScanDisplay(PlanDisplay):
 
     def customize_ui(self):
         super().customize_ui()
-        self.regions = GridRegionsManager[GridRegionsManager.WidgetSet](layout=self.regions_layout)
+        self.regions = GridRegionsManager[GridRegionsManager.WidgetSet](
+            layout=self.regions_layout
+        )
         self.num_regions_spin_box.valueChanged.connect(self.regions.set_region_count)
         self.num_regions_spin_box.setValue(self._default_region_count)
         # Connect scan points change to update total time

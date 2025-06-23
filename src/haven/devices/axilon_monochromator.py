@@ -96,7 +96,14 @@ class AxilonMonochromator(StandardReadable):
         self.vertical = Motor(f"{prefix}ACS:m2")
         self.roll2 = Motor(f"{prefix}ACS:m5")
         self.pitch2 = Motor(f"{prefix}ACS:m6")
-        extra_motors = [self.beam_offset, self.gap, self.horizontal, self.vertical, self.roll2, self.pitch2]
+        extra_motors = [
+            self.beam_offset,
+            self.gap,
+            self.horizontal,
+            self.vertical,
+            self.roll2,
+            self.pitch2,
+        ]
         self.add_readables([m.user_readback for m in extra_motors])
         with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
             # Transform constants, etc.

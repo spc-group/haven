@@ -143,7 +143,12 @@ async def test_line_scan_plan_args(display, monkeypatch, qtbot, xspress, ion_cha
     )
     assert kwargs == {
         "num": 10,
-        "md": {"sample_name": "sam", "purpose": "test", "notes": "notes", "is_standard": False},
+        "md": {
+            "sample_name": "sam",
+            "purpose": "test",
+            "notes": "notes",
+            "is_standard": False,
+        },
     }
 
 
@@ -160,13 +165,13 @@ async def test_full_motor_parameters(display, motors):
     assert start_box.minimum() == -10
     assert start_box.maximum() == 10
     assert start_box.decimals() == 5
-    assert start_box.suffix() == "\u202F°"
+    assert start_box.suffix() == "\u202f°"
     assert start_box.value() == 7.5
     stop_box = widgets.stop_spin_box
     assert stop_box.minimum() == -10
     assert stop_box.maximum() == 10
     assert stop_box.decimals() == 5
-    assert stop_box.suffix() == "\u202F°"
+    assert stop_box.suffix() == "\u202f°"
     assert stop_box.value() == 7.5
 
 

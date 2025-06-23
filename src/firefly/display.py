@@ -1,11 +1,9 @@
-import subprocess
 from pathlib import Path
-from typing import Optional, Sequence, Mapping
+from typing import Mapping, Optional, Sequence
 
 from ophyd import Device
 from pydm import Display
-from qtpy import QtWidgets
-from qtpy.QtCore import Signal, Slot
+from qtpy.QtCore import Signal
 
 from haven import beamline
 

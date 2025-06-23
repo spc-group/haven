@@ -64,14 +64,14 @@ async def test_plan_args(display):
 
 async def test_full_motor_parameters(display, motor):
     await display.regions.set_region_count(1)
-    display.regions.is_relative=False
+    display.regions.is_relative = False
     set_mock_value(motor.user_readback, 420)
     await display.regions.update_device_parameters(motor, row=1)
     spin_box = display.regions.row_widgets(1).position_spin_box
     assert spin_box.minimum() == -32000
     assert spin_box.maximum() == 32000
     assert spin_box.decimals() == 5
-    assert spin_box.suffix() == "\u202F°"
+    assert spin_box.suffix() == "\u202f°"
     assert spin_box.value() == 420
 
 
@@ -94,7 +94,7 @@ async def test_nonnumeric_motor_parameters(display, motor):
 
 async def test_relative_positioning(display, motor):
     await display.regions.set_region_count(1)
-    display.regions.is_relative = False    
+    display.regions.is_relative = False
     set_mock_value(motor.user_readback, 410)
     widgets = display.regions.row_widgets(1)
     widgets.device_selector.current_component = mock.MagicMock(return_value=motor)

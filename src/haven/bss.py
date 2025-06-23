@@ -1,11 +1,10 @@
-import dataclasses
-from typing import Any, Mapping, Sequence
-import json
 import datetime as dt
-from pydantic import BaseModel
+import json
+from typing import Any, Mapping
 
 import httpx
 import stamina
+from pydantic import BaseModel
 
 __all__ = ["Esaf", "Proposal", "User", "BssApi"]
 
@@ -54,24 +53,27 @@ class BSSParser:
     def _esaf(self, data: Mapping[str, Any]) -> Esaf:
         # Scheduling dates
         dt_format = "%Y-%m-%d %H:%M:%S"
-        start = dt.datetime.strptime(data['experimentStartDate'], dt_format)
-        end = dt.datetime.strptime(data['experimentEndDate'], dt_format)
+        start = dt.datetime.strptime(data["experimentStartDate"], dt_format)
+        end = dt.datetime.strptime(data["experimentEndDate"], dt_format)
         # Users
-        users = [User(
-            badge=user['badge'],
-            first_name=user['firstName'],
-            last_name=user['lastName'],
-            email=user['email'],
-            is_pi=user['piFlag'] == "Yes",
-            institution=None,
-        ) for user in data['experimentUsers']]
+        users = [
+            User(
+                badge=user["badge"],
+                first_name=user["firstName"],
+                last_name=user["lastName"],
+                email=user["email"],
+                is_pi=user["piFlag"] == "Yes",
+                institution=None,
+            )
+            for user in data["experimentUsers"]
+        ]
         # Create the ESAF
         return Esaf(
-            title=data['esafTitle'],
-            description=data['description'],
-            esaf_id=str(data['esafId']),
-            sector=data['sector'],
-            status=data['esafStatus'],
+            title=data["esafTitle"],
+            description=data["description"],
+            esaf_id=str(data["esafId"]),
+            sector=data["sector"],
+            status=data["esafStatus"],
             start=start,
             end=end,
             users=users,
@@ -84,36 +86,35 @@ class BSSParser:
     def proposal(self, json_data: str) -> Proposal:
         data = json.loads(json_data)
         return self._proposal(data)
-    
+
     def _proposal(self, data: Mapping[str, Any]) -> Proposal:
         # Scheduling dates
         # dt_format = "%Y-%m-%d %H:%M:%S"
-        start = dt.datetime.fromisoformat(data['startTime'])
-        end = dt.datetime.fromisoformat(data['endTime'])
-        duration = dt.timedelta(seconds=data['duration'])
+        start = dt.datetime.fromisoformat(data["startTime"])
+        end = dt.datetime.fromisoformat(data["endTime"])
+        duration = dt.timedelta(seconds=data["duration"])
         # Create users for the proposal
         users = [
             User(
-                badge=user_data['badge'],
-                first_name=user_data['firstName'],
-                last_name=user_data['lastName'],
-                is_pi=user_data['piFlag'],
+                badge=user_data["badge"],
+                first_name=user_data["firstName"],
+                last_name=user_data["lastName"],
+                is_pi=user_data["piFlag"],
                 email="",
                 institution=user_data["institution"],
-
             )
-            for user_data in data['experimenters']
+            for user_data in data["experimenters"]
         ]
         # Create the proposal itself
         return Proposal(
             title=data["title"],
             proposal_id=f"{data['id']:07}",
-            users = users,
+            users=users,
             start=start,
             end=end,
             duration=duration,
-            mail_in=(data['mailInFlag'] == "Yes"),
-            proprietary=(data['proprietaryFlag'] == "Yes"),
+            mail_in=(data["mailInFlag"] == "Yes"),
+            proprietary=(data["proprietaryFlag"] == "Yes"),
         )
 
 
@@ -156,7 +157,6 @@ class BssApi:
         response = await self._http_get(f"esafs/{esaf_id}")
         return self.parser.esaf(response.text)
 
-
     async def proposals(self, cycle: str, beamline: str):
         """Load the proposals for a given *beamline* during a given *cycle*."""
         response = await self._http_get(f"proposals/{cycle}/{beamline}")
@@ -166,7 +166,8 @@ class BssApi:
         """Load the given proposal on a given *beamline* during a given *cycle*."""
         response = await self._http_get(f"proposals/{cycle}/{beamline}/{proposal_id}")
         return self.parser.proposal(response.text)
-    
+
+
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov

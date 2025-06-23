@@ -1,10 +1,6 @@
-from unittest import mock
-
-import numpy as np
 import pytest
-from qtpy import QtWidgets
 
-from firefly.plans.xafs_scan import XafsScanDisplay, XafsRegionsManager
+from firefly.plans.xafs_scan import XafsScanDisplay
 
 # default values for EXAFS scan
 pre_edge = [-200, -50, 5]
@@ -58,8 +54,8 @@ async def test_time_calculator(display, xspress, ion_chamber):
     display.ui.spinBox_repeat_scan_num.setValue(3)
     # Check whether time is calculated correctly
     await display.update_total_time()
-    assert display.ui.scan_duration_label.text() == "0\u202Fh 0\u202Fm 27\u202Fs"
-    assert display.ui.total_duration_label.text() == "0\u202Fh 1\u202Fm 23\u202Fs"
+    assert display.ui.scan_duration_label.text() == "0\u202fh 0\u202fm 27\u202fs"
+    assert display.ui.total_duration_label.text() == "0\u202fh 1\u202fm 23\u202fs"
 
 
 async def test_E0_checkbox(display):

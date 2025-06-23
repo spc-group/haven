@@ -1,21 +1,26 @@
 import logging
 import re
-from enum import IntEnum
 from dataclasses import dataclass
+from enum import IntEnum
 from functools import partial
 from typing import Any
 
-from bluesky_queueserver_api import BPlan
 import xraydb
+from bluesky_queueserver_api import BPlan
 from qasync import asyncSlot
-from qtpy.QtWidgets import QCheckBox, QDoubleSpinBox, QSpinBox, QSizePolicy, QWidget, QMessageBox
+from qtpy.QtWidgets import (
+    QCheckBox,
+    QDoubleSpinBox,
+    QMessageBox,
+    QSizePolicy,
+    QWidget,
+)
 from xraydb.xraydb import XrayDB
 
 from firefly.exceptions import UnknownAbsorptionEdge
 from firefly.plans.plan_display import PlanDisplay
 from firefly.plans.regions import RegionsManager
 from haven.energy_ranges import (
-    EnergyRange,
     ERange,
     KRange,
     energy_to_wavenumber,
@@ -38,7 +43,7 @@ class XafsRegionsManager(RegionsManager):
     wavenumber_precision = 4
 
     @dataclass(frozen=True)
-    class WidgetSet():
+    class WidgetSet:
         active_checkbox: QCheckBox
         start_spin_box: QDoubleSpinBox
         stop_spin_box: QDoubleSpinBox
@@ -48,7 +53,7 @@ class XafsRegionsManager(RegionsManager):
         weight_spin_box: QDoubleSpinBox
 
     @dataclass(frozen=True, eq=True)
-    class Region():
+    class Region:
         is_active: bool
         start: float
         stop: float
@@ -60,7 +65,9 @@ class XafsRegionsManager(RegionsManager):
         @property
         def energy_range(self):
             if self.domain == Domain.WAVENUMBER:
-                return KRange(self.start, self.stop, self.step, self.exposure_time, self.weight)
+                return KRange(
+                    self.start, self.stop, self.step, self.exposure_time, self.weight
+                )
             else:
                 return ERange(self.start, self.stop, self.step, self.exposure_time)
 
@@ -94,16 +101,21 @@ class XafsRegionsManager(RegionsManager):
             spinbox.setDecimals(self.energy_precision)
 
         # Connect the k-space enabled checkbox to the relevant signals
-        k_space_checkbox.stateChanged.connect(partial(self.update_wavenumber_energy, row=row))
+        k_space_checkbox.stateChanged.connect(
+            partial(self.update_wavenumber_energy, row=row)
+        )
         # Disable/enable regions when selected
         return [
-            start_spin_box, stop_spin_box, step_spin_box, exposure_time_spin_box, k_space_checkbox, weight_spin_box
+            start_spin_box,
+            stop_spin_box,
+            step_spin_box,
+            exposure_time_spin_box,
+            k_space_checkbox,
+            weight_spin_box,
         ]
 
     def widgets_to_region(self, widgets: WidgetSet) -> Region:
-        """Take a list of widgets in a row, and build a Region object.
-
-        """
+        """Take a list of widgets in a row, and build a Region object."""
         return self.Region(
             is_active=widgets.active_checkbox.isChecked(),
             start=widgets.start_spin_box.value(),
@@ -137,7 +149,11 @@ class XafsRegionsManager(RegionsManager):
         self.set_domain(domain, row=row)
         # Define conversion functions
         widgets = self.row_widgets(row=row)
-        spin_boxes = [widgets.start_spin_box, widgets.stop_spin_box, widgets.step_spin_box]
+        spin_boxes = [
+            widgets.start_spin_box,
+            widgets.stop_spin_box,
+            widgets.step_spin_box,
+        ]
         start, stop, step = [widget.value() for widget in spin_boxes]
         if is_k_checked:
             convert = energy_to_wavenumber
@@ -230,7 +246,9 @@ class XafsScanDisplay(PlanDisplay):
 
         # when regions number changed
         self.ui.num_regions_spin_box.valueChanged.connect(self.regions.set_region_count)
-        self.ui.num_regions_spin_box.editingFinished.connect(self.regions.set_region_count)
+        self.ui.num_regions_spin_box.editingFinished.connect(
+            self.regions.set_region_count
+        )
 
         # connect checkboxes with all regions' check box
         self.ui.regions_all_checkbox.stateChanged.connect(self.on_regions_all_checkbox)
@@ -269,7 +287,7 @@ class XafsScanDisplay(PlanDisplay):
         try:
             time_per_scan, total_time = self.scan_durations()
         except ZeroDivisionError:
-            time_per_scan, total_time = float('nan'), float('nan')
+            time_per_scan, total_time = float("nan"), float("nan")
         self.scan_time_changed.emit(time_per_scan)
         self.total_time_changed.emit(total_time)
 
@@ -320,9 +338,7 @@ class XafsScanDisplay(PlanDisplay):
         if use_edge and self.E0 is None:
             # Check that an absorption edge was selected
             if self.E0 is None:
-                QMessageBox.warning(
-                    self, "Error", "Please select an absorption edge."
-                )
+                QMessageBox.warning(self, "Error", "Please select an absorption edge.")
                 raise ValueError(
                     "Absorption edge is selected, but no valid value was provided."
                 )

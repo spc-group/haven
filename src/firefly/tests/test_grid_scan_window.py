@@ -49,9 +49,9 @@ async def test_time_calculator(display, sim_registry, ion_chamber):
     # Run the time calculator
     await display.update_total_time()
     # Check whether time is calculated correctly for a single scan
-    assert display.ui.scan_duration_label.text() == "0\u202Fh 0\u202Fm 16\u202Fs"
+    assert display.ui.scan_duration_label.text() == "0\u202fh 0\u202fm 16\u202fs"
     # Check whether time is calculated correctly including the repeated scan
-    assert display.ui.total_duration_label.text() == "0\u202Fh 1\u202Fm 38\u202Fs"
+    assert display.ui.total_duration_label.text() == "0\u202fh 1\u202fm 38\u202fs"
 
 
 async def test_regions_in_layout(display):
@@ -73,8 +73,6 @@ async def test_step_size_calculation(display, qtbot):
     # region_0.scan_pts_spin_box.setValue(12)
     step_label = display.regions.layout.itemAtPosition(row, 5).widget()
     assert step_label.text() == "0.91"
-    return
-
     # Step size should be 5 for 3 points from 5 to 15.
     region_1 = display.regions[1]
     region_1.start_spin_box.setValue(5)
@@ -129,7 +127,12 @@ async def test_grid_scan_plan_args(display, xspress, ion_chamber, qtbot):
     )
     assert kwargs == dict(
         snake_axes=["sync_motor_2"],
-        md={"sample_name": "sam", "purpose": "test", "notes": "notes", "is_standard": False},
+        md={
+            "sample_name": "sam",
+            "purpose": "test",
+            "notes": "notes",
+            "is_standard": False,
+        },
     )
 
 
@@ -145,13 +148,13 @@ async def test_full_motor_parameters(display, async_motors):
     assert start_box.minimum() == -10
     assert start_box.maximum() == 10
     assert start_box.decimals() == 5
-    assert start_box.suffix() == "\u202F°"
+    assert start_box.suffix() == "\u202f°"
     assert start_box.value() == 7.5
     stop_box = widgets.stop_spin_box
     assert stop_box.minimum() == -10
     assert stop_box.maximum() == 10
     assert stop_box.decimals() == 5
-    assert stop_box.suffix() == "\u202F°"
+    assert stop_box.suffix() == "\u202f°"
     assert stop_box.value() == 7.5
 
 

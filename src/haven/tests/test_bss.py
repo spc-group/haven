@@ -1,9 +1,6 @@
-from pathlib import Path
-
 import pytest
 
 from haven import bss
-
 
 beamlines = [
     {
@@ -114,12 +111,14 @@ def api():
 
 
 async def test_get_esafs(httpx_mock, api):
-    httpx_mock.add_response(f"{base_uri}/dm/esafsBySectorAndYear/25/2025", json=[esaf_data])
+    httpx_mock.add_response(
+        f"{base_uri}/dm/esafsBySectorAndYear/25/2025", json=[esaf_data]
+    )
     esafs_ = await api.esafs(sector="20", year="2025")
     assert len(esafs_) == 1
-    this_esaf, = esafs_
-    assert this_esaf.title == esaf_data['esafTitle']
-    assert this_esaf.esaf_id == str(esaf_data['esafId'])
+    (this_esaf,) = esafs_
+    assert this_esaf.title == esaf_data["esafTitle"]
+    assert this_esaf.esaf_id == str(esaf_data["esafId"])
     assert len(this_esaf.users) == 2
     # Check properties of a signle user
     user = this_esaf.users[0]
@@ -136,23 +135,27 @@ async def test_get_esaf(httpx_mock, api):
 
 
 async def test_get_proposals(httpx_mock, api):
-    httpx_mock.add_response(f"{base_uri}/dm/proposals/2025-1/25-ID-C", json=[proposal_data])
+    httpx_mock.add_response(
+        f"{base_uri}/dm/proposals/2025-1/25-ID-C", json=[proposal_data]
+    )
     proposals_ = await api.proposals(cycle="2025-1", beamline="25-ID-C")
     assert len(proposals_) == 1
     proposal = proposals_[0]
     assert proposal.proposal_id == "0158394"
-    assert proposal.title == proposal_data['title']
+    assert proposal.title == proposal_data["title"]
     # Check user list
     users = proposal.users
     assert len(users) == 2
-    
+
 
 async def test_get_proposal(httpx_mock, api):
     httpx_mock.add_response(
         url=f"{base_uri}/dm/proposals/2025-1/99-ID-C/0158394", json=proposal_data
     )
-    proposal = await api.proposal(proposal_id="0158394", cycle="2025-1", beamline="99-ID-C")
-    assert proposal.title == proposal_data['title']
+    proposal = await api.proposal(
+        proposal_id="0158394", cycle="2025-1", beamline="99-ID-C"
+    )
+    assert proposal.title == proposal_data["title"]
 
 
 # -----------------------------------------------------------------------------

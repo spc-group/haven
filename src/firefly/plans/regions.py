@@ -20,35 +20,23 @@ to a `Region` object.
 
 """
 
-
 import asyncio
-import logging
-from dataclasses import dataclass, fields
 from collections.abc import Sequence
-from typing import Any, Generator, cast
+from dataclasses import dataclass, fields
 from functools import partial
-import warnings
+from typing import Any, Generator, cast
 
-from bluesky_queueserver_api import BPlan
 from ophyd_async.core import Device
-from qasync import asyncSlot
+from qtpy.QtCore import QObject, Qt
 from qtpy.QtWidgets import (
-    QWidget,
-    QLineEdit,
-    QComboBox,
-    QTextEdit,
-    QGridLayout,
-    QPushButton,
-    QDoubleSpinBox,
-    QSpinBox,
     QCheckBox,
+    QDoubleSpinBox,
+    QGridLayout,
+    QSpinBox,
+    QWidget,
 )
-from qtpy.QtCore import QObject, Signal, Qt
 
-from firefly import display
 from firefly.exceptions import FireflyError
-from firefly.plans.util import is_valid_value
-from firefly.queue_button import QueueButton
 
 
 @dataclass(frozen=True)
@@ -59,7 +47,6 @@ class DeviceParameters:
     units: str
     precision: int
     is_numeric: bool
-
 
 
 async def device_parameters(device: Device) -> DeviceParameters:
@@ -124,10 +111,12 @@ units_mapping = {
 
 
 DEFAULT_PRECISION = 5
-HALF_SPACE = "\u202F"
+HALF_SPACE = "\u202f"
 
 
-async def update_device_parameters(device: Device, widgets: Sequence[QDoubleSpinBox | QSpinBox], is_relative: bool):
+async def update_device_parameters(
+    device: Device, widgets: Sequence[QDoubleSpinBox | QSpinBox], is_relative: bool
+):
     """Update the *widgets*' properties based on a *device*."""
     params = await device_parameters(device)
     set_limits(widgets=widgets, params=params, is_relative=is_relative)
@@ -145,26 +134,27 @@ async def update_device_parameters(device: Device, widgets: Sequence[QDoubleSpin
             widget.setValue(params.current_value)
 
 
-
-async def make_relative(device: Device, widgets: Sequence[QDoubleSpinBox | QSpinBox], is_relative: bool):
+async def make_relative(
+    device: Device, widgets: Sequence[QDoubleSpinBox | QSpinBox], is_relative: bool
+):
     """Make *widgets* be relative to the *device* position."""
     params = await device_parameters(device)
     # Get last values first to avoid limit crossing
     if is_relative:
-        new_positions = [
-            widget.value() - params.current_value for widget in widgets
-        ]
+        new_positions = [widget.value() - params.current_value for widget in widgets]
     else:
-        new_positions = [
-            widget.value() + params.current_value for widget in widgets
-        ]
+        new_positions = [widget.value() + params.current_value for widget in widgets]
     # Update the current limits and positions
     set_limits(widgets=widgets, params=params, is_relative=is_relative)
     for widget, new_position in zip(widgets, new_positions):
         widget.setValue(new_position)
 
 
-def set_limits(widgets: Sequence[QDoubleSpinBox | QSpinBox], params: DeviceParameters, is_relative: bool):
+def set_limits(
+    widgets: Sequence[QDoubleSpinBox | QSpinBox],
+    params: DeviceParameters,
+    is_relative: bool,
+):
     """Set limits on the spin boxes to match the device limits."""
     # Determine new limits
     if is_relative:
@@ -179,9 +169,8 @@ def set_limits(widgets: Sequence[QDoubleSpinBox | QSpinBox], params: DeviceParam
 
 
 class RegionsManager[WidgetsType](QObject):
-    """Contains variable number of plan parameter regions in a table.
+    """Contains variable number of plan parameter regions in a table."""
 
-    """
     layout: QGridLayout
     header_rows = 1
     is_relative: bool
@@ -190,11 +179,11 @@ class RegionsManager[WidgetsType](QObject):
     # #######################
 
     @dataclass(frozen=True)
-    class WidgetSet():
+    class WidgetSet:
         active_checkbox: QCheckBox
 
     @dataclass(frozen=True, eq=True)
-    class Region():
+    class Region:
         is_active: bool
 
     # def widgets_to_region(self, widgets: WidgetSet) -> Region:
@@ -283,7 +272,9 @@ class RegionsManager[WidgetsType](QObject):
         items = [layout.itemAtPosition(row, col) for col in range(layout.columnCount())]
         widgets = [item.widget() if item is not None else item for item in items]
         if any([widget is None for widget in widgets]):
-            raise FireflyError(f"Row {row} does not have a full list of widgets: {widgets}")
+            raise FireflyError(
+                f"Row {row} does not have a full list of widgets: {widgets}"
+            )
         return cast(WidgetsType, self.WidgetSet(*widgets))
 
     @property

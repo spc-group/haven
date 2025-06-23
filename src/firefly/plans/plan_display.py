@@ -1,13 +1,8 @@
-import asyncio
 import logging
-from dataclasses import dataclass
-from typing import Sequence, Any
+from typing import Any
 
 from bluesky_queueserver_api import BPlan
-from ophyd_async.core import Device
-from qasync import asyncSlot
-from qtpy.QtWidgets import QWidget, QLineEdit, QComboBox, QTextEdit, QGridLayout, QPushButton, QSpinBox
-from qtpy.QtCore import QObject, Signal
+from qtpy.QtCore import Signal
 
 from firefly import display
 from firefly.queue_button import QueueButton
@@ -85,6 +80,7 @@ class PlanDisplay(PlanStubDisplay):
     Should be subclassed to produce a usable display.
 
     """
+
     scan_repetitions: int = 1
 
     def plan_metadata(self) -> dict[str, Any]:

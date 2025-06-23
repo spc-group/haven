@@ -48,7 +48,9 @@ def test_count_plan_args(display, qtbot, xspress):
         return_value=[xspress]
     )
     args, kwargs = display.plan_args()
-    assert kwargs == dict(num=5, detectors=["vortex_me4"], delay=0.5, md={"is_standard": False})
+    assert kwargs == dict(
+        num=5, detectors=["vortex_me4"], delay=0.5, md={"is_standard": False}
+    )
 
 
 def test_count_plan_metadata(display, qtbot, xspress, ion_chamber):

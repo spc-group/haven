@@ -1,15 +1,13 @@
 import asyncio
 import logging
-import dataclasses
 
 import qtawesome as qta
-from qtpy.QtCore import Signal, Qt, QDateTime
+from qtpy.QtCore import QDateTime, Qt, Signal
 from qtpy.QtGui import QStandardItem, QStandardItemModel
 from qtpy.QtWidgets import QAbstractItemView, QDateTimeEdit
 
 from firefly import display
-from haven import beamline, load_config
-from haven.bss import BssApi, Proposal, Esaf
+from haven.bss import BssApi, Esaf, Proposal
 
 log = logging.getLogger(__name__)
 
@@ -17,15 +15,16 @@ log = logging.getLogger(__name__)
 class BssDisplay(display.FireflyDisplay):
     """A PyDM display for the beamline scheduling system (BSS)."""
 
-    _proposal_col_names = ["proposal_id", "title", "start", "end", "users", "mail_in", "proprietary"]
-    _esaf_col_names = [
-        "esaf_id",
+    _proposal_col_names = [
+        "proposal_id",
         "title",
         "start",
         "end",
         "users",
-        "status"
+        "mail_in",
+        "proprietary",
     ]
+    _esaf_col_names = ["esaf_id", "title", "start", "end", "users", "status"]
     # Signal
     metadata_changed = Signal(dict)
     # These might only be used for testing, maybe they can be removed
@@ -82,10 +81,11 @@ class BssDisplay(display.FireflyDisplay):
 
     def metadata(self) -> dict[str, str]:
         """Read the UI widgets and prepare a metadata dictionary."""
+
         def dt_iso(widget: QDateTimeEdit) -> str:
             pydt = widget.dateTime().toPyDateTime()
             return pydt.astimezone().isoformat()
-        
+
         return {
             "esaf_title": self.ui.esaf_title_lineedit.text(),
             "esaf_id": self.ui.esaf_id_lineedit.text(),
@@ -120,9 +120,7 @@ class BssDisplay(display.FireflyDisplay):
 
     async def load_models(self):
         # Load data
-        proposals, esafs = await asyncio.gather(
-            self.proposals(), self.esafs()
-        )
+        proposals, esafs = await asyncio.gather(self.proposals(), self.esafs())
         # Create proposal model object
         col_names = self._proposal_col_names
         self.proposal_model = QStandardItemModel()
@@ -169,18 +167,19 @@ class BssDisplay(display.FireflyDisplay):
         self.ui.proposal_start_datetimeedit.setDateTime(qstart)
         self.ui.proposal_end_datetimeedit.setDateTime(qend)
         # Convert user info into commma-separated lists
-        users_text = ", ".join([f"{user.first_name} {user.last_name}" for user in proposal.users])
+        users_text = ", ".join(
+            [f"{user.first_name} {user.last_name}" for user in proposal.users]
+        )
         self.ui.proposal_users_lineedit.setText(users_text)
         pis = [user for user in proposal.users if user.is_pi]
         pis_text = ", ".join([f"{pi.first_name} {pi.last_name}" for pi in pis])
         self.ui.proposal_pis_lineedit.setText(pis_text)
 
-
     def select_esaf(self, current, previous):
         # Enable controls for updating the metadata
         self.ui.update_esaf_button.setEnabled(True)
         self.esaf_selected.emit()
-    
+
     def update_esaf(self):
         """Set the metadata widgets based on which ESAF is selected."""
         # Determine which esaf was selected
@@ -195,12 +194,14 @@ class BssDisplay(display.FireflyDisplay):
         self.ui.esaf_start_datetimeedit.setDateTime(qstart)
         self.ui.esaf_end_datetimeedit.setDateTime(qend)
         # Convert user info into commma-separated lists
-        users_text = ", ".join([f"{user.first_name} {user.last_name}" for user in esaf.users])
+        users_text = ", ".join(
+            [f"{user.first_name} {user.last_name}" for user in esaf.users]
+        )
         self.ui.esaf_users_lineedit.setText(users_text)
         pis = [user for user in esaf.users if user.is_pi]
         pis_text = ", ".join([f"{pi.first_name} {pi.last_name}" for pi in pis])
         self.ui.esaf_pis_lineedit.setText(pis_text)
-    
+
     def ui_filename(self):
         return "bss.ui"
 

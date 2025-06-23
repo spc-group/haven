@@ -4,16 +4,15 @@ from functools import partial
 
 from ophyd_async.core import Device
 from qasync import asyncSlot
-from qtpy.QtWidgets import QWidget, QDoubleSpinBox, QLabel, QCheckBox
+from qtpy.QtWidgets import QCheckBox, QDoubleSpinBox, QLabel, QWidget
 
 from firefly.component_selector import ComponentSelector
+from firefly.plans.plan_display import PlanDisplay
 from firefly.plans.regions import (
-    DeviceParameters,
     RegionsManager,
     make_relative,
-    update_device_parameters
+    update_device_parameters,
 )
-from firefly.plans.plan_display import PlanDisplay
 from haven import sanitize_name
 
 log = logging.getLogger()
@@ -23,7 +22,7 @@ class LineRegionsManager(RegionsManager):
     is_relative: bool
 
     @dataclass(frozen=True)
-    class WidgetSet():
+    class WidgetSet:
         active_checkbox: QCheckBox
         device_selector: ComponentSelector
         start_spin_box: QDoubleSpinBox
@@ -31,16 +30,14 @@ class LineRegionsManager(RegionsManager):
         step_label: QLabel
 
     @dataclass(frozen=True, eq=True)
-    class Region():
+    class Region:
         is_active: bool
         device: str
         start: float
         stop: float
 
     def widgets_to_region(self, widgets: WidgetSet) -> Region:
-        """Take a list of widgets in a row, and build a Region object.
-
-        """
+        """Take a list of widgets in a row, and build a Region object."""
         device_name = widgets.device_selector.current_device_name()
         return self.Region(
             is_active=widgets.active_checkbox.isChecked(),
@@ -52,7 +49,9 @@ class LineRegionsManager(RegionsManager):
     async def create_row_widgets(self, row: int) -> list[QWidget]:
         # Component selector
         device_selector = ComponentSelector()
-        device_selector.device_selected.connect(partial(self.update_device_parameters, row=row))
+        device_selector.device_selected.connect(
+            partial(self.update_device_parameters, row=row)
+        )
         # start point
         start_spin_box = QDoubleSpinBox()
         start_spin_box.lineEdit().setPlaceholderText("Start…")
@@ -91,9 +90,9 @@ class LineRegionsManager(RegionsManager):
         await update_device_parameters(
             device=device,
             widgets=[widgets.start_spin_box, widgets.stop_spin_box],
-            is_relative=self.is_relative
+            is_relative=self.is_relative,
         )
-        
+
     @asyncSlot(int)
     async def set_relative_position(self, is_relative: int):
         """Adjust the target position based on relative/aboslute mode."""
@@ -119,7 +118,9 @@ class LineRegionsManager(RegionsManager):
             # Get Start and Stop values
             start = widgets.start_spin_box.value()
             stop = widgets.stop_spin_box.value()
-            precision = max(widgets.start_spin_box.decimals(), widgets.stop_spin_box.decimals())
+            precision = max(
+                widgets.start_spin_box.decimals(), widgets.stop_spin_box.decimals()
+            )
             # Calculate step size
             try:
                 step_size = (stop - start) / (self.num_points - 1)
@@ -134,7 +135,10 @@ class LineScanDisplay(PlanDisplay):
 
     def customize_ui(self):
         super().customize_ui()
-        self.regions = LineRegionsManager(layout=self.regions_layout, is_relative=self.relative_scan_checkbox.isChecked())
+        self.regions = LineRegionsManager(
+            layout=self.regions_layout,
+            is_relative=self.relative_scan_checkbox.isChecked(),
+        )
         # Connect signals for total time updates
         self.ui.scan_pts_spin_box.valueChanged.connect(self.update_total_time)
         self.ui.detectors_list.selectionModel().selectionChanged.connect(
@@ -169,8 +173,7 @@ class LineScanDisplay(PlanDisplay):
         detector_names = [detector.name for detector in detectors]
         # Get parameters from each row of line regions
         region_args = [
-            (region.device, region.start, region.stop)
-            for region in self.regions
+            (region.device, region.start, region.stop) for region in self.regions
         ]
         device_args = [arg for region in region_args for arg in region]
         args = (detector_names, *device_args)

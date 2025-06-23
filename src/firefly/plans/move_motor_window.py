@@ -4,11 +4,15 @@ from functools import partial
 
 from ophyd_async.core import Device
 from qasync import asyncSlot
-from qtpy.QtWidgets import QCheckBox, QDoubleSpinBox, QWidget, QLabel
+from qtpy.QtWidgets import QCheckBox, QDoubleSpinBox, QWidget
 
 from firefly.component_selector import ComponentSelector
-from firefly.plans.regions import RegionsManager,     DeviceParameters,    device_parameters, update_device_parameters, set_limits, make_relative
-from firefly.plans.plan_display import     PlanStubDisplay
+from firefly.plans.plan_display import PlanStubDisplay
+from firefly.plans.regions import (
+    RegionsManager,
+    make_relative,
+    update_device_parameters,
+)
 from haven import sanitize_name
 
 log = logging.getLogger()
@@ -19,21 +23,19 @@ class MotorRegionsManager(RegionsManager):
     is_relative: bool
 
     @dataclass(frozen=True)
-    class WidgetSet():
+    class WidgetSet:
         active_checkbox: QCheckBox
         device_selector: ComponentSelector
         position_spin_box: QDoubleSpinBox
 
     @dataclass(frozen=True, eq=True)
-    class Region():
+    class Region:
         is_active: bool
         device: str
         position: float
 
     def widgets_to_region(self, widgets: WidgetSet) -> Region:
-        """Take a list of widgets in a row, and build a Region object.
-
-        """
+        """Take a list of widgets in a row, and build a Region object."""
         device_name = widgets.device_selector.current_device_name()
         return self.Region(
             is_active=widgets.active_checkbox.isChecked(),
@@ -44,7 +46,9 @@ class MotorRegionsManager(RegionsManager):
     async def create_row_widgets(self, row: int) -> list[QWidget]:
         # Component selector
         device_selector = ComponentSelector()
-        device_selector.device_selected.connect(partial(self.update_device_parameters, row=row))
+        device_selector.device_selected.connect(
+            partial(self.update_device_parameters, row=row)
+        )
         # start point
         position_spin_box = QDoubleSpinBox()
         position_spin_box.lineEdit().setPlaceholderText("Position…")
@@ -66,7 +70,7 @@ class MotorRegionsManager(RegionsManager):
         await update_device_parameters(
             device=device,
             widgets=[widgets.position_spin_box],
-            is_relative=self.is_relative
+            is_relative=self.is_relative,
         )
 
     @asyncSlot(int)
@@ -93,10 +97,7 @@ class MoveMotorDisplay(PlanStubDisplay):
 
     def plan_args(self) -> tuple[tuple, dict]:
         # Get parameters from each row of line regions
-        region_args = [
-            (region.device, region.position)
-            for region in self.regions
-        ]
+        region_args = [(region.device, region.position) for region in self.regions]
         args = tuple(arg for region in region_args for arg in region)
         kwargs: dict[str, float] = {}
         return args, kwargs

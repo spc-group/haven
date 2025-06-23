@@ -4,12 +4,12 @@ from zoneinfo import ZoneInfo
 chicago_tz = ZoneInfo("America/Chicago")
 
 import pytest
-from qtpy.QtCore import Qt, QDateTime
-from qtpy.QtGui import QStandardItemModel
 import time_machine
+from qtpy.QtCore import QDateTime, Qt
+from qtpy.QtGui import QStandardItemModel
 
-from haven.bss import Proposal, Esaf, User
 from firefly.bss import BssDisplay
+from haven.bss import Esaf, Proposal, User
 
 
 @pytest.fixture()
@@ -39,17 +39,17 @@ def bss_api(mocker):
                     email="",
                     is_pi=False,
                     institution=None,
-                )
-                ],
+                ),
+            ],
             sector="25",
         )
     ]
 
     api.proposals.return_value = [
         Proposal(
-            title = "X-ray science!",
-            proposal_id = "8675309",
-            users = [
+            title="X-ray science!",
+            proposal_id="8675309",
+            users=[
                 User(
                     badge="0000003",
                     first_name="Daria",
@@ -65,7 +65,7 @@ def bss_api(mocker):
                     email="",
                     is_pi=False,
                     institution="",
-                )
+                ),
             ],
             start=dt.datetime(2025, 5, 25, 12, 29, 0),
             end=dt.datetime(2025, 5, 25, 13, 29, 0),
@@ -117,9 +117,18 @@ async def test_bss_proposal_updating(display, qtbot):
     id_text = display.ui.proposal_id_lineedit.text()
     assert id_text == "8675309"
     assert display.ui.proposal_title_lineedit.text() == "X-ray science!"
-    assert display.ui.proposal_start_datetimeedit.dateTime().toPyDateTime() == dt.datetime(2025, 5, 25, 12, 29, 0)
-    assert display.ui.proposal_end_datetimeedit.dateTime().toPyDateTime() == dt.datetime(2025, 5, 25, 13, 29, 0)
-    assert display.ui.proposal_users_lineedit.text() == "Daria Morgendorffer, Quinn Morgendorffer"
+    assert (
+        display.ui.proposal_start_datetimeedit.dateTime().toPyDateTime()
+        == dt.datetime(2025, 5, 25, 12, 29, 0)
+    )
+    assert (
+        display.ui.proposal_end_datetimeedit.dateTime().toPyDateTime()
+        == dt.datetime(2025, 5, 25, 13, 29, 0)
+    )
+    assert (
+        display.ui.proposal_users_lineedit.text()
+        == "Daria Morgendorffer, Quinn Morgendorffer"
+    )
     assert display.ui.proposal_pis_lineedit.text() == "Daria Morgendorffer"
 
 
@@ -165,8 +174,12 @@ async def test_bss_esaf_updating(display, qtbot):
     assert id_text == "5555555"
     assert display.ui.esaf_status_label.text() == "Pending"
     assert display.ui.esaf_title_lineedit.text() == "X-ray Science!"
-    assert display.ui.esaf_start_datetimeedit.dateTime().toPyDateTime() == dt.datetime(2025, 5, 25, 12, 15, 39)
-    assert display.ui.esaf_end_datetimeedit.dateTime().toPyDateTime() == dt.datetime(2025, 5, 26, 12, 15, 39)
+    assert display.ui.esaf_start_datetimeedit.dateTime().toPyDateTime() == dt.datetime(
+        2025, 5, 25, 12, 15, 39
+    )
+    assert display.ui.esaf_end_datetimeedit.dateTime().toPyDateTime() == dt.datetime(
+        2025, 5, 26, 12, 15, 39
+    )
     assert display.ui.esaf_users_lineedit.text() == "Rosalind Franklin, Francis Crick"
     assert display.ui.esaf_pis_lineedit.text() == "Rosalind Franklin"
 
@@ -183,7 +196,7 @@ async def test_bss_esafs(display):
     assert esaf.end == dt.datetime(2025, 5, 26, 12, 15, 39)
 
 
-@time_machine.travel(dt.datetime(2025, 5, 28, 15, 51, tzinfo=chicago_tz))    
+@time_machine.travel(dt.datetime(2025, 5, 28, 15, 51, tzinfo=chicago_tz))
 def test_bss_metadata(display, bss_api, qtbot):
     """Checks the properties of the model that gets emitted when the
     widgets are changed.
@@ -237,7 +250,6 @@ def test_bss_metadata(display, bss_api, qtbot):
         "proposal_is_mail_in": True,
         "proposal_is_proprietary": False,
     }
-        
 
 
 # -----------------------------------------------------------------------------

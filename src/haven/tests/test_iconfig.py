@@ -51,7 +51,7 @@ def test_haven_config_cli(capsys):
     print_config_value(["metadata.xray_source"])
     # Check stdout for config value
     captured = capsys.readouterr()
-    assert captured.out == "2.8\u202Fmm planar undulator\n"
+    assert captured.out == "2.8\u202fmm planar undulator\n"
 
 
 # -----------------------------------------------------------------------------

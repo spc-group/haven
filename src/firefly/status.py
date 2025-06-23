@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Mapping
+from typing import Mapping
 
 import qtawesome as qta
 from pydm.widgets import PyDMByteIndicator, PyDMPushButton
@@ -79,13 +79,13 @@ class StatusDisplay(display.FireflyDisplay):
 
     def update_bss_metadata(self, md: Mapping[str, str]):
         super().update_bss_metadata(md)
-        self.ui.proposal_id_label.setText(md.get('proposal_id', ""))
-        self.ui.proposal_title_label.setText(md.get('proposal_title', ""))
-        self.ui.esaf_id_label.setText(md.get('esaf_id', ""))
-        self.ui.esaf_title_label.setText(md.get('esaf_title', ""))
-        self.ui.esaf_status_label.setText(md.get('esaf_status', ""))
-        self.ui.esaf_end_date_label.setText(md.get('esaf_end', ""))
-        self.ui.esaf_users_label.setText(md.get('esaf_users', ""))
+        self.ui.proposal_id_label.setText(md.get("proposal_id", ""))
+        self.ui.proposal_title_label.setText(md.get("proposal_title", ""))
+        self.ui.esaf_id_label.setText(md.get("esaf_id", ""))
+        self.ui.esaf_title_label.setText(md.get("esaf_title", ""))
+        self.ui.esaf_status_label.setText(md.get("esaf_status", ""))
+        self.ui.esaf_end_date_label.setText(md.get("esaf_end", ""))
+        self.ui.esaf_users_label.setText(md.get("esaf_users", ""))
 
     def customize_ui(self):
         self.ui.bss_modify_button.clicked.connect(self.bss_window_requested.emit)

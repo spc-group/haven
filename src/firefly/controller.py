@@ -299,9 +299,7 @@ class FireflyController(QtCore.QObject):
             WindowClass=FireflyMainWindow,
             icon=qta.icon("fa6s.calendar"),
         )
-        self.actions.bss.window_created.connect(
-            self.finalize_bss_window
-        )
+        self.actions.bss.window_created.connect(self.finalize_bss_window)
         # Action for shoing the IOC start/restart/stop window
         self.actions.iocs = WindowAction(
             name="show_iocs_window_action",

@@ -1,22 +1,17 @@
-from functools import partial
 import getpass
+import importlib
 import logging
 import os
 import socket
-import warnings
-from collections import ChainMap
-import importlib
-from typing import Mapping, Any
+from functools import partial
+from typing import Any, Mapping
 
 import epics
-from bluesky import plan_stubs as bps, Msg
 from bluesky.preprocessors import msg_mutator
 from bluesky.utils import make_decorator
 
 from haven import __version__ as haven_version
 from haven._iconfig import load_config
-from haven.exceptions import ComponentNotFound
-from haven.instrument import beamline
 
 log = logging.getLogger()
 
@@ -47,7 +42,7 @@ def version_md(config: Mapping | None) -> dict[str, Any]:
         "login_id": f"{getpass.getuser()}@{socket.gethostname()}",
         "pid": os.getpid(),
     }
-    md.update(config.get('metadata', {}))
+    md.update(config.get("metadata", {}))
     return md
 
 
@@ -55,6 +50,7 @@ def _inject_md(msg, config: Mapping | None = None):
     if msg.command != "open_run":
         return (None, None)
     from pprint import pprint
+
     pprint(msg.kwargs)
     md = version_md(config=config)
     # Filter out `None` values since they were not found
