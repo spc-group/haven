@@ -115,6 +115,7 @@ def build_queries(
     after: str | None = None,
     esaf: str | None = None,
     proposal: str | None = None,
+    beamline: str | None = None,
     sample_name: str | None = None,
     plan_name: str | None = None,
     sample_formula: str | None = None,
@@ -122,8 +123,11 @@ def build_queries(
     edge: str | None = None,
     uid: str | None = None,
 ) -> list[queries.NoBool]:
-    before_dt = dt.datetime.fromisoformat(before)
-    after_dt = dt.datetime.fromisoformat(after)
+    # Parse datestrings
+    if before is not None:
+        before = dt.datetime.fromisoformat(before).timestamp()
+    if after is not None:
+        after = dt.datetime.fromisoformat(after).timestamp()
     qs = []
     query_params = [
         # filter_name: (query type, metadata key)
@@ -134,9 +138,10 @@ def build_queries(
         (scan_name, queries.Contains, "start.scan_name"),
         (edge, queries.Contains, "start.edge"),
         (proposal, queries.Eq, "start.proposal_id"),
+        (beamline, queries.Contains, "start.beamline_id"),
         (esaf, queries.Eq, "start.esaf_id"),
-        (before_dt.timestamp(), partial(queries.Comparison, "le"), "stop.time"),
-        (after_dt.timestamp(), partial(queries.Comparison, "ge"), "start.time"),
+        (before, partial(queries.Comparison, "le"), "stop.time"),
+        (after, partial(queries.Comparison, "ge"), "start.time"),
         (uid, queries.Contains, "start.uid"),
     ]
     for (arg, query, key) in query_params:
@@ -147,11 +152,13 @@ def build_queries(
 
 async def table_row(run: CatalogScan) -> list[str]:
     md = await run.metadata
-    start_time = dt.datetime.fromtimestamp(md["start"]["time"]).isoformat()
+    start_time = dt.datetime.fromtimestamp(md["start"]["time"])
+    start_time = start_time.strftime("%Y-%m-%d %H:%M:%S")
     return [
         md["start"]["uid"],
         start_time,
         md.get("stop", {}).get("exit_status", ""),
+        md['start'].get("beamline_id", ""),
         md["start"].get("sample_name", ""),
         md["start"].get("scan_name", ""),
         md["start"].get("plan_name", ""),
@@ -166,7 +173,7 @@ async def export_runs(
 ):
     valid_runs = []
     rows = []
-    headers = ["#", "UID", "Start", "Status", "Sample", "Scan", "Plan"]
+    headers = ["#", "UID", "Start", "Status", "Beamline", "Sample", "Scan", "Plan"]
     # Print a table of runs for approval
     row_num = 0
     async for run in runs:
@@ -204,7 +211,9 @@ def main():
     parser.add_argument(
         "--proposal", help="Export runs with this proposal ID.", type=str
     )
-                    
+    parser.add_argument(
+        "--beamline", help="Export runs only on this beamline. Incomplete matches are allowed, so '25-ID' will match both '25-ID-C' and '25-ID-D'."
+    )
     parser.add_argument(
         "--before",
         help="Only include runs before this timestamp. E.g. 2025-04-22T8:00:00.",
@@ -236,6 +245,7 @@ def main():
     exit_status = None if args.failed else "success"
     qs = build_queries(
         before=args.before, after=args.after, esaf=args.esaf, proposal=args.proposal,
+        beamline=args.beamline,
         plan_name=args.plan,
         sample_name=args.sample,
         sample_formula=args.formula,
