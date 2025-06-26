@@ -1,20 +1,20 @@
 # Bluesky-Queueserver start-re-manager configuration
 # use:
-#   queue-monitor &
-#   ./qserver/qs_host.sh start
 #
-#   or
-#   cd ./qserver
 #   start-re-manager --config=./qs-config.yml
 #
 # https://blueskyproject.io/bluesky-queueserver/manager_config.html
+#
+# See docs/how_to_guides/environment_configuration.rst for
+# accompanying environmental variables.
 
 network:
     zmq_publish_console: true
+
     # Per-beamline config: handled by CLI options
     # redis_addr: localhost:6379
     # redis_name_prefix: qs_default
-    
+
     # Per-beamline config: handled by environmental variables
     # zmq_control_addr: tcp://*:60615
     # zmq_info_addr: tcp://*:60645
@@ -37,6 +37,7 @@ operation:
 
 startup:
     startup_module: haven_qserver.startup
+
     # Per-beamline config: handled by CLI options
     # existing_plans_and_devices_path: ${BLUESKY_DIR}/queueserver_existing_plans_and_devices.yaml
     # user_group_permissions_path: ${BLUESKY_DIR}/queueserver_user_group_permissions_bro.yaml

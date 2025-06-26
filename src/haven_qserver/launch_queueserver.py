@@ -19,6 +19,8 @@ def launch_queueserver():
     # Launch the queueserver
     args = [
         "start-re-manager",
+        "--config",
+        str(this_dir / "qs_config.yml"),
         "--existing-plans-devices",
         str(bluesky_dir / "queueserver_existing_plans_and_devices.yaml"),
         "--user-group-permissions",
