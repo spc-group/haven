@@ -25,9 +25,6 @@ log = logging.getLogger()
 class GridRegionsManager[WidgetsType](RegionsManager):
     is_relative: bool = False
 
-    # Signals
-    num_points_changed = Signal(int)
-
     @dataclass(frozen=True, eq=True)
     class WidgetSet(RegionsManager.WidgetSet):
         active_checkbox: QCheckBox
@@ -94,7 +91,9 @@ class GridRegionsManager[WidgetsType](RegionsManager):
         start_spin_box.valueChanged.connect(update_step_size)
         stop_spin_box.valueChanged.connect(update_step_size)
         scan_pts_spin_box.valueChanged.connect(update_step_size)
-        scan_pts_spin_box.valueChanged.connect(self.update_num_points)
+        start_spin_box.valueChanged.connect(self.regions_changed)
+        stop_spin_box.valueChanged.connect(self.regions_changed)
+        scan_pts_spin_box.valueChanged.connect(self.regions_changed)
         # Add all widgets to the layout
         return [
             device_selector,
@@ -116,17 +115,12 @@ class GridRegionsManager[WidgetsType](RegionsManager):
             is_relative=self.is_relative,
         )
 
-    def update_num_points(self):
-        self.num_points_changed.emit(self.num_points())
-
     def num_points(self) -> int:
-        rows = self.row_numbers
-        num_pts_col = 4
-        spin_boxes = [
-            self.layout.itemAtPosition(row, num_pts_col).widget() for row in rows
-        ]
-        num_points = math.prod([box.value() for box in spin_boxes])
-        return num_points
+        """Calculate the total number of points that will be measured."""
+        active_rows = [row for row in self.row_numbers if self.row_widgets(row).active_checkbox.isChecked()]
+        widgetsets = [self.row_widgets(row) for row in active_rows]
+        num_points = [widgets.num_points_spin_box.value() for widgets in widgetsets]
+        return math.prod(num_points)
 
     async def update_devices(self, registry):
         widgetsets = [self.row_widgets(row=row) for row in self.row_numbers]
@@ -180,6 +174,7 @@ class GridScanDisplay(plan_display.PlanDisplay):
         )
         self.num_regions_spin_box.valueChanged.connect(self.regions.set_region_count)
         self.num_regions_spin_box.setValue(self._default_region_count)
+        self.regions.regions_changed.connect(self.update_total_time)
         self.enable_all_checkbox.stateChanged.connect(self.regions.enable_all_rows)
         self.relative_scan_checkbox.stateChanged.connect(self.regions.set_relative_position)
         # Connect scan points change to update total time
@@ -206,14 +201,6 @@ class GridScanDisplay(plan_display.PlanDisplay):
         time_per_scan, total_time = self.scan_durations(detector_time=detector_time)
         self.scan_time_changed.emit(time_per_scan)
         self.total_time_changed.emit(total_time)
-
-    def add_region(self):
-        new_region = super().add_region()
-        self.relative_scan_checkbox.stateChanged.connect(
-            new_region.set_relative_position
-        )
-        new_region.set_relative_position(self.relative_scan_checkbox.checkState())
-        return new_region
 
     def reset_default_regions(self):
         super().reset_default_regions()

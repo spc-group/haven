@@ -43,9 +43,6 @@ class XafsRegionsManager(RegionsManager):
     energy_precision = 1
     wavenumber_precision = 4
 
-    # Qt slots
-    regions_changed = Signal()
-
     @dataclass(frozen=True)
     class WidgetSet:
         active_checkbox: QCheckBox
@@ -78,8 +75,6 @@ class XafsRegionsManager(RegionsManager):
     async def add_row(self):
         row = await super().add_row()
         self.set_domain(Domain.ENERGY, row=row)
-        new_widgets = self.row_widgets(row)
-        new_widgets.active_checkbox.stateChanged.connect(self.regions_changed)
 
     async def create_row_widgets(self, row: int) -> list[QWidget]:
         """Create the widgets that are to go in each row, in order."""

@@ -28,7 +28,7 @@ from typing import Any, Generator, cast
 
 from ophyd_async.core import Device
 from qasync import asyncSlot
-from qtpy.QtCore import QObject, Qt
+from qtpy.QtCore import QObject, Qt, Signal
 from qtpy.QtWidgets import (
     QCheckBox,
     QDoubleSpinBox,
@@ -176,6 +176,10 @@ class RegionsManager[WidgetsType](QObject):
     header_rows = 1
     is_relative: bool
 
+    # Qt signals
+    regions_changed = Signal()
+
+
     # Over-ridable components
     # #######################
 
@@ -255,6 +259,7 @@ class RegionsManager[WidgetsType](QObject):
         checkbox = QCheckBox()
         checkbox.setChecked(True)
         checkbox.stateChanged.connect(partial(self.enable_row_widgets, row=row))
+        checkbox.stateChanged.connect(self.regions_changed)
         row_widgets = await self.create_row_widgets(row=row)
         widgets = [checkbox, *row_widgets]
         for column, widget in enumerate(widgets):

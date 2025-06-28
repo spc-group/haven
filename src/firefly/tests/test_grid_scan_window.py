@@ -38,7 +38,7 @@ async def display(qtbot, sim_registry, sync_motors, async_motors, dxp, ion_chamb
 @pytest.mark.asyncio
 async def test_time_calculator(display, sim_registry, ion_chamber):
     # Set up motor num
-    await display.regions.set_region_count(2)
+    await display.regions.set_region_count(3)
     # Set up num of repeat scans
     display.ui.spinBox_repeat_scan_num.setValue(6)
     # Set up scan num of points
@@ -46,6 +46,10 @@ async def test_time_calculator(display, sim_registry, ion_chamber):
     display.regions_layout.itemAtPosition(2, 4).widget().setValue(5)
     # set up detectors
     display.ui.detectors_list.acquire_times = mock.AsyncMock(return_value=[0.82])
+    # Disable the third region to make sure it doesn't get used
+    widgets = display.regions.row_widgets(3)
+    widgets.active_checkbox.setChecked(False)
+    widgets.num_points_spin_box.setValue(3)
     # Run the time calculator
     await display.update_total_time()
     # Check whether time is calculated correctly for a single scan
