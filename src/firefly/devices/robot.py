@@ -31,6 +31,7 @@ class RobotDisplay(PlanDisplay):
         super().customize_ui()
         self.regions = MotorRegionsManager(layout=self.regions_layout)
         self.regions.is_relative = False
+        self.enable_all_checkbox.stateChanged.connect(self.regions.enable_all_rows)
         # set the list of values for the combo box
         self.ui.sample_combo_box.clear()
         for sam in self.sample_numbers():

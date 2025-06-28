@@ -1,10 +1,12 @@
 import asyncio
 import logging
+import re
 
 import qtawesome as qta
 from qtpy.QtCore import QDateTime, Qt, Signal
 from qtpy.QtGui import QStandardItem, QStandardItemModel
 from qtpy.QtWidgets import QAbstractItemView, QDateTimeEdit
+from qasync import asyncSlot
 
 from firefly import display
 from haven.bss import BssApi, Esaf, Proposal
@@ -46,6 +48,9 @@ class BssDisplay(display.FireflyDisplay):
         self.ui.update_proposal_button.clicked.connect(self.update_proposal)
         self.ui.update_esaf_button.setIcon(icon)
         self.ui.update_esaf_button.clicked.connect(self.update_esaf)
+        self.load_bss_button.clicked.connect(self.load_models)
+        self.beamline_lineedit.returnPressed.connect(self.load_models)
+        self.cycle_lineedit.returnPressed.connect(self.load_models)
         # Want tables to select the whole row
         self.ui.proposal_view.setSelectionMode(QAbstractItemView.SingleSelection)
         self.ui.proposal_view.setSelectionBehavior(QAbstractItemView.SelectRows)
@@ -108,16 +113,31 @@ class BssDisplay(display.FireflyDisplay):
         beamline = self.ui.beamline_lineedit.text()
         cycle = self.ui.cycle_lineedit.text()
         # Get proposal data from the API
-        proposals = self.api.proposals(cycle=cycle, beamline=beamline)
+        if "" in [beamline, cycle]:
+            log.info(f"Skipping proposal lookup for {cycle=}, {beamline=}")
+            return []
+        proposals = await self.api.proposals(cycle=cycle, beamline=beamline)
         # Parse the API payload into the format for the BSS IOC
         return proposals
 
     async def esafs(self) -> list[Esaf]:
         beamline = self.ui.beamline_lineedit.text()
         cycle = self.ui.cycle_lineedit.text()
-        esafs = self.api.esafs(cycle=cycle, beamline=beamline)
+        # Parse the arguments
+        try:
+            sector, *_ = beamline.split("-")
+        except ValueError:
+            log.info(f"Skipping ESAF lookup for {beamline=}")
+            return []
+        match = re.match(r"^(\d{4})[-/]\d{1,2}", cycle)
+        if not match:
+            log.info(f"Skipping ESAF lookup for {cycle=}")
+            return []
+        year, = match.groups()
+        esafs = await self.api.esafs(year=year, sector=sector)
         return esafs
 
+    @asyncSlot()
     async def load_models(self):
         # Load data
         proposals, esafs = await asyncio.gather(self.proposals(), self.esafs())
@@ -126,6 +146,7 @@ class BssDisplay(display.FireflyDisplay):
         self.proposal_model = QStandardItemModel()
         self.proposal_model.setHorizontalHeaderLabels(col_names)
         # Load individual proposals
+        log.info(f"Loaded {len(proposals)} proposals and {len(esafs)} ESAFs.")
         for proposal in proposals:
             items = [QStandardItem(str(getattr(proposal, col))) for col in col_names]
             for item in items:

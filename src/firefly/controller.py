@@ -384,6 +384,7 @@ class FireflyController(QtCore.QObject):
         """Connect up signals for the scheduling display window."""
         action.display.metadata_changed.connect(self._stash_bss_metadata)
         action.display.metadata_changed.connect(self.bss_metadata_changed)
+        await action.display.load_models()
 
     def finalize_status_window(self, action: QAction):
         """Connect up signals that are specific to the voltmeters window."""

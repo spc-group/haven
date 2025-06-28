@@ -8,6 +8,7 @@ from typing import Any
 import xraydb
 from bluesky_queueserver_api import BPlan
 from qasync import asyncSlot
+from qtpy.QtCore import Signal
 from qtpy.QtWidgets import (
     QCheckBox,
     QDoubleSpinBox,
@@ -18,7 +19,7 @@ from qtpy.QtWidgets import (
 from xraydb.xraydb import XrayDB
 
 from firefly.exceptions import UnknownAbsorptionEdge
-from firefly.plans.plan_display import PlanDisplay
+from firefly.plans import plan_display
 from firefly.plans.regions import RegionsManager
 from haven.energy_ranges import (
     ERange,
@@ -41,6 +42,9 @@ class XafsRegionsManager(RegionsManager):
     wavenumber_suffix = "Å⁻"
     energy_precision = 1
     wavenumber_precision = 4
+
+    # Qt slots
+    regions_changed = Signal()
 
     @dataclass(frozen=True)
     class WidgetSet:
@@ -74,6 +78,8 @@ class XafsRegionsManager(RegionsManager):
     async def add_row(self):
         row = await super().add_row()
         self.set_domain(Domain.ENERGY, row=row)
+        new_widgets = self.row_widgets(row)
+        new_widgets.active_checkbox.stateChanged.connect(self.regions_changed)
 
     async def create_row_widgets(self, row: int) -> list[QWidget]:
         """Create the widgets that are to go in each row, in order."""
@@ -86,7 +92,7 @@ class XafsRegionsManager(RegionsManager):
         exposure_time_spin_box.setSuffix(" s")
         # For converting between k and E space
         k_space_checkbox = QCheckBox()
-        k_space_checkbox.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        k_space_checkbox.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Preferred)
         k_space_checkbox.setEnabled(True)
         # Weight factor box
         weight_spin_box = QDoubleSpinBox()
@@ -104,7 +110,13 @@ class XafsRegionsManager(RegionsManager):
         k_space_checkbox.stateChanged.connect(
             partial(self.update_wavenumber_energy, row=row)
         )
-        # Disable/enable regions when selected
+        # Notify clients when the widgets change
+        start_spin_box.valueChanged.connect(self.regions_changed)
+        stop_spin_box.valueChanged.connect(self.regions_changed)
+        step_spin_box.valueChanged.connect(self.regions_changed)
+        exposure_time_spin_box.valueChanged.connect(self.regions_changed)
+        k_space_checkbox.stateChanged.connect(self.regions_changed)
+        weight_spin_box.valueChanged.connect(self.regions_changed)
         return [
             start_spin_box,
             stop_spin_box,
@@ -125,6 +137,19 @@ class XafsRegionsManager(RegionsManager):
             domain=widgets.k_space_checkbox.isChecked(),
             weight=widgets.weight_spin_box.value(),
         )
+
+    def enable_row_widgets(self, enabled: bool, *, row: int):
+        """Enable/disable the widgets in a row of the layout.
+
+        Excludes the checkbox used to enable/disable the rest of the
+        row.
+
+        """
+        super().enable_row_widgets(enabled=enabled, row=row)
+        # Weight spin box should respect the previous k-space decision
+        widgets = self.row_widgets(row=row)
+        if enabled:
+            widgets.weight_spin_box.setEnabled(widgets.k_space_checkbox.isChecked())
 
     def set_domain(self, domain: Domain, *, row: int):
         """Set up the UI to be in either energy (eV) or wavenumber (Å⁻) units."""
@@ -200,11 +225,10 @@ class XafsRegionsManager(RegionsManager):
             for line_edit in [widgets.start_spin_box, widgets.stop_spin_box]:
                 old_value = line_edit.value()
                 new_value = old_value + E0
-                print(f"{old_value} + {E0} = {new_value}")
                 line_edit.setValue(new_value)
 
 
-class XafsScanDisplay(PlanDisplay):
+class XafsScanDisplay(plan_display.PlanDisplay):
     plan_type = "xafs_scan"
     min_energy = 4000
     max_energy = 33000
@@ -213,8 +237,10 @@ class XafsScanDisplay(PlanDisplay):
     def customize_ui(self):
         super().customize_ui()
         self.regions = XafsRegionsManager(layout=self.regions_layout)
+        self.regions.regions_changed.connect(self.update_total_time)
         self.num_regions_spin_box.valueChanged.connect(self.regions.set_region_count)
         self.num_regions_spin_box.setValue(self._default_region_count)
+        self.enable_all_checkbox.stateChanged.connect(self.regions.enable_all_rows)
         # Disable the line edits in spin box (use up/down buttons instead)
         self.ui.num_regions_spin_box.lineEdit().setReadOnly(True)
         # Add absorption edges from XrayDB
@@ -233,35 +259,18 @@ class XafsScanDisplay(PlanDisplay):
             )
             combo_box.addItem(text, userData=edge)
         combo_box.setCurrentText("")
-
-        # Connect signals for total time updates
+        # Connect signals for updates
         self.scan_time_changed.connect(self.scan_duration_label.set_seconds)
         self.total_time_changed.connect(self.total_duration_label.set_seconds)
+        self.use_edge_checkbox.stateChanged.connect(self.use_edge)
+        self.num_regions_spin_box.lineEdit().setReadOnly(True)
+        self.num_regions_spin_box.valueChanged.connect(self.regions.set_region_count)
+        self.spinBox_repeat_scan_num.valueChanged.connect(self.update_total_time)
 
-        # Connect the E0 checkbox to the E0 combobox
-        self.ui.use_edge_checkbox.stateChanged.connect(self.use_edge)
-
-        # disable the line edits in spin box
-        self.ui.num_regions_spin_box.lineEdit().setReadOnly(True)
-
-        # when regions number changed
-        self.ui.num_regions_spin_box.valueChanged.connect(self.regions.set_region_count)
-        self.ui.num_regions_spin_box.editingFinished.connect(
-            self.regions.set_region_count
-        )
-
-        # connect checkboxes with all regions' check box
-        self.ui.regions_all_checkbox.stateChanged.connect(self.on_regions_all_checkbox)
-
-        # repeat scans
-        self.ui.spinBox_repeat_scan_num.valueChanged.connect(self.update_total_time)
-        self.ui.detectors_list.selectionModel().selectionChanged.connect(
-            self.update_total_time
-        )
-
-    def on_regions_all_checkbox(self, is_checked):
-        for region_i in self.regions:
-            region_i.region_checkbox.setChecked(is_checked)
+    async def update_devices(self, registry):
+        """Set available components in the device list."""
+        await super().update_devices(registry)
+        await self.detectors_list.update_devices(registry)
 
     def use_edge(self, is_checked: bool):
         self.edge_combo_box.setEnabled(is_checked)
@@ -274,7 +283,7 @@ class XafsScanDisplay(PlanDisplay):
             self.regions.unapply_E0(self.E0)
 
     def scan_durations(self, detector_time: float = 0) -> tuple[float, float]:
-        energy_ranges = [region.energy_range for region in self.regions]
+        energy_ranges = [region.energy_range for region in self.regions if region.is_active]
         _, exposures = merge_ranges(*energy_ranges, sort=True)
         time_per_scan = sum(exposures)
         num_scan_repeat = self.ui.spinBox_repeat_scan_num.value()
@@ -283,7 +292,7 @@ class XafsScanDisplay(PlanDisplay):
 
     @asyncSlot()
     async def update_total_time(self):
-        # Summing total_time for all checked regions directly within the sum function using a generator expression
+        """Summing total_time for all checked regions."""
         try:
             time_per_scan, total_time = self.scan_durations()
         except ZeroDivisionError:

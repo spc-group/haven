@@ -89,7 +89,7 @@ async def test_step_size_calculation(display, qtbot):
 
 
 @pytest.mark.asyncio
-async def test_grid_scan_plan_args(display, xspress, ion_chamber, qtbot):
+async def test_plan_args(display, xspress, ion_chamber, qtbot):
     await display.regions.set_region_count(2)
     widgets = display.regions.row_widgets(row=1)
     # set up a test motor 1
@@ -132,7 +132,6 @@ async def test_grid_scan_plan_args(display, xspress, ion_chamber, qtbot):
             "sample_name": "sam",
             "purpose": "test",
             "notes": "notes",
-            "is_standard": False,
         },
     )
 
@@ -184,3 +183,49 @@ async def test_relative_positioning(display, async_motors):
     assert widgets.stop_spin_box.value() == 10.0
     assert widgets.stop_spin_box.maximum() == 10
     assert widgets.stop_spin_box.minimum() == -10
+
+
+async def test_update_devices(display, sim_registry):
+    await display.regions.set_region_count(1)
+    device_selector = display.regions.row_widgets(1).device_selector
+    device_selector.update_devices = mock.AsyncMock()
+    display.detectors_list.update_devices = mock.AsyncMock()
+    await display.update_devices(sim_registry)
+    assert device_selector.update_devices.called
+    assert display.detectors_list.update_devices.called
+
+
+async def test_update_snakes(display):
+    """Check that the slow axes is not snakable."""
+    await display.regions.set_region_count(2)
+    widgets = display.regions.row_widgets(row=1)
+    assert not widgets.snake_checkbox.isEnabled()
+    widgets = display.regions.row_widgets(row=2)
+    assert widgets.snake_checkbox.isEnabled()
+
+
+# -----------------------------------------------------------------------------
+# :author:    Mark Wolfman, Juan Juan Huang
+# :email:     wolfman@anl.gov, juanjuan.huang@anl.gov
+# :copyright: Copyright © 2023, UChicago Argonne, LLC
+#
+# Distributed under the terms of the 3-Clause BSD License
+#
+# The full license is in the file LICENSE, distributed with this software.
+#
+# DISCLAIMER
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+# HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# -----------------------------------------------------------------------------
+

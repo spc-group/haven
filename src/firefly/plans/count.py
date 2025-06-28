@@ -13,7 +13,7 @@ class CountDisplay(plan_display.PlanDisplay):
     async def update_devices(self, registry):
         """Set available components in the device list."""
         await super().update_devices(registry)
-        await self.ui.detectors_list.update_devices(registry)
+        await self.detectors_list.update_devices(registry)
 
     def customize_ui(self):
         super().customize_ui()

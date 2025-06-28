@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from dataclasses import dataclass
 from functools import partial
@@ -7,7 +8,7 @@ from qasync import asyncSlot
 from qtpy.QtWidgets import QCheckBox, QDoubleSpinBox, QLabel, QWidget
 
 from firefly.component_selector import ComponentSelector
-from firefly.plans.plan_display import PlanDisplay
+from firefly.plans import plan_display
 from firefly.plans.regions import (
     RegionsManager,
     make_relative,
@@ -82,7 +83,9 @@ class LineRegionsManager(RegionsManager):
         ]
 
     async def update_devices(self, registry):
-        await self.motor_box.update_devices(registry)
+        widgetsets = [self.row_widgets(row=row) for row in self.row_numbers]
+        aws = [widgets.device_selector.update_devices(registry) for widgets in widgetsets]
+        await asyncio.gather(*aws)
 
     @asyncSlot(Device)
     async def update_device_parameters(self, device: Device, row: int):
@@ -131,14 +134,19 @@ class LineRegionsManager(RegionsManager):
                 widgets.step_label.setText(str(step_size))
 
 
-class LineScanDisplay(PlanDisplay):
-
+class LineScanDisplay(plan_display.PlanDisplay):
+    _default_region_count = 1
+    
     def customize_ui(self):
         super().customize_ui()
         self.regions = LineRegionsManager(
             layout=self.regions_layout,
             is_relative=self.relative_scan_checkbox.isChecked(),
         )
+        self.num_regions_spin_box.valueChanged.connect(self.regions.set_region_count)
+        self.num_regions_spin_box.setValue(self._default_region_count)
+        self.enable_all_checkbox.stateChanged.connect(self.regions.enable_all_rows)
+        self.relative_scan_checkbox.stateChanged.connect(self.regions.set_relative_position)
         # Connect signals for total time updates
         self.ui.scan_pts_spin_box.valueChanged.connect(self.update_total_time)
         self.ui.detectors_list.selectionModel().selectionChanged.connect(
@@ -166,6 +174,14 @@ class LineScanDisplay(PlanDisplay):
         time_per_scan, total_time = self.scan_durations(detector_time)
         self.scan_time_changed.emit(time_per_scan)
         self.total_time_changed.emit(total_time)
+
+    async def update_devices(self, registry):
+        """Re-configure the display for a new set of ophyd devices."""
+        await super().update_devices(registry)
+        await asyncio.gather(
+            self.regions.update_devices(registry),
+            self.detectors_list.update_devices(registry),
+        )
 
     def plan_args(self) -> tuple[tuple, dict]:
         # Get scan parameters from widgets

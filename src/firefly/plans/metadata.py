@@ -39,8 +39,9 @@ class MetadataWidget(QWidget):
             "purpose": self.purpose_combo_box.currentText(),
             "notes": self.notes_text_edit.toPlainText(),
             "sample_formula": self.formula_line_edit.text(),
-            "is_standard": self.standard_check_box.isChecked(),
         }
+        if self.standard_check_box.isChecked():
+            md[            "is_standard"] = True
         # Only include metadata that isn't an empty string
         md = {key: val for key, val in md.items() if is_valid_value(val)}
         return md

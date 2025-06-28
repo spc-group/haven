@@ -109,3 +109,11 @@ async def test_relative_positioning(display, motor):
     assert widgets.position_spin_box.value() == 420
     assert widgets.position_spin_box.maximum() == 32000
     assert widgets.position_spin_box.minimum() == -32000
+
+
+async def test_update_devices(display, sim_registry):
+    await display.regions.set_region_count(1)
+    device_selector = display.regions.row_widgets(1).device_selector
+    device_selector.update_devices = mock.AsyncMock()
+    await display.update_devices(sim_registry)
+    assert device_selector.update_devices.called

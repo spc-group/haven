@@ -107,7 +107,7 @@ async def test_step_size_calculation(display, qtbot):
 
 
 @pytest.mark.asyncio
-async def test_line_scan_plan_args(display, monkeypatch, qtbot, xspress, ion_chamber):
+async def test_plan_args(display, monkeypatch, qtbot, xspress, ion_chamber):
     # set up motor num
     await display.regions.set_region_count(2)
     # set up a test motor 1
@@ -147,7 +147,6 @@ async def test_line_scan_plan_args(display, monkeypatch, qtbot, xspress, ion_cha
             "sample_name": "sam",
             "purpose": "test",
             "notes": "notes",
-            "is_standard": False,
         },
     }
 
@@ -199,3 +198,13 @@ async def test_relative_positioning(display, motors):
     assert widgets.stop_spin_box.value() == 10.0
     assert widgets.stop_spin_box.maximum() == 10
     assert widgets.stop_spin_box.minimum() == -10
+
+
+async def test_update_devices(display, sim_registry):
+    await display.regions.set_region_count(1)
+    device_selector = display.regions.row_widgets(1).device_selector
+    device_selector.update_devices = mock.AsyncMock()
+    display.detectors_list.update_devices = mock.AsyncMock()
+    await display.update_devices(sim_registry)
+    assert device_selector.update_devices.called
+    assert display.detectors_list.update_devices.called

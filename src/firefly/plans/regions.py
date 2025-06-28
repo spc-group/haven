@@ -27,6 +27,7 @@ from functools import partial
 from typing import Any, Generator, cast
 
 from ophyd_async.core import Device
+from qasync import asyncSlot
 from qtpy.QtCore import QObject, Qt
 from qtpy.QtWidgets import (
     QCheckBox,
@@ -279,7 +280,13 @@ class RegionsManager[WidgetsType](QObject):
 
     @property
     def row_numbers(self):
-        return range(self.header_rows, self.layout.rowCount())
+        return range(self.header_rows, self.header_rows + len(self))
+
+    def enable_all_rows(self, enabled: bool):
+        """Enable/disable all rows in the layout."""
+        for row in self.row_numbers:
+            checkbox = self.row_widgets(row).active_checkbox
+            checkbox.setChecked(enabled)
 
     def enable_row_widgets(self, enabled: bool, *, row: int):
         """Enable/disable the widgets in a row of the layout.
@@ -292,6 +299,7 @@ class RegionsManager[WidgetsType](QObject):
         for widget in iter_widgets(widgets, all_widgets=False):
             widget.setEnabled(enabled)
 
+    @asyncSlot(int)
     async def set_region_count(self, new_region_num: int):
         """Adjust regions from the scan params layout to reach
         *new_region_num*.

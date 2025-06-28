@@ -77,10 +77,10 @@
         <string>Scan regions for XAFS</string>
        </property>
        <property name="minimum">
-        <number>1</number>
+        <number>0</number>
        </property>
        <property name="value">
-        <number>1</number>
+        <number>0</number>
        </property>
        <property name="displayIntegerBase">
         <number>10</number>
@@ -120,8 +120,8 @@
          <rect>
           <x>0</x>
           <y>0</y>
-          <width>578</width>
-          <height>180</height>
+          <width>580</width>
+          <height>158</height>
          </rect>
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_8">
@@ -182,7 +182,7 @@
               </widget>
              </item>
              <item row="0" column="0">
-              <widget class="QCheckBox" name="regions_all_checkbox">
+              <widget class="QCheckBox" name="enable_all_checkbox">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                  <horstretch>0</horstretch>
@@ -290,38 +290,6 @@
       </spacer>
      </item>
      <item>
-      <widget class="QLabel" name="label_11">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="toolTip">
-        <string>Do this scan by multiple times</string>
-       </property>
-       <property name="text">
-        <string>Num. of scans:</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QSpinBox" name="spinBox_repeat_scan_num">
-       <property name="toolTip">
-        <string>Do this scan by multiple times</string>
-       </property>
-       <property name="minimum">
-        <number>1</number>
-       </property>
-       <property name="maximum">
-        <number>999</number>
-       </property>
-      </widget>
-     </item>
-     <item>
       <widget class="QLabel" name="label_10">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -388,6 +356,45 @@
        </property>
        <property name="alignment">
         <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="Line" name="line">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="label_11">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="toolTip">
+        <string>Do this scan by multiple times</string>
+       </property>
+       <property name="text">
+        <string>Num. of scans:</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QSpinBox" name="spinBox_repeat_scan_num">
+       <property name="toolTip">
+        <string>Do this scan by multiple times</string>
+       </property>
+       <property name="minimum">
+        <number>1</number>
+       </property>
+       <property name="maximum">
+        <number>999</number>
        </property>
       </widget>
      </item>

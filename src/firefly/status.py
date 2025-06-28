@@ -23,7 +23,6 @@ def name_to_title(name: str):
 
 
 class StatusDisplay(display.FireflyDisplay):
-    caqtdm_ui_file: str = "/net/s25data/xorApps/ui/25id_main.ui"
     bss_window_requested = Signal()
 
     def add_shutter_widgets(self):

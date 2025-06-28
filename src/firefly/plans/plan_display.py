@@ -23,7 +23,6 @@ class PlanStubDisplay(display.FireflyDisplay):
     run_button: QueueButton
 
     def customize_ui(self):
-        self.run_button = QueueButton(self)
         self.run_button.clicked.connect(self.queue_plan)
 
     async def _get_time(self, detector):

@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import math
 from dataclasses import dataclass
@@ -10,7 +11,7 @@ from qtpy.QtCore import Signal, Slot
 from qtpy.QtWidgets import QCheckBox, QDoubleSpinBox, QLabel, QSpinBox, QWidget
 
 from firefly.component_selector import ComponentSelector
-from firefly.plans.plan_display import PlanDisplay
+from firefly.plans import plan_display 
 from firefly.plans.regions import (
     RegionsManager,
     make_relative,
@@ -73,7 +74,7 @@ class GridRegionsManager[WidgetsType](RegionsManager):
         stop_spin_box.setMaximum(float("inf"))
         # Number of scan points
         scan_pts_spin_box = QSpinBox()
-        scan_pts_spin_box.setMinimum(2)
+        scan_pts_spin_box.setMinimum(1)
         scan_pts_spin_box.setValue(2)
         scan_pts_spin_box.setMaximum(99999)
         # Step size (non-editable)
@@ -82,7 +83,8 @@ class GridRegionsManager[WidgetsType](RegionsManager):
         # Snake checkbox
         snake_checkbox = QCheckBox()
         snake_checkbox.setText("Snake")
-        snake_checkbox.setEnabled(True)
+        is_first_row = (row == self.header_rows)
+        snake_checkbox.setEnabled(not is_first_row)
         # Fly checkbox # not available right now
         fly_checkbox = QCheckBox()
         fly_checkbox.setText("Fly")
@@ -126,22 +128,10 @@ class GridRegionsManager[WidgetsType](RegionsManager):
         num_points = math.prod([box.value() for box in spin_boxes])
         return num_points
 
-    # def set_num_regions(self, num: int):
-    #     super().set_num_regions(num=num)
-    #     self.update_snakes()
-
-    # def update_snakes(self):
-    #     """Update the snake checkboxes.
-
-    #     The last region is not snakable, so that checkbox gets
-    #     disabled and unchecked. The rest get enabled.
-
-    #     """
-    #     if len(self.regions) > 0:
-    #         self.regions[-1].snake_checkbox.setEnabled(False)
-    #         self.regions[-1].snake_checkbox.setChecked(False)
-    #         for region_i in self.regions[:-1]:
-    #             region_i.snake_checkbox.setEnabled(True)
+    async def update_devices(self, registry):
+        widgetsets = [self.row_widgets(row=row) for row in self.row_numbers]
+        aws = [widgets.device_selector.update_devices(registry) for widgets in widgetsets]
+        await asyncio.gather(*aws)
 
     @asyncSlot(int)
     async def set_relative_position(self, is_relative: int):
@@ -171,13 +161,13 @@ class GridRegionsManager[WidgetsType](RegionsManager):
         try:
             step_size = (stop - start) / (num_points - 1)
             step_size = round(step_size, precision)
-        except ValueError:
+        except (ValueError, ZeroDivisionError):
             widgets.step_label.setText("NaN")
         else:
             widgets.step_label.setText(str(step_size))
 
 
-class GridScanDisplay(PlanDisplay):
+class GridScanDisplay(plan_display.PlanDisplay):
     _default_region_count = 2
 
     def __init__(self, parent=None, args=None, macros=None, ui_filename=None, **kwargs):
@@ -190,6 +180,8 @@ class GridScanDisplay(PlanDisplay):
         )
         self.num_regions_spin_box.valueChanged.connect(self.regions.set_region_count)
         self.num_regions_spin_box.setValue(self._default_region_count)
+        self.enable_all_checkbox.stateChanged.connect(self.regions.enable_all_rows)
+        self.relative_scan_checkbox.stateChanged.connect(self.regions.set_relative_position)
         # Connect scan points change to update total time
         self.ui.spinBox_repeat_scan_num.valueChanged.connect(self.update_total_time)
         self.ui.detectors_list.selectionModel().selectionChanged.connect(
@@ -239,6 +231,13 @@ class GridScanDisplay(PlanDisplay):
     async def update_regions_slot(self, new_region_num: int):
         await super().update_regions(new_region_num)
         self.update_snakes()
+
+    async def update_devices(self, registry):
+        await super().update_devices(registry)
+        await asyncio.gather(
+            self.regions.update_devices(registry),
+            self.detectors_list.update_devices(registry),
+        )
 
     @property
     def plan_type(self):

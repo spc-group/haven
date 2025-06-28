@@ -39,7 +39,7 @@ async def test_time_calculator(display, sim_registry, ion_chamber):
     assert display.ui.total_duration_label.text() == "0 h 1 m 38 s"
 
 
-def test_count_plan_args(display, qtbot, xspress):
+def test_plan_args(display, qtbot, xspress):
     display.ui.run_button.setEnabled(True)
     display.ui.num_spinbox.setValue(5)
     display.ui.delay_spinbox.setValue(0.5)
@@ -49,11 +49,11 @@ def test_count_plan_args(display, qtbot, xspress):
     )
     args, kwargs = display.plan_args()
     assert kwargs == dict(
-        num=5, detectors=["vortex_me4"], delay=0.5, md={"is_standard": False}
+        num=5, detectors=["vortex_me4"], delay=0.5, md={}
     )
 
 
-def test_count_plan_metadata(display, qtbot, xspress, ion_chamber):
+def test_plan_metadata(display, qtbot, xspress, ion_chamber):
     display.ui.run_button.setEnabled(True)
     display.ui.num_spinbox.setValue(5)
     # set up meta data
@@ -78,6 +78,12 @@ def test_count_plan_metadata(display, qtbot, xspress, ion_chamber):
             "sample_formula": "LiMn0.5Ni0.5O",
         },
     )
+
+async def test_update_devices(display, sim_registry):
+    display.detectors_list.update_devices = mock.AsyncMock()
+    await display.update_devices(sim_registry)
+    assert display.detectors_list.update_devices.called
+
 
 
 # -----------------------------------------------------------------------------

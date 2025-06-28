@@ -102,29 +102,6 @@
       </spacer>
      </item>
      <item>
-      <widget class="QLabel" name="label_11">
-       <property name="toolTip">
-        <string>Do this scan by multiple times</string>
-       </property>
-       <property name="text">
-        <string>Num. of scans:</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QSpinBox" name="spinBox_repeat_scan_num">
-       <property name="toolTip">
-        <string>Do this scan by multiple times</string>
-       </property>
-       <property name="minimum">
-        <number>1</number>
-       </property>
-       <property name="maximum">
-        <number>999</number>
-       </property>
-      </widget>
-     </item>
-     <item>
       <widget class="QLabel" name="label_10">
        <property name="toolTip">
         <string>total exposure time for a single scan</string>
@@ -167,6 +144,36 @@
        </property>
        <property name="alignment">
         <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="Line" name="line">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="label_11">
+       <property name="toolTip">
+        <string>Do this scan by multiple times</string>
+       </property>
+       <property name="text">
+        <string>Num. of scans:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QSpinBox" name="spinBox_repeat_scan_num">
+       <property name="toolTip">
+        <string>Do this scan by multiple times</string>
+       </property>
+       <property name="minimum">
+        <number>1</number>
+       </property>
+       <property name="maximum">
+        <number>999</number>
        </property>
       </widget>
      </item>

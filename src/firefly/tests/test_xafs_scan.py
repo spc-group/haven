@@ -1,6 +1,8 @@
+from unittest import mock
+
 import pytest
 
-from firefly.plans.xafs_scan import XafsScanDisplay
+from firefly.plans.xafs_scan import XafsScanDisplay, Domain
 
 # default values for EXAFS scan
 pre_edge = [-200, -50, 5]
@@ -34,8 +36,7 @@ async def test_region_number(display):
 
 
 async def test_time_calculator(display, xspress, ion_chamber):
-    await display.regions.set_region_count(2)
-    display.ui.num_regions_spin_box.setValue(2)
+    await display.regions.set_region_count(3)
     display.edge_combo_box.setCurrentIndex(1)
     # Set up the first region
     widgets = display.regions.row_widgets(1)
@@ -50,6 +51,8 @@ async def test_time_calculator(display, xspress, ion_chamber):
     widgets.k_space_checkbox.setChecked(True)
     widgets.step_spin_box.setValue(5)
     widgets.weight_spin_box.setValue(2)
+    # Disable the third region
+    display.regions.row_widgets(3).active_checkbox.setChecked(False)
     # Set other widgets
     display.ui.spinBox_repeat_scan_num.setValue(3)
     # Check whether time is calculated correctly
@@ -84,7 +87,7 @@ async def test_E0_checkbox(display):
     assert widgets.stop_spin_box.value() == 50
 
 
-async def test_plan_energies(display, qtbot):
+async def test_plan_energies(display):
     """Does a plan actually get emitted when queued?"""
     await display.regions.set_region_count(3)
     display.edge_combo_box.setCurrentText("58893.0")
@@ -109,7 +112,7 @@ async def test_plan_energies(display, qtbot):
     assert kwargs["E0"] == 58893.0
 
 
-async def test_plan_energies_k_mixed(qtbot, display):
+async def test_plan_energies_k_mixed(display):
     await display.regions.set_region_count(2)
     display.edge_combo_box.setCurrentIndex(1)
     # Set up the first region
@@ -133,7 +136,7 @@ async def test_plan_energies_k_mixed(qtbot, display):
     ]
 
 
-async def test_plan_metadata(display, qtbot):
+async def test_plan_metadata(display):
     """Check that the metadata are passed properly."""
     # set up meta data
     display.metadata_widget.sample_line_edit.setText("sam")
@@ -150,7 +153,7 @@ async def test_plan_metadata(display, qtbot):
     }
 
 
-async def test_plan_edge(display, qtbot):
+async def test_plan_edge(display):
     """Check that the edge name is passed properly."""
     display.edge_combo_box.setCurrentIndex(1)
     # Check plan arguments that will be sent to the queue
@@ -185,20 +188,41 @@ def test_E0(display):
     assert display.E0 is None
 
 
-async def test_region_domain(display, qtbot):
+async def test_region_domain(display):
     await display.regions.set_region_count(1)
     widgets = display.regions.row_widgets(1)
     assert widgets.start_spin_box.suffix() == " eV"
     assert widgets.stop_spin_box.suffix() == " eV"
     assert widgets.step_spin_box.suffix() == " eV"
-    display.regions.set_domain(domain=1, row=1)
+    assert not widgets.weight_spin_box.isEnabled()
+    display.regions.set_domain(domain=Domain.WAVENUMBER, row=1)
     assert widgets.start_spin_box.suffix() == " Å⁻"
     assert widgets.stop_spin_box.suffix() == " Å⁻"
     assert widgets.step_spin_box.suffix() == " Å⁻"
-    display.regions.set_domain(domain=0, row=1)
+    assert widgets.weight_spin_box.isEnabled()
+    display.regions.set_domain(domain=Domain.ENERGY, row=1)
     assert widgets.start_spin_box.suffix() == " eV"
     assert widgets.stop_spin_box.suffix() == " eV"
     assert widgets.step_spin_box.suffix() == " eV"
+    assert not widgets.weight_spin_box.isEnabled()
+
+
+async def test_enable_row_widgets(display):
+    """Check that the correct widgets are en/disabled for a row."""
+    await display.regions.set_region_count(1)
+    widgets = display.regions.row_widgets(1)
+    display.regions.set_domain(Domain.ENERGY, row=1)
+    assert not widgets.weight_spin_box.isEnabled()
+    # Toggle all the widgets in the row
+    display.regions.enable_row_widgets(False, row=1)
+    display.regions.enable_row_widgets(True, row=1)
+    assert not widgets.weight_spin_box.isEnabled()
+
+
+async def test_update_devices(display, sim_registry):
+    display.detectors_list.update_devices = mock.AsyncMock()
+    await display.update_devices(sim_registry)
+    assert display.detectors_list.update_devices.called
 
 
 # -----------------------------------------------------------------------------

@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from dataclasses import dataclass
 from functools import partial
@@ -7,7 +8,7 @@ from qasync import asyncSlot
 from qtpy.QtWidgets import QCheckBox, QDoubleSpinBox, QWidget
 
 from firefly.component_selector import ComponentSelector
-from firefly.plans.plan_display import PlanStubDisplay
+from firefly.plans import plan_display
 from firefly.plans.regions import (
     RegionsManager,
     make_relative,
@@ -62,7 +63,9 @@ class MotorRegionsManager(RegionsManager):
         ]
 
     async def update_devices(self, registry):
-        await self.motor_box.update_devices(registry)
+        widgetsets = [self.row_widgets(row=row) for row in self.row_numbers]
+        aws = [widgets.device_selector.update_devices(registry) for widgets in widgetsets]
+        await asyncio.gather(*aws)
 
     @asyncSlot(Device)
     async def update_device_parameters(self, device: Device, row: int):
@@ -89,11 +92,19 @@ class MotorRegionsManager(RegionsManager):
             )
 
 
-class MoveMotorDisplay(PlanStubDisplay):
-
+class MoveMotorDisplay(plan_display.PlanStubDisplay):
+    _default_region_count = 1
     def customize_ui(self):
         super().customize_ui()
         self.regions = MotorRegionsManager(layout=self.regions_layout)
+        self.num_regions_spin_box.valueChanged.connect(self.regions.set_region_count)
+        self.num_regions_spin_box.setValue(self._default_region_count)
+        self.enable_all_checkbox.stateChanged.connect(self.regions.enable_all_rows)
+        self.relative_scan_checkbox.stateChanged.connect(self.regions.set_relative_position)
+
+    async def update_devices(self, registry):
+        await super().update_devices(registry)
+        await self.regions.update_devices(registry)
 
     def plan_args(self) -> tuple[tuple, dict]:
         # Get parameters from each row of line regions
