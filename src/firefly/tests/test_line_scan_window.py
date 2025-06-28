@@ -107,7 +107,7 @@ async def test_step_size_calculation(display, qtbot):
 
 
 @pytest.mark.asyncio
-async def test_plan_args(display, monkeypatch, qtbot, xspress, ion_chamber):
+async def test_plan_args(display, qtbot, xspress, ion_chamber):
     # set up motor num
     await display.regions.set_region_count(2)
     # set up a test motor 1

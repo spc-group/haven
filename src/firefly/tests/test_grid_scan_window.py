@@ -92,24 +92,23 @@ async def test_step_size_calculation(display, qtbot):
 async def test_plan_args(display, xspress, ion_chamber, qtbot):
     await display.regions.set_region_count(2)
     widgets = display.regions.row_widgets(row=1)
-    # set up a test motor 1
-    widgets.device_selector.combo_box.setCurrentText("sync_motor_2")
-    widgets.start_spin_box.setValue(1)
-    widgets.stop_spin_box.setValue(111)
+    # Set up a test motor 1
+    widgets.device_selector.current_device_name = mock.MagicMock(return_value="async_motor_1")
+    widgets.start_spin_box.setValue(1.0)
+    widgets.stop_spin_box.setValue(111.0)
     widgets.num_points_spin_box.setValue(5)
-    # select snake for the first motor
-    widgets.snake_checkbox.setChecked(True)
-    # set up a test motor 2
+    # Set up a test motor 2
     widgets = display.regions.row_widgets(row=2)
-    widgets.device_selector.combo_box.setCurrentText("async_motor_1")
-    widgets.start_spin_box.setValue(2)
-    widgets.stop_spin_box.setValue(222)
+    widgets.device_selector.current_device_name = mock.MagicMock(return_value="async_motor_2")
+    widgets.start_spin_box.setValue(2.0)
+    widgets.stop_spin_box.setValue(222.0)
     widgets.num_points_spin_box.setValue(10)
-    # set up detector list
+    widgets.snake_checkbox.setChecked(True)
+    # Set up detector list
     display.ui.detectors_list.selected_detectors = mock.MagicMock(
         return_value=[xspress, ion_chamber]
     )
-    # set up meta data
+    # Set up meta data
     display.metadata_widget.sample_line_edit.setText("sam")
     display.metadata_widget.purpose_combo_box.setCurrentText("test")
     display.metadata_widget.notes_text_edit.setText("notes")
@@ -117,17 +116,17 @@ async def test_plan_args(display, xspress, ion_chamber, qtbot):
     args, kwargs = display.plan_args()
     assert args == (
         ["vortex_me4", "I00"],
-        "sync_motor_2",
+        "async_motor_1",
         1.0,
         111.0,
         5,
-        "async_motor_1",
+        "async_motor_2",
         2.0,
         222.0,
         10,
     )
     assert kwargs == dict(
-        snake_axes=["sync_motor_2"],
+        snake_axes=["async_motor_2"],
         md={
             "sample_name": "sam",
             "purpose": "test",
