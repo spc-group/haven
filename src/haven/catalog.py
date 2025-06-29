@@ -16,6 +16,7 @@ from tiled.client import from_profile as tiled_from_profile
 from tiled.client.base import BaseClient
 from tiled.client.cache import Cache
 from tiled.client.container import _queries_to_params
+from tiled.profiles import get_default_profile_name
 from tiled.queries import NoBool
 from tiled.serialization.table import deserialize_arrow
 from tiled.structures.array import BuiltinDtype
@@ -81,7 +82,7 @@ def deserialize_array(stream: IO[bytes], structure: dict):
 
 def tiled_client(
     catalog: str | type[DEFAULT] | None = DEFAULT,
-    profile: str = "haven",
+    profile: str | type[DEFAULT] = DEFAULT,
     cache_filepath: Path | type[DEFAULT] | None = DEFAULT,
     structure_clients: str = "numpy",
 ) -> BaseClient:
@@ -108,6 +109,8 @@ def tiled_client(
         cache_filepath = tiled_config.get("cache_filepath")
     if catalog is DEFAULT:
         catalog = tiled_config.get("default_catalog")
+    if profile is DEFAULT:
+        profile = tiled_config.get("default_profile", get_default_profile_name())
     # Create the client
     kw = {}
     if cache_filepath is not None:
@@ -272,8 +275,7 @@ class CatalogScan:
     async def _export(self, buff: IO[bytes], format: str):
         url = f"container/full/{quote_plus(str(self.path))}"
         async with self.client.stream(
-                "GET", url, params={"format": format},
-                timeout=30
+            "GET", url, params={"format": format}, timeout=30
         ) as response:
             if response.is_error:
                 # Make sure error handlers can access the details
@@ -282,7 +284,7 @@ class CatalogScan:
             # Write stream into the file
             async for chunk in response.aiter_bytes():
                 buff.write(chunk)
-    
+
     async def export(self, filename: str, format: str):
         with open(filename, mode="bw") as fd:
             await self._export(fd, format=format)
