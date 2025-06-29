@@ -1,6 +1,5 @@
 import asyncio
 import datetime as dt
-from functools import partial
 from unittest.mock import AsyncMock
 
 import pytest
@@ -145,19 +144,23 @@ async def test_auto_bss_filters(display):
     # First set the BSS metadata when the "current" box is checked
     display.filter_current_proposal_checkbox.setChecked(True)
     display.filter_current_esaf_checkbox.setChecked(True)
-    display.update_bss_metadata({
-        "proposal_id": "12345",
-        "esaf_id": "56789",
-    })
+    display.update_bss_metadata(
+        {
+            "proposal_id": "12345",
+            "esaf_id": "56789",
+        }
+    )
     assert display.filter_proposal_combobox.currentText() == "12345"
     assert display.filter_esaf_combobox.currentText() == "56789"
     # Now cache some BSS metadata with the "current" box unchecked
     display.filter_current_proposal_checkbox.setChecked(False)
     display.filter_current_esaf_checkbox.setChecked(False)
-    display.update_bss_metadata({
-        "proposal_id": "54321",
-        "esaf_id": "98765",
-    })
+    display.update_bss_metadata(
+        {
+            "proposal_id": "54321",
+            "esaf_id": "98765",
+        }
+    )
     assert display.filter_proposal_combobox.currentText() == "12345"  # Not updated yet
     assert display.filter_esaf_combobox.currentText() == "56789"  # Not updated yet
     # Now re-enable the "current" checkboxes and see if the widgets update

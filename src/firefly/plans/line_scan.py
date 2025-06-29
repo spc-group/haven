@@ -84,7 +84,9 @@ class LineRegionsManager(RegionsManager):
 
     async def update_devices(self, registry):
         widgetsets = [self.row_widgets(row=row) for row in self.row_numbers]
-        aws = [widgets.device_selector.update_devices(registry) for widgets in widgetsets]
+        aws = [
+            widgets.device_selector.update_devices(registry) for widgets in widgetsets
+        ]
         await asyncio.gather(*aws)
 
     @asyncSlot(Device)
@@ -136,7 +138,7 @@ class LineRegionsManager(RegionsManager):
 
 class LineScanDisplay(plan_display.PlanDisplay):
     _default_region_count = 1
-    
+
     def customize_ui(self):
         super().customize_ui()
         self.regions = LineRegionsManager(
@@ -146,7 +148,9 @@ class LineScanDisplay(plan_display.PlanDisplay):
         self.num_regions_spin_box.valueChanged.connect(self.regions.set_region_count)
         self.num_regions_spin_box.setValue(self._default_region_count)
         self.enable_all_checkbox.stateChanged.connect(self.regions.enable_all_rows)
-        self.relative_scan_checkbox.stateChanged.connect(self.regions.set_relative_position)
+        self.relative_scan_checkbox.stateChanged.connect(
+            self.regions.set_relative_position
+        )
         # Connect signals for total time updates
         self.ui.scan_pts_spin_box.valueChanged.connect(self.update_total_time)
         self.ui.detectors_list.selectionModel().selectionChanged.connect(

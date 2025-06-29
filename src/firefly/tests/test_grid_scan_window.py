@@ -97,13 +97,17 @@ async def test_plan_args(display, xspress, ion_chamber, qtbot):
     await display.regions.set_region_count(2)
     widgets = display.regions.row_widgets(row=1)
     # Set up a test motor 1
-    widgets.device_selector.current_device_name = mock.MagicMock(return_value="async_motor_1")
+    widgets.device_selector.current_device_name = mock.MagicMock(
+        return_value="async_motor_1"
+    )
     widgets.start_spin_box.setValue(1.0)
     widgets.stop_spin_box.setValue(111.0)
     widgets.num_points_spin_box.setValue(5)
     # Set up a test motor 2
     widgets = display.regions.row_widgets(row=2)
-    widgets.device_selector.current_device_name = mock.MagicMock(return_value="async_motor_2")
+    widgets.device_selector.current_device_name = mock.MagicMock(
+        return_value="async_motor_2"
+    )
     widgets.start_spin_box.setValue(2.0)
     widgets.stop_spin_box.setValue(222.0)
     widgets.num_points_spin_box.setValue(10)
@@ -231,4 +235,3 @@ async def test_update_snakes(display):
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 # -----------------------------------------------------------------------------
-

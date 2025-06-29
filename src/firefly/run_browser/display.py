@@ -3,13 +3,11 @@ import datetime as dt
 import logging
 from collections import ChainMap, Counter
 from contextlib import contextmanager
-from functools import partial, wraps
+from functools import wraps
 from typing import Mapping, Optional, Sequence
 
 import httpx
 import qtawesome as qta
-from ophyd import Device as ThreadedDevice
-from ophyd_async.core import Device
 from pydm import PyDMChannel
 from qasync import asyncSlot
 from qtpy.QtCore import QDateTime, Qt, Signal
@@ -102,9 +100,9 @@ class RunBrowserDisplay(display.FireflyDisplay):
         """Set the ESAF/proposal ID's to last known values from the BSS display."""
         md = self._bss_metadata
         if self.filter_current_proposal_checkbox.isChecked() and md.get("proposal_id"):
-            self.filter_proposal_combobox.setCurrentText(md['proposal_id'])
+            self.filter_proposal_combobox.setCurrentText(md["proposal_id"])
         if self.filter_current_esaf_checkbox.isChecked() and md.get("esaf_id"):
-            self.filter_esaf_combobox.setCurrentText(md['esaf_id'])
+            self.filter_esaf_combobox.setCurrentText(md["esaf_id"])
 
     @asyncSlot(str)
     async def fetch_datasets(self, dataset_name: str):

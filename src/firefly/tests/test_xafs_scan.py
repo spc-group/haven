@@ -2,7 +2,7 @@ from unittest import mock
 
 import pytest
 
-from firefly.plans.xafs_scan import XafsScanDisplay, Domain
+from firefly.plans.xafs_scan import Domain, XafsScanDisplay
 
 # default values for EXAFS scan
 pre_edge = [-200, -50, 5]

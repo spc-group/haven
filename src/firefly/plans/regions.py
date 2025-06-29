@@ -179,7 +179,6 @@ class RegionsManager[WidgetsType](QObject):
     # Qt signals
     regions_changed = Signal()
 
-
     # Over-ridable components
     # #######################
 

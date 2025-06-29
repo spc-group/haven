@@ -3,10 +3,10 @@ import logging
 import re
 
 import qtawesome as qta
+from qasync import asyncSlot
 from qtpy.QtCore import QDateTime, Qt, Signal
 from qtpy.QtGui import QStandardItem, QStandardItemModel
 from qtpy.QtWidgets import QAbstractItemView, QDateTimeEdit
-from qasync import asyncSlot
 
 from firefly import display
 from haven.bss import BssApi, Esaf, Proposal
@@ -133,7 +133,7 @@ class BssDisplay(display.FireflyDisplay):
         if not match:
             log.info(f"Skipping ESAF lookup for {cycle=}")
             return []
-        year, = match.groups()
+        (year,) = match.groups()
         esafs = await self.api.esafs(year=year, sector=sector)
         return esafs
 

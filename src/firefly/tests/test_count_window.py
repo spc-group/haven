@@ -48,9 +48,7 @@ def test_plan_args(display, qtbot, xspress):
         return_value=[xspress]
     )
     args, kwargs = display.plan_args()
-    assert kwargs == dict(
-        num=5, detectors=["vortex_me4"], delay=0.5, md={}
-    )
+    assert kwargs == dict(num=5, detectors=["vortex_me4"], delay=0.5, md={})
 
 
 def test_plan_metadata(display, qtbot, xspress, ion_chamber):
@@ -79,11 +77,11 @@ def test_plan_metadata(display, qtbot, xspress, ion_chamber):
         },
     )
 
+
 async def test_update_devices(display, sim_registry):
     display.detectors_list.update_devices = mock.AsyncMock()
     await display.update_devices(sim_registry)
     assert display.detectors_list.update_devices.called
-
 
 
 # -----------------------------------------------------------------------------

@@ -8,7 +8,6 @@ from typing import Any
 import xraydb
 from bluesky_queueserver_api import BPlan
 from qasync import asyncSlot
-from qtpy.QtCore import Signal
 from qtpy.QtWidgets import (
     QCheckBox,
     QDoubleSpinBox,
@@ -278,7 +277,9 @@ class XafsScanDisplay(plan_display.PlanDisplay):
             self.regions.unapply_E0(self.E0)
 
     def scan_durations(self, detector_time: float = 0) -> tuple[float, float]:
-        energy_ranges = [region.energy_range for region in self.regions if region.is_active]
+        energy_ranges = [
+            region.energy_range for region in self.regions if region.is_active
+        ]
         _, exposures = merge_ranges(*energy_ranges, sort=True)
         time_per_scan = sum(exposures)
         num_scan_repeat = self.ui.spinBox_repeat_scan_num.value()

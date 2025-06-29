@@ -7,11 +7,11 @@ from functools import partial
 import numpy as np
 from ophyd_async.core import Device
 from qasync import asyncSlot
-from qtpy.QtCore import Signal, Slot
+from qtpy.QtCore import Slot
 from qtpy.QtWidgets import QCheckBox, QDoubleSpinBox, QLabel, QSpinBox, QWidget
 
 from firefly.component_selector import ComponentSelector
-from firefly.plans import plan_display 
+from firefly.plans import plan_display
 from firefly.plans.regions import (
     RegionsManager,
     make_relative,
@@ -80,7 +80,7 @@ class GridRegionsManager[WidgetsType](RegionsManager):
         # Snake checkbox
         snake_checkbox = QCheckBox()
         snake_checkbox.setText("Snake")
-        is_first_row = (row == self.header_rows)
+        is_first_row = row == self.header_rows
         snake_checkbox.setEnabled(not is_first_row)
         # Fly checkbox # not available right now
         fly_checkbox = QCheckBox()
@@ -117,14 +117,20 @@ class GridRegionsManager[WidgetsType](RegionsManager):
 
     def num_points(self) -> int:
         """Calculate the total number of points that will be measured."""
-        active_rows = [row for row in self.row_numbers if self.row_widgets(row).active_checkbox.isChecked()]
+        active_rows = [
+            row
+            for row in self.row_numbers
+            if self.row_widgets(row).active_checkbox.isChecked()
+        ]
         widgetsets = [self.row_widgets(row) for row in active_rows]
         num_points = [widgets.num_points_spin_box.value() for widgets in widgetsets]
         return math.prod(num_points)
 
     async def update_devices(self, registry):
         widgetsets = [self.row_widgets(row=row) for row in self.row_numbers]
-        aws = [widgets.device_selector.update_devices(registry) for widgets in widgetsets]
+        aws = [
+            widgets.device_selector.update_devices(registry) for widgets in widgetsets
+        ]
         await asyncio.gather(*aws)
 
     @asyncSlot(int)
@@ -176,7 +182,9 @@ class GridScanDisplay(plan_display.PlanDisplay):
         self.num_regions_spin_box.setValue(self._default_region_count)
         self.regions.regions_changed.connect(self.update_total_time)
         self.enable_all_checkbox.stateChanged.connect(self.regions.enable_all_rows)
-        self.relative_scan_checkbox.stateChanged.connect(self.regions.set_relative_position)
+        self.relative_scan_checkbox.stateChanged.connect(
+            self.regions.set_relative_position
+        )
         # Connect scan points change to update total time
         self.ui.spinBox_repeat_scan_num.valueChanged.connect(self.update_total_time)
         self.ui.detectors_list.selectionModel().selectionChanged.connect(
