@@ -94,6 +94,18 @@ class RunBrowserDisplay(display.FireflyDisplay):
             name="change_catalog",
         )
 
+    def update_bss_metadata(self, md: Mapping[str, str]):
+        super().update_bss_metadata(md)
+        self.update_bss_widgets()
+
+    def update_bss_widgets(self):
+        """Set the ESAF/proposal ID's to last known values from the BSS display."""
+        md = self._bss_metadata
+        if self.filter_current_proposal_checkbox.isChecked() and md.get("proposal_id"):
+            self.filter_proposal_combobox.setCurrentText(md['proposal_id'])
+        if self.filter_current_esaf_checkbox.isChecked() and md.get("esaf_id"):
+            self.filter_esaf_combobox.setCurrentText(md['esaf_id'])
+
     @asyncSlot(str)
     async def fetch_datasets(self, dataset_name: str):
         """Retrieve a dataset from disk, and provide it to the slot.
@@ -227,6 +239,12 @@ class RunBrowserDisplay(display.FireflyDisplay):
         self.ui.catalog_combobox.currentTextChanged.connect(self.change_catalog)
         # Respond to filter controls getting updated
         self.ui.filters_widget.returnPressed.connect(self.refresh_runs_button.click)
+        self.filter_current_proposal_checkbox.stateChanged.connect(
+            self.update_bss_widgets,
+        )
+        self.filter_current_esaf_checkbox.stateChanged.connect(
+            self.update_bss_widgets,
+        )
         # Respond to controls for the current run
         self.ui.reload_plots_button.clicked.connect(self.update_plots)
         self.ui.stream_combobox.currentTextChanged.connect(self.update_data_keys)
@@ -249,47 +267,6 @@ class RunBrowserDisplay(display.FireflyDisplay):
         self.ui.export_button.clicked.connect(self.export_runs)
         self.export_dialog = ExportDialog(parent=self)
         self.error_dialog = QErrorMessage(parent=self)
-
-    async def update_devices(self, registry):
-        try:
-            bss_device = registry["bss"]
-        except KeyError:
-            log.warning("Could not find device 'bss', disabling 'current' filters.")
-            self.ui.filter_current_proposal_checkbox.setChecked(False),
-            self.ui.filter_current_proposal_checkbox.setEnabled(False),
-            self.ui.filter_current_esaf_checkbox.setChecked(False),
-            self.ui.filter_current_esaf_checkbox.setEnabled(False),
-        else:
-            self.setup_bss_channels(bss_device)
-        await super().update_devices(registry)
-
-    def setup_bss_channels(self, bss: Device | ThreadedDevice):
-        """Setup channels to update the proposal and ESAF ID boxes."""
-        if getattr(self, "proposal_channel", None) is not None:
-            self.proposal_channel.disconnect()
-        self.proposal_channel = PyDMChannel(
-            address=f"haven://{bss.proposal.proposal_id.name}",
-            value_slot=partial(
-                self.update_bss_filter,
-                combobox=self.ui.filter_proposal_combobox,
-                checkbox=self.ui.filter_current_proposal_checkbox,
-            ),
-        )
-        if getattr(self, "esaf_channel", None) is not None:
-            self.esaf_channel.disconnect()
-        self.esaf_channel = PyDMChannel(
-            address=f"haven://{bss.esaf.esaf_id.name}",
-            value_slot=partial(
-                self.update_bss_filter,
-                combobox=self.ui.filter_esaf_combobox,
-                checkbox=self.ui.filter_current_esaf_checkbox,
-            ),
-        )
-
-    def update_bss_filter(self, text: str, *, combobox, checkbox):
-        """If *checkbox* is checked, update *combobox* with new *text*."""
-        if checkbox.checkState():
-            combobox.setCurrentText(text)
 
     def auto_range(self):
         self.plot_1d_view.autoRange()

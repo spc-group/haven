@@ -141,6 +141,32 @@ def test_busy_hints_multiple(display):
     assert display.ui.detail_tabwidget.isEnabled()
 
 
+async def test_auto_bss_filters(display):
+    # First set the BSS metadata when the "current" box is checked
+    display.filter_current_proposal_checkbox.setChecked(True)
+    display.filter_current_esaf_checkbox.setChecked(True)
+    display.update_bss_metadata({
+        "proposal_id": "12345",
+        "esaf_id": "56789",
+    })
+    assert display.filter_proposal_combobox.currentText() == "12345"
+    assert display.filter_esaf_combobox.currentText() == "56789"
+    # Now cache some BSS metadata with the "current" box unchecked
+    display.filter_current_proposal_checkbox.setChecked(False)
+    display.filter_current_esaf_checkbox.setChecked(False)
+    display.update_bss_metadata({
+        "proposal_id": "54321",
+        "esaf_id": "98765",
+    })
+    assert display.filter_proposal_combobox.currentText() == "12345"  # Not updated yet
+    assert display.filter_esaf_combobox.currentText() == "56789"  # Not updated yet
+    # Now re-enable the "current" checkboxes and see if the widgets update
+    display.filter_current_proposal_checkbox.setChecked(True)
+    display.filter_current_esaf_checkbox.setChecked(True)
+    assert display.filter_proposal_combobox.currentText() == "54321"
+    assert display.filter_esaf_combobox.currentText() == "98765"
+
+
 async def test_update_combobox_items(display):
     """Check that the comboboxes get the distinct filter fields."""
     # Some of these have filters are disabled because they are slow
@@ -233,36 +259,11 @@ def test_time_filters(display):
     assert "before" in filters
 
 
-def test_bss_channels(display, bss):
-    """Do the widgets get updated based on the BSS proposal ID, etc."""
-    display.setup_bss_channels(bss)
-    assert (
-        display.proposal_channel.address == f"haven://{bss.proposal.proposal_id.name}"
-    )
-    assert display.esaf_channel.address == f"haven://{bss.esaf.esaf_id.name}"
-
-
 async def test_update_data_frames(display, qtbot):
     display.ui.stream_combobox.addItem("primary")
     display.ui.stream_combobox.setCurrentText("primary")
     with qtbot.waitSignal(display.data_frames_changed):
         await display.update_data_frames()
-
-
-def test_update_bss_filters(display):
-    checkbox = display.ui.filter_current_proposal_checkbox
-    combobox = display.ui.filter_proposal_combobox
-    update_slot = partial(
-        display.update_bss_filter, combobox=combobox, checkbox=checkbox
-    )
-    # Enable the "current" checkbox, and make sure the combobox updates
-    checkbox.setChecked(True)
-    update_slot("89321")
-    assert combobox.currentText() == "89321"
-    # Disable the "current" checkbox, and make sure the combobox doesn't update
-    checkbox.setChecked(False)
-    update_slot("99531")
-    assert combobox.currentText() == "89321"
 
 
 def test_catalog_choices(display):

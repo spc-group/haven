@@ -14,7 +14,7 @@ from haven.bss import Esaf, Proposal, User
 
 @pytest.fixture()
 def bss_api(mocker):
-    api = mocker.MagicMock()
+    api = mocker.AsyncMock()
     api.esafs.return_value = [
         Esaf(
             esaf_id="5555555",
@@ -81,6 +81,8 @@ def bss_api(mocker):
 def display(qtbot, bss_api):
     display = BssDisplay(api=bss_api)
     qtbot.addWidget(display)
+    display.cycle_lineedit.setText("2025-1")
+    display.beamline_lineedit.setText("255-ID-Z")
     return display
 
 
@@ -98,7 +100,7 @@ async def test_bss_proposal_model(display, bss_api):
 
 async def test_bss_proposal_updating(display, qtbot):
     await display.load_models()
-    # Set some base-line values on the IOC
+    # Set some base-line values for hitting the API
     display.ui.proposal_id_lineedit.setText("")
     # Change the proposal item
     item = display.proposal_model.item(0, 1)
@@ -148,7 +150,7 @@ async def test_bss_esaf_model(display, bss_api):
     await display.load_models()
     # Check model construction
     assert isinstance(display.esaf_model, QStandardItemModel)
-    bss_api.esafs.assert_called_once_with(cycle="3024-1", beamline="255-ID-Z")
+    bss_api.esafs.assert_called_once_with(year="3024", sector="255")
     assert display.esaf_model.rowCount() == 1
     # Check that the view has the model attached
     assert display.ui.esaf_view.model() is display.esaf_model

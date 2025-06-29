@@ -141,6 +141,7 @@ class BssDisplay(display.FireflyDisplay):
     async def load_models(self):
         # Load data
         proposals, esafs = await asyncio.gather(self.proposals(), self.esafs())
+        print(proposals)
         # Create proposal model object
         col_names = self._proposal_col_names
         self.proposal_model = QStandardItemModel()
