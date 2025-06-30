@@ -11,6 +11,7 @@ from httpx import HTTPStatusError
 import pandas as pd
 from tiled import queries
 from tiled.client.container import Container
+from tiled.profiles import get_default_profile_name, load_profiles
 from tqdm.asyncio import tqdm
 from tabulate import tabulate
 
@@ -24,6 +25,18 @@ extensions = {
 
 
 log = logging.getLogger("haven")
+
+
+def load_catalog(tiled_profile: str, catalog: str):
+    profiles = load_profiles()
+    try:
+        filepath, profile_content = profiles[tiled_profile]
+    except KeyError as err:
+        raise ProfileNotFound(
+            f"Profile {name!r} not found. Found profiles {list(profiles)} "
+            f"from directories {paths}."
+        ) from err
+    return Catalog(catalog, uri=profile_content['uri'])    
 
 
 async def export_run(
@@ -187,6 +200,7 @@ async def export_runs(
 
 
 def main():
+    default_profile = get_default_profile_name()
     parser = argparse.ArgumentParser(
         prog="export-runs",
         description="Export runs from the database as files on disk",
@@ -199,6 +213,12 @@ def main():
     )
     parser.add_argument(
         "-q", "--quiet", help="Verbose output", action="store_true"
+    )
+    parser.add_argument(
+        "-p", "--tiled-profile", help="Profile for the Tiled client, or else the default profile will be used. See https://blueskyproject.io/tiled/how-to/profiles.html", type=str, default=default_profile,
+    )
+    parser.add_argument(
+        "-c", "--catalog", help="Catalog name in the Tiled server. Default: scans", default="scans", type=str
     )
     # Arguments for filtering runs
     parser.add_argument("--failed", help="Also include scans that did not complete.", action="store_true")
@@ -241,7 +261,7 @@ def main():
     if not args.quiet:
         logging.basicConfig(level=log_level)
     # Get the list of runs we need
-    catalog = Catalog("scans", uri="http://fedorov.xray.aps.anl.gov:8020")
+    catalog = load_catalog(catalog=args.catalog, tiled_profile=args.tiled_profile)
     exit_status = None if args.failed else "success"
     qs = build_queries(
         before=args.before, after=args.after, esaf=args.esaf, proposal=args.proposal,
