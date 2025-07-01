@@ -1,8 +1,8 @@
-from haven.devices import FixedBounceMonochromator
+from haven.devices import ChannelCutMonochromator
 
 
 async def test_signals():
-    mono = FixedBounceMonochromator(prefix="25idcVME:Si220:", name="secondary_mono")
+    mono = ChannelCutMonochromator(prefix="25idcVME:Si220:", name="secondary_mono")
     await mono.connect(mock=True)
     reading = await mono.read()
     # Check the reading signals

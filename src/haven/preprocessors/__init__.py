@@ -5,3 +5,4 @@ from .shutter_suspender import (  # noqa: F401
     shutter_suspend_decorator,
     shutter_suspend_wrapper,
 )
+from .secondary_mono_tracking import secondary_mono_tracking_wrapper  # noqa: F401

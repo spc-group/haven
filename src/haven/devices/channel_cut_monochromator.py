@@ -20,16 +20,24 @@ class ChannelCutMonochromator(StandardReadable):
             self.energy = Motor(f"{prefix}energy")
             self.beam_offset = epics_signal_r(float, f"{prefix}offset")
         with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
-            self.d_spacing = epics_signal_rw(
-                float, read_pv=f"{prefix}energyC1", write_pv=f"{prefix}dspacing"
+            self.d_spacing = epics_signal_r(
+                float,
+                read_pv=f"{prefix}energyC1",
+                # write_pv=f"{prefix}dspacing"
             )
-            self.gap = epics_signal_rw(
-                float, read_pv=f"{prefix}energyC4", write_pv=f"{prefix}gap"
+            self.gap = epics_signal_r(
+                float,
+                read_pv=f"{prefix}energyC4",
+                # write_pv=f"{prefix}gap",
             )
             self.bragg_direction = epics_signal_rw(
-                float, read_pv=f"{prefix}energyC2", write_pv=f"{prefix}bragg_dir"
+                float,
+                read_pv=f"{prefix}energyC2",
+                # write_pv=f"{prefix}bragg_dir",
             )
             self.bragg_offset = epics_signal_rw(
-                float, read_pv=f"{prefix}energyC3", write_pv=f"{prefix}bragg_offset"
+                float,
+                read_pv=f"{prefix}energyC3",
+                write_pv=f"{prefix}bragg_offset",
             )
         super().__init__(name=name, *args, **kwargs)
