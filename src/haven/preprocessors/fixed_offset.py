@@ -30,22 +30,30 @@ def beam_offset(bragg: float, gap: float):
     return 2 * gap * math.cos(bragg)
 
 
-def secondary_mono_tracking_wrapper(
+def fixed_offset_wrapper(
     plan: Iterator,
-    secondary_mono: Monochromator,
     primary_mono: FixedOffsetMonochromator,
+    secondary_mono: Monochromator,
 ):
-    """A preprocessor that causes the primary mono to track the position of the secondary mono.
+    """A preprocessor that keeps the beam at a constant offset between two
+    monochromators.
 
     Parameters
     ----------
-    plan : iterable or iterator
+    plan
         a generator, list, or similar containing `Msg` objects
+    primary_mono
+      The mono that will adjust its offset to account for the offset
+      caused by *secondary_mono*
+    secondary_mono
+      The mono that will cause a variable offset to the beam.
+
 
     Yields
     ------
     msg : Msg
-        messages from plan, with 'set' messages inserted
+        Messages from *plan*, with messages inserted to control the mono
+        coupling.
 
     """
 
@@ -74,5 +82,4 @@ def secondary_mono_tracking_wrapper(
             return (head(msg), None)
         # Not a message we care about, just let it pass
         return (None, None)
-
     return (yield from plan_mutator(plan, insert_primary_move))

@@ -5,8 +5,8 @@ from bluesky import Msg
 from bluesky.utils import ensure_generator
 
 from haven.devices import AxilonMonochromator, ChannelCutMonochromator
-from haven.preprocessors import secondary_mono_tracking_wrapper
-from haven.preprocessors.secondary_mono_tracking import beam_offset
+from haven.preprocessors import fixed_offset_wrapper
+from haven.preprocessors.fixed_offset import beam_offset
 
 
 @pytest.fixture()
@@ -37,7 +37,7 @@ def test_bragg_tracking(primary_mono, secondary_mono):
             Msg("wait", group="set-43367a", run=None),
         ]
     )
-    wrapped = secondary_mono_tracking_wrapper(input_plan, secondary_mono, primary_mono)
+    wrapped = fixed_offset_wrapper(input_plan, primary_mono, secondary_mono)
     next(wrapped)
     primary_beam_offset = 10_000.0
     secondary_beam_offset = 7503.055409
