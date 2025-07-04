@@ -5,3 +5,4 @@ from .shutter_suspender import (  # noqa: F401
     shutter_suspend_decorator,
     shutter_suspend_wrapper,
 )
+from .fixed_offset import fixed_offset_wrapper  # noqa: F401
