@@ -9,14 +9,16 @@ from haven.devices.asymmotron import (
     Analyzer,
     EnergyTransform,
     Motor,
-    bragg_to_energy,
-    bragg_to_wavelength,
     device_units,
-    energy_to_wavelength,
-    ureg,
+ )
+from haven.units import (
     wavelength_to_bragg,
     wavelength_to_energy,
-)
+    energy_to_wavelength,
+    bragg_to_energy,
+    bragg_to_wavelength,
+    ureg,
+)    
 
 energy_to_wavelength_values = [
     # (eV,      meters)
