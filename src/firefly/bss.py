@@ -9,6 +9,7 @@ from qtpy.QtGui import QStandardItem, QStandardItemModel
 from qtpy.QtWidgets import QAbstractItemView, QDateTimeEdit
 
 from firefly import display
+from haven import load_config
 from haven.bss import BssApi, Esaf, Proposal
 
 log = logging.getLogger(__name__)
@@ -51,6 +52,7 @@ class BssDisplay(display.FireflyDisplay):
         self.load_bss_button.clicked.connect(self.load_models)
         self.beamline_lineedit.returnPressed.connect(self.load_models)
         self.cycle_lineedit.returnPressed.connect(self.load_models)
+        self.load_bss_button.setIcon(qta.icon('fa6s.table-list'))
         # Want tables to select the whole row
         self.ui.proposal_view.setSelectionMode(QAbstractItemView.SingleSelection)
         self.ui.proposal_view.setSelectionBehavior(QAbstractItemView.SelectRows)
@@ -71,6 +73,10 @@ class BssDisplay(display.FireflyDisplay):
         self.ui.proposal_users_lineedit.textChanged.connect(self.check_metadata)
         self.ui.proposal_mailin_checkbox.stateChanged.connect(self.check_metadata)
         self.ui.proposal_proprietary_checkbox.stateChanged.connect(self.check_metadata)
+        # Set defaults in widgets
+        bss_config = load_config()["bss"]
+        self.beamline_lineedit.setText(bss_config.get("beamline", ""))
+        self.cycle_lineedit.setText(bss_config.get("cycle", ""))
 
     def check_metadata(self):
         """Emit the latest metadata from display widgets.

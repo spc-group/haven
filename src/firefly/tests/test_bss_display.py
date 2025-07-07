@@ -81,9 +81,15 @@ def bss_api(mocker):
 def display(qtbot, bss_api):
     display = BssDisplay(api=bss_api)
     qtbot.addWidget(display)
-    display.cycle_lineedit.setText("2025-1")
-    display.beamline_lineedit.setText("255-ID-Z")
+    # display.cycle_lineedit.setText("2025-1")
+    # display.beamline_lineedit.setText("255-ID-Z")
     return display
+
+
+async def test_beamline_cycle_defaults(display):
+    # These values are set by the iconfig_testing.toml file
+    assert display.beamline_lineedit.text() == "255-ID-Z"
+    assert display.cycle_lineedit.text() == "2025-1"
 
 
 async def test_bss_proposal_model(display, bss_api):

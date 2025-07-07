@@ -12,8 +12,8 @@ xray_source = "2.8 mm planar undulator"
 
 [bss]
 uri = "https://localhost:12345"
-beamline = "255-ID-F"
-# cycle = "2025-1"
+beamline = "255-ID-Z"
+cycle = "2025-1"
 
 
 ##############

@@ -23,6 +23,13 @@
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout_7">
      <item>
+      <widget class="QPushButton" name="load_bss_button">
+       <property name="text">
+        <string>Load</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QLabel" name="label_24">
        <property name="text">
         <string>Beamline:</string>
@@ -47,13 +54,6 @@
       <widget class="QLineEdit" name="cycle_lineedit">
        <property name="placeholderText">
         <string>E.g. 2025-1</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="load_bss_button">
-       <property name="text">
-        <string>PushButton</string>
        </property>
       </widget>
      </item>
