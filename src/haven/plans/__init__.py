@@ -9,6 +9,7 @@ import bluesky.plans as bp
 from haven.instrument import beamline
 from haven.preprocessors import (
     baseline_decorator,
+    inject_metadata_decorator,
     open_shutters_decorator,
     shutter_suspend_decorator,
 )
@@ -45,6 +46,7 @@ all_decorators = chain(
     # shutter_suspend_decorator(),
     open_shutters_decorator(),
     baseline_decorator(),
+    inject_metadata_decorator(),
 )
 
 # Apply decorators to Haven plans

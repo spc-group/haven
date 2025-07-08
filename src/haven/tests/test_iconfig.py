@@ -8,7 +8,7 @@ from haven._iconfig import load_config, print_config_value
 
 def test_default_values():
     config = load_config()
-    assert "beamline" in config.keys()
+    assert "metadata" in config.keys()
 
 
 def test_loading_a_file():
@@ -48,10 +48,10 @@ def test_merging_dicts():
 
 def test_haven_config_cli(capsys):
     """Test the function used as a CLI way to get config values."""
-    print_config_value(["xray_source.prefix"])
+    print_config_value(["metadata.xray_source"])
     # Check stdout for config value
     captured = capsys.readouterr()
-    assert captured.out == "ID255ds:\n"
+    assert captured.out == "2.8\u202fmm planar undulator\n"
 
 
 # -----------------------------------------------------------------------------

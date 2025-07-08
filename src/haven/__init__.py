@@ -31,6 +31,7 @@ from . import plans  # noqa: F401
 from ._iconfig import load_config  # noqa: F401
 
 #  Top-level imports
+from .bss import BssApi  # noqa: F401
 from .catalog import tiled_client  # noqa: F401
 from .constants import edge_energy  # noqa: F401
 from .energy_ranges import (  # noqa: F401

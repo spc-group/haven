@@ -1,5 +1,8 @@
 from .baseline import baseline_decorator, baseline_wrapper  # noqa: F401
-from .inject_metadata import inject_haven_md_wrapper  # noqa: F401
+from .inject_metadata import (  # noqa: F401
+    inject_metadata_decorator,
+    inject_metadata_wrapper,
+)
 from .open_shutters import open_shutters_decorator, open_shutters_wrapper  # noqa: F401
 from .shutter_suspender import (  # noqa: F401
     shutter_suspend_decorator,

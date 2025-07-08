@@ -37,7 +37,7 @@ async def display(qtbot, motor, sim_registry, robot):
     await display.update_devices(sim_registry)
     display.ui.run_button.setEnabled(True)
     display.ui.num_regions_spin_box.setValue(1)
-    await display.update_regions(1)
+    await display.regions.set_region_count(1)
     return display
 
 
@@ -47,15 +47,16 @@ def test_sample_numbers(display):
 
 
 @pytest.mark.asyncio
-async def test_robot_queued(qtbot, motor, display, sim_registry):
+async def test_plan_args(qtbot, motor, display, sim_registry):
     await display.update_devices(sim_registry)
     display.ui.run_button.setEnabled(True)
     display.ui.num_regions_spin_box.setValue(1)
-    await display.update_regions(1)
+    await display.regions.set_region_count(1)
 
     # set up a test motor
-    display.regions[0].motor_box.combo_box.setCurrentText("motor1")
-    display.regions[0].position_spin_box.setValue(100)
+    widgets = display.regions.row_widgets(1)
+    widgets.device_selector.combo_box.setCurrentText("motor1")
+    widgets.position_spin_box.setValue(100)
     # Check arguments that will be given to the plan
     args, kwargs = display.plan_args()
     assert args == ("robotA", 8, "motor1", 100)
@@ -64,19 +65,17 @@ async def test_robot_queued(qtbot, motor, display, sim_registry):
 
 async def test_full_motor_parameters(display, motor):
     set_mock_value(motor.user_readback, 420)
-    region = display.regions[0]
-    await region.update_device_parameters(motor)
-    spin_box = region.position_spin_box
+    await display.regions.update_device_parameters(motor, row=1)
+    spin_box = display.regions.row_widgets(1).position_spin_box
     assert spin_box.minimum() == -32000
     assert spin_box.maximum() == 32000
     assert spin_box.decimals() == 5
-    assert spin_box.suffix() == " °"
+    assert spin_box.suffix() == "\u202f°"
     assert spin_box.value() == 420
 
 
 async def test_nonnumeric_motor_parameters(display, motor):
-    region = display.regions[0]
-    spin_box = region.position_spin_box
+    spin_box = display.regions.row_widgets(1).position_spin_box
     description = {
         motor.name: {
             "dtype": "string",
@@ -86,5 +85,5 @@ async def test_nonnumeric_motor_parameters(display, motor):
         }
     }
     motor.describe = mock.AsyncMock(return_value=description)
-    await region.update_device_parameters(motor)
+    await display.regions.update_device_parameters(motor, row=1)
     assert not spin_box.isEnabled()

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>662</width>
-    <height>285</height>
+    <width>582</width>
+    <height>301</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -456,40 +456,22 @@
            <number>6</number>
           </property>
           <item>
-           <widget class="PyDMLabel" name="proposal_id_label">
-            <property name="toolTip">
-             <string/>
-            </property>
-            <property name="text">
-             <string>746328</string>
-            </property>
-            <property name="channel" stdset="0">
-             <string>haven://beamline_manager.bss.proposal.proposal_id</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="PyDMLabel" name="proposal_title_label">
+           <widget class="QLabel" name="proposal_id_label">
             <property name="sizePolicy">
-             <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+             <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
               <horstretch>0</horstretch>
               <verstretch>0</verstretch>
              </sizepolicy>
             </property>
-            <property name="toolTip">
-             <string/>
-            </property>
             <property name="text">
-             <string>Saving the world from everything</string>
+             <string>#######</string>
             </property>
-            <property name="wordWrap">
-             <bool>true</bool>
-            </property>
-            <property name="channel" stdset="0">
-             <string>haven://beamline_manager.bss.proposal.title</string>
-            </property>
-            <property name="displayFormat" stdset="0">
-             <enum>PyDMLabel::String</enum>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="proposal_title_label">
+            <property name="text">
+             <string>&lt;Unset&gt;</string>
             </property>
            </widget>
           </item>
@@ -508,85 +490,66 @@
            <number>6</number>
           </property>
           <item>
-           <widget class="PyDMLabel" name="esaf_id_label">
-            <property name="toolTip">
-             <string/>
-            </property>
-            <property name="text">
-             <string>5564987</string>
-            </property>
-            <property name="channel" stdset="0">
-             <string>haven://beamline_manager.bss.esaf.esaf_id</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="PyDMLabel" name="esaf_title_label">
+           <widget class="QLabel" name="esaf_id_label">
             <property name="sizePolicy">
-             <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+             <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
               <horstretch>0</horstretch>
               <verstretch>0</verstretch>
              </sizepolicy>
             </property>
-            <property name="toolTip">
-             <string/>
-            </property>
             <property name="text">
-             <string>Testing the wetness of water</string>
+             <string>#######</string>
             </property>
-            <property name="wordWrap">
-             <bool>true</bool>
-            </property>
-            <property name="channel" stdset="0">
-             <string>haven://beamline_manager.bss.esaf.title</string>
-            </property>
-            <property name="displayFormat" stdset="0">
-             <enum>PyDMLabel::String</enum>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="esaf_title_label">
+            <property name="text">
+             <string>&lt;Unset&gt;</string>
             </property>
            </widget>
           </item>
          </layout>
         </item>
-        <item row="2" column="0">
+        <item row="3" column="0">
          <widget class="QLabel" name="label_3">
           <property name="text">
            <string>End Date:</string>
           </property>
          </widget>
         </item>
-        <item row="3" column="1">
-         <widget class="PyDMLabel" name="esaf_users_label">
-          <property name="toolTip">
-           <string/>
-          </property>
-          <property name="text">
-           <string>Franklin, Watson, Crick</string>
-          </property>
-          <property name="channel" stdset="0">
-           <string>haven://beamline_manager.bss.esaf.user_last_names</string>
-          </property>
-          <property name="displayFormat" stdset="0">
-           <enum>PyDMLabel::String</enum>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="0">
+        <item row="4" column="0">
          <widget class="QLabel" name="label_4">
           <property name="text">
            <string>Users:</string>
           </property>
          </widget>
         </item>
-        <item row="2" column="1">
-         <widget class="PyDMLabel" name="esaf_end_date_label">
-          <property name="toolTip">
-           <string/>
-          </property>
+        <item row="3" column="1">
+         <widget class="QLabel" name="esaf_end_date_label">
           <property name="text">
-           <string>1901-01-01 8:00:00</string>
+           <string>&lt;Unset&gt;</string>
           </property>
-          <property name="channel" stdset="0">
-           <string>haven://beamline_manager.bss.esaf.end_date</string>
+         </widget>
+        </item>
+        <item row="4" column="1">
+         <widget class="QLabel" name="esaf_users_label">
+          <property name="text">
+           <string>&lt;Unset&gt;</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="0">
+         <widget class="QLabel" name="label_5">
+          <property name="text">
+           <string>Status:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="1">
+         <widget class="QLabel" name="esaf_status_label">
+          <property name="text">
+           <string>&lt;Unset&gt;</string>
           </property>
          </widget>
         </item>
