@@ -1,5 +1,7 @@
 import logging
 import re  # noqa: F401
+from functools import partial
+import warnings
 
 import databroker  # noqa: F401
 from bluesky.plan_stubs import abs_set  # noqa: F401
@@ -7,6 +9,7 @@ from bluesky.plan_stubs import mv as _mv  # noqa: F401
 from bluesky.plan_stubs import mvr, null, pause, rel_set, sleep, stop  # noqa: F401
 from bluesky.run_engine import call_in_bluesky_event_loop
 from ophyd_async.core import NotConnected
+from ophydregistry import ComponentNotFound
 
 # Import plans
 from haven import beamline, recall_motor_position, sanitize_name  # noqa: F401
@@ -26,6 +29,7 @@ from haven.plans import (  # noqa: F401
     set_energy,
     xafs_scan,
 )
+from haven.preprocessors import fixed_offset_wrapper
 from haven.run_engine import run_engine  # noqa: F401
 
 log = logging.getLogger(__name__)
@@ -51,6 +55,19 @@ for cpt in beamline.devices.all_devices:
     name = sanitize_name(cpt.name)
     # Add the device as a variable in module's globals
     globals().setdefault(name, cpt)
+
+
+try:
+    wrapper = partial(
+        fixed_offset_wrapper,
+        primary_mono=beamline.devices['monochromator'],
+        secondary_mono=beamline.devices['secondary_mono'],
+    )
+except ComponentNotFound as exc:
+    log.warnings(f"Could not couple mono offsets: {exc}")
+    warnings.warn(f"Could not couple mono offsets: {exc}")
+else:
+    RE.preprocessors.append(wrapper)
 
 
 # Workaround for https://github.com/bluesky/bluesky-queueserver/issues/310
