@@ -3,7 +3,7 @@ from typing import Any, Generator
 from bluesky import Msg
 from pint import UnitRegistry
 
-from haven.typing import Calibratable
+from haven.protocols import Calibratable
 
 ureg = UnitRegistry()
 

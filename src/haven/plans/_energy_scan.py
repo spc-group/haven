@@ -7,10 +7,10 @@ from bluesky import plan_stubs as bps
 from bluesky import plans as bp
 from typing_extensions import NotRequired, TypedDict
 
-from ..constants import edge_energy
-from ..instrument import beamline
-from ..preprocessors import baseline_decorator
-from ..typing import DetectorList
+from haven.constants import edge_energy
+from haven.instrument import beamline
+from haven.preprocessors import baseline_decorator
+from haven.protocols import DetectorList
 
 __all__ = ["energy_scan"]
 

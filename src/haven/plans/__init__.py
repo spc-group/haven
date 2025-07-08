@@ -13,6 +13,7 @@ from haven.preprocessors import (
     shutter_suspend_decorator,
 )
 
+from ._align_monochromators import align_monochromators  # noqa: F401
 from ._align_motor import align_motor
 from ._auto_gain import auto_gain
 from ._calibrate import calibrate  # noqa: F401

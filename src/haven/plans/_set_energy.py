@@ -3,8 +3,8 @@ from typing import Literal, Sequence
 from bluesky import plan_stubs as bps
 from bluesky.protocols import Movable
 
-from ..instrument import beamline
-from ..typing import DetectorList
+from haven.instrument import beamline
+from haven.protocols import DetectorList
 
 __all__ = ["set_energy"]
 
@@ -67,30 +67,34 @@ def set_energy(
 
     """
     if undulators:
-        undulators = beamline.devices.findall(undulators, allow_none=True)
+        _undulators = beamline.devices.findall(undulators, allow_none=True)
+    else:
+        _undulators = []
     if monochromators:
-        monochromators = beamline.devices.findall(monochromators, allow_none=True)
+        _monochromators = beamline.devices.findall(monochromators, allow_none=True)
+    else:
+        _monochromators = []
     # Prepare arguments for undulator harmonics and offsets
     mv_args: list[Movable | int | float] = []
     if harmonic == "auto":
         harmonic = auto_harmonic(energy)
     if harmonic is not None:
-        harmonic_signals = [undulator.harmonic_value for undulator in undulators]
+        harmonic_signals = [undulator.harmonic_value for undulator in _undulators]
         mv_args.extend(arg for signal in harmonic_signals for arg in (signal, harmonic))
     if undulator_offset == "auto":
-        offsets = [undulator.auto_offset(energy) for undulator in undulators]
+        offsets = [undulator.auto_offset(energy) for undulator in _undulators]
     elif undulator_offset is not None:
-        offsets = [undulator_offset for undulator in undulators]
+        offsets = [undulator_offset for undulator in _undulators]
     else:
         offsets = []
     # Move the undulator harmonics/offsets before setting energy
-    for offset, undulator in zip(offsets, undulators):
+    for offset, undulator in zip(offsets, _undulators):
         if offset is not None:
             mv_args.extend((undulator.energy.offset, offset))
     if len(mv_args) > 0:
         yield from bps.mv(*mv_args)
     # Prepare arguments for moving energy
-    energy_devices = [device.energy for device in [*undulators, *monochromators]]
+    energy_devices = [device.energy for device in [*_undulators, *_monochromators]]
     args = [arg for device in energy_devices for arg in (device, energy)]
     # Execute the plan
     yield from bps.mv(*args)

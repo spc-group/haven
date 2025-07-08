@@ -39,9 +39,9 @@ VERSIONS = dict(
 def inject_haven_md_wrapper(plan):
     """Inject additional metadata into a run.
 
-    This takes precedences over the original metadata dict in the event of
-    overlapping keys, but it does not mutate the original metadata dict.
-    (It uses ChainMap.)
+    This takes precedence over the original metadata dict in the event
+    of overlapping keys, but it does not mutate the original metadata
+    dict.
 
     Parameters
     ----------
