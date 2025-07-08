@@ -1,5 +1,3 @@
-import math
-
 import pytest
 from bluesky import Msg
 from bluesky.utils import ensure_generator
@@ -19,7 +17,9 @@ async def primary_mono():
 
 @pytest.fixture()
 async def secondary_mono():
-    mono = ChannelCutMonochromator(prefix="", name="secondary_mono")
+    mono = ChannelCutMonochromator(
+        prefix="", name="secondary_mono", vertical_motor="255idzVME:m1"
+    )
     await mono.connect(mock=True)
     return mono
 
@@ -61,7 +61,7 @@ def test_energy_tracking(primary_mono, secondary_mono):
     #
     # F = 12398.42
     # B = 1.92
-    # 
+    #
     # F/2/B/sin((A+D)/R2S)
     energy = 10057.9
     input_plan = ensure_generator(

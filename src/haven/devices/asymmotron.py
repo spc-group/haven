@@ -34,21 +34,20 @@ from ophyd_async.core import (
     soft_signal_r_and_setter,
     soft_signal_rw,
 )
-from ophyd_async.epics.motor import Motor
-from pydantic import ConfigDict
 from pint import Quantity
+from pydantic import ConfigDict
 
-from ..positioner import Positioner
-from .motor import Motor
-from haven.units import c, h, ureg, energy_to_wavelength, bragg_to_energy, energy_to_bragg
+from haven.devices.motor import Motor
+from haven.positioner import Positioner
+from haven.units import (
+    bragg_to_energy,
+    energy_to_bragg,
+    ureg,
+)
 
 __all__ = ["Analyzer", "HKL"]
 
 log = logging.getLogger(__name__)
-
-
-
-
 
 
 async def device_units(device: SignalR | StandardReadable):
@@ -69,8 +68,6 @@ async def device_units(device: SignalR | StandardReadable):
 
 def units(quantity: Quantity) -> str:
     return str(quantity.to_reduced_units())
-
-
 
 
 def hkl_to_alpha(base, reflection) -> Quantity:

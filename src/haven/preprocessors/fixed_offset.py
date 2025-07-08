@@ -10,8 +10,6 @@ from haven.protocols import FixedOffsetMonochromator, Monochromator
 from haven.units import energy_to_bragg, ureg
 
 
-
-
 def beam_offset(bragg: Quantity, gap: Quantity) -> Quantity:
     """Calculate the offset in the beam height applied by a channel cut
     mono.
@@ -71,12 +69,9 @@ def fixed_offset_wrapper(
             # Calculate bragg angle from energy, if necessary
             if bragg is None:
                 bragg = energy_to_bragg(energy, d=d_spacing)
-                print(bragg.to(ureg.arcseconds))
             # Calculate the new primary offset
-            print(bragg, bragg_offset, gap)
             new_secondary_offset = beam_offset(bragg + bragg_offset, gap=gap)
             new_primary_offset = total_offset - new_secondary_offset
-            print(new_secondary_offset, new_primary_offset)
             yield Msg(
                 "set",
                 primary_mono.beam_offset,
@@ -94,4 +89,5 @@ def fixed_offset_wrapper(
             return (head(msg, energy=msg.args[0] * ureg.electron_volt), None)
         # Not a message we care about, so just let it pass
         return (None, None)
+
     return (yield from plan_mutator(plan, insert_primary_move))

@@ -2,7 +2,9 @@ from haven.devices import ChannelCutMonochromator
 
 
 async def test_signals():
-    mono = ChannelCutMonochromator(prefix="25idcVME:Si220:", name="secondary_mono")
+    mono = ChannelCutMonochromator(
+        prefix="25idcVME:Si220:", name="secondary_mono", vertical_motor="255idzVME:m1"
+    )
     await mono.connect(mock=True)
     reading = await mono.read()
     # Check the reading signals
@@ -33,4 +35,10 @@ async def test_signals():
         "secondary_mono-energy-offset",
         "secondary_mono-energy-offset_dir",
         "secondary_mono-energy-velocity",
+        "secondary_mono-vertical",
+        "secondary_mono-vertical-description",
+        "secondary_mono-vertical-motor_egu",
+        "secondary_mono-vertical-offset",
+        "secondary_mono-vertical-offset_dir",
+        "secondary_mono-vertical-velocity",
     }

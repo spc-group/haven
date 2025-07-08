@@ -1,6 +1,6 @@
 import numpy as np
-from scipy import constants
 from pint import Quantity, UnitRegistry
+from scipy import constants
 
 ureg = UnitRegistry()
 

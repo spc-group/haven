@@ -130,10 +130,11 @@ files = [
     'src/haven/devices/motor.py', "src/haven/tests/test_motor.py",
     'src/haven/devices/undulator.py', "src/haven/tests/test_undulator.py",
     'src/haven/devices/vacuum.py', 'src/haven/tests/test_vacuum_devices.py',
+    'src/haven/plans/_align_monochromators.py', 'src/haven/tests/test_align_monochromators.py',
     'src/haven/plans/_calibrate.py', 'src/haven/tests/test_calibrate_plan.py',
     'src/haven/plans/_set_energy.py', 'src/haven/tests/test_set_energy.py',
     'src/haven/plans/_xafs_scan.py', 'src/haven/plans/_energy_scan.py', 'src/haven/tests/test_energy_xafs_scan.py',
-    'src/haven/preprocessors/secondary_mono_tracking.py', 'src/haven/tests/test_secondary_mono_tracking.py',
+    'src/haven/preprocessors/fixed_offset.py', 'src/haven/tests/test_fixed_offset.py',
     'src/haven/positioner.py', "src/haven/tests/test_positioner.py",
     'src/haven/protocols.py',
 ]
