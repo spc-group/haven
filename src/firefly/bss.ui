@@ -351,7 +351,7 @@
         <item row="2" column="1">
          <widget class="QLineEdit" name="esaf_title_lineedit">
           <property name="placeholderText">
-           <string>E.g. Adamantium oxidation in accelerated regenration biological systems.</string>
+           <string>E.g. Adamantium oxidation in accelerated regeneration biological systems.</string>
           </property>
          </widget>
         </item>

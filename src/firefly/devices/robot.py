@@ -38,11 +38,6 @@ class RobotDisplay(PlanDisplay):
             self.ui.sample_combo_box.addItem(str(sam))
 
     def plan_args(self) -> tuple[tuple, dict]:
-        # Get parameters from each row of line regions
-        kwargs = {}
-        return (), kwargs
-
-    def plan_args(self):
         # Get the sample number from the sample_spin_box
         sam_num_str = self.ui.sample_combo_box.currentText()
         # Convert sam_num_str to an integer if it's a string representation of a number

@@ -289,7 +289,8 @@ class RegionsManager[WidgetsType](QObject):
     def enable_all_rows(self, enabled: bool):
         """Enable/disable all rows in the layout."""
         for row in self.row_numbers:
-            checkbox = self.row_widgets(row).active_checkbox
+            widgets = self.row_widgets(row)
+            checkbox = widgets.active_checkbox  # type: ignore
             checkbox.setChecked(enabled)
 
     def enable_row_widgets(self, enabled: bool, *, row: int):

@@ -113,7 +113,7 @@ async def test_bss_proposal_updating(display, qtbot):
     assert item is not None
     rect = display.proposal_view.visualRect(item.index())
     # See if the proposal PVs were updated
-    with qtbot.waitSignal(display.proposal_selected):
+    with qtbot.waitSignal(display._proposal_selected):
         qtbot.mouseClick(
             display.proposal_view.viewport(), Qt.LeftButton, pos=rect.center()
         )
@@ -171,7 +171,7 @@ async def test_bss_esaf_updating(display, qtbot):
     assert item is not None
     rect = display.esaf_view.visualRect(item.index())
     # Clicking a list entry should enable the update button
-    with qtbot.waitSignal(display.esaf_selected):
+    with qtbot.waitSignal(display._esaf_selected):
         qtbot.mouseClick(display.esaf_view.viewport(), Qt.LeftButton, pos=rect.center())
     assert display.ui.update_esaf_button.isEnabled()
     id_text = display.ui.esaf_id_lineedit.text()

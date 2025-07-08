@@ -28,13 +28,11 @@ class BssDisplay(display.FireflyDisplay):
         "proprietary",
     ]
     _esaf_col_names = ["esaf_id", "title", "start", "end", "users", "status"]
-    # Signal
+    # Signals
     metadata_changed = Signal(dict)
-    # These might only be used for testing, maybe they can be removed
-    proposal_changed = Signal()
-    proposal_selected = Signal()
-    esaf_changed = Signal()
-    esaf_selected = Signal()
+    # These are only used for testing, maybe they can be removed in future releases
+    _proposal_selected = Signal()
+    _esaf_selected = Signal()
 
     def __init__(self, api=None, args=None, macros={}, **kwargs):
         if api is None:
@@ -52,7 +50,7 @@ class BssDisplay(display.FireflyDisplay):
         self.load_bss_button.clicked.connect(self.load_models)
         self.beamline_lineedit.returnPressed.connect(self.load_models)
         self.cycle_lineedit.returnPressed.connect(self.load_models)
-        self.load_bss_button.setIcon(qta.icon('fa6s.table-list'))
+        self.load_bss_button.setIcon(qta.icon("fa6s.table-list"))
         # Want tables to select the whole row
         self.ui.proposal_view.setSelectionMode(QAbstractItemView.SingleSelection)
         self.ui.proposal_view.setSelectionBehavior(QAbstractItemView.SelectRows)
@@ -147,7 +145,6 @@ class BssDisplay(display.FireflyDisplay):
     async def load_models(self):
         # Load data
         proposals, esafs = await asyncio.gather(self.proposals(), self.esafs())
-        print(proposals)
         # Create proposal model object
         col_names = self._proposal_col_names
         self.proposal_model = QStandardItemModel()
@@ -180,7 +177,7 @@ class BssDisplay(display.FireflyDisplay):
     def select_proposal(self, current, previous):
         # Enable controls for updating the metadata
         self.ui.update_proposal_button.setEnabled(True)
-        self.proposal_selected.emit()
+        self._proposal_selected.emit()
 
     def update_proposal(self):
         """Set the metadata widgets based on which proposal is selected."""
@@ -206,7 +203,7 @@ class BssDisplay(display.FireflyDisplay):
     def select_esaf(self, current, previous):
         # Enable controls for updating the metadata
         self.ui.update_esaf_button.setEnabled(True)
-        self.esaf_selected.emit()
+        self._esaf_selected.emit()
 
     def update_esaf(self):
         """Set the metadata widgets based on which ESAF is selected."""

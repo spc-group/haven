@@ -49,19 +49,12 @@ def version_md(config: Mapping | None) -> dict[str, Any]:
 def _inject_md(msg, config: Mapping | None = None):
     if msg.command != "open_run":
         return (None, None)
-    from pprint import pprint
-
-    pprint(msg.kwargs)
     md = version_md(config=config)
     # Filter out `None` values since they were not found
     md = {key: val for key, val in md.items() if val not in [None, ""]}
     # Update the message
     md.update(msg.kwargs)
-    pprint(md)
     new_msg = msg._replace(kwargs=md)
-    # new_msg = Msg("open_run", **md)
-    print("---")
-    pprint(new_msg.kwargs)
     return new_msg
 
 
