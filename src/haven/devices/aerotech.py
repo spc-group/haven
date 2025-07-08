@@ -11,6 +11,46 @@ log = logging.getLogger(__name__)
 ureg = pint.UnitRegistry()
 
 
+"""
+An example script written by Kevin, for dev reference.
+
+```python
+
+#!/APSshare/anaconda3/x86_64/bin/python
+#/usr/bin/env python3
+
+import math
+import epics
+
+numPoints = 101
+startPos = -1000
+endPos = 1000
+segmentSize = (endPos - startPos) / (numPoints - 1)
+
+#
+m1pos = list(range(startPos, endPos+1, int(segmentSize)))
+
+epics.caput("25idc:pm1:NumPoints", numPoints)
+epics.caput("25idc:pm1:NumPulses", numPoints)
+epics.caput("25idc:pm1:StartPulses", 0)
+epics.caput("25idc:pm1:EndPulses", numPoints)
+
+#!epics.caput("25idc:pm1:FixedTime", 1.0)
+#!epics.caput("25idc:pm1:Acceleration", 0.5)
+
+epics.caput("25idc:pm1:M2Positions", m1pos)
+# Is this necessary for fixed time mode scans?
+epics.caput("25idc:pm1:PulsePositions", m1pos)
+
+#!epics.caput("25idc:pm1:M1UseAxis", 1)
+
+#!epics.caput("25idc:pm1:MoveMode", "Absolute")
+
+```
+
+"""
+
+
 class AerotechMotor(Motor):
     """Allow an Aerotech stage to fly-scan via the Ophyd FlyerInterface.
 
