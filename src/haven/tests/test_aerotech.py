@@ -1,46 +1,123 @@
+import asyncio
 from collections import OrderedDict
 from unittest import mock
 
 import numpy as np
 import pytest
-from ophyd import StatusBase
+from ophyd_async.core import AsyncStatus
+from ophyd_async.testing import get_mock_put, set_mock_value
 
 from haven import exceptions
+from haven.plans._fly import FlyMotorInfo
 from haven.devices.aerotech import AerotechMotor, AerotechStage, ureg
 
 
 @pytest.fixture()
 async def aerotech():
     stage = AerotechStage(
-        horizontal_prefix="255idc:m1",
-        vertical_prefix="255idc:m2",
+        prefix="255idc",
         name="aerotech",
     )
     await stage.connect(mock=True)
+    await asyncio.gather(
+        stage.horizontal.velocity.set(5),
+        stage.vertical.velocity.set(5),
+    )
     return stage
 
 
 @pytest.fixture()
 def aerotech_axis(aerotech):
-    m = aerotech.horiz
+    m = aerotech.horizontal
     yield m
 
 
-def test_aerotech_flyer(sim_registry):
-    aeroflyer = AerotechMotor(
-        prefix="255idc:m1", name="aerotech_flyer", axis="@0", encoder=6
-    )
-    assert aeroflyer is not None
+async def test_aerotech_signals(aerotech):
+    reading = await aerotech.read()
+    assert set(reading.keys()) == {
+        "aerotech-vertical",
+        "aerotech-horizontal",
+    }
+    config = await aerotech.read_configuration()
+    assert set(config.keys()) == {
+        'aerotech-horizontal-description',
+        'aerotech-horizontal-motor_egu',
+        'aerotech-horizontal-offset',
+        'aerotech-horizontal-offset_dir',
+        'aerotech-horizontal-velocity',
+        'aerotech-vertical-description',
+        'aerotech-vertical-motor_egu',
+        'aerotech-vertical-offset',
+        'aerotech-vertical-offset_dir',
+        'aerotech-vertical-velocity',
+        # Profile move parameters
+        'aerotech-profile_move-point_count',
+        'aerotech-profile_move-pulse_count',
+        'aerotech-profile_move-move_mode',
+        'aerotech-profile_move-pulse_range_start',
+        'aerotech-profile_move-pulse_range_end',
+        'aerotech-profile_move-time_mode',
+        'aerotech-profile_move-dwell_time',
+        'aerotech-profile_move-acceleration_time',
+        'aerotech-profile_move-axis-0-enabled',
+        'aerotech-profile_move-axis-0-positions',
+        'aerotech-profile_move-axis-1-enabled',
+        'aerotech-profile_move-axis-1-positions',
+        'aerotech-profile_move-pulse_positions',
+        # PSO parameters
+        'aerotech-profile_move-pulse_mode',
+        'aerotech-profile_move-pulse_direction',
+        'aerotech-profile_move-pulse_length',
+        'aerotech-profile_move-pulse_period',
+        'aerotech-profile_move-pulse_source',
+        'aerotech-profile_move-pulse_output',
+        'aerotech-profile_move-pulse_axis',
+    }
 
 
-async def test_aerotech_stage(sim_registry):
-    fly_stage = AerotechStage(
-        vertical_prefix="255idc:m1",
-        horizontal_prefix="255idc:m2",
-        name="aerotech",
-    )
-    assert fly_stage is not None
-    # assert fly_stage.asyn.ascii_output.pvname == "motor_ioc:asynEns.AOUT"
+async def test_prepare(aerotech):
+    axis = aerotech.horizontal
+    motor_info = FlyMotorInfo(start_position=-1000, end_position=1000, time_for_move=120, point_count=100)
+    # Set to busy to check the observe_value behavior
+    set_mock_value(aerotech.profile_move.build_state, "Busy")
+    # Prepare
+    prepared = axis.prepare(motor_info)
+    await asyncio.sleep(0.01)
+    set_mock_value(aerotech.profile_move.build_status, "Success")
+    set_mock_value(aerotech.profile_move.build_state, "Done")
+    await prepared
+    # Check that the aerotech profile move was setup properly
+    get_mock_put(aerotech.profile_move.point_count).assert_called_once_with(101, wait=True)
+    get_mock_put(aerotech.profile_move.pulse_count).assert_called_once_with(101, wait=True)
+    get_mock_put(aerotech.profile_move.pulse_range_start).assert_called_once_with(0, wait=True)
+    get_mock_put(aerotech.profile_move.pulse_range_end).assert_called_once_with(101, wait=True)
+    get_mock_put(aerotech.profile_move.dwell_time).assert_called_once_with(1.2, wait=True)
+    get_mock_put(aerotech.profile_move.move_mode).assert_called_once_with("Absolute", wait=True)
+    get_mock_put(aerotech.profile_move.axis[0].enabled).assert_called_once_with(True, wait=True)
+    get_mock_put(aerotech.profile_move.axis[1].enabled).assert_called_once_with(False, wait=True)
+    pulse_positions = np.linspace(-1010, 1010, num=101)
+    mock_put = get_mock_put(aerotech.profile_move.axis[0].positions)
+    assert mock_put.called
+    assert np.all(mock_put.call_args.args[0] == pulse_positions)
+    # .assert_called_once_with(pulse_positions)
+    mock_put = get_mock_put(aerotech.profile_move.pulse_positions)
+    assert mock_put.called
+    assert np.all(mock_put.call_args.args[0] == pulse_positions)
+
+
+async def test_prepare_build_failed(aerotech):
+    """Check that prepare fails if the build does not succeed."""
+    axis = aerotech.horizontal
+    motor_info = FlyMotorInfo(start_position=-1000, end_position=1000, time_for_move=120, point_count=100)
+    # Set to busy to check the observe_value behavior
+    set_mock_value(aerotech.profile_move.build_state, "Busy")
+    # Prepare
+    prepared = axis.prepare(motor_info)
+    await asyncio.sleep(0.01)
+    set_mock_value(aerotech.profile_move.build_status, "Failure")
+    set_mock_value(aerotech.profile_move.build_state, "Done")
+    with pytest.raises(Exception):
+        await prepared
 
 
 @pytest.mark.skip(reason="Aerotech support needs to be re-written for new hardware")

@@ -31,9 +31,7 @@ dependencies = [
     "httpx[http2]",
     "mergedeep",
     "ophyd==1.10.5",
-    # "ophyd-async==0.10.0",
-    # We need this ophyd-async development branch until a new release (>0.10.0a4)
-    "ophyd-async @ git+https://github.com/bluesky/ophyd-async@f652399e24c045b0f6c675d173c1ef588f909062",
+    "ophyd-async==0.11",
     "pint",
     "pcdsdevices",
     "rich",
@@ -122,6 +120,7 @@ files = [
     'src/firefly/devices/axilon_monochromator.py', 'src/firefly/tests/test_monochromator.py',
     'src/firefly/devices/undulator.py', 'src/firefly/tests/test_undulator.py',
     'src/haven/run_engine.py', 'src/haven/tests/test_run_engine.py',
+    'src/haven/devices/aerotech.py', "src/haven/tests/test_aerotech.py",
     'src/haven/devices/asymmotron.py', "src/haven/tests/test_asymmotron.py",
     'src/haven/devices/blade_slits.py', "src/haven/tests/test_blade_slits.py",
     'src/haven/devices/ion_chamber.py', "src/haven/tests/test_ion_chamber.py",

@@ -2,6 +2,7 @@ import uuid
 from collections import OrderedDict, abc
 from typing import Mapping, Sequence, Union
 
+from pydantic import Field
 import numpy as np
 from bluesky import plan_patterns
 from bluesky import plan_stubs as bps
@@ -22,9 +23,15 @@ from ophyd import Device
 from ophyd.flyers import FlyerInterface
 from ophyd.status import StatusBase
 from ophyd_async.core import DetectorTrigger, TriggerInfo
-from ophyd_async.epics.motor import FlyMotorInfo
+from ophyd_async.epics.motor import FlyMotorInfo as BaseFlyMotorInfo
 
 __all__ = ["fly_scan", "grid_fly_scan"]
+
+
+class FlyMotorInfo(BaseFlyMotorInfo):
+    point_count: int = Field(frozen=True, gt=1)
+    """How many points will be will be measured during the fly scan. This
+    will be one less than the number of trigger."""
 
 
 def reset_flyers_wrapper(plan, devices=None):
