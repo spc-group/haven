@@ -30,7 +30,7 @@ dependencies = [
     "guarneri==0.2.0",
     "httpx[http2]",
     "mergedeep",
-    "ophyd==1.10.5",
+    "ophyd==1.10.7",
     "ophyd-async==0.11",
     "pint",
     "pcdsdevices",

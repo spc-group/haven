@@ -2,7 +2,6 @@ import uuid
 from collections import OrderedDict, abc
 from typing import Mapping, Sequence, Union
 
-from pydantic import Field
 import numpy as np
 from bluesky import plan_patterns
 from bluesky import plan_stubs as bps
@@ -24,6 +23,7 @@ from ophyd.flyers import FlyerInterface
 from ophyd.status import StatusBase
 from ophyd_async.core import DetectorTrigger, TriggerInfo
 from ophyd_async.epics.motor import FlyMotorInfo as BaseFlyMotorInfo
+from pydantic import Field
 
 __all__ = ["fly_scan", "grid_fly_scan"]
 

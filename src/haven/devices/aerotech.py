@@ -3,11 +3,23 @@ import logging
 
 import numpy as np
 import pint
-from ophyd_async.core import Device, StandardReadable, StandardReadableFormat, StrictEnum, FlyMotorInfo, AsyncStatus, Array1D, DeviceVector, observe_value, DEFAULT_TIMEOUT
-from ophyd_async.epics.core import epics_signal_rw, epics_signal_r, epics_signal_x
+from ophyd_async.core import (
+    CALCULATE_TIMEOUT,
+    DEFAULT_TIMEOUT,
+    Array1D,
+    AsyncStatus,
+    DeviceVector,
+    FlyMotorInfo,
+    StandardReadable,
+    StandardReadableFormat,
+    StrictEnum,
+    error_if_none,
+    observe_value,
+)
+from ophyd_async.epics.core import epics_signal_r, epics_signal_rw, epics_signal_x
 
-from haven.devices.motor import Motor
 from haven import exceptions
+from haven.devices.motor import Motor
 
 log = logging.getLogger(__name__)
 
@@ -133,9 +145,7 @@ class AerotechMotor(Motor):
 
     axis: int
 
-    def __init__(
-        self, *args, axis: int, **kwargs
-    ):
+    def __init__(self, *args, axis: int, **kwargs):
         super().__init__(*args, **kwargs)
         # Save needed axis/encoder values
         self.axis = axis
@@ -143,6 +153,7 @@ class AerotechMotor(Motor):
     @AsyncStatus.wrap
     async def prepare(self, value: FlyMotorInfo):
         """Move to the beginning of a suitable run-up distance ready for a flyscan."""
+        self._fly_info = value
         # Initial calculations
         stage = self.parent
         num_pulses = value.point_count + 1  # Account for the extra pulse at the end
@@ -164,78 +175,78 @@ class AerotechMotor(Motor):
             stage.profile_move.axis[self.axis].positions.set(pulse_positions),
             stage.profile_move.pulse_positions.set(pulse_positions),
             # Only enable this axis, disable all others
-            *(axis.enabled.set(num == self.axis) for num, axis in stage.profile_move.axis.items()),
+            *(
+                axis.enabled.set(num == self.axis)
+                for num, axis in stage.profile_move.axis.items()
+            ),
         )
         # Build the profile
-        async for current_state in observe_value(stage.profile_move.build_state, done_timeout=DEFAULT_TIMEOUT):
-            if current_state == ProfileState.DONE:
+        await stage.profile_move.build.trigger()
+        observations = observe_value(
+            stage.profile_move.build_state, done_timeout=DEFAULT_TIMEOUT
+        )
+        async for current_state in observations:
+            if current_state == BuildState.DONE:
                 break
         # Confirm the profile build was successful
         status = await stage.profile_move.build_status.get_value()
-        if status != ProfileStatus.SUCCESS:
-            raise exceptions.ProfileBuildFailure()
+        if status != BuildStatus.SUCCESS:
+            raise exceptions.ProfileFailure(
+                f"Profile move build unsuccessful: {status}"
+            )
         # Make sure we've arrived at the start position
         await move_status
 
+    @AsyncStatus.wrap
+    async def kickoff(self):
+        """Start a flyer."""
+        error_if_none(
+            self._fly_info, "Motor must be prepared before attempting to kickoff"
+        )
+        stage = self.parent
+        await stage.profile_move.execute.trigger()
+        # Wait for the stage to report it is flying
+        observations = observe_value(
+            stage.profile_move.execute_state, done_timeout=DEFAULT_TIMEOUT
+        )
+        async for current_state in observations:
+            if current_state == ExecuteState.EXECUTING:
+                break
 
-    # def kickoff(self):
-    #     """Start a flyer
+    @AsyncStatus.wrap
+    async def complete(self):
+        """Wait for flying to be complete.
 
-    #     The status object return is marked as done once flying
-    #     has started.
+        This can either be a question ("are you done yet") or a
+        command ("please wrap up") to accommodate flyers that have a
+        fixed trajectory (ex. high-speed raster scans) or that are
+        passive collectors (ex MAIA or a hardware buffer).
 
-    #     Returns
-    #     -------
-    #     kickoff_status : StatusBase
-    #         Indicate when flying has started.
+        In either case, the returned status object should indicate when
+        the device is actually finished flying.
 
-    #     """
-
-    #     def flight_check(*args, old_value, value, **kwargs) -> bool:
-    #         return not bool(old_value) and bool(value)
-
-    #     # Status object is complete when flying has started
-    #     self.ready_to_fly.set(False).wait()
-    #     status = SubscriptionStatus(self.ready_to_fly, flight_check)
-    #     # Taxi the motor
-    #     th = threading.Thread(target=self.taxi)
-    #     th.daemon = True
-    #     th.start()
-    #     # Record time of fly start of scan
-    #     self.starttime = time.time()
-    #     self._taxi_thread = th  # Prevents garbage collection
-    #     return status
-
-    # def complete(self):
-    #     """Wait for flying to be complete.
-
-    #     This can either be a question ("are you done yet") or a
-    #     command ("please wrap up") to accommodate flyers that have a
-    #     fixed trajectory (ex. high-speed raster scans) or that are
-    #     passive collectors (ex MAIA or a hardware buffer).
-
-    #     In either case, the returned status object should indicate when
-    #     the device is actually finished flying.
-
-    #     Returns
-    #     -------
-    #     complete_status : StatusBase
-    #         Indicate when flying has completed
-    #     """
-
-    #     # Prepare a callback to check when the motor has stopped moving
-    #     def check_flying(*args, old_value, value, **kwargs) -> bool:
-    #         "Check if flying is complete."
-    #         return bool(value)
-
-    #     # Status object is complete when flying has started
-    #     self.flying_complete.set(False).wait()
-    #     status = SubscriptionStatus(self.flying_complete, check_flying)
-    #     # Iniate the fly scan
-    #     th = threading.Thread(target=self.fly)
-    #     th.start()
-    #     self._fly_thread = th  # Prevents garbage collection
-    #     return status
+        """
+        fly_info = error_if_none(
+            self._fly_info, "Motor must be prepared before attempting to kickoff"
+        )
+        stage = self.parent
+        if fly_info.timeout == CALCULATE_TIMEOUT:
+            timeout = fly_info.time_for_move + DEFAULT_TIMEOUT
+        else:
+            timeout = fly_info.timeout
+        observations = observe_value(
+            stage.profile_move.execute_state, done_timeout=timeout
+        )
+        async for current_state in observations:
+            if current_state == ExecuteState.DONE:
+                break
+        # Check that the move was successful
+        status = await stage.profile_move.execute_status.get_value()
+        print(status)
+        if status != ExecuteStatus.SUCCESS:
+            raise exceptions.ProfileFailure(
+                f"Profile move execution unsuccessful: {status}"
+            )
 
     # def collect(self) -> Generator[Dict, None, None]:
     #     """Retrieve data from the flyer as proto-events
@@ -614,19 +625,35 @@ class PulseMode(StrictEnum):
     NONE = "None"
 
 
-class ProfileState(StrictEnum):
+class BuildState(StrictEnum):
     DONE = "Done"
     BUSY = "Busy"
 
 
-class ProfileStatus(StrictEnum):
+class BuildStatus(StrictEnum):
     UNDEFINED = "Undefined"
     SUCCESS = "Success"
     FAILURE = "Failure"
 
 
+class ExecuteState(StrictEnum):
+    DONE = "Done"
+    MOVE_START = "Move start"
+    EXECUTING = "Executing"
+    FLYBACK = "Flyback"
+
+
+class ExecuteStatus(StrictEnum):
+    UNDEFINED = "Undefined"
+    SUCCESS = "Success"
+    FAILURE = "Failure"
+    ABORT = "Abort"
+    TIMEOUT = "Timeout"
+
+
 class ProfileAxis(StandardReadable):
     """An individual axis in the profile move."""
+
     def __init__(self, prefix: str, *, name: str = ""):
         with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
             self.enabled = epics_signal_rw(bool, f"{prefix}UseAxis")
@@ -636,6 +663,7 @@ class ProfileAxis(StandardReadable):
 
 class ProfileMove(StandardReadable):
     """Controller for programming profile moves."""
+
     def __init__(self, prefix: str, *, axis_count: int, name: str = ""):
         with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
             self.acceleration_time = epics_signal_rw(float, f"{prefix}Acceleration")
@@ -653,17 +681,18 @@ class ProfileMove(StandardReadable):
             self.pulse_source = epics_signal_rw(int, f"{prefix}PulseSrc")
             self.pulse_output = epics_signal_rw(int, f"{prefix}PulseOut")
             self.pulse_axis = epics_signal_rw(int, f"{prefix}PulseAxis")
-            self.pulse_positions = epics_signal_rw(Array1D[np.float64], f"{prefix}PulsePositions")
+            self.pulse_positions = epics_signal_rw(
+                Array1D[np.float64], f"{prefix}PulsePositions"
+            )
         with self.add_children_as_readables():
-            self.axis = DeviceVector({
-                i: ProfileAxis(f"{prefix}M{i+1}")
-                for i in range(axis_count)
-            })
+            self.axis = DeviceVector(
+                {i: ProfileAxis(f"{prefix}M{i+1}") for i in range(axis_count)}
+            )
         self.build = epics_signal_x(f"{prefix}Build")
-        self.build_state = epics_signal_r(ProfileState, f"{prefix}BuildState")
+        self.build_state = epics_signal_r(BuildState, f"{prefix}BuildState")
         self.build_status = epics_signal_r(str, f"{prefix}BuildStatus")
         self.execute = epics_signal_x(f"{prefix}Execute")
-        self.execute_state = epics_signal_r(ProfileState, f"{prefix}ExecuteState")
+        self.execute_state = epics_signal_r(ExecuteState, f"{prefix}ExecuteState")
         self.execute_status = epics_signal_r(str, f"{prefix}ExecuteStatus")
         super().__init__(name=name)
 

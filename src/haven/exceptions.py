@@ -104,8 +104,9 @@ class PluginNotPrimed(RuntimeError):
     ...
 
 
-class ProfileBuildFailure(RuntimeError):
+class ProfileFailure(RuntimeError):
     """A profile move did not build correctly."""
+
     ...
 
 
