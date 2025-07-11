@@ -183,6 +183,7 @@ async def shutters(sim_registry):
         PssShutter(name="Shutter C", **kw),
     ]
     [sim_registry.register(s) for s in shutters]
+    await asyncio.gather(*[shutter.connect(mock=True) for shutter in shutters])
     yield shutters
 
 
