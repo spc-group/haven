@@ -1,10 +1,13 @@
+"""A personnelle safety system shutter as an ophyd-async device."""
+
+import asyncio
 import logging
 import warnings
 from enum import IntEnum, unique
-from typing import Mapping
+from typing import Literal, Mapping
 
 from ophyd.utils.errors import ReadOnlyError
-from ophyd_async.core import soft_signal_rw
+from ophyd_async.core import derived_signal_r, soft_signal_rw
 from ophyd_async.epics.core import epics_signal_r
 
 from ..positioner import Positioner
@@ -25,22 +28,35 @@ class ShutterState(IntEnum):
 
 
 class PssShutter(Positioner):
+    """A personnelle safety system shutter.
+
+    Parameters
+    ==========
+    allow_open
+      Determines whether this shutter can be opened. If "auto"
+      (default) then the determination will be made based on the hutch
+      search state and shutter permit.
+    allow_close
+      Determines whether this shutter can be opened or shut.
+
+    """
+
     _ophyd_labels_ = {"shutters"}
     _last_setpoint: int = ShutterState.UNKNOWN
-    allow_open: bool
-    allow_close: bool
 
     def __init__(
         self,
         prefix: str,
         name: str,
-        allow_open: bool = True,
+        hutch_prefix: str,
+        *,
+        allow_open: bool | Literal["auto"] = "auto",
         allow_close: bool = True,
         labels={"shutters"},
         **kwargs,
     ):
-        self.allow_open = allow_open
-        self.allow_close = allow_close
+        self._allow_open = allow_open
+        self._allow_close = allow_close
         # Actuators for opening/closing the shutter
         self.open_signal = epics_signal_xval(f"{prefix}OpenEPICSC")
         self.close_signal = epics_signal_xval(f"{prefix}CloseEPICSC")
@@ -60,22 +76,54 @@ class PssShutter(Positioner):
             forward=self._actuate_shutter,
             inverse=self._shutter_setpoint,
         )
+        # Extra signals for checking open/close permissions
+        # C-hutch searched: S25ID-PSS:StaC:SecureM
+        # C-hutch APS key: S25ID-PSS:StaC:APSKeyM
+        # C-hutch user key: S25ID-PSS:StaC:UserKeyM
+        self.hutch_searched = epics_signal_r(bool, f"{hutch_prefix}SecureM")
+        self.aps_key = epics_signal_r(bool, f"{hutch_prefix}APSKeyM")
+        self.user_key = epics_signal_r(bool, f"{hutch_prefix}UserKeyM")
+        self.open_allowed = derived_signal_r(
+            self._open_permission,
+            searched=self.hutch_searched,
+            aps_key=self.aps_key,
+            user_key=self.user_key,
+        )
+        self.close_allowed = derived_signal_r(
+            self._close_permission,
+            searched=self.hutch_searched,
+            aps_key=self.aps_key,
+            user_key=self.user_key,
+        )
         super().__init__(name=name, **kwargs)
 
-    def check_value(self, pos):
-        """Check that the shutter has the right permissions."""
-        if pos == ShutterState.CLOSED and not self.allow_close:
+    async def check_permissions(self, value: ShutterState) -> ShutterState:
+        """Check that the shutter has the right permissions to reach *value*."""
+        allow_close, allow_open = await asyncio.gather(
+            self.close_allowed.get_value(),
+            self.close_allowed.get_value(),
+        )
+        if value == ShutterState.CLOSED and not allow_close:
             raise ReadOnlyError(
                 f"Shutter {self.name} is not permitted to be closed. Set `allow_close` for this shutter."
             )
-        if pos == ShutterState.OPEN and not self.allow_open:
+        if value == ShutterState.OPEN and not allow_open:
             raise ReadOnlyError(
                 f"Shutter {self.name} is not permitted to be opened per iconfig.toml. Set `allow_open` for this shutter."
             )
+        return value
 
-    async def _actuate_shutter(self, value: int, open_signal, close_signal) -> Mapping:
+    def _open_permission(self, searched: bool, aps_key: bool, user_key: bool) -> bool:
+        return all([self._allow_open, searched, aps_key, user_key])
+
+    def _close_permission(self, searched: bool, aps_key: bool, user_key: bool) -> bool:
+        return all([self._allow_close, searched, aps_key, user_key])
+
+    async def _actuate_shutter(
+        self, value: ShutterState, open_signal, close_signal
+    ) -> Mapping:
         """Open/close the shutter using derived-from signals."""
-        self.check_value(value)
+        await self.check_permissions(value)
         if value == ShutterState.OPEN:
             items = {open_signal: 1}
         elif value == ShutterState.CLOSED:
