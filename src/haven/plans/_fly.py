@@ -122,11 +122,12 @@ def fly_line_scan(detectors: list, *args, num, dwell_time):
             start_position=start,
             end_position=end,
             time_for_move=dwell_time * num,
+            point_count=num,
         )
         yield from bps.prepare(obj, position_info, wait=False, group=prepare_group)
     # Set up detectors
     trigger_info = TriggerInfo(
-        number_of_triggers=num,
+        number_of_events=num,
         livetime=dwell_time,
         deadtime=0,
         trigger=DetectorTrigger.INTERNAL,
