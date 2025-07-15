@@ -66,19 +66,6 @@ async def test_selector_adds_devices(selector):
     assert tree_model.item(0).text() == "async_stage"
 
 
-# @pytest.mark.asyncio
-# async def test_lazy_signals_omitted(motor_registry, selector):
-#     model = DeviceTreeModel()
-#     await model.update_devices(motor_registry)
-#     stage_idx = 1
-#     stage_node = model.item(stage_idx)
-#     assert stage_node.text() == "stage"
-#     # Make sure the lazy motor isn't included
-#     column = 0
-#     cpt_names = [stage_node.child(row, column).text() for row in range(stage_node.rowCount())]
-#     assert "lazy_motor" not in cpt_names
-
-
 async def test_selected_component(selector):
     """Does the selector properly report the selected device?"""
     # If no component is selected

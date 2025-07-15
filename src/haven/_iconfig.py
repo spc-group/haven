@@ -41,6 +41,8 @@ def load_files(file_paths: Sequence[Path]):
 def lookup_file_paths():
     if os.environ.get("HAVEN_CONFIG_FILES", "") != "":
         return [Path(fp) for fp in os.environ["HAVEN_CONFIG_FILES"].split(",")]
+    elif os.environ.get("HAVEN_CONFIG_DIR", "") != "":
+        return [Path(os.environ["HAVEN_CONFIG_DIR"]) / "iconfig.toml"]
     else:
         return [Path(__file__).parent / "iconfig_testing.toml"]
 
@@ -52,7 +54,8 @@ def load_config(file_paths: Optional[Sequence[Path]] = None):
 
     1. *file_paths* argument
     2. The $HAVEN_CONFIG_FILES environmental variable.
-    3. iconfig_default.toml file included with Haven.
+    3. The $HAVEN_CONFIG_DIR/iconfig.toml environmental variable.
+    4. iconfig_default.toml file included with Haven.
 
     """
     if file_paths is None:
