@@ -11,7 +11,6 @@ from firefly.plans.regions_display import (
     RegionsDisplay,
     device_parameters,
 )
-from haven import sanitize_name
 
 log = logging.getLogger()
 
@@ -93,13 +92,10 @@ class MoveMotorDisplay(RegionsDisplay):
 
     def plan_args(self):
         # Get parameters from each row of line regions
-        devices = [region.motor_box.current_component() for region in self.regions]
-        device_names = [sanitize_name(device.name) for device in devices]
+        devices = [region.motor_box.selected_device_path() for region in self.regions]
         positions = [region.position_spin_box.value() for region in self.regions]
         args = tuple(
-            values
-            for device_row in zip(device_names, positions)
-            for values in device_row
+            values for device_row in zip(devices, positions) for values in device_row
         )
         kwargs = {}
         return args, kwargs

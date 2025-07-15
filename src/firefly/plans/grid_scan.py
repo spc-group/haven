@@ -252,7 +252,7 @@ class GridScanDisplay(RegionsDisplay):
         detector_names = [detector.name for detector in detectors]
         # Get parameters from each row of line regions:
         device_names = [
-            region.motor_box.current_component().name for region in self.regions
+            region.motor_box.selected_device_path() for region in self.regions
         ]
         device_names = [sanitize_name(name) for name in device_names]
         start_points = [region.start_spin_box.value() for region in self.regions]
