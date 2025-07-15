@@ -1,3 +1,6 @@
+from collections.abc import Generator, Mapping
+
+from bluesky import Msg
 from bluesky import plan_stubs as bps
 from bluesky.preprocessors import finalize_wrapper
 from bluesky.utils import make_decorator
@@ -9,10 +12,15 @@ from haven.instrument import beamline
 __all__ = ["open_shutters_wrapper", "open_shutters_decorator"]
 
 
-def _can_open(shutter):
-    return getattr(shutter, "allow_open", True) and getattr(
-        shutter, "allow_close", True
-    )
+def uses_permissions(shutter) -> bool:
+    return hasattr(shutter, "open_allowed") and hasattr(shutter, "close_allowed")
+
+
+def _can_open(shutter) -> Generator[Msg, Mapping, bool]:
+    allow_open = yield from bps.rd(shutter.open_allowed)
+    allow_close = yield from bps.rd(shutter.close_allowed)
+    print(f"{shutter.name}: {allow_open}, {allow_close}")
+    return allow_open and allow_close
 
 
 def _set_shutters(shutters, state: int):
@@ -48,10 +56,19 @@ def open_shutters_wrapper(plan, registry: Registry | None = None):
         registry = beamline.devices
     # Get a list of shutters that could be opened and closed
     all_shutters = registry.findall(label="shutters", allow_none=True)
-    all_shutters = [shtr for shtr in all_shutters if _can_open(shtr)]
+    # yield from _can_open(all_shutters[1])
+    allowed_shutters = []
+    for shutter in all_shutters:
+        # Decide whether each shutter can be opened
+        if not uses_permissions(shutter):
+            # Doesn't use the permissions mechanism, so assume we can open it
+            allowed_shutters.append(shutter)
+        elif (yield from _can_open(shutter)):
+            # Check that the ACIS and PSS systems will let us open
+            allowed_shutters.append(shutter)
     # Check for closed shutters (open shutters just stay open)
     shutters_to_open = []
-    for shutter in all_shutters:
+    for shutter in allowed_shutters:
         initial_state = yield from bps.rd(shutter)
         if initial_state == ShutterState.CLOSED:
             shutters_to_open.append(shutter)
