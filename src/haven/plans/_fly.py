@@ -22,9 +22,16 @@ from ophyd import Device
 from ophyd.flyers import FlyerInterface
 from ophyd.status import StatusBase
 from ophyd_async.core import DetectorTrigger, TriggerInfo
-from ophyd_async.epics.motor import FlyMotorInfo
+from ophyd_async.epics.motor import FlyMotorInfo as BaseFlyMotorInfo
+from pydantic import Field
 
 __all__ = ["fly_scan", "grid_fly_scan"]
+
+
+class FlyMotorInfo(BaseFlyMotorInfo):
+    point_count: int = Field(frozen=True, gt=1)
+    """How many points will be will be measured during the fly scan. This
+    will be one less than the number of trigger."""
 
 
 def reset_flyers_wrapper(plan, devices=None):
@@ -115,11 +122,12 @@ def fly_line_scan(detectors: list, *args, num, dwell_time):
             start_position=start,
             end_position=end,
             time_for_move=dwell_time * num,
+            point_count=num,
         )
         yield from bps.prepare(obj, position_info, wait=False, group=prepare_group)
     # Set up detectors
     trigger_info = TriggerInfo(
-        number_of_triggers=num,
+        number_of_events=num,
         livetime=dwell_time,
         deadtime=0,
         trigger=DetectorTrigger.INTERNAL,

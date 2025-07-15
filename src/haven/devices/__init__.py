@@ -1,3 +1,4 @@
+from .aerotech import AerotechStage  # noqa: F401
 from .aperture_slits import ApertureSlits  # noqa: F401
 from .asymmotron import Analyzer  # noqa: F401
 from .axilon_monochromator import AxilonMonochromator  # noqa: F401

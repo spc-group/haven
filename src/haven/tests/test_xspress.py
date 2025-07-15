@@ -87,7 +87,7 @@ async def test_deadtime_correction_disabled(detector):
 
     """
     set_mock_value(detector.driver.deadtime_correction, True)
-    trigger_info = TriggerInfo(number_of_triggers=1)
+    trigger_info = TriggerInfo(number_of_events=1)
     await detector.prepare(trigger_info)
     assert not await detector.driver.deadtime_correction.get_value()
 
