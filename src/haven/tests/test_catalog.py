@@ -10,7 +10,7 @@ from tiled import queries
 from haven.catalog import Catalog, CatalogScan, deserialize_array, resolve_uri, unsnake
 
 run_metadata_re = re.compile(
-    r"^http://localhost:8000/api/v1/metadata/([a-z]+)%2F([-a-z0-9]+)$"
+    r"^http://localhost:8000/api/v1/metadata/([a-z]+)/([-a-z0-9]+)$"
 )
 
 
@@ -306,7 +306,7 @@ async def test_formats(run, httpx_mock):
 
 async def test_export(run, httpx_mock):
     httpx_mock.add_response(
-        url="http://localhost:8000/api/v1/container/full/scans%2F518edf43-7370-4670-8e61-e1e18a8152cf?format=text%2Ftab-separate-values",
+        url="http://localhost:8000/api/v1/container/full/scans/518edf43-7370-4670-8e61-e1e18a8152cf?format=text%2Ftab-separate-values",
         stream=IteratorStream([b"hello\n", b"world\n"]),
     )
     buff = io.BytesIO()

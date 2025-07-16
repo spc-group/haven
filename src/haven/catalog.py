@@ -8,12 +8,15 @@ from typing import IO, Mapping
 from urllib.parse import parse_qs, quote_plus, urlparse
 
 import httpx
+import httpcore
 import numpy as np
 import pandas as pd
+import stamina
 from tiled.client import from_profile as tiled_from_profile
 from tiled.client.base import BaseClient
 from tiled.client.cache import Cache
 from tiled.client.container import _queries_to_params
+from tiled.profiles import get_default_profile_name
 from tiled.queries import NoBool
 from tiled.serialization.table import deserialize_arrow
 from tiled.structures.array import BuiltinDtype
@@ -79,7 +82,7 @@ def deserialize_array(stream: IO[bytes], structure: dict):
 
 def tiled_client(
     catalog: str | type[DEFAULT] | None = DEFAULT,
-    profile: str = "haven",
+    profile: str | type[DEFAULT] = DEFAULT,
     cache_filepath: Path | type[DEFAULT] | None = DEFAULT,
     structure_clients: str = "numpy",
 ) -> BaseClient:
@@ -106,6 +109,8 @@ def tiled_client(
         cache_filepath = tiled_config.get("cache_filepath")
     if catalog is DEFAULT:
         catalog = tiled_config.get("default_catalog")
+    if profile is DEFAULT:
+        profile = tiled_config.get("default_profile", get_default_profile_name())
     # Create the client
     kw = {}
     if cache_filepath is not None:
@@ -116,6 +121,7 @@ def tiled_client(
     return client
 
 
+@stamina.retry(on=httpcore.ReadTimeout, attempts=3)
 async def _search(path: str, client: httpx.AsyncClient, params: dict = {}):
     """Find scans in the catalog matching the given criteria.
 
@@ -124,7 +130,7 @@ async def _search(path: str, client: httpx.AsyncClient, params: dict = {}):
 
     """
     # Build query parameters
-    next_url = "/".join(["search", quote_plus(path)]).rstrip("/") + "/"
+    next_url = "/".join(["search", sanitize_path(path)]).rstrip("/") + "/"
     # Get search results from API
     while next_url is not None:
         # Re-use the query parameters
@@ -139,6 +145,7 @@ async def _search(path: str, client: httpx.AsyncClient, params: dict = {}):
                     **params,
                     **paging_params,
                 },
+                timeout=30,
             )
         except httpx.ReadTimeout as exc:
             log.error(f"Read timeout when searching for scans: {exc.request.url}")
@@ -152,7 +159,7 @@ async def _search(path: str, client: httpx.AsyncClient, params: dict = {}):
 async def get_table(
     path: str, structure: dict, client: httpx.AsyncClient
 ) -> pd.DataFrame:
-    url = f"table/full/{quote_plus(path)}"
+    url = f"table/full/{sanitize_path(path)}"
     response = await client.get(url, timeout=20)
     response.raise_for_status()
     return deserialize_arrow(response.content)
@@ -161,7 +168,7 @@ async def get_table(
 async def get_array(
     path: str, structure: dict, client: httpx.AsyncClient
 ) -> np.ndarray:
-    url = f"array/block/{quote_plus(path)}"
+    url = f"array/block/{sanitize_path(path)}"
     chunks = structure["chunks"]
     num_blocks = (range(len(n)) for n in chunks)
     blocks = itertools.product(*num_blocks)
@@ -244,7 +251,7 @@ class CatalogScan:
         params = {}
         path = str(self.path / dataset).rstrip("/")
         # First figure out what kind of data we're getting
-        response = await self.client.get(f"metadata/{quote_plus(path)}")
+        response = await self.client.get(f"metadata/{sanitize_path(path)}")
         response.raise_for_status()
         md = response.json()["data"]["attributes"]
         structure_family = md["structure_family"]
@@ -264,10 +271,11 @@ class CatalogScan:
         md = await self.metadata
         return md["start"]["uid"]
 
+    @stamina.retry(on=httpcore.ReadTimeout, attempts=3)
     async def _export(self, buff: IO[bytes], format: str):
-        url = f"container/full/{quote_plus(str(self.path))}"
+        url = f"container/full/{sanitize_path(str(self.path))}"
         async with self.client.stream(
-            "GET", url, params={"format": format}
+            "GET", url, params={"format": format}, timeout=30
         ) as response:
             if response.is_error:
                 # Make sure error handlers can access the details
@@ -362,7 +370,7 @@ class CatalogScan:
     async def _read_metadata(self, path: str = ""):
         new_path = str(self.path / path).rstrip("/")
         response = await self.client.get(
-            f"metadata/{quote_plus(new_path)}",
+            f"metadata/{sanitize_path(new_path)}",
         )
         response.raise_for_status()
         return response.json()["data"]["attributes"]
@@ -393,6 +401,13 @@ class CatalogScan:
         if "snaking" in metadata["start"]:
             arr = unsnake(arr, metadata["start"]["snaking"])
         return arr
+
+
+def sanitize_path(path: str) -> str:
+    """Make sure the given *path* is suitable as part of a Tiled URI."""
+    # For now just a no-op, but we want to keep this in case we need
+    # specific sanitation later.
+    return path
 
 
 class Catalog:
@@ -494,7 +509,7 @@ class Catalog:
         >>> await catalog.distinct("foo", "bar", counts=True)
 
         """
-        path = f"distinct/{quote_plus(self.path)}"
+        path = f"distinct/{sanitize_path(self.path)}"
         params = self._search_params(queries=queries)
         params = [{"metadata": key, **params} for key in metadata_keys]
         aws = [self.client.get(path, params=param) for param in params]
