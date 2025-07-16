@@ -11,7 +11,7 @@ from httpx import HTTPStatusError
 import pandas as pd
 from tiled import queries
 from tiled.client.container import Container
-from tiled.profiles import get_default_profile_name, load_profiles
+from tiled.profiles import get_default_profile_name, load_profiles, ProfileNotFound
 from tqdm.asyncio import tqdm
 from tabulate import tabulate
 
@@ -33,8 +33,7 @@ def load_catalog(tiled_profile: str, catalog: str):
         filepath, profile_content = profiles[tiled_profile]
     except KeyError as err:
         raise ProfileNotFound(
-            f"Profile {name!r} not found. Found profiles {list(profiles)} "
-            f"from directories {paths}."
+            f"Profile {tiled_profile!r} not found. Found profiles {list(profiles)}."
         ) from err
     return Catalog(catalog, uri=profile_content['uri'])    
 
