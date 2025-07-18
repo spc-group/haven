@@ -6,7 +6,9 @@ from pathlib import Path
 from typing import Sequence
 from functools import partial
 import logging
+from uuid import uuid4
 
+import h5py
 from httpx import HTTPStatusError
 import pandas as pd
 from tiled import queries
@@ -284,6 +286,17 @@ def main():
     )
     asyncio.run(do_export)
 
+
+def harden_link(parent: h5py.File | h5py.Group, link_path: str):
+    """Replace the link *link_path* in *link_file* with data at
+    *src_path* in *src_file*.
+
+    """
+    link = parent.get(link_path, getlink=True)
+    temp_path = f"{link_path}-{uuid4()}"
+    parent.copy(link_path, temp_path, expand_soft=True, expand_external=True, without_attrs=False)
+    del parent[link_path]
+    parent.move(temp_path, link_path)
 
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
