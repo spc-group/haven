@@ -15,6 +15,7 @@ from ophyd_async.core import (
     StrictEnum,
     error_if_none,
     observe_value,
+    DetectorTrigger,
 )
 from ophyd_async.epics.core import epics_signal_r, epics_signal_rw, epics_signal_x
 
@@ -144,6 +145,7 @@ class AerotechMotor(Motor):
     """
 
     axis: int
+    detector_trigger: DetectorTrigger = DetectorTrigger.EDGE_TRIGGER
 
     def __init__(self, *args, axis: int, **kwargs):
         super().__init__(*args, **kwargs)
@@ -242,7 +244,6 @@ class AerotechMotor(Motor):
                 break
         # Check that the move was successful
         status = await stage.profile_move.execute_status.get_value()
-        print(status)
         if status != ExecuteStatus.SUCCESS:
             raise exceptions.ProfileFailure(
                 f"Profile move execution unsuccessful: {status}"
@@ -672,8 +673,8 @@ class ProfileMove(StandardReadable):
             self.time_mode = epics_signal_rw(TimeMode, f"{prefix}TimeMode")
             self.point_count = epics_signal_rw(int, f"{prefix}NumPoints")
             self.pulse_count = epics_signal_rw(int, f"{prefix}NumPulses")
-            self.pulse_range_start = epics_signal_rw(float, f"{prefix}StartPulses")
-            self.pulse_range_end = epics_signal_rw(float, f"{prefix}EndPulses")
+            self.pulse_range_start = epics_signal_rw(int, f"{prefix}StartPulses")
+            self.pulse_range_end = epics_signal_rw(int, f"{prefix}EndPulses")
             self.pulse_direction = epics_signal_rw(PulseDirection, f"{prefix}PulseDir")
             self.pulse_mode = epics_signal_rw(PulseMode, f"{prefix}PulseMode")
             self.pulse_length = epics_signal_rw(int, f"{prefix}PulseLength")

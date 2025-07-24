@@ -13,6 +13,7 @@ from ophyd_async.core import (
     derived_signal_r,
     soft_signal_rw,
     wait_for_value,
+    DetectorTrigger,
 )
 
 from .labjack import LabJackT7
@@ -377,9 +378,15 @@ class IonChamber(StandardReadable, Triggerable):
         """Prepare the ion chamber for fly scanning."""
         self.start_timestamp = None
         # Set some configuration PVs on the MCS
+        channel_advance = {
+            DetectorTrigger.INTERNAL: self.mcs.ChannelAdvanceSource.INTERNAL,
+            DetectorTrigger.EDGE_TRIGGER: self.mcs.ChannelAdvanceSource.EXTERNAL,
+            DetectorTrigger.CONSTANT_GATE: self.mcs.ChannelAdvanceSource.EXTERNAL,
+        }[value.trigger]
+        count_on_start = 1 if value.triger == DetectorTrigger.INTERNAL else 0
         await asyncio.gather(
-            self.mcs.count_on_start.set(1),
-            self.mcs.channel_advance_source.set(self.mcs.ChannelAdvanceSource.INTERNAL),
+            self.mcs.count_on_start.set(count_on_start),
+            self.mcs.channel_advance_source.set(channel_advance),
             self.mcs.num_channels.set(await self.mcs.num_channels_max.get_value()),
             self.mcs.dwell_time.set(value.livetime),
             self.mcs.erase_all.trigger(),

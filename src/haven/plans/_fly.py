@@ -1,6 +1,7 @@
 import uuid
 from collections import OrderedDict, abc
-from typing import Mapping, Sequence, Union
+from collections.abc import Mapping, Sequence, Generator
+from typing import Any
 
 import numpy as np
 from bluesky import plan_patterns
@@ -24,6 +25,8 @@ from ophyd.status import StatusBase
 from ophyd_async.core import DetectorTrigger, TriggerInfo
 from ophyd_async.epics.motor import FlyMotorInfo as BaseFlyMotorInfo
 from pydantic import Field
+
+from haven.devices import DG645Delay
 
 __all__ = ["fly_scan", "grid_fly_scan"]
 
@@ -87,7 +90,7 @@ def reset_flyers_wrapper(plan, devices=None):
     return (yield from finalize_wrapper(plan_mutator(plan, insert_reads), reset()))
 
 
-def fly_line_scan(detectors: list, *args, num, dwell_time):
+def fly_line_scan(detectors: Sequence, *args, num: int, dwell_time: float, delay_generator: DG645Delay | None = None) -> Generator[Msg, Any, None]:
     """A plan stub for fly-scanning a single trajectory.
 
     Parameters
@@ -109,6 +112,9 @@ def fly_line_scan(detectors: list, *args, num, dwell_time):
       Number of measurements to take.
     dwell_time
       How long, in seconds, for each measurement point.
+    delay_generator
+      If provided, this delay generator will be used to coordinate hardware triggering of detectors
+
     """
     # Calculate parameters for the fly-scan
     # step_size = abs(start - stop) / (num - 1)
@@ -126,11 +132,13 @@ def fly_line_scan(detectors: list, *args, num, dwell_time):
         )
         yield from bps.prepare(obj, position_info, wait=False, group=prepare_group)
     # Set up detectors
+    # We can only use hardware triggering under certain circumstances
+    triggering = getattr(motors[0], 'detector_trigger', DetectorTrigger.INTERNAL) if len(motors) == 1 else DetectorTrigger.INTERNAL
     trigger_info = TriggerInfo(
         number_of_events=num,
         livetime=dwell_time,
         deadtime=0,
-        trigger=DetectorTrigger.INTERNAL,
+        trigger=triggering,
     )
     for obj in detectors:
         yield from bps.prepare(obj, trigger_info, wait=False, group=prepare_group)
@@ -171,9 +179,13 @@ def fly_scan(
     *args,
     num: int,
     dwell_time: float,
+    delay_generator: DG645Delay | None = None,
     md: Mapping = {},
 ):
     """Do a fly scan with a 'flyer' motor and some 'flyer' detectors.
+
+    Will use hardware triggering if *delay_generator* is provided.
+    Otherwise, free-running triggering is used.
 
     Parameters
     ----------
@@ -194,6 +206,8 @@ def fly_scan(
       Number of measurements to take.
     dwell_time
       How long, in seconds, for each measurement point.
+    delay_generator
+      If provided, this delay generator will be used to coordinate hardware triggering of detectors
     md
       metadata
 
@@ -220,6 +234,7 @@ def fly_scan(
             "*args": md_args,
             "num": num,
             "dwell_time": dwell_time,
+            "delay_generator": repr(delay_generator),
         },
     }
     md_.update(md)
@@ -229,6 +244,7 @@ def fly_scan(
         *args,
         num=num,
         dwell_time=dwell_time,
+        delay_generator=delay_generator,
     )
     # Wrapper for reseting the initial motor position/velocity
     line_scan = reset_flyers_wrapper(line_scan, motors)
@@ -241,7 +257,7 @@ def fly_scan(
 def grid_fly_scan(
     detectors: Sequence[FlyerInterface],
     *args,
-    snake_axes: Union[bool, Sequence[Device]] = False,
+    snake_axes: bool | Sequence[Device] = False,
     md: Mapping = {},
 ):
     """Scan over a mesh with one of the axes collecting without stopping.
