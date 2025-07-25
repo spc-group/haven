@@ -3,8 +3,8 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 import pytest
-from ophyd_async.core import TriggerInfo
-from ophyd_async.testing import get_mock_put, set_mock_value
+from ophyd_async.core import TriggerInfo, DetectorTrigger
+from ophyd_async.testing import get_mock_put, set_mock_value, assert_value
 
 from haven.devices.detectors.xspress import Xspress3Detector, ndattribute_params
 
@@ -128,6 +128,47 @@ async def test_ndattribute_set(detector):
     assert "vortex_me4-element1-deadtime_factor" in desc.keys()
     assert "vortex_me4-element2-deadtime_factor" in desc.keys()
     assert "vortex_me4-element3-deadtime_factor" in desc.keys()
+
+
+async def test_prepare_internal_trigger(detector):
+    tinfo = TriggerInfo(
+        number_of_events=10,
+        exposures_per_event=2,
+        trigger=DetectorTrigger.INTERNAL,
+    )
+    await detector.prepare(tinfo)
+    await assert_value(detector.driver.num_images, 20)
+    await assert_value(detector.driver.image_mode, "Multiple")
+    await assert_value(detector.driver.trigger_mode, "Internal")
+
+
+async def test_prepare_external_gate(detector):
+    tinfo = TriggerInfo(
+        number_of_events=10,
+        exposures_per_event=2,
+        trigger=DetectorTrigger.CONSTANT_GATE,
+        deadtime=0.1,
+    )
+    await detector.prepare(tinfo)
+    await assert_value(detector.driver.num_images, 20)
+    await assert_value(detector.driver.image_mode, "Multiple")
+    await assert_value(detector.driver.trigger_mode, "TTL Veto Only")
+
+
+async def test_validate_trigger_info(detector):
+    # An edge trigger cannot be used, turn it into a gate.
+    tinfo_in = TriggerInfo(
+        number_of_events=10,
+        trigger=DetectorTrigger.EDGE_TRIGGER,
+        deadtime=0.1,
+    )
+    tinfo_target = TriggerInfo(
+        number_of_events=10,
+        trigger=DetectorTrigger.CONSTANT_GATE,
+        deadtime=0.1,
+    )
+    assert detector.validate_trigger_info(tinfo_in) == tinfo_target
+    
 
 
 # -----------------------------------------------------------------------------

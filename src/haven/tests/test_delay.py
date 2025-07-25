@@ -3,13 +3,22 @@ test the SRS DG-645 digital delay device support
 
 Hardware is not available so test with best efforts
 """
+import pytest
+
+from ophyd_async.core import TriggerInfo, DetectorTrigger
+from ophyd_async.testing import assert_value
 
 from haven.devices import delay
 
 
-async def test_dg645_device():
+@pytest.fixture()
+async def dg645():
     dg645 = delay.DG645Delay("", name="delay")
     await dg645.connect(mock=True)
+    return dg645
+
+
+async def test_dg645_device(dg645):
     read_names = []
     read_attrs = (await dg645.describe()).keys()
     assert sorted(read_attrs) == read_names
@@ -128,3 +137,44 @@ async def test_dg645_device():
     ]
     child_names = [child.name for attr, child in dg645.children()]
     assert sorted(child_names) == sorted(cpt_names)
+
+
+async def test_prepare_delay_internal(dg645):
+    tinfo = TriggerInfo()
+    await dg645.prepare(tinfo)
+    await assert_value(dg645.trigger_source, "Internal")
+
+
+async def test_prepare_delay_edge_trigger(dg645):
+    tinfo = TriggerInfo(
+        trigger = DetectorTrigger.EDGE_TRIGGER,
+    )
+    await dg645.prepare(tinfo)
+    await assert_value(dg645.trigger_source, "Ext rising edge")
+
+
+async def test_prepare_output_edge(dg645):
+    tinfo = TriggerInfo(
+        trigger = DetectorTrigger.EDGE_TRIGGER,
+    )
+    output = dg645.output_AB
+    await output.prepare(tinfo)
+    await assert_value(dg645.channel_A.reference, "T0")
+    await assert_value(dg645.channel_A.delay, 0)
+    await assert_value(dg645.channel_B.reference, "T0")
+    await assert_value(dg645.channel_B.delay, 1e-8)
+
+
+async def test_prepare_output_edge(dg645):
+    tinfo = TriggerInfo(
+        trigger=DetectorTrigger.CONSTANT_GATE,
+        live_time=1.3,
+        deadtime=0.1
+    )
+    output = dg645.output_AB
+    await output.prepare(tinfo)
+    await assert_value(dg645.channel_A.reference, "T0")
+    await assert_value(dg645.channel_A.delay, 0)
+    await assert_value(dg645.channel_B.reference, "T0")
+    await assert_value(dg645.channel_B.delay, 1.2)
+

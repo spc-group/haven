@@ -1,3 +1,4 @@
+from unittest import mock
 from collections import OrderedDict
 from unittest.mock import MagicMock
 
@@ -5,9 +6,11 @@ import numpy as np
 import pytest
 from ophyd import sim
 from ophyd_async.epics.motor import Motor
+from ophyd_async.core import TriggerInfo, DetectorTrigger
 
+from haven.devices import DG645Delay, IonChamber, Xspress3Detector
 from haven.plans import fly_scan, grid_fly_scan
-from haven.plans._fly import FlyerCollector
+from haven.plans._fly import FlyerCollector, prepare_detectors
 
 
 @pytest.fixture()
@@ -21,8 +24,7 @@ def test_set_fly_params(flyer):
     # step size == 10
     plan = fly_scan([], flyer, -20, 30, num=6, dwell_time=1.5)
     messages = list(plan)
-    prep_msg = messages[4]
-    assert prep_msg.command == "prepare"
+    prep_msg = [msg for msg in messages if msg.command == "prepare" and msg.obj is flyer][0]
     prep_info = prep_msg.args[0]
     assert prep_info.start_position == -20
     assert prep_info.end_position == 30
@@ -42,6 +44,7 @@ def test_fly_scan_metadata(flyer, ion_chamber):
             "detectors": list([repr(ion_chamber)]),
             "num": 6,
             "dwell_time": 1,
+            "delay_outputs": [],
             "*args": (repr(flyer), -20, 30),
         },
         "plan_name": "fly_scan",
@@ -273,13 +276,11 @@ def test_collector_collect():
     assert events == expected_events
 
 
-@pytest.mark.skip(reason="grid scans are currently broken")
-def test_fly_grid_scan(aerotech_flyer):
-    flyer = aerotech_flyer
+def test_fly_grid_scan(flyer):
     stepper = sim.motor
     # step size == 10
     plan = grid_fly_scan(
-        [], stepper, -100, 100, 11, flyer, -20, 30, 6, snake_axes=[flyer]
+        [], stepper, -100, 100, 11, flyer, -20, 30, 6, dwell_time=1.0, snake_axes=[flyer]
     )
     messages = list(plan)
     assert messages[0].command == "stage"
@@ -293,34 +294,29 @@ def test_fly_grid_scan(aerotech_flyer):
     stepper_positions = [
         msg.args[0]
         for msg in messages
-        if (msg.command == "set" and msg.obj.name == "motor")
+        if (msg.command == "set" and msg.obj is stepper)
     ]
     flyer_start_positions = [
-        msg.args[0]
+        msg.args[0].start_position
         for msg in messages
-        if (
-            msg.command == "set"
-            and msg.obj.name == f"{flyer.name}_flyer_start_position"
-        )
+        if (msg.command == "prepare" and msg.obj is flyer)
     ]
     flyer_end_positions = [
-        msg.args[0]
+        msg.args[0].end_position
         for msg in messages
-        if (msg.command == "set" and msg.obj.name == f"{flyer.name}_flyer_end_position")
+        if (msg.command == "prepare" and msg.obj is flyer)
     ]
     assert stepper_positions == list(np.linspace(-100, 100, num=11))
     assert flyer_start_positions == [-20, 30, -20, 30, -20, 30, -20, 30, -20, 30, -20]
     assert flyer_end_positions == [30, -20, 30, -20, 30, -20, 30, -20, 30, -20, 30]
 
 
-@pytest.mark.skip(reason="grid scans are currently broken")
-def test_fly_grid_scan_metadata(sim_registry, aerotech_flyer, sim_ion_chamber):
+def test_fly_grid_scan_metadata(sim_registry, flyer, ion_chamber):
     """Does the plan set the parameters of the flyer motor."""
-    flyer = aerotech_flyer
     stepper = sim.motor
     md = {"spam": "eggs"}
     plan = grid_fly_scan(
-        [sim_ion_chamber],
+        [ion_chamber],
         stepper,
         -100,
         100,
@@ -329,6 +325,7 @@ def test_fly_grid_scan_metadata(sim_registry, aerotech_flyer, sim_ion_chamber):
         -20,
         30,
         6,
+        dwell_time=1.0,
         snake_axes=[flyer],
         md=md,
     )
@@ -343,8 +340,12 @@ def test_fly_grid_scan_metadata(sim_registry, aerotech_flyer, sim_ion_chamber):
         "num_points": 66,
         "num_intervals": 65,
         "plan_args": {
-            "detectors": [repr(sim_ion_chamber)],
+            "detectors": [repr(ion_chamber)],
             "args": [repr(stepper), -100, 100, 11, repr(flyer), -20, 30, 6],
+            "dwell_time": 1.0,
+            "trigger": DetectorTrigger.INTERNAL,
+            "delay_outputs": [],
+            "snake_axes": [repr(flyer)],
         },
         "plan_name": "grid_fly_scan",
         "hints": {
@@ -367,6 +368,53 @@ def test_fly_grid_scan_metadata(sim_registry, aerotech_flyer, sim_ion_chamber):
         "spam": "eggs",
     }
     assert real_md == expected_md
+
+
+def test_prepare_detectors():
+    delay = DG645Delay("")
+    # Include two ion chambers to make sure we set the delay outputs only once
+    ion_chamber = IonChamber("", scaler_channel=2, preamp_prefix="", voltmeter_prefix="", voltmeter_channel=0, counts_per_volt_second=1e6)
+    ion_chamber2 = IonChamber("", scaler_channel=2, preamp_prefix="", voltmeter_prefix="", voltmeter_channel=0, counts_per_volt_second=1e6)
+    trigger_info = TriggerInfo(
+        number_of_events=15,
+        livetime=1.5,
+    )
+    ion_chamber.validate_trigger_info = mock.MagicMock(return_value=trigger_info)
+    ion_chamber2.validate_trigger_info = mock.MagicMock(return_value=trigger_info)
+    xspress = Xspress3Detector("")
+    gate_info = TriggerInfo(
+        number_of_events=15,
+        livetime=1.5,
+        deadtime=0.1,
+    )
+    xspress.validate_trigger_info = mock.MagicMock(return_value=gate_info)
+    msgs = list(prepare_detectors(
+        detectors=[ion_chamber, ion_chamber2, xspress],
+        trigger_info=trigger_info,
+        delay_outputs=[delay.output_AB, delay.output_AB, delay.output_CD],
+    ))
+    # Ion chamber trigger
+    assert len(msgs) == 6
+    assert msgs[0].obj is ion_chamber
+    assert msgs[0].command == "prepare"
+    assert msgs[0].args == (trigger_info,)
+    assert msgs[1].obj is ion_chamber2
+    assert msgs[1].command == "prepare"
+    assert msgs[1].args == (trigger_info,)
+    # Xspress
+    assert msgs[2].obj is xspress
+    assert msgs[2].command == "prepare"
+    assert msgs[2].args == (gate_info,)
+    # Delay generator
+    assert msgs[3].obj is delay
+    assert msgs[3].command == "prepare"
+    assert msgs[3].args == (trigger_info,)
+    assert msgs[4].obj is delay.output_AB
+    assert msgs[4].command == "prepare"
+    assert msgs[4].args == (trigger_info,)
+    assert msgs[5].obj is delay.output_CD
+    assert msgs[5].command == "prepare"
+    assert msgs[5].args == (gate_info,)
 
 
 # -----------------------------------------------------------------------------

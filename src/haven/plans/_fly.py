@@ -1,7 +1,7 @@
 import uuid
 from collections import OrderedDict, abc
 from collections.abc import Mapping, Sequence, Generator
-from typing import Any
+from typing import Any, Hashable
 
 import numpy as np
 from bluesky import plan_patterns
@@ -26,7 +26,7 @@ from ophyd_async.core import DetectorTrigger, TriggerInfo
 from ophyd_async.epics.motor import FlyMotorInfo as BaseFlyMotorInfo
 from pydantic import Field
 
-from haven.devices import DG645Delay
+from haven.devices.delay import DG645DelayOutput, DG645Delay
 
 __all__ = ["fly_scan", "grid_fly_scan"]
 
@@ -90,7 +90,14 @@ def reset_flyers_wrapper(plan, devices=None):
     return (yield from finalize_wrapper(plan_mutator(plan, insert_reads), reset()))
 
 
-def fly_line_scan(detectors: Sequence, *args, num: int, dwell_time: float, delay_generator: DG645Delay | None = None) -> Generator[Msg, Any, None]:
+def fly_line_scan(
+    detectors: Sequence,
+    *args,
+    num: int,
+    dwell_time: float,
+    trigger: DetectorTrigger.INTERNAL,
+    delay_outputs: Sequence[DG645DelayOutput] = [],
+) -> Generator[Msg, Any, None]:
     """A plan stub for fly-scanning a single trajectory.
 
     Parameters
@@ -112,8 +119,9 @@ def fly_line_scan(detectors: Sequence, *args, num: int, dwell_time: float, delay
       Number of measurements to take.
     dwell_time
       How long, in seconds, for each measurement point.
-    delay_generator
-      If provided, this delay generator will be used to coordinate hardware triggering of detectors
+    delay_outputs
+      If provided, these delay generator outputs will be used to
+      coordinate hardware triggering of detectors
 
     """
     # Calculate parameters for the fly-scan
@@ -132,16 +140,19 @@ def fly_line_scan(detectors: Sequence, *args, num: int, dwell_time: float, delay
         )
         yield from bps.prepare(obj, position_info, wait=False, group=prepare_group)
     # Set up detectors
-    # We can only use hardware triggering under certain circumstances
-    triggering = getattr(motors[0], 'detector_trigger', DetectorTrigger.INTERNAL) if len(motors) == 1 else DetectorTrigger.INTERNAL
     trigger_info = TriggerInfo(
-        number_of_events=num,
-        livetime=dwell_time,
-        deadtime=0,
-        trigger=triggering,
+            number_of_events=num,
+            livetime=dwell_time,
+            deadtime=0,
+            trigger=trigger,
     )
-    for obj in detectors:
-        yield from bps.prepare(obj, trigger_info, wait=False, group=prepare_group)
+    yield from prepare_detectors(
+        detectors=detectors,
+        trigger_info=trigger_info,
+        delay_outputs=delay_outputs,
+        group=prepare_group,
+        wait=False,
+    )
     yield from bps.wait(group=prepare_group)
     # Monitor the motors during their move
     for motor in motors:
@@ -179,13 +190,14 @@ def fly_scan(
     *args,
     num: int,
     dwell_time: float,
-    delay_generator: DG645Delay | None = None,
+    trigger: DetectorTrigger = DetectorTrigger.INTERNAL,
+    delay_outputs: Sequence[DG645DelayOutput] = [],
     md: Mapping = {},
 ):
     """Do a fly scan with a 'flyer' motor and some 'flyer' detectors.
 
-    Will use hardware triggering if *delay_generator* is provided.
-    Otherwise, free-running triggering is used.
+    Will use external triggering if *delay_generator* is provided.
+    Otherwise, internal triggering is used.
 
     Parameters
     ----------
@@ -206,8 +218,11 @@ def fly_scan(
       Number of measurements to take.
     dwell_time
       How long, in seconds, for each measurement point.
-    delay_generator
-      If provided, this delay generator will be used to coordinate hardware triggering of detectors
+    trigger
+      The trigger mode to use for flying.
+    delay_outputs
+      If provided, these delay generator outputs will be used to
+      coordinate hardware triggering of detectors.
     md
       metadata
 
@@ -234,7 +249,7 @@ def fly_scan(
             "*args": md_args,
             "num": num,
             "dwell_time": dwell_time,
-            "delay_generator": repr(delay_generator),
+            "delay_outputs": [repr(output) for output in delay_outputs],
         },
     }
     md_.update(md)
@@ -244,10 +259,9 @@ def fly_scan(
         *args,
         num=num,
         dwell_time=dwell_time,
-        delay_generator=delay_generator,
+        trigger=trigger,
+        delay_outputs=delay_outputs,
     )
-    # Wrapper for reseting the initial motor position/velocity
-    line_scan = reset_flyers_wrapper(line_scan, motors)
     # Wrapper for making it a proper run
     line_scan = run_wrapper(line_scan, md=md_)
     line_scan = stage_wrapper(line_scan, motors)
@@ -257,6 +271,9 @@ def fly_scan(
 def grid_fly_scan(
     detectors: Sequence[FlyerInterface],
     *args,
+    dwell_time: float,
+    trigger: DetectorTrigger = DetectorTrigger.INTERNAL,
+    delay_outputs: Sequence[DG645DelayOutput] = [],
     snake_axes: bool | Sequence[Device] = False,
     md: Mapping = {},
 ):
@@ -276,6 +293,13 @@ def grid_fly_scan(
 
       The first motor is the "slowest", the outer loop. The last
       motor should be flyable.
+    dwell_time
+      How long, in seconds, for each measurement point.
+    trigger
+      The trigger mode to use for flying.
+    delay_outputs
+      If provided, these delay generator outputs will be used to
+      coordinate hardware triggering of detectors.
     snake_axes
       which axes should be snaked, either ``False`` (do not snake any axes),
       ``True`` (snake all axes) or a list of axes to snake. "Snaking" an axis
@@ -333,6 +357,10 @@ def grid_fly_scan(
         "plan_args": {
             "detectors": list(map(repr, detectors)),
             "args": md_args,
+            "dwell_time": dwell_time,
+            "trigger": trigger,
+            "delay_outputs": delay_outputs,
+            "snake_axes": snake_axes,
         },
         "plan_name": "grid_fly_scan",
         "num_points": num_points,
@@ -357,19 +385,70 @@ def grid_fly_scan(
         start=fly_start,
         stop=fly_stop,
         num=fly_num,
+        dwell_time=dwell_time,
+        trigger=trigger,
+        delay_outputs=delay_outputs,
         extra_signals=motors,
     )
-    grid_scan = yield from bp.grid_scan(
+    grid_scan = bp.grid_scan(
         detectors,
         *step_args,
         snake_axes=snake_steppers,
         per_step=per_step,
         md=md_,
     )
-    grid_scan = reset_flyers_wrapper(grid_scan)
-    grid_scan = reset_positions_wrapper(grid_scan)
     uid = yield from grid_scan
     return uid
+
+
+def prepare_detectors(
+    detectors: Sequence[Device],
+    trigger_info: TriggerInfo,
+    delay_outputs: Sequence[DG645DelayOutput] = [],
+    group: Hashable | None = None,
+    wait: bool = False,
+) -> Generator[Msg, Any, None]:
+    """A Bluesky plan stub to prepare detectors for flying.
+
+    A delay generator can be used to handle trigger mutation. Each
+    detector in *detectors* will be asked to provide a validation
+    trigger info that may be different than *trigger_info*.
+
+    Parameters
+    ==========
+    detectors
+      The detectors for which the DG645 will be configured.
+    trigger_info
+      The nominal trigger info for this scan.
+    delay_outputs
+      A sequence of DG645 delay generator output devices that will be
+      configured for each detector.
+
+    """
+    trigger_infos: list[TriggerInfo] = []
+    # Prepare the detectors
+    for detector in detectors:
+        tinfo = getattr(detector, "validate_trigger_info", lambda x: x)(trigger_info)
+        yield from bps.prepare(detector, tinfo, wait=wait, group=group)
+        trigger_infos.append(tinfo)
+    # Prepare the delay generator input
+    if len(delay_outputs) == 0:
+        return
+    delay_generators = {output.parent for output in delay_outputs}
+    for generator in delay_generators:
+        yield from bps.prepare(generator, trigger_info)
+    # Prepare the delay generator outputs
+    trigger_output_infos = {}
+    for output, tinfo in zip(delay_outputs, trigger_infos):
+        trigger_output_infos.setdefault(output, []).append(tinfo)
+    for output, tinfos in trigger_output_infos.items():
+        # Make sure we're only setting each output once, and consistently
+        if not all([tinfo == tinfos[0] for tinfo in tinfos]):
+            raise RuntimeError(
+                "Detectors cannot agree on trigger info for delay output "
+                f"{output.name}: {tinfos}"
+            )
+        yield from bps.prepare(output, tinfos[0])
 
 
 class Snaker:
@@ -386,12 +465,15 @@ class Snaker:
 
     reverse: bool = False
 
-    def __init__(self, snake_axes, flyer, start, stop, num, extra_signals):
+    def __init__(self, snake_axes: bool, flyer: Device, start: float, stop: float, num: int, dwell_time: float, trigger: DetectorTrigger, delay_outputs: Sequence[Device], extra_signals):
         self.snake_axes = snake_axes
         self.flyer = flyer
         self.start = start
         self.stop = stop
         self.num = num
+        self.dwell_time = dwell_time
+        self.trigger = trigger
+        self.delay_outputs = delay_outputs
         self.extra_signals = extra_signals
 
     def __call__(self, detectors, step, pos_cache):
@@ -408,8 +490,11 @@ class Snaker:
             self.flyer,
             start,
             stop,
+            dwell_time=self.dwell_time,
+            trigger=self.trigger,
+            delay_outputs=self.delay_outputs,
             num=self.num,
-            extra_signals=step.keys(),
+            # extra_signals=step.keys(),
         )
 
 

@@ -50,6 +50,8 @@ class IonChamber(StandardReadable, Triggerable):
     _trigger_statuses: dict[str, AsyncStatus] = {}
     _clock_register_width = 32  # bits in the register
 
+    detector_trigger: DetectorTrigger = DetectorTrigger.EDGE_TRIGGER
+
     def __init__(
         self,
         scaler_prefix: str,
@@ -378,16 +380,20 @@ class IonChamber(StandardReadable, Triggerable):
         """Prepare the ion chamber for fly scanning."""
         self.start_timestamp = None
         # Set some configuration PVs on the MCS
-        channel_advance = {
-            DetectorTrigger.INTERNAL: self.mcs.ChannelAdvanceSource.INTERNAL,
-            DetectorTrigger.EDGE_TRIGGER: self.mcs.ChannelAdvanceSource.EXTERNAL,
-            DetectorTrigger.CONSTANT_GATE: self.mcs.ChannelAdvanceSource.EXTERNAL,
-        }[value.trigger]
-        count_on_start = 1 if value.triger == DetectorTrigger.INTERNAL else 0
+        if value.trigger == DetectorTrigger.INTERNAL:
+            count_on_start = 1
+            num_channels = await self.mcs.num_channels_max.get_value()
+            channel_advance = self.mcs.ChannelAdvanceSource.INTERNAL
+        elif value.trigger == DetectorTrigger.EDGE_TRIGGER:
+            count_on_start = 0
+            num_channels = value.total_number_of_exposures
+            channel_advance = self.mcs.ChannelAdvanceSource.EXTERNAL
+        else:
+            raise ValueError(f"Ion chamber does not support {value.trigger}.")
         await asyncio.gather(
             self.mcs.count_on_start.set(count_on_start),
             self.mcs.channel_advance_source.set(channel_advance),
-            self.mcs.num_channels.set(await self.mcs.num_channels_max.get_value()),
+            self.mcs.num_channels.set(num_channels),
             self.mcs.dwell_time.set(value.livetime),
             self.mcs.erase_all.trigger(),
         )

@@ -281,7 +281,7 @@ def trigger_info():
     )
 
 
-async def test_flyscan_prepare(ion_chamber, trigger_info):
+async def test_flyscan_prepare_internal_trigger(ion_chamber, trigger_info):
     # Prepare the ion chamber with mocked put commands
     await ion_chamber.connect(mock=True)
     set_mock_value(ion_chamber.mcs.num_channels_max, 8000)
@@ -293,6 +293,25 @@ async def test_flyscan_prepare(ion_chamber, trigger_info):
     assert erase_mock_put.called
     await assert_value(ion_chamber.mcs.channel_advance_source, "Internal")
     await assert_value(ion_chamber.mcs.num_channels, 8000)
+    await assert_value(ion_chamber.mcs.dwell_time, 1.3)
+    assert ion_chamber._fly_readings == []
+
+
+async def test_flyscan_prepare_external_trigger(ion_chamber):
+    trigger_info = TriggerInfo(
+        number_of_events=5, trigger=DetectorTrigger.EDGE_TRIGGER, deadtime=0, livetime=1.3
+    )
+    # Prepare the ion chamber with mocked put commands
+    await ion_chamber.connect(mock=True)
+    set_mock_value(ion_chamber.mcs.num_channels_max, 8000)
+    erase_mock_put = get_mock_put(ion_chamber.mcs.erase_all)
+    assert not erase_mock_put.called
+    # Prepare the ion chamber
+    await ion_chamber.prepare(trigger_info)
+    # Check that the device was properly configured for fly-scanning
+    assert erase_mock_put.called
+    await assert_value(ion_chamber.mcs.channel_advance_source, "External")
+    await assert_value(ion_chamber.mcs.num_channels, 5)
     await assert_value(ion_chamber.mcs.dwell_time, 1.3)
     assert ion_chamber._fly_readings == []
 

@@ -13,6 +13,7 @@ from ophyd_async.core import (
     SignalR,
     StrictEnum,
     TriggerInfo,
+    DetectorTrigger,
     soft_signal_r_and_setter,
 )
 from ophyd_async.epics import adcore
@@ -66,10 +67,14 @@ class XspressController(ADBaseController):
 
     @AsyncStatus.wrap
     async def prepare(self, trigger_info: TriggerInfo):
+        if trigger_info.trigger == DetectorTrigger.INTERNAL:
+            trigger_mode = XspressTriggerMode.INTERNAL
+        elif trigger_info.trigger == DetectorTrigger.CONSTANT_GATE:
+            trigger_mode = XspressTriggerMode.TTL_VETO_ONLY
         await asyncio.gather(
             self.driver.num_images.set(trigger_info.total_number_of_exposures),
             self.driver.image_mode.set(adcore.ADImageMode.MULTIPLE),
-            self.driver.trigger_mode.set(XspressTriggerMode.INTERNAL),
+            self.driver.trigger_mode.set(trigger_mode),
             # Hardware deadtime correciton is not reliable
             # https://github.com/epics-modules/xspress3/issues/57
             self.driver.deadtime_correction.set(False),
@@ -151,6 +156,8 @@ class Xspress3Detector(AreaDetector):
     _controller: DetectorController
     _writer: adcore.ADHDFWriter
 
+    detector_trigger: DetectorTrigger = DetectorTrigger.CONSTANT_GATE
+
     def __init__(
         self,
         prefix: str,
@@ -225,6 +232,12 @@ class Xspress3Detector(AreaDetector):
     @property
     def default_time_signal(self):
         return self.driver.acquire_time
+
+    def validate_trigger_info(self, value: TriggerInfo) -> TriggerInfo:
+        """Xspress3 supports internal and gate triggering."""
+        if value.trigger == DetectorTrigger.EDGE_TRIGGER:
+            return value.copy(update={"trigger": DetectorTrigger.CONSTANT_GATE})
+        return value
 
 
 def ndattribute_xml(params):
