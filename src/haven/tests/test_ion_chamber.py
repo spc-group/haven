@@ -299,7 +299,10 @@ async def test_flyscan_prepare_internal_trigger(ion_chamber, trigger_info):
 
 async def test_flyscan_prepare_external_trigger(ion_chamber):
     trigger_info = TriggerInfo(
-        number_of_events=5, trigger=DetectorTrigger.EDGE_TRIGGER, deadtime=0, livetime=1.3
+        number_of_events=5,
+        trigger=DetectorTrigger.EDGE_TRIGGER,
+        deadtime=0,
+        livetime=1.3,
     )
     # Prepare the ion chamber with mocked put commands
     await ion_chamber.connect(mock=True)

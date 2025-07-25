@@ -7,13 +7,13 @@ from ophyd_async.core import (
     Array1D,
     AsyncStatus,
     DetectorController,
+    DetectorTrigger,
     Device,
     DeviceVector,
     PathProvider,
     SignalR,
     StrictEnum,
     TriggerInfo,
-    DetectorTrigger,
     soft_signal_r_and_setter,
 )
 from ophyd_async.epics import adcore

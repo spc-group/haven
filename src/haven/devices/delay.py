@@ -3,15 +3,15 @@ from collections.abc import Sequence
 
 from ophyd_async.core import (
     DEFAULT_TIMEOUT,
+    AsyncStatus,
+    DetectorTrigger,
     SignalDatatypeT,
     SignalRW,
     StandardReadable,
     StandardReadableFormat,
     StrictEnum,
     SubsetEnum,
-    AsyncStatus,
     TriggerInfo,
-    DetectorTrigger,
 )
 from ophyd_async.epics.core import epics_signal_r, epics_signal_rw, epics_signal_x
 
@@ -79,12 +79,14 @@ class DG645Output(StandardReadable):
 
 
 class DG645DelayOutput(DG645Output):
-    def __init__(self, prefix: str, name: str = "", channels: Sequence[DG645Channel] = ()):
+    def __init__(
+        self, prefix: str, name: str = "", channels: Sequence[DG645Channel] = ()
+    ):
         """*channels* are the two channels that should be controlled by this output."""
         with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
             self.trigger_prescale = epics_signal_io(int, f"{prefix}TriggerPrescaleL")
             self.trigger_phase = epics_signal_io(int, f"{prefix}TriggerPhaseL")
-        self.channels = channels            
+        self.channels = channels
         super().__init__(prefix=prefix, name=name)
 
     @AsyncStatus.wrap
@@ -96,14 +98,17 @@ class DG645DelayOutput(DG645Output):
 
         """
         aws = [
-            await self.channels[0].reference.set(self.channels[0].Reference.T0),
-            await self.channels[0].delay.set(0),
-            await self.channels[1].reference.set(self.channels[0].Reference.T0),
+            self.channels[0].reference.set(self.channels[0].Reference.T0),
+            self.channels[0].delay.set(0),
+            self.channels[1].reference.set(self.channels[0].Reference.T0),
         ]
         if value.trigger == DetectorTrigger.EDGE_TRIGGER:
-            aws.append(self.channels[1].set(1e-8))
-        elif value.trigger in [DetectorTrigger.CONSTANT_GATE, DetectorTrigger.VARIABLE_GATE]:
-            aws.append(self.channels[1].set(value.livetime))
+            aws.append(self.channels[1].delay.set(1e-8))
+        elif value.trigger in [
+            DetectorTrigger.CONSTANT_GATE,
+            DetectorTrigger.VARIABLE_GATE,
+        ]:
+            aws.append(self.channels[1].delay.set(value.livetime - value.deadtime))
         await asyncio.gather(*aws)
 
 
@@ -180,10 +185,18 @@ class DG645Delay(StandardReadable):
         # 2-channel delay outputs
         with self.add_children_as_readables():
             self.output_T0 = DG645Output(f"{prefix}T0")
-            self.output_AB = DG645DelayOutput(f"{prefix}AB", channels=(self.channel_A, self.channel_B))
-            self.output_CD = DG645DelayOutput(f"{prefix}CD", channels=(self.channel_C, self.channel_D))
-            self.output_EF = DG645DelayOutput(f"{prefix}EF", channels=(self.channel_E, self.channel_F))
-            self.output_GH = DG645DelayOutput(f"{prefix}GH", channels=(self.channel_G, self.channel_H))
+            self.output_AB = DG645DelayOutput(
+                f"{prefix}AB", channels=(self.channel_A, self.channel_B)
+            )
+            self.output_CD = DG645DelayOutput(
+                f"{prefix}CD", channels=(self.channel_C, self.channel_D)
+            )
+            self.output_EF = DG645DelayOutput(
+                f"{prefix}EF", channels=(self.channel_E, self.channel_F)
+            )
+            self.output_GH = DG645DelayOutput(
+                f"{prefix}GH", channels=(self.channel_G, self.channel_H)
+            )
         # Trigger control
         with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
             self.trigger_source = epics_signal_io(

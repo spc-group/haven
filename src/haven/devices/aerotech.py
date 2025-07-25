@@ -8,6 +8,7 @@ from ophyd_async.core import (
     DEFAULT_TIMEOUT,
     Array1D,
     AsyncStatus,
+    DetectorTrigger,
     DeviceVector,
     FlyMotorInfo,
     StandardReadable,
@@ -15,7 +16,6 @@ from ophyd_async.core import (
     StrictEnum,
     error_if_none,
     observe_value,
-    DetectorTrigger,
 )
 from ophyd_async.epics.core import epics_signal_r, epics_signal_rw, epics_signal_x
 
@@ -167,6 +167,7 @@ class AerotechMotor(Motor):
         # Move to start position
         move_status = self.set(start)
         # Set up profile parameters
+        ixce2_output = 143
         await asyncio.gather(
             stage.profile_move.point_count.set(num_pulses),
             stage.profile_move.pulse_count.set(num_pulses),
@@ -181,6 +182,11 @@ class AerotechMotor(Motor):
                 axis.enabled.set(num == self.axis)
                 for num, axis in stage.profile_move.axis.items()
             ),
+            # Magic values for the PSO to work
+            # TODO: Sort out which of these need to change for different axes
+            stage.profile_move.pulse_output.set(ixce2_output),
+            stage.profile_move.pulse_source.set(0),
+            stage.profile_move.pulse_axis.set(0),
         )
         # Build the profile
         await stage.profile_move.build.trigger()

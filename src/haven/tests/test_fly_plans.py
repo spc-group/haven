@@ -1,12 +1,12 @@
-from unittest import mock
 from collections import OrderedDict
+from unittest import mock
 from unittest.mock import MagicMock
 
 import numpy as np
 import pytest
 from ophyd import sim
+from ophyd_async.core import DetectorTrigger, TriggerInfo
 from ophyd_async.epics.motor import Motor
-from ophyd_async.core import TriggerInfo, DetectorTrigger
 
 from haven.devices import DG645Delay, IonChamber, Xspress3Detector
 from haven.plans import fly_scan, grid_fly_scan
@@ -24,7 +24,9 @@ def test_set_fly_params(flyer):
     # step size == 10
     plan = fly_scan([], flyer, -20, 30, num=6, dwell_time=1.5)
     messages = list(plan)
-    prep_msg = [msg for msg in messages if msg.command == "prepare" and msg.obj is flyer][0]
+    prep_msg = [
+        msg for msg in messages if msg.command == "prepare" and msg.obj is flyer
+    ][0]
     prep_info = prep_msg.args[0]
     assert prep_info.start_position == -20
     assert prep_info.end_position == 30
@@ -280,7 +282,17 @@ def test_fly_grid_scan(flyer):
     stepper = sim.motor
     # step size == 10
     plan = grid_fly_scan(
-        [], stepper, -100, 100, 11, flyer, -20, 30, 6, dwell_time=1.0, snake_axes=[flyer]
+        [],
+        stepper,
+        -100,
+        100,
+        11,
+        flyer,
+        -20,
+        30,
+        6,
+        dwell_time=1.0,
+        snake_axes=[flyer],
     )
     messages = list(plan)
     assert messages[0].command == "stage"
@@ -292,9 +304,7 @@ def test_fly_grid_scan(flyer):
     assert messages[4].command == "wait"
     # Check that flyer motor positions snake back and forth
     stepper_positions = [
-        msg.args[0]
-        for msg in messages
-        if (msg.command == "set" and msg.obj is stepper)
+        msg.args[0] for msg in messages if (msg.command == "set" and msg.obj is stepper)
     ]
     flyer_start_positions = [
         msg.args[0].start_position
@@ -373,8 +383,22 @@ def test_fly_grid_scan_metadata(sim_registry, flyer, ion_chamber):
 def test_prepare_detectors():
     delay = DG645Delay("")
     # Include two ion chambers to make sure we set the delay outputs only once
-    ion_chamber = IonChamber("", scaler_channel=2, preamp_prefix="", voltmeter_prefix="", voltmeter_channel=0, counts_per_volt_second=1e6)
-    ion_chamber2 = IonChamber("", scaler_channel=2, preamp_prefix="", voltmeter_prefix="", voltmeter_channel=0, counts_per_volt_second=1e6)
+    ion_chamber = IonChamber(
+        "",
+        scaler_channel=2,
+        preamp_prefix="",
+        voltmeter_prefix="",
+        voltmeter_channel=0,
+        counts_per_volt_second=1e6,
+    )
+    ion_chamber2 = IonChamber(
+        "",
+        scaler_channel=2,
+        preamp_prefix="",
+        voltmeter_prefix="",
+        voltmeter_channel=0,
+        counts_per_volt_second=1e6,
+    )
     trigger_info = TriggerInfo(
         number_of_events=15,
         livetime=1.5,
@@ -388,11 +412,13 @@ def test_prepare_detectors():
         deadtime=0.1,
     )
     xspress.validate_trigger_info = mock.MagicMock(return_value=gate_info)
-    msgs = list(prepare_detectors(
-        detectors=[ion_chamber, ion_chamber2, xspress],
-        trigger_info=trigger_info,
-        delay_outputs=[delay.output_AB, delay.output_AB, delay.output_CD],
-    ))
+    msgs = list(
+        prepare_detectors(
+            detectors=[ion_chamber, ion_chamber2, xspress],
+            trigger_info=trigger_info,
+            delay_outputs=[delay.output_AB, delay.output_AB, delay.output_CD],
+        )
+    )
     # Ion chamber trigger
     assert len(msgs) == 6
     assert msgs[0].obj is ion_chamber

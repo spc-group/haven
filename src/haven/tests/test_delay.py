@@ -3,9 +3,9 @@ test the SRS DG-645 digital delay device support
 
 Hardware is not available so test with best efforts
 """
-import pytest
 
-from ophyd_async.core import TriggerInfo, DetectorTrigger
+import pytest
+from ophyd_async.core import DetectorTrigger, TriggerInfo
 from ophyd_async.testing import assert_value
 
 from haven.devices import delay
@@ -147,7 +147,7 @@ async def test_prepare_delay_internal(dg645):
 
 async def test_prepare_delay_edge_trigger(dg645):
     tinfo = TriggerInfo(
-        trigger = DetectorTrigger.EDGE_TRIGGER,
+        trigger=DetectorTrigger.EDGE_TRIGGER,
     )
     await dg645.prepare(tinfo)
     await assert_value(dg645.trigger_source, "Ext rising edge")
@@ -155,7 +155,7 @@ async def test_prepare_delay_edge_trigger(dg645):
 
 async def test_prepare_output_edge(dg645):
     tinfo = TriggerInfo(
-        trigger = DetectorTrigger.EDGE_TRIGGER,
+        trigger=DetectorTrigger.EDGE_TRIGGER,
     )
     output = dg645.output_AB
     await output.prepare(tinfo)
@@ -167,9 +167,7 @@ async def test_prepare_output_edge(dg645):
 
 async def test_prepare_output_edge(dg645):
     tinfo = TriggerInfo(
-        trigger=DetectorTrigger.CONSTANT_GATE,
-        live_time=1.3,
-        deadtime=0.1
+        trigger=DetectorTrigger.CONSTANT_GATE, livetime=1.3, deadtime=0.1
     )
     output = dg645.output_AB
     await output.prepare(tinfo)
@@ -177,4 +175,3 @@ async def test_prepare_output_edge(dg645):
     await assert_value(dg645.channel_A.delay, 0)
     await assert_value(dg645.channel_B.reference, "T0")
     await assert_value(dg645.channel_B.delay, 1.2)
-

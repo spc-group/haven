@@ -3,8 +3,8 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 import pytest
-from ophyd_async.core import TriggerInfo, DetectorTrigger
-from ophyd_async.testing import get_mock_put, set_mock_value, assert_value
+from ophyd_async.core import DetectorTrigger, TriggerInfo
+from ophyd_async.testing import assert_value, get_mock_put, set_mock_value
 
 from haven.devices.detectors.xspress import Xspress3Detector, ndattribute_params
 
@@ -168,7 +168,6 @@ async def test_validate_trigger_info(detector):
         deadtime=0.1,
     )
     assert detector.validate_trigger_info(tinfo_in) == tinfo_target
-    
 
 
 # -----------------------------------------------------------------------------

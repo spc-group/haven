@@ -7,13 +7,13 @@ from bluesky.protocols import Triggerable
 from ophyd_async.core import (
     DEFAULT_TIMEOUT,
     AsyncStatus,
+    DetectorTrigger,
     StandardReadable,
     StandardReadableFormat,
     TriggerInfo,
     derived_signal_r,
     soft_signal_rw,
     wait_for_value,
-    DetectorTrigger,
 )
 
 from .labjack import LabJackT7

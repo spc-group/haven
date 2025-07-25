@@ -1,6 +1,6 @@
 import uuid
 from collections import OrderedDict, abc
-from collections.abc import Mapping, Sequence, Generator
+from collections.abc import Generator, Mapping, Sequence
 from typing import Any, Hashable
 
 import numpy as np
@@ -13,7 +13,6 @@ from bluesky.preprocessors import (
     finalize_wrapper,
     pchain,
     plan_mutator,
-    reset_positions_wrapper,
     run_wrapper,
     stage_wrapper,
 )
@@ -26,7 +25,7 @@ from ophyd_async.core import DetectorTrigger, TriggerInfo
 from ophyd_async.epics.motor import FlyMotorInfo as BaseFlyMotorInfo
 from pydantic import Field
 
-from haven.devices.delay import DG645DelayOutput, DG645Delay
+from haven.devices.delay import DG645DelayOutput
 
 __all__ = ["fly_scan", "grid_fly_scan"]
 
@@ -141,10 +140,10 @@ def fly_line_scan(
         yield from bps.prepare(obj, position_info, wait=False, group=prepare_group)
     # Set up detectors
     trigger_info = TriggerInfo(
-            number_of_events=num,
-            livetime=dwell_time,
-            deadtime=0,
-            trigger=trigger,
+        number_of_events=num,
+        livetime=dwell_time,
+        deadtime=0,
+        trigger=trigger,
     )
     yield from prepare_detectors(
         detectors=detectors,
@@ -349,6 +348,10 @@ def grid_fly_scan(
         md_args.extend([repr(motor), start, stop, num])
         motor_names.append(motor.name)
     num_points = np.prod([num for motor, start, stop, num, snake in chunk_args])
+    try:
+        snake_repr = [repr(ax) for ax in snake_axes]
+    except TypeError:
+        snake_repr = snake_axes
     md_ = {
         "shape": tuple(num for motor, start, stop, num, snake in chunk_args),
         "extents": tuple(
@@ -360,7 +363,7 @@ def grid_fly_scan(
             "dwell_time": dwell_time,
             "trigger": trigger,
             "delay_outputs": delay_outputs,
-            "snake_axes": snake_axes,
+            "snake_axes": snake_repr,
         },
         "plan_name": "grid_fly_scan",
         "num_points": num_points,
@@ -465,7 +468,18 @@ class Snaker:
 
     reverse: bool = False
 
-    def __init__(self, snake_axes: bool, flyer: Device, start: float, stop: float, num: int, dwell_time: float, trigger: DetectorTrigger, delay_outputs: Sequence[Device], extra_signals):
+    def __init__(
+        self,
+        snake_axes: bool,
+        flyer: Device,
+        start: float,
+        stop: float,
+        num: int,
+        dwell_time: float,
+        trigger: DetectorTrigger,
+        delay_outputs: Sequence[Device],
+        extra_signals,
+    ):
         self.snake_axes = snake_axes
         self.flyer = flyer
         self.start = start
