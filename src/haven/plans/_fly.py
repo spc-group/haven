@@ -268,8 +268,8 @@ def fly_scan(
     def fly_inner():
         # Set up detector streams
         n_outputs = len(delay_outputs)
-        triggered_detectors = []  # detectors[:n_outputs]
-        internal_detectors = detectors
+        triggered_detectors = detectors[:n_outputs]
+        internal_detectors = detectors[n_outputs:]
         yield from bps.declare_stream(*triggered_detectors, name="primary")
         for detector in internal_detectors:
             yield from bps.declare_stream(detector, name=detector.name)

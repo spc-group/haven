@@ -31,7 +31,7 @@ dependencies = [
     "httpx[http2]",
     "mergedeep",
     "ophyd==1.10.7",
-    "ophyd-async==0.11",
+    "ophyd-async==0.12.2",
     "pint",
     "pcdsdevices",
     "rich",
