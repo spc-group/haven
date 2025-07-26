@@ -7,6 +7,7 @@ from ophyd_async.core import (
     Array1D,
     AsyncStatus,
     DetectorController,
+    DetectorTrigger,
     Device,
     DeviceVector,
     PathProvider,
@@ -57,7 +58,7 @@ class XspressController(ADBaseController):
     def get_deadtime(self, exposure: float) -> float:
         # Arbitrary value. To-do: fill this in when we know what to
         # include
-        return 0.001
+        return 1e-6
 
     async def setup_ndattributes(self, device_name: str, elements: Sequence[int]):
         params = ndattribute_params(device_name=device_name, elements=elements)
@@ -66,14 +67,29 @@ class XspressController(ADBaseController):
 
     @AsyncStatus.wrap
     async def prepare(self, trigger_info: TriggerInfo):
-        await asyncio.gather(
+        print(trigger_info)
+        if trigger_info.trigger == DetectorTrigger.INTERNAL:
+            trigger_mode = XspressTriggerMode.INTERNAL
+        elif trigger_info.trigger == DetectorTrigger.CONSTANT_GATE:
+            trigger_mode = XspressTriggerMode.TTL_VETO_ONLY
+        aws = [
             self.driver.num_images.set(trigger_info.total_number_of_exposures),
             self.driver.image_mode.set(adcore.ADImageMode.MULTIPLE),
-            self.driver.trigger_mode.set(XspressTriggerMode.INTERNAL),
+            self.driver.trigger_mode.set(trigger_mode),
             # Hardware deadtime correciton is not reliable
             # https://github.com/epics-modules/xspress3/issues/57
             self.driver.deadtime_correction.set(False),
-        )
+        ]
+        if trigger_info.livetime is not None:
+            aws.extend(
+                [
+                    self.driver.acquire_time.set(trigger_info.livetime),
+                    self.driver.acquire_period.set(
+                        trigger_info.livetimeatrigger_info.deadtime
+                    ),
+                ]
+            )
+        await asyncio.gather(*aws)
 
 
 class XspressDatasetDescriber(adcore.ADBaseDatasetDescriber):
@@ -151,6 +167,8 @@ class Xspress3Detector(AreaDetector):
     _controller: DetectorController
     _writer: adcore.ADHDFWriter
 
+    detector_trigger: DetectorTrigger = DetectorTrigger.CONSTANT_GATE
+
     def __init__(
         self,
         prefix: str,
@@ -225,6 +243,14 @@ class Xspress3Detector(AreaDetector):
     @property
     def default_time_signal(self):
         return self.driver.acquire_time
+
+    def validate_trigger_info(self, value: TriggerInfo) -> TriggerInfo:
+        """Xspress3 supports internal and gate triggering."""
+        if value.trigger == DetectorTrigger.EDGE_TRIGGER:
+            value = value.copy(update={"trigger": DetectorTrigger.CONSTANT_GATE})
+        if value.deadtime == 0 and value.trigger != DetectorTrigger.INTERNAL:
+            value = value.copy(update={"deadtime": 1e-5})
+        return value
 
 
 def ndattribute_xml(params):

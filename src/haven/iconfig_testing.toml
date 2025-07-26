@@ -131,12 +131,9 @@ prefix = "255idcVME:m1"
 vertical_prefix = "255idcVME:m13"
 horizontal_prefix = "255idcVME:m14"
 
-# Aerotech controller support disabled until new controllers are ready
-# [aerotech_stage.aerotech]
-# prefix = "255idc"
-# delay_prefix = "255idc:DG645"
-# pv_vert = ":m1"
-# pv_horiz = ":m2"
+[[ aerotech_stage ]]
+name = "aerotech"
+prefix = "255idc:"
 
 
 # External high-voltage power supplies
