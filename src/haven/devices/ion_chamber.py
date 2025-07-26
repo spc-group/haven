@@ -15,6 +15,7 @@ from ophyd_async.core import (
     soft_signal_rw,
     wait_for_value,
 )
+import numpy as np
 
 from .labjack import LabJackT7
 from .scaler import MultiChannelScaler
@@ -423,16 +424,23 @@ class IonChamber(StandardReadable, Triggerable):
 
     async def collect_pages(self):
         # Prepare the individual signal data-sets
+        raw_counts, raw_times, clock_freq, offset_rate, num_points = await asyncio.gather(
+            self.mca.spectrum.get_value(),
+            self.mcs.mcas[0].spectrum.get_value(),
+            self.mcs.scaler.clock_frequency.get_value(),
+            self.scaler_channel.offset_rate.get_value(),
+            self.mcs.current_channel.get_value(),
+        )
+        raw_counts = raw_counts[:num_points]
+        times = raw_times / clock_freq
+        # Fill in any missing timestamps
         timestamps = [
             d[self.mcs.current_channel.name]["timestamp"] for d in self._fly_readings
         ]
-        num_points = len(timestamps)
-        raw_counts = (await self.mca.spectrum.get_value())[:num_points]
-        raw_times = await self.mcs.mcas[0].spectrum.get_value()
-        clock_freq = await self.mcs.scaler.clock_frequency.get_value()
-        times = raw_times / clock_freq
+        elapsed_times = np.cumsum(times)
+        t0 = min(timestamps)
+        timestamps = t0 + elapsed_times
         # Apply the dark current correction
-        offset_rate = await self.scaler_channel.offset_rate.get_value()
         net_counts = raw_counts - offset_rate * times
         # Build the results dictionary to be sent out
         data = {

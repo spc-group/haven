@@ -58,7 +58,7 @@ class XspressController(ADBaseController):
     def get_deadtime(self, exposure: float) -> float:
         # Arbitrary value. To-do: fill this in when we know what to
         # include
-        return 0.001
+        return 1e-6
 
     async def setup_ndattributes(self, device_name: str, elements: Sequence[int]):
         params = ndattribute_params(device_name=device_name, elements=elements)
@@ -75,6 +75,8 @@ class XspressController(ADBaseController):
             self.driver.num_images.set(trigger_info.total_number_of_exposures),
             self.driver.image_mode.set(adcore.ADImageMode.MULTIPLE),
             self.driver.trigger_mode.set(trigger_mode),
+            self.driver.acquire_time.set(trigger_info.livetime),
+            self.driver.acquire_period.set(trigger_info.livetime+trigger_info.deadtime),
             # Hardware deadtime correciton is not reliable
             # https://github.com/epics-modules/xspress3/issues/57
             self.driver.deadtime_correction.set(False),
@@ -236,7 +238,9 @@ class Xspress3Detector(AreaDetector):
     def validate_trigger_info(self, value: TriggerInfo) -> TriggerInfo:
         """Xspress3 supports internal and gate triggering."""
         if value.trigger == DetectorTrigger.EDGE_TRIGGER:
-            return value.copy(update={"trigger": DetectorTrigger.CONSTANT_GATE})
+            value = value.copy(update={"trigger": DetectorTrigger.CONSTANT_GATE})
+        if value.deadtime == 0 and value.trigger != DetectorTrigger.INTERNAL:
+            value = value.copy(update={"deadtime": 1e-5})
         return value
 
 

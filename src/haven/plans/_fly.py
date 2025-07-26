@@ -15,8 +15,10 @@ from bluesky.preprocessors import (
     plan_mutator,
     run_wrapper,
     stage_wrapper,
+    stage_decorator,
+    run_decorator,
 )
-from bluesky.protocols import EventPageCollectable
+from bluesky.protocols import EventPageCollectable, Collectable
 from bluesky.utils import Msg, single_gen
 from ophyd import Device
 from ophyd.flyers import FlyerInterface
@@ -141,8 +143,8 @@ def fly_line_scan(
     # Set up detectors
     trigger_info = TriggerInfo(
         number_of_events=num,
-        livetime=dwell_time,
-        deadtime=0,
+        livetime=dwell_time * 0.85,
+        deadtime=dwell_time * 0.15,
         trigger=trigger,
     )
     yield from prepare_detectors(
@@ -179,7 +181,7 @@ def fly_line_scan(
         yield from bps.unmonitor(sig)
     # Collect the data after flying
     flyers = [*motors, *detectors]
-    flyers = [flyer for flyer in flyers if isinstance(flyer, EventPageCollectable)]
+    flyers = [flyer for flyer in flyers if isinstance(flyer, Collectable)]
     for flyer_ in flyers:
         yield from bps.collect(flyer_)
 
@@ -262,9 +264,20 @@ def fly_scan(
         delay_outputs=delay_outputs,
     )
     # Wrapper for making it a proper run
-    line_scan = run_wrapper(line_scan, md=md_)
-    line_scan = stage_wrapper(line_scan, motors)
-    yield from line_scan
+    @stage_decorator([*detectors, *motors])
+    @run_decorator(md=md_)
+    def fly_inner():
+        # Set up detector streams
+        n_outputs = len(delay_outputs)
+        triggered_detectors = [] #detectors[:n_outputs]
+        internal_detectors = detectors
+        yield from bps.declare_stream(*triggered_detectors, name="primary")
+        for detector in internal_detectors:
+            yield from bps.declare_stream(detector, name=detector.name)
+        # Do the true original plan
+        yield from line_scan
+
+    yield from fly_inner()
 
 
 def grid_fly_scan(
@@ -362,14 +375,14 @@ def grid_fly_scan(
             "args": md_args,
             "dwell_time": dwell_time,
             "trigger": trigger,
-            "delay_outputs": delay_outputs,
+            "delay_outputs": [repr(output) for output in delay_outputs],
             "snake_axes": snake_repr,
         },
         "plan_name": "grid_fly_scan",
         "num_points": num_points,
         "num_intervals": num_points - 1,
         "motors": tuple(motor_names),
-        "snaking": snaking,
+        "snaking": bool(snake_axes),
         "hints": {},
     }
     # Add metadata hints for plotting, etc
@@ -508,7 +521,6 @@ class Snaker:
             trigger=self.trigger,
             delay_outputs=self.delay_outputs,
             num=self.num,
-            # extra_signals=step.keys(),
         )
 
 

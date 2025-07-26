@@ -103,7 +103,7 @@ class DG645DelayOutput(DG645Output):
             self.channels[1].reference.set(self.channels[0].Reference.T0),
         ]
         if value.trigger == DetectorTrigger.EDGE_TRIGGER:
-            aws.append(self.channels[1].delay.set(1e-8))
+            aws.append(self.channels[1].delay.set(1e-5))
         elif value.trigger in [
             DetectorTrigger.CONSTANT_GATE,
             DetectorTrigger.VARIABLE_GATE,

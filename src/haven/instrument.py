@@ -97,6 +97,7 @@ beamline = HavenInstrument(
         "aperture_slits": devices.ApertureSlits,
         "blade_slits": devices.BladeSlits,
         "camera": devices.AravisDetector,
+        "delay_generator": devices.DG645Delay,
         "eiger": devices.EigerDetector,
         "high_heat_load_mirror": devices.HighHeatLoadMirror,
         "ion_chamber": devices.IonChamber,
