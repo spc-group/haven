@@ -355,6 +355,7 @@ async def test_flyscan_collect(ion_chamber, trigger_info):
     sim_times = np.asarray([4.0e7, 4.0e7, 4.0e7, 4.0e7, 4.0e7, 4.0e7])
     set_mock_value(ion_chamber.mcs.mcas[0].spectrum, sim_times)
     set_mock_value(ion_chamber.mcs.scaler.clock_frequency, 1e7)
+    set_mock_value(ion_chamber.mcs.current_channel, 6)
     channel_numbers = range(len(sim_times) + 1)
     expected_timestamps = [1004, 1008, 1012, 1016, 1020, 1024]
     ion_chamber._fly_readings = [

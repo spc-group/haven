@@ -38,7 +38,7 @@ def test_fly_scan_metadata(flyer, ion_chamber):
     md = {"spam": "eggs"}
     plan = fly_scan([ion_chamber], flyer, -20, 30, num=6, dwell_time=1, md=md)
     messages = list(plan)
-    open_msg = messages[1]
+    open_msg = messages[2]
     assert open_msg.command == "open_run"
     real_md = open_msg.kwargs
     expected_md = {

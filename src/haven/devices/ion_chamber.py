@@ -3,6 +3,7 @@
 import asyncio
 import logging
 
+import numpy as np
 from bluesky.protocols import Triggerable
 from ophyd_async.core import (
     DEFAULT_TIMEOUT,
@@ -15,7 +16,6 @@ from ophyd_async.core import (
     soft_signal_rw,
     wait_for_value,
 )
-import numpy as np
 
 from .labjack import LabJackT7
 from .scaler import MultiChannelScaler
@@ -424,12 +424,14 @@ class IonChamber(StandardReadable, Triggerable):
 
     async def collect_pages(self):
         # Prepare the individual signal data-sets
-        raw_counts, raw_times, clock_freq, offset_rate, num_points = await asyncio.gather(
-            self.mca.spectrum.get_value(),
-            self.mcs.mcas[0].spectrum.get_value(),
-            self.mcs.scaler.clock_frequency.get_value(),
-            self.scaler_channel.offset_rate.get_value(),
-            self.mcs.current_channel.get_value(),
+        raw_counts, raw_times, clock_freq, offset_rate, num_points = (
+            await asyncio.gather(
+                self.mca.spectrum.get_value(),
+                self.mcs.mcas[0].spectrum.get_value(),
+                self.mcs.scaler.clock_frequency.get_value(),
+                self.scaler_channel.offset_rate.get_value(),
+                self.mcs.current_channel.get_value(),
+            )
         )
         raw_counts = raw_counts[:num_points]
         times = raw_times / clock_freq
@@ -437,9 +439,9 @@ class IonChamber(StandardReadable, Triggerable):
         timestamps = [
             d[self.mcs.current_channel.name]["timestamp"] for d in self._fly_readings
         ]
-        elapsed_times = np.cumsum(times)
+        elapsed_times = np.cumsum(times[1:])
         t0 = min(timestamps)
-        timestamps = t0 + elapsed_times
+        timestamps = [t0, *(t0 + elapsed_times)]
         # Apply the dark current correction
         net_counts = raw_counts - offset_rate * times
         # Build the results dictionary to be sent out

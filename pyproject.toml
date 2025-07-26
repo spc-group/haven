@@ -130,6 +130,7 @@ files = [
     'src/haven/plans/_calibrate.py', 'src/haven/tests/test_calibrate_plan.py',
     'src/haven/plans/_set_energy.py', 'src/haven/tests/test_set_energy.py',
     'src/haven/plans/_xafs_scan.py', 'src/haven/plans/_energy_scan.py', 'src/haven/tests/test_energy_xafs_scan.py',
+    'src/haven/plans/_fly.py', 'src/haven/tests/test_fly_plans.py',
     'src/haven/positioner.py', "src/haven/tests/test_positioner.py",
 ]
 follow_imports = "skip"

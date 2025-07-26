@@ -67,20 +67,29 @@ class XspressController(ADBaseController):
 
     @AsyncStatus.wrap
     async def prepare(self, trigger_info: TriggerInfo):
+        print(trigger_info)
         if trigger_info.trigger == DetectorTrigger.INTERNAL:
             trigger_mode = XspressTriggerMode.INTERNAL
         elif trigger_info.trigger == DetectorTrigger.CONSTANT_GATE:
             trigger_mode = XspressTriggerMode.TTL_VETO_ONLY
-        await asyncio.gather(
+        aws = [
             self.driver.num_images.set(trigger_info.total_number_of_exposures),
             self.driver.image_mode.set(adcore.ADImageMode.MULTIPLE),
             self.driver.trigger_mode.set(trigger_mode),
-            self.driver.acquire_time.set(trigger_info.livetime),
-            self.driver.acquire_period.set(trigger_info.livetime+trigger_info.deadtime),
             # Hardware deadtime correciton is not reliable
             # https://github.com/epics-modules/xspress3/issues/57
             self.driver.deadtime_correction.set(False),
-        )
+        ]
+        if trigger_info.livetime is not None:
+            aws.extend(
+                [
+                    self.driver.acquire_time.set(trigger_info.livetime),
+                    self.driver.acquire_period.set(
+                        trigger_info.livetimeatrigger_info.deadtime
+                    ),
+                ]
+            )
+        await asyncio.gather(*aws)
 
 
 class XspressDatasetDescriber(adcore.ADBaseDatasetDescriber):

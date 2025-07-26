@@ -13,12 +13,10 @@ from bluesky.preprocessors import (
     finalize_wrapper,
     pchain,
     plan_mutator,
-    run_wrapper,
-    stage_wrapper,
-    stage_decorator,
     run_decorator,
+    stage_decorator,
 )
-from bluesky.protocols import EventPageCollectable, Collectable
+from bluesky.protocols import Collectable
 from bluesky.utils import Msg, single_gen
 from ophyd import Device
 from ophyd.flyers import FlyerInterface
@@ -263,13 +261,14 @@ def fly_scan(
         trigger=trigger,
         delay_outputs=delay_outputs,
     )
+
     # Wrapper for making it a proper run
     @stage_decorator([*detectors, *motors])
     @run_decorator(md=md_)
     def fly_inner():
         # Set up detector streams
         n_outputs = len(delay_outputs)
-        triggered_detectors = [] #detectors[:n_outputs]
+        triggered_detectors = []  # detectors[:n_outputs]
         internal_detectors = detectors
         yield from bps.declare_stream(*triggered_detectors, name="primary")
         for detector in internal_detectors:
@@ -382,7 +381,7 @@ def grid_fly_scan(
         "num_points": num_points,
         "num_intervals": num_points - 1,
         "motors": tuple(motor_names),
-        "snaking": bool(snake_axes),
+        "snaking": snaking,
         "hints": {},
     }
     # Add metadata hints for plotting, etc

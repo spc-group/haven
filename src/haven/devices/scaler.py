@@ -47,7 +47,9 @@ class MCA(StandardReadable):
 
     def __init__(self, prefix, name=""):
         # Signals
-        with self.add_children_as_readables(StandardReadableFormat.HINTED_UNCACHED_SIGNAL):
+        with self.add_children_as_readables(
+            StandardReadableFormat.HINTED_UNCACHED_SIGNAL
+        ):
             self.spectrum = epics_signal_r(Array1D[np.int32], f"{prefix}.VAL")
         self.background = epics_signal_r(Array1D[np.int32], f"{prefix}.BG")
         with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
