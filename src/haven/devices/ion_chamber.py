@@ -445,10 +445,18 @@ class IonChamber(StandardReadable, Triggerable):
         # Apply the dark current correction
         net_counts = raw_counts - offset_rate * times
         # Build the results dictionary to be sent out
+        null_data = [0] * len(net_counts)
         data = {
             self.scaler_channel.raw_count.name: raw_counts,
             self.scaler_channel.net_count.name: net_counts,
             self.mcs.scaler.elapsed_time.name: times,
+            self.mcs.scaler.channels[0].net_count.name: null_data,
+            self.mcs.scaler.channels[0].raw_count.name: null_data,
+            self.voltmeter_channel.final_value.name: null_data,
+            self.net_count_rate.name: null_data,
+            self.net_current.name: null_data,
+            self.raw_current.name: null_data,
+            self.raw_count_rate.name: null_data,
         }
         results = {
             "time": max(timestamps),
