@@ -2,6 +2,8 @@
 
 import asyncio
 import logging
+from collections.abc import Iterable
+from itertools import repeat
 
 import numpy as np
 from bluesky.protocols import Triggerable
@@ -381,20 +383,27 @@ class IonChamber(StandardReadable, Triggerable):
         """Prepare the ion chamber for fly scanning."""
         self.start_timestamp = None
         # Set some configuration PVs on the MCS
+        max_channels = await self.mcs.num_channels_max.get_value()
         if value.trigger == DetectorTrigger.INTERNAL:
             count_on_start = 1
-            num_channels = await self.mcs.num_channels_max.get_value()
+            num_channels = max_channels
             channel_advance = self.mcs.ChannelAdvanceSource.INTERNAL
         elif value.trigger == DetectorTrigger.EDGE_TRIGGER:
             count_on_start = 0
-            num_channels = value.total_number_of_exposures
+            num_channels = value.number_of_events or max_channels
             channel_advance = self.mcs.ChannelAdvanceSource.EXTERNAL
         else:
             raise ValueError(f"Ion chamber does not support {value.trigger}.")
+        if isinstance(num_channels, Iterable):
+            # We have multiple events with distinct number of channels
+            self._trigger_channel_nums = iter(num_channels)
+        else:
+            # Fixed number of events
+            self._trigger_channel_nums = repeat(num_channels)
         await asyncio.gather(
+            self.mcs.num_channels_max.get_value(),
             self.mcs.count_on_start.set(count_on_start),
             self.mcs.channel_advance_source.set(channel_advance),
-            self.mcs.num_channels.set(num_channels),
             self.mcs.dwell_time.set(value.livetime),
             self.mcs.erase_all.trigger(),
         )
@@ -405,10 +414,13 @@ class IonChamber(StandardReadable, Triggerable):
     @AsyncStatus.wrap
     async def kickoff(self):
         """Start recording data for the fly scan."""
+        # Decide how many frames we expect
+        num_channels = next(self._trigger_channel_nums)
+        await self.mcs.num_channels.set(num_channels)
         # Watch for new data being collected so we can save timestamps
         self.mcs.current_channel.subscribe(self.record_fly_reading)
         # Start acquiring
-        self.mcs.start_all.trigger(wait=False)
+        self.mcs.erase_start.trigger(wait=False)
         # Wait for acquisition to start
         await wait_for_value(
             self.mcs.acquiring, self.mcs.Acquiring.ACQUIRING, timeout=DEFAULT_TIMEOUT

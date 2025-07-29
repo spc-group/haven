@@ -1,6 +1,9 @@
 import asyncio
 import xml.etree.ElementTree as ET
 from collections.abc import Sequence
+from collections.abc import Iterable
+from itertools import repeat
+
 
 import numpy as np
 from ophyd_async.core import (
@@ -67,13 +70,21 @@ class XspressController(ADBaseController):
 
     @AsyncStatus.wrap
     async def prepare(self, trigger_info: TriggerInfo):
-        print(trigger_info)
         if trigger_info.trigger == DetectorTrigger.INTERNAL:
             trigger_mode = XspressTriggerMode.INTERNAL
         elif trigger_info.trigger == DetectorTrigger.CONSTANT_GATE:
             trigger_mode = XspressTriggerMode.TTL_VETO_ONLY
+        max_frames = 2000
+        print(f"Preparing: {trigger_info}")
+        num_frames = trigger_info.number_of_events or max_frames
+        if isinstance(num_frames, Iterable):
+            # We have multiple events with distinct number of channels
+            self._trigger_frame_nums = iter(num_frames)
+        else:
+            # Fixed number of events
+            self._trigger_frame_nums = repeat(num_frames)
         aws = [
-            self.driver.num_images.set(trigger_info.total_number_of_exposures),
+            # self.driver.num_images.set(trigger_info.total_number_of_exposures),
             self.driver.image_mode.set(adcore.ADImageMode.MULTIPLE),
             self.driver.trigger_mode.set(trigger_mode),
             # Hardware deadtime correciton is not reliable
@@ -221,10 +232,19 @@ class Xspress3Detector(AreaDetector):
         )
 
     @AsyncStatus.wrap
+    async def kickoff(self):
+        print("Entering kickoff()")
+        await super().kickoff()
+        print("Finished super kickoff()")
+        if self._trigger_info.trigger == DetectorTrigger.CONSTANT_GATE:
+            await self._controller.arm()
+        print("Finishing kickoff()")
+
+    @AsyncStatus.wrap
     async def stage(self) -> None:
-        self._old_xml_file, *_ = await asyncio.gather(
-            self.driver.nd_attributes_file.get_value(),
-            super().stage(),
+        await super().stage()
+        self._old_xml_file = await self.driver.nd_attributes_file.get_value()
+        await asyncio.gather(
             self._controller.setup_ndattributes(
                 device_name=self.name, elements=self.elements.keys()
             ),
@@ -234,11 +254,11 @@ class Xspress3Detector(AreaDetector):
 
     @AsyncStatus.wrap
     async def unstage(self) -> None:
-        await super().unstage()
         if self._old_xml_file is not None:
             # Restore the original XML attributes file
             await self.driver.nd_attributes_file.set(self._old_xml_file)
             self._old_xml_file = None
+        await super().unstage()            
 
     @property
     def default_time_signal(self):
@@ -285,69 +305,69 @@ def ndattribute_params(
     params = []
     for idx in elements:
         new_params = [
-            # NDAttributeParam(
-            #     name=f"{device_name}-element{idx}-deadtime_factor",
-            #     param="XSP3_CHAN_DTFACTOR",
-            #     datatype=NDAttributeDataType.DOUBLE,
-            #     addr=idx,
-            #     description=f"Chan {idx} DTC Factor",
-            # ),
-            # NDAttributeParam(
-            #     name=f"{device_name}-element{idx}-deadtime_percent",
-            #     param="XSP3_CHAN_DTPERCENT",
-            #     datatype=NDAttributeDataType.DOUBLE,
-            #     addr=idx,
-            #     description=f"Chan {idx} DTC Percent",
-            # ),
-            # NDAttributeParam(
-            #     name=f"{device_name}-element{idx}-event_width",
-            #     param="XSP3_EVENT_WIDTH",
-            #     datatype=NDAttributeDataType.DOUBLE,
-            #     addr=idx,
-            #     description=f"Chan {idx} Event Width",
-            # ),
-            # NDAttributeParam(
-            #     name=f"{device_name}-element{idx}-clock_ticks",
-            #     param="XSP3_CHAN_SCA0",
-            #     datatype=NDAttributeDataType.DOUBLE,
-            #     addr=idx,
-            #     description=f"Chan {idx} ClockTicks",
-            # ),
-            # NDAttributeParam(
-            #     name=f"{device_name}-element{idx}-reset_ticks",
-            #     param="XSP3_CHAN_SCA1",
-            #     datatype=NDAttributeDataType.DOUBLE,
-            #     addr=idx,
-            #     description=f"Chan {idx} ResetTicks",
-            # ),
-            # NDAttributeParam(
-            #     name=f"{device_name}-element{idx}-reset_counts",
-            #     param="XSP3_CHAN_SCA2",
-            #     datatype=NDAttributeDataType.DOUBLE,
-            #     addr=idx,
-            #     description=f"Chan {idx} ResetCounts",
-            # ),
-            # NDAttributeParam(
-            #     name=f"{device_name}-element{idx}-all_event",
-            #     param="XSP3_CHAN_SCA3",
-            #     datatype=NDAttributeDataType.DOUBLE,
-            #     addr=idx,
-            #     description=f"Chan {idx} AllEvent",
-            # ),
-            # NDAttributeParam(
-            #     name=f"{device_name}-element{idx}-all_good",
-            #     param="XSP3_CHAN_SCA4",
-            #     datatype=NDAttributeDataType.DOUBLE,
-            #     addr=idx,
-            #     description=f"Chan {idx} AllGood",
-            # ),
-            # NDAttributeParam(
-            #     name=f"{device_name}-element{idx}-pileup",
-            #     param="XSP3_CHAN_SCA7",
-            #     datatype=NDAttributeDataType.DOUBLE,
-            #     addr=idx,
-            #     description=f"Chan {idx} Pileup",
-            # ),
+            NDAttributeParam(
+                name=f"{device_name}-element{idx}-deadtime_factor",
+                param="XSP3_CHAN_DTFACTOR",
+                datatype=NDAttributeDataType.DOUBLE,
+                addr=idx,
+                description=f"Chan {idx} DTC Factor",
+            ),
+            NDAttributeParam(
+                name=f"{device_name}-element{idx}-deadtime_percent",
+                param="XSP3_CHAN_DTPERCENT",
+                datatype=NDAttributeDataType.DOUBLE,
+                addr=idx,
+                description=f"Chan {idx} DTC Percent",
+            ),
+            NDAttributeParam(
+                name=f"{device_name}-element{idx}-event_width",
+                param="XSP3_EVENT_WIDTH",
+                datatype=NDAttributeDataType.DOUBLE,
+                addr=idx,
+                description=f"Chan {idx} Event Width",
+            ),
+            NDAttributeParam(
+                name=f"{device_name}-element{idx}-clock_ticks",
+                param="XSP3_CHAN_SCA0",
+                datatype=NDAttributeDataType.DOUBLE,
+                addr=idx,
+                description=f"Chan {idx} ClockTicks",
+            ),
+            NDAttributeParam(
+                name=f"{device_name}-element{idx}-reset_ticks",
+                param="XSP3_CHAN_SCA1",
+                datatype=NDAttributeDataType.DOUBLE,
+                addr=idx,
+                description=f"Chan {idx} ResetTicks",
+            ),
+            NDAttributeParam(
+                name=f"{device_name}-element{idx}-reset_counts",
+                param="XSP3_CHAN_SCA2",
+                datatype=NDAttributeDataType.DOUBLE,
+                addr=idx,
+                description=f"Chan {idx} ResetCounts",
+            ),
+            NDAttributeParam(
+                name=f"{device_name}-element{idx}-all_event",
+                param="XSP3_CHAN_SCA3",
+                datatype=NDAttributeDataType.DOUBLE,
+                addr=idx,
+                description=f"Chan {idx} AllEvent",
+            ),
+            NDAttributeParam(
+                name=f"{device_name}-element{idx}-all_good",
+                param="XSP3_CHAN_SCA4",
+                datatype=NDAttributeDataType.DOUBLE,
+                addr=idx,
+                description=f"Chan {idx} AllGood",
+            ),
+            NDAttributeParam(
+                name=f"{device_name}-element{idx}-pileup",
+                param="XSP3_CHAN_SCA7",
+                datatype=NDAttributeDataType.DOUBLE,
+                addr=idx,
+                description=f"Chan {idx} Pileup",
+            ),
         ]
         params.extend(new_params)
     return params

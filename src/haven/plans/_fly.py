@@ -15,6 +15,7 @@ from bluesky.preprocessors import (
     plan_mutator,
     run_decorator,
     stage_decorator,
+    stage_wrapper,
     stub_wrapper,
 )
 from bluesky.protocols import Collectable
@@ -135,6 +136,21 @@ def fly_line_scan(*args) -> Generator[Msg, Any, None]:
         yield from bps.unmonitor(sig)
 
 
+def declare_streams(primary_detectors: Sequence[Device], secondary_detectors: Sequence[Device]):
+    """Plan stub to declare data streams for bluesky.
+
+    *primary_detectors* will be grouped into a single primary data
+    stream, while *secondary_detectors* will each get their own named
+    stream.
+
+    """
+    if len(primary_detectors) > 0:
+        yield from bps.declare_stream(*triggered_detectors, name="primary")
+    for detector in secondary_detectors:
+        yield from bps.declare_stream(detector, name=detector.name)
+
+
+
 def fly_scan(
     detectors: Sequence[FlyerInterface],
     *args,
@@ -221,6 +237,7 @@ def fly_scan(
             "*args": md_args,
             "num": num,
             "dwell_time": dwell_time,
+            "trigger": str(trigger),
             "delay_outputs": [repr(output) for output in delay_outputs],
         },
     }
@@ -233,21 +250,16 @@ def fly_scan(
     @stage_decorator([*detectors, *motors])
     @run_decorator(md=md_)
     def fly_inner():
-        # Set up detector streams
-        n_outputs = len(delay_outputs)
-        triggered_detectors = detectors[:n_outputs]
-        internal_detectors = detectors[n_outputs:]
-        yield from bps.declare_stream(*triggered_detectors, name="primary")
-        for detector in internal_detectors:
-            yield from bps.declare_stream(detector, name=detector.name)
         # Start the detectors
-        prepare_group = uuid.uuid4()
         yield from prepare_detectors(
             detectors=detectors,
             trigger_info=trigger_info,
             delay_outputs=delay_outputs,
             wait=True,
         )
+        # num_outputs = len(delay_outputs)
+        num_outputs = 0  # for now they're all just different streams
+        yield from declare_streams(detectors[:num_outputs], detectors[num_outputs:])
         yield from bps.kickoff_all(*detectors, wait=True)
         # Fly the motors
         yield from line_scan
@@ -332,6 +344,15 @@ def grid_fly_scan(
         snake_steppers = snake_axes
         snake_flyer = snake_axes
         snaking = [False, *[snake_axes for _ in step_chunks[1:]], snake_flyer]
+    # Decide how to trigger the detectors
+    step_num = np.prod([chunk[3] for chunk in step_chunks])
+    trigger_info = TriggerInfo(
+        number_of_events=[fly_num] * step_num,
+        # number_of_events=self.num,
+            livetime=dwell_time * 0.85,
+        deadtime=dwell_time * 0.15,
+        trigger=trigger,
+    )
     # Prepare metadata
     chunk_args = list(plan_patterns.chunk_outer_product_args(args))
     md_args = []
@@ -353,7 +374,7 @@ def grid_fly_scan(
             "detectors": list(map(repr, detectors)),
             "args": md_args,
             "dwell_time": dwell_time,
-            "trigger": trigger,
+            "trigger": str(trigger),
             "delay_outputs": [repr(output) for output in delay_outputs],
             "snake_axes": snake_repr,
         },
@@ -373,38 +394,45 @@ def grid_fly_scan(
     except (AttributeError, KeyError):
         ...
     md_.update(md)
-    # Set up the plan
-    per_step = Snaker(
-        snake_axes=snake_flyer,
-        flyer=flyer,
-        start=fly_start,
-        stop=fly_stop,
-        num=fly_num,
-        dwell_time=dwell_time,
-        trigger=trigger,
-        delay_outputs=delay_outputs,
-        extra_signals=motors,
-    )
-    grid_scan = bp.grid_scan(
-        detectors,
-        *step_args,
-        snake_axes=snake_steppers,
-        per_step=per_step,
-        md=md_,
-    )
-        # Wrapper for making it a proper run
+    # Wrapper for making it a proper run
     @stage_decorator([*detectors, *motors])
     @run_decorator(md=md_)
     def fly_inner():
-        # Set up detector streams
-        n_outputs = len(delay_outputs)
-        triggered_detectors = detectors[:n_outputs]
-        internal_detectors = detectors[n_outputs:]
-        yield from bps.declare_stream(*triggered_detectors, name="primary")
-        for detector in internal_detectors:
-            yield from bps.declare_stream(detector, name=detector.name)
+        # Start the detectors (moved to the snaker until we can get the gate correct)
+        trigger_infos = yield from prepare_detectors(
+            detectors=detectors,
+            trigger_info=trigger_info,
+            delay_outputs=delay_outputs,
+            wait=True,
+        )
+        # num_outputs = len(delay_outputs)
+        num_outputs = 0  # for now they're all just different streams
+        yield from declare_streams(detectors[:num_outputs], detectors[num_outputs:])
         # Do the true original plan
-        return (yield from stub_wrapper(grid_scan))
+        per_step = Snaker(
+            snake_axes=snake_flyer,
+            flyer=flyer,
+            start=fly_start,
+            stop=fly_stop,
+            num=fly_num,
+            dwell_time=dwell_time,
+            trigger=trigger,
+            delay_outputs=delay_outputs,
+            extra_signals=motors,
+        )
+        grid_scan = bp.grid_scan(
+            detectors,
+            *step_args,
+            snake_axes=snake_steppers,
+            per_step=per_step,
+            md=md_,
+        )
+        result = (yield from stub_wrapper(grid_scan))
+        # yield from bps.complete_all(*detectors, wait=True)
+        # for detector in detectors:
+        #     yield from bps.collect(detector)
+        return result
+
 
     return (yield from fly_inner())
 
@@ -442,7 +470,7 @@ def prepare_detectors(
         trigger_infos.append(tinfo)
     # Prepare the delay generator input
     if len(delay_outputs) == 0:
-        return
+        return trigger_infos
     delay_generators = {output.parent for output in delay_outputs}
     for generator in delay_generators:
         yield from bps.prepare(generator, trigger_info)
@@ -460,6 +488,7 @@ def prepare_detectors(
         yield from bps.prepare(output, tinfos[0])
     if wait:
         yield from bps.wait(group=group)
+    return trigger_infos
 
 
 class Snaker:
@@ -501,22 +530,38 @@ class Snaker:
     def __call__(self, detectors, step, pos_cache):
         # Move the step-scanning motors to the correct position
         yield from bps.move_per_step(step, pos_cache)
-        # Determine line scans range based on snaking
+        # Determine line scan range based on snaking
         start, stop = (self.start, self.stop)
         if self.reverse and self.snake_axes:
             start, stop = stop, start
         self.reverse = not self.reverse
+        # Start the detectors
+        print("kicking off")
+        yield from bps.kickoff_all(*detectors, wait=True)
         # Launch the fly scan
-        yield from fly_line_scan(
-            detectors,
-            self.flyer,
-            start,
-            stop,
-            dwell_time=self.dwell_time,
-            trigger=self.trigger,
-            delay_outputs=self.delay_outputs,
-            num=self.num,
+        fly_motor_info = FlyMotorInfo(
+            start_position=start,
+            end_position=stop,
+            time_for_move=self.dwell_time * self.num,
+            point_count=self.num,
         )
+        yield from fly_line_scan(self.flyer, fly_motor_info)
+        # Collect data from the detectors. Only detectors using
+        # triggers need to complete here, gates can just keep going.
+        #   This currently doesn't work because we can't control the
+        #   pulses properly. It leaves an extra frame at the end of
+        #   every gated signal.
+        # to_complete = [
+        #     detector
+        #     for trig_info, detector in zip(trigger_infos, detectors)
+        #     if trig_info.trigger == DetectorTrigger.EDGE_TRIGGER
+        # ]p
+        to_complete = detectors
+        # print(f"Completing: {to_complete}")
+        yield from bps.complete_all(*to_complete, wait=True)
+        for detector in detectors:
+            print(f"Collecting: {detector}")
+            yield from bps.collect(detector)
 
 
 # -----------------------------------------------------------------------------
