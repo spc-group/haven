@@ -84,7 +84,7 @@ class XspressController(ADBaseController):
             # Fixed number of events
             self._trigger_frame_nums = repeat(num_frames)
         aws = [
-            # self.driver.num_images.set(trigger_info.total_number_of_exposures),
+            self.driver.num_images.set(trigger_info.total_number_of_exposures),
             self.driver.image_mode.set(adcore.ADImageMode.MULTIPLE),
             self.driver.trigger_mode.set(trigger_mode),
             # Hardware deadtime correciton is not reliable
