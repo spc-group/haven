@@ -29,7 +29,6 @@ dependencies = [
     "guarneri==0.2.0",
     "httpx[http2]",
     "mergedeep",
-    "odfpy",
     "ophyd==1.10.5",
     # "ophyd-async==0.10.0",
     # We need this ophyd-async development branch until a new release (>0.10.0a4)
@@ -39,6 +38,7 @@ dependencies = [
     "rich",
     "stamina",
     "tiled[client]==0.1.0b27",
+    "tiled-export",
     "tomlkit",
     "xraydb>=4.5.0",
     "xrayutilities",
