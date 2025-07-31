@@ -1,9 +1,7 @@
 import asyncio
 import xml.etree.ElementTree as ET
-from collections.abc import Sequence
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
 from itertools import repeat
-
 
 import numpy as np
 from ophyd_async.core import (
@@ -258,7 +256,7 @@ class Xspress3Detector(AreaDetector):
             # Restore the original XML attributes file
             await self.driver.nd_attributes_file.set(self._old_xml_file)
             self._old_xml_file = None
-        await super().unstage()            
+        await super().unstage()
 
     @property
     def default_time_signal(self):

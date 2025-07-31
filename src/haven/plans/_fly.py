@@ -1,6 +1,6 @@
 import uuid
 from collections import OrderedDict, abc
-from collections.abc import Generator, Mapping, Sequence
+from collections.abc import Generator, Iterable, Mapping, MutableMapping, Sequence
 from typing import Any, Hashable
 
 import numpy as np
@@ -15,15 +15,11 @@ from bluesky.preprocessors import (
     plan_mutator,
     run_decorator,
     stage_decorator,
-    stage_wrapper,
     stub_wrapper,
 )
-from bluesky.protocols import Collectable
+from bluesky.protocols import Flyable, Preparable
 from bluesky.utils import Msg, single_gen
-from ophyd import Device
-from ophyd.flyers import FlyerInterface
-from ophyd.status import StatusBase
-from ophyd_async.core import DetectorTrigger, TriggerInfo
+from ophyd_async.core import DetectorTrigger, Device, TriggerInfo
 from ophyd_async.epics.motor import FlyMotorInfo as BaseFlyMotorInfo
 from pydantic import Field
 
@@ -38,7 +34,9 @@ class FlyMotorInfo(BaseFlyMotorInfo):
     will be one less than the number of trigger."""
 
 
-def reset_flyers_wrapper(plan, devices=None):
+def reset_flyers_wrapper(
+    plan: Generator[Msg, Any, Any], devices: Sequence[Flyable] | None = None
+):
     """Return flyer devices to their initial positions and velocities
     prior to being prepared for flying.
 
@@ -55,7 +53,7 @@ def reset_flyers_wrapper(plan, devices=None):
         messages from plan with 'read' and finally 'set' messages inserted
 
     """
-    initial_positions = OrderedDict()
+    initial_positions: MutableMapping[Flyable, float] = OrderedDict()
     if devices is not None:
         devices, coupled_parents = _normalize_devices(devices)
     else:
@@ -136,7 +134,9 @@ def fly_line_scan(*args) -> Generator[Msg, Any, None]:
         yield from bps.unmonitor(sig)
 
 
-def declare_streams(primary_detectors: Sequence[Device], secondary_detectors: Sequence[Device]):
+def declare_streams(
+    primary_detectors: Sequence[Device], secondary_detectors: Sequence[Device]
+) -> Generator[Msg, Any, None]:
     """Plan stub to declare data streams for bluesky.
 
     *primary_detectors* will be grouped into a single primary data
@@ -145,21 +145,20 @@ def declare_streams(primary_detectors: Sequence[Device], secondary_detectors: Se
 
     """
     if len(primary_detectors) > 0:
-        yield from bps.declare_stream(*triggered_detectors, name="primary")
+        yield from bps.declare_stream(*primary_detectors, name="primary")
     for detector in secondary_detectors:
         yield from bps.declare_stream(detector, name=detector.name)
 
 
-
 def fly_scan(
-    detectors: Sequence[FlyerInterface],
+    detectors: Sequence[Flyable],
     *args,
     num: int,
     dwell_time: float,
     trigger: DetectorTrigger = DetectorTrigger.INTERNAL,
-    delay_outputs: Sequence[DG645DelayOutput] = [],
+    delay_outputs: Sequence[Preparable] = [],
     md: Mapping = {},
-):
+) -> Generator[Msg, Any, None]:
     """Do a fly scan with a 'flyer' motor and some 'flyer' detectors.
 
     Will use external triggering if *delay_generator* is provided.
@@ -226,7 +225,8 @@ def fly_scan(
         trigger=trigger,
     )
     # Prepare metadata
-    md_args = zip([repr(m) for m in motors], starts, stops)
+    md_args = tuple(zip([repr(m) for m in motors], starts, stops))
+    print(md_args)
     md_args = tuple(obj for m, start, stop in md_args for obj in [m, start, stop])
     md_ = {
         "plan_name": "fly_scan",
@@ -246,6 +246,7 @@ def fly_scan(
     line_scan = fly_line_scan(
         *motor_args,
     )
+
     # Wrapper for making it a proper run
     @stage_decorator([*detectors, *motors])
     @run_decorator(md=md_)
@@ -272,12 +273,12 @@ def fly_scan(
 
 
 def grid_fly_scan(
-    detectors: Sequence[FlyerInterface],
+    detectors: Sequence[Flyable],
     *args,
     dwell_time: float,
     trigger: DetectorTrigger = DetectorTrigger.INTERNAL,
-    delay_outputs: Sequence[DG645DelayOutput] = [],
-    snake_axes: bool | Sequence[Device] = False,
+    delay_outputs: Sequence[Preparable] = [],
+    snake_axes: Iterable | bool | None = False,
     md: Mapping = {},
 ):
     """Scan over a mesh with one of the axes collecting without stopping.
@@ -327,29 +328,25 @@ def grid_fly_scan(
     num_steppers = len(step_chunks)
     motors = [m[0] for m in step_chunks]
     all_motors = [*motors, flyer]
-    if isinstance(snake_axes, abc.Iterable) and not isinstance(snake_axes, str):
-        snake_steppers = snake_axes.copy()
-        try:
-            snake_steppers.remove(flyer)
-        except ValueError:
-            snake_flyer = False
-        else:
-            snake_flyer = True
+    snake_steppers: Iterable | bool | None
+    if isinstance(snake_axes, abc.Iterable):
+        snake_steppers = [ax for ax in snake_axes if ax is not flyer]
+        snake_flyer = flyer in snake_axes
         # Save for metadata processing
         snaking = [
             (motor in snake_steppers) for motor, start, stop, num, snake in step_chunks
         ]
-        snaking = (False, *snaking[1:], snake_flyer)
+        snaking = [False, *snaking[1:], snake_flyer]
     else:
         snake_steppers = snake_axes
-        snake_flyer = snake_axes
-        snaking = [False, *[snake_axes for _ in step_chunks[1:]], snake_flyer]
+        snake_flyer = bool(snake_axes)
+        snaking = [False, *[bool(snake_axes) for _ in step_chunks[1:]], snake_flyer]
     # Decide how to trigger the detectors
     step_num = np.prod([chunk[3] for chunk in step_chunks])
     trigger_info = TriggerInfo(
         number_of_events=[fly_num] * step_num,
         # number_of_events=self.num,
-            livetime=dwell_time * 0.85,
+        livetime=dwell_time * 0.85,
         deadtime=dwell_time * 0.15,
         trigger=trigger,
     )
@@ -361,10 +358,16 @@ def grid_fly_scan(
         md_args.extend([repr(motor), start, stop, num])
         motor_names.append(motor.name)
     num_points = np.prod([num for motor, start, stop, num, snake in chunk_args])
+    snake_repr: Iterable | bool | None
     try:
-        snake_repr = [repr(ax) for ax in snake_axes]
+        snake_repr = [repr(ax) for ax in snake_axes]  # type: ignore
     except TypeError:
         snake_repr = snake_axes
+    pattern_args = []
+    for idx, obj in enumerate(args):
+        if not (idx % 4):
+            obj = repr(obj)
+        pattern_args.append(obj)
     md_ = {
         "shape": tuple(num for motor, start, stop, num, snake in chunk_args),
         "extents": tuple(
@@ -381,19 +384,20 @@ def grid_fly_scan(
         "plan_name": "grid_fly_scan",
         "num_points": num_points,
         "num_intervals": num_points - 1,
+        "plan_pattern": "outer_product",
+        "plan_pattern_args": {
+            "args": pattern_args,
+        },
+        "plan_pattern_module": "bluesky.plan_patterns",
         "motors": tuple(motor_names),
         "snaking": snaking,
-        "hints": {},
+        "hints": {
+            "gridding": "rectilinear",
+            "dimensions": [(m.hints["fields"], "primary") for m in all_motors],
+        },
     }
-    # Add metadata hints for plotting, etc
-    md_["hints"].setdefault("gridding", "rectilinear")
-    try:
-        md_["hints"].setdefault(
-            "dimensions", [(m.hints["fields"], "primary") for m in all_motors]
-        )
-    except (AttributeError, KeyError):
-        ...
     md_.update(md)
+
     # Wrapper for making it a proper run
     @stage_decorator([*detectors, *motors])
     @run_decorator(md=md_)
@@ -427,12 +431,11 @@ def grid_fly_scan(
             per_step=per_step,
             md=md_,
         )
-        result = (yield from stub_wrapper(grid_scan))
+        result = yield from stub_wrapper(grid_scan)
         # yield from bps.complete_all(*detectors, wait=True)
         # for detector in detectors:
         #     yield from bps.collect(detector)
         return result
-
 
     return (yield from fly_inner())
 
@@ -443,7 +446,7 @@ def prepare_detectors(
     delay_outputs: Sequence[DG645DelayOutput] = [],
     group: Hashable | None = None,
     wait: bool = False,
-) -> Generator[Msg, Any, None]:
+) -> Generator[Msg, Any, list[TriggerInfo]]:
     """A Bluesky plan stub to prepare detectors for flying.
 
     A delay generator can be used to handle trigger mutation. Each
@@ -475,7 +478,7 @@ def prepare_detectors(
     for generator in delay_generators:
         yield from bps.prepare(generator, trigger_info)
     # Prepare the delay generator outputs
-    trigger_output_infos = {}
+    trigger_output_infos: dict[Device, TriggerInfo] = {}
     for output, tinfo in zip(delay_outputs, trigger_infos):
         trigger_output_infos.setdefault(output, []).append(tinfo)
     for output, tinfos in trigger_output_infos.items():

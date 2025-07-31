@@ -1,11 +1,9 @@
-from collections import OrderedDict
 from unittest import mock
-from unittest.mock import MagicMock
 
 import numpy as np
 import pytest
 from ophyd import sim
-from ophyd_async.core import DetectorTrigger, TriggerInfo
+from ophyd_async.core import TriggerInfo
 from ophyd_async.epics.motor import Motor
 
 from haven.devices import DG645Delay, IonChamber, Xspress3Detector
@@ -47,6 +45,7 @@ def test_fly_scan_metadata(flyer, ion_chamber):
             "num": 6,
             "dwell_time": 1,
             "delay_outputs": [],
+            "trigger": "DetectorTrigger.INTERNAL",
             "*args": (repr(flyer), -20, 30),
         },
         "plan_name": "fly_scan",
@@ -100,9 +99,10 @@ def test_fly_grid_scan(flyer):
     assert flyer_end_positions == [30, -20, 30, -20, 30, -20, 30, -20, 30, -20, 30]
 
 
-def test_fly_grid_scan_metadata(sim_registry, flyer, ion_chamber):
+async def test_fly_grid_scan_metadata(sim_registry, flyer, ion_chamber):
     """Does the plan set the parameters of the flyer motor."""
-    stepper = sim.motor
+    stepper = Motor(name="stepper", prefix="")
+    await stepper.connect(mock=True)
     md = {"spam": "eggs"}
     plan = grid_fly_scan(
         [ion_chamber],
@@ -124,26 +124,25 @@ def test_fly_grid_scan_metadata(sim_registry, flyer, ion_chamber):
     assert open_msg.command == "open_run"
     real_md = open_msg.kwargs
     expected_md = {
-        "detectors": ["I00"],
-        "motors": ("motor", flyer.name),
+        "motors": (stepper.name, flyer.name),
         "num_points": 66,
         "num_intervals": 65,
         "plan_args": {
             "detectors": [repr(ion_chamber)],
             "args": [repr(stepper), -100, 100, 11, repr(flyer), -20, 30, 6],
             "dwell_time": 1.0,
-            "trigger": DetectorTrigger.INTERNAL,
+            "trigger": "DetectorTrigger.INTERNAL",
             "delay_outputs": [],
             "snake_axes": [repr(flyer)],
         },
         "plan_name": "grid_fly_scan",
         "hints": {
             "gridding": "rectilinear",
-            "dimensions": [(["motor"], "primary"), ([flyer.name], "primary")],
+            "dimensions": [([stepper.name], "primary"), ([flyer.name], "primary")],
         },
         "shape": (11, 6),
         "extents": ([-100, 100], [-20, 30]),
-        "snaking": (False, True),
+        "snaking": [False, True],
         "plan_pattern": "outer_product",
         "plan_pattern_args": {
             "args": [
@@ -151,6 +150,10 @@ def test_fly_grid_scan_metadata(sim_registry, flyer, ion_chamber):
                 -100,
                 100,
                 11,
+                repr(flyer),
+                -20,
+                30,
+                6,
             ]
         },
         "plan_pattern_module": "bluesky.plan_patterns",

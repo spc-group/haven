@@ -401,7 +401,6 @@ class IonChamber(StandardReadable, Triggerable):
             # Fixed number of events
             self._trigger_channel_nums = repeat(num_channels)
         await asyncio.gather(
-            self.mcs.num_channels_max.get_value(),
             self.mcs.count_on_start.set(count_on_start),
             self.mcs.channel_advance_source.set(channel_advance),
             self.mcs.dwell_time.set(value.livetime),
