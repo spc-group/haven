@@ -351,7 +351,7 @@ class FireflyMainWindow(PyDMMainWindow):
             title = self.display_widget().windowTitle()
         # Add the beamline name
         config = load_config()
-        beamline_name = config["beamline"]["name"]
+        beamline_name = config["metadata"]["beamline"]
         title += f" - {beamline_name} - Firefly"
         if data_plugins.is_read_only():
             title += " [Read Only Mode]"

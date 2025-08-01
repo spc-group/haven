@@ -1,6 +1,9 @@
 import logging
+from collections.abc import Generator
+from typing import Any
 
 from bluesky import plan_stubs as bps
+from bluesky.utils import Msg
 
 from ..instrument import beamline
 from ..motor_position import rbv
@@ -14,10 +17,11 @@ __all__ = ["robot_transfer_sample"]
 ON = 1
 
 
-def robot_transfer_sample(robot, sampleN, *args):
+def robot_transfer_sample(
+    robot, sampleN: int | None, *args
+) -> Generator[Msg, Any, None]:
     """
-    Use robot to load sampleN at a fixed Aerotech stage position or any
-    motors.
+    Use robot to load sampleN at fixed motor positions.
 
     e.g.
     Load sample:
@@ -29,11 +33,12 @@ def robot_transfer_sample(robot, sampleN, *args):
     Parameters
     ==========
     robot
-      robot device
+      Robot device
     sampleN
-      Sample number
+      Sample position to load.
     args
-      multiple pairs of motor and pos
+
+      Multiple pairs of *motor*, *position*. These motors will be set first, then the
     """
 
     robot = beamline.devices[robot]

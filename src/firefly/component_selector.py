@@ -327,6 +327,13 @@ class ComponentSelector(QWidget):
             # A device was selected
             return self.registry.find(name=cpt_name)
 
+    def current_device_name(self):
+        """Return the dotted name of the current device, suitable for passing
+        to the queueserver.
+
+        """
+        return self.combo_box.currentText()
+
     def create_models(self):
         self.tree_model = DeviceTreeModel(0, 2)
         self.tree_model.setHorizontalHeaderLabels(["Component", "Type"])
