@@ -218,27 +218,27 @@ class BssApi:
 
     async def esafs(self, beamline: str = "", year: str | None = None) -> list[Esaf]:
         """Load the ESAF's for the given *beamline* and *year*."""
-        url = f"esaf/stationEsafs/{self.station_name}/{encode(beamline)}"
+        url = f"esaf/stationEsafs/{self.station_name!r}/{encode(beamline)!r}"
         params = {"year": year} if year else None
         response = await self._http_get(url, params=params)
         return self.parser.esafs(response.text)
 
     async def esaf(self, esaf_id: str) -> Esaf:
         """Load the ESAF's for the given *sector* and *year*."""
-        url = f"esaf/stationEsafsById/{self.station_name}/{esaf_id}"
+        url = f"esaf/stationEsafsById/{self.station_name!r}/{esaf_id}"
         response = await self._http_get(url)
         return self.parser.esaf(response.text)
 
     async def proposals(self, beamline: str = "", cycle: str | None = None):
         """Load the proposals for a given *beamline* during a given *cycle*."""
-        url = f"bss/stationProposals/{self.station_name}/{encode(beamline)}"
+        url = f"bss/stationProposals/{self.station_name!r}/{encode(beamline)!r}"
         params = {"runName": cycle} if cycle else None
         response = await self._http_get(url, params=params)
         return self.parser.proposals(response.text)
 
     async def proposal(self, proposal_id: str, cycle: str | None = None):
         """Load the given proposal on a given *beamline* during a given *cycle*."""
-        url = f"bss/stationProposalsById/{self.station_name}/{proposal_id}"
+        url = f"bss/stationProposalsById/{self.station_name!r}/{proposal_id}"
         params = {"runName": cycle} if cycle else None
         response = await self._http_get(url, params=params)
         return self.parser.proposal(response.text)

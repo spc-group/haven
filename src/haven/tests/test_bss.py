@@ -1,4 +1,6 @@
+import httpx
 import pytest
+import stamina
 
 from haven import bss
 
@@ -102,19 +104,22 @@ esaf_data = {
 }
 
 
-base_uri = "https://xraydtn02.xray.aps.anl.gov:11336"
+base_uri = "https://xraydtn02.xray.aps.anl.gov:11337"
 
 
 @pytest.fixture()
 def api():
-    return bss.BssApi()
+    stamina.set_testing(True)
+    return bss.BssApi(username="", password="", station_name="25IDC")
 
 
 async def test_get_esafs(httpx_mock, api):
-    httpx_mock.add_response(
-        f"{base_uri}/dm/esafsBySectorAndYear/25/2025", json=[esaf_data]
+    url = httpx.URL(
+        f"{base_uri}/dm/esaf/stationEsafs/b'TWpWSlJFTT0='/b'TWpVdFNVUXRRdz09'",
+        params={"year": "2025"},
     )
-    esafs_ = await api.esafs(sector="20", year="2025")
+    httpx_mock.add_response(url=url, json=[esaf_data])
+    esafs_ = await api.esafs(beamline="25-ID-C", year="2025")
     assert len(esafs_) == 1
     (this_esaf,) = esafs_
     assert this_esaf.title == esaf_data["esafTitle"]
@@ -130,14 +135,19 @@ async def test_get_esafs(httpx_mock, api):
 
 
 async def test_get_esaf(httpx_mock, api):
-    httpx_mock.add_response(url=f"{base_uri}/dm/esafs/279007", json=esaf_data)
+    httpx_mock.add_response(
+        url=f"{base_uri}/dm/esaf/stationEsafsById/b'TWpWSlJFTT0='/279007",
+        json=esaf_data,
+    )
     esaf = await api.esaf(esaf_id="279007")
 
 
 async def test_get_proposals(httpx_mock, api):
-    httpx_mock.add_response(
-        f"{base_uri}/dm/proposals/2025-1/25-ID-C", json=[proposal_data]
+    url = httpx.URL(
+        f"{base_uri}/dm/bss/stationProposals/b'TWpWSlJFTT0='/b'TWpVdFNVUXRRdz09'",
+        params={"runName": "2025-1"},
     )
+    httpx_mock.add_response(url=url, json=[proposal_data])
     proposals_ = await api.proposals(cycle="2025-1", beamline="25-ID-C")
     assert len(proposals_) == 1
     proposal = proposals_[0]
@@ -149,12 +159,12 @@ async def test_get_proposals(httpx_mock, api):
 
 
 async def test_get_proposal(httpx_mock, api):
-    httpx_mock.add_response(
-        url=f"{base_uri}/dm/proposals/2025-1/99-ID-C/0158394", json=proposal_data
+    url = httpx.URL(
+        f"{base_uri}/dm/bss/stationProposalsById/b'TWpWSlJFTT0='/0158394",
+        params={"runName": "2025-1"},
     )
-    proposal = await api.proposal(
-        proposal_id="0158394", cycle="2025-1", beamline="99-ID-C"
-    )
+    httpx_mock.add_response(url=url, json=proposal_data)
+    proposal = await api.proposal(proposal_id="0158394", cycle="2025-1")
     assert proposal.title == proposal_data["title"]
 
 
