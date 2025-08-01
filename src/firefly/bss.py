@@ -36,7 +36,13 @@ class BssDisplay(display.FireflyDisplay):
 
     def __init__(self, api=None, args=None, macros={}, **kwargs):
         if api is None:
-            api = BssApi()
+            bss_config = load_config()["bss"]
+            api = BssApi(
+                username=bss_config["username"],
+                password=bss_config["password"],
+                station_name=bss_config["station_name"],
+                uri=bss_config["uri"],
+            )
         self.api = api
         super().__init__(args=args, macros=macros, **kwargs)
 
@@ -74,7 +80,6 @@ class BssDisplay(display.FireflyDisplay):
         # Set defaults in widgets
         bss_config = load_config()["bss"]
         self.beamline_lineedit.setText(bss_config.get("beamline", ""))
-        self.cycle_lineedit.setText(bss_config.get("cycle", ""))
 
     def check_metadata(self):
         """Emit the latest metadata from display widgets.
@@ -114,31 +119,22 @@ class BssDisplay(display.FireflyDisplay):
         }
 
     async def proposals(self) -> list[Proposal]:
-        beamline = self.ui.beamline_lineedit.text()
-        cycle = self.ui.cycle_lineedit.text()
-        # Get proposal data from the API
-        if "" in [beamline, cycle]:
-            log.info(f"Skipping proposal lookup for {cycle=}, {beamline=}")
-            return []
+        beamline = self.ui.beamline_lineedit.text() or None
+        cycle = self.ui.cycle_lineedit.text() or None
         proposals = await self.api.proposals(cycle=cycle, beamline=beamline)
         # Parse the API payload into the format for the BSS IOC
         return proposals
 
     async def esafs(self) -> list[Esaf]:
-        beamline = self.ui.beamline_lineedit.text()
+        beamline = self.ui.beamline_lineedit.text() or None
         cycle = self.ui.cycle_lineedit.text()
         # Parse the arguments
-        try:
-            sector, *_ = beamline.split("-")
-        except ValueError:
-            log.info(f"Skipping ESAF lookup for {beamline=}")
-            return []
         match = re.match(r"^(\d{4})[-/]\d{1,2}", cycle)
-        if not match:
-            log.info(f"Skipping ESAF lookup for {cycle=}")
-            return []
-        (year,) = match.groups()
-        esafs = await self.api.esafs(year=year, sector=sector)
+        if match:
+            (year,) = match.groups()
+        else:
+            year = None
+        esafs = await self.api.esafs(beamline=beamline, year=year)
         return esafs
 
     @asyncSlot()

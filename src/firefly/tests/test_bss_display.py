@@ -89,7 +89,6 @@ def display(qtbot, bss_api):
 async def test_beamline_cycle_defaults(display):
     # These values are set by the iconfig_testing.toml file
     assert display.beamline_lineedit.text() == "255-ID-Z"
-    assert display.cycle_lineedit.text() == "2025-1"
 
 
 async def test_bss_proposal_model(display, bss_api):
@@ -156,7 +155,7 @@ async def test_bss_esaf_model(display, bss_api):
     await display.load_models()
     # Check model construction
     assert isinstance(display.esaf_model, QStandardItemModel)
-    bss_api.esafs.assert_called_once_with(year="3024", sector="255")
+    bss_api.esafs.assert_called_once_with(year="3024", beamline="255-ID-Z")
     assert display.esaf_model.rowCount() == 1
     # Check that the view has the model attached
     assert display.ui.esaf_view.model() is display.esaf_model

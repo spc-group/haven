@@ -11,9 +11,11 @@ xray_source = "2.8 mm planar undulator"
 ####################################################
 
 [bss]
-uri = "https://localhost:12345"
+uri = "https://localhost:12345/dm"
 beamline = "255-ID-Z"
-cycle = "2025-1"
+station_name = "255IDZ"
+username = "s255idzuser"
+password = "abc123"
 
 
 ##############

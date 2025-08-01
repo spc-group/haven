@@ -104,13 +104,13 @@ esaf_data = {
 }
 
 
-base_uri = "https://xraydtn02.xray.aps.anl.gov:11337"
+base_uri = "http://localhost:12345"
 
 
 @pytest.fixture()
 def api():
     stamina.set_testing(True)
-    return bss.BssApi(username="", password="", station_name="25IDC")
+    return bss.BssApi(username="", password="", station_name="25IDC", uri=base_uri)
 
 
 async def test_get_esafs(httpx_mock, api):

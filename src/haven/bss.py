@@ -185,15 +185,21 @@ class BssApi:
     """
 
     _client: httpx.AsyncClient
-    base_uri: str = "https://xraydtn02.xray.aps.anl.gov:11337/dm"
+    base_uri: str
     parser = BSSParser()
     auth: httpx.Auth
 
-    def __init__(self, username: str, password: str, station_name: str):
+    def __init__(self, username: str, password: str, station_name: str, uri: str):
         """*username*, *password*, and *station_name* are all assigned by the
         data management group.
 
         """
+        # Standardize the host URI
+        uri = uri.rstrip("/")
+        if uri.split("/")[-1] != "dm":
+            # Add the 'dm' prefix for paths
+            uri = f"{uri}/dm"
+        self.base_uri = uri
         self.auth = DMAuth(username=username, password=password, base_uri=self.base_uri)
         self.station_name = encode(station_name)
 
