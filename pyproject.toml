@@ -24,7 +24,10 @@ dependencies = [
     "apstools==1.7.3",
     "bluesky==1.14.0",
     "bluesky-adaptive",
-    "bluesky-queueserver==0.0.22",
+    # Temprary branch until this issue is resolved
+    #   https://github.com/bluesky/bluesky-queueserver/pull/329
+    "bluesky-queueserver @ git+https://github.com/dmgav/bluesky-queueserver@ophyd-async",
+    # "bluesky-queueserver==0.0.22",
     "bluesky-queueserver-api==0.0.12",
     "guarneri==0.2.0",
     "httpx[http2]",
