@@ -10,7 +10,7 @@ from bluesky import plans as bp  # noqa: F401
 from bluesky import preprocessors as bpp  # noqa: F401
 from bluesky import suspenders  # noqa: F401
 from bluesky.callbacks.best_effort import BestEffortCallback  # noqa: F401
-from bluesky.run_engine import RunEngine, call_in_bluesky_event_loop  # noqa: F401
+from bluesky.run_engine import RunEngine, autoawait_in_bluesky_event_loop  # noqa: F401
 from bluesky.simulators import summarize_plan  # noqa: F401
 from ophyd_async.core import NotConnected
 from ophydregistry import ComponentNotFound
@@ -36,6 +36,7 @@ RE = haven.run_engine(
     call_returns_result=True,
     use_bec=False,
 )
+autoawait_in_bluesky_event_loop()
 
 
 # Prepare the haven instrument
@@ -45,7 +46,7 @@ print(f"Initializing [bold cyan]{config['beamline']['name']}[/]…", flush=True)
 loader_exception = None
 haven.beamline.load()
 try:
-    call_in_bluesky_event_loop(haven.beamline.connect())
+    await haven.beamline.connect()
 except NotConnected as exc:
     log.exception(exc)
     # Save the exception so we can alert the user later
