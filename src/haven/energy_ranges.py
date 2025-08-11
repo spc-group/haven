@@ -186,17 +186,32 @@ def merge_ranges(*ranges, default_exposure=DEFAULT_EXPOSURE, sort=False):
       A sequence of exposure times, in seconds.
 
     """
-    energies = []
+    energies  = []
     exposures = []
     for rng in ranges:
         if not isinstance(rng, EnergyRange):
             # Not an energy range, assume it's a float or something
-            energies.append(rng)
-            exposures.append(default_exposure)
+            if energies == [] or rng > energies[-1]:
+                # ensures that next energy is greater than previous energy
+                energies.append(rng)
+                exposures.append(default_exposure)
         else:
             # An energy range, so break it down
-            energies.extend(rng.energies())
-            exposures.extend(rng.exposures())
+            if energies == [] or rng.energies()[0] > energies[-1]:
+                # ensures that next energy is greater than previous energy
+                energies.extend(rng.energies())
+                exposures.extend(rng.exposures())
+            else:
+                # discard energies in energy range below previous energy
+                energies.extend(np.extract(
+                    rng.energies() > energies[-1],
+                    rng.energies()
+                    ))
+                exposures.extend(np.extract(
+                    rng.energies() > energies[-1],
+                    rng.exposures()
+                    ))
+                
     # Convert to proper arrays, and remove duplicate energies
     energies, unique_idx = np.unique(
         np.asarray(energies, dtype=float), return_index=True
