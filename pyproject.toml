@@ -24,13 +24,16 @@ dependencies = [
     "apstools==1.7.3",
     "bluesky==1.14.2",
     "bluesky-adaptive",
-    "bluesky-queueserver==0.0.22",
+    # Temprary branch until this issue is resolved
+    #   https://github.com/bluesky/bluesky-queueserver/pull/329
+    "bluesky-queueserver @ git+https://github.com/dmgav/bluesky-queueserver@ophyd-async",
+    # "bluesky-queueserver==0.0.22",
     "bluesky-queueserver-api==0.0.12",
     "bluesky-tiled-plugins==2.0.0b64",
     "guarneri==0.2.0",
     "httpx[http2]",
     "mergedeep",
-    "ophyd==1.10.5",
+    "ophyd==1.10.7",
     # "ophyd-async==0.10.0",
     # We need this ophyd-async development branch until a new release (>0.10.0a4)
     "ophyd-async @ git+https://github.com/bluesky/ophyd-async@f652399e24c045b0f6c675d173c1ef588f909062",
@@ -86,9 +89,9 @@ HavenPlugin = "firefly.pydm_plugin:HavenPlugin"
 
 [project.scripts]
 haven_config = "haven._iconfig:print_config_value"
-haven_queueserver = "queueserver.launch_queueserver:launch_queueserver"
-databroker_consumer = "queueserver.databroker_consumer:main"
-tiled_consumer = "queueserver.tiled_consumer:main"
+haven_qserver = "haven_qserver.launch_queueserver:launch_queueserver"
+databroker_consumer = "haven_qserver.databroker_consumer:main"
+tiled_consumer = "haven_qserver.tiled_consumer:main"
 
 [project.gui-scripts]
 firefly = "firefly.launcher:main"
