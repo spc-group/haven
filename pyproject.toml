@@ -22,13 +22,14 @@ dependencies = [
     "apsbits",
     "apsbss==1.5.6",
     "apstools==1.7.3",
-    "bluesky==1.14.0",
+    "bluesky==1.14.2",
     "bluesky-adaptive",
     # Temprary branch until this issue is resolved
     #   https://github.com/bluesky/bluesky-queueserver/pull/329
     "bluesky-queueserver @ git+https://github.com/dmgav/bluesky-queueserver@ophyd-async",
     # "bluesky-queueserver==0.0.22",
     "bluesky-queueserver-api==0.0.12",
+    "bluesky-tiled-plugins==2.0.0b64",
     "guarneri==0.2.0",
     "httpx[http2]",
     "mergedeep",
@@ -40,7 +41,7 @@ dependencies = [
     "pcdsdevices",
     "rich",
     "stamina",
-    "tiled[client]==0.1.0b28",
+    "tiled[client]==0.1.0b29",
     "tomlkit",
     "xraydb>=4.5.0",
     "xrayutilities",
@@ -75,7 +76,6 @@ gui = [
     "pydm==1.25.2",
     "pyqtgraph",
     "qasync",
-    "tiled[all]",
     "bluesky-widgets",
     "typhos>=3.1.0",  # need the find_signal method on the SignalConnection()
 ]
