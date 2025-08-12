@@ -11,7 +11,6 @@ from firefly.plans.regions_display import (
     RegionsDisplay,
     device_parameters,
 )
-from haven import sanitize_name
 
 log = logging.getLogger(__name__)
 
@@ -86,11 +85,10 @@ class RobotDisplay(RegionsDisplay):
         # Convert sam_num_str to an integer if it's a string representation of a number
         sam_num = int(sam_num_str) if sam_num_str.isdigit() else None
         # Get parameters from device regions
-        devices = [region.motor_box.current_component() for region in self.regions]
-        device_names = [sanitize_name(device.name) for device in devices]
+        devices = [region.motor_box.selected_device_path() for region in self.regions]
         positions = [float(region.position_spin_box.text()) for region in self.regions]
         position_args = [
-            values for region in zip(device_names, positions) for values in region
+            values for region in zip(devices, positions) for values in region
         ]
         # Build the arguments
         robot = self.macros()["DEVICE"]

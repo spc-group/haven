@@ -318,6 +318,9 @@ class ComponentSelector(QWidget):
         self.add_widgets()
         self.connect_signals()
 
+    def selected_device_path(self):
+        return self.combo_box.currentText()
+
     def current_component(self):
         cpt_name = self.combo_box.currentText()
         if cpt_name == "":
