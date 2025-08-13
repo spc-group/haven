@@ -49,7 +49,7 @@ async def display(qtbot, sim_registry, sync_motors, motors, dxp, ion_chamber):
 @pytest.mark.asyncio
 async def test_time_calculator(display, sim_registry, ion_chamber, qtbot, qapp):
     # set up motor num
-    await display.update_regions(2)
+    await display.regions.set_region_count(2)
 
     # set up num of repeat scans
     display.ui.spinBox_repeat_scan_num.setValue(6)
@@ -78,45 +78,48 @@ async def test_time_calculator(display, sim_registry, ion_chamber, qtbot, qapp):
 
 
 async def test_regions_in_layout(display):
-    assert display.regions_layout.rowCount() == 2  # header + default row
+    assert display.num_regions_spin_box.value() == 1
 
 
 @pytest.mark.asyncio
 async def test_step_size_calculation(display, qtbot):
-    await display.update_regions(1)
+    await display.regions.set_region_count(1)
     region = display.regions[0]
+    widgets = display.regions.row_widgets(1)
 
     # Test valid inputs
-    region.start_spin_box.setValue(0)
-    region.stop_spin_box.setValue(10)
+    widgets.start_spin_box.setValue(0)
+    widgets.stop_spin_box.setValue(10)
 
     # Set num_points
     display.ui.scan_pts_spin_box.setValue(7)
     # Step size should be 1.6666 for 7 points from 0 to 10.
-    assert region.step_label.text() == "1.67"
+    assert widgets.step_label.text() == "1.67"
     # Change the number of points and verify step size updates
     display.ui.scan_pts_spin_box.setValue(3)
     # Step size should be 5.0 for 3 points from 0 to 10."
-    assert region.step_label.text() == "5.0"
+    assert widgets.step_label.text() == "5.0"
     # Reset to another state and verify
-    region.start_spin_box.setValue(0)
-    region.stop_spin_box.setValue(10)
+    widgets.start_spin_box.setValue(0)
+    widgets.stop_spin_box.setValue(10)
     display.ui.scan_pts_spin_box.setValue(6)
-    assert region.step_label.text() == "2.0"
+    assert widgets.step_label.text() == "2.0"
 
 
 @pytest.mark.asyncio
-async def test_line_scan_plan_args(display, monkeypatch, qtbot, xspress, ion_chamber):
+async def test_plan_args(display, qtbot, xspress, ion_chamber):
     # set up motor num
-    await display.update_regions(2)
+    await display.regions.set_region_count(2)
     # set up a test motor 1
-    display.regions[0].motor_box.combo_box.setCurrentText("async motor-1")
-    display.regions[0].start_spin_box.setValue(1)
-    display.regions[0].stop_spin_box.setValue(111)
+    widgets = display.regions.row_widgets(1)
+    widgets.device_selector.combo_box.setCurrentText("async motor-1")
+    widgets.start_spin_box.setValue(1)
+    widgets.stop_spin_box.setValue(111)
     # set up a test motor 2
-    display.regions[1].motor_box.combo_box.setCurrentText("sync_motor_2")
-    display.regions[1].start_spin_box.setValue(2)
-    display.regions[1].stop_spin_box.setValue(222)
+    widgets = display.regions.row_widgets(2)
+    widgets.device_selector.combo_box.setCurrentText("sync_motor_2")
+    widgets.start_spin_box.setValue(2)
+    widgets.stop_spin_box.setValue(222)
     # set up scan num of points
     display.ui.scan_pts_spin_box.setValue(10)
     # time is calculated when the selection is changed
@@ -124,14 +127,14 @@ async def test_line_scan_plan_args(display, monkeypatch, qtbot, xspress, ion_cha
         return_value=[xspress, ion_chamber]
     )
     # set up meta data
-    display.ui.lineEdit_sample.setText("sam")
-    display.ui.comboBox_purpose.setCurrentText("test")
-    display.ui.textEdit_notes.setText("notes")
+    display.ui.metadata_widget.sample_line_edit.setText("sam")
+    display.ui.metadata_widget.purpose_combo_box.setCurrentText("test")
+    display.ui.metadata_widget.notes_text_edit.setText("notes")
     # Check the arguments that will get used by the plan
     args, kwargs = display.plan_args()
     assert args == (
         ["vortex_me4", "I00"],
-        "async_motor_1",
+        "async motor-1",
         1.0,
         111.0,
         "sync_motor_2",
@@ -140,50 +143,68 @@ async def test_line_scan_plan_args(display, monkeypatch, qtbot, xspress, ion_cha
     )
     assert kwargs == {
         "num": 10,
-        "md": {"sample_name": "sam", "purpose": "test", "notes": "notes"},
+        "md": {
+            "sample_name": "sam",
+            "purpose": "test",
+            "notes": "notes",
+        },
     }
 
 
 async def test_full_motor_parameters(display, motors):
+    await display.regions.set_region_count(2)
     motor = motors[0]
-    display.ui.relative_scan_checkbox.setChecked(False)
+    # display.relative_scan_checkbox.setChecked(False)
+    await display.regions.set_relative_position(False)
     set_mock_value(motor.user_readback, 7.5)
     region = display.regions[0]
-    await region.update_device_parameters(motor)
-    start_box = region.start_spin_box
+    await display.regions.update_device_parameters(motor, row=1)
+    widgets = display.regions.row_widgets(1)
+    start_box = widgets.start_spin_box
     assert start_box.minimum() == -10
     assert start_box.maximum() == 10
     assert start_box.decimals() == 5
-    assert start_box.suffix() == " °"
+    assert start_box.suffix() == "\u202f°"
     assert start_box.value() == 7.5
-    stop_box = region.stop_spin_box
+    stop_box = widgets.stop_spin_box
     assert stop_box.minimum() == -10
     assert stop_box.maximum() == 10
     assert stop_box.decimals() == 5
-    assert stop_box.suffix() == " °"
+    assert stop_box.suffix() == "\u202f°"
     assert stop_box.value() == 7.5
 
 
 async def test_relative_positioning(display, motors):
+    await display.regions.set_region_count(2)
     motor = motors[0]
-    region = display.regions[0]
+    widgets = display.regions.row_widgets(1)
     set_mock_value(motor.user_readback, 7.5)
-    region.motor_box.current_component = mock.MagicMock(return_value=motor)
-    region.start_spin_box.setValue(5.0)
-    region.stop_spin_box.setValue(10.0)
+    widgets.device_selector.current_component = mock.MagicMock(return_value=motor)
+    widgets.start_spin_box.setValue(5.0)
+    widgets.stop_spin_box.setValue(10.0)
     # Relative positioning mode
-    await region.set_relative_position(True)
-    assert region.start_spin_box.value() == -2.5
-    assert region.start_spin_box.maximum() == 2.5
-    assert region.start_spin_box.minimum() == -17.5
-    assert region.stop_spin_box.value() == 2.5
-    assert region.stop_spin_box.maximum() == 2.5
-    assert region.stop_spin_box.minimum() == -17.5
+    await display.regions.set_relative_position(True)
+    assert widgets.start_spin_box.value() == -2.5
+    assert widgets.start_spin_box.maximum() == 2.5
+    assert widgets.start_spin_box.minimum() == -17.5
+    assert widgets.stop_spin_box.value() == 2.5
+    assert widgets.stop_spin_box.maximum() == 2.5
+    assert widgets.stop_spin_box.minimum() == -17.5
     # Absolute positioning mode
-    await region.set_relative_position(False)
-    assert region.start_spin_box.value() == 5.0
-    assert region.start_spin_box.maximum() == 10
-    assert region.start_spin_box.minimum() == -10
-    assert region.stop_spin_box.value() == 10.0
-    assert region.stop_spin_box.maximum() == 10
-    assert region.stop_spin_box.minimum() == -10
+    await display.regions.set_relative_position(False)
+    assert widgets.start_spin_box.value() == 5.0
+    assert widgets.start_spin_box.maximum() == 10
+    assert widgets.start_spin_box.minimum() == -10
+    assert widgets.stop_spin_box.value() == 10.0
+    assert widgets.stop_spin_box.maximum() == 10
+    assert widgets.stop_spin_box.minimum() == -10
+
+
+async def test_update_devices(display, sim_registry):
+    await display.regions.set_region_count(1)
+    device_selector = display.regions.row_widgets(1).device_selector
+    device_selector.update_devices = mock.AsyncMock()
+    display.detectors_list.update_devices = mock.AsyncMock()
+    await display.update_devices(sim_registry)
+    assert device_selector.update_devices.called
+    assert display.detectors_list.update_devices.called

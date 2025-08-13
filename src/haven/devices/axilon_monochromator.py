@@ -83,17 +83,28 @@ class AxilonMonochromator(StandardReadable):
         ML24 = "Multi-layer 2.4nm"
 
     def __init__(self, prefix: str, name: str = ""):
+        # Full (hinted) motors
         with self.add_children_as_readables():
             # Virtual motors
             self.energy = EnergyMotor(f"{prefix}Energy")
-            self.offset = Motor(f"{prefix}Offset")
-            # ACS Motors
             self.bragg = Motor(f"{prefix}ACS:m3")
-            self.gap = Motor(f"{prefix}ACS:m4")
-            self.horiz = Motor(f"{prefix}ACS:m1")
-            self.vert = Motor(f"{prefix}ACS:m2")
-            self.roll2 = Motor(f"{prefix}ACS:m5")
-            self.pitch2 = Motor(f"{prefix}ACS:m6")
+        # Non-hinted motors need to be added deliberately
+        self.beam_offset = Motor(f"{prefix}Offset")
+        # ACS Motors
+        self.gap = Motor(f"{prefix}ACS:m4")
+        self.horizontal = Motor(f"{prefix}ACS:m1")
+        self.vertical = Motor(f"{prefix}ACS:m2")
+        self.roll2 = Motor(f"{prefix}ACS:m5")
+        self.pitch2 = Motor(f"{prefix}ACS:m6")
+        extra_motors = [
+            self.beam_offset,
+            self.gap,
+            self.horizontal,
+            self.vertical,
+            self.roll2,
+            self.pitch2,
+        ]
+        self.add_readables([m.user_readback for m in extra_motors])
         with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
             # Transform constants, etc.
             self.id_tracking = epics_signal_rw(bool, f"{prefix}ID_tracking")

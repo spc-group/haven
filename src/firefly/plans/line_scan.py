@@ -1,155 +1,165 @@
+import asyncio
 import logging
+from dataclasses import dataclass
+from functools import partial
 
 from ophyd_async.core import Device
 from qasync import asyncSlot
-from qtpy import QtWidgets
+from qtpy.QtWidgets import QCheckBox, QDoubleSpinBox, QLabel, QWidget
 
 from firefly.component_selector import ComponentSelector
-from firefly.plans.regions_display import (
-    DeviceParameters,
-    RegionBase,
-    RegionsDisplay,
-    device_parameters,
+from firefly.plans import plan_display
+from firefly.plans.regions import (
+    RegionsManager,
+    make_relative,
+    update_device_parameters,
 )
-from haven import sanitize_name
 
 log = logging.getLogger()
 
 
-class LineScanRegion(RegionBase):
-    num_points: int = 2
+class LineRegionsManager(RegionsManager):
     is_relative: bool
 
-    def setup_ui(self):
+    @dataclass(frozen=True)
+    class WidgetSet:
+        active_checkbox: QCheckBox
+        device_selector: ComponentSelector
+        start_spin_box: QDoubleSpinBox
+        stop_spin_box: QDoubleSpinBox
+        step_label: QLabel
+
+    @dataclass(frozen=True, eq=True)
+    class Region:
+        is_active: bool
+        device: str
+        start: float
+        stop: float
+
+    def widgets_to_region(self, widgets: WidgetSet) -> Region:
+        """Take a list of widgets in a row, and build a Region object."""
+        device_name = widgets.device_selector.current_device_name()
+        return self.Region(
+            is_active=widgets.active_checkbox.isChecked(),
+            device=device_name,
+            start=widgets.start_spin_box.value(),
+            stop=widgets.stop_spin_box.value(),
+        )
+
+    async def create_row_widgets(self, row: int) -> list[QWidget]:
         # Component selector
-        self.motor_box = ComponentSelector()
-        self.motor_box.device_selected.connect(self.update_device_parameters)
+        device_selector = ComponentSelector()
+        device_selector.device_selected.connect(
+            partial(self.update_device_parameters, row=row)
+        )
         # start point
-        self.start_spin_box = QtWidgets.QDoubleSpinBox()
-        self.start_spin_box.lineEdit().setPlaceholderText("Start…")
-        self.start_spin_box.setMinimum(float("-inf"))
-        self.start_spin_box.setMaximum(float("inf"))
+        start_spin_box = QDoubleSpinBox()
+        start_spin_box.lineEdit().setPlaceholderText("Start…")
+        start_spin_box.setMinimum(float("-inf"))
+        start_spin_box.setMaximum(float("inf"))
 
         # Stop point
-        self.stop_spin_box = QtWidgets.QDoubleSpinBox()
-        self.stop_spin_box.lineEdit().setPlaceholderText("Stop…")
-        self.stop_spin_box.setMinimum(float("-inf"))
-        self.stop_spin_box.setMaximum(float("inf"))
+        stop_spin_box = QDoubleSpinBox()
+        stop_spin_box.lineEdit().setPlaceholderText("Stop…")
+        stop_spin_box.setMinimum(float("-inf"))
+        stop_spin_box.setMaximum(float("inf"))
 
         # Step size (non-editable)
-        self.step_label = QtWidgets.QLabel()
-        self.step_label.setText("nan")
-
-        # Add widgets to the layout
-        self.widgets = [
-            self.motor_box,
-            self.start_spin_box,
-            self.stop_spin_box,
-            self.step_label,
-        ]
-        for column, widget in enumerate(self.widgets):
-            self.layout.addWidget(widget, self.row, column)
+        step_label = QLabel()
+        step_label.setText("nan")
 
         # Connect signals
-        self.start_spin_box.valueChanged.connect(self.update_step_size)
-        self.stop_spin_box.valueChanged.connect(self.update_step_size)
+        update_step_size = self.update_step_size
+        start_spin_box.valueChanged.connect(update_step_size)
+        stop_spin_box.valueChanged.connect(update_step_size)
+
+        # Add widgets to the layout
+        return [
+            device_selector,
+            start_spin_box,
+            stop_spin_box,
+            step_label,
+        ]
 
     async def update_devices(self, registry):
-        await self.motor_box.update_devices(registry)
+        widgetsets = [self.row_widgets(row=row) for row in self.row_numbers]
+        aws = [
+            widgets.device_selector.update_devices(registry) for widgets in widgetsets
+        ]
+        await asyncio.gather(*aws)
 
     @asyncSlot(Device)
-    async def update_device_parameters(self, new_device: Device):
-        device = await device_parameters(new_device)
-        # Filter out non-numeric datatypes
-        for widget in [self.start_spin_box, self.stop_spin_box]:
-            widget.setEnabled(device.is_numeric)
-            widget.setEnabled(device.is_numeric)
-            # Set other metadata
-            self.set_limits(device)
-            widget.setDecimals(device.precision)
-            # Handle units
-            widget.setSuffix(f" {device.units}")
-            # Set starting motor position
-            if self.is_relative:
-                widget.setValue(0)
-            else:
-                widget.setValue(device.current_value)
-
-    def set_limits(self, device: DeviceParameters):
-        """Set limits on the spin boxes to match the device limits."""
-        if self.is_relative:
-            minimum = device.minimum - device.current_value
-            maximum = device.maximum - device.current_value
-        else:
-            maximum, minimum = device.maximum, device.minimum
-        self.start_spin_box.setMaximum(maximum)
-        self.start_spin_box.setMinimum(minimum)
-        self.stop_spin_box.setMaximum(maximum)
-        self.stop_spin_box.setMinimum(minimum)
+    async def update_device_parameters(self, device: Device, row: int):
+        widgets = self.row_widgets(row=row)
+        await update_device_parameters(
+            device=device,
+            widgets=[widgets.start_spin_box, widgets.stop_spin_box],
+            is_relative=self.is_relative,
+        )
 
     @asyncSlot(int)
     async def set_relative_position(self, is_relative: int):
         """Adjust the target position based on relative/aboslute mode."""
         self.is_relative = bool(is_relative)
-        device = self.motor_box.current_component()
-        if device is None:
-            return
-        params = await device_parameters(device)
-        # Get last values first to avoid limit crossing
-        widgets = [self.start_spin_box, self.stop_spin_box]
-        if is_relative:
-            new_positions = [
-                widget.value() - params.current_value for widget in widgets
-            ]
-        else:
-            new_positions = [
-                widget.value() + params.current_value for widget in widgets
-            ]
-        # Update the current limits and positions
-        self.set_limits(params)
-        for widget, new_position in zip(widgets, new_positions):
-            widget.setValue(new_position)
+        for row in self.row_numbers:
+            widgets = self.row_widgets(row)
+            device = widgets.device_selector.current_component()
+            if device is None:
+                continue
+            await make_relative(
+                device=device,
+                widgets=[widgets.start_spin_box, widgets.stop_spin_box],
+                is_relative=self.is_relative,
+            )
 
     def set_num_points(self, num_points):
-        self.num_points = max(2, int(num_points))  # Ensure num_points is >= 2
+        self.num_points = num_points
         self.update_step_size()
 
     def update_step_size(self):
-        # Get Start and Stop values
-        start = self.start_spin_box.value()
-        stop = self.stop_spin_box.value()
-        precision = max(self.start_spin_box.decimals(), self.stop_spin_box.decimals())
-        # Calculate step size
-        try:
-            step_size = (stop - start) / (self.num_points - 1)
-        except (ValueError, ZeroDivisionError):
-            self.step_label.setText("nan")
-        else:
-            step_size = round(step_size, precision)
-            self.step_label.setText(str(step_size))
+        for row in self.row_numbers:
+            widgets = self.row_widgets(row)
+            # Get Start and Stop values
+            start = widgets.start_spin_box.value()
+            stop = widgets.stop_spin_box.value()
+            precision = max(
+                widgets.start_spin_box.decimals(), widgets.stop_spin_box.decimals()
+            )
+            # Calculate step size
+            try:
+                step_size = (stop - start) / (self.num_points - 1)
+            except (ValueError, ZeroDivisionError):
+                widgets.step_label.setText("nan")
+            else:
+                step_size = round(step_size, precision)
+                widgets.step_label.setText(str(step_size))
 
 
-class LineScanDisplay(RegionsDisplay):
-    Region = LineScanRegion
+class LineScanDisplay(plan_display.PlanDisplay):
+    _default_region_count = 1
 
     def customize_ui(self):
         super().customize_ui()
-
+        self.regions = LineRegionsManager(
+            layout=self.regions_layout,
+            is_relative=self.relative_scan_checkbox.isChecked(),
+        )
+        self.num_regions_spin_box.valueChanged.connect(self.regions.set_region_count)
+        self.num_regions_spin_box.setValue(self._default_region_count)
+        self.enable_all_checkbox.stateChanged.connect(self.regions.enable_all_rows)
+        self.relative_scan_checkbox.stateChanged.connect(
+            self.regions.set_relative_position
+        )
         # Connect signals for total time updates
         self.ui.scan_pts_spin_box.valueChanged.connect(self.update_total_time)
         self.ui.detectors_list.selectionModel().selectionChanged.connect(
             self.update_total_time
         )
-        for region in self.regions:
-            self.ui.scan_pts_spin_box.valueChanged.connect(region.set_num_points)
+        self.ui.scan_pts_spin_box.valueChanged.connect(self.regions.set_num_points)
+        self.regions.set_num_points(self.scan_pts_spin_box.value())
         self.ui.spinBox_repeat_scan_num.valueChanged.connect(self.update_total_time)
         self.scan_time_changed.connect(self.scan_duration_label.set_seconds)
         self.total_time_changed.connect(self.total_duration_label.set_seconds)
-        # Default metadata values
-        self.ui.comboBox_purpose.lineEdit().setPlaceholderText(
-            "e.g. commissioning, alignment…"
-        )
-        self.ui.comboBox_purpose.setCurrentText("")
 
     def scan_durations(self, detector_time):
         num_points = self.ui.scan_pts_spin_box.value()
@@ -168,45 +178,33 @@ class LineScanDisplay(RegionsDisplay):
         self.scan_time_changed.emit(time_per_scan)
         self.total_time_changed.emit(total_time)
 
-    def add_region(self):
-        new_region = super().add_region()
-        self.relative_scan_checkbox.stateChanged.connect(
-            new_region.set_relative_position
+    async def update_devices(self, registry):
+        """Re-configure the display for a new set of ophyd devices."""
+        await super().update_devices(registry)
+        await asyncio.gather(
+            self.regions.update_devices(registry),
+            self.detectors_list.update_devices(registry),
         )
-        new_region.set_relative_position(self.relative_scan_checkbox.checkState())
-        return new_region
-
-    def reset_default_regions(self):
-        super().reset_default_regions()
-        # Reset scan repeat num to 1
-        self.ui.spinBox_repeat_scan_num.setValue(1)
 
     def plan_args(self) -> tuple[tuple, dict]:
         # Get scan parameters from widgets
         detectors = self.ui.detectors_list.selected_detectors()
         detector_names = [detector.name for detector in detectors]
         # Get parameters from each row of line regions
-        device_names = [
-            region.motor_box.selected_device_path() for region in self.regions
+        region_args = [
+            (region.device, region.start, region.stop) for region in self.regions
         ]
-        device_names = [sanitize_name(name) for name in device_names]
-        start_points = [region.start_spin_box.value() for region in self.regions]
-        stop_points = [region.stop_spin_box.value() for region in self.regions]
-        device_args = [
-            values
-            for entry in zip(device_names, start_points, stop_points)
-            for values in entry
-        ]
+        device_args = [arg for region in region_args for arg in region]
         args = (detector_names, *device_args)
         kwargs = {
             "num": self.ui.scan_pts_spin_box.value(),
-            "md": self.get_meta_data(),
+            "md": self.plan_metadata(),
         }
         return args, kwargs
 
     @property
     def plan_type(self) -> str:
-        """Determine what kind of scan we're running based on use input."""
+        """Determine what kind of scan we're running based on user input."""
         return {
             # Rel, log
             (True, True): "rel_log_scan",
@@ -220,10 +218,27 @@ class LineScanDisplay(RegionsDisplay):
             )
         ]
 
+    @plan_type.setter
+    def plan_type(self, plan_type: str):
+        """Set UI widgets based on what kind of scan we're running."""
+        is_rel, is_log = {
+            #               Rel, log
+            "rel_log_scan": (True, True),
+            "rel_scan": (True, False),
+            "log_scan": (False, True),
+            "scan": (False, False),
+        }[plan_type]
+        self.ui.relative_scan_checkbox.setChecked(is_rel)
+        self.ui.log_scan_checkbox.setChecked(is_log)
+
     @property
     def scan_repetitions(self) -> int:
         """How many times should each scan be run."""
         return self.ui.spinBox_repeat_scan_num.value()
+
+    @scan_repetitions.setter
+    def scan_repetitions(self, value: int):
+        self.spinBox_repeat_scan_num.setValue(value)
 
     def ui_filename(self):
         return "plans/line_scan.ui"

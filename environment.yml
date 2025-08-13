@@ -25,9 +25,6 @@ dependencies:
   - python=3.12
   - pip
 
-  # This package is not available on pip as of 2024-07-25
-  - aps-dm-api >=5
-  
   # --- Qt (tends to cause problems when installed through pip
   # Optional: Pin at 5.12.3 until pydm figures out how to designer widgets
   # - pyqt ==5.12.3
