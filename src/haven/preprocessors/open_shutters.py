@@ -19,7 +19,6 @@ def uses_permissions(shutter) -> bool:
 def _can_open(shutter) -> Generator[Msg, Mapping, bool]:
     allow_open = yield from bps.rd(shutter.open_allowed)
     allow_close = yield from bps.rd(shutter.close_allowed)
-    print(f"{shutter.name}: {allow_open}, {allow_close}")
     return allow_open and allow_close
 
 
