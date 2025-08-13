@@ -48,6 +48,7 @@ def version_md(config: Mapping | None) -> dict[str, Any]:
 
 def _inject_md(msg, config: Mapping | None = None):
     if msg.command != "open_run":
+        # This is not a message with metadata, so let it pass as-is
         return (None, None)
     md = version_md(config=config)
     # Filter out `None` values since they were not found

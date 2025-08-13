@@ -83,18 +83,18 @@ async def device_parameters(device: Device) -> DeviceParameters:
     )
 
 
-def iter_widgets(widgets, all_widgets: bool) -> Generator[QWidget, Any, None]:
+def iter_widgets(
+    widgets, include_checkbox: bool = False
+) -> Generator[QWidget, Any, None]:
     """Iterate over all the widgets in a widget set.
 
     Parameters
     ----------
-    all
-      If False, skip the first widget since it is the isActive checkbox.
-
+    include_checkbox
+      If true, include the checkbox at the beginning of each row.
     """
-    _fields = fields(widgets)
-    if not all_widgets:
-        _fields = _fields[1:]
+    widgets_slice = slice(0, None) if include_checkbox else slice(1, None)
+    _fields = fields(widgets)[widgets_slice]
     for field in _fields:
         widget = getattr(widgets, field.name)
         yield widget
@@ -268,7 +268,7 @@ class RegionsManager[WidgetsType](QObject):
     def remove_row(self):
         """Remove the last row of widgets from the layout."""
         row = len(self) + self.header_rows - 1
-        for widget in iter_widgets(self.row_widgets(row), all_widgets=True):
+        for widget in iter_widgets(self.row_widgets(row), include_checkbox=True):
             self.layout.removeWidget(widget)
             widget.deleteLater()
 
@@ -301,7 +301,7 @@ class RegionsManager[WidgetsType](QObject):
 
         """
         widgets = self.row_widgets(row)
-        for widget in iter_widgets(widgets, all_widgets=False):
+        for widget in iter_widgets(widgets):
             widget.setEnabled(enabled)
 
     @asyncSlot(int)
