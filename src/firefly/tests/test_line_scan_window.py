@@ -134,7 +134,7 @@ async def test_plan_args(display, qtbot, xspress, ion_chamber):
     args, kwargs = display.plan_args()
     assert args == (
         ["vortex_me4", "I00"],
-        "async_motor_1",
+        "async motor-1",
         1.0,
         111.0,
         "sync_motor_2",

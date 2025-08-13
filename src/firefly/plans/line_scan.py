@@ -14,7 +14,6 @@ from firefly.plans.regions import (
     make_relative,
     update_device_parameters,
 )
-from haven import sanitize_name
 
 log = logging.getLogger()
 
@@ -42,7 +41,7 @@ class LineRegionsManager(RegionsManager):
         device_name = widgets.device_selector.current_device_name()
         return self.Region(
             is_active=widgets.active_checkbox.isChecked(),
-            device=sanitize_name(device_name),
+            device=device_name,
             start=widgets.start_spin_box.value(),
             stop=widgets.stop_spin_box.value(),
         )

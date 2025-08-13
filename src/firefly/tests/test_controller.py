@@ -1,7 +1,6 @@
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from bluesky_queueserver_api.zmq.aio import REManagerAPI
 from ophyd import Device
 from ophyd.sim import make_fake_device
 from ophydregistry import Registry
@@ -22,7 +21,9 @@ async def controller(qapp):
 
 @pytest.fixture()
 async def api():
-    _api = REManagerAPI()
+    _api = AsyncMock()
+    _api.status.return_value = {"success": True}
+    _api.queue_autostart.return_value = {"success": True}
     return _api
 
 

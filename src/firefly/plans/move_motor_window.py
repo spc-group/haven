@@ -14,7 +14,6 @@ from firefly.plans.regions import (
     make_relative,
     update_device_parameters,
 )
-from haven import sanitize_name
 
 log = logging.getLogger()
 
@@ -37,10 +36,10 @@ class MotorRegionsManager(RegionsManager):
 
     def widgets_to_region(self, widgets: WidgetSet) -> Region:
         """Take a list of widgets in a row, and build a Region object."""
-        device_name = widgets.device_selector.current_device_name()
+        device_name = widgets.device_selector.selected_device_path()
         return self.Region(
             is_active=widgets.active_checkbox.isChecked(),
-            device=sanitize_name(device_name),
+            device=device_name,
             position=widgets.position_spin_box.value(),
         )
 
