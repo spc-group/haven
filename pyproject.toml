@@ -24,7 +24,10 @@ dependencies = [
     "apstools==1.7.3",
     "bluesky==1.14.2",
     "bluesky-adaptive",
-    "bluesky-queueserver==0.0.22",
+    # Temprary branch until this issue is resolved
+    #   https://github.com/bluesky/bluesky-queueserver/pull/329
+    "bluesky-queueserver @ git+https://github.com/dmgav/bluesky-queueserver@ophyd-async",
+    # "bluesky-queueserver==0.0.22",
     "bluesky-queueserver-api==0.0.12",
     "bluesky-tiled-plugins==2.0.0b64",
     "guarneri==0.2.0",
@@ -84,9 +87,9 @@ HavenPlugin = "firefly.pydm_plugin:HavenPlugin"
 
 [project.scripts]
 haven_config = "haven._iconfig:print_config_value"
-haven_queueserver = "queueserver.launch_queueserver:launch_queueserver"
-databroker_consumer = "queueserver.databroker_consumer:main"
-tiled_consumer = "queueserver.tiled_consumer:main"
+haven_qserver = "haven_qserver.launch_queueserver:launch_queueserver"
+databroker_consumer = "haven_qserver.databroker_consumer:main"
+tiled_consumer = "haven_qserver.tiled_consumer:main"
 
 [project.gui-scripts]
 firefly = "firefly.launcher:main"
@@ -116,15 +119,29 @@ parentdir_prefix = "haven-"
 
 [tool.mypy]
 files = [
+    'src/firefly/bss.py', 'src/firefly/tests/test_bss_display.py',
     'src/firefly/energy.py', 'src/firefly/tests/test_energy_display.py',
     'src/firefly/devices/axilon_monochromator.py', 'src/firefly/tests/test_monochromator.py',
     'src/firefly/devices/undulator.py', 'src/firefly/tests/test_undulator.py',
+    'src/firefly/plans/count.py', 'src/firefly/tests/test_count_window.py',
+    'src/firefly/plans/duration_label.py', 'src/firefly/tests/test_duration_label.py',
+    'src/firefly/plans/metadata.py', 'src/firefly/tests/test_metadata_widget.py',
+    'src/firefly/plans/move_motor_window.py', 'src/firefly/tests/test_move_motor_window.py',
+    'src/firefly/plans/regions.py', 'src/firefly/tests/test_regions.py',
+    'src/firefly/plans/plan_display.py', 'src/firefly/tests/test_plan_display.py',
+    'src/firefly/plans/line_scan.py', 'src/firefly/tests/test_line_scan_window.py',
+    'src/firefly/plans/grid_scan.py', 'src/firefly/tests/test_grid_scan_window.py',
+    'src/firefly/plans/relative_checkbox.py', 'src/firefly/tests/test_relative_checkbox.py',
+    'src/firefly/plans/util.py',
+    'src/firefly/plans/xafs_scan.py', 'src/firefly/tests/test_xafs_scan.py',
     'src/haven/run_engine.py', 'src/haven/tests/test_run_engine.py',
     'src/haven/devices/aerotech.py', "src/haven/tests/test_aerotech.py",
     'src/haven/devices/asymmotron.py', "src/haven/tests/test_asymmotron.py",
+    "src/haven/bss.py", "src/haven/tests/test_bss.py",
     'src/haven/devices/blade_slits.py', "src/haven/tests/test_blade_slits.py",
     'src/haven/devices/ion_chamber.py', "src/haven/tests/test_ion_chamber.py",
     'src/haven/devices/motor.py', "src/haven/tests/test_motor.py",
+    'src/haven/plans/_robot_transfer_sample.py', "src/haven/tests/test_robot_transfer_sample.py",
     'src/haven/devices/undulator.py', "src/haven/tests/test_undulator.py",
     'src/haven/devices/vacuum.py', 'src/haven/tests/test_vacuum_devices.py',
     'src/haven/plans/_calibrate.py', 'src/haven/tests/test_calibrate_plan.py',

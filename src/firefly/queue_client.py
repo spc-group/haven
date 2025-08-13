@@ -229,6 +229,7 @@ class QueueClient(QObject):
 
         """
         # Report results
+        print(result)
         if result["success"] is True:
             log.debug(f"{task}: {result}")
         else:
@@ -247,6 +248,7 @@ class QueueClient(QObject):
 
         """
         new_status = await self.queue_status()
+        print(new_status)
         signals_changed = self.status.send(new_status)
         # Check individual components of the status if they've changed
         if signals_changed != {}:

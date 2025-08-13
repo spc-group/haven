@@ -70,11 +70,14 @@ class Sample(Device):
 
 def transfer_samples(num_samples: int):
     """Create a dictionary with robot sample device definitions.
+
     For use with an ophyd DynamicDeviceComponent.
+
     Parameters
     ==========
-    num_dios
+    num_samples
       How many samples to create.
+
     """
     samples = {}
     # Now the sample holder bases are only located at sites [8,9,10,14,15,16,20,21,22] on the board.

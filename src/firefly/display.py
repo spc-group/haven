@@ -1,11 +1,9 @@
-import subprocess
 from pathlib import Path
-from typing import Optional, Sequence
+from typing import Mapping, Optional, Sequence
 
 from ophyd import Device
 from pydm import Display
-from qtpy import QtWidgets
-from qtpy.QtCore import Signal, Slot
+from qtpy.QtCore import Signal
 
 from haven import beamline
 
@@ -16,6 +14,7 @@ class FireflyDisplay(Display):
     caqtdm_actions: Sequence
     device: Optional[Device]
     registry = None
+    _bss_metadata: Mapping[str, str] = {}
 
     # Signals
     status_message_changed = Signal(str, int)
@@ -29,57 +28,6 @@ class FireflyDisplay(Display):
         )
         self.customize_device()
         self.customize_ui()
-        self.prepare_caqtdm_actions()
-
-    def prepare_caqtdm_actions(self):
-        """Create QActions for opening caQtDM panels.
-
-        By default, this method creates one action if
-        *self.caqtdm_ui_file* is set. Individual displays should
-        override this method to add their own QActions. Any actions
-        added to the *self.caqtdm_actions* list will be added to the
-        "Setup" menu if the display is the root display in a main
-        window.
-
-        """
-        self.caqtdm_actions = []
-        if self.caqtdm_ui_file != "":
-            # Create an action for launching a single caQtDM file
-            action = QtWidgets.QAction(self)
-            action.setObjectName("launch_caqtdm_action")
-            action.setText("ca&QtDM")
-            action.triggered.connect(self.launch_caqtdm)
-            try:
-                tooltip = f"Launch the caQtDM panel for {self.device.name}"
-            except AttributeError:
-                tooltip = "Launch the caQtDM panel for this display."
-            action.setToolTip(tooltip)
-            self.caqtdm_actions.append(action)
-
-    def _all_children(self, widget):
-        for child in widget.children():
-            yield widget
-            yield from self._all_children(widget=child)
-
-    def _open_caqtdm_subprocess(self, cmds, *args, **kwargs):
-        """Launch a new subprocess and save it to self._caqtdm_process."""
-        # Try to leave this as just a simple call to Popen.
-        # It helps simplify testing
-        self._caqtdm_process = subprocess.Popen(cmds, *args, **kwargs)
-
-    @Slot()
-    def launch_caqtdm(self, macros={}, ui_file: str = None):
-        """Launch a caQtDM window showing the window's panel."""
-        if ui_file is None:
-            ui_file = self.caqtdm_ui_file
-        cmds = self.caqtdm_command.split()
-        # Add macros
-        macro_str = ",".join(f"{key}={val}" for key, val in macros.items())
-        if macro_str != "":
-            cmds.extend(["-macro", macro_str])
-        # Add the path to caQtDM .ui file
-        cmds.append(ui_file)
-        self._open_caqtdm_subprocess(cmds)
 
     async def update_devices(self, registry):
         """The list of accessible devices has changed."""
@@ -95,6 +43,9 @@ class FireflyDisplay(Display):
 
     def customize_ui(self):
         pass
+
+    def update_bss_metadata(self, md: Mapping[str, str]):
+        self._bss_metadata = md
 
     def update_queue_status(self, status):
         pass

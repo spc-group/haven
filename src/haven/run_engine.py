@@ -17,7 +17,6 @@ from haven.tiled_writer import TiledWriter
 from .catalog import tiled_client
 from .exceptions import ComponentNotFound
 from .instrument import beamline
-from .preprocessors import inject_haven_md_wrapper
 
 log = logging.getLogger(__name__)
 
@@ -121,8 +120,6 @@ def run_engine(
         RE.subscribe(tiled_writer)
     if connect_kafka:
         RE.subscribe(kafka_publisher())
-    # Add preprocessors
-    RE.preprocessors.append(inject_haven_md_wrapper)
     return RE
 
 
