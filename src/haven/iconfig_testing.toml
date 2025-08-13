@@ -1,16 +1,21 @@
 area_detector_root_path = "/tmp"
 
-[ beamline ]
-# General name for the beamline, used for metadata.
-name = "SPC Beamline (sector unknown)"
+[metadata]
+# Additional metadata to inject in every scan
+facility = "Advanced Photon Source"
+beamline = "SPC Beamline (sector unknown)"
+xray_source = "2.8 mm planar undulator"
 
-[xray_source]
-type = "undulator"
-prefix = "ID255ds:"
+
+# Metadata from the beamline scheduling system (BSS)
+####################################################
 
 [bss]
-prefix = "255idc:bss"
-beamline = "255-ID-C"
+uri = "https://localhost:12345/dm"
+beamline = "255-ID-Z"
+station_name = "255IDZ"
+username = "s255idzuser"
+password = "abc123"
 
 
 ##############
@@ -44,7 +49,7 @@ catalog = "bluesky"
 # Device support
 #################
 
-[[ synchrotron ]]
+[ synchrotron ]
 name = "advanced_photon_source"
 
 # PSS Shutters
