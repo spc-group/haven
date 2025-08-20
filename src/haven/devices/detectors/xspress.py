@@ -73,7 +73,6 @@ class XspressController(ADBaseController):
         elif trigger_info.trigger == DetectorTrigger.CONSTANT_GATE:
             trigger_mode = XspressTriggerMode.TTL_VETO_ONLY
         max_frames = 2000
-        print(f"Preparing: {trigger_info}")
         num_frames = trigger_info.number_of_events or max_frames
         if isinstance(num_frames, Iterable):
             # We have multiple events with distinct number of channels
@@ -228,15 +227,6 @@ class Xspress3Detector(AreaDetector):
             ),
             name=name,
         )
-
-    @AsyncStatus.wrap
-    async def kickoff(self):
-        print("Entering kickoff()")
-        await super().kickoff()
-        print("Finished super kickoff()")
-        if self._trigger_info.trigger == DetectorTrigger.CONSTANT_GATE:
-            await self._controller.arm()
-        print("Finishing kickoff()")
 
     @AsyncStatus.wrap
     async def stage(self) -> None:

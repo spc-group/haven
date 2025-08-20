@@ -254,7 +254,6 @@ class AerotechMotor(Motor):
             raise exceptions.ProfileFailure(
                 f"Profile move execution unsuccessful: {status}"
             )
-        print("Finished aerotech complete.", flush=True)
 
     # def collect(self) -> Generator[Dict, None, None]:
     #     """Retrieve data from the flyer as proto-events

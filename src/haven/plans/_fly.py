@@ -89,11 +89,13 @@ def reset_flyers_wrapper(
     return (yield from finalize_wrapper(plan_mutator(plan, insert_reads), reset()))
 
 
-def fly_line_scan(*args) -> Generator[Msg, Any, None]:
+def fly_line_scan(detectors: Sequence, *args) -> Generator[Msg, Any, None]:
     """A plan stub for fly-scanning a single trajectory.
 
     Parameters
     ==========
+    detectors
+      Will be kicked off before the motors begin to move.
     *args
       A motor and FlyMotorInfo() object for each axis:
 
@@ -118,6 +120,8 @@ def fly_line_scan(*args) -> Generator[Msg, Any, None]:
     for motor in motors:
         sig = motor.user_readback
         yield from bps.monitor(sig, name=sig.name)
+    # Kickoff the detectors
+    yield from bps.kickoff_all(*detectors, wait=True)
     # Perform the fly scan
     kickoff_group = uuid.uuid4()
     for motor in motors:
@@ -226,7 +230,6 @@ def fly_scan(
     )
     # Prepare metadata
     md_args = tuple(zip([repr(m) for m in motors], starts, stops))
-    print(md_args)
     md_args = tuple(obj for m, start, stop in md_args for obj in [m, start, stop])
     md_ = {
         "plan_name": "fly_scan",
@@ -243,10 +246,11 @@ def fly_scan(
     }
     md_.update(md)
     # Create the plan for moving over a single line
+    delays = set([output.parent for output in delay_outputs])
     line_scan = fly_line_scan(
+        [*delays, *delay_outputs, *detectors],
         *motor_args,
     )
-
     # Wrapper for making it a proper run
     @stage_decorator([*detectors, *motors])
     @run_decorator(md=md_)
@@ -261,7 +265,6 @@ def fly_scan(
         # num_outputs = len(delay_outputs)
         num_outputs = 0  # for now they're all just different streams
         yield from declare_streams(detectors[:num_outputs], detectors[num_outputs:])
-        yield from bps.kickoff_all(*detectors, wait=True)
         # Fly the motors
         yield from line_scan
         # Stop detectors
@@ -413,6 +416,7 @@ def grid_fly_scan(
         num_outputs = 0  # for now they're all just different streams
         yield from declare_streams(detectors[:num_outputs], detectors[num_outputs:])
         # Do the true original plan
+        delays = set([output.parent for output in delay_outputs])
         per_step = Snaker(
             snake_axes=snake_flyer,
             flyer=flyer,
@@ -421,8 +425,9 @@ def grid_fly_scan(
             num=fly_num,
             dwell_time=dwell_time,
             trigger=trigger,
-            delay_outputs=delay_outputs,
+            delay_outputs=[*delays, *delay_outputs],
             extra_signals=motors,
+            trigger_infos=trigger_infos,
         )
         grid_scan = bp.grid_scan(
             detectors,
@@ -488,7 +493,7 @@ def prepare_detectors(
                 "Detectors cannot agree on trigger info for delay output "
                 f"{output.name}: {tinfos}"
             )
-        yield from bps.prepare(output, tinfos[0])
+        yield from bps.prepare(output, tinfos[0], wait=wait, group=group)
     if wait:
         yield from bps.wait(group=group)
     return trigger_infos
@@ -519,6 +524,7 @@ class Snaker:
         trigger: DetectorTrigger,
         delay_outputs: Sequence[Device],
         extra_signals,
+        trigger_infos,
     ):
         self.snake_axes = snake_axes
         self.flyer = flyer
@@ -529,8 +535,17 @@ class Snaker:
         self.trigger = trigger
         self.delay_outputs = delay_outputs
         self.extra_signals = extra_signals
+        self.trigger_infos = trigger_infos
 
     def __call__(self, detectors, step, pos_cache):
+        # Only some detectors (edge triggers) need to fly, gated
+        # detectors should be flown from the calling plan and will
+        # continue flying for the next step.
+        to_fly = [
+            detector
+            for trig_info, detector in zip(self.trigger_infos, detectors)
+            if trig_info.trigger == DetectorTrigger.EDGE_TRIGGER
+        ]
         # Move the step-scanning motors to the correct position
         yield from bps.move_per_step(step, pos_cache)
         # Determine line scan range based on snaking
@@ -538,9 +553,6 @@ class Snaker:
         if self.reverse and self.snake_axes:
             start, stop = stop, start
         self.reverse = not self.reverse
-        # Start the detectors
-        print("kicking off")
-        yield from bps.kickoff_all(*detectors, wait=True)
         # Launch the fly scan
         fly_motor_info = FlyMotorInfo(
             start_position=start,
@@ -548,23 +560,16 @@ class Snaker:
             time_for_move=self.dwell_time * self.num,
             point_count=self.num,
         )
-        yield from fly_line_scan(self.flyer, fly_motor_info)
+        yield from fly_line_scan(to_fly + self.delay_outputs, self.flyer, fly_motor_info)
         # Collect data from the detectors. Only detectors using
         # triggers need to complete here, gates can just keep going.
         #   This currently doesn't work because we can't control the
         #   pulses properly. It leaves an extra frame at the end of
         #   every gated signal.
-        # to_complete = [
-        #     detector
-        #     for trig_info, detector in zip(trigger_infos, detectors)
-        #     if trig_info.trigger == DetectorTrigger.EDGE_TRIGGER
-        # ]p
-        to_complete = detectors
-        # print(f"Completing: {to_complete}")
-        yield from bps.complete_all(*to_complete, wait=True)
-        for detector in detectors:
-            print(f"Collecting: {detector}")
-            yield from bps.collect(detector)
+        yield from bps.complete_all(*to_fly, wait=True)
+        # for detector in detectors:
+        #     yield from bps.collect(detector)
+
 
 
 # -----------------------------------------------------------------------------
