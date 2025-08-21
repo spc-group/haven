@@ -1,14 +1,16 @@
 from unittest import mock
 
 import pytest
+from bluesky import RunEngine
 from ophyd_async.epics.motor import Motor
 
 from haven.units import read_quantity, read_units, ureg
 
 
 @pytest.fixture()
-def motor():
+async def motor():
     motor = Motor("", name="motor")
+    await motor.connect(mock=True)
     return motor
 
 
@@ -18,6 +20,15 @@ def units_task():
     task.result.return_value = {"motor": {"units": "um"}}
     task.exception.return_value = None
     return task
+
+
+def test_read_no_units(motor, units_task):
+    # Do this in the run engine so that at least one test calls the
+    # inner `describe()`
+    RE = RunEngine(call_returns_result=True)
+    plan = read_units(motor)
+    with pytest.raises(KeyError):
+        result = RE(plan)
 
 
 def test_read_units(motor, units_task):

@@ -118,7 +118,10 @@ def read_units(device: Readable) -> Generator[Msg, Mapping | None, Unit]:
     (task,) = result
     if task.exception() is not None:
         raise task.exception()
-    units = task.result()[device.name]["units"]
+    try:
+        units = task.result()[device.name]["units"]
+    except KeyError:
+        raise KeyError(f"Descriptor for {device.name} does not contain 'units'.")
     return ureg.Unit(units)
 
 
