@@ -20,7 +20,11 @@ from ophyd_async.core import (
     SubsetEnum,
     TriggerInfo,
 )
-from ophyd_async.epics.core import epics_signal_r, epics_signal_rw, epics_signal_x, EpicsDevice
+from ophyd_async.epics.core import (
+    epics_signal_r,
+    epics_signal_rw,
+    epics_signal_x,
+)
 
 from haven.devices import soft_glue
 from haven.devices.soft_glue import SoftGlueSignal as SGSig
@@ -281,7 +285,9 @@ class SoftGlueDelayOutput(StandardReadable, Preparable):
                     self.output.signal.set(GATE_OUTPUT),
                 )
             case _:
-                raise ValueError(f"Soft glue output cannot provide triggers for {trigger_info.trigger}")
+                raise ValueError(
+                    f"Soft glue output cannot provide triggers for {trigger_info.trigger}"
+                )
         # Set all the signals concurrently
         await asyncio.gather(
             self.and_gate.inputA_signal.set(OUTPUT_PERMIT),
@@ -292,24 +298,26 @@ class SoftGlueDelayOutput(StandardReadable, Preparable):
     async def kickoff(self):
         pass
 
-        
     @AsyncStatus.wrap
     async def complete(self):
         pass
 
 
-
 class SoftGlueDelay(StandardReadable, Preparable):
-    def __init__(self, prefix: str, name="", pulse_input: int=0):
+    def __init__(self, prefix: str, name="", pulse_input: int = 0):
         self.output_permitted_gate = soft_glue.LogicGate(f"{prefix}AND-1")
-        self.pulse_counter = soft_glue.Counter(f"{prefix}DnCntr-1", direction=soft_glue.Counter.Direction.DOWN)
+        self.pulse_counter = soft_glue.Counter(
+            f"{prefix}DnCntr-1", direction=soft_glue.Counter.Direction.DOWN
+        )
         self.reset_buffer = soft_glue.Buffer(f"{prefix}BUFFER-1")
         self.pulse_input = soft_glue.FieldIO(f"{prefix}FI{pulse_input+1}")
         self.trigger_output = soft_glue.FieldIO(f"{prefix}FO1")
         self.gate_latch = soft_glue.Latch(f"{prefix}DFF-1")
         self.stop_trigger_latch = soft_glue.Latch(f"{prefix}DFF-2")
         # Internal triggering mechanism
-        self.internal_clock = soft_glue.Clock(prefix=f"{prefix}10MHZ_CLOCK", frequency=10e6)
+        self.internal_clock = soft_glue.Clock(
+            prefix=f"{prefix}10MHZ_CLOCK", frequency=10e6
+        )
         self.clock_divider = soft_glue.Divider(prefix=f"{prefix}DivByN-1")
         # Specific output signal chains
         self.pulse_output = soft_glue.FieldIO(prefix=f"{prefix}FO1")
@@ -317,7 +325,7 @@ class SoftGlueDelay(StandardReadable, Preparable):
         self.gate_output = SoftGlueDelayOutput(prefix=prefix, output_num=2)
         super().__init__(name=name)
 
-    @AsyncStatus.wrap        
+    @AsyncStatus.wrap
     async def prepare(self, trigger_info: TriggerInfo):
         aws = (
             # Input/output channels
@@ -367,7 +375,9 @@ class SoftGlueDelay(StandardReadable, Preparable):
                     *aws,
                 )
             case _:
-                raise ValueError(f"Soft glue cannot accept trigger type {trigger_info.trigger}")
+                raise ValueError(
+                    f"Soft glue cannot accept trigger type {trigger_info.trigger}"
+                )
         await asyncio.gather(*aws)
         # Prepare an iterator for use during kickoff()
         self._number_of_events_iter = iter(
@@ -396,6 +406,7 @@ class SoftGlueDelay(StandardReadable, Preparable):
     @AsyncStatus.wrap
     async def complete(self):
         pass
+
 
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman

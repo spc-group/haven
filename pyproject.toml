@@ -49,26 +49,24 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "black",
-    "pytest",
-    "asynctest",
     "build",
-    "twine",
-    "pytest-httpx",
+    "graphviz",
+    "isort",
+    "autoapi",
+    "mypy",
+    "nbsphinx",
+    "sphinx",
+    "sphinxcontrib-napoleon",
     "time-machine",
+    "pytest",
+    "pytest-asyncio",
+    "pytest_httpx",
     "pytest-mock",
     "pytest-qt",
     "pytest-xvfb",
-    "flake8",
-    "isort",
-    "sphinx",
-    "autoapi",
-    "nbsphinx",
-    "graphviz",
-    "sphinxcontrib-napoleon",
-    "pytest-asyncio",
-    "pytest_httpx",
+    "ruff",
     "scipy-stubs",
-    "mypy"
+    "twine"
 ]
 gui = [
     "qtawesome>=1.4.0",
@@ -109,6 +107,9 @@ build-backend = "setuptools.build_meta"
 
 [tool.isort]
 profile = "black"
+
+[tool.ruff.lint]
+select = ["E9", "F63", "F7", "F82", "F401"]
 
 [tool.versioneer]
 VCS = "git"

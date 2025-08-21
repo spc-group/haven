@@ -8,16 +8,26 @@ application-specific device definitions.
 
 """
 
-from enum import IntEnum
 from collections.abc import Sequence
+from enum import IntEnum
 from typing import Annotated as A
 
-from ophyd_async.core import SignalR, SignalRW, StandardReadable, StrictEnum, SubsetEnum, SupersetEnum
-from ophyd_async.core import StandardReadableFormat as Format, DeviceVector
-from ophyd_async.epics.core import EpicsDevice, PvSuffix, epics_signal_r, epics_signal_rw
+from ophyd_async.core import (
+    DeviceVector,
+    SignalR,
+    SignalRW,
+    StandardReadable,
+)
+from ophyd_async.core import StandardReadableFormat as Format
+from ophyd_async.epics.core import (
+    EpicsDevice,
+    PvSuffix,
+    epics_signal_r,
+    epics_signal_rw,
+)
 
 
-class SoftGlueSignal():
+class SoftGlueSignal:
     def __init__(self, name: str):
         self._name = name
 
@@ -103,10 +113,15 @@ class Counter(StandardReadable, EpicsDevice):
         DOWN = 0
         UP_DOWN = 2
 
-    def __init__(self, prefix: str, direction: Direction, name: str = "", ):
+    def __init__(
+        self,
+        prefix: str,
+        direction: Direction,
+        name: str = "",
+    ):
         if direction in [self.Direction.UP, self.Direction.UP_DOWN]:
             with self.add_children_as_readables(Format.CONFIG_SIGNAL):
-                self.clear_signal= epics_signal_rw(str, f"{prefix}_CLEAR_Signal")
+                self.clear_signal = epics_signal_rw(str, f"{prefix}_CLEAR_Signal")
             self.clear_value = epics_signal_r(bool, f"{prefix}_CLEAR_BI")
             self.counts = epics_signal_r(int, f"{prefix}_COUNTS")
         if direction in [self.Direction.DOWN, self.Direction.UP_DOWN]:
@@ -121,6 +136,7 @@ class Counter(StandardReadable, EpicsDevice):
                 self.direction_signal = epics_signal_rw(str, f"{prefix}_UPDOWN_Signal")
             self.direction_value = epics_signal_r(int, f"{prefix}_UPDOWN_BI")
         super().__init__(prefix=prefix, name=name)
+
 
 class Divider(StandardReadable, EpicsDevice):
     enable_signal: A[SignalRW[str], PvSuffix("_ENABLE_Signal"), Format.CONFIG_SIGNAL]
@@ -142,12 +158,14 @@ class QuadratureDecoder(StandardReadable, EpicsDevice):
     inputB_value: A[SignalR[bool], PvSuffix("_B_BI")]
     clock_signal: A[SignalRW[str], PvSuffix("_CLOCK_Signal"), Format.CONFIG_SIGNAL]
     clock_value: A[SignalR[bool], PvSuffix("_CLOCK_BI")]
-    miss_clear_signal: A[SignalRW[str], PvSuffix("_MISSCLR_Signal"), Format.CONFIG_SIGNAL]
+    miss_clear_signal: A[
+        SignalRW[str], PvSuffix("_MISSCLR_Signal"), Format.CONFIG_SIGNAL
+    ]
     miss_clear_value: A[SignalR[bool], PvSuffix("_MISSCLR_BI")]
     miss_signal: A[SignalRW[str], PvSuffix("_MISS_Signal"), Format.CONFIG_SIGNAL]
     miss_value: A[SignalR[bool], PvSuffix("_MISS_BI")]
     step_signal: A[SignalRW[str], PvSuffix("_STEP_Signal"), Format.CONFIG_SIGNAL]
-    step_value: A[SignalR[bool], PvSuffix("_STEP_BI")]    
+    step_value: A[SignalR[bool], PvSuffix("_STEP_BI")]
     direction_signal: A[SignalRW[str], PvSuffix("_DIR_Signal"), Format.CONFIG_SIGNAL]
     direction_value: A[SignalR[bool], PvSuffix("_DIR_BI")]
     description: A[SignalRW[str], PvSuffix("_desc"), Format.CONFIG_SIGNAL]
@@ -174,6 +192,7 @@ class FrequencyCounter(StandardReadable, EpicsDevice):
 
 class Clock(StandardReadable, EpicsDevice):
     signal: A[SignalRW[str], PvSuffix("_Signal"), Format.CONFIG_SIGNAL]
+
     def __init__(self, prefix: str, name: str = "", frequency: int | None = None):
         self.frequency = frequency
         super().__init__(prefix=prefix, name=name)
@@ -227,25 +246,50 @@ class SoftGlueZynq(StandardReadable):
                 {i: Multiplexer(prefix=f"{prefix}MUX2-{i+1}") for i in multiplexers}
             )
             self.demultiplexers = DeviceVector(
-                {i: Demultiplexer(prefix=f"{prefix}DEMUX2-{i+1}") for i in demultiplexers}
+                {
+                    i: Demultiplexer(prefix=f"{prefix}DEMUX2-{i+1}")
+                    for i in demultiplexers
+                }
             )
             self.up_counters = DeviceVector(
-                {i: Counter(prefix=f"{prefix}UpCntr-{i+1}", direction=Counter.Direction.UP) for i in up_counters}
+                {
+                    i: Counter(
+                        prefix=f"{prefix}UpCntr-{i+1}", direction=Counter.Direction.UP
+                    )
+                    for i in up_counters
+                }
             )
             self.down_counters = DeviceVector(
-                {i: Counter(prefix=f"{prefix}DnCntr-{i+1}", direction=Counter.Direction.DOWN) for i in down_counters}
+                {
+                    i: Counter(
+                        prefix=f"{prefix}DnCntr-{i+1}", direction=Counter.Direction.DOWN
+                    )
+                    for i in down_counters
+                }
             )
             self.dividers = DeviceVector(
                 {i: Divider(prefix=f"{prefix}DivByN-{i+1}") for i in dividers}
             )
             self.up_down_counters = DeviceVector(
-                {i: Counter(prefix=f"{prefix}UpDnCntr-{i+1}", direction=Counter.Direction.UP_DOWN) for i in up_down_counters}
+                {
+                    i: Counter(
+                        prefix=f"{prefix}UpDnCntr-{i+1}",
+                        direction=Counter.Direction.UP_DOWN,
+                    )
+                    for i in up_down_counters
+                }
             )
             self.quadrature_decoders = DeviceVector(
-                {i: QuadratureDecoder(prefix=f"{prefix}QuadDec-{i+1}") for i in quadrature_decoders}
+                {
+                    i: QuadratureDecoder(prefix=f"{prefix}QuadDec-{i+1}")
+                    for i in quadrature_decoders
+                }
             )
             self.gate_and_delay_generators = DeviceVector(
-                {i: GateAndDelayGenerator(prefix=f"{prefix}GateDly-{i+1}") for i in gate_and_delay_generators}
+                {
+                    i: GateAndDelayGenerator(prefix=f"{prefix}GateDly-{i+1}")
+                    for i in gate_and_delay_generators
+                }
             )
             self.frequency_counter = FrequencyCounter(prefix=f"{prefix}FreqCntr-1")
             self.clock_10MHz = Clock(prefix=f"{prefix}10MHZ_CLOCK", frequency=10e6)

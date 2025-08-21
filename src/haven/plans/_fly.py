@@ -251,6 +251,7 @@ def fly_scan(
         [*delays, *delay_outputs, *detectors],
         *motor_args,
     )
+
     # Wrapper for making it a proper run
     @stage_decorator([*detectors, *motors])
     @run_decorator(md=md_)
@@ -560,7 +561,9 @@ class Snaker:
             time_for_move=self.dwell_time * self.num,
             point_count=self.num,
         )
-        yield from fly_line_scan(to_fly + self.delay_outputs, self.flyer, fly_motor_info)
+        yield from fly_line_scan(
+            to_fly + self.delay_outputs, self.flyer, fly_motor_info
+        )
         # Collect data from the detectors. Only detectors using
         # triggers need to complete here, gates can just keep going.
         #   This currently doesn't work because we can't control the
@@ -569,7 +572,6 @@ class Snaker:
         yield from bps.complete_all(*to_fly, wait=True)
         # for detector in detectors:
         #     yield from bps.collect(detector)
-
 
 
 # -----------------------------------------------------------------------------
