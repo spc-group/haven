@@ -15,7 +15,7 @@ def aps(sim_registry):
     aps = instantiate_fake_device(ApsMachine, name="advanced_photon_source")
 
 
-def test_subscribers_garbage_collection(monkeypatch, aps):
+def test_subscribers_garbage_collection(monkeypatch):
     """Tests for regression of a bug in databroker.
 
     Since databroker uses a weak reference to the insert function, it
@@ -32,7 +32,7 @@ def test_subscribers_garbage_collection(monkeypatch, aps):
     assert len(RE.dispatcher.cb_registry.callbacks) == 12
 
 
-def test_run_engine_preprocessors(aps):
+def test_run_engine_preprocessors():
     RE = run_engine(
         use_bec=False,
         connect_databroker=False,
@@ -42,7 +42,7 @@ def test_run_engine_preprocessors(aps):
     assert len(RE.preprocessors) > 0
 
 
-def test_run_engine_created(aps):
+def test_run_engine_created():
     RE = run_engine(
         use_bec=False,
         connect_databroker=False,

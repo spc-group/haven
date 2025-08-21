@@ -1,7 +1,7 @@
 import logging
 import re  # noqa: F401
-from functools import partial
 import warnings
+from functools import partial
 
 import databroker  # noqa: F401
 from bluesky.plan_stubs import abs_set  # noqa: F401
@@ -60,8 +60,8 @@ for cpt in beamline.devices.all_devices:
 try:
     wrapper = partial(
         fixed_offset_wrapper,
-        primary_mono=beamline.devices['monochromator'],
-        secondary_mono=beamline.devices['secondary_mono'],
+        primary_mono=beamline.devices["monochromator"],
+        secondary_mono=beamline.devices["secondary_mono"],
     )
 except ComponentNotFound as exc:
     log.warnings(f"Could not couple mono offsets: {exc}")

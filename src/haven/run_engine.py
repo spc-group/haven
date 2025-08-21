@@ -8,7 +8,10 @@ from bluesky import Msg
 from bluesky import RunEngine as BlueskyRunEngine
 from bluesky.bundlers import maybe_await
 from bluesky.callbacks.best_effort import BestEffortCallback
-from bluesky.utils import ProgressBarManager, register_transform
+from bluesky.utils import (
+    ProgressBarManager,
+    register_transform,
+)
 from bluesky_kafka import Publisher
 
 from haven import load_config
@@ -111,7 +114,7 @@ def run_engine(
     RE.waiting_hook = ProgressBarManager()
     if (ip := IPython.get_ipython()) is not None:
         register_transform("RE", prefix="<", ip=ip)
-    # Install databroker connection
+    # Install database connections
     if connect_databroker:
         RE.subscribe(save_to_databroker)
     if connect_tiled:
@@ -121,7 +124,7 @@ def run_engine(
         RE.subscribe(tiled_writer)
     if connect_kafka:
         RE.subscribe(kafka_publisher())
-    # Add preprocessors
+    # Add extras
     RE.preprocessors.append(inject_haven_md_wrapper)
     return RE
 

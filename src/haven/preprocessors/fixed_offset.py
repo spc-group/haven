@@ -2,12 +2,11 @@ import math
 from collections.abc import Iterator
 
 from bluesky import Msg
-from bluesky import plan_stubs as bps
 from bluesky.preprocessors import plan_mutator
 from pint import Quantity
 
 from haven.protocols import FixedOffsetMonochromator, Monochromator
-from haven.units import energy_to_bragg, ureg
+from haven.units import energy_to_bragg, read_quantity, read_units
 
 
 def beam_offset(bragg: Quantity, gap: Quantity) -> Quantity:
@@ -57,12 +56,14 @@ def fixed_offset_wrapper(
 
     """
     # Read starting state so we can use it for calculations later
-    secondary_offset = (yield from bps.rd(secondary_mono.beam_offset)) * ureg.microns
-    primary_offset = (yield from bps.rd(primary_mono.beam_offset)) * ureg.microns
+    bragg_units = yield from read_units(secondary_mono.bragg)
+    energy_units = yield from read_units(secondary_mono.energy)
+    primary_offset = yield from read_quantity(primary_mono.beam_offset)
+    secondary_offset = yield from read_quantity(secondary_mono.beam_offset)
     total_offset = secondary_offset + primary_offset
-    bragg_offset = (yield from bps.rd(secondary_mono.bragg_offset)) * ureg.arcseconds
-    gap = (yield from bps.rd(secondary_mono.gap)) * ureg.microns
-    d_spacing = (yield from bps.rd(secondary_mono.d_spacing)) * ureg.angstrom
+    bragg_offset = yield from read_quantity(secondary_mono.bragg_offset)
+    gap = yield from read_quantity(secondary_mono.gap)
+    d_spacing = yield from read_quantity(secondary_mono.d_spacing)
 
     def insert_primary_move(msg):
         def head(msg, bragg: float | None = None, energy: float | None = None):
@@ -75,7 +76,7 @@ def fixed_offset_wrapper(
             yield Msg(
                 "set",
                 primary_mono.beam_offset,
-                new_primary_offset.to(ureg.microns).magnitude,
+                new_primary_offset.to(primary_offset.units).magnitude,
                 run=msg.run,
                 **msg.kwargs,
             )
@@ -83,10 +84,10 @@ def fixed_offset_wrapper(
 
         if msg.command == "set" and msg.obj is secondary_mono.bragg:
             # If setting bragg angle
-            return (head(msg, bragg=msg.args[0] * ureg.arcseconds), None)
+            return (head(msg, bragg=msg.args[0] * bragg_units), None)
         if msg.command == "set" and msg.obj is secondary_mono.energy:
             # If setting energy
-            return (head(msg, energy=msg.args[0] * ureg.electron_volt), None)
+            return (head(msg, energy=msg.args[0] * energy_units), None)
         # Not a message we care about, so just let it pass
         return (None, None)
 
