@@ -35,9 +35,7 @@ dependencies = [
     "httpx[http2]",
     "mergedeep",
     "ophyd==1.10.7",
-    # "ophyd-async==0.10.0",
-    # We need this ophyd-async development branch until a new release (>0.10.0a4)
-    "ophyd-async @ git+https://github.com/bluesky/ophyd-async@f652399e24c045b0f6c675d173c1ef588f909062",
+    "ophyd-async==0.13.1",
     "pint",
     "pcdsdevices",
     "rich",
@@ -51,26 +49,24 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "black",
-    "pytest",
-    "asynctest",
     "build",
-    "twine",
-    "pytest-httpx",
+    "graphviz",
+    "isort",
+    "autoapi",
+    "mypy",
+    "nbsphinx",
+    "sphinx",
+    "sphinxcontrib-napoleon",
     "time-machine",
+    "pytest",
+    "pytest-asyncio",
+    "pytest_httpx",
     "pytest-mock",
     "pytest-qt",
     "pytest-xvfb",
-    "flake8",
-    "isort",
-    "sphinx",
-    "autoapi",
-    "nbsphinx",
-    "graphviz",
-    "sphinxcontrib-napoleon",
-    "pytest-asyncio",
-    "pytest_httpx",
+    "ruff",
     "scipy-stubs",
-    "mypy"
+    "twine"
 ]
 gui = [
     "qtawesome>=1.4.0",
@@ -112,6 +108,9 @@ build-backend = "setuptools.build_meta"
 [tool.isort]
 profile = "black"
 
+[tool.ruff.lint]
+select = ["E9", "F63", "F7", "F82", "F401"]
+
 [tool.versioneer]
 VCS = "git"
 style = "pep440"
@@ -138,6 +137,7 @@ files = [
     'src/firefly/plans/util.py',
     'src/firefly/plans/xafs_scan.py', 'src/firefly/tests/test_xafs_scan.py',
     'src/haven/run_engine.py', 'src/haven/tests/test_run_engine.py',
+    'src/haven/devices/aerotech.py', "src/haven/tests/test_aerotech.py",
     'src/haven/devices/asymmotron.py', "src/haven/tests/test_asymmotron.py",
     "src/haven/bss.py", "src/haven/tests/test_bss.py",
     'src/haven/devices/blade_slits.py', "src/haven/tests/test_blade_slits.py",
@@ -149,6 +149,7 @@ files = [
     'src/haven/plans/_calibrate.py', 'src/haven/tests/test_calibrate_plan.py',
     'src/haven/plans/_set_energy.py', 'src/haven/tests/test_set_energy.py',
     'src/haven/plans/_xafs_scan.py', 'src/haven/plans/_energy_scan.py', 'src/haven/tests/test_energy_xafs_scan.py',
+    'src/haven/plans/_fly.py', 'src/haven/tests/test_fly_plans.py',
     'src/haven/positioner.py', "src/haven/tests/test_positioner.py",
 ]
 follow_imports = "skip"

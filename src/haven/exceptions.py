@@ -104,6 +104,12 @@ class PluginNotPrimed(RuntimeError):
     ...
 
 
+class ProfileFailure(RuntimeError):
+    """A profile move did not build correctly."""
+
+    ...
+
+
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov
