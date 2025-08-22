@@ -77,7 +77,7 @@ def run_engine(
         register_transform("RE", prefix="<", ip=ip)
     # Install database connections
     if connect_tiled:
-        tiled_config = config()["tiled"]
+        tiled_config = config["tiled"]
         client = tiled_client(
             profile=tiled_config["writer_profile"],
             cache_filepath=None,
