@@ -102,7 +102,7 @@ def tiled_client(
     """
     # Get default values from the database
     tiled_config = load_config()["tiled"]
-    if profile is None:
+    if profile is DEFAULT:
         profile = get_default_profile_name()
     if cache_filepath is DEFAULT:
         cache_filepath = tiled_config.get("cache_filepath")
@@ -419,7 +419,7 @@ class Catalog:
 
     def __init__(
         self,
-        path: str,
+        path: str = "",
         uri: str = "http://localhost:8000",
         client: httpx.AsyncClient | None = None,
     ):

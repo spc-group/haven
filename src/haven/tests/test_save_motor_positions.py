@@ -11,6 +11,7 @@ import time_machine
 from ophyd_async.testing import set_mock_value
 from pytest_httpx import IteratorStream
 from tiled.serialization.table import serialize_arrow
+from tiled.utils import APACHE_ARROW_FILE_MIME_TYPE
 
 from haven.devices import Motor
 from haven.motor_position import (
@@ -106,6 +107,7 @@ def tiled_api(httpx_mock):
         stream=IteratorStream(
             [
                 serialize_arrow(
+                    APACHE_ARROW_FILE_MIME_TYPE,
                     pd.DataFrame(
                         {
                             "motor_A": [12.0],
