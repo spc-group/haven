@@ -30,10 +30,6 @@ password = "abc123"
 [queueserver]
 redis_addr = "localhost:6379"
 
-[kafka]
-servers = ["fedorov.xray.aps.anl.gov:9092"]
-topic = "bluesky.documents.haven-dev"
-
 [tiled]
 cache_filepath = "/tmp/tiled/http_response_cache.db"
 writer_profile = "<profile_name>"
@@ -43,8 +39,6 @@ writer_profile = "<profile_name>"
 # deprecated Tiled consumer.
 # api_key = ""
 
-[database.databroker]
-catalog = "bluesky"
 
 #################
 # Device support

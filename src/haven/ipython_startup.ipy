@@ -3,7 +3,6 @@ import logging
 import time
 
 import numpy as np
-import databroker  # noqa: F401
 from bluesky import plan_stubs as bps  # noqa: F401
 from bluesky.plan_stubs import mv, mvr, rd  # noqa: F401
 from bluesky import plans as bp  # noqa: F401
