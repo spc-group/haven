@@ -1,12 +1,5 @@
 area_detector_root_path = "/tmp"
 
-[metadata]
-# Additional metadata to inject in every scan
-facility = "Advanced Photon Source"
-beamline = "SPC Beamline (sector unknown)"
-xray_source = "2.8 mm planar undulator"
-
-
 # Metadata from the beamline scheduling system (BSS)
 ####################################################
 
@@ -39,6 +32,15 @@ writer_profile = "<profile_name>"
 # In most cases, *api_key* is not necessary. Only used by the now
 # deprecated Tiled consumer.
 # api_key = ""
+
+[ RUN_ENGINE ]
+USE_PROGRESS_BAR = true
+
+[ RUN_ENGINE.DEFAULT_METADATA ]
+# Additional metadata to inject in every scan
+facility = "Advanced Photon Source"
+beamline = "SPC Beamline (sector unknown)"
+xray_source = "2.8 mm planar undulator"
 
 
 #################

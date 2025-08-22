@@ -18,7 +18,7 @@ license = "BSD-3-clause"
 keywords = ["synchrotron", "xray", "bluesky"]
 dependencies = [
     "aioca",
-    "apsbits",
+    "apsbits==1.0.5",
     "apsbss==1.5.6",
     "apstools==1.7.3",
     "bluesky==1.14.2",
@@ -90,8 +90,6 @@ HavenPlugin = "firefly.pydm_plugin:HavenPlugin"
 [project.scripts]
 haven_config = "haven._iconfig:print_config_value"
 haven_qserver = "haven_qserver.launch_queueserver:launch_queueserver"
-databroker_consumer = "haven_qserver.databroker_consumer:main"
-tiled_consumer = "haven_qserver.tiled_consumer:main"
 
 [project.gui-scripts]
 firefly = "firefly.launcher:main"

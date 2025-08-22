@@ -1,8 +1,7 @@
 import logging
-from collections.abc import Mapping
-from uuid import uuid4 as uuid
 
 import IPython
+from apsbits.core.run_engine_init import init_RE
 from bluesky import Msg
 from bluesky import RunEngine as BlueskyRunEngine
 from bluesky.bundlers import maybe_await
@@ -10,16 +9,10 @@ from bluesky.callbacks.best_effort import BestEffortCallback
 from bluesky.utils import ProgressBarManager, register_transform
 
 from haven import load_config
+from haven.catalog import tiled_client
 from haven.tiled_writer import TiledWriter
 
-from .catalog import tiled_client
-from .exceptions import ComponentNotFound
-from .instrument import beamline
-
 log = logging.getLogger(__name__)
-
-
-catalog = None
 
 
 async def _calibrate(msg: Msg):
@@ -53,36 +46,38 @@ def run_engine(
       subscribed to it.
 
     """
-    RE = BlueskyRunEngine(**kwargs)
+    config = load_config()
+    # Add the best-effort callback if needed
+    bec = BestEffortCallback() if use_bec else None
+    # Create the run engine
+    RE, *_ = init_RE(config, bec_instance=bec, **kwargs)
+    # Add custom verbs
     RE.register_command("calibrate", _calibrate)
-    # Add the best-effort callback
-    if use_bec:
-        RE.subscribe(BestEffortCallback())
     # Install suspenders
-    try:
-        aps = beamline.devices["APS"]
-    except ComponentNotFound:
-        log.warning("APS device not found, suspenders not installed.")
-    else:
-        # Suspend when shutter permit is disabled
-        # Re-enable when the APS shutter permit signal is better understood
-        pass
-        # RE.install_suspender(
-        #     suspenders.SuspendWhenChanged(
-        #         signal=aps.shutter_permit,
-        #         expected_value="PERMIT",
-        #         allow_resume=True,
-        #         sleep=3,
-        #         tripped_message="Shutter permit revoked.",
-        #     )
-        # )
+    # try:
+    #     aps = beamline.devices["APS"]
+    # except ComponentNotFound:
+    #     log.warning("APS device not found, suspenders not installed.")
+    # else:
+    #     # Suspend when shutter permit is disabled
+    #     # Re-enable when the APS shutter permit signal is better understood
+    #     pass
+    #     # RE.install_suspender(
+    #     #     suspenders.SuspendWhenChanged(
+    #     #         signal=aps.shutter_permit,
+    #     #         expected_value="PERMIT",
+    #     #         allow_resume=True,
+    #     #         sleep=3,
+    #     #         tripped_message="Shutter permit revoked.",
+    #     #     )
+    #     # )
     # Add a shortcut for using the run engine more efficiently
     RE.waiting_hook = ProgressBarManager()
     if (ip := IPython.get_ipython()) is not None:
         register_transform("RE", prefix="<", ip=ip)
     # Install database connections
     if connect_tiled:
-        tiled_config = load_config()["tiled"]
+        tiled_config = config()["tiled"]
         client = tiled_client(
             profile=tiled_config["writer_profile"],
             cache_filepath=None,

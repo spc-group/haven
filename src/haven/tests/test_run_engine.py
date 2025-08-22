@@ -1,11 +1,8 @@
-import gc
 from unittest import mock
 
-import pytest
 from bluesky import Msg, RunEngine
 
 from haven import run_engine
-from haven.devices.aps import ApsMachine
 
 
 def test_run_engine_created():
