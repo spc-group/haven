@@ -32,9 +32,8 @@ catalog = haven.tiled_client()
 
 # Create a run engine
 RE = haven.run_engine(
-    connect_kafka=True,
+    connect_tiled=True,
     call_returns_result=True,
-    use_bec=False,
 )
 autoawait_in_bluesky_event_loop()
 

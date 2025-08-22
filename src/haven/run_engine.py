@@ -64,7 +64,7 @@ def run_engine(
     *,
     connect_tiled: bool = False,
     connect_databroker: bool = False,
-    connect_kafka: bool = True,
+    connect_kafka: bool = False,
     use_bec: bool = False,
     **kwargs,
 ) -> BlueskyRunEngine:
@@ -114,9 +114,18 @@ def run_engine(
     if connect_databroker:
         RE.subscribe(save_to_databroker)
     if connect_tiled:
-        client = tiled_client()
+        tiled_config = load_config()["tiled"]
+        client = tiled_client(
+            profile=tiled_config["writer_profile"],
+            cache_filepath=None,
+            structure_clients="numpy",
+        )
         client.include_data_sources()
-        tiled_writer = TiledWriter(client)
+        tiled_writer = TiledWriter(
+            client,
+            backup_directory=tiled_config.get("writer_backup_directory"),
+            batch_size=tiled_config.get("writer_batch_size", 100),
+        )
         RE.subscribe(tiled_writer)
     if connect_kafka:
         RE.subscribe(kafka_publisher())
