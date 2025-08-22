@@ -14,6 +14,7 @@ from tiled.client import from_profile as tiled_from_profile
 from tiled.client.base import BaseClient
 from tiled.client.cache import Cache
 from tiled.client.container import _queries_to_params
+from tiled.profiles import get_default_profile_name
 from tiled.queries import NoBool
 from tiled.serialization.table import deserialize_arrow
 from tiled.structures.array import BuiltinDtype
@@ -78,8 +79,7 @@ def deserialize_array(stream: IO[bytes], structure: dict):
 
 
 def tiled_client(
-    catalog: str | type[DEFAULT] | None = DEFAULT,
-    profile: str = "haven",
+    profile: str | type[DEFAULT] = DEFAULT,
     cache_filepath: Path | type[DEFAULT] | None = DEFAULT,
     structure_clients: str = "numpy",
 ) -> BaseClient:
@@ -102,17 +102,15 @@ def tiled_client(
     """
     # Get default values from the database
     tiled_config = load_config()["tiled"]
+    if profile is DEFAULT:
+        profile = get_default_profile_name()
     if cache_filepath is DEFAULT:
         cache_filepath = tiled_config.get("cache_filepath")
-    if catalog is DEFAULT:
-        catalog = tiled_config.get("default_catalog")
     # Create the client
     kw = {}
     if cache_filepath is not None:
         kw["cache"] = Cache(cache_filepath)
     client = tiled_from_profile(profile, structure_clients=structure_clients, **kw)
-    if catalog is not None:
-        client = client[catalog]
     return client
 
 
@@ -421,7 +419,7 @@ class Catalog:
 
     def __init__(
         self,
-        path: str,
+        path: str = "",
         uri: str = "http://localhost:8000",
         client: httpx.AsyncClient | None = None,
     ):

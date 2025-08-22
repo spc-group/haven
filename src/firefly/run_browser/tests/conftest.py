@@ -6,6 +6,7 @@ import pandas as pd
 import pytest
 from pytest_httpx import IteratorStream
 from tiled.serialization.table import serialize_arrow
+from tiled.utils import APACHE_ARROW_FILE_MIME_TYPE
 
 
 def md_to_json(metadata):
@@ -169,6 +170,7 @@ def tiled_api(httpx_mock):
         stream=IteratorStream(
             [
                 serialize_arrow(
+                    APACHE_ARROW_FILE_MIME_TYPE,
                     pd.DataFrame(
                         {
                             "seq_num": [1, 2, 3],

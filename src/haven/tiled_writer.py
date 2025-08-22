@@ -1,3 +1,4 @@
+import copy
 import logging
 import re
 from typing import Sequence
@@ -36,9 +37,14 @@ class TiledWriter(BlueskyTiledWriter):
 
 class _RunWriter(BlueskyRunWriter):
     def start(self, doc: RunStart):
+        doc = copy.copy(doc)
+        self.access_tags = doc.pop("tiled_access_tags", None)  # type: ignore
         self.root_node = self.client.create_container(
             key=doc["uid"],
             metadata={"start": truncate_json_overflow(dict(doc))},
             specs=md_to_specs(doc),
+            access_tags=self.access_tags,
         )
-        self._streams_node = self.root_node.create_container(key="streams")
+        self._streams_node = self.root_node.create_container(
+            key="streams", access_tags=self.access_tags
+        )

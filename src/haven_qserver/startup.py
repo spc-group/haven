@@ -1,7 +1,6 @@
 import logging
 import re  # noqa: F401
 
-import databroker  # noqa: F401
 from bluesky.plan_stubs import abs_set  # noqa: F401
 from bluesky.plan_stubs import mv as mv  # noqa: F401
 from bluesky.plan_stubs import mvr, null, pause, rel_set, sleep, stop  # noqa: F401
@@ -31,9 +30,7 @@ from haven.run_engine import run_engine  # noqa: F401
 log = logging.getLogger(__name__)
 
 # Create a run engine
-RE = run_engine(
-    connect_databroker=False, connect_tiled=False, connect_kafka=True, use_bec=False
-)
+RE = run_engine(connect_tiled=False, use_bec=False)
 
 # Import devices
 beamline.load()
