@@ -144,7 +144,7 @@ dev = { features = ["dev", "gui"], solve-group = "default" }
 gui = { features = ["gui"], solve-group = "default" }
 25idc = { features = ["25idc", "gui", "qserver"], solve-group = "default" }
 25idd = { features = ["25idd", "gui", "qserver"], solve-group = "default" }
-qa = { features = ["qa", "gui", "dev"], solve-group = "default" }
+qa = { features = ["qa", "gui"], solve-group = "default" }
 
 [tool.pixi.tasks]
 test-all = [{ task = "lint" }, { task = "format" }, { task = "isort" },{ task = "check-types" }, { task = "test-haven" }, { task = "test-firefly" }]

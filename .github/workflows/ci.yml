@@ -16,7 +16,7 @@ env:
 
 
 jobs:
-  build-linux:
+  test:
     defaults:
       run:
         shell: bash -l {0}
@@ -26,39 +26,46 @@ jobs:
       max-parallel: 5
     steps:
     - uses: actions/checkout@v4
-    - name: Install micromamba
-      uses: mamba-org/setup-micromamba@v1
+    - uses: prefix-dev/setup-pixi@v0.9.0
       with:
-        environment-file: environment.yml
-    - name: Install haven
-      run: pip install -e ".[dev,gui]"
-    - name: Environment info
-      run: |
-        env
-        micromamba info
-        micromamba list
-        pip freeze
-    - name: Check syntax
-      run: |
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-    - name: Check for unused imports
-      run: |
-        flake8 . --count --select=F401
-    - name: Enforce formatting with black
-      run: |
-        black --check src/
-    - name: Enforce import ordering with isort
-      run: |
-        isort --check src/
-    - name: Haven tests with pytest in Xvfb
-      run: python -m pytest src/haven -vv
-    - name: Firefly tests with pytest in Xvfb
-      run: xvfb-run python -m pytest src/firefly -vv --exitfirst
-    - name: Static type checking
-      run: mypy
-    - name: Reporting linting
-      run: |
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics	
-    - name: Licensing
-      run: |
-        find src/ -type f -name "*.py" -exec grep -H -c 'Copyright © 2023, UChicago Argonne, LLC' {} \; | grep 0$ | cut -d':' -f1
+        pixi-version: v0.49.0
+        cache: true
+        # auth-host: prefix.dev
+        # auth-token: ${{ secrets.PREFIX_DEV_TOKEN }}
+    - run: pixi run test-all
+    # - name: Install micromamba
+    #   uses: mamba-org/setup-micromamba@v1
+    #   with:
+    #     environment-file: environment.yml
+    # - name: Install haven
+    #   run: pip install -e ".[dev,gui]"
+    # - name: Environment info
+    #   run: |
+    #     env
+    #     micromamba info
+    #     micromamba list
+    #     pip freeze
+    # - name: Check syntax
+    #   run: |
+    #     flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+    # - name: Check for unused imports
+    #   run: |
+    #     flake8 . --count --select=F401
+    # - name: Enforce formatting with black
+    #   run: |
+    #     black --check src/
+    # - name: Enforce import ordering with isort
+    #   run: |
+    #     isort --check src/
+    # - name: Haven tests with pytest in Xvfb
+    #   run: python -m pytest src/haven -vv
+    # - name: Firefly tests with pytest in Xvfb
+    #   run: xvfb-run python -m pytest src/firefly -vv --exitfirst
+    # - name: Static type checking
+    #   run: mypy
+    # - name: Reporting linting
+    #   run: |
+    #     flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics	
+    # - name: Licensing
+    #   run: |
+    #     find src/ -type f -name "*.py" -exec grep -H -c 'Copyright © 2023, UChicago Argonne, LLC' {} \; | grep 0$ | cut -d':' -f1
