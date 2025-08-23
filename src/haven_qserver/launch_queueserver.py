@@ -1,3 +1,4 @@
+import sys
 import logging
 import os
 import subprocess
@@ -11,7 +12,7 @@ log = logging.getLogger(__name__)
 def launch_queueserver():
     # Derive environmental variables
     this_dir = Path(__file__).parent
-    bluesky_dir = Path(os.environ["HAVEN_CONFIG_DIR"])
+    bluesky_dir = Path(os.environ["BLUESKY_DIR"])
 
     # Derive internal haven variables
     config = load_config()
@@ -30,3 +31,7 @@ def launch_queueserver():
     ]
     log.info(f"Starting queueserver with command: {' '.join(args)}")
     subprocess.run(args)
+
+
+if __name__ == "__main__":
+    sys.exit(launch_queueserver())

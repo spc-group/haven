@@ -31,7 +31,7 @@ HavenPlugin = "firefly.pydm_plugin:HavenPlugin"
 
 [project.scripts]
 haven_config = "haven._iconfig:print_config_value"
-haven_qserver = "haven_qserver.launch_queueserver:launch_queueserver"
+# haven_qserver = "haven_qserver.launch_queueserver:launch_queueserver"
 databroker_consumer = "haven_qserver.databroker_consumer:main"
 tiled_consumer = "haven_qserver.tiled_consumer:main"
 
@@ -99,6 +99,9 @@ follow_untyped_imports = true
 channels = ["conda-forge"]
 platforms = ["linux-64"]
 
+[tool.pixi.activation.env]
+PYDM_DEFAULT_PROTOCOL = "ca"
+
 [tool.pixi.pypi-dependencies]
 haven-spc = { path = ".", editable = true }
 apsbits = "*"
@@ -110,7 +113,6 @@ ophyd-async = "==0.10.1"
 # #   https://github.com/bluesky/bluesky-queueserver/pull/329
 # # "bluesky-queueserver @ git+https://github.com/dmgav/bluesky-queueserver@ophyd-async",
 bluesky-adaptive = "*"
-bluesky-queueserver = {"git" = "https://github.com/bluesky/bluesky-queueserver"}
 bluesky-queueserver-api = "*"  #  = ">=0.0.12"
 
 [tool.pixi.dependencies]
@@ -136,11 +138,17 @@ tomlkit = "*"
 xraydb = ">=4.5.0"
 xrayutilities = "*"
 
-
 [tool.pixi.environments]
 default = { solve-group = "default" }
 dev = { features = ["dev", "gui"], solve-group = "default" }
 gui = { features = ["gui"], solve-group = "default" }
+25idc = { features = ["25idc", "gui", "qserver"], solve-group = "default" }
+25idd = { features = ["25idd", "gui", "qserver"], solve-group = "default" }
+qa = { features = ["qa", "gui", "dev"], solve-group = "default" }
+
+[tool.pixi.tasks]
+test-all = [{ task = "lint" }, { task = "format" }, { task = "isort" },{ task = "check-types" }, { task = "test-haven" }, { task = "test-firefly" }]
+ipython = "ipython -i ./src/haven/ipython_startup.ipy"
 
 [tool.pixi.feature.dev.dependencies]
 "pytest" = "*"
@@ -165,7 +173,6 @@ gui = { features = ["gui"], solve-group = "default" }
 autoapi = "*"
 build = "*"
 
-
 [tool.pixi.feature.dev.tasks]
 test-haven = "pytest src/haven"
 test-firefly = "pytest src/firefly"
@@ -173,7 +180,6 @@ check-types = "mypy"
 format = "black src"
 isort = "isort src"
 lint = "flake8 --count --select=E9,F63,F7,F82,F401 --show-source --statistics src/"
-
 
 [tool.pixi.feature.gui.dependencies]
 qtawesome = ">=1.4.0"
@@ -185,11 +191,29 @@ typhos = ">=3.1.0"  # need the find_signal method on the SignalConnection()
 qt = ">=5.15"
 pyqt = ">=5.15"
 
-
 [tool.pixi.feature.gui.tasks]
 firefly = "firefly"
 
+[tool.pixi.feature.qserver]
+tasks = {qserver = "python -m haven_qserver.launch_queueserver"}
+pypi-dependencies = {bluesky-queueserver = {"git" = "https://github.com/bluesky/bluesky-queueserver"}}
 
-[tool.pixi.tasks]
-test-all = [{ task = "lint" }, { task = "format" }, { task = "isort" },{ task = "check-types" }, { task = "test-haven" }, { task = "test-firefly" }]
-ipython = "ipython -i ./src/haven/ipython_startup.ipy"
+
+[tool.pixi.feature.qa.activation.env]
+PYDM_DEFAULT_PROTOCOL = "ca"
+HAVEN_CONFIG_FILES = "~/.config/bluesky/iconfig.toml"
+BLUESKY_DIR = "~/.config/bluesky/"
+QSERVER_ZMQ_CONTROL_ADDRESS = "tcp://localhost:60617"
+
+# Per beamline configuration
+[tool.pixi.feature.25idc.activation.env]
+PYDM_DEFAULT_PROTOCOL = "ca"
+HAVEN_CONFIG_FILES = "/net/s25data/xorApps/bluesky/25idd/iconfig.toml"
+BLUESKY_DIR = "/net/s25data/xorApps/bluesky/25idc/"
+QSERVER_ZMQ_CONTROL_ADDRESS = "tcp://fedorov.xray.aps.anl.gov:60615"
+
+[tool.pixi.feature.25idd.activation.env]
+PYDM_DEFAULT_PROTOCOL = "ca"
+HAVEN_CONFIG_FILES = "/net/s25data/xorApps/bluesky/25idd/iconfig.toml"
+BLUESKY_DIR = "/net/s25data/xorApps/bluesky/25idd/"
+QSERVER_ZMQ_CONTROL_ADDRESS = "tcp://fedorov.xray.aps.anl.gov:60616"
