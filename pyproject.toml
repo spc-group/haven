@@ -17,69 +17,10 @@ classifiers = [
 license = "BSD-3-clause"
 keywords = ["synchrotron", "xray", "bluesky"]
 dependencies = [
-    "aioca",
-    "aiokafka==0.12.0",
-    "apsbits",
-    "apsbss==1.5.6",
-    "apstools==1.7.3",
-    "bluesky==1.14.2",
-    "bluesky-adaptive",
-    # Temprary commit until a new release is available
-    #   https://github.com/bluesky/bluesky-queueserver/pull/329
-    # "bluesky-queueserver @ git+https://github.com/dmgav/bluesky-queueserver@ophyd-async",
-    "bluesky-queueserver @ git+https://github.com/bluesky/bluesky-queueserver@fd7219aacff73aed42e15eca3b9d26d058ab6c1d",
-    # "bluesky-queueserver==0.0.22",
-    "bluesky-queueserver-api==0.0.12",
-    "bluesky-tiled-plugins==2.0.0b64",
-    "guarneri==0.2.0",
-    "httpx[http2]",
-    "mergedeep",
-    "ophyd==1.10.7",
-    # "ophyd-async==0.10.0",
-    # We need this ophyd-async development branch until a new release (>0.10.0a4)
-    "ophyd-async @ git+https://github.com/bluesky/ophyd-async@f652399e24c045b0f6c675d173c1ef588f909062",
-    "pint",
-    "pcdsdevices",
-    "rich",
-    "stamina",
-    "tiled[client]==0.1.0b29",
-    "tomlkit",
-    "xraydb>=4.5.0",
-    "xrayutilities",
+    # Managed by pixi
+    # To-do: what dependencies do we actually need for e.g. pip install.
 ]
 
-[project.optional-dependencies]
-dev = [
-    "black",
-    "pytest",
-    "asynctest",
-    "build",
-    "twine",
-    "pytest-httpx",
-    "time-machine",
-    "pytest-mock",
-    "pytest-qt",
-    "pytest-xvfb",
-    "flake8",
-    "isort",
-    "sphinx",
-    "autoapi",
-    "nbsphinx",
-    "graphviz",
-    "sphinxcontrib-napoleon",
-    "pytest-asyncio",
-    "pytest_httpx",
-    "scipy-stubs",
-    "mypy"
-]
-gui = [
-    "qtawesome>=1.4.0",
-    "pydm==1.25.2",
-    "pyqtgraph",
-    "qasync",
-    "bluesky-widgets",
-    "typhos>=3.1.0",  # need the find_signal method on the SignalConnection()
-]
 
 [project.urls]
 "Homepage" = "https://haven-spc.readthedocs.io/en/latest/"
@@ -153,3 +94,102 @@ files = [
 ]
 follow_imports = "skip"
 follow_untyped_imports = true
+
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["linux-64"]
+
+[tool.pixi.pypi-dependencies]
+haven-spc = { path = ".", editable = true }
+apsbits = "*"
+apsbss = "*"
+apstools = "*"  # ==1.7.3",
+guarneri = "*"  # ==0.2.0",
+ophyd-async = "==0.10.1"
+# # Temprary commit until a new release is available, then back to conda dependencies
+# #   https://github.com/bluesky/bluesky-queueserver/pull/329
+# # "bluesky-queueserver @ git+https://github.com/dmgav/bluesky-queueserver@ophyd-async",
+bluesky-adaptive = "*"
+bluesky-queueserver = {"git" = "https://github.com/bluesky/bluesky-queueserver"}
+bluesky-queueserver-api = "*"  #  = ">=0.0.12"
+
+[tool.pixi.dependencies]
+aioca = "*"
+aiokafka = "*"  # ==0.12.0",
+bluesky = "*"  #==1.14.2",
+# bluesky-adaptive = "*"
+# bluesky-queueserver" = ">=0.0.23",
+# bluesky-queueserver-api = "*"  #  = ">=0.0.12"
+bluesky-tiled-plugins = ">=2.0.0b64"
+httpx = "*"
+ipython = "*"
+lmfit = "*"
+mergedeep = "*"
+ophyd = "*"  # =1.10.7",
+pint = "*"
+pcdsdevices = "*"
+rich = "*"
+scipy = "*"
+tiled = "==0.1.0b29"
+stamina = "*"
+tomlkit = "*"
+xraydb = ">=4.5.0"
+xrayutilities = "*"
+
+
+[tool.pixi.environments]
+default = { solve-group = "default" }
+dev = { features = ["dev", "gui"], solve-group = "default" }
+gui = { features = ["gui"], solve-group = "default" }
+
+[tool.pixi.feature.dev.dependencies]
+"pytest" = "*"
+"pytest-httpx" = "*"
+"pytest-mock" = "*"
+"pytest-qt" = "*"
+"pytest-xvfb" = "*"
+"pytest-asyncio" = "*"
+"black" = "*"
+"twine" = "*"
+"time-machine" = "*"
+"flake8" = "*"
+"isort" = "*"
+"sphinx" = "*"
+"nbsphinx" = "*"
+"graphviz" = "*"
+"sphinxcontrib-napoleon" = "*"
+"scipy-stubs" = "*"
+"mypy" = "*"
+
+[tool.pixi.feature.dev.pypi-dependencies]
+autoapi = "*"
+build = "*"
+
+
+[tool.pixi.feature.dev.tasks]
+test-haven = "pytest src/haven"
+test-firefly = "pytest src/firefly"
+check-types = "mypy"
+format = "black src"
+isort = "isort src"
+lint = "flake8 --count --select=E9,F63,F7,F82,F401 --show-source --statistics src/"
+
+
+[tool.pixi.feature.gui.dependencies]
+qtawesome = ">=1.4.0"
+pydm = "==1.25.2"
+pyqtgraph = "*"
+qasync = "*"
+bluesky-widgets = "*"
+typhos = ">=3.1.0"  # need the find_signal method on the SignalConnection()
+qt = ">=5.15"
+pyqt = ">=5.15"
+
+
+[tool.pixi.feature.gui.tasks]
+firefly = "firefly"
+
+
+[tool.pixi.tasks]
+test-all = [{ task = "lint" }, { task = "format" }, { task = "isort" },{ task = "check-types" }, { task = "test-haven" }, { task = "test-firefly" }]
+ipython = "ipython -i ./src/haven/ipython_startup.ipy"
