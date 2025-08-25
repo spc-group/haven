@@ -172,17 +172,18 @@ def xia_shutter(xia_shutter_bank):
 
 
 @pytest.fixture()
-def shutters(sim_registry):
-    FakeShutter = make_fake_device(PssShutter)
+async def shutters(sim_registry):
     kw = dict(
         prefix="_prefix",
         labels={"shutters"},
+        hutch_prefix="255ID:StaC:",
     )
     shutters = [
-        FakeShutter(name="Shutter A", **kw),
-        FakeShutter(name="Shutter C", **kw),
+        PssShutter(name="Shutter A", **kw),
+        PssShutter(name="Shutter C", **kw),
     ]
     [sim_registry.register(s) for s in shutters]
+    await asyncio.gather(*[shutter.connect(mock=True) for shutter in shutters])
     yield shutters
 
 
