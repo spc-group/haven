@@ -39,16 +39,12 @@ tiled_consumer = "haven_qserver.tiled_consumer:main"
 firefly = "firefly.launcher:main"
 firefly_cameras = "firefly.launcher:cameras"
 
-[tool.setuptools.package-data]
-firefly = ["firefly.qss"]
-# This might be necessary in the future for BITS compatibility
-# "" = "src"
-
-[tool.setuptools_scm]
-
 [build-system]
-requires = ["setuptools>=61.0", "setuptools-scm>=8.0"]
-build-backend = "setuptools.build_meta"
+build-backend = "hatchling.build"
+requires = ["hatchling"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/haven", "src/firefly", "src/haven_qserver"]
 
 [tool.isort]
 profile = "black"
@@ -102,19 +98,6 @@ platforms = ["linux-64"]
 [tool.pixi.activation.env]
 PYDM_DEFAULT_PROTOCOL = "ca"
 
-[tool.pixi.pypi-dependencies]
-haven-spc = { path = ".", editable = true }
-apsbits = "*"
-apsbss = "*"
-apstools = "*"  # ==1.7.3",
-guarneri = "*"  # ==0.2.0",
-ophyd-async = "==0.10.1"
-# # Temprary commit until a new release is available, then back to conda dependencies
-# #   https://github.com/bluesky/bluesky-queueserver/pull/329
-# # "bluesky-queueserver @ git+https://github.com/dmgav/bluesky-queueserver@ophyd-async",
-bluesky-adaptive = "*"
-bluesky-queueserver-api = "*"  #  = ">=0.0.12"
-
 [tool.pixi.dependencies]
 aioca = "*"
 aiokafka = "*"  # ==0.12.0",
@@ -123,6 +106,7 @@ bluesky = "*"  #==1.14.2",
 # bluesky-queueserver" = ">=0.0.23",
 # bluesky-queueserver-api = "*"  #  = ">=0.0.12"
 bluesky-tiled-plugins = ">=2.0.0b64"
+databroker = "==1.2.5"  # Just to make the solve work for apsbits
 httpx = "*"
 ipython = "*"
 lmfit = "*"
@@ -137,6 +121,19 @@ stamina = "*"
 tomlkit = "*"
 xraydb = ">=4.5.0"
 xrayutilities = "*"
+
+[tool.pixi.pypi-dependencies]
+haven-spc = { path = ".", editable = true }
+apsbits = "*"
+apsbss = "*"
+apstools = "*"  # ==1.7.3",
+guarneri = "*"  # ==0.2.0",
+ophyd-async = "==0.10.1"
+# # Temprary commit until a new release is available, then back to conda dependencies
+# #   https://github.com/bluesky/bluesky-queueserver/pull/329
+# "bluesky-queueserver @ git+https://github.com/dmgav/bluesky-queueserver@ophyd-async",
+bluesky-adaptive = "*"
+bluesky-queueserver-api = "*"  #  = ">=0.0.12"
 
 [tool.pixi.environments]
 default = { solve-group = "default" }
