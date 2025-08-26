@@ -438,9 +438,9 @@ def grid_fly_scan(
             md=md_,
         )
         result = yield from stub_wrapper(grid_scan)
-        # yield from bps.complete_all(*detectors, wait=True)
-        # for detector in detectors:
-        #     yield from bps.collect(detector)
+        yield from bps.complete_all(*detectors, wait=True)
+        for detector in detectors:
+            yield from bps.collect(detector)
         return result
 
     return (yield from fly_inner())
@@ -570,8 +570,8 @@ class Snaker:
         #   pulses properly. It leaves an extra frame at the end of
         #   every gated signal.
         yield from bps.complete_all(*to_fly, wait=True)
-        # for detector in detectors:
-        #     yield from bps.collect(detector)
+        for detector in detectors:
+            yield from bps.collect(detector)
 
 
 # -----------------------------------------------------------------------------

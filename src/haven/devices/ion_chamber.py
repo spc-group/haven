@@ -434,6 +434,9 @@ class IonChamber(StandardReadable, Triggerable):
         self._is_flying = False
 
     async def collect_pages(self):
+        if len(self._fly_readings) == 0:
+            # No readings have been collected, so just skip this step
+            return
         # Prepare the individual signal data-sets
         raw_counts, raw_times, clock_freq, offset_rate, num_points = (
             await asyncio.gather(
@@ -474,6 +477,8 @@ class IonChamber(StandardReadable, Triggerable):
             "data": data,
             "timestamps": {key: timestamps for key in data.keys()},
         }
+        await self.mcs.erase_all.trigger()
+        self._fly_readings: list[dict] = []
         yield results
 
     async def describe_collect(self) -> dict[str, dict]:
