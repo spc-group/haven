@@ -236,6 +236,7 @@ async def test_list_motor_positions(tiled_api, capsys):
     # print(expected)
     assert first_motor == expected
 
+
 @pytest.mark.skip(reason="breaks CI")
 @time_machine.travel(fake_time, tick=True)
 async def test_list_current_motor_positions(motors, capsys):

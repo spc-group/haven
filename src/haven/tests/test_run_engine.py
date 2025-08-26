@@ -2,9 +2,7 @@ import gc
 from unittest import mock
 
 import databroker
-import pytest
 from bluesky import Msg, RunEngine
-from ophyd.sim import instantiate_fake_device
 
 from haven import run_engine
 
