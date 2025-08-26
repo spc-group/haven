@@ -4,12 +4,21 @@ test the SRS DG-645 digital delay device support
 Hardware is not available so test with best efforts
 """
 
+import pytest
+from ophyd_async.core import DetectorTrigger, TriggerInfo
+from ophyd_async.testing import assert_value
+
 from haven.devices import delay
 
 
-async def test_dg645_device():
+@pytest.fixture()
+async def dg645():
     dg645 = delay.DG645Delay("", name="delay")
     await dg645.connect(mock=True)
+    return dg645
+
+
+async def test_dg645_device(dg645):
     read_names = []
     read_attrs = (await dg645.describe()).keys()
     assert sorted(read_attrs) == read_names
@@ -128,3 +137,154 @@ async def test_dg645_device():
     ]
     child_names = [child.name for attr, child in dg645.children()]
     assert sorted(child_names) == sorted(cpt_names)
+
+
+async def test_prepare_delay_internal(dg645):
+    tinfo = TriggerInfo()
+    await dg645.prepare(tinfo)
+    await assert_value(dg645.trigger_source, "Internal")
+
+
+async def test_prepare_delay_edge_trigger(dg645):
+    tinfo = TriggerInfo(
+        trigger=DetectorTrigger.EDGE_TRIGGER,
+    )
+    await dg645.prepare(tinfo)
+    await assert_value(dg645.trigger_source, "Ext rising edge")
+
+
+async def test_prepare_output_edge(dg645):
+    tinfo = TriggerInfo(
+        trigger=DetectorTrigger.EDGE_TRIGGER,
+    )
+    output = dg645.output_AB
+    await output.prepare(tinfo)
+    await assert_value(dg645.channel_A.reference, "T0")
+    await assert_value(dg645.channel_A.delay, 0)
+    await assert_value(dg645.channel_B.reference, "T0")
+    await assert_value(dg645.channel_B.delay, 1e-8)
+
+
+async def test_prepare_output_edge(dg645):
+    tinfo = TriggerInfo(
+        trigger=DetectorTrigger.CONSTANT_GATE, livetime=1.3, deadtime=0.1
+    )
+    output = dg645.output_AB
+    await output.prepare(tinfo)
+    await assert_value(dg645.channel_A.reference, "T0")
+    await assert_value(dg645.channel_A.delay, 0)
+    await assert_value(dg645.channel_B.reference, "T0")
+    await assert_value(dg645.channel_B.delay, 1.2)
+
+
+@pytest.fixture()
+async def soft_glue():
+    sg = delay.SoftGlueDelay("", name="delay")
+    await sg.connect(mock=True)
+    return sg
+
+
+async def test_prepare_softglue_edge_trigger(soft_glue):
+    tinfo = TriggerInfo(trigger="EDGE_TRIGGER")
+    await soft_glue.prepare(tinfo)
+    # Check that the right signals were set up
+    assert await soft_glue.pulse_input.signal.get_value() == "pulseIn"
+    assert await soft_glue.clock_divider.output_signal.get_value() != "pulseIn"
+    # For producing the gate signal
+    assert await soft_glue.gate_latch.clock_signal.get_value() == "pulseIn"
+    assert await soft_glue.gate_latch.data_signal.get_value() == "1"
+    assert await soft_glue.gate_latch.clear_signal.get_value() == "reset*"
+    assert await soft_glue.gate_latch.output_signal.get_value() == "gateLatch"
+    assert await soft_glue.gate_latch.description.get_value() == "Gate latch"
+    # For stopping the triggers/gates once the count is reached
+    assert await soft_glue.pulse_counter.clock_signal.get_value() == "pulseIn"
+    assert await soft_glue.pulse_counter.load_signal.get_value() == "reset"
+    assert await soft_glue.pulse_counter.output_signal.get_value() == "stopTrig"
+    assert await soft_glue.pulse_counter.description.get_value() == "Pulse counter"
+    assert await soft_glue.pulse_counter.preset_counts.get_value() == 0
+    assert await soft_glue.stop_trigger_latch.clock_signal.get_value() == "stopTrig"
+    assert await soft_glue.stop_trigger_latch.data_signal.get_value() == "1"
+    assert await soft_glue.stop_trigger_latch.clear_signal.get_value() == "reset*"
+    assert await soft_glue.stop_trigger_latch.output_signal.get_value() == "blockTrigs"
+    assert (
+        await soft_glue.stop_trigger_latch.description.get_value()
+        == "Block extra triggers"
+    )
+    assert (
+        await soft_glue.output_permitted_gate.inputA_signal.get_value() == "blockTrigs*"
+    )
+    assert await soft_glue.output_permitted_gate.inputB_signal.get_value() == "pulseIn*"
+    assert (
+        await soft_glue.output_permitted_gate.output_signal.get_value() == "outPermit"
+    )
+    assert (
+        await soft_glue.output_permitted_gate.description.get_value() == "Output permit"
+    )
+    # For passing the input pulses back out
+    assert await soft_glue.pulse_output.signal.get_value() == "pulseIn"
+
+
+async def test_prepare_softglue_internal(soft_glue):
+    tinfo = TriggerInfo(trigger="INTERNAL")
+    await soft_glue.prepare(tinfo)
+    # Don't want a trigger input, just internal clocks ticks
+    assert await soft_glue.pulse_input.signal.get_value() == ""
+    assert await soft_glue.clock_divider.output_signal.get_value() == "pulseIn"
+    assert await soft_glue.internal_clock.signal.get_value() == "internClk"
+    assert await soft_glue.clock_divider.clock_signal.get_value() == "internClk"
+    assert await soft_glue.clock_divider.enable_signal.get_value() == "1"
+    assert await soft_glue.clock_divider.reset_signal.get_value() == "reset"
+
+
+async def test_prepare_softglue_gate_output(soft_glue):
+    tinfo = TriggerInfo(trigger="CONSTANT_GATE")
+    await soft_glue.gate_output.prepare(tinfo)
+    # Don't want a trigger input, just internal clocks ticks
+    assert await soft_glue.gate_output.and_gate.inputA_signal.get_value() == "outPermit"
+    assert await soft_glue.gate_output.and_gate.inputB_signal.get_value() == "gateLatch"
+    assert await soft_glue.gate_output.and_gate.output_signal.get_value() == "gateOut"
+    assert await soft_glue.gate_output.output.signal.get_value() == "gateOut"
+
+
+async def test_prepare_softglue_trigger_output(soft_glue):
+    tinfo = TriggerInfo(trigger="EDGE_TRIGGER")
+    await soft_glue.trigger_output.prepare(tinfo)
+    # Don't want a trigger input, just internal clocks ticks
+    assert (
+        await soft_glue.trigger_output.and_gate.inputA_signal.get_value() == "outPermit"
+    )
+    assert (
+        await soft_glue.trigger_output.and_gate.inputB_signal.get_value() == "pulseIn"
+    )
+    assert (
+        await soft_glue.trigger_output.and_gate.output_signal.get_value() == "trigOut"
+    )
+    assert await soft_glue.trigger_output.output.signal.get_value() == "trigOut"
+
+
+async def test_kickoff_softglue_single_event(soft_glue):
+    num_events = 6
+    tinfo = TriggerInfo(trigger="INTERNAL", number_of_events=num_events)
+    await soft_glue.prepare(tinfo)
+    assert await soft_glue.pulse_counter.preset_counts.get_value() == 0
+    await soft_glue.kickoff()
+    assert await soft_glue.pulse_counter.preset_counts.get_value() == num_events + 1
+    assert await soft_glue.reset_buffer.input_signal.get_value() == "1!"
+    # Extra kickoffs shouldn't work
+    with pytest.raises(RuntimeError):
+        await soft_glue.kickoff()
+
+
+async def test_kickoff_softglue_multiple_events(soft_glue):
+    num_events = [6, 9]
+    tinfo = TriggerInfo(trigger="INTERNAL", number_of_events=num_events)
+    await soft_glue.prepare(tinfo)
+    assert await soft_glue.pulse_counter.preset_counts.get_value() == 0
+    await soft_glue.kickoff()
+    assert await soft_glue.pulse_counter.preset_counts.get_value() == num_events[0] + 1
+    assert await soft_glue.reset_buffer.input_signal.get_value() == "1!"
+    # Set the reset buffer low to we can check again
+    await soft_glue.reset_buffer.input_signal.set("")
+    await soft_glue.kickoff()
+    assert await soft_glue.pulse_counter.preset_counts.get_value() == num_events[1] + 1
+    assert await soft_glue.reset_buffer.input_signal.get_value() == "1!"

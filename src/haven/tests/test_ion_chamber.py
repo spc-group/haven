@@ -277,11 +277,11 @@ def test_offset_pv(sim_registry):
 @pytest.fixture()
 def trigger_info():
     return TriggerInfo(
-        number_of_triggers=5, trigger=DetectorTrigger.INTERNAL, deadtime=0, livetime=1.3
+        number_of_events=5, trigger=DetectorTrigger.INTERNAL, deadtime=0, livetime=1.3
     )
 
 
-async def test_flyscan_prepare(ion_chamber, trigger_info):
+async def test_flyscan_prepare_internal_trigger(ion_chamber, trigger_info):
     # Prepare the ion chamber with mocked put commands
     await ion_chamber.connect(mock=True)
     set_mock_value(ion_chamber.mcs.num_channels_max, 8000)
@@ -292,20 +292,44 @@ async def test_flyscan_prepare(ion_chamber, trigger_info):
     # Check that the device was properly configured for fly-scanning
     assert erase_mock_put.called
     await assert_value(ion_chamber.mcs.channel_advance_source, "Internal")
-    await assert_value(ion_chamber.mcs.num_channels, 8000)
+    await assert_value(ion_chamber.mcs.dwell_time, 1.3)
+    assert ion_chamber._fly_readings == []
+
+
+async def test_flyscan_prepare_external_trigger(ion_chamber):
+    trigger_info = TriggerInfo(
+        number_of_events=[5, 7],
+        trigger=DetectorTrigger.EDGE_TRIGGER,
+        deadtime=0,
+        livetime=1.3,
+    )
+    # Prepare the ion chamber with mocked put commands
+    await ion_chamber.connect(mock=True)
+    set_mock_value(ion_chamber.mcs.num_channels_max, 8000)
+    erase_mock_put = get_mock_put(ion_chamber.mcs.erase_all)
+    assert not erase_mock_put.called
+    # Prepare the ion chamber
+    await ion_chamber.prepare(trigger_info)
+    # Check that the device was properly configured for fly-scanning
+    assert erase_mock_put.called
+    await assert_value(ion_chamber.mcs.channel_advance_source, "External")
+    assert next(ion_chamber._trigger_channel_nums) == 5
+    assert next(ion_chamber._trigger_channel_nums) == 7
     await assert_value(ion_chamber.mcs.dwell_time, 1.3)
     assert ion_chamber._fly_readings == []
 
 
 async def test_flyscan_kickoff(ion_chamber, trigger_info):
     await ion_chamber.connect(mock=True)
+    set_mock_value(ion_chamber.mcs.num_channels_max, 8000)
     await ion_chamber.prepare(trigger_info)
     # Prepare the mocked put commands
-    start_mock_put = get_mock_put(ion_chamber.mcs.start_all)
+    start_mock_put = get_mock_put(ion_chamber.mcs.erase_start)
     # Kickoff the fly scan
     status = ion_chamber.kickoff()
     set_mock_value(ion_chamber.mcs.acquiring, ion_chamber.mcs.Acquiring.ACQUIRING)
     await status
+    await assert_value(ion_chamber.mcs.num_channels, 8000)
     # Check that the scan was started
     assert start_mock_put.called
     # Check that timestamps get recorded when new data are available
@@ -333,6 +357,7 @@ async def test_flyscan_collect(ion_chamber, trigger_info):
     sim_times = np.asarray([4.0e7, 4.0e7, 4.0e7, 4.0e7, 4.0e7, 4.0e7])
     set_mock_value(ion_chamber.mcs.mcas[0].spectrum, sim_times)
     set_mock_value(ion_chamber.mcs.scaler.clock_frequency, 1e7)
+    set_mock_value(ion_chamber.mcs.current_channel, 6)
     channel_numbers = range(len(sim_times) + 1)
     expected_timestamps = [1004, 1008, 1012, 1016, 1020, 1024]
     ion_chamber._fly_readings = [
