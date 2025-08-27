@@ -144,7 +144,14 @@ gui = { features = ["gui"], solve-group = "default" }
 qa = { features = ["ipython", "qa", "gui", "qserver"], solve-group = "default" }
 
 [tool.pixi.tasks]
-test-all = [{ task = "lint" }, { task = "format" }, { task = "isort" },{ task = "check-types" }, { task = "test-haven" }, { task = "test-firefly" }]
+test-all = [
+    {task = "lint" },
+    {task = "format", args = ["--check"] },
+    {task = "isort", args = ["--check"] },
+    {task = "check-types" },
+    {task = "test-haven" },
+    {task = "test-firefly" }
+]
 
 [tool.pixi.feature.dev.dependencies]
 "pytest" = "*"
@@ -176,9 +183,20 @@ build = "*"
 test-haven = "pytest src/haven"
 test-firefly = "pytest src/firefly"
 check-types = "mypy"
-format = "black src"
-isort = "isort src"
 lint = "flake8 --count --select=E9,F63,F7,F82,F401 --show-source --statistics src/"
+make-docs = "make html --directory=docs/"
+
+[tool.pixi.feature.dev.tasks.isort]
+args = [
+     { arg = "check_flag", default = "" },
+]
+cmd = "isort src {{ check_flag }}"
+
+[tool.pixi.feature.dev.tasks.format]
+args = [
+     { arg = "check_flag", default = "" },
+]
+cmd = "black src {{ check_flag }}"
 
 [tool.pixi.feature.gui.dependencies]
 qtawesome = ">=1.4.0"
