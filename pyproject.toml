@@ -6,7 +6,7 @@ authors = [
 ]
 description = "Tools and GUI for running the spectroscopy group beamlines at the Advanced Photon Source."
 readme = "README.md"
-requires-python = ">=3.12"
+# requires-python = ">=3.12"
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
@@ -98,19 +98,9 @@ platforms = ["linux-64"]
 PYDM_DEFAULT_PROTOCOL = "ca"
 
 [tool.pixi.dependencies]
-aioca = "*"
-aiokafka = "*"  # ==0.12.0",
-bluesky = "*"  #==1.14.2",
-# bluesky-adaptive = "*"
-# bluesky-queueserver" = ">=0.0.23",
-# bluesky-queueserver-api = "*"  #  = ">=0.0.12"
-bluesky-tiled-plugins = ">=2.0.0b64"
-databroker = "==1.2.5"  # Just to make the solve work for apsbits
 httpx = "*"
-ipython = "*"
 lmfit = "*"
 mergedeep = "*"
-ophyd = "*"  # =1.10.7",
 pint = "*"
 pcdsdevices = "*"
 rich = "*"
@@ -122,25 +112,15 @@ xrayutilities = "*"
 
 [tool.pixi.pypi-dependencies]
 haven-spc = { path = ".", editable = true }
-apsbits = "*"
-apsbss = "*"
-apstools = "*"  # ==1.7.3",
-guarneri = "*"  # ==0.2.0",
-ophyd-async = "==0.10.1"
-# # Temprary commit until a new release is available, then back to conda dependencies
-# #   https://github.com/bluesky/bluesky-queueserver/pull/329
-# "bluesky-queueserver @ git+https://github.com/dmgav/bluesky-queueserver@ophyd-async",
-bluesky-adaptive = "*"
-bluesky-queueserver-api = "*"  #  = ">=0.0.12"
 tiled = { version = "==0.1.0b29", extras = ["client"] }
 
 [tool.pixi.environments]
 default = { solve-group = "default" }
-dev = { features = ["ipython", "dev", "gui"], solve-group = "default" }
-gui = { features = ["gui"], solve-group = "default" }
-25idc = { features = ["ipython", "25idc", "gui", "qserver", "tiled-server"], solve-group = "default" }
-25idd = { features = ["ipython", "25idd", "gui", "qserver", "tiled-server"], solve-group = "default" }
-qa = { features = ["ipython", "qa", "gui", "qserver", "tiled-server"], solve-group = "default" }
+dev = { features = ["bluesky", "ipython", "dev", "gui"], solve-group = "default" }
+25idc = { features = ["bluesky", "ipython", "25idc", "gui", "qserver", "tiled-server"], solve-group = "default" }
+25idd = { features = ["bluesky", "ipython", "25idd", "gui", "qserver", "tiled-server"], solve-group = "default" }
+qa = { features = ["bluesky", "ipython", "qa", "gui", "qserver", "tiled-server"], solve-group = "default" }
+designer = { features = ["designer"] }
 
 [tool.pixi.tasks]
 test-all = [
@@ -151,6 +131,26 @@ test-all = [
     {task = "test-haven" },
     {task = "test-firefly" }
 ]
+
+[tool.pixi.feature.bluesky.dependencies]
+aioca = "*"
+aiokafka = "*"  # ==0.12.0",
+bluesky = "*"  #==1.14.2",
+# bluesky-adaptive = "*"
+# bluesky-queueserver" = ">=0.0.23",
+# bluesky-queueserver-api = "*"  #  = ">=0.0.12"
+bluesky-tiled-plugins = ">=2.0.0b64"
+databroker = "==1.2.5"  # Just to make the solve work for apsbits
+ophyd = "*"  # =1.10.7",
+
+[tool.pixi.feature.bluesky.pypi-dependencies]
+apsbits = "*"
+apstools = "*"  # ==1.7.3",
+guarneri = "*"  # ==0.2.0",
+ophyd-async = "==0.10.1"
+bluesky-adaptive = "*"
+bluesky-queueserver-api = "*"  #  = ">=0.0.12"
+
 
 [tool.pixi.feature.dev.dependencies]
 "pytest" = "*"
@@ -171,8 +171,9 @@ test-all = [
 "scipy-stubs" = "*"
 "mypy" = "*"
 
-[tool.pixi.feature.ipython.tasks]
-ipython = "ipython -i ./src/haven/ipython_startup.ipy"
+[tool.pixi.feature.ipython]
+dependencies = {ipython = "*"}
+tasks = {ipython = "ipython -i ./src/haven/ipython_startup.ipy"}
 
 [tool.pixi.feature.dev.pypi-dependencies]
 autoapi = "*"
@@ -207,8 +208,21 @@ typhos = ">=3.1.0"  # need the find_signal method on the SignalConnection()
 qt = ">=5.15"
 pyqt = ">=5.15"
 
+[tool.pixi.feature.gui.pypi-dependencies]
+apsbss = "*"
+
 [tool.pixi.feature.gui.tasks]
 firefly = "firefly"
+
+[tool.pixi.feature.designer.dependencies]
+python = "3.10.*"
+pyqt = "==5.12.3"
+pyqtgraph = "<0.13.0"  # Last version to support pyqt 5.12
+qt = "~=5.12"
+pydm = "==1.25.2"
+
+[tool.pixi.feature.designer.tasks]
+designer = "designer"
 
 [tool.pixi.feature.qserver]
 tasks = {qserver = "python -m haven_qserver.launch_queueserver"}

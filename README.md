@@ -55,6 +55,12 @@ $ pixi run firefly
 
 Firefly uses the same pixi environments described above.
 
+To make changes to the window layouts using Qt Designer, use:
+
+```bash
+$ pixi run designer
+```
+
 
 ## Running Tests
 
