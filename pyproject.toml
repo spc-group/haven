@@ -31,7 +31,6 @@ HavenPlugin = "firefly.pydm_plugin:HavenPlugin"
 
 [project.scripts]
 haven_config = "haven._iconfig:print_config_value"
-# haven_qserver = "haven_qserver.launch_queueserver:launch_queueserver"
 databroker_consumer = "haven_qserver.databroker_consumer:main"
 tiled_consumer = "haven_qserver.tiled_consumer:main"
 
@@ -116,7 +115,6 @@ pint = "*"
 pcdsdevices = "*"
 rich = "*"
 scipy = "*"
-tiled = "==0.1.0b29"
 stamina = "*"
 tomlkit = "*"
 xraydb = ">=4.5.0"
@@ -134,14 +132,15 @@ ophyd-async = "==0.10.1"
 # "bluesky-queueserver @ git+https://github.com/dmgav/bluesky-queueserver@ophyd-async",
 bluesky-adaptive = "*"
 bluesky-queueserver-api = "*"  #  = ">=0.0.12"
+tiled = { version = "==0.1.0b29", extras = ["client"] }
 
 [tool.pixi.environments]
 default = { solve-group = "default" }
 dev = { features = ["ipython", "dev", "gui"], solve-group = "default" }
 gui = { features = ["gui"], solve-group = "default" }
-25idc = { features = ["ipython", "25idc", "gui", "qserver"], solve-group = "default" }
-25idd = { features = ["ipython", "25idd", "gui", "qserver"], solve-group = "default" }
-qa = { features = ["ipython", "qa", "gui", "qserver"], solve-group = "default" }
+25idc = { features = ["ipython", "25idc", "gui", "qserver", "tiled-server"], solve-group = "default" }
+25idd = { features = ["ipython", "25idd", "gui", "qserver", "tiled-server"], solve-group = "default" }
+qa = { features = ["ipython", "qa", "gui", "qserver", "tiled-server"], solve-group = "default" }
 
 [tool.pixi.tasks]
 test-all = [
@@ -215,18 +214,27 @@ firefly = "firefly"
 tasks = {qserver = "python -m haven_qserver.launch_queueserver"}
 pypi-dependencies = {bluesky-queueserver = {"git" = "https://github.com/bluesky/bluesky-queueserver"}}
 
+[tool.pixi.feature.tiled-server.pypi-dependencies]
+tiled = { version = "==0.1.0b29", extras = ["all"] }
+
+[tool.pixi.feature.tiled-server.tasks]
+tiled = "tiled serve config"
+
 [tool.pixi.feature.qa.activation.env]
-HAVEN_CONFIG_FILES = "~/.config/bluesky/iconfig.toml"
 BLUESKY_DIR = "~/.config/bluesky/"
+HAVEN_CONFIG_FILES = "${BLUESKY_DIR}iconfig.toml"
+TILED_CONFIG = "${HOME}/.config/tiled/server_config.yml"
 QSERVER_ZMQ_CONTROL_ADDRESS = "tcp://localhost:60617"
 
 # Per beamline configuration
 [tool.pixi.feature.25idc.activation.env]
-HAVEN_CONFIG_FILES = "/net/s25data/xorApps/bluesky/25idd/iconfig.toml"
 BLUESKY_DIR = "/net/s25data/xorApps/bluesky/25idc/"
+HAVEN_CONFIG_FILES = "${BLUESKY_DIR}iconfig.toml"
+TILED_CONFIG = "${BLUESKY_DIR}tiled_server_config.yml"
 QSERVER_ZMQ_CONTROL_ADDRESS = "tcp://fedorov.xray.aps.anl.gov:60615"
 
 [tool.pixi.feature.25idd.activation.env]
-HAVEN_CONFIG_FILES = "/net/s25data/xorApps/bluesky/25idd/iconfig.toml"
 BLUESKY_DIR = "/net/s25data/xorApps/bluesky/25idd/"
+HAVEN_CONFIG_FILES = "${BLUESKY_DIR}iconfig.toml"
+TILED_CONFIG = "${BLUESKY_DIR}tiled_server_config.yml"
 QSERVER_ZMQ_CONTROL_ADDRESS = "tcp://fedorov.xray.aps.anl.gov:60616"
