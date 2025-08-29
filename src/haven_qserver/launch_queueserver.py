@@ -16,7 +16,9 @@ def launch_queueserver():
 
     # Derive internal haven variables
     config = load_config()
-    redis_addr = config.get("queueserver", {}).get("redis_addr", "")
+    qs_config = config.get("queueserver", {})
+    redis_addr = qs_config.get("redis_addr", "")
+    redis_prefix = qs_config.get("redis_prefix", "qs_default")
     # Launch the queueserver
     args = [
         "start-re-manager",
@@ -28,6 +30,8 @@ def launch_queueserver():
         str(this_dir / "queueserver_user_group_permissions.yaml"),
         "--redis-addr",
         redis_addr,
+        "--redis-name-prefix",
+        redis_prefix,
     ]
     log.info(f"Starting queueserver with command: {' '.join(args)}")
     subprocess.run(args)
