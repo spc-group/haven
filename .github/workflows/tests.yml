@@ -1,6 +1,4 @@
-# Based on tutorial: https://autobencoder.com/2020-08-24-conda-actions/
-
-name: Tests
+name: tests
 on:
   push:
     branches:

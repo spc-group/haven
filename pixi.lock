@@ -6316,7 +6316,7 @@ packages:
 - pypi: ./
   name: haven-spc
   version: 2025.2.1
-  sha256: 0268dbc9802a5fb55b4dea507127006ba5d0fa85cc570a0be83fffc2b2a96b15
+  sha256: d4bfefbf5c9f2bac45bb2774100423229403c406bcb32bad8830326b2c786561
   editable: true
 - conda: https://conda.anaconda.org/conda-forge/linux-64/hdf5-1.14.0-nompi_h5231ba7_103.conda
   sha256: cfec313dcb1c51a0f6faee9c6af7dcb9cbe86847697f0be9846eaa0058500d29
