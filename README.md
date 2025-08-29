@@ -25,6 +25,14 @@ and running **tasks**.
 
 If **pixi** is not installed, follow the instructions [here](https://pixi.sh/latest/installation/).
 
+## Configuration
+
+Haven uses configuration files for most of the instrument-specific
+details (PV prefixes, etc). Deciding which configuration files to use
+is handled by Pixi. Each instrument has a Pixi feature with
+environmental variables that point to the correct configuration files
+to use. See ``pixi.toml`` for existing examples.
+
 
 ## Usage
 
@@ -61,6 +69,28 @@ To make changes to the window layouts using Qt Designer, use:
 $ pixi run designer
 ```
 
+## Bluesky Queueserver
+
+A bluesky queueserver instance can be launched using
+
+```shell
+$ pixi run qserver
+```
+
+The specifics of the queueserver are determined by environmental
+variables in the instrument-specific Pixi features (``pixi.toml``).
+
+## Tiled API
+
+Haven's default run-engine configuration requires a Tiled instance for
+writing data. A Tiled server can be started using
+
+```
+$ pixi run tiled
+```
+
+Configuration is handled by the configuration file referenced by the
+``$TILED_CONFIG`` in ``pixi.toml``.
 
 ## Running Tests
 
@@ -76,6 +106,15 @@ To run all tests as well as linting and type-checking, use:
 ```
 $ pixi run test-all
 ```
+
+## Building Documentation
+
+Documentation is stored in ``docs/`` and built using Sphinx:
+
+```
+$ pixi run make-docs
+```
+
 
 # Packaging
 

@@ -23,4 +23,3 @@ These guides do not cover the individual beamlines thoroughly.
    instrument_registry.rst
    shutters_and_filters.rst
    motor_positions.rst
-   xdi_writer.rst
