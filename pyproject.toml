@@ -6,7 +6,7 @@ authors = [
 ]
 description = "Tools and GUI for running the spectroscopy group beamlines at the Advanced Photon Source."
 readme = "README.md"
-requires-python = ">=3.12"
+# requires-python = ">=3.12"
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
@@ -17,69 +17,10 @@ classifiers = [
 license = "BSD-3-clause"
 keywords = ["synchrotron", "xray", "bluesky"]
 dependencies = [
-    "aioca",
-    "aiokafka==0.12.0",
-    "apsbits",
-    "apsbss==1.5.6",
-    "apstools==1.7.3",
-    "bluesky==1.14.2",
-    "bluesky-adaptive",
-    # Temprary commit until a new release is available
-    #   https://github.com/bluesky/bluesky-queueserver/pull/329
-    # "bluesky-queueserver @ git+https://github.com/dmgav/bluesky-queueserver@ophyd-async",
-    "bluesky-queueserver @ git+https://github.com/bluesky/bluesky-queueserver@fd7219aacff73aed42e15eca3b9d26d058ab6c1d",
-    # "bluesky-queueserver==0.0.22",
-    "bluesky-queueserver-api==0.0.12",
-    "bluesky-tiled-plugins==2.0.0b64",
-    "guarneri==0.2.0",
-    "httpx[http2]",
-    "mergedeep",
-    "ophyd==1.10.7",
-    # "ophyd-async==0.10.0",
-    # We need this ophyd-async development branch until a new release (>0.10.0a4)
-    "ophyd-async @ git+https://github.com/bluesky/ophyd-async@f652399e24c045b0f6c675d173c1ef588f909062",
-    "pint",
-    "pcdsdevices",
-    "rich",
-    "stamina",
-    "tiled[client]==0.1.0b29",
-    "tomlkit",
-    "xraydb>=4.5.0",
-    "xrayutilities",
+    # Managed by pixi
+    # To-do: what dependencies do we actually need for e.g. pip install.
 ]
 
-[project.optional-dependencies]
-dev = [
-    "black",
-    "pytest",
-    "asynctest",
-    "build",
-    "twine",
-    "pytest-httpx",
-    "time-machine",
-    "pytest-mock",
-    "pytest-qt",
-    "pytest-xvfb",
-    "flake8",
-    "isort",
-    "sphinx",
-    "autoapi",
-    "nbsphinx",
-    "graphviz",
-    "sphinxcontrib-napoleon",
-    "pytest-asyncio",
-    "pytest_httpx",
-    "scipy-stubs",
-    "mypy"
-]
-gui = [
-    "qtawesome>=1.4.0",
-    "pydm==1.25.2",
-    "pyqtgraph",
-    "qasync",
-    "bluesky-widgets",
-    "typhos>=3.1.0",  # need the find_signal method on the SignalConnection()
-]
 
 [project.urls]
 "Homepage" = "https://haven-spc.readthedocs.io/en/latest/"
@@ -90,7 +31,6 @@ HavenPlugin = "firefly.pydm_plugin:HavenPlugin"
 
 [project.scripts]
 haven_config = "haven._iconfig:print_config_value"
-haven_qserver = "haven_qserver.launch_queueserver:launch_queueserver"
 databroker_consumer = "haven_qserver.databroker_consumer:main"
 tiled_consumer = "haven_qserver.tiled_consumer:main"
 
@@ -98,16 +38,12 @@ tiled_consumer = "haven_qserver.tiled_consumer:main"
 firefly = "firefly.launcher:main"
 firefly_cameras = "firefly.launcher:cameras"
 
-[tool.setuptools.package-data]
-firefly = ["firefly.qss"]
-# This might be necessary in the future for BITS compatibility
-# "" = "src"
-
-[tool.setuptools_scm]
-
 [build-system]
-requires = ["setuptools>=61.0", "setuptools-scm>=8.0"]
-build-backend = "setuptools.build_meta"
+build-backend = "hatchling.build"
+requires = ["hatchling"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/haven", "src/firefly", "src/haven_qserver"]
 
 [tool.isort]
 profile = "black"
@@ -153,3 +89,6 @@ files = [
 ]
 follow_imports = "skip"
 follow_untyped_imports = true
+
+[tool.ruff.lint]
+select = ["E9", "F63", "F7", "F82", "F401"]
