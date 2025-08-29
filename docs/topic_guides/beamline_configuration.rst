@@ -127,43 +127,6 @@ could have an entry in the configuration file:
 
 These factory functions should return either a **new Device**, or a
 **iterable of new devices**.
-    
-
-Development and Testing
------------------------
-
-While adding features and tests to Haven, it is often necessary to
-read a configuration file, for example when testing functions that
-load devices through
-:py:func:`~haven.load_instrument.load_instrument()`. However,
-the configuration that is loaded should not come from a real beamline
-configuration or else there is a risk of controlling real hardware
-while running tests.
-
-To avoid this problem, **pytest modifies the configuration file
-loading** when running tests with pytest:
-
-1. Ignore any config files besides ``iconfig_default.toml``.
-2. Add ``iconfig_testing.toml`` to the configuration
-
-Additionally, all ``load_motors()`` style functions should accept an
-optional *config* argument, that will determine the configuration
-instead of using the above-mentioned priority.
-
-If a feature is added to Haven that would benefit from
-beamline-specific configuration, it can be added in one of two places.
-
-``src/haven/iconfig_default.toml``
-  This is the best choice if the device or feature is critical to the
-  operation of Haven and/or Firefly, such as the beamline scheduling
-  system. The values listed should still not point at real hardware,
-  but should be sensible defaults or dummy values to allow Haven to
-  function.
-``src/haven/iconfig_testing.toml``
-  This is the best choice if the device or hardware is optional, and may
-  or may not be present at any given beamline, for example,
-  fluorescence detectors. This configuration should not point to real
-  hardware.
 
 
 Checking Configuration
@@ -178,7 +141,7 @@ used to read configuration variables as they will be seen by Haven:
 	  {'hardware_is_present': False, 'name': 'SPC Beamline (sector unknown)'}
 	  $ haven_config beamline.hardware_is_present
 	  False
-  
+
 
 Example Configuration
 ---------------------
@@ -186,8 +149,10 @@ Example Configuration
 Below is an example of a configuration that can be re-used for new
 device support or beamline setup.
 
+If a feature is added to Haven that would benefit from
+beamline-specific configuration, an example of its use should be added
+to ``src/haven/iconfig_testing.toml``.
 
 .. literalinclude:: ../../src/haven/iconfig_testing.toml
    :caption: iconfig_testing.toml
    :language: toml
-

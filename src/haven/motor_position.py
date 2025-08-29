@@ -216,7 +216,6 @@ async def get_motor_positions(
     after: float | None = None,
     name: str | None = None,
     case_sensitive: bool = True,
-    catalog: Catalog | None = None,
 ) -> list[MotorPosition]:
     """Get all motor position objects from the catalog.
 
@@ -240,9 +239,8 @@ async def get_motor_positions(
       The motor positions matching the requested parameters.
 
     """
-    if catalog is None:
-        path = load_config()["tiled"]["default_catalog"]
-        catalog = Catalog(path=path)
+    path = load_config()["tiled"]["default_catalog"]
+    catalog = Catalog(path=path)
     # Filter only saved motor positions
     queries = [Key("plan_name") == "save_motor_position"]
     # runs = await catalog.search(Key("plan_name") == "save_motor_position")

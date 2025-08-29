@@ -31,8 +31,6 @@ HavenPlugin = "firefly.pydm_plugin:HavenPlugin"
 
 [project.scripts]
 haven_config = "haven._iconfig:print_config_value"
-databroker_consumer = "haven_qserver.databroker_consumer:main"
-tiled_consumer = "haven_qserver.tiled_consumer:main"
 
 [project.gui-scripts]
 firefly = "firefly.launcher:main"
