@@ -11,20 +11,7 @@ Bluesky tools for beamlines managed by the spectroscopy group.
 of the sky."
 
 
-## Installation
-
-### Python Packing Index
-
-Easiest way to install haven is using pip.
-
-```
-$ python -m pip install 'haven-spc'
-```
-
-### Development (Conda)
-
-*haven* can also use *mamba* for dependency management, and
-*setuptools* for installation and development.
+## Setup and Installation
 
 First, download the package from github:
 
@@ -33,64 +20,63 @@ $ git clone https://github.com/spc-group/haven.git
 $ cd haven
 ```
 
-Then create the conda environment with mamba:
+Haven uses **pixi** for managing **environments** and **dependencies**,
+and running **tasks**.
 
-```bash
-$ mamba env create -f environment.yml -n haven
-```
+If **pixi** is not installed, follow the instructions [here](https://pixi.sh/latest/installation/).
 
-lastly install the package, in developer mode:
-
-```bash
-$ conda activate haven
-$ pip install -e ".[dev]"
-```
 
 ## Usage
 
-The easiest way to start **haven** is to use IPython's magic run command.
+To start an iPython session with all the instrument features loaded, use:
 
-```
-$ ipython
-In [1]: %run -m haven.ipython_startup
+```bash
+$ pixi run ipython
 ```
 
-This will load some common tools, and print some useful information
-about how to use Haven.
+The default environment does not connect to any real hardware, and is
+meant for demonstration purposes.
+
+To **select a real beamline**, provide an environment using ``-e <beamline>`` or
+``--environment <beamline>``:
+
+```bash
+pixi run ipython -e 25idc
+```
+
+## Firefly (GUI)
+
+Firefly is a user-facing application for controlling the beamlines
+managed by the spectroscopy group. It can be started using:
+
+```bash
+$ pixi run firefly
+```
+
+Firefly uses the same pixi environments described above.
+
+To make changes to the window layouts using Qt Designer, use:
+
+```bash
+$ pixi run designer
+```
+
 
 ## Running Tests
 
-To run tests, run
+To run tests for a specific package, use:
 
 ```
-$ pytest
+$ pixi run test-haven
+$ pixi run test-firefly
 ```
 
-# firefly
-
-User-facing applications for controlling the beamlines managed by the
-spectroscopy group. Be sure to include the [gui] extras if you plan
-to use the GUI.
+To run all tests as well as linting and type-checking, use:
 
 ```
-$ python -m pip install 'haven-spc[gui]'
-$ firefly
+$ pixi run test-all
 ```
-
-# Versioning
-
-Haven/Firefly uses calendar versioning, with short year and short
-month for the MAJOR and MINOR versions, then a incremental MICRO
-version. For example, version *2024.7.2* is the 3rd (*2*) release in
-July (*7*) 2023 (*23*).
 
 # Packaging
 
-## Python Package Index (PyPI)
-
-To deploy to PyPI:
-
-```
-$ python -m build
-$ python -m twine check dist/*
-$ python -m twine upload dist/*
+Coming soon…

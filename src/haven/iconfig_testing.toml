@@ -17,11 +17,12 @@ password = "abc123"
 
 # This section describes how to connect to the queueserver and how
 # queueserver data reaches the database. It does not generate any
-# devices, but is intended to be read by the Firefly GUI application
-# to determine how to interact with the queue.
+# devices, but is intended to be read by the queueserver and Firefly
+# GUI application to determine how to interact with the queue.
 
 [queueserver]
-redis_addr = "localhost:6379"
+redis_addr = "localhost:6379"  # Instruments can share a redis instance, but
+redis_topic = "qs_default"     # each instrument should have a unique prefix.
 
 [tiled]
 default_catalog = "testing"
@@ -99,7 +100,7 @@ name = "I0"
 
 # Scalers
 # =======
-# 
+#
 # These definitions are not for using ion chambers, but for if the
 # scaler is needed as an independent device. The ion chamber
 # defintions include a scaler channel.
