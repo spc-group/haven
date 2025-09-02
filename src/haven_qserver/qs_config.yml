@@ -19,7 +19,7 @@ network:
     # zmq_control_addr: tcp://*:60615
     # zmq_info_addr: tcp://*:60645
     # zmq_info_addr: tcp://*:60625
-    
+
 
 operation:
     # choices: SILENT QUIET NORMAL VERBOSE
@@ -36,7 +36,7 @@ operation:
     user_group_permissions_reload: ON_STARTUP
 
 startup:
-    startup_module: haven_qserver.startup
+    startup_module: haven.startup
 
     # Per-beamline config: handled by CLI options
     # existing_plans_and_devices_path: ${BLUESKY_DIR}/queueserver_existing_plans_and_devices.yaml
