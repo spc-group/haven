@@ -34,7 +34,10 @@ RE = haven.run_engine(
     connect_tiled=True,
     call_returns_result=True,
 )
-autoawait_in_bluesky_event_loop()
+try:
+    autoawait_in_bluesky_event_loop()
+except AssertionError:
+    log.info("Autoawait not installed.")
 
 
 # Prepare the haven instrument
