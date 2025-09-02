@@ -80,7 +80,7 @@ bluesky-queueserver-api = "*"  #  = ">=0.0.12"
 
 [feature.ipython]
 dependencies = {ipython = "*"}
-tasks = {ipython = "ipython -i ./src/haven/ipython_startup.ipy"}
+tasks = {ipython = "ipython -i ./src/haven/startup.py"}
 
 [feature.dev.pypi-dependencies]
 autoapi = "*"
@@ -148,7 +148,7 @@ tiled = "tiled serve config"
 [feature.qa.activation.env]
 BLUESKY_DIR = "/net/s25data/xorApps/bluesky/qa/"
 HAVEN_CONFIG_FILES = "${BLUESKY_DIR}iconfig.toml"
-TILED_CONFIG = "${BLUESKY_DIR}/.tiled_server_config.yml"
+TILED_CONFIG = "${BLUESKY_DIR}/tiled_server_config.yml"
 QSERVER_ZMQ_CONTROL_ADDRESS = "tcp://localhost:60617"
 QSERVER_ZMQ_CONTROL_ADDRESS_FOR_SERVER = "tcp://*:60617"
 QSERVER_ZMQ_INFO_ADDRESS = "tcp://localhost:60627"

@@ -52,6 +52,10 @@ DEPRECATED_KEYS = [
     ("metadata", "RUN_ENGINE.DEFAULT_METADATA"),
     ("kafka", None),
     ("database", None),
+    ("queueserver.control_host", None),
+    ("queueserver.control_port", None),
+    ("queueserver.info_host", None),
+    ("queueserver.info_port", None),
 ]
 
 
