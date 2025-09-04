@@ -58,12 +58,14 @@ name = "advanced_photon_source"
 [[ pss_shutter ]]
 name = "front_end_shutter"
 prefix = "S255ID-PSS:FES:"
+hutch_prefix = "S25ID-PSS:StaA:"
 allow_close = false
 # allow_open = true  # Default
 
 [[ pss_shutter ]]
-name = "hutch_shutter"
-prefix = "S255ID-PSS:SCS:"
+name = "endstation_shutter"
+prefix = "S255ID-PSS:SZS:"
+hutch_prefix = "S255ID-PSS:StaZ:"
 # allow_open = true  # Default
 # allow_close = true  # Default
 
