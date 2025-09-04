@@ -7,8 +7,9 @@ from haven._iconfig import load_config, print_config_value
 
 
 def test_default_values():
+    """Do we pull in the testing TOML file by default?"""
     config = load_config()
-    assert "metadata" in config.keys()
+    assert "RUN_ENGINE" in config.keys()
 
 
 def test_loading_a_file():
@@ -48,7 +49,7 @@ def test_merging_dicts():
 
 def test_haven_config_cli(capsys):
     """Test the function used as a CLI way to get config values."""
-    print_config_value(["metadata.xray_source"])
+    print_config_value(["RUN_ENGINE.DEFAULT_METADATA.xray_source"])
     # Check stdout for config value
     captured = capsys.readouterr()
     assert captured.out == "2.8\u202fmm planar undulator\n"

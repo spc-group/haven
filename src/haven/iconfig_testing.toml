@@ -1,12 +1,5 @@
 area_detector_root_path = "/tmp"
 
-[metadata]
-# Additional metadata to inject in every scan
-facility = "Advanced Photon Source"
-beamline = "SPC Beamline (sector unknown)"
-xray_source = "2.8 mm planar undulator"
-
-
 # Metadata from the beamline scheduling system (BSS)
 ####################################################
 
@@ -24,26 +17,29 @@ password = "abc123"
 
 # This section describes how to connect to the queueserver and how
 # queueserver data reaches the database. It does not generate any
-# devices, but is intended to be read by the Firefly GUI application
-# to determine how to interact with the queue.
+# devices, but is intended to be read by the queueserver and Firefly
+# GUI application to determine how to interact with the queue.
 
 [queueserver]
-redis_addr = "localhost:6379"
-
-[kafka]
-servers = ["fedorov.xray.aps.anl.gov:9092"]
-topic = "bluesky.documents.haven-dev"
+redis_addr = "localhost:6379"  # Instruments can share a redis instance, but
+redis_topic = "qs_default"     # each instrument should have a unique prefix.
 
 [tiled]
-# uri = "http://localhost:8000/api"
 default_catalog = "testing"
 cache_filepath = "/tmp/tiled/http_response_cache.db"
-# In most cases, *api_key* is not necessary. Only used by the Tiled
-# consumer.
-# api_key = ""
+writer_profile = "<profile_name>"
+# writer_backup_directory = "/tmp/tiled_writer_backup"
+# writer_batch_size = 5
 
-[database.databroker]
-catalog = "bluesky"
+[ RUN_ENGINE ]
+USE_PROGRESS_BAR = true
+
+[ RUN_ENGINE.DEFAULT_METADATA ]
+# Additional metadata to inject in every scan
+facility = "Advanced Photon Source"
+beamline = "SPC Beamline (sector unknown)"
+xray_source = "2.8 mm planar undulator"
+
 
 #################
 # Device support
@@ -101,7 +97,7 @@ name = "I0"
 
 # Scalers
 # =======
-# 
+#
 # These definitions are not for using ion chambers, but for if the
 # scaler is needed as an independent device. The ion chamber
 # defintions include a scaler channel.

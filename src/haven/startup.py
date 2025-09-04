@@ -1,24 +1,23 @@
-import asyncio
+"""Load plans/devices/etc. for interactive REPL sessions and the Haven
+qserver."""
+
 import logging
 import time
 
-import numpy as np
-import databroker  # noqa: F401
+import numpy as np  # noqa: F401
+import rich
 from bluesky import plan_stubs as bps  # noqa: F401
-from bluesky.plan_stubs import mv, mvr, rd  # noqa: F401
 from bluesky import plans as bp  # noqa: F401
 from bluesky import preprocessors as bpp  # noqa: F401
-from bluesky import suspenders  # noqa: F401
-from bluesky.callbacks.best_effort import BestEffortCallback  # noqa: F401
-from bluesky.run_engine import RunEngine, autoawait_in_bluesky_event_loop  # noqa: F401
+from bluesky.plan_stubs import mv, mvr, rd  # noqa: F401
+from bluesky.run_engine import (  # noqa: F401
+    RunEngine,
+    autoawait_in_bluesky_event_loop,
+    call_in_bluesky_event_loop,
+)
 from bluesky.simulators import summarize_plan  # noqa: F401
 from ophyd_async.core import NotConnected
 from ophydregistry import ComponentNotFound
-from rich import print
-from rich.align import Align
-from rich.console import Console
-from rich.panel import Panel
-from rich.theme import Theme
 
 import haven  # noqa: F401
 from haven import plans  # noqa: F401
@@ -32,32 +31,38 @@ catalog = haven.tiled_client()
 
 # Create a run engine
 RE = haven.run_engine(
-    connect_kafka=True,
+    connect_tiled=True,
     call_returns_result=True,
-    use_bec=False,
 )
-autoawait_in_bluesky_event_loop()
+try:
+    autoawait_in_bluesky_event_loop()
+except AssertionError:
+    log.info("Autoawait not installed.")
 
 
 # Prepare the haven instrument
 config = haven.load_config()
 t0 = time.monotonic()
-print(f"Initializing [bold cyan]{config['beamline']['name']}[/]…", flush=True)
+rich.print(f"Initializing [bold cyan]{config['beamline']['name']}[/]…", flush=True)
 loader_exception = None
 haven.beamline.load()
 try:
-    await haven.beamline.connect()
+    call_in_bluesky_event_loop(haven.beamline.connect())
 except NotConnected as exc:
     log.exception(exc)
     # Save the exception so we can alert the user later
     loader_exception = exc
 num_devices = len(haven.beamline.devices.root_devices)
-print(f"Connected to {num_devices} devices in {time.monotonic() - t0:.2f} seconds.", flush=True)
+rich.print(
+    f"Connected to {num_devices} devices in {time.monotonic() - t0:.2f} seconds.",
+    flush=True,
+)
+del num_devices
 
 # Save references to all the devices in the global namespace
 devices = haven.beamline.devices
 ion_chambers = devices.findall("ion_chambers", allow_none=True)
-for cpt in devices.all_devices:
+for cpt in devices.root_devices:
     # Make sure we're not adding a readback value with the same name
     # as its parent.
     if cpt.parent is not None and cpt.name == cpt.parent.name:
@@ -68,12 +73,12 @@ for cpt in devices.all_devices:
     globals().setdefault(name, cpt)
 
 # Print helpful information to the console
-custom_theme = Theme(
+custom_theme = rich.theme.Theme(
     {
         "code": "white on grey27",
     }
 )
-console = Console(theme=custom_theme)
+console = rich.console.Console(theme=custom_theme)
 motd = (
     "[bold]Devices[/bold] are available directly by name or though the [italic]devices[/italic].\n"
     " ┣━ [code]m2 = sim_motor_2[/]\n"
@@ -94,9 +99,9 @@ motd = (
     "\n"
     "Run [code]help(haven)[/code] for more information."
 )
-print("")  # Blank line for separation
+rich.print("")  # Blank line for separation
 console.print(
-    Panel(
+    rich.panel.Panel(
         motd,
         title="Welcome to the [bold purple]Haven[/] beamline control system.",
         subtitle="[link=https://haven-spc.readthedocs.io/en/latest/]haven-spc.readthedocs.io[/]",
@@ -106,4 +111,18 @@ console.print(
 
 # Make an alert in case devices did not connect properly
 if loader_exception is not None:
-    console.print(Align.center("\n[bold red][blink]:fire:[/] Some devices did not connect properly! See logs for details. [blink]:fire:[/][/]"))
+    msg = "Some devices did not connect properly! See logs for details."
+    console.print(
+        rich.align.Align.center(f"\n[bold red][blink]:fire:[/]{msg}[blink]:fire:[/][/]")
+    )
+
+# Clean up the namespace by removing tokens that are only useful
+# inside this script
+del logging
+del time
+del RunEngine
+del autoawait_in_bluesky_event_loop
+del call_in_bluesky_event_loop
+del NotConnected
+del ComponentNotFound
+del rich

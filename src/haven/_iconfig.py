@@ -47,6 +47,45 @@ def lookup_file_paths():
         return [Path(__file__).parent / "iconfig_testing.toml"]
 
 
+DEPRECATED_KEYS = [
+    # (old_key, new_key)
+    ("metadata", "RUN_ENGINE.DEFAULT_METADATA"),
+    ("kafka", None),
+    ("database", None),
+    ("queueserver.control_host", None),
+    ("queueserver.control_port", None),
+    ("queueserver.info_host", None),
+    ("queueserver.info_port", None),
+]
+
+
+def has_key(config, key: str) -> bool:
+    """Check if a given dotted key is in a configuration dictionary."""
+    for bit in key.split("."):
+        try:
+            config = config[bit]
+        except (KeyError, TypeError):
+            return False
+    return True
+
+
+def check_deprecated_keys(config):
+    """Error if renamed keys aren't renamed, or warning if old keys are
+    still there.
+
+    """
+    for old_key, new_key in DEPRECATED_KEYS:
+        needs_new_key = new_key is not None and not has_key(config, new_key)
+        has_old_key = has_key(config, old_key)
+        if has_old_key and needs_new_key:
+            # Without migrating the configuration, things will not work properly
+            raise ValueError(f"Config key {old_key} has been replaced with {new_key}.")
+        elif has_old_key:
+            # Shouldn't break the configuration, just doesn't need to be there
+            # To-do: wanted to make these warnings, but they weren't getting shown
+            raise ValueError(f"Config key '{old_key}' is no longer used")
+
+
 def load_config(file_paths: Optional[Sequence[Path]] = None):
     """Load TOML config files.
 
@@ -66,6 +105,7 @@ def load_config(file_paths: Optional[Sequence[Path]] = None):
     # Load configuration from TOML files
     config = {}
     merge(config, *load_files(file_paths), _local_overrides)
+    check_deprecated_keys(config)
     return config
 
 

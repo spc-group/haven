@@ -1,43 +1,14 @@
-import gc
 from unittest import mock
 
-import databroker
-import pytest
 from bluesky import Msg, RunEngine
-from ophyd.sim import instantiate_fake_device
 
 from haven import run_engine
-from haven.devices.aps import ApsMachine
 
 
-@pytest.fixture()
-def aps(sim_registry):
-    aps = instantiate_fake_device(ApsMachine, name="advanced_photon_source")
-
-
-def test_subscribers_garbage_collection(monkeypatch, aps):
-    """Tests for regression of a bug in databroker.
-
-    Since databroker uses a weak reference to the insert function, it
-    can be subject to garbage collection and no longer able to save
-    data.
-
-    """
-    monkeypatch.setattr(databroker, "catalog", {"bluesky": databroker.temp()})
-    RE = run_engine(
-        use_bec=False, connect_tiled=False, connect_databroker=True, connect_kafka=False
-    )
-    assert len(RE.dispatcher.cb_registry.callbacks) == 12
-    gc.collect()
-    assert len(RE.dispatcher.cb_registry.callbacks) == 12
-
-
-def test_run_engine_created(aps):
+def test_run_engine_created():
     RE = run_engine(
         use_bec=False,
-        connect_databroker=False,
         connect_tiled=False,
-        connect_kafka=False,
     )
     assert isinstance(RE, RunEngine)
 
@@ -46,9 +17,7 @@ def test_calibrate_message():
     device = mock.AsyncMock()
     RE = run_engine(
         use_bec=False,
-        connect_databroker=False,
         connect_tiled=False,
-        connect_kafka=False,
     )
     assert not device.calibrate.called
     RE([Msg("calibrate", device, truth=1304, target=1314)])
