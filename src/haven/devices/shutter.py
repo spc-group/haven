@@ -99,17 +99,20 @@ class PssShutter(Positioner):
 
     async def check_permissions(self, value: ShutterState) -> ShutterState:
         """Check that the shutter has the right permissions to reach *value*."""
-        allow_close, allow_open = await asyncio.gather(
-            self.close_allowed.get_value(),
-            self.close_allowed.get_value(),
-        )
-        if value == ShutterState.CLOSED and not allow_close:
+        # Get current permit values from the PSS system, etc
+        async with asyncio.TaskGroup() as tg:
+            allow_close = tg.create_task(self.close_allowed.get_value())
+            allow_open = tg.create_task(self.open_allowed.get_value())
+        # Logic for deciding whether we can open/close the shutter
+        if value == ShutterState.CLOSED and not allow_close.result():
             raise ReadOnlyError(
-                f"Shutter {self.name} is not permitted to be closed. Set `allow_close` for this shutter."
+                f"Shutter {self.name} is not permitted to be closed. "
+                "Set `allow_close` for this shutter or wait for APS permit."
             )
-        if value == ShutterState.OPEN and not allow_open:
+        if value == ShutterState.OPEN and not allow_open.result():
             raise ReadOnlyError(
-                f"Shutter {self.name} is not permitted to be opened per iconfig.toml. Set `allow_open` for this shutter."
+                f"Shutter {self.name} is not permitted to be opened "
+                "per iconfig.toml. Set `allow_open` for this shutter."
             )
         return value
 
