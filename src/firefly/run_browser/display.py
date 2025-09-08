@@ -24,6 +24,9 @@ from haven import load_config
 log = logging.getLogger(__name__)
 
 
+DEFAULT_PROFILE = get_default_profile_name()
+
+
 def cancellable(fn):
     @wraps(fn)
     async def inner(*args, **kwargs):
@@ -76,14 +79,11 @@ class RunBrowserDisplay(display.FireflyDisplay):
         """Prepare to use a set of databases accessible through *tiled_client*."""
         profile_names = list_profiles().keys()
         self.ui.profile_combobox.addItems(profile_names)
-        default_profile = get_default_profile_name()
-        self.ui.profile_combobox.setCurrentText(default_profile)
-        default_profile = get_default_profile_name()
-        self.ui.profile_combobox.setCurrentText(default_profile)
+        self.ui.profile_combobox.setCurrentText(DEFAULT_PROFILE)
 
     @asyncSlot(str)
     @cancellable
-    async def change_catalog(self, profile_name: str):
+    async def change_catalog(self, profile_name: str = DEFAULT_PROFILE):
         """Activate a different catalog in the Tiled server."""
         self.db.catalog = await from_profile_async(profile_name)
         await self.db_task(

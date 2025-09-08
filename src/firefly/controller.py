@@ -364,7 +364,7 @@ class FireflyController(QtCore.QObject):
     async def finalize_run_browser_window(self, action: QAction):
         """Connect up run browser signals and load initial data."""
         display = action.display
-        await display.setup_database()
+        await display.change_catalog()
 
     @asyncSlot(QAction)
     async def finalize_bss_window(self, action: QAction):
