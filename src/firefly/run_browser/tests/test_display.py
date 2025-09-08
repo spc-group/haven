@@ -1,5 +1,6 @@
 import asyncio
 import datetime as dt
+from pathlib import Path
 from unittest.mock import AsyncMock
 
 import pytest
@@ -18,7 +19,7 @@ def bss(sim_registry):
 
 
 @pytest.fixture()
-async def display(qtbot, mocker, tiled_api):
+async def display(qtbot, mocker, tiled_client):
     mocker.patch(
         "firefly.run_browser.widgets.ExportDialog.exec_",
         return_value=QFileDialog.Accepted,
@@ -28,13 +29,22 @@ async def display(qtbot, mocker, tiled_api):
         return_value=["/net/s255data/export/test_file.nx"],
     )
     mocker.patch("firefly.run_browser.client.DatabaseWorker.export_runs")
+    mocker.patch(
+        "firefly.run_browser.display.list_profiles",
+        return_value={
+            "cortex": Path("/tmp/cortex"),
+            "fedorov": Path("/tmp/fedorov"),
+        },
+    )
+    mocker.patch(
+        "firefly.run_browser.display.get_default_profile_name", return_value="cortex"
+    )
     display = RunBrowserDisplay()
     qtbot.addWidget(display)
     display.clear_filters()
     # Wait for the initial database load to process
-    await display.setup_database(
-        base_url="http://localhost:8000/api/v1", catalog_name="scans"
-    )
+    display.db.catalog = tiled_client
+    await display.load_runs()
     return display
 
 
@@ -68,22 +78,13 @@ def test_load_runs(display):
     assert display.ui.runs_total_label.text() == str(display.runs_model.rowCount())
 
 
-async def test_update_selected_runs(display):
-    # Change the proposal item
-    item = display.runs_model.item(0, 1)
-    assert item is not None
-    display.ui.run_tableview.selectRow(0)
-    # Update the runs
-    await display.update_selected_runs()
-    # Check that the runs were saved
-    assert len(display.db.selected_runs) > 0
-
-
-async def test_metadata(display, qtbot):
-    # Change the proposal item
-    display.ui.run_tableview.selectRow(0)
-    with qtbot.waitSignal(display.metadata_changed):
-        await display.update_selected_runs()
+async def test_metadata(display, qtbot, mocker):
+    display.selected_uids = mocker.MagicMock(
+        return_value={"85573831-f4b4-4f64-b613-a6007bf03a8d"}
+    )
+    with qtbot.wait_signal(display.metadata_changed):
+        new_md = await display.update_metadata()
+    assert "85573831-f4b4-4f64-b613-a6007bf03a8d" in new_md
 
 
 def test_busy_hints_run_widgets(display):
@@ -172,16 +173,17 @@ async def test_auto_bss_filters(display):
 
 async def test_update_combobox_items(display):
     """Check that the comboboxes get the distinct filter fields."""
+    await display.update_combobox_items()
     # Some of these have filters are disabled because they are slow
     # with sqlite They may be re-enabled when switching to postgres
     assert display.ui.filter_plan_combobox.count() > 0
-    assert display.ui.filter_sample_combobox.count() == 0
-    assert display.ui.filter_formula_combobox.count() == 0
-    assert display.ui.filter_scan_combobox.count() == 0
+    assert display.ui.filter_sample_combobox.count() > 0
+    assert display.ui.filter_formula_combobox.count() > 0
+    assert display.ui.filter_scan_combobox.count() > 0
     assert display.ui.filter_edge_combobox.count() > 0
     assert display.ui.filter_exit_status_combobox.count() > 0
-    assert display.ui.filter_proposal_combobox.count() == 0
-    assert display.ui.filter_esaf_combobox.count() == 0
+    assert display.ui.filter_proposal_combobox.count() > 0
+    assert display.ui.filter_esaf_combobox.count() > 0
     assert display.ui.filter_beamline_combobox.count() > 0
 
 
@@ -226,7 +228,6 @@ fake_time = dt.datetime(2022, 8, 19, 19, 10, 51).astimezone()
 
 @time_machine.travel(fake_time, tick=False)
 def test_default_filters(display):
-    display.clear_filters()
     display.reset_default_filters()
     assert display.ui.filter_exit_status_combobox.currentText() == "success"
     assert display.ui.filter_current_esaf_checkbox.checkState()
@@ -262,21 +263,29 @@ def test_time_filters(display):
     assert "before" in filters
 
 
-async def test_update_data_frames(display, qtbot):
+async def test_update_data_frames(display, qtbot, mocker):
+    display.selected_uids = mocker.MagicMock(
+        return_value={
+            "85573831-f4b4-4f64-b613-a6007bf03a8d",
+            "7d1daf1d-60c7-4aa7-a668-d1cd97e5335f",
+        }
+    )
     display.ui.stream_combobox.addItem("primary")
     display.ui.stream_combobox.setCurrentText("primary")
     with qtbot.waitSignal(display.data_frames_changed):
         await display.update_data_frames()
 
 
-def test_catalog_choices(display):
-    combobox = display.ui.catalog_combobox
+async def test_profile_choices(display):
+    combobox = display.ui.profile_combobox
     items = [combobox.itemText(idx) for idx in range(combobox.count())]
-    assert items == ["scans", "testing"]
+    assert items == ["cortex", "fedorov"]
 
 
-async def test_stream_choices(display):
-    display.db.load_selected_runs(["scan1"])
+async def test_stream_choices(display, mocker):
+    display.selected_uids = mocker.MagicMock(
+        return_value={"85573831-f4b4-4f64-b613-a6007bf03a8d"}
+    )
     await display.update_streams()
     combobox = display.ui.stream_combobox
     items = [combobox.itemText(idx) for idx in range(combobox.count())]
@@ -287,19 +296,6 @@ async def test_retrieve_dataset(display, qtbot):
     # See '788b1d91-efa1-4b26-9a0a-3454aa7e1a93' for a sample dataset
     with qtbot.wait_signal(display.datasets_changed):
         await display.fetch_datasets("ge_8element", "testing")
-
-
-async def test_update_running_scan(display, qtbot):
-    display.update_plots = AsyncMock()
-    await display.update_running_scan("not-the-real-uid")
-    assert not display.update_plots.called
-    # Now try again with some runs selected
-    display.ui.run_tableview.selectRow(0)
-    await display.update_selected_runs()
-
-
-async def test_infinite_scroll(display):
-    pass
 
 
 # -----------------------------------------------------------------------------

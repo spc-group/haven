@@ -14,7 +14,6 @@ from qtpy import QtCore, QtWidgets
 from qtpy.QtCore import Signal, Slot
 from qtpy.QtGui import QIcon, QKeySequence
 from qtpy.QtWidgets import QAction, QErrorMessage
-from tiled.profiles import load_profiles
 
 from haven import beamline, load_config
 from haven.exceptions import ComponentNotFound, InvalidConfiguration
@@ -365,14 +364,7 @@ class FireflyController(QtCore.QObject):
     async def finalize_run_browser_window(self, action: QAction):
         """Connect up run browser signals and load initial data."""
         display = action.display
-        self.run_updated.connect(display.update_running_scan)
-        self.run_stopped.connect(display.update_running_scan)
-        # Set initial state for the run_browser
-        config = load_config()["tiled"]
-        path, tiled_config = load_profiles()["haven"]
-        await display.setup_database(
-            base_url=tiled_config["uri"], catalog_name=config["default_catalog"]
-        )
+        await display.setup_database()
 
     @asyncSlot(QAction)
     async def finalize_bss_window(self, action: QAction):

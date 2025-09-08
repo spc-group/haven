@@ -1,73 +1,80 @@
 import asyncio
 import datetime as dt
 import logging
-import warnings
 from collections import ChainMap, OrderedDict
 from collections.abc import Generator
 from functools import partial
 from typing import Mapping, Sequence
 
-import httpx
 import numpy as np
 import pandas as pd
 from tiled import queries
+from tiled.client.container import Container
 
 from haven import exceptions
-from haven.catalog import Catalog, _search, resolve_uri
 
 log = logging.getLogger(__name__)
 
 
 class DatabaseWorker:
     selected_runs: Sequence = []
-    catalog: Catalog = None
+    profile: str = ""
+    catalog: Container
 
-    def __init__(self, base_url: str = "http://localhost:8000"):
-        uri = resolve_uri(base_url)
-        self.client = httpx.AsyncClient(base_url=uri, timeout=20, http2=True)
+    async def stream_names(self, uids: Sequence[str]):
+        runs = self.runs(uids)
 
-    def change_catalog(self, catalog_name: str):
-        """Change the catalog being used for pulling data.
+        async def _stream_names(run):
+            return [key async for key in (await run["streams"]).keys()]
 
-        *catalog_name* should be an entry in *worker.tiled_client()*.
-        """
-        self.catalog = Catalog(path=catalog_name, client=self.client)
-
-    async def catalog_names(self):
-        catalogs = _search(path="", client=self.client)
-        return [cat["id"] async for cat in catalogs]
-
-    async def stream_names(self):
-        awaitables = [scan.stream_names() for scan in self.selected_runs]
-        all_streams = await asyncio.gather(*awaitables)
+        # awaitables = [scan.stream_names() for scan in self.selected_runs]
+        # all_streams = await asyncio.gather(*awaitables)
+        async with asyncio.TaskGroup() as tg:
+            tasks = [tg.create_task(_stream_names(run)) async for run in runs.values()]
         # Flatten the lists
+        all_streams = [task.result() for task in tasks]
         streams = [stream for streams in all_streams for stream in streams]
         return list(set(streams))
 
-    async def data_keys(self, stream: str):
-        aws = [run.data_keys(stream=stream) for run in self.selected_runs]
-        keys = await asyncio.gather(*aws)
-        keys = ChainMap(*keys)
-        keys["seq_num"] = {
-            "dtype": "number",
-            "dtype_numpy": "<i8",
-            "precision": 0,
-            "shape": [],
-        }
+    async def data_keys(self, uids: Sequence[str], stream: str):
+        async def get_data_key(run):
+            strm = await run[f"streams/{stream}"]
+            return strm.metadata["data_keys"]
+
+        runs = self.runs(uids)
+        async with asyncio.TaskGroup() as tg:
+            tasks = [tg.create_task(get_data_key(run)) async for run in runs.values()]
+        keys = ChainMap(*[task.result() for task in tasks])
+        keys.setdefault(
+            "seq_num",
+            {
+                "dtype": "number",
+                "dtype_numpy": "<i8",
+                "precision": 0,
+                "shape": [],
+            },
+        )
         return keys
 
-    async def data_frames(self, stream: str) -> dict:
-        """Return the internal dataframes for selected runs as {uid: dataframe}."""
-        if len(self.selected_runs) == 0:
-            return {}
-        aws = [run.data(stream=stream) for run in self.selected_runs]
-        aws += [run.uid for run in self.selected_runs]
-        results = await asyncio.gather(*aws)
-        dfs = results[: len(results) // 2]
-        uids = results[len(results) // 2 :]
-        return {uid: df for uid, df in zip(uids, dfs)}
+    def runs(self, uids: Sequence[str]) -> Container:
+        return self.catalog.search(queries.In("start.uid", uids))
 
-    async def filtered_runs(self, filters: Mapping):
+    async def data_frames(self, uids: Sequence[str], stream: str) -> dict:
+        """Return the internal dataframes for selected runs as {uid: dataframe}."""
+        runs = self.runs(uids)
+
+        async def get_data_frame(run):
+            return await (await run[f"streams/{stream}/internal"]).read()
+
+        async with asyncio.TaskGroup() as tg:
+            tasks = {
+                uid: tg.create_task(get_data_frame(run))
+                async for uid, run in runs.items()
+            }
+        results = {uid: task.result() for uid, task in tasks.items()}
+        return results
+
+    def filtered_runs(self, filters: Mapping):
         log.debug(f"Filtering nodes: {filters}")
         filter_params = {
             # filter_name: (query type, metadata key)
@@ -87,7 +94,7 @@ class DatabaseWorker:
             "standards_only": (queries.Eq, "start.is_standard"),
         }
         # Apply filters
-        _queries = []
+        runs = self.catalog
         for filter_name, filter_value in filters.items():
             if filter_name not in filter_params:
                 continue
@@ -96,9 +103,8 @@ class DatabaseWorker:
                 query = Query(filter_value)
             else:
                 query = Query(md_name, filter_value)
-            _queries.append(query)
-        async for run in self.catalog.runs(queries=_queries):
-            yield run
+            runs = runs.search(query)
+        return runs
 
     async def distinct_fields(self) -> Generator[tuple[str, dict], None, None]:
         """Get distinct metadata fields for filterable metadata."""
@@ -107,29 +113,27 @@ class DatabaseWorker:
         # (could be re-enabled when switching to postgres)
         target_fields = [
             "start.plan_name",
-            # "start.sample_name",
-            # "start.sample_formula",
-            # "start.scan_name",
+            "start.sample_name",
+            "start.sample_formula",
+            "start.scan_name",
             "start.edge",
             "stop.exit_status",
-            # "start.proposal_id",
-            # "start.esaf_id",
+            "start.proposal_id",
+            "start.esaf_id",
             "start.beamline_id",
         ]
         # Get fields from the database
-        async for distinct in self.catalog.distinct(*target_fields):
-            field_name = list(distinct.keys())[0]
-            fields = distinct[field_name]
-            fields = [field["value"] for field in fields]
-            fields = [field for field in fields if field not in ["", None]]
-            yield field_name, fields
+        for field_name, values in (await self.catalog.distinct(*target_fields))[
+            "metadata"
+        ].items():
+            yield field_name, [info["value"] for info in values]
 
     async def load_all_runs(self, filters: Mapping = {}):
         all_runs = []
         runs = self.filtered_runs(filters=filters)
-        async for run in runs:
+        async for run in runs.values():
             # Get meta-data documents
-            metadata = await run.metadata
+            metadata = run.metadata
             start_doc = metadata.get("start")
             if start_doc is None:
                 log.debug(f"Skipping run with no start doc: {run.path}")
@@ -177,7 +181,9 @@ class DatabaseWorker:
             all_runs.append(run_data)
         return all_runs
 
-    async def hints(self, stream: str = "primary") -> tuple[list, list]:
+    async def hints(
+        self, uids: Sequence[str], stream: str = "primary"
+    ) -> tuple[set, set]:
         """Get hints for this stream, as two lists.
 
         (*independent_hints*, *dependent_hints*)
@@ -185,15 +191,32 @@ class DatabaseWorker:
         *independent_hints* are those operated by the experiment,
          while *dependent_hints* are those measured as a result.
         """
-        aws = [run.hints(stream) for run in self.selected_runs]
-        all_hints = await asyncio.gather(*aws)
+        runs = await asyncio.gather(*(self.catalog[uid] for uid in uids))
+
+        async def get_hints(run):
+            run_md = run.metadata
+            stream_md = (await run[f"streams/{stream}"]).metadata
+            # Get hints for the independent (X)
+            dimensions = run_md.get("start", {}).get("hints", {}).get("dimensions", [])
+            independent = [
+                sig for signals, strm in dimensions if strm == stream for sig in signals
+            ]
+            # Get hints for the dependent (Y) axes
+            dependent = [
+                hint
+                for dev_hints in stream_md.get("hints", {}).values()
+                for hint in dev_hints.get("fields", [])
+            ]
+            return independent, dependent
+
+        all_hints = await asyncio.gather(*(get_hints(run) for run in runs))
         # Flatten arrays
         try:
             ihints, dhints = zip(*all_hints)
         except ValueError:
             ihints, dhints = [], []
-        ihints = [hint for hints in ihints for hint in hints]
-        dhints = [hint for hints in dhints for hint in hints]
+        ihints = {hint for hints in ihints for hint in hints}
+        dhints = {hint for hints in dhints for hint in hints}
         return ihints, dhints
 
     async def signal_names(self, stream: str, *, hinted_only: bool = False):
@@ -222,23 +245,18 @@ class DatabaseWorker:
         ysignals = list(dict.fromkeys(ysignals))
         return list(xsignals), list(ysignals)
 
-    async def metadata(self):
+    async def metadata(self, uids: Sequence[str]) -> dict[str, dict]:
         """Get all metadata for the selected runs in one big dictionary."""
-        md = {}
-        if len(self.selected_runs) == 0:
-            warnings.warn("No runs selected, metadata will be empty.")
-        for run in self.selected_runs:
-            md[str(run.path)] = await run.metadata
-        return md
+        return {uid: run.metadata async for uid, run in self.runs(uids).items()}
 
-    def load_selected_runs(self, uids):
+    async def load_selected_runs(self, uids):
+        assert False, "Deprecated"
         # Prepare the query for finding the runs
         uids = list(dict.fromkeys(uids))
         # Retrieve runs from the database
-        runs = [self.catalog[uid] for uid in uids]
-        # runs = await asyncio.gather(*run_coros)
+        runs = await asyncio.gather(*(self.catalog[uid] for uid in uids))
         self.selected_runs = runs
-        return runs
+        return self.selected_runs
 
     async def images(self, signal: str, stream: str):
         """Load the selected runs as 2D or 3D images suitable for plotting."""

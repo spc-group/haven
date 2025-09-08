@@ -39,12 +39,12 @@
                 <bool>true</bool>
                </property>
                <property name="text">
-                <string>Catalog:</string>
+                <string>Tiled Profile:</string>
                </property>
               </widget>
              </item>
              <item>
-              <widget class="QComboBox" name="catalog_combobox">
+              <widget class="QComboBox" name="profile_combobox">
                <property name="enabled">
                 <bool>true</bool>
                </property>
@@ -188,8 +188,8 @@
                <rect>
                 <x>0</x>
                 <y>0</y>
-                <width>541</width>
-                <height>573</height>
+                <width>534</width>
+                <height>546</height>
                </rect>
               </property>
               <layout class="QVBoxLayout" name="verticalLayout_9">
