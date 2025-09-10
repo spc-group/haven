@@ -23,7 +23,7 @@ haven-spc = { path = ".", editable = true }
 
 [environments]
 default = { solve-group = "default" }
-dev = { features = ["bluesky", "ipython", "dev", "gui"], solve-group = "default" }
+dev = { features = ["bluesky", "ipython", "dev", "gui", "tiled"], solve-group = "default" }
 qa = { features = ["bluesky", "ipython", "qa", "gui", "qserver", "tiled"], solve-group = "default" }
 25idc = { features = ["bluesky", "ipython", "25idc", "gui", "qserver", "tiled"], solve-group = "default" }
 25idd = { features = ["bluesky", "ipython", "25idd", "gui", "qserver", "tiled"], solve-group = "default" }
@@ -46,7 +46,6 @@ bluesky = "==1.14.4"
 # bluesky-adaptive = "*"
 # bluesky-queueserver = ">=0.0.23",
 # bluesky-queueserver-api = "*"  #  = ">=0.0.12"
-bluesky-tiled-plugins = ">=2.0.0b68"
 databroker = "==1.2.5"  # Just to make the solve work for apsbits
 ophyd = "*"  # =1.10.7",
 
@@ -120,6 +119,7 @@ apsbss = "*"
 
 [feature.gui.tasks]
 firefly = "firefly"
+run_browser = "firefly --no-instrument --no-queue run_browser"
 
 [feature.designer.dependencies]
 python = "3.10.*"
@@ -135,11 +135,10 @@ designer = "designer"
 tasks = {qserver = "python -m haven_qserver.launch_queueserver"}
 pypi-dependencies = {bluesky-queueserver = {"git" = "https://github.com/bluesky/bluesky-queueserver"}}
 
-# [feature.tiled.pypi-dependencies]
-# tiled = { version = "==0.1.0b39", extras = ["all"] }
-
-[feature.tiled.dependencies]
-tiled = "==0.1.0b36"
+[feature.tiled.pypi-dependencies]
+# tiled = {url = "https://github.com/spc-group/tiled/releases/download/v0.1.0b36/tiled-0.1.0b37.dev7+g52f22d8cb-py3-none-any.whl", extras=["all"]}
+tiled = {path = "../tiled", extras=["all"], editable=true}
+bluesky-tiled-plugins = ">=2.0.0b68"
 
 [feature.tiled.tasks]
 tiled = "tiled serve config"

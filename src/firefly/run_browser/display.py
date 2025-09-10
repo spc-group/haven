@@ -10,9 +10,11 @@ import httpx
 import qtawesome as qta
 from pydm import PyDMChannel
 from qasync import asyncSlot
-from qtpy.QtCore import QDateTime, Qt, Signal
+from qtpy.QtCore import QDateTime, Qt, Signal, Slot
 from qtpy.QtGui import QStandardItem, QStandardItemModel
 from qtpy.QtWidgets import QErrorMessage
+from tiled.client import from_profile_async
+from tiled.profiles import get_default_profile_name, list_profiles
 
 from firefly import display
 from firefly.run_browser.client import DatabaseWorker
@@ -20,6 +22,9 @@ from firefly.run_browser.widgets import ExportDialog
 from haven import load_config
 
 log = logging.getLogger(__name__)
+
+
+DEFAULT_PROFILE = get_default_profile_name()
 
 
 def cancellable(fn):
@@ -36,6 +41,7 @@ def cancellable(fn):
 class RunBrowserDisplay(display.FireflyDisplay):
     runs_model: QStandardItemModel
     _run_col_names: Sequence = [
+        "✓",
         "Plan",
         "Sample",
         "Scan",
@@ -68,25 +74,19 @@ class RunBrowserDisplay(display.FireflyDisplay):
         self._running_db_tasks = {}
         self._busy_hinters = Counter()
         self.reset_default_filters()
+        self.db = DatabaseWorker()
 
-    async def setup_database(self, base_url: str, catalog_name: str):
-        """Prepare to use a set of databases accessible through *tiled_client*.
-
-        Parameters
-        ==========
-        Each key in *tiled_client* should be"""
-        self.db = DatabaseWorker(base_url=base_url)
-        with self.busy_hints(run_widgets=True, run_table=True, filter_widgets=False):
-            catalog_names = await self.db.catalog_names()
-        self.ui.catalog_combobox.addItems(catalog_names)
-        self.ui.catalog_combobox.setCurrentText(catalog_name)
-        await self.change_catalog(catalog_name)
+    def load_profiles(self):
+        """Prepare to use a set of databases accessible through *tiled_client*."""
+        profile_names = list_profiles().keys()
+        self.ui.profile_combobox.addItems(profile_names)
+        self.ui.profile_combobox.setCurrentText(DEFAULT_PROFILE)
 
     @asyncSlot(str)
     @cancellable
-    async def change_catalog(self, catalog_name: str):
+    async def change_catalog(self, profile_name: str = DEFAULT_PROFILE):
         """Activate a different catalog in the Tiled server."""
-        self.db.change_catalog(catalog_name)
+        self.db.catalog = await from_profile_async(profile_name)
         await self.db_task(
             asyncio.gather(self.load_runs(), self.update_combobox_items()),
             name="change_catalog",
@@ -158,7 +158,11 @@ class RunBrowserDisplay(display.FireflyDisplay):
             self.runs_model.clear()
             self.runs_model.setHorizontalHeaderLabels(self._run_col_names)
             for run in runs:
-                items = [QStandardItem(val) for val in run.values()]
+                checkbox = QStandardItem(True)
+                checkbox.setCheckable(True)
+                checkbox.setCheckState(False)
+                items = [checkbox]
+                items += [QStandardItem(val) for val in run.values()]
                 self.ui.runs_model.appendRow(items)
             # Adjust the layout of the data table
             sort_col = self._run_col_names.index("Datetime")
@@ -198,7 +202,12 @@ class RunBrowserDisplay(display.FireflyDisplay):
         next_week = QDateTime.fromTime_t(int(next_week.timestamp()))
         self.ui.filter_before_datetimeedit.setDateTime(next_week)
         # Set beamline based on config file
-        beamline_id = load_config()["RUN_ENGINE"]["DEFAULT_METADATA"]["beamline"]
+        beamline_id = (
+            load_config()
+            .get("RUN_ENGINE", {})
+            .get("DEFAULT_METADATA", {})
+            .get("beamline", "")
+        )
         self.ui.filter_beamline_combobox.setCurrentText(beamline_id)
 
     async def update_combobox_items(self):
@@ -226,15 +235,16 @@ class RunBrowserDisplay(display.FireflyDisplay):
 
     def customize_ui(self):
         self.load_models()
+        self.load_profiles()
         # Setup controls for select which run to show
-        self.ui.run_tableview.selectionModel().selectionChanged.connect(
-            self.update_selected_runs
-        )
+        for slot in [self.update_streams, self.update_plots, self.update_export_button]:
+            # self.ui.run_tableview.selectionModel().selectionChanged.connect(slot)
+            self.ui.runs_model.dataChanged.connect(slot)
         self.ui.refresh_runs_button.setIcon(qta.icon("fa6s.arrows-rotate"))
         self.ui.refresh_runs_button.clicked.connect(self.reload_runs)
         self.ui.reset_filters_button.clicked.connect(self.reset_default_filters)
         # Select a new catalog
-        self.ui.catalog_combobox.currentTextChanged.connect(self.change_catalog)
+        self.ui.profile_combobox.currentTextChanged.connect(self.change_catalog)
         # Respond to filter controls getting updated
         self.ui.filters_widget.returnPressed.connect(self.refresh_runs_button.click)
         self.filter_current_proposal_checkbox.stateChanged.connect(
@@ -248,16 +258,13 @@ class RunBrowserDisplay(display.FireflyDisplay):
         self.ui.stream_combobox.currentTextChanged.connect(self.update_data_keys)
         self.ui.stream_combobox.currentTextChanged.connect(self.update_data_frames)
         # Connect to signals for individual tabs
-        self.metadata_changed.connect(self.ui.metadata_view.display_metadata)
+        self.metadata_changed.connect(self.ui.metadata_tab.display_metadata)
         self.metadata_changed.connect(self.ui.lineplot_view.stash_metadata)
-        self.metadata_changed.connect(self.ui.gridplot_view.set_image_dimensions)
-        self.data_keys_changed.connect(self.ui.multiplot_view.update_signal_widgets)
-        self.data_keys_changed.connect(self.ui.lineplot_view.update_signal_widgets)
-        self.data_keys_changed.connect(self.ui.gridplot_view.update_signal_widgets)
-        self.data_keys_changed.connect(self.ui.frameset_tab.update_signal_widgets)
+        self.metadata_changed.connect(self.ui.gridplot_tab.set_image_dimensions)
+        self.data_keys_changed.connect(self.update_signal_widgets)
         self.data_frames_changed.connect(self.ui.multiplot_view.plot_multiples)
         self.data_frames_changed.connect(self.ui.lineplot_view.plot)
-        self.data_frames_changed.connect(self.ui.gridplot_view.plot)
+        self.data_frames_changed.connect(self.ui.gridplot_tab.plot)
         self.data_frames_changed.connect(self.ui.frameset_tab.stash_data_frames)
         self.datasets_changed.connect(self.ui.frameset_tab.plot_datasets)
         self.ui.frameset_tab.dataset_selected.connect(self.fetch_datasets)
@@ -265,6 +272,74 @@ class RunBrowserDisplay(display.FireflyDisplay):
         self.ui.export_button.clicked.connect(self.export_runs)
         self.export_dialog = ExportDialog(parent=self)
         self.error_dialog = QErrorMessage(parent=self)
+        # Respond to signal selection widgets
+        self.ui.use_hints_checkbox.stateChanged.connect(self.update_signal_widgets)
+        self.ui.x_signal_combobox.currentTextChanged.connect(self.update_plots)
+        self.ui.y_signal_combobox.currentTextChanged.connect(self.update_plots)
+        self.ui.swap_button.setIcon(qta.icon("mdi.swap-horizontal"))
+        self.ui.swap_button.clicked.connect(self.swap_signals)
+        self.ui.r_signal_combobox.currentTextChanged.connect(self.update_plots)
+        self.ui.r_signal_checkbox.stateChanged.connect(self.update_plots)
+        self.ui.logarithm_checkbox.stateChanged.connect(self.update_plots)
+        self.ui.invert_checkbox.stateChanged.connect(self.update_plots)
+        self.ui.gradient_checkbox.stateChanged.connect(self.update_plots)
+
+    def swap_signals(self):
+        """Swap the value and reference signals."""
+        new_r = self.ui.y_signal_combobox.currentText()
+        new_y = self.ui.r_signal_combobox.currentText()
+        self.ui.y_signal_combobox.setCurrentText(new_y)
+        self.ui.r_signal_combobox.setCurrentText(new_r)
+
+    @Slot(dict, set, set)
+    @Slot()
+    def update_signal_widgets(
+        self,
+        data_keys: Mapping | None = None,
+        independent_hints: Sequence | None = None,
+        dependent_hints: Sequence | None = None,
+    ):
+        """Update the UI based on new data keys and hints.
+
+        If any of *data_keys*, *independent_hints* or
+        *dependent_hints* are used, then the last seen values will be
+        used.
+
+        """
+        # Stash inputs for if we need to update later
+        if data_keys is not None:
+            self.data_keys = {
+                key: props
+                for key, props in data_keys.items()
+                if "external" not in props
+            }
+        valid_hints = set(self.data_keys.keys())
+        if independent_hints is not None:
+            self.independent_hints = set(independent_hints) & valid_hints
+        if dependent_hints is not None:
+            self.dependent_hints = set(dependent_hints) & valid_hints
+        # Decide whether we want to use hints
+        use_hints = self.ui.use_hints_checkbox.isChecked()
+        if use_hints:
+            new_xcols = self.independent_hints
+            new_ycols = self.dependent_hints
+        else:
+            new_xcols = list(self.data_keys.keys())
+            new_ycols = list(self.data_keys.keys())
+        # Update the UI
+        comboboxes = [
+            self.ui.x_signal_combobox,
+            self.ui.y_signal_combobox,
+            self.ui.r_signal_combobox,
+        ]
+        for combobox, new_cols in zip(comboboxes, [new_xcols, new_ycols, new_ycols]):
+            old_cols = [combobox.itemText(idx) for idx in range(combobox.count())]
+            if old_cols != new_cols:
+                old_value = combobox.currentText()
+                combobox.clear()
+                combobox.addItems(new_cols)
+                if old_value in new_cols:
+                    combobox.setCurrentText(old_value)
 
     def auto_range(self):
         self.plot_1d_view.autoRange()
@@ -338,7 +413,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
     @asyncSlot()
     async def update_streams(self, *args):
         """Update the list of available streams to choose from."""
-        stream_names = await self.db.stream_names()
+        stream_names = await self.db.stream_names(self.selected_uids())
         # Sort so that "primary" is first
         stream_names = sorted(stream_names, key=lambda x: x != "primary")
         self.ui.stream_combobox.clear()
@@ -401,22 +476,15 @@ class RunBrowserDisplay(display.FireflyDisplay):
             msg += f"<br /><br />{detail}"
             self.error_dialog.showMessage(msg, str(response.status_code))
 
-    @asyncSlot(str)
-    @cancellable
-    async def update_running_scan(self, uid: str) -> None:
-        selected_uids = [run.uid for run in self.selected_runs]
-        if uid in selected_uids:
-            log.debug(f"Updating running scan: {uid=}")
-            await self.update_plots()
-
     @asyncSlot()
-    async def update_metadata(self, *args):
+    async def update_metadata(self, *args) -> dict[str, dict]:
         """Render metadata for the runs into the metadata widget."""
         # Combine the metadata in a human-readable output
-        new_md = await self.db_task(self.db.metadata(), "metadata")
-        # Remove catalog names from MD keys
-        new_md = {key.split("/")[-1]: val for key, val in new_md.items()}
+        new_md = await self.db_task(
+            self.db.metadata(uids=self.selected_uids()), "metadata"
+        )
         self.metadata_changed.emit(new_md)
+        return new_md
 
     @asyncSlot()
     @cancellable
@@ -434,10 +502,11 @@ class RunBrowserDisplay(display.FireflyDisplay):
     @cancellable
     async def update_data_keys(self, *args):
         stream = self.ui.stream_combobox.currentText()
+        uids = self.selected_uids()
         with self.busy_hints(run_widgets=True, run_table=False, filter_widgets=False):
             data_keys, hints = await asyncio.gather(
-                self.db_task(self.db.data_keys(stream), "update data keys"),
-                self.db_task(self.db.hints(stream), "update data hints"),
+                self.db_task(self.db.data_keys(uids, stream), "update data keys"),
+                self.db_task(self.db.hints(uids, stream), "update data hints"),
             )
         independent_hints, dependent_hints = hints
         self.data_keys_changed.emit(
@@ -448,35 +517,49 @@ class RunBrowserDisplay(display.FireflyDisplay):
     @cancellable
     async def update_data_frames(self):
         stream = self.ui.stream_combobox.currentText()
+        uids = self.selected_uids()
         if stream == "":
             data_frames = {}
-            assert False
             log.info("Not loading data frames for empty stream.")
         else:
             with self.busy_hints(
                 run_widgets=True, run_table=False, filter_widgets=False
             ):
                 data_frames = await self.db_task(
-                    self.db.data_frames(stream), "update data frames"
+                    self.db.data_frames(uids, stream), "update data frames"
                 )
         self.data_frames_changed.emit(data_frames)
 
-    @asyncSlot()
-    @cancellable
-    async def update_selected_runs(self, *args):
-        """Get the current runs from the database and stash them."""
+    def selected_uids(self) -> set[str]:
         # Get UID's from the selection
-        col_idx = self._run_col_names.index("UID")
-        indexes = self.ui.run_tableview.selectedIndexes()
-        uids = [i.siblingAtColumn(col_idx).data() for i in indexes]
-        # Get selected runs from the database
-        self.selected_runs = self.db.load_selected_runs(uids=uids)
-        # Update the necessary UI elements
-        await self.update_streams()
-        await self.update_data_keys()
-        # Update the plots
-        await self.update_plots()
-        self.update_export_button()
+        uid_col = self._run_col_names.index("UID")
+        cbox_col = 0
+        model = self.runs_model
+        print(
+            [
+                model.item(row_idx, cbox_col).checkState()
+                for row_idx in range(self.runs_model.rowCount())
+            ]
+        )
+        uids = [
+            model.item(row_idx, uid_col).text()
+            for row_idx in range(self.runs_model.rowCount())
+            if model.item(row_idx, cbox_col).checkState()
+        ]
+        return set(uids)
+
+    # @asyncSlot()
+    # @cancellable
+    # async def update_selected_runs(self, *args):
+    #     """Get the current runs from the database and stash them."""
+    #     # Get selected runs from the database
+    #     self.selected_runs = self.db.load_selected_runs(uids=uids)
+    #     # Update the necessary UI elements
+    #     await self.update_streams()
+    #     await self.update_data_keys()
+    #     # Update the plots
+    #     await self.update_plots()
+    #     self.update_export_button()
 
     def filters(self, *args):
         new_filters = {
@@ -507,9 +590,14 @@ class RunBrowserDisplay(display.FireflyDisplay):
         new_filters = {k: v for k, v in new_filters.items() if v not in null_values}
         return new_filters
 
+    def print_data(self, *args, **kwargs):
+        print(args)
+        print(kwargs)
+
     def load_models(self):
         # Set up the model
         self.runs_model = QStandardItemModel()
+        self.runs_model.dataChanged.connect(self.print_data)
         # Add the model to the UI element
         self.ui.run_tableview.setModel(self.runs_model)
 
