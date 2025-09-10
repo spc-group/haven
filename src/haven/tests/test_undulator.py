@@ -4,6 +4,7 @@ import pytest
 from ophyd_async.testing import get_mock_put, set_mock_value
 
 from haven.devices import PlanarUndulator
+from haven.devices.undulator import TrajectoryMotorInfo
 
 
 @pytest.fixture()
@@ -87,6 +88,14 @@ def test_auto_offset_lookup(undulator):
     # Out-of-bounds interpolation should fail
     with pytest.raises(ValueError):
         undulator.auto_offset(500)
+
+
+async def test_prepare_for_scanning(undulator):
+    tinfo = TrajectoryMotorInfo(
+        positions=[1000, 1100, 1200],
+        times=[0, 0.5, 1.0],
+    )
+    await undulator.prepare(tinfo)
 
 
 # -----------------------------------------------------------------------------

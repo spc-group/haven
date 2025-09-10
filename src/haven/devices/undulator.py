@@ -3,19 +3,38 @@ import math
 from enum import IntEnum
 from pathlib import Path
 from typing import IO
+from typing import Annotated as A
+from typing import Sequence
 
 import numpy as np
 import pandas as pd
+from bluesky.protocols import Preparable
 from ophyd_async.core import (
+    AsyncStatus,
     Signal,
+    SignalRW,
     StandardReadable,
-    StandardReadableFormat,
+)
+from ophyd_async.core import StandardReadableFormat as Format
+from ophyd_async.core import (
     SubsetEnum,
     derived_signal_r,
     derived_signal_rw,
     soft_signal_rw,
 )
-from ophyd_async.epics.core import epics_signal_r, epics_signal_rw, epics_signal_x
+from ophyd_async.core._utils import (
+    CALCULATE_TIMEOUT,
+    CalculatableTimeout,
+    ConfinedModel,
+)
+from ophyd_async.epics.core import (
+    EpicsDevice,
+    PvSuffix,
+    epics_signal_r,
+    epics_signal_rw,
+    epics_signal_x,
+)
+from pydantic import Field
 
 from ..positioner import Positioner
 from .signal import derived_signal_x
@@ -38,6 +57,20 @@ class MotorDriveStatus(IntEnum):
     READY_TO_MOVE = 1
 
 
+class TrajectoryMotorInfo(ConfinedModel):
+    """Minimal set of information required to fly a motor."""
+
+    positions: Sequence[int | float] = Field(frozen=True)
+    """Absolute positions that the motor should hit."""
+
+    times: Sequence[int | float] = Field(frozen=True)
+    """Relative times at which the motor should reach each position."""
+
+    timeout: CalculatableTimeout = Field(frozen=True, default=CALCULATE_TIMEOUT)
+    """Maximum time for the complete motor move, including run up and run down.
+    Defaults to `time_for_move` + run up and run down times + 10s."""
+
+
 class BasePositioner(Positioner):
     done_value: int = BusyStatus.DONE
 
@@ -50,7 +83,7 @@ class BasePositioner(Positioner):
         done_signal: Signal,
         name: str = "",
     ):
-        with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
+        with self.add_children_as_readables(Format.CONFIG_SIGNAL):
             self.units = epics_signal_r(str, f"{prefix}SetC.EGU")
             self.precision = epics_signal_r(int, f"{prefix}SetC.PREC")
         self.velocity = soft_signal_rw(
@@ -101,7 +134,7 @@ class EnergyPositioner(BasePositioner):
             self.dial_readback = epics_signal_rw(float, f"{prefix}M.VAL")
         self.dial_setpoint = epics_signal_rw(float, f"{prefix}SetC.VAL")
         # Derived signals so we can apply offsets and convert units
-        with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
+        with self.add_children_as_readables(Format.CONFIG_SIGNAL):
             self.offset = epics_signal_rw(float, offset_pv)
         with self.add_children_as_readables():
             self.readback = derived_signal_r(
@@ -134,7 +167,15 @@ def _energy_to_keV(energy: float, offset: float) -> float:
     return (energy + offset) / 1000
 
 
-class PlanarUndulator(StandardReadable):
+def UndulatorScanMode(StrictEnum):
+    NORMAL = "NormalMode"
+    INTERNAL = "ScanMode1"
+    EDGE_TRIGGER = "ScanMode2"
+    SOFTWARE = "ScanMode3"
+    SOFTWARE_RETRIES = "ScanMode4"
+
+
+class PlanarUndulator(StandardReadable, EpicsDevice, Preparable):
     """APS Planar Undulator
 
     .. index:: Ophyd Device; PlanarUndulator
@@ -151,6 +192,14 @@ class PlanarUndulator(StandardReadable):
 
     _ophyd_labels_ = {"xray_sources", "undulators"}
     _offset_table: IO | str | Path
+
+    # Signals for ID scanning mode
+    scan_array_length = A[
+        SignalRW[float], PvSuffix("GapArrayLenC"), Format.CONFIG_SIGNAL
+    ]
+    clear_scan_array = A[SignalRW[int], PvSuffix(":GapArraySetClearC")]
+    scan_mode = A[SignalRW[UndulatorScanMode], PvSuffix(":GapScanModeSetC")]
+    scan_next_point = A[SignalRW[int], PvSuffix(":MoveToNextGapC")]
 
     class AccessMode(SubsetEnum):
         USER = "User"
@@ -175,7 +224,7 @@ class PlanarUndulator(StandardReadable):
         # Configuration state for the undulator
         with self.add_children_as_readables():
             self.total_power = epics_signal_r(float, f"{prefix}TotalPowerM.VAL")
-        with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
+        with self.add_children_as_readables(Format.CONFIG_SIGNAL):
             self.harmonic_value = epics_signal_rw(int, f"{prefix}HarmonicValueC")
             self.gap_deadband = epics_signal_rw(int, f"{prefix}DeadbandGapC")
             self.device_limit = epics_signal_rw(float, f"{prefix}DeviceLimitM.VAL")
@@ -215,7 +264,7 @@ class PlanarUndulator(StandardReadable):
         self.access_mode = epics_signal_r(self.AccessMode, f"{prefix}AccessSecurityC")
         self.message1 = epics_signal_r(str, f"{prefix}Message1M.VAL")
         self.message2 = epics_signal_r(str, f"{prefix}Message2M.VAL")
-        super().__init__(name=name)
+        super().__init__(prefix=prefix, name=name)
 
     @property
     def offset_table(self):
@@ -233,6 +282,10 @@ class PlanarUndulator(StandardReadable):
         if math.isnan(new_offset):
             raise ValueError(f"Refusing to extrapolate ID offset: {energy}")
         return float(new_offset)
+
+    @AsyncStatus.wrap
+    async def prepare(self, value: TrajectoryMotorInfo):
+        pass
 
 
 # -----------------------------------------------------------------------------
