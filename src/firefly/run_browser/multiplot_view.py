@@ -22,9 +22,6 @@ class MultiplotView(QtWidgets.QWidget):
         self.dataframes = {}
         super().__init__(parent)
         self.ui = uic.loadUi(self.ui_file, self)
-        self.ui.use_hints_checkbox.stateChanged.connect(self.update_signal_widgets)
-        self.ui.use_hints_checkbox.stateChanged.connect(self.plot_multiples)
-        self.ui.x_signal_combobox.currentTextChanged.connect(self.plot_multiples)
 
     @Slot(dict, set, set)
     @Slot()

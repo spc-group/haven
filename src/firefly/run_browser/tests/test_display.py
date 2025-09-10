@@ -78,6 +78,17 @@ def test_load_runs(display):
     assert display.ui.runs_total_label.text() == str(display.runs_model.rowCount())
 
 
+def test_selected_uids(display):
+    # No rows at first
+    assert display.selected_uids() == set()
+    # Check a row
+    row, col = (0, 0)
+    display.ui.runs_model.item(0, 0).setCheckState(True)
+    # Now there are some selected rows
+    assert len(display.selected_uids()) == 1
+    assert False
+
+
 async def test_metadata(display, qtbot, mocker):
     display.selected_uids = mocker.MagicMock(
         return_value={"85573831-f4b4-4f64-b613-a6007bf03a8d"}

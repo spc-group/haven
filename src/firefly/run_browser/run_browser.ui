@@ -6,14 +6,14 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1408</width>
-    <height>961</height>
+    <width>1071</width>
+    <height>708</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Run Browser</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout_10">
+  <layout class="QVBoxLayout" name="verticalLayout_7">
    <item>
     <widget class="QSplitter" name="splitter">
      <property name="orientation">
@@ -188,8 +188,8 @@
                <rect>
                 <x>0</x>
                 <y>0</y>
-                <width>534</width>
-                <height>546</height>
+                <width>248</width>
+                <height>493</height>
                </rect>
               </property>
               <layout class="QVBoxLayout" name="verticalLayout_9">
@@ -669,6 +669,16 @@
           </widget>
          </item>
          <item>
+          <widget class="QPushButton" name="export_button">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="text">
+            <string>Export</string>
+           </property>
+          </widget>
+         </item>
+         <item>
           <spacer name="horizontalSpacer_10">
            <property name="orientation">
             <enum>Qt::Horizontal</enum>
@@ -682,23 +692,226 @@
           </spacer>
          </item>
          <item>
-          <widget class="QPushButton" name="export_button">
-           <property name="enabled">
-            <bool>false</bool>
-           </property>
+          <widget class="QPushButton" name="pushButton">
            <property name="text">
-            <string>Export</string>
+            <string>Save all ✓</string>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="larch_button">
+          <widget class="QLineEdit" name="lineEdit">
+           <property name="placeholderText">
+            <string>New data key…</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="Line" name="line_4">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="signals_layout">
+         <item>
+          <spacer name="horizontalSpacer_2">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="use_hints_checkbox">
            <property name="enabled">
-            <bool>false</bool>
+            <bool>true</bool>
            </property>
            <property name="text">
-            <string>Larch</string>
+            <string>Use Hints</string>
            </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="Line" name="line_3">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_6">
+           <item>
+            <widget class="QLabel" name="x_signal_label">
+             <property name="text">
+              <string>X:</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QComboBox" name="x_signal_combobox"/>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <widget class="Line" name="line">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_5">
+           <item>
+            <widget class="QLabel" name="y_signal_label">
+             <property name="text">
+              <string>Y:</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QComboBox" name="y_signal_combobox"/>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <widget class="QPushButton" name="swap_button">
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_4">
+           <item>
+            <widget class="QCheckBox" name="r_signal_checkbox">
+             <property name="enabled">
+              <bool>true</bool>
+             </property>
+             <property name="text">
+              <string>R:</string>
+             </property>
+             <property name="checked">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QComboBox" name="r_operator_combobox">
+             <item>
+              <property name="text">
+               <string/>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>+</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>−</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>×</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>÷</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item>
+            <widget class="QComboBox" name="r_signal_combobox">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <widget class="Line" name="line_2">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="invert_checkbox">
+           <property name="text">
+            <string>Invert</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="logarithm_checkbox">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+           <property name="text">
+            <string>Log</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="gradient_checkbox">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+           <property name="text">
+            <string>dy/dx</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QComboBox" name="aggregator_combobox">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <item>
+            <property name="text">
+             <string>All</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Mean</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Median</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>StDev</string>
+            </property>
+           </item>
           </widget>
          </item>
         </layout>
@@ -715,16 +928,25 @@
           </sizepolicy>
          </property>
          <property name="currentIndex">
-          <number>1</number>
+          <number>0</number>
          </property>
-         <widget class="QWidget" name="metadata_tab">
+         <widget class="MetadataView" name="metadata_tab">
           <attribute name="title">
            <string>Metadata</string>
           </attribute>
           <layout class="QVBoxLayout" name="verticalLayout">
-           <item>
-            <widget class="MetadataView" name="metadata_view" native="true"/>
-           </item>
+           <property name="leftMargin">
+            <number>9</number>
+           </property>
+           <property name="topMargin">
+            <number>9</number>
+           </property>
+           <property name="rightMargin">
+            <number>9</number>
+           </property>
+           <property name="bottomMargin">
+            <number>9</number>
+           </property>
           </layout>
          </widget>
          <widget class="QWidget" name="multiplot_tab">
@@ -735,6 +957,18 @@
            <string>All Lines</string>
           </attribute>
           <layout class="QVBoxLayout" name="verticalLayout_5">
+           <property name="leftMargin">
+            <number>0</number>
+           </property>
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="rightMargin">
+            <number>0</number>
+           </property>
+           <property name="bottomMargin">
+            <number>0</number>
+           </property>
            <item>
             <widget class="MultiplotView" name="multiplot_view" native="true"/>
            </item>
@@ -748,12 +982,24 @@
            <string>Line</string>
           </attribute>
           <layout class="QVBoxLayout" name="verticalLayout_6">
+           <property name="leftMargin">
+            <number>0</number>
+           </property>
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="rightMargin">
+            <number>0</number>
+           </property>
+           <property name="bottomMargin">
+            <number>0</number>
+           </property>
            <item>
             <widget class="LineplotView" name="lineplot_view" native="true"/>
            </item>
           </layout>
          </widget>
-         <widget class="QWidget" name="grid_tab">
+         <widget class="GridplotView" name="gridplot_tab">
           <property name="enabled">
            <bool>true</bool>
           </property>
@@ -761,9 +1007,18 @@
            <string>Grid</string>
           </attribute>
           <layout class="QVBoxLayout" name="verticalLayout_2">
-           <item>
-            <widget class="GridplotView" name="gridplot_view" native="true"/>
-           </item>
+           <property name="leftMargin">
+            <number>0</number>
+           </property>
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="rightMargin">
+            <number>0</number>
+           </property>
+           <property name="bottomMargin">
+            <number>0</number>
+           </property>
           </layout>
          </widget>
          <widget class="FramesetView" name="frameset_tab">
@@ -773,7 +1028,25 @@
           <attribute name="title">
            <string>Frames</string>
           </attribute>
-          <layout class="QVBoxLayout" name="verticalLayout_16"/>
+          <layout class="QVBoxLayout" name="verticalLayout_16">
+           <property name="leftMargin">
+            <number>0</number>
+           </property>
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="rightMargin">
+            <number>0</number>
+           </property>
+           <property name="bottomMargin">
+            <number>0</number>
+           </property>
+          </layout>
+         </widget>
+         <widget class="SpectraView" name="spectra_tab">
+          <attribute name="title">
+           <string>Spectra</string>
+          </attribute>
          </widget>
         </widget>
        </item>
@@ -818,6 +1091,12 @@
    <class>FramesetView</class>
    <extends>QWidget</extends>
    <header>firefly.run_browser.frameset_view</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>SpectraView</class>
+   <extends>QWidget</extends>
+   <header>firefly.run_browser.spectra_view</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

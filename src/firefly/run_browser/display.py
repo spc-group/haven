@@ -10,7 +10,7 @@ import httpx
 import qtawesome as qta
 from pydm import PyDMChannel
 from qasync import asyncSlot
-from qtpy.QtCore import QDateTime, Qt, Signal
+from qtpy.QtCore import QDateTime, Qt, Signal, Slot
 from qtpy.QtGui import QStandardItem, QStandardItemModel
 from qtpy.QtWidgets import QErrorMessage
 from tiled.client import from_profile_async
@@ -41,6 +41,7 @@ def cancellable(fn):
 class RunBrowserDisplay(display.FireflyDisplay):
     runs_model: QStandardItemModel
     _run_col_names: Sequence = [
+        "✓",
         "Plan",
         "Sample",
         "Scan",
@@ -157,7 +158,11 @@ class RunBrowserDisplay(display.FireflyDisplay):
             self.runs_model.clear()
             self.runs_model.setHorizontalHeaderLabels(self._run_col_names)
             for run in runs:
-                items = [QStandardItem(val) for val in run.values()]
+                checkbox = QStandardItem(True)
+                checkbox.setCheckable(True)
+                checkbox.setCheckState(False)
+                items = [checkbox]
+                items += [QStandardItem(val) for val in run.values()]
                 self.ui.runs_model.appendRow(items)
             # Adjust the layout of the data table
             sort_col = self._run_col_names.index("Datetime")
@@ -233,7 +238,8 @@ class RunBrowserDisplay(display.FireflyDisplay):
         self.load_profiles()
         # Setup controls for select which run to show
         for slot in [self.update_streams, self.update_plots, self.update_export_button]:
-            self.ui.run_tableview.selectionModel().selectionChanged.connect(slot)
+            # self.ui.run_tableview.selectionModel().selectionChanged.connect(slot)
+            self.ui.runs_model.dataChanged.connect(slot)
         self.ui.refresh_runs_button.setIcon(qta.icon("fa6s.arrows-rotate"))
         self.ui.refresh_runs_button.clicked.connect(self.reload_runs)
         self.ui.reset_filters_button.clicked.connect(self.reset_default_filters)
@@ -252,16 +258,13 @@ class RunBrowserDisplay(display.FireflyDisplay):
         self.ui.stream_combobox.currentTextChanged.connect(self.update_data_keys)
         self.ui.stream_combobox.currentTextChanged.connect(self.update_data_frames)
         # Connect to signals for individual tabs
-        self.metadata_changed.connect(self.ui.metadata_view.display_metadata)
+        self.metadata_changed.connect(self.ui.metadata_tab.display_metadata)
         self.metadata_changed.connect(self.ui.lineplot_view.stash_metadata)
-        self.metadata_changed.connect(self.ui.gridplot_view.set_image_dimensions)
-        self.data_keys_changed.connect(self.ui.multiplot_view.update_signal_widgets)
-        self.data_keys_changed.connect(self.ui.lineplot_view.update_signal_widgets)
-        self.data_keys_changed.connect(self.ui.gridplot_view.update_signal_widgets)
-        self.data_keys_changed.connect(self.ui.frameset_tab.update_signal_widgets)
+        self.metadata_changed.connect(self.ui.gridplot_tab.set_image_dimensions)
+        self.data_keys_changed.connect(self.update_signal_widgets)
         self.data_frames_changed.connect(self.ui.multiplot_view.plot_multiples)
         self.data_frames_changed.connect(self.ui.lineplot_view.plot)
-        self.data_frames_changed.connect(self.ui.gridplot_view.plot)
+        self.data_frames_changed.connect(self.ui.gridplot_tab.plot)
         self.data_frames_changed.connect(self.ui.frameset_tab.stash_data_frames)
         self.datasets_changed.connect(self.ui.frameset_tab.plot_datasets)
         self.ui.frameset_tab.dataset_selected.connect(self.fetch_datasets)
@@ -269,6 +272,74 @@ class RunBrowserDisplay(display.FireflyDisplay):
         self.ui.export_button.clicked.connect(self.export_runs)
         self.export_dialog = ExportDialog(parent=self)
         self.error_dialog = QErrorMessage(parent=self)
+        # Respond to signal selection widgets
+        self.ui.use_hints_checkbox.stateChanged.connect(self.update_signal_widgets)
+        self.ui.x_signal_combobox.currentTextChanged.connect(self.update_plots)
+        self.ui.y_signal_combobox.currentTextChanged.connect(self.update_plots)
+        self.ui.swap_button.setIcon(qta.icon("mdi.swap-horizontal"))
+        self.ui.swap_button.clicked.connect(self.swap_signals)
+        self.ui.r_signal_combobox.currentTextChanged.connect(self.update_plots)
+        self.ui.r_signal_checkbox.stateChanged.connect(self.update_plots)
+        self.ui.logarithm_checkbox.stateChanged.connect(self.update_plots)
+        self.ui.invert_checkbox.stateChanged.connect(self.update_plots)
+        self.ui.gradient_checkbox.stateChanged.connect(self.update_plots)
+
+    def swap_signals(self):
+        """Swap the value and reference signals."""
+        new_r = self.ui.y_signal_combobox.currentText()
+        new_y = self.ui.r_signal_combobox.currentText()
+        self.ui.y_signal_combobox.setCurrentText(new_y)
+        self.ui.r_signal_combobox.setCurrentText(new_r)
+
+    @Slot(dict, set, set)
+    @Slot()
+    def update_signal_widgets(
+        self,
+        data_keys: Mapping | None = None,
+        independent_hints: Sequence | None = None,
+        dependent_hints: Sequence | None = None,
+    ):
+        """Update the UI based on new data keys and hints.
+
+        If any of *data_keys*, *independent_hints* or
+        *dependent_hints* are used, then the last seen values will be
+        used.
+
+        """
+        # Stash inputs for if we need to update later
+        if data_keys is not None:
+            self.data_keys = {
+                key: props
+                for key, props in data_keys.items()
+                if "external" not in props
+            }
+        valid_hints = set(self.data_keys.keys())
+        if independent_hints is not None:
+            self.independent_hints = set(independent_hints) & valid_hints
+        if dependent_hints is not None:
+            self.dependent_hints = set(dependent_hints) & valid_hints
+        # Decide whether we want to use hints
+        use_hints = self.ui.use_hints_checkbox.isChecked()
+        if use_hints:
+            new_xcols = self.independent_hints
+            new_ycols = self.dependent_hints
+        else:
+            new_xcols = list(self.data_keys.keys())
+            new_ycols = list(self.data_keys.keys())
+        # Update the UI
+        comboboxes = [
+            self.ui.x_signal_combobox,
+            self.ui.y_signal_combobox,
+            self.ui.r_signal_combobox,
+        ]
+        for combobox, new_cols in zip(comboboxes, [new_xcols, new_ycols, new_ycols]):
+            old_cols = [combobox.itemText(idx) for idx in range(combobox.count())]
+            if old_cols != new_cols:
+                old_value = combobox.currentText()
+                combobox.clear()
+                combobox.addItems(new_cols)
+                if old_value in new_cols:
+                    combobox.setCurrentText(old_value)
 
     def auto_range(self):
         self.plot_1d_view.autoRange()
@@ -461,9 +532,20 @@ class RunBrowserDisplay(display.FireflyDisplay):
 
     def selected_uids(self) -> set[str]:
         # Get UID's from the selection
-        col_idx = self._run_col_names.index("UID")
-        indexes = self.ui.run_tableview.selectedIndexes()
-        uids = [i.siblingAtColumn(col_idx).data() for i in indexes]
+        uid_col = self._run_col_names.index("UID")
+        cbox_col = 0
+        model = self.runs_model
+        print(
+            [
+                model.item(row_idx, cbox_col).checkState()
+                for row_idx in range(self.runs_model.rowCount())
+            ]
+        )
+        uids = [
+            model.item(row_idx, uid_col).text()
+            for row_idx in range(self.runs_model.rowCount())
+            if model.item(row_idx, cbox_col).checkState()
+        ]
         return set(uids)
 
     # @asyncSlot()
@@ -508,9 +590,14 @@ class RunBrowserDisplay(display.FireflyDisplay):
         new_filters = {k: v for k, v in new_filters.items() if v not in null_values}
         return new_filters
 
+    def print_data(self, *args, **kwargs):
+        print(args)
+        print(kwargs)
+
     def load_models(self):
         # Set up the model
         self.runs_model = QStandardItemModel()
+        self.runs_model.dataChanged.connect(self.print_data)
         # Add the model to the UI element
         self.ui.run_tableview.setModel(self.runs_model)
 

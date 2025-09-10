@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Mapping, Sequence
+from typing import Mapping
 
 import numpy as np
 import pandas as pd
@@ -80,18 +80,8 @@ class LineplotView(QtWidgets.QWidget):
         self.autorange_button.setIcon(qta.icon("mdi.image-filter-center-focus"))
         self.ui.symbol_combobox.addItems(self.symbols.keys())
         # Connect internal signals/slots
-        self.ui.use_hints_checkbox.stateChanged.connect(self.update_signal_widgets)
-        self.ui.x_signal_combobox.currentTextChanged.connect(self.plot)
-        self.ui.y_signal_combobox.currentTextChanged.connect(self.plot)
-        self.ui.r_signal_combobox.currentTextChanged.connect(self.plot)
-        self.ui.r_signal_checkbox.stateChanged.connect(self.plot)
-        self.ui.logarithm_checkbox.stateChanged.connect(self.plot)
-        self.ui.invert_checkbox.stateChanged.connect(self.plot)
-        self.ui.gradient_checkbox.stateChanged.connect(self.plot)
         self.ui.autorange_button.clicked.connect(self.auto_range)
         self.ui.cursor_button.clicked.connect(self.center_cursor)
-        self.ui.swap_button.setIcon(qta.icon("mdi.swap-horizontal"))
-        self.ui.swap_button.clicked.connect(self.swap_signals)
         self.ui.symbol_checkbox.stateChanged.connect(self.change_symbol)
         self.ui.symbol_combobox.currentTextChanged.connect(self.change_symbol)
         # Set up plotting widgets
@@ -99,56 +89,6 @@ class LineplotView(QtWidgets.QWidget):
         plot_item.addLegend()
         plot_item.hover_coords_changed.connect(self.ui.hover_coords_label.setText)
         self.clear_plot()
-
-    @Slot(dict, set, set)
-    @Slot()
-    def update_signal_widgets(
-        self,
-        data_keys: Mapping | None = None,
-        independent_hints: Sequence | None = None,
-        dependent_hints: Sequence | None = None,
-    ):
-        """Update the UI based on new data keys and hints.
-
-        If any of *data_keys*, *independent_hints* or
-        *dependent_hints* are used, then the last seen values will be
-        used.
-
-        """
-        # Stash inputs for if we need to update later
-        if data_keys is not None:
-            self.data_keys = {
-                key: props
-                for key, props in data_keys.items()
-                if "external" not in props
-            }
-        valid_hints = set(self.data_keys.keys())
-        if independent_hints is not None:
-            self.independent_hints = set(independent_hints) & valid_hints
-        if dependent_hints is not None:
-            self.dependent_hints = set(dependent_hints) & valid_hints
-        # Decide whether we want to use hints
-        use_hints = self.ui.use_hints_checkbox.isChecked()
-        if use_hints:
-            new_xcols = self.independent_hints
-            new_ycols = self.dependent_hints
-        else:
-            new_xcols = list(self.data_keys.keys())
-            new_ycols = list(self.data_keys.keys())
-        # Update the UI
-        comboboxes = [
-            self.ui.x_signal_combobox,
-            self.ui.y_signal_combobox,
-            self.ui.r_signal_combobox,
-        ]
-        for combobox, new_cols in zip(comboboxes, [new_xcols, new_ycols, new_ycols]):
-            old_cols = [combobox.itemText(idx) for idx in range(combobox.count())]
-            if old_cols != new_cols:
-                old_value = combobox.currentText()
-                combobox.clear()
-                combobox.addItems(new_cols)
-                if old_value in new_cols:
-                    combobox.setCurrentText(old_value)
 
     @property
     def current_symbol(self) -> str | None:
@@ -163,13 +103,6 @@ class LineplotView(QtWidgets.QWidget):
         symbol = self.current_symbol
         for item in self.data_items.values():
             item.setSymbol(symbol)
-
-    def swap_signals(self):
-        """Swap the value and reference signals."""
-        new_r = self.ui.y_signal_combobox.currentText()
-        new_y = self.ui.r_signal_combobox.currentText()
-        self.ui.y_signal_combobox.setCurrentText(new_y)
-        self.ui.r_signal_combobox.setCurrentText(new_r)
 
     def prepare_plotting_data(self, df: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
         xsignal = self.ui.x_signal_combobox.currentText()
@@ -191,6 +124,7 @@ class LineplotView(QtWidgets.QWidget):
         return (xdata, ydata)
 
     def axis_labels(self):
+        return "", ""
         xlabel = self.ui.x_signal_combobox.currentText()
         ylabel = self.ui.y_signal_combobox.currentText()
         rlabel = self.ui.r_signal_combobox.currentText()

@@ -5,7 +5,6 @@ from typing import Mapping, Sequence
 import numpy as np
 import pandas as pd
 import pyqtgraph
-import qtawesome as qta
 from matplotlib.colors import TABLEAU_COLORS
 from pyqtgraph import ImageView, PlotItem
 from qtpy import QtWidgets, uic
@@ -41,22 +40,11 @@ class GridplotView(QtWidgets.QWidget):
         self.metadata = {}
         super().__init__(parent)
         self.ui = uic.loadUi(self.ui_file, self)
-        self.ui.swap_button.setIcon(qta.icon("mdi.swap-horizontal"))
-        self.ui.swap_button.clicked.connect(self.swap_signals)
         # Prepare plotting style
         vbox = self.ui.plot_widget.ui.roiPlot.getPlotItem().getViewBox()
         vbox.setBackgroundColor("k")
         # Connect internal signals/slots
-        self.ui.use_hints_checkbox.stateChanged.connect(self.update_signal_widgets)
         self.ui.regrid_checkbox.stateChanged.connect(self.update_signal_widgets)
-        self.ui.regrid_xsignal_combobox.currentTextChanged.connect(self.plot)
-        self.ui.regrid_ysignal_combobox.currentTextChanged.connect(self.plot)
-        self.ui.value_signal_combobox.currentTextChanged.connect(self.plot)
-        self.ui.r_signal_combobox.currentTextChanged.connect(self.plot)
-        self.ui.r_signal_checkbox.stateChanged.connect(self.plot)
-        self.ui.logarithm_checkbox.stateChanged.connect(self.plot)
-        self.ui.invert_checkbox.stateChanged.connect(self.plot)
-        self.ui.gradient_checkbox.stateChanged.connect(self.plot)
 
     def set_image_dimensions(self, metadata: Sequence):
         if len(metadata) != 1:

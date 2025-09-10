@@ -11846,8 +11846,8 @@ packages:
   timestamp: 1749714772656
 - pypi: ../tiled
   name: tiled
-  version: 0.1.0b37.dev2+gda50003f5
-  sha256: b30abd1b95b25ebf39718e5a1e231b402ad842fbc0950b335066b1e4208a5a3a
+  version: 0.1.1.dev13+gc789549ab
+  sha256: d23cd7f8846fb2fc67523dc61f1f71eb7b0a1f0e0c094f9307892203d4c7a96e
   requires_dist:
   - httpx>=0.20.0,!=0.23.1
   - json-merge-patch
@@ -11899,6 +11899,7 @@ packages:
   - python-dateutil ; extra == 'all'
   - python-jose[cryptography] ; extra == 'all'
   - python-multipart ; extra == 'all'
+  - redis ; extra == 'all'
   - rich ; extra == 'all'
   - sparse>=0.15.5 ; extra == 'all'
   - sqlalchemy[asyncio]>=2 ; extra == 'all'
@@ -11928,6 +11929,7 @@ packages:
   - sparse>=0.15.5 ; extra == 'client'
   - stamina ; extra == 'client'
   - watchfiles ; extra == 'client'
+  - websockets ; extra == 'client'
   - xarray ; extra == 'client'
   - zstandard ; extra == 'client'
   - blosc2 ; python_full_version >= '3.10' and extra == 'compression'
@@ -11967,6 +11969,7 @@ packages:
   - rich ; extra == 'minimal-client'
   - stamina ; extra == 'minimal-client'
   - watchfiles ; extra == 'minimal-client'
+  - websockets ; extra == 'minimal-client'
   - aiofiles ; extra == 'minimal-server'
   - aiosqlite ; extra == 'minimal-server'
   - alembic ; extra == 'minimal-server'
@@ -11984,6 +11987,7 @@ packages:
   - python-dateutil ; extra == 'minimal-server'
   - python-jose[cryptography] ; extra == 'minimal-server'
   - python-multipart ; extra == 'minimal-server'
+  - redis ; extra == 'minimal-server'
   - sqlalchemy[asyncio]>=2 ; extra == 'minimal-server'
   - starlette>=0.38.0 ; extra == 'minimal-server'
   - uvicorn[standard] ; extra == 'minimal-server'
@@ -12005,6 +12009,7 @@ packages:
   - dask[array] ; extra == 'server'
   - dask[dataframe] ; extra == 'server'
   - duckdb ; extra == 'server'
+  - entrypoints ; extra == 'server'
   - fastapi>=0.115.8 ; extra == 'server'
   - h5netcdf ; extra == 'server'
   - h5py ; extra == 'server'
@@ -12025,11 +12030,14 @@ packages:
   - python-dateutil ; extra == 'server'
   - python-jose[cryptography] ; extra == 'server'
   - python-multipart ; extra == 'server'
+  - redis ; extra == 'server'
   - sparse>=0.15.5 ; extra == 'server'
   - sqlalchemy[asyncio]>=2 ; extra == 'server'
+  - stamina ; extra == 'server'
   - starlette>=0.38.0 ; extra == 'server'
   - tifffile ; extra == 'server'
   - uvicorn[standard] ; extra == 'server'
+  - websockets ; extra == 'server'
   - xarray ; extra == 'server'
   - zarr ; extra == 'server'
   - zstandard ; extra == 'server'

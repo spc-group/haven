@@ -42,8 +42,6 @@ class FramesetView(QtWidgets.QWidget):
         super().__init__(parent)
         self.ui = uic.loadUi(self.ui_file, self)
         # Set up control widgets
-        self.ui.dataset_combobox.currentTextChanged.connect(self.select_dataset)
-        self.ui.time_signal_combobox.currentTextChanged.connect(self.plot_datasets)
         self.button_groups = [  # One for each plotting dimension
             QtWidgets.QButtonGroup(),
             QtWidgets.QButtonGroup(),
