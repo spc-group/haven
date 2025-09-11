@@ -1,5 +1,7 @@
+import asyncio
 import logging
 import math
+from contextlib import asynccontextmanager
 from enum import IntEnum
 from pathlib import Path
 from typing import IO
@@ -17,6 +19,7 @@ from ophyd_async.core import (
 )
 from ophyd_async.core import StandardReadableFormat as Format
 from ophyd_async.core import (
+    StrictEnum,
     SubsetEnum,
     derived_signal_r,
     derived_signal_rw,
@@ -29,7 +32,9 @@ from ophyd_async.core._utils import (
 )
 from ophyd_async.epics.core import (
     EpicsDevice,
-    PvSuffix,
+)
+from ophyd_async.epics.core import PvSuffix as PV
+from ophyd_async.epics.core import (
     epics_signal_r,
     epics_signal_rw,
     epics_signal_x,
@@ -40,6 +45,10 @@ from ..positioner import Positioner
 from .signal import derived_signal_x
 
 log = logging.getLogger(__name__)
+
+
+class SetupFailed(RuntimeError):
+    pass
 
 
 class DoneStatus(IntEnum):
@@ -55,6 +64,9 @@ class BusyStatus(IntEnum):
 class MotorDriveStatus(IntEnum):
     NOT_READY = 0
     READY_TO_MOVE = 1
+
+
+SCAN_SETUP_RETRIES = 3
 
 
 class TrajectoryMotorInfo(ConfinedModel):
@@ -157,6 +169,19 @@ class EnergyPositioner(BasePositioner):
         raw = _energy_to_keV(value, offset=offset)
         await self.dial_setpoint.set(raw)
 
+    @AsyncStatus.wrap
+    async def prepare(self, value: TrajectoryMotorInfo):
+        async with self.parent.prepare_scan_mode() as tg:
+            for _ in range(SCAN_SETUP_RETRIES):
+                await self.parent.scan_array_length.set(len(value.positions))
+                await self.parent.scan_energy_array.set(value.positions)
+                if await self.parent.scan_setup_successful():
+                    break
+            else:
+                raise SetupFailed(
+                    f"Preparing energy scan mode was not successful after {SCAN_SETUP_RETRIES} attempts."
+                )
+
 
 def _keV_to_energy(keV: float, offset: float) -> float:
     energy = keV * 1000 - offset
@@ -167,7 +192,7 @@ def _energy_to_keV(energy: float, offset: float) -> float:
     return (energy + offset) / 1000
 
 
-def UndulatorScanMode(StrictEnum):
+class UndulatorScanMode(StrictEnum):
     NORMAL = "NormalMode"
     INTERNAL = "ScanMode1"
     EDGE_TRIGGER = "ScanMode2"
@@ -194,12 +219,15 @@ class PlanarUndulator(StandardReadable, EpicsDevice, Preparable):
     _offset_table: IO | str | Path
 
     # Signals for ID scanning mode
-    scan_array_length = A[
-        SignalRW[float], PvSuffix("GapArrayLenC"), Format.CONFIG_SIGNAL
-    ]
-    clear_scan_array = A[SignalRW[int], PvSuffix(":GapArraySetClearC")]
-    scan_mode = A[SignalRW[UndulatorScanMode], PvSuffix(":GapScanModeSetC")]
-    scan_next_point = A[SignalRW[int], PvSuffix(":MoveToNextGapC")]
+    scan_array_length: A[SignalRW[float], PV("GapArrayLenC"), Format.CONFIG_SIGNAL]
+    clear_scan_array: A[SignalRW[bool], PV(":GapArraySetClearC")]
+    scan_mode: A[SignalRW[UndulatorScanMode], PV(":GapScanModeSetC")]
+    scan_next_point: A[SignalRW[bool], PV(":MoveToNextGapC")]
+    scan_energy_array: A[SignalRW[np.ndarray], PV(":EnergyArraySetC")]
+    scan_gap_array: A[SignalRW[np.ndarray], PV(":GapArraySetC")]
+    scan_mismatch_count: A[SignalRW[int], PV(":MismatchCountM")]
+    scan_gap_array_check: A[SignalRW[bool], PV(":GapArrayCheckM")]
+    scan_energy_array_check: A[SignalRW[bool], PV(":EnergyArrayCheckM")]
 
     class AccessMode(SubsetEnum):
         USER = "User"
@@ -283,9 +311,41 @@ class PlanarUndulator(StandardReadable, EpicsDevice, Preparable):
             raise ValueError(f"Refusing to extrapolate ID offset: {energy}")
         return float(new_offset)
 
+    async def scan_setup_successful(self):
+        mismatched, gap_ok, energy_ok = await asyncio.gather(
+            self.scan_mismatch_count.get_value(),
+            self.scan_gap_array_check.get_value(),
+            self.scan_energy_array_check.get_value(),
+        )
+        return gap_ok and energy_ok and mismatched == 0
+
+    @asynccontextmanager
+    async def prepare_scan_mode(self):
+        # Preliminary set up to ensure scanning can be prepared
+        await asyncio.gather(
+            self.scan_mode.set(UndulatorScanMode.NORMAL),
+            self.clear_scan_array.set(True),
+        )
+        async with asyncio.TaskGroup() as tg:
+            # Each individual positioner can prepare here
+            yield tg
+        # Scanning is set up, now get ready for executing the steps
+        scan_gaps = await self.scan_gap_array.get_value()
+        first_gap = scan_gaps[0]
+        await self.gap.set(first_gap, timeout=3)
+        await self.scan_mode.set(UndulatorScanMode.SOFTWARE)
+
     @AsyncStatus.wrap
     async def prepare(self, value: TrajectoryMotorInfo):
-        pass
+        """Gets the detector ready to perform a scan as described by *value*.
+
+        The undulator itself does not set the energy or gap arrays,
+        this is left up to the energy and gap positioners' individual
+        `prepare()` methods.
+
+        """
+        # async with asyncio.TaskGroup() as tg:
+        #     tg.create_task(self.scan_mode.NORMAL
 
 
 # -----------------------------------------------------------------------------
