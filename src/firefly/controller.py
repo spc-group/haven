@@ -387,17 +387,7 @@ class FireflyController(QtCore.QObject):
         display.ui.bss_modify_button.clicked.connect(self.actions.bss.trigger)
 
     def launch_queuemonitor(self):
-        config = load_config()["queueserver"]
-        zmq_info_addr = f"tcp://{config['info_host']}:{config['info_port']}"
-        zmq_ctrl_addr = f"tcp://{config['control_host']}:{config['control_port']}"
-        cmds = [
-            "queue-monitor",
-            "--zmq-control-addr",
-            zmq_ctrl_addr,
-            "--zmq-info-addr",
-            zmq_info_addr,
-        ]
-        subprocess.Popen(cmds)
+        subprocess.Popen(["queue-monitor"])
 
     def setup_queue_actions(self):
         """Create QAction objects for controlling the bluesky queueserver."""

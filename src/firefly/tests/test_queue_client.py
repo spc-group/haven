@@ -430,9 +430,6 @@ async def test_devices_available(client, qtbot):
 @pytest.mark.asyncio
 async def test_update(client, time_machine, monkeypatch):
     api = client.api
-    monkeypatch.setattr(
-        queue_client, "load_config", lambda: {"beamline": {"hardware_is_present": True}}
-    )
     # Set the last update timestamp to be long enough ago
     time_machine.move_to(dt.datetime(2024, 5, 29, 17, 51))
     client.last_update = time.monotonic()
