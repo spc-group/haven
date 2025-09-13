@@ -191,6 +191,7 @@ class GridplotView(QtWidgets.QWidget):
           keys.
 
         """
+        return
         self.clear_plot()
         if dataframes is not None:
             self.dataframes = dataframes

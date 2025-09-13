@@ -68,7 +68,7 @@ class MultiplotView(QtWidgets.QWidget):
 
     @Slot(dict)
     @Slot()
-    def plot_multiples(self, dataframes: Mapping | None = None) -> None:
+    def plot(self, dataframes: Mapping | None = None) -> None:
         """Take loaded run data and plot small multiples.
 
         If *dataframes* is None, the last known set of data frames
@@ -82,6 +82,7 @@ class MultiplotView(QtWidgets.QWidget):
           values and the series' values are the y data.
 
         """
+        return
         # Stash the data in case we want to replot later
         if dataframes is not None:
             self.dataframes = dataframes

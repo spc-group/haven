@@ -189,7 +189,7 @@
                 <x>0</x>
                 <y>0</y>
                 <width>248</width>
-                <height>493</height>
+                <height>426</height>
                </rect>
               </property>
               <layout class="QVBoxLayout" name="verticalLayout_9">
@@ -928,76 +928,28 @@
           </sizepolicy>
          </property>
          <property name="currentIndex">
-          <number>0</number>
+          <number>6</number>
          </property>
          <widget class="MetadataView" name="metadata_tab">
           <attribute name="title">
            <string>Metadata</string>
           </attribute>
-          <layout class="QVBoxLayout" name="verticalLayout">
-           <property name="leftMargin">
-            <number>9</number>
-           </property>
-           <property name="topMargin">
-            <number>9</number>
-           </property>
-           <property name="rightMargin">
-            <number>9</number>
-           </property>
-           <property name="bottomMargin">
-            <number>9</number>
-           </property>
-          </layout>
          </widget>
-         <widget class="QWidget" name="multiplot_tab">
+         <widget class="MultiplotView" name="multiplot_tab">
           <property name="enabled">
            <bool>true</bool>
           </property>
           <attribute name="title">
            <string>All Lines</string>
           </attribute>
-          <layout class="QVBoxLayout" name="verticalLayout_5">
-           <property name="leftMargin">
-            <number>0</number>
-           </property>
-           <property name="topMargin">
-            <number>0</number>
-           </property>
-           <property name="rightMargin">
-            <number>0</number>
-           </property>
-           <property name="bottomMargin">
-            <number>0</number>
-           </property>
-           <item>
-            <widget class="MultiplotView" name="multiplot_view" native="true"/>
-           </item>
-          </layout>
          </widget>
-         <widget class="QWidget" name="lineplot_tab">
+         <widget class="LineplotView" name="lineplot_tab">
           <property name="enabled">
            <bool>true</bool>
           </property>
           <attribute name="title">
            <string>Line</string>
           </attribute>
-          <layout class="QVBoxLayout" name="verticalLayout_6">
-           <property name="leftMargin">
-            <number>0</number>
-           </property>
-           <property name="topMargin">
-            <number>0</number>
-           </property>
-           <property name="rightMargin">
-            <number>0</number>
-           </property>
-           <property name="bottomMargin">
-            <number>0</number>
-           </property>
-           <item>
-            <widget class="LineplotView" name="lineplot_view" native="true"/>
-           </item>
-          </layout>
          </widget>
          <widget class="GridplotView" name="gridplot_tab">
           <property name="enabled">
@@ -1006,20 +958,6 @@
           <attribute name="title">
            <string>Grid</string>
           </attribute>
-          <layout class="QVBoxLayout" name="verticalLayout_2">
-           <property name="leftMargin">
-            <number>0</number>
-           </property>
-           <property name="topMargin">
-            <number>0</number>
-           </property>
-           <property name="rightMargin">
-            <number>0</number>
-           </property>
-           <property name="bottomMargin">
-            <number>0</number>
-           </property>
-          </layout>
          </widget>
          <widget class="FramesetView" name="frameset_tab">
           <property name="enabled">
@@ -1028,24 +966,15 @@
           <attribute name="title">
            <string>Frames</string>
           </attribute>
-          <layout class="QVBoxLayout" name="verticalLayout_16">
-           <property name="leftMargin">
-            <number>0</number>
-           </property>
-           <property name="topMargin">
-            <number>0</number>
-           </property>
-           <property name="rightMargin">
-            <number>0</number>
-           </property>
-           <property name="bottomMargin">
-            <number>0</number>
-           </property>
-          </layout>
          </widget>
          <widget class="SpectraView" name="spectra_tab">
           <attribute name="title">
            <string>Spectra</string>
+          </attribute>
+         </widget>
+         <widget class="QWidget" name="tab">
+          <attribute name="title">
+           <string>Volume</string>
           </attribute>
          </widget>
         </widget>

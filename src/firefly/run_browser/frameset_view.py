@@ -172,12 +172,13 @@ class FramesetView(QtWidgets.QWidget):
 
     @QtCore.Slot()
     @QtCore.Slot(dict)
-    def plot_datasets(self, datasets: dict[str, np.ndarray] | None = None):
+    def plot(self, datasets: dict[str, np.ndarray] | None = None):
         """Plot a set of datasets as lines.
 
         If *datasets* is not given, the last datasets seen are used.
 
         """
+        return
         if datasets is None:
             datasets = self.datasets
         else:

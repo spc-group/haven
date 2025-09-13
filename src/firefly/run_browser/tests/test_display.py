@@ -3,6 +3,7 @@ import datetime as dt
 from pathlib import Path
 from unittest.mock import AsyncMock
 
+import pandas as pd
 import pytest
 import time_machine
 from ophyd.sim import instantiate_fake_device
@@ -45,7 +46,16 @@ async def display(qtbot, mocker, tiled_client):
     # Wait for the initial database load to process
     display.db.catalog = tiled_client
     await display.load_runs()
-    return display
+    try:
+        yield display
+    finally:
+        # Make sure all the db tasks have a chance to finish cleanly
+        [task.cancel() for task in display._running_db_tasks.values()]
+        # tasks = asyncio.gather(*display._running_db_tasks.values())
+        # print("Awaiting tasks")
+        # from pprint import pprint
+        # pprint(list(display._running_db_tasks.values()))
+        # await asyncio.wait_for(tasks, timeout=5)
 
 
 async def test_db_task(display):
@@ -86,7 +96,6 @@ def test_selected_uids(display):
     display.ui.runs_model.item(0, 0).setCheckState(True)
     # Now there are some selected rows
     assert len(display.selected_uids()) == 1
-    assert False
 
 
 async def test_metadata(display, qtbot, mocker):
@@ -274,17 +283,50 @@ def test_time_filters(display):
     assert "before" in filters
 
 
-async def test_update_data_frames(display, qtbot, mocker):
+async def test_update_internal_dataframes(display, qtbot, mocker):
     display.selected_uids = mocker.MagicMock(
-        return_value={
-            "85573831-f4b4-4f64-b613-a6007bf03a8d",
-            "7d1daf1d-60c7-4aa7-a668-d1cd97e5335f",
-        }
+        return_value={"85573831-f4b4-4f64-b613-a6007bf03a8d"}
     )
     display.ui.stream_combobox.addItem("primary")
+    display.ui.x_signal_combobox.addItem("mono-energy")
+    display.ui.multiplot_tab.plot = mocker.MagicMock()
+    await display.update_internal_dataframes()
+    # Check that the plotting routines were called correctly
+    assert display.ui.multiplot_tab.plot.called
+    args, kwargs = display.ui.multiplot_tab.plot.call_args
+    dfs = args[0]
+    assert len(dfs) == 1
+    df = dfs["85573831-f4b4-4f64-b613-a6007bf03a8d"]
+    assert isinstance(df, pd.DataFrame)
+    for task in display._running_db_tasks.values():
+        print(task)
+
+
+async def test_update_datasets(display, qtbot, mocker):
+    display.selected_uids = mocker.MagicMock(return_value={"xarray_run"})
+    display.ui.stream_combobox.addItem("primary")
     display.ui.stream_combobox.setCurrentText("primary")
-    with qtbot.waitSignal(display.data_frames_changed):
-        await display.update_data_frames()
+    display.ui.x_signal_combobox.addItem("mono-energy")
+    display.ui.y_signal_combobox.addItem("It-net_count")
+    display.ui.r_signal_combobox.addItem("I0-net_count")
+    # Check that the clients got called
+    display.ui.lineplot_tab.plot = mocker.MagicMock()
+    display.ui.gridplot_tab.plot = mocker.MagicMock()
+    display.ui.frameset_tab.plot = mocker.MagicMock()
+    display.ui.spectra_tab.plot = mocker.MagicMock()
+    await display.update_datasets()
+    assert display.ui.lineplot_tab.plot.called
+    args, kwargs = display.ui.lineplot_tab.plot.call_args
+    datasets = args[0]
+    assert len(datasets) == 1
+    ds = datasets["xarray_run"]
+    assert "mono-energy" in ds
+    assert "It-net_count" in ds
+    assert "I0-net_count" in ds
+    # Check that the other view plot methods were called
+    assert display.ui.gridplot_tab.plot.called
+    assert display.ui.frameset_tab.plot.called
+    assert display.ui.spectra_tab.plot.called
 
 
 async def test_profile_choices(display):
@@ -303,10 +345,87 @@ async def test_stream_choices(display, mocker):
     assert items == ["primary", "baseline"]
 
 
-async def test_retrieve_dataset(display, qtbot):
-    # See '788b1d91-efa1-4b26-9a0a-3454aa7e1a93' for a sample dataset
-    with qtbot.wait_signal(display.datasets_changed):
-        await display.fetch_datasets("ge_8element", "testing")
+@pytest.mark.asyncio
+async def test_signal_options(display, mocker):
+    """
+    We need to know:
+    - data_keys
+    - independent hints (scan axes)
+    - dependent hints (device hints)
+
+    Used '64e85e20-106c-48e6-b643-77e9647b0242' for testing in the
+    haven-dev catalog.
+
+    """
+    display.selected_uids = mocker.MagicMock(
+        return_value={"85573831-f4b4-4f64-b613-a6007bf03a8d"}
+    )
+    await display.update_streams()
+    display.ui.stream_combobox.setCurrentText("primary")
+    display.ui.use_hints_checkbox.setChecked(False)
+    # Check that we got the right signals in the right order
+    await display.update_signal_widgets()
+    expected_signals = [
+        "energy_energy",
+        "ge_8element",
+        "ge_8element-deadtime_factor",
+        "I0-net_count",
+        "seq_num",
+    ]
+    combobox = display.ui.x_signal_combobox
+    signals = [combobox.itemText(idx) for idx in range(combobox.count())]
+    assert signals == expected_signals
+    combobox = display.ui.y_signal_combobox
+    signals = [combobox.itemText(idx) for idx in range(combobox.count())]
+    assert signals == expected_signals
+    combobox = display.ui.r_signal_combobox
+    signals = [combobox.itemText(idx) for idx in range(combobox.count())]
+    assert signals == expected_signals
+
+
+@pytest.mark.asyncio
+async def test_hinted_signal_options(display, mocker):
+    """
+    We need to know:
+    - data_keys
+    - independent hints (scan axes)
+    - dependent hints (device hints)
+
+    Used '64e85e20-106c-48e6-b643-77e9647b0242' for testing in the
+    haven-dev catalog.
+
+    """
+    display.selected_uids = mocker.MagicMock(
+        return_value={"85573831-f4b4-4f64-b613-a6007bf03a8d"}
+    )
+    await display.update_streams()
+    display.ui.stream_combobox.setCurrentText("primary")
+    display.ui.use_hints_checkbox.setChecked(True)
+    await display.update_signal_widgets()
+    await display.update_signal_widgets()
+    # Check hinted X signals
+    combobox = display.ui.x_signal_combobox
+    signals = [combobox.itemText(idx) for idx in range(combobox.count())]
+    assert signals == ["aerotech_horiz", "aerotech_vert"]
+    # Check hinted Y signals
+    expected_signals = [
+        "aerotech_horiz",
+        "aerotech_vert",
+        "CdnI0_net_counts",
+        "CdnIPreKb_net_counts",
+        "CdnIt_net_counts",
+        "I0_net_counts",
+        "Ipre_KB_net_counts",
+        "Ipreslit_net_counts",
+        "It_net_counts",
+    ]
+    combobox = display.ui.y_signal_combobox
+    signals = [combobox.itemText(idx) for idx in range(combobox.count())]
+    assert signals == expected_signals
+    # Check hinted reference signals
+    combobox = display.ui.r_signal_combobox
+    signals = [combobox.itemText(idx) for idx in range(combobox.count())]
+    assert signals == expected_signals
 
 
 # -----------------------------------------------------------------------------

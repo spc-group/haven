@@ -1,16 +1,18 @@
 import asyncio
 import datetime as dt
 import logging
-from collections import ChainMap, Counter
+from collections import Counter
 from contextlib import contextmanager
 from functools import wraps
 from typing import Mapping, Optional, Sequence
 
 import httpx
+import pandas as pd
 import qtawesome as qta
+import xarray as xr
 from pydm import PyDMChannel
 from qasync import asyncSlot
-from qtpy.QtCore import QDateTime, Qt, Signal, Slot
+from qtpy.QtCore import QDateTime, Qt, Signal
 from qtpy.QtGui import QStandardItem, QStandardItemModel
 from qtpy.QtWidgets import QErrorMessage
 from tiled.client import from_profile_async
@@ -58,8 +60,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
     proposal_channel: PyDMChannel
     esaf_channel: PyDMChannel
     # (data keys, experiment hints, signal hints)
-    data_keys_changed = Signal(ChainMap, set, set)
-    data_frames_changed = Signal(dict)
+    data_changed = Signal(dict)
     metadata_changed = Signal(dict)
     datasets_changed = Signal(dict)
 
@@ -104,31 +105,9 @@ class RunBrowserDisplay(display.FireflyDisplay):
         if self.filter_current_esaf_checkbox.isChecked() and md.get("esaf_id"):
             self.filter_esaf_combobox.setCurrentText(md["esaf_id"])
 
-    @asyncSlot(str)
-    async def fetch_datasets(self, dataset_name: str):
-        """Retrieve a dataset from disk, and provide it to the slot.
-
-        Parameters
-        ==========
-        dataset_name
-          The name in the Tiled catalog of the dataset to retrieve.
-
-        Emits
-        =====
-        datasets_changed
-          Emitted with the new datasets as a dictionary.
-
-        """
-        # Retrieve data from the database
-        data = await self.db_task(
-            self.db.dataset(dataset_name, stream=self.stream),
-            name="retrieve_dataset",
-        )
-        self.datasets_changed.emit(data)
-
     def db_task(self, coro, name="default task"):
         """Executes a co-routine as a database task. Existing database
-        tasks get cancelled.
+        tasks with the same *name* get cancelled.
 
         """
         # Check for existing tasks
@@ -255,19 +234,12 @@ class RunBrowserDisplay(display.FireflyDisplay):
         )
         # Respond to controls for the current run
         self.ui.reload_plots_button.clicked.connect(self.update_plots)
-        self.ui.stream_combobox.currentTextChanged.connect(self.update_data_keys)
-        self.ui.stream_combobox.currentTextChanged.connect(self.update_data_frames)
+        self.ui.stream_combobox.currentTextChanged.connect(self.update_signal_widgets)
+        self.ui.stream_combobox.currentTextChanged.connect(self.update_datasets)
         # Connect to signals for individual tabs
         self.metadata_changed.connect(self.ui.metadata_tab.display_metadata)
-        self.metadata_changed.connect(self.ui.lineplot_view.stash_metadata)
+        self.metadata_changed.connect(self.ui.lineplot_tab.stash_metadata)
         self.metadata_changed.connect(self.ui.gridplot_tab.set_image_dimensions)
-        self.data_keys_changed.connect(self.update_signal_widgets)
-        self.data_frames_changed.connect(self.ui.multiplot_view.plot_multiples)
-        self.data_frames_changed.connect(self.ui.lineplot_view.plot)
-        self.data_frames_changed.connect(self.ui.gridplot_tab.plot)
-        self.data_frames_changed.connect(self.ui.frameset_tab.stash_data_frames)
-        self.datasets_changed.connect(self.ui.frameset_tab.plot_datasets)
-        self.ui.frameset_tab.dataset_selected.connect(self.fetch_datasets)
         # Create a new export dialog for saving files
         self.ui.export_button.clicked.connect(self.export_runs)
         self.export_dialog = ExportDialog(parent=self)
@@ -291,14 +263,9 @@ class RunBrowserDisplay(display.FireflyDisplay):
         self.ui.y_signal_combobox.setCurrentText(new_y)
         self.ui.r_signal_combobox.setCurrentText(new_r)
 
-    @Slot(dict, set, set)
-    @Slot()
-    def update_signal_widgets(
-        self,
-        data_keys: Mapping | None = None,
-        independent_hints: Sequence | None = None,
-        dependent_hints: Sequence | None = None,
-    ):
+    @asyncSlot()
+    @cancellable
+    async def update_signal_widgets(self):
         """Update the UI based on new data keys and hints.
 
         If any of *data_keys*, *independent_hints* or
@@ -306,26 +273,15 @@ class RunBrowserDisplay(display.FireflyDisplay):
         used.
 
         """
-        # Stash inputs for if we need to update later
-        if data_keys is not None:
-            self.data_keys = {
-                key: props
-                for key, props in data_keys.items()
-                if "external" not in props
-            }
-        valid_hints = set(self.data_keys.keys())
-        if independent_hints is not None:
-            self.independent_hints = set(independent_hints) & valid_hints
-        if dependent_hints is not None:
-            self.dependent_hints = set(dependent_hints) & valid_hints
+        data_keys, ihints, dhints = await self.data_signals()
         # Decide whether we want to use hints
         use_hints = self.ui.use_hints_checkbox.isChecked()
         if use_hints:
-            new_xcols = self.independent_hints
-            new_ycols = self.dependent_hints
+            new_xcols = ihints
+            new_ycols = dhints
         else:
-            new_xcols = list(self.data_keys.keys())
-            new_ycols = list(self.data_keys.keys())
+            new_xcols = list(data_keys.keys())
+            new_ycols = list(data_keys.keys())
         # Update the UI
         comboboxes = [
             self.ui.x_signal_combobox,
@@ -333,13 +289,11 @@ class RunBrowserDisplay(display.FireflyDisplay):
             self.ui.r_signal_combobox,
         ]
         for combobox, new_cols in zip(comboboxes, [new_xcols, new_ycols, new_ycols]):
-            old_cols = [combobox.itemText(idx) for idx in range(combobox.count())]
-            if old_cols != new_cols:
-                old_value = combobox.currentText()
-                combobox.clear()
-                combobox.addItems(new_cols)
-                if old_value in new_cols:
-                    combobox.setCurrentText(old_value)
+            old_value = combobox.currentText()
+            combobox.clear()
+            combobox.addItems(sorted(new_cols, key=str.lower))
+            if old_value in new_cols:
+                combobox.setCurrentText(old_value)
 
     def auto_range(self):
         self.plot_1d_view.autoRange()
@@ -496,11 +450,11 @@ class RunBrowserDisplay(display.FireflyDisplay):
         """
 
         await self.update_metadata()
-        await self.update_data_frames()
+        await self.update_datasets()
+        await self.update_internal_dataframes()
 
-    @asyncSlot()
-    @cancellable
-    async def update_data_keys(self, *args):
+    async def data_signals(self) -> tuple[dict, set[str], set[str]]:
+        """Get valid keys and hints for the selected UIDs."""
         stream = self.ui.stream_combobox.currentText()
         uids = self.selected_uids()
         with self.busy_hints(run_widgets=True, run_table=False, filter_widgets=False):
@@ -509,57 +463,72 @@ class RunBrowserDisplay(display.FireflyDisplay):
                 self.db_task(self.db.hints(uids, stream), "update data hints"),
             )
         independent_hints, dependent_hints = hints
-        self.data_keys_changed.emit(
-            data_keys, set(independent_hints), set(dependent_hints)
-        )
+        return data_keys, set(independent_hints), set(dependent_hints)
 
     @asyncSlot()
     @cancellable
-    async def update_data_frames(self):
+    async def update_internal_dataframes(self) -> dict[str, pd.DataFrame]:
+        """Load only signals for the "internal" part of the run, and plot."""
         stream = self.ui.stream_combobox.currentText()
         uids = self.selected_uids()
         if stream == "":
-            data_frames = {}
-            log.info("Not loading data frames for empty stream.")
+            dataframes = {}
+            log.info("Not loading dataframes for empty stream.")
         else:
             with self.busy_hints(
                 run_widgets=True, run_table=False, filter_widgets=False
             ):
-                data_frames = await self.db_task(
-                    self.db.data_frames(uids, stream), "update data frames"
+                # dataframes = await self.db_task(
+                #     self.db.dataframes(uids, stream),
+                #     "update_dataframes"
+                # )
+                dataframes = await self.db.dataframes(uids, stream)
+
+        self.ui.multiplot_tab.plot(dataframes)
+        return dataframes
+
+    @asyncSlot()
+    @cancellable
+    async def update_datasets(self) -> dict[str, xr.Dataset]:
+        stream = self.ui.stream_combobox.currentText()
+        uids = self.selected_uids()
+        xsig = self.x_signal_combobox.currentText()
+        ysig = self.y_signal_combobox.currentText()
+        rsig = self.r_signal_combobox.currentText()
+        print(xsig, ysig, rsig)
+        if stream == "":
+            datasets = {}
+            log.info("Not loading datasets for empty stream.")
+        else:
+            with self.busy_hints(
+                run_widgets=True, run_table=False, filter_widgets=False
+            ):
+                # datasets = await self.db_task(
+                #     self.db.datasets(uids, stream, xcolumn=xsig, ycolumn=ysig, rcolumn=rsig),
+                #     "update_datasets"
+                # )
+                datasets = await self.db.datasets(
+                    uids, stream, xcolumn=xsig, ycolumn=ysig, rcolumn=rsig
                 )
-        self.data_frames_changed.emit(data_frames)
+
+        print(datasets)
+        self.ui.lineplot_tab.plot(datasets)
+        self.ui.gridplot_tab.plot(datasets)
+        self.ui.frameset_tab.plot(datasets)
+        self.ui.spectra_tab.plot(datasets)
+        return datasets
 
     def selected_uids(self) -> set[str]:
         # Get UID's from the selection
         uid_col = self._run_col_names.index("UID")
         cbox_col = 0
         model = self.runs_model
-        print(
-            [
-                model.item(row_idx, cbox_col).checkState()
-                for row_idx in range(self.runs_model.rowCount())
-            ]
-        )
         uids = [
             model.item(row_idx, uid_col).text()
             for row_idx in range(self.runs_model.rowCount())
             if model.item(row_idx, cbox_col).checkState()
         ]
         return set(uids)
-
-    # @asyncSlot()
-    # @cancellable
-    # async def update_selected_runs(self, *args):
-    #     """Get the current runs from the database and stash them."""
-    #     # Get selected runs from the database
-    #     self.selected_runs = self.db.load_selected_runs(uids=uids)
-    #     # Update the necessary UI elements
-    #     await self.update_streams()
-    #     await self.update_data_keys()
-    #     # Update the plots
-    #     await self.update_plots()
-    #     self.update_export_button()
 
     def filters(self, *args):
         new_filters = {

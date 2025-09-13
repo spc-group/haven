@@ -3,6 +3,7 @@ import re
 import httpx
 import pandas as pd
 import pytest
+import xarray as xr
 
 from firefly.run_browser.client import DatabaseWorker
 
@@ -64,7 +65,7 @@ async def test_data_keys(worker):
         "7d1daf1d-60c7-4aa7-a668-d1cd97e5335f",
     ]
     data_keys = await worker.data_keys(uids, "primary")
-    assert "I0-mcs-scaler-channels-0-net_count" in data_keys
+    assert "I0-net_count" in data_keys
     assert "It-mcs-scaler-channels-3-net_count" in data_keys
     assert "seq_num" in data_keys
 
@@ -89,6 +90,24 @@ async def test_data_frames(worker, tiled_client):
     data_frames = await worker.data_frames(uids, "primary")
     # Check the results
     assert isinstance(data_frames["85573831-f4b4-4f64-b613-a6007bf03a8d"], pd.DataFrame)
+
+
+async def test_datasets(worker, tiled_client):
+    uids = ["xarray_run"]
+    arrays = await worker.datasets(
+        uids,
+        stream="primary",
+        xcolumn="mono-energy",
+        ycolumn="It-net_count",
+        rcolumn="I0-net_count",
+    )
+    # Check the results
+    ds = arrays["xarray_run"]
+    assert isinstance(ds, xr.Dataset)
+    assert "I0-net_count" in ds.variables
+    assert "mono-energy" in ds.variables
+    assert "It-net_count" in ds.variables
+    assert "other_signal" not in ds.variables
 
 
 @pytest.mark.asyncio

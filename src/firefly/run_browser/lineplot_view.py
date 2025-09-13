@@ -169,6 +169,7 @@ class LineplotView(QtWidgets.QWidget):
           keys.
 
         """
+        return
         if dataframes is not None:
             self.clear_plot()
             self.dataframes = dataframes

@@ -8,6 +8,7 @@ from typing import Mapping, Sequence
 
 import numpy as np
 import pandas as pd
+import xarray as xr
 from tiled import queries
 from tiled.client.container import Container
 
@@ -39,7 +40,7 @@ class DatabaseWorker:
     async def data_keys(self, uids: Sequence[str], stream: str):
         async def get_data_key(run):
             strm = await run[f"streams/{stream}"]
-            return strm.metadata["data_keys"]
+            return strm.metadata.get("data_keys", {})
 
         runs = self.runs(uids)
         async with asyncio.TaskGroup() as tg:
@@ -59,17 +60,43 @@ class DatabaseWorker:
     def runs(self, uids: Sequence[str]) -> Container:
         return self.catalog.search(queries.In("start.uid", uids))
 
-    async def data_frames(self, uids: Sequence[str], stream: str) -> dict:
+    async def dataframes(self, uids: Sequence[str], stream: str) -> dict:
         """Return the internal dataframes for selected runs as {uid: dataframe}."""
         runs = self.runs(uids)
 
         async def get_data_frame(run):
-            return await (await run[f"streams/{stream}/internal"]).read()
+            try:
+                node = await run[f"streams/{stream}/internal"]
+            except KeyError as exc:
+                # log.(exc)
+                return xr.Dataset({})
+            else:
+                return await node.read()
 
         async with asyncio.TaskGroup() as tg:
             tasks = {
                 uid: tg.create_task(get_data_frame(run))
                 async for uid, run in runs.items()
+            }
+        results = {uid: task.result() for uid, task in tasks.items()}
+        return results
+
+    async def datasets(
+        self, uids: Sequence[str], stream: str, xcolumn: str, ycolumn: str, rcolumn: str
+    ) -> dict[str, xr.DataArray]:
+        """Return data for selected runs as {uid: xarray.Dataset}."""
+        runs = self.runs(uids)
+
+        async def get_xarray(run):
+            node = await run[f"streams/{stream}"]
+            if not hasattr(node, "read"):
+                log.warning(f"Node {node} cannot be read.")
+                return xr.Dataset({})
+            return await node.read(variables=[xcolumn, ycolumn, rcolumn])
+
+        async with asyncio.TaskGroup() as tg:
+            tasks = {
+                uid: tg.create_task(get_xarray(run)) async for uid, run in runs.items()
             }
         results = {uid: task.result() for uid, task in tasks.items()}
         return results
@@ -288,34 +315,6 @@ class DatabaseWorker:
             df = await run.data(signals=xsignals + ysignals, stream=stream)
             dfs[run.uid] = df
         return dfs
-
-    async def dataset(
-        self,
-        dataset_name: str,
-        *,
-        stream: str,
-        uids: Sequence[str] | None = None,
-    ) -> Mapping:
-        """Produce a dictionary with the n-dimensional datasets for plotting.
-
-        The keys of the dictionary are the UIDs for each scan, and
-        the corresponding value is a pandas dataset with the data for
-        each signal.
-
-        Parameters
-        ==========
-        uids
-          If not ``None``, only runs with UIDs listed in this
-          parameter will be included.
-
-        """
-        # Build the dataframes
-        arrays = OrderedDict()
-        for run in self.selected_runs:
-            # Get data from the database
-            arr = await run.external_dataset(dataset_name, stream=stream)
-            arrays[run.uid] = arr
-        return arrays
 
     async def signals(
         self,

@@ -1,6 +1,9 @@
+import logging
 from pathlib import Path
 
 from qtpy import QtWidgets, uic
+
+log = logging.getLogger("run_browser")
 
 
 class SpectraView(QtWidgets.QWidget):
@@ -9,3 +12,6 @@ class SpectraView(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.ui = uic.loadUi(self.ui_file, self)
+
+    def plot(self, *args, **kwargs):
+        log.exception(NotImplementedError())

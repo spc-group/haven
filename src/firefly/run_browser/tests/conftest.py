@@ -5,9 +5,11 @@ import httpx
 import numpy as np
 import pandas as pd
 import pytest
+import xarray as xr
 from pytest_httpx import IteratorStream
 from tiled.adapters.dataframe import DataFrameAdapter
 from tiled.adapters.mapping import MapAdapter
+from tiled.adapters.xarray import DatasetAdapter
 from tiled.client import from_context_async
 from tiled.client.context import Context
 from tiled.serialization.table import serialize_arrow
@@ -89,9 +91,12 @@ tree = MapAdapter(
                             },
                             metadata={
                                 "data_keys": {
-                                    "I0-mcs-scaler-channels-0-net_count": {
+                                    "I0-net_count": {
                                         "dtype": "number",
                                     },
+                                    "ge_8element": {},
+                                    "ge_8element-deadtime_factor": {},
+                                    "energy_energy": {},
                                 },
                                 "hints": {
                                     "Ipreslit": {"fields": ["Ipreslit_net_counts"]},
@@ -187,6 +192,29 @@ tree = MapAdapter(
                 },
             },
         ),
+        "xarray_run": MapAdapter(
+            {
+                "streams": MapAdapter(
+                    {
+                        "primary": DatasetAdapter.from_dataset(
+                            xr.Dataset(
+                                {
+                                    "I0-net_count": ("mono-energy", [200, 300, 250]),
+                                    "It-net_count": ("mono-energy", [200, 300, 250]),
+                                    "other_signal": ("mono-energy", [10, 122, 13345]),
+                                    "mono-energy": ("mono-energy", [0, 1, 2]),
+                                }
+                            ),
+                        ),
+                    },
+                ),
+            },
+            metadata={
+                "start": {
+                    "uid": "xarray_run",
+                },
+            },
+        ),
     }
 )
 
@@ -196,6 +224,7 @@ async def tiled_client():
     async with Context.from_app(build_app(tree), awaitable=True) as context:
         client = await from_context_async(context)
         yield client
+        assert False, "exiting context"
 
 
 @pytest.fixture()
