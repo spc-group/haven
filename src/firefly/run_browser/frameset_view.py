@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 import pyqtgraph as pg
 import qtawesome as qta
+import xarray as xr
 from qtpy import QtCore, QtWidgets, uic
 
 axes = namedtuple("axes", ("z", "y", "x"))
@@ -109,7 +110,7 @@ class FramesetView(QtWidgets.QWidget):
         combobox = QtWidgets.QComboBox()
         layout.addWidget(combobox, row_idx, 5)
         combobox.addItems(self.aggregators.keys())
-        combobox.currentTextChanged.connect(self.plot_datasets)
+        combobox.currentTextChanged.connect(self.plot)
         # See if we should check a box by default
         if dim_idx < 3 and self.button_groups[dim_idx].checkedId() == -1:
             layout.itemAtPosition(row_idx, dim_idx + 2).widget().setChecked(True)
@@ -140,8 +141,6 @@ class FramesetView(QtWidgets.QWidget):
         buttons_checked = any([btn.isChecked() for btn in btns])
         combobox = layout.itemAtPosition(row_idx, 5).widget()
         combobox.setEnabled(not buttons_checked)
-        # Update the plots
-        self.plot_datasets()
 
     def set_dimension_widgets(self, row_idx: int, shape: int):
         layout = self.ui.dimensions_layout
@@ -171,66 +170,16 @@ class FramesetView(QtWidgets.QWidget):
         combobox.addItems(self.signal_keys.keys())
 
     @QtCore.Slot()
-    @QtCore.Slot(dict)
-    def plot(self, datasets: dict[str, np.ndarray] | None = None):
-        """Plot a set of datasets as lines.
-
-        If *datasets* is not given, the last datasets seen are used.
-
-        """
-        return
-        if datasets is None:
-            datasets = self.datasets
-        else:
-            self.datasets = datasets
-        # Clear the plot if there's nothing to show
+    def plot(self, array: xr.DataArray):
+        """Plot a dataset as a stack of frames."""
+        # Start with a clear plot
         im_plot = self.ui.frame_view
-        if datasets is None:
-            im_plot.clear()
-            self.enable(False)
-            return
-        # Make sure it's just one dataset
-        if len(datasets) > 1:
-            log.warning(
-                "Cannot plot framesets for multiple scans. Please submit an issue to request this feature."
-            )
-            return
-        elif len(datasets) == 1:
-            dataset = list(datasets.values())[0]
-        elif len(datasets) == 0:
-            return
-        else:
-            raise RuntimeError(f"Malformed input: {datasets}")
-        self.update_dimension_widgets(shape=dataset.shape)
-        try:
-            dataset = self.reduce_dimensions(dataset)
-        except ValueError:
-            # These are usually transient states when signals are being swapped
-            self.enable(False)
-            return
+        im_plot.clear()
         # Determine how to plot the time series values
-        tsignal = self.ui.time_signal_combobox.currentText()
-        try:
-            tvals = self.data_frames[tsignal].values
-            assert dataset.ndim == 3
-            assert tvals.shape[0] == dataset.shape[0]
-        except (TypeError, AssertionError):
-            tvals = None
+        self.update_dimension_widgets(shape=array.shape)
+        tvals = list(array.coords.values())[0]
         # Plot the images
-        if 2 <= dataset.ndim <= 3:
-            self.enable()
-            im_plot.setImage(dataset, xvals=tvals)
-        else:
-            log.info(f"Skipping plot of frames with shape {dataset.shape}.")
-            im_plot.clear()
-            self.enable_plots(False)
-
-    def enable(self, enabled: bool = True):
-        self.enable_plots(enabled)
-        self.dimensions_layout.setEnabled(enabled)
-
-    def enable_plots(self, enabled: bool = True):
-        self.ui.plotting_tabs.setEnabled(enabled)
+        im_plot.setImage(array.values, xvals=tvals)
 
     def update_dimension_widgets(self, shape: tuple[int]):
         """Update the widgets for setting dimensions to match the

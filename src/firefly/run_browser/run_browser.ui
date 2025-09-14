@@ -928,7 +928,7 @@
           </sizepolicy>
          </property>
          <property name="currentIndex">
-          <number>6</number>
+          <number>4</number>
          </property>
          <widget class="MetadataView" name="metadata_tab">
           <attribute name="title">
@@ -961,7 +961,7 @@
          </widget>
          <widget class="FramesetView" name="frameset_tab">
           <property name="enabled">
-           <bool>true</bool>
+           <bool>false</bool>
           </property>
           <attribute name="title">
            <string>Frames</string>

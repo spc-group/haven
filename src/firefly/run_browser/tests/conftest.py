@@ -224,7 +224,6 @@ async def tiled_client():
     async with Context.from_app(build_app(tree), awaitable=True) as context:
         client = await from_context_async(context)
         yield client
-        assert False, "exiting context"
 
 
 @pytest.fixture()

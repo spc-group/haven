@@ -1,5 +1,6 @@
 import asyncio
 import datetime as dt
+from contextlib import contextmanager
 from pathlib import Path
 from unittest.mock import AsyncMock
 
@@ -11,6 +12,18 @@ from qtpy.QtWidgets import QFileDialog
 
 from firefly.run_browser.display import RunBrowserDisplay
 from haven.devices.beamline_manager import EpicsBssDevice
+
+
+@contextmanager
+def block_signals(*widgets):
+    """Disable Qt signals so tests can be set up."""
+    for widget in widgets:
+        widget.blockSignals(True)
+    try:
+        yield
+    finally:
+        for widget in widgets:
+            widget.blockSignals(False)
 
 
 @pytest.fixture()
@@ -45,7 +58,6 @@ async def display(qtbot, mocker, tiled_client):
     display.clear_filters()
     # Wait for the initial database load to process
     display.db.catalog = tiled_client
-    await display.load_runs()
     try:
         yield display
     finally:
@@ -83,12 +95,14 @@ async def test_db_task_interruption(display):
     assert task_1.cancelled()
 
 
-def test_load_runs(display):
+async def test_load_runs(display):
+    await display.load_runs()
     assert display.runs_model.rowCount() > 0
     assert display.ui.runs_total_label.text() == str(display.runs_model.rowCount())
 
 
-def test_selected_uids(display):
+async def test_selected_uids(display):
+    await display.load_runs()
     # No rows at first
     assert display.selected_uids() == set()
     # Check a row
@@ -287,8 +301,9 @@ async def test_update_internal_dataframes(display, qtbot, mocker):
     display.selected_uids = mocker.MagicMock(
         return_value={"85573831-f4b4-4f64-b613-a6007bf03a8d"}
     )
-    display.ui.stream_combobox.addItem("primary")
-    display.ui.x_signal_combobox.addItem("mono-energy")
+    with block_signals(display.ui.stream_combobox, display.ui.x_signal_combobox):
+        display.ui.stream_combobox.addItem("primary")
+        display.ui.x_signal_combobox.addItem("mono-energy")
     display.ui.multiplot_tab.plot = mocker.MagicMock()
     await display.update_internal_dataframes()
     # Check that the plotting routines were called correctly
@@ -298,17 +313,20 @@ async def test_update_internal_dataframes(display, qtbot, mocker):
     assert len(dfs) == 1
     df = dfs["85573831-f4b4-4f64-b613-a6007bf03a8d"]
     assert isinstance(df, pd.DataFrame)
-    for task in display._running_db_tasks.values():
-        print(task)
 
 
 async def test_update_datasets(display, qtbot, mocker):
     display.selected_uids = mocker.MagicMock(return_value={"xarray_run"})
-    display.ui.stream_combobox.addItem("primary")
-    display.ui.stream_combobox.setCurrentText("primary")
-    display.ui.x_signal_combobox.addItem("mono-energy")
-    display.ui.y_signal_combobox.addItem("It-net_count")
-    display.ui.r_signal_combobox.addItem("I0-net_count")
+    with block_signals(
+        display.ui.stream_combobox,
+        display.ui.x_signal_combobox,
+        display.ui.y_signal_combobox,
+        display.ui.r_signal_combobox,
+    ):
+        display.ui.stream_combobox.addItem("primary")
+        display.ui.x_signal_combobox.addItem("mono-energy")
+        display.ui.y_signal_combobox.addItem("It-net_count")
+        display.ui.r_signal_combobox.addItem("I0-net_count")
     # Check that the clients got called
     display.ui.lineplot_tab.plot = mocker.MagicMock()
     display.ui.gridplot_tab.plot = mocker.MagicMock()
@@ -360,9 +378,10 @@ async def test_signal_options(display, mocker):
     display.selected_uids = mocker.MagicMock(
         return_value={"85573831-f4b4-4f64-b613-a6007bf03a8d"}
     )
-    await display.update_streams()
-    display.ui.stream_combobox.setCurrentText("primary")
-    display.ui.use_hints_checkbox.setChecked(False)
+    with block_signals(display.ui.stream_combobox, display.ui.use_hints_checkbox):
+        await display.update_streams()
+        display.ui.stream_combobox.setCurrentText("primary")
+        display.ui.use_hints_checkbox.setChecked(False)
     # Check that we got the right signals in the right order
     await display.update_signal_widgets()
     expected_signals = [
@@ -398,10 +417,9 @@ async def test_hinted_signal_options(display, mocker):
     display.selected_uids = mocker.MagicMock(
         return_value={"85573831-f4b4-4f64-b613-a6007bf03a8d"}
     )
-    await display.update_streams()
-    display.ui.stream_combobox.setCurrentText("primary")
-    display.ui.use_hints_checkbox.setChecked(True)
-    await display.update_signal_widgets()
+    with block_signals(display.ui.stream_combobox, display.ui.use_hints_checkbox):
+        display.ui.stream_combobox.addItem("primary")
+        display.ui.use_hints_checkbox.setChecked(True)
     await display.update_signal_widgets()
     # Check hinted X signals
     combobox = display.ui.x_signal_combobox
@@ -426,6 +444,38 @@ async def test_hinted_signal_options(display, mocker):
     combobox = display.ui.r_signal_combobox
     signals = [combobox.itemText(idx) for idx in range(combobox.count())]
     assert signals == expected_signals
+
+
+@pytest.mark.xfail
+def test_prepare_plotting_data():
+    assert False
+
+
+@pytest.mark.xfail
+def test_label_from_metadata():
+    assert False
+
+
+@pytest.mark.xfail
+def test_swap_signals(view, qtbot):
+    assert view.ui.y_signal_combobox.currentText() == "It-net_current"
+    assert view.ui.r_signal_combobox.currentText() == "I0-net_current"
+    view.swap_signals()
+    assert view.ui.y_signal_combobox.currentText() == "I0-net_current"
+    assert view.ui.r_signal_combobox.currentText() == "It-net_current"
+
+
+@pytest.mark.xfail
+def test_update_plot_mean(view):
+    view.independent_hints = ["energy_energy"]
+    view.dependent_hints = ["I0-net_current"]
+    # view.data_keys = data_keys
+    view.ui.aggregator_combobox.setCurrentText("StDev")
+    # Update the plots
+    # view.plot(dataframes)
+    # Check the data were plotted
+    plot_item = view.ui.plot_widget.getPlotItem()
+    assert len(plot_item.dataItems) == 1
 
 
 # -----------------------------------------------------------------------------

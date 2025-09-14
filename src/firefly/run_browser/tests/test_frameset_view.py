@@ -1,9 +1,7 @@
-from unittest.mock import MagicMock
-
 import numpy as np
-import pandas as pd
 import pytest
-from qtpy.QtWidgets import QComboBox
+import xarray as xr
+from pyqtgraph import ImageView
 
 from firefly.run_browser.frameset_view import FramesetView
 
@@ -17,69 +15,7 @@ def view(qtbot):
 
 def test_load_ui(view):
     """Make sure widgets were loaded from the UI file."""
-    assert isinstance(view.ui.dataset_combobox, QComboBox)
-
-
-def test_dataset_combobox_options(view):
-    """
-    We need to know:
-    - external signals
-    - internal signals
-    - hints
-
-    Then each view can handle sorting out which signals it needs.
-
-    Use '64e85e20-106c-48e6-b643-77e9647b0242' for testing in the
-    haven-dev catalog.
-
-    """
-
-    data_keys = {
-        "ge_8element": {
-            "dtype": "array",
-            "dtype_numpy": "<u4",
-            "external": "STREAM:",
-            "object_name": "ge_8element",
-            "shape": [8, 4096],
-            "source": "ca://XSP_Ge_8elem:HDF1:FullFileName_RBV",
-        },
-        "I0-net_current": {
-            "dtype": "number",
-            "dtype_numpy": "<f8",
-            "object_name": "I0",
-            "shape": [],
-            "source": "ca://25idVME:3820:scaler1.S0",
-            "units": "A",
-        },
-        "I0-net_counts": {
-            "dtype": "number",
-            "dtype_numpy": "<u4",
-            "object_name": "I0",
-            "shape": [],
-            "source": "ca://25idVME:3820:scaler1.S0",
-            "units": "",
-        },
-    }
-    ihints = ["sim_motor_2"]
-    dhints = ["I0-net_current"]
-    combobox = view.ui.dataset_combobox
-    view.update_signal_widgets(data_keys, ihints, dhints)
-    assert (
-        combobox.findText("ge_8element") > -1
-    ), f"ge_8element signal not in {combobox.objectName()}."
-    assert (
-        combobox.findText("I0-net_current") == -1
-    ), f"I0-net_current signal should not be in {combobox.objectName()}."
-    time_combobox = view.ui.time_signal_combobox
-    assert (
-        time_combobox.findText("ge_8element") == -1
-    ), f"ge_8element signal should not be in {combobox.objectName()}."
-    assert (
-        time_combobox.findText("I0-net_current") > -1
-    ), f"I0-net_current signal not in {combobox.objectName()}."
-    assert (
-        time_combobox.findText("I0-net_counts") > -1
-    ), f"I0-net_counts signal not in {combobox.objectName()}."
+    assert isinstance(view.ui.frame_view, ImageView)
 
 
 def test_update_dimension_widgets(view):
@@ -171,42 +107,11 @@ def test_reduce_dimensions_2d(view):
     assert new_data.shape == (8, 51)
 
 
-def test_time_signal(view):
-    """Check that the correct time signal gets provided to the plotting widgets."""
-    # Set up
-    df = pd.DataFrame(
-        {
-            "I0-net_current": np.linspace(0, 100, num=5),
-        }
+def test_plot(view):
+    ds = xr.DataArray(
+        np.random.rand(16, 8, 4),
+        coords={"frame": range(16), "row": range(8), "column": range(4)},
     )
-    view.stash_data_frames({"": df})
-    view.ui.time_signal_combobox.addItem("I0-net_current")
-    view.ui.time_signal_combobox.setCurrentText("I0-net_current")
-    plot_mock = MagicMock()
-    view.ui.frame_view.setImage = plot_mock
-    # Code under test
-    view.plot_datasets({"": np.ones(shape=(5, 10, 15))})
-    # Asserts
-    assert plot_mock.called
-    xvals = plot_mock.call_args[1]["xvals"]
-    np.testing.assert_array_equal(xvals, df["I0-net_current"].values)
-
-
-def test_time_signal_shape_mismatch(view):
-    """What happens if the time signal has a different shape from the dataset?"""
-    df = pd.DataFrame(
-        {
-            "I0-net_current": np.linspace(0, 100, num=5),
-        }
-    )
-    view.stash_data_frames({"": df})
-    view.ui.time_signal_combobox.addItem("I0-net_current")
-    view.ui.time_signal_combobox.setCurrentText("I0-net_current")
-    plot_mock = MagicMock()
-    view.ui.frame_view.setImage = plot_mock
-    # Code under test
-    view.plot_datasets({"": np.ones(shape=(12, 10, 15))})
-    # Asserts
-    assert plot_mock.called
-    xvals = plot_mock.call_args[1]["xvals"]
-    assert xvals is None
+    view.plot(ds)
+    im_plot = view.ui.frame_view
+    assert np.array_equal(im_plot.image, ds.values)

@@ -238,7 +238,6 @@ class RunBrowserDisplay(display.FireflyDisplay):
         self.ui.stream_combobox.currentTextChanged.connect(self.update_datasets)
         # Connect to signals for individual tabs
         self.metadata_changed.connect(self.ui.metadata_tab.display_metadata)
-        self.metadata_changed.connect(self.ui.lineplot_tab.stash_metadata)
         self.metadata_changed.connect(self.ui.gridplot_tab.set_image_dimensions)
         # Create a new export dialog for saving files
         self.ui.export_button.clicked.connect(self.export_runs)
@@ -464,6 +463,114 @@ class RunBrowserDisplay(display.FireflyDisplay):
             )
         independent_hints, dependent_hints = hints
         return data_keys, set(independent_hints), set(dependent_hints)
+
+    # def axis_labels(self):
+    #     xlabel = self.ui.x_signal_combobox.currentText()
+    #     ylabel = self.ui.y_signal_combobox.currentText()
+    #     rlabel = self.ui.r_signal_combobox.currentText()
+    #     use_reference = self.ui.r_signal_checkbox.checkState()
+    #     inverted = self.ui.invert_checkbox.checkState()
+    #     logarithm = self.ui.logarithm_checkbox.checkState()
+    #     gradient = self.ui.gradient_checkbox.checkState()
+    #     if use_reference and inverted:
+    #         ylabel = f"{rlabel}/{ylabel}"
+    #     elif use_reference:
+    #         ylabel = f"{ylabel}/{rlabel}"
+    #     elif inverted:
+    #         ylabel = f"1/{ylabel}"
+    #     if logarithm:
+    #         ylabel = f"ln({ylabel})"
+    #     if gradient:
+    #         ylabel = f"grad({ylabel})"
+    #     return xlabel, ylabel
+
+    # def label_from_metadata(self, start_doc: Mapping) -> str:
+    #     # Determine label from metadata
+    #     uid = start_doc.get("uid", "")
+    #     sample_name = start_doc.get("sample_name")
+    #     scan_name = start_doc.get("scan_name")
+    #     sample_formula = start_doc.get("sample_formula")
+    #     if sample_name is not None and sample_formula is not None:
+    #         sample_name = f"{sample_name} ({sample_formula})"
+    #     elif sample_formula is not None:
+    #         sample_name = sample_formula
+    #     md_values = [val for val in [sample_name, scan_name] if val is not None]
+    #     # Use the full UID unless we have something else to show
+    #     if len(md_values) > 0:
+    #         uid = uid.split("-")[0]
+    #     # Build the label
+    #     label = " — ".join([uid, *md_values])
+    #     if start_doc.get("is_standard", False):
+    #         label = f"{label} ★"
+    #     return label
+
+    ### From lineplot_view
+    # def prepare_plotting_data(self, df: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
+    #     xsignal = self.ui.x_signal_combobox.currentText()
+    #     ysignal = self.ui.y_signal_combobox.currentText()
+    #     rsignal = self.ui.r_signal_combobox.currentText()
+    #     # Get data from dataframe
+    #     xdata = df[xsignal].values
+    #     ydata = df[ysignal].values
+    #     rdata = df[rsignal].values
+    #     # Apply corrections
+    #     if self.ui.r_signal_checkbox.checkState():
+    #         ydata = ydata / rdata
+    #     if self.ui.invert_checkbox.checkState():
+    #         ydata = 1 / ydata
+    #     if self.ui.logarithm_checkbox.checkState():
+    #         ydata = np.log(ydata)
+    #     if self.ui.gradient_checkbox.checkState():
+    #         ydata = np.gradient(ydata, xdata)
+    #     return (xdata, ydata)
+
+    ### From gridplot_view
+    # def prepare_plotting_data(self, df: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
+    #     """Prepare independent and dependent datasets from this
+    #     dataframe and UI state.
+
+    #     Based on the state of various UI widgets, the image data may
+    #     be reference-corrected or inverted and be converted to its
+    #     natural-log or gradeient. Additionally, the images may be
+    #     re-gridded: interpolated to match the readback values of a
+    #     independent, scanned axis (e.g. motor position).
+
+    #     Parameters
+    #     ==========
+    #     df
+    #       The dataframe from which to pull data.
+
+    #     Returns
+    #     =======
+    #     img
+    #       The 2D or 3D image data to plot in (slice, row, col) order.
+
+    #     """
+    #     xsignal = self.ui.regrid_xsignal_combobox.currentText()
+    #     ysignal = self.ui.regrid_ysignal_combobox.currentText()
+    #     vsignal = self.ui.value_signal_combobox.currentText()
+    #     rsignal = self.ui.r_signal_combobox.currentText()
+    #     # Get data from dataframe
+    #     values = df[vsignal]
+    #     # Make the grid linear based on measured motor positions
+    #     if self.ui.regrid_checkbox.checkState():
+    #         xdata = df[xsignal]
+    #         ydata = df[ysignal]
+    #         values = self.regrid(points=np.c_[ydata, xdata], values=values)
+    #     # Apply scaler filters
+    #     if self.ui.r_signal_checkbox.checkState():
+    #         values = values / df[rsignal]
+    #     if self.ui.invert_checkbox.checkState():
+    #         values = 1 / values
+    #     if self.ui.logarithm_checkbox.checkState():
+    #         values = np.log(values)
+    #     # Reshape to an image
+    #     img = np.reshape(values, self.shape)
+    #     # Apply gradient filter
+    #     if self.ui.gradient_checkbox.checkState():
+    #         img = np.gradient(img)
+    #         img = np.linalg.norm(img, axis=0)
+    #     return img
 
     @asyncSlot()
     @cancellable

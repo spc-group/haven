@@ -3,8 +3,8 @@ from pathlib import Path
 from typing import Mapping, Sequence
 
 import numpy as np
-import pandas as pd
 import pyqtgraph
+import xarray as xr
 from matplotlib.colors import TABLEAU_COLORS
 from pyqtgraph import ImageView, PlotItem
 from qtpy import QtWidgets, uic
@@ -121,53 +121,6 @@ class GridplotView(QtWidgets.QWidget):
         self.ui.value_signal_combobox.setCurrentText(new_value)
         self.ui.r_signal_combobox.setCurrentText(new_r)
 
-    def prepare_plotting_data(self, df: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
-        """Prepare independent and dependent datasets from this
-        dataframe and UI state.
-
-        Based on the state of various UI widgets, the image data may
-        be reference-corrected or inverted and be converted to its
-        natural-log or gradeient. Additionally, the images may be
-        re-gridded: interpolated to match the readback values of a
-        independent, scanned axis (e.g. motor position).
-
-        Parameters
-        ==========
-        df
-          The dataframe from which to pull data.
-
-        Returns
-        =======
-        img
-          The 2D or 3D image data to plot in (slice, row, col) order.
-
-        """
-        xsignal = self.ui.regrid_xsignal_combobox.currentText()
-        ysignal = self.ui.regrid_ysignal_combobox.currentText()
-        vsignal = self.ui.value_signal_combobox.currentText()
-        rsignal = self.ui.r_signal_combobox.currentText()
-        # Get data from dataframe
-        values = df[vsignal]
-        # Make the grid linear based on measured motor positions
-        if self.ui.regrid_checkbox.checkState():
-            xdata = df[xsignal]
-            ydata = df[ysignal]
-            values = self.regrid(points=np.c_[ydata, xdata], values=values)
-        # Apply scaler filters
-        if self.ui.r_signal_checkbox.checkState():
-            values = values / df[rsignal]
-        if self.ui.invert_checkbox.checkState():
-            values = 1 / values
-        if self.ui.logarithm_checkbox.checkState():
-            values = np.log(values)
-        # Reshape to an image
-        img = np.reshape(values, self.shape)
-        # Apply gradient filter
-        if self.ui.gradient_checkbox.checkState():
-            img = np.gradient(img)
-            img = np.linalg.norm(img, axis=0)
-        return img
-
     def regrid(self, points: np.ndarray, values: np.ndarray):
         """Calculate a new image with a shape based on metadata."""
         # Prepare new regular grid to interpolate to
@@ -181,35 +134,19 @@ class GridplotView(QtWidgets.QWidget):
 
     @Slot()
     @Slot(dict)
-    def plot(self, dataframes: Mapping | None = None):
+    def plot(self, dataset: xr.DataArray):
         """Take loaded run data and plot it.
 
         Parameters
         ==========
-        dataframes
-          Dictionary with pandas series for each run with run UIDs for
-          keys.
-
+        dataframe
+          The gridded data array to plot. Data should be a 2D array.
         """
-        return
         self.clear_plot()
-        if dataframes is not None:
-            self.dataframes = dataframes
-        # Prepare data to plot
-        if len(self.dataframes) != 1:
-            log.info(f"Cannot plot {len(self.dataframes)} maps.")
-            return
-        df = list(self.dataframes.values())[0]
-        try:
-            img = self.prepare_plotting_data(df)
-        except (KeyError, ValueError) as exc:
-            log.warning(f"Could not plot map of signal {exc}.")
-            return
         # Plot this run's data
-        if not (2 <= img.ndim <= 3):
-            log.warning(f"Cannot plot image with {img.ndim} dimensions.")
-        img = np.reshape(img, self.shape)
-        self.ui.plot_widget.setImage(img, autoRange=False)
+        if not (2 <= dataset.ndim <= 3):
+            log.warning(f"Cannot plot image with {dataset.ndim} dimensions.")
+        self.ui.plot_widget.setImage(dataset.values, autoRange=False)
         # Set axis labels
         img_item = self.ui.plot_widget.getImageItem()
         try:
@@ -222,7 +159,9 @@ class GridplotView(QtWidgets.QWidget):
             view = self.ui.plot_widget.view
             view.setLabels(left=ylabel, bottom=xlabel)
         # Set axes extent
-        (ymin, ymax), (xmin, xmax) = self.extent
+        ycoords, xcoords = dataset.coords.values()
+        xmin, xmax = np.min(xcoords.values), np.max(xcoords.values)
+        ymin, ymax = np.min(ycoords.values), np.max(ycoords.values)
         x = xmin
         y = ymin
         w = xmax - xmin

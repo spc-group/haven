@@ -87,7 +87,7 @@ async def test_data_frames(worker, tiled_client):
         "85573831-f4b4-4f64-b613-a6007bf03a8d",
         "7d1daf1d-60c7-4aa7-a668-d1cd97e5335f",
     ]
-    data_frames = await worker.data_frames(uids, "primary")
+    data_frames = await worker.dataframes(uids, "primary")
     # Check the results
     assert isinstance(data_frames["85573831-f4b4-4f64-b613-a6007bf03a8d"], pd.DataFrame)
 
