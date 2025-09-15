@@ -15,3 +15,6 @@ class SpectraView(QtWidgets.QWidget):
 
     def plot(self, *args, **kwargs):
         log.exception(NotImplementedError())
+
+    def clear(self):
+        pass

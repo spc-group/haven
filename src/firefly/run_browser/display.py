@@ -1,5 +1,6 @@
 import asyncio
 import datetime as dt
+import enum
 import logging
 from collections import Counter
 from contextlib import contextmanager
@@ -7,12 +8,13 @@ from functools import wraps
 from typing import Mapping, Optional, Sequence
 
 import httpx
+import numpy as np
 import pandas as pd
 import qtawesome as qta
 import xarray as xr
 from pydm import PyDMChannel
 from qasync import asyncSlot
-from qtpy.QtCore import QDateTime, Qt, Signal
+from qtpy.QtCore import QDateTime, Qt
 from qtpy.QtGui import QStandardItem, QStandardItemModel
 from qtpy.QtWidgets import QErrorMessage
 from tiled.client import from_profile_async
@@ -52,22 +54,25 @@ class RunBrowserDisplay(display.FireflyDisplay):
         "Datetime",
         "UID",
     ]
-    _multiplot_items = {}
 
-    selected_runs: list
     _running_db_tasks: Mapping
 
     proposal_channel: PyDMChannel
     esaf_channel: PyDMChannel
-    # (data keys, experiment hints, signal hints)
-    data_changed = Signal(dict)
-    metadata_changed = Signal(dict)
-    datasets_changed = Signal(dict)
 
     export_dialog: Optional[ExportDialog] = None
 
     # Counter for keeping track of UI hints for long DB hits
     _busy_hinters: Counter
+
+    class Tabs(enum.IntEnum):
+        METADATA = 0
+        MULTIPLOT = 1
+        LINE = 2
+        GRID = 3
+        FRAMES = 4
+        SPECTRA = 5
+        VOLUME = 6
 
     def __init__(self, args=None, macros=None, **kwargs):
         super().__init__(args=args, macros=macros, **kwargs)
@@ -216,7 +221,11 @@ class RunBrowserDisplay(display.FireflyDisplay):
         self.load_models()
         self.load_profiles()
         # Setup controls for select which run to show
-        for slot in [self.update_streams, self.update_plots, self.update_export_button]:
+        for slot in [
+            self.update_streams,
+            self.update_all_views,
+            self.update_export_button,
+        ]:
             # self.ui.run_tableview.selectionModel().selectionChanged.connect(slot)
             self.ui.runs_model.dataChanged.connect(slot)
         self.ui.refresh_runs_button.setIcon(qta.icon("fa6s.arrows-rotate"))
@@ -233,27 +242,26 @@ class RunBrowserDisplay(display.FireflyDisplay):
             self.update_bss_widgets,
         )
         # Respond to controls for the current run
-        self.ui.reload_plots_button.clicked.connect(self.update_plots)
+        self.ui.reload_plots_button.clicked.connect(self.update_all_views)
         self.ui.stream_combobox.currentTextChanged.connect(self.update_signal_widgets)
-        self.ui.stream_combobox.currentTextChanged.connect(self.update_datasets)
-        # Connect to signals for individual tabs
-        self.metadata_changed.connect(self.ui.metadata_tab.display_metadata)
-        self.metadata_changed.connect(self.ui.gridplot_tab.set_image_dimensions)
         # Create a new export dialog for saving files
         self.ui.export_button.clicked.connect(self.export_runs)
         self.export_dialog = ExportDialog(parent=self)
         self.error_dialog = QErrorMessage(parent=self)
         # Respond to signal selection widgets
         self.ui.use_hints_checkbox.stateChanged.connect(self.update_signal_widgets)
-        self.ui.x_signal_combobox.currentTextChanged.connect(self.update_plots)
-        self.ui.y_signal_combobox.currentTextChanged.connect(self.update_plots)
+        self.ui.x_signal_combobox.currentTextChanged.connect(self.update_internal_data)
+        self.ui.x_signal_combobox.currentTextChanged.connect(self.update_selected_data)
+        self.ui.y_signal_combobox.currentTextChanged.connect(self.update_selected_data)
         self.ui.swap_button.setIcon(qta.icon("mdi.swap-horizontal"))
         self.ui.swap_button.clicked.connect(self.swap_signals)
-        self.ui.r_signal_combobox.currentTextChanged.connect(self.update_plots)
-        self.ui.r_signal_checkbox.stateChanged.connect(self.update_plots)
-        self.ui.logarithm_checkbox.stateChanged.connect(self.update_plots)
-        self.ui.invert_checkbox.stateChanged.connect(self.update_plots)
-        self.ui.gradient_checkbox.stateChanged.connect(self.update_plots)
+        self.ui.r_operator_combobox.currentTextChanged.connect(
+            self.update_selected_data
+        )
+        self.ui.r_signal_combobox.currentTextChanged.connect(self.update_selected_data)
+        self.ui.logarithm_checkbox.stateChanged.connect(self.update_selected_data)
+        self.ui.invert_checkbox.stateChanged.connect(self.update_selected_data)
+        self.ui.gradient_checkbox.stateChanged.connect(self.update_selected_data)
 
     def swap_signals(self):
         """Swap the value and reference signals."""
@@ -366,7 +374,7 @@ class RunBrowserDisplay(display.FireflyDisplay):
     @asyncSlot()
     async def update_streams(self, *args):
         """Update the list of available streams to choose from."""
-        stream_names = await self.db.stream_names(self.selected_uids())
+        stream_names = await self.db.stream_names(self.active_uids())
         # Sort so that "primary" is first
         stream_names = sorted(stream_names, key=lambda x: x != "primary")
         self.ui.stream_combobox.clear()
@@ -434,28 +442,29 @@ class RunBrowserDisplay(display.FireflyDisplay):
         """Render metadata for the runs into the metadata widget."""
         # Combine the metadata in a human-readable output
         new_md = await self.db_task(
-            self.db.metadata(uids=self.selected_uids()), "metadata"
+            self.db.metadata(uids=self.active_uids()), "metadata"
         )
-        self.metadata_changed.emit(new_md)
+        self.ui.metadata_tab.display_metadata(new_md)
         return new_md
 
     @asyncSlot()
     @cancellable
-    async def update_plots(self):
+    async def update_all_views(self):
         """Get new data, and update all the plots.
 
         If a *uid* is provided, only the plots matching the scan with
         *uid* will be updated.
         """
-
-        await self.update_metadata()
-        await self.update_datasets()
-        await self.update_internal_dataframes()
+        await asyncio.gather(
+            self.update_metadata(),
+            self.update_internal_data(),
+            self.update_selected_data(),
+        )
 
     async def data_signals(self) -> tuple[dict, set[str], set[str]]:
         """Get valid keys and hints for the selected UIDs."""
         stream = self.ui.stream_combobox.currentText()
-        uids = self.selected_uids()
+        uids = self.active_uids()
         with self.busy_hints(run_widgets=True, run_table=False, filter_widgets=False):
             data_keys, hints = await asyncio.gather(
                 self.db_task(self.db.data_keys(uids, stream), "update data keys"),
@@ -574,10 +583,11 @@ class RunBrowserDisplay(display.FireflyDisplay):
 
     @asyncSlot()
     @cancellable
-    async def update_internal_dataframes(self) -> dict[str, pd.DataFrame]:
+    async def update_internal_data(self) -> dict[str, pd.DataFrame]:
         """Load only signals for the "internal" part of the run, and plot."""
         stream = self.ui.stream_combobox.currentText()
-        uids = self.selected_uids()
+        uids = self.active_uids()
+        x_signal = self.ui.x_signal_combobox.currentText()
         if stream == "":
             dataframes = {}
             log.info("Not loading dataframes for empty stream.")
@@ -585,24 +595,101 @@ class RunBrowserDisplay(display.FireflyDisplay):
             with self.busy_hints(
                 run_widgets=True, run_table=False, filter_widgets=False
             ):
-                # dataframes = await self.db_task(
-                #     self.db.dataframes(uids, stream),
-                #     "update_dataframes"
-                # )
                 dataframes = await self.db.dataframes(uids, stream)
 
-        self.ui.multiplot_tab.plot(dataframes)
+        # Convert to standard format datasets
+        def to_dataset(df):
+            coords = {x_signal: df[x_signal].values}
+            return xr.Dataset(
+                {
+                    col: xr.DataArray(df[col].values, coords=coords)
+                    for col in df.columns
+                    if col != x_signal
+                }
+            )
+
+        datasets = [
+            to_dataset(df) for df in dataframes.values() if x_signal in df.columns
+        ]
+        self.ui.multiplot_tab.plot(datasets)
         return dataframes
+
+    def prepare_1d_dataset(self, datasets: dict[str, xr.Dataset]) -> xr.Dataset:
+        """Convert runs' datasets into a single dataset with coords.
+
+        Data arrays in the set may have the attr *selected* which
+        indicates they should be highlighted somehow.
+
+        """
+        x_signal = self.ui.x_signal_combobox.currentText()
+        y_signal = self.ui.y_signal_combobox.currentText()
+        new_dataset = xr.Dataset(
+            {
+                label: xr.DataArray(
+                    ds[y_signal].values,
+                    coords={x_signal: ds[x_signal].values},
+                    name=y_signal,
+                )
+                for label, ds in datasets.items()
+            },
+            attrs={
+                "coord_label": x_signal,
+                "data_label": y_signal,
+            },
+        )
+        return new_dataset
+
+    def prepare_grid_dataset(
+        self,
+        dataset: xr.Dataset,
+        grid_shape: tuple[int, ...],
+        extent: tuple[float, float, float, float],
+        coord_signals: list[str],
+    ) -> xr.DataArray:
+        """Convert runs' datasets into a single dataset with coords.
+
+        Data arrays in the set may have the attr *selected* which
+        indicates they should be highlighted somehow.
+
+        """
+        y_signal, x_signal = coord_signals
+        coords = {
+            y_signal: np.median(dataset[y_signal].values.reshape(grid_shape), axis=1),
+            x_signal: np.median(dataset[x_signal].values.reshape(grid_shape), axis=0),
+        }
+        v_signal = self.ui.y_signal_combobox.currentText()
+        new_dataset = xr.DataArray(
+            dataset[v_signal].values.reshape(grid_shape),
+            coords=coords,
+            name=y_signal,
+        )
+        return new_dataset
+
+    def prepare_volume_dataset(self, dataset: xr.Dataset) -> xr.DataArray:
+        """Convert run dataset into a new dataset with coords."""
+        x_signal = self.ui.x_signal_combobox.currentText()
+        y_signal = self.ui.y_signal_combobox.currentText()
+        vals = dataset[y_signal].values
+        extra_coords = {
+            f"coord_{idx+1}": np.arange(size) for idx, size in enumerate(vals.shape[1:])
+        }
+        new_array = xr.DataArray(
+            vals,
+            coords={x_signal: dataset[x_signal].values, **extra_coords},
+            name=y_signal,
+        )
+        return new_array
 
     @asyncSlot()
     @cancellable
-    async def update_datasets(self) -> dict[str, xr.Dataset]:
+    async def update_selected_data(self):
+        """Load new data for the selected signals and plot it."""
         stream = self.ui.stream_combobox.currentText()
-        uids = self.selected_uids()
+        selected_uid = self.selected_uid()
+        uids = self.active_uids()
         xsig = self.x_signal_combobox.currentText()
         ysig = self.y_signal_combobox.currentText()
         rsig = self.r_signal_combobox.currentText()
-        print(xsig, ysig, rsig)
         if stream == "":
             datasets = {}
             log.info("Not loading datasets for empty stream.")
@@ -617,15 +704,53 @@ class RunBrowserDisplay(display.FireflyDisplay):
                 datasets = await self.db.datasets(
                     uids, stream, xcolumn=xsig, ycolumn=ysig, rcolumn=rsig
                 )
+        # 1D line plots
+        if len(datasets) > 0:
+            self.ui.detail_tabwidget.setTabEnabled(self.Tabs.LINE, True)
+            line_data = self.prepare_1d_dataset(datasets)
+            self.ui.lineplot_tab.plot(line_data)
+        else:
+            self.ui.detail_tabwidget.setTabEnabled(self.Tabs.LINE, False)
+            self.ui.lineplot_tab.clear()
+        # Grid plot
+        ihints, _ = await self.db_task(self.db.hints(uids, stream), "selected hints")
+        if len(ihints) == 2:
+            self.ui.detail_tabwidget.setTabEnabled(self.Tabs.GRID, True)
+            grid_data = (
+                self.prepare_grid_dataset(datasets[selected_uid])
+                if selected_uid
+                else None
+            )
+            self.ui.gridplot_tab.plot(grid_data)
+        else:
+            self.ui.detail_tabwidget.setTabEnabled(self.Tabs.GRID, False)
+            self.ui.gridplot_tab.clear()
+        # Volume-based data views
+        if selected_uid is not None:
+            volume_data = self.prepare_volume_dataset(datasets[selected_uid])
+            self.ui.detail_tabwidget.setTabEnabled(self.Tabs.FRAMES, True)
+            self.ui.frameset_tab.plot(volume_data)
+            self.ui.detail_tabwidget.setTabEnabled(self.Tabs.SPECTRA, True)
+            self.ui.spectra_tab.plot(volume_data)
+        else:
+            self.ui.detail_tabwidget.setTabEnabled(self.Tabs.FRAMES, False)
+            self.ui.frameset_tab.clear()
+            self.ui.detail_tabwidget.setTabEnabled(self.Tabs.SPECTRA, False)
+            self.ui.spectra_tab.clear()
 
-        print(datasets)
-        self.ui.lineplot_tab.plot(datasets)
-        self.ui.gridplot_tab.plot(datasets)
-        self.ui.frameset_tab.plot(datasets)
-        self.ui.spectra_tab.plot(datasets)
-        return datasets
+    def active_uids(self) -> str:
+        """UIDS of runs that are checked or selected in the run list."""
+        uids = self.checked_uids()
+        if (selected := self.selected_uid()) is not None:
+            uids.add(selected)
+        return uids
 
-    def selected_uids(self) -> set[str]:
+    def selected_uid(self) -> str:
+        """The UID of the run currently selected in the list."""
+        pass
+
+    def checked_uids(self) -> set[str]:
+        """The UIDs of the runs currently checked in the list."""
         # Get UID's from the selection
         uid_col = self._run_col_names.index("UID")
         cbox_col = 0

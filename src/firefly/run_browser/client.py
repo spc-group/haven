@@ -85,6 +85,8 @@ class DatabaseWorker:
         self, uids: Sequence[str], stream: str, xcolumn: str, ycolumn: str, rcolumn: str
     ) -> dict[str, xr.DataArray]:
         """Return data for selected runs as {uid: xarray.Dataset}."""
+        if len(uids) == 0:
+            return {}
         runs = self.runs(uids)
 
         async def get_xarray(run):

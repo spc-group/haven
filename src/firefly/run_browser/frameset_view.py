@@ -173,13 +173,16 @@ class FramesetView(QtWidgets.QWidget):
     def plot(self, array: xr.DataArray):
         """Plot a dataset as a stack of frames."""
         # Start with a clear plot
-        im_plot = self.ui.frame_view
-        im_plot.clear()
+        self.clear()
         # Determine how to plot the time series values
         self.update_dimension_widgets(shape=array.shape)
         tvals = list(array.coords.values())[0]
         # Plot the images
-        im_plot.setImage(array.values, xvals=tvals)
+        self.ui.frame_view.setImage(array.values, xvals=tvals)
+
+    def clear(self):
+        im_plot = self.ui.frame_view
+        im_plot.clear()
 
     def update_dimension_widgets(self, shape: tuple[int]):
         """Update the widgets for setting dimensions to match the

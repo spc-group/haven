@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Mapping, Sequence
+from typing import Sequence
 
 import numpy as np
 import pyqtgraph
@@ -44,7 +44,6 @@ class GridplotView(QtWidgets.QWidget):
         vbox = self.ui.plot_widget.ui.roiPlot.getPlotItem().getViewBox()
         vbox.setBackgroundColor("k")
         # Connect internal signals/slots
-        self.ui.regrid_checkbox.stateChanged.connect(self.update_signal_widgets)
 
     def set_image_dimensions(self, metadata: Sequence):
         if len(metadata) != 1:
@@ -60,66 +59,6 @@ class GridplotView(QtWidgets.QWidget):
             self.shape = ()
             self.extent = ()
             log.warning("Could not determine grid structure.")
-
-    @Slot(dict, set, set)
-    @Slot()
-    def update_signal_widgets(
-        self,
-        data_keys: Mapping | None = None,
-        independent_hints: Sequence | None = None,
-        dependent_hints: Sequence | None = None,
-    ):
-        """Update the UI based on new data keys and hints.
-
-        If any of *data_keys*, *independent_hints* or
-        *dependent_hints* are used, then the last seen values will be
-        used.
-
-        """
-        # Stash inputs for if we need to update later
-        if data_keys is not None:
-            self.data_keys = {
-                key: props
-                for key, props in data_keys.items()
-                if "external" not in props
-            }
-        valid_hints = set(self.data_keys.keys())
-        if independent_hints is not None:
-            self.independent_hints = set(independent_hints) & valid_hints
-        if dependent_hints is not None:
-            self.dependent_hints = set(dependent_hints) & valid_hints
-        # Decide whether we want to use hints
-        use_hints = self.ui.use_hints_checkbox.isChecked()
-        if use_hints:
-            new_xcols = self.independent_hints
-            new_ycols = self.dependent_hints
-        else:
-            new_xcols = list(self.data_keys.keys())
-            new_ycols = list(self.data_keys.keys())
-        # Update the UI
-        comboboxes = [
-            self.ui.regrid_xsignal_combobox,
-            self.ui.regrid_ysignal_combobox,
-            self.ui.value_signal_combobox,
-            self.ui.r_signal_combobox,
-        ]
-        for combobox, new_cols in zip(
-            comboboxes, [new_xcols, new_xcols, new_ycols, new_ycols]
-        ):
-            old_cols = [combobox.itemText(idx) for idx in range(combobox.count())]
-            if old_cols != new_cols:
-                old_value = combobox.currentText()
-                combobox.clear()
-                combobox.addItems(new_cols)
-                if old_value in new_cols:
-                    combobox.setCurrentText(old_value)
-
-    def swap_signals(self):
-        """Swap the value and reference signals."""
-        new_r = self.ui.value_signal_combobox.currentText()
-        new_value = self.ui.r_signal_combobox.currentText()
-        self.ui.value_signal_combobox.setCurrentText(new_value)
-        self.ui.r_signal_combobox.setCurrentText(new_r)
 
     def regrid(self, points: np.ndarray, values: np.ndarray):
         """Calculate a new image with a shape based on metadata."""
@@ -167,6 +106,10 @@ class GridplotView(QtWidgets.QWidget):
         w = xmax - xmin
         h = ymax - ymin
         img_item.setRect(x, y, w, h)
+
+    def clear(self):
+        """Reset the page to look blank."""
+        self.clear_plot()
 
     def clear_plot(self):
         self.ui.plot_widget.getImageItem().clear()

@@ -15,11 +15,14 @@ def view(qtbot):
 
 
 # Set up fake data
-dataset = xr.DataArray(
-    data=np.linspace(101, 200, num=101),
-    coords={"energy_energy": np.linspace(8333, 8533, num=101)},
+dataset = xr.Dataset(
+    {
+        "7d1daf1d-60c7-4aa7-a668-d1cd97e5335f": xr.DataArray(
+            data=np.linspace(101, 200, num=101),
+            coords={"energy_energy": np.linspace(8333, 8533, num=101)},
+        )
+    }
 )
-datasets = {"7d1daf1d-60c7-4aa7-a668-d1cd97e5335f": dataset}
 
 
 def test_load_ui(view):
@@ -34,13 +37,13 @@ def test_symbol_options(view):
 
 def test_change_symbol(view):
     """For now just make sure it doesn't raise exceptions."""
-    view.plot(datasets)
+    view.plot(dataset)
     view.change_symbol()
 
 
-def test_update_plot(view):
+def test_plot(view):
     # Update the plots
-    view.plot(datasets)
+    view.plot(dataset)
     # Check the data were plotted
     plot_item = view.ui.plot_widget.getPlotItem()
     assert len(plot_item.dataItems) == 1

@@ -4,9 +4,10 @@ from contextlib import contextmanager
 from pathlib import Path
 from unittest.mock import AsyncMock
 
-import pandas as pd
+import numpy as np
 import pytest
 import time_machine
+import xarray as xr
 from ophyd.sim import instantiate_fake_device
 from qtpy.QtWidgets import QFileDialog
 
@@ -101,24 +102,25 @@ async def test_load_runs(display):
     assert display.ui.runs_total_label.text() == str(display.runs_model.rowCount())
 
 
-async def test_selected_uids(display):
+async def test_active_uids(display):
     await display.load_runs()
     # No rows at first
-    assert display.selected_uids() == set()
+    assert display.active_uids() == set()
     # Check a row
     row, col = (0, 0)
-    display.ui.runs_model.item(0, 0).setCheckState(True)
+    display.ui.runs_model.item(row, col).setCheckState(True)
     # Now there are some selected rows
-    assert len(display.selected_uids()) == 1
+    assert len(display.active_uids()) == 1
 
 
 async def test_metadata(display, qtbot, mocker):
-    display.selected_uids = mocker.MagicMock(
+    display.ui.metadata_tab.display_metadata = mocker.MagicMock()
+    display.active_uids = mocker.MagicMock(
         return_value={"85573831-f4b4-4f64-b613-a6007bf03a8d"}
     )
-    with qtbot.wait_signal(display.metadata_changed):
-        new_md = await display.update_metadata()
+    new_md = await display.update_metadata()
     assert "85573831-f4b4-4f64-b613-a6007bf03a8d" in new_md
+    assert display.ui.metadata_tab.display_metadata.called
 
 
 def test_busy_hints_run_widgets(display):
@@ -297,26 +299,28 @@ def test_time_filters(display):
     assert "before" in filters
 
 
-async def test_update_internal_dataframes(display, qtbot, mocker):
-    display.selected_uids = mocker.MagicMock(
+async def test_update_internal_data(display, qtbot, mocker):
+    display.active_uids = mocker.MagicMock(
         return_value={"85573831-f4b4-4f64-b613-a6007bf03a8d"}
     )
     with block_signals(display.ui.stream_combobox, display.ui.x_signal_combobox):
         display.ui.stream_combobox.addItem("primary")
-        display.ui.x_signal_combobox.addItem("mono-energy")
+        display.ui.x_signal_combobox.addItem("x")
     display.ui.multiplot_tab.plot = mocker.MagicMock()
-    await display.update_internal_dataframes()
+    await display.update_internal_data()
     # Check that the plotting routines were called correctly
     assert display.ui.multiplot_tab.plot.called
     args, kwargs = display.ui.multiplot_tab.plot.call_args
-    dfs = args[0]
-    assert len(dfs) == 1
-    df = dfs["85573831-f4b4-4f64-b613-a6007bf03a8d"]
-    assert isinstance(df, pd.DataFrame)
+    datasets = args[0]
+    assert len(datasets) == 1
+    ds = datasets[0]
+    assert isinstance(ds, xr.Dataset)
+    assert "x" in ds.coords
 
 
-async def test_update_datasets(display, qtbot, mocker):
-    display.selected_uids = mocker.MagicMock(return_value={"xarray_run"})
+async def test_update_selected_data(display, qtbot, mocker):
+    display.active_uids = mocker.MagicMock(return_value={"xarray_run"})
+    display.selected_uid = mocker.MagicMock(return_value="xarray_run")
     with block_signals(
         display.ui.stream_combobox,
         display.ui.x_signal_combobox,
@@ -332,19 +336,38 @@ async def test_update_datasets(display, qtbot, mocker):
     display.ui.gridplot_tab.plot = mocker.MagicMock()
     display.ui.frameset_tab.plot = mocker.MagicMock()
     display.ui.spectra_tab.plot = mocker.MagicMock()
-    await display.update_datasets()
+    await display.update_selected_data()
     assert display.ui.lineplot_tab.plot.called
     args, kwargs = display.ui.lineplot_tab.plot.call_args
-    datasets = args[0]
-    assert len(datasets) == 1
-    ds = datasets["xarray_run"]
-    assert "mono-energy" in ds
-    assert "It-net_count" in ds
-    assert "I0-net_count" in ds
+    dataset = args[0]
+    assert isinstance(dataset, xr.Dataset)
+    arr = dataset["xarray_run"]
+    assert "mono-energy" in arr.coords
+    assert dataset.attrs["data_label"] == "It-net_count"
     # Check that the other view plot methods were called
-    assert display.ui.gridplot_tab.plot.called
+    # assert display.ui.gridplot_tab.plot.called  # Disabled until we can write data
     assert display.ui.frameset_tab.plot.called
     assert display.ui.spectra_tab.plot.called
+
+
+async def test_update_no_data_selected(display, qtbot, mocker):
+    display.active_uids = mocker.MagicMock(return_value={})
+    display.selected_uid = mocker.MagicMock(return_value=None)
+    # Check that the clients got called
+    display.ui.lineplot_tab.plot = mocker.MagicMock()
+    display.ui.gridplot_tab.plot = mocker.MagicMock()
+    display.ui.frameset_tab.plot = mocker.MagicMock()
+    display.ui.spectra_tab.plot = mocker.MagicMock()
+    await display.update_selected_data()
+    # All the tab views should be disabled
+    assert not display.ui.lineplot_tab.plot.called
+    assert not display.ui.detail_tabwidget.isTabEnabled(display.Tabs.LINE)
+    assert not display.ui.gridplot_tab.plot.called
+    assert not display.ui.detail_tabwidget.isTabEnabled(display.Tabs.GRID)
+    assert not display.ui.frameset_tab.plot.called
+    assert not display.ui.detail_tabwidget.isTabEnabled(display.Tabs.FRAMES)
+    assert not display.ui.spectra_tab.plot.called
+    assert not display.ui.detail_tabwidget.isTabEnabled(display.Tabs.SPECTRA)
 
 
 async def test_profile_choices(display):
@@ -354,7 +377,7 @@ async def test_profile_choices(display):
 
 
 async def test_stream_choices(display, mocker):
-    display.selected_uids = mocker.MagicMock(
+    display.active_uids = mocker.MagicMock(
         return_value={"85573831-f4b4-4f64-b613-a6007bf03a8d"}
     )
     await display.update_streams()
@@ -375,7 +398,7 @@ async def test_signal_options(display, mocker):
     haven-dev catalog.
 
     """
-    display.selected_uids = mocker.MagicMock(
+    display.active_uids = mocker.MagicMock(
         return_value={"85573831-f4b4-4f64-b613-a6007bf03a8d"}
     )
     with block_signals(display.ui.stream_combobox, display.ui.use_hints_checkbox):
@@ -414,7 +437,7 @@ async def test_hinted_signal_options(display, mocker):
     haven-dev catalog.
 
     """
-    display.selected_uids = mocker.MagicMock(
+    display.active_uids = mocker.MagicMock(
         return_value={"85573831-f4b4-4f64-b613-a6007bf03a8d"}
     )
     with block_signals(display.ui.stream_combobox, display.ui.use_hints_checkbox):
@@ -446,9 +469,99 @@ async def test_hinted_signal_options(display, mocker):
     assert signals == expected_signals
 
 
-@pytest.mark.xfail
-def test_prepare_plotting_data():
-    assert False
+def test_prepare_1d_data(display):
+    with block_signals(display.ui.x_signal_combobox, display.ui.y_signal_combobox):
+        display.ui.x_signal_combobox.addItem("mono-energy")
+        display.ui.y_signal_combobox.addItem("I0-net_count")
+    data = {
+        "run1": xr.Dataset(
+            {
+                "I0-net_count": np.linspace(9658, 10334, num=51),
+                "mono-energy": np.linspace(8325, 8355, num=51),
+            }
+        ),
+        "run2": xr.Dataset(
+            {
+                "I0-net_count": np.linspace(9723, 10354, num=51),
+                "mono-energy": np.linspace(8325.1, 8354.9, num=51),
+            }
+        ),
+    }
+    new_data = display.prepare_1d_dataset(data)
+    expected = xr.Dataset(
+        {
+            "run1": xr.DataArray(
+                np.linspace(9658, 10334, num=51),
+                coords={"mono-energy": np.linspace(8325, 8355, num=51)},
+            ),
+            "run2": xr.DataArray(
+                np.linspace(9723, 10354, num=51),
+                coords={"mono-energy": np.linspace(8325.1, 8354.9, num=51)},
+            ),
+        }
+    )
+    assert new_data.equals(expected)
+    assert new_data.attrs["data_label"] == "I0-net_count"
+    assert new_data.attrs["coord_label"] == "mono-energy"
+
+
+def test_prepare_grid_data(display):
+    with block_signals(display.ui.x_signal_combobox, display.ui.y_signal_combobox):
+        display.ui.x_signal_combobox.addItem("mono-energy")
+        display.ui.y_signal_combobox.addItem("I0-net_count")
+    grid_shape = (15, 11)
+    yy, xx = np.mgrid[:15, :11]
+    data = xr.Dataset(
+        {
+            "I0-net_count": np.linspace(9658, 10334, num=np.prod(grid_shape)),
+            "aerotech-vert": yy.flatten(),
+            "aerotech-horiz": xx.flatten(),
+        },
+    )
+    # Create the new dataset
+    new_data = display.prepare_grid_dataset(
+        data,
+        grid_shape=grid_shape,
+        extent=[],
+        coord_signals=["aerotech-vert", "aerotech-horiz"],
+    )
+    # Verify the new dataset
+    expected = xr.DataArray(
+        np.linspace(9658, 10334, num=np.prod(grid_shape)).reshape(grid_shape),
+        coords={
+            "aerotech-vert": np.arange(15),
+            "aerotech-horiz": np.arange(11),
+        },
+    )
+    assert new_data.equals(expected)
+
+
+def test_prepare_volume_data(display):
+    with block_signals(display.ui.x_signal_combobox, display.ui.y_signal_combobox):
+        display.ui.x_signal_combobox.addItem("mono-energy")
+        display.ui.y_signal_combobox.addItem("vortex")
+    shape = (16, 8, 4)
+    data = xr.Dataset(
+        {
+            "vortex": xr.DataArray(
+                np.linspace(0, 100, num=np.prod(shape)).reshape(shape)
+            ),
+            "mono-energy": np.linspace(8325, 8355, num=16),
+        },
+    )
+    # Create the new dataset
+    new_data = display.prepare_volume_dataset(data)
+    # Verify the new dataset
+    expected = xr.DataArray(
+        data.vortex.values,
+        coords={
+            "mono-energy": data["mono-energy"],
+            "coord_1": range(8),
+            "coord_2": range(4),
+        },
+        name="vortex",
+    )
+    assert new_data.equals(expected)
 
 
 @pytest.mark.xfail
@@ -456,13 +569,17 @@ def test_label_from_metadata():
     assert False
 
 
-@pytest.mark.xfail
-def test_swap_signals(view, qtbot):
-    assert view.ui.y_signal_combobox.currentText() == "It-net_current"
-    assert view.ui.r_signal_combobox.currentText() == "I0-net_current"
-    view.swap_signals()
-    assert view.ui.y_signal_combobox.currentText() == "I0-net_current"
-    assert view.ui.r_signal_combobox.currentText() == "It-net_current"
+def test_swap_signals(display):
+    signal_names = ["It-net_current", "I0-net_current"]
+    with block_signals(display.ui.y_signal_combobox, display.ui.r_signal_combobox):
+        display.ui.y_signal_combobox.addItems(signal_names)
+        display.ui.y_signal_combobox.setCurrentText(signal_names[0])
+        display.ui.r_signal_combobox.addItems(signal_names)
+        display.ui.r_signal_combobox.setCurrentText(signal_names[1])
+        display.swap_signals()
+    # Make sure the signals were actually swapped
+    assert display.ui.y_signal_combobox.currentText() == signal_names[1]
+    assert display.ui.r_signal_combobox.currentText() == signal_names[0]
 
 
 @pytest.mark.xfail

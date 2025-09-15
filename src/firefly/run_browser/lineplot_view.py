@@ -153,6 +153,9 @@ class LineplotView(QtWidgets.QWidget):
     def auto_range(self):
         self.plot_widget.autoRange(items=self.data_items.values())
 
+    def clear(self):
+        self.clear_plot()
+
     def clear_plot(self):
         self.ui.plot_widget.getPlotItem().clear()
         if self.cursor_line is not None:

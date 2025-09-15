@@ -1,6 +1,6 @@
 import numpy as np
-import pandas as pd
 import pytest
+import xarray as xr
 from pyqtgraph import GraphicsLayoutWidget
 
 from firefly.run_browser.multiplot_view import MultiplotView
@@ -42,18 +42,17 @@ def test_load_ui(view):
 
 
 def test_update_plot(view):
-    df = pd.DataFrame(
+    coords = {"energy_energy": np.linspace(8330, 8500, num=101)}
+    dataset = xr.Dataset(
         {
-            "energy_energy": np.linspace(8330, 8500, num=101),
-            "I0": np.sin(np.linspace(0, 6.28, num=101)),
-        }
+            "I0": xr.DataArray(np.sin(np.linspace(0, 6.28, num=101)), coords=coords),
+        },
     )
-    dataframes = {"7d1daf1d-60c7-4aa7-a668-d1cd97e5335f": df}
     # Update the plots
-    view.plot(dataframes, xsignal="energy_energy")
+    view.plot([dataset])
     # Check that the data were added
     assert len(view._multiplot_items) == 1
     data_item = view._multiplot_items[(0, 0)].listDataItems()[0]
     xdata, ydata = data_item.getData()
-    np.testing.assert_almost_equal(xdata, df["energy_energy"])
-    np.testing.assert_almost_equal(ydata, df["I0"])
+    np.testing.assert_almost_equal(xdata, coords["energy_energy"])
+    np.testing.assert_almost_equal(ydata, dataset["I0"].values)

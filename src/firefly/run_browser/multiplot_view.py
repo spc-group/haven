@@ -1,11 +1,10 @@
 import logging
-from collections.abc import Generator, Mapping
+from collections.abc import Generator, Mapping, Sequence
 from itertools import count
 from pathlib import Path
 from typing import Any
 
-import pandas as pd
-from pandas.api.types import is_numeric_dtype
+import xarray as xr
 from pyqtgraph.graphicsItems import PlotItem
 from qtpy import QtWidgets, uic
 from qtpy.QtCore import Slot
@@ -21,9 +20,9 @@ class MultiplotView(QtWidgets.QWidget):
         super().__init__(parent)
         self.ui = uic.loadUi(self.ui_file, self)
 
-    @Slot(dict)
+    @Slot(list)
     @Slot()
-    def plot(self, dataframes: Mapping[str, pd.DataFrame], xsignal: str) -> None:
+    def plot(self, datasets: Sequence[xr.Dataset]) -> None:
         """Take loaded run data and plot small multiples.
 
         Parameters
@@ -36,31 +35,39 @@ class MultiplotView(QtWidgets.QWidget):
           plotted on the vertical axis.
 
         """
-        all_signals = {col for df in dataframes.values() for col in df.columns}
-        ysignals = [sig for sig in all_signals if sig != xsignal]
+        ysignals = [sig for ds in datasets for sig in ds.keys()]
         ysignals = sorted(ysignals, key=str.lower)
         # Plot the runs
         self.clear_plot()
-        for label, data in dataframes.items():
-            # Figure out which signals to plot
-            if xsignal in data.columns:
-                xdata = data[xsignal].values
-            else:
-                # Could not find x signal, so use the index instead
-                log.warning(
-                    f"Cannot plot x='{xsignal}' for {list(data.keys())}. Falling back to index."
-                )
-                xdata = data.index
-            # Plot each y signal on a separate plot
-            for ysignal, plot_item in zip(ysignals, self.multiplot_items()):
-                plot_item.setTitle(ysignal)
-                if ysignal not in data.columns:
-                    log.debug(f"No signal {ysignal} in data.")
+        for ysignal, plot_item in zip(ysignals, self.multiplot_items()):
+            plot_item.setTitle(ysignal)
+            for data in datasets:
+                if ysignal not in data:
                     continue
-                ydata = data[ysignal].values
-                if is_numeric_dtype(ydata):
-                    plot_item.plot(xdata, ydata)
-                log.debug(f"Plotted {ysignal} vs. {xsignal} for {label}")
+                arr = data[ysignal]
+                xdata = list(arr.coords.values())[0]
+                plot_item.plot(xdata, arr.values)
+
+        # for label, data in dataframes.items():
+        #     # Figure out which signals to plot
+        #     if xsignal in data.columns:
+        #         xdata = data[xsignal].values
+        #     else:
+        #         # Could not find x signal, so use the index instead
+        #         log.warning(
+        #             f"Cannot plot x='{xsignal}' for {list(data.keys())}. Falling back to index."
+        #         )
+        #         xdata = data.index
+        #     # Plot each y signal on a separate plot
+        #     for ysignal, plot_item in zip(ysignals, self.multiplot_items()):
+        #         plot_item.setTitle(ysignal)
+        #         if ysignal not in data.columns:
+        #             log.debug(f"No signal {ysignal} in data.")
+        #             continue
+        #         ydata = data[ysignal].values
+        #         if is_numeric_dtype(ydata):
+        #             plot_item.plot(xdata, ydata)
+        #         log.debug(f"Plotted {ysignal} vs. {xsignal} for {label}")
 
     def clear_plot(self):
         """Remove all existing multiplot items from the view."""
