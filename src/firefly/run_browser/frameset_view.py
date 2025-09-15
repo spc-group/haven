@@ -9,6 +9,7 @@ import pandas as pd
 import pyqtgraph as pg
 import qtawesome as qta
 import xarray as xr
+from numpy.typing import NDArray
 from qtpy import QtCore, QtWidgets, uic
 
 axes = namedtuple("axes", ("z", "y", "x"))
@@ -178,7 +179,15 @@ class FramesetView(QtWidgets.QWidget):
         self.update_dimension_widgets(shape=array.shape)
         tvals = list(array.coords.values())[0]
         # Plot the images
-        self.ui.frame_view.setImage(array.values, xvals=tvals)
+        self.ui.frame_view.setImage(array.values, xvals=tvals.values)
+
+    def apply_roi(self, arr: NDArray) -> NDArray:
+        im_view = self.ui.frame_view
+        if not im_view.ui.roiBtn.isChecked():
+            return arr
+        roi = im_view.roi
+        new_arr = roi.getArrayRegion(data=arr, img=im_view.imageItem, axes=(1, 2))
+        return new_arr
 
     def clear(self):
         im_plot = self.ui.frame_view

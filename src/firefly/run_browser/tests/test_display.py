@@ -469,39 +469,44 @@ async def test_hinted_signal_options(display, mocker):
     assert signals == expected_signals
 
 
+data_reductions = [
+    # (roi, array, expected)
+    (np.linspace(1003, 1025, num=51), np.linspace(1003, 1025, num=51)),
+    (np.array([[0, 1], [2, 3]]), np.array([1, 5])),
+]
+
+
+@pytest.mark.parametrize("arr,expected", data_reductions)
+def test_reduce_nd_array(display, arr, expected):
+    np.testing.assert_array_equal(display.reduce_nd_array(arr), expected)
+
+
 def test_prepare_1d_data(display):
     with block_signals(display.ui.x_signal_combobox, display.ui.y_signal_combobox):
         display.ui.x_signal_combobox.addItem("mono-energy")
-        display.ui.y_signal_combobox.addItem("I0-net_count")
-    data = {
+        display.ui.y_signal_combobox.addItem("It-net_count")
+        display.ui.r_signal_combobox.addItem("I0-net_count")
+        display.ui.r_operator_combobox.setCurrentText("÷")
+    dataset = {
         "run1": xr.Dataset(
             {
                 "I0-net_count": np.linspace(9658, 10334, num=51),
+                "It-net_count": np.linspace(1003, 1025, num=51),
                 "mono-energy": np.linspace(8325, 8355, num=51),
             }
         ),
-        "run2": xr.Dataset(
-            {
-                "I0-net_count": np.linspace(9723, 10354, num=51),
-                "mono-energy": np.linspace(8325.1, 8354.9, num=51),
-            }
-        ),
     }
-    new_data = display.prepare_1d_dataset(data)
+    new_data = display.prepare_1d_dataset(dataset)
     expected = xr.Dataset(
         {
             "run1": xr.DataArray(
-                np.linspace(9658, 10334, num=51),
+                np.linspace(1003, 1025, num=51) / np.linspace(9658, 10334, num=51),
                 coords={"mono-energy": np.linspace(8325, 8355, num=51)},
-            ),
-            "run2": xr.DataArray(
-                np.linspace(9723, 10354, num=51),
-                coords={"mono-energy": np.linspace(8325.1, 8354.9, num=51)},
             ),
         }
     )
     assert new_data.equals(expected)
-    assert new_data.attrs["data_label"] == "I0-net_count"
+    assert new_data.attrs["data_label"] == "It-net_count ÷ I0-net_count"
     assert new_data.attrs["coord_label"] == "mono-energy"
 
 
@@ -567,6 +572,28 @@ def test_prepare_volume_data(display):
 @pytest.mark.xfail
 def test_label_from_metadata():
     assert False
+
+
+def test_axis_labels(display):
+    with block_signals(
+        display.ui.x_signal_combobox,
+        display.ui.y_signal_combobox,
+        display.ui.r_operator_combobox,
+        display.ui.r_signal_combobox,
+        display.ui.invert_checkbox,
+        display.ui.logarithm_checkbox,
+        display.ui.gradient_checkbox,
+    ):
+        display.ui.x_signal_combobox.addItem("signal_x")
+        display.ui.y_signal_combobox.addItem("signal_y")
+        display.ui.r_signal_combobox.addItem("signal_r")
+        display.ui.r_operator_combobox.setCurrentText("+")
+        display.ui.invert_checkbox.setCheckState(True)
+        display.ui.logarithm_checkbox.setCheckState(True)
+        display.ui.gradient_checkbox.setCheckState(True)
+    x_label, y_label = display.axis_labels()
+    assert x_label == "signal_x"
+    assert y_label == "∇(ln((signal_y + signal_r)⁻))"
 
 
 def test_swap_signals(display):

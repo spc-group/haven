@@ -115,3 +115,20 @@ def test_plot(view):
     view.plot(ds)
     im_plot = view.ui.frame_view
     assert np.array_equal(im_plot.image, ds.values)
+
+
+def test_apply_no_roi(view):
+    """Do we get the array back if no ROI is set?"""
+    arr = np.random.rand(8, 8, 8)
+    view.ui.frame_view.ui.roiBtn.setChecked(False)
+    new_arr = view.apply_roi(arr)
+    assert new_arr is arr
+
+
+def test_apply_roi(view):
+    """Can we read the current ROI from the frameset tab?"""
+    arr = np.random.rand(16, 8, 4)
+    view.ui.frame_view.ui.roiBtn.setChecked(True)
+    new_arr = view.apply_roi(arr)
+    assert new_arr is not arr
+    assert new_arr.shape[0] == 16

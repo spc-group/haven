@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 import qtawesome as qta
 import xarray as xr
+from numpy.typing import NDArray
 from pydm import PyDMChannel
 from qasync import asyncSlot
 from qtpy.QtCore import QDateTime, Qt
@@ -29,6 +30,15 @@ log = logging.getLogger(__name__)
 
 
 DEFAULT_PROFILE = get_default_profile_name()
+
+
+reference_operators = {
+    "": lambda x, y: x,
+    "+": np.add,
+    "−": np.subtract,
+    "×": np.multiply,
+    "÷": np.divide,
+}
 
 
 def cancellable(fn):
@@ -87,6 +97,9 @@ class RunBrowserDisplay(display.FireflyDisplay):
         profile_names = list_profiles().keys()
         self.ui.profile_combobox.addItems(profile_names)
         self.ui.profile_combobox.setCurrentText(DEFAULT_PROFILE)
+
+    def enable_reference_combobox(self, operator: str):
+        self.r_signal_combobox.setEnabled(bool(operator))
 
     @asyncSlot(str)
     @cancellable
@@ -228,6 +241,12 @@ class RunBrowserDisplay(display.FireflyDisplay):
         ]:
             # self.ui.run_tableview.selectionModel().selectionChanged.connect(slot)
             self.ui.runs_model.dataChanged.connect(slot)
+        self.ui.run_tableview.selectionModel().selectionChanged.connect(
+            self.update_streams
+        )
+        self.ui.run_tableview.selectionModel().selectionChanged.connect(
+            self.update_all_views
+        )
         self.ui.refresh_runs_button.setIcon(qta.icon("fa6s.arrows-rotate"))
         self.ui.refresh_runs_button.clicked.connect(self.reload_runs)
         self.ui.reset_filters_button.clicked.connect(self.reset_default_filters)
@@ -255,6 +274,9 @@ class RunBrowserDisplay(display.FireflyDisplay):
         self.ui.y_signal_combobox.currentTextChanged.connect(self.update_selected_data)
         self.ui.swap_button.setIcon(qta.icon("mdi.swap-horizontal"))
         self.ui.swap_button.clicked.connect(self.swap_signals)
+        self.ui.r_operator_combobox.currentTextChanged.connect(
+            self.enable_reference_combobox
+        )
         self.ui.r_operator_combobox.currentTextChanged.connect(
             self.update_selected_data
         )
@@ -374,6 +396,8 @@ class RunBrowserDisplay(display.FireflyDisplay):
     @asyncSlot()
     async def update_streams(self, *args):
         """Update the list of available streams to choose from."""
+        print(self.active_uids())
+        print("#################")
         stream_names = await self.db.stream_names(self.active_uids())
         # Sort so that "primary" is first
         stream_names = sorted(stream_names, key=lambda x: x != "primary")
@@ -473,25 +497,20 @@ class RunBrowserDisplay(display.FireflyDisplay):
         independent_hints, dependent_hints = hints
         return data_keys, set(independent_hints), set(dependent_hints)
 
-    # def axis_labels(self):
-    #     xlabel = self.ui.x_signal_combobox.currentText()
-    #     ylabel = self.ui.y_signal_combobox.currentText()
-    #     rlabel = self.ui.r_signal_combobox.currentText()
-    #     use_reference = self.ui.r_signal_checkbox.checkState()
-    #     inverted = self.ui.invert_checkbox.checkState()
-    #     logarithm = self.ui.logarithm_checkbox.checkState()
-    #     gradient = self.ui.gradient_checkbox.checkState()
-    #     if use_reference and inverted:
-    #         ylabel = f"{rlabel}/{ylabel}"
-    #     elif use_reference:
-    #         ylabel = f"{ylabel}/{rlabel}"
-    #     elif inverted:
-    #         ylabel = f"1/{ylabel}"
-    #     if logarithm:
-    #         ylabel = f"ln({ylabel})"
-    #     if gradient:
-    #         ylabel = f"grad({ylabel})"
-    #     return xlabel, ylabel
+    def axis_labels(self):
+        xlabel = self.ui.x_signal_combobox.currentText()
+        ylabel = self.ui.y_signal_combobox.currentText()
+        rlabel = self.ui.r_signal_combobox.currentText()
+        roperator = self.ui.r_operator_combobox.currentText()
+        if roperator != "":
+            ylabel = f"{ylabel} {roperator} {rlabel}"
+        if self.ui.invert_checkbox.checkState():
+            ylabel = f"({ylabel})⁻"
+        if self.ui.logarithm_checkbox.checkState():
+            ylabel = f"ln({ylabel})"
+        if self.ui.gradient_checkbox.checkState():
+            ylabel = f"∇({ylabel})"
+        return xlabel, ylabel
 
     # def label_from_metadata(self, start_doc: Mapping) -> str:
     #     # Determine label from metadata
@@ -614,6 +633,12 @@ class RunBrowserDisplay(display.FireflyDisplay):
         self.ui.multiplot_tab.plot(datasets)
         return dataframes
 
+    def reduce_nd_array(self, array: NDArray) -> NDArray:
+        """Convert an ND array to a 1D array"""
+        new_array = self.ui.frameset_tab.apply_roi(array)
+        new_array = np.sum(new_array, axis=tuple(range(1, new_array.ndim)))
+        return new_array
+
     def prepare_1d_dataset(self, datasets: dict[str, xr.Dataset]) -> xr.Dataset:
         """Convert runs' datasets into a single dataset with coords.
 
@@ -623,18 +648,23 @@ class RunBrowserDisplay(display.FireflyDisplay):
         """
         x_signal = self.ui.x_signal_combobox.currentText()
         y_signal = self.ui.y_signal_combobox.currentText()
+        apply_reference = reference_operators[self.ui.r_operator_combobox.currentText()]
+        r_signal = self.ui.r_signal_combobox.currentText()
+        x_label, y_label = self.axis_labels()
+        data_vars = {}
+        for label, ds in datasets.items():
+            arr = apply_reference(ds[y_signal].values, ds[r_signal].values)
+            arr = self.reduce_nd_array(arr)
+            data_vars[label] = xr.DataArray(
+                arr,
+                coords={x_signal: ds[x_signal].values},
+                name=y_signal,
+            )
         new_dataset = xr.Dataset(
-            {
-                label: xr.DataArray(
-                    ds[y_signal].values,
-                    coords={x_signal: ds[x_signal].values},
-                    name=y_signal,
-                )
-                for label, ds in datasets.items()
-            },
+            data_vars,
             attrs={
-                "coord_label": x_signal,
-                "data_label": y_signal,
+                "coord_label": x_label,
+                "data_label": y_label,
             },
         )
         return new_dataset
@@ -684,6 +714,9 @@ class RunBrowserDisplay(display.FireflyDisplay):
     @cancellable
     async def update_selected_data(self):
         """Load new data for the selected signals and plot it."""
+        # Clear the plots for better user experience
+        self.ui.lineplot_tab.clear()
+        # Figure out what we're plotting
         stream = self.ui.stream_combobox.currentText()
         selected_uid = self.selected_uid()
         uids = self.active_uids()
@@ -711,7 +744,6 @@ class RunBrowserDisplay(display.FireflyDisplay):
             self.ui.lineplot_tab.plot(line_data)
         else:
             self.ui.detail_tabwidget.setTabEnabled(self.Tabs.LINE, False)
-            self.ui.lineplot_tab.clear()
         # Grid plot
         ihints, _ = await self.db_task(self.db.hints(uids, stream), "selected hints")
         if len(ihints) == 2:
@@ -747,7 +779,12 @@ class RunBrowserDisplay(display.FireflyDisplay):
 
     def selected_uid(self) -> str:
         """The UID of the run currently selected in the list."""
-        pass
+        uid_col = self._run_col_names.index("UID")
+        selected = self.ui.run_tableview.selectedIndexes()
+        if len(selected) == 0:
+            return None
+        uid = selected[0].siblingAtColumn(uid_col).data()
+        return uid
 
     def checked_uids(self) -> set[str]:
         """The UIDs of the runs currently checked in the list."""

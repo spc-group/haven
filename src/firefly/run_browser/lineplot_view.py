@@ -1,9 +1,9 @@
 import logging
 from pathlib import Path
-from typing import Mapping
 
 import numpy as np
 import qtawesome as qta
+import xarray as xr
 from matplotlib.colors import TABLEAU_COLORS
 from pyqtgraph import PlotItem, PlotWidget
 from qtpy import QtWidgets, uic
@@ -118,7 +118,7 @@ class LineplotView(QtWidgets.QWidget):
 
     @Slot()
     @Slot(dict)
-    def plot(self, datasets: Mapping | None = None):
+    def plot(self, dataset: xr.Dataset):
         """Take loaded run data and plot it.
 
         Parameters
@@ -132,7 +132,7 @@ class LineplotView(QtWidgets.QWidget):
         plot_item = self.ui.plot_widget.getPlotItem()
         xlabel, ylabel = "", ""
         # Plot each run's data
-        for idx, (label, ydata) in enumerate(datasets.items()):
+        for idx, (label, ydata) in enumerate(dataset.items()):
             xdata = list(ydata.coords.values())[0]
             color = colors[idx % len(colors)]
             log.debug(f"Adding new plot item for {label}")
@@ -144,8 +144,10 @@ class LineplotView(QtWidgets.QWidget):
                 symbol=self.current_symbol,
                 clear=False,
             )
-            xlabel, ylabel = xdata.name or xlabel, ydata.name or ylabel
         # Axis formatting
+        xlabel, ylabel = dataset.attrs.get("coord_label", ""), dataset.attrs.get(
+            "data_label", ""
+        )
         plot_item.setLabels(left=ylabel, bottom=xlabel)
         if self.ui.autorange_checkbox.checkState():
             self.auto_range()
