@@ -231,8 +231,20 @@ class RunBrowserDisplay(display.FireflyDisplay):
             cb.setCurrentText(old_value)
 
     def customize_ui(self):
+        # self.ui.run_details_layout.setEnabled(False)
         self.load_models()
         self.load_profiles()
+        # Set icons for the tabs
+        self.ui.detail_tabwidget.setTabIcon(self.Tabs.METADATA, qta.icon("fa6s.list"))
+        self.ui.detail_tabwidget.setTabIcon(
+            self.Tabs.MULTIPLOT, qta.icon("fa6s.chart-line")
+        )
+        self.ui.detail_tabwidget.setTabIcon(self.Tabs.LINE, qta.icon("fa6s.chart-line"))
+        self.ui.detail_tabwidget.setTabIcon(
+            self.Tabs.GRID, qta.icon("fa6s.table-cells")
+        )
+        self.ui.detail_tabwidget.setTabIcon(self.Tabs.FRAMES, qta.icon("fa6s.images"))
+        self.ui.detail_tabwidget.setTabIcon(self.Tabs.SPECTRA, qta.icon("fa6s.images"))
         # Setup controls for select which run to show
         for slot in [
             self.update_streams,
@@ -767,8 +779,9 @@ class RunBrowserDisplay(display.FireflyDisplay):
         else:
             self.ui.detail_tabwidget.setTabEnabled(self.Tabs.FRAMES, False)
             self.ui.frameset_tab.clear()
-            self.ui.detail_tabwidget.setTabEnabled(self.Tabs.SPECTRA, False)
             self.ui.spectra_tab.clear()
+        # Always disable until the spectra view is ready
+        self.ui.detail_tabwidget.setTabEnabled(self.Tabs.SPECTRA, False)
 
     def active_uids(self) -> str:
         """UIDS of runs that are checked or selected in the run list."""
