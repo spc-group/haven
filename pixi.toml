@@ -76,6 +76,7 @@ bluesky-queueserver-api = "*"  #  = ">=0.0.12"
 "sphinxcontrib-napoleon" = "*"
 "scipy-stubs" = "*"
 "mypy" = "*"
+pytest-timeout = ">=2.4.0,<3"
 
 [feature.ipython]
 dependencies = {ipython = "*"}

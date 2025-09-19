@@ -193,7 +193,6 @@ class FireflyMainWindow(PyDMMainWindow):
             table_actions=actions.tables,
             robot_actions=actions.robots,
             plan_actions=actions.plans,
-            run_browser_action=actions.run_browser,
             voltmeters_action=actions.voltmeter,
             motor_actions=actions.motors,
             ion_chamber_actions=actions.ion_chambers,
@@ -220,7 +219,6 @@ class FireflyMainWindow(PyDMMainWindow):
         table_actions,
         robot_actions,
         plan_actions,
-        run_browser_action,
         voltmeters_action,
         motor_actions,
         ion_chamber_actions,
@@ -294,10 +292,6 @@ class FireflyMainWindow(PyDMMainWindow):
         # Add actions to the individual plans
         for action in plan_actions.values():
             self.ui.plans_menu.addAction(action)
-        # Add entries for general scan management
-        self.ui.plans_menu.addSeparator()
-        if run_browser_action is not None:
-            self.ui.plans_menu.addAction(run_browser_action)
         # Voltmeters window
         if voltmeters_action is not None:
             self.ui.detectors_menu.addAction(voltmeters_action)
