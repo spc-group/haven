@@ -13,6 +13,7 @@ env:
 
 
 jobs:
+
   linting:
     defaults:
       run:
@@ -36,6 +37,7 @@ jobs:
       run:
         shell: bash -l {0}
     runs-on: ubuntu-latest
+    needs: "linting"
     timeout-minutes: 10
     strategy:
       max-parallel: 5
@@ -52,6 +54,7 @@ jobs:
       run:
         shell: bash -l {0}
     runs-on: ubuntu-latest
+    needs: "linting"
     timeout-minutes: 10
     strategy:
       max-parallel: 5
@@ -69,6 +72,7 @@ jobs:
       run:
         shell: bash -l {0}
     runs-on: ubuntu-latest
+    needs: "linting"
     timeout-minutes: 10
     strategy:
       max-parallel: 5

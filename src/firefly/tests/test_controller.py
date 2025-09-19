@@ -8,6 +8,7 @@ from ophydregistry import Registry
 import firefly
 from firefly.action import WindowAction
 from firefly.controller import FireflyController
+from firefly.main_window import FireflyMainWindow, PlanMainWindow
 from firefly.queue_client import QueueClient
 
 
@@ -95,6 +96,31 @@ def test_prepare_generic_device_windows(controller, tardis, mocker):
     # Check that actions were created
     assert "my_tardis" in actions.keys()
     assert isinstance(actions["my_tardis"], WindowAction)
+
+
+action_targets = {
+    "bss": FireflyMainWindow,
+    "energy": PlanMainWindow,
+    "iocs": FireflyMainWindow,
+    "log": FireflyMainWindow,
+    "status": PlanMainWindow,
+    "voltmeter": PlanMainWindow,
+    "xray_filter": FireflyMainWindow,
+}
+
+
+@pytest.mark.parametrize("action_name,WindowClass", action_targets.items())
+def test_window_actions(controller, qtbot, action_name, WindowClass):
+    action = getattr(controller.actions, action_name)
+    action.blockSignals(True)
+    assert action.window is None
+    try:
+        action.show_window()
+    finally:
+        action.blockSignals(False)
+    window = action.window
+    qtbot.addWidget(window)
+    assert isinstance(window, WindowClass)
 
 
 @pytest.mark.asyncio
