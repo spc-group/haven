@@ -174,6 +174,7 @@ class Xspress3Detector(AreaDetector):
     _ophyd_labels_ = {"detectors", "xrf_detectors"}
     _controller: DetectorController
     _writer: adcore.ADHDFWriter
+    _old_xml_file: str | None = None
 
     detector_trigger: DetectorTrigger = DetectorTrigger.CONSTANT_GATE
 

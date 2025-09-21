@@ -110,6 +110,7 @@ beamline = HavenInstrument(
         "pss_shutter": PssShutter,
         "scaler": devices.MultiChannelScaler,
         "sim_detector": devices.SimDetector,
+        "soft_glue_delay": devices.SoftGlueDelay,
         "table": Table,
         "undulator": devices.PlanarUndulator,
         "vacuum_gauges": make_devices(devices.TelevacIonGauge),

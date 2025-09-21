@@ -164,8 +164,6 @@ class AerotechMotor(Motor):
         start = value.start_position - step_size / 2
         end = value.end_position + step_size / 2
         pulse_positions = np.linspace(start, end, num=num_pulses)
-        # Move to start position
-        move_status = self.set(start)
         # Set up profile parameters
         ixce2_output = 143
         await asyncio.gather(
@@ -202,8 +200,6 @@ class AerotechMotor(Motor):
             raise exceptions.ProfileFailure(
                 f"Profile move build unsuccessful: {status}"
             )
-        # Make sure we've arrived at the start position
-        await move_status
 
     @AsyncStatus.wrap
     async def kickoff(self):
@@ -705,19 +701,7 @@ class ProfileMove(StandardReadable):
 
 
 class AerotechStage(StandardReadable):
-    """An XY stage for an Aerotech stage with fly-scanning capabilities.
-
-    Parameters
-    ==========
-
-    vertical_prefix
-      The prefix for the PV of the vertical motor.
-    horizontal_prefix
-      The prefix to the PV of the horizontal motor.
-    delay_prefix
-      The prefix to the PVs associated with the pulse delay generator
-
-    """
+    """An XY stage for an Aerotech stage with fly-scanning capabilities."""
 
     _ophyd_labels_ = {"stages"}
 

@@ -477,7 +477,6 @@ class IonChamber(StandardReadable, Triggerable):
             "data": data,
             "timestamps": {key: timestamps for key in data.keys()},
         }
-        await self.mcs.erase_all.trigger()
         self._fly_readings: list[dict] = []
         yield results
 
