@@ -73,14 +73,14 @@ async def test_aerotech_signals(aerotech):
 
 
 profile_positions = [
-    # (start, stop, num, expected)
-    (-1000, 1000, 100, np.linspace(-1010, 1010, num=101)),
-    (1000, -1000, 100, np.linspace(1010, -1010, num=101)),
+    # (start, stop, num, expected, direction)
+    (-1000, 1000, 100, np.linspace(-1010, 1010, num=101), "Pos"),
+    (1000, -1000, 100, np.linspace(1010, -1010, num=101), "Neg"),
 ]
 
 
-@pytest.mark.parametrize("start,end,num,expected", profile_positions)
-async def test_prepare(aerotech, start, end, num, expected):
+@pytest.mark.parametrize("start,end,num,expected,direction", profile_positions)
+async def test_prepare(aerotech, start, end, num, expected, direction):
     axis = aerotech.horizontal
     motor_info = FlyMotorInfo(
         start_position=start, end_position=end, time_for_move=120, point_count=num
@@ -109,6 +109,9 @@ async def test_prepare(aerotech, start, end, num, expected):
     )
     get_mock_put(aerotech.profile_move.dwell_time).assert_called_once_with(
         1.2, wait=True
+    )
+    get_mock_put(aerotech.profile_move.pulse_direction).assert_called_once_with(
+        direction, wait=True
     )
     get_mock_put(aerotech.profile_move.move_mode).assert_called_once_with(
         "Absolute", wait=True

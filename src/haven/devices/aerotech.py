@@ -164,6 +164,11 @@ class AerotechMotor(Motor):
         start = value.start_position - step_size / 2
         end = value.end_position + step_size / 2
         pulse_positions = np.linspace(start, end, num=num_pulses)
+        direction = PulseDirection.BOTH
+        if start < end:
+            direction = PulseDirection.POSITIVE
+        elif start > end:
+            direction = PulseDirection.NEGATIVE
         # Set up profile parameters
         ixce2_output = 143
         await asyncio.gather(
@@ -173,6 +178,7 @@ class AerotechMotor(Motor):
             stage.profile_move.pulse_range_end.set(num_pulses),
             stage.profile_move.dwell_time.set(dwell_time),
             stage.profile_move.move_mode.set(MoveMode.ABSOLUTE),
+            stage.profile_move.pulse_direction.set(direction),
             stage.profile_move.axis[self.axis].positions.set(pulse_positions),
             stage.profile_move.pulse_positions.set(pulse_positions),
             # Only enable this axis, disable all others
