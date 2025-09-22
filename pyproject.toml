@@ -21,7 +21,6 @@ dependencies = [
     # To-do: what dependencies do we actually need for e.g. pip install.
 ]
 
-
 [project.urls]
 "Homepage" = "https://haven-spc.readthedocs.io/en/latest/"
 "Bug Tracker" = "https://github.com/spc-group/haven/issues"
@@ -45,6 +44,9 @@ packages = ["src/haven", "src/firefly", "src/haven_qserver"]
 
 [tool.isort]
 profile = "black"
+
+[tool.ruff.lint]
+select = ["E9", "F63", "F7", "F82", "F401"]
 
 [tool.versioneer]
 VCS = "git"
@@ -72,6 +74,7 @@ files = [
     'src/firefly/plans/util.py',
     'src/firefly/plans/xafs_scan.py', 'src/firefly/tests/test_xafs_scan.py',
     'src/haven/run_engine.py', 'src/haven/tests/test_run_engine.py',
+    'src/haven/devices/aerotech.py', "src/haven/tests/test_aerotech.py",
     'src/haven/devices/asymmotron.py', "src/haven/tests/test_asymmotron.py",
     "src/haven/bss.py", "src/haven/tests/test_bss.py",
     'src/haven/devices/blade_slits.py', "src/haven/tests/test_blade_slits.py",
@@ -83,10 +86,8 @@ files = [
     'src/haven/plans/_calibrate.py', 'src/haven/tests/test_calibrate_plan.py',
     'src/haven/plans/_set_energy.py', 'src/haven/tests/test_set_energy.py',
     'src/haven/plans/_xafs_scan.py', 'src/haven/plans/_energy_scan.py', 'src/haven/tests/test_energy_xafs_scan.py',
+    'src/haven/plans/_fly.py', 'src/haven/tests/test_fly_plans.py',
     'src/haven/positioner.py', "src/haven/tests/test_positioner.py",
 ]
 follow_imports = "skip"
 follow_untyped_imports = true
-
-[tool.ruff.lint]
-select = ["E9", "F63", "F7", "F82", "F401"]

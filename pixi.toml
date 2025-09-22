@@ -54,7 +54,8 @@ ophyd = "*"  # =1.10.7",
 apsbits = "*"
 apstools = "*"  # ==1.7.3",
 guarneri = "*"  # ==0.2.0",
-ophyd-async = "==0.10.1"
+ophyd-async = "==0.13.2"
+scanspec = "==1.0a2"
 bluesky-adaptive = "*"
 bluesky-queueserver-api = "*"  #  = ">=0.0.12"
 
