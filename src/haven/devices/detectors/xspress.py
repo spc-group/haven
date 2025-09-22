@@ -5,6 +5,7 @@ from itertools import repeat
 
 import numpy as np
 from ophyd_async.core import (
+    DEFAULT_TIMEOUT,
     Array1D,
     AsyncStatus,
     DetectorController,
@@ -15,6 +16,7 @@ from ophyd_async.core import (
     SignalR,
     StrictEnum,
     TriggerInfo,
+    observe_value,
     soft_signal_r_and_setter,
 )
 from ophyd_async.epics import adcore
@@ -98,6 +100,12 @@ class XspressController(ADBaseController):
                 ]
             )
         await asyncio.gather(*aws)
+        # Make sure the number of frames is not too high
+        async for num_images in observe_value(
+            self.driver.num_images, done_timeout=DEFAULT_TIMEOUT
+        ):
+            if num_images == trigger_info.total_number_of_exposures:
+                break
 
 
 class XspressDatasetDescriber(adcore.ADBaseDatasetDescriber):
