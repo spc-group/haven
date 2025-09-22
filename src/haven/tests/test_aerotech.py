@@ -72,10 +72,18 @@ async def test_aerotech_signals(aerotech):
     }
 
 
-async def test_prepare(aerotech):
+profile_positions = [
+    # (start, stop, num, expected)
+    (-1000, 1000, 100, np.linspace(-1010, 1010, num=101)),
+    (1000, -1000, 100, np.linspace(1010, -1010, num=101)),
+]
+
+
+@pytest.mark.parametrize("start,end,num,expected", profile_positions)
+async def test_prepare(aerotech, start, end, num, expected):
     axis = aerotech.horizontal
     motor_info = FlyMotorInfo(
-        start_position=-1000, end_position=1000, time_for_move=120, point_count=100
+        start_position=start, end_position=end, time_for_move=120, point_count=num
     )
     # Set to busy to check the observe_value behavior
     set_mock_value(aerotech.profile_move.build_state, "Busy")
@@ -111,13 +119,12 @@ async def test_prepare(aerotech):
     get_mock_put(aerotech.profile_move.axis[1].enabled).assert_called_once_with(
         False, wait=True
     )
-    pulse_positions = np.linspace(-1010, 1010, num=101)
     mock_put = get_mock_put(aerotech.profile_move.axis[0].positions)
     assert mock_put.called
-    assert np.all(mock_put.call_args.args[0] == pulse_positions)
+    assert np.all(mock_put.call_args.args[0] == expected)
     mock_put = get_mock_put(aerotech.profile_move.pulse_positions)
     assert mock_put.called
-    assert np.all(mock_put.call_args.args[0] == pulse_positions)
+    assert np.all(mock_put.call_args.args[0] == expected)
 
 
 async def test_prepare_build_failed(aerotech):

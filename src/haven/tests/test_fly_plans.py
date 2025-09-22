@@ -18,7 +18,7 @@ def flyer(sim_registry, mocker):
 
 
 def test_set_fly_params(flyer):
-    """Does the plan set the parameters of the flyer motor."""
+    """Does the plan set the parameters of the flyer motor?"""
     # step size == 10
     plan = fly_scan([], flyer, -20, 30, num=6, dwell_time=1.5)
     messages = list(plan)
@@ -29,6 +29,24 @@ def test_set_fly_params(flyer):
     assert prep_info.start_position == -20
     assert prep_info.end_position == 30
     assert prep_info.time_for_move == 9.0
+    assert prep_info.point_count == 6
+
+
+def test_set_fly_params_reverse(flyer):
+    """Does the plan set the parameters of the flyer motor when going
+    higher to lower positions?
+
+    """
+    plan = fly_scan([], flyer, 20, -30, num=6, dwell_time=1.5)
+    messages = list(plan)
+    prep_msg = [
+        msg for msg in messages if msg.command == "prepare" and msg.obj is flyer
+    ][0]
+    prep_info = prep_msg.args[0]
+    assert prep_info.start_position == 20
+    assert prep_info.end_position == -30
+    assert prep_info.time_for_move == 9.0
+    assert prep_info.point_count == 6
 
 
 def test_fly_scan_metadata(flyer, ion_chamber):
