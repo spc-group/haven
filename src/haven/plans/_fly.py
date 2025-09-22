@@ -98,7 +98,7 @@ def unmonitor_motors(motors):
 def monitor_motors(motors):
     for motor in motors:
         sig = getattr(motor, "user_readback", motor)
-        yield from bps.monitor(sig)
+        yield from bps.monitor(sig, name=motor.name)
 
 
 def fly_line_scan(detectors: Sequence, *args) -> Generator[Msg, Any, None]:
@@ -445,8 +445,8 @@ def grid_fly_scan(
             )
         )
         # Execute the fly scan and Keep track of the motor positions
-        yield from monitor_motors(motors)
-        result = yield from finalize_wrapper(grid_scan, unmonitor_motors(motors))
+        yield from monitor_motors(all_motors)
+        result = yield from finalize_wrapper(grid_scan, unmonitor_motors(all_motors))
         # Tear down the scan
         yield from bps.complete_all(*detectors, wait=True)
         for detector in detectors:

@@ -86,7 +86,7 @@ class XspressController(ADBaseController):
             self.driver.num_images.set(trigger_info.total_number_of_exposures),
             self.driver.image_mode.set(adcore.ADImageMode.MULTIPLE),
             self.driver.trigger_mode.set(trigger_mode),
-            # Hardware deadtime correciton is not reliable
+            # Hardware deadtime correction is not reliable
             # https://github.com/epics-modules/xspress3/issues/57
             self.driver.deadtime_correction.set(False),
         ]
@@ -99,13 +99,14 @@ class XspressController(ADBaseController):
                     ),
                 ]
             )
-        await asyncio.gather(*aws)
-        # Make sure the number of frames is not too high
+        task = asyncio.ensure_future(asyncio.gather(*aws))
+        # Make sure the number of frames is set properly (not too high)
         async for num_images in observe_value(
             self.driver.num_images, done_timeout=DEFAULT_TIMEOUT
         ):
             if num_images == trigger_info.total_number_of_exposures:
                 break
+        await task
 
 
 class XspressDatasetDescriber(adcore.ADBaseDatasetDescriber):
