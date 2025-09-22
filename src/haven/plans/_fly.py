@@ -89,6 +89,18 @@ def reset_flyers_wrapper(
     return (yield from finalize_wrapper(plan_mutator(plan, insert_reads), reset()))
 
 
+def unmonitor_motors(motors):
+    for motor in motors:
+        sig = getattr(motor, "user_readback", motor)
+        yield from bps.unmonitor(sig)
+
+
+def monitor_motors(motors):
+    for motor in motors:
+        sig = getattr(motor, "user_readback", motor)
+        yield from bps.monitor(sig)
+
+
 def fly_line_scan(detectors: Sequence, *args) -> Generator[Msg, Any, None]:
     """A plan stub for fly-scanning a single trajectory.
 
@@ -116,10 +128,6 @@ def fly_line_scan(detectors: Sequence, *args) -> Generator[Msg, Any, None]:
     for obj, motor_info in zip(motors, motor_infos):
         yield from bps.prepare(obj, motor_info, wait=False, group=prepare_group)
     yield from bps.wait(group=prepare_group)
-    # Monitor the motors during their move
-    for motor in motors:
-        sig = motor.user_readback
-        yield from bps.monitor(sig, name=sig.name)
     # Kickoff the detectors
     yield from bps.kickoff_all(*detectors, wait=True)
     # Perform the fly scan
@@ -132,10 +140,6 @@ def fly_line_scan(detectors: Sequence, *args) -> Generator[Msg, Any, None]:
     for m in motors:
         yield from bps.complete(m, wait=False, group=motor_complete_group)
     yield from bps.wait(group=(motor_complete_group))
-    # Stop monitoring motors
-    for motor in motors:
-        sig = motor.user_readback
-        yield from bps.unmonitor(sig)
 
 
 def declare_streams(
@@ -266,8 +270,9 @@ def fly_scan(
         # num_outputs = len(delay_outputs)
         num_outputs = 0  # for now they're all just different streams
         yield from declare_streams(detectors[:num_outputs], detectors[num_outputs:])
-        # Fly the motors
-        yield from line_scan
+        # Execute the fly scan and Keep track of the motor positions
+        yield from monitor_motors(motors)
+        yield from finalize_wrapper(line_scan, unmonitor_motors(motors))
         # Stop detectors
         yield from bps.complete_all(*detectors, wait=True)
         for detector in detectors:
@@ -430,14 +435,19 @@ def grid_fly_scan(
             extra_signals=motors,
             trigger_infos=trigger_infos,
         )
-        grid_scan = bp.grid_scan(
-            detectors,
-            *step_args,
-            snake_axes=snake_steppers,
-            per_step=per_step,
-            md=md_,
+        grid_scan = stub_wrapper(
+            bp.grid_scan(
+                detectors,
+                *step_args,
+                snake_axes=snake_steppers,
+                per_step=per_step,
+                md=md_,
+            )
         )
-        result = yield from stub_wrapper(grid_scan)
+        # Execute the fly scan and Keep track of the motor positions
+        yield from monitor_motors(motors)
+        result = yield from finalize_wrapper(grid_scan, unmonitor_motors(motors))
+        # Tear down the scan
         yield from bps.complete_all(*detectors, wait=True)
         for detector in detectors:
             yield from bps.collect(detector)
