@@ -12,9 +12,10 @@ __all__ = [
 import argparse
 import logging
 import os
+from collections.abc import Mapping
 from pathlib import Path
 from pprint import pprint
-from typing import Optional, Sequence
+from typing import Sequence
 
 import tomli
 from mergedeep import merge
@@ -25,17 +26,40 @@ log = logging.getLogger(__name__)
 _local_overrides = {}
 
 
-def load_files(file_paths: Sequence[Path]):
+class ConfigMapping(Mapping):
+    _config: Mapping
+
+    def __init__(self, config: Mapping):
+        self._config = config
+
+    def __getitem__(self, key):
+        config = self._config
+        for part in key.split("."):
+            config = config[part]
+        # If the value can still be mapped further, then return another config mapping
+        if isinstance(config, Mapping):
+            config = type(self)(config)
+        return config
+
+    def __iter__(self):
+        for obj in self._config:
+            yield obj
+
+    def __len__(self):
+        return len(self._config)
+
+
+def load_file(file_path: Path):
     """Generate the configs for files as dictionaries."""
-    for fp in file_paths:
-        fp = Path(fp)
-        if fp.exists():
-            with open(fp, mode="rb") as fp:
-                log.debug(f"Loading config file: {fp}")
-                config = tomli.load(fp)
-                yield config
-        else:
-            log.debug(f"Could not find config file, skipping: {fp}")
+    fp = Path(file_path)
+    if fp.exists():
+        with open(fp, mode="rb") as fp:
+            log.debug(f"Loading config file: {fp}")
+            config = tomli.load(fp)
+            return config
+    else:
+        log.info(f"Could not find config file, skipping: {fp}")
+        return {}
 
 
 def lookup_file_paths():
@@ -86,7 +110,7 @@ def check_deprecated_keys(config):
             raise ValueError(f"Config key '{old_key}' is no longer used")
 
 
-def load_config(file_paths: Optional[Sequence[Path]] = None):
+def load_config(*configs: Sequence[Path | Mapping]) -> ConfigMapping:
     """Load TOML config files.
 
     Will load files specified in the following locations:
@@ -97,16 +121,14 @@ def load_config(file_paths: Optional[Sequence[Path]] = None):
     4. iconfig_default.toml file included with Haven.
 
     """
-    if file_paths is None:
-        file_paths = lookup_file_paths()
-    else:
-        file_paths = list(file_paths).copy()
-    # Add config file from environmental variable
+    if len(configs) == 0:
+        # Add config file from environmental variable
+        configs = lookup_file_paths()
     # Load configuration from TOML files
-    config = {}
-    merge(config, *load_files(file_paths), _local_overrides)
+    configs = [cfg if isinstance(cfg, Mapping) else load_file(cfg) for cfg in configs]
+    config = merge({}, *configs, _local_overrides)
     check_deprecated_keys(config)
-    return config
+    return ConfigMapping(config)
 
 
 def print_config_value(args: Sequence[str] = None):

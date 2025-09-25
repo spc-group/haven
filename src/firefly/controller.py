@@ -15,7 +15,7 @@ from qtpy.QtCore import Signal, Slot
 from qtpy.QtGui import QIcon, QKeySequence
 from qtpy.QtWidgets import QAction, QErrorMessage
 
-from haven import beamline, load_config
+from haven import beamline
 from haven.exceptions import ComponentNotFound, InvalidConfiguration
 from haven.utils import titleize
 
