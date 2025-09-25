@@ -48,8 +48,6 @@ bluesky = "==1.14.4"
 # bluesky-queueserver-api = "*"  #  = ">=0.0.12"
 databroker = "==1.2.5"  # Just to make the solve work for apsbits
 ophyd = "*"  # =1.10.7",
-bluesky-tiled-plugins = ">=2.0.0b68"
-tiled = "==0.1.2"
 
 [feature.bluesky.pypi-dependencies]
 apsbits = "*"
@@ -139,6 +137,8 @@ tasks = {qserver = "python -m haven_qserver.launch_queueserver"}
 pypi-dependencies = {bluesky-queueserver = {"git" = "https://github.com/bluesky/bluesky-queueserver"}}
 
 [feature.tiled.pypi-dependencies]
+bluesky-tiled-plugins = ">=2.0.0b68"
+tiled = "==0.1.2"
 
 [feature.tiled.tasks]
 tiled = "tiled serve config"
