@@ -14,8 +14,13 @@ async def shutter(sim_registry):
     S25ID-PSS:SCS:CloseEPICSC
     S25ID-PSS:SCS:BeamBlockingM.VAL
     """
-    shutter = PssShutter(prefix="S255ID-PSS:SCS:", name="shutter")
+    shutter = PssShutter(
+        prefix="S255ID-PSS:SCS:", name="shutter", hutch_prefix="S255ID-PSS:StaC:"
+    )
     await shutter.connect(mock=True)
+    set_mock_value(shutter.hutch_searched, True)
+    set_mock_value(shutter.user_key, True)
+    set_mock_value(shutter.aps_key, True)
     return shutter
 
 
@@ -59,16 +64,32 @@ async def test_shutter_setpoint(shutter):
     open_put.assert_called_once_with(1, wait=False)
 
 
+async def test_open_allowed_signal(shutter):
+    shutter._allow_open = False
+    assert not await shutter.open_allowed.get_value()
+    # Make it openable
+    shutter._allow_open = True
+    assert await shutter.open_allowed.get_value()
+
+
+async def test_close_allowed_signal(shutter):
+    shutter._allow_close = False
+    assert not await shutter.close_allowed.get_value()
+    # Make it openable
+    shutter._allow_close = True
+    assert await shutter.close_allowed.get_value()
+
+
 async def test_shutter_check_value(shutter):
     # Check for non-sense values
     with pytest.raises(ValueError):
         await shutter.set(ShutterState.FAULT)
     # Test shutter allow_close
-    shutter.allow_close = False
+    shutter._allow_close = False
     with pytest.raises(ReadOnlyError):
         await shutter.set(ShutterState.CLOSED)
     # Test shutter allow_open
-    shutter.allow_open = False
+    shutter._allow_open = False
     with pytest.raises(ReadOnlyError):
         await shutter.set(ShutterState.OPEN)
 

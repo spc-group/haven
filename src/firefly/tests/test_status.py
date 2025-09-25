@@ -6,20 +6,22 @@ from firefly.status import StatusDisplay
 
 
 @pytest.fixture()
-def display(qtbot, shutters, xia_shutter, sim_registry):
-    disp = StatusDisplay()
-    qtbot.addWidget(disp)
-    return disp
+async def display(qtbot, shutters, xia_shutter, sim_registry):
+    display = StatusDisplay()
+    qtbot.addWidget(display)
+    await display.update_devices(sim_registry)
+    return display
 
 
 def test_shutter_controls(display):
     """Do shutter controls get added to the window?"""
     form = display.ui.beamline_layout
     # Check label text
-    label0 = form.itemAt(4, QFormLayout.LabelRole)
+    first_shutter_row = 4
+    label0 = form.itemAt(first_shutter_row, QFormLayout.LabelRole)
     assert "shutter" in label0.widget().text().lower()
     # Check the widgets for the shutter
-    layout0 = form.itemAt(4, QFormLayout.FieldRole)
+    layout0 = form.itemAt(first_shutter_row, QFormLayout.FieldRole)
     indicator = layout0.itemAt(0).widget()
     assert isinstance(indicator, PyDMByteIndicator)
     open_btn = layout0.itemAt(1).widget()
