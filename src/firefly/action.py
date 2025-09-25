@@ -90,7 +90,6 @@ class WindowAction(Action):
         if self.macros is not None:
             kwargs["macros"] = self.macros
         window.open(str(self.display_file.resolve()), **kwargs)
-        print("EMITTING", self.window)
         self.window_created.emit(self)
         # Properly remove the window if it's closed
         window.destroyed.connect(self.forget_window)
