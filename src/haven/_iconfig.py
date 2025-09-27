@@ -33,18 +33,32 @@ class Configuration(Mapping):
 
     .. code-block:: python
 
-        config = Configuration({"spam": {"eggs": "cheese"}})
+        example_config = {
+            "spam": {
+                "eggs": "cheese"
+            }
+        }
+        config = Configuration(example_config)
         assert config["spam"]["eggs"] == config["spam.eggs"]
 
     """
 
-    _config: Mapping
+    _configs: Sequence[Mapping | Path | str]
 
-    def __init__(self, config: Mapping):
-        self._config = config
+    def __init__(self, *configs: Sequence[Mapping | Path | str]):
+        self._configs = configs
+
+    def _config(self):
+        # Load configuration from TOML files
+        configs = [
+            cfg if isinstance(cfg, Mapping) else load_file(cfg) for cfg in self._configs
+        ]
+        config = merge({}, *configs, _local_overrides)
+        check_deprecated_keys(config)
+        return config
 
     def __getitem__(self, key):
-        config = self._config
+        config = self._config()
         extra_parts = []
         _key = key
         while _key != "":
@@ -138,7 +152,7 @@ def check_deprecated_keys(config):
             raise ValueError(f"Config key '{old_key}' is no longer used")
 
 
-def load_config(*configs: Sequence[Path | Mapping]) -> Configuration:
+def load_config(*configs: Sequence[Path | str | Mapping]) -> Configuration:
     """Load TOML config files.
 
     Will load files specified in the following locations:
@@ -152,11 +166,7 @@ def load_config(*configs: Sequence[Path | Mapping]) -> Configuration:
     if len(configs) == 0:
         # Add config file from environmental variable
         configs = lookup_file_paths()
-    # Load configuration from TOML files
-    configs = [cfg if isinstance(cfg, Mapping) else load_file(cfg) for cfg in configs]
-    config = merge({}, *configs, _local_overrides)
-    check_deprecated_keys(config)
-    return Configuration(config)
+    return Configuration(*configs)
 
 
 def print_config_value(args: Sequence[str] = None):
