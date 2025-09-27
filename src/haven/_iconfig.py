@@ -26,7 +26,18 @@ log = logging.getLogger(__name__)
 _local_overrides = {}
 
 
-class ConfigMapping(Mapping):
+class Configuration(Mapping):
+    """A mapping of config keys to values.
+
+    Allows complicated lookup by dotted keys:
+
+    .. code-block:: python
+
+        config = Configuration({"spam": {"eggs": "cheese"}})
+        assert config["spam"]["eggs"] == config["spam.eggs"]
+
+    """
+
     _config: Mapping
 
     def __init__(self, config: Mapping):
@@ -34,12 +45,29 @@ class ConfigMapping(Mapping):
 
     def __getitem__(self, key):
         config = self._config
-        for part in key.split("."):
-            config = config[part]
-        # If the value can still be mapped further, then return another config mapping
-        if isinstance(config, Mapping):
-            config = type(self)(config)
-        return config
+        extra_parts = []
+        _key = key
+        while _key != "":
+            if _key in config:
+                if len(extra_parts) > 0:
+                    # Look up the rest of the keys
+                    config = config[_key]
+                    _key = ".".join(extra_parts[::-1])
+                    extra_parts = []
+                    continue
+                elif isinstance(config[_key], Mapping):
+                    # Not a leaf of the config tree
+                    return type(self)(config[_key])
+                else:
+                    # Leaf of the config tree
+                    return config[_key]
+            try:
+                _key, tail = _key.rsplit(".", maxsplit=1)
+            except ValueError:
+                # We can't split anymore '.', so lookup has failed
+                print(config, _key)
+                raise KeyError(key)
+            extra_parts.append(tail)
 
     def __iter__(self):
         for obj in self._config:
@@ -110,7 +138,7 @@ def check_deprecated_keys(config):
             raise ValueError(f"Config key '{old_key}' is no longer used")
 
 
-def load_config(*configs: Sequence[Path | Mapping]) -> ConfigMapping:
+def load_config(*configs: Sequence[Path | Mapping]) -> Configuration:
     """Load TOML config files.
 
     Will load files specified in the following locations:
@@ -128,7 +156,7 @@ def load_config(*configs: Sequence[Path | Mapping]) -> ConfigMapping:
     configs = [cfg if isinstance(cfg, Mapping) else load_file(cfg) for cfg in configs]
     config = merge({}, *configs, _local_overrides)
     check_deprecated_keys(config)
-    return ConfigMapping(config)
+    return Configuration(config)
 
 
 def print_config_value(args: Sequence[str] = None):

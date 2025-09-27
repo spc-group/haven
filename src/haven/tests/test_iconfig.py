@@ -109,6 +109,16 @@ def test_nested_indexing():
     assert config["spam.eggs"]["cheese.shop"] == 5
 
 
+def test_dotted_keys():
+    """What if a key actually has a dot in it?"""
+    config = load_config(
+        {
+            "spam.eggs": {"cheese.shop": 5},
+        },
+    )
+    assert config["spam.eggs.cheese.shop"] == 5
+
+
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov
