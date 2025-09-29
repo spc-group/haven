@@ -14,9 +14,8 @@ from qtpy import QtCore, QtWidgets
 from qtpy.QtCore import Signal, Slot
 from qtpy.QtGui import QIcon, QKeySequence
 from qtpy.QtWidgets import QAction, QErrorMessage
-from tiled.profiles import load_profiles
 
-from haven import beamline, load_config
+from haven import beamline
 from haven.exceptions import ComponentNotFound, InvalidConfiguration
 from haven.utils import titleize
 
@@ -274,18 +273,6 @@ class FireflyController(QtCore.QObject):
                 WindowClass=PlanMainWindow,
             ),
         }
-        # Action for showing the run browser window
-        self.actions.run_browser = WindowAction(
-            name="show_run_browser_action",
-            text="Browse Runs",
-            display_file=ui_dir / "run_browser" / "display.py",
-            shortcut="Ctrl+Shift+B",
-            icon=qta.icon("mdi.book-open-variant"),
-            WindowClass=FireflyMainWindow,
-        )
-        self.actions.run_browser.window_created.connect(
-            self.finalize_run_browser_window
-        )
         # Action for showing the beamline scheduling window
         self.actions.bss = WindowAction(
             name="show_bss_window_action",
@@ -307,7 +294,7 @@ class FireflyController(QtCore.QObject):
             name="show_voltmeters_window_action",
             text="&Voltmeters",
             display_file=ui_dir / "voltmeters.py",
-            WindowClass=FireflyMainWindow,
+            WindowClass=PlanMainWindow,
             shortcut="Ctrl+V",
             icon=qta.icon("ph.faders-horizontal"),
         )
@@ -360,19 +347,6 @@ class FireflyController(QtCore.QObject):
         """Finished setting up the plan windows."""
         display = action.display
         await display.setup_default_regions()
-
-    @asyncSlot(QAction)
-    async def finalize_run_browser_window(self, action: QAction):
-        """Connect up run browser signals and load initial data."""
-        display = action.display
-        self.run_updated.connect(display.update_running_scan)
-        self.run_stopped.connect(display.update_running_scan)
-        # Set initial state for the run_browser
-        config = load_config()["tiled"]
-        path, tiled_config = load_profiles()["haven"]
-        await display.setup_database(
-            base_url=tiled_config["uri"], catalog_name=config["default_catalog"]
-        )
 
     @asyncSlot(QAction)
     async def finalize_bss_window(self, action: QAction):

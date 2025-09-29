@@ -12,9 +12,11 @@ __all__ = [
 import argparse
 import logging
 import os
+from collections.abc import Callable, Mapping, Sequence
+from functools import wraps
 from pathlib import Path
 from pprint import pprint
-from typing import Optional, Sequence
+from typing import Any
 
 import tomli
 from mergedeep import merge
@@ -25,17 +27,115 @@ log = logging.getLogger(__name__)
 _local_overrides = {}
 
 
-def load_files(file_paths: Sequence[Path]):
+class Configuration(Mapping):
+    """A mapping of config keys to values.
+
+    Allows complicated lookup by dotted keys:
+
+    .. code-block:: python
+
+        example_config = {
+            "spam": {
+                "eggs": "cheese"
+            }
+        }
+        config = Configuration(example_config)
+        assert config["spam"]["eggs"] == config["spam.eggs"]
+
+    """
+
+    _configs: Sequence[Mapping | Path | str]
+
+    def __init__(self, *configs: Sequence[Mapping | Path | str]):
+        self._configs = configs
+
+    def _config(self):
+        # Load configuration from TOML files
+        configs = [
+            cfg if isinstance(cfg, Mapping) else load_file(cfg) for cfg in self._configs
+        ]
+        config = merge({}, *configs, _local_overrides)
+        check_deprecated_keys(config)
+        return config
+
+    def __getitem__(self, key):
+        config = self._config()
+        extra_parts = []
+        _key = key
+        while _key != "":
+            if _key in config:
+                if len(extra_parts) > 0:
+                    # Look up the rest of the keys
+                    config = config[_key]
+                    _key = ".".join(extra_parts[::-1])
+                    extra_parts = []
+                    continue
+                elif isinstance(config[_key], Mapping):
+                    # Not a leaf of the config tree
+                    return type(self)(config[_key])
+                else:
+                    # Leaf of the config tree
+                    return config[_key]
+            try:
+                _key, tail = _key.rsplit(".", maxsplit=1)
+            except ValueError:
+                # We can't split anymore '.', so lookup has failed
+                print(config, _key)
+                raise KeyError(key)
+            extra_parts.append(tail)
+
+    def __iter__(self):
+        for obj in self._config:
+            yield obj
+
+    def __len__(self):
+        return len(self._config)
+
+    def feature_flag(self, key: str):
+        return self["haven.feature_flags"][key]
+
+    def with_feature_flag(self, flag: str, alternate: Callable, *, eq: Any = True):
+        """Call an alternate implementation if a feature flag is set.
+
+        The argument *eq* can be used to only respond on a specific
+        value for the flag. By default, any truthy value will trigger
+        *alternate* instead of the original function/class.
+
+        Parameters
+        ==========
+        flag:
+          The name of the feature flag to check.
+        alternate
+          What to call if the feature flag is present.
+        eq
+          Value against which to compare the feature flag.
+
+        """
+
+        def wrapper(func):
+            @wraps(func)
+            def inner(*args, **kwargs):
+                if self.feature_flag(flag) == eq:
+                    return alternate(*args, **kwargs)
+                else:
+                    return func(*args, **kwargs)
+
+            return inner
+
+        return wrapper
+
+
+def load_file(file_path: Path):
     """Generate the configs for files as dictionaries."""
-    for fp in file_paths:
-        fp = Path(fp)
-        if fp.exists():
-            with open(fp, mode="rb") as fp:
-                log.debug(f"Loading config file: {fp}")
-                config = tomli.load(fp)
-                yield config
-        else:
-            log.debug(f"Could not find config file, skipping: {fp}")
+    fp = Path(file_path)
+    if fp.exists():
+        with open(fp, mode="rb") as fp:
+            log.debug(f"Loading config file: {fp}")
+            config = tomli.load(fp)
+            return config
+    else:
+        log.info(f"Could not find config file, skipping: {fp}")
+        return {}
 
 
 def lookup_file_paths():
@@ -86,7 +186,7 @@ def check_deprecated_keys(config):
             raise ValueError(f"Config key '{old_key}' is no longer used")
 
 
-def load_config(file_paths: Optional[Sequence[Path]] = None):
+def load_config(*configs: Sequence[Path | str | Mapping]) -> Configuration:
     """Load TOML config files.
 
     Will load files specified in the following locations:
@@ -97,16 +197,10 @@ def load_config(file_paths: Optional[Sequence[Path]] = None):
     4. iconfig_default.toml file included with Haven.
 
     """
-    if file_paths is None:
-        file_paths = lookup_file_paths()
-    else:
-        file_paths = list(file_paths).copy()
-    # Add config file from environmental variable
-    # Load configuration from TOML files
-    config = {}
-    merge(config, *load_files(file_paths), _local_overrides)
-    check_deprecated_keys(config)
-    return config
+    if len(configs) == 0:
+        # Add config file from environmental variable
+        configs = lookup_file_paths()
+    return Configuration(*configs)
 
 
 def print_config_value(args: Sequence[str] = None):

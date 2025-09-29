@@ -1,9 +1,10 @@
 import importlib
 import os
+from collections.abc import Mapping
 from pathlib import Path
 
 from haven import _iconfig
-from haven._iconfig import load_config, print_config_value
+from haven._iconfig import Configuration, load_config, print_config_value
 
 
 def test_default_values():
@@ -14,7 +15,7 @@ def test_default_values():
 
 def test_loading_a_file():
     test_file = Path(__file__).resolve().parent / "test_iconfig.toml"
-    config = load_config(file_paths=(test_file,))
+    config = load_config(test_file)
     assert config["beamline"]["pv_prefix"] == "spam"
 
 
@@ -43,7 +44,7 @@ def test_merging_dicts():
         this_dir.parent / "iconfig_testing.toml",
     ]
     test_file = this_dir / "test_iconfig.toml"
-    config = load_config(file_paths=(*default_files, test_file))
+    config = load_config(*default_files, test_file)
     assert "prefix" in config["area_detector"][0].keys()
 
 
@@ -53,6 +54,93 @@ def test_haven_config_cli(capsys):
     # Check stdout for config value
     captured = capsys.readouterr()
     assert captured.out == "2.8\u202fmm planar undulator\n"
+
+
+def test_loads_config_mapping():
+    config = load_config({})
+    assert isinstance(config, Mapping)
+
+
+def test_dotted_indexing():
+    config = load_config(
+        {
+            "spam": {
+                "eggs": 5,
+            },
+        }
+    )
+    assert config["spam.eggs"] == 5
+
+
+def test_dotted_get():
+    config = load_config(
+        {
+            "spam": {
+                "eggs": 5,
+            },
+        }
+    )
+    assert config.get("spam.eggs") == 5
+
+
+def test_get_default():
+    config = load_config(
+        {
+            "spam": {
+                "eggs": 5,
+            },
+        }
+    )
+    assert config.get("spam.eggs") == 5
+
+
+def test_nested_indexing():
+    config = load_config(
+        {
+            "spam": {
+                "eggs": {
+                    "cheese": {
+                        "shop": 5,
+                    },
+                },
+            },
+        }
+    )
+    assert config["spam.eggs"]["cheese.shop"] == 5
+
+
+def test_dotted_keys():
+    """What if a key actually has a dot in it?"""
+    config = load_config(
+        {
+            "spam.eggs": {"cheese.shop": 5},
+        },
+    )
+    assert config["spam.eggs.cheese.shop"] == 5
+
+
+flags = {
+    "haven.feature_flags": {
+        "spam": True,
+    }
+}
+
+
+def test_feature_flag():
+    config = Configuration(flags)
+    assert config.feature_flag("spam") is True
+
+
+def test_feature_flag_decorator(mocker):
+    config = Configuration(flags)
+    mock = mocker.MagicMock()
+
+    @config.with_feature_flag("spam", alternate=mock)
+    def inner():
+        assert False, "Feature flag not applied."
+
+    inner("hello")
+    mock.assert_called_once_with("hello")
 
 
 # -----------------------------------------------------------------------------
