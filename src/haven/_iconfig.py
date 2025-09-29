@@ -12,10 +12,11 @@ __all__ = [
 import argparse
 import logging
 import os
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping, Sequence
+from functools import wraps
 from pathlib import Path
 from pprint import pprint
-from typing import Sequence
+from typing import Any
 
 import tomli
 from mergedeep import merge
@@ -89,6 +90,39 @@ class Configuration(Mapping):
 
     def __len__(self):
         return len(self._config)
+
+    def feature_flag(self, key: str):
+        return self["haven.feature_flags"][key]
+
+    def with_feature_flag(self, flag: str, alternate: Callable, *, eq: Any = True):
+        """Call an alternate implementation if a feature flag is set.
+
+        The argument *eq* can be used to only respond on a specific
+        value for the flag. By default, any truthy value will trigger
+        *alternate* instead of the original function/class.
+
+        Parameters
+        ==========
+        flag:
+          The name of the feature flag to check.
+        alternate
+          What to call if the feature flag is present.
+        eq
+          Value against which to compare the feature flag.
+
+        """
+
+        def wrapper(func):
+            @wraps(func)
+            def inner(*args, **kwargs):
+                if self.feature_flag(flag) == eq:
+                    return alternate(*args, **kwargs)
+                else:
+                    return func(*args, **kwargs)
+
+            return inner
+
+        return wrapper
 
 
 def load_file(file_path: Path):

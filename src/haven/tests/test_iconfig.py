@@ -4,7 +4,7 @@ from collections.abc import Mapping
 from pathlib import Path
 
 from haven import _iconfig
-from haven._iconfig import load_config, print_config_value
+from haven._iconfig import Configuration, load_config, print_config_value
 
 
 def test_default_values():
@@ -117,6 +117,30 @@ def test_dotted_keys():
         },
     )
     assert config["spam.eggs.cheese.shop"] == 5
+
+
+flags = {
+    "haven.feature_flags": {
+        "spam": True,
+    }
+}
+
+
+def test_feature_flag():
+    config = Configuration(flags)
+    assert config.feature_flag("spam") is True
+
+
+def test_feature_flag_decorator(mocker):
+    config = Configuration(flags)
+    mock = mocker.MagicMock()
+
+    @config.with_feature_flag("spam", alternate=mock)
+    def inner():
+        assert False, "Feature flag not applied."
+
+    inner("hello")
+    mock.assert_called_once_with("hello")
 
 
 # -----------------------------------------------------------------------------
