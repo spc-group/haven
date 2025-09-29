@@ -1,13 +1,14 @@
-from collections import OrderedDict
-from unittest.mock import MagicMock
+from unittest import mock
 
 import numpy as np
 import pytest
 from ophyd import sim
+from ophyd_async.core import TriggerInfo
 from ophyd_async.epics.motor import Motor
 
+from haven.devices import DG645Delay, IonChamber, Xspress3Detector
 from haven.plans import fly_scan, grid_fly_scan
-from haven.plans._fly import FlyerCollector
+from haven.plans._fly import prepare_detectors
 
 
 @pytest.fixture()
@@ -17,16 +18,35 @@ def flyer(sim_registry, mocker):
 
 
 def test_set_fly_params(flyer):
-    """Does the plan set the parameters of the flyer motor."""
+    """Does the plan set the parameters of the flyer motor?"""
     # step size == 10
     plan = fly_scan([], flyer, -20, 30, num=6, dwell_time=1.5)
     messages = list(plan)
-    prep_msg = messages[4]
-    assert prep_msg.command == "prepare"
+    prep_msg = [
+        msg for msg in messages if msg.command == "prepare" and msg.obj is flyer
+    ][0]
     prep_info = prep_msg.args[0]
     assert prep_info.start_position == -20
     assert prep_info.end_position == 30
     assert prep_info.time_for_move == 9.0
+    assert prep_info.point_count == 6
+
+
+def test_set_fly_params_reverse(flyer):
+    """Does the plan set the parameters of the flyer motor when going
+    higher to lower positions?
+
+    """
+    plan = fly_scan([], flyer, 20, -30, num=6, dwell_time=1.5)
+    messages = list(plan)
+    prep_msg = [
+        msg for msg in messages if msg.command == "prepare" and msg.obj is flyer
+    ][0]
+    prep_info = prep_msg.args[0]
+    assert prep_info.start_position == 20
+    assert prep_info.end_position == -30
+    assert prep_info.time_for_move == 9.0
+    assert prep_info.point_count == 6
 
 
 def test_fly_scan_metadata(flyer, ion_chamber):
@@ -34,7 +54,7 @@ def test_fly_scan_metadata(flyer, ion_chamber):
     md = {"spam": "eggs"}
     plan = fly_scan([ion_chamber], flyer, -20, 30, num=6, dwell_time=1, md=md)
     messages = list(plan)
-    open_msg = messages[1]
+    open_msg = messages[2]
     assert open_msg.command == "open_run"
     real_md = open_msg.kwargs
     expected_md = {
@@ -42,6 +62,8 @@ def test_fly_scan_metadata(flyer, ion_chamber):
             "detectors": list([repr(ion_chamber)]),
             "num": 6,
             "dwell_time": 1,
+            "delay_outputs": [],
+            "trigger": "DetectorTrigger.INTERNAL",
             "*args": (repr(flyer), -20, 30),
         },
         "plan_name": "fly_scan",
@@ -52,275 +74,11 @@ def test_fly_scan_metadata(flyer, ion_chamber):
     assert real_md == expected_md
 
 
-def test_collector_describe():
-    # Dummy devices with data taken from actual ophyd devices
-    aerotech = MagicMock()
-    aerotech.describe_collect.return_value = {
-        "positions": OrderedDict(
-            [
-                (
-                    "aerotech_horiz",
-                    {
-                        "source": "PV:25idc:m1.RBV",
-                        "dtype": "number",
-                        "shape": [],
-                        "units": "micron",
-                        "lower_ctrl_limit": -28135.352,
-                        "upper_ctrl_limit": 31864.648,
-                        "precision": 7,
-                    },
-                ),
-                (
-                    "aerotech_horiz_user_setpoint",
-                    {
-                        "source": "PV:25idc:m1.VAL",
-                        "dtype": "number",
-                        "shape": [],
-                        "units": "micron",
-                        "lower_ctrl_limit": -28135.352,
-                        "upper_ctrl_limit": 31864.648,
-                        "precision": 7,
-                    },
-                ),
-            ]
-        )
-    }
-    I0 = MagicMock()
-    I0.describe_collect.return_value = {
-        "I0": OrderedDict(
-            [
-                (
-                    "I0_net_counts",
-                    {
-                        "source": "PV:25idcVME:3820:scaler1_netA.D",
-                        "dtype": "number",
-                        "shape": [],
-                        "units": "",
-                        "lower_ctrl_limit": 0.0,
-                        "upper_ctrl_limit": 0.0,
-                        "precision": 0,
-                    },
-                )
-            ]
-        )
-    }
-    motor = MagicMock()
-    motor.describe.return_value = OrderedDict(
-        [
-            (
-                "motor",
-                {
-                    "source": "SIM:motor",
-                    "dtype": "integer",
-                    "shape": [],
-                    "precision": 3,
-                },
-            ),
-            (
-                "motor_setpoint",
-                {
-                    "source": "SIM:motor_setpoint",
-                    "dtype": "integer",
-                    "shape": [],
-                    "precision": 3,
-                },
-            ),
-        ]
-    )
-    flyers = [aerotech, I0]
-    collector = FlyerCollector(
-        positioners=[aerotech],
-        detectors=[I0],
-        stream_name="primary",
-        extra_signals=[motor],
-        name="collector",
-    )
-    desc = collector.describe_collect()
-    assert "primary" in desc.keys()
-    assert list(desc["primary"].keys()) == [
-        "aerotech_horiz",
-        "aerotech_horiz_user_setpoint",
-        "I0_net_counts",
-        "motor",
-        "motor_setpoint",
-    ]
-    assert (
-        desc["primary"]["aerotech_horiz"]
-        == aerotech.describe_collect()["positions"]["aerotech_horiz"]
-    )
-
-
-def test_collector_collect():
-    aerotech = MagicMock()
-    aerotech.predict.side_effect = [
-        # These are the target data, but we need more events to simulate a flying motor
-        {
-            "data": {
-                "aerotech_horiz": -1000.0,
-                "aerotech_horiz_user_setpoint": -1000.0,
-            },
-            "timestamps": {
-                "aerotech_horiz": 1691957265.6073308,
-                "aerotech_horiz_user_setpoint": 1691957265.6073308,
-            },
-            "time": 1691957265.6073308,
-        },
-        {
-            "data": {"aerotech_horiz": -800.0, "aerotech_horiz_user_setpoint": -800.0},
-            "timestamps": {
-                "aerotech_horiz": 1691957266.1137164,
-                "aerotech_horiz_user_setpoint": 1691957266.1137164,
-            },
-            "time": 1691957266.1137164,
-        },
-    ]
-    aerotech.collect.return_value = [
-        {
-            "data": {
-                "aerotech_horiz": -1100.0,
-                "aerotech_horiz_user_setpoint": -1100.0,
-            },
-            "timestamps": {
-                "aerotech_horiz": 1691957265.354138,
-                "aerotech_horiz_user_setpoint": 1691957265.354138,
-            },
-            "time": 1691957265.354138,
-        },
-        {
-            "data": {"aerotech_horiz": -900.0, "aerotech_horiz_user_setpoint": -900.0},
-            "timestamps": {
-                "aerotech_horiz": 1691957265.8605237,
-                "aerotech_horiz_user_setpoint": 1691957265.8605237,
-            },
-            "time": 1691957265.8605237,
-        },
-        {
-            "data": {"aerotech_horiz": -700.0, "aerotech_horiz_user_setpoint": -700.0},
-            "timestamps": {
-                "aerotech_horiz": 1691957266.366909,
-                "aerotech_horiz_user_setpoint": 1691957266.366909,
-            },
-            "time": 1691957266.366909,
-        },
-    ]
-    I0 = MagicMock()
-    I0.collect.return_value = [
-        {
-            "data": {"I0_net_counts": [0]},
-            "timestamps": {"I0_net_counts": [1691957269.1575842]},
-            "time": 1691957269.1575842,
-        },
-        {
-            "data": {"I0_net_counts": [0]},
-            "timestamps": {"I0_net_counts": [1691957269.0734286]},
-            "time": 1691957269.0734286,
-        },
-    ]
-    flyers = [aerotech, I0]
-    motor = MagicMock()
-    motor.read.return_value = OrderedDict(
-        [
-            ("motor", {"value": 119.983, "timestamp": 1692072398.879956}),
-            ("motor_setpoint", {"value": 120.0, "timestamp": 1692072398.8799553}),
-        ]
-    )
-
-    collector = FlyerCollector(
-        detectors=[I0],
-        positioners=[aerotech],
-        stream_name="primary",
-        name="flyer_collector",
-        extra_signals=[motor],
-    )
-    events = list(collector.collect())
-    expected_events = [
-        {
-            "data": {
-                "I0_net_counts": [0],
-                "aerotech_horiz": -1000.0,
-                "aerotech_horiz_user_setpoint": -1000.0,
-                "motor": 119.983,
-                "motor_setpoint": 120.0,
-            },
-            "timestamps": {
-                "I0_net_counts": [1691957269.1575842],
-                "aerotech_horiz": 1691957265.6073308,
-                "aerotech_horiz_user_setpoint": 1691957265.6073308,
-                "motor": 1692072398.879956,
-                "motor_setpoint": 1692072398.8799553,
-            },
-            "time": 1691957269.1575842,
-        },
-        {
-            "data": {
-                "I0_net_counts": [0],
-                "aerotech_horiz": -800.0,
-                "aerotech_horiz_user_setpoint": -800.0,
-                "motor": 119.983,
-                "motor_setpoint": 120.0,
-            },
-            "timestamps": {
-                "I0_net_counts": [1691957269.0734286],
-                "aerotech_horiz": 1691957266.1137164,
-                "aerotech_horiz_user_setpoint": 1691957266.1137164,
-                "motor": 1692072398.879956,
-                "motor_setpoint": 1692072398.8799553,
-            },
-            "time": 1691957269.0734286,
-        },
-    ]
-    assert len(events) == 2
-    assert events == expected_events
-
-
-@pytest.mark.skip(reason="grid scans are currently broken")
-def test_fly_grid_scan(aerotech_flyer):
-    flyer = aerotech_flyer
+def test_fly_grid_scan(flyer):
     stepper = sim.motor
     # step size == 10
     plan = grid_fly_scan(
-        [], stepper, -100, 100, 11, flyer, -20, 30, 6, snake_axes=[flyer]
-    )
-    messages = list(plan)
-    assert messages[0].command == "stage"
-    assert messages[1].command == "open_run"
-    # Check that we move the stepper first
-    assert messages[2].command == "checkpoint"
-    assert messages[3].command == "set"
-    assert messages[3].args == (-100,)
-    assert messages[4].command == "wait"
-    # Check that flyer motor positions snake back and forth
-    stepper_positions = [
-        msg.args[0]
-        for msg in messages
-        if (msg.command == "set" and msg.obj.name == "motor")
-    ]
-    flyer_start_positions = [
-        msg.args[0]
-        for msg in messages
-        if (
-            msg.command == "set"
-            and msg.obj.name == f"{flyer.name}_flyer_start_position"
-        )
-    ]
-    flyer_end_positions = [
-        msg.args[0]
-        for msg in messages
-        if (msg.command == "set" and msg.obj.name == f"{flyer.name}_flyer_end_position")
-    ]
-    assert stepper_positions == list(np.linspace(-100, 100, num=11))
-    assert flyer_start_positions == [-20, 30, -20, 30, -20, 30, -20, 30, -20, 30, -20]
-    assert flyer_end_positions == [30, -20, 30, -20, 30, -20, 30, -20, 30, -20, 30]
-
-
-@pytest.mark.skip(reason="grid scans are currently broken")
-def test_fly_grid_scan_metadata(sim_registry, aerotech_flyer, sim_ion_chamber):
-    """Does the plan set the parameters of the flyer motor."""
-    flyer = aerotech_flyer
-    stepper = sim.motor
-    md = {"spam": "eggs"}
-    plan = grid_fly_scan(
-        [sim_ion_chamber],
+        [],
         stepper,
         -100,
         100,
@@ -329,6 +87,54 @@ def test_fly_grid_scan_metadata(sim_registry, aerotech_flyer, sim_ion_chamber):
         -20,
         30,
         6,
+        dwell_time=1.0,
+        snake_axes=[flyer],
+    )
+    messages = list(plan)
+    assert messages[0].command == "stage"
+    assert messages[1].command == "open_run"
+    assert messages[2].command == "monitor"
+    assert messages[3].command == "monitor"
+    assert messages[4].command == "checkpoint"
+    # Check that we move the stepper first
+    assert messages[5].command == "set"
+    assert messages[5].args == (-100,)
+    assert messages[6].command == "wait"
+    # Check that flyer motor positions snake back and forth
+    stepper_positions = [
+        msg.args[0] for msg in messages if (msg.command == "set" and msg.obj is stepper)
+    ]
+    flyer_start_positions = [
+        msg.args[0].start_position
+        for msg in messages
+        if (msg.command == "prepare" and msg.obj is flyer)
+    ]
+    flyer_end_positions = [
+        msg.args[0].end_position
+        for msg in messages
+        if (msg.command == "prepare" and msg.obj is flyer)
+    ]
+    assert stepper_positions == list(np.linspace(-100, 100, num=11))
+    assert flyer_start_positions == [-20, 30, -20, 30, -20, 30, -20, 30, -20, 30, -20]
+    assert flyer_end_positions == [30, -20, 30, -20, 30, -20, 30, -20, 30, -20, 30]
+
+
+async def test_fly_grid_scan_metadata(sim_registry, flyer, ion_chamber):
+    """Does the plan set the parameters of the flyer motor."""
+    stepper = Motor(name="stepper", prefix="")
+    await stepper.connect(mock=True)
+    md = {"spam": "eggs"}
+    plan = grid_fly_scan(
+        [ion_chamber],
+        stepper,
+        -100,
+        100,
+        11,
+        flyer,
+        -20,
+        30,
+        6,
+        dwell_time=1.0,
         snake_axes=[flyer],
         md=md,
     )
@@ -338,22 +144,25 @@ def test_fly_grid_scan_metadata(sim_registry, aerotech_flyer, sim_ion_chamber):
     assert open_msg.command == "open_run"
     real_md = open_msg.kwargs
     expected_md = {
-        "detectors": ["I00"],
-        "motors": ("motor", flyer.name),
+        "motors": (stepper.name, flyer.name),
         "num_points": 66,
         "num_intervals": 65,
         "plan_args": {
-            "detectors": [repr(sim_ion_chamber)],
+            "detectors": [repr(ion_chamber)],
             "args": [repr(stepper), -100, 100, 11, repr(flyer), -20, 30, 6],
+            "dwell_time": 1.0,
+            "trigger": "DetectorTrigger.INTERNAL",
+            "delay_outputs": [],
+            "snake_axes": [repr(flyer)],
         },
         "plan_name": "grid_fly_scan",
         "hints": {
             "gridding": "rectilinear",
-            "dimensions": [(["motor"], "primary"), ([flyer.name], "primary")],
+            "dimensions": [([stepper.name], "primary"), ([flyer.name], "primary")],
         },
         "shape": (11, 6),
         "extents": ([-100, 100], [-20, 30]),
-        "snaking": (False, True),
+        "snaking": [False, True],
         "plan_pattern": "outer_product",
         "plan_pattern_args": {
             "args": [
@@ -361,12 +170,79 @@ def test_fly_grid_scan_metadata(sim_registry, aerotech_flyer, sim_ion_chamber):
                 -100,
                 100,
                 11,
+                repr(flyer),
+                -20,
+                30,
+                6,
             ]
         },
         "plan_pattern_module": "bluesky.plan_patterns",
         "spam": "eggs",
     }
     assert real_md == expected_md
+
+
+def test_prepare_detectors():
+    delay = DG645Delay("")
+    # Include two ion chambers to make sure we set the delay outputs only once
+    ion_chamber = IonChamber(
+        "",
+        scaler_channel=2,
+        preamp_prefix="",
+        voltmeter_prefix="",
+        voltmeter_channel=0,
+        counts_per_volt_second=1e6,
+    )
+    ion_chamber2 = IonChamber(
+        "",
+        scaler_channel=2,
+        preamp_prefix="",
+        voltmeter_prefix="",
+        voltmeter_channel=0,
+        counts_per_volt_second=1e6,
+    )
+    trigger_info = TriggerInfo(
+        number_of_events=15,
+        livetime=1.5,
+    )
+    ion_chamber.validate_trigger_info = mock.MagicMock(return_value=trigger_info)
+    ion_chamber2.validate_trigger_info = mock.MagicMock(return_value=trigger_info)
+    xspress = Xspress3Detector("")
+    gate_info = TriggerInfo(
+        number_of_events=15,
+        livetime=1.5,
+        deadtime=0.1,
+    )
+    xspress.validate_trigger_info = mock.MagicMock(return_value=gate_info)
+    msgs = list(
+        prepare_detectors(
+            detectors=[ion_chamber, ion_chamber2, xspress],
+            trigger_info=trigger_info,
+            delay_outputs=[delay.output_AB, delay.output_AB, delay.output_CD],
+        )
+    )
+    # Ion chamber trigger
+    assert len(msgs) == 6
+    assert msgs[0].obj is ion_chamber
+    assert msgs[0].command == "prepare"
+    assert msgs[0].args == (trigger_info,)
+    assert msgs[1].obj is ion_chamber2
+    assert msgs[1].command == "prepare"
+    assert msgs[1].args == (trigger_info,)
+    # Xspress
+    assert msgs[2].obj is xspress
+    assert msgs[2].command == "prepare"
+    assert msgs[2].args == (gate_info,)
+    # Delay generator
+    assert msgs[3].obj is delay
+    assert msgs[3].command == "prepare"
+    assert msgs[3].args == (trigger_info,)
+    assert msgs[4].obj is delay.output_AB
+    assert msgs[4].command == "prepare"
+    assert msgs[4].args == (trigger_info,)
+    assert msgs[5].obj is delay.output_CD
+    assert msgs[5].command == "prepare"
+    assert msgs[5].args == (gate_info,)
 
 
 # -----------------------------------------------------------------------------

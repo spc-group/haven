@@ -47,7 +47,7 @@ log = logging.getLogger(__name__)
 
 
 # Load the Tiled catalog for reading data back outline
-catalog = haven.tiled_client()
+# catalog = haven.tiled_client()
 
 # Create a run engine
 RE = haven.run_engine(
