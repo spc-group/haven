@@ -350,6 +350,7 @@ async def test_document_plan_args(mono):
     RE.subscribe(track_doc)
     # Prepare the plan
     energies = np.linspace(8250, 8550, num=11)
+    await mono.energy.high_limit_travel.set(10_000)
     plan = energy_scan(energies=energies, detectors=[], energy_devices=[mono])
     RE(plan)
     (start_doc,) = [doc for name, doc in documents if name == "start"]

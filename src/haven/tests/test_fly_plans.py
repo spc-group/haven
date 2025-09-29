@@ -93,12 +93,13 @@ def test_fly_grid_scan(flyer):
     messages = list(plan)
     assert messages[0].command == "stage"
     assert messages[1].command == "open_run"
-    # Check that we move the stepper first
     assert messages[2].command == "monitor"
-    assert messages[3].command == "checkpoint"
-    assert messages[4].command == "set"
-    assert messages[4].args == (-100,)
-    assert messages[5].command == "wait"
+    assert messages[3].command == "monitor"
+    assert messages[4].command == "checkpoint"
+    # Check that we move the stepper first
+    assert messages[5].command == "set"
+    assert messages[5].args == (-100,)
+    assert messages[6].command == "wait"
     # Check that flyer motor positions snake back and forth
     stepper_positions = [
         msg.args[0] for msg in messages if (msg.command == "set" and msg.obj is stepper)
