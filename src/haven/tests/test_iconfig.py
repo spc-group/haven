@@ -1,10 +1,15 @@
 import importlib
 import os
+import time
 from collections.abc import Mapping
 from pathlib import Path
 
-from haven import _iconfig
-from haven._iconfig import Configuration, load_config, print_config_value
+import pytest
+
+from haven import _iconfig, exceptions
+from haven._iconfig import Configuration, FeatureFlag, load_config, print_config_value
+
+next_month = time.time() + 30 * 24 * 3600
 
 
 def test_default_values():
@@ -119,20 +124,31 @@ def test_dotted_keys():
     assert config["spam.eggs.cheese.shop"] == 5
 
 
-flags = {
-    "haven.feature_flags": {
-        "spam": True,
-    }
-}
+@pytest.fixture()
+def config():
+    config = Configuration(
+        {
+            "haven.feature_flags": {
+                "spam": True,
+            },
+        },
+        feature_flags={"spam": FeatureFlag(expires=next_month)},
+    )
+    return config
 
 
-def test_feature_flag():
-    config = Configuration(flags)
+def test_feature_flag(config):
     assert config.feature_flag("spam") is True
 
 
-def test_feature_flag_decorator(mocker):
-    config = Configuration(flags)
+def test_feature_flag_default():
+    config = Configuration(
+        feature_flags={"spam": FeatureFlag(default="eggs", expires=next_month)}
+    )
+    assert config.feature_flag("spam") == "eggs"
+
+
+def test_feature_flag_decorator(mocker, config):
     mock = mocker.MagicMock()
 
     @config.with_feature_flag("spam", alternate=mock)
@@ -141,6 +157,32 @@ def test_feature_flag_decorator(mocker):
 
     inner("hello")
     mock.assert_called_once_with("hello")
+
+
+def test_get_undeclared_feature_flag(config):
+    """Do we raise an exception if getting a feature flag that is not declared?"""
+    config._feature_flags = {}
+    with pytest.raises(exceptions.UndeclaredFeatureFlag):
+        config.feature_flag("spam")
+
+
+def test_set_undeclared_feature_flag():
+    """Do we raise an exception if we use a feature flag that is not declared?"""
+    config = Configuration(
+        {"haven.feature_flags": {"spam": True}},
+        feature_flags={},
+    )
+    with pytest.raises(exceptions.UndeclaredFeatureFlag):
+        config.feature_flag("spam")
+
+
+def test_expired_feature_flag():
+    now = time.time()
+    config = Configuration(
+        {}, feature_flags={"spam": FeatureFlag(default="eggs", expires=now - 3600)}
+    )
+    with pytest.warns(exceptions.ExpiredFeatureFlag):
+        config.feature_flag("spam")
 
 
 # -----------------------------------------------------------------------------

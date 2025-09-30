@@ -12,7 +12,10 @@ __all__ = [
 import argparse
 import logging
 import os
+import time
+import warnings
 from collections.abc import Callable, Mapping, Sequence
+from dataclasses import dataclass
 from functools import wraps
 from pathlib import Path
 from pprint import pprint
@@ -21,10 +24,32 @@ from typing import Any
 import tomli
 from mergedeep import merge
 
+from haven.exceptions import ExpiredFeatureFlag, UndeclaredFeatureFlag
+
 log = logging.getLogger(__name__)
 
 
 _local_overrides = {}
+
+
+class Unset:
+    pass
+
+
+UNSET = Unset()
+
+
+@dataclass(frozen=True)
+class FeatureFlag:
+    expires: float | int
+    description: str = ""
+    default: Any = False
+
+
+FEATURE_FLAGS = {
+    # Declare a feature flags to develop some new feature. Be
+    # conservative when deciding on expiration dates.
+}
 
 
 class Configuration(Mapping):
@@ -45,9 +70,31 @@ class Configuration(Mapping):
     """
 
     _configs: Sequence[Mapping | Path | str]
+    _feature_flags: Mapping[str:Any]
 
-    def __init__(self, *configs: Sequence[Mapping | Path | str]):
+    def __init__(
+        self,
+        *configs: Sequence[Mapping | Path | str],
+        feature_flags: Mapping[str:Any] = FEATURE_FLAGS,
+    ):
         self._configs = configs
+        self._feature_flags = feature_flags
+
+    def check_feature_flags(self, config):
+        feature_flags = self._feature_flags
+        flags = config.get("haven.feature_flags", {})
+        extra_flags = [
+            flag for flag in flags.keys() if flag not in feature_flags.keys()
+        ]
+        if len(extra_flags) > 0:
+            raise UndeclaredFeatureFlag(extra_flags)
+        # See if any flags are expired
+        now = time.time()
+        expired = [name for name, flag in feature_flags.items() if flag.expires < now]
+        if len(expired) > 0:
+            warnings.warn(
+                f"Expired feature flags are declared: {expired}.", ExpiredFeatureFlag
+            )
 
     def _config(self):
         # Load configuration from TOML files
@@ -56,6 +103,7 @@ class Configuration(Mapping):
         ]
         config = merge({}, *configs, _local_overrides)
         check_deprecated_keys(config)
+        self.check_feature_flags(config)
         return config
 
     def __getitem__(self, key):
@@ -80,7 +128,6 @@ class Configuration(Mapping):
                 _key, tail = _key.rsplit(".", maxsplit=1)
             except ValueError:
                 # We can't split anymore '.', so lookup has failed
-                print(config, _key)
                 raise KeyError(key)
             extra_parts.append(tail)
 
@@ -91,8 +138,18 @@ class Configuration(Mapping):
     def __len__(self):
         return len(self._config)
 
-    def feature_flag(self, key: str):
-        return self["haven.feature_flags"][key]
+    def feature_flag(self, key: str) -> Any:
+        # Feature flags must be declared so they can be properly
+        # managed (expired, etc)
+        try:
+            flag = self._feature_flags[key]
+        except KeyError as exc:
+            raise UndeclaredFeatureFlag(key) from exc
+        # Now get the feature flag's value if possible
+        try:
+            return self[f"haven.feature_flags.{key}"]
+        except KeyError as exc:
+            return self._feature_flags[key].default
 
     def with_feature_flag(self, flag: str, alternate: Callable, *, eq: Any = True):
         """Call an alternate implementation if a feature flag is set.
