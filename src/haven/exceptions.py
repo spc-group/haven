@@ -77,7 +77,8 @@ class SignalNotFound(KeyError):
     ...
 
 
-class EmptySignalName(ValueError): ...
+class EmptySignalName(ValueError):
+    ...
 
 
 class InvalidTransformation(TypeError):
@@ -100,6 +101,24 @@ class PluginNotPrimed(RuntimeError):
     extract the dimensions, type, etc. of the data it will receive.
 
     """
+
+    ...
+
+
+class ProfileFailure(RuntimeError):
+    """A profile move did not build correctly."""
+
+    ...
+
+
+class UndeclaredFeatureFlag(ValueError):
+    """Attempted to check a feature flag that was not declared."""
+
+    ...
+
+
+class ExpiredFeatureFlag(FutureWarning):
+    """The feature flag has expired and should be removed."""
 
     ...
 

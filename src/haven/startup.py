@@ -20,14 +20,34 @@ from ophyd_async.core import NotConnected
 from ophydregistry import ComponentNotFound
 
 import haven  # noqa: F401
+
+# Import plans (needed for the qserver, optional for ipython/firefly)
 from haven import plans  # noqa: F401
+from haven import recall_motor_position  # noqa: F401
+from haven.plans import (  # noqa: F401
+    auto_gain,
+    calibrate,
+    count,
+    energy_scan,
+    grid_scan,
+    list_scan,
+    record_dark_current,
+    rel_grid_scan,
+    rel_list_scan,
+    rel_scan,
+    scan,
+    scan_nd,
+    set_energy,
+    xafs_scan,
+)
 
 logging.basicConfig(level=logging.WARNING)
 
 log = logging.getLogger(__name__)
 
+
 # Load the Tiled catalog for reading data back outline
-catalog = haven.tiled_client()
+# catalog = haven.tiled_client()
 
 # Create a run engine
 RE = haven.run_engine(

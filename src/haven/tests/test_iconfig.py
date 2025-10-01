@@ -1,9 +1,15 @@
 import importlib
 import os
+import time
+from collections.abc import Mapping
 from pathlib import Path
 
-from haven import _iconfig
-from haven._iconfig import load_config, print_config_value
+import pytest
+
+from haven import _iconfig, exceptions
+from haven._iconfig import Configuration, FeatureFlag, load_config, print_config_value
+
+next_month = time.time() + 30 * 24 * 3600
 
 
 def test_default_values():
@@ -14,7 +20,7 @@ def test_default_values():
 
 def test_loading_a_file():
     test_file = Path(__file__).resolve().parent / "test_iconfig.toml"
-    config = load_config(file_paths=(test_file,))
+    config = load_config(test_file)
     assert config["beamline"]["pv_prefix"] == "spam"
 
 
@@ -43,7 +49,7 @@ def test_merging_dicts():
         this_dir.parent / "iconfig_testing.toml",
     ]
     test_file = this_dir / "test_iconfig.toml"
-    config = load_config(file_paths=(*default_files, test_file))
+    config = load_config(*default_files, test_file)
     assert "prefix" in config["area_detector"][0].keys()
 
 
@@ -53,6 +59,130 @@ def test_haven_config_cli(capsys):
     # Check stdout for config value
     captured = capsys.readouterr()
     assert captured.out == "2.8\u202fmm planar undulator\n"
+
+
+def test_loads_config_mapping():
+    config = load_config({})
+    assert isinstance(config, Mapping)
+
+
+def test_dotted_indexing():
+    config = load_config(
+        {
+            "spam": {
+                "eggs": 5,
+            },
+        }
+    )
+    assert config["spam.eggs"] == 5
+
+
+def test_dotted_get():
+    config = load_config(
+        {
+            "spam": {
+                "eggs": 5,
+            },
+        }
+    )
+    assert config.get("spam.eggs") == 5
+
+
+def test_get_default():
+    config = load_config(
+        {
+            "spam": {
+                "eggs": 5,
+            },
+        }
+    )
+    assert config.get("spam.eggs") == 5
+
+
+def test_nested_indexing():
+    config = load_config(
+        {
+            "spam": {
+                "eggs": {
+                    "cheese": {
+                        "shop": 5,
+                    },
+                },
+            },
+        }
+    )
+    assert config["spam.eggs"]["cheese.shop"] == 5
+
+
+def test_dotted_keys():
+    """What if a key actually has a dot in it?"""
+    config = load_config(
+        {
+            "spam.eggs": {"cheese.shop": 5},
+        },
+    )
+    assert config["spam.eggs.cheese.shop"] == 5
+
+
+@pytest.fixture()
+def config():
+    config = Configuration(
+        {
+            "haven.feature_flags": {
+                "spam": True,
+            },
+        },
+        feature_flags={"spam": FeatureFlag(expires=next_month)},
+    )
+    return config
+
+
+def test_feature_flag(config):
+    assert config.feature_flag("spam") is True
+
+
+def test_feature_flag_default():
+    config = Configuration(
+        feature_flags={"spam": FeatureFlag(default="eggs", expires=next_month)}
+    )
+    assert config.feature_flag("spam") == "eggs"
+
+
+def test_feature_flag_decorator(mocker, config):
+    mock = mocker.MagicMock()
+
+    @config.with_feature_flag("spam", alternate=mock)
+    def inner():
+        assert False, "Feature flag not applied."
+
+    inner("hello")
+    mock.assert_called_once_with("hello")
+
+
+def test_get_undeclared_feature_flag(config):
+    """Do we raise an exception if getting a feature flag that is not declared?"""
+    config._feature_flags = {}
+    with pytest.raises(exceptions.UndeclaredFeatureFlag):
+        config.feature_flag("spam")
+
+
+def test_set_undeclared_feature_flag():
+    """Do we raise an exception if we use a feature flag that is not declared?"""
+    config = Configuration(
+        {"haven.feature_flags": {"spam": True}},
+        feature_flags={},
+    )
+    with pytest.raises(exceptions.UndeclaredFeatureFlag):
+        config.feature_flag("spam")
+
+
+def test_expired_feature_flag():
+    now = time.time()
+    config = Configuration(
+        {}, feature_flags={"spam": FeatureFlag(default="eggs", expires=now - 3600)}
+    )
+    with pytest.warns(exceptions.ExpiredFeatureFlag):
+        config.feature_flag("spam")
 
 
 # -----------------------------------------------------------------------------
