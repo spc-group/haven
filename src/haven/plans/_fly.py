@@ -24,6 +24,7 @@ from ophyd_async.epics.motor import FlyMotorInfo as BaseFlyMotorInfo
 from pydantic import Field
 
 from haven.devices.delay import DG645DelayOutput
+from haven._iconfig import load_config
 
 __all__ = ["fly_scan", "grid_fly_scan"]
 
@@ -101,7 +102,7 @@ def monitor_motors(motors):
         yield from bps.monitor(sig, name=motor.name)
 
 
-def fly_line_scan(detectors: Sequence, *args) -> Generator[Msg, Any, None]:
+def fly_line_scan(detectors: Sequence, *args, trigger_info=None, delay_outputs=[]) -> Generator[Msg, Any, None]:
     """A plan stub for fly-scanning a single trajectory.
 
     Parameters
@@ -121,9 +122,16 @@ def fly_line_scan(detectors: Sequence, *args) -> Generator[Msg, Any, None]:
       Motors can be any ‘flyable’ object.
 
     """
+    if load_config().feature_flag("grid_fly_scan_by_line"):
+        trigger_infos = yield from prepare_detectors(
+            detectors=detectors,
+            trigger_info=trigger_info,
+            delay_outputs=delay_outputs,
+            wait=True,
+        )
+    # Set up motors in their taxi position
     motors = args[0::2]
     motor_infos = args[1::2]
-    # Set up motors in their taxi position
     prepare_group = uuid.uuid4()
     for obj, motor_info in zip(motors, motor_infos):
         yield from bps.prepare(obj, motor_info, wait=False, group=prepare_group)
@@ -354,7 +362,6 @@ def grid_fly_scan(
     step_num = np.prod([chunk[3] for chunk in step_chunks])
     trigger_info = TriggerInfo(
         number_of_events=[fly_num] * step_num,
-        # number_of_events=self.num,
         livetime=dwell_time * 0.85,
         deadtime=dwell_time * 0.15,
         trigger=trigger,
@@ -412,29 +419,44 @@ def grid_fly_scan(
     @run_decorator(md=md_)
     def fly_inner():
         # Start the detectors (moved to the snaker until we can get the gate correct)
-        trigger_infos = yield from prepare_detectors(
-            detectors=detectors,
-            trigger_info=trigger_info,
-            delay_outputs=delay_outputs,
-            wait=True,
-        )
-        # num_outputs = len(delay_outputs)
-        num_outputs = 0  # for now they're all just different streams
-        yield from declare_streams(detectors[:num_outputs], detectors[num_outputs:])
-        # Do the true original plan
-        delays = set([output.parent for output in delay_outputs])
-        per_step = Snaker(
-            snake_axes=snake_flyer,
-            flyer=flyer,
-            start=fly_start,
-            stop=fly_stop,
-            num=fly_num,
-            dwell_time=dwell_time,
-            trigger=trigger,
-            delay_outputs=[*delays, *delay_outputs],
-            extra_signals=motors,
-            trigger_infos=trigger_infos,
-        )
+        if load_config().feature_flag("grid_fly_scan_by_line"):
+            delays = set([output.parent for output in delay_outputs])
+            per_step = Snaker(
+                snake_axes=snake_flyer,
+                flyer=flyer,
+                start=fly_start,
+                stop=fly_stop,
+                num=fly_num,
+                dwell_time=dwell_time,
+                trigger=trigger,
+                delay_outputs=delay_outputs,
+                extra_signals=motors,
+                trigger_info=trigger_info,
+            )
+        else:
+            trigger_infos = yield from prepare_detectors(
+                detectors=detectors,
+                trigger_info=trigger_info,
+                delay_outputs=delay_outputs,
+                wait=True,
+            )
+            # num_outputs = len(delay_outputs)
+            num_outputs = 0  # for now they're all just different streams
+            yield from declare_streams(detectors[:num_outputs], detectors[num_outputs:])
+            # Do the true original plan
+            delays = set([output.parent for output in delay_outputs])
+            per_step = Snaker(
+                snake_axes=snake_flyer,
+                flyer=flyer,
+                start=fly_start,
+                stop=fly_stop,
+                num=fly_num,
+                dwell_time=dwell_time,
+                trigger=trigger,
+                delay_outputs=[*delays, *delay_outputs],
+                extra_signals=motors,
+                trigger_infos=trigger_infos,
+            )
         grid_scan = stub_wrapper(
             bp.grid_scan(
                 detectors,
@@ -535,7 +557,8 @@ class Snaker:
         trigger: DetectorTrigger,
         delay_outputs: Sequence[Device],
         extra_signals,
-        trigger_infos,
+        trigger_infos=[],
+        trigger_info=None,
     ):
         self.snake_axes = snake_axes
         self.flyer = flyer
@@ -547,16 +570,9 @@ class Snaker:
         self.delay_outputs = delay_outputs
         self.extra_signals = extra_signals
         self.trigger_infos = trigger_infos
+        self.trigger_info = trigger_info
 
     def __call__(self, detectors, step, pos_cache):
-        # Only some detectors (edge triggers) need to fly, gated
-        # detectors should be flown from the calling plan and will
-        # continue flying for the next step.
-        to_fly = [
-            detector
-            for trig_info, detector in zip(self.trigger_infos, detectors)
-            if trig_info.trigger == DetectorTrigger.EDGE_TRIGGER
-        ]
         # Move the step-scanning motors to the correct position
         yield from bps.move_per_step(step, pos_cache)
         # Determine line scan range based on snaking
@@ -571,17 +587,28 @@ class Snaker:
             time_for_move=self.dwell_time * self.num,
             point_count=self.num,
         )
-        yield from fly_line_scan(
-            to_fly + self.delay_outputs, self.flyer, fly_motor_info
-        )
-        # Collect data from the detectors. Only detectors using
-        # triggers need to complete here, gates can just keep going.
-        #   This currently doesn't work because we can't control the
-        #   pulses properly. It leaves an extra frame at the end of
-        #   every gated signal.
-        yield from bps.complete_all(*to_fly, wait=True)
-        for detector in detectors:
-            yield from bps.collect(detector)
+        if load_config().feature_flag("grid_fly_scan_by_line"):
+            yield from fly_line_scan(detectors, self.flyer, fly_motor_info, delay_outputs=self.delay_outputs, trigger_info=self.trigger_info)
+        else:
+            # Only some detectors (edge triggers) need to fly, gated
+            # detectors should be flown from the calling plan and will
+            # continue flying for the next step.
+            to_fly = [
+                detector
+                for trig_info, detector in zip(self.trigger_infos, detectors)
+                if trig_info.trigger == DetectorTrigger.EDGE_TRIGGER
+            ]
+            yield from fly_line_scan(
+                to_fly + self.delay_outputs, self.flyer, fly_motor_info
+            )
+            # Collect data from the detectors. Only detectors using
+            # triggers need to complete here, gates can just keep going.
+            #   This currently doesn't work because we can't control the
+            #   pulses properly. It leaves an extra frame at the end of
+            #   every gated signal.
+            yield from bps.complete_all(*to_fly, wait=True)
+            for detector in detectors:
+                yield from bps.collect(detector)
 
 
 # -----------------------------------------------------------------------------

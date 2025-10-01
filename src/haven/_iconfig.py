@@ -9,6 +9,7 @@ __all__ = [
     "load_config",
 ]
 
+import datetime as dt
 import argparse
 import logging
 import os
@@ -32,13 +33,6 @@ log = logging.getLogger(__name__)
 _local_overrides = {}
 
 
-class Unset:
-    pass
-
-
-UNSET = Unset()
-
-
 @dataclass(frozen=True)
 class FeatureFlag:
     expires: float | int
@@ -49,6 +43,9 @@ class FeatureFlag:
 FEATURE_FLAGS = {
     # Declare a feature flags to develop some new feature. Be
     # conservative when deciding on expiration dates.
+    "grid_fly_scan_by_line": FeatureFlag(
+        expires=dt.datetime(2025, 11, 1).timestamp(),
+    ),
 }
 
 
