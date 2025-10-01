@@ -23,8 +23,8 @@ from ophyd_async.core import DetectorTrigger, Device, TriggerInfo
 from ophyd_async.epics.motor import FlyMotorInfo as BaseFlyMotorInfo
 from pydantic import Field
 
-from haven.devices.delay import DG645DelayOutput
 from haven._iconfig import load_config
+from haven.devices.delay import DG645DelayOutput
 
 __all__ = ["fly_scan", "grid_fly_scan"]
 
@@ -102,7 +102,9 @@ def monitor_motors(motors):
         yield from bps.monitor(sig, name=motor.name)
 
 
-def fly_line_scan(detectors: Sequence, *args, trigger_info=None, delay_outputs=[]) -> Generator[Msg, Any, None]:
+def fly_line_scan(
+    detectors: Sequence, *args, trigger_info=None, delay_outputs=[]
+) -> Generator[Msg, Any, None]:
     """A plan stub for fly-scanning a single trajectory.
 
     Parameters
@@ -588,7 +590,13 @@ class Snaker:
             point_count=self.num,
         )
         if load_config().feature_flag("grid_fly_scan_by_line"):
-            yield from fly_line_scan(detectors, self.flyer, fly_motor_info, delay_outputs=self.delay_outputs, trigger_info=self.trigger_info)
+            yield from fly_line_scan(
+                detectors,
+                self.flyer,
+                fly_motor_info,
+                delay_outputs=self.delay_outputs,
+                trigger_info=self.trigger_info,
+            )
         else:
             # Only some detectors (edge triggers) need to fly, gated
             # detectors should be flown from the calling plan and will

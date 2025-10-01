@@ -9,8 +9,8 @@ __all__ = [
     "load_config",
 ]
 
-import datetime as dt
 import argparse
+import datetime as dt
 import logging
 import os
 import time
@@ -45,6 +45,11 @@ FEATURE_FLAGS = {
     # conservative when deciding on expiration dates.
     "grid_fly_scan_by_line": FeatureFlag(
         expires=dt.datetime(2025, 11, 1).timestamp(),
+    ),
+    "apstools_2025-3_cycle_support": FeatureFlag(
+        expires=dt.datetime(2025, 10, 15).timestamp(),
+        description="https://github.com/BCDA-APS/apstools/issues/1122",
+        default=True,
     ),
 }
 
