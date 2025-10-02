@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import math
+import warnings
 from contextlib import asynccontextmanager
 from enum import IntEnum
 from pathlib import Path
@@ -12,6 +13,7 @@ import numpy as np
 import pandas as pd
 from bluesky.protocols import Preparable
 from ophyd_async.core import (
+    Array1D,
     AsyncStatus,
     Signal,
     SignalR,
@@ -192,7 +194,7 @@ class EnergyPositioner(BasePositioner, Preparable):
         ) and None not in [self.parent._energy_iter, self.parent._gap_iter]
         if not use_scanning:
             # No scan array is declared, so just move as normal
-            for update in await super().set(value, wait=wait, timeout=timeout):
+            async for update in super()._set(value, wait=wait, timeout=timeout):
                 yield update
             return
         # Use the scanning mode controls
@@ -231,19 +233,26 @@ class EnergyPositioner(BasePositioner, Preparable):
     @AsyncStatus.wrap
     async def prepare(self, value: TrajectoryMotorInfo):
         async with self.parent.prepare_scan_mode() as tg:
+            warnings.warn("Apply the energy offset")
+            energies = _energy_to_keV(np.asarray(value.positions), offset=0)
             for _ in range(SCAN_SETUP_RETRIES):
                 await self.parent.scan_array_length.set(len(value.positions))
-                await self.parent.scan_energy_array.set(value.positions)
+                await self.parent.scan_energy_array.set(energies)
+                await asyncio.sleep(3)  # To-do replace this with a observe_value()
                 if await self.parent.scan_setup_successful():
                     break
             else:
                 raise SetupFailed(
                     f"Preparing energy scan mode was not successful after {SCAN_SETUP_RETRIES} attempts."
                 )
+            self.parent._energy_iter = iter(value.positions)
 
     @AsyncStatus.wrap
     async def unstage(self):
-        await self.parent.scan_mode.set(UndulatorScanMode.NORMAL)
+        await asyncio.gather(
+            self.parent.clear_scan_array.set(True),
+            self.parent.scan_mode.set(UndulatorScanMode.NORMAL),
+        )
 
 
 def _keV_to_energy(keV: float, offset: float) -> float:
@@ -285,15 +294,15 @@ class PlanarUndulator(StandardReadable, EpicsDevice):
 
     # Signals for ID scanning mode
     scan_array_length: A[SignalRW[float], PV("GapArrayLenC"), Format.CONFIG_SIGNAL]
-    clear_scan_array: A[SignalRW[bool], PV(":GapArraySetClearC")]
-    scan_mode: A[SignalRW[UndulatorScanMode], PV(":GapScanModeSetC")]
-    scan_next_point: A[SignalRW[bool], PV(":MoveToNextGapC")]
-    scan_energy_array: A[SignalRW[np.ndarray], PV(":EnergyArraySetC")]
-    scan_gap_array: A[SignalRW[np.ndarray], PV(":GapArraySetC")]
-    scan_mismatch_count: A[SignalRW[int], PV(":MismatchCountM")]
-    scan_gap_array_check: A[SignalRW[bool], PV(":GapArrayCheckM")]
-    scan_energy_array_check: A[SignalRW[bool], PV(":EnergyArrayCheckM")]
-    scan_current_index: A[SignalR[int], PV(":ScanIndexM")]
+    clear_scan_array: A[SignalRW[float], PV("GapArraySetClearC")]
+    scan_mode: A[SignalRW[UndulatorScanMode], PV("GapScanModeSetC")]
+    scan_next_point: A[SignalRW[bool], PV("MoveToNextGapC")]
+    scan_energy_array: A[SignalRW[Array1D[np.float64]], PV("EnergyArraySetC.VAL")]
+    scan_gap_array: A[SignalRW[Array1D[np.int32]], PV("GapArraySetC")]
+    scan_mismatch_count: A[SignalRW[int], PV("MismatchCountM")]
+    scan_gap_array_check: A[SignalRW[bool], PV("GapArrayCheckM")]
+    scan_energy_array_check: A[SignalRW[bool], PV("EnergyArrayCheckM")]
+    scan_current_index: A[SignalR[int], PV("ScanIndexM")]
 
     class AccessMode(SubsetEnum):
         USER = "User"
@@ -397,9 +406,10 @@ class PlanarUndulator(StandardReadable, EpicsDevice):
             yield tg
         # Scanning is set up, now get ready for executing the steps
         scan_gaps = await self.scan_gap_array.get_value()
-        first_gap = scan_gaps[0]
-        await self.gap.set(first_gap, timeout=3)
-        await self.scan_mode.set(UndulatorScanMode.SOFTWARE)
+        self._gap_iter = iter(scan_gaps)
+        first_gap = scan_gaps[0] / 1000
+        await self.gap.set(first_gap, timeout=CALCULATE_TIMEOUT)
+        await self.scan_mode.set(UndulatorScanMode.SOFTWARE_RETRIES)
 
 
 # -----------------------------------------------------------------------------

@@ -102,7 +102,7 @@ async def test_prepare_energy_scan(undulator):
     set_mock_value(undulator.scan_gap_array_check, True)
     set_mock_value(undulator.scan_energy_array_check, True)
     # Simulate the gap array getting calculated
-    set_mock_value(undulator.scan_gap_array, [35.8, 36, 0, 37.1])
+    set_mock_value(undulator.scan_gap_array, [35800, 3600, 37100])
     # Prepare and check end point
     status = undulator.energy.prepare(tinfo)
     set_mock_value(undulator.busy, 1)
@@ -111,7 +111,7 @@ async def test_prepare_energy_scan(undulator):
     assert await undulator.clear_scan_array.get_value() == True
     assert await undulator.scan_array_length.get_value() == 3
     np.testing.assert_equal(
-        await undulator.scan_energy_array.get_value(), [1000, 1100, 1200]
+        await undulator.scan_energy_array.get_value(), [1.0, 1.1, 1.2]
     )
     # Simulate the undulator having been moved
     set_mock_value(undulator.busy, 0)

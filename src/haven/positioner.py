@@ -91,13 +91,13 @@ class Positioner(StandardReadable, Locatable, Movable, Stoppable):
         }
         return location
 
-    @WatchableAsyncStatus.wrap
-    async def set(
+    async def _set(
         self,
         value: float,
         wait: bool = True,
         timeout: CalculatableTimeout = "CALCULATE_TIMEOUT",
     ):
+        print(f"Setting to {value=}")
         new_position = value
         self._set_success = True
         old_position, current_position, units, precision, velocity = (
@@ -162,6 +162,7 @@ class Positioner(StandardReadable, Locatable, Movable, Stoppable):
         async for current_position in observe_value(
             self.readback, done_status=done_status
         ):
+            print(current_position, new_position)
             yield WatcherUpdate(
                 current=current_position,
                 initial=old_position,
@@ -176,14 +177,18 @@ class Positioner(StandardReadable, Locatable, Movable, Stoppable):
                 new_position,
                 atol=10 ** (-precision),
             )
+            print(f"{target_reached=}")
             if target_reached:
                 reached_setpoint.set()
                 break
         # Make sure the done point was actually reached
         await done_status
+        print("DONE")
         # Handle failed moves
         if not self._set_success:
             raise RuntimeError("Motor was stopped")
+
+    set = WatchableAsyncStatus.wrap(_set)
 
     async def stop(self, success=True):
         self._set_success = success
