@@ -332,6 +332,7 @@ class PlanarUndulator(StandardReadable, EpicsDevice, Preparable):
         # Scanning is set up, now get ready for executing the steps
         scan_gaps = await self.scan_gap_array.get_value()
         first_gap = scan_gaps[0]
+        print(self.gap)
         await self.gap.set(first_gap, timeout=3)
         await self.scan_mode.set(UndulatorScanMode.SOFTWARE)
 

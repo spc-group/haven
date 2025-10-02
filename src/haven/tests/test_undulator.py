@@ -46,6 +46,7 @@ async def test_data_keys(undulator):
         "undulator-harmonic_value",
         "undulator-location",
         "undulator-magnet",
+        "undulator-scan_array_length",
         "undulator-version_hpmu",
         "undulator-version_plc",
     }
@@ -103,14 +104,16 @@ async def test_prepare_energy_scan(undulator):
     set_mock_value(undulator.scan_gap_array, [35.8, 36, 0, 37.1])
     # Prepare and check end point
     status = undulator.energy.prepare(tinfo)
+    set_mock_value(undulator.busy, 1)
     await asyncio.sleep(0.1)
     set_mock_value(undulator.busy, 0)
     await undulator.gap.readback.set(35.8)
+    await asyncio.sleep(0.1)
     await asyncio.wait_for(
         status, timeout=3
     )  # Timeout needed until we get the positioner updated to ophyd-async
     assert await undulator.gap.setpoint.get_value() == 35.8
-    assert await undulator.scan_mode == UndulatorScanMode.SOFTWARE
+    assert await undulator.scan_mode.get_value() == UndulatorScanMode.SOFTWARE
 
 
 # -----------------------------------------------------------------------------
