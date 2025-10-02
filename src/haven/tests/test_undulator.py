@@ -1,6 +1,7 @@
 import asyncio
 from io import StringIO
 
+import numpy as np
 import pytest
 from ophyd_async.testing import get_mock_put, set_mock_value
 
@@ -106,14 +107,44 @@ async def test_prepare_energy_scan(undulator):
     status = undulator.energy.prepare(tinfo)
     set_mock_value(undulator.busy, 1)
     await asyncio.sleep(0.1)
+    assert await undulator.scan_mode.get_value() == UndulatorScanMode.NORMAL
+    assert await undulator.clear_scan_array.get_value() == True
+    assert await undulator.scan_array_length.get_value() == 3
+    np.testing.assert_equal(
+        await undulator.scan_energy_array.get_value(), [1000, 1100, 1200]
+    )
+    # Simulate the undulator having been moved
     set_mock_value(undulator.busy, 0)
     await undulator.gap.readback.set(35.8)
     await asyncio.sleep(0.1)
-    await asyncio.wait_for(
-        status, timeout=3
-    )  # Timeout needed until we get the positioner updated to ophyd-async
+    await asyncio.wait_for(status, timeout=3)
     assert await undulator.gap.setpoint.get_value() == 35.8
     assert await undulator.scan_mode.get_value() == UndulatorScanMode.SOFTWARE
+
+
+async def test_move_energy_scan(undulator, mocker):
+    """Can we move the undulator properly as part of a pre-determined energy scan?"""
+    mock_config = mocker.MagicMock()
+    mock_config.feature_flag.return_value = True
+    mocker.patch("haven.devices.undulator.load_config", new=mock_config)
+    # Pretend we already prepared it
+    undulator._energy_iter = iter([1000, 1100, 1200])
+    undulator._gap_iter = iter([35.8, 36, 37.1])
+    # Now do the actual move
+    set_status = undulator.energy.set(1000)
+    await asyncio.sleep(0.05)
+    assert await undulator.scan_next_point.get_value() == 1
+    await asyncio.sleep(0.1)  # Wait for the next-point-trigger to reset
+    assert await undulator.scan_next_point.get_value() == 0
+    set_mock_value(undulator.energy.dial_readback, 1.0)
+    await asyncio.sleep(0.1)
+    await asyncio.wait_for(set_status, timeout=3)
+
+
+async def test_unstage(undulator):
+    set_mock_value(undulator.scan_mode, UndulatorScanMode.SOFTWARE)
+    await undulator.energy.unstage()
+    assert await undulator.scan_mode.get_value() == UndulatorScanMode.NORMAL
 
 
 # -----------------------------------------------------------------------------
