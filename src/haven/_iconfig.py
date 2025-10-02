@@ -51,6 +51,10 @@ FEATURE_FLAGS = {
         description="https://github.com/BCDA-APS/apstools/issues/1122",
         default=True,
     ),
+    "undulator_fast_step_scanning_mode": FeatureFlag(
+        expires=dt.datetime(2025, 10, 30).timestamp(),
+        description="new controls added to the 25-ID undulator for step scanning faster",
+    ),
 }
 
 

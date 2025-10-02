@@ -1,9 +1,11 @@
+import asyncio
 from io import StringIO
 
 import pytest
 from ophyd_async.testing import get_mock_put, set_mock_value
 
 from haven.devices import PlanarUndulator
+from haven.devices.undulator import TrajectoryMotorInfo, UndulatorScanMode
 
 
 @pytest.fixture()
@@ -44,6 +46,7 @@ async def test_data_keys(undulator):
         "undulator-harmonic_value",
         "undulator-location",
         "undulator-magnet",
+        "undulator-scan_array_length",
         "undulator-version_hpmu",
         "undulator-version_plc",
     }
@@ -87,6 +90,30 @@ def test_auto_offset_lookup(undulator):
     # Out-of-bounds interpolation should fail
     with pytest.raises(ValueError):
         undulator.auto_offset(500)
+
+
+async def test_prepare_energy_scan(undulator):
+    tinfo = TrajectoryMotorInfo(
+        positions=[1000, 1100, 1200],
+        times=[0, 0.5, 1.0],  # Not currently used
+    )
+    set_mock_value(undulator.scan_mismatch_count, 0)
+    set_mock_value(undulator.scan_gap_array_check, True)
+    set_mock_value(undulator.scan_energy_array_check, True)
+    # Simulate the gap array getting calculated
+    set_mock_value(undulator.scan_gap_array, [35.8, 36, 0, 37.1])
+    # Prepare and check end point
+    status = undulator.energy.prepare(tinfo)
+    set_mock_value(undulator.busy, 1)
+    await asyncio.sleep(0.1)
+    set_mock_value(undulator.busy, 0)
+    await undulator.gap.readback.set(35.8)
+    await asyncio.sleep(0.1)
+    await asyncio.wait_for(
+        status, timeout=3
+    )  # Timeout needed until we get the positioner updated to ophyd-async
+    assert await undulator.gap.setpoint.get_value() == 35.8
+    assert await undulator.scan_mode.get_value() == UndulatorScanMode.SOFTWARE
 
 
 # -----------------------------------------------------------------------------
