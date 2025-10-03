@@ -7,7 +7,7 @@ from enum import IntEnum
 from pathlib import Path
 from typing import IO
 from typing import Annotated as A
-from typing import Sequence
+from typing import Sequence, cast
 
 import numpy as np
 import pandas as pd
@@ -193,13 +193,31 @@ class EnergyPositioner(BasePositioner, Preparable):
         wait: bool = True,
         timeout: CalculatableTimeout = "CALCULATE_TIMEOUT",
     ):
-        use_scanning = load_config().feature_flag(
-            "undulator_fast_step_scanning_mode"
-        ) and None not in [self.parent._energy_iter, self.parent._gap_iter]
-        if not use_scanning:
-            # No scan array is declared, so just move as normal
+        #         first_gap = scan_gaps[0]
+        # await self.gap.set(first_gap, timeout=CALCULATE_TIMEOUT)
+        use_scanning = load_config().feature_flag("undulator_fast_step_scanning_mode")
+        is_scanning = (
+            await self.parent.scan_mode.get_value() != UndulatorScanMode.NORMAL
+        )
+        if not (use_scanning and is_scanning):
+            # No scan array is active, so just move as normal
             async for update in super()._set(value, wait=wait, timeout=timeout):
                 yield update
+            return
+        assert wait is True, "Cannot handle not waiting in scan mode."
+        next_gap = next(self.parent._gap_iter)
+        next_energy = next(self.parent._energy_iter)
+        current_index, current_mode = await asyncio.gather(
+            self.parent.scan_current_index.get_value(),
+            self.parent.scan_mode.get_value(),
+        )
+        is_first_point = current_index == 0
+        if is_first_point:
+            # The scan controls don't actually move the gap to the first position
+            # so we have to do it manually
+            await self.parent.scan_mode.set(UndulatorScanMode.NORMAL)
+            await self.parent.gap.set(next_gap, timeout=timeout)
+            await self.parent.scan_mode.set(current_mode)
             return
         # Use the scanning mode controls
         old_position, current_position, units, precision, velocity = (
@@ -211,10 +229,17 @@ class EnergyPositioner(BasePositioner, Preparable):
                 self.velocity.get_value(),
             )
         )
-        target = next(self.parent._energy_iter)
+        target = next_energy
         next_scan_task = asyncio.ensure_future(self._advance_scan_point())
+        # Decide how long we should wait
+        timeout_: float
+        if timeout == CALCULATE_TIMEOUT:
+            assert velocity > 0, "Mover has zero velocity"
+            timeout_ = abs(target - old_position) / velocity + DEFAULT_TIMEOUT
+        else:
+            timeout_ = cast(float, timeout)
         # Monitor the scanning PVs to see when the move is done
-        async for current_position in observe_value(self.readback):
+        async for current_position in observe_value(self.readback, timeout=timeout_):
             yield WatcherUpdate(
                 current=current_position,
                 initial=old_position,
@@ -436,8 +461,6 @@ class PlanarUndulator(StandardReadable, EpicsDevice):
         scan_gaps = scan_gaps.result()[:num_points]
         scan_gaps = scan_gaps / UM_PER_MM
         self._gap_iter = iter(scan_gaps)
-        first_gap = scan_gaps[0]
-        await self.gap.set(first_gap, timeout=CALCULATE_TIMEOUT)
         await self.scan_mode.set(UndulatorScanMode.SOFTWARE_RETRIES)
 
 

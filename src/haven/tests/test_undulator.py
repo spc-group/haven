@@ -109,35 +109,68 @@ async def test_prepare_energy_scan(undulator, mocker):
     set_mock_value(undulator.scan_gap_array, gaps + [0] * (array_size - len(gaps)))
     # Prepare and check end point
     mocker.patch.object(undulator, "auto_offset", mocker.MagicMock(return_value=20))
-    status = undulator.energy.prepare(tinfo)
-    set_mock_value(undulator.busy, 1)
-    await asyncio.sleep(0.1)
-    assert await undulator.scan_mode.get_value() == UndulatorScanMode.NORMAL
+    await undulator.energy.prepare(tinfo)
+    # set_mock_value(undulator.busy, 1)
+    # await asyncio.sleep(0.1)
+    # assert await undulator.scan_mode.get_value() == UndulatorScanMode.NORMAL
     assert await undulator.clear_scan_array.get_value() == True
     assert await undulator.scan_array_length.get_value() == 3
     np.testing.assert_equal(
         await undulator.scan_energy_array.get_value(), [1.02, 1.12, 1.22]
     )
-    # Simulate the undulator having been moved
-    set_mock_value(undulator.busy, 0)
-    await undulator.gap.readback.set(35.8)
-    await asyncio.sleep(0.1)
-    await asyncio.wait_for(status, timeout=3)
-    assert await undulator.gap.setpoint.get_value() == 35.8
+    # # Simulate the undulator having been moved
+    # set_mock_value(undulator.busy, 0)
+    # await undulator.gap.readback.set(35.8)
+    # await asyncio.sleep(0.1)
+    # await asyncio.wait_for(status, timeout=3)
+    # assert await undulator.gap.setpoint.get_value() == 35.8
     assert await undulator.scan_mode.get_value() == UndulatorScanMode.SOFTWARE_RETRIES
     # Confirm that the energy and gap iterators are set so we can move later
     np.testing.assert_equal(list(undulator._gap_iter), np.divide(gaps, 1000))
     np.testing.assert_equal(list(undulator._energy_iter), energies)
 
 
-async def test_move_energy_scan(undulator, mocker):
-    """Can we move the undulator properly as part of a pre-determined energy scan?"""
+async def test_move_first_energy_scan(undulator, mocker):
+    """Can we move the undulator properly to the first point a
+    pre-determined energy scan?
+
+    """
     mock_config = mocker.MagicMock()
     mock_config.feature_flag.return_value = True
     mocker.patch("haven.devices.undulator.load_config", new=mock_config)
     # Pretend we already prepared it
     undulator._energy_iter = iter([1000, 1100, 1200])
     undulator._gap_iter = iter([35.8, 36, 37.1])
+    set_mock_value(undulator.scan_mode, UndulatorScanMode.SOFTWARE_RETRIES)
+    # Now do the actual move
+    set_status = undulator.energy.set(1000)
+    set_mock_value(undulator.busy, 1)
+    await asyncio.sleep(0.05)  # Sleep to let the move start
+    assert await undulator.scan_mode.get_value() == UndulatorScanMode.NORMAL
+    assert await undulator.gap.setpoint.get_value() == 35.8
+    # Simulate the undulator having been moved
+    set_mock_value(undulator.busy, 0)
+    await undulator.gap.readback.set(35.8)
+    await asyncio.wait_for(set_status, timeout=3)
+    assert await undulator.scan_mode.get_value() == UndulatorScanMode.SOFTWARE_RETRIES
+    # Should not update the next scan point
+    assert await undulator.scan_next_point.get_value() == 0
+
+
+async def test_move_next_energy_scan(undulator, mocker):
+    """Can we move the undulator properly to the 2nd, 3rd, etc point as
+    part of a pre-determined energy scan?
+
+    """
+    mock_config = mocker.MagicMock()
+    mock_config.feature_flag.return_value = True
+    mocker.patch("haven.devices.undulator.load_config", new=mock_config)
+    # Pretend we already prepared it
+    undulator._energy_iter = iter([1000, 1100, 1200])
+    undulator._gap_iter = iter([35.8, 36, 37.1])
+    set_mock_value(undulator.scan_mode, UndulatorScanMode.SOFTWARE_RETRIES)
+    set_mock_value(undulator.scan_current_index, 1)
+    set_mock_value(undulator.energy.velocity, 1000)  # Make timeouts reasonable
     # Now do the actual move
     set_status = undulator.energy.set(1000)
     await asyncio.sleep(0.05)
@@ -146,7 +179,7 @@ async def test_move_energy_scan(undulator, mocker):
     assert await undulator.scan_next_point.get_value() == 0
     set_mock_value(undulator.energy.dial_readback, 1.0)
     await asyncio.sleep(0.1)
-    await asyncio.wait_for(set_status, timeout=3)
+    await set_status
 
 
 async def test_unstage(undulator):
