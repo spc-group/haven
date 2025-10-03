@@ -124,6 +124,22 @@ def test_dotted_keys():
     assert config["spam.eggs.cheese.shop"] == 5
 
 
+def test_iterate_keys():
+    config = load_config({"hello": "spam"})
+    iterated_keys = [k for k in config]
+    assert iterated_keys == ["hello"]
+
+
+def test_iterate_nested_keys():
+    """We don't actually want to iterate over the nested keys, so just
+    make sure we don't.
+
+    """
+    config = load_config({"hello": {"spam": "eggs"}})
+    iterated_keys = [k for k in config]
+    assert iterated_keys == ["hello"]
+
+
 @pytest.fixture()
 def config():
     config = Configuration(

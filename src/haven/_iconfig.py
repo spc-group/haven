@@ -138,7 +138,7 @@ class Configuration(Mapping):
             extra_parts.append(tail)
 
     def __iter__(self):
-        for obj in self._config:
+        for obj in self._config():
             yield obj
 
     def __len__(self):
