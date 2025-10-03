@@ -1,6 +1,7 @@
 import pytest
 
 from haven.devices.motor import Motor, load_motors
+from haven.devices.undulator import TrajectoryMotorInfo
 
 
 @pytest.fixture()
@@ -31,6 +32,12 @@ def test_load_motors():
 async def test_description_field_updates(motor):
     """Do the EPICS .DESC fields get set to the device name?"""
     assert (await motor.description.get_value()) == "test_motor"
+
+
+async def test_prepare_trajectory(motor):
+    """We should be able to prepare a trajectory scan, but have it just be a normal scan really."""
+    tinfo = TrajectoryMotorInfo(positions=[], times=[])
+    await motor.prepare(tinfo)
 
 
 # -----------------------------------------------------------------------------

@@ -2,11 +2,15 @@ import logging
 from collections.abc import Generator
 
 from ophyd_async.core import (
+    AsyncStatus,
+    FlyMotorInfo,
     StandardReadableFormat,
     StrictEnum,
 )
 from ophyd_async.epics.core import epics_signal_r, epics_signal_rw
 from ophyd_async.epics.motor import Motor as MotorBase
+
+from haven.devices.undulator import TrajectoryMotorInfo
 
 log = logging.getLogger(__name__)
 
@@ -36,6 +40,11 @@ class Motor(MotorBase):
     async def connect(self, *args, **kwargs):
         await super().connect(*args, **kwargs)
         await self.description.set(self.name)
+
+    @AsyncStatus.wrap
+    async def prepare(self, value: FlyMotorInfo | TrajectoryMotorInfo):
+        if isinstance(value, FlyMotorInfo):
+            return await super().prepare(value)
 
 
 def load_motors(**defns: str) -> Generator[Motor, None, None]:
