@@ -211,6 +211,13 @@ async def test_update_snakes(display):
     assert widgets.snake_checkbox.isEnabled()
 
 
+def test_queue_plan(display, qtbot):
+    # Make sure the plan can be submitted
+    # Specific plan args should test `display.plan_args()`
+    with qtbot.waitSignal(display.queue_item_submitted, timeout=2):
+        display.queue_plan()
+
+
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman, Juan Juan Huang
 # :email:     wolfman@anl.gov, juanjuan.huang@anl.gov

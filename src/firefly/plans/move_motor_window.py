@@ -95,6 +95,7 @@ class MotorRegionsManager(RegionsManager):
 
 class MoveMotorDisplay(plan_display.PlanStubDisplay):
     _default_region_count = 1
+    scan_repetitions = 1
 
     def customize_ui(self):
         super().customize_ui()

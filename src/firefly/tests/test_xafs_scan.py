@@ -225,6 +225,14 @@ async def test_update_devices(display, sim_registry):
     assert display.detectors_list.update_devices.called
 
 
+def test_queue_plan(display, qtbot):
+    # Make sure the plan can be submitted
+    # Specific plan args should test `display.plan_args()`
+    display.ui.edge_combo_box.setCurrentText("8333")
+    with qtbot.waitSignal(display.queue_item_submitted, timeout=2):
+        display.queue_plan()
+
+
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman, Juan Juan Huang
 # :email:     wolfman@anl.gov, juanjuan.huang@anl.gov

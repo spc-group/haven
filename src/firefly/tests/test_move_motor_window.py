@@ -117,3 +117,10 @@ async def test_update_devices(display, sim_registry):
     device_selector.update_devices = mock.AsyncMock()
     await display.update_devices(sim_registry)
     assert device_selector.update_devices.called
+
+
+def test_queue_plan(display, qtbot):
+    # Make sure the plan can be submitted
+    # Specific plan args should test `display.plan_args()`
+    with qtbot.waitSignal(display.queue_item_submitted, timeout=2):
+        display.queue_plan()
