@@ -145,6 +145,8 @@ class UndulatorPositioner(BasePositioner):
 
 
 class EnergyPositioner(BasePositioner, Preparable):
+    scan_has_moved: bool
+
     def __init__(
         self,
         *,
@@ -193,8 +195,6 @@ class EnergyPositioner(BasePositioner, Preparable):
         wait: bool = True,
         timeout: CalculatableTimeout = "CALCULATE_TIMEOUT",
     ):
-        #         first_gap = scan_gaps[0]
-        # await self.gap.set(first_gap, timeout=CALCULATE_TIMEOUT)
         use_scanning = load_config().feature_flag("undulator_fast_step_scanning_mode")
         is_scanning = (
             await self.parent.scan_mode.get_value() != UndulatorScanMode.NORMAL
@@ -211,13 +211,14 @@ class EnergyPositioner(BasePositioner, Preparable):
             self.parent.scan_current_index.get_value(),
             self.parent.scan_mode.get_value(),
         )
-        is_first_point = current_index == 0
+        is_first_point = current_index == 0 and not self.scan_has_moved
         if is_first_point:
             # The scan controls don't actually move the gap to the first position
             # so we have to do it manually
             await self.parent.scan_mode.set(UndulatorScanMode.NORMAL)
             await self.parent.gap.set(next_gap, timeout=timeout)
             await self.parent.scan_mode.set(current_mode)
+            self.scan_has_moved = True
             return
         # Use the scanning mode controls
         old_position, current_position, units, precision, velocity = (
@@ -263,7 +264,7 @@ class EnergyPositioner(BasePositioner, Preparable):
     async def prepare(self, value: TrajectoryMotorInfo, timeout=DEFAULT_TIMEOUT):
         """Prepare for a scan using ASD's undulator scan controls."""
         energies = np.asarray(value.positions)
-        offset = self.parent.auto_offset(np.median(energies))
+        offset = await self.offset.get_value()
         energies_kev = _energy_to_keV(energies, offset=offset)
         exceptions = []
         async with self.parent.prepare_scan_mode() as tg:
@@ -288,6 +289,7 @@ class EnergyPositioner(BasePositioner, Preparable):
         # The energy->gap calcuations in the IOC don't work right with a taper
         if gap_taper.result() != 0:
             warnings.warn("Setting energy array with non-zero taper.")
+        self.scan_has_moved = False
 
     @AsyncStatus.wrap
     async def unstage(self):

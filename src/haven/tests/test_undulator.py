@@ -102,6 +102,7 @@ async def test_prepare_energy_scan(undulator, mocker):
     set_mock_value(undulator.scan_mismatch_count, 0)
     set_mock_value(undulator.scan_gap_array_check, True)
     set_mock_value(undulator.scan_energy_array_check, True)
+    set_mock_value(undulator.energy.offset, 20)
     # Simulate the gap array getting calculated
     # The EPICS array will always be 2000 values long
     array_size = 2000
@@ -142,6 +143,7 @@ async def test_move_first_energy_scan(undulator, mocker):
     undulator._energy_iter = iter([1000, 1100, 1200])
     undulator._gap_iter = iter([35.8, 36, 37.1])
     set_mock_value(undulator.scan_mode, UndulatorScanMode.SOFTWARE_RETRIES)
+    undulator.energy.scan_has_moved = False
     # Now do the actual move
     set_status = undulator.energy.set(1000)
     set_mock_value(undulator.busy, 1)
