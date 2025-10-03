@@ -45,6 +45,9 @@ packages = ["src/haven", "src/firefly", "src/haven_qserver"]
 [tool.isort]
 profile = "black"
 
+[tool.ruff]
+target-version = "py312"
+
 [tool.ruff.lint]
 select = ["E9", "F63", "F7", "F82", "F401"]
 

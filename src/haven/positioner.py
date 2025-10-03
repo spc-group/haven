@@ -72,6 +72,7 @@ class Positioner(StandardReadable, Locatable, Movable, Stoppable):
     ):
         """Update the event when the done value is actually done."""
         log.debug(f"Received new done value: {value}.")
+        print(f"watch_done: {value=}, {self.done_value=}")
         if value != self.done_value:
             # The movement has started
             log.debug("Setting started_event")

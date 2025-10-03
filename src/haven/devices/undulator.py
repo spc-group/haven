@@ -13,6 +13,7 @@ import numpy as np
 import pandas as pd
 from bluesky.protocols import Preparable
 from ophyd_async.core import (
+    DEFAULT_TIMEOUT,
     Array1D,
     AsyncStatus,
     Signal,
@@ -52,6 +53,9 @@ from haven.devices.signal import derived_signal_x
 from haven.positioner import Positioner
 
 log = logging.getLogger(__name__)
+
+
+UM_PER_MM = 1000
 
 
 class SetupFailed(RuntimeError):
@@ -231,21 +235,33 @@ class EnergyPositioner(BasePositioner, Preparable):
         await next_scan_task
 
     @AsyncStatus.wrap
-    async def prepare(self, value: TrajectoryMotorInfo):
+    async def prepare(self, value: TrajectoryMotorInfo, timeout=DEFAULT_TIMEOUT):
+        """Prepare for a scan using ASD's undulator scan controls."""
+        energies = np.asarray(value.positions)
+        offset = self.parent.auto_offset(np.median(energies))
+        energies_kev = _energy_to_keV(energies, offset=offset)
+        exceptions = []
         async with self.parent.prepare_scan_mode() as tg:
-            warnings.warn("Apply the energy offset")
-            energies = _energy_to_keV(np.asarray(value.positions), offset=0)
+            gap_taper = tg.create_task(self.parent.gap_taper.readback.get_value())
             for _ in range(SCAN_SETUP_RETRIES):
                 await self.parent.scan_array_length.set(len(value.positions))
-                await self.parent.scan_energy_array.set(energies)
-                await asyncio.sleep(3)  # To-do replace this with a observe_value()
-                if await self.parent.scan_setup_successful():
+                await self.parent.scan_energy_array.set(energies_kev)
+                try:
+                    await self.parent.scan_setup_successful(timeout=timeout)
+                except (SetupFailed, TimeoutError) as exc:
+                    exceptions.append(exc)
+                    continue
+                else:
                     break
             else:
-                raise SetupFailed(
-                    f"Preparing energy scan mode was not successful after {SCAN_SETUP_RETRIES} attempts."
+                raise ExceptionGroup(
+                    f"Preparing energy scan mode was not successful after {SCAN_SETUP_RETRIES} attempts.",
+                    exceptions,
                 )
             self.parent._energy_iter = iter(value.positions)
+        # The energy->gap calcuations in the IOC don't work right with a taper
+        if gap_taper.result() != 0:
+            warnings.warn("Setting energy array with non-zero taper.")
 
     @AsyncStatus.wrap
     async def unstage(self):
@@ -386,13 +402,20 @@ class PlanarUndulator(StandardReadable, EpicsDevice):
             raise ValueError(f"Refusing to extrapolate ID offset: {energy}")
         return float(new_offset)
 
-    async def scan_setup_successful(self):
-        mismatched, gap_ok, energy_ok = await asyncio.gather(
-            self.scan_mismatch_count.get_value(),
+    async def scan_setup_successful(self, timeout):
+        gap_ok, energy_ok = await asyncio.gather(
             self.scan_gap_array_check.get_value(),
             self.scan_energy_array_check.get_value(),
         )
-        return gap_ok and energy_ok and mismatched == 0
+        if not gap_ok or not energy_ok:
+            raise SetupFailed(f"{gap_ok=}, {energy_ok=}")
+        # Make sure there are no mismatched arrays
+        async for value in observe_value(
+            self.scan_mismatch_count, done_timeout=timeout
+        ):
+            if value == 0:
+                break
+        return True
 
     @asynccontextmanager
     async def prepare_scan_mode(self):
@@ -407,7 +430,7 @@ class PlanarUndulator(StandardReadable, EpicsDevice):
         # Scanning is set up, now get ready for executing the steps
         scan_gaps = await self.scan_gap_array.get_value()
         self._gap_iter = iter(scan_gaps)
-        first_gap = scan_gaps[0] / 1000
+        first_gap = scan_gaps[0] / UM_PER_MM
         await self.gap.set(first_gap, timeout=CALCULATE_TIMEOUT)
         await self.scan_mode.set(UndulatorScanMode.SOFTWARE_RETRIES)
 
