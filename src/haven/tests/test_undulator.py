@@ -94,15 +94,19 @@ def test_auto_offset_lookup(undulator):
 
 
 async def test_prepare_energy_scan(undulator, mocker):
+    energies = [1000, 1100, 1200]
     tinfo = TrajectoryMotorInfo(
-        positions=[1000, 1100, 1200],
+        positions=energies,
         times=[0, 0.5, 1.0],  # Not currently used
     )
     set_mock_value(undulator.scan_mismatch_count, 0)
     set_mock_value(undulator.scan_gap_array_check, True)
     set_mock_value(undulator.scan_energy_array_check, True)
     # Simulate the gap array getting calculated
-    set_mock_value(undulator.scan_gap_array, [35800, 3600, 37100])
+    # The EPICS array will always be 2000 values long
+    array_size = 2000
+    gaps = [35800, 3600, 37100]
+    set_mock_value(undulator.scan_gap_array, gaps + [0] * (array_size - len(gaps)))
     # Prepare and check end point
     mocker.patch.object(undulator, "auto_offset", mocker.MagicMock(return_value=20))
     status = undulator.energy.prepare(tinfo)
@@ -115,13 +119,15 @@ async def test_prepare_energy_scan(undulator, mocker):
         await undulator.scan_energy_array.get_value(), [1.02, 1.12, 1.22]
     )
     # Simulate the undulator having been moved
-    print("Setting mock")
     set_mock_value(undulator.busy, 0)
     await undulator.gap.readback.set(35.8)
     await asyncio.sleep(0.1)
     await asyncio.wait_for(status, timeout=3)
     assert await undulator.gap.setpoint.get_value() == 35.8
     assert await undulator.scan_mode.get_value() == UndulatorScanMode.SOFTWARE_RETRIES
+    # Confirm that the energy and gap iterators are set so we can move later
+    np.testing.assert_equal(list(undulator._gap_iter), np.divide(gaps, 1000))
+    np.testing.assert_equal(list(undulator._energy_iter), energies)
 
 
 async def test_move_energy_scan(undulator, mocker):

@@ -258,7 +258,8 @@ class EnergyPositioner(BasePositioner, Preparable):
                     f"Preparing energy scan mode was not successful after {SCAN_SETUP_RETRIES} attempts.",
                     exceptions,
                 )
-            self.parent._energy_iter = iter(value.positions)
+        # Stash the requested ranges so we can check them later
+        self.parent._energy_iter = iter(value.positions)
         # The energy->gap calcuations in the IOC don't work right with a taper
         if gap_taper.result() != 0:
             warnings.warn("Setting energy array with non-zero taper.")
@@ -428,9 +429,14 @@ class PlanarUndulator(StandardReadable, EpicsDevice):
             # Each individual positioner can prepare here
             yield tg
         # Scanning is set up, now get ready for executing the steps
-        scan_gaps = await self.scan_gap_array.get_value()
+        async with asyncio.TaskGroup() as tg:
+            scan_gaps = tg.create_task(self.scan_gap_array.get_value())
+            num_points = tg.create_task(self.scan_array_length.get_value())
+        num_points = int(num_points.result())
+        scan_gaps = scan_gaps.result()[:num_points]
+        scan_gaps = scan_gaps / UM_PER_MM
         self._gap_iter = iter(scan_gaps)
-        first_gap = scan_gaps[0] / UM_PER_MM
+        first_gap = scan_gaps[0]
         await self.gap.set(first_gap, timeout=CALCULATE_TIMEOUT)
         await self.scan_mode.set(UndulatorScanMode.SOFTWARE_RETRIES)
 
