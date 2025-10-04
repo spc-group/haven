@@ -21,6 +21,7 @@ to a `Region` object.
 """
 
 import asyncio
+import logging
 from collections.abc import Sequence
 from dataclasses import dataclass, fields
 from functools import partial
@@ -38,6 +39,8 @@ from qtpy.QtWidgets import (
 )
 
 from firefly.exceptions import FireflyError
+
+log = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -175,6 +178,7 @@ class RegionsManager[WidgetsType](QObject):
     layout: QGridLayout
     header_rows = 1
     is_relative: bool
+    _device_registry = None
 
     # Qt signals
     regions_changed = Signal()
@@ -263,7 +267,18 @@ class RegionsManager[WidgetsType](QObject):
         widgets = [checkbox, *row_widgets]
         for column, widget in enumerate(widgets):
             self.layout.addWidget(widget, row, column, alignment=Qt.AlignTop)
+        await self.update_devices(None, rows=[row])
         return row
+
+    async def update_devices(self, registry=None, *arg, **kwargs):
+        # Either use this registry, if given, or the last one we've seen
+        if registry is None:
+            registry = self._device_registry
+        else:
+            self._device_registry = registry
+        if registry is None:
+            log.info("Cannot set device widgets as no registry is available.")
+        return registry
 
     def remove_row(self):
         """Remove the last row of widgets from the layout."""

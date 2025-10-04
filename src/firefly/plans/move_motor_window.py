@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from collections.abc import Sequence
 from dataclasses import dataclass
 from functools import partial
 
@@ -61,12 +62,18 @@ class MotorRegionsManager(RegionsManager):
             position_spin_box,
         ]
 
-    async def update_devices(self, registry):
-        widgetsets = [self.row_widgets(row=row) for row in self.row_numbers]
+    async def update_devices(self, registry=None, *, rows: Sequence[int] | None = None):
+        registry = await super().update_devices(registry)
+        if registry is None:
+            return
+
+        rows = self.row_numbers if rows is None else rows
+        widgetsets = [self.row_widgets(row=row) for row in rows]
         aws = [
             widgets.device_selector.update_devices(registry) for widgets in widgetsets
         ]
         await asyncio.gather(*aws)
+        return registry
 
     @asyncSlot(Device)
     async def update_device_parameters(self, device: Device, row: int):

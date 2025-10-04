@@ -202,6 +202,14 @@ async def test_update_devices(display, sim_registry):
     assert display.detectors_list.update_devices.called
 
 
+async def test_add_row_devices(display, sim_registry):
+    """Do the devices get updated when adding rows."""
+    await display.update_devices(sim_registry)
+    await display.regions.set_region_count(2)
+    selector_widget = display.regions.row_widgets(2).device_selector
+    assert selector_widget.combo_box_model.rowCount() > 0
+
+
 async def test_update_snakes(display):
     """Check that the slow axes is not snakable."""
     await display.regions.set_region_count(2)

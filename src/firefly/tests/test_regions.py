@@ -24,6 +24,9 @@ class MockManager[WidgetsType](RegionsManager):
         """
         return self.Region(is_active=widgets.active_checkbox.isChecked())
 
+    async def update_devices(self, registry=None, *, rows=None):
+        pass
+
 
 @pytest.fixture()
 def manager(qtbot):
@@ -43,6 +46,11 @@ async def test_set_row_count(manager):
     # Decrease the row count
     await manager.set_region_count(1)
     assert len(manager) == 1
+
+
+async def test_new_row_devices(manager, sim_registry):
+    """Do devices get added to new rows in the region?"""
+    manager.update_devices(sim_registry)
 
 
 async def test_regions_indexing(manager):

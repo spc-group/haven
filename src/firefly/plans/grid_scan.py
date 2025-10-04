@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import math
+from collections.abc import Sequence
 from dataclasses import dataclass
 from functools import partial
 
@@ -114,6 +115,19 @@ class GridRegionsManager[WidgetsType](RegionsManager):
             is_relative=self.is_relative,
         )
 
+    async def update_devices(self, registry=None, *, rows: Sequence[int] | None = None):
+        registry = await super().update_devices(registry)
+        if registry is None:
+            return
+
+        rows = self.row_numbers if rows is None else rows
+        widgetsets = [self.row_widgets(row=row) for row in rows]
+        aws = [
+            widgets.device_selector.update_devices(registry) for widgets in widgetsets
+        ]
+        await asyncio.gather(*aws)
+        return registry
+
     def num_points(self) -> int:
         """Calculate the total number of points that will be measured."""
         active_rows = [
@@ -124,13 +138,6 @@ class GridRegionsManager[WidgetsType](RegionsManager):
         widgetsets = [self.row_widgets(row) for row in active_rows]
         num_points = [widgets.num_points_spin_box.value() for widgets in widgetsets]
         return math.prod(num_points)
-
-    async def update_devices(self, registry):
-        widgetsets = [self.row_widgets(row=row) for row in self.row_numbers]
-        aws = [
-            widgets.device_selector.update_devices(registry) for widgets in widgetsets
-        ]
-        await asyncio.gather(*aws)
 
     @asyncSlot(int)
     async def set_relative_position(self, is_relative: int):
