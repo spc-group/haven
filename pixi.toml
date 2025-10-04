@@ -88,7 +88,7 @@ autoapi = "*"
 build = "*"
 
 [feature.dev.tasks]
-test-haven = "pytest src/haven"
+test-haven = "pytest src/haven -Werror"
 test-firefly = "pytest src/firefly"
 check-types = "mypy"
 lint = "ruff check"

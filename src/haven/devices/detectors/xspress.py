@@ -265,9 +265,9 @@ class Xspress3Detector(AreaDetector):
     def validate_trigger_info(self, value: TriggerInfo) -> TriggerInfo:
         """Xspress3 supports internal and gate triggering."""
         if value.trigger == DetectorTrigger.EDGE_TRIGGER:
-            value = value.copy(update={"trigger": DetectorTrigger.CONSTANT_GATE})
+            value = value.model_copy(update={"trigger": DetectorTrigger.CONSTANT_GATE})
         if value.deadtime == 0 and value.trigger != DetectorTrigger.INTERNAL:
-            value = value.copy(update={"deadtime": 1e-5})
+            value = value.model_copy(update={"deadtime": 1e-5})
         return value
 
 

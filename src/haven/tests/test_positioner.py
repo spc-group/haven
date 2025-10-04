@@ -7,7 +7,7 @@ from ophyd_async.testing import get_mock_put, set_mock_value
 from haven.positioner import Positioner
 
 
-class TestPositioner(Positioner):
+class MyPositioner(Positioner):
     done_value = 1
 
     def __init__(self, name: str = "", put_complete=False):
@@ -24,7 +24,7 @@ class TestPositioner(Positioner):
 
 @pytest.fixture()
 async def positioner():
-    positioner = TestPositioner()
+    positioner = MyPositioner()
     await positioner.connect(mock=True)
     await positioner.velocity.set(5)
     return positioner
@@ -54,7 +54,7 @@ async def test_set_with_readback(positioner):
 
 
 async def test_set_with_put_complete():
-    positioner = TestPositioner(put_complete=True)
+    positioner = MyPositioner(put_complete=True)
     await positioner.connect(mock=True)
     await positioner.velocity.set(5)
     # Just make sure it doesn't time-out

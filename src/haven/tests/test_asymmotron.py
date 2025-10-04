@@ -214,10 +214,10 @@ async def test_d_spacing(xtal, hkl, d):
 
 async def test_energy_setpoint(xtal):
     # Set the limits so the motor can move properly
-    await asyncio.gather(
-        xtal.horizontal.low_limit_travel.set(-100),
-        xtal.vertical.high_limit_travel.set(100),
-    )
+    set_mock_value(xtal.horizontal.low_limit_travel, -100)
+    set_mock_value(xtal.vertical.high_limit_travel, 100)
+    set_mock_value(xtal.horizontal.velocity, 1)
+    set_mock_value(xtal.vertical.velocity, 1)
     await xtal.energy.set(8333)
     assert await xtal.horizontal.user_setpoint.get_value() != 0
 

@@ -9,11 +9,11 @@ def test_robot_sample(robot):
     msgs = list(plan)
 
     assert robot.name == "robotA"
-    assert len(msgs) == 14
+    assert len(msgs) == 17
 
     unload = robot_transfer_sample(robot, None, motor1, 100)
     msgs = list(unload)
-    assert len(msgs) == 6
+    assert len(msgs) == 7
 
 
 # -----------------------------------------------------------------------------

@@ -6,7 +6,6 @@ from bluesky import plan_stubs as bps
 from bluesky.utils import Msg
 
 from ..instrument import beamline
-from ..motor_position import rbv
 
 log = logging.getLogger(__name__)
 
@@ -15,6 +14,17 @@ __all__ = ["robot_transfer_sample"]
 
 
 ON = 1
+
+
+def rbv(motor):
+    """Helper function to get readback value (rbv)."""
+    if hasattr(motor, "readback"):
+        signal = motor.readback
+    elif hasattr(motor, "user_readback"):
+        signal = motor.user_readback
+    else:
+        signal = motor
+    return (yield from bps.rd(signal))
 
 
 def robot_transfer_sample(
@@ -65,7 +75,10 @@ def robot_transfer_sample(
     motor_list = [beamline.devices[motor] for motor in args[::2]]
     new_positions = [pos for pos in args[1::2]]
     # Record the motor positions before load sampls
-    initial_positions = [rbv(motor) for motor in motor_list]
+    initial_positions = []
+    for motor in motor_list:
+        position = yield from rbv(motor)
+        initial_positions.append(position)
 
     # Move the aerotech to the loading position
     for motor, pos in zip(motor_list, new_positions):

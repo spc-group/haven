@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
 from bluesky import RunEngine
+from ophyd_async.testing import set_mock_value
 
 from haven.devices import AxilonMonochromator as Monochromator
 from haven.devices import PlanarUndulator
@@ -348,6 +349,7 @@ async def test_document_plan_args(mono):
         documents.append((name, doc))
 
     RE.subscribe(track_doc)
+    set_mock_value(mono.energy.velocity, 1)
     # Prepare the plan
     energies = np.linspace(8250, 8550, num=11)
     await mono.energy.high_limit_travel.set(10_000)
