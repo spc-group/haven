@@ -3,6 +3,7 @@ from unittest.mock import MagicMock
 
 import numpy as np
 import pytest
+from bluesky import RunEngine
 from bluesky_adaptive.recommendations import NoRecommendation
 
 from haven.plans import _auto_gain, auto_gain
@@ -61,8 +62,8 @@ def test_recommender_all_low(recommender):
     volts = np.asarray([[0.1, 0.25]])
     assert volts.shape == (1, 2)
     # Check recommendations are lower by 3
-    recommender.tell_many(gains, volts)
-    np.testing.assert_equal(recommender.ask(1), (13, 16))
+    recommender.ingest_many(gains, volts)
+    np.testing.assert_equal(recommender.suggest(1), (13, 16))
 
 
 def test_recommender_some_low(recommender):
@@ -77,8 +78,8 @@ def test_recommender_some_low(recommender):
     volts = np.asarray([[0.1, 2.5]])
     assert volts.shape == (1, 2)
     # Check recommendations
-    recommender.tell_many(gains, volts)
-    np.testing.assert_equal(recommender.ask(1), (13, 14))
+    recommender.ingest_many(gains, volts)
+    np.testing.assert_equal(recommender.suggest(1), (13, 14))
 
 
 def test_recommender_all_high(recommender):
@@ -94,8 +95,8 @@ def test_recommender_all_high(recommender):
     volts = np.asarray([[4.6, 5.2]])
     assert volts.shape == (1, 2)
     # Check recommendations
-    recommender.tell_many(gains, volts)
-    np.testing.assert_equal(recommender.ask(1), (7, 10))
+    recommender.ingest_many(gains, volts)
+    np.testing.assert_equal(recommender.suggest(1), (7, 10))
 
 
 def test_recommender_some_high(recommender):
@@ -106,8 +107,8 @@ def test_recommender_some_high(recommender):
     volts = np.asarray([[5.7, 2.5]])
     assert volts.shape == (1, 2)
     # Check recommendations
-    recommender.tell_many(gains, volts)
-    np.testing.assert_equal(recommender.ask(1), (7, 14))
+    recommender.ingest_many(gains, volts)
+    np.testing.assert_equal(recommender.suggest(1), (7, 14))
 
 
 def test_recommender_high_and_low(recommender):
@@ -118,8 +119,8 @@ def test_recommender_high_and_low(recommender):
     volts = np.asarray([[5.7, 0.23]])
     assert volts.shape == (1, 2)
     # Check recommendations
-    recommender.tell_many(gains, volts)
-    np.testing.assert_equal(recommender.ask(1), (7, 16))
+    recommender.ingest_many(gains, volts)
+    np.testing.assert_equal(recommender.suggest(1), (7, 16))
 
 
 def test_recommender_fill_missing_gains(recommender):
@@ -139,7 +140,7 @@ def test_recommender_fill_missing_gains(recommender):
         # Put in one that's really high to make sure skipped points aren't included
         [7.0],
     ]
-    recommender.tell_many(gains, volts)
+    recommender.ingest_many(gains, volts)
     # Does it recommend the missing gain value?
     df = recommender.dfs[0]
     assert recommender.next_gain(df) == 11
@@ -152,7 +153,7 @@ def test_recommender_no_high(recommender):
     """
     gains = [[8], [9], [10]]
     volts = [[0.3], [1.25], [2.7]]
-    recommender.tell_many(gains, volts)
+    recommender.ingest_many(gains, volts)
     df = recommender.dfs[0]
     assert recommender.next_gain(df) == 11
 
@@ -164,7 +165,7 @@ def test_recommender_no_low(recommender):
     """
     gains = [[8], [9], [10]]
     volts = [[1.25], [2.75], [5.4]]
-    recommender.tell_many(gains, volts)
+    recommender.ingest_many(gains, volts)
     df = recommender.dfs[0]
     assert recommender.next_gain(df) == 7
 
@@ -173,7 +174,7 @@ def test_recommender_no_solution(recommender):
     """If the gain profile goes from too low to too high in one step, what should we report?"""
     gains = [[9], [10]]
     volts = [[0.3], [5.2]]
-    recommender.tell_many(gains, volts)
+    recommender.ingest_many(gains, volts)
     # Does it recommend the missing gain value?
     df = recommender.dfs[0]
     assert recommender.next_gain(df) == 9
@@ -185,7 +186,7 @@ def test_recommender_correct_solution(target_volts, gain):
     recommender = _auto_gain.GainRecommender(target_volts=target_volts)
     gains = [[7], [8], [9], [10], [11]]
     volts = [[5.2], [4.1], [2.7], [1.25], [0.4]]
-    recommender.tell_many(gains, volts)
+    recommender.ingest_many(gains, volts)
     # Does it recommend the missing gain value?
     df = recommender.dfs[0]
     assert recommender.next_gain(df) == gain
@@ -195,7 +196,7 @@ def test_recommender_gain_range_high(recommender):
     """Check that the recommender doesn't go outside the allowed range."""
     gains = [[27]]
     volts = [[0.3]]
-    recommender.tell_many(gains, volts)
+    recommender.ingest_many(gains, volts)
     # Does it recommend the missing gain value?
     df = recommender.dfs[0]
     assert recommender.next_gain(df) == 27
@@ -205,7 +206,7 @@ def test_recommender_gain_range_low(recommender):
     """Check that the recommender doesn't go outside the allowed range."""
     gains = [[0]]
     volts = [[5.4]]
-    recommender.tell_many(gains, volts)
+    recommender.ingest_many(gains, volts)
     # Does it recommend the missing gain value?
     df = recommender.dfs[0]
     assert recommender.next_gain(df) == 0
@@ -230,11 +231,18 @@ def test_recommender_no_change(recommender):
             [0.20, 4.33],
         ]
     )
-    recommender.tell_many(gains, volts)
+    recommender.ingest_many(gains, volts)
     # Make sure the engine recommends the best solution
-    assert recommender.ask(1) == [12, 13]
+    assert recommender.suggest(1) == [12, 13]
     # Pass in results for this new measurement
-    recommender.tell_many([[12, 13]], [[2.13, 2.19]])
+    recommender.ingest_many([[12, 13]], [[2.13, 2.19]])
     # Check recommendations
     with pytest.raises(NoRecommendation):
-        recommender.ask(1)
+        recommender.suggest(1)
+
+
+def test_plan_in_run_engine(ion_chamber):
+    print(ion_chamber)
+    RE = RunEngine()
+    plan = auto_gain(ion_chambers=[ion_chamber])
+    RE(plan)
