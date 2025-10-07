@@ -11,6 +11,7 @@ lmfit = "*"
 mergedeep = "*"
 pint = "*"
 pcdsdevices = "*"
+# python = "3.12.*"
 rich = "*"
 scipy = "*"
 stamina = "*"
@@ -23,10 +24,10 @@ haven-spc = { path = ".", editable = true }
 
 [environments]
 default = { solve-group = "default" }
-dev = { features = ["bluesky", "ipython", "dev", "gui", "tiled"], solve-group = "default" }
-qa = { features = ["bluesky", "ipython", "qa", "gui", "qserver", "tiled"], solve-group = "default" }
-25idc = { features = ["bluesky", "ipython", "25idc", "gui", "qserver", "tiled"], solve-group = "default" }
-25idd = { features = ["bluesky", "ipython", "25idd", "gui", "qserver", "tiled"], solve-group = "default" }
+dev = { features = ["bluesky", "ipython", "dev", "gui", "tiled"] }
+qa = { features = ["bluesky", "ipython", "qa", "gui", "qserver", "tiled"], solve-group = "beamlines" }
+25idc = { features = ["bluesky", "ipython", "25idc", "gui", "qserver", "tiled"], solve-group = "beamlines" }
+25idd = { features = ["bluesky", "ipython", "25idd", "gui", "qserver", "tiled"], solve-group = "beamlines" }
 designer = { features = ["designer"] }
 
 [tasks]
@@ -106,12 +107,13 @@ args = [
 cmd = "black src {{ check_flag }}"
 
 [feature.gui.dependencies]
+# Old dependencies until pydm is stable with pyside6
 qtawesome = ">=1.4.0"
-pydm = "==1.25.2"
 pyqtgraph = "*"
+pydm = "==1.25.2"
+typhos = ">=3.1.0"  # need the find_signal method on the SignalConnection()
 qasync = "*"
 bluesky-widgets = "*"
-typhos = ">=3.1.0"  # need the find_signal method on the SignalConnection()
 qt = ">=5.15"
 pyqt = ">=5.15"
 
@@ -120,7 +122,25 @@ apsbss = "*"
 
 [feature.gui.tasks]
 firefly = "firefly"
-run_browser = "firefly --no-instrument --no-queue run_browser"
+
+[feature.gui_pyside6.dependencies]
+qtawesome = ">=1.4.0"
+pyqtgraph = "*"
+qasync = "*"
+bluesky-widgets = "*"
+qt6-main = "*"
+pyside6 = "*"
+
+[feature.gui_pyside6.pypi-dependencies]
+apsbss = "*"
+typhos = ">=3.1.0"  # need the find_signal method on the SignalConnection()
+pydm = ">=1.28.0"
+
+[feature.gui_pyside6.tasks]
+firefly = "firefly"
+
+[feature.gui_pyside6.activation.env]
+QT_API = "pyside6"
 
 [feature.designer.dependencies]
 python = "3.10.*"

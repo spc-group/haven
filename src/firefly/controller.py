@@ -5,7 +5,6 @@ from functools import partial
 from pathlib import Path
 from typing import Mapping
 
-import pydm
 import qtawesome as qta
 from ophyd_async.core import NotConnected
 from ophydregistry import Registry
@@ -135,7 +134,8 @@ class FireflyController(QtCore.QObject):
         default_window_action = getattr(self.actions, self.default_display)
         default_window = default_window_action.show_window()
         # Set up the window to show list of PV connections
-        pydm.utilities.shortcuts.install_connection_inspector(parent=default_window)
+        #   This is not compatible with pyside6
+        # pydm.utilities.shortcuts.install_connection_inspector(parent=default_window)
 
     def setup_window_actions(self):
         """Create QActions for clicking on menu items, shortcuts, etc.

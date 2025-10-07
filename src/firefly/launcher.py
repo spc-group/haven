@@ -7,6 +7,7 @@ import sys
 import time
 from pathlib import Path
 
+import PySide6
 from pydm import config
 from pydm.utilities import setup_renderer
 from qasync import QEventLoop
@@ -15,6 +16,8 @@ from qtpy.QtGui import QPixmap
 from qtpy.QtWidgets import QApplication, QSplashScreen, QStyleFactory
 
 from firefly.controller import FireflyController
+
+print(PySide6.__version__)
 
 
 def main(default_fullscreen=False, default_display="status"):
