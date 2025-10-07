@@ -16,6 +16,7 @@ from bluesky.run_engine import (  # noqa: F401
     call_in_bluesky_event_loop,
 )
 from bluesky.simulators import summarize_plan  # noqa: F401
+from bluesky_queueserver import is_re_worker_active
 from ophyd_async.core import NotConnected
 from ophydregistry import ComponentNotFound
 
@@ -52,7 +53,7 @@ log = logging.getLogger(__name__)
 # Create a run engine
 RE = haven.run_engine(
     connect_tiled=True,
-    call_returns_result=True,
+    call_returns_result=not is_re_worker_active(),
 )
 try:
     autoawait_in_bluesky_event_loop()

@@ -58,7 +58,6 @@ scanspec = "==1.0a2"
 bluesky-adaptive = ">=0.3.2"
 bluesky-queueserver-api = "*"  #  = ">=0.0.12"
 
-
 [feature.dev.dependencies]
 "pytest" = "*"
 "pytest-httpx" = "*"
@@ -133,13 +132,15 @@ pydm = "==1.25.2"
 [feature.designer.tasks]
 designer = "designer"
 
-[feature.qserver]
-tasks = {qserver = "python -m haven_qserver.launch_queueserver"}
-pypi-dependencies = {bluesky-queueserver = {"git" = "https://github.com/bluesky/bluesky-queueserver"}}
+[feature.qserver.tasks]
+qserver = "python -m haven_qserver.launch_queueserver"
+
+[feature.qserver.pypi-dependencies]
+bluesky-queueserver = {"git" = "https://github.com/bluesky/bluesky-queueserver"}
 
 [feature.tiled.pypi-dependencies]
 bluesky-tiled-plugins = ">=2.0.0b68"
-tiled = "==0.1.2"
+tiled = { version = "==0.1.6", extras = ["all"] }
 
 [feature.tiled.tasks]
 tiled = "tiled serve config"
