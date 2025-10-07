@@ -17,7 +17,7 @@ def flyer(sim_registry, mocker):
     return m1
 
 
-def test_set_fly_params(flyer):
+def test_set_fly_motor_params(flyer):
     """Does the plan set the parameters of the flyer motor?"""
     # step size == 10
     plan = fly_scan([], flyer, -20, 30, num=6, dwell_time=1.5)

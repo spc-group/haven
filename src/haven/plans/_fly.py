@@ -17,7 +17,7 @@ from bluesky.preprocessors import (
     stage_decorator,
     stub_wrapper,
 )
-from bluesky.protocols import Flyable, Preparable
+from bluesky.protocols import Collectable, Flyable, Preparable
 from bluesky.utils import Msg, single_gen
 from ophyd_async.core import DetectorTrigger, Device, TriggerInfo
 from ophyd_async.epics.motor import FlyMotorInfo as BaseFlyMotorInfo
@@ -124,13 +124,14 @@ def fly_line_scan(
       Motors can be any ‘flyable’ object.
 
     """
-    if load_config().feature_flag("grid_fly_scan_by_line"):
-        trigger_infos = yield from prepare_detectors(
-            detectors=detectors,
-            trigger_info=trigger_info,
-            delay_outputs=delay_outputs,
-            wait=True,
-        )
+    trigger_infos = yield from prepare_detectors(
+        detectors=detectors,
+        trigger_info=trigger_info,
+        delay_outputs=delay_outputs,
+        wait=True,
+    )
+    num_outputs = 0  # for now they're all just different streams
+    yield from declare_streams(detectors[:num_outputs], detectors[num_outputs:])
     # Set up motors in their taxi position
     motors = args[0::2]
     motor_infos = args[1::2]
@@ -141,6 +142,61 @@ def fly_line_scan(
     # Kickoff the detectors
     yield from bps.kickoff_all(*detectors, wait=True)
     # Perform the fly scan
+    yield from monitor_motors(motors)
+    kickoff_group = uuid.uuid4()
+    for motor in motors:
+        yield from bps.kickoff(motor, wait=False, group=kickoff_group)
+    yield from bps.wait(group=kickoff_group)
+    # Wait for all the flyers to be done
+    motor_complete_group = uuid.uuid4()
+    for m in motors:
+        yield from bps.complete(m, wait=False, group=motor_complete_group)
+    yield from bps.wait(group=(motor_complete_group))
+    yield from unmonitor_motors(motors)
+    # Stop the detectors
+    yield from bps.complete_all(*detectors, wait=True)
+    # Collect measured data so far
+    collectables = [
+        detector for detector in detectors if isinstance(detector, Collectable)
+    ]
+    for detector in collectables:
+        yield from bps.collect(detector)
+
+
+def fly_line_scan_old(
+    detectors: Sequence,
+    *args,
+) -> Generator[Msg, Any, None]:
+    """A plan stub for fly-scanning a single trajectory.
+
+    Parameters
+    ==========
+    detectors
+      Will be kicked off before the motors begin to move.
+    *args
+      A motor and FlyMotorInfo() object for each axis:
+
+      .. code-block:: python
+
+         motor1, fly_info1,
+         motor2, fly_info2,
+         ...,
+         motorN, trigger_infoN,
+
+      Motors can be any ‘flyable’ object.
+
+    """
+    # Set up motors in their taxi position
+    motors = args[0::2]
+    motor_infos = args[1::2]
+    prepare_group = uuid.uuid4()
+    for obj, motor_info in zip(motors, motor_infos):
+        yield from bps.prepare(obj, motor_info, wait=False, group=prepare_group)
+    yield from bps.wait(group=prepare_group)
+    # Kickoff the detectors
+    yield from bps.kickoff_all(*detectors, wait=True)
+    # Perform the fly scan
+    yield from monitor_motors(motors)
     kickoff_group = uuid.uuid4()
     for motor in motors:
         yield from bps.kickoff(motor, wait=False, group=kickoff_group)
@@ -261,32 +317,43 @@ def fly_scan(
     md_.update(md)
     # Create the plan for moving over a single line
     delays = set([output.parent for output in delay_outputs])
-    line_scan = fly_line_scan(
-        [*delays, *delay_outputs, *detectors],
-        *motor_args,
-    )
+    if load_config().feature_flag("grid_fly_scan_by_line"):
+        line_scan = fly_line_scan(
+            [*delays, *delay_outputs, *detectors],
+            *motor_args,
+            trigger_info=trigger_info,
+        )
+    else:
+        line_scan = fly_line_scan_old(
+            [*delays, *delay_outputs, *detectors],
+            *motor_args,
+        )
 
     # Wrapper for making it a proper run
     @stage_decorator([*detectors, *motors])
     @run_decorator(md=md_)
     def fly_inner():
         # Start the detectors
-        yield from prepare_detectors(
-            detectors=detectors,
-            trigger_info=trigger_info,
-            delay_outputs=delay_outputs,
-            wait=True,
-        )
-        # num_outputs = len(delay_outputs)
-        num_outputs = 0  # for now they're all just different streams
-        yield from declare_streams(detectors[:num_outputs], detectors[num_outputs:])
-        # Execute the fly scan and Keep track of the motor positions
-        yield from monitor_motors(motors)
-        yield from finalize_wrapper(line_scan, unmonitor_motors(motors))
-        # Stop detectors
-        yield from bps.complete_all(*detectors, wait=True)
-        for detector in detectors:
-            yield from bps.collect(detector)
+        if not load_config().feature_flag("grid_fly_scan_by_line"):
+            yield from prepare_detectors(
+                detectors=detectors,
+                trigger_info=trigger_info,
+                delay_outputs=delay_outputs,
+                wait=True,
+            )
+            num_outputs = len(delay_outputs)
+            num_outputs = 0  # for now they're all just different streams
+            yield from declare_streams(detectors[:num_outputs], detectors[num_outputs:])
+            # Execute the fly scan and Keep track of the motor positions
+            yield from monitor_motors(motors)
+            yield from finalize_wrapper(line_scan, unmonitor_motors(motors))
+            # Stop detectors
+            if not load_config().feature_flag("grid_fly_scan_by_line"):
+                yield from bps.complete_all(*detectors, wait=True)
+                for detector in detectors:
+                    yield from bps.collect(detector)
+        else:
+            yield from line_scan
 
     yield from fly_inner()
 
@@ -435,6 +502,19 @@ def grid_fly_scan(
                 extra_signals=motors,
                 trigger_info=trigger_info,
             )
+            grid_scan = stub_wrapper(
+                bp.grid_scan(
+                    detectors,
+                    *step_args,
+                    snake_axes=snake_steppers,
+                    per_step=per_step,
+                    md=md_,
+                )
+            )
+            # Execute the fly scan and Keep track of the motor positions
+            result = yield from grid_scan
+            return result
+
         else:
             trigger_infos = yield from prepare_detectors(
                 detectors=detectors,
@@ -459,23 +539,25 @@ def grid_fly_scan(
                 extra_signals=motors,
                 trigger_infos=trigger_infos,
             )
-        grid_scan = stub_wrapper(
-            bp.grid_scan(
-                detectors,
-                *step_args,
-                snake_axes=snake_steppers,
-                per_step=per_step,
-                md=md_,
+            grid_scan = stub_wrapper(
+                bp.grid_scan(
+                    detectors,
+                    *step_args,
+                    snake_axes=snake_steppers,
+                    per_step=per_step,
+                    md=md_,
+                )
             )
-        )
-        # Execute the fly scan and Keep track of the motor positions
-        yield from monitor_motors(all_motors)
-        result = yield from finalize_wrapper(grid_scan, unmonitor_motors(all_motors))
-        # Tear down the scan
-        yield from bps.complete_all(*detectors, wait=True)
-        for detector in detectors:
-            yield from bps.collect(detector)
-        return result
+            # Execute the fly scan and Keep track of the motor positions
+            yield from monitor_motors(all_motors)
+            result = yield from finalize_wrapper(
+                grid_scan, unmonitor_motors(all_motors)
+            )
+            # Tear down the scan
+            yield from bps.complete_all(*detectors, wait=True)
+            for detector in detectors:
+                yield from bps.collect(detector)
+            return result
 
     return (yield from fly_inner())
 
@@ -606,7 +688,7 @@ class Snaker:
                 for trig_info, detector in zip(self.trigger_infos, detectors)
                 if trig_info.trigger == DetectorTrigger.EDGE_TRIGGER
             ]
-            yield from fly_line_scan(
+            yield from fly_line_scan_old(
                 to_fly + self.delay_outputs, self.flyer, fly_motor_info
             )
             # Collect data from the detectors. Only detectors using

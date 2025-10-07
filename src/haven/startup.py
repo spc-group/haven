@@ -47,7 +47,7 @@ logging.basicConfig(level=logging.WARNING)
 log = logging.getLogger(__name__)
 
 
-# Load the Tiled catalog for reading data back outline
+# Load the Tiled catalog for reading data back
 # catalog = haven.tiled_client()
 
 # Create a run engine
