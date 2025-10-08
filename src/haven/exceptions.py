@@ -128,6 +128,12 @@ class ExpiredFeatureFlag(FutureWarning):
     ...
 
 
+class TiledNotAvailable(RuntimeError):
+    """The Tiled server was not available for connecting."""
+
+    ...
+
+
 # -----------------------------------------------------------------------------
 # :author:    Mark Wolfman
 # :email:     wolfman@anl.gov

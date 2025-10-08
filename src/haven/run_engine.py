@@ -1,5 +1,6 @@
 import logging
 
+import httpx
 import IPython
 from apsbits.core.run_engine_init import init_RE
 from bluesky import Msg
@@ -8,7 +9,7 @@ from bluesky.bundlers import maybe_await
 from bluesky.callbacks.best_effort import BestEffortCallback
 from bluesky.utils import ProgressBarManager, register_transform
 
-from haven import load_config
+from haven import exceptions, load_config
 from haven.catalog import tiled_client
 from haven.tiled_writer import TiledWriter
 
@@ -78,11 +79,15 @@ def run_engine(
     # Install database connections
     if connect_tiled:
         tiled_config = config["tiled"]
-        client = tiled_client(
-            profile=tiled_config["writer_profile"],
-            cache_filepath=None,
-            structure_clients="numpy",
-        )
+        profile = tiled_config["writer_profile"]
+        try:
+            client = tiled_client(
+                profile=tiled_config["writer_profile"],
+                cache_filepath=None,
+                structure_clients="numpy",
+            )
+        except httpx.ConnectError as exc:
+            raise exceptions.TiledNotAvailable(profile) from exc
         client.include_data_sources()
         tiled_writer = TiledWriter(
             client,
