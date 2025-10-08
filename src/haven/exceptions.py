@@ -71,6 +71,12 @@ class InvalidHarmonic(ValueError):
     ...
 
 
+class InvalidUndulatorDeadband(ValueError):
+    """The undulator has been asked to move with a non-zero deadband."""
+
+    ...
+
+
 class SignalNotFound(KeyError):
     """The dataset is not present in the run."""
 

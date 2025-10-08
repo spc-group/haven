@@ -5,6 +5,7 @@ import numpy as np
 import pytest
 from ophyd_async.testing import get_mock_put, set_mock_value
 
+from haven import exceptions
 from haven.devices import PlanarUndulator
 from haven.devices.undulator import TrajectoryMotorInfo, UndulatorScanMode
 
@@ -188,6 +189,13 @@ async def test_unstage(undulator):
     set_mock_value(undulator.scan_mode, UndulatorScanMode.SOFTWARE)
     await undulator.energy.unstage()
     assert await undulator.scan_mode.get_value() == UndulatorScanMode.NORMAL
+
+
+@pytest.mark.parametrize("signal_name", ("energy", "gap", "energy_taper", "gap_taper"))
+async def test_gap_deadband_raises(undulator, signal_name):
+    set_mock_value(undulator.gap_deadband, 1)
+    with pytest.raises(exceptions.InvalidUndulatorDeadband):
+        await getattr(undulator, signal_name).set(0)
 
 
 # -----------------------------------------------------------------------------

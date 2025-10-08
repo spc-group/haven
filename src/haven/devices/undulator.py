@@ -48,6 +48,7 @@ from ophyd_async.epics.core import (
 )
 from pydantic import Field
 
+from haven import exceptions
 from haven._iconfig import load_config
 from haven.devices.signal import derived_signal_x
 from haven.positioner import Positioner
@@ -129,6 +130,19 @@ class BasePositioner(Positioner):
 
         """
         return done
+
+    async def _set(
+        self,
+        value: float,
+        wait: bool = True,
+        timeout: CalculatableTimeout = "CALCULATE_TIMEOUT",
+    ):
+        gap_deadband = await self.parent.gap_deadband.get_value()
+        if gap_deadband != 0:
+            msg = f"This device cannot be set properly if the gap deadband is not zero: {gap_deadband}"
+            raise exceptions.InvalidUndulatorDeadband(msg)
+        async for update in super()._set(value=value, wait=wait, timeout=timeout):
+            yield update
 
 
 class UndulatorPositioner(BasePositioner):
