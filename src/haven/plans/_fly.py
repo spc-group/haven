@@ -22,6 +22,8 @@ from bluesky.utils import Msg, single_gen
 from ophyd_async.core import DetectorTrigger, Device, TriggerInfo
 from ophyd_async.epics.motor import FlyMotorInfo as BaseFlyMotorInfo
 from pydantic import Field
+from scanspec.core import Path
+from scanspec.specs import Spec
 
 from haven._iconfig import load_config
 from haven.devices.delay import DG645DelayOutput
@@ -699,6 +701,45 @@ class Snaker:
             yield from bps.complete_all(*to_fly, wait=True)
             for detector in detectors:
                 yield from bps.collect(detector)
+
+
+# New style from here down
+# ========================
+
+
+def fly_segment(
+    detectors: Sequence[Flyable],
+    motors: Sequence[Flyable],
+    spec: Spec[Flyable],
+    *,
+    start: int = 0,
+    num: int | None = None,
+    trigger_info: TriggerInfo,
+) -> Generator[Msg, Any, None]:
+    """A plan stub for fly-scanning a single trajectory.
+
+    Parameters
+    ==========
+    detectors
+      Will be kicked off before the motors begin to move.
+    spec
+      A scan spec that describes the trajectory to take.
+
+    """
+    # Prepare the detectors, just for this line segment
+    prepare_group = uuid.uuid4()
+    frames = spec.calculate()
+    for motor in motors:
+        path = Path(frames, start=start, num=num)
+        yield from bps.prepare(motor, path, group=prepare_group, wait=False)
+    for detector in detectors:
+        yield from bps.prepare(detector, trigger_info, group=prepare_group, wait=False)
+    yield from bps.wait(group=prepare_group)
+    # Start the detectors before the motors so we know they'll be ready
+    yield from bps.kickoff_all(*detectors, wait=True)
+    yield from bps.kickoff_all(*motors, wait=True)
+    yield from bps.complete_all(*motors, wait=True)
+    yield from bps.complete_all(*detectors, wait=True)
 
 
 # -----------------------------------------------------------------------------

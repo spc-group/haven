@@ -3,18 +3,53 @@ from unittest import mock
 import numpy as np
 import pytest
 from ophyd import sim
-from ophyd_async.core import TriggerInfo
+from ophyd_async.core import DetectorTrigger, TriggerInfo
 from ophyd_async.epics.motor import Motor
+from scanspec.specs import Line
 
 from haven.devices import DG645Delay, IonChamber, Xspress3Detector
 from haven.plans import fly_scan, grid_fly_scan
-from haven.plans._fly import prepare_detectors
+from haven.plans._fly import fly_segment, prepare_detectors
+
+fly_motor = Motor("255idcVME:m1", name="m1")
 
 
 @pytest.fixture()
 def flyer(sim_registry, mocker):
-    m1 = Motor("255idcVME:m1", name="m1")
+    m1 = fly_motor
     return m1
+
+
+def test_fly_segment(flyer):
+    xspress = Xspress3Detector("")
+    spec = Line(fly_motor, -10, 10, 6)
+    trigger_info = TriggerInfo(trigger=DetectorTrigger.EDGE_TRIGGER, number_of_events=6)
+    plan = fly_segment([xspress], motors=[flyer], spec=spec, trigger_info=trigger_info)
+    msgs = list(plan)
+    assert len(msgs) > 2
+    # Prepare the scan
+    assert msgs[0].command == "prepare"
+    assert msgs[1].command == "prepare"
+    prepared_objs = {
+        msgs[0].obj,
+        msgs[1].obj,
+    }
+    assert prepared_objs == {xspress, flyer}
+    assert msgs[2].command == "wait"
+    # Start the scan
+    # assert msgs[0].command == "kickoff"
+    # assert msgs[0].obj is xspress
+    # assert msgs[1].command == "wait"
+    # assert msgs[2].command == "kickoff"
+    # assert msgs[2].obj is flyer
+    # assert msgs[3].command == "wait"
+    # # Finish the scan
+    # assert msgs[4].command == "complete"
+    # assert msgs[4].obj is flyer
+    # assert msgs[3].command == "wait"
+    # assert msgs[6].command == "complete"
+    # assert msgs[6].obj is xspress
+    # assert msgs[7].command == "wait"
 
 
 def test_set_fly_motor_params(flyer):
