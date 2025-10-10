@@ -2146,9 +2146,9 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/26/30/7d6b649ed26ac2ac3acc22f0fd3ade5daf48db7dc442b810ca4bf78ab12e/awkward-2.8.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f5/6c/0a7db73c085cb719e0010b313a2d1e2adb06e2b498c282bfb017b84b42d6/awkward_cpp-50-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/57/ed/368ba4cca535e207cf9098d271cc5fd9328c57a42646862c52bb5215f019/blosc2-3.9.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
+      - pypi: git+https://github.com/bluesky/bluesky-queueserver#56573f88cb89bf88437aff75f130763181177aad
       - pypi: https://files.pythonhosted.org/packages/92/02/6b06969a043215b257e617ad0ccf75de7285e5b2f0570d1b67a009a3efe3/bluesky_adaptive-0.3.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b1/d3/a3e8393cdf6e40e94b3a91ab8afdb010769829b520b2fbfdc4697f31a1c3/bluesky_kafka-0.10.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/99/ac/5a66a04a8828d139c3c746f8491852c7809b4ec2413697e3b75302d25f08/bluesky_queueserver-0.0.22-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/fb/9c/42d6c23fe3ef031f22b2e42a93a4e85aa98a767697d39ef0e265fcfeeb93/bluesky_queueserver_api-0.0.12-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/4c/bc/2a699600e9fc722ef6c7f846c503793831caaa4b4e109cca3571a6b7597a/bluesky_tiled_plugins-2.0.0b68-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/cb/8c/2b30c12155ad8de0cf641d76a8b396a16d2c36bc6d50b621a62b7c4567c1/build-1.3.0-py3-none-any.whl
@@ -3965,28 +3965,6 @@ packages:
   - pkg:pypi/bluesky-live?source=hash-mapping
   size: 34118
   timestamp: 1734965301665
-- pypi: https://files.pythonhosted.org/packages/99/ac/5a66a04a8828d139c3c746f8491852c7809b4ec2413697e3b75302d25f08/bluesky_queueserver-0.0.22-py3-none-any.whl
-  name: bluesky-queueserver
-  version: 0.0.22
-  sha256: d336fe7ee0e05ea03189ac3912877733a340d56dc122da34bc7fe2bb238ac02c
-  requires_dist:
-  - bluesky>=1.7.0
-  - ipykernel
-  - jsonschema
-  - jupyter-client>=7.4.2
-  - jupyter-console
-  - numpydoc
-  - openpyxl
-  - ophyd
-  - packaging
-  - pydantic
-  - python-multipart
-  - pyyaml
-  - pyzmq
-  - redis[hiredis]
-  - requests
-  - typing-extensions ; python_full_version < '3.8'
-  requires_python: '>=3.7'
 - pypi: git+https://github.com/bluesky/bluesky-queueserver#56573f88cb89bf88437aff75f130763181177aad
   name: bluesky-queueserver
   version: 0.0.22.post14+g56573f8
@@ -6032,7 +6010,7 @@ packages:
 - pypi: ./
   name: haven-spc
   version: 2025.2.1
-  sha256: 688126f87a3a09863d22e3deeb4714932e4ed963e62796f289b901d1babfdb05
+  sha256: 49a720af6773b3b49980366bb763b6323e504ffb7331812ecbeb03046eaf044d
   editable: true
 - conda: https://conda.anaconda.org/conda-forge/linux-64/hdf5-1.14.0-nompi_h5231ba7_103.conda
   sha256: cfec313dcb1c51a0f6faee9c6af7dcb9cbe86847697f0be9846eaa0058500d29

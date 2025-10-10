@@ -95,6 +95,8 @@ def run_engine(
             batch_size=tiled_config.get("writer_batch_size", 100),
         )
         RE.subscribe(tiled_writer)
+    else:
+        log.info("Tiled Writer not installed in run engine.")
     return RE
 
 

@@ -91,6 +91,7 @@ files = [
     'src/haven/plans/_xafs_scan.py', 'src/haven/plans/_energy_scan.py', 'tests/haven/plans/test_energy_xafs_scan.py',
     'src/haven/plans/_fly.py', 'tests/haven/plans/test_fly.py',
     'src/haven/positioner.py', "tests/haven/test_positioner.py",
+    'tests/integration/',
 ]
 follow_imports = "skip"
 follow_untyped_imports = true

@@ -27,7 +27,7 @@ redis_topic = "qs_default"     # each instrument should have a unique prefix.
 [tiled]
 default_catalog = "testing"
 cache_filepath = "/tmp/tiled/http_response_cache.db"
-writer_profile = "<profile_name>"
+writer_profile = "<tiled_profile>"
 # writer_backup_directory = "/tmp/tiled_writer_backup"
 # writer_batch_size = 5
 

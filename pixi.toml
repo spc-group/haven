@@ -24,7 +24,7 @@ haven-spc = { path = ".", editable = true }
 
 [environments]
 default = { solve-group = "default" }
-dev = { features = ["bluesky", "ipython", "dev", "gui", "tiled"] }
+dev = { features = ["bluesky", "ipython", "dev", "gui", "tiled", "qserver"] }
 qa = { features = ["bluesky", "ipython", "qa", "gui", "qserver", "tiled"], solve-group = "beamlines" }
 25idc = { features = ["bluesky", "ipython", "25idc", "gui", "qserver", "tiled"], solve-group = "beamlines" }
 25idd = { features = ["bluesky", "ipython", "25idd", "gui", "qserver", "tiled"], solve-group = "beamlines" }
@@ -37,7 +37,8 @@ test-all = [
     {task = "isort", args = ["--check"] },
     {task = "check-types" },
     {task = "test-haven" },
-    {task = "test-firefly" }
+    {task = "test-firefly" },
+    {task = "test-integration" }
 ]
 
 [feature.bluesky.dependencies]
@@ -90,6 +91,7 @@ build = "*"
 [feature.dev.tasks]
 test-haven = "pytest tests/haven -Werror"
 test-firefly = "pytest tests/firefly"
+test-integration = "pytest tests/integration --runslow"
 check-types = "mypy"
 lint = "ruff check"
 make-docs = "make html --directory=docs/"

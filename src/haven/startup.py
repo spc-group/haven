@@ -46,13 +46,21 @@ logging.basicConfig(level=logging.WARNING)
 
 log = logging.getLogger(__name__)
 
+config = haven.load_config()
+
 
 # Load the Tiled catalog for reading data back
 # catalog = haven.tiled_client()
+if "tiled" in config:
+    connect_tiled = True
+else:
+    msg = "Section '[ tiled ]' not found in configuration."
+    log.info(msg)
+    connect_tiled = False
 
 # Create a run engine
 RE = haven.run_engine(
-    connect_tiled=True,
+    connect_tiled=connect_tiled,
     call_returns_result=not is_re_worker_active(),
 )
 try:
@@ -62,9 +70,9 @@ except AssertionError:
 
 
 # Prepare the haven instrument
-config = haven.load_config()
 t0 = time.monotonic()
-rich.print(f"Initializing [bold cyan]{config['beamline']['name']}[/]…", flush=True)
+beamline_name = config.get("beamline", {}).get("name", "UNKNOWN BEAMLINE")
+rich.print(f"Initializing [bold cyan]{beamline_name}[/]…", flush=True)
 loader_exception = None
 haven.beamline.load()
 try:

@@ -49,7 +49,7 @@ jobs:
         cache: true
     - run: |
         pixi run check-types
-  tests:
+  unit-tests:
     defaults:
       run:
         shell: bash -l {0}
@@ -84,3 +84,20 @@ jobs:
         cache: true
     - run: |
         pixi run make-docs
+  integration-tests:
+    defaults:
+      run:
+        shell: bash -l {0}
+    runs-on: ubuntu-latest
+    needs: ["unit-tests", "type-checking"]
+    timeout-minutes: 10
+    strategy:
+      max-parallel: 5
+    steps:
+    - uses: actions/checkout@v4
+    - uses: prefix-dev/setup-pixi@v0.9.0
+      with:
+        pixi-version: v0.53.0
+        cache: true
+    - run: |
+        pixi run test-integration
