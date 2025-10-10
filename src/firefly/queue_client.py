@@ -1,4 +1,5 @@
 import logging
+import os
 from typing import Mapping, Optional
 
 from bluesky_queueserver_api import comm_base
@@ -6,7 +7,6 @@ from bluesky_queueserver_api.zmq.aio import REManagerAPI
 from qasync import asyncSlot
 from qtpy.QtCore import QObject, QTimer, Signal
 
-from haven import load_config
 from haven.exceptions import InvalidConfiguration
 
 log = logging.getLogger()
@@ -26,9 +26,8 @@ def is_in_use(status):
 
 def queueserver_api():
     try:
-        config = load_config()["queueserver"]
-        ctrl_addr = f"tcp://{config['control_host']}:{config['control_port']}"
-        info_addr = f"tcp://{config['info_host']}:{config['info_port']}"
+        ctrl_addr = os.environ["QSERVER_ZMQ_CONTROL_ADDRESS"]
+        info_addr = os.environ["QSERVER_ZMQ_INFO_ADDRESS"]
     except KeyError as e:
         raise InvalidConfiguration(str(e))
     api = REManagerAPI(zmq_control_addr=ctrl_addr, zmq_info_addr=info_addr)

@@ -4,7 +4,7 @@ from typing import Mapping
 
 from qtpy.QtCore import Signal
 from qtpy.QtGui import QIcon, QKeySequence
-from qtpy.QtWidgets import QAction, QMainWindow
+from qtpy.QtWidgets import QAction, QMainWindow, QWidget
 
 log = logging.getLogger(__name__)
 
@@ -80,7 +80,7 @@ class WindowAction(Action):
     def forget_window(self):
         self.window = None
 
-    def create_window(self):
+    def create_window(self) -> QWidget:
         # Create the window
         window = self.WindowClass()
         self.window = window
@@ -93,6 +93,7 @@ class WindowAction(Action):
         self.window_created.emit(self)
         # Properly remove the window if it's closed
         window.destroyed.connect(self.forget_window)
+        return window
 
 
 class ActionsRegistry:
@@ -100,12 +101,10 @@ class ActionsRegistry:
 
     # Actions for showing specific windows
     bss: WindowAction = None
-    camera_overview: WindowAction = None
     energy: WindowAction = None
     iocs: WindowAction = None
     log: WindowAction = None
     status: WindowAction = None
-    run_browser: WindowAction = None
     voltmeter: WindowAction = None
     xray_filter: WindowAction = None
 
@@ -169,12 +168,10 @@ class ActionsRegistry:
     def all_actions(self):
         return [
             self.bss,
-            self.camera_overview,
             self.energy,
             self.iocs,
             self.log,
             self.status,
-            self.run_browser,
             self.voltmeter,
             self.xray_filter,
             *self.plans.values(),

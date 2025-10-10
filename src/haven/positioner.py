@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import warnings
-from functools import partial
+from functools import partial, wraps
 from typing import cast
 
 import numpy as np
@@ -91,13 +91,13 @@ class Positioner(StandardReadable, Locatable, Movable, Stoppable):
         }
         return location
 
-    @WatchableAsyncStatus.wrap
-    async def set(
+    async def _set(
         self,
         value: float,
         wait: bool = True,
         timeout: CalculatableTimeout = "CALCULATE_TIMEOUT",
     ):
+        log.info(f"Moving {self.name} to {value} ({wait=}, {timeout=}).")
         new_position = value
         self._set_success = True
         old_position, current_position, units, precision, velocity = (
@@ -143,7 +143,9 @@ class Positioner(StandardReadable, Locatable, Movable, Stoppable):
             done_status = set_status
         elif hasattr(self, "done"):
             # Monitor the `done` signal
-            log.debug(f"Monitoring progress via ``done`` signal: {self.done.name}.")
+            log.debug(
+                f"Monitoring progress via ``done`` signal: {self.done.name}, {self.done.source}."
+            )
             self.done.subscribe_value(
                 partial(
                     self.watch_done, done_event=done_event, started_event=started_event
@@ -184,6 +186,12 @@ class Positioner(StandardReadable, Locatable, Movable, Stoppable):
         # Handle failed moves
         if not self._set_success:
             raise RuntimeError("Motor was stopped")
+
+    @WatchableAsyncStatus.wrap
+    @wraps(_set)
+    async def set(self, *args, **kwargs):
+        async for update in self._set(*args, **kwargs):
+            yield update
 
     async def stop(self, success=True):
         self._set_success = success

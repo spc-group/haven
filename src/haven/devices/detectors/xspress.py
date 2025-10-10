@@ -1,18 +1,22 @@
 import asyncio
 import xml.etree.ElementTree as ET
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
+from itertools import repeat
 
 import numpy as np
 from ophyd_async.core import (
+    DEFAULT_TIMEOUT,
     Array1D,
     AsyncStatus,
     DetectorController,
+    DetectorTrigger,
     Device,
     DeviceVector,
     PathProvider,
     SignalR,
     StrictEnum,
     TriggerInfo,
+    observe_value,
     soft_signal_r_and_setter,
 )
 from ophyd_async.epics import adcore
@@ -57,7 +61,7 @@ class XspressController(ADBaseController):
     def get_deadtime(self, exposure: float) -> float:
         # Arbitrary value. To-do: fill this in when we know what to
         # include
-        return 0.001
+        return 1e-6
 
     async def setup_ndattributes(self, device_name: str, elements: Sequence[int]):
         params = ndattribute_params(device_name=device_name, elements=elements)
@@ -66,14 +70,43 @@ class XspressController(ADBaseController):
 
     @AsyncStatus.wrap
     async def prepare(self, trigger_info: TriggerInfo):
-        await asyncio.gather(
+        if trigger_info.trigger == DetectorTrigger.INTERNAL:
+            trigger_mode = XspressTriggerMode.INTERNAL
+        elif trigger_info.trigger == DetectorTrigger.CONSTANT_GATE:
+            trigger_mode = XspressTriggerMode.TTL_VETO_ONLY
+        max_frames = 2000
+        num_frames = trigger_info.number_of_events or max_frames
+        if isinstance(num_frames, Iterable):
+            # We have multiple events with distinct number of channels
+            self._trigger_frame_nums = iter(num_frames)
+        else:
+            # Fixed number of events
+            self._trigger_frame_nums = repeat(num_frames)
+        aws = [
             self.driver.num_images.set(trigger_info.total_number_of_exposures),
             self.driver.image_mode.set(adcore.ADImageMode.MULTIPLE),
-            self.driver.trigger_mode.set(XspressTriggerMode.INTERNAL),
-            # Hardware deadtime correciton is not reliable
+            self.driver.trigger_mode.set(trigger_mode),
+            # Hardware deadtime correction is not reliable
             # https://github.com/epics-modules/xspress3/issues/57
             self.driver.deadtime_correction.set(False),
-        )
+        ]
+        if trigger_info.livetime is not None:
+            aws.extend(
+                [
+                    self.driver.acquire_time.set(trigger_info.livetime),
+                    self.driver.acquire_period.set(
+                        trigger_info.livetime + trigger_info.deadtime
+                    ),
+                ]
+            )
+        task = asyncio.ensure_future(asyncio.gather(*aws))
+        # Make sure the number of frames is set properly (not too high)
+        async for num_images in observe_value(
+            self.driver.num_images, done_timeout=DEFAULT_TIMEOUT
+        ):
+            if num_images == trigger_info.total_number_of_exposures:
+                break
+        await task
 
 
 class XspressDatasetDescriber(adcore.ADBaseDatasetDescriber):
@@ -150,6 +183,9 @@ class Xspress3Detector(AreaDetector):
     _ophyd_labels_ = {"detectors", "xrf_detectors"}
     _controller: DetectorController
     _writer: adcore.ADHDFWriter
+    _old_xml_file: str | None = None
+
+    detector_trigger: DetectorTrigger = DetectorTrigger.CONSTANT_GATE
 
     def __init__(
         self,
@@ -204,9 +240,9 @@ class Xspress3Detector(AreaDetector):
 
     @AsyncStatus.wrap
     async def stage(self) -> None:
-        self._old_xml_file, *_ = await asyncio.gather(
-            self.driver.nd_attributes_file.get_value(),
-            super().stage(),
+        await super().stage()
+        self._old_xml_file = await self.driver.nd_attributes_file.get_value()
+        await asyncio.gather(
             self._controller.setup_ndattributes(
                 device_name=self.name, elements=self.elements.keys()
             ),
@@ -216,15 +252,23 @@ class Xspress3Detector(AreaDetector):
 
     @AsyncStatus.wrap
     async def unstage(self) -> None:
-        await super().unstage()
         if self._old_xml_file is not None:
             # Restore the original XML attributes file
             await self.driver.nd_attributes_file.set(self._old_xml_file)
             self._old_xml_file = None
+        await super().unstage()
 
     @property
     def default_time_signal(self):
         return self.driver.acquire_time
+
+    def validate_trigger_info(self, value: TriggerInfo) -> TriggerInfo:
+        """Xspress3 supports internal and gate triggering."""
+        if value.trigger == DetectorTrigger.EDGE_TRIGGER:
+            value = value.model_copy(update={"trigger": DetectorTrigger.CONSTANT_GATE})
+        if value.deadtime == 0 and value.trigger != DetectorTrigger.INTERNAL:
+            value = value.model_copy(update={"deadtime": 1e-5})
+        return value
 
 
 def ndattribute_xml(params):

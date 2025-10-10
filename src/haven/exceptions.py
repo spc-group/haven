@@ -71,6 +71,12 @@ class InvalidHarmonic(ValueError):
     ...
 
 
+class InvalidUndulatorDeadband(ValueError):
+    """The undulator has been asked to move with a non-zero deadband."""
+
+    ...
+
+
 class SignalNotFound(KeyError):
     """The dataset is not present in the run."""
 
@@ -100,6 +106,30 @@ class PluginNotPrimed(RuntimeError):
     extract the dimensions, type, etc. of the data it will receive.
 
     """
+
+    ...
+
+
+class ProfileFailure(RuntimeError):
+    """A profile move did not build correctly."""
+
+    ...
+
+
+class UndeclaredFeatureFlag(ValueError):
+    """Attempted to check a feature flag that was not declared."""
+
+    ...
+
+
+class ExpiredFeatureFlag(FutureWarning):
+    """The feature flag has expired and should be removed."""
+
+    ...
+
+
+class TiledNotAvailable(RuntimeError):
+    """The Tiled server was not available for connecting."""
 
     ...
 

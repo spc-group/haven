@@ -1,188 +1,207 @@
+import asyncio
 import logging
 import math
+from collections.abc import Sequence
+from dataclasses import dataclass
+from functools import partial
 
 import numpy as np
 from ophyd_async.core import Device
 from qasync import asyncSlot
-from qtpy import QtWidgets
-from qtpy.QtCore import Qt
+from qtpy.QtCore import Slot
+from qtpy.QtWidgets import QCheckBox, QDoubleSpinBox, QLabel, QSpinBox, QWidget
 
 from firefly.component_selector import ComponentSelector
-from firefly.plans.regions_display import (
-    DeviceParameters,
-    RegionBase,
-    RegionsDisplay,
-    device_parameters,
+from firefly.plans import display
+from firefly.plans.regions import (
+    RegionsManager,
+    make_relative,
+    update_device_parameters,
 )
-from haven import sanitize_name
 
 log = logging.getLogger()
 
 
-class GridScanRegion(RegionBase):
-    is_relative: bool
+class GridRegionsManager[WidgetsType](RegionsManager):
+    is_relative: bool = False
 
-    def setup_ui(self):
-        # motor No.
-        self.motor_label = QtWidgets.QLabel()
-        self.motor_label.setText(str(self.row - 1))
+    @dataclass(frozen=True, eq=True)
+    class WidgetSet(RegionsManager.WidgetSet):
+        active_checkbox: QCheckBox
+        device_selector: ComponentSelector
+        start_spin_box: QDoubleSpinBox
+        stop_spin_box: QDoubleSpinBox
+        num_points_spin_box: QSpinBox
+        step_label: QLabel
+        snake_checkbox: QCheckBox
+        fly_checkbox: QCheckBox
+
+    @dataclass(frozen=True, eq=True)
+    class Region(RegionsManager.Region):
+        is_active: bool
+        device: str
+        start: float
+        stop: float
+        num_points: int
+        snake: bool
+
+    def widgets_to_region(self, widgets: WidgetSet) -> Region:
+        """Take a list of widgets in a row, and build a Region object."""
+        device_name = widgets.device_selector.current_device_name()
+        return self.Region(
+            is_active=widgets.active_checkbox.isChecked(),
+            device=device_name,
+            start=widgets.start_spin_box.value(),
+            stop=widgets.stop_spin_box.value(),
+            num_points=widgets.num_points_spin_box.value(),
+            snake=widgets.snake_checkbox.isChecked(),
+        )
+
+    async def create_row_widgets(self, row: int) -> list[QWidget]:
         # ComponentSelector
-        self.motor_box = ComponentSelector()
-        self.motor_box.device_selected.connect(self.update_device_parameters)
+        device_selector = ComponentSelector()
+        device_selector.device_selected.connect(self.update_device_parameters)
         # Start point
-        self.start_spin_box = QtWidgets.QDoubleSpinBox()
-        self.start_spin_box.setMinimum(float("-inf"))
-        self.start_spin_box.setMaximum(float("inf"))
+        start_spin_box = QDoubleSpinBox()
+        start_spin_box.setMinimum(float("-inf"))
+        start_spin_box.setMaximum(float("inf"))
         # Stop point
-        self.stop_spin_box = QtWidgets.QDoubleSpinBox()
-        self.stop_spin_box.setMinimum(float("-inf"))
-        self.stop_spin_box.setMaximum(float("inf"))
+        stop_spin_box = QDoubleSpinBox()
+        stop_spin_box.setMinimum(float("-inf"))
+        stop_spin_box.setMaximum(float("inf"))
         # Number of scan points
-        self.scan_pts_spin_box = QtWidgets.QSpinBox()
-        self.scan_pts_spin_box.setMinimum(2)
-        self.scan_pts_spin_box.setValue(2)
-        self.scan_pts_spin_box.setMaximum(99999)
+        scan_pts_spin_box = QSpinBox()
+        scan_pts_spin_box.setMinimum(1)
+        scan_pts_spin_box.setValue(2)
+        scan_pts_spin_box.setMaximum(99999)
         # Step size (non-editable)
-        self.step_label = QtWidgets.QLabel()
-        self.step_label.setText("NaN")
+        step_label = QLabel()
+        step_label.setText("NaN")
         # Snake checkbox
-        self.snake_checkbox = QtWidgets.QCheckBox()
-        self.snake_checkbox.setText("Snake")
-        self.snake_checkbox.setEnabled(True)
+        snake_checkbox = QCheckBox()
+        snake_checkbox.setText("Snake")
+        is_first_row = row == self.header_rows
+        snake_checkbox.setEnabled(not is_first_row)
         # Fly checkbox # not available right now
-        self.fly_checkbox = QtWidgets.QCheckBox()
-        self.fly_checkbox.setText("Fly")
-        self.fly_checkbox.setEnabled(False)
+        fly_checkbox = QCheckBox()
+        fly_checkbox.setText("Fly")
+        fly_checkbox.setEnabled(False)
         # Connect signals
-        self.start_spin_box.textChanged.connect(self.update_step_size)
-        self.stop_spin_box.textChanged.connect(self.update_step_size)
-        self.scan_pts_spin_box.valueChanged.connect(self.update_step_size)
-        self.scan_pts_spin_box.valueChanged.connect(self.num_points_changed)
-
+        update_step_size = partial(self.update_step_size, row=row)
+        start_spin_box.valueChanged.connect(update_step_size)
+        stop_spin_box.valueChanged.connect(update_step_size)
+        scan_pts_spin_box.valueChanged.connect(update_step_size)
+        start_spin_box.valueChanged.connect(self.regions_changed)
+        stop_spin_box.valueChanged.connect(self.regions_changed)
+        scan_pts_spin_box.valueChanged.connect(self.regions_changed)
         # Add all widgets to the layout
-        self.widgets = [
-            self.motor_label,
-            self.motor_box,
-            self.start_spin_box,
-            self.stop_spin_box,
-            self.scan_pts_spin_box,
-            self.step_label,
-            self.snake_checkbox,
-            self.fly_checkbox,
+        return [
+            device_selector,
+            start_spin_box,
+            stop_spin_box,
+            scan_pts_spin_box,
+            step_label,
+            snake_checkbox,
+            fly_checkbox,
         ]
-        for column, widget in enumerate(self.widgets):
-            self.layout.addWidget(widget, self.row, column, alignment=Qt.AlignTop)
-
-        # Connect Qt signals/slots
-        self.scan_pts_spin_box.valueChanged.connect(self.num_points_changed)
 
     @asyncSlot(Device)
-    async def update_device_parameters(self, new_device: Device):
-        device = await device_parameters(new_device)
-        # Filter out non-numeric datatypes
-        for widget in [self.start_spin_box, self.stop_spin_box]:
-            widget.setEnabled(device.is_numeric)
-            widget.setEnabled(device.is_numeric)
-            # Set other metadata
-            self.set_limits(device)
-            widget.setDecimals(device.precision)
-            # Handle units
-            widget.setSuffix(f" {device.units}")
-            # Set starting motor position
-            if self.is_relative:
-                widget.setValue(0)
-            else:
-                widget.setValue(device.current_value)
+    async def update_device_parameters(self, device: Device, row: int):
+        """Update the *widgets*' properties based on a *device*."""
+        widgets = self.row_widgets(row=row)
+        await update_device_parameters(
+            device=device,
+            widgets=[widgets.start_spin_box, widgets.stop_spin_box],
+            is_relative=self.is_relative,
+        )
 
-    def set_limits(self, device: DeviceParameters):
-        """Set limits on the spin boxes to match the device limits."""
-        if self.is_relative:
-            minimum = device.minimum - device.current_value
-            maximum = device.maximum - device.current_value
-        else:
-            maximum, minimum = device.maximum, device.minimum
-        self.start_spin_box.setMaximum(maximum)
-        self.start_spin_box.setMinimum(minimum)
-        self.stop_spin_box.setMaximum(maximum)
-        self.stop_spin_box.setMinimum(minimum)
+    async def update_devices(self, registry=None, *, rows: Sequence[int] | None = None):
+        registry = await super().update_devices(registry)
+        if registry is None:
+            return
+
+        rows = self.row_numbers if rows is None else rows
+        widgetsets = [self.row_widgets(row=row) for row in rows]
+        aws = [
+            widgets.device_selector.update_devices(registry) for widgets in widgetsets
+        ]
+        await asyncio.gather(*aws)
+        return registry
+
+    def num_points(self) -> int:
+        """Calculate the total number of points that will be measured."""
+        active_rows = [
+            row
+            for row in self.row_numbers
+            if self.row_widgets(row).active_checkbox.isChecked()
+        ]
+        widgetsets = [self.row_widgets(row) for row in active_rows]
+        num_points = [widgets.num_points_spin_box.value() for widgets in widgetsets]
+        return math.prod(num_points)
 
     @asyncSlot(int)
     async def set_relative_position(self, is_relative: int):
         """Adjust the target position based on relative/aboslute mode."""
         self.is_relative = bool(is_relative)
-        device = self.motor_box.current_component()
-        if device is None:
-            return
-        params = await device_parameters(device)
-        # Get last values first to avoid limit crossing
-        widgets = [self.start_spin_box, self.stop_spin_box]
-        if is_relative:
-            new_positions = [
-                widget.value() - params.current_value for widget in widgets
-            ]
-        else:
-            new_positions = [
-                widget.value() + params.current_value for widget in widgets
-            ]
-        # Update the current limits and positions
-        self.set_limits(params)
-        for widget, new_position in zip(widgets, new_positions):
-            widget.setValue(new_position)
-
-    def update_step_size(self):
-        try:
-            # Get Start and Stop values
-            start_text = self.start_spin_box.text().strip()
-            stop_text = self.stop_spin_box.text().strip()
-            if not start_text or not stop_text:
-                self.step_label.setText("N/A")
-                return
-
-            start = float(start_text)
-            stop = float(stop_text)
-
-            # Ensure num_points is an integer
-            num_points = int(self.scan_pts_spin_box.value())  # Corrected method call
-            # Calculate step size
-            precision = max(
-                self.start_spin_box.decimals(), self.stop_spin_box.decimals()
+        for row in self.row_numbers:
+            widgets = self.row_widgets(row)
+            device = widgets.device_selector.current_component()
+            if device is None:
+                continue
+            await make_relative(
+                device=device,
+                widgets=[widgets.start_spin_box, widgets.stop_spin_box],
+                is_relative=self.is_relative,
             )
+
+    @Slot()
+    def update_step_size(self, row: int):
+        widgets = self.row_widgets(row)
+        start = widgets.start_spin_box.value()
+        stop = widgets.stop_spin_box.value()
+        num_points = widgets.num_points_spin_box.value()
+        # Calculate step size
+        precision = max(
+            widgets.start_spin_box.decimals(), widgets.stop_spin_box.decimals()
+        )
+        try:
             step_size = (stop - start) / (num_points - 1)
             step_size = round(step_size, precision)
-            self.step_label.setText(str(step_size))
-        except ValueError:
-            self.step_label.setText("NaN")
+        except (ValueError, ZeroDivisionError):
+            widgets.step_label.setText("NaN")
+        else:
+            widgets.step_label.setText(str(step_size))
 
 
-class GridScanDisplay(RegionsDisplay):
-    Region = GridScanRegion
-    default_num_regions = 2
+class GridScanDisplay(display.PlanDisplay):
+    _default_region_count = 2
 
     def __init__(self, parent=None, args=None, macros=None, ui_filename=None, **kwargs):
         super().__init__(parent, args, macros, ui_filename, **kwargs)
 
     def customize_ui(self):
         super().customize_ui()
-        self.update_snakes()
+        self.regions = GridRegionsManager[GridRegionsManager.WidgetSet](
+            layout=self.regions_layout
+        )
+        self.num_regions_spin_box.valueChanged.connect(self.regions.set_region_count)
+        self.num_regions_spin_box.setValue(self._default_region_count)
+        self.regions.regions_changed.connect(self.update_total_time)
+        self.enable_all_checkbox.stateChanged.connect(self.regions.enable_all_rows)
+        self.relative_scan_checkbox.stateChanged.connect(
+            self.regions.set_relative_position
+        )
         # Connect scan points change to update total time
         self.ui.spinBox_repeat_scan_num.valueChanged.connect(self.update_total_time)
         self.ui.detectors_list.selectionModel().selectionChanged.connect(
             self.update_total_time
         )
-
         self.scan_time_changed.connect(self.scan_duration_label.set_seconds)
         self.total_time_changed.connect(self.total_duration_label.set_seconds)
-        # Default metadata values
-        self.ui.comboBox_purpose.lineEdit().setPlaceholderText(
-            "e.g. commissioning, alignment…"
-        )
-        self.ui.comboBox_purpose.setCurrentText("")
 
     def scan_durations(self, detector_time: float) -> tuple[float, float]:
-        num_points = math.prod(
-            [region.scan_pts_spin_box.value() for region in self.regions]
-        )
-        time_per_scan = detector_time * num_points
+        num_points = self.regions.num_points()
+        time_per_scan = num_points * detector_time
         num_scan_repeat = self.ui.spinBox_repeat_scan_num.value()
         total_time = num_scan_repeat * time_per_scan
         return time_per_scan, total_time
@@ -190,20 +209,12 @@ class GridScanDisplay(RegionsDisplay):
     @asyncSlot()
     async def update_total_time(self):
         """Update the total scan time and display it."""
+        # Calculate time per scan
         acquire_times = await self.detectors_list.acquire_times()
         detector_time = max([*acquire_times, float("nan")])
-        # Calculate time per scan
-        time_per_scan, total_time = self.scan_durations(detector_time)
+        time_per_scan, total_time = self.scan_durations(detector_time=detector_time)
         self.scan_time_changed.emit(time_per_scan)
         self.total_time_changed.emit(total_time)
-
-    def add_region(self):
-        new_region = super().add_region()
-        self.relative_scan_checkbox.stateChanged.connect(
-            new_region.set_relative_position
-        )
-        new_region.set_relative_position(self.relative_scan_checkbox.checkState())
-        return new_region
 
     def reset_default_regions(self):
         super().reset_default_regions()
@@ -215,25 +226,19 @@ class GridScanDisplay(RegionsDisplay):
             [region.scan_pts_spin_box.value() for region in self.regions]
         )
         total_time_per_scan = total_num_pnts * detector_time
-        return total_time_per_scan
+        return float(total_time_per_scan)
 
     @asyncSlot(int)
     async def update_regions_slot(self, new_region_num: int):
         await super().update_regions(new_region_num)
         self.update_snakes()
 
-    def update_snakes(self):
-        """Update the snake checkboxes.
-
-        The last region is not snakable, so that checkbox gets
-        disabled and unchecked. The rest get enabled.
-
-        """
-        if len(self.regions) > 0:
-            self.regions[-1].snake_checkbox.setEnabled(False)
-            self.regions[-1].snake_checkbox.setChecked(False)
-            for region_i in self.regions[:-1]:
-                region_i.snake_checkbox.setEnabled(True)
+    async def update_devices(self, registry):
+        await super().update_devices(registry)
+        await asyncio.gather(
+            self.regions.update_devices(registry),
+            self.detectors_list.update_devices(registry),
+        )
 
     @property
     def plan_type(self):
@@ -247,35 +252,27 @@ class GridScanDisplay(RegionsDisplay):
         """How many times should each scan be run."""
         return self.ui.spinBox_repeat_scan_num.value()
 
+    @scan_repetitions.setter
+    def scan_repetitions(self, value: int):
+        self.spinBox_repeat_scan_num.setValue(value)
+
     def plan_args(self):
         detectors = self.ui.detectors_list.selected_detectors()
         detector_names = [detector.name for detector in detectors]
         # Get parameters from each row of line regions:
-        device_names = [
-            region.motor_box.current_component().name for region in self.regions
+        region_args = [
+            (region.device, region.start, region.stop, region.num_points)
+            for region in self.regions
         ]
-        device_names = [sanitize_name(name) for name in device_names]
-        start_points = [region.start_spin_box.value() for region in self.regions]
-        stop_points = [region.stop_spin_box.value() for region in self.regions]
-        num_points = [region.scan_pts_spin_box.value() for region in self.regions]
-        device_args = [
-            values
-            for line in zip(device_names, start_points, stop_points, num_points)
-            for values in line
-        ]
+        device_args = [arg for region in region_args for arg in region]
         # Decide whether and how to snake the axes
         # get snake axes, if all unchecked, set it None
-        snake_axes = [
-            region.motor_box.current_component().name
-            for region in self.regions
-            if region.snake_checkbox.isChecked()
-        ]
+        snake_axes = [region.device for region in self.regions if region.snake]
         if snake_axes == []:
             snake_axes = False
-
         # Prepare the argument collections
         args = (detector_names, *device_args)
-        kwargs = {"snake_axes": snake_axes, "md": self.get_meta_data()}
+        kwargs = {"snake_axes": snake_axes, "md": self.plan_metadata()}
         return args, kwargs
 
     def ui_filename(self):

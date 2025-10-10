@@ -6,7 +6,7 @@ authors = [
 ]
 description = "Tools and GUI for running the spectroscopy group beamlines at the Advanced Photon Source."
 readme = "README.md"
-requires-python = ">=3.12"
+# requires-python = ">=3.14"
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
@@ -17,64 +17,8 @@ classifiers = [
 license = "BSD-3-clause"
 keywords = ["synchrotron", "xray", "bluesky"]
 dependencies = [
-    "aioca",
-    "aiokafka==0.12.0",
-    "apsbits",
-    "apsbss==1.5.6",
-    "apstools==1.7.3",
-    "bluesky==1.14.2",
-    "bluesky-adaptive",
-    "bluesky-queueserver==0.0.22",
-    "bluesky-queueserver-api==0.0.12",
-    "bluesky-tiled-plugins==2.0.0b64",
-    "guarneri==0.2.0",
-    "httpx[http2]",
-    "mergedeep",
-    "ophyd==1.10.7",
-    # "ophyd-async==0.10.0",
-    # We need this ophyd-async development branch until a new release (>0.10.0a4)
-    "ophyd-async @ git+https://github.com/bluesky/ophyd-async@f652399e24c045b0f6c675d173c1ef588f909062",
-    "pint",
-    "pcdsdevices",
-    "rich",
-    "stamina",
-    "tiled[client]==0.1.0b29",
-    "tomlkit",
-    "xraydb>=4.5.0",
-    "xrayutilities",
-]
-
-[project.optional-dependencies]
-dev = [
-    "black",
-    "pytest",
-    "asynctest",
-    "build",
-    "twine",
-    "pytest-httpx",
-    "time-machine",
-    "pytest-mock",
-    "pytest-qt",
-    "pytest-xvfb",
-    "flake8",
-    "isort",
-    "sphinx",
-    "autoapi",
-    "nbsphinx",
-    "graphviz",
-    "sphinxcontrib-napoleon",
-    "pytest-asyncio",
-    "pytest_httpx",
-    "scipy-stubs",
-    "mypy"
-]
-gui = [
-    "qtawesome>=1.4.0",
-    "pydm==1.25.2",
-    "pyqtgraph",
-    "qasync",
-    "bluesky-widgets",
-    "typhos>=3.1.0",  # need the find_signal method on the SignalConnection()
+    # Managed by pixi
+    # To-do: what dependencies do we actually need for e.g. pip install.
 ]
 
 [project.urls]
@@ -86,27 +30,26 @@ HavenPlugin = "firefly.pydm_plugin:HavenPlugin"
 
 [project.scripts]
 haven_config = "haven._iconfig:print_config_value"
-haven_queueserver = "queueserver.launch_queueserver:launch_queueserver"
-databroker_consumer = "queueserver.databroker_consumer:main"
-tiled_consumer = "queueserver.tiled_consumer:main"
 
 [project.gui-scripts]
 firefly = "firefly.launcher:main"
 firefly_cameras = "firefly.launcher:cameras"
 
-[tool.setuptools.package-data]
-firefly = ["firefly.qss"]
-# This might be necessary in the future for BITS compatibility
-# "" = "src"
-
-[tool.setuptools_scm]
-
 [build-system]
-requires = ["setuptools>=61.0", "setuptools-scm>=8.0"]
-build-backend = "setuptools.build_meta"
+build-backend = "hatchling.build"
+requires = ["hatchling"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/haven", "src/firefly", "src/haven_qserver"]
 
 [tool.isort]
 profile = "black"
+
+[tool.ruff]
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E9", "F63", "F7", "F82", "F401"]
 
 [tool.versioneer]
 VCS = "git"
@@ -118,25 +61,38 @@ parentdir_prefix = "haven-"
 
 [tool.mypy]
 files = [
-    'src/firefly/energy.py', 'src/firefly/tests/test_energy_display.py',
-    'src/firefly/devices/axilon_monochromator.py', 'src/firefly/tests/test_monochromator.py',
-    'src/firefly/devices/undulator.py', 'src/firefly/tests/test_undulator.py',
-    'src/haven/run_engine.py', 'src/haven/tests/test_run_engine.py',
-    'src/haven/devices/asymmotron.py', "src/haven/tests/test_asymmotron.py",
-    'src/haven/devices/axilon_monochromator.py', "src/haven/tests/test_monochromator.py",
-    'src/haven/devices/blade_slits.py', "src/haven/tests/test_blade_slits.py",
-    'src/haven/devices/channel_cut_monochromator.py', "src/haven/tests/test_channel_cut_monochromator.py",
-    'src/haven/devices/ion_chamber.py', "src/haven/tests/test_ion_chamber.py",
-    'src/haven/devices/motor.py', "src/haven/tests/test_motor.py",
-    'src/haven/devices/undulator.py', "src/haven/tests/test_undulator.py",
-    'src/haven/devices/vacuum.py', 'src/haven/tests/test_vacuum_devices.py',
-    'src/haven/plans/_align_monochromators.py', 'src/haven/tests/test_align_monochromators.py',
-    'src/haven/plans/_calibrate.py', 'src/haven/tests/test_calibrate_plan.py',
-    'src/haven/plans/_set_energy.py', 'src/haven/tests/test_set_energy.py',
-    'src/haven/plans/_xafs_scan.py', 'src/haven/plans/_energy_scan.py', 'src/haven/tests/test_energy_xafs_scan.py',
-    'src/haven/preprocessors/fixed_offset.py', 'src/haven/tests/test_fixed_offset.py',
-    'src/haven/positioner.py', "src/haven/tests/test_positioner.py",
-    'src/haven/protocols.py',
+    'src/firefly/bss.py', 'tests/firefly/test_bss_display.py',
+    'src/firefly/energy.py', 'tests/firefly/test_energy_display.py',
+    'src/firefly/devices/axilon_monochromator.py', 'tests/firefly/devices/test_monochromator.py',
+    'src/firefly/devices/undulator.py', 'tests/firefly/devices/test_undulator.py',
+    'src/firefly/plans/count.py', 'tests/firefly/plans/test_count.py',
+    'src/firefly/plans/duration_label.py', 'tests/firefly/plans/test_duration_label.py',
+    'src/firefly/plans/metadata.py', 'tests/firefly/test_metadata_widget.py',
+    'src/firefly/plans/move.py', 'tests/firefly/plans/test_move.py',
+    'src/firefly/plans/regions.py', 'tests/firefly/plans/test_regions.py',
+    'src/firefly/plans/display.py', 'tests/firefly/plans/test_display.py',
+    'src/firefly/plans/line_scan.py', 'tests/firefly/plans/test_line_scan.py',
+    'src/firefly/plans/grid_scan.py', 'tests/firefly/plans/test_grid_scan.py',
+    'src/firefly/plans/relative_checkbox.py', 'tests/firefly/test_relative_checkbox.py',
+    'src/firefly/plans/util.py',
+    'src/firefly/plans/xafs_scan.py', 'tests/firefly/plans/test_xafs_scan.py',
+    'src/haven/run_engine.py', 'tests/haven/test_run_engine.py',
+    'src/haven/devices/aerotech.py', "tests/haven/devices/test_aerotech.py",
+    'src/haven/devices/asymmotron.py', "tests/haven/devices/test_asymmotron.py",
+    "src/haven/bss.py", "tests/haven/test_bss.py",
+    'src/haven/devices/blade_slits.py', "tests/haven/devices/test_blade_slits.py",
+    'src/haven/devices/channel_cut_monochromator.py', "tests/haven/devices/test_channel_cut_monochromator.py",
+    'src/haven/devices/ion_chamber.py', "tests/haven/devices/test_ion_chamber.py",
+    'src/haven/devices/motor.py', "tests/haven/devices/test_motor.py",
+    'src/haven/plans/_robot_transfer_sample.py', "tests/haven/plans/test_robot_transfer_sample.py",
+    'src/haven/devices/undulator.py', "tests/haven/devices/test_undulator.py",
+    'src/haven/devices/vacuum.py', 'tests/haven/devices/test_vacuum_devices.py',
+    'src/haven/plans/_calibrate.py', 'tests/haven/plans/test_calibrate.py',
+    'src/haven/plans/_set_energy.py', 'tests/haven/plans/test_set_energy.py',
+    'src/haven/plans/_xafs_scan.py', 'src/haven/plans/_energy_scan.py', 'tests/haven/plans/test_energy_xafs_scan.py',
+    'src/haven/plans/_fly.py', 'tests/haven/plans/test_fly.py',
+    'src/haven/positioner.py', "tests/haven/test_positioner.py",
+    'tests/integration/',
 ]
 follow_imports = "skip"
 follow_untyped_imports = true

@@ -40,7 +40,7 @@ class GainRecommender:
         self.volts_max = volts_max
         self.target_volts = target_volts
 
-    def tell(self, gains, volts):
+    def ingest(self, gains, volts):
         self.last_point = gains
         # Check if dataframes exist yet
         if self.dfs is None:
@@ -54,11 +54,11 @@ class GainRecommender:
             for gain, volt, df in zip(gains, volts, self.dfs)
         ]
 
-    def tell_many(self, xs, ys):
+    def ingest_many(self, xs, ys):
         for x, y in zip(xs, ys):
-            self.tell(x, y)
+            self.ingest(x, y)
 
-    def ask(self, n, tell_pending=True):
+    def suggest(self, n, tell_pending=True):
         """Figure out the next gain point based on the past ones we've measured."""
         if n != 1:
             raise NotImplementedError
