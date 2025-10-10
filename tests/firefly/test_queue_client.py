@@ -1,4 +1,3 @@
-import datetime as dt
 import time
 from collections import ChainMap
 from unittest.mock import AsyncMock
@@ -428,12 +427,10 @@ async def test_devices_available(client, qtbot):
 
 
 @pytest.mark.asyncio
-async def test_update(client, time_machine, monkeypatch):
+async def test_update(client, monkeypatch):
     api = client.api
     # Set the last update timestamp to be long enough ago
-    time_machine.move_to(dt.datetime(2024, 5, 29, 17, 51))
     client.last_update = time.monotonic()
-    time_machine.move_to(dt.datetime(2024, 5, 29, 17, 55))
     client.timeout = 1
     # Update the client
     await client.update()

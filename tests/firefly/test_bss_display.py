@@ -4,7 +4,6 @@ from zoneinfo import ZoneInfo
 chicago_tz = ZoneInfo("America/Chicago")
 
 import pytest
-import time_machine
 from qtpy.QtCore import QDateTime, Qt
 from qtpy.QtGui import QStandardItemModel
 
@@ -203,7 +202,6 @@ async def test_bss_esafs(display):
     assert esaf.end == dt.datetime(2025, 5, 26, 12, 15, 39)
 
 
-@time_machine.travel(dt.datetime(2025, 5, 28, 15, 51, tzinfo=chicago_tz))
 def test_bss_metadata(display, bss_api, qtbot):
     """Checks the properties of the model that gets emitted when the
     widgets are changed.
@@ -244,14 +242,14 @@ def test_bss_metadata(display, bss_api, qtbot):
         "esaf_title": "Spam and eggs science",
         "esaf_status": "Rejected!",
         "esaf_id": "1225467",
-        "esaf_start": "2025-05-26T12:33:13-05:00",
-        "esaf_end": "2025-05-26T13:47:13-05:00",
+        "esaf_start": esaf_start.astimezone().isoformat(),
+        "esaf_end": esaf_end.astimezone().isoformat(),
         "esaf_users": "Freddy Mercury, Brian May",
         "esaf_PIs": "Freddy Mercury",
         "proposal_title": "MAMAAAAAAA",
         "proposal_id": "9876543",
-        "proposal_start": "2025-05-28T12:33:13-05:00",
-        "proposal_end": "2025-05-29T15:47:13-05:00",
+        "proposal_start": proposal_start.astimezone().isoformat(),
+        "proposal_end": proposal_end.astimezone().isoformat(),
         "proposal_users": "Animal, Zoot",
         "proposal_PIs": "Animal",
         "proposal_is_mail_in": True,

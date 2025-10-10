@@ -2061,7 +2061,6 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/tblib-3.1.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/tenacity-9.1.2-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/tifffile-2025.10.4-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/linux-64/time-machine-2.19.0-py312h5253ce2_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/timechart-1.5.3-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/tinycss2-1.4.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/tk-8.6.13-noxft_hd72426e_102.conda
@@ -12416,21 +12415,6 @@ packages:
   - pyarrow ; extra == 'xarray'
   - xarray ; extra == 'xarray'
   requires_python: '>=3.9'
-- conda: https://conda.anaconda.org/conda-forge/linux-64/time-machine-2.19.0-py312h5253ce2_1.conda
-  sha256: c5d7672e929883b4e90c3f9b8647131da3134d6bee0ef95c5eeefa636ff8fff6
-  md5: 1a3c63a47e042490184007287ad148e0
-  depends:
-  - python
-  - python-dateutil
-  - __glibc >=2.17,<3.0.a0
-  - libgcc >=14
-  - python_abi 3.12.* *_cp312
-  license: MIT
-  license_family: MIT
-  purls:
-  - pkg:pypi/time-machine?source=hash-mapping
-  size: 45285
-  timestamp: 1756482573058
 - conda: https://conda.anaconda.org/conda-forge/noarch/timechart-1.5.3-pyhd8ed1ab_1.conda
   sha256: dc73352546156f5ce97e4686022be84d9ba3902d5cec246881f617195af098e6
   md5: 1561e025d39d46b8b6ba768264118462

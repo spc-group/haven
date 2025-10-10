@@ -6,7 +6,6 @@ from zoneinfo import ZoneInfo
 
 import pandas as pd
 import pytest
-import time_machine
 from ophyd_async.testing import set_mock_value
 from pytest_httpx import IteratorStream
 from tiled.serialization.table import serialize_arrow
@@ -213,8 +212,7 @@ async def test_recall_motor_position(tiled_api, motors):
     assert msg1.args[0] == -113.25
 
 
-@pytest.mark.skip(reason="breaks CI")
-@time_machine.travel(fake_time, tick=True)
+@pytest.mark.skip(reason="need to replace time_machine (breaks bluesky)")
 async def test_list_motor_positions(tiled_api, capsys):
     # Do the listing
     await list_motor_positions()
@@ -238,8 +236,7 @@ async def test_list_motor_positions(tiled_api, capsys):
     assert first_motor == expected
 
 
-@pytest.mark.skip(reason="breaks CI")
-@time_machine.travel(fake_time, tick=True)
+@pytest.mark.skip(reason="need to replace time_machine (breaks bluesky)")
 async def test_list_current_motor_positions(motors, capsys):
     # Get our simulated motors into the device registry
     motorA, motorB = motors
