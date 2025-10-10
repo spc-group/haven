@@ -37,19 +37,19 @@ def test_fly_segment(flyer):
     assert prepared_objs == {xspress, flyer}
     assert msgs[2].command == "wait"
     # Start the scan
-    # assert msgs[0].command == "kickoff"
-    # assert msgs[0].obj is xspress
-    # assert msgs[1].command == "wait"
-    # assert msgs[2].command == "kickoff"
-    # assert msgs[2].obj is flyer
-    # assert msgs[3].command == "wait"
-    # # Finish the scan
-    # assert msgs[4].command == "complete"
-    # assert msgs[4].obj is flyer
-    # assert msgs[3].command == "wait"
-    # assert msgs[6].command == "complete"
-    # assert msgs[6].obj is xspress
-    # assert msgs[7].command == "wait"
+    assert msgs[3].command == "kickoff"
+    assert msgs[3].obj is xspress
+    assert msgs[4].command == "wait"
+    assert msgs[5].command == "kickoff"
+    assert msgs[5].obj is flyer
+    assert msgs[6].command == "wait"
+    # Finish the scan
+    assert msgs[7].command == "complete"
+    assert msgs[7].obj is flyer
+    assert msgs[8].command == "wait"
+    assert msgs[9].command == "complete"
+    assert msgs[9].obj is xspress
+    assert msgs[10].command == "wait"
 
 
 def test_set_fly_motor_params(flyer):

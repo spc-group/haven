@@ -36,7 +36,7 @@ test-all = [
     {task = "format", args = ["--check"] },
     {task = "isort", args = ["--check"] },
     {task = "check-types" },
-    {task = "test-haven" },
+    {task = "test-haven", args = ["--runslow"] },
     {task = "test-firefly" },
     {task = "test-integration" }
 ]
@@ -88,12 +88,17 @@ autoapi = "*"
 build = "*"
 
 [feature.dev.tasks]
-test-haven = "pytest tests/haven -Werror"
 test-firefly = "pytest tests/firefly"
 test-integration = "pytest tests/integration --runslow"
 check-types = "mypy"
 lint = "ruff check"
 make-docs = "make html --directory=docs/"
+
+[feature.dev.tasks.test-haven]
+args = [
+     { arg = "runslow", default = "" },
+]
+cmd = "pytest tests/haven -Werror {{ runslow }}"
 
 [feature.dev.tasks.isort]
 args = [

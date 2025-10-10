@@ -241,8 +241,8 @@ def test_recommender_no_change(recommender):
         recommender.suggest(1)
 
 
+@pytest.mark.slow
 def test_plan_in_run_engine(ion_chamber):
-    print(ion_chamber)
     RE = RunEngine()
     plan = auto_gain(ion_chambers=[ion_chamber])
     RE(plan)
