@@ -81,6 +81,7 @@ files = [
     'src/haven/devices/asymmotron.py', "tests/haven/devices/test_asymmotron.py",
     "src/haven/bss.py", "tests/haven/test_bss.py",
     'src/haven/devices/blade_slits.py', "tests/haven/devices/test_blade_slits.py",
+    'src/haven/devices/channel_cut_monochromator.py', "tests/haven/devices/test_channel_cut_monochromator.py",
     'src/haven/devices/ion_chamber.py', "tests/haven/devices/test_ion_chamber.py",
     'src/haven/devices/motor.py', "tests/haven/devices/test_motor.py",
     'src/haven/plans/_robot_transfer_sample.py', "tests/haven/plans/test_robot_transfer_sample.py",

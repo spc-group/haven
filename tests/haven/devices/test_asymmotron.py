@@ -9,9 +9,11 @@ from haven.devices.asymmotron import (
     Analyzer,
     EnergyTransform,
     Motor,
+    device_units,
+)
+from haven.units import (
     bragg_to_energy,
     bragg_to_wavelength,
-    device_units,
     energy_to_wavelength,
     ureg,
     wavelength_to_bragg,

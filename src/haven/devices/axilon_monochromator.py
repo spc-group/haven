@@ -4,6 +4,7 @@ import logging
 import numpy as np
 from ophyd_async.core import (
     AsyncStatus,
+    Device,
     StandardReadable,
     StandardReadableFormat,
     StrictEnum,
@@ -75,6 +76,7 @@ class EnergyMotor(Motor):
 
 class AxilonMonochromator(StandardReadable):
     _ophyd_labels_ = {"monochromators"}
+    _has_hints: tuple[Device]
 
     class Mode(StrictEnum):
         FIXED_OFFSET = "Si(111) Fixed Offset"

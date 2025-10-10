@@ -62,9 +62,9 @@ def _inject_md(msg, config: Mapping | None = None):
 def inject_metadata_wrapper(plan, config: Mapping | None = None):
     """Inject additional metadata into a run.
 
-    This takes precedences over the original metadata dict in the event of
-    overlapping keys, but it does not mutate the original metadata dict.
-    (It uses ChainMap.)
+    This takes precedence over the original metadata dict in the event
+    of overlapping keys, but it does not mutate the original metadata
+    dict.
 
     Parameters
     ----------

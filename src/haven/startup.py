@@ -3,6 +3,8 @@ qserver."""
 
 import logging
 import time
+import warnings
+from functools import partial
 
 import numpy as np  # noqa: F401
 import rich
@@ -41,6 +43,7 @@ from haven.plans import (  # noqa: F401
     set_energy,
     xafs_scan,
 )
+from haven.preprocessors import fixed_offset_wrapper  # noqa: F401
 
 logging.basicConfig(level=logging.WARNING)
 
@@ -100,6 +103,20 @@ for cpt in devices.root_devices:
     name = haven.sanitize_name(cpt.name)
     # Add the device as a variable in module's globals
     globals().setdefault(name, cpt)
+
+# Apply a wrapper for keeping the beam at a fixed offset
+if config.feature_flag("fixed_offset_tracking"):
+    try:
+        wrapper = partial(
+            fixed_offset_wrapper,
+            primary_mono=haven.beamline.devices["monochromator"],
+            secondary_mono=haven.beamline.devices["secondary_mono"],
+        )
+    except ComponentNotFound as exc:
+        log.warning(f"Could not couple mono offsets: {exc}")
+        warnings.warn(f"Could not couple mono offsets: {exc}")
+    else:
+        RE.preprocessors.append(wrapper)
 
 # Print helpful information to the console
 custom_theme = rich.theme.Theme(

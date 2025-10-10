@@ -1,3 +1,5 @@
+"""Protocols for the various kinds of monos at our beamlines."""
+
 from abc import abstractmethod
 from typing import (
     Protocol,
@@ -6,7 +8,7 @@ from typing import (
     runtime_checkable,
 )
 
-from bluesky.protocols import HasName, Locatable, Readable
+from bluesky.protocols import HasName, Locatable, Movable, Readable
 from ophyd import Component, Device, Signal
 from ophyd_async.epics.motor import Motor
 
@@ -26,12 +28,18 @@ class EnergyDevice(Readable, HasName):
 class Monochromator(EnergyDevice):
     d_spacing: Readable
     bragg: Motor
+    beam_offset: Readable
+    vertical: Movable
 
 
 @runtime_checkable
 class Calibratable(Protocol):
     @abstractmethod
     def calibrate(self, truth: float, target: float | None = None): ...
+
+
+class FixedOffsetMonochromator(Monochromator):
+    beam_offset: Movable
 
 
 # -----------------------------------------------------------------------------

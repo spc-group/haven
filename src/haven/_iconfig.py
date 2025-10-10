@@ -55,6 +55,10 @@ FEATURE_FLAGS = {
         expires=dt.datetime(2025, 10, 30).timestamp(),
         description="new controls added to the 25-ID undulator for step scanning faster",
     ),
+    "fixed_offset_tracking": FeatureFlag(
+        expires=dt.datetime(2025, 11, 15).timestamp(),
+        description="preprocessor that keeps 1° and 2° aligned.",
+    ),
 }
 
 

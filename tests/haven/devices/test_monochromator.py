@@ -11,6 +11,45 @@ async def mono():
     return mono
 
 
+async def test_signals(mono):
+    reading = await mono.read()
+    assert set(reading.keys()) == {
+        "monochromator-beam_offset",
+        "monochromator-bragg",
+        "monochromator-energy",
+        "monochromator-gap",
+        "monochromator-horizontal",
+        "monochromator-pitch2",
+        "monochromator-roll2",
+        "monochromator-vertical",
+    }
+    assert set(mono.hints["fields"]) == {
+        "monochromator-bragg",
+        "monochromator-energy",
+    }
+    config = await mono.read_configuration()
+    assert set(config.keys()) == {
+        "monochromator-bragg-description",
+        "monochromator-bragg-motor_egu",
+        "monochromator-bragg-offset",
+        "monochromator-bragg-offset_dir",
+        "monochromator-bragg-velocity",
+        "monochromator-energy-description",
+        "monochromator-energy-motor_egu",
+        "monochromator-energy-offset",
+        "monochromator-energy-offset_dir",
+        "monochromator-energy-velocity",
+        "monochromator-id_tracking",
+        "monochromator-id_offset",
+        "monochromator-d_spacing",
+        "monochromator-d_spacing_unit",
+        "monochromator-mode",
+        "monochromator-transform_d_spacing",
+        "monochromator-transform_direction",
+        "monochromator-transform_offset",
+    }
+
+
 def test_mono_energy_signal(mono):
     # Check PVs are correct
     mono.energy.user_readback.source == "ca+mock://255idMono:Energy.RBV"
