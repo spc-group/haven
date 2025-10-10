@@ -105,17 +105,18 @@ for cpt in devices.root_devices:
     globals().setdefault(name, cpt)
 
 # Apply a wrapper for keeping the beam at a fixed offset
-try:
-    wrapper = partial(
-        fixed_offset_wrapper,
-        primary_mono=haven.beamline.devices["monochromator"],
-        secondary_mono=haven.beamline.devices["secondary_mono"],
-    )
-except ComponentNotFound as exc:
-    log.warning(f"Could not couple mono offsets: {exc}")
-    warnings.warn(f"Could not couple mono offsets: {exc}")
-else:
-    RE.preprocessors.append(wrapper)
+if config.feature_flag("fixed_offset_tracking"):
+    try:
+        wrapper = partial(
+            fixed_offset_wrapper,
+            primary_mono=haven.beamline.devices["monochromator"],
+            secondary_mono=haven.beamline.devices["secondary_mono"],
+        )
+    except ComponentNotFound as exc:
+        log.warning(f"Could not couple mono offsets: {exc}")
+        warnings.warn(f"Could not couple mono offsets: {exc}")
+    else:
+        RE.preprocessors.append(wrapper)
 
 # Print helpful information to the console
 custom_theme = rich.theme.Theme(
