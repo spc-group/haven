@@ -1,0 +1,103 @@
+name: tests
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+env:
+  DISPLAY: ":99"
+  BLUESKY_DEBUG_CALLBACKS: 1
+
+
+jobs:
+
+  linting:
+    defaults:
+      run:
+        shell: bash -l {0}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      max-parallel: 5
+    steps:
+    - uses: actions/checkout@v4
+    - uses: prefix-dev/setup-pixi@v0.9.0
+      with:
+        pixi-version: v0.53.0
+        cache: true
+    - run: |
+        pixi run lint
+        pixi run format --check
+        pixi run isort --check
+  type-checking:
+    defaults:
+      run:
+        shell: bash -l {0}
+    runs-on: ubuntu-latest
+    needs: "linting"
+    timeout-minutes: 10
+    strategy:
+      max-parallel: 5
+    steps:
+    - uses: actions/checkout@v4
+    - uses: prefix-dev/setup-pixi@v0.9.0
+      with:
+        pixi-version: v0.53.0
+        cache: true
+    - run: |
+        pixi run check-types
+  unit-tests:
+    defaults:
+      run:
+        shell: bash -l {0}
+    runs-on: ubuntu-latest
+    needs: "linting"
+    timeout-minutes: 10
+    strategy:
+      max-parallel: 5
+    steps:
+    - uses: actions/checkout@v4
+    - uses: prefix-dev/setup-pixi@v0.9.0
+      with:
+        pixi-version: v0.53.0
+        cache: true
+    - run: |
+        pixi run test-haven
+        pixi run test-firefly
+  make-docs:
+    defaults:
+      run:
+        shell: bash -l {0}
+    runs-on: ubuntu-latest
+    needs: "linting"
+    timeout-minutes: 10
+    strategy:
+      max-parallel: 5
+    steps:
+    - uses: actions/checkout@v4
+    - uses: prefix-dev/setup-pixi@v0.9.0
+      with:
+        pixi-version: v0.53.0
+        cache: true
+    - run: |
+        pixi run make-docs
+  integration-tests:
+    defaults:
+      run:
+        shell: bash -l {0}
+    runs-on: ubuntu-latest
+    needs: ["unit-tests", "type-checking"]
+    timeout-minutes: 10
+    strategy:
+      max-parallel: 5
+    steps:
+    - uses: actions/checkout@v4
+    - uses: prefix-dev/setup-pixi@v0.9.0
+      with:
+        pixi-version: v0.53.0
+        cache: true
+    - run: |
+        pixi run test-integration

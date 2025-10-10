@@ -1,26 +1,66 @@
+import asyncio
 import logging
 import math
+import warnings
+from contextlib import asynccontextmanager
 from enum import IntEnum
 from pathlib import Path
 from typing import IO
+from typing import Annotated as A
+from typing import Sequence, cast
 
 import numpy as np
 import pandas as pd
+from bluesky.protocols import Preparable
 from ophyd_async.core import (
+    DEFAULT_TIMEOUT,
+    Array1D,
+    AsyncStatus,
     Signal,
+    SignalR,
+    SignalRW,
     StandardReadable,
-    StandardReadableFormat,
+)
+from ophyd_async.core import StandardReadableFormat as Format
+from ophyd_async.core import (
+    StrictEnum,
     SubsetEnum,
+    WatchableAsyncStatus,
+    WatcherUpdate,
     derived_signal_r,
     derived_signal_rw,
+    observe_value,
     soft_signal_rw,
 )
-from ophyd_async.epics.core import epics_signal_r, epics_signal_rw, epics_signal_x
+from ophyd_async.core._utils import (
+    CALCULATE_TIMEOUT,
+    CalculatableTimeout,
+    ConfinedModel,
+)
+from ophyd_async.epics.core import (
+    EpicsDevice,
+)
+from ophyd_async.epics.core import PvSuffix as PV
+from ophyd_async.epics.core import (
+    epics_signal_r,
+    epics_signal_rw,
+    epics_signal_x,
+)
+from pydantic import Field
 
-from ..positioner import Positioner
-from .signal import derived_signal_x
+from haven import exceptions
+from haven._iconfig import load_config
+from haven.devices.signal import derived_signal_x
+from haven.positioner import Positioner
 
 log = logging.getLogger(__name__)
+
+
+UM_PER_MM = 1000
+
+
+class SetupFailed(RuntimeError):
+    pass
 
 
 class DoneStatus(IntEnum):
@@ -38,6 +78,23 @@ class MotorDriveStatus(IntEnum):
     READY_TO_MOVE = 1
 
 
+SCAN_SETUP_RETRIES = 3
+
+
+class TrajectoryMotorInfo(ConfinedModel):
+    """Minimal set of information required to fly a motor."""
+
+    positions: Sequence[int | float] = Field(frozen=True)
+    """Absolute positions that the motor should hit."""
+
+    times: Sequence[int | float] = Field(frozen=True)
+    """Relative times at which the motor should reach each position."""
+
+    timeout: CalculatableTimeout = Field(frozen=True, default=CALCULATE_TIMEOUT)
+    """Maximum time for the complete motor move, including run up and run down.
+    Defaults to `time_for_move` + run up and run down times + 10s."""
+
+
 class BasePositioner(Positioner):
     done_value: int = BusyStatus.DONE
 
@@ -50,7 +107,7 @@ class BasePositioner(Positioner):
         done_signal: Signal,
         name: str = "",
     ):
-        with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
+        with self.add_children_as_readables(Format.CONFIG_SIGNAL):
             self.units = epics_signal_r(str, f"{prefix}SetC.EGU")
             self.precision = epics_signal_r(int, f"{prefix}SetC.PREC")
         self.velocity = soft_signal_rw(
@@ -74,6 +131,19 @@ class BasePositioner(Positioner):
         """
         return done
 
+    async def _set(
+        self,
+        value: float,
+        wait: bool = True,
+        timeout: CalculatableTimeout = "CALCULATE_TIMEOUT",
+    ):
+        gap_deadband = await self.parent.gap_deadband.get_value()
+        if gap_deadband != 0:
+            msg = f"This device cannot be set properly if the gap deadband is not zero: {gap_deadband}"
+            raise exceptions.InvalidUndulatorDeadband(msg)
+        async for update in super()._set(value=value, wait=wait, timeout=timeout):
+            yield update
+
 
 class UndulatorPositioner(BasePositioner):
     def __init__(
@@ -88,7 +158,9 @@ class UndulatorPositioner(BasePositioner):
         super().__init__(prefix=prefix, **kwargs)
 
 
-class EnergyPositioner(BasePositioner):
+class EnergyPositioner(BasePositioner, Preparable):
+    scan_has_moved: bool
+
     def __init__(
         self,
         *,
@@ -101,7 +173,7 @@ class EnergyPositioner(BasePositioner):
             self.dial_readback = epics_signal_rw(float, f"{prefix}M.VAL")
         self.dial_setpoint = epics_signal_rw(float, f"{prefix}SetC.VAL")
         # Derived signals so we can apply offsets and convert units
-        with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
+        with self.add_children_as_readables(Format.CONFIG_SIGNAL):
             self.offset = epics_signal_rw(float, offset_pv)
         with self.add_children_as_readables():
             self.readback = derived_signal_r(
@@ -124,6 +196,122 @@ class EnergyPositioner(BasePositioner):
         raw = _energy_to_keV(value, offset=offset)
         await self.dial_setpoint.set(raw)
 
+    async def _advance_scan_point(self):
+        """Move to the next point in a scan array."""
+        await self.parent.scan_next_point.set(True)
+        await asyncio.sleep(0.1)
+        await self.parent.scan_next_point.set(False)
+
+    @WatchableAsyncStatus.wrap
+    async def set(
+        self,
+        value: float,
+        wait: bool = True,
+        timeout: CalculatableTimeout = "CALCULATE_TIMEOUT",
+    ):
+        use_scanning = load_config().feature_flag("undulator_fast_step_scanning_mode")
+        is_scanning = (
+            await self.parent.scan_mode.get_value() != UndulatorScanMode.NORMAL
+        )
+        if not (use_scanning and is_scanning):
+            # No scan array is active, so just move as normal
+            async for update in super()._set(value, wait=wait, timeout=timeout):
+                yield update
+            return
+        assert wait is True, "Cannot handle not waiting in scan mode."
+        next_gap = next(self.parent._gap_iter)
+        next_energy = next(self.parent._energy_iter)
+        current_index, current_mode = await asyncio.gather(
+            self.parent.scan_current_index.get_value(),
+            self.parent.scan_mode.get_value(),
+        )
+        is_first_point = current_index == 0 and not self.scan_has_moved
+        if is_first_point:
+            # The scan controls don't actually move the gap to the first position
+            # so we have to do it manually
+            await self.parent.scan_mode.set(UndulatorScanMode.NORMAL)
+            await self.parent.gap.set(next_gap, timeout=timeout)
+            await self.parent.scan_mode.set(current_mode)
+            self.scan_has_moved = True
+            return
+        # Use the scanning mode controls
+        old_position, current_position, units, precision, velocity = (
+            await asyncio.gather(
+                self.setpoint.get_value(),
+                self.readback.get_value(),
+                self.units.get_value(),
+                self.precision.get_value(),
+                self.velocity.get_value(),
+            )
+        )
+        target = next_energy
+        next_scan_task = asyncio.ensure_future(self._advance_scan_point())
+        # Decide how long we should wait
+        timeout_: float
+        if timeout == CALCULATE_TIMEOUT:
+            assert velocity > 0, "Mover has zero velocity"
+            timeout_ = abs(target - old_position) / velocity + DEFAULT_TIMEOUT
+        else:
+            timeout_ = cast(float, timeout)
+        # Monitor the scanning PVs to see when the move is done
+        async for current_position in observe_value(self.readback, timeout=timeout_):
+            yield WatcherUpdate(
+                current=current_position,
+                initial=old_position,
+                target=target,
+                name=self.name,
+                unit=self.units,
+                precision=int(precision),
+            )
+            # Check if the move has finished
+            target_reached = current_position is not None and np.isclose(
+                current_position,
+                target,
+                atol=10 ** (-precision),
+            )
+            if target_reached:
+                break
+        # Make sure the next_scan_point PV has had time to reset
+        await next_scan_task
+
+    @AsyncStatus.wrap
+    async def prepare(self, value: TrajectoryMotorInfo, timeout=DEFAULT_TIMEOUT):
+        """Prepare for a scan using ASD's undulator scan controls."""
+        energies = np.asarray(value.positions)
+        offset = await self.offset.get_value()
+        energies_kev = _energy_to_keV(energies, offset=offset)
+        exceptions = []
+        async with self.parent.prepare_scan_mode() as tg:
+            gap_taper = tg.create_task(self.parent.gap_taper.readback.get_value())
+            for _ in range(SCAN_SETUP_RETRIES):
+                await self.parent.scan_array_length.set(len(value.positions))
+                await self.parent.scan_energy_array.set(energies_kev)
+                try:
+                    await self.parent.scan_setup_successful(timeout=timeout)
+                except (SetupFailed, TimeoutError) as exc:
+                    exceptions.append(exc)
+                    continue
+                else:
+                    break
+            else:
+                raise ExceptionGroup(
+                    f"Preparing energy scan mode was not successful after {SCAN_SETUP_RETRIES} attempts.",
+                    exceptions,
+                )
+        # Stash the requested ranges so we can check them later
+        self.parent._energy_iter = iter(value.positions)
+        # The energy->gap calcuations in the IOC don't work right with a taper
+        if gap_taper.result() != 0:
+            warnings.warn("Setting energy array with non-zero taper.")
+        self.scan_has_moved = False
+
+    @AsyncStatus.wrap
+    async def unstage(self):
+        await asyncio.gather(
+            self.parent.clear_scan_array.set(True),
+            self.parent.scan_mode.set(UndulatorScanMode.NORMAL),
+        )
+
 
 def _keV_to_energy(keV: float, offset: float) -> float:
     energy = keV * 1000 - offset
@@ -134,7 +322,15 @@ def _energy_to_keV(energy: float, offset: float) -> float:
     return (energy + offset) / 1000
 
 
-class PlanarUndulator(StandardReadable):
+class UndulatorScanMode(StrictEnum):
+    NORMAL = "NormalMode"
+    INTERNAL = "ScanMode1"
+    EDGE_TRIGGER = "ScanMode2"
+    SOFTWARE = "ScanMode3"
+    SOFTWARE_RETRIES = "ScanMode4"
+
+
+class PlanarUndulator(StandardReadable, EpicsDevice):
     """APS Planar Undulator
 
     .. index:: Ophyd Device; PlanarUndulator
@@ -151,6 +347,20 @@ class PlanarUndulator(StandardReadable):
 
     _ophyd_labels_ = {"xray_sources", "undulators"}
     _offset_table: IO | str | Path
+
+    gap_device_setpoint: A[SignalRW[float], PV("GapSetDeviceC")]
+
+    # Signals for ID scanning mode
+    scan_array_length: A[SignalRW[float], PV("GapArrayLenC"), Format.CONFIG_SIGNAL]
+    clear_scan_array: A[SignalRW[float], PV("GapArraySetClearC")]
+    scan_mode: A[SignalRW[UndulatorScanMode], PV("GapScanModeSetC")]
+    scan_next_point: A[SignalRW[bool], PV("MoveToNextGapC")]
+    scan_energy_array: A[SignalRW[Array1D[np.float64]], PV("EnergyArraySetC.VAL")]
+    scan_gap_array: A[SignalRW[Array1D[np.int32]], PV("GapArraySetC")]
+    scan_mismatch_count: A[SignalRW[int], PV("MismatchCountM")]
+    scan_gap_array_check: A[SignalRW[bool], PV("GapArrayCheckM")]
+    scan_energy_array_check: A[SignalRW[bool], PV("EnergyArrayCheckM")]
+    scan_current_index: A[SignalR[int], PV("ScanIndexM")]
 
     class AccessMode(SubsetEnum):
         USER = "User"
@@ -175,7 +385,7 @@ class PlanarUndulator(StandardReadable):
         # Configuration state for the undulator
         with self.add_children_as_readables():
             self.total_power = epics_signal_r(float, f"{prefix}TotalPowerM.VAL")
-        with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
+        with self.add_children_as_readables(Format.CONFIG_SIGNAL):
             self.harmonic_value = epics_signal_rw(int, f"{prefix}HarmonicValueC")
             self.gap_deadband = epics_signal_rw(int, f"{prefix}DeadbandGapC")
             self.device_limit = epics_signal_rw(float, f"{prefix}DeviceLimitM.VAL")
@@ -215,7 +425,7 @@ class PlanarUndulator(StandardReadable):
         self.access_mode = epics_signal_r(self.AccessMode, f"{prefix}AccessSecurityC")
         self.message1 = epics_signal_r(str, f"{prefix}Message1M.VAL")
         self.message2 = epics_signal_r(str, f"{prefix}Message2M.VAL")
-        super().__init__(name=name)
+        super().__init__(prefix=prefix, name=name)
 
     @property
     def offset_table(self):
@@ -233,6 +443,41 @@ class PlanarUndulator(StandardReadable):
         if math.isnan(new_offset):
             raise ValueError(f"Refusing to extrapolate ID offset: {energy}")
         return float(new_offset)
+
+    async def scan_setup_successful(self, timeout):
+        gap_ok, energy_ok = await asyncio.gather(
+            self.scan_gap_array_check.get_value(),
+            self.scan_energy_array_check.get_value(),
+        )
+        if not gap_ok or not energy_ok:
+            raise SetupFailed(f"{gap_ok=}, {energy_ok=}")
+        # Make sure there are no mismatched arrays
+        async for value in observe_value(
+            self.scan_mismatch_count, done_timeout=timeout
+        ):
+            if value == 0:
+                break
+        return True
+
+    @asynccontextmanager
+    async def prepare_scan_mode(self):
+        # Preliminary set up to ensure scanning can be prepared
+        await asyncio.gather(
+            self.scan_mode.set(UndulatorScanMode.NORMAL),
+            self.clear_scan_array.set(True),
+        )
+        async with asyncio.TaskGroup() as tg:
+            # Each individual positioner can prepare here
+            yield tg
+        # Scanning is set up, now get ready for executing the steps
+        async with asyncio.TaskGroup() as tg:
+            scan_gaps = tg.create_task(self.scan_gap_array.get_value())
+            num_points = tg.create_task(self.scan_array_length.get_value())
+        num_points = int(num_points.result())
+        scan_gaps = scan_gaps.result()[:num_points]
+        scan_gaps = scan_gaps / UM_PER_MM
+        self._gap_iter = iter(scan_gaps)
+        await self.scan_mode.set(UndulatorScanMode.SOFTWARE_RETRIES)
 
 
 # -----------------------------------------------------------------------------

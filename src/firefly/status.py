@@ -1,12 +1,13 @@
 import logging
+from typing import Mapping
 
 import qtawesome as qta
+from pydm import PyDMChannel
 from pydm.widgets import PyDMByteIndicator, PyDMPushButton
 from qtpy.QtCore import Signal
 from qtpy.QtWidgets import QHBoxLayout, QSizePolicy
 
 from firefly import display
-from haven import beamline
 from haven.devices.shutter import ShutterState
 
 log = logging.getLogger(__name__)
@@ -22,64 +23,100 @@ def name_to_title(name: str):
 
 
 class StatusDisplay(display.FireflyDisplay):
-    caqtdm_ui_file: str = "/net/s25data/xorApps/ui/25id_main.ui"
+    first_shutter_row = 3
     bss_window_requested = Signal()
 
-    def add_shutter_widgets(self):
-        form = self.ui.beamline_layout
-        # Remove existing layouts
-        form.removeRow(self.ui.shutter_A_layout)
-        form.removeRow(self.ui.shutter_CD_layout)
+    async def update_devices(self, registry):
+        await super().update_devices(registry)
+        shutters = registry.findall("shutters", allow_none=True)
+        shutters = sorted(shutters, key=lambda x: x.name)
+        self.remove_shutter_widgets()
+        for shutter in shutters:
+            self.add_shutter_widgets(shutter)
+
+    def remove_shutter_widgets(self):
+        # Disconnect existing pydm channels for the openable/closable signals
+        old_channels = [ch for chs in self.shutter_channels for ch in chs]
+        old_channels = [ch for ch in old_channels if ch is not None]
+        for ch in old_channels:
+            ch.disconnect()
+        self.shutter_channels = []
+
+    def add_shutter_widgets(self, shutter):
         # Add widgets for shutters
-        shutters = beamline.devices.findall("shutters", allow_none=True)
-        row_idx = 4
         on_color = self.ui.shutter_permit_indicator.onColor
         off_color = self.ui.shutter_permit_indicator.offColor
-        for shutter in shutters[::-1]:
-            # Add a layout with the buttons
-            layout = QHBoxLayout()
-            label = name_to_title(shutter.name) + ":"
-            form.insertRow(row_idx, label, layout)
-            # Indicator to show if the shutter is open
-            indicator = PyDMByteIndicator(
-                parent=self, init_channel=f"haven://{shutter.name}.readback"
+        # Add a layout with the buttons
+        layout = QHBoxLayout()
+        label = name_to_title(shutter.name) + ":"
+        row_idx = self.first_shutter_row + len(self.shutter_channels)
+        self.beamline_layout.insertRow(row_idx, label, layout)
+        # Indicator to show if the shutter is open
+        indicator = PyDMByteIndicator(
+            parent=self, init_channel=f"haven://{shutter.name}.readback"
+        )
+        indicator.labels = ["Closed", "Fault"]
+        indicator.numBits = 2
+        indicator.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        # Switch colors because open is 0 which should means "good"
+        indicator.offColor = on_color
+        indicator.onColor = off_color
+        layout.addWidget(indicator)
+        # Button to open the shutter
+        open_btn = PyDMPushButton(
+            parent=self,
+            label="Open",
+            icon=qta.icon("mdi.window-shutter-open"),
+            pressValue=ShutterState.OPEN,
+            relative=False,
+            init_channel=f"haven://{shutter.name}.setpoint",
+        )
+        layout.addWidget(open_btn)
+        if hasattr(shutter, "open_allowed"):
+            openable_channel = PyDMChannel(
+                address=f"haven://{shutter.name}.open_allowed",
+                value_slot=open_btn.setEnabled,
             )
-            # indicator.showLabels = False
-            indicator.labels = ["Closed", "Fault"]
-            indicator.numBits = 2
-            indicator.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-            # Switch colors because open is 0 which should means "good"
-            indicator.offColor = on_color
-            indicator.onColor = off_color
-            layout.addWidget(indicator)
-            # Button to open the shutter
-            open_btn = PyDMPushButton(
-                parent=self,
-                label="Open",
-                icon=qta.icon("mdi.window-shutter-open"),
-                pressValue=ShutterState.OPEN,
-                relative=False,
-                init_channel=f"haven://{shutter.name}.setpoint",
+            openable_channel.connect()
+        else:
+            openable_channel = None
+        # Button to close the shutter
+        close_btn = PyDMPushButton(
+            parent=self,
+            label="Close",
+            icon=qta.icon("mdi.window-shutter"),
+            pressValue=ShutterState.CLOSED,
+            relative=False,
+            init_channel=f"haven://{shutter.name}.setpoint",
+        )
+        layout.addWidget(close_btn)
+        if hasattr(shutter, "close_allowed"):
+            closable_channel = PyDMChannel(
+                address=f"haven://{shutter.name}.close_allowed",
+                value_slot=close_btn.setEnabled,
             )
-            print(f"{shutter.name} - {getattr(shutter, 'allow_open', True)=}")
-            open_btn.setEnabled(getattr(shutter, "allow_open", True))
-            layout.addWidget(open_btn)
-            # Button to close the shutter
-            close_btn = PyDMPushButton(
-                parent=self,
-                label="Close",
-                icon=qta.icon("mdi.window-shutter"),
-                pressValue=ShutterState.CLOSED,
-                relative=False,
-                init_channel=f"haven://{shutter.name}.setpoint",
-            )
-            close_btn.setEnabled(getattr(shutter, "allow_close", True))
-            layout.addWidget(close_btn)
+            closable_channel.connect()
+        else:
+            closable_channel = None
+        self.shutter_channels.append((openable_channel, closable_channel))
+
+    def update_bss_metadata(self, md: Mapping[str, str]):
+        super().update_bss_metadata(md)
+        self.ui.proposal_id_label.setText(md.get("proposal_id", ""))
+        self.ui.proposal_title_label.setText(md.get("proposal_title", ""))
+        self.ui.esaf_id_label.setText(md.get("esaf_id", ""))
+        self.ui.esaf_title_label.setText(md.get("esaf_title", ""))
+        self.ui.esaf_status_label.setText(md.get("esaf_status", ""))
+        self.ui.esaf_end_date_label.setText(md.get("esaf_end", ""))
+        self.ui.esaf_users_label.setText(md.get("esaf_users", ""))
 
     def customize_ui(self):
         self.ui.bss_modify_button.clicked.connect(self.bss_window_requested.emit)
         self.ui.bss_modify_button.setIcon(qta.icon("fa6s.calendar"))
-        self.add_shutter_widgets()
+        # Remove existing designer shutter widgets
+        self.beamline_layout.removeRow(self.ui.shutter_A_layout)
+        self.beamline_layout.removeRow(self.ui.shutter_CD_layout)
+        self.shutter_channels = []
 
     def ui_filename(self):
         return "status.ui"

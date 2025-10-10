@@ -9,10 +9,12 @@ import bluesky.plans as bp
 from haven.instrument import beamline
 from haven.preprocessors import (
     baseline_decorator,
+    inject_metadata_decorator,
     open_shutters_decorator,
     shutter_suspend_decorator,
 )
 
+from ._align_monochromators import align_monochromators  # noqa: F401
 from ._align_motor import align_motor
 from ._auto_gain import auto_gain
 from ._calibrate import calibrate  # noqa: F401
@@ -45,6 +47,7 @@ all_decorators = chain(
     # shutter_suspend_decorator(),
     open_shutters_decorator(),
     baseline_decorator(),
+    inject_metadata_decorator(),
 )
 
 # Apply decorators to Haven plans

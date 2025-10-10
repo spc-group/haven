@@ -12,3 +12,4 @@ Bluesky.
    :caption: Contents:
 
    adding_devices.rst
+   environment_configuration.rst

@@ -1,47 +1,70 @@
 import getpass
+import importlib
 import logging
 import os
 import socket
-import warnings
-from collections import ChainMap
+from functools import partial
+from typing import Any, Mapping
 
 import epics
-import pkg_resources
 from bluesky.preprocessors import msg_mutator
+from bluesky.utils import make_decorator
 
 from haven import __version__ as haven_version
 from haven._iconfig import load_config
-from haven.exceptions import ComponentNotFound
-from haven.instrument import beamline
 
 log = logging.getLogger()
 
 
 def get_version(pkg_name):
-    return pkg_resources.get_distribution(pkg_name).version
+    return importlib.metadata.version(pkg_name)
 
 
-VERSIONS = dict(
-    apstools=get_version("apstools"),
-    bluesky=get_version("bluesky"),
-    databroker=get_version("databroker"),
-    epics_ca=epics.__version__,
-    epics=epics.__version__,
-    haven=haven_version,
-    h5py=get_version("h5py"),
-    matplotlib=get_version("matplotlib"),
-    numpy=get_version("numpy"),
-    ophyd=get_version("ophyd"),
-    pymongo=get_version("pymongo"),
-)
+def version_md(config: Mapping | None) -> dict[str, Any]:
+    if config is None:
+        config = load_config()
+    # Prepare the metadata dictionary
+    md = {
+        # Software versions
+        "version_apstools": get_version("apstools"),
+        "version_bits": get_version("apsbits"),
+        "version_bluesky": get_version("bluesky"),
+        "version_epics_ca": epics.__version__,
+        "version_epics": epics.__version__,
+        "version_haven": haven_version,
+        "version_ophyd": get_version("ophyd"),
+        "version_ophyd_async": get_version("ophyd_async"),
+        # Controls
+        "EPICS_HOST_ARCH": os.environ.get("EPICS_HOST_ARCH"),
+        "epics_libca": os.environ.get("PYEPICS_LIBCA"),
+        "EPICS_CA_MAX_ARRAY_BYTES": os.environ.get("EPICS_CA_MAX_ARRAY_BYTES"),
+        # Computer
+        "login_id": f"{getpass.getuser()}@{socket.gethostname()}",
+        "pid": os.getpid(),
+    }
+    md.update(config.get("metadata", {}))
+    return md
 
 
-def inject_haven_md_wrapper(plan):
+def _inject_md(msg, config: Mapping | None = None):
+    if msg.command != "open_run":
+        # This is not a message with metadata, so let it pass as-is
+        return msg
+    md = version_md(config=config)
+    # Filter out `None` values since they were not found
+    md = {key: val for key, val in md.items() if val not in [None, ""]}
+    # Update the message
+    md.update(msg.kwargs)
+    new_msg = msg._replace(kwargs=md)
+    return new_msg
+
+
+def inject_metadata_wrapper(plan, config: Mapping | None = None):
     """Inject additional metadata into a run.
 
-    This takes precedences over the original metadata dict in the event of
-    overlapping keys, but it does not mutate the original metadata dict.
-    (It uses ChainMap.)
+    This takes precedence over the original metadata dict in the event
+    of overlapping keys, but it does not mutate the original metadata
+    dict.
 
     Parameters
     ----------
@@ -49,65 +72,10 @@ def inject_haven_md_wrapper(plan):
         a generator, list, or similar containing `Msg` objects
 
     """
+    return (yield from msg_mutator(plan, partial(_inject_md, config=config)))
 
-    def _inject_md(msg):
-        if msg.command != "open_run":
-            return msg
-        # Prepare the metadata dictionary
-        config = load_config()
-        md = {
-            # Software versions
-            "versions": VERSIONS,
-            # Controls
-            "EPICS_HOST_ARCH": os.environ.get("EPICS_HOST_ARCH"),
-            "epics_libca": os.environ.get("PYEPICS_LIBCA"),
-            "EPICS_CA_MAX_ARRAY_BYTES": os.environ.get("EPICS_CA_MAX_ARRAY_BYTES"),
-            # Facility
-            "beamline_id": config["beamline"]["name"],
-            "facility_id": ", ".join(
-                cfg["name"] for cfg in config.get("synchrotron", [])
-            ),
-            "xray_source": config["xray_source"]["type"],
-            # Computer
-            "login_id": f"{getpass.getuser()}@{socket.gethostname()}",
-            "pid": os.getpid(),
-            # User supplied
-            "sample_name": "",
-            # Bluesky
-            "parameters": "",
-            "purpose": "",
-        }
-        # Get metadata from the beamline scheduling system (bss)
-        try:
-            bss = beamline.devices["bss"]
-        except ComponentNotFound:
-            wmsg = "Could not find bss device, metadata may be missing."
-            warnings.warn(wmsg)
-            log.warning(wmsg)
-            bss_md = None
-        else:
-            bss_md = bss.get()
-            md.update(
-                {
-                    "proposal_id": bss_md.proposal.proposal_id,
-                    "proposal_title": bss_md.proposal.title,
-                    "proposal_users": bss_md.proposal.user_last_names,
-                    "proposal_user_badges": bss_md.proposal.user_badges,
-                    "esaf_id": bss_md.esaf.esaf_id,
-                    "esaf_title": bss_md.esaf.title,
-                    "esaf_users": bss_md.esaf.user_last_names,
-                    "esaf_user_badges": bss_md.esaf.user_badges,
-                    "mail_in_flag": bss_md.proposal.mail_in_flag,
-                    "proprietary_flag": bss_md.proposal.proprietary_flag,
-                    "bss_aps_cycle": bss_md.esaf.aps_cycle,
-                    "bss_beamline_name": bss_md.proposal.beamline_name,
-                }
-            )
-        # Update the message
-        msg = msg._replace(kwargs=ChainMap(msg.kwargs, md))
-        return msg
 
-    return (yield from msg_mutator(plan, _inject_md))
+inject_metadata_decorator = make_decorator(inject_metadata_wrapper)
 
 
 # -----------------------------------------------------------------------------

@@ -24,6 +24,7 @@ from ophyd_async.core import (
     DEFAULT_TIMEOUT,
     AsyncStatus,
     DerivedSignalFactory,
+    Device,
     LazyMock,
     SignalR,
     StandardReadable,
@@ -33,37 +34,20 @@ from ophyd_async.core import (
     soft_signal_r_and_setter,
     soft_signal_rw,
 )
-from ophyd_async.epics.motor import Motor
-from pint import Quantity, UnitRegistry
+from pint import Quantity
 from pydantic import ConfigDict
-from scipy import constants
 
-from ..positioner import Positioner
-from .motor import Motor
+from haven.devices.motor import Motor
+from haven.positioner import Positioner
+from haven.units import (
+    bragg_to_energy,
+    energy_to_bragg,
+    ureg,
+)
 
 __all__ = ["Analyzer", "HKL"]
 
-ureg = UnitRegistry()
-
 log = logging.getLogger(__name__)
-
-um_per_mm = 1000
-
-
-h = (
-    constants.physical_constants["Planck constant in eV/Hz"][0]
-    * ureg.electron_volt
-    / ureg.hertz
-)
-c = constants.c * ureg.meter / ureg.second
-
-
-def energy_to_wavelength(energy: Quantity) -> Quantity:
-    """Energy in eV to wavelength in meters."""
-    return h * c / energy
-
-
-wavelength_to_energy = energy_to_wavelength
 
 
 async def device_units(device: SignalR | StandardReadable):
@@ -84,81 +68,6 @@ async def device_units(device: SignalR | StandardReadable):
 
 def units(quantity: Quantity) -> str:
     return str(quantity.to_reduced_units())
-
-
-def bragg_to_wavelength(bragg_angle: Quantity, d: Quantity, n: int = 1) -> Quantity:
-    """Convert Bragg angle to wavelength.
-
-    Parameters
-    ==========
-    bragg_angle
-      The Bragg angle (θ) of the reflection.
-    d
-      Inter-planar spacing of the crystal.
-    n
-      The order of the reflection.
-    """
-    return 2 * d * np.sin(bragg_angle) / n
-
-
-def wavelength_to_bragg(wavelength: Quantity, d: Quantity, n: int = 1) -> Quantity:
-    """Convert wavelength to Bragg angle.
-
-    Parameters
-    ==========
-    wavelength
-      The photon wavelength in meters.
-    d
-      Inter-planar spacing of the crystal.
-    n
-      The order of the reflection.
-
-    Returns
-    =======
-    bragg
-      The Bragg angle of the reflection, in Radians.
-    """
-    return np.arcsin(n * wavelength / 2 / d)
-
-
-def energy_to_bragg(energy: Quantity, d: Quantity) -> Quantity:
-    """Convert photon energy to Bragg angle.
-
-    Parameters
-    ==========
-    energy
-      Photon energy, in eV.
-    d
-      d-spacing of the analyzer crystal, in meters.
-
-    Returns
-    =======
-    bragg
-      First order Bragg angle for this photon, in radians.
-
-    """
-    bragg = np.arcsin(h * c / 2 / d / energy)
-    return bragg
-
-
-def bragg_to_energy(bragg: Quantity, d: Quantity) -> Quantity:
-    """Convert Bragg angle to photon energy.
-
-    Parameters
-    ==========
-    bragg
-      Bragg angle for the crystal.
-    d
-      d-spacing of the analyzer crystal.
-
-    Returns
-    =======
-    energy
-      Photon energy.
-
-    """
-    energy = h * c / 2 / d / np.sin(bragg)
-    return energy
 
 
 def hkl_to_alpha(base, reflection) -> Quantity:
@@ -237,6 +146,7 @@ class Analyzer(StandardReadable):
     """
 
     energy_unit = "eV"
+    _has_hints: tuple[Device]
 
     def __init__(
         self,
@@ -303,13 +213,12 @@ class Analyzer(StandardReadable):
             )
         # The actual energy signal that controls the analyzer
         self.energy = EnergyPositioner(xtal=self)
-        # Decide which signals should be readable/config/etc
+        # Decide which signals should be readable/config/etc.
+        self.add_readables([self.energy.readback], StandardReadableFormat.HINTED_SIGNAL)
         self.add_readables(
             [
-                self.energy.readback,
-                self.energy.setpoint,
-                self.vertical.user_readback,
-                self.horizontal.user_readback,
+                self.vertical,
+                self.horizontal,
             ]
         )
         self.add_readables(
@@ -319,6 +228,12 @@ class Analyzer(StandardReadable):
             StandardReadableFormat.CONFIG_SIGNAL,
         )
         super().__init__(name=name)
+        # We don't have vertical/horizontal to be hinted, but still configuration
+        self._has_hints = tuple(
+            device
+            for device in self._has_hints
+            if device not in [self.vertical, self.horizontal]
+        )
 
     async def connect(
         self,
@@ -441,7 +356,8 @@ class EnergyTransform(Transform):
         log.info(f"Inverse: {bragg=}")
         energy = bragg_to_energy(bragg, d=d)
         log.info(f"Inverse: {energy=}")
-        derived = EnergyDerived(energy=energy.to(units["energy"]).magnitude)
+        energy_val = float(energy.to(units["energy"]).magnitude)
+        derived = EnergyDerived(energy=energy_val)
         return derived
 
 

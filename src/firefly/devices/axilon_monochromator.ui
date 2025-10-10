@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>335</width>
-    <height>568</height>
+    <height>591</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -259,7 +259,7 @@
           <bool>true</bool>
          </property>
          <property name="channel" stdset="0">
-          <string>haven://${DEVICE}.offset.user_readback</string>
+          <string>haven://${DEVICE}.beam_offset.user_readback</string>
          </property>
         </widget>
        </item>

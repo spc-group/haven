@@ -16,7 +16,10 @@ class IocsDisplay(display.FireflyDisplay):
             self.iocs_layout.takeAt(idx).widget().deleteLater()
         # Add embedded displays for all the ion chambers
         self._ioc_displays = []
-        manager = beamline.devices["beamline_manager"]
+        try:
+            manager = beamline.devices["beamline_manager"]
+        except KeyError:
+            return
 
         for idx, cpt_name in enumerate(manager.iocs.component_names):
             cpt = getattr(manager.iocs, cpt_name)

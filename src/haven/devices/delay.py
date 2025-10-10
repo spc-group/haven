@@ -1,13 +1,33 @@
+"""Tools for changing the shape of a trigger pulse, mostly meant for fly scanning.
+
+These devices will be prepared from a bluesky fly scan plan.
+
+"""
+
+import asyncio
+from collections.abc import Sequence
+
+from bluesky.protocols import Preparable
 from ophyd_async.core import (
     DEFAULT_TIMEOUT,
+    AsyncStatus,
+    DetectorTrigger,
     SignalDatatypeT,
     SignalRW,
     StandardReadable,
     StandardReadableFormat,
     StrictEnum,
     SubsetEnum,
+    TriggerInfo,
 )
-from ophyd_async.epics.core import epics_signal_r, epics_signal_rw, epics_signal_x
+from ophyd_async.epics.core import (
+    epics_signal_r,
+    epics_signal_rw,
+    epics_signal_x,
+)
+
+from haven.devices import soft_glue
+from haven.devices.soft_glue import SoftGlueSignal as SGSig
 
 
 def epics_signal_io(
@@ -73,11 +93,37 @@ class DG645Output(StandardReadable):
 
 
 class DG645DelayOutput(DG645Output):
-    def __init__(self, prefix: str, name: str = ""):
+    def __init__(
+        self, prefix: str, name: str = "", channels: Sequence[DG645Channel] = ()
+    ):
+        """*channels* are the two channels that should be controlled by this output."""
         with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
             self.trigger_prescale = epics_signal_io(int, f"{prefix}TriggerPrescaleL")
             self.trigger_phase = epics_signal_io(int, f"{prefix}TriggerPhaseL")
+        self.channels = channels
         super().__init__(prefix=prefix, name=name)
+
+    @AsyncStatus.wrap
+    async def prepare(self, value: TriggerInfo):
+        """Prepare this output to trigger another device.
+
+        *value* in this case is the trigger info for the other device,
+        and this output will be set up to trigger it appropriately.
+
+        """
+        aws = [
+            self.channels[0].reference.set(self.channels[0].Reference.T0),
+            self.channels[0].delay.set(0),
+            self.channels[1].reference.set(self.channels[0].Reference.T0),
+        ]
+        if value.trigger == DetectorTrigger.EDGE_TRIGGER:
+            aws.append(self.channels[1].delay.set(1e-5))
+        elif value.trigger in [
+            DetectorTrigger.CONSTANT_GATE,
+            DetectorTrigger.VARIABLE_GATE,
+        ]:
+            aws.append(self.channels[1].delay.set(value.livetime - value.deadtime))
+        await asyncio.gather(*aws)
 
 
 class DG645Delay(StandardReadable):
@@ -92,10 +138,10 @@ class DG645Delay(StandardReadable):
 
     class TriggerSource(SubsetEnum):
         INTERNAL = "Internal"
-        EXT_RISING_EDGE = "Ext rising edge"
-        EXT_FALLING_EDGE = "Ext falling edge"
-        SS_EXT_RISE_EDGE = "SS ext rise edge"
-        SS_EXT_FALL_EDGE = "SS ext fall edge"
+        EXTERNAL_RISING_EDGE = "Ext rising edge"
+        EXTERNAL_FALLING_EDGE = "Ext falling edge"
+        SINGLE_SHOT_EXTERNAL_RISING_EDGE = "SS ext rise edge"
+        SINGLE_SHOT_EXTERNAL_FALLING_EDGE = "SS ext fall edge"
         SINGLE_SHOT = "Single shot"
         LINE = "Line"
 
@@ -153,10 +199,18 @@ class DG645Delay(StandardReadable):
         # 2-channel delay outputs
         with self.add_children_as_readables():
             self.output_T0 = DG645Output(f"{prefix}T0")
-            self.output_AB = DG645DelayOutput(f"{prefix}AB")
-            self.output_CD = DG645DelayOutput(f"{prefix}CD")
-            self.output_EF = DG645DelayOutput(f"{prefix}EF")
-            self.output_GH = DG645DelayOutput(f"{prefix}GH")
+            self.output_AB = DG645DelayOutput(
+                f"{prefix}AB", channels=(self.channel_A, self.channel_B)
+            )
+            self.output_CD = DG645DelayOutput(
+                f"{prefix}CD", channels=(self.channel_C, self.channel_D)
+            )
+            self.output_EF = DG645DelayOutput(
+                f"{prefix}EF", channels=(self.channel_E, self.channel_F)
+            )
+            self.output_GH = DG645DelayOutput(
+                f"{prefix}GH", channels=(self.channel_G, self.channel_H)
+            )
         # Trigger control
         with self.add_children_as_readables(StandardReadableFormat.CONFIG_SIGNAL):
             self.trigger_source = epics_signal_io(
@@ -183,6 +237,175 @@ class DG645Delay(StandardReadable):
             self.burst_delay = epics_signal_io(float, f"{prefix}BurstDelayA")
             self.burst_period = epics_signal_io(float, f"{prefix}BurstPeriodA")
         super().__init__(name=name)
+
+    @AsyncStatus.wrap
+    async def prepare(self, value: TriggerInfo):
+        if value.trigger == DetectorTrigger.INTERNAL:
+            trigger_source = self.TriggerSource.INTERNAL
+        elif value.trigger == DetectorTrigger.EDGE_TRIGGER:
+            trigger_source = self.TriggerSource.EXTERNAL_RISING_EDGE
+        await self.trigger_source.set(trigger_source)
+
+
+UNSET = ""
+HIGH = "1"
+HIGH_NOW = "1!"
+INPUT = SGSig("pulseIn")
+RESET = SGSig("reset")
+GATE_LATCH = SGSig("gateLatch")
+TRIGGER_LIMIT_REACHED = SGSig("stopTrig")
+BLOCK_TRIGGERS = SGSig("blockTrigs")
+OUTPUT_PERMIT = SGSig("outPermit")
+CLOCK = SGSig("internClk")
+GATE_OUTPUT = SGSig("gateOut")
+TRIGGER_OUTPUT = SGSig("trigOut")
+
+
+class SoftGlueDelayOutput(StandardReadable, Preparable):
+    def __init__(self, prefix: str, output_num: int, name: str = ""):
+        """*output_num* is the index of the components to use, 0-indexed."""
+        self.and_gate = soft_glue.LogicGate(f"{prefix}AND-{output_num+1}")
+        self.output = soft_glue.FieldIO(f"{prefix}FO{output_num+1}")
+        super().__init__(name=name)
+
+    @AsyncStatus.wrap
+    async def prepare(self, trigger_info: TriggerInfo):
+        match trigger_info.trigger:
+            case DetectorTrigger.EDGE_TRIGGER:
+                # External input provides the input uplses
+                aws = (
+                    self.and_gate.inputB_signal.set(INPUT),
+                    self.and_gate.output_signal.set(TRIGGER_OUTPUT),
+                    self.output.signal.set(TRIGGER_OUTPUT),
+                )
+            case DetectorTrigger.CONSTANT_GATE | DetectorTrigger.VARIABLE_GATE:
+                aws = (
+                    self.and_gate.inputB_signal.set(GATE_LATCH),
+                    self.and_gate.output_signal.set(GATE_OUTPUT),
+                    self.output.signal.set(GATE_OUTPUT),
+                )
+            case _:
+                raise ValueError(
+                    f"Soft glue output cannot provide triggers for {trigger_info.trigger}"
+                )
+        # Set all the signals concurrently
+        await asyncio.gather(
+            self.and_gate.inputA_signal.set(OUTPUT_PERMIT),
+            *aws,
+        )
+
+    @AsyncStatus.wrap
+    async def kickoff(self):
+        pass
+
+    @AsyncStatus.wrap
+    async def complete(self):
+        pass
+
+
+class SoftGlueDelay(StandardReadable, Preparable):
+    def __init__(self, prefix: str, name="", pulse_input: int = 0):
+        self.output_permitted_gate = soft_glue.LogicGate(f"{prefix}AND-1")
+        self.pulse_counter = soft_glue.Counter(
+            f"{prefix}DnCntr-1", direction=soft_glue.Counter.Direction.DOWN
+        )
+        self.reset_buffer = soft_glue.Buffer(f"{prefix}BUFFER-1")
+        self.pulse_input = soft_glue.FieldIO(f"{prefix}FI{pulse_input+1}")
+        self.trigger_output = soft_glue.FieldIO(f"{prefix}FO1")
+        self.gate_latch = soft_glue.Latch(f"{prefix}DFF-1")
+        self.stop_trigger_latch = soft_glue.Latch(f"{prefix}DFF-2")
+        # Internal triggering mechanism
+        self.internal_clock = soft_glue.Clock(
+            prefix=f"{prefix}10MHZ_CLOCK", frequency=10e6
+        )
+        self.clock_divider = soft_glue.Divider(prefix=f"{prefix}DivByN-1")
+        # Specific output signal chains
+        self.pulse_output = soft_glue.FieldIO(prefix=f"{prefix}FO1")
+        self.trigger_output = SoftGlueDelayOutput(prefix=prefix, output_num=1)
+        self.gate_output = SoftGlueDelayOutput(prefix=prefix, output_num=2)
+        super().__init__(name=name)
+
+    @AsyncStatus.wrap
+    async def prepare(self, trigger_info: TriggerInfo):
+        aws = (
+            # Input/output channels
+            self.reset_buffer.description.set("Reset"),
+            self.reset_buffer.output_signal.set(RESET),
+            self.pulse_output.signal.set(INPUT),
+            # Latch for opening any gate signals
+            self.gate_latch.description.set("Gate latch"),
+            self.gate_latch.data_signal.set(HIGH),
+            self.gate_latch.clock_signal.set(INPUT),
+            self.gate_latch.clear_signal.set(~RESET),
+            self.gate_latch.output_signal.set(GATE_LATCH),
+            # Latch for stopping triggers once enough have passed
+            self.pulse_counter.description.set("Pulse counter"),
+            self.pulse_counter.clock_signal.set(INPUT),
+            self.pulse_counter.load_signal.set(RESET),
+            self.pulse_counter.output_signal.set(TRIGGER_LIMIT_REACHED),
+            self.pulse_counter.preset_counts.set(0),  # Set properly during kickoff()
+            self.stop_trigger_latch.description.set("Block extra triggers"),
+            self.stop_trigger_latch.data_signal.set(HIGH),
+            self.stop_trigger_latch.clock_signal.set(TRIGGER_LIMIT_REACHED),
+            self.stop_trigger_latch.clear_signal.set(~RESET),
+            self.stop_trigger_latch.output_signal.set(BLOCK_TRIGGERS),
+            self.output_permitted_gate.description.set("Output permit"),
+            self.output_permitted_gate.inputA_signal.set(~BLOCK_TRIGGERS),
+            self.output_permitted_gate.inputB_signal.set(~INPUT),
+            self.output_permitted_gate.output_signal.set(OUTPUT_PERMIT),
+            # Internal triggering signals that don't interfere with external triggering
+            self.internal_clock.signal.set(CLOCK),
+            self.clock_divider.clock_signal.set(CLOCK),
+            self.clock_divider.enable_signal.set(HIGH),
+            self.clock_divider.reset_signal.set(RESET),
+        )
+        match trigger_info.trigger:
+            case DetectorTrigger.INTERNAL:
+                # The internal clock provides the input pulses
+                aws = (
+                    self.pulse_input.signal.set(UNSET),
+                    self.clock_divider.output_signal.set(INPUT),
+                    *aws,
+                )
+            case DetectorTrigger.EDGE_TRIGGER:
+                # External input provides the input uplses
+                aws = (
+                    self.pulse_input.signal.set(INPUT),
+                    self.clock_divider.output_signal.set(UNSET),
+                    *aws,
+                )
+            case _:
+                raise ValueError(
+                    f"Soft glue cannot accept trigger type {trigger_info.trigger}"
+                )
+        await asyncio.gather(*aws)
+        # Prepare an iterator for use during kickoff()
+        self._number_of_events_iter = iter(
+            trigger_info.number_of_events
+            if isinstance(trigger_info.number_of_events, list)
+            else [trigger_info.number_of_events]
+        )
+        self._trigger_info = trigger_info
+
+    @AsyncStatus.wrap
+    async def kickoff(self):
+        if self._trigger_info is None or self._number_of_events_iter is None:
+            raise RuntimeError("Prepare must be called before kickoff!")
+        try:
+            events_to_complete = next(self._number_of_events_iter)
+        except StopIteration as err:
+            raise RuntimeError(
+                f"Kickoff called more than the configured number of "
+                f"{self._trigger_info.total_number_of_exposures} iteration(s)!"
+            ) from err
+        num_pulses = events_to_complete + 1
+        await self.pulse_counter.preset_counts.set(num_pulses)
+        # Setting the reset buffer triggers the start of pulses
+        await self.reset_buffer.input_signal.set(HIGH_NOW)
+
+    @AsyncStatus.wrap
+    async def complete(self):
+        pass
 
 
 # -----------------------------------------------------------------------------
